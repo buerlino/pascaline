@@ -5,6 +5,11 @@
 
 extern "C" const char *caseval(const char *);
 
+namespace giac {
+// global.cc: an integer power b^n fails fast with "Exponent overflow" when |n*ln(b)| exceeds this.
+extern double powlog2float;
+}
+
 namespace {
 std::string g_last;
 }
@@ -43,6 +48,15 @@ EMSCRIPTEN_KEEPALIVE const char *giac_set_setting(const char *name, const char *
   s += value;
   g_last = caseval(s.c_str());
   return g_last.c_str();
+}
+
+// Size guard for exact integer powers: b^n with |n*ln(b)| > limit gives an "Exponent overflow" error
+// at once instead of computing a huge integer (a single GMP call that the timeout can't interrupt).
+// Giac's default is 1e8. Returns the previous limit.
+EMSCRIPTEN_KEEPALIVE double giac_set_pow_limit(double limit) {
+  double prev = giac::powlog2float;
+  giac::powlog2float = limit;
+  return prev;
 }
 
 }  // extern "C"

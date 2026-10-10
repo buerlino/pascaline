@@ -174,7 +174,7 @@ stage_giac() {
 }
 
 # Exported C API (wasm/api.cc) plus what the JS glue needs.
-GIAC_EXPORTS='["_giac_init","_giac_eval","_giac_latex","_giac_set_setting","_caseval","_malloc","_free"]'
+GIAC_EXPORTS='["_giac_init","_giac_eval","_giac_latex","_giac_set_setting","_giac_set_pow_limit","_caseval","_malloc","_free"]'
 GIAC_LDFLAGS=(-Oz -fwasm-exceptions
   -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createGiacModule -sENVIRONMENT=web,worker,node
   -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sSTACK_SIZE=8MB
