@@ -41,6 +41,16 @@ a mixed-number entry template would be needed if the calculator should support i
 
 ## Size and start-up (desktop; Tab One numbers come from annabell)
 Compute Engine is the heavy part: the bundle is MathLive 808 kB (223 kB gzip) plus Compute Engine **4.1 MB (1.18 MB gzip)**.
-The page loads Compute Engine in the background after first paint (`timing.serializerReadyMs`). Because we only use
+The page loads Compute Engine in the background after first paint (`timing.serializerReadyMs`), so the keyboard and
+field are usable without it. Desktop Chromium, production build served by `vite preview`, median of 7 loads (ms from
+navigation start; CPU throttling is only an indication, not a Tab One proxy):
+
+| | field + keyboard usable | serializer ready |
+|---|---|---|
+| CPU x1 | 29 | 132 |
+| CPU x4 | 93 | 440 |
+| CPU x6 | 129 | 650 |
+
+So the field costs 808 kB of JS (223 kB gzip) and Compute Engine adds 4.1 MB (1.18 MB gzip) in the background. Because we only use
 `parse`, a small hand-written parser for the LaTeX subset our keyboard produces would cost a few hundred lines and about
 20 kB; see ron's opinion to henri.
