@@ -4,7 +4,7 @@ Pascaline is an **open-source graphing CAS calculator** for Android (also PWA, l
 
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 
-**Status (2026-10-10):** planning is done and no code exists yet. **Next step: the Phase 0 spike.** Run it with the `phase-0-spike` skill ([.claude/skills/phase-0-spike/SKILL.md](.claude/skills/phase-0-spike/SKILL.md)).
+**Status (2026-10-10):** Phase 0 spike in progress on branch `spike/phase-0`. Steps 0–2 (toolchain, Giac→wasm from source, MathEngine worker + desktop benchmark) are done; results are in [spike/RESULTS.md](spike/RESULTS.md). **Next: device steps 3+** (Capacitor shell on real phones) via the `phase-0-spike` skill ([.claude/skills/phase-0-spike/SKILL.md](.claude/skills/phase-0-spike/SKILL.md)).
 
 Background reading (read before larger design decisions):
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): **the plan**. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
@@ -85,7 +85,26 @@ pascaline/
 - A local checkout of **fdroiddata** is at `../fdroiddata`. Reference recipes: `metadata/com.graphhopper.maps.yml` (Capacitor), `metadata/net.alexbarry.alexgames.yml` (Emscripten).
 
 ## Commands
-None yet. Add them here as soon as they exist (dev server, unit tests, golden tests, wasm build, APK build, lint).
+Emscripten lives in `~/emsdk` (6.0.12). The build script sources `emsdk_env.sh` itself; don't add it to shell rc files.
+
+```bash
+# Giac + GMP + MPFR → wasm (pinned, SHA-256-checked; ≈4 min clean on 16 cores)
+engine/giac/build-wasm.sh                                  # → engine/giac/_out/base/giac.{mjs,wasm}
+WITH_SOLVERS=1 engine/giac/build-wasm.sh fetch link        # + Boost.Math/cminpack → _out/base-solvers/ (needs a base build first)
+WITH_GSL=1 engine/giac/build-wasm.sh fetch gsl giac link   # + GSL → _out/gsl/ (measurement only)
+
+# Node smoke tests (from spike/node/)
+node source-smoke.mjs 'factor(x^4-1)' 'solve(x^2=2,x)'     # VARIANT=base|gsl|base-solvers
+node solvers-smoke.mjs                                     # TOMS 748 + hybrd1 inside the wasm
+node prebuilt-smoke.cjs 'version()'                        # Parisse's giacwasm.js in spike/prebuilt/ (gitignored)
+
+# Spike app (from spike/app/; copies engine/giac/_out/base-solvers into public/engine/)
+npm ci
+npm run dev                                                # http://localhost:5173/?engine=source|prebuilt
+npm run build && npm run bench                             # Playwright, Chromium + Firefox → bench/results/*.json
+ENGINES=source npx playwright test --project=chromium      # subset
+npx playwright install chromium firefox                    # once
+```
 
 ## Conventions
 - Small, focused modules. Engine code knows nothing about the UI.
