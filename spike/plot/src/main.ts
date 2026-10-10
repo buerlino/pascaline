@@ -4,6 +4,9 @@
 import JXG from "jsxgraph";
 import "../node_modules/jsxgraph/distrib/jsxgraph.css";
 import { compile } from "@cortex-js/compute-engine";
+import { mark } from "./marks";
+
+mark("plot-js-start");
 
 const FUNCS = ["\\sin(x)", "x^3-2x", "\\frac{1}{x}"];
 const COLORS = ["#4da3ff", "#ff8c42", "#6fd36f"];
@@ -103,3 +106,18 @@ window.__plot = {
   setAuto,
   resetStats: () => { deltas.length = 0; stamps.length = 0; work.length = 0; },
 };
+
+// Device runs: ?autorun=<seconds> starts the scripted zoom/pan, then logs one result mark.
+mark("plot-ready");
+const autorun = Number(new URLSearchParams(location.search).get("autorun") ?? 0);
+if (autorun > 0) {
+  setTimeout(() => {
+    window.__plot.resetStats();
+    setAuto(true);
+    setTimeout(() => {
+      const s = stats();
+      setAuto(false);
+      mark("plot-fps", { fps: s.fps, p95FrameMs: s.p95FrameMs, redrawMs: s.workMedianMs, displayHz: s.displayHz, frames: s.frames });
+    }, autorun * 1000);
+  }, 1000);
+}
