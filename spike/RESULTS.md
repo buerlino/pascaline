@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Phase 0 spike results
-Date range: 2026-10-10 → (open) | Devices: low-end = *not yet chosen*, mid-range = *not yet chosen* | Build: desktop only so far (Vite production build served by `vite preview`)
+Date range: 2026-10-10 → (open) | Devices: low-end = Lenovo Tab One (Android 15), mid-range = Fairphone 6 (Android 16); exact SoC/RAM/WebView to be read via adb | Build: desktop only so far (Vite production build served by `vite preview`)
 
 Desktop machine for all numbers below: Rocky Linux 10.2, 16 cores, 28 GB RAM. Desktop numbers only show relative cost; the Q1 pass criteria are about a **low-end phone** and are still open.
 
@@ -108,7 +108,7 @@ None so far. The source build was done in about one working session, so the shor
 2. **Solver stack** as proposed above (Boost.Math + cminpack, no GSL by default)? If yes, I'll update docs/02 section 4.
 3. **Giac tarball pinning:** Parisse re-rolls `giac-2.1.0.tar.gz` in place, so our SHA-256 will break when he updates it. Options: mirror the exact tarball (e.g. a release asset in our repo or on Codeberg) or ask Parisse for immutable versioned tarballs. This matters for F-Droid.
 4. **Upstream reports to Parisse** (could go into the outreach email): the `add_evalf` debug log and `UI.addevalf` typo; `markup.cc` vs `EMCC2` (can the improved LaTeX exporter be enabled in web builds?); immutable tarballs.
-5. **Devices for steps 3+:** which low-end and mid-range phones (model, Android version, RAM)? A phone connected over `adb` lets me install and read timings myself.
+5. **Devices for steps 3+:** Lenovo Tab One (Android 15) as the low-end device, Fairphone 6 (Android 16) as the mid/high-end one (user, 2026-10-10). Still to record per device via adb: SoC, RAM, Android WebView version (it updates separately from Android and decides wasm speed). Gap: no older, slower device (e.g. Android 10–12, Cortex-A53-only SoC). If the Tab One passes comfortably, consider borrowing one before the final go/no-go.
 6. **Reference calculator** (real G2 or the official Virtual Calculator) for the `assumed` values in steps 4–5.
 7. `assumed` values so far: only the remark that V8's lazy wasm compilation explains Chromium's slower first calls. No Prime-behaviour values have been assumed yet.
 
