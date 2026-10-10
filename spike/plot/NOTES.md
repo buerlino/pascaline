@@ -28,4 +28,4 @@ Reading: the desktop is capped by the display at 60 fps. With the CPU slowed 4x,
 ## Observations
 - The plot page bundle is 5.2 MB of minified JS (Compute Engine ships its whole CAS, JSXGraph its whole core). For the real app the plot path should avoid pulling the full Compute Engine just to evaluate points: use a Giac-generated JS function or a small expression compiler, or import only `compile`. Worth measuring the plot page start on the Tab One before choosing.
 - JSXGraph's package `exports` hide `distrib/jsxgraph.css`, so the CSS is imported by relative path.
-- `1/x` needs no special handling: JSXGraph breaks the curve at the pole.
+- Not yet checked by eye: how `1/x` looks around the pole and whether touch pinch feels right (needs a screenshot or the device).
