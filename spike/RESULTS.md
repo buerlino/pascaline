@@ -59,6 +59,10 @@ Why ours is smaller and faster: Parisse's build also contains MicroPython, Quick
 | `secant_solver`, `steffenson_solver` | ✘ "Not linked with GSL" | ✘ | ✔ |
 | `hybrid_solver`, `hybrids_solver`, `hybridj_solver`, `newtonj_solver` | ✘ "Not linked with GSL" | ✘ | ✔ |
 
+Does linking GSL change other results? `spike/node/compare-variants.mjs base gsl` on the 55 benchmark inputs plus 19 numeric/special-function inputs: **all 55 benchmark outputs identical**. 4 of 74 differ:
+- `evalf(Airy_Ai(1))`: base returns it unevaluated (`Airy_Ai(1.0)`), GSL gives `0.135292416313`.
+- Numeric `eigenvals`, `eigenvects`, `svd` on float matrices: **same values, different order/sign** (GSL sorts eigenvalues ascending, e.g. `1.26794919243,3.0,4.73205080757` vs base `3.0,1.26794919243,4.73205080757`). Both are correct. Which order the reference calculator shows is a black-box check for the G2 (to verify, not assumed).
+
 Boost.Math + cminpack inside the same wasm (`engine/solvers/solvers.cc`, residuals evaluated by Giac in `caseval`'s context, so user variables apply):
 - `pas_solve1("x^3-2","x",0,3)` → 1.2599210498948783, residual 1.4e-14, 14 iterations
 - `pas_solve1("x*exp(x)=5","x",0,2)` → 1.3267246652422069, 9 iterations
