@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Phase 0 spike results
-Date range: 2026-10-10 → (open) | Devices: slow = old tablet (Android 8 or 9, model tbd), low-end = Lenovo Tab One (Android 15), mid/high = Fairphone 6 (Android 16); exact SoC/RAM/WebView to be read via adb | Reference calculator: HP Prime G2 (black-box use only, by the user) | Build: desktop only so far (Vite production build served by `vite preview`)
+Date range: 2026-10-10 → (open) | Devices: slow = old tablet (Android 8 or 9, model tbd), low-end = Lenovo Tab One TB305FU (Android 15, MediaTek MT8786 / mt6768, 8 cores, 3.9 GB RAM, Android WebView 131.0.6778.260 as found; adb serial HA24BZ2Y, stay-awake on since 2026-10-10 23:30), mid/high = Fairphone 6 (Android 16); exact SoC/RAM/WebView to be read via adb | Reference calculator: HP Prime G2 (black-box use only, by the user) | Build: desktop only so far (Vite production build served by `vite preview`)
 
 Desktop machine for all numbers below: Rocky Linux 10.2, 16 cores, 28 GB RAM. Desktop numbers only show relative cost; the Q1 pass criteria are about a **low-end phone** and are still open.
 

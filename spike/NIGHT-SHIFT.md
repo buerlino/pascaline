@@ -61,6 +61,8 @@ Possible tonight (whatever `adb devices` shows; the user is connecting them as c
 
 **First job on every newly connected tablet** (annabell): `spike/tools/stay-awake.sh <serial>`. It keeps the screen on (while charging, and with the longest timeout on battery), saves the original settings once, and records model, SoC, RAM, WebView version and battery in `.coord/devices/<serial>.info`. Tablets stay that way. If the device shows a lock screen with a PIN, the script can't dismiss it: log it for the user.
 
+**Battery watch:** the devices charge only from the laptop's USB port while their screens stay on. Check `dumpsys battery` (level, temperature) every hour and log it. If a level drops below 25%, save the current `screen_brightness` to `.coord/devices/<serial>.orig.brightness` and lower it (`settings put system screen_brightness 10`), and note it for the morning so it can be restored. Already connected at 23:30: Lenovo Tab One `HA24BZ2Y` (stay-awake on, 57%). Its WebView is 131, much older than desktop Chromium 156: measure it **as found** (that's what real users have), and note the version with every number.
+
 Measurement etiquette: one worker per device at a time (lock). Record battery level and temperature before each series. Let a hot device cool down. Plugged in, screen on, no other apps in front.
 
 ## 7. Assignments
