@@ -160,11 +160,11 @@ def main(write: bool) -> int:
                         print(f"DIFF {case['id']}: expect {case.get('expect')!r} oracle {v30!r}")
                         bad += 1
                     case["expect"] = v30
-                    line = emit(case)
             elif case.get("expect") != v30:
                 print(f"CROSS-CHECK {case['id']} ({case['source']}): expect {case.get('expect')!r} oracle {v30!r}")
                 bad += 1
-        out.append(line)
+        # --write normalises every case line (all values quoted, fixed key order): run.ts relies on it.
+        out.append(emit(case) if write else line)
     if write:
         CASES.write_text("\n".join(out) + "\n")
     print(f"{'written' if write else 'checked'}; problems: {bad}")

@@ -27,6 +27,10 @@ export interface HomeSettings {
   /** Working precision of the float fallback. */
   workDigits: number;
   guardMode: "round-exact" | "reeval-float";
+  /** Exact integer powers b^n with |n·ln b| above this fail at once ("Exponent overflow") and go to
+   *  the float path. The host applies it with the engine's giac_set_pow_limit(); Giac's default is 1e8.
+   *  1e5 ≈ results up to ~43,000 digits. */
+  powLimit: number;
 }
 
 export const defaultHomeSettings: HomeSettings = {
@@ -36,6 +40,7 @@ export const defaultHomeSettings: HomeSettings = {
   maxExactDigits: 20,
   workDigits: 30,
   guardMode: "round-exact",
+  powLimit: 1e5,
 };
 
 export type HomePath = "exact" | "exact-big" | "float-big" | "float-timeout" | "float-error";
