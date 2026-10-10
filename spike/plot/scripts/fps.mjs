@@ -10,9 +10,7 @@ const throttle = Number(process.argv[4] ?? 1);
 const server = await preview({ preview: { port: 4174, strictPort: true } });
 const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
 
-const only = process.env.BROWSERS; // e.g. BROWSERS=chromium
 for (const [name, type] of [["chromium", chromium], ["firefox", firefox]]) {
-  if (only && !only.split(",").includes(name)) continue;
   let browser;
   try { browser = await type.launch(); } catch (e) { console.log(name, "not installed, skipped"); continue; }
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });

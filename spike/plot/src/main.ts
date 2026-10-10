@@ -1,33 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Plot spike (Q6): three functions in JSXGraph, pinch/pan/wheel, rAF-based FPS overlay.
-// Point evaluation: LaTeX -> JS closure (ron's parser by default, Compute Engine with ?compiler=ce).
+// Point evaluation uses Compute Engine compile() on LaTeX input.
 import JXG from "jsxgraph";
 import "../node_modules/jsxgraph/distrib/jsxgraph.css";
+import { compile } from "@cortex-js/compute-engine";
 import { mark } from "./marks";
-import { toFn as ronFn } from "./ron/emit-js.ts";
 
 mark("plot-js-start");
 
 const FUNCS = ["\\sin(x)", "x^3-2x", "\\frac{1}{x}"];
 const COLORS = ["#4da3ff", "#ff8c42", "#6fd36f"];
 
-// Point evaluation: ron's LaTeX-subset compiler (default) or Compute Engine compile() with ?compiler=ce
-// (loaded on demand, so it costs nothing unless asked for). Both give a closure (x) => y without per-call allocation.
-type Fn = (x: number) => number;
-async function ceFn(latex: string): Promise<Fn> {
-  const { compile } = await import("@cortex-js/compute-engine");
+function toFn(latex: string): (x: number) => number {
   const c = compile(latex, { strict: true });
   if (!c.success) throw new Error(`cannot compile ${latex}`);
-  const vars = { x: 0 };
+  const vars = { x: 0 }; // reused, so no allocation per sample
   return (x: number) => {
     vars.x = x;
     return Number(c.run(vars));
   };
 }
-const useCe = new URLSearchParams(location.search).get("compiler") === "ce";
-const t0c = performance.now();
-const fns: Fn[] = await Promise.all(FUNCS.map((f) => (useCe ? ceFn(f) : Promise.resolve(ronFn(f)))));
-mark("plot-compiled", { compiler: useCe ? "ce" : "ron", compileMs: performance.now() - t0c });
 
 const board = JXG.JSXGraph.initBoard("box", {
   boundingbox: [-8, 6, 8, -6],
@@ -38,8 +30,8 @@ const board = JXG.JSXGraph.initBoard("box", {
   pan: { enabled: true, needTwoFingers: false },
   zoom: { wheel: true, pinchHorizontal: true, pinchVertical: true, pinchSensitivity: 7, factorX: 1.1, factorY: 1.1 },
 });
-fns.forEach((fn, i) => {
-  board.create("functiongraph", [fn], { strokeColor: COLORS[i], strokeWidth: 2, highlight: false, numberPointsHigh: 400, numberPointsLow: 200 });
+FUNCS.forEach((f, i) => {
+  board.create("functiongraph", [toFn(f)], { strokeColor: COLORS[i], strokeWidth: 2, highlight: false, numberPointsHigh: 400, numberPointsLow: 200 });
 });
 
 // FPS: frame deltas from requestAnimationFrame; "busy" = frames longer than 1.5x the display period.
