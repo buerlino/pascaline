@@ -37,3 +37,8 @@ engine/**/_out/
 .DS_Store
 *.swp
 .idea/
+
+# Night-shift coordination (locks, device state, messages)
+.coord/
+# Python tooling venvs (mpmath oracle etc.)
+**/.venv/

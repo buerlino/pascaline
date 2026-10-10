@@ -19,7 +19,7 @@
 | Pretty-printed results | Giac `latex()` output, rendered by MathLive/**KaTeX** | MIT |
 | Function / Parametric / Polar / Sequence / Advanced Graphing / 3D plots | **JSXGraph** (2D, implicit curves, 3D view) | LGPL / MIT dual |
 | Geometry app | **JSXGraph** (interactive geometry) + Giac (symbolic geometry) | LGPL / MIT, GPLv3 |
-| Numerical solver (Solve app) | Giac `fsolve`/`proot` + **Boost.Math** root finders + **cminpack** (MINPACK) compiled into the same wasm (section 4) | GPLv3, BSL-1.0, BSD-style |
+| Numerical solver (Solve app) | Giac `fsolve`/`proot` with **GSL** (GNU Scientific Library) compiled into the same wasm (section 4) | GPLv3 |
 | Statistics 1Var/2Var, regressions, distributions | Giac (has them all) + **jStat** for hypothesis tests | GPLv3, MIT |
 | Spreadsheet | **Jspreadsheet CE** grid, formulas evaluated by Giac | MIT |
 | Programming | **MicroPython** compiled to wasm as the default (small, instant start, builds from source for F-Droid), plus optional **Pyodide** "Python+" pack (CPython with numpy, sympy, mpmath, scipy). See section 11.5. | MIT; MPL-2.0 (+BSD) |
@@ -86,24 +86,26 @@ What we add on top of Python:
 
 Yes, there are several excellent ones. The Prime's **Solve app** needs three solver types. Here's what to use for each:
 
-| Problem | What the Prime does | Recommended open-source solver | Why |
-|---|---|---|---|
-| **One equation, one unknown** (e.g. `x·eˣ = 5`, solve for `x` near a guess) | Iterates from the user's guess | **Boost.Math** `toms748_solve` / `bracket_and_solve_root` (bracketing, guaranteed convergence) plus `newton_raphson_iterate` / `halley_iterate` with **exact derivatives from Giac** | Boost.Math (BSL-1.0, header-only) is industrial-grade and well tested. TOMS 748 is the modern successor to Brent's method. Exact symbolic derivatives make Newton very robust. |
-| **System of N equations, N unknowns** | Newton-type iteration from guesses | **cminpack** `hybrd`/`hybrj` (Powell's hybrid "dog-leg" method from MINPACK), the same algorithm behind `scipy.optimize.fsolve` | MINPACK has been the reference implementation for 40+ years. cminpack is the C port (BSD-style licence). Giac supplies the exact Jacobian. |
-| **Polynomials** (all roots, including complex) | `proot` / CAS | **Giac `proot`** (already included). Optionally **MPSolve** (GPLv3) for certified high-degree roots | `proot` covers calculator needs; MPSolve is overkill unless we want "certified" roots. |
-| Least-squares fits / overdetermined systems | Statistics regressions | **cminpack** `lmdif` (Levenberg–Marquardt) or Giac's regression commands | Same library, no extra dependency |
+> **Decided 2026-10-10 (Phase 0 spike, Q5):** GSL, linked into Giac's wasm, is the solver library. Boost.Math + cminpack were tested and work (+5 KB brotli), but MINPACK's licence has an acknowledgment clause whose GPL compatibility we didn't want to depend on. GSL is GPL-3.0 like Giac, covers the same algorithms, and Giac already calls it through `fsolve`. Cost: +68 KB brotli (≈3% of the engine). Details: [spike/RESULTS.md](../spike/RESULTS.md).
 
-What Giac already offers on its own: `fsolve` with selectable methods (bisection, Brent, false position, Newton, secant and Steffensen for one variable; Newton/hybrid methods for systems). Those are **GSL-based** in native builds. Whether GSL is compiled into the wasm build needs checking (spike task). If it is, Giac alone may be enough, and Boost/cminpack become an upgrade, not a requirement.
+| Problem | What the Prime does | Our solver | Why |
+|---|---|---|---|
+| **One equation, one unknown** (e.g. `x·eˣ = 5`, solve for `x` near a guess) | Iterates from the user's guess | Our bracket search, then **Brent** (GSL, via Giac `fsolve(…, x=a..b, brent_solver)`, guaranteed convergence); **Newton/secant/Steffensen** (GSL/Giac) with **exact derivatives from Giac** when there is no sign change | GSL's root finders are standard, well-tested implementations. Exact symbolic derivatives make Newton very robust. |
+| **System of N equations, N unknowns** | Newton-type iteration from guesses | **GSL `hybrids` / `hybridsj`** (Powell's hybrid "dog-leg" method, the algorithm behind MINPACK and `scipy.optimize.fsolve`), via Giac `fsolve(…, hybrids_solver)` | Robust from poor starting guesses; Giac supplies the exact Jacobian for the `j` variants. |
+| **Polynomials** (all roots, including complex) | `proot` / CAS | **Giac `proot`** (already included). Optionally **MPSolve** (GPLv3) for certified high-degree roots | `proot` covers calculator needs; MPSolve is overkill unless we want "certified" roots. |
+| Least-squares fits / overdetermined systems | Statistics regressions | Giac's regression commands; for general nonlinear fits later, a small wrapper around GSL's nonlinear least squares (Levenberg–Marquardt) | Same library, no extra dependency |
+
+Without GSL, Giac's wasm build only has Newton and interval bisection; every other `fsolve` method fails with "Not linked with GSL" (measured in the spike). Linking GSL changed none of the 55 benchmark results; numeric eigenvalue/eigenvector/SVD output comes out in a different (still correct) order or sign, and Airy functions gain numeric values.
 
 The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and `mpmath.findroot` (arbitrary precision) for free.
 
-**An improvement over the Prime:** after every numeric solve, we **plug the root back into the equation** (the residual check) and re-evaluate with **mpmath at 30+ digits**. If the residual is not tiny, we show a ⚠ next to the answer. The real Prime silently returns wrong roots in some known cases (see 01-feasibility-report.md section 6), so this check directly addresses "how do we avoid wrong answers?".
+**An improvement over the Prime:** after every numeric solve, we **plug the root back into the equation** (the residual check) and re-evaluate with **Giac at 30+ digits** (MPFR; mpmath is only available when the optional Python+ pack is installed). If the residual is not tiny, we show a ⚠ next to the answer. The real Prime silently returns wrong roots in some known cases (see 01-feasibility-report.md section 6), so this check directly addresses "how do we avoid wrong answers?".
 
 **Solver strategy for a single equation:**
-1. Use Giac to get exact `f(x)` and `f'(x)`, and compile both to fast JS functions with Compute Engine's `compile()`.
+1. Use Giac to get exact `f(x)` and `f'(x)`. For the many evaluations of the bracket search, compile both to fast JS functions with Compute Engine's `compile()` (or evaluate in Giac if that's fast enough; measure).
 2. Starting from the guess, expand outward until the sign changes (bracket search).
-3. If a bracket is found, run **TOMS 748**. It's guaranteed to converge.
-4. If there's no sign change (a double root like `x² = 0`), run **Newton/Halley** with the exact derivative and damping.
+3. If a bracket is found, run **Brent** (GSL via Giac `fsolve`). It's guaranteed to converge.
+4. If there's no sign change (a double root like `x² = 0`), run **Newton** (or Steffensen) with the exact derivative and damping.
 5. Polish the result with Newton at high precision (Giac `evalf` with more digits or mpmath), then run the residual check.
 6. Report the result, the residual, and which method was used (visible as an "info" line, like the Prime's "Zero"/"Sign reversal" messages).
 
@@ -150,7 +152,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 │  └──────┬───────┘ └───────┬───────┘ └───────────┬────────────┘ └────────┬───────┘ └────────────┬─────────────┘ │
 │         └─────────────────┴──────── MathEngine interface (async) ───────┴──────────────────────┘               │
 │                     │                                             │                                            │
-│  Web Worker 1: giac.wasm (+ Boost.Math roots, cminpack)   Web Worker 2: Pyodide (lazy-loaded)                  │
+│  Web Worker 1: giac.wasm (+ GSL, GMP, MPFR)               Web Worker 2: Python (MicroPython; Pyodide optional) │
 │  - eval / exact / approx / latex()                        - numpy, sympy, mpmath (+ scipy on demand)           │
 │  - solve, fsolve, regressions, units...                   - calc / hpprime modules → message bridge            │
 │                                                                                                                │
@@ -184,7 +186,7 @@ Giac in WebAssembly is about **2× slower than native, and sometimes 15× slower
 | 2 | Does MathLive work with **our** keyboard (no system keyboard), and does the MathJSON→Giac round-trip hold up for 200 sample expressions? | 100% round-trip on the sample set |
 | 3 | Does "exact-first" Home evaluation (section 6.2) give Prime-like results without slowdowns? | Matches the Prime on 300 golden Home cases, no case over 500 ms |
 | 4 | Pyodide: download size and start time with numpy/sympy; how big is scipy? | Python app opens under about 4 s after the first install; scipy offered as optional download |
-| 5 | Is GSL included in Giac-wasm (`fsolve` methods)? Can Boost.Math and cminpack be linked into the same wasm? | Decide the solver stack from section 4 |
+| 5 | Is GSL included in Giac-wasm (`fsolve` methods)? Can Boost.Math and cminpack be linked into the same wasm? | Decide the solver stack from section 4. **Done 2026-10-10: GSL** |
 | 6 | Plotting smoothness: JSXGraph pinch-zoom with 3 functions | 60 fps on a mid-range phone |
 
 ---
@@ -224,7 +226,7 @@ With 2 developers, MVP is about 4 months and the full app about 1.5 years. With 
 
 ## 9. Bugs: what changes with the reuse approach
 
-Most of the maths is now **well-tested third-party code** (Giac is used by GeoGebra and HP, millions of users; Boost.Math, MINPACK, numpy). Our biggest bug risk moves to the **glue**: the MathJSON→Giac serializer, exact-first evaluation, app logic, and settings handling.
+Most of the maths is now **well-tested third-party code** (Giac is used by GeoGebra and HP, millions of users; GSL, GMP/MPFR, numpy). Our biggest bug risk moves to the **glue**: the MathJSON→Giac serializer, exact-first evaluation, app logic, and settings handling.
 
 1. **Serializer round-trip fuzzing:** generate random expressions → MathJSON → Giac → `latex()` → MathLive → MathJSON, and check equality with Giac `simplify(a-b)==0` plus numeric spot checks.
 2. **Cross-engine oracle tests:** run the same question through Giac and through **SymPy/mpmath** (we ship them anyway in Pyodide; in CI they run natively). Disagreements get reviewed by a human.
@@ -252,13 +254,13 @@ The risk is now **lower** than for the 1:1 clone. We have no file-format reverse
 | Language | Share of *our* code | Used for |
 |---|---|---|
 | **TypeScript** | ~85% | UI, keyboard, app framework (Symb/Plot/Num), all apps, glue to the engines, tests (Vitest, Playwright) |
-| **C++** | ~5% (thin wrappers) | Emscripten bindings around Giac, Boost.Math and cminpack. Giac itself is existing code we compile, not code we write. |
+| **C++** | ~1–5% (thin wrappers) | Emscripten bindings around Giac (and GSL if we ever call it directly). Giac itself is existing code we compile, not code we write. |
 | **Python** | ~5% | The `calc` and `hpprime` modules that run *inside* the Python app |
 | **Kotlin** | ~0–5% | Only if a Capacitor native plugin is needed (e.g. a native Giac fallback, file sharing) |
 | CMake / shell / YAML | build | Wasm build scripts, CI, F-Droid recipe |
 
 ### 11.2 What WebAssembly actually is (it isn't native code)
-- Emscripten compiles Giac's C++ (plus GMP, MPFR, Boost.Math and cminpack) to a **`.wasm` file**. That file is a portable, sandboxed bytecode, *not* machine code.
+- Emscripten compiles Giac's C++ (plus GMP, MPFR and GSL) to a **`.wasm` file**. That file is a portable, sandboxed bytecode, *not* machine code.
 - At load time, the browser engine (V8 in Android WebView/Chrome, JavaScriptCore in Safari) compiles the wasm to **real machine code** for the device's CPU. The result runs close to native speed. For Giac that means about 2× slower than a native build, and up to 15× on heavy algebra.
 - One `.wasm` file runs on every platform (ARM/x86, Android/iOS/desktop/web). That's the whole point, and it's why we don't need per-ABI native builds.
 - If a device turns out too slow, the fallback is native Giac via the NDK behind the same `MathEngine` interface (section 6.3).
@@ -285,7 +287,7 @@ The same web build (`dist/`) is shipped in different wrappers:
 **Steps:**
 1. Public repo on Codeberg or GitHub, with release tags (`v1.2.0`) and `versionCode`/`versionName` in `android/app/build.gradle`.
 2. Store texts and screenshots in the repo as **fastlane metadata** (`fastlane/metadata/android/en-US/…`), which F-Droid reads automatically.
-3. **One build script** (`build.sh`) that goes from clean source to `dist/`: install npm dependencies, compile Giac + GMP + MPFR + Boost.Math + cminpack with Emscripten, run `vite build`, run `npx cap sync android`.
+3. **One build script** (`build.sh`) that goes from clean source to `dist/`: install npm dependencies, compile Giac + GMP + MPFR + GSL with Emscripten (`engine/giac/build-wasm.sh`), run `vite build`, run `npx cap sync android`.
 4. Write `metadata/<appId>.yml` in fdroiddata, modelled on the GraphHopper and alexgames recipes: `sudo:` installs npm and emscripten, `prebuild:` runs `build.sh`, `scandelete:` removes `node_modules`, `gradle: [yes]`, plus `AutoUpdateMode: Version` and `UpdateCheckMode: Tags`.
 5. Test locally with fdroidserver (`fdroid build -v -l <appId>`) against your fdroiddata checkout, then open a merge request at gitlab.com/fdroid/fdroiddata.
 6. Optional: **reproducible builds** (pinned toolchain versions, deterministic Emscripten output). Then F-Droid can publish **our** signed APK, and users can switch between GitHub, Play and F-Droid without reinstalling.
@@ -300,8 +302,8 @@ The same web build (`dist/`) is shipped in different wrappers:
 
 ## 12. Next steps
 1. ~~Pick a name~~ **Pascaline** (2026-10-10). Before going public: check Google Play, the App Store, GitHub/Codeberg, trademark databases (EUIPO, WIPO, Swiss IGE, class 9) and domains. ~~Create the repo~~ https://github.com/buerlino/pascaline (GPL-3.0). README.md and CONTRIBUTING.md (clean-room rules, DCO sign-off) written 2026-10-10.
-2. Email **Bernard Parisse**: tell him about the project, ask about the Giac-wasm build options (GSL, size), the help-file licence, and KhiCAS reuse.
-3. Run the **Phase 0 spike** (section 7) on two real phones, one low-end and one mid-range. Step-by-step instructions are in [`../.claude/skills/phase-0-spike/SKILL.md`](../.claude/skills/phase-0-spike/SKILL.md).
+2. Email **Bernard Parisse** *after the device measurements* (so the email has real numbers): tell him about the project, ask about the help-file licence and KhiCAS reuse, and pass on the upstream reports collected in the spike (spike/RESULTS.md: debug log in `gen.cc`, improved LaTeX exporter in web builds, request for versioned tarballs).
+3. Run the **Phase 0 spike** (section 7) on real devices (an old Android 8/9 tablet, a Lenovo Tab One on Android 15, a Fairphone 6 on Android 16). Step-by-step instructions are in [`../.claude/skills/phase-0-spike/SKILL.md`](../.claude/skills/phase-0-spike/SKILL.md).
 4. Write `keyboard.yaml` (the Prime's logical layout, our own styling) and a clickable prototype of the keyboard and Home view.
 5. Decide go/no-go and native fallback based on the spike results.
 
@@ -317,4 +319,4 @@ The same web build (`dist/`) is shipped in different wrappers:
 - MathLive (MIT), Compute Engine (MIT), HyperFormula (GPLv3): <https://github.com/cortex-js/compute-engine>, <https://libraries.io/npm/mathlive>
 - JSXGraph (LGPL/MIT): <https://jsxgraph.uni-bayreuth.de/home/>
 - Other open-source Android maths apps (for UI inspiration): microMathematics Plus <https://github.com/mkulesh/microMathematics>, Qalculate! for Android <https://f-droid.org/packages/com.jherkenhoff.qalculate/>, ArityCalc <https://f-droid.org/en/packages/org.woheller69.arity/>
-- Licences I know well but didn't fetch in this study (verify in the spike): Boost.Math (BSL-1.0), cminpack (BSD-style MINPACK licence), MPSolve (GPLv3), mpmath/SymPy/SciPy/numpy (BSD), decimal.js/KaTeX/CodeMirror/Capacitor/jStat/Jspreadsheet CE (MIT).
+- Licences I know well but didn't fetch in this study (verify when adopted): MPSolve (GPLv3), mpmath/SymPy/SciPy/numpy (BSD), decimal.js/KaTeX/CodeMirror/Capacitor/jStat/Jspreadsheet CE (MIT).

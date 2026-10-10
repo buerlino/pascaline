@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Smoke test for our source-built engine/giac/_out/giac.mjs in Node.
-const variant = process.env.VARIANT ?? "base";
+const variant = process.env.VARIANT ?? "gsl";
 const { default: createGiacModule } = await import(`../../engine/giac/_out/${variant}/giac.mjs`);
 
 globalThis.UI = { add_evalf: 0, js_bigint: 0, disable3d: -1, Datestart: Date.now() };

@@ -6,10 +6,11 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../../..");
 const dest = join(root, "spike/app/public/engine");
-const variant = process.env.GIAC_VARIANT ?? "base-solvers";
-const src = join(root, "engine/giac/_out", variant);
+const variant = process.env.GIAC_VARIANT ?? "gsl";
+// GIAC_OUT points at another checkout's build output (e.g. from a git worktree).
+const src = process.env.GIAC_OUT ?? join(root, "engine/giac/_out", variant);
 if (!existsSync(join(src, "giac.wasm"))) {
-  console.error(`missing ${src}/giac.wasm, run: WITH_SOLVERS=1 engine/giac/build-wasm.sh`);
+  console.error(`missing ${src}/giac.wasm, run: engine/giac/build-wasm.sh`);
   process.exit(1);
 }
 mkdirSync(join(dest, "source"), { recursive: true });
