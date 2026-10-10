@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copy engine builds into public/engine/ (gitignored). Source build is required; prebuilt is optional.
-import { cpSync, existsSync, mkdirSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { parse } from "yaml";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,4 +21,7 @@ if (existsSync(prebuilt)) {
   mkdirSync(join(dest, "prebuilt"), { recursive: true });
   cpSync(prebuilt, join(dest, "prebuilt/giacwasm.js"));
 }
+// Benchmark cases for the on-device runner (src/deviceBench.ts).
+const cases = parse(readFileSync(join(root, "spike/bench/cases.yaml"), "utf8")).cases;
+writeFileSync(join(dest, "../cases.json"), JSON.stringify(cases));
 console.log(`engine: source=${variant}${existsSync(prebuilt) ? " prebuilt=yes" : ""}`);

@@ -42,3 +42,5 @@ engine/**/_out/
 .coord/
 # Python tooling venvs (mpmath oracle etc.)
 **/.venv/
+# throwaway signing keys for spike release builds
+spike/android/_keys/

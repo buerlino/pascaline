@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Signs the release build with the throwaway keystore named by PASCALINE_KEYSTORE (never committed).
+allprojects {
+    afterEvaluate { p ->
+        if (p.plugins.hasPlugin('com.android.application') && System.getenv('PASCALINE_KEYSTORE')) {
+            p.android {
+                signingConfigs {
+                    spike {
+                        storeFile p.file(System.getenv('PASCALINE_KEYSTORE'))
+                        storePassword 'pascaline-spike'
+                        keyAlias 'spike'
+                        keyPassword 'pascaline-spike'
+                    }
+                }
+                buildTypes { release { signingConfig signingConfigs.spike } }
+            }
+        }
+    }
+}
