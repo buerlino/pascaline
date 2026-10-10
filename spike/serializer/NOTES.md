@@ -54,3 +54,5 @@ navigation start; CPU throttling is only an indication, not a Tab One proxy):
 So the field costs 808 kB of JS (223 kB gzip) and Compute Engine adds 4.1 MB (1.18 MB gzip) in the background. Because we only use
 `parse`, a small hand-written parser for the LaTeX subset our keyboard produces would cost a few hundred lines and about
 20 kB; see ron's opinion to henri.
+
+Dependencies: `yaml` in `spike/input/package.json` is a devDependency used only by `spike/serializer/run.mjs` (it reads `cases.yaml`); the page itself does not use it.
