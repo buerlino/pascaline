@@ -4,7 +4,7 @@ Pascaline is an **open-source graphing CAS calculator** for Android (also PWA, l
 
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 
-**Status (2026-10-10):** Phase 0 spike in progress on branch `spike/phase-0`. Steps 0–2 (toolchain, Giac→wasm from source, MathEngine worker + desktop benchmark) are done; results are in [spike/RESULTS.md](spike/RESULTS.md). **Next: device steps 3+** (Capacitor shell on real phones) via the `phase-0-spike` skill ([.claude/skills/phase-0-spike/SKILL.md](.claude/skills/phase-0-spike/SKILL.md)).
+**Status (2026-10-10):** Phase 0 spike in progress on branch `spike/phase-0`. Steps 0–2 (toolchain, Giac→wasm from source, MathEngine worker + desktop benchmark) are done; results are in [spike/RESULTS.md](spike/RESULTS.md). **Next: device steps 3+** (Capacitor shell on real devices), run as a coordinated night shift per [spike/NIGHT-SHIFT.md](spike/NIGHT-SHIFT.md), following the `phase-0-spike` skill ([.claude/skills/phase-0-spike/SKILL.md](.claude/skills/phase-0-spike/SKILL.md)).
 
 Background reading (read before larger design decisions):
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): **the plan**. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
