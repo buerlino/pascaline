@@ -107,6 +107,9 @@ npx playwright install chromium firefox                    # once
 # Devices and coordination (from the repo root; state lives in .coord/, gitignored)
 spike/tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it
 spike/tools/devlock.sh acquire <serial|host-cpu> <owner> [wait_s]   # release / status / break
+
+# Night shift (spike/NIGHT-SHIFT.md; agents in .claude/agents/); keeps the laptop awake while it runs
+systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline night shift" claude --agent henri
 ```
 
 ## Conventions
