@@ -8,7 +8,7 @@ Method: a list of everyday engineering tasks (my own, from general engineering p
 | Need | Giac command that worked | Status and gap |
 |---|---|---|
 | Units: convert `5 km -> m`, `km/h -> m/s`, `psi -> Pa`, `ft -> m` | `convert(5*_km,_m)`, `convert(1*_psi,_Pa)`, `ufactor(5*_ft,_m)` | OK, but results come back as `27.77..._(m*s^-1.0)` (float exponents) and need our own formatter. |
-| Units: **mixed-unit sums** `5 ft + 2 in` | `5*_ft+2*_in` | **Error "Incompatible units"** (also with `_ft`/`_in` spelling). Engineers do this all the time. Gap: UI must convert both to one unit first, or we patch/ask upstream. |
+| Units: mixed-unit sums `5 ft + 2 in` | `5*_ft+2*_inch` = `5.16666666667_ft`; `convert(5*_ft+2*_inch,_m)` = `1.5748_m` | Works. My first probe used `_in`, which is **not a Giac unit name** (Giac's inch is `_inch`), hence the "Incompatible units" error. Gap is naming only: our unit table/keyboard must map familiar names (in, ft, lb, mph...) to Giac's, and show a friendly error for unknown names. |
 | Units: **temperature** `25 degC -> K / degF` | `convert(25*_degC,_K)` | **Error** ("Incompatible units" / "could not be converted to MKSA"). Offset units are not handled by `convert`; `tconvert` stays unevaluated. Gap: small table of our own offset conversions (C, F, K, R). |
 | Physical constants | `_c_`, `_qe_`, `_h_`, `_mu0_`, `_epsilon0_`, `_NA` parse | **Not numeric**: `evalf(_c_)` gives `1.0_c_` (a unit of that name). Gap: we ship our own constants table with CODATA values and units (e.g. generated from NIST data, public domain). |
 | Complex arithmetic, abs, conj, re/im | `(3+4*i)*(1-2*i)`, `abs`, `conj`, `re` | OK. |
@@ -31,7 +31,7 @@ Method: a list of everyday engineering tasks (my own, from general engineering p
 Not tried: spreadsheet-style statistics (two-sample tests), finance functions beyond the above, vectors/units in matrices, interval arithmetic, 3-D vectors (cross product is surely there but I did not run it).
 
 ## Gaps to plan for (in priority order)
-1. **Units layer of our own** on top of Giac: mixed-unit addition, offset temperatures, float exponents in output. Everything else about units that I tried works, so wrap rather than replace. Check upstream first (the mixed-sum error looks like a bug worth reporting).
+1. **Units layer of our own** on top of Giac: name aliases (`in` -> `_inch`, etc.), offset temperatures, float exponents in output. Everything else about units that I tried works (including mixed sums), so wrap rather than replace.
 2. **Constants table** with numeric values and units.
 3. **Number formatting**: SCI/ENG, significant digits, base display (hex/bin/oct), polar/rectangular complex. All formatter work, none of it Giac's.
 4. **Result parsing**: `list[...]`, `GIAC_ERROR: ...` strings, `1.0_(c_)`-style unit output.
