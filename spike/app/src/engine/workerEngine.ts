@@ -2,6 +2,7 @@
 // MathEngine backed by giac.worker.ts. State that must survive a Cancel (settings and variable
 // definitions) is logged here, outside the worker, and replayed into a fresh worker.
 import type { Request, Response } from "./protocol";
+import type { HomeResult, HomeSettings } from "../home/homeEval";
 import {
   EngineCancelled,
   type EngineKind,
@@ -54,6 +55,12 @@ export class WorkerEngine implements MathEngine {
     const r = await this.call({ type: "latex", input });
     if (r.type !== "result") throw new Error(`unexpected ${r.type}`);
     return { output: r.output, ok: r.ok, engineMs: r.engineMs };
+  }
+
+  async home(input: string, settings: HomeSettings): Promise<HomeResult> {
+    const r = await this.call({ type: "home", input, settings });
+    if (r.type !== "home") throw new Error(`unexpected ${r.type}`);
+    return r.result;
   }
 
   async setSettings(settings: Partial<EngineSettings>): Promise<void> {

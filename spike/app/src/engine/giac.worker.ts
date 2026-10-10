@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Web Worker hosting one Giac wasm instance. Synchronous inside; the main thread cancels by terminating us.
 import type { Request, Response } from "./protocol";
+import { homeEval, homeSetupCommands, type HomeResult, type HomeSettings } from "../home/homeEval";
 
 interface GiacModule {
   cwrap(name: string, ret: "string", args: string[]): (...a: string[]) => string;
+  cwrap(name: string, ret: "number", args: "number"[]): (...a: number[]) => number;
 }
 type ModuleFactory = (opts: object) => Promise<GiacModule>;
 
@@ -16,6 +18,23 @@ type ModuleFactory = (opts: object) => Promise<GiacModule>;
 };
 
 let giacEval: ((s: string) => string) | null = null;
+// Source engine only: Home's size guard for exact powers (wasm/api.cc giac_set_pow_limit).
+let setPowLimit: ((limit: number) => number) | null = null;
+// Home settings last applied to this worker instance (a new worker after Cancel starts empty).
+let homeKey = "";
+
+function home(input: string, s: HomeSettings): HomeResult {
+  if (!giacEval) throw new Error("engine not ready");
+  if (!setPowLimit) throw new Error("Home needs the source engine");
+  const ev = giacEval;
+  const key = JSON.stringify(s);
+  if (key !== homeKey) {
+    for (const c of homeSetupCommands(s)) ev(c);
+    setPowLimit(s.powLimit);
+    homeKey = key;
+  }
+  return homeEval({ eval: ev }, input, s);
+}
 
 function post(msg: Response): void {
   (self as unknown as Worker).postMessage(msg);
@@ -28,6 +47,7 @@ async function loadSource(baseUrl: string): Promise<(s: string) => string> {
   const M = await mod.default({ print: () => {}, printErr: () => {} });
   const init = M.cwrap("giac_init", "string", []);
   init();
+  setPowLimit = M.cwrap("giac_set_pow_limit", "number", ["number"]);
   return M.cwrap("giac_eval", "string", ["string"]);
 }
 
@@ -72,6 +92,9 @@ self.onmessage = async (ev: MessageEvent<Request>) => {
       }
       case "eval":
         post({ id: req.id, type: "result", ...evaluate(req.input) });
+        break;
+      case "home":
+        post({ id: req.id, type: "home", result: home(req.input, req.settings) });
         break;
       case "latex": {
         // latex() returns a Giac string; its printed form is wrapped in quotes.

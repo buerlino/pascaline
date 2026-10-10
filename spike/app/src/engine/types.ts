@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The only way UI code talks to maths. Implementations run the engine off the main thread.
+import type { HomeResult, HomeSettings } from "../home/homeEval";
 
 export type EngineKind = "source" | "prebuilt";
 
@@ -42,6 +43,8 @@ export interface MathEngine {
   /** LaTeX for `input` (evaluated first). */
   latex(input: string): Promise<EvalResult>;
   setSettings(settings: Partial<EngineSettings>): Promise<void>;
+  /** Exact-first Home evaluation (spike/home/NOTES.md); source engine only. */
+  home(input: string, settings: HomeSettings): Promise<HomeResult>;
   /**
    * Abort whatever is running: terminates the worker, starts a new one and replays the
    * settings and variable definitions. Pending calls reject with EngineCancelled.

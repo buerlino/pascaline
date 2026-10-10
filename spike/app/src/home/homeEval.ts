@@ -80,7 +80,7 @@ export function toExactLiterals(input: string): string {
   let out = "";
   let i = 0;
   while (i < input.length) {
-    const c = input[i];
+    const c = input.charAt(i);
     if (c === '"') {
       const end = input.indexOf('"', i + 1);
       const j = end < 0 ? input.length : end + 1;
@@ -100,7 +100,9 @@ export function toExactLiterals(input: string): string {
       DECIMAL.lastIndex = i;
       const m = DECIMAL.exec(input);
       if (m && m[0] !== ".") {
-        const [lit, mant, exp] = m;
+        const lit = m[0];
+        const mant = m[1] ?? "";
+        const exp = m[2];
         if (!mant.includes(".") && !exp) out += lit;
         else out += exactRational(mant, exp ? parseInt(exp.slice(1), 10) : 0);
         i += lit.length;
@@ -163,20 +165,22 @@ export function roundRational(p: bigint, q: bigint, n: number): Rounded {
 /** Round a printed Giac float (`-0.3141e6`, `1.414…`, `2.5e-07`) to n significant digits. */
 export function roundDecimalString(s: string, n: number): Rounded | null {
   const m = /^(-?)(\d*)\.?(\d*)(?:e([+-]?\d+))?$/.exec(s.trim());
-  if (!m || (m[2] === "" && m[3] === "")) return null;
-  const neg = m[1] === "-";
-  const all = m[2] + m[3];
+  if (!m) return null;
+  const [, sign = "", ip = "", fp = "", ex] = m;
+  if (ip === "" && fp === "") return null;
+  const neg = sign === "-";
+  const all = ip + fp;
   const lead = all.search(/[1-9]/);
   if (lead < 0) return ZERO;
-  // value = 0.all × 10^(len(int part)) × 10^E; first significant digit sits at exponent:
-  const exp = m[2].length - 1 - lead + (m[4] ? parseInt(m[4], 10) : 0);
+  // first significant digit sits at exponent (digits before the point) - 1 - (leading zeros) + E:
+  const exp = ip.length - 1 - lead + (ex ? parseInt(ex, 10) : 0);
   const sig = all.slice(lead);
   const head = sig.slice(0, n).padEnd(n, "0");
   const rest = sig.slice(n);
   const tieRisk = rest.length >= 2 && /^(49+|50+)$/.test(rest.slice(0, Math.min(rest.length, 20)));
   let d = BigInt(head);
   let e = exp;
-  if (rest.length > 0 && rest[0] >= "5") d += 1n;
+  if (rest.charAt(0) >= "5") d += 1n;
   if (d === pow10(n)) {
     d = pow10(n - 1);
     e += 1;
@@ -224,8 +228,9 @@ function roundPart(giac: Giac, part: string, n: number, maxDigits: number): { r:
   const v = giac.eval(part);
   const q = RATIONAL.exec(v);
   if (q) {
-    const big = q[1].replace("-", "").length > maxDigits || (q[2] ?? "").length > maxDigits;
-    return { r: roundRational(BigInt(q[1]), BigInt(q[2] ?? "1"), n), big };
+    const [, num = "0", den = "1"] = q;
+    const big = num.replace("-", "").length > maxDigits || den.length > maxDigits;
+    return { r: roundRational(BigInt(num), BigInt(den), n), big };
   }
   const f = roundDecimalString(giac.eval(`evalf(${part},40)`), n);
   return f ? { r: f, big: false } : null;

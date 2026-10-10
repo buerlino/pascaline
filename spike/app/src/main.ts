@@ -4,6 +4,7 @@ import { WorkerEngine } from "./engine/workerEngine";
 import { EngineCancelled, type EngineKind, type MathEngine } from "./engine/types";
 import { mark } from "./marks";
 import { runDeviceBench } from "./deviceBench";
+import { runDeviceHome } from "./deviceHome";
 
 mark("js-start", { timeOrigin: Math.round(performance.timeOrigin) });
 
@@ -35,6 +36,8 @@ engine.ready().then(
     $("status").textContent = `${kind} engine ready in ${t.readyMs.toFixed(0)} ms (instantiate ${t.instantiateMs.toFixed(0)} ms)`;
     if (params.has("bench")) {
       await runDeviceBench(engine, (s) => ($("status").textContent += " | " + s));
+    } else if (params.has("home")) {
+      await runDeviceHome(engine, (s) => ($("status").textContent += " | " + s));
     } else {
       const r = await engine.eval("factor(x^4-1)");
       mark("first-result", { engineMs: r.engineMs, output: r.output });

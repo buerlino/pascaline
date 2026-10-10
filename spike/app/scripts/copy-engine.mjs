@@ -24,4 +24,7 @@ if (existsSync(prebuilt)) {
 // Benchmark cases for the on-device runner (src/deviceBench.ts).
 const cases = parse(readFileSync(join(root, "spike/bench/cases.yaml"), "utf8")).cases;
 writeFileSync(join(dest, "../cases.json"), JSON.stringify(cases));
+// Exact-first Home cases for src/deviceHome.ts.
+const homeCases = parse(readFileSync(join(root, "spike/home/cases.yaml"), "utf8")).cases;
+writeFileSync(join(dest, "../home-cases.json"), JSON.stringify(homeCases));
 console.log(`engine: source=${variant}${existsSync(prebuilt) ? " prebuilt=yes" : ""}`);
