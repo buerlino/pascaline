@@ -42,3 +42,4 @@ engine/**/_out/
 .coord/
 # Python tooling venvs (mpmath oracle etc.)
 **/.venv/
+spike/**/_build/
