@@ -7,5 +7,5 @@ Firmware: write it down once (Help → About, or the boot screen) — expected 2
 
 | # | View / settings | Input | What the G2 shows (fill in) | Why we ask | Asked by |
 |---|---|---|---|---|---|
-| 1 | CAS, default settings | `eigenvals(approx([[2,1,0],[1,3,1],[0,1,4]]))` | | Order of numeric eigenvalues (GSL sorts ascending, Giac without GSL does not) | spike Q5 |
+| 1 | CAS, default settings | `eigenvals([[2.,1.,0.],[1.,3.,1.],[0.,1.,4.]])` (decimal entries) | | Order of numeric eigenvalues (GSL sorts ascending, Giac without GSL does not) | spike Q5 |
 | 2 | CAS, default settings | `factor(x^20-1)` | | Does it factor over √5 like our build does? | spike Q1 |

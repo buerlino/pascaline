@@ -115,7 +115,7 @@ None so far. The source build was done in about one working session, so the shor
 ## Open questions for the user
 1. **Mirror upload** (decision 2): run the `gh release create …` command from engine/giac/README.md once `gh` is logged in. Until then the build falls back to upstream, which works only while Parisse still serves the pinned snapshot.
 2. **Upstream reports for the Parisse email** (send after the device measurements): the `add_evalf` debug log and `UI.addevalf` typo in `gen.cc`; `markup.cc` vs `EMCC2` (can the improved LaTeX exporter be enabled in web builds?); a request for versioned, immutable tarballs.
-3. **G2 checks** (the user does these by hand; the G2 never gets connected to the laptop): the list is collected during the night shift in `spike/G2-CHECKLIST.md`. First item: in which order does the G2 show numeric eigenvalues, e.g. `eigenvals` of the float matrix [[2,1,0],[1,3,1],[0,1,4]]?
+3. **G2 checks** (the user does these by hand; the G2 never gets connected to the laptop): the list is collected during the night shift in `spike/G2-CHECKLIST.md`. First item: in which order does the G2 show numeric eigenvalues, e.g. `eigenvals([[2.,1.,0.],[1.,3.,1.],[0.,1.,4.]])`?
 4. **Devices:** model of the old Android 8/9 tablet; per device SoC, RAM and Android WebView version are recorded by `spike/tools/stay-awake.sh` once connected. Each device must be authorised once by tapping "Allow USB debugging" on its screen (tick "Always allow from this computer").
 5. `assumed` values so far: only the remark that V8's lazy wasm compilation explains Chromium's slower first calls. No Prime-behaviour values have been assumed yet.
 
