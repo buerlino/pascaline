@@ -31,5 +31,13 @@ spike/tools/device_run.py page "/other.html?x=1" --wait <mark> --timeout 60   # 
 spike/tools/runs_summary.py                       # medians from .coord/device-runs.jsonl
 ```
 `start`: `first` = reinstall (no WebView code cache), `cold` = `am force-stop` then `am start -W`,
-`warm` = app sent to background and brought back (process alive). Other apps' pages ride in the same APK:
+`warm` = app sent to background (see also the keyboard-page section at the end) and brought back (process alive). Other apps' pages ride in the same APK:
 put the page in `public/`, and `page` opens it through the `--es path` extra handled by `MainActivity`.
+
+## Keyboard page on the tablet (ron, `night/ron@7ead564`, `spike/input`)
+Built with its own `npm run build`, copied into `spike/app/public/input/` (gitignored) so the shell serves it at
+`/input/index.html`. Taps with `spike/tools/tap-seq.py` (`adb input tap`), cold starts with `spike/tools/shots.py`
+(numbers that only exist on screen are read from screenshots). Release build, WebView 131.0.6778.260, battery 70-71%, 29 C:
+`mInputShown=false` after the field tap and after each of 1, a/b, 2, right, +, 3; field shows 1/2+3, Giac line `1/2+3`.
+Status line over 5 cold starts: ready 301/291/298/324/296 ms (median 298), serializer 1241/1223/1214/1236/1223 ms
+(median 1223); first launch after install 355/1267. Raw record: `.coord/device-runs.jsonl`, kind `keyboard-page`.

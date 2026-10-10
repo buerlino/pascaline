@@ -113,7 +113,8 @@ def start_once(mode, timeout=60):
         sh("input keyevent KEYCODE_HOME")
         time.sleep(1.5)
         logcat_clear()
-    t = am_start_w()
+    page = os.environ.get("PAGE_PATH")   # e.g. "/?wasmcache=1" for an experiment variant
+    t = am_start_w(f'--es path "{page}"' if page else "")
     txt = wait_for("first-result", timeout) if mode != "warm" else logcat_dump()
     marks = parse_marks(txt)
     rec = dict(t)

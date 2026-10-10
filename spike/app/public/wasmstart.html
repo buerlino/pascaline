@@ -1,0 +1,41 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<meta charset="utf-8"><title>wasm start probe</title>
+<body>probe
+<script>
+// R2 probe: ?v=stream|buffer|cache|main  (stream = compileStreaming in a worker; buffer = arrayBuffer+compile in a worker;
+// cache = Cache API put, then compileStreaming(caches.match) in a worker; main = compileStreaming on the main thread)
+const v = new URLSearchParams(location.search).get("v") || "stream";
+const url = new URL("engine/source/giac.wasm", location.href).href;
+const log = (o) => console.log("PASCALINE_T wasmprobe epoch=" + Date.now() + " v=" + v + " " + Object.entries(o).map(([k, x]) => k + "=" + (Math.round(x * 10) / 10)).join(" "));
+const code = `
+onmessage = async (e) => {
+  const { v, url } = e.data;
+  const t0 = performance.now();
+  let mod, fetchMs = 0, extra = {};
+  if (v === "buffer") {
+    const r = await fetch(url); const b = await r.arrayBuffer(); fetchMs = performance.now() - t0;
+    mod = await WebAssembly.compile(b);
+  } else if (v === "cache") {
+    const c = await caches.open("wasm-v1");
+    let hit = await c.match(url);
+    extra.hit = hit ? 1 : 0;
+    if (!hit) { await c.put(url, await fetch(url)); hit = await c.match(url); }
+    fetchMs = performance.now() - t0;
+    mod = await WebAssembly.compileStreaming(hit);
+  } else {
+    mod = await WebAssembly.compileStreaming(fetch(url));
+  }
+  postMessage({ totalMs: performance.now() - t0, fetchMs, ...extra, exports: WebAssembly.Module.exports(mod).length });
+};`;
+(async () => {
+  if (v === "main") {
+    const t = performance.now(); const mod = await WebAssembly.compileStreaming(fetch(url));
+    log({ totalMs: performance.now() - t, exports: WebAssembly.Module.exports(mod).length, sinceStart: performance.now() });
+    return;
+  }
+  const w = new Worker(URL.createObjectURL(new Blob([code], { type: "text/javascript" })));
+  w.onmessage = (e) => log({ ...e.data, sinceStart: performance.now() });
+  w.postMessage({ v, url });
+})();
+</script>
