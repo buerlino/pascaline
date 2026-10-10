@@ -4,7 +4,8 @@ import { MathfieldElement } from "mathlive";
 import "./style.css";
 import { ROWS, type Action, type Key } from "./layout";
 
-MathfieldElement.fontsDirectory = `${location.origin}/fonts`;
+// Relative to the page, so it also works when the page is served from a sub-folder (spike/app/public/input/).
+MathfieldElement.fontsDirectory = new URL("fonts", location.href).href;
 MathfieldElement.soundsDirectory = null;
 // Never open MathLive's own virtual keyboard; ours is the only one.
 MathfieldElement.plonkSound = null;
@@ -107,25 +108,50 @@ function build(): void {
 }
 build();
 
+// Compute Engine is large (about 4 MB unminified): load it in the background after first paint.
+type Serializer = typeof import("./serialize");
+let serializer: Serializer | undefined;
+const timing: { entryReadyMs: number; serializerReadyMs?: number } = { entryReadyMs: 0 };
+function loadSerializer(): void {
+  import("./serialize").then((m) => {
+    serializer = m;
+    m.latexToGiac("1"); // warm up the engine instance
+    timing.serializerReadyMs = Math.round(performance.now());
+    report();
+  });
+}
+
+function giacText(): string {
+  if (!serializer) return "(serializer loading)";
+  try {
+    return serializer.latexToGiac(mf.value);
+  } catch (e) {
+    return `(${e instanceof Error ? e.message : String(e)})`;
+  }
+}
+
 function report(): void {
   $("o-latex").textContent = mf.value;
-  $("o-kb").textContent = `activeElement=${document.activeElement?.tagName.toLowerCase()} mathVK.visible=${String(window.mathVirtualKeyboard?.visible)}`;
+  $("o-giac").textContent = mf.value ? giacText() : "";
+  $("o-kb").textContent = `ready ${timing.entryReadyMs} ms, serializer ${timing.serializerReadyMs ?? "…"} ms; activeElement=${document.activeElement?.tagName.toLowerCase()} mathVK.visible=${String(window.mathVirtualKeyboard?.visible)}`;
 }
 mf.addEventListener("input", report);
-document.addEventListener("pascaline:enter", () => {
-  $("o-giac").textContent = "(serializer not wired yet)";
-});
+document.addEventListener("pascaline:enter", report);
 
 declare global {
   interface Window {
-    pascalineInput: { press: (id: string) => void; mf: MathfieldElement };
+    pascalineInput: { press: (id: string) => void; giac: () => string; timing: { entryReadyMs: number; serializerReadyMs?: number }; mf: MathfieldElement };
   }
 }
 window.pascalineInput = {
   mf,
+  timing,
+  giac: giacText,
   press: (id) => {
     for (const row of ROWS) for (const k of row) if (k.id === id) press(k);
   },
 };
 mf.focus();
+timing.entryReadyMs = Math.round(performance.now());
 report();
+requestAnimationFrame(() => setTimeout(loadSerializer, 0));
