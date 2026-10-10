@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "_build", "pyodide");
 const lock = JSON.parse(fs.readFileSync(path.join(dir, "pyodide-lock.json"), "utf8")).packages;
-const core = ["pyodide.asm.wasm", "pyodide.mjs", "python_stdlib.zip", "pyodide-lock.json"];
+const core = ["pyodide.asm.wasm", "pyodide.asm.mjs", "pyodide.mjs", "python_stdlib.zip", "pyodide-lock.json"];
 const closure = (n, seen = new Set()) => { if (seen.has(n)) return seen; seen.add(n); lock[n].depends.forEach((d) => closure(d, seen)); return seen; };
 const row = (name, f) => {
   const b = fs.readFileSync(path.join(dir, f));

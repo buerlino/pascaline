@@ -17,10 +17,10 @@
 
 | Part | raw | gzip | brotli |
 |---|---|---|---|
-| core (`pyodide.asm.wasm` 9.6 MB, `python_stdlib.zip` 2.5 MB, loader, lock) | 12.28 MB | 6.07 MB | 5.26 MB |
+| core (`pyodide.asm.wasm` 9.6 MB, `pyodide.asm.mjs` 1.25 MB, `python_stdlib.zip` 2.5 MB, loader, lock) | 13.53 MB | 6.33 MB | 5.46 MB |
 | numpy | 2.96 MB | 2.92 MB | 2.91 MB |
 | sympy + mpmath (+numpy) | 7.58 MB | 7.47 MB | 7.43 MB |
-| **pack: core + numpy + sympy + mpmath** | **19.9 MB** | **13.5 MB** | **12.7 MB** |
+| **pack: core + numpy + sympy + mpmath** | **21.1 MB** | **13.8 MB** | **12.9 MB** |
 | scipy (+numpy), not bundled | 16.99 MB | 16.74 MB | 16.69 MB |
 
 - Start time, **Node 22 on the laptop (desktop only; the host was shared with other workers, load average 3-5)**, medians of 5 runs after one warm-up (`pyodide-node-bench.mjs`):
