@@ -18,7 +18,7 @@ Desktop machine for all numbers below: Rocky Linux 10.2, 16 cores, 28 GB RAM. De
 | Q1 | Giac-wasm cold start / ops | **Desktop only.** Source build: ready 108 ms (Chromium) / 211 ms (Firefox); first call p50 1.9 / 1 ms, p95 19.4 / 2 ms, max 23 / 10 ms over 55 cases. Low-end / mid: not measured | open | Phone numbers are needed. Details below. |
 | Q2 | MathLive + own keyboard; round-trip | – | not started | step 4 |
 | Q3 | Exact-first Home | – | not started | Confirmed it's needed: plain Giac gives `1-0.9-0.1` → `1.7763568394e-15` |
-| Q4 | MicroPython / Pyodide | – | not started | Giac 2.1.0 tarball bundles MicroPython 1.12 sources (`micropython-1.12/`); worth a look in step 6 |
+| Q4 | MicroPython / Pyodide | **Desktop only (Node 22).** MicroPython v1.29.0: wasm 1.12 MB raw / 328 KB brotli, start **11 ms**; `calc.cas` bridge to the Giac worker 1.2 ms round trip. Pyodide 314.0.7 pack (core + numpy + sympy + mpmath): 12.7 MB brotli; start core 1.8 s, core + numpy ≈4.5 s, + sympy ≈6.9 s (host shared, load 3–5). Tab One: not measured yet | MicroPython: desktop pass; Pyodide + sympy: **fails** 4 s even on desktop | Details in `spike/python/NOTES.md`. `calc.cas` is async (`await`); a sync API needs COOP/COEP. Giac's bundled `micropython-1.12/` is 17 releases older: reference only |
 | Q5 | GSL in Giac-wasm? Boost.Math + cminpack linked? | **GSL: no** in Parisse's prebuilt and not in a build without it. With GSL 2.8 linked: all GSL methods work, **+197 KB raw / +68 KB brotli**, no change to the 55 benchmark outputs. Boost.Math TOMS 748 + MINPACK hybrd1 also linked and worked (+14 KB raw / +5 KB brotli) | **decided: GSL** | see "Decisions taken" |
 | Q6 | Plot FPS | – | not started | step 7 |
 
@@ -90,6 +90,8 @@ Boost.Math + cminpack inside the same wasm (`engine/solvers/solvers.cc`, since d
 | **Parisse `giacwasm.js`** | Giac 1.9.0-xx, Last-Modified 2025-10-22 | GPL-3.0 (Giac) | https://www-fourier.univ-grenoble-alpes.fr/~parisse/giacjs/giacwasm.js | **YES, prebuilt shortcut**, in `spike/prebuilt/` (gitignored) | step 1.1 shortcut and benchmark comparison only |
 | Parisse `giacsimple.js`, `simple.html` | Last-Modified 2024-12-13 / 2020-12-31 | GPL-3.0 (Giac) | same directory | yes, `spike/prebuilt/` (gitignored) | read to learn the loading API (`caseval` via cwrap); not used |
 | GeoGebra giac repo | commit bdbb1c4 (2026-09-11) | no licence file at repo root (mirror of GPL Giac) | https://github.com/geogebra/giac | its prebuilt `libgmp.a`/`libmpfr.a` were **not** used | read `build.gradle` for Emscripten flags only; no code copied |
+| MicroPython | v1.29.0 (commit 0fd6c573ea81) | MIT | https://github.com/micropython/micropython | no, built by `spike/python/build-micropython.sh` | default Python runtime (Q4) |
+| Pyodide | 314.0.7 (release tarball sha256 192b5864…6645) | MPL-2.0 (bundles CPython PSF, numpy/sympy/mpmath BSD-3) | https://github.com/pyodide/pyodide | **YES, prebuilt** wasm and wheels, gitignored `spike/python/_build/` | optional "Python+" pack, download-only, never in F-Droid builds (Q4) |
 | Vite | 8.3.4 | MIT | https://vite.dev | npm | spike app |
 | TypeScript | 7.0.2 | Apache-2.0 | https://www.typescriptlang.org | npm | spike app |
 | @playwright/test | 1.64.0 (Chromium 156.0.8078.4, Firefox 157.0 test builds) | Apache-2.0 | https://playwright.dev | npm + browser downloads | benchmark |
