@@ -7,7 +7,7 @@
 #
 # Stages: fetch gmp mpfr gsl giac link (default: all, gsl skipped with WITH_GSL=0)
 # Output: engine/giac/_out/<variant>/giac.{mjs,wasm}; variant = gsl (default) | base (WITH_GSL=0, comparisons only)
-# Needs: emsdk (EMSDK_DIR, default ~/emsdk) at $EMSDK_VERSION.
+# Needs: emsdk (EMSDK_DIR, default ~/emsdk) at $EMSDK_VERSION, or EMSDK_DIR=system for an emcc already on PATH (unpinned; F-Droid tests).
 # PASCALINE_DL_DIR overrides the download cache (e.g. to share one cache between git worktrees).
 # Nothing here touches the user's shell rc files.
 set -euo pipefail
@@ -49,9 +49,17 @@ GIAC_URLS=(
 log() { printf '\n==> %s\n' "$*"; }
 
 emsdk_env() {
+  local v
+  if [[ "$EMSDK_DIR" == system ]]; then
+    # Emscripten already on PATH (e.g. a distro package, as F-Droid's build server uses). Any version
+    # is accepted, but it is not the pinned one, so the output is not the reference build.
+    command -v emcc >/dev/null || { echo "EMSDK_DIR=system but no emcc on PATH" >&2; exit 1; }
+    v="$(emcc --version | head -1 | sed -E 's/.* ([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+    echo "using system emcc $v (pinned: $EMSDK_VERSION)" >&2
+    return 0
+  fi
   # shellcheck disable=SC1091
   source "$EMSDK_DIR/emsdk_env.sh" >/dev/null 2>&1
-  local v
   v="$(emcc --version | head -1 | sed -E 's/.* ([0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
   if [[ "$v" != "$EMSDK_VERSION" ]]; then
     echo "emcc $v found, $EMSDK_VERSION required (cd $EMSDK_DIR && ./emsdk install $EMSDK_VERSION && ./emsdk activate $EMSDK_VERSION)" >&2
