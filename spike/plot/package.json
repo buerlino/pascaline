@@ -1,0 +1,23 @@
+{
+  "name": "pascaline-spike-plot",
+  "private": true,
+  "version": "0.0.0",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4174 --strictPort",
+    "fps": "node scripts/fps.mjs"
+  },
+  "dependencies": {
+    "@cortex-js/compute-engine": "0.151.0",
+    "jsxgraph": "1.14.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@types/node": "26.6.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.4"
+  }
+}
