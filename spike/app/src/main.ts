@@ -2,6 +2,10 @@
 // Spike page: a minimal REPL over MathEngine, plus window.spike for the Playwright benchmark.
 import { WorkerEngine } from "./engine/workerEngine";
 import { EngineCancelled, type EngineKind, type MathEngine } from "./engine/types";
+import { mark } from "./marks";
+import { runDeviceBench } from "./deviceBench";
+
+mark("js-start", { timeOrigin: Math.round(performance.timeOrigin) });
 
 const params = new URLSearchParams(location.search);
 const kind: EngineKind = params.get("engine") === "prebuilt" ? "prebuilt" : "source";
@@ -26,8 +30,15 @@ window.spike = { engine, kind };
 
 engine.ready().then(
   async (t) => {
+    mark("engine-ready", { instantiateMs: t.instantiateMs, initMs: t.initMs, readyMs: t.readyMs });
     await engine.setSettings({ digits: 12, angle: "rad" });
     $("status").textContent = `${kind} engine ready in ${t.readyMs.toFixed(0)} ms (instantiate ${t.instantiateMs.toFixed(0)} ms)`;
+    if (params.has("bench")) {
+      await runDeviceBench(engine, (s) => ($("status").textContent += " | " + s));
+    } else {
+      const r = await engine.eval("factor(x^4-1)");
+      mark("first-result", { engineMs: r.engineMs, output: r.output });
+    }
   },
   (e: unknown) => ($("status").textContent = `engine failed: ${String(e)}`),
 );
