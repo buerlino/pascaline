@@ -15,12 +15,12 @@ Desktop machine for all numbers below: Rocky Linux 10.2, 16 cores, 28 GB RAM. De
 ## Results per question
 | # | Question | Measured (median of ≥5) | Pass? | Notes |
 |---|---|---|---|---|
-| Q1 | Giac-wasm cold start / ops | **Desktop only.** Source build: ready 108 ms (Chromium) / 211 ms (Firefox); first call p50 1.9 / 1 ms, p95 19.4 / 2 ms, max 23 / 10 ms over 55 cases. Low-end / mid: not measured | open | Phone numbers are needed. Details below. |
-| Q2 | MathLive + own keyboard; round-trip | – | not started | step 4 |
+| Q1 | Giac-wasm cold start / ops | **Low-end, Lenovo Tab One** (Android 15, WebView 131.0.6778.260, Capacitor 8.5.3, **release** build): cold launch → engine ready **975 ms**, → first result **1071 ms** (n=7); first launch after install 1107 / 1199 ms (n=5); warm resume 82 ms (n=5). 55 cases × 5 launches: first call p50 **7.5 ms**, p95 **75.8 ms**, max 123 ms (`solve(sin(x)=1/2,x)`); warm p50 1.8 / p95 8.1 ms; 0 errors, 0 mismatches; cancel → ready 381 ms, variables replayed. Debug build ≈2× slower (2147 / 2267 ms). Desktop: see below. Mid-range and old devices: **not measured** | **pass on low-end** (< 2 s; typical solve/int/factor < 200 ms) | Tab One detail below |
+| Q2 | MathLive + own keyboard; round-trip | **Desktop / emulation.** Serializer LaTeX → MathJSON → Giac: **292 / 296** cases pass, 0 wrong, 4 known gaps (reproduced by henri). Keyboard: 21 Playwright tests (Pixel 7 emulation, touch) pass: focus stays in the field, MathLive's keyboard never shows, `inputmode=none`. Field + keyboard 808 kB JS (223 kB gzip), usable 29 ms on desktop; Compute Engine 4.1 MB (1.18 MB gzip), lazy-loaded, serializer ready 132 ms (desktop, n=7). Tab One: pending | round trip: **98.6 %**, not 100 % (gaps below); system keyboard on device: **open** | `spike/serializer/NOTES.md`. Gaps: real cube root of a negative (we give the complex principal root), units, sets, decimal comma, one-letter user functions other than f, g, h |
 | Q3 | Exact-first Home | – | not started | Confirmed it's needed: plain Giac gives `1-0.9-0.1` → `1.7763568394e-15` |
-| Q4 | MicroPython / Pyodide | – | not started | Giac 2.1.0 tarball bundles MicroPython 1.12 sources (`micropython-1.12/`); worth a look in step 6 |
+| Q4 | MicroPython / Pyodide | **Desktop only (Node 22).** MicroPython v1.29.0: wasm 1.12 MB raw / 328 KB brotli, start **11 ms**; `calc.cas` bridge to the Giac worker 1.2 ms round trip. Pyodide 314.0.7 pack (core + numpy + sympy + mpmath): start core 1.8 s (core download 5.46 MB brotli incl. `pyodide.asm.mjs`; pack 12.9 MB brotli / 21.1 MB raw, corrected), core + numpy ≈4.5 s, + sympy ≈6.9 s (host shared, load 3–5). Tab One: not measured yet | MicroPython: desktop pass; Pyodide + sympy: **fails** 4 s even on desktop | Details in `spike/python/NOTES.md`. `calc.cas` is async (`await`); a sync API needs COOP/COEP. Giac's bundled `micropython-1.12/` is 17 releases older: reference only |
 | Q5 | GSL in Giac-wasm? Boost.Math + cminpack linked? | **GSL: no** in Parisse's prebuilt and not in a build without it. With GSL 2.8 linked: all GSL methods work, **+197 KB raw / +68 KB brotli**, no change to the 55 benchmark outputs. Boost.Math TOMS 748 + MINPACK hybrd1 also linked and worked (+14 KB raw / +5 KB brotli) | **decided: GSL** | see "Decisions taken" |
-| Q6 | Plot FPS | – | not started | step 7 |
+| Q6 | Plot FPS | **Desktop only.** JSXGraph 1.14.0, 3 functions, scripted zoom + pan (5 runs × 5 s, medians): Chromium 156 **60 fps** (redraw 4.2 ms), Firefox 140 59.4 fps (7.0 ms); Chromium with CPU throttled ×4: 46 fps, ×8: 22.6 fps (crude proxy only). Tab One: pending. Mid-range: **not measurable tonight** (no device) | open | `spike/plot/NOTES.md`. Points via Compute Engine `compile()`, which makes the plot page 5.2 MB JS |
 
 ### Q1 desktop detail
 Benchmark: `spike/bench/cases.yaml`, 55 inputs across arithmetic, trig, algebra, solve, calculus, matrix, stats and "heavy" (`factor(x^20-1)`, `int(1/(x^4+1),x)`, `ifactor(2^64+1)`). Each input runs through `MathEngine.eval` in a Web Worker. **First call** = the first evaluation of that input in a fresh session (what a user sees), median over 7 fresh sessions. **Warm** = the same input repeated (median of 3 repeats × 7 sessions). The p50/p95 are taken across the 55 per-case medians. Times are measured inside the worker (`engineMs`); round trip including `postMessage` adds about 0.1–1 ms.
@@ -39,6 +39,24 @@ Benchmark: `spike/bench/cases.yaml`, 55 inputs across arithmetic, trig, algebra,
 - Both engines gave **identical output on all 55 cases** in both browsers. All 15 cases with a provable expected value (`source: derived`) matched.
 - **Cancel** (terminate worker → new worker → replay settings and variable log): a long `ifactor` was interrupted every time (`EngineCancelled`), and a variable defined before the cancel (`pasvar:=7`) was intact afterwards (`pasvar*6` → `42`, 5/5 runs). Replay of the log took ≤1 ms.
 - Raw per-case data: `spike/app/bench/results/*.json` (gitignored; regenerate with `npm run bench`).
+
+### Q1 on the Lenovo Tab One (2026-10-10, 23:45–23:50)
+Device HA24BZ2Y: Android 15 (SDK 35), MediaTek MT8786 (mt6768), 8 cores, 3.9 GB RAM, Android WebView 131.0.6778.260 as found. Plugged into USB, screen on, battery 66–68 %, 27.9–29.5 °C. Capacitor 8.5.3, compileSdk/targetSdk 36, AGP 8.13, Gradle 8.14.3, Java 21. APK 6.6 MB (release; the 9.75 MB wasm is 3.4 MB deflated inside). Tools: `spike/tools/device-build.sh`, `spike/tools/device_run.py`, raw runs in `.coord/device-runs.jsonl` (gitignored), medians by `spike/tools/runs_summary.py`; see `spike/android/NOTES.md`.
+
+| Release build, medians | Cold (`am force-stop` + `am start -W`, n=7) | First launch after install (n=5) | Debug, cold (n=7) |
+|---|---|---|---|
+| `am start -W` TotalTime | 639 ms | 640 ms | 1419 ms |
+| Activity created | 366 ms | 357 ms | 958 ms |
+| JS starts | 559 ms | 554 ms | 1695 ms |
+| wasm fetch + compile + instantiate | 366 ms | 498 ms | 430 ms |
+| `giac_init` | 0.7 ms | 0.8 ms | 0.8 ms |
+| **Engine ready** (from process start) | **975 ms** | 1107 ms | 2147 ms |
+| **First result** | **1071 ms** | 1199 ms | 2267 ms |
+
+- Cold first-result raw values (ms): 1115, 1066, 1057, 1295, 1061, 1071, 1078. Warm resume (`am start -W`, app in background): 78, 82, 69, 82, 85 → 82 ms.
+- Benchmark on device (55 cases, 5 launches, release): first call p50 7.5 / p95 75.8 / max 123.2 ms; warm p50 1.8 / p95 8.1 ms. Slowest first calls: `solve-trig` 123 ms, `trig-simplify` 101 ms, `int-atan` 76 ms, `solve-quad` 55 ms, `int-def` 40 ms. Debug: p50 10 / p95 75.8 / max 158 ms, cancel 435 ms. Roughly 4–5× the desktop Chromium times.
+- The wasm instantiate time doesn't shrink on later launches, so the WebView doesn't seem to cache the compiled code for files served by Capacitor (*assumed* from timings, to check). That is the biggest single slice still to cut (research note R2).
+- Only one low-end device was measured. Mid-range (Fairphone 6) and the old Android 8/9 tablet stay open; don't extrapolate.
 
 ### Engine size and startup
 | Build | Giac | wasm raw | gzip -9 | brotli -q 11 | Node instantiate+init |
@@ -90,6 +108,12 @@ Boost.Math + cminpack inside the same wasm (`engine/solvers/solvers.cc`, since d
 | **Parisse `giacwasm.js`** | Giac 1.9.0-xx, Last-Modified 2025-10-22 | GPL-3.0 (Giac) | https://www-fourier.univ-grenoble-alpes.fr/~parisse/giacjs/giacwasm.js | **YES, prebuilt shortcut**, in `spike/prebuilt/` (gitignored) | step 1.1 shortcut and benchmark comparison only |
 | Parisse `giacsimple.js`, `simple.html` | Last-Modified 2024-12-13 / 2020-12-31 | GPL-3.0 (Giac) | same directory | yes, `spike/prebuilt/` (gitignored) | read to learn the loading API (`caseval` via cwrap); not used |
 | GeoGebra giac repo | commit bdbb1c4 (2026-09-11) | no licence file at repo root (mirror of GPL Giac) | https://github.com/geogebra/giac | its prebuilt `libgmp.a`/`libmpfr.a` were **not** used | read `build.gradle` for Emscripten flags only; no code copied |
+| MicroPython | v1.29.0 (commit 0fd6c573ea81) | MIT | https://github.com/micropython/micropython | no, built by `spike/python/build-micropython.sh` | default Python runtime (Q4) |
+| Pyodide | 314.0.7 (release tarball sha256 192b5864…6645) | MPL-2.0 (bundles CPython PSF, numpy/sympy/mpmath BSD-3) | https://github.com/pyodide/pyodide | **YES, prebuilt** wasm and wheels, gitignored `spike/python/_build/` | optional "Python+" pack, download-only, never in F-Droid builds (Q4) |
+| Capacitor (`@capacitor/core`, `/android`, `/cli`) | 8.5.3 | MIT | https://github.com/ionic-team/capacitor | npm (Android project generated by `cap add android`, gitignored) | Android shell (Q1); needs API 24+ |
+| MathLive | 0.111.1 | MIT | https://github.com/arnog/mathlive | npm (fonts copied by script, not committed) | formula entry (Q2), `spike/input` |
+| Compute Engine (`@cortex-js/compute-engine`) | 0.151.0 | MIT | https://github.com/cortex-js/compute-engine | npm | LaTeX → MathJSON parsing (Q2), lazy-loaded |
+| JSXGraph | 1.14.0 | MIT OR LGPL-3.0-or-later | https://github.com/jsxgraph/jsxgraph | npm | plotting (Q6), `spike/plot` |
 | Vite | 8.3.4 | MIT | https://vite.dev | npm | spike app |
 | TypeScript | 7.0.2 | Apache-2.0 | https://www.typescriptlang.org | npm | spike app |
 | @playwright/test | 1.64.0 (Chromium 156.0.8078.4, Firefox 157.0 test builds) | Apache-2.0 | https://playwright.dev | npm + browser downloads | benchmark |

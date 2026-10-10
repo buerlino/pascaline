@@ -40,5 +40,12 @@ engine/**/_out/
 
 # Night-shift coordination (locks, device state, messages)
 .coord/
+# Claude Code: agent worktrees and personal settings
+.claude/worktrees/
+.claude/settings.local.json
 # Python tooling venvs (mpmath oracle etc.)
 **/.venv/
+spike/**/_build/
+spike/**/_out/
+# throwaway signing keys for spike release builds
+spike/android/_keys/

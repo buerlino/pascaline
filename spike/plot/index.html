@@ -1,0 +1,22 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Plot spike</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #101418; color: #dde; font: 14px system-ui, sans-serif; overflow: hidden; }
+    #box { position: absolute; inset: 0; touch-action: none; }
+    #hud { position: fixed; top: 6px; left: 6px; z-index: 5; background: #000b; padding: 6px 10px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+    #bar { position: fixed; bottom: 6px; left: 6px; z-index: 5; display: flex; gap: 6px; }
+    button { font: inherit; padding: 8px 12px; background: #2a3440; color: #dde; border: 1px solid #456; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div id="box" class="jxgbox"></div>
+  <div id="hud">fps --</div>
+  <div id="bar"><button id="auto">auto zoom/pan: off</button></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
