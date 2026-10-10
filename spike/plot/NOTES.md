@@ -35,7 +35,7 @@ Reading: the desktop is capped by the display at 60 fps. With the CPU slowed 4x,
 | `\frac{1}{x}` | 87.0 | 10.1 | 3.8 ms | 0.4 ms |
 | `\sqrt{x^2+1}\cdot e^{-x}` | 109.7 | 67.3 | 11.5 ms | 0.4 ms |
 
-Same scripted FPS run with ron's compiler (Chromium 156, 5 runs of 5 s): x1 60.0 fps (redraw 3.6 ms, was 4.2), x4 **54.6 fps** (p95 33.3 ms, redraw 12.6 ms; was 46.0 with CE), x8 **26.6 fps** (redraw 25.8 ms; was 22.6). Firefox 140 x4: 59.8 fps (redraw 5.0 ms). So the evaluator was a visible part of the redraw cost, but most of it is still JSXGraph's SVG update.
+Same scripted FPS run with ron's compiler (Chromium 156, 5 runs of 5 s): x1 60.0 fps (redraw 3.6 ms, was 4.2), x4 **54.6 fps** (p95 33.3 ms, redraw 12.6 ms; was 46.0 with CE), x8 **26.6 fps** (redraw 25.8 ms; was 22.6). (CPU throttling is a Chromium-only feature in our script, so Firefox rows are always unthrottled.) So the evaluator was a visible part of the redraw cost, but most of it is still JSXGraph's SVG update.
 
 Results agree (largest difference 1.4e-14 on the last function). ron's is 1.3x to 8.7x faster per call, 10x to 150x faster to compile, and the plot page's main JS drops from 5.2 MB to 1.05 MB (almost all JSXGraph) with Compute Engine as a lazy 4.1 MB chunk. Recommendation: use ron's compiler for plotting; keep Compute Engine only if it is needed elsewhere.
 
