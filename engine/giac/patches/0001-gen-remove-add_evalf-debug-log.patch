@@ -1,0 +1,11 @@
+# Upstream: giac 2.1.0 gen.cc. Debug log in the EMCC add_evalf hook fires on every caseval (and reads the misspelt UI.addevalf).
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -17194,7 +17194,6 @@
+ #if defined EMCC || defined EMCC2
+       double add_evalf=EM_ASM_DOUBLE_V({
+           if (typeof(UI)!=="undefined" && typeof(UI.add_evalf)!="undefined"){
+-            console.log("gen.cc add_evalf",UI.addevalf);
+             return UI.add_evalf*1.0;
+           }
+           return 1.0;

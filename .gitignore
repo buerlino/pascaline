@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Node / web build output
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+test-results/
+playwright-report/
+
+# Android build outputs (Capacitor project itself is committed later)
+android/**/build/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Prebuilt third-party binaries: allowed only as spike shortcuts, never committed
+spike/**/prebuilt/
+spike/prebuilt/
+
+# Engine build trees and downloads (rebuilt from source by engine/*/build-*.sh)
+engine/**/_downloads/
+engine/**/_build/
+engine/**/_out/
+
+# Binaries must never be committed (F-Droid rule); build output dirs are ignored above
+*.wasm
+*.so
+*.a
+*.jar
+!android/gradle/wrapper/gradle-wrapper.jar
+
+# Editors / OS
+.DS_Store
+*.swp
+.idea/
