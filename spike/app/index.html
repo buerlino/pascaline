@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pascaline spike</title>
+    <style>
+      body { font: 16px/1.4 system-ui, sans-serif; margin: 16px; max-width: 900px; }
+      #log { font-family: ui-monospace, monospace; white-space: pre-wrap; border: 1px solid #ccc; padding: 8px; min-height: 8em; }
+      input { font: inherit; width: 60%; }
+      .err { color: #b00; }
+    </style>
+  </head>
+  <body>
+    <h1>Pascaline spike: MathEngine</h1>
+    <p id="status">starting…</p>
+    <form id="form">
+      <input id="input" value="factor(x^4-1)" autocomplete="off" />
+      <button type="submit">Eval</button>
+      <button type="button" id="cancel">Cancel</button>
+    </form>
+    <div id="log"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

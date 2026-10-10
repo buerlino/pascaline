@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Spike page: a minimal REPL over MathEngine, plus window.spike for the Playwright benchmark.
+import { WorkerEngine } from "./engine/workerEngine";
+import { EngineCancelled, type EngineKind, type MathEngine } from "./engine/types";
+
+const params = new URLSearchParams(location.search);
+const kind: EngineKind = params.get("engine") === "prebuilt" ? "prebuilt" : "source";
+
+const engine: MathEngine = new WorkerEngine(kind);
+const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const log = $("log");
+
+function append(text: string, cls = ""): void {
+  const line = document.createElement("div");
+  line.textContent = text;
+  if (cls) line.className = cls;
+  log.append(line);
+}
+
+declare global {
+  interface Window {
+    spike: { engine: MathEngine; kind: EngineKind };
+  }
+}
+window.spike = { engine, kind };
+
+engine.ready().then(
+  async (t) => {
+    await engine.setSettings({ digits: 12, angle: "rad" });
+    $("status").textContent = `${kind} engine ready in ${t.readyMs.toFixed(0)} ms (instantiate ${t.instantiateMs.toFixed(0)} ms)`;
+  },
+  (e: unknown) => ($("status").textContent = `engine failed: ${String(e)}`),
+);
+
+$("form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const input = $<HTMLInputElement>("input").value;
+  append(`> ${input}`);
+  try {
+    const r = await engine.eval(input);
+    append(`${r.output}   (${r.engineMs.toFixed(1)} ms)`, r.ok ? "" : "err");
+  } catch (e) {
+    append(e instanceof EngineCancelled ? "cancelled" : String(e), "err");
+  }
+});
+
+$("cancel").addEventListener("click", async () => {
+  const t = await engine.cancel();
+  append(`engine restarted in ${t.readyMs.toFixed(0)} ms (replay ${t.replayMs.toFixed(1)} ms)`);
+});

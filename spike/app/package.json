@@ -1,0 +1,22 @@
+{
+  "name": "pascaline-spike-app",
+  "private": true,
+  "version": "0.0.0",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "engine:copy": "node scripts/copy-engine.mjs",
+    "dev": "npm run engine:copy && vite",
+    "build": "npm run engine:copy && tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "tsc --noEmit",
+    "bench": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@types/node": "26.6.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "yaml": "2.9.1"
+  }
+}
