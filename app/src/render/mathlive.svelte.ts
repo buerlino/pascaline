@@ -17,3 +17,6 @@ class Lazy {
 }
 
 export const mathlive = new Lazy();
+
+/** How many LaTeX strings have been turned into markup (tests check that Enter draws only the new entry). */
+export const renderStats = { count: 0 };

@@ -1,5 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
+  import { tick } from "svelte";
   import { t } from "../i18n/index.ts";
   import Math from "../render/Math.svelte";
   import type { HistoryItem } from "../state/session.svelte.ts";
@@ -15,6 +16,32 @@
     onrecall: (latex: string) => void; oncancel: () => void } = $props();
 
   let scroller: HTMLElement | undefined = $state();
+
+  // Only the newest entries are drawn (layout and MathLive markup cost grow with every drawn item, which
+  // slowed both the engine start and Enter with a full history). Scrolling to the top draws earlier ones.
+  const PAGE = 20;
+  let shownCount = $state(PAGE);
+  const shown = $derived(items.length > shownCount ? items.slice(items.length - shownCount) : items);
+  let sentinel: HTMLElement | undefined = $state();
+  $effect(() => {
+    if (!sentinel || !scroller) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) void showEarlier();
+      },
+      { root: scroller },
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  });
+  async function showEarlier(): Promise<void> {
+    if (!scroller || shownCount >= items.length) return;
+    const before = scroller.scrollHeight - scroller.scrollTop;
+    shownCount += PAGE;
+    await tick();
+    scroller.scrollTop = scroller.scrollHeight - before; // keep what the user was looking at in place
+  }
+
   // Keep the newest entry in view.
   $effect(() => {
     void items.length;
@@ -26,7 +53,7 @@
   const SOFT_MS = 10_000;
   let now = $state(performance.now());
   $effect(() => {
-    if (!items.some((i) => i.status === "pending")) return;
+    if (items.at(-1)?.status !== "pending") return; // only the newest entry can be running
     const timer = setInterval(() => (now = performance.now()), 500);
     return () => clearInterval(timer);
   });
@@ -36,7 +63,10 @@
   {#if items.length === 0}
     <p class="empty">{t("history.empty")}</p>
   {/if}
-  {#each items as item (item.id)}
+  {#if items.length > shown.length}
+    <div class="earlier" bind:this={sentinel} aria-hidden="true"></div>
+  {/if}
+  {#each shown as item (item.id)}
     <article class="item" data-status={item.status}>
       <button type="button" class="in" title={t("history.recall")} onclick={() => onrecall(item.latex)}>
         <Math latex={item.latex} />
@@ -52,8 +82,9 @@
         {:else if item.status === "error"}
           <span class="error" role="alert">{item.text}</span>
         {:else}
-          <span class="result" data-text={display(item).text}>
-            <Math latex={display(item).latex} />
+          {@const d = display(item)}
+          <span class="result" data-text={d.text}>
+            <Math latex={d.latex} />
           </span>
           {#if item.approximate}<span class="note">{t("history.approximate")}</span>{/if}
         {/if}
@@ -71,6 +102,9 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+  }
+  .earlier {
+    min-height: 1px;
   }
   .empty {
     margin: auto;
