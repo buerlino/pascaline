@@ -3,6 +3,9 @@
 // the UI never talks to Giac directly (CLAUDE.md).
 
 import type { ComplexValue } from "../engine/format.ts";
+import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRequest, TableRequest } from "../engine/types.ts";
+
+export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest } from "../engine/types.ts";
 
 export type AngleUnit = "rad" | "deg";
 export type NumberFormat = "std" | "sci" | "eng";
@@ -49,6 +52,14 @@ export interface Calc {
   ready(): Promise<void>;
   home(giac: string, settings: CalcSettings): Promise<HomeOutcome>;
   cas(giac: string, settings: CalcSettings): Promise<CasOutcome>;
+  /** Solve app: equations from guesses (1-D or a system), or all roots of a polynomial. */
+  solve(req: SolveRequest, settings: CalcSettings): Promise<SolveOutcome>;
+  /** The variables in the equations, constants excluded, in order of appearance. */
+  unknowns(equations: string[]): Promise<string[]>;
+  /** Function app Plot menu: root, extremum, intersection, slope, signed area. */
+  analyze(req: AnalysisRequest, settings: CalcSettings): Promise<AnalysisResult>;
+  /** Function app Num table and trace: rows by x, cells as Home shows them. One engine call. */
+  table(req: TableRequest, settings: CalcSettings): Promise<HomeResult[][]>;
   /** Stop the running job. Variables survive. Resolves when the engine can take calls again. */
   cancel(): Promise<void>;
 }

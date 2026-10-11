@@ -3,8 +3,14 @@
 // Worker (giac.worker.ts) and, for tests and the golden runner, directly in Node. Knows nothing
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
 import type { Request, Response } from "./protocol.ts";
-import type { CasResult, CasSettings, HomeResult, HomeSettings } from "./types.ts";
+import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import { homeEval, homeSetupCommands, toExactLiterals } from "./homeEval.ts";
+import { solveRequest, unknownsOf } from "./solve.ts";
+import { analyze, table } from "./analysis.ts";
+
+/** Giac's own interrupt for one call inside Solve and Function analysis: a safety net only; the
+ *  solvers keep their own budgets and the user has Cancel. */
+export const SOLVE_HARD_TIMEOUT_S = 30;
 
 /** What the host needs from a loaded Giac module (engine/giac/wasm/api.cc). */
 export interface GiacApi {
@@ -120,11 +126,7 @@ export class EngineHost {
   }
 
   home(input: string, s: HomeSettings): { result: HomeResult; replay: string[] } {
-    this.useMode(`home${JSON.stringify(s)}`, () => {
-      for (const c of homeSetupCommands(s)) this.giac.eval(c);
-      this.giac.eval(`Digits:=${Math.trunc(s.digits)}`);
-      this.giac.setPowLimit(s.powLimit);
-    });
+    this.useHomeMode(s);
     const t0 = performance.now();
     let result: HomeResult;
     try {
@@ -175,6 +177,44 @@ export class EngineHost {
     };
   }
 
+  solve(req: SolveRequest, s: HomeSettings): SolveOutcome {
+    this.useSolveMode(s);
+    return solveRequest(this.giac, req, s);
+  }
+
+  unknowns(equations: string[]): string[] {
+    return unknownsOf(this.giac, equations);
+  }
+
+  analyze(req: AnalysisRequest, s: HomeSettings): AnalysisResult {
+    this.useSolveMode(s);
+    return analyze(this.giac, req, s);
+  }
+
+  /** Num table cells are Home evaluations, in Home mode (same budget per cell). */
+  table(req: TableRequest, s: HomeSettings): HomeResult[][] {
+    this.useHomeMode(s);
+    return table(this.giac, req, s);
+  }
+
+  private useHomeMode(s: HomeSettings): void {
+    this.useMode(`home${JSON.stringify(s)}`, () => {
+      for (const c of homeSetupCommands(s)) this.giac.eval(c);
+      this.giac.eval(`Digits:=${Math.trunc(s.digits)}`);
+      this.giac.setPowLimit(s.powLimit);
+    });
+  }
+
+  private useSolveMode(s: HomeSettings): void {
+    this.useMode(`solve${JSON.stringify(s)}`, () => {
+      this.giac.eval(`angle_radian:=${s.angle === "rad" ? 1 : 0}`);
+      this.giac.eval(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
+      this.giac.eval("ckevery 10");
+      this.giac.eval(`Digits:=${Math.trunc(s.digits)}`);
+      this.giac.setPowLimit(s.powLimit);
+    });
+  }
+
   private useMode(key: string, apply: () => void): void {
     if (key === this.modeKey) return;
     apply();
@@ -208,6 +248,18 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           break;
         case "cas":
           post({ id: req.id, type: "cas", ...host.cas(req.input, req.settings) });
+          break;
+        case "solve":
+          post({ id: req.id, type: "solve", result: host.solve(req.req, req.settings) });
+          break;
+        case "unknowns":
+          post({ id: req.id, type: "unknowns", result: host.unknowns(req.equations) });
+          break;
+        case "analyze":
+          post({ id: req.id, type: "analyze", result: host.analyze(req.req, req.settings) });
+          break;
+        case "table":
+          post({ id: req.id, type: "table", result: host.table(req.req, req.settings) });
           break;
       }
     } catch (e) {
