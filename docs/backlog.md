@@ -15,7 +15,7 @@ The one place for "where are we and what's left". The plan is [02-architecture-p
 | MVP release (Play testing track + web app, docs/02 section 8) | Not started |
 | v1, v2 | Not started |
 
-`phase-1` is on GitHub (local `phase-1` is ahead of `origin/phase-1`; not pushed). `master` still has only the first docs commit.
+`phase-1` and `master` are on GitHub; `master` was fast-forwarded to `phase-1` on 2026-10-11 (b4431ae, user). Work continues on `phase-1`.
 
 ### Is it on track?
 **Yes on scope and speed, but with two growing debts.**
@@ -39,7 +39,7 @@ The two debts grow with every milestone:
 ## Needs the user
 1. **G2 checks:** 23 open items in `tests/golden/G2-CHECKLIST.md` (questions only a real G2 or the official Virtual Calculator can answer; the Virtual Calculator mapping session can fill most of them). Answers go into `tests/golden/g2.yaml`.
 2. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-3. **When to merge `phase-1` into `master`.** C1 is done. Recommendation: after the mapping branch is merged into `phase-1` and milestone 3 passes.
+3. ~~**When to merge `phase-1` into `master`.**~~ Done 2026-10-11 (fast-forward to b4431ae, full gate passed).
 4. **Later, not now** (user, 2026-10-11: first a usable prototype): the email to Bernard Parisse (draft in `../outreach/`), the name and trademark checks, the real application id, CI (C3) and the F-Droid recipe (C4).
 
 Done: the Giac mirror is live (release `deps-giac-2.1.0-1d9536e0`, SHA-256 checked 2026-10-11); the leftover worktrees and branches were removed and Phase 0 is tagged `phase-0-done`; milestone 3 as proposed below is approved (user, 2026-10-11).
@@ -58,7 +58,7 @@ Optional disk space (gitignored, rebuilt when needed): `spike/{app,input,plot}/n
 - `tests/golden/oracle.py` writes `tests/golden/G2-CHECKLIST.md`;
 - the device tools (`tools/device_run.py` and the others) are part of the measurement workflow.
 
-These should move out of `spike/` before `phase-1` goes to `master`.
+These moved out of `spike/` (C1, done) before `phase-1` went to `master`.
 
 ## Tasks
 
@@ -98,7 +98,7 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 - **L7. Bundle size.** It is 94 kB at start, plus 808 kB of MathLive loaded after the keypad. Watch start-up as features grow.
 
 ### MVP release (after milestone 3; docs/02 section 8)
-- **R1. PWA.** Service worker and manifest so it works 100% offline. Host it after your OK.
+- ~~**R1. PWA.**~~ **Done** 2026-10-11 (`p1/ron-pwa`): own 40-line service worker, manifest, placeholder icons, offline Playwright test. Hosting still needs your OK.
 - **R2. Play testing track.** Real application id, signing key (yours), store texts in `fastlane/metadata/`. Never published without your OK.
 - **R3. App icon and screenshots.** Our own design; nothing from the reference calculator.
 - **R4. Settings and help pass.** i18n table complete, first help texts. The Giac help-text licence is still to clarify with Parisse.
