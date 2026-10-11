@@ -44,6 +44,9 @@ export class Session {
   view = $state<View>("home");
   shift = $state(false);
   alpha = $state(false);
+  /** Alpha lock (L3): alpha stays on after each key; capsLock keeps shift on too (capitals). */
+  alphaLock = $state(false);
+  capsLock = $state(false);
   settingsOpen = $state(false);
   settings = $state<Settings>({ ...defaultSettings });
   home = $state<HistoryItem[]>([]);
@@ -80,16 +83,25 @@ export class Session {
     return [...this.home, ...this.cas].find((i) => i.status === "pending");
   }
 
-  // ---- modifiers: one-shot, as on a calculator
+  // ---- modifiers: one-shot, as on a calculator. Alpha twice locks it (shift, alpha, alpha locks capitals);
+  // alpha again unlocks. In the lock, shift is one-shot and flips the case of the next letter.
   toggleShift(): void {
     this.shift = !this.shift;
   }
   toggleAlpha(): void {
-    this.alpha = !this.alpha;
+    if (this.alphaLock) {
+      this.alphaLock = false;
+      this.capsLock = false;
+      this.alpha = false;
+      this.shift = false;
+    } else if (this.alpha) {
+      this.alphaLock = true;
+      this.capsLock = this.shift;
+    } else this.alpha = true;
   }
   clearModifiers(): void {
-    this.shift = false;
-    this.alpha = false;
+    this.shift = this.alphaLock && this.capsLock;
+    this.alpha = this.alphaLock;
   }
 
   toggleView(): void {

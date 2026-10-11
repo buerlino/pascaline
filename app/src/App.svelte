@@ -210,7 +210,7 @@
     <div class="field" bind:this={host}></div>
   </div>
 
-  <Keypad shift={session.shift} alpha={session.alpha} onpress={press} />
+  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} onpress={press} />
 
   {#if session.settingsOpen}<Settings {session} />{/if}
 </main>
