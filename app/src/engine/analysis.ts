@@ -4,7 +4,10 @@
 // user comes from here (D7), never from the plot evaluator. Synchronous, UI-free.
 import { homeEval, toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
 import { solve1, type SolveSettings } from "./solve1.ts";
-import { num, numericResult, solveSettingsFor, withUnassigned } from "./solve.ts";
+import { num, numericResult, SOLVE_HARD_TIMEOUT_S, solveSettingsFor, withUnassigned } from "./solve.ts";
+
+/** Time Giac may spend on an exact definite integral when Romberg did not converge (seconds). */
+const EXACT_INT_S = 0.5;
 import type { AnalysisRequest, AnalysisResult, TableRequest } from "./types.ts";
 
 /** Home's answer variable: analysis must not change what Ans means in Home. */
@@ -138,29 +141,48 @@ function run(giac: Giac, req: AnalysisRequest, v: string, h: HomeSettings, t0: n
         ev("pasar:=0");
         return { ok: true, value: numericResult(giac, "pasar", s.digits, W), warn: false, info: "a = b", method: "none", ms: performance.now() - t0 };
       }
-      // Romberg at work precision; Giac returns two estimates when it does not converge, undef on a
-      // singularity. Consistency check against Gauss–Kronrod in double precision (gaussquad).
+      // 1. Romberg at work precision: one number when it converges, two estimates when it does not
+      //    (kink, steep part), undef on a singularity (1/x across 0: no area, even though the
+      //    principal value exists).
+      // 2. Not converged: Giac's exact integral within EXACT_INT_S (abs(x-0.3) → 29/100), used only
+      //    when it is a plain number.
+      // 3. Otherwise Gauss quadrature in double precision, with ⚠.
+      // Every result is cross-checked against gaussquad (double precision); disagreement → ⚠.
       ev(`Digits:=${W}`);
       const A = `exact(${ex(req.a)})`;
       const B = `exact(${ex(req.b)})`;
       const rom = ev(`pasar:=romberg(${integrand},${v},${A},${B})`);
-      let warn = false;
-      let info = "Romberg";
-      if (/^\[/.test(rom)) {
-        ev("pasar:=(pasar[0]+pasar[1])/2");
-        warn = true;
-        info = "Romberg did not converge (singularity or kink?)";
-      } else if (num(rom) === undefined) {
-        return failed("no-root", `the integral does not converge (${rom})`, "romberg", t0);
-      }
+      if (!/^\[/.test(rom) && num(rom) === undefined) return failed("no-root", `the integral does not converge (${rom})`, "romberg", t0);
       ev(`Digits:=${s.digits}`);
-      const gq = num(ev(`evalf(gaussquad(${integrand},${v},${A},${B}))`));
+      const gqText = ev(`pasgq:=evalf(gaussquad(${integrand},${v},${A},${B}))`);
+      const gq = num(gqText);
       ev(`Digits:=${W}`);
+      let method = "romberg";
+      let info = "Romberg";
+      let warn = false;
+      if (/^\[/.test(rom)) {
+        ev(`timeout ${EXACT_INT_S}`);
+        const exact = ev(`pasex:=int(${integrand},${v},${A},${B})`);
+        ev(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
+        const exv = !exact.startsWith("GIAC_ERROR") && !/integrate|int\(|undef|infinity/.test(exact) ? num(ev(`evalf(pasex,${W})`)) : undefined;
+        if (exv !== undefined) {
+          ev(`pasar:=evalf(pasex,${W})`);
+          method = "int";
+          info = "Romberg did not converge; exact integral";
+        } else if (gq !== undefined) {
+          ev("pasar:=pasgq");
+          method = "gaussquad";
+          info = "Romberg did not converge; Gauss quadrature (double precision)";
+          warn = true;
+        } else return failed("no-root", "the integral does not converge", "romberg", t0);
+      }
       const rv = num(ev("pasar"))!;
       const agree = gq !== undefined && Math.abs(gq - rv) <= 1e-8 * Math.max(1, Math.abs(rv));
-      if (!agree) warn = true;
-      info += agree ? ", matches Gauss quadrature" : ", disagrees with Gauss quadrature";
-      return { ok: true, value: numericResult(giac, "pasar", s.digits, W), warn, info, method: "romberg", ms: performance.now() - t0 };
+      if (method !== "gaussquad") {
+        if (!agree) warn = true;
+        info += agree ? ", matches Gauss quadrature" : ", disagrees with Gauss quadrature";
+      }
+      return { ok: true, value: numericResult(giac, "pasar", s.digits, W), warn, info, method, ms: performance.now() - t0 };
     }
   }
 }

@@ -29,3 +29,26 @@ cases:
   - { id: "no-real-root", eq: "x^2+1=0", var: "x", guess: "0", expect: "no root found", source: "derived", g2: 13 }
   - { id: "exp-no-root", eq: "exp(x)=0", var: "x", guess: "0", expect: "no root found", source: "derived" }
   - { id: "pole-no-root", eq: "1/x=0", var: "x", guess: "1", expect: "no root found", source: "derived", g2: 14, note: "the only sign change is the pole at 0" }
+  - { id: "double-root-0-scaled", eq: "3*x^2=0", var: "x", guess: "1", oracle: "F(0)", expect: "0", source: "derived", note: "regression 2026-10-11: multiple root at 0, the relative polish step never shrinks; accepted because the CAS proves x=0 (also the extremum of x^3)" }
+# Systems: N equations in N unknowns from guesses (kind: system); expect has one value per unknown. The
+# oracle is mpmath findroot started at the guess; Solve reports the root it converges to.
+  - { id: "sys-circle-exp-left", kind: "system", eq: ["X^2+Y^2=4", "Y=exp(X)"], var: ["X", "Y"], guess: ["-1", "1"], oracle: "findroot([lambda x, y: x**2+y**2-4, lambda x, y: y-mp.exp(x)], (-1, 1))", expect: ["-1.99537317006", "0.135962907412"], source: "oracle", note: "GSL hybrids alone returns the guess unchanged here; hybridsj converges" }
+  - { id: "sys-circle-exp-right", kind: "system", eq: ["X^2+Y^2=4", "Y=exp(X)"], var: ["X", "Y"], guess: ["1", "1"], oracle: "findroot([lambda x, y: x**2+y**2-4, lambda x, y: y-mp.exp(x)], (1, 1))", expect: ["0.639263074808", "1.89508382959"], source: "oracle" }
+  - { id: "sys-linear", kind: "system", eq: ["X+Y=3", "X-Y=1"], var: ["X", "Y"], guess: ["0", "0"], oracle: "[F(2), F(1)]", expect: ["2", "1"], source: "derived" }
+  - { id: "sys-circle-line", kind: "system", eq: ["X^2+Y^2=1", "Y=X"], var: ["X", "Y"], guess: ["1", "1"], oracle: "[sqrt(F(1,2)), sqrt(F(1,2))]", expect: ["0.707106781187", "0.707106781187"], source: "derived" }
+  - { id: "sys-3x3-symmetric", kind: "system", eq: ["X+Y+Z=6", "X*Y*Z=6", "X^2+Y^2+Z^2=14"], var: ["X", "Y", "Z"], guess: ["0.8", "2.2", "3.1"], oracle: "[F(1), F(2), F(3)]", expect: ["1", "2", "3"], source: "derived", note: "the roots are the permutations of 1, 2, 3; the guess is nearest (1, 2, 3)" }
+  - { id: "sys-trig", kind: "system", eq: ["sin(X)+Y=1", "X-Y^2=0"], var: ["X", "Y"], guess: ["0.5", "0.5"], oracle: "findroot([lambda x, y: mp.sin(x)+y-1, lambda x, y: x-y**2], (0.5, 0.5))", expect: ["0.387286068206", "0.622323122024"], source: "oracle" }
+  - { id: "sys-decimal-coeffs", kind: "system", eq: ["0.1*X+0.2*Y=0.3", "X*Y=1"], var: ["X", "Y"], guess: ["0.5", "2"], oracle: "[F(1), F(1)]", expect: ["1", "1"], source: "derived", note: "decimal literals made exact; (1, 1) is a double root of the system, so Newton converges linearly" }
+  - { id: "sys-no-solution", kind: "system", eq: ["X^2+Y^2=-1", "Y=X"], var: ["X", "Y"], guess: ["1", "1"], expect: "no root found", source: "derived", g2: 20, note: "no real solution; what the reference shows is G2 item 20" }
+# Polynomials: every root, complex included (kind: poly). Our order: reals ascending, then complex by
+# real part, then imaginary part (oracle sortroots).
+  - { id: "poly-cube-minus-one", kind: "poly", eq: "X^3+1=0", var: "X", oracle: "sortroots(mp.polyroots([1, 0, 0, 1], extraprec=50))", expect: ["-1", "0.5-0.866025403784*i", "0.5+0.866025403784*i"], source: "oracle" }
+  - { id: "poly-quartic-complex", kind: "poly", eq: "X^4+X+1=0", var: "X", oracle: "sortroots(mp.polyroots([1, 0, 0, 1, 1], extraprec=50))", expect: ["-0.727136084491-0.43001428833*i", "-0.727136084491+0.43001428833*i", "0.727136084491-0.934099289461*i", "0.727136084491+0.934099289461*i"], source: "oracle", g2: 21, note: "proot answers in double precision here; the 30-digit Newton polish makes 12 digits safe" }
+  - { id: "poly-quintic", kind: "poly", eq: "X^5-X-1=0", var: "X", oracle: "sortroots(mp.polyroots([1, 0, 0, 0, -1, -1], extraprec=50))", expect: ["1.16730397826", "-0.764884433601-0.352471546032*i", "-0.764884433601+0.352471546032*i", "0.18123244447-1.08395410132*i", "0.18123244447+1.08395410132*i"], source: "oracle" }
+  - { id: "poly-sqrt2", kind: "poly", eq: "X^2=2", var: "X", oracle: "[-sqrt(2), sqrt(2)]", expect: ["-1.41421356237", "1.41421356237"], source: "oracle" }
+  - { id: "poly-i", kind: "poly", eq: "X^2+1=0", var: "X", oracle: "[-I, I]", expect: ["-1*i", "1*i"], source: "derived" }
+  - { id: "poly-triple", kind: "poly", eq: "(X-1)^3=0", var: "X", oracle: "[F(1), F(1), F(1)]", expect: ["1", "1", "1"], source: "derived" }
+  - { id: "poly-complex-coeffs", kind: "poly", eq: "X^2-2*i*X-1=0", var: "X", oracle: "[I, I]", expect: ["1*i", "1*i"], source: "derived", note: "(X-i)^2" }
+  - { id: "poly-unity-6", kind: "poly", eq: "X^6=1", var: "X", oracle: "sortroots([mp.expjpi(mpf(2*k)/6) for k in range(6)])", expect: ["-1", "1", "-0.5-0.866025403784*i", "-0.5+0.866025403784*i", "0.5-0.866025403784*i", "0.5+0.866025403784*i"], source: "oracle" }
+  - { id: "poly-decimal", kind: "poly", eq: "0.5*X^2-1.5*X+1=0", var: "X", oracle: "[F(1), F(2)]", expect: ["1", "2"], source: "derived" }
+  - { id: "poly-not", kind: "poly", eq: "sin(X)=0", var: "X", expect: "not a polynomial", source: "derived" }

@@ -5,12 +5,9 @@
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import { homeEval, homeSetupCommands, toExactLiterals } from "./homeEval.ts";
-import { solveRequest, unknownsOf } from "./solve.ts";
+import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 
-/** Giac's own interrupt for one call inside Solve and Function analysis: a safety net only; the
- *  solvers keep their own budgets and the user has Cancel. */
-export const SOLVE_HARD_TIMEOUT_S = 30;
 
 /** What the host needs from a loaded Giac module (engine/giac/wasm/api.cc). */
 export interface GiacApi {
@@ -224,21 +221,27 @@ export class EngineHost {
 
 /** Builds the message handler used by the worker: init loads Giac, then requests go to EngineHost. */
 export function createRequestHandler(load: GiacLoader, post: (r: Response) => void): (req: Request) => Promise<void> {
-  let host: EngineHost | null = null;
+  // Calls that arrive while init is still loading the engine wait for it, in arrival order (a Plot
+  // view restored at launch asks for the trace before the engine is up).
+  let starting: Promise<EngineHost> | null = null;
   return async (req) => {
     try {
       if (req.type === "init") {
-        const loaded = await load(req.baseUrl);
-        const t1 = performance.now();
-        loaded.giac.eval("0");
-        const t2 = performance.now();
-        for (const line of req.replay) loaded.giac.eval(line);
-        const t3 = performance.now();
-        host = new EngineHost(loaded.giac);
-        post({ id: req.id, type: "ready", instantiateMs: loaded.instantiateMs, initMs: t2 - t1, replayMs: t3 - t2 });
+        starting = (async () => {
+          const loaded = await load(req.baseUrl);
+          const t1 = performance.now();
+          loaded.giac.eval("0");
+          const t2 = performance.now();
+          for (const line of req.replay) loaded.giac.eval(line);
+          const t3 = performance.now();
+          post({ id: req.id, type: "ready", instantiateMs: loaded.instantiateMs, initMs: t2 - t1, replayMs: t3 - t2 });
+          return new EngineHost(loaded.giac);
+        })();
+        await starting;
         return;
       }
-      if (!host) throw new Error("engine not ready");
+      if (!starting) throw new Error("engine not initialised");
+      const host = await starting;
       switch (req.type) {
         case "eval":
           post({ id: req.id, type: "result", ...host.eval(req.input) });
