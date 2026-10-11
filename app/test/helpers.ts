@@ -11,5 +11,6 @@ export const entryValue = (page: Page): Promise<string> => page.evaluate(() => w
 export async function open(page: Page, query = "engine=fake"): Promise<void> {
   await page.goto(`/?${query}`);
   await page.waitForFunction(() => customElements.get("math-field") !== undefined && window.pascaline !== undefined);
+  await page.evaluate(() => window.pascaline.entry.ready);
   await page.waitForTimeout(150);
 }
