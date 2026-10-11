@@ -10,6 +10,7 @@ export const en = {
   "key.app": "Home/CAS",
   "key.settings": "Settings",
   "key.clear": "Clear",
+  "key.sto": "Store",
   "key.enter": "Enter",
   "entry.label": "Entry line",
   "history.label": "History",

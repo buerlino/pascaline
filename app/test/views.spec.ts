@@ -86,6 +86,20 @@ test("SCI and ENG formats work in Home", async ({ page }) => {
   await tap(page, ["d1", "d2", "d3", "d4", "d5", "enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();
   expect(await lastText(page)).toMatch(/^1\.2345\d*E\+?4$|^1\.2345\d*×10\^4$/);
+  await page.evaluate(() => window.pascaline.session.setFormat("eng"));
+  // engineering notation: exponent a multiple of 3 (12345 = 12.345E3), the same history entry re-formatted
+  await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", /^12\.345\d*E3$/);
+});
+
+test("Store key: a := 7, then a+1 gives 8, all through keys", async ({ page }) => {
+  await tap(page, ["alpha", "sin", "shift", "comma", "d7"]);
+  expect(await entryValue(page)).toBe("a:=7");
+  await tap(page, ["enter"]);
+  await expect(lastResult(page).locator(".result")).toBeVisible();
+  expect(await lastText(page)).toBe("7");
+  await tap(page, ["alpha", "sin", "add", "d1", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+  expect(await lastText(page)).toBe("8");
 });
 
 test("the system keyboard never appears", async ({ page }) => {
