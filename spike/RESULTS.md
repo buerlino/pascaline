@@ -141,6 +141,9 @@ Boost.Math + cminpack inside the same wasm (`engine/solvers/solvers.cc`, since d
 - Output formatting seen in `caseval` results: lists print as `list[…]` and `eigenvals` returns a bare sequence `3,1`. The UI should render through `latex()` or our own printer, never raw `caseval` text.
 - Observation for later (Q3/CAS defaults): `factor(x^20-1)` factors over ℚ(√5) (`x^2+(-sqrt(5)-1)/2*x+1`…) in this configuration. How the reference calculator's CAS shows this needs checking on a device.
 
+### F-Droid toolchain check (proposal P2, 2026-10-11 ≈05:00)
+`spike/research/trixie-build.sh` in a `debian:trixie` Podman container with Debian's packaged **Emscripten 3.1.69** (what F-Droid recipes use) and `EMSDK_DIR=system`: GMP, MPFR, GSL and Giac (with patches 0001 and 0002) all build and link. `giac.wasm` 9,777,360 B (emsdk 6.0.12: 9,752,981 B), `giac.mjs` 75,056 B; 258 compiler warnings, no errors. **Gate passed** on that build: `spike/node/interrupt-test.mjs` (16 interrupts, none escaped), Home 123 / 123 (max 329 ms, Node), Solve 23 / 23. The 55-case benchmark and a device run on this build were not done.
+
 ## Blockers
 None so far. The source build was done in about one working session, so the shortcut (prebuilt) wasn't needed beyond the comparison.
 

@@ -63,7 +63,7 @@ Judged by the two principles in `spike/NIGHT-SHIFT.md` §1: reuse open source, a
 
 ### P2. F-Droid builds the engine with Debian's Emscripten; we keep emsdk for development
 - **What:** every Emscripten app in fdroiddata uses Debian's `emscripten` package (trixie 3.1.69); none uses emsdk. We develop with emsdk 6.0.12.
-- **Evidence so far:** in a `debian:trixie` container, GMP, MPFR and GSL built with 3.1.69; the Giac step had not been reached at the time of writing (see RESULTS.md for the latest).
-- **Gate:** a wasm built that way must pass `spike/node/interrupt-test.mjs` and the Home and Solve golden runs, because patch 0002 and `-fwasm-exceptions` depend on the toolchain.
+- **Evidence:** in a `debian:trixie` container with Debian's Emscripten 3.1.69, the whole engine (GMP, MPFR, GSL, Giac with both patches) builds and links; `giac.wasm` 9,777,360 B vs 9,752,981 B with emsdk 6.0.12.
+- **Gate (passed tonight):** interrupt test 16 / 16, Home 123 / 123, Solve 23 / 23 on the 3.1.69 build. A wasm built that way must keep passing `spike/node/interrupt-test.mjs` and the Home and Solve golden runs, because patch 0002 and `-fwasm-exceptions` depend on the toolchain.
 - **Fallback:** a hash-pinned emsdk download in the recipe, after asking the F-Droid maintainers.
-- **Henri's recommendation:** yes, if the gate passes.
+- **Henri's recommendation:** yes. Next steps: the 55-case benchmark and a Tab One run on the 3.1.69 build, then a draft recipe modelled on `net.alexbarry.alexgames.yml`.
