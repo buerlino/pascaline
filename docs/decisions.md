@@ -91,6 +91,12 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Why:** what the user sees is what they asked about; a root far off-screen would be confusing. Sign changes at poles are not roots (residual check).
 - **Would change if:** the G2 shows the reference searching beyond the window.
 
+### 2026-10-11 Function app defaults (assumed, G2 items 23–25)
+- **Choice:** default Plot window x ∈ [-10, 10], y at the same scale as x, centred on 0; canvas renderer with "hybrid" sampling (D7, fastest on desktop: 59.3 fps at CPU ×4). Trace step = a 1-2-5 step near window width / 100, so trace x-values stay short decimals. Num starts at X = 0 with step 1, 12 rows per screen, one engine call per screen. Intersection uses the traced function and the next function that is on. The Symb slots are written with `X`; the parser maps `X` to Giac's `x`.
+- **Why:** a square, centred window shows the shape of most engineering functions at once; short trace values are easier to read and type back; one engine call per screen keeps Num fast.
+- **Alternatives:** the reference's own window and trace step (unknown until the G2 checks), a free-form trace step, a chooser for the second function of an intersection (an extra key press every time).
+- **Would change if:** the G2 checks (items 23–25) show other defaults, or Tab One measurements show the canvas renderer is slower there.
+
 ### 2026-10-11 Solve app variables and results (assumed, G2 items 12–14, 20)
 - **Choice:** the Solve app keeps names as typed (`x` and `X` are different unknowns; the Function app maps `X` to `x`). New unknowns start at 0. With one equation, Solve finds the selected unknown and holds the others fixed; with N equations it finds N unknowns, the selected one first. A failed solve or a failed residual check shows ⚠ with the engine's info line. A polynomial with exactly one real root also writes that root into the value.
 - **Why:** engineers expect case-sensitive names, as in the CAS. Starting at 0 is predictable.

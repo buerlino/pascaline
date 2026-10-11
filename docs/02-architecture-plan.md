@@ -312,7 +312,10 @@ The same web build (`dist/`) is shipped in different wrappers:
    - `build.sh` from clean source to APK, with the engine built by Debian's Emscripten.
    Bar: on the Tab One (release build), cold launch → keyboard usable < 1 s and → engine ready < 1.5 s; Enter → drawn result p95 < 150 ms on the 55 benchmark inputs.
    **Done 2026-10-11** (`phase-1`, shift report docs/shifts/2026-10-11-report.md): every item above, verified. On the Tab One (release): keyboard usable 653–667 ms, engine ready 1.0 s (1.29 s with a full 200-entry history), Enter → drawn p95 92 ms (114 ms with a full history). The release engine is built in the container (P2 met) and is bit-reproducible. Left over: the a/b mixed-number form, alpha lock, a literal-caret one-line mode.
-5. Then the rest of the MVP (section 8): Function app, Solve app, Python.
+5. **Phase 1, milestone 2: Function app + Solve app.** An app framework (app switcher, Symb/Plot/Num views, per-app state in IndexedDB, apps and JSXGraph loaded lazily); the **Function app** (F1…F0, Plot on JSXGraph with trace and an analysis menu for root, extremum, intersection, slope and signed area, Num table, every number shown from the engine); the **Solve app** (equations E1…E0, unknowns with guesses; 1-D bracket + Brent/Newton, systems through GSL `hybridsj`/`hybrids`, polynomials through `proot`; every root substituted back, ⚠ when the residual is large).
+   Bar: milestone 1's start-up numbers hold; Plot ≥ 30 fps while zooming and panning three functions; Enter → solve result p95 < 300 ms (1-D and a 2×2 system).
+   **Done 2026-10-11** (`phase-1`, shift reports docs/shifts/2026-10-11-m2-report.md and 2026-10-11-m2b-report.md): every item above, verified. On the Tab One (release, Android 15, WebView 131): keyboard usable 679 ms, engine ready 1.02 s; Plot 53.8 fps median (near the display's refresh rate); solve p95 82 ms (1-D) and 51 ms (2×2); first Plot open 0.70 s. `build.sh` from a fresh clone gives a 15.0 MB APK in about 10 minutes. The MicroPython build for milestone 3 is in `python/`. Left over: subscripted unknowns (`x_1`) in Solve, the G2 checks for items 12–14 and 19–25.
+6. Then the rest of the MVP (section 8): Python (milestone 3), then the remaining apps.
 
 ---
 

@@ -128,17 +128,21 @@ GIAC_OUT=<dir> npm run test:e2e                            # Playwright key-sequ
 npm run build                                              # → app/dist/
 
 # Engine gate (run on every engine build that ships; from app/, GIAC_MJS=<giac.mjs> or GIAC_OUT=<dir>)
-npm run golden                                             # interrupt 16/16, Home 123/123, Solve 23/23, bench 55, parser 294/298 (4 known gaps)
+npm run golden                                             # interrupt 16/16, Home 123/123, Solve 42/42, Function 24/24, bench 55, parser 294/298 (4 known gaps)
 node scripts/compare-engines.ts <a/giac.mjs> <b/giac.mjs>  # output differences between two engine builds
 python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2   # oracle, once (repo root)
 tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # check cases; --g2 regenerates spike/G2-CHECKLIST.md from tests/golden/g2.yaml
 
 # Full build: clean source → engine (container, P2) → app → Capacitor → Gradle → dist/pascaline.apk (from the repo root)
-./build.sh [--dev] [--measure] [--unsigned] [--engine-dir DIR] [--install [SERIAL]]   # --dev = emsdk engine; --measure = timing marks
+./build.sh [--dev] [--measure] [--unsigned] [--no-python] [--engine-dir DIR] [--install [SERIAL]]   # --dev = emsdk engine; --measure = timing marks; --no-python skips MicroPython
 PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads ./build.sh                    # in a fresh clone: reuse the tarball cache
 
 # Release engine: Debian's Emscripten 3.1.69 in a pinned debian:trixie container (P2; works on scratch copies, takes the host-cpu lock)
 engine/giac/build-wasm-release.sh                          # → engine/giac/_out/release/giac.{mjs,wasm} + SHA256SUMS
+
+# MicroPython v1.29.0 → wasm (D6; milestone 3 Python; pinned + SHA-checked; build.sh copies it into the app, not loaded at start)
+python/build-micropython.sh [dev|release]                  # dev = ~/emsdk → python/_out/dev/; release = trixie container (P2) → python/_out/release/
+node python/smoke.mjs [python/_out/release]              # desktop smoke test: print(1+1) (default dir: python/_out/dev)
 
 # Coordinator team (brief: docs/shifts/brief.md; agents in .claude/agents/); keeps the laptop awake while it runs
 systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline shift" claude --agent henri
