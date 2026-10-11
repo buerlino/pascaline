@@ -161,9 +161,10 @@ def display(x):
         if im_ == "0":
             return re_
         ims = im_.lstrip("-")
+        imt = "i" if ims == "1" else f"{ims}*i"  # a unit imaginary part prints as i, not 1*i (format pass, 2026-10-11)
         if re_ == "0":
-            return f"{'-' if im_.startswith('-') else ''}{ims}*i"
-        return f"{re_}{'-' if im_.startswith('-') else '+'}{ims}*i"
+            return f"{'-' if im_.startswith('-') else ''}{imt}"
+        return f"{re_}{'-' if im_.startswith('-') else '+'}{imt}"
     return fmt_real(round_decimal(to_decimal(x)))
 
 
