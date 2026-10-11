@@ -89,11 +89,11 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 - **C4. F-Droid recipe.** It is untested end to end. `npm ci` downloads packages after `prebuild`, so it needs an offline/srclibs rework. Still open: a release tag and `versionCode`, an icon and screenshots (`fdroid/README.md`).
 
 ### Left over from milestones 1 and 2
-- **L1. Subscripted unknowns (`x_1`) in Solve.** Engine part **done** (a3ddd52: our name check accepts `x_1`; Giac already treats it as a variable). Left: show `x_{1}` in results, Playwright tests.
-- **L2. a/b mixed-number key** (G2 item 17 for the form).
-- **L3. Alpha lock.**
-- **L4. A literal-caret one-line entry mode.**
-- **L5. Results as insertable text** (copy a history entry into the entry line).
+- ~~**L1. Subscripted unknowns (`x_1`) in Solve.** Engine part **done** (a3ddd52: our name check accepts `x_1`; Giac already treats it as a variable). Left: show `x_{1}` in results, Playwright tests.~~ **Done** 2026-10-11 (ec4a94d).
+- ~~**L2. a/b mixed-number key** (G2 item 17 for the form).~~ **Done** 2026-10-11 (ec4a94d).
+- ~~**L3. Alpha lock.**~~ **Done** 2026-10-11 (ec4a94d).
+- ~~**L4. A literal-caret one-line entry mode.**~~ **Done** 2026-10-11 (ec4a94d).
+- ~~**L5. Results as insertable text** (copy a history entry into the entry line).~~ **Done** 2026-10-11 (ec4a94d).
 - **L6. Parser gaps** (4 known, `parser/gaps-*`):
   - the real cube root of a negative number (G2 items 4 and 11);
   - sets;

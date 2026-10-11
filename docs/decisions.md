@@ -38,7 +38,7 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Choice:** P2's bar (within +10%) is met, so every release builds the engine in the container. emsdk stays for development.
 
 ### 2026-10-11 Mixed numbers in textbook entry (assumed, G2 item 17)
-- **Choice (for now):** the a/b key inserts the same plain stacked fraction as ÷. A digit directly before a stacked fraction parses as `2*1/2`. A mixed-number form of a/b (2½ → `(2+1/2)`) is planned but not built yet.
+- **Choice:** one press of a/b inserts the same plain stacked fraction as ÷. Pressing a/b twice after a whole number makes a mixed number `2\tfrac12`, which the parser reads as `(2+1/2)` (L2, 2026-10-11). A digit directly before a plain stacked fraction still parses as `2*1/2`.
 - **Why:** P1 only accepts what our keyboard produces. A separate mixed-number template keeps the parser unambiguous once it exists.
 - **Would change if:** the G2 shows how a/b mixed numbers are entered and read (item 17).
 
@@ -110,3 +110,19 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Why:** the Galaxy S8+ (Android 9) still has its factory WebView, Chrome 72 (2019). Our bundle stops at the first `?.`, and the wasm builds need newer features anyway. On Android 7–9 the WebView is Chrome and updates from the app store (Chrome 138 is the last for Android 8/9), so real users on these devices run a modern WebView. Transpiling down to Chrome 72 would cost bundle size and start-up time on every device (principle 2), and the wasm feature gap would remain.
 - **Alternatives:** a legacy build (`@vitejs/plugin-legacy`, wasm built without exceptions or bulk memory): two builds to test, slower everywhere. Raising minSdk instead: wouldn't help, because the WebView version is what matters.
 - **Would change if:** testers report Android 7–9 devices that can't update their WebView (e.g. no app store) in meaningful numbers.
+
+### 2026-10-11 Alpha lock (assumed)
+- **Choice:** alpha twice locks lowercase letters; shift, alpha, alpha locks capitals; alpha again unlocks (L3).
+- **Why:** this is the usual calculator gesture, and it needs no extra key.
+- **Alternatives:** a long press on alpha (slower; harder to discover on touch).
+- **Would change if:** the Virtual Calculator mapping or the G2 shows another gesture.
+
+### 2026-10-11 One-line entry mode: exponents are linear too
+- **Choice:** in the one-line entry setting, xʸ, x² and a typed `^` insert a literal caret (`\char"5E`); the exponent is the next signed factor, as in plain text input (L4). Textbook mode is unchanged.
+- **Why:** one-line mode is for people who want to type `2^3` literally; a raised box would break that.
+- **Would change if:** testers find the "next signed factor" rule surprising (e.g. they expect `2^3+1` to raise `3+1`).
+
+### 2026-10-11 Results are insertable
+- **Choice:** tapping a result in the Home or CAS history inserts it at the cursor, bracketed if it is a sum (L5).
+- **Why:** reusing a result is the most common engineer workflow; brackets keep precedence right.
+- **Would change if:** the G2 inserts the entry instead of the result, or never brackets.
