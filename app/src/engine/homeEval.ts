@@ -78,7 +78,7 @@ export function homeSetupCommands(s: HomeSettings): string[] {
   return [
     `angle_radian:=${s.angle === "rad" ? 1 : 0}`,
     `timeout ${(s.budgetMs / 1000).toFixed(3)}`,
-    // How often control_c() looks at the clock: every 10th check. See spike/home/NOTES.md for the cost.
+    // How often control_c() looks at the clock: every 10th check. See spike/home/NOTES.md (Phase 0 history) for the cost.
     "ckevery 10",
   ];
 }
