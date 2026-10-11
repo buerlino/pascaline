@@ -117,7 +117,7 @@ export class Session {
    * line, or a job is running); otherwise the history item exists at once and the promise settles when
    * the job has finished, failed or been cancelled.
    */
-  submit(latex: string): Promise<void> | undefined {
+  submit(latex: string, giacOverride?: string): Promise<void> | undefined {
     if (latex.trim() === "" || this.busy) return undefined;
     const view = this.view;
     const list = view === "home" ? this.home : this.cas;
@@ -134,13 +134,13 @@ export class Session {
     // Read and write through the proxy in the list from here on.
     const live = list[list.length - 1] as HistoryItem;
     if (list.length > HISTORY_LIMIT) list.splice(0, list.length - HISTORY_LIMIT);
-    return this.finish(live, view, latex);
+    return this.finish(live, view, latex, giacOverride);
   }
 
-  private async finish(live: HistoryItem, view: View, latex: string): Promise<void> {
+  private async finish(live: HistoryItem, view: View, latex: string, giacOverride?: string): Promise<void> {
     let giac: string;
     try {
-      giac = latexToGiac(latex);
+      giac = giacOverride ?? latexToGiac(latex);
     } catch (e) {
       live.status = "error";
       live.text = e instanceof SerializeError ? e.message : String(e);
