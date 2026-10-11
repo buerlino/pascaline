@@ -8,7 +8,7 @@ import { t, type MessageKey } from "../i18n/index.ts";
 import { formatComplex, type ComplexValue } from "../engine/format.ts";
 import { complexToLatex, homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
-import { kvGet, kvSet } from "./storage.ts";
+import { idbKv, type Kv } from "./storage.ts";
 
 export type View = "home" | "cas";
 export type EntryMode = "textbook" | "line";
@@ -54,7 +54,10 @@ export class Session {
   private nextId = 1;
   private readonly calc: Calc;
 
-  constructor(calc: Calc) {
+  private readonly kv: Kv;
+
+  constructor(calc: Calc, kv: Kv = idbKv) {
+    this.kv = kv;
     this.calc = calc;
     calc.ready().then(
       () => (this.engineState = "ready"),
@@ -134,7 +137,7 @@ export class Session {
     // Read and write through the proxy in the list from here on.
     const live = list[list.length - 1] as HistoryItem;
     if (list.length > HISTORY_LIMIT) list.splice(0, list.length - HISTORY_LIMIT);
-    return this.finish(live, view, latex, giacOverride);
+    return this.finish(live, view, latex, giacOverride).finally(() => this.saveHistory());
   }
 
   private async finish(live: HistoryItem, view: View, latex: string, giacOverride?: string): Promise<void> {
@@ -179,6 +182,7 @@ export class Session {
     const p = this.pending;
     if (!p) return false;
     p.status = "cancelled";
+    this.saveHistory();
     await this.calc.cancel();
     return true;
   }
@@ -195,24 +199,41 @@ export class Session {
   clearHistory(): void {
     if (this.view === "home") this.home.length = 0;
     else this.cas.length = 0;
+    this.saveHistory();
   }
 
   // ---- persistence (IndexedDB; failures are silent)
   async restore(): Promise<void> {
-    const saved = await kvGet<Partial<Settings>>("settings");
+    const saved = await this.kv.get<Partial<Settings>>("settings");
     if (saved) {
       if (saved.angle === "rad" || saved.angle === "deg") this.settings.angle = saved.angle;
       if (saved.format === "std" || saved.format === "sci" || saved.format === "eng") this.settings.format = saved.format;
       if (saved.entry === "textbook" || saved.entry === "line") this.settings.entry = saved.entry;
       if (typeof saved.digits === "number") this.settings.digits = clampDigits(saved.digits);
     }
-    const view = await kvGet<View>("view");
+    const hist = await this.kv.get<{ home?: HistoryItem[]; cas?: HistoryItem[] }>("history");
+    if (hist) {
+      // Entries typed before the store answered stay after the restored ones.
+      const keep = (xs: HistoryItem[] | undefined): HistoryItem[] =>
+        (xs ?? []).filter((i) => (i.status === "done" || i.status === "error") && typeof i.latex === "string");
+      this.home.splice(0, 0, ...keep(hist.home));
+      this.cas.splice(0, 0, ...keep(hist.cas));
+      const top = [...this.home, ...this.cas].reduce((m, i) => Math.max(m, i.id), 0);
+      this.nextId = Math.max(this.nextId, top + 1);
+    }
+    const view = await this.kv.get<View>("view");
     if (view === "home" || view === "cas") this.view = view;
   }
+  /** Entry LaTeX, result LaTeX and the Home numeric value of finished entries; nothing that needs the engine. */
+  saveHistory(): void {
+    const keep = (xs: HistoryItem[]): HistoryItem[] =>
+      $state.snapshot(xs).filter((i) => i.status === "done" || i.status === "error").slice(-HISTORY_LIMIT);
+    void this.kv.set("history", { home: keep(this.home), cas: keep(this.cas) });
+  }
   save(): void {
-    void kvSet("settings", { ...this.settings });
+    void this.kv.set("settings", { ...this.settings });
   }
   saveView(): void {
-    void kvSet("view", this.view);
+    void this.kv.set("view", this.view);
   }
 }

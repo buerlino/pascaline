@@ -107,7 +107,7 @@ test("the system keyboard never appears", async ({ page }) => {
   const st = await page.evaluate(() => ({
     active: document.activeElement?.tagName.toLowerCase(),
     vk: window.mathVirtualKeyboard?.visible,
-    inputmode: [...(window.pascaline.entry.mf.shadowRoot?.querySelectorAll("[inputmode]") ?? [])].map((e) => e.getAttribute("inputmode")),
+    inputmode: [...(window.pascaline.entry.field?.shadowRoot?.querySelectorAll("[inputmode]") ?? [])].map((e) => e.getAttribute("inputmode")),
   }));
   expect(st).toEqual({ active: "math-field", vk: false, inputmode: ["none"] });
 });
