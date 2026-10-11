@@ -126,3 +126,15 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Choice:** tapping a result in the Home or CAS history inserts it at the cursor, bracketed if it is a sum (L5).
 - **Why:** reusing a result is the most common engineer workflow; brackets keep precedence right.
 - **Would change if:** the G2 inserts the entry instead of the result, or never brackets.
+
+### 2026-10-11 `calc.cas` is synchronous (amends D6; no SharedArrayBuffer needed)
+- **Choice:** Python calls `calc.cas("…")` like a normal function, with no `await` and no preprocessor. A 40-line MicroPython user C module of our own (`python/modules/host`, built with `USER_C_MODULES`; the upstream tree is unpatched) suspends the wasm stack with Asyncify, which the upstream webassembly port already uses, until the main thread answers. MicroPython is now linked at `-O2` (upstream links at `-O0`): wasm 1.12 → 0.63 MB, a 10⁶-step loop 1.3 → 0.61 s in Chromium.
+- **Why:** D6 assumed that a synchronous bridge needs SharedArrayBuffer (so COOP/COEP headers) and chose async plus a preprocessor. Asyncify gives a synchronous call without either. The async route also turned out to be broken upstream: `runPython`/`runPythonAsync` abort at the first garbage collection in a loop that allocates. Synchronous calls are what engineers expect, and they also work inside functions and comprehensions.
+- **Alternatives:** async plus a preprocessor (broken upstream, and it can't reach calls inside functions); SharedArrayBuffer with COOP/COEP (headers the Capacitor shell would have to serve, plus a second mechanism).
+- **Limit:** recursion deeper than about 50–100 frames overflows the JS stack, as in the stock upstream build. It is reported as `RecursionError`, and the worker is replaced, so shell variables are lost.
+- **Would change if:** the release build (Debian Emscripten 3.1.69) rejects `EM_ASYNC_JS`/`-O2`, or the Tab One misses the milestone 3 bars (`calc.cas` p95 < 50 ms, shell ready < 0.5 s).
+
+### 2026-10-11 Python runtime defaults
+- **Choice:** Python heap 4 MB, Python stack 8K words. The shell echoes the repr of a single expression, like a REPL, and runs blocks of several statements without echo. stdout/stderr are flushed at a newline (at most every 16 ms), at 8 KiB, and before each `calc` call. Tracebacks hide our own frames; scripts without a name are `<script>`. A failed `calc` call raises `ValueError` with Giac's message. The worker starts only when the Python app first needs it.
+- **Why:** these are small, predictable defaults that fit the Tab One. Echo and tracebacks behave as in desktop Python, which engineers know.
+- **Would change if:** real scripts hit the heap limit, or the G2 Python shell behaves differently (assumed).

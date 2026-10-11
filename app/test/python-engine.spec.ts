@@ -5,7 +5,8 @@ import { expect, test } from "@playwright/test";
 test("python engine: run, error line, calc, cancel an endless loop", async ({ page }) => {
   await page.goto("/");
   const r = await page.evaluate(async () => {
-    const mod = (await import(/* @vite-ignore */ "/src/python/pythonEngine.ts")) as typeof import("../src/python/pythonEngine.ts");
+    const url = "/src/python/pythonEngine.ts";
+    const mod = (await import(/* @vite-ignore */ url)) as typeof import("../src/python/pythonEngine.ts");
     const out: string[] = [];
     const math = {} as Parameters<typeof mod.loadPythonEngine>[0];
     const py = mod.loadPythonEngine(math, { host: async (fn, args) => `${fn}:${String(args[0])}` });
