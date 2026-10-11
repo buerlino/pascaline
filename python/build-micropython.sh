@@ -56,8 +56,13 @@ cp "$DL/$TARBALL" "$SCRATCH/w/"
 
 case "$MODE" in
   dev)
-    # shellcheck disable=SC1091
-    source "$HOME/emsdk/emsdk_env.sh" >/dev/null 2>&1
+    # EMSDK_DIR=system: emcc already on PATH (the F-Droid build VM installs Debian's emscripten package)
+    if [[ "${EMSDK_DIR:-$HOME/emsdk}" == system ]]; then
+      command -v emcc >/dev/null || { echo "EMSDK_DIR=system but no emcc on PATH" >&2; exit 1; }
+    else
+      # shellcheck disable=SC1091
+      source "${EMSDK_DIR:-$HOME/emsdk}/emsdk_env.sh" >/dev/null 2>&1
+    fi
     W="$SCRATCH/w" VERSION="$VERSION" TARBALL="$TARBALL" VARIANT="$VARIANT" JOBS="$JOBS" bash -c "$STEPS" >&2
     ;;
   release)

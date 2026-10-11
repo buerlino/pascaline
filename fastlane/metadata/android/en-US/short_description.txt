@@ -1,0 +1,1 @@
+Open-source graphing CAS calculator, offline and keyboard-first

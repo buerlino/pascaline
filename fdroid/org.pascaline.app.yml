@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# DRAFT F-Droid recipe for fdroiddata (metadata/org.pascaline.app.yml). Never submitted; the application id is a placeholder.
+# Modelled on net.alexbarry.alexgames (Debian emscripten in the build VM) and com.graphhopper.maps (Capacitor).
+# Status: untested in fdroidserver (see fdroid/README.md). commit: below is a placeholder until a release tag exists.
+Categories:
+  - Science & Education
+License: GPL-3.0-or-later
+AuthorName: Pascaline contributors
+WebSite: https://github.com/buerlino/pascaline
+SourceCode: https://github.com/buerlino/pascaline
+IssueTracker: https://github.com/buerlino/pascaline/issues
+
+AutoName: Pascaline
+
+RepoType: git
+Repo: https://github.com/buerlino/pascaline.git
+
+Builds:
+  - versionName: 0.2.0
+    versionCode: 2
+    commit: v0.2.0
+    subdir: android/app
+    sudo:
+      - apt-get update
+      # Same Debian emscripten as the release container (P2): 3.1.69+dfsg-3 in trixie. Then `emcc` is on PATH (EMSDK_DIR=system).
+      - apt-get install -y emscripten make patch gcc g++ m4 perl xz-utils bzip2 curl python3 npm
+    prebuild:
+      - cd ../..
+      - export EMSDK_DIR=system
+      - engine/giac/build-wasm.sh
+      - python/build-micropython.sh dev
+      - cd app
+      - mkdir -p public/python
+      - cp ../python/_out/dev/micropython.mjs ../python/_out/dev/micropython.wasm public/python/
+      - npm ci
+      - GIAC_OUT=../engine/giac/_out/gsl npm run build
+      - npx cap sync android
+    gradle:
+      - yes
+    scandelete:
+      - app/node_modules/
+      - engine/giac/_downloads/
+      - engine/giac/_build/
+      - python/_downloads/
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 0.2.0
+CurrentVersionCode: 2
