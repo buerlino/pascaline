@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# P3 spike: units, constants and uncertainty cases for libqalculate (spike/qalc/check.py runs them).
+# value / unc are mpmath expressions (evaluated at 40 digits). A case passes when the unit text
+# matches and every printed number is the correctly rounded true value (|printed - true| <= half a
+# unit in its last printed digit). Unit definitions used: international yard and pound (1959:
+# 1 yd = 0.9144 m, 1 lb = 0.45359237 kg), standard gravity 9.80665 m/s^2, 1 atm = 101325 Pa,
+# 1 nmi = 1852 m, and the exact SI 2019 constants (c, h, e, k, N_A). Uncertainty: first-order
+# (Gaussian, uncorrelated) error propagation, sigma_f^2 = sum (df/dx_i * sigma_i)^2.
+cases:
+  # --- units ---
+  - {id: u01, expr: "5 km/h to m/s", value: "mpf(5000)/3600", unit: "m/s", source: derived}
+  - {id: u02, expr: "60 mph to km/h", value: "60*1760*mpf('0.9144')/1000", unit: "km/h", source: derived}
+  - {id: u03, expr: "1 inch to cm", value: "mpf('0.9144')/36*100", unit: "cm", source: derived}
+  - {id: u04, expr: "1 atm to Pa", value: "101325", unit: "Pa", source: derived}
+  - {id: u05, expr: "100 °F to °C", value: "(mpf(100)-32)*5/9", unit: "oC", source: oracle}
+  - {id: u06, expr: "0 °C to K", value: "mpf('273.15')", unit: "K", source: derived}
+  - {id: u07, expr: "1 kWh to J", value: "1000*3600", unit: "J", source: derived}
+  - {id: u08, expr: "1 eV to J", value: "mpf('1.602176634e-19')", unit: "J", source: derived}
+  - {id: u09, expr: "1 lbf to N", value: "mpf('0.45359237')*mpf('9.80665')", unit: "N", source: oracle}
+  - {id: u10, expr: "1 hp to W", value: "550*mpf('0.3048')*mpf('0.45359237')*mpf('9.80665')", unit: "W", source: oracle,
+     note: "mechanical horsepower = 550 ft*lbf/s. FAILS: upstream units.xml has 745.699987158227022 (a stray 9; true 745.69987158227022)"}
+  - {id: u11, expr: "1 bar to psi", value: "mpf(100000)/(mpf('0.45359237')*mpf('9.80665')/mpf('0.0254')**2)", unit: "psi", source: oracle}
+  - {id: u12, expr: "1 L to m^3", value: "mpf('0.001')", unit: "m^3", source: derived}
+  - {id: u13, expr: "1 nmi to m", value: "1852", unit: "m", source: derived}
+  - {id: u14, expr: "1 rad to deg", value: "180/pi", unit: "deg", source: oracle}
+  - {id: u15, expr: "3 m * 4 s", value: "12", unit: "m*s", source: derived}
+  # --- constants ---
+  - {id: c01, expr: "c", value: "299792458", unit: "m/s", source: derived}
+  - {id: c02, expr: "planck", value: "mpf('6.62607015e-34')", unit: "J*s", source: derived}
+  - {id: c03, expr: "N_A", value: "mpf('6.02214076e23')", unit: "mol^-1", source: derived}
+  - {id: c04, expr: "k_B", value: "mpf('1.380649e-23')", unit: "J/K", source: derived}
+  - {id: c05, expr: "q_e", value: "mpf('1.602176634e-19')", unit: "C", source: derived}
+  - {id: c06, expr: "gas_constant", value: "mpf('6.02214076e23')*mpf('1.380649e-23')", unit: "J/(K*mol)", source: oracle,
+     note: "R = N_A * k exactly (SI 2019)"}
+  - {id: c07, expr: "g0", value: "mpf('9.80665')", unit: "m/s^2", source: derived}
+  # --- uncertainty ---
+  - {id: e01, expr: "(3±0.1)*(2±0.2)", value: "6", unc: "sqrt((2*mpf('0.1'))**2+(3*mpf('0.2'))**2)", unit: "", source: oracle}
+  - {id: e02, expr: "(10±0.5)+(5±0.2)", value: "15", unc: "sqrt(mpf('0.5')**2+mpf('0.2')**2)", unit: "", source: oracle}
+  - {id: e03, expr: "(10±1)/(2±0.1)", value: "5", unc: "5*sqrt((mpf(1)/10)**2+(mpf('0.1')/2)**2)", unit: "", source: oracle}
+  - {id: e04, expr: "(2±0.1) m * (3±0.2) m", value: "6", unc: "sqrt((3*mpf('0.1'))**2+(2*mpf('0.2'))**2)", unit: "m^2", source: oracle}

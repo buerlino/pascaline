@@ -111,6 +111,32 @@ Boost.Math + cminpack inside the same wasm (`engine/solvers/solvers.cc`, since d
 
 **Decision: GSL** (see "Decisions taken"). The first proposal here was Boost.Math + cminpack for its smaller size; it was dropped because of the MINPACK licence clause, and because 68 KB is small next to a 2.5 MB engine. `hybridsj_solver` and `dnewton_solver` were also checked and work in the GSL build.
 
+## P3 spike: libqalculate as a lazy units/constants/uncertainty engine (gorge, 2026-10-11, branch `p3/gorge-qalc`)
+**Recommendation: GO**, as its own lazily loaded worker (docs/02 6b), on one condition: a Tab One measurement of the lazy start (not done yet, see below) stays under 1 s to the first result.
+
+What was built (`spike/qalc/build-wasm.sh`, emsdk 6.0.12, `-Oz`, everything from pinned SHA-256-checked tarballs, output gitignored): libqalculate **5.13.1** (GPL-2.0-or-later, https://github.com/Qalculate/libqalculate) with **compiled-in definitions** (no data files at run time), plus libxml2 2.15.1 (MIT; needed to parse those definitions; built without iconv, zlib, ICU, HTTP, threads or validation; UTF-8 only, so no iconv is needed) and our GMP 6.3.0 / MPFR 4.2.2. No curl, ICU, readline, NLS, external commands. Calculation runs on the calling thread (`msecs = 0`): no pthreads, cancel = terminate the worker, as for Giac. Glue: `spike/qalc/glue.cc` (`qalc_init`, `qalc_calc`; 12 significant digits).
+
+| Measure | Result |
+|---|---|
+| `qalc.wasm` | 3,601,897 B raw / 1,186,951 B gzip -9 / **929,072 B brotli** (Giac+GSL: 9,752,927 / 3,428,110 / 2,509,333) |
+| `qalc.mjs` glue | 85,342 B raw / 23,123 B gzip / 20,751 B brotli |
+| Node 22, cold process, n=7, medians | instantiate 31.3 ms, `qalc_init` (load definitions) 43.8 ms, first calc 23.8 ms, **total 100 ms** |
+| Chromium 156 headless, module worker, fresh context, no cache, n=7, medians | worker ready **105.7 ms**, first result (`5 km/h to m/s`) **127.4 ms** from `new Worker` |
+| Later calls (Node) | 0.2–9 ms |
+| Cases `spike/qalc/cases.yaml` (`check.py`, mpmath 40 digits; 15 units, 7 constants, 4 uncertainty) | **25/26 pass**. The failure is an upstream data typo: `units.xml` defines `hp` as 745.69998715… W; the true value (550 ft·lbf/s) is 745.69987158… W. Report upstream |
+| Lenovo Tab One | **not measured: the device is unavailable** this shift |
+| Samsung S8+ | **not measured**: the page (`spike/qalc/page/`) is ready, but device runs belong to annabell and need a measurement APK with the page in it; recipe below |
+
+Cost against benefit:
+- **Start-up: none**, if it loads only when units/constants are first used (principle 2). The first use pays ≈130 ms on the desktop; on the Tab One expect several times that (MicroPython: 11 ms desktop → 335 ms Tab One); it can also be preloaded when idle after Giac is ready.
+- **Size:** +0.93 MB brotli (+1.19 MB gzip) to the APK/PWA, ≈37 % of Giac. Acceptable for an optional lazy chunk.
+- **Reuse:** a maintained unit and physical-constant database, conversions and uncertainty propagation (first-order Gaussian, matches the oracle) that we would otherwise write and maintain ourselves (principle 1). GPL-2.0-or-later combines fine with our GPL-3.0-or-later.
+- **Caveats for integration:** qalc's bare names collide with variables (`R` is röntgen, `g` gram, `NA` = N·A); our parser must emit explicit unit/constant tokens (e.g. from a `_unit` keyboard template), never raw text. Output must go through our formatter (12 digits, MathPrint), not qalc's print. The data needs its own checks (the `hp` typo shows why).
+
+S8+ / Tab One recipe (annabell): copy `spike/qalc/page/*` and `qalc.{mjs,wasm}` into `app/public/qalc/` of a measurement build only (never committed), `tools/device-build.sh --measure --install`, then 5× `tools/device_run.py page /qalc/index.html`, with a `--wait` that matches its log line; the page logs `PASCALINE_BENCH qalc {ready_ms, first_result_ms, …}`.
+
+Reproduce: `QALC_WORK=<dir under /home> spike/qalc/build-wasm.sh`; `node spike/qalc/smoke.mjs $QALC_WORK/out`; `APP_DIR=<checkout>/app node spike/qalc/bench-chromium.mjs $QALC_WORK/out 7`; `tests/golden/.venv/bin/python spike/qalc/check.py $QALC_WORK/out`.
+
 ## Components used (name, version, licence, URL, prebuilt?)
 | Component | Version | Licence | URL | Prebuilt? | Used for |
 |---|---|---|---|---|---|
