@@ -4,7 +4,7 @@
 // user comes from here (D7), never from the plot evaluator. Synchronous, UI-free.
 import { homeEval, toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
 import { solve1, type SolveSettings } from "./solve1.ts";
-import { num, numericResult, SOLVE_HARD_TIMEOUT_S, solveSettingsFor, withUnassigned } from "./solve.ts";
+import { IDENT, num, numericResult, SOLVE_HARD_TIMEOUT_S, solveSettingsFor, withUnassigned } from "./solve.ts";
 
 /** Time Giac may spend on an exact definite integral when Romberg did not converge (seconds). */
 const EXACT_INT_S = 0.5;
@@ -53,7 +53,7 @@ function bound(giac: Giac, x: string | undefined): number | undefined {
 export function analyze(giac: Giac, req: AnalysisRequest, h: HomeSettings): AnalysisResult {
   const t0 = performance.now();
   const v = req.variable ?? "x";
-  if (!/^[A-Za-z][A-Za-z0-9]*$/.test(v)) return failed("bad-input", `bad variable name ${v}`, "none", t0);
+  if (!IDENT.test(v)) return failed("bad-input", `bad variable name ${v}`, "none", t0);
   try {
     return withUnassigned(giac, [v], () => run(giac, req, v, h, t0));
   } finally {

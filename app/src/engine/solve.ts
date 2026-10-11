@@ -25,7 +25,8 @@ function negZero(t: string): string {
   return t.replace(/^0\.-(0+)$/, "-0.$1");
 }
 
-const IDENT = /^[A-Za-z][A-Za-z0-9]*$/;
+/** A variable name: letters/digits, optionally one subscript (`x_1`, `v_c`); Giac reads these as plain identifiers. */
+export const IDENT = /^[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?$/;
 
 /** The solver settings for a Home settings object (digits; tuning stays at its defaults). */
 export function solveSettingsFor(h: HomeSettings, extra: Partial<SolveSettings> = {}): SolveSettings {

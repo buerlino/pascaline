@@ -19,6 +19,13 @@ describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () 
     expect(r.info).toBe("sign change in [1.32, 1.64]"); // derived: guess 1, steps 0.01·2^k on both sides
   });
 
+  it("subscripted unknowns x_1, x_2 are found and solved (regression: IDENT rejected the underscore)", () => {
+    const eqs = ["x_1+x_2=3", "x_1-x_2=1"];
+    expect(host.unknowns(eqs)).toEqual(["x_1", "x_2"]);
+    const r = host.solve({ kind: "equations", equations: eqs, unknowns: ["x_1", "x_2"], guesses: ["0", "0"] }, s);
+    expect(r.roots.map((x) => x.result.display)).toEqual(["2", "1"]); // derived: add and subtract the equations
+  });
+
   it("a user's values of the unknowns are put back, Home Ans is left alone", () => {
     host.home("Y:=0.25", s);
     const r = host.solve({ kind: "equations", equations: ["Y^2=2"], unknowns: ["Y"], guesses: ["1"] }, s);
