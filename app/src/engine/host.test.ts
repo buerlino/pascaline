@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
+import { formatComplex } from "./format.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 
 describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
@@ -15,6 +16,14 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   it("Home: 1/3 -> 0.333333333333 (source: device, G2 item 16)", () => {
     const { result } = host.home("1/3", defaultHomeSettings);
     expect(result).toMatchObject({ ok: true, display: "0.333333333333", path: "exact", approximate: false });
+  });
+
+  it("Home: the value re-formats in SCI and ENG without the engine (derived)", () => {
+    const { result } = host.home("12345.6789", defaultHomeSettings);
+    expect(result.display).toBe("12345.6789");
+    expect(result.value).toBeDefined();
+    expect(formatComplex(result.value!, { format: "SCI", digits: 4 }).text).toBe("1.235E4");
+    expect(formatComplex(result.value!, { format: "ENG", digits: 4 }).text).toBe("12.35E3");
   });
 
   it("Home: 1-0.9-0.1 -> 0 (derived)", () => {
