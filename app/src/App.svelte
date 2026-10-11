@@ -9,6 +9,7 @@
   import { t, type MessageKey } from "./i18n/index.ts";
   import Keypad from "./keyboard/Keypad.svelte";
   import { actionFor, type ActionBody, type Key } from "./keyboard/keyboard.ts";
+  import { resultToEntry } from "./render/insertable.ts";
   import type { Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   import Settings from "./views/Settings.svelte";
@@ -22,6 +23,9 @@
     entry.onEscape = () => void cancel();
   });
   let host: HTMLElement | undefined = $state();
+  $effect(() => {
+    entry.lineMode = session.settings.entry === "line";
+  });
 
   /** Home/CAS: the entry line is cleared as soon as the job starts; the result arrives in the history. Apps decide themselves. */
   function enter(): void {
@@ -128,7 +132,7 @@
       if (dir && shell.nav(dir)) return;
       if (!shell.showsEntry) return; // a view without an entry line (Plot) ignores typing
     }
-    entry.run(action);
+    entry.run(action, key.id);
   }
 
   const showSoftCancel = $derived(session.busy || shell.busy);
@@ -177,6 +181,7 @@
         items={session.items}
         display={(item) => session.display(item)}
         onrecall={(latex) => entry.set(latex)}
+        oninsert={(latex) => entry.insert(resultToEntry(latex))}
         oncancel={() => void cancel()}
       />
     {:else if shell.current}
@@ -210,7 +215,7 @@
     <div class="field" bind:this={host}></div>
   </div>
 
-  <Keypad shift={session.shift} alpha={session.alpha} onpress={press} />
+  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} onpress={press} />
 
   {#if session.settingsOpen}<Settings {session} />{/if}
 </main>

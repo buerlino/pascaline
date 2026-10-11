@@ -86,8 +86,14 @@ keys:
     col: 0
     cls: fn
     label: { primary: "xʸ", shift: "x²", alpha: f }
-    primary: { insert: "#@^{#?}", sample: ["3^{2}", "3^2"] }
-    shift: { insert: "#@^{2}", sample: ["3^{2}", "3^2"] }
+    primary:
+      insert: "#@^{#?}"
+      sample: ["3^{2}", "3^2"]
+      line: { insert: "\\char\"5E ", sample: ["3\\char\"5E 2", "3^2"] }
+    shift:
+      insert: "#@^{2}"
+      sample: ["3^{2}", "3^2"]
+      line: { insert: "\\char\"5E 2", sample: ["3\\char\"5E 2", "3^2"] }
     alpha: { type: f }
     source: assumed
   - id: sqrt

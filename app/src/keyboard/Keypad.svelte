@@ -6,8 +6,9 @@
   let {
     shift,
     alpha,
+    alphaLock = false,
     onpress,
-  }: { shift: boolean; alpha: boolean; onpress: (key: Key) => void } = $props();
+  }: { shift: boolean; alpha: boolean; alphaLock?: boolean; onpress: (key: Key) => void } = $props();
 
   // The legend printed above a key is its next layer; the face shows the active layer.
   const face = (k: Key): string => legend(labelFor(k, shift, alpha) || k.label.primary || "");
@@ -36,6 +37,7 @@
       data-key={key.id}
       tabindex="-1"
       aria-pressed={key.cls === "ctl" && (key.id === "shift" || key.id === "alpha") ? pressed(key) : undefined}
+      data-locked={key.id === "alpha" && alphaLock ? "true" : undefined}
       style:grid-row={key.row + 1}
       style:grid-column={key.col + 1}
       onpointerdown={(ev) => {
@@ -122,5 +124,9 @@
   }
   .alphaed .key[data-key="alpha"][aria-pressed="true"] {
     outline-color: var(--alpha);
+  }
+  .key[data-locked="true"] {
+    outline-width: 3px;
+    background: color-mix(in srgb, var(--alpha) 25%, transparent);
   }
 </style>

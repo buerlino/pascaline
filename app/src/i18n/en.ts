@@ -70,6 +70,7 @@ export const en = {
   "history.cancelled": "Cancelled",
   "history.approximate": "approximate",
   "history.recall": "Use this entry again",
+  "history.insert": "Put this result on the entry line",
   "error.syntax": "Syntax error",
   "error.timeout": "Stopped: it took too long",
   "error.engine": "The calculation failed",

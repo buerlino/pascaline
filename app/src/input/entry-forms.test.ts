@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Entry forms. L4: the literal caret of the one-line mode; MathLive serialises it as \char"5E plus a space.
+// Expected Giac text is derived (the usual precedence: the exponent is the next signed factor).
+import { describe, expect, it } from "vitest";
+import { latexToGiac } from "./latex-to-giac.ts";
+
+const C = '\\char"5E ';
+const cases: [string, string][] = [
+  [`2${C}3`, "2^3"],
+  [`2${C}34`, "2^34"],
+  [`x${C}2+1`, "x^2+1"],
+  [`2${C}-1`, "2^(-1)"],
+  [`2${C}\\left(3+1\\right)`, "2^(3+1)"],
+  [`2${C}3${C}2`, "2^(3^2)"],
+  [`-x${C}2`, "-x^2"],
+  [`2${C}3x`, "2^3*x"],
+];
+
+describe("literal caret (L4)", () => {
+  for (const [latex, giac] of cases)
+    it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
+  it("rejects a \\char that is not a caret", () => {
+    expect(() => latexToGiac('2\\char"41 3')).toThrow();
+  });
+});
+
+// L2: the a/b key pressed twice after a whole number gives a mixed number, 2\tfrac12 (assumed, G2 item 17).
+// A plain \frac after a number stays a product (docs/decisions.md "Mixed numbers").
+describe("mixed numbers (L2)", () => {
+  const mixed: [string, string][] = [
+    ["2\\tfrac12", "(2+1/2)"],
+    ["12\\tfrac{3}{4}", "(12+3/4)"],
+    ["2\\tfrac12\\times4", "(2+1/2)*4"],
+    ["-2\\tfrac12", "-(2+1/2)"],
+    ["\\tfrac{1}{2}", "1/2"],
+    ["2\\frac{1}{2}", "2*(1/2)"],
+  ];
+  for (const [latex, giac] of mixed) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
+});

@@ -15,6 +15,9 @@ const SPACING = new Set([",", ";", ":", "!", " ", "quad", "qquad", "displaystyle
 const OPEN_CMD: Record<string, string> = { lfloor: "floor", lceil: "ceil" };
 const CLOSE_CMD: Record<string, string> = { rfloor: "floor", rceil: "ceil" };
 
+/** Token for a literal caret (one-line mode): power of the next factor, not a TeX superscript. */
+const CARET = "^caret";
+
 function tokenize(src: string): Tok[] {
   const out: Tok[] = [];
   let i = 0;
@@ -30,6 +33,17 @@ function tokenize(src: string): Tok[] {
       const name = j > i + 1 ? src.slice(i + 1, j) : (src[j++] ?? "");
       i = j;
       if (SPACING.has(name)) continue;
+      if (name === "char") {
+        // L4: the literal caret of the one-line entry mode, \char"5E (MathLive serialises it with a trailing space)
+        const m = /^(?:"5E|"5e|94)\b ?/.exec(src.slice(i));
+        if (!m) {
+          out.push({ t: "cmd", v: "char" });
+          continue;
+        }
+        i += m[0].length;
+        out.push({ t: "cmd", v: CARET });
+        continue;
+      }
       if (name === "left" || name === "right") {
         while (src[i] === " ") i++;
         let d = src[i] ?? "";
@@ -255,6 +269,13 @@ class Parser {
           base = ["Power", base, this.script()];
           if (this.isCh("^")) this.fail("ambiguous double superscript, use braces");
         }
+      } else if (this.isCmd(CARET)) {
+        // a^b typed literally: the exponent is the next signed factor (2^34 = 2^(34); 2^-1; right-associative)
+        this.pos++;
+        if (this.isCh("-")) {
+          this.pos++;
+          base = ["Power", base, ["Negate", this.postfix()]];
+        } else base = ["Power", base, this.postfix()];
       } else if (this.isCh("!")) {
         this.pos++;
         base = ["Factorial", base];
@@ -316,9 +337,18 @@ class Parser {
     if (!t) this.fail("unexpected end of input");
     const tok = t as Tok;
     switch (tok.t) {
-      case "num":
+      case "num": {
         this.pos++;
-        return { num: tok.v.replace(/^0+(?=\d)/, "") };
+        const num = { num: tok.v.replace(/^0+(?=\d)/, "") };
+        // L2: a whole number directly before \tfrac is a mixed number (the a/b key pressed twice): 2\tfrac12 = 2+1/2
+        if (/^\d+$/.test(tok.v) && this.isCmd("tfrac")) {
+          this.pos++;
+          const a = this.arg();
+          const b = this.arg();
+          return ["Delimiter", ["Add", num, ["Divide", a, b]]];
+        }
+        return num;
+      }
       case "open": {
         this.pos++;
         if (tok.v === "(") {

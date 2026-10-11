@@ -109,3 +109,34 @@ describe("Session history", () => {
     expect((kv.data.get("history") as { home: unknown[] }).home).toHaveLength(0);
   });
 });
+
+describe("alpha lock (L3)", () => {
+  it("alpha is one-shot; alpha twice locks; alpha again unlocks", () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    s.toggleAlpha();
+    s.clearModifiers();
+    expect([s.alpha, s.alphaLock]).toEqual([false, false]);
+    s.toggleAlpha();
+    s.toggleAlpha();
+    expect([s.alpha, s.alphaLock, s.capsLock]).toEqual([true, true, false]);
+    s.clearModifiers();
+    s.clearModifiers();
+    expect([s.alpha, s.shift]).toEqual([true, false]);
+    s.toggleAlpha();
+    expect([s.alpha, s.alphaLock]).toEqual([false, false]);
+  });
+  it("shift, alpha, alpha locks capitals; shift in the lock is one-shot", () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    s.toggleShift();
+    s.toggleAlpha();
+    s.toggleAlpha();
+    s.clearModifiers();
+    expect([s.alpha, s.shift, s.capsLock]).toEqual([true, true, true]);
+    s.toggleShift();
+    expect(s.shift).toBe(false);
+    s.clearModifiers();
+    expect(s.shift).toBe(true);
+    s.toggleAlpha();
+    expect([s.alpha, s.shift, s.alphaLock, s.capsLock]).toEqual([false, false, false, false]);
+  });
+});

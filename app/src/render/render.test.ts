@@ -20,6 +20,12 @@ const cases: [string, string][] = [
   ["\\left(\\begin{array}{cc}\n1 & 2 \\\\\n3 & 4\n\\end{array}\\right) ", "\\begin{pmatrix}1 & 2 \\\\ 3 & 4\\end{pmatrix}"],
   ["\\{-\\sqrt{2},\\sqrt{2}\\}", "\\{-\\sqrt{2},\\sqrt{2}\\}"],
   ["x^{2}\\cdot y", "x^{2}y"],
+  // L1: subscripted names (Giac latex() of x_1+2*x_2, X_1/y_2, x_12^2, ab_1)
+  ["\\mathrm{x\\_1}+2\\cdot \\mathrm{x\\_2}", "x_{1}+2x_{2}"],
+  ["\\frac{\\mathrm{X\\_1}}{\\mathrm{y\\_2}}", "\\frac{X_{1}}{y_{2}}"],
+  ["\\mathrm{x\\_12}^{2}", "x_{12}^{2}"],
+  ["\\mathrm{x\\_1}\\cdot \\mathrm{x\\_2}", "x_{1}x_{2}"],
+  ["\\mathrm{ab\\_1}", "\\mathrm{ab}_{1}"],
   // regression: a \command on the left is one token (Giac prints latex(pi*x) as "\pi \cdot x")
   ["\\pi \\cdot x", "\\pi x"],
   ["2\\cdot \\pi \\cdot x", "2\\pi x"],
@@ -42,6 +48,9 @@ describe("tidyGiacLatex", () => {
 });
 
 describe("homeResultToLatex", () => {
+  it("draws subscripted names with a braced subscript (L1)", () => {
+    expect(homeResultToLatex("2*x_12+y_1")).toBe("2\\cdot x_{12}+y_{1}");
+  });
   it("keeps plain decimals", () => {
     expect(homeResultToLatex("0.333333333333")).toBe("0.333333333333");
     expect(homeResultToLatex("-12.5")).toBe("-12.5");
