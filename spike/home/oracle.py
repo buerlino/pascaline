@@ -8,6 +8,7 @@ the canonical format of spike/app/src/home/homeEval.ts (formatDecimal).
 
   spike/.venv/bin/python spike/home/oracle.py           # check: print cases whose expect differs
   spike/.venv/bin/python spike/home/oracle.py --write   # fill/refresh expect for source: oracle
+  spike/.venv/bin/python spike/home/oracle.py spike/solve/cases.yaml [--write]   # another case file
 
 `source: derived` cases keep their hand-written expect; an oracle expression on them is a cross-check.
 """
@@ -25,7 +26,7 @@ from mpmath import mp
 
 CASES = Path(__file__).with_name("cases.yaml")
 DIGITS = 12
-KEYS = ["id", "angle", "input", "oracle", "expect", "source", "note"]
+KEYS = ["id", "angle", "input", "eq", "var", "guess", "oracle", "expect", "source", "note"]
 
 
 def F(a, b=1):
@@ -49,7 +50,7 @@ def namespace():
     ns = {"F": F, "M": M, "factorial": math.factorial, "mp": mp, "mpf": mp.mpf, "mpc": mp.mpc, "I": mp.mpc(0, 1)}
     for n in ["sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", "asinh", "acosh",
               "atanh", "exp", "ln", "log10", "sqrt", "cbrt", "gamma", "erf", "power", "nsum", "quad",
-              "fabs", "fsum", "e", "pi", "inf"]:
+              "fabs", "fsum", "findroot", "lambertw", "polyroots", "e", "pi", "inf"]:
         ns[n] = _wrap(n) if callable(getattr(mpmath, n)) and n not in ("e", "pi", "inf") else getattr(mp, n)
     deg = lambda x: M(x) * mp.pi / 180
     ns.update(sind=lambda x: mp.sin(deg(x)), cosd=lambda x: mp.cos(deg(x)), tand=lambda x: mp.tan(deg(x)),
@@ -140,7 +141,8 @@ def emit(case: dict) -> str:
 
 
 def main(write: bool) -> int:
-    lines = CASES.read_text().splitlines()
+    cases_path = next((Path(a) for a in sys.argv[1:] if not a.startswith("--")), CASES)
+    lines = cases_path.read_text().splitlines()
     bad = 0
     out = []
     for line in lines:
@@ -166,7 +168,7 @@ def main(write: bool) -> int:
         # --write normalises every case line (all values quoted, fixed key order): run.ts relies on it.
         out.append(emit(case) if write else line)
     if write:
-        CASES.write_text("\n".join(out) + "\n")
+        cases_path.write_text("\n".join(out) + "\n")
     print(f"{'written' if write else 'checked'}; problems: {bad}")
     return 1 if bad and not write else 0
 

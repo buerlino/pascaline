@@ -222,7 +222,7 @@ function isTimeout(out: string): boolean {
   return isError(out) && /interrupt/i.test(out);
 }
 
-/** Round one real part (a Giac expression such as `re(pas_ans)`) to n digits. `big`: an exact
+/** Round one real part (a Giac expression such as `re(pasans)`) to n digits. `big`: an exact
  *  rational whose numerator or denominator has more than maxDigits digits. */
 function roundPart(giac: Giac, part: string, n: number, maxDigits: number): { r: Rounded; big: boolean } | null {
   const v = giac.eval(part);
@@ -251,7 +251,7 @@ function roundValue(
 function floatEval(giac: Giac, input: string, s: HomeSettings): { out: string; ok: boolean } {
   giac.eval(`Digits:=${s.workDigits}`);
   try {
-    const out = giac.eval(`pas_ans:=(${input})`);
+    const out = giac.eval(`pasans:=(${input})`);
     return { out, ok: !isError(out) };
   } finally {
     giac.eval(`Digits:=${s.digits}`);
@@ -265,14 +265,14 @@ export function homeEval(
   now: () => number = () => performance.now(),
 ): HomeResult {
   const t0 = now();
-  const exactOut = giac.eval(`pas_ans:=(${toExactLiterals(input)})`);
+  const exactOut = giac.eval(`pasans:=(${toExactLiterals(input)})`);
   const exactMs = now() - t0;
   const done = (r: Omit<HomeResult, "exactMs" | "totalMs">): HomeResult => ({ ...r, exactMs, totalMs: now() - t0 });
 
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
     const f = floatEval(giac, input, s);
     if (!f.ok) return done({ ok: false, display: f.out, exact, path, approximate: true, tieRisk: false });
-    const v = roundValue(giac, "pas_ans", s.digits, s.maxExactDigits);
+    const v = roundValue(giac, "pasans", s.digits, s.maxExactDigits);
     if (!v) return done({ ok: false, display: f.out, exact, path, approximate: true, tieRisk: false });
     return done({ ok: true, display: v.text, exact, path, approximate: true, tieRisk: v.tieRisk });
   };
@@ -280,7 +280,7 @@ export function homeEval(
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 
-  const v = roundValue(giac, "pas_ans", s.digits, s.maxExactDigits);
+  const v = roundValue(giac, "pasans", s.digits, s.maxExactDigits);
   if (!v) {
     // Not a number (symbolic, list, matrix…): out of scope for this spike; show Giac's text.
     return done({ ok: true, display: exactOut, exact: exactOut, path: "exact", approximate: false, tieRisk: false });
@@ -290,6 +290,6 @@ export function homeEval(
   }
   if (s.guardMode === "reeval-float") return viaFloat("float-big", exactOut);
   // Shown from the exact value (already computed); Ans continues as a float.
-  giac.eval(`pas_ans:=evalf(pas_ans,${s.workDigits})`);
+  giac.eval(`pasans:=evalf(pasans,${s.workDigits})`);
   return done({ ok: true, display: v.text, exact: exactOut, path: "exact-big", approximate: false, tieRisk: v.tieRisk });
 }
