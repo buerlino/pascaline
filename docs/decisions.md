@@ -104,3 +104,9 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Alternatives:** fold case (would clash with CAS variables), or start from the last value used anywhere.
 - **Would change if:** the G2 (items 12–14, 20) shows a different behaviour. Known gap: subscripted names (`x_1`) aren't solvable yet, because our own name check (`IDENT` in `solve.ts`, `analysis.ts`) rejects the underscore. Giac itself reads `x_1` as a plain variable (checked 2026-10-11: `type(x_1)` → identifier); only `<number>_<unit>` is a unit.
 
+
+### 2026-10-11 Minimum WebView: modern Chrome WebView, with an "update" notice below it
+- **Choice:** minSdk stays 24 (Android 7). Below that, we also require a minimum WebView version, the highest floor among our Vite build target, the Emscripten builds (Giac, MicroPython) and MathLive (exact number to be filled in from annabell's check). An inline ES5 check in `app/index.html` feature-detects what we need. On an older WebView it shows one line asking the user to update Android System WebView / Chrome, instead of a blank page.
+- **Why:** the Galaxy S8+ (Android 9) still has its factory WebView, Chrome 72 (2019). Our bundle stops at the first `?.`, and the wasm builds need newer features anyway. On Android 7–9 the WebView is Chrome and updates from the app store (Chrome 138 is the last for Android 8/9), so real users on these devices run a modern WebView. Transpiling down to Chrome 72 would cost bundle size and start-up time on every device (principle 2), and the wasm feature gap would remain.
+- **Alternatives:** a legacy build (`@vitejs/plugin-legacy`, wasm built without exceptions or bulk memory): two builds to test, slower everywhere. Raising minSdk instead: wouldn't help, because the WebView version is what matters.
+- **Would change if:** testers report Android 7–9 devices that can't update their WebView (e.g. no app store) in meaningful numbers.
