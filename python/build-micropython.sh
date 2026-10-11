@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
-# MicroPython (ports/webassembly) -> wasm from the pinned v1.29.0 release tarball (D6: the default Python).
+# MicroPython (ports/webassembly) -> wasm from the pinned v1.29.0 release tarball (D6: the default Python),
+# plus our user C modules from python/modules/ (unmodified upstream tree; USER_C_MODULES).
 #   python/build-micropython.sh [dev|release]      (default: dev)
 #   dev      local emsdk (~/emsdk), fast iteration -> python/_out/dev/micropython.{mjs,wasm}
 #   release  Debian trixie's emscripten in the pinned container, as the engine (P2) -> python/_out/release/
@@ -38,7 +39,7 @@ set -euo pipefail
 tar -xJf "$W/$TARBALL" -C "$W"
 SRC="$W/micropython-$VERSION"
 make -C "$SRC/mpy-cross" -j"$JOBS"
-make -C "$SRC/ports/webassembly" -j"$JOBS" VARIANT="$VARIANT"
+make -C "$SRC/ports/webassembly" -j"$JOBS" VARIANT="$VARIANT" USER_C_MODULES="$W/modules"
 '
 
 OUT="$HERE/_out/$MODE"
@@ -53,6 +54,8 @@ trap cleanup EXIT
 [[ "${NO_LOCK:-0}" == 1 ]] || "$LOCK" acquire host-cpu annabell-py 1800 >&2
 mkdir -p "$SCRATCH/w"
 cp "$DL/$TARBALL" "$SCRATCH/w/"
+# Our user C modules (python/modules/: `_host`, the synchronous calc bridge) are built into the port.
+cp -r "$HERE/modules" "$SCRATCH/w/modules"
 
 case "$MODE" in
   dev)

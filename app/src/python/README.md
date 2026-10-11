@@ -1,0 +1,47 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+# app/src/python: the Python runtime (milestone 3, D6)
+
+MicroPython v1.29.0 (`python/build-micropython.sh`, plus our C module in `python/modules/host`) in its own
+Web Worker, behind `PythonEngine` (`types.ts`). Nothing here loads at app start.
+
+| File | Role |
+|---|---|
+| `types.ts` | `PythonEngine`, `PyResult`/`PyError`/`PyOutput`, graphics `GfxCmd` (agreed with the UI) |
+| `pythonEngine.ts` | main thread: `loadPythonEngine(math)`; starts the worker on first use; Cancel = terminate + new worker |
+| `protocol.ts` | messages between the two |
+| `python.worker.ts` | the worker: loads `python/micropython.mjs` (copied to `app/public/python/` by `npm run engine:copy` or `build.sh`) |
+| `pyHost.ts` | worker side, UI-free (also runs in Node): run/shell, output batching, exceptions → `PyError` |
+| `calcHost.ts` | main thread: answers `calc` calls through the `MathEngine` |
+| `nodePython.ts` | loads MicroPython in Node for tests (`PYTHON_OUT`, else `python/_out/dev`) |
+
+```ts
+const { loadPythonEngine } = await import("../python/pythonEngine.ts");   // lazily, when the Python app opens
+const py = loadPythonEngine(mathEngine);
+py.onOutput((o) => append(o.stream, o.text));
+await py.ready();
+await py.shell("1+1");                 // stdout "2\n" (expressions are echoed, as in a REPL)
+const r = await py.run(src, { file: "main.py" });   // r.error?.line for the editor
+await py.cancel();                     // pending calls reject with PythonCancelled
+```
+
+## How it works, and why
+- **`calc` is synchronous.** `calc.cas("factor(x^2-1)")` is a plain call that returns a string, also inside
+  functions and comprehensions. Our `_host` C module (`python/modules/host/host.c`) uses Emscripten's
+  `EM_ASYNC_JS` to suspend the wasm stack (Asyncify, already part of the upstream build) until the main
+  thread answers. No `await`, no preprocessor, no SharedArrayBuffer and so no COOP/COEP headers.
+- **Every entry into Python is an async `ccall`.** The port's GC finds roots by unwinding the wasm stack
+  with Asyncify (`emscripten_scan_registers`). Upstream's `runPython()`/`runPythonAsync()` use a sync
+  `ccall` and abort at the first GC of an allocating loop, so `PyHost.exec` calls `mp_js_do_exec` itself.
+- **Link at -O2.** Upstream links at -O0 (no `-O` in its link line). `python/modules/host/micropython.mk`
+  adds `-O2` and a 128 KiB Asyncify buffer: wasm 1.12 MB → 0.63 MB, a 1e6-iteration loop 1.3 s → 0.61 s
+  (desktop Chromium, dev build).
+- **Run vs shell.** `run` clears `__main__` and execs the script under its file name; `shell` compiles in
+  `single` mode (echoes expression values), or `exec` for several statements. Tracebacks drop our own frames;
+  `PyError.line` is the innermost frame in the user's file.
+- **Output** goes out on each newline at most every 16 ms, at 8 KiB, before each `calc` call, and at the end.
+- **Recursion limit.** Deep recursion (roughly 50-100 Python frames) overflows the JS stack through
+  Emscripten's setjmp trampolines before MicroPython's own check; it is reported as `RecursionError` and the
+  worker is replaced (globals are lost). Same in the stock upstream build.
+
+Tests: `npx vitest run src/python` (real MicroPython, skipped without a build) and
+`npx playwright test test/python-engine.spec.ts` (the worker in Chromium).
