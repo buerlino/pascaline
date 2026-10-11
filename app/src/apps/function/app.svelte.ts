@@ -56,7 +56,6 @@ export class FunctionApp implements AppInstance {
   /** null until Plot has been drawn once (then y follows the board's aspect). */
   win = $state<PlotWindow | null>(null);
   trace = $state({ on: true, slot: 0, x: "0" });
-  traceY = $state<Cell | undefined>(undefined);
   marks = $state.raw<Mark[]>([]);
   readout = $state<Readout | undefined>(undefined);
   /** Start of a signed area, waiting for the end position (Enter). */
@@ -64,7 +63,6 @@ export class FunctionApp implements AppInstance {
 
   num = $state({ start: "0", step: "1", top: 0, rows: 12, edit: "start" as "start" | "step" });
   numXs = $state.raw<string[]>([]);
-  numCells = $state.raw<Cell[][]>([]);
   numSlots = $state.raw<number[]>([]);
 
   private jobs = $state(0);
@@ -195,15 +193,19 @@ export class FunctionApp implements AppInstance {
     this.save();
   }
 
-  // ---- engine jobs (one at a time per kind; a newer request replaces a waiting one)
+  // ---- engine jobs
+  /** Set when Cancel stopped a job; a queued re-run is then dropped. */
+  private cancelled = false;
   private async job<T>(run: () => Promise<T>): Promise<T | undefined> {
     this.jobs++;
+    this.cancelled = false;
     try {
       await this.host.calc.ready(); // a restored Plot or Num view asks before the engine has started
       return await run();
     } catch (e) {
       // Cancel: keep what is shown. A failed call: nothing to show (the cell or readout stays empty).
-      if (!(e instanceof CalcCancelled)) console.warn("function app:", e);
+      if (e instanceof CalcCancelled) this.cancelled = true;
+      else console.warn("function app:", e);
       return undefined;
     } finally {
       this.jobs--;
@@ -216,6 +218,28 @@ export class FunctionApp implements AppInstance {
     this.latest.set(key, n);
     const r = await this.job(run);
     return this.latest.get(key) === n ? r : undefined;
+  }
+  private flights = new Map<string, { again: boolean }>();
+  /**
+   * One engine call at a time per key: a request while one runs only marks it to run once more, with the
+   * state as it is then (fast scrolling or tracing sends one call per settled screen, not one per key).
+   */
+  private async single(key: string, body: () => Promise<void>): Promise<void> {
+    const f = this.flights.get(key);
+    if (f) {
+      f.again = true;
+      return;
+    }
+    const st = { again: false };
+    this.flights.set(key, st);
+    try {
+      do {
+        st.again = false;
+        await body();
+      } while (st.again && !this.cancelled);
+    } finally {
+      this.flights.delete(key);
+    }
   }
 
   // ---- Num
@@ -237,18 +261,34 @@ export class FunctionApp implements AppInstance {
     const step = parseDec(this.num.step) as Dec;
     return decText(addMul(start, k, step));
   }
-  async refreshNum(): Promise<void> {
+  /** Engine rows by x for the current functions and angle unit (scrolling by a row asks for one row). */
+  numCache = $state.raw<ReadonlyMap<string, Cell[]>>(new Map());
+  private numSig = "";
+  numCell(row: number, col: number): Cell | undefined {
+    return this.numCache.get(this.numXs[row] ?? "")?.[col];
+  }
+  refreshNum(): Promise<void> {
     const slots = this.active;
-    const xs = Array.from({ length: this.num.rows }, (_, i) => this.numX(this.num.top + i));
-    this.numXs = xs;
+    this.numXs = Array.from({ length: this.num.rows }, (_, i) => this.numX(this.num.top + i));
     this.numSlots = slots;
-    if (slots.length === 0) {
-      this.numCells = [];
-      return;
-    }
     const fns = slots.map((i) => this.compiled[i]?.giac ?? "");
-    const r = await this.fresh("num", () => this.fc.table({ fns, xs }, this.host.settings));
-    if (r) this.numCells = r;
+    const sig = `${fns.join(" ; ")}|${this.host.settings.angle}`;
+    if (sig !== this.numSig) {
+      this.numSig = sig;
+      this.numCache = new Map();
+    }
+    if (slots.length === 0) return Promise.resolve();
+    return this.single("num", async () => {
+      const sigNow = this.numSig;
+      const want = this.numXs.filter((x) => !this.numCache.has(x));
+      if (want.length === 0) return;
+      const f = this.numSlots.map((i) => this.compiled[i]?.giac ?? "");
+      const r = await this.job(() => this.fc.table({ fns: f, xs: want }, this.host.settings));
+      if (!r || sigNow !== this.numSig) return;
+      const next = new Map(this.numCache.size > 400 ? [] : this.numCache);
+      want.forEach((x, i) => next.set(x, r[i] ?? []));
+      this.numCache = next;
+    });
   }
 
   // ---- Plot: window
@@ -305,15 +345,25 @@ export class FunctionApp implements AppInstance {
     this.save();
     void this.refreshTrace();
   }
-  async refreshTrace(): Promise<void> {
-    const f = this.compiled[this.trace.slot]?.giac ?? "";
-    if (f === "" || !this.active.includes(this.trace.slot)) {
-      this.traceY = undefined;
-      return;
-    }
-    this.traceY = undefined;
-    const r = await this.fresh("trace", () => this.fc.table({ fns: [f], xs: [this.trace.x] }, this.host.settings));
-    if (r) this.traceY = r[0]?.[0];
+  /** The engine's y at the trace position, with the position and function it belongs to. */
+  private traceAt = $state.raw<{ x: string; slot: number; y: Cell } | undefined>(undefined);
+  get traceY(): Cell | undefined {
+    const a = this.traceAt;
+    return a && a.x === this.trace.x && a.slot === this.trace.slot ? a.y : undefined;
+  }
+  set traceY(y: Cell | undefined) {
+    this.traceAt = y ? { x: this.trace.x, slot: this.trace.slot, y } : undefined;
+  }
+  refreshTrace(): Promise<void> {
+    return this.single("trace", async () => {
+      const slot = this.trace.slot;
+      const x = this.trace.x;
+      const f = this.compiled[slot]?.giac ?? "";
+      if (f === "" || !this.active.includes(slot) || this.traceY) return;
+      const r = await this.job(() => this.fc.table({ fns: [f], xs: [x] }, this.host.settings));
+      const y = r?.[0]?.[0];
+      if (y) this.traceAt = { x, slot, y };
+    });
   }
 
   // ---- Plot: analysis (maths in the engine, gorge)
@@ -367,7 +417,9 @@ export class FunctionApp implements AppInstance {
 
   private showAnalysis(kind: string, r: AnalysisOutcome, other?: number, a?: string, b?: string): void {
     if (!r.ok) {
-      this.readout = { lines: [], info: t(r.error === "no-root" ? "fcn.noResult" : "fcn.failed"), warn: true };
+      // e.g. a sign change at a pole: not a root. The engine's line says what it found.
+      const msg = t(r.error === "no-root" && kind !== "area" ? "fcn.noResult" : "fcn.failed");
+      this.readout = { lines: [], info: r.info ? `${msg} ${r.info}` : msg, warn: true };
       return;
     }
     const lines: Readout["lines"] = [];
