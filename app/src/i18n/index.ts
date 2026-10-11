@@ -3,9 +3,10 @@ import { en, type MessageKey } from "./en.ts";
 
 export type { MessageKey };
 
-/** Look up a message. Only English exists so far; other tables plug in here. */
-export function t(key: MessageKey): string {
-  return en[key];
+/** Look up a message; `{name}` placeholders are filled from `vars`. Only English exists so far. */
+export function t(key: MessageKey, vars?: Readonly<Record<string, string>>): string {
+  const m: string = en[key];
+  return vars ? m.replace(/\{(\w+)\}/g, (all, k: string) => vars[k] ?? all) : m;
 }
 
 /** Resolve a keyboard legend: "$key.shift" is a message key, anything else is shown as is. */

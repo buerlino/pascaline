@@ -5,7 +5,7 @@
 import type { Calc, CalcSettings } from "../calc/port.ts";
 import type { Kv } from "../state/storage.ts";
 import { appEntry, isAppId } from "./registry.ts";
-import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type ViewId } from "./types.ts";
+import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type TextInput, type ViewId } from "./types.ts";
 
 /** The entry line as the shell sees it (EntryController in the app, a stub in tests). */
 export interface EntryLine {
@@ -56,6 +56,10 @@ export class AppShell {
     const a = this.instance;
     return a ? a.entryLabel(this.view) : undefined;
   }
+  /** The open view takes keys as text (Python editor and shell). */
+  get takesText(): boolean {
+    return this.instance?.takesText?.(this.view) ?? false;
+  }
   get showsEntry(): boolean {
     return this.app === null || this.entryLabel !== undefined;
   }
@@ -75,6 +79,7 @@ export class AppShell {
         this.entryBase = latex;
         this.entry.set(latex);
       },
+      showView: (v: ViewId) => void this.setView(v),
     };
   }
 
@@ -154,7 +159,11 @@ export class AppShell {
     const a = this.instance;
     if (a) a.enter(this.view, latex);
   }
-  nav(dir: NavDir): boolean {
+  /** A key for a view with its own text input. */
+  input(key: TextInput): void {
+    this.instance?.input?.(this.view, key);
+  }
+    nav(dir: NavDir): boolean {
     const a = this.instance;
     return a?.nav?.(this.view, dir, this.entryEdited) ?? false;
   }
@@ -183,7 +192,8 @@ export class AppShell {
       return true;
     }
     if (!this.busy) return false;
-    await this.calc.cancel();
+    const own = Object.values(this.loaded).find((l) => l.instance.busy && l.instance.cancel);
+    await (own?.instance.cancel ? own.instance.cancel() : this.calc.cancel());
     return true;
   }
   flush(): void {

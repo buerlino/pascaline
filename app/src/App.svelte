@@ -8,7 +8,7 @@
   import type { EntryController } from "./entry/controller.ts";
   import { t, type MessageKey } from "./i18n/index.ts";
   import Keypad from "./keyboard/Keypad.svelte";
-  import { actionFor, type ActionBody, type Key } from "./keyboard/keyboard.ts";
+  import { actionFor, keyboard, pythonText, type ActionBody, type Key } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
@@ -123,6 +123,7 @@
       } else shell.pick(i);
       return;
     }
+    if (shell.takesText) return pressText(key);
     const action = actionFor(key, session.shift, session.alpha, session.settings.entry === "line");
     session.clearModifiers();
     if (!action) return;
@@ -133,6 +134,23 @@
       if (!shell.showsEntry) return; // a view without an entry line (Plot) ignores typing
     }
     entry.run(action, key.id);
+  }
+
+  /** A view with its own text input (Python editor and shell): the Python layer, else typed text and cursor keys. */
+  function pressText(key: Key): void {
+    const text = pythonText(keyboard, key, session.shift, session.alpha);
+    const action = actionFor(key, session.shift, session.alpha);
+    session.clearModifiers();
+    if (text !== undefined) return shell.input({ kind: "text", text });
+    if (!action) return;
+    if (action.kind === "special") {
+      if (action.name === "enter") return shell.input({ kind: "enter" });
+      if (action.name === "clear") return shell.input({ kind: "cmd", name: "clear" });
+      return special(action.name);
+    }
+    if (action.kind === "type") return shell.input({ kind: "text", text: action.text });
+    if (action.kind === "cmd") return shell.input({ kind: "cmd", name: action.name });
+    // a LaTeX template means nothing in Python
   }
 
   const showSoftCancel = $derived(session.busy || shell.busy);
@@ -165,7 +183,7 @@
         <span class="appname" data-app={shell.app}>{appName}</span>
         {#each appViews as v (v)}
           <button type="button" role="tab" aria-selected={shell.view === v} data-view={v} onclick={() => void shell.setView(v)}
-            >{t(`view.${v}`)}</button>
+            >{shell.instance?.viewLabel?.(v) ?? t(`view.${v}`)}</button>
         {/each}
       {/if}
     </div>
@@ -215,7 +233,7 @@
     <div class="field" bind:this={host}></div>
   </div>
 
-  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} onpress={press} />
+  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} python={shell.takesText} onpress={press} />
 
   {#if session.settingsOpen}<Settings {session} />{/if}
 </main>

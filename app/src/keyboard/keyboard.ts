@@ -42,6 +42,14 @@ export interface Keyboard {
   readonly rows: number;
   readonly keys: readonly Key[];
   readonly byId: ReadonlyMap<string, Key>;
+  /** The Python layer (keyboard.yaml `python:`): what keys type in the Python app's editor and shell. */
+  readonly python: ReadonlyMap<string, PythonKey>;
+}
+
+/** A key in the Python layer: plain text per layer (primary, shift) and the legends shown for it. */
+export interface PythonKey {
+  readonly text: Readonly<Partial<Record<"primary" | "shift", string>>>;
+  readonly label: Readonly<Partial<Record<"primary" | "shift", string>>>;
 }
 
 export class KeyboardSpecError extends Error {}
@@ -142,7 +150,44 @@ export function loadKeyboard(doc: unknown): Keyboard {
     byId.set(id, key);
   }
   const rows = keys.reduce((m, k) => Math.max(m, k.row + 1), 0);
-  return { columns, rows, keys, byId };
+  return { columns, rows, keys, byId, python: loadPython(doc["python"], byId) };
+}
+
+function loadPython(list: unknown, byId: ReadonlyMap<string, Key>): Map<string, PythonKey> {
+  const out = new Map<string, PythonKey>();
+  if (list === undefined) return out;
+  if (!Array.isArray(list)) throw new KeyboardSpecError("keyboard.yaml: 'python' must be a list");
+  for (const item of list) {
+    if (!isObj(item)) throw new KeyboardSpecError("python layer: every entry must be a mapping");
+    const id = str(item, "key", "python layer");
+    const where = `python key '${id}'`;
+    if (!byId.has(id)) throw new KeyboardSpecError(`${where}: no such key`);
+    if (out.has(id)) throw new KeyboardSpecError(`${where}: duplicate`);
+    const text: Partial<Record<"primary" | "shift", string>> = {};
+    const label: Partial<Record<"primary" | "shift", string>> = {};
+    const labels = isObj(item["label"]) ? item["label"] : {};
+    for (const layer of ["primary", "shift"] as const) {
+      if (item[layer] === undefined) continue;
+      text[layer] = str(item, layer, where);
+      label[layer] = typeof labels[layer] === "string" ? (labels[layer] as string) : (text[layer] as string).trim();
+    }
+    if (!text.primary && !text.shift) throw new KeyboardSpecError(`${where}: needs primary or shift text`);
+    if (!SOURCES.includes(str(item, "source", where) as Source)) throw new KeyboardSpecError(`${where}: unknown source`);
+    out.set(id, { text, label });
+  }
+  return out;
+}
+
+/** What a key types in the Python layer, or undefined to fall back to its normal action. Alpha keeps letters. */
+export function pythonText(kb: Keyboard, key: Key, shift: boolean, alpha: boolean): string | undefined {
+  if (alpha) return undefined;
+  const p = kb.python.get(key.id);
+  return shift ? p?.text.shift : p?.text.primary;
+}
+
+/** The legend of a key in the Python layer (undefined: the normal legend). */
+export function pythonLabel(kb: Keyboard, key: Key, layer: "primary" | "shift"): string | undefined {
+  return kb.python.get(key.id)?.label[layer];
 }
 
 /** The shipped layout. */
