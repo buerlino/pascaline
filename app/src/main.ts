@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+import "./polyfills.ts";
 import { mark } from "./marks.ts";
 mark("js-start");
 import "mathlive/static.css";
