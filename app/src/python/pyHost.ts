@@ -142,12 +142,12 @@ def _giac(v):
 `;
 
 /** A host-call failure raised in Python as the named exception type (default ValueError). */
+// No TypeScript parameter properties in this folder: Node runs these files with type stripping (golden runner).
 export class HostError extends Error {
-  constructor(
-    readonly pyType: "ValueError" | "NameError" | "TypeError",
-    message: string,
-  ) {
+  readonly pyType: "ValueError" | "NameError" | "TypeError";
+  constructor(pyType: "ValueError" | "NameError" | "TypeError", message: string) {
     super(message);
+    this.pyType = pyType;
     this.name = "HostError";
   }
 }
@@ -155,10 +155,12 @@ export class HostError extends Error {
 class OutStream {
   private bytes: number[] = [];
   private readonly dec = new TextDecoder();
-  constructor(
-    private readonly stream: "stdout" | "stderr",
-    private readonly emit: (o: PyOutput) => void,
-  ) {}
+  private readonly stream: "stdout" | "stderr";
+  private readonly emit: (o: PyOutput) => void;
+  constructor(stream: "stdout" | "stderr", emit: (o: PyOutput) => void) {
+    this.stream = stream;
+    this.emit = emit;
+  }
   push(b: Uint8Array): void {
     for (const c of b) this.bytes.push(c);
   }
@@ -215,11 +217,12 @@ export class PyHost {
   private gfx: GfxCmd[] = [];
   private busy: Promise<unknown> = Promise.resolve();
 
-  private constructor(
-    private readonly mp: MicroPython,
-    private readonly hooks: PyHostHooks,
-    streams: { out: OutStream; err: OutStream },
-  ) {
+  private readonly mp: MicroPython;
+  private readonly hooks: PyHostHooks;
+
+  private constructor(mp: MicroPython, hooks: PyHostHooks, streams: { out: OutStream; err: OutStream }) {
+    this.mp = mp;
+    this.hooks = hooks;
     this.out = streams.out;
     this.err = streams.err;
     const M = mp._module;

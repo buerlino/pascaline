@@ -3,7 +3,7 @@
 // build that ships (CLAUDE.md). Exit 0 only if every stage passes.
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
-//   ONLY=home,parser npm run golden                 # stages: interrupt, home, solve, function, bench, parser
+//   ONLY=home,parser npm run golden                 # stages: interrupt, home, solve, function, bench, parser, python
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches, same in every round, median ≤ 500 ms
@@ -12,6 +12,8 @@
 //   function   Function analysis and Num table (analysis.ts), same rules
 //   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed
 //   parser     LaTeX → Giac (our parser) equals the intended expression, decided by Giac; gaps never fail
+//   python     tests/golden/python.yaml: MicroPython ($PYTHON_OUT, else python/_out/dev) with calc on this Giac;
+//              output, errors with lines, calc, Cancel (worker terminated, fresh runtime works), graphics
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -22,6 +24,11 @@ import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
 import { latexToGiac, resetUserFunctions } from "../src/input/latex-to-giac.ts";
+import { Worker } from "node:worker_threads";
+import { createCalcHost } from "../src/python/calcHost.ts";
+import { loadNodeMath } from "../src/python/nodeMath.ts";
+import { loadNodePyHost, micropythonAvailable, micropythonMjsPath } from "../src/python/nodePython.ts";
+import type { GfxCmd, PyResult } from "../src/python/types.ts";
 
 type Expect = string | Expect[];
 
@@ -50,8 +57,7 @@ interface Case {
   options?: { decimalComma?: boolean; realOddRoots?: boolean };
   /** parser.yaml: entries typed before this one (e.g. a function definition, L6). */
   before?: string[];
-  /** Why a `status: gap` case stays open. */
-  why?: string;
+  note?: string;
 }
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -273,6 +279,98 @@ async function stageParser(): Promise<void> {
   );
 }
 
+interface PyCase {
+  id: string;
+  kind: "run" | "shell" | "cancel";
+  code: string;
+  file?: string;
+  before?: string[];
+  home?: string[];
+  expect: { stdout?: string; error?: { type: string; line?: number }; gfx?: unknown[]; home?: Record<string, string> };
+}
+
+/** Runs `code` in its own worker thread (its own JS realm, as each app worker is). With `cancelAfterMs`, the
+ *  thread is terminated then, like Cancel; `finished` stays empty if the script was still running. */
+async function pyWorker(code: string, cancelAfterMs?: number): Promise<{ finished: string; stdout: string; terminateMs: number }> {
+  const w = new Worker(new URL("./python-cancel-worker.ts", import.meta.url), { workerData: { code, mjs: micropythonMjsPath() } });
+  let finished = "";
+  let stdout = "";
+  const done = new Promise<void>((resolve, reject) => {
+    w.on("message", (m: string) => {
+      if (m.startsWith("out:")) stdout += m.slice(4);
+      else if (m.startsWith("finished")) {
+        finished = m;
+        resolve();
+      }
+    });
+    w.on("error", reject);
+  });
+  await new Promise<void>((resolve, reject) => {
+    w.on("message", (m: string) => m === "ready" && resolve());
+    w.on("error", reject);
+  });
+  if (cancelAfterMs === undefined) {
+    await done;
+    await w.terminate();
+    return { finished, stdout, terminateMs: 0 };
+  }
+  await new Promise((r) => setTimeout(r, cancelAfterMs));
+  const t0 = performance.now();
+  await w.terminate();
+  return { finished, stdout, terminateMs: performance.now() - t0 };
+}
+
+async function stagePython(): Promise<void> {
+  if (!micropythonAvailable()) {
+    report("python", false, `no MicroPython at ${micropythonMjsPath()} (python/build-micropython.sh dev, or set PYTHON_OUT)`);
+    return;
+  }
+  const doc = parse(readFileSync(`${root}tests/golden/python.yaml`, "utf8")) as { cases: PyCase[] };
+  const { math, host } = await loadNodeMath();
+  let out = "";
+  let gfx: GfxCmd[] = [];
+  const py = await loadNodePyHost({ output: (o) => (out += o.stream === "stdout" ? o.text : ""), hostCall: createCalcHost(math), graphics: (b) => gfx.push(...b) });
+  let pass = 0;
+  const cancelMs: number[] = [];
+  for (const c of doc.cases) {
+    const problems: string[] = [];
+    for (const h of c.home ?? []) host.home(h, defaultHomeSettings);
+    for (const b of c.before ?? []) await py.shell(b);
+    out = "";
+    gfx = [];
+    let r: PyResult | undefined;
+    if (c.kind === "cancel") {
+      const k = await pyWorker(c.code, 300);
+      cancelMs.push(k.terminateMs);
+      if (k.finished) problems.push(`the script ended by itself (${k.finished})`);
+      // After Cancel the app starts a fresh runtime; it must work.
+      const fresh = await pyWorker("print(1)");
+      out = fresh.stdout;
+      r = { ok: fresh.finished === "finished ok", ms: 0 };
+    } else {
+      r = c.kind === "shell" ? await py.shell(c.code) : await py.run(c.code, c.file);
+    }
+    const e = c.expect;
+    if (e.stdout !== undefined && out !== e.stdout) {
+      problems.push(`stdout ${JSON.stringify(out)}, want ${JSON.stringify(e.stdout)}`);
+    }
+    if (e.error) {
+      if (r.ok) problems.push(`no error, want ${e.error.type}`);
+      else if (r.error?.type !== e.error.type || (e.error.line !== undefined && r.error.line !== e.error.line))
+        problems.push(`error ${r.error?.type} line ${r.error?.line}, want ${e.error.type} line ${e.error.line}`);
+    } else if (!r.ok) problems.push(`error ${r.error?.type}: ${r.error?.message}`);
+    if (e.gfx && JSON.stringify(gfx) !== JSON.stringify(e.gfx)) problems.push(`gfx ${JSON.stringify(gfx)}, want ${JSON.stringify(e.gfx)}`);
+    for (const [input, display] of Object.entries(e.home ?? {})) {
+      const got = host.home(input, defaultHomeSettings).result.display;
+      if (got !== display) problems.push(`Home ${input} -> ${got}, want ${display}`);
+    }
+    if (problems.length === 0) pass++;
+    else console.log(`  python ${c.id}: ${problems.join("; ")}`);
+  }
+  const ms = cancelMs.length ? `; Cancel terminate median ${median(cancelMs).toFixed(1)} ms (desktop)` : "";
+  report("python", pass === doc.cases.length, `${pass}/${doc.cases.length} match${ms}`);
+}
+
 console.log(`golden: engine ${mjs}`);
 if (want("interrupt")) stageInterrupt();
 if (want("home")) await stageHome();
@@ -280,6 +378,7 @@ if (want("solve")) await stageCases("solve", "solve.yaml", solveCase);
 if (want("function")) await stageCases("function", "function.yaml", (host, _g, c) => functionCase(host, c));
 if (want("bench")) await stageBench();
 if (want("parser")) await stageParser();
+if (want("python")) await stagePython();
 const failed = summary.filter((s) => !s.ok);
 console.log(failed.length ? `\nGOLDEN GATE FAILED: ${failed.map((s) => s.stage).join(", ")}` : "\nGOLDEN GATE PASSED");
 process.exit(failed.length ? 1 : 0);

@@ -316,8 +316,8 @@ cases:
   - { id: "assign-02", latex: "f\\left(x\\right):=x^{2}", expect: "f(x):=x^2", source: "derived", group: "assign" }
   # --- gaps
   - { id: "gaps-01", latex: "\\sqrt[3]{-8}", expect: "-2", source: "derived", g2: 4, group: "gaps" }
-  - { id: "gaps-02", latex: "x^y^z", expect: "x^(y^z)", source: "derived", status: "gap", group: "gaps", why: "not keyboard input: MathLive never writes a double superscript (the x^y key nests x^{y^{z}}, which parses)" }
-  - { id: "gaps-03", latex: "12\\,\\mathrm{m}", expect: "12*m", source: "derived", status: "gap", group: "gaps", why: "units are not part of milestones 1-3; how a unit is typed and shown waits for the units feature (not L6)" }
+  - { id: "gaps-02", latex: "x^y^z", expect: "x^(y^z)", source: "derived", status: "gap", group: "gaps", note: "not keyboard input: MathLive never writes a double superscript (the x^y key nests x^{y^{z}}, which parses)" }
+  - { id: "gaps-03", latex: "12\\,\\mathrm{m}", expect: "12*m", source: "derived", status: "gap", group: "gaps", note: "units are not part of milestones 1-3; how a unit is typed and shown waits for the units feature (not L6)" }
   - { id: "gaps-04", latex: "\\left\\{1,2,3\\right\\}", expect: "[1,2,3]", source: "derived", group: "gaps" }
   # --- L6 (gorge, 2026-10-11)
   - { id: "l6-root-01", latex: "\\sqrt[3]{-27}", expect: "-3", source: "assumed", g2: 4, group: "l6" }

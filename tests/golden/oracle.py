@@ -34,7 +34,7 @@ CHECKLIST = HERE.parent.parent / "tests/golden/G2-CHECKLIST.md"
 DIGITS = 12
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "assumed"}
 KEYS = ["id", "kind", "input", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
-        "expect", "source", "g2", "status", "group", "cat", "note"]
+        "options", "before", "code", "file", "home", "expect", "source", "g2", "status", "group", "cat", "note"]
 CASE_LINE = re.compile(r"^\s*- (\{.*\})\s*$")
 
 

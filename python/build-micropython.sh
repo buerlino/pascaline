@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
 # MicroPython (ports/webassembly) -> wasm from the pinned v1.29.0 release tarball (D6: the default Python),
-# plus our user C modules from python/modules/ (unmodified upstream tree; USER_C_MODULES).
+# plus our user C modules from python/modules/ and our variant python/variant/pascaline (unmodified upstream
+# tree; USER_C_MODULES and VARIANT_DIR).
 #   python/build-micropython.sh [dev|release]      (default: dev)
 #   dev      local emsdk (~/emsdk), fast iteration -> python/_out/dev/micropython.{mjs,wasm}
 #   release  Debian trixie's emscripten in the pinned container, as the engine (P2) -> python/_out/release/
-# Env: PASCALINE_PY_DL_DIR (tarball cache, default python/_downloads), VARIANT (default standard), JOBS (default 8),
+# Env: PASCALINE_PY_DL_DIR (tarball cache, default python/_downloads), VARIANT (default pascaline = python/variant/pascaline; an upstream name like standard also works), JOBS (default 8),
 #      NO_LOCK=1 (caller holds the host-cpu lock), CONTAINER_ENGINE (default podman), KEEP_SCRATCH=1.
 # Safety: the container only ever sees a scratch copy; the :Z mount relabels files for SELinux, so never mount the checkout.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 MODE="${1:-dev}"
-VARIANT="${VARIANT:-standard}"
+VARIANT="${VARIANT:-pascaline}"
 JOBS="${JOBS:-8}"
 CE="${CONTAINER_ENGINE:-podman}"
 DL="${PASCALINE_PY_DL_DIR:-$HERE/_downloads}"
@@ -39,7 +40,8 @@ set -euo pipefail
 tar -xJf "$W/$TARBALL" -C "$W"
 SRC="$W/micropython-$VERSION"
 make -C "$SRC/mpy-cross" -j"$JOBS"
-make -C "$SRC/ports/webassembly" -j"$JOBS" VARIANT="$VARIANT" USER_C_MODULES="$W/modules"
+if [[ -d "$W/variant/$VARIANT" ]]; then VA="VARIANT_DIR=$W/variant/$VARIANT"; else VA="VARIANT=$VARIANT"; fi
+make -C "$SRC/ports/webassembly" -j"$JOBS" "$VA" USER_C_MODULES="$W/modules"
 '
 
 OUT="$HERE/_out/$MODE"
@@ -56,6 +58,7 @@ mkdir -p "$SCRATCH/w"
 cp "$DL/$TARBALL" "$SCRATCH/w/"
 # Our user C modules (python/modules/: `_host`, the synchronous calc bridge) are built into the port.
 cp -r "$HERE/modules" "$SCRATCH/w/modules"
+cp -r "$HERE/variant" "$SCRATCH/w/variant"
 
 case "$MODE" in
   dev)

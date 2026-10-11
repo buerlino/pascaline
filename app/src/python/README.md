@@ -55,9 +55,13 @@ The compatibility module (`COMPAT_MODULE`, the name scripts for the reference ca
 - **Every entry into Python is an async `ccall`.** The port's GC finds roots by unwinding the wasm stack
   with Asyncify (`emscripten_scan_registers`). Upstream's `runPython()`/`runPythonAsync()` use a sync
   `ccall` and abort at the first GC of an allocating loop, so `PyHost.exec` calls `mp_js_do_exec` itself.
-- **Link at -O2.** Upstream links at -O0 (no `-O` in its link line). `python/modules/host/micropython.mk`
-  adds `-O2` and a 128 KiB Asyncify buffer: wasm 1.12 MB → 0.63 MB, a 1e6-iteration loop 1.3 s → 0.61 s
-  (desktop Chromium, dev build).
+- **Our variant** (`python/variant/pascaline`, built via `VARIANT_DIR`, upstream tree untouched): upstream's
+  standard variant plus `-O2` at link (upstream links at -O0), a 128 KiB Asyncify buffer, and no JS hook
+  (a Ctrl-C poll we don't need; under Node it fails in worker threads). wasm 1.12 MB → 0.63 MB, a
+  1e6-iteration loop 1.3 s → 0.61 s (desktop Chromium, dev build).
+- **One MicroPython per JS realm.** Upstream's JS proxies use a global `Module`, so a second instance in the
+  same realm breaks the first one's JS modules (`_gfx`). The app has one per worker; the golden runner uses
+  worker threads where it needs more than one.
 - **Run vs shell.** `run` clears `__main__` and execs the script under its file name; `shell` compiles in
   `single` mode (echoes expression values), or `exec` for several statements. Tracebacks drop our own frames;
   `PyError.line` is the innermost frame in the user's file.
