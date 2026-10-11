@@ -9,11 +9,16 @@
     items,
     display,
     onrecall,
+    oninsert,
     oncancel,
   }: {
     items: HistoryItem[];
     display: (item: HistoryItem) => { text: string; latex: string };
-    onrecall: (latex: string) => void; oncancel: () => void } = $props();
+    onrecall: (latex: string) => void;
+    /** L5: tapping a result puts it on the entry line at the cursor. */
+    oninsert: (latex: string) => void;
+    oncancel: () => void;
+  } = $props();
 
   let scroller: HTMLElement | undefined = $state();
 
@@ -83,9 +88,10 @@
           <span class="error" role="alert">{item.text}</span>
         {:else}
           {@const d = display(item)}
-          <span class="result" data-text={d.text}>
+          <button type="button" class="result" data-text={d.text} title={t("history.insert")}
+            onpointerdown={(e) => e.preventDefault()} onclick={() => oninsert(d.latex)}>
             <Math latex={d.latex} />
-          </span>
+          </button>
           {#if item.approximate}<span class="note">{t("history.approximate")}</span>{/if}
         {/if}
       </div>
@@ -139,6 +145,8 @@
     overflow-x: auto;
   }
   .result {
+    all: unset;
+    cursor: pointer;
     color: var(--text);
   }
   .note,

@@ -5,6 +5,14 @@ import type { MathfieldElement } from "mathlive";
 import type { ActionBody } from "../keyboard/keyboard.ts";
 import { mathlive } from "../render/mathlive.svelte.ts";
 
+/** The literal caret of the one-line mode, as MathLive serialises it (the parser reads it as a power). */
+export const CARET = '\\char"5E ';
+
+const FRAC = "\\frac{#@}{#?}";
+const MIXED = "\\tfrac{#?}{#?}";
+/** A whole number right before the cursor (not part of a decimal, a name or a group). */
+const WHOLE_BEFORE = /(?:^|[^\d.}A-Za-z_^])\d+$/;
+
 export class EntryController {
   private mf: MathfieldElement | undefined;
   private host: HTMLElement | undefined;
@@ -13,6 +21,8 @@ export class EntryController {
   /** Called for a physical Enter / Escape (desktop convenience). */
   onEnter: () => void = () => {};
   onEscape: () => void = () => {};
+  /** One-line entry mode (settings): a typed ^ is a literal caret, not a raised exponent (L4). */
+  lineMode = false;
 
   /** Resolves when the entry line is on the page and the queued keys have been replayed. */
   ready: Promise<void> = Promise.resolve();
@@ -56,6 +66,17 @@ export class EntryController {
     const enforce = (): void => this.forceNoSystemKeyboard();
     void customElements.whenDefined("math-field").then(() => requestAnimationFrame(enforce));
     mf.addEventListener("focusin", enforce);
+    // Capture on the host runs before MathLive's own handler inside the shadow root.
+    mf.addEventListener(
+      "keydown",
+      (ev) => {
+        if (ev.key !== "^" || !this.lineMode) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        mf.insert(CARET, { format: "latex" });
+      },
+      { capture: true },
+    );
     mf.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter") {
         ev.preventDefault();
@@ -105,19 +126,46 @@ export class EntryController {
     this.mf.focus();
     this.mf.executeCommand("moveToMathfieldEnd");
   }
-  focus(): void {
+  /** Insert LaTeX at the cursor (a history result, L5). */
+  insert(latex: string): void {
+    if (!this.mf) {
+      this.pendingValue = (this.pendingValue ?? "") + latex;
+      return;
+    }
+    this.mf.insert(latex, { format: "latex", selectionMode: "after" });
+    this.mf.focus();
+  }
+    focus(): void {
     this.mf?.focus();
   }
 
-  /** Run a type / insert / cmd action. Specials belong to the app and are not handled here. */
-  run(a: ActionBody): void {
+  /** The field value right after the a/b key made a fraction from a whole number (see run), else undefined. */
+  private mixedAfter: string | undefined;
+
+  /**
+   * Run a type / insert / cmd action. Specials belong to the app and are not handled here.
+   * `keyId` "frac" (a/b): pressed again right after it turned a whole number into a fraction's numerator,
+   * it makes a mixed number instead (2 a/b a/b 1 ▶ 2 → 2½, as \tfrac; L2, assumed, G2 item 17).
+   */
+  run(a: ActionBody, keyId?: string): void {
     if (a.kind === "special") return;
     if (!this.mf) {
       this.queue.push(a);
       return;
     }
-    this.apply(this.mf, a);
-    this.mf.focus();
+    const mf = this.mf;
+    const isFrac = keyId === "frac" && a.kind === "insert" && a.latex === FRAC;
+    if (isFrac && this.mixedAfter !== undefined && this.mixedAfter === mf.value) {
+      this.mixedAfter = undefined;
+      mf.executeCommand("undo");
+      mf.insert(MIXED, { selectionMode: "placeholder", format: "latex" });
+      mf.focus();
+      return;
+    }
+    const whole = isFrac && WHOLE_BEFORE.test(mf.getValue(0, mf.position, "latex"));
+    this.apply(mf, a);
+    this.mixedAfter = whole ? mf.value : undefined;
+    mf.focus();
   }
 
   private apply(mf: MathfieldElement, a: ActionBody): void {
