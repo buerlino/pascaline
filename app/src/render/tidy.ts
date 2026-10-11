@@ -85,9 +85,16 @@ const GIAC_FUNCS: Record<string, string> = {
   atanh: "\\operatorname{artanh}",
 };
 
-/** A product sign between a factor and a letter, command or bracket is implicit in textbook maths. */
+/**
+ * A product sign between a factor and a letter, command or bracket is implicit in textbook maths.
+ * The left factor is a whole token: a \command (\pi, \alpha, \infty), a digit, a single letter that is not
+ * the tail of a command, "}" or "\right)". A command followed by a letter keeps a space (\pi x).
+ */
 function implicitProducts(s: string): string {
-  return s.replace(/(\d|[A-Za-z]|\}|\\right\))\s*\\cdot\s*(?=(?:\\left\(|\\(?!cdot|times)[A-Za-z]+|[A-Za-z]))/g, (_, left: string) => left);
+  const left = String.raw`(\\[A-Za-z]+|\d|(?<!\\[A-Za-z]*)[A-Za-z]|\}|\\right\))`;
+  const right = String.raw`(?=(\\left\(|\\(?!cdot|times)[A-Za-z]+|[A-Za-z]))`;
+  return s.replace(new RegExp(`${left}\\s*\\\\cdot\\s*${right}`, "g"), (_, l: string, r: string) =>
+    l.startsWith("\\") && l !== "\\right)" && /^[A-Za-z]/.test(r) ? `${l} ` : l);
 }
 
 export function tidyGiacLatex(raw: string): string {
