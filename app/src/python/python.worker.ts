@@ -21,7 +21,7 @@ async function load(baseUrl: string): Promise<PyHost> {
   // Absolute URL: Vite's dev server rewrites root-relative dynamic imports (adds ?import), which breaks public/ files.
   const url = new URL(`${baseUrl}python/micropython.mjs`, self.location.href).href;
   const { loadMicroPython } = (await import(/* @vite-ignore */ url)) as { loadMicroPython: LoadMicroPython };
-  return PyHost.load(loadMicroPython, { output: (o) => post({ type: "out", ...o }), hostCall }, new URL("micropython.wasm", url).href);
+  return PyHost.load(loadMicroPython, { output: (o) => post({ type: "out", ...o }), hostCall, graphics: (batch) => post({ type: "gfx", batch }) }, new URL("micropython.wasm", url).href);
 }
 
 self.onmessage = async (ev: MessageEvent<PyRequest>) => {

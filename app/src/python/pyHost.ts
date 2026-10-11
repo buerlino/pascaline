@@ -8,13 +8,15 @@
 //   so we never use it for user code.
 // - `calc` is synchronous for the script: our `_host` C module (python/modules/host) suspends the wasm
 //   stack (EM_ASYNC_JS) until `hostCall` resolves. No `await`, no SharedArrayBuffer.
-import type { PyError, PyOutput, PyResult } from "./types.ts";
+import type { GfxCmd, PyError, PyOutput, PyResult } from "./types.ts";
+import { DRAW_PY, COMPAT_PY, COMPAT_MODULE } from "./graphics.ts";
 
 /** The part of upstream's loadMicroPython() result that we use. */
 export interface MicroPython {
   _module: MpModule;
   FS: { mkdirTree(path: string): void; writeFile(path: string, data: string): void };
   runPython(code: string): unknown;
+  registerJsModule(name: string, module: object): void;
 }
 interface MpModule {
   ccall(name: string, ret: "number", types: string[], args: number[], opts: { async: true }): Promise<number>;
@@ -46,14 +48,18 @@ export interface PyHostHooks {
   output(o: PyOutput): void;
   /** A `calc`/host call from Python: resolve with a JSON-serialisable value, reject with a message. */
   hostCall(fn: string, args: unknown[]): Promise<unknown>;
-  /** Called before each host call and at the end of every run (graphics flush point). */
-  flush?(): void;
+  /** A batch of graphics commands (every 256 commands, at most every 16 ms with output, before each
+   *  host call and at the end of every call). */
+  graphics?(batch: GfxCmd[]): void;
 }
+
+/** Graphics commands per batch at most. */
+export const GFX_BATCH = 256;
 
 export const SHELL_FILE = "<shell>";
 export const SCRIPT_FILE = "<script>";
 /** Files whose frames are ours, not the user's: dropped from tracebacks. */
-const INTERNAL_FILES = new Set(["<stdin>", "/lib/_pl.py", "/lib/calc.py"]);
+const INTERNAL_FILES = new Set(["<stdin>", "/lib/_pl.py", "/lib/calc.py", "/lib/draw.py", `/lib/${COMPAT_MODULE}.py`]);
 
 const PL_PY = `# Pascaline glue (internal)
 import _host, json
@@ -206,6 +212,7 @@ export class PyHost {
   /** Set when the runtime threw at the JS level (e.g. the JS stack overflowed in deep recursion):
    *  its state can't be trusted, so the worker must be replaced before the next call. */
   broken = false;
+  private gfx: GfxCmd[] = [];
   private busy: Promise<unknown> = Promise.resolve();
 
   private constructor(
@@ -231,6 +238,16 @@ export class PyHost {
     mp.FS.mkdirTree("/lib");
     mp.FS.writeFile("/lib/_pl.py", PL_PY);
     mp.FS.writeFile("/lib/calc.py", CALC_PY);
+    mp.FS.writeFile("/lib/draw.py", DRAW_PY);
+    mp.FS.writeFile(`/lib/${COMPAT_MODULE}.py`, COMPAT_PY);
+    // Python checks and converts the arguments (graphics.ts); here they are only queued.
+    mp.registerJsModule("_gfx", {
+      c: (...cmd: unknown[]) => {
+        this.gfx.push(cmd as GfxCmd);
+        if (this.gfx.length >= GFX_BATCH) this.flushGfx();
+        else if (cmd[0] === "show" || performance.now() - this.lastFlush >= PY_FLUSH_MS) this.flushAll();
+      },
+    });
   }
 
   static async load(loadMicroPython: LoadMicroPython, hooks: PyHostHooks, url?: string): Promise<PyHost> {
@@ -281,7 +298,14 @@ export class PyHost {
     this.lastFlush = performance.now();
     this.out.flush(final);
     this.err.flush(final);
-    this.hooks.flush?.();
+    this.flushGfx();
+  }
+
+  private flushGfx(): void {
+    if (this.gfx.length === 0) return;
+    const batch = this.gfx;
+    this.gfx = [];
+    this.hooks.graphics?.(batch);
   }
 
   private async exec(src: string, file: string): Promise<PyResult> {

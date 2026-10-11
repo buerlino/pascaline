@@ -38,6 +38,15 @@ Names are letters, digits and `_`, starting with a letter. Exact values come to 
 Giac floats come as Giac prints them (12 digits by default, which is also about all they carry).
 Stores are definitions (`name:=…`), so the MathEngine replays them after a Cancel.
 
+## Graphics (`graphics.ts`)
+`draw` is our own module: `clear`, `pixel`, `line`, `rect`, `fill_rect`, `circle`, `fill_circle`, `text`,
+`show`, `rgb`, on 320×240 (origin top-left, y down, 0xRRGGBB, floats rounded). Each call becomes one `GfxCmd`;
+PyHost sends them through `onGraphics` in batches of at most 256, at most every 16 ms, before each `calc`
+call and at the end of every call. 10,000 `draw.pixel` calls: 61 ms (desktop Chromium).
+The compatibility module (`COMPAT_MODULE`, the name scripts for the reference calculator import) maps
+`pixon`, `line`, `rect`, `fillrect`, `circle`, `fillcircle`, `textout` (screen G0 only) and `eval` onto
+`draw`/`calc`; its names and argument orders are `assumed` (G2 items 26-28).
+
 ## How it works, and why
 - **`calc` is synchronous.** `calc.cas("factor(x^2-1)")` is a plain call that returns a string, also inside
   functions and comprehensions. Our `_host` C module (`python/modules/host/host.c`) uses Emscripten's
