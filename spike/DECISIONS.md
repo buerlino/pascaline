@@ -3,7 +3,14 @@
 
 Decided by Henri after one brainstorm round with the four workers (each gave 3–5 ideas, then reacted once to the collected list; nobody objected to D1–D9). Every default below stays inside CLAUDE.md and docs/02. The two **proposals** at the end would change the plan and wait for the user's yes or no. Numbers come from `spike/RESULTS.md` (Lenovo Tab One, release build, WebView 131, unless noted).
 
-Judged by the two principles in `spike/NIGHT-SHIFT.md` §1: reuse open source, and speed for engineers.
+Judged by the two principles in CLAUDE.md: reuse open source, and speed for engineers. (The night-shift brief is in git history: `git show 6f17010:spike/NIGHT-SHIFT.md`.)
+
+## User decisions (2026-10-11, after the night shift)
+- **Phase 0: GO.** Every low-end question passed on the Tab One; no native-Giac fallback. Mid-range and old-device runs happen alongside Phase 1.
+- **P1 accepted:** our own LaTeX-subset parser replaces Compute Engine (below).
+- **P2 accepted, extended:** not only F-Droid; **every release** builds the engine with Debian's Emscripten in a pinned `debian:trixie` container, so F-Droid, GitHub and Play ship the same engine (and F-Droid can publish our signed APK later). emsdk stays for development. Condition: the 55-case benchmark and a Tab One run on the container build show no real slowdown (engine-ready and first-call p95 within +10% of the emsdk build); otherwise back to the user.
+- **MathPrint is Phase 1 milestone 1:** textbook entry and 2D results, with a one-line mode as a setting. Seen on the user's G2 (2026-10-11): the ÷ key makes a stacked fraction, and Home shows `1÷3` as `0.333333333333`. So Home results are decimals; exact 2D results live in the CAS view, which milestone 1 therefore includes.
+- **Defaults D1–D9 stand.**
 
 ## Defaults
 
@@ -60,6 +67,7 @@ Judged by the two principles in `spike/NIGHT-SHIFT.md` §1: reuse open source, a
 - **Evidence:** same 296 round-trip cases: 292 pass, 0 wrong (same as Compute Engine). Size 16.2 kB min / 5.7 kB gzip vs 4.1 MB / 1.18 MB. Tab One: parser ready **370 ms vs 1223 ms**; plot page ready **456 ms vs 1364 ms**, 38.8 vs 36.2 fps. 20,000 fuzz inputs: no crash; unknown input is rejected, never guessed. It also keeps typed decimals exact (`1.5\times10^{3}` → `1.5*10^3`, where Compute Engine gives `1500.0`), which the exact-first Home needs.
 - **Cost:** we maintain the grammar; each new keyboard template needs a parser rule and a round-trip case in the same commit. Gates: ron's round-trip test for every change; the plot evaluator never produces numbers shown to the user.
 - **Henri's recommendation:** yes.
+- **User: accepted 2026-10-11.**
 
 ### P2. F-Droid builds the engine with Debian's Emscripten; we keep emsdk for development
 - **What:** every Emscripten app in fdroiddata uses Debian's `emscripten` package (trixie 3.1.69); none uses emsdk. We develop with emsdk 6.0.12.
@@ -67,3 +75,4 @@ Judged by the two principles in `spike/NIGHT-SHIFT.md` §1: reuse open source, a
 - **Gate (passed tonight):** interrupt test 16 / 16, Home 123 / 123, Solve 23 / 23 on the 3.1.69 build. A wasm built that way must keep passing `spike/node/interrupt-test.mjs` and the Home and Solve golden runs, because patch 0002 and `-fwasm-exceptions` depend on the toolchain.
 - **Fallback:** a hash-pinned emsdk download in the recipe, after asking the F-Droid maintainers.
 - **Henri's recommendation:** yes. Next steps: the 55-case benchmark and a Tab One run on the 3.1.69 build, then a draft recipe modelled on `net.alexbarry.alexgames.yml`.
+- **User: accepted 2026-10-11, extended to all release builds** (see "User decisions" above).

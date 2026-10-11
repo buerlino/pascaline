@@ -5,12 +5,18 @@ Date range: 2026-10-10 → 2026-10-11 (night shift; mid-range and old devices st
 Desktop machine for all numbers below: Rocky Linux 10.2, 16 cores, 28 GB RAM. Desktop numbers only show relative cost. Device numbers are from the Lenovo Tab One, **release** build, unless a row says otherwise.
 
 ## Decision
-**GO (low-end confirmed; mid-range still open).** On the Lenovo Tab One, the low-end device that decides Q1, the Giac wasm engine is ready **975 ms** after a cold launch (≈900 ms with the wasm stored uncompressed), typical calls take 7.5 ms (p50) and at most 123 ms, our own keyboard never brings up the system keyboard, the exact-first Home view matches all 123 oracle cases (max 406 ms), MicroPython starts in 335 ms and plotting runs at 36–39 fps. The native-Giac fallback is not needed on this evidence. Still open: the mid-range target (≈60 fps plotting, Fairphone 6) and the old Android 8/9 tablet, neither available tonight; Pyodide (optional "Python+") misses its 4 s bar (7.9 s core on the Tab One), which doesn't block the plan because it stays an optional download. Defaults and proposals from the night shift: `spike/DECISIONS.md`.
+**GO, confirmed by the user on 2026-10-11** (low-end confirmed; mid-range still open; no native-Giac fallback). Phase 1 started on branch `phase-1`. Night-shift summary: On the Lenovo Tab One, the low-end device that decides Q1, the Giac wasm engine is ready **975 ms** after a cold launch (≈900 ms with the wasm stored uncompressed), typical calls take 7.5 ms (p50) and at most 123 ms, our own keyboard never brings up the system keyboard, the exact-first Home view matches all 123 oracle cases (max 406 ms), MicroPython starts in 335 ms and plotting runs at 36–39 fps. The native-Giac fallback is not needed on this evidence. Still open: the mid-range target (≈60 fps plotting, Fairphone 6) and the old Android 8/9 tablet, neither available tonight; Pyodide (optional "Python+") misses its 4 s bar (7.9 s core on the Tab One), which doesn't block the plan because it stays an optional download. Defaults and proposals from the night shift: `spike/DECISIONS.md`.
 
 ## Decisions taken (user, 2026-10-10)
 1. **Solver stack: GSL**, linked into the Giac wasm and used through Giac `fsolve` (Q5). Boost.Math + cminpack were tested and removed: MINPACK's licence has an acknowledgment clause whose GPL compatibility we don't want to depend on, while GSL is GPL-3.0 like Giac, covers the same algorithms (Brent, Newton/secant/Steffensen, Powell hybrid `hybrids`), and costs only +68 KB brotli (≈3% of the engine). `engine/giac/build-wasm.sh` now builds with GSL by default; `engine/solvers/` was deleted (history: commit df187eb). docs/02 section 4 updated.
 2. **Giac tarball: mirror it.** The pinned file goes into a GitHub release asset of this repo (tag `deps-giac-2.1.0-1d9536e0`); the build script tries the mirror first and upstream second, both hash-checked. Backup copy: `../pascaline-deps/giac-2.1.0.tar.gz`. **Still to do by the user:** run the `gh release create` command in engine/giac/README.md (needs `gh auth login`).
 3. **Email to Bernard Parisse after the device measurements**, with real numbers and the upstream reports below. Asking him about MINPACK isn't needed any more (and he isn't the right person for it).
+
+## Decisions taken (user, 2026-10-11)
+1. **Phase 0: GO.** Phase 1 starts with milestone 1, **MathPrint Home + CAS** (docs/02 section 12).
+2. **P1: our own LaTeX-subset parser** replaces Compute Engine (spike/DECISIONS.md).
+3. **P2, extended: every release** builds the engine with Debian's Emscripten in a pinned `debian:trixie` container; emsdk is for development only. Condition: no real slowdown vs the emsdk build on the benchmark and the Tab One.
+4. Seen on the user's G2: the ÷ key makes a stacked fraction; Home shows `1÷3` as `0.333333333333` (G2 checklist items 5 and 16, `source: device`).
 
 ## Results per question
 | # | Question | Measured (median of ≥5) | Pass? | Notes |
@@ -148,13 +154,11 @@ Boost.Math + cminpack inside the same wasm (`engine/solvers/solvers.cc`, since d
 None so far. The source build was done in about one working session, so the shortcut (prebuilt) wasn't needed beyond the comparison.
 
 ## Open questions for the user
-1. **Mirror upload** (decision 2): run the `gh release create …` command from engine/giac/README.md once `gh` is logged in. Until then the build falls back to upstream, which works only while Parisse still serves the pinned snapshot.
-2. **Upstream reports for the Parisse email** (send after the device measurements): the `add_evalf` debug log and `UI.addevalf` typo in `gen.cc`; `markup.cc` vs `EMCC2` (can the improved LaTeX exporter be enabled in web builds?); a request for versioned, immutable tarballs.
-3. **G2 checks** (the user does these by hand; the G2 never gets connected to the laptop): the list is collected during the night shift in `spike/G2-CHECKLIST.md`. First item: in which order does the G2 show numeric eigenvalues, e.g. `eigenvals([[2.,1.,0.],[1.,3.,1.],[0.,1.,4.]])`?
-4. **Devices:** model of the old Android 8/9 tablet; per device SoC, RAM and Android WebView version are recorded by `spike/tools/stay-awake.sh` once connected. Each device must be authorised once by tapping "Allow USB debugging" on its screen (tick "Always allow from this computer").
-5. `assumed` values so far: V8's lazy wasm compilation as the reason for Chromium's slower first calls; the WebView not caching compiled wasm (from timings); the Q6 30 Hz page rate being caused by 17–20 ms redraws. No reference-calculator behaviour has been assumed: those questions are in `spike/G2-CHECKLIST.md` (14 items).
-6. **Proposals P1 and P2** in `spike/DECISIONS.md` need a yes or no: P1 replaces Compute Engine with our own LaTeX-subset parser; P2 builds the engine with Debian's Emscripten for F-Droid.
-7. **More upstream items for the Parisse email:** the whole-second `caseval` timeout in web builds (patch 0002); the licence of the French help texts (`spike/research/giac-help-licence.md`).
+1. **Mirror upload:** run the `gh release create …` command from engine/giac/README.md once `gh` is logged in. Until then the build falls back to upstream, which works only while Parisse still serves the pinned snapshot.
+2. **Parisse email** (the device numbers are in now): upstream items are the `add_evalf` debug log and `UI.addevalf` typo (patch 0001); the whole-second `caseval` timeout in web builds (patch 0002); `markup.cc` vs `EMCC2` (improved LaTeX exporter in web builds); versioned, immutable tarballs; the licence of the French help texts (`spike/research/giac-help-licence.md`).
+3. **G2 checks:** `spike/G2-CHECKLIST.md`, items without an answer.
+4. **Devices:** connect the Fairphone 6 and the old Android 8/9 tablet (tap "Allow USB debugging"); the Tab One must be plugged in again for Phase 1 device runs.
+5. `assumed` values so far: V8's lazy wasm compilation as the reason for Chromium's slower first calls; the WebView not caching compiled wasm (from timings); the Q6 30 Hz page rate being caused by 17–20 ms redraws. The three tie-rounding Home cases (`rnd-tie-*`) depend on G2 item 8 and must be re-tagged `assumed` (they say `derived`).
 
 ## Changes made to docs/02 and CLAUDE.md
 - CLAUDE.md: "Commands" section filled with the real build, smoke-test, benchmark and device-tool commands; status line; architecture and solver lines now say GSL; `engine/solvers/` removed from the planned layout.
