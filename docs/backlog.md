@@ -76,7 +76,7 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
   - A shell (REPL) view with history.
   - Scripts are stored in IndexedDB, with import and export.
 - ~~**P5. Golden and e2e cases**~~ (done 2026-10-11) for `calc`, `print`, errors with line numbers, Cancel on `while True: pass`, and graphics output.
-- **D1. Device numbers, still open** (Tab One, release; needs the device):
+- **D1. Device numbers: S8+ done 2026-10-11 evening (m3 report), Tab One still open** (release; needs the device). S8+: Python open 782 ms, Cancel 398 ms, `calc.cas` p95 17 ms, start-up 576 ms / 1.73 s. Tab One bars:
   - milestone 1's start-up numbers still hold;
   - first open of Python → shell ready < 0.5 s (the spike measured 335 ms);
   - Cancel on an endless loop → ready again < 0.5 s;
