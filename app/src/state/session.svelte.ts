@@ -58,6 +58,8 @@ export class Session {
   /** 0 = write the history at once (tests); the app sets a delay so Enter does not wait for the store. */
   saveDelayMs = 0;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
+  private restoring = false;
+  private savePending = false;
 
   constructor(calc: Calc, kv: Kv = idbKv) {
     this.kv = kv;
@@ -207,6 +209,11 @@ export class Session {
 
   // ---- persistence (IndexedDB; failures are silent)
   async restore(): Promise<void> {
+    await this.restoreSettings();
+    await this.restoreHistory();
+  }
+  /** Settings and the open view: small, read at launch. */
+  async restoreSettings(): Promise<void> {
     const saved = await this.kv.get<Partial<Settings>>("settings");
     if (saved) {
       if (saved.angle === "rad" || saved.angle === "deg") this.settings.angle = saved.angle;
@@ -214,21 +221,16 @@ export class Session {
       if (saved.entry === "textbook" || saved.entry === "line") this.settings.entry = saved.entry;
       if (typeof saved.digits === "number") this.settings.digits = clampDigits(saved.digits);
     }
-    const hist = await this.kv.get<{ home?: HistoryItem[]; cas?: HistoryItem[] }>("history");
-    if (hist) {
-      // Entries typed before the store answered stay after the restored ones.
-      const keep = (xs: HistoryItem[] | undefined): HistoryItem[] =>
-        (xs ?? []).filter((i) => (i.status === "done" || i.status === "error") && typeof i.latex === "string");
-      this.home.splice(0, 0, ...keep(hist.home));
-      this.cas.splice(0, 0, ...keep(hist.cas));
-      const top = [...this.home, ...this.cas].reduce((m, i) => Math.max(m, i.id), 0);
-      this.nextId = Math.max(this.nextId, top + 1);
-    }
     const view = await this.kv.get<View>("view");
     if (view === "home" || view === "cas") this.view = view;
   }
   /** Entry LaTeX, result LaTeX and the Home numeric value of finished entries; nothing that needs the engine. */
   saveHistory(): void {
+    if (this.restoring) {
+      // Writing now would overwrite the stored history with only the entries typed since launch.
+      this.savePending = true;
+      return;
+    }
     if (this.saveDelayMs > 0) {
       // Snapshotting and storing up to HISTORY_LIMIT entries costs ~100 ms on a tablet: not on the Enter path.
       this.saveTimer ??= setTimeout(() => this.flushHistory(), this.saveDelayMs);
@@ -243,6 +245,31 @@ export class Session {
     const keep = (xs: HistoryItem[]): HistoryItem[] =>
       $state.snapshot(xs).filter((i) => i.status === "done" || i.status === "error").slice(-HISTORY_LIMIT);
     void this.kv.set("history", { home: keep(this.home), cas: keep(this.cas) });
+  }
+  /** The stored history (up to HISTORY_LIMIT entries per view); the app reads it after the keypad is drawn. */
+  async restoreHistory(): Promise<void> {
+    this.restoring = true;
+    let hist: { home?: HistoryItem[]; cas?: HistoryItem[] } | undefined;
+    try {
+      hist = await this.kv.get<{ home?: HistoryItem[]; cas?: HistoryItem[] }>("history");
+    } finally {
+      this.restoring = false;
+    }
+    if (hist) {
+      // Entries typed before the store answered stay after the restored ones.
+      // Fresh ids: entries typed before the store answered already use the low numbers (ids key the list).
+      const keep = (xs: HistoryItem[] | undefined): HistoryItem[] =>
+        (xs ?? [])
+          .filter((i) => (i.status === "done" || i.status === "error") && typeof i.latex === "string")
+          .slice(-HISTORY_LIMIT)
+          .map((i) => ({ ...i, id: this.nextId++ }));
+      this.home.splice(0, 0, ...keep(hist.home));
+      this.cas.splice(0, 0, ...keep(hist.cas));
+    }
+    if (this.savePending) {
+      this.savePending = false;
+      this.saveHistory();
+    }
   }
   save(): void {
     void this.kv.set("settings", { ...this.settings });

@@ -86,6 +86,21 @@ describe("Session history", () => {
     expect(CalcCancelled).toBeDefined();
   });
 
+  it("an entry typed while the history is still loading is kept, stored with it, and ids stay unique", async () => {
+    const kv = memoryKv();
+    const old = new Session(new ValueCalc(), kv);
+    for (const x of ["1", "2", "3"]) await old.submit(x);
+    const s = new Session(new ValueCalc(), kv);
+    const restoring = s.restoreHistory();
+    const job = s.submit("4"); // before the store has answered
+    await restoring;
+    await job;
+    expect(s.home.map((i) => i.latex)).toEqual(["1", "2", "3", "4"]);
+    expect(new Set(s.home.map((i) => i.id)).size).toBe(4);
+    const stored = kv.data.get("history") as { home: { latex: string }[] };
+    expect(stored.home.map((i) => i.latex)).toEqual(["1", "2", "3", "4"]);
+  });
+
   it("clearing the history clears the store", async () => {
     const kv = memoryKv();
     const a = new Session(new ValueCalc(), kv);
