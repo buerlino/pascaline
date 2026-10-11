@@ -95,6 +95,12 @@ test("Function: definitions, window and view survive a reload", async ({ page })
   await expect(page.locator('[data-name="F2"] .math')).toHaveAttribute("data-latex", "x^3-2x");
 });
 
+test("keys typed while the app's code is still loading are kept (regression)", async ({ page }) => {
+  await tap(page, ["symb", "sin", "x", "enter", "down", "d1", "div", "x", "enter"]);
+  await expect(page.locator('[data-name="F1"] .math')).toHaveAttribute("data-latex", "\\sin\\left(x\\right)");
+  await expect(page.locator('[data-name="F2"] .math')).toHaveAttribute("data-latex", "\\frac{1}{x}");
+});
+
 test("Apps key lists the apps; Home/CAS key goes back to Home", async ({ page }) => {
   await tap(page, ["apps"]);
   await expect(page.getByTestId("apps")).toBeVisible();

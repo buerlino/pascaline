@@ -88,7 +88,21 @@
   };
   const DIGIT = /^d([0-9])$/;
 
+  // Keys pressed while an app's code is loading wait for it, so nothing typed is lost (like MathLive's queue).
+  let waiting: Key[] = [];
   function press(key: Key): void {
+    const pk = key.actions.primary;
+    const switches = pk?.kind === "special" && ["cancel", "app", "apps", "symb", "plot", "num", "settings"].includes(pk.name);
+    if (shell.loading !== null && !switches) {
+      waiting.push(key);
+      if (waiting.length === 1)
+        void shell.opening.then(() => {
+          const keys = waiting;
+          waiting = [];
+          for (const k of keys) press(k);
+        });
+      return;
+    }
     const p = key.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) {
       if (p.name === "shift") session.toggleShift();
@@ -222,10 +236,12 @@
   }
   .tabs {
     flex-wrap: wrap;
+    gap: 2px;
   }
   .tabs button {
     font: inherit;
-    padding: 6px 12px;
+    font-size: 15px;
+    padding: 6px 9px;
     border-radius: 8px;
     border: 0;
     background: transparent;
@@ -253,7 +269,8 @@
   }
   .appname {
     align-self: center;
-    margin-left: 8px;
+    margin: 0 4px 0 6px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--shift);
   }

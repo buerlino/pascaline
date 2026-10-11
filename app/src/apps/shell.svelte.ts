@@ -97,7 +97,13 @@ export class AppShell {
   }
 
   /** Open an app at a view (default: the view it was left in, else Symb). */
-  async open(id: AppId, view?: ViewId): Promise<void> {
+  open(id: AppId, view?: ViewId): Promise<void> {
+    this.opening = this.doOpen(id, view);
+    return this.opening;
+  }
+  /** Settles when the app being opened is on screen (keys pressed meanwhile wait for it). */
+  opening: Promise<void> = Promise.resolve();
+  private async doOpen(id: AppId, view?: ViewId): Promise<void> {
     this.switcherOpen = false;
     this.menuOpen = false;
     this.loading = id;
@@ -116,7 +122,7 @@ export class AppShell {
   async setView(v: ViewId): Promise<void> {
     this.menuOpen = false;
     this.switcherOpen = false;
-    if (this.app === null) return this.open(this.lastApp ?? "function", v);
+    if (this.app === null || this.loading !== null) return this.open(this.app ?? this.lastApp ?? "function", v);
     const a = this.instance;
     if (!a || !a.views.includes(v)) return;
     this.showView(a, v);
