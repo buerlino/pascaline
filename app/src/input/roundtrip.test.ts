@@ -8,7 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "yaml";
 import { beforeAll, describe, expect, it } from "vitest";
-import { keyboard } from "../keyboard/keyboard.ts";
+import { keyboard, templates } from "../keyboard/keyboard.ts";
 import { latexToGiac } from "./latex-to-giac.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -79,16 +79,15 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
 
   // Rule: every keyboard template (spec/keyboard.yaml) has a parser rule and a round-trip case.
   describe("keyboard templates", () => {
-    for (const key of keyboard.keys)
-      for (const [layer, a] of Object.entries(key.actions)) {
-        if (a.kind !== "insert" || !a.sample) continue;
-        const [latex, intended] = a.sample;
-        it(`${key.id}/${layer}: ${latex}`, () => {
-          const produced = latexToGiac(latex);
-          const r = equal(produced, intended);
-          expect(r.ok, `got ${produced}, want ${intended}: ${r.how}`).toBe(true);
-        });
-      }
+    for (const t of templates(keyboard)) {
+      if (!t.sample) continue;
+      const [latex, intended] = t.sample;
+      it(`${t.keyId}/${t.layer}/${t.variant}: ${latex}`, () => {
+        const produced = latexToGiac(latex);
+        const r = equal(produced, intended);
+        expect(r.ok, `got ${produced}, want ${intended}: ${r.how}`).toBe(true);
+      });
+    }
   });
 });
 

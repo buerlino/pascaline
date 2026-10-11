@@ -4,13 +4,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { latexToGiac } from "../input/latex-to-giac.ts";
-import { actionFor, KeyboardSpecError, keyboard, labelFor, loadKeyboard, type Action } from "./keyboard.ts";
+import { actionFor, KeyboardSpecError, keyboard, labelFor, loadKeyboard, templates } from "./keyboard.ts";
 
 const spec = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../spec/keyboard.yaml"), "utf8");
 
-const insertActions: { id: string; layer: string; a: Extract<Action, { kind: "insert" }> }[] = [];
-for (const k of keyboard.keys)
-  for (const [layer, a] of Object.entries(k.actions)) if (a.kind === "insert") insertActions.push({ id: k.id, layer, a });
+const all = templates(keyboard);
 
 describe("keyboard spec", () => {
   it("loads: 5 columns, 8 rows, unique ids and positions", () => {
@@ -47,24 +45,34 @@ describe("keyboard spec", () => {
   });
 
   it("every insert template has a sample, and our parser accepts the sample (rule: one parser case per template)", () => {
-    expect(insertActions.length).toBeGreaterThanOrEqual(20);
-    for (const { id, layer, a } of insertActions) {
-      expect(a.sample, `${id}/${layer} needs a sample`).toBeDefined();
-      expect(() => latexToGiac((a.sample as readonly [string, string])[0]), `${id}/${layer}`).not.toThrow();
+    expect(all.length).toBeGreaterThanOrEqual(24);
+    for (const t of all) {
+      const id = `${t.keyId}/${t.layer}/${t.variant}`;
+      expect(t.sample, `${id} needs a sample`).toBeDefined();
+      expect(() => latexToGiac((t.sample as readonly [string, string])[0]), id).not.toThrow();
     }
   });
 
   it("template samples really are the template with its placeholders filled", () => {
-    for (const { id, layer, a } of insertActions) {
-      const skeleton = a.latex.replace(/#[?@0]/g, "\u0000").split("\u0000");
-      const sample = (a.sample as readonly [string, string])[0];
+    for (const t of all) {
+      const skeleton = t.latex.replace(/#[?@0]/g, "\u0000").split("\u0000");
+      const sample = (t.sample as readonly [string, string])[0];
       let pos = 0;
       for (const part of skeleton) {
         const at = sample.indexOf(part, pos);
-        expect(at, `${id}/${layer}: sample ${sample} does not follow template ${a.latex}`).toBeGreaterThanOrEqual(pos);
+        expect(at, `${t.keyId}/${t.layer}/${t.variant}: sample ${sample} does not follow template ${t.latex}`).toBeGreaterThanOrEqual(pos);
         pos = at + part.length;
       }
     }
+  });
+
+  it("one-line mode swaps the stacked fraction and root for linear forms", () => {
+    const div = keyboard.byId.get("div");
+    const sqrt = keyboard.byId.get("sqrt");
+    if (!div || !sqrt) throw new Error("keys missing");
+    expect(actionFor(div, false, false, true)).toEqual({ kind: "insert", latex: "\\div", sample: ["5\\div5", "5/5"] });
+    expect(actionFor(sqrt, false, false, true)).toMatchObject({ latex: "\\operatorname{sqrt}\\left(#?\\right)" });
+    expect(actionFor(div, false, false, false)).toMatchObject({ latex: "\\frac{#@}{#?}" });
   });
 
   it("contains no trademarked names", () => {

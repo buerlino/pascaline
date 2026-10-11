@@ -9,6 +9,8 @@
 #                                  what is before the cursor. Every template needs a `sample`: the
 #                                  template filled in, and the Giac text it must mean. The round-trip
 #                                  test runs all samples through our parser and Giac.
+#                                  Any action may carry `line: <action>`, used instead of it when the
+#                                  one-line entry mode is on (a linear form of the same key).
 #   { cmd: "moveToNextChar" }      a MathLive editing command
 #   { special: shift|alpha|enter|clear|cancel|app|settings }   handled by the app
 # Missing layer: the key does nothing in that layer, except that alpha falls back to primary. Shift + alpha
@@ -85,7 +87,10 @@ keys:
     col: 1
     cls: fn
     label: { primary: "√", shift: "ⁿ√", alpha: g }
-    primary: { insert: "\\sqrt{#0}", sample: ["\\sqrt{8}", "sqrt(8)"] }
+    primary:
+      insert: "\\sqrt{#0}"
+      sample: ["\\sqrt{8}", "sqrt(8)"]
+      line: { insert: "\\operatorname{sqrt}\\left(#?\\right)", sample: ["\\operatorname{sqrt}\\left(8\\right)", "sqrt(8)"] }
     shift: { insert: "\\sqrt[#?]{#0}", sample: ["\\sqrt[3]{8}", "surd(8,3)"] }
     alpha: { type: g }
     source: assumed
@@ -94,8 +99,14 @@ keys:
     col: 2
     cls: fn
     label: { primary: "a/b", shift: "1/x", alpha: h }
-    primary: { insert: "\\frac{#@}{#?}", sample: ["\\frac{1}{3}", "1/3"] }
-    shift: { insert: "\\frac{1}{#@}", sample: ["\\frac{1}{3}", "1/3"] }
+    primary:
+      insert: "\\frac{#@}{#?}"
+      sample: ["\\frac{1}{3}", "1/3"]
+      line: { insert: "\\div", sample: ["1\\div3", "1/3"] }
+    shift:
+      insert: "\\frac{1}{#@}"
+      sample: ["\\frac{1}{3}", "1/3"]
+      line: { insert: "\\left(#@\\right)^{-1}", sample: ["\\left(3\\right)^{-1}", "3^(-1)"] }
     alpha: { type: h }
     source: assumed
   - id: pi
@@ -118,7 +129,10 @@ keys:
     col: 3
     cls: op
     label: { primary: "÷", alpha: n }
-    primary: { insert: "\\frac{#@}{#?}", sample: ["\\frac{5}{5}", "5/5"] }
+    primary:
+      insert: "\\frac{#@}{#?}"
+      sample: ["\\frac{5}{5}", "5/5"]
+      line: { insert: "\\div", sample: ["5\\div5", "5/5"] }
     alpha: { type: n }
     source: device
   - id: ln

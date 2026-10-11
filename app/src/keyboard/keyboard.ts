@@ -5,7 +5,12 @@ import raw from "../../../spec/keyboard.yaml";
 export type Special = "shift" | "alpha" | "enter" | "clear" | "cancel" | "app" | "settings";
 export const SPECIALS: readonly Special[] = ["shift", "alpha", "enter", "clear", "cancel", "app", "settings"];
 
-export type Action =
+export type Action = ActionBody & {
+  /** Replacement in one-line entry mode (settings): used instead of this action when entry is linear. */
+  readonly line?: ActionBody;
+};
+
+export type ActionBody =
   /** Type characters as a physical keyboard would (smart fences, auto-subscript rules apply). */
   | { kind: "type"; text: string }
   /** Insert a LaTeX template; #? marks a placeholder, #@ the selection or what is before the cursor. */
@@ -58,6 +63,14 @@ function int(o: Obj, k: string, where: string): number {
 }
 
 function parseAction(v: unknown, where: string): Action {
+  const { line, ...rest } = isObj(v) ? v : ({} as Obj);
+  const body = parseBody(isObj(v) ? rest : v, where);
+  if (line === undefined) return body;
+  const lineBody = parseBody(line, `${where} line`);
+  return { ...body, line: lineBody };
+}
+
+function parseBody(v: unknown, where: string): ActionBody {
   if (!isObj(v)) throw new KeyboardSpecError(`${where}: an action must be a mapping`);
   const names = Object.keys(v).filter((k) => k !== "sample");
   if (names.length !== 1) throw new KeyboardSpecError(`${where}: an action has exactly one of type/insert/cmd/special`);
@@ -134,7 +147,12 @@ export function loadKeyboard(doc: unknown): Keyboard {
 export const keyboard: Keyboard = loadKeyboard(raw);
 
 /** The action a key triggers in the given modifier state (alpha falls back to primary; shift never does). */
-export function actionFor(key: Key, shift: boolean, alpha: boolean): Action | undefined {
+export function actionFor(key: Key, shift: boolean, alpha: boolean, oneLine = false): ActionBody | undefined {
+  const a = layerAction(key, shift, alpha);
+  return oneLine && a?.line ? a.line : a;
+}
+
+function layerAction(key: Key, shift: boolean, alpha: boolean): Action | undefined {
   if (alpha) {
     const a = key.actions.alpha ?? key.actions.primary;
     if (shift && a?.kind === "type" && a === key.actions.alpha) return { kind: "type", text: a.text.toUpperCase() };
@@ -149,4 +167,26 @@ export function labelFor(key: Key, shift: boolean, alpha: boolean): string {
   if (alpha) return key.label.alpha ?? key.label.primary ?? "";
   if (shift) return key.label.shift ?? "";
   return key.label.primary ?? "";
+}
+
+export interface Template {
+  readonly keyId: string;
+  readonly layer: Layer;
+  readonly variant: "normal" | "line";
+  readonly latex: string;
+  readonly sample?: readonly [string, string];
+}
+
+/** Every LaTeX template on the keyboard, including the one-line variants (each needs a parser case). */
+export function templates(kb: Keyboard): Template[] {
+  const out: Template[] = [];
+  for (const key of kb.keys)
+    for (const layer of LAYERS) {
+      const a = key.actions[layer];
+      if (!a) continue;
+      for (const [variant, body] of [["normal", a], ["line", a.line]] as const)
+        if (body?.kind === "insert")
+          out.push({ keyId: key.id, layer, variant, latex: body.latex, ...(body.sample ? { sample: body.sample } : {}) });
+    }
+  return out;
 }
