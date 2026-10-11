@@ -14,6 +14,7 @@ Everything here is built from source by scripts in this repository. Spike-only t
 
 ## Toolchain (not shipped)
 
-| Component | Version | Licence | Source |
-|---|---|---|---|
-| Emscripten SDK | 6.0.12 | MIT / UIUC (NCSA) | https://github.com/emscripten-core/emsdk |
+| Component | Version | Licence | Source | Use |
+|---|---|---|---|---|
+| Emscripten SDK | 6.0.12 | MIT / UIUC (NCSA) | https://github.com/emscripten-core/emsdk | development builds only |
+| Emscripten (Debian package) | 3.1.69 (debian:trixie; image digest to be pinned) | MIT / UIUC (NCSA) | https://packages.debian.org/trixie/emscripten | **release builds** of the engine (decided 2026-10-11, P2) |

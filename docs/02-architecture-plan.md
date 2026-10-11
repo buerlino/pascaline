@@ -15,8 +15,8 @@
 | Prime feature | We reuse | Licence |
 |---|---|---|
 | CAS **and** Home calculations | **Giac** (the Prime's real CAS) compiled to WebAssembly (`giacwasm.js`, already maintained by Parisse) | GPLv3 |
-| Textbook-style 2D math entry | **MathLive** (math editor web component) + **Compute Engine** (MathJSON) | MIT |
-| Pretty-printed results | Giac `latex()` output, rendered by MathLive/**KaTeX** | MIT |
+| Textbook-style 2D math entry ("MathPrint") | **MathLive** (math editor web component) + our own small LaTeX-subset parser to Giac (decided 2026-10-11, replaces Compute Engine) | MIT, GPLv3 |
+| Pretty-printed results (MathPrint) | Giac `latex()` output, rendered by MathLive's static renderer | MIT |
 | Function / Parametric / Polar / Sequence / Advanced Graphing / 3D plots | **JSXGraph** (2D, implicit curves, 3D view) | LGPL / MIT dual |
 | Geometry app | **JSXGraph** (interactive geometry) + Giac (symbolic geometry) | LGPL / MIT, GPLv3 |
 | Numerical solver (Solve app) | Giac `fsolve`/`proot` with **GSL** (GNU Scientific Library) compiled into the same wasm (section 4) | GPLv3 |
@@ -102,7 +102,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 **An improvement over the Prime:** after every numeric solve, we **plug the root back into the equation** (the residual check) and re-evaluate with **Giac at 30+ digits** (MPFR; mpmath is only available when the optional Python+ pack is installed). If the residual is not tiny, we show a ⚠ next to the answer. The real Prime silently returns wrong roots in some known cases (see 01-feasibility-report.md section 6), so this check directly addresses "how do we avoid wrong answers?".
 
 **Solver strategy for a single equation:**
-1. Use Giac to get exact `f(x)` and `f'(x)`. For the many evaluations of the bracket search, compile both to fast JS functions with Compute Engine's `compile()` (or evaluate in Giac if that's fast enough; measure).
+1. Use Giac to get exact `f(x)` and `f'(x)`. For the many evaluations of the bracket search, compile both to fast JS functions with our LaTeX-subset parser's evaluator (or evaluate in Giac if that's fast enough; measure). Numbers shown to the user always come from Giac.
 2. Starting from the guess, expand outward until the sign changes (bracket search).
 3. If a bracket is found, run **Brent** (GSL via Giac `fsolve`). It's guaranteed to converge.
 4. If there's no sign change (a double root like `x² = 0`), run **Newton** (or Steffensen) with the exact derivative and damping.
@@ -117,8 +117,8 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 |---|---|---|
 | **Home view** | Giac in "exact-first" mode (section 6.2), 12-digit display (configurable, an improvement) | History UI, settings, Ans, variables |
 | **CAS view** | Giac (same commands as the Prime CAS, since it's the same engine) | History, CAS settings page |
-| **Textbook entry** | MathLive with **our** on-screen keyboard driving it; MathJSON→Giac serializer | Serializer (about 2–4 weeks), templates key |
-| **Function, Parametric, Polar, Sequence** | JSXGraph plots, Compute Engine `compile()` for fast point evaluation, Giac for roots/extrema/area ("Fcn" menu) | Symb/Plot/Num framework, trace, zoom, tables |
+| **Textbook entry (MathPrint)** | MathLive with **our** on-screen keyboard driving it; our LaTeX-subset → Giac parser | Parser grammar (one rule + one round-trip case per keyboard template), templates key |
+| **Function, Parametric, Polar, Sequence** | JSXGraph plots, our parser's evaluator for fast point evaluation, Giac for roots/extrema/area ("Fcn" menu) | Symb/Plot/Num framework, trace, zoom, tables |
 | **Advanced Graphing** (implicit curves, inequalities) | JSXGraph `implicitcurve` and inequality shading; optional interval arithmetic library for robust plotting | Equation classification |
 | **Graph 3D** | JSXGraph 3D (`view3d`), or three.js if we need more | Camera controls |
 | **Geometry** | JSXGraph constructions; Giac for symbolic answers (equations, exact lengths) | Prime-style tool menus |
@@ -147,7 +147,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 │  UI thread (TypeScript)                                                                                        │
 │  ┌──────────────┐ ┌───────────────┐ ┌────────────────────────┐ ┌────────────────┐ ┌──────────────────────────┐ │
 │  │ Keyboard     │ │ MathLive      │ │ App framework          │ │ JSXGraph views │ │ Spreadsheet / editors    │ │
-│  │ (shift/alpha │ │ entry + KaTeX │ │ Symb / Plot / Num      │ │ 2D/3D/geometry │ │ CodeMirror (Python)      │ │
+│  │ (shift/alpha │ │ entry+output │ │ Symb / Plot / Num      │ │ 2D/3D/geometry │ │ CodeMirror (Python)      │ │
 │  │  layers)     │ │ output        │ │ app registry, settings │ │                │ │                          │ │
 │  └──────┬───────┘ └───────┬───────┘ └───────────┬────────────┘ └────────┬───────┘ └────────────┬─────────────┘ │
 │         └─────────────────┴──────── MathEngine interface (async) ───────┴──────────────────────┘               │
@@ -199,7 +199,7 @@ PM = person-months, experienced TypeScript developers with some maths background
 |---|---|
 | Phase 0 spike | 0.75 |
 | Shell: keyboard + layers, menus/Toolbox/Catalog, history, settings, persistence, theming | 3–4 |
-| Math entry/output: MathLive integration, MathJSON→Giac serializer, LaTeX output | 1.5–2.5 |
+| Math entry/output: MathLive integration, LaTeX-subset → Giac parser, LaTeX output (MathPrint) | 1.5–2.5 |
 | Home + CAS views on Giac (exact-first, Prime-style function aliases) | 1.5–2.5 |
 | App framework (Symb/Plot/Num, zoom, trace, tables) | 2–3 |
 | Function, Parametric, Polar, Sequence | 2–3 |
@@ -226,9 +226,9 @@ With 2 developers, MVP is about 4 months and the full app about 1.5 years. With 
 
 ## 9. Bugs: what changes with the reuse approach
 
-Most of the maths is now **well-tested third-party code** (Giac is used by GeoGebra and HP, millions of users; GSL, GMP/MPFR, numpy). Our biggest bug risk moves to the **glue**: the MathJSON→Giac serializer, exact-first evaluation, app logic, and settings handling.
+Most of the maths is now **well-tested third-party code** (Giac is used by GeoGebra and HP, millions of users; GSL, GMP/MPFR, numpy). Our biggest bug risk moves to the **glue**: the LaTeX → Giac parser, exact-first evaluation, app logic, and settings handling.
 
-1. **Serializer round-trip fuzzing:** generate random expressions → MathJSON → Giac → `latex()` → MathLive → MathJSON, and check equality with Giac `simplify(a-b)==0` plus numeric spot checks.
+1. **Parser round-trip fuzzing:** generate random expressions → LaTeX → Giac → `latex()` → MathLive → LaTeX → Giac, and check equality with Giac `simplify(a-b)==0` plus numeric spot checks.
 2. **Cross-engine oracle tests:** run the same question through Giac and through **SymPy/mpmath** (we ship them anyway in Pyodide; in CI they run natively). Disagreements get reviewed by a human.
 3. **Self-check in the product:** residual checks after `solve`/`fsolve` (section 4), and `diff(int(f)) == f` checks in tests.
 4. **A small golden set from a real Prime** (a few hundred to a few thousand cases for Home/CAS/Solve/Stats), so that "feels like a Prime" stays true. That's enough for a spiritual clone; no need for 40k cases.
@@ -288,7 +288,7 @@ The same web build (`dist/`) is shipped in different wrappers:
 1. Public repo on Codeberg or GitHub, with release tags (`v1.2.0`) and `versionCode`/`versionName` in `android/app/build.gradle`.
 2. Store texts and screenshots in the repo as **fastlane metadata** (`fastlane/metadata/android/en-US/…`), which F-Droid reads automatically.
 3. **One build script** (`build.sh`) that goes from clean source to `dist/`: install npm dependencies, compile Giac + GMP + MPFR + GSL with Emscripten (`engine/giac/build-wasm.sh`), run `vite build`, run `npx cap sync android`.
-4. Write `metadata/<appId>.yml` in fdroiddata, modelled on the GraphHopper and alexgames recipes: `sudo:` installs npm and emscripten, `prebuild:` runs `build.sh`, `scandelete:` removes `node_modules`, `gradle: [yes]`, plus `AutoUpdateMode: Version` and `UpdateCheckMode: Tags`.
+4. Write `metadata/<appId>.yml` in fdroiddata, modelled on the GraphHopper and alexgames recipes: `sudo:` installs npm and **Debian's emscripten** (decided 2026-10-11: every release, ours included, builds the engine with Debian's Emscripten in a pinned `debian:trixie` container, so all channels ship the same engine; emsdk is for development only), `prebuild:` runs `build.sh`, `scandelete:` removes `node_modules`, `gradle: [yes]`, plus `AutoUpdateMode: Version` and `UpdateCheckMode: Tags`.
 5. Test locally with fdroidserver (`fdroid build -v -l <appId>`) against your fdroiddata checkout, then open a merge request at gitlab.com/fdroid/fdroiddata.
 6. Optional: **reproducible builds** (pinned toolchain versions, deterministic Emscripten output). Then F-Droid can publish **our** signed APK, and users can switch between GitHub, Play and F-Droid without reinstalling.
 
@@ -302,10 +302,16 @@ The same web build (`dist/`) is shipped in different wrappers:
 
 ## 12. Next steps
 1. ~~Pick a name~~ **Pascaline** (2026-10-10). Before going public: check Google Play, the App Store, GitHub/Codeberg, trademark databases (EUIPO, WIPO, Swiss IGE, class 9) and domains. ~~Create the repo~~ https://github.com/buerlino/pascaline (GPL-3.0). README.md and CONTRIBUTING.md (clean-room rules, DCO sign-off) written 2026-10-10.
-2. Email **Bernard Parisse** *after the device measurements* (so the email has real numbers): tell him about the project, ask about the help-file licence and KhiCAS reuse, and pass on the upstream reports collected in the spike (spike/RESULTS.md: debug log in `gen.cc`, improved LaTeX exporter in web builds, request for versioned tarballs).
-3. Run the **Phase 0 spike** (section 7) on real devices (an old Android 8/9 tablet, a Lenovo Tab One on Android 15, a Fairphone 6 on Android 16). Step-by-step instructions are in [`../.claude/skills/phase-0-spike/SKILL.md`](../.claude/skills/phase-0-spike/SKILL.md).
-4. Write `keyboard.yaml` (the Prime's logical layout, our own styling) and a clickable prototype of the keyboard and Home view.
-5. Decide go/no-go and native fallback based on the spike results.
+2. Email **Bernard Parisse** with the device numbers: tell him about the project, ask about the help-file licence and KhiCAS reuse, and pass on the upstream reports collected in the spike (spike/RESULTS.md, "Open questions").
+3. ~~Run the Phase 0 spike~~ Done 2026-10-11 on the low-end Lenovo Tab One: **GO**, no native fallback needed (spike/RESULTS.md). The Fairphone 6 (mid-range) and the old Android 8/9 tablet are measured whenever they're connected, alongside Phase 1.
+4. **Phase 1, milestone 1: MathPrint Home + CAS** (decided 2026-10-11). The real app in `app/` (Svelte 5 shell, plain-TS keyboard, parser and engine client), with:
+   - textbook entry: stacked fractions, raised exponents, root signs, driven only by our keyboard. On the reference calculator the ÷ key makes a stacked fraction (seen on a G2, 2026-10-11), so ours does too;
+   - a **Home** view whose results are decimals (on a G2, `1÷3` gives `0.333333333333`) from exact-first evaluation, and a **CAS** view whose exact results are drawn in 2D (fractions, roots, powers, matrices);
+   - history, Cancel, settings (digits, angle, number format, a one-line entry mode);
+   - `spec/keyboard.yaml` as the single source of the key layout (positions not yet checked on a G2 are marked `assumed`); `tests/golden/` as the single golden-case format (spike/DECISIONS.md D8);
+   - `build.sh` from clean source to APK, with the engine built by Debian's Emscripten.
+   Bar: on the Tab One (release build), cold launch → keyboard usable < 1 s and → engine ready < 1.5 s; Enter → drawn result p95 < 150 ms on the 55 benchmark inputs.
+5. Then the rest of the MVP (section 8): Function app, Solve app, Python.
 
 ---
 

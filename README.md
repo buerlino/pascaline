@@ -27,7 +27,7 @@ Pascaline reuses mature open-source projects instead of reinventing them:
 | Part | Project |
 |---|---|
 | Computer algebra + numerics | [Giac/Xcas](https://xcas.univ-grenoble-alpes.fr/) by Bernard Parisse & Renée De Graeve, compiled to WebAssembly |
-| Math input | [MathLive](https://mathlive.io/) + Compute Engine |
+| Math input and textbook display | [MathLive](https://mathlive.io/), with our own small LaTeX → Giac parser |
 | Graphs & geometry | [JSXGraph](https://jsxgraph.org/) |
 | Numerical solvers | Giac with the [GNU Scientific Library (GSL)](https://www.gnu.org/software/gsl/) |
 | Python | [MicroPython](https://micropython.org/); optional [Pyodide](https://pyodide.org/) |

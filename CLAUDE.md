@@ -2,9 +2,13 @@
 
 Pascaline is an **open-source graphing CAS calculator** for Android (also PWA, later iOS and desktop). It feels like an HP Prime G2, with the same logical key layout, the same apps and the same functions, but it has its own name and look, and it reuses open-source projects wherever possible. The name comes from Blaise Pascal's 1642 calculating machine.
 
+**Two principles decide every default** (user, 2026-10-10):
+1. **Fully open source, reuse first.** Build on existing open-source projects wherever one fits; we write glue, UI and tests, not maths engines. Write our own only when the measured gain is large (e.g. the LaTeX parser, P1).
+2. **Speed and efficiency for engineers.** This is the calculator an engineer reaches for when they can't use their G2: instant start, instant answers, keyboard-first, no clutter. When two options are otherwise equal, pick the faster and leaner one.
+
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 
-**Status (2026-10-11):** Phase 0 spike on branch `spike/phase-0`. Steps 0–7 measured on desktop and on the low-end Lenovo Tab One (night shift): Q1, Q3 and Q6 (low-end) pass, Q2 keyboard passes with 292/296 round-trip, MicroPython passes, Pyodide misses its 4 s bar (optional pack). Results in [spike/RESULTS.md](spike/RESULTS.md); defaults and open proposals in [spike/DECISIONS.md](spike/DECISIONS.md); hand checks on the reference calculator in [spike/G2-CHECKLIST.md](spike/G2-CHECKLIST.md). **Next:** the user decides proposals P1/P2, does the G2 checks and connects the mid-range and old devices.
+**Status (2026-10-11):** Phase 0 is done: **GO** (user, 2026-10-11), no native fallback. Results in [spike/RESULTS.md](spike/RESULTS.md), defaults D1–D9 and the accepted proposals P1/P2 in [spike/DECISIONS.md](spike/DECISIONS.md). **Phase 1 has started on branch `phase-1`** (branched from `spike/phase-0`; neither is merged into `master` yet). Milestone 1: **MathPrint Home + CAS** in `app/` (docs/02 section 12). The current shift brief for the coordinator team is [docs/shifts/brief.md](docs/shifts/brief.md) (agents in `.claude/agents/`).
 
 Background reading (read before larger design decisions):
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): **the plan**. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
@@ -42,7 +46,7 @@ Background reading (read before larger design decisions):
 
 ```
 Capacitor shell (Android / iOS / desktop / plain web PWA)
-└─ UI (TypeScript): keyboard (spec/keyboard.yaml), MathLive entry, KaTeX output,
+└─ UI (TypeScript): keyboard (spec/keyboard.yaml), MathLive entry and output (MathPrint),
    app framework Symb/Plot/Num, JSXGraph views, spreadsheet, CodeMirror editor
    └─ MathEngine (async interface)
       ├─ Worker 1: giac.wasm (+ GSL, GMP, MPFR): CAS + Home + numeric solving
@@ -51,13 +55,16 @@ Storage: IndexedDB (state) + Capacitor Filesystem (import/export)
 ```
 
 Key decisions (from the plan):
-- **Home view = Giac in "exact-first" mode**: decimal input becomes exact fractions, results are rounded to 12 digits, with a guard that falls back to floats when numbers get too big or evaluation gets too slow. This is unvalidated until the spike runs; the fallback is decimal.js.
+- **MathPrint everywhere (decided 2026-10-11):** textbook entry (stacked fractions, raised exponents, root signs) driven only by our keyboard; results drawn in 2D from Giac `latex()` by MathLive's renderer; never raw engine text. A one-line entry mode is a setting. The ÷ key makes a stacked fraction, as on the reference calculator.
+- **Our own LaTeX-subset parser** (decided 2026-10-11, P1) turns MathLive's LaTeX into Giac input and into fast plot evaluators. It only accepts what our keyboard can produce; each keyboard template needs a parser rule and a round-trip case in the same commit. Compute Engine is not used.
+- **Home view = Giac in "exact-first" mode** (validated in Phase 0: 123/123 oracle cases): decimal input becomes exact fractions, results are rounded to 12 digits and shown as decimals (as on the reference calculator: `1÷3` → `0.333333333333`), with a guard that falls back to floats when numbers get too big or evaluation gets too slow. Exact 2D results belong to the **CAS** view.
 - **No PPL.** Programming is Python plus Giac function definitions. The `calc` and `hpprime`-compatible Python modules give access to calculator variables and a 320×240 graphics canvas.
 - **Numerical solving (decided 2026-10-10): GSL inside the Giac wasm**, used through Giac `fsolve`. 1-D: our bracket search + Brent, with Newton/Steffensen using exact Giac derivatives when there is no sign change. Systems: GSL `hybrids`/`hybridsj` (Powell hybrid). Boost.Math and cminpack were tested and dropped (MINPACK licence clause). Polynomials: Giac `proot`. **Every root is checked by substituting it back (residual check)**, and a ⚠ is shown if the residual is large.
-- **Performance fallback:** native Giac (NDK) as a Capacitor plugin behind the same `MathEngine` interface.
+- **Performance fallback:** native Giac (NDK) as a Capacitor plugin behind the same `MathEngine` interface. Not needed on Phase 0 evidence.
+- **Toolchain (decided 2026-10-11, P2):** every release (F-Droid, GitHub, Play) builds the engine with **Debian's Emscripten** in a pinned `debian:trixie` container, so all channels ship the same engine. emsdk 6.0.12 is for development only. Any engine build that ships must pass the interrupt, Home and Solve golden runs.
 
-## Stack (tentative; pin exact versions during the spike)
-TypeScript (strict, no `any`), Vite, **Svelte 5** (tentative UI framework, confirm in spike), MathLive + Compute Engine (MIT), KaTeX (MIT), JSXGraph (LGPL/MIT), CodeMirror 6 (MIT), Capacitor (MIT), Emscripten, Giac (GPL-3.0+), GMP/MPFR (LGPL), GSL (GPL-3.0+), MicroPython (MIT), Pyodide (MPL-2.0, optional), Vitest, Playwright.
+## Stack (pin exact versions in package files and THIRD_PARTY.md)
+TypeScript (strict, no `any`), Vite, **Svelte 5** for the app shell (D1; keyboard, parser and engine client stay plain TS), MathLive (MIT), JSXGraph (LGPL/MIT), CodeMirror 6 (MIT), Capacitor (MIT), Emscripten, Giac (GPL-3.0+), GMP/MPFR (LGPL), GSL (GPL-3.0+), MicroPython (MIT), Pyodide (MPL-2.0, optional), Vitest, Playwright.
 
 ## Planned repo layout
 ```
@@ -108,8 +115,23 @@ npx playwright install chromium firefox                    # once
 spike/tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it
 spike/tools/devlock.sh acquire <serial|host-cpu> <owner> [wait_s]   # release / status / break
 
-# Night shift (spike/NIGHT-SHIFT.md; agents in .claude/agents/); keeps the laptop awake while it runs
-systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline night shift" claude --agent henri
+spike/tools/device-build.sh [--app DIR] [--debug|--release] [--install]   # build our APK, prints its path
+spike/tools/device_run.py start --mode first|cold|warm --runs 7         # launch timings from logcat marks
+spike/tools/device_run.py bench --runs 5                                 # the 55 benchmark cases on the device
+spike/tools/runs_summary.py                                             # medians from .coord/device-runs.jsonl
+
+# Engine regression gates (run on every engine build that ships; from the repo root)
+node spike/node/interrupt-test.mjs                         # Giac interrupt (patch 0002): 16/16
+node spike/home/run.ts                                     # exact-first Home: 123/123 oracle cases (ROUNDS=5, GIAC_MJS=<giac.mjs>)
+node spike/solve/run.ts                                    # Solve strategy: 23/23
+(cd spike/input && npm run test:serializer)                # LaTeX → Giac round trip: 292/296 (4 known gaps)
+python3 -m venv spike/.venv && spike/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2   # oracle tooling, once
+
+# Release toolchain: Debian's Emscripten in a container (P2). Pass a scratch copy, never the main checkout (the :Z mount relabels it)
+spike/research/trixie-build.sh <scratch dir with engine/giac> <scratch copy of the tarballs>
+
+# Coordinator team (brief: docs/shifts/brief.md; agents in .claude/agents/); keeps the laptop awake while it runs
+systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline shift" claude --agent henri
 ```
 
 ## Conventions
