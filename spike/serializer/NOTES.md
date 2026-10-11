@@ -56,3 +56,22 @@ So the field costs 808 kB of JS (223 kB gzip) and Compute Engine adds 4.1 MB (1.
 20 kB; see ron's opinion to henri.
 
 Dependencies: `yaml` in `spike/input/package.json` is a devDependency used only by `spike/serializer/run.mjs` (it reads `cases.yaml`); the page itself does not use it.
+
+## Own parser instead of Compute Engine (branch night/ron-parser, a proposal)
+`spike/input/src/parse.ts` (tokenizer + recursive-descent parser for the LaTeX subset our keyboard and Giac's `latex()`
+produce) builds the same MathJSON shapes as Compute Engine's raw parse, so `emit.ts` (MathJSON → Giac) serves both. Anything
+it does not know throws `SerializeError` instead of guessing (units, sets, `x^y^z`, unknown commands).
+
+```bash
+PARSER=own GIAC_OUT=<dir> node spike/serializer/run.mjs     # the 296 cases through the own parser
+GIAC_OUT=<dir> node spike/serializer/diff-parsers.mjs       # both parsers side by side, Giac decides equality
+node spike/serializer/fuzz-parser.mjs                       # 20000 random token strings: parse or clean error, no crash
+node spike/serializer/test-js.mjs                           # LaTeX -> JS function for plotting (emit-js.ts), + speed
+VITE_PARSER=ce npm run build                                # in spike/input: build the page with Compute Engine instead
+```
+Results (desktop): the same 296 cases give **292 pass, 0 wrong** with either parser; the diff run shows 284 identical
+Giac strings, 4 different text with equal value (the own parser keeps `1.5*10^3` and `5/100` exact where Compute Engine
+turns them into the floats `1500.0` and `0.05`), and 8 where one side or both reject (the gap cases). The fuzz run: 20000
+inputs, 0 crashes. Size of parser + emitter: **16.2 kB minified, 5.7 kB gzip**, against 4.1 MB / 1.18 MB for Compute Engine.
+Desktop page, median of 7 loads (ms from navigation): serializer ready 50 / 150 / 255 at CPU throttle x1 / x4 / x6 (Compute Engine
+build: 132 / 440 / 650). Tab One numbers: see ron's report.

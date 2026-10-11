@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// The raw strings are what Giac's latex() printed in the engine build of 2026-10-11 (source: derived from running it).
+import { describe, expect, it } from "vitest";
+import { homeResultToLatex } from "./home.ts";
+import { tidyGiacLatex } from "./tidy.ts";
+
+const cases: [string, string][] = [
+  ["\\frac{1}{2}", "\\frac{1}{2}"],
+  ["2\\cdot \\sqrt{2}", "2\\sqrt{2}"],
+  ["x^{3}+3\\cdot x^{2}+3\\cdot x+1", "x^{3}+3x^{2}+3x+1"],
+  ["(x-1)\\cdot (x+1) (x^{2}+1)", "\\left(x-1\\right)\\left(x+1\\right) \\left(x^{2}+1\\right)"],
+  ["\\frac{(x+1)}{(x-1)}", "\\frac{x+1}{x-1}"],
+  ["\\frac{(a+b)(c+d)}{2}", "\\frac{\\left(a+b\\right)\\left(c+d\\right)}{2}"],
+  ["\\frac{e^{x}}{x}", "\\frac{\\mathrm{e}^{x}}{x}"],
+  ["\\pi \\cdot 2", "\\pi \\cdot 2"],
+  ["1+2*i", "1+2i"],
+  ["\\mathrm{atan}\\left(x\\right)", "\\arctan\\left(x\\right)"],
+  ["\\mathrm{factorial}\\left(x\\right)", "\\left(x\\right)!"],
+  ["\\sin\\left(x\\right)^{2}+\\cos\\left(x\\right)^{2}", "\\sin\\left(x\\right)^{2}+\\cos\\left(x\\right)^{2}"],
+  ["\\left(\\begin{array}{cc}\n1 & 2 \\\\\n3 & 4\n\\end{array}\\right) ", "\\begin{pmatrix}1 & 2 \\\\ 3 & 4\\end{pmatrix}"],
+  ["\\{-\\sqrt{2},\\sqrt{2}\\}", "\\{-\\sqrt{2},\\sqrt{2}\\}"],
+  ["x^{2}\\cdot y", "x^{2}y"],
+  ["\\frac{a\\cdot b}{c}", "\\frac{ab}{c}"],
+  ["1267650600228229401496703205376", "1267650600228229401496703205376"],
+];
+
+describe("tidyGiacLatex", () => {
+  for (const [raw, want] of cases) it(raw.replace(/\n/g, "↵"), () => expect(tidyGiacLatex(raw)).toBe(want));
+
+  it("leaves unbalanced brackets alone", () => {
+    expect(tidyGiacLatex("(x+1")).toBe("(x+1");
+  });
+});
+
+describe("homeResultToLatex", () => {
+  it("keeps plain decimals", () => {
+    expect(homeResultToLatex("0.333333333333")).toBe("0.333333333333");
+    expect(homeResultToLatex("-12.5")).toBe("-12.5");
+  });
+  it("raises the exponent of scientific notation", () => {
+    expect(homeResultToLatex("1.5E-7")).toBe("1.5\\times10^{-7}");
+    expect(homeResultToLatex("2E3")).toBe("2\\times10^{3}");
+  });
+  it("writes complex results with i", () => {
+    expect(homeResultToLatex("1.5+2*i")).toBe("1.5+2\\mathrm{i}");
+  });
+});
