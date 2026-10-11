@@ -15,3 +15,6 @@ Questions only a real HP Prime G2 (firmware 2.4 rev 15515) or the official Virtu
 | 9 | Home | In real mode, does `sqrt(-4)` give `2*i` or an error? | We give `2*i` | gorge | |
 | 10 | Home | What does `asin(2)` give (which complex branch, or an error)? | We give 1.57079632679-1.31695789692*i | gorge | |
 | 11 | Home | Does `(-8)^(1/3)` give -2 or 1+1.73205080757*i? (Same question as #4 for the Home view) | We give the principal complex root | gorge | |
+| 12 | Solve | Which root does Solve return for `tan(x)=0` with guess 1.4, and for `x^3-3x+1=0` with guess 0? | Our rule is "the root nearest the guess" | gorge | |
+| 13 | Solve | What does Solve show for `x^2+1=0` with guess 0 (no real root)? | We show "no root found" | gorge | |
+| 14 | Solve | Does Solve say anything about the pole when solving `1/x=0`? | We show "no root found" | gorge | |

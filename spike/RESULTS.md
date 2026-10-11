@@ -59,6 +59,12 @@ Device HA24BZ2Y: Android 15 (SDK 35), MediaTek MT8786 (mt6768), 8 cores, 3.9 GB 
 - **R2 (fast wasm start), measured on the Tab One:** Capacitor already serves `.wasm` as `application/wasm` and Emscripten already uses `instantiateStreaming`. Storing the wasm **uncompressed in the APK** (`noCompress "wasm"`) cut engine ready from 975 to ≈900 ms (three 7-run series: 899, 905, 898 ms) and first result to ≈1005 ms, at the cost of a bigger APK (6.6 → 14.3 MB). A Cache API / compiled-module cache gave no end-to-end gain (883–1019 ms, noise) and was dropped; compiling on the main thread was slower. Note: `spike/research/r2-wasm-start.md`.
 - Only one low-end device was measured. Mid-range (Fairphone 6) and the old Android 8/9 tablet stay open; don't extrapolate.
 
+### Solve-app strategy prototype (docs/02 section 4; desktop only)
+`spike/app/src/solve/solve1.ts`, 23 cases in `spike/solve/cases.yaml` (mpmath or `derived`): **23 / 23** (reproduced by henri on the main engine build). Node, median of 5 fresh engines: 2–4 ms with a sign change, 13–28 ms when Newton is needed, ≈57 ms (up to 116 ms in one run) for "no root found". Accepted roots have a relative residual ≤ 5e-29.
+- Strategy: decimal literals made exact; exact f′ and f″; bracket search in doubles from the guess; each sign change → Brent (`fsolve` interval form, `brent_solver`) → 30-digit polish (Schröder step, also for multiple roots); a root is accepted only if the polish converges and the residual is ≤ 1e-15, otherwise the sign change is treated as a pole or jump (`tan(x)=0` from 1.4 skips π/2). No sign change → damped Newton with the same checks. An integer is shown only when Giac proves it is an exact root (`cos(x)=1` → 0, not 7e-16).
+- Findings: a value assigned at `Digits:=12` stays a double after `Digits:=30`, so double literals limit the polish to ≈1e-16 (exact literals fix it); `exp(x)=0` underflows to exactly 0 near x = −1.4e9 even in MPFR, which fakes a root (now rejected); Giac reads names like `pas_d` as a value with a unit, so internal names have no underscores.
+- Not done: systems (`hybrids`), `proot`, running Solve in the worker or on the Tab One.
+
 ### Engine size and startup
 | Build | Giac | wasm raw | gzip -9 | brotli -q 11 | Node instantiate+init |
 |---|---|---|---|---|---|
