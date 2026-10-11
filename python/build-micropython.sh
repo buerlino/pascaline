@@ -43,7 +43,7 @@ make -C "$SRC/ports/webassembly" -j"$JOBS" VARIANT="$VARIANT"
 
 OUT="$HERE/_out/$MODE"
 mkdir -p "$OUT"
-LOCK="$ROOT/spike/tools/devlock.sh"
+LOCK="$ROOT/tools/devlock.sh"
 SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pascaline-mp.XXXXXX")"
 cleanup() {
   [[ "${NO_LOCK:-0}" == 1 ]] || "$LOCK" release host-cpu annabell-py >/dev/null 2>&1 || true

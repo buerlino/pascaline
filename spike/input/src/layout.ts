@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Prototype keyboard layout: 5 columns x 7 rows, one shift layer.
 // Positions are OUR prototype choice; matching any real calculator's logical layout stays `assumed`
-// until the owner checks spike/G2-CHECKLIST.md.
+// until the owner checks tests/golden/G2-CHECKLIST.md.
 
 export type Action =
   /** Type characters as if from a physical keyboard (smart fences, auto-subscript rules apply). */

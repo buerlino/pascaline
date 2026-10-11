@@ -112,13 +112,13 @@ ENGINES=source npx playwright test --project=chromium      # subset
 npx playwright install chromium firefox                    # once
 
 # Devices and coordination (from the repo root; state lives in .coord/, gitignored)
-spike/tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it
-spike/tools/devlock.sh acquire <serial|host-cpu> <owner> [wait_s]   # release / status / break
+tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it
+tools/devlock.sh acquire <serial|host-cpu> <owner> [wait_s]   # release / status / break
 
-spike/tools/device-build.sh [--app DIR] [--debug|--release] [--install]   # build our APK, prints its path
-spike/tools/device_run.py start --mode first|cold|warm --runs 7         # launch timings from logcat marks
-spike/tools/device_run.py bench --runs 5                                 # the 55 benchmark cases on the device
-spike/tools/runs_summary.py                                             # medians from .coord/device-runs.jsonl
+tools/device-build.sh [--app DIR] [--debug|--release] [--install]   # build our APK, prints its path
+tools/device_run.py start --mode first|cold|warm --runs 7         # launch timings from logcat marks
+tools/device_run.py bench --runs 5                                 # the 55 benchmark cases on the device
+tools/runs_summary.py                                             # medians from .coord/device-runs.jsonl
 
 # App (from app/; Vite + Svelte 5; copies the engine from GIAC_OUT, default engine/giac/_out/gsl)
 npm ci
@@ -131,7 +131,7 @@ npm run build                                              # → app/dist/
 npm run golden                                             # interrupt 16/16, Home 123/123, Solve 42/42, Function 24/24, bench 55, parser 294/298 (4 known gaps)
 node scripts/compare-engines.ts <a/giac.mjs> <b/giac.mjs>  # output differences between two engine builds
 python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2   # oracle, once (repo root)
-tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # check cases; --g2 regenerates spike/G2-CHECKLIST.md from tests/golden/g2.yaml
+tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # check cases; --g2 regenerates tests/golden/G2-CHECKLIST.md from tests/golden/g2.yaml
 
 # Full build: clean source → engine (container, P2) → app → Capacitor → Gradle → dist/pascaline.apk (from the repo root)
 ./build.sh [--dev] [--measure] [--unsigned] [--no-python] [--engine-dir DIR] [--install [SERIAL]]   # --dev = emsdk engine; --measure = timing marks; --no-python skips MicroPython

@@ -3,7 +3,7 @@
 # Build an app directory (default spike/app) into an Android APK with the Capacitor shell, and
 # optionally install it on the tablet. One command for the whole team:
 #
-#   spike/tools/device-build.sh [--app DIR] [--debug|--release] [--install] [--serial S]
+#   tools/device-build.sh [--app DIR] [--debug|--release] [--install] [--serial S]
 #
 # DIR must be a Vite project with @capacitor/* 8.5.3 and capacitor.config.ts (like spike/app).
 # --release (default) is signed with a throwaway key (spike/android/_keys, gitignored).
@@ -11,7 +11,7 @@
 # Output: prints the APK path on the last line. Takes the host-cpu lock for the Gradle part.
 set -euo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP="$REPO/spike/app" BUILD=release INSTALL=0 SERIAL="${ANDROID_SERIAL:-HA24BZ2Y}"
 while (( $# )); do
   case "$1" in
@@ -50,10 +50,10 @@ if [[ "$BUILD" == release && ! -f "$KEYS/spike.jks" ]]; then
 fi
 export PASCALINE_KEYSTORE="$KEYS/spike.jks"
 
-"$REPO/spike/tools/devlock.sh" acquire host-cpu "device-build" 1800 >&2
-trap '"$REPO/spike/tools/devlock.sh" release host-cpu device-build >&2 || true' EXIT
+"$REPO/tools/devlock.sh" acquire host-cpu "device-build" 1800 >&2
+trap '"$REPO/tools/devlock.sh" release host-cpu device-build >&2 || true' EXIT
 (cd android && ./gradlew --console=plain -q --init-script "$OVERLAY/init.gradle" "assemble${BUILD^}") >&2
-"$REPO/spike/tools/devlock.sh" release host-cpu device-build >&2; trap - EXIT
+"$REPO/tools/devlock.sh" release host-cpu device-build >&2; trap - EXIT
 
 if [[ "$BUILD" == release ]]; then
   APK="$APP/android/app/build/outputs/apk/release/app-release.apk"

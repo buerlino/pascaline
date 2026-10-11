@@ -10,7 +10,7 @@ import com.getcapacitor.BridgeActivity;
 
 /**
  * Plain Capacitor shell. In measurement builds only (BuildConfig.MEASURE, set by PASCALINE_MEASURE=1) it logs
- * Java-side timing marks under the logcat tag PASCALINE_T, which spike/tools/device_run.py lines up with the JS marks.
+ * Java-side timing marks under the logcat tag PASCALINE_T, which tools/device_run.py lines up with the JS marks.
  */
 public class MainActivity extends BridgeActivity {
     private static final String TAG = "PASCALINE_T";

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # G2 checklist items: questions only the reference calculator (a real G2, firmware 2.4 rev 15515, or the
-# official Virtual Calculator) can answer. Single source for spike/G2-CHECKLIST.md, which oracle.py --g2
+# official Virtual Calculator) can answer. Single source for tests/golden/G2-CHECKLIST.md, which oracle.py --g2
 # generates (never edit the .md by hand). Cases link items with `g2: <n>`.
 # To record an answer: fill `answer` (markdown, with who/date) and set `source: device` or `virtual-calc`;
 # then re-tag the linked `assumed` cases. Never delete an answer.

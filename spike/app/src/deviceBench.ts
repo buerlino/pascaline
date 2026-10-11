@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // On-device version of bench/engine.bench.ts: one session per app launch. Every case is run once
 // "first" (what a user sees) and REPEATS more times "warm"; results go to the console as one JSON
-// line per case plus a summary, which spike/tools/device-run.sh collects from logcat.
+// line per case plus a summary, which tools/device-run.sh collects from logcat.
 import type { MathEngine } from "./engine/types";
 import { EngineCancelled } from "./engine/types";
 import { mark } from "./marks";

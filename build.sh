@@ -34,7 +34,7 @@ done
 
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
-COORD_LOCK=(spike/tools/devlock.sh)
+COORD_LOCK=(tools/devlock.sh)
 lock()   { [[ "${NO_LOCK:-0}" == 1 ]] || "${COORD_LOCK[@]}" acquire host-cpu build.sh 1800 >&2; }
 unlock() { [[ "${NO_LOCK:-0}" == 1 ]] || "${COORD_LOCK[@]}" release host-cpu build.sh >&2 || true; }
 

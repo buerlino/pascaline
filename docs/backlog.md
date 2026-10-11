@@ -29,14 +29,14 @@ The one place for "where are we and what's left". The plan is [02-architecture-p
 
 The two debts grow with every milestone:
 
-1. **Almost nothing is checked against a real G2.** Only 2 of the 25 questions in `spike/G2-CHECKLIST.md` are answered (5 and 16). That includes item 2, the logical key layout, which is the core of "feels like a G2". Every default since milestone 1 is `assumed`. The longer this waits, the more behaviour may have to change later. **Recommendation:** spend an hour with the G2 on items 2, 3, 6, 15, 17 and 18 (keyboard and entry) before milestone 3 adds more UI.
+1. **Almost nothing is checked against a real G2.** Only 2 of the 25 questions in `tests/golden/G2-CHECKLIST.md` are answered (5 and 16). That includes item 2, the logical key layout, which is the core of "feels like a G2". Every default since milestone 1 is `assumed`. The longer this waits, the more behaviour may have to change later. **Recommendation:** spend an hour with the G2 on items 2, 3, 6, 15, 17 and 18 (keyboard and entry) before milestone 3 adds more UI.
 2. **Only the low-end tablet is measured.**
    - The Fairphone 6 (mid-range, 60 fps target, Q6) hasn't been measured.
    - A Samsung Galaxy S8+ (Android 9, old-device class) is now available and gets measured in the milestone 3 shift; the old Android 8/9 tablet is no longer needed for that.
    - Start-up is slowly creeping up: engine ready went from 956 ms to 1022 ms, and keyboard usable from 653–667 ms to 679 ms. Milestone 3 must load Python lazily, never at start.
 
 ## Needs the user
-1. **G2 checks:** 23 open items in `spike/G2-CHECKLIST.md` (questions only a real G2 or the official Virtual Calculator can answer; the Virtual Calculator mapping session can fill most of them). Answers go into `tests/golden/g2.yaml`.
+1. **G2 checks:** 23 open items in `tests/golden/G2-CHECKLIST.md` (questions only a real G2 or the official Virtual Calculator can answer; the Virtual Calculator mapping session can fill most of them). Answers go into `tests/golden/g2.yaml`.
 2. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 3. **When to merge `phase-1` into `master`.** Recommendation: after the `spike/` clean-up (task C1).
 4. **Later, not now** (user, 2026-10-11: first a usable prototype): the email to Bernard Parisse (draft in `../outreach/`), the name and trademark checks, the real application id, CI (C3) and the F-Droid recipe (C4).
@@ -52,10 +52,10 @@ Optional disk space (gitignored, rebuilt when needed): `spike/{app,input,plot}/n
 
 ### Code that still lives in `spike/` (task C1)
 `spike/` was meant to be throwaway. Shipped code still depends on it:
-- `build.sh`, `engine/giac/build-wasm-release.sh` and `python/build-micropython.sh` use `spike/tools/devlock.sh`;
-- the golden gate (`app/scripts/golden.ts`) runs `spike/node/interrupt-test.mjs`;
-- `tests/golden/oracle.py` writes `spike/G2-CHECKLIST.md`;
-- the device tools (`spike/tools/device_run.py` and the others) are part of the measurement workflow.
+- `build.sh`, `engine/giac/build-wasm-release.sh` and `python/build-micropython.sh` use `tools/devlock.sh`;
+- the golden gate (`app/scripts/golden.ts`) runs `tests/engine/interrupt-test.mjs`;
+- `tests/golden/oracle.py` writes `tests/golden/G2-CHECKLIST.md`;
+- the device tools (`tools/device_run.py` and the others) are part of the measurement workflow.
 
 These should move out of `spike/` before `phase-1` goes to `master`.
 
@@ -83,9 +83,9 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 
 ### Clean-up and infrastructure
 - **C1. Move shipped tooling out of `spike/`.**
-  - `spike/tools/` → `tools/`.
-  - `spike/node/interrupt-test.mjs` → `tests/engine/`.
-  - `spike/G2-CHECKLIST.md` → `tests/golden/G2-CHECKLIST.md`.
+  - `tools/` → `tools/`.
+  - `tests/engine/interrupt-test.mjs` → `tests/engine/`.
+  - `tests/golden/G2-CHECKLIST.md` → `tests/golden/G2-CHECKLIST.md`.
   - Update CLAUDE.md, the agents in `.claude/agents/` and the brief in the same commit.
   - Re-run the golden gate and `./build.sh --dev`.
 - **C2. Results file for page benches.** Make `device_run.py page` append the `?bench=solve` and `?bench=plot` results to `.coord/device-runs.jsonl`, so they're recorded and not only in logcat (m2b report).

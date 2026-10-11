@@ -2,15 +2,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Exclusive locks for shared resources during parallel work (devices, heavy host CPU use).
 #
-#   spike/tools/devlock.sh acquire <resource> <owner> [wait_seconds]   # exit 0 = you hold it, 1 = busy
-#   spike/tools/devlock.sh release <resource> <owner>
-#   spike/tools/devlock.sh status
-#   spike/tools/devlock.sh break <resource>     # coordinator only, for a lock whose owner is gone
+#   tools/devlock.sh acquire <resource> <owner> [wait_seconds]   # exit 0 = you hold it, 1 = busy
+#   tools/devlock.sh release <resource> <owner>
+#   tools/devlock.sh status
+#   tools/devlock.sh break <resource>     # coordinator only, for a lock whose owner is gone
 #
 # <resource> is an adb serial or "host-cpu". Locks are directories (mkdir is atomic).
 set -euo pipefail
 
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOCKS="${PASCALINE_COORD:-$REPO/.coord}/locks"
 mkdir -p "$LOCKS"
 cmd="${1:?usage: devlock.sh acquire|release|status|break ...}"

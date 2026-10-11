@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Timing marks for on-device runs (spike/tools/device_run.py reads them from logcat).
+// Timing marks for on-device runs (tools/device_run.py reads them from logcat).
 // Active only in measurement builds (PASCALINE_MEASURE=1 -> VITE_MEASURE=1); otherwise the calls compile away.
 // Wall-clock epoch milliseconds, so they line up with the process start MainActivity logs.
 // Names the tools expect: js-start, keyboard-ready, engine-ready (+ instantiateMs, initMs), first-result.

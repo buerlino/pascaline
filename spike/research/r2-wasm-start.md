@@ -3,7 +3,7 @@
 
 Measured on the Lenovo Tab One (Android 15, WebView 131.0.6778.260, release build, plugged in, 29-30 C), cold start =
 `am force-stop` then `am start -W`, 7-8 runs per series, medians, time counted from process start. Giac wasm is 9.75 MB.
-Raw data: `.coord/device-runs.jsonl`. Tools: `spike/tools/device_run.py`, `spike/tools/probe-wasm.py`
+Raw data: `.coord/device-runs.jsonl`. Tools: `tools/device_run.py`, `tools/probe-wasm.py`
 (probe page `spike/app/public/wasmstart.html`).
 
 ## Result: one change kept, three checked

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // On-device Solve timing for measurement builds only (VITE_MEASURE=1, started with ?bench=solve; see main.ts).
 // Times Calc.solve (Enter -> result delivered, then the next two animation frames) for the 1-D case and the 2x2 system.
-// Output for spike/tools/device_run.py page --wait bench-done: PASCALINE_BENCH solve {json} lines in logcat.
+// Output for tools/device_run.py page --wait bench-done: PASCALINE_BENCH solve {json} lines in logcat.
 import type { Calc } from "./calc/port.ts";
 import { mark } from "./marks.ts";
 

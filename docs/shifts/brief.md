@@ -74,7 +74,7 @@ For this shift that means: MicroPython, never loaded at start; CodeMirror 6 for 
 - If a tool call is denied, don't retry it. Log it and move on.
 
 ## 4. Start-up sequence
-1. Run `date`, `git switch phase-1 && git status` (should be clean), `adb devices -l` and `devlock.sh status`. Use `spike/tools/devlock.sh` until C1 lands, then `tools/devlock.sh`. Append a new dated section to `.coord/log.md` and log every assignment, merge, decision and problem.
+1. Run `date`, `git switch phase-1 && git status` (should be clean), `adb devices -l` and `devlock.sh status`. Use `tools/devlock.sh` until C1 lands, then `tools/devlock.sh`. Append a new dated section to `.coord/log.md` and log every assignment, merge, decision and problem.
 2. **Spawn the three workers** (`subagent_type`: `ron`, `gorge`, `annabell`; background, each in its own worktree). Each spawn prompt says: "Do the setup in section 5, then start section 7 / <name>, task 1."
 3. **Roll call.** Message each worker: `ROLL CALL: reply "READY <name> <your agent id>" plus one line on your first step.` Then send everyone the list of agent IDs. Workers can't message each other by name.
 4. **Device watcher:** a background command or Monitor (with a timeout, re-armed when it expires). It prints a line whenever `adb devices` changes. Forward every change to annabell. `unauthorized` needs a human tap: log it.
@@ -168,9 +168,9 @@ For this shift that means: MicroPython, never loaded at start; CodeMirror 6 for 
 
 ### annabell: tooling move, S8+, measurements (Sonnet / medium)
 1. **C1. Move the shipped tooling out of `spike/`**, as one commit, first thing. The other workers rebase after you announce it.
-   - `spike/tools/` → `tools/`;
-   - `spike/node/interrupt-test.mjs` → `tests/engine/interrupt-test.mjs`;
-   - `spike/G2-CHECKLIST.md` → `tests/golden/G2-CHECKLIST.md`.
+   - `tools/` → `tools/`;
+   - `tests/engine/interrupt-test.mjs` → `tests/engine/interrupt-test.mjs`;
+   - `tests/golden/G2-CHECKLIST.md` → `tests/golden/G2-CHECKLIST.md`.
    - Update every reference: `build.sh`, `engine/giac/*.sh`, `python/build-micropython.sh`, `app/scripts/golden.ts`, `tests/golden/oracle.py` and README, `app/src/*Bench.ts`, `app/src/marks.ts`, `MainActivity.java`, `android/NOTES.md`, `spec/keyboard.yaml`, `CLAUDE.md` Commands, `.claude/agents/*`, and this brief. `spike/` keeps only Phase 0 history (`git grep spike/` afterwards should only find history docs).
    - Prove it: `npm run golden`, then `oracle.py --g2`, then `./build.sh --dev --unsigned` all pass. `[FYI]` everyone with the commit.
 2. **C2.** `device_run.py page` appends its `PASCALINE_BENCH` results (solve, plot, and later python) to `.coord/device-runs.jsonl`, and `runs_summary.py` reads them.

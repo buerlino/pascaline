@@ -4,7 +4,7 @@
 # `expect` is the mathematically correct value rounded to 12 significant digits, half away from
 # zero, in our canonical test format (formatDecimal in spike/app/src/home/homeEval.ts: plain for
 # 1e-4 ≤ |x| < 1e12, else d.dddE±k; complex as a+b*i). It is NOT a claim about how the G2 displays
-# anything; display questions go to spike/G2-CHECKLIST.md.
+# anything; display questions go to tests/golden/G2-CHECKLIST.md.
 #   source: oracle  → expect written by spike/home/oracle.py (mpmath at 30 digits, cross-checked at 60;
 #                     exact Fraction arithmetic where the expression is rational)
 #   source: derived → provable by hand (value given in `note` where not obvious); oracle is a cross-check

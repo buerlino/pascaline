@@ -3,7 +3,7 @@
 // Every case of tests/golden/bench.yaml goes through the real app path (Session.submit -> engine -> history item
 // -> rendered result). The inputs are Giac text, not LaTeX typed on our keyboard (most of them, e.g. matrices
 // and factor(), have no key yet), so the parser step is skipped; evaluation, tidy-up and drawing are the real ones.
-// Output for spike/tools/device_run.py: PASCALINE_BENCH case|summary lines in logcat, then the mark bench-done.
+// Output for tools/device_run.py: PASCALINE_BENCH case|summary lines in logcat, then the mark bench-done.
 import raw from "../../tests/golden/bench.yaml";
 import type { Session, HistoryItem } from "./state/session.svelte.ts";
 import { mark } from "./marks.ts";

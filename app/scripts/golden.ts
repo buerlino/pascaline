@@ -5,7 +5,7 @@
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
 //   ONLY=home,parser npm run golden                 # stages: interrupt, home, solve, function, bench, parser
 // Stages:
-//   interrupt  spike/node/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
+//   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches, same in every round, median ≤ 500 ms
 //   solve      Solve strategy: 1-D (solve1.ts), systems and polynomials (solve.ts); every case matches in
 //              every round, and no ⚠ unless the case has status "warn"
@@ -77,7 +77,7 @@ function report(stage: string, ok: boolean, line: string): void {
 }
 
 function stageInterrupt(): void {
-  const r = spawnSync(process.execPath, [`${root}spike/node/interrupt-test.mjs`], {
+  const r = spawnSync(process.execPath, [`${root}tests/engine/interrupt-test.mjs`], {
     env: { ...process.env, GIAC_MJS: mjs },
     encoding: "utf8",
     timeout: 300_000,
