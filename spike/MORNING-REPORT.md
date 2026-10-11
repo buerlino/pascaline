@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Morning report: Phase 0 night shift, 2026-10-10 23:38 → 2026-10-11 ≈05:30
+# Morning report: Phase 0 night shift, 2026-10-10 23:38 → 2026-10-11 05:10
 
 Henri (coordinator) with annabell (tablet), ron (math input), gorge (engine, Home, Solve) and sandra (Python, plotting, research). All work is merged into `spike/phase-0` and committed; nothing was pushed. Full numbers: `spike/RESULTS.md`. Defaults and proposals: `spike/DECISIONS.md`. Hand checks for you: `spike/G2-CHECKLIST.md`.
 
@@ -46,13 +46,14 @@ Also done: the engine builds with Debian's Emscripten in a trixie container and 
 - Workers can't message each other by name; they used agent IDs.
 - My log's clock ran ahead between ≈00:10 and 00:20 (I wrote estimated times); corrected in `.coord/log.md`.
 - sandra stalled on a background command around 04:05 without answering; I stopped her at 04:52 and ran the trixie build myself.
+- sandra's first trixie container run mounted `engine/giac/_downloads/` with `:Z`, which relabelled it for SELinux (`container_file_t`). The tarballs were intact (Giac sha256 still `1d9536e0…`); I restored the normal label with `restorecon -RF`, and the script now warns to use a scratch copy. Her own scratch folder may hold container-owned files; remove them with `podman unshare rm -rf` if you find any.
 - sandra's plot commit brought the unmerged parser into her branch; it was split off to `night/plot-own` and reverted on her branch before merging.
 
 ## Tablet
 Still connected, stay-awake on, battery 80 % and 27 °C at the last check, our release build installed. Brightness was never lowered (the battery charged all night).
 
 ## Unmerged branches
-- `night/ron-parser` (a58e65a): proposal P1. `night/plot-own` (52a1d93) is in `spike/phase-0`'s history but its changes were reverted, so it is not in the tree; keep the branch for P1.
+- `night/ron-parser` (a58e65a): proposal P1. `night/sandra-notes` (46f26ab) was only a helper to merge two notes; it can be deleted. `night/plot-own` (52a1d93) is in `spike/phase-0`'s history but its changes were reverted, so it is not in the tree; keep the branch for P1.
 
 ## Next
 Decide P1/P2; G2 checks; mid-range and old-device runs (Q1, Q6); adaptive sampling / canvas for plotting; Solve for systems (`hybrids`) and polynomials (`proot`); start Phase 1 with the `tests/golden/` format (D8).
