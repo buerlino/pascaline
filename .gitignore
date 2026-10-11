@@ -52,3 +52,6 @@ spike/android/_keys/
 spike/_ron/
 spike/_plot*/
 spike/_plotB/
+
+# app/: fonts and engine copied in by npm scripts
+app/public/engine/
