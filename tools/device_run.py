@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """On-device measurements for the Pascaline spike shell (org.pascaline.app) on one tablet.
 
-  spike/tools/device_run.py status                       # battery, temperature, WebView, app version
-  spike/tools/device_run.py start  [--runs 7] [--mode cold|warm|first]
-  spike/tools/device_run.py bench  [--runs 5]            # 55 cases per launch, p50/p95, cancel
-  spike/tools/device_run.py page PATH [--wait MARK] [--timeout 60]   # open another page, print its marks
+  tools/device_run.py status                       # battery, temperature, WebView, app version
+  tools/device_run.py start  [--runs 7] [--mode cold|warm|first]
+  tools/device_run.py bench  [--runs 5]            # 55 cases per launch, p50/p95, cancel
+  tools/device_run.py page PATH [--wait MARK] [--timeout 60]   # open another page, print its marks
 
 Modes for `start`: first = fresh install (no WebView code cache), cold = process killed with
 am force-stop (code cache present), warm = app in background, brought back to front.
@@ -18,7 +18,7 @@ SERIAL = os.environ.get("ANDROID_SERIAL", "HA24BZ2Y")
 PKG = "org.pascaline.app"
 ACT = f"{PKG}/.MainActivity"
 HERE = os.path.dirname(os.path.abspath(__file__))
-REPO = os.path.abspath(os.path.join(HERE, "../.."))
+REPO = os.path.abspath(os.path.join(HERE, ".."))
 MAIN = REPO.split("/.claude/worktrees/")[0]
 COORD = os.environ.get("PASCALINE_COORD", os.path.join(MAIN, ".coord"))
 

@@ -9,7 +9,7 @@ Files: `spike/app/src/home/homeEval.ts` (core, runs next to the engine), `cases.
 python3 -m venv spike/.venv && spike/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2
 spike/.venv/bin/python spike/home/oracle.py            # check expect values (--write fills them)
 node spike/home/run.ts                                  # ROUNDS=5, GIAC_MJS=<giac.mjs>, OUT=<json>
-node spike/node/interrupt-test.mjs                      # engine regression test for patch 0002
+node tests/engine/interrupt-test.mjs                      # engine regression test for patch 0002
 ```
 
 ## How it works

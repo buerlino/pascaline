@@ -25,11 +25,11 @@ EMSCRIPTEN_PKG_VERSION="3.1.69+dfsg-3"
 [[ -d "$DL" ]] || { echo "no download cache at $DL (set PASCALINE_DL_DIR)" >&2; exit 1; }
 SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pascaline-release.XXXXXX")"
 cleanup() {
-  [[ "${NO_LOCK:-0}" == 1 ]] || "$ROOT/spike/tools/devlock.sh" release host-cpu annabell >/dev/null 2>&1 || true
+  [[ "${NO_LOCK:-0}" == 1 ]] || "$ROOT/tools/devlock.sh" release host-cpu annabell >/dev/null 2>&1 || true
   if [[ "${KEEP_SCRATCH:-0}" == 1 ]]; then echo "scratch kept: $SCRATCH" >&2; else "$CE" unshare rm -rf "$SCRATCH" 2>/dev/null || rm -rf "$SCRATCH"; fi
 }
 trap cleanup EXIT
-[[ "${NO_LOCK:-0}" == 1 ]] || "$ROOT/spike/tools/devlock.sh" acquire host-cpu annabell 1800
+[[ "${NO_LOCK:-0}" == 1 ]] || "$ROOT/tools/devlock.sh" acquire host-cpu annabell 1800
 
 mkdir -p "$SCRATCH/src" "$SCRATCH/dl"
 (cd "$ROOT" && tar --exclude=engine/giac/_out --exclude=engine/giac/_downloads -cf - engine/giac) | tar -xf - -C "$SCRATCH/src"

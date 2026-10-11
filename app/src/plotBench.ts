@@ -3,7 +3,7 @@
 // Defines sin(X), X^3-2X and 1/X in the Function app, opens Plot (marks plot-open, and the view's own plot-ready),
 // then runs a scripted zoom + pan on the real board for `runs` x `seconds`, counting requestAnimationFrame frames.
 // An FPS overlay is shown while it runs; ?bench=plot&manual=1 only shows the overlay (pinch and pan by hand).
-// Output for spike/tools/device_run.py page --wait bench-done: PASCALINE_BENCH plot {json} lines in logcat.
+// Output for tools/device_run.py page --wait bench-done: PASCALINE_BENCH plot {json} lines in logcat.
 import type { AppShell } from "./apps/shell.svelte.ts";
 import type { FunctionApp } from "./apps/function/app.svelte.ts";
 import { plotHook } from "./apps/function/plotHook.ts";

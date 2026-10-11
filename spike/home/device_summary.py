@@ -2,7 +2,7 @@
 """Medians over several on-device Home runs (Q3 on the tablet).
 
 Each input file is the logcat text of one app launch with /?home=1, e.g. the stdout of
-  spike/tools/device_run.py page "/?home=1" --wait home-done --timeout 300 > run1.txt
+  tools/device_run.py page "/?home=1" --wait home-done --timeout 300 > run1.txt
 Usage: python3 spike/home/device_summary.py run*.txt
 """
 import json

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Build the Giac wasm with Debian trixie's apt `emscripten` (what F-Droid recipes use), in a Podman container.
 # usage: trixie-build.sh <dir containing engine/giac from the branch to test> <download cache dir>
-# Takes the host-cpu lock by hand: run `spike/tools/devlock.sh acquire host-cpu sandra` first.
+# Takes the host-cpu lock by hand: run `tools/devlock.sh acquire host-cpu sandra` first.
 # The mounts use :Z (SELinux relabel), so pass a scratch copy (git archive of engine/giac + spike/{node,home,solve}, plus a copy of the tarballs), not the main checkout or _downloads/. Files written by the container belong to its root user: clean up with `podman unshare rm -rf`.
 set -euo pipefail
 SRC="${1:?dir with engine/giac}"

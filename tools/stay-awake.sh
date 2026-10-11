@@ -2,15 +2,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Keep an Android device awake for long measurement sessions, and undo it afterwards.
 #
-#   spike/tools/stay-awake.sh <serial>            # save originals (once), keep screen on, record device info
-#   spike/tools/stay-awake.sh <serial> --restore  # put the saved settings back
+#   tools/stay-awake.sh <serial>            # save originals (once), keep screen on, record device info
+#   tools/stay-awake.sh <serial> --restore  # put the saved settings back
 #
 # Only touches: global stay_on_while_plugged_in, system screen_off_timeout. Originals are saved
 # to .coord/devices/<serial>.orig the first time and never overwritten.
 set -euo pipefail
 
 SERIAL="${1:?usage: stay-awake.sh <serial> [--restore]}"
-REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COORD="${PASCALINE_COORD:-$REPO/.coord}"
 DIR="$COORD/devices"
 mkdir -p "$DIR"

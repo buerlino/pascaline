@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Plot, MicroPython and Pyodide device pages (spike steps 6 and 7, Q4 and Q6), sandra
 
-A Capacitor-ready Vite project (same shape as `spike/app`, so `spike/tools/device-build.sh --app spike/plot` works). Three pages:
+A Capacitor-ready Vite project (same shape as `spike/app`, so `tools/device-build.sh --app spike/plot` works). Three pages:
 
 | Page | What it does | Mark logged (`PASCALINE_T`) |
 |---|---|---|

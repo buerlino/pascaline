@@ -17,7 +17,7 @@
 # types capital letters.
 # `label` entries starting with "$" are i18n keys (app/src/i18n), anything else is shown as is.
 # `source` says where the position/function came from: `assumed` = our choice, to be checked on a real
-# calculator (docs: spike/G2-CHECKLIST.md item 2); `device` = seen on a G2.
+# calculator (docs: tests/golden/G2-CHECKLIST.md item 2); `device` = seen on a G2.
 schema: 1
 columns: 5
 

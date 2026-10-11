@@ -9,7 +9,7 @@ in the canonical text of app/src/engine/format.ts (STD).
   python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2
   tests/golden/.venv/bin/python tests/golden/oracle.py            # check every file, exit 1 on a problem
   tests/golden/.venv/bin/python tests/golden/oracle.py --write    # fill/refresh expect for source: oracle
-  tests/golden/.venv/bin/python tests/golden/oracle.py --g2       # also regenerate spike/G2-CHECKLIST.md
+  tests/golden/.venv/bin/python tests/golden/oracle.py --g2       # also regenerate tests/golden/G2-CHECKLIST.md
   tests/golden/.venv/bin/python tests/golden/oracle.py home.yaml  # one file
 
 Sources: `oracle` (expect written here), `derived` (by hand; an oracle expression must agree),
@@ -30,7 +30,7 @@ import yaml
 from mpmath import mp
 
 HERE = Path(__file__).resolve().parent
-CHECKLIST = HERE.parent.parent / "spike/G2-CHECKLIST.md"
+CHECKLIST = HERE.parent.parent / "tests/golden/G2-CHECKLIST.md"
 DIGITS = 12
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "assumed"}
 KEYS = ["id", "kind", "input", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
