@@ -104,9 +104,9 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 - **R4. Settings and help pass.** i18n table complete, first help texts. The Giac help-text licence is still to clarify with Parisse.
 
 ### Unscheduled feature requests (docs/02 section 12b)
-- Physical constants menu (Giac built-ins; CODATA 2022 update upstream).
+- ~~Physical constants menu~~ replaced by P3 (qalc CODATA constants; decided 2026-10-11).
 - A decimal ⇄ scientific (STD → SCI → ENG) key, about a day.
-- Units, Qalculate-style picker on Giac units, about 1–2 weeks (needs L1 first).
+- Units, constants and uncertainty: P3 with libqalculate, plan `docs/p3-units-plan.md` (decided 2026-10-11, about 11–12 days; after the MVP basics, before Statistics).
 
 ### v1 and later
 These are in docs/02 section 8:
