@@ -7,6 +7,7 @@ Keep this list short; each patch should also be reported upstream (Giac forum / 
 | Patch | Why | Upstream status |
 |---|---|---|
 | `0001-gen-remove-add_evalf-debug-log.patch` | In EMCC/EMCC2 builds, `caseval` logs `console.log("gen.cc add_evalf", UI.addevalf)` on every evaluation once the host defines `UI.add_evalf` (needed to stop `1/3` printing as `1/3=0.333…`). The log also reads a misspelt property. Removes the log line only. | not reported yet (goes with the email to Parisse, after the device measurements) |
+| `0002-emcc-subsecond-caseval-timeout.patch` | Home's exact-first time guard needs Giac to stop itself after ~0.3 s (`timeout 0.3`, `ckevery 10`). In EMCC builds the check compares whole seconds from `time(0)`, so it fired only after 1–2 s. Records the start with `emscripten_get_now()` and compares milliseconds; after a timeout it restarts that clock like the seconds clock, so the check doesn't fire again while Giac unwinds (without that, every interrupt with `ckevery 1` escaped `caseval` as an uncaught exception). Test: `spike/node/interrupt-test.mjs`. | not reported yet (same email) |
 
 Last checked 2026-10-10: every patch applies cleanly (`patch -p1 --dry-run`) to the pinned `giac-2.1.0.tar.gz` (SHA-256 `1d9536e0…`).
 

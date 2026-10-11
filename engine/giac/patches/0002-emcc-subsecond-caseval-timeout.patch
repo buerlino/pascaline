@@ -1,0 +1,52 @@
+# Upstream: giac 2.1.0 global.cc/gen.cc. EMCC builds compare whole seconds (time(0)) in the caseval timeout check, so 'timeout 0.3' fires only after 1-2 s. Record the start in ms (emscripten_get_now), compare in ms, and restart the ms clock after a timeout (as the seconds clock is) so the check doesn't fire again while Giac unwinds. Non-EMCC builds unchanged.
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -17008,6 +17008,9 @@
+     ctrl_c=false;
+     interrupted=false;
+     caseval_begin=time(0);    
++#if defined(EMCC) || defined(EMCC2)
++    caseval_begin_ms=emscripten_get_now();
++#endif
+ #endif
+ #ifdef HAVE_LIBPTHREAD
+     gen g;
+--- a/src/global.cc
++++ b/src/global.cc
+@@ -2199,6 +2199,7 @@
+   }
+ #endif
+   time_t caseval_begin,caseval_current;
++  double caseval_begin_ms=0;
+   double caseval_maxtime=15; // max 15 seconds
+   int caseval_n=0,caseval_mod=0,caseval_unitialized=-123454321;
+ #if !defined POCKETCAS
+@@ -2227,13 +2228,16 @@
+ 	caseval_n=0; 
+ 	caseval_current=time(0); 
+ #if defined(EMCC) || defined(EMCC2)
+-	if (difftime(caseval_current,caseval_begin)>caseval_maxtime)
++	if (emscripten_get_now()-caseval_begin_ms>caseval_maxtime*1000)
+ #else
+ 	if (caseval_current>caseval_maxtime+caseval_begin)
+ #endif
+ 	  { 
+-	    CERR << "Timeout" << '\n'; ctrl_c=true; interrupted=true; 
++	    CERR << "Timeout" << '\n'; ctrl_c=true; interrupted=true;
+ 	    caseval_begin=caseval_current;
++#if defined(EMCC) || defined(EMCC2)
++	    caseval_begin_ms=emscripten_get_now();
++#endif
+ 	  } 
+       } 
+     }
+--- a/src/global.h
++++ b/src/global.h
+@@ -435,6 +435,7 @@
+   double time(int );
+ #endif
+   extern time_t caseval_begin,caseval_current;
++  extern double caseval_begin_ms; // EMCC: start of the current caseval in ms, for sub-second timeouts
+   extern double caseval_maxtime;
+   extern int caseval_n,caseval_mod,caseval_unitialized;
+ #endif
