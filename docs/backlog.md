@@ -93,7 +93,7 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 - **C4. F-Droid recipe.** It is untested end to end. `npm ci` downloads packages after `prebuild`, so it needs an offline/srclibs rework. Still open: a release tag and `versionCode`, an icon and screenshots (`fdroid/README.md`).
 
 ### Left over from milestones 1 and 2
-- **L1. Subscripted unknowns (`x_1`) in Solve.** This is also needed before units, because Giac reads `x_1` as x with unit 1 (docs/02 section 12b).
+- **L1. Subscripted unknowns (`x_1`) in Solve.** Giac already treats `x_1` as a variable; what blocks it is our own name check in `solve.ts`/`analysis.ts` (ron, 2026-10-11).
 - **L2. a/b mixed-number key** (G2 item 17 for the form).
 - **L3. Alpha lock.**
 - **L4. A literal-caret one-line entry mode.**

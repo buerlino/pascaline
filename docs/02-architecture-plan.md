@@ -339,7 +339,7 @@ Three additions the user asked for. Each reuses what Giac already has, in line w
 - **Display:** MathPrint draws units upright after the number (`19.62 kg·m·s⁻²`). A "→" convert action (Giac `=>`) converts the last result to a picked unit, and "simplify units" (`usimplify`) turns `kg·m·s⁻²` into `N`.
 - **Work needed:** a parser rule and round-trip cases for the unit template (P1); formatter support for value + unit (12 digits on the number only); Home's exact-first path must keep units; golden cases from `oracle`/`derived` conversions. Units stay out of the Function and Solve apps at first (the plot evaluator doesn't carry units).
 - **Effort:** medium, about 1–2 weeks. Feasible, and not ambitious given Giac. The risks are Giac's unit-simplification quirks (golden cases will show them) and the picker design.
-- **Clash to fix first:** Giac reads `x_1` as x with unit `1`. Subscripted variable names must parse differently from units in our parser (P1), e.g. units always come from the picker as `_unit` after a number and subscripts as `x_{1}` → a plain name.
+- **No clash with subscripts** (checked 2026-10-11): Giac reads `x_1` as a plain variable (`type(x_1)` → identifier) and only `<number>_<unit>` (`2_m`) as a unit. Our parser keeps it that way: units come from the picker as `_unit` after a number, subscripts `x_{1}` become the name `x_1`.
 
 ## Sources
 - Giac/Xcas in the browser (giac.js / giacwasm.js; wasm about 2× slower than native, up to 15× on Gröbner bases): <https://xcas.univ-grenoble-alpes.fr/backup/install_en>, <https://www-fourier.univ-grenoble-alpes.fr/~parisse/giacjs/simple.html>, <https://xcas.univ-grenoble-alpes.fr/nw/xcasen.html>

@@ -102,5 +102,5 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Choice:** the Solve app keeps names as typed (`x` and `X` are different unknowns; the Function app maps `X` to `x`). New unknowns start at 0. With one equation, Solve finds the selected unknown and holds the others fixed; with N equations it finds N unknowns, the selected one first. A failed solve or a failed residual check shows ⚠ with the engine's info line. A polynomial with exactly one real root also writes that root into the value.
 - **Why:** engineers expect case-sensitive names, as in the CAS. Starting at 0 is predictable.
 - **Alternatives:** fold case (would clash with CAS variables), or start from the last value used anywhere.
-- **Would change if:** the G2 (items 12–14, 20) shows a different behaviour. Known gap: subscripted names (`x_1`) aren't solvable yet, because Giac reads `x_1` as a unit.
+- **Would change if:** the G2 (items 12–14, 20) shows a different behaviour. Known gap: subscripted names (`x_1`) aren't solvable yet, because our own name check (`IDENT` in `solve.ts`, `analysis.ts`) rejects the underscore. Giac itself reads `x_1` as a plain variable (checked 2026-10-11: `type(x_1)` → identifier); only `<number>_<unit>` is a unit.
 
