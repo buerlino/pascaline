@@ -6,7 +6,8 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "../input/node_modules/yaml/dist/index.js";
-import { latexToGiac } from "../input/src/serialize.ts";
+// PARSER=own uses the hand-written parser (no Compute Engine); default is Compute Engine.
+const { latexToGiac } = await import(process.env.PARSER === "own" ? "../input/src/serialize-light.ts" : "../input/src/serialize.ts");
 
 const here = dirname(fileURLToPath(import.meta.url));
 const giacOut = process.env.GIAC_OUT ?? resolve(here, "../../engine/giac/_out/gsl");
