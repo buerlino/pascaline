@@ -23,7 +23,7 @@ async function name(page: Page, base: string, sub: string): Promise<void> {
 /** Home: x_1 := 5 (Sto), then 2·x_1 → 10 (derived): x_1 is a variable, not a unit. */
 async function storeX1(page: Page): Promise<void> {
   await name(page, "x", "1");
-  await tap(page, ["shift", "comma", "d5", "enter"]);
+  await tap(page, ["alpha", "sub", "shift", "dot", "d5", "enter"]); // ":" then "="
   await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", "5");
 }
 
@@ -61,12 +61,12 @@ test("L1 Solve: unknowns x_1, x_2 solve the 2×2 system x_1+x_2=3, x_1-x_2=1", a
   await name(page, "x", "1");
   await tap(page, ["add"]);
   await name(page, "x", "2");
-  await tap(page, ["shift", "enter", "d3", "enter", "down"]);
+  await tap(page, ["shift", "dot", "d3", "enter", "down"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E2:");
   await name(page, "x", "1");
   await tap(page, ["sub"]);
   await name(page, "x", "2");
-  await tap(page, ["shift", "enter", "d1", "enter"]);
+  await tap(page, ["shift", "dot", "d1", "enter"]);
   await tap(page, ["num"]);
   const row = (n: string) => page.locator(`[data-testid="solve-table"] tr[data-name="${n}"]`);
   await expect(row("x_1")).toBeVisible();

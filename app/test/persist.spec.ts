@@ -10,7 +10,7 @@ test("history survives a reload and is drawn without calling the engine", async 
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();
-  await tap(page, ["app", "sqrt", "d8", "enter"]);
+  await tap(page, ["app", "shift", "sq", "d8", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await page.waitForTimeout(800); // the store write is debounced (400 ms) and asynchronous
   await page.reload();

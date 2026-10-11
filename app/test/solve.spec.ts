@@ -23,13 +23,13 @@ const value = (page: Page, name: string) => page.locator(`[data-testid="solve-ta
 async function setValue(page: Page, name: string, keys: string[]): Promise<void> {
   await page.locator(`[data-testid="solve-table"] tr[data-name="${name}"] th button`).tap();
   await expect(page.getByTestId("entry-label")).toHaveText(`${name}=`);
-  await tap(page, ["shift", "bksp", ...keys, "enter"]);
+  await tap(page, ["esc", ...keys, "enter"]);
 }
 
 test("Solve: x·e^x=5 with guess 1 gives the oracle root and the info line", async ({ page }) => {
   await openSolve(page);
   // x e^x = 5
-  await tap(page, ["x", "shift", "ln", "x", "right", "shift", "enter", "d5", "enter"]);
+  await tap(page, ["x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter"]);
   await expect(page.locator('[data-name="E1"] .math')).toHaveAttribute("data-latex", /x.*e.*=5/);
   await tap(page, ["num"]);
   await expect(value(page, "x")).toBeVisible();
@@ -44,10 +44,10 @@ test("Solve: x·e^x=5 with guess 1 gives the oracle root and the info line", asy
 
 test("Solve: the 2×2 system x²+y²=4, y=e^x from guesses (-1, 1) gives the oracle roots", async ({ page }) => {
   await openSolve(page);
-  await tap(page, ["x", "pow", "d2", "right", "add", "shift", "x", "pow", "d2", "right", "shift", "enter", "d4", "enter"]);
+  await tap(page, ["x", "pow", "d2", "right", "add", "shift", "x", "pow", "d2", "right", "shift", "dot", "d4", "enter"]);
   await tap(page, ["down"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E2:");
-  await tap(page, ["shift", "x", "shift", "enter", "shift", "ln", "x", "right", "enter"]);
+  await tap(page, ["shift", "x", "shift", "dot", "shift", "ln", "x", "right", "enter"]);
   await tap(page, ["num"]);
   await expect(value(page, "y")).toBeVisible();
   await setValue(page, "x", ["sub", "d1"]);
@@ -63,7 +63,7 @@ test("Solve: the 2×2 system x²+y²=4, y=e^x from guesses (-1, 1) gives the ora
 
 test("Solve: polynomial roots of x⁴+x+1=0, complex included (oracle)", async ({ page }) => {
   await openSolve(page);
-  await tap(page, ["x", "pow", "d4", "right", "add", "x", "add", "d1", "shift", "enter", "d0", "enter"]);
+  await tap(page, ["x", "pow", "d4", "right", "add", "x", "add", "d1", "shift", "dot", "d0", "enter"]);
   await tap(page, ["num"]);
   await expect(value(page, "x")).toBeVisible();
   await tap(page, ["menu", "d2"]); // Polynomial roots
@@ -79,7 +79,7 @@ test("Solve: polynomial roots of x⁴+x+1=0, complex included (oracle)", async (
 
 test("Solve: 1/x=0 — the sign change at the pole is not a root; ⚠ and the reason", async ({ page }) => {
   await openSolve(page);
-  await tap(page, ["d1", "div", "x", "right", "shift", "enter", "d0", "enter"]);
+  await tap(page, ["d1", "div", "x", "right", "shift", "dot", "d0", "enter"]);
   await tap(page, ["num"]);
   await setValue(page, "x", ["d1"]);
   await tap(page, ["menu", "d1"]);
@@ -108,14 +108,14 @@ test("Solve: Cancel stops a long solve; equations and values survive and the eng
   // The engine works again: replace E1 by x^2=2 and solve from 1 (oracle sqrt(2), solve.yaml sqrt2-pos).
   await tap(page, ["symb"]);
   await expect(page.locator('[data-name="E1"] .math')).toHaveAttribute("data-latex", /sum/);
-  await tap(page, ["shift", "bksp", "x", "pow", "d2", "right", "shift", "enter", "d2", "enter"]);
+  await tap(page, ["esc", "x", "pow", "d2", "right", "shift", "dot", "d2", "enter"]);
   await tap(page, ["num", "menu", "d1"]);
   await expect(value(page, "x")).toHaveText("1.41421356237");
 });
 
 test("Solve: equations and values are stored", async ({ page }) => {
   await openSolve(page);
-  await tap(page, ["x", "pow", "d2", "right", "shift", "enter", "d2", "enter"]);
+  await tap(page, ["x", "pow", "d2", "right", "shift", "dot", "d2", "enter"]);
   await tap(page, ["num"]);
   await setValue(page, "x", ["sub", "d3"]);
   await page.evaluate(() => window.pascaline.shell.flush());

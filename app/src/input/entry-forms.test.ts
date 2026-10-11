@@ -46,6 +46,9 @@ describe("store and polar entry (P4)", () => {
     ["2\\measuredangle30", "2*(cos(30)+i*sin(30))"],
     ["2\\measuredangle\\frac{\\pi}{6}", "2*(cos(pi/6)+i*sin(pi/6))"],
     ["1+1\\measuredangle-45", "(1+1)*(cos(-45)+i*sin(-45))"],
+    ["2\\mathbin{\\measuredangle}\\frac{\\pi}{6}", "2*(cos(pi/6)+i*sin(pi/6))"],
+    ["2\\mathbin{\\measuredangle}30", "2*(cos(30)+i*sin(30))"],
+    ["\\operatorname{\\mathrm{approx}}\\left(\\frac13\\right)", "approx(1/3)"], // shift Enter, as MathLive serialises it
   ];
   for (const [latex, giac] of forms) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
   it("store needs a name after ▶", () => expect(() => latexToGiac("5\\blacktriangleright 3")).toThrow());

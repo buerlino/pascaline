@@ -217,7 +217,7 @@ keys:
     cls: op
     label: { primary: "×", shift: "∡", alpha: X }
     primary: { insert: "\\times", sample: ["3\\times4", "3*4"] }
-    shift: { insert: "\\measuredangle", sample: ["2\\measuredangle\\frac{\\pi}{6}", "2*(cos(pi/6)+i*sin(pi/6))"] }
+    shift: { insert: "\\mathbin{\\measuredangle}", sample: ["2\\mathbin{\\measuredangle}\\frac{\\pi}{6}", "2*(cos(pi/6)+i*sin(pi/6))"] }  # \mathbin: a following ÷ must not take the sign into its numerator
     alpha: { type: X }
     source: virtual-calc  # r8c5 (shift angle sign: polar entry r∡θ, the angle in the current angle mode; its effect is assumed, user 2026-10-11)
 

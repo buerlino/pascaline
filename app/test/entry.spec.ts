@@ -20,20 +20,25 @@ test("L2: 2 a/b a/b 1 ▶ 2 is the mixed number 2½; ×2 gives 5", async ({ page
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.25");
 });
 
-test("L3: alpha twice locks lowercase letters, alpha again unlocks; shift alpha alpha locks capitals", async ({ page }) => {
+test("L3: alpha twice locks capitals, alpha again unlocks; shift alpha alpha locks lower case", async ({ page }) => {
   const alpha = page.locator('[data-key="alpha"]');
   await tap(page, ["alpha", "alpha"]);
   await expect(alpha).toHaveAttribute("data-locked", "true");
   await tap(page, ["sin", "cos", "tan"]);
-  expect(await entryValue(page)).toBe("abc");
+  expect(await entryValue(page)).toBe("GHI");
   await tap(page, ["alpha"]);
   await expect(alpha).not.toHaveAttribute("data-locked", "true");
   await tap(page, ["d7"]);
-  expect(await entryValue(page)).toBe("abc7");
-  await tap(page, ["shift", "bksp", "shift", "alpha", "alpha", "sin", "cos", "shift", "tan"]);
-  expect(await entryValue(page)).toBe("ABc");
-  await tap(page, ["alpha", "d7"]);
-  expect(await entryValue(page)).toBe("ABc7");
+  expect(await entryValue(page)).toBe("GHI7");
+  await tap(page, ["esc", "shift", "alpha", "alpha", "sin", "cos", "shift", "tan"]);
+  expect(await entryValue(page)).toBe("ghI");
+  await tap(page, ["alpha", "alpha", "d7"]); // unlock, then a one-shot alpha
+  expect(await entryValue(page)).toBe("ghIQ");
+});
+
+test("alpha: one-shot alpha types the capital of the key, shift alpha its lower case", async ({ page }) => {
+  await tap(page, ["alpha", "vars", "alpha", "d4", "shift", "alpha", "d4", "shift", "alpha", "sin"]);
+  expect(await entryValue(page)).toBe("AUug");
 });
 
 test("L4: in one-line mode xʸ and a typed ^ are a literal caret; 2^10 gives 1024", async ({ page }) => {

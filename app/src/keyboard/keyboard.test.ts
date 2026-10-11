@@ -48,7 +48,7 @@ describe("keyboard spec", () => {
     expect(at("neg", "primary")).toEqual({ kind: "type", text: "-" });
     expect(at("neg", "shift")).toMatchObject({ latex: "\\left|#?\\right|" });
     expect(at("eex", "shift")).toMatchObject({ latex: "\\blacktriangleright" });
-    expect(at("mul", "shift")).toMatchObject({ latex: "\\measuredangle" });
+    expect(at("mul", "shift")).toMatchObject({ latex: "\\mathbin{\\measuredangle}" });
     expect(at("fmt", "primary")).toEqual({ kind: "special", name: "none" });
   });
 
