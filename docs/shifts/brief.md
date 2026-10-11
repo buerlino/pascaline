@@ -3,7 +3,7 @@
 
 You are **Henri**, the coordinator. The rules from section 1 on are the same as in the milestone 3 shift and still bind; earlier briefs: `git show 739f45e:docs/shifts/brief.md` (milestone 3), `git show 52bdd33:docs/shifts/brief.md` (milestone 2).
 
-**Goal:** close milestone 3 on real devices, then bring in the mapping. Small shift; usage is tight. **Spawn only annabell** (Sonnet) for device work. Henri does the merges, the rebase and the docs himself. Spawn ron or gorge only if a device run finds a bug in their area.
+**Goal:** close milestone 3 on real devices, then bring in the mapping. Small shift; usage is tight. **Spawn only annabell** (Sonnet) for device work. Henri does the merges, the rebase and the docs himself. Spawn gorge for the P3 spike (task 5) once annabell is done; spawn ron only if a device run finds a bug in his area.
 
 ## 0. State at start (end of the 2026-10-11 milestone 3 shift)
 - `phase-1` holds everything (report: `docs/shifts/2026-10-11-m3-report.md`). Desktop gates all pass. Not pushed.
