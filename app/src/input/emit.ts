@@ -7,6 +7,14 @@ export class SerializeError extends Error {}
 export interface SerializeOptions {
   /** Single-letter names treated as functions when followed by (...), e.g. f(x). Others multiply. */
   userFunctions?: ReadonlySet<string>;
+  /** L6 setting (default on, assumed): an n-th root with odd whole n is the real root (∛(-8) = -2). */
+  realOddRoots?: boolean;
+}
+
+/** The root index is an odd whole number literal (3, 5, ...). */
+export function oddIndex(n: Json | undefined): boolean {
+  const v = typeof n === "number" ? String(n) : typeof n === "object" && n !== null && !Array.isArray(n) && "num" in n ? n.num : "";
+  return /^\d+$/.test(v) && Number(v) % 2 === 1;
 }
 
 /** Fixed names: MathJSON head -> Giac function name (plain 1:1 calls). */
@@ -159,7 +167,9 @@ function ser(e: Json, o: SerializeOptions): Out {
       return { s: `${wrap(base, 5)}^${wrap(ex, 5)}`, p: 4 };
     }
     case "Root": {
-      // principal root, as Giac's x^(1/n); real-root behaviour for odd n is a G2-checklist question
+      // L6 default (assumed, G2 items 4/11): an odd whole-number index gives the real root, so ∛(-8) = -2
+      // (Giac surd). Otherwise, or with realOddRoots off, the principal root x^(1/n).
+      if (o.realOddRoots !== false && oddIndex(a1)) return call("surd", [a0, a1], o);
       return { s: `${wrap(ser(a0, o), 5)}^(1/${wrap(ser(a1, o), 5)})`, p: 4 };
     }
     case "Log": {

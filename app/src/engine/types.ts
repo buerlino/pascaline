@@ -151,7 +151,7 @@ export interface MathEngine {
   analyze(req: AnalysisRequest, settings: HomeSettings): Promise<AnalysisResult>;
   /** Num table: rows by x, each cell what Home shows for fn at x. One engine call. */
   table(req: TableRequest, settings: HomeSettings): Promise<HomeResult[][]>;
-  /** Raw Giac call in whatever mode the engine is in (tools and benchmarks only, not the UI). */
+  /** Raw Giac call in whatever mode the engine is in (tools, benchmarks and the Python `calc` bridge; not the UI). */
   eval(input: string): Promise<EvalResult>;
   /**
    * Abort whatever is running: terminates the worker, starts a new one and replays the variable

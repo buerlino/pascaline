@@ -45,11 +45,15 @@ class WorkerPythonEngine implements PythonEngine {
   private outSubs = new Set<(o: PyOutput) => void>();
   private gfxSubs = new Set<(b: GfxCmd[]) => void>();
 
-  constructor(
-    private readonly baseUrl: string,
-    private readonly createWorker: () => PyWorkerLike,
-    private readonly host: HostHandler,
-  ) {}
+  private readonly baseUrl: string;
+  private readonly createWorker: () => PyWorkerLike;
+  private readonly host: HostHandler;
+
+  constructor(baseUrl: string, createWorker: () => PyWorkerLike, host: HostHandler) {
+    this.baseUrl = baseUrl;
+    this.createWorker = createWorker;
+    this.host = host;
+  }
 
   ready(): Promise<PyTimings> {
     if (!this.readyPromise) this.start();

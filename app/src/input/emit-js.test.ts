@@ -10,7 +10,9 @@ const cases: [string, (x: number) => number][] = [
   ["\\frac12x^2", (x) => 0.5 * x * x],
   ["2\\sin x\\cos x", (x) => 2 * Math.sin(x) * Math.cos(x)],
   ["\\sqrt{x}", (x) => Math.sqrt(x)],
-  ["\\sqrt[3]{x}", (x) => Math.pow(x, 1 / 3)],
+  ["\\sqrt[3]{x}", (x) => Math.cbrt(x)], // L6: real odd roots (assumed, G2 item 4), also for x < 0
+  ["\\sqrt[5]{x}", (x) => Math.sign(x) * Math.pow(Math.abs(x), 1 / 5)],
+  ["\\sqrt[4]{x}", (x) => Math.pow(x, 1 / 4)],
   ["\\ln\\left(x\\right)", (x) => Math.log(x)],
   ["\\log\\left(x\\right)", (x) => Math.log10(x)],
   ["\\exponentialE^{-x^2}", (x) => Math.exp(-(x * x))],
