@@ -17,7 +17,10 @@ if (import.meta.env.VITE_MEASURE === "1") {
   void calc.ready().then(() => mark("engine-ready"));
   if (new URLSearchParams(location.search).has("bench")) void import("./bench.ts").then((m) => m.runBench(session));
 }
+session.saveDelayMs = 400;
 void session.restore();
+addEventListener("pagehide", () => session.flushHistory());
+document.addEventListener("visibilitychange", () => document.hidden && session.flushHistory());
 
 mount(App, { target: document.getElementById("app") as HTMLElement, props: { session, entry } });
 
