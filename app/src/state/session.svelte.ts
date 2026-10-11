@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The calculator session: current view, modifier keys, settings and the history of both views.
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
-import { CalcCancelled, type AngleUnit, type Calc, type CalcSettings, type NumberFormat } from "../calc/port.ts";
+import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat } from "../calc/port.ts";
 import { SerializeError } from "../input/emit.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
+import { t, type MessageKey } from "../i18n/index.ts";
 import { homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
 import { kvGet, kvSet } from "./storage.ts";
@@ -32,6 +33,8 @@ export interface HistoryItem {
 }
 
 const HISTORY_LIMIT = 200;
+const errorText = (code: CalcError | undefined, fallback: string): string =>
+  code ? t(`error.${code}` as MessageKey) : fallback;
 const clampDigits = (n: number): number => Math.min(15, Math.max(1, Math.round(n)));
 
 export class Session {
@@ -146,14 +149,14 @@ export class Session {
         const r = await this.calc.home(giac, s);
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
-        live.text = r.display;
+        live.text = r.ok ? r.display : errorText(r.error, r.display);
         live.approximate = r.approximate;
         if (r.ok) live.resultLatex = homeResultToLatex(r.display);
       } else {
         const r = await this.calc.cas(giac, s);
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
-        live.text = r.text;
+        live.text = r.ok ? r.text : errorText(r.error, r.text);
         if (r.ok) live.resultLatex = tidyGiacLatex(r.latex);
       }
     } catch (e) {

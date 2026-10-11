@@ -12,12 +12,16 @@ export interface CalcSettings {
   format: NumberFormat;
 }
 
+export type CalcError = "syntax" | "timeout" | "engine";
+
 export interface HomeOutcome {
   ok: boolean;
   /** The formatted result (decimal), or the error text when !ok. */
   display: string;
   /** The shown value came from floating point, not from an exact computation. */
   approximate: boolean;
+  /** Why it failed, for the app's own translated message. */
+  error?: CalcError;
 }
 
 export interface CasOutcome {
@@ -26,6 +30,7 @@ export interface CasOutcome {
   text: string;
   /** Giac `latex()` of the result (raw); empty when !ok. */
   latex: string;
+  error?: CalcError;
 }
 
 /** Thrown by home()/cas() when Cancel stopped the job. */
