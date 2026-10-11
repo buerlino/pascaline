@@ -5,7 +5,8 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 ## Needs the user
 
-- **2026-10-11 Merges into `phase-1` are blocked in the coordinator session.** The permission classifier denied `git merge --no-ff` into `phase-1` (and last shift's commits). Verified worker commits are listed in the shift report with the exact merge commands. **Recommendation:** allow Henri to run `git merge --no-ff p1/*-m2` and `git commit -s` on `phase-1` (never push), so verified work lands during the shift.
+- ~~**2026-10-11 Merges into `phase-1` are blocked in the coordinator session.**~~ **Resolved:** in the milestone 2 part 2 shift Henri merged and committed on `phase-1` without problems. The permission classifier denied `git merge --no-ff` into `phase-1` (and last shift's commits). Verified worker commits are listed in the shift report with the exact merge commands. **Recommendation:** allow Henri to run `git merge --no-ff p1/*-m2` and `git commit -s` on `phase-1` (never push), so verified work lands during the shift.
+- Open items for the user: see [backlog.md](backlog.md), "Needs the user".
 
 ## Defaults (Phase 1)
 

@@ -15,8 +15,8 @@ the ⚠, and every other case must not.
 | `solve.yaml` | 42 | Solve: 1-D (nearest root to the guess), systems (`kind: system`), polynomials (`kind: poly`) |
 | `function.yaml` | 24 | Function app: Plot analysis (root, extremum, intersection, slope, area) and Num table rows |
 | `bench.yaml` | 55 | benchmark inputs (timing set; 14 `derived` values checked) |
-| `parser.yaml` | 296 | LaTeX to Giac round trip for our parser (4 known gaps) |
-| `g2.yaml` | 22 items | G2 checklist questions and answers; `spike/G2-CHECKLIST.md` is generated from it |
+| `parser.yaml` | 298 | LaTeX to Giac round trip for our parser (4 known gaps) |
+| `g2.yaml` | 25 items | G2 checklist questions and answers; `spike/G2-CHECKLIST.md` is generated from it |
 
 ```bash
 python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2   # once

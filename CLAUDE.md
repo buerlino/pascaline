@@ -8,7 +8,7 @@ Pascaline is an **open-source graphing CAS calculator** for Android (also PWA, l
 
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 
-**Status (2026-10-11):** Phase 0 is done: **GO** (user, 2026-10-11), no native fallback. Results in [spike/RESULTS.md](spike/RESULTS.md), defaults D1–D9 and the accepted proposals P1/P2 in [spike/DECISIONS.md](spike/DECISIONS.md). **Phase 1 has started on branch `phase-1`** (branched from `spike/phase-0`; neither is merged into `master` yet). Milestone 1: **MathPrint Home + CAS** in `app/` (docs/02 section 12). The current shift brief for the coordinator team is [docs/shifts/brief.md](docs/shifts/brief.md) (agents in `.claude/agents/`).
+**Status (2026-10-11):** Phase 0 is done: **GO** (user, 2026-10-11), no native fallback. Results in [spike/RESULTS.md](spike/RESULTS.md), defaults D1–D9 and the accepted proposals P1/P2 in [spike/DECISIONS.md](spike/DECISIONS.md). **Phase 1 is on branch `phase-1`** (pushed; not merged into `master` yet). Milestones 1 (MathPrint Home + CAS) and 2 (Function + Solve apps) are **done**; next is milestone 3 (Python). Status, open items and tasks: [docs/backlog.md](docs/backlog.md). The current shift brief for the coordinator team is [docs/shifts/brief.md](docs/shifts/brief.md) (agents in `.claude/agents/`).
 
 Background reading (read before larger design decisions):
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): **the plan**. Stack, app→component mapping, solver choice, effort, F-Droid, licence.

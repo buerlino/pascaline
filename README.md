@@ -2,7 +2,7 @@
 
 **A free, open-source graphing CAS calculator for Android and the web, with the keyboard and workflow of a real graphing calculator.**
 
-> 🚧 **Status: planning / early prototype.** There is nothing to download yet. Feedback and ideas are very welcome: please [open an issue](https://github.com/buerlino/pascaline/issues).
+> 🚧 **Status: early development.** The Phase 0 spike is done; the MVP is being built (Home, CAS, textbook entry, Function and Solve apps work; Python is next). There is nothing to download yet. Feedback and ideas are very welcome: please [open an issue](https://github.com/buerlino/pascaline/issues).
 
 Pascaline aims to feel like the HP Prime: the same key layout, the same kind of apps (Function, Solve, Statistics, Spreadsheet, Geometry…) and the same way of working. It has its own design and is built entirely from open-source software. The name honours the *Pascaline*, the calculating machine Blaise Pascal built in 1642.
 
@@ -36,8 +36,8 @@ Pascaline reuses mature open-source projects instead of reinventing them:
 Details: [docs/02-architecture-plan.md](docs/02-architecture-plan.md).
 
 ## Roadmap
-1. **Phase 0, technical spike:** Giac in WebAssembly on real phones, a keyboard prototype, measurements, then a go/no-go decision.
-2. **MVP:** keyboard, Home, CAS, textbook input, Function app, Solve app, Python.
+1. ~~**Phase 0, technical spike**~~ ✅ done (2026-10-11): Giac in WebAssembly is fast enough on a low-end Android tablet.
+2. **MVP** (in progress): keyboard, Home, CAS, textbook input, Function app, Solve app ✅; Python next.
 3. **v1:** Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, RPN.
 4. **v2:** Geometry, Advanced Graphing, 3D, polish. Releases on F-Droid, Google Play and as a web app.
 
@@ -46,6 +46,7 @@ Feedback, ideas and code are all welcome. Please read [CONTRIBUTING.md](CONTRIBU
 
 ## Project documents
 - [Architecture & project plan](docs/02-architecture-plan.md)
+- [Status and backlog](docs/backlog.md)
 - [Original feasibility study](docs/01-feasibility-report.md) (its legal section is still current)
 
 ## Licence

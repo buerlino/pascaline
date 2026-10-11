@@ -130,7 +130,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 | **Explorers** (Linear/Quadratic/Trig) | JSXGraph sliders | Small |
 | **Units, constants** | Giac (Prime CAS units are Giac units, e.g. `_m`, `_s`) | Units menu |
 | **Lists, matrices** | Giac | List/matrix editors (grid) |
-| **Python** | Pyodide + `calc` and `hpprime`-compatible modules + CodeMirror editor | Section 3 |
+| **Python** | MicroPython (default, D6) + `calc` and `hpprime`-compatible modules + CodeMirror editor; Pyodide "Python+" (numpy) as an optional download | Section 3 |
 | **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); *check the licence*, which is likely GPL like the rest of Giac | Help texts for apps and keys |
 | **Notes** | CodeMirror (Markdown) | Small |
 | **Keyboard** | — | **Ours.** Same logical layout as the Prime, our own visual design |
@@ -314,8 +314,8 @@ The same web build (`dist/`) is shipped in different wrappers:
    **Done 2026-10-11** (`phase-1`, shift report docs/shifts/2026-10-11-report.md): every item above, verified. On the Tab One (release): keyboard usable 653–667 ms, engine ready 1.0 s (1.29 s with a full 200-entry history), Enter → drawn p95 92 ms (114 ms with a full history). The release engine is built in the container (P2 met) and is bit-reproducible. Left over: the a/b mixed-number form, alpha lock, a literal-caret one-line mode.
 5. **Phase 1, milestone 2: Function app + Solve app.** An app framework (app switcher, Symb/Plot/Num views, per-app state in IndexedDB, apps and JSXGraph loaded lazily); the **Function app** (F1…F0, Plot on JSXGraph with trace and an analysis menu for root, extremum, intersection, slope and signed area, Num table, every number shown from the engine); the **Solve app** (equations E1…E0, unknowns with guesses; 1-D bracket + Brent/Newton, systems through GSL `hybridsj`/`hybrids`, polynomials through `proot`; every root substituted back, ⚠ when the residual is large).
    Bar: milestone 1's start-up numbers hold; Plot ≥ 30 fps while zooming and panning three functions; Enter → solve result p95 < 300 ms (1-D and a 2×2 system).
-   **Done 2026-10-11** (`phase-1`, shift reports docs/shifts/2026-10-11-m2-report.md and 2026-10-11-m2b-report.md): every item above, verified. On the Tab One (release, Android 15, WebView 131): keyboard usable 679 ms, engine ready 1.02 s; Plot 53.8 fps median (near the display's refresh rate); solve p95 82 ms (1-D) and 51 ms (2×2); first Plot open 0.70 s. `build.sh` from a fresh clone gives a 15.0 MB APK in about 10 minutes. The MicroPython build for milestone 3 is in `python/`. Left over: subscripted unknowns (`x_1`) in Solve, the G2 checks for items 12–14 and 19–25.
-6. Then the rest of the MVP (section 8): Python (milestone 3), then the remaining apps.
+   **Done 2026-10-11** (`phase-1`, shift reports docs/shifts/2026-10-11-m2-report.md and 2026-10-11-m2b-report.md): every item above, verified. On the Tab One (release, Android 15, WebView 131): keyboard usable 679 ms, engine ready 1.02 s; Plot 53.8 fps median (near the display's refresh rate); solve p95 82 ms (1-D) and 51 ms (2×2); first Plot open 0.70 s. `build.sh` from a fresh clone gives a 15.0 MB APK in about 10 minutes. The MicroPython build for milestone 3 is in `python/`. Left over: subscripted unknowns (`x_1`) in Solve; 23 of the 25 G2 checklist items are still unanswered (every Function and Solve default is `assumed`).
+6. **Phase 1, milestone 3: Python** (MicroPython by default, D6), then the MVP release (PWA + Play testing track). The task list, the proposed milestone 3 bar and everything not yet finished are in [backlog.md](backlog.md).
 
 ---
 
