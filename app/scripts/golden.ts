@@ -21,7 +21,7 @@ import { defaultHomeSettings, type HomeResult, type HomeSettings } from "../src/
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
-import { latexToGiac } from "../src/input/latex-to-giac.ts";
+import { latexToGiac, resetUserFunctions } from "../src/input/latex-to-giac.ts";
 
 type Expect = string | Expect[];
 
@@ -46,6 +46,12 @@ interface Case {
   source?: string;
   g2?: number;
   status?: string;
+  /** parser.yaml: input settings for this case (L6). */
+  options?: { decimalComma?: boolean; realOddRoots?: boolean };
+  /** parser.yaml: entries typed before this one (e.g. a function definition, L6). */
+  before?: string[];
+  /** Why a `status: gap` case stays open. */
+  why?: string;
 }
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -243,7 +249,9 @@ async function stageParser(): Promise<void> {
     let produced: string;
     let r: { ok: boolean; how: string };
     try {
-      produced = latexToGiac(c.latex!);
+      resetUserFunctions();
+      for (const b of c.before ?? []) latexToGiac(b, c.options ?? {});
+      produced = latexToGiac(c.latex!, c.options ?? {});
       r = equalByGiac(g, produced, c.expect as string);
     } catch (e) {
       produced = "";

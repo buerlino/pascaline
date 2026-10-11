@@ -2,7 +2,7 @@
 // MathJSON -> JavaScript expression source for plotting: real numbers only, one or more named variables,
 // fully parenthesised, so the result can be compiled once with new Function and called allocation-free.
 // 1/0 gives Infinity and invalid points (sqrt(-1), ln(-1)) give NaN, which curve renderers treat as a break.
-import { SerializeError, type Json } from "./emit.ts";
+import { SerializeError, oddIndex, type Json } from "./emit.ts";
 import { parseLatex } from "./parse.ts";
 
 const FN1: Record<string, string> = {
@@ -39,7 +39,10 @@ function js(e: Json, vars: ReadonlySet<string>): string {
     case "Power": return `Math.pow(${r(0)},${r(1)})`;
     case "Delimiter": return r(0);
     case "Degrees": return `(${r(0)}*Math.PI/180)`;
-    case "Root": return `Math.pow(${r(0)},1/${r(1)})`;
+    case "Root":
+      // Same default as emit.ts (L6): an odd whole index gives the real root.
+      if (oddIndex(a[1])) return r(1) === "3" ? `Math.cbrt(${r(0)})` : `(Math.sign(${r(0)})*Math.pow(Math.abs(${r(0)}),1/${r(1)}))`;
+      return `Math.pow(${r(0)},1/${r(1)})`;
     case "Log": return a.length === 1 ? "Math.log10(" + r(0) + ")" : `(Math.log(${r(0)})/Math.log(${r(1)}))`;
     case "Max": return `Math.max(${a.map((_, i) => r(i)).join(",")})`;
     case "Min": return `Math.min(${a.map((_, i) => r(i)).join(",")})`;

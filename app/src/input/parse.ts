@@ -12,13 +12,14 @@ type Tok =
   | { t: "close"; v: string };
 
 const SPACING = new Set([",", ";", ":", "!", " ", "quad", "qquad", "displaystyle", "textstyle"]);
-const OPEN_CMD: Record<string, string> = { lfloor: "floor", lceil: "ceil" };
-const CLOSE_CMD: Record<string, string> = { rfloor: "floor", rceil: "ceil" };
+const OPEN_CMD: Record<string, string> = { lfloor: "floor", lceil: "ceil", lbrace: "{", "{": "{" };
+const CLOSE_CMD: Record<string, string> = { rfloor: "floor", rceil: "ceil", rbrace: "}", "}": "}" };
 
 /** Token for a literal caret (one-line mode): power of the next factor, not a TeX superscript. */
 const CARET = "^caret";
 
-function tokenize(src: string): Tok[] {
+/** decimalComma (L6): "3,5" and MathLive's "3{,}5" are the number 3.5; use ";" between arguments then. */
+function tokenize(src: string, decimalComma = false): Tok[] {
   const out: Tok[] = [];
   let i = 0;
   const n = src.length;
@@ -48,7 +49,10 @@ function tokenize(src: string): Tok[] {
         while (src[i] === " ") i++;
         let d = src[i] ?? "";
         i++;
-        if (d === "\\") {
+        if (d === "\\" && (src[i] === "{" || src[i] === "}")) {
+          // \left\{ ... \right\}: braces (a list, L6)
+          d = src[i++] as string;
+        } else if (d === "\\") {
           let k = i;
           while (k < n && /[A-Za-z]/.test(src[k] as string)) k++;
           d = src.slice(i - 1, k);
@@ -63,9 +67,18 @@ function tokenize(src: string): Tok[] {
       let j = i;
       while (isDigit(src[j])) j++;
       while (isDigit(src[j])) j++;
+      const comma = !decimalComma ? 0 : src[j] === "," ? 1 : src.startsWith("{,}", j) ? 3 : 0;
       if (src[j] === "." && isDigit(src[j + 1])) {
         j++;
         while (isDigit(src[j])) j++;
+      } else if (comma && isDigit(src[j + comma])) {
+        const intPart = src.slice(i, j);
+        j += comma;
+        const k = j;
+        while (isDigit(src[j])) j++;
+        out.push({ t: "num", v: `${intPart}.${src.slice(k, j)}` });
+        i = j;
+        continue;
       } else if (src[j] === "." && c !== ".") {
         // "5." alone: treat the dot as part of the number
         j++;
@@ -119,12 +132,14 @@ const FACTOR_CMDS = new Set([
 export interface ParseOptions {
   /** Single letters that name functions when followed by parentheses. Default f, g, h. */
   userFunctions?: ReadonlySet<string>;
+  /** L6 setting: the decimal separator is a comma; arguments are then separated by ";". */
+  decimalComma?: boolean;
 }
 
 class Parser {
   private pos = 0;
   private noDiff = 0;
-  private readonly user: ReadonlySet<string>;
+  private user: ReadonlySet<string>;
   private toks: Tok[];
   constructor(toks: Tok[], o: ParseOptions) {
     this.toks = toks;
@@ -163,8 +178,28 @@ class Parser {
     return e;
   }
 
+  /** L6: `p(x):=...` (one letter, parentheses, then :=) defines a function p, whatever the letter. */
+  private definitionName(): string | undefined {
+    const a = this.peek();
+    const b = this.peek(1);
+    if (!a || a.t !== "ch" || !/^[A-Za-z]$/.test(a.v) || !b || b.t !== "open" || b.v !== "(") return undefined;
+    let depth = 0;
+    for (let k = this.pos + 1; k < this.toks.length; k++) {
+      const t = this.toks[k] as Tok;
+      if (t.t === "open") depth++;
+      else if (t.t === "close" && --depth === 0) {
+        const c1 = this.toks[k + 1];
+        const c2 = this.toks[k + 2];
+        return c1?.t === "ch" && c1.v === ":" && c2?.t === "ch" && c2.v === "=" ? a.v : undefined;
+      }
+    }
+    return undefined;
+  }
+
   // ---- levels ----
   private relation(): Json {
+    const def = this.definitionName();
+    if (def) this.user = new Set([...this.user, def]);
     const left = this.additive();
     if (this.isCh(":") && this.isCh("=", 1)) {
       this.pos += 2;
@@ -323,7 +358,7 @@ class Parser {
 
   private list(close: string): Json[] {
     const items: Json[] = [this.relation()];
-    while (this.isCh(",")) {
+    while (this.isCh(",") || this.isCh(";")) {
       this.pos++;
       items.push(this.relation());
     }
@@ -359,6 +394,14 @@ class Parser {
           const e = this.relation();
           this.expectClose("|");
           return ["Abs", e];
+        }
+        if (tok.v === "{") {
+          // L6: braces make a list, as the reference keyboard's { } key does (Giac input has no other use for them here)
+          if (this.peek()?.t === "close" && (this.peek() as Tok).v === "}") {
+            this.pos++;
+            return ["List"];
+          }
+          return ["List", ...this.list("}")];
         }
         if (tok.v === "floor" || tok.v === "ceil") {
           const e = this.relation();
@@ -667,5 +710,5 @@ class Parser {
 }
 
 export function parseLatex(latex: string, o: ParseOptions = {}): Json {
-  return new Parser(tokenize(latex), o).parseAll();
+  return new Parser(tokenize(latex, o.decimalComma), o).parseAll();
 }
