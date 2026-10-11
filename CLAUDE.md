@@ -128,7 +128,7 @@ GIAC_OUT=<dir> npm run test:e2e                            # Playwright key-sequ
 npm run build                                              # → app/dist/
 
 # Engine gate (run on every engine build that ships; from app/, GIAC_MJS=<giac.mjs> or GIAC_OUT=<dir>)
-npm run golden                                             # interrupt 16/16, Home 123/123, Solve 42/42, Function 24/24, bench 55, parser 294/298 (4 known gaps)
+npm run golden                                             # needs an ABSOLUTE GIAC_OUT/GIAC_MJS; interrupt 16/16, Home 123/123, Solve 42/42, Function 24/24, bench 55, parser 294/298 (4 known gaps)
 node scripts/compare-engines.ts <a/giac.mjs> <b/giac.mjs>  # output differences between two engine builds
 python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2   # oracle, once (repo root)
 tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # check cases; --g2 regenerates tests/golden/G2-CHECKLIST.md from tests/golden/g2.yaml

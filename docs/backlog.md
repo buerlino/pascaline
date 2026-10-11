@@ -10,11 +10,12 @@ The one place for "where are we and what's left". The plan is [02-architecture-p
 | Phase 0 spike | **Done**, GO (2026-10-11) |
 | MVP milestone 1: MathPrint Home + CAS | **Done** 2026-10-11 |
 | MVP milestone 2: Function app + Solve app | **Done** 2026-10-11 |
-| MVP milestone 3: Python | **Next.** Not started; the MicroPython build is ready in `python/` |
+| Virtual Calculator mapping | **In progress** (user's Windows session). Integrated by a separate session on its own branch `map/vc-*`, reviewed and pushed by the user after the shift (brief section 0b) |
+| MVP milestone 3: Python | **Started:** interface agreed (`p1/gorge-m3@75e79af`, not merged); MicroPython dev build ready |
 | MVP release (Play testing track + web app, docs/02 section 8) | Not started |
 | v1, v2 | Not started |
 
-`phase-1` is on GitHub (`origin/phase-1` @52bdd33). `master` still has only the first docs commit.
+`phase-1` is on GitHub (local `phase-1` is ahead of `origin/phase-1`; not pushed). `master` still has only the first docs commit.
 
 ### Is it on track?
 **Yes on scope and speed, but with two growing debts.**
@@ -38,7 +39,7 @@ The two debts grow with every milestone:
 ## Needs the user
 1. **G2 checks:** 23 open items in `tests/golden/G2-CHECKLIST.md` (questions only a real G2 or the official Virtual Calculator can answer; the Virtual Calculator mapping session can fill most of them). Answers go into `tests/golden/g2.yaml`.
 2. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-3. **When to merge `phase-1` into `master`.** Recommendation: after the `spike/` clean-up (task C1).
+3. **When to merge `phase-1` into `master`.** C1 is done. Recommendation: after the mapping branch is merged into `phase-1` and milestone 3 passes.
 4. **Later, not now** (user, 2026-10-11: first a usable prototype): the email to Bernard Parisse (draft in `../outreach/`), the name and trademark checks, the real application id, CI (C3) and the F-Droid recipe (C4).
 
 Done: the Giac mirror is live (release `deps-giac-2.1.0-1d9536e0`, SHA-256 checked 2026-10-11); the leftover worktrees and branches were removed and Phase 0 is tagged `phase-0-done`; milestone 3 as proposed below is approved (user, 2026-10-11).
@@ -46,7 +47,7 @@ Done: the Giac mirror is live (release `deps-giac-2.1.0-1d9536e0`, SHA-256 check
 ## Repo cleanup
 
 ### Branches and worktrees
-Done by the user 2026-10-11: only `master` and `phase-1` are left, plus the tags `phase-0-done` and `deps-giac-2.1.0-1d9536e0`.
+Done by the user 2026-10-11 (first round). The paused milestone 3 round left three worktrees under `.claude/worktrees/`: `p1/annabell-m3` (merged) and `p1/ron-m3` (no commits) can go; keep `p1/gorge-m3` (75e79af, `types.ts`) until gorge has cherry-picked it onto `p1/gorge-m3b`.
 
 Optional disk space (gitignored, rebuilt when needed): `spike/{app,input,plot}/node_modules` (565 MB) and `engine/giac/_build` (561 MB, the engine build cache). **Never delete** `engine/giac/_downloads/` or `spike/prebuilt/`.
 
@@ -82,18 +83,13 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
   - a `calc.cas` round trip p95 < 50 ms.
 
 ### Clean-up and infrastructure
-- **C1. Move shipped tooling out of `spike/`.**
-  - `tools/` → `tools/`.
-  - `tests/engine/interrupt-test.mjs` → `tests/engine/`.
-  - `tests/golden/G2-CHECKLIST.md` → `tests/golden/G2-CHECKLIST.md`.
-  - Update CLAUDE.md, the agents in `.claude/agents/` and the brief in the same commit.
-  - Re-run the golden gate and `./build.sh --dev`.
+- ~~**C1. Move shipped tooling out of `spike/`.**~~ **Done** 2026-10-11 (10c2f92): `tools/`, `tests/engine/interrupt-test.mjs`, `tests/golden/G2-CHECKLIST.md`. Left: `tools/device-build.sh` (a spike-app helper) still uses `spike/app` and `spike/android`; `npm run golden` now needs an absolute `GIAC_OUT`.
 - **C2. Results file for page benches.** Make `device_run.py page` append the `?bench=solve` and `?bench=plot` results to `.coord/device-runs.jsonl`, so they're recorded and not only in logcat (m2b report).
 - **C3. CI.** There is none. Add a GitHub Actions workflow for typecheck, unit and parser tests (no engine, so it stays fast). Add the engine gate later, once the Giac mirror exists. Needs your OK, since it runs on GitHub.
 - **C4. F-Droid recipe.** It is untested end to end. `npm ci` downloads packages after `prebuild`, so it needs an offline/srclibs rework. Still open: a release tag and `versionCode`, an icon and screenshots (`fdroid/README.md`).
 
 ### Left over from milestones 1 and 2
-- **L1. Subscripted unknowns (`x_1`) in Solve.** Giac already treats `x_1` as a variable; what blocks it is our own name check in `solve.ts`/`analysis.ts` (ron, 2026-10-11).
+- **L1. Subscripted unknowns (`x_1`) in Solve.** Engine part **done** (a3ddd52: our name check accepts `x_1`; Giac already treats it as a variable). Left: show `x_{1}` in results, Playwright tests.
 - **L2. a/b mixed-number key** (G2 item 17 for the form).
 - **L3. Alpha lock.**
 - **L4. A literal-caret one-line entry mode.**

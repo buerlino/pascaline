@@ -3,10 +3,10 @@
 
 You are **Henri**, the coordinator. You lead three workers. You assign the work, keep everyone talking, check and merge their results, and make the calls a lead makes within the plan. The workers do the hands-on work. The user may be asleep or busy: never wait for them (section 3, plan changes).
 
-**Goal of this shift (user, 2026-10-11): a usable prototype.** Three parts:
+**Goal of this shift (user, 2026-10-11): a usable prototype.** The Virtual Calculator mapping is integrated **in parallel by a separate session on its own branch** (section 0b); this shift doesn't do it and doesn't wait for it. Three parts:
 1. **Milestone 3, Python.** The engineer opens the Python app, writes a script in the editor or types into the shell, uses `calc` to reach the CAS and the calculator variables, draws on a 320×240 canvas, and can always stop a runaway script with Cancel.
-2. **Milestones 1 and 2 finished completely.** Every leftover listed in `docs/backlog.md` (L1–L6) is either done or explicitly `assumed` with a G2 question.
-3. **The shipped tooling moves out of `spike/` (C1),** and page benches are recorded (C2).
+2. **Milestones 1 and 2 finished completely.** Every leftover in `docs/backlog.md` (L1–L6) is either done or explicitly `assumed` with a G2 question.
+3. **Page benches are recorded (C2)** and the Galaxy S8+ is measured.
 
 The definition of done is in section 8. Outreach, the name check, CI and the F-Droid recipe come later. Don't work on them.
 
@@ -24,6 +24,23 @@ Earlier briefs are in git history:
 | **annabell** | Sonnet / medium | C1 tooling move, C2, the Galaxy S8+ and every device measurement, start-up budget |
 
 Spawn workers with `subagent_type` set to their name, and don't override the model.
+
+## 0. State at resume (first part of this shift, 2026-10-11 15:42–16:30, paused at the usage limit)
+- **Merged on `phase-1`:** C1 (shipped tooling now in `tools/`, `tests/engine/`, `tests/golden/G2-CHECKLIST.md`; 10c2f92) and the L1 engine fix (`IDENT` accepts `x_1`, with a regression test; a3ddd52). Gates green: typecheck 0, vitest 180/180, golden passed.
+- **Not merged:** `p1/gorge-m3@75e79af` holds only `app/src/python/types.ts`, the PythonEngine and graphics interface agreed by ron and gorge. `p1/ron-m3` has no commits. Their old worktrees under `.claude/worktrees/` may still have these branches checked out, so new workers branch `p1/<name>-m3b` from `phase-1` (gorge: `git cherry-pick 75e79af` first).
+- **Agreed interfaces** (types.ts): `loadPythonEngine(math)` → `ready`, `run` (fresh globals), `shell` (persistent globals, whole blocks), `cancel` (new worker, `PythonCancelled`), `onOutput`/`onGraphics` (survive cancel), `dispose`; errors `{type, message, line, traceback}`. Graphics: batched tuple commands (clear, pixel, line, rect, fillrect, circle, fillcircle, text, show) on 320×240, origin top-left, 0xRRGGBB, starts white; Cancel keeps a half-drawn canvas; a run doesn't clear it.
+- **L1:** `x_1` / `x_{1}` stay Giac `x_1` (a plain identifier in our build; only `<number>_<unit>` is a unit). Left: ron's display mapping (`\mathrm{x\_1}` → `x_{1}` in `render/tidy.ts`) and the Playwright tests.
+- **MicroPython dev build** is in `python/_out/dev/`. It includes Asyncify, so gorge checks whether a synchronous `calc.cas` works without SharedArrayBuffer.
+- **Gotcha:** since C1, `npm run golden` needs an **absolute** `GIAC_OUT` (a relative one breaks the interrupt test).
+- Log: `.coord/log.md`, section "Shift 2026-10-11 milestone 3 + M1/M2 finish".
+
+## 0b. The Virtual Calculator mapping runs beside this shift
+A separate session integrates the user's Virtual Calculator mapping on its own branch (`map/vc-*`) in its own worktree: key layout into `spec/keyboard.yaml`, answers into `tests/golden/` as `source: virtual-calc`, the G2 checklist filled in, and the raw notes in their own folder. **Henri never merges that branch;** after this shift is merged, it is rebased onto `phase-1` and the user reviews and pushes it.
+
+To keep the two merge-friendly:
+- **ron:** don't move or rename existing keys in `spec/keyboard.yaml`. Add the Python layer as a new, separate block at the end.
+- **gorge:** in `tests/golden/g2.yaml`, only append new items at the end and don't edit existing items' answers. Don't change the `source:` of existing cases.
+- **Nobody** changes an existing default in `docs/decisions.md` because of what the reference "probably" does. That is the mapping branch's job.
 
 ## 1. Principles
 The two principles in CLAUDE.md decide every default:
@@ -56,7 +73,7 @@ For this shift that means: MicroPython, never loaded at start; CodeMirror 6 for 
   - **The `hpprime`-compatible module:** write its API from public descriptions, in our own words. Its Python module name is the one compatibility needs. The file and identifiers on our side get our own names, e.g. `app/src/python/graphics.ts`. Function names and signatures that aren't publicly documented are `assumed`, with a G2 question.
 - **The reference calculator is not ours to touch.**
   - The G2 stays off the laptop.
-  - A separate session on another PC maps the official Virtual Calculator. Don't look for it or wait for it.
+  - The Virtual Calculator mapping is integrated by a separate session on its own branch (section 0b). Don't look for it, wait for it or merge it.
   - Anything taken from the reference calculator is `source: assumed`, with a G2-checklist question.
   - Never lose an answer the user already gave.
 - **Never invent expected values.** Sources: `device`, `virtual-calc`, `oracle`, `derived`, `assumed`. Measurements are medians of ≥5 runs, with device, Android version, WebView version and build type.
@@ -74,14 +91,14 @@ For this shift that means: MicroPython, never loaded at start; CodeMirror 6 for 
 - If a tool call is denied, don't retry it. Log it and move on.
 
 ## 4. Start-up sequence
-1. Run `date`, `git switch phase-1 && git status` (should be clean), `adb devices -l` and `devlock.sh status`. Use `tools/devlock.sh` until C1 lands, then `tools/devlock.sh`. Append a new dated section to `.coord/log.md` and log every assignment, merge, decision and problem.
+1. Run `date`, `git switch phase-1 && git status` (should be clean), `adb devices -l` and `devlock.sh status`. Use `tools/devlock.sh`. Append a new dated section to `.coord/log.md` and log every assignment, merge, decision and problem.
 2. **Spawn the three workers** (`subagent_type`: `ron`, `gorge`, `annabell`; background, each in its own worktree). Each spawn prompt says: "Do the setup in section 5, then start section 7 / <name>, task 1."
 3. **Roll call.** Message each worker: `ROLL CALL: reply "READY <name> <your agent id>" plus one line on your first step.` Then send everyone the list of agent IDs. Workers can't message each other by name.
 4. **Device watcher:** a background command or Monitor (with a timeout, re-armed when it expires). It prints a line whenever `adb devices` changes. Forward every change to annabell. `unauthorized` needs a human tap: log it.
 5. Let the workers run. You wake up on a report, a device change or a message.
 
 ## 5. Worker setup (every worker, first)
-- In your worktree: `git switch -c p1/<name>-m3 phase-1`. **Commit small and often**, at least every 30–45 minutes of work.
+- In your worktree: `git switch -c p1/<name>-m3b phase-1` (see section 0 for gorge's cherry-pick). **Commit small and often**, at least every 30–45 minutes of work.
 - Shared paths:
   ```bash
   export MAIN=/home/nordmu/Documents/source99/pascaline
@@ -125,7 +142,7 @@ For this shift that means: MicroPython, never loaded at start; CodeMirror 6 for 
 
 ### ron: entry leftovers, Python app UI (Opus / high)
 1. **Finish the entry leftovers** (backlog L1–L5), each with Playwright or unit tests:
-   - **L1. Subscripted names.** `x_1`, `X_{1}` → a plain variable name (e.g. `x_1` → Giac `x1`, or another mapping agreed with gorge). Never a Giac unit. Works in Home, CAS, Solve unknowns and Function. Agree the parser rule with gorge, who owns the parser.
+   - **L1. Subscripted names.** `x_1`, `X_{1}` → Giac `x_1` (agreed; the engine part is merged, a3ddd52). Left: show results as `x_{1}` (`render/tidy.ts`) and the Playwright tests in Home, CAS, Solve and Function.
    - **L2. The a/b mixed-number key.** The form follows `docs/decisions.md` "Mixed numbers", `assumed` (G2 item 17).
    - **L3. Alpha lock.**
    - **L4. The literal-caret one-line entry mode** (setting).
@@ -227,7 +244,7 @@ Defaults you'll likely need:
 - the decimal-comma setting.
 
 ## 10. Your loop and the usage budget
-- On every report: check the claim (re-run the test or look at the numbers), then merge `p1/<name>-m3` into `phase-1` (`git merge --no-ff`). Update the shared files, log it, and hand out the next job.
+- On every report: check the claim (re-run the test or look at the numbers), then merge `p1/<name>-m3b` into `phase-1` (`git merge --no-ff`). Update the shared files, log it, and hand out the next job.
 - Every time you wake: run `devlock.sh status` (break locks held by a worker that is gone) and `adb devices`, and ping anyone who has been silent for over an hour. If a worker doesn't answer within 30 minutes of a ping, stop it, log what it was doing, and reassign the job.
 - **Usage budget.** The user's other sessions count against the same limit. To keep progress steady:
   - keep your turns short and your messages few;
