@@ -16,6 +16,7 @@ Sources: `oracle` (expect written here), `derived` (by hand; an oracle expressio
 `device` / `virtual-calc` (seen on the reference calculator; an oracle expression must agree),
 `assumed` (depends on an open G2 item, `g2:` required; a differing oracle is only noted).
 """
+import functools
 import json
 import math
 import re
@@ -32,7 +33,8 @@ HERE = Path(__file__).resolve().parent
 CHECKLIST = HERE.parent.parent / "spike/G2-CHECKLIST.md"
 DIGITS = 12
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "assumed"}
-KEYS = ["id", "input", "latex", "eq", "var", "guess", "settings", "oracle", "expect", "source", "g2", "status", "group", "cat", "note"]
+KEYS = ["id", "kind", "input", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
+        "expect", "source", "g2", "status", "group", "cat", "note"]
 CASE_LINE = re.compile(r"^\s*- (\{.*\})\s*$")
 
 
@@ -64,7 +66,35 @@ def namespace():
               asind=lambda x: mp.asin(M(x)) * 180 / mp.pi, acosd=lambda x: mp.acos(M(x)) * 180 / mp.pi,
               atand=lambda x: mp.atan(M(x)) * 180 / mp.pi)
     ns["pi"], ns["e"], ns["inf"] = +mp.pi, +mp.e, mp.inf
+    ns["diff"] = mpmath.diff
+    ns["sortroots"] = sortroots
+    ns["S"] = lambda label: Label(label)
     return ns
+
+
+class Label(str):
+    """A non-numeric entry in an expected list (e.g. the extremum kind "min"), passed through as is."""
+
+
+def sortroots(roots):
+    """Our order for polynomial roots (app/src/engine/solve.ts): reals ascending, then complex by real
+    part, then imaginary part. A root counts as real when its imaginary part is below 1e-(dps-5)·|z|."""
+    tol = mp.mpf(10) ** (-(mp.dps - 5))
+    reals, cplx = [], []
+    for z in roots:
+        z = mp.mpmathify(z)
+        if isinstance(z, mp.mpc) and abs(z.imag) > tol * abs(z):
+            cplx.append(z)
+        else:
+            reals.append(mp.mpf(z.real) if isinstance(z, mp.mpc) else z)
+    eq = mp.mpf(10) ** -20  # real parts this close count as equal (conjugate pairs), as in solve.ts
+
+    def cmp(a, b):
+        if abs(a.real - b.real) <= eq * max(1, abs(a), abs(b)):
+            return -1 if a.imag < b.imag else (1 if a.imag > b.imag else 0)
+        return -1 if a.real < b.real else 1
+
+    return sorted(reals) + sorted(cplx, key=functools.cmp_to_key(cmp))
 
 
 def round_decimal(d: Decimal) -> Decimal:
@@ -113,7 +143,14 @@ def exact_fraction_round(x: Fraction) -> Decimal:
     return Decimal((1 if neg else 0, tuple(int(c) for c in str(m)), e - DIGITS + 1))
 
 
-def display(x) -> str:
+def display(x):
+    """12-digit STD text; lists (systems, polynomial roots, table rows) element by element."""
+    if isinstance(x, Label):
+        return str(x)
+    if isinstance(x, mp.matrix):
+        return [display(x[i]) for i in range(x.rows)] if x.cols == 1 else [display(r) for r in x.tolist()]
+    if isinstance(x, (list, tuple)):
+        return [display(v) for v in x]
     if isinstance(x, int):
         x = Fraction(x)
     if isinstance(x, Fraction):
@@ -130,7 +167,7 @@ def display(x) -> str:
     return fmt_real(round_decimal(to_decimal(x)))
 
 
-def evaluate(expr: str, dps: int) -> str:
+def evaluate(expr: str, dps: int):
     mp.dps = dps
     return display(eval(expr, namespace()))  # expressions come from our own case files
 

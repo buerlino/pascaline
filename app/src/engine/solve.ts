@@ -10,10 +10,19 @@ import type { KnownValue, SolveOutcome, SolveRequest } from "./types.ts";
 
 /** Internal numbers only (comparisons, search points); never shown to users. */
 export function num(s: string): number | undefined {
-  const t = s.trim();
+  const t = negZero(s.trim());
   if (!/^-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/.test(t)) return undefined;
   const v = Number(t);
   return Number.isFinite(v) ? v : undefined;
+}
+
+/** Giac's own interrupt for one call inside Solve and Function analysis: a safety net only; the
+ *  solvers keep their own budgets and the user has Cancel. */
+export const SOLVE_HARD_TIMEOUT_S = 30;
+
+/** Giac prints a negative zero MPFR float as `0.-000…`; read it as `-0.000…`. */
+function negZero(t: string): string {
+  return t.replace(/^0\.-(0+)$/, "-0.$1");
 }
 
 const IDENT = /^[A-Za-z][A-Za-z0-9]*$/;
@@ -65,7 +74,7 @@ export function unknownsOf(giac: Giac, equations: string[]): string[] {
 /** One real part as a DecimalValue (from a work-precision float or an exact integer). */
 function realPart(giac: Giac, expr: string, work: number): DecimalValue | null {
   const t = giac.eval(`evalf(${expr},${work})`);
-  return decimalFromString(t);
+  return decimalFromString(negZero(t.trim()));
 }
 
 /** A numeric HomeResult for the Giac expression `expr` (a value at work precision), rounded to `digits`. */
@@ -272,7 +281,7 @@ function polyRoots(giac: Giac, eq: string, v: string, wrap: (e: string) => strin
     ev(`pasr[${k}]:=pasz`);
   }
   // Reals first (ascending), then complex by real part, then imaginary part.
-  ev("pasr:=sort(pasr,(a,b)->when(im(a)==0,when(im(b)==0,re(a)<re(b),true),when(im(b)==0,false,when(re(a)==re(b),im(a)<im(b),re(a)<re(b)))))");
+  ev("pasr:=sort(pasr,(a,b)->when(im(a)==0,when(im(b)==0,re(a)<re(b),true),when(im(b)==0,false,when(abs(re(a)-re(b))<=10^(-20)*max(1,abs(a),abs(b)),im(a)<im(b),re(a)<re(b)))))");
   const roots = Array.from({ length: count }, (_, k) => ({ result: numericResult(giac, `pasr[${k}]`, s.digits, s.workDigits) }));
   const warn = worst > s.warnRel;
   return {

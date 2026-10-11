@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Function app maths (app/src/engine/analysis.ts): the Plot analysis menu and Num table rows, in x.
+#   root / intersection : expect [x, y]                 (nearest x0; inside lo..hi when given)
+#   extremum            : expect [x, y, min|max|flat]
+#   slope               : expect f'(x0)
+#   area                : expect the signed integral of f (minus g) from a to b
+#   table               : expect rows by x, one cell per function, as Home shows them
+# A case with status "warn" must raise ⚠ (residual or consistency check failed); every other case must not.
+#   oracle  : tests/golden/oracle.py (mpmath, 30 digits, checked at 60)
+#   derived : by hand
+cases:
+  - { id: "root-sqrt2", kind: "root", f: "x^3-2*x", x0: "1", oracle: "[sqrt(2), F(0)]", expect: ["1.41421356237", "0"], source: "oracle", note: "milestone 2 bar: root near X=1 of X^3-2X" }
+  - { id: "root-pi", kind: "root", f: "sin(x)", x0: "3", oracle: "[pi, F(0)]", expect: ["3.14159265359", "0"], source: "oracle" }
+  - { id: "root-zero", kind: "root", f: "x^3-2*x", x0: "0.2", oracle: "[F(0), F(0)]", expect: ["0", "0"], source: "derived" }
+  - { id: "root-outside-window", kind: "root", f: "x^3-2*x", x0: "1", lo: "0.5", hi: "1.2", expect: "no root found", source: "derived", note: "the roots are 0 and ±1.414, none in [0.5, 1.2]" }
+  - { id: "root-pole-in-window", kind: "root", f: "tan(x)", x0: "1.4", lo: "1", hi: "2", expect: "no root found", source: "derived", note: "the only sign change in the window is the pole at pi/2" }
+  - { id: "extremum-min", kind: "extremum", f: "x^3-2*x", x0: "1", oracle: "[sqrt(F(2,3)), sqrt(F(2,3))**3-2*sqrt(F(2,3)), S('min')]", expect: ["0.816496580928", "-1.0886621079", "min"], source: "oracle" }
+  - { id: "extremum-max", kind: "extremum", f: "x^3-2*x", x0: "-1", oracle: "[-sqrt(F(2,3)), -sqrt(F(2,3))**3+2*sqrt(F(2,3)), S('max')]", expect: ["-0.816496580928", "1.0886621079", "max"], source: "oracle" }
+  - { id: "extremum-sin", kind: "extremum", f: "sin(x)", x0: "1.5", oracle: "[pi/2, F(1), S('max')]", expect: ["1.57079632679", "1", "max"], source: "oracle" }
+  - { id: "extremum-flat", kind: "extremum", f: "x^3", x0: "1", oracle: "[F(0), F(0), S('flat')]", expect: ["0", "0", "flat"], source: "derived", g2: 22, note: "f'=0 at 0 but no extremum; how the reference reports it is G2 item 22" }
+  - { id: "extremum-quartic-min", kind: "extremum", f: "x^4", x0: "1", oracle: "[F(0), F(0), S('min')]", expect: ["0", "0", "min"], source: "derived", note: "f''=0 at the minimum: decided by f on both sides" }
+  - { id: "intersection-sin-cubic", kind: "intersection", f: "sin(x)", g: "x^3-2*x", x0: "1", oracle: "(lambda r: [r, mp.sin(r)])(findroot(lambda t: mp.sin(t)-t**3+2*t, 1.6))", expect: ["1.61784493243", "0.998893418501"], source: "oracle", note: "milestone 2 bar: an intersection of the two curves" }
+  - { id: "intersection-parabola", kind: "intersection", f: "x^2", g: "2", x0: "1", oracle: "[sqrt(2), F(2)]", expect: ["1.41421356237", "2"], source: "oracle" }
+  - { id: "intersection-exp-line", kind: "intersection", f: "exp(x)", g: "x+2", x0: "-2", oracle: "(lambda r: [r, mp.exp(r)])(findroot(lambda t: mp.exp(t)-t-2, -1.8))", expect: ["-1.84140566044", "0.158594339563"], source: "oracle" }
+  - { id: "slope-cubic", kind: "slope", f: "x^3-2*x", x0: "2", oracle: "F(10)", expect: "10", source: "derived" }
+  - { id: "slope-sin", kind: "slope", f: "sin(x)", x0: "0.5", oracle: "cos(F(1,2))", expect: "0.87758256189", source: "oracle" }
+  - { id: "slope-exp", kind: "slope", f: "exp(x)", x0: "1", oracle: "e", expect: "2.71828182846", source: "oracle" }
+  - { id: "area-sin", kind: "area", f: "sin(x)", a: "0", b: "pi", oracle: "F(2)", expect: "2", source: "derived" }
+  - { id: "area-between", kind: "area", f: "sin(x)", g: "x^3-2*x", a: "0", b: "1", oracle: "M(F(7,4))-cos(1)", expect: "1.20969769413", source: "oracle" }
+  - { id: "area-gauss", kind: "area", f: "exp(-x^2)", a: "0", b: "3", oracle: "quad(lambda t: mp.exp(-t**2), [0, 3])", expect: "0.88620734826", source: "oracle" }
+  - { id: "area-reversed", kind: "area", f: "x", a: "0", b: "-1", oracle: "F(1,2)", expect: "0.5", source: "derived", note: "signed: from 0 down to -1" }
+  - { id: "area-kink", kind: "area", f: "abs(x-0.3)", a: "0", b: "1", oracle: "F(29,100)", expect: "0.29", source: "derived", note: "Romberg does not converge at the kink; the exact integral is used" }
+  - { id: "area-pole", kind: "area", f: "1/x", a: "-1", b: "1", expect: "no area", source: "derived", g2: 22, note: "diverges at 0 (only the principal value is 0)" }
+  - { id: "table-three", kind: "table", f: ["sin(x)", "x^3-2*x"], xs: ["0", "0.1", "1.5"], oracle: "[[F(0), F(0)], [sin(F(1,10)), F(1,1000)-F(2,10)], [sin(F(3,2)), F(27,8)-3]]", expect: [["0", "0"], ["0.0998334166468", "-0.199"], ["0.997494986604", "0.375"]], source: "oracle", note: "milestone 2: Num table values" }
+  - { id: "table-negative-step", kind: "table", f: ["1/x", "exp(x)"], xs: ["-2", "-1.5"], oracle: "[[F(-1,2), exp(-2)], [F(-2,3), exp(F(-3,2))]]", expect: [["-0.5", "0.135335283237"], ["-0.666666666667", "0.223130160148"]], source: "oracle" }
