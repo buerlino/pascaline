@@ -152,6 +152,10 @@ class Parser {
   // ---- levels ----
   private relation(): Json {
     const left = this.additive();
+    if (this.isCh(":") && this.isCh("=", 1)) {
+      this.pos += 2;
+      return ["Assign", left, this.relation()];
+    }
     const t = this.peek();
     if (t && (t.t === "ch" || t.t === "cmd") && t.v in RELATION) {
       this.pos++;

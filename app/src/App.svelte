@@ -108,6 +108,7 @@
 
   <History
     items={session.items}
+    display={(item) => session.display(item)}
     onrecall={(latex) => entry.set(latex)}
     oncancel={() => void cancel()}
   />

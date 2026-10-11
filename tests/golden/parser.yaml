@@ -311,6 +311,9 @@ cases:
   - { id: "decimals-11", latex: "1.5\\times10^{3}", expect: "1500", source: "derived", group: "decimals" }
   - { id: "decimals-12", latex: "2.5\\times10^{-3}", expect: "1/400", source: "derived", group: "decimals" }
   - { id: "decimals-13", latex: "6.02\\times10^{23}", expect: "602*10^21", source: "derived", group: "decimals" }
+  # --- assignment (typed with : =; needed by the Cancel test and Home variables)
+  - { id: "assign-01", latex: "a:=7", expect: "a:=7", source: "derived", group: "assign" }
+  - { id: "assign-02", latex: "f\\left(x\\right):=x^{2}", expect: "f(x):=x^2", source: "derived", group: "assign" }
   # --- gaps
   - { id: "gaps-01", latex: "\\sqrt[3]{-8}", expect: "-2", source: "derived", g2: 4, status: "gap", group: "gaps" }
   - { id: "gaps-02", latex: "x^y^z", expect: "x^(y^z)", source: "derived", status: "gap", group: "gaps" }

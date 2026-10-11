@@ -6,9 +6,13 @@
 
   let {
     items,
+    display,
     onrecall,
     oncancel,
-  }: { items: HistoryItem[]; onrecall: (latex: string) => void; oncancel: () => void } = $props();
+  }: {
+    items: HistoryItem[];
+    display: (item: HistoryItem) => { text: string; latex: string };
+    onrecall: (latex: string) => void; oncancel: () => void } = $props();
 
   let scroller: HTMLElement | undefined = $state();
   // Keep the newest entry in view.
@@ -48,8 +52,8 @@
         {:else if item.status === "error"}
           <span class="error" role="alert">{item.text}</span>
         {:else}
-          <span class="result" data-text={item.text}>
-            <Math latex={item.resultLatex} />
+          <span class="result" data-text={display(item).text}>
+            <Math latex={display(item).latex} />
           </span>
           {#if item.approximate}<span class="note">{t("history.approximate")}</span>{/if}
         {/if}

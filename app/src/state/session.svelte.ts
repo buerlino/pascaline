@@ -5,7 +5,8 @@ import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSett
 import { SerializeError } from "../input/emit.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
-import { homeResultToLatex } from "../render/home.ts";
+import { formatComplex, type ComplexValue } from "../engine/format.ts";
+import { complexToLatex, homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
 import { kvGet, kvSet } from "./storage.ts";
 
@@ -29,6 +30,8 @@ export interface HistoryItem {
   /** Plain text of the result or the error message. */
   text: string;
   approximate: boolean;
+  /** Home: the numeric result, formatted on demand so a settings change re-formats the whole history. */
+  value?: ComplexValue;
   startedAt: number;
 }
 
@@ -151,6 +154,7 @@ export class Session {
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.display : errorText(r.error, r.display);
         live.approximate = r.approximate;
+        if (r.value) live.value = r.value;
         if (r.ok) live.resultLatex = homeResultToLatex(r.display);
       } else {
         const r = await this.calc.cas(giac, s);
@@ -177,6 +181,15 @@ export class Session {
     p.status = "cancelled";
     await this.calc.cancel();
     return true;
+  }
+
+  /** What the history shows for a finished item: Home numbers follow the current digits and format. */
+  display(item: HistoryItem): { text: string; latex: string } {
+    if (item.view === "home" && item.value && item.status === "done") {
+      const f = formatComplex(item.value, { format: this.settings.format.toUpperCase() as "STD" | "SCI" | "ENG", digits: this.settings.digits });
+      return { text: f.text, latex: complexToLatex(f) };
+    }
+    return { text: item.text, latex: item.resultLatex };
   }
 
   clearHistory(): void {

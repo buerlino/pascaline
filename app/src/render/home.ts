@@ -2,6 +2,21 @@
 // Home results are decimals formatted by our own formatter (never JS Number.toString). This turns the
 // formatted string into LaTeX for the 2D renderer: an exponent part becomes a raised power of ten.
 
+import type { FormattedComplex, FormattedNumber } from "../engine/format.ts";
+
+function part(f: FormattedNumber): string {
+  return `${f.mantissa}${f.exponent === null ? "" : `\\times10^{${f.exponent}}`}`;
+}
+
+/** A formatted Home number as LaTeX: the exponent is drawn raised, the imaginary unit as i. */
+export function complexToLatex(c: FormattedComplex): string {
+  const re = `${c.re.neg ? "-" : ""}${part(c.re)}`;
+  if (!c.im) return re;
+  const im = `${part(c.im)}\\mathrm{i}`;
+  if (c.re.mantissa.replace(/[0.]/g, "") === "" && c.re.exponent === null) return `${c.im.neg ? "-" : ""}${im}`;
+  return `${re}${c.im.neg ? "-" : "+"}${im}`;
+}
+
 /** `-1.5E-7` / `1.5×10^-7` style display strings -> LaTeX. Anything else is drawn as typed. */
 export function homeResultToLatex(display: string): string {
   const s = display.trim();

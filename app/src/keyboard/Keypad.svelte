@@ -89,6 +89,7 @@
   }
   .key.enter {
     background: var(--key-enter);
+    color: #fff;
     font-size: 16px;
   }
   .shiftlegend {
