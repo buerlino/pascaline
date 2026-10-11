@@ -31,7 +31,11 @@ async function enter(session: Session, giac: string): Promise<{ ms: number; item
 export async function runBench(session: Session): Promise<void> {
   const doc = raw as { cases: Case[] };
   while (session.engineState === "starting") await sleep(20);
+  // History is persisted: start every run from an empty one so the runs are comparable.
+  session.setView("home");
+  session.clearHistory();
   session.setView("cas");
+  session.clearHistory();
   const first: number[] = [];
   const errors: string[] = [];
   const mismatches: string[] = [];
