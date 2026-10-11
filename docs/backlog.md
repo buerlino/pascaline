@@ -11,7 +11,7 @@ The one place for "where are we and what's left". The plan is [02-architecture-p
 | MVP milestone 1: MathPrint Home + CAS | **Done** 2026-10-11 |
 | MVP milestone 2: Function app + Solve app | **Done** 2026-10-11 |
 | Virtual Calculator mapping | **In progress** (user's Windows session). Integrated by a separate session on its own branch `map/vc-*`, reviewed and pushed by the user after the shift (brief section 0b) |
-| MVP milestone 3: Python | **Desktop done** 2026-10-11 (all gates and key-sequence tests pass; report docs/shifts/2026-10-11-m3-report.md). **Left:** the device numbers (Tab One, S8+) and the fresh-clone APK on the Tab One |
+| MVP milestone 3: Python | **Done** 2026-10-11 (desktop gates, S8+ and Tab One device numbers; report docs/shifts/2026-10-11-m3-report.md) |
 | MVP release (Play testing track + web app, docs/02 section 8) | Not started |
 | v1, v2 | Not started |
 
@@ -76,7 +76,7 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
   - A shell (REPL) view with history.
   - Scripts are stored in IndexedDB, with import and export.
 - ~~**P5. Golden and e2e cases**~~ (done 2026-10-11) for `calc`, `print`, errors with line numbers, Cancel on `while True: pass`, and graphics output.
-- **D1. Device numbers: S8+ done 2026-10-11 evening (m3 report), Tab One still open** (release; needs the device). S8+: Python open 782 ms, Cancel 398 ms, `calc.cas` p95 17 ms, start-up 576 ms / 1.73 s. Tab One bars:
+- ~~**D1. Device numbers.**~~ **Done** 2026-10-11 evening (m3 report). Tab One: keyboard usable 662 ms, engine ready 995 ms, Python open 165 ms, Cancel 109 ms, `calc.cas` p95 25 ms; all bars pass. S8+: Python open 782 ms, Cancel 398 ms, `calc.cas` p95 17 ms, start-up 576 ms / 1.73 s. Tab One bars:
   - milestone 1's start-up numbers still hold;
   - first open of Python → shell ready < 0.5 s (the spike measured 335 ms);
   - Cancel on an endless loop → ready again < 0.5 s;
