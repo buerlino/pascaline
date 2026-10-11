@@ -97,8 +97,18 @@ function implicitProducts(s: string): string {
     l.startsWith("\\") && l !== "\\right)" && /^[A-Za-z]/.test(r) ? `${l} ` : l);
 }
 
+/**
+ * Giac prints a subscripted name x_1 as `\mathrm{x\_1}` (an upright name with an escaped underscore);
+ * textbook form is an italic base with a subscript, `x_{1}`. A multi-letter base stays upright.
+ */
+function subscriptNames(s: string): string {
+  return s.replace(/\\mathrm\{([A-Za-z][A-Za-z0-9]*)\\_([A-Za-z0-9]+)\}/g, (_, base: string, sub: string) =>
+    `${base.length === 1 ? base : `\\mathrm{${base}}`}_{${sub}}`);
+}
+
 export function tidyGiacLatex(raw: string): string {
   let s = raw.trim();
+  s = subscriptNames(s);
   // matrices
   s = s.replace(/\\left\(\\begin\{array\}\{[a-z|]*\}([\s\S]*?)\\end\{array\}\\right\)/g, (_, body: string) =>
     `\\begin{pmatrix}${body.trim()}\\end{pmatrix}`);

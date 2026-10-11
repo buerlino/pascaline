@@ -16,8 +16,8 @@ import { parseDec, showDecimal } from "../decimal.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
 import type { AppHost, AppInstance, MenuItem, NavDir, ViewId } from "../types.ts";
 
-/** A variable name the engine accepts (letters and digits; subscripts are not supported yet). */
-const NAME = /^[A-Za-z][A-Za-z0-9]*$/;
+/** A variable name the engine accepts: letters and digits, optionally subscripted (x_1, L1; engine IDENT). */
+const NAME = /^[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?$/;
 
 export interface SolveReport {
   /** What was solved for, e.g. ["X", "Y"]. */

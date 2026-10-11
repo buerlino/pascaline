@@ -26,5 +26,6 @@ export function homeResultToLatex(display: string): string {
     .replace(/\*i\b/g, "\\mathrm{i}")
     .replace(/(\d)\s*i\b/g, "$1\\mathrm{i}")
     .replace(/\*/g, "\\cdot ")
-    .replace(/\binf\b/g, "\\infty");
+    .replace(/\binf\b/g, "\\infty")
+    .replace(/\b([A-Za-z])_([A-Za-z0-9]+)\b/g, "$1_{$2}");
 }

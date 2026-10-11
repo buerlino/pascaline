@@ -7,7 +7,15 @@
   import type { SolveApp } from "./app.svelte.ts";
 
   let { app }: { app: SolveApp } = $props();
+
+  /** A subscripted unknown x_1 is shown as x with a subscript 1 (L1); the Giac name stays in data-name. */
+  const split = (n: string): [string, string] => {
+    const i = n.indexOf("_");
+    return i < 0 ? [n, ""] : [n.slice(0, i), n.slice(i + 1)];
+  };
 </script>
+
+{#snippet label(n: string)}{split(n)[0]}{#if split(n)[1]}<sub>{split(n)[1]}</sub>{/if}{/snippet}
 
 <div class="num">
   {#if app.unknowns.length === 0}
@@ -18,7 +26,7 @@
         {#each app.unknowns as name (name)}
           <tr data-name={name} data-selected={app.selected === name} aria-current={app.selected === name}>
             <th>
-              <button type="button" onpointerdown={(e) => e.preventDefault()} onclick={() => app.selectUnknown(name)}>{name}</button>
+              <button type="button" onpointerdown={(e) => e.preventDefault()} onclick={() => app.selectUnknown(name)}>{@render label(name)}</button>
             </th>
             <td data-value={app.value(name)} data-solved={app.report?.ok && app.report.names.includes(name) && !app.report.roots}>
               {app.fmtValue(name)}
@@ -32,7 +40,7 @@
     <div class="report" data-testid="solve-report" data-warn={app.report.warn} data-ok={app.report.ok}>
       {#if app.report.roots}
         <ol class="roots" data-testid="solve-roots">
-          {#each app.report.roots as r, i (i)}<li>{app.report.names[0]} = {r}</li>{/each}
+          {#each app.report.roots as r, i (i)}<li>{@render label(app.report.names[0] ?? "")} = {r}</li>{/each}
         </ol>
       {/if}
       <p class="info">
