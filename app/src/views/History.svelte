@@ -11,8 +11,11 @@
     onrecall,
     oninsert,
     oncancel,
+    selected = null,
   }: {
     items: HistoryItem[];
+    /** P4: the row picked with Up from an empty entry line (index into items), or null. */
+    selected?: number | null;
     display: (item: HistoryItem) => { text: string; latex: string };
     onrecall: (latex: string) => void;
     /** L5: tapping a result puts it on the entry line at the cursor. */
@@ -54,6 +57,13 @@
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
   });
 
+  // Keep the picked row in view (drawing earlier rows first if it is above the drawn page).
+  $effect(() => {
+    if (selected === null || !scroller) return;
+    if (selected < items.length - shownCount) shownCount = items.length - selected;
+    void tick().then(() => scroller?.querySelector('[data-selected="true"]')?.scrollIntoView({ block: "nearest" }));
+  });
+
   // After this long a running job gets a prominent Cancel (D3: CAS soft budget).
   const SOFT_MS = 10_000;
   let now = $state(performance.now());
@@ -71,8 +81,9 @@
   {#if items.length > shown.length}
     <div class="earlier" bind:this={sentinel} aria-hidden="true"></div>
   {/if}
-  {#each shown as item (item.id)}
-    <article class="item" data-status={item.status}>
+  {#each shown as item, k (item.id)}
+    <article class="item" data-status={item.status}
+      data-selected={selected !== null && k + items.length - shown.length === selected ? "true" : undefined}>
       <button type="button" class="in" title={t("history.recall")} onclick={() => onrecall(item.latex)}>
         <Math latex={item.latex} />
       </button>
@@ -125,6 +136,11 @@
   }
   .item + .item {
     margin-top: 0;
+  }
+  .item[data-selected="true"] {
+    border-radius: 8px;
+    background: var(--panel);
+    outline: 2px solid var(--shift);
   }
   .in {
     all: unset;

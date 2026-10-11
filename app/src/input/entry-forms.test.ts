@@ -37,3 +37,16 @@ describe("mixed numbers (L2)", () => {
   ];
   for (const [latex, giac] of mixed) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
 });
+
+// P4 keys: store (value ▶ name, shift of the exponent key) and polar entry r∡θ (shift ×). Expected text derived.
+describe("store and polar entry (P4)", () => {
+  const forms: [string, string][] = [
+    ["5\\blacktriangleright A", "A:=5"],
+    ["1+2\\blacktriangleright x", "x:=1+2"],
+    ["2\\measuredangle30", "2*(cos(30)+i*sin(30))"],
+    ["2\\measuredangle\\frac{\\pi}{6}", "2*(cos(pi/6)+i*sin(pi/6))"],
+    ["1+1\\measuredangle-45", "(1+1)*(cos(-45)+i*sin(-45))"],
+  ];
+  for (const [latex, giac] of forms) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
+  it("store needs a name after ▶", () => expect(() => latexToGiac("5\\blacktriangleright 3")).toThrow());
+});

@@ -200,7 +200,19 @@ class Parser {
   private relation(): Json {
     const def = this.definitionName();
     if (def) this.user = new Set([...this.user, def]);
-    const left = this.additive();
+    let left = this.additive();
+    // P4: polar entry r∡θ (shift ×), the angle in the current angle mode.
+    if (this.isCmd("measuredangle")) {
+      this.pos++;
+      left = ["PolarComplex", left, this.additive()];
+    }
+    // P4: store, value ▶ name (shift of the exponent key); the same as name := value.
+    if (this.isCmd("blacktriangleright")) {
+      this.pos++;
+      const name = this.additive();
+      if (typeof name !== "string") this.fail("expected a name after ▶");
+      return ["Assign", name, left];
+    }
     if (this.isCh(":") && this.isCh("=", 1)) {
       this.pos += 2;
       return ["Assign", left, this.relation()];
