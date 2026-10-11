@@ -71,6 +71,8 @@ that would now fail stays here instead of being forced).
   The reference's typing-time fraction template is its ÷ key (our `div`, already `source: device`
   and unaffected). This is exactly backlog item **L2** and the subject of G2 item 17/item 2's
   answer; `keys.yaml` row `r4c5`.
+  **Correction (user, 2026-10-11):** this cycling was the user's own script (User key mode was
+  locked), not the stock key. The stock a b/c behaviour is open (G2 item 29); L2 stays as built.
 - `pi` (lines ~120-128): the reference has π as Shift of the "3" key (r9c4) and e as Shift of LN
   (r5c5); we combine both on one key.
 - `i` (lines ~183-191): the reference has i as Shift of the "2" key (r9c3); we have a standalone
