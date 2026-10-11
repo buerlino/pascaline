@@ -55,6 +55,9 @@ export class Session {
   private readonly calc: Calc;
 
   private readonly kv: Kv;
+  /** 0 = write the history at once (tests); the app sets a delay so Enter does not wait for the store. */
+  saveDelayMs = 0;
+  private saveTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(calc: Calc, kv: Kv = idbKv) {
     this.kv = kv;
@@ -226,6 +229,17 @@ export class Session {
   }
   /** Entry LaTeX, result LaTeX and the Home numeric value of finished entries; nothing that needs the engine. */
   saveHistory(): void {
+    if (this.saveDelayMs > 0) {
+      // Snapshotting and storing up to HISTORY_LIMIT entries costs ~100 ms on a tablet: not on the Enter path.
+      this.saveTimer ??= setTimeout(() => this.flushHistory(), this.saveDelayMs);
+      return;
+    }
+    this.flushHistory();
+  }
+  /** Write the history now (also called when the page is hidden). */
+  flushHistory(): void {
+    if (this.saveTimer !== undefined) clearTimeout(this.saveTimer);
+    this.saveTimer = undefined;
     const keep = (xs: HistoryItem[]): HistoryItem[] =>
       $state.snapshot(xs).filter((i) => i.status === "done" || i.status === "error").slice(-HISTORY_LIMIT);
     void this.kv.set("history", { home: keep(this.home), cas: keep(this.cas) });

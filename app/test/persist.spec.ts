@@ -12,7 +12,7 @@ test("history survives a reload and is drawn without calling the engine", async 
   await expect(lastResult(page).locator(".result")).toBeVisible();
   await tap(page, ["app", "sqrt", "d8", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
-  await page.waitForTimeout(300); // the store write is asynchronous
+  await page.waitForTimeout(800); // the store write is debounced (400 ms) and asynchronous
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined);
   // the view that was open (CAS) comes back with its entry and its 2D result
