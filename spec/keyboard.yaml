@@ -118,7 +118,9 @@ keys:
     shift: { insert: "\\exponentialE", sample: ["2\\exponentialE", "2*e"] }
     alpha: { type: i }
     source: assumed
-  - { id: comma, row: 3, col: 4, cls: op, label: { primary: ",", alpha: j }, primary: { type: "," }, alpha: { type: j }, source: assumed }
+  # shift + comma stores into a variable: it types `:=` (name first, then the value; our parser maps it to Giac assignment)
+  - { id: comma, row: 3, col: 4, cls: op, label: { primary: ",", shift: "$key.sto", alpha: j },
+      primary: { type: "," }, shift: { type: ":=" }, alpha: { type: j }, source: assumed }
 
   # ---- rows 4-7: digits and operators. The ÷ key makes a stacked fraction (seen on a G2, 2026-10-11).
   - { id: d7, row: 4, col: 0, cls: num, label: { primary: "7", alpha: k }, primary: { type: "7" }, alpha: { type: k }, source: assumed }

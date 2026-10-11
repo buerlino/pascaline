@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The calculator session: current view, modifier keys, settings and the history of both views.
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
-import { CalcCancelled, type AngleUnit, type Calc, type CalcSettings, type NumberFormat } from "../calc/port.ts";
+import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat } from "../calc/port.ts";
 import { SerializeError } from "../input/emit.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
-import { homeResultToLatex } from "../render/home.ts";
+import { t, type MessageKey } from "../i18n/index.ts";
+import { formatComplex, type ComplexValue } from "../engine/format.ts";
+import { complexToLatex, homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
 import { kvGet, kvSet } from "./storage.ts";
 
@@ -28,10 +30,14 @@ export interface HistoryItem {
   /** Plain text of the result or the error message. */
   text: string;
   approximate: boolean;
+  /** Home: the numeric result, formatted on demand so a settings change re-formats the whole history. */
+  value?: ComplexValue;
   startedAt: number;
 }
 
 const HISTORY_LIMIT = 200;
+const errorText = (code: CalcError | undefined, fallback: string): string =>
+  code ? t(`error.${code}` as MessageKey) : fallback;
 const clampDigits = (n: number): number => Math.min(15, Math.max(1, Math.round(n)));
 
 export class Session {
@@ -146,14 +152,15 @@ export class Session {
         const r = await this.calc.home(giac, s);
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
-        live.text = r.display;
+        live.text = r.ok ? r.display : errorText(r.error, r.display);
         live.approximate = r.approximate;
+        if (r.value) live.value = r.value;
         if (r.ok) live.resultLatex = homeResultToLatex(r.display);
       } else {
         const r = await this.calc.cas(giac, s);
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
-        live.text = r.text;
+        live.text = r.ok ? r.text : errorText(r.error, r.text);
         if (r.ok) live.resultLatex = tidyGiacLatex(r.latex);
       }
     } catch (e) {
@@ -174,6 +181,15 @@ export class Session {
     p.status = "cancelled";
     await this.calc.cancel();
     return true;
+  }
+
+  /** What the history shows for a finished item: Home numbers follow the current digits and format. */
+  display(item: HistoryItem): { text: string; latex: string } {
+    if (item.view === "home" && item.value && item.status === "done") {
+      const f = formatComplex(item.value, { format: this.settings.format.toUpperCase() as "STD" | "SCI" | "ENG", digits: this.settings.digits });
+      return { text: f.text, latex: complexToLatex(f) };
+    }
+    return { text: item.text, latex: item.resultLatex };
   }
 
   clearHistory(): void {

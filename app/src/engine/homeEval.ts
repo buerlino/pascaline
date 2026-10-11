@@ -3,7 +3,7 @@
 //
 // 1. Decimal literals become exact rationals (`0.1` → `(1/10)`), so `1-0.9-0.1` is exactly 0.
 // 2. Giac evaluates exactly, under Giac's own interrupt (`timeout <s>`, sub-second with patch 0002).
-// 3. The value is rounded to `digits` significant digits at the end: exact rationals with BigInt
+// 3. The value becomes a DecimalValue (format.ts) and is shown in STD at `digits`: exact rationals with BigInt
 //    arithmetic, everything else from a 40-digit `evalf` string. Rounding is half away from zero.
 // Guards: timeout → re-evaluate in floating point at `workDigits` and round (marked approximate).
 // Result over `maxExactDigits` digits → shown from the exact value, but Ans keeps a float so the
@@ -11,6 +11,14 @@
 //
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
+import {
+  decimalFromRational,
+  decimalFromString,
+  formatComplex,
+  tieRisk,
+  type ComplexValue,
+  type DecimalValue,
+} from "./format.ts";
 
 export interface Giac {
   eval(input: string): string;
@@ -47,8 +55,10 @@ export type HomePath = "exact" | "exact-big" | "float-big" | "float-timeout" | "
 
 export interface HomeResult {
   ok: boolean;
-  /** Canonical display string (see formatDecimal), or the error text when !ok. */
+  /** Canonical text: STD at `digits` (format.ts), Giac's text for non-numbers, the error text when !ok. */
   display: string;
+  /** The numeric value, for re-formatting in STD/SCI/ENG without the engine (format.ts). Absent for non-numbers. */
+  value?: ComplexValue;
   /** Exact Giac result when the exact path finished (may be long). */
   exact?: string;
   path: HomePath;
@@ -125,92 +135,6 @@ function exactRational(mant: string, exp10: number): string {
   return e > 0 ? `(${digits}*10^${e})` : `(${digits}/10^${-e})`;
 }
 
-// --- 3. rounding and formatting -------------------------------------------------------------
-
-/** A rounded value: `digits` (no leading zeros, ≤ n digits) × 10^(exp - digits.length + 1), i.e.
- *  `exp` is the decimal exponent of the first digit. digits "0" means zero. */
-export interface Rounded {
-  neg: boolean;
-  digits: string;
-  exp: number;
-  tieRisk: boolean;
-}
-
-const ZERO: Rounded = { neg: false, digits: "0", exp: 0, tieRisk: false };
-
-function pow10(k: number): bigint {
-  return 10n ** BigInt(k);
-}
-
-/** Round p/q (exact integers, q > 0) to n significant digits, half away from zero. */
-export function roundRational(p: bigint, q: bigint, n: number): Rounded {
-  if (p === 0n) return ZERO;
-  const neg = p < 0n;
-  if (neg) p = -p;
-  let e = p.toString().length - q.toString().length;
-  // 10^e ≤ p/q < 10^(e+1)
-  const below = (k: number) => (k >= 0 ? p < q * pow10(k) : p * pow10(-k) < q);
-  if (below(e)) e -= 1;
-  const shift = n - 1 - e;
-  const N = shift >= 0 ? p * pow10(shift) : p;
-  const D = shift >= 0 ? q : q * pow10(-shift);
-  let m = N / D;
-  const r = N % D;
-  if (2n * r >= D) m += 1n;
-  if (m === pow10(n)) {
-    m = pow10(n - 1);
-    e += 1;
-  }
-  return { neg, digits: m.toString(), exp: e, tieRisk: false };
-}
-
-/** Round a printed Giac float (`-0.3141e6`, `1.414…`, `2.5e-07`) to n significant digits. */
-export function roundDecimalString(s: string, n: number): Rounded | null {
-  const m = /^(-?)(\d*)\.?(\d*)(?:e([+-]?\d+))?$/.exec(s.trim());
-  if (!m) return null;
-  const [, sign = "", ip = "", fp = "", ex] = m;
-  if (ip === "" && fp === "") return null;
-  const neg = sign === "-";
-  const all = ip + fp;
-  const lead = all.search(/[1-9]/);
-  if (lead < 0) return ZERO;
-  // first significant digit sits at exponent (digits before the point) - 1 - (leading zeros) + E:
-  const exp = ip.length - 1 - lead + (ex ? parseInt(ex, 10) : 0);
-  const sig = all.slice(lead);
-  const head = sig.slice(0, n).padEnd(n, "0");
-  const rest = sig.slice(n);
-  const tieRisk = rest.length >= 2 && /^(49+|50+)$/.test(rest.slice(0, Math.min(rest.length, 20)));
-  let d = BigInt(head);
-  let e = exp;
-  if (rest.charAt(0) >= "5") d += 1n;
-  if (d === pow10(n)) {
-    d = pow10(n - 1);
-    e += 1;
-  }
-  return { neg, digits: d.toString(), exp: e, tieRisk };
-}
-
-/** Canonical test/display form: plain decimal for 1e-4 ≤ |x| < 1e12, else `d.ddd…E±k`.
- *  (Our own format for tests; how the G2 shows numbers is a G2-checklist question.) */
-export function formatDecimal(r: Rounded): string {
-  if (r.digits === "0") return "0";
-  const d = r.digits.replace(/0+$/, "") || "0";
-  const sign = r.neg ? "-" : "";
-  if (r.exp >= -4 && r.exp < 12) {
-    if (r.exp < 0) return `${sign}0.${"0".repeat(-r.exp - 1)}${d}`;
-    if (d.length <= r.exp + 1) return sign + d + "0".repeat(r.exp + 1 - d.length);
-    return `${sign}${d.slice(0, r.exp + 1)}.${d.slice(r.exp + 1)}`;
-  }
-  const frac = d.slice(1);
-  return `${sign}${d[0]}${frac ? "." + frac : ""}E${r.exp}`;
-}
-
-function formatComplex(re: Rounded, im: Rounded): string {
-  if (im.digits === "0") return formatDecimal(re);
-  const ims = formatDecimal({ ...im, neg: false });
-  if (re.digits === "0") return `${im.neg ? "-" : ""}${ims}*i`;
-  return `${formatDecimal(re)}${im.neg ? "-" : "+"}${ims}*i`;
-}
 
 // --- 2. evaluation ---------------------------------------------------------------------------
 
@@ -224,30 +148,42 @@ function isTimeout(out: string): boolean {
   return isError(out) && /interrupt/i.test(out);
 }
 
-/** Round one real part (a Giac expression such as `re(pasans)`) to n digits. `big`: an exact
- *  rational whose numerator or denominator has more than maxDigits digits. */
-function roundPart(giac: Giac, part: string, n: number, maxDigits: number): { r: Rounded; big: boolean } | null {
-  const v = giac.eval(part);
-  const q = RATIONAL.exec(v);
+/** One real part (a Giac expression such as `re(pasans)`) as a DecimalValue: exact rationals by
+ *  BigInt division, everything else from a 40-digit `evalf` string. `big`: an exact rational whose
+ *  numerator or denominator has more than maxDigits digits. `tieRisk` only for float strings. */
+function valuePart(
+  giac: Giac,
+  part: string,
+  n: number,
+  maxDigits: number,
+): { v: DecimalValue; big: boolean; tieRisk: boolean } | null {
+  const out = giac.eval(part);
+  const q = RATIONAL.exec(out);
   if (q) {
     const [, num = "0", den = "1"] = q;
     const big = num.replace("-", "").length > maxDigits || den.length > maxDigits;
-    return { r: roundRational(BigInt(num), BigInt(den), n), big };
+    return { v: decimalFromRational(BigInt(num), BigInt(den)), big, tieRisk: false };
   }
-  const f = roundDecimalString(giac.eval(`evalf(${part},40)`), n);
-  return f ? { r: f, big: false } : null;
+  const f = decimalFromString(giac.eval(`evalf(${part},40)`));
+  return f ? { v: f, big: false, tieRisk: tieRisk(f, n) } : null;
 }
 
-function roundValue(
+function numericValue(
   giac: Giac,
   v: string,
   n: number,
   maxDigits: number,
-): { text: string; big: boolean; tieRisk: boolean } | null {
-  const re = roundPart(giac, `re(${v})`, n, maxDigits);
-  const im = roundPart(giac, `im(${v})`, n, maxDigits);
+): { value: ComplexValue; text: string; big: boolean; tieRisk: boolean } | null {
+  const re = valuePart(giac, `re(${v})`, n, maxDigits);
+  const im = valuePart(giac, `im(${v})`, n, maxDigits);
   if (!re || !im) return null;
-  return { text: formatComplex(re.r, im.r), big: re.big || im.big, tieRisk: re.r.tieRisk || im.r.tieRisk };
+  const value = { re: re.v, im: im.v };
+  return {
+    value,
+    text: formatComplex(value, { format: "STD", digits: n }).text,
+    big: re.big || im.big,
+    tieRisk: re.tieRisk || im.tieRisk,
+  };
 }
 
 function floatEval(giac: Giac, input: string, s: HomeSettings): { out: string; ok: boolean } {
@@ -274,24 +210,24 @@ export function homeEval(
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
     const f = floatEval(giac, input, s);
     if (!f.ok) return done({ ok: false, display: f.out, exact, path, approximate: true, tieRisk: false });
-    const v = roundValue(giac, "pasans", s.digits, s.maxExactDigits);
+    const v = numericValue(giac, "pasans", s.digits, s.maxExactDigits);
     if (!v) return done({ ok: false, display: f.out, exact, path, approximate: true, tieRisk: false });
-    return done({ ok: true, display: v.text, exact, path, approximate: true, tieRisk: v.tieRisk });
+    return done({ ok: true, display: v.text, value: v.value, exact, path, approximate: true, tieRisk: v.tieRisk });
   };
 
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 
-  const v = roundValue(giac, "pasans", s.digits, s.maxExactDigits);
+  const v = numericValue(giac, "pasans", s.digits, s.maxExactDigits);
   if (!v) {
     // Not a number (symbolic, list, matrix…): out of scope for this spike; show Giac's text.
     return done({ ok: true, display: exactOut, exact: exactOut, path: "exact", approximate: false, tieRisk: false });
   }
   if (!v.big) {
-    return done({ ok: true, display: v.text, exact: exactOut, path: "exact", approximate: false, tieRisk: v.tieRisk });
+    return done({ ok: true, display: v.text, value: v.value, exact: exactOut, path: "exact", approximate: false, tieRisk: v.tieRisk });
   }
   if (s.guardMode === "reeval-float") return viaFloat("float-big", exactOut);
   // Shown from the exact value (already computed); Ans continues as a float.
   giac.eval(`pasans:=evalf(pasans,${s.workDigits})`);
-  return done({ ok: true, display: v.text, exact: exactOut, path: "exact-big", approximate: false, tieRisk: v.tieRisk });
+  return done({ ok: true, display: v.text, value: v.value, exact: exactOut, path: "exact-big", approximate: false, tieRisk: v.tieRisk });
 }

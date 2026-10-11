@@ -1,0 +1,321 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# LaTeX -> Giac round trip for our parser (P1, app/src/input/latex-to-giac.ts). `latex` is what our
+# keyboard + MathLive produce; `expect` is the intended Giac expression, written by hand from the
+# mathematics (derived). Equality is decided by Giac: identical, same value, simplify(a-b)=0, else
+# numeric at 3 points. `status: gap` cases are known failures: reported, never failing the run, and
+# a gap that starts passing is reported too. Rule: each keyboard template has a case here.
+cases:
+  # --- arithmetic
+  - { id: "arithmetic-01", latex: "1+2", expect: "1+2", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-02", latex: "12+3\\times4", expect: "12+3*4", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-03", latex: "3\\times4\\div5", expect: "3*4/5", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-04", latex: "10-4-3", expect: "10-4-3", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-05", latex: "10-\\left(4-3\\right)", expect: "10-(4-3)", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-06", latex: "2+3\\times4", expect: "2+3*4", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-07", latex: "\\left(2+3\\right)\\times4", expect: "(2+3)*4", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-08", latex: "100\\div10\\div5", expect: "100/10/5", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-09", latex: "100\\div\\left(10\\div5\\right)", expect: "100/(10/5)", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-10", latex: "7-3", expect: "7-3", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-11", latex: "-5+3", expect: "-5+3", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-12", latex: "-\\left(5+3\\right)", expect: "-(5+3)", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-13", latex: "2\\times-3", expect: "2*(-3)", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-14", latex: "2-\\left(-3\\right)", expect: "2-(-3)", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-15", latex: "1+2+3+4+5", expect: "15", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-16", latex: "2\\cdot3", expect: "2*3", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-17", latex: "2\\times3\\times4", expect: "24", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-18", latex: "1-2-3-4", expect: "1-2-3-4", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-19", latex: "8\\div2\\times4", expect: "8/2*4", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-20", latex: "8\\div\\left(2\\times4\\right)", expect: "8/(2*4)", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-21", latex: "a+b-c", expect: "a+b-c", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-22", latex: "a-b+c", expect: "a-b+c", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-23", latex: "a-\\left(b+c\\right)", expect: "a-(b+c)", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-24", latex: "a\\times b\\div c", expect: "a*b/c", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-25", latex: "a\\div b\\times c", expect: "a/b*c", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-26", latex: "0", expect: "0", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-27", latex: "007", expect: "7", source: "derived", group: "arithmetic" }
+  # --- fractions
+  - { id: "fractions-01", latex: "\\frac12", expect: "1/2", source: "derived", group: "fractions" }
+  - { id: "fractions-02", latex: "\\frac{1}{2}", expect: "1/2", source: "derived", group: "fractions" }
+  - { id: "fractions-03", latex: "\\frac{1}{2}+\\frac{1}{3}", expect: "1/2+1/3", source: "derived", group: "fractions" }
+  - { id: "fractions-04", latex: "\\frac{x+1}{x-1}", expect: "(x+1)/(x-1)", source: "derived", group: "fractions" }
+  - { id: "fractions-05", latex: "\\frac{x}{y}+1", expect: "x/y+1", source: "derived", group: "fractions" }
+  - { id: "fractions-06", latex: "\\frac{1}{x}+\\frac{1}{y}", expect: "1/x+1/y", source: "derived", group: "fractions" }
+  - { id: "fractions-07", latex: "\\frac{\\frac{1}{2}}{3}", expect: "1/2/3", source: "derived", group: "fractions" }
+  - { id: "fractions-08", latex: "\\frac{1}{\\frac{2}{3}}", expect: "3/2", source: "derived", group: "fractions" }
+  - { id: "fractions-09", latex: "\\frac{a}{b}\\frac{c}{d}", expect: "a/b*c/d", source: "derived", group: "fractions" }
+  - { id: "fractions-10", latex: "\\frac{x^2-1}{x+1}", expect: "(x^2-1)/(x+1)", source: "derived", group: "fractions" }
+  - { id: "fractions-11", latex: "\\frac{-1}{2}", expect: "-1/2", source: "derived", group: "fractions" }
+  - { id: "fractions-12", latex: "\\frac{1}{-2}", expect: "1/(-2)", source: "derived", group: "fractions" }
+  - { id: "fractions-13", latex: "\\frac{2}{3}x", expect: "2/3*x", source: "derived", group: "fractions" }
+  - { id: "fractions-14", latex: "x\\frac{2}{3}", expect: "x*2/3", source: "derived", group: "fractions" }
+  - { id: "fractions-15", latex: "\\frac{\\sin x}{\\cos x}", expect: "sin(x)/cos(x)", source: "derived", group: "fractions" }
+  - { id: "fractions-16", latex: "\\frac{1}{2}\\times\\frac{3}{4}", expect: "3/8", source: "derived", group: "fractions" }
+  - { id: "fractions-17", latex: "\\frac{12}{4}", expect: "3", source: "derived", group: "fractions" }
+  - { id: "fractions-18", latex: "\\frac{a+b}{c+d}", expect: "(a+b)/(c+d)", source: "derived", group: "fractions" }
+  - { id: "fractions-19", latex: "1+\\frac{1}{1+\\frac{1}{x}}", expect: "1+1/(1+1/x)", source: "derived", group: "fractions" }
+  - { id: "fractions-20", latex: "\\frac{x}{2}-\\frac{x}{3}", expect: "x/2-x/3", source: "derived", group: "fractions" }
+  - { id: "fractions-21", latex: "\\frac{1}{x^2}", expect: "1/x^2", source: "derived", group: "fractions" }
+  - { id: "fractions-22", latex: "\\frac{1}{2x}", expect: "1/(2*x)", source: "derived", group: "fractions" }
+  - { id: "fractions-23", latex: "\\frac{x}{yz}", expect: "x/(y*z)", source: "derived", group: "fractions" }
+  - { id: "fractions-24", latex: "\\frac{3}{4}\\div\\frac{5}{6}", expect: "(3/4)/(5/6)", source: "derived", group: "fractions" }
+  - { id: "fractions-25", latex: "\\frac{22}{7}", expect: "22/7", source: "derived", group: "fractions" }
+  # --- powers
+  - { id: "powers-01", latex: "x^2", expect: "x^2", source: "derived", group: "powers" }
+  - { id: "powers-02", latex: "x^{2}", expect: "x^2", source: "derived", group: "powers" }
+  - { id: "powers-03", latex: "x^3", expect: "x^3", source: "derived", group: "powers" }
+  - { id: "powers-04", latex: "x^{12}", expect: "x^12", source: "derived", group: "powers" }
+  - { id: "powers-05", latex: "x^{-1}", expect: "1/x", source: "derived", group: "powers" }
+  - { id: "powers-06", latex: "x^{-2}", expect: "1/x^2", source: "derived", group: "powers" }
+  - { id: "powers-07", latex: "x^{y+1}", expect: "x^(y+1)", source: "derived", group: "powers" }
+  - { id: "powers-08", latex: "x^{\\frac{1}{2}}", expect: "sqrt(x)", source: "derived", group: "powers" }
+  - { id: "powers-09", latex: "2^x", expect: "2^x", source: "derived", group: "powers" }
+  - { id: "powers-10", latex: "2^{3^{4}}", expect: "2^81", source: "derived", group: "powers" }
+  - { id: "powers-11", latex: "\\left(2^3\\right)^4", expect: "4096", source: "derived", group: "powers" }
+  - { id: "powers-12", latex: "\\left(x+1\\right)^2", expect: "(x+1)^2", source: "derived", group: "powers" }
+  - { id: "powers-13", latex: "\\left(x+1\\right)^{2}-\\left(x-1\\right)^{2}", expect: "4*x", source: "derived", group: "powers" }
+  - { id: "powers-14", latex: "-x^2", expect: "-(x^2)", source: "derived", group: "powers" }
+  - { id: "powers-15", latex: "\\left(-x\\right)^2", expect: "x^2", source: "derived", group: "powers" }
+  - { id: "powers-16", latex: "\\left(-2\\right)^2", expect: "4", source: "derived", group: "powers" }
+  - { id: "powers-17", latex: "-2^2", expect: "-4", source: "derived", group: "powers" }
+  - { id: "powers-18", latex: "x^2y", expect: "x^2*y", source: "derived", group: "powers" }
+  - { id: "powers-19", latex: "x^{2}y^{3}", expect: "x^2*y^3", source: "derived", group: "powers" }
+  - { id: "powers-20", latex: "10^{-3}", expect: "1/1000", source: "derived", group: "powers" }
+  - { id: "powers-21", latex: "10^{3}", expect: "1000", source: "derived", group: "powers" }
+  - { id: "powers-22", latex: "e^x", expect: "exp(x)", source: "derived", group: "powers" }
+  - { id: "powers-23", latex: "\\exponentialE^{x}", expect: "exp(x)", source: "derived", group: "powers" }
+  - { id: "powers-24", latex: "\\exponentialE^{-x^2}", expect: "exp(-x^2)", source: "derived", group: "powers" }
+  - { id: "powers-25", latex: "\\exponentialE^{2x}", expect: "exp(2*x)", source: "derived", group: "powers" }
+  - { id: "powers-26", latex: "x^{y^{z}}", expect: "x^(y^z)", source: "derived", group: "powers" }
+  - { id: "powers-27", latex: "a^{b+c}", expect: "a^b*a^c", source: "derived", group: "powers" }
+  - { id: "powers-28", latex: "\\left(x^2\\right)^3", expect: "x^6", source: "derived", group: "powers" }
+  - { id: "powers-29", latex: "x^{2}+y^{2}", expect: "x^2+y^2", source: "derived", group: "powers" }
+  - { id: "powers-30", latex: "\\pi^2", expect: "pi^2", source: "derived", group: "powers" }
+  # --- roots
+  - { id: "roots-01", latex: "\\sqrt9", expect: "3", source: "derived", group: "roots" }
+  - { id: "roots-02", latex: "\\sqrt{9}", expect: "3", source: "derived", group: "roots" }
+  - { id: "roots-03", latex: "\\sqrt{x}", expect: "sqrt(x)", source: "derived", group: "roots" }
+  - { id: "roots-04", latex: "\\sqrt{x+1}", expect: "sqrt(x+1)", source: "derived", group: "roots" }
+  - { id: "roots-05", latex: "\\sqrt{x^2+y^2}", expect: "sqrt(x^2+y^2)", source: "derived", group: "roots" }
+  - { id: "roots-06", latex: "\\sqrt{2}", expect: "sqrt(2)", source: "derived", group: "roots" }
+  - { id: "roots-07", latex: "\\sqrt[3]{8}", expect: "2", source: "derived", group: "roots" }
+  - { id: "roots-08", latex: "\\sqrt[3]{x}", expect: "x^(1/3)", source: "derived", group: "roots" }
+  - { id: "roots-09", latex: "\\sqrt[n]{x}", expect: "x^(1/n)", source: "derived", group: "roots" }
+  - { id: "roots-10", latex: "\\sqrt{\\frac{1}{4}}", expect: "1/2", source: "derived", group: "roots" }
+  - { id: "roots-11", latex: "\\sqrt{x}\\sqrt{x}", expect: "x", source: "derived", group: "roots" }
+  - { id: "roots-12", latex: "2\\sqrt{3}", expect: "2*sqrt(3)", source: "derived", group: "roots" }
+  - { id: "roots-13", latex: "\\sqrt{2}+\\sqrt{3}", expect: "sqrt(2)+sqrt(3)", source: "derived", group: "roots" }
+  - { id: "roots-14", latex: "\\sqrt{\\sqrt{x}}", expect: "x^(1/4)", source: "derived", group: "roots" }
+  - { id: "roots-15", latex: "\\frac{\\sqrt{3}}{2}", expect: "sqrt(3)/2", source: "derived", group: "roots" }
+  - { id: "roots-16", latex: "\\frac{-b+\\sqrt{b^2-4ac}}{2a}", expect: "(-b+sqrt(b^2-4*a*c))/(2*a)", source: "derived", group: "roots" }
+  # --- trig
+  - { id: "trig-01", latex: "\\sin\\left(x\\right)", expect: "sin(x)", source: "derived", group: "trig" }
+  - { id: "trig-02", latex: "\\cos\\left(x\\right)", expect: "cos(x)", source: "derived", group: "trig" }
+  - { id: "trig-03", latex: "\\tan\\left(x\\right)", expect: "tan(x)", source: "derived", group: "trig" }
+  - { id: "trig-04", latex: "\\sin x", expect: "sin(x)", source: "derived", group: "trig" }
+  - { id: "trig-05", latex: "\\cos x", expect: "cos(x)", source: "derived", group: "trig" }
+  - { id: "trig-06", latex: "\\tan x", expect: "tan(x)", source: "derived", group: "trig" }
+  - { id: "trig-07", latex: "\\sin\\left(2x\\right)", expect: "sin(2*x)", source: "derived", group: "trig" }
+  - { id: "trig-08", latex: "\\sin 2x", expect: "sin(2*x)", source: "derived", group: "trig" }
+  - { id: "trig-09", latex: "\\sin\\left(x+y\\right)", expect: "sin(x+y)", source: "derived", group: "trig" }
+  - { id: "trig-10", latex: "\\sin^2x", expect: "sin(x)^2", source: "derived", group: "trig" }
+  - { id: "trig-11", latex: "\\sin^{2}\\left(x\\right)+\\cos^{2}\\left(x\\right)", expect: "1", source: "derived", group: "trig" }
+  - { id: "trig-12", latex: "\\sin\\left(x\\right)^2", expect: "sin(x)^2", source: "derived", group: "trig" }
+  - { id: "trig-13", latex: "\\sin x\\cos x", expect: "sin(x)*cos(x)", source: "derived", group: "trig" }
+  - { id: "trig-14", latex: "\\sin\\left(x\\right)\\cos\\left(x\\right)", expect: "sin(x)*cos(x)", source: "derived", group: "trig" }
+  - { id: "trig-15", latex: "2\\sin x\\cos x", expect: "sin(2*x)", source: "derived", group: "trig" }
+  - { id: "trig-16", latex: "\\arcsin\\left(x\\right)", expect: "asin(x)", source: "derived", group: "trig" }
+  - { id: "trig-17", latex: "\\arccos\\left(x\\right)", expect: "acos(x)", source: "derived", group: "trig" }
+  - { id: "trig-18", latex: "\\arctan\\left(x\\right)", expect: "atan(x)", source: "derived", group: "trig" }
+  - { id: "trig-19", latex: "\\sin^{-1}\\left(x\\right)", expect: "asin(x)", source: "derived", group: "trig" }
+  - { id: "trig-20", latex: "\\cos^{-1}\\left(x\\right)", expect: "acos(x)", source: "derived", group: "trig" }
+  - { id: "trig-21", latex: "\\tan^{-1}\\left(x\\right)", expect: "atan(x)", source: "derived", group: "trig" }
+  - { id: "trig-22", latex: "\\sinh\\left(x\\right)", expect: "sinh(x)", source: "derived", group: "trig" }
+  - { id: "trig-23", latex: "\\cosh\\left(x\\right)", expect: "cosh(x)", source: "derived", group: "trig" }
+  - { id: "trig-24", latex: "\\tanh\\left(x\\right)", expect: "tanh(x)", source: "derived", group: "trig" }
+  - { id: "trig-25", latex: "\\sin\\left(\\frac{\\pi}{6}\\right)", expect: "1/2", source: "derived", group: "trig" }
+  - { id: "trig-26", latex: "\\cos\\left(\\pi\\right)", expect: "-1", source: "derived", group: "trig" }
+  - { id: "trig-27", latex: "\\tan\\left(\\frac{\\pi}{4}\\right)", expect: "1", source: "derived", group: "trig" }
+  - { id: "trig-28", latex: "\\sin\\left(\\pi x\\right)", expect: "sin(pi*x)", source: "derived", group: "trig" }
+  - { id: "trig-29", latex: "\\sin\\left(x\\right)+\\cos\\left(x\\right)", expect: "sin(x)+cos(x)", source: "derived", group: "trig" }
+  - { id: "trig-30", latex: "\\frac{\\tan x}{x}", expect: "tan(x)/x", source: "derived", group: "trig" }
+  - { id: "trig-31", latex: "\\cot\\left(x\\right)", expect: "cot(x)", source: "derived", group: "trig" }
+  - { id: "trig-32", latex: "\\sin\\left(\\cos\\left(x\\right)\\right)", expect: "sin(cos(x))", source: "derived", group: "trig" }
+  - { id: "trig-33", latex: "\\sin\\left(x\\right)\\left(x+1\\right)", expect: "sin(x)*(x+1)", source: "derived", group: "trig" }
+  # --- log-exp-constants
+  - { id: "log-exp-constants-01", latex: "\\ln\\left(x\\right)", expect: "ln(x)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-02", latex: "\\ln x", expect: "ln(x)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-03", latex: "\\ln\\left(2\\right)", expect: "ln(2)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-04", latex: "\\ln\\left(x\\right)+\\ln\\left(y\\right)", expect: "ln(x)+ln(y)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-05", latex: "\\ln\\left(x\\right)\\ln\\left(y\\right)", expect: "ln(x)*ln(y)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-06", latex: "\\ln\\left(\\exponentialE\\right)", expect: "1", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-07", latex: "\\log\\left(100\\right)", expect: "2", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-08", latex: "\\log\\left(x\\right)", expect: "ln(x)/ln(10)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-09", latex: "\\log_{2}\\left(8\\right)", expect: "3", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-10", latex: "\\log_{2}x", expect: "ln(x)/ln(2)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-11", latex: "\\log_{10}\\left(x\\right)", expect: "ln(x)/ln(10)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-12", latex: "\\log_{b}\\left(x\\right)", expect: "ln(x)/ln(b)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-13", latex: "\\exp\\left(x\\right)", expect: "exp(x)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-14", latex: "\\exp\\left(1\\right)", expect: "exp(1)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-15", latex: "\\pi", expect: "pi", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-16", latex: "2\\pi", expect: "2*pi", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-17", latex: "\\pi r^2", expect: "pi*r^2", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-18", latex: "2\\pi r", expect: "2*pi*r", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-19", latex: "\\frac{\\pi}{2}", expect: "pi/2", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-20", latex: "\\exponentialE", expect: "exp(1)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-21", latex: "\\exponentialE+1", expect: "exp(1)+1", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-22", latex: "\\exponentialE^{\\pi}", expect: "exp(pi)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-23", latex: "\\exponentialE^{i\\pi}", expect: "-1", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-24", latex: "\\infty", expect: "inf", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-25", latex: "-\\infty", expect: "-inf", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-26", latex: "\\left|x\\right|", expect: "abs(x)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-27", latex: "\\left|x-1\\right|", expect: "abs(x-1)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-28", latex: "\\left|-3\\right|", expect: "3", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-29", latex: "\\lfloor x\\rfloor", expect: "floor(x)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-30", latex: "\\lceil x\\rceil", expect: "ceil(x)", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-31", latex: "n!", expect: "n!", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-32", latex: "5!", expect: "120", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-33", latex: "\\left(n+1\\right)!", expect: "(n+1)!", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-34", latex: "\\binom{5}{2}", expect: "10", source: "derived", group: "log-exp-constants" }
+  - { id: "log-exp-constants-35", latex: "\\binom{n}{k}", expect: "comb(n,k)", source: "derived", group: "log-exp-constants" }
+  # --- implicit-multiplication
+  - { id: "implicit-multiplication-01", latex: "2x", expect: "2*x", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-02", latex: "2xy", expect: "2*x*y", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-03", latex: "xy", expect: "x*y", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-04", latex: "xyz", expect: "x*y*z", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-05", latex: "3x^2", expect: "3*x^2", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-06", latex: "3x^2+2x+1", expect: "3*x^2+2*x+1", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-07", latex: "ax^2+bx+c", expect: "a*x^2+b*x+c", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-08", latex: "2\\left(3+4\\right)", expect: "14", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-09", latex: "2\\left(x+1\\right)", expect: "2*(x+1)", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-10", latex: "\\left(x+1\\right)\\left(x-1\\right)", expect: "(x+1)*(x-1)", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-11", latex: "\\left(x+1\\right)\\left(x-1\\right)-x^2", expect: "-1", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-12", latex: "\\left(a+b\\right)\\left(a-b\\right)", expect: "a^2-b^2", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-13", latex: "x\\left(x+1\\right)", expect: "x*(x+1)", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-14", latex: "2\\pi x", expect: "2*pi*x", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-15", latex: "x\\pi", expect: "x*pi", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-16", latex: "x\\sin x", expect: "x*sin(x)", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-17", latex: "x\\ln x", expect: "x*ln(x)", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-18", latex: "2\\sqrt{x}", expect: "2*sqrt(x)", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-19", latex: "\\frac{1}{2}x", expect: "x/2", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-20", latex: "2\\frac{1}{2}", expect: "2*1/2", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-21", latex: "a\\cdot b", expect: "a*b", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-22", latex: "4ac", expect: "4*a*c", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-23", latex: "\\frac{1}{2}mv^2", expect: "1/2*m*v^2", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-24", latex: "\\frac{1}{2}at^2", expect: "1/2*a*t^2", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-25", latex: "\\left(x\\right)\\left(y\\right)", expect: "x*y", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-26", latex: "x_1x_2", expect: "x_1*x_2", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-27", latex: "2x_1", expect: "2*x_1", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-28", latex: "2\\alpha", expect: "2*alpha", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-29", latex: "\\alpha\\beta", expect: "alpha*beta", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-30", latex: "3\\exponentialE^{x}", expect: "3*exp(x)", source: "derived", group: "implicit-multiplication" }
+  # --- relations
+  - { id: "relations-01", latex: "x=2", expect: "x=2", source: "derived", group: "relations" }
+  - { id: "relations-02", latex: "x^2=4", expect: "x^2=4", source: "derived", group: "relations" }
+  - { id: "relations-03", latex: "x+1=y", expect: "x+1=y", source: "derived", group: "relations" }
+  - { id: "relations-04", latex: "x^2-4=0", expect: "x^2-4=0", source: "derived", group: "relations" }
+  - { id: "relations-05", latex: "\\sin x=\\frac12", expect: "sin(x)=1/2", source: "derived", group: "relations" }
+  - { id: "relations-06", latex: "x<3", expect: "x<3", source: "derived", group: "relations" }
+  - { id: "relations-07", latex: "x>3", expect: "x>3", source: "derived", group: "relations" }
+  - { id: "relations-08", latex: "x\\le3", expect: "x<=3", source: "derived", group: "relations" }
+  - { id: "relations-09", latex: "x\\ge3", expect: "x>=3", source: "derived", group: "relations" }
+  - { id: "relations-10", latex: "x\\ne3", expect: "x!=3", source: "derived", group: "relations" }
+  - { id: "relations-11", latex: "2x+3=11", expect: "2*x+3=11", source: "derived", group: "relations" }
+  # --- calculus
+  - { id: "calculus-01", latex: "\\frac{d}{dx}x^2", expect: "2*x", source: "derived", group: "calculus" }
+  - { id: "calculus-02", latex: "\\frac{d}{dx}\\sin x", expect: "cos(x)", source: "derived", group: "calculus" }
+  - { id: "calculus-03", latex: "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\left(x^3\\right)", expect: "3*x^2", source: "derived", group: "calculus" }
+  - { id: "calculus-04", latex: "\\frac{d}{dx}\\left(x^2+3x\\right)", expect: "2*x+3", source: "derived", group: "calculus" }
+  - { id: "calculus-05", latex: "\\frac{d^2}{dx^2}x^3", expect: "6*x", source: "derived", group: "calculus" }
+  - { id: "calculus-06", latex: "\\frac{d}{dx}\\exponentialE^{x}", expect: "exp(x)", source: "derived", group: "calculus" }
+  - { id: "calculus-07", latex: "\\frac{d}{dx}\\ln x", expect: "1/x", source: "derived", group: "calculus" }
+  - { id: "calculus-08", latex: "\\int x\\,dx", expect: "x^2/2", source: "derived", group: "calculus" }
+  - { id: "calculus-09", latex: "\\int x^2\\,dx", expect: "x^3/3", source: "derived", group: "calculus" }
+  - { id: "calculus-10", latex: "\\int\\sin x\\,dx", expect: "-cos(x)", source: "derived", group: "calculus" }
+  - { id: "calculus-11", latex: "\\int_0^1 x^2\\,dx", expect: "1/3", source: "derived", group: "calculus" }
+  - { id: "calculus-12", latex: "\\int_{0}^{1}x\\,dx", expect: "1/2", source: "derived", group: "calculus" }
+  - { id: "calculus-13", latex: "\\int_{0}^{\\pi}\\sin x\\,dx", expect: "2", source: "derived", group: "calculus" }
+  - { id: "calculus-14", latex: "\\int_{1}^{2}\\frac{1}{x}\\,dx", expect: "ln(2)", source: "derived", group: "calculus" }
+  - { id: "calculus-15", latex: "\\int_0^1 \\exponentialE^x\\,dx", expect: "exp(1)-1", source: "derived", group: "calculus" }
+  - { id: "calculus-16", latex: "\\int_{-1}^{1}x^2\\,dx", expect: "2/3", source: "derived", group: "calculus" }
+  - { id: "calculus-17", latex: "\\int_{0}^{2}\\left(x+1\\right)dx", expect: "4", source: "derived", group: "calculus" }
+  - { id: "calculus-18", latex: "\\int_{0}^{1}\\sqrt{x}\\,dx", expect: "2/3", source: "derived", group: "calculus" }
+  - { id: "calculus-19", latex: "\\lim_{x\\to0}\\frac{\\sin x}{x}", expect: "1", source: "derived", group: "calculus" }
+  - { id: "calculus-20", latex: "\\lim_{x\\to\\infty}\\frac{1}{x}", expect: "0", source: "derived", group: "calculus" }
+  - { id: "calculus-21", latex: "\\lim_{x\\to1}\\frac{x^2-1}{x-1}", expect: "2", source: "derived", group: "calculus" }
+  - { id: "calculus-22", latex: "\\lim_{x\\to0}\\frac{\\exponentialE^{x}-1}{x}", expect: "1", source: "derived", group: "calculus" }
+  - { id: "calculus-23", latex: "\\sum_{k=1}^{10}k", expect: "55", source: "derived", group: "calculus" }
+  - { id: "calculus-24", latex: "\\sum_{k=1}^{n}k", expect: "n*(n+1)/2", source: "derived", group: "calculus" }
+  - { id: "calculus-25", latex: "\\sum_{k=1}^{4}k^2", expect: "30", source: "derived", group: "calculus" }
+  - { id: "calculus-26", latex: "\\sum_{k=0}^{5}2^k", expect: "63", source: "derived", group: "calculus" }
+  - { id: "calculus-27", latex: "\\prod_{k=1}^{5}k", expect: "120", source: "derived", group: "calculus" }
+  - { id: "calculus-28", latex: "\\sum_{n=1}^{10}\\frac{1}{n}", expect: "7381/2520", source: "derived", group: "calculus" }
+  # --- misc-more
+  - { id: "misc-more-01", latex: "5\\%", expect: "1/20", source: "derived", group: "misc-more" }
+  - { id: "misc-more-02", latex: "30^\\circ", expect: "pi/6", source: "derived", group: "misc-more" }
+  - { id: "misc-more-03", latex: "\\sin\\left(30^\\circ\\right)", expect: "1/2", source: "derived", group: "misc-more" }
+  - { id: "misc-more-04", latex: "\\frac{d}{dt}t^2", expect: "2*t", source: "derived", group: "misc-more" }
+  - { id: "misc-more-05", latex: "\\int_0^1 x^2\\,dx+1", expect: "4/3", source: "derived", group: "misc-more" }
+  - { id: "misc-more-06", latex: "\\int\\frac{1}{x}\\,dx", expect: "ln(abs(x))", source: "derived", group: "misc-more" }
+  - { id: "misc-more-07", latex: "\\overline{z}", expect: "conj(z)", source: "derived", group: "misc-more" }
+  - { id: "misc-more-08", latex: "x\\bmod 3", expect: "irem(x,3)", source: "derived", group: "misc-more" }
+  - { id: "misc-more-09", latex: "\\det\\left(\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\right)", expect: "-2", source: "derived", group: "misc-more" }
+  - { id: "misc-more-10", latex: "\\lim_{x\\to0^+}\\frac{1}{x}", expect: "inf", source: "derived", group: "misc-more" }
+  - { id: "misc-more-11", latex: "\\lim_{x\\to0^-}\\frac{1}{x}", expect: "-inf", source: "derived", group: "misc-more" }
+  - { id: "misc-more-12", latex: "x\\,y", expect: "x*y", source: "derived", group: "misc-more" }
+  - { id: "misc-more-13", latex: "2\\,x", expect: "2*x", source: "derived", group: "misc-more" }
+  - { id: "misc-more-14", latex: "12345678901234567890", expect: "12345678901234567890", source: "derived", group: "misc-more" }
+  - { id: "misc-more-15", latex: "12345678901234567890+1", expect: "12345678901234567891", source: "derived", group: "misc-more" }
+  # --- lists-matrices
+  - { id: "lists-matrices-01", latex: "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}", expect: "[[1,2],[3,4]]", source: "derived", group: "lists-matrices" }
+  - { id: "lists-matrices-02", latex: "\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}", expect: "[[a,b],[c,d]]", source: "derived", group: "lists-matrices" }
+  - { id: "lists-matrices-03", latex: "\\begin{bmatrix}1&0\\\\0&1\\end{bmatrix}", expect: "[[1,0],[0,1]]", source: "derived", group: "lists-matrices" }
+  - { id: "lists-matrices-04", latex: "\\begin{pmatrix}1&2&3\\end{pmatrix}", expect: "[[1,2,3]]", source: "derived", group: "lists-matrices" }
+  - { id: "lists-matrices-05", latex: "\\begin{pmatrix}1\\\\2\\\\3\\end{pmatrix}", expect: "[[1],[2],[3]]", source: "derived", group: "lists-matrices" }
+  # --- complex
+  - { id: "complex-01", latex: "\\imaginaryI", expect: "i", source: "derived", group: "complex" }
+  - { id: "complex-02", latex: "i", expect: "i", source: "derived", group: "complex" }
+  - { id: "complex-03", latex: "3+4i", expect: "3+4*i", source: "derived", group: "complex" }
+  - { id: "complex-04", latex: "\\left(1+i\\right)\\left(1-i\\right)", expect: "2", source: "derived", group: "complex" }
+  - { id: "complex-05", latex: "i^2", expect: "-1", source: "derived", group: "complex" }
+  - { id: "complex-06", latex: "\\imaginaryI^{2}", expect: "-1", source: "derived", group: "complex" }
+  - { id: "complex-07", latex: "\\left|3+4i\\right|", expect: "5", source: "derived", group: "complex" }
+  - { id: "complex-08", latex: "\\frac{1}{i}", expect: "-i", source: "derived", group: "complex" }
+  - { id: "complex-09", latex: "2i", expect: "2*i", source: "derived", group: "complex" }
+  - { id: "complex-10", latex: "\\sqrt{-1}", expect: "i", source: "derived", group: "complex" }
+  - { id: "complex-11", latex: "x+iy", expect: "x+i*y", source: "derived", group: "complex" }
+  # --- functions
+  - { id: "functions-01", latex: "f\\left(x\\right)", expect: "f(x)", source: "derived", group: "functions" }
+  - { id: "functions-02", latex: "f(x)", expect: "f(x)", source: "derived", group: "functions" }
+  - { id: "functions-03", latex: "f\\left(x\\right)+g\\left(x\\right)", expect: "f(x)+g(x)", source: "derived", group: "functions" }
+  - { id: "functions-04", latex: "f\\left(x+1\\right)", expect: "f(x+1)", source: "derived", group: "functions" }
+  - { id: "functions-05", latex: "f\\left(x\\right)^2", expect: "f(x)^2", source: "derived", group: "functions" }
+  - { id: "functions-06", latex: "2f\\left(x\\right)", expect: "2*f(x)", source: "derived", group: "functions" }
+  - { id: "functions-07", latex: "\\operatorname{foo}\\left(x\\right)", expect: "foo(x)", source: "derived", group: "functions" }
+  - { id: "functions-08", latex: "\\operatorname{gcd}\\left(12,18\\right)", expect: "6", source: "derived", group: "functions" }
+  - { id: "functions-09", latex: "\\max\\left(1,2\\right)", expect: "2", source: "derived", group: "functions" }
+  - { id: "functions-10", latex: "\\min\\left(x,y\\right)", expect: "min(x,y)", source: "derived", group: "functions" }
+  - { id: "functions-11", latex: "\\operatorname{abs}\\left(x\\right)", expect: "abs(x)", source: "derived", group: "functions" }
+  - { id: "functions-12", latex: "f\\left(x,y\\right)", expect: "f(x,y)", source: "derived", group: "functions" }
+  - { id: "functions-13", latex: "f\\left(g\\left(x\\right)\\right)", expect: "f(g(x))", source: "derived", group: "functions" }
+  # --- decimals
+  - { id: "decimals-01", latex: "1.5", expect: "3/2", source: "derived", group: "decimals" }
+  - { id: "decimals-02", latex: "0.1+0.2", expect: "3/10", source: "derived", group: "decimals" }
+  - { id: "decimals-03", latex: ".5", expect: "1/2", source: "derived", group: "decimals" }
+  - { id: "decimals-04", latex: "2.5x", expect: "5/2*x", source: "derived", group: "decimals" }
+  - { id: "decimals-05", latex: "1.5\\times2", expect: "3", source: "derived", group: "decimals" }
+  - { id: "decimals-06", latex: "3.14159", expect: "314159/100000", source: "derived", group: "decimals" }
+  - { id: "decimals-07", latex: "100.0", expect: "100", source: "derived", group: "decimals" }
+  - { id: "decimals-08", latex: "0.001", expect: "1/1000", source: "derived", group: "decimals" }
+  - { id: "decimals-09", latex: "12.5\\div2.5", expect: "5", source: "derived", group: "decimals" }
+  - { id: "decimals-10", latex: "1.5^2", expect: "9/4", source: "derived", group: "decimals" }
+  - { id: "decimals-11", latex: "1.5\\times10^{3}", expect: "1500", source: "derived", group: "decimals" }
+  - { id: "decimals-12", latex: "2.5\\times10^{-3}", expect: "1/400", source: "derived", group: "decimals" }
+  - { id: "decimals-13", latex: "6.02\\times10^{23}", expect: "602*10^21", source: "derived", group: "decimals" }
+  # --- assignment (typed with : =; needed by the Cancel test and Home variables)
+  - { id: "assign-01", latex: "a:=7", expect: "a:=7", source: "derived", group: "assign" }
+  - { id: "assign-02", latex: "f\\left(x\\right):=x^{2}", expect: "f(x):=x^2", source: "derived", group: "assign" }
+  # --- gaps
+  - { id: "gaps-01", latex: "\\sqrt[3]{-8}", expect: "-2", source: "derived", g2: 4, status: "gap", group: "gaps" }
+  - { id: "gaps-02", latex: "x^y^z", expect: "x^(y^z)", source: "derived", status: "gap", group: "gaps" }
+  - { id: "gaps-03", latex: "12\\,\\mathrm{m}", expect: "12*m", source: "derived", status: "gap", group: "gaps" }
+  - { id: "gaps-04", latex: "\\left\\{1,2,3\\right\\}", expect: "[1,2,3]", source: "derived", status: "gap", group: "gaps" }

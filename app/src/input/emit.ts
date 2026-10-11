@@ -223,6 +223,7 @@ function ser(e: Json, o: SerializeOptions): Out {
     }
     default:
   }
+  if (head === "Assign") return { s: `${wrap(ser(a0, o), 1)}:=${wrap(ser(a1, o), 0)}`, p: 0 };
   if (head in REL) return { s: `${wrap(ser(a0, o), 1)}${REL[head]}${wrap(ser(a1, o), 1)}`, p: 0 };
   if (head in FN) return call(FN[head] as string, args, o);
   throw new SerializeError(`unsupported head ${head}`);

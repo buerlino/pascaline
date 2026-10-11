@@ -2,6 +2,8 @@
 // What the views need from the maths engine. The real implementation (calc/engine.ts) wraps MathEngine;
 // the UI never talks to Giac directly (CLAUDE.md).
 
+import type { ComplexValue } from "../engine/format.ts";
+
 export type AngleUnit = "rad" | "deg";
 export type NumberFormat = "std" | "sci" | "eng";
 
@@ -12,12 +14,18 @@ export interface CalcSettings {
   format: NumberFormat;
 }
 
+export type CalcError = "syntax" | "timeout" | "engine";
+
 export interface HomeOutcome {
   ok: boolean;
   /** The formatted result (decimal), or the error text when !ok. */
   display: string;
   /** The shown value came from floating point, not from an exact computation. */
   approximate: boolean;
+  /** The numeric value, so the view can re-format it (STD/SCI/ENG) without calling the engine. */
+  value?: ComplexValue;
+  /** Why it failed, for the app's own translated message. */
+  error?: CalcError;
 }
 
 export interface CasOutcome {
@@ -26,6 +34,7 @@ export interface CasOutcome {
   text: string;
   /** Giac `latex()` of the result (raw); empty when !ok. */
   latex: string;
+  error?: CalcError;
 }
 
 /** Thrown by home()/cas() when Cancel stopped the job. */
