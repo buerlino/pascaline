@@ -9,6 +9,27 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      // Too-old WebView check (ES5, feature detection only, no UA sniffing). Inline and English on purpose:
+      // the i18n table lives in the bundle, which an old WebView cannot even parse.
+      // Needs: optional chaining (Chrome 80), WebAssembly legacy exception handling (Chrome 95, used by the Giac engine).
+      (function () {
+        var ok = true;
+        try { new Function("var a = null; return a?.b;"); } catch (e) { ok = false; }
+        try {
+          // (module (func (try (catch_all)))) : validates only where wasm exception handling exists
+          ok = ok && typeof WebAssembly === "object" && WebAssembly.validate(new Uint8Array(
+            [0, 97, 115, 109, 1, 0, 0, 0, 1, 4, 1, 96, 0, 0, 3, 2, 1, 0, 10, 8, 1, 6, 0, 6, 64, 25, 11, 11]));
+        } catch (e) { ok = false; }
+        if (ok) return;
+        var app = document.getElementById("app");
+        if (app) app.removeAttribute("id");
+        var p = document.createElement("p");
+        p.style.cssText = "font:16px sans-serif;padding:24px";
+        p.appendChild(document.createTextNode("This app needs a newer Android System WebView / Chrome. Update it from your app store."));
+        document.body.insertBefore(p, document.body.firstChild);
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
