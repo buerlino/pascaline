@@ -109,12 +109,12 @@ function build(): void {
 build();
 
 // Compute Engine is large (about 4 MB unminified): load it in the background after first paint.
-type Serializer = typeof import("./serialize-light.ts");
+type Serializer = typeof import("../../../app/src/input/latex-to-giac.ts");
 let serializer: Serializer | undefined;
 const timing: { entryReadyMs: number; serializerReadyMs?: number } = { entryReadyMs: 0 };
 function loadSerializer(): void {
   // VITE_PARSER=ce selects Compute Engine; the default is our own parser (night/ron-parser).
-  (import.meta.env.VITE_PARSER === "ce" ? import("./serialize.ts") : import("./serialize-light.ts")).then((m) => {
+  (import.meta.env.VITE_PARSER === "ce" ? import("./serialize.ts") : import("../../../app/src/input/latex-to-giac.ts")).then((m) => {
     serializer = m;
     m.latexToGiac("1"); // warm up the engine instance
     timing.serializerReadyMs = Math.round(performance.now());

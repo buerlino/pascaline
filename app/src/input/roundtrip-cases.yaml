@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Round-trip cases for the LaTeX -> MathJSON -> Giac serializer (spike/input/src/serialize.ts).
+# Round-trip cases for the LaTeX -> MathJSON -> Giac serializer (app/src/input/latex-to-giac.ts).
 # Each case is [latex, intended Giac expression]. The intended expression is written by hand from the
 # mathematics, so its source is `derived`; semantic choices that depend on a calculator's conventions are
 # in groups marked `assumed` and listed for the owner in spike/G2-CHECKLIST (via henri).

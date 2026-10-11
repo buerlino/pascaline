@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Plot-function compiler test: LaTeX -> JS (emit-js.ts) against hand-written JS reference functions, plus speed.
 //   node spike/serializer/test-js.mjs
-import { toFn, latexToJs } from "../input/src/emit-js.ts";
+import { toFn, latexToJs } from "../../app/src/input/emit-js.ts";
 
 const cases = [
   ["\\sin\\left(x\\right)", (x) => Math.sin(x)],

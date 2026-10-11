@@ -8,7 +8,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "../input/node_modules/yaml/dist/index.js";
 import { latexToGiac as ce } from "../input/src/serialize.ts";
-import { latexToGiac as own } from "../input/src/serialize-light.ts";
+import { latexToGiac as own } from "../../app/src/input/latex-to-giac.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const giacOut = process.env.GIAC_OUT;

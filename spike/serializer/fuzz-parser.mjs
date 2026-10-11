@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Robustness: random token soup must either parse or throw SerializeError (never another exception, never hang).
 //   node spike/serializer/fuzz-parser.mjs [iterations]
-import { latexToGiac, SerializeError } from "../input/src/serialize-light.ts";
+import { latexToGiac, SerializeError } from "../../app/src/input/latex-to-giac.ts";
 
 const pieces = ["1", "2.5", "x", "y", "+", "-", "\\times", "\\div", "^", "_", "{", "}", "\\left(", "\\right)", "(", ")", "\\frac", "\\sqrt",
   "\\sin", "\\ln", "\\int", "dx", "d", "\\sum", "\\lim", "\\to", "=", ",", "\\begin{pmatrix}", "\\end{pmatrix}", "&", "\\\\", "\\pi", "!", "\\%",

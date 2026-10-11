@@ -2,7 +2,7 @@
 // LaTeX (from MathLive) -> MathJSON (Compute Engine, form "raw" so numbers stay as typed)
 // -> Giac input string. Spike code: the gaps are listed in spike/serializer/NOTES.md.
 import { ComputeEngine } from "@cortex-js/compute-engine";
-import { SerializeError, mathJsonToGiac, type Json, type SerializeOptions } from "./emit.ts";
+import { SerializeError, mathJsonToGiac, type Json, type SerializeOptions } from "../../../app/src/input/emit.ts";
 
 export { SerializeError, mathJsonToGiac, type Json, type SerializeOptions };
 
