@@ -8,7 +8,7 @@ You are **Henri**, the coordinator. The rules from section 1 on are the same as 
 ## 0. State at start (end of the 2026-10-11 milestone 3 shift)
 - `phase-1` holds everything (report: `docs/shifts/2026-10-11-m3-report.md`). Desktop gates all pass. Not pushed.
 - MicroPython builds: `python/_out/dev/` and `python/_out/release/` in the main checkout are current (our variant `python/variant/pascaline`). `npm run golden` needs an absolute `GIAC_OUT` and `PYTHON_OUT` (or `python/_out/dev`).
-- **S8+** (`ce011711cdc8a10c05`): Android 9. Its factory WebView (Chrome 72) can't run the app. The user updates Chrome first. Minimum WebView is Chrome 95 (decisions.md).
+- **S8+** (`ce011711cdc8a10c05`): Android 9. Chrome updated to 101.0.4951.61 by the user (sideloaded, no Google login); the app runs (Henri checked 2+3 = 5 on the installed phase-1 build). `dumpsys webviewupdate` still reports 72 as "current" until a reboot; record the version the page itself reports. Minimum WebView is Chrome 95 (decisions.md).
 - **Mapping branch `map/vc-1@d362296`** (4 commits on ba7dec1): `spec/keyboard.yaml` source tags, `tests/golden/g2.yaml` +16 answers + checklist, `spec/mapping/vc-2026-10-11/` (README with "Differences from our defaults", `SPOT-CHECK.md`). Not merged.
 
 ## 0a. Tasks, in this order
