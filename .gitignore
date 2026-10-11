@@ -65,3 +65,8 @@ android/_keys/
 android/gradle/
 android/gradlew
 android/gradlew.bat
+
+# MicroPython build downloads and output (rebuilt by python/build-micropython.sh)
+python/_downloads/
+python/_out/
+app/public/python/

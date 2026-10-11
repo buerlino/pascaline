@@ -2,11 +2,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Clean source -> engine -> web app (dist/) -> Capacitor sync -> Gradle -> APK. F-Droid and CI use this script.
 #
-#   ./build.sh [--dev] [--measure] [--unsigned] [--engine-dir DIR] [--install [SERIAL]]
+#   ./build.sh [--dev] [--measure] [--unsigned] [--engine-dir DIR] [--python-dir DIR | --no-python] [--install [SERIAL]]
 #
 #   (default)        engine built with the pinned Debian trixie Emscripten in a container (P2: what every release ships)
 #   --dev            engine built with the local emsdk instead (engine/giac/build-wasm.sh; fast iteration only)
 #   --engine-dir D   use an existing engine build (giac.mjs + giac.wasm in D) and skip the engine step
+#   --python-dir D   use an existing MicroPython build (micropython.mjs + .wasm in D); default builds it like the engine (python/build-micropython.sh: dev with --dev, else release container)
+#   --no-python      skip MicroPython (it is only copied to app/public/python/ for milestone 3; nothing loads it at start)
 #   --measure        measurement build: timing marks to logcat (PASCALINE_MEASURE=1); never for release
 #   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with a throwaway key in android/_keys/
 #   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs org.pascaline.app only
@@ -16,10 +18,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
-DEV=0 MEASURE=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR=""
+DEV=0 MEASURE=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR="" PYTHON_DIR="" WITH_PYTHON=1
 while (( $# )); do
   case "$1" in
     --dev) DEV=1; shift ;;
+    --python-dir) PYTHON_DIR="$(cd "$2" && pwd)"; shift 2 ;;
+    --no-python) WITH_PYTHON=0; shift ;;
     --measure) MEASURE=1; shift ;;
     --unsigned) SIGN=0; shift ;;
     --engine-dir) ENGINE_DIR="$(cd "$2" && pwd)"; shift 2 ;;
@@ -45,6 +49,16 @@ else
   GIAC_OUT="$ROOT/engine/giac/_out/release"
 fi
 export GIAC_OUT
+
+# 1b. MicroPython (milestone 3 prepares it; app/public/python/ is copied into dist/, loaded lazily later)
+if (( WITH_PYTHON )); then
+  if [[ -z "$PYTHON_DIR" ]]; then
+    if (( DEV )); then python/build-micropython.sh dev >&2; PYTHON_DIR="$ROOT/python/_out/dev"
+    else python/build-micropython.sh release >&2; PYTHON_DIR="$ROOT/python/_out/release"; fi
+  fi
+  mkdir -p app/public/python
+  cp "$PYTHON_DIR/micropython.mjs" "$PYTHON_DIR/micropython.wasm" app/public/python/
+fi
 
 # 2. web app -> app/dist
 (( MEASURE )) && export PASCALINE_MEASURE=1 VITE_MEASURE=1
