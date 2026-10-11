@@ -34,6 +34,15 @@ function tokenize(src: string, decimalComma = false): Tok[] {
       const name = j > i + 1 ? src.slice(i + 1, j) : (src[j++] ?? "");
       i = j;
       if (SPACING.has(name)) continue;
+      if (name === "mathbin") {
+        // P4: the polar sign is entered as \mathbin{\measuredangle} so that a following ÷ does not absorb it into the numerator
+        const m = /^\{\s*\\measuredangle\s*\}/.exec(src.slice(i));
+        if (m) {
+          i += m[0].length;
+          out.push({ t: "cmd", v: "measuredangle" });
+          continue;
+        }
+      }
       if (name === "char") {
         // L4: the literal caret of the one-line entry mode, \char"5E (MathLive serialises it with a trailing space)
         const m = /^(?:"5E|"5e|94)\b ?/.exec(src.slice(i));
@@ -200,7 +209,19 @@ class Parser {
   private relation(): Json {
     const def = this.definitionName();
     if (def) this.user = new Set([...this.user, def]);
-    const left = this.additive();
+    let left = this.additive();
+    // P4: polar entry r∡θ (shift ×), the angle in the current angle mode.
+    if (this.isCmd("measuredangle")) {
+      this.pos++;
+      left = ["PolarComplex", left, this.additive()];
+    }
+    // P4: store, value ▶ name (shift of the exponent key); the same as name := value.
+    if (this.isCmd("blacktriangleright")) {
+      this.pos++;
+      const name = this.additive();
+      if (typeof name !== "string") this.fail("expected a name after ▶");
+      return ["Assign", name, left];
+    }
     if (this.isCh(":") && this.isCh("=", 1)) {
       this.pos += 2;
       return ["Assign", left, this.relation()];
@@ -499,7 +520,13 @@ class Parser {
       case "mathrm":
       case "mathit": {
         this.pos++;
-        const text = this.groupText();
+        let text: string;
+        if (name === "operatorname" && this.isCh("{") && this.isCmd("mathrm", 1) && this.isCh("{", 2)) {
+          // MathLive writes an inserted \operatorname{approx} as \operatorname{\mathrm{approx}}
+          this.pos += 2;
+          text = this.groupText();
+          this.expectCh("}");
+        } else text = this.groupText();
         if (name === "mathrm" && text === "e") return "ExponentialE";
         if (name === "mathrm" && text === "i") return "ImaginaryUnit";
         if (text in ABS_LIKE || NAMED_FUNCS.has(text) || text.length > 1) {

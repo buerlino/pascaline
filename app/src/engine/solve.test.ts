@@ -54,7 +54,7 @@ describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () 
 
   it("every root comes with its value for re-formatting and the residual", () => {
     const r = host.solve({ kind: "poly", equation: "X^2+1=0", unknown: "X" }, s);
-    expect(r.roots.map((x) => x.result.display)).toEqual(["-1*i", "1*i"]); // derived: ±i
+    expect(r.roots.map((x) => x.result.display)).toEqual(["-i", "i"]); // derived: ±i
     expect(r.roots[0]!.result.value?.im.neg).toBe(true);
     expect(r.residualRel).toBeLessThan(1e-25);
     expect(r.method).toBe("proot");

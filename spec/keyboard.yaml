@@ -1,245 +1,282 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Logical key layout: the single source for the on-screen keyboard (app/src/keyboard/), validated by
-# app/src/keyboard/keyboard.test.ts. Visual design (colours, shapes) lives in the app, not here.
+# app/src/keyboard/keyboard.test.ts. Visual design (colours, shapes, legends' look) lives in the app, not here.
+#
+# Layout (P4, accepted 2026-10-11): the reference's logical grid, from black-box observation of the official
+# Virtual Calculator (spec/mapping/vc-2026-10-11/keys.yaml; ids r<row>c<col> in the comments). Our rows 0-2 are
+# its upper cluster (r1-r3: two key columns, the round pad in the middle as a cross, two key columns), rows 3-9
+# its rows r4-r10. A row has `columns` cells unless `row_columns` says otherwise (the reference's lower rows have
+# 5 wider keys); `span` makes a key wider (Enter). Cells without a key are gaps.
 #
 # Each key has up to three layers: primary, shift, alpha. A layer is an action, one of
 #   { type: "7" }                  type characters as a physical keyboard would (smart fences apply)
 #   { insert: "\\frac{#@}{#?}", sample: [latex, giac] }
 #                                  insert a LaTeX template: #? is a placeholder, #@ the selection or
-#                                  what is before the cursor. Every template needs a `sample`: the
-#                                  template filled in, and the Giac text it must mean. The round-trip
-#                                  test runs all samples through our parser and Giac.
+#                                  what is before the cursor, #0 the selection or a placeholder. Every
+#                                  template needs a `sample`: the template filled in, and the Giac text it
+#                                  must mean. The round-trip test runs all samples through our parser and Giac.
 #                                  Any action may carry `line: <action>`, used instead of it when the
 #                                  one-line entry mode is on (a linear form of the same key).
 #   { cmd: "moveToNextChar" }      a MathLive editing command
-#   { special: shift|alpha|enter|clear|cancel|app|settings|apps|symb|plot|num|menu }   handled by the app
-# Missing layer: the key does nothing in that layer, except that alpha falls back to primary. Shift + alpha
-# types capital letters.
+#   { special: shift|alpha|enter|clear|cancel|esc|app|cas|settings|apps|symb|plot|num|menu|none }   handled by the app
+# Missing layer: the key does nothing in that layer, except that alpha falls back to primary.
+# Letters: Alpha types the capital in the alpha layer, Shift + Alpha its lower case (as on the reference).
 # `label` entries starting with "$" are i18n keys (app/src/i18n), anything else is shown as is.
-# `source` says where the position/function came from: `assumed` = our choice, to be checked on a real
-# calculator (docs: tests/golden/G2-CHECKLIST.md item 2); `device` = seen on a G2.
+# `source`: `virtual-calc` = position and function seen on the official simulator (row id in the comment);
+# `device` = seen on a G2; `assumed` = our choice (tests/golden/G2-CHECKLIST.md).
 schema: 1
-columns: 5
+columns: 6
+row_columns: { 6: 5, 7: 5, 8: 5, 9: 5 }
 
 keys:
-  # ---- row 0: apps and their views. Symb / Plot / Num open the views of the current app (from Home or CAS:
-  # the last app used). Menu opens the current view's menu. Our own arrangement of the reference's logical keys.
-  - { id: apps, row: 0, col: 0, cls: nav, label: { primary: "$key.apps" }, primary: { special: apps }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r1c1
-  - { id: symb, row: 0, col: 1, cls: nav, label: { primary: "$key.symb" }, primary: { special: symb }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r1c2
-  - { id: plot, row: 0, col: 2, cls: nav, label: { primary: "$key.plot" }, primary: { special: plot }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r2c2
-  - { id: num, row: 0, col: 3, cls: nav, label: { primary: "$key.num" }, primary: { special: num }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r3c2
-  - { id: menu, row: 0, col: 4, cls: nav, label: { primary: "$key.menu" }, primary: { special: menu }, source: assumed }  # no clean match; see mapping README "Differences from our defaults"
+  # ---- rows 0-2: the upper cluster. Symb / Plot / Num open the views of the current app (from Home or CAS: the
+  # last app used). Help (r1c4) and View (r2c4) have no function of ours yet: gaps.
+  - { id: apps, row: 0, col: 0, cls: nav, label: { primary: "$key.apps" }, primary: { special: apps }, source: virtual-calc }  # r1c1 (shift Info: not ours)
+  - { id: symb, row: 0, col: 1, cls: nav, label: { primary: "$key.symb" }, primary: { special: symb }, source: virtual-calc }  # r1c2 (shift Setup: not ours)
+  - { id: up, row: 0, col: 2, span: 2, cls: ctl, label: { primary: "▲" }, primary: { cmd: moveUp }, source: virtual-calc }  # pad up; on an empty entry line it selects the last history row (App.svelte)
+  - { id: esc, row: 0, col: 5, cls: nav, label: { primary: "$key.esc", shift: "$key.clear" },
+      primary: { special: esc }, shift: { special: clear }, source: virtual-calc }  # r1c5 (Esc clears the line / closes a list; shift Clear wipes the history)
+  - { id: plot, row: 1, col: 1, cls: nav, label: { primary: "$key.plot" }, primary: { special: plot }, source: virtual-calc }  # r2c2
+  - { id: left, row: 1, col: 2, cls: ctl, label: { primary: "◀", shift: "|◀" },
+      primary: { cmd: moveToPreviousChar }, shift: { cmd: moveToMathfieldStart }, source: virtual-calc }  # pad left; shift is ours (not checked on the reference)
+  - { id: right, row: 1, col: 3, cls: ctl, label: { primary: "▶", shift: "▶|" },
+      primary: { cmd: moveToNextChar }, shift: { cmd: moveToMathfieldEnd }, source: virtual-calc }  # pad right; shift is ours (not checked on the reference)
+  - { id: cancel, row: 1, col: 5, cls: ctl, label: { primary: "$key.cancel" }, primary: { special: cancel }, source: assumed }  # ours (P4 item 6): stops a running job, closes a list, else clears the line; in a gap under Esc (r2c5)
+  - { id: app, row: 2, col: 0, cls: nav, label: { primary: "$key.app", shift: "$key.settings" },
+      primary: { special: app }, shift: { special: settings }, source: assumed }  # at the reference's Home key (r3c1, shift Settings); ours toggles Home/CAS and leaves an app (P4 item 6)
+  - { id: num, row: 2, col: 1, cls: nav, label: { primary: "$key.num" }, primary: { special: num }, source: virtual-calc }  # r3c2
+  - { id: down, row: 2, col: 2, span: 2, cls: ctl, label: { primary: "▼" }, primary: { cmd: moveDown }, source: virtual-calc }  # pad down
+  - { id: menu, row: 2, col: 4, cls: nav, label: { primary: "$key.menu" }, primary: { special: menu }, source: assumed }  # at r3c4; our Menu opens the current view's menu (P4 item 6)
+  - { id: cas, row: 2, col: 5, cls: nav, label: { primary: "$key.cas", shift: "$key.settings" },
+      primary: { special: cas }, shift: { special: settings }, source: virtual-calc }  # r3c5 (CAS; shift CAS Settings, ours is the one Settings sheet)
 
-  # ---- row 1: modifiers, cancel, view switch, delete
-  - { id: shift, row: 1, col: 0, cls: ctl, label: { primary: "$key.shift" }, primary: { special: shift }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r9c1 (a second press was not tried on the reference)
-  - { id: alpha, row: 1, col: 1, cls: ctl, label: { primary: "$key.alpha" }, primary: { special: alpha }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r8c1; reference's alpha/shift+alpha case convention is reversed from ours, see mapping README
-  - { id: cancel, row: 1, col: 2, cls: ctl, label: { primary: "$key.cancel" }, primary: { special: cancel }, source: assumed }  # not confirmed: the reference's On key was not tested while a computation was running; see SPOT-CHECK.md
-  - { id: app, row: 1, col: 3, cls: ctl, label: { primary: "$key.app", shift: "$key.settings" },
-      primary: { special: app }, shift: { special: settings }, source: assumed }  # no clean match; see mapping README "Differences from our defaults"
-  - { id: bksp, row: 1, col: 4, cls: ctl, label: { primary: "⌫", shift: "$key.clear" },
-      primary: { cmd: deleteBackward }, shift: { special: clear }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r4c6; shift (Del) was not checked on the reference
-
-  # ---- row 2: cursor
-  - { id: left, row: 2, col: 0, cls: ctl, label: { primary: "◀", shift: "|◀" },
-      primary: { cmd: moveToPreviousChar }, shift: { cmd: moveToMathfieldStart }, source: virtual-calc }  # vc-2026-10-11/keys.yaml "left"; shift was not checked on the reference
-  - { id: up, row: 2, col: 1, cls: ctl, label: { primary: "▲" }, primary: { cmd: moveUp }, source: assumed }  # on the reference, Up on an empty entry line selects the last history row; see mapping README "Differences from our defaults"
-  - { id: down, row: 2, col: 2, cls: ctl, label: { primary: "▼" }, primary: { cmd: moveDown }, source: virtual-calc }  # vc-2026-10-11/keys.yaml "down"
-  - { id: right, row: 2, col: 3, cls: ctl, label: { primary: "▶", shift: "▶|" },
-      primary: { cmd: moveToNextChar }, shift: { cmd: moveToMathfieldEnd }, source: virtual-calc }  # vc-2026-10-11/keys.yaml "right"; shift was not checked on the reference
-  - { id: abs, row: 2, col: 4, cls: fn, label: { primary: "|x|" },
-      primary: { insert: "\\left|#?\\right|", sample: ["\\left|-3\\right|", "abs(-3)"] }, source: assumed }  # reference puts |x| behind shift of the +/- key (r6c2), not a standalone key; see mapping README
-
-  # ---- row 3: trigonometry and brackets
-  - id: sin
-    row: 3
-    col: 0
-    cls: fn
-    label: { primary: sin, shift: "sin⁻¹", alpha: a }
-    primary: { insert: "\\sin\\left(#?\\right)", sample: ["\\sin\\left(2\\right)", "sin(2)"] }
-    shift: { insert: "\\arcsin\\left(#?\\right)", sample: ["\\arcsin\\left(0.5\\right)", "asin(1/2)"] }
-    alpha: { type: a }
-    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c2 (SIN/ASIN); alpha letter position not reference-matched, see mapping README
-  - id: cos
-    row: 3
-    col: 1
-    cls: fn
-    label: { primary: cos, shift: "cos⁻¹", alpha: b }
-    primary: { insert: "\\cos\\left(#?\\right)", sample: ["\\cos\\left(2\\right)", "cos(2)"] }
-    shift: { insert: "\\arccos\\left(#?\\right)", sample: ["\\arccos\\left(0.5\\right)", "acos(1/2)"] }
-    alpha: { type: b }
-    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c3 (COS/ACOS); alpha letter position not reference-matched, see mapping README
-  - id: tan
-    row: 3
-    col: 2
-    cls: fn
-    label: { primary: tan, shift: "tan⁻¹", alpha: c }
-    primary: { insert: "\\tan\\left(#?\\right)", sample: ["\\tan\\left(2\\right)", "tan(2)"] }
-    shift: { insert: "\\arctan\\left(#?\\right)", sample: ["\\arctan\\left(2\\right)", "atan(2)"] }
-    alpha: { type: c }
-    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c4 (TAN/ATAN); alpha letter position not reference-matched, see mapping README
-  - { id: lpar, row: 3, col: 3, cls: op, label: { primary: "(", alpha: d }, primary: { type: "(" }, alpha: { type: d }, source: assumed }  # reference combines ( and ) into one key that inserts the pair (r6c3); see mapping README
-  - { id: rpar, row: 3, col: 4, cls: op, label: { primary: ")", alpha: e }, primary: { type: ")" }, alpha: { type: e }, source: assumed }  # same key on the reference as lpar above; see mapping README
-
-  # ---- row 4: powers, roots, fractions, constants, comma
-  - id: pow
-    row: 4
-    col: 0
-    cls: fn
-    label: { primary: "xʸ", shift: "x²", alpha: f }
-    primary:
-      insert: "#@^{#?}"
-      sample: ["3^{2}", "3^2"]
-      line: { insert: "\\char\"5E ", sample: ["3\\char\"5E 2", "3^2"] }
-    shift:
-      insert: "#@^{2}"
-      sample: ["3^{2}", "3^2"]
-      line: { insert: "\\char\"5E 2", sample: ["3\\char\"5E 2", "3^2"] }
-    alpha: { type: f }
-    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c1 (x^y) + r6c1 (x²); the reference uses two separate keys where we use primary/shift, see mapping README
-  - id: sqrt
-    row: 4
-    col: 1
-    cls: fn
-    label: { primary: "√", shift: "ⁿ√", alpha: g }
-    primary:
-      insert: "\\sqrt{#0}"
-      sample: ["\\sqrt{8}", "sqrt(8)"]
-      line: { insert: "\\operatorname{sqrt}\\left(#?\\right)", sample: ["\\operatorname{sqrt}\\left(8\\right)", "sqrt(8)"] }
-    shift: { insert: "\\sqrt[#?]{#0}", sample: ["\\sqrt[3]{8}", "surd(8,3)"] }
-    alpha: { type: g }
-    source: virtual-calc  # vc-2026-10-11/keys.yaml r6c1 shift (√ template) + r5c1 shift (ⁿ√, index first); the reference reaches these via shift of other keys, see mapping README
+  # ---- row 3 (r4). Vars, Math and Templates open menus we don't have yet: the keys keep their letters.
+  - { id: vars, row: 3, col: 0, cls: fn, label: { primary: "$key.vars", alpha: A }, primary: { special: none }, alpha: { type: A }, source: virtual-calc }  # r4c1 (menu not ours yet)
+  - { id: math, row: 3, col: 1, cls: fn, label: { primary: "$key.math", alpha: B }, primary: { special: none }, alpha: { type: B }, source: virtual-calc }  # r4c2 (menu not ours yet)
+  - { id: tmpl, row: 3, col: 2, cls: fn, label: { primary: "$key.tmpl", alpha: C }, primary: { special: none }, alpha: { type: C }, source: virtual-calc }  # r4c3 (palette not ours yet)
+  # The variable key types x (the reference types the current app's variable, X in its Function app); shift y is
+  # ours (the reference's shift is a Define dialog).
+  - { id: x, row: 3, col: 3, cls: fn, label: { primary: x, shift: y, alpha: D }, primary: { type: x }, shift: { type: y }, alpha: { type: D }, source: virtual-calc }  # r4c4; shift y assumed
+  # a b/c: as built in L2 (docs/decisions.md "Mixed numbers", G2 item 17); the stock reference behaviour is G2 item 29.
   - id: frac
-    row: 4
-    col: 2
+    row: 3
+    col: 4
     cls: fn
-    label: { primary: "a/b", shift: "1/x", alpha: h }
+    label: { primary: "a/b", alpha: E }
     primary:
       insert: "\\frac{#@}{#?}"
       sample: ["\\frac{1}{3}", "1/3"]
       line: { insert: "\\div", sample: ["1\\div3", "1/3"] }
-    shift:
-      insert: "\\frac{1}{#@}"
-      sample: ["\\frac{1}{3}", "1/3"]
-      line: { insert: "\\left(#@\\right)^{-1}", sample: ["\\left(3\\right)^{-1}", "3^(-1)"] }
-    alpha: { type: h }
-    source: assumed  # NOT confirmed: on the reference this "a b/c" key cycles the LAST RESULT's display form (decimal/fraction/mixed), it doesn't insert a template while typing (that's the reference's ÷ key, our "div"); see mapping README "Differences from our defaults" (L2, G2 item 17)
-  - id: pi
+    alpha: { type: E }
+    source: assumed  # position r4c5 (virtual-calc); function ours (L2); shift (degrees-minutes-seconds) not ours
+  - { id: bksp, row: 3, col: 5, cls: ctl, label: { primary: "⌫", shift: "$key.del" },
+      primary: { cmd: deleteBackward }, shift: { cmd: deleteForward }, source: virtual-calc }  # r4c6; shift Del (forward) is assumed, not checked on the reference
+
+  # ---- row 4 (r5): powers, trigonometry, logarithms
+  - id: pow
+    row: 4
+    col: 0
+    cls: fn
+    label: { primary: "xʸ", shift: "ⁿ√", alpha: F }
+    primary:
+      insert: "#@^{#?}"
+      sample: ["3^{2}", "3^2"]
+      line: { insert: "\\char\"5E ", sample: ["3\\char\"5E 2", "3^2"] }
+    shift: { insert: "\\sqrt[#?]{#0}", sample: ["\\sqrt[3]{8}", "surd(8,3)"] }
+    alpha: { type: F }
+    source: virtual-calc  # r5c1 (x^y; shift nth root, index first)
+  - id: sin
+    row: 4
+    col: 1
+    cls: fn
+    label: { primary: sin, shift: "sin⁻¹", alpha: G }
+    primary: { insert: "\\sin\\left(#?\\right)", sample: ["\\sin\\left(2\\right)", "sin(2)"] }
+    shift: { insert: "\\arcsin\\left(#?\\right)", sample: ["\\arcsin\\left(0.5\\right)", "asin(1/2)"] }
+    alpha: { type: G }
+    source: virtual-calc  # r5c2
+  - id: cos
+    row: 4
+    col: 2
+    cls: fn
+    label: { primary: cos, shift: "cos⁻¹", alpha: H }
+    primary: { insert: "\\cos\\left(#?\\right)", sample: ["\\cos\\left(2\\right)", "cos(2)"] }
+    shift: { insert: "\\arccos\\left(#?\\right)", sample: ["\\arccos\\left(0.5\\right)", "acos(1/2)"] }
+    alpha: { type: H }
+    source: virtual-calc  # r5c3
+  - id: tan
     row: 4
     col: 3
     cls: fn
-    label: { primary: "π", shift: e, alpha: i }
-    primary: { insert: "\\pi", sample: ["2\\pi", "2*pi"] }
-    shift: { insert: "\\exponentialE", sample: ["2\\exponentialE", "2*e"] }
-    alpha: { type: i }
-    source: assumed  # on the reference, π is shift of the "3" key (r9c4) and e is shift of LN (r5c5); we combine both on one key, see mapping README
-  # shift + comma stores into a variable: it types `:=` (name first, then the value; our parser maps it to Giac assignment)
-  - { id: comma, row: 4, col: 4, cls: op, label: { primary: ",", shift: "$key.sto", alpha: j },
-      primary: { type: "," }, shift: { type: ":=" }, alpha: { type: j }, source: assumed }  # primary (comma) confirmed (vc-2026-10-11/keys.yaml r6c4); but the reference's comma-shift is Eval(), not store — store is shift of EEX (r7c1) there; see mapping README
+    label: { primary: tan, shift: "tan⁻¹", alpha: I }
+    primary: { insert: "\\tan\\left(#?\\right)", sample: ["\\tan\\left(2\\right)", "tan(2)"] }
+    shift: { insert: "\\arctan\\left(#?\\right)", sample: ["\\arctan\\left(2\\right)", "atan(2)"] }
+    alpha: { type: I }
+    source: virtual-calc  # r5c4
+  - id: ln
+    row: 4
+    col: 4
+    cls: fn
+    label: { primary: ln, shift: "eˣ", alpha: J }
+    primary: { insert: "\\ln\\left(#?\\right)", sample: ["\\ln\\left(2\\right)", "ln(2)"] }
+    shift: { insert: "\\exponentialE^{#?}", sample: ["\\exponentialE^{2}", "exp(2)"] }
+    alpha: { type: J }
+    source: virtual-calc  # r5c5
+  - id: log
+    row: 4
+    col: 5
+    cls: fn
+    label: { primary: log, shift: "10ˣ", alpha: K }
+    primary: { insert: "\\log\\left(#?\\right)", sample: ["\\log\\left(100\\right)", "log10(100)"] }
+    shift: { insert: "10^{#?}", sample: ["10^{2}", "10^2"] }
+    alpha: { type: K }
+    source: virtual-calc  # r5c6 (shift 10^x)
 
-  # ---- rows 5-8: digits and operators. The ÷ key makes a stacked fraction (seen on a G2, 2026-10-11).
-  - { id: d7, row: 5, col: 0, cls: num, label: { primary: "7", alpha: k }, primary: { type: "7" }, alpha: { type: k }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r7c2; alpha letter position not reference-matched
-  - { id: d8, row: 5, col: 1, cls: num, label: { primary: "8", alpha: l }, primary: { type: "8" }, alpha: { type: l }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r7c3; alpha letter position not reference-matched
-  - { id: d9, row: 5, col: 2, cls: num, label: { primary: "9", alpha: m }, primary: { type: "9" }, alpha: { type: m }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r7c4; alpha letter position not reference-matched
-  - id: div
+  # ---- row 5 (r6): square, negation, brackets, comma, Enter (two cells wide)
+  - id: sq
     row: 5
-    col: 3
+    col: 0
+    cls: fn
+    label: { primary: "x²", shift: "√", alpha: L }
+    primary:
+      insert: "#@^{2}"
+      sample: ["3^{2}", "3^2"]
+      line: { insert: "\\char\"5E 2", sample: ["3\\char\"5E 2", "3^2"] }
+    shift:
+      insert: "\\sqrt{#0}"
+      sample: ["\\sqrt{8}", "sqrt(8)"]
+      line: { insert: "\\operatorname{sqrt}\\left(#?\\right)", sample: ["\\operatorname{sqrt}\\left(8\\right)", "sqrt(8)"] }
+    alpha: { type: L }
+    source: virtual-calc  # r6c1 (x²; shift root template)
+  - id: neg
+    row: 5
+    col: 1
+    cls: fn
+    label: { primary: "(−)", shift: "|x|", alpha: M }
+    primary: { type: "-" }
+    shift: { insert: "\\left|#?\\right|", sample: ["\\left|-3\\right|", "abs(-3)"] }
+    alpha: { type: M }
+    source: virtual-calc  # r6c2 (negation; shift absolute value)
+  - id: paren
+    row: 5
+    col: 2
     cls: op
-    label: { primary: "÷", alpha: n }
+    label: { primary: "( )", alpha: N }
+    primary: { insert: "\\left(#0\\right)", sample: ["\\left(1+2\\right)\\times3", "(1+2)*3"] }
+    alpha: { type: N }
+    source: virtual-calc  # r6c3 (a matched pair; shift tick marks not ours)
+  - { id: comma, row: 5, col: 3, cls: op, label: { primary: ",", alpha: O }, primary: { type: "," }, alpha: { type: O }, source: virtual-calc }  # r6c4 (shift Eval not ours)
+  - { id: enter, row: 5, col: 4, span: 2, cls: enter, label: { primary: "$key.enter", shift: "≈" },
+      primary: { special: enter },
+      shift: { insert: "\\operatorname{approx}\\left(#?\\right)", sample: ["\\operatorname{approx}\\left(\\frac{1}{3}\\right)", "approx(1/3)"] },
+      source: virtual-calc }  # r6c5 (wide; shift inserts approx())
+
+  # ---- rows 6-9 (r7-r10): five keys per row. The ÷ key makes a stacked fraction (seen on a G2, 2026-10-11).
+  - id: eex
+    row: 6
+    col: 0
+    cls: fn
+    label: { primary: "×10ⁿ", shift: "$key.sto", alpha: P }
+    primary: { insert: "\\times10^{#?}", sample: ["1.5\\times10^{3}", "1.5*10^3"] }
+    shift: { insert: "\\blacktriangleright", sample: ["5\\blacktriangleright A", "A:=5"] }
+    alpha: { type: P }
+    source: virtual-calc  # r7c1 (exponent mark, drawn as ×10^; shift store ▶: value, ▶, name)
+  - { id: d7, row: 6, col: 1, cls: num, label: { primary: "7", alpha: Q }, primary: { type: "7" }, alpha: { type: Q }, source: virtual-calc }  # r7c2 (shift List not ours)
+  - { id: d8, row: 6, col: 2, cls: num, label: { primary: "8", alpha: R }, primary: { type: "8" }, alpha: { type: R }, source: virtual-calc }  # r7c3 (shift { } not ours yet)
+  - id: d9
+    row: 6
+    col: 3
+    cls: num
+    label: { primary: "9", shift: "∞", alpha: S }
+    primary: { type: "9" }
+    shift: { insert: "\\infty", sample: ["\\infty", "inf"] }
+    alpha: { type: S }
+    source: virtual-calc  # r7c4; shift ∞ is assumed (the reference's shift opens a symbol palette that starts with !, ∞)
+  - id: div
+    row: 6
+    col: 4
+    cls: op
+    label: { primary: "÷", shift: "x⁻¹", alpha: T }
     primary:
       insert: "\\frac{#@}{#?}"
       sample: ["\\frac{5}{5}", "5/5"]
       line: { insert: "\\div", sample: ["5\\div5", "5/5"] }
-    alpha: { type: n }
-    source: device
-  - id: ln
-    row: 5
-    col: 4
-    cls: fn
-    label: { primary: ln, shift: "eˣ", alpha: o }
-    primary: { insert: "\\ln\\left(#?\\right)", sample: ["\\ln\\left(2\\right)", "ln(2)"] }
-    shift: { insert: "\\exponentialE^{#?}", sample: ["\\exponentialE^{2}", "exp(2)"] }
-    alpha: { type: o }
-    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c5 (LN/e^x); alpha letter position not reference-matched
+    shift:
+      insert: "#@^{-1}"
+      sample: ["3^{-1}", "3^(-1)"]
+      line: { insert: "\\left(#@\\right)^{-1}", sample: ["\\left(3\\right)^{-1}", "3^(-1)"] }
+    alpha: { type: T }
+    source: device  # stacked fraction seen on a G2; r7c5 (virtual-calc) for the position and shift x⁻¹
 
-  - { id: d4, row: 6, col: 0, cls: num, label: { primary: "4", alpha: p }, primary: { type: "4" }, alpha: { type: p }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r8c2; alpha letter position not reference-matched
-  - { id: d5, row: 6, col: 1, cls: num, label: { primary: "5", alpha: q }, primary: { type: "5" }, alpha: { type: q }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r8c3; alpha letter position not reference-matched
-  - { id: d6, row: 6, col: 2, cls: num, label: { primary: "6", alpha: r }, primary: { type: "6" }, alpha: { type: r }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r8c4; alpha letter position not reference-matched
+  - { id: alpha, row: 7, col: 0, cls: ctl, label: { primary: "$key.alpha" }, primary: { special: alpha }, source: virtual-calc }  # r8c1 (twice locks it, L3: ours)
+  - { id: d4, row: 7, col: 1, cls: num, label: { primary: "4", alpha: U }, primary: { type: "4" }, alpha: { type: U }, source: virtual-calc }  # r8c2 (shift Matrix not ours)
+  - { id: d5, row: 7, col: 2, cls: num, label: { primary: "5", alpha: V }, primary: { type: "5" }, alpha: { type: V }, source: virtual-calc }  # r8c3 (shift [ ] not ours yet)
+  - { id: d6, row: 7, col: 3, cls: num, label: { primary: "6", alpha: W }, primary: { type: "6" }, alpha: { type: W }, source: virtual-calc }  # r8c4 (shift palette not ours)
   - id: mul
-    row: 6
-    col: 3
-    cls: op
-    label: { primary: "×", alpha: s }
-    primary: { insert: "\\times", sample: ["3\\times4", "3*4"] }
-    alpha: { type: s }
-    source: virtual-calc  # vc-2026-10-11/keys.yaml r8c5 (×); shift (angle sign) was not visible on the reference, we have no shift here so no conflict
-  - id: log
-    row: 6
-    col: 4
-    cls: fn
-    label: { primary: log, shift: "10ˣ", alpha: t }
-    primary: { insert: "\\log\\left(#?\\right)", sample: ["\\log\\left(100\\right)", "log10(100)"] }
-    shift: { insert: "10^{#?}", sample: ["10^{2}", "10^2"] }
-    alpha: { type: t }
-    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c6 (LOG/10^x via ALOG); alpha letter position not reference-matched
-
-  - { id: d1, row: 7, col: 0, cls: num, label: { primary: "1", alpha: u }, primary: { type: "1" }, alpha: { type: u }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r9c2; alpha letter position not reference-matched
-  - { id: d2, row: 7, col: 1, cls: num, label: { primary: "2", alpha: v }, primary: { type: "2" }, alpha: { type: v }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r9c3; alpha letter position not reference-matched; the reference's shift here is "i" (imaginary unit), ours is unshifted
-  - { id: d3, row: 7, col: 2, cls: num, label: { primary: "3", alpha: w }, primary: { type: "3" }, alpha: { type: w }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r9c4; alpha letter position not reference-matched; the reference's shift here is π, ours is unshifted
-  - { id: sub, row: 7, col: 3, cls: op, label: { primary: "−", alpha: x }, primary: { type: "-" }, alpha: { type: x }, source: assumed }  # primary (subtraction) matches vc-2026-10-11/keys.yaml r9c5, but the reference has a SEPARATE negation key (+/−, r6c2) that we don't have; see mapping README
-  - id: i
     row: 7
     col: 4
-    cls: fn
-    label: { primary: i, shift: "∞", alpha: y }
-    primary: { insert: "\\imaginaryI", sample: ["2\\imaginaryI", "2*i"] }
-    shift: { insert: "\\infty", sample: ["\\infty", "inf"] }
-    alpha: { type: y }
-    source: assumed  # on the reference, i is shift of the "2" key (r9c3); we have a standalone key; see mapping README
+    cls: op
+    label: { primary: "×", shift: "∡", alpha: X }
+    primary: { insert: "\\times", sample: ["3\\times4", "3*4"] }
+    shift: { insert: "\\mathbin{\\measuredangle}", sample: ["2\\mathbin{\\measuredangle}\\frac{\\pi}{6}", "2*(cos(pi/6)+i*sin(pi/6))"] }  # \mathbin: a following ÷ must not take the sign into its numerator
+    alpha: { type: X }
+    source: virtual-calc  # r8c5 (shift angle sign: polar entry r∡θ, the angle in the current angle mode; its effect is assumed, user 2026-10-11)
 
-  - { id: d0, row: 8, col: 0, cls: num, label: { primary: "0", alpha: z }, primary: { type: "0" }, alpha: { type: z }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r10c2; alpha letter position not reference-matched
-  - id: dot
+  - { id: shift, row: 8, col: 0, cls: ctl, label: { primary: "$key.shift" }, primary: { special: shift }, source: virtual-calc }  # r9c1
+  - { id: d1, row: 8, col: 1, cls: num, label: { primary: "1", alpha: Y }, primary: { type: "1" }, alpha: { type: Y }, source: virtual-calc }  # r9c2 (shift Program not ours)
+  - id: d2
     row: 8
-    col: 1
+    col: 2
     cls: num
-    label: { primary: ".", shift: "×10ˣ" }
-    primary: { type: "." }
-    shift: { insert: "\\times10^{#?}", sample: ["1.5\\times10^{3}", "1.5*10^3"] }
-    source: assumed  # primary (decimal point) matches vc-2026-10-11/keys.yaml r10c3, but the reference's shift there is "=", not scientific notation; the reference reaches EEX via a separate key (r7c1); see mapping README
-  - { id: x, row: 8, col: 2, cls: fn, label: { primary: x, shift: y }, primary: { type: x }, shift: { type: y }, source: assumed }  # the reference's variable key (r4c4) depends on the current app and was not cross-checked against a standalone x/y key; see mapping README
-  - { id: add, row: 8, col: 3, cls: op, label: { primary: "+" }, primary: { type: "+" }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r10c5 (+); we have no shift here, the reference's shift inserts Ans
-  - { id: enter, row: 8, col: 4, cls: enter, label: { primary: "$key.enter", shift: "=" },
-      primary: { special: enter }, shift: { type: "=" }, source: assumed }  # primary (evaluate) matches vc-2026-10-11/keys.yaml r6c5, but the reference's shift there inserts approx(), not "="; see mapping README
+    label: { primary: "2", shift: i, alpha: Z }
+    primary: { type: "2" }
+    shift: { insert: "\\imaginaryI", sample: ["2\\imaginaryI", "2*i"] }
+    alpha: { type: Z }
+    source: virtual-calc  # r9c3 (shift i)
+  - id: d3
+    row: 8
+    col: 3
+    cls: num
+    label: { primary: "3", shift: "π", alpha: "#" }
+    primary: { type: "3" }
+    shift: { insert: "\\pi", sample: ["2\\pi", "2*pi"] }
+    alpha: { type: "#" }
+    source: virtual-calc  # r9c4 (shift π; alpha #)
+  - { id: sub, row: 8, col: 4, cls: op, label: { primary: "−", alpha: ":" }, primary: { type: "-" }, alpha: { type: ":" }, source: virtual-calc }  # r9c5 (alpha :; shift Base not ours)
+
+  - { id: fmt, row: 9, col: 0, cls: ctl, label: { primary: "$key.fmt" }, primary: { special: fmt }, source: assumed }  # at the reference's On key (r10c1); ours cycles the display format of the last result (Settings: Format key cycle)
+  - { id: d0, row: 9, col: 1, cls: num, label: { primary: "0", alpha: "\"" }, primary: { type: "0" }, alpha: { type: "\"" }, source: virtual-calc }  # r10c2 (alpha: the reference inserts a pair of quotes, ours one; shift Notes not ours)
+  - { id: dot, row: 9, col: 2, cls: num, label: { primary: ".", shift: "=" }, primary: { type: "." }, shift: { type: "=" }, source: virtual-calc }  # r10c3 (shift =)
+  - { id: space, row: 9, col: 3, cls: num, label: { primary: "␣", shift: "_" }, primary: { type: " " }, shift: { type: "_" }, source: virtual-calc }  # r10c4 (space; shift _)
+  - { id: add, row: 9, col: 4, cls: op, label: { primary: "+", alpha: ";" }, primary: { type: "+" }, alpha: { type: ";" }, source: virtual-calc }  # r10c5 (alpha ;; shift Ans not ours yet)
 
 # ---- Python layer (milestone 3). In the Python app's editor and shell, these keys type Python text instead of
-# their normal action; keys not listed keep it (digits, letters with alpha, cursor, Enter, Cancel). A key whose
-# normal action is a LaTeX template and is not listed here does nothing in Python. `label` overrides the legend
-# (default: the text). All positions are our own choice (`assumed`); Python keywords are in the Menu.
+# their normal action; keys not listed keep it (digits, letters with alpha, cursor, Enter, Cancel, space, minus).
+# A key whose normal action is a LaTeX template and is not listed here does nothing in Python. `label` overrides
+# the legend (default: the text). All positions are our own choice (`assumed`); Python keywords are in the Menu.
 python:
-  - { key: abs, primary: "abs(", source: assumed }
+  - { key: pow, primary: "**", source: assumed }
+  - { key: sq, primary: "**2", shift: "sqrt(", source: assumed }
+  - { key: neg, shift: "abs(", source: assumed }
+  - { key: paren, primary: "(", shift: ")", source: assumed }
   - { key: sin, primary: "sin(", shift: "asin(", source: assumed }
   - { key: cos, primary: "cos(", shift: "acos(", source: assumed }
   - { key: tan, primary: "tan(", shift: "atan(", source: assumed }
-  - { key: lpar, primary: "(", shift: "[", source: assumed }
-  - { key: rpar, primary: ")", shift: "]", source: assumed }
-  - { key: pow, primary: "**", shift: "**2", source: assumed }
-  - { key: sqrt, primary: "sqrt(", source: assumed }
-  - { key: frac, primary: "/", shift: "//", source: assumed }
-  - { key: pi, primary: "pi", shift: "e", source: assumed }
-  - { key: comma, primary: ",", shift: "=", source: assumed }
-  - { key: d7, primary: "7", shift: ":", source: assumed }
-  - { key: d8, primary: "8", shift: "\"", source: assumed }
-  - { key: d9, primary: "9", shift: "'", source: assumed }
-  - { key: div, primary: "/", shift: "%", source: assumed }
   - { key: ln, primary: "log(", shift: "exp(", label: { primary: "ln" }, source: assumed }
-  - { key: d4, primary: "4", shift: "{", source: assumed }
-  - { key: d5, primary: "5", shift: "}", source: assumed }
-  - { key: d6, primary: "6", shift: "_", source: assumed }
-  - { key: mul, primary: "*", source: assumed }
   - { key: log, primary: "log10(", shift: "10**", label: { primary: "log" }, source: assumed }
+  - { key: frac, primary: "/", shift: "//", source: assumed }
+  - { key: comma, primary: ",", shift: ":", source: assumed }
+  - { key: enter, shift: "==", source: assumed }
+  - { key: eex, primary: "e", shift: "=", label: { primary: "E" }, source: assumed }
+  - { key: d7, primary: "7", shift: "\"", source: assumed }
+  - { key: d8, primary: "8", shift: "'", source: assumed }
+  - { key: d9, primary: "9", shift: "!", source: assumed }
+  - { key: div, primary: "/", shift: "%", source: assumed }
+  - { key: d4, primary: "4", shift: "[", source: assumed }
+  - { key: d5, primary: "5", shift: "]", source: assumed }
+  - { key: d6, primary: "6", shift: "{", source: assumed }
+  - { key: mul, primary: "*", shift: "}", source: assumed }
   - { key: d1, primary: "1", shift: "<", source: assumed }
   - { key: d2, primary: "2", shift: ">", source: assumed }
-  - { key: d3, primary: "3", shift: "!", source: assumed }
-  - { key: i, primary: " ", shift: "1j", label: { primary: "␣", shift: "j" }, source: assumed }
+  - { key: d3, primary: "3", shift: "pi", source: assumed }
   - { key: d0, primary: "0", shift: "    ", label: { shift: "⇥" }, source: assumed }
-  - { key: dot, primary: ".", shift: "e", label: { shift: "E" }, source: assumed }
-  - { key: enter, shift: "==", source: assumed }
+  - { key: dot, primary: ".", shift: "=", source: assumed }

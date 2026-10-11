@@ -233,6 +233,11 @@ function ser(e: Json, o: SerializeOptions): Out {
     }
     default:
   }
+  // P4: polar entry r∡θ. Giac's cos/sin follow the angle mode (angle_radian), so degrees work too.
+  if (head === "PolarComplex") {
+    const t = ser(a1, o).s;
+    return { s: `${wrap(ser(a0, o), 2)}*(cos(${t})+i*sin(${t}))`, p: 2 };
+  }
   if (head === "Assign") return { s: `${wrap(ser(a0, o), 1)}:=${wrap(ser(a1, o), 0)}`, p: 0 };
   if (head in REL) return { s: `${wrap(ser(a0, o), 1)}${REL[head]}${wrap(ser(a1, o), 1)}`, p: 0 };
   if (head in FN) return call(FN[head] as string, args, o);

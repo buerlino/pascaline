@@ -28,6 +28,8 @@ export interface HomeOutcome {
   approximate: boolean;
   /** The numeric value, so the view can re-format it (STD/SCI/ENG) without calling the engine. */
   value?: ComplexValue;
+  /** The exact result when it is a plain integer or fraction (`3`, `-7/3`): the Format key's fraction modes. */
+  exact?: string;
   /** Why it failed, for the app's own translated message. */
   error?: CalcError;
 }

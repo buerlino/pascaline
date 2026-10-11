@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
   import { legend } from "../i18n/index.ts";
-  import { keyboard, labelFor, pythonLabel, type Key } from "./keyboard.ts";
+  import { gridPlace, keyboard, labelFor, pythonLabel, type Key } from "./keyboard.ts";
 
   let {
     shift,
@@ -33,7 +33,7 @@
   class="pad"
   class:shifted={shift}
   class:alphaed={alpha}
-  style:grid-template-columns={`repeat(${keyboard.columns}, 1fr)`}
+  style:grid-template-columns={`repeat(${keyboard.units}, 1fr)`}
 >
   {#each keyboard.keys as key (key.id)}
     <!-- pointerdown + preventDefault: the button never takes focus, so the caret stays in the entry line. -->
@@ -45,7 +45,8 @@
       aria-pressed={key.cls === "ctl" && (key.id === "shift" || key.id === "alpha") ? pressed(key) : undefined}
       data-locked={key.id === "alpha" && alphaLock ? "true" : undefined}
       style:grid-row={key.row + 1}
-      style:grid-column={key.col + 1}
+      style:grid-column={`${gridPlace(keyboard, key).start} / span ${gridPlace(keyboard, key).span}`}
+      data-reserved={key.actions.primary?.kind === "special" && key.actions.primary.name === "none" ? "true" : undefined}
       onpointerdown={(ev) => {
         ev.preventDefault();
         onpress(key);
@@ -99,6 +100,19 @@
     min-height: 36px;
     background: var(--key-nav);
     font-size: 15px;
+  }
+  /* the round pad and Cancel in the upper cluster: as low as the app keys beside them */
+  .key[data-key="cancel"],
+  .key[data-key="up"],
+  .key[data-key="down"],
+  .key[data-key="left"],
+  .key[data-key="right"] {
+    min-height: 36px;
+  }
+  /* a key whose function we don't have yet: only its letter matters */
+  .key[data-reserved="true"] .main {
+    opacity: 0.4;
+    font-size: 14px;
   }
   .key.enter {
     background: var(--key-enter);

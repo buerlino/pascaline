@@ -31,7 +31,7 @@ export class EngineCalc implements Calc {
   async home(giac: string, s: CalcSettings): Promise<HomeOutcome> {
     try {
       const r = await this.engine.home(giac, { ...defaultHomeSettings, digits: s.digits, angle: s.angle });
-      return { ok: r.ok, display: r.display, approximate: r.approximate, ...(r.value ? { value: r.value } : {}), ...(r.error ? { error: r.error } : {}) };
+      return { ok: r.ok, display: r.display, approximate: r.approximate, ...(r.value ? { value: r.value } : {}), ...(r.exact && /^-?\d{1,200}(\/\d{1,200})?$/.test(r.exact) ? { exact: r.exact } : {}), ...(r.error ? { error: r.error } : {}) };
     } catch (e) {
       throw e instanceof EngineCancelled ? new CalcCancelled() : e;
     }

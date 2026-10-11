@@ -125,7 +125,7 @@ describe("alpha lock (L3)", () => {
     s.toggleAlpha();
     expect([s.alpha, s.alphaLock]).toEqual([false, false]);
   });
-  it("shift, alpha, alpha locks capitals; shift in the lock is one-shot", () => {
+  it("shift, alpha, alpha locks the shift layer (lower case); shift in the lock is one-shot", () => {
     const s = new Session(new FakeCalc(), memoryKv());
     s.toggleShift();
     s.toggleAlpha();

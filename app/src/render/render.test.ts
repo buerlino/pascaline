@@ -61,5 +61,7 @@ describe("homeResultToLatex", () => {
   });
   it("writes complex results with i", () => {
     expect(homeResultToLatex("1.5+2*i")).toBe("1.5+2\\mathrm{i}");
+    expect(homeResultToLatex("1.5+i")).toBe("1.5+\\mathrm{i}");
+    expect(homeResultToLatex("-i")).toBe("-\\mathrm{i}");
   });
 });

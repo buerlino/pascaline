@@ -35,7 +35,8 @@ async function typeText(page: Page, text: string): Promise<void> {
 test("Python shell: print(1+1) by keys gives 2; calc.cas factors through Giac", async ({ page }) => {
   await openPython(page, "num");
   // p r i n t ( 1 + 1 ) with alpha lock for the letters
-  await tap(page, ["alpha", "alpha", "d4", "d6", "pi", "div", "log", "alpha", "lpar", "d1", "add", "d1", "rpar", "enter"]);
+  // (in the Python layer: paren types "(", shift paren ")")
+  await tap(page, ["shift", "alpha", "alpha", "eex", "d8", "tan", "paren", "div", "alpha", "paren", "d1", "add", "d1", "shift", "paren", "enter"]);
   await expect(lastOut(page)).toHaveText("2");
   await typeText(page, "import calc\n");
   await typeText(page, 'calc.cas("factor(x^2-1)")\n');
@@ -44,7 +45,7 @@ test("Python shell: print(1+1) by keys gives 2; calc.cas factors through Giac", 
 
 test("Python shell: a Home variable is read from Python, and a value Python writes is seen in Home", async ({ page }) => {
   // Home: A := 7
-  await tap(page, ["shift", "alpha", "sin", "shift", "comma", "d7", "enter"]);
+  await tap(page, ["d7", "shift", "eex", "alpha", "vars", "enter"]);
   await expect(page.locator('[data-testid="result"] .result').last()).toHaveAttribute("data-text", "7");
   await openPython(page, "num");
   await typeText(page, "import calc\n");
@@ -53,7 +54,7 @@ test("Python shell: a Home variable is read from Python, and a value Python writ
   await typeText(page, 'calc.cas("B:=A+1")\n');
   await expect(transcript(page).locator("pre").last()).toContainText("8");
   await tap(page, ["app"]); // back to Home
-  await tap(page, ["shift", "alpha", "cos", "enter"]);
+  await tap(page, ["alpha", "math", "enter"]);
   await expect(page.locator('[data-testid="result"] .result').last()).toHaveAttribute("data-text", "8");
 });
 

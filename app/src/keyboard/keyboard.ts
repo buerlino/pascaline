@@ -2,9 +2,12 @@
 // Keyboard model: types, validation and lookup for spec/keyboard.yaml (turned into JSON at build time).
 import raw from "../../../spec/keyboard.yaml";
 
-export type Special = "shift" | "alpha" | "enter" | "clear" | "cancel" | "app" | "settings" | "apps" | "symb" | "plot" | "num" | "menu";
+export type Special =
+  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "app" | "cas" | "settings" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt"
+  /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
+  | "none";
 export const SPECIALS: readonly Special[] = [
-  "shift", "alpha", "enter", "clear", "cancel", "app", "settings", "apps", "symb", "plot", "num", "menu",
+  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "apps", "symb", "plot", "num", "menu", "fmt", "none",
 ];
 
 export type Action = ActionBody & {
@@ -29,7 +32,10 @@ export type Source = "assumed" | "device" | "virtual-calc" | "derived";
 export interface Key {
   readonly id: string;
   readonly row: number;
+  /** Cell index within its row (the row has `cellsIn(row)` cells). */
   readonly col: number;
+  /** Width in cells of its row (default 1). */
+  readonly span: number;
   readonly cls: KeyClass;
   /** Legends per layer; a string starting with "$" is an i18n key. */
   readonly label: Readonly<Partial<Record<Layer, string>>>;
@@ -38,7 +44,11 @@ export interface Key {
 }
 
 export interface Keyboard {
+  /** Cells in a row unless `rowColumns` says otherwise. */
   readonly columns: number;
+  readonly rowColumns: ReadonlyMap<number, number>;
+  /** Grid units across: a multiple of every row's cell count, so all rows share one CSS grid. */
+  readonly units: number;
   readonly rows: number;
   readonly keys: readonly Key[];
   readonly byId: ReadonlyMap<string, Key>;
@@ -112,6 +122,17 @@ function parseBody(v: unknown, where: string): ActionBody {
 export function loadKeyboard(doc: unknown): Keyboard {
   if (!isObj(doc) || doc["schema"] !== 1) throw new KeyboardSpecError("keyboard.yaml: schema must be 1");
   const columns = int(doc, "columns", "keyboard.yaml");
+  const rowColumns = new Map<number, number>();
+  const rc = doc["row_columns"];
+  if (rc !== undefined) {
+    if (!isObj(rc)) throw new KeyboardSpecError("keyboard.yaml: 'row_columns' must be a mapping");
+    for (const [r, n] of Object.entries(rc)) {
+      if (!/^\d+$/.test(r) || typeof n !== "number" || !Number.isInteger(n) || n < 1)
+        throw new KeyboardSpecError(`keyboard.yaml: row_columns ${r} must be a positive integer`);
+      rowColumns.set(Number(r), n);
+    }
+  }
+  const cellsOf = (row: number): number => rowColumns.get(row) ?? columns;
   const list = doc["keys"];
   if (!Array.isArray(list)) throw new KeyboardSpecError("keyboard.yaml: 'keys' must be a list");
   const keys: Key[] = [];
@@ -124,9 +145,13 @@ export function loadKeyboard(doc: unknown): Keyboard {
     if (byId.has(id)) throw new KeyboardSpecError(`${where}: duplicate id`);
     const row = int(item, "row", where);
     const col = int(item, "col", where);
-    if (col >= columns) throw new KeyboardSpecError(`${where}: col ${col} is outside ${columns} columns`);
-    if (cells.has(`${row},${col}`)) throw new KeyboardSpecError(`${where}: position ${row},${col} is taken`);
-    cells.add(`${row},${col}`);
+    const span = item["span"] === undefined ? 1 : int(item, "span", where);
+    if (span < 1) throw new KeyboardSpecError(`${where}: span must be at least 1`);
+    if (col + span > cellsOf(row)) throw new KeyboardSpecError(`${where}: col ${col} is outside ${cellsOf(row)} columns`);
+    for (let c = col; c < col + span; c++) {
+      if (cells.has(`${row},${c}`)) throw new KeyboardSpecError(`${where}: position ${row},${c} is taken`);
+      cells.add(`${row},${c}`);
+    }
     const cls = str(item, "cls", where) as KeyClass;
     if (!CLASSES.includes(cls)) throw new KeyboardSpecError(`${where}: unknown cls '${cls}'`);
     const source = str(item, "source", where) as Source;
@@ -145,12 +170,25 @@ export function loadKeyboard(doc: unknown): Keyboard {
     for (const layer of ["shift", "alpha"] as const)
       if ((label[layer] !== undefined) !== (actions[layer] !== undefined))
         throw new KeyboardSpecError(`${where}: ${layer} needs both a label and an action`);
-    const key: Key = { id, row, col, cls, label, actions, source };
+    const key: Key = { id, row, col, span, cls, label, actions, source };
     keys.push(key);
     byId.set(id, key);
   }
   const rows = keys.reduce((m, k) => Math.max(m, k.row + 1), 0);
-  return { columns, rows, keys, byId, python: loadPython(doc["python"], byId) };
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+  const units = [columns, ...rowColumns.values()].reduce((a, b) => (a * b) / gcd(a, b), 1);
+  return { columns, rowColumns, units, rows, keys, byId, python: loadPython(doc["python"], byId) };
+}
+
+/** Number of cells in a row. */
+export function cellsIn(kb: Keyboard, row: number): number {
+  return kb.rowColumns.get(row) ?? kb.columns;
+}
+
+/** Where a key sits on the shared CSS grid: first grid column (1-based) and how many grid units it spans. */
+export function gridPlace(kb: Keyboard, key: Key): { start: number; span: number } {
+  const unit = kb.units / cellsIn(kb, key.row);
+  return { start: key.col * unit + 1, span: key.span * unit };
 }
 
 function loadPython(list: unknown, byId: ReadonlyMap<string, Key>): Map<string, PythonKey> {
@@ -193,7 +231,8 @@ export function pythonLabel(kb: Keyboard, key: Key, layer: "primary" | "shift"):
 /** The shipped layout. */
 export const keyboard: Keyboard = loadKeyboard(raw);
 
-/** The action a key triggers in the given modifier state (alpha falls back to primary; shift never does). */
+/** The action a key triggers in the given modifier state (alpha falls back to primary; shift never does).
+ *  Alpha types the capital letter, shift + alpha its lower case (as on the reference, P4). */
 export function actionFor(key: Key, shift: boolean, alpha: boolean, oneLine = false): ActionBody | undefined {
   const a = layerAction(key, shift, alpha);
   return oneLine && a?.line ? a.line : a;
@@ -202,7 +241,7 @@ export function actionFor(key: Key, shift: boolean, alpha: boolean, oneLine = fa
 function layerAction(key: Key, shift: boolean, alpha: boolean): Action | undefined {
   if (alpha) {
     const a = key.actions.alpha ?? key.actions.primary;
-    if (shift && a?.kind === "type" && a === key.actions.alpha) return { kind: "type", text: a.text.toUpperCase() };
+    if (shift && a?.kind === "type" && a === key.actions.alpha) return { kind: "type", text: a.text.toLowerCase() };
     return a;
   }
   if (shift) return key.actions.shift;

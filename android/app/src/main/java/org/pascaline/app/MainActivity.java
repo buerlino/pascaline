@@ -17,6 +17,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(PascalineHapticsPlugin.class); // local plugin; must come before super.onCreate
         if (!BuildConfig.MEASURE) {
             super.onCreate(savedInstanceState);
             return;

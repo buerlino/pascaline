@@ -109,7 +109,7 @@ test("Function: a sign change at the pole of 1/x is not a root: ⚠ and no x", a
 test("Function: signed area of x^2 from 0 to 1 is 1/3 (derived)", async ({ page }) => {
   await tap(page, ["symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
-  await tap(page, ["x", "shift", "pow", "enter", "plot"]);
+  await tap(page, ["x", "sq", "enter", "plot"]);
   await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
   await tap(page, ["menu", "d5"]); // start at x = 0
   await tap(page, ["right", "right", "right", "right", "right"]); // x = 1

@@ -39,14 +39,14 @@ test("CAS: 1 a/b 3 + 1 a/b 6 Enter is drawn as a stacked one half (assumed, G2 i
 });
 
 test("CAS: √8 is drawn as 2√2 (assumed, G2 item 17)", async ({ page }) => {
-  await tap(page, ["app", "sqrt", "d8", "enter"]);
+  await tap(page, ["app", "shift", "sq", "d8", "enter"]);
   const res = lastResult(page).locator(".math");
   await expect(res).toBeVisible();
   expect(await res.getAttribute("data-latex")).toBe("2\\sqrt{2}");
 });
 
 test("CAS: π × x is drawn as πx, never as an unknown command like \\pix", async ({ page }) => {
-  await tap(page, ["app", "pi", "mul", "x", "enter"]);
+  await tap(page, ["app", "shift", "d3", "mul", "x", "enter"]);
   const res = lastResult(page).locator(".math");
   await expect(res).toBeVisible();
   const latex = await res.getAttribute("data-latex");
@@ -59,7 +59,7 @@ test("one-line mode shows the entry on one line", async ({ page }) => {
   await tap(page, ["d1", "div", "d3"]);
   expect(await entryValue(page)).toBe("1\\div3");
   await page.evaluate(() => window.pascaline.entry.clear());
-  await tap(page, ["sqrt", "d8"]);
+  await tap(page, ["shift", "sq", "d8"]);
   expect(await entryValue(page)).not.toContain("\\sqrt{");
   await page.evaluate(() => window.pascaline.session.setEntry("textbook"));
 });
@@ -100,13 +100,13 @@ test("SCI and ENG formats work in Home", async ({ page }) => {
   await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", /^12\.345\d*E3$/);
 });
 
-test("Store key: a := 7, then a+1 gives 8, all through keys", async ({ page }) => {
-  await tap(page, ["alpha", "sin", "shift", "comma", "d7"]);
-  expect(await entryValue(page)).toBe("a:=7");
+test("Store key: 7 ▶ A, then A+1 gives 8, all through keys", async ({ page }) => {
+  await tap(page, ["d7", "shift", "eex", "alpha", "vars"]);
+  expect(await entryValue(page)).toBe("7\\blacktriangleright A");
   await tap(page, ["enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();
   expect(await lastText(page)).toBe("7");
-  await tap(page, ["alpha", "sin", "add", "d1", "enter"]);
+  await tap(page, ["alpha", "vars", "add", "d1", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(2);
   expect(await lastText(page)).toBe("8");
 });

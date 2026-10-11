@@ -7,6 +7,7 @@
   import { VIEW_IDS, type NavDir, type ViewId } from "./apps/types.ts";
   import type { EntryController } from "./entry/controller.ts";
   import { t, type MessageKey } from "./i18n/index.ts";
+  import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
   import { actionFor, keyboard, pythonText, type ActionBody, type Key } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
@@ -58,10 +59,23 @@
       case "clear":
         clearKey();
         break;
+      case "esc":
+        // Esc: close an open list, else clear the entry line (a running job is the Cancel key's business).
+        if (shell.switcherOpen || shell.menuOpen) {
+          shell.switcherOpen = false;
+          shell.menuOpen = false;
+        } else entry.clear();
+        break;
       case "app":
         // Home/CAS key: from an app back to Home/CAS, else switch between the two.
+        picked = null;
         if (shell.app !== null) shell.close();
         else session.toggleView();
+        break;
+      case "cas":
+        picked = null;
+        shell.close();
+        session.setView("cas");
         break;
       case "settings":
         session.settingsOpen = true;
@@ -78,10 +92,55 @@
       case "menu":
         shell.toggleMenu();
         break;
+      case "fmt":
+        // Format key: Home and CAS show the last result in the next mode; the apps have no such result.
+        if (shell.app === null) void session.cycleFormat();
+        break;
       case "shift":
       case "alpha":
+      case "none":
         break;
     }
+  }
+
+  // P4: Up on an empty entry line picks the last history row (Home/CAS); Up/Down walk the rows, Enter puts the
+  // picked result on the entry line (L5; an entry without a result puts its input back), Esc drops the pick.
+  // Any other key drops the pick and does its normal job.
+  let picked = $state<number | null>(null);
+  function historyKey(action: ActionBody): boolean {
+    const items = session.items;
+    const n = items.length;
+    const isCmd = (name: string) => action.kind === "cmd" && action.name === name;
+    if (picked === null || picked >= n) {
+      picked = null;
+      if (!isCmd("moveUp") || n === 0 || entry.value !== "") return false;
+      picked = n - 1;
+      return true;
+    }
+    if (isCmd("moveUp")) {
+      picked = Math.max(0, picked - 1);
+      return true;
+    }
+    if (isCmd("moveDown")) {
+      picked = picked + 1 < n ? picked + 1 : null;
+      return true;
+    }
+    const item = items[picked];
+    picked = null;
+    if (action.kind === "special" && action.name === "esc") return true;
+    if (action.kind === "special" && action.name === "enter" && item) {
+      if (item.status === "done") entry.insert(resultToEntry(session.display(item).latex));
+      else entry.insert(item.latex);
+      return true;
+    }
+    return false;
+  }
+
+  /** A key went down: vibrate first (when switched on in Settings), then do its job. */
+  function keyDown(key: Key): void {
+    const h = session.settings.haptics;
+    if (h.on) vibrate(h.strength / 100, h.ms);
+    press(key);
   }
 
   const NAV: Record<string, NavDir> = {
@@ -96,7 +155,7 @@
   let waiting: Key[] = [];
   function press(key: Key): void {
     const pk = key.actions.primary;
-    const switches = pk?.kind === "special" && ["cancel", "app", "apps", "symb", "plot", "num", "settings"].includes(pk.name);
+    const switches = pk?.kind === "special" && ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings"].includes(pk.name);
     if (shell.loading !== null && !switches) {
       waiting.push(key);
       if (waiting.length === 1)
@@ -127,6 +186,7 @@
     const action = actionFor(key, session.shift, session.alpha, session.settings.entry === "line");
     session.clearModifiers();
     if (!action) return;
+    if (shell.app === null && historyKey(action)) return;
     if (action.kind === "special") return special(action.name);
     if (shell.app !== null) {
       const dir = action.kind === "cmd" ? NAV[action.name] : undefined;
@@ -146,6 +206,7 @@
     if (action.kind === "special") {
       if (action.name === "enter") return shell.input({ kind: "enter" });
       if (action.name === "clear") return shell.input({ kind: "cmd", name: "clear" });
+      if (action.name === "esc" && !shell.switcherOpen && !shell.menuOpen) return shell.input({ kind: "cmd", name: "clear" });
       return special(action.name);
     }
     if (action.kind === "type") return shell.input({ kind: "text", text: action.text });
@@ -197,6 +258,7 @@
     {#if shell.app === null}
       <History
         items={session.items}
+        selected={picked}
         display={(item) => session.display(item)}
         onrecall={(latex) => entry.set(latex)}
         oninsert={(latex) => entry.insert(resultToEntry(latex))}
@@ -233,7 +295,7 @@
     <div class="field" bind:this={host}></div>
   </div>
 
-  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} python={shell.takesText} onpress={press} />
+  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} python={shell.takesText} onpress={keyDown} />
 
   {#if session.settingsOpen}<Settings {session} />{/if}
 </main>
