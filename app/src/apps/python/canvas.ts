@@ -41,17 +41,17 @@ export class GfxSurface {
           g.fillRect(c[1], c[2], 1, 1);
           break;
         case "line":
-          g.strokeStyle = hex(c[5]);
-          g.lineWidth = 1;
-          g.beginPath();
-          g.moveTo(c[1] + 0.5, c[2] + 0.5);
-          g.lineTo(c[3] + 0.5, c[4] + 0.5);
-          g.stroke();
+          g.fillStyle = hex(c[5]);
+          this.line(c[1], c[2], c[3], c[4]);
           break;
         case "rect":
-          g.strokeStyle = hex(c[5]);
-          g.lineWidth = 1;
-          g.strokeRect(c[1] + 0.5, c[2] + 0.5, Math.max(0, c[3] - 1), Math.max(0, c[4] - 1));
+          g.fillStyle = hex(c[5]);
+          if (c[3] > 0 && c[4] > 0) {
+            g.fillRect(c[1], c[2], c[3], 1);
+            g.fillRect(c[1], c[2] + c[4] - 1, c[3], 1);
+            g.fillRect(c[1], c[2], 1, c[4]);
+            g.fillRect(c[1] + c[3] - 1, c[2], 1, c[4]);
+          }
           break;
         case "fillrect":
           g.fillStyle = hex(c[5]);
@@ -59,16 +59,8 @@ export class GfxSurface {
           break;
         case "circle":
         case "fillcircle":
-          g.beginPath();
-          g.arc(c[1] + 0.5, c[2] + 0.5, Math.max(0, c[3]), 0, 2 * Math.PI);
-          if (c[0] === "circle") {
-            g.strokeStyle = hex(c[4]);
-            g.lineWidth = 1;
-            g.stroke();
-          } else {
-            g.fillStyle = hex(c[4]);
-            g.fill();
-          }
+          g.fillStyle = hex(c[4]);
+          this.circle(c[1], c[2], c[3], c[0] === "fillcircle");
           break;
         case "text":
           g.fillStyle = hex(c[4]);
@@ -80,6 +72,60 @@ export class GfxSurface {
           break;
       }
       this.drawn++;
+    }
+  }
+
+  /** Bresenham: whole pixels, both ends included, no anti-aliasing (crisp like a calculator screen). */
+  private line(x0: number, y0: number, x1: number, y1: number): void {
+    x0 = Math.round(x0);
+    y0 = Math.round(y0);
+    x1 = Math.round(x1);
+    y1 = Math.round(y1);
+    const dx = Math.abs(x1 - x0);
+    const dy = -Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx + dy;
+    for (let n = 0; n < 4096; n++) {
+      this.ctx.fillRect(x0, y0, 1, 1);
+      if (x0 === x1 && y0 === y1) break;
+      const e2 = 2 * err;
+      if (e2 >= dy) {
+        err += dy;
+        x0 += sx;
+      }
+      if (e2 <= dx) {
+        err += dx;
+        y0 += sy;
+      }
+    }
+  }
+
+  /** Midpoint circle of radius r around (cx, cy); filled with horizontal spans. */
+  private circle(cx: number, cy: number, r: number, fill: boolean): void {
+    cx = Math.round(cx);
+    cy = Math.round(cy);
+    r = Math.round(r);
+    if (r < 0) return;
+    const g = this.ctx;
+    let x = r;
+    let y = 0;
+    let err = 1 - r;
+    while (x >= y) {
+      if (fill) {
+        g.fillRect(cx - x, cy + y, 2 * x + 1, 1);
+        g.fillRect(cx - x, cy - y, 2 * x + 1, 1);
+        g.fillRect(cx - y, cy + x, 2 * y + 1, 1);
+        g.fillRect(cx - y, cy - x, 2 * y + 1, 1);
+      } else
+        for (const [px, py] of [[x, y], [y, x], [-y, x], [-x, y], [-x, -y], [-y, -x], [y, -x], [x, -y]] as const)
+          g.fillRect(cx + px, cy + py, 1, 1);
+      y++;
+      if (err < 0) err += 2 * y + 1;
+      else {
+        x--;
+        err += 2 * (y - x) + 1;
+      }
     }
   }
 

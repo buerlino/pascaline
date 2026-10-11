@@ -73,6 +73,9 @@ export class PythonApp implements AppInstance {
   private surface: GfxSurface | undefined;
   /** A Run is in progress and has not drawn yet (its first drawing shows the Plot view). */
   private runAwaitingGfx = false;
+  /** Shell entries typed while one runs wait their turn; Cancel drops them (a new generation). */
+  private chain: Promise<unknown> = Promise.resolve();
+  private generation = 0;
 
   constructor(host: AppHost) {
     this.host = host;
@@ -147,7 +150,8 @@ export class PythonApp implements AppInstance {
     this.trim();
   }
 
-  private graphics(batch: GfxCmd[]): void {
+  /** A batch of drawing commands from the worker (public for tests). */
+  graphics(batch: GfxCmd[]): void {
     this.gfx.draw(batch);
     if (this.runAwaitingGfx) {
       this.runAwaitingGfx = false;
@@ -208,13 +212,14 @@ export class PythonApp implements AppInstance {
     // A block (a line ending in ":") goes on until an empty line, as in the Python prompt.
     if (/:\s*$/.test(lastLine) || (lines.length > 1 && lastLine.trim() !== "")) return false;
     const code = text.replace(/\s+$/, "");
-    if (code === "" || this.busy) return true;
+    if (code === "") return true;
     v.doc = "";
     this.inputs.push(code);
     if (this.inputs.length > SHELL_HISTORY) this.inputs.shift();
     this.recall = -1;
     this.push("in", code);
-    void this.job((py) => py.shell(code));
+    const gen = this.generation;
+    this.chain = this.chain.then(() => (gen === this.generation ? this.job((py) => py.shell(code)) : undefined));
     return true;
   }
 
@@ -231,6 +236,7 @@ export class PythonApp implements AppInstance {
 
   async cancel(): Promise<void> {
     if (!this.engine) return;
+    this.generation++;
     await this.engine.cancel();
     this.status = "ready";
     this.push("note", t("python.cancelled"));
