@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
 import android.util.Log;
+import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 /**
@@ -26,5 +27,12 @@ public class MainActivity extends BridgeActivity {
         super.onCreate(savedInstanceState);
         long t1 = System.currentTimeMillis();
         Log.i(TAG, "activity-created epoch=" + t1 + " sinceProc=" + (t1 - procStartEpoch) + " superOnCreateMs=" + (t1 - t0));
+        // `am start --es path "/?bench=1"` loads that page instead (device_run.py bench)
+        String path = getIntent() != null ? getIntent().getStringExtra("path") : null;
+        if (path != null && getBridge() != null) {
+            final WebView wv = getBridge().getWebView();
+            final String url = getBridge().getAppUrl() + (path.startsWith("/") ? path : "/" + path);
+            wv.post(() -> wv.loadUrl(url));
+        }
     }
 }
