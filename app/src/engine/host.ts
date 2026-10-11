@@ -4,7 +4,7 @@
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
-import { homeEval, homeSetupCommands, toExactLiterals } from "./homeEval.ts";
+import { homeEval, homeSetupCommands, regrouped, toExactLiterals } from "./homeEval.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 
@@ -166,6 +166,8 @@ export class EngineHost {
       throw e;
     }
     if (isError(text)) return fail(text, isTimeout(text) ? "timeout" : "engine");
+    // This build leaves x*x unevaluated (no top-level "regroup" autosimplify), and latex() then draws x·x as "xx".
+    if (text.includes("*")) text = regrouped(this.giac, "pcasans", text);
     const tex = this.giac.eval("latex(pcasans)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {

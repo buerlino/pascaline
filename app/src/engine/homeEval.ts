@@ -197,6 +197,18 @@ function floatEval(giac: Giac, input: string, s: HomeSettings): { out: string; o
   }
 }
 
+/**
+ * `regroup` on the stored answer `name` (x*x -> x^2), kept only when it merges equal factors, i.e. has
+ * fewer "*" than `text`. Otherwise regroup would just reorder (factor's (x-1)*(x+1) -> (x+1)*(x-1))
+ * and `text` and the stored answer stay as they were.
+ */
+export function regrouped(giac: Giac, name: string, text: string): string {
+  const out = giac.eval(`regroup(${name})`);
+  if (isError(out) || out === "undef" || out.split("*").length >= text.split("*").length) return text;
+  giac.eval(`${name}:=regroup(${name})`);
+  return out;
+}
+
 export function homeEval(
   giac: Giac,
   input: string,
@@ -221,8 +233,10 @@ export function homeEval(
 
   const v = numericValue(giac, "pasans", s.digits, s.maxExactDigits);
   if (!v) {
-    // Not a number (symbolic, list, matrix…): out of scope for this spike; show Giac's text.
-    return done({ ok: true, display: exactOut, exact: exactOut, path: "exact", approximate: false, tieRisk: false });
+    // Not a number (symbolic, list, matrix…): show Giac's text. This build does not apply the
+    // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
+    const text = exactOut.includes("*") ? regrouped(giac, "pasans", exactOut) : exactOut;
+    return done({ ok: true, display: text, exact: text, path: "exact", approximate: false, tieRisk: false });
   }
   if (!v.big) {
     return done({ ok: true, display: v.text, value: v.value, exact: exactOut, path: "exact", approximate: false, tieRisk: v.tieRisk });
