@@ -30,10 +30,9 @@ const engineHome = (page: Page, giac: string): Promise<string> =>
 test("Function: sin(x) and x^3-2x are drawn; the trace y comes from the engine", async ({ page }) => {
   await defineTwo(page);
   await tap(page, ["plot"]);
-  await expect(page.locator(".board svg")).toBeVisible();
-  // two curves (JSXGraph draws each function graph as one path)
-  await expect(page.locator(".board svg path[stroke='#e8743b']")).toHaveCount(1);
-  await expect(page.locator(".board svg path[stroke='#3fa7d6']")).toHaveCount(1);
+  await expect(page.locator(".board canvas")).toBeVisible();
+  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  expect(await page.evaluate(() => window.pascaline.plot.curves)).toBe(2);
   await expect(page.getByTestId("trace-y")).toHaveAttribute("data-text", "0");
   await tap(page, ["right", "right", "right"]);
   await expect(page.getByTestId("trace-x")).toHaveText("0.6");
@@ -64,7 +63,7 @@ test("Function: Num shows a table whose values match the engine", async ({ page 
 test("Function: root, extremum and intersection from the Plot menu (oracle)", async ({ page }) => {
   await defineTwo(page);
   await tap(page, ["plot"]);
-  await expect(page.locator(".board svg")).toBeVisible();
+  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
   await tap(page, ["down"]); // trace F2
   await tap(page, ["right", "right", "right", "right", "right"]); // x = 1
   await expect(page.getByTestId("trace-x")).toHaveText("1");
@@ -84,7 +83,7 @@ test("Function: root, extremum and intersection from the Plot menu (oracle)", as
 test("Function: definitions, window and view survive a reload", async ({ page }) => {
   await defineTwo(page);
   await tap(page, ["plot"]);
-  await expect(page.locator(".board svg")).toBeVisible();
+  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
   await page.evaluate(() => window.pascaline.shell.flush());
   await page.waitForTimeout(300);
   await page.reload();

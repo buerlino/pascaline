@@ -21,9 +21,19 @@
   let JXG: JXGModule | undefined;
   let markEls: { remove(): void }[] = [];
 
-  /** D7 options for measurement builds: ?renderer=canvas, ?adaptive=0. */
+  // D7 options (desktop, CPU 4x slower: canvas redraws in 6.4 ms vs 10.2 ms for SVG; plain sampling is
+  // faster than adaptive while moving). Default: canvas, plain sampling while the window moves and adaptive
+  // sampling (clean poles) once it rests. ?renderer=svg and ?sampling=adaptive|plain for device comparisons.
   const q = new URLSearchParams(location.search);
-  const renderer = q.get("renderer") === "canvas" ? "canvas" : "svg";
+  const renderer = q.get("renderer") === "svg" ? "svg" : "canvas";
+  const sampling = q.get("sampling") === "adaptive" || q.get("sampling") === "plain" ? q.get("sampling") : "hybrid";
+  type Curve = { setAttribute(a: Record<string, unknown>): unknown };
+  let curves: Curve[] = [];
+  let restTimer: ReturnType<typeof setTimeout> | undefined;
+  let moving = false;
+  function setAdaptive(on: boolean): void {
+    for (const c of curves) c.setAttribute({ doAdvancedPlot: on });
+  }
 
   function defaultWindow(): PlotWindow {
     const w = box?.clientWidth || 1;
@@ -39,6 +49,17 @@
     const [x1, y1, x2, y2] = board.getBoundingBox() as [number, number, number, number];
     clearTimeout(saveTimer);
     saveTimer = setTimeout(() => app.setWindow({ xmin: x1, xmax: x2, ymin: y2, ymax: y1 }), 150);
+    if (sampling !== "hybrid") return;
+    if (!moving) {
+      moving = true;
+      setAdaptive(false);
+    }
+    clearTimeout(restTimer);
+    restTimer = setTimeout(() => {
+      moving = false;
+      setAdaptive(true);
+      board?.update();
+    }, 120);
   }
 
   onMount(() => {
@@ -48,7 +69,6 @@
       if (disposed || !box) return;
       const t1 = performance.now();
       JXG = (m as unknown as { default: JXGModule }).default;
-      const adaptive = q.get("adaptive") !== "0";
       const b = JXG.JSXGraph.initBoard(box, {
         boundingbox: bbox(app.win ?? defaultWindow()),
         axis: true,
@@ -70,15 +90,16 @@
       for (const i of app.active) {
         const fn = app.compiled[i]?.fn;
         if (!fn) continue;
-        b.create("functiongraph", [fn], {
+        const c = b.create("functiongraph", [fn], {
           strokeColor: CURVE_COLORS[i],
           strokeWidth: 2,
           highlight: false,
           fixed: true,
-          doAdvancedPlot: adaptive,
+          doAdvancedPlot: sampling !== "plain",
           numberPointsHigh: 400,
           numberPointsLow: 120,
         });
+        curves.push(c as unknown as Curve);
       }
       // The trace cursor: drawn with the evaluator, its numbers come from the engine.
       b.create(
@@ -98,14 +119,17 @@
       if (!app.win) app.setWindow({ ...defaultWindow() });
       ready = true;
       plotHook.board = b;
+      plotHook.curves = curves.length;
       // Measurement builds: time from opening Plot to the first drawn board (JSXGraph loads on first open).
       requestAnimationFrame(() =>
-        mark("plot-ready", { openMs: performance.now() - t0, importMs: t1 - t0, curves: app.active.length, renderer }),
+        mark("plot-ready", { openMs: performance.now() - t0, importMs: t1 - t0, curves: app.active.length, renderer, sampling: sampling ?? "" }),
       );
     });
     return () => {
       disposed = true;
       clearTimeout(saveTimer);
+      clearTimeout(restTimer);
+      curves = [];
       if (plotHook.board === board) plotHook.board = undefined;
       if (board && JXG) JXG.JSXGraph.freeBoard(board);
       board = undefined;

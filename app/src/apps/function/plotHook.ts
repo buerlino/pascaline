@@ -7,4 +7,4 @@ export interface PlotBoardHandle {
   getBoundingBox(): number[];
 }
 
-export const plotHook: { board: PlotBoardHandle | undefined } = { board: undefined };
+export const plotHook: { board: PlotBoardHandle | undefined; curves: number } = { board: undefined, curves: 0 };
