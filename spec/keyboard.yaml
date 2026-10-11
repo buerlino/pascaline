@@ -24,30 +24,30 @@ columns: 5
 keys:
   # ---- row 0: apps and their views. Symb / Plot / Num open the views of the current app (from Home or CAS:
   # the last app used). Menu opens the current view's menu. Our own arrangement of the reference's logical keys.
-  - { id: apps, row: 0, col: 0, cls: nav, label: { primary: "$key.apps" }, primary: { special: apps }, source: assumed }
-  - { id: symb, row: 0, col: 1, cls: nav, label: { primary: "$key.symb" }, primary: { special: symb }, source: assumed }
-  - { id: plot, row: 0, col: 2, cls: nav, label: { primary: "$key.plot" }, primary: { special: plot }, source: assumed }
-  - { id: num, row: 0, col: 3, cls: nav, label: { primary: "$key.num" }, primary: { special: num }, source: assumed }
-  - { id: menu, row: 0, col: 4, cls: nav, label: { primary: "$key.menu" }, primary: { special: menu }, source: assumed }
+  - { id: apps, row: 0, col: 0, cls: nav, label: { primary: "$key.apps" }, primary: { special: apps }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r1c1
+  - { id: symb, row: 0, col: 1, cls: nav, label: { primary: "$key.symb" }, primary: { special: symb }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r1c2
+  - { id: plot, row: 0, col: 2, cls: nav, label: { primary: "$key.plot" }, primary: { special: plot }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r2c2
+  - { id: num, row: 0, col: 3, cls: nav, label: { primary: "$key.num" }, primary: { special: num }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r3c2
+  - { id: menu, row: 0, col: 4, cls: nav, label: { primary: "$key.menu" }, primary: { special: menu }, source: assumed }  # no clean match; see mapping README "Differences from our defaults"
 
   # ---- row 1: modifiers, cancel, view switch, delete
-  - { id: shift, row: 1, col: 0, cls: ctl, label: { primary: "$key.shift" }, primary: { special: shift }, source: assumed }
-  - { id: alpha, row: 1, col: 1, cls: ctl, label: { primary: "$key.alpha" }, primary: { special: alpha }, source: assumed }
-  - { id: cancel, row: 1, col: 2, cls: ctl, label: { primary: "$key.cancel" }, primary: { special: cancel }, source: assumed }
+  - { id: shift, row: 1, col: 0, cls: ctl, label: { primary: "$key.shift" }, primary: { special: shift }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r9c1 (a second press was not tried on the reference)
+  - { id: alpha, row: 1, col: 1, cls: ctl, label: { primary: "$key.alpha" }, primary: { special: alpha }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r8c1; reference's alpha/shift+alpha case convention is reversed from ours, see mapping README
+  - { id: cancel, row: 1, col: 2, cls: ctl, label: { primary: "$key.cancel" }, primary: { special: cancel }, source: assumed }  # not confirmed: the reference's On key was not tested while a computation was running; see SPOT-CHECK.md
   - { id: app, row: 1, col: 3, cls: ctl, label: { primary: "$key.app", shift: "$key.settings" },
-      primary: { special: app }, shift: { special: settings }, source: assumed }
+      primary: { special: app }, shift: { special: settings }, source: assumed }  # no clean match; see mapping README "Differences from our defaults"
   - { id: bksp, row: 1, col: 4, cls: ctl, label: { primary: "⌫", shift: "$key.clear" },
-      primary: { cmd: deleteBackward }, shift: { special: clear }, source: assumed }
+      primary: { cmd: deleteBackward }, shift: { special: clear }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r4c6; shift (Del) was not checked on the reference
 
   # ---- row 2: cursor
   - { id: left, row: 2, col: 0, cls: ctl, label: { primary: "◀", shift: "|◀" },
-      primary: { cmd: moveToPreviousChar }, shift: { cmd: moveToMathfieldStart }, source: assumed }
-  - { id: up, row: 2, col: 1, cls: ctl, label: { primary: "▲" }, primary: { cmd: moveUp }, source: assumed }
-  - { id: down, row: 2, col: 2, cls: ctl, label: { primary: "▼" }, primary: { cmd: moveDown }, source: assumed }
+      primary: { cmd: moveToPreviousChar }, shift: { cmd: moveToMathfieldStart }, source: virtual-calc }  # vc-2026-10-11/keys.yaml "left"; shift was not checked on the reference
+  - { id: up, row: 2, col: 1, cls: ctl, label: { primary: "▲" }, primary: { cmd: moveUp }, source: assumed }  # on the reference, Up on an empty entry line selects the last history row; see mapping README "Differences from our defaults"
+  - { id: down, row: 2, col: 2, cls: ctl, label: { primary: "▼" }, primary: { cmd: moveDown }, source: virtual-calc }  # vc-2026-10-11/keys.yaml "down"
   - { id: right, row: 2, col: 3, cls: ctl, label: { primary: "▶", shift: "▶|" },
-      primary: { cmd: moveToNextChar }, shift: { cmd: moveToMathfieldEnd }, source: assumed }
+      primary: { cmd: moveToNextChar }, shift: { cmd: moveToMathfieldEnd }, source: virtual-calc }  # vc-2026-10-11/keys.yaml "right"; shift was not checked on the reference
   - { id: abs, row: 2, col: 4, cls: fn, label: { primary: "|x|" },
-      primary: { insert: "\\left|#?\\right|", sample: ["\\left|-3\\right|", "abs(-3)"] }, source: assumed }
+      primary: { insert: "\\left|#?\\right|", sample: ["\\left|-3\\right|", "abs(-3)"] }, source: assumed }  # reference puts |x| behind shift of the +/- key (r6c2), not a standalone key; see mapping README
 
   # ---- row 3: trigonometry and brackets
   - id: sin
@@ -58,7 +58,7 @@ keys:
     primary: { insert: "\\sin\\left(#?\\right)", sample: ["\\sin\\left(2\\right)", "sin(2)"] }
     shift: { insert: "\\arcsin\\left(#?\\right)", sample: ["\\arcsin\\left(0.5\\right)", "asin(1/2)"] }
     alpha: { type: a }
-    source: assumed
+    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c2 (SIN/ASIN); alpha letter position not reference-matched, see mapping README
   - id: cos
     row: 3
     col: 1
@@ -67,7 +67,7 @@ keys:
     primary: { insert: "\\cos\\left(#?\\right)", sample: ["\\cos\\left(2\\right)", "cos(2)"] }
     shift: { insert: "\\arccos\\left(#?\\right)", sample: ["\\arccos\\left(0.5\\right)", "acos(1/2)"] }
     alpha: { type: b }
-    source: assumed
+    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c3 (COS/ACOS); alpha letter position not reference-matched, see mapping README
   - id: tan
     row: 3
     col: 2
@@ -76,9 +76,9 @@ keys:
     primary: { insert: "\\tan\\left(#?\\right)", sample: ["\\tan\\left(2\\right)", "tan(2)"] }
     shift: { insert: "\\arctan\\left(#?\\right)", sample: ["\\arctan\\left(2\\right)", "atan(2)"] }
     alpha: { type: c }
-    source: assumed
-  - { id: lpar, row: 3, col: 3, cls: op, label: { primary: "(", alpha: d }, primary: { type: "(" }, alpha: { type: d }, source: assumed }
-  - { id: rpar, row: 3, col: 4, cls: op, label: { primary: ")", alpha: e }, primary: { type: ")" }, alpha: { type: e }, source: assumed }
+    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c4 (TAN/ATAN); alpha letter position not reference-matched, see mapping README
+  - { id: lpar, row: 3, col: 3, cls: op, label: { primary: "(", alpha: d }, primary: { type: "(" }, alpha: { type: d }, source: assumed }  # reference combines ( and ) into one key that inserts the pair (r6c3); see mapping README
+  - { id: rpar, row: 3, col: 4, cls: op, label: { primary: ")", alpha: e }, primary: { type: ")" }, alpha: { type: e }, source: assumed }  # same key on the reference as lpar above; see mapping README
 
   # ---- row 4: powers, roots, fractions, constants, comma
   - id: pow
@@ -95,7 +95,7 @@ keys:
       sample: ["3^{2}", "3^2"]
       line: { insert: "\\char\"5E 2", sample: ["3\\char\"5E 2", "3^2"] }
     alpha: { type: f }
-    source: assumed
+    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c1 (x^y) + r6c1 (x²); the reference uses two separate keys where we use primary/shift, see mapping README
   - id: sqrt
     row: 4
     col: 1
@@ -107,7 +107,7 @@ keys:
       line: { insert: "\\operatorname{sqrt}\\left(#?\\right)", sample: ["\\operatorname{sqrt}\\left(8\\right)", "sqrt(8)"] }
     shift: { insert: "\\sqrt[#?]{#0}", sample: ["\\sqrt[3]{8}", "surd(8,3)"] }
     alpha: { type: g }
-    source: assumed
+    source: virtual-calc  # vc-2026-10-11/keys.yaml r6c1 shift (√ template) + r5c1 shift (ⁿ√, index first); the reference reaches these via shift of other keys, see mapping README
   - id: frac
     row: 4
     col: 2
@@ -122,7 +122,7 @@ keys:
       sample: ["\\frac{1}{3}", "1/3"]
       line: { insert: "\\left(#@\\right)^{-1}", sample: ["\\left(3\\right)^{-1}", "3^(-1)"] }
     alpha: { type: h }
-    source: assumed
+    source: assumed  # NOT confirmed: on the reference this "a b/c" key cycles the LAST RESULT's display form (decimal/fraction/mixed), it doesn't insert a template while typing (that's the reference's ÷ key, our "div"); see mapping README "Differences from our defaults" (L2, G2 item 17)
   - id: pi
     row: 4
     col: 3
@@ -131,15 +131,15 @@ keys:
     primary: { insert: "\\pi", sample: ["2\\pi", "2*pi"] }
     shift: { insert: "\\exponentialE", sample: ["2\\exponentialE", "2*e"] }
     alpha: { type: i }
-    source: assumed
+    source: assumed  # on the reference, π is shift of the "3" key (r9c4) and e is shift of LN (r5c5); we combine both on one key, see mapping README
   # shift + comma stores into a variable: it types `:=` (name first, then the value; our parser maps it to Giac assignment)
   - { id: comma, row: 4, col: 4, cls: op, label: { primary: ",", shift: "$key.sto", alpha: j },
-      primary: { type: "," }, shift: { type: ":=" }, alpha: { type: j }, source: assumed }
+      primary: { type: "," }, shift: { type: ":=" }, alpha: { type: j }, source: assumed }  # primary (comma) confirmed (vc-2026-10-11/keys.yaml r6c4); but the reference's comma-shift is Eval(), not store — store is shift of EEX (r7c1) there; see mapping README
 
   # ---- rows 5-8: digits and operators. The ÷ key makes a stacked fraction (seen on a G2, 2026-10-11).
-  - { id: d7, row: 5, col: 0, cls: num, label: { primary: "7", alpha: k }, primary: { type: "7" }, alpha: { type: k }, source: assumed }
-  - { id: d8, row: 5, col: 1, cls: num, label: { primary: "8", alpha: l }, primary: { type: "8" }, alpha: { type: l }, source: assumed }
-  - { id: d9, row: 5, col: 2, cls: num, label: { primary: "9", alpha: m }, primary: { type: "9" }, alpha: { type: m }, source: assumed }
+  - { id: d7, row: 5, col: 0, cls: num, label: { primary: "7", alpha: k }, primary: { type: "7" }, alpha: { type: k }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r7c2; alpha letter position not reference-matched
+  - { id: d8, row: 5, col: 1, cls: num, label: { primary: "8", alpha: l }, primary: { type: "8" }, alpha: { type: l }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r7c3; alpha letter position not reference-matched
+  - { id: d9, row: 5, col: 2, cls: num, label: { primary: "9", alpha: m }, primary: { type: "9" }, alpha: { type: m }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r7c4; alpha letter position not reference-matched
   - id: div
     row: 5
     col: 3
@@ -159,11 +159,11 @@ keys:
     primary: { insert: "\\ln\\left(#?\\right)", sample: ["\\ln\\left(2\\right)", "ln(2)"] }
     shift: { insert: "\\exponentialE^{#?}", sample: ["\\exponentialE^{2}", "exp(2)"] }
     alpha: { type: o }
-    source: assumed
+    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c5 (LN/e^x); alpha letter position not reference-matched
 
-  - { id: d4, row: 6, col: 0, cls: num, label: { primary: "4", alpha: p }, primary: { type: "4" }, alpha: { type: p }, source: assumed }
-  - { id: d5, row: 6, col: 1, cls: num, label: { primary: "5", alpha: q }, primary: { type: "5" }, alpha: { type: q }, source: assumed }
-  - { id: d6, row: 6, col: 2, cls: num, label: { primary: "6", alpha: r }, primary: { type: "6" }, alpha: { type: r }, source: assumed }
+  - { id: d4, row: 6, col: 0, cls: num, label: { primary: "4", alpha: p }, primary: { type: "4" }, alpha: { type: p }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r8c2; alpha letter position not reference-matched
+  - { id: d5, row: 6, col: 1, cls: num, label: { primary: "5", alpha: q }, primary: { type: "5" }, alpha: { type: q }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r8c3; alpha letter position not reference-matched
+  - { id: d6, row: 6, col: 2, cls: num, label: { primary: "6", alpha: r }, primary: { type: "6" }, alpha: { type: r }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r8c4; alpha letter position not reference-matched
   - id: mul
     row: 6
     col: 3
@@ -171,7 +171,7 @@ keys:
     label: { primary: "×", alpha: s }
     primary: { insert: "\\times", sample: ["3\\times4", "3*4"] }
     alpha: { type: s }
-    source: assumed
+    source: virtual-calc  # vc-2026-10-11/keys.yaml r8c5 (×); shift (angle sign) was not visible on the reference, we have no shift here so no conflict
   - id: log
     row: 6
     col: 4
@@ -180,12 +180,12 @@ keys:
     primary: { insert: "\\log\\left(#?\\right)", sample: ["\\log\\left(100\\right)", "log10(100)"] }
     shift: { insert: "10^{#?}", sample: ["10^{2}", "10^2"] }
     alpha: { type: t }
-    source: assumed
+    source: virtual-calc  # vc-2026-10-11/keys.yaml r5c6 (LOG/10^x via ALOG); alpha letter position not reference-matched
 
-  - { id: d1, row: 7, col: 0, cls: num, label: { primary: "1", alpha: u }, primary: { type: "1" }, alpha: { type: u }, source: assumed }
-  - { id: d2, row: 7, col: 1, cls: num, label: { primary: "2", alpha: v }, primary: { type: "2" }, alpha: { type: v }, source: assumed }
-  - { id: d3, row: 7, col: 2, cls: num, label: { primary: "3", alpha: w }, primary: { type: "3" }, alpha: { type: w }, source: assumed }
-  - { id: sub, row: 7, col: 3, cls: op, label: { primary: "−", alpha: x }, primary: { type: "-" }, alpha: { type: x }, source: assumed }
+  - { id: d1, row: 7, col: 0, cls: num, label: { primary: "1", alpha: u }, primary: { type: "1" }, alpha: { type: u }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r9c2; alpha letter position not reference-matched
+  - { id: d2, row: 7, col: 1, cls: num, label: { primary: "2", alpha: v }, primary: { type: "2" }, alpha: { type: v }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r9c3; alpha letter position not reference-matched; the reference's shift here is "i" (imaginary unit), ours is unshifted
+  - { id: d3, row: 7, col: 2, cls: num, label: { primary: "3", alpha: w }, primary: { type: "3" }, alpha: { type: w }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r9c4; alpha letter position not reference-matched; the reference's shift here is π, ours is unshifted
+  - { id: sub, row: 7, col: 3, cls: op, label: { primary: "−", alpha: x }, primary: { type: "-" }, alpha: { type: x }, source: assumed }  # primary (subtraction) matches vc-2026-10-11/keys.yaml r9c5, but the reference has a SEPARATE negation key (+/−, r6c2) that we don't have; see mapping README
   - id: i
     row: 7
     col: 4
@@ -194,9 +194,9 @@ keys:
     primary: { insert: "\\imaginaryI", sample: ["2\\imaginaryI", "2*i"] }
     shift: { insert: "\\infty", sample: ["\\infty", "inf"] }
     alpha: { type: y }
-    source: assumed
+    source: assumed  # on the reference, i is shift of the "2" key (r9c3); we have a standalone key; see mapping README
 
-  - { id: d0, row: 8, col: 0, cls: num, label: { primary: "0", alpha: z }, primary: { type: "0" }, alpha: { type: z }, source: assumed }
+  - { id: d0, row: 8, col: 0, cls: num, label: { primary: "0", alpha: z }, primary: { type: "0" }, alpha: { type: z }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r10c2; alpha letter position not reference-matched
   - id: dot
     row: 8
     col: 1
@@ -204,11 +204,11 @@ keys:
     label: { primary: ".", shift: "×10ˣ" }
     primary: { type: "." }
     shift: { insert: "\\times10^{#?}", sample: ["1.5\\times10^{3}", "1.5*10^3"] }
-    source: assumed
-  - { id: x, row: 8, col: 2, cls: fn, label: { primary: x, shift: y }, primary: { type: x }, shift: { type: y }, source: assumed }
-  - { id: add, row: 8, col: 3, cls: op, label: { primary: "+" }, primary: { type: "+" }, source: assumed }
+    source: assumed  # primary (decimal point) matches vc-2026-10-11/keys.yaml r10c3, but the reference's shift there is "=", not scientific notation; the reference reaches EEX via a separate key (r7c1); see mapping README
+  - { id: x, row: 8, col: 2, cls: fn, label: { primary: x, shift: y }, primary: { type: x }, shift: { type: y }, source: assumed }  # the reference's variable key (r4c4) depends on the current app and was not cross-checked against a standalone x/y key; see mapping README
+  - { id: add, row: 8, col: 3, cls: op, label: { primary: "+" }, primary: { type: "+" }, source: virtual-calc }  # vc-2026-10-11/keys.yaml r10c5 (+); we have no shift here, the reference's shift inserts Ans
   - { id: enter, row: 8, col: 4, cls: enter, label: { primary: "$key.enter", shift: "=" },
-      primary: { special: enter }, shift: { type: "=" }, source: assumed }
+      primary: { special: enter }, shift: { type: "=" }, source: assumed }  # primary (evaluate) matches vc-2026-10-11/keys.yaml r6c5, but the reference's shift there inserts approx(), not "="; see mapping README
 
 # ---- Python layer (milestone 3). In the Python app's editor and shell, these keys type Python text instead of
 # their normal action; keys not listed keep it (digits, letters with alpha, cursor, Enter, Cancel). A key whose

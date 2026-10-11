@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Section F: settings pages. Names/choices/defaults as found on the emulator before any change.
+# Facts only, in our words. Date: 2026-10-11. Emulator: Software 2.4.2, revision 15751 (user accepted this instead of 2.4.15515).
+- { page: "Home Settings 1/4", name: "Angle Measure", choices: [Radians, Degrees, Gradians], default: "Radians", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 1/4", name: "Number Format", choices: [Standard, Fixed, Scientific, Engineering, Floating, Rounded], default: "Standard", note: "no digit-count box next to it while Standard is selected", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 1/4", name: "Digit Grouping", choices: ["123,456.789", "123'456.789", "123 456.789", "123456.789", "123.456,789", "123'456,789", "123 456,789", "123<mark>456,789 (a raised-dot style separator)", "123456,789"], default: "123,456.789", note: "list is scrollable; 9 rows were visible, there may be more", unsure: true, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 1/4", name: "Entry", choices: [Textbook, Algebraic, RPN], default: "Textbook", g2: 18, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 1/4", name: "Integers", choices: [Binary, Octal, Decimal, Hex], default: "Hex", note: "beside it: a bit-width box showing 32 and a checkbox labelled with a plus-minus sign, unchecked", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 1/4", name: "Complex", choices: ["a+b*i", "(a,b)"], default: "a+b*i", note: "an unlabelled checkbox follows the dropdown, unchecked", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 1/4", name: "Language", choices: [Deutsch, English, Español, Français, Nederlands, Português, "中文 (简体)", "日本語"], default: "English", note: "list opened and closed again with Esc, nothing changed", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 2/4", name: "Font Size", choices: ["Small Font", "Medium Font", "Large Font"], default: "Medium Font", note: "list opened and closed again with Esc, nothing changed", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 2/4", name: "Calculator Name", default: "(empty text field)", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 2/4", name: "Textbook Display", kind: checkbox, default: checked, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 2/4", name: "Menu Display", kind: checkbox, default: checked, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 2/4", name: "Intelligent Math", kind: checkbox, default: unchecked, note: "a dropdown named 'a b/c Key Options' sits beside it; its list has two tick items, 'a b/c' and 'a/b', both ticked by default (probably they choose what the a b/c key cycles through, not tested; see keys.yaml r4c5). Intelligent Math itself was not switched on", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 2/4", name: "Date", default: "2026 / 10 / 11 with format YYYY/MM/DD", note: "format dropdown", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 2/4", name: "Time", default: "24-hour clock, checkbox checked, weekday dropdown", note: "weekday box showed 'Su' while the date was 2026-10-11", unsure: true, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 2/4", name: "Color Theme", default: "Light", note: "plus a small colour swatch dropdown", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 3/4", name: "Exam Mode: Configuration", default: "Basic Mode", note: "page has a Start soft key; deliberately never pressed", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 3/4", name: "Exam Mode: Default Angle", default: "No change", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "Home Settings 4/4", name: "Wireless Network Properties", default: "No network selected; status 'Looking for network'; RF version 'No adapter found'", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Angle Measure", choices: [Radians, Degrees, Gradians], default: "Radians", note: "list opened and closed again with Esc, nothing changed", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Number Format", choices: [Standard, Scientific, Engineering], default: "Standard with digits box 12", note: "only three formats here (Home has six); list opened and closed again with Esc, nothing changed", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Integers", default: "Decimal, checkbox beside it checked", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Simplify", choices: [None, Minimum, Maximum], default: "Minimum", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Exact", kind: checkbox, default: checked, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Complex", kind: checkbox, default: unchecked, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Use sqrt", kind: checkbox, default: checked, note: "labelled with a root sign", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Use i", kind: checkbox, default: unchecked, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Principal", kind: checkbox, default: checked, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 1/2", name: "Increasing", kind: checkbox, default: unchecked, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 2/2", name: "Recursive Evaluation", default: "25", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 2/2", name: "Recursive Replacement", default: "1", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 2/2", name: "Recursive Function", default: "100", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 2/2", name: "Epsilon", default: "0.000000000001", note: "digit count of the zeros read from a screenshot", unsure: true, source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 2/2", name: "Probability", default: "1E-15", note: "shown with the calculator's own small exponent mark", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { page: "CAS Settings 2/2", name: "Newton", default: "60", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+# Number-format examples (G2 item 15). Home view, Textbook entry, radians; the digits box next to the format showed 8 for every non-Standard format.
+# Display groups integer digits with commas (default grouping); the copy text omits them. Total significant digits are capped at 12.
+- { n: 15, format: "Standard", input: "12345.6789", shown: "12,345.6789", note: "no digits box", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Standard", input: "0.000123", shown: "0.000123", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Fixed (8)", input: "12345.6789", shown: "12,345.6789000", note: "only 7 decimals: the 12-digit cap applies; copy text 12345.6789000", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Fixed (8)", input: "0.000123", shown: "0.00012300", note: "8 decimals", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Scientific (8)", input: "12345.6789", shown: "1.23456789ᴇ4", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Scientific (8)", input: "0.000123", shown: "1.23000000ᴇ-4", note: "8 digits after the point, raised minus on the exponent", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Engineering (8)", input: "12345.6789", shown: "12.3456789ᴇ3", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Engineering (8)", input: "0.000123", shown: "123.000000ᴇ-6", note: "exponent a multiple of 3", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Floating (8)", input: "12345.6789", shown: "12,345.6789", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Floating (8)", input: "0.000123", shown: "0.000123", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Rounded (8)", input: "12345.6789", shown: "12,345.6789", note: "same as Floating for these two inputs", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 15, format: "Rounded (8)", input: "0.000123", shown: "0.000123", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { n: 18, name: "Entry modes", choices: [Textbook, Algebraic, RPN], default: "Textbook", note: "RPN not tried", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }

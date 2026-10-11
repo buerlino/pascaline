@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Section E: Solve app (Software 2.4.2 rev 15751; user accepted this instead of 2.4.15515). Radians, default settings.
+# Method for every case: Solve app, Symbolic view: the equation was put into E1 (text inserted with the emulator's Edit>Paste, then Enter);
+# Numeric view: the guess was put into the unknown's field (also pasted, then Enter), then the Solve soft key; the root is the value left in
+# that field; `message` is what the Info soft key shows afterwards (the solver's own result line, not a help page).
+# Digits were read from enlarged screenshots; field and Info box agreed in every case.
+# The very first time a new unknown (x) is used, a dialog asks whether to create the undefined variable in the current app or in Home (soft keys Cancel / Home / App); App was chosen.
+# The calculator's exponent mark is a small-capital E (U+1D07); negative values start with a raised minus (written - here).
+# `n` is the number of the G2 checklist item the case answers.
+- { id: "lambert-xexp", eq: "x*exp(x)=5", var: "x", guess: "1", root: "1.32672466524", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "cube-root-2", eq: "x^3=2", var: "x", guess: "1", root: "1.25992104989", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "dottie", eq: "cos(x)=x", var: "x", guess: "0", root: "0.739085133215", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "sqrt2-pos", eq: "x^2=2", var: "x", guess: "1", root: "1.41421356237", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "sqrt2-neg", eq: "x^2=2", var: "x", guess: "-1", root: "-1.41421356237", message: "Zero", note: "guess typed as minus 1 (pasted)", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "ln-e", eq: "ln(x)=1", var: "x", guess: "1", root: "2.71828182846", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "sqrt-9", eq: "sqrt(x)=3", var: "x", guess: "1", root: "8.99999999998", message: "Zero", note: "not exactly 9: last digits differ", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "quintic", eq: "x^5-x-1=0", var: "x", guess: "1", root: "1.16730397826", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "cubic-nearest", eq: "x^3-3*x+1=0", var: "x", guess: "0", root: "0.347296355335", message: "Zero", n: 12, note: "root nearest the guess of the three real roots; last digit 5 (a plain-arithmetic value would end 334)", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "kepler", eq: "E-0.5*sin(E)=1", var: "E", guess: "1", root: "1.49870113352", message: "Zero", note: "unknown is named E, the Numeric view showed it as E", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "lambert-small", eq: "x*exp(-x)=0.1", var: "x", guess: "0", root: "0.111832559159", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "exp-big", eq: "exp(x)=1e100", var: "x", guess: "1", root: "230.258509299", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "scale-small", eq: "1e6*x=1", var: "x", guess: "1", root: "0.000001", message: "Zero", note: "equation echoed as 1,000,000*x=1", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "tan-pole", eq: "tan(x)=0", var: "x", guess: "1.4", root: "0", message: "Zero", n: 12, note: "returned the root 0 for guess 1.4, not the pole near 1.57 and not pi", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "double-root-0", eq: "x^2=0", var: "x", guess: "1", root: "0", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "double-root-1", eq: "(x-1)^2=0", var: "x", guess: "3", root: "1", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "triple-root-2", eq: "(x-2)^3=0", var: "x", guess: "0", root: "1.99999999998", message: "Error: Extremum found", note: "message gist: stopped at an extremum rather than a zero; value is close to 2 but not exactly", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "triple-root-0", eq: "x^3=0", var: "x", guess: "1", root: "0", message: "Zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "tiny-root", eq: "x^2=1e-20", var: "x", guess: "1", root: "0.0000000001", message: "Zero", note: "equation echoed with the calculator's own exponent mark: 1E-20", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "cos-touch", eq: "cos(x)=1", var: "x", guess: "1", root: "1.92013295984ᴇ-6", message: "Error: Extremum found", note: "value is about 1.9E-6, not 0; message gist: extremum found; exponent sign is the raised minus", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "no-real-root", eq: "x^2+1=0", var: "x", guess: "0", root: "0", message: "Error: Extremum found", n: 13, note: "the field keeps the guess value 0; message gist: stopped at an extremum, no zero", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "exp-no-root", eq: "exp(x)=0", var: "x", guess: "0", root: "-1,149.15867377", message: "Zero", note: "returns a large negative number with message Zero even though exp(x)=0 has no solution; shown with the digit-grouping comma", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
+- { id: "pole-no-root", eq: "1/x=0", var: "x", guess: "1", root: "1.45989166621ᴇ499", message: "Zero", n: 14, note: "no mention of a pole: returns a huge value with message Zero; equation echoed as a stacked fraction 1 over x", source: virtual-calc, fw: "2.4.2.15751", date: "2026-10-11" }
