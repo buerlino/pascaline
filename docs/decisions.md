@@ -143,3 +143,18 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Choice:** Symb = Editor (CodeMirror 6), Plot = Graphics (the 320×240 canvas, scaled 4:3, pixel-exact lines and circles without anti-aliasing), Num = Shell. Scripts live in IndexedDB (`app.python`), at most 50 scripts of 64 kB each; the shell transcript is capped at 64 kB. The Python key layer is a separate `python:` block in `spec/keyboard.yaml` (xʸ → `**`, shift 7/8/9 → `:` `"` `'`, shift 0 → 4-space indent, shift , → `=`, shift Enter → `==`). Every position in it is assumed. Cancel keeps the canvas and the editor and shell text. A run that draws switches to Graphics. Text sizes are 10/14/18 px (assumed).
 - **Why:** these map the three-view framework onto definition, picture and table-like output. The limits keep IndexedDB and memory small on the Tab One. Pixel-exact drawing matches a 320×240 calculator screen.
 - **Would change if:** the Virtual Calculator mapping or the G2 puts the Python keys or views elsewhere, or users hit the limits.
+
+### 2026-10-11 Parser: odd roots, lists, decimal comma, one-letter functions (L6)
+- **Choice:** a root with an odd whole-number index is the real root (∛(-8) = -2 in Home and in plots; the CAS view leaves `-8^(1/3)` unsimplified, as Giac does with `8^(1/3)`). This is assumed (G2 item 4), and the option `realOddRoots: false` restores the principal complex root. `{…}` is a list. A `decimalComma` input option reads `3,5` as 3.5 and then separates arguments with `;`. After `p(x):=…`, `p` is a function for the rest of the session (f, g and h always are).
+- **Why:** engineers expect ∛(-8) = -2. Lists and user functions are things our keyboard can produce, and the decimal comma is common in Europe.
+- **Left open:** `x^y^z` (our keyboard can't produce it) and units (a separate feature); the reasons are in `parser.yaml`.
+- **Would change if:** the G2 answers item 4 differently, or shows how the decimal-comma setting separates arguments.
+
+### 2026-10-11 Graphics modules (compatibility names assumed, G2 items 26–28)
+- **Choice:** `draw` is our own module. The compatibility module, under the name existing scripts import, covers pixon, line, rect, fillrect, circle, fillcircle, textout and eval on screen G0 only. Its names and argument orders are assumed from public descriptions. Our implementation files have our own names (`app/src/python/graphics.ts`). MicroPython reports a missing indented block as `SyntaxError` (CPython says `IndentationError`). We keep that.
+- **Why:** existing calculator scripts should run where possible; our own module stays free of compatibility constraints.
+- **Would change if:** the G2 answers items 26–28 differently.
+
+### 2026-10-11 Our MicroPython variant
+- **Choice:** `python/build-micropython.sh` builds `python/variant/pascaline`: upstream's standard variant plus `-O2`, a 128 KiB Asyncify buffer, and the Ctrl-C JS hook turned off (it breaks scripts in worker threads, and Cancel terminates the worker instead). The upstream source stays unmodified. One MicroPython per JS realm (one per worker).
+- **Would change if:** an upstream release adds a supported way to pause for host calls.

@@ -94,11 +94,7 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 - ~~**L3. Alpha lock.**~~ **Done** 2026-10-11 (ec4a94d).
 - ~~**L4. A literal-caret one-line entry mode.**~~ **Done** 2026-10-11 (ec4a94d).
 - ~~**L5. Results as insertable text** (copy a history entry into the entry line).~~ **Done** 2026-10-11 (ec4a94d).
-- **L6. Parser gaps** (4 known, `parser/gaps-*`):
-  - the real cube root of a negative number (G2 items 4 and 11);
-  - sets;
-  - decimal comma;
-  - one-letter user functions other than f, g and h.
+- ~~**L6. Parser gaps** (4 known)~~ **Done** 2026-10-11 (6eda358): real odd roots (assumed, G2 item 4; option `realOddRoots`), `{…}` lists, decimal-comma input option, one-letter user functions `p(x):=`. Still open with reasons in `parser.yaml`: `x^y^z` (not keyboard input) and units (separate feature).
 - **L7. Bundle size.** It is 94 kB at start, plus 808 kB of MathLive loaded after the keypad. Watch start-up as features grow.
 
 ### MVP release (after milestone 3; docs/02 section 8)
