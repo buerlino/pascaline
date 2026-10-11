@@ -11,23 +11,13 @@
 
   let { session, entry }: { session: Session; entry: EntryController } = $props();
 
-  let host: HTMLElement | undefined = $state();
+  // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {
-    if (host) entry.attach(host);
-    entry.mf.addEventListener("keydown", onHardwareKey);
-    return () => entry.mf.removeEventListener("keydown", onHardwareKey);
+    if (host) entry.setHost(host);
+    entry.onEnter = enter;
+    entry.onEscape = () => void cancel();
   });
-
-  /** Desktop convenience: Enter and Escape on a physical keyboard act like our Enter and Cancel keys. */
-  function onHardwareKey(ev: KeyboardEvent): void {
-    if (ev.key === "Enter") {
-      ev.preventDefault();
-      enter();
-    } else if (ev.key === "Escape") {
-      ev.preventDefault();
-      void cancel();
-    }
-  }
+  let host: HTMLElement | undefined = $state();
 
   /** The entry line is cleared as soon as the job starts; the result arrives in the history. */
   function enter(): void {
@@ -158,6 +148,8 @@
   }
   .entry {
     padding: 8px 12px;
+    /* room for the field before MathLive has loaded, so nothing jumps */
+    min-height: 66px;
   }
   .entry :global(math-field) {
     display: block;

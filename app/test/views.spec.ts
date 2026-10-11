@@ -45,6 +45,15 @@ test("CAS: √8 is drawn as 2√2 (assumed, G2 item 17)", async ({ page }) => {
   expect(await res.getAttribute("data-latex")).toBe("2\\sqrt{2}");
 });
 
+test("CAS: π × x is drawn as πx, never as an unknown command like \\pix", async ({ page }) => {
+  await tap(page, ["app", "pi", "mul", "x", "enter"]);
+  const res = lastResult(page).locator(".math");
+  await expect(res).toBeVisible();
+  const latex = await res.getAttribute("data-latex");
+  expect(latex).not.toContain("\\pix");
+  expect(latex).toBe("\\pi x");
+});
+
 test("one-line mode shows the entry on one line", async ({ page }) => {
   await page.evaluate(() => window.pascaline.session.setEntry("line"));
   await tap(page, ["d1", "div", "d3"]);
@@ -107,7 +116,7 @@ test("the system keyboard never appears", async ({ page }) => {
   const st = await page.evaluate(() => ({
     active: document.activeElement?.tagName.toLowerCase(),
     vk: window.mathVirtualKeyboard?.visible,
-    inputmode: [...(window.pascaline.entry.mf.shadowRoot?.querySelectorAll("[inputmode]") ?? [])].map((e) => e.getAttribute("inputmode")),
+    inputmode: [...(window.pascaline.entry.field?.shadowRoot?.querySelectorAll("[inputmode]") ?? [])].map((e) => e.getAttribute("inputmode")),
   }));
   expect(st).toEqual({ active: "math-field", vk: false, inputmode: ["none"] });
 });

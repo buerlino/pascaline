@@ -20,6 +20,15 @@ const cases: [string, string][] = [
   ["\\left(\\begin{array}{cc}\n1 & 2 \\\\\n3 & 4\n\\end{array}\\right) ", "\\begin{pmatrix}1 & 2 \\\\ 3 & 4\\end{pmatrix}"],
   ["\\{-\\sqrt{2},\\sqrt{2}\\}", "\\{-\\sqrt{2},\\sqrt{2}\\}"],
   ["x^{2}\\cdot y", "x^{2}y"],
+  // regression: a \command on the left is one token (Giac prints latex(pi*x) as "\pi \cdot x")
+  ["\\pi \\cdot x", "\\pi x"],
+  ["2\\cdot \\pi \\cdot x", "2\\pi x"],
+  ["\\alpha \\cdot y", "\\alpha y"],
+  ["\\infty \\cdot x", "\\infty x"],
+  ["x\\pi", "x\\pi"],
+  ["\\pi \\cdot \\sqrt{2}", "\\pi\\sqrt{2}"],
+  ["\\pi \\cdot 2", "\\pi \\cdot 2"],
+  ["a\\cdot b\\cdot c", "abc"],
   ["\\frac{a\\cdot b}{c}", "\\frac{ab}{c}"],
   ["1267650600228229401496703205376", "1267650600228229401496703205376"],
 ];

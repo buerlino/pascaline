@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Tiny key-value store on IndexedDB (settings, history). Every call survives a missing or blocked IndexedDB:
 // the app then simply starts with defaults.
+/** The store the session persists to; tests pass an in-memory one. */
+export interface Kv {
+  get<T>(key: string): Promise<T | undefined>;
+  set(key: string, value: unknown): Promise<void>;
+}
+
 const DB = "pascaline";
 const STORE = "kv";
 
@@ -39,3 +45,5 @@ export async function kvSet(key: string, value: unknown): Promise<void> {
     /* not persisted; nothing else to do */
   }
 }
+
+export const idbKv: Kv = { get: kvGet, set: kvSet };

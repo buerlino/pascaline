@@ -10,6 +10,7 @@ import { EntryController } from "./entry/controller.ts";
 import { Session } from "./state/session.svelte.ts";
 
 const entry = new EntryController();
+// The engine worker starts at launch (D2): it compiles the wasm on another thread while the page paints.
 const calc = createCalc();
 const session = new Session(calc);
 if (import.meta.env.VITE_MEASURE === "1") {
@@ -27,4 +28,12 @@ declare global {
   }
 }
 window.pascaline = { entry, session };
-requestAnimationFrame(() => requestAnimationFrame(() => mark("keyboard-ready")));
+
+// Keypad first: MathLive (the biggest chunk) is fetched and parsed only after the keypad has been painted.
+// Keys pressed before it is ready are queued by the entry controller.
+requestAnimationFrame(() =>
+  requestAnimationFrame(() => {
+    mark("keyboard-ready");
+    void entry.load();
+  }),
+);
