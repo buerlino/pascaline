@@ -107,6 +107,19 @@ test("Python graphics: a batch with a line and a circle is drawn on the 320×240
   expect(box && Math.abs(box.width / box.height - 4 / 3) < 0.02).toBe(true);
 });
 
+test("Python graphics: a script draws a line and a circle; Run shows Graphics with those pixels", async ({ page }) => {
+  await openPython(page, "symb");
+  await page.locator(".cm-content").first().focus();
+  await typeText(page, "import draw\ndraw.clear()\ndraw.line(0, 10, 319, 10, 0xff0000)\ndraw.circle(160, 120, 50, 0x0000ff)\n");
+  await tap(page, ["menu", "d1"]); // Run
+  await expect(page.locator('[data-view="plot"]')).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("py-canvas")).toBeVisible();
+  // derived: the line covers y=10, the circle passes through (210, 120), its centre stays white
+  await expect.poll(() => pixel(page, 100, 10)).toBe(0xff0000);
+  await expect.poll(() => pixel(page, 210, 120)).toBe(0x0000ff);
+  expect(await pixel(page, 160, 120)).toBe(0xffffff);
+});
+
 test("Python Cancel: Cancel stops while True: pass, and the next print(1) works; the editor keeps its text", async ({ page }) => {
   await openPython(page, "num");
   await typeText(page, "while True: pass\n\n");
