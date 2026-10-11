@@ -88,8 +88,7 @@ that would now fail stays here instead of being forced).
 ### Home / CAS behaviour (`tests/golden/home.yaml`, `tests/golden/solve.yaml`)
 - `cx-sqrt-4` (home.yaml:127, g2 item 9), `cx-asin2` (home.yaml:137, g2 item 10): the reference
   raises "Error: Invalid input" for `sqrt(-4)` and `asin(2)` in real/default mode; our Home
-  deliberately returns a complex result instead (D-something in `docs/decisions.md`). Left
-  unchanged.
+  deliberately returns a complex result instead. Left unchanged.
 - `cx-cbrt-neg8` (home.yaml:138, g2 item 11): the reference gives the real root `-2` for
   `(-8)^(1/3)`; our default gives the complex principal root `1+1.73205080757*i`. Left unchanged
   (same question as G2 item 4).
@@ -102,9 +101,21 @@ that would now fail stays here instead of being forced).
   unchanged.
 - `pole-no-root` (solve.yaml:31, g2 item 14): the reference returns a huge finite value with
   message "Zero" and no pole mention; ours deliberately says "no root found". Left unchanged.
+- `exp-no-root` (solve.yaml:30): same class as the two above — the reference returns a large
+  negative finite value (`-1,149.15867377`) with message "Zero" for `exp(x)=0`, which has no
+  solution; ours deliberately says "no root found". Left unchanged.
 - `cubic-nearest` (solve.yaml:17, g2 item 12): the reference's displayed root is
   `0.347296355335`, one ULP away from our oracle value `0.347296355334`; likely the reference's
   own solver's last-digit rounding, not a bug — noted, not changed.
+- `triple-root-2` (solve.yaml:25) and `cos-touch` (solve.yaml:28): for a double/triple root with
+  no sign change, the reference's own numeric solver stops near but not at the exact root
+  (`1.99999999998` with message "Error: Extremum found" for `(x-2)^3=0`; `1.92013295984e-6` for
+  `cos(x)=1`) and names it an extremum. We deliberately polish to the exact root via Giac and
+  don't raise that message; left unchanged. Cross-checks the rest of `cases: 1-D` exactly
+  (`lambert-xexp`, `cube-root-2`, `dottie`, `sqrt2-pos/neg`, `ln-e`, `quintic`, `kepler`,
+  `lambert-small`, `exp-big`, `tan-pole`, `double-root-0/1`, `triple-root-0`, `tiny-root`): all
+  match our existing `oracle`/`derived` values. `sqrt-9` and `scale-small` match up to the
+  reference's own floating display noise (`8.99999999998` vs our exact `9`).
 
 ### Function app defaults (G2 items 23, 24)
 - Plot window: reference default is `X Rng -15.9..15.9`, `Y Rng -10.9..10.9`; we assumed
