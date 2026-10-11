@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Solve, one equation in one unknown (docs/02 section 4): eq + var + guess -> root, 12 digits.
+# Our rule: the real root NEAREST THE GUESS among those found in the first round of the bracket search
+# that has one, else the Newton result; "no root found" when there is none. Which root the reference
+# calculator returns is G2 items 12-14 (linked with `g2:`).
+#   oracle  : tests/golden/oracle.py (mpmath, 30 digits, checked at 60)
+#   derived : exact root by hand
+cases:
+  - { id: "lambert-xexp", eq: "x*exp(x)=5", var: "x", guess: "1", oracle: "lambertw(5)", expect: "1.32672466524", source: "oracle" }
+  - { id: "cube-root-2", eq: "x^3=2", var: "x", guess: "1", oracle: "cbrt(2)", expect: "1.25992104989", source: "oracle" }
+  - { id: "dottie", eq: "cos(x)=x", var: "x", guess: "0", oracle: "findroot(lambda t: mp.cos(t)-t, 0.7)", expect: "0.739085133215", source: "oracle" }
+  - { id: "sqrt2-pos", eq: "x^2=2", var: "x", guess: "1", oracle: "sqrt(2)", expect: "1.41421356237", source: "oracle" }
+  - { id: "sqrt2-neg", eq: "x^2=2", var: "x", guess: "-1", oracle: "-sqrt(2)", expect: "-1.41421356237", source: "oracle" }
+  - { id: "ln-e", eq: "ln(x)=1", var: "x", guess: "1", oracle: "e", expect: "2.71828182846", source: "oracle", note: "left of 0 ln is complex: skipped by the search" }
+  - { id: "sqrt-9", eq: "sqrt(x)=3", var: "x", guess: "1", oracle: "F(9)", expect: "9", source: "derived" }
+  - { id: "quintic", eq: "x^5-x-1=0", var: "x", guess: "1", oracle: "findroot(lambda t: t**5-t-1, 1.2)", expect: "1.16730397826", source: "oracle" }
+  - { id: "cubic-nearest", eq: "x^3-3*x+1=0", var: "x", guess: "0", oracle: "findroot(lambda t: t**3-3*t+1, 0.35)", expect: "0.347296355334", source: "oracle", g2: 12, note: "roots -1.88, 0.347, 1.53" }
+  - { id: "kepler", eq: "E-0.5*sin(E)=1", var: "E", guess: "1", oracle: "findroot(lambda t: t-mpf('0.5')*mp.sin(t)-1, 1.5)", expect: "1.49870113352", source: "oracle" }
+  - { id: "lambert-small", eq: "x*exp(-x)=0.1", var: "x", guess: "0", oracle: "-lambertw(mpf('-0.1'))", expect: "0.111832559159", source: "oracle", note: "other root 3.58" }
+  - { id: "exp-big", eq: "exp(x)=1e100", var: "x", guess: "1", oracle: "100*ln(10)", expect: "230.258509299", source: "oracle" }
+  - { id: "scale-small", eq: "1e6*x=1", var: "x", guess: "1", oracle: "F(1,10**6)", expect: "1E-6", source: "derived" }
+  - { id: "tan-pole", eq: "tan(x)=0", var: "x", guess: "1.4", oracle: "F(0)", expect: "0", source: "derived", g2: 12, note: "sign change at the pole pi/2 must be rejected; nearest root is 0 (pi is 1.74 away)" }
+  - { id: "double-root-0", eq: "x^2=0", var: "x", guess: "1", oracle: "F(0)", expect: "0", source: "derived", note: "no sign change: Newton" }
+  - { id: "double-root-1", eq: "(x-1)^2=0", var: "x", guess: "3", oracle: "F(1)", expect: "1", source: "derived" }
+  - { id: "triple-root-2", eq: "(x-2)^3=0", var: "x", guess: "0", oracle: "F(2)", expect: "2", source: "derived" }
+  - { id: "triple-root-0", eq: "x^3=0", var: "x", guess: "1", oracle: "F(0)", expect: "0", source: "derived" }
+  - { id: "tiny-root", eq: "x^2=1e-20", var: "x", guess: "1", oracle: "F(1,10**10)", expect: "1E-10", source: "derived", note: "no sign change seen from the guess: Newton" }
+  - { id: "cos-touch", eq: "cos(x)=1", var: "x", guess: "1", oracle: "F(0)", expect: "0", source: "derived", note: "double root, no sign change" }
+  - { id: "no-real-root", eq: "x^2+1=0", var: "x", guess: "0", expect: "no root found", source: "derived", g2: 13 }
+  - { id: "exp-no-root", eq: "exp(x)=0", var: "x", guess: "0", expect: "no root found", source: "derived" }
+  - { id: "pole-no-root", eq: "1/x=0", var: "x", guess: "1", expect: "no root found", source: "derived", g2: 14, note: "the only sign change is the pole at 0" }

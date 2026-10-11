@@ -6,7 +6,8 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "../input/node_modules/yaml/dist/index.js";
-import { latexToGiac } from "../input/src/serialize.ts";
+// PARSER=own uses the hand-written parser (no Compute Engine); default is Compute Engine.
+const { latexToGiac } = await import(process.env.PARSER === "own" ? "../../app/src/input/latex-to-giac.ts" : "../input/src/serialize.ts");
 
 const here = dirname(fileURLToPath(import.meta.url));
 const giacOut = process.env.GIAC_OUT ?? resolve(here, "../../engine/giac/_out/gsl");
@@ -21,7 +22,7 @@ M.cwrap("giac_init", "number", [])();
 const giac = M.cwrap("giac_eval", "string", ["string"]);
 
 const filter = process.argv[2];
-const doc = parse(readFileSync(join(here, "cases.yaml"), "utf8"));
+const doc = parse(readFileSync(join(here, "../../app/src/input/roundtrip-cases.yaml"), "utf8"));
 
 // Cases that need a fresh state: Giac keeps assignments, so we never assign in cases.
 const randomPoints = () => Array.from({ length: 3 }, () => 0.15 + Math.random() * 1.7);

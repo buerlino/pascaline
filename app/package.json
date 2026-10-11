@@ -1,0 +1,31 @@
+{
+  "name": "pascaline-app",
+  "private": true,
+  "version": "0.0.0",
+  "license": "GPL-3.0-or-later",
+  "type": "module",
+  "scripts": {
+    "engine:copy": "node scripts/copy-engine.mjs",
+    "dev": "npm run engine:copy && vite",
+    "build": "npm run engine:copy && npm run typecheck && vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
+    "test": "vitest run",
+    "golden": "node scripts/golden.ts",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "mathlive": "0.111.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@types/node": "26.6.5",
+    "svelte": "5.57.2",
+    "svelte-check": "4.7.6",
+    "typescript": "6.0.3",
+    "vite": "8.3.4",
+    "vitest": "5.0.3",
+    "yaml": "2.9.1"
+  }
+}
