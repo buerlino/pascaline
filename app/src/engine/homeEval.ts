@@ -51,7 +51,8 @@ export const defaultHomeSettings: HomeSettings = {
   powLimit: 1e5,
 };
 
-export type HomePath = "exact" | "exact-big" | "float-big" | "float-timeout" | "float-error";
+/** `numeric`: a value from a numeric method (Solve, Function analysis) at work precision, rounded for display. */
+export type HomePath = "exact" | "exact-big" | "float-big" | "float-timeout" | "float-error" | "numeric";
 
 export interface HomeResult {
   ok: boolean;

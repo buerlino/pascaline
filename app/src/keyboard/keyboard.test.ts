@@ -11,11 +11,11 @@ const spec = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../.
 const all = templates(keyboard);
 
 describe("keyboard spec", () => {
-  it("loads: 5 columns, 8 rows, unique ids and positions", () => {
+  it("loads: 5 columns, 9 rows, unique ids and positions", () => {
     expect(keyboard.columns).toBe(5);
-    expect(keyboard.rows).toBe(8);
-    expect(keyboard.keys).toHaveLength(40);
-    expect(keyboard.byId.size).toBe(40);
+    expect(keyboard.rows).toBe(9);
+    expect(keyboard.keys).toHaveLength(45);
+    expect(keyboard.byId.size).toBe(45);
   });
 
   it("every layout cell is filled", () => {

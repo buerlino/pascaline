@@ -57,6 +57,11 @@ export function latexToJs(latex: string, vars: readonly string[] = ["x"]): strin
   return js(parseLatex(latex), new Set(vars));
 }
 
+/** JS source of an already parsed expression (MathJSON from parseLatex). */
+export function jsonToJs(e: Json, vars: readonly string[] = ["x"]): string {
+  return js(e, new Set(vars));
+}
+
 /** Compile `latex` into a function of x. Throws SerializeError for anything not plottable. */
 export function toFn(latex: string): (x: number) => number {
   const src = latexToJs(latex, ["x"]);

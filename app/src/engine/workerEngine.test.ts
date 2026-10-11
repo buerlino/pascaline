@@ -85,3 +85,34 @@ describe.skipIf(!giacAvailable())("WorkerEngine (real Giac in process)", () => {
     engine.dispose();
   });
 });
+
+describe.skipIf(!giacAvailable())("WorkerEngine start-up (real Giac in process)", () => {
+  it("a call sent before the engine is ready waits for it (regression: rejected with 'engine not ready')", async () => {
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new InProcessWorker() });
+    const [a, b] = await Promise.all([engine.home("1/3", defaultHomeSettings), engine.home("2/3", defaultHomeSettings)]);
+    expect(a.display).toBe("0.333333333333"); // device, G2 item 16 (tests/golden/home.yaml)
+    expect(b.display).toBe("0.666666666667"); // derived: 2/3 rounded half away from zero at 12 digits
+    engine.dispose();
+  });
+});
+
+describe.skipIf(!giacAvailable())("WorkerEngine Solve and Cancel (real Giac in process)", () => {
+  it("a user's X survives a solve, and a Cancel in the middle of one", async () => {
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new InProcessWorker() });
+    await engine.ready();
+    await engine.home("X:=7", defaultHomeSettings);
+    // Inside the solve X is purged and restored; the call itself adds nothing to the replay log.
+    const r = await engine.solve({ kind: "equations", equations: ["X^2=2"], unknowns: ["X"], guesses: ["1"] }, defaultHomeSettings);
+    expect(r.roots[0]!.result.display).toBe("1.41421356237"); // oracle sqrt(2): tests/golden/solve.yaml sqrt2-pos
+    expect((await engine.home("X", defaultHomeSettings)).display).toBe("7");
+    expect(engine.replayCommands).toEqual(["X:=7"]);
+    // Cancel while a solve is queued or running: the restarted engine still has X = 7.
+    const job = expect(
+      engine.solve({ kind: "equations", equations: ["X^2+Y^2=4", "Y=exp(X)"], unknowns: ["X", "Y"], guesses: ["-1", "1"] }, defaultHomeSettings),
+    ).rejects.toBeInstanceOf(EngineCancelled);
+    await engine.cancel();
+    await job;
+    expect((await engine.home("X", defaultHomeSettings)).display).toBe("7");
+    engine.dispose();
+  });
+});

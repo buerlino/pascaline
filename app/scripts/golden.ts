@@ -3,11 +3,13 @@
 // build that ships (CLAUDE.md). Exit 0 only if every stage passes.
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
-//   ONLY=home,parser npm run golden                 # stages: interrupt, home, solve, bench, parser
+//   ONLY=home,parser npm run golden                 # stages: interrupt, home, solve, function, bench, parser
 // Stages:
 //   interrupt  spike/node/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches, same in every round, median ≤ 500 ms
-//   solve      Solve strategy (solve1.ts): every case matches in every round
+//   solve      Solve strategy: 1-D (solve1.ts), systems and polynomials (solve.ts); every case matches in
+//              every round, and no ⚠ unless the case has status "warn"
+//   function   Function analysis and Num table (analysis.ts), same rules
 //   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed
 //   parser     LaTeX → Giac (our parser) equals the intended expression, decided by Giac; gaps never fail
 import { spawnSync } from "node:child_process";
@@ -21,15 +23,26 @@ import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/so
 import { defaultCasSettings } from "../src/engine/types.ts";
 import { latexToGiac } from "../src/input/latex-to-giac.ts";
 
+type Expect = string | Expect[];
+
 interface Case {
   id: string;
+  kind?: string;
   input?: string;
   latex?: string;
-  eq?: string;
-  var?: string;
-  guess?: string;
+  eq?: string | string[];
+  var?: string | string[];
+  guess?: string | string[];
+  f?: string | string[];
+  g?: string;
+  x0?: string;
+  lo?: string;
+  hi?: string;
+  a?: string;
+  b?: string;
+  xs?: string[];
   settings?: { angle?: "rad" | "deg" };
-  expect?: string;
+  expect?: Expect;
   source?: string;
   g2?: number;
   status?: string;
@@ -108,22 +121,74 @@ async function stageHome(): Promise<void> {
   );
 }
 
-async function stageSolve(): Promise<void> {
-  const cs = cases("solve.yaml");
-  const runs = new Map<string, SolveResult[]>(cs.map((c) => [c.id, []]));
+/** What a case produced: the shown text(s), and whether ⚠ was raised. */
+interface Got {
+  shown: Expect;
+  warn: boolean;
+}
+
+const same = (a: Expect, b: Expect | undefined): boolean => JSON.stringify(a) === JSON.stringify(b);
+const str = (x: string | string[] | undefined): string => (Array.isArray(x) ? x[0]! : x!);
+const list = (x: string | string[] | undefined): string[] => (Array.isArray(x) ? x : [x!]);
+
+function solveCase(host: EngineHost, g: GiacApi, c: Case): Got {
+  if (!c.kind) {
+    const r: SolveResult = solve1(g, str(c.eq), str(c.var), str(c.guess), defaultSolveSettings);
+    return { shown: r.display, warn: r.warn };
+  }
+  const r =
+    c.kind === "poly"
+      ? host.solve({ kind: "poly", equation: str(c.eq), unknown: str(c.var) }, defaultHomeSettings)
+      : host.solve({ kind: "equations", equations: list(c.eq), unknowns: list(c.var), guesses: list(c.guess) }, defaultHomeSettings);
+  if (r.ok) return { shown: r.roots.map((x) => x.result.display), warn: r.warn };
+  return { shown: r.error === "bad-input" && c.kind === "poly" ? "not a polynomial" : r.error === "no-root" ? "no root found" : r.info, warn: r.warn };
+}
+
+function functionCase(host: EngineHost, c: Case): Got {
+  const s = defaultHomeSettings;
+  if (c.kind === "table") {
+    const rows = host.table({ fns: list(c.f), xs: c.xs!, variable: str(c.var ?? "x") }, s);
+    return { shown: rows.map((row) => row.map((x) => x.display)), warn: false };
+  }
+  const f = str(c.f);
+  const variable = str(c.var ?? "x");
+  const r =
+    c.kind === "slope"
+      ? host.analyze({ kind: "slope", f, x0: c.x0!, variable }, s)
+      : c.kind === "area"
+        ? host.analyze({ kind: "area", f, ...(c.g ? { g: c.g } : {}), a: c.a!, b: c.b!, variable }, s)
+        : c.kind === "intersection"
+          ? host.analyze({ kind: "intersection", f, g: c.g!, x0: c.x0!, lo: c.lo, hi: c.hi, variable }, s)
+          : host.analyze({ kind: c.kind === "extremum" ? "extremum" : "root", f, x0: c.x0!, lo: c.lo, hi: c.hi, variable }, s);
+  if (!r.ok) return { shown: r.error === "no-root" ? (c.kind === "area" ? "no area" : "no root found") : r.info, warn: r.warn };
+  if (c.kind === "slope" || c.kind === "area") return { shown: r.value!.display, warn: r.warn };
+  const xy = [r.x!.display, r.y!.display];
+  return { shown: c.kind === "extremum" ? [...xy, r.extremum!] : xy, warn: r.warn };
+}
+
+/** Runs every case of `file` ROUNDS times on fresh engines; a case passes when every round shows `expect`
+ *  and raises ⚠ exactly when the case says status "warn". */
+async function stageCases(stage: string, file: string, run: (host: EngineHost, g: GiacApi, c: Case) => Got): Promise<void> {
+  const cs = cases(file);
+  const runs = new Map<string, Got[]>(cs.map((c) => [c.id, []]));
   for (let r = 0; r < ROUNDS; r++) {
     const g = await freshGiac();
     g.eval("timeout 2");
     g.eval("ckevery 10");
-    for (const c of cs) runs.get(c.id)!.push(solve1(g, c.eq!, c.var!, c.guess!, defaultSolveSettings));
+    const host = new EngineHost(g);
+    for (const c of cs) runs.get(c.id)!.push(run(host, g, c));
   }
   let pass = 0;
   for (const c of cs) {
     const rs = runs.get(c.id)!;
-    if (rs.every((x) => x.display === c.expect)) pass++;
-    else console.log(`  solve ${c.id}: got ${rs.map((x) => x.display).join(" / ")}, expect ${c.expect}`);
+    const wantWarn = c.status === "warn";
+    if (rs.every((x) => same(x.shown, c.expect) && x.warn === wantWarn)) pass++;
+    else
+      console.log(
+        `  ${stage} ${c.id}: got ${rs.map((x) => `${JSON.stringify(x.shown)}${x.warn ? " ⚠" : ""}`).join(" / ")}, expect ${JSON.stringify(c.expect)}${wantWarn ? " ⚠" : ""}`,
+      );
   }
-  report("solve", pass === cs.length, `${pass}/${cs.length} match, rounds ${ROUNDS}`);
+  report(stage, pass === cs.length, `${pass}/${cs.length} match, rounds ${ROUNDS}`);
 }
 
 async function stageBench(): Promise<void> {
@@ -179,7 +244,7 @@ async function stageParser(): Promise<void> {
     let r: { ok: boolean; how: string };
     try {
       produced = latexToGiac(c.latex!);
-      r = equalByGiac(g, produced, c.expect!);
+      r = equalByGiac(g, produced, c.expect as string);
     } catch (e) {
       produced = "";
       r = { ok: false, how: `parser threw: ${e instanceof Error ? e.message : String(e)}` };
@@ -203,7 +268,8 @@ async function stageParser(): Promise<void> {
 console.log(`golden: engine ${mjs}`);
 if (want("interrupt")) stageInterrupt();
 if (want("home")) await stageHome();
-if (want("solve")) await stageSolve();
+if (want("solve")) await stageCases("solve", "solve.yaml", solveCase);
+if (want("function")) await stageCases("function", "function.yaml", (host, _g, c) => functionCase(host, c));
 if (want("bench")) await stageBench();
 if (want("parser")) await stageParser();
 const failed = summary.filter((s) => !s.ok);
