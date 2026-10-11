@@ -6,6 +6,8 @@
   import type JXGType from "jsxgraph";
   import { onMount } from "svelte";
   import { t } from "../../i18n/index.ts";
+  import { mark } from "../../marks.ts";
+  import { plotHook } from "./plotHook.ts";
   import { CURVE_COLORS, DEFAULT_X, type FunctionApp, type PlotWindow } from "./app.svelte.ts";
 
   let { app }: { app: FunctionApp } = $props();
@@ -41,8 +43,10 @@
 
   onMount(() => {
     let disposed = false;
+    const t0 = performance.now();
     void import("jsxgraph").then((m) => {
       if (disposed || !box) return;
+      const t1 = performance.now();
       JXG = (m as unknown as { default: JXGModule }).default;
       const adaptive = q.get("adaptive") !== "0";
       const b = JXG.JSXGraph.initBoard(box, {
@@ -93,10 +97,16 @@
       b.on("boundingbox", windowChanged);
       if (!app.win) app.setWindow({ ...defaultWindow() });
       ready = true;
+      plotHook.board = b;
+      // Measurement builds: time from opening Plot to the first drawn board (JSXGraph loads on first open).
+      requestAnimationFrame(() =>
+        mark("plot-ready", { openMs: performance.now() - t0, importMs: t1 - t0, curves: app.active.length, renderer }),
+      );
     });
     return () => {
       disposed = true;
       clearTimeout(saveTimer);
+      if (plotHook.board === board) plotHook.board = undefined;
       if (board && JXG) JXG.JSXGraph.freeBoard(board);
       board = undefined;
     };
