@@ -5,7 +5,7 @@ export default defineConfig({
   testDir: "test",
   timeout: 30_000,
   webServer: {
-    command: "npm run engine:copy && npm run fonts:copy && npx vite --port 5181 --strictPort",
+    command: "npx vite --port 5181 --strictPort",
     url: "http://localhost:5181",
     reuseExistingServer: true,
     timeout: 120_000,

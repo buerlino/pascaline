@@ -6,9 +6,8 @@
   "type": "module",
   "scripts": {
     "engine:copy": "node scripts/copy-engine.mjs",
-    "fonts:copy": "node scripts/copy-fonts.mjs",
-    "dev": "npm run engine:copy && npm run fonts:copy && vite",
-    "build": "npm run engine:copy && npm run fonts:copy && npm run typecheck && vite build",
+    "dev": "npm run engine:copy && vite",
+    "build": "npm run engine:copy && npm run typecheck && vite build",
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
     "test": "vitest run",

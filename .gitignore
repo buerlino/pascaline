@@ -54,5 +54,4 @@ spike/_plot*/
 spike/_plotB/
 
 # app/: fonts and engine copied in by npm scripts
-app/public/fonts/
 app/public/engine/
