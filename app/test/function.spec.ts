@@ -94,6 +94,42 @@ test("Function: definitions, window and view survive a reload", async ({ page })
   await expect(page.locator('[data-name="F2"] .math')).toHaveAttribute("data-latex", "x^3-2x");
 });
 
+test("Function: a sign change at the pole of 1/x is not a root: ⚠ and no x", async ({ page }) => {
+  await tap(page, ["symb"]);
+  await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
+  await tap(page, ["d1", "div", "x", "enter", "plot"]);
+  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await tap(page, ["right"]); // x = 0.2
+  await expect(page.getByTestId("trace-y")).toHaveAttribute("data-text", "5"); // derived
+  await tap(page, ["menu", "d1"]);
+  await expect(page.getByTestId("readout-info")).toContainText("⚠");
+  await expect(page.getByTestId("readout-x")).toHaveCount(0);
+});
+
+test("Function: signed area of x^2 from 0 to 1 is 1/3 (derived)", async ({ page }) => {
+  await tap(page, ["symb"]);
+  await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
+  await tap(page, ["x", "shift", "pow", "enter", "plot"]);
+  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await tap(page, ["menu", "d5"]); // start at x = 0
+  await tap(page, ["right", "right", "right", "right", "right"]); // x = 1
+  await expect(page.getByTestId("trace-x")).toHaveText("1");
+  await tap(page, ["enter"]);
+  await expect(page.getByTestId("readout-Signed area")).toHaveText("0.333333333333");
+});
+
+test("Cancel stops a running Num job; the definitions survive", async ({ page }) => {
+  await open(page, "engine=fake&delay=4000");
+  await tap(page, ["symb"]);
+  await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
+  await tap(page, ["sin", "x", "enter", "num"]);
+  await page.waitForFunction(() => window.pascaline.shell.busy);
+  await tap(page, ["cancel"]);
+  await page.waitForFunction(() => !window.pascaline.shell.busy, undefined, { timeout: 1000 });
+  await tap(page, ["symb"]);
+  await expect(page.locator('[data-name="F1"] .math')).toHaveAttribute("data-latex", "\\sin\\left(x\\right)");
+});
+
 test("keys typed while the app's code is still loading are kept (regression)", async ({ page }) => {
   await tap(page, ["symb", "sin", "x", "enter", "down", "d1", "div", "x", "enter"]);
   await expect(page.locator('[data-name="F1"] .math')).toHaveAttribute("data-latex", "\\sin\\left(x\\right)");

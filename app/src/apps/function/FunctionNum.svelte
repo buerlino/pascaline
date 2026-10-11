@@ -50,7 +50,7 @@
           <tr>
             <td class="x" data-x={x}>{app.fmtX(x)}</td>
             {#each app.numSlots as s, c (s)}
-              {@const cell = app.numCells[r]?.[c]}
+              {@const cell = app.numCell(r, c)}
               <td data-text={cell ? app.fmt(cell) : ""}>{app.fmt(cell)}</td>
             {/each}
           </tr>
