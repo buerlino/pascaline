@@ -11,7 +11,7 @@ The one place for "where are we and what's left". The plan is [02-architecture-p
 | MVP milestone 1: MathPrint Home + CAS | **Done** 2026-10-11 |
 | MVP milestone 2: Function app + Solve app | **Done** 2026-10-11 |
 | Virtual Calculator mapping | **In progress** (user's Windows session). Integrated by a separate session on its own branch `map/vc-*`, reviewed and pushed by the user after the shift (brief section 0b) |
-| MVP milestone 3: Python | **Started:** interface agreed (`p1/gorge-m3@75e79af`, not merged); MicroPython dev build ready |
+| MVP milestone 3: Python | **Desktop done** 2026-10-11 (all gates and key-sequence tests pass; report docs/shifts/2026-10-11-m3-report.md). **Left:** the device numbers (Tab One, S8+) and the fresh-clone APK on the Tab One |
 | MVP release (Play testing track + web app, docs/02 section 8) | Not started |
 | v1, v2 | Not started |
 
@@ -65,18 +65,18 @@ These should move out of `spike/` before `phase-1` goes to `master`.
 ### Milestone 3: Python (approved 2026-10-11; shift brief docs/shifts/brief.md)
 This follows D6: MicroPython by default, with the Pyodide "Python+" pack only optional and later.
 
-- **P1. Python worker.** MicroPython runs in its own Web Worker (worker 2) behind a `PythonEngine` interface (async and cancellable like `MathEngine`). It loads the first time Python is opened, never at start. Cancel terminates the worker and starts a fresh one.
-- **P2. `calc` module.**
+- ~~**P1. Python worker.**~~ (done 2026-10-11) MicroPython runs in its own Web Worker (worker 2) behind a `PythonEngine` interface (async and cancellable like `MathEngine`). It loads the first time Python is opened, never at start. Cancel terminates the worker and starts a fresh one.
+- ~~**P2. `calc` module.**~~ (done 2026-10-11)
   - `calc.cas("…")` calls the Giac worker. It is async (D6), and a small preprocessor adds the `await`.
   - It can also read and write Home variables.
   - First decide whether a synchronous version is possible: it would need `SharedArrayBuffer` plus COOP/COEP headers in the Capacitor shell. Check this first (spike/python/NOTES.md).
-- **P3. `hpprime`-compatible graphics module.** A 320×240 canvas with the drawing calls the reference documents publicly. Write the API from public documentation in our own words (clean room).
-- **P4. Editor and shell.**
+- ~~**P3. `hpprime`-compatible graphics module.**~~ (done 2026-10-11) A 320×240 canvas with the drawing calls the reference documents publicly. Write the API from public documentation in our own words (clean room).
+- ~~**P4. Editor and shell.**~~ (done 2026-10-11)
   - CodeMirror 6 for the editor (MIT; add it to THIRD_PARTY.md), with the Python keyboard layer.
   - A shell (REPL) view with history.
   - Scripts are stored in IndexedDB, with import and export.
-- **P5. Golden and e2e cases** for `calc`, `print`, errors with line numbers, Cancel on `while True: pass`, and graphics output.
-- **Proposed bar** (Tab One, release):
+- ~~**P5. Golden and e2e cases**~~ (done 2026-10-11) for `calc`, `print`, errors with line numbers, Cancel on `while True: pass`, and graphics output.
+- **D1. Device numbers, still open** (Tab One, release; needs the device):
   - milestone 1's start-up numbers still hold;
   - first open of Python → shell ready < 0.5 s (the spike measured 335 ms);
   - Cancel on an endless loop → ready again < 0.5 s;
@@ -84,7 +84,7 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 
 ### Clean-up and infrastructure
 - ~~**C1. Move shipped tooling out of `spike/`.**~~ **Done** 2026-10-11 (10c2f92): `tools/`, `tests/engine/interrupt-test.mjs`, `tests/golden/G2-CHECKLIST.md`. Left: `tools/device-build.sh` now wraps `build.sh`; `npm run golden` now needs an absolute `GIAC_OUT`.
-- **C2. Results file for page benches.** Make `device_run.py page` append the `?bench=solve` and `?bench=plot` results to `.coord/device-runs.jsonl`, so they're recorded and not only in logcat (m2b report).
+- ~~**C2. Results file for page benches.**~~ **Done** 2026-10-11 (a201499); not yet used on a device. Make `device_run.py page` append the `?bench=solve` and `?bench=plot` results to `.coord/device-runs.jsonl`, so they're recorded and not only in logcat (m2b report).
 - **C3. CI.** There is none. Add a GitHub Actions workflow for typecheck, unit and parser tests (no engine, so it stays fast). Add the engine gate later, once the Giac mirror exists. Needs your OK, since it runs on GitHub.
 - **C4. F-Droid recipe.** It is untested end to end. `npm ci` downloads packages after `prebuild`, so it needs an offline/srclibs rework. Still open: a release tag and `versionCode`, an icon and screenshots (`fdroid/README.md`).
 

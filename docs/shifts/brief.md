@@ -1,46 +1,29 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Shift brief: Phase 1, milestone 3 (Python) + milestones 1–2 finished completely
+# Shift brief: milestone 3 device numbers + mapping rebase (next session)
 
-You are **Henri**, the coordinator. You lead three workers. You assign the work, keep everyone talking, check and merge their results, and make the calls a lead makes within the plan. The workers do the hands-on work. The user may be asleep or busy: never wait for them (section 3, plan changes).
+You are **Henri**, the coordinator. The rules from section 1 on are the same as in the milestone 3 shift and still bind; earlier briefs: `git show 739f45e:docs/shifts/brief.md` (milestone 3), `git show 52bdd33:docs/shifts/brief.md` (milestone 2).
 
-**Goal of this shift (user, 2026-10-11): a usable prototype.** The Virtual Calculator mapping is integrated **in parallel by a separate session on its own branch** (section 0b); this shift doesn't do it and doesn't wait for it. Three parts:
-1. **Milestone 3, Python.** The engineer opens the Python app, writes a script in the editor or types into the shell, uses `calc` to reach the CAS and the calculator variables, draws on a 320×240 canvas, and can always stop a runaway script with Cancel.
-2. **Milestones 1 and 2 finished completely.** Every leftover in `docs/backlog.md` (L1–L6) is either done or explicitly `assumed` with a G2 question.
-3. **Page benches are recorded (C2)** and the Galaxy S8+ is measured.
+**Goal:** close milestone 3 on real devices, then bring in the mapping. Small shift; usage is tight. **Spawn only annabell** (Sonnet) for device work. Henri does the merges, the rebase and the docs himself. Spawn ron or gorge only if a device run finds a bug in their area.
 
-The definition of done is in section 8. Outreach, the name check, CI and the F-Droid recipe come later. Don't work on them.
+## 0. State at start (end of the 2026-10-11 milestone 3 shift)
+- `phase-1` holds everything (report: `docs/shifts/2026-10-11-m3-report.md`). Desktop gates all pass. Not pushed.
+- MicroPython builds: `python/_out/dev/` and `python/_out/release/` in the main checkout are current (our variant `python/variant/pascaline`). `npm run golden` needs an absolute `GIAC_OUT` and `PYTHON_OUT` (or `python/_out/dev`).
+- **S8+** (`ce011711cdc8a10c05`): Android 9. Its factory WebView (Chrome 72) can't run the app. The user updates Chrome first. Minimum WebView is Chrome 95 (decisions.md).
+- **Mapping branch `map/vc-1@d362296`** (4 commits on ba7dec1): `spec/keyboard.yaml` source tags, `tests/golden/g2.yaml` +16 answers + checklist, `spec/mapping/vc-2026-10-11/` (README with "Differences from our defaults", `SPOT-CHECK.md`). Not merged.
 
-**Length:** start with `date`. Work until section 8 passes and you have verified it yourself, or for at most 8 hours, whichever comes first. No make-work after that. Wrap up as in section 11.
+## 0a. Tasks, in this order
+1. **Start-up:** `date`, `git switch phase-1 && git status`, `adb devices -l`, `tools/devlock.sh status`; new section in `.coord/log.md`.
+2. **Rebase the mapping (Henri):** in a worktree, `git rebase phase-1` on a copy of `map/vc-1` (new branch `map/vc-1-rebased`; never force or rewrite `map/vc-1`). Overlaps are only at the ends of `spec/keyboard.yaml` (our `python:` block) and `tests/golden/g2.yaml` (our items 26–28): keep both sides. Renumber the mapping's new g2 items after ours if needed, never changing any answer. Regenerate the checklist (`oracle.py --g2`). Run typecheck, Vitest, Playwright and golden. Don't merge it into `phase-1`: the user reviews and pushes it.
+3. **Devices (annabell),** release + `--measure`, ≥5 runs, with WebView version, battery and temperature:
+   - **Tab One:** cold launch → keyboard usable < 1 s and engine ready < 1.5 s; first Python open → shell ready < 0.5 s; Cancel on `while True: pass` → ready < 0.5 s; `calc.cas` round trip p95 < 50 ms. This needs the `?bench=python` mode first (annabell task 5 in the milestone 3 brief; measurement builds only). Record bundle sizes (start + lazy chunks).
+   - **Fresh-clone `./build.sh`** → APK installed on the Tab One; Home, CAS, Function, Solve and Python each compute.
+   - **S8+** (after the Chrome update): the same, plus plot fps with three functions and solve p95. No bar; failures are findings. Check that MathLive's styling is fine (it uses `:has()` / `@container`, Chrome 105).
+   - Use `device_run.py page` so results land in `.coord/device-runs.jsonl` (C2's first real use).
+4. **Docs and report:** fill the numbers into the m3 report, `docs/02` s12, `backlog.md` (D1), `spike/RESULTS.md` (S8+ = the old-device class). Commit on `phase-1`, don't push.
+5. **If time is left:** list the mapping's "Differences from our defaults" as proposals or defaults for the following shift. Change nothing in the defaults yet.
 
-Earlier briefs are in git history:
-- milestone 1: `git show e187ab7:docs/shifts/brief.md`
-- milestone 2: `git show 52bdd33:docs/shifts/brief.md`
-
-| Agent (`.claude/agents/<name>.md`) | Model / effort | Track |
-|---|---|---|
-| **henri** (you, main session) | Opus / high | coordination, verification, merges, docs, shift report |
-| **ron** | Opus / high | entry leftovers (L1–L6), Python app UI (editor, shell, canvas view, keyboard layer) |
-| **gorge** | Opus / medium | Python runtime worker, `calc` and graphics modules, Python golden cases, parser maths for L1/L6 |
-| **annabell** | Sonnet / medium | C1 tooling move, C2, the Galaxy S8+ and every device measurement, start-up budget |
-
-Spawn workers with `subagent_type` set to their name, and don't override the model.
-
-## 0. State at resume (first part of this shift, 2026-10-11 15:42–16:30, paused at the usage limit)
-- **Merged on `phase-1`:** C1 (shipped tooling now in `tools/`, `tests/engine/`, `tests/golden/G2-CHECKLIST.md`; 10c2f92) and the L1 engine fix (`IDENT` accepts `x_1`, with a regression test; a3ddd52). Gates green: typecheck 0, vitest 180/180, golden passed.
-- **Not merged:** `p1/gorge-m3@75e79af` holds only `app/src/python/types.ts`, the PythonEngine and graphics interface agreed by ron and gorge. `p1/ron-m3` has no commits. Their old worktrees under `.claude/worktrees/` may still have these branches checked out, so new workers branch `p1/<name>-m3b` from `phase-1` (gorge: `git cherry-pick 75e79af` first).
-- **Agreed interfaces** (types.ts): `loadPythonEngine(math)` → `ready`, `run` (fresh globals), `shell` (persistent globals, whole blocks), `cancel` (new worker, `PythonCancelled`), `onOutput`/`onGraphics` (survive cancel), `dispose`; errors `{type, message, line, traceback}`. Graphics: batched tuple commands (clear, pixel, line, rect, fillrect, circle, fillcircle, text, show) on 320×240, origin top-left, 0xRRGGBB, starts white; Cancel keeps a half-drawn canvas; a run doesn't clear it.
-- **L1:** `x_1` / `x_{1}` stay Giac `x_1` (a plain identifier in our build; only `<number>_<unit>` is a unit). Left: ron's display mapping (`\mathrm{x\_1}` → `x_{1}` in `render/tidy.ts`) and the Playwright tests.
-- **MicroPython dev build** is in `python/_out/dev/`. It includes Asyncify, so gorge checks whether a synchronous `calc.cas` works without SharedArrayBuffer.
-- **Gotcha:** since C1, `npm run golden` needs an **absolute** `GIAC_OUT` (a relative one breaks the interrupt test).
-- Log: `.coord/log.md`, section "Shift 2026-10-11 milestone 3 + M1/M2 finish".
-
-## 0b. The Virtual Calculator mapping runs beside this shift
-A separate session integrates the user's Virtual Calculator mapping on its own branch (`map/vc-*`) in its own worktree: key layout into `spec/keyboard.yaml`, answers into `tests/golden/` as `source: virtual-calc`, the G2 checklist filled in, and the raw notes in their own folder. **Henri never merges that branch;** after this shift is merged, it is rebased onto `phase-1` and the user reviews and pushes it.
-
-To keep the two merge-friendly:
-- **ron:** don't move or rename existing keys in `spec/keyboard.yaml`. Add the Python layer as a new, separate block at the end.
-- **gorge:** in `tests/golden/g2.yaml`, only append new items at the end and don't edit existing items' answers. Don't change the `source:` of existing cases.
-- **Nobody** changes an existing default in `docs/decisions.md` because of what the reference "probably" does. That is the mapping branch's job.
+## Definition of done
+Tab One bars measured (pass or a written finding), the S8+ measured or blocked with a reason, the fresh-clone APK runs, `map/vc-1-rebased` passes all gates, docs updated, the report written.
 
 ## 1. Principles
 The two principles in CLAUDE.md decide every default:
