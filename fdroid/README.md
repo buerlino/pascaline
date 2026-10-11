@@ -8,3 +8,5 @@ How it builds, and how it differs from `./build.sh`:
 - Source tarballs (Giac, GMP, MPFR, GSL, MicroPython) are downloaded and SHA-256-checked by the scripts, and `npm ci` downloads packages. F-Droid builds are normally offline after `prebuild`, so check this (and a `srclibs` rework) before submitting.
 - The container builds of the engine and of MicroPython are byte-reproducible between runs. The system-emscripten build on the VM should match; verify before claiming reproducible builds.
 - Open items before a real submission: a release tag and `versionCode`, the real application id, an app icon and screenshots in `fastlane/metadata/android/en-US/`.
+
+- Checked 2026-10-11 with fdroidserver 2.4.5 (pip, venv): `fdroid readmeta` parses the recipe. `fdroid lint` only complains that the category is unknown, because a scratch repo has no `config/categories.yml`; the real fdroiddata uses "Science & Education" in 534 recipes. A real `fdroid build` needs the build-server VM (vagrant/KVM image), which is not set up here, so the recipe is untested end to end.
