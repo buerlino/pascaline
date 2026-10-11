@@ -4,7 +4,7 @@ Pascaline is an **open-source graphing CAS calculator** for Android (also PWA, l
 
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 
-**Status (2026-10-10):** Phase 0 spike in progress on branch `spike/phase-0`. Steps 0–2 (toolchain, Giac→wasm from source, MathEngine worker + desktop benchmark) are done; results are in [spike/RESULTS.md](spike/RESULTS.md). **Next: device steps 3+** (Capacitor shell on real devices), run as a coordinated night shift per [spike/NIGHT-SHIFT.md](spike/NIGHT-SHIFT.md), following the `phase-0-spike` skill ([.claude/skills/phase-0-spike/SKILL.md](.claude/skills/phase-0-spike/SKILL.md)).
+**Status (2026-10-11):** Phase 0 spike on branch `spike/phase-0`. Steps 0–7 measured on desktop and on the low-end Lenovo Tab One (night shift): Q1, Q3 and Q6 (low-end) pass, Q2 keyboard passes with 292/296 round-trip, MicroPython passes, Pyodide misses its 4 s bar (optional pack). Results in [spike/RESULTS.md](spike/RESULTS.md); defaults and open proposals in [spike/DECISIONS.md](spike/DECISIONS.md); hand checks on the reference calculator in [spike/G2-CHECKLIST.md](spike/G2-CHECKLIST.md). **Next:** the user decides proposals P1/P2, does the G2 checks and connects the mid-range and old devices.
 
 Background reading (read before larger design decisions):
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): **the plan**. Stack, app→component mapping, solver choice, effort, F-Droid, licence.

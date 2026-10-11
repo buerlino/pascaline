@@ -18,3 +18,4 @@ Questions only a real HP Prime G2 (firmware 2.4 rev 15515) or the official Virtu
 | 12 | Solve | Which root does Solve return for `tan(x)=0` with guess 1.4, and for `x^3-3x+1=0` with guess 0? | Our rule is "the root nearest the guess" | gorge | |
 | 13 | Solve | What does Solve show for `x^2+1=0` with guess 0 (no real root)? | We show "no root found" | gorge | |
 | 14 | Solve | Does Solve say anything about the pole when solving `1/x=0`? | We show "no root found" | gorge | |
+| 15 | Home | Which number formats does Home offer (Standard, Fixed, Scientific, Engineering?) and how does each show 12345.6789 and 0.000123? | D5 plans STD 12 digits + SCI + ENG | henri | |
