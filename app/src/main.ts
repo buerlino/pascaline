@@ -7,6 +7,7 @@ import "./style.css";
 import App from "./App.svelte";
 import { createCalc } from "./calc/index.ts";
 import { EntryController } from "./entry/controller.ts";
+import { renderStats } from "./render/mathlive.svelte.ts";
 import { Session } from "./state/session.svelte.ts";
 
 const entry = new EntryController();
@@ -18,7 +19,7 @@ if (import.meta.env.VITE_MEASURE === "1") {
   if (new URLSearchParams(location.search).has("bench")) void import("./bench.ts").then((m) => m.runBench(session));
 }
 session.saveDelayMs = 400;
-void session.restore();
+void session.restoreSettings();
 addEventListener("pagehide", () => session.flushHistory());
 document.addEventListener("visibilitychange", () => document.hidden && session.flushHistory());
 
@@ -27,10 +28,10 @@ mount(App, { target: document.getElementById("app") as HTMLElement, props: { ses
 // Test hook (desktop Playwright): read the entry line and the session without reaching into the DOM.
 declare global {
   interface Window {
-    pascaline: { entry: EntryController; session: Session };
+    pascaline: { entry: EntryController; session: Session; renderStats: { count: number } };
   }
 }
-window.pascaline = { entry, session };
+window.pascaline = { entry, session, renderStats };
 
 // Keypad first: MathLive (the biggest chunk) is fetched and parsed only after the keypad has been painted.
 // Keys pressed before it is ready are queued by the entry controller.
@@ -38,5 +39,7 @@ requestAnimationFrame(() =>
   requestAnimationFrame(() => {
     mark("keyboard-ready");
     void entry.load();
+    // The history is read after the keypad is up, so it does not compete with the first paint.
+    void session.restoreHistory();
   }),
 );

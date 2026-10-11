@@ -2,7 +2,7 @@
 <script lang="ts">
   // Static 2D rendering of a LaTeX string with MathLive's renderer (the same one the entry line uses).
   // Until MathLive has loaded the LaTeX is shown as plain text.
-  import { mathlive } from "./mathlive.svelte.ts";
+  import { mathlive, renderStats } from "./mathlive.svelte.ts";
 
   let { latex, label = "" }: { latex: string; label?: string } = $props();
 
@@ -10,6 +10,7 @@
     const lib = mathlive.mod;
     if (!lib) return "";
     try {
+      renderStats.count++;
       return lib.convertLatexToMarkup(latex);
     } catch {
       return "";
