@@ -7,6 +7,7 @@
   --key-op: #3a4250;
   --key-fn: #26384a;
   --key-ctl: #4a3a2a;
+  --key-nav: #2e3a33;
   --key-enter: #1f6f54;
   --text: #e8ebef;
   --muted: #98a2b3;
@@ -24,6 +25,7 @@
     --key-op: #d5dae3;
     --key-fn: #cfe0f2;
     --key-ctl: #f2dcc2;
+    --key-nav: #d6e8dc;
     --key-enter: #1f6f54;
     --text: #1a1d22;
     --muted: #5b6575;

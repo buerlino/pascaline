@@ -87,6 +87,11 @@
     background: var(--key-ctl);
     font-size: 16px;
   }
+  .key.nav {
+    min-height: 36px;
+    background: var(--key-nav);
+    font-size: 15px;
+  }
   .key.enter {
     background: var(--key-enter);
     color: #fff;

@@ -2,8 +2,10 @@
 // Keyboard model: types, validation and lookup for spec/keyboard.yaml (turned into JSON at build time).
 import raw from "../../../spec/keyboard.yaml";
 
-export type Special = "shift" | "alpha" | "enter" | "clear" | "cancel" | "app" | "settings";
-export const SPECIALS: readonly Special[] = ["shift", "alpha", "enter", "clear", "cancel", "app", "settings"];
+export type Special = "shift" | "alpha" | "enter" | "clear" | "cancel" | "app" | "settings" | "apps" | "symb" | "plot" | "num" | "menu";
+export const SPECIALS: readonly Special[] = [
+  "shift", "alpha", "enter", "clear", "cancel", "app", "settings", "apps", "symb", "plot", "num", "menu",
+];
 
 export type Action = ActionBody & {
   /** Replacement in one-line entry mode (settings): used instead of this action when entry is linear. */
@@ -17,11 +19,11 @@ export type ActionBody =
   | { kind: "insert"; latex: string; sample?: readonly [string, string] }
   /** A MathLive editing command. */
   | { kind: "cmd"; name: string }
-  /** Handled by the app (shift, alpha, enter, clear, cancel, view switch, settings). */
+  /** Handled by the app (shift, alpha, enter, clear, cancel, Home/CAS, settings, apps and their views, menu). */
   | { kind: "special"; name: Special };
 
 export type Layer = "primary" | "shift" | "alpha";
-export type KeyClass = "num" | "op" | "fn" | "ctl" | "enter";
+export type KeyClass = "num" | "op" | "fn" | "ctl" | "enter" | "nav";
 export type Source = "assumed" | "device" | "virtual-calc" | "derived";
 
 export interface Key {
@@ -44,7 +46,7 @@ export interface Keyboard {
 
 export class KeyboardSpecError extends Error {}
 
-const CLASSES: readonly KeyClass[] = ["num", "op", "fn", "ctl", "enter"];
+const CLASSES: readonly KeyClass[] = ["num", "op", "fn", "ctl", "enter", "nav"];
 const SOURCES: readonly Source[] = ["assumed", "device", "virtual-calc", "derived"];
 const LAYERS: readonly Layer[] = ["primary", "shift", "alpha"];
 
