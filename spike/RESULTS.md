@@ -125,7 +125,7 @@ What was built (`spike/qalc/build-wasm.sh`, emsdk 6.0.12, `-Oz`, everything from
 | Later calls (Node) | 0.2–9 ms |
 | Cases `spike/qalc/cases.yaml` (`check.py`, mpmath 40 digits; 15 units, 7 constants, 4 uncertainty) | **25/26 pass**. The failure is an upstream data typo: `units.xml` defines `hp` as 745.69998715… W; the true value (550 ft·lbf/s) is 745.69987158… W. Report upstream |
 | Lenovo Tab One | **not measured: the device is unavailable** this shift |
-| Samsung S8+ | **not measured**: the page (`spike/qalc/page/`) is ready, but device runs belong to annabell and need a measurement APK with the page in it; recipe below |
+| Samsung S8+ (SM-G955F, Android 9, Chrome 101 = WebView provider), n=6 cold | worker ready median **612 ms** (581-642), first result (`5 km/h to m/s`) median **626 ms** (589-653) from `new Worker`; the calc itself 4-14 ms. **< 1 s: PASS**. Method: not our APK but the spike page served over `adb reverse` (loopback, `Cache-Control: no-store`) and opened in the device's Chrome 101 after `am force-stop` each run (cold process, fresh URL); result read from the tab title via DevTools `/json`. Loopback has no network latency and Chrome is a proxy for the WebView, so an APK run could differ a little (asset loading from the APK is also local) |
 
 Cost against benefit:
 - **Start-up: none**, if it loads only when units/constants are first used (principle 2). The first use pays ≈130 ms on the desktop; on the Tab One expect several times that (MicroPython: 11 ms desktop → 335 ms Tab One); it can also be preloaded when idle after Giac is ready.
