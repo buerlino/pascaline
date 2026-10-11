@@ -41,3 +41,5 @@ Built with its own `npm run build`, copied into `spike/app/public/input/` (gitig
 `mInputShown=false` after the field tap and after each of 1, a/b, 2, right, +, 3; field shows 1/2+3, Giac line `1/2+3`.
 Status line over 5 cold starts: ready 301/291/298/324/296 ms (median 298), serializer 1241/1223/1214/1236/1223 ms
 (median 1223); first launch after install 355/1267. Raw record: `.coord/device-runs.jsonl`, kind `keyboard-page`.
+Second run with ron's own parser (`night/ron-parser@a58e65a`, wasm uncompressed build): same checks pass; ready 314/299/296/309/317 ms
+(median 309), serializer 370/359/369/377/384 ms (median 370, vs 1223 with Compute Engine); battery 80%, 30 C.

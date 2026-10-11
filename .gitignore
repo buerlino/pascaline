@@ -50,3 +50,5 @@ spike/**/_out/
 # throwaway signing keys for spike release builds
 spike/android/_keys/
 spike/_ron/
+spike/_plot*/
+spike/_plotB/
