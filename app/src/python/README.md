@@ -12,7 +12,7 @@ Web Worker, behind `PythonEngine` (`types.ts`). Nothing here loads at app start.
 | `python.worker.ts` | the worker: loads `python/micropython.mjs` (copied to `app/public/python/` by `npm run engine:copy` or `build.sh`) |
 | `pyHost.ts` | worker side, UI-free (also runs in Node): run/shell, output batching, exceptions → `PyError` |
 | `calcHost.ts` | main thread: answers `calc` calls through the `MathEngine` |
-| `nodePython.ts` | loads MicroPython in Node for tests (`PYTHON_OUT`, else `python/_out/dev`) |
+| `nodePython.ts`, `nodeMath.ts` | Node loaders for tests and the golden runner (`PYTHON_OUT`, else `python/_out/dev`; Giac as usual) |
 
 ```ts
 const { loadPythonEngine } = await import("../python/pythonEngine.ts");   // lazily, when the Python app opens
@@ -23,6 +23,20 @@ await py.shell("1+1");                 // stdout "2\n" (expressions are echoed, 
 const r = await py.run(src, { file: "main.py" });   // r.error?.line for the editor
 await py.cancel();                     // pending calls reject with PythonCancelled
 ```
+
+## The `calc` module (our API, in our own words)
+All calls are synchronous and go to the same Giac engine as Home and CAS, so variables are shared both ways.
+
+| Call | Returns |
+|---|---|
+| `calc.cas(expr)` | Giac's exact result as text, e.g. `"(x-1)*(x+1)"`; `ValueError` with Giac's message on error |
+| `calc.eval(expr)` | `int` for an exact integer; else `evalf(…,17)` as `float`, `complex` or a list; text if not numeric |
+| `calc.get(name)` | a calculator variable, as `eval` returns it; `NameError` if it has no value |
+| `calc.set(name, v)` | stores `int`/`float`/`complex`/`bool`/list, or an expression given as text; `None` purges |
+
+Names are letters, digits and `_`, starting with a letter. Exact values come to Python to 17 digits;
+Giac floats come as Giac prints them (12 digits by default, which is also about all they carry).
+Stores are definitions (`name:=…`), so the MathEngine replays them after a Cancel.
 
 ## How it works, and why
 - **`calc` is synchronous.** `calc.cas("factor(x^2-1)")` is a plain call that returns a string, also inside

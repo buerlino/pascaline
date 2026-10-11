@@ -58,11 +58,25 @@ const INTERNAL_FILES = new Set(["<stdin>", "/lib/_pl.py", "/lib/calc.py"]);
 const PL_PY = `# Pascaline glue (internal)
 import _host, json
 
+_ERR = {"NameError": NameError, "TypeError": TypeError}
+
+def _py(v):
+    if isinstance(v, dict):
+        if "i" in v:
+            return int(v["i"])
+        if "f" in v:
+            return float(v["f"])
+        if "c" in v:
+            return complex(float(v["c"][0]), float(v["c"][1]))
+    if isinstance(v, list):
+        return [_py(x) for x in v]
+    return v
+
 def call(fn, *args):
     r = json.loads(_host.call(json.dumps([fn, list(args)])))
     if r[0]:
-        return r[1]
-    raise ValueError(r[1])
+        return _py(r[1])
+    raise _ERR.get(r[2], ValueError)(r[1])
 
 def run(g, src, file):
     for k in list(g):
@@ -78,13 +92,59 @@ def shell(g, src):
     exec(c, g)
 `;
 
-const CALC_PY = `# calc: the calculator from Python (synchronous calls into the Giac engine)
+const CALC_PY = `# calc: the calculator from Python. Every call is synchronous and goes to the Giac engine
+# that Home and CAS use, so calculator variables are shared both ways.
 from _pl import call as _call
 
 def cas(expr):
-    """Evaluate expr in the CAS; returns Giac's result as text."""
+    """Evaluate expr in the CAS; returns Giac's exact result as text, e.g. "(x-1)*(x+1)"."""
     return _call("cas", str(expr))
+
+def eval(expr):
+    """Evaluate expr numerically: int for an exact integer, else float, complex, a list, or text if not numeric."""
+    return _call("eval", str(expr))
+
+def get(name):
+    """The value of calculator variable name (as eval returns it); NameError if it has none."""
+    return _call("get", str(name))
+
+def set(name, value):
+    """Store value (int, float, complex, bool, list, or an expression as text) in calculator variable name.
+    None deletes the variable."""
+    _call("set", str(name), None if value is None else _giac(value))
+
+def _giac(v):
+    if v is True:
+        return "1"
+    if v is False:
+        return "0"
+    if isinstance(v, int):
+        return str(v)
+    if isinstance(v, float):
+        if v != v:
+            return "undef"
+        if v in (float("inf"), float("-inf")):
+            return "infinity" if v > 0 else "-infinity"
+        return repr(v)
+    if isinstance(v, complex):
+        return "(" + _giac(v.real) + ")+(" + _giac(v.imag) + ")*i"
+    if isinstance(v, (list, tuple)):
+        return "[" + ",".join([_giac(x) for x in v]) + "]"
+    if isinstance(v, str):
+        return v
+    raise TypeError("can't store a " + type(v).__name__ + " in a calculator variable")
 `;
+
+/** A host-call failure raised in Python as the named exception type (default ValueError). */
+export class HostError extends Error {
+  constructor(
+    readonly pyType: "ValueError" | "NameError" | "TypeError",
+    message: string,
+  ) {
+    super(message);
+    this.name = "HostError";
+  }
+}
 
 class OutStream {
   private bytes: number[] = [];
@@ -164,7 +224,8 @@ export class PyHost {
         [fn, args] = JSON.parse(req) as [string, unknown[]];
         return JSON.stringify([true, await hooks.hostCall(fn, args)]);
       } catch (e) {
-        return JSON.stringify([false, e instanceof Error ? e.message : String(e)]);
+        const type = e instanceof HostError ? e.pyType : "ValueError";
+        return JSON.stringify([false, e instanceof Error ? e.message : String(e), type]);
       }
     };
     mp.FS.mkdirTree("/lib");
