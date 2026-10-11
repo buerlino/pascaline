@@ -13,6 +13,9 @@ import {
   type TableRequest,
 } from "./port.ts";
 
+import type { PythonEngine } from "../python/types.ts";
+import { FakePython } from "./fakePython.ts";
+
 /** An echo cell: the Giac text that would be evaluated. */
 function echo(display: string): HomeResult {
   return { ok: true, display, path: "exact", approximate: false, tieRisk: false, exactMs: 0, totalMs: 0 };
@@ -20,6 +23,11 @@ function echo(display: string): HomeResult {
 
 export class FakeCalc implements Calc {
   private readonly delayMs: number;
+  private py: FakePython | undefined;
+  python(): Promise<PythonEngine> {
+    this.py ??= new FakePython();
+    return Promise.resolve(this.py);
+  }
   private reject: ((e: Error) => void) | undefined;
   constructor(delayMs = 0) {
     this.delayMs = delayMs;

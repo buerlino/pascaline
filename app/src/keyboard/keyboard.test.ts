@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { latexToGiac } from "../input/latex-to-giac.ts";
-import { actionFor, KeyboardSpecError, keyboard, labelFor, loadKeyboard, templates } from "./keyboard.ts";
+import { actionFor, KeyboardSpecError, keyboard, labelFor, loadKeyboard, pythonLabel, pythonText, templates } from "./keyboard.ts";
 
 const spec = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../spec/keyboard.yaml"), "utf8");
 
@@ -92,5 +92,22 @@ describe("keyboard spec", () => {
     expect(() => loadKeyboard(doc([{ ...key, cls: "huge" }]))).toThrow(/cls/);
     expect(() => loadKeyboard(doc([{ ...key, source: "guess" }]))).toThrow(/source/);
     expect(() => loadKeyboard(doc([{ ...key, shift: { type: "2" } }]))).toThrow(/shift needs both/);
+  });
+});
+
+describe("Python layer", () => {
+  const key = (id: string) => keyboard.byId.get(id) as NonNullable<ReturnType<typeof keyboard.byId.get>>;
+  it("types Python text, keeps letters under alpha, and falls back where a key is not listed", () => {
+    expect(pythonText(keyboard, key("pow"), false, false)).toBe("**");
+    expect(pythonText(keyboard, key("d7"), true, false)).toBe(":");
+    expect(pythonText(keyboard, key("comma"), true, false)).toBe("=");
+    expect(pythonText(keyboard, key("i"), false, false)).toBe(" ");
+    expect(pythonText(keyboard, key("sin"), false, true)).toBeUndefined();
+    expect(pythonText(keyboard, key("x"), false, false)).toBeUndefined();
+    expect(pythonLabel(keyboard, key("i"), "primary")).toBe("␣");
+  });
+  it("covers every key whose normal primary action is a LaTeX template", () => {
+    for (const k of keyboard.keys)
+      if (k.actions.primary?.kind === "insert") expect(keyboard.python.get(k.id)?.text.primary, k.id).toBeDefined();
   });
 });

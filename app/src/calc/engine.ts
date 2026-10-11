@@ -14,6 +14,8 @@ import {
   type TableRequest,
 } from "../engine/types.ts";
 import { WorkerEngine } from "../engine/workerEngine.ts";
+import type { PythonEngine } from "../python/types.ts";
+import { loadPython } from "./python.ts";
 import { CalcCancelled, type Calc, type CalcSettings, type CasOutcome, type HomeOutcome } from "./port.ts";
 
 export class EngineCalc implements Calc {
@@ -58,6 +60,13 @@ export class EngineCalc implements Calc {
 
   table(req: TableRequest, s: CalcSettings): Promise<HomeResult[][]> {
     return mapCancel(this.engine.table(req, homeSettings(s)));
+  }
+
+  private py: Promise<PythonEngine> | undefined;
+  /** Loaded on the first call only (the Python app), so MicroPython never slows the start. */
+  python(): Promise<PythonEngine> {
+    this.py ??= loadPython(this.engine);
+    return this.py;
   }
 
   async cancel(): Promise<void> {

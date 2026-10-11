@@ -209,3 +209,37 @@ keys:
   - { id: add, row: 8, col: 3, cls: op, label: { primary: "+" }, primary: { type: "+" }, source: assumed }
   - { id: enter, row: 8, col: 4, cls: enter, label: { primary: "$key.enter", shift: "=" },
       primary: { special: enter }, shift: { type: "=" }, source: assumed }
+
+# ---- Python layer (milestone 3). In the Python app's editor and shell, these keys type Python text instead of
+# their normal action; keys not listed keep it (digits, letters with alpha, cursor, Enter, Cancel). A key whose
+# normal action is a LaTeX template and is not listed here does nothing in Python. `label` overrides the legend
+# (default: the text). All positions are our own choice (`assumed`); Python keywords are in the Menu.
+python:
+  - { key: abs, primary: "abs(", source: assumed }
+  - { key: sin, primary: "sin(", shift: "asin(", source: assumed }
+  - { key: cos, primary: "cos(", shift: "acos(", source: assumed }
+  - { key: tan, primary: "tan(", shift: "atan(", source: assumed }
+  - { key: lpar, primary: "(", shift: "[", source: assumed }
+  - { key: rpar, primary: ")", shift: "]", source: assumed }
+  - { key: pow, primary: "**", shift: "**2", source: assumed }
+  - { key: sqrt, primary: "sqrt(", source: assumed }
+  - { key: frac, primary: "/", shift: "//", source: assumed }
+  - { key: pi, primary: "pi", shift: "e", source: assumed }
+  - { key: comma, primary: ",", shift: "=", source: assumed }
+  - { key: d7, primary: "7", shift: ":", source: assumed }
+  - { key: d8, primary: "8", shift: "\"", source: assumed }
+  - { key: d9, primary: "9", shift: "'", source: assumed }
+  - { key: div, primary: "/", shift: "%", source: assumed }
+  - { key: ln, primary: "log(", shift: "exp(", label: { primary: "ln" }, source: assumed }
+  - { key: d4, primary: "4", shift: "{", source: assumed }
+  - { key: d5, primary: "5", shift: "}", source: assumed }
+  - { key: d6, primary: "6", shift: "_", source: assumed }
+  - { key: mul, primary: "*", source: assumed }
+  - { key: log, primary: "log10(", shift: "10**", label: { primary: "log" }, source: assumed }
+  - { key: d1, primary: "1", shift: "<", source: assumed }
+  - { key: d2, primary: "2", shift: ">", source: assumed }
+  - { key: d3, primary: "3", shift: "!", source: assumed }
+  - { key: i, primary: " ", shift: "1j", label: { primary: "␣", shift: "j" }, source: assumed }
+  - { key: d0, primary: "0", shift: "    ", label: { shift: "⇥" }, source: assumed }
+  - { key: dot, primary: ".", shift: "e", label: { shift: "E" }, source: assumed }
+  - { key: enter, shift: "==", source: assumed }
