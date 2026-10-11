@@ -32,10 +32,14 @@ export async function runBench(session: Session): Promise<void> {
   const doc = raw as { cases: Case[] };
   while (session.engineState === "starting") await sleep(20);
   // History is persisted: start every run from an empty one so the runs are comparable.
-  session.setView("home");
-  session.clearHistory();
+  // ?bench=1&keep=1 keeps the persisted history (run twice to seed a full 200-entry history).
+  if (!new URLSearchParams(location.search).has("keep")) {
+    session.setView("home");
+    session.clearHistory();
+    session.setView("cas");
+    session.clearHistory();
+  }
   session.setView("cas");
-  session.clearHistory();
   const first: number[] = [];
   const errors: string[] = [];
   const mismatches: string[] = [];

@@ -173,7 +173,7 @@ def cmd_bench(a):
         sh(f"am force-stop {PKG}")
         time.sleep(1.5)
         logcat_clear()
-        am_start_w('--es path "/?bench=1"')
+        am_start_w(f'--es path "{os.environ.get("BENCH_PATH", "/?bench=1")}"')
         txt = wait_for("bench-done", 300)
         cases = {}
         summary = None
