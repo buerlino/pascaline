@@ -48,6 +48,14 @@ declare global {
 }
 window.pascaline = { entry, session, shell, calc, plot: plotHook, renderStats };
 
+// Offline support (web build only): after the engine is up and the browser is idle, so the install's downloads
+// (the whole build, ~10 MB with both wasm files) never compete with the first paint or the engine's own load.
+void calc.ready().then(() => {
+  const register = (): void => void import("./pwa.ts").then((m) => m.registerServiceWorker());
+  if ("requestIdleCallback" in window) requestIdleCallback(register, { timeout: 5000 });
+  else setTimeout(register, 2000);
+});
+
 // Keypad first: MathLive (the biggest chunk) is fetched and parsed only after the keypad has been painted.
 // Keys pressed before it is ready are queued by the entry controller.
 requestAnimationFrame(() =>
