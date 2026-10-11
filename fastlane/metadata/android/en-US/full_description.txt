@@ -1,0 +1,7 @@
+Pascaline is a graphing calculator with a computer algebra system, for engineers and students. It works completely offline, has no ads, no tracking and no analytics, and is built entirely from open source.
+
+It uses the logical key layout of a modern graphing calculator (the same function on the same key and shift layer) with its own look. Type fractions, powers and roots the way they are written in a textbook, and get exact answers or 12-digit decimals.
+
+Free software, GPL-3.0-or-later. Maths by Giac (the engine also used by KhiCAS), GSL, GMP and MPFR.
+
+Not affiliated with HP Inc. or Moravia.
