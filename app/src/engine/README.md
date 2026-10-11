@@ -10,7 +10,7 @@ The UI talks to maths only through `MathEngine` (`types.ts`); `WorkerEngine` is 
 | `protocol.ts` | messages between the two |
 | `giac.worker.ts` | the Web Worker: loads `engine/giac.mjs` (copied to `app/public/engine/` by `npm run engine:copy`) |
 | `host.ts` | engine side, synchronous, UI-free: Home/CAS modes (D3), syntax-error detection, replay log. Also runs in Node |
-| `homeEval.ts` | exact-first Home (from `spike/home`, 123/123 oracle cases); results carry a `value` |
+| `homeEval.ts` | exact-first Home (from the Phase 0 spike, 123/123 oracle cases); results carry a `value` |
 | `format.ts` | Home number formatter (D5): STD/SCI/ENG from a BigInt-derived `DecimalValue`, no engine round trip |
 | `nodeGiac.ts` | loads a Giac build in Node for tests and the golden runner (`GIAC_MJS`, `GIAC_OUT`, else `engine/giac/_out/gsl`) |
 

@@ -83,7 +83,7 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
   - a `calc.cas` round trip p95 < 50 ms.
 
 ### Clean-up and infrastructure
-- ~~**C1. Move shipped tooling out of `spike/`.**~~ **Done** 2026-10-11 (10c2f92): `tools/`, `tests/engine/interrupt-test.mjs`, `tests/golden/G2-CHECKLIST.md`. Left: `tools/device-build.sh` (a spike-app helper) still uses `spike/app` and `spike/android`; `npm run golden` now needs an absolute `GIAC_OUT`.
+- ~~**C1. Move shipped tooling out of `spike/`.**~~ **Done** 2026-10-11 (10c2f92): `tools/`, `tests/engine/interrupt-test.mjs`, `tests/golden/G2-CHECKLIST.md`. Left: `tools/device-build.sh` now wraps `build.sh`; `npm run golden` now needs an absolute `GIAC_OUT`.
 - **C2. Results file for page benches.** Make `device_run.py page` append the `?bench=solve` and `?bench=plot` results to `.coord/device-runs.jsonl`, so they're recorded and not only in logcat (m2b report).
 - **C3. CI.** There is none. Add a GitHub Actions workflow for typecheck, unit and parser tests (no engine, so it stays fast). Add the engine gate later, once the Giac mirror exists. Needs your OK, since it runs on GitHub.
 - **C4. F-Droid recipe.** It is untested end to end. `npm ci` downloads packages after `prebuild`, so it needs an offline/srclibs rework. Still open: a release tag and `versionCode`, an icon and screenshots (`fdroid/README.md`).

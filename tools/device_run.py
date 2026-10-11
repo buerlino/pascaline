@@ -6,6 +6,7 @@
   tools/device_run.py start  [--runs 7] [--mode cold|warm|first]
   tools/device_run.py bench  [--runs 5]            # 55 cases per launch, p50/p95, cancel
   tools/device_run.py page PATH [--wait MARK] [--timeout 60]   # open another page, print its marks
+    (appends the page's PASCALINE_BENCH results, e.g. solve/plot/python, to .coord/device-runs.jsonl as kind "page")
 
 Modes for `start`: first = fresh install (no WebView code cache), cold = process killed with
 am force-stop (code cache present), warm = app in background, brought back to front.
@@ -209,13 +210,32 @@ def cmd_bench(a):
     })
 
 
+def parse_bench_lines(text):
+    """All `PASCALINE_BENCH <kind> {json}` lines (solve, plot, python, ... pages), in order, plus `kind key=value` marks."""
+    out = []
+    for line in text.splitlines():
+        m = re.search(r"PASCALINE_BENCH (\S+) (\{.*\})\s*$", line)
+        if m:
+            try:
+                out.append({"what": m.group(1), **json.loads(m.group(2))})
+            except ValueError:
+                pass
+    return out
+
+
 def cmd_page(a):
+    pre = battery()
     sh(f"am force-stop {PKG}")
     time.sleep(1.5)
     logcat_clear()
     am_start_w(f'--es path "{a.path}"')
     txt = wait_for(a.wait, a.timeout) if a.wait else (time.sleep(a.timeout), logcat_dump())[1]
     print(txt)
+    # C2: keep the page bench results next to the start and bench series (read by runs_summary.py)
+    results = parse_bench_lines(txt)
+    marks = {k: v for k, v in parse_marks(txt).items()}
+    log_result({"kind": "page", "path": a.path, "wait": a.wait, "before": pre, "after": battery(), **env_info(),
+                "results": results, "marks": marks})
 
 
 def main():

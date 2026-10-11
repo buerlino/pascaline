@@ -115,7 +115,7 @@ npx playwright install chromium firefox                    # once
 tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it
 tools/devlock.sh acquire <serial|host-cpu> <owner> [wait_s]   # release / status / break
 
-tools/device-build.sh [--app DIR] [--debug|--release] [--install]   # build our APK, prints its path
+tools/device-build.sh [--measure] [--install] [--engine-dir DIR] # build our APK, prints its path
 tools/device_run.py start --mode first|cold|warm --runs 7         # launch timings from logcat marks
 tools/device_run.py bench --runs 5                                 # the 55 benchmark cases on the device
 tools/runs_summary.py                                             # medians from .coord/device-runs.jsonl
