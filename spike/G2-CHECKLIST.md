@@ -11,3 +11,7 @@ Questions only a real HP Prime G2 (firmware 2.4 rev 15515) or the official Virtu
 | 5 | Entry | Is ÷ shown as ÷ in the entry line, or turned into a fraction? | Display of division | ron | |
 | 6 | Entry | How are `2x`, `x(x+1)` and `1/2x` read (implicit multiplication; does `1/2x` mean (1/2)·x or 1/(2x))? | We emit `2*x`, `x*(x+1)`, `(1/2)*x` | ron | |
 | 7 | CAS | How does the CAS show `factor(x^20-1)`: over the rationals only, or with √5 factors? | Our Giac build factors over ℚ(√5) | Q1 bench | |
+| 8 | Home | How are exact ties rounded at 12 digits, e.g. `0.1234567890125`: half away from zero (0.123456789013) or half to even? | We round half away from zero | gorge | |
+| 9 | Home | In real mode, does `sqrt(-4)` give `2*i` or an error? | We give `2*i` | gorge | |
+| 10 | Home | What does `asin(2)` give (which complex branch, or an error)? | We give 1.57079632679-1.31695789692*i | gorge | |
+| 11 | Home | Does `(-8)^(1/3)` give -2 or 1+1.73205080757*i? (Same question as #4 for the Home view) | We give the principal complex root | gorge | |
