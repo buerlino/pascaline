@@ -31,7 +31,6 @@ engine/**/_out/
 *.so
 *.a
 *.jar
-!android/gradle/wrapper/gradle-wrapper.jar
 
 # Editors / OS
 .DS_Store
@@ -61,3 +60,8 @@ android/app/src/main/assets/public/
 android/app/src/main/assets/capacitor.config.json
 android/app/src/main/assets/capacitor.plugins.json
 android/_keys/
+
+# android/: no Gradle wrapper (a committed .jar breaks the F-Droid rule); build.sh fetches the pinned Gradle
+android/gradle/
+android/gradlew
+android/gradlew.bat

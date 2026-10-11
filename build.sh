@@ -64,9 +64,24 @@ if (( SIGN )); then
   fi
   export PASCALINE_KEYSTORE="$KEYS/throwaway.jks"
 fi
+# Gradle: pinned distribution, SHA-256 checked, cached outside git (no wrapper jar in the repo; F-Droid uses its own Gradle)
+GRADLE_VERSION=8.14.3
+GRADLE_SHA256=bd71102213493060956ec229d946beee57158dbd89d0e62b91bca0fa2c5f3531
+CACHE="${PASCALINE_CACHE:-$HOME/.cache/pascaline}"
+GRADLE_HOME_DIR="$CACHE/gradle-$GRADLE_VERSION"
+if [[ ! -x "$GRADLE_HOME_DIR/bin/gradle" ]]; then
+  mkdir -p "$CACHE"
+  ZIP="$CACHE/gradle-$GRADLE_VERSION-bin.zip"
+  if [[ ! -f "$ZIP" ]]; then
+    curl -fL --retry 3 -o "$ZIP.part" "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip"
+    mv -f "$ZIP.part" "$ZIP"
+  fi
+  echo "$GRADLE_SHA256  $ZIP" | sha256sum -c - >&2 || { rm -f "$ZIP"; exit 1; }
+  unzip -q "$ZIP" -d "$CACHE"
+fi
 lock
 trap unlock EXIT
-(cd android && ./gradlew --console=plain -q assembleRelease >&2)
+(cd android && "$GRADLE_HOME_DIR/bin/gradle" --console=plain -q assembleRelease >&2)
 unlock; trap - EXIT
 
 # 5. dist/
