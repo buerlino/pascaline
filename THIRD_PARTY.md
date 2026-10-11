@@ -44,3 +44,5 @@ Everything here is built from source by scripts in this repository. Spike-only t
 | @capacitor/android | 8.5.3 | MIT | https://github.com/ionic-team/capacitor | Android project (shipped) |
 | @capacitor/cli | 8.5.3 | MIT | https://github.com/ionic-team/capacitor | `cap sync` (build) |
 | JSXGraph | 1.14.0 | MIT OR LGPL-3.0-or-later | https://github.com/jsxgraph/jsxgraph | Function app Plot view (shipped, loaded lazily when Plot first opens; D7) |
+| CodeMirror 6 (`@codemirror/state` 6.7.6, `view` 6.43.14, `commands` 6.11.1, `language` 6.13.1, `lang-python` 6.2.1) | pinned exactly | MIT | https://github.com/codemirror | Python app editor (milestone 3); lazy chunk, not loaded at start. Transitive: `@codemirror/autocomplete` 6.20.3, style-mod 4.1.4, w3c-keyname 2.2.8, crelt 1.0.7 (all MIT) |
+| Lezer (`@lezer/common` 1.5.3, `highlight` 1.2.5, `lr` 1.4.11, `python` 1.1.19) | pinned via lockfile | MIT | https://github.com/lezer-parser | Parser for CodeMirror's Python mode |
