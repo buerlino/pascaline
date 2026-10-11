@@ -20,7 +20,9 @@ const calc = createCalc();
 const session = new Session(calc);
 if (import.meta.env.VITE_MEASURE === "1") {
   void calc.ready().then(() => mark("engine-ready"));
-  if (new URLSearchParams(location.search).get("bench") === "solve") void import("./solveBench.ts").then((m) => m.runSolveBench(calc));
+  if (new URLSearchParams(location.search).get("bench") === "plot")
+    void import("./plotBench.ts").then((m) => m.runPlotBench(shell, new URLSearchParams(location.search).has("manual")));
+  else if (new URLSearchParams(location.search).get("bench") === "solve") void import("./solveBench.ts").then((m) => m.runSolveBench(calc));
   else if (new URLSearchParams(location.search).has("bench")) void import("./bench.ts").then((m) => m.runBench(session));
 }
 session.saveDelayMs = 400;
