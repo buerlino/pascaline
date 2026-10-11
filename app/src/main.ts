@@ -20,7 +20,8 @@ const calc = createCalc();
 const session = new Session(calc);
 if (import.meta.env.VITE_MEASURE === "1") {
   void calc.ready().then(() => mark("engine-ready"));
-  if (new URLSearchParams(location.search).has("bench")) void import("./bench.ts").then((m) => m.runBench(session));
+  if (new URLSearchParams(location.search).get("bench") === "solve") void import("./solveBench.ts").then((m) => m.runSolveBench(calc));
+  else if (new URLSearchParams(location.search).has("bench")) void import("./bench.ts").then((m) => m.runBench(session));
 }
 session.saveDelayMs = 400;
 const shell = new AppShell(calc, idbKv, entry, () => session.settings);
