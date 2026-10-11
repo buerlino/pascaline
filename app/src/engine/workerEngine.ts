@@ -5,7 +5,12 @@ import type { Request, Response } from "./protocol.ts";
 import {
   EngineCancelled,
   type CasResult,
+  type AnalysisRequest,
+  type AnalysisResult,
   type CasSettings,
+  type SolveOutcome,
+  type SolveRequest,
+  type TableRequest,
   type EngineTimings,
   type EvalResult,
   type HomeResult,
@@ -72,6 +77,30 @@ export class WorkerEngine implements MathEngine {
     const r = await this.call({ type: "cas", input, settings });
     if (r.type !== "cas") throw new Error(`unexpected ${r.type}`);
     this.replayLog.push(...r.replay);
+    return r.result;
+  }
+
+  async solve(req: SolveRequest, settings: HomeSettings): Promise<SolveOutcome> {
+    const r = await this.call({ type: "solve", req, settings });
+    if (r.type !== "solve") throw new Error(`unexpected ${r.type}`);
+    return r.result;
+  }
+
+  async unknowns(equations: string[]): Promise<string[]> {
+    const r = await this.call({ type: "unknowns", equations });
+    if (r.type !== "unknowns") throw new Error(`unexpected ${r.type}`);
+    return r.result;
+  }
+
+  async analyze(req: AnalysisRequest, settings: HomeSettings): Promise<AnalysisResult> {
+    const r = await this.call({ type: "analyze", req, settings });
+    if (r.type !== "analyze") throw new Error(`unexpected ${r.type}`);
+    return r.result;
+  }
+
+  async table(req: TableRequest, settings: HomeSettings): Promise<HomeResult[][]> {
+    const r = await this.call({ type: "table", req, settings });
+    if (r.type !== "table") throw new Error(`unexpected ${r.type}`);
     return r.result;
   }
 

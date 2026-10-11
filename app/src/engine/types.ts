@@ -56,6 +56,79 @@ export interface EngineTimings {
   readyMs: number;
 }
 
+// --- Solve app and Function analysis (docs/02 section 4) ------------------------------------
+// All strings are Giac text from our parser (or exact decimals such as "0.1"). Numbers in results are
+// HomeResults (path "numeric", approximate) so the views format them like Home and can read `.value`.
+
+/** A variable held at a fixed value while others are solved for (Solve app Num view). */
+export interface KnownValue {
+  name: string;
+  value: string;
+}
+
+export type SolveRequest =
+  /** N equations in N unknowns from guesses: N = 1 uses the 1-D strategy (bracket + Brent, else
+   *  Newton), N > 1 Giac `fsolve` (GSL hybridsj, hybrids, then Giac's Newton), every candidate
+   *  polished at work precision and substituted back. */
+  | { kind: "equations"; equations: string[]; unknowns: string[]; guesses: string[]; knowns?: KnownValue[] }
+  /** All roots (complex included) of one polynomial equation: Giac `proot`, then substituted back. */
+  | { kind: "poly"; equation: string; unknown: string; knowns?: KnownValue[] };
+
+export type SolveMethod = "exact-zero" | "brent" | "newton" | "hybridsj" | "hybrids" | "giac-newton" | "proot" | "none";
+
+export interface SolveRoot {
+  /** The unknown (kind "equations"); absent for polynomial roots. */
+  name?: string;
+  result: HomeResult;
+}
+
+export interface SolveOutcome {
+  ok: boolean;
+  /** kind "equations": one per unknown, in request order. kind "poly": every root (reals first, ascending). */
+  roots: SolveRoot[];
+  method: SolveMethod;
+  /** The info line: which method found the root and what happened on the way. */
+  info: string;
+  /** Largest relative residual after substituting back (work precision). */
+  residualRel?: number;
+  /** The residual check failed: show ⚠. */
+  warn: boolean;
+  /** Why !ok, for the UI's own message. */
+  error?: "syntax" | "engine" | "no-root" | "bad-input";
+  ms: number;
+}
+
+export type AnalysisRequest =
+  /** Root of f, or extremum (root of f'), nearest x0; inside [lo, hi] when given (the visible window). */
+  | { kind: "root" | "extremum"; f: string; x0: string; lo?: string; hi?: string; variable?: string }
+  | { kind: "intersection"; f: string; g: string; x0: string; lo?: string; hi?: string; variable?: string }
+  | { kind: "slope"; f: string; x0: string; variable?: string }
+  /** Signed area ∫_a^b (f − g), g = 0 when absent. */
+  | { kind: "area"; f: string; g?: string; a: string; b: string; variable?: string };
+
+export interface AnalysisResult {
+  ok: boolean;
+  /** root / extremum / intersection / slope: the point. */
+  x?: HomeResult;
+  y?: HomeResult;
+  /** slope: f'(x); area: the integral. */
+  value?: HomeResult;
+  extremum?: "min" | "max" | "flat";
+  warn: boolean;
+  info: string;
+  method: string;
+  error?: "syntax" | "engine" | "no-root" | "bad-input";
+  ms: number;
+}
+
+export interface TableRequest {
+  fns: string[];
+  /** Exact decimals, e.g. "0.1". */
+  xs: string[];
+  /** Default "x". */
+  variable?: string;
+}
+
 export class EngineCancelled extends Error {
   constructor() {
     super("cancelled");
@@ -70,6 +143,14 @@ export interface MathEngine {
   home(input: string, settings: HomeSettings): Promise<HomeResult>;
   /** Exact CAS evaluation plus `latex()` of the result. */
   cas(input: string, settings: CasSettings): Promise<CasResult>;
+  /** Solve app: equations from guesses, or all roots of a polynomial. Residual-checked. */
+  solve(req: SolveRequest, settings: HomeSettings): Promise<SolveOutcome>;
+  /** The variables in the equations (Giac `lname`, constants excluded), in order of appearance. */
+  unknowns(equations: string[]): Promise<string[]>;
+  /** Function analysis for the Plot menu: root, extremum, intersection, slope, signed area. */
+  analyze(req: AnalysisRequest, settings: HomeSettings): Promise<AnalysisResult>;
+  /** Num table: rows by x, each cell what Home shows for fn at x. One engine call. */
+  table(req: TableRequest, settings: HomeSettings): Promise<HomeResult[][]>;
   /** Raw Giac call in whatever mode the engine is in (tools and benchmarks only, not the UI). */
   eval(input: string): Promise<EvalResult>;
   /**

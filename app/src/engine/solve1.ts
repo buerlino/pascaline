@@ -20,6 +20,9 @@ export interface SolveSettings {
   warnRel: number;
   budgetMs: number;
   maxBracketSteps: number;
+  /** Search window (Plot: the visible x range). Roots outside it are not reported. */
+  lo?: number;
+  hi?: number;
 }
 
 export const defaultSolveSettings: SolveSettings = {
@@ -54,6 +57,12 @@ function num(s: string): number | undefined {
   if (!/^-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/.test(t)) return undefined;
   const v = Number(t);
   return Number.isFinite(v) ? v : undefined;
+}
+
+/** A search point for the info line, through our formatter (no binary noise such as 1.6400000000000001). */
+function pt(x: number): string {
+  const d = decimalFromString(String(x));
+  return d ? toText(formatReal(d, { format: "STD", digits: 12 })) : "?";
 }
 
 export function solve1(
@@ -138,7 +147,11 @@ export function solve1(
       const isolated = ev(`evalf(subst(pasf,${v}=pasx+pasdl))!=0 and evalf(subst(pasf,${v}=pasx-pasdl))!=0`) === "true";
       return { ok: isolated, rr };
     }
-    return { ok: rel < 1e-20 && rr <= s.warnRel, rr };
+    if (rel < 1e-20 && rr <= s.warnRel) return { ok: true, rr };
+    // A multiple root at 0 (3x² = 0, the extremum of x³): every polish step is the size of x, so the
+    // relative step never shrinks. Accept only when the CAS proves the nearby integer is an exact root.
+    if (snap()) return { ok: true, rr: 0 };
+    return { ok: false, rr };
   };
 
   /** Snap to 0 or to the nearest integer when Giac proves it is an exact root of the equation
@@ -166,15 +179,23 @@ export function solve1(
   if (x0 === undefined) return done({ ok: false, display: "guess is not a real number", method: "none", info: "", warn: false });
   const h = Math.max(Math.abs(x0), 1) * 1e-2;
   const f0 = f(x0);
-  const sides = [-1, 1].map((dir) => ({ dir, x: x0, fx: f0 }));
+  const lo = s.lo ?? -Infinity;
+  const hi = s.hi ?? Infinity;
+  const sides = [-1, 1].map((dir) => ({ dir, x: x0, fx: f0, out: false }));
   for (let k = -1; k <= s.maxBracketSteps; k++) {
-    if (now() - t0 > s.budgetMs) break;
+    if (now() - t0 > s.budgetMs || sides.every((sd) => sd.out)) break;
     const found: { a: number; b: number; zero: boolean }[] = [];
     if (k < 0) {
       if (f0 === 0) found.push({ a: x0, b: x0, zero: true });
     } else {
       for (const side of sides) {
-        const p = x0 + side.dir * h * 2 ** k;
+        if (side.out) continue;
+        let p = x0 + side.dir * h * 2 ** k;
+        if (p < lo || p > hi) {
+          side.out = true; // clamp the last step to the window edge, then stop this side
+          p = side.dir < 0 ? lo : hi;
+          if (p === side.x) continue;
+        }
         const fp = f(p);
         if (fp === undefined) continue; // outside the domain, a pole, or complex: keep the last good point
         if (fp === 0) found.push({ a: p, b: p, zero: true }); // zero in double precision: confirmed below
@@ -218,7 +239,7 @@ export function solve1(
       const { br, rr } = best;
       ev(`Digits:=${s.workDigits}`);
       ev(`pasx:=${best.root}`);
-      return finish(br.zero ? "exact-zero" : "brent", br.zero ? `f(${br.a})=0` : `sign change in [${br.a}, ${br.b}]`, rr, br.zero ? undefined : [br.a, br.b]);
+      return finish(br.zero ? "exact-zero" : "brent", br.zero ? `f(${pt(br.a)})=0` : `sign change in [${pt(br.a)}, ${pt(br.b)}]`, rr, br.zero ? undefined : [br.a, br.b]);
     }
   }
 
@@ -241,7 +262,8 @@ export function solve1(
     if (Math.abs(st) <= 1e-12 * Math.max(Math.abs(x), 1e-300)) break;
   }
   const a = accept();
-  if (!a.ok || num(ev("pasx")) === undefined) {
+  const xn = num(ev("pasx"));
+  if (!a.ok || xn === undefined || xn < lo || xn > hi) {
     return done({ ok: false, display: "no root found", method: "none", info: rejected ? `${rejected} sign change(s) without a root (pole, jump or underflow)` : "no sign change, Newton did not converge", warn: false });
   }
   return finish("newton", "no sign change: Newton + polish (even-multiplicity root or touch)", a.rr);

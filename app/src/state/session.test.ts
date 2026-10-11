@@ -24,15 +24,15 @@ const third: ComplexValue = {
 };
 
 /** A Home engine that returns a numeric value, and a CAS that echoes. */
-class ValueCalc implements Calc {
-  ready = (): Promise<void> => Promise.resolve();
-  home(): Promise<HomeOutcome> {
+class ValueCalc extends FakeCalc implements Calc {
+  override ready = (): Promise<void> => Promise.resolve();
+  override home(): Promise<HomeOutcome> {
     return Promise.resolve({ ok: true, display: "0.333333333333", approximate: false, value: third });
   }
-  cas(giac: string): Promise<CasOutcome> {
+  override cas(giac: string): Promise<CasOutcome> {
     return Promise.resolve({ ok: true, text: giac, latex: "\\frac{1}{2}" });
   }
-  cancel(): Promise<void> {
+  override cancel(): Promise<void> {
     return Promise.resolve();
   }
 }
@@ -47,12 +47,12 @@ describe("Session history", () => {
     expect(a.home).toHaveLength(1);
 
     let engineCalls = 0;
-    const counting: Calc = {
+    const counting: Calc = Object.assign(new FakeCalc(), {
       ready: () => Promise.resolve(),
       home: () => (engineCalls++, Promise.reject(new Error("no engine call expected"))),
       cas: () => (engineCalls++, Promise.reject(new Error("no engine call expected"))),
       cancel: () => Promise.resolve(),
-    };
+    });
     const b = new Session(counting, kv);
     await b.restore();
     expect(engineCalls).toBe(0);
