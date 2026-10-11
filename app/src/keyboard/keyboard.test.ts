@@ -49,7 +49,7 @@ describe("keyboard spec", () => {
     expect(at("neg", "shift")).toMatchObject({ latex: "\\left|#?\\right|" });
     expect(at("eex", "shift")).toMatchObject({ latex: "\\blacktriangleright" });
     expect(at("mul", "shift")).toMatchObject({ latex: "\\mathbin{\\measuredangle}" });
-    expect(at("fmt", "primary")).toEqual({ kind: "special", name: "none" });
+    expect(at("fmt", "primary")).toEqual({ kind: "special", name: "fmt" });
   });
 
   it("the division key makes a stacked fraction with the previous argument as numerator (device, 2026-10-11)", () => {

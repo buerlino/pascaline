@@ -12,6 +12,7 @@
 //          1e-4 ≤ |x| < 10^n, otherwise mantissa and exponent.
 //   SCI n: n significant digits, one before the point, exponent always shown.
 //   ENG n: n significant digits, exponent a multiple of 3, 1 ≤ |mantissa| < 1000.
+//   FIX f: f digits after the point, plain notation (the Format key's optional "Fixed" mode).
 // Rounding is half away from zero; half to even is available for G2 item 8.
 
 /** Significant digits a DecimalValue keeps (evalf strings from the engine carry 40). */
@@ -30,13 +31,15 @@ export interface DecimalValue {
 export const ZERO_VALUE: DecimalValue = { neg: false, digits: "", exp: 0, sticky: false };
 
 export type Rounding = "half-away" | "half-even";
-export type NumberFormat = "STD" | "SCI" | "ENG";
+export type NumberFormat = "STD" | "SCI" | "ENG" | "FIX";
 
 export interface FormatOptions {
   format: NumberFormat;
   /** Significant digits (CLAUDE.md: 12 by default). */
   digits: number;
   rounding?: Rounding;
+  /** Decimals after the point; only used by FIX (default 4). */
+  fixed?: number;
 }
 
 /** A formatted real number. The view draws it (e.g. the exponent as ×10^k); toText gives the canonical text. */
@@ -163,6 +166,28 @@ function eng(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
   return { neg: r.neg, mantissa, exponent: e3 };
 }
 
+function fix(v: DecimalValue, f: number, rounding: Rounding): FormattedNumber {
+  const zero: FormattedNumber = { neg: false, mantissa: f > 0 ? `0.${"0".repeat(f)}` : "0", exponent: null };
+  if (isZero(v)) return zero;
+  const keep = v.exp + 1 + f; // significant digits up to the last decimal place
+  if (keep < 0) return zero;
+  let digits: string;
+  let exp: number;
+  if (keep === 0) {
+    // Below the last place: rounds to one unit of it, or to zero.
+    const lead = v.digits.charAt(0);
+    const beyond = v.digits.length > 1 || v.sticky;
+    if (!(lead > "5" || (lead === "5" && (rounding === "half-away" || beyond)))) return zero;
+    digits = "1";
+    exp = -f;
+  } else {
+    ({ digits, exp } = roundSignificant(v, keep, rounding));
+  }
+  const ip = exp >= 0 ? digits.padEnd(exp + 1, "0").slice(0, exp + 1) : "0";
+  const fp = (exp >= 0 ? digits.slice(exp + 1) : "0".repeat(-exp - 1) + digits).padEnd(f, "0");
+  return { neg: v.neg, mantissa: f > 0 ? `${ip}.${fp}` : ip, exponent: null };
+}
+
 export function formatReal(v: DecimalValue, o: FormatOptions): FormattedNumber {
   const rounding = o.rounding ?? "half-away";
   switch (o.format) {
@@ -172,6 +197,8 @@ export function formatReal(v: DecimalValue, o: FormatOptions): FormattedNumber {
       return sci(v, o.digits, rounding);
     case "ENG":
       return eng(v, o.digits, rounding);
+    case "FIX":
+      return fix(v, o.fixed ?? 4, rounding);
   }
 }
 
@@ -188,11 +215,65 @@ export interface FormattedComplex {
   text: string;
 }
 
+/** The imaginary part's text: a plain 1 is just `i` (1.5+i, not 1.5+1*i). */
+function imagText(im: FormattedNumber): string {
+  return im.mantissa === "1" && im.exponent === null ? "i" : `${toText({ ...im, neg: false })}*i`;
+}
+
 export function formatComplex(v: ComplexValue, o: FormatOptions): FormattedComplex {
   const re = formatReal(v.re, o);
   if (isZero(v.im)) return { re, im: null, text: toText(re) };
   const im = formatReal(v.im, o);
-  const ims = toText({ ...im, neg: false });
-  if (isZero(v.re)) return { re, im, text: `${im.neg ? "-" : ""}${ims}*i` };
-  return { re, im, text: `${toText(re)}${im.neg ? "-" : "+"}${ims}*i` };
+  const ims = imagText(im);
+  if (isZero(v.re)) return { re, im, text: `${im.neg ? "-" : ""}${ims}` };
+  return { re, im, text: `${toText(re)}${im.neg ? "-" : "+"}${ims}` };
+}
+
+/** The value as a decimal literal the engine reads back (`0.123e1`), digits as kept (40 at most). */
+export function decimalToString(v: DecimalValue): string {
+  if (isZero(v)) return "0";
+  return `${v.neg ? "-" : ""}0.${v.digits}e${v.exp + 1}`;
+}
+
+/** ∡ (U+2221), typed by shift + the × key. */
+export const POLAR_SIGN = "∡";
+
+export interface FormattedPolar {
+  r: FormattedNumber;
+  theta: FormattedNumber;
+  /** Canonical text: `5∡0.927295218002`. */
+  text: string;
+}
+
+/** Polar form r∡θ; both numbers use the same format. The engine computes r and θ (abs and arg). */
+export function formatPolar(r: DecimalValue, theta: DecimalValue, o: FormatOptions): FormattedPolar {
+  const fr = formatReal(r, o);
+  const ft = formatReal(theta, o);
+  return { r: fr, theta: ft, text: `${toText(fr)}${POLAR_SIGN}${toText(ft)}` };
+}
+
+export interface FormattedFraction {
+  neg: boolean;
+  /** Integer part of a mixed fraction, or the whole value of an integer ("" when there is none). */
+  whole: string;
+  /** "" when the value is an integer. */
+  num: string;
+  den: string;
+  /** Canonical text: `-7/3`, `-2 1/3`, `6`. */
+  text: string;
+}
+
+/** p/q (q > 0, as the engine gives it) as a fraction or, with `mixed`, a mixed fraction. */
+export function formatFraction(p: bigint, q: bigint, mixed: boolean): FormattedFraction {
+  if (q <= 0n) throw new RangeError("denominator must be positive");
+  const neg = p < 0n;
+  const a = neg ? -p : p;
+  const sign = neg ? "-" : "";
+  if (a % q === 0n) return { neg, whole: (a / q).toString(), num: "", den: "", text: `${sign}${a / q}` };
+  if (mixed && a > q) {
+    const w = (a / q).toString();
+    const n = (a % q).toString();
+    return { neg, whole: w, num: n, den: q.toString(), text: `${sign}${w} ${n}/${q}` };
+  }
+  return { neg, whole: "", num: a.toString(), den: q.toString(), text: `${sign}${a}/${q}` };
 }

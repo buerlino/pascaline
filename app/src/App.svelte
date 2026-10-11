@@ -7,6 +7,7 @@
   import { VIEW_IDS, type NavDir, type ViewId } from "./apps/types.ts";
   import type { EntryController } from "./entry/controller.ts";
   import { t, type MessageKey } from "./i18n/index.ts";
+  import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
   import { actionFor, keyboard, pythonText, type ActionBody, type Key } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
@@ -91,6 +92,10 @@
       case "menu":
         shell.toggleMenu();
         break;
+      case "fmt":
+        // Format key: Home and CAS show the last result in the next mode; the apps have no such result.
+        if (shell.app === null) void session.cycleFormat();
+        break;
       case "shift":
       case "alpha":
       case "none":
@@ -129,6 +134,13 @@
       return true;
     }
     return false;
+  }
+
+  /** A key went down: vibrate first (when switched on in Settings), then do its job. */
+  function keyDown(key: Key): void {
+    const h = session.settings.haptics;
+    if (h.on) vibrate(h.strength / 100, h.ms);
+    press(key);
   }
 
   const NAV: Record<string, NavDir> = {
@@ -283,7 +295,7 @@
     <div class="field" bind:this={host}></div>
   </div>
 
-  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} python={shell.takesText} onpress={press} />
+  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} python={shell.takesText} onpress={keyDown} />
 
   {#if session.settingsOpen}<Settings {session} />{/if}
 </main>

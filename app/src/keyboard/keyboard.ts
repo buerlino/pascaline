@@ -3,11 +3,11 @@
 import raw from "../../../spec/keyboard.yaml";
 
 export type Special =
-  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "app" | "cas" | "settings" | "apps" | "symb" | "plot" | "num" | "menu"
+  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "app" | "cas" | "settings" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
 export const SPECIALS: readonly Special[] = [
-  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "apps", "symb", "plot", "num", "menu", "none",
+  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "apps", "symb", "plot", "num", "menu", "fmt", "none",
 ];
 
 export type Action = ActionBody & {

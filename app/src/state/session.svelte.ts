@@ -5,18 +5,50 @@ import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSett
 import { SerializeError } from "../input/emit.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
-import { formatComplex, type ComplexValue } from "../engine/format.ts";
-import { complexToLatex, homeResultToLatex } from "../render/home.ts";
+import { decimalFromRational, decimalFromString, decimalToString, type ComplexValue } from "../engine/format.ts";
+import { homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
+import {
+  DEFAULT_FMT_CYCLE,
+  factsOf,
+  isFmtMode,
+  nextMode,
+  normalizeCycle,
+  renderNumeric,
+  type FmtMode,
+  type Polar,
+  type Rational,
+} from "./displayMode.ts";
 import { idbKv, type Kv } from "./storage.ts";
 
 export type View = "home" | "cas";
 export type EntryMode = "textbook" | "line";
 
+/** Key vibration (off by default). Strength 0..100 %, duration in ms; the web build can only set the duration. */
+export interface HapticsSettings {
+  on: boolean;
+  strength: number;
+  ms: number;
+}
+export const HAPTIC_MS_RANGE = { min: 5, max: 100 } as const;
+
 export interface Settings extends CalcSettings {
   entry: EntryMode;
+  /** Modes the Format key (fmt) cycles through, in canonical order. */
+  fmtCycle: FmtMode[];
+  /** Decimals of the Fixed mode. */
+  fixDecimals: number;
+  haptics: HapticsSettings;
 }
-export const defaultSettings: Settings = { digits: 12, angle: "rad", format: "std", entry: "textbook" };
+export const defaultSettings: Settings = {
+  digits: 12,
+  angle: "rad",
+  format: "std",
+  entry: "textbook",
+  fmtCycle: [...DEFAULT_FMT_CYCLE],
+  fixDecimals: 4,
+  haptics: { on: false, strength: 50, ms: 15 },
+};
 
 export type ItemStatus = "pending" | "done" | "error" | "cancelled";
 export interface HistoryItem {
@@ -32,12 +64,25 @@ export interface HistoryItem {
   approximate: boolean;
   /** Home: the numeric result, formatted on demand so a settings change re-formats the whole history. */
   value?: ComplexValue;
+  /** An exact rational result (Fraction and Mixed fraction modes). */
+  rational?: Rational;
+  /** r∡θ, filled the first time the Format key shows this complex result in polar form. */
+  polar?: Polar;
+  /** The mode the Format key chose for this result only; undefined: the global setting (Home) or the exact form (CAS). */
+  fmt?: FmtMode;
   startedAt: number;
 }
 
 const HISTORY_LIMIT = 200;
 const errorText = (code: CalcError | undefined, fallback: string): string =>
   code ? t(`error.${code}` as MessageKey) : fallback;
+const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, Math.round(n)));
+const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
+function rationalOf(text: string | undefined): Rational | undefined {
+  const m = text === undefined ? null : RATIONAL.exec(text.trim());
+  if (!m || m[1] === undefined || (m[2] !== undefined && BigInt(m[2]) === 0n)) return undefined;
+  return { n: m[1], d: m[2] ?? "1" };
+}
 const clampDigits = (n: number): number => Math.min(15, Math.max(1, Math.round(n)));
 
 export class Session {
@@ -48,7 +93,7 @@ export class Session {
   alphaLock = $state(false);
   capsLock = $state(false);
   settingsOpen = $state(false);
-  settings = $state<Settings>({ ...defaultSettings });
+  settings = $state<Settings>(structuredClone(defaultSettings));
   home = $state<HistoryItem[]>([]);
   cas = $state<HistoryItem[]>([]);
   /** Set when the engine is starting or failed to start. */
@@ -130,6 +175,26 @@ export class Session {
     this.settings.entry = m;
     this.save();
   }
+  setFmtMode(mode: FmtMode, on: boolean): void {
+    const ticked = new Set(this.settings.fmtCycle);
+    if (on) ticked.add(mode);
+    else ticked.delete(mode);
+    this.settings.fmtCycle = normalizeCycle([...ticked]);
+    this.save();
+  }
+  setFixDecimals(n: number): void {
+    this.settings.fixDecimals = clamp(n, 0, 12);
+    this.save();
+  }
+  setHaptics(h: Partial<HapticsSettings>): void {
+    const next = { ...this.settings.haptics, ...h };
+    this.settings.haptics = {
+      on: next.on === true,
+      strength: clamp(next.strength, 0, 100),
+      ms: clamp(next.ms, HAPTIC_MS_RANGE.min, HAPTIC_MS_RANGE.max),
+    };
+    this.save();
+  }
 
   // ---- evaluation
   /**
@@ -175,13 +240,22 @@ export class Session {
         live.text = r.ok ? r.display : errorText(r.error, r.display);
         live.approximate = r.approximate;
         if (r.value) live.value = r.value;
+        const q = r.value ? rationalOf(r.exact) : undefined;
+        if (q) live.rational = q;
         if (r.ok) live.resultLatex = homeResultToLatex(r.display);
       } else {
         const r = await this.calc.cas(giac, s);
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.text : errorText(r.error, r.text);
-        if (r.ok) live.resultLatex = tidyGiacLatex(r.latex);
+        if (r.ok) {
+          live.resultLatex = tidyGiacLatex(r.latex);
+          // A plain number (3/4, 2.5): the Format key can show it in the other forms.
+          const q = rationalOf(r.text);
+          const dec = q ? decimalFromRational(BigInt(q.n), BigInt(q.d)) : decimalFromString(r.text);
+          if (dec) live.value = { re: dec, im: decimalFromRational(0n, 1n) };
+          if (q) live.rational = q;
+        }
       }
     } catch (e) {
       if (live.status !== "pending") return;
@@ -204,13 +278,50 @@ export class Session {
     return true;
   }
 
-  /** What the history shows for a finished item: Home numbers follow the current digits and format. */
+  /** What the history shows for a finished item: Home numbers follow the current digits and format, or the mode
+   *  the Format key chose for that item; a CAS result changes only when the Format key has chosen a mode. */
   display(item: HistoryItem): { text: string; latex: string } {
-    if (item.view === "home" && item.value && item.status === "done") {
-      const f = formatComplex(item.value, { format: this.settings.format.toUpperCase() as "STD" | "SCI" | "ENG", digits: this.settings.digits });
-      return { text: f.text, latex: complexToLatex(f) };
+    if (item.status === "done" && (item.view === "home" || item.fmt !== undefined)) {
+      const r = renderNumeric(item, item.fmt, {
+        format: this.settings.format,
+        digits: this.settings.digits,
+        fixDecimals: this.settings.fixDecimals,
+        angle: this.settings.angle,
+      });
+      if (r) return r;
     }
     return { text: item.text, latex: item.resultLatex };
+  }
+
+  /**
+   * The Format key: show the last result of the current view in the next ticked mode (Settings). Changes that
+   * result only. Resolves true when the display changed.
+   */
+  async cycleFormat(): Promise<boolean> {
+    const item = this.items.at(-1);
+    if (!item || item.status !== "done" || this.busy) return false;
+    const exactBase = item.view === "cas";
+    const next = nextMode(item.fmt ?? (exactBase ? undefined : this.settings.format), this.settings.fmtCycle, factsOf(item), exactBase);
+    if (!next) return false;
+    if (next.mode === "polar" && item.value && item.polar?.angle !== this.settings.angle && !(await this.computePolar(item, item.value)))
+      return false;
+    item.fmt = next.mode;
+    this.saveHistory();
+    return true;
+  }
+
+  /** abs and arg of the value, from the engine (arg follows the angle unit setting). */
+  private async computePolar(item: HistoryItem, v: ComplexValue): Promise<boolean> {
+    const z = `((${decimalToString(v.re)})+(${decimalToString(v.im)})*i)`;
+    const s: CalcSettings = { digits: this.settings.digits, angle: this.settings.angle, format: this.settings.format };
+    try {
+      const [r, th] = [await this.calc.home(`abs(${z})`, s), await this.calc.home(`arg(${z})`, s)];
+      if (!r.ok || !th.ok || !r.value || !th.value) return false;
+      item.polar = { r: r.value.re, theta: th.value.re, angle: this.settings.angle };
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   clearHistory(): void {
@@ -232,6 +343,10 @@ export class Session {
       if (saved.format === "std" || saved.format === "sci" || saved.format === "eng") this.settings.format = saved.format;
       if (saved.entry === "textbook" || saved.entry === "line") this.settings.entry = saved.entry;
       if (typeof saved.digits === "number") this.settings.digits = clampDigits(saved.digits);
+      if (Array.isArray(saved.fmtCycle)) this.settings.fmtCycle = normalizeCycle(saved.fmtCycle.filter(isFmtMode));
+      if (typeof saved.fixDecimals === "number") this.settings.fixDecimals = clamp(saved.fixDecimals, 0, 12);
+      const h = saved.haptics;
+      if (h && typeof h === "object") this.setHapticsQuiet(h);
     }
     const view = await this.kv.get<View>("view");
     if (view === "home" || view === "cas") this.view = view;
@@ -283,8 +398,16 @@ export class Session {
       this.saveHistory();
     }
   }
+  private setHapticsQuiet(h: Partial<HapticsSettings>): void {
+    const d = defaultSettings.haptics;
+    this.settings.haptics = {
+      on: h.on === true,
+      strength: clamp(typeof h.strength === "number" ? h.strength : d.strength, 0, 100),
+      ms: clamp(typeof h.ms === "number" ? h.ms : d.ms, HAPTIC_MS_RANGE.min, HAPTIC_MS_RANGE.max),
+    };
+  }
   save(): void {
-    void this.kv.set("settings", { ...this.settings });
+    void this.kv.set("settings", $state.snapshot(this.settings));
   }
   saveView(): void {
     void this.kv.set("view", this.view);

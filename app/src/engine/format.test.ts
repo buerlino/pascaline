@@ -6,6 +6,8 @@ import {
   decimalFromRational,
   decimalFromString,
   formatComplex,
+  formatFraction,
+  formatPolar,
   formatReal,
   roundSignificant,
   tieRisk,
@@ -128,7 +130,69 @@ describe("formatComplex", () => {
     expect(c.text).toBe("1-0.5*i");
     expect(c.im).toEqual({ neg: true, mantissa: "0.5", exponent: null });
   });
+  it("a unit imaginary part shows as i, not 1*i (regression: 1.73205080757+1*i)", () => {
+    expect(formatComplex({ re: q(0n), im: q(1n) }, o).text).toBe("i");
+    expect(formatComplex({ re: q(0n), im: q(-1n) }, o).text).toBe("-i");
+    expect(formatComplex({ re: q(3n, 2n), im: q(1n) }, o).text).toBe("1.5+i");
+    expect(formatComplex({ re: q(3n, 2n), im: q(-1n) }, o).text).toBe("1.5-i");
+    // only a plain 1 is dropped: 1.5 stays, and so do scientific and engineering mantissas
+    expect(formatComplex({ re: q(0n), im: q(3n, 2n) }, o).text).toBe("1.5*i");
+    expect(formatComplex({ re: q(0n), im: q(1n) }, { format: "SCI", digits: 3 }).text).toBe("1.00E0*i");
+    expect(formatComplex({ re: q(0n), im: q(10n) }, o).text).toBe("10*i");
+  });
   it("ENG applies to both parts", () => {
     expect(formatComplex({ re: q(1500n), im: q(25n, 1000n) }, { format: "ENG", digits: 3 }).text).toBe("1.50E3+25.0E-3*i");
+  });
+});
+
+describe("FIX (decimals after the point)", () => {
+  const fix = (p: bigint, d: bigint, f: number, rounding?: FormatOptions["rounding"]) =>
+    toText(formatReal(q(p, d), { format: "FIX", digits: 12, fixed: f, rounding }));
+  it("rounds at the decimal position", () => {
+    expect(fix(1n, 3n, 4)).toBe("0.3333");
+    expect(fix(2n, 3n, 4)).toBe("0.6667");
+    expect(fix(-2n, 3n, 4)).toBe("-0.6667");
+    expect(fix(12345678n, 1000n, 2)).toBe("12345.68");
+    expect(fix(5n, 2n, 0)).toBe("3"); // half away from zero
+    expect(fix(5n, 2n, 0, "half-even")).toBe("2");
+    expect(fix(1000n, 1n, 2)).toBe("1000.00");
+  });
+  it("carries into a new digit and handles values below the last place", () => {
+    expect(fix(99999n, 10000n, 4)).toBe("9.9999");
+    expect(fix(999996n, 100000n, 4)).toBe("10.0000"); // 9.99996
+    expect(fix(1n, 100000n, 4)).toBe("0.0000"); // 0.00001
+    expect(fix(-1n, 100000n, 4)).toBe("0.0000"); // no negative zero
+    expect(fix(5n, 100000n, 4)).toBe("0.0001"); // 0.00005, half away
+    expect(fix(5n, 100000n, 4, "half-even")).toBe("0.0000");
+    expect(fix(0n, 1n, 3)).toBe("0.000");
+  });
+  it("applies to both parts of a complex number", () => {
+    expect(formatComplex({ re: q(1n, 3n), im: q(-2n, 3n) }, { format: "FIX", digits: 12, fixed: 2 }).text).toBe("0.33-0.67*i");
+  });
+});
+
+describe("formatFraction", () => {
+  it("fraction and mixed fraction", () => {
+    expect(formatFraction(1n, 3n, false).text).toBe("1/3");
+    expect(formatFraction(-7n, 3n, false).text).toBe("-7/3");
+    expect(formatFraction(7n, 3n, true).text).toBe("2 1/3");
+    expect(formatFraction(-7n, 3n, true).text).toBe("-2 1/3");
+    expect(formatFraction(1n, 3n, true).text).toBe("1/3");
+    expect(formatFraction(6n, 1n, false).text).toBe("6");
+    expect(formatFraction(6n, 3n, true).text).toBe("2");
+    expect(formatFraction(0n, 1n, true).text).toBe("0");
+  });
+  it("exposes the parts for drawing", () => {
+    expect(formatFraction(-7n, 3n, true)).toMatchObject({ neg: true, whole: "2", num: "1", den: "3" });
+    expect(formatFraction(-7n, 3n, false)).toMatchObject({ neg: true, whole: "", num: "7", den: "3" });
+  });
+});
+
+describe("formatPolar", () => {
+  it("r and theta share the number format", () => {
+    // |3+4i| = 5 (derived); the angle is any value here: only the layout is tested
+    expect(formatPolar(q(5n), q(1n, 2n), { format: "STD", digits: 12 }).text).toBe("5\u22210.5");
+    expect(formatPolar(q(5n), q(-1n, 2n), { format: "STD", digits: 12 }).text).toBe("5\u2221-0.5");
+    expect(formatPolar(q(1500n), q(0n), { format: "ENG", digits: 3 }).text).toBe("1.50E3\u22210.00E0");
   });
 });
