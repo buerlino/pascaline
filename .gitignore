@@ -65,3 +65,6 @@ android/gradlew.bat
 python/_downloads/
 python/_out/
 app/public/python/
+
+# P3 spike: libqalculate build tree, downloads and output (spike/qalc/build-wasm.sh)
+spike/qalc/_work/

@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- P3 spike: cold lazy start of the libqalculate worker; serve this dir with qalc.{mjs,wasm} copied next to it. -->
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>qalc spike</title></head>
+<body>
+<pre id="out">running…</pre>
+<script type="module">
+  const t0 = performance.now();
+  const w = new Worker('./qalc-worker.mjs', { type: 'module' });
+  const r = {};
+  w.onmessage = (e) => {
+    if (e.data.type === 'ready') {
+      r.ready_ms = performance.now() - t0;
+      r.init_ok = e.data.ok;
+      w.postMessage('5 km/h to m/s');
+    } else {
+      r.first_result_ms = performance.now() - t0;
+      r.first_calc_in_worker_ms = e.data.ms;
+      r.first = e.data.out;
+      r.ua = navigator.userAgent;
+      const line = 'PASCALINE_BENCH qalc ' + JSON.stringify(r);
+      console.log(line);
+      document.getElementById('out').textContent = line;
+      window.qalcResult = r;
+    }
+  };
+</script>
+</body>
+</html>
