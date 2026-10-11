@@ -12,6 +12,12 @@ Everything here is built from source by scripts in this repository. Spike-only t
 | MPFR | 4.2.2 | LGPL-3.0-or-later | https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz | GPG signature checked (Vincent Lefèvre) |
 | GSL | 2.8 | GPL-3.0-or-later | https://ftp.gnu.org/gnu/gsl/gsl-2.8.tar.gz | GPG signature checked (Patrick Alken). Numeric solvers behind Giac `fsolve` (decided 2026-10-10) |
 
+## Python (python/build-micropython.sh)
+
+| Component | Version | Licence | Source | Notes |
+|---|---|---|---|---|
+| MicroPython | 1.29.0 (release tarball with submodules, SHA-256 `d925a7c6…efeca0`; tag commit `0fd6c573`) | MIT | https://micropython.org/resources/source/ | default Python (D6). Release builds use the same pinned trixie container as the engine and are reproducible. Copied into the app's assets by `build.sh` (`--no-python` skips it) and not loaded at start; the UI comes in milestone 3 |
+
 ## Toolchain (not shipped)
 
 | Component | Version | Licence | Source | Use |

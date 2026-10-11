@@ -5,7 +5,7 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 ## Needs the user
 
-_None yet._
+- **2026-10-11 Merges into `phase-1` are blocked in the coordinator session.** The permission classifier denied `git merge --no-ff` into `phase-1` (and last shift's commits). Verified worker commits are listed in the shift report with the exact merge commands. **Recommendation:** allow Henri to run `git merge --no-ff p1/*-m2` and `git commit -s` on `phase-1` (never push), so verified work lands during the shift.
 
 ## Defaults (Phase 1)
 
@@ -67,3 +67,33 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Choice:** `engine/giac/build-wasm-release.sh` runs the engine build under `setarch -R` (ASLR off) inside the container. That needs `--security-opt seccomp=unconfined` for rootless podman, so the container can call `personality()`. It still only mounts scratch copies. Two builds in one checkout and one from a fresh clone all give `giac.wasm` SHA-256 `ab5ca4eb…3003a`.
 - **Why:** F-Droid's reproducible builds need the same bytes on every build (principle 1).
 - **Would change if:** a clang or Emscripten update makes `-Oz` deterministic, or F-Droid's build server can't turn off ASLR (then we look for the compiler pass that depends on addresses).
+
+### 2026-10-11 Residual check thresholds for Solve and Plot analysis
+- **Choice:** a root is accepted silently when its relative residual, evaluated at 30 digits, is ≤ 1e-15. 1-D roots above that are shown with ⚠. For systems, a residual < 1e-6 is shown with ⚠, and anything worse is reported as no solution (Giac's `hybrids` returns the guess unchanged when it fails, so the check is the only guard).
+- **Why:** docs/02 section 4 requires substituting every root back. 1e-15 is far above 30-digit noise and far below anything a 12-digit display would show as wrong.
+- **Alternatives:** an absolute threshold (fails for large-scale equations), or showing every residual (clutter).
+- **Would change if:** golden or user cases show false ⚠ on well-conditioned roots, or the G2 (items 12–14, 20) shows a different policy.
+
+### 2026-10-11 Polynomial root order (assumed, G2 item 21)
+- **Choice:** real roots in ascending order, then complex roots by real part, then imaginary part. `proot` results are polished with Newton at 30 digits.
+- **Would change if:** G2 item 21 shows another order.
+
+### 2026-10-11 Solve and analysis time limit
+- **Choice:** a 30 s hard Giac timeout per solve or analysis call. Cancel is the user's own limit.
+- **Why:** a runaway `fsolve` must never hang the worker. Normal solves take well under 300 ms (milestone 2 bar).
+
+### 2026-10-11 Signed area in Plot analysis
+- **Choice:** Romberg at 30 digits, then the exact `int` (0.5 s budget), then `gaussquad` with ⚠, always cross-checked against `gaussquad`. A pole inside the interval gives "no area" (G2 item 22).
+- **Why:** Romberg is fast on smooth functions but doesn't converge at kinks; the exact integral covers those.
+
+### 2026-10-11 Plot root search stays inside the visible window
+- **Choice:** root, extremum and intersection from the Plot menu search only the visible x-range, starting at the trace position.
+- **Why:** what the user sees is what they asked about; a root far off-screen would be confusing. Sign changes at poles are not roots (residual check).
+- **Would change if:** the G2 shows the reference searching beyond the window.
+
+### 2026-10-11 Solve app variables and results (assumed, G2 items 12–14, 20)
+- **Choice:** the Solve app keeps names as typed (`x` and `X` are different unknowns; the Function app maps `X` to `x`). New unknowns start at 0. With one equation, Solve finds the selected unknown and holds the others fixed; with N equations it finds N unknowns, the selected one first. A failed solve or a failed residual check shows ⚠ with the engine's info line. A polynomial with exactly one real root also writes that root into the value.
+- **Why:** engineers expect case-sensitive names, as in the CAS. Starting at 0 is predictable.
+- **Alternatives:** fold case (would clash with CAS variables), or start from the last value used anywhere.
+- **Would change if:** the G2 (items 12–14, 20) shows a different behaviour. Known gap: subscripted names (`x_1`) aren't solvable yet, because Giac reads `x_1` as a unit.
+

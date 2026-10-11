@@ -316,6 +316,28 @@ The same web build (`dist/`) is shipped in different wrappers:
 
 ---
 
+## 12b. Features requested by the user (2026-10-11), not yet scheduled
+
+Three additions the user asked for. Each reuses what Giac already has, in line with principle 1. Where keys and menus sit waits for the Virtual Calculator mapping. The reference calculator has its own units and constants menus; everything copied from it stays `assumed` until the mapping lands.
+
+### Physical constants
+- **Engine:** Giac has them built in (`_c_`, `_h_`, `_hbar_`, `_k_`, `_NA_`, `_G_`, `_me_`, `_epsilon0_`, `_mu0_`, `_R_`, `_g_` …) as unit-carrying values (`mksa(_c_)` → `299792458_(m*s^-1)`). Probed 2026-10-11 on our GSL build.
+- **Data age:** the exact SI 2019 constants (c, h, e, k, N_A) are correct. The measured ones are CODATA 2018 (e.g. `_me_` 9.1093837015e-31 kg); CODATA 2022 differs in the last digits. Plan: send Parisse an upstream update to CODATA 2022 and carry it as a documented local patch until then. Golden cases get `source: oracle` from the NIST CODATA table.
+- **UI:** a constants menu (categories: universal, electromagnetic, atomic, physico-chemical), each entry showing symbol, name, value and unit. Picking one inserts the symbol (e.g. `c`, typeset upright with a subscript where needed). A setting chooses "with units" (default when the units feature exists) or "value only".
+
+### Decimal ⇄ scientific key
+- **Engine:** none needed. Our Home formatter (D5) already does STD, SCI and ENG from the exact value, so switching formats only re-renders the display; nothing is recalculated.
+- **UI:** one key cycles the display format STD → SCI → ENG for the history and new results (engineers want ENG: `12.35E3`). It changes the Home setting, so it persists. The key position needs a free primary or shift slot in `spec/keyboard.yaml`, chosen once the mapping is known.
+- **Effort:** small (about a day with tests).
+
+### Units (Qalculate-style)
+- **Engine:** Giac has a complete units system (HP-48 heritage). `1_km+3_m` → `1.003_km`, `2_MPa=>_psi` → `290.07547546_psi`, `usimplify(1_N*1_m)` → `1_J`, `mksa(…)` gives base SI, and SI prefixes work (`3_nm`, `5_µm`, `kN*m`). Composite units come for free, because a unit is just a factor: `9.81_(m/s^2)*2_kg` → `19.62_(kg*m/s^2)`. We don't need Qalculate's library (GPL-2.0-or-later, so licence-compatible, but a second large C++ engine).
+- **Entry (recommended):** a Units key opens a picker. A row of prefixes at the top (n µ m c k M G …), then categories (length, mass, time, force, pressure, energy, power, temperature, electrical …) with their units. Prefix first, then unit, as in Qalculate; the prefix is optional and stays selected for one pick. Typing letters while the picker is open filters it (`kN`, `psi`), which is the fastest path for engineers. Composites are built with the normal × ÷ ^ keys between unit picks (`kN·m`, `m/s²`).
+- **Display:** MathPrint draws units upright after the number (`19.62 kg·m·s⁻²`). A "→" convert action (Giac `=>`) converts the last result to a picked unit, and "simplify units" (`usimplify`) turns `kg·m·s⁻²` into `N`.
+- **Work needed:** a parser rule and round-trip cases for the unit template (P1); formatter support for value + unit (12 digits on the number only); Home's exact-first path must keep units; golden cases from `oracle`/`derived` conversions. Units stay out of the Function and Solve apps at first (the plot evaluator doesn't carry units).
+- **Effort:** medium, about 1–2 weeks. Feasible, and not ambitious given Giac. The risks are Giac's unit-simplification quirks (golden cases will show them) and the picker design.
+- **Clash to fix first:** Giac reads `x_1` as x with unit `1`. Subscripted variable names must parse differently from units in our parser (P1), e.g. units always come from the picker as `_unit` after a number and subscripts as `x_{1}` → a plain name.
+
 ## Sources
 - Giac/Xcas in the browser (giac.js / giacwasm.js; wasm about 2× slower than native, up to 15× on Gröbner bases): <https://xcas.univ-grenoble-alpes.fr/backup/install_en>, <https://www-fourier.univ-grenoble-alpes.fr/~parisse/giacjs/simple.html>, <https://xcas.univ-grenoble-alpes.fr/nw/xcasen.html>
 - Giac `fsolve` methods (GSL-based bisection, Brent, false position, Newton, secant, Steffensen): <https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac/doc/en/cascmd_en/cascmd_en750.html>
