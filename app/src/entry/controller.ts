@@ -31,16 +31,22 @@ export class EntryController {
     return this.ready;
   }
 
-  private create(Field: typeof MathfieldElement): void {
+  private async create(Field: typeof MathfieldElement): Promise<void> {
     // Fonts come from mathlive/static.css (bundled by Vite), not from a fonts folder at run time.
     Field.fontsDirectory = null;
     Field.soundsDirectory = null;
     Field.plonkSound = null;
     Field.keypressSound = null;
     const mf = new Field();
-    this.mf = mf;
-    // MathLive only accepts options once the field is mounted.
+    // MathLive only accepts options once the field is mounted, and it is only fully laid out a frame later.
+    const mounted = new Promise<void>((resolve) => {
+      mf.addEventListener("mount", () => resolve(), { once: true });
+      setTimeout(resolve, 1000); // safety net if the event never comes
+    });
     this.host?.append(mf);
+    await mounted;
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    this.mf = mf;
     mf.mathVirtualKeyboardPolicy = "manual"; // never open MathLive's own keyboard; ours is the only one
     mf.menuItems = [];
     mf.smartFence = true;
@@ -61,10 +67,11 @@ export class EntryController {
     });
     if (this.pendingValue !== undefined) mf.value = this.pendingValue;
     this.pendingValue = undefined;
-    for (const a of this.queue) this.apply(mf, a);
-    this.queue = [];
+    // Replay the queued keys one by one through the same path as a live keypress. Keys that arrive while
+    // we replay (this.mf is set now) go straight in, so drain until the queue is empty.
     mf.focus();
     mf.executeCommand("moveToMathfieldEnd");
+    while (this.queue.length > 0) this.run(this.queue.shift() as ActionBody);
   }
 
   /** The field's hidden textarea must never summon the system keyboard (inputmode=none, again after upgrade). */
