@@ -16,5 +16,11 @@ for line in open(path).read().strip().splitlines()[-last:]:
     elif d["kind"] == "bench":
         keep = {k: v for k, v in d.items() if k not in ("perCase", "t")}
         print(d["t"], "bench", json.dumps(keep))
+    elif d["kind"] == "page":
+        print(d["t"], "page", d["path"], d.get("build"), d.get("device"), "webview", d.get("webview"), "bat", d["before"], "->", d["after"])
+        for r in d.get("results", []):
+            print("   ", json.dumps(r))
+        if not d.get("results"):
+            print("    marks:", json.dumps(d.get("marks", {})))
     else:
         print(d["t"], d["kind"], d.get("level"), d.get("tempC"))
