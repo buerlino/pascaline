@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Function app: up to ten functions of x (F1…F9, F0) in Symb, drawn in Plot, tabulated in Num.
 // Drawing uses our own JS evaluator (D7); every number shown (trace, table, analysis) comes from the engine.
-import { CalcCancelled } from "../../calc/port.ts";
+import { CalcCancelled, type Calc } from "../../calc/port.ts";
 import { formatComplex, type ComplexValue, type DecimalValue } from "../../engine/format.ts";
 import { t } from "../../i18n/index.ts";
 import { addMul, decText, decToNumber, nearestK, niceStep, parseDec, showDecimal, type Dec } from "../decimal.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
 import type { AppHost, AppInstance, MenuItem, NavDir, ViewId } from "../types.ts";
 import { compileDefinition, type Compiled } from "./compile.ts";
-import { functionCalc, type AnalysisOutcome, type AnalysisRequest, type Cell, type FunctionCalc } from "./engineApi.ts";
+import type { AnalysisOutcome, AnalysisRequest, Cell } from "./engineApi.ts";
 
 /** Curve colours (our own palette, readable on dark and light backgrounds). */
 export const CURVE_COLORS = ["#e8743b", "#3fa7d6", "#59c36a", "#d65db1", "#f2c14e", "#8f7ee6", "#e05d5d", "#4fc1b5", "#b0b8c4", "#c4884f"];
@@ -69,12 +69,12 @@ export class FunctionApp implements AppInstance {
 
   private jobs = $state(0);
   private readonly host: AppHost;
-  private readonly fc: FunctionCalc;
+  private readonly fc: Calc;
   private saveTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(host: AppHost) {
     this.host = host;
-    this.fc = functionCalc(host.calc);
+    this.fc = host.calc;
     this.compiled = this.slots.names.map(() => ({ giac: "", error: "" }));
   }
 
@@ -89,7 +89,7 @@ export class FunctionApp implements AppInstance {
   // ---- formatting (Home formatter, current settings)
   fmt(c: Cell | undefined): string {
     if (!c) return "…";
-    if (!c.ok) return t("function.undefined");
+    if (!c.ok || /^[-+]?(infinity|inf|undef)$/.test(c.display)) return t("function.undefined");
     return c.value ? this.fmtValue(c.value) : c.display;
   }
   fmtValue(v: ComplexValue): string {
@@ -199,10 +199,12 @@ export class FunctionApp implements AppInstance {
   private async job<T>(run: () => Promise<T>): Promise<T | undefined> {
     this.jobs++;
     try {
+      await this.host.calc.ready(); // a restored Plot or Num view asks before the engine has started
       return await run();
     } catch (e) {
-      if (e instanceof CalcCancelled) return undefined;
-      throw e;
+      // Cancel: keep what is shown. A failed call: nothing to show (the cell or readout stays empty).
+      if (!(e instanceof CalcCancelled)) console.warn("function app:", e);
+      return undefined;
     } finally {
       this.jobs--;
     }

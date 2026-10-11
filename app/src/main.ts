@@ -6,6 +6,7 @@ import { mount } from "svelte";
 import "./style.css";
 import App from "./App.svelte";
 import { createCalc } from "./calc/index.ts";
+import type { Calc } from "./calc/port.ts";
 import { EntryController } from "./entry/controller.ts";
 import { renderStats } from "./render/mathlive.svelte.ts";
 import { Session } from "./state/session.svelte.ts";
@@ -36,10 +37,10 @@ mount(App, { target: document.getElementById("app") as HTMLElement, props: { ses
 // Test hook (desktop Playwright): read the entry line and the session without reaching into the DOM.
 declare global {
   interface Window {
-    pascaline: { entry: EntryController; session: Session; shell: AppShell; renderStats: { count: number } };
+    pascaline: { entry: EntryController; session: Session; shell: AppShell; calc: Calc; renderStats: { count: number } };
   }
 }
-window.pascaline = { entry, session, shell, renderStats };
+window.pascaline = { entry, session, shell, calc, renderStats };
 
 // Keypad first: MathLive (the biggest chunk) is fetched and parsed only after the keypad has been painted.
 // Keys pressed before it is ready are queued by the entry controller.
