@@ -311,6 +311,7 @@ The same web build (`dist/`) is shipped in different wrappers:
    - `spec/keyboard.yaml` as the single source of the key layout (positions not yet checked on a G2 are marked `assumed`); `tests/golden/` as the single golden-case format (spike/DECISIONS.md D8);
    - `build.sh` from clean source to APK, with the engine built by Debian's Emscripten.
    Bar: on the Tab One (release build), cold launch → keyboard usable < 1 s and → engine ready < 1.5 s; Enter → drawn result p95 < 150 ms on the 55 benchmark inputs.
+   **Done 2026-10-11** (`phase-1`, shift report docs/shifts/2026-10-11-report.md): every item above, verified. On the Tab One (release): keyboard usable 653–667 ms, engine ready 1.0 s (1.29 s with a full 200-entry history), Enter → drawn p95 92 ms (114 ms with a full history). The release engine is built in the container (P2 met) and is bit-reproducible. Left over: the a/b mixed-number form, alpha lock, a literal-caret one-line mode.
 5. Then the rest of the MVP (section 8): Function app, Solve app, Python.
 
 ---

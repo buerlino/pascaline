@@ -11,7 +11,7 @@ You are **Henri**, the coordinator. You lead three workers. You assign the work,
 |---|---|---|
 | **henri** (you, main session) | Opus / high | coordination, verification, merges, docs, shift report |
 | **gorge** | Opus / medium | engine + evaluation in `app/`, Home formatter, `tests/golden/` + oracle |
-| **ron** | Sonnet / high | `app/` shell (Svelte 5), keyboard from `spec/keyboard.yaml`, MathLive entry, our parser, MathPrint views |
+| **ron** | Opus / high (from 2026-10-11, user) | `app/` shell (Svelte 5), keyboard from `spec/keyboard.yaml`, MathLive entry, our parser, MathPrint views |
 | **annabell** | Sonnet / medium | devices, release toolchain (Debian's Emscripten, P2), `android/`, `build.sh`, every device measurement |
 
 Spawn workers with `subagent_type` = their name, and don't override the model.
@@ -83,7 +83,7 @@ The two principles in CLAUDE.md decide every default: **fully open source, reuse
 
 ## 7. Assignments
 
-### ron: app shell, keyboard, MathPrint views (Sonnet / high)
+### ron: app shell, keyboard, MathPrint views (Opus / high)
 1. **Adopt P1.** Merge `night/ron-parser` (a58e65a) into `p1/ron`, then move the parser, its round-trip suite (296 cases) and its fuzz test into `app/src/input/`. The plot evaluator (`night/plot-own`) waits until the Function app.
 2. **`app/` skeleton:** Vite + Svelte 5 + strict TypeScript (no `any`), SPDX headers, an i18n table (English) for every user-facing string, Vitest and Playwright. Scripts: `dev`, `build`, `typecheck`, `test`. Pinned versions; send new dependencies to Henri.
 3. **`spec/keyboard.yaml`:** the single source of the layout (key → primary / shift / alpha action), with a schema, a loader and a test. Start from the night prototype. Every key position that copies the reference calculator is `assumed` (G2 item 2), except what's seen on a G2: **÷ makes a stacked fraction** (typing `5 ÷ 5` showed one, so what is before the cursor becomes the numerator, like MathLive's `\frac{#@}{#?}`, and the cursor moves to the denominator). Rule: each template has a parser rule and a round-trip case, in the same commit.

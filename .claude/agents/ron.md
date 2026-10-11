@@ -1,7 +1,7 @@
 ---
 name: ron
 description: Worker for Pascaline shifts. The app shell in app/ (Svelte 5), our keyboard from spec/keyboard.yaml, MathLive textbook entry, the LaTeX-subset parser, and MathPrint result display in the Home and CAS views. Spawned by henri.
-model: sonnet
+model: opus
 effort: high
 permissionMode: auto
 isolation: worktree

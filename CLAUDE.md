@@ -120,15 +120,25 @@ spike/tools/device_run.py start --mode first|cold|warm --runs 7         # launch
 spike/tools/device_run.py bench --runs 5                                 # the 55 benchmark cases on the device
 spike/tools/runs_summary.py                                             # medians from .coord/device-runs.jsonl
 
-# Engine regression gates (run on every engine build that ships; from the repo root)
-node spike/node/interrupt-test.mjs                         # Giac interrupt (patch 0002): 16/16
-node spike/home/run.ts                                     # exact-first Home: 123/123 oracle cases (ROUNDS=5, GIAC_MJS=<giac.mjs>)
-node spike/solve/run.ts                                    # Solve strategy: 23/23
-(cd spike/input && npm run test:serializer)                # LaTeX → Giac round trip: 292/296 (4 known gaps)
-python3 -m venv spike/.venv && spike/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2   # oracle tooling, once
+# App (from app/; Vite + Svelte 5; copies the engine from GIAC_OUT, default engine/giac/_out/gsl)
+npm ci
+npm run dev                                                # http://localhost:5173 (?engine=fake echoes input, dev only)
+npm run typecheck && npm test                              # svelte-check + Vitest (real-engine tests need GIAC_OUT)
+GIAC_OUT=<dir> npm run test:e2e                            # Playwright key-sequence tests (Chromium, phone size)
+npm run build                                              # → app/dist/
 
-# Release toolchain: Debian's Emscripten in a container (P2). Pass a scratch copy, never the main checkout (the :Z mount relabels it)
-spike/research/trixie-build.sh <scratch dir with engine/giac> <scratch copy of the tarballs>
+# Engine gate (run on every engine build that ships; from app/, GIAC_MJS=<giac.mjs> or GIAC_OUT=<dir>)
+npm run golden                                             # interrupt 16/16, Home 123/123, Solve 23/23, bench 55, parser 294/298 (4 known gaps)
+node scripts/compare-engines.ts <a/giac.mjs> <b/giac.mjs>  # output differences between two engine builds
+python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2   # oracle, once (repo root)
+tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # check cases; --g2 regenerates spike/G2-CHECKLIST.md from tests/golden/g2.yaml
+
+# Full build: clean source → engine (container, P2) → app → Capacitor → Gradle → dist/pascaline.apk (from the repo root)
+./build.sh [--dev] [--measure] [--unsigned] [--engine-dir DIR] [--install [SERIAL]]   # --dev = emsdk engine; --measure = timing marks
+PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads ./build.sh                    # in a fresh clone: reuse the tarball cache
+
+# Release engine: Debian's Emscripten 3.1.69 in a pinned debian:trixie container (P2; works on scratch copies, takes the host-cpu lock)
+engine/giac/build-wasm-release.sh                          # → engine/giac/_out/release/giac.{mjs,wasm} + SHA256SUMS
 
 # Coordinator team (brief: docs/shifts/brief.md; agents in .claude/agents/); keeps the laptop awake while it runs
 systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline shift" claude --agent henri
