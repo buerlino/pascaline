@@ -20,7 +20,8 @@ You are **Henri**, the coordinator. The rules from section 1 on are the same as 
    - **S8+** (after the Chrome update): the same, plus plot fps with three functions and solve p95. No bar; failures are findings. Check that MathLive's styling is fine (it uses `:has()` / `@container`, Chrome 105).
    - Use `device_run.py page` so results land in `.coord/device-runs.jsonl` (C2's first real use).
 4. **Docs and report:** fill the numbers into the m3 report, `docs/02` s12, `backlog.md` (D1), `spike/RESULTS.md` (S8+ = the old-device class). Commit on `phase-1`, don't push.
-5. **If time is left:** list the mapping's "Differences from our defaults" as proposals or defaults for the following shift. Change nothing in the defaults yet.
+5. **P3 spike (accepted by the user 2026-10-11), after task 4:** gorge (one worker at a time) builds libqalculate (pin the version, GPL-2.0-or-later, record it in THIRD_PARTY.md, SHA-checked, from source, no prebuilt binaries) to wasm with our GMP/MPFR. Measure wasm size and lazy start-up on the Tab One (≥5 runs, release), and run units, constants and uncertainty cases (`source: oracle` or `derived`). Report a go or no-go with numbers; no integration into the app yet. See docs/02 section 6b.
+6. **If time is left:** list the mapping's "Differences from our defaults" as proposals or defaults for the following shift. Change nothing in the defaults yet.
 
 ## Definition of done
 Tab One bars measured (pass or a written finding), the S8+ measured or blocked with a reason, the fresh-clone APK runs, `map/vc-1-rebased` passes all gates, docs updated, the report written.

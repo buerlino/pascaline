@@ -178,6 +178,13 @@ Giac in WebAssembly is about **2× slower than native, and sometimes 15× slower
 
 ---
 
+## 6b. The engine layer: a familiar layout over engines that can grow (user, 2026-10-11)
+Pascaline keeps the G2's logical key layout and apps, so G2 users are fast from the first minute. Underneath, it is not limited to what the G2 can do. All maths goes through the async `MathEngine` interface, so a new ability is a new engine (or engine module) behind that interface, and the screens don't change. Each engine runs in its own worker, can be cancelled, and loads only when it is first needed, so start-up stays fast.
+- **Giac** (+ GSL, GMP, MPFR): exact and numeric maths, the core. Loaded at start.
+- **MicroPython**: scripts and `calc`. Loaded when the Python app opens.
+- **libqalculate** (P3, accepted 2026-10-11, spike first): units and conversions, physical constants, uncertainty/interval arithmetic. It would load when units are first used.
+- Later candidates, each its own decision: ODE/optimisation solvers, more numerics. Every new engine must pass principle 1 (open source, GPL-compatible, built from source) and principle 2 (no cost at start-up).
+
 ## 7. Phase 0: spike (2–3 weeks) to de-risk before committing
 
 | # | Question | Pass criterion |
