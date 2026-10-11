@@ -35,6 +35,15 @@ Plain floating-point Giac (`evalf` at 12 digits) gets 20 of the same cases wrong
 cancellation (`exp(1)-2.718281828459`, `355/113-pi`), over/underflow (`1.5e300*2e300` → infinity,
 `exp(-1000)` → 0), `sin(1e22)`, the 12th digit of `sum(1.1^k,k,1,500)`, and the three exact ties.
 
+## Tab One result (2026-10-11, run by annabell)
+**Q3 on the low-end device: pass.** Lenovo Tab One TB305FU, Android 15, WebView 131.0.6778.260, release build
+(night/gorge@3ad1a78 + this engine), battery 80%, 24.9 °C. 5 cold launches of `/?home=1`: 123/123 in every run,
+no case over 500 ms. Per-case medians: p50 3.9 ms, p95 65.7 ms, max 406 ms (`sum(1.0001^k,k,1,2000)`, the
+time-guard case: 300 ms budget + float fallback ≈ 106 ms on this device). All 123 cases took ≈2.4 s per launch.
+Next slowest: `sum(1.1^k,k,1,500)` 268 ms (exact, under the 300 ms budget but only just; a slower
+device would push it to the float path, which gives the same 12 digits), `int(sin(x)/x,x,0,1)` 103 ms.
+Raw logcat: `.coord/home-runs/run1..5.txt` (gitignored); summary: `spike/home/device_summary.py`.
+
 ## Findings
 - Without a time guard, exact evaluation can hang: `sum(1.0001^k,k,1,2000)` takes 17.7 s exactly (16,000-digit rational).
 - Giac's `timeout` in EMCC builds counted whole seconds (fired after 1–2 s). Patch 0002 makes it milliseconds;
