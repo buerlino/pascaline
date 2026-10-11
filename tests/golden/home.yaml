@@ -1,0 +1,143 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Home view, exact-first (D3): input -> value shown in STD with 12 significant digits.
+# `expect` is the mathematically correct value rounded to 12 significant digits, half away from zero,
+# in our canonical text (format.ts: plain for 1e-4 <= |x| < 1e12, else d.dddE+-k; complex a+b*i).
+# It is NOT a claim about how the reference calculator displays anything (G2 checklist item 15).
+#   oracle  : expect written by tests/golden/oracle.py (exact Fraction, else mpmath at 30 digits, checked at 60)
+#   derived : provable by hand; an oracle expression is a cross-check
+#   assumed : depends on an open G2 question (`g2:` = item number); the oracle shows our current rule
+# `settings` overrides the Home defaults (angle: rad). `g2:` on a non-assumed case links the item it
+# also touches. One case per line (oracle.py rewrites lines). Runner: npm run golden (app/).
+cases:
+  # --- binary-float traps: exact rationals give the true value -------------------------------
+  - { id: "trap-1-0.9-0.1", input: "1-0.9-0.1", oracle: "F(1)-F('0.9')-F('0.1')", expect: "0", source: "derived" }
+  - { id: "trap-0.1+0.2", input: "0.1+0.2", oracle: "F('0.1')+F('0.2')", expect: "0.3", source: "derived" }
+  - { id: "trap-third-times-3", input: "(1/3)*3", oracle: "F(1,3)*3", expect: "1", source: "derived" }
+  - { id: "trap-0.1*3", input: "0.1*3", oracle: "F('0.1')*3", expect: "0.3", source: "derived" }
+  - { id: "trap-0.3-0.1", input: "0.3-0.1", oracle: "F('0.3')-F('0.1')", expect: "0.2", source: "derived" }
+  - { id: "trap-3*0.1-0.3", input: "3*0.1-0.3", oracle: "3*F('0.1')-F('0.3')", expect: "0", source: "derived" }
+  - { id: "trap-1.1^2", input: "1.1*1.1", oracle: "F('1.1')**2", expect: "1.21", source: "derived" }
+  - { id: "trap-1.15*100", input: "1.15*100", oracle: "F('1.15')*100", expect: "115", source: "derived" }
+  - { id: "trap-4.35*100", input: "4.35*100", oracle: "F('4.35')*100", expect: "435", source: "derived" }
+  - { id: "trap-2.675*100", input: "2.675*100", oracle: "F('2.675')*100", expect: "267.5", source: "derived" }
+  - { id: "trap-0.7+0.1+0.2", input: "0.7+0.1+0.2", oracle: "F('0.7')+F('0.1')+F('0.2')", expect: "1", source: "derived" }
+  - { id: "trap-1e16+1-1e16", input: "1e16+1-1e16", oracle: "F(10**16)+1-F(10**16)", expect: "1", source: "derived" }
+  - { id: "trap-1e15+0.3-1e15", input: "1e15+0.3-1e15", oracle: "F(10**15)+F('0.3')-F(10**15)", expect: "0.3", source: "derived" }
+  - { id: "trap-1+1e-15-1", input: "(1+1e-15)-1", oracle: "(1+F('1e-15'))-1", expect: "1E-15", source: "derived" }
+  - { id: "trap-0.1^10", input: "0.1^10", oracle: "F('0.1')**10", expect: "1E-10", source: "derived" }
+  - { id: "trap-22/7-approx", input: "22/7-3.142857142857", oracle: "F(22,7)-F('3.142857142857')", expect: "1.42857142857E-13", source: "oracle" }
+  - { id: "trap-sum-0.1-x10", input: "0.1+0.1+0.1+0.1+0.1+0.1+0.1+0.1+0.1+0.1", oracle: "10*F('0.1')", expect: "1", source: "derived" }
+  # --- rounding to 12 digits ---------------------------------------------------------------------
+  - { id: "rnd-1/3", input: "1/3", oracle: "F(1,3)", expect: "0.333333333333", source: "device", g2: 16, note: "seen on a G2 (item 16); the oracle agrees" }
+  - { id: "rnd-2/3", input: "2/3", oracle: "F(2,3)", expect: "0.666666666667", source: "oracle" }
+  - { id: "rnd-1/7", input: "1/7", oracle: "F(1,7)", expect: "0.142857142857", source: "oracle" }
+  - { id: "rnd-13-digits-down", input: "1.000000000001", oracle: "F('1.000000000001')", expect: "1", source: "derived", note: "13 significant digits: the 13th (1) rounds away" }
+  - { id: "rnd-13-digits-up", input: "1.000000000006", oracle: "F('1.000000000006')", expect: "1.00000000001", source: "derived" }
+  - { id: "rnd-tie-pos", input: "123456789012.5", oracle: "F('123456789012.5')", expect: "123456789013", source: "assumed", g2: 8, note: "exact tie; our rule is half away from zero; G2 tie rule is a checklist item" }
+  - { id: "rnd-tie-neg", input: "-123456789012.5", oracle: "F('-123456789012.5')", expect: "-123456789013", source: "assumed", g2: 8, note: "exact tie, see rnd-tie-pos" }
+  - { id: "rnd-tie-small", input: "0.1234567890125", oracle: "F('0.1234567890125')", expect: "0.123456789013", source: "assumed", g2: 8, note: "exact tie, see rnd-tie-pos" }
+  - { id: "rnd-carry", input: "999999999999.5", oracle: "F('999999999999.5')", expect: "1E12", source: "derived", note: "rounding carries into a 13th digit" }
+  - { id: "rnd-10^12-1", input: "10^12-1", oracle: "F(10**12-1)", expect: "999999999999", source: "derived" }
+  - { id: "rnd-10^12", input: "10^12", oracle: "F(10**12)", expect: "1E12", source: "derived" }
+  - { id: "rnd-small-plain", input: "1/1024", oracle: "F(1,1024)", expect: "0.0009765625", source: "derived" }
+  - { id: "rnd-small-sci", input: "0.0000123", oracle: "F('0.0000123')", expect: "1.23E-5", source: "derived" }
+  - { id: "rnd-product", input: "123456789*987654321", oracle: "F(123456789*987654321)", expect: "1.21932631113E17", source: "oracle" }
+  - { id: "rnd-negative", input: "-2/3", oracle: "F(-2,3)", expect: "-0.666666666667", source: "oracle" }
+  # --- big and small numbers ---------------------------------------------------------------------
+  - { id: "big-2^100", input: "2^100", oracle: "F(2**100)", expect: "1.26765060023E30", source: "oracle" }
+  - { id: "big-50!", input: "50!", oracle: "F(factorial(50))", expect: "3.04140932017E64", source: "oracle" }
+  - { id: "big-1e300*1e300", input: "1.5e300*2e300", oracle: "F('1.5e300')*F('2e300')", expect: "3E600", source: "derived", note: "beyond IEEE double range" }
+  - { id: "big-1e-300/1e300", input: "1e-300/1e300", oracle: "F('1e-300')/F('1e300')", expect: "1E-600", source: "derived" }
+  - { id: "big-2^1000", input: "2^1000", oracle: "F(2**1000)", expect: "1.07150860719E301", source: "oracle" }
+  - { id: "big-2^-30", input: "2^-30", oracle: "F(1,2**30)", expect: "9.31322574615E-10", source: "oracle" }
+  - { id: "big-7^-100", input: "7^(-100)", oracle: "F(1,7**100)", expect: "3.09169040809E-85", source: "oracle" }
+  - { id: "big-2^10000", input: "2^10000", oracle: "F(2**10000)", expect: "1.99506311688E3010", source: "oracle", note: "3011-digit integer: size guard" }
+  - { id: "big-1.1^100", input: "1.1^100", oracle: "F('1.1')**100", expect: "13780.6123398", source: "oracle" }
+  - { id: "big-1.01^1000", input: "1.01^1000", oracle: "F('1.01')**1000", expect: "20959.1556378", source: "oracle", note: "2000-digit rational: size guard" }
+  - { id: "big-100!/98!", input: "100!/98!", oracle: "F(9900)", expect: "9900", source: "derived" }
+  - { id: "big-1e99*1e99", input: "1e99*1e99", oracle: "F(10**198)", expect: "1E198", source: "derived" }
+  # --- blow-up loops and sums (guards) -------------------------------------------------------------
+  - { id: "sum-1.1^k-500", input: "sum(1.1^k,k,1,500)", oracle: "sum(F('1.1')**k for k in range(1,501))", expect: "5.46682616404E21", source: "oracle", note: "plain double gives a wrong 12th digit" }
+  - { id: "sum-harmonic-1000", input: "sum(1/k,k,1,1000)", oracle: "sum(F(1,k) for k in range(1,1001))", expect: "7.48547086055", source: "oracle", note: "868-character rational: size guard" }
+  - { id: "sum-1/k^2-2000", input: "sum(1/k^2,k,1,2000)", oracle: "sum(F(1,k*k) for k in range(1,2001))", expect: "1.64443419183", source: "oracle" }
+  - { id: "sum-1.0001^k-2000", input: "sum(1.0001^k,k,1,2000)", oracle: "fsum(power(mpf('1.0001'),k) for k in range(1,2001))", expect: "2214.12684062", source: "oracle", note: "exact takes ~18 s: time guard" }
+  - { id: "pow-1.000001^1e6", input: "1.000001^1000000", oracle: "power(F('1.000001'),10**6)", expect: "2.71828046932", source: "oracle", note: "6-million-digit rational if done exactly: time guard" }
+  - { id: "sum-geom-inf", input: "sum(0.5^k,k,0,inf)", oracle: "F(2)", expect: "2", source: "derived" }
+  - { id: "sum-basel", input: "sum(1/k^2,k,1,inf)", oracle: "pi**2/6", expect: "1.64493406685", source: "oracle" }
+  - { id: "prod-1.01-1000", input: "product(1.01,k,1,1000)", oracle: "F('1.01')**1000", expect: "20959.1556378", source: "oracle" }
+  # --- roots, powers, exp, log ----------------------------------------------------------------------
+  - { id: "fn-sqrt2", input: "sqrt(2)", oracle: "sqrt(2)", expect: "1.41421356237", source: "oracle" }
+  - { id: "fn-sqrt0.5", input: "sqrt(0.5)", oracle: "sqrt(F('0.5'))", expect: "0.707106781187", source: "oracle" }
+  - { id: "fn-sqrt1e-10", input: "sqrt(1e-10)", oracle: "F(1,10**5)", expect: "1E-5", source: "derived" }
+  - { id: "fn-sqrt2-squared", input: "sqrt(2)^2", oracle: "F(2)", expect: "2", source: "derived" }
+  - { id: "fn-sqrt2-cancel", input: "sqrt(2)-1.41421356237", oracle: "sqrt(2)-F('1.41421356237')", expect: "3.09504880169E-12", source: "oracle", note: "cancellation" }
+  - { id: "fn-2^0.5", input: "2^0.5", oracle: "sqrt(2)", expect: "1.41421356237", source: "oracle" }
+  - { id: "fn-10^0.3", input: "10^0.3", oracle: "power(10,F('0.3'))", expect: "1.99526231497", source: "oracle" }
+  - { id: "fn-8^(1/3)", input: "8^(1/3)", oracle: "F(2)", expect: "2", source: "derived" }
+  - { id: "fn-exp1", input: "exp(1)", oracle: "e", expect: "2.71828182846", source: "oracle" }
+  - { id: "fn-exp0.5", input: "exp(0.5)", oracle: "exp(F('0.5'))", expect: "1.6487212707", source: "oracle" }
+  - { id: "fn-exp-10", input: "exp(-10)", oracle: "exp(-10)", expect: "4.53999297625E-5", source: "oracle" }
+  - { id: "fn-exp100", input: "exp(100)", oracle: "exp(100)", expect: "2.68811714182E43", source: "oracle" }
+  - { id: "fn-exp1000", input: "exp(1000)", oracle: "exp(1000)", expect: "1.97007111402E434", source: "oracle", note: "beyond IEEE double range" }
+  - { id: "fn-exp-1000", input: "exp(-1000)", oracle: "exp(-1000)", expect: "5.07595889755E-435", source: "oracle" }
+  - { id: "fn-e-cancel", input: "exp(1)-2.718281828459", oracle: "e-F('2.718281828459')", expect: "4.52353602875E-14", source: "oracle", note: "cancellation" }
+  - { id: "fn-ln2", input: "ln(2)", oracle: "ln(2)", expect: "0.69314718056", source: "oracle" }
+  - { id: "fn-ln0.001", input: "ln(0.001)", oracle: "ln(F('0.001'))", expect: "-6.90775527898", source: "oracle" }
+  - { id: "fn-ln1e-100", input: "ln(1e-100)", oracle: "ln(F(1,10**100))", expect: "-230.258509299", source: "oracle" }
+  - { id: "fn-log10-2", input: "log10(2)", oracle: "log10(2)", expect: "0.301029995664", source: "oracle" }
+  - { id: "fn-log10-1000", input: "log10(1000)", oracle: "F(3)", expect: "3", source: "derived" }
+  - { id: "fn-e^pi-pi", input: "exp(pi)-pi", oracle: "exp(pi)-pi", expect: "19.9990999792", source: "oracle" }
+  - { id: "fn-pi-355/113", input: "355/113-pi", oracle: "-(pi-F(355,113))", expect: "2.66764189062E-7", source: "oracle", note: "cancellation" }
+  - { id: "fn-gamma0.5", input: "Gamma(0.5)", oracle: "gamma(F('0.5'))", expect: "1.77245385091", source: "oracle" }
+  - { id: "fn-gamma5.5", input: "Gamma(5.5)", oracle: "gamma(F('5.5'))", expect: "52.3427777846", source: "oracle" }
+  - { id: "fn-erf0.5", input: "erf(0.5)", oracle: "erf(F('0.5'))", expect: "0.520499877813", source: "oracle" }
+  - { id: "fn-int-sinx/x", input: "int(sin(x)/x,x,0,1)", oracle: "quad(lambda t: mp.sin(t)/t, [0, 1])", expect: "0.946083070367", source: "oracle" }
+  - { id: "fn-int-x^2", input: "int(x^2,x,0,1.5)", oracle: "F('1.5')**3/3", expect: "1.125", source: "derived" }
+  # --- trigonometry, radians ----------------------------------------------------------------------
+  - { id: "rad-sin1", input: "sin(1)", oracle: "sin(1)", expect: "0.841470984808", source: "oracle" }
+  - { id: "rad-cos1", input: "cos(1)", oracle: "cos(1)", expect: "0.540302305868", source: "oracle" }
+  - { id: "rad-tan1", input: "tan(1)", oracle: "tan(1)", expect: "1.55740772465", source: "oracle" }
+  - { id: "rad-sin0.1", input: "sin(0.1)", oracle: "sin(F('0.1'))", expect: "0.0998334166468", source: "oracle" }
+  - { id: "rad-sinpi", input: "sin(pi)", oracle: "F(0)", expect: "0", source: "derived" }
+  - { id: "rad-sinpi/6", input: "sin(pi/6)", oracle: "F(1,2)", expect: "0.5", source: "derived" }
+  - { id: "rad-sin1e22", input: "sin(1e22)", oracle: "sin(10**22)", expect: "-0.852200849767", source: "oracle", note: "argument reduction" }
+  - { id: "rad-asin0.5", input: "asin(0.5)", oracle: "asin(F('0.5'))", expect: "0.523598775598", source: "oracle" }
+  - { id: "rad-acos0.3", input: "acos(0.3)", oracle: "acos(F('0.3'))", expect: "1.26610367278", source: "oracle" }
+  - { id: "rad-atan10", input: "atan(10)", oracle: "atan(10)", expect: "1.4711276743", source: "oracle" }
+  - { id: "rad-sinh1", input: "sinh(1)", oracle: "sinh(1)", expect: "1.17520119364", source: "oracle" }
+  - { id: "rad-tanh0.5", input: "tanh(0.5)", oracle: "tanh(F('0.5'))", expect: "0.46211715726", source: "oracle" }
+  - { id: "rad-pythagoras", input: "sin(0.1)^2+cos(0.1)^2", oracle: "F(1)", expect: "1", source: "derived" }
+  # --- trigonometry, degrees ----------------------------------------------------------------------
+  - { id: "deg-sin30", input: "sin(30)", settings: { angle: "deg" }, oracle: "F(1,2)", expect: "0.5", source: "derived" }
+  - { id: "deg-cos60", input: "cos(60)", settings: { angle: "deg" }, oracle: "F(1,2)", expect: "0.5", source: "derived" }
+  - { id: "deg-tan45", input: "tan(45)", settings: { angle: "deg" }, oracle: "F(1)", expect: "1", source: "derived" }
+  - { id: "deg-sin180", input: "sin(180)", settings: { angle: "deg" }, oracle: "F(0)", expect: "0", source: "derived", note: "a float sin(pi) gives about 1.2E-16" }
+  - { id: "deg-cos90", input: "cos(90)", settings: { angle: "deg" }, oracle: "F(0)", expect: "0", source: "derived" }
+  - { id: "deg-tan135", input: "tan(135)", settings: { angle: "deg" }, oracle: "F(-1)", expect: "-1", source: "derived" }
+  - { id: "deg-sin45", input: "sin(45)", settings: { angle: "deg" }, oracle: "sind(45)", expect: "0.707106781187", source: "oracle" }
+  - { id: "deg-sin1", input: "sin(1)", settings: { angle: "deg" }, oracle: "sind(1)", expect: "0.0174524064373", source: "oracle" }
+  - { id: "deg-sin0.5", input: "sin(0.5)", settings: { angle: "deg" }, oracle: "sind(F('0.5'))", expect: "0.00872653549837", source: "oracle" }
+  - { id: "deg-tan89.9", input: "tan(89.9)", settings: { angle: "deg" }, oracle: "tand(F('89.9'))", expect: "572.957213354", source: "oracle" }
+  - { id: "deg-asin0.5", input: "asin(0.5)", settings: { angle: "deg" }, oracle: "F(30)", expect: "30", source: "derived" }
+  - { id: "deg-acos0", input: "acos(0)", settings: { angle: "deg" }, oracle: "F(90)", expect: "90", source: "derived" }
+  - { id: "deg-atan1", input: "atan(1)", settings: { angle: "deg" }, oracle: "F(45)", expect: "45", source: "derived" }
+  - { id: "deg-acos0.3", input: "acos(0.3)", settings: { angle: "deg" }, oracle: "acosd(F('0.3'))", expect: "72.5423968763", source: "oracle" }
+  # --- complex results ----------------------------------------------------------------------------
+  - { id: "cx-product", input: "(3+4*i)*(1-2*i)", oracle: "(3+4*I)*(1-2*I)", expect: "11-2*i", source: "derived" }
+  - { id: "cx-sqrt-4", input: "sqrt(-4)", oracle: "2*I", expect: "2*i", source: "derived", g2: 9, note: "whether Home shows a complex result or an error in real mode is a G2 checklist item" }
+  - { id: "cx-(1+i)^10", input: "(1+i)^10", oracle: "32*I", expect: "32*i", source: "derived" }
+  - { id: "cx-1/(1+i)", input: "1/(1+i)", oracle: "1/(1+I)", expect: "0.5-0.5*i", source: "derived" }
+  - { id: "cx-e^ipi", input: "exp(i*pi)", oracle: "F(-1)", expect: "-1", source: "derived" }
+  - { id: "cx-ln-1", input: "ln(-1)", oracle: "pi*I", expect: "3.14159265359*i", source: "oracle" }
+  - { id: "cx-i^i", input: "i^i", oracle: "exp(-pi/2)", expect: "0.207879576351", source: "oracle" }
+  - { id: "cx-abs", input: "abs(3+4*i)", oracle: "F(5)", expect: "5", source: "derived" }
+  - { id: "cx-sqrt-i", input: "sqrt(i)", oracle: "sqrt(I)", expect: "0.707106781187+0.707106781187*i", source: "oracle" }
+  - { id: "cx-quotient", input: "(2+3*i)/(4-5*i)", oracle: "(2+3*I)/(4-5*I)", expect: "-0.170731707317+0.536585365854*i", source: "oracle" }
+  - { id: "cx-decimal", input: "(0.1+0.2*i)*3", oracle: "F('0.3')+F('0.6')*I", expect: "0.3+0.6*i", source: "derived" }
+  - { id: "cx-asin2", input: "asin(2)", oracle: "mp.asin(2)", expect: "1.57079632679-1.31695789692*i", source: "oracle", g2: 10, note: "principal branch on the cut: conventions differ; G2 checklist item" }
+  - { id: "cx-cbrt-neg8", input: "(-8)^(1/3)", oracle: "power(-8, mpf(1)/3)", expect: "1+1.73205080757*i", source: "oracle", g2: 11, note: "principal complex root; whether the G2 gives -2 is a checklist item" }
+  # --- rounding/integer functions -------------------------------------------------------------------
+  - { id: "int-floor2.5", input: "floor(2.5)", oracle: "F(2)", expect: "2", source: "derived" }
+  - { id: "int-ceil-2.5", input: "ceil(-2.5)", oracle: "F(-2)", expect: "-2", source: "derived" }
+  - { id: "int-abs-0.3", input: "abs(-0.3)", oracle: "F('0.3')", expect: "0.3", source: "derived" }
+  - { id: "int-frac2.7", input: "frac(2.7)", oracle: "F('0.7')", expect: "0.7", source: "derived" }
