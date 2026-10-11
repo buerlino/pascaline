@@ -1,15 +1,19 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import PickList from "./apps/PickList.svelte";
+  import { APPS } from "./apps/registry.ts";
+  import type { AppShell } from "./apps/shell.svelte.ts";
+  import { VIEW_IDS, type NavDir, type ViewId } from "./apps/types.ts";
   import type { EntryController } from "./entry/controller.ts";
-  import { t } from "./i18n/index.ts";
+  import { t, type MessageKey } from "./i18n/index.ts";
   import Keypad from "./keyboard/Keypad.svelte";
   import { actionFor, type ActionBody, type Key } from "./keyboard/keyboard.ts";
   import type { Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   import Settings from "./views/Settings.svelte";
 
-  let { session, entry }: { session: Session; entry: EntryController } = $props();
+  let { session, entry, shell }: { session: Session; entry: EntryController; shell: AppShell } = $props();
 
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {
@@ -19,18 +23,23 @@
   });
   let host: HTMLElement | undefined = $state();
 
-  /** The entry line is cleared as soon as the job starts; the result arrives in the history. */
+  /** Home/CAS: the entry line is cleared as soon as the job starts; the result arrives in the history. Apps decide themselves. */
   function enter(): void {
+    if (shell.app !== null) {
+      shell.enter(entry.value);
+      return;
+    }
     if (session.submit(entry.value)) entry.clear();
   }
 
   async function cancel(): Promise<void> {
+    if (await shell.cancel()) return;
     if (await session.cancel()) return;
     entry.clear();
   }
 
   function clearKey(): void {
-    if (entry.value === "") session.clearHistory();
+    if (shell.app === null && entry.value === "") session.clearHistory();
     else entry.clear();
   }
 
@@ -46,16 +55,38 @@
         clearKey();
         break;
       case "app":
-        session.toggleView();
+        // Home/CAS key: from an app back to Home/CAS, else switch between the two.
+        if (shell.app !== null) shell.close();
+        else session.toggleView();
         break;
       case "settings":
         session.settingsOpen = true;
+        break;
+      case "apps":
+        shell.menuOpen = false;
+        shell.switcherOpen = !shell.switcherOpen;
+        break;
+      case "symb":
+      case "plot":
+      case "num":
+        void shell.setView(name);
+        break;
+      case "menu":
+        shell.toggleMenu();
         break;
       case "shift":
       case "alpha":
         break;
     }
   }
+
+  const NAV: Record<string, NavDir> = {
+    moveUp: "up",
+    moveDown: "down",
+    moveToPreviousChar: "left",
+    moveToNextChar: "right",
+  };
+  const DIGIT = /^d([0-9])$/;
 
   function press(key: Key): void {
     const p = key.actions.primary;
@@ -64,14 +95,31 @@
       else session.toggleAlpha();
       return;
     }
+    // An open list takes the digit keys (1…9, 0).
+    const digit = DIGIT.exec(key.id);
+    if (digit && !session.shift && !session.alpha && (shell.switcherOpen || shell.menuOpen)) {
+      const i = (Number(digit[1]) + 9) % 10;
+      if (shell.switcherOpen) {
+        const a = APPS[i];
+        if (a) void shell.open(a.id);
+      } else shell.pick(i);
+      return;
+    }
     const action = actionFor(key, session.shift, session.alpha, session.settings.entry === "line");
     session.clearModifiers();
     if (!action) return;
-    if (action.kind === "special") special(action.name);
-    else entry.run(action);
+    if (action.kind === "special") return special(action.name);
+    if (shell.app !== null) {
+      const dir = action.kind === "cmd" ? NAV[action.name] : undefined;
+      if (dir && shell.nav(dir)) return;
+      if (!shell.showsEntry) return; // a view without an entry line (Plot) ignores typing
+    }
+    entry.run(action);
   }
 
-  const showSoftCancel = $derived(session.busy);
+  const showSoftCancel = $derived(session.busy || shell.busy);
+  const appName = $derived(shell.app ? t(APPS.find((a) => a.id === shell.app)?.name as MessageKey) : "");
+  const appViews = $derived<readonly ViewId[]>(shell.instance?.views ?? (shell.app ? VIEW_IDS : []));
 </script>
 
 <main class="app">
@@ -80,15 +128,28 @@
       <button
         type="button"
         role="tab"
-        aria-selected={session.view === "home"}
+        aria-selected={shell.app === null && session.view === "home"}
         data-view="home"
-        onclick={() => session.setView("home")}>{t("view.home")}</button>
+        onclick={() => {
+          shell.close();
+          session.setView("home");
+        }}>{t("view.home")}</button>
       <button
         type="button"
         role="tab"
-        aria-selected={session.view === "cas"}
+        aria-selected={shell.app === null && session.view === "cas"}
         data-view="cas"
-        onclick={() => session.setView("cas")}>{t("view.cas")}</button>
+        onclick={() => {
+          shell.close();
+          session.setView("cas");
+        }}>{t("view.cas")}</button>
+      {#if shell.app !== null}
+        <span class="appname" data-app={shell.app}>{appName}</span>
+        {#each appViews as v (v)}
+          <button type="button" role="tab" aria-selected={shell.view === v} data-view={v} onclick={() => void shell.setView(v)}
+            >{t(`view.${v}`)}</button>
+        {/each}
+      {/if}
     </div>
     <span class="status" data-engine={session.engineState} data-busy={showSoftCancel}>
       {#if session.engineState === "starting"}{t("engine.starting")}{/if}
@@ -96,14 +157,44 @@
     </span>
   </header>
 
-  <History
-    items={session.items}
-    display={(item) => session.display(item)}
-    onrecall={(latex) => entry.set(latex)}
-    oncancel={() => void cancel()}
-  />
+  <div class="stage">
+    {#if shell.app === null}
+      <History
+        items={session.items}
+        display={(item) => session.display(item)}
+        onrecall={(latex) => entry.set(latex)}
+        oncancel={() => void cancel()}
+      />
+    {:else if shell.current}
+      {@const C = shell.current.Root}
+      <C app={shell.current.instance} view={shell.view} />
+    {:else}
+      <p class="loading">{t("apps.loading")}</p>
+    {/if}
 
-  <div class="entry" aria-label={t("entry.label")} bind:this={host}></div>
+    {#if shell.switcherOpen}
+      <PickList
+        testid="apps"
+        title={t("apps.title")}
+        items={APPS.map((a) => ({ label: t(a.name) }))}
+        onpick={(i) => void shell.open(APPS[i]?.id ?? "function")}
+        onclose={() => (shell.switcherOpen = false)}
+      />
+    {:else if shell.menuOpen}
+      <PickList
+        testid="menu"
+        title={t("menu.title")}
+        items={shell.menuItems}
+        onpick={(i) => shell.pick(i)}
+        onclose={() => (shell.menuOpen = false)}
+      />
+    {/if}
+  </div>
+
+  <div class="entry" class:hidden={!shell.showsEntry} aria-label={t("entry.label")}>
+    {#if shell.entryLabel}<span class="entrylabel" data-testid="entry-label">{shell.entryLabel}</span>{/if}
+    <div class="field" bind:this={host}></div>
+  </div>
 
   <Keypad shift={session.shift} alpha={session.alpha} onpress={press} />
 
@@ -129,9 +220,12 @@
     display: flex;
     gap: 4px;
   }
+  .tabs {
+    flex-wrap: wrap;
+  }
   .tabs button {
     font: inherit;
-    padding: 6px 16px;
+    padding: 6px 12px;
     border-radius: 8px;
     border: 0;
     background: transparent;
@@ -146,10 +240,41 @@
     font-size: 13px;
     color: var(--muted);
   }
+  .stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .loading {
+    margin: auto;
+    color: var(--muted);
+  }
+  .appname {
+    align-self: center;
+    margin-left: 8px;
+    font-weight: 700;
+    color: var(--shift);
+  }
   .entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     padding: 8px 12px;
     /* room for the field before MathLive has loaded, so nothing jumps */
     min-height: 66px;
+  }
+  .entry.hidden {
+    display: none;
+  }
+  .entrylabel {
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .field {
+    flex: 1;
+    min-width: 0;
   }
   .entry :global(math-field) {
     display: block;
