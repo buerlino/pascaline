@@ -55,3 +55,9 @@ spike/_plotB/
 
 # app/: fonts and engine copied in by npm scripts
 app/public/engine/
+
+# android/: web assets and config copied in by `npx cap sync`; build outputs; throwaway signing keys
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/_keys/

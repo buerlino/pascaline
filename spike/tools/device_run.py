@@ -102,7 +102,7 @@ def am_start_w(extra=""):
 
 def start_once(mode, timeout=60):
     if mode == "first":
-        apk = os.environ.get("APK", os.path.join(REPO, "spike/app/android/app/build/outputs/apk/release/app-release.apk"))
+        apk = os.environ.get("APK", os.path.join(REPO, os.environ.get("APP_APK", "android/app/build/outputs/apk/release/app-release.apk")))
         adb("uninstall", PKG, check=False)
         adb("install", apk)
     if mode in ("first", "cold"):
@@ -115,7 +115,7 @@ def start_once(mode, timeout=60):
         logcat_clear()
     page = os.environ.get("PAGE_PATH")   # e.g. "/?wasmcache=1" for an experiment variant
     t = am_start_w(f'--es path "{page}"' if page else "")
-    txt = wait_for("first-result", timeout) if mode != "warm" else logcat_dump()
+    txt = wait_for(os.environ.get("READY_MARK", "first-result"), timeout)   # app/ has no first-result at launch: READY_MARK=engine-ready if mode != "warm" else logcat_dump()
     marks = parse_marks(txt)
     rec = dict(t)
     try:
@@ -123,12 +123,14 @@ def start_once(mode, timeout=60):
         rec["activityMs"] = int(marks["activity-created"]["sinceProc"])
         if "js-start" in marks:
             rec["jsStartMs"] = int(marks["js-start"]["epoch"]) - p0
+        if "keyboard-ready" in marks:
+            rec["keyboardReadyMs"] = int(marks["keyboard-ready"]["epoch"]) - p0
         if "engine-ready" in marks:
             er = marks["engine-ready"]
             rec["engineReadyMs"] = int(er["epoch"]) - p0
-            rec["instantiateMs"] = float(er["instantiateMs"])
-            rec["initMs"] = float(er["initMs"])
-            rec["workerReadyMs"] = float(er["readyMs"])
+            for key, field in (("instantiateMs", "instantiateMs"), ("initMs", "initMs"), ("workerReadyMs", "readyMs")):
+                if field in er:
+                    rec[key] = float(er[field])
         if "first-result" in marks:
             rec["firstResultMs"] = int(marks["first-result"]["epoch"]) - p0
     except KeyError:
@@ -159,7 +161,7 @@ def cmd_start(a):
             time.sleep(60)
         recs.append(start_once(a.mode))
         time.sleep(2)
-    keys = ["totalTime", "waitTime", "activityMs", "jsStartMs", "engineReadyMs", "instantiateMs", "initMs", "firstResultMs"]
+    keys = ["totalTime", "waitTime", "activityMs", "jsStartMs", "keyboardReadyMs", "engineReadyMs", "instantiateMs", "initMs", "firstResultMs"]
     log_result({"kind": "start", "mode": a.mode, "runs": a.runs, "before": pre, "after": battery(), **env_info(),
                 "summary": summarize(recs, keys), "raw": recs})
 
