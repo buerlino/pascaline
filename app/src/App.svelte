@@ -281,6 +281,7 @@
         items={session.items}
         selected={picked}
         display={(item) => session.display(item)}
+        mark={(item) => session.mark(item)}
         onrecall={(item) => entry.set(item.latex, item.chips)}
         oninsert={insertResult}
         oncancel={() => void cancel()}

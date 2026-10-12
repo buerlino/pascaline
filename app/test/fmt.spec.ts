@@ -90,3 +90,81 @@ test("key vibration: off by default, and on it calls navigator.vibrate on key-do
   await page.locator('[data-key="d4"]').dispatchEvent("pointerdown");
   expect(await vib()).toEqual([15, 15]);
 });
+
+const markOfLast = (page: Page) => page.getByTestId("mark").last();
+
+test("marks: = for an exact value shown in full, ≈ for digits of an irrational or a third; none for a non-number", async ({ page }) => {
+  await open(page, "");
+  await ready(page);
+  await tap(page, ["d2", "add", "d2", "enter"]);
+  await expect(lastText(page)).toHaveAttribute("data-text", "4");
+  await expect(markOfLast(page)).toHaveText("=");
+  await tap(page, ["d1", "div", "d4", "enter"]);
+  await expect(lastText(page)).toHaveAttribute("data-text", "0.25");
+  await expect(markOfLast(page)).toHaveText("=");
+  await tap(page, ["d1", "div", "d3", "enter"]);
+  await expect(lastText(page)).toHaveAttribute("data-text", "0.333333333333");
+  await expect(markOfLast(page)).toHaveText("≈");
+  // the old "approximate" note is gone
+  await expect(page.getByText("approximate", { exact: true })).toHaveCount(0);
+  // the Format key shows the third as an exact fraction: =
+  await openSettings(page);
+  await page.locator('[data-mode="frac"]').check();
+  await closeSettings(page);
+  await tap(page, ["fmt", "fmt", "fmt"]);
+  await expect(lastText(page)).toHaveAttribute("data-text", "1/3");
+  await expect(markOfLast(page)).toHaveText("=");
+});
+
+test("30 digits: the setting takes 30, Home draws 30 digits and 1/3 stays ≈", async ({ page }) => {
+  await open(page, "");
+  await ready(page);
+  await openSettings(page);
+  const digits = page.locator('input[type="number"]').first();
+  await digits.fill("45");
+  await digits.blur();
+  expect(await page.evaluate(() => window.pascaline.session.settings.digits)).toBe(30);
+  await closeSettings(page);
+  await tap(page, ["d1", "div", "d3", "enter"]);
+  await expect(lastText(page)).toHaveAttribute("data-text", `0.${"3".repeat(30)}`);
+  await expect(markOfLast(page)).toHaveText("≈");
+});
+
+test("PFX: 2500 draws as 2.500 k with a thin space and an accented prefix, from Settings and from the Format key", async ({ page }) => {
+  await open(page, "");
+  await ready(page);
+  await openSettings(page);
+  const digits = page.locator('input[type="number"]').first();
+  await digits.fill("4");
+  await digits.blur();
+  await page.locator('[data-mode="pfx"]').check();
+  await closeSettings(page);
+  await tap(page, ["d2", "d5", "d0", "d0", "enter"]);
+  await expect(lastText(page)).toHaveAttribute("data-text", "2500");
+  await expect(markOfLast(page)).toHaveText("=");
+  // std -> sci -> eng -> pfx
+  await tap(page, ["fmt", "fmt", "fmt"]);
+  await expect(lastText(page)).toHaveAttribute("data-text", "2.500 k");
+  await expect(lastText(page).locator(".pfx")).toHaveText("k");
+  await expect(markOfLast(page)).toHaveText("=");
+  // as the global format too
+  await openSettings(page);
+  await page.getByRole("dialog").locator("select").nth(1).selectOption("pfx");
+  await closeSettings(page);
+  await tap(page, ["d1", "d2", "d0", "d0", "d0", "d0", "enter"]);
+  await expect(lastText(page)).toHaveAttribute("data-text", "120.0 k");
+  // tapping the result puts a chip with the full value on the line, never the prefix text
+  await lastText(page).click();
+  const chips = await page.evaluate(() => Object.values(window.pascaline.entry.chips).map((c) => c.value));
+  expect(chips).toEqual(["120000"]);
+});
+
+test("marks: an un-audited float is ⚠ with no count and shows only the confirmed digits (M4-5)", async ({ page }) => {
+  await open(page, "");
+  await ready(page);
+  await page.evaluate(() => window.pascaline.session.setDigits(30));
+  // oracle: besselj(1,2) = 0.576724807756873387202448242269…; the engine falls back to a double here
+  await page.evaluate(() => window.pascaline.session.submit("\\operatorname{BesselJ}\\left(1,2\\right)"));
+  await expect(lastText(page)).toHaveAttribute("data-text", "0.57672480775687");
+  await expect(markOfLast(page)).toHaveText("⚠");
+});

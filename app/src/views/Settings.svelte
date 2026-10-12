@@ -19,7 +19,7 @@
       <input
         type="number"
         min="1"
-        max="15"
+        max="30"
         inputmode="none"
         value={session.settings.digits}
         onchange={(e) => session.setDigits(Number(e.currentTarget.value))}
@@ -40,6 +40,7 @@
         <option value="std">{t("settings.format.std")}</option>
         <option value="sci">{t("settings.format.sci")}</option>
         <option value="eng">{t("settings.format.eng")}</option>
+        <option value="pfx">{t("settings.format.pfx")}</option>
       </select>
     </label>
 

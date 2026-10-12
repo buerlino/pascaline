@@ -51,7 +51,7 @@
             <td class="x" data-x={x}>{app.fmtX(x)}</td>
             {#each app.numSlots as s, c (s)}
               {@const cell = app.numCell(r, c)}
-              <td data-text={cell ? app.fmt(cell) : ""}>{app.fmt(cell)}</td>
+              <td data-text={cell ? app.fmt(cell) : ""}>{app.fmt(cell)}{#if app.warned(cell)}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</td>
             {/each}
           </tr>
         {/each}
@@ -61,6 +61,9 @@
 </div>
 
 <style>
+  td > .warn {
+    color: var(--error);
+  }
   .num {
     flex: 1;
     min-height: 0;

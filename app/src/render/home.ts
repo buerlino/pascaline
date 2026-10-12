@@ -5,6 +5,8 @@
 import type { FormattedComplex, FormattedFraction, FormattedNumber, FormattedPolar } from "../engine/format.ts";
 
 function part(f: FormattedNumber): string {
+  // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
+  if (f.prefix) return `${f.mantissa}\\,\\class{pfx}{\\mathrm{${f.prefix}}}`;
   return `${f.mantissa}${f.exponent === null ? "" : `\\times10^{${f.exponent}}`}`;
 }
 
@@ -12,8 +14,8 @@ function part(f: FormattedNumber): string {
 export function complexToLatex(c: FormattedComplex): string {
   const re = `${c.re.neg ? "-" : ""}${part(c.re)}`;
   if (!c.im) return re;
-  const im = c.im.mantissa === "1" && c.im.exponent === null ? "\\mathrm{i}" : `${part(c.im)}\\mathrm{i}`;
-  if (c.re.mantissa.replace(/[0.]/g, "") === "" && c.re.exponent === null) return `${c.im.neg ? "-" : ""}${im}`;
+  const im = c.im.mantissa === "1" && c.im.exponent === null && !c.im.prefix ? "\\mathrm{i}" : `${part(c.im)}\\mathrm{i}`;
+  if (c.re.mantissa.replace(/[0.]/g, "") === "" && c.re.exponent === null && !c.re.prefix) return `${c.im.neg ? "-" : ""}${im}`;
   return `${re}${c.im.neg ? "-" : "+"}${im}`;
 }
 

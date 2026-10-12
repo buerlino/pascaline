@@ -2,6 +2,7 @@
 // The Function app: up to ten functions of x (F1…F9, F0) in Symb, drawn in Plot, tabulated in Num.
 // Drawing uses our own JS evaluator (D7); every number shown (trace, table, analysis) comes from the engine.
 import { CalcCancelled, engineFormat, type Calc } from "../../calc/port.ts";
+import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { formatComplex, type ComplexValue, type DecimalValue } from "../../engine/format.ts";
 import { t } from "../../i18n/index.ts";
 import { addMul, decText, decToNumber, nearestK, niceStep, parseDec, plainNumber, showDecimal, type Dec } from "../decimal.ts";
@@ -90,7 +91,11 @@ export class FunctionApp implements AppInstance {
     if (!c.ok) return t("function.undefined");
     // a pole or an undefined value: NaN, as the reference's Num view and Signed area show it (G2 items 19, 22)
     if (/^[-+]?(infinity|inf|undef)$/.test(c.display)) return t("function.nan");
-    return c.value ? this.fmtValue(c.value) : c.display;
+    return c.value ? (confirmedText(c, this.host.settings) ?? c.display) : c.display;
+  }
+  /** ⚠: the cell shows more digits than the engine confirmed (the Num table and trace show no other mark). */
+  warned(c: Cell | undefined): boolean {
+    return c?.ok === true && isWarned(c, this.host.settings);
   }
   fmtValue(v: ComplexValue): string {
     const s = this.host.settings;

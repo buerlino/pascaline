@@ -207,13 +207,16 @@
       {:else}
         <span class="pair" style:color={CURVE_COLORS[app.trace.slot]}>{traceName}</span>
         <span class="pair"><span class="k">x</span> <span class="v" data-testid="trace-x">{app.fmtX(app.trace.x)}</span></span>
-        <span class="pair"><span class="k">y</span> <span class="v" data-testid="trace-y" data-text={app.traceY ? app.fmt(app.traceY) : ""}>{app.fmt(app.traceY)}</span></span>
+        <span class="pair"><span class="k">y</span> <span class="v" data-testid="trace-y" data-text={app.traceY ? app.fmt(app.traceY) : ""}>{app.fmt(app.traceY)}</span>{#if app.warned(app.traceY)}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</span>
       {/if}
     </div>
   {/if}
 </div>
 
 <style>
+  .pair > .warn {
+    color: var(--error);
+  }
   .plot {
     position: relative;
     flex: 1;
