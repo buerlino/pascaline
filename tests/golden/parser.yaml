@@ -320,8 +320,8 @@ cases:
   - { id: "gaps-03", latex: "12\\,\\mathrm{m}", expect: "12*m", source: "derived", status: "gap", group: "gaps", note: "units are not part of milestones 1-3; how a unit is typed and shown waits for the units feature (not L6)" }
   - { id: "gaps-04", latex: "\\left\\{1,2,3\\right\\}", expect: "[1,2,3]", source: "derived", group: "gaps" }
   # --- L6 (gorge, 2026-10-11)
-  - { id: "l6-root-01", latex: "\\sqrt[3]{-27}", expect: "-3", source: "virtual-calc", g2: 4, group: "l6", note: "the reference gives (-8)^(1/3) = -2 in Home (2.4.2.15751, 2026-10-11)" }
-  - { id: "l6-root-02", latex: "\\sqrt[5]{-32}", expect: "-2", source: "virtual-calc", g2: 4, group: "l6", note: "the reference gives (-8)^(1/3) = -2 in Home (2.4.2.15751, 2026-10-11)" }
+  - { id: "l6-root-01", latex: "\\sqrt[3]{-27}", expect: "-3", source: "derived", g2: 4, group: "l6", note: "real odd root (provable); the reference gives -2 for (-8)^(1/3) typed as a power (G2 items 4/11), ours keeps that complex (P5(b))" }
+  - { id: "l6-root-02", latex: "\\sqrt[5]{-32}", expect: "-2", source: "derived", g2: 4, group: "l6", note: "real odd root (provable); the reference gives -2 for (-8)^(1/3) typed as a power (G2 items 4/11), ours keeps that complex (P5(b))" }
   - { id: "l6-root-03", latex: "\\sqrt[3]{x}", expect: "surd(x,3)", source: "derived", g2: 4, group: "l6", note: "real odd root as on the reference (G2 item 4); surd is Giac's real n-th root" }
   - { id: "l6-root-04", latex: "\\sqrt[4]{16}", expect: "2", source: "derived", group: "l6" }
   - { id: "l6-root-05", latex: "\\sqrt[3]{-8}", expect: "(-8)^(1/3)", options: { realOddRoots: false }, source: "derived", group: "l6" }
