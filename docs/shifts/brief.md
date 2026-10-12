@@ -1,5 +1,5 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Shift brief: 2026-10-12 evening ("gestures")
+# Shift brief: 2026-10-12 evening ("gestures") — ENDED, see [2026-10-12-eve-report.md](2026-10-12-eve-report.md)
 
 The standing rules (sections 1, 3–6 and 9–11) are in [rules.md](rules.md); read them first. Shift name for branches: `eve`.
 
