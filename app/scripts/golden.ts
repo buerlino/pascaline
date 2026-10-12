@@ -3,10 +3,14 @@
 // build that ships (CLAUDE.md). Exit 0 only if every stage passes.
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
-//   ONLY=home,parser npm run golden                 # stages: interrupt, home, solve, function, bench, parser, python
+//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, parser, python
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches, same in every round, median ≤ 500 ms
+//   precision  tests/golden/precision.yaml (docs/04 2.3 regression list, 20/30-digit cases): Home and CAS at the case's
+//              digits. A case with `status: pending` is known to fail until its fix: it never fails the gate, and is
+//              listed as still pending or now passing. The `mark:` of a case is checked once the engine result carries
+//              one (EN3-engine); until then it is counted as unchecked.
 //   solve      Solve strategy: 1-D (solve1.ts), systems and polynomials (solve.ts); every case matches in
 //              every round, and no ⚠ unless the case has status "warn"
 //   function   Function analysis and Num table (analysis.ts), same rules
@@ -48,8 +52,10 @@ interface Case {
   a?: string;
   b?: string;
   xs?: string[];
-  settings?: { angle?: "rad" | "deg" };
+  settings?: { angle?: "rad" | "deg"; digits?: number };
   expect?: Expect;
+  /** home.yaml, precision.yaml: the mark before the result (docs/04 2.4), checked by oracle.py; by this gate once the engine reports it. */
+  mark?: "=" | "≈" | "⚠";
   source?: string;
   g2?: number;
   status?: string;
@@ -129,7 +135,67 @@ async function stageHome(): Promise<void> {
   report(
     "home",
     pass === cs.length && slow === 0,
-    `${pass}/${cs.length} match (${assumed} assumed), ${slow} over ${HOME_LIMIT_MS} ms, max median ${maxMed.toFixed(1)} ms, rounds ${ROUNDS}`,
+    `${pass}/${cs.length} match (${assumed} assumed, ${cs.filter((c) => c.mark).length} with a mark: checked by oracle.py, by this gate from EN3-engine), ${slow} over ${HOME_LIMIT_MS} ms, max median ${maxMed.toFixed(1)} ms, rounds ${ROUNDS}`,
+  );
+}
+
+/** The mark the engine result carries, once EN3-engine adds it to HomeResult (undefined until then). */
+function markOf(r: HomeResult): string | undefined {
+  const m = (r as HomeResult & { mark?: unknown }).mark;
+  return typeof m === "string" ? m : undefined;
+}
+
+const LOOKS_NUMERIC = /^-?(\d+(\.\d+)?|\.\d+)(E[+-]?\d+)?([+-](\d+(\.\d+)?(E[+-]?\d+)?\*)?i)?$/;
+
+async function stagePrecision(): Promise<void> {
+  const cs = cases("precision.yaml");
+  const host = new EngineHost(await freshGiac());
+  let active = 0;
+  let activePass = 0;
+  const pending: string[] = [];
+  const nowPassing: string[] = [];
+  let marksSeen = 0;
+  let marksChecked = 0;
+  for (const c of cs) {
+    const problems: string[] = [];
+    let mark: string | undefined;
+    let shown: string;
+    if (c.kind === "cas") {
+      const r = host.cas(c.input!, defaultCasSettings).result;
+      shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
+    } else {
+      const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: c.settings?.digits ?? 12 };
+      const r = host.home(c.input!, s).result;
+      shown = r.ok ? r.display : `error: ${r.display}`;
+      mark = markOf(r);
+    }
+    if (c.expect !== undefined && shown !== c.expect) problems.push(`got ${shown}, expect ${String(c.expect)}`);
+    // A mark-only case still needs an answer: the input echoed back (BesselJ(1,2) at 30 digits) is a lost result.
+    if (c.expect === undefined && !LOOKS_NUMERIC.test(shown)) problems.push(`answer is not a number: ${shown}`);
+    let markUnchecked = false;
+    if (c.mark) {
+      marksSeen++;
+      if (mark === undefined) markUnchecked = true;
+      else {
+        marksChecked++;
+        if (!mark.startsWith(c.mark)) problems.push(`mark ${mark}, expect ${c.mark}`);
+      }
+    }
+    if (c.status === "pending") {
+      if (problems.length === 0 && !markUnchecked) nowPassing.push(c.id);
+      else pending.push(c.id);
+      console.log(`  precision ${c.id}: pending${problems.length ? ` (${problems.join("; ")})` : markUnchecked ? " (value passes, no mark in the engine result yet)" : ""}`);
+    } else {
+      active++;
+      if (problems.length === 0) activePass++;
+      else console.log(`  precision ${c.id}: ${problems.join("; ")}`);
+    }
+  }
+  const pendingNote = `${pending.length} pending${nowPassing.length ? `, ${nowPassing.length} NOW PASSING (remove status: ${nowPassing.join(", ")})` : ""}`;
+  report(
+    "precision",
+    activePass === active,
+    `${activePass}/${active} active match; ${pendingNote}; marks: ${marksChecked}/${marksSeen} checked (the rest wait for the engine mark)`,
   );
 }
 
@@ -286,6 +352,8 @@ interface PyCase {
   file?: string;
   before?: string[];
   home?: string[];
+  /** "pending": known to fail until its fix; never fails the gate (listed as still pending or now passing). */
+  status?: string;
   expect: { stdout?: string; error?: { type: string; line?: number }; gfx?: unknown[]; home?: Record<string, string> };
 }
 
@@ -331,6 +399,9 @@ async function stagePython(): Promise<void> {
   let gfx: GfxCmd[] = [];
   const py = await loadNodePyHost({ output: (o) => (out += o.stream === "stdout" ? o.text : ""), hostCall: createCalcHost(math), graphics: (b) => gfx.push(...b) });
   let pass = 0;
+  let active = 0;
+  const pendingIds: string[] = [];
+  const nowPassing: string[] = [];
   const cancelMs: number[] = [];
   for (const c of doc.cases) {
     const problems: string[] = [];
@@ -364,16 +435,24 @@ async function stagePython(): Promise<void> {
       const got = host.home(input, defaultHomeSettings).result.display;
       if (got !== display) problems.push(`Home ${input} -> ${got}, want ${display}`);
     }
+    if (c.status === "pending") {
+      (problems.length === 0 ? nowPassing : pendingIds).push(c.id);
+      console.log(`  python ${c.id}: pending${problems.length ? ` (${problems.join("; ")})` : ""}`);
+      continue;
+    }
+    active++;
     if (problems.length === 0) pass++;
     else console.log(`  python ${c.id}: ${problems.join("; ")}`);
   }
   const ms = cancelMs.length ? `; Cancel terminate median ${median(cancelMs).toFixed(1)} ms (desktop)` : "";
-  report("python", pass === doc.cases.length, `${pass}/${doc.cases.length} match${ms}`);
+  const pend = pendingIds.length + nowPassing.length ? `; ${pendingIds.length} pending${nowPassing.length ? `, ${nowPassing.length} NOW PASSING (remove status: ${nowPassing.join(", ")})` : ""}` : "";
+  report("python", pass === active, `${pass}/${active} match${pend}${ms}`);
 }
 
 console.log(`golden: engine ${mjs}`);
 if (want("interrupt")) stageInterrupt();
 if (want("home")) await stageHome();
+if (want("precision")) await stagePrecision();
 if (want("solve")) await stageCases("solve", "solve.yaml", solveCase);
 if (want("function")) await stageCases("function", "function.yaml", (host, _g, c) => functionCase(host, c));
 if (want("bench")) await stageBench();
