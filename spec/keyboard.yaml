@@ -22,6 +22,12 @@
 # Missing layer: the key does nothing in that layer, except that alpha falls back to primary.
 # Letters: Alpha types the capital in the alpha layer, Shift + Alpha its lower case (as on the reference).
 # `label` entries starting with "$" are i18n keys (app/src/i18n), anything else is shown as is.
+#
+# Gestures (docs/decisions.md P7; app/src/keyboard/gestures.ts and Keypad.svelte; tests app/test/gestures.spec.ts):
+#   Trackpad (K1): the arrow keys `up`, `down`, `left`, `right` are the tap zones of one trackpad surface. A drag
+#     steps in two dimensions, one step per 12 px with a haptic tick, through the same actions as the arrow keys
+#     (entry line, Plot, Num, Symb lists). A touch that makes no full step is a tap on its zone: one step, in the
+#     current Shift state (shift ◀ = |◀). Steps fire while dragging, a tap when the finger lifts.
 # `source`: `virtual-calc` = position and function seen on the official simulator (row id in the comment);
 # `device` = seen on a G2; `assumed` = our choice (tests/golden/G2-CHECKLIST.md).
 schema: 1
