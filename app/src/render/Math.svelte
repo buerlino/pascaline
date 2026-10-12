@@ -23,3 +23,10 @@
 <span class="math" data-latex={latex} role="math" aria-label={label || latex}>
   {#if markup}{@html markup}{:else}{latex}{/if}
 </span>
+
+<style>
+  /* the SI prefix of the PFX format (render/home.ts) */
+  .math :global(.pfx) {
+    color: var(--shift);
+  }
+</style>

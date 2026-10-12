@@ -3,21 +3,27 @@
 // Plain logic, no Svelte: which modes apply to a result, what comes next, and how a result is drawn in a mode.
 // All number formatting is engine/format.ts (our own formatter), never JS Number.toString.
 import {
+  confirmedOptions,
   formatComplex,
+  formatConfirmed,
   formatFraction,
   formatPolar,
   isZero,
+  markOf,
   type ComplexValue,
   type DecimalValue,
   type FormatOptions,
+  type MarkInfo,
+  type PrecisionFacts,
+  type PrecisionWarn,
 } from "../engine/format.ts";
 import type { NumberFormat } from "../calc/port.ts";
-import { complexToLatex, fractionToLatex, polarToLatex } from "../render/home.ts";
+import { complexToLatex, fractionToLatex, homeResultToLatex, polarToLatex } from "../render/home.ts";
 
-export type FmtMode = "std" | "sci" | "eng" | "fix" | "frac" | "mixed" | "polar";
+export type FmtMode = "std" | "sci" | "eng" | "pfx" | "fix" | "frac" | "mixed" | "polar";
 
 /** Canonical order of the cycle (the order of the Settings checkboxes). */
-export const FMT_MODES: readonly FmtMode[] = ["std", "sci", "eng", "fix", "frac", "mixed", "polar"];
+export const FMT_MODES: readonly FmtMode[] = ["std", "sci", "eng", "pfx", "fix", "frac", "mixed", "polar"];
 export const DEFAULT_FMT_CYCLE: readonly FmtMode[] = ["std", "sci", "eng"];
 
 export const isFmtMode = (x: unknown): x is FmtMode => typeof x === "string" && (FMT_MODES as readonly string[]).includes(x);
@@ -35,9 +41,24 @@ export interface Polar {
   angle: "rad" | "deg";
 }
 
+/** What the engine said about how far a result can be trusted (docs/04 2.4); `value` of a scalar is the item's own. */
+export interface ResultFacts {
+  exactRational: boolean;
+  /** Significant digits confirmed by the agreement check; null = exact. */
+  reliableDigits: number | null;
+  warn?: PrecisionWarn;
+  /** A numeric list or matrix: its elements, each with its own value and facts. */
+  items?: PrecisionFacts[];
+  shape?: [number, number];
+}
+
 /** What a history item knows about its number. */
 export interface NumericResult {
   value?: ComplexValue;
+  /** The facts behind the mark; absent for an item stored before marks existed (it then shows none). */
+  facts?: ResultFacts;
+  /** An inexact chip went into the input: the result is never marked "=" (decisions M4-4). */
+  inexactInput?: boolean;
   rational?: Rational;
   polar?: Polar;
   /** The mode chosen with the Format key for this result; undefined: the global setting (Home) or exact (CAS). */
@@ -99,18 +120,52 @@ export interface DisplayContext {
   angle: "rad" | "deg";
 }
 
-const BASE: Record<"std" | "sci" | "eng" | "fix", FormatOptions["format"]> = { std: "STD", sci: "SCI", eng: "ENG", fix: "FIX" };
+const BASE: Record<"std" | "sci" | "eng" | "pfx" | "fix", FormatOptions["format"]> = {
+  std: "STD",
+  sci: "SCI",
+  eng: "ENG",
+  pfx: "PFX",
+  fix: "FIX",
+};
 
-/** A result drawn in `mode` (undefined: the global setting). Undefined when the item has no number. */
+/** The precision facts of a result with its value filled in, as markOf and formatConfirmed read them. */
+function precisionOf(r: NumericResult): (PrecisionFacts & { shape?: [number, number] }) | undefined {
+  const f = r.facts;
+  if (!f) return undefined;
+  return {
+    exactRational: f.exactRational,
+    reliableDigits: f.reliableDigits,
+    ...(f.warn ? { warn: f.warn } : {}),
+    ...(f.items ? { items: f.items } : {}),
+    ...(f.shape ? { shape: f.shape } : {}),
+    ...(r.value ? { value: r.value } : {}),
+  };
+}
+
+/** The mode a result is drawn in, once the global setting stands in for none. */
+function baseMode(mode: FmtMode | undefined, ctx: DisplayContext): "std" | "sci" | "eng" | "pfx" | "fix" {
+  return mode === "fix" || mode === "sci" || mode === "eng" || mode === "std" || mode === "pfx" ? mode : ctx.format;
+}
+
+/**
+ * A result drawn in `mode` (undefined: the global setting). Undefined when the item has no number.
+ * Only the digits the engine confirmed are drawn (docs/04 2.4): re-formatting a ⚠ value with the plain digits setting
+ * would show digits nobody checked.
+ */
 export function renderNumeric(
   r: NumericResult,
   mode: FmtMode | undefined,
   ctx: DisplayContext,
 ): { text: string; latex: string } | undefined {
-  if (!r.value) return undefined;
   const m = mode ?? ctx.format;
   const opts = (f: keyof typeof BASE): FormatOptions => ({ format: BASE[f], digits: ctx.digits, fixed: ctx.fixDecimals });
-  const base = m === "fix" || m === "sci" || m === "eng" || m === "std" ? m : ctx.format;
+  const base = baseMode(mode, ctx);
+  if (!r.value) {
+    // a numeric list or matrix: our formatter draws every element
+    const p = precisionOf(r);
+    const text = p?.items ? formatConfirmed(p, opts(base)) : null;
+    return text === null || text === undefined ? undefined : { text, latex: homeResultToLatex(text) };
+  }
   if ((m === "frac" || m === "mixed") && r.rational) {
     const f = formatFraction(BigInt(r.rational.n), BigInt(r.rational.d), m === "mixed");
     return { text: f.text, latex: fractionToLatex(f) };
@@ -119,6 +174,31 @@ export function renderNumeric(
     const p = formatPolar(r.polar.r, r.polar.theta, opts(ctx.format));
     return { text: p.text, latex: polarToLatex(p) };
   }
-  const c = formatComplex(r.value, opts(base));
+  const c = formatComplex(r.value, confirmedOptions(r.value, r.facts?.reliableDigits ?? null, opts(base)));
   return { text: c.text, latex: complexToLatex(c) };
+}
+
+/**
+ * The mark before a result (docs/04 2.4): `=`, `≈` or `⚠`, for the form the result is drawn in; null for a
+ * non-number and for an item stored before marks existed. A fraction is the exact value, so `=` (a result from
+ * an inexact chip never gets `=`, decisions M4-4); polar form rounds, so it never gets `=`.
+ */
+export function markFor(r: NumericResult, mode: FmtMode | undefined, ctx: DisplayContext): MarkInfo | null {
+  const p = precisionOf(r);
+  if (!p) return null;
+  const m = mode ?? ctx.format;
+  const base = baseMode(mode, ctx);
+  const o: FormatOptions = { format: BASE[base], digits: ctx.digits, fixed: ctx.fixDecimals };
+  let info: MarkInfo | null;
+  if ((m === "frac" || m === "mixed") && r.rational && r.value) info = p.exactRational ? { mark: "=" } : markOf(p, o);
+  else {
+    info = markOf(p, o);
+    if (info?.mark === "=" && m === "polar" && r.polar?.angle === ctx.angle) info = { mark: "≈" };
+  }
+  return info?.mark === "=" && r.inexactInput ? { mark: "≈" } : info;
+}
+
+/** The mark as drawn: `=`, `≈`, `⚠ 7`, or a bare `⚠` for an un-audited or unchecked float (decisions M4-5). */
+export function markText(m: MarkInfo): string {
+  return m.mark === "⚠" && m.n !== undefined && !m.warn ? `⚠ ${m.n}` : m.mark;
 }

@@ -8,7 +8,7 @@
 //     selected one and then in list order; the rest keep their values;
 //   - Polynomial roots lists every root (complex too) of the one equation in the selected unknown.
 import { CalcCancelled, engineFormat, IDENT, type Calc, type KnownValue, type SolveOutcome } from "../../calc/port.ts";
-import { formatComplex } from "../../engine/format.ts";
+import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { mathJsonToGiac, SerializeError } from "../../input/emit.ts";
 import { parseLatex } from "../../input/parse.ts";
 import { t } from "../../i18n/index.ts";
@@ -24,6 +24,8 @@ export interface SolveReport {
   ok: boolean;
   /** Polynomial roots, formatted (kind "poly" only). */
   roots?: string[];
+  /** Per root: fewer digits are confirmed than shown (⚠, docs/04 2.4). */
+  rootWarns?: boolean[];
 }
 
 interface Stored {
@@ -56,6 +58,8 @@ export class SolveApp implements AppInstance {
   /** Value of each variable as a plain decimal (the guess, then the answer). Kept for names not shown. */
   values = $state<Record<string, string>>({});
   selected = $state("");
+  /** Variables whose answer has fewer confirmed digits than shown: the table marks them ⚠ (docs/04 2.4). */
+  warned = $state<Record<string, boolean>>({});
   report = $state<SolveReport | undefined>(undefined);
 
   private jobs = $state(0);
@@ -104,6 +108,7 @@ export class SolveApp implements AppInstance {
       const v = plainNumber(latex);
       if (v === undefined) return;
       this.values = { ...this.values, [this.selected]: v };
+      this.warned = { ...this.warned, [this.selected]: false };
       this.report = undefined;
       this.loadEntry();
       this.save();
@@ -224,17 +229,17 @@ export class SolveApp implements AppInstance {
       return;
     }
     const s = this.host.settings;
-    const fmt = engineFormat(s.format);
     this.report = {
       names: [name],
       ok: r.ok,
       warn: r.warn || !r.ok,
       info: r.ok ? r.info : this.failText(r),
-      roots: r.roots.map((x) => (x.result.value ? formatComplex(x.result.value, { format: fmt, digits: s.digits }).text : x.result.display)),
+      roots: r.roots.map((x) => confirmedText(x.result, s) ?? x.result.display),
+      rootWarns: r.roots.map((x) => isWarned(x.result, s)),
     };
     // A single real root becomes the value, like a solve.
     const real = r.roots.filter((x) => x.result.value && x.result.value.im.digits === "");
-    if (r.ok && real.length === 1) this.setFromResult(name, real[0]!.result.display);
+    if (r.ok && real.length === 1) this.setFromResult(name, real[0]!.result.display, isWarned(real[0]!.result, s));
   }
 
   private failText(r: SolveOutcome): string {
@@ -245,15 +250,18 @@ export class SolveApp implements AppInstance {
   }
 
   private apply(names: string[], r: SolveOutcome): void {
-    if (r.ok) for (const root of r.roots) if (root.name) this.setFromResult(root.name, root.result.display);
+    if (r.ok) for (const root of r.roots) if (root.name) this.setFromResult(root.name, root.result.display, isWarned(root.result, this.host.settings));
     // A failure is flagged like a failed residual check: nothing was substituted back successfully.
     this.report = { names, ok: r.ok, warn: r.warn || !r.ok, info: r.ok ? r.info : this.failText(r) };
     this.loadEntry();
     this.save();
   }
-  private setFromResult(name: string, display: string): void {
+  private setFromResult(name: string, display: string, warn = false): void {
     const v = display.replace("E", "e");
-    if (parseDec(v)) this.values = { ...this.values, [name]: v };
+    if (parseDec(v)) {
+      this.values = { ...this.values, [name]: v };
+      this.warned = { ...this.warned, [name]: warn };
+    }
   }
 
   // ---- persistence

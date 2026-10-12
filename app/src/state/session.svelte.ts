@@ -3,22 +3,31 @@
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
 import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat } from "../calc/port.ts";
 import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
-import { SerializeError } from "../input/emit.ts";
-import { latexToGiacInfo } from "../input/latex-to-giac.ts";
+import { SerializeError } from "../input/errors.ts";
+import { loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
-import { decimalFromRational, decimalFromString, decimalToString, type ComplexValue } from "../engine/format.ts";
+import {
+  decimalFromRational,
+  decimalFromString,
+  decimalToString,
+  type ComplexValue,
+  type MarkInfo,
+  type PrecisionFacts,
+} from "../engine/format.ts";
 import { homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
 import {
   DEFAULT_FMT_CYCLE,
   factsOf,
   isFmtMode,
+  markFor,
   nextMode,
   normalizeCycle,
   renderNumeric,
   type FmtMode,
   type Polar,
   type Rational,
+  type ResultFacts,
 } from "./displayMode.ts";
 import { idbKv, type Kv } from "./storage.ts";
 
@@ -41,6 +50,10 @@ export interface Settings extends CalcSettings {
   fixDecimals: number;
   haptics: HapticsSettings;
 }
+/** The stored settings' version (docs/04 6.2): 1 = no field (digits ≤ 15, formats std/sci/eng), 2 = digits ≤ 30, pfx. */
+export const SETTINGS_SCHEMA = 2;
+/** Most significant digits the setting allows (docs/04 2.5). */
+export const MAX_DIGITS = 30;
 export const defaultSettings: Settings = {
   digits: 12,
   angle: "rad",
@@ -65,6 +78,8 @@ export interface HistoryItem {
   approximate: boolean;
   /** Home: the numeric result, formatted on demand so a settings change re-formats the whole history. */
   value?: ComplexValue;
+  /** What the engine knows about the result's accuracy: the mark, and which digits are drawn (docs/04 2.4). */
+  facts?: ResultFacts;
   /** An exact rational result (Fraction and Mixed fraction modes). */
   rational?: Rational;
   /** r∡θ, filled the first time the Format key shows this complex result in polar form. */
@@ -77,7 +92,7 @@ export interface HistoryItem {
   full?: string;
   /** `full` is the exact value (a fraction, an exact expression), not rounded digits. */
   fullExact?: boolean;
-  /** An inexact chip went into the input, so the result is never marked "=" (docs/04 2.4; R3 draws the mark). */
+  /** An inexact chip went into the input, so the result is never marked "=" (docs/04 2.4, decisions M4-4). */
   inexactInput?: boolean;
   startedAt: number;
 }
@@ -96,12 +111,78 @@ function rationalOf(text: string | undefined): Rational | undefined {
   if (!m || m[1] === undefined || (m[2] !== undefined && BigInt(m[2]) === 0n)) return undefined;
   return { n: m[1], d: m[2] ?? "1" };
 }
-const clampDigits = (n: number): number => Math.min(15, Math.max(1, Math.round(n)));
+const clampDigits = (n: number): number => Math.min(MAX_DIGITS, Math.max(1, Math.round(n)));
+/** A numeric list or matrix keeps its elements in the history (to re-format it); beyond this the item shows no mark. */
+const ITEMS_LIMIT = 400;
+
+/** The facts of an engine result, as kept in a history item. Undefined: too large to keep. */
+function factsFrom(r: {
+  exactRational: boolean;
+  reliableDigits: number | null;
+  warn?: ResultFacts["warn"];
+  items?: { value?: ComplexValue; exactRational: boolean; reliableDigits: number | null; warn?: ResultFacts["warn"] }[];
+  shape?: [number, number];
+}): ResultFacts | undefined {
+  const f: ResultFacts = { exactRational: r.exactRational, reliableDigits: r.reliableDigits };
+  if (r.warn) f.warn = r.warn;
+  if (r.items) {
+    if (r.items.length > ITEMS_LIMIT) return undefined;
+    f.items = r.items.map((it) => ({
+      exactRational: it.exactRational,
+      reliableDigits: it.reliableDigits,
+      ...(it.warn ? { warn: it.warn } : {}),
+      ...(it.value ? { value: it.value } : {}),
+    }));
+    if (r.shape) f.shape = r.shape;
+  }
+  return f;
+}
+
+/** Stored facts read back from IndexedDB: kept when they have the shape, else dropped (the item then shows no mark). */
+function validFacts(x: unknown): ResultFacts | undefined {
+  if (!x || typeof x !== "object") return undefined;
+  const f = x as Record<string, unknown>;
+  const digitsOk = (d: unknown): boolean => d === null || (typeof d === "number" && Number.isFinite(d));
+  if (typeof f["exactRational"] !== "boolean" || !digitsOk(f["reliableDigits"])) return undefined;
+  const items = f["items"];
+  if (items !== undefined && (!Array.isArray(items) || items.length > ITEMS_LIMIT)) return undefined;
+  if (Array.isArray(items) && !items.every((it) => it && typeof it === "object" && typeof (it as Record<string, unknown>)["exactRational"] === "boolean")) return undefined;
+  return f as unknown as ResultFacts;
+}
+
+/**
+ * The settings from what was stored (docs/04 6.2): field by field, so a wrong or missing field keeps its default.
+ * `schema` absent is version 1 (digits ≤ 15, formats std/sci/eng); version 2 allows digits ≤ 30 and `pfx`. Every
+ * version-1 value stays valid, so the migration only has to write the data back with `schema: 2`.
+ */
+export function migrateSettings(saved: unknown): { settings: Settings; migrated: boolean } {
+  const s = structuredClone(defaultSettings);
+  const x = (saved && typeof saved === "object" ? saved : {}) as Partial<Record<keyof Settings | "schema", unknown>>;
+  if (x["angle"] === "rad" || x["angle"] === "deg") s.angle = x["angle"];
+  if (x["format"] === "std" || x["format"] === "sci" || x["format"] === "eng" || x["format"] === "pfx") s.format = x["format"];
+  if (x["entry"] === "textbook" || x["entry"] === "line") s.entry = x["entry"];
+  if (typeof x["digits"] === "number" && Number.isFinite(x["digits"])) s.digits = clampDigits(x["digits"]);
+  if (Array.isArray(x["fmtCycle"])) s.fmtCycle = normalizeCycle(x["fmtCycle"].filter(isFmtMode));
+  if (typeof x["fixDecimals"] === "number" && Number.isFinite(x["fixDecimals"])) s.fixDecimals = clamp(x["fixDecimals"], 0, 12);
+  const h = x["haptics"];
+  if (h && typeof h === "object") {
+    const hh = h as Partial<HapticsSettings>;
+    const d = defaultSettings.haptics;
+    s.haptics = {
+      on: hh.on === true,
+      strength: clamp(typeof hh.strength === "number" ? hh.strength : d.strength, 0, 100),
+      ms: clamp(typeof hh.ms === "number" ? hh.ms : d.ms, HAPTIC_MS_RANGE.min, HAPTIC_MS_RANGE.max),
+    };
+  }
+  return { settings: s, migrated: x["schema"] !== SETTINGS_SCHEMA };
+}
 
 /** A stored history item with a fresh id; chip fields that do not have their shape are dropped. */
 function restoredItem(i: HistoryItem, id: number): HistoryItem {
-  const { chips, full, fullExact, ...rest } = i;
+  const { chips, full, fullExact, facts, ...rest } = i;
   const out: HistoryItem = { ...rest, id };
+  const f = validFacts(facts);
+  if (f) out.facts = f;
   const c = validChips(chips);
   if (c) out.chips = c;
   if (typeof full === "string" && full.length <= FULL_LIMIT) {
@@ -273,7 +354,9 @@ export class Session {
     try {
       if (giacOverride !== undefined) giac = giacOverride;
       else {
-        const p = latexToGiacInfo(latex, { chips });
+        const parser = await loadParser();
+        if (live.status !== "pending") return; // Cancel came while the parser chunk was loading
+        const p = parser.latexToGiacInfo(latex, { chips });
         giac = p.giac;
         if (p.inexact) live.inexactInput = true;
       }
@@ -291,6 +374,10 @@ export class Session {
         live.text = r.ok ? r.display : errorText(r.error, r.display);
         live.approximate = r.approximate;
         if (r.value) live.value = r.value;
+        if (r.ok) {
+          const f = factsFrom(r);
+          if (f) live.facts = f;
+        }
         const q = r.value ? rationalOf(r.exact) : undefined;
         if (q) live.rational = q;
         if (r.ok) live.resultLatex = homeResultToLatex(r.display);
@@ -315,6 +402,17 @@ export class Session {
           if (r.text.length <= FULL_LIMIT) {
             live.full = r.text;
             live.fullExact = !isDigitsText(r.text);
+          }
+          // A result with a float in it comes with its value and facts (docs/04 2.9): drawn by our formatter, marked.
+          const n = r.numeric;
+          if (n?.value) {
+            live.value = n.value;
+            const f = factsFrom(n);
+            if (f) live.facts = f;
+            if (n.full.length <= FULL_LIMIT) {
+              live.full = n.full;
+              live.fullExact = false;
+            }
           }
         }
       }
@@ -342,16 +440,22 @@ export class Session {
   /** What the history shows for a finished item: Home numbers follow the current digits and format, or the mode
    *  the Format key chose for that item; a CAS result changes only when the Format key has chosen a mode. */
   display(item: HistoryItem): { text: string; latex: string } {
-    if (item.status === "done" && (item.view === "home" || item.fmt !== undefined)) {
-      const r = renderNumeric(item, item.fmt, {
-        format: this.settings.format,
-        digits: this.settings.digits,
-        fixDecimals: this.settings.fixDecimals,
-        angle: this.settings.angle,
-      });
+    if (item.status === "done" && (item.view === "home" || item.fmt !== undefined || item.facts !== undefined)) {
+      const r = renderNumeric(item, item.fmt, this.displayContext());
       if (r) return r;
     }
     return { text: item.text, latex: item.resultLatex };
+  }
+
+  /** The mark before a finished result (docs/04 2.4), for the form it is drawn in; null: a non-number, or none known. */
+  mark(item: HistoryItem): MarkInfo | null {
+    if (item.status !== "done") return null;
+    return markFor(item, item.fmt, this.displayContext());
+  }
+
+  private displayContext(): { format: NumberFormat; digits: number; fixDecimals: number; angle: AngleUnit } {
+    const s = this.settings;
+    return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle };
   }
 
   /**
@@ -398,16 +502,11 @@ export class Session {
   }
   /** Settings and the open view: small, read at launch. */
   async restoreSettings(): Promise<void> {
-    const saved = await this.kv.get<Partial<Settings>>("settings");
+    const saved = await this.kv.get<unknown>("settings");
     if (saved) {
-      if (saved.angle === "rad" || saved.angle === "deg") this.settings.angle = saved.angle;
-      if (saved.format === "std" || saved.format === "sci" || saved.format === "eng") this.settings.format = saved.format;
-      if (saved.entry === "textbook" || saved.entry === "line") this.settings.entry = saved.entry;
-      if (typeof saved.digits === "number") this.settings.digits = clampDigits(saved.digits);
-      if (Array.isArray(saved.fmtCycle)) this.settings.fmtCycle = normalizeCycle(saved.fmtCycle.filter(isFmtMode));
-      if (typeof saved.fixDecimals === "number") this.settings.fixDecimals = clamp(saved.fixDecimals, 0, 12);
-      const h = saved.haptics;
-      if (h && typeof h === "object") this.setHapticsQuiet(h);
+      const { settings, migrated } = migrateSettings(saved);
+      Object.assign(this.settings, settings);
+      if (migrated) this.save(); // docs/04 6.2: write the settings back as schema 2
     }
     const view = await this.kv.get<View>("view");
     if (view === "home" || view === "cas") this.view = view;
@@ -459,16 +558,8 @@ export class Session {
       this.saveHistory();
     }
   }
-  private setHapticsQuiet(h: Partial<HapticsSettings>): void {
-    const d = defaultSettings.haptics;
-    this.settings.haptics = {
-      on: h.on === true,
-      strength: clamp(typeof h.strength === "number" ? h.strength : d.strength, 0, 100),
-      ms: clamp(typeof h.ms === "number" ? h.ms : d.ms, HAPTIC_MS_RANGE.min, HAPTIC_MS_RANGE.max),
-    };
-  }
   save(): void {
-    void this.kv.set("settings", $state.snapshot(this.settings));
+    void this.kv.set("settings", { schema: SETTINGS_SCHEMA, ...$state.snapshot(this.settings) });
   }
   saveView(): void {
     void this.kv.set("view", this.view);

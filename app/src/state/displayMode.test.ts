@@ -8,6 +8,8 @@ import {
   isApplicable,
   nextMode,
   normalizeCycle,
+  markFor,
+  markText,
   renderNumeric,
   type DisplayContext,
   type FmtMode,
@@ -94,5 +96,60 @@ describe("renderNumeric", () => {
     });
     // an angle computed for the other unit is not shown
     expect(renderNumeric(polar, "polar", { ...ctx, angle: "deg" })?.text).toBe("3+i");
+  });
+});
+
+describe("marks and PFX (docs/04 2.4, 2.7)", () => {
+  const exact = (r: NumericResult): NumericResult => ({ ...r, facts: { exactRational: true, reliableDigits: null } });
+  const approx = (r: NumericResult, reliableDigits: number | null, warn?: "unaudited"): NumericResult => ({
+    ...r,
+    facts: { exactRational: false, reliableDigits, ...(warn ? { warn } : {}) },
+  });
+  const two = real(2n);
+
+  it("an exact integer shown in full is =", () => {
+    expect(markFor(exact({ value: two }), undefined, ctx)).toEqual({ mark: "=" });
+  });
+  it("an exact third shown as digits is ≈, as a fraction it is =", () => {
+    const r = exact(third);
+    expect(markFor(r, undefined, ctx)).toEqual({ mark: "≈" });
+    expect(markFor(r, "frac", ctx)).toEqual({ mark: "=" });
+  });
+  it("a float whose digits are confirmed is ≈; fewer confirmed digits give ⚠ n", () => {
+    expect(markFor(approx({ value: real(1n, 3n) }, 30), undefined, ctx)).toEqual({ mark: "≈" });
+    const m = markFor(approx({ value: real(1n, 3n) }, 7), undefined, ctx);
+    expect(m).toEqual({ mark: "⚠", n: 7 });
+    expect(markText(m!)).toBe("⚠ 7");
+  });
+  it("an un-audited float is ⚠ without a count (decisions M4-5)", () => {
+    const m = markFor(approx({ value: real(1n, 3n) }, null, "unaudited"), undefined, ctx);
+    expect(m).toEqual({ mark: "⚠", warn: "unaudited" });
+    expect(markText(m!)).toBe("⚠");
+  });
+  it("an inexact chip in the input is never = (decisions M4-4)", () => {
+    expect(markFor({ ...exact({ value: two }), inexactInput: true }, undefined, ctx)).toEqual({ mark: "≈" });
+  });
+  it("an item without facts, and a non-number, show no mark", () => {
+    expect(markFor({ value: two }, undefined, ctx)).toBeNull();
+    expect(markFor(exact({}), undefined, ctx)).toBeNull();
+  });
+  it("the digits drawn are the confirmed ones only", () => {
+    const r = approx({ value: real(1n, 3n) }, 5);
+    expect(renderNumeric(r, undefined, ctx)?.text).toBe("0.33333");
+  });
+  it("30 digits are drawn when asked for", () => {
+    const r = exact({ value: real(1n, 3n) });
+    expect(renderNumeric(r, undefined, { ...ctx, digits: 30 })?.text).toBe("0." + "3".repeat(30));
+  });
+  it("PFX draws the prefix after a thin space; the prefix is accented in the LaTeX", () => {
+    const r = exact({ value: real(2500n) });
+    const out = renderNumeric(r, "pfx", { ...ctx, digits: 4 });
+    expect(out?.text).toBe("2.500\u2009k");
+    expect(out?.latex).toBe("2.500\\,\\class{pfx}{\\mathrm{k}}");
+  });
+  it("PFX outside f … P falls back to E notation, and 10^0 has no prefix", () => {
+    const c4 = { ...ctx, digits: 4 };
+    expect(renderNumeric(exact({ value: real(10n ** 18n) }), "pfx", c4)?.text).toBe("1.000E18");
+    expect(renderNumeric(exact({ value: real(5n) }), "pfx", c4)?.text).toBe("5.000");
   });
 });

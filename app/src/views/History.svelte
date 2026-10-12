@@ -4,11 +4,14 @@
   import { t } from "../i18n/index.ts";
   import { CAS_SOFT_BUDGET_MS } from "../calc/port.ts";
   import Math from "../render/Math.svelte";
+  import { markText } from "../state/displayMode.ts";
+  import type { MarkInfo } from "../engine/format.ts";
   import type { HistoryItem } from "../state/session.svelte.ts";
 
   let {
     items,
     display,
+    mark,
     onrecall,
     oninsert,
     oncancel,
@@ -18,6 +21,8 @@
     /** P4: the row picked with Up from an empty entry line (index into items), or null. */
     selected?: number | null;
     display: (item: HistoryItem) => { text: string; latex: string };
+    /** The `=` / `≈` / `⚠ n` before a number result (docs/04 2.4); null for a non-number. */
+    mark: (item: HistoryItem) => MarkInfo | null;
     /** Tapping an entry puts it back on the line, with the values of its chips. */
     onrecall: (item: HistoryItem) => void;
     /** L5: tapping a result puts it on the entry line at the cursor, as a chip (docs/04 2.8). */
@@ -100,11 +105,12 @@
           <span class="error" role="alert">{item.text}</span>
         {:else}
           {@const d = display(item)}
+          {@const m = mark(item)}
+          {#if m}<span class="mark" data-mark={m.mark} data-testid="mark" title={t(`mark.${m.mark === "=" ? "exact" : m.mark === "≈" ? "approx" : "warn"}`)}>{markText(m)}</span>{/if}
           <button type="button" class="result" data-text={d.text} title={t("history.insert")}
             onpointerdown={(e) => e.preventDefault()} onclick={() => oninsert(item)}>
             <Math latex={d.latex} />
           </button>
-          {#if item.approximate}<span class="note">{t("history.approximate")}</span>{/if}
         {/if}
       </div>
     </article>
@@ -165,6 +171,14 @@
     all: unset;
     cursor: pointer;
     color: var(--text);
+  }
+  .mark {
+    font-size: 20px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .mark[data-mark="⚠"] {
+    color: var(--error);
   }
   .note,
   .working {

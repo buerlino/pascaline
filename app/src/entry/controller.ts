@@ -39,6 +39,13 @@ function hasOuterSup(latex: string): boolean {
   return false;
 }
 
+/** The keys that join two terms: + − × ÷ and a/b. (−) is negation and stays where it is (a sign inside the exponent). */
+function isBinaryOperator(a: ActionBody, keyId: string | undefined): boolean {
+  if (keyId === "neg") return false;
+  if (a.kind === "type") return a.text === "+" || a.text === "-";
+  return a.kind === "insert" && (a.latex === "\\times" || a.latex === "\\div" || a.latex === FRAC);
+}
+
 export class EntryController {
   private mf: MathfieldElement | undefined;
   private host: HTMLElement | undefined;
@@ -215,6 +222,7 @@ export class EntryController {
       mf.focus();
       return;
     }
+    if (isBinaryOperator(a, keyId)) this.endExponent(mf);
     const whole = isFrac && WHOLE_BEFORE.test(mf.getValue(0, mf.position, "latex"));
     if (a.kind === "insert" && a.latex.includes("#@") && this.selectChip(mf)) {
       // a chip is one term: ÷, a/b, x², xʸ, x⁻¹ take all of it, and it draws as one box, so no brackets
@@ -227,6 +235,27 @@ export class EntryController {
     } else this.apply(mf, a);
     this.mixedAfter = whole ? mf.value : undefined;
     mf.focus();
+  }
+
+  /**
+   * The EEX key puts the cursor in the exponent of `×10^`. An operator typed there would become part of the exponent
+   * (2.2E-9 × 4.7E3 read as 2.2E-42300, silently; decisions M4-2), so once the exponent holds a digit an operator key
+   * first moves the cursor out of it. A sign typed before any digit stays in: it is the exponent's sign.
+   */
+  private endExponent(mf: MathfieldElement): void {
+    if (!mf.selectionIsCollapsed) return;
+    const depth = mf.getElementInfo(mf.position)?.depth ?? 0;
+    if (depth === 0) return;
+    // MathLive lists an atom's parts before the atom: the parent is the first later offset that sits higher up,
+    // and the first offset of the exponent's own branch is the one after the last offset that sits higher up.
+    let o = mf.position + 1;
+    while (o <= mf.lastOffset && (mf.getElementInfo(o)?.depth ?? 0) >= depth) o++;
+    const parent = mf.getElementInfo(o)?.latex ?? "";
+    if (!parent.startsWith("^") || !/\d/.test(parent)) return; // `^3` or `^{-9}`: MathLive drops the braces round one character
+    let first = mf.position;
+    while (first > 0 && (mf.getElementInfo(first - 1)?.depth ?? 0) >= depth) first--;
+    if (!/\\times10$/.test(mf.getValue(0, first, "latex"))) return;
+    mf.executeCommand("moveAfterParent");
   }
 
   /** If a chip is right before the cursor, select it (MathLive's #@ does not take a macro by itself) and return true. */

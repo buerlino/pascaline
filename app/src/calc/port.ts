@@ -10,9 +10,9 @@ export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutc
 export { CAS_SOFT_BUDGET_MS, IDENT } from "../engine/types.ts";
 
 export type AngleUnit = "rad" | "deg";
-export type NumberFormat = "std" | "sci" | "eng";
+export type NumberFormat = "std" | "sci" | "eng" | "pfx";
 
-const ENGINE_FORMAT = { std: "STD", sci: "SCI", eng: "ENG" } as const satisfies Record<NumberFormat, EngineFormat>;
+const ENGINE_FORMAT = { std: "STD", sci: "SCI", eng: "ENG", pfx: "PFX" } as const satisfies Record<NumberFormat, EngineFormat>;
 
 /** The engine formatter's name for a Number format setting ("std" → "STD"). */
 export function engineFormat(f: NumberFormat): (typeof ENGINE_FORMAT)[NumberFormat] {
