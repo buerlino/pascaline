@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""Tap a sequence on the tablet and report the system-keyboard state after each tap.
+"""Tap a sequence on the device ($ANDROID_SERIAL, default the Tab One) and report the system-keyboard state after each tap.
 usage: tap-seq.py name:x:y [name:x:y ...]   (prints mInputShown after every tap)"""
-import subprocess, sys, time
+import os, subprocess, sys, time
 
-S = "HA24BZ2Y"
+S = os.environ.get("ANDROID_SERIAL", "HA24BZ2Y")
 def adb(*a):
     return subprocess.run(["adb", "-s", S, *a], capture_output=True, text=True).stdout
 

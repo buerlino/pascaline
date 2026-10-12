@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Cold-start a page N times and save a screenshot of each (for pages whose numbers only show on screen).
+Device: $ANDROID_SERIAL (default the Tab One).
 usage: shots.py PATH N OUTPREFIX [WAIT_S]"""
-import subprocess, sys, time
+import os, subprocess, sys, time
 
-S = "HA24BZ2Y"
+S = os.environ.get("ANDROID_SERIAL", "HA24BZ2Y")
 path, n, out = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 wait = float(sys.argv[4]) if len(sys.argv) > 4 else 6
 def adb(*a, **k):

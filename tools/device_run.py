@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""On-device measurements for the Pascaline spike shell (org.pascaline.app) on one tablet.
+"""On-device measurements of our app (org.pascaline.app) on one device: $ANDROID_SERIAL, default the Tab One.
 
   tools/device_run.py status                       # battery, temperature, WebView, app version
   tools/device_run.py start  [--runs 7] [--mode cold|warm|first]
@@ -12,6 +12,9 @@ Modes for `start`: first = fresh install (no WebView code cache), cold = process
 am force-stop (code cache present), warm = app in background, brought back to front.
 Results are JSON lines on stdout and appended to .coord/device-runs.jsonl. Only the tablet's own
 app is installed or removed; the caller must hold the device lock (devlock.sh acquire <serial> ...).
+
+Env: ANDROID_SERIAL (device), PASCALINE_COORD (default <main checkout>/.coord), READY_MARK (the mark `start`
+waits for; default engine-ready), APK (for --mode first; default the Gradle release APK), BENCH_PATH (default /?bench=1).
 """
 import argparse, json, os, re, statistics, subprocess, sys, time
 
@@ -103,7 +106,7 @@ def am_start_w(extra=""):
 
 def start_once(mode, timeout=60):
     if mode == "first":
-        apk = os.environ.get("APK", os.path.join(REPO, os.environ.get("APP_APK", "android/app/build/outputs/apk/release/app-release.apk")))
+        apk = os.environ.get("APK", os.path.join(REPO, "android/app/build/outputs/apk/release/app-release.apk"))
         adb("uninstall", PKG, check=False)
         adb("install", apk)
     if mode in ("first", "cold"):
@@ -114,9 +117,8 @@ def start_once(mode, timeout=60):
         sh("input keyevent KEYCODE_HOME")
         time.sleep(1.5)
         logcat_clear()
-    page = os.environ.get("PAGE_PATH")   # e.g. "/?wasmcache=1" for an experiment variant
-    t = am_start_w(f'--es path "{page}"' if page else "")
-    txt = wait_for(os.environ.get("READY_MARK", "first-result"), timeout)   # app/ has no first-result at launch: READY_MARK=engine-ready if mode != "warm" else logcat_dump()
+    t = am_start_w("")
+    txt = wait_for(os.environ.get("READY_MARK", "engine-ready"), timeout) if mode != "warm" else logcat_dump()
     marks = parse_marks(txt)
     rec = dict(t)
     try:
