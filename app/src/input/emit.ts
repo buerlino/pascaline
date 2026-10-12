@@ -7,7 +7,7 @@ export class SerializeError extends Error {}
 export interface SerializeOptions {
   /** Single-letter names treated as functions when followed by (...), e.g. f(x). Others multiply. */
   userFunctions?: ReadonlySet<string>;
-  /** L6 setting (default on, assumed): an n-th root with odd whole n is the real root (∛(-8) = -2). */
+  /** L6 setting (default on, as on the reference, G2 items 4/11): an n-th root with odd whole n is the real root (∛(-8) = -2). */
   realOddRoots?: boolean;
 }
 
@@ -167,7 +167,7 @@ function ser(e: Json, o: SerializeOptions): Out {
       return { s: `${wrap(base, 5)}^${wrap(ex, 5)}`, p: 4 };
     }
     case "Root": {
-      // L6 default (assumed, G2 items 4/11): an odd whole-number index gives the real root, so ∛(-8) = -2
+      // L6 default (as on the reference, G2 items 4/11): an odd whole-number index gives the real root, so ∛(-8) = -2
       // (Giac surd). Otherwise, or with realOddRoots off, the principal root x^(1/n).
       if (o.realOddRoots !== false && oddIndex(a1)) return call("surd", [a0, a1], o);
       return { s: `${wrap(ser(a0, o), 5)}^(1/${wrap(ser(a1, o), 5)})`, p: 4 };

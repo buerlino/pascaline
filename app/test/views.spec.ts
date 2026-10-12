@@ -28,7 +28,7 @@ test("Home: 1-0.9-0.1 gives 0", async ({ page }) => {
   expect(await lastText(page)).toBe("0");
 });
 
-test("CAS: 1 a/b 3 + 1 a/b 6 Enter is drawn as a stacked one half (assumed, G2 item 17)", async ({ page }) => {
+test("CAS: 1 a/b 3 + 1 a/b 6 Enter is drawn as a stacked one half (G2 item 17)", async ({ page }) => {
   await tap(page, ["app"]);
   await expect(page.locator('[data-view="cas"]')).toHaveAttribute("aria-selected", "true");
   await tap(page, ["d1", "frac", "d3", "right", "add", "d1", "frac", "d6", "enter"]);
@@ -38,7 +38,7 @@ test("CAS: 1 a/b 3 + 1 a/b 6 Enter is drawn as a stacked one half (assumed, G2 i
   await expect(res.locator(".ML__mfrac")).toHaveCount(1);
 });
 
-test("CAS: √8 is drawn as 2√2 (assumed, G2 item 17)", async ({ page }) => {
+test("CAS: √8 is drawn as 2√2 (G2 item 17)", async ({ page }) => {
   await tap(page, ["app", "shift", "sq", "d8", "enter"]);
   const res = lastResult(page).locator(".math");
   await expect(res).toBeVisible();

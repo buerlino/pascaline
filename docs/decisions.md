@@ -55,19 +55,19 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Why:** replay must be fast and must not re-run the cancelled job. Definitions are what the user would lose.
 - **Would change if:** users miss `Ans` after Cancel. It could then be stored as a value.
 
-### 2026-10-11 Home number formats (assumed, G2 item 15)
+### 2026-10-11 Home number formats (differs from the reference, G2 item 15; backlog G9)
 - **Choice:** `digits` means significant digits in every mode. STD drops trailing zeros and is plain for 1E-4 ≤ |x| < 10^digits, otherwise scientific. SCI: `1.235E4`. ENG: `12.35E3` (exponent a multiple of 3). Rounding is half-up from an exact BigInt value; half-even is implemented but switched off until G2 item 8.
-- **Why:** it's our own formatter (D5), and it matches the observed `1÷3` → `0.333333333333`. The rest waits for the G2.
-- **Would change if:** the G2 answers to items 8 and 15 differ.
+- **Why:** it's our own formatter (D5), and it matches the observed `1÷3` → `0.333333333333`.
+- **Would change if:** G9 decides to match the reference's formats (item 15 differs: six formats, digits as decimal places, thousands separator), or the real G2 confirms half to even (item 8).
 
 ### 2026-10-11 P2 condition met: releases use the container toolchain
 - **Result:** the engine built with Debian's Emscripten 3.1.69 (`debian:trixie@sha256:913f6706…`, `emscripten=3.1.69+dfsg-3`, script `engine/giac/build-wasm-release.sh`) passes interrupt 16/16, Home 123/123 and Solve 23/23 with output identical to the emsdk build. On the Tab One (Android 15, WebView 131.0.6778.260, release builds of the spike app, 7 cold starts and 5 benchmark runs each), cold launch → engine ready p50 is 896 ms (emsdk) vs 917 ms (container), +2.3%. First result is 1001 vs 1016 ms (+1.5%). Benchmark first-call p95 over 55 cases is 76.7 vs 72.6 ms. Cancel → ready is 322 vs 306 ms.
 - **Choice:** P2's bar (within +10%) is met, so every release builds the engine in the container. emsdk stays for development.
 
-### 2026-10-11 Mixed numbers in textbook entry (assumed, G2 item 17)
+### 2026-10-11 Mixed numbers in textbook entry (assumed, G2 item 29)
 - **Choice:** one press of a/b inserts the same plain stacked fraction as ÷. Pressing a/b twice after a whole number makes a mixed number `2\tfrac12`, which the parser reads as `(2+1/2)` (L2, 2026-10-11). A digit directly before a plain stacked fraction still parses as `2*1/2`.
 - **Why:** P1 only accepts what our keyboard produces. A separate mixed-number template keeps the parser unambiguous once it exists.
-- **Would change if:** the G2 shows how a/b mixed numbers are entered and read (item 17).
+- **Would change if:** the real G2 confirms the Virtual Calculator's answer to item 29 (a/b cycles the last result's form and does nothing while typing a number; backlog G6).
 
 ### 2026-10-11 Golden gate
 - **Choice:** `(cd app && npm run golden)` is the gate for every engine build that ships (interrupt, Home, Solve, benchmark, parser). It replaces the separate spike runners. The G2 checklist is generated from `tests/golden/g2.yaml` (`oracle.py --g2`), so edit the YAML, not the .md.
@@ -141,7 +141,7 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Choice:** the Solve app keeps names as typed (`x` and `X` are different unknowns; the Function app maps `X` to `x`). New unknowns start at 0. With one equation, Solve finds the selected unknown and holds the others fixed; with N equations it finds N unknowns, the selected one first. A failed solve or a failed residual check shows ⚠ with the engine's info line. A polynomial with exactly one real root also writes that root into the value.
 - **Why:** engineers expect case-sensitive names, as in the CAS. Starting at 0 is predictable.
 - **Alternatives:** fold case (would clash with CAS variables), or start from the last value used anywhere.
-- **Would change if:** the G2 (items 12–14, 20) shows a different behaviour. Known gap: subscripted names (`x_1`) aren't solvable yet, because our own name check (`IDENT` in `solve.ts`, `analysis.ts`) rejects the underscore. Giac itself reads `x_1` as a plain variable (checked 2026-10-11: `type(x_1)` → identifier); only `<number>_<unit>` is a unit.
+- **Would change if:** the G2 (items 12–14, 20) shows a different behaviour. Subscripted names (`x_1`) are solvable (L1, `a3ddd52`): Giac reads `x_1` as a plain variable (checked 2026-10-11: `type(x_1)` → identifier); only `<number>_<unit>` is a unit.
 
 
 ### 2026-10-11 Minimum WebView: modern Chrome WebView, with an "update" notice below it
@@ -184,10 +184,10 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Would change if:** the Virtual Calculator mapping or the G2 puts the Python keys or views elsewhere, or users hit the limits.
 
 ### 2026-10-11 Parser: odd roots, lists, decimal comma, one-letter functions (L6)
-- **Choice:** a root with an odd whole-number index is the real root (∛(-8) = -2 in Home and in plots; the CAS view leaves `-8^(1/3)` unsimplified, as Giac does with `8^(1/3)`). This is assumed (G2 item 4), and the option `realOddRoots: false` restores the principal complex root. `{…}` is a list. A `decimalComma` input option reads `3,5` as 3.5 and then separates arguments with `;`. After `p(x):=…`, `p` is a function for the rest of the session (f, g and h always are).
+- **Choice:** a root with an odd whole-number index is the real root (∛(-8) = -2 in Home and in plots; the CAS view leaves `-8^(1/3)` unsimplified, as Giac does with `8^(1/3)`). The reference gives -2 too (G2 items 4 and 11, Virtual Calculator), and the option `realOddRoots: false` restores the principal complex root. `{…}` is a list. A `decimalComma` input option reads `3,5` as 3.5 and then separates arguments with `;`. After `p(x):=…`, `p` is a function for the rest of the session (f, g and h always are).
 - **Why:** engineers expect ∛(-8) = -2. Lists and user functions are things our keyboard can produce, and the decimal comma is common in Europe.
 - **Left open:** `x^y^z` (our keyboard can't produce it) and units (a separate feature); the reasons are in `parser.yaml`.
-- **Would change if:** the G2 answers item 4 differently, or shows how the decimal-comma setting separates arguments.
+- **Would change if:** the G2 shows how the decimal-comma setting separates arguments.
 
 ### 2026-10-11 Graphics modules (compatibility names assumed, G2 items 26–28)
 - **Choice:** `draw` is our own module. The compatibility module, under the name existing scripts import, covers pixon, line, rect, fillrect, circle, fillcircle, textout and eval on screen G0 only. Its names and argument orders are assumed from public descriptions. Our implementation files have our own names (`app/src/python/graphics.ts`). MicroPython reports a missing indented block as `SyntaxError` (CPython says `IndentationError`). We keep that.

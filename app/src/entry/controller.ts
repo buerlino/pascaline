@@ -164,7 +164,7 @@ export class EntryController {
   /**
    * Run a type / insert / cmd action. Specials belong to the app and are not handled here.
    * `keyId` "frac" (a/b): pressed again right after it turned a whole number into a fraction's numerator,
-   * it makes a mixed number instead (2 a/b a/b 1 ▶ 2 → 2½, as \tfrac; L2, assumed, G2 item 17).
+   * it makes a mixed number instead (2 a/b a/b 1 ▶ 2 → 2½, as \tfrac; L2, assumed, G2 item 29, backlog G6).
    */
   run(a: ActionBody, keyId?: string): void {
     if (a.kind === "special") return;

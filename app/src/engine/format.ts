@@ -7,7 +7,7 @@
 // mode rounds once, from the same value, and the history can be re-formatted after a settings
 // change without asking the engine again. Only erasable TypeScript syntax (Node runs it directly).
 //
-// The display conventions are our own until G2 checklist item 15 is answered (`assumed`):
+// The display conventions are our own; the reference's differ (G2 item 15, tracked as backlog G9):
 //   STD n: up to n significant digits, trailing zeros dropped; plain notation for
 //          1e-4 ≤ |x| < 10^n, otherwise mantissa and exponent.
 //   SCI n: n significant digits, one before the point, exponent always shown.

@@ -24,7 +24,7 @@ describe("literal caret (L4)", () => {
   });
 });
 
-// L2: the a/b key pressed twice after a whole number gives a mixed number, 2\tfrac12 (assumed, G2 item 17).
+// L2: the a/b key pressed twice after a whole number gives a mixed number, 2\tfrac12 (assumed, G2 item 29, backlog G6).
 // A plain \frac after a number stays a product (docs/decisions.md "Mixed numbers").
 describe("mixed numbers (L2)", () => {
   const mixed: [string, string][] = [

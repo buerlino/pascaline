@@ -73,6 +73,7 @@ Each row is a difference between our default and what the reference does (answer
 - **G6. a b/c key (item 29).** With User mode off the reference cycles the last result's form on an empty line (2.5 → 5/2 → 2 1/2) and does nothing while typing a number. This contradicts the user's 2026-10-11 correction (the cycling was their own script). Needs a check on the real G2 before changing L2.
 - **G7. Units (item 30), input for P3.** Shift + the Units key opens one menu with three tabs (Tools, Units, Const). A unit is attached as `5_km`; `CONVERT(5_km,1_m)` or `5_km▶_m` converts; mixed sums keep the first unit. Constants tab not opened. Details in `g2.yaml` item 30.
 - **G8. Equal factors (item 31).** The CAS view merges them (`x*x` → `x^2`, `a*b*a` → `a^2*b`), matching our default. In Home, lowercase names give Syntax Error and uppercase `A*B` gives 0 (stored variables), so Home does not treat undefined names as symbols.
+- **G9. Number formats (item 15).** The reference has six formats (Standard, Fixed, Scientific, Engineering, Floating, Rounded); the digits box defaults to 8 for every format but Standard and counts decimal places (Scientific(8) of `12345.6789` → `1.23456789ᴇ4`), and numbers get a thousands separator (`12,345.6789`). Ours: STD/SCI/ENG (FIX in the formatter only), `digits` = significant digits, no separator. Fits the R4 settings pass; decide then which to match.
 
 ### Milestone 3: Python (approved 2026-10-11; shift brief docs/shifts/brief.md)
 This follows D6: MicroPython by default, with the Pyodide "Python+" pack only optional and later.
