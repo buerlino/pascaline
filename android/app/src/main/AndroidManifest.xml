@@ -37,7 +37,6 @@
 
     <!-- Permissions -->
 
-    <uses-permission android:name="android.permission.INTERNET" />
     <!-- Normal (install-time) permission, no prompt: key vibration -->
     <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>
