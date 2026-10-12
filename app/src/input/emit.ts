@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // MathJSON (Compute Engine's shape, also produced by our own parser) -> Giac input string.
-export type Json = number | string | { num: string } | { sym: string } | { str: string } | Json[];
+import { SerializeError } from "./errors.ts";
 
-export class SerializeError extends Error {}
+export { SerializeError };
+
+export type Json = number | string | { num: string } | { sym: string } | { str: string } | Json[];
 
 export interface SerializeOptions {
   /** Single-letter names treated as functions when followed by (...), e.g. f(x). Others multiply. */

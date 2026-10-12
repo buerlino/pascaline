@@ -3,8 +3,8 @@
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
 import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat } from "../calc/port.ts";
 import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
-import { SerializeError } from "../input/emit.ts";
-import { latexToGiacInfo } from "../input/latex-to-giac.ts";
+import { SerializeError } from "../input/errors.ts";
+import { loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { decimalFromRational, decimalFromString, decimalToString, type ComplexValue } from "../engine/format.ts";
 import { homeResultToLatex } from "../render/home.ts";
@@ -273,7 +273,9 @@ export class Session {
     try {
       if (giacOverride !== undefined) giac = giacOverride;
       else {
-        const p = latexToGiacInfo(latex, { chips });
+        const parser = await loadParser();
+        if (live.status !== "pending") return; // Cancel came while the parser chunk was loading
+        const p = parser.latexToGiacInfo(latex, { chips });
         giac = p.giac;
         if (p.inexact) live.inexactInput = true;
       }

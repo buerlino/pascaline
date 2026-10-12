@@ -2,7 +2,8 @@
 // Hand-written parser for the LaTeX subset MathLive produces from our keyboard (and Giac's latex() style).
 // It yields the same MathJSON shapes as Compute Engine's raw parse, so emit.ts serves both parsers.
 // Unknown or ambiguous input throws SerializeError instead of guessing.
-import { ANS_KEY, chipToGiac, constKey, resKey, type ChipTable } from "./chips.ts";
+import { ANS_KEY, constKey, resKey, type ChipTable } from "./chips.ts";
+import { chipToGiac } from "./chip-giac.ts";
 import { SerializeError, type Json } from "./emit.ts";
 
 type Tok =

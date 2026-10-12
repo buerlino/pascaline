@@ -2,7 +2,8 @@
 // Chips (docs/04 2.8, 3.6): value conversion, the inexact flag and the chip table helpers. The round trips through
 // Giac are in tests/golden/parser.yaml (group "chips").
 import { describe, expect, it } from "vitest";
-import { chipToGiac, pruneChips, validChips, type ChipTable } from "./chips.ts";
+import { chipToGiac } from "./chip-giac.ts";
+import { pruneChips, validChips, type ChipTable } from "./chips.ts";
 import { SerializeError } from "./emit.ts";
 import { latexToGiac, latexToGiacInfo } from "./latex-to-giac.ts";
 
