@@ -15,7 +15,7 @@ Brief: [2026-10-12-sandra-architecture-brief.md](2026-10-12-sandra-architecture-
   7. Rounded results carry no mark.
 - **qalc (spike build, relinked probe):** "try exact" gives exact SI conversions (`72 km/h → m/s` = 20, `1 in → mm` = 127/5). qalc flags π, logarithms and uncertainties as approximate. It also accepts `1 m + 1 s` and `20 °C × 2` without error, misreads `degC`, `BTU`, `mu0` (0 kg), `epsilon0`, `NA`, `R`, `h`, `g`, and still has the wrong `hp`, flagged exact.
 - **Digits 30 cost (desktop):** the 123 Home golden inputs show p95 2.74 → 3.63 ms, no path changes.
-- **Find feasibility:** an index from Giac's help (1,780 entries) and qalc's data (982 units, 184 constants) is 293 kB, 71 kB gzip. Our own tiered ranking takes p95 1.23 ms per key on the desktop.
+- **Find feasibility:** an index from Giac's help (1,780 entries) and qalc's data (426 unit definitions, 184 constants; not 982 units as docs/03 said, which counted nested `<unit>` references) is 282 kB, 68 kB gzip without Giac's `_` entries. Our own tiered ranking takes p95 1.04–1.23 ms per key on the desktop.
 - **State:** user variables are not persisted (`workerEngine.ts:54`). Settings have no schema version. `tieRisk` has no reader. The "L7 size test" does not exist.
 - **Keys:** the reference has Copy on Shift + View, Paste on Shift + Menu, Ans on Shift + `+`, Base on Shift + `−`, `[ ]` on Shift + 5, `{ }` on Shift + 8, Matrix on Shift + 4 (mapping data). Each of these settles an EN4, EN5 or EN6 position under P4.
 - **Bundle:** start chunk 142.62 kB (49.64 gzip), MathLive 807.73 kB, JSXGraph chunk 1,035 kB, Python 377 kB, whole build 13 MB.
@@ -54,3 +54,11 @@ Brief: [2026-10-12-sandra-architecture-brief.md](2026-10-12-sandra-architecture-
 
 ## The owner's answers (2026-10-12)
 P8 confirmed (no veto), P9 yes (exact decimals in CAS), P10 yes (ship Giac's English help lines; confirm with Parisse before a public release). Recorded in `docs/decisions.md`, `docs/backlog.md` and docs/04. The settled defaults of docs/04 stand; the two most visible ones are Help = context help (P8 had left Help free) and an operator on an empty line inserting Ans (the reference's behaviour, but a change from today).
+
+## Follow-up the same evening (after f87874a): the advisor kit
+The owner asked for sandra as a standing advisor and for the deep-dive knowledge to be kept.
+- `tools/probes/` (new, with a README): the probes behind docs/04, made repo-relative and rerunnable: `engine.ts` (Home, CAS, raw Giac), `parse.ts`, `digits-cost.ts`, `qalc/` (probe glue, a link script under the host-cpu lock, a runner), `find/` (index extract from the pinned tarballs, SHA-checked, and the ranking timer). Output in `tools/probes/_out/` (gitignored). All rerun on 2026-10-12.
+- `docs/research/r6-pipelines.md` (new): how a key press, a number, a build and a check flow through the code; Giac and qalc behaviour learned by probing; the doc-vs-code traps; how to check a claim fast.
+- `.claude/agents/sandra.md` (new): the advisor role (`claude --agent sandra`, or spawned by Henri). Pointers in `CLAUDE.md` (background reading, Commands) and `docs/shifts/rules.md`.
+- **Correction:** qalc's `units.xml.in` has 426 unit definitions, not 982 (that count included 556 nested `<unit>` references); constants are 184 (166 plus 18 built-in). Fixed in docs/03, docs/04 and this report. The reproducible Find prototype (without Giac's `_` entries) is 2,179 items, 282 kB, 68 kB gzip, p95 1.04 ms per key on the desktop.
+- `tools/README.md` points to the probes; docs/04 Appendix A points to them.

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Shift rules (every shift)
 
-The standing rules for a coordinator shift: Henri and the workers gorge, ron and annabell (`.claude/agents/`). They bind together with `CLAUDE.md`. The shift's own goal, tasks, definition of done and per-worker assignments are in [brief.md](brief.md); where the two differ, the brief wins for that shift. Section numbers match the old single-file brief (sections 0, 2, 7 and 8 are in the brief), so the agent files' references still work.
+The standing rules for a coordinator shift: Henri and the workers gorge, ron and annabell (`.claude/agents/`). sandra is the owner's advisor (`.claude/agents/sandra.md`): Henri may spawn her for a research or architecture task; she writes docs, probes and proposals, not feature code, and never touches devices. They bind together with `CLAUDE.md`. The shift's own goal, tasks, definition of done and per-worker assignments are in [brief.md](brief.md); where the two differ, the brief wins for that shift. Section numbers match the old single-file brief (sections 0, 2, 7 and 8 are in the brief), so the agent files' references still work.
 
 ## 1. Principles
 The three principles in CLAUDE.md decide every default:

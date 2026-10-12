@@ -19,3 +19,5 @@ All of them use `$ANDROID_SERIAL` (default: the Tab One). Smaller helpers (usage
 - `page-series.py`: open a page N times and log the series.
 - `shots.py`: cold-start a page N times and keep a screenshot of each.
 - `tap-seq.py`: tap a sequence and report whether the system keyboard is shown after each tap.
+
+Desktop probes (no device): `tools/probes/` checks what the engine, the parser and the qalc and Find data do today; see its README.

@@ -206,8 +206,8 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 ### 3.1 Today
 - Vars, Math and Tmpl do nothing (`spec/keyboard.yaml:68-70`). `PickList.svelte` is a numbered list over the view; while it is open, digit keys pick (`App.svelte`, `press`).
 - Any `\operatorname{name}\left(…\right)` reaches Giac as `name(…)` (probe: `\operatorname{par}\left(4.7,10\right)` → `par(4.7,10)`), so inserting a function needs no new parser rule.
-- **Data, checked 2026-10-12:** Giac's `doc/aide_cas` has 1,780 entries, each with an English line (average 80 characters) next to syntax and example lines. libqalculate 5.13.1 `units.xml.in` 982 units, `variables.xml.in` 184 constants with name kinds (`ar:c,speed_of_light`) and an `uncertainty` attribute, `prefixes.xml.in` 34 prefixes. `aide_cas` also lists Giac's own units and constants (`_kph`, `_c_`), which must not enter the index (P3 decision 1).
-- **Prototype measurements (scratch, not committed):** an index of names, English lines, titles and values: 2,390 items, 293 kB JSON, 71 kB gzip, 61 kB brotli. A tiered ranking in plain JS over it: p50 0.98 ms, p95 1.23 ms per key on the desktop (20 queries × 20 rounds). It already ranks `speed` → c, `kph` → km/h, `ohm` → Ω, `normlad` → normald.
+- **Data, checked 2026-10-12:** Giac's `doc/aide_cas` has 1,780 entries, each with an English line (average 80 characters) next to syntax and example lines. libqalculate 5.13.1 `units.xml.in` 426 unit definitions (prefixed forms are not separate entries; a plain count of `<unit` tags gives 982 because 556 of them are references inside definitions), `variables.xml.in` 184 constants (166 plus 18 built-in) with name kinds (`ar:c,speed_of_light`) and an `uncertainty` attribute, `prefixes.xml.in` 34 prefixes. `aide_cas` also lists Giac's own units and constants (`_kph`, `_c_`), which must not enter the index (P3 decision 1).
+- **Prototype measurements** (`tools/probes/find/`, reading the pinned tarballs): an index of names, English lines, titles and values, without Giac's `_` entries: 2,179 items (1,569 functions, 426 units, 184 constants), 282 kB JSON, 68 kB gzip, 59 kB brotli. A tiered ranking in plain JS over it: p50 0.82 ms, p95 1.04 ms per key on the desktop (20 queries × 20 rounds; a first scratch run with Giac's `_` entries, 2,390 items, gave p95 1.23 ms). It already ranks `speed` → c, `kph` → km/h, `ohm` → Ω, `normlad` → normald.
 
 ### 3.2 Decision: where it runs
 **Main thread.** 1.2 ms per key on the desktop leaves room for a 10× slower Tab One inside 16 ms; a worker would add a message round trip per key. **Gate:** `?bench=find` replays 50 queries one character at a time, timing key → list rendered; p95 ≤ 16 ms on the Tab One (annabell). If it misses, first filter incrementally (each key narrows the previous candidates), then move ranking to a worker.
@@ -237,7 +237,7 @@ interface FindItem {
 
 Live items (variables, user functions) have the same shape with `kind: "var" | "userfn"`, built at run time (3.4).
 
-**Format and size:** `find-index.<hash>.json`, a Vite asset outside every chunk. Budget ≤ 400 kB raw, ≤ 100 kB gzip (prototype: 293 / 71). **i18n:** English titles and descriptions in the index; another language is an overlay file `find-index.<lang>.json` keyed by id with its own titles and aliases, merged at load. The structure allows it now; only English ships.
+**Format and size:** `find-index.<hash>.json`, a Vite asset outside every chunk. Budget ≤ 400 kB raw, ≤ 100 kB gzip (prototype: 282 / 68). **i18n:** English titles and descriptions in the index; another language is an overlay file `find-index.<lang>.json` keyed by id with its own titles and aliases, merged at load. The structure allows it now; only English ships.
 
 **Generation, from source at build time** (gorge; `tools/find-index/generate.mjs`, Node, no network; run by `build.sh` after the engines, and by `npm run index` in development; output gitignored under `app/src/find/_gen/`):
 1. Giac `doc/aide_cas` from the pinned tarball: names, the English line (`2 …`) only, never French (R5), syntax and examples; entries starting with `_` dropped.
@@ -549,13 +549,13 @@ interface ClipboardPort {                                // new (m4): navigator.
 | Start chunk | ≤ 150 kB raw, ≤ 52 kB gzip | 142.62 / 49.64 kB | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
-| Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | prototype 293 / 71 kB | size test |
+| Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | prototype 282 / 68 kB | size test |
 | Units app chunk | ≤ 30 kB raw | — | size test |
 | qalc wasm + glue | ≤ 1.0 MB brotli | spike 0.93 MB + 21 kB | size test |
 | Precache total | ≤ 18 MB | 13 MB | size test |
 | Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with `defs` replay | 662 / 995 ms | device runs |
 | Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | 92 ms at 12 | device runs |
-| Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype 1.23 ms | `?bench=find` |
+| Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` |
 | Find open | ≤ 100 ms warm, ≤ 300 ms cold | — | device runs |
 | Units first result (Tab One) | < 1 s | S8+ 626 ms (spike page) | device runs |
 | `defs` replay | ≤ 50 ms at 200 definitions | — | device runs |
@@ -574,7 +574,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 ---
 
-## Appendix A: probes (2026-10-12; scripts in the session scratchpad, not committed)
+## Appendix A: probes (2026-10-12; rerun them with `tools/probes/`, see its README)
 
 - **Home and CAS paths:** a Node script that loads `engine/giac/_out/gsl/giac.mjs` with `app/src/engine/nodeGiac.ts` and calls `new EngineHost(giac).home(input, {...defaultHomeSettings, digits})` or `.cas(...)`; raw calls through `giac.eval`. Run from `app/` with `node <script>.ts`. Inputs: those named in 2.1 and 2.3.
 - **Oracle values:** `tests/golden/.venv/bin/python -I -c "import mpmath as m; m.mp.dps=40; …"`: `sqrt(2)*erfinv(2p-1)` for `normald_icdf`, `quad(exp(-x^2),[0,1])`, `erfc(10/sqrt(2))/2`, `besselj`, `airyai`.

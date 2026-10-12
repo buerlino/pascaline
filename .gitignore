@@ -71,3 +71,6 @@ app/public/python/
 
 # P3 spike: libqalculate build tree, downloads and output (spike/qalc/build-wasm.sh)
 spike/qalc/_work/
+
+# tools/probes output (rebuilt by the probes; tools/probes/README.md)
+tools/probes/_out/

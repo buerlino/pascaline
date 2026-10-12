@@ -15,6 +15,7 @@ Pascaline is an **open-source precision engineering tool** for Android (also PWA
 
 Background reading (read before larger design decisions):
 - [docs/04-architecture.md](docs/04-architecture.md): **the architecture for the engineer goal** (2026-10-12): precision chain and marks, Find, the Units app, keys, state, build, gates and budgets. Supersedes docs/02 where they differ.
+- [docs/research/r6-pipelines.md](docs/research/r6-pipelines.md): how a key press, a number, a build and a check flow through the code today, engine and qalc behaviour learned by probing, and how to check a claim fast (probes in `tools/probes/`).
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): the original plan. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
 - [docs/01-feasibility-report.md](docs/01-feasibility-report.md): the original study. **Section 3 (legal) is binding**; the rest is superseded by 02.
 - Decisions: Phase 0 results and defaults D1–D9, P1, P2 in [spike/RESULTS.md](spike/RESULTS.md) and [spike/DECISIONS.md](spike/DECISIONS.md); from Phase 1 on in [docs/decisions.md](docs/decisions.md).
@@ -125,6 +126,9 @@ node python/smoke.mjs [python/_out/release]              # desktop smoke test: p
 
 # Coordinator team (docs/shifts/rules.md + brief.md; agents in .claude/agents/); keeps the laptop awake while it runs
 systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline shift" claude --agent henri
+
+# Advisor: architecture and research questions, with evidence (.claude/agents/sandra.md; probes in tools/probes/)
+claude --agent sandra
 ```
 
 ## Conventions
