@@ -96,7 +96,14 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Alternatives:** an absolute threshold (fails for large-scale equations), or showing every residual (clutter).
 - **Would change if:** golden or user cases show false ⚠ on well-conditioned roots, or the G2 (items 12–14, 20) shows a different policy.
 
-### 2026-10-11 Polynomial root order (assumed, G2 item 21)
+### 2026-10-12 G2 answers (Virtual Calculator 2.4.2 rev 15751, items 19–22, 24–31)
+- **Source:** `tests/golden/g2.yaml`; golden cases re-tagged: `function/extremum-flat`, `function/area-pole`, `python/py-gfx-03` now `virtual-calc`, `solve/poly-quartic-complex` order confirmed.
+- **Matches our defaults:** polynomial root order via `proot` (item 21), flat point reported for X³ (item 22a), no area across a pole (22b, shown as `NaN`), the five graphics signatures (26), equal factors merged in CAS (31), 2-equation Solve result (20).
+- **Differs (follow-ups G1–G8 in docs/backlog.md):** Num step 0.1 and trace step 0.1 (24), `NaN` at a pole in Num (19), Intersection asks for the second function (25), "Cannot find solution" wording (20), Python canvas lifetime and `eval` return types (27, 28), Home treats lowercase undefined names as a syntax error (31).
+- **Open:** item 29 contradicts the user's earlier finding that a b/c cycling was their own script. The decision "a b/c stays as built (L2)" in P4 stands until the real G2 is checked. Item 24's trace step was measured only at the default window.
+- **Caveat:** the reference is rev 15751, the user's G2 is rev 15515. The user accepted 15751 as the reference (2026-10-11).
+
+### 2026-10-11 Polynomial root order (G2 item 21, confirmed 2026-10-12)
 - **Choice:** real roots in ascending order, then complex roots by real part, then imaginary part. `proot` results are polished with Newton at 30 digits.
 - **Would change if:** G2 item 21 shows another order.
 

@@ -10,7 +10,7 @@ The one place for "where are we and what's left". The plan is [02-architecture-p
 | Phase 0 spike | **Done**, GO (2026-10-11) |
 | MVP milestone 1: MathPrint Home + CAS | **Done** 2026-10-11 |
 | MVP milestone 2: Function app + Solve app | **Done** 2026-10-11 |
-| Virtual Calculator mapping | **In progress** (user's Windows session). Integrated by a separate session on its own branch `map/vc-*`, reviewed and pushed by the user after the shift (brief section 0b) |
+| Virtual Calculator mapping | **Done** 2026-10-11 (data merged, 632dab4). Second session 2026-10-12 answered the last G2 items (19–22, 24–31); see "Follow-ups from the G2 answers" below |
 | MVP milestone 3: Python | **Done** 2026-10-11 (desktop gates, S8+ and Tab One device numbers; report docs/shifts/2026-10-11-m3-report.md) |
 | MVP release (Play testing track + web app, docs/02 section 8) | Not started |
 | v1, v2 | Not started |
@@ -30,14 +30,14 @@ The one place for "where are we and what's left". The plan is [02-architecture-p
 
 The two debts grow with every milestone:
 
-1. **Almost nothing is checked against a real G2.** Only 2 of the 25 questions in `tests/golden/G2-CHECKLIST.md` are answered (5 and 16). That includes item 2, the logical key layout, which is the core of "feels like a G2". Every default since milestone 1 is `assumed`. The longer this waits, the more behaviour may have to change later. **Recommendation:** spend an hour with the G2 on items 2, 3, 6, 15, 17 and 18 (keyboard and entry) before milestone 3 adds more UI.
+1. **Everything is checked only against the Virtual Calculator (2.4.2 rev 15751), not a real G2 (rev 15515).** All 31 questions in `tests/golden/G2-CHECKLIST.md` now have a Virtual Calculator answer, so the `assumed` tags are mostly gone, but several defaults still differ from what the reference does (list under "Follow-ups from the G2 answers"). The firmware differs from the user's G2, so a short spot check on the real G2 is still worth it (items 2, 8, 29: see `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 2. **Only the low-end tablet is measured.**
    - The Fairphone 6 (mid-range, 60 fps target, Q6) hasn't been measured.
    - A Samsung Galaxy S8+ (Android 9, old-device class) is now available and gets measured in the milestone 3 shift; the old Android 8/9 tablet is no longer needed for that.
    - Start-up is slowly creeping up: engine ready went from 956 ms to 1022 ms, and keyboard usable from 653–667 ms to 679 ms. Milestone 3 must load Python lazily, never at start.
 
 ## Needs the user
-1. **G2 checks:** 23 open items in `tests/golden/G2-CHECKLIST.md` (questions only a real G2 or the official Virtual Calculator can answer; the Virtual Calculator mapping session can fill most of them). Answers go into `tests/golden/g2.yaml`.
+1. **G2 spot checks on the real G2** (optional, about 15 minutes): item 29 (the stock a b/c key; the Virtual Calculator contradicts the earlier "it was my script" finding), item 8 (tie rounding, typed with the keys) and the list in `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`. The Virtual Calculator answers are already in `tests/golden/g2.yaml`.
 2. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 3. ~~**When to merge `phase-1` into `master`.**~~ Done 2026-10-11 (fast-forward to b4431ae, full gate passed).
 4. **Later, not now** (user, 2026-10-11: first a usable prototype): the email to Bernard Parisse (draft in `../outreach/`), the name and trademark checks, the real application id, CI (C3) and the F-Droid recipe (C4).
@@ -61,6 +61,18 @@ Optional disk space (gitignored, rebuilt when needed): `spike/{app,input,plot}/n
 These moved out of `spike/` (C1, done) before `phase-1` went to `master`.
 
 ## Tasks
+
+### Follow-ups from the G2 answers (Virtual Calculator, 2026-10-12)
+Each row is a difference between our default and what the reference does (answers in `tests/golden/g2.yaml`, summary in `docs/decisions.md` "G2 answers 2026-10-12"). Nothing here is built yet; the user picks which to follow.
+
+- **G1. Num table (items 19, 24).** At a pole the cell shows `NaN` (ours: what Home shows for 1/0). Num starts at X = 0 with step **0.1** (ours: step 1). One trace step is 0.1 at the default window (ours: a 1-2-5 step near width/100).
+- **G2. Intersection asks (item 25).** The reference opens a list "Intersection of F1(X) and …" with the other functions that are on, plus X-Axis; the first function is the traced one. Ours takes the next function that is on.
+- **G3. Solve (item 20).** The failure message is a dialog "Cannot find solution" and the fields keep the guesses (ours: "no root found" with ⚠). P5(d) already keeps our wording; the two-equation case matches (X = -1.99537317006, Y = 0.135962907412).
+- **G4. Polynomial roots (item 21).** Only `proot` is sorted (real part, then imaginary part), which matches our rule. `cZeros` and `cSolve` use other orders; the Solve app gives one root per run, no all-roots list. No change needed.
+- **G5. Python modules (items 26–28).** Graphics signatures match our assumed ones (pixon, line, rect, fillrect, circle, textout; graphic first, 0 = screen). Differences: (a) colours are 0xRRGGBB and a run does not clear the screen, but the shell repaints when the script ends, so a drawing disappears unless the script waits; ours keeps a canvas. (b) The reference reaches the CAS and variables through `hpprime.eval(...)` and `hpprime.eval('CAS("...")')`; numbers come back as Python floats even when whole, lists as lists, symbolic results as text, errors as text (not raised). Our `calc.cas` always returns text. Decide whether to match the types.
+- **G6. a b/c key (item 29).** With User mode off the reference cycles the last result's form on an empty line (2.5 → 5/2 → 2 1/2) and does nothing while typing a number. This contradicts the user's 2026-10-11 correction (the cycling was their own script). Needs a check on the real G2 before changing L2.
+- **G7. Units (item 30), input for P3.** Shift + the Units key opens one menu with three tabs (Tools, Units, Const). A unit is attached as `5_km`; `CONVERT(5_km,1_m)` or `5_km▶_m` converts; mixed sums keep the first unit. Constants tab not opened. Details in `g2.yaml` item 30.
+- **G8. Equal factors (item 31).** The CAS view merges them (`x*x` → `x^2`, `a*b*a` → `a^2*b`), matching our default. In Home, lowercase names give Syntax Error and uppercase `A*B` gives 0 (stored variables), so Home does not treat undefined names as symbols.
 
 ### Milestone 3: Python (approved 2026-10-11; shift brief docs/shifts/brief.md)
 This follows D6: MicroPython by default, with the Pyodide "Python+" pack only optional and later.
@@ -95,6 +107,12 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 - ~~**L4. A literal-caret one-line entry mode.**~~ **Done** 2026-10-11 (ec4a94d).
 - ~~**L5. Results as insertable text** (copy a history entry into the entry line).~~ **Done** 2026-10-11 (ec4a94d).
 - ~~**L6. Parser gaps** (4 known)~~ **Done** 2026-10-11 (6eda358): real odd roots (assumed, G2 item 4; option `realOddRoots`), `{…}` lists, decimal-comma input option, one-letter user functions `p(x):=`. Still open with reasons in `parser.yaml`: `x^y^z` (not keyboard input) and units (separate feature).
+- **L8. The x² key after a fraction (or another compound term).** Found 2026-10-12 with a key-sequence probe in Chromium (phone size, real MathLive; the probe file was removed). The x² key is `#@^{2}` ([spec/keyboard.yaml](../spec/keyboard.yaml) key `sq`), which squares "what is before the cursor". That works for a number (`3` → `3^2`) and a bracket (`(1+2)` → `(1+2)^2`), but not for a fraction:
+  - `1 a/b 2`, cursor moved out of the denominator, x² gives `\frac12\placeholder{}^2`: an empty base with a placeholder, so the square is not applied to the fraction;
+  - `1 a/b 2`, cursor still in the denominator, x² gives `\frac{1}{2^2}`: only the denominator is squared.
+  **Wanted (user, 2026-10-12):** directly after a fraction the key wraps the whole fraction in brackets and squares it: `\left(\frac12\right)^2`, the cursor after the exponent. Do the same for the other compound terms where a bare `^2` would read ambiguously (to check: a root, a function call, a `x^y` power, a mixed number; a sum typed without brackets should keep squaring only the last term, as now). If the cursor is still inside the denominator or numerator, x² should treat the whole fraction as the term, not just its inside (decide whether this applies at the top level only).
+  **How:** in `EntryController.run` (app/src/entry/controller.ts) handle `keyId === "sq"` (and check `pow`, `div` shift `x⁻¹`, which use the same `#@` template) before `apply`: look at the atom before the cursor, and if it is a fraction (or in a fraction's part when the cursor is inside), select it and insert `\left(#@\right)^{2}`. The parser (`app/src/input/parse.ts`) already reads `\left(\frac12\right)^2`; add the round-trip case with the key (rule in CLAUDE.md: keyboard template change ⇒ parser rule + round-trip case in the same commit).
+  **Tests first:** Playwright key sequences in `app/test/keys.spec.ts`: `1 a/b 2 right x²` → entry `\left(\frac12\right)^2`, Enter → `0.25` (derived); the same with the cursor still in the denominator; `1 + 3 x²` stays `1+3^2`; and one case per other compound term. Not a G2 question: the reference's own behaviour here can be added to the next Virtual Calculator session if wanted (Textbook entry, `1 ÷ 2` then x²).
 - **L7. Bundle size.** It is 94 kB at start, plus 808 kB of MathLive loaded after the keypad. Watch start-up as features grow.
 
 ### MVP release (after milestone 3; docs/02 section 8)

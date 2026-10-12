@@ -79,3 +79,22 @@ None had to be typed by hand: every input of home/bench/solve was pasted with Ed
 ### Screenshots and scratch
 - All 225 files in `C:\pascaline-scratch\shots\` were deleted individually; the folder is empty. Screenshots were only used for my own reading and none went into `observations/`.
 - Text-only scratch data (clipboard readings and walker logs, no images) was copied to `C:\pascaline-scratch\data\`, outside the kit. It is not part of the deliverable.
+
+## Session 2026-10-12: remaining G2 checklist items (19-22, 24-31)
+
+Copied from the mapper's `observations/LOG.md` (kit in ~/SY99/pascaline-mapping-kit). Same emulator (2.4.2 rev 15751). Answers are in `tests/golden/g2.yaml`; no other `observations/*.yaml` row was added or changed. The kit's `observations/` files other than LOG.md are unchanged from the 2026-10-11 run, so they are not copied again.
+
+### How
+- The Pillow install in the mapper's scratch Python is broken (`_imaging` import error), so `drive.py` no longer runs; `d2.py` (pyautogui clicks only) and `shot2.ps1` were used instead. The window had moved (left edge -8, height 741).
+- Built-in Help was not opened. The Python names came from `dir()` of the module and the argument orders from drawing on screen.
+
+### State changed on the emulator and not fully restored
+- Home variable A: set to 7 by a Python probe, then to 0. Its earlier value is unknown (it may have been 0 already).
+- CAS variable x held 1.32672466524 (left by the Solve app) and could not be purged, so item 31 was run in the Function app.
+- Solve app: E1 held `x*EXP(x)=5` at the start; it now holds `X^2+Y^2=-1`, E2 `Y=X`, guesses 1 and 1. **Not restored.**
+- Function app F1-F3 and Python `main.py` were empty at the start, filled for tests and cleared again. Home and CAS histories cleared. Data Streamer was started by a mis-click; nothing changed in it. 162 screenshots deleted one by one.
+
+### Caveats
+- Item 29 contradicts the 2026-10-11 correction in item 2 (with no U in the status bar, a b/c cycled the last result's form). Worth a check on the real G2.
+- Item 24: the trace step was measured only at the default window.
+- Item 31: the Home results were run with pasted text, not typed from the keys.
