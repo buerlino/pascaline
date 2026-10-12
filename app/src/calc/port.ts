@@ -2,7 +2,7 @@
 // What the views need from the maths engine. The real implementation (calc/engine.ts) wraps MathEngine;
 // the UI never talks to Giac directly (CLAUDE.md).
 
-import type { ComplexValue, NumberFormat as EngineFormat } from "../engine/format.ts";
+import type { ComplexValue, NumberFormat as EngineFormat, PrecisionWarn } from "../engine/format.ts";
 import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRequest, TableRequest } from "../engine/types.ts";
 import type { PythonEngine } from "../python/types.ts";
 
@@ -20,7 +20,7 @@ export function engineFormat(f: NumberFormat): (typeof ENGINE_FORMAT)[NumberForm
 }
 
 export interface CalcSettings {
-  /** Significant digits shown in Home. */
+  /** Significant digits shown in Home: 1–30 (docs/04 section 2.5; the engine works at max(30, digits+10)). */
   digits: number;
   angle: AngleUnit;
   format: NumberFormat;
@@ -48,9 +48,11 @@ export interface HomeOutcome {
   full: string;
   /** What a stateful input defined (Find live items). */
   defined?: { name: string; kind: "var" | "fn" };
-  /** Elements of a numeric list or matrix (rows flattened, with `shape`). */
+  /** Elements of a numeric list or matrix (rows flattened, with `shape` for a matrix). */
   items?: HomeResult[];
   shape?: [number, number];
+  /** ⚠ although the digits agree: an un-audited function's float, or a value evaluated only once (markOf, format.ts). */
+  warn?: PrecisionWarn;
 }
 
 export interface CasOutcome {
