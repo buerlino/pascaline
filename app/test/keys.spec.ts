@@ -95,6 +95,28 @@ test("EEX types ×10^ with the cursor in the exponent", async ({ page }) => {
   await resultIs(page, "1500", 1);
 });
 
+// Found in R1 (decisions M4-2): an operator typed right after an exponent went into the exponent, silently
+// (2.2E-9 × 4.7E3 = 2.2E-42300). An operator key ends the exponent; (−) and an empty exponent keep the sign.
+test("E notation: × after an exponent ends it, so 2.2E-9 × 4.7E3 = 1.034E-5", async ({ page }) => {
+  await tap(page, ["d2", "dot", "d2", "eex", "neg", "d9", "mul", "d4", "dot", "d7", "eex", "d3"]);
+  expect(await entryValue(page)).toBe("2.2\\times10^{-9}\\times4.7\\times10^3");
+  await tap(page, ["enter"]);
+  await resultIs(page, "1.034E-5", 1);
+});
+
+test("E notation: + − ÷ also end the exponent; a sign right after EEX stays in it", async ({ page }) => {
+  await tap(page, ["d2", "eex", "d3", "add", "d1", "enter"]);
+  await resultIs(page, "2001", 1);
+  await tap(page, ["d2", "eex", "d3", "sub", "d1", "enter"]);
+  await resultIs(page, "1999", 2);
+  await tap(page, ["d4", "eex", "d3", "div", "d8", "enter"]);
+  await resultIs(page, "500", 3);
+  await tap(page, ["d5", "eex", "sub", "d1", "enter"]); // 5E−1: the sign belongs to the exponent
+  await resultIs(page, "0.5", 4);
+  await tap(page, ["d5", "eex", "add", "d2", "enter"]); // 5E+2
+  await resultIs(page, "500", 5);
+});
+
 test("store: value ▶ name, then the name reads back", async ({ page }) => {
   await tap(page, ["d9", "shift", "eex", "alpha", "d1"]);
   expect(await entryValue(page)).toBe("9\\blacktriangleright Y");

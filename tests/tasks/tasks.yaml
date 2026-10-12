@@ -64,8 +64,8 @@ tasks:
     expect: { value: "0.00001034", text: "1.034E-5" }
     source: derived   # 2.2 × 4.7 = 10.34 and 10^-9 × 10^3 = 10^-6
     baseline:
-      note: "E-notation; the right-arrow after the exponent is needed (without it × is typed into the exponent)"
-      keys: [d2, dot, d2, eex, neg, d9, right, mul, d4, dot, d7, eex, d3, enter]
+      note: "E-notation; × ends the exponent by itself (R3), so the right-arrow that used to be needed after it is gone"
+      keys: [d2, dot, d2, eex, neg, d9, mul, d4, dot, d7, eex, d3, enter]
       text: "1.034E-5"
     compare: { g2_virtual_calc: null, phone_calculator: null }
 
