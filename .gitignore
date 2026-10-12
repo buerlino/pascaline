@@ -1,12 +1,15 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-# Node / web build output
-node_modules/
+# Node / web build output (no trailing slash: also matches a symlinked node_modules in a worktree)
+node_modules
 dist/
 .vite/
 *.tsbuildinfo
 test-results/
 playwright-report/
+
+# Python bytecode (tools/*.py, tests/golden/oracle.py)
+__pycache__/
 
 # Android build outputs (Capacitor project itself is committed later)
 android/**/build/

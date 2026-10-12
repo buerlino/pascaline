@@ -43,7 +43,7 @@ Done: the Giac mirror is live (release `deps-giac-2.1.0-1d9536e0`, SHA-256 check
 ## Repo cleanup
 
 ### Branches and worktrees
-Done by the user 2026-10-11 (first round). The paused milestone 3 round left three worktrees under `.claude/worktrees/`: `p1/annabell-m3` (merged) and `p1/ron-m3` (no commits) can go; keep `p1/gorge-m3` (75e79af, `types.ts`) until gorge has cherry-picked it onto `p1/gorge-m3b`.
+None left: on 2026-10-12 the user removed all worktrees, the two sibling checkouts and every branch except `master` and `phase-1` (cleanup audit, area F). Every removed commit was already in `phase-1`, apart from the old icon (be84510, replaced by 8ff8576).
 
 Optional disk space (gitignored, rebuilt when needed): `engine/giac/_build` (561 MB, the engine build cache).
 
@@ -81,7 +81,7 @@ Each row is a difference between our default and what the reference does (answer
 
 ### Left over from milestones 1 and 2
 - **L9. ÷ (and a/b) right after a fraction.** Found 2026-10-12 while doing L8. `1 a/b 2 ▶ ÷ 3` gives `\frac12\frac{3}{\placeholder{}}`: a new fraction with 3 as its numerator, multiplied onto ½, not (½)÷3. The ÷ template `\frac{#@}{#?}` takes "what is before the cursor", and MathLive takes nothing from a fraction (the same cause as L8). **Proposed:** like L8, select the whole term before the cursor (fraction, root, power, mixed number) and make it the numerator: `\frac{\frac12}{3}`, so ÷ divides what you see. Reuse `selectCompound` in `EntryController`. Tests first in `app/test/keys.spec.ts` (`1 a/b 2 ▶ ÷ 3` Enter = `0.166666666667`, derived), plus a parser round-trip case for the nested fraction. The reference's behaviour can go into the next Virtual Calculator session (Textbook `1 ÷ 2 ▶ ÷ 3`).
-- **L7. Bundle size.** It is 139 kB at start (94 kB at milestone 1; measured 2026-10-12), plus 808 kB of MathLive loaded after the keypad. Watch start-up as features grow.
+- **L7. Bundle size.** It is 139 kB at start (48 kB gzip; measured 2026-10-12), plus 808 kB of MathLive loaded after the keypad. Trend: 94 kB (milestone 1), 108 (2), 115 (3, the last Tab One measurement), 139. Since milestone 3 the largest single addition is `@capacitor/core` (7.8 kB, imported by `input/haptics.ts` for key vibration); the Format key's state code is most of the rest. Re-measure cold start on the Tab One in the next device session; if it got slower, load Capacitor only in the native build.
 
 ### MVP release (after milestone 3; docs/02 section 8)
 - **R2. Play testing track.** Real application id, signing key (yours), store texts in `fastlane/metadata/`. Never published without your OK.
