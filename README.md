@@ -2,7 +2,7 @@
 
 **A free, open-source graphing CAS calculator for Android and the web, with the keyboard and workflow of a real graphing calculator.**
 
-> 🚧 **Status: early development.** The Phase 0 spike is done; the MVP is being built (Home, CAS, textbook entry, Function and Solve apps work; Python is next). There is nothing to download yet. Feedback and ideas are very welcome: please [open an issue](https://github.com/buerlino/pascaline/issues).
+> 🚧 **Status: early development.** The Phase 0 spike is done; the MVP is being built (Home, CAS, textbook entry, the Function and Solve apps and Python work). There is nothing to download yet. Feedback and ideas are very welcome: please [open an issue](https://github.com/buerlino/pascaline/issues).
 
 Pascaline aims to feel like the HP Prime: the same key layout, the same kind of apps (Function, Solve, Statistics, Spreadsheet, Geometry…) and the same way of working. It has its own design and is built entirely from open-source software. The name honours the *Pascaline*, the calculating machine Blaise Pascal built in 1642.
 
@@ -37,7 +37,7 @@ Details: [docs/02-architecture-plan.md](docs/02-architecture-plan.md).
 
 ## Roadmap
 1. ~~**Phase 0, technical spike**~~ ✅ done (2026-10-11): Giac in WebAssembly is fast enough on a low-end Android tablet.
-2. **MVP** (in progress): keyboard, Home, CAS, textbook input, Function app, Solve app ✅; Python next.
+2. **MVP** (in progress): keyboard, Home, CAS, textbook input, Function app, Solve app, Python ✅; next: the first test release.
 3. **v1:** Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, RPN.
 4. **v2:** Geometry, Advanced Graphing, 3D, polish. Releases on F-Droid, Google Play and as a web app.
 

@@ -65,7 +65,7 @@ A calculator that's wrong is worse than no calculator. So:
 - User-facing strings go through the translation table, never hard-coded.
 - Commit messages use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `test:`, `build:`…).
 - Small, focused pull requests are easier to review. Open an issue first for bigger changes.
-- Build and test commands will be documented in the README as soon as there's code.
+- Build and test commands are in [CLAUDE.md](CLAUDE.md), section "Commands".
 
 AI-assisted contributions are welcome, but **you** are responsible for them: understand the code you submit, make sure it follows the clean-room rules, and test it.
 

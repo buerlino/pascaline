@@ -128,7 +128,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 | **Finance** (time value of money, amortization) | Our own small TVM module (well-known formulas) + the section 4 solver; cross-checked against `numpy-financial` in tests | About 1 week |
 | **Spreadsheet** | Jspreadsheet CE grid + Giac evaluation (Prime-style formulas, even symbolic ones) | Cell dependency graph |
 | **Explorers** (Linear/Quadratic/Trig) | JSXGraph sliders | Small |
-| **Units, constants** | Giac (Prime CAS units are Giac units, e.g. `_m`, `_s`) | Units menu |
+| **Units, constants** | libqalculate as a third worker (P3, `docs/p3-units-plan.md`; Giac units are not used) | Units and Constants pickers |
 | **Lists, matrices** | Giac | List/matrix editors (grid) |
 | **Python** | MicroPython (default, D6) + `calc` and `hpprime`-compatible modules + CodeMirror editor; Pyodide "Python+" (numpy) as an optional download | Section 3 |
 | **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); licence: the English lines are GPL-3.0-or-later by Giac's README (R5, `docs/research/giac-help-licence.md`; to confirm with Parisse) | Help texts for apps and keys |
@@ -223,7 +223,7 @@ PM = person-months, experienced TypeScript developers with some maths background
 | **Total** | **≈ 26–41 PM** |
 
 **Phases**
-- **MVP (≈ 6–9 PM):** keyboard, Home, CAS, textbook entry, Function app, Solve app, Python (numpy/sympy). Release on Play (testing track) and as a web app.
+- **MVP (≈ 6–9 PM):** keyboard, Home, CAS, textbook entry, Function app, Solve app, Python (MicroPython, D6; numpy/sympy only in the optional Python+ pack). Release on Play (testing track) and as a web app.
 - **v1 (≈ +10–15 PM):** Stats, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, Linear/Triangle solvers, RPN.
 - **v2 (≈ +10–17 PM):** Geometry, Advanced Graphing, 3D, Python apps, Explorers, polish.
 
@@ -310,7 +310,7 @@ The same web build (`dist/`) is shipped in different wrappers:
 ## 12. Next steps
 1. ~~Pick a name~~ **Pascaline** (2026-10-10). Before going public: check Google Play, the App Store, GitHub/Codeberg, trademark databases (EUIPO, WIPO, Swiss IGE, class 9) and domains. ~~Create the repo~~ https://github.com/buerlino/pascaline (GPL-3.0). README.md and CONTRIBUTING.md (clean-room rules, DCO sign-off) written 2026-10-10.
 2. Email **Bernard Parisse** with the device numbers: tell him about the project, ask about the help-file licence and KhiCAS reuse, and pass on the upstream reports collected in the spike (spike/RESULTS.md, "Open questions").
-3. ~~Run the Phase 0 spike~~ Done 2026-10-11 on the low-end Lenovo Tab One: **GO**, no native fallback needed (spike/RESULTS.md). The Fairphone 6 (mid-range) and the old Android 8/9 tablet are measured whenever they're connected, alongside Phase 1.
+3. ~~Run the Phase 0 spike~~ Done 2026-10-11 on the low-end Lenovo Tab One: **GO**, no native fallback needed (spike/RESULTS.md). The Fairphone 6 (mid-range) is measured whenever it's connected; the Galaxy S8+ replaced the old Android 8/9 tablet (milestone 3).
 4. **Phase 1, milestone 1: MathPrint Home + CAS** (decided 2026-10-11). The real app in `app/` (Svelte 5 shell, plain-TS keyboard, parser and engine client), with:
    - textbook entry: stacked fractions, raised exponents, root signs, driven only by our keyboard. On the reference calculator the ÷ key makes a stacked fraction (seen on a G2, 2026-10-11), so ours does too;
    - a **Home** view whose results are decimals (on a G2, `1÷3` gives `0.333333333333`) from exact-first evaluation, and a **CAS** view whose exact results are drawn in 2D (fractions, roots, powers, matrices);
@@ -327,27 +327,12 @@ The same web build (`dist/`) is shipped in different wrappers:
 
 ---
 
-## 12b. Features requested by the user (2026-10-11), not yet scheduled
+## 12b. Features requested by the user (2026-10-11)
 
-Three additions the user asked for. Each reuses what Giac already has, in line with principle 1. Where keys and menus sit waits for the Virtual Calculator mapping. The reference calculator has its own units and constants menus; everything copied from it stays `assumed` until the mapping lands.
-
-### Physical constants
-- **Engine:** Giac has them built in (`_c_`, `_h_`, `_hbar_`, `_k_`, `_NA_`, `_G_`, `_me_`, `_epsilon0_`, `_mu0_`, `_R_`, `_g_` …) as unit-carrying values (`mksa(_c_)` → `299792458_(m*s^-1)`). Probed 2026-10-11 on our GSL build.
-- **Data age:** the exact SI 2019 constants (c, h, e, k, N_A) are correct. The measured ones are CODATA 2018 (e.g. `_me_` 9.1093837015e-31 kg); CODATA 2022 differs in the last digits. Plan: send Parisse an upstream update to CODATA 2022 and carry it as a documented local patch until then. Golden cases get `source: oracle` from the NIST CODATA table.
-- **UI:** a constants menu (categories: universal, electromagnetic, atomic, physico-chemical), each entry showing symbol, name, value and unit. Picking one inserts the symbol (e.g. `c`, typeset upright with a subscript where needed). A setting chooses "with units" (default when the units feature exists) or "value only".
-
-### Decimal ⇄ scientific key
-- **Engine:** none needed. Our Home formatter (D5) already does STD, SCI and ENG from the exact value, so switching formats only re-renders the display; nothing is recalculated.
-- **UI:** one key cycles the display format STD → SCI → ENG for the history and new results (engineers want ENG: `12.35E3`). It changes the Home setting, so it persists. The key position needs a free primary or shift slot in `spec/keyboard.yaml`, chosen once the mapping is known.
-- **Effort:** small (about a day with tests).
-
-### Units (Qalculate-style)
-- **Engine:** Giac has a complete units system (HP-48 heritage). `1_km+3_m` → `1.003_km`, `2_MPa=>_psi` → `290.07547546_psi`, `usimplify(1_N*1_m)` → `1_J`, `mksa(…)` gives base SI, and SI prefixes work (`3_nm`, `5_µm`, `kN*m`). Composite units come for free, because a unit is just a factor: `9.81_(m/s^2)*2_kg` → `19.62_(kg*m/s^2)`. We don't need Qalculate's library (GPL-2.0-or-later, so licence-compatible, but a second large C++ engine).
-- **Entry (recommended):** a Units key opens a picker. A row of prefixes at the top (n µ m c k M G …), then categories (length, mass, time, force, pressure, energy, power, temperature, electrical …) with their units. Prefix first, then unit, as in Qalculate; the prefix is optional and stays selected for one pick. Typing letters while the picker is open filters it (`kN`, `psi`), which is the fastest path for engineers. Composites are built with the normal × ÷ ^ keys between unit picks (`kN·m`, `m/s²`).
-- **Display:** MathPrint draws units upright after the number (`19.62 kg·m·s⁻²`). A "→" convert action (Giac `=>`) converts the last result to a picked unit, and "simplify units" (`usimplify`) turns `kg·m·s⁻²` into `N`.
-- **Work needed:** a parser rule and round-trip cases for the unit template (P1); formatter support for value + unit (12 digits on the number only); Home's exact-first path must keep units; golden cases from `oracle`/`derived` conversions. Units stay out of the Function and Solve apps at first (the plot evaluator doesn't carry units).
-- **Effort:** medium, about 1–2 weeks. Feasible, and not ambitious given Giac. The risks are Giac's unit-simplification quirks (golden cases will show them) and the picker design.
-- **No clash with subscripts** (checked 2026-10-11): Giac reads `x_1` as a plain variable (`type(x_1)` → identifier) and only `<number>_<unit>` (`2_m`) as a unit. Our parser keeps it that way: units come from the picker as `_unit` after a number, subscripts `x_{1}` become the name `x_1`.
+All three are settled; the earlier design notes are in `git show 8f95cef:docs/02-architecture-plan.md`.
+- **Physical constants:** replaced by P3, libqalculate's CODATA constants (`docs/decisions.md`, P3 integration plan, point 7).
+- **Decimal ⇄ scientific key:** done as the Format key (`e9e9c89`). On an empty line it cycles the last result's display through the formats ticked in Settings; the Settings format stays the default (`docs/decisions.md`, user requests 1). More formats: backlog G9.
+- **Units:** libqalculate as worker 3, loaded on first use; Giac's units are not used (P3, plan in `docs/p3-units-plan.md`). The reference's units menu is G2 item 30.
 
 ## Sources
 - Giac/Xcas in the browser (giac.js / giacwasm.js; wasm about 2× slower than native, up to 15× on Gröbner bases): <https://xcas.univ-grenoble-alpes.fr/backup/install_en>, <https://www-fourier.univ-grenoble-alpes.fr/~parisse/giacjs/simple.html>, <https://xcas.univ-grenoble-alpes.fr/nw/xcasen.html>

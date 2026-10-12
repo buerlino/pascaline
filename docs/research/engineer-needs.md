@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R3: what engineers need day to day, mapped to Giac (sandra)
 
+*Moved from `spike/research/` on 2026-10-12 (cleanup audit). The `spike/` paths below were archived; they are in `git show 8ff8576:<path>`.*
+
 Method: a list of everyday engineering tasks (my own, from general engineering practice; no manual text), each tried on our GSL wasm build through `spike/research/coverage-probe.mjs` (`GIAC_OUT=... node coverage-probe.mjs ['expr' ...]`, Giac 2.1.0, desktop Node). "OK" = right-looking answer in a few ms; values were eyeballed, not oracle-checked (this is a coverage probe, not a test suite). Where I did not run something it says so.
 
 ## Coverage table

@@ -57,7 +57,7 @@ keys:
   # The variable key types x (the reference types the current app's variable, X in its Function app); shift y is
   # ours (the reference's shift is a Define dialog).
   - { id: x, row: 3, col: 3, cls: fn, label: { primary: x, shift: y, alpha: D }, primary: { type: x }, shift: { type: y }, alpha: { type: D }, source: virtual-calc }  # r4c4; shift y assumed
-  # a b/c: as built in L2 (docs/decisions.md "Mixed numbers", G2 item 17); the stock reference behaviour is G2 item 29.
+  # a b/c: as built in L2 (docs/decisions.md "Mixed numbers", assumed); the stock reference behaviour is G2 item 29.
   - id: frac
     row: 3
     col: 4

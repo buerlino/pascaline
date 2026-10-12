@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R1: F-Droid feasibility of our wasm build (sandra)
 
+*Moved from `spike/research/` on 2026-10-12 (cleanup audit). The `spike/` paths below were archived; they are in `git show 8ff8576:<path>`.*
+
 Sources: the local `../fdroiddata` checkout (recipes and `srclibs/`), `build-wasm.sh`, and Debian's source index (`sources.debian.org/api/src/emscripten/`). Nothing here was built on an F-Droid server; "likely" marks what is inferred.
 
 ## How existing recipes get toolchains and sources

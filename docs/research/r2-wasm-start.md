@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R2: fast wasm start on Android WebView
 
+*Moved from `spike/research/` on 2026-10-12 (cleanup audit). The `spike/` paths below were archived; they are in `git show 8ff8576:<path>`.*
+
 Measured on the Lenovo Tab One (Android 15, WebView 131.0.6778.260, release build, plugged in, 29-30 C), cold start =
 `am force-stop` then `am start -W`, 7-8 runs per series, medians, time counted from process start. Giac wasm is 9.75 MB.
 Raw data: `.coord/device-runs.jsonl`. Tools: `tools/device_run.py`, `tools/probe-wasm.py`

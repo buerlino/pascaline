@@ -8,11 +8,12 @@ Pascaline is an **open-source graphing CAS calculator** for Android (also PWA, l
 
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 
-**Status (2026-10-11):** Phase 0 is done: **GO** (user, 2026-10-11), no native fallback. Results in [spike/RESULTS.md](spike/RESULTS.md), defaults D1–D9 and the accepted proposals P1/P2 in [spike/DECISIONS.md](spike/DECISIONS.md). **Phase 1 work happens on branch `phase-1`**; `master` was fast-forwarded to it on 2026-10-11 (b4431ae, user). Milestones 1 (MathPrint Home + CAS), 2 (Function + Solve apps) and 3 (Python) are **done**, with device numbers on the Tab One and the S8+. Next: MVP release (backlog R1–R4; R1 offline web app done) and units (P3, `docs/p3-units-plan.md`). Status, open items and tasks: [docs/backlog.md](docs/backlog.md). The current shift brief for the coordinator team is [docs/shifts/brief.md](docs/shifts/brief.md) (agents in `.claude/agents/`).
+**Status:** Phase 0 GO (2026-10-11); milestones 1–3 (Home + CAS, Function + Solve, Python) done. **Work happens on branch `phase-1`.** Status, open items and tasks: [docs/backlog.md](docs/backlog.md). Coordinator team: rules in [docs/shifts/rules.md](docs/shifts/rules.md), the current brief in [docs/shifts/brief.md](docs/shifts/brief.md), agents in `.claude/agents/`.
 
 Background reading (read before larger design decisions):
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): **the plan**. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
 - [docs/01-feasibility-report.md](docs/01-feasibility-report.md): the original study. **Section 3 (legal) is binding**; the rest is superseded by 02.
+- Decisions: Phase 0 results and defaults D1–D9, P1, P2 in [spike/RESULTS.md](spike/RESULTS.md) and [spike/DECISIONS.md](spike/DECISIONS.md); from Phase 1 on in [docs/decisions.md](docs/decisions.md).
 - [CONTRIBUTING.md](CONTRIBUTING.md): contributor rules (clean room, DCO, dependencies, golden-test sources); keep it consistent with this file.
 - Outreach drafts (r/calculators post, email to Bernard Parisse) are kept **outside the repo** in `../outreach/`. The user sends these personally.
 
@@ -32,6 +33,7 @@ Background reading (read before larger design decisions):
 - **No prebuilt binaries in git** (`.wasm`, `.so`, `.jar`, `.a`). Everything gets built from source by scripts in the repo. The only exception is throwaway experiments under `spike/`, which must be listed in `spike/RESULTS.md` and ignored via `.gitignore`.
 - **No Google Play Services, Firebase, analytics, crash reporters or trackers.**
 - **The app works 100% offline.** Network access is only allowed for an explicit, optional download (e.g. the Pyodide "Python+" pack, and only in non-F-Droid builds).
+- **Never delete** `engine/giac/_downloads/` (the SHA-checked source tarballs) or `spike/prebuilt/` (Parisse's build, kept for comparisons). Both are gitignored.
 
 ### Maths correctness
 - **The UI never calls Giac directly.** All maths goes through the async `MathEngine` interface. Engines run in Web Workers, and every call must be cancellable (Cancel key = terminate the worker and restore state).
@@ -54,32 +56,19 @@ Capacitor shell (Android / iOS / desktop / plain web PWA)
 Storage: IndexedDB (state) + Capacitor Filesystem (import/export)
 ```
 
-Key decisions (from the plan):
-- **MathPrint everywhere (decided 2026-10-11):** textbook entry (stacked fractions, raised exponents, root signs) driven only by our keyboard; results drawn in 2D from Giac `latex()` by MathLive's renderer; never raw engine text. A one-line entry mode is a setting. The ÷ key makes a stacked fraction, as on the reference calculator.
-- **Our own LaTeX-subset parser** (decided 2026-10-11, P1) turns MathLive's LaTeX into Giac input and into fast plot evaluators. It only accepts what our keyboard can produce; each keyboard template needs a parser rule and a round-trip case in the same commit. Compute Engine is not used.
-- **Home view = Giac in "exact-first" mode** (validated in Phase 0: 123/123 oracle cases): decimal input becomes exact fractions, results are rounded to 12 digits and shown as decimals (as on the reference calculator: `1÷3` → `0.333333333333`), with a guard that falls back to floats when numbers get too big or evaluation gets too slow. Exact 2D results belong to the **CAS** view.
-- **No PPL.** Programming is Python plus Giac function definitions. The `calc` and `hpprime`-compatible Python modules give access to calculator variables and a 320×240 graphics canvas.
-- **Numerical solving (decided 2026-10-10): GSL inside the Giac wasm**, used through Giac `fsolve`. 1-D: our bracket search + Brent, with Newton/Steffensen using exact Giac derivatives when there is no sign change. Systems: GSL `hybrids`/`hybridsj` (Powell hybrid). Boost.Math and cminpack were tested and dropped (MINPACK licence clause). Polynomials: Giac `proot`. **Every root is checked by substituting it back (residual check)**, and a ⚠ is shown if the residual is large.
-- **Performance fallback:** native Giac (NDK) as a Capacitor plugin behind the same `MathEngine` interface. Not needed on Phase 0 evidence.
-- **Toolchain (decided 2026-10-11, P2):** every release (F-Droid, GitHub, Play) builds the engine with **Debian's Emscripten** in a pinned `debian:trixie` container, so all channels ship the same engine. emsdk 6.0.12 is for development only. Any engine build that ships must pass the interrupt, Home and Solve golden runs.
+Key decisions (reasons in docs/02 and the decision logs):
+- **MathPrint everywhere:** textbook entry driven only by our keyboard (÷ makes a stacked fraction); results drawn in 2D from Giac `latex()` by MathLive, never raw engine text. One-line entry is a setting.
+- **Our own LaTeX-subset parser** (P1) turns MathLive's LaTeX into Giac input and plot evaluators. Each keyboard template needs a parser rule and a round-trip case in the same commit.
+- **Home = Giac "exact-first":** decimals become exact fractions, results are rounded to 12 digits and shown as decimals (`1÷3` → `0.333333333333`), with a float fallback when numbers get too big or slow. Exact 2D results belong to the **CAS** view.
+- **No PPL.** Python plus Giac function definitions; the `calc` and compatibility graphics modules reach the variables and a 320×240 canvas.
+- **Solving: GSL inside the Giac wasm** (bracket + Brent, Newton/Steffensen, `hybrids`/`hybridsj` for systems, `proot` for polynomials). **Every root is substituted back**, with a ⚠ when the residual is large.
+- **Releases build the engine with Debian's Emscripten** in a pinned `debian:trixie` container (P2); emsdk 6.0.12 is for development. Every engine build that ships must pass the golden gate.
 
 ## Stack (pin exact versions in package files and THIRD_PARTY.md)
 TypeScript (strict, no `any`), Vite, **Svelte 5** for the app shell (D1; keyboard, parser and engine client stay plain TS), MathLive (MIT), JSXGraph (LGPL/MIT), CodeMirror 6 (MIT), Capacitor (MIT), Emscripten, Giac (GPL-3.0+), GMP/MPFR (LGPL), GSL (GPL-3.0+), MicroPython (MIT), Pyodide (MPL-2.0, optional), Vitest, Playwright.
 
-## Planned repo layout
-```
-pascaline/
-├─ app/                 Vite + TS web app (UI, app framework, MathEngine client)
-├─ engine/giac/         Emscripten build scripts for Giac + GSL + GMP + MPFR (+ patches/)
-├─ python/              MicroPython-wasm build + calc/hpprime modules
-├─ android/             Capacitor Android project (generated by `npx cap add android`)
-├─ spec/keyboard.yaml   Logical key layout: key → primary / shift / alpha actions
-├─ tests/golden/        Golden cases (YAML) with `source:` per case
-├─ spike/               Phase 0 experiments + RESULTS.md (throwaway code)
-├─ docs/                Plans and reports
-├─ fastlane/metadata/   Store texts and screenshots (read by F-Droid)
-└─ build.sh             Single clean-source → dist/ → APK script (F-Droid uses this)
-```
+## Repo layout
+`app/` (web app), `engine/giac/` (engine build + patches), `python/` (MicroPython build), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `tests/golden/` (golden cases), `tests/engine/`, `tools/` (device tools), `docs/`, `fastlane/`, `fdroid/`, `logo/`, `build.sh` (clean source → APK, used by F-Droid), `spike/` (Phase 0 record and the P3 qalc spike).
 
 ## This machine (checked 2026-10-10)
 - Rocky Linux 10.2, 16 cores, 28 GB RAM
@@ -102,14 +91,7 @@ PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads   # share the download c
 # Node smoke test (from the repo root)
 node engine/giac/smoke.mjs 'factor(x^4-1)' 'solve(x^2=2,x)'   # VARIANT=gsl (default)|base
 
-# Devices and coordination (from the repo root; state lives in .coord/, gitignored)
-tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it
-tools/devlock.sh acquire <serial|host-cpu> <owner> [wait_s]   # release / status / break
-
-tools/device-build.sh [--measure] [--install] [--engine-dir DIR] # build our APK, prints its path
-tools/device_run.py start --mode first|cold|warm --runs 7         # launch timings from logcat marks
-tools/device_run.py bench --runs 5                                 # the 55 benchmark cases on the device
-tools/runs_summary.py                                             # medians from .coord/device-runs.jsonl
+# Devices and coordination: tools/README.md (device lock, measurement builds, launch and bench timings)
 
 # App (from app/; Vite + Svelte 5; copies the engine from GIAC_OUT, default engine/giac/_out/gsl)
 npm ci
@@ -119,7 +101,7 @@ GIAC_OUT=<dir> npm run test:e2e                            # Playwright key-sequ
 npm run build                                              # → app/dist/
 
 # Engine gate (run on every engine build that ships; from app/, GIAC_MJS=<giac.mjs> or GIAC_OUT=<dir>)
-npm run golden                                             # needs an ABSOLUTE GIAC_OUT/GIAC_MJS; interrupt 16/16, Home 123/123, Solve 42/42, Function 24/24, bench 55, parser 324/326 (2 known gaps), python 22/22 (needs PYTHON_OUT or python/_out/dev)
+npm run golden                                             # needs an ABSOLUTE GIAC_OUT/GIAC_MJS (and PYTHON_OUT, else python/_out/dev); must end in GOLDEN GATE PASSED (counts: tests/golden/README.md)
 node scripts/compare-engines.ts <a/giac.mjs> <b/giac.mjs>  # output differences between two engine builds
 python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2   # oracle, once (repo root)
 tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # check cases; --g2 regenerates tests/golden/G2-CHECKLIST.md from tests/golden/g2.yaml
@@ -135,7 +117,7 @@ engine/giac/build-wasm-release.sh                          # → engine/giac/_ou
 python/build-micropython.sh [dev|release]                  # dev = ~/emsdk → python/_out/dev/; release = trixie container (P2) → python/_out/release/
 node python/smoke.mjs [python/_out/release]              # desktop smoke test: print(1+1) (default dir: python/_out/dev)
 
-# Coordinator team (brief: docs/shifts/brief.md; agents in .claude/agents/); keeps the laptop awake while it runs
+# Coordinator team (docs/shifts/rules.md + brief.md; agents in .claude/agents/); keeps the laptop awake while it runs
 systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline shift" claude --agent henri
 ```
 

@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Morning report: Phase 0 night shift, 2026-10-10 23:38 → 2026-10-11 05:10
 
+*Moved from `spike/MORNING-REPORT.md` on 2026-10-12 (cleanup audit). The `spike/` paths below were archived; they are in `git show 8ff8576:<path>`.*
+
 Henri (coordinator) with annabell (tablet), ron (math input), gorge (engine, Home, Solve) and sandra (Python, plotting, research). All work is merged into `spike/phase-0` and committed; nothing was pushed. Full numbers: `spike/RESULTS.md`. Defaults and proposals: `spike/DECISIONS.md`. Hand checks for you: `spike/G2-CHECKLIST.md`.
 
 ## Bottom line
