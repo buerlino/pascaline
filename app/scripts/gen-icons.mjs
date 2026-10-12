@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// App icons and splash screens from the project logo (logo/pascaline_back.svg + logo/pascaline_front.svg,
+// App icons and splash screens from the project logo (logo/android_logo/pascaline_back.svg + pascaline_front.svg,
 // a 108×108 Android adaptive-icon pair: solid background, mark inside the 66-unit safe circle).
 // Writes the PWA icons (app/public/icons/) and the Android launcher icons and splash screens
 // (android/app/src/main/res/). Run after changing the logo: node scripts/gen-icons.mjs
@@ -15,7 +15,7 @@ const res = join(root, "android/app/src/main/res");
 
 /** The drawing inside a logo file's root <svg>, with the root's style (fill-rule, line caps) kept on a group. */
 function layer(file) {
-  const svg = readFileSync(join(root, "logo", file), "utf8");
+  const svg = readFileSync(join(root, "logo", "android_logo", file), "utf8");
   const open = /<svg\b[^>]*>/.exec(svg);
   if (!open) throw new Error(`${file}: no <svg> element`);
   const style = /\bstyle="([^"]*)"/.exec(open[0])?.[1] ?? "";
