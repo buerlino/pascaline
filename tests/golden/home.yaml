@@ -141,3 +141,25 @@ cases:
   - { id: "int-ceil-2.5", input: "ceil(-2.5)", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived" }
   - { id: "int-abs-0.3", input: "abs(-0.3)", oracle: "F('0.3')", expect: "0.3", mark: "=", source: "derived" }
   - { id: "int-frac2.7", input: "frac(2.7)", oracle: "F('0.7')", expect: "0.7", mark: "=", source: "derived" }
+  # --- Find tier 0 (G4, docs/04 3.3): one accuracy case per curated function that had none ----------
+  - { id: "fn-cbrt2", input: "surd(2,3)", oracle: "cbrt(2)", expect: "1.25992104989", mark: "≈", source: "oracle" }
+  - { id: "fn-cbrt-neg8", input: "surd(-8,3)", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived", note: "real cube root (the parser emits surd for odd roots)" }
+  - { id: "fn-cosh1", input: "cosh(1)", oracle: "cosh(1)", expect: "1.54308063482", mark: "≈", source: "oracle" }
+  - { id: "fn-irem-neg", input: "irem(-7,3)", oracle: "F(2)", expect: "2", mark: "=", source: "derived", note: "Euclidean remainder, never negative" }
+  - { id: "fn-gcd", input: "gcd(1071,462)", oracle: "F(21)", expect: "21", mark: "=", source: "derived" }
+  - { id: "fn-lcm", input: "lcm(4,6)", oracle: "F(12)", expect: "12", mark: "=", source: "derived" }
+  - { id: "fn-factorial0.5", input: "factorial(0.5)", oracle: "gamma(F(3,2))", expect: "0.886226925453", mark: "≈", source: "oracle" }
+  - { id: "fn-comb", input: "comb(52,5)", oracle: "F(factorial(52)//(factorial(5)*factorial(47)))", expect: "2598960", mark: "=", source: "derived" }
+  - { id: "stat-mean", input: "mean([1,2,3,4])", oracle: "F(10,4)", expect: "2.5", mark: "=", source: "derived" }
+  - { id: "stat-stddevp-sample", input: "stddevp([2,4,4,4,5,5,7,9])", oracle: "sqrt(F(32,7))", expect: "2.1380899353", mark: "≈", source: "oracle", note: "Giac's stddevp is the sample deviation (n-1), stddev the population one" }
+  - { id: "stat-stddev-population", input: "stddev([2,4,4,4,5,5,7,9])", oracle: "F(2)", expect: "2", mark: "=", source: "derived" }
+  - { id: "stat-variance", input: "variance([2,4,4,4,5,5,7,9])", oracle: "F(4)", expect: "4", mark: "=", source: "derived", note: "population variance" }
+  - { id: "stat-normald_cdf1.96", input: "normald_cdf(1.96)", oracle: "erfc(-M(F('1.96'))/sqrt(2))/2", expect: "0.975002104852", mark: "≈", source: "oracle" }
+  - { id: "stat-normald_cdf-10", input: "normald_cdf(-10)", oracle: "erfc(M(F(10))/sqrt(2))/2", expect: "7.61985302416E-24", mark: "≈", source: "oracle", note: "lower tail: a naive 1-cdf gives 0" }
+  - { id: "cas-diff-at", input: "subst(diff(x^3,x),x,2)", oracle: "F(12)", expect: "12", mark: "=", source: "derived" }
+  - { id: "cas-limit-sinc", input: "limit(sin(x)/x,x,0)", oracle: "F(1)", expect: "1", mark: "=", source: "derived" }
+  - { id: "cas-solve-sqrt2", input: "max(solve(x^2=2,x))", oracle: "sqrt(2)", expect: "1.41421356237", mark: "≈", source: "oracle" }
+  - { id: "mat-det", input: "det([[1,2],[3,4]])", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived" }
+  - { id: "mat-inv", input: "inv([[1,2],[3,4]])[1][0]", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived" }
+  - { id: "mat-tran", input: "tran([[1,2],[3,4]])[0][1]", oracle: "F(3)", expect: "3", mark: "=", source: "derived" }
+  - { id: "vec-cross", input: "cross([1,2,3],[4,5,6])[1]", oracle: "F(6)", expect: "6", mark: "=", source: "derived" }
