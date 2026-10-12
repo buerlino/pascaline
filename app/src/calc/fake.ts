@@ -15,10 +15,11 @@ import {
 
 import type { PythonEngine } from "../python/types.ts";
 import { FakePython } from "./fakePython.ts";
+import { safePrecision } from "../engine/homeEval.ts";
 
 /** An echo cell: the Giac text that would be evaluated. */
 function echo(display: string): HomeResult {
-  return { ok: true, display, path: "exact", approximate: false, tieRisk: false, exactMs: 0, totalMs: 0 };
+  return { ok: true, display, path: "exact", approximate: false, tieRisk: false, exactMs: 0, totalMs: 0, ...safePrecision(display) };
 }
 
 export class FakeCalc implements Calc {
@@ -45,7 +46,7 @@ export class FakeCalc implements Calc {
     });
   }
   home(giac: string): Promise<HomeOutcome> {
-    return this.run({ ok: true, display: giac, approximate: false });
+    return this.run({ ok: true, display: giac, approximate: false, ...safePrecision(giac) });
   }
   cas(giac: string): Promise<CasOutcome> {
     return this.run({ ok: true, text: giac, latex: giac });

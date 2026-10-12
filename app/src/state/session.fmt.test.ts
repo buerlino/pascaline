@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import type { Calc, CasOutcome, HomeOutcome } from "../calc/port.ts";
 import { EngineHost } from "../engine/host.ts";
-import { defaultHomeSettings } from "../engine/homeEval.ts";
+import { defaultHomeSettings, safePrecision } from "../engine/homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
 import type { Kv } from "./storage.ts";
 import { Session } from "./session.svelte.ts";
@@ -29,6 +29,7 @@ async function engineCalc(): Promise<Calc> {
         ok: r.ok,
         display: r.display,
         approximate: r.approximate,
+        ...safePrecision(r.display),
         ...(r.value ? { value: r.value } : {}),
         ...(r.exact ? { exact: r.exact } : {}),
       });
