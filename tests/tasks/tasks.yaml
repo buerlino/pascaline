@@ -1,0 +1,170 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# EN0, the task benchmark (docs/03 section 6, docs/04 section 5.2; format and rules in README.md).
+# Replayed by app/test/tasks.spec.ts (Playwright, real engine). The ten tasks the owner accepted on 2026-10-12.
+#
+# A task has:
+#   id, title, milestone  which task, in words, and the milestone in which it must hold
+#   status        active = `keys` is replayed and must stay within `budget`; pending = it needs a later milestone
+#   needs         pending only: what is missing
+#   budget        presses allowed (§5.2). Pending budgets are PLANS from the sequence below, fixed when the task
+#                 goes active; null where the interface is not designed yet
+#   keys          the target sequence: key ids of spec/keyboard.yaml, or {tap: <target>}, {hold: <key>},
+#                 {drag: <gesture>}. A pending task's keys are not replayed. null = not planned yet
+#   expect        value = the true value (string, or a list of strings), `text` = what Home shows (12 digits)
+#   source        oracle | derived | device | virtual-calc | assumed, like a golden case. Never from memory
+#   baseline      today's best sequence found (a short search, not a proof): replayed on every run; its result
+#                 must read `text` and agree with expect.value to 12 digits. null = no way to do it today
+#   compare       hand-measured presses on other tools; null until the owner measures them (README.md)
+#
+# Find letters are written as the key that types them (docs/04 section 3.7): c = tmpl, e = frac, h = cos, k = log,
+# m = neg, p = eex, r = d8, s = d9, a = vars. All pending sequences are planned from docs/03 and docs/04; where a
+# detail is open (for example whether the Units app needs Alpha for letters) the plan assumes the shortest form.
+schema: 1
+
+tasks:
+  - id: t01
+    title: Parallel combination 4.7k ‖ 10k (resistors)
+    milestone: 6
+    status: pending
+    needs: "par() from EN7 (milestone 6) through Find, prefix chips (milestone 5, gated by t03)"
+    budget: 14
+    # Math, p a r, Enter (par(), cursor inside); 4 . 7 chip-k , 1 0 chip-k, Enter. With 4700 typed the count is the same
+    keys: [math, eex, vars, d8, enter, d4, dot, d7, {tap: "prefix:k"}, comma, d1, d0, {tap: "prefix:k"}, enter]
+    expect: { value: "3197.278911564625850340136054421768707483", text: "3197.27891156" }
+    source: derived   # 4700 × 10000 / (4700 + 10000) = 470000/147, exact fraction
+    baseline:
+      note: "1/(1/4700 + 1/10000) with nested fractions"
+      keys: [d1, frac, d1, frac, d4, d7, d0, d0, right, add, d1, frac, d1, d0, d0, d0, d0, enter]
+      text: "3197.27891156"
+    compare: { g2_virtual_calc: null, phone_calculator: null }
+
+  - id: t02
+    title: "72 km/h → m/s"
+    milestone: 5
+    status: pending
+    needs: "Units app (milestone 5)"
+    budget: 15
+    # Shift Tmpl (Units app), 7 2, k p h Enter (kph = km/h), Shift EEX (→), m p s Enter, Enter
+    keys: [shift, tmpl, d7, d2, log, eex, cos, enter, shift, eex, neg, eex, d9, enter, enter]
+    expect: { value: "20", text: "20" }
+    source: derived   # 1 km/h = 5/18 m/s exactly, so 72 km/h = 20 m/s
+    baseline:
+      note: "72 ÷ 3.6, which needs the factor in the head and checks no unit"
+      keys: [d7, d2, frac, d3, dot, d6, enter]
+      text: "20"
+    compare: { g2_virtual_calc: null, phone_calculator: null }
+
+  - id: t03
+    title: 2.2n × 4.7k with prefix chips, against 2.2E-9 × 4.7E3
+    milestone: 5
+    status: pending
+    needs: "prefix chips (milestone 5; they stay only if this task shows they win)"
+    budget: 10
+    keys: [d2, dot, d2, {tap: "prefix:n"}, mul, d4, dot, d7, {tap: "prefix:k"}, enter]
+    expect: { value: "0.00001034", text: "1.034E-5" }
+    source: derived   # 2.2 × 4.7 = 10.34 and 10^-9 × 10^3 = 10^-6
+    baseline:
+      note: "E-notation; the right-arrow after the exponent is needed (without it × is typed into the exponent)"
+      keys: [d2, dot, d2, eex, neg, d9, right, mul, d4, dot, d7, eex, d3, enter]
+      text: "1.034E-5"
+    compare: { g2_virtual_calc: null, phone_calculator: null }
+
+  - id: t04
+    title: Circumference 2π r with r = 25 mm typed in mm, result in m
+    milestone: 5
+    status: pending
+    needs: "Units app (milestone 5)"
+    budget: 14
+    # Shift Tmpl, 2 × π × 2 5, m m Enter (mm), Enter, tap the SI alternative (m)
+    keys: [shift, tmpl, d2, mul, shift, d3, mul, d2, d5, neg, neg, enter, enter, {tap: "alt:si"}]
+    expect: { value: "0.1570796326794896619231321691639751442099", text: "0.157079632679", unit: m }
+    source: oracle   # mpmath 1.3.0, 40 digits: 2π × 0.025
+    baseline:
+      note: "r = 25E-3 by hand; no unit is checked"
+      keys: [d2, mul, shift, d3, mul, d2, d5, eex, neg, d3, enter]
+      text: "0.157079632679"
+    compare: { g2_virtual_calc: null, phone_calculator: null }
+
+  - id: t05
+    title: Insert the speed of light by name
+    milestone: 4
+    status: pending   # becomes active when Find lands (backlog milestone 4, step 8)
+    needs: "Find UI (R4) and the index (G4)"
+    budget: 4   # "under 5 keys" counts the Enter that evaluates; ε₀ by name needs `eps` (6 presses) or a short alias
+    # Math, c (the Tmpl key), Enter inserts the chip, Enter evaluates
+    keys: [math, tmpl, enter, enter]
+    expect: { value: "299792458", text: "299792458" }
+    source: derived   # the metre is defined by c = 299792458 m/s exactly
+    baseline:
+      note: "typing the nine digits"
+      keys: [d2, d9, d9, d7, d9, d2, d4, d5, d8, enter]
+      text: "299792458"
+    compare: { g2_virtual_calc: null, phone_calculator: null }
+
+  - id: t06
+    title: Nearest E24 value to 3.87k
+    milestone: 6
+    status: pending
+    needs: "eseries() from EN7 (milestone 6) through Find"
+    budget: 12
+    # Math, e s Enter (eseries(), cursor inside), 2 4 , 3 8 7 0, Enter
+    keys: [math, frac, d9, enter, d2, d4, comma, d3, d8, d7, d0, enter]
+    expect: { value: "3900", text: "3900" }
+    source: derived   # IEC 60063 E24: …, 3.6, 3.9, 4.3, … ; |3.87 − 3.9| < |3.87 − 3.6|
+    baseline: null    # nothing computes it today; the engineer reads a table
+    compare: { g2_virtual_calc: null, phone_calculator: null }
+
+  - id: t07
+    title: 0xFF AND 0x3C, shown in binary
+    milestone: 6
+    status: pending
+    needs: "number bases and bitwise (EN6, milestone 6); today 0xFF from the keys is an error (docs/04 2.3 #1)"
+    budget: null
+    keys: null
+    expect: { value: "60", base2: "111100", base16: "3C" }
+    source: derived   # 0xFF = 11111111, 0x3C = 00111100, AND = 00111100
+    baseline: null    # no way to show binary today
+    compare: { g2_virtual_calc: null, phone_calculator: null }
+
+  - id: t08
+    title: Solve a 3×3 linear system
+    milestone: 6
+    status: pending
+    needs: "matrices and lists you can enter (EN5, milestone 6)"
+    budget: null
+    keys: null
+    # x + y + z = 6;  2x − y + z = 3;  x + 2y − z = 2   (determinant 7)
+    equations: ["x+y+z=6", "2x-y+z=3", "x+2y-z=2"]
+    expect: { value: ["1", "2", "3"] }
+    source: derived   # substitute (1, 2, 3): 6, 3, 2
+    baseline: null    # no key makes a list or a matrix today
+    compare: { g2_virtual_calc: null, phone_calculator: null }
+
+  - id: t09
+    title: Mean and standard deviation of ten readings
+    milestone: 6
+    status: pending
+    needs: "lists you can enter (EN5, milestone 6); statistics itself is deferred"
+    budget: null
+    keys: null
+    data: ["9.81", "9.79", "9.83", "9.80", "9.82", "9.78", "9.84", "9.81", "9.80", "9.82"]
+    # sample standard deviation (n − 1), the usual one for readings; the population value is the second line
+    expect:
+      value: ["9.81", "0.01825741858350553711523232609336007113176"]
+      stdev_population: "0.01732050807568877293527446341505872366943"
+    source: oracle    # mean = 981/100 and sum of squares = 3/1000 exactly; roots by mpmath 1.3.0, 40 digits
+    baseline: null    # no list entry today
+    compare: { g2_virtual_calc: null, phone_calculator: null }
+
+  - id: t10
+    title: (12.34 ± 0.05) m × (3.2 ± 0.1) m, with uncertainty
+    milestone: 5
+    status: pending
+    needs: "Units app with uncertainty (milestone 5)"
+    budget: 31
+    # Shift Tmpl; ( 1 2 . 3 4 ± 0 . 0 5 ) m Enter; × ; ( 3 . 2 ± 0 . 1 ) m Enter; Enter. ± is Shift (−) in the Units layer
+    keys: [shift, tmpl, paren, d1, d2, dot, d3, d4, shift, neg, d0, dot, d0, d5, right, neg, enter, mul, paren, d3, dot, d2, shift, neg, d0, dot, d1, right, neg, enter, enter]
+    expect: { value: "39.488", uncertainty: "1.244329538345851532731350590709587226327", unit: "m^2" }
+    source: derived   # first-order propagation of independent errors: sqrt((3.2·0.05)² + (12.34·0.1)²); arithmetic by mpmath 1.3.0
+    baseline: null    # no ± today
+    compare: { g2_virtual_calc: null, phone_calculator: null }
