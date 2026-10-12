@@ -11,6 +11,13 @@ in the canonical text of app/src/engine/format.ts (STD).
   tests/golden/.venv/bin/python tests/golden/oracle.py --write    # fill/refresh expect for source: oracle
   tests/golden/.venv/bin/python tests/golden/oracle.py --g2       # also regenerate tests/golden/G2-CHECKLIST.md
   tests/golden/.venv/bin/python tests/golden/oracle.py home.yaml  # one file
+  tests/golden/.venv/bin/python tests/golden/oracle.py --digits 30 # default digits for cases without settings.digits (12)
+
+A case may set `settings: { digits: N }` (precision.yaml): its oracle value is then rounded and printed to N
+significant digits, evaluated at N+20 and N+50 digits for the stability check. In home.yaml and precision.yaml
+every case whose `expect` is a number also carries `mark:` (docs/04 section 2.4): "=" when the shown text equals the
+oracle value exactly, "≈" when it is rounded; "⚠" is never derived, it is written by hand for functions whose result
+the engine cannot confirm (the case then needs a `note`). A case with a mark but no `expect` is mark-only.
 
 Sources: `oracle` (expect written here), `derived` (by hand; an oracle expression must agree),
 `device` / `virtual-calc` (seen on the reference calculator; an oracle expression must agree),
@@ -31,10 +38,12 @@ from mpmath import mp
 
 HERE = Path(__file__).resolve().parent
 CHECKLIST = HERE.parent.parent / "tests/golden/G2-CHECKLIST.md"
-DIGITS = 12
+DIGITS = 12  # default significant digits; --digits N changes it, settings.digits overrides it per case
+MARK_FILES = {"home.yaml", "precision.yaml"}
+MARKS = {"=", "≈", "⚠"}
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "assumed"}
 KEYS = ["id", "kind", "input", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
-        "options", "before", "code", "file", "home", "expect", "source", "g2", "status", "group", "cat", "note"]
+        "options", "before", "code", "file", "home", "expect", "mark", "source", "g2", "status", "group", "cat", "note"]
 CASE_LINE = re.compile(r"^\s*- (\{.*\})\s*$")
 
 
@@ -59,7 +68,7 @@ def namespace():
     ns = {"F": F, "M": M, "factorial": math.factorial, "mp": mp, "mpf": mp.mpf, "mpc": mp.mpc, "I": mp.mpc(0, 1)}
     for n in ["sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", "asinh", "acosh",
               "atanh", "exp", "ln", "log10", "sqrt", "cbrt", "gamma", "erf", "power", "nsum", "quad",
-              "fabs", "fsum", "findroot", "lambertw", "polyroots"]:
+              "fabs", "fsum", "findroot", "lambertw", "polyroots", "erfc", "besselj", "airyai"]:
         ns[n] = _wrap(n)
     deg = lambda x: M(x) * mp.pi / 180
     ns.update(sind=lambda x: mp.sin(deg(x)), cosd=lambda x: mp.cos(deg(x)), tand=lambda x: mp.tan(deg(x)),
@@ -97,24 +106,24 @@ def sortroots(roots):
     return sorted(reals) + sorted(cplx, key=functools.cmp_to_key(cmp))
 
 
-def round_decimal(d: Decimal) -> Decimal:
+def round_decimal(d: Decimal, digits: int) -> Decimal:
     if d == 0:
         return Decimal(0)
     with localcontext() as c:
-        c.prec = DIGITS
+        c.prec = digits
         c.rounding = ROUND_HALF_UP  # half away from zero for Decimal
         return +d
 
 
-def fmt_real(d: Decimal) -> str:
-    """Mirror of STD in app/src/engine/format.ts at 12 digits."""
+def fmt_real(d: Decimal, digits: int) -> str:
+    """Mirror of STD in app/src/engine/format.ts at `digits` significant digits."""
     if d == 0:
         return "0"
-    sign, digits, exp = d.as_tuple()
-    ds = "".join(map(str, digits)).rstrip("0") or "0"
-    e10 = len(digits) + exp - 1  # exponent of the first digit
+    sign, dd, exp = d.as_tuple()
+    ds = "".join(map(str, dd)).rstrip("0") or "0"
+    e10 = len(dd) + exp - 1  # exponent of the first digit
     s = "-" if sign else ""
-    if -4 <= e10 < DIGITS:
+    if -4 <= e10 < digits:
         if e10 < 0:
             return f"{s}0.{'0' * (-e10 - 1)}{ds}"
         if len(ds) <= e10 + 1:
@@ -127,7 +136,7 @@ def to_decimal(x) -> Decimal:
     return Decimal(mp.nstr(x, mp.dps, strip_zeros=False)) if x != 0 else Decimal(0)
 
 
-def exact_fraction_round(x: Fraction) -> Decimal:
+def exact_fraction_round(x: Fraction, digits: int) -> Decimal:
     """Exact rounding of a rational (no double rounding)."""
     if x == 0:
         return Decimal(0)
@@ -135,29 +144,32 @@ def exact_fraction_round(x: Fraction) -> Decimal:
     e = len(str(a.numerator)) - len(str(a.denominator))
     if a < Fraction(10) ** e:
         e -= 1
-    scaled = a * Fraction(10) ** (DIGITS - 1 - e)
+    scaled = a * Fraction(10) ** (digits - 1 - e)
     m = scaled.numerator // scaled.denominator
     if 2 * (scaled - m) >= 1:
         m += 1
-    # m has DIGITS digits, or DIGITS+1 after a carry (10^DIGITS); the value is m * 10^(e-DIGITS+1) either way.
-    return Decimal((1 if neg else 0, tuple(int(c) for c in str(m)), e - DIGITS + 1))
+    # m has `digits` digits, or digits+1 after a carry (10^digits); the value is m * 10^(e-digits+1) either way.
+    return Decimal((1 if neg else 0, tuple(int(c) for c in str(m)), e - digits + 1))
 
 
-def display(x):
-    """12-digit STD text; lists (systems, polynomial roots, table rows) element by element."""
+def display(x, digits=None):
+    """STD text at `digits` (default 12); lists (systems, polynomial roots, table rows) element by element."""
+    if digits is None:
+        digits = DIGITS
     if isinstance(x, Label):
         return str(x)
     if isinstance(x, mp.matrix):
-        return [display(x[i]) for i in range(x.rows)] if x.cols == 1 else [display(r) for r in x.tolist()]
+        return [display(x[i], digits) for i in range(x.rows)] if x.cols == 1 else [display(r, digits) for r in x.tolist()]
     if isinstance(x, (list, tuple)):
-        return [display(v) for v in x]
+        return [display(v, digits) for v in x]
     if isinstance(x, int):
         x = Fraction(x)
     if isinstance(x, Fraction):
-        return fmt_real(exact_fraction_round(x))
+        return fmt_real(exact_fraction_round(x, digits), digits)
     x = mp.mpmathify(x)
     if isinstance(x, mp.mpc):
-        re_, im_ = fmt_real(round_decimal(to_decimal(x.real))), fmt_real(round_decimal(to_decimal(x.imag)))
+        re_, im_ = (fmt_real(round_decimal(to_decimal(x.real), digits), digits),
+                    fmt_real(round_decimal(to_decimal(x.imag), digits), digits))
         if im_ == "0":
             return re_
         ims = im_.lstrip("-")
@@ -165,12 +177,68 @@ def display(x):
         if re_ == "0":
             return f"{'-' if im_.startswith('-') else ''}{imt}"
         return f"{re_}{'-' if im_.startswith('-') else '+'}{imt}"
-    return fmt_real(round_decimal(to_decimal(x)))
+    return fmt_real(round_decimal(to_decimal(x), digits), digits)
 
 
-def evaluate(expr: str, dps: int):
+def raw(expr: str, dps: int):
     mp.dps = dps
-    return display(eval(expr, namespace()))  # expressions come from our own case files
+    return eval(expr, namespace())  # expressions come from our own case files
+
+
+def evaluate(expr: str, dps: int, digits=None):
+    mp.dps = dps
+    return display(eval(expr, namespace()), digits)  # expressions come from our own case files
+
+
+def case_digits(case: dict) -> int:
+    return int((case.get("settings") or {}).get("digits", DIGITS))
+
+
+def stability_dps(digits: int):
+    """Two working precisions whose rounded results must agree: 30 and 60 at 12 digits, digits+20 and +50 above."""
+    return (30, 60) if digits <= 10 else (digits + 20, digits + 50)
+
+
+NUM = r"\d+(?:\.\d+)?(?:E[+-]?\d+)?"
+SHOWN = re.compile(rf"^(?P<re>-?{NUM})?(?:(?P<sign>[+-])?(?P<imn>{NUM}\*)?i)?$")
+
+
+def parse_shown(text):
+    """The exact (re, im) a shown number stands for, or None when the text is not a number (lists, symbols, errors)."""
+    if not isinstance(text, str) or text == "":
+        return None
+    m = SHOWN.match(text)
+    if not m or not (m["re"] or m["sign"] or m["imn"] or text.endswith("i")):
+        return None
+    re_ = Fraction(Decimal(m["re"])) if m["re"] else Fraction(0)
+    if not (m["sign"] or m["imn"] or text.endswith("i")):
+        return re_, Fraction(0)
+    mag = Fraction(Decimal(m["imn"][:-1])) if m["imn"] else Fraction(1)
+    return re_, -mag if (m["sign"] == "-" or (not m["re"] and text.startswith("-"))) else mag
+
+
+def equals_shown(value, shown) -> bool:
+    """True when the oracle value (exact Fraction, or an mpmath number at high precision) is exactly the shown number."""
+    re_, im_ = shown
+    if isinstance(value, int):
+        value = Fraction(value)
+    if isinstance(value, Fraction):
+        return value == re_ and im_ == 0
+    v = mp.mpmathify(value)
+    parts = [(v.real, re_), (v.imag if isinstance(v, mp.mpc) else mp.mpf(0), im_)]
+    # Relative to the size of the whole number, so exp(-1000) is not "equal" to a short text just because both are tiny.
+    scale = max(abs(v), abs(mp.mpc(M(re_), M(im_))))
+    tol = mp.mpf(10) ** (-(mp.dps - 10)) * scale
+    return all(abs(a - M(b)) <= tol for a, b in parts)
+
+
+def derived_mark(case: dict):
+    """"=" when the oracle value is exactly the shown text, else "≈" (docs/04 section 2.4); None for non-numbers."""
+    shown = parse_shown(case.get("expect"))
+    if shown is None or "oracle" not in case:
+        return None
+    lo, hi = stability_dps(case_digits(case))
+    return "=" if equals_shown(raw(case["oracle"], hi), shown) else "≈"
 
 
 def emit_value(v) -> str:
@@ -197,6 +265,26 @@ def case_files(args):
 
 def load_cases(path: Path):
     return [yaml.safe_load(m.group(1)) for m in map(CASE_LINE.match, path.read_text().splitlines()) if m]
+
+
+def check_mark(case: dict, write: bool) -> list:
+    """The `mark:` field (docs/04 section 2.4). Numbers get "=" or "≈" from the oracle; "⚠" is written by hand."""
+    mark = case.get("mark")
+    if mark is not None and mark not in MARKS:
+        return [f"mark {mark!r} not one of {sorted(MARKS)}"]
+    if mark == "⚠":
+        return [] if case.get("note") else ["mark ⚠ needs a note (why the result cannot be confirmed)"]
+    if "expect" not in case:
+        return [] if mark in (None, "⚠") else ["mark without expect needs ⚠ (a mark-only case has no value to derive from)"]
+    want = derived_mark(case)
+    if want is None:
+        return [f"mark {mark!r} on a case whose expect is not a number"] if mark else []
+    if mark == want:
+        return []
+    if write:
+        case["mark"] = want
+        return []
+    return [f"mark {mark!r} but the oracle says {want!r}" if mark else f"numeric case without mark (oracle says {want!r})"]
 
 
 def check_file(path: Path, write: bool, g2_items: set) -> int:
@@ -227,9 +315,11 @@ def check_file(path: Path, write: bool, g2_items: set) -> int:
         if "g2" in case and case["g2"] not in g2_items:
             problems.append(f"g2 item {case['g2']} does not exist")
         if "oracle" in case:
-            v30, v60 = evaluate(case["oracle"], 30), evaluate(case["oracle"], 60)
+            digits = case_digits(case)
+            lo, hi = stability_dps(digits)
+            v30, v60 = evaluate(case["oracle"], lo, digits), evaluate(case["oracle"], hi, digits)
             if v30 != v60:
-                problems.append(f"unstable oracle: 30 digits {v30} vs 60 digits {v60}")
+                problems.append(f"unstable oracle: {lo} digits {v30} vs {hi} digits {v60}")
             if src == "oracle":
                 if case.get("expect") != v30:
                     if write:
@@ -241,6 +331,8 @@ def check_file(path: Path, write: bool, g2_items: set) -> int:
                     print(f"NOTE {path.name} {cid} (assumed, G2 item {case.get('g2')}): expect {case.get('expect')!r}, oracle {v30!r}")
                 else:
                     problems.append(f"cross-check ({src}): expect {case.get('expect')!r} but oracle {v30!r}")
+        if path.name in MARK_FILES:
+            problems += check_mark(case, write)
         for p in problems:
             print(f"PROBLEM {path.name} {cid}: {p}")
         bad += len(problems)
@@ -283,6 +375,11 @@ def write_checklist(items, files) -> None:
 
 
 def main(argv) -> int:
+    global DIGITS
+    if "--digits" in argv:
+        i = argv.index("--digits")
+        DIGITS = int(argv[i + 1])
+        argv = argv[:i] + argv[i + 2:]
     write = "--write" in argv
     items = yaml.safe_load((HERE / "g2.yaml").read_text())["items"]
     numbers = [it["n"] for it in items]
