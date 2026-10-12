@@ -5,7 +5,7 @@ Verification and declutter pass. **Phase 1** is the read-only audit; **phase 2**
 
 Rules of record read first: `CLAUDE.md`, `CONTRIBUTING.md`, `docs/backlog.md`, `docs/decisions.md`.
 
-**Status of this report:** phase 1 is complete for all areas. A–D are applied; F is applied (the removal by the user, the small fixes in this commit set); E and G wait for approval (see "Needs the user").
+**Status of this report:** complete. Every area is audited, and everything approved is applied and committed on `phase-1` (not pushed). Open: E2 and F7 wait for the next device session (backlog C5, L7). The user chose not to ask GitHub Support about 632dab4.
 
 ## Summary
 
@@ -15,9 +15,9 @@ Rules of record read first: `CLAUDE.md`, `CONTRIBUTING.md`, `docs/backlog.md`, `
 | B. Dead and deprecated code | 13 | 12 (`51927b0`, `e7a208b`, `8ff8576`) | – | – (B13, a flaky e2e test: watch it) |
 | C. spike/ | 9 | 9 (`8f95cef`, `27f8378`) | – | – |
 | D. Docs | 12 | 11 (`09665a6`, `0e2a731`); D9 kept on purpose | – | – |
-| E. HP/Prime and network | 6 | – | E1, E6 | E3 (`hpprime` name). E2 needs a device check first; E4, E5 are fine as they are |
+| E. HP/Prime and network | 6 | E1, E3, E6 (`23ea006`, `286cb97`) | – | – (E2: device check, backlog C5; E4, E5 are fine as they are) |
 | F. Repo state and weight | 8 | F1, F3–F5 (the removal, run by the user); F2, F5, F8 fixes in this commit set | – | – (F7: re-measure on the device) |
-| G. Build reproducibility | 9 | – | G1–G5, G8, G9 | – (G6, G7 are fine as they are) |
+| G. Build reproducibility | 9 | G1–G5, G8, G9 (`450c3fd`, `bbc2280`, `286cb97`) | – | – (G6, G7 are fine as they are) |
 
 **Recommended order:**
 1. **Now, in one approval, all S effort:**
@@ -720,6 +720,39 @@ I re-checked every DELETE candidate (`git ls-files | grep wasmstart`, the script
   - Six paths it cites no longer exist (`spike/app`, `spike/bench/cases.yaml`, `spike/home/cases.yaml`, `spike/serializer/cases.yaml` and others; `test -e`).
   - Its description triggers on "phase 0 or the spike", so a request about the P3 qalc spike could load it.
   - Risk: none; git history keeps it. Effort S. **DELETE.**
+
+### E and G, phase 2 (approved 2026-10-12: yes to the whole batch, yes to E3, "leave it" for GitHub Support)
+
+Edits by Opus (not delegated). One commit per theme:
+
+| Commit | Items | What changed |
+|---|---|---|
+| `23ea006` `build(android)` | E1, E6 | The `com.google.gms:google-services` classpath (`android/build.gradle`) and the apply block (`android/app/build.gradle`) are gone. So are the two template tests, their junit/espresso dependencies and the `testInstrumentationRunner`. `android/variables.gradle` keeps its versions because Capacitor's own module reads them. |
+| `450c3fd` `fix(tools)` | G1–G3 | `probe-wasm.py` deleted; the R2 note points to `git show 8f95cef^:…`. `page-series.py`, `shots.py` and `tap-seq.py` read `$ANDROID_SERIAL`, and page-series uses `$PASCALINE_COORD` or the repo's `.coord`. `device_run.py`: docstring updated, `APP_APK`/`PAGE_PATH` removed, env vars documented, `start` waits for `engine-ready` by default. `tools/README.md` lists `status`. |
+| `bbc2280` `chore(agents)` | G8, G9 | The four agent files read `docs/shifts/rules.md` and the shift's `brief.md`. `.claude/skills/phase-0-spike/` deleted. |
+| `286cb97` `docs` | E3, G4, G5 | CLAUDE.md "Legal / clean room" and CONTRIBUTING.md name the `hpprime` import-name exception. `build.sh:3` and CLAUDE.md say the F-Droid recipe mirrors `build.sh` (`fdroid/README.md`). THIRD_PARTY.md lists the GMP, MPFR and GSL tarball hashes; each matches `build-wasm.sh` (checked with `grep`). |
+
+**Found while fixing G3, a real bug:**
+- `device_run.py start --mode warm` waited for a launch mark instead of reading the log.
+- The cause: in e798ef8 a comment was inserted in the middle of `wait_for(...) if mode != "warm" else logcat_dump()`, so the conditional became part of the comment. The spike version (`git grep` at 4636267, `spike/tools/device_run.py:118`) had it working.
+- Fixed in `450c3fd`.
+- A related problem: the default mark `first-result` is never emitted by the app at launch (`app/src/main.ts` marks `js-start`, `keyboard-ready`, `engine-ready`). So `start` without `READY_MARK` timed out. The default is now `engine-ready`, which makes `tools/README.md` and the L7 re-measure command right as written.
+
+**Checks:**
+- `./build.sh --engine-dir engine/giac/_out/gsl --python-dir python/_out/dev --unsigned` exited 0 in 72 s with no engine build, and `unzip -l dist/pascaline.apk` has no gms or firebase entries.
+- `py_compile` passes on the four edited tools, and `device_run.py --help` runs.
+- `bash -n build.sh` passes.
+- Baseline after all four commits (logs in `scratchpad/phase2EG/`), the same as before phase 2:
+  - typecheck 0 errors over 506 files;
+  - Vitest 318/318;
+  - e2e 69 passed + 1 skipped;
+  - `test:pwa` 1/1;
+  - golden PASSED (interrupt 16, Home 123, Solve 42, Function 25, bench 14/55, parser 324/326, python 22);
+  - start chunk 139.12 kB.
+
+**Backlog:** C5 (drop INTERNET after a device check, E2) added, and a Done line for this audit.
+
+**First commit try:** my own pre-commit hook rejected this report once, because it contained the old domain in a command. I reworded it. The hook works.
 
 ## Needs the user
 

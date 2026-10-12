@@ -78,6 +78,7 @@ Each row is a difference between our default and what the reference does (answer
 ### Clean-up and infrastructure
 - **C3. CI.** There is none. Add a GitHub Actions workflow for typecheck, unit and parser tests (no engine, so it stays fast). The engine gate can go in too, now that the Giac mirror is live. Needs your OK, since it runs on GitHub.
 - **C4. F-Droid recipe.** It is untested end to end. `npm ci` downloads packages after `prebuild`, so it needs an offline/srclibs rework. Still open: a release tag and `versionCode`, and screenshots; the icon is done (`8ff8576`) (`fdroid/README.md`).
+- **C5. Drop the INTERNET permission** (`android/app/src/main/AndroidManifest.xml:40`, Capacitor template default). The app is fully offline; check on the Tab One that it still starts and runs without it, together with the L7 re-measure (cleanup audit E2). A later Pyodide download flavour would add it back there only.
 
 ### Left over from milestones 1 and 2
 - **L9. ÷ (and a/b) right after a fraction.** Found 2026-10-12 while doing L8. `1 a/b 2 ▶ ÷ 3` gives `\frac12\frac{3}{\placeholder{}}`: a new fraction with 3 as its numerator, multiplied onto ½, not (½)÷3. The ÷ template `\frac{#@}{#?}` takes "what is before the cursor", and MathLive takes nothing from a fraction (the same cause as L8). **Proposed:** like L8, select the whole term before the cursor (fraction, root, power, mixed number) and make it the numerator: `\frac{\frac12}{3}`, so ÷ divides what you see. Reuse `selectCompound` in `EntryController`. Tests first in `app/test/keys.spec.ts` (`1 a/b 2 ▶ ÷ 3` Enter = `0.166666666667`, derived), plus a parser round-trip case for the nested fraction. The reference's behaviour can go into the next Virtual Calculator session (Textbook `1 ÷ 2 ▶ ÷ 3`).
@@ -93,6 +94,7 @@ Each row is a difference between our default and what the reference does (answer
 
 ### Done
 The record is in the commits, the shift reports and `docs/decisions.md`; the ids stay valid there.
+- Cleanup audit (2026-10-12): `docs/cleanup-audit-2026-10-12.md`, areas A–G; branches and worktrees removed, spikes archived, docs and counts brought in line with the code.
 - Milestone 3, Python (2026-10-11): P1 worker, P2 `calc`, P3 graphics module, P4 editor and shell, P5 golden and e2e cases, D1 device numbers (m3 report).
 - C1 tooling out of `spike/` (`10c2f92`); C2 page-bench results in `.coord/device-runs.jsonl` (`a201499`).
 - L1 subscripted unknowns (`a3ddd52`, display in `ec4a94d`), L2 a b/c mixed numbers, L3 alpha lock, L4 one-line caret mode, L5 insertable results (all `ec4a94d`), L6 parser gaps (`6eda358`), L8 x² after a compound term (`4d9c3a1`).
