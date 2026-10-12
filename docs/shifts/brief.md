@@ -16,7 +16,8 @@ Goal: the keypad gestures from P7 (K1–K3, K5) and the L9 entry fix, plus one s
 | 1 | L9: ÷ and a/b right after a compound term | ron (Sonnet) | `p1/ron-eve-l9` |
 | 2 | K1–K3 + their K5 tests: trackpad, flicks, lock flicks | ron (Opus) | `p1/ron-eve-gestures` |
 | 3 | xx follow-up: does a Giac entry point autosimplify by itself? | gorge (Sonnet) | `p1/gorge-eve-xx` |
-| later | K0 device check, C5 (no INTERNET permission) + L7 cold-start re-measure on the Tab One | annabell | when the Tab One is connected |
+| 4 | Fairphone 6: K0 check, C5 (no INTERNET permission), first FP6 numbers | annabell (Sonnet) | `p1/annabell-eve-fp6` |
+| later | L7 cold-start re-measure on the Tab One | annabell | when the Tab One is connected |
 | later | K4 compact keypad | ron | after task 2 is merged |
 
 ## 2. Read before you start
@@ -34,6 +35,13 @@ Backlog K1, K2, K3 and the K5 tests for them (Playwright drag and flick helpers 
 
 ### gorge, task 3 (xx follow-up), branch `p1/gorge-eve-xx`
 Backlog/log 2026-10-11 20:55: the xx fix (`d1e9c7e`) adds a regroup call when a stored answer merges factors. Find out whether another Giac entry point (or eval setting) applies autosimplify itself, so the extra call can go. If yes and all tests and the golden gate pass, replace it; if not, write the finding in two lines in your report and stop. Time box: about one hour.
+
+### annabell, task 4 (Fairphone 6), branch `p1/annabell-eve-fp6`
+The user's Fairphone 6 (`4d42e62f`, LineageOS) is connected and offered for this shift (user, 2026-10-12 19:10). Rules section 6: `stay-awake.sh` first, our app only, `--restore` right after, battery and temperature before each series.
+1. C5: remove the INTERNET permission from `android/app/src/main/AndroidManifest.xml`; build from `phase-1` (`./build.sh --dev`, it takes the host-cpu lock itself; do not wrap it).
+2. Install on the FP6 and check: the app starts and computes in all apps (Home `1+1`, CAS, Function plot, Solve, Python `print(1)`); K0: switching to and from Python (editor and shell) and to Function/Solve never opens the system keyboard.
+3. First FP6 numbers (medians of ≥5, with Android/WebView version and build type): cold launch → keyboard usable, → engine ready; Plot fps (60 fps target, Q6); Home Enter → result p95. Same tools and method as the Tab One runs (`tools/README.md`).
+4. Restore the FP6, commit, report.
 
 ## 8. Definition of done
 - Each branch: typecheck 0, vitest all pass, e2e all pass (the known-flaky `solve.spec.ts` persistence test may be re-run once), SPDX headers, `git commit -s` with the trailer.

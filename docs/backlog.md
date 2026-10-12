@@ -81,7 +81,6 @@ Each row is a difference between our default and what the reference does (answer
 - **C5. Drop the INTERNET permission** (`android/app/src/main/AndroidManifest.xml:40`, Capacitor template default). The app is fully offline; check on the Tab One that it still starts and runs without it, together with the L7 re-measure (cleanup audit E2). A later Pyodide download flavour would add it back there only.
 
 ### Left over from milestones 1 and 2
-- **L9. ÷ (and a/b) right after a fraction.** Found 2026-10-12 while doing L8. `1 a/b 2 ▶ ÷ 3` gives `\frac12\frac{3}{\placeholder{}}`: a new fraction with 3 as its numerator, multiplied onto ½, not (½)÷3. The ÷ template `\frac{#@}{#?}` takes "what is before the cursor", and MathLive takes nothing from a fraction (the same cause as L8). **Proposed:** like L8, select the whole term before the cursor (fraction, root, power, mixed number) and make it the numerator: `\frac{\frac12}{3}`, so ÷ divides what you see. Reuse `selectCompound` in `EntryController`. Tests first in `app/test/keys.spec.ts` (`1 a/b 2 ▶ ÷ 3` Enter = `0.166666666667`, derived), plus a parser round-trip case for the nested fraction. The reference's behaviour can go into the next Virtual Calculator session (Textbook `1 ÷ 2 ▶ ÷ 3`).
 - **L7. Bundle size.** It is 139 kB at start (48 kB gzip; measured 2026-10-12), plus 808 kB of MathLive loaded after the keypad. Trend: 94 kB (milestone 1), 108 (2), 115 (3, the last Tab One measurement), 139. Since milestone 3 the largest single addition is `@capacitor/core` (7.8 kB, imported by `input/haptics.ts` for key vibration); the Format key's state code is most of the rest. Re-measure cold start on the Tab One in the next device session; if it got slower, load Capacitor only in the native build.
 
 ### MVP release (after milestone 3; docs/02 section 8)
@@ -97,7 +96,7 @@ The record is in the commits, the shift reports and `docs/decisions.md`; the ids
 - Cleanup audit (2026-10-12): `docs/cleanup-audit-2026-10-12.md`, areas A–G; branches and worktrees removed, spikes archived, docs and counts brought in line with the code.
 - Milestone 3, Python (2026-10-11): P1 worker, P2 `calc`, P3 graphics module, P4 editor and shell, P5 golden and e2e cases, D1 device numbers (m3 report).
 - C1 tooling out of `spike/` (`10c2f92`); C2 page-bench results in `.coord/device-runs.jsonl` (`a201499`).
-- L1 subscripted unknowns (`a3ddd52`, display in `ec4a94d`), L2 a b/c mixed numbers, L3 alpha lock, L4 one-line caret mode, L5 insertable results (all `ec4a94d`), L6 parser gaps (`6eda358`), L8 x² after a compound term (`4d9c3a1`).
+- L1 subscripted unknowns (`a3ddd52`, display in `ec4a94d`), L2 a b/c mixed numbers, L3 alpha lock, L4 one-line caret mode, L5 insertable results (all `ec4a94d`), L6 parser gaps (`6eda358`), L8 x² after a compound term (`4d9c3a1`), L9 ÷ and a/b after a compound term (`d4a44ad`; Virtual Calculator question for the next session: Textbook `1 ÷ 2 ▶ ÷ 3`).
 - G1 Num table and G2 Intersection list (`4d9c3a1`). G3 Solve messages, G4 root order, G8 equal factors: no change needed (P5(d) keeps our Solve wording; the rest matches).
 - R1 PWA (`p1/ron-pwa`).
 - Physical constants menu: replaced by P3 (qalc CODATA constants). Decimal ⇄ scientific key: done as the Format key (`e9e9c89`); more formats are G9.
