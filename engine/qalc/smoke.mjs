@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// P3 spike: node spike/qalc/smoke.mjs <out dir> [expr...]  -> prints timings and results.
+// node engine/qalc/smoke.mjs <out dir> [expr...]  -> prints timings and results (default dir: engine/qalc/_out/dev).
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
-const dir = resolve(process.argv[2] ?? 'spike/qalc/_work/out');
+const dir = resolve(process.argv[2] ?? 'engine/qalc/_out/dev');
 const exprs = process.argv.slice(3);
 const t0 = performance.now();
 const factory = (await import(pathToFileURL(`${dir}/qalc.mjs`).href)).default;

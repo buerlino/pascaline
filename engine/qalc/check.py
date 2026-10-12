@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""P3 spike: run spike/qalc/cases.yaml through the libqalculate wasm and check it with mpmath.
+"""Run engine/qalc/cases.yaml through the libqalculate wasm and check it with mpmath.
 
-    tests/golden/.venv/bin/python spike/qalc/check.py <out dir with qalc.mjs>
+    tests/golden/.venv/bin/python engine/qalc/check.py <out dir with qalc.mjs>
 """
 import json
 import re
