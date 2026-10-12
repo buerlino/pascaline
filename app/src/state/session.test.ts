@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { CalcCancelled, type Calc, type CasOutcome, type HomeOutcome } from "../calc/port.ts";
 import type { ComplexValue } from "../engine/format.ts";
+import { safePrecision } from "../engine/homeEval.ts";
 import { Session } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
 
@@ -27,7 +28,7 @@ const third: ComplexValue = {
 class ValueCalc extends FakeCalc implements Calc {
   override ready = (): Promise<void> => Promise.resolve();
   override home(): Promise<HomeOutcome> {
-    return Promise.resolve({ ok: true, display: "0.333333333333", approximate: false, value: third });
+    return Promise.resolve({ ok: true, display: "0.333333333333", approximate: false, ...safePrecision("0.333333333333"), value: third });
   }
   override cas(giac: string): Promise<CasOutcome> {
     return Promise.resolve({ ok: true, text: giac, latex: "\\frac{1}{2}" });

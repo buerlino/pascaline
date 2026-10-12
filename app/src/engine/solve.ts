@@ -3,7 +3,7 @@
 // hybridsj / hybrids, then Giac's own Newton) and polynomials (Giac proot). Every candidate is polished
 // at work precision and substituted back; the relative residual decides ⚠ (SolveSettings.warnRel).
 // Synchronous, UI-free; runs in the Giac worker and in Node. Giac names here have no underscore.
-import { toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
+import { safePrecision, toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
 import { decimalFromString, formatComplex, type ComplexValue, type DecimalValue } from "./format.ts";
 import { defaultSolveSettings, negZero, num, solve1, type SolveSettings } from "./solve1.ts";
 import { IDENT, type KnownValue, type SolveOutcome, type SolveRequest } from "./types.ts";
@@ -68,12 +68,14 @@ export function numericResult(giac: Giac, expr: string, digits: number, work: nu
   const im = realPart(giac, `im(${expr})`, work);
   if (!re || !im) {
     const text = giac.eval(`evalf(${expr},${digits})`);
-    return { ok: false, display: text, path: "numeric", approximate: true, tieRisk: false, exactMs: 0, totalMs: ms, error: "engine" };
+    return { ok: false, display: text, path: "numeric", approximate: true, tieRisk: false, exactMs: 0, totalMs: ms, error: "engine", ...safePrecision(text) };
   }
   const value: ComplexValue = { re, im };
+  const display = formatComplex(value, { format: "STD", digits }).text;
   return {
     ok: true,
-    display: formatComplex(value, { format: "STD", digits }).text,
+    display,
+    ...safePrecision(display),
     value,
     path: "numeric",
     approximate: true,

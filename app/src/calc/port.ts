@@ -40,6 +40,17 @@ export interface HomeOutcome {
   exact?: string;
   /** Why it failed, for the app's own translated message. */
   error?: CalcError;
+  /** The value is exactly p/q or an integer; with the format this decides "=". */
+  exactRational: boolean;
+  /** Digits confirmed by the agreement check; null = exact. */
+  reliableDigits: number | null;
+  /** The text to copy and the `\res` chip value: the exact text or P digits. */
+  full: string;
+  /** What a stateful input defined (Find live items). */
+  defined?: { name: string; kind: "var" | "fn" };
+  /** Elements of a numeric list or matrix (rows flattened, with `shape`). */
+  items?: HomeResult[];
+  shape?: [number, number];
 }
 
 export interface CasOutcome {
@@ -49,6 +60,8 @@ export interface CasOutcome {
   /** Giac `latex()` of the result (raw); empty when !ok. */
   latex: string;
   error?: CalcError;
+  /** The result as a number, when it is one. */
+  numeric?: HomeResult;
 }
 
 /** Thrown by home()/cas() when Cancel stopped the job. */

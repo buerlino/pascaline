@@ -4,7 +4,7 @@
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
-import { homeEval, homeSetupCommands, regrouped, toExactLiterals } from "./homeEval.ts";
+import { homeEval, homeSetupCommands, regrouped, safePrecision, toExactLiterals } from "./homeEval.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 
@@ -132,7 +132,7 @@ export class EngineHost {
       if (!(e instanceof GiacSyntaxError)) throw e;
       const ms = performance.now() - t0;
       return {
-        result: { ok: false, display: e.message, path: "float-error", approximate: false, tieRisk: false, exactMs: ms, totalMs: ms, error: "syntax" },
+        result: { ok: false, display: e.message, path: "float-error", approximate: false, tieRisk: false, exactMs: ms, totalMs: ms, error: "syntax", ...safePrecision(e.message) },
         replay: [],
       };
     }

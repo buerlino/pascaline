@@ -71,6 +71,23 @@ export interface HomeResult {
   totalMs: number;
   /** Set by the engine host when !ok: "syntax" (Giac could not parse the input) or "engine". */
   error?: "syntax" | "engine";
+  /** The value is exactly p/q or an integer; with the format this decides "=" (docs/04 section 2.4, 8.2). */
+  exactRational: boolean;
+  /** Digits confirmed by the agreement check; null = exact (no digit is in doubt). */
+  reliableDigits: number | null;
+  /** The text to copy and the `\res` chip value: the exact text or P digits (docs/04 section 2.6, 3.6). */
+  full: string;
+  /** What a stateful input defined, for the live Find items (docs/04 section 3.4). */
+  defined?: { name: string; kind: "var" | "fn" };
+  /** Elements of a numeric list or matrix (rows flattened, with `shape`). */
+  items?: HomeResult[];
+  /** [rows, columns] of `items`. */
+  shape?: [number, number];
+}
+
+/** Placeholder precision facts until the engine fills them (docs/04 section 8.2): no claim of exactness, `full` = the display. */
+export function safePrecision(display: string): Pick<HomeResult, "exactRational" | "reliableDigits" | "full"> {
+  return { exactRational: false, reliableDigits: null, full: display };
 }
 
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */
@@ -218,7 +235,12 @@ export function homeEval(
   const t0 = now();
   const exactOut = giac.eval(`pasans:=(${toExactLiterals(input)})`);
   const exactMs = now() - t0;
-  const done = (r: Omit<HomeResult, "exactMs" | "totalMs">): HomeResult => ({ ...r, exactMs, totalMs: now() - t0 });
+  const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "exactRational" | "reliableDigits" | "full">): HomeResult => ({
+    ...safePrecision(r.display),
+    ...r,
+    exactMs,
+    totalMs: now() - t0,
+  });
 
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
     const f = floatEval(giac, input, s);

@@ -38,6 +38,8 @@ export interface CasResult {
   /** Why !ok, for the UI's own (translated) message: Giac's text stays in `text`. */
   error?: "syntax" | "timeout" | "engine";
   engineMs: number;
+  /** The result as a number, when it is one: the value the mark, the copy and the digits setting work on (docs/04 section 2.9). */
+  numeric?: HomeResult;
 }
 
 export interface EvalResult {
