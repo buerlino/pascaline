@@ -227,3 +227,38 @@ test("xʸ and x⁻¹ after a fraction also take the whole fraction", async ({ pa
   await tap(page, ["enter"]);
   await resultIs(page, "4", 2); // derived: (1/4)⁻¹ = 4
 });
+
+// L9 (2026-10-12): ÷ and a/b right after a fraction, root, power or mixed number divide the whole term: the term
+// becomes the numerator (\frac{\frac12}{3}), not a new fraction multiplied onto it.
+test("÷ after a fraction divides the whole fraction", async ({ page }) => {
+  await tap(page, ["d1", "frac", "d2", "right", "div", "d3"]);
+  expect(await entryValue(page)).toBe("\\frac{\\frac12}{3}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "0.166666666667", 1); // derived: (1/2)/3 = 1/6
+  await tap(page, ["d1", "frac", "d2", "right", "frac", "d3"]);
+  expect(await entryValue(page)).toBe("\\frac{\\frac12}{3}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "0.166666666667", 2); // a/b behaves like ÷ here
+});
+
+test("÷ after a root, a power or a mixed number divides the whole term", async ({ page }) => {
+  await tap(page, ["shift", "sq", "d4", "right", "div", "d2"]);
+  expect(await entryValue(page)).toBe("\\frac{\\sqrt4}{2}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "1", 1); // derived: √4 / 2 = 1
+  await tap(page, ["d2", "pow", "d3", "right", "div", "d4"]);
+  expect(await entryValue(page)).toBe("\\frac{2^3}{4}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "2", 2); // derived: 2³/4 = 2 (not 2^(3/4))
+  await tap(page, ["d2", "frac", "frac", "d1", "right", "d2", "right", "div", "d5"]);
+  expect(await entryValue(page)).toBe("\\frac{2\\tfrac12}{5}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "0.5", 3); // derived: (5/2)/5 = 1/2
+});
+
+test("÷ after a plain number or a sum is unchanged", async ({ page }) => {
+  await tap(page, ["d1", "add", "d6", "div", "d3"]);
+  expect(await entryValue(page)).toBe("1+\\frac63");
+  await tap(page, ["enter"]);
+  await resultIs(page, "3", 1);
+});
