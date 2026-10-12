@@ -40,7 +40,9 @@ The two debts grow with every milestone:
 1. **G2 spot checks on the real G2** (optional, about 15 minutes): item 29 (the stock a b/c key; the Virtual Calculator contradicts the earlier "it was my script" finding), item 8 (tie rounding, typed with the keys) and the list in `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`. The Virtual Calculator answers are already in `tests/golden/g2.yaml`.
 2. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 3. ~~**When to merge `phase-1` into `master`.**~~ Done 2026-10-11 (fast-forward to b4431ae, full gate passed).
-4. **Later, not now** (user, 2026-10-11: first a usable prototype): the email to Bernard Parisse (draft in `../outreach/`), the name and trademark checks, the real application id, CI (C3) and the F-Droid recipe (C4).
+4. **P7 (keypad gestures), point 4: merge Shift and Alpha into one key?** Decide after using the flicks for a few days (K2, K3); recommendation and the merged key's behaviour in `docs/decisions.md` P7.
+5. **Check K0 on a device:** does the system keyboard still open when switching apps (Python editor and shell especially)? Fixed and tested in emulation only.
+6. **Later, not now** (user, 2026-10-11: first a usable prototype): the email to Bernard Parisse (draft in `../outreach/`), the name and trademark checks, the real application id, CI (C3) and the F-Droid recipe (C4).
 
 Done: the Giac mirror is live (release `deps-giac-2.1.0-1d9536e0`, SHA-256 checked 2026-10-11); the leftover worktrees and branches were removed and Phase 0 is tagged `phase-0-done`; milestone 3 as proposed below is approved (user, 2026-10-11).
 
@@ -74,6 +76,15 @@ Each row is a difference between our default and what the reference does (answer
 - **G7. Units (item 30), input for P3.** Shift + the Units key opens one menu with three tabs (Tools, Units, Const). A unit is attached as `5_km`; `CONVERT(5_km,1_m)` or `5_km▶_m` converts; mixed sums keep the first unit. Constants tab not opened. Details in `g2.yaml` item 30.
 - **G8. Equal factors (item 31).** The CAS view merges them (`x*x` → `x^2`, `a*b*a` → `a^2*b`), matching our default. In Home, lowercase names give Syntax Error and uppercase `A*B` gives 0 (stored variables), so Home does not treat undefined names as symbols.
 - **G9. Number formats (item 15).** The reference has six formats (Standard, Fixed, Scientific, Engineering, Floating, Rounded); the digits box defaults to 8 for every format but Standard and counts decimal places (Scientific(8) of `12345.6789` → `1.23456789ᴇ4`), and numbers get a thousands separator (`12,345.6789`). Ours: STD/SCI/ENG (FIX in the formatter only), `digits` = significant digits, no separator. Fits the R4 settings pass; decide then which to match.
+
+### Keypad gestures (P7, decided 2026-10-12; docs/decisions.md P7)
+- **K0. The system keyboard opened when switching apps (bug, user 2026-10-12).** Cause: CodeMirror 6.43 uses Chrome's EditContext on Android (`window.EditContext && browser.android`), and EditContext ignores our `inputmode="none"`; the Python app focuses its editor or shell every time it is shown. **Fixed** 2026-10-12, not committed yet: `app/src/apps/python/codeView.ts` uses a subclass with CodeMirror's undocumented static `EDIT_CONTEXT = false` (check it still exists when CodeMirror is updated) and adds `virtualkeyboardpolicy="manual"`. Regression test `app/test/softkeyboard.spec.ts`: after each app switch the focused element must have `inputmode=none` and no EditContext (it failed before the fix: "Python editor: DIV uses EditContext"). Python tests still pass. **Not checked on a device** (none connected), and not yet known whether it also happened when switching to Function or Solve (MathLive entry line, not touched by this fix).
+- **K1. Trackpad** in place of the four arrow keys (P7 point 1). Drag = steps in 2D with a haptic tick; a tap on an edge = one step; the same `NavDir` handling as the arrow keys today, so Plot, Num and the Symb lists keep working. Keep the key ids `up`/`down`/`left`/`right` as the tap zones, so existing tests and `spec/keyboard.yaml` stay meaningful.
+- **K2. Flicks up and down on every key** (P7 point 2). Up = shift layer, down = letter; legends at the top left (shift) and bottom left (letter); preview bubble and haptic tick; fire on release; `touch-action: none` on the pad.
+- **K3. Lock flicks on Shift and Alpha** (P7 point 3): Alpha down = capitals lock, Alpha up = lowercase lock, Shift up = shift lock. Taps and the L3 double-tap locks unchanged.
+- **K4. Compact keypad with the View key** (P7 point 5): the empty View cell toggles full / compact (upper cluster only); a Menu item to end a Signed area, since Enter is hidden in compact mode.
+- **K5. Tests and docs:** Playwright drag and flick helpers (CDP touch events), one test per gesture; record the gestures in `spec/keyboard.yaml`'s header and in the help texts (R4).
+- **Flaky test seen 2026-10-12:** `test/solve.spec.ts` "Solve: equations and values are stored" failed once in a full e2e run, then passed 6/6 three times on its own. Probably a timing issue in the persistence check under load; watch it.
 
 ### Milestone 3: Python (approved 2026-10-11; shift brief docs/shifts/brief.md)
 This follows D6: MicroPython by default, with the Pyodide "Python+" pack only optional and later.

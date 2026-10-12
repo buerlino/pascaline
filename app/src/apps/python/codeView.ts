@@ -10,6 +10,15 @@ import { EditorSelection, EditorState } from "@codemirror/state";
 import { drawSelection, EditorView, keymap, lineNumbers, type Command } from "@codemirror/view";
 import type { TextInput } from "../types.ts";
 
+/**
+ * CodeMirror uses Chrome's EditContext on Android, which ignores inputmode=none: the system keyboard opened
+ * whenever the Python app focused its editor (user, 2026-10-12). This static, read by @codemirror/view 6.43
+ * (undocumented), keeps the plain contenteditable path.
+ */
+class KeypadView extends EditorView {
+  static EDIT_CONTEXT = false;
+}
+
 export interface CodeViewOptions {
   parent: HTMLElement;
   doc: string;
@@ -48,7 +57,7 @@ export class CodeView {
         const atEdge = dir === "up" ? line === 1 : line === v.state.doc.lines;
         return atEdge && (o.onEdge?.(dir) ?? false);
       };
-    this.view = new EditorView({
+    this.view = new KeypadView({
       parent: o.parent,
       state: EditorState.create({
         doc: o.doc,
@@ -67,7 +76,7 @@ export class CodeView {
             ...historyKeymap,
             ...defaultKeymap,
           ]),
-          EditorView.contentAttributes.of({ inputmode: "none", "aria-label": o.label, spellcheck: "false", autocapitalize: "off" }),
+          EditorView.contentAttributes.of({ inputmode: "none", virtualkeyboardpolicy: "manual", "aria-label": o.label, spellcheck: "false", autocapitalize: "off" }),
           EditorView.updateListener.of((u) => {
             if (u.docChanged) o.onChange?.(u.state.doc.toString());
           }),
