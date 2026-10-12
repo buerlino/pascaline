@@ -553,6 +553,8 @@ interface ClipboardPort {                                // new (m4): navigator.
 | Units app chunk | ≤ 30 kB raw | — | size test |
 | qalc wasm + glue | ≤ 1.0 MB brotli | spike 0.93 MB + 21 kB | size test |
 | Precache total | ≤ 18 MB | 13 MB | size test |
+
+"Start chunk" is the entry's JavaScript plus every chunk it imports statically (Vite manifest `imports`, transitively), as `app/scripts/size-check.ts` measures it. The entry's CSS is not counted (25.8 kB raw, 9.0 kB gzip on 2026-10-12): the budget was set on the JavaScript figure. CSS gets its own line if it grows past 40 kB raw.
 | Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with `defs` replay | 662 / 995 ms | device runs |
 | Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | 92 ms at 12 | device runs |
 | Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` |
