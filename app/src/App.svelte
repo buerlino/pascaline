@@ -5,13 +5,15 @@
   import { APPS } from "./apps/registry.ts";
   import type { AppShell } from "./apps/shell.svelte.ts";
   import { VIEW_IDS, type NavDir, type ViewId } from "./apps/types.ts";
+  import { startsWithAns } from "./entry/ans.ts";
+  import { ANS_CHIP } from "./entry/macros.ts";
   import type { EntryController } from "./entry/controller.ts";
   import { t, type MessageKey } from "./i18n/index.ts";
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
   import { actionFor, keyboard, pythonText, type ActionBody, type Key, type Layer } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
-  import type { Session } from "./state/session.svelte.ts";
+  import type { HistoryItem, Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   import Settings from "./views/Settings.svelte";
 
@@ -34,7 +36,15 @@
       shell.enter(entry.value);
       return;
     }
-    if (session.submit(entry.value)) entry.clear();
+    if (session.submit(entry.value, undefined, entry.chips)) entry.clear();
+  }
+
+  /** L5 and docs/04 2.8: a tapped or picked result goes on the line as a chip that carries its full value. */
+  function insertResult(item: HistoryItem): void {
+    const shown = session.display(item).latex;
+    const chip = session.chipFor(item);
+    if (chip) entry.insertResult(shown, chip);
+    else entry.insert(resultToEntry(shown)); // too long for a chip: as drawn
   }
 
   async function cancel(): Promise<void> {
@@ -129,8 +139,8 @@
     picked = null;
     if (action.kind === "special" && action.name === "esc") return true;
     if (action.kind === "special" && action.name === "enter" && item) {
-      if (item.status === "done") entry.insert(resultToEntry(session.display(item).latex));
-      else entry.insert(item.latex);
+      if (item.status === "done") insertResult(item);
+      else entry.set(item.latex, item.chips); // the line is empty while picking: the entry comes back with its chips
       return true;
     }
     return false;
@@ -146,6 +156,8 @@
   type Mods = { shift: boolean; alpha: boolean };
   const modsFor = (layer: Layer | undefined): Mods =>
     layer === undefined ? { shift: session.shift, alpha: session.alpha } : { shift: layer === "shift", alpha: layer === "alpha" };
+
+  const layerOf = (m: Mods): Layer => (m.alpha ? "alpha" : m.shift ? "shift" : "primary");
 
   const NAV: Record<string, NavDir> = {
     moveUp: "up",
@@ -198,6 +210,9 @@
       const dir = action.kind === "cmd" ? NAV[action.name] : undefined;
       if (dir && shell.nav(dir)) return;
       if (!shell.showsEntry) return; // a view without an entry line (Plot) ignores typing
+      if (action.kind === "insert" && action.latex === ANS_CHIP) return; // Ans belongs to Home and CAS
+    } else if (entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.lastChip()) {
+      entry.insertAns(); // docs/04 2.8: an operator on an empty line starts with Ans
     }
     entry.run(action, key.id);
   }
@@ -266,8 +281,8 @@
         items={session.items}
         selected={picked}
         display={(item) => session.display(item)}
-        onrecall={(latex) => entry.set(latex)}
-        oninsert={(latex) => entry.insert(resultToEntry(latex))}
+        onrecall={(item) => entry.set(item.latex, item.chips)}
+        oninsert={insertResult}
         oncancel={() => void cancel()}
       />
     {:else if shell.current}

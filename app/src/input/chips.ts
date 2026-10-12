@@ -21,6 +21,9 @@ export const resKey = (k: number | string): string => `res:${k}`;
 export const constKey = (id: string): string => `const:${id}`;
 export const ANS_KEY = "ans";
 
+/** The chip table keyboard template samples are parsed with (spec/keyboard.yaml: Shift + `+` = Ans, sample Ans = 7). */
+export const SAMPLE_CHIPS: ChipTable = { [ANS_KEY]: { value: "7", exact: true } };
+
 /** The chips a LaTeX string refers to, as table keys (to keep only those in a history item). */
 export function chipKeysIn(latex: string): Set<string> {
   const keys = new Set<string>();

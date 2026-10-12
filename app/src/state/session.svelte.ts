@@ -2,8 +2,9 @@
 // The calculator session: current view, modifier keys, settings and the history of both views.
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
 import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat } from "../calc/port.ts";
+import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
 import { SerializeError } from "../input/emit.ts";
-import { latexToGiac } from "../input/latex-to-giac.ts";
+import { latexToGiacInfo } from "../input/latex-to-giac.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { decimalFromRational, decimalFromString, decimalToString, type ComplexValue } from "../engine/format.ts";
 import { homeResultToLatex } from "../render/home.ts";
@@ -70,10 +71,22 @@ export interface HistoryItem {
   polar?: Polar;
   /** The mode the Format key chose for this result only; undefined: the global setting (Home) or the exact form (CAS). */
   fmt?: FmtMode;
+  /** The values of the chips in `latex` (docs/04 3.6), so a recalled entry needs no engine or index. Ans is not kept. */
+  chips?: ChipTable;
+  /** The value a \res chip of this result carries (docs/04 2.8): the exact text, or every digit the engine gave. */
+  full?: string;
+  /** `full` is the exact value (a fraction, an exact expression), not rounded digits. */
+  fullExact?: boolean;
+  /** An inexact chip went into the input, so the result is never marked "=" (docs/04 2.4; R3 draws the mark). */
+  inexactInput?: boolean;
   startedAt: number;
 }
 
 const HISTORY_LIMIT = 200;
+/** A chip carries at most this much text (docs/04 2.8); a longer result is inserted as it is drawn. */
+export const FULL_LIMIT = 2048;
+/** Engine text with a decimal point or an E exponent is rounded digits, not an exact value. */
+const isDigitsText = (t: string): boolean => /\.|\d[eE][+-]?\d/.test(t);
 const errorText = (code: CalcError | undefined, fallback: string): string =>
   code ? t(`error.${code}` as MessageKey) : fallback;
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, Math.round(n)));
@@ -84,6 +97,19 @@ function rationalOf(text: string | undefined): Rational | undefined {
   return { n: m[1], d: m[2] ?? "1" };
 }
 const clampDigits = (n: number): number => Math.min(15, Math.max(1, Math.round(n)));
+
+/** A stored history item with a fresh id; chip fields that do not have their shape are dropped. */
+function restoredItem(i: HistoryItem, id: number): HistoryItem {
+  const { chips, full, fullExact, ...rest } = i;
+  const out: HistoryItem = { ...rest, id };
+  const c = validChips(chips);
+  if (c) out.chips = c;
+  if (typeof full === "string" && full.length <= FULL_LIMIT) {
+    out.full = full;
+    out.fullExact = fullExact === true;
+  }
+  return out;
+}
 
 export class Session {
   view = $state<View>("home");
@@ -202,10 +228,14 @@ export class Session {
    * line, or a job is running); otherwise the history item exists at once and the promise settles when
    * the job has finished, failed or been cancelled.
    */
-  submit(latex: string, giacOverride?: string): Promise<void> | undefined {
+  submit(latex: string, giacOverride?: string, chips: ChipTable = {}): Promise<void> | undefined {
     if (latex.trim() === "" || this.busy) return undefined;
     const view = this.view;
     const list = view === "home" ? this.home : this.cas;
+    // Ans is the view's last result now, at Enter (as on the reference), not when the key was pressed.
+    const ans = this.lastChip(view);
+    const kept = pruneChips(chips, latex);
+    const table: ChipTable = ans ? { ...kept, [ANS_KEY]: ans } : kept;
     list.push({
       id: this.nextId++,
       view,
@@ -214,18 +244,39 @@ export class Session {
       resultLatex: "",
       text: "",
       approximate: false,
+      ...(Object.keys(kept).length ? { chips: kept } : {}),
       startedAt: performance.now(),
     });
     // Read and write through the proxy in the list from here on.
     const live = list[list.length - 1] as HistoryItem;
     if (list.length > HISTORY_LIMIT) list.splice(0, list.length - HISTORY_LIMIT);
-    return this.finish(live, view, latex, giacOverride).finally(() => this.saveHistory());
+    return this.finish(live, view, latex, table, giacOverride).finally(() => this.saveHistory());
   }
 
-  private async finish(live: HistoryItem, view: View, latex: string, giacOverride?: string): Promise<void> {
+  /** The chip a finished result gives when it is tapped or picked (docs/04 2.8); undefined: insert it as drawn. */
+  chipFor(item: HistoryItem): Chip | undefined {
+    if (item.status !== "done" || item.full === undefined) return undefined;
+    return { value: item.full, exact: item.fullExact === true };
+  }
+  /** The last finished result of a view, as Ans. */
+  lastChip(view: View = this.view): Chip | undefined {
+    const list = view === "home" ? this.home : this.cas;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const item = list[i] as HistoryItem;
+      if (item.status === "done") return this.chipFor(item);
+    }
+    return undefined;
+  }
+
+  private async finish(live: HistoryItem, view: View, latex: string, chips: ChipTable, giacOverride?: string): Promise<void> {
     let giac: string;
     try {
-      giac = giacOverride ?? latexToGiac(latex);
+      if (giacOverride !== undefined) giac = giacOverride;
+      else {
+        const p = latexToGiacInfo(latex, { chips });
+        giac = p.giac;
+        if (p.inexact) live.inexactInput = true;
+      }
     } catch (e) {
       live.status = "error";
       live.text = e instanceof SerializeError ? e.message : String(e);
@@ -243,6 +294,12 @@ export class Session {
         const q = r.value ? rationalOf(r.exact) : undefined;
         if (q) live.rational = q;
         if (r.ok) live.resultLatex = homeResultToLatex(r.display);
+        // The chip value: the exact fraction when there is one, else the engine's full value (every confirmed digit)
+        const full = r.exact ?? r.full;
+        if (r.ok && full && full.length <= FULL_LIMIT) {
+          live.full = full;
+          live.fullExact = !r.approximate && (r.exact !== undefined || r.exactRational || !isDigitsText(full));
+        }
       } else {
         const r = await this.calc.cas(giac, s);
         if (live.status !== "pending") return;
@@ -255,6 +312,10 @@ export class Session {
           const dec = q ? decimalFromRational(BigInt(q.n), BigInt(q.d)) : decimalFromString(r.text);
           if (dec) live.value = { re: dec, im: decimalFromRational(0n, 1n) };
           if (q) live.rational = q;
+          if (r.text.length <= FULL_LIMIT) {
+            live.full = r.text;
+            live.fullExact = !isDigitsText(r.text);
+          }
         }
       }
     } catch (e) {
@@ -389,7 +450,7 @@ export class Session {
         (xs ?? [])
           .filter((i) => (i.status === "done" || i.status === "error") && typeof i.latex === "string")
           .slice(-HISTORY_LIMIT)
-          .map((i) => ({ ...i, id: this.nextId++ }));
+          .map((i) => restoredItem(i, this.nextId++));
       this.home.splice(0, 0, ...keep(hist.home));
       this.cas.splice(0, 0, ...keep(hist.cas));
     }

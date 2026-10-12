@@ -477,7 +477,7 @@ class Parser {
   /** The value of a chip from the table, as one factor; a missing chip is an error, never a guess. */
   private chip(key: string, what: string): Json {
     const c = this.chips[key];
-    if (!c) throw new SerializeError(key === ANS_KEY ? "Ans: there is no result yet in this view" : `${what}: its value is missing`);
+    if (!c) throw new SerializeError(key === ANS_KEY ? "Ans: no result to use in this view yet" : `${what}: its value is missing`);
     if (!c.exact) this.inexact = true;
     return ["Chip", { str: chipToGiac(c.value) }];
   }

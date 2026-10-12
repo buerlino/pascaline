@@ -8,6 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import { keyboard, templates } from "../keyboard/keyboard.ts";
+import { SAMPLE_CHIPS } from "./chips.ts";
 import { latexToGiac } from "./latex-to-giac.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -61,7 +62,7 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
       if (!t.sample) continue;
       const [latex, intended] = t.sample;
       it(`${t.keyId}/${t.layer}/${t.variant}: ${latex}`, () => {
-        const produced = latexToGiac(latex);
+        const produced = latexToGiac(latex, { chips: SAMPLE_CHIPS });
         const r = equal(produced, intended);
         expect(r.ok, `got ${produced}, want ${intended}: ${r.how}`).toBe(true);
       });

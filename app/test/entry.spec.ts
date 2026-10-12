@@ -59,17 +59,17 @@ test("L5: tapping a result puts it on the entry line, in Home and CAS", async ({
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.25");
   await tap(page, ["d2", "mul"]);
   await lastResult(page).tap();
-  expect(await entryValue(page)).toBe("2\\times0.25");
+  expect(await entryValue(page)).toBe("2\\times\\res{1}{0.25}"); // a chip carrying 1/4 (docs/04 2.8)
   await tap(page, ["enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.5");
-  // CAS: x+1 comes back bracketed, so 2×(x+1) stays a product
+  // CAS: the chip x+1 is one factor, so 2×(x+1) stays a product
   await tap(page, ["app"]);
   await expect(page.locator('[data-view="cas"]')).toHaveAttribute("aria-selected", "true");
   await tap(page, ["x", "add", "d1", "enter"]);
   await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", "x+1");
   await tap(page, ["d2", "mul"]);
   await lastResult(page).tap();
-  expect(await entryValue(page)).toBe("2\\times\\left(x+1\\right)");
+  expect(await entryValue(page)).toBe("2\\times\\res{1}{x+1}");
   await tap(page, ["enter"]);
   await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", /2\\left\(x\+1\\right\)|2x\+2/);
 });

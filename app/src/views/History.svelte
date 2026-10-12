@@ -18,9 +18,10 @@
     /** P4: the row picked with Up from an empty entry line (index into items), or null. */
     selected?: number | null;
     display: (item: HistoryItem) => { text: string; latex: string };
-    onrecall: (latex: string) => void;
-    /** L5: tapping a result puts it on the entry line at the cursor. */
-    oninsert: (latex: string) => void;
+    /** Tapping an entry puts it back on the line, with the values of its chips. */
+    onrecall: (item: HistoryItem) => void;
+    /** L5: tapping a result puts it on the entry line at the cursor, as a chip (docs/04 2.8). */
+    oninsert: (item: HistoryItem) => void;
     oncancel: () => void;
   } = $props();
 
@@ -84,7 +85,7 @@
   {#each shown as item, k (item.id)}
     <article class="item" data-status={item.status}
       data-selected={selected !== null && k + items.length - shown.length === selected ? "true" : undefined}>
-      <button type="button" class="in" title={t("history.recall")} onclick={() => onrecall(item.latex)}>
+      <button type="button" class="in" title={t("history.recall")} onclick={() => onrecall(item)}>
         <Math latex={item.latex} />
       </button>
       <div class="out" data-testid="result">
@@ -100,7 +101,7 @@
         {:else}
           {@const d = display(item)}
           <button type="button" class="result" data-text={d.text} title={t("history.insert")}
-            onpointerdown={(e) => e.preventDefault()} onclick={() => oninsert(d.latex)}>
+            onpointerdown={(e) => e.preventDefault()} onclick={() => oninsert(item)}>
             <Math latex={d.latex} />
           </button>
           {#if item.approximate}<span class="note">{t("history.approximate")}</span>{/if}
