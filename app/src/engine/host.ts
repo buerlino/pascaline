@@ -4,7 +4,7 @@
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
-import { ENGINE_DEFINITIONS, homeEval, homeSetupCommands, isStateful, regrouped, resultFromFacts, safePrecision, toExactLiterals } from "./homeEval.ts";
+import { definitionsUsedBy, ENGINE_DEFINITIONS, homeEval, homeSetupCommands, isStateful, regrouped, resultFromFacts, safePrecision, toExactLiterals } from "./homeEval.ts";
 import { floatFacts, hasFloat, numberLatex, shapeOf } from "./numeric.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -96,10 +96,20 @@ export class EngineHost {
    *  otherwise leave the previous answer in place and show it again). */
   private readonly strict: { eval(input: string): string };
 
-  /** Loads our definitions (ENGINE_DEFINITIONS) into this Giac instance. */
+  /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
+  private readonly loaded = new Set<string>();
+
+  /** Loads the definitions `text` mentions that are not loaded yet. Called before every input reaches Giac. */
+  need(text: string): void {
+    for (const name of definitionsUsedBy(text)) {
+      if (this.loaded.has(name)) continue;
+      this.giac.eval(ENGINE_DEFINITIONS[name]!);
+      this.loaded.add(name);
+    }
+  }
+
   constructor(giac: GiacApi) {
     this.giac = giac;
-    for (const d of ENGINE_DEFINITIONS) giac.eval(d);
     this.strict = {
       eval: (input) => {
         giac.clearMessages();
@@ -114,6 +124,7 @@ export class EngineHost {
   }
 
   eval(input: string): { output: string; ok: boolean; engineMs: number; replay: string[] } {
+    this.need(input);
     const t0 = performance.now();
     const output = this.giac.eval(input);
     const ok = !isError(output);
@@ -121,6 +132,7 @@ export class EngineHost {
   }
 
   home(input: string, s: HomeSettings): { result: HomeResult; replay: string[] } {
+    this.need(input);
     this.useHomeMode(s);
     const t0 = performance.now();
     let result: HomeResult;
@@ -147,6 +159,7 @@ export class EngineHost {
   }
 
   cas(input: string, s: CasSettings): { result: CasResult; replay: string[] } {
+    this.need(input);
     this.useMode(`cas${JSON.stringify(s)}`, () => {
       for (const c of casSetupCommands(s)) this.giac.eval(c);
       this.giac.setPowLimit(s.powLimit);
@@ -190,6 +203,7 @@ export class EngineHost {
   }
 
   solve(req: SolveRequest, s: HomeSettings): SolveOutcome {
+    this.need(JSON.stringify(req));
     this.useSolveMode(s);
     return solveRequest(this.giac, req, s);
   }
@@ -199,12 +213,14 @@ export class EngineHost {
   }
 
   analyze(req: AnalysisRequest, s: HomeSettings): AnalysisResult {
+    this.need(JSON.stringify(req));
     this.useSolveMode(s);
     return analyze(this.giac, req, s);
   }
 
   /** Num table cells are Home evaluations, in Home mode (same budget per cell). */
   table(req: TableRequest, s: HomeSettings): HomeResult[][] {
+    this.need(JSON.stringify(req));
     this.useHomeMode(s);
     return table(this.giac, req, s);
   }
@@ -246,10 +262,12 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           const loaded = await load(req.baseUrl);
           const t1 = performance.now();
           loaded.giac.eval("0");
-          // Our definitions first: a replayed user definition may call them.
           const host = new EngineHost(loaded.giac);
           const t2 = performance.now();
-          for (const line of req.replay) loaded.giac.eval(line);
+          for (const line of req.replay) {
+            host.need(line); // a replayed definition may use one of ours
+            loaded.giac.eval(line);
+          }
           const t3 = performance.now();
           post({ id: req.id, type: "ready", instantiateMs: loaded.instantiateMs, initMs: t2 - t1, replayMs: t3 - t2 });
           return host;

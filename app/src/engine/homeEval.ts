@@ -102,19 +102,26 @@ export function safePrecision(display: string): Pick<HomeResult, "exactRational"
 }
 
 /**
- * Our definitions, loaded into Giac when the engine starts (before the user's definitions are replayed).
+ * Our definitions, by name, loaded into Giac on the first input that mentions the name (EngineHost.need): defining
+ * them costs ~10 ms on the desktop, which must not land on the engine-ready path.
  * `sigfig(x,n)` (docs/04 section 2.5): x rounded to n significant digits, half away from zero, as an exact rational,
  * so `sigfig(1/3,3)` is exactly 333/1000. The power of ten is found by exact comparisons (a float log10 can land on
  * the wrong side at 999.95); an irrational x is first evaluated with n+30 digits.
  */
-export const ENGINE_DEFINITIONS: readonly string[] = [
-  "sigfig(x,n):={ local a,p,k,m; " +
+export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
+  sigfig:
+    "sigfig(x,n):={ local a,p,k,m; " +
     'if (type(n)!=integer or n<1) throw("sigfig: n must be a positive integer"); ' +
     "if (x==0) return 0; " +
     'if (type(x)!=integer and type(x)!=rational) { x:=evalf(x,n+30); if (type(x)!=real) throw("sigfig: x must be a real number"); } ' +
     "a:=abs(x); p:=floor(evalf(log10(a),30)); while (10^p>a) p:=p-1; while (10^(p+1)<=a) p:=p+1; " +
     "k:=n-1-p; m:=floor(a*10^k+1/2); return sign(x)*m/10^k; }",
-];
+};
+
+/** The names of our definitions that `input` mentions. */
+export function definitionsUsedBy(input: string): string[] {
+  return Object.keys(ENGINE_DEFINITIONS).filter((name) => new RegExp(`\\b${name}\\b`).test(input));
+}
 
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */
 export function homeSetupCommands(s: HomeSettings): string[] {

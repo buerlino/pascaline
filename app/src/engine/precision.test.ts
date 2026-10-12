@@ -97,6 +97,13 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     expect(home("sigfig(1/3,0)").ok).toBe(false);
   });
 
+  it("sigfig is defined on first use, not at engine start (start-up budget)", async () => {
+    const { giac } = await loadNodeGiac();
+    const fresh = new EngineHost(giac);
+    expect(giac.eval("sigfig(1/3,3)")).toBe("sigfig(1/3,3)");
+    expect(fresh.home("sigfig(1/3,3)", defaultHomeSettings).result.display).toBe("0.333");
+  });
+
   it("CAS: typed decimals are exact (P9), and a float result is checked and formatted by us (oracle)", () => {
     const cas = (input: string) => host.cas(input, defaultCasSettings).result;
     expect(cas("1-0.9-0.1").text).toBe("0");
