@@ -135,7 +135,7 @@ stage_link() {
   em++ -Oz "$BUILD/glue.o" "$PREFIX/lib/libqalculate.a" "$PREFIX/lib/libxml2.a" \
       "$PREFIX/lib/libmpfr.a" "$PREFIX/lib/libgmp.a" \
       -sMODULARIZE=1 -sEXPORT_ES6=1 -sENVIRONMENT=web,worker,node -sALLOW_MEMORY_GROWTH=1 \
-      -sEXPORTED_FUNCTIONS=_qalc_init,_qalc_calc -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
+      -sEXPORTED_FUNCTIONS=_qalc_init,_qalc_calc,_qalc_set_precision,_qalc_parse,_qalc_print,_qalc_eval -sEXPORTED_RUNTIME_METHODS=ccall,cwrap \
       -fexceptions -o "$WORK/out/qalc.mjs"
   ls -l "$WORK/out" >&2
 }
