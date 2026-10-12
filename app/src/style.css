@@ -14,6 +14,8 @@
   --shift: #f0b35a;
   --alpha: #7fc8f8;
   --error: #c0392b;
+  /* chips on the entry line and in the history (\res, \ans, \const): upright, on an accent background */
+  --chip-bg: #24486a;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: light) {
@@ -31,6 +33,7 @@
     --muted: #5b6575;
     --shift: #a35f00;
     --alpha: #0d5f93;
+    --chip-bg: #cfe3f7;
     color-scheme: light;
   }
 }
