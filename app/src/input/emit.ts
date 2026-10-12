@@ -132,6 +132,9 @@ function ser(e: Json, o: SerializeOptions): Out {
   const a0 = args[0] as Json;
   const a1 = args[1] as Json;
   switch (head) {
+    case "Chip": // our own parser: a chip's value, already Giac text in brackets (input/chips.ts)
+      if (typeof a0 === "object" && a0 !== null && !Array.isArray(a0) && "str" in a0) return { s: a0.str, p: 5 };
+      throw new SerializeError("bad chip");
     case "Call": // our own parser: ["Call", name, ...args]
       return call(a0 as string, args.slice(1), o);
     case "Error":

@@ -16,7 +16,7 @@ the ⚠, and every other case must not.
 | `solve.yaml` | 42 | Solve: 1-D (nearest root to the guess), systems (`kind: system`), polynomials (`kind: poly`) |
 | `function.yaml` | 25 | Function app: Plot analysis (root, extremum, intersection, slope, area) and Num table rows |
 | `bench.yaml` | 55 | benchmark inputs (timing set; 14 `derived` values checked) |
-| `parser.yaml` | 330 | LaTeX to Giac round trip for our parser (2 known gaps, `status: gap`; the gate prints 328/330) |
+| `parser.yaml` | 355 | LaTeX to Giac round trip for our parser (2 known gaps, `status: gap`; the gate prints 353/355); `error: true` cases must be rejected, `chips:` gives the chip table |
 | `python.yaml` | 23 (1 `pending`) | MicroPython with `calc` and the graphics modules on the same Giac build |
 | `g2.yaml` | 31 items (all answered by the Virtual Calculator; items 8, 29 and the real-G2 spot checks are still worth a device check) | G2 checklist questions and answers; `tests/golden/G2-CHECKLIST.md` is generated from it |
 

@@ -2,8 +2,10 @@
 // The MathLive entry line, driven only by our keyboard. Plain TS. MathLive loads lazily (render/mathlive.svelte.ts):
 // keys pressed before it is ready are queued and replayed in order, so the keypad is usable at once.
 import type { MathfieldElement } from "mathlive";
+import { constKey, pruneChips, resKey, type Chip, type ChipTable } from "../input/chips.ts";
 import type { ActionBody } from "../keyboard/keyboard.ts";
 import { mathlive } from "../render/mathlive.svelte.ts";
+import { ANS_CHIP, CHIP_MACROS, constChip, isChipLatex, resChip } from "./macros.ts";
 
 /** The literal caret of the one-line mode, as MathLive serialises it (the parser reads it as a power). */
 export const CARET = '\\char"5E ';
@@ -42,6 +44,9 @@ export class EntryController {
   private host: HTMLElement | undefined;
   private queue: ActionBody[] = [];
   private pendingValue: string | undefined;
+  /** The values of the chips on the line (docs/04 3.6); keys as in input/chips.ts. */
+  private table: ChipTable = {};
+  private nextRes = 1;
   /** Called for a physical Enter / Escape (desktop convenience). */
   onEnter: () => void = () => {};
   onEscape: () => void = () => {};
@@ -87,6 +92,7 @@ export class EntryController {
     mf.smartMode = false;
     mf.inlineShortcuts = {};
     mf.removeExtraneousParentheses = true;
+    mf.macros = { ...mf.macros, ...CHIP_MACROS };
     const enforce = (): void => this.forceNoSystemKeyboard();
     void customElements.whenDefined("math-field").then(() => requestAnimationFrame(enforce));
     mf.addEventListener("focusin", enforce);
@@ -134,13 +140,21 @@ export class EntryController {
   get value(): string {
     return this.mf ? this.mf.value : (this.pendingValue ?? "");
   }
+  /** The chip table of the line: only the chips still on it. */
+  get chips(): ChipTable {
+    return pruneChips(this.table, this.value);
+  }
   clear(): void {
     this.queue = [];
     this.pendingValue = undefined;
+    this.table = {};
+    this.nextRes = 1;
     if (this.mf) this.mf.value = "";
   }
-  /** Put a previous entry back on the line. */
-  set(latex: string): void {
+  /** Put a previous entry back on the line, with the values of its chips. */
+  set(latex: string, chips: ChipTable = {}): void {
+    this.table = { ...chips };
+    this.nextRes = 1 + Math.max(0, ...Object.keys(chips).map((k) => (k.startsWith("res:") ? Number(k.slice(4)) : 0)));
     if (!this.mf) {
       this.pendingValue = latex;
       this.queue = [];
@@ -159,7 +173,22 @@ export class EntryController {
     this.mf.insert(latex, { format: "latex", selectionMode: "after" });
     this.mf.focus();
   }
-    focus(): void {
+  /** A history result as a chip (docs/04 2.8): drawn as `shown` (its display LaTeX), worth `chip.value`. */
+  insertResult(shown: string, chip: Chip): void {
+    const k = this.nextRes++;
+    this.table[resKey(k)] = chip;
+    this.insert(resChip(k, shown));
+  }
+  /** A constant as a chip (Find, docs/04 3.6): `symbol` is LaTeX, the value and uncertainty come with it. */
+  insertConst(id: string, symbol: string, chip: Chip): void {
+    this.table[constKey(id)] = chip;
+    this.insert(constChip(id, symbol));
+  }
+  /** Ans: the view's last result, read when Enter is pressed. */
+  insertAns(): void {
+    this.insert(ANS_CHIP);
+  }
+  focus(): void {
     this.mf?.focus();
   }
 
@@ -187,7 +216,10 @@ export class EntryController {
       return;
     }
     const whole = isFrac && WHOLE_BEFORE.test(mf.getValue(0, mf.position, "latex"));
-    if (a.kind === "insert" && a.latex.startsWith("#@^") && this.selectCompound(mf)) {
+    if (a.kind === "insert" && a.latex.includes("#@") && this.selectChip(mf)) {
+      // a chip is one term: ÷, a/b, x², xʸ, x⁻¹ take all of it, and it draws as one box, so no brackets
+      this.apply(mf, a);
+    } else if (a.kind === "insert" && a.latex.startsWith("#@^") && this.selectCompound(mf)) {
       this.apply(mf, { ...a, latex: `\\left(#@\\right)${a.latex.slice(2)}` });
     } else if (isDivide(a) && this.selectCompound(mf)) {
       // L9: with the term selected, #@ takes all of it as the numerator: \frac{\frac12}{□}
@@ -195,6 +227,15 @@ export class EntryController {
     } else this.apply(mf, a);
     this.mixedAfter = whole ? mf.value : undefined;
     mf.focus();
+  }
+
+  /** If a chip is right before the cursor, select it (MathLive's #@ does not take a macro by itself) and return true. */
+  private selectChip(mf: MathfieldElement): boolean {
+    if (!mf.selectionIsCollapsed || !isChipLatex(mf.getElementInfo(mf.position)?.latex ?? "")) return false;
+    const end = mf.position;
+    mf.executeCommand("moveToPreviousChar"); // a chip is one step (captureSelection)
+    mf.selection = { ranges: [[mf.position, end]] };
+    return true;
   }
 
   /**

@@ -354,3 +354,33 @@ cases:
   - { id: "l9-02", latex: "\\frac{\\sqrt4}{2}", expect: "1", source: "derived", group: "l9" }
   - { id: "l9-03", latex: "\\frac{2^3}{4}", expect: "2", source: "derived", group: "l9" }
   - { id: "l9-04", latex: "\\frac{2\\tfrac12}{5}", expect: "1/2", source: "derived", group: "l9" }
+  # --- docs/04 2.3 #1 (R2): 0x / 0b / 0o followed by digits is not read as a product (0xFF typed with the keys
+  # gave 0*x*F*F = 0, shown as exact). An error with a message until EN6 (milestone 6) makes it a literal.
+  - { id: "p231-01", latex: "0xFF", error: true, source: "derived", group: "p231", note: "keys 0 x Alpha-F Alpha-F; the intended value is 255 (derived), an error until EN6" }
+  - { id: "p231-02", latex: "0x1F", error: true, source: "derived", group: "p231" }
+  - { id: "p231-03", latex: "0b101", error: true, source: "derived", group: "p231" }
+  - { id: "p231-04", latex: "0o17", error: true, source: "derived", group: "p231" }
+  - { id: "p231-05", latex: "0x+1", expect: "0*x+1", source: "derived", group: "p231", note: "0 times x stays a product when no digit follows" }
+  - { id: "p231-06", latex: "0xy", expect: "0*x*y", source: "derived", group: "p231" }
+  - { id: "p231-07", latex: "20xF", expect: "20*x*F", source: "derived", group: "p231", note: "only a lone 0 starts a base prefix" }
+  # --- chips (R2, docs/04 2.8 and 3.6): \res{k}{shown}, \ans and \const{ID}{symbol} stand for the value in the
+  # entry's chip table (`chips:`), never for the digits they show. Constants: the exact SI 2019 values (derived:
+  # exact by definition), G with its CODATA uncertainty only to test an inexact chip (the value is the table's).
+  - { id: "chip-res-01", latex: "\\res{1}{0.333333333333}\\times3", expect: "1", chips: { "res:1": { value: "1/3", exact: true } }, source: "derived", group: "chips", note: "docs/04 2.3 #8" }
+  - { id: "chip-res-02", latex: "\\res{1}{0.333333333333}", expect: "3333333333333333333333333333333333333333/10^40", chips: { "res:1": { value: "0.3333333333333333333333333333333333333333", exact: false } }, source: "derived", group: "chips", note: "a decimal value is an exact rational literal of its digits" }
+  - { id: "chip-res-03", latex: "\\frac{\\res{1}{0.25}}{2}", expect: "1/8", chips: { "res:1": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-04", latex: "\\res{2}{-0.5}^2", expect: "1/4", chips: { "res:2": { value: "-1/2", exact: true } }, source: "derived", group: "chips", note: "the power takes the whole chip: (-1/2)^2" }
+  - { id: "chip-res-05", latex: "2\\res{1}{\\frac{\\sqrt{2}}{2}}", expect: "sqrt(2)", chips: { "res:1": { value: "sqrt(2)/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-06", latex: "\\res{1}{1.5\\cdot10^{-30}}+\\res{2}{x+1}", expect: "15/10^31+x+1", chips: { "res:1": { value: "1.5E-30", exact: false }, "res:2": { value: "x+1", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-07", latex: "3-\\res{1}{x+1}", expect: "2-x", chips: { "res:1": { value: "x+1", exact: true } }, source: "derived", group: "chips", note: "a sum stays one factor" }
+  - { id: "chip-res-08", latex: "\\res{3}{7}", error: true, source: "derived", group: "chips", note: "a chip without its value is an error, never a guess" }
+  - { id: "chip-ans-01", latex: "\\ans\\times3", expect: "1", chips: { "ans": { value: "1/3", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-ans-02", latex: "\\ans^2", expect: "4", chips: { "ans": { value: "-2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-ans-03", latex: "2\\ans", expect: "10", chips: { "ans": { value: "5", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-ans-04", latex: "\\frac{\\ans}{4}", expect: "3/4", chips: { "ans": { value: "3", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-ans-05", latex: "\\ans^{-1}", expect: "4", chips: { "ans": { value: "0.25", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-ans-06", latex: "\\ans+1", error: true, source: "derived", group: "chips", note: "no result yet in the view" }
+  - { id: "chip-const-01", latex: "\\const{c}{c}\\times2", expect: "599584916", chips: { "const:c": { value: "299792458", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-const-02", latex: "\\frac{\\const{h}{h}}{\\const{e}{e}}", expect: "(662607015/10^42)/(1602176634/10^28)", chips: { "const:h": { value: "6.62607015E-34", exact: true }, "const:e": { value: "1.602176634E-19", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-const-03", latex: "\\const{G}{G}", expect: "667430/10^16", chips: { "const:G": { value: "6.67430E-11", exact: false, unc: "0.00015E-11" } }, source: "derived", group: "chips" }
+  - { id: "chip-const-04", latex: "\\const{k_B}{k_{B}}\\times300", expect: "1380649*3/10^27", chips: { "const:k_B": { value: "1.380649E-23", exact: true } }, source: "derived", group: "chips" }

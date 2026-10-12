@@ -15,7 +15,9 @@
 //              every round, and no ⚠ unless the case has status "warn"
 //   function   Function analysis and Num table (analysis.ts), same rules
 //   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed
-//   parser     LaTeX → Giac (our parser) equals the intended expression, decided by Giac; gaps never fail
+//   parser     LaTeX → Giac (our parser) equals the intended expression, decided by Giac; gaps never fail.
+//              A case with `error: true` passes when the parser rejects the input (a message, never a guess);
+//              `chips:` is the entry's chip table (\res, \ans, \const; docs/04 section 3.6)
 //   python     tests/golden/python.yaml: MicroPython ($PYTHON_OUT, else python/_out/dev) with calc on this Giac;
 //              output, errors with lines, calc, Cancel (worker terminated, fresh runtime works), graphics
 import { spawnSync } from "node:child_process";
@@ -27,7 +29,8 @@ import { defaultHomeSettings, type HomeResult, type HomeSettings } from "../src/
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
-import { latexToGiac, resetUserFunctions } from "../src/input/latex-to-giac.ts";
+import type { ChipTable } from "../src/input/chips.ts";
+import { latexToGiac, resetUserFunctions, SerializeError } from "../src/input/latex-to-giac.ts";
 import { Worker } from "node:worker_threads";
 import { createCalcHost } from "../src/python/calcHost.ts";
 import { loadNodeMath } from "../src/python/nodeMath.ts";
@@ -63,6 +66,10 @@ interface Case {
   options?: { decimalComma?: boolean; realOddRoots?: boolean };
   /** parser.yaml: entries typed before this one (e.g. a function definition, L6). */
   before?: string[];
+  /** parser.yaml: the input must be rejected by the parser (docs/04 2.3 #1). */
+  error?: boolean;
+  /** parser.yaml: the entry's chip table (\res, \ans, \const), keyed as in app/src/input/chips.ts. */
+  chips?: ChipTable;
   note?: string;
 }
 
@@ -322,12 +329,14 @@ async function stageParser(): Promise<void> {
     let r: { ok: boolean; how: string };
     try {
       resetUserFunctions();
-      for (const b of c.before ?? []) latexToGiac(b, c.options ?? {});
-      produced = latexToGiac(c.latex!, c.options ?? {});
-      r = equalByGiac(g, produced, c.expect as string);
+      const o = { ...(c.options ?? {}), ...(c.chips ? { chips: c.chips } : {}) };
+      for (const b of c.before ?? []) latexToGiac(b, o);
+      produced = latexToGiac(c.latex!, o);
+      r = c.error ? { ok: false, how: "accepted, but must be an error" } : equalByGiac(g, produced, c.expect as string);
     } catch (e) {
       produced = "";
-      r = { ok: false, how: `parser threw: ${e instanceof Error ? e.message : String(e)}` };
+      const msg = e instanceof Error ? e.message : String(e);
+      r = c.error && e instanceof SerializeError ? { ok: true, how: `error: ${msg}` } : { ok: false, how: `parser threw: ${msg}` };
     }
     if (c.status === "gap") {
       gaps++;

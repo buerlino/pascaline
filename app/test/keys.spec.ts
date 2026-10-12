@@ -137,7 +137,7 @@ test("Up on an empty line picks the last history row, Enter inserts it", async (
   await expect(page.locator('[data-selected="true"] .result')).toHaveAttribute("data-text", "15");
   await tap(page, ["enter"]);
   await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
-  expect(await entryValue(page)).toBe("15");
+  expect(await entryValue(page)).toBe("\\res{1}{15}"); // a chip carrying the result (docs/04 2.8)
   // with something typed, Up is an ordinary cursor key: no pick
   await tap(page, ["up"]);
   await expect(page.locator('[data-selected="true"]')).toHaveCount(0);
@@ -261,4 +261,68 @@ test("÷ after a plain number or a sum is unchanged", async ({ page }) => {
   expect(await entryValue(page)).toBe("1+\\frac63");
   await tap(page, ["enter"]);
   await resultIs(page, "3", 1);
+});
+
+// docs/04 2.3 #1: 0 x F F typed with the keys was read as 0·x·F·F = 0 and shown as an exact result.
+test("0xFF typed with the keys is an error, not 0", async ({ page }) => {
+  await tap(page, ["d0", "x", "alpha", "pow", "alpha", "pow"]);
+  expect(await entryValue(page)).toBe("0xFF");
+  await tap(page, ["enter"]);
+  await expect(page.locator('[data-status="error"]')).toHaveCount(1);
+  await expect(page.locator('[data-status="error"] .error')).toContainText("0x");
+});
+
+// docs/04 2.3 #8: a tapped result carries its full value, so 1/3 tapped and ×3 is 1, not 0.999999999999.
+test("1/3, tap the result, ×3 is 1", async ({ page }) => {
+  await tap(page, ["d1", "div", "d3", "enter"]);
+  await resultIs(page, "0.333333333333", 1);
+  await lastResult(page).tap();
+  await tap(page, ["mul", "d3", "enter"]);
+  await resultIs(page, "1", 2); // derived: (1/3)·3 = 1
+});
+
+// docs/04 2.8: Ans on Shift + (the reference's position), read when Enter is pressed.
+test("shift + is Ans, the view's last result", async ({ page }) => {
+  await tap(page, ["d1", "div", "d3", "enter"]);
+  await resultIs(page, "0.333333333333", 1);
+  await tap(page, ["d2", "add", "shift", "add"]);
+  expect(await entryValue(page)).toBe("2+\\ans");
+  await tap(page, ["mul", "d3", "enter"]);
+  await resultIs(page, "3", 2); // derived: 2 + (1/3)·3, Ans carries 1/3 exactly
+  // CAS has its own Ans
+  await tap(page, ["app", "x", "add", "d1", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+  await tap(page, ["d2", "mul", "shift", "add", "enter"]);
+  await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", /2\\left\(x\+1\\right\)|2x\+2/);
+});
+
+// docs/04 2.8: + − × ÷ xʸ x² x⁻¹ on an empty line start with Ans; (−) stays negation.
+test("an operator on an empty line starts with Ans; (−) stays negation", async ({ page }) => {
+  // no result yet: − is just a minus
+  await tap(page, ["sub", "d5", "enter"]);
+  await resultIs(page, "-5", 1);
+  await tap(page, ["d1", "div", "d3", "enter"]);
+  await resultIs(page, "0.333333333333", 2);
+  await tap(page, ["mul"]);
+  expect(await entryValue(page)).toBe("\\ans\\times");
+  await tap(page, ["d3", "enter"]);
+  await resultIs(page, "1", 3); // derived: (1/3)·3
+  await tap(page, ["add", "d1", "enter"]);
+  await resultIs(page, "2", 4);
+  await tap(page, ["sq"]);
+  expect(await entryValue(page)).toBe("\\ans^2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "4", 5);
+  await tap(page, ["div", "d8"]);
+  expect(await entryValue(page)).toBe("\\frac{\\ans}{8}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "0.5", 6);
+  await tap(page, ["shift", "div", "enter"]);
+  await resultIs(page, "2", 7); // (1/2)⁻¹
+  await tap(page, ["pow", "d3", "enter"]);
+  await resultIs(page, "8", 8);
+  await tap(page, ["sub", "d1", "enter"]);
+  await resultIs(page, "7", 9);
+  await tap(page, ["neg", "d2", "enter"]);
+  await resultIs(page, "-2", 10); // (−) is negation, not Ans−
 });

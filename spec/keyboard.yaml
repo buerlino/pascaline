@@ -14,12 +14,15 @@
 #                                  insert a LaTeX template: #? is a placeholder, #@ the selection or
 #                                  what is before the cursor, #0 the selection or a placeholder. Every
 #                                  template needs a `sample`: the template filled in, and the Giac text it
-#                                  must mean. The round-trip test runs all samples through our parser and Giac.
+#                                  must mean. The round-trip test runs all samples through our parser and Giac,
+#                                  with Ans = 7 (SAMPLE_CHIPS in app/src/input/chips.ts).
 #                                  Any action may carry `line: <action>`, used instead of it when the
 #                                  one-line entry mode is on (a linear form of the same key).
 #   { cmd: "moveToNextChar" }      a MathLive editing command
 #   { special: shift|alpha|enter|clear|cancel|esc|app|cas|settings|apps|symb|plot|num|menu|none }   handled by the app
 # Missing layer: the key does nothing in that layer, except that alpha falls back to primary.
+# Empty line (docs/04 2.8, app/src/entry/ans.ts): in Home and CAS, + − × ÷ xʸ x² and x⁻¹ on an empty entry line
+# insert Ans (the \ans chip) first, as on the reference; (−) stays negation. Only when the view has a result.
 # Letters: Alpha types the capital in the alpha layer, Shift + Alpha its lower case (as on the reference).
 # `label` entries starting with "$" are i18n keys (app/src/i18n), anything else is shown as is.
 #
@@ -263,7 +266,8 @@ keys:
   - { id: d0, row: 9, col: 1, cls: num, label: { primary: "0", alpha: "\"" }, primary: { type: "0" }, alpha: { type: "\"" }, source: virtual-calc }  # r10c2 (alpha: the reference inserts a pair of quotes, ours one; shift Notes not ours)
   - { id: dot, row: 9, col: 2, cls: num, label: { primary: ".", shift: "=" }, primary: { type: "." }, shift: { type: "=" }, source: virtual-calc }  # r10c3 (shift =)
   - { id: space, row: 9, col: 3, cls: num, label: { primary: "␣", shift: "_" }, primary: { type: " " }, shift: { type: "_" }, source: virtual-calc }  # r10c4 (space; shift _)
-  - { id: add, row: 9, col: 4, cls: op, label: { primary: "+", alpha: ";" }, primary: { type: "+" }, alpha: { type: ";" }, source: virtual-calc }  # r10c5 (alpha ;; shift Ans not ours yet)
+  - { id: add, row: 9, col: 4, cls: op, label: { primary: "+", shift: "Ans", alpha: ";" }, primary: { type: "+" },
+      shift: { insert: "\\ans", sample: ["\\ans", "7"] }, alpha: { type: ";" }, source: virtual-calc }  # r10c5 (shift Ans, docs/04 2.8: the view's last result, read at Enter; alpha ;)
 
 # ---- Python layer (milestone 3). In the Python app's editor and shell, these keys type Python text instead of
 # their normal action; keys not listed keep it (digits, letters with alpha, cursor, Enter, Cancel, space, minus).

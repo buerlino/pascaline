@@ -2,6 +2,7 @@
 // Hand-written parser for the LaTeX subset MathLive produces from our keyboard (and Giac's latex() style).
 // It yields the same MathJSON shapes as Compute Engine's raw parse, so emit.ts serves both parsers.
 // Unknown or ambiguous input throws SerializeError instead of guessing.
+import { ANS_KEY, chipToGiac, constKey, resKey, type ChipTable } from "./chips.ts";
 import { SerializeError, type Json } from "./emit.ts";
 
 type Tok =
@@ -135,7 +136,7 @@ const NAMED_FUNCS = new Set(["abs", "sqrt", "floor", "ceil", "round", "sign", "g
 const ABS_LIKE: Record<string, string> = { abs: "Abs", sign: "Sign", floor: "Floor", ceil: "Ceil", round: "Round" };
 const FACTOR_CMDS = new Set([
   "frac", "dfrac", "tfrac", "sqrt", "binom", "overline", "int", "sum", "prod", "lim", "begin",
-  "operatorname", "mathrm", "mathit",
+  "operatorname", "mathrm", "mathit", "res", "ans", "const",
 ]);
 
 export interface ParseOptions {
@@ -143,16 +144,32 @@ export interface ParseOptions {
   userFunctions?: ReadonlySet<string>;
   /** L6 setting: the decimal separator is a comma; arguments are then separated by ";". */
   decimalComma?: boolean;
+  /** The entry's chip table: the values of its \res, \ans and \const chips (input/chips.ts). */
+  chips?: ChipTable;
 }
+
+/** What the parser found besides the expression. */
+export interface ParseInfo {
+  json: Json;
+  /** A chip whose value is not exact was used, so the result cannot be marked "=" (docs/04 2.4). */
+  inexact: boolean;
+}
+
+/** Letters that start a base prefix after a lone 0 (0x, 0b, 0o), and what may follow them. */
+const BASE_PREFIX: Record<string, RegExp> = { x: /^[0-9A-Fa-f]/, b: /^[0-9]/, o: /^[0-9]/ };
 
 class Parser {
   private pos = 0;
   private noDiff = 0;
   private user: ReadonlySet<string>;
   private toks: Tok[];
+  private readonly chips: ChipTable;
+  /** Set when a chip with an inexact value is used. */
+  inexact = false;
   constructor(toks: Tok[], o: ParseOptions) {
     this.toks = toks;
     this.user = o.userFunctions ?? new Set(["f", "g", "h"]);
+    this.chips = o.chips ?? {};
   }
 
   private peek(k = 0): Tok | undefined {
@@ -394,6 +411,7 @@ class Parser {
     const tok = t as Tok;
     switch (tok.t) {
       case "num": {
+        this.basePrefix(tok);
         this.pos++;
         const num = { num: tok.v.replace(/^0+(?=\d)/, "") };
         // L2: a whole number directly before \tfrac is a mixed number (the a/b key pressed twice): 2\tfrac12 = 2+1/2
@@ -443,6 +461,38 @@ class Parser {
     }
   }
 
+  /**
+   * docs/04 2.3 #1: a lone 0 followed by x, b or o and a digit (0xFF, 0b101, 0o17) is a number in another base,
+   * which the keys type as 0·x·F·F = 0 today. Refuse it with a message until EN6 (milestone 6) reads it.
+   */
+  private basePrefix(tok: Tok): void {
+    if (tok.v !== "0") return;
+    const p = this.peek(1);
+    const q = this.peek(2);
+    const after = p?.t === "ch" ? BASE_PREFIX[p.v] : undefined;
+    if (!after || !q || (q.t !== "num" && q.t !== "ch") || !after.test(q.v)) return;
+    throw new SerializeError(`0${(p as Tok).v}… numbers in other bases are not supported yet: type the value in decimal`);
+  }
+
+  /** The value of a chip from the table, as one factor; a missing chip is an error, never a guess. */
+  private chip(key: string, what: string): Json {
+    const c = this.chips[key];
+    if (!c) throw new SerializeError(key === ANS_KEY ? "Ans: no result to use in this view yet" : `${what}: its value is missing`);
+    if (!c.exact) this.inexact = true;
+    return ["Chip", { str: chipToGiac(c.value) }];
+  }
+
+  /** Skip one {…} group (a chip's display argument), braces balanced. */
+  private skipGroup(): void {
+    this.expectCh("{");
+    for (let depth = 1; depth > 0; this.pos++) {
+      const t = this.peek();
+      if (!t) this.fail("unterminated group");
+      if (t?.t === "ch" && t.v === "{") depth++;
+      else if (t?.t === "ch" && t.v === "}") depth--;
+    }
+  }
+
   private symbol(letter: string): Json {
     this.pos++;
     let name = letter;
@@ -479,6 +529,24 @@ class Parser {
     }
     if (name in FUNCS) return this.func(name);
     switch (name) {
+      case "res": {
+        // \res{k}{shown}: a history result (docs/04 2.8)
+        this.pos++;
+        const k = this.groupText();
+        if (!/^\d+$/.test(k)) throw new SerializeError(`unsupported result chip ${k}`);
+        this.skipGroup();
+        return this.chip(resKey(k), "result chip");
+      }
+      case "ans":
+        this.pos++;
+        return this.chip(ANS_KEY, "Ans");
+      case "const": {
+        // \const{ID}{symbol}: a constant inserted from Find (docs/04 3.6)
+        this.pos++;
+        const id = this.groupText();
+        this.skipGroup();
+        return this.chip(constKey(id), `constant ${id}`);
+      }
       case "frac":
       case "dfrac":
       case "tfrac": {
@@ -737,5 +805,11 @@ class Parser {
 }
 
 export function parseLatex(latex: string, o: ParseOptions = {}): Json {
-  return new Parser(tokenize(latex, o.decimalComma), o).parseAll();
+  return parseLatexInfo(latex, o).json;
+}
+
+export function parseLatexInfo(latex: string, o: ParseOptions = {}): ParseInfo {
+  const p = new Parser(tokenize(latex, o.decimalComma), o);
+  const json = p.parseAll();
+  return { json, inexact: p.inexact };
 }

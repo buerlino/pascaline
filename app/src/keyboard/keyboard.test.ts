@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { SAMPLE_CHIPS } from "../input/chips.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { actionFor, cellsIn, gridPlace, type Key, KeyboardSpecError, keyboard, labelFor, loadKeyboard, pythonLabel, pythonText, templates } from "./keyboard.ts";
 
@@ -69,13 +70,15 @@ describe("keyboard spec", () => {
     const vars = keyboard.byId.get("vars");
     const d3 = keyboard.byId.get("d3");
     const plus = keyboard.byId.get("add");
+    const minus = keyboard.byId.get("sub");
     const sin = keyboard.byId.get("sin");
-    if (!vars || !plus || !sin || !d3) throw new Error("keys missing");
+    if (!vars || !plus || !minus || !sin || !d3) throw new Error("keys missing");
     expect(actionFor(vars, false, true)).toEqual({ kind: "type", text: "A" });
     expect(actionFor(vars, true, true)).toEqual({ kind: "type", text: "a" });
     expect(actionFor(d3, true, true)).toEqual({ kind: "type", text: "#" });
     expect(actionFor(keyboard.byId.get("enter") as Key, false, true)).toEqual({ kind: "special", name: "enter" });
-    expect(actionFor(plus, true, false)).toBeUndefined();
+    expect(actionFor(minus, true, false)).toBeUndefined(); // shift − (Base) comes with EN6
+    expect(actionFor(plus, true, false)).toEqual({ kind: "insert", latex: "\\ans", sample: ["\\ans", "7"] }); // docs/04 2.8
     expect(labelFor(sin, true, false)).toBe("sin⁻¹");
   });
 
@@ -84,7 +87,7 @@ describe("keyboard spec", () => {
     for (const t of all) {
       const id = `${t.keyId}/${t.layer}/${t.variant}`;
       expect(t.sample, `${id} needs a sample`).toBeDefined();
-      expect(() => latexToGiac((t.sample as readonly [string, string])[0]), id).not.toThrow();
+      expect(() => latexToGiac((t.sample as readonly [string, string])[0], { chips: SAMPLE_CHIPS }), id).not.toThrow();
     }
   });
 

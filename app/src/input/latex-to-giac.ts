@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // LaTeX -> Giac with our own parser (no Compute Engine). Same output stage as serialize.ts.
 import { SerializeError, mathJsonToGiac, type Json, type SerializeOptions } from "./emit.ts";
-import { parseLatex } from "./parse.ts";
+import type { ChipTable } from "./chips.ts";
+import { parseLatexInfo } from "./parse.ts";
 
 export { SerializeError };
 
 export interface LatexToGiacOptions extends SerializeOptions {
   /** L6 setting: decimal comma input ("3,5" = 3.5; ";" separates arguments). */
   decimalComma?: boolean;
+  /** The entry's chip table (\res, \ans, \const); without it a chip is an error. */
+  chips?: ChipTable;
 }
 
 /** f, g and h are always functions; other single letters once the user defines them (L6). */
@@ -31,10 +34,19 @@ function noteDefinition(e: Json): void {
 }
 
 export function latexToGiac(latex: string, o: LatexToGiacOptions = {}): string {
+  return latexToGiacInfo(latex, o).giac;
+}
+
+/** The Giac text, and whether an inexact chip went into it (then the result is never marked "=", docs/04 2.4). */
+export function latexToGiacInfo(latex: string, o: LatexToGiacOptions = {}): { giac: string; inexact: boolean } {
   if (latex.trim() === "") throw new SerializeError("empty input");
   const user = o.userFunctions ?? userFunctions();
-  const json = parseLatex(latex, { userFunctions: user, ...(o.decimalComma ? { decimalComma: true } : {}) });
-  const out = mathJsonToGiac(json, { ...o, userFunctions: user });
+  const { json, inexact } = parseLatexInfo(latex, {
+    userFunctions: user,
+    ...(o.decimalComma ? { decimalComma: true } : {}),
+    ...(o.chips ? { chips: o.chips } : {}),
+  });
+  const giac = mathJsonToGiac(json, { ...o, userFunctions: user });
   noteDefinition(json);
-  return out;
+  return { giac, inexact };
 }
