@@ -19,12 +19,17 @@ export function buildOutDir(root: string, outDir: string): string {
   return resolve(root, outDir);
 }
 
+/** The files the service worker precaches: everything in `outDir` except sw.js, source maps and Vite's own `.vite/` (manifest). Sorted, "/"-separated. */
+export function precacheFiles(outDir: string): string[] {
+  return walk(outDir)
+    .map((p) => relative(outDir, p).split(sep).join("/"))
+    .filter((f) => f !== "sw.js" && !f.endsWith(".map") && !f.startsWith(".vite/"))
+    .sort();
+}
+
 /** List the files in `outDir`, fingerprint them and write `outDir/sw.js` from `root/pwa/sw.js`. */
 export function writeServiceWorker(root: string, outDir: string): void {
-  const files = walk(outDir)
-    .map((p) => relative(outDir, p).split(sep).join("/"))
-    .filter((f) => f !== "sw.js" && !f.endsWith(".map"))
-    .sort();
+  const files = precacheFiles(outDir);
   const hash = createHash("sha256");
   for (const f of files) hash.update(f).update(createHash("sha256").update(readFileSync(join(outDir, f))).digest());
   const version = hash.digest("hex").slice(0, 12);
