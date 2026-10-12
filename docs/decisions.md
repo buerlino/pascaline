@@ -6,6 +6,8 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 ## Needs the user
 
 - Open items for the user: see [backlog.md](backlog.md), "Needs the user".
+- **2026-10-12 M4-3: The parser leaves the start chunk (from R2). DECIDED by the user (2026-10-12).** After R2 the start chunk is at 51.13 of 52 kB gzip (147.60 of 150 kB raw), and R3 and R4 still add code. The parser (`parse.ts`, `emit.ts`, `chips.ts`, about 20 kB raw) becomes its own chunk, loaded together with MathLive: it is needed only at Enter, and nothing typed reaches Enter before MathLive is ready. ron does it as the first step of R3. Alternative: raise the budget (rejected: the start chunk would keep growing with every package).
+- **2026-10-12 M4-4: A chip's exactness, not its mark, decides `=` (from R2). DECIDED by the user (2026-10-12).** docs/04 2.4 said a result from "a result chip whose own mark is not `=`" cannot be `=`; it now reads "whose value is not exact". So `1/3` tapped `×3` is `= 1` (2.3 #8), while a tapped `√2` (carried as digits) never gives `=`. docs/04 2.4 and 2.8 updated; R3 draws the mark from `HistoryItem.inexactInput`.
 - **2026-10-12 M4-2: Task benchmark questions (from R1). PROPOSED, needs the user.**
   1. **Units lose on presses in the plan:** t02 `72 km/h → m/s` 15 presses against 7 for `72 ÷ 3.6`; t04 14 against 11. **Recommendation:** decide at milestone 5, when the Units app's entry is designed; the first lever is a default target unit per dimension (SI), which would drop the `→ m/s` part of t02. Nothing to do in milestone 4.
   2. **t10 uncertainty:** first-order propagation gives 39.488 ± 1.2443 m² (`derived`, in tasks.yaml); docs/04 (lines 168 and 296) says `39.5 ± 1.3`. Worst-case intervals give ± 1.394, so 1.3 fits neither rule. **Recommendation:** treat docs/04's 1.3 as a typo and correct it to `39.5 ± 1.2` once qalc's own result is a golden case (milestone 5, U2); until then nobody quotes it.
@@ -78,6 +80,10 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-12 Chips and Ans (R2)
+- **Choice:** chips carry two arguments (key, shown); Ans is resolved in the session at Enter; Ans before an operator only when the view has a result (else the operator stays itself); a chip takes x², xʸ, x⁻¹ without brackets (it is drawn as one box).
+- **Would change if:** the owner finds a boxed negative chip with ² misleading on a device.
 
 ### 2026-10-12 Task benchmark budgets and values (EN0, R1)
 - **Choice:** a pending task's budget is the press count of its planned sequence (from docs/03 and docs/04); it is fixed, with the owner, when the task goes active. Expected values are `derived` or `oracle` (mpmath 1.3.0); the `compare` column (reference calculator, phone calculator) stays null until the owner measures by hand.

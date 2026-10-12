@@ -134,6 +134,7 @@ Take the host-cpu lock for every build. Never mount the main checkout into the c
 
 ### ron, R3: marks, 30 digits, PFX in the UI, branch `p1/ron-m4-marks`
 Backlog step 4, on top of G2.
+- **First, the parser chunk (user, 2026-10-12, decisions M4-3):** move the parser (`parse.ts`, `emit.ts`, `chips.ts`) out of the start chunk into its own chunk, loaded together with MathLive. Report the start chunk before and after (after R2: 147.60 kB / 51.13 kB gzip).
 - Show `=`/`≈`/`⚠ n` before Home and CAS results. Num and Solve show only `⚠` (§2.4). The "approximate" note goes.
 - Allow digits up to 30, with the settings `schema: 2` migration (§6.2).
 - Wire G2's PFX format into Settings and the Format key cycle (§2.7).
