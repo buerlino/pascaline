@@ -4,9 +4,10 @@
 The standing rules for a coordinator shift: Henri and the workers gorge, ron and annabell (`.claude/agents/`). They bind together with `CLAUDE.md`. The shift's own goal, tasks, definition of done and per-worker assignments are in [brief.md](brief.md); where the two differ, the brief wins for that shift. Section numbers match the old single-file brief (sections 0, 2, 7 and 8 are in the brief), so the agent files' references still work.
 
 ## 1. Principles
-The two principles in CLAUDE.md decide every default:
+The three principles in CLAUDE.md decide every default:
 - **fully open source, reuse first**;
-- **speed and efficiency for engineers.**
+- **speed and efficiency for engineers**;
+- **precision you can trust** (no silent wrong answers; docs/04 section 2).
 
 ## 3. Hard rules (non-negotiable)
 - **Clean room** (CLAUDE.md):
@@ -28,7 +29,7 @@ The two principles in CLAUDE.md decide every default:
 - **Containers:** never mount the main checkout or `_downloads/` with `:Z`/`:z`. Mount scratch copies only. Clean up root-owned files with `podman unshare rm -rf`.
 - **No hanging commands:** every long or background command gets a timeout (`timeout 1800 …`) and never waits for interactive input.
 - **Devices:** only install our own app (placeholder ID `org.pascaline.app`, never published). Never touch other apps or user data. The only settings changes allowed are the ones `stay-awake.sh` makes.
-- **Plan changes need the user.** Decide defaults that are consistent with CLAUDE.md and docs/02 yourself, and record them. Anything that contradicts them, or misses a bar in the brief's definition of done, becomes a **proposal** in `docs/decisions.md`.
+- **Plan changes need the user.** Decide defaults that are consistent with CLAUDE.md, docs/04 and docs/02 yourself, and record them. Anything that contradicts them, or misses a bar in the brief's definition of done, becomes a **proposal** in `docs/decisions.md`.
 - **Start-up numbers must hold:** on the Tab One, cold launch → keyboard usable < 1 s and → engine ready < 1.5 s. Anything not needed at start loads lazily.
 - If a tool call is denied, don't retry it. Log it and move on.
 
@@ -52,10 +53,10 @@ The two principles in CLAUDE.md decide every default:
   Build engines once in the main checkout under the host-cpu lock, then point at them, rather than building in every worktree.
 - **Locks:** wrap heavy host work in `tools/devlock.sh acquire host-cpu <name> 1800` … `release`. Heavy work means wasm, container or Gradle builds, and desktop benchmarks. Never hold a lock while you wait for someone.
 - **Devices belong to annabell.** Nobody else runs `adb`. Send her a `[NEED]` with the branch and what to run. Device commands: `tools/README.md`.
-- **Shared files belong to Henri:** `CLAUDE.md`, `docs/02-architecture-plan.md`, `docs/decisions.md`, `docs/backlog.md`, `THIRD_PARTY.md`, `spike/RESULTS.md`, `.claude/agents/*`. Send him the text: numbers, decisions, G2 questions, and every new dependency.
+- **Shared files belong to Henri:** `CLAUDE.md`, `docs/02-architecture-plan.md`, `docs/04-architecture.md`, `docs/decisions.md`, `docs/backlog.md`, `THIRD_PARTY.md`, `spike/RESULTS.md`, `.claude/agents/*`. Send him the text: numbers, decisions, G2 questions, and every new dependency.
 - **Ownership inside `app/`:**
-  - **ron:** `app/src/views/`, `app/src/apps/`, `app/src/entry/`, `app/src/keyboard/`, `spec/keyboard.yaml`.
-  - **gorge:** `app/src/engine/`, `app/src/python/`, `app/src/input/` (the parser), `tests/golden/`.
+  - **ron:** `app/src/views/`, `app/src/apps/`, `app/src/entry/`, `app/src/keyboard/`, `app/src/input/` (the parser; ron adds the `parser.yaml` row with each rule), `spec/keyboard.yaml`.
+  - **gorge:** `app/src/engine/`, `app/src/python/`, `tests/golden/` (with the oracle), the Find index generator and data.
   - **annabell:** `android/`, `build.sh`, `tools/`, the release toolchain.
   - **Agree the interfaces early.**
 - **Messages** (SendMessage to an agent ID). Short, in these forms:
@@ -95,6 +96,6 @@ Log every default in `docs/decisions.md`: the choice, why, the alternatives, and
 1. Stop handing out work. Every worker commits, sends a final `[STATUS]` and releases its locks.
 2. Merge what's ready into `phase-1`. List any unmerged branches and why they weren't merged.
 3. Restore the Fairphone if it was used. The Tab One and the S8+ stay awake.
-4. Bring the shared docs up to date (`docs/backlog.md`, `docs/decisions.md`, `docs/02-architecture-plan.md` section 12 for milestones).
+4. Bring the shared docs up to date (`docs/backlog.md`, `docs/decisions.md`, `docs/04-architecture.md` when a decision or budget changes, `docs/02-architecture-plan.md` section 12 for milestones).
 5. Write `docs/shifts/<date>-<shift>-report.md` for the user, short and in plain language: what got done; the brief's definition of done, item by item; the numbers; the defaults decided; proposals that need a yes or no; what the user has to do; problems; next steps.
 6. Commit on `phase-1`. Don't push.

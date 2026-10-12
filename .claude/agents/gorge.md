@@ -1,6 +1,6 @@
 ---
 name: gorge
-description: Worker for Pascaline shifts. Engine owner (engine/giac, the MathEngine worker and client), exact-first Home and CAS evaluation in app/, the Home number formatter, and tests/golden/ with the oracle. Spawned by henri.
+description: Worker for Pascaline shifts. Engine owner (engine/giac, the MathEngine worker and client), exact-first Home and CAS evaluation in app/, the Home number formatter, tests/golden/ with the oracle, and the Find index generator and data. Spawned by henri.
 model: opus
 effort: medium
 permissionMode: auto

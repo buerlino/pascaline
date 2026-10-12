@@ -44,7 +44,8 @@ row_columns: { 6: 5, 7: 5, 8: 5, 9: 5 }
 
 keys:
   # ---- rows 0-2: the upper cluster. Symb / Plot / Num open the views of the current app (from Home or CAS: the
-  # last app used). Help (r1c4) and View (r2c4) have no function of ours yet: gaps.
+  # last app used). Help (r1c4) and View (r2c4) are gaps until built: View = compact keypad (K4), shift View = Copy,
+  # shift Menu = Paste, Help = context help (docs/04-architecture.md section 5.1).
   - { id: apps, row: 0, col: 0, cls: nav, label: { primary: "$key.apps" }, primary: { special: apps }, source: virtual-calc }  # r1c1 (shift Info: not ours)
   - { id: symb, row: 0, col: 1, cls: nav, label: { primary: "$key.symb" }, primary: { special: symb }, source: virtual-calc }  # r1c2 (shift Setup: not ours)
   - { id: up, row: 0, col: 2, span: 2, cls: ctl, label: { primary: "▲" }, primary: { cmd: moveUp }, source: virtual-calc }  # pad up; on an empty entry line it selects the last history row (App.svelte)
@@ -64,7 +65,8 @@ keys:
   - { id: cas, row: 2, col: 5, cls: nav, label: { primary: "$key.cas", shift: "$key.settings" },
       primary: { special: cas }, shift: { special: settings }, source: virtual-calc }  # r3c5 (CAS; shift CAS Settings, ours is the one Settings sheet)
 
-  # ---- row 3 (r4). Vars, Math and Templates open menus we don't have yet: the keys keep their letters.
+  # ---- row 3 (r4). Planned (P8, docs/04 section 5.1): Vars = Find on variables, Math = Find, shift Math = Memory,
+  # Tmpl = templates, shift Tmpl = the Units app. Not built yet, so `special: none`; the Alpha letters stay.
   - { id: vars, row: 3, col: 0, cls: fn, label: { primary: "$key.vars", alpha: A }, primary: { special: none }, alpha: { type: A }, source: virtual-calc }  # r4c1 (menu not ours yet)
   - { id: math, row: 3, col: 1, cls: fn, label: { primary: "$key.math", alpha: B }, primary: { special: none }, alpha: { type: B }, source: virtual-calc }  # r4c2 (menu not ours yet)
   - { id: tmpl, row: 3, col: 2, cls: fn, label: { primary: "$key.tmpl", alpha: C }, primary: { special: none }, alpha: { type: C }, source: virtual-calc }  # r4c3 (palette not ours yet)

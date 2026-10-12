@@ -11,11 +11,12 @@ Pascaline is aimed at engineers: the fastest way to a correct number, with exact
 - Most maths apps on phones are worksheets or chat-style tools. We want a **real calculator keyboard** with fast, predictable input.
 - There's no open-source app of this kind on F-Droid yet.
 
-## Planned features
+## Features
 - **Home** (numeric) and **CAS** (symbolic) views, with textbook-style (2D) input and output
-- **Apps:** Function, Parametric, Polar, Sequence, Solve, Linear & Triangle Solver, Statistics 1Var/2Var, Inference, Finance, Spreadsheet, Advanced Graphing, Geometry, 3D graphing
-- **Python** for programming (MicroPython built in; an optional full CPython pack with numpy and sympy)
+- **Apps:** Function and Solve, with **Python** for programming (MicroPython built in; an optional full CPython pack with numpy is planned)
 - **Checked answers:** numeric solutions are plugged back in and verified, and you get a warning if something looks wrong
+- **Next (planned):** one **Find** key for every function, constant, unit and variable; **honest precision** (every result marked exact or rounded, up to 30 digits, copy the full value); a **Units app** with physical constants and uncertainty; matrices, number bases and everyday engineering functions
+- **Later:** Statistics, Spreadsheet, more plot types, Geometry, 3D
 - **Fully offline**, no ads, no tracking, no account
 - Android first, also installable as a **web app (PWA)** on any device
 
@@ -33,19 +34,20 @@ Pascaline reuses mature open-source projects instead of reinventing them:
 | Python | [MicroPython](https://micropython.org/); optional [Pyodide](https://pyodide.org/) |
 | App shell | [Capacitor](https://capacitorjs.com/) (Android, iOS, desktop) |
 
-Details: [docs/02-architecture-plan.md](docs/02-architecture-plan.md).
+Details: [docs/04-architecture.md](docs/04-architecture.md).
 
 ## Roadmap
 1. ~~**Phase 0, technical spike**~~ ✅ done (2026-10-11): Giac in WebAssembly is fast enough on a low-end Android tablet.
-2. **MVP** (in progress): keyboard, Home, CAS, textbook input, Function app, Solve app, Python ✅; next: the first test release.
-3. **v1:** Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, RPN.
-4. **v2:** Geometry, Advanced Graphing, 3D, polish. Releases on F-Droid, Google Play and as a web app.
+2. ~~**MVP**~~ ✅ keyboard, Home, CAS, textbook input, Function app, Solve app, Python.
+3. **Engineer core** (next): Find and honest precision, then the Units app, then matrices, number bases and everyday functions.
+4. **Later:** Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, RPN, Geometry, Advanced Graphing, 3D. Releases on F-Droid, Google Play and as a web app (not scheduled yet).
 
 ## Contributing
 Feedback, ideas and code are all welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first. It contains a few **important legal rules**: Pascaline must never contain HP code, firmware or artwork.
 
 ## Project documents
-- [Architecture & project plan](docs/02-architecture-plan.md)
+- [Architecture](docs/04-architecture.md) and the [original project plan](docs/02-architecture-plan.md)
+- [Feature analysis and roadmap](docs/03-feature-analysis.md)
 - [Status and backlog](docs/backlog.md)
 - [Original feasibility study](docs/01-feasibility-report.md) (its legal section is still current)
 

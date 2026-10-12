@@ -56,7 +56,8 @@ Pascaline is *inspired by* the HP Prime but contains **nothing from it**.
 A calculator that's wrong is worse than no calculator. So:
 - **Every bug fix comes with a regression test.**
 - Golden test cases record **where the expected value comes from**: `source: device` (real calculator), `virtual-calc` (official simulator), `oracle` (MPFR/mpmath/SymPy), `derived` (provable), or `assumed` (still to verify). Never write an expected value from memory.
-- The UI never calls the maths engine directly. Everything goes through the `MathEngine` interface. See [docs/02-architecture-plan.md](docs/02-architecture-plan.md).
+- The UI never calls a maths engine directly. Everything goes through the async engine interfaces (`MathEngine` for Giac; the units engine gets its own). See [docs/04-architecture.md](docs/04-architecture.md), section 8.2.
+- A number shown to the user is exact (`=`), rounded with every digit confirmed (`≈`), or flagged (`⚠`). Never show digits the engine has not confirmed (docs/04 section 2).
 - If a bug is in **Giac** itself, please also report it upstream to the Giac authors with a minimal example.
 
 ## 5. Code style and workflow

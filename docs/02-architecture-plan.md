@@ -4,7 +4,9 @@
 
 *Date: 2026-10-10. This follows up [01-feasibility-report.md](01-feasibility-report.md) and replaces its "1:1 clone" approach. The legal advice (section 3 of 01-feasibility-report.md) still applies.*
 
-**Goal update (user, 2026-10-12):** the product goal is a precision engineering tool that makes everyday engineering calculation faster and more precise; the Prime-like layout is the way in, not the aim. Priorities: [03-feature-analysis.md](03-feature-analysis.md). The rest of this document is the original plan and still describes the architecture.
+**Goal update (user, 2026-10-12):** the product goal is a precision engineering tool that makes everyday engineering calculation faster and more precise; the Prime-like layout is the way in, not the aim. Priorities: [03-feature-analysis.md](03-feature-analysis.md).
+
+**Superseded where they differ (2026-10-12): [04-architecture.md](04-architecture.md)** settles the architecture for that goal (precision chain, Find, the Units app, keys, state, build and gates). This document stays the record of the original plan, the solver choice (section 4), the licence and F-Droid reasoning (sections 10–11) and the milestone history (section 12).
 
 **Original goal (2026-10-10):** an app that *feels* like an HP Prime G2, with the same key layout, the same apps and the same functions, but with our own look and name. It doesn't have to be bit-for-bit identical, it may improve on the original, and it should be built **mostly from existing open-source projects** to keep development time low.
 
@@ -130,7 +132,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 | **Finance** (time value of money, amortization) | Our own small TVM module (well-known formulas) + the section 4 solver; cross-checked against `numpy-financial` in tests | About 1 week |
 | **Spreadsheet** | Jspreadsheet CE grid + Giac evaluation (Prime-style formulas, even symbolic ones) | Cell dependency graph |
 | **Explorers** (Linear/Quadratic/Trig) | JSXGraph sliders | Small |
-| **Units, constants** | libqalculate as a third worker (P3, `docs/p3-units-plan.md`; Giac units are not used) | Units and Constants pickers |
+| **Units, constants** | libqalculate as a third worker, in its own Units app; units and constants are found through Find, constants enter Home as numbers (P3 as amended by P8; `docs/p3-units-plan.md`, docs/04 section 4; Giac units are not used) | Units app, Find index |
 | **Lists, matrices** | Giac | List/matrix editors (grid) |
 | **Python** | MicroPython (default, D6) + `calc` and `hpprime`-compatible modules + CodeMirror editor; Pyodide "Python+" (numpy) as an optional download | Section 3 |
 | **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); licence: the English lines are GPL-3.0-or-later by Giac's README (R5, `docs/research/giac-help-licence.md`; to confirm with Parisse) | Help texts for apps and keys |
@@ -156,7 +158,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 │                     │                                             │                                            │
 │  Web Worker 1: giac.wasm (+ GSL, GMP, MPFR)               Web Worker 2: Python (MicroPython; Pyodide optional) │
 │  - eval / exact / approx / latex()                        - numpy, sympy, mpmath (+ scipy on demand)           │
-│  - solve, fsolve, regressions, units...                   - calc / hpprime modules → message bridge            │
+│  - solve, fsolve, regressions...                          - calc / hpprime modules → message bridge            │
 │                                                                                                                │
 │  Storage: IndexedDB (history, variables, app data) + Capacitor Filesystem (import/export, share)               │
 └────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -184,7 +186,7 @@ Giac in WebAssembly is about **2× slower than native, and sometimes 15× slower
 Pascaline keeps the G2's logical key layout and apps, so G2 users are fast from the first minute. Underneath, it is not limited to what the G2 can do. All maths goes through the async `MathEngine` interface, so a new ability is a new engine (or engine module) behind that interface, and the screens don't change. Each engine runs in its own worker, can be cancelled, and loads only when it is first needed, so start-up stays fast.
 - **Giac** (+ GSL, GMP, MPFR): exact and numeric maths, the core. Loaded at start.
 - **MicroPython**: scripts and `calc`. Loaded when the Python app opens.
-- **libqalculate** (P3, accepted 2026-10-11, spike first): units and conversions, physical constants, uncertainty/interval arithmetic. It would load when units are first used.
+- **libqalculate** (P3, accepted 2026-10-11; amended by P8): units and conversions, physical constants, first-order uncertainty (interval arithmetic off, P3 decision 4). Worker 3, loaded when the Units app first opens (docs/04 section 4).
 - Later candidates, each its own decision: ODE/optimisation solvers, more numerics. Every new engine must pass principle 1 (open source, GPL-compatible, built from source) and principle 2 (no cost at start-up).
 
 ## 7. Phase 0: spike (2–3 weeks) to de-risk before committing
@@ -228,6 +230,8 @@ PM = person-months, experienced TypeScript developers with some maths background
 - **MVP (≈ 6–9 PM):** keyboard, Home, CAS, textbook entry, Function app, Solve app, Python (MicroPython, D6; numpy/sympy only in the optional Python+ pack). Release on Play (testing track) and as a web app.
 - **v1 (≈ +10–15 PM):** Stats, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, Linear/Triangle solvers, RPN.
 - **v2 (≈ +10–17 PM):** Geometry, Advanced Graphing, 3D, Python apps, Explorers, polish.
+
+*Since 2026-10-12 (P8):* the engineer core (milestones 4–6: Find and honest precision, the Units app, matrices, bases and everyday functions) comes before v1; most of v1 is deferred and the MVP release is not scheduled. Order and tasks: docs/03 section 8, docs/backlog.md.
 
 With 2 developers, MVP is about 4 months and the full app about 1.5 years. With 3–4 developers, the full app takes about 9–12 months.
 
@@ -324,7 +328,7 @@ The same web build (`dist/`) is shipped in different wrappers:
 5. **Phase 1, milestone 2: Function app + Solve app.** An app framework (app switcher, Symb/Plot/Num views, per-app state in IndexedDB, apps and JSXGraph loaded lazily); the **Function app** (F1…F0, Plot on JSXGraph with trace and an analysis menu for root, extremum, intersection, slope and signed area, Num table, every number shown from the engine); the **Solve app** (equations E1…E0, unknowns with guesses; 1-D bracket + Brent/Newton, systems through GSL `hybridsj`/`hybrids`, polynomials through `proot`; every root substituted back, ⚠ when the residual is large).
    Bar: milestone 1's start-up numbers hold; Plot ≥ 30 fps while zooming and panning three functions; Enter → solve result p95 < 300 ms (1-D and a 2×2 system).
    **Done 2026-10-11** (`phase-1`, shift reports docs/shifts/2026-10-11-m2-report.md and 2026-10-11-m2b-report.md): every item above, verified. On the Tab One (release, Android 15, WebView 131): keyboard usable 679 ms, engine ready 1.02 s; Plot 53.8 fps median (near the display's refresh rate); solve p95 82 ms (1-D) and 51 ms (2×2); first Plot open 0.70 s. `build.sh` from a fresh clone gives a 15.0 MB APK in about 10 minutes. The MicroPython build for milestone 3 is in `python/`. Left over: subscripted unknowns (`x_1`) in Solve; 23 of the 25 G2 checklist items are still unanswered (every Function and Solve default is `assumed`).
-6. **Phase 1, milestone 3: Python** (MicroPython by default, D6), then the MVP release (PWA + Play testing track). The task list, the proposed milestone 3 bar and everything not yet finished are in [backlog.md](backlog.md).
+6. **Phase 1, milestone 3: Python** (MicroPython by default, D6), then the MVP release (PWA + Play testing track; not scheduled since 2026-10-12, P8). The task list, the proposed milestone 3 bar and everything not yet finished are in [backlog.md](backlog.md).
    **Done 2026-10-11** (`phase-1`, docs/shifts/2026-10-11-m3-report.md): MicroPython worker, synchronous `calc` (Asyncify, no SharedArrayBuffer), `draw` + compatibility graphics, CodeMirror editor, shell, Cancel; L1–L6 finished. S8+ (old-device class, Chrome 101) measured the same evening: keyboard usable 576 ms, engine ready 1.73 s, Python open 782 ms, Cancel 398 ms, `calc.cas` p95 17 ms, solve p95 133/150 ms, Plot 37.9 fps; fresh-clone `build.sh` APK runs. Tab One (release, Android 15, WebView 131), all bars pass: keyboard usable 662 ms, engine ready 995 ms, Python open 165 ms, Cancel 109 ms (max 135), `calc.cas` p95 25 ms, solve p95 80/51 ms, Plot 56 fps, APK 14.56 MB; the fresh-clone APK computes in Home, CAS, Function, Solve and Python. Minimum WebView: Chrome 95.
 
 ---
@@ -334,7 +338,7 @@ The same web build (`dist/`) is shipped in different wrappers:
 All three are settled; the earlier design notes are in `git show 8f95cef:docs/02-architecture-plan.md`.
 - **Physical constants:** replaced by P3, libqalculate's CODATA constants (`docs/decisions.md`, P3 integration plan, point 7).
 - **Decimal ⇄ scientific key:** done as the Format key (`e9e9c89`). On an empty line it cycles the last result's display through the formats ticked in Settings; the Settings format stays the default (`docs/decisions.md`, user requests 1). More formats: backlog G9.
-- **Units:** libqalculate as worker 3, loaded on first use; Giac's units are not used (P3, plan in `docs/p3-units-plan.md`). The reference's units menu is G2 item 30.
+- **Units:** libqalculate as worker 3 in its own Units app, opened with Shift + Tmpl, loaded on first use; Giac's units are not used (P3 as amended by P8, `docs/p3-units-plan.md`, docs/04 section 4). The reference's units menu is G2 item 30.
 
 ## Sources
 - Giac/Xcas in the browser (giac.js / giacwasm.js; wasm about 2× slower than native, up to 15× on Gröbner bases): <https://xcas.univ-grenoble-alpes.fr/backup/install_en>, <https://www-fourier.univ-grenoble-alpes.fr/~parisse/giacjs/simple.html>, <https://xcas.univ-grenoble-alpes.fr/nw/xcasen.html>

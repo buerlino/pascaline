@@ -11,10 +11,11 @@ Pascaline is an **open-source precision engineering tool** for Android (also PWA
 
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 
-**Status:** Phase 0 GO (2026-10-11); milestones 1–3 (Home + CAS, Function + Solve, Python) done. **Next: the engineer core** (milestones 4 Find and trust, 5 Units, 6 Structure; P8 in docs/decisions.md, plan in docs/03 section 8). **Work happens on branch `phase-1`.** Status, open items and tasks: [docs/backlog.md](docs/backlog.md). Coordinator team: rules in [docs/shifts/rules.md](docs/shifts/rules.md), the current brief in [docs/shifts/brief.md](docs/shifts/brief.md), agents in `.claude/agents/`.
+**Status:** Phase 0 GO (2026-10-11); milestones 1–3 (Home + CAS, Function + Solve, Python) done. **Next: the engineer core** (milestones 4 Find and trust, 5 Units, 6 Structure; P8 in docs/decisions.md, architecture in docs/04, ordered tasks in docs/backlog.md; the milestone 4 shift brief is ready). **Work happens on branch `phase-1`.** Status, open items and tasks: [docs/backlog.md](docs/backlog.md). Coordinator team: rules in [docs/shifts/rules.md](docs/shifts/rules.md), the current brief in [docs/shifts/brief.md](docs/shifts/brief.md), agents in `.claude/agents/`.
 
 Background reading (read before larger design decisions):
-- [docs/02-architecture-plan.md](docs/02-architecture-plan.md): **the plan**. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
+- [docs/04-architecture.md](docs/04-architecture.md): **the architecture for the engineer goal** (2026-10-12): precision chain and marks, Find, the Units app, keys, state, build, gates and budgets. Supersedes docs/02 where they differ.
+- [docs/02-architecture-plan.md](docs/02-architecture-plan.md): the original plan. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
 - [docs/01-feasibility-report.md](docs/01-feasibility-report.md): the original study. **Section 3 (legal) is binding**; the rest is superseded by 02.
 - Decisions: Phase 0 results and defaults D1–D9, P1, P2 in [spike/RESULTS.md](spike/RESULTS.md) and [spike/DECISIONS.md](spike/DECISIONS.md); from Phase 1 on in [docs/decisions.md](docs/decisions.md).
 - [CONTRIBUTING.md](CONTRIBUTING.md): contributor rules (clean room, DCO, dependencies, golden-test sources); keep it consistent with this file.
@@ -47,7 +48,7 @@ Background reading (read before larger design decisions):
 
 ---
 
-## Architecture (summary; details in docs/02 section 6)
+## Architecture (summary; details in docs/04 section 8)
 
 ```
 Capacitor shell (Android / iOS / desktop / plain web PWA)
@@ -55,7 +56,9 @@ Capacitor shell (Android / iOS / desktop / plain web PWA)
    app framework Symb/Plot/Num, JSXGraph views, spreadsheet, CodeMirror editor
    └─ MathEngine (async interface)
       ├─ Worker 1: giac.wasm (+ GSL, GMP, MPFR): CAS + Home + numeric solving
-      └─ Worker 2: Python: MicroPython-wasm (default) | Pyodide "Python+" (optional)
+      ├─ Worker 2: Python: MicroPython-wasm (default) | Pyodide "Python+" (optional)
+      └─ Worker 3: libqalculate (Units app; lazy; milestone 5, P3 as amended by P8)
+   Find: a static index generated at build time, searched on the main thread (lazy)
 Storage: IndexedDB (state) + Capacitor Filesystem (import/export)
 ```
 
