@@ -99,17 +99,8 @@ engine/giac/build-wasm.sh                                  # → engine/giac/_ou
 WITH_GSL=0 engine/giac/build-wasm.sh fetch giac link      # without GSL → _out/base/ (comparisons only)
 PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads   # share the download cache from a git worktree
 
-# Node smoke tests (from spike/node/)
-node source-smoke.mjs 'factor(x^4-1)' 'solve(x^2=2,x)'     # VARIANT=gsl (default)|base
-node compare-variants.mjs base gsl                         # output differences between two builds
-node prebuilt-smoke.cjs 'version()'                        # Parisse's giacwasm.js in spike/prebuilt/ (gitignored)
-
-# Spike app (from spike/app/; copies engine/giac/_out/gsl into public/engine/, or GIAC_OUT=<dir>)
-npm ci
-npm run dev                                                # http://localhost:5173/?engine=source|prebuilt
-npm run build && npm run bench                             # Playwright, Chromium + Firefox → bench/results/*.json
-ENGINES=source npx playwright test --project=chromium      # subset
-npx playwright install chromium firefox                    # once
+# Node smoke test (from the repo root)
+node engine/giac/smoke.mjs 'factor(x^4-1)' 'solve(x^2=2,x)'   # VARIANT=gsl (default)|base
 
 # Devices and coordination (from the repo root; state lives in .coord/, gitignored)
 tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it

@@ -36,7 +36,7 @@ For this shift that means: MicroPython, never loaded at start; CodeMirror 6 for 
 ## 2. Read before you start
 - `CLAUDE.md`, `docs/backlog.md` (**the task list for this shift**), and `docs/02-architecture-plan.md` sections 3, 5, 6 and 12.
 - `docs/decisions.md` and the last shift reports (`docs/shifts/2026-10-11-m2-report.md`, `…-m2b-report.md`).
-- `spike/DECISIONS.md` D6 (Python) and `spike/python/NOTES.md` (the `calc` bridge, the async/sync question, the Tab One numbers).
+- `spike/DECISIONS.md` D6 (Python) and `docs/research/python-notes.md` (the `calc` bridge, the async/sync question, the Tab One numbers).
 - `python/build-micropython.sh` and `python/smoke.mjs` (the build is done; `build.sh` copies the output into the app).
 - `app/src/engine/README.md` (the MathEngine, the pattern to copy for the Python worker).
 

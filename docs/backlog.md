@@ -49,16 +49,16 @@ Done: the Giac mirror is live (release `deps-giac-2.1.0-1d9536e0`, SHA-256 check
 ### Branches and worktrees
 Done by the user 2026-10-11 (first round). The paused milestone 3 round left three worktrees under `.claude/worktrees/`: `p1/annabell-m3` (merged) and `p1/ron-m3` (no commits) can go; keep `p1/gorge-m3` (75e79af, `types.ts`) until gorge has cherry-picked it onto `p1/gorge-m3b`.
 
-Optional disk space (gitignored, rebuilt when needed): `spike/{app,input,plot}/node_modules` (565 MB) and `engine/giac/_build` (561 MB, the engine build cache). **Never delete** `engine/giac/_downloads/` or `spike/prebuilt/`.
+Optional disk space (gitignored, rebuilt when needed): `engine/giac/_build` (561 MB, the engine build cache). **Never delete** `engine/giac/_downloads/` or `spike/prebuilt/`.
 
-### Code that still lives in `spike/` (task C1)
-`spike/` was meant to be throwaway. Shipped code still depends on it:
+### Code that used to live in `spike/` (task C1, done)
+`spike/` was meant to be throwaway. Shipped code depended on it:
 - `build.sh`, `engine/giac/build-wasm-release.sh` and `python/build-micropython.sh` use `tools/devlock.sh`;
 - the golden gate (`app/scripts/golden.ts`) runs `tests/engine/interrupt-test.mjs`;
 - `tests/golden/oracle.py` writes `tests/golden/G2-CHECKLIST.md`;
 - the device tools (`tools/device_run.py` and the others) are part of the measurement workflow.
 
-These moved out of `spike/` (C1, done) before `phase-1` went to `master`.
+These moved out of `spike/` (C1, done) before `phase-1` went to `master`. The other Phase 0 spikes were archived on 2026-10-12 (list in `spike/RESULTS.md`, "Archived"); `spike/` now holds only `qalc/` (P3), `RESULTS.md` and `DECISIONS.md`.
 
 ## Tasks
 
@@ -82,7 +82,7 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 - ~~**P2. `calc` module.**~~ (done 2026-10-11)
   - `calc.cas("…")` calls the Giac worker. It is async (D6), and a small preprocessor adds the `await`.
   - It can also read and write Home variables.
-  - First decide whether a synchronous version is possible: it would need `SharedArrayBuffer` plus COOP/COEP headers in the Capacitor shell. Check this first (spike/python/NOTES.md).
+  - First decide whether a synchronous version is possible: it would need `SharedArrayBuffer` plus COOP/COEP headers in the Capacitor shell. Check this first (docs/research/python-notes.md).
 - ~~**P3. `hpprime`-compatible graphics module.**~~ (done 2026-10-11) A 320×240 canvas with the drawing calls the reference documents publicly. Write the API from public documentation in our own words (clean room).
 - ~~**P4. Editor and shell.**~~ (done 2026-10-11)
   - CodeMirror 6 for the editor (MIT; add it to THIRD_PARTY.md), with the Python keyboard layer.
@@ -121,7 +121,7 @@ This follows D6: MicroPython by default, with the Pyodide "Python+" pack only op
 - ~~**R1. PWA.**~~ **Done** 2026-10-11 (`p1/ron-pwa`): own 40-line service worker, manifest, placeholder icons, offline Playwright test. Hosting still needs your OK.
 - **R2. Play testing track.** Real application id, signing key (yours), store texts in `fastlane/metadata/`. Never published without your OK.
 - **R3. App icon and screenshots.** Our own design; nothing from the reference calculator.
-- **R4. Settings and help pass.** i18n table complete, first help texts. The Giac help-text licence is still to clarify with Parisse.
+- **R4. Settings and help pass.** i18n table complete, first help texts. Giac help-text licence: R5 (`docs/research/giac-help-licence.md`) reads the English help lines as GPL-3.0-or-later, usable with attribution; that is a reading of Giac's README, so confirming with Parisse is still worth it.
 
 ### Unscheduled feature requests (docs/02 section 12b)
 - ~~Physical constants menu~~ replaced by P3 (qalc CODATA constants; decided 2026-10-11).

@@ -131,7 +131,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 | **Units, constants** | Giac (Prime CAS units are Giac units, e.g. `_m`, `_s`) | Units menu |
 | **Lists, matrices** | Giac | List/matrix editors (grid) |
 | **Python** | MicroPython (default, D6) + `calc` and `hpprime`-compatible modules + CodeMirror editor; Pyodide "Python+" (numpy) as an optional download | Section 3 |
-| **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); *check the licence*, which is likely GPL like the rest of Giac | Help texts for apps and keys |
+| **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); licence: the English lines are GPL-3.0-or-later by Giac's README (R5, `docs/research/giac-help-licence.md`; to confirm with Parisse) | Help texts for apps and keys |
 | **Notes** | CodeMirror (Markdown) | Small |
 | **Keyboard** | — | **Ours.** Same logical layout as the Prime, our own visual design |
 | **RPN entry mode** | Giac operations on a stack | About 2–3 weeks (Phase 2) |

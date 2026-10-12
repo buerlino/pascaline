@@ -193,3 +193,22 @@ None so far. The source build was done in about one working session, so the shor
 - CLAUDE.md: "Commands" section filled with the real build, smoke-test, benchmark and device-tool commands; status line; architecture and solver lines now say GSL; `engine/solvers/` removed from the planned layout.
 - docs/02: section 4 rewritten for GSL (decision box, solver table, strategy steps; residual check now re-evaluates with Giac/MPFR at 30+ digits, since mpmath is only in the optional Python+ pack); TL;DR table, architecture diagram, sections 7, 9, 11 and 12 (email after device measurements, device list) updated.
 - README.md: solver row now says Giac + GSL. THIRD_PARTY.md: GSL is a regular dependency; Boost.Math and cminpack removed; Giac mirror noted.
+
+## Archived 2026-10-12 (cleanup audit, area C)
+Phase 0 is closed and Phase 1 replaced these spikes. Their results stay above; the code is in git history (last present in commit `8ff8576`, `git show 8ff8576:spike/<folder>/…`). Lines above that name a spike path are history; this list says where each thing lives now.
+
+| Folder | What it proved | Now |
+|---|---|---|
+| `app/` | Q1, Q3: worker engine, cold start, the 55 benchmark cases, prebuilt vs source | `app/` (engine worker, `npm run golden` bench), `tools/device_run.py bench` |
+| `bench/` | the 55 benchmark inputs | `tests/golden/bench.yaml` (all 55 ids) |
+| `home/` | Q3: exact-first Home, 123/123 | `tests/golden/home.yaml` (all 123 ids), `tests/golden/oracle.py`, `app/src/engine/homeEval.ts` |
+| `solve/` | Solve-app strategy, 23/23 | `tests/golden/solve.yaml` (all 23 ids, 42 in total), `app/src/engine/solve1.ts` |
+| `serializer/` | Q2, P1: LaTeX → Giac round trip, Compute Engine vs our parser | `app/src/input/` (parser, `fuzz.test.ts`, `emit-js.test.ts`), `tests/golden/parser.yaml` |
+| `input/` | Q2: MathLive with our keyboard | `app/` (entry, keyboard) |
+| `plot/` | Q4, Q6: plot FPS, MicroPython and Pyodide device pages | `app/` Function Plot (JSXGraph, D7), `python/` |
+| `android/` | Q1: Capacitor overlay for the spike shell | the tracked `android/` project, `build.sh` |
+| `python/` scripts | Q4: MicroPython build, Node and Pyodide benchmarks | `python/build-micropython.sh`, `python/smoke.mjs`; the notes are `docs/research/python-notes.md` |
+| `research/` scripts | `trixie-build.sh` (P2 container build), `coverage-probe.mjs` (R3) | `engine/giac/build-wasm-release.sh`; the five notes are in `docs/research/` |
+| `node/` | Node smoke tests, variant compare, prebuilt smoke | `engine/giac/smoke.mjs`; `app/scripts/compare-engines.ts` |
+
+Other moves: `MORNING-REPORT.md` → `docs/shifts/2026-10-11-morning-report.md`; `spike/node/interrupt-test.mjs` → `tests/engine/interrupt-test.mjs` (C1, earlier). Still here: `qalc/` (P3; moves to `engine/qalc/` when P3 starts), this file, `DECISIONS.md`, and the gitignored `prebuilt/` (Parisse's build, kept for comparisons). The spike apps' build outputs (`spike/app/public/engine/`, `spike/app/dist/`: copies of our wasm and of Parisse's prebuilt) and `node_modules` were deleted from disk with the folders.
