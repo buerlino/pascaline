@@ -52,11 +52,16 @@ export interface SolveResult {
 }
 
 /** Internal numbers only (search points, comparisons); never shown to users. */
-function num(s: string): number | undefined {
-  const t = s.trim();
+export function num(s: string): number | undefined {
+  const t = negZero(s.trim());
   if (!/^-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/.test(t)) return undefined;
   const v = Number(t);
   return Number.isFinite(v) ? v : undefined;
+}
+
+/** Giac prints a negative zero MPFR float as `0.-000…`; read it as `-0.000…`. */
+export function negZero(t: string): string {
+  return t.replace(/^0\.-(0+)$/, "-0.$1");
 }
 
 /** A search point for the info line, through our formatter (no binary noise such as 1.6400000000000001). */

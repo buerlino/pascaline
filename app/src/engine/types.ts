@@ -17,6 +17,9 @@ export interface CasSettings {
 /** D3: no automatic fallback in CAS; after about this long the UI makes Cancel prominent. */
 export const CAS_SOFT_BUDGET_MS = 10_000;
 
+/** A variable name: letters/digits, optionally one subscript (`x_1`, `v_c`); Giac reads these as plain identifiers. */
+export const IDENT = /^[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?$/;
+
 export const defaultCasSettings: CasSettings = {
   angle: "rad",
   digits: 12,

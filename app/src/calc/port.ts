@@ -2,14 +2,22 @@
 // What the views need from the maths engine. The real implementation (calc/engine.ts) wraps MathEngine;
 // the UI never talks to Giac directly (CLAUDE.md).
 
-import type { ComplexValue } from "../engine/format.ts";
+import type { ComplexValue, NumberFormat as EngineFormat } from "../engine/format.ts";
 import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRequest, TableRequest } from "../engine/types.ts";
 import type { PythonEngine } from "../python/types.ts";
 
 export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest } from "../engine/types.ts";
+export { CAS_SOFT_BUDGET_MS, IDENT } from "../engine/types.ts";
 
 export type AngleUnit = "rad" | "deg";
 export type NumberFormat = "std" | "sci" | "eng";
+
+const ENGINE_FORMAT = { std: "STD", sci: "SCI", eng: "ENG" } as const satisfies Record<NumberFormat, EngineFormat>;
+
+/** The engine formatter's name for a Number format setting ("std" → "STD"). */
+export function engineFormat(f: NumberFormat): (typeof ENGINE_FORMAT)[NumberFormat] {
+  return ENGINE_FORMAT[f];
+}
 
 export interface CalcSettings {
   /** Significant digits shown in Home. */

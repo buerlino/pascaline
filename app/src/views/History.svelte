@@ -2,6 +2,7 @@
 <script lang="ts">
   import { tick } from "svelte";
   import { t } from "../i18n/index.ts";
+  import { CAS_SOFT_BUDGET_MS } from "../calc/port.ts";
   import Math from "../render/Math.svelte";
   import type { HistoryItem } from "../state/session.svelte.ts";
 
@@ -64,8 +65,7 @@
     void tick().then(() => scroller?.querySelector('[data-selected="true"]')?.scrollIntoView({ block: "nearest" }));
   });
 
-  // After this long a running job gets a prominent Cancel (D3: CAS soft budget).
-  const SOFT_MS = 10_000;
+  // After CAS_SOFT_BUDGET_MS a running job gets a prominent Cancel (D3).
   let now = $state(performance.now());
   $effect(() => {
     if (items.at(-1)?.status !== "pending") return; // only the newest entry can be running
@@ -90,7 +90,7 @@
       <div class="out" data-testid="result">
         {#if item.status === "pending"}
           <span class="working">{t("history.working")}</span>
-          <button type="button" class="cancel" class:prominent={now - item.startedAt > SOFT_MS} onclick={oncancel}>
+          <button type="button" class="cancel" class:prominent={now - item.startedAt > CAS_SOFT_BUDGET_MS} onclick={oncancel}>
             {t("history.cancel")}
           </button>
         {:else if item.status === "cancelled"}

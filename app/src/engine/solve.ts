@@ -5,28 +5,12 @@
 // Synchronous, UI-free; runs in the Giac worker and in Node. Giac names here have no underscore.
 import { toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
 import { decimalFromString, formatComplex, type ComplexValue, type DecimalValue } from "./format.ts";
-import { defaultSolveSettings, solve1, type SolveSettings } from "./solve1.ts";
-import type { KnownValue, SolveOutcome, SolveRequest } from "./types.ts";
-
-/** Internal numbers only (comparisons, search points); never shown to users. */
-export function num(s: string): number | undefined {
-  const t = negZero(s.trim());
-  if (!/^-?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/.test(t)) return undefined;
-  const v = Number(t);
-  return Number.isFinite(v) ? v : undefined;
-}
+import { defaultSolveSettings, negZero, num, solve1, type SolveSettings } from "./solve1.ts";
+import { IDENT, type KnownValue, type SolveOutcome, type SolveRequest } from "./types.ts";
 
 /** Giac's own interrupt for one call inside Solve and Function analysis: a safety net only; the
  *  solvers keep their own budgets and the user has Cancel. */
 export const SOLVE_HARD_TIMEOUT_S = 30;
-
-/** Giac prints a negative zero MPFR float as `0.-000…`; read it as `-0.000…`. */
-function negZero(t: string): string {
-  return t.replace(/^0\.-(0+)$/, "-0.$1");
-}
-
-/** A variable name: letters/digits, optionally one subscript (`x_1`, `v_c`); Giac reads these as plain identifiers. */
-export const IDENT = /^[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?$/;
 
 /** The solver settings for a Home settings object (digits; tuning stays at its defaults). */
 export function solveSettingsFor(h: HomeSettings, extra: Partial<SolveSettings> = {}): SolveSettings {

@@ -3,12 +3,12 @@
 // extremum, intersection, slope, signed area), built on solve1.ts and Giac. Every number shown to the
 // user comes from here (D7), never from the plot evaluator. Synchronous, UI-free.
 import { homeEval, toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
-import { solve1, type SolveSettings } from "./solve1.ts";
-import { IDENT, num, numericResult, SOLVE_HARD_TIMEOUT_S, solveSettingsFor, withUnassigned } from "./solve.ts";
+import { num, solve1, type SolveSettings } from "./solve1.ts";
+import { numericResult, SOLVE_HARD_TIMEOUT_S, solveSettingsFor, withUnassigned } from "./solve.ts";
 
 /** Time Giac may spend on an exact definite integral when Romberg did not converge (seconds). */
 const EXACT_INT_S = 0.5;
-import type { AnalysisRequest, AnalysisResult, TableRequest } from "./types.ts";
+import { IDENT, type AnalysisRequest, type AnalysisResult, type TableRequest } from "./types.ts";
 
 /** Home's answer variable: analysis must not change what Ans means in Home. */
 function keepingAns<T>(giac: Giac, fn: () => T): T {

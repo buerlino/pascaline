@@ -23,6 +23,15 @@ export function parseDec(s: string): Dec | undefined {
   return { m: r[1] === "-" ? -m : m, scale };
 }
 
+/** The entry line as a plain decimal: "-0.5", "1.5\\times10^{3}" → "1.5e3"; undefined if it is not one. */
+export function plainNumber(latex: string): string | undefined {
+  const s = latex
+    .replace(/\\times\s*10\^\{([^}]*)\}/, "e$1")
+    .replace(/\\times\s*10\^(\d)/, "e$1")
+    .replace(/[{}\s]/g, "");
+  return parseDec(s) ? s : undefined;
+}
+
 function align(a: Dec, b: Dec): [bigint, bigint, number] {
   const s = Math.max(a.scale, b.scale);
   return [a.m * 10n ** BigInt(s - a.scale), b.m * 10n ** BigInt(s - b.scale), s];

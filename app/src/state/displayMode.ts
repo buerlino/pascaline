@@ -11,6 +11,7 @@ import {
   type DecimalValue,
   type FormatOptions,
 } from "../engine/format.ts";
+import type { NumberFormat } from "../calc/port.ts";
 import { complexToLatex, fractionToLatex, polarToLatex } from "../render/home.ts";
 
 export type FmtMode = "std" | "sci" | "eng" | "fix" | "frac" | "mixed" | "polar";
@@ -92,7 +93,7 @@ export function nextMode(
 
 export interface DisplayContext {
   /** The global Number format setting. */
-  format: "std" | "sci" | "eng";
+  format: NumberFormat;
   digits: number;
   fixDecimals: number;
   angle: "rad" | "deg";

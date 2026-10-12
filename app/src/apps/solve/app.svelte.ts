@@ -7,17 +7,14 @@
 //   - several equations on: Solve finds as many unknowns as there are equations, starting with the
 //     selected one and then in list order; the rest keep their values;
 //   - Polynomial roots lists every root (complex too) of the one equation in the selected unknown.
-import { CalcCancelled, type Calc, type KnownValue, type SolveOutcome } from "../../calc/port.ts";
+import { CalcCancelled, engineFormat, IDENT, type Calc, type KnownValue, type SolveOutcome } from "../../calc/port.ts";
 import { formatComplex } from "../../engine/format.ts";
 import { mathJsonToGiac, SerializeError } from "../../input/emit.ts";
 import { parseLatex } from "../../input/parse.ts";
 import { t } from "../../i18n/index.ts";
-import { parseDec, showDecimal } from "../decimal.ts";
+import { parseDec, plainNumber, showDecimal } from "../decimal.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
 import type { AppHost, AppInstance, MenuItem, NavDir, ViewId } from "../types.ts";
-
-/** A variable name the engine accepts: letters and digits, optionally subscripted (x_1, L1; engine IDENT). */
-const NAME = /^[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)?$/;
 
 export interface SolveReport {
   /** What was solved for, e.g. ["X", "Y"]. */
@@ -43,15 +40,6 @@ export function compileEquation(latex: string): { giac: string; error: string } 
   } catch (e) {
     return { giac: "", error: e instanceof SerializeError ? e.message : String(e) };
   }
-}
-
-/** The entry line as a plain decimal: "-0.5", "1.5\\times10^{3}" → "1.5e3"; undefined if it is not one. */
-export function plainNumber(latex: string): string | undefined {
-  const s = latex
-    .replace(/\\times\s*10\^\{([^}]*)\}/, "e$1")
-    .replace(/\\times\s*10\^(\d)/, "e$1")
-    .replace(/[{}\s]/g, "");
-  return parseDec(s) ? s : undefined;
 }
 
 /** A plain decimal as LaTeX for the entry line. */
@@ -93,7 +81,7 @@ export class SolveApp implements AppInstance {
   }
   fmtValue(name: string): string {
     const s = this.host.settings;
-    return showDecimal(this.value(name), s.digits, s.format.toUpperCase() as "STD" | "SCI" | "ENG");
+    return showDecimal(this.value(name), s.digits, engineFormat(s.format));
   }
 
   // ---- framework hooks
@@ -192,7 +180,7 @@ export class SolveApp implements AppInstance {
     const eqs = this.active;
     const names = eqs.length ? await this.job(() => this.calc.unknowns(eqs)) : [];
     if (names === undefined) return;
-    this.unknowns = names.filter((n) => NAME.test(n));
+    this.unknowns = names.filter((n) => IDENT.test(n));
     if (!this.unknowns.includes(this.selected)) this.selected = this.unknowns[0] ?? "";
     this.loadEntry();
   }
@@ -236,7 +224,7 @@ export class SolveApp implements AppInstance {
       return;
     }
     const s = this.host.settings;
-    const fmt = s.format.toUpperCase() as "STD" | "SCI" | "ENG";
+    const fmt = engineFormat(s.format);
     this.report = {
       names: [name],
       ok: r.ok,
@@ -275,8 +263,8 @@ export class SolveApp implements AppInstance {
     this.slots.fromJSON(s.slots);
     this.giac = this.slots.latex.map((l) => compileEquation(l).giac);
     if (s.values && typeof s.values === "object")
-      this.values = Object.fromEntries(Object.entries(s.values).filter(([k, v]) => NAME.test(k) && typeof v === "string" && parseDec(v)));
-    if (typeof s.selected === "string" && NAME.test(s.selected)) this.selected = s.selected;
+      this.values = Object.fromEntries(Object.entries(s.values).filter(([k, v]) => IDENT.test(k) && typeof v === "string" && parseDec(v)));
+    if (typeof s.selected === "string" && IDENT.test(s.selected)) this.selected = s.selected;
   }
   save(): void {
     this.saveTimer ??= setTimeout(() => this.flush(), 300);

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Function app: up to ten functions of x (F1…F9, F0) in Symb, drawn in Plot, tabulated in Num.
 // Drawing uses our own JS evaluator (D7); every number shown (trace, table, analysis) comes from the engine.
-import { CalcCancelled, type Calc } from "../../calc/port.ts";
+import { CalcCancelled, engineFormat, type Calc } from "../../calc/port.ts";
 import { formatComplex, type ComplexValue, type DecimalValue } from "../../engine/format.ts";
 import { t } from "../../i18n/index.ts";
-import { addMul, decText, decToNumber, nearestK, niceStep, parseDec, showDecimal, type Dec } from "../decimal.ts";
+import { addMul, decText, decToNumber, nearestK, niceStep, parseDec, plainNumber, showDecimal, type Dec } from "../decimal.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
 import type { AppHost, AppInstance, MenuItem, NavDir, SubMenu, ViewId } from "../types.ts";
 import { compileDefinition, type Compiled } from "./compile.ts";
@@ -94,10 +94,10 @@ export class FunctionApp implements AppInstance {
   }
   fmtValue(v: ComplexValue): string {
     const s = this.host.settings;
-    return formatComplex(v, { format: s.format.toUpperCase() as "STD" | "SCI" | "ENG", digits: s.digits }).text;
+    return formatComplex(v, { format: engineFormat(s.format), digits: s.digits }).text;
   }
   fmtX(x: string): string {
-    return showDecimal(x, this.host.settings.digits, this.host.settings.format.toUpperCase() as "STD" | "SCI" | "ENG");
+    return showDecimal(x, this.host.settings.digits, engineFormat(this.host.settings.format));
   }
 
   // ---- framework hooks
@@ -121,7 +121,8 @@ export class FunctionApp implements AppInstance {
       this.define(this.slots.selected, latex);
       this.host.setEntry(this.slots.latex[this.slots.selected] ?? "");
     } else if (view === "num") {
-      const d = parseDec(plainNumber(latex));
+      const s = plainNumber(latex);
+      const d = s === undefined ? undefined : parseDec(s);
       if (!d || (this.num.edit === "step" && d.m === 0n)) return;
       if (this.num.edit === "start") {
         this.num.start = decText(d);
@@ -485,12 +486,4 @@ export class FunctionApp implements AppInstance {
     };
     void this.host.kv.set("app.function", s);
   }
-}
-
-/** The entry line as a plain number: "-0.5", "1.5\\times10^{3}" → "1.5e3". */
-function plainNumber(latex: string): string {
-  return latex
-    .replace(/\\times10\^\{([^}]*)\}/, "e$1")
-    .replace(/\\times10\^(\d)/, "e$1")
-    .replace(/[{}\s]/g, "");
 }

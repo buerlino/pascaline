@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from "vitest";
-import { addMul, decText, nearestK, niceStep, parseDec, showDecimal } from "./decimal.ts";
+import { addMul, decText, nearestK, niceStep, parseDec, plainNumber, showDecimal } from "./decimal.ts";
 import { compileDefinition } from "./function/compile.ts";
 
 describe("exact decimal steps", () => {
@@ -16,6 +16,14 @@ describe("exact decimal steps", () => {
     expect(parseDec("1/3")).toBeUndefined();
     expect(parseDec("")).toBeUndefined();
     expect(parseDec(".")).toBeUndefined();
+  });
+  it("reads the entry line as a plain decimal (Solve values, Function Num start/step)", () => {
+    expect(plainNumber("-0.5")).toBe("-0.5");
+    expect(plainNumber("1.5\\times10^{3}")).toBe("1.5e3");
+    expect(plainNumber("1.5\\times 10^{-3}")).toBe("1.5e-3");
+    expect(plainNumber("2\\times10^4")).toBe("2e4");
+    expect(plainNumber("\\frac{1}{3}")).toBeUndefined();
+    expect(plainNumber("")).toBeUndefined();
   });
   it("picks 1-2-5 steps", () => {
     expect(decText(niceStep(0.2))).toBe("0.2");
