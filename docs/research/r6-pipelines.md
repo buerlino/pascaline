@@ -35,7 +35,7 @@
 ## 4. Build and gates
 
 - **`build.sh`**: fetch (SHA-256 pinned, mirror for Giac) → Giac in the pinned `debian:trixie` container (Emscripten 3.1.69, `setarch -R` for bit-reproducible output) → MicroPython (same container) → app (`npm run build`; `scripts/copy-engine.mjs` copies the engine into `app/public/engine`) → `cap sync` → Gradle 8.14.3 (downloaded and pinned; no wrapper jar in git). Development uses emsdk 6.0.12 (`engine/giac/build-wasm.sh`, output `engine/giac/_out/gsl`).
-- **libqalculate** is still a spike (`spike/qalc/build-wasm.sh`, emsdk; built tree in `../pascaline-deps/qalc-spike/`); docs/04 7.1 moves it into `build.sh`.
+- **libqalculate** is built by `engine/qalc/build-wasm.sh [dev|release]` (A2, milestone 4; build.sh step 1c, output in `engine/qalc/_out/`).
 - **Gates today**: `npm run typecheck`, `npm test` (Vitest), `npm run test:e2e` (Playwright, `app/test/*.spec.ts`), the golden gate `npm run golden` (`app/scripts/golden.ts`: interrupt, home, solve, function, bench in CAS mode, parser, python), `tests/golden/oracle.py` (mpmath), `scripts/compare-engines.ts`. Device bars through `tools/device_run.py` (annabell).
 
 ## 5. Giac behaviour learned by probing (dev build, Giac 2.1.0 + GSL)

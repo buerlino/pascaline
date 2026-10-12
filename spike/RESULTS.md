@@ -135,7 +135,7 @@ Cost against benefit:
 
 S8+ / Tab One recipe (annabell): copy `spike/qalc/page/*` and `qalc.{mjs,wasm}` into `app/public/qalc/` of a measurement build only (never committed), `tools/device-build.sh --measure --install`, then 5× `tools/device_run.py page /qalc/index.html`, with a `--wait` that matches its log line; the page logs `PASCALINE_BENCH qalc {ready_ms, first_result_ms, …}`.
 
-Reproduce: `QALC_WORK=<dir under /home> spike/qalc/build-wasm.sh`; `node spike/qalc/smoke.mjs $QALC_WORK/out`; `APP_DIR=<checkout>/app node spike/qalc/bench-chromium.mjs $QALC_WORK/out 7`; `tests/golden/.venv/bin/python spike/qalc/check.py $QALC_WORK/out`.
+Reproduce (moved to `engine/qalc/` in milestone 4, A2): `engine/qalc/build-wasm.sh dev`; `node engine/qalc/smoke.mjs engine/qalc/_out/dev`; `APP_DIR=<checkout>/app node spike/qalc/bench-chromium.mjs $QALC_WORK/out 7`; `tests/golden/.venv/bin/python engine/qalc/check.py engine/qalc/_out/dev`.
 
 ## Components used (name, version, licence, URL, prebuilt?)
 | Component | Version | Licence | URL | Prebuilt? | Used for |

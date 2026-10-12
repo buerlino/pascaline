@@ -18,11 +18,13 @@ Everything here is built from source by scripts in this repository. Spike-only t
 |---|---|---|---|---|
 | MicroPython | 1.29.0 (release tarball with submodules, SHA-256 `d925a7c6…efeca0`; tag commit `0fd6c573`) | MIT | https://micropython.org/resources/source/ | default Python (D6). Release builds use the same pinned trixie container as the engine and are reproducible. Copied into the app's assets by `build.sh` (`--no-python` skips it) and not loaded at start; the UI comes in milestone 3 |
 
-## Spike only: P3 units/constants engine (spike/qalc/build-wasm.sh; not shipped, not in the app)
+## Units and constants engine (engine/qalc/build-wasm.sh; built in milestone 4 for the Find index, shipped in the app from milestone 5)
+
+The libxml2 and libqalculate tarballs are SHA-256-checked by the script.
 
 | Component | Version | Licence | Source | Notes |
 |---|---|---|---|---|
-| libqalculate | 5.13.1 (tarball SHA-256 `cf8d3eaf…d1b01d3cc3`; pinned at first download 2026-10-11, upstream publishes no hash) | GPL-2.0-or-later | https://github.com/Qalculate/libqalculate/releases/download/v5.13.1/libqalculate-5.13.1.tar.gz | P3 spike (units, constants, uncertainty). Built with compiled-in definitions, no curl/icu/readline/NLS |
+| libqalculate | 5.13.1 (tarball SHA-256 `cf8d3eaf…d1b01d3cc3`; pinned at first download 2026-10-11, upstream publishes no hash) | GPL-2.0-or-later | https://github.com/Qalculate/libqalculate/releases/download/v5.13.1/libqalculate-5.13.1.tar.gz | Find index values and unit factors (milestone 4), Units app (milestone 5). Compiled-in definitions, no curl/icu/readline/NLS. Release build in the pinned trixie container, reproducible |
 | libxml2 | 2.15.1 (SHA-256 `c008bac0…c39bc54c`, matches upstream `.sha256sum`) | MIT | https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.1.tar.xz | required by libqalculate to parse its definitions; built without iconv, zlib, ICU, HTTP, threads, validation |
 
 ## Toolchain (not shipped)

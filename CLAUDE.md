@@ -75,7 +75,7 @@ Key decisions (reasons in docs/02 and the decision logs):
 TypeScript (strict, no `any`), Vite, **Svelte 5** for the app shell (D1; keyboard, parser and engine client stay plain TS), MathLive (MIT), JSXGraph (LGPL/MIT), CodeMirror 6 (MIT), Capacitor (MIT), Emscripten, Giac (GPL-3.0+), GMP/MPFR (LGPL), GSL (GPL-3.0+), MicroPython (MIT), Pyodide (MPL-2.0, optional), Vitest, Playwright.
 
 ## Repo layout
-`app/` (web app), `engine/giac/` (engine build + patches), `python/` (MicroPython build), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `tests/golden/` (golden cases), `tests/engine/`, `tools/` (device tools), `docs/`, `fastlane/`, `fdroid/`, `logo/`, `build.sh` (clean source → APK; the F-Droid recipe mirrors it, see `fdroid/README.md`), `spike/` (Phase 0 record and the P3 qalc spike).
+`app/` (web app), `engine/giac/` (engine build + patches), `engine/qalc/` (libqalculate build), `python/` (MicroPython build), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `tests/golden/` (golden cases), `tests/engine/`, `tools/` (device tools), `docs/`, `fastlane/`, `fdroid/`, `logo/`, `build.sh` (clean source → APK; the F-Droid recipe mirrors it, see `fdroid/README.md`), `spike/` (Phase 0 record and the P3 qalc spike).
 
 ## This machine (checked 2026-10-10)
 - Rocky Linux 10.2, 16 cores, 28 GB RAM
@@ -123,6 +123,10 @@ engine/giac/build-wasm-release.sh                          # → engine/giac/_ou
 # MicroPython v1.29.0 → wasm (D6; milestone 3 Python; pinned + SHA-checked; build.sh copies it into the app, not loaded at start)
 python/build-micropython.sh [dev|release]                  # dev = ~/emsdk → python/_out/dev/; release = trixie container (P2) → python/_out/release/
 node python/smoke.mjs [python/_out/release]              # desktop smoke test: print(1+1) (default dir: python/_out/dev)
+
+# libqalculate 5.13.1 → wasm (P3/P8; Find index in milestone 4, Units app in 5; build.sh step 1c, --no-units skips it)
+engine/qalc/build-wasm.sh [dev|release]                    # dev = ~/emsdk → engine/qalc/_out/dev/; release = trixie container → engine/qalc/_out/release/ + SHA256SUMS
+node engine/qalc/smoke.mjs engine/qalc/_out/dev            # desktop smoke test (72 km/h to m/s)
 
 # Coordinator team (docs/shifts/rules.md + brief.md; agents in .claude/agents/); keeps the laptop awake while it runs
 systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline shift" claude --agent henri

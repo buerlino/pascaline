@@ -26,10 +26,12 @@ Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). T
 | A4 | Device bars on the Tab One | 12 | annabell, Sonnet | `p1/annabell-m4-device` | R3, R4, A3; Tab One connected | ~0.5 d |
 
 **Waves** (one package per agent at a time; the three agents run in parallel):
-1. G0, R1, G1, A1 (A2 can start at once too).
-2. R2, G2, A2.
-3. R3, G3, G4, A3.
-4. R4, then A4.
+1. G0, R1, G1, A1 (A2 can start at once too). Merged.
+2. R2, G2, A2. Merged (2026-10-12).
+3. **Now:** R3 (ron, Sonnet), G4 (gorge, Opus), A3 (annabell, Sonnet).
+4. Then: G3 (gorge, Opus, after G4), R4 (ron, Sonnet, after R3). Last: A4 (annabell, after R3, R4, A3).
+
+G4 goes before G3 because A2 → G4 → R4 → A4 is the longest chain. G3 now carries G2's precision follow-ups (M4-6 to M4-8), hence Opus. The qalc build for G4's index generator is in the main checkout: `QALC_OUT=/home/nordmu/Documents/source99/pascaline/engine/qalc/_out/dev`.
 
 **Why these models:** Opus where a subtle mistake becomes a wrong number or a broken entry line and rework would cost more than doing it right: G2 (the agreement check, the `⚠` rules, P9), R2 (MathLive macros, the parser, Ans on an empty line) and G4 (the qalc round-trip check, ranking quality). Sonnet elsewhere: those packages have mechanical checks (tests, the oracle, the size budgets) that catch mistakes, and every package gets an Opus review before it merges.
 
