@@ -176,7 +176,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 ### 2.7 Decision: SI prefix display, and prefix entry
 
-- **Display:** a format `PFX` beside ENG: `n` significant digits as in ENG, the exponent replaced by f p n µ m (none) k M G T P (10⁻¹⁵ to 10¹⁵); `µ` is U+00B5. Outside that range, ENG E notation. Drawn as mantissa, thin space, prefix in the accent colour, so `1.5 m` (milli) reads as a prefix and not as metres. In Settings and the Format key cycle. Copy always gives the full value, never the prefix text. Formatter work in `format.ts` (gorge), unit tests per prefix boundary and rounding into the next prefix (999.96 k at 4 digits → 1.000 M).
+- **Display:** a format `PFX` beside ENG: `n` significant digits as in ENG, the exponent replaced by f p n µ m (none) k M G T P (10⁻¹⁵ to 10¹⁵); `µ` is U+00B5. Outside that range, ENG E notation. Drawn as mantissa, thin space, prefix in the accent colour, so `1.5 m` (milli) reads as a prefix and not as metres. In Settings and the Format key cycle. Copy always gives the full value, never the prefix text. Built (R3): the prefix is drawn as `\class{pfx}{\mathrm{k}}`, coloured `--shift` in `Math.svelte`; ENG and PFX keep trailing zeros to n digits (`2.500 k` at 4 digits). Formatter work in `format.ts` (gorge), unit tests per prefix boundary and rounding into the next prefix (999.96 k at 4 digits → 1.000 M).
 - **Entry (gated by benchmark task 3):** only through a prefix chip `\pfx{k}`. Letters typed with Alpha stay variables (`4.7k` parses as `4.7*k`: probe), so a variable `k` and the prefix k never collide. Parser rule: a numeric literal directly followed by `\pfx{X}` becomes the exact `(literal*10^e)`; `\pfx` anywhere else is a parse error. One round-trip case per chip.
 
 ### 2.8 Decision: reuse through chips and Ans
@@ -395,7 +395,7 @@ One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
 | `find.usage` | Find counts and recency, ≤ 500 ids | new |
 | `units.targets`, `units.history` | last target per dimension; the Units app's history | new (milestone 5) |
 
-**Migration:** `schema` absent means 1; a restore keeps validating field by field and writes back `schema: 2`. **Replay budget:** `defs` replay ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` is already in `EngineTimings`). **Why persist definitions:** a calculator keeps its memory; today the history shows `5▶A` after a relaunch while `A` is undefined.
+**Migration:** `schema` absent means 1; a restore keeps validating field by field and writes back `schema: 2`. Built as written (R3): `session.migrateSettings` validates every field. **Replay budget:** `defs` replay ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` is already in `EngineTimings`). **Why persist definitions:** a calculator keeps its memory; today the history shows `5▶A` after a relaunch while `A` is undefined.
 
 ### 6.3 Decision: start-up and bytes
 - Today (`vite build`, 2026-10-12): start chunk `index` 142.62 kB (49.64 kB gzip); MathLive 807.73 kB (222.09 kB gzip) after the keypad; lazy: Function 19.6 kB, JSXGraph chunk 1,035.31 kB (258.52 kB gzip), Solve 8.2 kB, Python 377.18 kB (127.99 kB gzip), the Giac worker 25.68 kB; Giac wasm 9.75 MB; the whole build 13 MB, all precached by the service worker after the engine is up.
@@ -547,7 +547,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 | Item | Budget | Today | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 150 kB raw, ≤ 52 kB gzip | 142.62 / 49.64 kB | size test |
+| Start chunk | ≤ 150 kB raw, ≤ 52 kB gzip | 132.62 / 45.98 kB (after R3) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | prototype 282 / 68 kB | size test |
