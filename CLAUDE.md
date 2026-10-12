@@ -23,7 +23,7 @@ Background reading (read before larger design decisions):
 
 ### Legal / clean room
 - **Never** use, copy, decompile or reference HP/Moravia code, firmware, ROMs, skins, icons, fonts, screenshots, manual text or help text. Learn behaviour only from black-box observation (a real device or the official Virtual Calculator), public documentation in our own words, and Giac's GPL sources.
-- **No "HP" or "Prime"** in the app name, package IDs, identifiers, icons, file names or UI strings. The only exception is a nominative mention in the README or store description together with the disclaimer: *"Not affiliated with HP Inc. or Moravia."*
+- **No "HP" or "Prime"** in the app name, package IDs, identifiers, icons, file names or UI strings. Two exceptions: a nominative mention in the README or store description together with the disclaimer *"Not affiliated with HP Inc. or Moravia."*, and the Python compatibility module's import name `hpprime` (scripts written for the reference import it; our files and identifiers around it keep our own names).
 - Same **logical** key layout as the Prime (which function sits on which key or shift layer), but **our own visual design**: colours, shapes, icons.
 - **Do not use NumWorks Epsilon/Omega/Upsilon code.** Its CC BY-NC-SA licence isn't GPL-compatible. KhiCAS and Giac (GPL) are fine.
 - Every source file starts with `// SPDX-License-Identifier: GPL-3.0-or-later` (or the comment syntax of its language).
@@ -68,7 +68,7 @@ Key decisions (reasons in docs/02 and the decision logs):
 TypeScript (strict, no `any`), Vite, **Svelte 5** for the app shell (D1; keyboard, parser and engine client stay plain TS), MathLive (MIT), JSXGraph (LGPL/MIT), CodeMirror 6 (MIT), Capacitor (MIT), Emscripten, Giac (GPL-3.0+), GMP/MPFR (LGPL), GSL (GPL-3.0+), MicroPython (MIT), Pyodide (MPL-2.0, optional), Vitest, Playwright.
 
 ## Repo layout
-`app/` (web app), `engine/giac/` (engine build + patches), `python/` (MicroPython build), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `tests/golden/` (golden cases), `tests/engine/`, `tools/` (device tools), `docs/`, `fastlane/`, `fdroid/`, `logo/`, `build.sh` (clean source → APK, used by F-Droid), `spike/` (Phase 0 record and the P3 qalc spike).
+`app/` (web app), `engine/giac/` (engine build + patches), `python/` (MicroPython build), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `tests/golden/` (golden cases), `tests/engine/`, `tools/` (device tools), `docs/`, `fastlane/`, `fdroid/`, `logo/`, `build.sh` (clean source → APK; the F-Droid recipe mirrors it, see `fdroid/README.md`), `spike/` (Phase 0 record and the P3 qalc spike).
 
 ## This machine (checked 2026-10-10)
 - Rocky Linux 10.2, 16 cores, 28 GB RAM

@@ -27,7 +27,7 @@ Pascaline is *inspired by* the HP Prime but contains **nothing from it**.
 
 **If you have ever disassembled or decompiled HP calculator firmware**, please contribute documentation, tests or design work, not engine code. Mention it in your pull request so we can route your work accordingly.
 
-**Naming:** don't use "HP" or "Prime" in identifiers, file names, package names, icons or UI text. When you need to refer to the original, write "the reference calculator", or "HP Prime" in documentation only.
+**Naming:** don't use "HP" or "Prime" in identifiers, file names, package names, icons or UI text. When you need to refer to the original, write "the reference calculator", or "HP Prime" in documentation only. One exception: the Python compatibility module keeps the import name `hpprime`, because scripts written for the reference import it; the files and identifiers around it use our own names.
 
 ## 2. Licence and sign-off
 

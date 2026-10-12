@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Clean source -> engine -> web app (dist/) -> Capacitor sync -> Gradle -> APK. F-Droid and CI use this script.
+# Clean source -> engine -> web app (dist/) -> Capacitor sync -> Gradle -> APK. The F-Droid recipe runs the same steps itself (fdroid/README.md).
 #
 #   ./build.sh [--dev] [--measure] [--unsigned] [--engine-dir DIR] [--python-dir DIR | --no-python] [--install [SERIAL]]
 #
