@@ -32,6 +32,7 @@ The two debts grow with every milestone:
    - Start-up on the Tab One: engine ready 956 ms (milestone 1) → 1022 ms (2) → 995 ms (3); keyboard usable 653–667 → 679 → 662 ms. Python loads lazily (P1). The start chunk grew to 139 kB (L7).
 
 ## Needs the user
+0. **Decide the roadmap for the new goal** (precision engineering tool, 2026-10-12): [03-feature-analysis.md](03-feature-analysis.md) revised after your answers: no discipline categories, one search for everything (Find, EN1), units in their own app with SI prefix shorthand elsewhere (EN2, amends P3 decisions 2 and 6), then precision, copy/share, matrices, bases, and a keystroke task benchmark (EN0). Section 8 lists what needs your OK. Nothing below is reordered yet.
 1. **G2 spot checks on the real G2** (optional, about 15 minutes): item 29 (the stock a b/c key; the Virtual Calculator contradicts the earlier "it was my script" finding), item 8 (tie rounding, typed with the keys) and the list in `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`. The Virtual Calculator answers are already in `tests/golden/g2.yaml`.
 2. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 3. **Feel of the hold-and-drag cursor (P7 revised, K2)** once it is built: keys then fire on release; say if that feels slow.

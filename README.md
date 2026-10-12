@@ -1,10 +1,10 @@
 # Pascaline
 
-**A free, open-source graphing CAS calculator for Android and the web, with the keyboard and workflow of a real graphing calculator.**
+**A free, open-source precision engineering tool for Android and the web: a graphing CAS calculator built so engineers calculate faster and more precisely.**
 
 > 🚧 **Status: early development.** The Phase 0 spike is done; the MVP is being built (Home, CAS, textbook entry, the Function and Solve apps and Python work). There is nothing to download yet. Feedback and ideas are very welcome: please [open an issue](https://github.com/buerlino/pascaline/issues).
 
-Pascaline aims to feel like the HP Prime: the same key layout, the same kind of apps (Function, Solve, Statistics, Spreadsheet, Geometry…) and the same way of working. It has its own design and is built entirely from open-source software. The name honours the *Pascaline*, the calculating machine Blaise Pascal built in 1642.
+Pascaline is aimed at engineers: the fastest way to a correct number, with exact maths, checked answers, and (planned) units and uncertainty. It starts from the key layout and workflow of the HP Prime, so owners of one are fast from the first minute, and goes beyond it where engineering work needs it. It has its own design and is built entirely from open-source software. The name honours the *Pascaline*, the calculating machine Blaise Pascal built in 1642.
 
 ## Why?
 - HP's official Prime app for Android disappeared from Google Play in late 2024.

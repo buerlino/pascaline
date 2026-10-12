@@ -1,10 +1,13 @@
 # CLAUDE.md: Pascaline
 
-Pascaline is an **open-source graphing CAS calculator** for Android (also PWA, later iOS and desktop). It feels like an HP Prime G2, with the same logical key layout, the same apps and the same functions, but it has its own name and look, and it reuses open-source projects wherever possible. The name comes from Blaise Pascal's 1642 calculating machine.
+Pascaline is an **open-source precision engineering tool** for Android (also PWA, later iOS and desktop): a graphing CAS calculator that lets any engineer do day-to-day calculations much faster and more precisely than with other tools. It is not another calculator and not a clone. It keeps the logical key layout of the HP Prime G2 as the way in (muscle memory, same kind of apps and functions), but it has its own name and look, and it goes beyond the G2 where engineers need it (units, uncertainty, honest precision). It reuses open-source projects wherever possible. The name comes from Blaise Pascal's 1642 calculating machine.
 
-**Two principles decide every default** (user, 2026-10-10):
+**The goal** (user, 2026-10-12): the most efficient and most precise calculation tool an engineer can carry. Every feature is judged by whether it makes an engineer's everyday work faster or more trustworthy, not by whether the G2 has it. Analysis and priorities: [docs/03-feature-analysis.md](docs/03-feature-analysis.md).
+
+**Three principles decide every default** (1 and 2: user, 2026-10-10; 3: user, 2026-10-12):
 1. **Fully open source, reuse first.** Build on existing open-source projects wherever one fits; we write glue, UI and tests, not maths engines. Write our own only when the measured gain is large (e.g. the LaTeX parser, P1).
-2. **Speed and efficiency for engineers.** This is the calculator an engineer reaches for when they can't use their G2: instant start, instant answers, keyboard-first, no clutter. When two options are otherwise equal, pick the faster and leaner one.
+2. **Speed and efficiency for engineers.** This is the calculator an engineer reaches for first: instant start, instant answers, keyboard-first, no clutter, and as few keystrokes per task as possible. When two options are otherwise equal, pick the faster and leaner one.
+3. **Precision you can trust.** No silent wrong answers: a result is exact, or approximate and marked, or flagged. Units are checked, uncertainty travels with the number, every solver root is substituted back, and the display never hides digits the user can copy. When speed and correctness conflict, correctness wins.
 
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 

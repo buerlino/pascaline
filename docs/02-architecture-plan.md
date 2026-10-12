@@ -4,7 +4,9 @@
 
 *Date: 2026-10-10. This follows up [01-feasibility-report.md](01-feasibility-report.md) and replaces its "1:1 clone" approach. The legal advice (section 3 of 01-feasibility-report.md) still applies.*
 
-**New goal:** an app that *feels* like an HP Prime G2, with the same key layout, the same apps and the same functions, but with our own look and name. It doesn't have to be bit-for-bit identical, it may improve on the original, and it should be built **mostly from existing open-source projects** to keep development time low.
+**Goal update (user, 2026-10-12):** the product goal is a precision engineering tool that makes everyday engineering calculation faster and more precise; the Prime-like layout is the way in, not the aim. Priorities: [03-feature-analysis.md](03-feature-analysis.md). The rest of this document is the original plan and still describes the architecture.
+
+**Original goal (2026-10-10):** an app that *feels* like an HP Prime G2, with the same key layout, the same apps and the same functions, but with our own look and name. It doesn't have to be bit-for-bit identical, it may improve on the original, and it should be built **mostly from existing open-source projects** to keep development time low.
 
 ---
 
