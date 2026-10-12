@@ -6,11 +6,12 @@
 //   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, parser, python
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
-//   home       exact-first Home through EngineHost: every case matches, same in every round, median ≤ 500 ms
+//   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
+//              median ≤ 500 ms
 //   precision  tests/golden/precision.yaml (docs/04 2.3 regression list, 20/30-digit cases): Home and CAS at the case's
-//              digits. A case with `status: pending` is known to fail until its fix: it never fails the gate, and is
-//              listed as still pending or now passing. The `mark:` of a case is checked once the engine result carries
-//              one (EN3-engine); until then it is counted as unchecked.
+//              digits, value and mark. A case with `status: pending` is known to fail until its fix: it never fails
+//              the gate, and is listed as still pending or now passing. A result shown with ⚠ n (fewer confirmed
+//              digits than asked) must equal `expect` rounded to those n digits.
 //   solve      Solve strategy: 1-D (solve1.ts), systems and polynomials (solve.ts); every case matches in
 //              every round, and no ⚠ unless the case has status "warn"
 //   function   Function analysis and Num table (analysis.ts), same rules
@@ -24,6 +25,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, type GiacApi } from "../src/engine/host.ts";
 import { defaultHomeSettings, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
+import { decimalFromString, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
@@ -118,14 +120,18 @@ async function stageHome(): Promise<void> {
   let slow = 0;
   let maxMed = 0;
   let assumed = 0;
+  let marks = 0;
   for (const c of cs) {
     const rs = runs.get(c.id)!;
     const shown = rs[0]!.display;
-    const ok = rs.every((x) => x.display === c.expect);
+    const got = rs.map((x) => markText(markOf(x, { format: "STD", digits: 12 })));
+    const markOk = !c.mark || got.every((m) => m?.startsWith(c.mark!));
+    if (c.mark) marks++;
+    const ok = rs.every((x) => x.display === c.expect) && markOk;
     const med = median(rs.map((x) => x.totalMs));
     maxMed = Math.max(maxMed, med);
     if (ok) pass++;
-    else console.log(`  home ${c.id}: got ${rs.map((x) => x.display).join(" / ")}, expect ${c.expect}`);
+    else console.log(`  home ${c.id}: got ${rs.map((x, k) => `${got[k] ?? "-"} ${x.display}`).join(" / ")}, expect ${c.mark ?? ""} ${c.expect}`);
     if (!(med <= HOME_LIMIT_MS)) {
       slow++;
       console.log(`  home ${c.id}: median ${med.toFixed(1)} ms > ${HOME_LIMIT_MS} ms (${shown})`);
@@ -135,14 +141,24 @@ async function stageHome(): Promise<void> {
   report(
     "home",
     pass === cs.length && slow === 0,
-    `${pass}/${cs.length} match (${assumed} assumed, ${cs.filter((c) => c.mark).length} with a mark: checked by oracle.py, by this gate from EN3-engine), ${slow} over ${HOME_LIMIT_MS} ms, max median ${maxMed.toFixed(1)} ms, rounds ${ROUNDS}`,
+    `${pass}/${cs.length} match with their mark (${assumed} assumed, ${marks} marks checked), ${slow} over ${HOME_LIMIT_MS} ms, max median ${maxMed.toFixed(1)} ms, rounds ${ROUNDS}`,
   );
 }
 
-/** The mark the engine result carries, once EN3-engine adds it to HomeResult (undefined until then). */
-function markOf(r: HomeResult): string | undefined {
-  const m = (r as HomeResult & { mark?: unknown }).mark;
-  return typeof m === "string" ? m : undefined;
+/** A mark as text: "=", "≈", "⚠", or "⚠11" (eleven confirmed digits). */
+function markText(m: MarkInfo | null): string | undefined {
+  return m ? `${m.mark}${m.n ?? ""}` : undefined;
+}
+
+const RATIONAL_TEXT = /^-?\d+(\/\d+)?$/;
+
+/** `expect` (STD at the case's digits) rounded again to n digits, or null when that could round the wrong way
+ *  (the dropped part is exactly 5: the case then needs a longer expect). */
+function expectAt(expect: string, n: number): string | null {
+  const v = decimalFromString(expect.replace("E", "e"));
+  if (!v) return null;
+  if (v.digits.slice(n) === "5") return null;
+  return toText(formatReal(v, { format: "STD", digits: n }));
 }
 
 const LOOKS_NUMERIC = /^-?(\d+(\.\d+)?|\.\d+)(E[+-]?\d+)?([+-](\d+(\.\d+)?(E[+-]?\d+)?\*)?i)?$/;
@@ -154,37 +170,39 @@ async function stagePrecision(): Promise<void> {
   let activePass = 0;
   const pending: string[] = [];
   const nowPassing: string[] = [];
-  let marksSeen = 0;
   let marksChecked = 0;
   for (const c of cs) {
     const problems: string[] = [];
-    let mark: string | undefined;
+    let mark: MarkInfo | null;
     let shown: string;
+    const digits = c.settings?.digits ?? 12;
     if (c.kind === "cas") {
-      const r = host.cas(c.input!, defaultCasSettings).result;
+      const r = host.cas(c.input!, { ...defaultCasSettings, digits }).result;
       shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
+      // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it).
+      mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
     } else {
-      const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: c.settings?.digits ?? 12 };
+      const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits };
       const r = host.home(c.input!, s).result;
       shown = r.ok ? r.display : `error: ${r.display}`;
-      mark = markOf(r);
+      mark = markOf(r, { format: "STD", digits });
     }
-    if (c.expect !== undefined && shown !== c.expect) problems.push(`got ${shown}, expect ${String(c.expect)}`);
+    if (c.expect !== undefined) {
+      // ⚠ n: the result shows only its n confirmed digits; those must be the oracle's.
+      const want = mark?.mark === "⚠" && mark.n !== undefined && mark.n < digits ? expectAt(String(c.expect), Math.max(1, mark.n)) : String(c.expect);
+      if (want === null) problems.push(`expect ${String(c.expect)} cannot be rounded to ${mark?.n} digits safely: give more digits`);
+      else if (shown !== want) problems.push(`got ${shown}, expect ${want}${want !== c.expect ? ` (${c.expect} at ${mark?.n} digits)` : ""}`);
+    }
     // A mark-only case still needs an answer: the input echoed back (BesselJ(1,2) at 30 digits) is a lost result.
     if (c.expect === undefined && !LOOKS_NUMERIC.test(shown)) problems.push(`answer is not a number: ${shown}`);
-    let markUnchecked = false;
     if (c.mark) {
-      marksSeen++;
-      if (mark === undefined) markUnchecked = true;
-      else {
-        marksChecked++;
-        if (!mark.startsWith(c.mark)) problems.push(`mark ${mark}, expect ${c.mark}`);
-      }
+      marksChecked++;
+      if (!mark || mark.mark !== c.mark) problems.push(`mark ${markText(mark) ?? "none"}, expect ${c.mark}`);
     }
     if (c.status === "pending") {
-      if (problems.length === 0 && !markUnchecked) nowPassing.push(c.id);
+      if (problems.length === 0) nowPassing.push(c.id);
       else pending.push(c.id);
-      console.log(`  precision ${c.id}: pending${problems.length ? ` (${problems.join("; ")})` : markUnchecked ? " (value passes, no mark in the engine result yet)" : ""}`);
+      console.log(`  precision ${c.id}: pending${problems.length ? ` (${problems.join("; ")})` : ""}`);
     } else {
       active++;
       if (problems.length === 0) activePass++;
@@ -195,7 +213,7 @@ async function stagePrecision(): Promise<void> {
   report(
     "precision",
     activePass === active,
-    `${activePass}/${active} active match; ${pendingNote}; marks: ${marksChecked}/${marksSeen} checked (the rest wait for the engine mark)`,
+    `${activePass}/${active} active match; ${pendingNote}; ${marksChecked} marks checked`,
   );
 }
 

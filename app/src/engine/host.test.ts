@@ -18,14 +18,6 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     expect(result).toMatchObject({ ok: true, display: "0.333333333333", path: "exact", approximate: false });
   });
 
-  it("Home: the new precision fields hold their safe placeholders until G2 fills them (docs/04 8.2)", () => {
-    const { result } = host.home("1/3", defaultHomeSettings);
-    expect(result).toMatchObject({ exactRational: false, reliableDigits: null, full: result.display });
-    expect(result.defined).toBeUndefined();
-    expect(result.items).toBeUndefined();
-    expect(result.shape).toBeUndefined();
-  });
-
   it("Home: the value re-formats in SCI and ENG without the engine (derived)", () => {
     const { result } = host.home("12345.6789", defaultHomeSettings);
     expect(result.display).toBe("12345.6789");

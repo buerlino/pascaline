@@ -4,7 +4,8 @@
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
-import { homeEval, homeSetupCommands, regrouped, safePrecision, toExactLiterals } from "./homeEval.ts";
+import { ENGINE_DEFINITIONS, homeEval, homeSetupCommands, isStateful, regrouped, resultFromFacts, safePrecision, toExactLiterals } from "./homeEval.ts";
+import { floatFacts, hasFloat, numberLatex, shapeOf } from "./numeric.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 
@@ -52,12 +53,7 @@ export function messageBuffer(): { print: (s: string) => void; messages: () => s
   };
 }
 
-// Inputs that change engine state and must be replayed after a restart.
-const STATEFUL = /:=|=>|\b(purge|assume|additionally)\s*\(/;
-
-export function isStateful(input: string): boolean {
-  return STATEFUL.test(input);
-}
+export { isStateful };
 
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
@@ -100,8 +96,10 @@ export class EngineHost {
    *  otherwise leave the previous answer in place and show it again). */
   private readonly strict: { eval(input: string): string };
 
+  /** Loads our definitions (ENGINE_DEFINITIONS) into this Giac instance. */
   constructor(giac: GiacApi) {
     this.giac = giac;
+    for (const d of ENGINE_DEFINITIONS) giac.eval(d);
     this.strict = {
       eval: (input) => {
         giac.clearMessages();
@@ -158,21 +156,36 @@ export class EngineHost {
       result: { ok: false, text, latex: "", timedOut: error === "timeout", error, engineMs: performance.now() - t0 },
       replay: [],
     });
+    // P9 (docs/04 section 2.9): typed decimals are exact rationals, as in Home; approx() gives decimals.
+    const exactInput = toExactLiterals(input);
     let text: string;
     try {
-      text = this.strict.eval(`pcasans:=(${input})`);
+      text = this.strict.eval(`pcasans:=(${exactInput})`);
     } catch (e) {
       if (e instanceof GiacSyntaxError) return fail(e.message, "syntax");
       throw e;
     }
     if (isError(text)) return fail(text, isTimeout(text) ? "timeout" : "engine");
+    const replay = isStateful(input) ? [exactInput] : [];
+    // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
+    const shape = hasFloat(text) ? shapeOf(text) : null;
+    if (shape) {
+      const facts = floatFacts(this.giac, "pcasans", isStateful(input) ? null : exactInput, shape, Math.trunc(s.digits), Math.trunc(s.digits));
+      if (facts) {
+        const numeric = resultFromFacts(facts, shape, Math.trunc(s.digits), "numeric", true, performance.now() - t0);
+        return {
+          result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },
+          replay,
+        };
+      }
+    }
     // This build leaves x*x unevaluated (no top-level "regroup" autosimplify), and latex() then draws x·x as "xx".
     if (text.includes("*")) text = regrouped(this.giac, "pcasans", text);
     const tex = this.giac.eval("latex(pcasans)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
       result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0 },
-      replay: isStateful(input) ? [input] : [],
+      replay,
     };
   }
 
@@ -233,11 +246,13 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           const loaded = await load(req.baseUrl);
           const t1 = performance.now();
           loaded.giac.eval("0");
+          // Our definitions first: a replayed user definition may call them.
+          const host = new EngineHost(loaded.giac);
           const t2 = performance.now();
           for (const line of req.replay) loaded.giac.eval(line);
           const t3 = performance.now();
           post({ id: req.id, type: "ready", instantiateMs: loaded.instantiateMs, initMs: t2 - t1, replayMs: t3 - t2 });
-          return new EngineHost(loaded.giac);
+          return host;
         })();
         await starting;
         return;

@@ -13,6 +13,10 @@
 //   SCI n: n significant digits, one before the point, exponent always shown.
 //   ENG n: n significant digits, exponent a multiple of 3, 1 ≤ |mantissa| < 1000.
 //   FIX f: f digits after the point, plain notation (the Format key's optional "Fixed" mode).
+//   PFX n: as ENG, with the exponent shown as an SI prefix (f p n µ m, none, k M G T P; docs/04 section 2.7);
+//          outside 10^-15 … 10^15 it is ENG.
+// Marks (docs/04 section 2.4): the engine reports facts (exactRational, reliableDigits, warn); markOf() and
+// formatConfirmed() below decide, for the format on screen, which digits may be shown and which mark goes first.
 // Rounding is half away from zero; half to even is available for G2 item 8.
 
 /** Significant digits a DecimalValue keeps (evalf strings from the engine carry 40). */
@@ -31,7 +35,7 @@ export interface DecimalValue {
 export const ZERO_VALUE: DecimalValue = { neg: false, digits: "", exp: 0, sticky: false };
 
 export type Rounding = "half-away" | "half-even";
-export type NumberFormat = "STD" | "SCI" | "ENG" | "FIX";
+export type NumberFormat = "STD" | "SCI" | "ENG" | "FIX" | "PFX";
 
 export interface FormatOptions {
   format: NumberFormat;
@@ -49,6 +53,8 @@ export interface FormattedNumber {
   mantissa: string;
   /** Power of ten, or null for plain notation. */
   exponent: number | null;
+  /** PFX: the SI prefix that stands for the power of ten ("" for 10^0); exponent is then null. */
+  prefix?: string;
 }
 
 export interface ComplexValue {
@@ -188,9 +194,22 @@ function fix(v: DecimalValue, f: number, rounding: Rounding): FormattedNumber {
   return { neg: v.neg, mantissa: f > 0 ? `${ip}.${fp}` : ip, exponent: null };
 }
 
+/** SI prefixes by power of ten (µ is U+00B5, as docs/04 section 2.7 says). */
+const PREFIXES: Record<number, string> = { [-15]: "f", [-12]: "p", [-9]: "n", [-6]: "\u00b5", [-3]: "m", 0: "", 3: "k", 6: "M", 9: "G", 12: "T", 15: "P" };
+
+function pfx(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
+  const e = eng(v, n, rounding);
+  // Zero and values inside f … P take a prefix; the exponent comes from the rounded value (999.96 k → 1.000 M).
+  const p = e.exponent === null ? undefined : PREFIXES[e.exponent];
+  if (p === undefined) return e;
+  return { neg: e.neg, mantissa: e.mantissa, exponent: null, prefix: p };
+}
+
 export function formatReal(v: DecimalValue, o: FormatOptions): FormattedNumber {
   const rounding = o.rounding ?? "half-away";
   switch (o.format) {
+    case "PFX":
+      return pfx(v, o.digits, rounding);
     case "STD":
       return std(v, o.digits, rounding);
     case "SCI":
@@ -202,9 +221,13 @@ export function formatReal(v: DecimalValue, o: FormatOptions): FormattedNumber {
   }
 }
 
-/** Canonical text (tests, copy): `-1.25E-5`, `0.333333333333`. */
+/** Thin space between a PFX mantissa and its prefix (docs/04 section 2.7). */
+export const PREFIX_SPACE = "\u2009";
+
+/** Canonical text (tests, copy): `-1.25E-5`, `0.333333333333`; PFX `1.5 m` with a thin space. */
 export function toText(f: FormattedNumber): string {
-  return `${f.neg ? "-" : ""}${f.mantissa}${f.exponent === null ? "" : `E${f.exponent}`}`;
+  const tail = f.prefix ? `${PREFIX_SPACE}${f.prefix}` : f.exponent === null ? "" : `E${f.exponent}`;
+  return `${f.neg ? "-" : ""}${f.mantissa}${tail}`;
 }
 
 export interface FormattedComplex {
@@ -276,4 +299,163 @@ export function formatFraction(p: bigint, q: bigint, mixed: boolean): FormattedF
     return { neg, whole: w, num: n, den: q.toString(), text: `${sign}${w} ${n}/${q}` };
   }
   return { neg, whole: "", num: a.toString(), den: q.toString(), text: `${sign}${a}/${q}` };
+}
+
+// --- Marks and confirmed digits (docs/04 sections 2.2, 2.4) --------------------------------------------------------
+
+/** `=` the text shown is the exact value; `≈` rounded, every digit shown confirmed; `⚠` see MarkInfo.n and warn. */
+export type Mark = "=" | "≈" | "⚠";
+
+/** Why a value gets ⚠ even when its digits agree (docs/04 section 2.4 rule 3):
+ *  "unaudited": a float that Giac's numeric code returned for a function not on the audited list;
+ *  "unchecked": only one evaluation gave a value, so nothing could be compared. */
+export type PrecisionWarn = "unaudited" | "unchecked";
+
+/** The engine's facts about one result (a subset of HomeResult, so the formatter does not depend on the engine). */
+export interface PrecisionFacts {
+  value?: ComplexValue;
+  exactRational: boolean;
+  /** Significant digits confirmed by the agreement check; null = exact, nothing in doubt. */
+  reliableDigits: number | null;
+  warn?: PrecisionWarn;
+  /** A numeric list or matrix: its elements (the list's own value is absent). */
+  items?: PrecisionFacts[];
+}
+
+export interface MarkInfo {
+  mark: Mark;
+  /** ⚠ with fewer confirmed digits than the format asks for: how many are confirmed (and shown). */
+  n?: number;
+  warn?: PrecisionWarn;
+}
+
+/** Significant digits that `o` shows for v (FIX: the digits up to the last decimal place, at least 1). */
+function digitsShown(v: DecimalValue, o: FormatOptions): number {
+  if (o.format !== "FIX") return o.digits;
+  return Math.max(1, v.exp + 1 + (o.fixed ?? 4));
+}
+
+/** The text in format `o` is exactly v: nothing non-zero is cut off. */
+function shownExactly(v: DecimalValue, o: FormatOptions): boolean {
+  if (isZero(v)) return true;
+  if (v.sticky) return false;
+  if (o.format === "FIX") return v.digits.length - (v.exp + 1) <= (o.fixed ?? 4);
+  return v.digits.length <= o.digits;
+}
+
+/**
+ * The format options that show only confirmed digits of `value`: `o` itself when every digit it shows is confirmed,
+ * otherwise fewer significant digits (FIX: fewer decimals; SCI when not even the integer part is confirmed).
+ * One reliable digit is the least shown (a ⚠ 0 value still shows its leading digit, with the mark saying so).
+ */
+export function confirmedOptions(value: ComplexValue, reliableDigits: number | null, o: FormatOptions): FormatOptions {
+  if (reliableDigits === null) return o;
+  const n = Math.max(1, reliableDigits);
+  const parts = [value.re, value.im].filter((v) => !isZero(v));
+  if (parts.every((v) => digitsShown(v, o) <= n)) return o;
+  if (o.format !== "FIX") return { ...o, digits: Math.min(o.digits, n) };
+  let fixed = o.fixed ?? 4;
+  for (const v of parts) fixed = Math.min(fixed, n - (v.exp + 1));
+  return fixed >= 0 ? { ...o, fixed } : { ...o, format: "SCI", digits: n };
+}
+
+const RANK: Record<Mark, number> = { "⚠": 0, "≈": 1, "=": 2 };
+
+function weakest(a: MarkInfo, b: MarkInfo): MarkInfo {
+  if (RANK[a.mark] !== RANK[b.mark]) return RANK[a.mark] < RANK[b.mark] ? a : b;
+  if (a.mark !== "⚠") return a;
+  const n = a.n === undefined ? b.n : b.n === undefined ? a.n : Math.min(a.n, b.n);
+  return { mark: "⚠", ...(n === undefined ? {} : { n }), ...((a.warn ?? b.warn) ? { warn: a.warn ?? b.warn } : {}) };
+}
+
+/**
+ * The mark for a result shown in format `o` (docs/04 section 2.4); null for a non-number.
+ * `=` needs an exact rational shown in full; `⚠ n` when fewer than the shown digits are confirmed; `⚠` with
+ * `warn` for an un-audited or unchecked float; `≈` otherwise. A list or matrix gets its weakest element's mark.
+ */
+export function markOf(f: PrecisionFacts, o: FormatOptions): MarkInfo | null {
+  if (f.items) {
+    if (f.items.length === 0) return null;
+    let m: MarkInfo | null = null;
+    for (const it of f.items) {
+      const x = markOf(it, o);
+      if (!x) return null;
+      m = m ? weakest(m, x) : x;
+    }
+    return m;
+  }
+  const v = f.value;
+  if (!v) return null;
+  const parts = [v.re, v.im].filter((p) => !isZero(p));
+  if (f.reliableDigits !== null && parts.some((p) => digitsShown(p, o) > Math.max(1, f.reliableDigits!))) {
+    return { mark: "⚠", n: Math.max(0, f.reliableDigits), ...(f.warn ? { warn: f.warn } : {}) };
+  }
+  if (f.warn) return { mark: "⚠", warn: f.warn };
+  if (f.exactRational && parts.every((p) => shownExactly(p, o))) return { mark: "=" };
+  return { mark: "≈" };
+}
+
+/** The value formatted in `o`, showing confirmed digits only (canonical text: lists `[a,b]`; with `shape`, a matrix `[[a,b],[c,d]]`). */
+export function formatConfirmed(f: PrecisionFacts & { shape?: [number, number] }, o: FormatOptions): string | null {
+  if (f.items) {
+    const texts: string[] = [];
+    for (const it of f.items) {
+      const t = formatConfirmed(it, o);
+      if (t === null) return null;
+      texts.push(t);
+    }
+    if (f.shape && f.shape[0] * f.shape[1] === texts.length && f.shape[1] > 0) {
+      const [rows, cols] = f.shape;
+      const rs: string[] = [];
+      for (let r = 0; r < rows; r++) rs.push(`[${texts.slice(r * cols, (r + 1) * cols).join(",")}]`);
+      return `[${rs.join(",")}]`;
+    }
+    return `[${texts.join(",")}]`;
+  }
+  if (!f.value) return null;
+  return formatComplex(f.value, confirmedOptions(f.value, f.reliableDigits, o)).text;
+}
+
+// --- The agreement check (docs/04 section 2.4 rule 2) ---------------------------------------------------------------
+
+/** v as m·10^e (m a signed BigInt). */
+function scaled(v: DecimalValue): { m: bigint; e: number } {
+  if (isZero(v)) return { m: 0n, e: 0 };
+  const m = BigInt(v.digits);
+  return { m: v.neg ? -m : m, e: v.exp + 1 - v.digits.length };
+}
+
+function fromScaled(m: bigint, e: number, keep: number): DecimalValue {
+  return e >= 0 ? decimalFromRational(m * pow10(e), 1n, keep) : decimalFromRational(m, pow10(-e), keep);
+}
+
+/**
+ * How many significant digits of `b` are confirmed by a second evaluation `a` (docs/04 section 2.4 rule 2).
+ * `b` is the more precise of the two; `a` was printed with `aPrecision` significant digits. The error of `b` is taken
+ * to be at most d = |a − b| + one unit in the last place of `a`, and n is the largest digit count (≤ cap) at which
+ * every value in [b − d, b + d] rounds to the same n digits: then rounding `b` to n digits is right.
+ * Two zeros confirm each other (the value cancelled to zero at both precisions); a zero and a non-zero confirm nothing.
+ */
+export function confirmedDigits(a: DecimalValue, b: DecimalValue, aPrecision: number, cap: number = DECIMAL_KEEP): number {
+  if (isZero(a) && isZero(b)) return cap;
+  if (isZero(a) || isZero(b)) return 0;
+  const A = scaled(a);
+  const B = scaled(b);
+  // Common scale, one digit below a's last printed place.
+  const ulpExp = a.exp + 1 - aPrecision;
+  const e = Math.min(A.e, B.e, ulpExp);
+  const am = A.m * pow10(A.e - e);
+  const bm = B.m * pow10(B.e - e);
+  const diff = am > bm ? am - bm : bm - am;
+  const d = diff + pow10(ulpExp - e);
+  const keep = cap + 2;
+  const lo = fromScaled(bm - d, e, keep);
+  const hi = fromScaled(bm + d, e, keep);
+  if (isZero(lo) || isZero(hi) || lo.neg !== hi.neg) return 0;
+  for (let n = cap; n >= 1; n--) {
+    const x = roundSignificant(lo, n);
+    const y = roundSignificant(hi, n);
+    if (x.digits === y.digits && x.exp === y.exp) return n;
+  }
+  return 0;
 }

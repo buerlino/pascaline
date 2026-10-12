@@ -200,7 +200,8 @@ def stability_dps(digits: int):
 
 
 NUM = r"\d+(?:\.\d+)?(?:E[+-]?\d+)?"
-SHOWN = re.compile(rf"^(?P<re>-?{NUM})?(?:(?P<sign>[+-])?(?P<imn>{NUM}\*)?i)?$")
+# A real part, optionally followed by a signed imaginary part; or an imaginary part alone (`32*i` is 32i, not 3+2i).
+SHOWN = re.compile(rf"^(?:(?P<re>-?{NUM})(?:(?P<sign>[+-])(?P<imn>{NUM}\*)?i)?|(?P<ineg>-)?(?P<imo>{NUM}\*)?i)$")
 
 
 def parse_shown(text):
@@ -208,13 +209,16 @@ def parse_shown(text):
     if not isinstance(text, str) or text == "":
         return None
     m = SHOWN.match(text)
-    if not m or not (m["re"] or m["sign"] or m["imn"] or text.endswith("i")):
+    if not m:
         return None
-    re_ = Fraction(Decimal(m["re"])) if m["re"] else Fraction(0)
-    if not (m["sign"] or m["imn"] or text.endswith("i")):
-        return re_, Fraction(0)
-    mag = Fraction(Decimal(m["imn"][:-1])) if m["imn"] else Fraction(1)
-    return re_, -mag if (m["sign"] == "-" or (not m["re"] and text.startswith("-"))) else mag
+    if m["re"] is not None:
+        re_ = Fraction(Decimal(m["re"]))
+        if not m["sign"]:
+            return re_, Fraction(0)
+        mag = Fraction(Decimal(m["imn"][:-1])) if m["imn"] else Fraction(1)
+        return re_, -mag if m["sign"] == "-" else mag
+    mag = Fraction(Decimal(m["imo"][:-1])) if m["imo"] else Fraction(1)
+    return Fraction(0), -mag if m["ineg"] else mag
 
 
 def equals_shown(value, shown) -> bool:

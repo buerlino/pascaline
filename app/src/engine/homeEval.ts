@@ -4,25 +4,31 @@
 // 1. Decimal literals become exact rationals (`0.1` → `(1/10)`), so `1-0.9-0.1` is exactly 0.
 // 2. Giac evaluates exactly, under Giac's own interrupt (`timeout <s>`, sub-second with patch 0002).
 // 3. The value becomes a DecimalValue (format.ts) and is shown in STD at `digits`: exact rationals with BigInt
-//    arithmetic, everything else from a 40-digit `evalf` string. Rounding is half away from zero.
-// Guards: timeout → re-evaluate in floating point at `workDigits` and round (marked approximate).
+//    arithmetic, everything else from `evalf` at P = max(40, digits+10) digits, confirmed by a second evaluation
+//    (numeric.ts, docs/04 section 2.4). Only confirmed digits are shown; the facts for the mark go with the result.
+//    Rounding is half away from zero.
+// Guards: timeout → re-evaluate in floating point at W = max(workDigits, digits+10) and at W+20, and round.
 // Result over `maxExactDigits` digits → shown from the exact value, but Ans keeps a float so the
 // blow-up doesn't propagate (`guardMode: "reeval-float"` re-evaluates in float instead, as a comparison).
 //
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
+import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn } from "./format.ts";
 import {
-  decimalFromRational,
-  decimalFromString,
-  formatComplex,
-  tieRisk,
-  type ComplexValue,
-  type DecimalValue,
-} from "./format.ts";
+  doubleFallback,
+  exactFacts,
+  floatFacts,
+  floatPathFacts,
+  hasFloat,
+  rationalValue,
+  shapeOf,
+  valuePrecision,
+  type ElementFacts,
+  type Giac,
+  type Shape,
+} from "./numeric.ts";
 
-export interface Giac {
-  eval(input: string): string;
-}
+export type { Giac };
 
 export interface HomeSettings {
   /** Significant digits shown (CLAUDE.md: 12). */
@@ -32,13 +38,16 @@ export interface HomeSettings {
   budgetMs: number;
   /** Numerator/denominator size above which the result stops being carried exactly. */
   maxExactDigits: number;
-  /** Working precision of the float fallback. */
+  /** Working precision of the float fallback (at least digits+10 is used, docs/04 section 2.5). */
   workDigits: number;
   guardMode: "round-exact" | "reeval-float";
   /** Exact integer powers b^n with |n·ln b| above this fail at once ("Exponent overflow") and go to
    *  the float path. The host applies it with the engine's giac_set_pow_limit(); Giac's default is 1e8.
    *  1e5 ≈ results up to ~43,000 digits. */
   powLimit: number;
+  /** The Giac variable that holds this evaluation's answer (Home's Ans). Python's `calc.eval` uses its own, so a
+   *  script never changes Home's Ans. */
+  answer?: string;
 }
 
 export const defaultHomeSettings: HomeSettings = {
@@ -81,14 +90,31 @@ export interface HomeResult {
   defined?: { name: string; kind: "var" | "fn" };
   /** Elements of a numeric list or matrix (rows flattened, with `shape`). */
   items?: HomeResult[];
-  /** [rows, columns] of `items`. */
+  /** [rows, columns] of `items` for a matrix; absent for a list. */
   shape?: [number, number];
+  /** ⚠ although the digits agree: an un-audited function's float, or a value that could be evaluated only once. */
+  warn?: PrecisionWarn;
 }
 
 /** Placeholder precision facts until the engine fills them (docs/04 section 8.2): no claim of exactness, `full` = the display. */
 export function safePrecision(display: string): Pick<HomeResult, "exactRational" | "reliableDigits" | "full"> {
   return { exactRational: false, reliableDigits: null, full: display };
 }
+
+/**
+ * Our definitions, loaded into Giac when the engine starts (before the user's definitions are replayed).
+ * `sigfig(x,n)` (docs/04 section 2.5): x rounded to n significant digits, half away from zero, as an exact rational,
+ * so `sigfig(1/3,3)` is exactly 333/1000. The power of ten is found by exact comparisons (a float log10 can land on
+ * the wrong side at 999.95); an irrational x is first evaluated with n+30 digits.
+ */
+export const ENGINE_DEFINITIONS: readonly string[] = [
+  "sigfig(x,n):={ local a,p,k,m; " +
+    'if (type(n)!=integer or n<1) throw("sigfig: n must be a positive integer"); ' +
+    "if (x==0) return 0; " +
+    'if (type(x)!=integer and type(x)!=rational) { x:=evalf(x,n+30); if (type(x)!=real) throw("sigfig: x must be a real number"); } ' +
+    "a:=abs(x); p:=floor(evalf(log10(a),30)); while (10^p>a) p:=p-1; while (10^(p+1)<=a) p:=p+1; " +
+    "k:=n-1-p; m:=floor(a*10^k+1/2); return sign(x)*m/10^k; }",
+];
 
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */
 export function homeSetupCommands(s: HomeSettings): string[] {
@@ -156,8 +182,6 @@ function exactRational(mant: string, exp10: number): string {
 
 // --- 2. evaluation ---------------------------------------------------------------------------
 
-const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
-
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
 }
@@ -166,53 +190,31 @@ function isTimeout(out: string): boolean {
   return isError(out) && /interrupt/i.test(out);
 }
 
-/** One real part (a Giac expression such as `re(pasans)`) as a DecimalValue: exact rationals by
- *  BigInt division, everything else from a 40-digit `evalf` string. `big`: an exact rational whose
- *  numerator or denominator has more than maxDigits digits. `tieRisk` only for float strings. */
-function valuePart(
-  giac: Giac,
-  part: string,
-  n: number,
-  maxDigits: number,
-): { v: DecimalValue; big: boolean; tieRisk: boolean } | null {
-  const out = giac.eval(part);
-  const q = RATIONAL.exec(out);
-  if (q) {
-    const [, num = "0", den = "1"] = q;
-    const big = num.replace("-", "").length > maxDigits || den.length > maxDigits;
-    return { v: decimalFromRational(BigInt(num), BigInt(den)), big, tieRisk: false };
-  }
-  const f = decimalFromString(giac.eval(`evalf(${part},40)`));
-  return f ? { v: f, big: false, tieRisk: tieRisk(f, n) } : null;
+// Inputs that change engine state and must be replayed after a restart.
+const STATEFUL = /:=|=>|\b(purge|assume|additionally)\s*\(/;
+
+export function isStateful(input: string): boolean {
+  return STATEFUL.test(input);
 }
 
-function numericValue(
-  giac: Giac,
-  v: string,
-  n: number,
-  maxDigits: number,
-): { value: ComplexValue; text: string; big: boolean; tieRisk: boolean } | null {
-  const re = valuePart(giac, `re(${v})`, n, maxDigits);
-  const im = valuePart(giac, `im(${v})`, n, maxDigits);
-  if (!re || !im) return null;
-  const value = { re: re.v, im: im.v };
-  return {
-    value,
-    text: formatComplex(value, { format: "STD", digits: n }).text,
-    big: re.big || im.big,
-    tieRisk: re.tieRisk || im.tieRisk,
-  };
+/** `name:=value` with a plain variable name: evaluated as the value, then stored (so a check may run it twice). */
+export function simpleAssignment(input: string): { name: string; rhs: string } | null {
+  const m = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*:=([\s\S]+)$/.exec(input);
+  return m ? { name: m[1]!, rhs: m[2]! } : null;
 }
 
-function floatEval(giac: Giac, input: string, s: HomeSettings): { out: string; ok: boolean } {
-  giac.eval(`Digits:=${s.workDigits}`);
-  try {
-    const out = giac.eval(`pasans:=(${input})`);
-    return { out, ok: !isError(out) };
-  } finally {
-    giac.eval(`Digits:=${s.digits}`);
-  }
+/** What an input defines, for the live Find items (docs/04 section 3.4). */
+export function definedBy(input: string): { name: string; kind: "var" | "fn" } | undefined {
+  const a = simpleAssignment(input);
+  if (a) return { name: a.name, kind: "var" };
+  const f = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\([^()]*\)\s*:=/.exec(input);
+  if (f) return { name: f[1]!, kind: "fn" };
+  const sto = /=>\s*([A-Za-z][A-Za-z0-9_]*)\s*$/.exec(input);
+  return sto ? { name: sto[1]!, kind: "var" } : undefined;
 }
+
+/** Longest exact text kept as `full` (docs/04 section 2.8: ≤ 2 kB). */
+export const FULL_EXACT_MAX = 2048;
 
 /**
  * `regroup` on the stored answer `name` (x*x -> x^2), kept only when it merges equal factors, i.e. has
@@ -226,6 +228,93 @@ export function regrouped(giac: Giac, name: string, text: string): string {
   return out;
 }
 
+/** The precision fields of a result built from its element facts (docs/04 section 8.2). */
+interface Built {
+  display: string;
+  value?: ComplexValue;
+  items?: HomeResult[];
+  shape?: [number, number];
+  exactRational: boolean;
+  reliableDigits: number | null;
+  warn?: PrecisionWarn;
+  tieRisk: boolean;
+  /** The value as a decimal with every confirmed digit up to P (copy, chips). */
+  decimal: string;
+}
+
+function element(f: ElementFacts, digits: number, P: number, path: HomePath, approximate: boolean): HomeResult {
+  const facts = { value: f.value, exactRational: f.exactRational, reliableDigits: f.reliableDigits, ...(f.warn ? { warn: f.warn } : {}) };
+  const display = formatConfirmed(facts, { format: "STD", digits })!;
+  return {
+    ok: true,
+    display,
+    ...facts,
+    full: formatConfirmed(facts, { format: "STD", digits: P })!,
+    path,
+    approximate,
+    tieRisk: !f.exactRational && (tieRisk(f.value.re, digits) || (!isZero(f.value.im) && tieRisk(f.value.im, digits))),
+    exactMs: 0,
+    totalMs: 0,
+  };
+}
+
+/** A numeric HomeResult from element facts (CAS numeric results use it too). */
+export function resultFromFacts(facts: ElementFacts[], shape: Shape, digits: number, path: HomePath, approximate: boolean, ms = 0): HomeResult {
+  const { decimal, ...b } = build(facts, shape, digits, path, approximate);
+  return { ok: true, ...b, full: decimal, path, approximate, exactMs: 0, totalMs: ms };
+}
+
+function build(facts: ElementFacts[], shape: Shape, digits: number, path: HomePath, approximate: boolean): Built {
+  const P = valuePrecision(digits);
+  const els = facts.map((f) => element(f, digits, P, path, approximate));
+  if (shape.kind === "scalar") {
+    const e = els[0]!;
+    return {
+      display: e.display,
+      value: e.value!,
+      exactRational: e.exactRational,
+      reliableDigits: e.reliableDigits,
+      ...(e.warn ? { warn: e.warn } : {}),
+      tieRisk: e.tieRisk,
+      decimal: e.full,
+    };
+  }
+  const shp: [number, number] | undefined = shape.kind === "matrix" ? [shape.rows, shape.cols] : undefined;
+  const reliable = els.reduce<number | null>((n, e) => (e.reliableDigits === null ? n : n === null ? e.reliableDigits : Math.min(n, e.reliableDigits)), null);
+  const warn = els.find((e) => e.warn)?.warn;
+  const fmt = (key: "display" | "full") =>
+    shp ? `[${Array.from({ length: shp[0] }, (_, r) => `[${els.slice(r * shp[1], (r + 1) * shp[1]).map((e) => e[key]).join(",")}]`).join(",")}]` : `[${els.map((e) => e[key]).join(",")}]`;
+  return {
+    display: fmt("display"),
+    items: els,
+    ...(shp ? { shape: shp } : {}),
+    exactRational: els.every((e) => e.exactRational),
+    reliableDigits: reliable,
+    ...(warn ? { warn } : {}),
+    tieRisk: els.some((e) => e.tieRisk),
+    decimal: fmt("full"),
+  };
+}
+
+/**
+ * An exact non-rational scalar whose value printed as a short decimal (`8^(1/3)` → 2.000…): Giac may prove it rational
+ * with `simplify`. Then it is exact (and Ans becomes the rational). Only tried when the digits look like it, so it
+ * costs nothing for ordinary irrational results.
+ */
+function provedRational(giac: Giac, name: string, f: ElementFacts, digits: number): ElementFacts | null {
+  if (f.exactRational || f.value.re.sticky || f.value.im.sticky) return null;
+  if (f.value.re.digits.length > digits || f.value.im.digits.length > digits) return null;
+  const out = giac.eval(`simplify(${name})`);
+  if (isError(out)) return null;
+  const re = giac.eval(`re(simplify(${name}))`);
+  const im = giac.eval(`im(simplify(${name}))`);
+  const a = rationalValue(re);
+  const b = rationalValue(im);
+  if (!a || !b) return null;
+  giac.eval(`${name}:=simplify(${name})`);
+  return { value: { re: a.v, im: b.v }, exactRational: true, reliableDigits: null, big: false };
+}
+
 export function homeEval(
   giac: Giac,
   input: string,
@@ -233,38 +322,87 @@ export function homeEval(
   now: () => number = () => performance.now(),
 ): HomeResult {
   const t0 = now();
-  const exactOut = giac.eval(`pasans:=(${toExactLiterals(input)})`);
+  const ans = s.answer ?? "pasans";
+  const asg = simpleAssignment(input);
+  const body = asg ? asg.rhs : input;
+  // Other stateful inputs (f(x):=…, purge, assume, =>) must not run twice.
+  const once = !asg && isStateful(input);
+  const exactBody = toExactLiterals(body);
+  const exactOut = giac.eval(`${ans}:=(${exactBody})`);
   const exactMs = now() - t0;
-  const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "exactRational" | "reliableDigits" | "full">): HomeResult => ({
-    ...safePrecision(r.display),
+  const W = Math.max(s.workDigits, s.digits + 10);
+  const defined = definedBy(input);
+  const store = () => {
+    if (asg) giac.eval(`${asg.name}:=${ans}`);
+  };
+
+  const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "full"> & { full?: string }): HomeResult => ({
     ...r,
+    full: r.full ?? r.display,
+    ...(r.ok && defined ? { defined } : {}),
     exactMs,
     totalMs: now() - t0,
   });
+  const fromBuilt = (b: Built, path: HomePath, approximate: boolean, exact: string | undefined, full: string): HomeResult => {
+    const { decimal: _d, ...rest } = b;
+    return done({ ok: true, ...rest, ...(exact !== undefined ? { exact } : {}), path, approximate, full });
+  };
+  const failed = (display: string, path: HomePath, exact?: string): HomeResult =>
+    done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, tieRisk: false, exactRational: false, reliableDigits: null });
 
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
-    const f = floatEval(giac, input, s);
-    if (!f.ok) return done({ ok: false, display: f.out, exact, path, approximate: true, tieRisk: false });
-    const v = numericValue(giac, "pasans", s.digits, s.maxExactDigits);
-    if (!v) return done({ ok: false, display: f.out, exact, path, approximate: true, tieRisk: false });
-    return done({ ok: true, display: v.text, value: v.value, exact, path, approximate: true, tieRisk: v.tieRisk });
+    const f = floatPathFacts(giac, ans, asg ? asg.rhs : input, once, W, s.digits);
+    if ("error" in f) return failed(f.error, path, exact);
+    store();
+    const b = build(f.facts, f.shape, s.digits, path, true);
+    return fromBuilt(b, path, true, exact, b.decimal);
   };
 
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 
-  const v = numericValue(giac, "pasans", s.digits, s.maxExactDigits);
-  if (!v) {
-    // Not a number (symbolic, list, matrix…): show Giac's text. This build does not apply the
+  const shape = shapeOf(exactOut);
+  const symbolic = (): HomeResult => {
+    // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
-    const text = exactOut.includes("*") ? regrouped(giac, "pasans", exactOut) : exactOut;
-    return done({ ok: true, display: text, exact: text, path: "exact", approximate: false, tieRisk: false });
+    const text = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
+    store();
+    return done({ ok: true, display: text, exact: text, path: "exact", approximate: false, tieRisk: false, exactRational: false, reliableDigits: null });
+  };
+  if (!shape) return symbolic();
+
+  if (hasFloat(exactOut)) {
+    // Giac's numeric code returned a float on the exact path (rule 3).
+    const facts = floatFacts(giac, ans, once ? null : exactBody, shape, s.digits, s.digits);
+    if (!facts) return symbolic();
+    store();
+    const b = build(facts, shape, s.digits, "exact", true);
+    return fromBuilt(b, "exact", true, exactOut, b.decimal);
   }
-  if (!v.big) {
-    return done({ ok: true, display: v.text, value: v.value, exact: exactOut, path: "exact", approximate: false, tieRisk: v.tieRisk });
+
+  let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits);
+  if (!facts) {
+    const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
+    if (!d) return symbolic();
+    store();
+    const b = build([d], shape, s.digits, "exact", true);
+    return fromBuilt(b, "exact", true, exactOut, b.decimal);
   }
-  if (s.guardMode === "reeval-float") return viaFloat("float-big", exactOut);
+  let exactText = exactOut;
+  if (shape.kind === "scalar" && !facts[0]!.exactRational) {
+    const proved = provedRational(giac, ans, facts[0]!, valuePrecision(s.digits));
+    if (proved) {
+      facts = [proved];
+      exactText = giac.eval(ans);
+    }
+  }
+  store();
+  const b = build(facts, shape, s.digits, "exact", false);
+  const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
+  const big = shape.kind === "scalar" && facts[0]!.big;
+  if (!big) return fromBuilt(b, "exact", false, exactText, full);
+  if (s.guardMode === "reeval-float") return viaFloat("float-big", exactText);
   // Shown from the exact value (already computed); Ans continues as a float.
-  giac.eval(`pasans:=evalf(pasans,${s.workDigits})`);
-  return done({ ok: true, display: v.text, value: v.value, exact: exactOut, path: "exact-big", approximate: false, tieRisk: v.tieRisk });
+  giac.eval(`${ans}:=evalf(${ans},${W})`);
+  return fromBuilt(b, "exact-big", false, exactText, full);
 }

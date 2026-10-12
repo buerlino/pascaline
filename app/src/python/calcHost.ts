@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Main-thread side of the `calc` module: answers Python's host calls through the MathEngine.
 // Values cross as tagged JSON (PyValue) so Python gets int / float / complex / list / str exactly.
-import { defaultCasSettings, type MathEngine } from "../engine/types.ts";
+import { defaultHomeSettings } from "../engine/homeEval.ts";
+import { isZero, type DecimalValue } from "../engine/format.ts";
+import { defaultCasSettings, type HomeResult, type MathEngine } from "../engine/types.ts";
 import { HostError } from "./pyHost.ts";
 
 /** Resolves with a JSON-serialisable value; a rejection becomes an exception in Python
@@ -62,6 +64,47 @@ export function parseGiacNumeric(text: string): PyValue | undefined {
   return re !== undefined && im !== undefined ? { c: [re, im] } : undefined;
 }
 
+/** Python's Ans: `calc.eval` keeps its own, so a script never changes Home's Ans. */
+const PY_ANSWER = "pascalcans";
+
+/** A decimal as a Python float literal from its leading 17 digits (`-0.12345678901234567e3`). */
+function floatText(v: DecimalValue): string {
+  return isZero(v) ? "0.0" : `${v.neg ? "-" : ""}0.${v.digits.slice(0, 17)}e${v.exp + 1}`;
+}
+
+/** An exact integer DecimalValue as its digits, or undefined. */
+function integerText(v: DecimalValue): string | undefined {
+  if (isZero(v)) return "0";
+  if (v.sticky || v.digits.length > v.exp + 1) return undefined;
+  return `${v.neg ? "-" : ""}${v.digits}${"0".repeat(v.exp + 1 - v.digits.length)}`;
+}
+
+/**
+ * A Home result as a Python value (docs/04 section 2.10): an exact integer stays int, any other number becomes a
+ * float from its leading 17 digits (complex when it has an imaginary part), lists and matrices become lists, and
+ * anything else is Giac's text.
+ */
+export function pyValueOf(r: HomeResult): PyValue {
+  if (r.items) {
+    const els = r.items.map(pyValueOf);
+    if (!r.shape) return els;
+    const [rows, cols] = r.shape;
+    return Array.from({ length: rows }, (_, k) => els.slice(k * cols, (k + 1) * cols));
+  }
+  if (!r.value) return r.display;
+  const { re, im } = r.value;
+  if (isZero(im)) {
+    if (r.exactRational) {
+      // Big integers keep every digit: the exact text, when it is an integer.
+      if (r.exact !== undefined && INT.test(r.exact)) return { i: r.exact };
+      const n = integerText(re);
+      if (n !== undefined) return { i: n };
+    }
+    return { f: floatText(re) };
+  }
+  return { c: [floatText(re), `${im.neg ? "" : "+"}${floatText(im)}`] };
+}
+
 export function createCalcHost(math: MathEngine): HostHandler {
   const giac = async (input: string): Promise<string> => {
     const r = await math.eval(input);
@@ -69,13 +112,11 @@ export function createCalcHost(math: MathEngine): HostHandler {
     return r.output;
   };
 
-  /** Evaluate and convert: exact integers stay int; everything numeric goes through evalf at 17 digits
-   *  (exact values are exact to 17 digits; Giac floats carry what they print at the current Digits). */
+  /** Evaluate the way Home does (exact-first, decimals exact, every digit checked: docs/04 section 2.10) and convert. */
   const value = async (expr: string): Promise<PyValue> => {
-    const exact = await giac(expr);
-    if (INT.test(exact)) return { i: exact };
-    const num = parseGiacNumeric(await giac(`evalf(${exact},17)`));
-    return num ?? exact;
+    const r = await math.home(expr, { ...defaultHomeSettings, answer: PY_ANSWER });
+    if (!r.ok) throw new HostError("ValueError", r.display);
+    return pyValueOf(r);
   };
 
   const checkName = (v: unknown): string => {

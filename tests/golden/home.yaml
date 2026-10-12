@@ -125,7 +125,7 @@ cases:
   # --- complex results ----------------------------------------------------------------------------
   - { id: "cx-product", input: "(3+4*i)*(1-2*i)", oracle: "(3+4*I)*(1-2*I)", expect: "11-2*i", mark: "=", source: "derived" }
   - { id: "cx-sqrt-4", input: "sqrt(-4)", oracle: "2*I", expect: "2*i", mark: "=", source: "derived", g2: 9, note: "whether Home shows a complex result or an error in real mode is a G2 checklist item" }
-  - { id: "cx-(1+i)^10", input: "(1+i)^10", oracle: "32*I", expect: "32*i", mark: "≈", source: "derived" }
+  - { id: "cx-(1+i)^10", input: "(1+i)^10", oracle: "32*I", expect: "32*i", mark: "=", source: "derived" }
   - { id: "cx-1/(1+i)", input: "1/(1+i)", oracle: "1/(1+I)", expect: "0.5-0.5*i", mark: "=", source: "derived" }
   - { id: "cx-e^ipi", input: "exp(i*pi)", oracle: "F(-1)", expect: "-1", mark: "=", source: "derived" }
   - { id: "cx-ln-1", input: "ln(-1)", oracle: "pi*I", expect: "3.14159265359*i", mark: "≈", source: "oracle" }
