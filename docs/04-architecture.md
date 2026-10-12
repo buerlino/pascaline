@@ -131,7 +131,7 @@ Num tables and the Solve and analysis results show only `⚠` (a mark on every c
 
 **The agreement check** (engine, `homeEval.ts`, `solve.ts` `numericResult`, `analysis.ts`):
 1. An exact rational needs no check: BigInt is exact.
-2. Any other value is evaluated at precision P = `max(40, digits+10)` and again at P + 20. The confirmed digits are the common leading digits of the two decimal strings (less one, for the rounding position). If they cover the shown digits, the mark is `≈`; otherwise `⚠ n`.
+2. Any other value is evaluated at precision P = `max(40, digits+10)` and again at P + 20. The confirmed digits are the largest n at which both values, widened by their difference (plus one ulp), round alike (G2; stricter than "common digits less one" at ties). If fewer than `digits` agree, the check runs once more at P + 20 against P + 40. If they cover the shown digits, the mark is `≈`; otherwise `⚠ n`. A float from a function that is not audited shows `⚠` without a count (M4-5): two of Giac's routines can agree on wrong digits.
 3. A value that Giac's numeric code returned as a float on the "exact" path (the exact output is a float literal, as `normald_icdf` gives `-1.2815515655446`) is re-evaluated once with `Digits` on the other side of 14 (double ↔ MPFR) and compared the same way. If one side has no value (2.3 #5), the other side's digits are shown, at most 15 for a double. Such a value gets `⚠` unless every function in the input is on the audited list (tier 0, 3.3), because agreement between two of Giac's routines does not prove either right (2.3 #2).
 4. A `tieRisk` value (`format.ts:134`) is re-evaluated at P + 20 before rounding, so the flag finally has a reader.
 
@@ -148,6 +148,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 - The setting allows 1–30 (`session.svelte.ts:86`, `Settings.svelte:22`); stored values 1–15 stay valid (6.2 migration).
 - Home `workDigits = max(30, digits+10)` (today fixed at 30, `homeEval.ts:49`; Solve already does this, `solve.ts:17`). The value precision P = `max(40, digits+10)` replaces the fixed 40 (`homeEval.ts:168`) and `DECIMAL_KEEP` (`format.ts:19`) follows it, so rounding at 30 digits keeps 10 guard digits.
+- `sigfig` and our other Giac definitions load on first use, not at engine start (G2).
 - The agreement check (2.4) is what makes 20 and 30 digits honest: without it, 2.3 #3–#5 would go out unmarked.
 - **Latency, measured on the desktop** (123 `home.yaml` inputs through `EngineHost`, 3 rounds, last round timed): digits 12 p50 0.15 ms / p95 2.74 ms; digits 30 p50 0.14 ms / p95 3.63 ms; the same max (the 300 ms budget case) and no case changed path. This is cheap because the exact path already uses a 40-digit `evalf` and the float fallback already runs at 30 digits; Giac's switch to MPFR above 14 digits only affects floats that Giac itself computes.
 - **Tab One measurement (annabell, milestone 4):** the 55 `bench.yaml` and 123 `home.yaml` inputs at digits 12, 20 and 30 (a `digits` parameter for `?bench=1`), medians of 5 cold runs. **Gate:** p95 at 30 digits < 150 ms and ≤ 1.3 × the 12-digit p95. If it fails, the setting stops at 20 and Settings says why.
@@ -188,7 +189,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 ### 2.9 Decision: CAS
 
-- A CAS result that contains a float gets `≈`, and its numbers are drawn by our formatter at the digits setting (`CasResult` gains the numeric value when the result is a number, 8.2). Exact CAS results get no mark.
+- A CAS result that contains a float gets `≈`, and its numbers are drawn by our formatter at the digits setting (`CasResult` gains the numeric value when the result is a number, 8.2); its text and LaTeX come from `numeric`, never Giac's float. Exact CAS results get no mark. An explicit precision (`evalf(x,50)`) is honoured: that many digits, only the confirmed ones (M4-6).
 - **P9 (accepted by the user, 2026-10-12):** typed decimals in CAS become exact rationals before evaluation, as in Home (`toExactLiterals`); `approx()` (Shift + Enter) gives decimals. This removes 2.3 #6 at the source (the mark alone would show `≈ 1.7763568394E-15` for `1-0.9-0.1`: marked, but not right). The visible change: `1.5x` shows as `3/2·x`, where the reference CAS keeps `1.5·x`. The `bench` stage of the golden gate runs in CAS mode, so its decimal inputs are re-checked.
 
 ### 2.10 Decision: Python

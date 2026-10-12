@@ -19,7 +19,7 @@ Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). T
 | G2 | Honest precision in the engine (EN3-engine, P9) | 3 | gorge, **Opus** | `p1/gorge-m4-precision` | G0, G1 | ~3 d |
 | A2 | qalc build in `build.sh` | 6 | annabell, Sonnet | `p1/annabell-m4-qalc` | — | ~1 d |
 | R3 | Marks, 30 digits, PFX in the UI (EN3-UI) | 4 | ron, Sonnet | `p1/ron-m4-marks` | G2 | ~1.5 d |
-| G3 | Definitions survive a relaunch | 10 | gorge, Sonnet | `p1/gorge-m4-defs` | G2 | ~0.5 d |
+| G3 | Definitions survive a relaunch, plus G2's follow-ups (M4-6 to M4-8) | 10, 3 | gorge, **Opus** | `p1/gorge-m4-defs` | G2 | ~1.5 d |
 | G4 | Find index generator and query test (EN1-index) | 7 | gorge, **Opus** | `p1/gorge-m4-index` | A2 | ~3 d |
 | A3 | Copy, paste, share, export (EN4) | 9 | annabell, Sonnet | `p1/annabell-m4-copy` | R2 | ~2 d |
 | R4 | Find UI (EN1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R2 (G4 for the real index) | ~3 d |
@@ -135,7 +135,8 @@ Take the host-cpu lock for every build. Never mount the main checkout into the c
 ### ron, R3: marks, 30 digits, PFX in the UI, branch `p1/ron-m4-marks`
 Backlog step 4, on top of G2.
 - **First, the parser chunk (user, 2026-10-12, decisions M4-3):** move the parser (`parse.ts`, `emit.ts`, `chips.ts`) out of the start chunk into its own chunk, loaded together with MathLive. Report the start chunk before and after (after R2: 147.60 kB / 51.13 kB gzip).
-- Show `=`/`≈`/`⚠ n` before Home and CAS results. Num and Solve show only `⚠` (§2.4). The "approximate" note goes.
+- Show `=`/`≈`/`⚠ n` before Home and CAS results, from G2's `markOf()`. Num and Solve show only `⚠` (§2.4). The "approximate" note goes. A result with `warn: "unaudited"` shows `⚠` without a count (decisions M4-5). A result with `inexactInput` (R2) is never `=` (M4-4).
+- **Draw with `formatConfirmed()`** (G2): re-formatting a history value with `formatComplex` alone shows unconfirmed digits of a `⚠` result. Known places: `displayMode.ts:122`, `apps/solve/app.svelte.ts:233`, `apps/function/app.svelte.ts:97`. The port's `NumberFormat` needs `"pfx"` → `"PFX"`.
 - Allow digits up to 30, with the settings `schema: 2` migration (§6.2).
 - Wire G2's PFX format into Settings and the Format key cycle (§2.7).
 - **Fix the E-notation exponent bug (user, 2026-10-12; found in R1, decisions M4-2):** typing `2.2E-9 × 4.7E3` without → after the exponent puts × inside the exponent and gives `2.2E-42300`, silently. A Playwright regression test first (the key sequence gives 1.034E-5), then the fix: an operator key ends the exponent.
@@ -146,6 +147,11 @@ Tests: session migration unit tests, and `fmt.spec.ts` e2e for the marks and PFX
 Backlog step 10 and §6.2.
 - Add the `defs` key: the last definition per name, at most 500 lines, replayed at engine init through `init.replay`.
 - Keep `userNames` for Find.
+
+- **G2 follow-ups (user, 2026-10-12, decisions M4-6 to M4-8):**
+  - **Marks of stored variables (M4-7):** keep the mark per name with the defs log, so `B:=romberg(exp(-x^2),x,0,1)` (`⚠`) then `B` reads `⚠`, not `≈`. Golden case first.
+  - **`evalf(x,n)` in CAS (M4-6):** show the n digits asked for, only the confirmed ones (the agreement check at the requested precision; `⚠ n` if fewer agree). Golden cases first: `evalf(pi,50)` (`oracle`), and a case where fewer agree.
+  - **Root polish (M4-8):** Solve and analysis roots get a second-precision polish at W + 20 in `solve1`, so `full` carries confirmed digits and a 30-digit root is checked. Golden cases at 30 digits (`oracle`).
 
 Test: `app/test/persist.spec.ts` (`5▶A`, reload, `A×2` = 10). Report `replayMs` with 200 definitions on the desktop.
 

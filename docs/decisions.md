@@ -6,6 +6,11 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 ## Needs the user
 
 - Open items for the user: see [backlog.md](backlog.md), "Needs the user".
+- **2026-10-12 M4-5 to M4-8: G2's four questions. DECIDED by the user (2026-10-12), all on Henri's recommendation.**
+  - **M4-5:** a float from an un-audited function shows `⚠` without a count. The count came from double-vs-MPFR agreement, and `normald_icdf(10^-10)` showed `⚠ 7` with a wrong 7th digit (both routines wrong alike). R3 draws it (`warn: "unaudited"`).
+  - **M4-6:** `evalf(x,n)` in CAS shows the n digits asked for, only the confirmed ones (the check at the requested precision, `⚠ n` if fewer agree); G2 had cut it to the digits setting. Typing 50 and seeing 12 looks broken. G3.
+  - **M4-7:** a stored variable keeps its mark (`B:=romberg(…)` is `⚠`, `B` alone must not read `≈`): a mark per name, kept with G3's defs log. G3.
+  - **M4-8:** Solve and analysis roots get a second-precision polish at W + 20 in `solve1`, so `full` and 30-digit roots are confirmed, not resting on the 1e-15 residual alone. G3.
 - **2026-10-12 M4-3: The parser leaves the start chunk (from R2). DECIDED by the user (2026-10-12).** After R2 the start chunk is at 51.13 of 52 kB gzip (147.60 of 150 kB raw), and R3 and R4 still add code. The parser (`parse.ts`, `emit.ts`, `chips.ts`, about 20 kB raw) becomes its own chunk, loaded together with MathLive: it is needed only at Enter, and nothing typed reaches Enter before MathLive is ready. ron does it as the first step of R3. Alternative: raise the budget (rejected: the start chunk would keep growing with every package).
 - **2026-10-12 M4-4: A chip's exactness, not its mark, decides `=` (from R2). DECIDED by the user (2026-10-12).** docs/04 2.4 said a result from "a result chip whose own mark is not `=`" cannot be `=`; it now reads "whose value is not exact". So `1/3` tapped `×3` is `= 1` (2.3 #8), while a tapped `√2` (carried as digits) never gives `=`. docs/04 2.4 and 2.8 updated; R3 draws the mark from `HistoryItem.inexactInput`.
 - **2026-10-12 M4-2: Task benchmark questions (from R1). PROPOSED, needs the user.**
@@ -80,6 +85,12 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-12 Honest precision in the engine (G2)
+- **Choice:** (1) confirmed digits by an interval rule (largest n at which [b−d, b+d] rounds alike, d = |a−b| + 1 ulp of a), not "common digits less one"; (2) one escalation step P+20/P+40 when P/P+20 disagree; (3) `AUDITED_FUNCTIONS` = evalf, approx, sigfig and the MPFR elementary functions until Find's tier 0 replaces it; (4) a short decimal of an unsimplified exact value is proved rational with simplify() and gets `=`; (5) assignments evaluated as the value, then stored (never run twice); (6) Python `calc.eval` has its own Ans; (7) a CAS float result's text and LaTeX come from our formatter; (8) our Giac definitions load on first use.
+- **Why:** principle 3 (no digit shown without confirmation; UTPN(10) at 30 digits needs (2)); start-up budget (8).
+- **Alternatives:** the docs/04 wording (common digits − 1: same result in every case probed, less exact at ties); no escalation (UTPN(10) would be ⚠ 16 at 30 digits); an empty audited list (evalf(sin(1)) would be ⚠).
+- **Would change if:** Find tier 0 lands (G4: read the audited list from find/functions.yaml); the Tab One shows the extra evalf over 20 % of Enter p95 (docs/04 2.4).
 
 ### 2026-10-12 Chips and Ans (R2)
 - **Choice:** chips carry two arguments (key, shown); Ans is resolved in the session at Enter; Ans before an operator only when the view has a result (else the operator stays itself); a chip takes x², xʸ, x⁻¹ without brackets (it is drawn as one box).
