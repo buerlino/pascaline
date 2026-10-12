@@ -22,7 +22,7 @@ The three principles in CLAUDE.md decide every default:
 - **Never invent expected values.** Sources: `device`, `virtual-calc`, `oracle`, `derived`, `assumed`. Measurements are medians of ≥5 runs, with device, Android version, WebView version and build type.
 - **Git:**
   - The integration branch is **`phase-1`**.
-  - Workers commit on `p1/<name>-<shift>` branches, with `git commit -s` and the trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Sonnet workers use `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>`.
+  - Workers commit on `p1/<name>-<shift>` branches, with `git commit -s` and the trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Sonnet workers use `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`.
   - **Never push, never touch `master`, never force anything, and only ever use `git branch -d` (never `-D`).**
 - **Nothing goes out:** no uploads, releases, emails, issues or posts. Network only for downloads: npm, pip into a venv, container images, git clones of open-source projects, docs.
 - **Never delete:** `engine/giac/_downloads/` tarballs, `../pascaline-deps/`, `../outreach/`, `../fdroiddata/`, `spike/prebuilt/`, `~/emsdk`. No `sudo`, no shell rc edits.
