@@ -28,8 +28,8 @@ Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). T
 **Waves** (one package per agent at a time; the three agents run in parallel):
 1. G0, R1, G1, A1 (A2 can start at once too). Merged.
 2. R2, G2, A2. Merged (2026-10-12).
-3. **Now:** R3 (ron, Sonnet), G4 (gorge, Opus), A3 (annabell, Sonnet).
-4. Then: G3 (gorge, Opus, after G4), R4 (ron, Sonnet, after R3). Last: A4 (annabell, after R3, R4, A3).
+3. R3, A3 merged (2026-10-12). G4 paused half way (first two commits merged; the rest uncommitted in its worktree, resume with `claude --continue` there or restart G4 on the same branch).
+4. **Next:** the owner's phone test (debug APK on the Fairphone 6, 2026-10-12) gives a bug list; then G4 finished, ron's bug fixes with M4-10, then G3 (gorge, Opus, after G4), R4 (ron, Sonnet, after R3). Last: A4 (annabell, after R3, R4, A3).
 
 G4 goes before G3 because A2 → G4 → R4 → A4 is the longest chain. G3 now carries G2's precision follow-ups (M4-6 to M4-8), hence Opus. The qalc build for G4's index generator is in the main checkout: `QALC_OUT=/home/nordmu/Documents/source99/pascaline/engine/qalc/_out/dev`.
 
