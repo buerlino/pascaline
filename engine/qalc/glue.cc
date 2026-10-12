@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// P3 spike: the smallest C API over libqalculate for wasm (init + one calculation -> text).
+// The smallest C API over libqalculate for wasm (init + one calculation -> text).
 // Runs on the calling thread (msecs = 0): no control thread; cancel = terminate the worker.
 #include <libqalculate/qalculate.h>
 #include <string>

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// P3 spike: node spike/qalc/run-cases.mjs <out dir> <expr...>  -> JSON array of qalc outputs (for check.py).
+// node engine/qalc/run-cases.mjs <out dir> <expr...>  -> JSON array of qalc outputs (for check.py).
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 

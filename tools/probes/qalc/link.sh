@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Builds the qalc probe (probe.cc) against the static libraries of a P3 spike build (spike/qalc/build-wasm.sh),
+# Builds the qalc probe (probe.cc) against the static libraries of a qalc build tree (engine/qalc/build-wasm.sh),
 # for Node only. Output: tools/probes/_out/qalc/qprobe.{mjs,wasm} (gitignored). Takes the host-cpu lock.
 #   tools/probes/qalc/link.sh                         # prefix: $QALC_PREFIX, else $QALC_WORK/build/prefix,
 #                                                     #         else ../pascaline-deps/qalc-spike/build/prefix
@@ -10,7 +10,7 @@ REPO="$(cd "$HERE/../../.." && pwd)"
 PREFIX="${QALC_PREFIX:-${QALC_WORK:+$QALC_WORK/build/prefix}}"
 PREFIX="${PREFIX:-$REPO/../pascaline-deps/qalc-spike/build/prefix}"
 OUT="$REPO/tools/probes/_out/qalc"
-[[ -f "$PREFIX/lib/libqalculate.a" ]] || { echo "no libqalculate.a under $PREFIX: run spike/qalc/build-wasm.sh first" >&2; exit 1; }
+[[ -f "$PREFIX/lib/libqalculate.a" ]] || { echo "no libqalculate.a under $PREFIX: run engine/qalc/build-wasm.sh first" >&2; exit 1; }
 mkdir -p "$OUT/tmp"
 # shellcheck disable=SC1091
 source "${EMSDK_DIR:-$HOME/emsdk}/emsdk_env.sh" >/dev/null 2>&1

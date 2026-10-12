@@ -1,29 +1,33 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Clean source -> engine -> web app (dist/) -> Capacitor sync -> Gradle -> APK. The F-Droid recipe runs the same steps itself (fdroid/README.md).
+# Clean source -> engines -> web app (dist/) -> Capacitor sync -> Gradle -> APK. The F-Droid recipe runs the same steps itself (fdroid/README.md).
 #
-#   ./build.sh [--dev] [--measure] [--unsigned] [--engine-dir DIR] [--python-dir DIR | --no-python] [--install [SERIAL]]
+#   ./build.sh [--dev] [--measure] [--unsigned] [--engine-dir DIR] [--python-dir DIR | --no-python] [--qalc-dir DIR | --no-units] [--install [SERIAL]]
 #
 #   (default)        engine built with the pinned Debian trixie Emscripten in a container (P2: what every release ships)
 #   --dev            engine built with the local emsdk instead (engine/giac/build-wasm.sh; fast iteration only)
 #   --engine-dir D   use an existing engine build (giac.mjs + giac.wasm in D) and skip the engine step
 #   --python-dir D   use an existing MicroPython build (micropython.mjs + .wasm in D); default builds it like the engine (python/build-micropython.sh: dev with --dev, else release container)
 #   --no-python      skip MicroPython (it is only copied to app/public/python/ for milestone 3; nothing loads it at start)
+#   --qalc-dir D     use an existing libqalculate build (qalc.mjs + qalc.wasm in D); default builds it like the engine (engine/qalc/build-wasm.sh: dev with --dev, else release container)
+#   --no-units       skip libqalculate (the Find index then holds functions only; the Units app is milestone 5)
 #   --measure        measurement build: timing marks to logcat (PASCALINE_MEASURE=1); never for release
 #   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with a throwaway key in android/_keys/
 #   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs org.pascaline.app only
-# Output: dist/pascaline.apk (last line printed). Env: PASCALINE_DL_DIR (tarball cache), ANDROID_HOME (default ~/Android/Sdk),
+# Output: dist/pascaline.apk (last line printed). Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libxml2/libqalculate cache), ANDROID_HOME (default ~/Android/Sdk),
 # NO_LOCK=1 (the caller holds the host-cpu lock).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
-DEV=0 MEASURE=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR="" PYTHON_DIR="" WITH_PYTHON=1
+DEV=0 MEASURE=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR="" PYTHON_DIR="" WITH_PYTHON=1 QALC_DIR="" WITH_UNITS=1
 while (( $# )); do
   case "$1" in
     --dev) DEV=1; shift ;;
     --python-dir) PYTHON_DIR="$(cd "$2" && pwd)"; shift 2 ;;
     --no-python) WITH_PYTHON=0; shift ;;
+    --qalc-dir) QALC_DIR="$(cd "$2" && pwd)"; shift 2 ;;
+    --no-units) WITH_UNITS=0; shift ;;
     --measure) MEASURE=1; shift ;;
     --unsigned) SIGN=0; shift ;;
     --engine-dir) ENGINE_DIR="$(cd "$2" && pwd)"; shift 2 ;;
@@ -58,6 +62,17 @@ if (( WITH_PYTHON )); then
   fi
   mkdir -p app/public/python
   cp "$PYTHON_DIR/micropython.mjs" "$PYTHON_DIR/micropython.wasm" app/public/python/
+fi
+
+# 1c. libqalculate (milestone 4: the Find index takes constant values and unit factors from it, run in Node; docs/04 7.1).
+#     It is not copied into app/public/ or dist/: the Units worker that loads it in the browser is milestone 5.
+if (( WITH_UNITS )); then
+  if [[ -z "$QALC_DIR" ]]; then
+    if (( DEV )); then engine/qalc/build-wasm.sh dev >&2; QALC_DIR="$ROOT/engine/qalc/_out/dev"
+    else engine/qalc/build-wasm.sh release >&2; QALC_DIR="$ROOT/engine/qalc/_out/release"; fi
+  fi
+  [[ -f "$QALC_DIR/qalc.mjs" && -f "$QALC_DIR/qalc.wasm" ]] || { echo "no qalc.mjs/qalc.wasm in $QALC_DIR" >&2; exit 1; }
+  export QALC_OUT="$QALC_DIR"
 fi
 
 # 2. web app -> app/dist
