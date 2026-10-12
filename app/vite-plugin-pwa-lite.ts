@@ -4,7 +4,7 @@
 // (no runtime caching rules are needed: the app is entirely static and fully precached).
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import type { Plugin } from "vite";
 
 function walk(dir: string): string[] {
@@ -14,6 +14,26 @@ function walk(dir: string): string[] {
   });
 }
 
+/** The build output folder; `outDir` may be relative to the project root or absolute (`vite build --outDir /abs`). */
+export function buildOutDir(root: string, outDir: string): string {
+  return resolve(root, outDir);
+}
+
+/** List the files in `outDir`, fingerprint them and write `outDir/sw.js` from `root/pwa/sw.js`. */
+export function writeServiceWorker(root: string, outDir: string): void {
+  const files = walk(outDir)
+    .map((p) => relative(outDir, p).split(sep).join("/"))
+    .filter((f) => f !== "sw.js" && !f.endsWith(".map"))
+    .sort();
+  const hash = createHash("sha256");
+  for (const f of files) hash.update(f).update(createHash("sha256").update(readFileSync(join(outDir, f))).digest());
+  const version = hash.digest("hex").slice(0, 12);
+  // "./" is the app's start URL; index.html is also listed so offline navigations to either find a page.
+  const list = ["./", ...files];
+  const sw = readFileSync(join(root, "pwa/sw.js"), "utf8").replace("__CACHE__", `pascaline-${version}`).replace("__PRECACHE__", JSON.stringify(list));
+  writeFileSync(join(outDir, "sw.js"), sw);
+}
+
 export function pwaLite(): Plugin {
   let outDir = "dist";
   let root = process.cwd();
@@ -21,21 +41,11 @@ export function pwaLite(): Plugin {
     name: "pascaline-pwa-lite",
     apply: "build",
     configResolved(c) {
-      outDir = join(c.root, c.build.outDir);
+      outDir = buildOutDir(c.root, c.build.outDir);
       root = c.root;
     },
     closeBundle() {
-      const files = walk(outDir)
-        .map((p) => relative(outDir, p).split(sep).join("/"))
-        .filter((f) => f !== "sw.js" && !f.endsWith(".map"))
-        .sort();
-      const hash = createHash("sha256");
-      for (const f of files) hash.update(f).update(createHash("sha256").update(readFileSync(join(outDir, f))).digest());
-      const version = hash.digest("hex").slice(0, 12);
-      // "./" is the app's start URL; index.html is also listed so offline navigations to either find a page.
-      const list = ["./", ...files];
-      const sw = readFileSync(join(root, "pwa/sw.js"), "utf8").replace("__CACHE__", `pascaline-${version}`).replace("__PRECACHE__", JSON.stringify(list));
-      writeFileSync(join(outDir, "sw.js"), sw);
+      writeServiceWorker(root, outDir);
     },
   };
 }
