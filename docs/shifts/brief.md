@@ -175,6 +175,7 @@ Backlog step 9 and §2.6.
 - **`ClipboardPort`** (§8.2): `navigator.clipboard` first. Capacitor plugins only if A4's device check needs them; the plugin's THIRD_PARTY.md text goes in your report.
 - **Keys:** Shift + View = Copy (full value), Shift + Menu = Paste a number. You may edit those two entries in `spec/keyboard.yaml`.
 - **Actions:** the Home/CAS Menu items, a long press on a history row, and Num as CSV.
+- **Shared device lock (user, 2026-10-12, decisions M4-9):** `tools/devlock.sh` defaults to the main checkout's `.coord` (found with `git rev-parse --git-common-dir`), so a lock taken in a worktree is the shared one; `PASCALINE_COORD` still overrides it. A small shell test: acquire in a worktree, see it held from the main checkout. Update `tools/README.md`.
 
 Tests: one e2e per action and a copy → paste round trip.
 
