@@ -28,6 +28,14 @@
 #     steps in two dimensions, one step per 12 px with a haptic tick, through the same actions as the arrow keys
 #     (entry line, Plot, Num, Symb lists). A touch that makes no full step is a tap on its zone: one step, in the
 #     current Shift state (shift ◀ = |◀). Steps fire while dragging, a tap when the finger lifts.
+#   Hold and drag (K2, P7 revised): every other key fires when the finger lifts, not on touch. A finger held still
+#     (10 px slop) for 350 ms anywhere on the keypad, gaps included, turns the keypad into the trackpad: the keys
+#     dim, a haptic tick marks the start, a drag steps exactly as the trackpad does (12 px per step, a tick per
+#     step; the first step uses up a one-shot Shift), and lifting the finger ends it without firing the held key.
+#     A finger that slides before the hold stays a tap. A second finger, or the browser taking the touch
+#     (pointercancel), ends the cursor mode; a second finger during the hold fires the first key, so two-thumb
+#     typing keeps its order. Exception: `bksp` fires on touch and auto-repeats while held (after 400 ms, then
+#     every 60 ms, in the layer of the first press), never the cursor.
 # `source`: `virtual-calc` = position and function seen on the official simulator (row id in the comment);
 # `device` = seen on a G2; `assumed` = our choice (tests/golden/G2-CHECKLIST.md).
 schema: 1
