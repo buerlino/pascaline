@@ -109,7 +109,7 @@ Each item becomes a regression case before its fix (CLAUDE.md). Values marked `o
 | 1 | Home, keys `0` `x` Alpha-F Alpha-F Enter: parser gives `0*x*F*F` (probe) | `0`, as an exact result | 255 (`derived`) | parser rejects `0x`/`0b` followed by letters with a message (m4); a real literal with EN6 (m6) |
 | 2 | Home `normald_icdf(10^-10)`, 12 digits | `-6.36134035799`, no mark | −6.36134090240… (`oracle`): wrong from the 8th significant digit. At 30 digits Giac gives `-6.3613403515334`, also wrong and different | the agreement check alone is **not enough** here: Giac's two evaluations agree on 9 digits, and the 8th is already wrong. So inverse functions are substituted back, like Solve roots: a 40-digit `fsolve(normald_cdf(x)=10^-10, x=<Giac's value>)` gives −6.36134090240405620469537582826518… (32 digits agree with the oracle; `normald_cdf` is right in the tail: probe). Until that polish exists, Home marks these results `⚠` and Find does not list them as tier 0; report upstream (m4 for the mark, m6 for the polish with EN7) |
 | 3 | Home `UTPN(10)` at 30 digits | `7.61985302416052604747040248572E-24` | 7.619853024160526065973…E-24 (`oracle`): wrong from the 17th digit (cancellation in `1-erf` at 40 digits) | agreement check at P and P+20 (m4) |
-| 4 | Home `romberg(exp(-x^2),x,0,1)` at 30 digits | `0.746824132812427041600115591871` | 0.746824132812427025399467436132 (`oracle`): wrong from the 17th digit | float on the exact path → `≈`, re-evaluated for the agreement check (m4) |
+| 4 | Home `romberg(exp(-x^2),x,0,1)` at 30 digits | `0.746824132812427041600115591871` | 0.746824132812427025399467436132 (`oracle`): wrong from the 17th digit | float from a function not on the audited list → `⚠` until romberg is audited (2.4 rule 3; M4-1) |
 | 5 | Home `BesselJ(1,2)`, `Airy_Ai(1)`, `BesselJ(0,100)` at 15–30 digits | the input as text (`BesselJ(1,2)`): Giac has no MPFR path (`evalf(BesselJ(1,2),40)` at `Digits:=30` → "Bad Argument Value") | J₁(2) = 0.576724807757 at 12 digits (`oracle` agrees) | not wrong, but the answer is lost: fall back to a ≤ 14-digit evaluation and show `⚠` with the digits available (m4) |
 | 6 | CAS `1-0.9-0.1`; `evalf(sin(10^22))`; `1e16+1-1e16` | `1.7763568394E-15`; `-0.54764225985`; `0.0` | 0 (`derived`); −0.852200849767… (`oracle`; Home gets it right); 1 (`derived`) | marks in CAS and P9, exact decimals in CAS (accepted) (m4) |
 | 7 | Python `calc.eval("1-0.9-0.1")` | 1.7763568394e-15 | 0 (`derived`; Home shows 0) | `calc.eval` through Home's exact-first path (m4) |
@@ -553,6 +553,8 @@ interface ClipboardPort {                                // new (m4): navigator.
 | Units app chunk | ≤ 30 kB raw | — | size test |
 | qalc wasm + glue | ≤ 1.0 MB brotli | spike 0.93 MB + 21 kB | size test |
 | Precache total | ≤ 18 MB | 13 MB | size test |
+
+"Start chunk" is the entry's JavaScript plus every chunk it imports statically (Vite manifest `imports`, transitively), as `app/scripts/size-check.ts` measures it. The entry's CSS is not counted (25.8 kB raw, 9.0 kB gzip on 2026-10-12): the budget was set on the JavaScript figure. CSS gets its own line if it grows past 40 kB raw.
 | Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with `defs` replay | 662 / 995 ms | device runs |
 | Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | 92 ms at 12 | device runs |
 | Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` |

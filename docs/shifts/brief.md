@@ -137,6 +137,7 @@ Backlog step 4, on top of G2.
 - Show `=`/`≈`/`⚠ n` before Home and CAS results. Num and Solve show only `⚠` (§2.4). The "approximate" note goes.
 - Allow digits up to 30, with the settings `schema: 2` migration (§6.2).
 - Wire G2's PFX format into Settings and the Format key cycle (§2.7).
+- **Fix the E-notation exponent bug (user, 2026-10-12; found in R1, decisions M4-2):** typing `2.2E-9 × 4.7E3` without → after the exponent puts × inside the exponent and gives `2.2E-42300`, silently. A Playwright regression test first (the key sequence gives 1.034E-5), then the fix: an operator key ends the exponent.
 
 Tests: session migration unit tests, and `fmt.spec.ts` e2e for the marks and PFX.
 
