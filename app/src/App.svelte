@@ -9,7 +9,7 @@
   import { t, type MessageKey } from "./i18n/index.ts";
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
-  import { actionFor, keyboard, pythonText, type ActionBody, type Key } from "./keyboard/keyboard.ts";
+  import { actionFor, keyboard, pythonText, type ActionBody, type Key, type Layer } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
@@ -136,12 +136,16 @@
     return false;
   }
 
-  /** A key went down: vibrate first (when switched on in Settings), then do its job. */
-  function keyDown(key: Key): void {
+  /** A finger went down on the keypad, or a gesture made a step: vibrate when switched on in Settings. */
+  function touched(): void {
     const h = session.settings.haptics;
     if (h.on) vibrate(h.strength / 100, h.ms);
-    press(key);
   }
+
+  /** Shift and Alpha as one key would see them: the session's state, or the layer a gesture chose. */
+  type Mods = { shift: boolean; alpha: boolean };
+  const modsFor = (layer: Layer | undefined): Mods =>
+    layer === undefined ? { shift: session.shift, alpha: session.alpha } : { shift: layer === "shift", alpha: layer === "alpha" };
 
   const NAV: Record<string, NavDir> = {
     moveUp: "up",
@@ -152,17 +156,18 @@
   const DIGIT = /^d([0-9])$/;
 
   // Keys pressed while an app's code is loading wait for it, so nothing typed is lost (like MathLive's queue).
-  let waiting: Key[] = [];
-  function press(key: Key): void {
+  let waiting: [Key, Layer | undefined][] = [];
+  /** A key fires. `layer` (a trackpad step, a flick) overrides the Shift/Alpha state for this key only. */
+  function press(key: Key, layer?: Layer): void {
     const pk = key.actions.primary;
     const switches = pk?.kind === "special" && ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings"].includes(pk.name);
     if (shell.loading !== null && !switches) {
-      waiting.push(key);
+      waiting.push([key, layer]);
       if (waiting.length === 1)
         void shell.opening.then(() => {
           const keys = waiting;
           waiting = [];
-          for (const k of keys) press(k);
+          for (const [k, l] of keys) press(k, l);
         });
       return;
     }
@@ -172,9 +177,10 @@
       else session.toggleAlpha();
       return;
     }
+    const mods = modsFor(layer);
     // An open list takes the digit keys (1…9, 0).
     const digit = DIGIT.exec(key.id);
-    if (digit && !session.shift && !session.alpha && (shell.switcherOpen || shell.menuOpen)) {
+    if (digit && !mods.shift && !mods.alpha && (shell.switcherOpen || shell.menuOpen)) {
       const i = (Number(digit[1]) + 9) % 10;
       if (shell.switcherOpen) {
         const a = APPS[i];
@@ -182,8 +188,8 @@
       } else shell.pick(i);
       return;
     }
-    if (shell.takesText) return pressText(key);
-    const action = actionFor(key, session.shift, session.alpha, session.settings.entry === "line");
+    if (shell.takesText) return pressText(key, mods);
+    const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line");
     session.clearModifiers();
     if (!action) return;
     if (shell.app === null && historyKey(action)) return;
@@ -197,9 +203,9 @@
   }
 
   /** A view with its own text input (Python editor and shell): the Python layer, else typed text and cursor keys. */
-  function pressText(key: Key): void {
-    const text = pythonText(keyboard, key, session.shift, session.alpha);
-    const action = actionFor(key, session.shift, session.alpha);
+  function pressText(key: Key, mods: Mods): void {
+    const text = pythonText(keyboard, key, mods.shift, mods.alpha);
+    const action = actionFor(key, mods.shift, mods.alpha);
     session.clearModifiers();
     if (text !== undefined) return shell.input({ kind: "text", text });
     if (!action) return;
@@ -295,7 +301,7 @@
     <div class="field" bind:this={host}></div>
   </div>
 
-  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} python={shell.takesText} onpress={keyDown} />
+  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} python={shell.takesText} onpress={press} ontouch={touched} />
 
   {#if session.settingsOpen}<Settings {session} />{/if}
 </main>
