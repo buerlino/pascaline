@@ -3,6 +3,8 @@
 
 Status: design only (gorge, 2026-10-11). Base: phase-1. Spike evidence: spike/RESULTS.md (P3 section), spike/qalc/. Decisions for the user are in section 7.
 
+**Amended 2026-10-12 (P8 in docs/decisions.md):** units live in their own Units app (Shift+Tmpl); Home, CAS, Solve and lists stay unit-free, so the `unitEval` split in section 1 and the Home entry in section 2 are replaced; units and constants are found through Find (docs/03-feature-analysis.md section 3) instead of Menu pickers. Engine, build, data checks, `hp` patch and tests stand. What changed is in docs/03-feature-analysis.md section 4; it is milestone 5.
+
 ## 1. Architecture
 - **Worker 3 `qalc`**, next to Giac (worker 1) and Python (worker 2). Same pattern as `MathEngine` and the Python engine: an async `UnitEngine` interface (`init`, `evaluate(expr, settings) -> {value, unit, uncertainty, error}`, `convert`, `listUnits/listConstants` for the picker), run through the existing `workerEngine` host. Cancel = terminate the worker and respawn on next use (qalc runs on the calling thread, no pthreads).
 - **Lazy load:** the chunk (qalc.mjs + qalc.wasm, 0.93 MB brotli) is fetched only when a unit or constant is first inserted, opened from the Units menu, or an expression containing a unit token is evaluated. Optional idle preload after Giac is ready, off by default (a setting). Spike: first result 127 ms desktop, 626 ms on the S8+ (cold, < 1 s gate met); Tab One still unmeasured.

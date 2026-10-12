@@ -6,12 +6,12 @@ Pascaline is an **open-source precision engineering tool** for Android (also PWA
 
 **Three principles decide every default** (1 and 2: user, 2026-10-10; 3: user, 2026-10-12):
 1. **Fully open source, reuse first.** Build on existing open-source projects wherever one fits; we write glue, UI and tests, not maths engines. Write our own only when the measured gain is large (e.g. the LaTeX parser, P1).
-2. **Speed and efficiency for engineers.** This is the calculator an engineer reaches for first: instant start, instant answers, keyboard-first, no clutter, and as few keystrokes per task as possible. When two options are otherwise equal, pick the faster and leaner one.
+2. **Speed and efficiency for engineers.** This is the calculator an engineer reaches for first: instant start, instant answers, keyboard-first, no clutter, and as few keystrokes per task as possible. Anyone finds any function, unit or constant in a few keys, with no split by discipline (user, 2026-10-12). When two options are otherwise equal, pick the faster and leaner one.
 3. **Precision you can trust.** No silent wrong answers: a result is exact, or approximate and marked, or flagged. Units are checked, uncertainty travels with the number, every solver root is substituted back, and the display never hides digits the user can copy. When speed and correctness conflict, correctness wins.
 
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 
-**Status:** Phase 0 GO (2026-10-11); milestones 1–3 (Home + CAS, Function + Solve, Python) done. **Work happens on branch `phase-1`.** Status, open items and tasks: [docs/backlog.md](docs/backlog.md). Coordinator team: rules in [docs/shifts/rules.md](docs/shifts/rules.md), the current brief in [docs/shifts/brief.md](docs/shifts/brief.md), agents in `.claude/agents/`.
+**Status:** Phase 0 GO (2026-10-11); milestones 1–3 (Home + CAS, Function + Solve, Python) done. **Next: the engineer core** (milestones 4 Find and trust, 5 Units, 6 Structure; P8 in docs/decisions.md, plan in docs/03 section 8). **Work happens on branch `phase-1`.** Status, open items and tasks: [docs/backlog.md](docs/backlog.md). Coordinator team: rules in [docs/shifts/rules.md](docs/shifts/rules.md), the current brief in [docs/shifts/brief.md](docs/shifts/brief.md), agents in `.claude/agents/`.
 
 Background reading (read before larger design decisions):
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): **the plan**. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
