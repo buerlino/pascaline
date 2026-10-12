@@ -4,7 +4,9 @@
 import { CalcCancelled, engineFormat, type Calc } from "../../calc/port.ts";
 import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { formatComplex, type ComplexValue, type DecimalValue } from "../../engine/format.ts";
+import type { CopySource } from "../../clipboard/text.ts";
 import { t } from "../../i18n/index.ts";
+import { tc } from "../../clipboard/strings.ts";
 import { addMul, decText, decToNumber, nearestK, niceStep, parseDec, plainNumber, showDecimal, type Dec } from "../decimal.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
 import type { AppHost, AppInstance, MenuItem, NavDir, SubMenu, ViewId } from "../types.ts";
@@ -179,8 +181,40 @@ export class FunctionApp implements AppInstance {
       return [
         { id: "start", label: t("num.setStart"), run: () => this.editNum("start") },
         { id: "step", label: t("num.setStep"), run: () => this.editNum("step") },
+        { id: "csv", label: tc("clip.csv"), disabled: this.numSlots.length === 0, run: () => void this.copyNum() },
       ];
     return [];
+  }
+
+  // ---- Copy (docs/04 section 2.6): the Num table as CSV, full values
+  copyText(view: ViewId): Promise<string | undefined> | undefined {
+    return view === "num" ? this.numCsv() : undefined;
+  }
+  private async copyNum(): Promise<void> {
+    const csv = await this.numCsv();
+    if (csv !== undefined) this.host.copy(csv, tc("clip.copiedTable"));
+  }
+  /** The rows on screen: a header with x and the function names, then x and the full value of each function. */
+  async numCsv(): Promise<string | undefined> {
+    if (this.numSlots.length === 0) return undefined;
+    const { copyFull, tableCsv } = await import("../../clipboard/impl.ts"); // not needed to start
+    const header = ["x", ...this.numSlots.map((s) => this.slots.names[s] ?? "")];
+    const rows = this.numXs.map((x, r) => [x, ...this.numSlots.map((_, c) => this.csvCell(this.numCell(r, c), copyFull))]);
+    return tableCsv(header, rows);
+  }
+  private csvCell(c: Cell | undefined, copyFull: (i: CopySource) => string | undefined): string {
+    if (!c || !c.ok) return "";
+    if (/^[-+]?(infinity|inf|undef)$/.test(c.display)) return "NaN";
+    return (
+      copyFull({
+        latex: "",
+        status: "done",
+        text: c.display,
+        ...(c.value ? { value: c.value } : {}),
+        ...(c.full !== undefined ? { full: c.full } : {}),
+        ...(c.reliableDigits !== undefined ? { reliableDigits: c.reliableDigits } : {}),
+      }) ?? c.display
+    );
   }
 
   // ---- Symb

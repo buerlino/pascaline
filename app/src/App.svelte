@@ -5,6 +5,7 @@
   import { APPS } from "./apps/registry.ts";
   import type { AppShell } from "./apps/shell.svelte.ts";
   import { VIEW_IDS, type NavDir, type ViewId } from "./apps/types.ts";
+  import type { ClipActions } from "./clipboard/actions.svelte.ts";
   import { startsWithAns } from "./entry/ans.ts";
   import { ANS_CHIP } from "./entry/macros.ts";
   import type { EntryController } from "./entry/controller.ts";
@@ -26,8 +27,32 @@
     entry.onEscape = () => void cancel();
   });
   let host: HTMLElement | undefined = $state();
+
+  // Copy, paste and share (docs/04 2.6) load after the engine is ready, once the browser is idle (not in the start chunk).
+  // The shell reaches them for the apps (AppHost.copy) and for the Home/CAS Menu.
+  let clip = $state.raw<ClipActions | undefined>();
+  let clipLoading: Promise<ClipActions> | undefined;
+  function loadClip(): Promise<ClipActions> {
+    clipLoading ??= import("./clipboard/actions.svelte.ts").then((m) => {
+      const c = new m.ClipActions(session, shell, entry);
+      shell.clip = c;
+      shell.homeMenu = () => c.menu();
+      clip = c;
+      return c;
+    });
+    return clipLoading;
+  }
+  /** Run now when loaded, else as soon as the code has arrived (a key pressed before the idle load). */
+  function withClip(run: (c: ClipActions) => void): void {
+    if (clip) run(clip);
+    else void loadClip().then(run);
+  }
   $effect(() => {
     entry.lineMode = session.settings.entry === "line";
+  });
+  $effect(() => {
+    // (a browser without requestIdleCallback loads it on the first use)
+    if (session.engineState === "ready" && "requestIdleCallback" in window) requestIdleCallback(() => void loadClip(), { timeout: 3000 });
   });
 
   /** Home/CAS: the entry line is cleared as soon as the job starts; the result arrives in the history. Apps decide themselves. */
@@ -100,7 +125,13 @@
         void shell.setView(name);
         break;
       case "menu":
-        shell.toggleMenu();
+        withClip(() => shell.toggleMenu()); // the Home/CAS menu comes with the clipboard code
+        break;
+      case "copy":
+        withClip((c) => void c.copyKey());
+        break;
+      case "paste":
+        withClip((c) => void c.paste());
         break;
       case "fmt":
         // Format key: Home and CAS show the last result in the next mode; the apps have no such result.
@@ -138,6 +169,10 @@
     const item = items[picked];
     picked = null;
     if (action.kind === "special" && action.name === "esc") return true;
+    if (action.kind === "special" && action.name === "copy" && item) {
+      withClip((c) => void c.copyKey(item)); // Shift + View copies the picked row
+      return true;
+    }
     if (action.kind === "special" && action.name === "enter" && item) {
       if (item.status === "done") insertResult(item);
       else entry.set(item.latex, item.chips); // the line is empty while picking: the entry comes back with its chips
@@ -285,6 +320,7 @@
         onrecall={(item) => entry.set(item.latex, item.chips)}
         oninsert={insertResult}
         oncancel={() => void cancel()}
+        onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
       />
     {:else if shell.current}
       {@const C = shell.current.Root}
@@ -311,6 +347,8 @@
       />
     {/if}
   </div>
+
+  {#if clip?.notice}<div class="notice" role="status" data-testid="notice">{clip.notice}</div>{/if}
 
   <div class="entry" class:hidden={!shell.showsEntry} aria-label={t("entry.label")}>
     {#if shell.entryLabel}<span class="entrylabel" data-testid="entry-label">{shell.entryLabel}</span>{/if}
@@ -380,6 +418,17 @@
     font-size: 15px;
     font-weight: 700;
     color: var(--shift);
+  }
+  .notice {
+    position: relative;
+    align-self: center;
+    margin: 0 12px 4px;
+    padding: 6px 14px;
+    border-radius: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-size: 14px;
   }
   .entry {
     display: flex;

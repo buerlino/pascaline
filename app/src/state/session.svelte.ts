@@ -399,9 +399,12 @@ export class Session {
           const dec = q ? decimalFromRational(BigInt(q.n), BigInt(q.d)) : decimalFromString(r.text);
           if (dec) live.value = { re: dec, im: decimalFromRational(0n, 1n) };
           if (q) live.rational = q;
-          if (r.text.length <= FULL_LIMIT) {
-            live.full = r.text;
-            live.fullExact = !isDigitsText(r.text);
+          // A float result: every confirmed digit the engine gave (r.text is drawn at the shown digits only).
+          const nf = r.numeric?.full;
+          const full = nf !== undefined && nf.length > 0 ? nf : r.text;
+          if (full.length <= FULL_LIMIT) {
+            live.full = full;
+            live.fullExact = !isDigitsText(full);
           }
           // A result with a float in it comes with its value and facts (docs/04 2.9): drawn by our formatter, marked.
           const n = r.numeric;

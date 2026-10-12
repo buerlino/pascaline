@@ -21,6 +21,8 @@ export interface AppHost {
   setEntry(latex: string): void;
   /** Switch to one of the app's views (e.g. Python: Run shows the shell). */
   showView(view: ViewId): void;
+  /** Put text on the clipboard and say so (Copy, docs/04 section 2.6). `notice` replaces the default "Copied". */
+  copy(text: string, notice?: string): void;
 }
 
 /** Keys for an app view with its own text input (Python editor and shell) instead of the entry line. */
@@ -56,6 +58,8 @@ export interface AppInstance {
   enter(view: ViewId, latex: string): void;
   /** Arrow keys. `edited`: the entry line differs from the last setEntry. Return true when handled. */
   nav?(view: ViewId, dir: NavDir, edited: boolean): boolean;
+  /** What Shift + View copies in this view (the Num table as CSV); undefined: nothing to copy. */
+  copyText?(view: ViewId): Promise<string | undefined> | string | undefined;
   /** The view's menu (Menu key or the header button). Items are picked by tap or digit key. */
   menu?(view: ViewId): MenuItem[];
   /** The tab name of a view (default: Symb, Plot, Num). */

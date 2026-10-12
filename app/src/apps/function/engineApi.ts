@@ -13,4 +13,6 @@ export interface Cell {
   exactRational?: boolean;
   reliableDigits?: number | null;
   warn?: PrecisionWarn;
+  /** The engine's full value, for Copy and the CSV table. */
+  full?: string;
 }
