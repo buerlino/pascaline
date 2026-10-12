@@ -1,62 +1,99 @@
-# Pascaline
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="logo/wordmark/pascaline_wordmark_light.svg">
+    <img alt="Pascaline" src="logo/wordmark/pascaline_wordmark_dark.svg" width="320">
+  </picture>
+</p>
 
-**A free, open-source precision engineering tool for Android and the web: a graphing CAS calculator built so engineers calculate faster and more precisely.**
+A graphing CAS calculator for Android and the web. Giac, GSL and MPFR compiled to WebAssembly, run in a Web Worker, fully offline. GPL-3.0-or-later.
 
-> 🚧 **Status: early development.** The Phase 0 spike is done; the MVP is being built (Home, CAS, textbook entry, the Function and Solve apps and Python work). There is nothing to download yet. Feedback and ideas are very welcome: please [open an issue](https://github.com/buerlino/pascaline/issues).
+> **Pre-release.** No APK or web app to download yet; build it from source (below).
 
-Pascaline is aimed at engineers: the fastest way to a correct number, with exact maths, checked answers, and (planned) units and uncertainty. It starts from the key layout and workflow of the HP Prime, so owners of one are fast from the first minute, and goes beyond it where engineering work needs it. It has its own design and is built entirely from open-source software. The name honours the *Pascaline*, the calculating machine Blaise Pascal built in 1642.
+## What it is
+- **Home:** numeric, exact-first. Decimals are turned into exact rationals, evaluated by Giac, then rounded to 12 significant digits (`1÷3` → `0.333333333333`). It falls back to floats when the numbers get too big or too slow.
+- **CAS:** symbolic, with exact 2D results.
+- **Function:** Symb/Plot/Num views, with JSXGraph plots.
+- **Solve:** GSL bracketing with Brent, `hybrids` for systems, `proot` for polynomials. Every root is substituted back, and a large residual is flagged with `⚠`.
+- **Python:** MicroPython 1.29.0 in its own worker, with a `calc` module that can read the calculator's variables and draw on a 320×240 canvas. It loads only when the Python app first opens.
+- **Entry:** textbook (MathPrint) entry with MathLive, driven only by the on-screen keyboard. Our own LaTeX-subset parser turns the entry into Giac input. Results are drawn in 2D from Giac's `latex()`.
+- **Keyboard:** the logical key layout of the HP Prime (which function sits on which key and shift layer), defined in [spec/keyboard.yaml](spec/keyboard.yaml). The visual design is our own.
+- **Result chips and `Ans`:** reusing a result passes its full-precision value, not the digits on screen.
+- **Cancel:** terminates the worker and restores state; every engine call can be cancelled.
 
-## Why?
-- HP's official Prime app for Android disappeared from Google Play in late 2024.
-- Most maths apps on phones are worksheets or chat-style tools. We want a **real calculator keyboard** with fast, predictable input.
-- There's no open-source app of this kind on F-Droid yet.
-
-## Features
-- **Home** (numeric) and **CAS** (symbolic) views, with textbook-style (2D) input and output
-- **Apps:** Function and Solve, with **Python** for programming (MicroPython built in; an optional full CPython pack with numpy is planned)
-- **Checked answers:** numeric solutions are plugged back in and verified, and you get a warning if something looks wrong
-- **Next (planned):** one **Find** key for every function, constant, unit and variable; **honest precision** (every result marked exact or rounded, up to 30 digits, copy the full value); a **Units app** with physical constants and uncertainty; matrices, number bases and everyday engineering functions
-- **Later:** Statistics, Spreadsheet, more plot types, Geometry, 3D
-- **Fully offline**, no ads, no tracking, no account
-- Android first, also installable as a **web app (PWA)** on any device
-
-What it is **not**: an exam calculator (phones aren't allowed in exams), an emulator, or a copy of HP's software.
-
-## How it's built
-Pascaline reuses mature open-source projects instead of reinventing them:
-
-| Part | Project |
-|---|---|
-| Computer algebra + numerics | [Giac/Xcas](https://xcas.univ-grenoble-alpes.fr/) by Bernard Parisse & Renée De Graeve, compiled to WebAssembly |
-| Math input and textbook display | [MathLive](https://mathlive.io/), with our own small LaTeX → Giac parser |
-| Graphs & geometry | [JSXGraph](https://jsxgraph.org/) |
-| Numerical solvers | Giac with the [GNU Scientific Library (GSL)](https://www.gnu.org/software/gsl/) |
-| Python | [MicroPython](https://micropython.org/); optional [Pyodide](https://pyodide.org/) |
-| App shell | [Capacitor](https://capacitorjs.com/) (Android, iOS, desktop) |
-
+## Architecture
+```
+Capacitor shell (Android; plain web as an offline PWA)
+└─ UI: Svelte 5 + MathLive + JSXGraph + CodeMirror 6
+   └─ MathEngine (async, cancellable)
+      ├─ Worker: giac.wasm (Giac 2.1.0 + GSL 2.8 + GMP 6.3.0 + MPFR 4.2.2)
+      ├─ Worker: MicroPython 1.29.0 wasm (lazy)
+      └─ Worker: libqalculate 5.13.1 wasm (lazy; built, used from milestone 4)
+```
 Details: [docs/04-architecture.md](docs/04-architecture.md).
 
-## Roadmap
-1. ~~**Phase 0, technical spike**~~ ✅ done (2026-10-11): Giac in WebAssembly is fast enough on a low-end Android tablet.
-2. ~~**MVP**~~ ✅ keyboard, Home, CAS, textbook input, Function app, Solve app, Python.
-3. **Engineer core** (next): Find and honest precision, then the Units app, then matrices, number bases and everyday functions.
-4. **Later:** Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, RPN, Geometry, Advanced Graphing, 3D. Releases on F-Droid, Google Play and as a web app (not scheduled yet).
+## Measured
+| | Lenovo Tab One (low end) | Fairphone 6 |
+|---|---|---|
+| Keyboard usable | 662 ms | 329 ms |
+| Engine ready | 995 ms | 609 ms |
+| Home Enter → result, p95 | 92 ms | 23 ms |
+| Plot | 56 fps | 89 fps |
+
+The start chunk is capped at 150 kB (52 kB gzip), and the build fails above that.
+
+## Testing
+- **Golden gate:** about 600 cases across Home, precision, Solve, Function, parser and Python, checked against the real engine build. Every case records its source: `device`, `virtual-calc`, `oracle` (mpmath), `derived` or `assumed`. An engine build that fails the gate does not ship.
+- **Also:** svelte-check, Vitest unit tests and Playwright key-sequence tests at phone size.
+
+## Status
+| Milestone | Content | State |
+|---|---|---|
+| 1 | Home + CAS with MathPrint | done |
+| 2 | Function + Solve | done |
+| 3 | Python | done |
+| 4 | **Find and trust** | **in progress** |
+| 5 | Units | next |
+| 6 | Structure | after 5 |
+
+**Milestone 4, Find and trust:**
+- A mark on every result: `=` for exact, `≈` for rounded with only confirmed digits shown, `⚠` for unverified. Precision up to 30 digits.
+- **Find:** one search over every function, constant and unit, from a static index built at build time.
+- Copy, paste and share the full value.
+
+**Milestone 5, Units (libqalculate):**
+- Unit-checked arithmetic and conversion.
+- Physical constants.
+- Uncertainty that travels with the number.
+
+**Milestone 6, Structure:**
+- Matrices and vectors, and number bases.
+- Engineering functions: parallel resistance, E-series, dB and interpolation.
+
+**Later:** statistics, spreadsheet, more plot types, 3D, iOS and desktop.
+
+No release dates yet. Task list: [docs/backlog.md](docs/backlog.md).
+
+## Build
+```bash
+engine/giac/build-wasm.sh          # Giac + GSL → wasm, needs emsdk (about 5 min on 16 cores)
+cd app && npm ci && npm run dev    # http://localhost:5173
+./build.sh                         # clean source → dist/pascaline.apk
+```
+- **No binaries in git:** every source tarball is pinned and SHA-256 checked.
+- **Release builds:** these use Debian's Emscripten 3.1.69 in a pinned `debian:trixie` container, and are reproducible.
+- **F-Droid:** no Google services and no trackers, so the app is ready for F-Droid.
+
+All other commands: [CLAUDE.md](CLAUDE.md#commands).
+
+## Built on
+- **Engine:** [Giac](https://xcas.univ-grenoble-alpes.fr/) by Bernard Parisse and Renée De Graeve.
+- **Libraries:** [GSL](https://www.gnu.org/software/gsl/), [GMP](https://gmplib.org/), [MPFR](https://www.mpfr.org/), [libqalculate](https://qalculate.github.io/), [MicroPython](https://micropython.org/), [MathLive](https://mathlive.io/), [JSXGraph](https://jsxgraph.org/), [CodeMirror](https://codemirror.net/), [Svelte](https://svelte.dev/) and [Capacitor](https://capacitorjs.com/).
+
+Versions and licences: [THIRD_PARTY.md](THIRD_PARTY.md).
 
 ## Contributing
-Feedback, ideas and code are all welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) first. It contains a few **important legal rules**: Pascaline must never contain HP code, firmware or artwork.
-
-## Project documents
-- [Architecture](docs/04-architecture.md) and the [original project plan](docs/02-architecture-plan.md)
-- [Feature analysis and roadmap](docs/03-feature-analysis.md)
-- [Status and backlog](docs/backlog.md)
-- [Original feasibility study](docs/01-feasibility-report.md) (its legal section is still current)
-
-## Licence
-Pascaline is free software under the **GNU General Public License v3.0 or later** (see [LICENSE](LICENSE)). It has to be, and we're happy that it is: it builds on Giac, which is GPL-3.0.
-
-## Acknowledgements
-Huge thanks to **Bernard Parisse and Renée De Graeve** for Giac/Xcas, the engine that makes this project possible, and to all the open-source projects listed above.
+See [CONTRIBUTING.md](CONTRIBUTING.md). The project is clean-room: no HP code, firmware or artwork, and every commit needs a DCO sign-off.
 
 ---
 
-<sub>Pascaline is an independent project and is **not affiliated with, endorsed by, or connected to HP Inc. or Moravia Consulting**. HP and HP Prime are trademarks of HP Inc., mentioned here only to describe the kind of calculator Pascaline is inspired by.</sub>
+<sub>Not affiliated with HP Inc. or Moravia Consulting. HP and HP Prime are trademarks of HP Inc., named only to describe the key layout. Named after Blaise Pascal's 1642 calculating machine.</sub>
