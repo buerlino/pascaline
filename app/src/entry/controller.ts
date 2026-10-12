@@ -16,6 +16,11 @@ const WHOLE_BEFORE = /(?:^|[^\d.}A-Za-z_^])\d+$/;
 const COMPOUND = /^\\(?:[dt]?frac|sqrt)(?![A-Za-z])/;
 const MIXED_FRAC = /^\\tfrac(?![A-Za-z])/;
 
+/** The ÷ / a/b template (stacked fraction); the one-line mode inserts \\div instead. */
+function isDivide(a: ActionBody): boolean {
+  return a.kind === "insert" && a.latex === FRAC;
+}
+
 /** True if `latex` has a superscript outside every {…} group and \left…\right pair. */
 function hasOuterSup(latex: string): boolean {
   let depth = 0;
@@ -173,7 +178,7 @@ export class EntryController {
       return;
     }
     const mf = this.mf;
-    const isFrac = keyId === "frac" && a.kind === "insert" && a.latex === FRAC;
+    const isFrac = keyId === "frac" && isDivide(a);
     if (isFrac && this.mixedAfter !== undefined && this.mixedAfter === mf.value) {
       this.mixedAfter = undefined;
       mf.executeCommand("undo");
@@ -184,14 +189,17 @@ export class EntryController {
     const whole = isFrac && WHOLE_BEFORE.test(mf.getValue(0, mf.position, "latex"));
     if (a.kind === "insert" && a.latex.startsWith("#@^") && this.selectCompound(mf)) {
       this.apply(mf, { ...a, latex: `\\left(#@\\right)${a.latex.slice(2)}` });
+    } else if (isDivide(a) && this.selectCompound(mf)) {
+      // L9: with the term selected, #@ takes all of it as the numerator: \frac{\frac12}{□}
+      this.apply(mf, a);
     } else this.apply(mf, a);
     this.mixedAfter = whole ? mf.value : undefined;
     mf.focus();
   }
 
   /**
-   * L8: if the term before the cursor is a fraction, a root, a power or a mixed number, select all of it and
-   * return true, so a #@^ key (x², xʸ, x⁻¹) raises the whole term in brackets. Inside a mixed number the term is
+   * L8 / L9: if the term before the cursor is a fraction, a root, a power or a mixed number, select all of it and
+   * return true, so a #@^ key (x², xʸ, x⁻¹) raises the whole term in brackets and ÷ / a/b divide it. Inside a mixed number the term is
    * the whole number; inside a fraction's part the key raises the last term of that part (user, 2026-10-12).
    * MathLive offsets list an atom's parts before the atom itself, and getElementInfo gives each one's depth.
    */

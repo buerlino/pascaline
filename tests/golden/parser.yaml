@@ -349,3 +349,8 @@ cases:
   - { id: "l8-06", latex: "\\left(\\frac12\\right)^3", expect: "1/8", source: "derived", group: "l8" }
   - { id: "l8-07", latex: "\\left(\\frac14\\right)^{-1}", expect: "4", source: "derived", group: "l8" }
   - { id: "l8-08", latex: "\\frac{3}{2^2}", expect: "3/4", source: "derived", group: "l8" }
+  # --- L9 (2026-10-12): ÷ and a/b after a compound term make it the numerator (EntryController)
+  - { id: "l9-01", latex: "\\frac{\\frac12}{3}", expect: "1/6", source: "derived", group: "l9" }
+  - { id: "l9-02", latex: "\\frac{\\sqrt4}{2}", expect: "1", source: "derived", group: "l9" }
+  - { id: "l9-03", latex: "\\frac{2^3}{4}", expect: "2", source: "derived", group: "l9" }
+  - { id: "l9-04", latex: "\\frac{2\\tfrac12}{5}", expect: "1/2", source: "derived", group: "l9" }
