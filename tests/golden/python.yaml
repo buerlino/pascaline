@@ -6,6 +6,7 @@
 #   cancel  `code` runs in a worker that is terminated after 300 ms; then a fresh runtime runs print(1)
 # `home`: Home entries evaluated first (they share Giac with calc). `expect` keys: stdout (exact text),
 # error ({type, line}), gfx (the graphics commands, in order), home ({input: display} after the run).
+# `status: "pending"`: known to fail until its fix; the gate runs it, lists it as still pending or now passing, and never fails on it.
 # Sources: derived = follows from Python's or the module's documented semantics (app/src/python/README.md).
 cases:
   # --- output and arithmetic
@@ -28,6 +29,7 @@ cases:
   - { id: "py-calc-05", kind: "run", code: "import calc\ncalc.set(\"B\", 2.5)\ncalc.set(\"C\", 3)", expect: { home: { "B*C": "7.5" } }, source: "derived", group: "calc", note: "a value written by Python is seen in Home" }
   - { id: "py-calc-06", kind: "run", code: "import calc\ncalc.set(\"Q\", None)\nprint(1)\ncalc.get(\"Q\")\n", expect: { stdout: "1\n", error: { type: "NameError", line: 4 } }, source: "derived", group: "calc" }
   - { id: "py-calc-07", kind: "run", code: "import calc\n\ncalc.cas(\"factor(\")\n", expect: { error: { type: "ValueError", line: 3 } }, source: "derived", group: "calc" }
+  - { id: "py-calc-eval-float-trap", kind: "run", code: "import calc\nprint(calc.eval(\"1-0.9-0.1\"))", expect: { stdout: "0\n" }, source: "derived", group: "calc", status: "pending", note: "docs/04 2.3 #7: Home shows 0 (exact decimals) but calc.eval ran a raw Giac float call and gave 1.7763568394e-15; calc.eval goes through home() in EN3-engine (2.10). An exact integer result stays int, so print shows 0, not 0.0" }
   # --- Cancel
   - { id: "py-cancel-01", kind: "cancel", code: "while True: pass", expect: { stdout: "1\n" }, source: "derived", group: "cancel" }
   - { id: "py-cancel-02", kind: "cancel", code: "i = 0\nwhile True:\n    i += 1\n    if i % 100000 == 0: print(i)\n", expect: { stdout: "1\n" }, source: "derived", group: "cancel" }
