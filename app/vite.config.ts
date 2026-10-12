@@ -7,8 +7,8 @@ import { yamlPlugin } from "./vite-plugin-yaml.ts";
 export default defineConfig({
   base: "./",
   plugins: [yamlPlugin(), svelte(), pwaLite()],
-  build: { target: "es2022" },
+  build: { target: "es2022", manifest: true },
   // spec/keyboard.yaml lives one level above app/
   server: { host: true, fs: { allow: [".."] } },
-  test: { include: ["src/**/*.test.ts"], environment: "node" },
+  test: { include: ["src/**/*.test.ts", "scripts/**/*.test.ts"], environment: "node" },
 });
