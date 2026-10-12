@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Device and coordination tools
 
-Run from the repo root. Shared state (locks, run logs) lives in `.coord/`, which is gitignored. Take the device lock before touching a device, and the `host-cpu` lock before a heavy build.
+Run from the repo root. Shared state (locks, run logs) lives in the **main checkout's** `.coord/`, which is gitignored: `devlock.sh` finds it with `git rev-parse --git-common-dir`, so a lock taken in a git worktree is the shared one. `PASCALINE_COORD` overrides it. `tools/devlock.test.sh` checks this (acquire in a worktree, see it from the main checkout). Take the device lock before touching a device, and the `host-cpu` lock before a heavy build.
 
 ```bash
 tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/WebView; --restore undoes it

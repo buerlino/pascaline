@@ -9,4 +9,7 @@ export interface Cell {
   ok: boolean;
   display: string;
   value?: ComplexValue;
+  /** The engine's full value and its confirmation (HomeResult), for Copy and the CSV table. */
+  full?: string;
+  reliableDigits?: number | null;
 }

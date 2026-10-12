@@ -8,10 +8,16 @@
 #   tools/devlock.sh break <resource>     # coordinator only, for a lock whose owner is gone
 #
 # <resource> is an adb serial or "host-cpu". Locks are directories (mkdir is atomic).
+# Locks live in the main checkout's .coord (shared by every git worktree); PASCALINE_COORD overrides.
 set -euo pipefail
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-LOCKS="${PASCALINE_COORD:-$REPO/.coord}/locks"
+# Default: the MAIN checkout's .coord, so a lock taken in a git worktree is the shared one (decisions M4-9).
+# `git rev-parse --git-common-dir` is the main checkout's .git from any worktree; its parent is the main checkout.
+# PASCALINE_COORD still overrides it. Outside a git checkout, fall back to this copy's own .coord.
+COMMON="$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+if [[ -n "$COMMON" ]]; then MAIN_REPO="$(dirname "$COMMON")"; else MAIN_REPO="$REPO"; fi
+LOCKS="${PASCALINE_COORD:-$MAIN_REPO/.coord}/locks"
 mkdir -p "$LOCKS"
 cmd="${1:?usage: devlock.sh acquire|release|status|break ...}"
 

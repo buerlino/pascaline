@@ -6,7 +6,7 @@ import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../i
 import { SerializeError } from "../input/emit.ts";
 import { latexToGiacInfo } from "../input/latex-to-giac.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
-import { decimalFromRational, decimalFromString, decimalToString, type ComplexValue } from "../engine/format.ts";
+import { decimalFromRational, decimalFromString, decimalToString, type ComplexValue, type PrecisionWarn } from "../engine/format.ts";
 import { homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
 import {
@@ -79,6 +79,11 @@ export interface HistoryItem {
   fullExact?: boolean;
   /** An inexact chip went into the input, so the result is never marked "=" (docs/04 2.4; R3 draws the mark). */
   inexactInput?: boolean;
+  /** The engine's facts about the number (docs/04 2.4, 8.2): Copy writes only confirmed digits and the session text carries the mark. */
+  exactRational?: boolean;
+  /** Digits confirmed by the agreement check; null = exact. */
+  reliableDigits?: number | null;
+  warn?: PrecisionWarn;
   startedAt: number;
 }
 
@@ -97,6 +102,13 @@ function rationalOf(text: string | undefined): Rational | undefined {
   return { n: m[1], d: m[2] ?? "1" };
 }
 const clampDigits = (n: number): number => Math.min(15, Math.max(1, Math.round(n)));
+
+/** The engine's precision facts onto the history item (Copy and the session text read them). */
+function noteFacts(i: HistoryItem, r: { exactRational: boolean; reliableDigits: number | null; warn?: PrecisionWarn }): void {
+  i.exactRational = r.exactRational;
+  i.reliableDigits = r.reliableDigits;
+  if (r.warn) i.warn = r.warn;
+}
 
 /** A stored history item with a fresh id; chip fields that do not have their shape are dropped. */
 function restoredItem(i: HistoryItem, id: number): HistoryItem {
@@ -291,6 +303,7 @@ export class Session {
         live.text = r.ok ? r.display : errorText(r.error, r.display);
         live.approximate = r.approximate;
         if (r.value) live.value = r.value;
+        if (r.ok) noteFacts(live, r);
         const q = r.value ? rationalOf(r.exact) : undefined;
         if (q) live.rational = q;
         if (r.ok) live.resultLatex = homeResultToLatex(r.display);
@@ -312,10 +325,14 @@ export class Session {
           const dec = q ? decimalFromRational(BigInt(q.n), BigInt(q.d)) : decimalFromString(r.text);
           if (dec) live.value = { re: dec, im: decimalFromRational(0n, 1n) };
           if (q) live.rational = q;
-          if (r.text.length <= FULL_LIMIT) {
-            live.full = r.text;
-            live.fullExact = !isDigitsText(r.text);
+          // A float result: every confirmed digit the engine gave (r.text is drawn at the shown digits only).
+          const nf = r.numeric?.full;
+          const full = nf !== undefined && nf.length > 0 ? nf : r.text;
+          if (full.length <= FULL_LIMIT) {
+            live.full = full;
+            live.fullExact = !isDigitsText(full);
           }
+          if (r.numeric) noteFacts(live, r.numeric);
         }
       }
     } catch (e) {

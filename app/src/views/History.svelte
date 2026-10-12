@@ -12,6 +12,7 @@
     onrecall,
     oninsert,
     oncancel,
+    onlongpress,
     selected = null,
   }: {
     items: HistoryItem[];
@@ -23,7 +24,33 @@
     /** L5: tapping a result puts it on the entry line at the cursor, as a chip (docs/04 2.8). */
     oninsert: (item: HistoryItem) => void;
     oncancel: () => void;
+    /** A long press on a finished row: its copy actions (docs/04 2.6). */
+    onlongpress?: (item: HistoryItem) => void;
   } = $props();
+
+  // A long press (500 ms; the browser cancels the pointer when the finger starts a scroll) opens the row's actions; the tap that follows the lift is not a tap.
+  const LONG_PRESS_MS = 500;
+  let press: ReturnType<typeof setTimeout> | undefined;
+  let longPressed = false;
+  function endPress(): void {
+    clearTimeout(press);
+    press = undefined;
+  }
+  function pressStart(e: PointerEvent, item: HistoryItem): void {
+    endPress();
+    longPressed = false;
+    if (!onlongpress || item.status !== "done" || e.button > 0) return;
+    press = setTimeout(() => {
+      press = undefined;
+      longPressed = true;
+      onlongpress(item);
+    }, LONG_PRESS_MS);
+  }
+  /** Run a tap action unless this click ends a long press. */
+  function tapped(act: () => void): void {
+    if (longPressed) longPressed = false;
+    else act();
+  }
 
   let scroller: HTMLElement | undefined = $state();
 
@@ -84,8 +111,10 @@
   {/if}
   {#each shown as item, k (item.id)}
     <article class="item" data-status={item.status}
+      onpointerdown={(e) => pressStart(e, item)} onpointerup={endPress} onpointercancel={endPress}
+      oncontextmenu={(e) => e.preventDefault()}
       data-selected={selected !== null && k + items.length - shown.length === selected ? "true" : undefined}>
-      <button type="button" class="in" title={t("history.recall")} onclick={() => onrecall(item)}>
+      <button type="button" class="in" title={t("history.recall")} onclick={() => tapped(() => onrecall(item))}>
         <Math latex={item.latex} />
       </button>
       <div class="out" data-testid="result">
@@ -101,7 +130,7 @@
         {:else}
           {@const d = display(item)}
           <button type="button" class="result" data-text={d.text} title={t("history.insert")}
-            onpointerdown={(e) => e.preventDefault()} onclick={() => oninsert(item)}>
+            onpointerdown={(e) => e.preventDefault()} onclick={() => tapped(() => oninsert(item))}>
             <Math latex={d.latex} />
           </button>
           {#if item.approximate}<span class="note">{t("history.approximate")}</span>{/if}
@@ -134,6 +163,10 @@
     flex-direction: column;
     gap: 2px;
     margin-top: auto;
+    /* a long press opens the row's actions, not the system's text selection */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
   .item + .item {
     margin-top: 0;

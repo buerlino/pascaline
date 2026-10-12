@@ -30,6 +30,11 @@ export class AppShell {
   /** Set while an app's code is loading (the view shows a short note). */
   loading = $state<AppId | null>(null);
 
+  /** Copy, paste and share (set by App.svelte); apps reach it through AppHost.copy. */
+  clip: { copyRaw(text: string | undefined, notice?: string): Promise<boolean> } | undefined;
+  /** The Menu of Home and CAS (set by App.svelte); the apps bring their own. */
+  homeMenu: (() => MenuItem[]) | undefined;
+
   private readonly calc: Calc;
   private readonly kv: Kv;
   private readonly entry: EntryLine;
@@ -80,6 +85,7 @@ export class AppShell {
         this.entry.set(latex);
       },
       showView: (v: ViewId) => void this.setView(v),
+      copy: (text: string, notice?: string) => void this.clip?.copyRaw(text, notice),
     };
   }
 
@@ -170,7 +176,18 @@ export class AppShell {
   /** The follow-up list of a picked item, shown in place of the view's menu until the menu closes. */
   private sub = $state.raw<SubMenu | undefined>(undefined);
   get menuItems(): readonly MenuItem[] {
-    return this.sub?.items ?? this.instance?.menu?.(this.view) ?? [];
+    if (this.sub) return this.sub.items;
+    return (this.app === null ? this.homeMenu?.() : this.instance?.menu?.(this.view)) ?? [];
+  }
+  /** What Copy (Shift + View) takes from the open app view; undefined when it has nothing to copy. */
+  copyText(): Promise<string | undefined> | string | undefined {
+    return this.instance?.copyText?.(this.view);
+  }
+  /** Open a list of items over the view (a long press on a history row): same list and keys as the Menu key. */
+  showMenu(title: string, items: readonly MenuItem[]): void {
+    this.switcherOpen = false;
+    this.sub = { title, items };
+    this.menuOpen = true;
   }
   /** The open list's title; undefined for the view's own menu. */
   get menuTitle(): string | undefined {

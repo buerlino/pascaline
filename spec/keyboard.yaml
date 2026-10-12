@@ -47,8 +47,8 @@ row_columns: { 6: 5, 7: 5, 8: 5, 9: 5 }
 
 keys:
   # ---- rows 0-2: the upper cluster. Symb / Plot / Num open the views of the current app (from Home or CAS: the
-  # last app used). Help (r1c4) and View (r2c4) are gaps until built: View = compact keypad (K4), shift View = Copy,
-  # shift Menu = Paste, Help = context help (docs/04-architecture.md section 5.1).
+  # last app used). Help (r1c4) is a gap until built (context help). View (r2c4) has only its shift layer so far: shift View = Copy,
+  # shift Menu = Paste; its primary layer is the compact keypad (K4) (docs/04-architecture.md section 5.1).
   - { id: apps, row: 0, col: 0, cls: nav, label: { primary: "$key.apps" }, primary: { special: apps }, source: virtual-calc }  # r1c1 (shift Info: not ours)
   - { id: symb, row: 0, col: 1, cls: nav, label: { primary: "$key.symb" }, primary: { special: symb }, source: virtual-calc }  # r1c2 (shift Setup: not ours)
   - { id: up, row: 0, col: 2, span: 2, cls: ctl, label: { primary: "▲" }, primary: { cmd: moveUp }, source: virtual-calc }  # pad up; on an empty entry line it selects the last history row (App.svelte)
@@ -59,12 +59,16 @@ keys:
       primary: { cmd: moveToPreviousChar }, shift: { cmd: moveToMathfieldStart }, source: virtual-calc }  # pad left; shift is ours (not checked on the reference)
   - { id: right, row: 1, col: 3, cls: ctl, label: { primary: "▶", shift: "▶|" },
       primary: { cmd: moveToNextChar }, shift: { cmd: moveToMathfieldEnd }, source: virtual-calc }  # pad right; shift is ours (not checked on the reference)
+  # View (r2c4): the compact keypad toggle comes with K4, so only the shift layer is built (shift View = Copy, docs/04 2.6, 5.1).
+  - { id: view, row: 1, col: 4, cls: nav, label: { primary: "$key.view", shift: "$key.copy" },
+      primary: { special: none }, shift: { special: copy }, source: virtual-calc }  # r2c4
   - { id: cancel, row: 1, col: 5, cls: ctl, label: { primary: "$key.cancel" }, primary: { special: cancel }, source: assumed }  # ours (P4 item 6): stops a running job, closes a list, else clears the line; in a gap under Esc (r2c5)
   - { id: app, row: 2, col: 0, cls: nav, label: { primary: "$key.app", shift: "$key.settings" },
       primary: { special: app }, shift: { special: settings }, source: assumed }  # at the reference's Home key (r3c1, shift Settings); ours toggles Home/CAS and leaves an app (P4 item 6)
   - { id: num, row: 2, col: 1, cls: nav, label: { primary: "$key.num" }, primary: { special: num }, source: virtual-calc }  # r3c2
   - { id: down, row: 2, col: 2, span: 2, cls: ctl, label: { primary: "▼" }, primary: { cmd: moveDown }, source: virtual-calc }  # pad down
-  - { id: menu, row: 2, col: 4, cls: nav, label: { primary: "$key.menu" }, primary: { special: menu }, source: assumed }  # at r3c4; our Menu opens the current view's menu (P4 item 6)
+  - { id: menu, row: 2, col: 4, cls: nav, label: { primary: "$key.menu", shift: "$key.paste" },
+      primary: { special: menu }, shift: { special: paste }, source: assumed }  # at r3c4; our Menu opens the current view's menu (P4 item 6); shift Paste reads one number from the clipboard (docs/04 2.6)
   - { id: cas, row: 2, col: 5, cls: nav, label: { primary: "$key.cas", shift: "$key.settings" },
       primary: { special: cas }, shift: { special: settings }, source: virtual-calc }  # r3c5 (CAS; shift CAS Settings, ours is the one Settings sheet)
 
