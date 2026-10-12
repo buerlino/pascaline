@@ -14,7 +14,8 @@
 #               behaviour is the ⚠ and not a value.
 #   status      "pending" = known to fail until its fix. The gate (stage precision) runs it anyway and lists it as
 #               still pending or now passing; it never fails the gate. Remove the status when the case passes.
-# `mark:` is checked by the gate once the engine reports it (EN3-engine, G2); until then the gate only counts it.
+# `mark:` is checked by the gate (markOf() in app/src/engine/format.ts, STD at `digits`). A result shown with ⚠ n must equal
+# `expect` rounded to its n confirmed digits.
 # Python's side of #7 is in python.yaml; #1 (the parser) and #8 (the result chip) are ron's, in R2.
 cases:
   # --- 20 and 30 digits: the displayed digits are the oracle's (these hold today; they guard the setting) ----------
@@ -37,24 +38,34 @@ cases:
   - { id: "prec-30-355/113-pi", input: "355/113-pi", settings: { digits: 30 }, oracle: "-(pi-F(355,113))", expect: "2.66764189062422312368932886496E-7", mark: "≈", source: "oracle", note: "cancellation" }
   # --- 2.3 #2: inverse functions: Giac's value is wrong from the 8th digit and its two evaluations nearly agree ------
   - { id: "prec-2-normald_icdf-value", input: "normald_icdf(10^-10)", oracle: "findroot(lambda x: erfc(-x/sqrt(2))/2 - M(F(1,10**10)), -6.36)", expect: "-6.3613409024", mark: "≈", source: "oracle", status: "pending", note: "Home shows -6.36134035799. The correct value needs the substitute-back polish of EN7 (milestone 6); the agreement check cannot find this error (docs/04 2.3 #2)" }
-  - { id: "prec-2-normald_icdf-mark", input: "normald_icdf(10^-10)", mark: "⚠", status: "pending", note: "until the polish exists, a float that Giac's numeric code returned for an un-audited function is shown with ⚠, never a bare ≈ (docs/04 2.4 rule 3); the oracle value above differs from Giac's from the 8th digit" }
+  - { id: "prec-2-normald_icdf-mark", input: "normald_icdf(10^-10)", mark: "⚠", source: "derived", note: "until the polish exists, a float that Giac's numeric code returned for an un-audited function is shown with ⚠, never a bare ≈ (docs/04 2.4 rule 3); the oracle value above differs from Giac's from the 8th digit" }
   # --- 2.3 #3: cancellation in 1-erf at 40 digits -------------------------------------------------------------------
-  - { id: "prec-3-UTPN-30", input: "UTPN(10)", settings: { digits: 30 }, oracle: "erfc(M(10)/sqrt(2))/2", expect: "7.6198530241605260659733432516E-24", mark: "≈", source: "oracle", status: "pending", note: "Home shows 7.61985302416052604747040248572E-24, wrong from the 17th digit. The agreement check at P and P+20 must either give this value or show ⚠ with only the confirmed digits; if the engine can only do the latter, replace this case by the ⚠ form and say why under Needs a decision" }
-  - { id: "prec-3-UTPN-30-mark", input: "UTPN(10)", settings: { digits: 30 }, mark: "⚠", status: "pending", note: "the fallback form of the case above: only if 30 true digits cannot be reached, the 30-digit result must carry ⚠ (the two evaluations differ from the 17th digit). Delete whichever of the two UTPN cases does not apply" }
+  - { id: "prec-3-UTPN-30", input: "UTPN(10)", settings: { digits: 30 }, oracle: "erfc(M(10)/sqrt(2))/2", expect: "7.6198530241605260659733432516E-24", mark: "≈", source: "oracle", note: "Home showed 7.61985302416052604747040248572E-24 before G2, wrong from the 17th digit (cancellation in 1-erf at 40 digits). The agreement check sees P and P+20 disagree and takes one more step (P+20 against P+40), which confirms all 30 digits" }
   # --- 2.3 #4: a float on the exact path (romberg) ------------------------------------------------------------------
-  - { id: "prec-4-romberg-30", input: "romberg(exp(-x^2),x,0,1)", settings: { digits: 30 }, oracle: "sqrt(pi)/2*erf(1)", expect: "0.746824132812427025399467436132", mark: "⚠", source: "oracle", status: "pending", note: "Home shows 0.746824132812427041600115591871, wrong from the 17th digit. romberg is not on the audited list, so the result carries ⚠ (docs/04 2.4 rule 3; the 2.3 table row says ≈ for the same case: rule 3 is the stricter one). Shown digits must agree with expect for as many as are shown" }
+  - { id: "prec-4-romberg-30", input: "romberg(exp(-x^2),x,0,1)", settings: { digits: 30 }, oracle: "sqrt(pi)/2*erf(1)", expect: "0.746824132812427025399467436132", mark: "⚠", source: "oracle", note: "Home shows 0.746824132812427041600115591871, wrong from the 17th digit. romberg is not on the audited list, so the result carries ⚠ (docs/04 2.4 rule 3; the 2.3 table row says ≈ for the same case: rule 3 is the stricter one). Shown digits must agree with expect for as many as are shown" }
   - { id: "prec-4-romberg-12", input: "romberg(exp(-x^2),x,0,1)", oracle: "sqrt(pi)/2*erf(1)", expect: "0.746824132812", mark: "⚠", source: "oracle", note: "at 12 digits Giac's value is right; the mark is ⚠ because romberg is un-audited (docs/04 2.4 rule 3)" }
   # --- 2.3 #5: Giac has no MPFR path for these: the answer must not be lost ----------------------------------------
   - { id: "prec-5-BesselJ(1,2)-12", input: "BesselJ(1,2)", oracle: "besselj(1,2)", expect: "0.576724807757", mark: "⚠", source: "oracle", note: "un-audited float-returning function (docs/04 2.4 rule 3)" }
   - { id: "prec-5-Airy_Ai(1)-12", input: "Airy_Ai(1)", oracle: "airyai(1)", expect: "0.135292416313", mark: "⚠", source: "oracle", note: "un-audited float-returning function (docs/04 2.4 rule 3)" }
   - { id: "prec-5-BesselJ(0,100)-12", input: "BesselJ(0,100)", oracle: "besselj(0,100)", expect: "0.0199858503042", mark: "⚠", source: "oracle", note: "un-audited float-returning function (docs/04 2.4 rule 3)" }
-  - { id: "prec-5-BesselJ(1,2)-30", input: "BesselJ(1,2)", settings: { digits: 30 }, mark: "⚠", status: "pending", note: "Home returns the input text (BesselJ(1,2)) at 30 digits. It must fall back to a double-precision evaluation (at most 15 digits) and show ⚠ with the digits available (docs/04 2.3 #5)" }
-  - { id: "prec-5-Airy_Ai(1)-30", input: "Airy_Ai(1)", settings: { digits: 30 }, mark: "⚠", status: "pending", note: "same as BesselJ(1,2) at 30 digits" }
-  - { id: "prec-5-BesselJ(0,100)-30", input: "BesselJ(0,100)", settings: { digits: 30 }, mark: "⚠", status: "pending", note: "same as BesselJ(1,2) at 30 digits" }
+  - { id: "prec-5-BesselJ(1,2)-30", input: "BesselJ(1,2)", settings: { digits: 30 }, mark: "⚠", source: "derived", note: "Home returns the input text (BesselJ(1,2)) at 30 digits. It must fall back to a double-precision evaluation (at most 15 digits) and show ⚠ with the digits available (docs/04 2.3 #5)" }
+  - { id: "prec-5-Airy_Ai(1)-30", input: "Airy_Ai(1)", settings: { digits: 30 }, mark: "⚠", source: "derived", note: "same as BesselJ(1,2) at 30 digits" }
+  - { id: "prec-5-BesselJ(0,100)-30", input: "BesselJ(0,100)", settings: { digits: 30 }, mark: "⚠", source: "derived", note: "same as BesselJ(1,2) at 30 digits" }
   # --- 2.3 #6: CAS: typed decimals are exact (P9) and numeric results are right ---------------------------------------
-  - { id: "prec-6-cas-1-0.9-0.1", kind: "cas", input: "1-0.9-0.1", oracle: "F(1)-F('0.9')-F('0.1')", expect: "0", mark: "=", source: "derived", status: "pending", note: "CAS shows 1.7763568394e-15 today; with P9 the decimals are exact rationals" }
-  - { id: "prec-6-cas-1e16+1-1e16", kind: "cas", input: "1e16+1-1e16", oracle: "F(10**16)+1-F(10**16)", expect: "1", mark: "=", source: "derived", status: "pending", note: "CAS shows 0.0 today" }
-  - { id: "prec-6-cas-evalf-sin1e22", kind: "cas", input: "evalf(sin(10^22))", oracle: "sin(10**22)", expect: "-0.852200849767", mark: "≈", source: "oracle", status: "pending", note: "CAS shows -0.54764225985 today (Home gets it right). The gate compares CasResult.text; EN3-engine may compare the formatted numeric value instead, if it adds one" }
+  - { id: "prec-6-cas-1-0.9-0.1", kind: "cas", input: "1-0.9-0.1", oracle: "F(1)-F('0.9')-F('0.1')", expect: "0", mark: "=", source: "derived", note: "CAS shows 1.7763568394e-15 today; with P9 the decimals are exact rationals" }
+  - { id: "prec-6-cas-1e16+1-1e16", kind: "cas", input: "1e16+1-1e16", oracle: "F(10**16)+1-F(10**16)", expect: "1", mark: "=", source: "derived", note: "CAS shows 0.0 today" }
+  - { id: "prec-6-cas-evalf-sin1e22", kind: "cas", input: "evalf(sin(10^22))", oracle: "sin(10**22)", expect: "-0.852200849767", mark: "≈", source: "oracle", note: "CAS shows -0.54764225985 today (Home gets it right). The gate compares CasResult.text; EN3-engine may compare the formatted numeric value instead, if it adds one" }
+  # --- sigfig(x,n) (docs/04 2.5): x rounded to n significant digits, half away from zero, as an exact decimal ---------
+  - { id: "sigfig-999.95-4", input: "sigfig(999.95,4)", oracle: "F(1000)", expect: "1000", mark: "=", source: "derived", note: "rounds up into the next power of ten" }
+  - { id: "sigfig-999.94-4", input: "sigfig(999.94,4)", oracle: "F('999.9')", expect: "999.9", mark: "=", source: "derived" }
+  - { id: "sigfig-0.0012345-3", input: "sigfig(0.0012345,3)", oracle: "F('0.00123')", expect: "0.00123", mark: "=", source: "derived" }
+  - { id: "sigfig-third-3", input: "sigfig(1/3,3)", oracle: "F(333,1000)", expect: "0.333", mark: "=", source: "derived" }
+  - { id: "sigfig-neg-third-3", input: "sigfig(-1/3,3)", oracle: "F(-333,1000)", expect: "-0.333", mark: "=", source: "derived" }
+  - { id: "sigfig-tie-0.125-2", input: "sigfig(0.125,2)", oracle: "F(13,100)", expect: "0.13", mark: "=", source: "derived", note: "a tie rounds away from zero" }
+  - { id: "sigfig-tie-neg-0.125-2", input: "sigfig(-0.125,2)", oracle: "F(-13,100)", expect: "-0.13", mark: "=", source: "derived", note: "a tie rounds away from zero" }
+  - { id: "sigfig-tie-25-1", input: "sigfig(25,1)", oracle: "F(30)", expect: "30", mark: "=", source: "derived" }
+  - { id: "sigfig-sqrt2-3", input: "sigfig(sqrt(2),3)", oracle: "F(141,100)", expect: "1.41", mark: "=", source: "derived", note: "an irrational x: the rounded value is exact" }
+  - { id: "sigfig-exp-1000-2", input: "sigfig(exp(-1000),2)", oracle: "F(51,10**436)", expect: "5.1E-435", mark: "=", source: "derived", note: "exp(-1000) = 5.0759588975…E-435 (oracle)" }
   # --- 2.3 #9: 1/3 and 1/4 look alike without the mark ---------------------------------------------------------------
-  - { id: "prec-9-third", input: "1/3", oracle: "F(1,3)", expect: "0.333333333333", mark: "≈", source: "oracle", status: "pending", note: "needs the mark in the engine result (EN3-engine); the value already passes" }
-  - { id: "prec-9-quarter", input: "1/4", oracle: "F(1,4)", expect: "0.25", mark: "=", source: "derived", status: "pending", note: "needs the mark in the engine result (EN3-engine); the value already passes" }
+  - { id: "prec-9-third", input: "1/3", oracle: "F(1,3)", expect: "0.333333333333", mark: "≈", source: "oracle", note: "needs the mark in the engine result (EN3-engine); the value already passes" }
+  - { id: "prec-9-quarter", input: "1/4", oracle: "F(1,4)", expect: "0.25", mark: "=", source: "derived", note: "needs the mark in the engine result (EN3-engine); the value already passes" }

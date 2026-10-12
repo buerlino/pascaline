@@ -29,16 +29,19 @@ export const defaultCasSettings: CasSettings = {
 
 export interface CasResult {
   ok: boolean;
-  /** Giac's printed result (for copy/paste and tests), or the error text when !ok. Never shown as the 2D result. */
+  /** Giac's printed result (for copy/paste and tests), or the error text when !ok. Never shown as the 2D result.
+   *  When `numeric` is set: its display text (our formatter, confirmed digits only), not Giac's float text. */
   text: string;
-  /** Giac `latex()` of the result (raw; the view tidies it up and renders it). Empty when !ok. */
+  /** Giac `latex()` of the result (raw; the view tidies it up and renders it). Empty when !ok. With `numeric`, the
+   *  LaTeX of its display text. */
   latex: string;
   /** Giac stopped itself at hardTimeoutS. */
   timedOut: boolean;
   /** Why !ok, for the UI's own (translated) message: Giac's text stays in `text`. */
   error?: "syntax" | "timeout" | "engine";
   engineMs: number;
-  /** The result as a number, when it is one: the value the mark, the copy and the digits setting work on (docs/04 section 2.9). */
+  /** The result as a number, when it is one with a float in it (docs/04 section 2.9): the value the mark, the copy and
+   *  the digits setting work on. Exact CAS results (`1/3`, `sqrt(2)`) have none: they get no mark. */
   numeric?: HomeResult;
 }
 

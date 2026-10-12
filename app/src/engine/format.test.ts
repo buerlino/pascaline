@@ -3,9 +3,14 @@
 // layout conventions themselves are our own until G2 checklist item 15 is answered.
 import { describe, expect, it } from "vitest";
 import {
+  confirmedDigits,
   decimalFromRational,
   decimalFromString,
   formatComplex,
+  formatConfirmed,
+  markOf,
+  ZERO_VALUE,
+  type ComplexValue,
   formatFraction,
   formatPolar,
   formatReal,
@@ -194,5 +199,116 @@ describe("formatPolar", () => {
     expect(formatPolar(q(5n), q(1n, 2n), { format: "STD", digits: 12 }).text).toBe("5\u22210.5");
     expect(formatPolar(q(5n), q(-1n, 2n), { format: "STD", digits: 12 }).text).toBe("5\u2221-0.5");
     expect(formatPolar(q(1500n), q(0n), { format: "ENG", digits: 3 }).text).toBe("1.50E3\u22210.00E0");
+  });
+});
+
+// --- G2: PFX, marks, confirmed digits (docs/04 sections 2.4, 2.7). All expected values derived by hand. ------------
+
+describe("PFX: SI prefix display (docs/04 2.7)", () => {
+  const p = (s: string, digits = 4) => toText(formatReal(decimalFromString(s)!, { format: "PFX", digits }));
+  it.each([
+    ["1e-15", "1.000 f"],
+    ["1e-12", "1.000 p"],
+    ["4.7e-9", "4.700 n"],
+    ["1e-6", "1.000 µ"],
+    ["0.0015", "1.500 m"],
+    ["1.5", "1.500"],
+    ["4.7e3", "4.700 k"],
+    ["1e6", "1.000 M"],
+    ["2.2e9", "2.200 G"],
+    ["1e12", "1.000 T"],
+    ["1e15", "1.000 P"],
+    ["-4.7e3", "-4.700 k"],
+    ["0", "0.000"],
+  ])("%s → %s", (x, want) => expect(p(x)).toBe(want));
+  it("rounding moves into the next prefix: 999.96 k at 4 digits is 1.000 M", () => expect(p("999.96e3")).toBe("1.000 M"));
+  it("rounding moves into the range: 9.9996E-16 at 4 digits is 1.000 f", () => expect(p("9.9996e-16")).toBe("1.000 f"));
+  it("999.94 k stays 999.9 k", () => expect(p("999.94e3")).toBe("999.9 k"));
+  it("outside f … P it is ENG", () => {
+    expect(p("1e18")).toBe("1.000E18");
+    expect(p("1e-16")).toBe("100.0E-18");
+    expect(p("9.9994e-16")).toBe("999.9E-18");
+  });
+});
+
+describe("markOf: the mark per format (docs/04 2.4)", () => {
+  const v = (s: string) => decimalFromString(s)!;
+  const real = (s: string): ComplexValue => ({ re: v(s), im: ZERO_VALUE });
+  const exact = (s: string) => ({ value: real(s), exactRational: true, reliableDigits: null });
+  const quarter = { value: { re: decimalFromRational(1n, 4n), im: ZERO_VALUE }, exactRational: true, reliableDigits: null };
+  const third = { value: { re: decimalFromRational(1n, 3n), im: ZERO_VALUE }, exactRational: true, reliableDigits: null };
+  const STD = { format: "STD", digits: 12 } as const;
+  it("1/4 is = in STD, SCI, ENG and PFX, ≈ in FIX 1 (0.3)", () => {
+    for (const format of ["STD", "SCI", "ENG", "PFX"] as const) expect(markOf(quarter, { format, digits: 12 })).toEqual({ mark: "=" });
+    expect(markOf(quarter, { format: "FIX", digits: 12, fixed: 1 })).toEqual({ mark: "≈" });
+    expect(markOf(quarter, { format: "FIX", digits: 12, fixed: 2 })).toEqual({ mark: "=" });
+  });
+  it("1/3 is ≈ in every format", () => {
+    for (const format of ["STD", "SCI", "ENG", "PFX", "FIX"] as const) expect(markOf(third, { format, digits: 12 })).toEqual({ mark: "≈" });
+  });
+  it("an exact integer too long for the digits is ≈ (2^100 at 12 digits), = when it fits (2^64 at 30)", () => {
+    expect(markOf(exact("1267650600228229401496703205376"), STD)).toEqual({ mark: "≈" });
+    expect(markOf(exact("18446744073709551616"), { format: "STD", digits: 30 })).toEqual({ mark: "=" });
+    expect(markOf(exact("1e600"), STD)).toEqual({ mark: "=" });
+  });
+  it("a non-rational value is ≈ when enough digits are confirmed, ⚠ n when not", () => {
+    const f = { value: real("1.41421356237309504880"), exactRational: false, reliableDigits: 20 };
+    expect(markOf(f, STD)).toEqual({ mark: "≈" });
+    expect(markOf(f, { format: "STD", digits: 30 })).toEqual({ mark: "⚠", n: 20 });
+    expect(markOf(f, { format: "FIX", digits: 12, fixed: 25 })).toEqual({ mark: "⚠", n: 20 });
+    expect(markOf(f, { format: "FIX", digits: 12, fixed: 4 })).toEqual({ mark: "≈" });
+  });
+  it("an un-audited float is ⚠ even when its digits agree", () => {
+    expect(markOf({ value: real("0.576724807757"), exactRational: false, reliableDigits: 12, warn: "unaudited" }, STD)).toEqual({ mark: "⚠", warn: "unaudited" });
+  });
+  it("a complex number takes the weaker part; an exact complex shown whole is =", () => {
+    expect(markOf({ value: { re: v("11"), im: v("-2") }, exactRational: true, reliableDigits: null }, STD)).toEqual({ mark: "=" });
+    expect(markOf({ value: { re: v("0.5"), im: decimalFromRational(1n, 3n) }, exactRational: true, reliableDigits: null }, STD)).toEqual({ mark: "≈" });
+  });
+  it("a list takes its weakest element's mark; an empty list or a non-number has none", () => {
+    expect(markOf({ exactRational: true, reliableDigits: null, items: [quarter, third] }, STD)).toEqual({ mark: "≈" });
+    expect(markOf({ exactRational: true, reliableDigits: null, items: [quarter, exact("2")] }, STD)).toEqual({ mark: "=" });
+    expect(markOf({ exactRational: false, reliableDigits: 5, items: [quarter, { value: real("0.746824132812"), exactRational: false, reliableDigits: 5 }] }, STD)).toEqual({ mark: "⚠", n: 5 });
+    expect(markOf({ exactRational: true, reliableDigits: null, items: [] }, STD)).toBeNull();
+    expect(markOf({ exactRational: false, reliableDigits: null }, STD)).toBeNull();
+  });
+});
+
+describe("formatConfirmed: only confirmed digits are shown", () => {
+  const v = (s: string) => decimalFromString(s)!;
+  const f = (s: string, reliableDigits: number | null) => ({ value: { re: v(s), im: ZERO_VALUE }, exactRational: false, reliableDigits });
+  it("STD, SCI and ENG cut to the confirmed digits", () => {
+    expect(formatConfirmed(f("0.746824132812427041600", 11), { format: "STD", digits: 30 })).toBe("0.74682413281");
+    expect(formatConfirmed(f("12345.678", 3), { format: "SCI", digits: 6 })).toBe("1.23E4");
+    expect(formatConfirmed(f("12345.678", 3), { format: "ENG", digits: 6 })).toBe("12.3E3");
+  });
+  it("FIX shows fewer decimals, and SCI when not even the integer part is confirmed", () => {
+    expect(formatConfirmed(f("123.456789", 5), { format: "FIX", digits: 12, fixed: 4 })).toBe("123.46");
+    expect(formatConfirmed(f("123456.789", 3), { format: "FIX", digits: 12, fixed: 2 })).toBe("1.23E5");
+  });
+  it("lists and matrices", () => {
+    const it2 = [f("1.5", null), f("0.333333333333333", 3)];
+    expect(formatConfirmed({ exactRational: false, reliableDigits: 3, items: it2 }, { format: "STD", digits: 12 })).toBe("[1.5,0.333]");
+    expect(formatConfirmed({ exactRational: false, reliableDigits: 3, items: [...it2, ...it2], shape: [2, 2] }, { format: "STD", digits: 12 })).toBe("[[1.5,0.333],[1.5,0.333]]");
+  });
+});
+
+describe("confirmedDigits: the agreement check (docs/04 2.4 rule 2)", () => {
+  const v = (s: string) => decimalFromString(s)!;
+  it("two evaluations of sqrt(2) at 40 and 60 digits confirm 39 digits", () => {
+    expect(confirmedDigits(v("1.414213562373095048801688724209698078570"), v("1.41421356237309504880168872420969807856967187537694807317668"), 40)).toBe(39);
+  });
+  it("a cancellation: UTPN(10) at 40 and 60 digits agrees on 16 digits only (Giac's output, 2026-10-12)", () => {
+    expect(confirmedDigits(v("0.7619853024160526047470402485719718202649e-23"), v("0.761985302416052606597334325159930836356760859193473531291124e-23"), 40)).toBe(16);
+  });
+  it("a double against MPFR (romberg, Giac's output): 11 digits; the 12th could round either way", () => {
+    expect(confirmedDigits(v("0.74682413281235"), v("0.7468241328124270416001155918698308916810"), 14)).toBe(11);
+  });
+  it("values on both sides of a rounding boundary confirm only what rounds alike", () => {
+    expect(confirmedDigits(v("0.99999999999999999"), v("1.00000000000000001"), 17)).toBe(16);
+  });
+  it("two zeros confirm each other; a zero and a non-zero confirm nothing", () => {
+    expect(confirmedDigits(ZERO_VALUE, ZERO_VALUE, 40)).toBe(40);
+    expect(confirmedDigits(ZERO_VALUE, v("1e-50"), 40)).toBe(0);
   });
 });

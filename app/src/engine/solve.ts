@@ -62,7 +62,12 @@ function realPart(giac: Giac, expr: string, work: number): DecimalValue | null {
   return decimalFromString(negZero(t.trim()));
 }
 
-/** A numeric HomeResult for the Giac expression `expr` (a value at work precision), rounded to `digits`. */
+/**
+ * A numeric HomeResult for the Giac expression `expr` (a value at work precision), rounded to `digits`.
+ * Its check is the solver's own (a converged polish at work precision and the residual substituted back; ⚠ on the
+ * outcome when that fails), so it claims the shown digits as confirmed and `full` is the shown text. A second polish
+ * at a higher precision, to confirm more digits for copy, is not built yet (G2 report).
+ */
 export function numericResult(giac: Giac, expr: string, digits: number, work: number, ms = 0): HomeResult {
   const re = realPart(giac, `re(${expr})`, work);
   const im = realPart(giac, `im(${expr})`, work);
@@ -75,7 +80,9 @@ export function numericResult(giac: Giac, expr: string, digits: number, work: nu
   return {
     ok: true,
     display,
-    ...safePrecision(display),
+    exactRational: false,
+    reliableDigits: digits,
+    full: display,
     value,
     path: "numeric",
     approximate: true,

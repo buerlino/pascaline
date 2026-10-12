@@ -30,7 +30,7 @@ All calls are synchronous and go to the same Giac engine as Home and CAS, so var
 | Call | Returns |
 |---|---|
 | `calc.cas(expr)` | Giac's exact result as text, e.g. `"(x-1)*(x+1)"`; `ValueError` with Giac's message on error |
-| `calc.eval(expr)` | `int` for an exact integer; else `evalf(…,17)` as `float`, `complex` or a list; text if not numeric |
+| `calc.eval(expr)` | evaluated like Home (exact-first, decimals exact, digits checked; docs/04 2.10): `int` for an exact integer; else a `float` (or `complex`) from the leading 17 digits; a list (of lists) for a list or matrix; text if not numeric. Uses its own Ans, so Home's Ans is untouched |
 | `calc.get(name)` | a calculator variable, as `eval` returns it; `NameError` if it has no value |
 | `calc.set(name, v)` | stores `int`/`float`/`complex`/`bool`/list, or an expression given as text; `None` purges |
 

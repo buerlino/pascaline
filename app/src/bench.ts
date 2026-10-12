@@ -39,6 +39,10 @@ export async function runBench(session: Session): Promise<void> {
     session.setView("cas");
     session.clearHistory();
   }
+  // ?bench=1&digits=N (1–30; docs/04 section 2.5): the digits setting for this run, set directly so a measurement
+  // build can time 20 and 30 digits before Settings allows them. Not persisted.
+  const digits = Number(new URLSearchParams(location.search).get("digits"));
+  if (Number.isInteger(digits) && digits >= 1 && digits <= 30) session.settings.digits = digits;
   session.setView("cas");
   const first: number[] = [];
   const errors: string[] = [];
@@ -68,6 +72,7 @@ export async function runBench(session: Session): Promise<void> {
   const histOk = session.cas.some((i) => i.status === "cancelled") && session.cas.some((i) => i.status === "done");
   const summary = {
     n: doc.cases.length,
+    digits: session.settings.digits,
     firstP50: r1(pct(first, 50)), firstP95: r1(pct(first, 95)), firstMax: r1(Math.max(...first)),
     cancelToReadyMs: r1(pct(cancels, 50)), cancelAll: cancels.map(r1), varAfterReplay: after, historyIntact: histOk,
     errors, mismatches,

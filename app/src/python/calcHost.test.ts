@@ -52,9 +52,16 @@ describe.skipIf(!giacAvailable() || !micropythonAvailable())("calc module (real 
     expect(r.out).toBe("(x-1)*(x+1)\n");
   });
 
-  it("calc.eval gives Python numbers (derived)", async () => {
+  it("calc.eval gives Python numbers (derived: docs/04 2.10, an exact integer stays int)", async () => {
     const r = await run('import calc\nprint(repr(calc.eval("2^70")), repr(calc.eval("7/2")), calc.eval("sqrt(-4)"), calc.eval("[1,1/2]"), calc.eval("x+1"))\n');
-    expect(r.out).toBe("1180591620717411303424 3.5 2j [1.0, 0.5] x+1\n");
+    expect(r.out).toBe("1180591620717411303424 3.5 2j [1, 0.5] x+1\n");
+  });
+
+  it("calc.eval is exact-first like Home: 1-0.9-0.1 is 0, and Home's Ans is untouched (derived, docs/04 2.3 #7)", async () => {
+    host.home("41", defaultHomeSettings);
+    const r = await run('import calc\nprint(repr(calc.eval("1-0.9-0.1")), repr(calc.eval("[[1,2],[3,4]]^-1")))\n');
+    expect(r.out).toBe("0 [[-2, 1], [1.5, -0.5]]\n");
+    expect(host.home("pasans+1", defaultHomeSettings).result.display).toBe("42");
   });
 
   it("a variable set in Home is read from Python (derived)", async () => {
