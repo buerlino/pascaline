@@ -44,7 +44,7 @@ Benchmark: `spike/bench/cases.yaml`, 55 inputs across arithmetic, trig, algebra,
 - **Firefox rounds `performance.now()` to 1 ms** here (no cross-origin isolation), so its sub-millisecond values show as 0 or 1.
 - Both engines gave **identical output on all 55 cases** in both browsers. All 15 cases with a provable expected value (`source: derived`) matched.
 - **Cancel** (terminate worker → new worker → replay settings and variable log): a long `ifactor` was interrupted every time (`EngineCancelled`), and a variable defined before the cancel (`pasvar:=7`) was intact afterwards (`pasvar*6` → `42`, 5/5 runs). Replay of the log took ≤1 ms.
-- Raw per-case data: `spike/app/bench/results/*.json` (gitignored; regenerate with `npm run bench`).
+- Raw per-case data: `spike/bench-results/*.json` (committed 2026-10-12, moved from the archived `spike/app/bench/results/`; the bench app is in `git show 8ff8576:spike/app`).
 
 ### Q1 on the Lenovo Tab One (2026-10-10, 23:45–23:50)
 Device HA24BZ2Y: Android 15 (SDK 35), MediaTek MT8786 (mt6768), 8 cores, 3.9 GB RAM, Android WebView 131.0.6778.260 as found. Plugged into USB, screen on, battery 66–68 %, 27.9–29.5 °C. Capacitor 8.5.3, compileSdk/targetSdk 36, AGP 8.13, Gradle 8.14.3, Java 21. APK 6.6 MB (release; the 9.75 MB wasm is 3.4 MB deflated inside). Tools: `spike/tools/device-build.sh`, `spike/tools/device_run.py`, raw runs in `.coord/device-runs.jsonl` (gitignored), medians by `spike/tools/runs_summary.py`; see `spike/android/NOTES.md`.
