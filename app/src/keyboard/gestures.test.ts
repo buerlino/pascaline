@@ -1,6 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from "vitest";
-import { STEP_PX, Stepper } from "./gestures.ts";
+import { FLICK_PX, STEP_PX, Stepper, flickOf } from "./gestures.ts";
+
+describe("key flicks (K2)", () => {
+  const both = { up: true, down: true };
+  it("up is the shift layer, down the letter, past FLICK_PX of vertical slide", () => {
+    expect(flickOf(0, -FLICK_PX, both)).toBe("up");
+    expect(flickOf(3, FLICK_PX + 10, both)).toBe("down");
+    expect(flickOf(0, -(FLICK_PX - 1), both)).toBeNull();
+  });
+  it("a sideways or diagonal slide is a tap, not a flick", () => {
+    expect(flickOf(-40, -30, both)).toBeNull();
+    expect(flickOf(30, 30, both)).toBe("down"); // exactly diagonal still counts as vertical
+    expect(flickOf(31, 30, both)).toBeNull();
+  });
+  it("a direction the key doesn't have is a tap", () => {
+    expect(flickOf(0, -40, { up: false, down: true })).toBeNull();
+    expect(flickOf(0, 40, { up: true, down: false })).toBeNull();
+  });
+});
 
 describe("trackpad stepper (K1)", () => {
   it("makes one step per STEP_PX in each direction, and steps back when dragged back", () => {

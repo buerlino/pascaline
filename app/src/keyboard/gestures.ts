@@ -5,6 +5,22 @@
 export type PadDir = "up" | "down" | "left" | "right";
 export const PAD_KEYS: readonly PadDir[] = ["up", "down", "left", "right"];
 
+/** A key flick: up = the shift layer, down = the letter (P7 point 2). No left/right flicks. */
+export type Flick = "up" | "down";
+
+/** A flick needs this many CSS pixels of vertical slide; less is a tap (so sliding back to the middle cancels it). */
+export const FLICK_PX = 20;
+
+/**
+ * The flick a slide of (dx, dy) from the touch point makes, or null for a tap. The slide must be mostly vertical,
+ * so a diagonal or sideways slip never fires a layer, and only directions the key has (`has`) count.
+ */
+export function flickOf(dx: number, dy: number, has: { up: boolean; down: boolean }): Flick | null {
+  if (Math.abs(dy) < FLICK_PX || Math.abs(dy) < Math.abs(dx)) return null;
+  const f: Flick = dy < 0 ? "up" : "down";
+  return has[f] ? f : null;
+}
+
 /** Trackpad: one cursor step per this many CSS pixels of drag (P7 point 1). */
 export const STEP_PX = 12;
 
