@@ -160,3 +160,70 @@ test("tapping inside an entered expression moves the cursor there", async ({ pag
   await tap(page, ["d8"]);
   expect(await entryValue(page)).toBe("812934");
 });
+
+// L8 (user, 2026-10-12): after a fraction, root, power or mixed number, x² (and the other #@^ keys: xʸ, x⁻¹) wraps
+// the whole term in brackets. Inside a numerator or denominator it squares the last term there (user, 2026-10-12);
+// ▶ leaves the part first. Inside a mixed number it squares the whole number (its parts are whole numbers).
+test("x² after a fraction squares the whole fraction; inside it squares the part", async ({ page }) => {
+  await tap(page, ["d1", "frac", "d2", "right", "sq"]);
+  expect(await entryValue(page)).toBe("\\left(\\frac12\\right)^2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "0.25", 1); // derived: (1/2)² = 1/4
+  await tap(page, ["d3", "frac", "d2", "sq"]);
+  expect(await entryValue(page)).toBe("\\frac{3}{2^2}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "0.75", 2); // derived: 3/2² = 3/4
+  await tap(page, ["d1", "div", "x", "sq"]);
+  expect(await entryValue(page)).toBe("\\frac{1}{x^2}");
+  await tap(page, ["esc", "d3", "frac", "d2", "right", "sq", "enter"]);
+  await resultIs(page, "2.25", 3); // derived: (3/2)² = 9/4
+});
+
+test("x² after a sum still squares only the last term", async ({ page }) => {
+  await tap(page, ["d1", "add", "d3", "sq"]);
+  expect(await entryValue(page)).toBe("1+3^2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "10", 1);
+});
+
+test("x² after a root, a power or a mixed number squares the whole term", async ({ page }) => {
+  await tap(page, ["shift", "sq", "d2", "right", "sq"]);
+  expect(await entryValue(page)).toBe("\\left(\\sqrt2\\right)^2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "2", 1); // derived: (√2)² = 2
+  await tap(page, ["shift", "pow", "d3", "right", "d8", "right", "sq"]);
+  expect(await entryValue(page)).toBe("\\left(\\sqrt[3]{8}\\right)^2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "4", 2); // derived: (∛8)² = 4
+  // ▶ leaves the exponent; without the brackets MathLive would merge the 2 into it (2^{32})
+  await tap(page, ["d2", "pow", "d3", "right", "sq"]);
+  expect(await entryValue(page)).toBe("\\left(2^3\\right)^2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "64", 3); // derived: (2³)² = 64
+  await tap(page, ["d2", "frac", "frac", "d1", "right", "d2", "right", "sq"]);
+  expect(await entryValue(page)).toBe("\\left(2\\tfrac12\\right)^2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "6.25", 4); // derived: (5/2)² = 25/4
+  await tap(page, ["d2", "frac", "frac", "d1", "right", "d2", "sq"]);
+  expect(await entryValue(page)).toBe("\\left(2\\tfrac12\\right)^2");
+});
+
+test("x² after a function call or a bracket keeps the plain square", async ({ page }) => {
+  await tap(page, ["sin", "d2", "right", "sq"]);
+  expect(await entryValue(page)).toBe("\\sin\\left(2\\right)^2");
+  await tap(page, ["esc", "paren", "d1", "add", "d2", "right", "sq"]);
+  expect(await entryValue(page)).toBe("\\left(1+2\\right)^2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "9", 1);
+});
+
+test("xʸ and x⁻¹ after a fraction also take the whole fraction", async ({ page }) => {
+  await tap(page, ["d1", "frac", "d2", "right", "pow", "d3"]);
+  expect(await entryValue(page)).toBe("\\left(\\frac12\\right)^3");
+  await tap(page, ["enter"]);
+  await resultIs(page, "0.125", 1); // derived: (1/2)³ = 1/8
+  await tap(page, ["d1", "frac", "d4", "right", "shift", "div"]);
+  expect(await entryValue(page)).toBe("\\left(\\frac14\\right)^{-1}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "4", 2); // derived: (1/4)⁻¹ = 4
+});

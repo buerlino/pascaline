@@ -31,7 +31,15 @@ export interface MenuItem {
   /** Already translated. */
   readonly label: string;
   readonly disabled?: boolean;
-  run(): void;
+  /** Picking the item runs it, or opens this follow-up list in place of the menu (e.g. Intersection: with which?). */
+  run?(): void;
+  readonly submenu?: SubMenu;
+}
+
+export interface SubMenu {
+  /** Already translated. */
+  readonly title: string;
+  readonly items: readonly MenuItem[];
 }
 
 export interface AppInstance {

@@ -84,7 +84,7 @@ test("L1 Function: F1(x)=x_1·x uses the Home variable x_1 (Num at x=1 is 5)", a
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await name(page, "x", "1");
   await tap(page, ["mul", "x", "enter"]);
-  await tap(page, ["num"]);
+  await tap(page, ["num", "d1", "enter"]); // Num start 1 (the step is 0.1)
   const row = page.locator('[data-testid="num-table"] tr:has(td[data-x="1"])');
   await expect(row.locator("td").nth(1)).toHaveAttribute("data-text", "5");
 });

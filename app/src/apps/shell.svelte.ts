@@ -5,7 +5,7 @@
 import type { Calc, CalcSettings } from "../calc/port.ts";
 import type { Kv } from "../state/storage.ts";
 import { appEntry, isAppId } from "./registry.ts";
-import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type TextInput, type ViewId } from "./types.ts";
+import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type SubMenu, type TextInput, type ViewId } from "./types.ts";
 
 /** The entry line as the shell sees it (EntryController in the app, a stub in tests). */
 export interface EntryLine {
@@ -167,18 +167,30 @@ export class AppShell {
     const a = this.instance;
     return a?.nav?.(this.view, dir, this.entryEdited) ?? false;
   }
-  get menuItems(): MenuItem[] {
-    return this.instance?.menu?.(this.view) ?? [];
+  /** The follow-up list of a picked item, shown in place of the view's menu until the menu closes. */
+  private sub = $state.raw<SubMenu | undefined>(undefined);
+  get menuItems(): readonly MenuItem[] {
+    return this.sub?.items ?? this.instance?.menu?.(this.view) ?? [];
+  }
+  /** The open list's title; undefined for the view's own menu. */
+  get menuTitle(): string | undefined {
+    return this.sub?.title;
   }
   toggleMenu(): void {
     this.switcherOpen = false;
+    this.sub = undefined;
     this.menuOpen = !this.menuOpen && this.menuItems.length > 0;
   }
   pick(i: number): boolean {
     const item = this.menuItems[i];
     if (!item || item.disabled) return false;
+    if (item.submenu) {
+      this.sub = item.submenu;
+      return true;
+    }
     this.menuOpen = false;
-    item.run();
+    this.sub = undefined;
+    item.run?.();
     return true;
   }
   get busy(): boolean {

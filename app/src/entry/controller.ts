@@ -12,6 +12,25 @@ const FRAC = "\\frac{#@}{#?}";
 const MIXED = "\\tfrac{#?}{#?}";
 /** A whole number right before the cursor (not part of a decimal, a name or a group). */
 const WHOLE_BEFORE = /(?:^|[^\d.}A-Za-z_^])\d+$/;
+/** An atom a bare ^ would not read as raising whole (L8): a fraction or a root. */
+const COMPOUND = /^\\(?:[dt]?frac|sqrt)(?![A-Za-z])/;
+const MIXED_FRAC = /^\\tfrac(?![A-Za-z])/;
+
+/** True if `latex` has a superscript outside every {…} group and \left…\right pair. */
+function hasOuterSup(latex: string): boolean {
+  let depth = 0;
+  for (let i = 0; i < latex.length; i++) {
+    const c = latex[i];
+    if (c === "\\") {
+      if (latex.startsWith("\\left", i)) depth++;
+      else if (latex.startsWith("\\right", i)) depth--;
+      i++; // skip the escaped character (\{ \} \^ count as text)
+    } else if (c === "{") depth++;
+    else if (c === "}") depth--;
+    else if (c === "^" && depth === 0) return true;
+  }
+  return false;
+}
 
 export class EntryController {
   private mf: MathfieldElement | undefined;
@@ -163,9 +182,51 @@ export class EntryController {
       return;
     }
     const whole = isFrac && WHOLE_BEFORE.test(mf.getValue(0, mf.position, "latex"));
-    this.apply(mf, a);
+    if (a.kind === "insert" && a.latex.startsWith("#@^") && this.selectCompound(mf)) {
+      this.apply(mf, { ...a, latex: `\\left(#@\\right)${a.latex.slice(2)}` });
+    } else this.apply(mf, a);
     this.mixedAfter = whole ? mf.value : undefined;
     mf.focus();
+  }
+
+  /**
+   * L8: if the term before the cursor is a fraction, a root, a power or a mixed number, select all of it and
+   * return true, so a #@^ key (x², xʸ, x⁻¹) raises the whole term in brackets. Inside a mixed number the term is
+   * the whole number; inside a fraction's part the key raises the last term of that part (user, 2026-10-12).
+   * MathLive offsets list an atom's parts before the atom itself, and getElementInfo gives each one's depth.
+   */
+  private selectCompound(mf: MathfieldElement): boolean {
+    if (!mf.selectionIsCollapsed) return false;
+    const latexAt = (o: number): string => mf.getElementInfo(o)?.latex ?? "";
+    const depthAt = (o: number): number => mf.getElementInfo(o)?.depth ?? 0;
+    let end = mf.position;
+    const d = depthAt(end);
+    if (d > 0) {
+      // the parent atom is the first one after the cursor that sits higher up
+      let o = end + 1;
+      while (o <= mf.lastOffset && depthAt(o) >= d) o++;
+      if (o <= mf.lastOffset && MIXED_FRAC.test(latexAt(o))) end = o;
+    }
+    const latex = latexAt(end);
+    const de = depthAt(end);
+    /** The offset before the atom at `o`, skipping its parts. */
+    const before = (o: number): number => {
+      let s = o - 1;
+      while (s > 0 && depthAt(s) > de) s--;
+      return s;
+    };
+    const digit = (o: number): boolean => o > 0 && depthAt(o) === de && /^[\d.]$/.test(latexAt(o));
+    let start = before(end);
+    if (MIXED_FRAC.test(latex)) {
+      while (digit(start)) start--;
+    } else if (latex.startsWith("^")) {
+      // a power whose exponent is an atom of its own: the base comes before it
+      if (digit(start)) while (digit(start)) start--;
+      else if (start > 0) start = before(start);
+      else return false;
+    } else if (!COMPOUND.test(latex) && !hasOuterSup(latex)) return false;
+    mf.selection = { ranges: [[start, end]] };
+    return true;
   }
 
   private apply(mf: MathfieldElement, a: ActionBody): void {

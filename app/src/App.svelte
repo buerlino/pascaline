@@ -282,7 +282,7 @@
     {:else if shell.menuOpen}
       <PickList
         testid="menu"
-        title={t("menu.title")}
+        title={shell.menuTitle ?? t("menu.title")}
         items={shell.menuItems}
         onpick={(i) => shell.pick(i)}
         onclose={() => (shell.menuOpen = false)}

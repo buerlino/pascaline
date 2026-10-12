@@ -340,3 +340,12 @@ cases:
   - { id: "l6-fn-03", latex: "p\\left(3\\right)", expect: "p*3", source: "derived", group: "l6" }
   - { id: "l6-fn-04", latex: "k\\left(t\\right):=2t", expect: "k(t):=2*t", source: "derived", group: "l6" }
   - { id: "l6-fn-05", latex: "k\\left(a+1\\right)^{2}", expect: "k(a+1)^2", before: ["k\\left(t\\right):=2t"], source: "derived", group: "l6" }
+  # --- L8 (2026-10-12): x², xʸ, x⁻¹ after a fraction, root, power or mixed number bracket the whole term (EntryController)
+  - { id: "l8-01", latex: "\\left(\\frac12\\right)^2", expect: "1/4", source: "derived", group: "l8" }
+  - { id: "l8-02", latex: "\\left(\\sqrt2\\right)^2", expect: "2", source: "derived", group: "l8" }
+  - { id: "l8-03", latex: "\\left(\\sqrt[3]{8}\\right)^2", expect: "4", source: "derived", group: "l8" }
+  - { id: "l8-04", latex: "\\left(2^3\\right)^2", expect: "64", source: "derived", group: "l8" }
+  - { id: "l8-05", latex: "\\left(2\\tfrac12\\right)^2", expect: "25/4", source: "derived", group: "l8" }
+  - { id: "l8-06", latex: "\\left(\\frac12\\right)^3", expect: "1/8", source: "derived", group: "l8" }
+  - { id: "l8-07", latex: "\\left(\\frac14\\right)^{-1}", expect: "4", source: "derived", group: "l8" }
+  - { id: "l8-08", latex: "\\frac{3}{2^2}", expect: "3/4", source: "derived", group: "l8" }

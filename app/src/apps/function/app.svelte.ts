@@ -6,7 +6,7 @@ import { formatComplex, type ComplexValue, type DecimalValue } from "../../engin
 import { t } from "../../i18n/index.ts";
 import { addMul, decText, decToNumber, nearestK, niceStep, parseDec, showDecimal, type Dec } from "../decimal.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
-import type { AppHost, AppInstance, MenuItem, NavDir, ViewId } from "../types.ts";
+import type { AppHost, AppInstance, MenuItem, NavDir, SubMenu, ViewId } from "../types.ts";
 import { compileDefinition, type Compiled } from "./compile.ts";
 import type { AnalysisOutcome, AnalysisRequest, Cell } from "./engineApi.ts";
 
@@ -61,7 +61,7 @@ export class FunctionApp implements AppInstance {
   /** Start of a signed area, waiting for the end position (Enter). */
   areaStart = $state<string | undefined>(undefined);
 
-  num = $state({ start: "0", step: "1", top: 0, rows: 12, edit: "start" as "start" | "step" });
+  num = $state({ start: "0", step: "0.1", top: 0, rows: 12, edit: "start" as "start" | "step" });
   numXs = $state.raw<string[]>([]);
   numSlots = $state.raw<number[]>([]);
 
@@ -87,7 +87,9 @@ export class FunctionApp implements AppInstance {
   // ---- formatting (Home formatter, current settings)
   fmt(c: Cell | undefined): string {
     if (!c) return "…";
-    if (!c.ok || /^[-+]?(infinity|inf|undef)$/.test(c.display)) return t("function.undefined");
+    if (!c.ok) return t("function.undefined");
+    // a pole or an undefined value: NaN, as the reference's Num view and Signed area show it (G2 items 19, 22)
+    if (/^[-+]?(infinity|inf|undef)$/.test(c.display)) return t("function.nan");
     return c.value ? this.fmtValue(c.value) : c.display;
   }
   fmtValue(v: ComplexValue): string {
@@ -158,11 +160,10 @@ export class FunctionApp implements AppInstance {
   menu(view: ViewId): MenuItem[] {
     if (view === "plot") {
       const none = this.active.length === 0;
-      const two = this.active.length < 2;
       return [
         { id: "root", label: t("fcn.root"), disabled: none, run: () => void this.analyze("root") },
         { id: "extremum", label: t("fcn.extremum"), disabled: none, run: () => void this.analyze("extremum") },
-        { id: "intersection", label: t("fcn.intersection"), disabled: two, run: () => void this.analyze("intersection") },
+        { id: "intersection", label: t("fcn.intersection"), disabled: none, submenu: this.intersectionMenu() },
         { id: "slope", label: t("fcn.slope"), disabled: none, run: () => void this.analyze("slope") },
         { id: "area", label: t("fcn.area"), disabled: none, run: () => this.startArea() },
         { id: "default", label: t("plot.defaultWindow"), run: () => this.defaultWindow() },
@@ -301,10 +302,11 @@ export class FunctionApp implements AppInstance {
     this.marks = [];
     this.save();
   }
+  /** 0.1 at the default window, as on the reference (G2 item 24); a 1-2-5 step for other widths (assumed). */
   get traceStep(): Dec {
     const w = this.win;
     const span = w ? w.xmax - w.xmin : DEFAULT_X[1] - DEFAULT_X[0];
-    return niceStep(span / 100);
+    return niceStep(span / 200);
   }
 
   // ---- Plot: trace
@@ -373,17 +375,24 @@ export class FunctionApp implements AppInstance {
     // bounds go to the engine as short decimals; they only limit the search
     return { lo: w.xmin.toPrecision(12), hi: w.xmax.toPrecision(12) };
   }
-  async analyze(kind: "root" | "extremum" | "intersection" | "slope"): Promise<void> {
+  /** Intersection asks for the second function: the others that are on, then the x-axis (G2 item 25). */
+  private intersectionMenu(): SubMenu {
+    const f = this.trace.slot;
+    const name = (i: number): string => `${this.slots.names[i] ?? ""}(x)`;
+    const items: MenuItem[] = this.active
+      .filter((i) => i !== f)
+      .map((i) => ({ id: `with-${i}`, label: name(i), run: () => void this.analyze("intersection", i) }));
+    items.push({ id: "x-axis", label: t("fcn.xAxis"), run: () => void this.analyze("root") });
+    return { title: t("fcn.intersectionOf", { f: name(f) }), items };
+  }
+  /** `other`: the second function of an intersection. */
+  async analyze(kind: "root" | "extremum" | "intersection" | "slope", other?: number): Promise<void> {
     const f = this.compiled[this.trace.slot]?.giac ?? "";
     if (!f) return;
     const x0 = this.trace.x;
     let req: AnalysisRequest;
-    let other: number | undefined;
     if (kind === "intersection") {
-      // with the next function that is on (assumed; the reference asks which one)
-      const act = this.active;
-      other = act[(act.indexOf(this.trace.slot) + 1) % act.length];
-      if (other === undefined || other === this.trace.slot) return;
+      if (other === undefined || other === this.trace.slot || !this.active.includes(other)) return;
       req = { kind, f, g: this.compiled[other]?.giac ?? "", x0, ...this.windowBounds() };
     } else if (kind === "slope") req = { kind, f, x0 };
     else req = { kind, f, x0, ...this.windowBounds() };
