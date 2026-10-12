@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
   import { legend } from "../i18n/index.ts";
-  import { PAD_KEYS, Stepper, type PadDir } from "./gestures.ts";
+  import { KeyHold, PAD_KEYS, REPEAT_KEYS, Repeat, Stepper, type PadDir } from "./gestures.ts";
   import { gridPlace, keyboard, labelFor, pythonLabel, type Key, type Layer } from "./keyboard.ts";
 
   let {
@@ -51,9 +51,19 @@
     return { rows: `${Math.min(...rows) + 1} / ${Math.max(...rows) + 2}`, cols: `${Math.min(...starts)} / ${Math.max(...ends)}` };
   })();
 
-  type Gesture = { kind: "pad"; key: Key | undefined; x0: number; y0: number; steps: Stepper };
+  // Hold and drag (K2): any other key fires when the finger lifts; held still for HOLD_MS it is the 2D cursor
+  // (the keys dim) until the finger lifts. ⌫ fires on touch and repeats while held instead.
+  type Gesture =
+    | { kind: "pad"; key: Key | undefined; x0: number; y0: number; steps: Stepper }
+    | { kind: "key"; x0: number; y0: number; hold: KeyHold }
+    | { kind: "repeat"; repeat: Repeat };
   const gestures = new Map<number, Gesture>();
   let padEl: HTMLDivElement | undefined = $state();
+  let cursor = $state(false);
+  $effect(() => () => {
+    for (const g of gestures.values()) cancel(g);
+    gestures.clear();
+  });
 
   function targetOf(ev: PointerEvent): Key | "pad" | undefined {
     const el = ev.target instanceof Element ? ev.target.closest<HTMLElement>("[data-key],[data-trackpad]") : null;
@@ -70,21 +80,43 @@
     for (const g of gestures.values()) finish(g);
     gestures.clear();
     const target = targetOf(ev);
-    if (!target) return;
-    ontouch();
-    if (target !== "pad" && !isPadKey(target)) return onpress(target);
+    if (target) ontouch();
+    if (target && target !== "pad" && REPEAT_KEYS.includes(target.id)) {
+      onpress(target);
+      // the repeats keep the layer of the first press (Shift ⌫ = Del), which used up a one-shot Shift
+      const layer: Layer = alpha ? "alpha" : shift ? "shift" : "primary";
+      gestures.set(ev.pointerId, { kind: "repeat", repeat: new Repeat(() => onpress(target, layer)) });
+      return;
+    }
     try {
       padEl?.setPointerCapture(ev.pointerId);
     } catch {
       // a synthetic event without an active pointer: the gesture still works while the finger stays on the pad
     }
-    gestures.set(ev.pointerId, { kind: "pad", key: target === "pad" ? undefined : target, x0: ev.clientX, y0: ev.clientY, steps: new Stepper() });
+    const [x0, y0] = [ev.clientX, ev.clientY];
+    if (target === "pad" || (target && isPadKey(target)))
+      gestures.set(ev.pointerId, { kind: "pad", key: target === "pad" ? undefined : target, x0, y0, steps: new Stepper() });
+    else {
+      // a key, or a gap between keys: the hold works anywhere on the keypad
+      const hold = new KeyHold({
+        cursor: () => {
+          cursor = true;
+          ontouch();
+        },
+        step,
+        tap: () => target && onpress(target),
+        end: () => (cursor = false),
+      });
+      gestures.set(ev.pointerId, { kind: "key", x0, y0, hold });
+    }
   }
 
   function move(ev: PointerEvent): void {
     const g = gestures.get(ev.pointerId);
-    if (!g) return;
-    for (const dir of g.steps.move(ev.clientX - g.x0, ev.clientY - g.y0)) step(dir);
+    if (!g || g.kind === "repeat") return;
+    const [dx, dy] = [ev.clientX - g.x0, ev.clientY - g.y0];
+    if (g.kind === "key") g.hold.move(dx, dy);
+    else for (const dir of g.steps.move(dx, dy)) step(dir);
   }
 
   function step(dir: PadDir): void {
@@ -102,9 +134,28 @@
     finish(g);
   }
 
-  /** The finger lifts (or another one comes down): a trackpad touch without a step was a tap on its zone. */
+  /**
+   * The finger lifts (or another one comes down): a trackpad touch without a step was a tap on its zone, a key
+   * touch before the hold is the key, a hold ends the cursor, ⌫ stops repeating.
+   */
   function finish(g: Gesture): void {
-    if (g.steps.count === 0 && g.key) onpress(g.key);
+    if (g.kind === "pad") {
+      if (g.steps.count === 0 && g.key) onpress(g.key);
+    } else if (g.kind === "key") g.hold.release();
+    else g.repeat.stop();
+  }
+
+  /** The browser took the touch (a scroll, a system gesture): nothing fires, the cursor mode ends. */
+  function cancel(g: Gesture): void {
+    if (g.kind === "key") g.hold.cancel();
+    else if (g.kind === "repeat") g.repeat.stop();
+  }
+
+  function cancelled(ev: PointerEvent): void {
+    const g = gestures.get(ev.pointerId);
+    if (!g) return;
+    gestures.delete(ev.pointerId);
+    cancel(g);
   }
 </script>
 
@@ -112,12 +163,13 @@
   class="pad"
   class:shifted={shift}
   class:alphaed={alpha}
+  data-cursor={cursor ? "true" : undefined}
   style:grid-template-columns={`repeat(${keyboard.units}, 1fr)`}
   bind:this={padEl}
   onpointerdown={down}
   onpointermove={move}
   onpointerup={up}
-  onpointercancel={(ev) => gestures.delete(ev.pointerId)}
+  onpointercancel={cancelled}
   onclick={(ev) => ev.preventDefault()}
   role="presentation"
 >
@@ -201,6 +253,15 @@
   .key[data-zone="true"]:active {
     filter: none;
     opacity: 1;
+  }
+  /* hold and drag (K2): the keys dim while the keypad is the cursor */
+  .key,
+  .trackpad {
+    transition: opacity 0.12s;
+  }
+  .pad[data-cursor="true"] .key,
+  .pad[data-cursor="true"] .trackpad {
+    opacity: 0.3;
   }
   /* a key whose function we don't have yet: only its letter matters */
   .key[data-reserved="true"] .main {

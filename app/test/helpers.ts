@@ -22,7 +22,11 @@ export async function open(page: Page, query = "engine=fake"): Promise<void> {
 export async function touch(
   page: Page,
   id: string,
-): Promise<{ move: (dx: number, dy: number, steps?: number) => Promise<void>; end: () => Promise<void> }> {
+): Promise<{
+  move: (dx: number, dy: number, steps?: number) => Promise<void>;
+  end: () => Promise<void>;
+  cancel: () => Promise<void>;
+}> {
   const box = await page.locator(`[data-key="${id}"]`).boundingBox();
   if (!box) throw new Error(`key ${id} is not visible`);
   const x0 = box.x + box.width / 2;
@@ -43,6 +47,41 @@ export async function touch(
       }
     },
     async end() {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await cdp.detach();
+    },
+    /** The browser takes the touch away (a scroll, a system gesture): pointercancel instead of a lift. */
+    async cancel() {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
+      await cdp.detach();
+    },
+  };
+}
+
+/**
+ * Two fingers: the first goes down on key `a` and stays, then a second comes down on key `b`; `end` lifts both
+ * (second, then first). The first finger can be held (`page.waitForTimeout`) before `second` is called.
+ */
+export async function twoFingers(
+  page: Page,
+  a: string,
+  b: string,
+): Promise<{ second: () => Promise<void>; end: () => Promise<void> }> {
+  const centre = async (id: string): Promise<{ x: number; y: number }> => {
+    const box = await page.locator(`[data-key="${id}"]`).boundingBox();
+    if (!box) throw new Error(`key ${id} is not visible`);
+    return { x: Math.round(box.x + box.width / 2), y: Math.round(box.y + box.height / 2) };
+  };
+  const p1 = { ...(await centre(a)), id: 1 };
+  const p2 = { ...(await centre(b)), id: 2 };
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [p1] });
+  return {
+    async second() {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [p1, p2] });
+    },
+    async end() {
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [p1] });
       await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
       await cdp.detach();
     },
