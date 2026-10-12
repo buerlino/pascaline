@@ -211,3 +211,6 @@ Each entry: the choice, why, the alternatives, and what would change it.
 ### 2026-10-11 Our MicroPython variant
 - **Choice:** `python/build-micropython.sh` builds `python/variant/pascaline`: upstream's standard variant plus `-O2`, a 128 KiB Asyncify buffer, and the Ctrl-C JS hook turned off (it breaks scripts in worker threads, and Cancel terminates the worker instead). The upstream source stays unmodified. One MicroPython per JS realm (one per worker).
 - **Would change if:** an upstream release adds a supported way to pause for host calls.
+
+### 2026-10-12 Hold-and-drag cursor and ⌫ repeat timings (K2; assumed, to judge by feel)
+Hold 350 ms with at most 10 px of movement turns the keypad into the trackpad (12 px per step, as K1); keys fire on release; a slide before 350 ms stays a tap; a second finger ends cursor mode. ⌫ had no auto-repeat, so K2 added one: fires on touch, repeats after 400 ms, then every 60 ms, in the layer of the first press (held Shift+⌫ keeps deleting forward). Why: ron's defaults, nothing measured. Alternatives: other hold times or slop. Would change on the user's verdict after trying it on a device (backlog "Needs the user" 3).
