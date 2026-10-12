@@ -354,3 +354,12 @@ cases:
   - { id: "l9-02", latex: "\\frac{\\sqrt4}{2}", expect: "1", source: "derived", group: "l9" }
   - { id: "l9-03", latex: "\\frac{2^3}{4}", expect: "2", source: "derived", group: "l9" }
   - { id: "l9-04", latex: "\\frac{2\\tfrac12}{5}", expect: "1/2", source: "derived", group: "l9" }
+  # --- docs/04 2.3 #1 (R2): 0x / 0b / 0o followed by digits is not read as a product (0xFF typed with the keys
+  # gave 0*x*F*F = 0, shown as exact). An error with a message until EN6 (milestone 6) makes it a literal.
+  - { id: "p231-01", latex: "0xFF", error: true, source: "derived", group: "p231", note: "keys 0 x Alpha-F Alpha-F; the intended value is 255 (derived), an error until EN6" }
+  - { id: "p231-02", latex: "0x1F", error: true, source: "derived", group: "p231" }
+  - { id: "p231-03", latex: "0b101", error: true, source: "derived", group: "p231" }
+  - { id: "p231-04", latex: "0o17", error: true, source: "derived", group: "p231" }
+  - { id: "p231-05", latex: "0x+1", expect: "0*x+1", source: "derived", group: "p231", note: "0 times x stays a product when no digit follows" }
+  - { id: "p231-06", latex: "0xy", expect: "0*x*y", source: "derived", group: "p231" }
+  - { id: "p231-07", latex: "20xF", expect: "20*x*F", source: "derived", group: "p231", note: "only a lone 0 starts a base prefix" }
