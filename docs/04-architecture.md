@@ -227,11 +227,13 @@ interface FindItem {
   unc?: string;            // const: standard uncertainty (CODATA), absent when exact
   unit?: string;           // const: canonical unit expression
   dim?: string;            // const, unit: dimension key (4.3)
-  si?: string;             // unit: exact factor to SI base as p/q; offset for °C, °F
+  si?: string;             // unit: exact factor to SI base as p/q; offset for °C, °F; absent when qalc's factor is approximate (dim stays)
   tier: 0 | 1;             // 0: curated, audited, ranked first; 1: documented only
   insert: string;          // LaTeX the entry line receives (macro or \operatorname template)
 }
 ```
+
+**Amended 2026-10-13 (G4, user):** in the index file a tier-1 function has no `insert`; `prepare()` fills in `\operatorname{name}\left(#?\right)` at load (saves about 70 kB raw), so `FindItem.insert` stays required after loading. A unit whose qalc factor is uncertain or approximate (solar_mass, cal_fifteen, cal_mean, u, Da, the Planck and atomic units) keeps `dim` and has no `si`.
 
 Live items (variables, user functions) have the same shape with `kind: "var" | "userfn"`, built at run time (3.4).
 

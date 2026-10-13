@@ -175,6 +175,8 @@ Backlog step 10 and §6.2.
   - **`evalf(x,n)` in CAS (M4-6):** show the n digits asked for, only the confirmed ones (the agreement check at the requested precision; `⚠ n` if fewer agree). Golden cases first: `evalf(pi,50)` (`oracle`), and a case where fewer agree.
   - **Root polish (M4-8):** Solve and analysis roots get a second-precision polish at W + 20 in `solve1`, so `full` carries confirmed digits and a 30-digit root is checked. Golden cases at 30 digits (`oracle`).
 
+- **G4 follow-up (user, 2026-10-13; decisions.md G4 item 1, docs/04 3.3):** the generator leaves `insert` out of tier-1 functions and `prepare()` in `app/src/find/rank.ts` fills in `\operatorname{name}\left(#?\right)` (with `_` escaped, as `insert.test.ts` does). Test: every prepared item has an `insert`; the raw size drops by about 70 kB (report before and after).
+
 Test: `app/test/persist.spec.ts` (`5▶A`, reload, `A×2` = 10). Report `replayMs` with 200 definitions on the desktop.
 
 ### gorge, G4: Find index generator and query test, branch `p1/gorge-m4-index`
