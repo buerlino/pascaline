@@ -384,3 +384,37 @@ cases:
   - { id: "chip-const-02", latex: "\\frac{\\const{h}{h}}{\\const{e}{e}}", expect: "(662607015/10^42)/(1602176634/10^28)", chips: { "const:h": { value: "6.62607015E-34", exact: true }, "const:e": { value: "1.602176634E-19", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-const-03", latex: "\\const{G}{G}", expect: "667430/10^16", chips: { "const:G": { value: "6.67430E-11", exact: false, unc: "0.00015E-11" } }, source: "derived", group: "chips" }
   - { id: "chip-const-04", latex: "\\const{k_B}{k_{B}}\\times300", expect: "1380649*3/10^27", chips: { "const:k_B": { value: "1.380649E-23", exact: true } }, source: "derived", group: "chips" }
+  # --- R10 (2026-10-13): the Tmpl palette (spec/keyboard.yaml `templates:`). Each template as MathLive writes it when
+  # filled from the keys (app/test/tmpl.spec.ts types the same samples); expected values derived by hand.
+  - { id: "tmpl-evalat-01", latex: "\\left.x^2\\right|_{x=3}", expect: "9", source: "derived", group: "tmpl" }
+  - { id: "tmpl-evalat-02", latex: "\\left.\\frac{\\partial x^3}{\\partial x}\\right|_{x=2}", expect: "12", source: "derived", group: "tmpl" }
+  - { id: "tmpl-evalat-03", latex: "\\left.x+y\\right|_{y=2x}", expect: "3*x", source: "derived", group: "tmpl" }
+  - { id: "tmpl-evalat-04", latex: "\\left.x^2\\right|_{3}", error: true, source: "derived", group: "tmpl", note: "the bar needs variable = value" }
+  - { id: "tmpl-deriv-01", latex: "\\frac{\\partial x^2+3x}{\\partial x}", expect: "2*x+3", source: "derived", group: "tmpl" }
+  - { id: "tmpl-deriv-02", latex: "\\frac{\\partial\\sin\\left(t\\right)}{\\partial t}", expect: "cos(t)", source: "derived", group: "tmpl" }
+  - { id: "tmpl-deriv-03", latex: "\\frac{\\partial x_1^2}{\\partial x_1}", expect: "2*x_1", source: "derived", group: "tmpl" }
+  - { id: "tmpl-deriv-04", latex: "\\frac{\\partial}{\\partial x}", error: true, source: "derived", group: "tmpl", note: "an empty numerator is an error, not 0" }
+  - { id: "tmpl-cases-01", latex: "\\begin{cases}x & \\text{if }x=0\\\\ 1 & \\text{if }x=1\\end{cases}", expect: "piecewise(x==0,x,x==1,1)", source: "derived", group: "tmpl" }
+  - { id: "tmpl-cases-02", latex: "\\begin{cases}5 & \\text{if }2=2\\\\ 7 & \\text{if }2=3\\end{cases}", expect: "5", source: "derived", group: "tmpl" }
+  - { id: "tmpl-cases-03", latex: "\\begin{cases}5 & \\text{if }2=3\\\\ 7 & \\text{if }3=3\\end{cases}", expect: "7", source: "derived", group: "tmpl" }
+  - { id: "tmpl-matrix-01", latex: "\\begin{pmatrix}1 & 2\\\\ 3 & 4\\end{pmatrix}", expect: "[[1,2],[3,4]]", source: "derived", group: "tmpl" }
+  - { id: "tmpl-matrix-02", latex: "\\begin{pmatrix}1 & 2\\end{pmatrix}", expect: "[[1,2]]", source: "derived", group: "tmpl" }
+  - { id: "tmpl-matrix-03", latex: "\\begin{pmatrix}1\\\\ 2\\end{pmatrix}", expect: "[[1],[2]]", source: "derived", group: "tmpl" }
+  - { id: "tmpl-limit-01", latex: "\\lim_{x\\to0}\\left(\\frac{\\sin\\left(x\\right)}{x}\\right)", expect: "1", source: "derived", group: "tmpl" }
+  - { id: "tmpl-limit-02", latex: "\\lim_{x\\to2}\\left(x+1\\right)", expect: "3", source: "derived", group: "tmpl", note: "the body box holds all of x+1" }
+  - { id: "tmpl-int-01", latex: "\\int_{-1}^{10}x^2\\,\\mathrm{d}x", expect: "1001/3", source: "derived", group: "tmpl" }
+  - { id: "tmpl-int-02", latex: "\\int_0^1x\\,\\mathrm{d}x", expect: "1/2", source: "derived", group: "tmpl" }
+  - { id: "tmpl-mixed-01", latex: "2\\tfrac{11}{13}", expect: "37/13", source: "derived", group: "tmpl" }
+  - { id: "tmpl-mixed-02", latex: "2\\tfrac13\\times3", expect: "7", source: "derived", group: "tmpl" }
+  - { id: "tmpl-mixed-03", latex: "x\\tfrac13", error: true, source: "derived", group: "tmpl", note: "not a whole number before the fraction: refused, not x/3" }
+  - { id: "tmpl-mixed-04", latex: "2.5\\tfrac13", error: true, source: "derived", group: "tmpl" }
+  - { id: "tmpl-sum-01", latex: "\\sum_{k=1}^{10}\\left(k^2\\right)", expect: "385", source: "derived", group: "tmpl" }
+  - { id: "tmpl-sum-02", latex: "\\sum_{k=1}^{3}\\left(k+1\\right)", expect: "9", source: "derived", group: "tmpl" }
+  - { id: "tmpl-prod-01", latex: "\\prod_{k=1}^{10}\\left(k\\right)", expect: "3628800", source: "derived", group: "tmpl" }
+  - { id: "tmpl-log-01", latex: "\\log_{16}\\left(256\\right)", expect: "2", source: "derived", group: "tmpl" }
+  - { id: "tmpl-log-02", latex: "\\log_2\\left(8\\right)", expect: "3", source: "derived", group: "tmpl" }
+  - { id: "tmpl-dms-01", latex: "30\\degree15\\prime36\\doubleprime", expect: "1513*pi/9000", source: "derived", group: "tmpl", note: "30.26 degrees, in radians (the gate runs in RAD)" }
+  - { id: "tmpl-dms-02", latex: "-30\\degree30\\prime0\\doubleprime", expect: "-61*pi/360", source: "derived", group: "tmpl" }
+  - { id: "tmpl-dms-03", latex: "\\sin\\left(30\\degree0\\prime0\\doubleprime\\right)", expect: "1/2", source: "derived", group: "tmpl" }
+  - { id: "tmpl-dms-04", latex: "45\\degree", expect: "pi/4", source: "derived", group: "tmpl" }
+  - { id: "tmpl-dms-05", latex: "15\\prime", error: true, source: "derived", group: "tmpl", note: "minutes only after degrees" }

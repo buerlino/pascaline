@@ -69,7 +69,7 @@ function tokenize(src: string, decimalComma = false): Tok[] {
           d = src.slice(i - 1, k);
           i = k;
         }
-        if (d === ".") continue;
+        // \left. … \right| is the evaluate-at bar (Tmpl, R10); a lone \left. or \right. still has to pair up
         out.push({ t: name === "left" ? "open" : "close", v: d });
       } else if (name in OPEN_CMD) out.push({ t: "open", v: OPEN_CMD[name] as string });
       else if (name in CLOSE_CMD) out.push({ t: "close", v: CLOSE_CMD[name] as string });
@@ -338,7 +338,7 @@ class Parser {
         this.pos++;
         if (this.isCmd("circ") || (this.isCh("{") && this.isCmd("circ", 1) && this.isCh("}", 2))) {
           this.pos += this.isCmd("circ") ? 1 : 3;
-          base = ["Degrees", base];
+          base = this.dms(base);
         } else {
           base = ["Power", base, this.script()];
           if (this.isCh("^")) this.fail("ambiguous double superscript, use braces");
@@ -350,6 +350,9 @@ class Parser {
           this.pos++;
           base = ["Power", base, ["Negate", this.postfix()]];
         } else base = ["Power", base, this.postfix()];
+      } else if (this.isCmd("degree")) {
+        this.pos++;
+        base = this.dms(base);
       } else if (this.isCh("!")) {
         this.pos++;
         base = ["Factorial", base];
@@ -358,6 +361,38 @@ class Parser {
         base = ["Divide", base, { num: "100" }];
       } else return base;
     }
+  }
+
+  /**
+   * After a degree sign: the minutes and seconds of the DMS template (Tmpl, R10), `30\degree15\prime36\doubleprime`
+   * = 30 + 15/60 + 36/3600 degrees. A prime anywhere else is not ours and stays an error.
+   */
+  private dms(deg: Json): Json {
+    const parts: Json[] = [deg];
+    for (const [mark, per] of [["prime", "60"], ["doubleprime", "3600"]] as const) {
+      const t = this.peek();
+      if (t?.t === "num" && this.isCmd(mark, 1)) {
+        this.pos += 2;
+        parts.push(["Divide", { num: t.v }, { num: per }]);
+      }
+    }
+    return ["Degrees", parts.length === 1 ? deg : ["Add", ...parts]];
+  }
+
+  /** `\left. e \right|_{x=a}`: e evaluated at x = a (the evaluate-at template, R10). The `\left.` is consumed. */
+  private evaluateAt(): Json {
+    const e = this.relation();
+    const t = this.peek();
+    if (t?.t === "close" && t.v === ".") {
+      this.pos++;
+      return ["Delimiter", e];
+    }
+    if (t?.t !== "close" || t.v !== "|" || !this.isCh("_", 1)) this.fail("expected the evaluate-at bar |");
+    this.pos += 2;
+    const at = this.arg();
+    if (!Array.isArray(at) || at[0] !== "Equal" || typeof at[1] !== "string")
+      throw new SerializeError("evaluate at: write variable = value under the bar");
+    return ["Subst", e, at[1], at[2] as Json];
   }
 
   // ---- arguments ----
@@ -415,7 +450,7 @@ class Parser {
         this.basePrefix(tok);
         this.pos++;
         const num = { num: tok.v.replace(/^0+(?=\d)/, "") };
-        // L2: a whole number directly before \tfrac is a mixed number (the a/b key pressed twice): 2\tfrac12 = 2+1/2
+        // a whole number directly before \tfrac is a mixed number (the Tmpl mixed-number template, R10): 2\tfrac12 = 2+1/2
         if (/^\d+$/.test(tok.v) && this.isCmd("tfrac")) {
           this.pos++;
           const a = this.arg();
@@ -430,6 +465,7 @@ class Parser {
           const items = this.list(")");
           return items.length === 1 ? ["Delimiter", items[0] as Json] : ["Tuple", ...items];
         }
+        if (tok.v === ".") return this.evaluateAt();
         if (tok.v === "|") {
           const e = this.relation();
           this.expectClose("|");
@@ -548,10 +584,13 @@ class Parser {
         this.skipGroup();
         return this.chip(constKey(id), `constant ${id}`);
       }
+      case "tfrac":
+        // the mixed-number template (Tmpl, R10) makes \tfrac only after a whole number (read in atom); anything else
+        // before it would silently multiply (x\tfrac12 = x/2), so it is refused
+        throw new SerializeError("a mixed number needs a whole number before its fraction");
       case "frac":
-      case "dfrac":
-      case "tfrac": {
-        const d = this.tryDerivative();
+      case "dfrac": {
+        const d = this.tryPartial() ?? this.tryDerivative();
         if (d) return d;
         this.pos++;
         const a = this.arg();
@@ -648,6 +687,27 @@ class Parser {
     if (base !== undefined) args.push(base);
     const call: Json = [callHead, ...args];
     return power === undefined ? call : ["Power", call, power];
+  }
+
+  /**
+   * The derivative template (Tmpl, R10): `\frac{\partial e}{\partial x}` = de/dx. Undefined (nothing consumed) when
+   * the numerator does not start with \partial; a \partial fraction of any other shape is an error, never a guess.
+   */
+  private tryPartial(): Json | undefined {
+    if (!this.isCh("{", 1) || !this.isCmd("partial", 2)) return undefined;
+    this.pos += 3;
+    if (this.isCh("}")) throw new SerializeError("derivative: the expression goes after ∂ in the numerator");
+    const body = this.relation();
+    this.expectCh("}");
+    this.expectCh("{");
+    if (!this.isCmd("partial")) this.fail("derivative: expected ∂ before the variable");
+    this.pos++;
+    const v = this.peek();
+    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("derivative: expected a variable after ∂");
+    const name = this.symbol((v as Tok).v);
+    if (typeof name !== "string") this.fail("derivative: expected a variable after ∂");
+    this.expectCh("}");
+    return ["D", body, name];
   }
 
   /** \frac{d}{dx} f, \frac{d^2}{dx^2} f, with d or \mathrm{d}. Returns undefined (position restored) if not a derivative. */
@@ -784,10 +844,15 @@ class Parser {
   private matrix(): Json {
     this.pos++;
     const env = this.groupText();
-    if (!["pmatrix", "bmatrix", "matrix"].includes(env)) throw new SerializeError(`unsupported environment ${env}`);
+    if (!["pmatrix", "bmatrix", "matrix", "cases"].includes(env)) throw new SerializeError(`unsupported environment ${env}`);
     const rows: Json[] = [];
     let row: Json[] = [];
     for (;;) {
+      // the piecewise template (Tmpl, R10) writes "if" before each condition
+      if (env === "cases" && row.length === 1 && this.isCmd("text")) {
+        this.pos++;
+        if (this.groupText().trim() !== "if") this.fail("piecewise: expected 'if'");
+      }
       row.push(this.relation());
       if (this.isCh("&")) {
         this.pos++;
@@ -801,6 +866,12 @@ class Parser {
     if (!this.isCmd("end")) this.fail("expected \\end");
     this.pos++;
     if (this.groupText() !== env) throw new SerializeError("mismatched \\end");
+    if (env === "cases") {
+      // value & if condition, one row each: piecewise(condition, value, …)
+      const pairs = rows.map((r) => (r as Json[]).slice(1));
+      if (pairs.some((p) => p.length !== 2)) throw new SerializeError("piecewise: each line needs a value and a condition");
+      return ["Piecewise", ...pairs.map((p) => ["Pair", p[0] as Json, p[1] as Json] as Json)];
+    }
     return ["Matrix", ["List", ...rows]];
   }
 }

@@ -4,6 +4,7 @@
   // over the keypad. The keys drive it through App.svelte and sheetKeys.ts; touch is a shortcut: a tap on a row picks
   // it, ‹ goes back a level, × or a tap beside the sheet closes it.
   import { t } from "../i18n/index.ts";
+  import MathView from "../render/Math.svelte";
   import type { Sheet } from "./sheet.svelte.ts";
 
   let {
@@ -67,6 +68,24 @@
       {#if cutTop || cutBottom}<span class="count" data-testid="sheet-count">{t("sheet.count", { n: String(rows.length) })}</span>{/if}
       <button type="button" class="icon" aria-label={t("apps.close")} onclick={onclose}>×</button>
     </div>
+    {#if level.columns !== undefined}
+      <!-- a grid (the Tmpl palette, R10): each cell drawn as math, no numbers -->
+      <div class="grid" style:grid-template-columns="repeat({level.columns}, 1fr)" bind:this={list}>
+        {#each rows as row (row.index)}
+          <button
+            type="button"
+            role="menuitem"
+            class="cell"
+            aria-label={row.item.label}
+            disabled={row.item.disabled}
+            data-active={row.index === level.highlight}
+            data-id={row.item.id}
+            onclick={() => ontap(row.index)}
+          ><MathView latex={row.item.latex ?? row.item.label} label={row.item.label} /></button>
+        {/each}
+      </div>
+      <p class="hint" data-testid="sheet-hint">{level.current?.label ?? ""}</p>
+    {:else}
     <div class="list" class:cut-top={cutTop} class:cut-bottom={cutBottom} bind:this={list} onscroll={measure}>
       {#each rows as row (row.index)}
         <button
@@ -82,6 +101,7 @@
       {/each}
       {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
     </div>
+    {/if}
   </div>
   <!-- shrinks first (flex-shrink weighs by size: 1000 × its height against the sheet's 1 × its own) -->
   <div class="room" style:flex-basis="{below}px"></div>
@@ -232,6 +252,40 @@
   .more {
     color: var(--muted);
     font-size: 20px;
+  }
+  .grid {
+    display: grid;
+    gap: 4px;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .cell {
+    all: unset;
+    box-sizing: border-box;
+    height: 58px;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .cell[data-active="true"] {
+    background: var(--key-num);
+    border-color: var(--shift);
+    box-shadow: inset 0 -3px 0 var(--shift);
+  }
+  .hint {
+    margin: 6px 8px 0;
+    min-height: 1.3em;
+    color: var(--muted);
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .empty {
     margin: 8px 12px;

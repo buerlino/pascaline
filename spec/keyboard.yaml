@@ -19,7 +19,7 @@
 #                                  Any action may carry `line: <action>`, used instead of it when the
 #                                  one-line entry mode is on (a linear form of the same key).
 #   { cmd: "moveToNextChar" }      a MathLive editing command
-#   { special: shift|alpha|enter|clear|cancel|esc|app|cas|settings|mode|apps|symb|plot|num|menu|none }   handled by the app
+#   { special: shift|alpha|enter|clear|cancel|esc|app|cas|settings|mode|apps|symb|plot|num|menu|tmpl|none }   handled by the app
 # Missing layer: the key does nothing in that layer, except that alpha falls back to primary.
 # Empty line (docs/04 2.8, app/src/entry/ans.ts): in Home and CAS, + − × ÷ xʸ x² and x⁻¹ on an empty entry line
 # insert Ans (the \ans chip) first, as on the reference; (−) stays negation. Only when the view has a result.
@@ -79,25 +79,29 @@ keys:
       primary: { special: cas }, shift: { special: mode }, source: virtual-calc }  # r3c5 (CAS; shift CAS = the G2's CAS settings place, ours is the Mode sheet: angle, format, digits, decimals, entry; docs/05 3.4)
 
   # ---- row 3 (r4). Planned (P8, docs/04 section 5.1): Vars = Find on variables, Math = Find, shift Math = Memory,
-  # Tmpl = templates, shift Tmpl = the Units app. Not built yet, so `special: none`; the Alpha letters stay.
+  # shift Tmpl = the unit view. Not built yet, so `special: none`; the Alpha letters stay. Tmpl opens the template
+  # palette (R10, `templates:` below).
   - { id: vars, row: 3, col: 0, cls: fn, label: { primary: "$key.vars", alpha: A }, primary: { special: none }, alpha: { type: A }, source: virtual-calc }  # r4c1 (menu not ours yet)
   - { id: math, row: 3, col: 1, cls: fn, label: { primary: "$key.math", alpha: B }, primary: { special: none }, alpha: { type: B }, source: virtual-calc }  # r4c2 (menu not ours yet)
-  - { id: tmpl, row: 3, col: 2, cls: fn, label: { primary: "$key.tmpl", alpha: C }, primary: { special: none }, alpha: { type: C }, source: virtual-calc }  # r4c3 (palette not ours yet)
+  - { id: tmpl, row: 3, col: 2, cls: fn, label: { primary: "$key.tmpl", alpha: C }, primary: { special: tmpl }, alpha: { type: C }, source: virtual-calc }  # r4c3 (the palette: seen on a G2, 2026-10-13)
   # The variable key types x (the reference types the current app's variable, X in its Function app); shift y is
   # ours (the reference's shift is a Define dialog).
   - { id: x, row: 3, col: 3, cls: fn, label: { primary: x, shift: y, alpha: D }, primary: { type: x }, shift: { type: y }, alpha: { type: D }, source: virtual-calc }  # r4c4; shift y assumed
-  # a b/c: as built in L2 (docs/decisions.md "Mixed numbers", assumed); the stock reference behaviour is G2 item 29.
+  # a b/c (R10, P11): on an empty Home or CAS line it switches the last result between its forms (decimal ↔ fraction,
+  # as on the owner's G2, 2026-10-13, G2 item 29; a+bi ↔ polar is ours; Settings > a b/c cycle, app/src/state/
+  # displayMode.ts). While typing it inserts the stacked fraction (ours: the G2 does nothing there). The mixed number
+  # is in the Tmpl palette.
   - id: frac
     row: 3
     col: 4
     cls: fn
-    label: { primary: "a/b", alpha: E }
+    label: { primary: "a b/c", alpha: E }
     primary:
       insert: "\\frac{#@}{#?}"
       sample: ["\\frac{1}{3}", "1/3"]
       line: { insert: "\\div", sample: ["1\\div3", "1/3"] }
     alpha: { type: E }
-    source: assumed  # position r4c5 (virtual-calc); function ours (L2); shift (degrees-minutes-seconds) not ours
+    source: device  # position r4c5 (virtual-calc); the empty-line cycle seen on a G2; the insert while typing is ours; shift (degrees-minutes-seconds) not ours
   - { id: bksp, row: 3, col: 5, cls: ctl, label: { primary: "⌫", shift: "$key.del" },
       primary: { cmd: deleteBackward }, shift: { cmd: deleteForward }, source: virtual-calc }  # r4c6; shift Del (forward) is assumed, not checked on the reference
 
@@ -330,35 +334,109 @@ unit_slot:
   find: math
   source: assumed
 
-# ---- Template palette (the Tmpl key, r4c3; planned: docs/04 section 5.1, EN5 in docs/backlog.md). Layout record only:
-# keyboard.ts does not read this section yet, so nothing here is shown or tested. A 6 x 3 grid in the order the
-# reference shows it (seen on a G2, 2026-10-13: its Function app, Tmpl menu open, the first cell selected), listed
-# row by row. `desc` is our own wording. `status: built` = the template exists on a key (`key`/`layer` say where);
-# `status: planned` = not built. When EN5 builds a planned one it gets `insert` + `sample` (see the top of this
-# file) and a parser rule + round-trip case in the same commit; `parser` names what parse.ts already handles.
-# Uncertain readings of the photo are marked `check: true` (to confirm on the device or Virtual Calculator).
+# ---- Template palette (the Tmpl key, r4c3; R10). A 6 x 3 grid in the order the reference shows it (seen on a G2,
+# 2026-10-13: its Function app, Tmpl menu open, the first cell selected), listed row by row. keyboard.ts reads this
+# section (`palette`); Tmpl opens it on the sheet (app/src/views/sheet.svelte.ts, grid variant): ▲ ▼ ◀ ▶ move in two
+# dimensions, Enter or a tap inserts, the last pick is remembered (Tmpl, Enter repeats it), Esc and Cancel close.
+# `desc` is our own wording, shown through i18n (`tmpl.<id>`). An item is either the template of a key (`key` and
+# `layer`: the same action, its one-line form included) or its own `insert` + `sample` (as for keys, see the top of
+# this file). Every `insert` has its parser rule (app/src/input/parse.ts), its round trip (the keyboard test runs
+# every sample) and a case in tests/golden/parser.yaml. `check: true` = our reading of the photo, to confirm on the
+# device (G2 checklist). In a template, ▶ goes to the next empty box (EntryController), as the arrows walk the boxes
+# on the reference.
+# Our forms: the boxes of lim, Σ and Π are bracketed, so a body like x+1 stays in its box; evaluate-at brackets the
+# expression with a sized bar; the piecewise lines read "value if condition"; DMS uses °, ′ and ″ on the line (not
+# raised, so typing after the seconds stays on the line), and means degrees in every angle mode.
 templates:
   columns: 6
   items:
     # row 1
-    - { id: frac,    row: 0, col: 0, desc: "fraction",                          status: built,   key: frac, layer: primary }
-    - { id: power,   row: 0, col: 1, desc: "power □^□",                         status: built,   key: pow,  layer: primary }
-    - { id: evalat,  row: 0, col: 2, desc: "evaluate at: expression | variable = value", status: planned, check: true }
-    - { id: deriv,   row: 0, col: 3, desc: "derivative ∂□/∂□",                  status: planned }
-    - { id: cases,   row: 0, col: 4, desc: "piecewise, two lines □ if □",       status: planned }
-    - { id: matrix22, row: 0, col: 5, desc: "2×2 matrix",                       status: planned, parser: "pmatrix, bmatrix" }
+    - { id: frac,     row: 0, col: 0, desc: "fraction", key: frac, layer: primary }
+    - { id: power,    row: 0, col: 1, desc: "power □^□", key: pow, layer: primary }
+    - id: evalat
+      row: 0
+      col: 2
+      desc: "evaluate at: expression | variable = value"
+      insert: "\\left.#0\\right|_{#?=#?}"
+      sample: ["\\left.x^2\\right|_{x=3}", "subst(x^2,x=3)"]
+      check: true
+    - id: deriv
+      row: 0
+      col: 3
+      desc: "derivative ∂□/∂□"
+      insert: "\\frac{\\partial#?}{\\partial#?}"
+      sample: ["\\frac{\\partial x^2}{\\partial x}", "diff(x^2,x)"]
+    - id: cases
+      row: 0
+      col: 4
+      desc: "piecewise, two lines □ if □"
+      insert: "\\begin{cases}#? & \\text{if }#?\\\\ #? & \\text{if }#?\\end{cases}"
+      sample: ["\\begin{cases}x & \\text{if }x=0\\\\ 1 & \\text{if }x=1\\end{cases}", "piecewise(x==0,x,x==1,1)"]
+    - id: matrix22
+      row: 0
+      col: 5
+      desc: "2×2 matrix"
+      insert: "\\begin{pmatrix}#? & #?\\\\ #? & #?\\end{pmatrix}"
+      sample: ["\\begin{pmatrix}1 & 2\\\\ 3 & 4\\end{pmatrix}", "[[1,2],[3,4]]"]
     # row 2
-    - { id: sqrt,    row: 1, col: 0, desc: "square root",                       status: built,   key: sq,   layer: shift }
-    - { id: nthroot, row: 1, col: 1, desc: "nth root",                          status: built,   key: pow,  layer: shift }
-    - { id: limit,   row: 1, col: 2, desc: "limit, lim □ as □ → □",             status: planned, parser: "lim" }
-    - { id: integral, row: 1, col: 3, desc: "definite integral, ∫ from □ to □ of □ ∂□", status: planned, parser: "int" }
-    - { id: rowvec,  row: 1, col: 4, desc: "row matrix/vector, 1×2",            status: planned, check: true, parser: "pmatrix, bmatrix" }
-    - { id: colvec,  row: 1, col: 5, desc: "column matrix/vector, 2×1",         status: planned, parser: "pmatrix, bmatrix" }
+    - { id: sqrt,     row: 1, col: 0, desc: "square root", key: sq, layer: shift }
+    - { id: nthroot,  row: 1, col: 1, desc: "nth root", key: pow, layer: shift }
+    - id: limit
+      row: 1
+      col: 2
+      desc: "limit, lim □ as □ → □"
+      insert: "\\lim_{#?\\to#?}\\left(#?\\right)"
+      sample: ["\\lim_{x\\to0}\\left(\\frac{\\sin\\left(x\\right)}{x}\\right)", "limit(sin(x)/x,x,0)"]
+    - id: integral
+      row: 1
+      col: 3
+      desc: "definite integral, ∫ from □ to □ of □ ∂□"
+      insert: "\\int_{#?}^{#?}#?\\,\\mathrm{d}#?"
+      sample: ["\\int_{-1}^{10}x^2\\,\\mathrm{d}x", "integrate(x^2,x,-1,10)"]
+    - id: rowvec
+      row: 1
+      col: 4
+      desc: "row matrix/vector, 1×2"
+      insert: "\\begin{pmatrix}#? & #?\\end{pmatrix}"
+      sample: ["\\begin{pmatrix}1 & 2\\end{pmatrix}", "[[1,2]]"]
+      check: true
+    - id: colvec
+      row: 1
+      col: 5
+      desc: "column matrix/vector, 2×1"
+      insert: "\\begin{pmatrix}#?\\\\ #?\\end{pmatrix}"
+      sample: ["\\begin{pmatrix}1\\\\ 2\\end{pmatrix}", "[[1],[2]]"]
     # row 3
-    - { id: abs,     row: 2, col: 0, desc: "absolute value |□|",                status: built,   key: neg,  layer: shift }
-    - { id: mixed,   row: 2, col: 1, desc: "mixed number □ + □/□",              status: built,   key: frac, layer: primary, check: true }  # ours: a/b pressed twice (L2)
-    - { id: sum,     row: 2, col: 2, desc: "sum Σ, □ = □ to □ of □",            status: planned, parser: "sum" }
-    - { id: product, row: 2, col: 3, desc: "product Π, □ = □ to □ of □",        status: planned, parser: "prod" }
-    - { id: logbase, row: 2, col: 4, desc: "logarithm with base, log_□ □",      status: planned }
-    - { id: dms,     row: 2, col: 5, desc: "degrees, minutes, seconds □°□'□\"", status: planned }
+    - { id: abs,      row: 2, col: 0, desc: "absolute value |□|", key: neg, layer: shift }
+    - id: mixed
+      row: 2
+      col: 1
+      desc: "mixed number □ + □/□"
+      insert: "#@\\tfrac{#?}{#?}"
+      sample: ["2\\tfrac{11}{13}", "2+11/13"]
+      check: true
+    - id: sum
+      row: 2
+      col: 2
+      desc: "sum Σ, □ = □ to □ of □"
+      insert: "\\sum_{#?=#?}^{#?}\\left(#?\\right)"
+      sample: ["\\sum_{k=1}^{10}\\left(k^2\\right)", "sum(k^2,k,1,10)"]
+    - id: product
+      row: 2
+      col: 3
+      desc: "product Π, □ = □ to □ of □"
+      insert: "\\prod_{#?=#?}^{#?}\\left(#?\\right)"
+      sample: ["\\prod_{k=1}^{10}\\left(k\\right)", "product(k,k,1,10)"]
+    - id: logbase
+      row: 2
+      col: 4
+      desc: "logarithm with base, log_□ □"
+      insert: "\\log_{#?}\\left(#?\\right)"
+      sample: ["\\log_{16}\\left(256\\right)", "ln(256)/ln(16)"]
+    - id: dms
+      row: 2
+      col: 5
+      desc: "degrees, minutes, seconds □°□′□″"
+      insert: "#?\\degree#?\\prime#?\\doubleprime"
+      sample: ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*(pi/180)^angle_radian()"]
   source: device

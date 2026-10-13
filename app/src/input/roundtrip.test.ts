@@ -68,6 +68,24 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
       });
     }
   });
+
+  // The degree sign and the DMS template mean degrees in every angle mode (bug found in R10: 30° was always
+  // 30·π/180, so sin(30°) in DEG mode was the sine of 0.52°). Expected values derived: sin(30°) = 1/2.
+  describe("degrees follow the angle mode", () => {
+    for (const [mode, flag] of [["rad", 1], ["deg", 0]] as const) {
+      it(`${mode}: sin(30°) = 1/2, 30°15′36″ = 30.26° and sin(30°0′0″) = 1/2`, () => {
+        giac(`angle_radian:=${flag}`);
+        try {
+          expect(giac(`simplify(${latexToGiac("\\sin\\left(30^{\\circ}\\right)")})`)).toBe("1/2");
+          expect(giac(`simplify(${latexToGiac("\\sin\\left(30\\degree0\\prime0\\doubleprime\\right)")})`)).toBe("1/2");
+          const dms = giac(`simplify(${latexToGiac("30\\degree15\\prime36\\doubleprime")})`);
+          expect(dms).toBe(mode === "deg" ? "1513/50" : "1513*pi/9000");
+        } finally {
+          giac("angle_radian:=1");
+        }
+      });
+    }
+  });
 });
 
 describe("round-trip engine", () => {

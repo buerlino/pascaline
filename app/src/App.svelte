@@ -11,13 +11,14 @@
   import { t, type MessageKey } from "./i18n/index.ts";
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
-  import { actionFor, keyboard, type ActionBody, type Key, type Layer } from "./keyboard/keyboard.ts";
+  import { actionFor, keyboard, type ActionBody, type Key, type Layer, type PaletteItem } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { HistoryItem, Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   import { modeItems, settingsItems } from "./views/modeSheet.ts";
   import Sheet from "./views/Sheet.svelte";
   import { sheetFlick, sheetKey } from "./views/sheetKeys.ts";
+  import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
 
   let { session, entry, shell }: { session: Session; entry: EntryController; shell: AppShell } = $props();
 
@@ -85,6 +86,17 @@
     else entry.clear();
   }
 
+  /** Tmpl: the template palette (R10), a grid on the sheet; a pick inserts its template as its key would. A view
+   *  without an entry line (Plot) has nothing to insert into. */
+  function openTemplates(): void {
+    if (!shell.showsEntry) return;
+    picked = null;
+    shell.toggleTemplates(() => paletteItems(keyboard.palette.items, insertTemplate), keyboard.palette.columns);
+  }
+  function insertTemplate(p: PaletteItem): void {
+    entry.run(paletteAction(p, session.settings.entry === "line"), p.key);
+  }
+
   /** Shift + Home/CAS: the Settings sheet (docs/05 3.4). It opens on its first row, whatever was picked last. */
   function openSettings(): void {
     picked = null;
@@ -149,6 +161,9 @@
       case "fmt":
         // Format key: Home and CAS show the last result in the next mode; the apps have no such result.
         if (shell.app === null) void session.cycleFormat();
+        break;
+      case "tmpl":
+        openTemplates();
         break;
       case "shift":
       case "alpha":
@@ -319,6 +334,11 @@
       if (dir && shell.nav(dir)) return;
       if (!shell.showsEntry) return; // a view without an entry line (Plot) ignores typing
       if (action.kind === "insert" && action.latex === ANS_CHIP) return; // Ans belongs to Home and CAS
+    } else if (entry.value === "" && key.id === "frac" && layerOf(mods) === "primary") {
+      // a b/c on an empty line (R10): the last result in its next form (decimal ↔ fraction, a+bi ↔ polar), as on the
+      // G2; while typing it is the stacked fraction below
+      void session.cycleForm();
+      return;
     } else if (entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.lastChip()) {
       entry.insertAns(); // docs/04 2.8: an operator on an empty line starts with Ans
     }

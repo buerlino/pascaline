@@ -177,7 +177,7 @@ export class AppShell {
     return this.sheet?.id === "apps";
   }
   get menuOpen(): boolean {
-    return this.sheet !== null && this.sheet.id !== "apps";
+    return this.sheet !== null && this.sheet.id !== "apps" && this.sheet.id !== "tmpl";
   }
   /** Apps key: the Apps sheet, or close it when it is open. */
   toggleApps(): void {
@@ -196,6 +196,11 @@ export class AppShell {
   /** Open a list of items over the view (a long press on a history row): same sheet and keys as the Menu key. */
   showMenu(title: string, items: readonly MenuItem[], opts?: { remember?: boolean; at?: string }): void {
     this.sheet = new Sheet(`list:${title}`, title, () => items, opts);
+  }
+  /** Tmpl key: the template palette (a grid sheet, R10), or close it when it is open. */
+  toggleTemplates(items: () => readonly MenuItem[], columns: number): void {
+    if (this.sheet?.id === "tmpl") this.sheet = null;
+    else this.sheet = new Sheet("tmpl", t("tmpl.title"), items, { columns });
   }
   closeSheet(): void {
     this.sheet = null;

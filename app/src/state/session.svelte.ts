@@ -18,13 +18,20 @@ import { homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
 import {
   DEFAULT_FMT_CYCLE,
+  DEFAULT_FORM_CYCLE,
+  FORM_MODES,
   factsOf,
   isFmtMode,
+  isFormStep,
   markFor,
+  nextForm,
   nextMode,
   normalizeCycle,
+  normalizeForms,
   renderNumeric,
   type FmtMode,
+  type FormMode,
+  type FormStep,
   type Polar,
   type Rational,
   type ResultFacts,
@@ -45,8 +52,10 @@ export const HAPTIC_MS_RANGE = { min: 5, max: 100 } as const;
 
 export interface Settings extends CalcSettings {
   entry: EntryMode;
-  /** Modes the Format key (fmt) cycles through, in canonical order. */
+  /** Notations the Format key (fmt) cycles through, in canonical order. */
   fmtCycle: FmtMode[];
+  /** Forms the a b/c key cycles through on an empty line (R10), in canonical order. */
+  formCycle: FormMode[];
   /** Decimals of the Fixed mode. */
   fixDecimals: number;
   haptics: HapticsSettings;
@@ -61,6 +70,7 @@ export const defaultSettings: Settings = {
   format: "std",
   entry: "textbook",
   fmtCycle: [...DEFAULT_FMT_CYCLE],
+  formCycle: [...DEFAULT_FORM_CYCLE],
   fixDecimals: 4,
   haptics: { on: false, strength: 50, ms: 15 },
 };
@@ -87,6 +97,8 @@ export interface HistoryItem {
   polar?: Polar;
   /** The mode the Format key chose for this result only; undefined: the global setting (Home) or the exact form (CAS). */
   fmt?: FmtMode;
+  /** The form the a b/c key chose for this result only (R10); drawn instead of `fmt` until the Format key is pressed. */
+  form?: FormStep;
   /** The values of the chips in `latex` (docs/04 3.6), so a recalled entry needs no engine or index. Ans is not kept. */
   chips?: ChipTable;
   /** The value a \res chip of this result carries (docs/04 2.8): the exact text, or every digit the engine gave. */
@@ -168,6 +180,9 @@ export function migrateSettings(saved: unknown): { settings: Settings; migrated:
   if (x["entry"] === "textbook" || x["entry"] === "line") s.entry = x["entry"];
   if (typeof x["digits"] === "number" && Number.isFinite(x["digits"])) s.digits = clampDigits(x["digits"]);
   if (Array.isArray(x["fmtCycle"])) s.fmtCycle = normalizeCycle(x["fmtCycle"].filter(isFmtMode));
+  // R10: fraction, mixed and polar moved from the Format key to a b/c; forms ticked there before come along
+  if (Array.isArray(x["formCycle"])) s.formCycle = normalizeForms(x["formCycle"]);
+  else if (Array.isArray(x["fmtCycle"])) s.formCycle = normalizeForms([...DEFAULT_FORM_CYCLE, ...x["fmtCycle"].filter((m) => (FORM_MODES as readonly unknown[]).includes(m))]);
   if (typeof x["fixDecimals"] === "number" && Number.isFinite(x["fixDecimals"])) s.fixDecimals = clamp(x["fixDecimals"], 0, 12);
   const h = x["haptics"];
   if (h && typeof h === "object") {
@@ -184,8 +199,10 @@ export function migrateSettings(saved: unknown): { settings: Settings; migrated:
 
 /** A stored history item with a fresh id; chip fields that do not have their shape are dropped. */
 function restoredItem(i: HistoryItem, id: number): HistoryItem {
-  const { chips, full, fullExact, facts, ...rest } = i;
-  const out: HistoryItem = { ...rest, id };
+  const { chips, full, fullExact, facts, ...rest } = i as HistoryItem & { form?: unknown };
+  const { form, ...base } = rest;
+  const out: HistoryItem = { ...base, id };
+  if (isFormStep(form)) out.form = form;
   const f = validFacts(facts);
   if (f) out.facts = f;
   const c = validChips(chips);
@@ -337,6 +354,14 @@ export class Session {
     if (on) ticked.add(mode);
     else ticked.delete(mode);
     this.settings.fmtCycle = normalizeCycle([...ticked]);
+    this.save();
+  }
+  /** Settings > a b/c cycle: tick or untick a form (never all off: then the default comes back). */
+  setFormMode(mode: FormMode, on: boolean): void {
+    const ticked = new Set(this.settings.formCycle);
+    if (on) ticked.add(mode);
+    else ticked.delete(mode);
+    this.settings.formCycle = normalizeForms([...ticked]);
     this.save();
   }
   setFixDecimals(n: number): void {
@@ -496,17 +521,24 @@ export class Session {
   /** What the history shows for a finished item: Home numbers follow the current digits and format, or the mode
    *  the Format key chose for that item; a CAS result changes only when the Format key has chosen a mode. */
   display(item: HistoryItem): { text: string; latex: string } {
-    if (item.status === "done" && (item.view === "home" || item.fmt !== undefined || item.facts !== undefined)) {
-      const r = renderNumeric(item, item.fmt, this.displayContext());
+    const shown = item.view === "home" || item.fmt !== undefined || item.form !== undefined || item.facts !== undefined;
+    if (item.status === "done" && shown) {
+      const r = renderNumeric(item, this.modeOf(item), this.displayContext());
       if (r) return r;
     }
     return { text: item.text, latex: item.resultLatex };
   }
 
+  /** The mode an item is drawn in: the a b/c form when one is chosen, else the Format key's notation. */
+  private modeOf(item: HistoryItem): FmtMode | undefined {
+    if (item.form === "dec") return item.fmt ?? this.settings.format;
+    return item.form ?? item.fmt;
+  }
+
   /** The mark before a finished result (docs/04 2.4), for the form it is drawn in; null: a non-number, or none known. */
   mark(item: HistoryItem): MarkInfo | null {
     if (item.status !== "done") return null;
-    return markFor(item, item.fmt, this.displayContext());
+    return markFor(item, this.modeOf(item), this.displayContext());
   }
 
   private displayContext(): { format: NumberFormat; digits: number; fixDecimals: number; angle: AngleUnit } {
@@ -521,12 +553,36 @@ export class Session {
   async cycleFormat(): Promise<boolean> {
     const item = this.items.at(-1);
     if (!item || item.status !== "done" || this.busy) return false;
+    if (item.form !== undefined) {
+      // a form chosen with a b/c: the Format key goes back to the number in its notation
+      delete item.form;
+      this.saveHistory();
+      return true;
+    }
     const exactBase = item.view === "cas";
     const next = nextMode(item.fmt ?? (exactBase ? undefined : this.settings.format), this.settings.fmtCycle, factsOf(item), exactBase);
     if (!next) return false;
     if (next.mode === "polar" && item.value && item.polar?.angle !== this.settings.angle && !(await this.computePolar(item, item.value)))
       return false;
     item.fmt = next.mode;
+    this.saveHistory();
+    return true;
+  }
+
+  /**
+   * The a b/c key on an empty line (R10): show the last result of the current view in its next form (decimal ↔
+   * fraction as on the G2; a+bi ↔ polar; mixed when ticked in Settings). Changes that result only. Resolves true
+   * when the display changed; false when no other form applies (a whole number, a symbolic result).
+   */
+  async cycleForm(): Promise<boolean> {
+    const item = this.items.at(-1);
+    if (!item || item.status !== "done" || this.busy) return false;
+    const next = nextForm(item.form, this.settings.formCycle, factsOf(item), item.view === "cas");
+    if (!next) return false;
+    if (next.form === "polar" && item.value && item.polar?.angle !== this.settings.angle && !(await this.computePolar(item, item.value)))
+      return false;
+    if (next.form === undefined) delete item.form;
+    else item.form = next.form;
     this.saveHistory();
     return true;
   }

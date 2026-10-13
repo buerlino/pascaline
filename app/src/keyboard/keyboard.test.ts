@@ -113,8 +113,45 @@ describe("keyboard spec", () => {
     expect(actionFor(div, false, false, false)).toMatchObject({ latex: "\\frac{#@}{#?}" });
   });
 
+  it("the Tmpl palette (R10): the reference's 6 × 3 grid, every cell a template, row by row", () => {
+    const p = keyboard.palette;
+    expect(p.columns).toBe(6);
+    expect(p.items.map((i) => i.id)).toEqual([
+      "frac", "power", "evalat", "deriv", "cases", "matrix22",
+      "sqrt", "nthroot", "limit", "integral", "rowvec", "colvec",
+      "abs", "mixed", "sum", "product", "logbase", "dms",
+    ]);
+    p.items.forEach((it, i) => expect([it.row, it.col], it.id).toEqual([Math.floor(i / 6), i % 6]));
+    for (const it of p.items) expect(it.action.kind, it.id).toBe("insert");
+    // the cells that are a key's template are that key's action, one-line form included
+    expect(p.items.find((i) => i.id === "frac")?.action).toBe(keyboard.byId.get("frac")?.actions.primary);
+    expect(p.items.find((i) => i.id === "abs")?.action).toBe(keyboard.byId.get("neg")?.actions.shift);
+    // our readings of the photo, listed for the owner to confirm on the G2
+    expect(p.items.filter((i) => i.check).map((i) => i.id)).toEqual(["evalat", "rowvec", "mixed"]);
+  });
+
+  it("Tmpl opens the palette; a b/c is the fraction while typing", () => {
+    expect(keyboard.byId.get("tmpl")?.actions.primary).toEqual({ kind: "special", name: "tmpl" });
+    expect(keyboard.byId.get("frac")?.label.primary).toBe("a b/c");
+  });
+
+  it("rejects broken palettes", () => {
+    const key = { id: "a", row: 0, col: 0, cls: "num", label: { primary: "1" }, primary: { insert: "#@^{2}", sample: ["3^{2}", "9"] }, source: "assumed" };
+    const doc = (items: object[]) => ({ schema: 1, columns: 2, keys: [key], templates: { columns: 2, items } });
+    const own = { id: "t", row: 0, col: 0, insert: "\\sqrt{#?}", sample: ["\\sqrt{4}", "2"] };
+    expect(loadKeyboard(doc([own, { id: "k", row: 0, col: 1, key: "a", layer: "primary" }])).palette.items).toHaveLength(2);
+    expect(() => loadKeyboard(doc([own, own]))).toThrow(/duplicate/);
+    expect(() => loadKeyboard(doc([own, { ...own, id: "u" }]))).toThrow(/taken/);
+    expect(() => loadKeyboard(doc([{ ...own, col: 2 }]))).toThrow(/outside/);
+    expect(() => loadKeyboard(doc([{ id: "t", row: 0, col: 0, insert: "x" }]))).toThrow(/sample/);
+    expect(() => loadKeyboard(doc([{ id: "t", row: 0, col: 0, key: "a", layer: "shift" }]))).toThrow(/no template/);
+    expect(() => loadKeyboard(doc([{ id: "t", row: 0, col: 0, key: "nope", layer: "primary" }]))).toThrow(/no template/);
+    expect(() => loadKeyboard(doc([{ ...own, key: "a", layer: "primary" }]))).toThrow(/not both/);
+  });
+
   it("contains no trademarked names", () => {
-    expect(spec).not.toMatch(/\bHP\b|\bPrime\b/i);
+    // (the TeX command \prime, the minutes mark of the DMS template, is not a name)
+    expect(spec.replace(/\\(?:double)?prime\b/g, "")).not.toMatch(/\bHP\b|\bPrime\b/i);
   });
 
   it("rejects broken specs", () => {

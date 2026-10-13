@@ -24,18 +24,49 @@ describe("literal caret (L4)", () => {
   });
 });
 
-// L2: the a/b key pressed twice after a whole number gives a mixed number, 2\tfrac12 (assumed, G2 item 29, backlog G6).
-// A plain \frac after a number stays a product (docs/decisions.md "Mixed numbers").
-describe("mixed numbers (L2)", () => {
+// The mixed-number template of the Tmpl palette (R10; L2's a/b-twice is gone) writes a whole number, then \tfrac.
+// A plain \frac after a number stays a product (docs/decisions.md "Mixed numbers"). Expected text derived.
+describe("mixed numbers (Tmpl)", () => {
   const mixed: [string, string][] = [
     ["2\\tfrac12", "(2+1/2)"],
     ["12\\tfrac{3}{4}", "(12+3/4)"],
     ["2\\tfrac12\\times4", "(2+1/2)*4"],
     ["-2\\tfrac12", "-(2+1/2)"],
-    ["\\tfrac{1}{2}", "1/2"],
     ["2\\frac{1}{2}", "2*(1/2)"],
   ];
   for (const [latex, giac] of mixed) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
+  it("refuses \\tfrac after anything but a whole number (x\\tfrac12 would silently be x/2)", () => {
+    for (const latex of ["\\tfrac{1}{2}", "x\\tfrac12", "2.5\\tfrac12", "\\pi\\tfrac12"]) expect(() => latexToGiac(latex), latex).toThrow(/whole number/);
+  });
+});
+
+// The other Tmpl templates (R10): the Giac text they become. Values are checked by the round trip and parser.yaml.
+describe("Tmpl templates (R10)", () => {
+  const forms: [string, string][] = [
+    ["\\left.x^2\\right|_{x=3}", "subst(x^2,x=3)"],
+    ["\\left.x+1\\right.", "(x+1)"],
+    ["\\frac{\\partial x^2+3x}{\\partial x}", "diff(x^2+3*x,x)"],
+    ["\\begin{cases}x & \\text{if }x=0\\\\ 1 & \\text{if }x=1\\end{cases}", "piecewise(x==0,x,x==1,1)"],
+    ["\\begin{cases}x & x=0\\\\ 1 & x=1\\end{cases}", "piecewise(x==0,x,x==1,1)"],
+    ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*(pi/180)^angle_radian()"],
+    ["30\\degree36\\doubleprime", "(30+36/3600)*(pi/180)^angle_radian()"],
+    ["30^{\\circ}", "30*(pi/180)^angle_radian()"],
+  ];
+  for (const [latex, giac] of forms) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
+  it("refuses half-built forms instead of guessing", () => {
+    for (const latex of [
+      "\\left.x^2\\right|_{3}", // no variable under the bar
+      "\\left.x^2\\right|", // no subscript
+      "\\frac{\\partial}{\\partial x}", // nothing to differentiate
+      "\\frac{\\partial x^2}{x}", // no ∂ in the denominator
+      "\\frac{\\partial x^2}{\\partial 2}", // no variable
+      "\\begin{cases}1\\\\ 2 & x=1\\end{cases}", // a line without a condition
+      "\\begin{cases}1 & \\text{when }x=1\\end{cases}",
+      "15\\prime", // minutes without degrees
+      "x\\prime",
+    ])
+      expect(() => latexToGiac(latex), latex).toThrow();
+  });
 });
 
 // P4 keys: store (value ▶ name, shift of the exponent key) and polar entry r∡θ (shift ×). Expected text derived.
