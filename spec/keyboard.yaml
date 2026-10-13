@@ -273,6 +273,57 @@ keys:
   - { id: add, row: 9, col: 4, cls: op, label: { primary: "+", shift: "Ans", alpha: ";" }, primary: { type: "+" },
       shift: { insert: "\\ans", sample: ["\\ans", "7"] }, alpha: { type: ";" }, source: virtual-calc }  # r10c5 (shift Ans, docs/04 2.8: the view's last result, read at Enter; alpha ;)
 
+# ---- Unit slot (P11 "units after the formula", milestone 5; docs/research/r7-unit-slots.md). Layout record only:
+# keyboard.ts does not read this section yet; tools/probes/unit-presses.mjs reads it to count presses. The app bundles
+# this file whole, so the reasons live in these comments, not in strings.
+# The units key (Shift + Tmpl, or a flick up on Tmpl) on an entry line or a picked history row shows the same
+# formula with an empty unit slot after every number, and an optional end slot "→ should be" (empty = no check).
+# On an empty line it opens a single slot with the quantity 1, and the end slot (a unit check: `kg·m²/s³ → W`).
+# A quick conversion types the number first (`72`, units key, `km/h`).
+# Nothing on the keypad moves (docs/03 rule 8): inside a slot only the layers listed here change what they do. A
+# key not listed does nothing in a slot (sin, ln, Vars, the variable key, …).
+#   letters   the alpha letter of every key (A on Vars … Z on 2), at its fixed position; case is part of the symbol.
+#             Outside a slot a flick down types the capital and a flick up is the shift function (P11); inside, a
+#             flick down types the lower case and a flick up the capital. The G2 sequences keep working (docs/03
+#             rule 6): Alpha, key = capital; Shift, Alpha, key = lower case; the Alpha lock works as outside.
+#   symbols   fixed cells, a tap types the symbol (these keys' taps mean nothing in a unit):
+#             µ on (−): µ is the Greek m, and the key carries M. Inside an exponent (−) stays minus.
+#             Ω on the comma: Ω is the Greek O, and the key carries O.
+#             ° on a b/c: the reference's shift a b/c enters degrees, minutes, seconds. ° alone is the angle
+#             degree; °C and °F take the letter after it.
+#   ops       keys that keep their meaning, read as unit algebra. × = product, needed between units (`ms` is the
+#             millisecond; m·s needs ×, as the SI Brochure 5.2 asks). ÷ = per: the rest of the slot is the
+#             denominator (J/(kg·K) = J ÷ k g × K); on an empty slot it means 1/…. x² and xʸ: the power of the unit
+#             before. Shift ÷ (x⁻¹): its inverse. Shift x² (√): a root (nV/√Hz).
+#   exponent_leave: auto  an exponent holds digits, (−) and . only; any other key leaves it first (no ▶ needed).
+#   digits    only in an exponent (a number belongs in the formula, before the slot).
+#   nav       ◀ the previous slot, ▶ the next one and after the last the end slot (never through the formula; a
+#             tap on the formula still puts the cursor there). Enter evaluates from any slot. Esc leaves the unit
+#             view and keeps the slots with the line. Math opens Find on units, for what letters cannot type
+#             (Å, ′, ″, %, mmH₂O).
+#   reading   (the units-mode parser, milestone 5; shown live under the slot) a factor is one symbol: an exact
+#             symbol from Find's unit list first (min, Pa, ft, cd, kWh), then prefix + symbol (km, µF). A prefixed
+#             unit outside Find's list (Mm, Ms, MA, mPa) is read but its reading is marked. Anything else is an
+#             error that names the factor and offers the near symbols (kw: kW?). A prefix alone (k, M, G) is an
+#             error, never a constant (qalc reads G as the gravitational constant).
+# `source: assumed`: ours (P11, 2026-10-13); the units key position is the reference's (G2 item 30).
+unit_slot:
+  letters: { flick_down: lower, flick_up: upper }
+  symbols:
+    - { key: neg, tap: "µ" }
+    - { key: comma, tap: "Ω" }
+    - { key: frac, tap: "°" }
+  ops:
+    - { text: "·", keys: [mul] }
+    - { text: "/", keys: [div] }
+    - { text: "²", keys: [sq] }
+    - { text: "^", keys: [pow] }
+    - { text: "⁻¹", keys: [shift, div] }
+    - { text: "√", keys: [shift, sq] }
+  exponent_leave: auto
+  find: math
+  source: assumed
+
 # ---- Template palette (the Tmpl key, r4c3; planned: docs/04 section 5.1, EN5 in docs/backlog.md). Layout record only:
 # keyboard.ts does not read this section yet, so nothing here is shown or tested. A 6 x 3 grid in the order the
 # reference shows it (seen on a G2, 2026-10-13: its Function app, Tmpl menu open, the first cell selected), listed

@@ -278,9 +278,9 @@ Budgets: index ≤ 100 kB gzip; key → list ≤ 16 ms p95 on the Tab One; Find 
 
 ---
 
-## 4. The Units app (EN2, P3 as amended by P8)
+## 4. Units: the unit view (EN2, P3 as amended by P8 and P11)
 
-**Superseded in part by P11 (2026-10-13):** there is no separate Units app. Units are added *after* the formula, in unit slots (decisions.md P11; layout and press count: package S1, `docs/research/r7-unit-slots.md`). The qalc worker, the adapter checks and the data audit below still hold; sections 4.3 and 4.4 (entry and gates) are rewritten before milestone 5.
+**Superseded in part by P11 (2026-10-13):** there is no separate Units app. Units are added *after* the formula, in unit slots (decisions.md P11; layout and press count: package S1, `docs/research/r7-unit-slots.md`). The qalc worker, the adapter checks and the data audit below still hold; sections 4.3 and 4.4 (entry and gates) were rewritten after package S1 (accepted by the owner 2026-10-13).
 
 ### 4.1 Today (the qalc spike build, probed 2026-10-12)
 I relinked the spike's libraries (`../pascaline-deps/qalc-spike/build/prefix`, libqalculate 5.13.1) with a throwaway probe glue that reports qalc's own approximation flags (Appendix A). Default evaluation options, so `APPROXIMATION_TRY_EXACT`, precision 12.
@@ -306,24 +306,48 @@ I relinked the spike's libraries (`../pascaline-deps/qalc-spike/build/prefix`, l
 Calls took 0.2–28 ms in Node (the first conversion 28 ms). So: **"try exact" gives exact SI conversions** (the P8 question is answered: `72 km/h → m/s` = 20 exactly, `1 in → mm` = 25.4 exactly); qalc reports approximation reliably for π, logarithms and uncertainties; and qalc silently accepts mismatched sums, offset-unit arithmetic and misread names.
 
 ### 4.2 Decision: the `UnitEngine` and its worker
-Worker 3, loaded when the Units app first opens (or a unit chip is first evaluated); never at start. Same pattern as Giac and Python: an async interface, a module worker, Cancel = terminate and respawn (qalc runs on the calling thread, no pthreads; nothing to replay, since each call is self-contained and the Units app keeps its own Ans app-side). Interface in 8.2. The glue (`engine/qalc/glue.cc`, from the spike) returns one JSON result per call: the number as an exact fraction when qalc's structure is not approximate, else a decimal at precision P = `max(40, digits+10)`; the unit part as canonical qalc names with exponents; the dimension (from `convertToBaseUnits`); the uncertainty; qalc's approximate flag.
+Worker 3, loaded on the first press of the units key; never at start. Same pattern as Giac and Python: an async interface, a module worker, Cancel = terminate and respawn (qalc runs on the calling thread, no pthreads; nothing to replay, since each call is self-contained and the Units app keeps its own Ans app-side). Interface in 8.2. The glue (`engine/qalc/glue.cc`, from the spike) returns one JSON result per call: the number as an exact fraction when qalc's structure is not approximate, else a decimal at precision P = `max(40, digits+10)`; the unit part as canonical qalc names with exponents; the dimension (from `convertToBaseUnits`); the uncertainty; qalc's approximate flag.
 **Memory with three workers alive (to verify, annabell, U5):** `dumpsys meminfo` PSS on the Tab One with Giac, Python and qalc loaded, then a 10-minute mixed session. Gate: no low-memory kill. If PSS is too high, the Python worker is terminated when the user leaves the Python app (restart 165 ms).
 
-### 4.3 Decision: entry, parsing, results
-- **Grammar:** `quantity [± number] [→ target]`, where a quantity is numbers, constants and units combined with × ÷ ^ and brackets, and a target is a unit product. Units, prefixes and constants come only as chips (`\unit{ID}`, `\pfx{p}`, `\const{ID}`); `\pm` and `\to` are accepted only in the Units app.
-- **Parser:** our P1 parser in a `units` mode emits qalc text from whitelisted names only (the generator's round-trip check, 3.3). **Alternative rejected:** qalc's own parser behind a whitelist of words: the probes show qalc's free parse turns plausible input (`mu0`, `degC`) into confident nonsense, and a whitelist of words cannot stop a misread combination.
-- **Unit suggestions:** after a number, typed letters query Find's index filtered to units and prefixes, usage first.
-- **Our adapter checks what qalc lets through:** a result that is not a single term (number × units) → "Units don't match: L vs T" (the two dimensions), never a number; an absolute temperature in arithmetic → "Use Δ°C or K for a temperature difference".
-- **Result model:** value (exact fraction or P-digit decimal) through **our** formatter at the digits setting, the mark by the 2.4 rules with qalc's approximate flag as the engine fact, uncertainty `±` rounded to 2 significant digits and the value to match, the unit drawn upright by MathLive, the dimension as `L·T⁻¹`, and one-tap alternatives (SI base unit, the two most used for the dimension).
-- **Temperature:** `°C` and `°F` are absolute and allowed only as `number °C → unit`; differences use `Δ°C` (= K) and `Δ°F` (= °R, Rankine; qalc's name **(to verify)**). Golden cases for both, including `20 °C → °F` = 68 (`derived`) and the rejected `20 °C × 2`.
-- **Logarithmic units:** conversions only (W ↔ dBm, Np ↔ dB; probed); arithmetic on dB values through EN7 functions in Home.
-- **Angles:** `rad` is a component of the dimension key (qalc keeps it), so `rad/s` and `Hz` keep separate targets.
-- **Currency: off.** The generator skips currencies, so no chip can name one; a test checks that no currency id is in the index. Whether the compiled-in definitions carry currency data at all **(to verify, gorge, U1)**; if they do and stripping saves bytes, strip them.
-- **Last target per dimension:** IndexedDB `units.targets`, `{dimKey: unitId}`; `dimKey` is the canonical base-unit exponent string (`kg1m1s-2`).
-- **The way back:** inserting or copying a Units result into Home gives a `\res` chip with the number in the unit shown (exact when exact); the chip's label says the unit was dropped. Each app has its own Ans; nothing crosses implicitly.
+### 4.3 Decision: the unit view (entry, parsing, results)
+- **Entry (P11, layout in `spec/keyboard.yaml` `unit_slot:`, press count in docs/research/r7-unit-slots.md):** the
+  units key (Shift + Tmpl, a flick up on Tmpl) on an entry line or a picked history row shows the same formula,
+  read-only, with an empty unit slot after every number and an optional end slot "→ should be". On an empty line
+  it opens one slot (quantity 1) and the end slot. ◀ ▶ jump between slots, never through the formula; a tap on
+  the formula still puts the cursor there. Numbers belong in the formula: digits in a slot are only exponents.
+  Built on MathLive's prompts: a read-only mathfield with `\placeholder[id]{}` per slot (`getPromptRange`,
+  `getPromptValue`, MathLive 0.111.1 `types/mathfield-element.d.ts:781-810`) **(to verify, ron, first step: a
+  stacked fraction inside a prompt, and our key handling routed to the prompt)**.
+- **Grammar per slot:** a product of factors with `×`, one `÷` (the rest is the denominator), powers, `x⁻¹`, `√`.
+  A factor is one symbol from Find's unit list: an exact symbol first, then prefix + symbol. The parser in
+  `units` mode emits qalc text from these whitelisted names only (the generator's round-trip check, 3.3).
+  **Alternative rejected:** qalc's own parser, which reads `BTU`, `lbm`, `var`, `Kg`, `pa`, `G` as other things
+  (docs/research/r7-unit-slots.md section 5.2).
+- **Live reading:** under the slot, in words; a prefixed unit outside Find's common list is marked; a factor that
+  is no symbol is an error naming it with the near symbols. A prefix alone is an error.
+- **Our adapter checks what qalc lets through:** the formula with its units must give a single term (number ×
+  units), else "Units don't match: L vs T" naming the term (P11); an absolute temperature in arithmetic → "Use K
+  or Δ°C for a temperature difference"; with an end slot, a dimension mismatch is an error naming both.
+- **Result:** value (exact fraction or P-digit decimal) through our formatter at the digits setting, the mark by
+  the 2.4 rules with qalc's approximate flag as the engine fact, the unit drawn upright, the dimension as `L·T⁻¹`.
+  With an end slot: in that unit. Without: in the units typed when they fit the result's dimension (so a torque
+  stays `N·m`, qalc would say `J`), else SI with an SI prefix (2.7); one tap gives the SI base form and the last
+  unit used for that dimension (IndexedDB `units.targets`, `{dimKey: unitId}`).
+- **Temperature:** `°C` and `°F` are absolute and allowed only alone (`20 °C → °F` = 68, `derived`); differences
+  are `K`, `°R`, or the Find items `Δ°C`, `Δ°F`. Golden cases for each, and the rejected `20 °C × 2`.
+- **Logarithmic units, angles, currency:** as before (conversions only for dB, dBm, Np; `rad` stays in the
+  dimension key; currencies off, with the index test).
+- **The way back:** the result inserted into Home is a `\res` chip with the number in the unit shown; the chip's
+  label says the unit was dropped. The line itself keeps its slots, so the units key shows them again.
 
 ### 4.4 Budgets and gates
-qalc chunk +0.93 MB brotli, lazy (spike; the release container build must match within 5 %); first result < 1 s on the Tab One (S8+ measured 626 ms); a Playwright test asserts that no `qalc.*` file is requested in a Home, CAS, Function, Solve and Python session; `units.yaml` in the golden gate (Units section); benchmark tasks 1–4 and 10; the owner's hand timing (rule 2).
+qalc chunk +0.93 MB brotli, lazy: loaded on the first press of the units key, never at start (a Playwright test
+asserts no `qalc.*` request in a session without it); first result < 1 s on the Tab One; `units.yaml` in the
+golden gate; **a unit in ≤ 4 presses at the median** (`tools/probes/unit-presses.mjs`, then the same list as an
+e2e replay); benchmark tasks 1–4 and 10 within budget (plans from S1: t02 12, t04 13); the owner's hand
+timing (rule 2).
+
+Open points for milestone 5 (each with a default): r7 section 7.
 
 ### 4.5 Risks, would change
 Risks: qalc data errors beyond `hp` (the one-off audit against CODATA and exact definitions); memory with three workers. Would change if the owner, after using the Units app, wants `5 km + 300 m` in Home (P8: the same worker behind a setting; the token design already supports it).
@@ -342,7 +366,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Vars (row 3, col 0) [r4c1] | nothing | Find, filtered to variables | P8 |
 | Shift + Vars | nothing | unassigned | reference: Chars palette; Find covers named symbols |
 | Tmpl (row 3, col 2) [r4c3] | nothing | template list (EN5, milestone 6); nothing before | P8 |
-| Shift + Tmpl | nothing | Units app | P8; reference: Units |
+| Shift + Tmpl | nothing | the unit view (unit slots) | P11; reference: Units |
 | Alpha on Vars, Math, Tmpl | A, B, C | unchanged | P4 |
 | View (row 1, col 4) [r2c4] | gap | compact keypad toggle (K4) | P7 point 5 |
 | Shift + View | gap | Copy (full value of the selected or last result) | reference: Copy |
@@ -356,7 +380,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + 8 [r7c3] | nothing | `{ }` list template (EN5) | reference |
 | Shift + 4 [r8c2] | nothing | matrix editor (EN5) | reference: Matrix |
 | Shift + 7 [r7c2] | nothing | list editor, deferred with Statistics | reference: List |
-| Units app layer | — | Shift + EEX (Sto ▶) = `→` convert; Shift + `(−)` = `±` | the reference converts with ▶ (`g2.yaml` item 30); `±` is ours (`assumed`) |
+| Unit slots | — | `spec/keyboard.yaml` `unit_slot:` (r7): flick down lower case, flick up capital, tap µ on (−), Ω on the comma, ° on a b/c; `→` is the end slot reached with ▶; `±` per r7 section 7, open point 3 | P11, S1 (owner, 2026-10-13) |
 | Arrow cells after K3 (6 cells) | trackpad | not assigned in advance: they get the shifted functions pressed most often in the task benchmark | measured, not guessed |
 | Prefix chips | — | a strip above the keypad, only after a number, only if task 3 shows a gain | P8 |
 
@@ -610,5 +634,5 @@ interface ClipboardPort {                                // new (m4): navigator.
 | Three workers' memory | annabell (m5) | `dumpsys meminfo`, 10-minute session | Python worker idle shutdown (4.2) |
 | qalc release build (container) size and time | annabell (m4) | `engine/qalc/build-wasm.sh release` | size budget, build time |
 | qalc compiled-in currency data | gorge (m4/U1) | grep the generated definitions; size with and without | strip or not (4.3) |
-| qalc name for Rankine (Δ°F) | gorge (U1) | probe | temperature tokens (4.3) |
+| qalc name for Rankine (Δ°F) | answered (S1) | `°R` reads as Rankine, 1 °R = 5/9 K (r7 section 8) | temperature tokens (4.3) |
 | Units first result on the Tab One | annabell (m5) | device run of the Units app | lazy-load bar (4.4) |
