@@ -54,7 +54,7 @@ describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () 
     const m = markOf(root, { format: "STD", digits: 12 });
     expect(m?.mark).toBe("⚠");
     expect(m?.n).toBeLessThan(12);
-    expect("0.333333333333".startsWith(root.display.slice(0, -1))).toBe(true); // derived: 1/3
+    expect(root.display).toBe("0.3333333"); // derived: 1/3; the plateau of f at W = 30 is 1e-8 wide, so 7 digits are confirmed
   });
 
   it("subscripted unknowns x_1, x_2 are found and solved (regression: IDENT rejected the underscore)", () => {
