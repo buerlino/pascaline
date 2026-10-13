@@ -1,10 +1,74 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Shift brief: milestone 4a "feel", then the rest of milestone 4 "Find and trust" (shifts `m4a` and `m4`, run by the owner)
 
-**Manual mode (user, 2026-10-12):** there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
+**Night shift 2026-10-14:** henri runs the queue in section 0c; for that shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
 `phase-1` after the merges of R17, S2, R13, R16 and R14 (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R14, R16, R17. **Next:** R18, then R15a and R15b. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+
+## 0c. Night shift 2026-10-14: henri's plan (owner, 2026-10-14)
+The owner planned this shift in advance. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. **Low usage comes first** (the week is at 75%): the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for tomorrow.
+
+### Rules for this shift (they replace rules sections 4, 10 and 11 and change section 8a)
+1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
+2. **A fresh agent for every step:** each package, each review, each fix round and each Opus pass is a new spawn. Never SendMessage to give an agent a second task. Prompts are the templates below with the blanks filled in, nothing more (the agents read the brief themselves).
+3. **Spawn in the background, then end your turn.** Do not poll, sleep, read diffs, run tests or builds, or read files beyond this brief and `.coord/log.md`. You wake when the agent finishes.
+4. **No APKs, no devices:** skip section 8a step 5a and its feedback.md line. Nobody runs `adb` or `build.sh`. annabell is not used tonight.
+5. **Models:** workers run Sonnet, effort medium. One exception: R18 runs Opus (signed in 0b), effort medium. Reviews run Sonnet, effort medium (section 8a says Opus; tonight Sonnet). Opus passes run Opus, effort medium.
+6. **henri decides nothing.** A question, a blocked worker, a conflict or anything this section does not settle: log it and hand it to the next Opus pass (run that pass at once if the question blocks the queue). **Follow every Opus-pass recommendation as written.** Plan changes go to the owner through `docs/decisions.md` "Needs the user", written by the Opus pass.
+7. **Start-up:** `date`; `git switch phase-1 && git status` (must be clean; if not, stop and log); `tools/devlock.sh status`. Append a section "2026-10-14 night" to `.coord/log.md`. No roll call, no device watcher.
+8. **Log:** one line per step in `.coord/log.md`: time, step, agent and model, outcome, commit. The log is the queue state: on a resume, read it and continue from the first step not done.
+9. **Usage limit:** if a spawn fails or you hit a limit, log the time and the queue position and end your turn. No retry loops. The owner resumes with `claude --agent henri "Resume the night shift from .coord/log.md."`
+10. **Worker gone without a report** (no report commit): spawn one fresh worker with the same prompt (it continues from the branch's last commit). If that one also fails, log it, leave the branch, and go on with the next package.
+
+### The queue
+Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" verdict adds a fix round (fresh worker, then a fresh review), at most two rounds; after the second "NOT MERGED" leave the branch unmerged, log it, go on. **Opus pass:** after every three finished packages (merged or left unmerged; fix packages from a pass count), and once at the end for any finished package no pass has covered yet.
+
+| Step | What | Agent, model | Branch | Est. |
+|---|---|---|---|---|
+| 1 | R18 Shift palettes (section 7) | ron, **Opus** | `p1/ron-m4a-shiftpal` | 2 h + review |
+| 2 | R15a top-cluster mockups (section 7; ends with the page; the owner picks in the morning) | ron, Sonnet | `p1/ron-m4a-top` | 30 min + review |
+| 3 | G5 solver bugs SB1–SB4 (section 7) | gorge, Sonnet | `p1/gorge-m4-sb` | 1 h + review |
+| 4 | **Opus pass 1** on steps 1–3, then its FIX packages | Opus | — | 20 min + fixes |
+| 5 | G6 the §2.3 audit (section 7) | gorge, Sonnet | `p1/gorge-m4-prec` | 1 h + review |
+| 6 | R19 M4-10 and the `mod` parser bug (section 7) | ron, Sonnet | `p1/ron-m4-fix` | 45 min + review |
+| 7 | R20 Solve and analysis copy (section 7) | ron, Sonnet | `p1/ron-m4-copy` | 45 min + review |
+| 8 | **Opus pass 2** on what came after pass 1, then its FIX packages | Opus | — | 20 min + fixes |
+| 9 | Shift report, then stop | henri | — | 10 min |
+
+Not tonight: R15b and everything after it in 0b (they wait for the owner's pick), R4 and A4 (after 4a), milestone 5.
+
+### Prompt templates (Agent tool; `run_in_background: true`; `effort: "medium"`)
+**Worker** (`subagent_type` = the agent in the table, `model` = its model):
+> Do package `<ID>` in docs/shifts/brief.md section 7, under the night-shift rules of section 0c. You already run in your own worktree: skip the `git worktree add` step of section 2 and run `git switch -c <branch> phase-1` there (or `git switch <branch>` if the branch exists, and continue from its last commit). End with the report commit of section 2, then reply in at most five lines: branch, last commit, done or not done.
+
+**Review** (`subagent_type: "general-purpose"`, `model: "sonnet"`):
+> Review and merge package `<ID>` (branch `<branch>`): follow section 8a of docs/shifts/brief.md with the night changes of section 0c (skip step 5a; for a docs-only package such as R15a, skip the test runs). Reply in at most ten lines: `MERGED <merge commit>`, or `NOT MERGED` with the findings (at most five, each with file:line and the fix), plus any item you put under "Needs the user".
+
+**Fix round** (same agent and model as the package):
+> Fix the review findings for package `<ID>` on branch `<branch>` (docs/shifts/brief.md section 0c rules; you already run in your own worktree: `git switch <branch>` there): `<the findings, verbatim>`. End with a report commit, then reply in at most five lines.
+
+**Opus pass** (`subagent_type: "general-purpose"`, `model: "opus"`):
+> Opus pass `<n>` of the night shift: follow "Opus pass" in docs/shifts/brief.md section 0c for packages `<IDs with their merge commits or unmerged branches>`. Open questions from the log: `<lines, or none>`.
+
+### Opus pass (instructions for the Opus agent)
+You are the shift's quality gate and its decision-maker; henri executes your reply literally. Work in the main checkout on `phase-1`; no code changes.
+1. For each package: its text in section 7, its report (`git log -1 <merge>^2`, or the branch tip if unmerged), its diff (`git diff <merge>^1 <merge>`), and the Sonnet review's verdict from `.coord/log.md`.
+2. Run once on `phase-1` (from `app/`, with absolute `GIAC_OUT`): typecheck, `npm run index` then `FIND_INDEX=required npm test`, e2e, and the golden gate when engine or parser code changed. Take `tools/devlock.sh acquire host-cpu opus 1800` around them.
+3. Check what a Sonnet review tends to miss: wrong or invented expected values (sources), a missing round trip, silent wrong numbers or marks (principle 3), scope, keys that moved, tests that pass for the wrong reason.
+4. Decide each "Needs a decision" item of these packages and each open question from the log: a default within the plan goes into `docs/decisions.md` (rules section 9); a plan change goes under "Needs the user" with your recommendation in one sentence. Commit those doc changes on `phase-1` with `git commit -s` and the Opus trailer.
+5. Reply in exactly this form (one FIX line per needed fix package; fix IDs are `<ID>f1`, `<ID>f2`):
+```
+OPUS PASS <n>
+VERDICT: <ID> ok | <ID> fix — <one line each>
+FIX <ID>f1: agent <ron|gorge>, model <sonnet|opus>, branch <new branch from phase-1>, prompt: <one paragraph with file:line and the fix>
+QUEUE: unchanged | <the remaining steps in a new order, or steps to drop>
+NOTES: <at most three lines for the shift report>
+```
+henri runs each FIX as a package (the Worker template with "Do package …" replaced by the FIX prompt and `<branch>` by the FIX branch, then a review), then continues with QUEUE.
+
+### Shift report (step 9, henri)
+`docs/shifts/2026-10-14-night-report.md`, short and plain, from the log and the agents' replies: what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (pick an R15a layout; items under "Needs the user"); the queue left for tomorrow. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
 Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
@@ -106,6 +170,27 @@ docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on 
 
 ### ron, R12a and R12b: visual pass, branch `p1/ron-m4a-look`
 **R12a:** read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a menu sheet, the Mode sheet, Settings, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change. **R12b** (started with the owner's notes): design tokens in one file (docs/05 3.10: colours per role, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component; history rows (3.5); **theme setting System / Light / Dark, Dark by default on Android, System in the PWA**; press feedback within one frame; `prefers-reduced-motion`. Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
+
+### Night packages (section 0c)
+
+### gorge, G5: solver bugs SB1–SB4, branch `p1/gorge-m4-sb`
+Backlog "Solve bugs". For each bug, in this order: the golden case (expected value from `oracle.py` or `derived`, never from memory), a commit where it fails, the fix, a commit where it passes. Files: `app/src/engine/` (`solve1.ts`, `numeric.ts`, `homeEval.ts`), `tests/golden/`. Keep every existing solve and precision case passing.
+- **SB1:** `s30-wilk7`'s equation at digits 12 gives "no root found"; the residual check at W = 30 rejects a good root. A root that substitutes back within the rounding bound of the expanded polynomial is accepted; a wrong root is still rejected or marked `⚠`.
+- **SB2:** `expand((x-1/3)^4)=0` finds no root. It must find a root near 1/3 (`derived`) with the mark the agreement check gives, never "no root found" and never `=`; a multiple root confirms fewer digits, and the mark must say so.
+- **SB3:** the bracket search returns 3.333, not the root nearest the guess 15.33. The equation is in G3's report (`git show 29231d7`, `git log --grep=G3`); if it is not there, put SB3 under "Needs a decision" and skip it. Fix: the nearest root to the guess, or the bracket nearest the guess first.
+- **SB4:** `[romberg(exp(-x^2),x,0,1),1/3]` marks 1/3 with ⚠13 (`floatFacts` gives every element the weakest mark). Each element carries its own mark; the list's mark is still the weakest. Check how Home draws per-element marks today; if it draws one mark per list, keep the list mark and put per-element display under "For shared files" as a ron follow-up.
+Gate: golden gate, `solve.test.ts`, vitest, e2e `solve.spec.ts`.
+
+### gorge, G6: the §2.3 audit, branch `p1/gorge-m4-prec`
+Milestone 4 gate: "no §2.3 item #1–#9 is left". For #1–#6, #8 and #9 (#7 is moot): find the regression case (`tests/golden/`), run it, and record fixed (case id, commit) or open. Fix what is open and belongs to milestone 4, each regression case first: #2 (`normald_icdf` and the other inverse functions marked `⚠` and not tier 0; the polish is m6), #5 (a ≤ 14-digit fallback with `⚠` instead of the input as text). Anything open that is not m4 goes in the report with its milestone. Report: the new "Fix" column text for docs/04 §2.3 under "For shared files". Gate: golden gate, oracle check (`oracle.py`), vitest.
+
+### ron, R19: M4-10 and the `mod` parser bug, branch `p1/ron-m4-fix`
+- **M4-10** (decided 2026-10-12, decisions.md): (1) the Function Plot readout lines (root, extremum, intersection, area) get `⚠` when the value behind the line is warned; (2) a Solve `⚠` is kept across a reload (stored with the app state). A regression test first for each.
+- **`\operatorname{mod}(a,b)`** (from G4, backlog milestone 4 step 7): the parser emits Giac `mod(a,b)`, which is an error. Emit the Giac form that gives what Find's `mod` entry says (read its insert and preview in the index); probe it with `node engine/giac/smoke.mjs`. Round-trip cases with a positive and a negative first argument, values `derived` from the definition Find states; if Find states no sign rule, record the negative case `assumed` with a G2-checklist question.
+Gate: parser round trips, golden gate (parser change), e2e for both M4-10 points, size test.
+
+### ron, R20: Solve and analysis copy, branch `p1/ron-m4-copy`
+Backlog milestone 4 step 9, open part; docs/04 §2.6 row "Solve root, analysis value": the default copy (Shift + View, long press) copies the full value, and the Menu has "as shown". Use A3's `ClipboardPort` (`app/src/clipboard/`) and its full-value formatter; no new copy path. Covers the Solve roots and the Function Plot readout values. List and matrix element copy are not in this package. Gate: e2e for each from keys and from touch (paste back gives the same value, P5), size test.
 
 ## 8. Definition of done
 - **Each branch:** typecheck 0; `npm run index` (with `QALC_OUT=<main checkout>/engine/qalc/_out/dev` in a worktree), then `FIND_INDEX=required npm test`, all pass (the Find query test fails rather than skips without the full index); e2e all pass (the known-flaky `solve.spec.ts` persistence test may be re-run once); SPDX headers; `git commit -s` with the trailer (`Claude Opus 5.5` or `Claude Sonnet 5.5`, whichever model ran); the report commit; start chunk size reported for UI packages.
