@@ -25,6 +25,22 @@ export const CHIP_MACROS: Record<"res" | "ans" | "const", ChipMacro> = {
   const: { def: `\\htmlStyle{${CHIP_STYLE}}{\\mathrm{#2}}`, args: 2, captureSelection: true, expand: false },
 };
 
+/**
+ * The exponent mark (R14, P12 point 4): `1.5\emark-3` is 1.5·10⁻³, drawn `1.5ᴇ-3` (U+1D07, the small-capital E the
+ * reference draws). A macro, not the bare character, for two reasons found by probing MathLive 0.111.1: as a bare
+ * ordinary character it made the minus after it a binary operator (drawn `1.5ᴇ − 3`, spaced like a subtraction),
+ * and `\mathopen{ᴇ}` alone is a group the cursor steps into. `\mathopen` gives the tight spacing (an opening atom
+ * makes the following minus a sign), `captureSelection` makes it one step for the cursor and ⌫.
+ */
+export const EMARK = "\\emark";
+const EMARK_MACRO: ChipMacro = { def: "\\mathopen{\u1D07}", args: 0, captureSelection: true, expand: false };
+
+/** Every macro of the entry line, for the field and for the static renderer. */
+export const ENTRY_MACROS: Record<"res" | "ans" | "const" | "emark", ChipMacro> = {
+  ...CHIP_MACROS,
+  emark: EMARK_MACRO,
+};
+
 /** A history result as a chip: `shown` is the result's display LaTeX. */
 export const resChip = (k: number, shown: string): string => `\\res{${k}}{${shown}}`;
 /** A constant as a chip: `symbol` is LaTeX (`c`, `k_{B}`, `\\mu_{0}`). */

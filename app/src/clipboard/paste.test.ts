@@ -8,22 +8,23 @@ import { complexText } from "./text.ts";
 const latex = (s: string, o = {}): string | undefined => parsePastedNumber(s, o)?.latex;
 
 describe("parsePastedNumber", () => {
-  it("reads a real number as the keyboard's own LaTeX", () => {
+  it("reads a real number as the keyboard's own LaTeX (the exponent as the mark ᴇ, R14)", () => {
     expect(latex("-1.5")).toBe("-1.5");
     expect(latex("  42 ")).toBe("42");
     expect(latex(".5")).toBe("0.5");
-    expect(latex("1.5e-3")).toBe("1.5\\times10^{-3}");
-    expect(latex("1.5E-3")).toBe("1.5\\times10^{-3}");
-    expect(latex("1.5E+22")).toBe("1.5\\times10^{22}");
-    expect(latex("1.5×10^-3")).toBe("1.5\\times10^{-3}");
-    expect(latex("6.02 x 10^(23)")).toBe("6.02\\times10^{23}");
+    expect(latex("1.5e-3")).toBe("1.5\\emark-3");
+    expect(latex("1.5E-3")).toBe("1.5\\emark-3");
+    expect(latex("1.5E+22")).toBe("1.5\\emark22");
+    expect(latex("1.5ᴇ-3")).toBe("1.5\\emark-3"); // the reference's own mark
+    expect(latex("1.5×10^-3")).toBe("1.5\\emark-3");
+    expect(latex("6.02 x 10^(23)")).toBe("6.02\\emark23");
     expect(latex("−1.5")).toBe("-1.5");
   });
   it("reads the decimal comma only when the setting is on", () => {
     expect(latex("1,5")).toBeUndefined();
     expect(latex("1,5", { decimalComma: true })).toBe("1,5");
     expect(latex("1.5", { decimalComma: true })).toBeUndefined();
-    expect(latex("1,5e-3", { decimalComma: true })).toBe("1,5\\times10^{-3}");
+    expect(latex("1,5e-3", { decimalComma: true })).toBe("1,5\\emark-3");
   });
   it("reads complex numbers a+b*i", () => {
     expect(latex("1+2*i")).toBe("1+2\\imaginaryI");
@@ -31,7 +32,7 @@ describe("parsePastedNumber", () => {
     expect(latex("1 + i")).toBe("1+\\imaginaryI");
     expect(latex("2i")).toBe("2\\imaginaryI");
     expect(latex("-i")).toBe("-\\imaginaryI");
-    expect(latex("1.25E-7-3.5E-8*i")).toBe("1.25\\times10^{-7}-3.5\\times10^{-8}\\imaginaryI");
+    expect(latex("1.25E-7-3.5E-8*i")).toBe("1.25\\emark-7-3.5\\emark-8\\imaginaryI");
   });
   it("refuses anything that is not one number", () => {
     for (const s of ["", "abc", "0xFF", "1e", "1 000", "1/3", "1\n2", "1..5", "1+", "1++2i", "--1", "sqrt(2)", "1.5 apples", "x".repeat(500)])
@@ -61,7 +62,8 @@ describe("copy → paste gives the value back (P5)", () => {
       // the pasted LaTeX parses, and the copy of what it means is the same text
       const giac = latexToGiac(pasted?.latex ?? "");
       expect(giac.length).toBeGreaterThan(0);
-      expect(giac.replace(/\^\((-?\d+)\)/g, "^$1"), copied).toBe(copied.replace(/E(-?\d+)/, "*10^$1"));
+      // (the exponent mark reads as a literal with an exponent: 1.25E-7 → 1.25e-7, R14)
+      expect(giac, copied).toBe(copied.replace(/E(-?\d+)/g, "e$1"));
     });
   }
 });

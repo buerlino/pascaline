@@ -65,7 +65,7 @@ test("Menu with a picked row copies that row, not the last result (R13, S2 I1)",
 test("Shift + Menu pastes a number as the keyboard's own LaTeX", async ({ page }) => {
   await setClipboard(page, "1.5E-3");
   await tap(page, ["shift", "menu"]);
-  await expect.poll(() => entryValue(page)).toBe("1.5\\times10^{-3}");
+  await expect.poll(() => entryValue(page)).toBe("1.5\\emark-3"); // drawn 1.5ᴇ-3, as the exponent key types it (R14)
   await tap(page, ["esc"]);
   await setClipboard(page, "1.5-2*i");
   await tap(page, ["shift", "menu"]);

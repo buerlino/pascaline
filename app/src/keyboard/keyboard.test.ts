@@ -50,7 +50,7 @@ describe("keyboard spec", () => {
     expect(at("sq", "shift")).toMatchObject({ latex: "\\sqrt{#0}" });
     expect(at("neg", "primary")).toEqual({ kind: "type", text: "-" });
     expect(at("neg", "shift")).toMatchObject({ latex: "\\left|#0\\right|" });
-    expect(at("eex", "shift")).toMatchObject({ latex: "\\blacktriangleright" });
+    expect(at("emark", "shift")).toMatchObject({ latex: "\\blacktriangleright" });
     expect(at("mul", "shift")).toMatchObject({ latex: "\\mathbin{\\measuredangle}" });
     expect(at("fmt", "primary")).toEqual({ kind: "special", name: "fmt" });
   });
@@ -111,8 +111,8 @@ describe("keyboard spec", () => {
   // or #@ (the selection or what is before the cursor), never with #? (always an empty box, the selection is lost).
   // The templates below have NO argument slot: a selection is replaced, as typing does. Add a new one on purpose, with a reason.
   const NO_ARGUMENT: Record<string, string> = {
-    "eex/primary/normal": "the exponent mark: a mark, not a function (R14 makes it a typed character)",
-    "eex/shift/normal": "store ▸: it follows the value, the name comes after",
+    "emark/primary/normal": "the exponent mark ᴇ: one token, typed like a character (R14)",
+    "emark/shift/normal": "store ▸: it follows the value, the name comes after",
     "d9/shift/normal": "∞: a constant",
     "d2/shift/normal": "i: a constant",
     "d3/shift/normal": "π: a constant",

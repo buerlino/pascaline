@@ -34,7 +34,7 @@ test("keys pressed before MathLive has loaded are queued and replayed", async ({
 test("a definition survives a reload (docs/04 6.2: the defs log is stored and replayed at engine start)", async ({ page }) => {
   await open(page, "");
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["d5", "shift", "eex", "alpha", "vars", "enter"]); // 5▶A
+  await tap(page, ["d5", "shift", "emark", "alpha", "vars", "enter"]); // 5▶A
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await page.waitForTimeout(800); // the history and the defs log are written asynchronously
   await page.reload();

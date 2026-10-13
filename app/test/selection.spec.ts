@@ -31,8 +31,8 @@ const LAYERS: Layer[] = ["primary", "shift", "alpha"];
  * same list for the templates).
  */
 const REPLACES = new Set([
-  "eex/primary", // the exponent mark ×10ⁿ: a mark, not a function (R14 makes it a typed character)
-  "eex/shift", // ▸ store: after the value, before the name
+  "emark/primary", // the exponent mark ᴇ: one token, typed like a character (R14)
+  "emark/shift", // ▸ store: after the value, before the name
   "d9/shift", // ∞: a constant
   "mul/primary", // ×: an operator
   "mul/shift", // ∡: an operator (polar form)

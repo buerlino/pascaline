@@ -22,6 +22,7 @@ export const en = {
   "key.mode": "Mode",
   "key.clear": "Clear",
   "key.sto": "Store",
+  "key.emark": "ᴇ",
   "key.esc": "Esc",
   "key.cas": "CAS",
   "key.del": "Del",
