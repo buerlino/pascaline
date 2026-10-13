@@ -55,7 +55,7 @@ The top risks are in section 9.
 
 | Module | Faster | More trustworthy | Works against the goal today | Cost |
 |---|---|---|---|---|
-| Keyboard (`spec/keyboard.yaml`, `keyboard/`) | the reference's logical layout; hold-and-drag cursor (K2) | — | Vars, Math, Tmpl do nothing (`special: none`, `spec/keyboard.yaml:68-70`); no Ans key; no copy or paste | in the start chunk (142.6 kB total) |
+| Keyboard (`spec/keyboard.yaml`, `keyboard/`) | the reference's logical layout; hold-and-drag cursor (K2; removed by P11, 2026-10-13) | — | Vars, Math, Tmpl do nothing (`special: none`, `spec/keyboard.yaml:68-70`); no Ans key; no copy or paste | in the start chunk (142.6 kB total) |
 | Entry, MathLive (`entry/controller.ts`) | textbook entry; result insertion (L5) | — | inserting a result inserts the **rounded** digits shown (`App.svelte:132`, `:270`) | 808 kB chunk after the keypad |
 | Parser (`input/parse.ts`, `emit.ts`) | one rule per key | rejects unknown input | `0xFF` typed with the keys becomes `0*x*F*F` = 0 (probe, 2.3 #1); `\mathrm{…}` tokens are rejected (`parse.ts:540`) | 16 kB min |
 | Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel restores definitions | the replay log lives only in memory (`workerEngine.ts:54`): variables are gone after a relaunch | Giac 9.75 MB wasm |
@@ -258,7 +258,7 @@ Live items (variables, user functions) have the same shape with `kind: "var" | "
 The engine host reports the name each stateful input defines (`defined: {name, kind}`, from `:=` and ▶; `host.ts` already detects stateful inputs at `:56`). The session keeps `userNames` (name, kind, formatted value preview, view, time) and persists it with the definitions (6.2), so Vars works after a relaunch. Find merges them at query time and ranks them like recents. Python names stay in the Python app (its own completion, later).
 
 ### 3.5 Ranking
-Our own code (`app/src/find/rank.ts`, about 150 lines). Order: (1) usage boost: count and recency from `find.usage`; (2) exact match of a name, symbol or alias; (3) prefix of one, shorter first; (4) word prefix inside one (`_`, space); (5) word prefix in the title or description; (6) one edit away (insertion, deletion, substitution, transposition) for queries of 4+ characters. Ties: tier 0 first, then the context's kind (variables in Vars, units in the Units app), then the shorter name, then id. Usage: IndexedDB key `find.usage`, `{id: [count, lastUsed]}`, capped at 500 ids.
+**Amended 2026-10-13 (P11): no usage boost**, so the same query always gives the same order (docs/03 rule 8); with an empty query Find shows the G2-style Math menu (fixed categories, fixed order). Our own code (`app/src/find/rank.ts`, about 150 lines). Order: ~~(1) usage boost: count and recency from `find.usage`~~; (2) exact match of a name, symbol or alias; (3) prefix of one, shorter first; (4) word prefix inside one (`_`, space); (5) word prefix in the title or description; (6) one edit away (insertion, deletion, substitution, transposition) for queries of 4+ characters. Ties: tier 0 first, then the context's kind (variables in Vars, units in the Units app), then the shorter name, then id. Usage: IndexedDB key `find.usage`, `{id: [count, lastUsed]}`, capped at 500 ids.
 **Alternatives:** uFuzzy or fuzzysort (MIT, 4–7 kB): fast, but neither knows our tiers, usage or kinds, so we would wrap them in the same code; Fuse.js (Apache-2.0, about 24 kB, slower). Principle 1 yields here because the measured cost of our own code is 1.2 ms and the rules are ours.
 
 ### 3.6 Insertion and tokens
@@ -361,7 +361,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 In the Python app, Math and Vars keep doing nothing for now: Find inserts into the MathLive entry line, and Python has its own text layer.
 
 ### 5.2 Decision: how key presses are counted (EN0)
-Every key press counts 1, Shift and Alpha included; letters typed in Find count 1 each; Enter counts; a held ⌫ that auto-repeats counts 1; a hold-and-drag cursor gesture counts 1; a tap on the screen (history row, Find result, chip, menu item, prefix chip) counts 1. Nothing is free. A task stores its sequence as data (`keys:` key ids and `tap:` targets), and the harness replays it and counts.
+Every key press counts 1, Shift and Alpha included; letters typed in Find count 1 each; Enter counts; a held ⌫ that auto-repeats counts 1; a trackpad drag counts 1; a tap on the screen (history row, Find result, chip, menu item, prefix chip) counts 1. Nothing is free. A task stores its sequence as data (`keys:` key ids and `tap:` targets), and the harness replays it and counts.
 
 ### 5.3 Decision: matrices and lists (EN5)
 - **Entry:** Shift + 5 inserts a 1×1 `pmatrix` with the cursor inside; ▶ at the end of a row adds a column, ▼ in the last row adds a row (MathLive's `addColumnAfter`, `addRowAfter`, `mathlive/types/commands.d.ts:137-157`), ⌫ in an empty last row or column removes it. A 3×3 needs only digits, ▶ and ▼. Shift + 8 inserts `\{ \}` (the parser already reads `\{1,2,3\}` as a list: probe).

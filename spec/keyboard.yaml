@@ -273,6 +273,39 @@ keys:
   - { id: add, row: 9, col: 4, cls: op, label: { primary: "+", shift: "Ans", alpha: ";" }, primary: { type: "+" },
       shift: { insert: "\\ans", sample: ["\\ans", "7"] }, alpha: { type: ";" }, source: virtual-calc }  # r10c5 (shift Ans, docs/04 2.8: the view's last result, read at Enter; alpha ;)
 
+# ---- Template palette (the Tmpl key, r4c3; planned: docs/04 section 5.1, EN5 in docs/backlog.md). Layout record only:
+# keyboard.ts does not read this section yet, so nothing here is shown or tested. A 6 x 3 grid in the order the
+# reference shows it (seen on a G2, 2026-10-13: its Function app, Tmpl menu open, the first cell selected), listed
+# row by row. `desc` is our own wording. `status: built` = the template exists on a key (`key`/`layer` say where);
+# `status: planned` = not built. When EN5 builds a planned one it gets `insert` + `sample` (see the top of this
+# file) and a parser rule + round-trip case in the same commit; `parser` names what parse.ts already handles.
+# Uncertain readings of the photo are marked `check: true` (to confirm on the device or Virtual Calculator).
+templates:
+  columns: 6
+  items:
+    # row 1
+    - { id: frac,    row: 0, col: 0, desc: "fraction",                          status: built,   key: frac, layer: primary }
+    - { id: power,   row: 0, col: 1, desc: "power □^□",                         status: built,   key: pow,  layer: primary }
+    - { id: evalat,  row: 0, col: 2, desc: "evaluate at: expression | variable = value", status: planned, check: true }
+    - { id: deriv,   row: 0, col: 3, desc: "derivative ∂□/∂□",                  status: planned }
+    - { id: cases,   row: 0, col: 4, desc: "piecewise, two lines □ if □",       status: planned }
+    - { id: matrix22, row: 0, col: 5, desc: "2×2 matrix",                       status: planned, parser: "pmatrix, bmatrix" }
+    # row 2
+    - { id: sqrt,    row: 1, col: 0, desc: "square root",                       status: built,   key: sq,   layer: shift }
+    - { id: nthroot, row: 1, col: 1, desc: "nth root",                          status: built,   key: pow,  layer: shift }
+    - { id: limit,   row: 1, col: 2, desc: "limit, lim □ as □ → □",             status: planned, parser: "lim" }
+    - { id: integral, row: 1, col: 3, desc: "definite integral, ∫ from □ to □ of □ ∂□", status: planned, parser: "int" }
+    - { id: rowvec,  row: 1, col: 4, desc: "row matrix/vector, 1×2",            status: planned, check: true, parser: "pmatrix, bmatrix" }
+    - { id: colvec,  row: 1, col: 5, desc: "column matrix/vector, 2×1",         status: planned, parser: "pmatrix, bmatrix" }
+    # row 3
+    - { id: abs,     row: 2, col: 0, desc: "absolute value |□|",                status: built,   key: neg,  layer: shift }
+    - { id: mixed,   row: 2, col: 1, desc: "mixed number □ + □/□",              status: built,   key: frac, layer: primary, check: true }  # ours: a/b pressed twice (L2)
+    - { id: sum,     row: 2, col: 2, desc: "sum Σ, □ = □ to □ of □",            status: planned, parser: "sum" }
+    - { id: product, row: 2, col: 3, desc: "product Π, □ = □ to □ of □",        status: planned, parser: "prod" }
+    - { id: logbase, row: 2, col: 4, desc: "logarithm with base, log_□ □",      status: planned }
+    - { id: dms,     row: 2, col: 5, desc: "degrees, minutes, seconds □°□'□\"", status: planned }
+  source: device
+
 # ---- Python layer (milestone 3). In the Python app's editor and shell, these keys type Python text instead of
 # their normal action; keys not listed keep it (digits, letters with alpha, cursor, Enter, Cancel, space, minus).
 # A key whose normal action is a LaTeX template and is not listed here does nothing in Python. `label` overrides

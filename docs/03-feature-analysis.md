@@ -3,7 +3,7 @@
 
 *Written 2026-10-12 (Claude, for the project owner and Henri), revised the same day after the owner's answers, then **merged with a second review** (Henri, at the owner's request: "decide based on the goal"). Base: `phase-1` at 8681313. "What is here" was checked in the code, the docs and the engine on that day. **(to verify)** marks assumptions nobody tested. Effort figures are estimates, not measurements. The plan in section 8 is the one to work from; the backlog carries its tasks and `docs/decisions.md` P8 records the decision. How each item is built is settled in [04-architecture.md](04-architecture.md) (sandra, 2026-10-12), which also corrects three statements below (marked "checked 2026-10-12").*
 
-**Goal (user, 2026-10-12):** not another calculator. A precision engineering tool that lets any engineer do day-to-day calculations much faster and more precisely. The mission text is in CLAUDE.md, README.md and the docs/02 header. The G2 key layout stays as the way in, not the aim.
+**Goal (user, 2026-10-13, replacing 2026-10-12):** *the G2's flow, without its friction, with precision you can trust* (rules 5–13 below; P11). **Earlier goal (2026-10-12):** not another calculator. A precision engineering tool that lets any engineer do day-to-day calculations much faster and more precisely. The mission text is in CLAUDE.md, README.md and the docs/02 header. The G2 key layout stays as the way in, not the aim.
 
 ## 0. Design rules from the owner (2026-10-12)
 
@@ -13,6 +13,20 @@ These bind every feature below. Henri: treat them as decisions, not suggestions.
 2. **Speed is the test for units.** Entering `nm` must beat typing `E-10` (about one second). If finding a unit takes longer than that, it has failed. Searching a long unit list for ten seconds is a waste.
 3. **Units stay separate from normal calculation.** A precision tool does one or two things well, not everything. Units are decided by utility: if they make Home, Solve or lists harder, they do not go there.
 4. **Focus.** Fewer features done perfectly beat parity with the G2.
+
+### Rules added 2026-10-13 (owner, after the first days of daily use; P11)
+
+The goal is now *the G2's flow, without its friction, with precision you can trust* (CLAUDE.md). The risk the owner named: an app that crams three open-source engines into one screen and ends up a soup where nothing is useful. These rules are how we keep that out. They bind every package, and Henri and the workers apply them before adding anything.
+
+5. **One sentence decides.** A feature gets in only if it (a) is G2 flow, (b) removes a G2 friction the owner has actually hit (example: `=` sits on Shift while the letters are on Alpha, so typing `A=…` means leaving a mode), or (c) makes a result more trustworthy. "The G2 has it" is not enough on its own; "another app has it" is not a reason at all.
+6. **G2 key sequences keep working.** A departure from the G2 is added on top of the G2 way (a flick on top of the Shift-then-key tap), never instead of it, unless the G2 way is measurably bad.
+7. **One interaction model.** The screen is three zones: a thin status line, the calculation viewport, the keypad. A key is a tap, a flick up (its shift function) and a flick down (its letter). Every app has Symb / Plot / Num and Menu. The arrow keys are a trackpad that also accepts taps. Tapping a formula on the screen puts the cursor there. Anything looked up by name goes through Find. A feature that needs a new kind of gesture, a new screen zone or a new way to navigate is a red flag; the hold-and-drag cursor (K2) was one and was removed (P11).
+8. **Keys never move.** Every function sits at one fixed position on the keypad, in every app and every mode, so muscle memory works. A context may change what a layer of a key does (inside a unit slot the letter layer types unit symbols), but no keypad reflows, scrolls or swaps its layout, and no on-screen element jumps up and down while typing. This is why people love the G2, and it is what Qalculate!'s phone UI gets wrong.
+9. **Vertical space is precious.** The calculation viewport gets every pixel the keypad and a thin status line (one line, about 20 px) do not use. Switching views and apps lives on the keys (App, CAS, Apps, Symb, Plot, Num), not in tabs or bars on the screen. Any new on-screen element must say what it gives back for the space it takes; an e2e test keeps the viewport's share of the screen from shrinking.
+10. **Nothing merges untried.** At most one UI change the owner has not used yet is in flight. A UI package ends with an APK on the owner's phone and is done only after the owner has used it for a day or two. Engine and precision work may run ahead, because tests judge it; feel cannot be tested.
+11. **Every feature has a removal test, and we act on it.** Each feature states what would show it failed (as "prefix chips must beat E-notation or go"). When it fails, its code goes completely, with no dead setting left behind. First removals (P11): the hold-and-drag cursor (K2) and the Python app (the owner never uses it; a notebook on a laptop is the better tool for scripts).
+12. **One feedback inbox.** The owner's points go into [feedback.md](feedback.md), dated, in the owner's words, and each becomes a bug (fixed now, regression test first), a feel item (the next feel package) or an idea (waits a week, then must pass rule 5).
+13. **Win against the alternatives, or have no reason to exist.** Each benchmark task (section 6) records the hand-measured presses and time on the G2, on Qalculate! and on a phone calculator. A feature whose task Pascaline does not win gets reworked or removed. Graphing is the example: Desmos and GeoGebra are better graphers, so the Function app stays at its G2 level (quick roots, intersections and areas with checked residuals) and gets no further plot types unless a task shows a win.
 
 ## 1. Recommendation
 
@@ -30,7 +44,7 @@ Build an **engineer core** ahead of the Prime-parity apps, in three milestones (
 |---|---|
 | **Home** | Exact-first, 12 significant digits by default, float fallback for huge/slow cases (labelled "approximate" in the history), store ▶, variables shared with CAS, persisted history (123 golden cases). Checked 2026-10-12: the engine keeps Ans (`pasans`), but no key or parser rule reaches it, tapping a result inserts its rounded digits, and variables are not kept across a relaunch (docs/04 2.1, 6.2) |
 | **CAS** | Giac, exact results in 2D; calculus (`int`, `lim`, `sum`, `prod`, `diff`), matrices parsed, `det`, lists (330 parser cases) |
-| **Entry** | Textbook entry, one-line mode, decimal comma, polar `r∡θ`, insertable results (L5), trackpad on the arrow keys (K1), hold-and-drag cursor on the whole keypad (K2) |
+| **Entry** | Textbook entry, one-line mode, decimal comma, polar `r∡θ`, insertable results (L5), trackpad on the arrow keys (K1), hold-and-drag cursor on the whole keypad (K2; removed by P11, 2026-10-13) |
 | **Formats** | STD, SCI, ENG, FIX; Format key cycles the last result (also fraction, mixed, polar ⇄ rectangular) |
 | **Function app** | Plot, trace, root/extremum/intersection/slope/area, Num table (56 fps on the Tab One, 89 on the Fairphone 6) |
 | **Solve app** | 1-D, systems, polynomials; every root substituted back with ⚠ on a large residual |

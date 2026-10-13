@@ -4,7 +4,9 @@
 
 *Date: 2026-10-10. This follows up [01-feasibility-report.md](01-feasibility-report.md) and replaces its "1:1 clone" approach. The legal advice (section 3 of 01-feasibility-report.md) still applies.*
 
-**Goal update (user, 2026-10-12):** the product goal is a precision engineering tool that makes everyday engineering calculation faster and more precise; the Prime-like layout is the way in, not the aim. Priorities: [03-feature-analysis.md](03-feature-analysis.md).
+**Goal update (user, 2026-10-13):** *the G2's flow, without its friction, with precision you can trust*; stay close to the G2 (CLAUDE.md, docs/03 section 0, P11).
+
+**Goal update (user, 2026-10-12, replaced 2026-10-13):** the product goal is a precision engineering tool that makes everyday engineering calculation faster and more precise; the Prime-like layout is the way in, not the aim. Priorities: [03-feature-analysis.md](03-feature-analysis.md).
 
 **Superseded where they differ (2026-10-12): [04-architecture.md](04-architecture.md)** settles the architecture for that goal (precision chain, Find, the Units app, keys, state, build and gates). This document stays the record of the original plan, the solver choice (section 4), the licence and F-Droid reasoning (sections 10–11) and the milestone history (section 12).
 
