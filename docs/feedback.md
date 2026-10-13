@@ -47,3 +47,5 @@ The one place for the owner's points from using the app (docs/03 section 0, rule
 | 21 | The history-row buttons: needed, if only Home and CAS are the focus? | answered: yes, they are exactly Home/CAS (docs/05 section 7 point 2) |
 | 22 | Theme: a setting Light / Dark / Follow system. | decided: System / Light / Dark, Dark by default on Android (docs/05 section 7) |
 | 23 | Plan A–F signed off; order of milestone 4a agreed. | decided |
+
+Waiting for the owner's notes on R5 (Python app removed; APK of 2026-10-13).

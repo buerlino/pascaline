@@ -28,7 +28,7 @@ Background reading (read before larger design decisions):
 
 ### Legal / clean room
 - **Never** use, copy, decompile or reference HP/Moravia code, firmware, ROMs, skins, icons, fonts, screenshots, manual text or help text. Learn behaviour only from black-box observation (a real device or the official Virtual Calculator), public documentation in our own words, and Giac's GPL sources.
-- **No "HP" or "Prime"** in the app name, package IDs, identifiers, icons, file names or UI strings. Two exceptions: a nominative mention in the README or store description together with the disclaimer *"Not affiliated with HP Inc. or Moravia."*, and the Python compatibility module's import name `hpprime` (scripts written for the reference import it; our files and identifiers around it keep our own names).
+- **No "HP" or "Prime"** in the app name, package IDs, identifiers, icons, file names or UI strings. One exception: a nominative mention in the README or store description together with the disclaimer *"Not affiliated with HP Inc. or Moravia."*
 - Same **logical** key layout as the Prime (which function sits on which key or shift layer), but **our own visual design**: colours, shapes, icons.
 - **Do not use NumWorks Epsilon/Omega/Upsilon code.** Its CC BY-NC-SA licence isn't GPL-compatible. KhiCAS and Giac (GPL) are fine.
 - Every source file starts with `// SPDX-License-Identifier: GPL-3.0-or-later` (or the comment syntax of its language).
@@ -37,7 +37,7 @@ Background reading (read before larger design decisions):
 ### F-Droid readiness (from day one)
 - **No prebuilt binaries in git** (`.wasm`, `.so`, `.jar`, `.a`). Everything gets built from source by scripts in the repo. The only exception is throwaway experiments under `spike/`, which must be listed in `spike/RESULTS.md` and ignored via `.gitignore`.
 - **No Google Play Services, Firebase, analytics, crash reporters or trackers.**
-- **The app works 100% offline.** Network access is only allowed for an explicit, optional download (e.g. the Pyodide "Python+" pack, and only in non-F-Droid builds).
+- **The app works 100% offline.** Network access is only allowed for an explicit, optional download, and only in non-F-Droid builds.
 - **Never delete** `engine/giac/_downloads/` (the SHA-checked source tarballs) or `spike/prebuilt/` (Parisse's build, kept for comparisons). Both are gitignored.
 
 ### Maths correctness
@@ -54,10 +54,9 @@ Background reading (read before larger design decisions):
 ```
 Capacitor shell (Android / iOS / desktop / plain web PWA)
 └─ UI (TypeScript): keyboard (spec/keyboard.yaml), MathLive entry and output (MathPrint),
-   app framework Symb/Plot/Num, JSXGraph views, spreadsheet, CodeMirror editor
+   app framework Symb/Plot/Num, JSXGraph views, spreadsheet
    └─ MathEngine (async interface)
       ├─ Worker 1: giac.wasm (+ GSL, GMP, MPFR): CAS + Home + numeric solving
-      ├─ Worker 2: Python: MicroPython-wasm (default) | Pyodide "Python+" (optional)
       └─ Worker 3: libqalculate (Units app; lazy; milestone 5, P3 as amended by P8)
    Find: a static index generated at build time, searched on the main thread (lazy)
 Storage: IndexedDB (state) + Capacitor Filesystem (import/export)
@@ -67,12 +66,12 @@ Key decisions (reasons in docs/02 and the decision logs):
 - **MathPrint everywhere:** textbook entry driven only by our keyboard (÷ makes a stacked fraction); results drawn in 2D from Giac `latex()` by MathLive, never raw engine text. One-line entry is a setting.
 - **Our own LaTeX-subset parser** (P1) turns MathLive's LaTeX into Giac input and plot evaluators. Each keyboard template needs a parser rule and a round-trip case in the same commit.
 - **Home = Giac "exact-first":** decimals become exact fractions, results are rounded to 12 digits and shown as decimals (`1÷3` → `0.333333333333`), with a float fallback when numbers get too big or slow. Exact 2D results belong to the **CAS** view.
-- **No PPL.** Python plus Giac function definitions; the `calc` and compatibility graphics modules reach the variables and a 320×240 canvas.
+- **No PPL, no Python** (P11: the Python app was removed in milestone 4a). Programs are Giac function definitions.
 - **Solving: GSL inside the Giac wasm** (bracket + Brent, Newton/Steffensen, `hybrids`/`hybridsj` for systems, `proot` for polynomials). **Every root is substituted back**, with a ⚠ when the residual is large.
 - **Releases build the engine with Debian's Emscripten** in a pinned `debian:trixie` container (P2); emsdk 6.0.12 is for development. Every engine build that ships must pass the golden gate.
 
 ## Stack (pin exact versions in package files and THIRD_PARTY.md)
-TypeScript (strict, no `any`), Vite, **Svelte 5** for the app shell (D1; keyboard, parser and engine client stay plain TS), MathLive (MIT), JSXGraph (LGPL/MIT), CodeMirror 6 (MIT), Capacitor (MIT), Emscripten, Giac (GPL-3.0+), GMP/MPFR (LGPL), GSL (GPL-3.0+), MicroPython (MIT), Pyodide (MPL-2.0, optional), Vitest, Playwright.
+TypeScript (strict, no `any`), Vite, **Svelte 5** for the app shell (D1; keyboard, parser and engine client stay plain TS), MathLive (MIT), JSXGraph (LGPL/MIT), Capacitor (MIT), Emscripten, Giac (GPL-3.0+), GMP/MPFR (LGPL), GSL (GPL-3.0+), Vitest, Playwright.
 
 ## Repo layout
 `app/` (web app), `engine/giac/` (engine build + patches), `engine/qalc/` (libqalculate build), `python/` (MicroPython build), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `tests/golden/` (golden cases), `tests/engine/`, `tools/` (device tools), `docs/`, `fastlane/`, `fdroid/`, `logo/`, `build.sh` (clean source → APK; the F-Droid recipe mirrors it, see `fdroid/README.md`), `spike/` (Phase 0 record and the P3 qalc spike).
@@ -108,7 +107,7 @@ GIAC_OUT=<dir> npm run test:e2e                            # Playwright key-sequ
 npm run build                                              # → app/dist/
 
 # Engine gate (run on every engine build that ships; from app/, GIAC_MJS=<giac.mjs> or GIAC_OUT=<dir>)
-npm run golden                                             # needs an ABSOLUTE GIAC_OUT/GIAC_MJS (and PYTHON_OUT, else python/_out/dev); must end in GOLDEN GATE PASSED (counts: tests/golden/README.md)
+npm run golden                                             # needs an ABSOLUTE GIAC_OUT/GIAC_MJS; must end in GOLDEN GATE PASSED (counts: tests/golden/README.md)
 node scripts/compare-engines.ts <a/giac.mjs> <b/giac.mjs>  # output differences between two engine builds
 python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath==1.3.0 pyyaml==6.0.2   # oracle, once (repo root)
 tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # check cases; --g2 regenerates tests/golden/G2-CHECKLIST.md from tests/golden/g2.yaml

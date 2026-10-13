@@ -67,7 +67,7 @@ These moved out of `spike/` (C1, done) before `phase-1` went to `master`. The ot
 The owner's first days of daily use ([feedback.md](feedback.md)) and the UI plan ([05-ui-plan.md](05-ui-plan.md), accepted with its section 7). Runs before the rest of milestone 4, because Find and the unit view sit on the keypad and the screen layout. docs/03 rule 10: one untried UI change at a time; each ron package ends with an APK on the owner's phone (built by the review session) and is done after a day or two of use. Packages, models and branches: [shifts/brief.md](shifts/brief.md) section 0b.
 
 1. **F1. Keyboard on return (bug). Done** (`9679a43`): the app drops the focus when hidden, and on touch screens when the window loses focus; regression tests in `app/test/softkeyboard.spec.ts`. Left: the owner checks it with the first APK.
-2. **R5 + A5. Remove the Python app** (rule 11; ron the app side, annabell the build side). Goes first so no later package carries Python through menus and sheets.
+2. **R5 + A5. Remove the Python app** (rule 11; ron the app side, annabell the build side). Goes first so no later package carries Python through menus and sheets. *R5 done (`02a143c`): the app side, CodeMirror with it; start chunk 136.31 → 131.57 kB. A5 next.*
 3. **R6. Cleanup:** the hold-and-drag cursor (K2) removed completely; UI quick fixes U0 (legend overlap, alpha-layer contrast, keys going through an open list, the Plot hint on the axis), the screenshot gallery and the contrast test.
 4. **R7. One sheet for every list** (U1): Apps, view menus, the Home menu.
 5. **R8. Status bar and Mode sheet** (F3 = U2 + U4): the tab row goes; status line ≤ 28 px with tappable mode chips; Shift + CAS = Mode sheet, Shift + Home/CAS = Settings on the sheet; the viewport-share test.
@@ -76,7 +76,7 @@ The owner's first days of daily use ([feedback.md](feedback.md)) and the UI plan
 8. **R11. History-row actions, Home and CAS only** (U3).
 9. **R12. Visual pass** (F6 = U5 + U7): the owner's list, mockups first (R12a), then tokens, history rows, theme setting System / Light / Dark (Dark default on Android), press feedback (R12b).
 
-In parallel (no UI): gorge finishes G4, then G3; **S1** (sandra): the unit-slot paper test. *Done: median 2 presses over 50 units (gate ≤ 4), with flicks; layout accepted by the owner 2026-10-13 ([research/r7-unit-slots.md](research/r7-unit-slots.md), decisions.md S1).* After 4a: R4 Find UI (on the sheet, G2-style Math menu), A4 device bars.
+In parallel (no UI): gorge finishes G4, then G3; **S1** (sandra): the unit-slot paper test. *Done (`afa7f00`): median 2 presses over 50 units (gate ≤ 4), with flicks; layout accepted by the owner 2026-10-13 ([research/r7-unit-slots.md](research/r7-unit-slots.md), decisions.md S1).* After 4a: R4 Find UI (on the sheet, G2-style Math menu), A4 device bars.
 
 **Parked ideas** (feedback.md; decide around 2026-10-20): the function library file (+ User keyboard), the MCP server, "results mode" (feedback #19, replaces K4), user-arranged Math menu slots.
 

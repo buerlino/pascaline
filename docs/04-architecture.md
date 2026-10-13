@@ -13,7 +13,7 @@ How to read each area: **today** (verified), **decision** (one, with the reason)
 4. **Results are reused as chips that carry the full value**; Ans on Shift + `+`; an operator typed on an empty line starts with Ans, as on the reference (2.8).
 5. **Copy gives the full value** (all confirmed digits, up to 40); "as shown", "exact" and LaTeX are in the Menu. Shift + View = Copy and Shift + Menu = Paste, the reference's positions (2.6, 5.1).
 6. **CAS floats are marked `≈` and formatted by us.** Typed decimals in CAS become exact, like Home (**P9, accepted by the user 2026-10-12**) (2.9).
-7. **Python `calc.eval` uses Home's exact-first evaluation** (2.10).
+7. ~~Python `calc.eval` uses Home's exact-first evaluation~~: moot, the Python app is removed (P11, R5) (2.10).
 8. **Find is one static index generated at build time** (Giac's English help lines, libqalculate's units, constants and prefixes, our alias file), searched by our own ranking code on the main thread, fetched when idle after the engine is ready and parsed on first open (section 3).
 9. **Constants, units, prefixes and results enter the entry line as atomic MathLive macros** (`\const{ID}`, `\unit{ID}`, `\pfx{p}`, `\res{n}`, `\ans`); qalc never sees text the user typed (3.6, 4.3).
 10. **The Units app parses with our P1 parser** and sends qalc only whitelisted names; qalc's default "try exact" mode is verified exact for SI-defined factors; our adapter turns qalc's silent non-answers (mismatched sums, misused temperatures) into messages (section 4).
@@ -38,7 +38,7 @@ The top risks are in section 9.
 | E2 | Enter → drawn result, Home and CAS | p95 < 150 ms on the Tab One (today 92 ms) | `?bench=1` on the device (annabell), each release |
 | E3 | Find: key → updated list | p95 ≤ 16 ms on the Tab One | `?bench=find` (new), milestone 4 gate |
 | E4 | Start | keyboard usable < 1 s, engine ready < 1.5 s on the Tab One (today 662 / 995 ms) | device runs (`tools/device_run.py`), each release |
-| E5 | First use of a lazy part | Python ready < 0.5 s (today 165 ms); Units first result < 1 s; Find open → list ≤ 100 ms warm, ≤ 300 ms cold | device runs |
+| E5 | First use of a lazy part | Units first result < 1 s; Find open → list ≤ 100 ms warm, ≤ 300 ms cold | device runs |
 | E6 | Bytes | budgets in section 8.3 | size test (new, 6.3) on every build |
 
 **Precise** means no digit shown is wrong, and the user can tell an exact value from a rounded one. It is measured by:
@@ -65,7 +65,6 @@ The top risks are in section 9.
 | Function app | Plot 56 fps on the Tab One | every number shown comes from the engine (`apps/function/compile.ts` header) | — | 19.6 kB + JSXGraph 1,035 kB lazy |
 | Solve app | — | every root substituted back, ⚠ on failure | — | 8.2 kB lazy |
 | CAS view (`host.ts:151-177`) | — | exact results | float results unmarked and sometimes wrong (2.3 #6) | — |
-| Python (`python/calcHost.ts`) | sync `calc` (Asyncify) | — | `calc.eval` uses raw binary floats (`calcHost.ts:67`, `:95`): `1-0.9-0.1` → 1.78E-15 | 377 kB + MicroPython wasm, lazy |
 | PWA and Capacitor shell | offline; wasm stored uncompressed (R2) | no trackers, no INTERNET permission (C5) | — | the whole build is precached: 13 MB today |
 | Build (`build.sh`, P2 container) | — | reproducible engine | no automated size gate (the "L7 size test" in the backlog does not exist: no test reads chunk sizes) | — |
 
@@ -90,8 +89,6 @@ All "probe" rows ran on the dev engine `engine/giac/_out/gsl` through `EngineHos
 | Function Plot | `input/emit-js.ts` | JS doubles | — | drawing only; trace values come from the engine | — |
 | CAS exact | `host.ts:163-174` | exact | none | 2D LaTeX | — |
 | CAS approximate | `host.ts:79` (`Digits` = Home digits) | Giac floats, decimals read as binary | Giac's printing, not our formatter | `1-0.9-0.1` → `1.7763568394e-15`; `evalf(sin(10^22))` → `-0.54764225985`; `1e16+1-1e16` → `0.0` (probes) | no |
-| Python `calc.eval` | `calcHost.ts:67`, `:95`; `types.ts:158` ("raw Giac call in whatever mode the engine is in") | Giac floats at the current `Digits`, then `evalf(…,17)` | Giac | `calc.eval("1-0.9-0.1")` → 1.7763568394e-15 (probe of the same Giac call in Home mode) | no |
-| Python `calc.cas` | `calcHost.ts:89-93` | CAS | Giac's text | text | no |
 | Units app (milestone 5) | section 4 | qalc, "try exact" | — | — | — |
 
 **Reuse and copy today.** No clipboard, share or CSV code exists (03 section 2, grep). Tapping a result, or Up then Enter, inserts the LaTeX of the displayed text (`App.svelte:132`, `:270`), so the rounded digits. The engine keeps `pasans` and `pcasans`, but nothing reaches them: `Ans` typed with Alpha parses as `A*n*s` (probe), and the reference's Ans key (Shift + `+`) is "not ours yet" (`spec/keyboard.yaml`, key `add`).
@@ -112,7 +109,7 @@ Each item becomes a regression case before its fix (CLAUDE.md). Values marked `o
 | 4 | Home `romberg(exp(-x^2),x,0,1)` at 30 digits | `0.746824132812427041600115591871` | 0.746824132812427025399467436132 (`oracle`): wrong from the 17th digit | float from a function not on the audited list → `⚠` until romberg is audited (2.4 rule 3; M4-1) |
 | 5 | Home `BesselJ(1,2)`, `Airy_Ai(1)`, `BesselJ(0,100)` at 15–30 digits | the input as text (`BesselJ(1,2)`): Giac has no MPFR path (`evalf(BesselJ(1,2),40)` at `Digits:=30` → "Bad Argument Value") | J₁(2) = 0.576724807757 at 12 digits (`oracle` agrees) | not wrong, but the answer is lost: fall back to a ≤ 14-digit evaluation and show `⚠` with the digits available (m4) |
 | 6 | CAS `1-0.9-0.1`; `evalf(sin(10^22))`; `1e16+1-1e16` | `1.7763568394E-15`; `-0.54764225985`; `0.0` | 0 (`derived`); −0.852200849767… (`oracle`; Home gets it right); 1 (`derived`) | marks in CAS and P9, exact decimals in CAS (accepted) (m4) |
-| 7 | Python `calc.eval("1-0.9-0.1")` | 1.7763568394e-15 | 0 (`derived`; Home shows 0) | `calc.eval` through Home's exact-first path (m4) |
+| 7 | ~~Python `calc.eval("1-0.9-0.1")`~~ | 1.7763568394e-15 | 0 (`derived`; Home shows 0) | moot: the Python app is removed (P11, R5) |
 | 8 | Home `1/3`, tap the result, `×3` | `0.999999999999` | 1 is what the user meant; 0.999999999999 is right for what was inserted | result chips that carry the full value (m4) |
 | 9 | Home `1/3` and `1/4` | `0.333333333333` and `0.25` look alike | — | the mark (m4) |
 | 10 | Units (qalc data, m5) `1 hp to W` | 745.699987158 W, **flagged exact** by qalc (probe) | 745.69987158227… W (`derived`: 550 ft·lbf/s = 550 × 0.3048 × 0.45359237 × 9.80665): wrong from the 7th digit | the accepted P3 one-number patch, a golden case, the data audit (m5) |
@@ -194,7 +191,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 ### 2.10 Decision: Python
 
-`calc.eval` goes through `MathEngine.home()` (exact-first, the P-digit value): an exact integer stays `int`, any other number becomes a Python float from its leading 17 digits. `calc.cas` stays as built. P6 (the `hpprime` module) is untouched. Regression case in `python.yaml`: `calc.eval("1-0.9-0.1")` → `0` (`derived`).
+Removed (P11, 2026-10-13; R5 the app side, A5 the build side). The Python app, its worker and the `calc` bridge are gone, so 2.3 #7 has no subject and `python.yaml` left the golden gate. The earlier decision (`calc.eval` through `MathEngine.home()`) is in git history.
 
 ### 2.11 Risks and what would change it
 - Marks add a little text to every line. If the owner finds them noisy on a device, `=` could become the absence of a mark, keeping `≈` and `⚠` (one setting, no architecture change).
@@ -306,8 +303,8 @@ I relinked the spike's libraries (`../pascaline-deps/qalc-spike/build/prefix`, l
 Calls took 0.2–28 ms in Node (the first conversion 28 ms). So: **"try exact" gives exact SI conversions** (the P8 question is answered: `72 km/h → m/s` = 20 exactly, `1 in → mm` = 25.4 exactly); qalc reports approximation reliably for π, logarithms and uncertainties; and qalc silently accepts mismatched sums, offset-unit arithmetic and misread names.
 
 ### 4.2 Decision: the `UnitEngine` and its worker
-Worker 3, loaded on the first press of the units key; never at start. Same pattern as Giac and Python: an async interface, a module worker, Cancel = terminate and respawn (qalc runs on the calling thread, no pthreads; nothing to replay, since each call is self-contained and the Units app keeps its own Ans app-side). Interface in 8.2. The glue (`engine/qalc/glue.cc`, from the spike) returns one JSON result per call: the number as an exact fraction when qalc's structure is not approximate, else a decimal at precision P = `max(40, digits+10)`; the unit part as canonical qalc names with exponents; the dimension (from `convertToBaseUnits`); the uncertainty; qalc's approximate flag.
-**Memory with three workers alive (to verify, annabell, U5):** `dumpsys meminfo` PSS on the Tab One with Giac, Python and qalc loaded, then a 10-minute mixed session. Gate: no low-memory kill. If PSS is too high, the Python worker is terminated when the user leaves the Python app (restart 165 ms).
+Worker 3, loaded on the first press of the units key; never at start. Same pattern as Giac: an async interface, a module worker, Cancel = terminate and respawn (qalc runs on the calling thread, no pthreads; nothing to replay, since each call is self-contained and the Units app keeps its own Ans app-side). Interface in 8.2. The glue (`engine/qalc/glue.cc`, from the spike) returns one JSON result per call: the number as an exact fraction when qalc's structure is not approximate, else a decimal at precision P = `max(40, digits+10)`; the unit part as canonical qalc names with exponents; the dimension (from `convertToBaseUnits`); the uncertainty; qalc's approximate flag.
+**Memory with three workers alive (to verify, annabell, U5):** `dumpsys meminfo` PSS on the Tab One with Giac and qalc loaded, then a 10-minute mixed session. Gate: no low-memory kill.
 
 ### 4.3 Decision: the unit view (entry, parsing, results)
 - **Entry (P11, layout in `spec/keyboard.yaml` `unit_slot:`, press count in docs/research/r7-unit-slots.md):** the
@@ -384,7 +381,6 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Arrow cells after K3 (6 cells) | trackpad | not assigned in advance: they get the shifted functions pressed most often in the task benchmark | measured, not guessed |
 | Prefix chips | — | a strip above the keypad, only after a number, only if task 3 shows a gain | P8 |
 
-In the Python app, Math and Vars keep doing nothing for now: Find inserts into the MathLive entry line, and Python has its own text layer.
 
 ### 5.2 Decision: how key presses are counted (EN0)
 Every key press counts 1, Shift and Alpha included; letters typed in Find count 1 each; Enter counts; a held ⌫ that auto-repeats counts 1; a trackpad drag counts 1; a tap on the screen (history row, Find result, chip, menu item, prefix chip) counts 1. Nothing is free. A task stores its sequence as data (`keys:` key ids and `tap:` targets), and the harness replays it and counts.
@@ -405,7 +401,7 @@ Every key press counts 1, Shift and Alpha included; letters typed in Find count 
 ## 6. Engine, workers and state
 
 ### 6.1 Topology and contracts
-- **Today:** the main thread runs the UI, keyboard, parser and formatter; worker 1 is Giac (started at launch, D2), worker 2 is MicroPython (started by the Python app). Each cancels by terminate and respawn; Giac replays the definitions (`workerEngine.ts:148-156`).
+- **Today:** the main thread runs the UI, keyboard, parser and formatter; worker 1 is Giac (started at launch, D2); the MicroPython worker went with the Python app (P11). Each cancels by terminate and respawn; Giac replays the definitions (`workerEngine.ts:148-156`).
 - **Decision:** worker 3 is qalc (Units app, milestone 5). Find needs no worker (3.2). Nothing new needs an engine on the main thread. Interface changes are listed in 8.2: `HomeResult` gains the facts for the mark (`exactRational`, `reliableDigits`), `full` (the copy and chip value) and `defined`; `CasResult` gains the numeric value when the result is a number.
 
 ### 6.2 Decision: one storage plan
@@ -417,14 +413,14 @@ One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
 | `view`, `place` | open view, open app | exist |
 | `history` | ≤ 200 items per view; new fields `full` (≤ 2 kB), the mark facts | exists |
 | `defs` | **new:** the definitions log (`:=`, ▶, `purge`), last definition per name kept, ≤ 500 lines, replayed into the engine at start through the existing `init.replay` (`workerEngine.ts:154`) | the log is in memory only (`workerEngine.ts:54`) |
-| `app.function`, `app.solve`, `app.python` | per app | exist |
+| `app.function`, `app.solve` | per app | exist |
 | `find.usage` | Find counts and recency, ≤ 500 ids | new |
 | `units.targets`, `units.history` | last target per dimension; the Units app's history | new (milestone 5) |
 
 **Migration:** `schema` absent means 1; a restore keeps validating field by field and writes back `schema: 2`. Built as written (R3): `session.migrateSettings` validates every field. **Replay budget:** `defs` replay ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` is already in `EngineTimings`). **Why persist definitions:** a calculator keeps its memory; today the history shows `5▶A` after a relaunch while `A` is undefined.
 
 ### 6.3 Decision: start-up and bytes
-- Today (`vite build`, 2026-10-12): start chunk `index` 142.62 kB (49.64 kB gzip); MathLive 807.73 kB (222.09 kB gzip) after the keypad; lazy: Function 19.6 kB, JSXGraph chunk 1,035.31 kB (258.52 kB gzip), Solve 8.2 kB, Python 377.18 kB (127.99 kB gzip), the Giac worker 25.68 kB; Giac wasm 9.75 MB; the whole build 13 MB, all precached by the service worker after the engine is up.
+- Today (`vite build`, 2026-10-12): start chunk `index` 142.62 kB (49.64 kB gzip); MathLive 807.73 kB (222.09 kB gzip) after the keypad; lazy: Function 19.6 kB, JSXGraph chunk 1,035.31 kB (258.52 kB gzip), Solve 8.2 kB, Python 377.18 kB (127.99 kB gzip), the Giac worker 25.68 kB; Giac wasm 9.75 MB; the whole build 13 MB, all precached by the service worker after the engine is up. After R5 (2026-10-13, the Python chunk and MicroPython wasm gone): start chunk 131.57 kB (45.82 kB gzip), precache total 12.2 MB.
 - Budgets in 8.3. New code for Find, Units, copy and the matrix editor lives in lazy chunks; the start chunk may grow by the key handlers and the mark (≤ 150 kB, ≤ 52 kB gzip).
 - **The size test** (annabell, milestone 4): `app/scripts/size-check.ts` reads Vite's manifest (`build.manifest: true`) and fails when a chunk passes its budget; `npm run build` and `build.sh` run it.
 
@@ -452,15 +448,15 @@ One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
 |---|---|---|
 | typecheck, Vitest, e2e | as today | every merge |
 | Parser round trips | every new template, chip and token, in the same commit | every merge |
-| Golden gate | interrupt, home (with marks), **precision** (new), solve, function, bench, parser, python, **units** (new, m5) | every merge that touches engine-side code; every engine build that ships |
+| Golden gate | interrupt, home (with marks), **precision** (new), solve, function, bench, parser, **units** (new, m5) | every merge that touches engine-side code; every engine build that ships |
 | Task benchmark | `tests/tasks/tasks.yaml`, active tasks within budget | every merge from milestone 4 on |
 | Find query test | `tests/tasks/find-queries.yaml`: all in the top 3, ≥ 90 % first | every merge that touches the index, aliases or ranking |
 | Size test | budgets in 8.3 | every build |
-| No-lazy-load test | Home, CAS, Function, Solve and Python never request `qalc.*`; the Find index is not requested before the engine is ready and the browser idle | every merge (from the milestone that adds each) |
+| No-lazy-load test | Home, CAS, Function and Solve never request `qalc.*`; the Find index is not requested before the engine is ready and the browser idle | every merge (from the milestone that adds each) |
 | Device bars (Tab One) | start, Enter p95 at 12 and 30 digits, Find per key, Units first result, memory | each milestone and release (annabell) |
 | Reproducibility | two release builds give the same `giac.wasm` and `qalc.wasm` | each release |
 
-Per milestone: **m4** home.yaml marks, precision.yaml, the 2.3 regression cases, parser cases for chips and the `0x` error, python.yaml `calc.eval`, find-queries.yaml, tasks.yaml (task 5 active), copy and paste e2e, size test. **m5** units.yaml (from the 26 spike cases: temperature, prefixes, dimension errors, uncertainty, exactness marks, the `hp` case and the data audit), Units e2e, no-lazy-load test, tasks 1–4 and 10. **m6** matrix and base round trips, EN7 golden cases (one per function, tier 0), tasks 6–9.
+Per milestone: **m4** home.yaml marks, precision.yaml, the 2.3 regression cases, parser cases for chips and the `0x` error, find-queries.yaml, tasks.yaml (task 5 active), copy and paste e2e, size test. **m5** units.yaml (from the 26 spike cases: temperature, prefixes, dimension errors, uncertainty, exactness marks, the `hp` case and the data audit), Units e2e, no-lazy-load test, tasks 1–4 and 10. **m6** matrix and base round trips, EN7 golden cases (one per function, tier 0), tasks 6–9.
 
 ---
 
@@ -476,16 +472,16 @@ Capacitor shell (Android) / PWA (service worker precaches everything after the e
    │  \pfx \res \ans)                                  │
    ├─ Parser P1 (LaTeX → Giac text | qalc text)       ─┤
    ├─ Formatter + marks (format.ts, pure)              │
-   ├─ Views: Home, CAS, Function, Solve, Python,       │
+   ├─ Views: Home, CAS, Function, Solve,               │
    │  Units (m5), Find palette (lazy), Matrix editor   │
    ├─ Find: index (lazy asset) + ranking (rank.ts)     │
    ├─ Clipboard / share port                           │
    └─ Session state ── Kv (IndexedDB: settings, history, defs, find.usage, units.*)
-        │ Calc port (views)            │ PythonEngine            │ UnitEngine (m5)
-        ▼                               ▼                         ▼
-   Worker 1: Giac + GSL + GMP + MPFR  Worker 2: MicroPython   Worker 3: libqalculate
-   (launch; Home, CAS, Solve,          (Python app; calc →     + libxml2 + GMP + MPFR
-    analysis, table; defs replay)       Giac via main thread)   (Units app; stateless)
+        │ Calc port (views)                                      │ UnitEngine (m5)
+        ▼                                                        ▼
+   Worker 1: Giac + GSL + GMP + MPFR                         Worker 3: libqalculate
+   (launch; Home, CAS, Solve,                                + libxml2 + GMP + MPFR
+    analysis, table; defs replay)                            (Units app; stateless)
 Build: build.sh → engines (container) → Find index generator (Node + qalc) → Vite (size test) → Capacitor → Gradle
 ```
 
@@ -501,7 +497,7 @@ interface MathEngine {
   unknowns(equations: string[]): Promise<string[]>;
   analyze(req: AnalysisRequest, s: HomeSettings): Promise<AnalysisResult>;
   table(req: TableRequest, s: HomeSettings): Promise<HomeResult[][]>;
-  eval(input: string): Promise<EvalResult>;            // tools only; Python's calc.eval moves to home() (2.10)
+  eval(input: string): Promise<EvalResult>;            // tools and benchmarks only
   cancel(): Promise<EngineTimings>;
   dispose(): void;
 }
@@ -525,19 +521,9 @@ interface Calc {                                         // views; mirrors MathE
   analyze(req: AnalysisRequest, s: CalcSettings): Promise<AnalysisResult>;
   table(req: TableRequest, s: CalcSettings): Promise<HomeResult[][]>;
   cancel(): Promise<void>;
-  python(): Promise<PythonEngine>;
   units(): Promise<UnitEngine>;                          // new (m5): loaded on first call
 }
 
-interface PythonEngine {                                 // unchanged (python/types.ts:59-72)
-  ready(): Promise<PyTimings>;
-  run(code: string, opts?: { file?: string }): Promise<PyResult>;
-  shell(line: string): Promise<PyResult>;
-  cancel(): Promise<PyTimings>;
-  onOutput(cb: (o: PyOutput) => void): () => void;
-  onGraphics(cb: (batch: GfxCmd[]) => void): () => void;
-  dispose(): void;
-}
 
 interface UnitEngine {                                   // new (m5), worker 3
   ready(): Promise<UnitTimings>;                         // instantiate, init (definitions), ready
@@ -631,7 +617,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 | Find per-key time on the Tab One | annabell (m4) | `?bench=find` | main thread or incremental/worker (3.2) |
 | MathLive keeps `expand: false` macros and draws chips distinctly | ron (m4, first EN1 task) | unit test + Playwright screenshot | token design (3.6); fallback: `\mathrm{const:ID}` with a parser rule |
 | `navigator.clipboard` in WebView 131; `navigator.share` absent | annabell (m4) | on the Tab One APK | whether the Capacitor plugins are needed (2.6) |
-| Three workers' memory | annabell (m5) | `dumpsys meminfo`, 10-minute session | Python worker idle shutdown (4.2) |
+| Two workers' memory | annabell (m5) | `dumpsys meminfo`, 10-minute session | qalc worker idle shutdown (4.2) |
 | qalc release build (container) size and time | annabell (m4) | `engine/qalc/build-wasm.sh release` | size budget, build time |
 | qalc compiled-in currency data | gorge (m4/U1) | grep the generated definitions; size with and without | strip or not (4.3) |
 | qalc name for Rankine (Δ°F) | answered (S1) | `°R` reads as Rankine, 1 °R = 5/9 K (r7 section 8) | temperature tokens (4.3) |

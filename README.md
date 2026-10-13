@@ -14,7 +14,6 @@ A graphing CAS calculator for Android and the web. Giac, GSL and MPFR compiled t
 - **CAS:** symbolic, with exact 2D results.
 - **Function:** Symb/Plot/Num views, with JSXGraph plots.
 - **Solve:** GSL bracketing with Brent, `hybrids` for systems, `proot` for polynomials. Every root is substituted back, and a large residual is flagged with `⚠`.
-- **Python:** MicroPython 1.29.0 in its own worker, with a `calc` module that can read the calculator's variables and draw on a 320×240 canvas. It loads only when the Python app first opens.
 - **Entry:** textbook (MathPrint) entry with MathLive, driven only by the on-screen keyboard. Our own LaTeX-subset parser turns the entry into Giac input. Results are drawn in 2D from Giac's `latex()`.
 - **Keyboard:** the logical key layout of the HP Prime (which function sits on which key and shift layer), defined in [spec/keyboard.yaml](spec/keyboard.yaml). The visual design is our own.
 - **Result chips and `Ans`:** reusing a result passes its full-precision value, not the digits on screen.
@@ -23,10 +22,9 @@ A graphing CAS calculator for Android and the web. Giac, GSL and MPFR compiled t
 ## Architecture
 ```
 Capacitor shell (Android; plain web as an offline PWA)
-└─ UI: Svelte 5 + MathLive + JSXGraph + CodeMirror 6
+└─ UI: Svelte 5 + MathLive + JSXGraph
    └─ MathEngine (async, cancellable)
       ├─ Worker: giac.wasm (Giac 2.1.0 + GSL 2.8 + GMP 6.3.0 + MPFR 4.2.2)
-      ├─ Worker: MicroPython 1.29.0 wasm (lazy)
       └─ Worker: libqalculate 5.13.1 wasm (lazy; built, used from milestone 4)
 ```
 Details: [docs/04-architecture.md](docs/04-architecture.md).
@@ -42,7 +40,7 @@ Details: [docs/04-architecture.md](docs/04-architecture.md).
 The start chunk is capped at 150 kB (52 kB gzip), and the build fails above that.
 
 ## Testing
-- **Golden gate:** about 600 cases across Home, precision, Solve, Function, parser and Python, checked against the real engine build. Every case records its source: `device`, `virtual-calc`, `oracle` (mpmath), `derived` or `assumed`. An engine build that fails the gate does not ship.
+- **Golden gate:** about 600 cases across Home, precision, Solve, Function and parser, checked against the real engine build. Every case records its source: `device`, `virtual-calc`, `oracle` (mpmath), `derived` or `assumed`. An engine build that fails the gate does not ship.
 - **Also:** svelte-check, Vitest unit tests and Playwright key-sequence tests at phone size.
 
 ## Status
@@ -50,7 +48,7 @@ The start chunk is capped at 150 kB (52 kB gzip), and the build fails above that
 |---|---|---|
 | 1 | Home + CAS with MathPrint | done |
 | 2 | Function + Solve | done |
-| 3 | Python | done |
+| 3 | Python | done; removed in 4a (P11) |
 | 4 | **Find and trust** | **in progress** |
 | 5 | Units | next |
 | 6 | Structure | after 5 |
@@ -87,7 +85,7 @@ All other commands: [CLAUDE.md](CLAUDE.md#commands).
 
 ## Built on
 - **Engine:** [Giac](https://xcas.univ-grenoble-alpes.fr/) by Bernard Parisse and Renée De Graeve.
-- **Libraries:** [GSL](https://www.gnu.org/software/gsl/), [GMP](https://gmplib.org/), [MPFR](https://www.mpfr.org/), [libqalculate](https://qalculate.github.io/), [MicroPython](https://micropython.org/), [MathLive](https://mathlive.io/), [JSXGraph](https://jsxgraph.org/), [CodeMirror](https://codemirror.net/), [Svelte](https://svelte.dev/) and [Capacitor](https://capacitorjs.com/).
+- **Libraries:** [GSL](https://www.gnu.org/software/gsl/), [GMP](https://gmplib.org/), [MPFR](https://www.mpfr.org/), [libqalculate](https://qalculate.github.io/), [MathLive](https://mathlive.io/), [JSXGraph](https://jsxgraph.org/), [Svelte](https://svelte.dev/) and [Capacitor](https://capacitorjs.com/).
 
 Versions and licences: [THIRD_PARTY.md](THIRD_PARTY.md).
 
