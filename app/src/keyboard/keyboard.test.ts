@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { SAMPLE_CHIPS } from "../input/chips.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
+import { parse } from "yaml";
+import { shippedKeyboard } from "./shipped.ts";
 import { actionFor, cellsIn, gridPlace, type Key, KeyboardSpecError, keyboard, labelFor, loadKeyboard, templates } from "./keyboard.ts";
 
 const spec = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../spec/keyboard.yaml"), "utf8");
@@ -133,6 +135,15 @@ describe("keyboard spec", () => {
   it("Tmpl opens the palette; a b/c is the fraction while typing", () => {
     expect(keyboard.byId.get("tmpl")?.actions.primary).toEqual({ kind: "special", name: "tmpl" });
     expect(keyboard.byId.get("frac")?.label.primary).toBe("a b/c");
+  });
+
+  it("the built app's copy (no sample, source, check or unit_slot) loads to the same keys and palette", () => {
+    const slim = shippedKeyboard(parse(spec));
+    expect(JSON.stringify(slim)).not.toMatch(/"(sample|source|check|unit_slot)"/);
+    const k = loadKeyboard(slim);
+    const plain = (a: unknown) => JSON.parse(JSON.stringify(a, (key, v: unknown) => (["sample", "source", "check"].includes(key) ? undefined : v)));
+    expect(plain(k.keys)).toEqual(plain(keyboard.keys));
+    expect(plain(k.palette)).toEqual(plain(keyboard.palette));
   });
 
   it("rejects broken palettes", () => {

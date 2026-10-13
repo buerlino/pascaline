@@ -40,7 +40,8 @@ export interface Key {
   /** Legends per layer; a string starting with "$" is an i18n key. */
   readonly label: Readonly<Partial<Record<Layer, string>>>;
   readonly actions: Readonly<Partial<Record<Layer, Action>>>;
-  readonly source: Source;
+  /** Absent in the built app (src/keyboard/shipped.ts). */
+  readonly source?: Source;
 }
 
 /** A template action (and its one-line form, if any). */
@@ -55,7 +56,7 @@ export interface PaletteItem {
   readonly key?: string;
   readonly layer?: Layer;
   readonly action: InsertAction;
-  /** Our reading of the reference, to confirm on the device. */
+  /** Our reading of the reference, to confirm on the device (false in the built app). */
   readonly check: boolean;
 }
 
@@ -137,6 +138,8 @@ function parseBody(v: unknown, where: string): ActionBody {
 /** Validate the parsed YAML and build the lookup tables. Throws KeyboardSpecError with the position of the problem. */
 export function loadKeyboard(doc: unknown): Keyboard {
   if (!isObj(doc) || doc["schema"] !== 1) throw new KeyboardSpecError("keyboard.yaml: schema must be 1");
+  // the built app's copy has no `source` and no `sample` (src/keyboard/shipped.ts); tests load the whole file
+  const shipped = doc["shipped"] === true;
   const columns = int(doc, "columns", "keyboard.yaml");
   const rowColumns = new Map<number, number>();
   const rc = doc["row_columns"];
@@ -170,8 +173,8 @@ export function loadKeyboard(doc: unknown): Keyboard {
     }
     const cls = str(item, "cls", where) as KeyClass;
     if (!CLASSES.includes(cls)) throw new KeyboardSpecError(`${where}: unknown cls '${cls}'`);
-    const source = str(item, "source", where) as Source;
-    if (!SOURCES.includes(source)) throw new KeyboardSpecError(`${where}: unknown source '${source}'`);
+    const source = shipped ? undefined : (str(item, "source", where) as Source);
+    if (source !== undefined && !SOURCES.includes(source)) throw new KeyboardSpecError(`${where}: unknown source '${source}'`);
     const labelRaw = item["label"];
     if (!isObj(labelRaw)) throw new KeyboardSpecError(`${where}: 'label' must be a mapping`);
     const label: Partial<Record<Layer, string>> = {};
@@ -186,19 +189,19 @@ export function loadKeyboard(doc: unknown): Keyboard {
     for (const layer of ["shift", "alpha"] as const)
       if ((label[layer] !== undefined) !== (actions[layer] !== undefined))
         throw new KeyboardSpecError(`${where}: ${layer} needs both a label and an action`);
-    const key: Key = { id, row, col, span, cls, label, actions, source };
+    const key: Key = { id, row, col, span, cls, label, actions, ...(source ? { source } : {}) };
     keys.push(key);
     byId.set(id, key);
   }
   const rows = keys.reduce((m, k) => Math.max(m, k.row + 1), 0);
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
   const units = [columns, ...rowColumns.values()].reduce((a, b) => (a * b) / gcd(a, b), 1);
-  const palette = loadPalette(doc["templates"], byId);
+  const palette = loadPalette(doc["templates"], byId, shipped);
   return { columns, rowColumns, units, rows, keys, byId, palette };
 }
 
 /** The `templates:` section: a grid of cells, each the template of a key or its own insert action with a sample. */
-function loadPalette(v: unknown, byId: ReadonlyMap<string, Key>): Palette {
+function loadPalette(v: unknown, byId: ReadonlyMap<string, Key>, shipped: boolean): Palette {
   if (v === undefined) return { columns: 1, items: [] };
   if (!isObj(v)) throw new KeyboardSpecError("templates: must be a mapping");
   const columns = int(v, "columns", "templates");
@@ -229,7 +232,7 @@ function loadPalette(v: unknown, byId: ReadonlyMap<string, Key>): Palette {
       items.push({ id, row, col, key: keyId, layer, action: action as InsertAction, check });
     } else {
       const action = parseAction({ insert: it["insert"], sample: it["sample"] }, where);
-      if (action.kind !== "insert" || !action.sample) throw new KeyboardSpecError(`${where}: needs 'insert' and 'sample'`);
+      if (action.kind !== "insert" || (!action.sample && !shipped)) throw new KeyboardSpecError(`${where}: needs 'insert' and 'sample'`);
       items.push({ id, row, col, action: action as InsertAction, check });
     }
   }
