@@ -8,8 +8,8 @@ import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
-import { prepare, search } from "./rank.ts";
-import type { FindItem } from "./types.ts";
+import { functionInsert, prepare, search } from "./rank.ts";
+import type { IndexItem } from "./types.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const indexFile = join(here, "_gen/find-index.json");
@@ -31,7 +31,7 @@ describe("find-queries.yaml", () => {
 
 describe.skipIf(!hasIndex)("Find index and query test", () => {
   const json = hasIndex ? readFileSync(indexFile, "utf8") : "[]";
-  const items = JSON.parse(json) as FindItem[];
+  const items = JSON.parse(json) as IndexItem[];
   const index = prepare(items);
   const byId = new Map(items.map((it) => [it.id, it]));
 
@@ -47,11 +47,21 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
       expect(it.id.startsWith(`${it.kind}:`), it.id).toBe(true);
       expect(it.names.length, it.id).toBeGreaterThan(0);
       expect(it.title, it.id).toBeTruthy();
-      expect(it.insert, it.id).toBeTruthy();
+      // a tier-1 function's insert is left out of the index and filled in by prepare() (decisions.md G4 item 1)
+      if (it.kind === "fn" && it.tier === 1) expect(it.insert, it.id).toBeUndefined();
+      else expect(it.insert, it.id).toBeTruthy();
       expect([0, 1]).toContain(it.tier);
       expect(/currency|^unit:(EUR|USD|GBP|JPY|CHF|BTC)\b/i.test(`${it.id} ${it.title}`), it.id).toBe(false);
       if (it.kind === "const") expect(it.value, it.id).toBeTruthy();
     }
+  });
+
+  it("every prepared item has its insert; a tier-1 function's is the \\operatorname template of its name", () => {
+    for (const p of index.items) expect(p.item.insert, p.item.id).toBeTruthy();
+    const uniform = index.items.find((p) => p.item.id === "fn:uniform_cdf")?.item;
+    expect(uniform?.tier).toBe(1);
+    expect(uniform?.insert).toBe("\\operatorname{uniform\\_cdf}\\left(#?\\right)");
+    expect(functionInsert("fn:uniform_cdf")).toBe(uniform?.insert);
   });
 
   it("names every expected id of an active phrase", () => {

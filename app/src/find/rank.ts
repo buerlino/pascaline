@@ -6,7 +6,7 @@
 // Ties: tier 0 first, then the context's kinds, then the shorter matched name, then the id.
 // Matching is in lower case; "_" counts as a space, and a name also matches without its spaces and "_" ("kb" finds
 // k_B, "g0" finds g_0).
-import type { FindContext, FindHit, FindItem } from "./types.ts";
+import type { FindContext, FindHit, FindItem, IndexItem } from "./types.ts";
 
 const EXACT = 900;
 const PREFIX = 800; // minus the letters still missing, at most 50
@@ -31,8 +31,14 @@ function prepareItem(item: FindItem): Prepared {
   return { item, names, title: words(norm(item.title)), desc: words(norm(item.desc ?? "")) };
 }
 
-export function prepare(items: readonly FindItem[]): PreparedIndex {
-  return { items: items.map(prepareItem) };
+/** The insert of a Giac function from its id (`fn:normald_cdf`): `\operatorname{normald\_cdf}\left(#?\right)`. */
+export function functionInsert(id: string): string {
+  return `\\operatorname{${id.slice(id.indexOf(":") + 1).replace(/_/g, "\\_")}}\\left(#?\\right)`;
+}
+
+/** The index ready to search: every item with its insert (a tier-1 function's is filled in here). */
+export function prepare(items: readonly IndexItem[]): PreparedIndex {
+  return { items: items.map((it) => prepareItem(it.insert === undefined ? { ...it, insert: functionInsert(it.id) } : (it as FindItem))) };
 }
 
 /** Edit distance ≤ 1: one insertion, deletion, substitution or adjacent transposition. */

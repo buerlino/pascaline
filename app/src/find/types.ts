@@ -34,6 +34,10 @@ export interface FindItem {
   insert: string;
 }
 
+/** An item as the generated index holds it: a tier-1 function has no `insert` (always the \operatorname template of
+ *  its name, filled in by prepare() in rank.ts; decisions.md G4 item 1). */
+export type IndexItem = Omit<FindItem, "insert"> & { insert?: string };
+
 export interface FindHit {
   item: FindItem;
   /** Higher is better; only the order matters. */
