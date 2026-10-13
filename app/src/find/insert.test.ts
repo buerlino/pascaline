@@ -12,9 +12,13 @@ const here = dirname(fileURLToPath(import.meta.url));
 interface Curated { id: string; giac: string; insert?: string }
 const curated = (parse(readFileSync(join(here, "../../../find/functions.yaml"), "utf8")) as { functions: Curated[] }).functions;
 const opInsert = (n: string): string => `\\operatorname{${n.replace(/_/g, "\\_")}}\\left(#0\\right)`;
-const fill = (insert: string): string => insert.replace(/#[?0]/, "x");
+const fill = (insert: string): string => insert.replace("#0", "x");
 
 describe("Find insertion", () => {
+  it("puts a selection in every curated insert: its slot is #0, never #? (decisions.md R17 default, point 4)", () => {
+    for (const f of curated) if (f.insert) expect(f.insert.includes("#0") && !f.insert.includes("#?"), f.id).toBe(true);
+  });
+
   it.each(curated.map((f) => [f.id, f] as const))("%s becomes its Giac command", (_, f) => {
     const giac = latexToGiac(fill(f.insert ?? opInsert(f.giac)));
     expect(giac.startsWith(`${f.giac}(`), giac).toBe(true);

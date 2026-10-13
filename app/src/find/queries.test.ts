@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Find query test (docs/04 3.8): tests/tasks/find-queries.yaml against the generated index and the real
 // ranking. Gate: every active phrase in the top 3, at least 90 % first. Also the index budgets of 3.3 and 3.9.
-// Needs the generated index: `npm run index` (skipped with a warning when it is missing).
+// Needs the full generated index: `npm run index` with a qalc build. Skipped with a warning when it is missing or
+// holds functions only (a --no-units build); FIND_INDEX=required (the merge gate, docs/shifts/brief.md) fails instead.
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,7 +14,8 @@ import type { IndexItem } from "./types.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const indexFile = join(here, "_gen/find-index.json");
-const hasIndex = existsSync(indexFile);
+const indexJson = existsSync(indexFile) ? readFileSync(indexFile, "utf8") : "[]";
+const hasIndex = (JSON.parse(indexJson) as IndexItem[]).some((it) => it.kind === "unit"); // functions only = --no-units
 
 interface Query { query: string; expect: string; note?: string; status?: "pending" }
 const doc = parse(readFileSync(join(here, "../../../tests/tasks/find-queries.yaml"), "utf8")) as { schema: number; queries: Query[] };
@@ -30,7 +32,7 @@ describe("find-queries.yaml", () => {
 });
 
 describe.skipIf(!hasIndex)("Find index and query test", () => {
-  const json = hasIndex ? readFileSync(indexFile, "utf8") : "[]";
+  const json = indexJson;
   const items = JSON.parse(json) as IndexItem[];
   const index = prepare(items);
   const byId = new Map(items.map((it) => [it.id, it]));
@@ -85,8 +87,9 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
   it("takes well under 16 ms per key on the desktop (the device gate is ?bench=find)", () => {
     const keys = active.flatMap((q) => [...q.query].map((_, i) => q.query.slice(0, i + 1)));
     for (const k of keys.slice(0, 50)) search(index, k); // warm up
-    const times: number[] = [];
-    for (const k of keys) { const t = performance.now(); search(index, k); times.push(performance.now() - t); }
+    // the best of 3 rounds per key, so a busy machine (a typecheck alongside) does not fail it
+    const times = keys.map(() => Infinity);
+    for (let r = 0; r < 3; r++) keys.forEach((k, i) => { const t = performance.now(); search(index, k); times[i] = Math.min(times[i] ?? Infinity, performance.now() - t); });
     times.sort((a, b) => a - b);
     const p95 = times[Math.floor(times.length * 0.95)] ?? 0;
     console.log(`find queries: ${keys.length} keys, p50 ${(times[times.length >> 1] ?? 0).toFixed(2)} ms, p95 ${p95.toFixed(2)} ms`);
@@ -94,6 +97,10 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
   });
 });
 
-it("finds the generated index (otherwise the query test was skipped)", () => {
-  if (!hasIndex) console.warn("queries.test: no app/src/find/_gen/find-index.json (npm run index); the query test was skipped");
+it("finds the full generated index (otherwise the query test was skipped)", () => {
+  if (hasIndex) return;
+  const why = existsSync(indexFile) ? "holds functions only (a --no-units build)" : "is missing";
+  const msg = `app/src/find/_gen/find-index.json ${why}; run npm run index with a qalc build (QALC_OUT)`;
+  if (process.env["FIND_INDEX"] === "required") expect.fail(msg);
+  console.warn(`queries.test: ${msg}; the query test was skipped`);
 });
