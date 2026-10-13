@@ -19,10 +19,11 @@ async function openMode(page: Page): Promise<void> {
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
 }
 const closeSheet = (page: Page) => tap(page, ["cancel"]);
-/** Tick (or untick) forms of the Format key cycle: Settings, Enter on the first row, a tap per form, Cancel. */
-async function toggleCycle(page: Page, modes: string[]): Promise<void> {
+/** Tick (or untick) notations of the Format key cycle (row 1) or forms of the a b/c cycle (row 2, R10): Settings,
+ *  the row's digit, a tap per mode, Cancel. */
+async function toggleCycle(page: Page, modes: string[], row = "d1"): Promise<void> {
   await openSettings(page);
-  await tap(page, ["enter"]);
+  await tap(page, [row]);
   for (const m of modes) await sheet(page).locator(`[data-id="${m}"]`).tap();
   await closeSheet(page);
 }
@@ -52,18 +53,19 @@ test("fmt shows 1/3 in Standard, Scientific, Engineering and back, for that resu
   expect(await page.evaluate(() => window.pascaline.session.settings.format)).toBe("std");
 });
 
-test("fmt with Fraction ticked: 7/3 shows as 7/3 and 2 1/3", async ({ page }) => {
+test("a b/c with Mixed ticked (R10): 7/3 shows as 7/3, 2 1/3, then the decimal again", async ({ page }) => {
   await open(page, "");
   await ready(page);
-  await toggleCycle(page, ["frac", "mixed"]);
+  await toggleCycle(page, ["mixed"], "d2");
   await tap(page, ["d7", "div", "d3", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "2.33333333333");
-  // std -> sci -> eng -> frac -> mixed
-  await tap(page, ["fmt", "fmt", "fmt"]);
+  await tap(page, ["frac"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "7/3");
   await expect(lastText(page).locator(".math")).toHaveAttribute("data-latex", "\\frac{7}{3}");
-  await tap(page, ["fmt"]);
+  await tap(page, ["frac"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "2 1/3");
+  await tap(page, ["frac"]);
+  await expect(lastText(page)).toHaveAttribute("data-text", "2.33333333333");
 });
 
 test("the Format key cycle and the vibration settings persist across a reload", async ({ page }) => {
@@ -126,9 +128,8 @@ test("marks: = for an exact value shown in full, ≈ for digits of an irrational
   await expect(markOfLast(page)).toHaveText("≈");
   // the old "approximate" note is gone
   await expect(page.getByText("approximate", { exact: true })).toHaveCount(0);
-  // the Format key shows the third as an exact fraction: =
-  await toggleCycle(page, ["frac"]);
-  await tap(page, ["fmt", "fmt", "fmt"]);
+  // a b/c shows the third as an exact fraction: =
+  await tap(page, ["frac"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "1/3");
   await expect(markOfLast(page)).toHaveText("=");
 });
