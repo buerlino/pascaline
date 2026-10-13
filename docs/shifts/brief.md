@@ -7,7 +7,7 @@
 `phase-1` at `ad86660` (architecture docs, P8–P10 accepted, sandra's probes). Nothing pushed. Leftovers for the first review session to clean up: the merged branches `p1/annabell-eve-fp6`, `p1/annabell-night-fp6`, `p1/ron-night-k2` and their worktrees under `.claude/worktrees/` (`git worktree remove`, then `git branch -d`). `p1/ron-eve-gestures` is unmerged (the old flick classifier); leave it for the owner.
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
-Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (G3, R4, A4; G4 merged 2026-10-13) keep their place: G3 runs in parallel with 4a, R4 and A4 come after it.
+Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4; G4 merged 2026-10-13, G3 merged 2026-10-13 as 56ffab1) keep their place: R4 and A4 come after 4a.
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
@@ -47,7 +47,7 @@ Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). T
 **Waves** (one package per agent at a time; the three agents run in parallel):
 1. G0, R1, G1, A1 (A2 can start at once too). Merged.
 2. R2, G2, A2. Merged (2026-10-12).
-3. R3, A3 merged (2026-10-12). G4 merged (2026-10-13, 3376582; usage boost removed at review, P11).
+3. R3, A3 merged (2026-10-12). G4 merged (2026-10-13, 3376582; usage boost removed at review, P11). G3 merged (2026-10-13, 56ffab1).
 4. **Next:** the owner's phone test (debug APK on the Fairphone 6, 2026-10-12) gives a bug list; then G4 finished, ron's bug fixes with M4-10, then G3 (gorge, Opus, after G4), R4 (ron, Sonnet, after R3). Last: A4 (annabell, after R3, R4, A3).
 
 G4 goes before G3 because A2 → G4 → R4 → A4 is the longest chain. G3 now carries G2's precision follow-ups (M4-6 to M4-8), hence Opus. The qalc build for G4's index generator is in the main checkout: `QALC_OUT=/home/nordmu/Documents/source99/pascaline/engine/qalc/_out/dev`.

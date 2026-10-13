@@ -58,7 +58,7 @@ The top risks are in section 9.
 | Keyboard (`spec/keyboard.yaml`, `keyboard/`) | the reference's logical layout; hold-and-drag cursor (K2; removed by P11, 2026-10-13) | — | Vars, Math, Tmpl do nothing (`special: none`, `spec/keyboard.yaml:68-70`); no Ans key; no copy or paste | in the start chunk (142.6 kB total) |
 | Entry, MathLive (`entry/controller.ts`) | textbook entry; result insertion (L5) | — | inserting a result inserts the **rounded** digits shown (`App.svelte:132`, `:270`) | 808 kB chunk after the keypad |
 | Parser (`input/parse.ts`, `emit.ts`) | one rule per key | rejects unknown input | `0xFF` typed with the keys becomes `0*x*F*F` = 0 (probe, 2.3 #1); `\mathrm{…}` tokens are rejected (`parse.ts:540`) | 16 kB min |
-| Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel restores definitions | the replay log lives only in memory (`workerEngine.ts:54`): variables are gone after a relaunch | Giac 9.75 MB wasm |
+| Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel restores definitions | the definitions log is stored in IndexedDB and replayed at start (G3, 6.2) | Giac 9.75 MB wasm |
 | Home evaluation (`engine/homeEval.ts`) | 92 ms p95 | exact-first, 123/123 golden | a rounded result is `approximate: false` (`homeEval.ts:242`); lists, matrices and `solve` show Giac's raw text (`homeEval.ts:235-239`); floats returned by Giac's numeric functions count as exact (2.3 #2–#4) | — |
 | Formatter (`engine/format.ts`) | re-formats without the engine | BigInt, one rounding | `tieRisk` is computed but nothing reads it (grep: only engine files) | in the start chunk |
 | History and settings (`state/session.svelte.ts`, `storage.ts`) | history survives a relaunch | — | digits capped at 15 (`session.svelte.ts:86`, `Settings.svelte:22`); no schema version | — |
@@ -140,6 +140,8 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 **Risk:** both evaluations wrong in the same way is not caught: in 2.3 #2 both of Giac's algorithms are wrong in the 8th digit and agree up to the 9th. The answers are the substitute-back polish for inverse functions (as for Solve roots), the function audit for Find (3.3, tier 0: golden cases at the edges of each domain) and upstream reports. Until a function has passed the audit, a float that Giac's numeric code returned for it is shown with `⚠`, never a bare `≈`.
 **Would change if:** Tab One timing shows the extra `evalf` costing more than 20 % of Enter p95; then the check runs only above 15 digits and for float-returning inputs.
+
+**Built in G3:** stored floats keep their facts in the defs log; a result that uses them inherits the weakest, checked by perturbation (M4-7). `evalf(e,n)`/`approx(e,n)` are rewritten to the check's precision, and n becomes the display digits in Home and CAS (M4-6; Home by the owner, 2026-10-13). Solve and analysis roots are compared after a second polish at W+20 (M4-8). A value that is 0 in every evaluation but not an exact rational shows `⚠` without a count, never `≈ 0` (owner, 2026-10-13: `exp(10^-70)-1`).
 
 ### 2.5 Decision: digits up to 30
 
@@ -254,7 +256,7 @@ Live items (variables, user functions) have the same shape with `kind: "var" | "
 **Alternatives:** generating at run time from the engines (costs start-up and memory); committing the generated JSON (F-Droid: generated data in git is not our source); all 1,780 Giac commands at the same rank (buries what engineers use under graph theory and geometry).
 
 ### 3.4 Live entries
-The engine host reports the name each stateful input defines (`defined: {name, kind}`, from `:=` and ▶; `host.ts` already detects stateful inputs at `:56`). The session keeps `userNames` (name, kind, formatted value preview, view, time) and persists it with the definitions (6.2), so Vars works after a relaunch. Find merges them at query time and ranks them like recents. Python names stay in the Python app (its own completion, later).
+The engine host reports the name each stateful input defines (`defined: {name, kind}`, from `:=` and ▶; `host.ts` already detects stateful inputs at `:56`). The session keeps `userNames` (name, kind, formatted value preview, view, time), read through `Calc.names()` from the persisted defs log (6.2), so Vars works after a relaunch. Find merges them at query time and ranks them like recents. Python names stay in the Python app (its own completion, later).
 
 ### 3.5 Ranking
 **Amended 2026-10-13 (P11): no usage boost**, so the same query always gives the same order (docs/03 rule 8); with an empty query Find shows the G2-style Math menu (fixed categories, fixed order). Our own code (`app/src/find/rank.ts`, about 150 lines). Order: ~~(1) usage boost: count and recency from `find.usage`~~; (2) exact match of a name, symbol or alias; (3) prefix of one, shorter first; (4) word prefix inside one (`_`, space); (5) word prefix in the title or description; (6) one edit away (insertion, deletion, substitution, transposition) for queries of 4+ characters. Ties: tier 0 first, then the context's kind (variables in Vars, units in the Units app), then the shorter name, then id. Nothing is stored (no `find.usage`). Built as written (G4), with the usage boost removed before the merge.
@@ -414,11 +416,11 @@ One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
 | `settings` | `schema: 2`, digits ≤ 30, format (`std`, `sci`, `eng`, `fix`, `pfx`), fixDecimals, fmtCycle, entry, haptics, decimal comma, base word size and signedness | exists, no schema field; each field validated on restore (`session.svelte.ts:339-353`) |
 | `view`, `place` | open view, open app | exist |
 | `history` | ≤ 200 items per view; new fields `full` (≤ 2 kB), the mark facts | exists |
-| `defs` | **new:** the definitions log (`:=`, ▶, `purge`), last definition per name kept, ≤ 500 lines, replayed into the engine at start through the existing `init.replay` (`workerEngine.ts:154`) | the log is in memory only (`workerEngine.ts:54`) |
+| `defs` | the definitions log (`:=`, ▶, `purge`), last definition per name kept, ≤ 500 lines, replayed into the engine at start. **Variables are kept as their value, not the command that made them** (owner, 2026-10-13, G3): `B:=romberg(…)` is stored as `B:=(evalf(<exact>,k))`, so a relaunch does not re-run the integral and `A:=rand()` keeps its value; functions, `assume` and other stateful inputs keep their command | built (G3): one entry per name with kind, replay commands, mark facts, preview, view, time (`engine/defs.ts`); variables kept as values; symbolic values replayed first; a fresh worker gets it in `init.replay`, and on first launch a `define` message, gated before any call, brings the stored log (3 s load timeout) |
 | `app.function`, `app.solve` | per app | exist |
 | `units.targets`, `units.history` | last target per dimension; the Units app's history | new (milestone 5) |
 
-**Migration:** `schema` absent means 1; a restore keeps validating field by field and writes back `schema: 2`. Built as written (R3): `session.migrateSettings` validates every field. **Replay budget:** `defs` replay ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` is already in `EngineTimings`). **Why persist definitions:** a calculator keeps its memory; today the history shows `5▶A` after a relaunch while `A` is undefined.
+**Migration:** `schema` absent means 1; a restore keeps validating field by field and writes back `schema: 2`. Built as written (R3): `session.migrateSettings` validates every field. **Replay budget:** `defs` replay ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` is already in `EngineTimings`). Desktop: 10.8 ms for 200 definitions (G3). **Why persist definitions:** a calculator keeps its memory; today the history shows `5▶A` after a relaunch while `A` is undefined.
 
 ### 6.3 Decision: start-up and bytes
 - Today (`vite build`, 2026-10-12): start chunk `index` 142.62 kB (49.64 kB gzip); MathLive 807.73 kB (222.09 kB gzip) after the keypad; lazy: Function 19.6 kB, JSXGraph chunk 1,035.31 kB (258.52 kB gzip), Solve 8.2 kB, Python 377.18 kB (127.99 kB gzip), the Giac worker 25.68 kB; Giac wasm 9.75 MB; the whole build 13 MB, all precached by the service worker after the engine is up. After R5 (2026-10-13, the Python chunk and MicroPython wasm gone): start chunk 131.57 kB (45.82 kB gzip), precache total 12.2 MB.
@@ -499,6 +501,7 @@ interface MathEngine {
   analyze(req: AnalysisRequest, s: HomeSettings): Promise<AnalysisResult>;
   table(req: TableRequest, s: HomeSettings): Promise<HomeResult[][]>;
   eval(input: string): Promise<EvalResult>;            // tools and benchmarks only
+  definitions(): Promise<readonly DefEntry[]>;          // the defs log (6.2), the stored one included once read (G3)
   cancel(): Promise<EngineTimings>;
   dispose(): void;
 }
@@ -510,6 +513,7 @@ interface HomeResult {                                   // existing fields kept
   defined?: { name: string; kind: "var" | "fn" };        // new: what a stateful input defined (Find live items)
   items?: HomeResult[];                                  // new: elements of a numeric list or matrix (rows flattened, with shape)
   shape?: [number, number];
+  digits?: number;                                       // the digits evalf(e,n)/approx(e,n) asked for: shown with these (G3)
 }
 interface CasResult { /* ok, text, latex, timedOut, error, engineMs */ numeric?: HomeResult; }  // new: when the result is a number
 
@@ -521,10 +525,13 @@ interface Calc {                                         // views; mirrors MathE
   unknowns(equations: string[]): Promise<string[]>;
   analyze(req: AnalysisRequest, s: CalcSettings): Promise<AnalysisResult>;
   table(req: TableRequest, s: CalcSettings): Promise<HomeResult[][]>;
+  names(): Promise<UserName[]>;                         // the user's names from the defs log (3.4, G3)
   cancel(): Promise<void>;
   units(): Promise<UnitEngine>;                          // new (m5): loaded on first call
 }
 
+
+// Worker protocol (G3): home/cas/eval responses carry `defs: DefChange[]`; request {type:"define", defs} → {type:"defined", replayMs}.
 
 interface UnitEngine {                                   // new (m5), worker 3
   ready(): Promise<UnitTimings>;                         // instantiate, init (definitions), ready
