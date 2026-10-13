@@ -7,22 +7,23 @@
 `phase-1` after the merges of R17, S2, R13, R16 and R14 (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R14, R16, R17. **Next:** R18, then R15a and R15b. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ## 0c. Night shift 2026-10-14: henri's plan (owner, 2026-10-14)
-The owner planned this shift in advance. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. **Low usage comes first** (the week is at 75%): the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for tomorrow.
+The owner planned this shift in advance. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first** (the week is at 75%): the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for tomorrow.
 
 ### Rules for this shift (they replace rules sections 4, 10 and 11 and change section 8a)
 1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
 2. **A fresh agent for every step:** each package, each review, each fix round and each Opus pass is a new spawn. Never SendMessage to give an agent a second task. Prompts are the templates below with the blanks filled in, nothing more (the agents read the brief themselves).
-3. **Spawn in the background, then end your turn.** Do not poll, sleep, read diffs, run tests or builds, or read files beyond this brief and `.coord/log.md`. You wake when the agent finishes.
+3. **Spawn in the foreground** (`run_in_background: false`): the call returns when the agent is done. This is needed because henri_2 and later run headless, and a headless session ends with its turn. Do not poll, sleep, read diffs, run tests or builds, or read files beyond this brief and `.coord/log.md`.
 4. **No APKs, no devices:** skip section 8a step 5a and its feedback.md line. Nobody runs `adb` or `build.sh`. annabell is not used tonight.
 5. **Models:** workers run Sonnet, effort medium. One exception: R18 runs Opus (signed in 0b), effort medium. Reviews run Sonnet, effort medium (section 8a says Opus; tonight Sonnet). Opus passes run Opus, effort medium.
 6. **henri decides nothing.** A question, a blocked worker, a conflict or anything this section does not settle: log it and hand it to the next Opus pass (run that pass at once if the question blocks the queue). **Follow every Opus-pass recommendation as written.** Plan changes go to the owner through `docs/decisions.md` "Needs the user", written by the Opus pass.
-7. **Start-up:** `date`; `git switch phase-1 && git status` (must be clean; if not, stop and log); `tools/devlock.sh status`. Append a section "2026-10-14 night" to `.coord/log.md`. No roll call, no device watcher.
+7. **Start-up:** `date`; `git switch phase-1 && git status` (must be clean; if not, stop and log); `tools/devlock.sh status`. henri_1 appends a section "2026-10-14 night" to `.coord/log.md`; a later henri logs `START henri_<n>` under it and reads the log from the last HANDOVER on. No roll call, no device watcher.
 8. **Log:** one line per step in `.coord/log.md`: time, step, agent and model, outcome, commit. The log is the queue state: on a resume, read it and continue from the first step not done.
-9. **Usage limit:** if a spawn fails or you hit a limit, log the time and the queue position and end your turn. No retry loops. The owner resumes with `claude --agent henri "Resume the night shift from .coord/log.md."`
+9. **Usage limit:** if a spawn fails or you hit a limit, log the time, the queue position and `STOPPED henri_<n>`, and end without starting a next henri. No retry loops. The owner resumes with `tools/henri-next.sh <n+1>` (or interactively: `claude --agent henri "Resume the night shift from .coord/log.md."`).
 10. **Worker gone without a report** (no report commit): spawn one fresh worker with the same prompt (it continues from the branch's last commit). If that one also fails, log it, leave the branch, and go on with the next package.
+11. **A fresh henri after every Opus pass** (owner, 2026-10-14). The owner's interactive session is henri_1. Once an Opus pass has replied, log its reply in full (its FIX lines and QUEUE are the next henri's orders), then log `HANDOVER henri_<n> → henri_<n+1>; next: <step>`, run `tools/henri-next.sh <n+1>` (it starts a detached headless session that reads this brief and the log; output in `.coord/henri_<n+1>.out`), and end your turn. Do nothing more after that, even if woken: the new henri owns the queue. Your number n is in your prompt (henri_1 if none). The final pass (step 8) hands over the same way; that henri does its FIX packages and the report.
 
 ### The queue
-Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" verdict adds a fix round (fresh worker, then a fresh review), at most two rounds; after the second "NOT MERGED" leave the branch unmerged, log it, go on. **Opus pass:** after every three finished packages (merged or left unmerged; fix packages from a pass count), and once at the end for any finished package no pass has covered yet.
+Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" verdict adds a fix round (fresh worker, then a fresh review), at most two rounds; after the second "NOT MERGED" leave the branch unmerged, log it, go on. **Opus pass:** after every three finished packages (merged or left unmerged; fix packages from a pass count), and step 8 at the end of the queue. Step 8 is the last pass: the FIX packages it orders get only their Sonnet review, then the report.
 
 | Step | What | Agent, model | Branch | Est. |
 |---|---|---|---|---|
@@ -34,11 +35,11 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 6 | R19 M4-10 and the `mod` parser bug (section 7) | ron, Sonnet | `p1/ron-m4-fix` | 45 min + review |
 | 7 | R20 Solve and analysis copy (section 7) | ron, Sonnet | `p1/ron-m4-copy` | 45 min + review |
 | 8 | **Opus pass 2** on what came after pass 1, then its FIX packages | Opus | — | 20 min + fixes |
-| 9 | Shift report, then stop | henri | — | 10 min |
+| 9 | Shift report, then stop (the henri started after step 8) | henri_n | — | 10 min |
 
 Not tonight: R15b and everything after it in 0b (they wait for the owner's pick), R4 and A4 (after 4a), milestone 5.
 
-### Prompt templates (Agent tool; `run_in_background: true`; `effort: "medium"`)
+### Prompt templates (Agent tool; `run_in_background: false`; `effort: "medium"`)
 **Worker** (`subagent_type` = the agent in the table, `model` = its model):
 > Do package `<ID>` in docs/shifts/brief.md section 7, under the night-shift rules of section 0c. You already run in your own worktree: skip the `git worktree add` step of section 2 and run `git switch -c <branch> phase-1` there (or `git switch <branch>` if the branch exists, and continue from its last commit). End with the report commit of section 2, then reply in at most five lines: branch, last commit, done or not done.
 
@@ -67,8 +68,8 @@ NOTES: <at most three lines for the shift report>
 ```
 henri runs each FIX as a package (the Worker template with "Do package …" replaced by the FIX prompt and `<branch>` by the FIX branch, then a review), then continues with QUEUE.
 
-### Shift report (step 9, henri)
-`docs/shifts/2026-10-14-night-report.md`, short and plain, from the log and the agents' replies: what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (pick an R15a layout; items under "Needs the user"); the queue left for tomorrow. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
+### Shift report (step 9, the last henri)
+`docs/shifts/2026-10-14-night-report.md`, short and plain, from the log and the agents' replies (log `SHIFT DONE` at the end; start no further henri): what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (pick an R15a layout; items under "Needs the user"); the queue left for tomorrow. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
 Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
