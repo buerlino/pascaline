@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The only way UI code talks to maths (CLAUDE.md). Implementations run Giac off the main thread.
 import type { HomeResult, HomeSettings } from "./homeEval.ts";
+import type { DefEntry } from "./defs.ts";
 
 export type { HomeResult, HomeSettings };
 
@@ -58,7 +59,7 @@ export interface EngineTimings {
   instantiateMs: number;
   /** giac_init(). */
   initMs: number;
-  /** Variable-log replay after a restart (0 on first start). */
+  /** Replay of the definitions: the stored ones on first launch, the log after a restart (docs/04 6.2). */
   replayMs: number;
   /** Worker construction to "ready" as seen from the caller (includes the above). */
   readyMs: number;
@@ -161,6 +162,8 @@ export interface MathEngine {
   table(req: TableRequest, settings: HomeSettings): Promise<HomeResult[][]>;
   /** Raw Giac call in whatever mode the engine is in (tools and benchmarks; not the UI). */
   eval(input: string): Promise<EvalResult>;
+  /** The definitions log (docs/04 6.2): what the user defined, the stored log included once it has been read. */
+  definitions(): Promise<readonly DefEntry[]>;
   /**
    * Abort whatever is running: terminates the worker, starts a new one and replays the variable
    * definitions. Pending calls reject with EngineCancelled. Mode settings are re-applied on the next call.

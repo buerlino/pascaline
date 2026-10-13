@@ -14,7 +14,8 @@ import {
   type TableRequest,
 } from "../engine/types.ts";
 import { WorkerEngine } from "../engine/workerEngine.ts";
-import { CalcCancelled, type Calc, type CalcSettings, type CasOutcome, type HomeOutcome } from "./port.ts";
+import { userNamesOf } from "../engine/defs.ts";
+import { CalcCancelled, type Calc, type CalcSettings, type CasOutcome, type HomeOutcome, type UserName } from "./port.ts";
 
 export class EngineCalc implements Calc {
   private readonly engine: MathEngine;
@@ -58,6 +59,10 @@ export class EngineCalc implements Calc {
 
   table(req: TableRequest, s: CalcSettings): Promise<HomeResult[][]> {
     return mapCancel(this.engine.table(req, homeSettings(s)));
+  }
+
+  async names(): Promise<UserName[]> {
+    return userNamesOf(await this.engine.definitions());
   }
 
   async cancel(): Promise<void> {

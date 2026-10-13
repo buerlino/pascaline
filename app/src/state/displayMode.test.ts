@@ -153,3 +153,18 @@ describe("marks and PFX (docs/04 2.4, 2.7)", () => {
     expect(renderNumeric(exact({ value: real(5n) }), "pfx", c4)?.text).toBe("5.000");
   });
 });
+
+describe("digits the input asked for (CAS evalf(e,n), decisions M4-6)", () => {
+  // pi to 52 digits (oracle: tests/golden/precision.yaml prec-M4-6-cas-evalf-pi-50)
+  const pi = decimalFromRational(31415926535897932384626433832795028841971693993751058n, 10n ** 52n, 60);
+  const r: NumericResult = { value: { re: pi, im: q(0n) }, facts: { exactRational: false, reliableDigits: 60, digits: 50 } };
+  it("draws the result with them, not with the digits setting", () => {
+    expect(renderNumeric(r, undefined, ctx)?.text).toBe("3.1415926535897932384626433832795028841971693993751");
+    expect(markText(markFor(r, undefined, ctx)!)).toBe("≈");
+  });
+  it("shows only the confirmed ones when fewer agree", () => {
+    const fewer: NumericResult = { ...r, facts: { exactRational: false, reliableDigits: 20, digits: 50 } };
+    expect(renderNumeric(fewer, undefined, ctx)?.text).toBe("3.1415926535897932385");
+    expect(markText(markFor(fewer, undefined, ctx)!)).toBe("⚠ 20");
+  });
+});

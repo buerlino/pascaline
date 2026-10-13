@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// MathEngine backed by giac.worker.ts. State that must survive a Cancel (variable and function
-// definitions) is logged here, outside the worker, and replayed into a fresh worker (D2).
+// MathEngine backed by giac.worker.ts. State that must survive a Cancel or a relaunch (variable and function
+// definitions) is logged here, outside the worker, stored, and replayed into a fresh worker (D2; docs/04 section 6.2).
 import type { Request, Response } from "./protocol.ts";
+import { applyDefChanges, replayOrder, validDefs, type DefChange, type DefEntry } from "./defs.ts";
 import {
   EngineCancelled,
   type CasResult,
@@ -26,11 +27,22 @@ export interface WorkerLike {
   onerror: ((ev: { message?: string }) => void) | null;
 }
 
+/** Where the definitions log is kept between launches (the app: IndexedDB key `defs`). */
+export interface DefsStore {
+  load(): Promise<unknown>;
+  save(log: readonly DefEntry[]): void;
+}
+
 export interface WorkerEngineOptions {
   /** Base URL under which `engine/giac.mjs` is served (Vite's BASE_URL by default). */
   baseUrl?: string;
   createWorker?: () => WorkerLike;
+  /** Keeps the definitions across launches; without it they last until the page closes. */
+  defs?: DefsStore;
 }
+
+/** How long the first calls wait for the stored definitions before the engine starts without them (a blocked store). */
+export const DEFS_LOAD_TIMEOUT_MS = 3000;
 
 type Pending = { resolve: (r: Response) => void; reject: (e: Error) => void };
 type RequestBody = Request extends infer R ? (R extends { id: number } ? Omit<R, "id"> : never) : never;
@@ -51,15 +63,68 @@ export class WorkerEngine implements MathEngine {
   private worker!: WorkerLike;
   private nextId = 1;
   private pending = new Map<number, Pending>();
-  private replayLog: string[] = [];
+  private log: DefEntry[] = [];
   private readyPromise!: Promise<EngineTimings>;
   private readonly baseUrl: string;
   private readonly createWorker: () => WorkerLike;
+  private readonly store: DefsStore | undefined;
+  /** Saving is on once the stored log was read (a store that timed out is never overwritten with a partial log). */
+  private storeOk = false;
+  /** Settles once the stored definitions were read and sent to the worker; every call is posted after it. */
+  private readonly gate: Promise<void>;
+  private gateOpen = false;
+  /** Counts stops (Cancel, crash): a call still waiting for the gate when one comes is rejected like a posted one. */
+  private generation = 0;
+  private stopError: Error = new EngineCancelled();
+  /** The replay of the stored definitions on first launch (part of the first ready()). */
+  private defined: Promise<number> = Promise.resolve(0);
 
   constructor(opts: WorkerEngineOptions = {}) {
     this.baseUrl = opts.baseUrl ?? defaultBaseUrl();
     this.createWorker = opts.createWorker ?? defaultWorker;
+    this.store = opts.defs;
+    // The worker starts at once (the wasm loads while the store is read); the stored definitions follow as their own
+    // message, posted before any call (calls wait for the gate, and this callback is the gate's first).
     this.start();
+    this.gate = this.loadStored().then((stored) => {
+      this.gateOpen = true;
+      if (!stored.length) return;
+      this.log = applyDefChanges(this.log, stored.map((e) => ({ set: e })));
+      this.defined = this.post({ type: "define", defs: stored }).then((r) => (r.type === "defined" ? r.replayMs : 0));
+      this.defined.catch(() => {});
+    });
+    const first = this.readyPromise;
+    this.readyPromise = Promise.all([first, this.gate.then(() => this.defined)]).then(([t, ms]) => ({
+      ...t,
+      replayMs: t.replayMs + ms,
+      readyMs: Math.max(t.readyMs, performance.now() - this.startedAt),
+    }));
+    this.readyPromise.catch(() => {});
+  }
+
+  private startedAt = 0;
+
+  private async loadStored(): Promise<DefEntry[]> {
+    if (!this.store) return [];
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<"timeout">((resolve) => (timer = setTimeout(() => resolve("timeout"), DEFS_LOAD_TIMEOUT_MS)));
+    try {
+      const x = await Promise.race([this.store.load(), timeout]);
+      if (x === "timeout") return [];
+      this.storeOk = true;
+      return validDefs(x);
+    } catch {
+      return [];
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /** Applies what a call defined to the log, and stores it. */
+  private keep(changes: readonly DefChange[]): void {
+    if (!changes.length) return;
+    this.log = applyDefChanges(this.log, changes);
+    if (this.storeOk) this.store?.save(this.log);
   }
 
   ready(): Promise<EngineTimings> {
@@ -69,14 +134,14 @@ export class WorkerEngine implements MathEngine {
   async home(input: string, settings: HomeSettings): Promise<HomeResult> {
     const r = await this.call({ type: "home", input, settings });
     if (r.type !== "home") throw new Error(`unexpected ${r.type}`);
-    this.replayLog.push(...r.replay);
+    this.keep(r.defs);
     return r.result;
   }
 
   async cas(input: string, settings: CasSettings): Promise<CasResult> {
     const r = await this.call({ type: "cas", input, settings });
     if (r.type !== "cas") throw new Error(`unexpected ${r.type}`);
-    this.replayLog.push(...r.replay);
+    this.keep(r.defs);
     return r.result;
   }
 
@@ -107,7 +172,7 @@ export class WorkerEngine implements MathEngine {
   async eval(input: string): Promise<EvalResult> {
     const r = await this.call({ type: "eval", input });
     if (r.type !== "result") throw new Error(`unexpected ${r.type}`);
-    this.replayLog.push(...r.replay);
+    this.keep(r.defs);
     return { output: r.output, ok: r.ok, engineMs: r.engineMs };
   }
 
@@ -121,12 +186,20 @@ export class WorkerEngine implements MathEngine {
     this.stop(new EngineCancelled());
   }
 
-  /** Commands replayed into a fresh worker (for tests and diagnostics). */
+  /** The definitions log, once the stored one has been read (Vars, Find's live items, docs/04 3.4). */
+  async definitions(): Promise<readonly DefEntry[]> {
+    await this.gate;
+    return this.log;
+  }
+
+  /** Commands replayed into a fresh worker, in replay order (for tests and diagnostics). */
   get replayCommands(): readonly string[] {
-    return this.replayLog;
+    return replayOrder(this.log).flatMap((e) => e.cmds);
   }
 
   private stop(err: Error): void {
+    this.generation++;
+    this.stopError = err;
     this.worker.onmessage = null;
     this.worker.onerror = null;
     this.worker.terminate();
@@ -136,6 +209,7 @@ export class WorkerEngine implements MathEngine {
 
   private start(): void {
     const t0 = performance.now();
+    this.startedAt = t0;
     const w = this.createWorker();
     this.worker = w;
     w.onmessage = (ev) => {
@@ -151,7 +225,7 @@ export class WorkerEngine implements MathEngine {
       this.stop(new Error(ev.message || "engine crashed"));
       this.start();
     };
-    this.readyPromise = this.call({ type: "init", baseUrl: this.baseUrl, replay: [...this.replayLog] }).then((r) => {
+    this.readyPromise = this.post({ type: "init", baseUrl: this.baseUrl, replay: [...this.log] }).then((r) => {
       if (r.type !== "ready") throw new Error(`unexpected ${r.type}`);
       return { instantiateMs: r.instantiateMs, initMs: r.initMs, replayMs: r.replayMs, readyMs: performance.now() - t0 };
     });
@@ -159,7 +233,18 @@ export class WorkerEngine implements MathEngine {
     this.readyPromise.catch(() => {});
   }
 
+  /** A request, posted once the stored definitions have gone to the worker (at once when they have). */
   private call(body: RequestBody): Promise<Response> {
+    if (this.gateOpen) return this.post(body);
+    const gen = this.generation;
+    return this.gate.then(() => {
+      if (gen !== this.generation) throw this.stopError;
+      return this.post(body);
+    });
+  }
+
+  /** A request, posted now (init, and the stored definitions themselves). */
+  private post(body: RequestBody): Promise<Response> {
     const id = this.nextId++;
     return new Promise<Response>((resolve, reject) => {
       this.pending.set(id, { resolve, reject });

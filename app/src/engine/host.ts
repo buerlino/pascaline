@@ -4,8 +4,22 @@
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
-import { definitionsUsedBy, ENGINE_DEFINITIONS, homeEval, homeSetupCommands, isStateful, regrouped, resultFromFacts, safePrecision, toExactLiterals } from "./homeEval.ts";
-import { floatFacts, hasFloat, numberLatex, shapeOf } from "./numeric.ts";
+import {
+  definedBy,
+  definitionsUsedBy,
+  ENGINE_DEFINITIONS,
+  floatsAsEvalf,
+  homeEval,
+  homeSetupCommands,
+  isStateful,
+  regrouped,
+  resultFromFacts,
+  safePrecision,
+  simpleAssignment,
+  toExactLiterals,
+} from "./homeEval.ts";
+import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 
@@ -88,6 +102,24 @@ class GiacSyntaxError extends Error {
 
 type CasError = NonNullable<CasResult["error"]>;
 
+/** Names in a printed value that are not user names (a value with only these in it does not depend on the order of the
+ *  replay). */
+const CONSTANT_NAMES: ReadonlySet<string> = new Set(["i", "pi", "e", "infinity", "inf", "undef", "euler_gamma", "true", "false"]);
+
+const IDENT_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
+
+/** `L[2]:=…`: an element of a stored list or matrix (the whole variable is what changes). */
+function indexedTarget(input: string): string | null {
+  const m = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\[[^\]]*\]\s*:=/.exec(input);
+  return m ? m[1]! : null;
+}
+
+/** The shape of a numeric result (scalar, list, matrix), from its fields. */
+function shapeOfResult(r: HomeResult): Shape {
+  if (!r.items) return { kind: "scalar" };
+  return r.shape ? { kind: "matrix", rows: r.shape[0], cols: r.shape[1] } : { kind: "list", n: r.items.length };
+}
+
 /** Engine state and the synchronous operations on it. One per Giac instance. */
 export class EngineHost {
   private modeKey = "";
@@ -98,6 +130,11 @@ export class EngineHost {
 
   /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
   private readonly loaded = new Set<string>();
+
+  /** This engine's copy of the definitions log (defs.ts): what the user's names hold, and the mark facts of the
+   *  variables that hold floats (decisions M4-7). */
+  private log: DefEntry[] = [];
+  private byName = new Map<string, DefEntry>();
 
   /** Loads the definitions `text` mentions that are not loaded yet. Called before every input reaches Giac. */
   need(text: string): void {
@@ -123,15 +160,123 @@ export class EngineHost {
     };
   }
 
-  eval(input: string): { output: string; ok: boolean; engineMs: number; replay: string[] } {
+  /** Replays definitions (a fresh engine: at init, or the stored log on first launch) and adds them to the log.
+   *  Symbolic values first, while every name in them is still free (defs.ts). Returns the time it took. */
+  restore(entries: readonly DefEntry[]): number {
+    const t0 = performance.now();
+    for (const e of replayOrder(entries)) {
+      for (const c of e.cmds) {
+        this.need(c); // a replayed definition may use one of ours
+        this.giac.eval(c);
+      }
+    }
+    this.record(entries.map((e) => ({ set: e })));
+    return performance.now() - t0;
+  }
+
+  private record(changes: readonly DefChange[]): void {
+    if (!changes.length) return;
+    this.log = applyDefChanges(this.log, changes);
+    this.byName = new Map(this.log.filter((e) => e.kind !== "other").map((e) => [e.name, e]));
+  }
+
+  eval(input: string): { output: string; ok: boolean; engineMs: number; defs: DefChange[] } {
     this.need(input);
     const t0 = performance.now();
     const output = this.giac.eval(input);
     const ok = !isError(output);
-    return { output, ok, engineMs: performance.now() - t0, replay: ok && isStateful(input) ? [input] : [] };
+    const defs = ok && isStateful(input) ? this.defsAfter(input, [input], output, null, "home", 12) : [];
+    return { output, ok, engineMs: performance.now() - t0, defs };
   }
 
-  home(input: string, s: HomeSettings): { result: HomeResult; replay: string[] } {
+  /**
+   * What a stateful input changed, as entries for the definitions log (defs.ts), recorded in this engine's copy too.
+   * `ran`: the commands that redo it (kind "other" and functions); `facts`: the mark facts of the value it stored.
+   */
+  private defsAfter(input: string, ran: string[], preview: string, facts: NameFacts | null, view: "home" | "cas", digits: number): DefChange[] {
+    const base = { preview: preview.trim().slice(0, PREVIEW_MAX), view, time: Date.now() };
+    const purge = /^\s*purge\s*\(([^()]*)\)\s*$/.exec(input);
+    let changes: DefChange[];
+    const names = purge ? purge[1]!.split(",").map((x) => x.trim()) : [];
+    const assume = /^\s*(assume|additionally)\s*\(\s*([A-Za-z][A-Za-z0-9_]*)/.exec(input);
+    const asg = simpleAssignment(input);
+    const target = asg && isStateful(asg.rhs) ? undefined : (definedBy(input) ?? (indexedTarget(input) ? { name: indexedTarget(input)!, kind: "var" as const } : undefined));
+    if (purge && names.length && names.every((n) => IDENT_NAME.test(n))) changes = [{ purge: names }];
+    else if (assume) {
+      const name = assume[2]!;
+      const prev = this.byName.get(name);
+      const cmds = assume[1] === "additionally" && prev?.kind === "assume" ? [...prev.cmds, ...ran] : ran;
+      changes = [{ set: { name, kind: "assume", cmds, ...base } }];
+    } else if (target?.kind === "fn") changes = [{ set: { name: target.name, kind: "fn", cmds: ran, ...base } }];
+    else if (target?.kind === "var") {
+      const snap = this.snapshot(target.name, digits);
+      changes = snap
+        ? [{ set: { name: target.name, kind: "var", cmds: [snap.cmd], ...(snap.float && facts ? { facts } : {}), ...base, ...(snap.early ? { early: true } : {}) } }]
+        : [{ purge: [target.name] }];
+    } else changes = [{ set: { name: "", kind: "other", cmds: ran, ...base } }];
+    this.record(changes);
+    return changes;
+  }
+
+  /**
+   * A variable's value as a command that sets it again: `B:=(<value>)`, floats as `evalf(<exact>,k)` with the digits
+   * they print with (doubles: 14). `early`: the value has names in it, so it must be set before any of them is.
+   * Null when the name holds nothing.
+   */
+  private snapshot(name: string, digits: number): { cmd: string; float: boolean; early: boolean } | null {
+    const t = withDigits(this.giac, DOUBLE_DIGITS, digits, () => this.giac.eval(name)).trim();
+    if (t === "" || t === name || isError(t)) return null;
+    const float = hasFloat(t);
+    const early = namesIn(t).some((n) => !CONSTANT_NAMES.has(n));
+    return { cmd: `${name}:=(${float ? floatsAsEvalf(t) : t})`, float, early };
+  }
+
+  /**
+   * Decisions M4-7: a numeric result computed from stored variables that hold floats inherits their facts. Its
+   * confirmed digits are at most theirs, its warn is theirs, and it is never exact; when the input can be run again
+   * (`expr`, decimals exact) and is more than the bare name, it is checked once more with each variable moved in its
+   * last confirmed digit, which catches a cancellation (B-0.7468 with B known to 13 digits).
+   */
+  private inherited(r: HomeResult, input: string, expr: string | null, digits: number, restoreDigits: number): HomeResult {
+    if (!r.ok || (!r.value && !r.items)) return r;
+    const used = namesIn(input)
+      .map((name) => ({ name, facts: this.byName.get(name)?.facts }))
+      .filter((u): u is { name: string; facts: NameFacts } => u.facts !== undefined);
+    if (!used.length) return r;
+    const P = valuePrecision(digits);
+    const els = r.items ?? [r];
+    const cap = used.reduce((n, u) => (u.facts.reliableDigits === null ? n : Math.min(n, u.facts.reliableDigits)), P);
+    const warn = used.some((u) => u.facts.warn === "unaudited") ? "unaudited" : used.some((u) => u.facts.warn === "unchecked") ? "unchecked" : undefined;
+    const moved = used.filter((u) => u.facts.reliableDigits !== null).map((u) => ({ name: u.name, n: u.facts.reliableDigits! }));
+    const shape = shapeOfResult(r);
+    let pert: number[] | null | undefined;
+    if (expr !== null && moved.length && !IDENT_NAME.test(expr.trim())) {
+      pert = perturbedDigits(this.giac, expr, shape, els.map((e) => e.value!), moved, digits, restoreDigits);
+    }
+    const facts: ElementFacts[] = els.map((e, k) => {
+      let n = Math.min(e.reliableDigits ?? P, cap);
+      if (pert) n = Math.min(n, pert[k]!);
+      const w = warn ?? e.warn ?? (pert === null ? "unchecked" : undefined);
+      return { value: e.value!, exactRational: false, reliableDigits: n, ...(w ? { warn: w } : {}), big: false };
+    });
+    const b = resultFromFacts(facts, shape, digits, r.path, true, r.totalMs);
+    return {
+      ...b,
+      ...(r.exact !== undefined ? { exact: r.exact } : {}),
+      ...(r.defined ? { defined: r.defined } : {}),
+      ...(r.digits !== undefined ? { digits: r.digits } : {}),
+      exactMs: r.exactMs,
+    };
+  }
+
+  /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). */
+  private static factsOf(r: HomeResult | undefined): NameFacts | null {
+    if (!r || !r.ok) return null;
+    if (!r.value && !r.items) return { reliableDigits: null, warn: "unchecked" }; // a symbolic value with a float in it
+    return { reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}) };
+  }
+
+  home(input: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
     this.need(input);
     this.useHomeMode(s);
     const t0 = performance.now();
@@ -143,31 +288,38 @@ export class EngineHost {
       const ms = performance.now() - t0;
       return {
         result: { ok: false, display: e.message, path: "float-error", approximate: false, tieRisk: false, exactMs: ms, totalMs: ms, error: "syntax", ...safePrecision(e.message) },
-        replay: [],
+        defs: [],
       };
     }
-    if (!result.ok) return { result: { ...result, error: "engine" }, replay: [] };
-    let replay: string[] = [];
+    if (!result.ok) return { result: { ...result, error: "engine" }, defs: [] };
+    // M4-7: a value computed from stored floats keeps their marks. An assignment's right side is what ran; a
+    // self-reference (B:=B*2) already overwrote B, and other stateful inputs cannot run again, so neither is moved.
+    const asg = simpleAssignment(input);
+    const body = asg ? asg.rhs : input;
+    const rerun = asg ? !namesIn(asg.rhs).includes(asg.name) : !isStateful(input);
+    result = this.inherited(result, body, rerun ? toExactLiterals(body) : null, Math.trunc(s.digits), Math.trunc(s.digits));
+    let defs: DefChange[] = [];
     if (isStateful(input)) {
       // Replay the form that actually ran: exact for the exact paths, floats for the fallbacks.
-      replay =
+      const ran =
         result.path === "exact" || result.path === "exact-big"
           ? [toExactLiterals(input)]
           : [`Digits:=${s.workDigits}`, input, `Digits:=${s.digits}`];
+      defs = this.defsAfter(input, ran, result.display, EngineHost.factsOf(result), "home", Math.trunc(s.digits));
     }
-    return { result, replay };
+    return { result, defs };
   }
 
-  cas(input: string, s: CasSettings): { result: CasResult; replay: string[] } {
+  cas(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     this.need(input);
     this.useMode(`cas${JSON.stringify(s)}`, () => {
       for (const c of casSetupCommands(s)) this.giac.eval(c);
       this.giac.setPowLimit(s.powLimit);
     });
     const t0 = performance.now();
-    const fail = (text: string, error: CasError): { result: CasResult; replay: string[] } => ({
+    const fail = (text: string, error: CasError): { result: CasResult; defs: DefChange[] } => ({
       result: { ok: false, text, latex: "", timedOut: error === "timeout", error, engineMs: performance.now() - t0 },
-      replay: [],
+      defs: [],
     });
     // P9 (docs/04 section 2.9): typed decimals are exact rationals, as in Home; approx() gives decimals.
     const exactInput = toExactLiterals(input);
@@ -179,16 +331,25 @@ export class EngineHost {
       throw e;
     }
     if (isError(text)) return fail(text, isTimeout(text) ? "timeout" : "engine");
-    const replay = isStateful(input) ? [exactInput] : [];
+    const stateful = isStateful(input);
+    const asg = simpleAssignment(input);
+    const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
+      stateful ? this.defsAfter(input, [exactInput], preview, facts, "cas", Math.trunc(s.digits)) : [];
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
+    // `evalf(e,n)` alone is shown with the n digits it asks for, checked at that precision (decisions M4-6).
     const shape = hasFloat(text) ? shapeOf(text) : null;
     if (shape) {
-      const facts = floatFacts(this.giac, "pcasans", isStateful(input) ? null : exactInput, shape, Math.trunc(s.digits), Math.trunc(s.digits));
+      const asked = askedDigits(input);
+      const digits = asked ?? Math.trunc(s.digits);
+      const facts = floatFacts(this.giac, "pcasans", stateful ? null : exactInput, shape, digits, Math.trunc(s.digits));
       if (facts) {
-        const numeric = resultFromFacts(facts, shape, Math.trunc(s.digits), "numeric", true, performance.now() - t0);
+        let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
+        if (asked !== null) numeric.digits = asked;
+        const body = asg ? asg.rhs : input;
+        numeric = this.inherited(numeric, body, stateful ? null : exactInput, digits, Math.trunc(s.digits));
         return {
           result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },
-          replay,
+          defs: defsOf(numeric.display, EngineHost.factsOf(numeric)),
         };
       }
     }
@@ -198,7 +359,7 @@ export class EngineHost {
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
       result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0 },
-      replay,
+      defs: defsOf(text, hasFloat(text) ? { reliableDigits: null, warn: "unchecked" } : null),
     };
   }
 
@@ -264,12 +425,8 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           loaded.giac.eval("0");
           const host = new EngineHost(loaded.giac);
           const t2 = performance.now();
-          for (const line of req.replay) {
-            host.need(line); // a replayed definition may use one of ours
-            loaded.giac.eval(line);
-          }
-          const t3 = performance.now();
-          post({ id: req.id, type: "ready", instantiateMs: loaded.instantiateMs, initMs: t2 - t1, replayMs: t3 - t2 });
+          const replayMs = host.restore(req.replay);
+          post({ id: req.id, type: "ready", instantiateMs: loaded.instantiateMs, initMs: t2 - t1, replayMs });
           return host;
         })();
         await starting;
@@ -278,6 +435,9 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
       if (!starting) throw new Error("engine not initialised");
       const host = await starting;
       switch (req.type) {
+        case "define":
+          post({ id: req.id, type: "defined", replayMs: host.restore(req.defs) });
+          break;
         case "eval":
           post({ id: req.id, type: "result", ...host.eval(req.input) });
           break;

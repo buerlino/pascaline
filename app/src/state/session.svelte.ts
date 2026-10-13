@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The calculator session: current view, modifier keys, settings and the history of both views.
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
-import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat } from "../calc/port.ts";
+import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat, type UserName } from "../calc/port.ts";
 import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
 import { SerializeError } from "../input/errors.ts";
 import { loadParser } from "../input/parser.ts";
@@ -122,9 +122,11 @@ function factsFrom(r: {
   warn?: ResultFacts["warn"];
   items?: { value?: ComplexValue; exactRational: boolean; reliableDigits: number | null; warn?: ResultFacts["warn"] }[];
   shape?: [number, number];
+  digits?: number;
 }): ResultFacts | undefined {
   const f: ResultFacts = { exactRational: r.exactRational, reliableDigits: r.reliableDigits };
   if (r.warn) f.warn = r.warn;
+  if (r.digits !== undefined) f.digits = r.digits;
   if (r.items) {
     if (r.items.length > ITEMS_LIMIT) return undefined;
     f.items = r.items.map((it) => ({
@@ -144,6 +146,8 @@ function validFacts(x: unknown): ResultFacts | undefined {
   const f = x as Record<string, unknown>;
   const digitsOk = (d: unknown): boolean => d === null || (typeof d === "number" && Number.isFinite(d));
   if (typeof f["exactRational"] !== "boolean" || !digitsOk(f["reliableDigits"])) return undefined;
+  const d = f["digits"];
+  if (d !== undefined && !(typeof d === "number" && Number.isInteger(d) && d >= 1 && d <= 1000)) return undefined;
   const items = f["items"];
   if (items !== undefined && (!Array.isArray(items) || items.length > ITEMS_LIMIT)) return undefined;
   if (Array.isArray(items) && !items.every((it) => it && typeof it === "object" && typeof (it as Record<string, unknown>)["exactRational"] === "boolean")) return undefined;
@@ -205,6 +209,8 @@ export class Session {
   cas = $state<HistoryItem[]>([]);
   /** Set when the engine is starting or failed to start. */
   engineState = $state<"starting" | "ready" | "failed">("starting");
+  /** The user's variables and functions, the stored ones included (Vars, Find's live items; docs/04 3.4, 6.2). */
+  userNames = $state<UserName[]>([]);
 
   private nextId = 1;
   private readonly calc: Calc;
@@ -220,9 +226,21 @@ export class Session {
     this.kv = kv;
     this.calc = calc;
     calc.ready().then(
-      () => (this.engineState = "ready"),
+      () => {
+        this.engineState = "ready";
+        void this.refreshNames();
+      },
       () => (this.engineState = "failed"),
     );
+  }
+
+  /** Reads the user's names again from the engine's definitions log (after a job that may have changed it). */
+  async refreshNames(): Promise<void> {
+    try {
+      this.userNames = await this.calc.names();
+    } catch {
+      /* the engine restarts on its own; the next job refreshes the list */
+    }
   }
 
   get items(): HistoryItem[] {
@@ -331,7 +349,10 @@ export class Session {
     // Read and write through the proxy in the list from here on.
     const live = list[list.length - 1] as HistoryItem;
     if (list.length > HISTORY_LIMIT) list.splice(0, list.length - HISTORY_LIMIT);
-    return this.finish(live, view, latex, table, giacOverride).finally(() => this.saveHistory());
+    return this.finish(live, view, latex, table, giacOverride).finally(() => {
+      this.saveHistory();
+      if (live.status === "done") void this.refreshNames();
+    });
   }
 
   /** The chip a finished result gives when it is tapped or picked (docs/04 2.8); undefined: insert it as drawn. */

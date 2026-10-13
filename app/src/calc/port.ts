@@ -6,6 +6,8 @@ import type { ComplexValue, NumberFormat as EngineFormat, PrecisionWarn } from "
 import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRequest, TableRequest } from "../engine/types.ts";
 
 export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest } from "../engine/types.ts";
+export type { UserName } from "../engine/defs.ts";
+import type { UserName } from "../engine/defs.ts";
 export { CAS_SOFT_BUDGET_MS, IDENT } from "../engine/types.ts";
 
 export type AngleUnit = "rad" | "deg";
@@ -85,6 +87,8 @@ export interface Calc {
   analyze(req: AnalysisRequest, settings: CalcSettings): Promise<AnalysisResult>;
   /** Function app Num table and trace: rows by x, cells as Home shows them. One engine call. */
   table(req: TableRequest, settings: CalcSettings): Promise<HomeResult[][]>;
+  /** The user's variables and functions (Vars, Find's live items; docs/04 3.4), stored ones included once read. */
+  names(): Promise<UserName[]>;
   /** Stop the running job. Variables survive. Resolves when the engine can take calls again. */
   cancel(): Promise<void>;
 }

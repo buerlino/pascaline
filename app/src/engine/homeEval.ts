@@ -91,6 +91,8 @@ export interface HomeResult {
   shape?: [number, number];
   /** ⚠ although the digits agree: an un-audited function's float, or a value that could be evaluated only once. */
   warn?: PrecisionWarn;
+  /** The digits the input asked for (CAS `evalf(e,n)`, decisions M4-6): the result is shown with them, not the setting. */
+  digits?: number;
 }
 
 /** Placeholder precision facts until the engine fills them (docs/04 section 8.2): no claim of exactness, `full` = the display. */
@@ -134,9 +136,9 @@ export function homeSetupCommands(s: HomeSettings): string[] {
 
 const DECIMAL = /(\d+\.\d*|\.\d+|\d+)([eE][+-]?\d+)?/y;
 
-/** Rewrites decimal literals (`2.5`, `.5`, `1e-3`, `1.2E5`) as exact rationals. Leaves integers,
- *  identifiers (`x1`, `0x1F`) and strings alone. */
-export function toExactLiterals(input: string): string {
+/** Rewrites the decimal literals of `input` that have a point or an exponent (`2.5`, `.5`, `1e-3`, `1.2E5`) with `f`.
+ *  Leaves integers, identifiers (`x1`, `0x1F`) and strings alone. */
+function rewriteDecimals(input: string, f: (mant: string, exp10: number) => string): string {
   let out = "";
   let i = 0;
   while (i < input.length) {
@@ -164,7 +166,7 @@ export function toExactLiterals(input: string): string {
         const mant = m[1] ?? "";
         const exp = m[2];
         if (!mant.includes(".") && !exp) out += lit;
-        else out += exactRational(mant, exp ? parseInt(exp.slice(1), 10) : 0);
+        else out += f(mant, exp ? parseInt(exp.slice(1), 10) : 0);
         i += lit.length;
         continue;
       }
@@ -173,6 +175,24 @@ export function toExactLiterals(input: string): string {
     i++;
   }
   return out;
+}
+
+/** Rewrites decimal literals (`2.5`, `.5`, `1e-3`, `1.2E5`) as exact rationals. Leaves integers,
+ *  identifiers (`x1`, `0x1F`) and strings alone. */
+export function toExactLiterals(input: string): string {
+  return rewriteDecimals(input, exactRational);
+}
+
+/**
+ * Giac's printed floats as `evalf(<exact>,k)`, k their significant digits but at least 15: a stored float read back
+ * with the digits it was printed with, in MPFR (a 14-digit literal would be read as a double, and a double overflows
+ * above 1E308). Used for the definitions log (defs.ts): a variable's value, replayed into a fresh engine.
+ */
+export function floatsAsEvalf(text: string): string {
+  return rewriteDecimals(text, (mant, exp10) => {
+    const sig = mant.replace(".", "").replace(/^0+/, "").length;
+    return `evalf(${exactRational(mant, exp10)},${Math.max(15, sig)})`;
+  });
 }
 
 function exactRational(mant: string, exp10: number): string {

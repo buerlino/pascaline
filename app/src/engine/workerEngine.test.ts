@@ -7,6 +7,7 @@ import { defaultHomeSettings } from "./homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { EngineCancelled, defaultCasSettings } from "./types.ts";
 import { WorkerEngine, type WorkerLike } from "./workerEngine.ts";
+import type { DefEntry } from "./defs.ts";
 
 /** Runs the real request handler (and a fresh Giac instance) in this thread. */
 class InProcessWorker implements WorkerLike {
@@ -29,7 +30,7 @@ class InProcessWorker implements WorkerLike {
 class StuckWorker implements WorkerLike {
   onmessage: ((ev: { data: Response }) => void) | null = null;
   onerror: ((ev: { message?: string }) => void) | null = null;
-  inits: string[][] = [];
+  inits: DefEntry[][] = [];
   terminated = false;
   postMessage(msg: Request): void {
     if (msg.type === "init") {
@@ -77,7 +78,7 @@ describe.skipIf(!giacAvailable())("WorkerEngine (real Giac in process)", () => {
     expect((await engine.home("1/3", defaultHomeSettings)).display).toBe("0.333333333333");
     await engine.cas("f(x):=x^2+1", defaultCasSettings);
     await engine.home("a:=0.5", defaultHomeSettings);
-    expect(engine.replayCommands).toEqual(["f(x):=x^2+1", "a:=(5/10^1)"]);
+    expect(engine.replayCommands).toEqual(["f(x):=x^2+1", "a:=(1/2)"]);
     const t = await engine.cancel();
     expect(t.replayMs).toBeGreaterThanOrEqual(0);
     expect((await engine.cas("f(3)", defaultCasSettings)).text).toBe("10");
@@ -105,7 +106,7 @@ describe.skipIf(!giacAvailable())("WorkerEngine Solve and Cancel (real Giac in p
     const r = await engine.solve({ kind: "equations", equations: ["X^2=2"], unknowns: ["X"], guesses: ["1"] }, defaultHomeSettings);
     expect(r.roots[0]!.result.display).toBe("1.41421356237"); // oracle sqrt(2): tests/golden/solve.yaml sqrt2-pos
     expect((await engine.home("X", defaultHomeSettings)).display).toBe("7");
-    expect(engine.replayCommands).toEqual(["X:=7"]);
+    expect(engine.replayCommands).toEqual(["X:=(7)"]);
     // Cancel while a solve is queued or running: the restarted engine still has X = 7.
     const job = expect(
       engine.solve({ kind: "equations", equations: ["X^2+Y^2=4", "Y=exp(X)"], unknowns: ["X", "Y"], guesses: ["-1", "1"] }, defaultHomeSettings),
@@ -115,4 +116,109 @@ describe.skipIf(!giacAvailable())("WorkerEngine Solve and Cancel (real Giac in p
     expect((await engine.home("X", defaultHomeSettings)).display).toBe("7");
     engine.dispose();
   });
+});
+
+/** An in-memory definitions store: what a relaunch reads back. */
+class MemoryStore {
+  saved: unknown = undefined;
+  saves = 0;
+  load(): Promise<unknown> {
+    return Promise.resolve(structuredClone(this.saved));
+  }
+  save(log: readonly DefEntry[]): void {
+    this.saved = structuredClone(log);
+    this.saves++;
+  }
+}
+
+describe.skipIf(!giacAvailable())("WorkerEngine definitions across a relaunch (real Giac in process, docs/04 6.2)", () => {
+  const launch = (store: MemoryStore) => new WorkerEngine({ baseUrl: "/", createWorker: () => new InProcessWorker(), defs: store });
+
+  it("variables and functions come back; the first call already sees them", async () => {
+    const store = new MemoryStore();
+    const a = launch(store);
+    await a.home("A:=5", defaultHomeSettings);
+    await a.cas("g(x):=x^2+1", defaultCasSettings);
+    a.dispose();
+    const b = launch(store);
+    // no await of ready(): the stored definitions must reach the worker before this call
+    expect((await b.home("A*2", defaultHomeSettings)).display).toBe("10"); // derived
+    expect((await b.cas("g(3)", defaultCasSettings)).text).toBe("10"); // derived
+    expect((await b.definitions()).map((e) => `${e.name}:${e.kind}`)).toEqual(["A:var", "g:fn"]);
+    b.dispose();
+  });
+
+  it("a variable keeps its value, not the command: B:=A*2 then A:=5 (derived: B = 2)", async () => {
+    const store = new MemoryStore();
+    const a = launch(store);
+    await a.home("A:=1", defaultHomeSettings);
+    await a.home("B:=A*2", defaultHomeSettings);
+    await a.home("A:=5", defaultHomeSettings);
+    a.dispose();
+    const b = launch(store);
+    expect((await b.home("B", defaultHomeSettings)).display).toBe("2");
+    expect((await b.home("A", defaultHomeSettings)).display).toBe("5");
+    b.dispose();
+  });
+
+  it("a symbolic value is set again before the names in it: S:=K*x+1, then K:=5", async () => {
+    const store = new MemoryStore();
+    const a = launch(store);
+    await a.cas("S:=K*x+1", defaultCasSettings);
+    await a.cas("K:=5", defaultCasSettings);
+    const live = (await a.cas("S", defaultCasSettings)).text;
+    a.dispose();
+    const b = launch(store);
+    expect((await b.cas("S", defaultCasSettings)).text).toBe(live); // as in the session it was defined in
+    b.dispose();
+  });
+
+  it("a stored float keeps its digits and its mark (M4-7)", async () => {
+    const store = new MemoryStore();
+    const a = launch(store);
+    const s30 = { ...defaultHomeSettings, digits: 30 };
+    const first = await a.home("B:=romberg(exp(-x^2),x,0,1)", s30);
+    const before = await a.home("B", s30);
+    a.dispose();
+    const b = launch(store);
+    const after = await b.home("B", s30);
+    expect(after.display).toBe(before.display);
+    expect(after.reliableDigits).toBe(first.reliableDigits);
+    expect(after.warn).toBe("unaudited");
+    b.dispose();
+  });
+
+  it("purge removes a name; the log keeps the last definition per name", async () => {
+    const store = new MemoryStore();
+    const a = launch(store);
+    await a.home("P:=1", defaultHomeSettings);
+    await a.home("Q:=2", defaultHomeSettings);
+    await a.home("P:=3", defaultHomeSettings);
+    await a.home("purge(Q)", defaultHomeSettings);
+    expect(a.replayCommands).toEqual(["P:=(3)"]);
+    a.dispose();
+    const b = launch(store);
+    expect((await b.home("Q", defaultHomeSettings)).display).toBe("Q");
+    b.dispose();
+  });
+
+  it("reports the replay of 200 stored definitions in ready().replayMs", async () => {
+    const store = new MemoryStore();
+    const a = launch(store);
+    for (let k = 0; k < 100; k++) await a.home(`v${k}:=${k}/7`, defaultHomeSettings);
+    for (let k = 0; k < 100; k++) await a.cas(`f${k}(x):=x^2+${k}*x`, defaultCasSettings);
+    a.dispose();
+    const b = launch(store);
+    const t = await b.ready();
+    expect(t.replayMs).toBeGreaterThan(0);
+    expect((await b.home("v99*7+f3(1)", defaultHomeSettings)).display).toBe("103"); // derived: 99 + 1 + 3
+    b.dispose();
+  });
+
+  it("a store that never answers: the engine starts without it and does not overwrite it", async () => {
+    const store = { load: () => new Promise<unknown>(() => {}), save: () => expect.unreachable("saved over a store it never read") };
+    const e = new WorkerEngine({ baseUrl: "/", createWorker: () => new InProcessWorker(), defs: store });
+    expect((await e.home("Z:=4", defaultHomeSettings)).display).toBe("4");
+    e.dispose();
+  }, 10_000);
 });
