@@ -33,7 +33,7 @@ The goal is now *the G2's flow, without its friction, with precision you can tru
 Build an **engineer core** ahead of the Prime-parity apps, in three milestones (section 8):
 
 - **Milestone 4, "find and trust":** EN0 task benchmark (first; it judges everything else), EN1 Find (one search for everything), EN3 honest precision, EN4 copy/share/export.
-- **Milestone 5, "units":** EN2, a separate Units app with constants and uncertainty, plus SI prefixes in display (and in entry if the benchmark says so).
+- **Milestone 5, "units":** EN2, the unit view (units after the formula, P11) with constants and uncertainty, plus SI prefixes in display (and in entry if the benchmark says so).
 - **Milestone 6, "structure":** EN5 matrices and lists you can enter, EN6 number bases, EN7 everyday functions found through Find.
 
 **Dropped:** a categorised formula library with unit-aware Solve (rules 1 and 3). The user's own functions (`f(x):=…`) are found through Find like every variable. **Deferred:** statistics with data entry, spreadsheet, signals and control, extra plot types, then the Prime-parity apps (Geometry, 3D, Explorers, Inference, Finance). **Not scheduled:** the MVP release (R2–R4); the owner said it is not a priority (2026-10-12).
@@ -62,45 +62,42 @@ Build an **engineer core** ahead of the Prime-parity apps, in three milestones (
 **Problem.** The engine has hundreds of commands, the unit database has 426 unit definitions (each also with SI prefixes) and the constants file 184 constants. Category menus (Math → Algebra → ...) are slow and need the user to know the taxonomy. Spelling `normald_cdf(` with alpha letters needs the exact name. Both break rules 1 and 2.
 
 **Design.**
-- **One key, one habit: the Math key opens Find** (the reference's Math key opens the functions menu, so the muscle memory fits). Inside Find the keys type letters directly; no Alpha needed. **Vars** opens Find filtered to variables (one ⌫ clears the filter). **Shift+Tmpl** opens the Units app (section 4; the reference opens units with Shift on the same key, G2 item 30). **Tmpl** opens the template list once EN5 brings templates worth listing (matrix, piecewise, Σ, ∫, ±). The **Home/CAS Menu** key holds actions on the current view (copy, share, clear history: EN4), not things to insert; Shift + View = Copy and Shift + Menu = Paste, the reference's positions. Help (r1c4) becomes context help from the index in milestone 6 (docs/04 5.1; the owner may veto).
+- **One key, one habit: the Math key opens Find** (the reference's Math key opens the functions menu, so the muscle memory fits). Inside Find the keys type letters directly; no Alpha needed. **Vars** opens Find filtered to variables (one ⌫ clears the filter). **Shift+Tmpl** opens the unit view (section 4; the reference opens units with Shift on the same key, G2 item 30). **Tmpl** opens the template list once EN5 brings templates worth listing (matrix, piecewise, Σ, ∫, ±). The **Home/CAS Menu** key holds actions on the current view (copy, share, clear history: EN4), not things to insert; Shift + View = Copy and Shift + Menu = Paste, the reference's positions. Help (r1c4) becomes context help from the index in milestone 6 (docs/04 5.1; the owner may veto).
 - **Mixed results with a kind badge:** function, constant, unit, variable. Ranked by: recents and frequency first (the user's own habits), then exact name or symbol, then prefix, then alias and description words, then typo tolerance.
 - **Aliases make it forgiving:** `kph` → km/h, `inch`/`in` → inch, `speed of light`/`c0`/`c` → c, `eps0`/`ε0`/`permittivity` → ε₀, `mu`/`µ` both, `ohm`/`Ω`, `degC`/`°C`. A user who types the word they think of should land on the thing.
 - **Live preview, no extra tap:** a constant shows its symbol, value, unit and CODATA uncertainty; a unit shows its dimension and its factor to SI; a function shows its syntax and one example (Giac's help lines, R5 reads them as GPL-compatible, still to confirm with Parisse).
-- **Insertion is a token, not text.** A constant or unit is inserted as an upright symbol chip (the P3 plan already requires explicit tokens), so `g` the constant never collides with `g` the variable and `R` is never read as röntgen. In Home, CAS and Solve a constant goes in as its number (full CODATA digits, one token); only the Units app keeps its unit.
+- **Insertion is a token, not text.** A constant or unit is inserted as an upright symbol chip (the P3 plan already requires explicit tokens), so `g` the constant never collides with `g` the variable and `R` is never read as röntgen. In Home, CAS and Solve a constant goes in as its number (full CODATA digits, one token); only the unit view keeps its unit.
 - **Keystroke budget:** an item used before is 2 keys plus Enter (Find, first letters, Enter); a new one is the letters typed plus Enter. The benchmark enforces this (EN0).
 - **Works without the units engine loaded.** Search needs only names, aliases, descriptions and values, generated at build time into a small static index, so Find is instant and does not load the 0.93 MB units worker. **Checked 2026-10-12:** libqalculate 5.13.1's `units.xml.in` (426 unit definitions; an earlier count of 982 also counted nested `<unit>` references) and `variables.xml.in` (184 constants) carry a title, all names and aliases with their kind (`a-c-r:kph,a-c-r:kmph`; `au:Ω,r:ohm,p:ohms`; `ar:c,speed_of_light`), the value with its unit and the uncertainty attribute (`G`: `uncertainty="1.5E-15"`). Giac's command list and help lines feed the function part. Our own alias file adds what a user types and the data lacks.
 - **Speed:** results update within one frame per key (16 ms) on the Tab One; the index is loaded with Find, not at start (start chunk unchanged).
 - **Cost:** about 6–8 days for the palette, ranking, index generation and tests (reuses the existing `PickList` component). The alias content is the real work and is tested by the query test (section 6).
 
-## 4. EN2 Units: a separate app, plus prefixes
+## 4. EN2 Units: the unit view, plus prefixes
 
 **Amends P3 decisions 2 and 6** (`docs/p3-units-plan.md` section 7; both accepted 2026-10-11) on the owner's rules of 2026-10-12. The engine choice (libqalculate as a lazy third worker), the build, the data checks, the `hp` patch and the tests of that plan stand.
 
 | P3 plan | Now |
 |---|---|
 | Units and Constants as menu pickers | **Find** (section 3), type-ahead; no browse-by-category as the main path |
-| Unit tokens allowed in Home/CAS expressions, split between Giac and qalc by a `unitEval` layer | **Units live in their own app.** The whole expression goes to qalc there. This removes the Giac/qalc split and the "mixed unit + CAS" error case (P3 risk 5) |
+| Unit tokens allowed in Home/CAS expressions, split between Giac and qalc by a `unitEval` layer | **Units live in the unit view** (P11: slots after the numbers of a formula). The whole expression goes to qalc there. This removes the Giac/qalc split and the "mixed unit + CAS" error case (P3 risk 5) |
 | Units in scalar Home expressions | Home, CAS, Solve and lists stay unit-free |
 | ENG E-notation only | **SI prefixes** in display everywhere, in entry if the benchmark shows a gain (below) |
 
-**The Units app.**
-- Opened with **Shift+Tmpl** (one key pair, the reference's position) or from Apps. One entry line. After a number, typed letters bring up unit suggestions (the same index as Find, recents first); `→` converts, and it remembers the last target per dimension (if you always convert km/h → m/s, `→` already offers m/s).
-- The result shows the number in the chosen unit, the dimension (for example L·T⁻¹), and one-tap alternatives (SI base unit, the two or three most used for that dimension).
-- **Exact where the maths is exact.** Unit factors are exact in SI (1 in = 25.4 mm, 1 km/h = 5/18 m/s), so `72 km/h → m/s` must give exactly 20 with the `=` mark, not 20.0 or ≈. qalc's default "try exact" approximation does this (checked 2026-10-12 with the spike build: `72 km/h → m/s` = 20 and `1 in → mm` = 127/5 exactly; docs/04 4.1); its strict exact mode stays off (P3 decision 4). A result is marked `≈` only when qalc reports it approximate (EN3).
-- A dimension mismatch is a plain message that names both dimensions, never a number.
-- Uncertainty (`±`) with first-order propagation, as P3 decision 4 (interval arithmetic stays off).
-- Temperature offsets (°C, °F) get explicit rules and golden cases, as before.
-- **The way back:** a Units result goes into Home as a plain number in the unit shown (Ans, insert, copy), so a converted value is one step from any other calculation.
+**The unit view (P11; design in docs/04 section 4.3, layout and press count in `docs/research/r7-unit-slots.md`).**
+- The units key (Shift + Tmpl, the reference's position) on a line or a history row shows the same formula with an empty unit slot after every number and an optional end slot "→ should be"; on an empty line, one slot. Enter gives value, unit, dimension and mark.
+- **Exact where the maths is exact.** Unit factors are exact in SI (1 in = 25.4 mm, 1 km/h = 5/18 m/s), so `72 km/h → m/s` gives exactly 20 with the `=` mark. qalc's default "try exact" mode does this (docs/04 4.1); its strict exact mode stays off (P3 decision 4). A result is marked `≈` only when qalc reports it approximate (EN3).
+- A dimension mismatch is a plain message that names both dimensions, never a number. Uncertainty (`±`) with first-order propagation (P3 decision 4). Temperature offsets (°C, °F) get explicit rules and golden cases.
+- **The way back:** a result goes into Home as a plain number in the unit shown (a `\res` chip), so a converted value is one step from any other calculation.
 
 **SI prefixes (all views).**
 - **Display (built):** a prefix format beside ENG shows `4.7µ` instead of `4.7E-6`. Reading is where prefixes clearly win; it is formatter work (EN3).
 - **Entry (gated):** a strip of prefix chips (p n µ m k M G T) when the cursor follows a number; one tap writes `4.7 k` meaning 4700, read by the parser as an exact power of ten (one parser rule and one round-trip case per chip). `E-9` is 3 keys, a chip is 1, so the gain is small; the strip stays only if benchmark task 3 shows it wins and it does not clutter the screen (principle 2).
 
-**The speed gate (rule 2).** A unit insertion takes no more than 4 keystrokes at the median in the benchmark (recents ≤ 3), and the owner times ten sample tasks by hand, E-notation against units, before units ship. If units lose on a task, the answer is better ranking or entry, not a tutorial.
+**The speed gate (rule 2).** A unit takes no more than 4 presses at the median (S1's paper test: 2, with flicks), and the owner times ten sample tasks by hand, E-notation against units, before units ship. If units lose on a task, the answer is better ranking or entry, not a tutorial.
 
-**Units anywhere else: not now.** If, after the Units app is in use, a Home user wants `5 km + 300 m` directly, the same qalc worker can serve Home behind a setting. That is a later, measured decision. (Considered and set aside for v1: a units layer in our own parser for every view, with Giac computing on exact SI values. It would reach Solve and variables but goes against rule 3 and costs more.)
+**Units anywhere else: not now.** If, after the unit view is in use, a Home user wants `5 km + 300 m` directly, the same qalc worker can serve Home behind a setting. That is a later, measured decision. (Considered and set aside for v1: a units layer in our own parser for every view, with Giac computing on exact SI values. It would reach Solve and variables but goes against rule 3 and costs more.)
 
-**Effort:** U1 build and worker 2 d, Units app and parsing 3 d, formatting and conversion 2 d, tests and device timing 1.5 d: about 8–9 days, plus the shared Find index, plus about 2 days for prefixes. Cheaper than the P3 plan's 11–12 days because the Giac/qalc split disappears.
+**Effort:** U1 build and worker 2 d, unit view and parsing 3 d, formatting and conversion 2 d, tests and device timing 1.5 d: about 8–9 days, plus the shared Find index, plus about 2 days for prefixes. Cheaper than the P3 plan's 11–12 days because the Giac/qalc split disappears.
 
 ## 5. The other gaps
 
@@ -121,7 +118,7 @@ Latency is solved (Enter → result p95 92 ms). What decides day-to-day speed is
 The first ten (the owner accepted them as the start, 2026-10-12; nothing depends on a discipline):
 
 1. `4.7k ‖ 10k` (parallel combination, prefix entry)
-2. `72 km/h → m/s` (Units app)
+2. `72 km/h → m/s` (unit view)
 3. `2.2n × 4.7k` with prefix chips, against `2.2E-9 × 4.7E3` (the chips must win or they go)
 4. Circumference from a constant: `2π r` with r typed in mm, result in m
 5. Insert the speed of light or ε₀ by name, in under 5 keys
@@ -129,33 +126,33 @@ The first ten (the owner accepted them as the start, 2026-10-12; nothing depends
 7. `0xFF AND 0x3C` shown in binary
 8. Solve a 3×3 linear system
 9. Mean and standard deviation of ten readings
-10. `(12.34 ± 0.05) m × (3.2 ± 0.1) m` with uncertainty (Units app)
+10. `(12.34 ± 0.05) m × (3.2 ± 0.1) m` with uncertainty (unit view)
 
 Plus a **query test for Find** (`tests/tasks/find-queries.yaml`): 100 phrases a user might type ("speed of light", "kph", "stdev", "ohm", "boltzmann"), each with the expected item. Gate: every phrase finds its item in the top 3, at least 90 as the first hit. This makes "everyone can find it" testable. The owner adds real phrases whenever Find misses one.
 
 ## 7. Precision promises (testable)
 
 1. **No silent wrong answer:** a result is exact, or approximate and marked, or flagged (EN3 plus the existing residual check).
-2. **Units are checked** where they are used (Units app): adding metres to seconds is a message, not a number.
-3. **Uncertainty travels** in the Units app, first-order. Worst-case or Monte Carlo tolerance analysis would be a later add-on.
+2. **Units are checked** where they are used (unit view): adding metres to seconds is a message, not a number.
+3. **Uncertainty travels** in the unit view, first-order. Worst-case or Monte Carlo tolerance analysis would be a later add-on.
 4. **The display never hides the value:** the user sees how many digits are shown and can copy all of them (EN3, EN4).
 5. **Constants carry their uncertainty** (CODATA), shown in the Find preview.
 6. **Every shipped number has a `source:` tag**, as the golden tests already require.
 
 ## 8. The plan
 
-**Step 0 (done 2026-10-12):** K2 merged (9c3fd52), C5 merged (8681313), K0 checked on the Fairphone 6. Open for the owner: the feel of K1/K2 on a new APK, and the Python lowercase question (backlog "Needs the user").
+Milestone 4a ("feel", P11) runs before the rest of milestone 4; status in the backlog.
 
 The three workers own separate areas, so each milestone runs as three parallel tracks: **ron** (UI, keyboard, parser, e2e), **gorge** (engine, formatter, index data, golden), **annabell** (Capacitor, builds, devices). A milestone is done when its benchmark tasks pass within budget and its gates hold.
 
 | Milestone | ron | gorge | annabell | Gate | Est. |
 |---|---|---|---|---|---|
 | **4 Find and trust** | **EN0** benchmark harness and the ten tasks (first, ~1 d); **EN1** Find UI: Math/Vars keys, ranking, preview, chips; functions and variables | **EN3** precision (digits ≤ 30, `=`/`≈`, full-value copy API, sig-fig function, prefix display format); **Find index** generator (Giac commands + help lines, qalc units/constants/prefixes, our alias file) and the 100-phrase query test | **EN4** copy/share/CSV (Capacitor plugins, PWA fallbacks, THIRD_PARTY), Home/CAS Menu actions; device APK for the owner (K1/K2 feel), L7 Tab One re-measure | Tasks 5 (constant by name) active; query test; start chunk unchanged | ~2 w |
-| **5 Units** | Units app (entry, suggestions, `→` memory, result view), Shift+Tmpl; prefix chips behind the task 3 gate | U1–U2: qalc worker and client (from `spike/qalc`), "try exact" check, parser tokens, `tests/golden/units.yaml`, `hp` patch, data audit | qalc release build in the trixie container, size gate (+0.93 MB lazy), lazy-load test, first-unit timing on the Tab One and Fairphone 6 | Tasks 1–4 and 10; speed gate (≤ 4 keys median); owner's hand timing | ~2 w |
+| **5 Units** | the unit view (slots, live reading, result view), Shift+Tmpl; prefix chips behind the task 3 gate | U1–U2: qalc worker and client (from `spike/qalc`), "try exact" check, parser tokens, `tests/golden/units.yaml`, `hp` patch, data audit | qalc release build in the trixie container, size gate (+0.93 MB lazy), lazy-load test, first-unit timing on the Tab One and Fairphone 6 | Tasks 1–4 and 10; speed gate (≤ 4 keys median); owner's hand timing | ~2 w |
 | **6 Structure** | **EN5** matrix/list entry and grid editor, Tmpl list | **EN6** bases formatter (and `0x…` in the parser), **EN7** everyday functions with golden cases | Device timing; F-Droid recipe (C4) if the owner wants it then | Tasks 6–9 | ~2 w |
 
 After milestone 6: the deferred list (section 5), in the order the benchmark and the owner's use show is worth it. The MVP release (R2–R4) when the owner says.
 
-**Decided by Henri on the owner's rules (P8), confirmed by the owner 2026-10-12:** P3 decisions 2 and 6 amended as in section 4; Math = Find, Vars = Find on variables, Shift+Tmpl = Units app, Menu = view actions; formula library dropped; the ten tasks above as the start.
+**Decided by Henri on the owner's rules (P8), confirmed by the owner 2026-10-12:** P3 decisions 2 and 6 amended as in section 4; Math = Find, Vars = Find on variables, Shift+Tmpl = units (the unit view since P11), Menu = view actions; formula library dropped; the ten tasks above as the start.
 
 **Risks.** (1) Alias and ranking quality decides whether Find feels effortless; it needs real queries, not guesses. (2) The chip of a constant must look clearly different from a variable. (3) The prefix strip adds something to the screen; it must appear only after a number and stay out of the way, or go. (4) qalc's "try exact" gives exact SI conversions (checked 2026-10-12), but qalc silently misreads some names (`degC`, `BTU`, `mu0`) and accepts `1 m + 1 s`; chips and an adapter handle it (docs/04 4.1, 4.3); the golden units cases decide. (5) The pace is unproven for parser- and keyboard-heavy work, where the backlog shows many small follow-ups (L1–L9).

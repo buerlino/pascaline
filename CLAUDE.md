@@ -11,10 +11,10 @@ Pascaline is an **open-source precision engineering tool** for Android (also PWA
 
 **Repo:** https://github.com/buerlino/pascaline (default branch `master`; contains the GPL-3.0 `LICENSE`). The local folder tracks `origin/master`. **Never push or commit without the user's OK.** `gh` is installed but not logged in.
 
-**Status:** Phase 0 GO (2026-10-11); milestones 1–3 (Home + CAS, Function + Solve, Python) done. **Next: milestone 4a "feel"** (P11, 2026-10-13: the owner's first daily use; keyboard-on-return bug, hold-and-drag removed, status line instead of tabs, flicks, Tmpl palette, a visual pass, the Python app removed), **then the rest of the engineer core** (milestones 4 Find and trust, 5 Units, 6 Structure; P8 in docs/decisions.md, architecture in docs/04, ordered tasks in docs/backlog.md; the brief in docs/shifts/brief.md, milestone 4a packages in its section 0b, is run by the owner package by package, no coordinator). **Work happens on branch `phase-1`.** Status, open items and tasks: [docs/backlog.md](docs/backlog.md). Coordinator team: rules in [docs/shifts/rules.md](docs/shifts/rules.md), the current brief in [docs/shifts/brief.md](docs/shifts/brief.md), agents in `.claude/agents/`.
+**Status:** milestones 1–3 done; **now milestone 4a "feel"** (P11), then the rest of the engineer core (milestones 4 Find and trust, 5 Units, 6 Structure; P8). Status, open items and tasks: [docs/backlog.md](docs/backlog.md). Packages: [docs/shifts/brief.md](docs/shifts/brief.md), run by the owner one at a time (no coordinator), with the rules in [docs/shifts/rules.md](docs/shifts/rules.md) and agents in `.claude/agents/`. **Work happens on branch `phase-1`.** Docs are kept current by rewriting, not amending: one place per fact, history in git.
 
 Background reading (read before larger design decisions):
-- [docs/04-architecture.md](docs/04-architecture.md): **the architecture for the engineer goal** (2026-10-12): precision chain and marks, Find, the Units app, keys, state, build, gates and budgets. Supersedes docs/02 where they differ.
+- [docs/04-architecture.md](docs/04-architecture.md): **the architecture for the engineer goal** (2026-10-12): precision chain and marks, Find, the unit view, keys, state, build, gates and budgets. Supersedes docs/02 where they differ.
 - [docs/research/r6-pipelines.md](docs/research/r6-pipelines.md): how a key press, a number, a build and a check flow through the code today, engine and qalc behaviour learned by probing, and how to check a claim fast (probes in `tools/probes/`).
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): the original plan. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
 - [docs/01-feasibility-report.md](docs/01-feasibility-report.md): the original study. **Section 3 (legal) is binding**; the rest is superseded by 02.
@@ -57,7 +57,7 @@ Capacitor shell (Android / iOS / desktop / plain web PWA)
    app framework Symb/Plot/Num, JSXGraph views, spreadsheet
    └─ MathEngine (async interface)
       ├─ Worker 1: giac.wasm (+ GSL, GMP, MPFR): CAS + Home + numeric solving
-      └─ Worker 3: libqalculate (Units app; lazy; milestone 5, P3 as amended by P8)
+      └─ Worker 3: libqalculate (the unit view; lazy; milestone 5, P3 as amended by P8 and P11)
    Find: a static index generated at build time, searched on the main thread (lazy)
 Storage: IndexedDB (state) + Capacitor Filesystem (import/export)
 ```
@@ -120,7 +120,7 @@ PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads ./build.sh              
 # Release engine: Debian's Emscripten 3.1.69 in a pinned debian:trixie container (P2; works on scratch copies, takes the host-cpu lock)
 engine/giac/build-wasm-release.sh                          # → engine/giac/_out/release/giac.{mjs,wasm} + SHA256SUMS
 
-# libqalculate 5.13.1 → wasm (P3/P8; Find index in milestone 4, Units app in 5; build.sh step 1c, --no-units skips it)
+# libqalculate 5.13.1 → wasm (P3/P8; Find index in milestone 4, unit view in 5; build.sh step 1c, --no-units skips it)
 engine/qalc/build-wasm.sh [dev|release]                    # dev = ~/emsdk → engine/qalc/_out/dev/; release = trixie container → engine/qalc/_out/release/ + SHA256SUMS
 node engine/qalc/smoke.mjs engine/qalc/_out/dev            # desktop smoke test (72 km/h to m/s)
 

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Shift rules (every shift)
 
-The standing rules for a coordinator shift: Henri and the workers gorge, ron and annabell (`.claude/agents/`). sandra is the owner's advisor (`.claude/agents/sandra.md`): Henri may spawn her for a research or architecture task; she writes docs, probes and proposals, not feature code, and never touches devices. They bind together with `CLAUDE.md`. The shift's own goal, tasks, definition of done and per-worker assignments are in [brief.md](brief.md); where the two differ, the brief wins for that shift. Section numbers match the old single-file brief (sections 0, 2, 7 and 8 are in the brief), so the agent files' references still work.
+The standing rules for a coordinator shift: Henri and the workers gorge, ron and annabell (`.claude/agents/`). sandra is the owner's advisor (`.claude/agents/sandra.md`): Henri may spawn her for a research or architecture task; she writes docs, probes and proposals, not feature code, and never touches devices. They bind together with `CLAUDE.md`. The shift's own goal, tasks, definition of done and per-worker assignments are in [brief.md](brief.md); where the two differ, the brief wins for that shift. Section numbers match the old single-file brief (sections 0, 2, 7 and 8 are in the brief), so the agent files' references still work. **In manual mode (no coordinator) read only sections 1, 3, 5, 6 and 9;** sections 4, 10 and 11 are for a coordinator shift.
 
 ## 1. Principles
 The three principles in CLAUDE.md decide every default:
@@ -13,7 +13,7 @@ The three principles in CLAUDE.md decide every default:
 - **Clean room** (CLAUDE.md):
   - No HP/Moravia code, firmware, manual text, screenshots, icons or fonts.
   - No NumWorks code.
-  - No "HP" or "Prime" in identifiers, file names or UI strings. Compatibility modules (the Python graphics module) use the name scripts import, but the files and identifiers on our side get our own names.
+  - No "HP" or "Prime" in identifiers, file names or UI strings.
 - **The reference calculator is not ours to touch.**
   - The G2 stays off the laptop.
   - Virtual Calculator sessions run separately, on their own branch, with the user.
@@ -78,7 +78,7 @@ The three principles in CLAUDE.md decide every default:
 - One job at a time on a device. Let a device cool if it's above ~35 °C.
 
 ## 9. Defaults and proposals
-Log every default in `docs/decisions.md`: the choice, why, the alternatives, and what would change your mind. Proposals for the user go at the top, under "Needs the user", each with your recommendation in one sentence.
+Log every default in `docs/decisions.md`: the choice, why, the alternatives, and what would change your mind. Proposals for the user go at the top, under "Needs the user", each with your recommendation in one sentence; once decided, they move to "Decided proposals". When a decision changes what a doc says, rewrite that text in place: no "amended" or "superseded" notes, no strikeouts (git keeps the history).
 
 ## 10. Your loop and the usage budget
 - On every report: check the claim (re-run the test or look at the numbers), then merge the worker's branch into `phase-1` (`git merge --no-ff`). Update the shared files, log it, and hand out the next job.

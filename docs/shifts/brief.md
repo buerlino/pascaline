@@ -4,18 +4,14 @@
 **Manual mode (user, 2026-10-12):** there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` at `ad86660` (architecture docs, P8–P10 accepted, sandra's probes). Nothing pushed. Leftovers for the first review session to clean up: the merged branches `p1/annabell-eve-fp6`, `p1/annabell-night-fp6`, `p1/ron-night-k2` and their worktrees under `.claude/worktrees/` (`git worktree remove`, then `git branch -d`). `p1/ron-eve-gestures` is unmerged (the old flick classifier); leave it for the owner.
+`phase-1` at `b2f1e7e` (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1. Running: R7 (`p1/ron-m4a-sheet`, worktree `.claude/worktrees/m4a-r7`). The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier) and six stale `worktree-agent-*` branches (backlog C7).
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
-Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4; G4 merged 2026-10-13, G3 merged 2026-10-13 as 56ffab1) keep their place: R4 and A4 come after 4a.
+Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R5 | Remove the Python app, app side | ron, Sonnet | `p1/ron-m4a-nopython` | — | ~1 d |
-| S1 | Unit-slot paper test (layout + press count) | sandra, Opus | `p1/sandra-m4a-unitslots` | — | ~1 d |
-| A5 | Remove the Python build | annabell, Sonnet | `p1/annabell-m4a-nopython` | R5 | ~0.5 d |
-| R6 | Cleanup: hold-and-drag out, UI quick fixes (U0), gallery | ron, Sonnet | `p1/ron-m4a-cleanup` | R5 | ~2 d |
-| R7 | One sheet for every list (U1) | ron, **Opus** | `p1/ron-m4a-sheet` | R6, owner tried its APK | ~2 d |
+| R7 | One sheet for every list (U1) | ron, **Opus** | `p1/ron-m4a-sheet` | (running) | ~2 d |
 | R8 | Status bar, Mode sheet, Settings (U2, U4) | ron, Sonnet | `p1/ron-m4a-status` | R7, tried | ~2.5 d |
 | R9 | Flicks and the Shift/Alpha tap counter | ron, **Opus** | `p1/ron-m4a-flicks` | R8, tried | ~3 d |
 | R10 | Tmpl palette and the a b/c key | ron, **Opus** | `p1/ron-m4a-tmpl` | R9, tried | ~2.5 d |
@@ -23,36 +19,15 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R11, tried | ~0.5 d |
 | R12b | Visual pass: implementation (U5, U7, theme) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner | ~2.5 d |
 
-"Tried" = the owner has used that package's APK for about a day (docs/03 rule 10). R5 and R6 may run back to back. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10 (parser rules and round trips); S1 because its answer decides milestone 5. Sonnet elsewhere, with an Opus review per package.
+"Tried" = the owner has used that package's APK for about a day (docs/03 rule 10). **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10 (parser rules and round trips). Sonnet elsewhere, with an Opus review per package.
 
-## 0a. Work packages (milestone 4)
-Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" (steps 1–12) is binding. Each package below names its backlog step; § numbers point into docs/04.
+## 0a. Work packages (milestone 4), after 4a
+Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04.
 
 | # | Package | Backlog step | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|
-| G0 | Result types for the new fields (interface only) | 3 (first part) | gorge, Sonnet | `p1/gorge-m4-types` | — | ~1 h |
-| R1 | Task benchmark harness (EN0) | 1 | ron, Sonnet | `p1/ron-m4-en0` | — | ~1 d |
-| G1 | Regression cases first | 2 | gorge, Sonnet | `p1/gorge-m4-regress` | — | ~0.5 d |
-| A1 | Size test | 11 | annabell, Sonnet | `p1/annabell-m4-size` | — | ~0.5 d |
-| R2 | Chips and Ans, the `0x` error | 5 | ron, **Opus** | `p1/ron-m4-chips` | R1, G0 | ~2 d |
-| G2 | Honest precision in the engine (EN3-engine, P9) | 3 | gorge, **Opus** | `p1/gorge-m4-precision` | G0, G1 | ~3 d |
-| A2 | qalc build in `build.sh` | 6 | annabell, Sonnet | `p1/annabell-m4-qalc` | — | ~1 d |
-| R3 | Marks, 30 digits, PFX in the UI (EN3-UI) | 4 | ron, Sonnet | `p1/ron-m4-marks` | G2 | ~1.5 d |
-| G3 | Definitions survive a relaunch, plus G2's follow-ups (M4-6 to M4-8) | 10, 3 | gorge, **Opus** | `p1/gorge-m4-defs` | G2 | ~1.5 d |
-| G4 | Find index generator and query test (EN1-index) | 7 | gorge, **Opus** | `p1/gorge-m4-index` | A2 | ~3 d |
-| A3 | Copy, paste, share, export (EN4) | 9 | annabell, Sonnet | `p1/annabell-m4-copy` | R2 | ~2 d |
-| R4 | Find UI (EN1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R2 (G4 for the real index) | ~3 d |
-| A4 | Device bars on the Tab One | 12 | annabell, Sonnet | `p1/annabell-m4-device` | R3, R4, A3; Tab One connected | ~0.5 d |
-
-**Waves** (one package per agent at a time; the three agents run in parallel):
-1. G0, R1, G1, A1 (A2 can start at once too). Merged.
-2. R2, G2, A2. Merged (2026-10-12).
-3. R3, A3 merged (2026-10-12). G4 merged (2026-10-13, 3376582; usage boost removed at review, P11). G3 merged (2026-10-13, 56ffab1).
-4. **Next:** the owner's phone test (debug APK on the Fairphone 6, 2026-10-12) gives a bug list; then G4 finished, ron's bug fixes with M4-10, then G3 (gorge, Opus, after G4), R4 (ron, Sonnet, after R3). Last: A4 (annabell, after R3, R4, A3).
-
-G4 goes before G3 because A2 → G4 → R4 → A4 is the longest chain. G3 now carries G2's precision follow-ups (M4-6 to M4-8), hence Opus. The qalc build for G4's index generator is in the main checkout: `QALC_OUT=/home/nordmu/Documents/source99/pascaline/engine/qalc/_out/dev`.
-
-**Why these models:** Opus where a subtle mistake becomes a wrong number or a broken entry line and rework would cost more than doing it right: G2 (the agreement check, the `⚠` rules, P9), R2 (MathLive macros, the parser, Ans on an empty line) and G4 (the qalc round-trip check, ranking quality). Sonnet elsewhere: those packages have mechanical checks (tests, the oracle, the size budgets) that catch mistakes, and every package gets an Opus review before it merges.
+| R4 | Find UI (EN1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R7 (the sheet), after 4a | ~3 d |
+| A4 | Device bars on the Tab One | 12 | annabell, Sonnet | `p1/annabell-m4-device` | R4; Tab One connected | ~0.5 d |
 
 ### How to start a package
 From the main checkout (`/home/nordmu/Documents/source99/pascaline`), one terminal per package:
@@ -64,6 +39,7 @@ claude --agent <ron|gorge|annabell> --model <sonnet|opus> "Do package <ID> in do
 Check `/model` once at the start: the agent files pin `model: opus`, and the flag should override it. A package that runs out of usage can be resumed (`claude --continue` in the same terminal) or restarted with the same command: the agent finds its branch and continues from its last commit.
 
 ## 2. Read before you start (every package)
+Read only the sections named here and in your package, not whole files: find them with `grep -n '^#' <file>`, then read that range. Every file you read is sent again on every later turn.
 - **Your first step:** make your own worktree from `phase-1`, never switch branches in the main checkout (other packages run there at the same time):
   ```bash
   cd /home/nordmu/Documents/source99/pascaline
@@ -75,7 +51,7 @@ Check `/model` once at the start: the agent files pin `model: opus`, and the fla
 - `docs/backlog.md` "Engineer core", milestone 4: your step's text (files, tests, gate).
 - **From 2026-10-13:** `docs/decisions.md` P11, docs/03 section 0 rules 5–13 (they bind every package: one interaction model, keys never move, vertical space, removal tests), `docs/05-ui-plan.md` with its section 7, and `docs/feedback.md`.
 - `docs/decisions.md`: P8, P9, P10 and the defaults entry "2026-10-12 Architecture for the engineer core". These are decided; don't reopen them. If a docs/04 decision turns out wrong in the code, don't change it silently: finish what you can, and put the evidence under "Needs a decision" in your report.
-- Not in this milestone: the Units app and worker (milestone 5), matrices, bases and everyday functions (milestone 6), Help = context help (milestone 6), prefix entry chips (gated by task 3).
+- Not in this milestone: the unit view and the qalc worker (milestone 5), matrices, bases and everyday functions (milestone 6), Help = context help (milestone 6), prefix entry chips (gated by task 3).
 - **No coordinator to message.** Stay inside the files your package names. Shared files (`CLAUDE.md`, `docs/*`, `THIRD_PARTY.md`, `.claude/agents/*`) are not yours. Put the text for them in your report, and the review session applies it. Devices are only for A4.
 
 ### Your report (every package)
@@ -91,128 +67,18 @@ Then end your turn.
 
 ## 7. Packages
 
-### gorge, G0: result types, branch `p1/gorge-m4-types`
-Add the new result fields of §8.2 to `app/src/engine/types.ts` and `app/src/calc/port.ts`:
-- `HomeResult`: `exactRational`, `reliableDigits`, `full`, `defined`, `items`, `shape`
-- `CasResult`: `numeric`
-- the matching `HomeOutcome` and `CasOutcome` fields
-
-Fill them with safe values where results are built: `exactRational: false`, `reliableDigits: null`, `full` = the display text, no `defined`. No behaviour changes. Typecheck and every test must stay green. This package exists so R2, R3 and G2 build on the same types.
-
-### ron, R1: task benchmark harness (EN0), branch `p1/ron-m4-en0`
-Backlog step 1.
-- Write `tests/tasks/tasks.yaml` with the ten tasks of docs/03 section 6. Each task has `keys:`/`tap:` data, a budget, the expected result, `source:` and `status: active|pending`.
-- Write `app/test/tasks.spec.ts`. It replays the tasks and counts presses by §5.2: every press counts, Shift and Alpha included, and a hold-drag or a screen tap counts 1.
-- Tasks that can't run yet are `pending`, with today's best sequence recorded as their baseline.
-
-Gate: the harness runs in the e2e suite.
-
-### gorge, G1: regression cases first, branch `p1/gorge-m4-regress`
-Backlog step 2. Each case below is failing or `status: pending` until it's fixed.
-- `tests/golden/precision.yaml`: the 20- and 30-digit `oracle` cases, plus §2.3 #2–#5.
-- `home.yaml`: a `mark:` field on every numeric case, checked by `oracle.py`.
-- `python.yaml`: `calc.eval("1-0.9-0.1")` → 0.
-- `oracle.py --digits N`.
-
-Expected values come from the oracle only (`tests/golden/.venv`), never from memory. The parser case (#1) belongs to ron, in R2. Gate: the golden gate lists the new cases and still ends in GOLDEN GATE PASSED, with pending cases counted separately.
-
-### annabell, A1: size test, branch `p1/annabell-m4-size`
-Backlog step 11. Write `app/scripts/size-check.ts`. It reads Vite's manifest (`build.manifest: true`) and fails when a chunk is over its §8.3 budget. `npm run build` and `build.sh` run it. Budgets for chunks that don't exist yet apply once those chunks appear.
-
-### ron, R2: chips and Ans, branch `p1/ron-m4-chips`
-Backlog step 5. Build on G0's types.
-1. **Tests first:**
-   - `parser.yaml`: `0xFF` typed with the keys must be an error (§2.3 #1).
-   - `keys.spec.ts`: `1/3`, tap the result, `×3` = 1 (§2.3 #8).
-2. **The MathLive macro check of §3.6:** a unit test and a screenshot. If MathLive 0.111.1 drops `expand: false` macros, use the `\mathrm{const:ID}` fallback and say so under "Needs a decision".
-3. **The chips:** `\res{n}`, `\ans` and `\const{ID}`. Each chip carries its value in the history item's chip table, so the parser never reads the Find index (§3.6). Until G4 lands, `\const` takes its value from a small table of exact SI constants in your test fixture.
-4. **Ans:** Shift + `+` = Ans. An operator on an empty line inserts Ans first, and `(−)` stays negation (§2.8).
-
-Each token gets a round-trip case in the same commit. Report the start chunk size before and after.
-
-### gorge, G2: honest precision in the engine, branch `p1/gorge-m4-precision`
-Backlog step 3. Build on G0 and G1.
-- **The mark:** the agreement check, and `⚠` for un-audited functions that return floats (§2.4).
-- **Digits up to 30,** with `max(30, digits+10)` and `max(40, digits+10)` (§2.5).
-- **Formatting:** re-evaluate `tieRisk` values; our formatter for lists, matrices and Home `solve`; fill `full` and `defined` with real values.
-- **CAS:** numeric results get their value, and P9 makes typed decimals exact (§2.9). Re-check the `bench` stage, which runs in CAS mode.
-- **Python:** `calc.eval` goes through `home()` (§2.10).
-- **New formats:** `sigfig` (§2.5), and the PFX format in `format.ts` with unit tests at each prefix boundary (§2.7).
-
-Gate:
-- G1's cases #2–#7 and #9 pass (#8 is R2's).
-- The golden gate passes.
-- Vitest covers the mark for each format.
-
-Report the desktop Enter p95 at digits 12 and 30 (`?bench=1`) before and after.
-
-### annabell, A2: qalc build in `build.sh`, branch `p1/annabell-m4-qalc`
-Backlog step 6 and §7.1.
-- **The build script:** promote `spike/qalc` to `engine/qalc/build-wasm.sh [dev|release]`. The release build runs in the pinned trixie container (P2). libxml2 and libqalculate are pinned by SHA-256; GMP and MPFR are shared with Giac.
-- **Wiring:** a `build.sh` step, `--no-units`, and notes in `fdroid/README.md`. The THIRD_PARTY.md text goes in your report.
-- **Measure:** the release build time; the size against the spike (0.93 MB brotli, ±5 %); whether two release builds give the same `qalc.wasm`.
-
-Take the host-cpu lock for every build. Never mount the main checkout into the container.
-
-### ron, R3: marks, 30 digits, PFX in the UI, branch `p1/ron-m4-marks`
-Backlog step 4, on top of G2.
-- **First, the parser chunk (user, 2026-10-12, decisions M4-3):** move the parser (`parse.ts`, `emit.ts`, `chips.ts`) out of the start chunk into its own chunk, loaded together with MathLive. Report the start chunk before and after (after R2: 147.60 kB / 51.13 kB gzip).
-- Show `=`/`≈`/`⚠ n` before Home and CAS results, from G2's `markOf()`. Num and Solve show only `⚠` (§2.4). The "approximate" note goes. A result with `warn: "unaudited"` shows `⚠` without a count (decisions M4-5). A result with `inexactInput` (R2) is never `=` (M4-4).
-- **Draw with `formatConfirmed()`** (G2): re-formatting a history value with `formatComplex` alone shows unconfirmed digits of a `⚠` result. Known places: `displayMode.ts:122`, `apps/solve/app.svelte.ts:233`, `apps/function/app.svelte.ts:97`. The port's `NumberFormat` needs `"pfx"` → `"PFX"`.
-- Allow digits up to 30, with the settings `schema: 2` migration (§6.2).
-- Wire G2's PFX format into Settings and the Format key cycle (§2.7).
-- **Fix the E-notation exponent bug (user, 2026-10-12; found in R1, decisions M4-2):** typing `2.2E-9 × 4.7E3` without → after the exponent puts × inside the exponent and gives `2.2E-42300`, silently. A Playwright regression test first (the key sequence gives 1.034E-5), then the fix: an operator key ends the exponent.
-
-Tests: session migration unit tests, and `fmt.spec.ts` e2e for the marks and PFX.
-
-### gorge, G3: definitions survive a relaunch, branch `p1/gorge-m4-defs`
-Backlog step 10 and §6.2.
-- Add the `defs` key: the last definition per name, at most 500 lines, replayed at engine init through `init.replay`.
-- Keep `userNames` for Find.
-
-- **G2 follow-ups (user, 2026-10-12, decisions M4-6 to M4-8):**
-  - **Marks of stored variables (M4-7):** keep the mark per name with the defs log, so `B:=romberg(exp(-x^2),x,0,1)` (`⚠`) then `B` reads `⚠`, not `≈`. Golden case first.
-  - **`evalf(x,n)` in CAS (M4-6):** show the n digits asked for, only the confirmed ones (the agreement check at the requested precision; `⚠ n` if fewer agree). Golden cases first: `evalf(pi,50)` (`oracle`), and a case where fewer agree.
-  - **Root polish (M4-8):** Solve and analysis roots get a second-precision polish at W + 20 in `solve1`, so `full` carries confirmed digits and a 30-digit root is checked. Golden cases at 30 digits (`oracle`).
-
-- **G4 follow-up (user, 2026-10-13; decisions.md G4 item 1, docs/04 3.3):** the generator leaves `insert` out of tier-1 functions and `prepare()` in `app/src/find/rank.ts` fills in `\operatorname{name}\left(#?\right)` (with `_` escaped, as `insert.test.ts` does). Test: every prepared item has an `insert`; the raw size drops by about 70 kB (report before and after).
-
-Test: `app/test/persist.spec.ts` (`5▶A`, reload, `A×2` = 10). Report `replayMs` with 200 definitions on the desktop.
-
-### gorge, G4: Find index generator and query test, branch `p1/gorge-m4-index`
-Backlog step 7, on top of A2.
-- **The generator,** `tools/find-index/generate.mjs`. It builds the index from the pinned tarballs, takes values, uncertainties and SI factors from the qalc build run in Node, and checks that every id round-trips through qalc (§3.3). Sandra's prototype in `tools/probes/find/` and the notes in `docs/research/r6-pipelines.md` are a head start.
-- **Our data files:** `find/aliases.yaml`, and `find/functions.yaml` for tier 0 (each function with its golden accuracy case).
-- **The query test:** `tests/tasks/find-queries.yaml` from docs/04 Appendix B with real ids, plus `app/src/find/queries.test.ts`.
-- **Wiring:** the `npm run index` hook, and the `build.sh` step after the qalc step. `build.sh` is annabell's file; keep your change to that one step and name it in the report.
-- **THIRD_PARTY.md:** the "Find index data" text goes in your report.
-
-Gate:
-- every phrase in the top 3, at least 90 % first
-- the index ≤ 100 kB gzip
-- no currency ids
-
-### annabell, A3: copy, paste, share, export, branch `p1/annabell-m4-copy`
-Backlog step 9 and §2.6.
-- **`ClipboardPort`** (§8.2): `navigator.clipboard` first. Capacitor plugins only if A4's device check needs them; the plugin's THIRD_PARTY.md text goes in your report.
-- **Keys:** Shift + View = Copy (full value), Shift + Menu = Paste a number. You may edit those two entries in `spec/keyboard.yaml`.
-- **Actions:** the Home/CAS Menu items, a long press on a history row, and Num as CSV.
-- **Shared device lock (user, 2026-10-12, decisions M4-9):** `tools/devlock.sh` defaults to the main checkout's `.coord` (found with `git rev-parse --git-common-dir`), so a lock taken in a worktree is the shared one; `PASCALINE_COORD` still overrides it. A small shell test: acquire in a worktree, see it held from the main checkout. Update `tools/README.md`.
-
-Tests: one e2e per action and a copy → paste round trip.
-
 ### ron, R4: Find UI, branch `p1/ron-m4-find`
 Backlog step 8.
 - **Keys:** Math = Find, Vars = Find on variables, Shift + Math = Memory (§5.1).
 - **Inside Find:** keys follow §3.7, ranking §3.5 (`app/src/find/rank.ts`), preview and insertion §3.6.
-- **Content:** live items from `defined` (§3.4); `?bench=find`. **Changed by P11:** no usage ranking and no `find.usage`; an empty query shows the G2-style Math menu (fixed categories in a fixed order). Built on R7's sheet (docs/05 3.1, 3.6 and section 7); letters: a tap on a non-digit key, a flick down on any key.
+- **Content:** live items from `defined` (§3.4); `?bench=find`. No usage ranking and no `find.usage` (P11); an empty query shows the G2-style Math menu (fixed categories in a fixed order). Built on R7's sheet (docs/05 3.1, 3.6 and section 7); letters: a tap on a non-digit key, a flick down on any key.
 - **Loading:** Find is a lazy chunk, and the index is fetched only when the browser is idle after the engine is ready.
-- **Data:** until G4 is merged, work against a hand-written fixture of the §3.3 `FindItem` schema (`app/src/find/fixture.ts`, about 30 items covering every kind). Then switch to the generated index. The schema is fixed by §3.3; a change goes under "Needs a decision".
+- **Data:** the generated index (G4, merged): `prepare()` and `search()` in `app/src/find/rank.ts`. The schema is fixed by §3.3; a change goes under "Needs a decision".
 
 Gate:
 - task 5 active and within budget
 - ranking unit tests
-- the query test, once G4 is in
+- the query test
 - the size test
 
 ### annabell, A4: device bars, branch `p1/annabell-m4-device`
@@ -226,25 +92,6 @@ Backlog step 12, when the Tab One is connected (rules section 6). On the device:
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R5: remove the Python app (app side), branch `p1/ron-m4a-nopython`
-P11, docs/03 rule 11. Remove completely, no dead settings: the Python app (`app/src/apps/python/`), its worker, client and `calc` host (`app/src/python/`), its registration in the apps list, the Python layer in `spec/keyboard.yaml` and `keyboard.ts`, its i18n strings, the Python e2e tests and the Python steps of `softkeyboard.spec.ts`, `pythonBench`, Python parts of the task benchmark, the Python part of `app/scripts/golden.ts` and `tests/golden/python.yaml` (update the counts in `tests/golden/README.md`), Python copying in `app/package.json` scripts and the size test. Keep the CodeMirror `EDIT_CONTEXT` fix only if CodeMirror stays in use elsewhere; otherwise CodeMirror goes too (say which in the report). Gate: typecheck, vitest, e2e, golden gate (`GIAC_OUT` absolute; no `PYTHON_OUT` needed any more); start chunk before and after. **For shared files** in the report: CLAUDE.md (architecture worker 2, the `hpprime` exception, Python commands, stack line), README, docs/04 2.10, THIRD_PARTY.md (CodeMirror if it goes).
-
-### sandra, S1: unit-slot paper test, branch `p1/sandra-m4a-unitslots`
-The owner asked for this package, so commit on your branch (make your own worktree as in section 2). P11 "units after the formula". Write:
-- a `unit_slot:` section in `spec/keyboard.yaml`, a layout record only (like `templates:`; nothing reads it yet): inside a unit slot a flick down types the lowercase letter and a flick up the capital, on the letters' fixed positions; fixed cells for µ, Ω and °; ×, ÷, xʸ, x² and digits (exponents) as usual; ◀ ▶ jump from slot to slot; the optional end slot "→ should be" (empty = no check); a single slot on an empty line;
-- `tools/probes/unit-presses.mjs`: counts presses for the 50 most common engineering units and compound units (the list with a source line for each choice), from the layout above; prints median, worst ten, and every symbol the layout cannot type;
-- `docs/research/r7-unit-slots.md`: the result, case pitfalls (m/M, Pa/pa, the units qalc misreads, docs/04 4.1), a recommendation, and the rewrite of docs/04 4.3–4.4 for milestone 5 as a proposal.
-Gate: median ≤ 4 presses (P8 rule 2). If it fails, say what would fix it; don't change the layout of any key.
-
-### annabell, A5: remove the Python build, branch `p1/annabell-m4a-nopython`
-After R5. `build.sh` step 1b and the `--python-dir` / `--no-python` flags, `python/` (build script, smoke test, patches), `PYTHON_OUT` in tools and rules, `.gitignore` entries, `fdroid/README.md`. Leave `python/_out/` on disk (gitignored). Gate: `./build.sh --engine-dir engine/giac/_out/gsl --no-units` gives an APK; the size test. **For shared files:** CLAUDE.md (commands, repo layout), THIRD_PARTY.md (MicroPython out), `docs/shifts/rules.md` section 5.
-
-### ron, R6: cleanup, branch `p1/ron-m4a-cleanup`
-1. **Hold-and-drag out completely** (P11): `KeyHold` in `app/src/keyboard/gestures.ts`, its wiring and the dimming in `Keypad.svelte`, its tests in `app/test/gestures.spec.ts`, the K2 paragraph of the `spec/keyboard.yaml` header. Keep the K1 trackpad and ⌫ auto-repeat (`Repeat`). Keys keep firing on lift (R9's flicks need it).
-2. **U0** (docs/05 section 1 findings 1, 3, 4, 8 and package U0): legends get their own space (never cut, never overlap); contrast ≥ 4.5:1 in every layer, with a test computed from the CSS values; dead keys dim only in layers where they do nothing; **regression test first** for finding 4 (with Alpha lock on, a digit typed `Y` through the open Apps list); the Plot hint above the axes.
-3. **The gallery:** a Playwright script that renders every view, sheet and layer in light (and dark where it exists) at phone size into `app/test/gallery/` (gitignored), plus one HTML index page for the owner.
-Gate: e2e, contrast test, size test.
 
 ### ron, R7: one sheet for every list, branch `p1/ron-m4a-sheet`
 docs/05 3.1 with section 7. `Sheet.svelte` and its model (`items`, `submenu`, `lastPick`, `filter`) replace `PickList`; Apps, the view menus and the Home menu move to it. Keys as in the 3.1 table: ▲▼ and the trackpad move, digits pick (Shift/Alpha ignored for picking), Enter picks, ▶ opens a submenu, ◀/Esc back (path in the title), Cancel closes all, Menu toggles; letters filter (a tap on a non-digit key; flicks come in R9). Last pick remembered per sheet; scroll cue and item count; disabled items stay in place with a reason line. Gate: an e2e per key of 3.1; every existing menu test green; size test.
@@ -293,7 +140,8 @@ The reviewer works in the main checkout on `phase-1`:
    - `git merge --no-ff` into `phase-1`
    - apply the report's "For shared files" text
    - tick the backlog step with the commit
-   - put "Needs a decision" items under "Needs the user" in `docs/decisions.md`
+   - put "Needs a decision" items under "Needs the user" in `docs/decisions.md`; when the owner decides one, move it to "Decided proposals"
+   - **rewrite, don't amend:** where the package changes what a doc says, change that text in place (no "amended"/"superseded" notes or strikeouts; git keeps the history), and remove the finished package's text from section 7 of this brief and its row from 0a/0b
    - remove the worktree, then `git branch -d`
    - commit with `git commit -s`
    - never push
