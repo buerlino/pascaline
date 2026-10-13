@@ -48,4 +48,9 @@ The one place for the owner's points from using the app (docs/03 section 0, rule
 | 22 | Theme: a setting Light / Dark / Follow system. | decided: System / Light / Dark, Dark by default on Android (docs/05 section 7) |
 | 23 | Plan A–F signed off; order of milestone 4a agreed. | decided |
 
-Waiting for the owner's notes on R5 (Python app removed; APK of 2026-10-13).
+## 2026-10-13 (fourth round: the R5 APK)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 24 | The system keyboard no longer pops up. | confirmed: F1 done |
+| 25 | Home and CAS still have a bar at the top; it must go, for maximum vertical space. Isn't it all on the keys? | yes, every tab is on a key (Home key r3c1, CAS r3c5, Symb/Plot/Num). The tab row goes in R8; a status line of at most 28 px replaces it (angle, Shift/Alpha, busy) |

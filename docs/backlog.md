@@ -66,7 +66,7 @@ These moved out of `spike/` (C1, done) before `phase-1` went to `master`. The ot
 ### Milestone 4a: feel (P11, 2026-10-13; order signed off by the owner 2026-10-13)
 The owner's first days of daily use ([feedback.md](feedback.md)) and the UI plan ([05-ui-plan.md](05-ui-plan.md), accepted with its section 7). Runs before the rest of milestone 4, because Find and the unit view sit on the keypad and the screen layout. docs/03 rule 10: one untried UI change at a time; each ron package ends with an APK on the owner's phone (built by the review session) and is done after a day or two of use. Packages, models and branches: [shifts/brief.md](shifts/brief.md) section 0b.
 
-1. **F1. Keyboard on return (bug). Done** (`9679a43`): the app drops the focus when hidden, and on touch screens when the window loses focus; regression tests in `app/test/softkeyboard.spec.ts`. Left: the owner checks it with the first APK.
+1. **F1. Keyboard on return (bug). Done** (`9679a43`): the app drops the focus when hidden, and on touch screens when the window loses focus; regression tests in `app/test/softkeyboard.spec.ts`. Confirmed by the owner on the R5 APK (2026-10-13, feedback #24).
 2. **R5 + A5. Remove the Python app** (rule 11; ron the app side, annabell the build side). Goes first so no later package carries Python through menus and sheets. *R5 done (`02a143c`): the app side, CodeMirror with it; start chunk 136.31 → 131.57 kB. A5 next.*
 3. **R6. Cleanup:** the hold-and-drag cursor (K2) removed completely; UI quick fixes U0 (legend overlap, alpha-layer contrast, keys going through an open list, the Plot hint on the axis), the screenshot gallery and the contrast test.
 4. **R7. One sheet for every list** (U1): Apps, view menus, the Home menu.
