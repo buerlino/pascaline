@@ -169,7 +169,7 @@ describe("keyboard spec", () => {
     expect(p.items.find((i) => i.id === "frac")?.action).toBe(keyboard.byId.get("frac")?.actions.primary);
     expect(p.items.find((i) => i.id === "abs")?.action).toBe(keyboard.byId.get("neg")?.actions.shift);
     // our readings of the photo, listed for the owner to confirm on the G2
-    expect(p.items.filter((i) => i.check).map((i) => i.id)).toEqual(["evalat", "rowvec", "mixed"]);
+    expect(p.items.filter((i) => i.check).map((i) => i.id)).toEqual(["mixed"]); // evalat, rowvec: G2 items 34, 35
   });
 
   it("Tmpl opens the palette; a b/c is the fraction while typing", () => {

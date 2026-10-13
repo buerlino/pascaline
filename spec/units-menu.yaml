@@ -1,0 +1,247 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# The reference's units menu (Shift + Units, r4c3) as data for milestone 5 item 4: an empty unit slot shows this
+# menu on the sheet (categories, then units, in the reference's order), typing letters filters it (Find on units),
+# and the Const tab and the Tools tab map onto the unit view (docs/04 4.3). Nothing reads this file yet; the unit
+# view package does (ron), and its parts marked `confirm` wait for the G2 checklist (tests/golden/g2.yaml 33, 38, 39).
+#
+# Sources, named per section with `source:` (never from memory, CLAUDE.md):
+#   guide    the reference's public user guide (HP, edition of July 2016, chapter 24 "Units and constants",
+#            pp. 490-500): the tabs, the category list and order, the prefix palette, the 34 constants by category.
+#            Facts only; every description below is our own wording.
+#   device   observed on the reference (G2 checklist item 30, virtual-calc 2.4.2.15751, 2026-10-12).
+#   giac     Giac 2.1.0 (GPL), the reference's CAS: the unit names and what each one is (`mksa(1_<name>)` in our
+#            build), and Xcas's own units menu (doc/en/xcasmenu, Phys/...), written by Giac's author. Xcas's grids
+#            are the candidate grids below; the reference's grids are not in the guide. Counts per category for the
+#            reference's firmware of 2013 (numericana.com/answer/hp-prime.htm) are in `ref_count`.
+#   probe    tools/probes/g2-units.mjs: each unit against our Find index (app/src/find/_gen), same dimension and
+#            SI factor to 9 digits. 128 of the 164 candidates are the same unit; the rest are listed in `map:`.
+#   oracle   values computed with mpmath from the exact definitions (tests/golden/.venv).
+#
+# What the menu inserts: our Find unit (the `find` id, qalc's name), never the reference's spelling, so a unit
+# picked from the menu and the same unit typed in a slot are one token. The reference's names that differ from
+# ours become extra Find names (`alias: true` in `map:`), except where that name already means another unit in SI
+# or in qalc (`alias: false`, with the reason): a slot never reads a name two ways (docs/04 4.3).
+
+tabs:                                       # source: device (item 30)
+  - Tools
+  - Units
+  - Const
+
+# ---- Units tab ---------------------------------------------------------------------------------------------------
+# Prefix first, then the 17 categories, in this order (source: guide; Prefix first: device, item 30).
+prefixes:
+  source: guide
+  columns: 5                                # a 5 x 4 palette, row by row
+  items: [Y, Z, E, P, T, G, M, k, h, D, d, c, m, µ, n, p, f, a, z, y]
+  # The reference writes deca as D; SI and qalc write da. The palette shows da in D's place, and a slot reads da
+  # only, as SI writes it. The 2022 prefixes R, Q, r, q are not on the reference's palette; a slot reads them
+  # (Find has them).
+  ours: { D: da }
+
+# units: the candidate grid in Xcas's order (source: giac), with `seen` = the start of the reference's own grid
+# where it was observed (source: device). `ref_count` = units the reference had in 2013. Where the two counts
+# differ, the reference's grid has other units than Xcas's: those are the categories to photograph first.
+categories:
+  - name: Length
+    ref_count: 20
+    seen: [m, cm, mm, km, au, lyr, pc, Angstrom, fermi, yd, ft, inch]
+    units: [m, cm, mm, km, au, lyr, pc, Angstrom, chain, fath, fm, fermi, yd, ft, ftUS, inch, mi, mile, mille, miUS, mil, nmi, rod]
+  - name: Area
+    ref_count: 12
+    units: [m^2, km^2, cm^2, ha, a, acre, b, yd^2, ft^2, inch^2, mi^2, miUS^2]
+  - name: Volume
+    ref_count: 23
+    units: [m^3, cm^3, l, ml, st, yd^3, ft^3, inch^3, bbl, bu, buUS, cu, fbm, ozfl, ozUK, tbsp, tsp, qt, liqpt, ptUK, pk, galUS, galC, galUK]
+  - name: Time
+    ref_count: 6                            # 5 of time and Hz
+    units: [s, mn, h, d, yr, Hz]
+  - name: Speed
+    ref_count: 11                           # 8 linear, 3 rotational
+    units: [m*s^-1, cm*s^-1, ft*s^-1, kph, km*h^-1, mph, knot, rad*s^-1, tr*mn^-1, tr*s^-1]
+  - name: Mass
+    ref_count: 14                           # 13 and mol
+    units: [kg, g, grain, lb, lbt, oz, ozt, slug, ton, tonUK, u, t, ct, mol]
+  - name: Acceleration
+    ref_count: 5                            # 4 linear, 1 rotational
+    units: [m*s^-2, Gal, rad*s^-2]
+  - name: Force
+    ref_count: 7
+    units: [kg*m*s^-2, N, dyn, kip, gf, lbf, pdl]
+  - name: Energy
+    ref_count: 26
+    units: [kg*m^2*s^-2, J, Wh, kWh, Kcal, cal, eV, MeV, Btu, erg, ft*lb, therm, tep, toe, tec, lep, bblep, boe, cf]
+  - name: Power
+    ref_count: 5
+    units: [kg*m^2*s^-3, W, MW, hp]
+  - name: Pressure
+    ref_count: 9
+    units: [kg*m^-1*s^-2, Pa, bar, atm, psi, torr, mmHg, inHg, inH2O]
+  - name: Temperature
+    ref_count: 4
+    units: [K, Rankine]                     # the reference has two more (°C and °F?): confirm
+  - name: Electricity
+    ref_count: 12
+    units: [A, V, C, Ohm, F, Fdy, Wb, H, mho, S, T, A*h]
+  - name: Light
+    ref_count: 2
+    units: [cd, flam]
+  - name: Angle
+    ref_count: 7
+    units: [rad, deg, grad, gon, arcmin, arcs, tr]
+  - name: Viscosity
+    ref_count: 3
+    units: [m^2*s^-1, P, St]
+  - name: Radiation
+    ref_count: 7
+    units: [Bq, Ci, Gy, rd, rem, Sv, R]
+
+# map: every candidate whose Find unit is not spelled the same, or is not the same size, or is missing (source:
+# probe). Units not listed here are in Find under the same name, or as prefix + name (ml, MeV, MW), and are the
+# same unit (factor to 9 digits).
+#   find    the Find id the menu inserts, or "pfx:unit" as in find/units.yaml `parts` (null: not in Find)
+#   alias   whether the reference's name becomes an extra Find name
+#   value   ours | giac: whose size we use when they differ (ours = the exact current definition, source: oracle)
+#   todo    what the unit view package does
+map:
+  # Length
+  lyr:      { find: ly, alias: true, value: ours, note: "Giac 9.4605284e15 m (an older year); ours the Julian year × c, 9460730472580800 m exactly" }
+  au:       { find: au, value: ours, note: "Giac 1.495979e11 m (before 2012); ours 149597870700 m, exact since the IAU's 2012 definition" }
+  Angstrom: { find: angstrom, alias: true }
+  chain:    { find: ch, alias: true, value: ours, note: "Giac uses the US survey foot (20.1168402 m); ours the international foot, 20.1168 m. The survey foot stays as ftUS" }
+  rod:      { find: rd, alias: true, value: ours, note: "survey vs international, as chain (Giac 5.02921006 m, ours 5.0292 m)" }
+  fath:     { find: fathom, alias: true, value: ours, note: "survey vs international (Giac 1.82880366 m, ours 1.8288 m)" }
+  fm:       { find: fathom, alias: false, note: "Giac's fm is the fathom; in SI fm is the femtometre, so the menu shows the fathom once (fath)" }
+  fermi:    { find: "f:m", alias: true }
+  ftUS:     { find: ft_US, alias: true }
+  miUS:     { find: mi_US, alias: true }
+  mile:     { find: mi, alias: false, note: "the same unit as mi; a second cell for it adds nothing" }
+  mille:    { find: nmi, alias: false, note: "Giac's mille is the nautical mile (1852 m); nmi is already in the grid" }
+  inch:     { find: in, alias: true }
+  mil:      { find: thou, alias: true }
+  # Area
+  acre:     { find: acre, value: ours, note: "survey vs international (Giac 4046.87261 m², ours 4046.8564224 m²)" }
+  # Volume
+  l:        { find: L, alias: false, note: "Find already reads l" }
+  st:       { find: null, alias: false, todo: "add `stere` as a name of m^3 (1 m³ exactly); not `st`, which reads as other units in qalc's free text" }
+  bu:       { find: bu_UK, alias: false, value: ours, note: "Giac's bu is the imperial bushel with the gallon of before 1985 (36.368736 L); ours 36.36872 L. bu is the US bushel in qalc, so the reference's name cannot be ours" }
+  buUS:     { find: bu, alias: false, value: ours, note: "Giac rounds (0.03523907 m³)" }
+  cu:       { find: cup_US, alias: false, value: ours, note: "Giac rounds; `cu` in a slot would read c + u" }
+  fbm:      { find: null, todo: "add the board foot: ft²·in = 0.002359737216 m³ exactly (oracle), names fbm, board foot" }
+  ozfl:     { find: fl_oz, alias: true }
+  ozUK:     { find: fl_oz_UK, alias: true }
+  tbsp:     { find: tbsp_US, alias: false, note: "Find's tbsp is the metric 15 mL; the reference's is the US one" }
+  tsp:      { find: tsp_US, alias: false, value: ours, note: "as tbsp; Giac rounds" }
+  qt:       { find: liq_qt, alias: true, value: ours, note: "Giac 0.000946359246 m³ has two digits swapped: the US liquid quart is 0.000946352946 m³ exactly (oracle). To report upstream" }
+  liqpt:    { find: liq_pt, alias: true }
+  ptUK:     { find: pt_UK, alias: false, value: ours, note: "gallon of before 1985 in Giac" }
+  galUS:    { find: gal, alias: true }
+  galC:     { find: gal_UK, alias: true, note: "the Canadian gallon is the imperial gallon, 4.54609 L" }
+  galUK:    { find: gal_UK, alias: true, value: ours, note: "Giac 4.546092 L (before 1985); ours 4.54609 L. One cell for galC and galUK? confirm on the reference" }
+  pk:       { find: pk, value: ours, note: "Giac rounds" }
+  # Time
+  mn:       { find: min, alias: false, note: "mn is not a unit in qalc; min is what a slot reads" }
+  yr:       { find: a_j, alias: true, value: ours, note: "Giac's yr is a tropical year, 31556925.9747 s; ours the Julian year, 31557600 s (the IAU's year, the one in ly). Open: the reference shows yr in Time; the size is the reference's, to confirm" }
+  # Speed
+  kph:      { find: km/h, alias: true }
+  # Mass
+  grain:    { find: gr, alias: true }
+  lbt:      { find: lb_t, alias: true }
+  ozt:      { find: oz_t, alias: true }
+  ton:      { find: s_ton, alias: false, note: "Find's ton is the tonne; the reference's ton is the short ton (907.18474 kg). The menu cell says `ton (US)`" }
+  tonUK:    { find: l_ton, alias: true }
+  ct:       { find: carat, alias: false, note: "ct would read c + t (centitonne) in a slot" }
+  u:        { find: u, note: "no SI factor in Find: a measured constant (find/units.yaml)" }
+  # Force
+  kip:      { find: null, todo: "add kip = 1000 lbf = 4448.2216152605 N exactly (oracle), id klbf, names kip" }
+  # Energy
+  Kcal:     { find: kcal, alias: false, note: "Kcal is not SI (K would be kelvin as a prefix); kcal is read" }
+  therm:    { find: thm_ISO, alias: false, note: "Giac's therm is the EC therm, 105506000 J = Find's thm_ISO; Find's thm is the IT one (105505585 J)" }
+  tep:      { find: null, todo: "leave out", note: "tonne of oil equivalent (French tep): a convention, not a unit; Giac uses 41.76 GJ, the IEA 41.868 GJ. Principle 3: no unit whose size depends on who you ask" }
+  toe:      { find: null, todo: "leave out", note: "as tep" }
+  tec:      { find: null, todo: "leave out", note: "tonne of coal equivalent, as tep (Giac 27.84 GJ)" }
+  lep:      { find: null, todo: "leave out", note: "litre of oil equivalent, as tep" }
+  bblep:    { find: null, todo: "leave out", note: "barrel of oil equivalent, as tep" }
+  boe:      { find: null, todo: "leave out", note: "as bblep" }
+  cf:       { find: null, todo: "leave out", note: "a cubic foot of natural gas as energy (Giac 1.08 MJ), as tep" }
+  # Power, pressure
+  hp:       { find: hp, note: "no SI factor in Find: qalc's hp is off in the 7th digit (find/units.yaml, to report upstream)" }
+  mmHg:     { find: mmHg, note: "no SI factor in Find: qalc's mmHg is the Torr (find/units.yaml, to report upstream)" }
+  torr:     { find: Torr, alias: false, note: "Giac knows Torr, not torr: Xcas's menu entry gives an unknown name" }
+  inH2O:    { find: inWC, alias: true, value: ours, note: "Giac 249.081936 Pa (water at about 4 °C); ours the conventional inch of water, 0.0254 m × 1000 kg/m³ × g_n = 249.08891 Pa (oracle; NIST SP 811)" }
+  # Temperature, electricity, light
+  Rankine:  { find: oR, alias: true }
+  Ohm:      { find: ohm, alias: true }
+  Fdy:      { find: null, todo: "add the faraday as a unit of charge: N_A × e × 1 mol = 96485.3321233100184 C exactly (oracle), names Fdy, faraday (unit)" }
+  mho:      { find: S, alias: true }
+  flam:     { find: foot_lambert, alias: true }
+  cd:       { find: cd, note: "Giac reads cd as its change-directory command (an error in Xcas's menu); ours is the candela" }
+  # Angle, radiation
+  grad:     { find: gra, alias: false, note: "Giac reads grad as the gradient; gon is the same unit and is read" }
+  arcs:     { find: arcsec, alias: true }
+  rd:       { find: rad_radioactivity, alias: false, note: "rd is the rod in qalc; the menu cell says `rad (dose)`" }
+  Ci:       { find: Ci, note: "Giac knows Curie, not Ci: Xcas's menu entry gives an unknown name" }
+  rem:      { find: rem, note: "Giac reads rem as the remainder command" }
+
+# ---- Const tab ---------------------------------------------------------------------------------------------------
+# The reference's 34 constants in 4 categories, in the guide's order (source: guide). `find`: our constant (Find
+# id, CODATA 2022 through qalc 5.13.1); Giac 2.1.0 has CODATA 2018, so me, mp, α, a0, µB, µN, ε0, µ0, λc differ in
+# the last digits, and ours are the current ones. `define`: not in Find; the unit view package adds it as our own
+# constant, exactly from these (value checked by the generator, as find/units.yaml `checks`).
+# A pick inserts the constant's chip (docs/04 3.6): symbol with value and unit. The reference's Value toggle
+# (value only, or value and units) is G2 item 39; default: not built, the chip already shows the value.
+constants:
+  source: guide
+  categories:
+    - name: Math
+      items:
+        - { g2: e, ours: e, note: "Euler's number, the Home constant" }
+        - { g2: MAXREAL, find: null, todo: "leave out", note: "the reference's largest float; ours is a different engine and its limits are not the same" }
+        - { g2: MINREAL, find: null, todo: "leave out", note: "as MAXREAL" }
+        - { g2: π, ours: π }
+        - { g2: i, ours: i }
+    - name: Chemistry
+      items:
+        - { g2: NA, find: N_A }
+        - { g2: k, find: k_B }
+        - { g2: Vm, find: V_m101, note: "Giac's Vm is at 101.325 kPa (0.02241396954 m³/mol); Find's V_m is at 100 kPa" }
+        - { g2: R, find: gas_constant }
+        - { g2: StdT, define: "273.15 K", note: "exact; Giac 273.15 K" }
+        - { g2: StdP, define: "101325 Pa", note: "exact; Giac 101325 Pa, the pressure Vm goes with" }
+    - name: Physics
+      items:
+        - { g2: σ, find: sigma }
+        - { g2: c, find: c }
+        - { g2: ε0, find: epsilon_0 }
+        - { g2: µ0, find: mu_0 }
+        - { g2: g, find: g_0 }
+        - { g2: G, find: G }
+    - name: Quantum
+      items:
+        - { g2: h, find: planck }
+        - { g2: ħ, find: planck2pi }
+        - { g2: q, find: q_e }
+        - { g2: me, find: m_e }
+        - { g2: qme, define: "q_e / m_e", note: "1.758820008378e11 C/kg from CODATA 2022 masses (oracle)" }
+        - { g2: mp, find: m_p }
+        - { g2: mpme, define: "m_p / m_e", note: "1836.15267342 (oracle); carries the uncertainty of both masses" }
+        - { g2: α, find: alpha }
+        - { g2: ϕ, find: phi_0 }
+        - { g2: F, find: faraday }
+        - { g2: R∞, find: rydberg }
+        - { g2: a0, find: a_0 }
+        - { g2: µB, find: mu_B }
+        - { g2: µN, find: mu_N }
+        - { g2: λ0, define: "planck * c / q_e / V", note: "the photon wavelength of 1 eV, 1.2398419843320026e-6 m exactly (oracle)" }
+        - { g2: f0, define: "q_e * V / planck", note: "the photon frequency of 1 eV, 2.4179892420849182e14 Hz exactly (oracle). Giac's 2.4179883e14 is wrong in the 7th digit: to report upstream" }
+        - { g2: λc, find: lambda_C }
+
+# ---- Tools tab ---------------------------------------------------------------------------------------------------
+# The reference's six unit tools (source: device, item 30) and where each lives in the unit view (docs/04 4.3).
+# The tools are not commands we add: each is a place in the unit view, so it costs no new key or menu.
+tools:
+  - { g2: CONVERT,   ours: "the end slot (→ should be): 5 km, end slot m → 5000 m" }
+  - { g2: MKSA,      ours: "the result's one tap to the SI base form" }
+  - { g2: UFACTOR,   ours: "the end slot with the target unit (100 C → A·s); a partial unit like Giac's ufactor(100_C,1_A) is not taken: the end slot must match the whole dimension" }
+  - { g2: USIMPLIFY, ours: "the result rule: units typed when they fit, else SI with a prefix; the one-tap alternatives include the named unit (kg·m²/s² → J)" }
+  - { g2: UPART,     ours: null, confirm: true, note: "not a Giac command; meaning on the reference unknown (G2 item 38)" }
+  - { g2: UVAL,      ours: null, confirm: true, note: "not a Giac command; meaning on the reference unknown (G2 item 38). If it gives the number without the unit: that is the `\\res` chip into Home (docs/04 4.3, the way back)" }

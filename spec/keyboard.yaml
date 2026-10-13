@@ -370,7 +370,6 @@ templates:
       desc: "evaluate at: expression | variable = value"
       insert: "\\left.#0\\right|_{#?=#?}"
       sample: ["\\left.x^2\\right|_{x=3}", "subst(x^2,x=3)"]
-      check: true
     - id: deriv
       row: 0
       col: 3
@@ -410,7 +409,6 @@ templates:
       desc: "row matrix/vector, 1×2"
       insert: "\\begin{pmatrix}#? & #?\\end{pmatrix}"
       sample: ["\\begin{pmatrix}1 & 2\\end{pmatrix}", "[[1,2]]"]
-      check: true
     - id: colvec
       row: 1
       col: 5

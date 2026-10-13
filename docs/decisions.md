@@ -37,7 +37,7 @@ Newest first. Where an entry changed an earlier document, that document now carr
   6. **R18:** as briefed, plus Esc/Cancel and the remembered pick for both palettes; ° uses R10's DMS rule; μ and Ω are variable names, never units; ∞ costs 5 presses by keys, 3 by touch, 2 by flick + tap (today 2).
   7. **R4:** on Find's empty query digits pick a category; after a letter they type.
   8. **R10's palette stays as built** (decision R10 (3) confirmed).
-  **Would change if:** Shift + Apps is awkward on the R15 APK (then another free shifted cell); the G2 labels the Shift + 9 cells with keys (G2 item 37).
+  **Would change if:** Shift + Apps is awkward on the R15 APK (then another free shifted cell); the G2 labels the Shift + 9 cells with keys (G2 item 37: it does not, owner's screenshot 2026-10-13).
 - **2026-10-13 P13: Undo for the entry line, on Shift + Cancel (package R16). ACCEPTED by the owner (2026-10-13), without the week's wait.**
   - **Evidence** (probe on the real app, MathLive 0.111.1, `engine=fake`, Pixel 7 profile): MathLive's `undo` command already restores a selection deleted with ⌫ (all of it or part), a line cleared by Esc and a line cleared by Enter. One step per key press; a template insert is two steps. No new dependency or engine call. `entry/controller.ts` already uses `undo` for the mixed-number trick.
   - **Choice:** Shift + Cancel fires `undo` on the entry line, so a flick up on Cancel does it in one motion (R9). No redo key (a direct `executeCommand("redo")` after undo does restore the line, so a key is possible when the owner asks and a cell is free), no button, no setting, no screen element. Cancel's primary layer is unchanged (stop the job, close a list, clear the line).
@@ -146,7 +146,7 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Why:** `1+2` selected and x² gave `1+2²` = 5 where 9 was meant, a silent wrong answer (principle 3); the function keys threw the selection away. Values checked through the parser and the engine (`(1+2)^2` = 9, `(1+2)^(-1)` = 1/3, `derived`).
 - **Alternatives:** operators wrapping a selection (rejected: not what typing does); bracketing every selected base (rejected: `4+2^2` with only the 2 selected stays bare).
 - **Would change if:** the real G2 turns out to behave otherwise for a function key with a selection (not verified, no `source: device` claimed); a name such as `ab` selected is bracketed today and the owner may want it bare.
-- **Open:** `find/functions.yaml` still has 14 curated inserts with `#?` (Find drops a selection for those until gorge changes them); Shift + space with a selection gives `1+2_{}` (binds to the last character), unchanged.
+- **Open:** Shift + space with a selection gives `1+2_{}` (binds to the last character), unchanged.
 
 ### 2026-10-13 Tmpl palette and the a b/c key (R10)
 - **Choice:** (1) a b/c has one toggle per result type: fraction ↔ decimal, or a+bi ↔ polar; no Settings row, no mixed form on the key. (2) ▶ moves to the next empty template box while one is ahead, else it is the plain step. (3) In the Tmpl grid, digits and letters do nothing, Tmpl closes it, and it opens on the last pick (R7's remembered pick). (4) The degree sign and DMS mean degrees in every angle mode: `x*(pi/180)^angle_radian()`.
