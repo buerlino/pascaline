@@ -225,9 +225,10 @@
       return;
     }
     const mods = modsFor(layer);
-    // An open list takes the digit keys (1…9, 0).
+    // An open list takes the digit keys (1…9, 0), whatever Shift and Alpha say: a digit never leaks through (docs/05 3.1),
+    // and the list leaves the modifiers as they are.
     const digit = DIGIT.exec(key.id);
-    if (digit && !mods.shift && !mods.alpha && (shell.switcherOpen || shell.menuOpen)) {
+    if (digit && (shell.switcherOpen || shell.menuOpen)) {
       const i = (Number(digit[1]) + 9) % 10;
       if (shell.switcherOpen) {
         const a = APPS[i];

@@ -76,3 +76,6 @@ engine/qalc/_out/
 
 # tools/probes output (rebuilt by the probes; tools/probes/README.md)
 tools/probes/_out/
+
+# UI gallery screenshots (app/gallery/, npm run gallery)
+app/test/gallery/

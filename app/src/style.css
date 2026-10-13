@@ -10,7 +10,13 @@
   --key-nav: #2e3a33;
   --key-enter: #1f6f54;
   --text: #e8ebef;
+  /* a key that does nothing in the layer shown: dimmed, still at least 3:1 (src/style.test.ts) */
+  --text-dead: #8a93a3;
+  --on-enter: #ffffff;
   --muted: #98a2b3;
+  /* keypad legend line above each key face, and the key side padding */
+  --legend-h: 12px;
+  --key-pad: 4px;
   --shift: #f0b35a;
   --alpha: #7fc8f8;
   --error: #c0392b;
@@ -30,8 +36,9 @@
     --key-nav: #d6e8dc;
     --key-enter: #1f6f54;
     --text: #1a1d22;
+    --text-dead: #6b7585;
     --muted: #5b6575;
-    --shift: #a35f00;
+    --shift: #855000;
     --alpha: #0d5f93;
     --chip-bg: #cfe3f7;
     color-scheme: light;
