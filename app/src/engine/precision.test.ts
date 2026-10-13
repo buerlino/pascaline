@@ -47,6 +47,18 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     expect(markOf(r, { format: "STD", digits: 30 })).toEqual({ mark: "⚠", n: 11, warn: "unaudited" });
   });
 
+  it("SB4: in [romberg(…),1/3] each element carries its own mark; the list's is the weakest (derived; oracle)", () => {
+    const r = home("[romberg(exp(-x^2),x,0,1),1/3]");
+    const o = { format: "STD" as const, digits: 12 };
+    expect(r.items).toHaveLength(2);
+    expect(markOf(r.items![0]!, o)).toEqual({ mark: "⚠", n: 11, warn: "unaudited" }); // oracle sqrt(pi)/2*erf(1), as above
+    expect(r.items![1]).toMatchObject({ exactRational: true, reliableDigits: null }); // derived: 1/3 is exact
+    expect(r.items![1]!.warn).toBeUndefined();
+    expect(markOf(r.items![1]!, o)).toEqual({ mark: "≈" }); // derived: 1/3 shown as 0.333333333333 is rounded
+    expect(markOf(r, o)).toEqual({ mark: "⚠", n: 11, warn: "unaudited" });
+    expect(r.display).toBe("[0.74682413281,0.333333333333]");
+  });
+
   it("BesselJ at 30 digits falls back to a double instead of losing the answer (oracle; docs/04 2.3 #5)", () => {
     // oracle: besselj(1,2) = 0.576724807756873387202448242269…
     const r = home("BesselJ(1,2)", 30);
