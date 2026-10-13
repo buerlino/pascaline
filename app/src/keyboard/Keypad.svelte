@@ -2,37 +2,30 @@
 <script lang="ts">
   import { legend } from "../i18n/index.ts";
   import { KeyHold, PAD_KEYS, REPEAT_KEYS, Repeat, Stepper, type PadDir } from "./gestures.ts";
-  import { gridPlace, keyboard, labelFor, pythonLabel, type Key, type Layer } from "./keyboard.ts";
+  import { gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
 
   let {
     shift,
     alpha,
     alphaLock = false,
-    python = false,
     onpress,
     ontouch = () => {},
   }: {
     shift: boolean;
     alpha: boolean;
     alphaLock?: boolean;
-    python?: boolean;
     /** A key fires; `layer` overrides the Shift/Alpha state (trackpad steps, flicks). */
     onpress: (key: Key, layer?: Layer) => void;
     /** A finger went down, or a gesture made a step: the haptic tick. */
     ontouch?: () => void;
   } = $props();
 
-  // The legend printed above a key is its next layer; the face shows the active layer. In a Python text view
-  // the Python layer's legends replace the normal ones where it has them.
-  const py = (k: Key, layer: "primary" | "shift"): string | undefined => (python ? pythonLabel(keyboard, k, layer) : undefined);
+  // The legend printed above a key is its next layer; the face shows the active layer.
   const face = (k: Key): string =>
-    (!alpha ? py(k, shift ? "shift" : "primary") : undefined) ?? legend(labelFor(k, shift, alpha) || k.label.primary || "");
+    legend(labelFor(k, shift, alpha) || k.label.primary || "");
   const hint = (k: Key): string => {
     if (shift || alpha) return "";
-    const p = py(k, "shift");
-    if (p !== undefined) return p;
-    const s = k.label.shift ? legend(k.label.shift) : "";
-    return s;
+    return k.label.shift ? legend(k.label.shift) : "";
   };
   const alphaHint = (k: Key): string => (shift || alpha || !k.label.alpha ? "" : k.label.alpha);
   const pressed = (k: Key): boolean =>

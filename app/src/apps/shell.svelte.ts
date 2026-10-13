@@ -5,7 +5,7 @@
 import type { Calc, CalcSettings } from "../calc/port.ts";
 import type { Kv } from "../state/storage.ts";
 import { appEntry, isAppId } from "./registry.ts";
-import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type SubMenu, type TextInput, type ViewId } from "./types.ts";
+import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type SubMenu, type ViewId } from "./types.ts";
 
 /** The entry line as the shell sees it (EntryController in the app, a stub in tests). */
 export interface EntryLine {
@@ -61,10 +61,6 @@ export class AppShell {
     const a = this.instance;
     return a ? a.entryLabel(this.view) : undefined;
   }
-  /** The open view takes keys as text (Python editor and shell). */
-  get takesText(): boolean {
-    return this.instance?.takesText?.(this.view) ?? false;
-  }
   get showsEntry(): boolean {
     return this.app === null || this.entryLabel !== undefined;
   }
@@ -84,7 +80,6 @@ export class AppShell {
         this.entryBase = latex;
         this.entry.set(latex);
       },
-      showView: (v: ViewId) => void this.setView(v),
       copy: (text: string, notice?: string) => void this.clip?.copyRaw(text, notice),
     };
   }
@@ -164,10 +159,6 @@ export class AppShell {
   enter(latex: string): void {
     const a = this.instance;
     if (a) a.enter(this.view, latex);
-  }
-  /** A key for a view with its own text input. */
-  input(key: TextInput): void {
-    this.instance?.input?.(this.view, key);
   }
     nav(dir: NavDir): boolean {
     const a = this.instance;

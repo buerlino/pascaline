@@ -4,7 +4,6 @@
 
 import type { ComplexValue, NumberFormat as EngineFormat, PrecisionWarn } from "../engine/format.ts";
 import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRequest, TableRequest } from "../engine/types.ts";
-import type { PythonEngine } from "../python/types.ts";
 
 export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest } from "../engine/types.ts";
 export { CAS_SOFT_BUDGET_MS, IDENT } from "../engine/types.ts";
@@ -88,6 +87,4 @@ export interface Calc {
   table(req: TableRequest, settings: CalcSettings): Promise<HomeResult[][]>;
   /** Stop the running job. Variables survive. Resolves when the engine can take calls again. */
   cancel(): Promise<void>;
-  /** The Python engine (its own worker, loaded on the first call; the same instance afterwards). */
-  python(): Promise<PythonEngine>;
 }

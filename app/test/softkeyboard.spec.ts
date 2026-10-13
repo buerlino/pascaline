@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Regression (user, 2026-10-12): the Android system keyboard opened when switching apps. Our keypad is the only
 // keyboard, so whatever element has focus after a switch must keep the system keyboard closed: inputmode=none
-// and no EditContext (CodeMirror uses Chrome's EditContext on Android, which ignores inputmode).
+// and no EditContext (Chrome's EditContext on Android ignores inputmode).
 import { expect, test, type Page } from "@playwright/test";
 import { entryValue, open, tap } from "./helpers.ts";
 
@@ -35,17 +35,11 @@ test("switching apps never focuses an element that opens the system keyboard", a
   await tap(page, ["symb"]);
   await expect(page.locator('[data-app="function"]')).toBeVisible();
   await expectNoSystemKeyboard(page, "Function Symb");
-  await tap(page, ["apps", "d3"]);
-  await expect(page.locator('[data-app="python"]')).toBeVisible();
-  await expect(page.getByTestId("python")).toHaveAttribute("data-status", "ready", { timeout: 20_000 });
-  await tap(page, ["symb"]);
-  await expectNoSystemKeyboard(page, "Python editor");
-  await tap(page, ["num"]);
-  await expectNoSystemKeyboard(page, "Python shell");
   await tap(page, ["apps", "d2"]);
+  await expect(page.locator('[data-app="solve"]')).toBeVisible();
   await expectNoSystemKeyboard(page, "Solve");
-  await tap(page, ["apps", "d3", "symb"]);
-  await expectNoSystemKeyboard(page, "Python editor again");
+  await tap(page, ["apps", "d1", "symb"]);
+  await expectNoSystemKeyboard(page, "Function Symb again");
 });
 
 /** The deepest focused element is editable (the entry field's input, or an editor). */

@@ -12,7 +12,7 @@
   import { t, type MessageKey } from "./i18n/index.ts";
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
-  import { actionFor, keyboard, pythonText, type ActionBody, type Key, type Layer } from "./keyboard/keyboard.ts";
+  import { actionFor, keyboard, type ActionBody, type Key, type Layer } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { HistoryItem, Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
@@ -235,7 +235,6 @@
       } else shell.pick(i);
       return;
     }
-    if (shell.takesText) return pressText(key, mods);
     const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line");
     session.clearModifiers();
     if (!action) return;
@@ -250,24 +249,6 @@
       entry.insertAns(); // docs/04 2.8: an operator on an empty line starts with Ans
     }
     entry.run(action, key.id);
-  }
-
-  /** A view with its own text input (Python editor and shell): the Python layer, else typed text and cursor keys. */
-  function pressText(key: Key, mods: Mods): void {
-    const text = pythonText(keyboard, key, mods.shift, mods.alpha);
-    const action = actionFor(key, mods.shift, mods.alpha);
-    session.clearModifiers();
-    if (text !== undefined) return shell.input({ kind: "text", text });
-    if (!action) return;
-    if (action.kind === "special") {
-      if (action.name === "enter") return shell.input({ kind: "enter" });
-      if (action.name === "clear") return shell.input({ kind: "cmd", name: "clear" });
-      if (action.name === "esc" && !shell.switcherOpen && !shell.menuOpen) return shell.input({ kind: "cmd", name: "clear" });
-      return special(action.name);
-    }
-    if (action.kind === "type") return shell.input({ kind: "text", text: action.text });
-    if (action.kind === "cmd") return shell.input({ kind: "cmd", name: action.name });
-    // a LaTeX template means nothing in Python
   }
 
   const showSoftCancel = $derived(session.busy || shell.busy);
@@ -300,7 +281,7 @@
         <span class="appname" data-app={shell.app}>{appName}</span>
         {#each appViews as v (v)}
           <button type="button" role="tab" aria-selected={shell.view === v} data-view={v} onclick={() => void shell.setView(v)}
-            >{shell.instance?.viewLabel?.(v) ?? t(`view.${v}`)}</button>
+            >{t(`view.${v}`)}</button>
         {/each}
       {/if}
     </div>
@@ -355,7 +336,7 @@
     <div class="field" bind:this={host}></div>
   </div>
 
-  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} python={shell.takesText} onpress={press} ontouch={touched} />
+  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} onpress={press} ontouch={touched} />
 
   {#if session.settingsOpen}<Settings {session} />{/if}
 </main>

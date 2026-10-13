@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Offline (service worker) tests run against the production build served by `vite preview`: the dev server does not
-// register the worker. Run: GIAC_OUT=<abs dir> PYTHON_OUT=<abs dir> npm run test:pwa
+// register the worker. Run: GIAC_OUT=<abs dir> npm run test:pwa
 import { defineConfig, devices } from "@playwright/test";
 
 const port = Number(process.env["PW_PWA_PORT"] ?? 4183);

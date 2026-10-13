@@ -99,7 +99,7 @@ export class ClipActions {
     return this.copyRaw(i ? this.session.display(i).latex : undefined);
   }
 
-  /** Shift + Menu, Menu → Paste: the clipboard as one number, onto the entry line (or into a text view). */
+  /** Shift + Menu, Menu → Paste: the clipboard as one number, onto the entry line. */
   async paste(): Promise<boolean> {
     const clip = await (await this.port()).readText();
     if (clip === null) {
@@ -111,8 +111,7 @@ export class ClipActions {
       this.say(tc("clip.notNumber"));
       return false;
     }
-    if (this.shell.takesText) this.shell.input({ kind: "text", text: n.text });
-    else if (this.shell.showsEntry) this.entry.insert(n.latex);
+    if (this.shell.showsEntry) this.entry.insert(n.latex);
     else {
       this.say(tc("clip.nothing"));
       return false;

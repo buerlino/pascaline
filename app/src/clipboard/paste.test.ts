@@ -33,10 +33,6 @@ describe("parsePastedNumber", () => {
     expect(latex("-i")).toBe("-\\imaginaryI");
     expect(latex("1.25E-7-3.5E-8*i")).toBe("1.25\\times10^{-7}-3.5\\times10^{-8}\\imaginaryI");
   });
-  it("gives the plain text form for a text view", () => {
-    expect(parsePastedNumber("1.5E-3")?.text).toBe("1.5e-3");
-    expect(parsePastedNumber("1+2i")?.text).toBe("1+2*i");
-  });
   it("refuses anything that is not one number", () => {
     for (const s of ["", "abc", "0xFF", "1e", "1 000", "1/3", "1\n2", "1..5", "1+", "1++2i", "--1", "sqrt(2)", "1.5 apples", "x".repeat(500)])
       expect(parsePastedNumber(s), JSON.stringify(s)).toBeNull();
@@ -65,7 +61,7 @@ describe("copy → paste gives the value back (P5)", () => {
       // the pasted LaTeX parses, and the copy of what it means is the same text
       const giac = latexToGiac(pasted?.latex ?? "");
       expect(giac.length).toBeGreaterThan(0);
-      expect(pasted?.text.replace(/e/g, "E"), copied).toBe(copied.replace(/(^|[^E])E\+/g, "$1E"));
+      expect(giac.replace(/\^\((-?\d+)\)/g, "^$1"), copied).toBe(copied.replace(/E(-?\d+)/, "*10^$1"));
     });
   }
 });
