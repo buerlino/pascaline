@@ -30,7 +30,7 @@ export interface FindItem {
   si?: string;
   /** 0: curated, audited, ranked first; 1: documented only ("not checked" in the preview). */
   tier: 0 | 1;
-  /** The LaTeX the entry line receives: a chip macro or an \operatorname template with #?. */
+  /** The LaTeX the entry line receives: a chip macro or an \operatorname template with #0 (the selection or a box). */
   insert: string;
 }
 

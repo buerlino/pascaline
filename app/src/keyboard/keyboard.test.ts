@@ -41,15 +41,15 @@ describe("keyboard spec", () => {
     const at = (id: string, layer: "primary" | "shift") => keyboard.byId.get(id)?.actions[layer];
     expect(at("d3", "shift")).toMatchObject({ latex: "\\pi" });
     expect(at("d2", "shift")).toMatchObject({ latex: "\\imaginaryI" });
-    expect(at("ln", "shift")).toMatchObject({ latex: "\\exponentialE^{#?}" });
-    expect(at("log", "shift")).toMatchObject({ latex: "10^{#?}" });
+    expect(at("ln", "shift")).toMatchObject({ latex: "\\exponentialE^{#0}" });
+    expect(at("log", "shift")).toMatchObject({ latex: "10^{#0}" });
     expect(at("div", "shift")).toMatchObject({ latex: "#@^{-1}" });
     expect(at("dot", "shift")).toEqual({ kind: "type", text: "=" });
-    expect(at("enter", "shift")).toMatchObject({ latex: "\\operatorname{approx}\\left(#?\\right)" });
+    expect(at("enter", "shift")).toMatchObject({ latex: "\\operatorname{approx}\\left(#0\\right)" });
     expect(at("pow", "shift")).toMatchObject({ latex: "\\sqrt[#?]{#0}" });
     expect(at("sq", "shift")).toMatchObject({ latex: "\\sqrt{#0}" });
     expect(at("neg", "primary")).toEqual({ kind: "type", text: "-" });
-    expect(at("neg", "shift")).toMatchObject({ latex: "\\left|#?\\right|" });
+    expect(at("neg", "shift")).toMatchObject({ latex: "\\left|#0\\right|" });
     expect(at("eex", "shift")).toMatchObject({ latex: "\\blacktriangleright" });
     expect(at("mul", "shift")).toMatchObject({ latex: "\\mathbin{\\measuredangle}" });
     expect(at("fmt", "primary")).toEqual({ kind: "special", name: "fmt" });
@@ -106,12 +106,52 @@ describe("keyboard spec", () => {
     }
   });
 
+  // R17: a selection is the argument of a key (the contract is in the spec/keyboard.yaml header; test/selection.spec.ts
+  // presses every key with a selection). So an insert template names its argument slot with #0 (the selection or a box)
+  // or #@ (the selection or what is before the cursor), never with #? (always an empty box, the selection is lost).
+  // The templates below have NO argument slot: a selection is replaced, as typing does. Add a new one on purpose, with a reason.
+  const NO_ARGUMENT: Record<string, string> = {
+    "eex/primary/normal": "the exponent mark: a mark, not a function (R14 makes it a typed character)",
+    "eex/shift/normal": "store ▸: it follows the value, the name comes after",
+    "d9/shift/normal": "∞: a constant",
+    "d2/shift/normal": "i: a constant",
+    "d3/shift/normal": "π: a constant",
+    "add/shift/normal": "Ans: a value",
+    "mul/primary/normal": "×: an operator",
+    "mul/shift/normal": "∡: an operator (polar form)",
+    "div/primary/line": "÷ in one-line entry: an operator",
+    "frac/primary/line": "a b/c in one-line entry: an operator",
+    "tmpl:cases/primary/normal": "a table of two lines: no main argument",
+    "tmpl:matrix22/primary/normal": "the cells of a matrix are not an argument",
+    "tmpl:rowvec/primary/normal": "the cells of a matrix are not an argument",
+    "tmpl:colvec/primary/normal": "the cells of a matrix are not an argument",
+    "tmpl:dms/primary/normal": "three boxes of equal standing: none is the argument",
+  };
+  // The one-line forms of xʸ and x²: a bare caret. EntryController.run() brackets a selection in front of it (R17).
+  const CARET = ['\\char"5E '];
+
+  it("every insert template takes the selection as its argument (#0 or #@), or is on the NO_ARGUMENT list (R17)", () => {
+    const seen = new Set<string>();
+    for (const t of all) {
+      const id = `${t.keyId}/${t.layer}/${t.variant}`;
+      seen.add(id);
+      const takes = t.latex.includes("#@") || t.latex.includes("#0") || CARET.some((c) => t.latex.startsWith(c));
+      if (id in NO_ARGUMENT) expect(takes, `${id} is on NO_ARGUMENT but has an argument slot: ${t.latex}`).toBe(false);
+      else expect(takes, `${id}: ${t.latex} has no #0 or #@, so a selection would be lost; use #0 for the argument slot`).toBe(true);
+    }
+    for (const id of Object.keys(NO_ARGUMENT)) expect(seen.has(id), `${id} is on NO_ARGUMENT but is not a template`).toBe(true);
+  });
+
+  it("a power key's one-line form never binds the exponent to the last character of a selection (R17)", () => {
+    for (const t of all.filter((x) => x.variant === "line")) expect(t.latex.startsWith("#@^"), `${t.keyId}/${t.layer}: use \\left(#@\\right)^…`).toBe(false);
+  });
+
   it("one-line mode swaps the stacked fraction and root for linear forms", () => {
     const div = keyboard.byId.get("div");
     const sq = keyboard.byId.get("sq");
     if (!div || !sq) throw new Error("keys missing");
     expect(actionFor(div, false, false, true)).toEqual({ kind: "insert", latex: "\\div", sample: ["5\\div5", "5/5"] });
-    expect(actionFor(sq, true, false, true)).toMatchObject({ latex: "\\operatorname{sqrt}\\left(#?\\right)" });
+    expect(actionFor(sq, true, false, true)).toMatchObject({ latex: "\\operatorname{sqrt}\\left(#0\\right)" });
     expect(actionFor(div, false, false, false)).toMatchObject({ latex: "\\frac{#@}{#?}" });
   });
 
