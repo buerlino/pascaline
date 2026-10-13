@@ -37,7 +37,7 @@ Newest first. Where an entry changed an earlier document, that document now carr
   - **Not covered:** Shift + Clear (wipes the history), a relaunch, and the Solve/Function slot editors unless they share the main entry controller (R16 reports which).
   - Cost ~0.5 d (brief R16).
 - **2026-10-13 P12: keypad review against the G2. DECIDED by the owner (2026-10-13), point by point.** Every difference, with its reason, is in [06-keypad-vs-g2.md](06-keypad-vs-g2.md). The owner's decisions:
-  1. **a/b becomes the form toggle** of the last result: decimal ↔ fraction, polar ↔ rectangular, and similar forms later. The Fmt key keeps the number formats; fraction, mixed and polar leave its cycle (reading, to confirm in R10's report).
+  1. **a/b becomes the form toggle** of the last result: decimal ↔ fraction, polar ↔ rectangular, and similar forms later. The Fmt key keeps the number formats; fraction, mixed and polar leave its cycle (built in R10).
   2. **No Home or CAS key.** The App key (Home/CAS) and the CAS key go, and no key shows the mode. The status line's place name says where you are and a tap on it switches (Home ↔ CAS in one tap): two keys saved. The Mode sheet is a tap on a status chip, Settings the last item of the Mode sheet; Shift + CAS and Shift + Home/CAS go with their keys. Replaces the owner's first wording of the same day (Home and CAS on the Shift and Alpha layers of one key).
   3. **Symb, Plot and Num follow the same way** if R15a confirms every view stays one action away; the arrow pad moves one line down; the top cluster is tidied to take fewer rows. A one-off exception to docs/03 rules 6, 8 and 9 for the top cluster, which is why R15a draws it first and R15b builds it after the owner has seen it. The maths keys do not move.
   4. **The exponent key types an E mark (`ᴇ`), not the `×10^` template**, and loses the names EEX and ×10ⁿ. Results keep `1.5E-9`. The template needed space, hurt readability and caused M4-2's silent exponent bug.
@@ -131,6 +131,12 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-13 Tmpl palette and the a b/c key (R10)
+- **Choice:** (1) a b/c has one toggle per result type: fraction ↔ decimal, or a+bi ↔ polar; no Settings row, no mixed form on the key. (2) ▶ moves to the next empty template box while one is ahead, else it is the plain step. (3) In the Tmpl grid, digits and letters do nothing, Tmpl closes it, and it opens on the last pick (R7's remembered pick). (4) The degree sign and DMS mean degrees in every angle mode: `x*(pi/180)^angle_radian()`.
+- **Why:** (1) P12 ("the key never needs a setting"); the owner's G2 toggles 2.5 ↔ 5/2. (2) MathLive's step stops between boxes (∂, d, |), so a key-only fill typed into the wrong place. (3) 18 cells do not fit the digits 1–9, 0. (4) before R10, 30° was always 30·π/180, so sin(30°) in DEG was the sine of 0.52° (regression test in `roundtrip.test.ts`).
+- **Alternatives:** (2) a separate "next box" key (costs a key); (3) digits pick cells.
+- **Would change if:** (1) the owner wants the mixed number back on the key; (3) S2's menu note recommends otherwise (P12 open point A).
+
 ### 2026-10-13 Flicks (R9)
 - **Choice:** a flick arms at 20 px, mostly vertical; it cancels within 12 px of the touch point; a cancelled touch stays cancelled (sliding out again doesn't re-arm), so a change of mind can't misfire. A flick ignores the Shift/Alpha state and uses up a one-shot Shift or Alpha. One lock at a time: a lock flick replaces the other lock. Under the lower-case lock a flick down still gives the capital ("down = capital" everywhere outside unit slots). Taps on Shift/Alpha inside a sheet are counted too. A flick down on a key without a letter gives what Alpha + that key gives (its primary function; the bubble shows it).
 - **Alternatives:** a time-based classifier (rejected by the owner, feedback #26); a lower threshold (more misfires on slips).
@@ -205,10 +211,9 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Result:** the engine built with Debian's Emscripten 3.1.69 (`debian:trixie@sha256:913f6706…`, `emscripten=3.1.69+dfsg-3`, script `engine/giac/build-wasm-release.sh`) passes interrupt 16/16, Home 123/123 and Solve 23/23 with output identical to the emsdk build. On the Tab One (Android 15, WebView 131.0.6778.260, release builds of the spike app, 7 cold starts and 5 benchmark runs each), cold launch → engine ready p50 is 896 ms (emsdk) vs 917 ms (container), +2.3%. First result is 1001 vs 1016 ms (+1.5%). Benchmark first-call p95 over 55 cases is 76.7 vs 72.6 ms. Cancel → ready is 322 vs 306 ms.
 - **Choice:** P2's bar (within +10%) is met, so every release builds the engine in the container. emsdk stays for development.
 
-### 2026-10-11 Mixed numbers in textbook entry (assumed, G2 item 29)
-- **Choice:** one press of a/b inserts the same plain stacked fraction as ÷. Pressing a/b twice after a whole number makes a mixed number `2\tfrac12`, which the parser reads as `(2+1/2)` (L2, 2026-10-11). A digit directly before a plain stacked fraction still parses as `2*1/2`.
-- **Why:** P1 only accepts what our keyboard produces. A separate mixed-number template keeps the parser unambiguous once it exists.
-- **Changes in R10 (P11):** the owner's G2 answered item 29 (a b/c cycles the last result decimal ↔ fraction), so the second a/b press no longer makes a mixed number; the mixed number moves to the Tmpl palette.
+### 2026-10-11 Mixed numbers in textbook entry (R10, 2026-10-13)
+- **Choice:** the mixed number is a Tmpl template: a whole number, then `\tfrac{□}{□}`, which the parser reads as `(2+1/2)`. `\tfrac` after anything but a whole number is an error, never a product (`x\tfrac12` would silently be x/2). A digit directly before a plain stacked fraction still parses as `2*1/2`. While typing, a b/c inserts the plain stacked fraction, as ÷ does.
+- **Why:** P1 only accepts what our keyboard produces; a separate template keeps the parser unambiguous. The owner's G2 answered item 29: a b/c toggles the last result decimal ↔ fraction, with no mixed step, so L2's "a/b twice" is gone.
 
 ### 2026-10-11 Golden gate
 - **Choice:** `(cd app && npm run golden)` is the gate for every engine build that ships (interrupt, Home, Solve, benchmark, parser). It replaces the separate spike runners. The G2 checklist is generated from `tests/golden/g2.yaml` (`oracle.py --g2`), so edit the YAML, not the .md.

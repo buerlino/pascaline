@@ -88,7 +88,7 @@ keys:
   # ours (the reference's shift is a Define dialog).
   - { id: x, row: 3, col: 3, cls: fn, label: { primary: x, shift: y, alpha: D }, primary: { type: x }, shift: { type: y }, alpha: { type: D }, source: virtual-calc }  # r4c4; shift y assumed
   # a b/c (R10, P11): on an empty Home or CAS line it switches the last result between its forms (decimal ↔ fraction,
-  # as on the owner's G2, 2026-10-13, G2 item 29; a+bi ↔ polar is ours; Settings > a b/c cycle, app/src/state/
+  # as on the owner's G2, 2026-10-13, G2 item 29; a+bi ↔ polar is ours; no setting, app/src/state/
   # displayMode.ts). While typing it inserts the stacked fraction (ours: the G2 does nothing there). The mixed number
   # is in the Tmpl palette.
   - id: frac

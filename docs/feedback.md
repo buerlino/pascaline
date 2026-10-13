@@ -98,3 +98,7 @@ The R9 APK: flick up on a key = its shift function, flick down = its letter, in 
 | # | Owner's point | Triage |
 |---|---|---|
 | 37 | With some entry selected, ÷ divides the whole selection, but the abs key replaces it with an empty `\|□\|`. Does this happen for other functions too, and how do we fix it for the future of the implementation? | **URGENT: R17**, first after R10's merge. Sandra's probe (2026-10-13): yes, abs, sin, cos, tan, ln, log, their Shift forms, eˣ, 10ˣ and approx delete the selection; x², xʸ and x⁻¹ bind to the last character only (`1+2` selected, x² gives `1+2²`, a wrong value without a warning). ÷, a/b, ( ), √ and ⁿ√ are fine. Cause and fix: brief section 7, R17 |
+
+## 2026-10-13: waiting for the owner's notes on R10
+
+The R10 APK: Tmpl opens the 6 × 3 template palette (arrows move, Enter or a tap inserts, ▶ walks the empty boxes). On an empty line a b/c toggles the last result 2.5 ↔ 5/2 and 3+4i ↔ polar; the Format key keeps Std/Sci/Eng/Pfx/Fix only. To check on the G2: the three unsure cells (evaluate-at r1c3, row vector r2c5, mixed number r3c2; G2 items 34–36), and whether the □ cells and the ′ ″ of DMS draw well in the WebView.
