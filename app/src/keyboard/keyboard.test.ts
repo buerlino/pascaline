@@ -106,6 +106,46 @@ describe("keyboard spec", () => {
     }
   });
 
+  // R17: a selection is the argument of a key (the contract is in the spec/keyboard.yaml header; test/selection.spec.ts
+  // presses every key with a selection). So an insert template names its argument slot with #0 (the selection or a box)
+  // or #@ (the selection or what is before the cursor), never with #? (always an empty box, the selection is lost).
+  // The templates below have NO argument slot: a selection is replaced, as typing does. Add a new one on purpose, with a reason.
+  const NO_ARGUMENT: Record<string, string> = {
+    "eex/primary/normal": "the exponent mark: a mark, not a function (R14 makes it a typed character)",
+    "eex/shift/normal": "store ▸: it follows the value, the name comes after",
+    "d9/shift/normal": "∞: a constant",
+    "d2/shift/normal": "i: a constant",
+    "d3/shift/normal": "π: a constant",
+    "add/shift/normal": "Ans: a value",
+    "mul/primary/normal": "×: an operator",
+    "mul/shift/normal": "∡: an operator (polar form)",
+    "div/primary/line": "÷ in one-line entry: an operator",
+    "frac/primary/line": "a b/c in one-line entry: an operator",
+    "tmpl:cases/primary/normal": "a table of two lines: no main argument",
+    "tmpl:matrix22/primary/normal": "the cells of a matrix are not an argument",
+    "tmpl:rowvec/primary/normal": "the cells of a matrix are not an argument",
+    "tmpl:colvec/primary/normal": "the cells of a matrix are not an argument",
+    "tmpl:dms/primary/normal": "three boxes of equal standing: none is the argument",
+  };
+  // The one-line forms of xʸ and x²: a bare caret. EntryController.run() brackets a selection in front of it (R17).
+  const CARET = ['\\char"5E '];
+
+  it("every insert template takes the selection as its argument (#0 or #@), or is on the NO_ARGUMENT list (R17)", () => {
+    const seen = new Set<string>();
+    for (const t of all) {
+      const id = `${t.keyId}/${t.layer}/${t.variant}`;
+      seen.add(id);
+      const takes = t.latex.includes("#@") || t.latex.includes("#0") || CARET.some((c) => t.latex.startsWith(c));
+      if (id in NO_ARGUMENT) expect(takes, `${id} is on NO_ARGUMENT but has an argument slot: ${t.latex}`).toBe(false);
+      else expect(takes, `${id}: ${t.latex} has no #0 or #@, so a selection would be lost; use #0 for the argument slot`).toBe(true);
+    }
+    for (const id of Object.keys(NO_ARGUMENT)) expect(seen.has(id), `${id} is on NO_ARGUMENT but is not a template`).toBe(true);
+  });
+
+  it("a power key's one-line form never binds the exponent to the last character of a selection (R17)", () => {
+    for (const t of all.filter((x) => x.variant === "line")) expect(t.latex.startsWith("#@^"), `${t.keyId}/${t.layer}: use \\left(#@\\right)^…`).toBe(false);
+  });
+
   it("one-line mode swaps the stacked fraction and root for linear forms", () => {
     const div = keyboard.byId.get("div");
     const sq = keyboard.byId.get("sq");
