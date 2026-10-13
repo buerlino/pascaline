@@ -35,8 +35,21 @@ const flush = (): void => {
   session.flushHistory();
   shell.flush();
 };
+// Leaving the app (a swipe, the app switcher): drop the focus. Android restores focus to the focused element when
+// the app comes back and opens the system keyboard on it, inputmode=none or not (K0, user 2026-10-13). The next key
+// press focuses the entry again. Window blur only on touch screens: a desktop keeps its focus across windows.
+const dropFocus = (): void => {
+  let el = document.activeElement;
+  while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
+  if (el instanceof HTMLElement) el.blur();
+};
 addEventListener("pagehide", flush);
-document.addEventListener("visibilitychange", () => document.hidden && flush());
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) return;
+  flush();
+  dropFocus();
+});
+addEventListener("blur", () => matchMedia("(pointer: coarse)").matches && dropFocus());
 
 mount(App, { target: document.getElementById("app") as HTMLElement, props: { session, entry, shell } });
 
