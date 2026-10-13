@@ -39,6 +39,24 @@ describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () 
     expect("3.42857142857142857142857142857".startsWith(root.display.slice(0, -1))).toBe(true);
   });
 
+  it("SB1: a root of the expanded Wilkinson-type polynomial is found at 12 digits (rounding noise of f is not a residual)", () => {
+    const r = host.solve({ kind: "equations", equations: ["expand(product(x-k/7,k,1,25))=0"], unknowns: ["x"], guesses: ["3.4"] }, s);
+    expect(r.error).toBeUndefined();
+    const root = r.roots[0]!.result;
+    expect(root.display).toBe("3.42857142857"); // derived: 24/7
+    expect(markOf(root, { format: "STD", digits: 12 })?.mark).not.toBe("⚠"); // right to 15 digits or more
+  });
+
+  it("SB2: a quadruple root is found with fewer confirmed digits and ⚠, never = and never no root", () => {
+    const r = host.solve({ kind: "equations", equations: ["expand((x-1/3)^4)=0"], unknowns: ["x"], guesses: ["0.5"] }, s);
+    expect(r.error).toBeUndefined();
+    const root = r.roots[0]!.result;
+    const m = markOf(root, { format: "STD", digits: 12 });
+    expect(m?.mark).toBe("⚠");
+    expect(m?.n).toBeLessThan(12);
+    expect("0.333333333333".startsWith(root.display.slice(0, -1))).toBe(true); // derived: 1/3
+  });
+
   it("subscripted unknowns x_1, x_2 are found and solved (regression: IDENT rejected the underscore)", () => {
     const eqs = ["x_1+x_2=3", "x_1-x_2=1"];
     expect(host.unknowns(eqs)).toEqual(["x_1", "x_2"]);
