@@ -36,6 +36,9 @@ export const defaultSolveSettings: SolveSettings = {
   maxBracketSteps: 60,
 };
 
+/** A residual up to this many times the estimated rounding noise of f counts as 0 (SB1). */
+const NOISE_FACTOR = 100;
+
 export type SolveMethod = "exact-zero" | "brent" | "newton" | "none";
 
 export interface SolveResult {
@@ -117,7 +120,14 @@ export function solve1(
       ev(`${x}:=${x}-passt`);
       const xv = num(ev(x));
       if (xv === undefined) break;
-      rel = Math.abs(step) / Math.max(Math.abs(xv), 1e-300);
+      const r = Math.abs(step) / Math.max(Math.abs(xv), 1e-300);
+      // Converged to the noise of f: f/f' is noise over noise from here on, and the step grows again. Keep the
+      // iterate before it (seen with a quadruple root, where one step lands within 1e-28 of the root).
+      if (r > rel && rel < 1e-6) {
+        ev(`${x}:=${x}+passt`);
+        break;
+      }
+      rel = r;
       if (rel < 10 ** -(digits - 3)) break;
     }
     return rel;
@@ -157,6 +167,42 @@ export function solve1(
     ev(`pasx:=evalf(exact(${val}),${s.workDigits})`);
   };
 
+  /** f, f', f'' at pasx widened to workDigits+20 (the same point, evaluated with 10^20 times less rounding noise). */
+  const evalWide = (): [number, number, number] | undefined => {
+    const W2 = s.workDigits + 20;
+    ev(`Digits:=${W2}`);
+    ev(`pasxh:=evalf(pasx,${W2})`);
+    ev(`pasvh:=evalf(subst([pasf,pasfa,pasfb],${v}=pasxh))`);
+    const w = [0, 1, 2].map((i) => num(ev(`pasvh[${i}]`)));
+    ev(`Digits:=${s.workDigits}`);
+    return w.every((x) => x !== undefined) ? (w as [number, number, number]) : undefined;
+  };
+
+  /** SB1. f(pasx) failed the residual check, but is it only the rounding noise of evaluating f at workDigits?
+   *  The noise is estimated as |f_W(x) − f_{W+20}(x)| (an expanded product of 25 factors loses ~15 digits to
+   *  cancellation). A residual within NOISE_FACTOR times that is indistinguishable from 0 at this precision. A pole,
+   *  a jump or a wrong root has f_W = f_{W+20} (noise ~ 1e-30·|f|), so the residual stays far above the bound. */
+  const noiseLimited = (): boolean => {
+    ev(`Digits:=${s.workDigits}`);
+    const fW = num(ev(`evalf(subst(pasf,${v}=pasx))`));
+    const w = evalWide();
+    if (fW === undefined || w === undefined) return false;
+    const noise = Math.abs(fW - w[0]);
+    return noise > 0 && Math.abs(fW) <= NOISE_FACTOR * noise;
+  };
+
+  /** SB2. f is exactly 0 on a plateau around pasx (a multiple root: (x−1/3)^4 is 0 at 30 digits for |x−1/3| < 1e-8).
+   *  Evaluated at workDigits+20, f must be tiny but not 0, and the multiplicity estimate m = 1/(1 − f·f''/f'²)
+   *  (exactly m for c·(x−r)^m) must be a small integer. The tail of exp(x) (m = ∞) or of a Gaussian (m ≈ 2x²) is no root. */
+  const multipleRoot = (): boolean => {
+    const w = evalWide();
+    if (w === undefined) return false;
+    const [f0, f1, f2] = w;
+    if (f0 === 0 || f1 === 0 || Math.abs(f0) > s.warnRel) return false;
+    const m = 1 / (1 - (f0 * f2) / (f1 * f1));
+    return Number.isFinite(m) && m >= 1.9 && m <= 16 && Math.abs(m - Math.round(m)) < 0.15;
+  };
+
   /** Converged polish (or f exactly 0) and a small residual: pasx is a root. */
   const accept = (): { ok: boolean; rr: number } => {
     const rel = polish(8);
@@ -167,12 +213,16 @@ export function solve1(
       if (snap()) return { ok: true, rr: 0 };
       ev(`pasdl:=evalf(max(abs(pasx),1e-300)*10^(-${s.workDigits - 5}))`);
       const isolated = ev(`evalf(subst(pasf,${v}=pasx+pasdl))!=0 and evalf(subst(pasf,${v}=pasx-pasdl))!=0`) === "true";
+      if (!isolated && multipleRoot()) return { ok: true, rr: 0 };
       return { ok: isolated, rr };
     }
     if (rel < 1e-20 && rr <= s.warnRel) return { ok: true, rr };
     // A multiple root at 0 (3x² = 0, the extremum of x³): every polish step is the size of x, so the
     // relative step never shrinks. Accept only when the CAS proves the nearby integer is an exact root.
     if (snap()) return { ok: true, rr: 0 };
+    // The polish stopped at the noise of f (relative step ≥ 1e-20) and f(root) is that noise: accept. The digits
+    // are then checked by the second polish (finish), which shows only the digits both agree on.
+    if (rel < 1e-8 && noiseLimited()) return { ok: true, rr: 0 };
     return { ok: false, rr };
   };
 
