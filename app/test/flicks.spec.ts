@@ -99,25 +99,43 @@ test("a sideways slip is still the tap; the arrows (trackpad) and ⌫ (repeat) h
 });
 
 test("one motion, no wait: touch, slide and lift within 100 ms is a flick (move events start at once)", async ({ page }) => {
+  // The page's own event times, not the harness's wall clock (each CDP round trip adds its own wait).
+  await page.evaluate(() => {
+    const w = window as unknown as { __ptr: [string, number][] };
+    w.__ptr = [];
+    for (const type of ["pointerdown", "pointermove", "pointerup"])
+      document.addEventListener(type, (ev) => void w.__ptr.push([type, ev.timeStamp]), { capture: true });
+  });
+  const span = () =>
+    page.evaluate(() => {
+      const w = window as unknown as { __ptr: [string, number][] };
+      const ev = w.__ptr;
+      w.__ptr = [];
+      const down = ev.find(([t]) => t === "pointerdown");
+      const up = ev.find(([t]) => t === "pointerup");
+      const moved = ev.findIndex(([t]) => t === "pointermove") === 1; // the first event after the touch is a move
+      return { ms: down && up ? up[1] - down[1] : Infinity, moved };
+    });
+  // touch, two moves and the lift, sent without waiting between them (one motion)
   const c = await centre(page, "dot");
   const cdp = await page.context().newCDPSession(page);
   const at = (dy: number) => [{ x: c.x, y: c.y + dy, id: 1 }];
-  const t0 = Date.now();
-  await send(cdp, "touchStart", at(0));
-  await send(cdp, "touchMove", at(-12));
-  await send(cdp, "touchMove", at(-30));
-  await send(cdp, "touchEnd", []);
-  const ms = Date.now() - t0;
-  await cdp.detach();
-  expect(ms).toBeLessThan(100);
+  await Promise.all([send(cdp, "touchStart", at(0)), send(cdp, "touchMove", at(-12)), send(cdp, "touchMove", at(-30)), send(cdp, "touchEnd", [])]);
+  const first = await span();
+  expect(first.moved).toBe(true);
+  expect(first.ms).toBeLessThan(100);
   expect(await entryValue(page)).toBe("=");
   // the same with the very first move already far out (a fast finger): still the flick, down this time
   const v = await centre(page, "vars");
-  const cdp2 = await page.context().newCDPSession(page);
-  await send(cdp2, "touchStart", [{ ...v, id: 1 }]);
-  await send(cdp2, "touchMove", [{ x: v.x, y: v.y + 40, id: 1 }]);
-  await send(cdp2, "touchEnd", []);
-  await cdp2.detach();
+  await Promise.all([
+    send(cdp, "touchStart", [{ ...v, id: 1 }]),
+    send(cdp, "touchMove", [{ x: v.x, y: v.y + 40, id: 1 }]),
+    send(cdp, "touchEnd", []),
+  ]);
+  const second = await span();
+  await cdp.detach();
+  expect(second.moved).toBe(true);
+  expect(second.ms).toBeLessThan(100);
   expect(await entryValue(page)).toBe("=A");
 });
 
