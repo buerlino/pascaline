@@ -95,7 +95,7 @@ export async function drag(page: Page, id: string, dx: number, dy: number): Prom
   await f.end();
 }
 
-/** Flick a key up (its shift layer) or down (its letter): a 40 px slide, then lift (K2, K3). */
+/** Flick a key up (its shift layer) or down (its letter): a 40 px slide, then lift (R9; FlickTracker arms at 20 px). */
 export const flick = (page: Page, id: string, dir: "up" | "down"): Promise<void> => drag(page, id, 0, dir === "up" ? -40 : 40);
 
 /** Record navigator.vibrate calls (call before `open`); read them with `vibrations`. */

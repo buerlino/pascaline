@@ -3,8 +3,9 @@
 import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 
-/** One step of a sequence: a key id, or a screen tap, a held key or a drag gesture (each counts 1). */
-export type Step = string | { tap: string } | { hold: string } | { drag: string };
+/** One step of a sequence: a key id, or a screen tap, a held key, a drag gesture, or a flick up or down on a key
+ *  (R9: `{up: dot}` is `=`, `{down: vars}` is A). Each counts 1. */
+export type Step = string | { tap: string } | { hold: string } | { drag: string } | { up: string } | { down: string };
 
 export interface Baseline {
   note?: string;
@@ -41,14 +42,15 @@ export function keyIds(): Set<string> {
 
 /**
  * Presses of a sequence by §5.2: every press counts 1, Shift and Alpha included, Enter included; a held key that
- * auto-repeats, a hold-and-drag gesture and a tap on the screen count 1 each. Nothing is free.
+ * auto-repeats, a trackpad drag, a flick and a tap on the screen count 1 each. Nothing is free.
  */
 export const countPresses = (steps: readonly Step[]): number => steps.length;
 
 export const withinBudget = (steps: readonly Step[], budget: number): boolean => countPresses(steps) <= budget;
 
 /** The step's key id, or null when it is not a key press. */
-export const keyOf = (s: Step): string | null => (typeof s === "string" ? s : "hold" in s ? s.hold : null);
+export const keyOf = (s: Step): string | null =>
+  typeof s === "string" ? s : "hold" in s ? s.hold : "up" in s ? s.up : "down" in s ? s.down : null;
 
 /** Problems with the task list itself (empty = fine). Needs no browser. */
 export function validate(tasks: readonly Task[], keys: ReadonlySet<string>): string[] {

@@ -4,7 +4,7 @@
 //  - a PENDING task replays its `baseline` (today's best sequence), so the baseline stays true and its count is printed;
 //  - every run prints one table: task, status, baseline presses, target presses, budget.
 import { expect, test, type Page } from "@playwright/test";
-import { open } from "./helpers.ts";
+import { flick, open } from "./helpers.ts";
 import { countPresses, keyIds, loadTasks, validate, withinBudget, type Step, type Task } from "./tasks-lib.ts";
 
 const tasks = loadTasks();
@@ -15,6 +15,8 @@ async function replay(page: Page, steps: readonly Step[]): Promise<string> {
   for (const s of steps) {
     if (typeof s === "string") {
       await page.locator(`[data-key="${s}"]`).tap();
+    } else if ("up" in s || "down" in s) {
+      await ("up" in s ? flick(page, s.up, "up") : flick(page, s.down, "down"));
     } else if ("tap" in s && s.tap === "result:last") {
       await page.locator('[data-testid="result"]').last().locator(".result").tap();
     } else {
@@ -37,9 +39,10 @@ test.describe("task list", () => {
     expect(validate(tasks, keyIds())).toEqual([]);
   });
 
-  test("presses are counted by §5.2: every step, Shift and Alpha included, taps and holds count 1", () => {
+  test("presses are counted by §5.2: every step, Shift and Alpha included, taps, holds and flicks count 1", () => {
     expect(countPresses(["shift", "d3", "mul", "d2", "enter"])).toBe(5);
     expect(countPresses(["d2", { tap: "prefix:k" }, { hold: "bksp" }, { drag: "trackpad" }, "enter"])).toBe(5);
+    expect(countPresses([{ down: "vars" }, { up: "dot" }, "d2", "enter"])).toBe(4); // A=2: Shift and Alpha saved
     expect(withinBudget(["d1", "enter"], 2)).toBe(true);
     expect(withinBudget(["d1", "d2", "enter"], 2)).toBe(false);
   });
@@ -65,6 +68,13 @@ test.describe("replay", () => {
     expect(text).toBe(tasks.find((t) => t.id === "t05")?.expect.text);
     expect(withinBudget(steps, 10)).toBe(true);
     expect(withinBudget(steps, 9)).toBe(false);
+  });
+
+  // A flick step (R9) replays as a flick, not as Shift + key: 2×π with π flicked up from its key.
+  test("a flick step replays as a flick", async ({ page }) => {
+    const steps: Step[] = ["d2", "mul", { up: "d3" }, "enter"];
+    expect(await replay(page, steps)).toBe("6.28318530718");
+    expect(countPresses(steps)).toBe(4);
   });
 
   for (const t of tasks) {
