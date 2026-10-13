@@ -162,14 +162,25 @@ export class EntryController {
   clear(): void {
     this.queue = [];
     this.pendingValue = undefined;
-    this.table = {};
-    this.nextRes = 1;
+    // The chip table and the counter stay (R16): Shift + Cancel undoes Esc and Enter, and the chips it brings back must
+    // still be worth what they were. The `chips` getter only hands out the chips on the line.
     if (this.mf) this.mf.value = "";
   }
   /** Put a previous entry back on the line, with the values of its chips. */
   set(latex: string, chips: ChipTable = {}): void {
-    this.table = { ...chips };
-    this.nextRes = 1 + Math.max(0, ...Object.keys(chips).map((k) => (k.startsWith("res:") ? Number(k.slice(4)) : 0)));
+    // R16: a result key that already holds another value (an entry an undo can still bring back) is never
+    // overwritten: the recalled chip gets a fresh number, in the LaTeX and in the table.
+    const top = Math.max(0, ...Object.keys(chips).map((k) => (k.startsWith("res:") ? Number(k.slice(4)) : 0)));
+    this.nextRes = Math.max(this.nextRes, top + 1);
+    for (const [key, chip] of Object.entries(chips)) {
+      const old = this.table[key];
+      const same = old && old.value === chip.value && old.exact === chip.exact && old.unc === chip.unc;
+      if (old && !same && key.startsWith("res:")) {
+        const k = this.nextRes++;
+        latex = latex.replaceAll(`\\res{${key.slice(4)}}`, `\\res{${k}}`);
+        this.table[resKey(k)] = chip;
+      } else this.table[key] = chip;
+    }
     if (!this.mf) {
       this.pendingValue = latex;
       this.queue = [];
