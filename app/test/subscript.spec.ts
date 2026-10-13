@@ -38,7 +38,7 @@ test("L1 Home: x_1 is a variable, not a unit", async ({ page }) => {
 
 test("L1 CAS: x_1÷x_1+x_2·x_1 is drawn as 1+x₂x₁", async ({ page }) => {
   await tap(page, ["app"]);
-  await expect(page.locator('[data-view="cas"]')).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
   await name(page, "x", "1");
   await tap(page, ["div"]);
   await name(page, "x", "1");

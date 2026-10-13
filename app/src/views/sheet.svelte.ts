@@ -49,12 +49,16 @@ export class Level {
   /** Letters filter this level (long lists; Find forces it on). */
   readonly filterable: boolean;
 
-  constructor(title: string, source: () => readonly MenuItem[], memo: string, filterable?: boolean) {
+  /** Reopening starts on the last pick (false: always on the first row, for a sheet whose ◀ ▶ change values). */
+  private readonly remember: boolean;
+
+  constructor(title: string, source: () => readonly MenuItem[], memo: string, opts?: { filterable?: boolean; remember?: boolean; at?: string }) {
     this.title = title;
     this.source = source;
     this.memo = memo;
-    this.filterable = filterable ?? source().length > FILTER_ABOVE;
-    this.highlight = this.start();
+    this.remember = opts?.remember ?? true;
+    this.filterable = opts?.filterable ?? source().length > FILTER_ABOVE;
+    this.highlight = this.start(opts?.at);
   }
 
   get items(): readonly MenuItem[] {
@@ -77,10 +81,15 @@ export class Level {
     return this.items[this.highlight];
   }
 
-  /** Where the highlight starts: the last pick when it can be picked, else the first item that can. */
-  private start(): number {
+  /** Where the highlight starts: the item asked for (`at`), else the current value of a list of values, else the last
+   *  pick when it can be picked, else the first item that can. */
+  private start(at?: string): number {
     const items = this.items;
-    const last = lastPicks.get(this.memo);
+    const asked = at === undefined ? -1 : items.findIndex((x) => x.id === at && !x.disabled);
+    if (asked >= 0) return asked;
+    const current = items.findIndex((x) => x.selected === true && !x.disabled);
+    if (current >= 0) return current;
+    const last = this.remember ? lastPicks.get(this.memo) : undefined;
     const i = last === undefined ? -1 : items.findIndex((x) => x.id === last);
     if (i >= 0 && !items[i]?.disabled) return i;
     return this.firstRow();
@@ -126,9 +135,9 @@ export class Sheet {
   readonly id: string;
   levels = $state.raw<Level[]>([]);
 
-  constructor(id: string, title: string, items: () => readonly MenuItem[], opts?: { filterable?: boolean }) {
+  constructor(id: string, title: string, items: () => readonly MenuItem[], opts?: { filterable?: boolean; remember?: boolean; at?: string }) {
     this.id = id;
-    this.levels = [new Level(title, items, id, opts?.filterable)];
+    this.levels = [new Level(title, items, id, opts)];
   }
 
   get level(): Level {
@@ -148,14 +157,27 @@ export class Sheet {
     return row ? this.activate(row.index) : STAY;
   }
 
-  /** Enter: the highlighted item. */
+  /** Enter: the highlighted item. A setting changed in place (`adjust`) is picked as it stands: the sheet closes. */
   enter(): Picked {
-    return this.activate(this.level.highlight);
+    return this.activate(this.level.highlight, true);
   }
 
-  /** ▶: open the highlighted item's submenu (only an item that has one). */
+  /** ▶: step the highlighted setting up, else open the highlighted item's submenu (only an item that has one). */
   right(): Picked {
-    return this.level.current?.submenu ? this.activate(this.level.highlight) : STAY;
+    const item = this.level.current;
+    if (item && !item.disabled && item.adjust) {
+      item.adjust(1);
+      return STAY;
+    }
+    return item?.submenu ? this.activate(this.level.highlight) : STAY;
+  }
+
+  /** ◀ on a setting changed in place: step it down. False when the highlighted item is not one (◀ then goes back). */
+  left(): boolean {
+    const item = this.level.current;
+    if (!item || item.disabled || !item.adjust) return false;
+    item.adjust(-1);
+    return true;
   }
 
   /** ◀ and Esc: back one level. False at the root: the caller closes the sheet. */
@@ -165,13 +187,22 @@ export class Sheet {
     return true;
   }
 
-  /** Pick by index in the full list: a disabled item does nothing, a submenu opens on top, anything else runs. */
-  activate(index: number): Picked {
+  /** Pick by index in the full list: a disabled item does nothing, a submenu opens on top, a setting changed in place
+   *  steps forward (unless `confirm`: Enter), a switch (`keep`) runs and stays, anything else runs and closes. */
+  activate(index: number, confirm = false): Picked {
     const level = this.level;
     const item = level.items[index];
     if (!item || item.disabled) return STAY;
     level.highlight = index;
     lastPicks.set(level.memo, item.id);
+    if (!item.submenu && item.adjust && !confirm) {
+      item.adjust(1);
+      return STAY;
+    }
+    if (item.keep) {
+      item.run?.();
+      return STAY;
+    }
     if (item.submenu) {
       const sub = item.submenu;
       this.levels = [...this.levels, new Level(sub.title, () => sub.items, `${level.memo}/${item.id}`)];

@@ -194,8 +194,8 @@ export class AppShell {
     this.sheet = this.menuItems.length > 0 ? new Sheet(`menu:${place}`, t("menu.title"), () => this.menuItems) : null;
   }
   /** Open a list of items over the view (a long press on a history row): same sheet and keys as the Menu key. */
-  showMenu(title: string, items: readonly MenuItem[]): void {
-    this.sheet = new Sheet(`list:${title}`, title, () => items);
+  showMenu(title: string, items: readonly MenuItem[], opts?: { remember?: boolean; at?: string }): void {
+    this.sheet = new Sheet(`list:${title}`, title, () => items, opts);
   }
   closeSheet(): void {
     this.sheet = null;

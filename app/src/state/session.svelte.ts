@@ -203,7 +203,6 @@ export class Session {
   /** Alpha lock (L3): alpha stays on after each key; capsLock keeps shift on too (shift + alpha: lower case, P4). */
   alphaLock = $state(false);
   capsLock = $state(false);
-  settingsOpen = $state(false);
   settings = $state<Settings>(structuredClone(defaultSettings));
   home = $state<HistoryItem[]>([]);
   cas = $state<HistoryItem[]>([]);

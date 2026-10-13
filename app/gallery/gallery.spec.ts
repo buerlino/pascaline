@@ -121,11 +121,39 @@ const shots: Shot[] = [
     },
   },
   {
+    id: "home-mode",
+    group: "Home",
+    title: "Mode sheet (Shift + CAS): angle, format, digits, decimals, entry",
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["shift", "cas"]);
+    },
+  },
+  {
+    id: "home-mode-digits",
+    group: "Home",
+    title: "Mode sheet, Significant digits (current value marked)",
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["shift", "cas", "d3"]);
+    },
+  },
+  {
     id: "home-settings",
     group: "Home",
-    title: "Settings",
+    title: "Settings (Shift + Home/CAS)",
     setup: async (p) => {
-      await tap(p, ["shift", "app"]);
+      await someHistory(p);
+      await tap(p, ["shift", "app", "down", "right"]);
+    },
+  },
+  {
+    id: "home-settings-cycle",
+    group: "Home",
+    title: "Settings, Format key cycle",
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["shift", "app", "enter"]);
     },
   },
   // ---- CAS

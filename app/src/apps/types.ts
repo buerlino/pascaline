@@ -30,6 +30,15 @@ export interface MenuItem {
   readonly disabled?: boolean;
   /** Why it is disabled, shown on a second line (already translated; docs/05 3.1). */
   readonly reason?: string;
+  /** A setting's current value, drawn at the right of the row (already translated). Read on every draw. */
+  readonly value?: string;
+  /** In a list of values: this one is the current one (a mark, and the highlight starts on it). Read on every draw. */
+  readonly selected?: boolean;
+  /** A setting changed in place: ◀ ▶ step it (-1, +1), and a digit key or a tap steps it forward (docs/05 3.4). Enter
+   *  does not step it: it picks the item, which closes the sheet (or opens its submenu). */
+  adjust?(by: 1 | -1): void;
+  /** Picking the item runs it and the sheet stays open (a switch in a list of switches). */
+  readonly keep?: boolean;
   /** Picking the item runs it, or opens this follow-up list in place of the menu (e.g. Intersection: with which?). */
   run?(): void;
   readonly submenu?: SubMenu;

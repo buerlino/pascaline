@@ -74,10 +74,11 @@
           role="menuitem"
           aria-label={`${row.n === undefined ? "" : row.n % 10} ${row.item.label}`.trim()}
           disabled={row.item.disabled}
+          data-selected={row.item.selected}
           data-active={row.index === level.highlight}
           data-id={row.item.id}
           onclick={() => ontap(row.index)}
-        ><span class="n">{row.n === undefined ? "" : row.n % 10}</span><span class="text"><span class="label">{row.item.label}</span>{#if row.item.disabled && row.item.reason}<span class="reason">{row.item.reason}</span>{/if}</span>{#if row.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}</button>
+        ><span class="n">{row.n === undefined ? "" : row.n % 10}</span><span class="text"><span class="label">{row.item.label}</span>{#if row.item.disabled && row.item.reason}<span class="reason">{row.item.reason}</span>{/if}</span>{#if row.item.value !== undefined}<span class="value" data-testid="sheet-value">{row.item.value}</span>{/if}{#if row.item.selected !== undefined}<span class="tick" aria-hidden="true">{row.item.selected ? "✓" : ""}</span>{/if}{#if row.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}</button>
       {/each}
       {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
     </div>
@@ -215,6 +216,18 @@
   .reason {
     font-size: 13px;
     color: var(--muted);
+  }
+  .value {
+    color: var(--shift);
+    font-size: 17px;
+    white-space: nowrap;
+  }
+  button[role="menuitem"]:disabled .value {
+    color: var(--text-dead);
+  }
+  .tick {
+    color: var(--shift);
+    min-width: 1ch;
   }
   .more {
     color: var(--muted);
