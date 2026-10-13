@@ -11,6 +11,7 @@
   import { t, type MessageKey } from "./i18n/index.ts";
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
+  import { loadShiftPalettes, shiftPalettes } from "./keyboard/palettes.ts";
   import { actionFor, keyboard, type ActionBody, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { HistoryItem, Session } from "./state/session.svelte.ts";
@@ -89,13 +90,20 @@
   /** Tmpl: the template palette (R10), a grid on the sheet; a pick inserts its template as its key would. A view
    *  without an entry line (Plot) has nothing to insert into. */
   function openTemplates(): void {
-    openPalette("tmpl", keyboard.palette);
+    openPalette("tmpl", t("tmpl.title"), keyboard.palette);
   }
   /** Tmpl, Shift + 6 (relations and logic) and Shift + 9 (symbols and Greek, R18): a palette on the grid sheet. */
-  function openPalette(id: PaletteId, p: Palette): void {
+  function openPalette(id: PaletteId, title: string, p: Palette, name?: (id: string) => string): void {
     if (!shell.showsEntry) return dead();
     picked = null;
-    shell.togglePalette(id, () => paletteItems(p.items, insertTemplate, id), p.columns);
+    shell.togglePalette(id, title, () => paletteItems(p.items, insertTemplate, name), p.columns);
+  }
+  /** The Shift palettes come in their own chunk, loaded with MathLive; until then the key waits for it. */
+  function openShiftPalette(id: "rel" | "sym"): void {
+    const open = (m: NonNullable<typeof shiftPalettes>): void =>
+      openPalette(id, m.paletteText(`${id}.title`), id === "rel" ? m.relations : m.symbols, (cell) => m.paletteText(`${id}.${cell}`));
+    if (shiftPalettes) open(shiftPalettes);
+    else void loadShiftPalettes().then(open);
   }
   function insertTemplate(p: PaletteItem): void {
     entry.run(paletteAction(p, session.settings.entry === "line"));
@@ -173,10 +181,10 @@
         openTemplates();
         break;
       case "relations":
-        openPalette("rel", keyboard.relations);
+        openShiftPalette("rel");
         break;
       case "symbols":
-        openPalette("sym", keyboard.symbols);
+        openShiftPalette("sym");
         break;
       case "shift":
       case "alpha":

@@ -19,13 +19,18 @@ export function paletteAction(p: PaletteItem, oneLine: boolean): ActionBody {
   return oneLine && a.line ? a.line : a;
 }
 
-/** The palette's cells, in reading order; `insert` runs the picked one. `names`: the i18n prefix of the cells. */
-export function paletteItems(cells: readonly PaletteItem[], insert: (p: PaletteItem) => void, names: "tmpl" | "rel" | "sym" = "tmpl"): MenuItem[] {
+/** The palette's cells, in reading order; `insert` runs the picked one. `name`: a cell's name by its id (default: the
+ *  Tmpl names, `tmpl.<id>`; the Shift palettes bring theirs, i18n/enPalettes.ts). */
+export function paletteItems(
+  cells: readonly PaletteItem[],
+  insert: (p: PaletteItem) => void,
+  name: (id: string) => string = (id) => legend(`$tmpl.${id}`),
+): MenuItem[] {
   return cells.map((p) => {
     const key = p.pick === undefined ? undefined : keyboard.byId.get(p.pick);
     return {
       id: p.id,
-      label: legend(`$${names}.${p.id}`),
+      label: name(p.id),
       latex: cellLatex(p.action.latex),
       ...(key ? { pick: { key: key.id, legend: legend(key.label.primary ?? "") } } : {}),
       run: () => insert(p),

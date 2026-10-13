@@ -16,8 +16,16 @@ function strip(v: unknown): unknown {
   return Object.fromEntries(Object.entries(v).filter(([k]) => !DROP.has(k)).map(([k, x]) => [k, strip(x)]));
 }
 
+/** The start chunk's copy: no unit slot, and no Shift palettes (R18: their own lazy chunk, `shippedPalettes`). */
 export function shippedKeyboard(doc: unknown): unknown {
   if (doc === null || typeof doc !== "object" || Array.isArray(doc)) return doc;
-  const { unit_slot: _unitSlot, ...rest } = doc as Record<string, unknown>;
+  const { unit_slot: _unitSlot, relations: _relations, symbols: _symbols, ...rest } = doc as Record<string, unknown>;
   return { ...(strip(rest) as Record<string, unknown>), shipped: true };
+}
+
+/** The Shift palettes alone (`keyboard.yaml?palettes`), slimmed the same way. */
+export function shippedPalettes(doc: unknown): unknown {
+  if (doc === null || typeof doc !== "object" || Array.isArray(doc)) return doc;
+  const { relations, symbols } = doc as Record<string, unknown>;
+  return { ...(strip({ relations, symbols }) as Record<string, unknown>), shipped: true };
 }

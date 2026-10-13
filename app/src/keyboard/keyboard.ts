@@ -88,9 +88,10 @@ export interface Keyboard {
   readonly byId: ReadonlyMap<string, Key>;
   /** The Tmpl palette; empty when the spec has none. */
   readonly palette: Palette;
-  /** Shift + 6, relations and logic (R18); empty when the spec has none. */
+  /** Shift + 6, relations and logic (R18); empty when the spec has none, and in the built app's copy (the app reads the
+   *  Shift palettes from their own lazy chunk, keyboard/shiftPalettes.ts). */
   readonly relations: Palette;
-  /** Shift + 9, symbols and Greek (R18); empty when the spec has none. */
+  /** Shift + 9, symbols and Greek (R18); as `relations`. */
   readonly symbols: Palette;
 }
 
@@ -221,7 +222,7 @@ export function loadKeyboard(doc: unknown): Keyboard {
 
 /** A palette section (`templates:`, `relations:`, `symbols:`): a grid of cells, each the template of a key or its own
  *  insert action with a sample. */
-function loadPalette(v: unknown, section: string, byId: ReadonlyMap<string, Key>, shipped: boolean): Palette {
+export function loadPalette(v: unknown, section: string, byId: ReadonlyMap<string, Key>, shipped: boolean): Palette {
   if (v === undefined) return { columns: 1, items: [] };
   if (!isObj(v)) throw new KeyboardSpecError(`${section}: must be a mapping`);
   const columns = int(v, "columns", section);

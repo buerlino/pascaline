@@ -208,9 +208,9 @@ export class AppShell {
   }
   /** A palette on the grid sheet: Tmpl (R10; its key closes it again), Shift + 6 `rel` and Shift + 9 `sym` (R18; the
    *  digits pick inside those, so only Esc and Cancel close them). Each opens on its last pick. */
-  togglePalette(id: PaletteId, items: () => readonly MenuItem[], columns: number): void {
+  togglePalette(id: PaletteId, title: string, items: () => readonly MenuItem[], columns: number): void {
     if (this.sheet?.id === id) this.sheet = null;
-    else this.sheet = new Sheet(id, t(`${id}.title`), items, { columns });
+    else this.sheet = new Sheet(id, title, items, { columns });
   }
   closeSheet(): void {
     this.sheet = null;

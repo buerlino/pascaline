@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
 import { SAMPLE_CHIPS } from "../input/chips.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { parse } from "yaml";
-import { shippedKeyboard } from "./shipped.ts";
-import { actionFor, cellsIn, gridPlace, type Key, KeyboardSpecError, keyboard, labelFor, loadKeyboard, templates } from "./keyboard.ts";
+import { shippedKeyboard, shippedPalettes } from "./shipped.ts";
+import { actionFor, cellsIn, gridPlace, type Key, KeyboardSpecError, keyboard, labelFor, loadKeyboard, loadPalette, templates } from "./keyboard.ts";
 
 const spec = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../spec/keyboard.yaml"), "utf8");
 
@@ -221,9 +221,13 @@ describe("keyboard spec", () => {
     const plain = (a: unknown) => JSON.parse(JSON.stringify(a, (key, v: unknown) => (["sample", "source", "check"].includes(key) ? undefined : v)));
     expect(plain(k.keys)).toEqual(plain(keyboard.keys));
     expect(plain(k.palette)).toEqual(plain(keyboard.palette));
-    expect(plain(k.relations)).toEqual(plain(keyboard.relations));
-    expect(plain(k.symbols)).toEqual(plain(keyboard.symbols));
     expect(JSON.stringify(slim)).not.toMatch(/"desc"/);
+    // R18: the Shift palettes are not in the start chunk's copy; their own chunk's copy loads to the same cells
+    expect(JSON.stringify(slim)).not.toMatch(/"(relations|symbols)":/);
+    const pal = shippedPalettes(parse(spec)) as Record<string, unknown>;
+    expect(JSON.stringify(pal)).not.toMatch(/"(sample|source|check|desc|templates|keys)"/);
+    for (const s of ["relations", "symbols"] as const)
+      expect(plain(loadPalette(pal[s], s, keyboard.byId, true))).toEqual(plain(keyboard[s]));
   });
 
   it("rejects broken palettes", () => {
