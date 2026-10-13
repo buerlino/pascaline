@@ -50,8 +50,9 @@ engine/**/_out/
 spike/**/_build/
 spike/**/_out/
 
-# app/: fonts and engine copied in by npm scripts
+# app/: fonts and engine copied in by npm scripts; the Find index (generated from the source tarballs, npm run index)
 app/public/engine/
+app/src/find/_gen/
 
 # android/: web assets and config copied in by `npx cap sync`; build outputs; throwaway signing keys
 android/app/src/main/assets/public/

@@ -13,6 +13,7 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
     "test": "vitest run",
     "golden": "node scripts/golden.ts",
+    "index": "node ../tools/find-index/generate.mjs",
     "test:e2e": "playwright test",
     "test:tasks": "playwright test test/tasks.spec.ts",
     "test:pwa": "playwright test -c playwright.pwa.config.ts"

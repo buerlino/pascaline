@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Find: what users type that the data lacks (docs/04 3.3), per item id. Read by tools/find-index/generate.mjs,
+# which fails when an id does not exist. Matching ignores case, and "_" and spaces inside names, so "kb" already
+# finds k_B and "g0" finds g_0: add only what that does not cover. The query test (tests/tasks/find-queries.yaml)
+# shows which aliases are needed; add a phrase there whenever Find misses one.
+#
+# symbols: the symbol a constant's chip shows, where qalc's own is missing or unusual (LaTeX is made from it).
+
+aliases:
+  # constants
+  "const:c": ["c0", "c_0", "light speed", "speed of light in vacuum"]
+  "const:planck": ["planck constant"]
+  "const:planck2pi": ["h bar", "reduced planck", "dirac constant"]
+  "const:k_B": ["kb", "boltzmann constant"]
+  "const:N_A": ["avogadro constant", "avogadro number"]
+  "const:q_e": ["elementary charge", "electron charge", "charge of electron"]
+  "const:epsilon_0": ["eps0", "e0", "permittivity", "vacuum permittivity", "permittivity of free space"]
+  "const:mu_0": ["mu0", "u0", "permeability", "vacuum permeability", "permeability of free space"]
+  "const:G": ["gravitational constant", "newton constant", "big g"]
+  "const:g_0": ["gn", "g_n", "standard gravity", "standard acceleration of gravity", "gravity"]
+  "const:gas_constant": ["universal gas constant", "molar gas constant"]
+  "const:faraday": ["faraday constant"]
+  "const:sigma": ["stefan boltzmann", "stefan-boltzmann"]
+  "const:alpha": ["fine structure constant"]
+  # units
+  "unit:km/h": ["kph", "kmh", "km per hour", "kilometres per hour"]
+  "unit:mph": ["miles per hour"]
+  "unit:in": ["inch", "inches"]
+  "unit:ft": ["feet", "foot"]
+  "unit:thou": ["mils"]
+  "unit:um": ["micrometre", "micrometer"]
+  "unit:mm": ["millimetre", "millimeter"]
+  "unit:km": ["kilometre", "kilometer"]
+  "unit:oC": ["degC", "deg C", "degree celsius"]
+  "unit:oF": ["degF", "deg F", "degree fahrenheit"]
+  "unit:L": ["liter", "litre"]
+  "unit:t": ["metric ton"]
+  "unit:hp": ["horsepower"]
+  "unit:Btu": ["british thermal unit"]
+  "unit:N": ["newton"]
+  # functions
+  "fn:asin": ["arcsin"]
+  "fn:acos": ["arccos"]
+  "fn:atan": ["arctan"]
+
+symbols:
+  "const:planck": "h"
+  "const:planck2pi": "ℏ"
+  "const:q_e": "e"
+  "const:gas_constant": "R"
+  "const:faraday": "F"

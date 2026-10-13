@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Find tier 0: the curated functions (docs/04 3.3). Each one is ranked before Giac's other commands and
+# has a golden accuracy case (`golden`: a case id in tests/golden/*.yaml, checked by the generator).
+# Titles and descriptions are our own words. Fields:
+#   id      the Find id (fn:<Giac command>, or tmpl:<name> for a LaTeX template)
+#   title   what the list shows
+#   desc    one line, ours
+#   names   extra names a user may type (Giac's own names are added from aide_cas, except `drop`)
+#   drop    Giac names not to offer for this item (they mean something else in our entry line)
+#   insert  the LaTeX the entry line receives (default \operatorname{<name>}\left(#?\right))
+#   giac    the Giac command that insert must become through our parser (checked by app/src/find/insert.test.ts)
+#   syntax  shown in the preview (default: from aide_cas)
+#   golden  the golden case id
+# Not tier 0 on purpose (Giac behaviour to settle first, see the G4 report): median (lower median of an even
+# list), round (halves go up, round(-2.5) = -2).
+functions:
+  - { id: "fn:sqrt", title: "Square root", desc: "Square root; of a negative number gives an imaginary result.", names: ["square root", "√"], insert: "\\sqrt{#?}", giac: "sqrt", syntax: "sqrt(x)", golden: "fn-sqrt2" }
+  - { id: "tmpl:cbrt", title: "Cube root", desc: "Real cube root: ∛(−8) = −2.", names: ["cbrt", "cube root", "∛"], insert: "\\sqrt[3]{#?}", giac: "surd", syntax: "∛x", golden: "fn-cbrt2" }
+  - { id: "fn:surd", title: "Real n-th root", desc: "Real n-th root of x: surd(x, n).", names: ["nth root", "root"], giac: "surd", golden: "fn-cbrt-neg8" }
+  - { id: "fn:ln", title: "Natural logarithm", desc: "Logarithm to base e.", names: ["natural log", "natural logarithm"], drop: ["log", "LN"], insert: "\\ln\\left(#?\\right)", giac: "ln", syntax: "ln(x)", golden: "fn-ln2" }
+  - { id: "fn:log10", title: "Common logarithm (log₁₀)", desc: "Logarithm to base 10.", names: ["log", "lg", "common log", "decimal logarithm"], insert: "\\log\\left(#?\\right)", giac: "log10", syntax: "log10(x)", golden: "fn-log10-2" }
+  - { id: "fn:exp", title: "Exponential (eˣ)", desc: "e raised to the power x.", names: ["exponential", "e^x"], drop: ["EXP"], insert: "\\exp\\left(#?\\right)", giac: "exp", syntax: "exp(x)", golden: "fn-exp1" }
+  - { id: "fn:sin", title: "Sine", desc: "Sine, in the angle unit of the settings.", drop: ["SIN"], insert: "\\sin\\left(#?\\right)", giac: "sin", syntax: "sin(x)", golden: "rad-sin1" }
+  - { id: "fn:cos", title: "Cosine", desc: "Cosine, in the angle unit of the settings.", drop: ["COS"], insert: "\\cos\\left(#?\\right)", giac: "cos", syntax: "cos(x)", golden: "rad-cos1" }
+  - { id: "fn:tan", title: "Tangent", desc: "Tangent, in the angle unit of the settings.", drop: ["TAN"], insert: "\\tan\\left(#?\\right)", giac: "tan", syntax: "tan(x)", golden: "rad-tan1" }
+  - { id: "fn:asin", title: "Arcsine (sin⁻¹)", desc: "Inverse sine, in the angle unit of the settings.", names: ["inverse sine"], drop: ["ASIN"], insert: "\\arcsin\\left(#?\\right)", giac: "asin", syntax: "asin(x)", golden: "rad-asin0.5" }
+  - { id: "fn:acos", title: "Arccosine (cos⁻¹)", desc: "Inverse cosine, in the angle unit of the settings.", names: ["inverse cosine"], insert: "\\arccos\\left(#?\\right)", giac: "acos", syntax: "acos(x)", golden: "rad-acos0.3" }
+  - { id: "fn:atan", title: "Arctangent (tan⁻¹)", desc: "Inverse tangent, in the angle unit of the settings.", names: ["inverse tangent"], drop: ["ATAN"], insert: "\\arctan\\left(#?\\right)", giac: "atan", syntax: "atan(x)", golden: "rad-atan10" }
+  - { id: "fn:sinh", title: "Hyperbolic sine", desc: "Hyperbolic sine.", insert: "\\sinh\\left(#?\\right)", giac: "sinh", syntax: "sinh(x)", golden: "rad-sinh1" }
+  - { id: "fn:cosh", title: "Hyperbolic cosine", desc: "Hyperbolic cosine.", drop: ["COSH"], insert: "\\cosh\\left(#?\\right)", giac: "cosh", syntax: "cosh(x)", golden: "fn-cosh1" }
+  - { id: "fn:tanh", title: "Hyperbolic tangent", desc: "Hyperbolic tangent.", insert: "\\tanh\\left(#?\\right)", giac: "tanh", syntax: "tanh(x)", golden: "rad-tanh0.5" }
+  - { id: "fn:abs", title: "Absolute value", desc: "Absolute value |x|; the modulus of a complex number.", names: ["absolute value", "modulus", "magnitude"], giac: "abs", syntax: "abs(x)", golden: "int-abs-0.3" }
+  - { id: "fn:floor", title: "Floor", desc: "Largest integer ≤ x.", names: ["round down"], giac: "floor", syntax: "floor(x)", golden: "int-floor2.5" }
+  - { id: "fn:ceil", title: "Ceiling", desc: "Smallest integer ≥ x.", names: ["round up"], giac: "ceil", syntax: "ceil(x)", golden: "int-ceil-2.5" }
+  - { id: "fn:frac", title: "Fractional part", desc: "x minus its integer part.", names: ["fractional part"], giac: "frac", syntax: "frac(x)", golden: "int-frac2.7" }
+  - { id: "fn:irem", title: "Remainder (mod)", desc: "Remainder of the integer division a ÷ b; never negative.", names: ["mod", "modulo", "remainder"], giac: "irem", syntax: "irem(a, b)", golden: "fn-irem-neg" }
+  - { id: "fn:gcd", title: "Greatest common divisor", desc: "Greatest common divisor of integers or polynomials.", names: ["greatest common divisor", "hcf"], giac: "gcd", syntax: "gcd(a, b)", golden: "fn-gcd" }
+  - { id: "fn:lcm", title: "Least common multiple", desc: "Least common multiple of integers or polynomials.", names: ["least common multiple"], giac: "lcm", syntax: "lcm(a, b)", golden: "fn-lcm" }
+  - { id: "fn:factorial", title: "Factorial (n!)", desc: "n!; for non-integers Γ(n+1).", names: ["n!"], giac: "factorial", syntax: "factorial(n)", golden: "fn-factorial0.5" }
+  - { id: "fn:comb", title: "Combinations (nCr)", desc: "Number of ways to choose r of n: n! ÷ (r!(n−r)!).", names: ["ncr", "combinations", "binomial coefficient", "choose"], giac: "comb", syntax: "comb(n, r)", golden: "fn-comb" }
+  - { id: "fn:Gamma", title: "Gamma function (Γ)", desc: "Euler's gamma function; Γ(n) = (n−1)!.", names: ["gamma", "Γ"], giac: "Gamma", syntax: "Gamma(x)", golden: "fn-gamma0.5" }
+  - { id: "fn:erf", title: "Error function", desc: "Gauss error function erf(x).", names: ["error function"], giac: "erf", syntax: "erf(x)", golden: "fn-erf0.5" }
+  - { id: "fn:mean", title: "Mean (average)", desc: "Arithmetic mean of a list; an optional second list gives weights.", names: ["average", "avg", "arithmetic mean"], giac: "mean", syntax: "mean(list)", golden: "stat-mean" }
+  - { id: "fn:stddevp", title: "Standard deviation (sample, n−1)", desc: "Sample standard deviation of a list (divides by n−1).", names: ["stdev", "sample standard deviation", "standard deviation", "std", "sd"], giac: "stddevp", syntax: "stddevp(list)", golden: "stat-stddevp-sample" }
+  - { id: "fn:stddev", title: "Standard deviation (population, n)", desc: "Population standard deviation of a list (divides by n).", names: ["stdevp", "population standard deviation", "σ"], giac: "stddev", syntax: "stddev(list)", golden: "stat-stddev-population" }
+  - { id: "fn:variance", title: "Variance (population, n)", desc: "Population variance of a list (divides by n).", names: ["var"], giac: "variance", syntax: "variance(list)", golden: "stat-variance" }
+  - { id: "fn:normald_cdf", title: "Normal cumulative distribution", desc: "P(X ≤ x) for a normal distribution: normald_cdf(x) or normald_cdf(μ, σ, x).", names: ["normal cdf", "normcdf", "Φ"], giac: "normald_cdf", syntax: "normald_cdf(μ, σ, x)", golden: "stat-normald_cdf1.96" }
+  - { id: "fn:int", title: "Integral", desc: "Antiderivative int(f, x), or the definite integral int(f, x, a, b).", names: ["integral", "integrate", "antiderivative", "∫"], giac: "int", syntax: "int(f, x, a, b)", golden: "fn-int-sinx/x" }
+  - { id: "fn:diff", title: "Derivative", desc: "Derivative of an expression: diff(f, x).", names: ["derivative", "differentiate"], giac: "diff", syntax: "diff(f, x)", golden: "cas-diff-at" }
+  - { id: "fn:limit", title: "Limit", desc: "Limit of an expression: limit(f, x, a).", names: ["lim"], giac: "limit", syntax: "limit(f, x, a)", golden: "cas-limit-sinc" }
+  - { id: "fn:solve", title: "Solve an equation", desc: "Exact or numeric solutions of an equation or system: solve(eq, x).", names: ["equation", "roots"], giac: "solve", syntax: "solve(eq, x)", golden: "cas-solve-sqrt2" }
+  - { id: "fn:det", title: "Determinant", desc: "Determinant of a square matrix.", names: ["determinant"], giac: "det", syntax: "det(M)", golden: "mat-det" }
+  - { id: "fn:inv", title: "Inverse (matrix)", desc: "Inverse of a square matrix, or 1/x.", names: ["inverse", "inverse matrix", "matrix inverse"], giac: "inv", syntax: "inv(M)", golden: "mat-inv" }
+  - { id: "fn:tran", title: "Transpose", desc: "Transpose of a matrix.", names: ["transpose"], giac: "tran", syntax: "tran(M)", golden: "mat-tran" }
+  - { id: "fn:cross", title: "Cross product", desc: "Cross product of two 3-vectors.", names: ["cross product", "vector product"], giac: "cross", syntax: "cross(u, v)", golden: "vec-cross" }
+
+# Giac commands left out of the index: they need Xcas's windows, turtle, files, folders, sound or command
+# history, none of which exists in Pascaline (Giac's own ans() is not our Ans). Entries whose English line says
+# they are options, pseudo-variables, program instructions or reserved words are left out by the generator.
+exclude:
+  turtle: [efface, dessine_tortue, avance, recule, saute, pas_de_cote, tourne_droite, tourne_gauche, leve_crayon, baisse_crayon, crayon, position, cap, vers, rond, disque, disque_centre, rectangle_plein, triangle_plein, polygone_rempli, repete, debut_enregistrement, fin_enregistrement, cache_tortue, montre_tortue]
+  screens: [DispG, DispHome, ClrIO, ClrGraph, erase, erase3d, gnuplot, ecris, NewPic, RclPic, RplcPic, CyclePic, StoPic, switch_axes, xyztrange, Ox_2d_unit_vector, Oy_2d_unit_vector, Ox_3d_unit_vector, Oy_3d_unit_vector, Oz_3d_unit_vector, frame_2d, frame_3d, set_screen, set_pixel, draw_line, draw_rectangle, draw_polygon, draw_circle, draw_arc, clear, show_pixels, pixon, pixoff, click, widget_size, graph2tex, graph3d2tex]
+  files: [save_history, read, write, csv2gen, open, fopen, fclose, fprint, readwav, writewav, playsnd, readrgb, writergb, Archive, Unarchiv, archive, unarchive, NewFold, SetFold, DelFold, GetFold, VARS, export_graph, import_graph, maple2xcas, mupad2xcas, maple2mupad, mupad2maple, insmod, lsmod, rmmod, cd, pwd]
+  session: [current_sheet, tablefunc, tableseq, ans, quest, xcas_mode, autosimplify, Pause, WAIT, dir, help]
