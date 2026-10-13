@@ -45,9 +45,6 @@ export interface HomeSettings {
    *  the float path. The host applies it with the engine's giac_set_pow_limit(); Giac's default is 1e8.
    *  1e5 ≈ results up to ~43,000 digits. */
   powLimit: number;
-  /** The Giac variable that holds this evaluation's answer (Home's Ans). Python's `calc.eval` uses its own, so a
-   *  script never changes Home's Ans. */
-  answer?: string;
 }
 
 export const defaultHomeSettings: HomeSettings = {
@@ -329,7 +326,7 @@ export function homeEval(
   now: () => number = () => performance.now(),
 ): HomeResult {
   const t0 = now();
-  const ans = s.answer ?? "pasans";
+  const ans = "pasans";
   const asg = simpleAssignment(input);
   const body = asg ? asg.rhs : input;
   // Other stateful inputs (f(x):=…, purge, assume, =>) must not run twice.

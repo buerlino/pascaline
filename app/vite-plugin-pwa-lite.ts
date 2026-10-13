@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// After `vite build`: list every file in the output folder (hashed chunks, public/ engine and Python wasm, icons),
+// After `vite build`: list every file in the output folder (hashed chunks, public/ engine wasm, icons),
 // fingerprint the list and write dist/sw.js from pwa/sw.js. About 40 lines instead of a Workbox dependency
 // (no runtime caching rules are needed: the app is entirely static and fully precached).
 import { createHash } from "node:crypto";

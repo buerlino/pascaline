@@ -2,9 +2,9 @@
 // Service worker template. vite-plugin-pwa-lite.ts fills in the two placeholders below at build time and writes
 // the result to dist/sw.js. Plain JS on purpose: it is served as is.
 //
-// Offline: everything the build produced (app chunks, lazy chunks, giac.wasm, micropython.wasm, fonts, icons) is
+// Offline: everything the build produced (app chunks, lazy chunks, giac.wasm, fonts, icons) is
 // stored in one versioned cache when the worker installs, and served from it first. After one online visit the
-// app starts, computes and runs Python with no network.
+// app starts, computes with no network.
 //
 // Updates: no skipWaiting and no clients.claim. A new version installs in the background and waits until every
 // window of the old one is closed, so it takes effect on the next start and never replaces code mid-calculation.

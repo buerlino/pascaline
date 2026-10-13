@@ -6,8 +6,6 @@ import type { TextOptions } from "./text.ts";
 export interface PastedNumber {
   /** What goes on the entry line (`1.5\times10^{-3}`, `1+2\imaginaryI`). */
   latex: string;
-  /** The same number as plain text for a text view (Python): `1.5e-3`, `1+2*i`. */
-  text: string;
 }
 
 const MAX_LENGTH = 400;
@@ -47,12 +45,6 @@ function latexOf(r: Real, comma: boolean): string {
   return `${r.neg ? "-" : ""}${body}${exp}`;
 }
 
-function textOf(r: Real): string {
-  const body = `${r.int}${r.frac ? `.${r.frac}` : ""}`;
-  const exp = r.exp !== 0 && !isZeroReal(r) ? `e${r.exp}` : "";
-  return `${r.neg ? "-" : ""}${body}${exp}`;
-}
-
 /** The index of the + or − that separates the real part from the imaginary part, or -1. */
 function splitAt(s: string): number {
   for (let k = s.length - 1; k > 0; k--) {
@@ -76,7 +68,7 @@ export function parsePastedNumber(clip: string, o: TextOptions = {}): PastedNumb
   const re = realPattern(comma ? "," : String.raw`\.`);
 
   const real = parseReal(s, re);
-  if (real) return { latex: latexOf(real, comma), text: textOf(real) };
+  if (real) return { latex: latexOf(real, comma) };
 
   if (!/i$/.test(s)) return null;
   const body = s.slice(0, -1).replace(/\s*\*\s*$/, "").trimEnd(); // "2*i" → "2", "i" → ""
@@ -92,7 +84,6 @@ export function parsePastedNumber(clip: string, o: TextOptions = {}): PastedNumb
   im.neg = sign === "-";
   const sgn = im.neg ? "-" : "+";
   const imLatex = (mag === "" ? "" : latexOf({ ...im, neg: false }, comma)) + "\\imaginaryI";
-  const imText = mag === "" ? "i" : `${textOf({ ...im, neg: false })}*i`;
-  if (!re1) return { latex: `${im.neg ? "-" : ""}${imLatex}`, text: `${im.neg ? "-" : ""}${imText}` };
-  return { latex: `${latexOf(re1, comma)}${sgn}${imLatex}`, text: `${textOf(re1)}${sgn}${imText}` };
+  if (!re1) return { latex: `${im.neg ? "-" : ""}${imLatex}` };
+  return { latex: `${latexOf(re1, comma)}${sgn}${imLatex}` };
 }

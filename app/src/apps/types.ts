@@ -6,7 +6,7 @@ import type { Component } from "svelte";
 import type { Calc, CalcSettings } from "../calc/port.ts";
 import type { Kv } from "../state/storage.ts";
 
-export type AppId = "function" | "solve" | "python";
+export type AppId = "function" | "solve";
 export type ViewId = "symb" | "plot" | "num";
 export const VIEW_IDS: readonly ViewId[] = ["symb", "plot", "num"];
 export type NavDir = "up" | "down" | "left" | "right";
@@ -19,14 +19,9 @@ export interface AppHost {
   readonly kv: Kv;
   /** Put LaTeX on the shared entry line (e.g. the selected slot, to edit it). Marks the line as unedited. */
   setEntry(latex: string): void;
-  /** Switch to one of the app's views (e.g. Python: Run shows the shell). */
-  showView(view: ViewId): void;
   /** Put text on the clipboard and say so (Copy, docs/04 section 2.6). `notice` replaces the default "Copied". */
   copy(text: string, notice?: string): void;
 }
-
-/** Keys for an app view with its own text input (Python editor and shell) instead of the entry line. */
-export type TextInput = { kind: "text"; text: string } | { kind: "cmd"; name: string } | { kind: "enter" };
 
 export interface MenuItem {
   readonly id: string;
@@ -62,12 +57,6 @@ export interface AppInstance {
   copyText?(view: ViewId): Promise<string | undefined> | string | undefined;
   /** The view's menu (Menu key or the header button). Items are picked by tap or digit key. */
   menu?(view: ViewId): MenuItem[];
-  /** The tab name of a view (default: Symb, Plot, Num). */
-  viewLabel?(view: ViewId): string;
-  /** True when the view takes keys as text (TextInput) instead of using the shared entry line. */
-  takesText?(view: ViewId): boolean;
-  /** A key for a view that takes text. */
-  input?(view: ViewId, key: TextInput): void;
   /** Cancel key while busy: stop the app's own job (default: the math engine's). */
   cancel?(): Promise<void>;
   /** Read the stored state (IndexedDB key `app.<id>`). */

@@ -13,7 +13,6 @@ export interface AppEntry {
 export const APPS: readonly AppEntry[] = [
   { id: "function", name: "app.function", load: async (h) => instantiate((await import("./function/index.ts")).default, h) },
   { id: "solve", name: "app.solve", load: async (h) => instantiate((await import("./solve/index.ts")).default, h) },
-  { id: "python", name: "app.python", load: async (h) => instantiate((await import("./python/index.ts")).default, h) },
 ];
 
 export const isAppId = (v: unknown): v is AppId => APPS.some((a) => a.id === v);

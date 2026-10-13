@@ -26,7 +26,7 @@ await engine.cancel();                       // pending calls reject with Engine
 - **Modes (D3).** Home: exact with Giac's interrupt at `budgetMs` (300 ms), then floats; power limit 1e5.
   CAS: no fallback, `hardTimeoutS` (600 s) is only a safety net, the UI shows Cancel prominently after
   `CAS_SOFT_BUDGET_MS`; power limit 1e8. The host re-applies a mode only when mode or settings change.
-- **Ans.** Home keeps its answer in `pasans`, CAS in `pcasans`, Python's `calc.eval` in `pascalcans`; user variables are shared (one Giac context).
+- **Ans.** Home keeps its answer in `pasans`, CAS in `pcasans`; user variables are shared (one Giac context).
 - **Precision (G2, docs/04 2.4–2.10).** Every number carries `exactRational`, `reliableDigits` (null = exact) and maybe `warn`;
   `display` shows confirmed digits only. Exact non-rationals: `evalf` at P = max(40, digits+10) and P+20 (one more step to
   P+40 if they disagree). A float Giac's numeric code returned on the exact path: run again with a double and with MPFR

@@ -16,7 +16,7 @@
 #               still pending or now passing; it never fails the gate. Remove the status when the case passes.
 # `mark:` is checked by the gate (markOf() in app/src/engine/format.ts, STD at `digits`). A result shown with ⚠ n must equal
 # `expect` rounded to its n confirmed digits.
-# Python's side of #7 is in python.yaml; #1 (the parser) and #8 (the result chip) are ron's, in R2.
+# #7 (Python `calc.eval`) went away with the Python app (P11); #1 (the parser) and #8 (the result chip) are ron's, in R2.
 cases:
   # --- 20 and 30 digits: the displayed digits are the oracle's (these hold today; they guard the setting) ----------
   - { id: "prec-20-sqrt2", input: "sqrt(2)", settings: { digits: 20 }, oracle: "sqrt(2)", expect: "1.4142135623730950488", mark: "≈", source: "oracle" }
