@@ -28,12 +28,9 @@ Builds:
       - cd ../..
       - export EMSDK_DIR=system
       - engine/giac/build-wasm.sh
-      - python/build-micropython.sh dev
       # libqalculate for the Find index (milestone 4; the Units worker is milestone 5). Skip with build.sh's --no-units.
       - engine/qalc/build-wasm.sh dev
       - cd app
-      - mkdir -p public/python
-      - cp ../python/_out/dev/micropython.mjs ../python/_out/dev/micropython.wasm public/python/
       - npm ci
       - GIAC_OUT=../engine/giac/_out/gsl npm run build
       - npx cap sync android
@@ -43,7 +40,6 @@ Builds:
       - app/node_modules/
       - engine/giac/_downloads/
       - engine/giac/_build/
-      - python/_downloads/
       - engine/qalc/_downloads/
       - engine/qalc/_work/
 
