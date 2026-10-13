@@ -55,3 +55,10 @@ export function sheetKey(key: Key, filter: boolean): SheetKey {
   const ch = filter ? letterOf(key) : undefined;
   return ch ? { kind: "letter", ch } : { kind: "none" };
 }
+
+/** A flick in a sheet (R9): down types the key's letter into the filter, on any key, digits included (docs/05
+ *  section 7 point 6); up does nothing (a sheet ignores the Shift layer). */
+export function sheetFlick(key: Key, down: boolean, filter: boolean): SheetKey {
+  const ch = down && filter ? letterOf(key) : undefined;
+  return ch ? { kind: "letter", ch } : { kind: "none" };
+}

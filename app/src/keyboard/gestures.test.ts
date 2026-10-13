@@ -1,6 +1,48 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { REPEAT_DELAY_MS, REPEAT_MS, Repeat, STEP_PX, Stepper } from "./gestures.ts";
+import { CANCEL_PX, FLICK_PX, FlickTracker, REPEAT_DELAY_MS, REPEAT_MS, Repeat, STEP_PX, Stepper } from "./gestures.ts";
+
+describe("key flicks (R9, P7 points 2 and 3)", () => {
+  it("a slide up or down of FLICK_PX arms the flick once (one tick); less is a tap", () => {
+    const f = new FlickTracker();
+    expect(f.move(0, -(FLICK_PX - 1))).toBe(false);
+    expect(f.state).toBe("tap");
+    expect(f.move(0, -FLICK_PX)).toBe(true);
+    expect(f.state).toBe("up");
+    expect(f.move(3, -40)).toBe(false); // further out: still up, no second tick
+    expect(f.state).toBe("up");
+    const d = new FlickTracker();
+    expect(d.move(2, FLICK_PX + 5)).toBe(true);
+    expect(d.state).toBe("down");
+  });
+  it("distance alone decides: the first move event may already be past the threshold (no hold, no dwell)", () => {
+    const f = new FlickTracker();
+    expect(f.move(0, 60)).toBe(true);
+    expect(f.state).toBe("down");
+  });
+  it("a mostly sideways slide never arms a flick: it stays a tap (no left/right flicks)", () => {
+    const f = new FlickTracker();
+    f.move(30, -25);
+    f.move(-40, 22);
+    expect(f.state).toBe("tap");
+  });
+  it("sliding back to the middle cancels; sliding out again re-arms", () => {
+    const f = new FlickTracker();
+    f.move(0, -30);
+    f.move(0, -(CANCEL_PX + 1)); // between the two radii: still armed (no flutter at the edge)
+    expect(f.state).toBe("up");
+    f.move(0, -(CANCEL_PX - 1));
+    expect(f.state).toBe("cancelled");
+    expect(f.move(0, FLICK_PX)).toBe(true);
+    expect(f.state).toBe("down");
+  });
+  it("a jump through the middle in one move event switches direction, with a tick", () => {
+    const f = new FlickTracker();
+    f.move(0, -30);
+    expect(f.move(0, 30)).toBe(true);
+    expect(f.state).toBe("down");
+  });
+});
 
 describe("trackpad stepper (K1)", () => {
   it("makes one step per STEP_PX in each direction, and steps back when dragged back", () => {

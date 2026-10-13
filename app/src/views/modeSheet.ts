@@ -143,6 +143,31 @@ export function settingsItems(session: Session): MenuItem[] {
       },
       adjust: (by) => session.setHaptics({ ms: s.haptics.ms + 5 * by }),
     },
+    tapsItem(session),
   ];
+}
+
+/** The Shift and Alpha tap counter (R9, P7 point 4): the counts, since when, and a reset. Counted on this device only,
+ *  never sent anywhere. */
+function tapsItem(session: Session): MenuItem {
+  const taps = session.taps;
+  const counts = (): { shift: string; alpha: string } => ({ shift: String(taps.counts.shift), alpha: String(taps.counts.alpha) });
+  return {
+    id: "taps",
+    label: t("settings.taps"),
+    get value() {
+      return t("settings.taps.value", counts());
+    },
+    submenu: {
+      title: t("settings.taps"),
+      items: [
+        // information rows: picking one does nothing (the sheet stays)
+        { id: "shift", label: t("settings.taps.shift"), keep: true, get value() { return counts().shift; } },
+        { id: "alpha", label: t("settings.taps.alpha"), keep: true, get value() { return counts().alpha; } },
+        { id: "since", label: t("settings.taps.since"), keep: true, get value() { return taps.counts.since || "—"; } },
+        { id: "reset", label: t("settings.taps.reset"), keep: true, run: () => taps.reset() },
+      ],
+    },
+  };
 }
 

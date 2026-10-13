@@ -17,7 +17,7 @@
   import History from "./views/History.svelte";
   import { modeItems, settingsItems } from "./views/modeSheet.ts";
   import Sheet from "./views/Sheet.svelte";
-  import { sheetKey } from "./views/sheetKeys.ts";
+  import { sheetFlick, sheetKey } from "./views/sheetKeys.ts";
 
   let { session, entry, shell }: { session: Session; entry: EntryController; shell: AppShell } = $props();
 
@@ -215,12 +215,13 @@
   };
 
   /** A key while a sheet is open (docs/05 3.1). Shift and Alpha are ignored, and the sheet leaves them as they are; no
-   *  key goes through to the entry line. False: the key keeps its own job (Menu, Apps and the keys that change place). */
-  function sheetPress(key: Key): boolean {
+   *  key goes through to the entry line. A flick down types the key's letter into the filter, on any key (digits
+   *  too; docs/05 section 7 point 6); a flick up does nothing there. False: no sheet is open. */
+  function sheetPress(key: Key, layer: Layer | undefined): boolean {
     const sheet = shell.sheet;
     if (!sheet) return false;
     const level = sheet.level;
-    const k = sheetKey(key, level.filterable);
+    const k = layer === "alpha" || layer === "shift" ? sheetFlick(key, layer === "alpha", level.filterable) : sheetKey(key, level.filterable);
     switch (k.kind) {
       case "move":
         level.move(k.by);
@@ -263,32 +264,53 @@
     }
   }
 
-  // Keys pressed while an app's code is loading wait for it, so nothing typed is lost (like MathLive's queue).
-  let waiting: [Key, Layer | undefined][] = [];
-  /** A key fires. `layer` (a trackpad step, a flick) overrides the Shift/Alpha state for this key only. */
+  // Keys pressed while an app's code is loading wait for it, so nothing typed is lost (like MathLive's queue). Each
+  // waits with the layer it was pressed in (Shift and Alpha act at once), so "Plot, Shift, CAS" typed fast opens the
+  // Mode sheet as it would after the load (decisions.md R8). A key whose action changes place, opens a sheet or
+  // cancels runs at once.
+  const AT_ONCE: readonly string[] = ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings", "mode"];
+  let waiting: { key: Key; mods: Mods }[] = [];
+  function wait(key: Key, mods: Mods): void {
+    waiting.push({ key, mods });
+    if (waiting.length === 1) void shell.opening.then(replay);
+  }
+  function replay(): void {
+    const keys = waiting;
+    waiting = [];
+    for (const { key, mods } of keys)
+      if (shell.loading !== null) wait(key, mods); // another app started loading meanwhile
+      else run(key, mods);
+  }
+
+  /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
+   *  ("shift") or down ("alpha"). */
   function press(key: Key, layer?: Layer): void {
-    const pk = key.actions.primary;
-    const switches = pk?.kind === "special" && ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings", "mode"].includes(pk.name);
-    if (shell.loading !== null && !switches) {
-      waiting.push([key, layer]);
-      if (waiting.length === 1)
-        void shell.opening.then(() => {
-          const keys = waiting;
-          waiting = [];
-          for (const [k, l] of keys) press(k, l);
-        });
-      return;
-    }
     const p = key.actions.primary;
-    if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) {
-      if (p.name === "shift") session.toggleShift();
-      else session.toggleAlpha();
-      return;
-    }
-    if (shell.sheet && sheetPress(key)) return;
+    if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(p.name, layer);
+    if (shell.sheet && sheetPress(key, layer)) return;
     const mods = modsFor(layer);
+    session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
+    if (shell.loading !== null) {
+      const a = actionFor(key, mods.shift, mods.alpha);
+      if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait(key, mods);
+    }
+    run(key, mods);
+  }
+
+  /** Shift and Alpha: a tap is the G2's one-shot (L3's double taps lock), counted for P7 point 4; a flick locks
+   *  (P7 point 3): up on Shift = shift lock, down on Alpha = capitals, up on Alpha = lower case. */
+  function modifier(name: "shift" | "alpha", layer: Layer | undefined): void {
+    if (layer === undefined || layer === "primary") {
+      session.taps.tap(name);
+      if (name === "shift") session.toggleShift();
+      else session.toggleAlpha();
+    } else if (name === "alpha") session.flickAlphaLock(layer === "shift");
+    else if (layer === "shift") session.flickShiftLock();
+  }
+
+  /** The key's action in the layer it was pressed in. */
+  function run(key: Key, mods: Mods): void {
     const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line");
-    session.clearModifiers();
     if (!action) return;
     if (shell.app === null && historyKey(action)) return;
     if (action.kind === "special") return special(action.name);
@@ -339,7 +361,7 @@
         <button type="button" class="chip" data-testid="chip-format" onclick={() => openMode("format")}>{session.settings.format.toUpperCase()}</button>
         <button type="button" class="chip" data-testid="chip-digits" onclick={() => openMode("digits")}>{session.settings.digits}</button>
       </span>
-      {#if session.shift}<span class="mod" data-testid="mod-shift">⇧</span>{/if}
+      {#if session.shiftLock}<span class="mod" data-testid="mod-shift">⇧🔒</span>{:else if session.shift}<span class="mod" data-testid="mod-shift">⇧</span>{/if}
       {#if session.alphaLock}<span class="mod" data-testid="mod-alpha">α🔒</span>{:else if session.alpha}<span class="mod" data-testid="mod-alpha">α</span>{/if}
       {#if busy}<span class="busy" role="status" aria-label={t("status.busy")} data-testid="busy">⟳</span>{/if}
     </span>
@@ -392,6 +414,8 @@
     shift={session.shift}
     alpha={session.alpha}
     alphaLock={session.alphaLock}
+    capsLock={session.capsLock}
+    shiftLock={session.shiftLock}
     sheet={shell.sheet ? { filter: shell.sheet.level.filterable } : undefined}
     onpress={press}
     ontouch={touched}
