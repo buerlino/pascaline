@@ -137,19 +137,26 @@ export class ClipActions {
   menu(row?: HistoryItem): MenuItem[] {
     const i = this.target(row);
     const none = i === undefined;
+    const why = tc("clip.noResult"); // a disabled item says why on its second line (docs/05 3.1)
     const copies: MenuItem[] = [
-      { id: "copy", label: tc("clip.copy"), disabled: none, run: () => void this.copy(row) },
-      { id: "shown", label: tc("clip.asShown"), disabled: none, run: () => void this.copyShown(row) },
-      { id: "exact", label: tc("clip.exact"), disabled: none || copyExact(i) === undefined, run: () => void this.copyExact(row) },
-      { id: "latex", label: tc("clip.latex"), disabled: none, run: () => void this.copyLatex(row) },
+      { id: "copy", label: tc("clip.copy"), disabled: none, reason: why, run: () => void this.copy(row) },
+      { id: "shown", label: tc("clip.asShown"), disabled: none, reason: why, run: () => void this.copyShown(row) },
+      {
+        id: "exact",
+        label: tc("clip.exact"),
+        disabled: none || copyExact(i) === undefined,
+        reason: none ? why : tc("clip.noExact"),
+        run: () => void this.copyExact(row),
+      },
+      { id: "latex", label: tc("clip.latex"), disabled: none, reason: why, run: () => void this.copyLatex(row) },
     ];
     if (row) return copies;
     const finished = this.session.items.some((x) => x.status === "done" || x.status === "error");
     return [
       ...copies,
       { id: "paste", label: tc("clip.paste"), run: () => void this.paste() },
-      { id: "share", label: tc("clip.share"), disabled: !finished, run: () => void this.shareSession() },
-      { id: "clear", label: tc("clip.clear"), disabled: this.session.items.length === 0, run: () => this.session.clearHistory() },
+      { id: "share", label: tc("clip.share"), disabled: !finished, reason: why, run: () => void this.shareSession() },
+      { id: "clear", label: tc("clip.clear"), disabled: this.session.items.length === 0, reason: tc("clip.noHistory"), run: () => this.session.clearHistory() },
     ];
   }
 

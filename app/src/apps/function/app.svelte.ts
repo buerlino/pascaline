@@ -168,12 +168,13 @@ export class FunctionApp implements AppInstance {
   menu(view: ViewId): MenuItem[] {
     if (view === "plot") {
       const none = this.active.length === 0;
+      const why = none ? t("why.noFunction") : undefined;
       return [
-        { id: "root", label: t("fcn.root"), disabled: none, run: () => void this.analyze("root") },
-        { id: "extremum", label: t("fcn.extremum"), disabled: none, run: () => void this.analyze("extremum") },
-        { id: "intersection", label: t("fcn.intersection"), disabled: none, submenu: this.intersectionMenu() },
-        { id: "slope", label: t("fcn.slope"), disabled: none, run: () => void this.analyze("slope") },
-        { id: "area", label: t("fcn.area"), disabled: none, run: () => this.startArea() },
+        { id: "root", label: t("fcn.root"), disabled: none, reason: why, run: () => void this.analyze("root") },
+        { id: "extremum", label: t("fcn.extremum"), disabled: none, reason: why, run: () => void this.analyze("extremum") },
+        { id: "intersection", label: t("fcn.intersection"), disabled: none, reason: why, submenu: this.intersectionMenu() },
+        { id: "slope", label: t("fcn.slope"), disabled: none, reason: why, run: () => void this.analyze("slope") },
+        { id: "area", label: t("fcn.area"), disabled: none, reason: why, run: () => this.startArea() },
         { id: "default", label: t("plot.defaultWindow"), run: () => this.defaultWindow() },
       ];
     }
@@ -181,7 +182,7 @@ export class FunctionApp implements AppInstance {
       return [
         { id: "start", label: t("num.setStart"), run: () => this.editNum("start") },
         { id: "step", label: t("num.setStep"), run: () => this.editNum("step") },
-        { id: "csv", label: tc("clip.csv"), disabled: this.numSlots.length === 0, run: () => void this.copyNum() },
+        { id: "csv", label: tc("clip.csv"), disabled: this.numSlots.length === 0, reason: t("why.noFunction"), run: () => void this.copyNum() },
       ];
     return [];
   }

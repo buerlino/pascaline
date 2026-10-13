@@ -16,6 +16,8 @@ const clip = {
   "clip.copiedTable": "Copied the table as CSV",
   "clip.nothing": "Nothing to copy",
   "clip.noExact": "No exact form",
+  "clip.noResult": "No result yet",
+  "clip.noHistory": "The history is empty",
   "clip.notNumber": "Paste: not a number",
   "clip.unavailable": "The clipboard is not available",
   "clip.shared": "Shared",

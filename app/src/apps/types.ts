@@ -28,6 +28,8 @@ export interface MenuItem {
   /** Already translated. */
   readonly label: string;
   readonly disabled?: boolean;
+  /** Why it is disabled, shown on a second line (already translated; docs/05 3.1). */
+  readonly reason?: string;
   /** Picking the item runs it, or opens this follow-up list in place of the menu (e.g. Intersection: with which?). */
   run?(): void;
   readonly submenu?: SubMenu;
@@ -55,7 +57,7 @@ export interface AppInstance {
   nav?(view: ViewId, dir: NavDir, edited: boolean): boolean;
   /** What Shift + View copies in this view (the Num table as CSV); undefined: nothing to copy. */
   copyText?(view: ViewId): Promise<string | undefined> | string | undefined;
-  /** The view's menu (Menu key or the header button). Items are picked by tap or digit key. */
+  /** The view's menu (Menu key), shown on the sheet (docs/05 3.1). */
   menu?(view: ViewId): MenuItem[];
   /** Cancel key while busy: stop the app's own job (default: the math engine's). */
   cancel?(): Promise<void>;

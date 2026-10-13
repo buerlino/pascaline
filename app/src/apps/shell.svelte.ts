@@ -3,9 +3,11 @@
 // apps beside them. App code loads on first use (registry.ts); the open app and view are stored like the
 // settings, so the calculator comes back where it was.
 import type { Calc, CalcSettings } from "../calc/port.ts";
+import { t } from "../i18n/index.ts";
 import type { Kv } from "../state/storage.ts";
-import { appEntry, isAppId } from "./registry.ts";
-import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type SubMenu, type ViewId } from "./types.ts";
+import { Sheet, type Picked } from "../views/sheet.svelte.ts";
+import { APPS, appEntry, isAppId } from "./registry.ts";
+import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type ViewId } from "./types.ts";
 
 /** The entry line as the shell sees it (EntryController in the app, a stub in tests). */
 export interface EntryLine {
@@ -25,8 +27,8 @@ export class AppShell {
   view = $state<ViewId>("symb");
   /** Loaded apps (raw: instances keep their own reactive state). */
   loaded = $state.raw<Partial<Record<AppId, LoadedApp>>>({});
-  switcherOpen = $state(false);
-  menuOpen = $state(false);
+  /** The open sheet (docs/05 3.1): the Apps list, a view's Menu, or a list such as a history row's actions. */
+  sheet = $state.raw<Sheet | null>(null);
   /** Set while an app's code is loading (the view shows a short note). */
   loading = $state<AppId | null>(null);
 
@@ -110,8 +112,7 @@ export class AppShell {
   /** Settles when the app being opened is on screen (keys pressed meanwhile wait for it). */
   opening: Promise<void> = Promise.resolve();
   private async doOpen(id: AppId, view?: ViewId): Promise<void> {
-    this.switcherOpen = false;
-    this.menuOpen = false;
+    this.sheet = null;
     this.loading = id;
     this.app = id;
     try {
@@ -126,8 +127,7 @@ export class AppShell {
 
   /** Symb / Plot / Num key. From Home or CAS it opens the last app (Function by default). */
   async setView(v: ViewId): Promise<void> {
-    this.menuOpen = false;
-    this.switcherOpen = false;
+    this.sheet = null;
     if (this.app === null || this.loading !== null) return this.open(this.app ?? this.lastApp ?? "function", v);
     const a = this.instance;
     if (!a || !a.views.includes(v)) return;
@@ -148,8 +148,7 @@ export class AppShell {
   close(): void {
     if (this.app !== null) this.lastApp = this.app;
     this.app = null;
-    this.menuOpen = false;
-    this.switcherOpen = false;
+    this.sheet = null;
     this.entryBase = "";
     this.save();
   }
@@ -160,55 +159,69 @@ export class AppShell {
     const a = this.instance;
     if (a) a.enter(this.view, latex);
   }
-    nav(dir: NavDir): boolean {
+  nav(dir: NavDir): boolean {
     const a = this.instance;
     return a?.nav?.(this.view, dir, this.entryEdited) ?? false;
   }
-  /** The follow-up list of a picked item, shown in place of the view's menu until the menu closes. */
-  private sub = $state.raw<SubMenu | undefined>(undefined);
+  /** The open view's own Menu items (Home/CAS: the copy actions). */
   get menuItems(): readonly MenuItem[] {
-    if (this.sub) return this.sub.items;
     return (this.app === null ? this.homeMenu?.() : this.instance?.menu?.(this.view)) ?? [];
   }
   /** What Copy (Shift + View) takes from the open app view; undefined when it has nothing to copy. */
   copyText(): Promise<string | undefined> | string | undefined {
     return this.instance?.copyText?.(this.view);
   }
-  /** Open a list of items over the view (a long press on a history row): same list and keys as the Menu key. */
-  showMenu(title: string, items: readonly MenuItem[]): void {
-    this.switcherOpen = false;
-    this.sub = { title, items };
-    this.menuOpen = true;
+
+  // ---- sheets (docs/05 3.1)
+  get switcherOpen(): boolean {
+    return this.sheet?.id === "apps";
   }
-  /** The open list's title; undefined for the view's own menu. */
-  get menuTitle(): string | undefined {
-    return this.sub?.title;
+  get menuOpen(): boolean {
+    return this.sheet !== null && this.sheet.id !== "apps";
   }
+  /** Apps key: the Apps sheet, or close it when it is open. */
+  toggleApps(): void {
+    if (this.switcherOpen) this.sheet = null;
+    else this.sheet = new Sheet("apps", t("apps.title"), () => APPS.map((a) => ({ id: a.id, label: t(a.name), run: () => void this.open(a.id) })));
+  }
+  /** Menu key: the open view's menu (a view without one opens nothing), or close the open sheet. */
   toggleMenu(): void {
-    this.switcherOpen = false;
-    this.sub = undefined;
-    this.menuOpen = !this.menuOpen && this.menuItems.length > 0;
-  }
-  pick(i: number): boolean {
-    const item = this.menuItems[i];
-    if (!item || item.disabled) return false;
-    if (item.submenu) {
-      this.sub = item.submenu;
-      return true;
+    if (this.menuOpen) {
+      this.sheet = null;
+      return;
     }
-    this.menuOpen = false;
-    this.sub = undefined;
-    item.run?.();
-    return true;
+    const place = this.app === null ? "home" : `${this.app}:${this.view}`;
+    this.sheet = this.menuItems.length > 0 ? new Sheet(`menu:${place}`, t("menu.title"), () => this.menuItems) : null;
+  }
+  /** Open a list of items over the view (a long press on a history row): same sheet and keys as the Menu key. */
+  showMenu(title: string, items: readonly MenuItem[]): void {
+    this.sheet = new Sheet(`list:${title}`, title, () => items);
+  }
+  closeSheet(): void {
+    this.sheet = null;
+  }
+  /** Carry out a pick of the open sheet: a chosen item closes the sheet, then runs. */
+  picked(p: Picked): void {
+    if (p.kind !== "run") return;
+    this.sheet = null;
+    p.item.run?.();
+  }
+  /** Pick the item numbered n (1…10) of the open sheet; false when there is no such item or it is disabled. */
+  pick(n: number): boolean {
+    const s = this.sheet;
+    if (!s) return false;
+    const depth = s.depth;
+    const p = s.pickNumber(n);
+    this.picked(p);
+    return p.kind === "run" || s.depth !== depth;
   }
   get busy(): boolean {
     return Object.values(this.loaded).some((l) => l.instance.busy);
   }
   /** Cancel key: close an open list, else stop a running app job. False when there was nothing to stop. */
   async cancel(): Promise<boolean> {
-    if (this.menuOpen || this.switcherOpen) {
-      this.menuOpen = false;
-      this.switcherOpen = false;
+    if (this.sheet) {
+      this.sheet = null;
       return true;
     }
     if (!this.busy) return false;
