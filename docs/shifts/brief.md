@@ -4,14 +4,13 @@
 **Manual mode (user, 2026-10-12):** there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` at `d3e0d16` (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7. Next: R8, once the owner has tried R7's APK. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier) and six stale `worktree-agent-*` branches (backlog C7).
+`phase-1` at `99b34e6` (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8. Next: R9, once the owner has tried R8's APK. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier) and six stale `worktree-agent-*` branches (backlog C7).
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
 Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R8 | Status bar, Mode sheet, Settings (U2, U4) | ron, Sonnet | `p1/ron-m4a-status` | R7, tried | ~2.5 d |
 | R9 | Flicks and the Shift/Alpha tap counter | ron, **Opus** | `p1/ron-m4a-flicks` | R8, tried | ~3 d |
 | R10 | Tmpl palette and the a b/c key | ron, **Opus** | `p1/ron-m4a-tmpl` | R9, tried | ~2.5 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R10, tried | ~1 d |
@@ -91,9 +90,6 @@ Backlog step 12, when the Tab One is connected (rules section 6). On the device:
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R8: status bar, Mode sheet, Settings, branch `p1/ron-m4a-status`
-docs/05 3.2 and 3.4 with section 7. The tab row in the `App.svelte` header goes; one status line ≤ 28 px: place (tap = Apps sheet), mode chips for angle (tap toggles RAD/DEG), format and digits (tap = Mode sheet at that row), Shift/Alpha state, busy. **Shift + CAS = Mode sheet** (angle, format, digits, decimals, entry mode), **Shift + Home/CAS = Settings**, both on R7's sheet, no native `<select>` or number inputs; `spec/keyboard.yaml` legends updated. A viewport-share e2e at phone size: record the value after this package as the floor (docs/03 rule 9). Gate: e2e tap RAD → DEG changes the next result; DEG → RAD in ≤ 3 keys; size test.
 
 ### ron, R9: flicks, branch `p1/ron-m4a-flicks`
 P11 and P7's original points 2 and 3 (docs/decisions.md). Flick up = the key's shift function, flick down = its letter (capital, as Alpha gives); a bubble above the key while sliding, a haptic tick at the threshold, sliding back to the middle cancels; no left/right flicks; arrows (trackpad) and ⌫ (repeat) have no flicks. Legends: shift top left, letter bottom left. Lock flicks: up on Shift = shift lock; down on Alpha = capitals lock, up on Alpha = lowercase lock. Taps on Shift and Alpha stay exactly as now (G2 sequences keep working). Inside a sheet a flick down types the letter on any key. **One motion, no wait** (owner, 2026-10-13): press and slide in one movement is a flick; the direction is decided by distance alone, with no hold time or dwell before the slide may start, and a fast press-slide-lift (under 100 ms) gives the flick. **Tap counter:** local count of Shift and Alpha taps (IndexedDB, never sent anywhere), shown in Settings with a reset; for the merge decision after a week (P7 point 4). Task benchmark: a flick counts 1 (text for docs/04 5.2 in the report). Gate: gesture e2e for each flick and lock, a flick with no pause between touch and slide (move events start at once, lift within 100 ms), two-thumb ordering, no misfire on a fast tap sequence; size test.

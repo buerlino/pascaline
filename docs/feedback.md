@@ -53,7 +53,7 @@ The one place for the owner's points from using the app (docs/03 section 0, rule
 | # | Owner's point | Triage |
 |---|---|---|
 | 24 | The system keyboard no longer pops up. | confirmed: F1 done |
-| 25 | Home and CAS still have a bar at the top; it must go, for maximum vertical space. Isn't it all on the keys? | yes, every tab is on a key (Home key r3c1, CAS r3c5, Symb/Plot/Num). The tab row goes in R8; a status line of at most 28 px replaces it (angle, Shift/Alpha, busy) |
+| 25 | Home and CAS still have a bar at the top; it must go, for maximum vertical space. Isn't it all on the keys? | yes, every tab is on a key (Home key r3c1, CAS r3c5, Symb/Plot/Num). Fixed in R8 (`99b34e6`): a 28 px status line replaces the tab row (place, angle, format and digits, Shift/Alpha, busy) |
 
 ## 2026-10-13 (fifth round: the R6 APK)
 

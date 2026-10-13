@@ -95,8 +95,8 @@ One row of up to 6 touch buttons directly above the entry line. Its content foll
 
 Split by how often a thing changes:
 
-- **Mode sheet** (Shift + CAS, and a tap on a status chip): angle, format, digits, decimals in Fixed, entry (textbook/one-line). Each row is a sheet item; ◀ ▶ change the value in place, digits type a number, Enter closes. DEG → RAD from anywhere: Shift + CAS, ▶, Enter (3 keys) or one tap on the chip.
-- **Settings** (Shift + Home/CAS, and the last item of the Mode sheet): Format key cycle, haptics, decimal comma, theme, about and licences. Same sheet keys; no native `<select>` (they open the system picker, which the keypad cannot drive).
+- **Mode sheet** (Shift + CAS, and a tap on a status chip): angle, format, digits, decimals in Fixed, entry (textbook/one-line). Each row is a sheet item; ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes. Digits and decimals open a list of presets on a digit or Enter (digits 4 6 8 10 12 15 20 25 30; decimals 0 1 2 3 4 5 6 8 10 12), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: Shift + CAS, ▶, Enter (3 keys) or one tap on the chip; 20 digits: Shift + CAS, 3, 7 (3 keys).
+- **Settings** (Shift + Home/CAS, and the last item of the Mode sheet): Format key cycle (a list of switches), haptics (on/off, strength on Android only, length), decimal comma, theme, about and licences; the first two are built (R8), theme comes with R12b, the rest later. Same sheet keys; no native `<select>` (they open the system picker, which the keypad cannot drive).
 - This uses the duplicate Settings cell (finding 2) for the Mode sheet. **Keypad layout question for the owner:** this changes the meaning of Shift + CAS, not its position or the visual keypad. The reference opens CAS settings there, so the habit fits.
 
 ### 3.5 History rows

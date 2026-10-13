@@ -20,6 +20,7 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
   5. Function Plot with no function defined: the six rows with reason lines don't all fit on a Pixel 7, so row 1 scrolls under the top fade ("6 items" shows). Options: the reason only on the highlighted disabled row, or once in the title row when all disabled rows share it.
 
   **Recommendation:** keep 1–4 until the owner misses something; judge 5 on the phone. Points 1 and 2 can only be tried once a list longer than 10 items exists (R4 Find).
+- **2026-10-13 R8: keys typed while an app is still loading. OPEN.** Shift (a modifier) waits in the queue, but a place key (CAS, Home/CAS, Apps, Symb, Plot, Num, Mode, Settings) runs at once, so "Plot, Shift, CAS" typed fast opens CAS instead of the Mode sheet. It was so before R8 (an app loads in about a tap's time). Fix: capture the layer when a key is queued. **Recommendation:** do it in R9, which rewrites the key path; nothing before.
 - **2026-10-12 P7 point 4: merging Shift and Alpha into one key. OPEN.** Decided on R9's local Shift/Alpha tap counter after a week of flick use (P11). Details in P7 below.
 
 ## Decided proposals (2026-10-12 and 2026-10-13)
@@ -110,6 +111,11 @@ Newest first. Where an entry changed an earlier document, that document now carr
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-13 Mode and Settings sheets (R8)
+- **Choice:** the Mode and Settings sheets always open on their first row (`remember: false`); a status chip opens Mode on its own row (`at`); the last-pick memory of R7 stays for every other list. A row with a value: ◀ ▶ step it, a digit or a tap steps it forward and the sheet stays, Enter closes; ◀ on a row without a value goes back. Digits and decimals open a list of presets on a digit or Enter, and a pick closes. Switches (the Format key cycle) run and stay; an empty cycle falls back to the default. Vibration strength steps by 10 %, length by 5 ms.
+- **Why:** the 3-key paths of docs/05 3.4 (Shift + CAS, ▶, Enter for the angle; Shift + CAS, 3, 7 for 20 digits) must not depend on the last pick. ron's defaults otherwise, nothing measured.
+- **Would change if:** the owner's verdict on the APK.
 
 ### 2026-10-13 Sheet defaults (R7)
 - **Choice:** the last pick is kept per sheet and per level by item id, in memory only, so it resets on a relaunch. The letter filter is on for lists longer than 10 items (docs/05 3.1) and matches the start of any word, ignoring case; matches are numbered in order. ▲▼ wrap round the ends, and the highlight may rest on a disabled item so its reason can be read. ◀ and Esc go back a level without clearing the filter first; ⌫ removes the last filter letter. Shift and Alpha keep their state while a sheet is open (ignored for picking). A tap beside the sheet closes it. The sheet keeps the entry line visible while its rows fit and covers it when they don't.
