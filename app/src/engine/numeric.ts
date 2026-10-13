@@ -388,6 +388,36 @@ export function floatFacts(
   digits: number,
   restoreDigits: number,
 ): ElementFacts[] | null {
+  // SB4: an element that is an exact rational in the stored result keeps its own facts (= or ≈), not the mark of the
+  // weakest element. Read before the checks below, which store their values in `name`.
+  const exact = shape.kind === "scalar" ? null : exactElements(giac, name, shape, valuePrecision(digits));
+  const facts = floatFactsOf(giac, name, expr, shape, digits, restoreDigits);
+  return facts && exact && exact.length === facts.length ? facts.map((f, k) => exact[k] ?? f) : facts;
+}
+
+/** The facts of each element of the stored list or matrix `name` that is an exact rational; null for the others. */
+function exactElements(giac: Giac, name: string, shape: Shape, P: number): (ElementFacts | null)[] | null {
+  const reT = giac.eval(`re(${name})`);
+  const imT = giac.eval(`im(${name})`);
+  if (isError(reT) || isError(imT)) return null;
+  const re = flatten(reT, shape);
+  const im = flatten(imT, shape);
+  if (!re || !im || re.length !== im.length) return null;
+  return re.map((r, k) => {
+    const a = rationalValue(r, P);
+    const b = rationalValue(im[k]!, P);
+    return a && b ? { value: { re: a.v, im: b.v }, exactRational: true, reliableDigits: null, big: false } : null;
+  });
+}
+
+function floatFactsOf(
+  giac: Giac,
+  name: string,
+  expr: string | null,
+  shape: Shape,
+  digits: number,
+  restoreDigits: number,
+): ElementFacts[] | null {
   const P = valuePrecision(digits);
   // `asked`: the precision an evalf(e,n) in the input runs at in this evaluation (M4-6).
   const at = (d: number, slot: string, asked: (n: number) => number = (n) => Math.max(n, d)): { re: DecimalValue; im: DecimalValue }[] | null =>
