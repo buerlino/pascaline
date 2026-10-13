@@ -61,9 +61,11 @@ if (( WITH_UNITS )); then
   export QALC_OUT="$QALC_DIR"
 fi
 
-# 2. web app -> app/dist
+# 2. web app -> app/dist. First the Find index (docs/04 3.3): app/src/find/_gen/find-index.json from the pinned
+#    tarballs, with values and factors from the qalc build of step 1c (QALC_OUT); it needs the app's packages (yaml).
 (( MEASURE )) && export PASCALINE_MEASURE=1 VITE_MEASURE=1
-(cd app && npm ci --no-audit --no-fund >&2 && npm run build >&2)
+INDEX_ARGS=(); (( WITH_UNITS )) || INDEX_ARGS=(--no-units)
+(cd app && npm ci --no-audit --no-fund >&2 && npm run index -- "${INDEX_ARGS[@]}" >&2 && npm run build >&2)
 
 # 3. Capacitor project (android/ is committed; sync copies dist/ and the plugin list into it)
 [[ -d android ]] || (cd app && npx cap add android >&2)

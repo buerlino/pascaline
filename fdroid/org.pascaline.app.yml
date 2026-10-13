@@ -32,6 +32,7 @@ Builds:
       - engine/qalc/build-wasm.sh dev
       - cd app
       - npm ci
+      - npm run index
       - GIAC_OUT=../engine/giac/_out/gsl npm run build
       - npx cap sync android
     gradle:

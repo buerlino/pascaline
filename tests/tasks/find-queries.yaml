@@ -1,0 +1,126 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# The Find query test (docs/04 3.8; phrases from Appendix B). Run by app/src/find/queries.test.ts against the
+# generated index (app/src/find/_gen/find-index.json, `npm run index`) and the real ranking (app/src/find/rank.ts).
+# Gate: every active phrase in the top 3, at least 90 % first. Add a phrase whenever Find misses one.
+#   query   what the user types (Find types lower case only, docs/04 3.7)
+#   expect  the item id
+#   note    why, where it is not obvious
+#   status  pending: the item arrives in a later milestone (milestone 6); not run, ids are plans
+schema: 1
+
+queries:
+  # Constants (25)
+  - { query: "speed of light", expect: "const:c" }
+  - { query: "c0", expect: "const:c" }
+  - { query: "light speed", expect: "const:c" }
+  - { query: "planck", expect: "const:planck" }
+  - { query: "hbar", expect: "const:planck2pi" }
+  - { query: "reduced planck", expect: "const:planck2pi" }
+  - { query: "boltzmann", expect: "const:k_B" }
+  - { query: "kb", expect: "const:k_B", note: "ambiguous with kB (kilobyte); kilobyte is not an item" }
+  - { query: "avogadro", expect: "const:N_A" }
+  - { query: "elementary charge", expect: "const:q_e" }
+  - { query: "electron charge", expect: "const:q_e" }
+  - { query: "eps0", expect: "const:epsilon_0" }
+  - { query: "permittivity", expect: "const:epsilon_0" }
+  - { query: "mu0", expect: "const:mu_0" }
+  - { query: "permeability", expect: "const:mu_0" }
+  - { query: "gravitational constant", expect: "const:G" }
+  - { query: "newton constant", expect: "const:G" }
+  - { query: "standard gravity", expect: "const:g_0" }
+  - { query: "g0", expect: "const:g_0" }
+  - { query: "gas constant", expect: "const:gas_constant" }
+  - { query: "electron mass", expect: "const:m_e" }
+  - { query: "proton mass", expect: "const:m_p" }
+  - { query: "faraday", expect: "const:faraday" }
+  - { query: "stefan boltzmann", expect: "const:sigma" }
+  - { query: "fine structure", expect: "const:alpha" }
+  # Units (40)
+  - { query: "kph", expect: "unit:km/h" }
+  - { query: "km/h", expect: "unit:km/h" }
+  - { query: "mph", expect: "unit:mph" }
+  - { query: "knot", expect: "unit:knot" }
+  - { query: "inch", expect: "unit:in" }
+  - { query: "in", expect: "unit:in" }
+  - { query: "feet", expect: "unit:ft" }
+  - { query: "ft", expect: "unit:ft" }
+  - { query: "mil", expect: "unit:thou", note: "qalc's thou, also named mil" }
+  - { query: "mm", expect: "unit:mm" }
+  - { query: "micron", expect: "unit:micron", note: "qalc's own micron item (1E-6 m), not µm" }
+  - { query: "angstrom", expect: "unit:angstrom" }
+  - { query: "nautical mile", expect: "unit:nmi" }
+  - { query: "ohm", expect: "unit:ohm" }
+  - { query: "kohm", expect: "unit:kohm" }
+  - { query: "psi", expect: "unit:psi" }
+  - { query: "bar", expect: "unit:bar" }
+  - { query: "atm", expect: "unit:atm" }
+  - { query: "pascal", expect: "unit:Pa" }
+  - { query: "mpa", expect: "unit:MPa" }
+  - { query: "newton", expect: "unit:N", note: "ambiguous with the newton constant G" }
+  - { query: "lbf", expect: "unit:lbf" }
+  - { query: "pound", expect: "unit:lb", note: "ambiguous with pound-force" }
+  - { query: "kg", expect: "unit:kg" }
+  - { query: "tonne", expect: "unit:t" }
+  - { query: "celsius", expect: "unit:oC" }
+  - { query: "degc", expect: "unit:oC" }
+  - { query: "fahrenheit", expect: "unit:oF" }
+  - { query: "kelvin", expect: "unit:K" }
+  - { query: "kwh", expect: "unit:kWh" }
+  - { query: "btu", expect: "unit:Btu" }
+  - { query: "calorie", expect: "unit:cal", note: "the thermochemical calorie (4.184 J)" }
+  - { query: "horsepower", expect: "unit:hp" }
+  - { query: "watt", expect: "unit:W" }
+  - { query: "dbm", expect: "unit:dBm" }
+  - { query: "rpm", expect: "unit:rpm" }
+  - { query: "hz", expect: "unit:Hz" }
+  - { query: "litre", expect: "unit:L" }
+  - { query: "gallon", expect: "unit:gal", note: "the U.S. gallon" }
+  - { query: "electronvolt", expect: "unit:eV" }
+  # Prefixes (5)
+  - { query: "kilo", expect: "pfx:k" }
+  - { query: "micro", expect: "pfx:u" }
+  - { query: "nano", expect: "pfx:n" }
+  - { query: "mega", expect: "pfx:M" }
+  - { query: "pico", expect: "pfx:p" }
+  # Functions (30)
+  - { query: "sqrt", expect: "fn:sqrt" }
+  - { query: "square root", expect: "fn:sqrt" }
+  - { query: "cube root", expect: "tmpl:cbrt" }
+  - { query: "ln", expect: "fn:ln" }
+  - { query: "log", expect: "fn:log10", note: "log is base 10 in Home, as on the keyboard" }
+  - { query: "exp", expect: "fn:exp" }
+  - { query: "arcsin", expect: "fn:asin" }
+  - { query: "sinh", expect: "fn:sinh" }
+  - { query: "abs", expect: "fn:abs" }
+  - { query: "absolute", expect: "fn:abs" }
+  - { query: "round", expect: "fn:round", note: "tier 1 until its halves rule is settled (find/functions.yaml)" }
+  - { query: "floor", expect: "fn:floor" }
+  - { query: "mod", expect: "fn:irem" }
+  - { query: "gcd", expect: "fn:gcd" }
+  - { query: "factorial", expect: "fn:factorial" }
+  - { query: "ncr", expect: "fn:comb" }
+  - { query: "mean", expect: "fn:mean" }
+  - { query: "average", expect: "fn:mean" }
+  - { query: "median", expect: "fn:median", note: "tier 1 until the even-length rule is settled (find/functions.yaml)" }
+  - { query: "stdev", expect: "fn:stddevp", note: "the sample standard deviation (n−1); Giac's stddevp" }
+  - { query: "variance", expect: "fn:variance" }
+  - { query: "normal cdf", expect: "fn:normald_cdf" }
+  - { query: "integral", expect: "fn:int" }
+  - { query: "derivative", expect: "fn:diff" }
+  - { query: "limit", expect: "fn:limit" }
+  - { query: "solve", expect: "fn:solve" }
+  - { query: "determinant", expect: "fn:det" }
+  - { query: "inverse matrix", expect: "fn:inv" }
+  - { query: "transpose", expect: "fn:tran" }
+  - { query: "cross product", expect: "fn:cross" }
+  # Milestone 6 (pending)
+  - { query: "parallel", expect: "fn:par", note: "par() arrives with EN7", status: pending }
+  - { query: "e24", expect: "fn:eseries", note: "E-series rounding, EN7", status: pending }
+  - { query: "hex", expect: "tmpl:base", note: "number bases, EN6", status: pending }
+  - { query: "dot product", expect: "fn:dot", note: "curated in EN5", status: pending }
+  - { query: "rms", expect: "fn:rms", note: "EN7", status: pending }
+  - { query: "interpolate", expect: "fn:interp", note: "EN7", status: pending }
+  - { query: "polar to rectangular", expect: "tmpl:rect", note: "rectangular form", status: pending }
+  - { query: "dms", expect: "tmpl:dms", note: "degrees-minutes-seconds", status: pending }
+  - { query: "db", expect: "fn:db", note: "the dB function in Home, the dB unit in the Units app (context decides)", status: pending }
+  - { query: "bitand", expect: "fn:bitand", note: "EN6", status: pending }

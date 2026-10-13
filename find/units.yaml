@@ -1,0 +1,117 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Find: our unit data (docs/04 3.3), read by tools/find-index/generate.mjs.
+#
+# units: the common prefixed and compound units an engineer types, as items of their own (qalc's data has prefixes,
+#   not prefixed units). Fields:
+#     id     the qalc text; the generator checks that it parses back to exactly `parts`
+#     parts  "pfx:unit^exp ...", qalc reference names (k:W h = kW·h); pfx is qalc's ASCII prefix symbol (u = µ)
+#     names  extra names a user may type; the printed symbol (kΩ, µF) is added from qalc
+#     title  default: the prefix and qalc's title (Kilonewton)
+#   Left out on purpose: mbar (qalc prints it "millibar", not a symbol; hPa is the same size).
+#
+# checks: our audit of qalc's factors against the exact definitions (the international yard and pound of 1959, the
+#   2019 SI, NIST SP 811). Units: `si`, a product or quotient of decimals in SI base units (kg, not g). Constants:
+#   `value`. A mismatch fails the build. `known` marks a mismatch in qalc's data that we know of and report
+#   upstream: the item then gets no factor at all rather than a wrong one, and the build fails once qalc is fixed,
+#   so the mark gets removed.
+#
+# constants.skipCategories: qalc categories under Physical Constants left out of Find (derived conversion tables).
+
+units:
+  # force, pressure
+  - { id: kN, parts: "k:N" }
+  - { id: MN, parts: "M:N" }
+  - { id: kPa, parts: "k:Pa" }
+  - { id: MPa, parts: "M:Pa", names: ["N/mm^2", "N/mm²"] }
+  - { id: GPa, parts: "G:Pa" }
+  - { id: hPa, parts: "h:Pa" }
+  # torque, energy, power
+  - { id: N*m, parts: "N m", title: "Newton metre", names: ["Nm", "newton metre", "newton meter"] }
+  - { id: kN*m, parts: "k:N m", title: "Kilonewton metre", names: ["kNm"] }
+  - { id: MJ, parts: "M:J" }
+  - { id: Wh, parts: "W h", title: "Watt hour", names: ["watt hour"] }
+  - { id: kWh, parts: "k:W h", title: "Kilowatt hour", names: ["kilowatt hour"] }
+  - { id: MWh, parts: "M:W h", title: "Megawatt hour", names: ["megawatt hour"] }
+  - { id: mW, parts: "m:W" }
+  - { id: kW, parts: "k:W" }
+  - { id: MW, parts: "M:W" }
+  - { id: GW, parts: "G:W" }
+  # electrical
+  - { id: uA, parts: "u:A" }
+  - { id: mA, parts: "m:A" }
+  - { id: kA, parts: "k:A" }
+  - { id: mV, parts: "m:V" }
+  - { id: kV, parts: "k:V" }
+  - { id: mohm, parts: "m:ohm" }
+  - { id: kohm, parts: "k:ohm", title: "Kiloohm (kΩ)" }
+  - { id: Mohm, parts: "M:ohm", title: "Megaohm (MΩ)" }
+  - { id: pF, parts: "p:F" }
+  - { id: nF, parts: "n:F" }
+  - { id: uF, parts: "u:F" }
+  - { id: mF, parts: "m:F" }
+  - { id: nH, parts: "n:H" }
+  - { id: uH, parts: "u:H" }
+  - { id: mH, parts: "m:H" }
+  - { id: uT, parts: "u:T" }
+  - { id: mT, parts: "m:T" }
+  - { id: kHz, parts: "k:Hz" }
+  - { id: MHz, parts: "M:Hz" }
+  - { id: GHz, parts: "G:Hz" }
+  # mass, time, amount
+  - { id: ug, parts: "u:g" }
+  - { id: mg, parts: "m:g" }
+  - { id: ns, parts: "n:s" }
+  - { id: us, parts: "u:s" }
+  - { id: ms, parts: "m:s" }
+  - { id: mmol, parts: "m:mol" }
+  - { id: kmol, parts: "k:mol" }
+
+checks:
+  # length, mass, force, pressure (international yard and pound, 1959; standard gravity 9.80665)
+  "unit:in": { si: "0.0254" }
+  "unit:ft": { si: "0.3048" }
+  "unit:yd": { si: "0.9144" }
+  "unit:mi": { si: "1609.344" }
+  "unit:thou": { si: "0.0000254" }
+  "unit:nmi": { si: "1852" }
+  "unit:angstrom": { si: "1E-10" }
+  "unit:lb": { si: "0.45359237" }
+  "unit:t": { si: "1000" }
+  "unit:lbf": { si: "0.45359237*9.80665" }
+  "unit:kgf": { si: "9.80665" }
+  "unit:psi": { si: "0.45359237*9.80665/0.0254/0.0254" }
+  "unit:bar": { si: "100000" }
+  "unit:atm": { si: "101325" }
+  "unit:Torr": { si: "101325/760" }
+  # conventional millimetre of mercury: 133.322387415 Pa (NIST SP 811); qalc defines it as 1 Torr (133.322368… Pa)
+  "unit:mmHg": { si: "133.322387415", known: "qalc 5.13.1 units.xml: mmHg = Torr; to report upstream" }
+  # speed, volume
+  "unit:km/h": { si: "1000/3600" }
+  "unit:mph": { si: "1609.344/3600" }
+  "unit:knot": { si: "1852/3600" }
+  "unit:L": { si: "0.001" }
+  "unit:gal": { si: "231*0.0254*0.0254*0.0254" }
+  "unit:gal_UK": { si: "0.00454609" }
+  # energy, power (thermochemical and IT calorie, IT Btu; mechanical horsepower = 550 ft·lbf/s)
+  "unit:cal": { si: "4.184" }
+  "unit:cal_IT": { si: "4.1868" }
+  "unit:kcal": { si: "4184" }
+  "unit:Btu": { si: "1055.05585262" }
+  "unit:eV": { si: "1.602176634E-19" }
+  "unit:kWh": { si: "3600000" }
+  "unit:hp": { si: "550*0.3048*0.45359237*9.80665", known: "qalc 5.13.1 units.xml: hp is 745.6999871… W, the definition gives 745.6998715… W; to report upstream" }
+  # time
+  "unit:h": { si: "3600" }
+  "unit:d": { si: "86400" }
+  # exact constants of the 2019 SI and their exact products
+  "const:c": { value: "299792458" }
+  "const:planck": { value: "6.62607015E-34" }
+  "const:q_e": { value: "1.602176634E-19" }
+  "const:k_B": { value: "1.380649E-23" }
+  "const:N_A": { value: "6.02214076E23" }
+  "const:g_0": { value: "9.80665" }
+  "const:gas_constant": { value: "6.02214076E23*1.380649E-23" }
+  "const:faraday": { value: "6.02214076E23*1.602176634E-19" }
+
+constants:
+  skipCategories: ["Conversion factors for energy equivalents", "Particle Mass in u", "Particle Mass in MeV*c^(-2)"]
