@@ -20,13 +20,13 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
   5. Function Plot with no function defined: the six rows with reason lines don't all fit on a Pixel 7, so row 1 scrolls under the top fade ("6 items" shows). Options: the reason only on the highlighted disabled row, or once in the title row when all disabled rows share it.
 
   **Recommendation:** keep 1–4 until the owner misses something; judge 5 on the phone. Points 1 and 2 can only be tried once a list longer than 10 items exists (R4 Find).
-- **2026-10-13 R8: keys typed while an app is still loading. OPEN.** Shift (a modifier) waits in the queue, but a place key (CAS, Home/CAS, Apps, Symb, Plot, Num, Mode, Settings) runs at once, so "Plot, Shift, CAS" typed fast opens CAS instead of the Mode sheet. It was so before R8 (an app loads in about a tap's time). Fix: capture the layer when a key is queued. **Recommendation:** do it in R9, which rewrites the key path; nothing before.
 - **2026-10-12 P7 point 4: merging Shift and Alpha into one key. OPEN.** Decided on R9's local Shift/Alpha tap counter after a week of flick use (P11). Details in P7 below.
 
 ## Decided proposals (2026-10-12 and 2026-10-13)
 
 Newest first. Where an entry changed an earlier document, that document now carries the result.
 
+- **2026-10-13 R8: keys typed while an app is still loading. DECIDED by the user (2026-10-13), on the review's recommendation.** Shift waits in the queue but a place key (CAS, Home/CAS, Apps, Symb, Plot, Num, Mode, Settings) runs at once, so "Plot, Shift, CAS" typed fast opens CAS instead of the Mode sheet (so before R8 too). R9 fixes it: a queued key keeps the layer it was pressed in. Task in the brief, R9.
 - **2026-10-13 G3: open points from the defs package (merged 56ffab1). All four DECIDED by the owner (2026-10-13).** (1) A value that is 0 in every evaluation but not exactly 0 gets ⚠ without a count; prec-zero-cancel is active (done at review). (2) Home `evalf(x,n)` shows n digits like CAS (done at review). (3) Variables are saved as values, not commands (docs/04 6.2 updated). (4) The four solver notes are bugs SB1–SB4 in backlog "Solve bugs"; Solve is frozen for features, not for bugs; not fixed in this merge. Defaults entry "2026-10-13 Definitions survive a relaunch" below.
 - **2026-10-13 G4: open points from the Find index (merged 3376582). DECIDED by the user (2026-10-13), on the review's recommendation.** The review removed the usage boost (P11), so R4 builds on `prepare()` and `search()` only, and nothing is persisted.
   1. **Raw size:** the index was 395 of 400 kB raw (74.5 of 100 kB gzip); every tier-1 `insert` (70 kB) was `\operatorname{id}\left(#?\right)`. **Decided:** leave it out of tier-1 items and let `prepare()` fill it in (docs/04 3.3; built in G3). Not chosen: a 450 kB raw budget.
