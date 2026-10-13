@@ -23,7 +23,7 @@ The legend is missing on the keytop only because the feature is not built; the k
 ## 2. Different on purpose, with a written reason
 | Difference | Reason |
 |---|---|
-| Cancel key under Esc | Fmt took the On slot, which is where the G2 interrupts a job; every engine call must be cancellable (CLAUDE.md maths rules). P4 item 6 |
+| Cancel key under Esc | Fmt took the On slot, which is where the G2 interrupts a job; every engine call must be cancellable (CLAUDE.md maths rules). P4 item 6. Shift + Cancel is Undo for the entry line (P13, R16) |
 | Shift + CAS = Mode sheet, Shift + Home = Settings | the G2 keeps its settings on those cells; docs/05 3.4. **Replaced by P12** (section 3 point 2: the keys go, the status line takes over) |
 | Shift + Symb, Plot, Num (Setup) omitted | the same settings sit in the Mode sheet and in the Plot and Num menus (Window, Start, Step); nothing is lost |
 | Shift + Vars (Chars) omitted | Find covers named symbols (docs/04 5.1) |
