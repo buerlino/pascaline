@@ -168,7 +168,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 | Units result (m5) | `20 m/s`, `39.5±1.3 m^2` (value full, uncertainty 2 significant digits) | yes | `(1397/3125) m/s` | yes |
 | Session (Menu, Share) | text: one line per entry, `input = result` with the mark, full values | — | — | — |
 
-**Paste** (Shift + Menu, or Menu → Paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts); it enters as the keyboard's own LaTeX (`1.5\times10^{-3}`), so the parser sees only what our keys produce. Anything else gives the message "Paste: not a number". Pasting a result copied from Pascaline gives the same value back (P5).
+**Paste** (Shift + Menu, or Menu → Paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts); it enters as the keyboard's own LaTeX (`1.5\emark-3`, drawn `1.5ᴇ-3`), so the parser sees only what our keys produce. Anything else gives the message "Paste: not a number". Pasting a result copied from Pascaline gives the same value back (P5).
 **Mechanics:** `navigator.clipboard` (works in a secure context; Capacitor serves `https://localhost`); `@capacitor/clipboard` only if the Tab One WebView 131 check fails **(to verify, annabell)**. Share needs `@capacitor/share` in the APK (Android WebView has no `navigator.share` **(to verify)**), `navigator.share` in the PWA where it exists, else copy.
 
 **Alternatives:** copy the displayed text by default (hides digits, against principle 3); copy the exact form by default (`1/3` pastes badly into spreadsheets and code).
