@@ -125,6 +125,8 @@ The layout stays. Only the drawing changes:
 - **Dead keys** (today `special: none`) dim only in the layers where they do nothing. A press on one gives a short double haptic and no other effect.
 - **Press feedback** within one frame: the key darkens while the finger is down (keys fire on lift because of flicks, P11, so the feedback must start on touch).
 
+*Built in R6 (2026-10-13): the legend line, the fit rule (faces and legends shrink, `app/src/keyboard/fit.ts`) and the contrast test (`app/src/style.test.ts`); dead keys dim per layer. Not built: the double haptic on a dead key.*
+
 ### 3.8 Errors and empty states
 
 - Every empty state says what to do next in one line and never covers content: Plot with no function shows its hint in a box above the axes (finding 8).

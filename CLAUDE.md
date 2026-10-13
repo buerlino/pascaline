@@ -104,6 +104,7 @@ npm ci
 npm run dev                                                # http://localhost:5173 (?engine=fake echoes input, dev only)
 npm run typecheck && npm test                              # svelte-check + Vitest (real-engine tests need GIAC_OUT)
 GIAC_OUT=<dir> npm run test:e2e                            # Playwright key-sequence tests (Chromium, phone size)
+GIAC_OUT=<dir> npm run gallery                             # every view, sheet and layer, light and dark → app/test/gallery/index.html (PW_PORT=<port> if another dev server runs)
 npm run build                                              # → app/dist/
 
 # Engine gate (run on every engine build that ships; from app/, GIAC_MJS=<giac.mjs> or GIAC_OUT=<dir>)

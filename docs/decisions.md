@@ -108,6 +108,11 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-13 Keypad legends, contrast and dead keys (R6, U0)
+- **Choice:** (1) a key is dimmed when `actionFor()` in the current layer gives nothing or `special: none` (not by the static `special: none` alone), so Vars/Math/Tmpl are dim in the plain and Shift layers and live in Alpha; Shift and Alpha are never dim; (2) Enter has one text colour (`--on-enter`) in every layer; (3) light `--shift` darkened from #a35f00 to #855000 to reach 4.5:1 on every key; (4) faces and legends are fitted by measuring in JS (`app/src/keyboard/fit.ts`, minimum 9 px face, 8 px legend), on layer change and pad width change.
+- **Why:** docs/05 3.7 (never cut, never overlap, 4.5:1); container-query units are not in the Chrome 101 WebView of the S8+, and a `var()`-based fallback would compute to unset.
+- **Would change if:** the fit pass shows up in a Tab One timing of a Shift tap.
+
 ### 2026-10-12 Honest precision in the engine (G2)
 - **Choice:** (1) confirmed digits by an interval rule (largest n at which [b−d, b+d] rounds alike, d = |a−b| + 1 ulp of a), not "common digits less one"; (2) one escalation step P+20/P+40 when P/P+20 disagree; (3) `AUDITED_FUNCTIONS` = evalf, approx, sigfig and the MPFR elementary functions until Find's tier 0 replaces it; (4) a short decimal of an unsimplified exact value is proved rational with simplify() and gets `=`; (5) assignments evaluated as the value, then stored (never run twice); (6) Python `calc.eval` has its own Ans; (7) a CAS float result's text and LaTeX come from our formatter; (8) our Giac definitions load on first use.
 - **Why:** principle 3 (no digit shown without confirmation; UTPN(10) at 30 digits needs (2)); start-up budget (8).
