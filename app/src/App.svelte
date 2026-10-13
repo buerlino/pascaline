@@ -28,6 +28,7 @@
     entry.onEscape = () => void cancel();
   });
   let host: HTMLElement | undefined = $state();
+  let entryHeight = $state(0);
 
   // Copy, paste and share (docs/04 2.6) load after the engine is ready, once the browser is idle (not in the start chunk).
   // The shell reaches them for the apps (AppHost.copy) and for the Home/CAS Menu.
@@ -324,42 +325,47 @@
     </span>
   </header>
 
-  <div class="stage">
-    {#if shell.app === null}
-      <History
-        items={session.items}
-        selected={picked}
-        display={(item) => session.display(item)}
-        mark={(item) => session.mark(item)}
-        onrecall={(item) => entry.set(item.latex, item.chips)}
-        oninsert={insertResult}
-        oncancel={() => void cancel()}
-        onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
-      />
-    {:else if shell.current}
-      {@const C = shell.current.Root}
-      <C app={shell.current.instance} view={shell.view} />
-    {:else}
-      <p class="loading">{t("apps.loading")}</p>
-    {/if}
+  <div class="screen">
+    <div class="stage">
+      {#if shell.app === null}
+        <History
+          items={session.items}
+          selected={picked}
+          display={(item) => session.display(item)}
+          mark={(item) => session.mark(item)}
+          onrecall={(item) => entry.set(item.latex, item.chips)}
+          oninsert={insertResult}
+          oncancel={() => void cancel()}
+          onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
+        />
+      {:else if shell.current}
+        {@const C = shell.current.Root}
+        <C app={shell.current.instance} view={shell.view} />
+      {:else}
+        <p class="loading">{t("apps.loading")}</p>
+      {/if}
+    </div>
 
+    {#if clip?.notice}<div class="notice" role="status" data-testid="notice">{clip.notice}</div>{/if}
+
+    <div class="entry" class:hidden={!shell.showsEntry} aria-label={t("entry.label")} bind:clientHeight={entryHeight}>
+      {#if shell.entryLabel}<span class="entrylabel" data-testid="entry-label">{shell.entryLabel}</span>{/if}
+      <div class="field" bind:this={host}></div>
+    </div>
+
+    <!-- the sheet rises from just above the entry line, over the history or view; it takes the entry line's room only
+         when its rows need it, and never covers the keypad (docs/05 3.1) -->
     {#if shell.sheet}
       {@const sheet = shell.sheet}
       <Sheet
         {sheet}
         testid={shell.switcherOpen ? "apps" : "menu"}
+        below={entryHeight}
         ontap={(i) => shell.picked(sheet.activate(i))}
         onback={() => sheet.back()}
         onclose={() => shell.closeSheet()}
       />
     {/if}
-  </div>
-
-  {#if clip?.notice}<div class="notice" role="status" data-testid="notice">{clip.notice}</div>{/if}
-
-  <div class="entry" class:hidden={!shell.showsEntry} aria-label={t("entry.label")}>
-    {#if shell.entryLabel}<span class="entrylabel" data-testid="entry-label">{shell.entryLabel}</span>{/if}
-    <div class="field" bind:this={host}></div>
   </div>
 
   <Keypad
@@ -414,6 +420,13 @@
   .status {
     font-size: 13px;
     color: var(--muted);
+  }
+  .screen {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
   .stage {
     position: relative;

@@ -12,9 +12,12 @@
     ontap,
     onback,
     onclose,
+    below = 0,
   }: {
     sheet: Sheet;
     testid: string;
+    /** Height of the entry line under the sheet: kept free while the rows fit above it, given up when they need it. */
+    below?: number;
     /** A row was tapped (its index in the level's full list). */
     ontap: (index: number) => void;
     onback: () => void;
@@ -79,6 +82,8 @@
       {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
     </div>
   </div>
+  <!-- shrinks first (flex-shrink weighs by size: 1000 × its height against the sheet's 1 × its own) -->
+  <div class="room" style:flex-basis="{below}px"></div>
 </div>
 
 <style>
@@ -87,12 +92,19 @@
     inset: 0;
     background: color-mix(in srgb, var(--bg) 55%, transparent);
     display: flex;
-    align-items: flex-end;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
     z-index: 5;
   }
+  .room {
+    flex-grow: 0;
+    flex-shrink: 1000;
+    min-height: 0;
+    pointer-events: none;
+  }
   .sheet {
-    width: min(100%, 420px);
+    width: min(calc(100% - 16px), 420px);
     margin: 0 8px 4px;
     background: var(--panel);
     border: 1px solid var(--line);
@@ -100,8 +112,10 @@
     padding: 4px 6px 6px;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
     max-height: calc(100% - 8px);
     min-height: 0;
+    flex: 0 1 auto;
     animation: rise 100ms ease-out;
   }
   @keyframes rise {
