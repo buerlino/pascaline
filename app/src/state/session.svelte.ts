@@ -30,6 +30,7 @@ import {
   type ResultFacts,
 } from "./displayMode.ts";
 import { idbKv, type Kv } from "./storage.ts";
+import { TapCounter } from "./taps.svelte.ts";
 
 export type View = "home" | "cas";
 export type EntryMode = "textbook" | "line";
@@ -203,6 +204,10 @@ export class Session {
   /** Alpha lock (L3): alpha stays on after each key; capsLock keeps shift on too (shift + alpha: lower case, P4). */
   alphaLock = $state(false);
   capsLock = $state(false);
+  /** Shift lock (a flick up on Shift, R9): shift stays on after each key until Shift is tapped or flicked again. */
+  shiftLock = $state(false);
+  /** The local count of Shift and Alpha taps (R9, P7 point 4); shown in Settings. */
+  readonly taps: TapCounter;
   settings = $state<Settings>(structuredClone(defaultSettings));
   home = $state<HistoryItem[]>([]);
   cas = $state<HistoryItem[]>([]);
@@ -224,6 +229,7 @@ export class Session {
   constructor(calc: Calc, kv: Kv = idbKv) {
     this.kv = kv;
     this.calc = calc;
+    this.taps = new TapCounter(kv);
     calc.ready().then(
       () => {
         this.engineState = "ready";
@@ -254,8 +260,34 @@ export class Session {
 
   // ---- modifiers: one-shot, as on a calculator. Alpha twice locks it (alpha, alpha locks capitals; shift, alpha, alpha lower case);
   // alpha again unlocks. In the lock, shift is one-shot and flips the case of the next letter.
+  // Lock flicks (P7 point 3, R9): up on Shift locks shift, down on Alpha locks capitals, up on Alpha lower case. One
+  // lock at a time: a lock flick replaces the other lock, and the same flick again (or a tap on that key) unlocks.
   toggleShift(): void {
+    if (this.shiftLock) {
+      this.shiftLock = false;
+      this.shift = false;
+      return;
+    }
     this.shift = !this.shift;
+  }
+  /** Flick up on Shift. */
+  flickShiftLock(): void {
+    const on = !this.shiftLock;
+    this.unlock();
+    this.shiftLock = on;
+    this.shift = on;
+  }
+  /** Flick down (capitals) or up (lower case) on Alpha. */
+  flickAlphaLock(lower: boolean): void {
+    const on = !(this.alphaLock && this.capsLock === lower);
+    this.unlock();
+    this.alphaLock = on;
+    this.capsLock = on && lower;
+    this.alpha = on;
+    this.shift = on && lower;
+  }
+  private unlock(): void {
+    this.shiftLock = this.alphaLock = this.capsLock = this.alpha = this.shift = false;
   }
   toggleAlpha(): void {
     if (this.alphaLock) {
@@ -266,10 +298,11 @@ export class Session {
     } else if (this.alpha) {
       this.alphaLock = true;
       this.capsLock = this.shift;
+      this.shiftLock = false; // one lock at a time (a shift lock made this a lower-case lock)
     } else this.alpha = true;
   }
   clearModifiers(): void {
-    this.shift = this.alphaLock && this.capsLock;
+    this.shift = this.shiftLock || (this.alphaLock && this.capsLock);
     this.alpha = this.alphaLock;
   }
 

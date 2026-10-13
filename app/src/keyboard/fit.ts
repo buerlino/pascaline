@@ -8,7 +8,7 @@ export const MIN_LEGEND_PX = 8;
 
 /**
  * Fit the faces and legends of every key under `pad`. Three passes so the browser lays out once: reset, measure,
- * write. A face may use the key's width minus its side padding; the two legends share the same width.
+ * write. A face and each legend may use the key's width minus its side padding.
  */
 export function fitLegends(pad: HTMLElement): void {
   const keys = [...pad.querySelectorAll<HTMLElement>(".key")];
@@ -29,18 +29,8 @@ export function fitLegends(pad: HTMLElement): void {
   for (const key of keys) {
     const cs = getComputedStyle(key);
     const inner = key.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-    const legends = [...key.querySelectorAll<HTMLElement>('[data-fit="legend"]')];
-    const [a, s] = [legends[0], legends[1]];
-    const face = key.querySelector<HTMLElement>('[data-fit="face"]');
-    if (face) avail.set(face, inner);
-    // legends: the two share the line; each gets its natural width when both fit, else a share in proportion
-    const wa = a ? (natural.get(a) ?? 0) : 0;
-    const ws = s ? (natural.get(s) ?? 0) : 0;
-    const gap = 2;
-    const room = inner - (wa > 0 && ws > 0 ? gap : 0);
-    const scale = wa + ws > room ? room / (wa + ws) : 1;
-    if (a) avail.set(a, wa * scale);
-    if (s) avail.set(s, ws * scale);
+    // each legend has its own line (the shift function above the face, the letter below it): the key's whole width
+    for (const el of key.querySelectorAll<HTMLElement>("[data-fit]")) avail.set(el, inner);
   }
   // write
   for (const it of items) {

@@ -9,7 +9,8 @@
 #   budget        presses allowed (§5.2). Pending budgets are PLANS from the sequence below, fixed when the task
 #                 goes active; null where the interface is not designed yet
 #   keys          the target sequence: key ids of spec/keyboard.yaml, or {tap: <target>}, {hold: <key>},
-#                 {drag: <gesture>}. A pending task's keys are not replayed. null = not planned yet
+#                 {drag: <gesture>}, {up: <key>} / {down: <key>} (a flick, R9). A pending task's keys are not
+#                 replayed. null = not planned yet
 #   expect        value = the true value (string, or a list of strings), `text` = what Home shows (12 digits)
 #   source        oracle | derived | device | virtual-calc | assumed, like a golden case. Never from memory
 #   baseline      today's best sequence found (a short search, not a proof): replayed on every run; its result

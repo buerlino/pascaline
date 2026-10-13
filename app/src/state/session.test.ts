@@ -142,6 +142,57 @@ describe("alpha lock (L3)", () => {
   });
 });
 
+describe("lock flicks (R9, P7 point 3)", () => {
+  const mods = (s: Session) => ({ shift: s.shift, alpha: s.alpha, shiftLock: s.shiftLock, alphaLock: s.alphaLock, capsLock: s.capsLock });
+  it("up on Shift locks shift: it stays on after each key; a tap on Shift or the same flick unlocks", () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    s.flickShiftLock();
+    s.clearModifiers();
+    s.clearModifiers();
+    expect([s.shift, s.shiftLock]).toEqual([true, true]);
+    s.toggleShift();
+    expect([s.shift, s.shiftLock]).toEqual([false, false]);
+    s.flickShiftLock();
+    s.flickShiftLock();
+    expect([s.shift, s.shiftLock]).toEqual([false, false]);
+  });
+  it("down on Alpha locks capitals, up on Alpha lower case; the same flick or an Alpha tap unlocks", () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    s.flickAlphaLock(false);
+    s.clearModifiers();
+    expect(mods(s)).toEqual({ shift: false, alpha: true, shiftLock: false, alphaLock: true, capsLock: false });
+    s.flickAlphaLock(true); // switches to lower case
+    s.clearModifiers();
+    expect(mods(s)).toEqual({ shift: true, alpha: true, shiftLock: false, alphaLock: true, capsLock: true });
+    s.flickAlphaLock(true);
+    expect(mods(s)).toEqual({ shift: false, alpha: false, shiftLock: false, alphaLock: false, capsLock: false });
+    s.flickAlphaLock(false);
+    s.toggleAlpha();
+    expect(mods(s)).toEqual({ shift: false, alpha: false, shiftLock: false, alphaLock: false, capsLock: false });
+  });
+  it("one lock at a time: a lock flick or Alpha, Alpha replaces the shift lock", () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    s.flickShiftLock();
+    s.flickAlphaLock(false);
+    expect(mods(s)).toEqual({ shift: false, alpha: true, shiftLock: false, alphaLock: true, capsLock: false });
+    s.flickShiftLock();
+    expect(mods(s)).toEqual({ shift: true, alpha: false, shiftLock: true, alphaLock: false, capsLock: false });
+    s.toggleAlpha(); // one-shot Alpha under the shift lock: the lower-case letter, then the shift lock again
+    s.clearModifiers();
+    expect(mods(s)).toEqual({ shift: true, alpha: false, shiftLock: true, alphaLock: false, capsLock: false });
+    s.toggleAlpha();
+    s.toggleAlpha(); // Alpha, Alpha under the shift lock: the lower-case lock, and the shift lock goes
+    s.clearModifiers();
+    expect(mods(s)).toEqual({ shift: true, alpha: true, shiftLock: false, alphaLock: true, capsLock: true });
+  });
+  it("the double-tap locks of L3 keep working (taps stay as on the G2)", () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    s.toggleAlpha();
+    s.toggleAlpha();
+    expect([s.alphaLock, s.capsLock]).toEqual([true, false]);
+  });
+});
+
 describe("Session user names (docs/04 3.4)", () => {
   it("reads the engine's names when it is ready and after each finished job", async () => {
     let names: UserName[] = [{ name: "A", kind: "var", preview: "5", view: "home", time: 1 }];

@@ -62,20 +62,16 @@ for (const width of [412, 360, 320]) {
             const tr = range.getBoundingClientRect();
             if (tr.left < kb.x - 0.5 || tr.right > kb.x + kb.w + 0.5) out.push(`${id}: "${el.textContent}" is cut by the key edge`);
           }
-          // the legend line and the face are separate rows (element boxes), and the two legends share the line side by side
-          const legends = key.querySelector(".legends");
-          const main = key.querySelector(".main");
-          if (legends && main && legends.getBoundingClientRect().bottom > main.getBoundingClientRect().top + 0.5)
-            out.push(`${id}: the face rises into the legend line`);
-          const [al, sh] = ["alphalegend", "shiftlegend"].map((c) => key.querySelector(`.${c}`));
-          if (al && sh && (al.textContent ?? "").trim() !== "" && (sh.textContent ?? "").trim() !== "") {
-            const [a, b] = [al, sh].map((e) => {
-              const r = document.createRange();
-              r.selectNodeContents(e);
-              return r.getBoundingClientRect();
-            });
-            if (a && b && a.right > b.left + 0.5) out.push(`${id}: "${al.textContent}" overlaps "${sh.textContent}"`);
-          }
+          // R9 (P7 point 2): the shift legend sits on its own line above the face, at the left; the letter on its own line
+          // below the face, at the left. Element boxes, so a legend never rises or sinks into the face's row.
+          const main = key.querySelector(".main")?.getBoundingClientRect();
+          const sh = key.querySelector(".shiftlegend")?.getBoundingClientRect();
+          const al = key.querySelector(".alphalegend")?.getBoundingClientRect();
+          if (main && sh && sh.bottom > main.top + 0.5) out.push(`${id}: the face rises into the shift legend line`);
+          if (main && al && al.top < main.bottom - 0.5) out.push(`${id}: the face sinks into the letter line`);
+          if (sh && sh.left > kb.x + 8) out.push(`${id}: the shift legend is not at the left`);
+          if (al && al.left > kb.x + 8) out.push(`${id}: the letter is not at the left`);
+          if (al && al.bottom < kb.y + kb.h - 6) out.push(`${id}: the letter is not at the bottom`);
         }
         return out;
       });
@@ -84,18 +80,24 @@ for (const width of [412, 360, 320]) {
   });
 }
 
-test("every key reserves a legend line above its face, so faces sit at the same height whether or not a key has legends", async ({ page }) => {
+test("every key reserves a legend line above its face, and every key in a row with letters one below it, so faces sit level", async ({ page }) => {
   const rows = await page.evaluate(() => {
     const out: Record<string, number[]> = {};
+    const faceTop = new Map<number, number[]>();
     for (const key of document.querySelectorAll<HTMLElement>(".pad .key")) {
-      const legends = key.querySelector(".legends")?.getBoundingClientRect();
+      const legend = key.querySelector(".shiftlegend")?.getBoundingClientRect();
       const main = key.querySelector(".main")?.getBoundingClientRect();
-      if (!legends || !main) throw new Error(`key ${key.dataset["key"]} has no legend line or face`);
-      if (main.top < legends.bottom - 0.5) out[key.dataset["key"] ?? "?"] = [legends.bottom, main.top];
+      if (!legend || !main) throw new Error(`key ${key.dataset["key"]} has no legend line or face`);
+      if (main.top < legend.bottom - 0.5) out[key.dataset["key"] ?? "?"] = [legend.bottom, main.top];
+      const top = Math.round(key.getBoundingClientRect().top);
+      // the face's centre relative to its key: level across a row of keys of one height
+      const centre = main.top + main.height / 2 - key.getBoundingClientRect().top;
+      faceTop.set(top, [...(faceTop.get(top) ?? []), centre]);
     }
+    for (const [top, cs] of faceTop) if (Math.max(...cs) - Math.min(...cs) > 3) out[`row@${top}`] = cs;
     return out;
   });
-  expect(rows).toEqual({}); // none whose face rises into the legend line
+  expect(rows).toEqual({}); // none whose face rises into the legend line, no row whose faces are not level
 });
 
 // ---- finding 3: dead keys dim only in the layers where they do nothing ---------------------------------------------------

@@ -26,16 +26,25 @@
 # Letters: Alpha types the capital in the alpha layer, Shift + Alpha its lower case (as on the reference).
 # `label` entries starting with "$" are i18n keys (app/src/i18n), anything else is shown as is.
 #
-# Gestures (docs/decisions.md P7, P11; app/src/keyboard/gestures.ts and Keypad.svelte; tests app/test/gestures.spec.ts):
+# Gestures (docs/decisions.md P7, P11; app/src/keyboard/gestures.ts and Keypad.svelte; tests app/test/gestures.spec.ts
+# and app/test/flicks.spec.ts):
 #   Trackpad (K1): the arrow keys `up`, `down`, `left`, `right` are the tap zones of one trackpad surface. A drag
 #     steps in two dimensions, one step per 12 px with a haptic tick, through the same actions as the arrow keys
 #     (entry line, Plot, Num, Symb lists). A touch that makes no full step is a tap on its zone: one step, in the
 #     current Shift state (shift ◀ = |◀). Steps fire while dragging, a tap when the finger lifts.
-#   Every other key fires when the finger lifts, not on touch (flicks, R9, need the lift): a slip or a long hold is
-#     still that key; a second finger fires the first key at once, so two-thumb typing keeps its order; the browser
-#     taking the touch (pointercancel) types nothing. There is no hold-and-drag cursor (removed by P11). Exception:
-#     `bksp` fires on touch and auto-repeats while held (after 400 ms, then every 60 ms, in the layer of the first
-#     press).
+#   Flicks (R9, P7 points 2 and 3): every other key fires when the finger lifts. A slide of 20 px up or down from
+#     the touch point (mostly vertical) arms a flick: up = the key's `shift` layer, down = its `alpha` layer (the
+#     capital), whatever Shift and Alpha are set to. Distance alone decides: no hold time and no dwell, so one fast
+#     press-slide-lift is a flick. While armed, a bubble above the key shows what the lift fires (✕ = nothing) and a
+#     haptic tick marks the threshold; sliding back within 12 px of the touch point cancels (nothing fires). A
+#     sideways slip or a long hold is still a tap. No left/right flicks; the trackpad and `bksp` have none.
+#     Legends: the shift layer at the top left of the key, the letter at the bottom left.
+#     Lock flicks: up on `shift` = shift lock; down on `alpha` = capitals lock, up on `alpha` = lower-case lock; the
+#     same flick again, or a tap on that key, unlocks. Taps on Shift and Alpha stay one-shot (Alpha twice locks).
+#     In a sheet a flick down types the key's letter into the filter on any key; a flick up does nothing there.
+#   A second finger fires the first key at once, so two-thumb typing keeps its order; the browser taking the touch
+#     (pointercancel) types nothing. There is no hold-and-drag cursor (removed by P11). Exception: `bksp` fires on
+#     touch and auto-repeats while held (after 400 ms, then every 60 ms, in the layer of the first press).
 # `source`: `virtual-calc` = position and function seen on the official simulator (row id in the comment);
 # `device` = seen on a G2; `assumed` = our choice (tests/golden/G2-CHECKLIST.md).
 schema: 1
