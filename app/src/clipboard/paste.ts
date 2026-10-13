@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Paste a number (docs/04 section 2.6): the clipboard is read as one number, and it enters as the LaTeX our own keys
 // would have typed, so the parser sees nothing it does not already know. Anything else is refused.
+import { EMARK } from "../entry/macros.ts";
 import type { TextOptions } from "./text.ts";
 
 export interface PastedNumber {
-  /** What goes on the entry line (`1.5\times10^{-3}`, `1+2\imaginaryI`). */
+  /** What goes on the entry line (`1.5\emark-3`, drawn 1.5ᴇ-3; `1+2\imaginaryI`). */
   latex: string;
 }
 
@@ -17,10 +18,10 @@ interface Real {
   exp: number;
 }
 
-/** A real: digits with an optional point, then `e±k` or `×10^k` (also `*10^k`, `x10^k`, `·10^k`). */
+/** A real: digits with an optional point, then `e±k`, `ᴇ±k` or `×10^k` (also `*10^k`, `x10^k`, `·10^k`). */
 function realPattern(point: string): RegExp {
   const num = String.raw`(\d+)(?:${point}(\d*))?|${point}(\d+)`;
-  const exp = String.raw`(?:[eE]([+-]?\d+)|\s*[×x*·]\s*10\s*\^\s*(?:\(\s*([+-]?\d+)\s*\)|([+-]?\d+)))`;
+  const exp = String.raw`(?:[eE\u1D07]([+-]?\d+)|\s*[×x*·]\s*10\s*\^\s*(?:\(\s*([+-]?\d+)\s*\)|([+-]?\d+)))`;
   return new RegExp(String.raw`^([+-]?)\s*(?:${num})(?:${exp})?$`);
 }
 
@@ -41,7 +42,8 @@ const isZeroReal = (r: Real): boolean => !/[1-9]/.test(r.int + r.frac);
 
 function latexOf(r: Real, comma: boolean): string {
   const body = `${r.int}${r.frac ? `${comma ? "," : "."}${r.frac}` : ""}`;
-  const exp = r.exp !== 0 && !isZeroReal(r) ? `\\times10^{${r.exp}}` : "";
+  // the exponent as the exponent key types it (R14): 1.5ᴇ-3
+  const exp = r.exp !== 0 && !isZeroReal(r) ? `${EMARK}${r.exp}` : "";
   return `${r.neg ? "-" : ""}${body}${exp}`;
 }
 
@@ -51,7 +53,7 @@ function splitAt(s: string): number {
     const c = s[k];
     if (c !== "+" && c !== "-") continue;
     const before = s.slice(0, k).trimEnd().slice(-1);
-    if (before === "" || /[eE^(*×·]/.test(before)) continue; // the sign of an exponent or of a factor
+    if (before === "" || /[eEᴇ^(*×·]/.test(before)) continue; // the sign of an exponent or of a factor
     return k;
   }
   return -1;

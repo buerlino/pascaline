@@ -215,15 +215,16 @@ keys:
       source: virtual-calc }  # r6c5 (wide; shift inserts approx())
 
   # ---- rows 6-9 (r7-r10): five keys per row. The ÷ key makes a stacked fraction (seen on a G2, 2026-10-11).
-  - id: eex
+  - id: emark
     row: 6
     col: 0
     cls: fn
-    label: { primary: "×10ⁿ", shift: "$key.sto", alpha: P }
-    primary: { insert: "\\times10^{#?}", sample: ["1.5\\times10^{3}", "1.5*10^3"] }
+    label: { primary: "$key.emark", shift: "$key.sto", alpha: P }
+    # the exponent mark ᴇ as one token (R14, P12 point 4): 1.5ᴇ-3 = 1.5·10⁻³; on an empty line it starts with 1 (1ᴇ)
+    primary: { insert: "\\emark", sample: ["1.5\\emark-3", "1.5*10^(-3)"] }
     shift: { insert: "\\blacktriangleright", sample: ["5\\blacktriangleright A", "A:=5"] }
     alpha: { type: P }
-    source: virtual-calc  # r7c1 (exponent mark, drawn as ×10^; shift store ▶: value, ▶, name)
+    source: virtual-calc  # r7c1 (exponent mark ᴇ, a leading 1 on an empty line; shift store ▶: value, ▶, name)
   - { id: d7, row: 6, col: 1, cls: num, label: { primary: "7", alpha: Q }, primary: { type: "7" }, alpha: { type: Q }, source: virtual-calc }  # r7c2 (shift List not ours)
   - { id: d8, row: 6, col: 2, cls: num, label: { primary: "8", alpha: R }, primary: { type: "8" }, alpha: { type: R }, source: virtual-calc }  # r7c3 (shift { } not ours yet)
   - id: d9

@@ -311,6 +311,39 @@ cases:
   - { id: "decimals-11", latex: "1.5\\times10^{3}", expect: "1500", source: "derived", group: "decimals" }
   - { id: "decimals-12", latex: "2.5\\times10^{-3}", expect: "1/400", source: "derived", group: "decimals" }
   - { id: "decimals-13", latex: "6.02\\times10^{23}", expect: "602*10^21", source: "derived", group: "decimals" }
+  # --- the exponent mark ᴇ (R14, P12 point 4): the exponent key types \emark (drawn ᴇ, U+1D07) as one token;
+  # <number>ᴇ<signed whole number> is number × 10^n exactly, as the ×10^ template above was. Anything else is an error.
+  - { id: "emark-01", latex: "1.5\\emark3", expect: "1500", source: "derived", group: "emark" }
+  - { id: "emark-02", latex: "1.5\\emark-3", expect: "3/2000", source: "derived", group: "emark" }
+  - { id: "emark-03", latex: "1.5\\emark+3", expect: "1500", source: "derived", group: "emark" }
+  - { id: "emark-04", latex: "2\\emark4", expect: "20000", source: "derived", group: "emark", note: "a whole mantissa" }
+  - { id: "emark-05", latex: "1\\emark-6", expect: "1/1000000", source: "derived", group: "emark", note: "the key on an empty line types 1ᴇ" }
+  - { id: "emark-06", latex: ".5\\emark3", expect: "500", source: "derived", group: "emark" }
+  - { id: "emark-07", latex: "5.\\emark2", expect: "500", source: "derived", group: "emark" }
+  - { id: "emark-08", latex: "6.02\\emark23", expect: "602*10^21", source: "derived", group: "emark" }
+  - { id: "emark-09", latex: "-1.5\\emark-3", expect: "-3/2000", source: "derived", group: "emark", note: "the sign before the number negates it" }
+  - { id: "emark-10", latex: "2.2\\emark-9\\times4.7\\emark3", expect: "1034/100000000", source: "derived", group: "emark", note: "M4-2: 1.034E-5; with the template the × went into the exponent" }
+  - { id: "emark-11", latex: "2\\emark3+1", expect: "2001", source: "derived", group: "emark" }
+  - { id: "emark-12", latex: "5\\emark-1", expect: "1/2", source: "derived", group: "emark", note: "the minus right after ᴇ is the exponent's sign" }
+  - { id: "emark-13", latex: "\\frac{3\\emark-3}{2}", expect: "3/2000", source: "derived", group: "emark", note: "÷ takes the whole number as the numerator" }
+  - { id: "emark-14", latex: "\\left(2\\emark3\\right)^2", expect: "4000000", source: "derived", group: "emark", note: "x² puts the number in brackets" }
+  - { id: "emark-15", latex: "1\\emark3x", expect: "1000*x", source: "derived", group: "emark" }
+  - { id: "emark-16", latex: "\\sin\\left(1\\emark-3\\right)", expect: "sin(1/1000)", source: "derived", group: "emark" }
+  - { id: "emark-17", latex: "2^{1\\emark1}", expect: "1024", source: "derived", group: "emark", note: "an E number in an exponent" }
+  - { id: "emark-18", latex: "1.5ᴇ-3", expect: "3/2000", source: "derived", group: "emark", note: "the bare character U+1D07 reads as the mark" }
+  - { id: "emark-19", latex: "1{,}5\\emark-3", expect: "3/2000", options: { decimalComma: true }, source: "derived", group: "emark" }
+  - { id: "emark-20", latex: "1.25\\emark-7-3.5\\emark-8\\imaginaryI", expect: "125/10^9-35/10^9*i", source: "derived", group: "emark", note: "a pasted complex number (docs/04 2.6)" }
+  - { id: "emark-21", latex: "007\\emark-03", expect: "7/1000", source: "derived", group: "emark" }
+  - { id: "emark-e01", latex: "1.5\\emark", error: true, source: "derived", group: "emark", note: "no exponent" }
+  - { id: "emark-e02", latex: "1.5\\emark-", error: true, source: "derived", group: "emark", note: "a sign and no exponent" }
+  - { id: "emark-e03", latex: "1\\emark2.5", error: true, source: "derived", group: "emark", note: "the exponent must be a whole number" }
+  - { id: "emark-e04", latex: "1\\emark x", error: true, source: "derived", group: "emark", note: "a letter is not an exponent" }
+  - { id: "emark-e05", latex: "1\\emark\\frac{1}{2}", error: true, source: "derived", group: "emark" }
+  - { id: "emark-e06", latex: "\\emark3", error: true, source: "derived", group: "emark", note: "no mantissa: only an empty line gets the leading 1 (from the key)" }
+  - { id: "emark-e07", latex: "2+\\emark3", error: true, source: "derived", group: "emark", note: "no mantissa after an operator: refused, not a guessed 1" }
+  - { id: "emark-e08", latex: "x\\emark3", error: true, source: "derived", group: "emark", note: "the mantissa must be a number" }
+  - { id: "emark-e09", latex: "1\\emark3\\emark4", error: true, source: "derived", group: "emark" }
+  - { id: "emark-e10", latex: "1\\emark3^{2}", error: true, source: "derived", group: "emark", note: "1.5ᴇ3² reads two ways; x² brackets the number itself" }
   # --- assignment (typed with : =; needed by the Cancel test and Home variables)
   - { id: "assign-01", latex: "a:=7", expect: "a:=7", source: "derived", group: "assign" }
   - { id: "assign-02", latex: "f\\left(x\\right):=x^{2}", expect: "f(x):=x^2", source: "derived", group: "assign" }

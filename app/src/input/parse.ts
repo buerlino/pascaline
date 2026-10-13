@@ -19,6 +19,8 @@ const CLOSE_CMD: Record<string, string> = { rfloor: "floor", rceil: "ceil", rbra
 
 /** Token for a literal caret (one-line mode): power of the next factor, not a TeX superscript. */
 const CARET = "^caret";
+/** The exponent mark (R14): the key's `\emark` macro, or the bare character U+1D07 the reference draws. */
+const EMARK = "emark";
 
 /** decimalComma (L6): "3,5" and MathLive's "3{,}5" are the number 3.5; use ";" between arguments then. */
 function tokenize(src: string, decimalComma = false): Tok[] {
@@ -96,6 +98,9 @@ function tokenize(src: string, decimalComma = false): Tok[] {
       }
       out.push({ t: "num", v: src.slice(i, j) });
       i = j;
+    } else if (c === "\u1D07") {
+      out.push({ t: "cmd", v: EMARK });
+      i++;
     } else if (c === "(") {
       out.push({ t: "open", v: "(" });
       i++;
@@ -319,7 +324,8 @@ class Parser {
         return !(this.noDiff > 0 && this.diffLen() > 0);
       case "cmd":
         if (t.v === "mathrm" && this.noDiff > 0 && this.diffLen() > 0) return false;
-        return FACTOR_CMDS.has(t.v) || t.v in FUNCS || t.v in CONSTS || GREEK.has(t.v);
+        // the exponent mark after something that is not a number: atom() refuses it with a message
+        return FACTOR_CMDS.has(t.v) || t.v in FUNCS || t.v in CONSTS || GREEK.has(t.v) || t.v === EMARK;
       default:
         return false;
     }
@@ -449,6 +455,7 @@ class Parser {
       case "num": {
         this.basePrefix(tok);
         this.pos++;
+        if (this.isCmd(EMARK)) return this.eNumber(tok.v);
         const num = { num: tok.v.replace(/^0+(?=\d)/, "") };
         // a whole number directly before \tfrac is a mixed number (the Tmpl mixed-number template, R10): 2\tfrac12 = 2+1/2
         if (/^\d+$/.test(tok.v) && this.isCmd("tfrac")) {
@@ -496,6 +503,30 @@ class Parser {
       case "cmd":
         return this.command(tok.v);
     }
+  }
+
+  /**
+   * R14: `1.5ᴇ-3` is one number, 1.5·10⁻³, read exactly as the old `×10^` template was (a literal with an exponent,
+   * which the exact-first evaluation turns into 3/2000). The exponent is a whole number with an optional sign; anything
+   * else is an error that says so, never a guess. The mark has just been seen after the mantissa `mant`.
+   */
+  private eNumber(mant: string): Json {
+    this.pos++; // the mark
+    let sign = "";
+    if (this.isCh("-") || this.isCh("+")) {
+      sign = (this.peek() as Tok).v === "-" ? "-" : "";
+      this.pos++;
+    }
+    const t = this.peek();
+    if (t?.t !== "num") throw new SerializeError("ᴇ needs a whole-number exponent after it (1.5ᴇ-3)");
+    if (!/^\d+$/.test(t.v)) throw new SerializeError(`the exponent after ᴇ must be a whole number, not ${t.v}`);
+    this.pos++;
+    if (this.isCmd(EMARK)) throw new SerializeError("a number has one ᴇ exponent");
+    // x², xʸ after the number put it in brackets; a bare power here would read as 1.5ᴇ3² = 1.5·10⁹ to some, (1.5ᴇ3)² to others
+    if (this.isCh("^") || this.isCmd(CARET)) throw new SerializeError("put the ᴇ number in brackets before raising it to a power");
+    const m = mant.replace(/^0+(?=\d)/, "").replace(/\.$/, "").replace(/^\./, "0.");
+    const e = t.v.replace(/^0+(?=\d)/, "");
+    return { num: `${m}e${sign}${e}` };
   }
 
   /**
@@ -556,6 +587,7 @@ class Parser {
   }
 
   private command(name: string): Json {
+    if (name === EMARK) throw new SerializeError("type the number before ᴇ (1.5ᴇ-3)");
     if (name in CONSTS) {
       this.pos++;
       return CONSTS[name] as string;

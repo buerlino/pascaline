@@ -93,37 +93,68 @@ test("x^y, shift x^y is the n-th root; x² and shift x² the square root", async
   await resultIs(page, "4", 4);
 });
 
-test("EEX types ×10^ with the cursor in the exponent", async ({ page }) => {
-  await tap(page, ["d1", "dot", "d5", "eex", "d3"]);
-  expect(await entryValue(page)).toBe("1.5\\times10^3");
+// R14 (P12 point 4): the exponent key types the mark ᴇ as one token, 1.5ᴇ3 = 1500 as the ×10^ template was.
+test("ᴇ types the exponent mark as one token: 1.5ᴇ3 = 1500", async ({ page }) => {
+  await tap(page, ["d1", "dot", "d5", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("1.5\\emark3");
+  await expect(page.locator("math-field")).toHaveText(/1\.5ᴇ3/);
   await tap(page, ["enter"]);
   await resultIs(page, "1500", 1);
 });
 
-// Found in R1 (decisions M4-2): an operator typed right after an exponent went into the exponent, silently
-// (2.2E-9 × 4.7E3 = 2.2E-42300). An operator key ends the exponent; (−) and an empty exponent keep the sign.
-test("E notation: × after an exponent ends it, so 2.2E-9 × 4.7E3 = 1.034E-5", async ({ page }) => {
-  await tap(page, ["d2", "dot", "d2", "eex", "neg", "d9", "mul", "d4", "dot", "d7", "eex", "d3"]);
-  expect(await entryValue(page)).toBe("2.2\\times10^{-9}\\times4.7\\times10^3");
+test("ᴇ on an empty line starts with 1, as on the reference: ᴇ (−) 6 = 1ᴇ-6", async ({ page }) => {
+  await tap(page, ["emark", "neg", "d6"]);
+  expect(await entryValue(page)).toBe("1\\emark-6");
   await tap(page, ["enter"]);
-  await resultIs(page, "1.034E-5", 1);
+  await resultIs(page, "1E-6", 1);
 });
 
-test("E notation: + − ÷ also end the exponent; a sign right after EEX stays in it", async ({ page }) => {
-  await tap(page, ["d2", "eex", "d3", "add", "d1", "enter"]);
+test("ᴇ is one step for ⌫: 1ᴇ-3 ⌫ ⌫ ⌫ leaves 1", async ({ page }) => {
+  await tap(page, ["d1", "emark", "neg", "d3", "bksp", "bksp", "bksp"]);
+  expect(await entryValue(page)).toBe("1");
+});
+
+// Found in R1 (decisions M4-2): with the ×10^ template an operator typed right after the exponent went into it,
+// silently (2.2E-9 × 4.7E3 = 2.2E-42300). The mark is flat now, so the operator simply follows; the value is exact.
+test("E notation: 2.2ᴇ-9 × 4.7ᴇ3 = 1.034E-5, exact", async ({ page }) => {
+  await tap(page, ["d2", "dot", "d2", "emark", "neg", "d9", "mul", "d4", "dot", "d7", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("2.2\\emark-9\\times4.7\\emark3");
+  await tap(page, ["enter"]);
+  await resultIs(page, "1.034E-5", 1);
+  await expect(page.getByTestId("mark").last()).toHaveAttribute("data-mark", "=");
+});
+
+test("E notation: + − ÷ follow the exponent; a sign right after ᴇ is the exponent's", async ({ page }) => {
+  await tap(page, ["d2", "emark", "d3", "add", "d1", "enter"]);
   await resultIs(page, "2001", 1);
-  await tap(page, ["d2", "eex", "d3", "sub", "d1", "enter"]);
+  await tap(page, ["d2", "emark", "d3", "sub", "d1", "enter"]);
   await resultIs(page, "1999", 2);
-  await tap(page, ["d4", "eex", "d3", "div", "d8", "enter"]);
+  await tap(page, ["d4", "emark", "d3", "div", "d8", "enter"]);
   await resultIs(page, "500", 3);
-  await tap(page, ["d5", "eex", "sub", "d1", "enter"]); // 5E−1: the sign belongs to the exponent
+  await tap(page, ["d5", "emark", "sub", "d1", "enter"]); // 5ᴇ−1: the sign belongs to the exponent
   await resultIs(page, "0.5", 4);
-  await tap(page, ["d5", "eex", "add", "d2", "enter"]); // 5E+2
+  await tap(page, ["d5", "emark", "add", "d2", "enter"]); // 5ᴇ+2
   await resultIs(page, "500", 5);
 });
 
+test("E notation: ÷ and x² take the whole number, not the digits after ᴇ", async ({ page }) => {
+  await tap(page, ["d3", "emark", "neg", "d3", "div"]);
+  expect(await entryValue(page)).toBe("\\frac{3\\emark-3}{\\placeholder{}}");
+  await tap(page, ["d2", "enter"]);
+  await resultIs(page, "0.0015", 1);
+  await tap(page, ["d2", "emark", "d3", "sq"]);
+  expect(await entryValue(page)).toBe("\\left(2\\emark3\\right)^2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "4000000", 2);
+});
+
+test("E notation: a non-integer exponent is an error that says so", async ({ page }) => {
+  await tap(page, ["d1", "emark", "d2", "dot", "d5", "enter"]);
+  await expect(page.locator('[data-status="error"]').last()).toContainText("whole number");
+});
+
 test("store: value ▶ name, then the name reads back", async ({ page }) => {
-  await tap(page, ["d9", "shift", "eex", "alpha", "d1"]);
+  await tap(page, ["d9", "shift", "emark", "alpha", "d1"]);
   expect(await entryValue(page)).toBe("9\\blacktriangleright Y");
   await tap(page, ["enter"]);
   await resultIs(page, "9", 1);

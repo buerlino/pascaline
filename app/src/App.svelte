@@ -94,7 +94,7 @@
     shell.toggleTemplates(() => paletteItems(keyboard.palette.items, insertTemplate), keyboard.palette.columns);
   }
   function insertTemplate(p: PaletteItem): void {
-    entry.run(paletteAction(p, session.settings.entry === "line"), p.key);
+    entry.run(paletteAction(p, session.settings.entry === "line"));
   }
 
   /** Shift + Home/CAS: the Settings sheet (docs/05 3.4). It opens on its first row, whatever was picked last. */
@@ -358,7 +358,7 @@
     } else if (entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.lastChip()) {
       entry.insertAns(); // docs/04 2.8: an operator on an empty line starts with Ans
     }
-    entry.run(action, key.id);
+    entry.run(action);
   }
 
   const busy = $derived(session.busy || shell.busy);

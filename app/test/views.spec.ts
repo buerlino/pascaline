@@ -101,7 +101,7 @@ test("SCI and ENG formats work in Home", async ({ page }) => {
 });
 
 test("Store key: 7 ▶ A, then A+1 gives 8, all through keys", async ({ page }) => {
-  await tap(page, ["d7", "shift", "eex", "alpha", "vars"]);
+  await tap(page, ["d7", "shift", "emark", "alpha", "vars"]);
   expect(await entryValue(page)).toBe("7\\blacktriangleright A");
   await tap(page, ["enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();

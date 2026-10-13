@@ -2,7 +2,7 @@
 <script lang="ts">
   // Static 2D rendering of a LaTeX string with MathLive's renderer (the same one the entry line uses).
   // Until MathLive has loaded the LaTeX is shown as plain text.
-  import { CHIP_MACROS } from "../entry/macros.ts";
+  import { ENTRY_MACROS } from "../entry/macros.ts";
   import { mathlive, renderStats } from "./mathlive.svelte.ts";
 
   let { latex, label = "" }: { latex: string; label?: string } = $props();
@@ -12,8 +12,8 @@
     if (!lib) return "";
     try {
       renderStats.count++;
-      // chips in a history entry (\res, \ans, \const) draw as on the entry line
-      return lib.convertLatexToMarkup(latex, { macros: CHIP_MACROS });
+      // chips in a history entry (\res, \ans, \const) and the exponent mark ᴇ draw as on the entry line
+      return lib.convertLatexToMarkup(latex, { macros: ENTRY_MACROS });
     } catch {
       return "";
     }

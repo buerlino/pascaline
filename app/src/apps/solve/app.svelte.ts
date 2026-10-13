@@ -9,6 +9,7 @@
 //   - Polynomial roots lists every root (complex too) of the one equation in the selected unknown.
 import { CalcCancelled, engineFormat, IDENT, type Calc, type KnownValue, type SolveOutcome } from "../../calc/port.ts";
 import { confirmedText, isWarned } from "../../calc/shown.ts";
+import { EMARK } from "../../entry/macros.ts";
 import { mathJsonToGiac, SerializeError } from "../../input/emit.ts";
 import { parseLatex } from "../../input/parse.ts";
 import { t } from "../../i18n/index.ts";
@@ -44,8 +45,8 @@ export function compileEquation(latex: string): { giac: string; error: string } 
   }
 }
 
-/** A plain decimal as LaTeX for the entry line. */
-const numberLatex = (s: string): string => s.replace(/[eE]([+-]?\d+)$/, "\\times10^{$1}");
+/** A plain decimal as LaTeX for the entry line, its exponent as the exponent key types it (R14): 1.5e-3 → 1.5ᴇ-3. */
+const numberLatex = (s: string): string => s.replace(/[eE]\+?(-?\d+)$/, `${EMARK}$1`);
 
 export class SolveApp implements AppInstance {
   readonly id = "solve" as const;

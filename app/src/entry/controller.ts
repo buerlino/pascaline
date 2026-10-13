@@ -5,7 +5,7 @@ import type { MathfieldElement } from "mathlive";
 import { constKey, pruneChips, resKey, type Chip, type ChipTable } from "../input/chips.ts";
 import type { ActionBody } from "../keyboard/keyboard.ts";
 import { mathlive } from "../render/mathlive.svelte.ts";
-import { ANS_CHIP, CHIP_MACROS, constChip, isChipLatex, resChip } from "./macros.ts";
+import { ANS_CHIP, EMARK, ENTRY_MACROS, constChip, isChipLatex, resChip } from "./macros.ts";
 
 /** The literal caret of the one-line mode, as MathLive serialises it (the parser reads it as a power). */
 export const CARET = '\\char"5E ';
@@ -47,11 +47,9 @@ function isPlainTerm(latex: string): boolean {
   return /^[\d.]+$/.test(l) || /^\p{L}$/u.test(l) || isChipLatex(l);
 }
 
-/** The keys that join two terms: + − × ÷ and a/b. (−) is negation and stays where it is (a sign inside the exponent). */
-function isBinaryOperator(a: ActionBody, keyId: string | undefined): boolean {
-  if (keyId === "neg") return false;
-  if (a.kind === "type") return a.text === "+" || a.text === "-";
-  return a.kind === "insert" && (a.latex === "\\times" || a.latex === "\\div" || a.latex === FRAC);
+/** The exponent key (R14): the mark ᴇ, one token. */
+function isEMark(a: ActionBody): boolean {
+  return a.kind === "insert" && a.latex === EMARK;
 }
 
 export class EntryController {
@@ -107,7 +105,7 @@ export class EntryController {
     mf.smartMode = false;
     mf.inlineShortcuts = {};
     mf.removeExtraneousParentheses = true;
-    mf.macros = { ...mf.macros, ...CHIP_MACROS };
+    mf.macros = { ...mf.macros, ...ENTRY_MACROS };
     const enforce = (): void => this.forceNoSystemKeyboard();
     void customElements.whenDefined("math-field").then(() => requestAnimationFrame(enforce));
     mf.addEventListener("focusin", enforce);
@@ -222,7 +220,7 @@ export class EntryController {
    * Run a type / insert / cmd action. Specials belong to the app and are not handled here. (The a b/c key's
    * empty-line cycle is the app's: here it is the stacked fraction. The mixed number is in the Tmpl palette, R10.)
    */
-  run(a: ActionBody, keyId?: string): void {
+  run(a: ActionBody): void {
     if (a.kind === "special") return;
     if (!this.mf) {
       this.queue.push(a);
@@ -233,7 +231,15 @@ export class EntryController {
       mf.focus();
       return;
     }
-    if (isBinaryOperator(a, keyId)) this.endExponent(mf);
+    if (isEMark(a) && mf.value === "") {
+      // the mark on an empty line gets a leading 1, as on the reference (1ᴇ; spec/mapping/vc-2026-10-11/keys.yaml r7c1)
+      this.apply(mf, { kind: "insert", latex: `1${EMARK}` });
+      mf.focus();
+      return;
+    }
+    // R14: a number with an exponent mark is one term, so x², xʸ, x⁻¹, ÷ and a/b take all of it (1.5ᴇ-3 ÷ 2 is not 1.5ᴇ-3/2
+    // with the 3 alone as the numerator); a power puts it in brackets below, since it is not a plain term
+    if (a.kind === "insert" && a.latex.includes("#@")) this.selectENumber(mf);
     if (a.kind === "insert" && isPower(a) && !mf.selectionIsCollapsed) {
       // R17: a selection is the base of a power key, in brackets unless it is one plain term (#@^{2} alone would raise
       // only its last character: 1+2 selected, x² gave 1+2² = 5)
@@ -265,24 +271,28 @@ export class EntryController {
   }
 
   /**
-   * The EEX key puts the cursor in the exponent of `×10^`. An operator typed there would become part of the exponent
-   * (2.2E-9 × 4.7E3 read as 2.2E-42300, silently; decisions M4-2), so once the exponent holds a digit an operator key
-   * first moves the cursor out of it. A sign typed before any digit stays in: it is the exponent's sign.
+   * If the term before the cursor is a number with an exponent mark (`1.5ᴇ-3`, at the cursor's own depth), select all
+   * of it and return true. MathLive's own #@ would take only the digits after the mark. Offsets list an atom's parts
+   * before the atom itself, so the mark's drawing (depth below the cursor's) is skipped on the way back.
    */
-  private endExponent(mf: MathfieldElement): void {
-    if (!mf.selectionIsCollapsed) return;
-    const depth = mf.getElementInfo(mf.position)?.depth ?? 0;
-    if (depth === 0) return;
-    // MathLive lists an atom's parts before the atom: the parent is the first later offset that sits higher up,
-    // and the first offset of the exponent's own branch is the one after the last offset that sits higher up.
-    let o = mf.position + 1;
-    while (o <= mf.lastOffset && (mf.getElementInfo(o)?.depth ?? 0) >= depth) o++;
-    const parent = mf.getElementInfo(o)?.latex ?? "";
-    if (!parent.startsWith("^") || !/\d/.test(parent)) return; // `^3` or `^{-9}`: MathLive drops the braces round one character
-    let first = mf.position;
-    while (first > 0 && (mf.getElementInfo(first - 1)?.depth ?? 0) >= depth) first--;
-    if (!/\\times10$/.test(mf.getValue(0, first, "latex"))) return;
-    mf.executeCommand("moveAfterParent");
+  private selectENumber(mf: MathfieldElement): boolean {
+    if (!mf.selectionIsCollapsed) return false;
+    const end = mf.position;
+    const d = mf.getElementInfo(end)?.depth ?? 0;
+    const at = (o: number, re: RegExp): boolean =>
+      o > 0 && (mf.getElementInfo(o)?.depth ?? 0) === d && re.test(mf.getElementInfo(o)?.latex ?? "");
+    let k = end;
+    while (at(k, /^\d$/)) k--;
+    if (k === end) return false;
+    if (at(k, /^[+-]$/)) k--;
+    if (!at(k, /^\\emark$/)) return false;
+    k--;
+    while (k > 0 && (mf.getElementInfo(k)?.depth ?? 0) > d) k--;
+    const mantissa = k;
+    while (at(k, /^[\d.]$/)) k--;
+    if (k === mantissa) return false;
+    mf.selection = { ranges: [[k, end]] };
+    return true;
   }
 
   /** If a chip is right before the cursor, select it (MathLive's #@ does not take a macro by itself) and return true. */

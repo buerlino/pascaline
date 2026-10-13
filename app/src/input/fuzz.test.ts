@@ -6,7 +6,8 @@ import { latexToGiac } from "./latex-to-giac.ts";
 
 const pieces = ["1", "2.5", "x", "y", "+", "-", "\\times", "\\div", "^", "_", "{", "}", "\\left(", "\\right)", "(", ")", "\\frac", "\\sqrt",
   "\\sin", "\\ln", "\\int", "dx", "d", "\\sum", "\\lim", "\\to", "=", ",", "\\begin{pmatrix}", "\\end{pmatrix}", "&", "\\\\", "\\pi", "!", "\\%",
-  "\\circ", "\\left|", "\\right|", "\\operatorname{foo}", "\\mathrm{d}", "[", "]", "\\unknown", ".", "\\,", "e", "i"];
+  "\\circ", "\\left|", "\\right|", "\\operatorname{foo}", "\\mathrm{d}", "[", "]", "\\unknown", ".", "\\,", "e", "i",
+  "\\emark", "\\emark-", "ᴇ", "+"];
 
 describe("parser fuzz", () => {
   it("20000 random token strings parse or fail with SerializeError, quickly", () => {
