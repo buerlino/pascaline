@@ -200,7 +200,7 @@ describe("keyboard spec", () => {
     expect(keyboard.byId.get("d9")?.actions.shift).toEqual({ kind: "special", name: "symbols" });
     expect(p.columns).toBe(8);
     expect(p.items.map((i) => i.action.latex)).toEqual([
-      "!", "\\rightarrow", "\\infty", "\\degree", "\\prime", "\\doubleprime", "\\&", "\\text{Å}",
+      "!", "\\rightarrow", "\\infty", "\\degree", "\\prime", "\\doubleprime", "\\&", "\\AA",
       "\\alpha", "\\beta", "\\gamma", "\\Delta", "\\delta", "\\varepsilon", "\\theta", "\\lambda",
       "\\mu", "\\rho", "\\Sigma", "\\sigma", "\\tau", "\\varphi", "\\chi", "\\Omega",
     ]);

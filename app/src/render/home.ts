@@ -32,16 +32,27 @@ export function polarToLatex(p: FormattedPolar): string {
   return `${n(p.r)}\\mathbin{\\measuredangle}${n(p.theta)}`;
 }
 
+/** The Greek variable names as Giac prints them (input/parse.ts GREEK, R18; beta_, gamma_, Gamma_, epsilon_ stand in
+ *  for names Giac keeps), and the letter each one is drawn as. Kept here, not imported, so the parser stays lazy. */
+const GREEK_NAME =
+  /(?<![A-Za-z0-9_\\])(alpha|beta_|gamma_|delta|epsilon_|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|rho|sigma|tau|phi|chi|psi|omega|Gamma_|Delta|Theta|Lambda|Sigma|Phi|Psi|Omega)(?![A-Za-z0-9_])/g;
+const greekLetter = (name: string): string => {
+  const n = name.replace(/_$/, "");
+  return `\\${n === "epsilon" ? "varepsilon" : n === "phi" ? "varphi" : n} `;
+};
+
 /** `-1.5E-7` / `1.5×10^-7` style display strings -> LaTeX. Anything else is drawn as typed. */
 export function homeResultToLatex(display: string): string {
   const s = display.trim();
   const sci = /^([+-]?\d+(?:\.\d+)?)\s*(?:E|e|×10\^)\s*([+-]?\d+)$/.exec(s);
   if (sci) return `${sci[1]}\\times10^{${sci[2]}}`;
   return s
+    .replace(GREEK_NAME, greekLetter)
     .replace(/\*i\b/g, "\\mathrm{i}")
     .replace(/(\d)\s*i\b/g, "$1\\mathrm{i}")
     .replace(/(^|[+-])i\b/g, "$1\\mathrm{i}")
     .replace(/\*/g, "\\cdot ")
     .replace(/\binf\b/g, "\\infty")
+    .replace(/\binfinity\b/g, "\\infty") // Giac prints ∞ (R18: Shift + 9) as +infinity
     .replace(/\b([A-Za-z])_([A-Za-z0-9]+)\b/g, "$1_{$2}");
 }

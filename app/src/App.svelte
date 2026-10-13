@@ -2,7 +2,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { APPS } from "./apps/registry.ts";
-  import type { AppShell } from "./apps/shell.svelte.ts";
+  import type { AppShell, PaletteId } from "./apps/shell.svelte.ts";
   import type { NavDir } from "./apps/types.ts";
   import type { ClipActions } from "./clipboard/actions.svelte.ts";
   import { startsWithAns } from "./entry/ans.ts";
@@ -11,7 +11,7 @@
   import { t, type MessageKey } from "./i18n/index.ts";
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
-  import { actionFor, keyboard, type ActionBody, type Key, type Layer, type PaletteItem } from "./keyboard/keyboard.ts";
+  import { actionFor, keyboard, type ActionBody, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { HistoryItem, Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
@@ -89,9 +89,13 @@
   /** Tmpl: the template palette (R10), a grid on the sheet; a pick inserts its template as its key would. A view
    *  without an entry line (Plot) has nothing to insert into. */
   function openTemplates(): void {
+    openPalette("tmpl", keyboard.palette);
+  }
+  /** Tmpl, Shift + 6 (relations and logic) and Shift + 9 (symbols and Greek, R18): a palette on the grid sheet. */
+  function openPalette(id: PaletteId, p: Palette): void {
     if (!shell.showsEntry) return dead();
     picked = null;
-    shell.toggleTemplates(() => paletteItems(keyboard.palette.items, insertTemplate), keyboard.palette.columns);
+    shell.togglePalette(id, () => paletteItems(p.items, insertTemplate, id), p.columns);
   }
   function insertTemplate(p: PaletteItem): void {
     entry.run(paletteAction(p, session.settings.entry === "line"));
@@ -167,6 +171,12 @@
         break;
       case "tmpl":
         openTemplates();
+        break;
+      case "relations":
+        openPalette("rel", keyboard.relations);
+        break;
+      case "symbols":
+        openPalette("sym", keyboard.symbols);
         break;
       case "shift":
       case "alpha":
@@ -252,6 +262,12 @@
     const sheet = shell.sheet;
     if (!sheet) return false;
     const level = sheet.level;
+    // a grid whose cells show keys (Shift + 6, R18): a tap on such a key picks its cell, before its usual sheet job
+    const byPlace = layer === "alpha" || layer === "shift" ? undefined : sheet.pickKey(key.id);
+    if (byPlace) {
+      shell.picked(byPlace);
+      return true;
+    }
     const k = layer === "alpha" || layer === "shift" ? sheetFlick(key, layer === "alpha", level.filterable) : sheetKey(key, level.filterable);
     switch (k.kind) {
       case "move":

@@ -53,17 +53,9 @@ function tokenize(src: string, decimalComma = false): Tok[] {
         }
       }
       if (name === "AA") {
+        // the Å of the Shift + 9 palette (\AA keeps MathLive in math mode; a pasted Å is read below)
         out.push({ t: "cmd", v: ARING });
         continue;
-      }
-      if (name === "text" || name === "mathrm") {
-        // the Å of the Shift + 9 palette, however MathLive writes it
-        const m = /^\{\s*(?:Å|\\AA)\s*\}/.exec(src.slice(i));
-        if (m) {
-          i += m[0].length;
-          out.push({ t: "cmd", v: ARING });
-          continue;
-        }
       }
       if (name === "operatorname" || name === "mathrm") {
         // R18: the logic words of the Shift + 6 palette are infix operators, written \operatorname{AND} (MathLive may

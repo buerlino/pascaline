@@ -456,7 +456,8 @@ templates:
 # `refused: true`: the parser refuses the sample with a message (a meaning not settled yet; G2 checklist).
 #
 # Shift + 6, relations and logic, 4 × 3. == is a test (true/false), = makes an equation. AND, OR, XOR sit between
-# their operands; AND binds tighter than OR and XOR, and each operand is bracketed for Giac. NOT(□) and EQ(□,□) are
+# their operands; AND binds tighter than OR and XOR, and each operand is bracketed for Giac. XOR goes to Giac as
+# (a or b) and not(a and b): Giac's own xor gives 0 when a side is symbolic, a silent wrong answer. NOT(□) and EQ(□,□) are
 # calls; EQ is the G2's list command (G2 item 32), read as == of the two whole objects (Giac has no EQ).
 relations:
   columns: 4
@@ -470,7 +471,7 @@ relations:
     - { id: and,  row: 1, col: 2, pick: d6, desc: "and", insert: "\\operatorname{AND}", sample: ["x>0\\operatorname{AND}x<1", "(x>0) and (x<1)"] }
     - { id: or,   row: 1, col: 3, pick: mul, desc: "or", insert: "\\operatorname{OR}", sample: ["x<0\\operatorname{OR}x>1", "(x<0) or (x>1)"] }
     - { id: not,  row: 2, col: 0, pick: d1, desc: "not", insert: "\\operatorname{NOT}\\left(#0\\right)", sample: ["\\operatorname{NOT}\\left(x>0\\right)", "not(x>0)"] }
-    - { id: xor,  row: 2, col: 1, pick: d2, desc: "exclusive or", insert: "\\operatorname{XOR}", sample: ["x>0\\operatorname{XOR}x<1", "(x>0) xor (x<1)"] }
+    - { id: xor,  row: 2, col: 1, pick: d2, desc: "exclusive or", insert: "\\operatorname{XOR}", sample: ["x>0\\operatorname{XOR}x<1", "((x>0) or (x<1)) and not((x>0) and (x<1))"] }
     - { id: eq,   row: 2, col: 2, pick: d3, desc: "EQ, equality of two objects", insert: "\\operatorname{EQ}\\left(#0,#?\\right)", sample: ["\\operatorname{EQ}\\left(2,2\\right)", "2==2"] }
   source: device
 
@@ -492,7 +493,7 @@ symbols:
     - { id: minute,  row: 0, col: 4, desc: "minute ′", insert: "\\prime", sample: ["30\\degree15\\prime", "(30+15/60)*(pi/180)^angle_radian()"] }
     - { id: second,  row: 0, col: 5, desc: "second ″", insert: "\\doubleprime", sample: ["30\\degree36\\doubleprime", "(30+36/3600)*(pi/180)^angle_radian()"] }
     - { id: amp,     row: 0, col: 6, desc: "ampersand", insert: "\\&", sample: ["1\\&2", ""], refused: true }
-    - { id: aring,   row: 0, col: 7, desc: "ångström sign", insert: "\\text{Å}", sample: ["5\\text{Å}", ""], refused: true }
+    - { id: aring,   row: 0, col: 7, desc: "ångström sign", insert: "\\AA", sample: ["5\\AA", ""], refused: true }
     # row 2
     - { id: alpha,   row: 1, col: 0, desc: "alpha", insert: "\\alpha", sample: ["2\\alpha", "2*alpha"] }
     - { id: beta,    row: 1, col: 1, desc: "beta", insert: "\\beta", sample: ["2\\beta", "2*beta_"] }

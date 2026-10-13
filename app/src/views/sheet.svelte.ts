@@ -196,6 +196,14 @@ export class Sheet {
     return row ? this.activate(row.index) : STAY;
   }
 
+  /** A key that picks a grid cell by its place (Shift + 6, R18: 7 8 9 ÷ / 4 5 6 × / 1 2 3). Undefined: no cell of the
+   *  open level is picked by this key, so the key does its usual sheet job. */
+  pickKey(keyId: string): Picked | undefined {
+    if (this.level.columns === undefined) return undefined;
+    const i = this.level.items.findIndex((x) => x.pick?.key === keyId);
+    return i < 0 ? undefined : this.activate(i);
+  }
+
   /** Enter: the highlighted item. A setting changed in place (`adjust`) is picked as it stands: the sheet closes. */
   enter(): Picked {
     return this.activate(this.level.highlight, true);

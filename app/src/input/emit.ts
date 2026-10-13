@@ -41,7 +41,7 @@ const REL: Record<string, string> = {
   Equal: "=", NotEqual: "!=", Less: "<", LessEqual: "<=", Greater: ">", GreaterEqual: ">=",
 };
 
-const LOGIC: Record<string, string> = { And: "and", Or: "or", Xor: "xor" };
+const LOGIC: Record<string, string> = { And: "and", Or: "or" };
 
 type Prec = 0 | 1 | 2 | 3 | 4 | 5; // 0 relation, 1 add, 2 mul, 3 unary minus, 4 power, 5 atom
 interface Out { s: string; p: Prec }
@@ -261,6 +261,12 @@ function ser(e: Json, o: SerializeOptions): Out {
   // bracket every operand that is not an atom, so Giac's precedence never decides
   if (head === "EqualTest") return { s: `${wrap(ser(a0, o), 1)}==${wrap(ser(a1, o), 1)}`, p: 0 };
   if (head in LOGIC) return { s: args.map((a) => wrap(ser(a, o), 5)).join(` ${LOGIC[head] as string} `), p: 0 };
+  if (head === "Xor") {
+    // not Giac's xor: it gives 0 when an operand is symbolic, so (x>0) xor (x<1) would be a silent wrong answer
+    // (true at x = 2); (a or b) and not(a and b) stays an expression until both sides are known (probe 2026-10-14)
+    const [a, b] = [wrap(ser(a0, o), 5), wrap(ser(a1, o), 5)];
+    return { s: `(${a} or ${b}) and not(${a} and ${b})`, p: 0 };
+  }
   if (head === "Not") return call("not", args, o);
   // R18, Shift + 9: x → body, Giac's function arrow
   if (head === "Lambda" && isHead(a0, "Tuple")) {

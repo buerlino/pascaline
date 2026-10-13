@@ -21,6 +21,10 @@ interface Place {
   view: ViewId;
 }
 
+/** The palettes' sheet ids: Tmpl (R10), Shift + 6 and Shift + 9 (R18). Also their i18n prefix (`<id>.title`). */
+export type PaletteId = "tmpl" | "rel" | "sym";
+const PALETTE_IDS: readonly string[] = ["tmpl", "rel", "sym"] satisfies PaletteId[];
+
 export class AppShell {
   /** The open app, or null for Home/CAS. */
   app = $state<AppId | null>(null);
@@ -177,7 +181,11 @@ export class AppShell {
     return this.sheet?.id === "apps";
   }
   get menuOpen(): boolean {
-    return this.sheet !== null && this.sheet.id !== "apps" && this.sheet.id !== "tmpl";
+    return this.sheet !== null && this.sheet.id !== "apps" && !this.paletteOpen;
+  }
+  /** One of the palettes is open: Tmpl, or the Shift palettes `rel` and `sym` (R18). */
+  get paletteOpen(): boolean {
+    return this.sheet !== null && PALETTE_IDS.includes(this.sheet.id);
   }
   /** Apps key: the Apps sheet, or close it when it is open. */
   toggleApps(): void {
@@ -198,10 +206,11 @@ export class AppShell {
   showMenu(title: string, items: readonly MenuItem[], opts?: { remember?: boolean; at?: string }): void {
     this.sheet = new Sheet(`list:${title}`, title, () => items, opts);
   }
-  /** Tmpl key: the template palette (a grid sheet, R10), or close it when it is open. */
-  toggleTemplates(items: () => readonly MenuItem[], columns: number): void {
-    if (this.sheet?.id === "tmpl") this.sheet = null;
-    else this.sheet = new Sheet("tmpl", t("tmpl.title"), items, { columns });
+  /** A palette on the grid sheet: Tmpl (R10; its key closes it again), Shift + 6 `rel` and Shift + 9 `sym` (R18; the
+   *  digits pick inside those, so only Esc and Cancel close them). Each opens on its last pick. */
+  togglePalette(id: PaletteId, items: () => readonly MenuItem[], columns: number): void {
+    if (this.sheet?.id === id) this.sheet = null;
+    else this.sheet = new Sheet(id, t(`${id}.title`), items, { columns });
   }
   closeSheet(): void {
     this.sheet = null;
