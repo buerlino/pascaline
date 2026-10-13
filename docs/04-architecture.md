@@ -370,7 +370,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + Tmpl | nothing | the unit view (unit slots) | P11; reference: Units |
 | Alpha on Vars, Math, Tmpl | A, B, C | unchanged | P4 |
 | a b/c (row 3, col 4) [r4c5] | inserts a fraction | toggles the form of the last result: decimal ↔ fraction, polar ↔ rectangular (R10); the fraction template is on ÷ and in Tmpl | G2 item 29, P11, P12 |
-| Exponent key (row 6, col 0) [r7c1] | `×10^` template, legend ×10ⁿ | types the E mark `ᴇ`, legend `ᴇ` (R14); Shift stays Sto ▶ | P12 |
+| Exponent key (row 6, col 0) [r7c1] | `×10^` template, legend ×10ⁿ | types the E mark `ᴇ` (`\emark`, one token), legend `ᴇ`; Shift stays Sto ▶ | P12 |
 | App key (Home/CAS) [r3c1] and CAS [r3c5] | two keys, each with a Shift layer (Settings, Mode) | **no keys**: the status line's place name switches Home ↔ CAS; the Mode sheet is a status chip and Shift + Apps; the Apps sheet lists Home and CAS first (R15) | P12; S2 |
 | Symb, Plot, Num, arrow pad, top cluster | rows 0–2 | folded into the status line if R15a confirms; the pad moves one line down; fewer rows (R15) | P12 |
 | Alpha + 0 (quote mark) | `"` | removed (R13) | P12 |

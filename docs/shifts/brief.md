@@ -4,15 +4,14 @@
 **Manual mode (user, 2026-10-12):** there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` after the merges of R17, S2, R13 and R16 (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R16, R17. **Next:** R14, R18, then R15a and R15b. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` after the merges of R17, S2, R13, R16 and R14 (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R14, R16, R17. **Next:** R18, then R15a and R15b. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
 Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R14 | The exponent key (`ᴇ`) | ron, **Opus** | `p1/ron-m4a-exp` | now | ~1 d |
-| R18 | The Shift palettes: Shift + 6 relations and logic, Shift + 9 symbols and Greek | ron, **Opus** | `p1/ron-m4a-shiftpal` | R14 | ~1.5 d |
+| R18 | The Shift palettes: Shift + 6 relations and logic, Shift + 9 symbols and Greek | ron, **Opus** | `p1/ron-m4a-shiftpal` | now | ~1.5 d |
 | R15a | Top cluster: mockups for the owner | ron, Sonnet | `p1/ron-m4a-top` | R18 | ~0.5 d |
 | R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | R15a approved by the owner | ~2 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R15b | ~1 d |
@@ -92,9 +91,6 @@ Backlog step 12, when the Tab One is connected (rules section 6). On the device:
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R14: the exponent key, branch `p1/ron-m4a-exp`
-P12 point 4. The key at r7c1 (id `eex`) types the exponent mark `ᴇ` (U+1D07) as one token instead of the `\times10^{#?}` template; give the key id, i18n key and legend a name that is not EEX or ×10ⁿ (legend `ᴇ`); Shift stays Sto ▶. Parser: `<number>ᴇ<signed integer>` reads as number × 10^n exactly (`1.5ᴇ3` = 1500, as the template did), a missing mantissa on an empty line gets a leading 1 (the G2 shows `1ᴇ`), an exponent with a non-integer is an error that says so; one round-trip case per form in the same commit. Remove the `endExponent` workaround in `entry/controller.ts` (the exponent is no longer a nested atom) but keep its regression: `2.2ᴇ-9 × 4.7ᴇ3` (M4-2) must read as 1.034E-5 with the mark `=`. Paste (docs/04 2.6) enters `1.5ᴇ-3`. Check MathLive and the Android WebView draw `ᴇ` (fallback: a macro that draws a small-capital E). Results keep the E notation of Sci and Eng. Re-count the benchmark tasks that use the key and report presses against the template's. Gate: parser round trips, fuzz test, golden gate (parser change), e2e, size test.
 
 ### ron, R18: the Shift palettes, branch `p1/ron-m4a-shiftpal`
 The owner's answers to R10 (2026-10-13, from photos of the G2). Two palettes on the sheet's grid variant (R10), each cell with its parser rule and round-trip case in the same commit:

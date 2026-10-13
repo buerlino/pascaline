@@ -72,7 +72,7 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 | 27 | a/b will become a toggle for special views like polar / real-imaginary, fractions, etc. | decided: P12 point 1; R10 |
 | 28 | Home and CAS: first "shift and alpha of one key, the main key shows the mode"; then: "we don't need to show the current mode on the main button, I want to switch only via the top bar where it says which mode you are in, so we save 2 buttons." | decided: P12 point 2; R15 |
 | 29 | The other app keys use up vertical space too: move the arrows one line down and clean up the top section (the menu keys etc.). | decided: P12 point 3; R15a mockups first |
-| 30 | I don't like 10^ as the scientific notation: it needs so much space and only hurts the formula's readability. Use an E, and give the button a better name than EEX or ×10^. | decided: P12 point 4; R14 |
+| 30 | I don't like 10^ as the scientific notation: it needs so much space and only hurts the formula's readability. Use an E, and give the button a better name than EEX or ×10^. | decided: P12 point 4; **built in R14** (`d614260`). Waiting for the owner's notes on the APK |
 | 31 | Leave x/y for now. | decided: P12 point 5 |
 | 32 | The menus have to be revamped in the step where we add the other menus (fractions etc.); add it as an open point and analyse all menus. | open point A; S2 |
 | 33 | I don't think we need quotes now that Python is gone. Decide. | decided: P12 point 7; built in R13 |
@@ -102,3 +102,7 @@ The R9 APK: flick up on a key = its shift function, flick down = its letter, in 
 ## 2026-10-13: waiting for the owner's notes on R10
 
 The R10 APK: Tmpl opens the 6 × 3 template palette (arrows move, Enter or a tap inserts, ▶ walks the empty boxes). On an empty line a b/c toggles the last result 2.5 ↔ 5/2 and 3+4i ↔ polar; the Format key keeps Std/Sci/Eng/Pfx/Fix only. To check on the G2: the three unsure cells (evaluate-at r1c3, row vector r2c5, mixed number r3c2; G2 items 34–36), and whether the □ cells and the ′ ″ of DMS draw well in the WebView.
+
+## 2026-10-13: waiting for the owner's notes on R14
+
+The R14 APK: the exponent key's legend is now `ᴇ`. Type 1.5 ᴇ (−) 3: the line shows `1.5ᴇ-3` tight, one ⌫ removes the ᴇ, Enter gives 0.0015. On an empty line ᴇ starts with `1ᴇ`. Check that the WebView draws ᴇ on the key and on the line (if not: one line in `entry/macros.ts`).

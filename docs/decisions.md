@@ -141,6 +141,12 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-13 The exponent mark (R14)
+- **Choice:** the mark is a MathLive macro `\emark` drawn `\mathopen{ᴇ}`, read by the parser as one number literal (the bare character U+1D07 reads the same); an empty line gets `1ᴇ`; a missing mantissa elsewhere, a non-integer exponent and a bare power after an E number are errors.
+- **Why:** a bare ᴇ spaced the exponent's minus as a subtraction (`1.5ᴇ − 3`) and `\mathopen` alone let the cursor step into the mark; errors over guesses (principle 3).
+- **Alternatives:** the bare character (spacing); a leading 1 after any operator (not observed on the G2).
+- **Would change if:** the G2 adds 1ᴇ after an operator too (G2 item 40), or the WebView cannot draw U+1D07 (then the macro body becomes a small-capital E from the math font; one line in `entry/macros.ts`).
+
 ### 2026-10-13 A selection is the argument of the key (R17)
 - **Choice:** (1) A non-empty selection is the argument of any key whose template has an argument slot: functions and exponent keys put it inside their brackets or exponent, ÷ and a/b take it as the numerator, roots as the radicand, power keys as the base, in brackets unless it is one number, one letter or a chip. (2) Keys with no argument slot (constants, operators, typed characters, the exponent mark, store) replace the selection, as typing does. (3) With nothing selected every key behaves as before. (4) Every template is checked: its main argument slot is `#0` (or `#@` for a prefix argument), `#?` only for other slots, or the key is in `NO_ARGUMENT` in `keyboard.test.ts` with a reason; `app/test/selection.spec.ts` presses every key and layer with `1+2` selected. Find's `functionInsert` follows (`#0`).
 - **Why:** `1+2` selected and x² gave `1+2²` = 5 where 9 was meant, a silent wrong answer (principle 3); the function keys threw the selection away. Values checked through the parser and the engine (`(1+2)^2` = 9, `(1+2)^(-1)` = 1/3, `derived`).
@@ -241,7 +247,7 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **History:** Home and CAS keep separate histories over one shared variable context. Tapping a result inserts it (see "Results are insertable"). History, settings and the current view are stored in IndexedDB.
 - **Shift and alpha** are one-shot; alpha gives capitals and shift + alpha lower case (P4). Alpha twice locks it (see "Alpha lock").
 - **One-line mode** shows fractions, roots and exponents linearly (see "One-line entry mode").
-- **Sto▶** is Shift + EEX (P4; `spec/keyboard.yaml`, the key at r7c1).
+- **Sto▶** is Shift + ᴇ (P4; the exponent key, id `emark`, at r7c1 in `spec/keyboard.yaml`).
 - **Why:** each is the fastest path for keyboard use (principle 2) and matches what a calculator user expects. Cancel is ours (P4 item 6); the rest follows the reference's keys.
 
 ### 2026-10-11 How the Tab One "Enter → drawn result" number is measured
