@@ -165,6 +165,24 @@ const shots: Shot[] = [
       await tap(p, ["tmpl", "down", "down", "down", "right", "right"]);
     },
   },
+  {
+    id: "home-relations",
+    group: "Home",
+    title: "Shift + 6 palette (R18): relations and logic, each cell with the key that picks it",
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["shift", "d6", "down", "right"]);
+    },
+  },
+  {
+    id: "home-symbols",
+    group: "Home",
+    title: "Shift + 9 palette (R18): symbols and Greek, 8 × 3",
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["shift", "d9", "down", "right"]);
+    },
+  },
   // ---- CAS
   {
     id: "cas",

@@ -37,6 +37,14 @@ const cases: [string, string][] = [
   ["a\\cdot b\\cdot c", "abc"],
   ["\\frac{a\\cdot b}{c}", "\\frac{ab}{c}"],
   ["1267650600228229401496703205376", "1267650600228229401496703205376"],
+  // R18: the Greek stand-in names (Giac latex() of beta_^2, 2*beta_*x, gamma_/Gamma_, epsilon_^2+sqrt(Gamma_), phi^2;
+  // engine build of 2026-10-14) are drawn as their letters
+  ["\\beta_^{2}", "\\beta^{2}"],
+  ["2\\cdot \\beta_\\cdot x", "2\\beta x"],
+  ["\\frac{\\gamma_}{\\Gamma_}", "\\frac{\\gamma}{\\Gamma}"],
+  ["\\epsilon_^{2}+\\sqrt{\\Gamma_}", "\\varepsilon^{2}+\\sqrt{\\Gamma}"],
+  ["\\sin\\left(\\gamma_\\right)", "\\sin\\left(\\gamma\\right)"],
+  ["\\phi^{2}", "\\varphi^{2}"],
 ];
 
 describe("tidyGiacLatex", () => {
@@ -50,6 +58,14 @@ describe("tidyGiacLatex", () => {
 describe("homeResultToLatex", () => {
   it("draws subscripted names with a braced subscript (L1)", () => {
     expect(homeResultToLatex("2*x_12+y_1")).toBe("2\\cdot x_{12}+y_{1}");
+  });
+  it("draws the Greek names as their letters, the stand-ins for Giac's own names too (R18)", () => {
+    expect(homeResultToLatex("2*gamma_")).toBe("2\\cdot \\gamma ");
+    expect(homeResultToLatex("alpha+epsilon_*phi")).toBe("\\alpha +\\varepsilon \\cdot \\varphi ");
+    expect(homeResultToLatex("theta-Omega")).toBe("\\theta -\\Omega ");
+    expect(homeResultToLatex("+infinity")).toBe("+\\infty"); // Giac's print of inf (∞ on Shift + 9)
+    expect(homeResultToLatex("-infinity")).toBe("-\\infty");
+    expect(homeResultToLatex("beta_2+zeta1")).toBe("beta_2+zeta1"); // not Greek names: left alone
   });
   it("keeps plain decimals", () => {
     expect(homeResultToLatex("0.333333333333")).toBe("0.333333333333");

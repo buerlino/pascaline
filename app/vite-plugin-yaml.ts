@@ -3,7 +3,7 @@
 // In `vite build`, spec/keyboard.yaml loses its test-only fields (src/keyboard/shipped.ts); dev and tests see it whole.
 import { parse } from "yaml";
 import type { Plugin } from "vite";
-import { shippedKeyboard } from "./src/keyboard/shipped.ts";
+import { shippedKeyboard, shippedPalettes } from "./src/keyboard/shipped.ts";
 
 export function yamlPlugin(): Plugin {
   let build = false;
@@ -13,9 +13,12 @@ export function yamlPlugin(): Plugin {
       build = c.command === "build";
     },
     transform(code, id) {
-      if (!id.endsWith(".yaml")) return null;
+      const [path = "", query] = id.split("?");
+      if (!path.endsWith(".yaml")) return null;
       const data: unknown = parse(code);
-      const out = build && id.endsWith("/spec/keyboard.yaml") ? shippedKeyboard(data) : data;
+      const keyboard = build && path.endsWith("/spec/keyboard.yaml");
+      // `keyboard.yaml?palettes`: the Shift palettes' lazy chunk (R18, src/keyboard/shiftPalettes.ts)
+      const out = query === "palettes" && keyboard ? shippedPalettes(data) : keyboard ? shippedKeyboard(data) : data;
       return { code: `export default ${JSON.stringify(out)};`, map: null };
     },
   };

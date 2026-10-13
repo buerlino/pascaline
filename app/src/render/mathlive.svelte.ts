@@ -3,6 +3,7 @@
 // `lib.mod` becomes defined once it is there; views that draw LaTeX show plain text until then.
 import type * as MathLive from "mathlive";
 import { loadParser } from "../input/parser.ts";
+import { loadShiftPalettes } from "../keyboard/palettes.ts";
 
 class Lazy {
   mod = $state<typeof MathLive | undefined>(undefined);
@@ -11,6 +12,8 @@ class Lazy {
   load(): Promise<typeof MathLive> {
     // The parser chunk comes with MathLive (decisions M4-3): both are needed only once something can be entered.
     void loadParser().catch(() => undefined);
+    void loadShiftPalettes().catch(() => undefined); // R18: the Shift palettes, needed only to enter something
+
     this.promise ??= import("mathlive").then((m) => {
       this.mod = m;
       return m;

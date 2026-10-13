@@ -22,6 +22,11 @@ const CARET = "^caret";
 /** The exponent mark (R14): the key's `\emark` macro, or the bare character U+1D07 the reference draws. */
 const EMARK = "emark";
 
+/** Token prefix of the infix logic words (R18): `logic:and`, `logic:or`, `logic:xor`. */
+const LOGIC = "logic:";
+/** The Å of the Shift + 9 palette (R18), refused with a message. */
+const ARING = "aring";
+
 /** decimalComma (L6): "3,5" and MathLive's "3{,}5" are the number 3.5; use ";" between arguments then. */
 function tokenize(src: string, decimalComma = false): Tok[] {
   const out: Tok[] = [];
@@ -44,6 +49,21 @@ function tokenize(src: string, decimalComma = false): Tok[] {
         if (m) {
           i += m[0].length;
           out.push({ t: "cmd", v: "measuredangle" });
+          continue;
+        }
+      }
+      if (name === "AA") {
+        // the Å of the Shift + 9 palette (\AA keeps MathLive in math mode; a pasted Å is read below)
+        out.push({ t: "cmd", v: ARING });
+        continue;
+      }
+      if (name === "operatorname" || name === "mathrm") {
+        // R18: the logic words of the Shift + 6 palette are infix operators, written \operatorname{AND} (MathLive may
+        // write \operatorname{\mathrm{AND}})
+        const m = /^\{\s*(?:\\mathrm\{\s*(AND|OR|XOR)\s*\}|(AND|OR|XOR))\s*\}/.exec(src.slice(i));
+        if (m) {
+          i += m[0].length;
+          out.push({ t: "cmd", v: `${LOGIC}${(m[1] ?? m[2] ?? "").toLowerCase()}` });
           continue;
         }
       }
@@ -101,6 +121,9 @@ function tokenize(src: string, decimalComma = false): Tok[] {
     } else if (c === "\u1D07") {
       out.push({ t: "cmd", v: EMARK });
       i++;
+    } else if (c === "\u00C5") {
+      out.push({ t: "cmd", v: ARING });
+      i++;
     } else if (c === "(") {
       out.push({ t: "open", v: "(" });
       i++;
@@ -115,10 +138,20 @@ function tokenize(src: string, decimalComma = false): Tok[] {
   return out;
 }
 
-const GREEK = new Set([
-  "alpha", "beta", "gamma", "delta", "epsilon", "varepsilon", "zeta", "eta", "theta", "vartheta", "iota", "kappa",
-  "lambda", "mu", "nu", "xi", "rho", "sigma", "tau", "phi", "varphi", "chi", "psi", "omega",
-]);
+/**
+ * Greek letters are variable names (R18), never units (μ, Ω) or Giac's own names. Giac reads most of them as plain
+ * names, but some are taken: `epsilon` is a setting (it evaluates to 1e-12), `Gamma` is the Gamma function and cannot
+ * be stored, and `beta`, `gamma` stay clear of the Beta and Euler names. Those get a trailing `_`, which Giac's latex()
+ * draws as the letter and a stray `_` (render/tidy.ts removes it). One letter is one name: \epsilon and \varepsilon,
+ * \phi and \varphi, \theta and \vartheta are the same variable.
+ */
+export const GREEK: Readonly<Record<string, string>> = {
+  alpha: "alpha", beta: "beta_", gamma: "gamma_", delta: "delta", epsilon: "epsilon_", varepsilon: "epsilon_",
+  zeta: "zeta", eta: "eta", theta: "theta", vartheta: "theta", iota: "iota", kappa: "kappa", lambda: "lambda",
+  mu: "mu", nu: "nu", xi: "xi", rho: "rho", sigma: "sigma", tau: "tau", phi: "phi", varphi: "phi", chi: "chi",
+  psi: "psi", omega: "omega", Gamma: "Gamma_", Delta: "Delta", Theta: "Theta", Lambda: "Lambda", Sigma: "Sigma",
+  Phi: "Phi", Psi: "Psi", Omega: "Omega",
+};
 const CONSTS: Record<string, string> = {
   pi: "Pi", exponentialE: "ExponentialE", imaginaryI: "ImaginaryUnit", infty: "PositiveInfinity",
 };
@@ -134,11 +167,17 @@ const INVERSE: Record<string, string> = {
   Sin: "Arcsin", Cos: "Arccos", Tan: "Arctan", Sinh: "Arsinh", Cosh: "Arcosh", Tanh: "Artanh",
 };
 const RELATION: Record<string, string> = {
-  "=": "Equal", "<": "Less", ">": "Greater",
+  "=": "Equal", "<": "Less", ">": "Greater", lt: "Less", gt: "Greater",
   ne: "NotEqual", neq: "NotEqual", le: "LessEqual", leq: "LessEqual", ge: "GreaterEqual", geq: "GreaterEqual",
 };
 /** Names that become function calls when followed by parentheses (single letters need to be listed). */
 const NAMED_FUNCS = new Set(["abs", "sqrt", "floor", "ceil", "round", "sign", "gcd", "lcm", "max", "min", "det", "mod"]);
+/** R18: the logic words of the Shift + 6 palette written as calls, by their name in \operatorname. EQ is the G2's
+ *  list command (G2 item 32): equality of the two whole objects, Giac's == (Giac has no EQ). */
+const LOGIC_FUNCS: Readonly<Record<string, { head: string; args: number }>> = {
+  NOT: { head: "Not", args: 1 },
+  EQ: { head: "EqualTest", args: 2 },
+};
 const ABS_LIKE: Record<string, string> = { abs: "Abs", sign: "Sign", floor: "Floor", ceil: "Ceil", round: "Round" };
 const FACTOR_CMDS = new Set([
   "frac", "dfrac", "tfrac", "sqrt", "binom", "overline", "int", "sum", "prod", "lim", "begin",
@@ -229,14 +268,17 @@ class Parser {
   }
 
   // ---- levels ----
+  /** The lowest level: definitions and stores, then the function arrow, then logic, then one comparison. */
   private relation(): Json {
     const def = this.definitionName();
     if (def) this.user = new Set([...this.user, def]);
-    let left = this.additive();
-    // P4: polar entry r∡θ (shift ×), the angle in the current angle mode.
-    if (this.isCmd("measuredangle")) {
+    const left = this.logicOr();
+    // R18: x → body (Shift + 9) is a function of x, Giac's ->; (x, y) → body takes two
+    if (this.isCmd("rightarrow") || this.isCmd("to")) {
       this.pos++;
-      left = ["PolarComplex", left, this.additive()];
+      const vars = Array.isArray(left) && left[0] === "Tuple" ? left.slice(1) : [left];
+      if (!vars.every((v) => typeof v === "string")) throw new SerializeError("→ needs a variable name before it (x → x²)");
+      return ["Lambda", ["Tuple", ...vars], this.relation()];
     }
     // P4: store, value ▶ name (shift of the exponent key); the same as name := value.
     if (this.isCmd("blacktriangleright")) {
@@ -248,6 +290,44 @@ class Parser {
     if (this.isCh(":") && this.isCh("=", 1)) {
       this.pos += 2;
       return ["Assign", left, this.relation()];
+    }
+    return left;
+  }
+
+  /** R18: a OR b, a XOR b (the Shift + 6 palette), left to right; AND binds tighter, as in Giac. */
+  private logicOr(): Json {
+    let left = this.logicAnd();
+    for (;;) {
+      if (this.isCmd(`${LOGIC}or`)) {
+        this.pos++;
+        left = ["Or", left, this.logicAnd()];
+      } else if (this.isCmd(`${LOGIC}xor`)) {
+        this.pos++;
+        left = ["Xor", left, this.logicAnd()];
+      } else return left;
+    }
+  }
+
+  private logicAnd(): Json {
+    let left = this.compare();
+    while (this.isCmd(`${LOGIC}and`)) {
+      this.pos++;
+      left = ["And", left, this.compare()];
+    }
+    return left;
+  }
+
+  /** One comparison: a < b, a ≤ b, a = b (an equation), a == b (a test, R18), a ≠ b. */
+  private compare(): Json {
+    let left = this.additive();
+    // P4: polar entry r∡θ (shift ×), the angle in the current angle mode.
+    if (this.isCmd("measuredangle")) {
+      this.pos++;
+      left = ["PolarComplex", left, this.additive()];
+    }
+    if (this.isCh("=") && this.isCh("=", 1)) {
+      this.pos += 2;
+      return ["EqualTest", left, this.additive()];
     }
     const t = this.peek();
     if (t && (t.t === "ch" || t.t === "cmd") && t.v in RELATION) {
@@ -325,7 +405,8 @@ class Parser {
       case "cmd":
         if (t.v === "mathrm" && this.noDiff > 0 && this.diffLen() > 0) return false;
         // the exponent mark after something that is not a number: atom() refuses it with a message
-        return FACTOR_CMDS.has(t.v) || t.v in FUNCS || t.v in CONSTS || GREEK.has(t.v) || t.v === EMARK;
+        // Å and & (R18) too, so that 5Å reaches the message that says why it is refused
+        return FACTOR_CMDS.has(t.v) || t.v in FUNCS || t.v in CONSTS || t.v in GREEK || t.v === EMARK || t.v === ARING || t.v === "&";
       default:
         return false;
     }
@@ -592,9 +673,9 @@ class Parser {
       this.pos++;
       return CONSTS[name] as string;
     }
-    if (GREEK.has(name)) {
+    if (name in GREEK) {
       this.pos++;
-      return name;
+      return GREEK[name] as string;
     }
     if (name in FUNCS) return this.func(name);
     switch (name) {
@@ -669,6 +750,15 @@ class Parser {
         } else text = this.groupText();
         if (name === "mathrm" && text === "e") return "ExponentialE";
         if (name === "mathrm" && text === "i") return "ImaginaryUnit";
+        const logic = LOGIC_FUNCS[text];
+        if (logic) {
+          // R18: NOT(a) and EQ(a, b) from the Shift + 6 palette
+          if (!(this.peek()?.t === "open" && (this.peek() as Tok).v === "(")) throw new SerializeError(`${text} needs brackets: ${text}(…)`);
+          this.pos++;
+          const args = this.list(")");
+          if (args.length !== logic.args) throw new SerializeError(`${text} takes ${logic.args === 1 ? "one argument" : `${logic.args} arguments`}`);
+          return [logic.head, ...args];
+        }
         if (text in ABS_LIKE || NAMED_FUNCS.has(text) || text.length > 1) {
           if (this.peek()?.t === "open" && (this.peek() as Tok).v === "(") {
             this.pos++;
@@ -679,6 +769,12 @@ class Parser {
         }
         throw new SerializeError(`unsupported name \\${name}{${text}} (units are not supported yet)`);
       }
+      case "&":
+        // R18: the Shift + 9 palette has & as the G2's does; what it means there is not known yet (G2 checklist)
+        throw new SerializeError("& has no meaning here yet; for logic use AND (Shift + 6)");
+      case ARING:
+        // R18: Å is the ångström, a unit; Home is unit-free (P8), so it is refused, never read as a name
+        throw new SerializeError("Å is a unit (the ångström): units come with the unit view");
       default:
         throw new SerializeError(`unsupported command \\${name}`);
     }

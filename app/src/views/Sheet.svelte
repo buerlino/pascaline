@@ -69,19 +69,20 @@
       <button type="button" class="icon" aria-label={t("apps.close")} onclick={onclose}>×</button>
     </div>
     {#if level.columns !== undefined}
-      <!-- a grid (the Tmpl palette, R10): each cell drawn as math, no numbers -->
-      <div class="grid" style:grid-template-columns="repeat({level.columns}, minmax(0, 1fr))" bind:this={list}>
+      <!-- a grid (the palettes, R10 and R18): each cell drawn as math, no numbers; a cell picked by the key at its
+           place shows that key in its corner (Shift + 6) -->
+      <div class="grid" data-grid={sheet.id} style:grid-template-columns="repeat({level.columns}, minmax(0, 1fr))" bind:this={list}>
         {#each rows as row (row.index)}
           <button
             type="button"
             role="menuitem"
             class="cell"
-            aria-label={row.item.label}
+            aria-label={row.item.pick ? `${row.item.pick.legend} ${row.item.label}` : row.item.label}
             disabled={row.item.disabled}
             data-active={row.index === level.highlight}
             data-id={row.item.id}
             onclick={() => ontap(row.index)}
-          ><MathView latex={row.item.latex ?? row.item.label} label={row.item.label} /></button>
+          >{#if row.item.pick}<span class="pick" data-testid="cell-key">{row.item.pick.legend}</span>{/if}<MathView latex={row.item.latex ?? row.item.label} label={row.item.label} /></button>
         {/each}
       </div>
       <p class="hint" data-testid="sheet-hint">{level.current?.label ?? ""}</p>
@@ -273,6 +274,19 @@
     border: 1px solid var(--line);
     font-size: 10px; /* the widest template (piecewise) fits a sixth of a phone's width */
     cursor: pointer;
+  }
+  /* the Shift palettes hold one symbol or word per cell: larger type in lower cells */
+  .grid:is([data-grid="rel"], [data-grid="sym"]) button.cell {
+    height: 46px;
+    font-size: 15px;
+  }
+  .pick {
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    font-size: 11px;
+    line-height: 1;
+    color: var(--shift);
   }
   button.cell[data-active="true"] {
     background: var(--key-num);

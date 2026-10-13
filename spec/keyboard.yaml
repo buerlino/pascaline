@@ -30,7 +30,8 @@
 #                                  Any action may carry `line: <action>`, used instead of it when the
 #                                  one-line entry mode is on (a linear form of the same key).
 #   { cmd: "moveToNextChar" }      a MathLive editing command
-#   { special: shift|alpha|enter|clear|cancel|esc|app|cas|settings|mode|apps|symb|plot|num|menu|tmpl|none }   handled by the app
+#   { special: shift|alpha|enter|clear|cancel|esc|app|cas|settings|mode|apps|symb|plot|num|menu|tmpl|relations|symbols|none }
+#                                  handled by the app
 # Missing layer: the key does nothing in that layer, except that alpha falls back to primary.
 # Empty line (docs/04 2.8, app/src/entry/ans.ts): in Home and CAS, + − × ÷ xʸ x² and x⁻¹ on an empty entry line
 # insert Ans (the \ans chip) first, as on the reference; (−) stays negation. Only when the view has a result.
@@ -227,15 +228,8 @@ keys:
     source: virtual-calc  # r7c1 (exponent mark ᴇ, a leading 1 on an empty line; shift store ▶: value, ▶, name)
   - { id: d7, row: 6, col: 1, cls: num, label: { primary: "7", alpha: Q }, primary: { type: "7" }, alpha: { type: Q }, source: virtual-calc }  # r7c2 (shift List not ours)
   - { id: d8, row: 6, col: 2, cls: num, label: { primary: "8", alpha: R }, primary: { type: "8" }, alpha: { type: R }, source: virtual-calc }  # r7c3 (shift { } not ours yet)
-  - id: d9
-    row: 6
-    col: 3
-    cls: num
-    label: { primary: "9", shift: "∞", alpha: S }
-    primary: { type: "9" }
-    shift: { insert: "\\infty", sample: ["\\infty", "inf"] }
-    alpha: { type: S }
-    source: virtual-calc  # r7c4; shift ∞ is assumed (the reference's shift opens a symbol palette that starts with !, ∞)
+  - { id: d9, row: 6, col: 3, cls: num, label: { primary: "9", shift: "α∞", alpha: S }, primary: { type: "9" },
+      shift: { special: symbols }, alpha: { type: S }, source: device }  # r7c4; shift opens the symbol and Greek palette (`symbols:` below; the owner's G2, 2026-10-13, R18)
   - id: div
     row: 6
     col: 4
@@ -255,7 +249,8 @@ keys:
   - { id: alpha, row: 7, col: 0, cls: ctl, label: { primary: "$key.alpha" }, primary: { special: alpha }, source: virtual-calc }  # r8c1 (twice locks it, L3: ours)
   - { id: d4, row: 7, col: 1, cls: num, label: { primary: "4", alpha: U }, primary: { type: "4" }, alpha: { type: U }, source: virtual-calc }  # r8c2 (shift Matrix not ours)
   - { id: d5, row: 7, col: 2, cls: num, label: { primary: "5", alpha: V }, primary: { type: "5" }, alpha: { type: V }, source: virtual-calc }  # r8c3 (shift [ ] not ours yet)
-  - { id: d6, row: 7, col: 3, cls: num, label: { primary: "6", alpha: W }, primary: { type: "6" }, alpha: { type: W }, source: virtual-calc }  # r8c4 (shift palette not ours)
+  - { id: d6, row: 7, col: 3, cls: num, label: { primary: "6", shift: "≤≠", alpha: W }, primary: { type: "6" },
+      shift: { special: relations }, alpha: { type: W }, source: device }  # r8c4; shift opens the relations and logic palette (`relations:` below; the owner's G2, 2026-10-13, R18)
   - id: mul
     row: 7
     col: 4
@@ -450,4 +445,71 @@ templates:
       desc: "degrees, minutes, seconds □°□′□″"
       insert: "#?\\degree#?\\prime#?\\doubleprime"
       sample: ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*(pi/180)^angle_radian()"]
+  source: device
+
+# ---- The Shift palettes (R18; the owner's G2, photos and screenshots of 2026-10-13, cell for cell). Same schema and
+# grid sheet as the Tmpl palette above: ▲ ▼ ◀ ▶ move, Enter or a tap inserts, the last pick is remembered (Shift + 6,
+# Enter repeats it), Esc goes back (closes), Cancel closes. The digit keys pick inside them, so Shift + 6 and Shift + 9
+# cannot close their own palette (S2 rule M5). Every cell has its parser rule (app/src/input/parse.ts), its round trip
+# (`sample`, run by the keyboard and round-trip tests) and a case in tests/golden/parser.yaml (group "palettes").
+# `pick`: the key at the cell's place, shown on the cell, that picks it (the G2 labels this palette so; S2 rule M1).
+# `refused: true`: the parser refuses the sample with a message (a meaning not settled yet; G2 checklist).
+#
+# Shift + 6, relations and logic, 4 × 3. == is a test (true/false), = makes an equation. AND, OR, XOR sit between
+# their operands; AND binds tighter than OR and XOR, and each operand is bracketed for Giac. XOR goes to Giac as
+# (a or b) and not(a and b): Giac's own xor gives 0 when a side is symbolic, a silent wrong answer. NOT(□) and EQ(□,□) are
+# calls; EQ is the G2's list command (G2 item 32), read as == of the two whole objects (Giac has no EQ).
+relations:
+  columns: 4
+  items:
+    - { id: lt,   row: 0, col: 0, pick: d7, desc: "less than", insert: "<", sample: ["1<2", "1<2"] }
+    - { id: le,   row: 0, col: 1, pick: d8, desc: "less than or equal", insert: "\\le", sample: ["1\\le2", "1<=2"] }
+    - { id: gt,   row: 0, col: 2, pick: d9, desc: "greater than", insert: ">", sample: ["2>1", "2>1"] }
+    - { id: ge,   row: 0, col: 3, pick: div, desc: "greater than or equal", insert: "\\ge", sample: ["2\\ge1", "2>=1"] }
+    - { id: eqeq, row: 1, col: 0, pick: d4, desc: "equal (a test)", insert: "==", sample: ["2==2", "2==2"] }
+    - { id: ne,   row: 1, col: 1, pick: d5, desc: "not equal", insert: "\\ne", sample: ["1\\ne2", "1!=2"] }
+    - { id: and,  row: 1, col: 2, pick: d6, desc: "and", insert: "\\operatorname{AND}", sample: ["x>0\\operatorname{AND}x<1", "(x>0) and (x<1)"] }
+    - { id: or,   row: 1, col: 3, pick: mul, desc: "or", insert: "\\operatorname{OR}", sample: ["x<0\\operatorname{OR}x>1", "(x<0) or (x>1)"] }
+    - { id: not,  row: 2, col: 0, pick: d1, desc: "not", insert: "\\operatorname{NOT}\\left(#0\\right)", sample: ["\\operatorname{NOT}\\left(x>0\\right)", "not(x>0)"] }
+    - { id: xor,  row: 2, col: 1, pick: d2, desc: "exclusive or", insert: "\\operatorname{XOR}", sample: ["x>0\\operatorname{XOR}x<1", "((x>0) or (x<1)) and not((x>0) and (x<1))"] }
+    - { id: eq,   row: 2, col: 2, pick: d3, desc: "EQ, equality of two objects", insert: "\\operatorname{EQ}\\left(#0,#?\\right)", sample: ["\\operatorname{EQ}\\left(2,2\\right)", "2==2"] }
+  source: device
+
+# Shift + 9, symbols and Greek, 8 × 3; the G2 shows no keys on these cells (G2 item 37), so arrows, Enter or a tap.
+# ! is factorial. → makes a function, Giac's -> (x → x² is the function that squares; assumed: the G2's use of → is to
+# check). ∞ came from this key's Shift layer before R18. ° is R10's degree sign (degrees in every angle mode, the DMS
+# rule), so 30° means one thing; ′ and ″ follow it as minutes and seconds. & and Å are refused for now: what & does on
+# the G2 is not known, and Å is the ångström, a unit (units come with the unit view, milestone 5). Greek letters are
+# variable names, never units (μ, Ω) and never Giac's own names (parse.ts GREEK maps β, γ, ε to free names); ε and φ
+# insert \varepsilon and \varphi, the shapes the G2 draws.
+symbols:
+  columns: 8
+  items:
+    # row 1
+    - { id: fact,    row: 0, col: 0, desc: "factorial", insert: "!", sample: ["5!", "factorial(5)"] }
+    - { id: arrow,   row: 0, col: 1, desc: "function arrow", insert: "\\rightarrow", sample: ["x\\rightarrow x^2", "(x)->x^2"] }
+    - { id: inf,     row: 0, col: 2, desc: "infinity", insert: "\\infty", sample: ["\\infty", "inf"] }
+    - { id: deg,     row: 0, col: 3, desc: "degree", insert: "\\degree", sample: ["30\\degree", "30*(pi/180)^angle_radian()"] }
+    - { id: minute,  row: 0, col: 4, desc: "minute ′", insert: "\\prime", sample: ["30\\degree15\\prime", "(30+15/60)*(pi/180)^angle_radian()"] }
+    - { id: second,  row: 0, col: 5, desc: "second ″", insert: "\\doubleprime", sample: ["30\\degree36\\doubleprime", "(30+36/3600)*(pi/180)^angle_radian()"] }
+    - { id: amp,     row: 0, col: 6, desc: "ampersand", insert: "\\&", sample: ["1\\&2", ""], refused: true }
+    - { id: aring,   row: 0, col: 7, desc: "ångström sign", insert: "\\AA", sample: ["5\\AA", ""], refused: true }
+    # row 2
+    - { id: alpha,   row: 1, col: 0, desc: "alpha", insert: "\\alpha", sample: ["2\\alpha", "2*alpha"] }
+    - { id: beta,    row: 1, col: 1, desc: "beta", insert: "\\beta", sample: ["2\\beta", "2*beta_"] }
+    - { id: gamma,   row: 1, col: 2, desc: "gamma", insert: "\\gamma", sample: ["2\\gamma", "2*gamma_"] }
+    - { id: Delta,   row: 1, col: 3, desc: "capital delta", insert: "\\Delta", sample: ["2\\Delta", "2*Delta"] }
+    - { id: delta,   row: 1, col: 4, desc: "delta", insert: "\\delta", sample: ["2\\delta", "2*delta"] }
+    - { id: epsilon, row: 1, col: 5, desc: "epsilon", insert: "\\varepsilon", sample: ["2\\varepsilon", "2*epsilon_"] }
+    - { id: theta,   row: 1, col: 6, desc: "theta", insert: "\\theta", sample: ["2\\theta", "2*theta"] }
+    - { id: lambda,  row: 1, col: 7, desc: "lambda", insert: "\\lambda", sample: ["2\\lambda", "2*lambda"] }
+    # row 3
+    - { id: mu,      row: 2, col: 0, desc: "mu", insert: "\\mu", sample: ["2\\mu", "2*mu"] }
+    - { id: rho,     row: 2, col: 1, desc: "rho", insert: "\\rho", sample: ["2\\rho", "2*rho"] }
+    - { id: Sigma,   row: 2, col: 2, desc: "capital sigma", insert: "\\Sigma", sample: ["2\\Sigma", "2*Sigma"] }
+    - { id: sigma,   row: 2, col: 3, desc: "sigma", insert: "\\sigma", sample: ["2\\sigma", "2*sigma"] }
+    - { id: tau,     row: 2, col: 4, desc: "tau", insert: "\\tau", sample: ["2\\tau", "2*tau"] }
+    - { id: phi,     row: 2, col: 5, desc: "phi", insert: "\\varphi", sample: ["2\\varphi", "2*phi"] }
+    - { id: chi,     row: 2, col: 6, desc: "chi", insert: "\\chi", sample: ["2\\chi", "2*chi"] }
+    - { id: Omega,   row: 2, col: 7, desc: "capital omega", insert: "\\Omega", sample: ["2\\Omega", "2*Omega"] }
   source: device

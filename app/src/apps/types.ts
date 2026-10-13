@@ -44,6 +44,8 @@ export interface MenuItem {
   readonly submenu?: SubMenu;
   /** In a grid sheet (the Tmpl palette): the cell drawn as math; `label` is then its spoken name. */
   readonly latex?: string;
+  /** In a grid sheet: the key that picks this cell (its id) and its legend, shown on the cell (Shift + 6, R18). */
+  readonly pick?: { readonly key: string; readonly legend: string };
 }
 
 export interface SubMenu {

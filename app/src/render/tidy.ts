@@ -106,8 +106,21 @@ function subscriptNames(s: string): string {
     `${base.length === 1 ? base : `\\mathrm{${base}}`}_{${sub}}`);
 }
 
+/**
+ * R18: the Greek names that would clash in Giac are entered as beta_, gamma_, Gamma_, epsilon_ (input/parse.ts GREEK);
+ * Giac draws them as `\beta_`, a letter with a stray subscript mark. They are the letters again, and ε and φ take the
+ * shapes the palette shows (\varepsilon, \varphi).
+ */
+function greekNames(s: string): string {
+  return s
+    .replace(/\\(beta|gamma|Gamma|epsilon)_(?![A-Za-z0-9{])(?=([A-Za-z]?))/g, (_, n: string, letter: string) =>
+      `\\${n === "epsilon" ? "varepsilon" : n}${letter ? " " : ""}`)
+    .replace(/\\phi(?![A-Za-z])/g, "\\varphi");
+}
+
 export function tidyGiacLatex(raw: string): string {
   let s = raw.trim();
+  s = greekNames(s);
   s = subscriptNames(s);
   // matrices
   s = s.replace(/\\left\(\\begin\{array\}\{[a-z|]*\}([\s\S]*?)\\end\{array\}\\right\)/g, (_, body: string) =>

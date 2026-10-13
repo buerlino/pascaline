@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// R18: the names of the Shift palettes' cells (read in the sheet's hint line) and their titles. A table of its own,
+// loaded with the palettes (keyboard/shiftPalettes.ts), so the start chunk does not carry it. English only so far.
+export const enPalettes = {
+  "rel.title": "Relations and logic",
+  "rel.lt": "Less than",
+  "rel.le": "Less than or equal",
+  "rel.gt": "Greater than",
+  "rel.ge": "Greater than or equal",
+  "rel.eqeq": "Equal? (a test: true or false)",
+  "rel.ne": "Not equal",
+  "rel.and": "And",
+  "rel.or": "Or",
+  "rel.not": "Not",
+  "rel.xor": "Exclusive or",
+  "rel.eq": "EQ: are two objects equal?",
+  "sym.title": "Symbols and Greek",
+  "sym.fact": "Factorial !",
+  "sym.arrow": "Function arrow, x → …",
+  "sym.inf": "Infinity",
+  "sym.deg": "Degree °",
+  "sym.minute": "Minutes ′ (after °)",
+  "sym.second": "Seconds ″ (after °)",
+  "sym.amp": "Ampersand & (not used yet)",
+  "sym.aring": "Ångström Å (a unit: not in Home)",
+  "sym.alpha": "alpha",
+  "sym.beta": "beta",
+  "sym.gamma": "gamma",
+  "sym.Delta": "Delta",
+  "sym.delta": "delta",
+  "sym.epsilon": "epsilon",
+  "sym.theta": "theta",
+  "sym.lambda": "lambda",
+  "sym.mu": "mu",
+  "sym.rho": "rho",
+  "sym.Sigma": "Sigma",
+  "sym.sigma": "sigma",
+  "sym.tau": "tau",
+  "sym.phi": "phi",
+  "sym.chi": "chi",
+  "sym.Omega": "Omega",
+} as const satisfies Record<string, string>;
+
+/** A palette message; throws on a missing one, like `legend`. */
+export function paletteText(key: string): string {
+  if (key in enPalettes) return enPalettes[key as keyof typeof enPalettes];
+  throw new Error(`missing message ${key}`);
+}

@@ -206,7 +206,7 @@ cases:
   - { id: "implicit-multiplication-26", latex: "x_1x_2", expect: "x_1*x_2", source: "derived", group: "implicit-multiplication" }
   - { id: "implicit-multiplication-27", latex: "2x_1", expect: "2*x_1", source: "derived", group: "implicit-multiplication" }
   - { id: "implicit-multiplication-28", latex: "2\\alpha", expect: "2*alpha", source: "derived", group: "implicit-multiplication" }
-  - { id: "implicit-multiplication-29", latex: "\\alpha\\beta", expect: "alpha*beta", source: "derived", group: "implicit-multiplication" }
+  - { id: "implicit-multiplication-29", latex: "\\alpha\\beta", expect: "alpha*beta_", source: "derived", group: "implicit-multiplication", note: "β is the stand-in name beta_ (R18)" }
   - { id: "implicit-multiplication-30", latex: "3\\exponentialE^{x}", expect: "3*exp(x)", source: "derived", group: "implicit-multiplication" }
   # --- relations
   - { id: "relations-01", latex: "x=2", expect: "x=2", source: "derived", group: "relations" }
@@ -451,3 +451,44 @@ cases:
   - { id: "tmpl-dms-03", latex: "\\sin\\left(30\\degree0\\prime0\\doubleprime\\right)", expect: "1/2", source: "derived", group: "tmpl" }
   - { id: "tmpl-dms-04", latex: "45\\degree", expect: "pi/4", source: "derived", group: "tmpl" }
   - { id: "tmpl-dms-05", latex: "15\\prime", error: true, source: "derived", group: "tmpl", note: "minutes only after degrees" }
+  # --- R18 (2026-10-14): the Shift palettes (spec/keyboard.yaml `relations:` and `symbols:`), as MathLive writes them
+  # (app/test/shiftpal.spec.ts types the same); expected values derived by hand. The gate runs in RAD.
+  - { id: "pal-rel-01", latex: "2\\le3", expect: "true", source: "derived", group: "palettes" }
+  - { id: "pal-rel-02", latex: "3\\ge4", expect: "false", source: "derived", group: "palettes" }
+  - { id: "pal-rel-03", latex: "2<1", expect: "false", source: "derived", group: "palettes" }
+  - { id: "pal-rel-04", latex: "2==2", expect: "true", source: "derived", group: "palettes", note: "== tests; = makes an equation" }
+  - { id: "pal-rel-05", latex: "x==2", expect: "x==2", source: "derived", group: "palettes" }
+  - { id: "pal-rel-06", latex: "1\\ne2", expect: "true", source: "derived", group: "palettes" }
+  - { id: "pal-and-01", latex: "x>0\\operatorname{AND}x<1", expect: "(x>0) and (x<1)", source: "derived", group: "palettes" }
+  - { id: "pal-and-02", latex: "2>1\\operatorname{\\mathrm{AND}}1<2", expect: "true", source: "derived", group: "palettes", note: "MathLive's form after a term" }
+  - { id: "pal-or-01", latex: "2<1\\operatorname{\\mathrm{OR}}1<2", expect: "true", source: "derived", group: "palettes" }
+  - { id: "pal-or-02", latex: "1<2\\operatorname{OR}2<1\\operatorname{AND}3<2", expect: "true", source: "derived", group: "palettes", note: "AND binds tighter: true OR (false AND false); left to right would give false" }
+  - { id: "pal-xor-01", latex: "2>1\\operatorname{XOR}1<2", expect: "false", source: "derived", group: "palettes" }
+  - { id: "pal-xor-02", latex: "2<1\\operatorname{\\mathrm{XOR}}1<2", expect: "true", source: "derived", group: "palettes" }
+  - { id: "pal-xor-03", latex: "x>0\\operatorname{XOR}x<1", expect: "((x>0) or (x<1)) and not((x>0) and (x<1))", source: "derived", group: "palettes", note: "not Giac's xor, which gives 0 here (true at x = 2)" }
+  - { id: "pal-not-01", latex: "\\operatorname{\\mathrm{NOT}}\\left(2<1\\right)", expect: "true", source: "derived", group: "palettes" }
+  - { id: "pal-not-02", latex: "\\operatorname{NOT}2", error: true, source: "derived", group: "palettes", note: "NOT needs its brackets" }
+  - { id: "pal-eq-01", latex: "\\operatorname{\\mathrm{EQ}}\\left(2,2\\right)", expect: "true", source: "derived", group: "palettes" }
+  - { id: "pal-eq-02", latex: "\\operatorname{EQ}\\left(\\left\\{1,2\\right\\},\\left\\{1,2\\right\\}\\right)", expect: "true", source: "derived", group: "palettes", note: "whole lists (G2 item 32)" }
+  - { id: "pal-eq-03", latex: "\\operatorname{EQ}\\left(\\left\\{1,2\\right\\},\\left\\{1,3\\right\\}\\right)", expect: "false", source: "derived", group: "palettes" }
+  - { id: "pal-eq-04", latex: "\\operatorname{EQ}\\left(2\\right)", error: true, source: "derived", group: "palettes", note: "EQ takes two" }
+  - { id: "pal-fact-01", latex: "5!", expect: "120", source: "derived", group: "palettes" }
+  - { id: "pal-fact-02", latex: "\\left(1+2\\right)!", expect: "6", source: "derived", group: "palettes" }
+  - { id: "pal-arrow-01", latex: "x\\rightarrow x^2", expect: "(x)->x^2", source: "derived", group: "palettes" }
+  - { id: "pal-arrow-02", latex: "\\left(x,y\\right)\\rightarrow x+y", expect: "(x,y)->x+y", source: "derived", group: "palettes" }
+  - { id: "pal-arrow-03", latex: "2\\rightarrow x", error: true, source: "derived", group: "palettes", note: "a number is not a variable" }
+  - { id: "pal-deg-01", latex: "30\\degree", expect: "pi/6", source: "derived", group: "palettes", note: "R10's degree rule: degrees in every angle mode" }
+  - { id: "pal-deg-02", latex: "30\\degree15\\prime", expect: "121*pi/720", source: "derived", group: "palettes", note: "30.25 degrees" }
+  - { id: "pal-deg-03", latex: "30\\degree36\\doubleprime", expect: "3001*pi/18000", source: "derived", group: "palettes", note: "30.01 degrees" }
+  - { id: "pal-amp-01", latex: "1\\&2", error: true, source: "derived", group: "palettes", note: "& is refused until its meaning is settled (G2 checklist)" }
+  - { id: "pal-aring-01", latex: "5\\AA", error: true, source: "derived", group: "palettes", note: "Å is a unit; Home is unit-free (P8)" }
+  - { id: "pal-aring-02", latex: "5Å", error: true, source: "derived", group: "palettes", note: "a pasted Å too" }
+  - { id: "pal-greek-01", latex: "2\\alpha", expect: "2*alpha", source: "derived", group: "palettes" }
+  - { id: "pal-greek-02", latex: "2\\beta", expect: "2*beta_", source: "derived", group: "palettes", note: "beta, gamma, Gamma, epsilon are Giac's: stand-in names" }
+  - { id: "pal-greek-03", latex: "\\gamma^2", expect: "gamma_^2", source: "derived", group: "palettes" }
+  - { id: "pal-greek-04", latex: "\\epsilon-\\varepsilon", expect: "0", source: "derived", group: "palettes", note: "one letter, one name; Giac's epsilon is 1e-12" }
+  - { id: "pal-greek-05", latex: "\\phi-\\varphi", expect: "0", source: "derived", group: "palettes" }
+  - { id: "pal-greek-06", latex: "\\Gamma+1", expect: "Gamma_+1", source: "derived", group: "palettes", note: "Giac's Gamma is the function and cannot be stored" }
+  - { id: "pal-greek-07", latex: "\\mu\\Omega", expect: "mu*Omega", source: "derived", group: "palettes", note: "names, never micro or ohm" }
+  - { id: "pal-greek-08", latex: "\\Delta x", expect: "Delta*x", source: "derived", group: "palettes" }
+  - { id: "pal-greek-09", latex: "\\Sigma+\\sigma+\\delta+\\theta+\\lambda+\\rho+\\tau+\\chi", expect: "Sigma+sigma+delta+theta+lambda+rho+tau+chi", source: "derived", group: "palettes" }
