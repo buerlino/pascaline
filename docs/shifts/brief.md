@@ -1,12 +1,31 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Shift brief: milestone 4 "Find and trust" (shift name `m4`, run by the owner)
+# Shift brief: milestone 4a "feel", then the rest of milestone 4 "Find and trust" (shifts `m4a` and `m4`, run by the owner)
 
 **Manual mode (user, 2026-10-12):** there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
 `phase-1` at `ad86660` (architecture docs, P8–P10 accepted, sandra's probes). Nothing pushed. Leftovers for the first review session to clean up: the merged branches `p1/annabell-eve-fp6`, `p1/annabell-night-fp6`, `p1/ron-night-k2` and their worktrees under `.claude/worktrees/` (`git worktree remove`, then `git branch -d`). `p1/ron-eve-gestures` is unmerged (the old flick classifier); leave it for the owner.
 
-## 0a. Work packages
+## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
+Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (G4 running, G3, R4, A4) keep their place: G4 and G3 run in parallel with 4a, R4 and A4 come after it.
+
+| # | Package | Agent, model | Branch | Start when merged | Size |
+|---|---|---|---|---|---|
+| R5 | Remove the Python app, app side | ron, Sonnet | `p1/ron-m4a-nopython` | — | ~1 d |
+| S1 | Unit-slot paper test (layout + press count) | sandra, Opus | `p1/sandra-m4a-unitslots` | — | ~1 d |
+| A5 | Remove the Python build | annabell, Sonnet | `p1/annabell-m4a-nopython` | R5 | ~0.5 d |
+| R6 | Cleanup: hold-and-drag out, UI quick fixes (U0), gallery | ron, Sonnet | `p1/ron-m4a-cleanup` | R5 | ~2 d |
+| R7 | One sheet for every list (U1) | ron, **Opus** | `p1/ron-m4a-sheet` | R6, owner tried its APK | ~2 d |
+| R8 | Status bar, Mode sheet, Settings (U2, U4) | ron, Sonnet | `p1/ron-m4a-status` | R7, tried | ~2.5 d |
+| R9 | Flicks and the Shift/Alpha tap counter | ron, **Opus** | `p1/ron-m4a-flicks` | R8, tried | ~3 d |
+| R10 | Tmpl palette and the a b/c key | ron, **Opus** | `p1/ron-m4a-tmpl` | R9, tried | ~2.5 d |
+| R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R10, tried | ~1 d |
+| R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R11, tried | ~0.5 d |
+| R12b | Visual pass: implementation (U5, U7, theme) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner | ~2.5 d |
+
+"Tried" = the owner has used that package's APK for about a day (docs/03 rule 10). R5 and R6 may run back to back. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10 (parser rules and round trips); S1 because its answer decides milestone 5. Sonnet elsewhere, with an Opus review per package.
+
+## 0a. Work packages (milestone 4)
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" (steps 1–12) is binding. Each package below names its backlog step; § numbers point into docs/04.
 
 | # | Package | Backlog step | Agent, model | Branch | Start when merged | Size |
@@ -54,6 +73,7 @@ Check `/model` once at the start: the agent files pin `model: opus`, and the fla
   Then the shared paths and locks of rules section 5 (`GIAC_OUT`, `PYTHON_OUT`, `PASCALINE_DL_DIR`, `tools/devlock.sh` for heavy work).
 - [04-architecture.md](../04-architecture.md) sections 0 and 8, and the sections your package names. Where docs/04 and docs/02 differ, docs/04 wins.
 - `docs/backlog.md` "Engineer core", milestone 4: your step's text (files, tests, gate).
+- **From 2026-10-13:** `docs/decisions.md` P11, docs/03 section 0 rules 5–13 (they bind every package: one interaction model, keys never move, vertical space, removal tests), `docs/05-ui-plan.md` with its section 7, and `docs/feedback.md`.
 - `docs/decisions.md`: P8, P9, P10 and the defaults entry "2026-10-12 Architecture for the engineer core". These are decided; don't reopen them. If a docs/04 decision turns out wrong in the code, don't change it silently: finish what you can, and put the evidence under "Needs a decision" in your report.
 - Not in this milestone: the Units app and worker (milestone 5), matrices, bases and everyday functions (milestone 6), Help = context help (milestone 6), prefix entry chips (gated by task 3).
 - **No coordinator to message.** Stay inside the files your package names. Shared files (`CLAUDE.md`, `docs/*`, `THIRD_PARTY.md`, `.claude/agents/*`) are not yours. Put the text for them in your report, and the review session applies it. Devices are only for A4.
@@ -183,7 +203,7 @@ Tests: one e2e per action and a copy → paste round trip.
 Backlog step 8.
 - **Keys:** Math = Find, Vars = Find on variables, Shift + Math = Memory (§5.1).
 - **Inside Find:** keys follow §3.7, ranking §3.5 (`app/src/find/rank.ts`), preview and insertion §3.6.
-- **Content:** live items from `defined` (§3.4); usage stored in `find.usage`; `?bench=find`.
+- **Content:** live items from `defined` (§3.4); `?bench=find`. **Changed by P11:** no usage ranking and no `find.usage`; an empty query shows the G2-style Math menu (fixed categories in a fixed order). Built on R7's sheet (docs/05 3.1, 3.6 and section 7); letters: a tap on a non-digit key, a flick down on any key.
 - **Loading:** Find is a lazy chunk, and the index is fetched only when the browser is idle after the engine is ready.
 - **Data:** until G4 is merged, work against a hand-written fixture of the §3.3 `FindItem` schema (`app/src/find/fixture.ts`, about 30 items covering every kind). Then switch to the generated index. The schema is fixed by §3.3; a change goes under "Needs a decision".
 
@@ -203,6 +223,45 @@ Backlog step 12, when the Tab One is connected (rules section 6). On the device:
 
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
 
+### Milestone 4a packages (section 0b)
+
+### ron, R5: remove the Python app (app side), branch `p1/ron-m4a-nopython`
+P11, docs/03 rule 11. Remove completely, no dead settings: the Python app (`app/src/apps/python/`), its worker, client and `calc` host (`app/src/python/`), its registration in the apps list, the Python layer in `spec/keyboard.yaml` and `keyboard.ts`, its i18n strings, the Python e2e tests and the Python steps of `softkeyboard.spec.ts`, `pythonBench`, Python parts of the task benchmark, the Python part of `app/scripts/golden.ts` and `tests/golden/python.yaml` (update the counts in `tests/golden/README.md`), Python copying in `app/package.json` scripts and the size test. Keep the CodeMirror `EDIT_CONTEXT` fix only if CodeMirror stays in use elsewhere; otherwise CodeMirror goes too (say which in the report). Gate: typecheck, vitest, e2e, golden gate (`GIAC_OUT` absolute; no `PYTHON_OUT` needed any more); start chunk before and after. **For shared files** in the report: CLAUDE.md (architecture worker 2, the `hpprime` exception, Python commands, stack line), README, docs/04 2.10, THIRD_PARTY.md (CodeMirror if it goes).
+
+### sandra, S1: unit-slot paper test, branch `p1/sandra-m4a-unitslots`
+The owner asked for this package, so commit on your branch (make your own worktree as in section 2). P11 "units after the formula". Write:
+- a `unit_slot:` section in `spec/keyboard.yaml`, a layout record only (like `templates:`; nothing reads it yet): inside a unit slot a flick down types the lowercase letter and a flick up the capital, on the letters' fixed positions; fixed cells for µ, Ω and °; ×, ÷, xʸ, x² and digits (exponents) as usual; ◀ ▶ jump from slot to slot; the optional end slot "→ should be" (empty = no check); a single slot on an empty line;
+- `tools/probes/unit-presses.mjs`: counts presses for the 50 most common engineering units and compound units (the list with a source line for each choice), from the layout above; prints median, worst ten, and every symbol the layout cannot type;
+- `docs/research/r7-unit-slots.md`: the result, case pitfalls (m/M, Pa/pa, the units qalc misreads, docs/04 4.1), a recommendation, and the rewrite of docs/04 4.3–4.4 for milestone 5 as a proposal.
+Gate: median ≤ 4 presses (P8 rule 2). If it fails, say what would fix it; don't change the layout of any key.
+
+### annabell, A5: remove the Python build, branch `p1/annabell-m4a-nopython`
+After R5. `build.sh` step 1b and the `--python-dir` / `--no-python` flags, `python/` (build script, smoke test, patches), `PYTHON_OUT` in tools and rules, `.gitignore` entries, `fdroid/README.md`. Leave `python/_out/` on disk (gitignored). Gate: `./build.sh --engine-dir engine/giac/_out/gsl --no-units` gives an APK; the size test. **For shared files:** CLAUDE.md (commands, repo layout), THIRD_PARTY.md (MicroPython out), `docs/shifts/rules.md` section 5.
+
+### ron, R6: cleanup, branch `p1/ron-m4a-cleanup`
+1. **Hold-and-drag out completely** (P11): `KeyHold` in `app/src/keyboard/gestures.ts`, its wiring and the dimming in `Keypad.svelte`, its tests in `app/test/gestures.spec.ts`, the K2 paragraph of the `spec/keyboard.yaml` header. Keep the K1 trackpad and ⌫ auto-repeat (`Repeat`). Keys keep firing on lift (R9's flicks need it).
+2. **U0** (docs/05 section 1 findings 1, 3, 4, 8 and package U0): legends get their own space (never cut, never overlap); contrast ≥ 4.5:1 in every layer, with a test computed from the CSS values; dead keys dim only in layers where they do nothing; **regression test first** for finding 4 (with Alpha lock on, a digit typed `Y` through the open Apps list); the Plot hint above the axes.
+3. **The gallery:** a Playwright script that renders every view, sheet and layer in light (and dark where it exists) at phone size into `app/test/gallery/` (gitignored), plus one HTML index page for the owner.
+Gate: e2e, contrast test, size test.
+
+### ron, R7: one sheet for every list, branch `p1/ron-m4a-sheet`
+docs/05 3.1 with section 7. `Sheet.svelte` and its model (`items`, `submenu`, `lastPick`, `filter`) replace `PickList`; Apps, the view menus and the Home menu move to it. Keys as in the 3.1 table: ▲▼ and the trackpad move, digits pick (Shift/Alpha ignored for picking), Enter picks, ▶ opens a submenu, ◀/Esc back (path in the title), Cancel closes all, Menu toggles; letters filter (a tap on a non-digit key; flicks come in R9). Last pick remembered per sheet; scroll cue and item count; disabled items stay in place with a reason line. Gate: an e2e per key of 3.1; every existing menu test green; size test.
+
+### ron, R8: status bar, Mode sheet, Settings, branch `p1/ron-m4a-status`
+docs/05 3.2 and 3.4 with section 7. The tab row in the `App.svelte` header goes; one status line ≤ 28 px: place (tap = Apps sheet), mode chips for angle (tap toggles RAD/DEG), format and digits (tap = Mode sheet at that row), Shift/Alpha state, busy. **Shift + CAS = Mode sheet** (angle, format, digits, decimals, entry mode), **Shift + Home/CAS = Settings**, both on R7's sheet, no native `<select>` or number inputs; `spec/keyboard.yaml` legends updated. A viewport-share e2e at phone size: record the value after this package as the floor (docs/03 rule 9). Gate: e2e tap RAD → DEG changes the next result; DEG → RAD in ≤ 3 keys; size test.
+
+### ron, R9: flicks, branch `p1/ron-m4a-flicks`
+P11 and P7's original points 2 and 3 (docs/decisions.md). Flick up = the key's shift function, flick down = its letter (capital, as Alpha gives); a bubble above the key while sliding, a haptic tick at the threshold, sliding back to the middle cancels; no left/right flicks; arrows (trackpad) and ⌫ (repeat) have no flicks. Legends: shift top left, letter bottom left. Lock flicks: up on Shift = shift lock; down on Alpha = capitals lock, up on Alpha = lowercase lock. Taps on Shift and Alpha stay exactly as now (G2 sequences keep working). Inside a sheet a flick down types the letter on any key. **Tap counter:** local count of Shift and Alpha taps (IndexedDB, never sent anywhere), shown in Settings with a reset; for the merge decision after a week (P7 point 4). Task benchmark: a flick counts 1 (text for docs/04 5.2 in the report). Gate: gesture e2e for each flick and lock, two-thumb ordering, no misfire on a fast tap sequence; size test.
+
+### ron, R10: Tmpl palette and the a b/c key, branch `p1/ron-m4a-tmpl`
+The `templates:` section of `spec/keyboard.yaml` (seen on the owner's G2): `keyboard.ts` reads it; Tmpl opens the 6×3 grid as a sheet variant (arrows move in 2D, Enter or a tap inserts). Each planned template gets `insert` + `sample`, its parser rule and its round-trip case **in the same commit** (new: evaluate-at, ∂ derivative, piecewise, log with base, DMS; integral, limit, sum, product and matrices already parse). Cells marked `check: true` are built as recorded and listed in the report for the owner to confirm on the G2. **r4c5 = the G2's a b/c:** on an empty line it cycles the last result decimal ↔ fraction (2.5 ↔ 5/2; `source: device`, owner 2026-10-13); while typing it keeps inserting the fraction (ours, an addition where the G2 does nothing). L2's "a/b twice makes a mixed number" goes; the mixed number is in Tmpl. Gate: parser round trips, golden gate, e2e for the palette and the cycle.
+
+### ron, R11: history-row actions, branch `p1/ron-m4a-rows`
+docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on an empty line picks a row (exists); a row of buttons appears above the entry line: Insert · Recall · Copy · Store ▶ · Delete; hidden while typing; Menu lists the same actions first (same order, so digits 1–5 pick them); long press stays. Build the actions as one list used by the buttons, Menu and long press, so the "results mode" idea can reuse it. Gate: e2e per action from keys and from touch; task benchmark has no task with more presses; history performance test unchanged.
+
+### ron, R12a and R12b: visual pass, branch `p1/ron-m4a-look`
+**R12a:** read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a menu sheet, the Mode sheet, Settings, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change. **R12b** (started with the owner's notes): design tokens in one file (docs/05 3.10: colours per role, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component; history rows (3.5); **theme setting System / Light / Dark, Dark by default on Android, System in the PWA**; press feedback within one frame; `prefers-reduced-motion`. Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
+
 ## 8. Definition of done
 - **Each branch:** typecheck 0; vitest all pass; e2e all pass (the known-flaky `solve.spec.ts` persistence test may be re-run once); SPDX headers; `git commit -s` with the trailer (`Claude Opus 5.5` or `Claude Sonnet 5.5`, whichever model ran); the report commit; start chunk size reported for UI packages.
 - **Milestone 4 is done when:**
@@ -219,7 +278,7 @@ claude --model opus "Review and merge package <ID>: follow section 8a of docs/sh
 ```
 The reviewer works in the main checkout on `phase-1`:
 1. `git status` is clean, and the prerequisites in the table are merged. If not, stop and say so.
-2. Read the report (`git log -1 p1/<name>-m4-<pkg>`) and the diff (`git diff phase-1...p1/<name>-m4-<pkg>`) against the backlog step and the docs/04 sections it names. Check the claims:
+2. Use the package's branch from the table in 0a or 0b (4a branches are `p1/<name>-m4a-<pkg>`). Read the report (`git log -1 p1/<name>-m4-<pkg>`) and the diff (`git diff phase-1...p1/<name>-m4-<pkg>`) against the backlog step and the docs/04 sections it names. Check the claims:
    - expected values come from the oracle or are `derived`
    - every new token has its round-trip case
    - no file outside the package's scope is changed
@@ -236,4 +295,5 @@ The reviewer works in the main checkout on `phase-1`:
    - remove the worktree, then `git branch -d`
    - commit with `git commit -s`
    - never push
+5a. **After merging a ron package (4a), build and install the owner's APK** from the main checkout: `./build.sh --engine-dir engine/giac/_out/gsl --no-units --no-python --install` (drop `--no-python` once A5 is merged; the script takes the host-cpu lock). Install only `org.pascaline.app`, on the owner's phone (the only device the owner connects for this). Then tell the owner what to try, in three lines at most, and append a line to `docs/feedback.md` "waiting for the owner's notes on <package>".
 6. When a merge completes milestone 4: write `docs/shifts/<date>-m4-report.md` (rules section 11, step 5) and add milestone 4 to docs/02 section 12. The report says what the owner should try on the APK: marks, Find, copy and paste, and the empty-line Ans.

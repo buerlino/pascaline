@@ -36,3 +36,14 @@ The one place for the owner's points from using the app (docs/03 section 0, rule
 | 15 | Find as a fixed G2-style Math menu, typing filters it, no usage ranking. | decided: P11 |
 | 16 | Uses Home daily, CAS sometimes, the other apps hardly (an engineering student). | decided: P11, Function and Solve frozen |
 | 17 | The MCP server could be good. But more important: anyone who wants to change parts of the calculator or add their own scripts needs a real connection point, not a Python terminal nobody uses. | idea (discussion: a plain-text function library, edited on a laptop, imported on the phone, found in Find, assignable to a user key) |
+
+## 2026-10-13 (third round: sign-off of the merged plan)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 18 | Find's Math menu: maybe let the user rearrange the slots. A feature for later. | idea (fits rule 8: a personal order stays put) |
+| 19 | Instead of the compact keypad (K4): a button makes the keypad collapse to the bottom with a small slice showing; tapping the slice brings it back. In this mode the viewport gains buttons to really work with the results, like a Jupyter notebook: delete, copy, move, merge, unit check, draw in Plot, and more later. | idea ("results mode", replaces K4; decide around 2026-10-20). R11's row actions are built so it can reuse them |
+| 20 | Unit view: why Shift + Tmpl? The arrows must move from one unit slot to the next, not through the whole formula. The end slot is optional (empty = no check). | decided: P11 (Shift + Tmpl is where the G2 keeps Units, G2 item 30; ◀ ▶ jump slot to slot; empty end slot = no check) |
+| 21 | The history-row buttons: needed, if only Home and CAS are the focus? | answered: yes, they are exactly Home/CAS (docs/05 section 7 point 2) |
+| 22 | Theme: a setting Light / Dark / Follow system. | decided: System / Light / Dark, Dark by default on Android (docs/05 section 7) |
+| 23 | Plan A–F signed off; order of milestone 4a agreed. | decided |

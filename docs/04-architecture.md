@@ -280,6 +280,8 @@ Budgets: index ≤ 100 kB gzip; key → list ≤ 16 ms p95 on the Tab One; Find 
 
 ## 4. The Units app (EN2, P3 as amended by P8)
 
+**Superseded in part by P11 (2026-10-13):** there is no separate Units app. Units are added *after* the formula, in unit slots (decisions.md P11; layout and press count: package S1, `docs/research/r7-unit-slots.md`). The qalc worker, the adapter checks and the data audit below still hold; sections 4.3 and 4.4 (entry and gates) are rewritten before milestone 5.
+
 ### 4.1 Today (the qalc spike build, probed 2026-10-12)
 I relinked the spike's libraries (`../pascaline-deps/qalc-spike/build/prefix`, libqalculate 5.13.1) with a throwaway probe glue that reports qalc's own approximation flags (Appendix A). Default evaluation options, so `APPROXIMATION_TRY_EXACT`, precision 12.
 
