@@ -16,9 +16,12 @@ import { parse } from "yaml";
 import { entryValue, open, tap } from "./helpers.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
+interface Cell { id: string; key?: string; layer?: string; insert?: string; line?: { insert?: string } }
 const doc = parse(readFileSync(join(here, "../../spec/keyboard.yaml"), "utf8")) as {
   keys: Record<string, unknown>[];
-  templates: { items: { id: string; key?: string; layer?: string; insert?: string; line?: { insert?: string } }[] };
+  templates: { items: Cell[] };
+  relations: { items: Cell[] };
+  symbols: { items: Cell[] };
 };
 
 type Layer = "primary" | "shift" | "alpha";
@@ -33,7 +36,6 @@ const LAYERS: Layer[] = ["primary", "shift", "alpha"];
 const REPLACES = new Set([
   "emark/primary", // the exponent mark ᴇ: one token, typed like a character (R14)
   "emark/shift", // ▸ store: after the value, before the name
-  "d9/shift", // ∞: a constant
   "mul/primary", // ×: an operator
   "mul/shift", // ∡: an operator (polar form)
   "d2/shift", // i: a constant
@@ -123,6 +125,26 @@ test("every Tmpl cell with 1+2 selected: an argument slot takes it, the others r
     if (NO_ARGUMENT_CELLS.has(item.id)) {
       if (value.includes("1+2")) failures.push(`${item.id} should replace the selection but left ${value}`);
     } else if (!value.includes("1+2")) failures.push(`${item.id} lost the selection: ${value}`);
+  }
+  expect(failures).toEqual([]);
+});
+
+// R18: in the Shift palettes only NOT(□) and EQ(□,□) have an argument slot; every other cell is an operator, a symbol
+// or a name, and replaces the selection as typing does (keyboard.test.ts NO_ARGUMENT has the same list)
+const TAKES_SELECTION = new Set(["relations/not", "relations/eq"]);
+test("every Shift + 6 and Shift + 9 cell with 1+2 selected: NOT and EQ take it, the others replace it", async ({ page }) => {
+  test.setTimeout(120_000);
+  const failures: string[] = [];
+  for (const [section, opener] of [["relations", "d6"], ["symbols", "d9"]] as const) {
+    for (const item of doc[section].items) {
+      await select(page, "1+2");
+      await tap(page, ["shift", opener]);
+      await page.getByTestId("menu").locator(`[data-id="${item.id}"]`).tap();
+      const value = await entryValue(page);
+      if (TAKES_SELECTION.has(`${section}/${item.id}`)) {
+        if (!value.includes("1+2")) failures.push(`${section}/${item.id} lost the selection: ${value}`);
+      } else if (value.includes("1+2")) failures.push(`${section}/${item.id} should replace the selection but left ${value}`);
+    }
   }
   expect(failures).toEqual([]);
 });
