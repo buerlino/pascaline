@@ -4,14 +4,13 @@
 **Manual mode (user, 2026-10-12):** there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` at `99b34e6` (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8. Next: R9, once the owner has tried R8's APK. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier) and six stale `worktree-agent-*` branches (backlog C7).
+`phase-1` at `cd4719f` (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9. Next: R10, once the owner has tried R9's APK. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier) and six stale `worktree-agent-*` branches (backlog C7).
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
 Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R9 | Flicks and the Shift/Alpha tap counter | ron, **Opus** | `p1/ron-m4a-flicks` | R8, tried | ~3 d |
 | R10 | Tmpl palette and the a b/c key | ron, **Opus** | `p1/ron-m4a-tmpl` | R9, tried | ~2.5 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R10, tried | ~1 d |
 | R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R11, tried | ~0.5 d |
@@ -90,9 +89,6 @@ Backlog step 12, when the Tab One is connected (rules section 6). On the device:
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R9: flicks, branch `p1/ron-m4a-flicks`
-P11 and P7's original points 2 and 3 (docs/decisions.md). Flick up = the key's shift function, flick down = its letter (capital, as Alpha gives); a bubble above the key while sliding, a haptic tick at the threshold, sliding back to the middle cancels; no left/right flicks; arrows (trackpad) and ⌫ (repeat) have no flicks. Legends: shift top left, letter bottom left. Lock flicks: up on Shift = shift lock; down on Alpha = capitals lock, up on Alpha = lowercase lock. Taps on Shift and Alpha stay exactly as now (G2 sequences keep working). Inside a sheet a flick down types the letter on any key. **One motion, no wait** (owner, 2026-10-13): press and slide in one movement is a flick; the direction is decided by distance alone, with no hold time or dwell before the slide may start, and a fast press-slide-lift (under 100 ms) gives the flick. **Tap counter:** local count of Shift and Alpha taps (IndexedDB, never sent anywhere), shown in Settings with a reset; for the merge decision after a week (P7 point 4). **Keys typed while an app loads** (decisions.md R8): a queued key keeps the layer it was pressed in, so "Plot, Shift, CAS" typed fast opens the Mode sheet, not CAS. Task benchmark: a flick counts 1 (text for docs/04 5.2 in the report). Gate: gesture e2e for each flick and lock, a flick with no pause between touch and slide (move events start at once, lift within 100 ms), two-thumb ordering, no misfire on a fast tap sequence; "Plot, Shift, CAS" typed while the app loads opens the Mode sheet; size test.
 
 ### ron, R10: Tmpl palette and the a b/c key, branch `p1/ron-m4a-tmpl`
 The `templates:` section of `spec/keyboard.yaml` (seen on the owner's G2): `keyboard.ts` reads it; Tmpl opens the 6×3 grid as a sheet variant (arrows move in 2D, Enter or a tap inserts). Each planned template gets `insert` + `sample`, its parser rule and its round-trip case **in the same commit** (new: evaluate-at, ∂ derivative, piecewise, log with base, DMS; integral, limit, sum, product and matrices already parse). Cells marked `check: true` are built as recorded and listed in the report for the owner to confirm on the G2. **r4c5 = the G2's a b/c:** on an empty line it cycles the last result decimal ↔ fraction (2.5 ↔ 5/2; `source: device`, owner 2026-10-13); while typing it keeps inserting the fraction (ours, an addition where the G2 does nothing). L2's "a/b twice makes a mixed number" goes; the mixed number is in Tmpl. Gate: parser round trips, golden gate, e2e for the palette and the cycle.

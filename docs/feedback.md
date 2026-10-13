@@ -61,8 +61,12 @@ The R6 APK (hold-and-drag gone, legends on their own line, dead keys dimmed per 
 
 | # | Owner's point | Triage |
 |---|---|---|
-| 26 | Flicks must work instantly: press and slide up in one motion. Having to press, wait, then flick feels terrible. | decided: added to R9 in the brief (distance only, no hold time; a press-slide-lift under 100 ms is a flick; e2e gate). No flicks are built yet (R9 not started); the press-wait-slide feel was probably the old hold-and-drag (K2) of the R5 APK, which R6 removed (to confirm with the owner) |
+| 26 | Flicks must work instantly: press and slide up in one motion. Having to press, wait, then flick feels terrible. | built in R9 (`cd4719f`): distance only, no hold time; a press-slide-lift under 100 ms is a flick (e2e gate). The press-wait-slide feel was probably the old hold-and-drag (K2) of the R5 APK, which R6 removed (to confirm with the owner) |
 
 ## 2026-10-13: waiting for the owner's notes on R7
 
 The R7 APK: every list (Apps, the view menus, the Home Menu, a history row's long press) opens on one sheet. Try Menu + Enter to repeat the last pick, ◀/Esc out of a submenu (the path is in the title), and the Function Plot menu with no function defined (reason lines; does row 1 hide under the top fade?). Open defaults: decisions.md "Needs the user", R7.
+
+## 2026-10-13: waiting for the owner's notes on R9
+
+The R9 APK: flick up on a key = its shift function, flick down = its letter, in one motion (no wait); a bubble shows what the lift fires, sliding back cancels. Lock flicks: up on Shift, down/up on Alpha. Settings > Shift / Alpha taps counts the taps for the P7 point 4 decision. To judge: the 20 px arm and 12 px cancel distances, and the tick (key vibration on in Settings).

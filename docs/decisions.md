@@ -20,13 +20,13 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
   5. Function Plot with no function defined: the six rows with reason lines don't all fit on a Pixel 7, so row 1 scrolls under the top fade ("6 items" shows). Options: the reason only on the highlighted disabled row, or once in the title row when all disabled rows share it.
 
   **Recommendation:** keep 1–4 until the owner misses something; judge 5 on the phone. Points 1 and 2 can only be tried once a list longer than 10 items exists (R4 Find).
-- **2026-10-12 P7 point 4: merging Shift and Alpha into one key. OPEN.** Decided on R9's local Shift/Alpha tap counter after a week of flick use (P11). Details in P7 below.
+- **2026-10-12 P7 point 4: merging Shift and Alpha into one key. OPEN.** Decided on R9's local Shift/Alpha tap counter (Settings > Shift / Alpha taps, built in `cd4719f`) after a week of flick use (P11). Details in P7 below.
 
 ## Decided proposals (2026-10-12 and 2026-10-13)
 
 Newest first. Where an entry changed an earlier document, that document now carries the result.
 
-- **2026-10-13 R8: keys typed while an app is still loading. DECIDED by the user (2026-10-13), on the review's recommendation.** Shift waits in the queue but a place key (CAS, Home/CAS, Apps, Symb, Plot, Num, Mode, Settings) runs at once, so "Plot, Shift, CAS" typed fast opens CAS instead of the Mode sheet (so before R8 too). R9 fixes it: a queued key keeps the layer it was pressed in. Task in the brief, R9.
+- **2026-10-13 R8: keys typed while an app is still loading. DECIDED by the user (2026-10-13), on the review's recommendation.** Shift waits in the queue but a place key (CAS, Home/CAS, Apps, Symb, Plot, Num, Mode, Settings) runs at once, so "Plot, Shift, CAS" typed fast opens CAS instead of the Mode sheet (so before R8 too). Fixed in R9 (`cd4719f`): a queued key keeps the layer it was pressed in (e2e in `app/test/flicks.spec.ts`).
 - **2026-10-13 G3: open points from the defs package (merged 56ffab1). All four DECIDED by the owner (2026-10-13).** (1) A value that is 0 in every evaluation but not exactly 0 gets ⚠ without a count; prec-zero-cancel is active (done at review). (2) Home `evalf(x,n)` shows n digits like CAS (done at review). (3) Variables are saved as values, not commands (docs/04 6.2 updated). (4) The four solver notes are bugs SB1–SB4 in backlog "Solve bugs"; Solve is frozen for features, not for bugs; not fixed in this merge. Defaults entry "2026-10-13 Definitions survive a relaunch" below.
 - **2026-10-13 G4: open points from the Find index (merged 3376582). DECIDED by the user (2026-10-13), on the review's recommendation.** The review removed the usage boost (P11), so R4 builds on `prepare()` and `search()` only, and nothing is persisted.
   1. **Raw size:** the index was 395 of 400 kB raw (74.5 of 100 kB gzip); every tier-1 `insert` (70 kB) was `\operatorname{id}\left(#?\right)`. **Decided:** leave it out of tier-1 items and let `prepare()` fill it in (docs/04 3.3; built in G3). Not chosen: a 450 kB raw budget.
@@ -111,6 +111,11 @@ Newest first. Where an entry changed an earlier document, that document now carr
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-13 Flicks (R9)
+- **Choice:** a flick arms at 20 px, mostly vertical; it cancels within 12 px of the touch point; a cancelled touch stays cancelled (sliding out again doesn't re-arm), so a change of mind can't misfire. A flick ignores the Shift/Alpha state and uses up a one-shot Shift or Alpha. One lock at a time: a lock flick replaces the other lock. Under the lower-case lock a flick down still gives the capital ("down = capital" everywhere outside unit slots). Taps on Shift/Alpha inside a sheet are counted too. A flick down on a key without a letter gives what Alpha + that key gives (its primary function; the bubble shows it).
+- **Alternatives:** a time-based classifier (rejected by the owner, feedback #26); a lower threshold (more misfires on slips).
+- **Would change if:** the owner finds 20 px too far or too near on the phone.
 
 ### 2026-10-13 Mode and Settings sheets (R8)
 - **Choice:** the Mode and Settings sheets always open on their first row (`remember: false`); a status chip opens Mode on its own row (`at`); the last-pick memory of R7 stays for every other list. A row with a value: ◀ ▶ step it, a digit or a tap steps it forward and the sheet stays, Enter closes; ◀ on a row without a value goes back. Digits and decimals open a list of presets on a digit or Enter, and a pick closes. Switches (the Format key cycle) run and stay; an empty cycle falls back to the default. Vibration strength steps by 10 %, length by 5 ms.
