@@ -4,10 +4,11 @@
 //   sample     the template filled in; the round-trip and keyboard tests read it
 //   source     where a key's position was seen; keyboard.test.ts and the G2 checklist read it
 //   check      a palette cell to confirm on the device; keyboard.test.ts reads it
+//   desc       a palette cell's description for readers of the yaml; the app names cells through i18n
 //   unit_slot  the unit slot's layout record; tools/probes/unit-presses.mjs reads it (milestone 5 reads it at run time)
 // `shipped: true` tells loadKeyboard not to ask for them.
 
-const DROP = new Set(["sample", "source", "check"]);
+const DROP = new Set(["sample", "source", "check", "desc"]);
 
 function strip(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(strip);

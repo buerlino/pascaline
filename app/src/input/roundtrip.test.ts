@@ -61,7 +61,9 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
     for (const t of templates(keyboard)) {
       if (!t.sample) continue;
       const [latex, intended] = t.sample;
-      it(`${t.keyId}/${t.layer}/${t.variant}: ${latex}`, () => {
+      it(`${t.keyId}/${t.layer}/${t.variant}: ${latex}${t.refused ? " is refused" : ""}`, () => {
+        // a refused cell (R18: & and Å) must give a message, never a guessed meaning
+        if (t.refused) return void expect(() => latexToGiac(latex, { chips: SAMPLE_CHIPS })).toThrow(/has no meaning|is a unit/);
         const produced = latexToGiac(latex, { chips: SAMPLE_CHIPS });
         const r = equal(produced, intended);
         expect(r.ok, `got ${produced}, want ${intended}: ${r.how}`).toBe(true);

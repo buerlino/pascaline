@@ -4,10 +4,13 @@ import raw from "../../../spec/keyboard.yaml";
 
 export type Special =
   | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "app" | "cas" | "settings" | "mode" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt" | "copy" | "paste" | "tmpl"
+  /** The Shift palettes (R18): Shift + 6 relations and logic, Shift + 9 symbols and Greek. */
+  | "relations" | "symbols"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
 export const SPECIALS: readonly Special[] = [
-  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl", "none",
+  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
+  "relations", "symbols", "none",
 ];
 
 export type Action = ActionBody & {
@@ -47,7 +50,7 @@ export interface Key {
 /** A template action (and its one-line form, if any). */
 export type InsertAction = Extract<ActionBody, { kind: "insert" }> & { readonly line?: ActionBody };
 
-/** One cell of the template palette (the Tmpl key; spec/keyboard.yaml `templates:`). */
+/** One cell of a palette (the Tmpl key, `templates:`; Shift + 6, `relations:`; Shift + 9, `symbols:`). */
 export interface PaletteItem {
   readonly id: string;
   readonly row: number;
@@ -58,6 +61,10 @@ export interface PaletteItem {
   readonly action: InsertAction;
   /** Our reading of the reference, to confirm on the device (false in the built app). */
   readonly check: boolean;
+  /** The key at the cell's place, shown on the cell, that picks it (Shift + 6, R18). */
+  readonly pick?: string;
+  /** The parser refuses this cell's insert with a message (a meaning not settled yet). */
+  readonly refused: boolean;
 }
 
 export interface Palette {
@@ -65,6 +72,10 @@ export interface Palette {
   /** In reading order (row by row). */
   readonly items: readonly PaletteItem[];
 }
+
+/** The palettes by the yaml section that holds them; the template `keyId` of an own cell is `<prefix>:<id>`. */
+export const PALETTES = { palette: "templates", relations: "relations", symbols: "symbols" } as const;
+const PREFIX: Readonly<Record<keyof typeof PALETTES, string>> = { palette: "tmpl", relations: "rel", symbols: "sym" };
 
 export interface Keyboard {
   /** Cells in a row unless `rowColumns` says otherwise. */
@@ -77,6 +88,10 @@ export interface Keyboard {
   readonly byId: ReadonlyMap<string, Key>;
   /** The Tmpl palette; empty when the spec has none. */
   readonly palette: Palette;
+  /** Shift + 6, relations and logic (R18); empty when the spec has none. */
+  readonly relations: Palette;
+  /** Shift + 9, symbols and Greek (R18); empty when the spec has none. */
+  readonly symbols: Palette;
 }
 
 export class KeyboardSpecError extends Error {}
@@ -200,24 +215,26 @@ export function loadKeyboard(doc: unknown): Keyboard {
   const rows = keys.reduce((m, k) => Math.max(m, k.row + 1), 0);
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
   const units = [columns, ...rowColumns.values()].reduce((a, b) => (a * b) / gcd(a, b), 1);
-  const palette = loadPalette(doc["templates"], byId, shipped);
-  return { columns, rowColumns, units, rows, keys, byId, palette };
+  const pal = (k: keyof typeof PALETTES): Palette => loadPalette(doc[PALETTES[k]], PALETTES[k], byId, shipped);
+  return { columns, rowColumns, units, rows, keys, byId, palette: pal("palette"), relations: pal("relations"), symbols: pal("symbols") };
 }
 
-/** The `templates:` section: a grid of cells, each the template of a key or its own insert action with a sample. */
-function loadPalette(v: unknown, byId: ReadonlyMap<string, Key>, shipped: boolean): Palette {
+/** A palette section (`templates:`, `relations:`, `symbols:`): a grid of cells, each the template of a key or its own
+ *  insert action with a sample. */
+function loadPalette(v: unknown, section: string, byId: ReadonlyMap<string, Key>, shipped: boolean): Palette {
   if (v === undefined) return { columns: 1, items: [] };
-  if (!isObj(v)) throw new KeyboardSpecError("templates: must be a mapping");
-  const columns = int(v, "columns", "templates");
+  if (!isObj(v)) throw new KeyboardSpecError(`${section}: must be a mapping`);
+  const columns = int(v, "columns", section);
   const list = v["items"];
-  if (!Array.isArray(list)) throw new KeyboardSpecError("templates: 'items' must be a list");
+  if (!Array.isArray(list)) throw new KeyboardSpecError(`${section}: 'items' must be a list`);
+  const picks = new Set<string>();
   const items: PaletteItem[] = [];
   const ids = new Set<string>();
   const cells = new Set<string>();
   for (const it of list) {
-    if (!isObj(it)) throw new KeyboardSpecError("templates: every item must be a mapping");
-    const id = str(it, "id", "template");
-    const where = `template '${id}'`;
+    if (!isObj(it)) throw new KeyboardSpecError(`${section}: every item must be a mapping`);
+    const id = str(it, "id", section);
+    const where = `${section} '${id}'`;
     if (ids.has(id)) throw new KeyboardSpecError(`${where}: duplicate id`);
     ids.add(id);
     const row = int(it, "row", where);
@@ -226,6 +243,15 @@ function loadPalette(v: unknown, byId: ReadonlyMap<string, Key>, shipped: boolea
     if (cells.has(`${row},${col}`)) throw new KeyboardSpecError(`${where}: position ${row},${col} is taken`);
     cells.add(`${row},${col}`);
     const check = it["check"] === true;
+    const refused = it["refused"] === true;
+    let pick: string | undefined;
+    if (it["pick"] !== undefined) {
+      pick = str(it, "pick", where);
+      if (!byId.has(pick)) throw new KeyboardSpecError(`${where}: pick '${pick}' is not a key`);
+      if (picks.has(pick)) throw new KeyboardSpecError(`${where}: pick '${pick}' picks two cells`);
+      picks.add(pick);
+    }
+    const extra = { check, refused, ...(pick ? { pick } : {}) };
     if (it["key"] !== undefined) {
       if (it["insert"] !== undefined) throw new KeyboardSpecError(`${where}: either 'key' or 'insert', not both`);
       const keyId = str(it, "key", where);
@@ -233,11 +259,11 @@ function loadPalette(v: unknown, byId: ReadonlyMap<string, Key>, shipped: boolea
       if (!LAYERS.includes(layer)) throw new KeyboardSpecError(`${where}: unknown layer '${layer}'`);
       const action = byId.get(keyId)?.actions[layer];
       if (action?.kind !== "insert") throw new KeyboardSpecError(`${where}: key '${keyId}' has no template in its ${layer} layer`);
-      items.push({ id, row, col, key: keyId, layer, action: action as InsertAction, check });
+      items.push({ id, row, col, key: keyId, layer, action: action as InsertAction, ...extra });
     } else {
       const action = parseAction({ insert: it["insert"], sample: it["sample"] }, where);
       if (action.kind !== "insert" || (!action.sample && !shipped)) throw new KeyboardSpecError(`${where}: needs 'insert' and 'sample'`);
-      items.push({ id, row, col, action: action as InsertAction, check });
+      items.push({ id, row, col, action: action as InsertAction, ...extra });
     }
   }
   items.sort((a, b) => a.row - b.row || a.col - b.col);
@@ -288,15 +314,21 @@ export interface Template {
   readonly variant: "normal" | "line";
   readonly latex: string;
   readonly sample?: readonly [string, string];
+  /** The parser must refuse the sample (a palette cell whose meaning is not settled). */
+  readonly refused?: boolean;
 }
 
-/** Every LaTeX template on the keyboard, including the one-line variants and the palette's own templates (keyId
- *  `tmpl:<id>`); each needs a parser case. */
+/** Every LaTeX template on the keyboard, including the one-line variants and the palettes' own templates (keyId
+ *  `tmpl:<id>`, `rel:<id>`, `sym:<id>`); each needs a parser case. */
 export function templates(kb: Keyboard): Template[] {
   const out: Template[] = [];
-  for (const p of kb.palette.items)
-    if (p.key === undefined)
-      out.push({ keyId: `tmpl:${p.id}`, layer: "primary", variant: "normal", latex: p.action.latex, ...(p.action.sample ? { sample: p.action.sample } : {}) });
+  for (const k of Object.keys(PALETTES) as (keyof typeof PALETTES)[])
+    for (const p of kb[k].items)
+      if (p.key === undefined)
+        out.push({
+          keyId: `${PREFIX[k]}:${p.id}`, layer: "primary", variant: "normal", latex: p.action.latex,
+          ...(p.action.sample ? { sample: p.action.sample } : {}), ...(p.refused ? { refused: true } : {}),
+        });
   for (const key of kb.keys)
     for (const layer of LAYERS) {
       const a = key.actions[layer];

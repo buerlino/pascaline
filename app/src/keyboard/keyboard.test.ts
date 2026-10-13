@@ -89,7 +89,9 @@ describe("keyboard spec", () => {
     for (const t of all) {
       const id = `${t.keyId}/${t.layer}/${t.variant}`;
       expect(t.sample, `${id} needs a sample`).toBeDefined();
-      expect(() => latexToGiac((t.sample as readonly [string, string])[0], { chips: SAMPLE_CHIPS }), id).not.toThrow();
+      const run = () => latexToGiac((t.sample as readonly [string, string])[0], { chips: SAMPLE_CHIPS });
+      if (t.refused) expect(run, `${id} is refused: the parser must say why`).toThrow();
+      else expect(run, id).not.toThrow();
     }
   });
 
@@ -113,7 +115,6 @@ describe("keyboard spec", () => {
   const NO_ARGUMENT: Record<string, string> = {
     "emark/primary/normal": "the exponent mark ᴇ: one token, typed like a character (R14)",
     "emark/shift/normal": "store ▸: it follows the value, the name comes after",
-    "d9/shift/normal": "∞: a constant",
     "d2/shift/normal": "i: a constant",
     "d3/shift/normal": "π: a constant",
     "add/shift/normal": "Ans: a value",
@@ -126,6 +127,13 @@ describe("keyboard spec", () => {
     "tmpl:rowvec/primary/normal": "the cells of a matrix are not an argument",
     "tmpl:colvec/primary/normal": "the cells of a matrix are not an argument",
     "tmpl:dms/primary/normal": "three boxes of equal standing: none is the argument",
+    // R18, Shift + 6: relations and the infix logic words are operators (NOT and EQ take the selection)
+    ...Object.fromEntries(["lt", "le", "gt", "ge", "eqeq", "ne", "and", "or", "xor"].map((id) => [`rel:${id}/primary/normal`, "an operator"])),
+    // R18, Shift + 9: every cell is a character: operators (!, →, °, ′, ″, &), constants (∞) and names (Å, Greek)
+    ...Object.fromEntries(
+      ["fact", "arrow", "inf", "deg", "minute", "second", "amp", "aring", "alpha", "beta", "gamma", "Delta", "delta", "epsilon",
+        "theta", "lambda", "mu", "rho", "Sigma", "sigma", "tau", "phi", "chi", "Omega"].map((id) => [`sym:${id}/primary/normal`, "a character"]),
+    ),
   };
   // The one-line forms of xʸ and x²: a bare caret. EntryController.run() brackets a selection in front of it (R17).
   const CARET = ['\\char"5E '];
@@ -172,6 +180,35 @@ describe("keyboard spec", () => {
     expect(p.items.filter((i) => i.check).map((i) => i.id)).toEqual([]); // evalat, rowvec, mixed: G2 items 34–36
   });
 
+  it("Shift + 6 (R18): the G2's relations and logic, 4 × 3, each cell picked by the key at its place", () => {
+    const p = keyboard.relations;
+    expect(keyboard.byId.get("d6")?.actions.shift).toEqual({ kind: "special", name: "relations" });
+    expect(p.columns).toBe(4);
+    expect(p.items.map((i) => i.id)).toEqual(["lt", "le", "gt", "ge", "eqeq", "ne", "and", "or", "not", "xor", "eq"]);
+    p.items.forEach((it, i) => expect([it.row, it.col], it.id).toEqual([Math.floor(i / 4), i % 4]));
+    // the digit block 7 8 9 ÷ / 4 5 6 × / 1 2 3, cell for cell (the owner's photo, 2026-10-13)
+    expect(p.items.map((i) => i.pick)).toEqual(["d7", "d8", "d9", "div", "d4", "d5", "d6", "mul", "d1", "d2", "d3"]);
+    for (const it of p.items) {
+      const k = keyboard.byId.get(it.pick as string) as Key;
+      expect(Math.floor(it.row), it.id).toBe(k.row - 6); // rows 6, 7, 8 of the keypad
+      expect(it.col, it.id).toBe(k.col - 1); // the digit columns 1-4
+    }
+  });
+
+  it("Shift + 9 (R18): the G2's symbols and Greek, 8 × 3, no key labels (G2 item 37); ∞ moved here from the key", () => {
+    const p = keyboard.symbols;
+    expect(keyboard.byId.get("d9")?.actions.shift).toEqual({ kind: "special", name: "symbols" });
+    expect(p.columns).toBe(8);
+    expect(p.items.map((i) => i.action.latex)).toEqual([
+      "!", "\\rightarrow", "\\infty", "\\degree", "\\prime", "\\doubleprime", "\\&", "\\text{Å}",
+      "\\alpha", "\\beta", "\\gamma", "\\Delta", "\\delta", "\\varepsilon", "\\theta", "\\lambda",
+      "\\mu", "\\rho", "\\Sigma", "\\sigma", "\\tau", "\\varphi", "\\chi", "\\Omega",
+    ]);
+    p.items.forEach((it, i) => expect([it.row, it.col], it.id).toEqual([Math.floor(i / 8), i % 8]));
+    expect(p.items.filter((i) => i.pick !== undefined)).toEqual([]);
+    expect(p.items.filter((i) => i.refused).map((i) => i.id)).toEqual(["amp", "aring"]); // Needs a decision (R18 report)
+  });
+
   it("Tmpl opens the palette; a b/c is the fraction while typing", () => {
     expect(keyboard.byId.get("tmpl")?.actions.primary).toEqual({ kind: "special", name: "tmpl" });
     expect(keyboard.byId.get("frac")?.label.primary).toBe("a b/c");
@@ -184,6 +221,9 @@ describe("keyboard spec", () => {
     const plain = (a: unknown) => JSON.parse(JSON.stringify(a, (key, v: unknown) => (["sample", "source", "check"].includes(key) ? undefined : v)));
     expect(plain(k.keys)).toEqual(plain(keyboard.keys));
     expect(plain(k.palette)).toEqual(plain(keyboard.palette));
+    expect(plain(k.relations)).toEqual(plain(keyboard.relations));
+    expect(plain(k.symbols)).toEqual(plain(keyboard.symbols));
+    expect(JSON.stringify(slim)).not.toMatch(/"desc"/);
   });
 
   it("rejects broken palettes", () => {
@@ -198,6 +238,8 @@ describe("keyboard spec", () => {
     expect(() => loadKeyboard(doc([{ id: "t", row: 0, col: 0, key: "a", layer: "shift" }]))).toThrow(/no template/);
     expect(() => loadKeyboard(doc([{ id: "t", row: 0, col: 0, key: "nope", layer: "primary" }]))).toThrow(/no template/);
     expect(() => loadKeyboard(doc([{ ...own, key: "a", layer: "primary" }]))).toThrow(/not both/);
+    expect(() => loadKeyboard(doc([{ ...own, pick: "nope" }]))).toThrow(/not a key/);
+    expect(() => loadKeyboard(doc([{ ...own, pick: "a" }, { ...own, id: "u", col: 1, pick: "a" }]))).toThrow(/two cells/);
   });
 
   it("contains no trademarked names", () => {
