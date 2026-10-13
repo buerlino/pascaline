@@ -366,7 +366,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + Math | nothing | Memory: Find on variables and user functions, with delete and "clear all" | reference: Mem (memory manager) |
 | Vars (row 3, col 0) [r4c1] | nothing | Find, filtered to variables | P8 |
 | Shift + Vars | nothing | unassigned | reference: Chars palette; Find covers named symbols |
-| Tmpl (row 3, col 2) [r4c3] | nothing | template list (EN5, milestone 6); nothing before | P8 |
+| Tmpl (row 3, col 2) [r4c3] | the 6 × 3 template palette (R10) | unchanged; picked by arrows, Enter or a tap (docs/research/r8-menus.md, rule M1) | P8, P11, R10 |
 | Shift + Tmpl | nothing | the unit view (unit slots) | P11; reference: Units |
 | Alpha on Vars, Math, Tmpl | A, B, C | unchanged | P4 |
 | a b/c (row 3, col 4) [r4c5] | inserts a fraction | toggles the form of the last result: decimal ↔ fraction, polar ↔ rectangular (R10); the fraction template is on ÷ and in Tmpl | G2 item 29, P11, P12 |
@@ -377,12 +377,12 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + ◀, Shift + ▶ | line start, line end | removed (R13); a tap on the formula puts the cursor there | P12 |
 | Shift + 6, Shift + 9 | nothing; ∞ | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ (R18) | P12, owner 2026-10-13 |
 | View (row 1, col 4) [r2c4] | gap | compact keypad toggle (K4) | P7 point 5 |
-| Shift + View | gap | Copy (full value of the selected or last result) | reference: Copy |
-| Menu (row 2, col 4) [r3c4] | app menus only | Home/CAS: Copy, Copy as shown, Copy exact, Copy LaTeX, Paste, Share session, Clear history | P8 |
-| Shift + Menu | nothing | Paste a number | reference: Paste |
+| Shift + View | Copy (A3) | Copy (full value of the selected or last result) | reference: Copy |
+| Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: Copy, Copy as shown, Copy exact, Copy LaTeX, Paste, Share session, Clear history (A3) | Home/CAS, proposed by S2 for R11: Insert, Recall, Copy, Store ▶, Delete, Copy as ›, Paste, Share session, Clear history, on the picked row, else the last result | P8; S2 (to decide) |
+| Shift + Menu | Paste a number (A3) | unchanged | reference: Paste |
 | Help (row 0, col 4) [r1c4] | gap | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; uses the index; P8 left Help free, so the owner may veto |
 | row 1, col 0 | gap | stays empty | no reference key there |
-| Shift + `+` [r10c5] | nothing | Ans (`\ans`) | reference |
+| Shift + `+` [r10c5] | Ans (`\ans`, R2) | unchanged | reference |
 | Shift + `−` [r9c5] | nothing | Base: show the last result in HEX, BIN, OCT, DEC; word size (EN6) | reference: Base |
 | Shift + 5 [r8c3] | nothing | `[ ]` vector or matrix template (EN5) | reference |
 | Shift + 8 [r7c3] | nothing | `{ }` list template (EN5) | reference |

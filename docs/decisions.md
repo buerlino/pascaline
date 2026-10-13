@@ -144,7 +144,7 @@ Each entry: the choice, why, the alternatives, and what would change it.
 
 ### 2026-10-13 Mode and Settings sheets (R8)
 - **Choice:** the Mode and Settings sheets always open on their first row (`remember: false`); a status chip opens Mode on its own row (`at`); the last-pick memory of R7 stays for every other list. A row with a value: ◀ ▶ step it, a digit or a tap steps it forward and the sheet stays, Enter closes; ◀ on a row without a value goes back. Digits and decimals open a list of presets on a digit or Enter, and a pick closes. Switches (the Format key cycle) run and stay; an empty cycle falls back to the default. Vibration strength steps by 10 %, length by 5 ms.
-- **Why:** the 3-key paths of docs/05 3.4 (Shift + CAS, ▶, Enter for the angle; Shift + CAS, 3, 7 for 20 digits) must not depend on the last pick. ron's defaults otherwise, nothing measured.
+- **Why:** the fixed key paths of docs/05 3.4 (Shift, CAS, ▶, Enter for the angle; Shift, CAS, 3, 7 for 20 digits; 4 presses each, Shift counted as docs/04 5.2 says) must not depend on the last pick. ron's defaults otherwise, nothing measured.
 - **Would change if:** the owner's verdict on the APK.
 
 ### 2026-10-13 Sheet defaults (R7)
