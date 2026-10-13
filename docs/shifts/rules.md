@@ -47,7 +47,6 @@ The three principles in CLAUDE.md decide every default:
   export MAIN=/home/nordmu/Documents/source99/pascaline
   export PASCALINE_DL_DIR=$MAIN/engine/giac/_downloads   # never re-download Giac
   export GIAC_OUT=$MAIN/engine/giac/_out/gsl             # current dev engine build
-  export PYTHON_OUT=$MAIN/python/_out/dev                # current MicroPython dev build
   export PASCALINE_COORD=$MAIN/.coord                    # locks, device info, log
   ```
   Build engines once in the main checkout under the host-cpu lock, then point at them, rather than building in every worktree.
@@ -56,7 +55,7 @@ The three principles in CLAUDE.md decide every default:
 - **Shared files belong to Henri:** `CLAUDE.md`, `docs/02-architecture-plan.md`, `docs/04-architecture.md`, `docs/decisions.md`, `docs/backlog.md`, `THIRD_PARTY.md`, `spike/RESULTS.md`, `.claude/agents/*`. Send him the text: numbers, decisions, G2 questions, and every new dependency.
 - **Ownership inside `app/`:**
   - **ron:** `app/src/views/`, `app/src/apps/`, `app/src/entry/`, `app/src/keyboard/`, `app/src/input/` (the parser; ron adds the `parser.yaml` row with each rule), `spec/keyboard.yaml`.
-  - **gorge:** `app/src/engine/`, `app/src/python/`, `tests/golden/` (with the oracle), the Find index generator and data.
+  - **gorge:** `app/src/engine/`, `tests/golden/` (with the oracle), the Find index generator and data.
   - **annabell:** `android/`, `build.sh`, `tools/`, the release toolchain.
   - **Agree the interfaces early.**
 - **Messages** (SendMessage to an agent ID). Short, in these forms:
