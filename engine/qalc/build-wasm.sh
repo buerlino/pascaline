@@ -44,7 +44,7 @@ QALC_VERSION="5.13.1"
 QALC_URL="https://github.com/Qalculate/libqalculate/releases/download/v$QALC_VERSION/libqalculate-$QALC_VERSION.tar.gz"
 QALC_SHA256="cf8d3eaf3d85030115701e997b6585e69573e71add88e7758486c5d1b01d3cc3"
 
-# Same container pins as engine/giac/build-wasm-release.sh and python/build-micropython.sh (keep all three in step).
+# Same container pins as engine/giac/build-wasm-release.sh (keep both in step).
 IMAGE="docker.io/library/debian@sha256:913f6706df59a68922d1dd08f78c2476560a8d367897200a6005b00e5f67c2d5"
 EMSCRIPTEN_PKG_VERSION="3.1.69+dfsg-3"
 

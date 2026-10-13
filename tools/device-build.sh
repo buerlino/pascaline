@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Build our APK for a device with the existing dev engine (a thin wrapper over ./build.sh):
 #
-#   tools/device-build.sh [--measure] [--no-python] [--install] [--serial S] [--engine-dir DIR]
+#   tools/device-build.sh [--measure] [--install] [--serial S] [--engine-dir DIR]
 #
 # Engine: --engine-dir, else $GIAC_OUT, else the main checkout's engine/giac/_out/gsl (works from a worktree).
 # Signed with the throwaway key in android/_keys/ (gitignored). --install runs `adb install -r` for
@@ -18,7 +18,6 @@ ARGS=() SERIAL="${ANDROID_SERIAL:-}" INSTALL=0
 while (( $# )); do
   case "$1" in
     --measure) ARGS+=(--measure); shift ;;
-    --no-python) ARGS+=(--no-python); shift ;;
     --install) INSTALL=1; shift ;;
     --serial) SERIAL="$2"; shift 2 ;;
     --engine-dir) ENGINE="$2"; shift 2 ;;
