@@ -7,6 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-14 R18 open points. OPEN.** (1) `&` in Shift + 9 is refused until G2 item 41 is answered. (2) `Å` is refused in Home; in milestone 5 the cell inserts the ångström in the unit view. (3) `x==2` with x undefined is false in Home (same family as G2 item 31). **Recommendation:** keep all three as built.
 - **2026-10-13 P12 open points (keypad review, [06-keypad-vs-g2.md](06-keypad-vs-g2.md) section 4). OPEN.**
   A. **Menu audit: done** (S2, accepted by the owner 2026-10-13; entry "S2: one menu system" under Decided proposals). B. **Status-line switch:** hit area, press count against the G2's one key, and the fallback if the bar is slow (R15a). C. **`!` (factorial):** settled by the owner (2026-10-13, answer to R10): it goes in the Shift + 9 palette (R18). **Recommendation:** judge B on the R15 APK.
 - **2026-10-12 M4-2: Task benchmark questions (from R1). PROPOSED, needs the user.**
@@ -139,6 +140,9 @@ Newest first. Where an entry changed an earlier document, that document now carr
 - **2026-10-11 P3 integration plan (`docs/p3-units-plan.md`, gorge). DECIDED by the user (2026-10-11 evening): all eight defaults accepted.** (1) libqalculate is the only units database, Giac units are not used; (2) Units and Constants are pickers in the Menu key's menu, no key relabelling (the reference's key for units goes on the G2 checklist); (3) the `hp` typo gets a one-number local patch, and the user sends the upstream report; (4) interval arithmetic and exact mode in qalc off; (5) no idle preload, load on first unit use; (6) units only in scalar expressions in v1, with a clear message for mixed unit/CAS input; (7) qalc's CODATA constants replace the "physical constants menu" backlog item; (8) scheduled after the MVP basics, before Statistics (L1 is done). Not built yet; the user picks the start. **Amended 2026-10-12 by P8:** (2) and (6) changed (Find instead of pickers; units only where units are entered); **by P11:** units are entered in the unit view (docs/04 section 4); the start is milestone 5.
 
 ## Defaults (Phase 1)
+
+### 2026-10-14 R18 defaults
+Greek stand-in names beta_, gamma_, Gamma_, epsilon_ (alternatives: Unicode names, rejected by probe; plain names, which clash); XOR through and/or/not; → is Giac's ->; & and Å refused until settled. Would change if: the G2 shows a meaning for & or →.
 
 Each entry: the choice, why, the alternatives, and what would change it.
 

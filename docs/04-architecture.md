@@ -375,7 +375,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Symb, Plot, Num, arrow pad, top cluster | rows 0–2 | folded into the status line if R15a confirms; the pad moves one line down; fewer rows (R15) | P12 |
 | Alpha + 0 (quote mark) | `"` | removed (R13) | P12 |
 | Shift + ◀, Shift + ▶ | line start, line end | removed (R13); a tap on the formula puts the cursor there | P12 |
-| Shift + 6, Shift + 9 | nothing; ∞ | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ (R18) | P12, owner 2026-10-13 |
+| Shift + 6, Shift + 9 | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ | built (R18) | P12, owner 2026-10-13 |
 | View (row 1, col 4) [r2c4] | gap | compact keypad toggle (K4) | P7 point 5 |
 | Shift + View | Copy (A3) | Copy (full value of the selected or last result) | reference: Copy |
 | Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: Copy, Copy as shown, Copy exact, Copy LaTeX, Paste, Share session, Clear history (A3) | Home/CAS, from R11 (S2): Insert, Recall, Copy, Store ▶, Delete, Copy as ›, Paste, Share session, Clear history, on the picked row, else the last result | P8; S2 (accepted 2026-10-13) |

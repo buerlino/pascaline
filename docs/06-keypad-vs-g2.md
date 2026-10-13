@@ -17,8 +17,6 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Shift + 4, 5, 8 | matrix editor, `[ ]`, `{ }` (EN5, milestone 6) | docs/04 5.1 |
 | Shift + 7 (List) | deferred with Statistics | docs/04 5.1 |
 | Shift + − (Base) | Base menu (EN6, milestone 6) | docs/04 5.4 |
-| Shift + 6 | relations and logic palette, 4 × 3 (R18) | owner, 2026-10-13 |
-| Shift + 9 | symbol and Greek palette, 8 × 3, with `!` and ∞ (R18); replaces ∞ on the key | owner, 2026-10-13 |
 
 ## 2. Different on purpose, with a written reason
 | Difference | Reason |
@@ -36,6 +34,10 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Shift + a b/c (DMS) omitted | DMS is in Tmpl (owner, 2026-10-13) |
 | Tmpl's mixed-number cell takes the number before the cursor as its whole part | on the G2 the typed number stays outside the cell's brackets, so `2`, then the cell, reads as 2 × (□/□) (G2 item 36); ours gives 2 □/□ = 2 + □/□ |
 | Lower-case and `sin⁻¹`-style legends, ⌫ glyph, text labels for icons | our own look (clean-room rule); the logical position is the G2's |
+| Shift + 9: & and Å are refused with a message | what & does on the G2 is not known (G2 item 41); Å is the ångström, a unit, and Home is unit-free (P8); the unit view reads Å from Find (milestone 5) |
+| Shift + 9: → makes a function (Giac's ->) | assumed; the G2's use of → is to check (G2 item 42) |
+| Shift + 6: XOR is (a or b) and not(a and b) | Giac's xor gives 0 when a side is symbolic, a silent wrong answer |
+| Greek letters β, γ, Γ, ε are stored under stand-in names (beta_, gamma_, Gamma_, epsilon_) | Giac keeps the plain names (epsilon is a setting, Gamma the function); results show the letter |
 
 ## 3. Decided by the owner on 2026-10-13 (P12)
 1. **a/b becomes a toggle for the form of the last result**: decimal ↔ fraction, polar ↔ rectangular (real + imaginary), and later forms of the same kind. The fraction template stays on ÷ and in Tmpl. The Fmt key keeps the number formats (Std, Sci, Eng, Fix, Pfx); its cycle has no fraction, mixed or polar entries. Built in R10 (`f296a92`).
