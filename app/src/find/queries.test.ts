@@ -60,7 +60,7 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
     for (const p of index.items) expect(p.item.insert, p.item.id).toBeTruthy();
     const uniform = index.items.find((p) => p.item.id === "fn:uniform_cdf")?.item;
     expect(uniform?.tier).toBe(1);
-    expect(uniform?.insert).toBe("\\operatorname{uniform\\_cdf}\\left(#?\\right)");
+    expect(uniform?.insert).toBe("\\operatorname{uniform\\_cdf}\\left(#0\\right)");
     expect(functionInsert("fn:uniform_cdf")).toBe(uniform?.insert);
   });
 
