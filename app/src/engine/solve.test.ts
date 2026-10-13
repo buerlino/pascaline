@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { markOf } from "./format.ts";
 
 describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () => {
   let host: EngineHost;
@@ -17,6 +18,25 @@ describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () 
     const r = host.solve({ kind: "equations", equations: ["x*exp(x)=5"], unknowns: ["x"], guesses: ["1"] }, s);
     expect(r.roots[0]!.result.display).toBe("1.32672466524"); // oracle lambertw(5): solve.yaml lambert-xexp
     expect(r.info).toBe("sign change in [1.32, 1.64]"); // derived: guess 1, steps 0.01·2^k on both sides
+  });
+
+  it("a root's full value carries the digits a second polish at W+20 confirms (decisions M4-8)", () => {
+    const r = host.solve({ kind: "equations", equations: ["x^2=2"], unknowns: ["x"], guesses: ["1"] }, s);
+    const root = r.roots[0]!.result;
+    expect(root.display).toBe("1.41421356237"); // oracle sqrt(2): solve.yaml sqrt2-pos
+    expect(root.reliableDigits).toBeGreaterThanOrEqual(28); // W = 30 against W+20 = 50
+    expect(root.full.startsWith("1.4142135623730950488016887")).toBe(true); // oracle sqrt(2) to 26 digits
+    expect(root.full.length).toBeGreaterThan(28);
+  });
+
+  it("a root that cancellation leaves right to fewer digits than asked is ⚠ n, with only those shown (M4-8)", () => {
+    const s30 = { ...s, digits: 30 };
+    const r = host.solve({ kind: "equations", equations: ["expand(product(x-k/7,k,1,25))=0"], unknowns: ["x"], guesses: ["3.4"] }, s30);
+    const root = r.roots[0]!.result;
+    expect(root.reliableDigits).toBeLessThan(30);
+    expect(markOf(root, { format: "STD", digits: 30 })?.mark).toBe("⚠");
+    // derived: the root is 24/7; every digit shown is right
+    expect("3.42857142857142857142857142857".startsWith(root.display.slice(0, -1))).toBe(true);
   });
 
   it("subscripted unknowns x_1, x_2 are found and solved (regression: IDENT rejected the underscore)", () => {

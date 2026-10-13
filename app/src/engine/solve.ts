@@ -4,7 +4,8 @@
 // at work precision and substituted back; the relative residual decides ⚠ (SolveSettings.warnRel).
 // Synchronous, UI-free; runs in the Giac worker and in Node. Giac names here have no underscore.
 import { safePrecision, toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
-import { decimalFromString, formatComplex, type ComplexValue, type DecimalValue } from "./format.ts";
+import { confirmedDigits, decimalFromString, formatComplex, formatConfirmed, isZero, type ComplexValue, type DecimalValue } from "./format.ts";
+import { valuePrecision } from "./numeric.ts";
 import { defaultSolveSettings, negZero, num, solve1, type SolveSettings } from "./solve1.ts";
 import { IDENT, type KnownValue, type SolveOutcome, type SolveRequest } from "./types.ts";
 
@@ -59,37 +60,39 @@ export function unknownsOf(giac: Giac, equations: string[]): string[] {
 /** One real part as a DecimalValue (from a work-precision float or an exact integer). */
 function realPart(giac: Giac, expr: string, work: number): DecimalValue | null {
   const t = giac.eval(`evalf(${expr},${work})`);
-  return decimalFromString(negZero(t.trim()));
+  return decimalFromString(negZero(t.trim()), work + 2);
 }
+
+/** Digits a root is polished with in the second precision (decisions M4-8). */
+export const SECOND_POLISH = 20;
 
 /**
  * A numeric HomeResult for the Giac expression `expr` (a value at work precision), rounded to `digits`.
- * Its check is the solver's own (a converged polish at work precision and the residual substituted back; ⚠ on the
- * outcome when that fails), so it claims the shown digits as confirmed and `full` is the shown text. A second polish
- * at a higher precision, to confirm more digits for copy, is not built yet (G2 report).
+ * With `check` (decisions M4-8), the same value from a second polish at a higher precision: the digits on which the
+ * two agree are the confirmed ones (shown, and copied as `full`, up to P), and fewer than `digits` give ⚠ n. Without
+ * it, the solver's own check stands (a converged polish and the residual substituted back; ⚠ on the outcome when that
+ * fails): the shown digits count as confirmed and `full` is the shown text.
  */
-export function numericResult(giac: Giac, expr: string, digits: number, work: number, ms = 0): HomeResult {
+export function numericResult(giac: Giac, expr: string, digits: number, work: number, ms = 0, check?: { expr: string; work: number }): HomeResult {
   const re = realPart(giac, `re(${expr})`, work);
   const im = realPart(giac, `im(${expr})`, work);
   if (!re || !im) {
     const text = giac.eval(`evalf(${expr},${digits})`);
     return { ok: false, display: text, path: "numeric", approximate: true, tieRisk: false, exactMs: 0, totalMs: ms, error: "engine", ...safePrecision(text) };
   }
+  const base = { path: "numeric" as const, approximate: true, tieRisk: false, exactMs: 0, totalMs: ms };
+  const re2 = check && realPart(giac, `re(${check.expr})`, check.work);
+  const im2 = check && realPart(giac, `im(${check.expr})`, check.work);
+  if (re2 && im2) {
+    const P = valuePrecision(digits);
+    const part = (a: DecimalValue, b: DecimalValue): number => (isZero(a) && isZero(b) ? P : confirmedDigits(a, b, work, P));
+    const value: ComplexValue = { re: re2, im: im2 };
+    const facts = { value, exactRational: false, reliableDigits: Math.min(part(re, re2), part(im, im2)) };
+    return { ok: true, display: formatConfirmed(facts, { format: "STD", digits })!, ...facts, full: formatConfirmed(facts, { format: "STD", digits: P })!, ...base };
+  }
   const value: ComplexValue = { re, im };
   const display = formatComplex(value, { format: "STD", digits }).text;
-  return {
-    ok: true,
-    display,
-    exactRational: false,
-    reliableDigits: digits,
-    full: display,
-    value,
-    path: "numeric",
-    approximate: true,
-    tieRisk: false,
-    exactMs: 0,
-    totalMs: ms,
-  };
+  return { ok: true, display, exactRational: false, reliableDigits: digits, full: display, value, ...base };
 }
 
 /** `name=value` substitutions for the known variables (exact literals). */
@@ -141,8 +144,8 @@ function one(giac: Giac, eq: string, v: string, guess: string, ks: ReturnType<ty
     const error = r.info === "bad equation" ? "syntax" : r.display.startsWith("guess") ? "bad-input" : "no-root";
     return { ok: false, roots: [], method: "none", info: r.info || r.display, warn: false, error, ms: performance.now() - t0 };
   }
-  // solve1 leaves the root in pasx (work precision).
-  const result = numericResult(giac, "pasx", s.digits, s.workDigits, r.ms);
+  // solve1 leaves the root in pasx (work precision) and pasx2 (polished again at work precision + 20).
+  const result = numericResult(giac, "pasx", s.digits, s.workDigits, r.ms, { expr: "pasx2", work: s.workDigits + SECOND_POLISH });
   return {
     ok: result.ok,
     roots: [{ name: v, result }],
@@ -178,18 +181,18 @@ function system(giac: Giac, eqs: string[], vars: string[], guesses: string[], wr
   if (!g) return fail("bad-input", "guesses must be real numbers", t0);
   const G = `[${g.join(",")}]`;
 
-  /** Newton polish of pasX at work precision with the exact Jacobian; false if it breaks down. */
-  const polish = (): boolean => {
-    ev(`Digits:=${s.workDigits}`);
+  /** Newton polish of X (pasX) at `digits` (work precision) with the exact Jacobian; false if it breaks down. */
+  const polish = (X = "pasX", digits = s.workDigits): boolean => {
+    ev(`Digits:=${digits}`);
     for (let i = 0; i < 12; i++) {
-      const step = ev(`passt:=evalf(linsolve(subst(pasJ,${V},pasX),-subst(pasF,${V},pasX)))`);
+      const step = ev(`passt:=evalf(linsolve(subst(pasJ,${V},${X}),-subst(pasF,${V},${X})))`);
       if (!realList(step, n)) return i > 0; // singular Jacobian at the root: keep what we have
-      ev("pasX:=pasX+passt");
-      const big = num(ev("evalf(max(abs(passt))/max(1,max(abs(pasX))))"));
+      ev(`${X}:=${X}+passt`);
+      const big = num(ev(`evalf(max(abs(passt))/max(1,max(abs(${X}))))`));
       if (big === undefined) return false;
-      if (big < 10 ** -(s.workDigits - 3)) break;
+      if (big < 10 ** -(digits - 3)) break;
     }
-    return realList(ev("pasX"), n) !== null;
+    return realList(ev(X), n) !== null;
   };
   /** Largest |f_k| / max(1, |left_k|, |right_k|) at pasX. */
   const residual = (): number => {
@@ -230,7 +233,15 @@ function system(giac: Giac, eqs: string[], vars: string[], guesses: string[], wr
   }
   ev(`pasX:=${best.x}`);
   const warn = best.rr > s.warnRel;
-  const roots = vars.map((name, k) => ({ name, result: numericResult(giac, `pasX[${k}]`, s.digits, s.workDigits) }));
+  // M4-8: polished again at work precision + 20; the digits on which the two agree are shown.
+  const W2 = s.workDigits + SECOND_POLISH;
+  ev(`Digits:=${W2}`);
+  ev(`pasX2:=evalf(pasX,${W2})`); // widened without loss (exact() rounds to a nearby simple fraction)
+  const again = polish("pasX2", W2);
+  const roots = vars.map((name, k) => ({
+    name,
+    result: numericResult(giac, `pasX[${k}]`, s.digits, s.workDigits, 0, again ? { expr: `pasX2[${k}]`, work: W2 } : undefined),
+  }));
   const via = { hybridsj: "GSL hybridsj (exact Jacobian)", hybrids: "GSL hybrids", "giac-newton": "Giac Newton" }[best.m];
   return {
     ok: roots.every((r) => r.result.ok),
@@ -276,7 +287,22 @@ function polyRoots(giac: Giac, eq: string, v: string, wrap: (e: string) => strin
   }
   // Reals first (ascending), then complex by real part, then imaginary part.
   ev("pasr:=sort(pasr,(a,b)->when(im(a)==0,when(im(b)==0,re(a)<re(b),true),when(im(b)==0,false,when(abs(re(a)-re(b))<=10^(-20)*max(1,abs(a),abs(b)),im(a)<im(b),re(a)<re(b)))))");
-  const roots = Array.from({ length: count }, (_, k) => ({ result: numericResult(giac, `pasr[${k}]`, s.digits, s.workDigits) }));
+  // M4-8: each root polished again at work precision + 20 (pasr2); the digits on which the two agree are shown.
+  const W2 = s.workDigits + SECOND_POLISH;
+  ev(`Digits:=${W2}`);
+  ev("pasr2:=pasr");
+  for (let k = 0; k < count; k++) {
+    ev(`pasz:=evalf(pasr[${k}],${W2})`);
+    for (let i = 0; i < 4; i++) {
+      const d = ev("pasdz:=horner(pasdc,pasz)");
+      if (ev("pasdz==0") === "true" || d.startsWith("GIAC_ERROR")) break;
+      ev("pasz:=evalf(pasz-horner(pasc,pasz)/pasdz)");
+    }
+    ev(`pasr2[${k}]:=pasz`);
+  }
+  const roots = Array.from({ length: count }, (_, k) => ({
+    result: numericResult(giac, `pasr[${k}]`, s.digits, s.workDigits, 0, { expr: `pasr2[${k}]`, work: W2 }),
+  }));
   const warn = worst > s.warnRel;
   return {
     ok: roots.every((r) => r.result.ok),
