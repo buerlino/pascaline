@@ -11,8 +11,19 @@
 # Each key has up to three layers: primary, shift, alpha. A layer is an action, one of
 #   { type: "7" }                  type characters as a physical keyboard would (smart fences apply)
 #   { insert: "\\frac{#@}{#?}", sample: [latex, giac] }
-#                                  insert a LaTeX template: #? is a placeholder, #@ the selection or
-#                                  what is before the cursor, #0 the selection or a placeholder. Every
+#                                  insert a LaTeX template: #? is a placeholder (always empty: a selection is
+#                                  discarded), #@ the selection or what is before the cursor, #0 the selection
+#                                  or a placeholder. A SELECTION IS THE ARGUMENT OF THE KEY (R17): the main
+#                                  argument slot of a template must be #0 (or #@ for a prefix argument such as
+#                                  the numerator of a fraction or the base of a power), never #?; #? is only for
+#                                  slots that are not the main argument (the index of an nth root, a denominator,
+#                                  the second operand). Keys with no argument slot (constants, operators, the
+#                                  exponent mark, store) replace the selection, as typing does; they are listed
+#                                  with a reason in NO_ARGUMENT in app/src/keyboard/keyboard.test.ts. A power key
+#                                  (#@^ or the one-line caret) brackets a selection that is not one plain term
+#                                  (EntryController.run). With nothing selected every key is unchanged.
+#                                  Tests: keyboard.test.ts (every template) and app/test/selection.spec.ts
+#                                  (every key and layer pressed with 1+2 selected). Every
 #                                  template needs a `sample`: the template filled in, and the Giac text it
 #                                  must mean. The round-trip test runs all samples through our parser and Giac,
 #                                  with Ans = 7 (SAMPLE_CHIPS in app/src/input/chips.ts).
@@ -123,8 +134,8 @@ keys:
     col: 1
     cls: fn
     label: { primary: sin, shift: "sin⁻¹", alpha: G }
-    primary: { insert: "\\sin\\left(#?\\right)", sample: ["\\sin\\left(2\\right)", "sin(2)"] }
-    shift: { insert: "\\arcsin\\left(#?\\right)", sample: ["\\arcsin\\left(0.5\\right)", "asin(1/2)"] }
+    primary: { insert: "\\sin\\left(#0\\right)", sample: ["\\sin\\left(2\\right)", "sin(2)"] }
+    shift: { insert: "\\arcsin\\left(#0\\right)", sample: ["\\arcsin\\left(0.5\\right)", "asin(1/2)"] }
     alpha: { type: G }
     source: virtual-calc  # r5c2
   - id: cos
@@ -132,8 +143,8 @@ keys:
     col: 2
     cls: fn
     label: { primary: cos, shift: "cos⁻¹", alpha: H }
-    primary: { insert: "\\cos\\left(#?\\right)", sample: ["\\cos\\left(2\\right)", "cos(2)"] }
-    shift: { insert: "\\arccos\\left(#?\\right)", sample: ["\\arccos\\left(0.5\\right)", "acos(1/2)"] }
+    primary: { insert: "\\cos\\left(#0\\right)", sample: ["\\cos\\left(2\\right)", "cos(2)"] }
+    shift: { insert: "\\arccos\\left(#0\\right)", sample: ["\\arccos\\left(0.5\\right)", "acos(1/2)"] }
     alpha: { type: H }
     source: virtual-calc  # r5c3
   - id: tan
@@ -141,8 +152,8 @@ keys:
     col: 3
     cls: fn
     label: { primary: tan, shift: "tan⁻¹", alpha: I }
-    primary: { insert: "\\tan\\left(#?\\right)", sample: ["\\tan\\left(2\\right)", "tan(2)"] }
-    shift: { insert: "\\arctan\\left(#?\\right)", sample: ["\\arctan\\left(2\\right)", "atan(2)"] }
+    primary: { insert: "\\tan\\left(#0\\right)", sample: ["\\tan\\left(2\\right)", "tan(2)"] }
+    shift: { insert: "\\arctan\\left(#0\\right)", sample: ["\\arctan\\left(2\\right)", "atan(2)"] }
     alpha: { type: I }
     source: virtual-calc  # r5c4
   - id: ln
@@ -150,8 +161,8 @@ keys:
     col: 4
     cls: fn
     label: { primary: ln, shift: "eˣ", alpha: J }
-    primary: { insert: "\\ln\\left(#?\\right)", sample: ["\\ln\\left(2\\right)", "ln(2)"] }
-    shift: { insert: "\\exponentialE^{#?}", sample: ["\\exponentialE^{2}", "exp(2)"] }
+    primary: { insert: "\\ln\\left(#0\\right)", sample: ["\\ln\\left(2\\right)", "ln(2)"] }
+    shift: { insert: "\\exponentialE^{#0}", sample: ["\\exponentialE^{2}", "exp(2)"] }
     alpha: { type: J }
     source: virtual-calc  # r5c5
   - id: log
@@ -159,8 +170,8 @@ keys:
     col: 5
     cls: fn
     label: { primary: log, shift: "10ˣ", alpha: K }
-    primary: { insert: "\\log\\left(#?\\right)", sample: ["\\log\\left(100\\right)", "log10(100)"] }
-    shift: { insert: "10^{#?}", sample: ["10^{2}", "10^2"] }
+    primary: { insert: "\\log\\left(#0\\right)", sample: ["\\log\\left(100\\right)", "log10(100)"] }
+    shift: { insert: "10^{#0}", sample: ["10^{2}", "10^2"] }
     alpha: { type: K }
     source: virtual-calc  # r5c6 (shift 10^x)
 
@@ -177,7 +188,7 @@ keys:
     shift:
       insert: "\\sqrt{#0}"
       sample: ["\\sqrt{8}", "sqrt(8)"]
-      line: { insert: "\\operatorname{sqrt}\\left(#?\\right)", sample: ["\\operatorname{sqrt}\\left(8\\right)", "sqrt(8)"] }
+      line: { insert: "\\operatorname{sqrt}\\left(#0\\right)", sample: ["\\operatorname{sqrt}\\left(8\\right)", "sqrt(8)"] }
     alpha: { type: L }
     source: virtual-calc  # r6c1 (x²; shift root template)
   - id: neg
@@ -186,7 +197,7 @@ keys:
     cls: fn
     label: { primary: "(−)", shift: "|x|", alpha: M }
     primary: { type: "-" }
-    shift: { insert: "\\left|#?\\right|", sample: ["\\left|-3\\right|", "abs(-3)"] }
+    shift: { insert: "\\left|#0\\right|", sample: ["\\left|-3\\right|", "abs(-3)"] }
     alpha: { type: M }
     source: virtual-calc  # r6c2 (negation; shift absolute value)
   - id: paren
@@ -200,7 +211,7 @@ keys:
   - { id: comma, row: 5, col: 3, cls: op, label: { primary: ",", alpha: O }, primary: { type: "," }, alpha: { type: O }, source: virtual-calc }  # r6c4 (shift Eval not ours)
   - { id: enter, row: 5, col: 4, span: 2, cls: enter, label: { primary: "$key.enter", shift: "≈" },
       primary: { special: enter },
-      shift: { insert: "\\operatorname{approx}\\left(#?\\right)", sample: ["\\operatorname{approx}\\left(\\frac{1}{3}\\right)", "approx(1/3)"] },
+      shift: { insert: "\\operatorname{approx}\\left(#0\\right)", sample: ["\\operatorname{approx}\\left(\\frac{1}{3}\\right)", "approx(1/3)"] },
       source: virtual-calc }  # r6c5 (wide; shift inserts approx())
 
   # ---- rows 6-9 (r7-r10): five keys per row. The ÷ key makes a stacked fraction (seen on a G2, 2026-10-11).
@@ -364,7 +375,7 @@ templates:
       row: 0
       col: 3
       desc: "derivative ∂□/∂□"
-      insert: "\\frac{\\partial#?}{\\partial#?}"
+      insert: "\\frac{\\partial#0}{\\partial#?}"
       sample: ["\\frac{\\partial x^2}{\\partial x}", "diff(x^2,x)"]
     - id: cases
       row: 0
@@ -385,13 +396,13 @@ templates:
       row: 1
       col: 2
       desc: "limit, lim □ as □ → □"
-      insert: "\\lim_{#?\\to#?}\\left(#?\\right)"
+      insert: "\\lim_{#?\\to#?}\\left(#0\\right)"
       sample: ["\\lim_{x\\to0}\\left(\\frac{\\sin\\left(x\\right)}{x}\\right)", "limit(sin(x)/x,x,0)"]
     - id: integral
       row: 1
       col: 3
       desc: "definite integral, ∫ from □ to □ of □ ∂□"
-      insert: "\\int_{#?}^{#?}#?\\,\\mathrm{d}#?"
+      insert: "\\int_{#?}^{#?}#0\\,\\mathrm{d}#?"
       sample: ["\\int_{-1}^{10}x^2\\,\\mathrm{d}x", "integrate(x^2,x,-1,10)"]
     - id: rowvec
       row: 1
@@ -419,19 +430,19 @@ templates:
       row: 2
       col: 2
       desc: "sum Σ, □ = □ to □ of □"
-      insert: "\\sum_{#?=#?}^{#?}\\left(#?\\right)"
+      insert: "\\sum_{#?=#?}^{#?}\\left(#0\\right)"
       sample: ["\\sum_{k=1}^{10}\\left(k^2\\right)", "sum(k^2,k,1,10)"]
     - id: product
       row: 2
       col: 3
       desc: "product Π, □ = □ to □ of □"
-      insert: "\\prod_{#?=#?}^{#?}\\left(#?\\right)"
+      insert: "\\prod_{#?=#?}^{#?}\\left(#0\\right)"
       sample: ["\\prod_{k=1}^{10}\\left(k\\right)", "product(k,k,1,10)"]
     - id: logbase
       row: 2
       col: 4
       desc: "logarithm with base, log_□ □"
-      insert: "\\log_{#?}\\left(#?\\right)"
+      insert: "\\log_{#?}\\left(#0\\right)"
       sample: ["\\log_{16}\\left(256\\right)", "ln(256)/ln(16)"]
     - id: dms
       row: 2

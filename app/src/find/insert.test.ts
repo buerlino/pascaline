@@ -11,8 +11,8 @@ import { latexToGiac } from "../input/latex-to-giac.ts";
 const here = dirname(fileURLToPath(import.meta.url));
 interface Curated { id: string; giac: string; insert?: string }
 const curated = (parse(readFileSync(join(here, "../../../find/functions.yaml"), "utf8")) as { functions: Curated[] }).functions;
-const opInsert = (n: string): string => `\\operatorname{${n.replace(/_/g, "\\_")}}\\left(#?\\right)`;
-const fill = (insert: string): string => insert.replace("#?", "x");
+const opInsert = (n: string): string => `\\operatorname{${n.replace(/_/g, "\\_")}}\\left(#0\\right)`;
+const fill = (insert: string): string => insert.replace(/#[?0]/, "x");
 
 describe("Find insertion", () => {
   it.each(curated.map((f) => [f.id, f] as const))("%s becomes its Giac command", (_, f) => {

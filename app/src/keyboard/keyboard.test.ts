@@ -41,15 +41,15 @@ describe("keyboard spec", () => {
     const at = (id: string, layer: "primary" | "shift") => keyboard.byId.get(id)?.actions[layer];
     expect(at("d3", "shift")).toMatchObject({ latex: "\\pi" });
     expect(at("d2", "shift")).toMatchObject({ latex: "\\imaginaryI" });
-    expect(at("ln", "shift")).toMatchObject({ latex: "\\exponentialE^{#?}" });
-    expect(at("log", "shift")).toMatchObject({ latex: "10^{#?}" });
+    expect(at("ln", "shift")).toMatchObject({ latex: "\\exponentialE^{#0}" });
+    expect(at("log", "shift")).toMatchObject({ latex: "10^{#0}" });
     expect(at("div", "shift")).toMatchObject({ latex: "#@^{-1}" });
     expect(at("dot", "shift")).toEqual({ kind: "type", text: "=" });
-    expect(at("enter", "shift")).toMatchObject({ latex: "\\operatorname{approx}\\left(#?\\right)" });
+    expect(at("enter", "shift")).toMatchObject({ latex: "\\operatorname{approx}\\left(#0\\right)" });
     expect(at("pow", "shift")).toMatchObject({ latex: "\\sqrt[#?]{#0}" });
     expect(at("sq", "shift")).toMatchObject({ latex: "\\sqrt{#0}" });
     expect(at("neg", "primary")).toEqual({ kind: "type", text: "-" });
-    expect(at("neg", "shift")).toMatchObject({ latex: "\\left|#?\\right|" });
+    expect(at("neg", "shift")).toMatchObject({ latex: "\\left|#0\\right|" });
     expect(at("eex", "shift")).toMatchObject({ latex: "\\blacktriangleright" });
     expect(at("mul", "shift")).toMatchObject({ latex: "\\mathbin{\\measuredangle}" });
     expect(at("fmt", "primary")).toEqual({ kind: "special", name: "fmt" });
@@ -151,7 +151,7 @@ describe("keyboard spec", () => {
     const sq = keyboard.byId.get("sq");
     if (!div || !sq) throw new Error("keys missing");
     expect(actionFor(div, false, false, true)).toEqual({ kind: "insert", latex: "\\div", sample: ["5\\div5", "5/5"] });
-    expect(actionFor(sq, true, false, true)).toMatchObject({ latex: "\\operatorname{sqrt}\\left(#?\\right)" });
+    expect(actionFor(sq, true, false, true)).toMatchObject({ latex: "\\operatorname{sqrt}\\left(#0\\right)" });
     expect(actionFor(div, false, false, false)).toMatchObject({ latex: "\\frac{#@}{#?}" });
   });
 

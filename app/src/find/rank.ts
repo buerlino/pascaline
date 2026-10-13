@@ -31,9 +31,10 @@ function prepareItem(item: FindItem): Prepared {
   return { item, names, title: words(norm(item.title)), desc: words(norm(item.desc ?? "")) };
 }
 
-/** The insert of a Giac function from its id (`fn:normald_cdf`): `\operatorname{normald\_cdf}\left(#?\right)`. */
+/** The insert of a Giac function from its id (`fn:normald_cdf`): `\operatorname{normald\_cdf}\left(#0\right)`. #0, not #?:
+ *  a selected expression becomes the argument, as for sin (R17). */
 export function functionInsert(id: string): string {
-  return `\\operatorname{${id.slice(id.indexOf(":") + 1).replace(/_/g, "\\_")}}\\left(#?\\right)`;
+  return `\\operatorname{${id.slice(id.indexOf(":") + 1).replace(/_/g, "\\_")}}\\left(#0\\right)`;
 }
 
 /** The index ready to search: every item with its insert (a tier-1 function's is filled in here). */

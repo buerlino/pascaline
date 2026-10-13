@@ -36,6 +36,17 @@ function hasOuterSup(latex: string): boolean {
   return false;
 }
 
+/** A power key's template (R17): x², xʸ and x⁻¹ (`#@^…`), or the bare caret of the one-line mode. */
+function isPower(a: ActionBody): boolean {
+  return a.kind === "insert" && (a.latex.startsWith("#@^") || a.latex.startsWith(CARET));
+}
+
+/** One plain term: a number, one letter or a chip. A power key raises it without brackets; anything else gets them. */
+function isPlainTerm(latex: string): boolean {
+  const l = latex.trim();
+  return /^[\d.]+$/.test(l) || /^\p{L}$/u.test(l) || isChipLatex(l);
+}
+
 /** The keys that join two terms: + − × ÷ and a/b. (−) is negation and stays where it is (a sign inside the exponent). */
 function isBinaryOperator(a: ActionBody, keyId: string | undefined): boolean {
   if (keyId === "neg") return false;
@@ -212,7 +223,13 @@ export class EntryController {
       return;
     }
     if (isBinaryOperator(a, keyId)) this.endExponent(mf);
-    if (a.kind === "insert" && a.latex.includes("#@") && this.selectChip(mf)) {
+    if (a.kind === "insert" && isPower(a) && !mf.selectionIsCollapsed) {
+      // R17: a selection is the base of a power key, in brackets unless it is one plain term (#@^{2} alone would raise
+      // only its last character: 1+2 selected, x² gave 1+2² = 5)
+      const rest = a.latex.startsWith("#@") ? a.latex.slice(2) : a.latex;
+      const base = isPlainTerm(mf.getValue(mf.selection, "latex")) ? "#@" : "\\left(#@\\right)";
+      this.apply(mf, { ...a, latex: base + rest });
+    } else if (a.kind === "insert" && a.latex.includes("#@") && this.selectChip(mf)) {
       // a chip is one term: ÷, a/b, x², xʸ, x⁻¹ take all of it, and it draws as one box, so no brackets
       this.apply(mf, a);
     } else if (a.kind === "insert" && a.latex.startsWith("#@^") && this.selectCompound(mf)) {

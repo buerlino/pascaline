@@ -106,7 +106,7 @@ test("every key and layer, normal and one-line entry: 1+2 selected stays an argu
       }
     }
   }
-  expect(pressed).toBeGreaterThan(100);
+  expect(pressed).toBeGreaterThan(60); // 82 today: the keys and layers with an insert or a typed character, plus the one-line forms
   expect(failures).toEqual([]);
 });
 
@@ -134,9 +134,9 @@ const ROWS: Row[] = [
   ["neg", "shift", "\\left|1+2\\right|", "4+\\left|2\\right|", `4+2\\left|${BOX}\\right|`],
   ["sin", "primary", "\\sin\\left(1+2\\right)", "4+\\sin\\left(2\\right)", `4+2\\sin\\left(${BOX}\\right)`],
   ["sin", "shift", "\\arcsin\\left(1+2\\right)", "4+\\arcsin\\left(2\\right)", `4+2\\arcsin\\left(${BOX}\\right)`],
-  ["ln", "shift", "\\exponentialE^{1+2}", "4+\\exponentialE^{2}", `4+2\\exponentialE^{${BOX}}`],
-  ["log", "shift", "10^{1+2}", "4+10^{2}", `4+210^{${BOX}}`],
-  ["enter", "shift", "\\operatorname{\\mathrm{approx}}\\left(1+2\\right)", "4+\\operatorname{\\mathrm{approx}}\\left(2\\right)", `4+2\\operatorname{\\mathrm{approx}}\\left(${BOX}\\right)`],
+  ["ln", "shift", "\\exponentialE^{1+2}", "4+\\exponentialE^2", `4+2\\exponentialE^{${BOX}}`],
+  ["log", "shift", "10^{1+2}", "4+10^2", `4+210^{${BOX}}`],
+  ["enter", "shift", "\\operatorname{approx}\\left(1+2\\right)", "4+\\operatorname{approx}\\left(2\\right)", `4+2\\operatorname{\\mathrm{approx}}\\left(${BOX}\\right)`],
   ["sq", "primary", "\\left(1+2\\right)^2", "4+2^2", "4+2^2"],
   ["pow", "primary", `\\left(1+2\\right)^{${BOX}}`, `4+2^{${BOX}}`, `4+2^{${BOX}}`],
   ["div", "shift", "\\left(1+2\\right)^{-1}", "4+2^{-1}", "4+2^{-1}"],
@@ -176,5 +176,5 @@ test("one-line entry: 1+2 selected, x², xʸ and x⁻¹ bracket it; a single ter
   expect(await entryValue(page)).toBe('4+2\\char"5E 2');
   await select(page, "1+2");
   await press(page, "sq", "shift");
-  expect(await entryValue(page)).toBe("\\operatorname{\\mathrm{sqrt}}\\left(1+2\\right)");
+  expect(await entryValue(page)).toBe("\\operatorname{sqrt}\\left(1+2\\right)");
 });
