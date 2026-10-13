@@ -15,6 +15,7 @@ export const en = {
   "key.menu": "Menu",
   "key.view": "View",
   "key.copy": "Copy",
+  "key.undo": "Undo",
   "key.paste": "Paste",
   "key.fmt": "Fmt",
   "key.settings": "Settings",
