@@ -21,6 +21,16 @@ The libxml2 and libqalculate tarballs are SHA-256-checked by the script.
 | libqalculate | 5.13.1 (tarball SHA-256 `cf8d3eaf…d1b01d3cc3`; pinned at first download 2026-10-11, upstream publishes no hash) | GPL-2.0-or-later | https://github.com/Qalculate/libqalculate/releases/download/v5.13.1/libqalculate-5.13.1.tar.gz | Find index values and unit factors (milestone 4), Units app (milestone 5). Compiled-in definitions, no curl/icu/readline/NLS. Release build in the pinned trixie container, reproducible |
 | libxml2 | 2.15.1 (SHA-256 `c008bac0…c39bc54c`, matches upstream `.sha256sum`) | MIT | https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.1.tar.xz | required by libqalculate to parse its definitions; built without iconv, zlib, ICU, HTTP, threads, validation |
 
+## Find index data (tools/find-index/generate.mjs)
+
+Generated at build time by `tools/find-index/generate.mjs`, not committed.
+
+1. Giac 2.1.0 `doc/aide_cas`, English entries only: GPL-3.0-or-later per Giac's README (R5; P10, accepted 2026-10-12: shipped now, confirmation from B. Parisse before any public release), authors as R5 lists.
+2. libqalculate 5.13.1 `data/units.xml.in`, `variables.xml.in`, `prefixes.xml.in`: GPL-2.0-or-later, the library's licence (the combined work is GPL-3.0); values and factors computed by our qalc build.
+3. `find/aliases.yaml`, `find/functions.yaml`, `find/units.yaml`: ours, GPL-3.0-or-later.
+
+The About screen credits Giac and libqalculate.
+
 ## Toolchain (not shipped)
 
 | Component | Version | Licence | Source | Use |

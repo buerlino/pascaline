@@ -235,7 +235,7 @@ interface FindItem {
 
 Live items (variables, user functions) have the same shape with `kind: "var" | "userfn"`, built at run time (3.4).
 
-**Format and size:** `find-index.<hash>.json`, a Vite asset outside every chunk. Budget ≤ 400 kB raw, ≤ 100 kB gzip (prototype: 282 / 68). **i18n:** English titles and descriptions in the index; another language is an overlay file `find-index.<lang>.json` keyed by id with its own titles and aliases, merged at load. The structure allows it now; only English ships.
+**Format and size:** `find-index.<hash>.json`, a Vite asset outside every chunk. Budget ≤ 400 kB raw, ≤ 100 kB gzip (prototype: 282 / 68; G4: 395 / 74.5, so the raw budget is nearly used up, see decisions.md G4). **i18n:** English titles and descriptions in the index; another language is an overlay file `find-index.<lang>.json` keyed by id with its own titles and aliases, merged at load. The structure allows it now; only English ships.
 
 **Generation, from source at build time** (gorge; `tools/find-index/generate.mjs`, Node, no network; run by `build.sh` after the engines, and by `npm run index` in development; output gitignored under `app/src/find/_gen/`):
 1. Giac `doc/aide_cas` from the pinned tarball: names, the English line (`2 …`) only, never French (R5), syntax and examples; entries starting with `_` dropped.
@@ -255,7 +255,7 @@ Live items (variables, user functions) have the same shape with `kind: "var" | "
 The engine host reports the name each stateful input defines (`defined: {name, kind}`, from `:=` and ▶; `host.ts` already detects stateful inputs at `:56`). The session keeps `userNames` (name, kind, formatted value preview, view, time) and persists it with the definitions (6.2), so Vars works after a relaunch. Find merges them at query time and ranks them like recents. Python names stay in the Python app (its own completion, later).
 
 ### 3.5 Ranking
-**Amended 2026-10-13 (P11): no usage boost**, so the same query always gives the same order (docs/03 rule 8); with an empty query Find shows the G2-style Math menu (fixed categories, fixed order). Our own code (`app/src/find/rank.ts`, about 150 lines). Order: ~~(1) usage boost: count and recency from `find.usage`~~; (2) exact match of a name, symbol or alias; (3) prefix of one, shorter first; (4) word prefix inside one (`_`, space); (5) word prefix in the title or description; (6) one edit away (insertion, deletion, substitution, transposition) for queries of 4+ characters. Ties: tier 0 first, then the context's kind (variables in Vars, units in the Units app), then the shorter name, then id. Usage: IndexedDB key `find.usage`, `{id: [count, lastUsed]}`, capped at 500 ids.
+**Amended 2026-10-13 (P11): no usage boost**, so the same query always gives the same order (docs/03 rule 8); with an empty query Find shows the G2-style Math menu (fixed categories, fixed order). Our own code (`app/src/find/rank.ts`, about 150 lines). Order: ~~(1) usage boost: count and recency from `find.usage`~~; (2) exact match of a name, symbol or alias; (3) prefix of one, shorter first; (4) word prefix inside one (`_`, space); (5) word prefix in the title or description; (6) one edit away (insertion, deletion, substitution, transposition) for queries of 4+ characters. Ties: tier 0 first, then the context's kind (variables in Vars, units in the Units app), then the shorter name, then id. Nothing is stored (no `find.usage`). Built as written (G4), with the usage boost removed before the merge.
 **Alternatives:** uFuzzy or fuzzysort (MIT, 4–7 kB): fast, but neither knows our tiers, usage or kinds, so we would wrap them in the same code; Fuse.js (Apache-2.0, about 24 kB, slower). Principle 1 yields here because the measured cost of our own code is 1.2 ms and the rules are ours.
 
 ### 3.6 Insertion and tokens
@@ -414,7 +414,6 @@ One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
 | `history` | ≤ 200 items per view; new fields `full` (≤ 2 kB), the mark facts | exists |
 | `defs` | **new:** the definitions log (`:=`, ▶, `purge`), last definition per name kept, ≤ 500 lines, replayed into the engine at start through the existing `init.replay` (`workerEngine.ts:154`) | the log is in memory only (`workerEngine.ts:54`) |
 | `app.function`, `app.solve` | per app | exist |
-| `find.usage` | Find counts and recency, ≤ 500 ids | new |
 | `units.targets`, `units.history` | last target per dimension; the Units app's history | new (milestone 5) |
 
 **Migration:** `schema` absent means 1; a restore keeps validating field by field and writes back `schema: 2`. Built as written (R3): `session.migrateSettings` validates every field. **Replay budget:** `defs` replay ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` is already in `EngineTimings`). **Why persist definitions:** a calculator keeps its memory; today the history shows `5▶A` after a relaunch while `A` is undefined.
@@ -476,7 +475,7 @@ Capacitor shell (Android) / PWA (service worker precaches everything after the e
    │  Units (m5), Find palette (lazy), Matrix editor   │
    ├─ Find: index (lazy asset) + ranking (rank.ts)     │
    ├─ Clipboard / share port                           │
-   └─ Session state ── Kv (IndexedDB: settings, history, defs, find.usage, units.*)
+   └─ Session state ── Kv (IndexedDB: settings, history, defs, units.*)
         │ Calc port (views)                                      │ UnitEngine (m5)
         ▼                                                        ▼
    Worker 1: Giac + GSL + GMP + MPFR                         Worker 3: libqalculate
@@ -545,7 +544,6 @@ type UnitError = { error: "dimension"; dims: [string, string] } | { error: "temp
 interface FindIndex {                                    // new (m4), main thread
   load(lang?: string): Promise<void>;                    // fetch + parse the asset (and a language overlay)
   search(query: string, ctx: { filter?: FindItem["kind"][]; live: FindItem[] }): FindHit[];  // synchronous, ≤ 16 ms
-  noteUse(id: string): void;                             // usage counts → Kv "find.usage"
 }
 interface Kv { get<T>(key: string): Promise<T | undefined>; set(key: string, value: unknown): Promise<void>; }  // unchanged
 interface ClipboardPort {                                // new (m4): navigator.clipboard / Capacitor plugins
