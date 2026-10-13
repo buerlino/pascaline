@@ -106,11 +106,11 @@ test("ᴇ on an empty line starts with 1, as on the reference: ᴇ (−) 6 = 1�
   await tap(page, ["emark", "neg", "d6"]);
   expect(await entryValue(page)).toBe("1\\emark-6");
   await tap(page, ["enter"]);
-  await resultIs(page, "0.000001", 1);
+  await resultIs(page, "1E-6", 1);
 });
 
 test("ᴇ is one step for ⌫: 1ᴇ-3 ⌫ ⌫ ⌫ leaves 1", async ({ page }) => {
-  await tap(page, ["d1", "emark", "neg", "d3", "del", "del", "del"]);
+  await tap(page, ["d1", "emark", "neg", "d3", "bksp", "bksp", "bksp"]);
   expect(await entryValue(page)).toBe("1");
 });
 
