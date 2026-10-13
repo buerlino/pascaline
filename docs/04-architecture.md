@@ -371,14 +371,14 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Alpha on Vars, Math, Tmpl | A, B, C | unchanged | P4 |
 | a b/c (row 3, col 4) [r4c5] | inserts a fraction | toggles the form of the last result: decimal ↔ fraction, polar ↔ rectangular (R10); the fraction template is on ÷ and in Tmpl | G2 item 29, P11, P12 |
 | Exponent key (row 6, col 0) [r7c1] | `×10^` template, legend ×10ⁿ | types the E mark `ᴇ`, legend `ᴇ` (R14); Shift stays Sto ▶ | P12 |
-| App key (Home/CAS) [r3c1] and CAS [r3c5] | two keys, each with a Shift layer (Settings, Mode) | **no keys**: the status line's place name switches Home ↔ CAS; the Mode sheet is a status chip (R15) | P12 |
+| App key (Home/CAS) [r3c1] and CAS [r3c5] | two keys, each with a Shift layer (Settings, Mode) | **no keys**: the status line's place name switches Home ↔ CAS; the Mode sheet is a status chip and Shift + Apps; the Apps sheet lists Home and CAS first (R15) | P12; S2 |
 | Symb, Plot, Num, arrow pad, top cluster | rows 0–2 | folded into the status line if R15a confirms; the pad moves one line down; fewer rows (R15) | P12 |
 | Alpha + 0 (quote mark) | `"` | removed (R13) | P12 |
 | Shift + ◀, Shift + ▶ | line start, line end | removed (R13); a tap on the formula puts the cursor there | P12 |
 | Shift + 6, Shift + 9 | nothing; ∞ | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ (R18) | P12, owner 2026-10-13 |
 | View (row 1, col 4) [r2c4] | gap | compact keypad toggle (K4) | P7 point 5 |
 | Shift + View | Copy (A3) | Copy (full value of the selected or last result) | reference: Copy |
-| Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: Copy, Copy as shown, Copy exact, Copy LaTeX, Paste, Share session, Clear history (A3) | Home/CAS, proposed by S2 for R11: Insert, Recall, Copy, Store ▶, Delete, Copy as ›, Paste, Share session, Clear history, on the picked row, else the last result | P8; S2 (to decide) |
+| Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: Copy, Copy as shown, Copy exact, Copy LaTeX, Paste, Share session, Clear history (A3) | Home/CAS, from R11 (S2): Insert, Recall, Copy, Store ▶, Delete, Copy as ›, Paste, Share session, Clear history, on the picked row, else the last result | P8; S2 (accepted 2026-10-13) |
 | Shift + Menu | Paste a number (A3) | unchanged | reference: Paste |
 | Help (row 0, col 4) [r1c4] | gap | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; uses the index; P8 left Help free, so the owner may veto |
 | row 1, col 0 | gap | stays empty | no reference key there |

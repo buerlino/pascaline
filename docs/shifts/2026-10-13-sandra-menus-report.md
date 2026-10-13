@@ -31,7 +31,10 @@ briefed, with Esc/Cancel and the remembered pick; R4 lets digits pick on Find's 
 - `docs/04-architecture.md` 5.1: the "Today" column of Tmpl, Shift + View, Menu, Shift + Menu and Shift + `+` was
   stale (built in R2, A3, R10); the Menu row names S2's proposal as "to decide".
 
-## For shared files (the review applies these)
+## Accepted (owner, 2026-10-13): "yes to all of your recommendations"
+Applied on this branch, so the review only checks and merges: decisions.md (P12 point A done; new Decided entry "S2: one menu system"), backlog.md (3a, R13, R18, S2 done, R15, R11), brief.md (S2 removed; the accepted items written into R13, R18, R15a/b, R11, R4; R13 now ~0.5 d with I1's fix, the Decimals move and the dead-key haptic), docs/06 point A, docs/04 5.1, G2 item 37 in `tests/golden/g2.yaml` with `G2-CHECKLIST.md` regenerated (`oracle.py --g2`: 0 problems). The proposal text below is kept as made.
+
+## For shared files (as proposed; now applied)
 - **docs/decisions.md, "Needs the user"**, as the first item:
   > - **2026-10-13 S2: one menu system (P12 open point A). PROPOSED, needs the user.** Seven rules for every menu
   >   (research/r8-menus.md section 5). **Recommendation:** (1) R11 builds the Home/CAS Menu as one fixed list (Insert,

@@ -141,7 +141,7 @@ a menu can act on the wrong value (I1), and every sheet keeps a path without tou
 | **R15a/b** | (a) A key path to Mode (candidate Shift + Apps); Settings stays Mode's last row. (b) Apps lists 1 Home, 2 CAS, then the apps: Home ↔ CAS by keys is Apps, 1/2, and this is also open point B's fallback without a new flick. (c) Remove `app` and `cas` from `PASS` (`sheetKeys.ts:39`) and `AT_ONCE` (`App.svelte:286`), and `symb`/`plot`/`num` too if they fold into the status line. (d) The place-name tap changes from Apps (`App.svelte:368`, `status.spec.ts:46`) to the switch. (e) The press table in the R15a mockups uses section 2's rows. | I4, I9 |
 | **R11** | The nine-item Menu of section 5, one list for buttons, long press and Menu, acting on the picked row; an e2e that picks row 1 of 3 and copies it through Menu (I1's regression test first). | I1, I2 |
 | **R4** | On an empty query digits pick a category; after a letter they type (M1). | I7 |
-| Small, any ron package | Move "Decimals in Fixed" from Mode to Settings › Format key cycle (M4); a key that does nothing in the open view gives the dead-key haptic of docs/05 3.7 (I8). | I3, I8 |
+| R13 (owner, 2026-10-13: with I1's fix) | Move "Decimals in Fixed" from Mode to Settings › Format key cycle (M4); a key that does nothing in the open view gives the dead-key haptic of docs/05 3.7 (I8). | I3, I8 |
 
 ## 7. Still to verify
 
@@ -152,9 +152,9 @@ a menu can act on the wrong value (I1), and every sheet keeps a path without tou
 | I1 in the running app: ▲ twice, Menu, Copy copies the last result, not the picked row | R11, as its first regression test |
 | Whether Shift + Apps (Mode) suits the owner's hand after R15b | owner, on the R15 APK |
 
-## 8. Proposal for docs/decisions.md
+## 8. The decision (accepted 2026-10-13)
 
-**2026-10-13 S2: one menu system (P12 open point A). PROPOSED, needs the user.** Evidence in this note.
+**2026-10-13 S2: one menu system (P12 open point A). ACCEPTED by the owner (2026-10-13), every recommendation;** the decision text is in decisions.md, and I1's fix is pulled forward into R13. The proposal as made:
 - **Recommendation:** adopt rules M1–M7 (section 5). Concretely: (1) R11 builds the Home/CAS Menu as one fixed list
   of nine (Insert, Recall, Copy, Store ▶, Delete, Copy as ›, Paste, Share session, Clear history) acting on the picked
   row, else the last result; (2) R15 keeps a key path to Mode (Shift + Apps) and puts Home and CAS first in the Apps
