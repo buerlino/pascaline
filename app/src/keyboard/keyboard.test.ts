@@ -61,11 +61,11 @@ describe("keyboard spec", () => {
     expect(div?.actions.primary).toMatchObject({ kind: "insert", latex: "\\frac{#@}{#?}" });
   });
 
-  it("alpha reaches A-Z in the reference's key order (r4c1 A … r9c3 Z), then #, :, quote, ;", () => {
+  it("alpha reaches A-Z in the reference's key order (r4c1 A … r9c3 Z), then #, :, ;", () => {
     const letters = [...keyboard.keys]
       .sort((a, b) => a.row - b.row || a.col - b.col)
       .flatMap((k) => (k.actions.alpha?.kind === "type" ? [k.actions.alpha.text] : []));
-    expect(letters.join("")).toBe('ABCDEFGHIJKLMNOPQRSTUVWXYZ#:"' + ";");
+    expect(letters.join("")).toBe('ABCDEFGHIJKLMNOPQRSTUVWXYZ#:;');
   });
 
   it("alpha types capitals, shift+alpha lower case, alpha falls back to primary", () => {

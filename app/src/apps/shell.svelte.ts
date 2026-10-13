@@ -184,14 +184,15 @@ export class AppShell {
     if (this.switcherOpen) this.sheet = null;
     else this.sheet = new Sheet("apps", t("apps.title"), () => APPS.map((a) => ({ id: a.id, label: t(a.name), run: () => void this.open(a.id) })));
   }
-  /** Menu key: the open view's menu (a view without one opens nothing), or close the open sheet. */
-  toggleMenu(): void {
+  /** Menu key: the open view's menu, or close the open sheet. False when the view has no menu (a dead key). */
+  toggleMenu(): boolean {
     if (this.menuOpen) {
       this.sheet = null;
-      return;
+      return true;
     }
     const place = this.app === null ? "home" : `${this.app}:${this.view}`;
     this.sheet = this.menuItems.length > 0 ? new Sheet(`menu:${place}`, t("menu.title"), () => this.menuItems) : null;
+    return this.sheet !== null;
   }
   /** Open a list of items over the view (a long press on a history row): same sheet and keys as the Menu key. */
   showMenu(title: string, items: readonly MenuItem[], opts?: { remember?: boolean; at?: string }): void {

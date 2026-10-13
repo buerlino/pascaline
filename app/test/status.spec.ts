@@ -141,7 +141,7 @@ test("Shift and Alpha do nothing while the Mode sheet is open, and Esc goes back
 
 test("the last row of the Mode sheet opens Settings; Shift + Home/CAS opens Settings directly; the Menu key closes either", async ({ page }) => {
   await open(page);
-  await tap(page, ["shift", "cas", "d6"]);
+  await tap(page, ["shift", "cas", "d5"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Settings");
   await tap(page, ["menu"]);
   await expect(sheet(page)).toBeHidden();

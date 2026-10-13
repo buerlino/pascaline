@@ -15,7 +15,6 @@ const FORMATS: readonly NumberFormat[] = ["std", "sci", "eng", "pfx"];
 const ENTRIES: readonly EntryMode[] = ["textbook", "line"];
 /** The values the digits and decimals rows offer when picked (◀ ▶ reach every other one). */
 const DIGITS_PRESETS: readonly number[] = [4, 6, 8, 10, 12, 15, 20, 25, MAX_DIGITS];
-const DECIMALS_PRESETS: readonly number[] = [0, 1, 2, 3, 4, 5, 6, 8, 10, 12];
 
 /** The value after `by` steps from `now`, round the ends. */
 function cycle<T>(all: readonly T[], now: T, by: 1 | -1): T {
@@ -65,15 +64,6 @@ export function modeItems(session: Session, openSettings: () => void): MenuItem[
       submenu: { title: t("mode.digits"), items: presets(DIGITS_PRESETS, () => s.digits, (n) => session.setDigits(n)) },
     },
     {
-      id: "decimals",
-      label: t("mode.decimals"),
-      get value() {
-        return String(s.fixDecimals);
-      },
-      adjust: (by) => session.setFixDecimals(s.fixDecimals + by),
-      submenu: { title: t("mode.decimals"), items: presets(DECIMALS_PRESETS, () => s.fixDecimals, (n) => session.setFixDecimals(n)) },
-    },
-    {
       id: "entry",
       label: t("mode.entry"),
       get value() {
@@ -96,15 +86,29 @@ export function settingsItems(session: Session): MenuItem[] {
       label: t("settings.fmtCycle"),
       submenu: {
         title: t("settings.fmtCycle"),
-        items: NOTATION_MODES.map((mode) => ({
-          id: mode,
-          label: t(`settings.fmt.${mode}` as MessageKey),
-          keep: true,
-          get selected() {
-            return s.fmtCycle.includes(mode);
-          },
-          run: () => session.setFmtMode(mode, !s.fmtCycle.includes(mode)),
-        })),
+        items: NOTATION_MODES.flatMap((mode): MenuItem[] => {
+          const tick: MenuItem = {
+            id: mode,
+            label: t(`settings.fmt.${mode}` as MessageKey),
+            keep: true,
+            get selected() {
+              return s.fmtCycle.includes(mode);
+            },
+            run: () => session.setFmtMode(mode, !s.fmtCycle.includes(mode)),
+          };
+          if (mode !== "fix") return [tick];
+          // the decimals Fixed shows, right under its tick (S2 I3): changed in place with ◀ ▶
+          const decimals: MenuItem = {
+            id: "decimals",
+            label: t("mode.decimals"),
+            keep: true,
+            get value() {
+              return String(s.fixDecimals);
+            },
+            adjust: (by) => session.setFixDecimals(s.fixDecimals + by),
+          };
+          return [tick, decimals];
+        }),
       },
     },
     {
