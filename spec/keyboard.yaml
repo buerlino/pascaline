@@ -79,7 +79,7 @@ keys:
   # View (r2c4): the compact keypad toggle comes with K4, so only the shift layer is built (shift View = Copy, docs/04 2.6, 5.1).
   - { id: view, row: 1, col: 4, cls: nav, label: { primary: "$key.view", shift: "$key.copy" },
       primary: { special: none }, shift: { special: copy }, source: virtual-calc }  # r2c4
-  - { id: cancel, row: 1, col: 5, cls: ctl, label: { primary: "$key.cancel" }, primary: { special: cancel }, source: assumed }  # ours (P4 item 6): stops a running job, closes a list, else clears the line; in a gap under Esc (r2c5)
+  - { id: cancel, row: 1, col: 5, cls: ctl, label: { primary: "$key.cancel", shift: "$key.undo" }, primary: { special: cancel }, shift: { cmd: undo }, source: assumed }  # ours (P4 item 6): stops a running job, closes a list, else clears the line; in a gap under Esc (r2c5). Shift = Undo (P13, R16): MathLive's undo of the entry line; it keeps its id and layer if the cluster moves
   - { id: app, row: 2, col: 0, cls: nav, label: { primary: "$key.app", shift: "$key.settings" },
       primary: { special: app }, shift: { special: settings }, source: assumed }  # at the reference's Home key (r3c1, shift Settings = the Settings sheet: Format key cycle, key vibration); ours toggles Home/CAS and leaves an app (P4 item 6)
   - { id: num, row: 2, col: 1, cls: nav, label: { primary: "$key.num" }, primary: { special: num }, source: virtual-calc }  # r3c2
