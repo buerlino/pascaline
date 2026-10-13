@@ -197,6 +197,10 @@
     const item = items[picked];
     picked = null;
     if (action.kind === "special" && action.name === "esc") return true;
+    if (action.kind === "special" && action.name === "menu" && item) {
+      withClip((c) => c.openMenu(item)); // Menu acts on the picked row (R13)
+      return true;
+    }
     if (action.kind === "special" && action.name === "copy" && item) {
       withClip((c) => void c.copyKey(item)); // Shift + View copies the picked row
       return true;

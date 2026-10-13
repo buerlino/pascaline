@@ -134,7 +134,7 @@ export class ClipActions {
   }
 
   /** The Home/CAS Menu (docs/04 section 5.1), or the actions of one history row. */
-  menu(row?: HistoryItem): MenuItem[] {
+  menu(row?: HistoryItem, full = false): MenuItem[] {
     const i = this.target(row);
     const none = i === undefined;
     const why = tc("clip.noResult"); // a disabled item says why on its second line (docs/05 3.1)
@@ -150,7 +150,7 @@ export class ClipActions {
       },
       { id: "latex", label: tc("clip.latex"), disabled: none, reason: why, run: () => void this.copyLatex(row) },
     ];
-    if (row) return copies;
+    if (row && !full) return copies;
     const finished = this.session.items.some((x) => x.status === "done" || x.status === "error");
     return [
       ...copies,
@@ -158,6 +158,11 @@ export class ClipActions {
       { id: "share", label: tc("clip.share"), disabled: !finished, reason: why, run: () => void this.shareSession() },
       { id: "clear", label: tc("clip.clear"), disabled: this.session.items.length === 0, reason: tc("clip.noHistory"), run: () => this.session.clearHistory() },
     ];
+  }
+
+  /** Menu with a picked row: the whole Home/CAS list, its copies acting on that row. */
+  openMenu(item: HistoryItem): void {
+    this.shell.showMenu(tc("clip.title"), this.menu(item, true), { remember: false });
   }
 
   /** A long press on a history row: its copy actions, over the history. */
