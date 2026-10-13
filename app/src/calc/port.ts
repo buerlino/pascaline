@@ -54,6 +54,8 @@ export interface HomeOutcome {
   shape?: [number, number];
   /** ⚠ although the digits agree: an un-audited function's float, or a value evaluated only once (markOf, format.ts). */
   warn?: PrecisionWarn;
+  /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): drawn with these, not the digits setting. */
+  digits?: number;
 }
 
 export interface CasOutcome {

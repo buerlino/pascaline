@@ -327,6 +327,14 @@ function confirmedComplex(a: ComplexValue, b: ComplexValue, aPrecision: number, 
 }
 
 /**
+ * A value that is 0 in every evaluation but not known to be exactly 0 (not an exact rational) has no confirmed digit:
+ * `exp(10^-70)-1` is 0 at any working precision. It gets ⚠ without a count, never ≈ 0 (owner, 2026-10-13, G3).
+ */
+function zeroUnconfirmed(f: ElementFacts): ElementFacts {
+  return !f.exactRational && !f.warn && isZero(f.value.re) && isZero(f.value.im) ? { ...f, warn: "unchecked" } : f;
+}
+
+/**
  * Facts for every element of the stored exact result `name` (its printed text is `exactText`): exact rationals by
  * BigInt, everything else by the symbolic agreement check (P against P+20, then P+20 against P+40). Null when some
  * element is not a number.
@@ -363,7 +371,7 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
         value = C[k]!;
       }
     }
-    return { value, exactRational: false, reliableDigits: reliable, big: false };
+    return zeroUnconfirmed({ value, exactRational: false, reliableDigits: reliable, big: false });
   });
 }
 
@@ -392,7 +400,7 @@ export function floatFacts(
     });
   const unaudited = expr === null || !isAudited(expr);
   const facts = (v: { re: DecimalValue; im: DecimalValue }[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
-    v.map((value, k) => ({ value, exactRational: false, reliableDigits: Math.min(reliable(k), P), big: false, ...(warn ? { warn } : {}) }));
+    v.map((value, k) => zeroUnconfirmed({ value, exactRational: false, reliableDigits: Math.min(reliable(k), P), big: false, ...(warn ? { warn } : {}) }));
   if (expr === null) {
     // A stateful input that cannot be run again: the value as printed, one-sided.
     const d = digits <= DOUBLE_DIGITS ? DOUBLE_DIGITS : digits;
@@ -490,7 +498,7 @@ export function floatPathFacts(
     giac.eval(`${name}:=pasf`);
     return { facts: A.map((value) => ({ value, exactRational: false, reliableDigits: Math.min(digits, W - 10), warn: "unchecked", big: false })), shape };
   }
-  return { facts: B.map((value, k) => ({ value, exactRational: false, reliableDigits: Math.min(confirmedComplex(A[k]!, value, W, W), valuePrecision(digits)), big: false })), shape };
+  return { facts: B.map((value, k) => zeroUnconfirmed({ value, exactRational: false, reliableDigits: Math.min(confirmedComplex(A[k]!, value, W, W), valuePrecision(digits)), big: false })), shape };
 }
 
 

@@ -15,6 +15,7 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn } from "./format.ts";
 import {
+  askedDigits,
   doubleFallback,
   exactFacts,
   floatFacts,
@@ -91,7 +92,7 @@ export interface HomeResult {
   shape?: [number, number];
   /** ⚠ although the digits agree: an un-audited function's float, or a value that could be evaluated only once. */
   warn?: PrecisionWarn;
-  /** The digits the input asked for (CAS `evalf(e,n)`, decisions M4-6): the result is shown with them, not the setting. */
+  /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): the result is shown with them, not the setting. */
   digits?: number;
 }
 
@@ -396,12 +397,16 @@ export function homeEval(
   if (!shape) return symbolic();
 
   if (hasFloat(exactOut)) {
-    // Giac's numeric code returned a float on the exact path (rule 3).
-    const facts = floatFacts(giac, ans, once ? null : exactBody, shape, s.digits, s.digits);
+    // Giac's numeric code returned a float on the exact path (rule 3). `evalf(e,n)` alone is shown with the n digits it
+    // asks for, checked at that precision, as in CAS (decisions M4-6; owner, 2026-10-13).
+    const asked = askedDigits(input);
+    const digits = asked ?? s.digits;
+    const facts = floatFacts(giac, ans, once ? null : exactBody, shape, digits, s.digits);
     if (!facts) return symbolic();
     store();
-    const b = build(facts, shape, s.digits, "exact", true);
-    return fromBuilt(b, "exact", true, exactOut, b.decimal);
+    const b = build(facts, shape, digits, "exact", true);
+    const r = fromBuilt(b, "exact", true, exactOut, b.decimal);
+    return asked !== null ? { ...r, digits: asked } : r;
   }
 
   let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits);
