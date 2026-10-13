@@ -7,8 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
-- **2026-10-14 G5 open points. OPEN.** (1) SB3 needs its equation: neither the backlog nor G3's report gives one (only "guess 15.33 returns 3.333"); send it or the G3 session's input, then it is a small package. (2) s30-wilk7 and s30-cube-offset say the root is right to about 25 / 21 digits; evaluating f at rational x would make them exact to 30 digits but flips their `warn` status. **Recommendation:** keep as is. (3) For ron: Home draws one mark per list; per-element marks read `HomeResult.items[k]` with `markOf`.
-- **2026-10-14 R18 open points. OPEN.** (1) `&` in Shift + 9 is refused until G2 item 41 is answered. (2) `Å` is refused in Home; in milestone 5 the cell inserts the ångström in the unit view. (3) `x==2` with x undefined is false in Home (same family as G2 item 31). **Recommendation:** keep all three as built.
+- **2026-10-14 R15a: pick a top-cluster layout. OPEN, the owner's pick.** [mockups/top-cluster.html](mockups/top-cluster.html) shows today and layouts A (keys and cross stay, no row saved), B (a flat row of four arrows, Symb/Plot/Num stay keys, one row saved) and C (flat pad, the views fold into the status line, one row saved); all three make the place name the Home ↔ CAS switch with a 96 × 48 px hit area that takes taps from the top-left corner of the history. R15b waits for the pick. **Recommendation (Opus pass 1):** B with the 96 × 48 hit area: it keeps every G2 key press of Symb, Plot and Num and still gives back a row; C saves nothing more and costs presses.
 - **2026-10-13 P12 open points (keypad review, [06-keypad-vs-g2.md](06-keypad-vs-g2.md) section 4). OPEN.**
   A. **Menu audit: done** (S2, accepted by the owner 2026-10-13; entry "S2: one menu system" under Decided proposals). B. **Status-line switch:** hit area, press count against the G2's one key, and the fallback if the bar is slow (R15a). C. **`!` (factorial):** settled by the owner (2026-10-13, answer to R10): it goes in the Shift + 9 palette (R18). **Recommendation:** judge B on the R15 APK.
 - **2026-10-12 M4-2: Task benchmark questions (from R1). PROPOSED, needs the user.**
@@ -142,10 +141,18 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 ## Defaults (Phase 1)
 
-### 2026-10-14 R18 defaults
-Greek stand-in names beta_, gamma_, Gamma_, epsilon_ (alternatives: Unicode names, rejected by probe; plain names, which clash); XOR through and/or/not; → is Giac's ->; & and Å refused until settled. Would change if: the G2 shows a meaning for & or →.
-
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-14 R18 defaults (Opus pass 1 settled the open points)
+- **Choice:** (1) Greek letters are variable names; the ones Giac keeps get a stand-in: beta_, gamma_, Gamma_, epsilon_, and (R18f1) Phi_ and Psi_, which Giac reserves (`Psi:=3` is refused and `Psi+1` gives a function, probe 2026-10-14). (2) XOR goes to Giac as `(a or b) and not(a and b)`. (3) → is Giac's function arrow `->` (assumed; G2 item 42). (4) `&` is refused with a message until G2 item 41 is answered. (5) `Å` is refused in Home; in milestone 5 the cell inserts the ångström in the unit view. (6) **Reversed by Opus pass 1:** `==` and `≠` never answer false or true on sides they cannot decide. Giac's `==` compares the expressions, not their values: Home showed `x==2` (x undefined) as `false`, `sin(1)^2+cos(1)^2==1` as `false` and `sin(1)^2+cos(1)^2≠1` as `true`, all with the exact mark (probes 2026-10-14). The test is true when the difference simplifies to exact 0, false when the difference has no free names and its value is clearly not 0, and otherwise stays as typed (like `x>0`); a test on an approximate side carries the approximate mark. Fix package R18f1.
+- **Why:** principle 3 (no silent wrong answers); Unicode names were probed and rejected (Σ reserved, Δ an operator, homeEval reads ASCII names); Giac's own xor gives 0 when a side is symbolic.
+- **Alternatives:** (1) plain names (they clash); (6) keeping Giac's structural `==` (rejected: silent wrong answers).
+- **Would change if:** the G2 shows a meaning for & or → (items 41, 42).
+
+### 2026-10-14 G5 defaults (Opus pass 1)
+- **Choice:** (1) SB3's equation was found in the G3 session: `expand(product(x-k-1/3,k,1,20))=0`, guess 15.33, today gives 3.33333333333 (info "sign change in [-4.2924, 5.5188]"); guess 10.3 gives 1.33333333333 (probe 2026-10-14). Fix package G5f1. (2) s30-wilk7 and s30-cube-offset keep their `warn` status: the root as computed is right to about 25 and 21 digits, and the ⚠ says so. (3) Home keeps one mark per list, the weakest element's (`markOf` over `HomeResult.items`); per-element marks wait for R11/R12 (the history-row and visual passes), where the row layout is designed.
+- **Why:** (2) evaluating f at rational x would hide the precision the user's own float equation loses; (3) the weakest mark is conservative, never hides a warning, and the data for per-element marks is in place.
+- **Would change if:** (3) the owner wants each element marked on its own.
 
 ### 2026-10-13 The exponent mark (R14)
 - **Choice:** the mark is a MathLive macro `\emark` drawn `\mathopen{ᴇ}`, read by the parser as one number literal (the bare character U+1D07 reads the same); an empty line gets `1ᴇ`; a missing mantissa elsewhere, a non-integer exponent and a bare power after an E number are errors.
