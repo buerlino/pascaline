@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Probe (milestone 5 item 4, G2 item 33): the reference's units menu against our Find index. For every unit the
-// menu can offer, it asks our Giac build (Giac is the reference's CAS) what the unit is, `mksa(1_<name>)`, and
-// compares that with the Find unit we would insert (dimension and SI factor): the same, a different factor (Giac
-// keeps an older or another definition), or missing from Find. The candidate grids are Xcas's units menu (Giac
-// source, doc/en/xcasmenu, Phys/<category>/...), in its order; the reference's own grids and order are to be
-// confirmed (spec/units-menu.yaml says which parts are). Results: the `find:` fields of spec/units-menu.yaml.
+// Probe (milestone 5 item 4): the units of Xcas's units menu (Giac source, doc/en/xcasmenu, Phys/<category>/...)
+// against our Find index. For each it asks our Giac build what the unit is, `mksa(1_<name>)`, and compares that with
+// the Find unit of that name (dimension and SI factor): the same, a different factor (Giac keeps an older or a wrong
+// definition), or missing from Find. The menu itself does not come from here: spec/units-menu.yaml builds its grids
+// from Find (the G2's flow, our data, 2026-10-13). What this finds: Giac sizes to report upstream (the US
+// quart), names Giac does not read as units, and common units Find lacks.
 //
 //   node tools/probes/g2-units.mjs            one line per unit: category, name, verdict, Find id, Giac and Find factors
 //   node tools/probes/g2-units.mjs --json     the same as JSON (tools/probes/_out/g2-units.json)

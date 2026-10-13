@@ -424,7 +424,8 @@ templates:
       desc: "mixed number □ + □/□"
       insert: "#@\\tfrac{#?}{#?}"
       sample: ["2\\tfrac{11}{13}", "2+11/13"]
-      check: true
+      # G2 item 36: the G2's cell leaves a typed 2 outside its brackets (2(+□/□), a product); ours takes it as the
+      # whole part (docs/06 section 2)
     - id: sum
       row: 2
       col: 2

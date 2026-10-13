@@ -168,8 +168,8 @@ describe("keyboard spec", () => {
     // the cells that are a key's template are that key's action, one-line form included
     expect(p.items.find((i) => i.id === "frac")?.action).toBe(keyboard.byId.get("frac")?.actions.primary);
     expect(p.items.find((i) => i.id === "abs")?.action).toBe(keyboard.byId.get("neg")?.actions.shift);
-    // our readings of the photo, listed for the owner to confirm on the G2
-    expect(p.items.filter((i) => i.check).map((i) => i.id)).toEqual(["mixed"]); // evalat, rowvec: G2 items 34, 35
+    // our readings of the photo still to confirm on the G2: none left
+    expect(p.items.filter((i) => i.check).map((i) => i.id)).toEqual([]); // evalat, rowvec, mixed: G2 items 34–36
   });
 
   it("Tmpl opens the palette; a b/c is the fraction while typing", () => {

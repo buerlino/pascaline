@@ -21,15 +21,17 @@ actually observed on, not the brief's target build.
 - `vc-SPOT-CHECK.md` — the mapper's own 10+2 spot-check picks (superseded for G2 purposes by
   `SPOT-CHECK.md` one level up, written for this integration).
 - `g2-answers.yaml` — 16 answers to `tests/golden/g2.yaml` checklist items (items 5 and 16 were
-  already answered on the real G2 and were skipped).
+  already answered on the real G2 and were skipped), and items 32, 36 and 38 from the follow-up
+  round of 2026-10-13.
 - `keys.yaml` — 59 rows: every physical key's primary/shift/alpha/shift+alpha layer, plus 7
   findings rows on Textbook entry, letters and Ans insertion.
-- `home.yaml` — 123 Home cases + 10 Textbook-entry re-runs.
+- `home.yaml` — 123 Home cases + 10 Textbook-entry re-runs, and UPART and UVAL (2026-10-13).
 - `cas.yaml` — 55 CAS cases.
 - `solve.yaml` — 23 Solve cases.
 - `settings.yaml` — Home/CAS settings pages, number formats, entry modes.
 - `menus.yaml` — Math/CAS/App toolbox tab contents and the 910-name flat Catalog (names and
-  inserted text only, no descriptions — see the clean-room note below).
+  inserted text only, no descriptions — see the clean-room note below), and the Shift + Units
+  Units tab: the prefix palette and 19 categories, names only (2026-10-13).
 - `apps.yaml` — the 18 apps, their views and setup screens.
 
 ## Clean-room note on `menus.yaml`

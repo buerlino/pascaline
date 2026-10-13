@@ -98,3 +98,11 @@ Copied from the mapper's `observations/LOG.md` (kit in ~/SY99/pascaline-mapping-
 - Item 29 contradicts the 2026-10-11 correction in item 2 (with no U in the status bar, a b/c cycled the last result's form). Worth a check on the real G2.
 - Item 24: the trace step was measured only at the default window.
 - Item 31: the Home results were run with pasted text, not typed from the keys.
+
+## Follow-up round, 2026-10-13
+
+Copied from the mapper's `observations/LOG.md`, in our words. Same emulator (2.4.2 rev 15751), driven by clicks; text read with Edit > Copy (it works on a highlighted menu cell and on the entry line). Screenshots were for the mapper's own reading and are not in the kit.
+- Done: G2 items 32 (EQ), 36 (the mixed-number cell) and 38 (UPART, UVAL) in `g2-answers.yaml`; the two Home runs in `home.yaml`; the Units tab of Shift + Units, prefix palette and 19 categories, names only, in `menus.yaml` (collected before item 33 was dropped).
+- Unsure: item 36, where the cursor sits after the pick was not checked. Viscosity: two names came back from the clipboard with an unbalanced bracket and were not checked on screen.
+- Const tab (item 39): not recorded. Seen on screen: the lists Math, Chemistry, Physics and Quantum; the Value soft key opens on (a bullet); with it on, a pick inserts only the number (5.670367E-8 for the first Physics item), with it off the number and its unit; e and π insert the same either way. The automated walk of the lists read Physics as a second Quantum, so its output was thrown away.
+- Emulator left in the Home view, entry line empty, Const as the remembered Shift + Units tab, the Value key toggled once (now off). The crops of this round are still in `C:\pascaline-scratch\shots\` on the mapping PC (the delete was blocked): the owner deletes them by hand.
