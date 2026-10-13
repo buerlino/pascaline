@@ -4,14 +4,13 @@
 **Manual mode (user, 2026-10-12):** there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` at `b2f1e7e` (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1. Running: R7 (`p1/ron-m4a-sheet`, worktree `.claude/worktrees/m4a-r7`). The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier) and six stale `worktree-agent-*` branches (backlog C7).
+`phase-1` at `d3e0d16` (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7. Next: R8, once the owner has tried R7's APK. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier) and six stale `worktree-agent-*` branches (backlog C7).
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
 Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R7 | One sheet for every list (U1) | ron, **Opus** | `p1/ron-m4a-sheet` | (running) | ~2 d |
 | R8 | Status bar, Mode sheet, Settings (U2, U4) | ron, Sonnet | `p1/ron-m4a-status` | R7, tried | ~2.5 d |
 | R9 | Flicks and the Shift/Alpha tap counter | ron, **Opus** | `p1/ron-m4a-flicks` | R8, tried | ~3 d |
 | R10 | Tmpl palette and the a b/c key | ron, **Opus** | `p1/ron-m4a-tmpl` | R9, tried | ~2.5 d |
@@ -92,9 +91,6 @@ Backlog step 12, when the Tab One is connected (rules section 6). On the device:
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R7: one sheet for every list, branch `p1/ron-m4a-sheet`
-docs/05 3.1 with section 7. `Sheet.svelte` and its model (`items`, `submenu`, `lastPick`, `filter`) replace `PickList`; Apps, the view menus and the Home menu move to it. Keys as in the 3.1 table: ▲▼ and the trackpad move, digits pick (Shift/Alpha ignored for picking), Enter picks, ▶ opens a submenu, ◀/Esc back (path in the title), Cancel closes all, Menu toggles; letters filter (a tap on a non-digit key; flicks come in R9). Last pick remembered per sheet; scroll cue and item count; disabled items stay in place with a reason line. Gate: an e2e per key of 3.1; every existing menu test green; size test.
 
 ### ron, R8: status bar, Mode sheet, Settings, branch `p1/ron-m4a-status`
 docs/05 3.2 and 3.4 with section 7. The tab row in the `App.svelte` header goes; one status line ≤ 28 px: place (tap = Apps sheet), mode chips for angle (tap toggles RAD/DEG), format and digits (tap = Mode sheet at that row), Shift/Alpha state, busy. **Shift + CAS = Mode sheet** (angle, format, digits, decimals, entry mode), **Shift + Home/CAS = Settings**, both on R7's sheet, no native `<select>` or number inputs; `spec/keyboard.yaml` legends updated. A viewport-share e2e at phone size: record the value after this package as the floor (docs/03 rule 9). Gate: e2e tap RAD → DEG changes the next result; DEG → RAD in ≤ 3 keys; size test.

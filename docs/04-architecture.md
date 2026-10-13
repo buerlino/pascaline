@@ -204,7 +204,7 @@ Removed (P11, 2026-10-13; R5 the app side, A5 the build side). The Python app, i
 ## 3. Find (EN1)
 
 ### 3.1 Today
-- Vars, Math and Tmpl do nothing (`spec/keyboard.yaml:68-70`). `PickList.svelte` is a numbered list over the view; while it is open, digit keys pick (`App.svelte`, `press`).
+- Vars, Math and Tmpl do nothing (`spec/keyboard.yaml:68-70`). Lists open on the sheet (`app/src/views/Sheet.svelte`, model `sheet.svelte.ts`, keys `sheetKeys.ts`; docs/05 3.1): numbered rows, digit keys pick, and lists longer than 10 items take a letter filter.
 - Any `\operatorname{name}\left(…\right)` reaches Giac as `name(…)` (probe: `\operatorname{par}\left(4.7,10\right)` → `par(4.7,10)`), so inserting a function needs no new parser rule.
 - **Data, checked 2026-10-12:** Giac's `doc/aide_cas` has 1,780 entries, each with an English line (average 80 characters) next to syntax and example lines. libqalculate 5.13.1 `units.xml.in` 426 unit definitions (prefixed forms are not separate entries; a plain count of `<unit` tags gives 982 because 556 of them are references inside definitions), `variables.xml.in` 184 constants (166 plus 18 built-in) with name kinds (`ar:c,speed_of_light`) and an `uncertainty` attribute, `prefixes.xml.in` 34 prefixes. `aide_cas` also lists Giac's own units and constants (`_kph`, `_c_`), which must not enter the index (P3 decision 1).
 - **Prototype measurements** (`tools/probes/find/`, reading the pinned tarballs): an index of names, English lines, titles and values, without Giac's `_` entries: 2,179 items (1,569 functions, 426 units, 184 constants), 282 kB JSON, 68 kB gzip, 59 kB brotli. A tiered ranking in plain JS over it: p50 0.82 ms, p95 1.04 ms per key on the desktop (20 queries × 20 rounds; a first scratch run with Giac's `_` entries, 2,390 items, gave p95 1.23 ms). It already ranks `speed` → c, `kph` → km/h, `ohm` → Ω, `normlad` → normald.
@@ -268,7 +268,7 @@ No usage boost (P11), so the same query always gives the same order (docs/03 rul
 - Functions insert `\operatorname{name}\left(#?\right)`; templates insert their LaTeX, each with a parser rule and round-trip case.
 
 ### 3.7 Keys inside Find
-Every key types its Alpha letter in lower case (no Alpha press); Shift + key types the key's primary character (digits, `.`); the space key types a space; ⌫ deletes; ▲▼ and the trackpad move the selection; Enter inserts; Esc or Cancel closes. Vars opens Find filtered to variables; ⌫ on an empty query removes the filter. Digits do not pick, unlike `PickList`, because queries need them (`g0`, `log10`, `e24`).
+Every key types its Alpha letter in lower case (no Alpha press); Shift + key types the key's primary character (digits, `.`); the space key types a space; ⌫ deletes; ▲▼ and the trackpad move the selection; Enter inserts; Esc or Cancel closes. Vars opens Find filtered to variables; ⌫ on an empty query removes the filter. Digits do not pick, unlike the other sheets, because queries need them (`g0`, `log10`, `e24`).
 **Keystroke budget:** an item used before: Math, first letter, Enter (3 presses); a new one: Math, the letters, Enter. Benchmark task 5 checks it.
 
 ### 3.8 The query test

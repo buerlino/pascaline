@@ -12,6 +12,14 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
   2. **t10 uncertainty:** first-order propagation gives 39.488 ± 1.2443 m² (`derived`, in tasks.yaml); docs/04 (lines 168 and 296) says `39.5 ± 1.3`. Worst-case intervals give ± 1.394, so 1.3 fits neither rule. **Recommendation:** treat docs/04's 1.3 as a typo and correct it to `39.5 ± 1.2` once qalc's own result is a golden case (milestone 5, U2); until then nobody quotes it.
   3. **t05 budget 4:** "under 5 keys" read as 4 presses including the Enter that evaluates (Math, c, Enter, Enter). ε₀ by name needs 6 unless Find has a short alias. **Recommendation:** accept; the query test (G4) covers aliases like `eps0`.
   4. **t09 standard deviation:** sample (n−1), the population value kept beside it. **Recommendation:** accept (sample is the usual one for readings).
+- **2026-10-13 R7 sheet defaults: judge on the APK. OPEN.** Defaults as built (entry "Sheet defaults (R7)" below):
+  1. Esc in a filtered list goes back a level (or closes the sheet) without clearing the filter first, as the 3.1 table says. Alternative: the first Esc clears the filter.
+  2. ⌫ removes the last filter letter (not in the 3.1 table); outside a filter it does nothing.
+  3. ▲▼ wrap round the ends (the G2 way assumed, not checked on a device).
+  4. The last pick is forgotten on a relaunch (memory only; saving it is one small idbKv key).
+  5. Function Plot with no function defined: the six rows with reason lines don't all fit on a Pixel 7, so row 1 scrolls under the top fade ("6 items" shows). Options: the reason only on the highlighted disabled row, or once in the title row when all disabled rows share it.
+
+  **Recommendation:** keep 1–4 until the owner misses something; judge 5 on the phone. Points 1 and 2 can only be tried once a list longer than 10 items exists (R4 Find).
 - **2026-10-12 P7 point 4: merging Shift and Alpha into one key. OPEN.** Decided on R9's local Shift/Alpha tap counter after a week of flick use (P11). Details in P7 below.
 
 ## Decided proposals (2026-10-12 and 2026-10-13)
@@ -102,6 +110,11 @@ Newest first. Where an entry changed an earlier document, that document now carr
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-13 Sheet defaults (R7)
+- **Choice:** the last pick is kept per sheet and per level by item id, in memory only, so it resets on a relaunch. The letter filter is on for lists longer than 10 items (docs/05 3.1) and matches the start of any word, ignoring case; matches are numbered in order. ▲▼ wrap round the ends, and the highlight may rest on a disabled item so its reason can be read. ◀ and Esc go back a level without clearing the filter first; ⌫ removes the last filter letter. Shift and Alpha keep their state while a sheet is open (ignored for picking). A tap beside the sheet closes it. The sheet keeps the entry line visible while its rows fit and covers it when they don't.
+- **Why:** ron's defaults, nothing measured.
+- **Would change if:** the owner's verdict on a device (open points in "Needs the user").
 
 ### 2026-10-13 Definitions survive a relaunch; stored-variable marks; evalf(x,n); root polish (G3)
 - **Choice:** (1) stored variables are kept in the defs log as values, not commands: `name:=(value)`, with floats as `evalf(<exact>,k)`, k ≥ 15, so they come back at their precision; a value with free names is replayed first, because Giac does not re-evaluate a stored symbolic value (probe `B:=A*x+1; A:=5; B` → `A*x+1`). **Confirmed by the owner, 2026-10-13** (G3 decision 3). (2) A result that reads stored floats inherits their weakest mark; a perturbation check (each stored float × (1+10^-n)) finds lost digits after cancellation. (3) The agreement check rewrites each `evalf/approx(e,n)` to its own precision; Home and CAS show the n digits asked for, confirmed only (Home: owner, 2026-10-13, G3 decision 2). The float check escalates (P+20 vs P+40) like the exact one. (4) Roots get a second polish at W+20 from `evalf(root,W+20)`, not `exact(root)`: exact() rounds 0.6666666667666… to 2/3 and loses the difference (probe in G3, cube-offset case). (5) The stored defs load times out after 3 s; a store that timed out is never saved over, so a slow IndexedDB cannot wipe the definitions. (6) A value that is 0 in every evaluation but not an exact rational shows ⚠ without a count, never ≈ 0 (owner, 2026-10-13, G3 decision 1; `exp(10^-70)-1`, golden prec-zero-cancel). On the float paths the exact form is unknown, so a float 0 (CAS `evalf(0)`) also shows ⚠.
