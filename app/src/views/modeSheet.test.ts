@@ -68,10 +68,8 @@ describe("Mode sheet", () => {
     if (p.kind === "run") p.item.run?.();
     expect(session.settings.digits).toBe(20);
   });
-  it("Decimals and Entry change in place; the last row opens Settings", () => {
-    const s = mode("decimals");
-    s.left();
-    expect(session.settings.fixDecimals).toBe(3);
+  it("Entry changes in place; the last row opens Settings; Decimals is no longer a Mode row", () => {
+    expect(mode().level.items.some((i) => i.id === "decimals")).toBe(false);
     const e = mode("entry");
     e.right();
     expect(session.settings.entry).toBe("line");
@@ -84,6 +82,16 @@ describe("Mode sheet", () => {
 });
 
 describe("Settings sheet", () => {
+  it("Format key cycle: the Decimals row sits under the Fixed tick and steps in place", () => {
+    const s = settings();
+    expect(s.level.current?.id).toBe("fmtCycle");
+    s.enter();
+    const ids = s.level.items.map((i) => i.id);
+    expect(ids.indexOf("decimals")).toBe(ids.indexOf("fix") + 1);
+    while (s.level.current?.id !== "decimals") s.level.move(1);
+    s.left();
+    expect(session.settings.fixDecimals).toBe(3);
+  });
   it("key vibration: ▶ switches it on; strength (the browser cannot set it) and length follow", () => {
     const s = settings();
     const byId = (id: string) => s.level.items.find((i) => i.id === id);

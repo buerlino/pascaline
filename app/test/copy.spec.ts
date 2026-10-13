@@ -49,6 +49,19 @@ test("Shift + View copies the picked row (Up on an empty line)", async ({ page }
   await expect.poll(() => clipboard(page)).toBe(THIRD);
 });
 
+test("Menu with a picked row copies that row, not the last result (R13, S2 I1)", async ({ page }) => {
+  await tap(page, ["d1", "div", "d3", "enter"]);
+  await done(page, 1);
+  await tap(page, ["d2", "div", "d3", "enter"]);
+  await done(page, 2);
+  await tap(page, ["d1", "div", "d4", "enter"]);
+  await done(page, 3);
+  await tap(page, ["up", "up"]);
+  await pickMenu(page, "Copy");
+  await expect(page.getByTestId("notice")).toHaveText("Copied");
+  await expect.poll(() => clipboard(page)).toBe(TWO_THIRDS);
+});
+
 test("Shift + Menu pastes a number as the keyboard's own LaTeX", async ({ page }) => {
   await setClipboard(page, "1.5E-3");
   await tap(page, ["shift", "menu"]);

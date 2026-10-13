@@ -89,7 +89,7 @@
   /** Tmpl: the template palette (R10), a grid on the sheet; a pick inserts its template as its key would. A view
    *  without an entry line (Plot) has nothing to insert into. */
   function openTemplates(): void {
-    if (!shell.showsEntry) return;
+    if (!shell.showsEntry) return dead();
     picked = null;
     shell.toggleTemplates(() => paletteItems(keyboard.palette.items, insertTemplate), keyboard.palette.columns);
   }
@@ -150,7 +150,9 @@
         void shell.setView(name);
         break;
       case "menu":
-        withClip(() => shell.toggleMenu()); // the Home/CAS menu comes with the clipboard code
+        withClip(() => {
+          if (!shell.toggleMenu()) dead(); // the view has no menu
+        }); // the Home/CAS menu comes with the clipboard code
         break;
       case "copy":
         withClip((c) => void c.copyKey());
@@ -161,6 +163,7 @@
       case "fmt":
         // Format key: Home and CAS show the last result in the next mode; the apps have no such result.
         if (shell.app === null) void session.cycleFormat();
+        else dead();
         break;
       case "tmpl":
         openTemplates();
@@ -168,6 +171,7 @@
       case "shift":
       case "alpha":
       case "none":
+        dead();
         break;
     }
   }
@@ -197,6 +201,10 @@
     const item = items[picked];
     picked = null;
     if (action.kind === "special" && action.name === "esc") return true;
+    if (action.kind === "special" && action.name === "menu" && item) {
+      withClip((c) => c.openMenu(item)); // Menu acts on the picked row (R13)
+      return true;
+    }
     if (action.kind === "special" && action.name === "copy" && item) {
       withClip((c) => void c.copyKey(item)); // Shift + View copies the picked row
       return true;
@@ -213,6 +221,14 @@
   function touched(): void {
     const h = session.settings.haptics;
     if (h.on) vibrate(h.strength / 100, h.ms);
+  }
+
+  /** A key that does nothing here (docs/05 3.7): a short double haptic and no other effect. */
+  function dead(): void {
+    const h = session.settings.haptics;
+    if (!h.on) return;
+    vibrate(h.strength / 100, h.ms);
+    setTimeout(() => vibrate(h.strength / 100, h.ms), h.ms + 70);
   }
 
   /** Shift and Alpha as one key would see them: the session's state, or the layer a gesture chose. */
@@ -326,14 +342,14 @@
   /** The key's action in the layer it was pressed in. */
   function run(key: Key, mods: Mods): void {
     const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line");
-    if (!action) return;
+    if (!action) return dead();
     if (shell.app === null && historyKey(action)) return;
     if (action.kind === "special") return special(action.name);
     if (shell.app !== null) {
       const dir = action.kind === "cmd" ? NAV[action.name] : undefined;
       if (dir && shell.nav(dir)) return;
-      if (!shell.showsEntry) return; // a view without an entry line (Plot) ignores typing
-      if (action.kind === "insert" && action.latex === ANS_CHIP) return; // Ans belongs to Home and CAS
+      if (!shell.showsEntry) return dead(); // a view without an entry line (Plot) ignores typing
+      if (action.kind === "insert" && action.latex === ANS_CHIP) return dead(); // Ans belongs to Home and CAS
     } else if (entry.value === "" && key.id === "frac" && layerOf(mods) === "primary") {
       // a b/c on an empty line (R10): the last result in its next form (decimal ↔ fraction, a+bi ↔ polar), as on the
       // G2; while typing it is the stacked fraction below

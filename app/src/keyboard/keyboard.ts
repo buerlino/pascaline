@@ -186,9 +186,13 @@ export function loadKeyboard(doc: unknown): Keyboard {
       if (a !== undefined) actions[layer] = parseAction(a, `${where} ${layer}`);
     }
     if (!label.primary || !actions.primary) throw new KeyboardSpecError(`${where}: needs a primary label and action`);
-    for (const layer of ["shift", "alpha"] as const)
-      if ((label[layer] !== undefined) !== (actions[layer] !== undefined))
+    for (const layer of ["shift", "alpha"] as const) {
+      const a = actions[layer];
+      // a layer made dead on purpose (`special: none`) has no legend; alpha then does not fall back to the primary
+      if (a?.kind === "special" && a.name === "none" && label[layer] === undefined) continue;
+      if ((label[layer] !== undefined) !== (a !== undefined))
         throw new KeyboardSpecError(`${where}: ${layer} needs both a label and an action`);
+    }
     const key: Key = { id, row, col, span, cls, label, actions, ...(source ? { source } : {}) };
     keys.push(key);
     byId.set(id, key);

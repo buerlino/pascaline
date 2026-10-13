@@ -47,6 +47,33 @@ test("a flick in a direction with no function does nothing (the bubble says ✕)
   expect(await entryValue(page)).toBe("");
 });
 
+test("the removed layers are dead: ◀ and ▶ have no shift layer, 0 has no quote; the bubble says ✕ and nothing fires (R13)", async ({ page }) => {
+  const f = await touch(page, "d0");
+  await f.move(0, 35);
+  await expect(bubble(page)).toHaveText("✕");
+  await f.end();
+  await tap(page, ["shift", "left", "shift", "right"]); // |◀ and ▶| are gone: the arrows stay one step
+  await tap(page, ["alpha", "d0"]); // alpha does not fall back to 0 either
+  expect(await entryValue(page)).toBe("");
+  await expect(page.locator('[data-key="left"][data-dead="true"]')).toHaveCount(0); // dim only in the shifted layer
+  await tap(page, ["shift"]);
+  await expect(page.locator('[data-key="left"]')).toHaveAttribute("data-dead", "true");
+  await expect(page.locator('[data-key="right"]')).toHaveAttribute("data-dead", "true");
+});
+
+test("a key that does nothing in the open view gives a double haptic: Menu in Symb, Tmpl in Plot, Fmt in an app (R13)", async ({ page }) => {
+  await page.evaluate(() => window.pascaline.session.setHaptics({ on: true, ms: 10 }));
+  await tap(page, ["symb"]); // the last app (Function) opens on its Symb view
+  await expect(page.getByTestId("place")).toContainText("Symb");
+  const before = (await vibrations(page)).length;
+  await tap(page, ["menu"]);
+  await expect.poll(async () => (await vibrations(page)).length - before).toBe(3); // key down + the double
+  await tap(page, ["plot"]);
+  const b2 = (await vibrations(page)).length;
+  await tap(page, ["tmpl"]);
+  await expect.poll(async () => (await vibrations(page)).length - b2).toBe(3);
+});
+
 test("while sliding, the bubble shows what will fire, with one tick at the threshold; back to the middle cancels", async ({ page }) => {
   const before = (await vibrations(page)).length;
   const f = await touch(page, "dot");
