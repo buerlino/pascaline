@@ -42,9 +42,6 @@ export interface FindHit {
   matched: string;
 }
 
-/** Usage counts and recency per id: the Kv key "find.usage" (docs/04 section 3.5). */
-export type FindUsage = Record<string, [count: number, lastUsed: number]>;
-
 export interface FindContext {
   /** Only these kinds (Vars: ["var", "userfn"]). */
   filter?: FindKind[];
@@ -52,9 +49,6 @@ export interface FindContext {
   prefer?: FindKind[];
   /** Live items (variables, user functions), merged at query time. */
   live?: FindItem[];
-  usage?: FindUsage;
-  /** Now, for recency (ms since the epoch); tests pass a fixed value. */
-  now?: number;
   /** At most this many hits (default 50). */
   limit?: number;
 }

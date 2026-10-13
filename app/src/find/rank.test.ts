@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The ranking rules of docs/04 3.5 on a small hand-made index (the real index is tested in queries.test.ts).
 import { describe, expect, it } from "vitest";
-import { noteUse, oneEdit, prepare, search } from "./rank.ts";
-import type { FindItem } from "./types.ts";
+import { oneEdit, prepare, search } from "./rank.ts";
+import type { FindContext, FindItem } from "./types.ts";
 
 const item = (id: string, names: string[], title: string, extra: Partial<FindItem> = {}): FindItem =>
   ({ id, kind: id.split(":")[0] as FindItem["kind"], names, title, tier: 0, insert: "x", ...extra });
@@ -24,7 +24,7 @@ const items: FindItem[] = [
   item("unit:MW", ["MW"], "Megawatt"),
 ];
 const index = prepare(items);
-const ids = (q: string, ctx = {}): string[] => search(index, q, { now: 0, ...ctx }).map((h) => h.item.id);
+const ids = (q: string, ctx: FindContext = {}): string[] => search(index, q, ctx).map((h) => h.item.id);
 
 describe("Find ranking", () => {
   it("puts an exact name first, then prefixes, shorter first", () => {
@@ -61,27 +61,9 @@ describe("Find ranking", () => {
     expect(ids("normal")).toEqual(["fn:normal", "fn:normald"]);
   });
 
-  it("ranks a used item first from its first letter (Math, letter, Enter)", () => {
-    const usage = noteUse({}, "fn:cosh", 0);
-    expect(ids("c", { usage })[0]).toBe("fn:cosh");
-    // more uses and recent ones count more
-    const both = noteUse(noteUse(noteUse(usage, "const:c", 0), "const:c", 0), "fn:cosh", 0);
-    expect(ids("c", { usage: both }).slice(0, 2)).toEqual(["const:c", "fn:cosh"]);
-    // a typo match gets no usage boost, so a used item never jumps over a real match through a typo
-    expect(ids("cosj", { usage })).toEqual(ids("cosj"));
-  });
-
   it("filters by kind and merges live items", () => {
     const live = [item("var:A", ["A"], "A = 5"), item("userfn:f", ["f"], "f(x) = x^2")];
     expect(ids("", { filter: ["var", "userfn"], live })).toEqual(["userfn:f", "var:A"]);
     expect(ids("a", { live })[0]).toBe("var:A");
-  });
-
-  it("keeps at most 500 ids in the usage table, dropping the least recent", () => {
-    let u = {};
-    for (let i = 0; i < 510; i++) u = noteUse(u, `fn:f${i}`, i);
-    expect(Object.keys(u).length).toBe(500);
-    expect(u).not.toHaveProperty("fn:f0");
-    expect(u).toHaveProperty("fn:f509");
   });
 });

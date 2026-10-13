@@ -61,7 +61,7 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
 
   it("ranks every phrase in the top 3, at least 90 % first", () => {
     const rows = active.map((q) => {
-      const hits = search(index, q.query, { now: 0 }).slice(0, 3).map((h) => h.item.id);
+      const hits = search(index, q.query).slice(0, 3).map((h) => h.item.id);
       return { q, rank: hits.indexOf(q.expect) + 1, top: hits };
     });
     const first = rows.filter((r) => r.rank === 1).length;

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Find ranking (docs/04 section 3.5): plain code over the generated index, on the main thread, synchronous.
-// Order: (1) usage (count and recency), (2) exact name, (3) name prefix, shorter first, (4) word prefix inside a
-// name, (5) word prefix in the title or description, (6) one edit away (queries of 4+ characters).
+// Order: (2) exact name, (3) name prefix, shorter first, (4) word prefix inside a name, (5) word prefix in the
+// title or description, (6) one edit away (queries of 4+ characters). No usage boost (P11: the same query always
+// gives the same order, docs/03 rule 8), so there is no (1).
 // Ties: tier 0 first, then the context's kinds, then the shorter matched name, then the id.
 // Matching is in lower case; "_" counts as a space, and a name also matches without its spaces and "_" ("kb" finds
 // k_B, "g0" finds g_0).
-import type { FindContext, FindHit, FindItem, FindUsage } from "./types.ts";
+import type { FindContext, FindHit, FindItem } from "./types.ts";
 
 const EXACT = 900;
 const PREFIX = 800; // minus the letters still missing, at most 50
@@ -13,10 +14,6 @@ const NAME_WORD = 600;
 const TITLE_WORD = 500;
 const DESC_WORD = 450;
 const FUZZY = 300;
-const USED = 1_000_000; // a used item ranks before every unused one (Math, first letter, Enter: docs/04 3.7)
-
-const USAGE_CAP = 500;
-const DAY = 86_400_000;
 
 interface PreparedName { raw: string; norm: string; compact: string; cased: string; words: string[] }
 interface Prepared { item: FindItem; names: PreparedName[]; title: string[]; desc: string[] }
@@ -87,13 +84,6 @@ function level(p: Prepared, q: string, qc: string, qw: readonly string[], rawc: 
   return { score, matched };
 }
 
-/** 0..999: more uses and a more recent use rank higher (a use halves its weight every week). */
-function usageRank(u: [number, number] | undefined, now: number): number {
-  if (!u) return 0;
-  const recency = 300 * 0.5 ** (Math.max(0, now - u[1]) / (7 * DAY));
-  return Math.min(999, Math.round(100 * Math.log2(1 + u[0]) + recency));
-}
-
 const cache = new WeakMap<readonly FindItem[], Prepared[]>();
 function preparedLive(live: readonly FindItem[] | undefined): Prepared[] {
   if (!live?.length) return [];
@@ -108,17 +98,13 @@ export function search(index: PreparedIndex, query: string, ctx: FindContext = {
   const q = norm(raw);
   const qc = compact(q);
   const qw = words(q);
-  const now = ctx.now ?? Date.now();
-  const usage = ctx.usage ?? {};
   const filter = ctx.filter ? new Set(ctx.filter) : undefined;
   const prefer = new Set(ctx.prefer ?? []);
   const hits: FindHit[] = [];
   for (const list of [preparedLive(ctx.live), index.items]) for (const p of list) {
     if (filter && !filter.has(p.item.kind)) continue;
-    const used = usageRank(usage[p.item.id], now);
-    let { score, matched } = q ? level(p, q, qc, qw, rawc) : { score: 1, matched: p.item.names[0] ?? "" };
+    const { score, matched } = q ? level(p, q, qc, qw, rawc) : { score: 1, matched: p.item.names[0] ?? "" };
     if (!score) continue;
-    if (used && score > FUZZY + 1) score += USED + used * 1000;
     hits.push({ item: p.item, score, matched });
   }
   hits.sort((a, b) =>
@@ -128,14 +114,4 @@ export function search(index: PreparedIndex, query: string, ctx: FindContext = {
     || a.matched.length - b.matched.length
     || (a.item.id < b.item.id ? -1 : a.item.id > b.item.id ? 1 : 0));
   return hits.slice(0, ctx.limit ?? 50);
-}
-
-/** The usage table after one more use of `id`, at most 500 ids (the least recently used go first). */
-export function noteUse(usage: FindUsage, id: string, now = Date.now()): FindUsage {
-  const next: FindUsage = { ...usage, [id]: [(usage[id]?.[0] ?? 0) + 1, now] };
-  const ids = Object.keys(next);
-  if (ids.length <= USAGE_CAP) return next;
-  ids.sort((a, b) => (next[a]?.[1] ?? 0) - (next[b]?.[1] ?? 0));
-  for (const old of ids.slice(0, ids.length - USAGE_CAP)) delete next[old];
-  return next;
 }
