@@ -70,7 +70,7 @@
     </div>
     {#if level.columns !== undefined}
       <!-- a grid (the Tmpl palette, R10): each cell drawn as math, no numbers -->
-      <div class="grid" style:grid-template-columns="repeat({level.columns}, 1fr)" bind:this={list}>
+      <div class="grid" style:grid-template-columns="repeat({level.columns}, minmax(0, 1fr))" bind:this={list}>
         {#each rows as row (row.index)}
           <button
             type="button"
@@ -259,7 +259,7 @@
     overflow-y: auto;
     min-height: 0;
   }
-  .cell {
+  button.cell {
     all: unset;
     box-sizing: border-box;
     height: 58px;
@@ -268,12 +268,13 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    position: relative; /* clips MathLive's positioned boxes too */
     border-radius: 8px;
     border: 1px solid var(--line);
-    font-size: 13px;
+    font-size: 10px; /* the widest template (piecewise) fits a sixth of a phone's width */
     cursor: pointer;
   }
-  .cell[data-active="true"] {
+  button.cell[data-active="true"] {
     background: var(--key-num);
     border-color: var(--shift);
     box-shadow: inset 0 -3px 0 var(--shift);

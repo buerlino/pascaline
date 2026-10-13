@@ -156,6 +156,15 @@ const shots: Shot[] = [
       await tap(p, ["shift", "app", "enter"]);
     },
   },
+  {
+    id: "home-tmpl",
+    group: "Home",
+    title: "Tmpl palette (R10): the 6 × 3 grid, its name on the hint line",
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["tmpl", "down", "down", "down", "right", "right"]);
+    },
+  },
   // ---- CAS
   {
     id: "cas",

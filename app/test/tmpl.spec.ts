@@ -54,7 +54,7 @@ const FILLS: [string, string[], string, string | undefined][] = [
   ["deriv", ["x", "sq", "right", "x"], "\\frac{\\partial x^2}{\\partial x}", undefined],
   ["cases", ["x", "right", "x", "shift", "dot", "d0", "right", "d1", "right", "x", "shift", "dot", "d1"], "\\begin{cases}x & \\text{if }x=0\\\\ 1 & \\text{if }x=1\\end{cases}", undefined],
   ["matrix22", ["d1", "right", "d2", "right", "d3", "right", "d4"], "\\begin{pmatrix}1 & 2\\\\ 3 & 4\\end{pmatrix}", undefined],
-  ["limit", ["x", "right", "d0", "right", "div", "sin", "x", "right", "right", "x"], "\\lim_{x\\to0}\\left(\\frac{\\sin\\left(x\\right)}{x}\\right)", "1"],
+  ["limit", ["x", "right", "d0", "right", "div", "sin", "x", "right", "x"], "\\lim_{x\\to0}\\left(\\frac{\\sin\\left(x\\right)}{x}\\right)", "1"],
   ["integral", ["neg", "d1", "right", "d1", "d0", "right", "x", "sq", "right", "x"], "\\int_{-1}^{10}x^2\\,\\mathrm{d}x", "333.666666667"],
   ["rowvec", ["d1", "right", "d2"], "\\begin{pmatrix}1 & 2\\end{pmatrix}", undefined],
   ["colvec", ["d1", "right", "d2"], "\\begin{pmatrix}1\\\\ 2\\end{pmatrix}", undefined],
@@ -103,7 +103,7 @@ test("a key's template from the palette: the root and the power, as their keys i
   await tap(page, ["d9", "right", "add"]);
   await insert(page, "power");
   await tap(page, ["d2", "right", "d3"]);
-  expect(await entryValue(page)).toBe("\\sqrt{9}+\\placeholder{}^{3}".replace("\\placeholder{}", "\\placeholder{}"));
+  expect(await entryValue(page)).toBe("\\sqrt9+2^3"); // MathLive writes one-digit arguments without braces
 });
 
 test("a b/c on an empty line: 2.5 ↔ 5/2 (as on the G2), a+bi ↔ polar; while typing it is the fraction", async ({ page }) => {
@@ -121,7 +121,7 @@ test("a b/c on an empty line: 2.5 ↔ 5/2 (as on the G2), a+bi ↔ polar; while 
   await tap(page, ["frac"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "3+4*i");
   await tap(page, ["d1", "frac", "d4"]);
-  expect(await entryValue(page)).toBe("\\frac{1}{4}");
+  expect(await entryValue(page)).toBe("\\frac14");
 });
 
 test("a b/c in CAS: exact 5/2 ↔ 2.5", async ({ page }) => {

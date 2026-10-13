@@ -268,11 +268,11 @@
       case "none":
         return true;
       case "pass": {
-        // read by what the key is, not by the layer: Menu and Apps toggle their sheet, a key that changes place
+        // read by what the key is, not by the layer: Menu, Apps and Tmpl toggle their sheet, a key that changes place
         // (Home/CAS, CAS, Symb, Plot, Num) closes it and goes there
         const p = key.actions.primary;
         if (p?.kind !== "special") return true;
-        if (p.name !== "menu" && p.name !== "apps") shell.closeSheet();
+        if (p.name !== "menu" && p.name !== "apps" && p.name !== "tmpl") shell.closeSheet();
         special(p.name);
         return true;
       }

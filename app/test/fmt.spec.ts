@@ -19,15 +19,13 @@ async function openMode(page: Page): Promise<void> {
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
 }
 const closeSheet = (page: Page) => tap(page, ["cancel"]);
-/** Tick (or untick) notations of the Format key cycle (row 1) or forms of the a b/c cycle (row 2, R10): Settings,
- *  the row's digit, a tap per mode, Cancel. */
-async function toggleCycle(page: Page, modes: string[], row = "d1"): Promise<void> {
+/** Tick (or untick) notations of the Format key cycle: Settings, Enter on the first row, a tap per notation, Cancel. */
+async function toggleCycle(page: Page, modes: string[]): Promise<void> {
   await openSettings(page);
-  await tap(page, [row]);
+  await tap(page, ["enter"]);
   for (const m of modes) await sheet(page).locator(`[data-id="${m}"]`).tap();
   await closeSheet(page);
 }
-/** A setting's list of values (Mode sheet, Digits row): Shift + CAS, the row's digit, then the value's digit. */
 async function pickDigits(page: Page, valueKey: string): Promise<void> {
   await openMode(page);
   await tap(page, ["d3", valueKey]);
@@ -53,17 +51,14 @@ test("fmt shows 1/3 in Standard, Scientific, Engineering and back, for that resu
   expect(await page.evaluate(() => window.pascaline.session.settings.format)).toBe("std");
 });
 
-test("a b/c with Mixed ticked (R10): 7/3 shows as 7/3, 2 1/3, then the decimal again", async ({ page }) => {
+test("a b/c (R10): 7/3 shows as 7/3, then the decimal again; never a mixed number, needs no setting", async ({ page }) => {
   await open(page, "");
   await ready(page);
-  await toggleCycle(page, ["mixed"], "d2");
   await tap(page, ["d7", "div", "d3", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "2.33333333333");
   await tap(page, ["frac"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "7/3");
   await expect(lastText(page).locator(".math")).toHaveAttribute("data-latex", "\\frac{7}{3}");
-  await tap(page, ["frac"]);
-  await expect(lastText(page)).toHaveAttribute("data-text", "2 1/3");
   await tap(page, ["frac"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "2.33333333333");
 });

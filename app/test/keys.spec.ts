@@ -9,6 +9,11 @@ test.beforeEach(async ({ page }) => {
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
 });
 
+/** The mixed-number template from the Tmpl palette (R10; it was a/b twice before). */
+const mixed = async (page: Page): Promise<void> => {
+  await tap(page, ["tmpl"]);
+  await page.getByTestId("menu").locator('[data-id="mixed"]').tap();
+};
 const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 const resultIs = async (page: Page, text: string | RegExp, count: number) => {
   await expect(page.locator('[data-status="done"]')).toHaveCount(count);
@@ -222,11 +227,15 @@ test("x² after a root, a power or a mixed number squares the whole term", async
   expect(await entryValue(page)).toBe("\\left(2^3\\right)^2");
   await tap(page, ["enter"]);
   await resultIs(page, "64", 3); // derived: (2³)² = 64
-  await tap(page, ["d2", "frac", "frac", "d1", "right", "d2", "right", "sq"]);
+  await tap(page, ["d2"]);
+  await mixed(page);
+  await tap(page, ["d1", "right", "d2", "right", "sq"]);
   expect(await entryValue(page)).toBe("\\left(2\\tfrac12\\right)^2");
   await tap(page, ["enter"]);
   await resultIs(page, "6.25", 4); // derived: (5/2)² = 25/4
-  await tap(page, ["d2", "frac", "frac", "d1", "right", "d2", "sq"]);
+  await tap(page, ["d2"]);
+  await mixed(page);
+  await tap(page, ["d1", "right", "d2", "sq"]);
   expect(await entryValue(page)).toBe("\\left(2\\tfrac12\\right)^2");
 });
 
@@ -272,7 +281,9 @@ test("÷ after a root, a power or a mixed number divides the whole term", async 
   expect(await entryValue(page)).toBe("\\frac{2^3}{4}");
   await tap(page, ["enter"]);
   await resultIs(page, "2", 2); // derived: 2³/4 = 2 (not 2^(3/4))
-  await tap(page, ["d2", "frac", "frac", "d1", "right", "d2", "right", "div", "d5"]);
+  await tap(page, ["d2"]);
+  await mixed(page);
+  await tap(page, ["d1", "right", "d2", "right", "div", "d5"]);
   expect(await entryValue(page)).toBe("\\frac{2\\tfrac12}{5}");
   await tap(page, ["enter"]);
   await resultIs(page, "0.5", 3); // derived: (5/2)/5 = 1/2

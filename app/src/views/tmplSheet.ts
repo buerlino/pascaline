@@ -5,9 +5,10 @@ import type { MenuItem } from "../apps/types.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import type { ActionBody, PaletteItem } from "../keyboard/keyboard.ts";
 
-/** The template drawn with an empty box for every slot (#? a placeholder, #@ and #0 what the cursor would take). */
+/** The template drawn with an empty box for every slot (#? a placeholder, #@ and #0 what the cursor would take).
+ *  A box, not \placeholder: MathLive's static renderer draws a placeholder as nothing. */
 export function cellLatex(latex: string): string {
-  return latex.replace(/#[?@0]/g, "\\placeholder{}");
+  return latex.replace(/#[?@0]/g, "\\square ");
 }
 
 /** What a cell inserts: its action, or the one-line form when the entry is linear and the cell has one. */
