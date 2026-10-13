@@ -8,7 +8,7 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
 - **2026-10-13 P12 open points (keypad review, [06-keypad-vs-g2.md](06-keypad-vs-g2.md) section 4). OPEN.**
-  A. **Menu audit:** analyse all menus (package S2, in parallel); R10 was built first at the owner's request, so its palette is checked against S2's note when it lands. B. **Status-line switch:** hit area, press count against the G2's one key, and the fallback if the bar is slow (R15a). C. **`!` (factorial):** settled by the owner (2026-10-13, answer to R10): it goes in the Shift + 9 palette (R18). **Recommendation:** judge B on the R15 APK.
+  A. **Menu audit: done** (S2, accepted by the owner 2026-10-13; entry "S2: one menu system" under Decided proposals). B. **Status-line switch:** hit area, press count against the G2's one key, and the fallback if the bar is slow (R15a). C. **`!` (factorial):** settled by the owner (2026-10-13, answer to R10): it goes in the Shift + 9 palette (R18). **Recommendation:** judge B on the R15 APK.
 - **2026-10-12 M4-2: Task benchmark questions (from R1). PROPOSED, needs the user.**
   1. **Units lose on presses in the plan:** t02 `72 km/h → m/s` 15 presses against 7 for `72 ÷ 3.6`; t04 14 against 11. **Recommendation:** decide at milestone 5, when the unit view's entry is designed (S1's plan: t02 12 presses, t04 13); the first lever is a default target unit per dimension (SI), which would drop the `→ m/s` part of t02. Nothing to do in milestone 4.
   2. **t10 uncertainty:** first-order propagation gives 39.488 ± 1.2443 m² (`derived`, in tasks.yaml); docs/04 (lines 168 and 296) says `39.5 ± 1.3`. Worst-case intervals give ± 1.394, so 1.3 fits neither rule. **Recommendation:** treat docs/04's 1.3 as a typo and correct it to `39.5 ± 1.2` once qalc's own result is a golden case (milestone 5, U2); until then nobody quotes it.
@@ -28,6 +28,16 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
 
 Newest first. Where an entry changed an earlier document, that document now carries the result.
 
+- **2026-10-13 S2: one menu system (P12 open point A). ACCEPTED by the owner (2026-10-13), every recommendation.** Evidence and the rules M1–M7: [research/r8-menus.md](research/r8-menus.md) (sections 5 and 6).
+  1. **Rules for every menu:** an item shows the key that picks it (list rows 1…9, 0; a grid of at most 4 × 3 the key at each cell's place; larger grids arrows, Enter or a tap); Menu holds the verbs for what is on screen, one fixed numbered list per view; every key shortcut is also a menu item (except Fmt and a b/c); one home per setting (Mode: during work; Settings: set once; Fmt and a b/c: one result); Esc back, Cancel closes all; every sheet and place reachable by keys alone and by one tap where the status line shows it; fixed order, last pick remembered (not Mode and Settings).
+  2. **The Menu acting on the wrong row (I1) is fixed in R13**, regression test first: Menu with a picked history row acts on that row.
+  3. **R11:** the Home/CAS Menu is one list of nine, the same numbers whether or not a row is picked: Insert, Recall, Copy, Store ▶, Delete, Copy as › (as shown, exact, LaTeX), Paste, Share session, Clear history; on the picked row, else the last result. Row buttons = items 1–5; the long press opens the same list.
+  4. **R15:** a key path to Mode (Shift + Apps, the G2's omitted Info); Settings stays Mode's last row; the Apps sheet lists 1 Home, 2 CAS, then the apps (keys-only Home ↔ CAS, and open point B's fallback without a new flick).
+  5. **R13:** "Decimals in Fixed" moves from Mode to Settings › Format key cycle, beside the Fixed tick (Fixed as a Mode format stays with G9). A key that does nothing in the open view (Menu in Symb, Tmpl in Plot, Fmt in an app) gives the dead-key haptic of docs/05 3.7.
+  6. **R18:** as briefed, plus Esc/Cancel and the remembered pick for both palettes; ° uses R10's DMS rule; μ and Ω are variable names, never units; ∞ costs 5 presses by keys, 3 by touch, 2 by flick + tap (today 2).
+  7. **R4:** on Find's empty query digits pick a category; after a letter they type.
+  8. **R10's palette stays as built** (decision R10 (3) confirmed).
+  **Would change if:** Shift + Apps is awkward on the R15 APK (then another free shifted cell); the G2 labels the Shift + 9 cells with keys (G2 item 37).
 - **2026-10-13 P13: Undo for the entry line, on Shift + Cancel (package R16). ACCEPTED by the owner (2026-10-13), without the week's wait.**
   - **Evidence** (probe on the real app, MathLive 0.111.1, `engine=fake`, Pixel 7 profile): MathLive's `undo` command already restores a selection deleted with ⌫ (all of it or part), a line cleared by Esc and a line cleared by Enter. One step per key press; a template insert is two steps. No new dependency or engine call. `entry/controller.ts` already uses `undo` for the mixed-number trick.
   - **Choice:** Shift + Cancel fires `undo` on the entry line, so a flick up on Cancel does it in one motion (R9). No redo (the probe's redo after undo did nothing), no button, no setting, no screen element. Cancel's primary layer is unchanged (stop the job, close a list, clear the line).
@@ -144,7 +154,7 @@ Each entry: the choice, why, the alternatives, and what would change it.
 
 ### 2026-10-13 Mode and Settings sheets (R8)
 - **Choice:** the Mode and Settings sheets always open on their first row (`remember: false`); a status chip opens Mode on its own row (`at`); the last-pick memory of R7 stays for every other list. A row with a value: ◀ ▶ step it, a digit or a tap steps it forward and the sheet stays, Enter closes; ◀ on a row without a value goes back. Digits and decimals open a list of presets on a digit or Enter, and a pick closes. Switches (the Format key cycle) run and stay; an empty cycle falls back to the default. Vibration strength steps by 10 %, length by 5 ms.
-- **Why:** the 3-key paths of docs/05 3.4 (Shift + CAS, ▶, Enter for the angle; Shift + CAS, 3, 7 for 20 digits) must not depend on the last pick. ron's defaults otherwise, nothing measured.
+- **Why:** the fixed key paths of docs/05 3.4 (Shift, CAS, ▶, Enter for the angle; Shift, CAS, 3, 7 for 20 digits; 4 presses each, Shift counted as docs/04 5.2 says) must not depend on the last pick. ron's defaults otherwise, nothing measured.
 - **Would change if:** the owner's verdict on the APK.
 
 ### 2026-10-13 Sheet defaults (R7)

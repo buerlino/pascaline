@@ -49,7 +49,7 @@ The legend is missing on the keytop only because the feature is not built; the k
 10. **The G2's Shift palettes come back** (owner's answers to R10): Shift + 6 relations and logic, Shift + 9 symbols and Greek with `!`. Package R18.
 
 ## 4. Open points
-- **A. Menu audit (owner, 2026-10-13).** Analyse all menus now that the Tmpl palette and the form toggle (R10) and the Shift palettes (R18) add more: Apps sheet, view menus (Function, Solve, Home, CAS), the Menu key's contents, Math (Find), Tmpl, Mode, Settings, the Format cycle and the new form toggle. Each with its keys, press counts, duplicates and inconsistencies; then a recommendation for one consistent set. Package S2 (research note), in parallel; R10's palette is checked against it.
+- **A. Menu audit. Done** (S2, [research/r8-menus.md](research/r8-menus.md)); its seven rules were accepted by the owner on 2026-10-13 (decisions.md "S2: one menu system"). Key-level results: Mode moves to Shift + Apps when R15 removes Shift + CAS; R10's Tmpl palette stays as built.
 - **B. The status-line switch.** A 28 px line is below a comfortable touch target and sits far from the thumb. R15a must give the place name a larger hit area than its drawn height, state the press count for Home ↔ CAS against the G2's one key, and keep the fallback: if the owner finds the bar slow after a week, a layer of an existing key (candidate: a flick on Apps) takes the switch, with no new key.
 - **C. `!` (factorial). Settled** (owner, 2026-10-13): it goes in the Shift + 9 palette, as on the G2 (R18).
 

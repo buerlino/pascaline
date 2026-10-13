@@ -95,7 +95,7 @@ One row of up to 6 touch buttons directly above the entry line. Its content foll
 
 Split by how often a thing changes:
 
-- **Mode sheet** (a tap on a status chip; Shift + CAS until R15b removes that key, P12): angle, format, digits, decimals in Fixed, entry (textbook/one-line). Each row is a sheet item; ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes. Digits and decimals open a list of presets on a digit or Enter (digits 4 6 8 10 12 15 20 25 30; decimals 0 1 2 3 4 5 6 8 10 12), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: one tap on the chip (Shift + CAS, ▶, Enter until R15b); 20 digits: chip, 3, 7.
+- **Mode sheet** (a tap on a status chip; Shift + CAS until R15b removes that key, P12): angle, format, digits, decimals in Fixed, entry (textbook/one-line). Each row is a sheet item; ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes. Digits and decimals open a list of presets on a digit or Enter (digits 4 6 8 10 12 15 20 25 30; decimals 0 1 2 3 4 5 6 8 10 12), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: one tap on the chip (by keys Shift, CAS, ▶, Enter: 4 presses, 3 with a flick up on CAS, until R15b); 20 digits: digits chip, Enter, 7 (by keys Shift, CAS, 3, 7).
 - **Settings** (the last item of the Mode sheet; Shift + Home/CAS until R15b, P12): Format key cycle (a list of switches), haptics (on/off, strength on Android only, length), decimal comma, theme, about and licences; the first two are built (R8), theme comes with R12b, the rest later. Same sheet keys; no native `<select>` (they open the system picker, which the keypad cannot drive).
 - This uses the duplicate Settings cell (finding 2) for the Mode sheet. **Keypad layout question for the owner:** this changes the meaning of Shift + CAS, not its position or the visual keypad. The reference opens CAS settings there, so the habit fits.
 
@@ -153,7 +153,7 @@ The order lets every package build on the previous one. Owner of the code: ron; 
 | **U1** | One sheet | `Sheet.svelte` and its model (3.1) replace `PickList`; Apps, view menus and the Home menu move to it; last pick, submenu stack with path, scroll cue, type-ahead | 2 d | e2e per key in 3.1; every existing menu test green |
 | **U2** | Status bar | 3.2: place, mode chips with tap actions, Shift/Alpha, busy | 1 d | e2e: tap RAD → DEG changes the next result |
 | **U3** | Context bar | 3.3 for Home rows, Plot, Num, Solve, Python; Menu = the same items first | 2–3 d | Benchmark: no task gets more key presses; Plot trace in 1 tap |
-| **U4** | Mode sheet and Settings | 3.4; settings rows as sheet items; native inputs gone | 1.5 d | e2e: DEG → RAD in ≤ 3 keys |
+| **U4** | Mode sheet and Settings | 3.4; settings rows as sheet items; native inputs gone | 1.5 d | e2e: DEG → RAD in one tap, or 4 presses by keys |
 | **U5** | History rows | 3.5 | 1 d | Screenshot review; history performance test unchanged |
 | **U6** | Tablet and landscape | 3.9 | 1.5 d | Gallery at 1280×800; Tab One check (annabell) |
 | **U7** | Tokens, theme, icons, motion | 3.10, 3.7 press feedback, reduced motion | 2 d | Size test (start chunk unchanged within 2 kB) |
