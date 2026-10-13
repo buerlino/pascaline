@@ -95,7 +95,7 @@ One row of up to 6 touch buttons directly above the entry line. Its content foll
 
 Split by how often a thing changes:
 
-- **Mode sheet** (a tap on a status chip; Shift + CAS until R15b removes that key, P12): angle, format, digits, decimals in Fixed, entry (textbook/one-line). Each row is a sheet item; ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes. Digits and decimals open a list of presets on a digit or Enter (digits 4 6 8 10 12 15 20 25 30; decimals 0 1 2 3 4 5 6 8 10 12), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: one tap on the chip (by keys Shift, CAS, ▶, Enter: 4 presses, 3 with a flick up on CAS, until R15b); 20 digits: digits chip, Enter, 7 (by keys Shift, CAS, 3, 7).
+- **Mode sheet** (a tap on a status chip; Shift + CAS until R15b removes that key, P12): angle, format, digits, entry (textbook/one-line); the decimals of Fixed are in Settings › Format key cycle (R13). Each row is a sheet item; ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes. Digits open a list of presets on a digit or Enter (4 6 8 10 12 15 20 25 30), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: one tap on the chip (by keys Shift, CAS, ▶, Enter: 4 presses, 3 with a flick up on CAS, until R15b); 20 digits: digits chip, Enter, 7 (by keys Shift, CAS, 3, 7).
 - **Settings** (the last item of the Mode sheet; Shift + Home/CAS until R15b, P12): Format key cycle (a list of switches), haptics (on/off, strength on Android only, length), decimal comma, theme, about and licences; the first two are built (R8), theme comes with R12b, the rest later. Same sheet keys; no native `<select>` (they open the system picker, which the keypad cannot drive).
 - This uses the duplicate Settings cell (finding 2) for the Mode sheet. **Keypad layout question for the owner:** this changes the meaning of Shift + CAS, not its position or the visual keypad. The reference opens CAS settings there, so the habit fits.
 
@@ -125,7 +125,7 @@ The layout stays. Only the drawing changes:
 - **Dead keys** (today `special: none`) dim only in the layers where they do nothing. A press on one gives a short double haptic and no other effect.
 - **Press feedback** within one frame: the key darkens while the finger is down (keys fire on lift because of flicks, P11, so the feedback must start on touch).
 
-*Built in R6 (2026-10-13): the legend line, the fit rule (faces and legends shrink, `app/src/keyboard/fit.ts`) and the contrast test (`app/src/style.test.ts`); dead keys dim per layer. Not built: the double haptic on a dead key.*
+*Built in R6 (2026-10-13): the legend line, the fit rule (faces and legends shrink, `app/src/keyboard/fit.ts`) and the contrast test (`app/src/style.test.ts`); dead keys dim per layer. The double haptic on a dead key came with R13 (2026-10-13): Menu in Symb, Tmpl in Plot, Fmt in an app, `special: none` keys and typing in Plot.*
 
 ### 3.8 Errors and empty states
 

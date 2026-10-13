@@ -43,8 +43,8 @@ The legend is missing on the keytop only because the feature is not built; the k
 4. **The exponent key types an E mark instead of the `×10^` template.** The template needs space, hurts the formula's readability and caused the silent wrong exponent of M4-2 (`2.2E-9 × 4.7E3`). The key becomes `ᴇ` (the mark the G2 also draws), is no longer called EEX or ×10ⁿ, and its legend is `ᴇ`. Results keep the E notation of the Sci and Eng formats (`1.5E-9`). Package R14.
 5. **Shift + x = y stays** (section 2).
 6. **Menus are revamped in the step that adds the next menus** (the Tmpl palette and the form toggle of R10): see open point A.
-7. **Alpha + 0 (the quote mark) is removed.** Python is gone, strings have no use in Home or CAS, and an unmatched `"` is an error waiting to happen. A key that does nothing in a layer is dimmed (R6). Removal test: it comes back (as a pair) when a feature needs text. Package R13.
-8. **Shift + ◀ and Shift + ▶ (line start and end) are removed.** The arrow pad is a 2D cursor and a tap on the formula puts the cursor anywhere (G2 flow). Removal test: it comes back if long one-line entries scroll out of reach and the owner misses the jump. Package R13.
+7. **Alpha + 0 (the quote mark) is removed.** Python is gone, strings have no use in Home or CAS, and an unmatched `"` is an error waiting to happen. A key that does nothing in a layer is dimmed (R6). Removal test: it comes back (as a pair) when a feature needs text. Built in R13.
+8. **Shift + ◀ and Shift + ▶ (line start and end) are removed.** The arrow pad is a 2D cursor and a tap on the formula puts the cursor anywhere (G2 flow). Removal test: it comes back if long one-line entries scroll out of reach and the owner misses the jump. Built in R13.
 9. **Info, Notes and User stay omitted** (section 2).
 10. **The G2's Shift palettes come back** (owner's answers to R10): Shift + 6 relations and logic, Shift + 9 symbols and Greek with `!`. Package R18.
 

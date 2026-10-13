@@ -75,8 +75,8 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 | 30 | I don't like 10^ as the scientific notation: it needs so much space and only hurts the formula's readability. Use an E, and give the button a better name than EEX or ×10^. | decided: P12 point 4; R14 |
 | 31 | Leave x/y for now. | decided: P12 point 5 |
 | 32 | The menus have to be revamped in the step where we add the other menus (fractions etc.); add it as an open point and analyse all menus. | open point A; S2 |
-| 33 | I don't think we need quotes now that Python is gone. Decide. | decided: P12 point 7 (removed); R13 |
-| 34 | We don't need the line jump, because the whole arrow pad is a 2D cursor. | decided: P12 point 8 (removed); R13 |
+| 33 | I don't think we need quotes now that Python is gone. Decide. | decided: P12 point 7; built in R13 |
+| 34 | We don't need the line jump, because the whole arrow pad is a 2D cursor. | decided: P12 point 8; built in R13 |
 | 35 | Info, Notes and User omitted: good. | decided: P12 point 9 |
 
 ## 2026-10-13 (seventh round: undo)

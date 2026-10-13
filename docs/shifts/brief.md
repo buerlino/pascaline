@@ -4,15 +4,14 @@
 **Manual mode (user, 2026-10-12):** there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` after the merges of R17 and S2 (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R17. **Next:** R13, R16, R14, R18, then R15a and R15b. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R13, R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` after the merges of R17, S2 and R13 (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R17. **Next:** R16, R14, R18, then R15a and R15b. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
 Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R13 | Dead layers off (quote, Shift + ◀ ▶), plus S2's Menu-row fix, Decimals move, dead-key haptic | ron, Sonnet | `p1/ron-m4a-dead` | now | ~0.5 d |
-| R16 | Undo on Shift + Cancel (P13) | ron, Sonnet | `p1/ron-m4a-undo` | R13 | ~0.5 d |
+| R16 | Undo on Shift + Cancel (P13) | ron, Sonnet | `p1/ron-m4a-undo` | now | ~0.5 d |
 | R14 | The exponent key (`ᴇ`) | ron, **Opus** | `p1/ron-m4a-exp` | R16 | ~1 d |
 | R18 | The Shift palettes: Shift + 6 relations and logic, Shift + 9 symbols and Greek | ron, **Opus** | `p1/ron-m4a-shiftpal` | R14 | ~1.5 d |
 | R15a | Top cluster: mockups for the owner | ron, Sonnet | `p1/ron-m4a-top` | R18 | ~0.5 d |
@@ -94,9 +93,6 @@ Backlog step 12, when the Tab One is connected (rules section 6). On the device:
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R13: dead layers off, branch `p1/ron-m4a-dead`
-P12 points 7 and 8 ([06-keypad-vs-g2.md](../06-keypad-vs-g2.md) section 3). In `spec/keyboard.yaml`: remove the `alpha` layer of `d0` (the quote mark) and the `shift` layers of `left` and `right` (`|◀`, `▶|`, `moveToMathfieldStart/End`); the gestures comment loses "shift ◀ = |◀"; the keys dim in those layers (the R6 rule) and a flick there shows ✕. Remove what only they used. List the free Shift cells in the report. (`!` gets its cell in R18's Shift + 9 palette.) **Plus three items from S2** ([research/r8-menus.md](../research/r8-menus.md) I1, I3, I8): (a) **Menu with a picked history row acts on that row** (today it drops the pick and copies the last result: `App.svelte:179-209`, `clipboard/actions.svelte.ts:57-61`); regression e2e first: three results, ▲ twice, Menu, Copy gives the middle one; (b) "Decimals in Fixed" moves from the Mode sheet to Settings › Format key cycle, as a value row under the Fixed tick (`views/modeSheet.ts`); (c) a key that does nothing in the open view (Menu in Symb, Tmpl in Plot, Fmt in an app) gives the dead-key double haptic of docs/05 3.7. Gate: keyboard test, gestures and flicks e2e, copy and status e2e, typecheck, vitest. No parser change.
 
 ### ron, R16: undo on Shift + Cancel, branch `p1/ron-m4a-undo`
 P13 (decisions.md, accepted by the owner 2026-10-13). MathLive already keeps an undo history for the entry line, and a probe (2026-10-13, Playwright on the real app) showed it restores a deleted selection, a line cleared by Esc and a line cleared by Enter, one step per key press (a template insert is two). Read first: `app/src/entry/controller.ts` (`clear`, `set`, the `chips` getter, `run`), `spec/keyboard.yaml` (the `cancel` key, the gestures comment), `app/src/keyboard/keyboard.ts` (which `cmd` names it accepts). Four steps, **one commit each**, in this order:
