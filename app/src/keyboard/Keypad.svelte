@@ -4,17 +4,22 @@
   import { PAD_KEYS, REPEAT_KEYS, Repeat, Stepper, type PadDir } from "./gestures.ts";
   import { fitLegends } from "./fit.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
+  import { sheetKey } from "../views/sheetKeys.ts";
 
   let {
     shift,
     alpha,
     alphaLock = false,
+    sheet,
     onpress,
     ontouch = () => {},
   }: {
     shift: boolean;
     alpha: boolean;
     alphaLock?: boolean;
+    /** A sheet is open (docs/05 3.1): keys are read by sheetKeys.ts, and the ones that do nothing there look dead.
+     *  `filter`: the open list takes letters. */
+    sheet?: { filter: boolean } | undefined;
     /** A key fires; `layer` overrides the Shift/Alpha state (trackpad steps, flicks). */
     onpress: (key: Key, layer?: Layer) => void;
     /** A finger went down, or a gesture made a step: the haptic tick. */
@@ -35,6 +40,7 @@
 
   /** A key that does nothing in the current layer (a key we don't have yet, or a layer it has no function in). */
   const dead = (k: Key): boolean => {
+    if (sheet) return sheetKey(k, sheet.filter).kind === "none";
     const p = k.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return false; // the modifiers work in every layer
     const a = actionFor(k, shift, alpha);

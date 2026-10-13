@@ -65,3 +65,26 @@ describe("no colour is written directly in the keypad", () => {
     expect(style.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g) ?? []).toEqual([]);
   });
 });
+
+// The sheet (docs/05 3.1): rows on --panel, the highlighted row on --key-num; numbers in --shift, reasons in --muted.
+for (const [theme, t] of [
+  ["dark", dark],
+  ["light", light],
+] as const) {
+  describe(`sheet contrast, ${theme} theme`, () => {
+    for (const bg of ["panel", "key-num"] as const)
+      it(`on --${bg}: labels, numbers and reason lines at least 4.5:1, a disabled label at least 3:1`, () => {
+        for (const fg of ["text", "shift", "muted"] as const)
+          expect(contrast(t[fg] as string, t[bg] as string), `--${fg} on --${bg}`).toBeGreaterThanOrEqual(4.5);
+        expect(contrast(t["text-dead"] as string, t[bg] as string), `--text-dead on --${bg}`).toBeGreaterThanOrEqual(3);
+      });
+  });
+}
+
+describe("no colour is written directly in the sheet", () => {
+  it("Sheet.svelte uses tokens only", () => {
+    const src = readFileSync(new URL("./views/Sheet.svelte", import.meta.url), "utf8");
+    const style = src.slice(src.indexOf("<style>"));
+    expect(style.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g) ?? []).toEqual([]);
+  });
+});

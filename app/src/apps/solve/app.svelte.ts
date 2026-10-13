@@ -136,8 +136,14 @@ export class SolveApp implements AppInstance {
     if (view !== "num") return [];
     const none = !this.selected || this.active.length === 0;
     return [
-      { id: "solve", label: t("solve.solve"), disabled: none, run: () => void this.solve() },
-      { id: "poly", label: t("solve.polyRoots"), disabled: none || this.active.length !== 1, run: () => void this.polyRoots() },
+      { id: "solve", label: t("solve.solve"), disabled: none, reason: t("why.noEquation"), run: () => void this.solve() },
+      {
+        id: "poly",
+        label: t("solve.polyRoots"),
+        disabled: none || this.active.length !== 1,
+        reason: none ? t("why.noEquation") : t("why.oneEquation"),
+        run: () => void this.polyRoots(),
+      },
     ];
   }
 

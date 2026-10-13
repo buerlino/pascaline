@@ -1,7 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import PickList from "./apps/PickList.svelte";
   import { APPS } from "./apps/registry.ts";
   import type { AppShell } from "./apps/shell.svelte.ts";
   import { VIEW_IDS, type NavDir, type ViewId } from "./apps/types.ts";
@@ -17,6 +16,8 @@
   import type { HistoryItem, Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   import Settings from "./views/Settings.svelte";
+  import Sheet from "./views/Sheet.svelte";
+  import { sheetKey } from "./views/sheetKeys.ts";
 
   let { session, entry, shell }: { session: Session; entry: EntryController; shell: AppShell } = $props();
 
@@ -27,6 +28,7 @@
     entry.onEscape = () => void cancel();
   });
   let host: HTMLElement | undefined = $state();
+  let entryHeight = $state(0);
 
   // Copy, paste and share (docs/04 2.6) load after the engine is ready, once the browser is idle (not in the start chunk).
   // The shell reaches them for the apps (AppHost.copy) and for the Home/CAS Menu.
@@ -95,11 +97,8 @@
         clearKey();
         break;
       case "esc":
-        // Esc: close an open list, else clear the entry line (a running job is the Cancel key's business).
-        if (shell.switcherOpen || shell.menuOpen) {
-          shell.switcherOpen = false;
-          shell.menuOpen = false;
-        } else entry.clear();
+        // Esc clears the entry line (an open sheet takes Esc first; a running job is the Cancel key's business).
+        entry.clear();
         break;
       case "app":
         // Home/CAS key: from an app back to Home/CAS, else switch between the two.
@@ -116,8 +115,7 @@
         session.settingsOpen = true;
         break;
       case "apps":
-        shell.menuOpen = false;
-        shell.switcherOpen = !shell.switcherOpen;
+        shell.toggleApps();
         break;
       case "symb":
       case "plot":
@@ -200,7 +198,52 @@
     moveToPreviousChar: "left",
     moveToNextChar: "right",
   };
-  const DIGIT = /^d([0-9])$/;
+
+  /** A key while a sheet is open (docs/05 3.1). Shift and Alpha are ignored, and the sheet leaves them as they are; no
+   *  key goes through to the entry line. False: the key keeps its own job (Menu, Apps and the keys that change place). */
+  function sheetPress(key: Key): boolean {
+    const sheet = shell.sheet;
+    if (!sheet) return false;
+    const level = sheet.level;
+    const k = sheetKey(key, level.filterable);
+    switch (k.kind) {
+      case "move":
+        level.move(k.by);
+        return true;
+      case "pick":
+        shell.picked(sheet.pickNumber(k.n));
+        return true;
+      case "enter":
+        shell.picked(sheet.enter());
+        return true;
+      case "right":
+        shell.picked(sheet.right());
+        return true;
+      case "back":
+        if (!sheet.back()) shell.closeSheet();
+        return true;
+      case "close":
+        shell.closeSheet();
+        return true;
+      case "letter":
+        level.type(k.ch);
+        return true;
+      case "backspace":
+        level.backspace();
+        return true;
+      case "none":
+        return true;
+      case "pass": {
+        // read by what the key is, not by the layer: Menu and Apps toggle their sheet, a key that changes place
+        // (Home/CAS, CAS, Symb, Plot, Num) closes it and goes there
+        const p = key.actions.primary;
+        if (p?.kind !== "special") return true;
+        if (p.name !== "menu" && p.name !== "apps") shell.closeSheet();
+        special(p.name);
+        return true;
+      }
+    }
+  }
 
   // Keys pressed while an app's code is loading wait for it, so nothing typed is lost (like MathLive's queue).
   let waiting: [Key, Layer | undefined][] = [];
@@ -224,18 +267,8 @@
       else session.toggleAlpha();
       return;
     }
+    if (shell.sheet && sheetPress(key)) return;
     const mods = modsFor(layer);
-    // An open list takes the digit keys (1…9, 0), whatever Shift and Alpha say: a digit never leaks through (docs/05 3.1),
-    // and the list leaves the modifiers as they are.
-    const digit = DIGIT.exec(key.id);
-    if (digit && (shell.switcherOpen || shell.menuOpen)) {
-      const i = (Number(digit[1]) + 9) % 10;
-      if (shell.switcherOpen) {
-        const a = APPS[i];
-        if (a) void shell.open(a.id);
-      } else shell.pick(i);
-      return;
-    }
     const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line");
     session.clearModifiers();
     if (!action) return;
@@ -292,52 +325,57 @@
     </span>
   </header>
 
-  <div class="stage">
-    {#if shell.app === null}
-      <History
-        items={session.items}
-        selected={picked}
-        display={(item) => session.display(item)}
-        mark={(item) => session.mark(item)}
-        onrecall={(item) => entry.set(item.latex, item.chips)}
-        oninsert={insertResult}
-        oncancel={() => void cancel()}
-        onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
-      />
-    {:else if shell.current}
-      {@const C = shell.current.Root}
-      <C app={shell.current.instance} view={shell.view} />
-    {:else}
-      <p class="loading">{t("apps.loading")}</p>
-    {/if}
+  <div class="screen">
+    <div class="stage">
+      {#if shell.app === null}
+        <History
+          items={session.items}
+          selected={picked}
+          display={(item) => session.display(item)}
+          mark={(item) => session.mark(item)}
+          onrecall={(item) => entry.set(item.latex, item.chips)}
+          oninsert={insertResult}
+          oncancel={() => void cancel()}
+          onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
+        />
+      {:else if shell.current}
+        {@const C = shell.current.Root}
+        <C app={shell.current.instance} view={shell.view} />
+      {:else}
+        <p class="loading">{t("apps.loading")}</p>
+      {/if}
+    </div>
 
-    {#if shell.switcherOpen}
-      <PickList
-        testid="apps"
-        title={t("apps.title")}
-        items={APPS.map((a) => ({ label: t(a.name) }))}
-        onpick={(i) => void shell.open(APPS[i]?.id ?? "function")}
-        onclose={() => (shell.switcherOpen = false)}
-      />
-    {:else if shell.menuOpen}
-      <PickList
-        testid="menu"
-        title={shell.menuTitle ?? t("menu.title")}
-        items={shell.menuItems}
-        onpick={(i) => shell.pick(i)}
-        onclose={() => (shell.menuOpen = false)}
+    {#if clip?.notice}<div class="notice" role="status" data-testid="notice">{clip.notice}</div>{/if}
+
+    <div class="entry" class:hidden={!shell.showsEntry} aria-label={t("entry.label")} bind:clientHeight={entryHeight}>
+      {#if shell.entryLabel}<span class="entrylabel" data-testid="entry-label">{shell.entryLabel}</span>{/if}
+      <div class="field" bind:this={host}></div>
+    </div>
+
+    <!-- the sheet rises from just above the entry line, over the history or view; it takes the entry line's room only
+         when its rows need it, and never covers the keypad (docs/05 3.1) -->
+    {#if shell.sheet}
+      {@const sheet = shell.sheet}
+      <Sheet
+        {sheet}
+        testid={shell.switcherOpen ? "apps" : "menu"}
+        below={entryHeight}
+        ontap={(i) => shell.picked(sheet.activate(i))}
+        onback={() => sheet.back()}
+        onclose={() => shell.closeSheet()}
       />
     {/if}
   </div>
 
-  {#if clip?.notice}<div class="notice" role="status" data-testid="notice">{clip.notice}</div>{/if}
-
-  <div class="entry" class:hidden={!shell.showsEntry} aria-label={t("entry.label")}>
-    {#if shell.entryLabel}<span class="entrylabel" data-testid="entry-label">{shell.entryLabel}</span>{/if}
-    <div class="field" bind:this={host}></div>
-  </div>
-
-  <Keypad shift={session.shift} alpha={session.alpha} alphaLock={session.alphaLock} onpress={press} ontouch={touched} />
+  <Keypad
+    shift={session.shift}
+    alpha={session.alpha}
+    alphaLock={session.alphaLock}
+    sheet={shell.sheet ? { filter: shell.sheet.level.filterable } : undefined}
+    onpress={press}
+    ontouch={touched}
+  />
 
   {#if session.settingsOpen}<Settings {session} />{/if}
 </main>
@@ -382,6 +420,13 @@
   .status {
     font-size: 13px;
     color: var(--muted);
+  }
+  .screen {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
   .stage {
     position: relative;

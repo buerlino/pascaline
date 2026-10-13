@@ -44,6 +44,15 @@ async function defineTwo(page: Page): Promise<void> {
   await settle(page);
 }
 
+/** A 14-item list on the sheet, as Find and the template list will use it (no such list is built in yet). */
+async function longList(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const units = ["hour", "hertz", "henry", "gauss", "coulomb", "candela", "kelvin", "kilogram", "joule", "lux", "lumen", "newton", "ohm", "pascal"];
+    window.pascaline.shell.showMenu("Units (sample)", units.map((u) => ({ id: u, label: u, run: () => {} })));
+  });
+  await settle(page);
+}
+
 const shots: Shot[] = [
   // ---- keypad layers (on an empty Home)
   { id: "home-empty", group: "Home", title: "Home, empty", setup: async () => {} },
@@ -90,6 +99,25 @@ const shots: Shot[] = [
     setup: async (p) => {
       await someHistory(p);
       await tap(p, ["apps"]);
+    },
+  },
+  {
+    id: "home-sheet-long",
+    group: "Home",
+    title: "A long list on the sheet (scroll cue, item count)",
+    setup: async (p) => {
+      await someHistory(p);
+      await longList(p);
+    },
+  },
+  {
+    id: "home-sheet-filter",
+    group: "Home",
+    title: "A long list filtered by letters (H, E)",
+    setup: async (p) => {
+      await someHistory(p);
+      await longList(p);
+      await tap(p, ["cos", "frac"]);
     },
   },
   {
@@ -143,6 +171,27 @@ const shots: Shot[] = [
     setup: async (p) => {
       await defineTwo(p);
       await tap(p, ["plot", "menu"]);
+      await settle(p);
+    },
+  },
+  {
+    id: "fn-plot-intersection",
+    group: "Function",
+    title: "Function, Plot menu › Intersection (a submenu)",
+    setup: async (p) => {
+      await defineTwo(p);
+      await tap(p, ["plot", "menu", "d3"]);
+      await settle(p);
+    },
+  },
+  {
+    id: "fn-plot-menu-disabled",
+    group: "Function",
+    title: "Function, Plot menu with no function (disabled rows say why)",
+    setup: async (p) => {
+      await tap(p, ["symb", "plot"]);
+      await p.waitForFunction(() => window.pascaline.plot.board !== undefined);
+      await tap(p, ["menu"]);
       await settle(p);
     },
   },
