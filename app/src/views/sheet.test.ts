@@ -253,3 +253,36 @@ describe("sheet keys (docs/05 3.1)", () => {
     expect(letters.map(([, l]) => l).sort().join("")).toBe("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   });
 });
+
+// The grid variant (the Tmpl palette, R10): ▲ ▼ ◀ ▶ move in two dimensions, Enter or a tap picks, no numbers.
+describe("Sheet: grid", () => {
+  const cells = (): MenuItem[] => Array.from({ length: 18 }, (_, i) => item(`c${i}`));
+  it("▼ ▲ move by a row and wrap in the column; ▶ ◀ move in reading order and wrap round the grid", () => {
+    const s = new Sheet("tmpl", "Templates", cells, { columns: 6 });
+    expect(s.level.highlight).toBe(0);
+    s.level.move(1);
+    expect(s.level.highlight).toBe(6);
+    s.level.move(1);
+    s.level.move(1);
+    expect(s.level.highlight).toBe(0); // round the column
+    s.level.move(-1);
+    expect(s.level.highlight).toBe(12);
+    expect(s.right()).toEqual({ kind: "stay" });
+    expect(s.level.highlight).toBe(13);
+    s.level.highlight = 17;
+    s.right();
+    expect(s.level.highlight).toBe(0); // round the grid
+    expect(s.left()).toBe(true); // ◀ moves, it does not close the sheet
+    expect(s.level.highlight).toBe(17);
+  });
+  it("digits do nothing, letters do not filter, Enter picks and the pick is remembered", () => {
+    const s = new Sheet("tmpl", "Templates", cells, { columns: 6 });
+    expect(s.level.filterable).toBe(false);
+    expect(s.pickNumber(1)).toEqual({ kind: "stay" });
+    expect(sheetKey(key("sin"), s.level.filterable)).toEqual({ kind: "none" });
+    expect(sheetKey(key("tmpl"), false)).toEqual({ kind: "pass" }); // Tmpl toggles the palette
+    s.level.move(1);
+    expect(s.enter()).toMatchObject({ kind: "run", item: { id: "c6" } });
+    expect(new Sheet("tmpl", "Templates", cells, { columns: 6 }).level.highlight).toBe(6);
+  });
+});
