@@ -141,6 +141,13 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-13 A selection is the argument of the key (R17)
+- **Choice:** (1) A non-empty selection is the argument of any key whose template has an argument slot: functions and exponent keys put it inside their brackets or exponent, ÷ and a/b take it as the numerator, roots as the radicand, power keys as the base, in brackets unless it is one number, one letter or a chip. (2) Keys with no argument slot (constants, operators, typed characters, the exponent mark, store) replace the selection, as typing does. (3) With nothing selected every key behaves as before. (4) Every template is checked: its main argument slot is `#0` (or `#@` for a prefix argument), `#?` only for other slots, or the key is in `NO_ARGUMENT` in `keyboard.test.ts` with a reason; `app/test/selection.spec.ts` presses every key and layer with `1+2` selected. Find's `functionInsert` follows (`#0`).
+- **Why:** `1+2` selected and x² gave `1+2²` = 5 where 9 was meant, a silent wrong answer (principle 3); the function keys threw the selection away. Values checked through the parser and the engine (`(1+2)^2` = 9, `(1+2)^(-1)` = 1/3, `derived`).
+- **Alternatives:** operators wrapping a selection (rejected: not what typing does); bracketing every selected base (rejected: `4+2^2` with only the 2 selected stays bare).
+- **Would change if:** the real G2 turns out to behave otherwise for a function key with a selection (not verified, no `source: device` claimed); a name such as `ab` selected is bracketed today and the owner may want it bare.
+- **Open:** `find/functions.yaml` still has 14 curated inserts with `#?` (Find drops a selection for those until gorge changes them); Shift + space with a selection gives `1+2_{}` (binds to the last character), unchanged.
+
 ### 2026-10-13 Tmpl palette and the a b/c key (R10)
 - **Choice:** (1) a b/c has one toggle per result type: fraction ↔ decimal, or a+bi ↔ polar; no Settings row, no mixed form on the key. (2) ▶ moves to the next empty template box while one is ahead, else it is the plain step. (3) In the Tmpl grid, digits and letters do nothing, Tmpl closes it, and it opens on the last pick (R7's remembered pick). (4) The degree sign and DMS mean degrees in every angle mode: `x*(pi/180)^angle_radian()`.
 - **Why:** (1) P12 ("the key never needs a setting"); the owner's G2 toggles 2.5 ↔ 5/2. (2) MathLive's step stops between boxes (∂, d, |), so a key-only fill typed into the wrong place. (3) 18 cells do not fit the digits 1–9, 0. (4) before R10, 30° was always 30·π/180, so sin(30°) in DEG was the sine of 0.52° (regression test in `roundtrip.test.ts`).

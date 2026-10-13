@@ -4,17 +4,14 @@
 **Manual mode (user, 2026-10-12):** there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` at `f296a92` (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10. **Next:** R17 (URGENT: a silent wrong answer), R13, R16, R14, R18, then R15a and R15b. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R13, R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` at `f296a92` (2026-10-13). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R17. **Next:** R13, R16, R14, R18, then R15a and R15b. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R13, R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
 Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
 
-> **URGENT: R17 goes next** (owner, 2026-10-13). With text selected, x², xʸ and x⁻¹ square only the last character (`1+2` selected, x² gives `1+2²` = 5, not 9) and every function key deletes the selection. The first is a silent wrong answer (CLAUDE.md principle 3). R17's every-key test covers R10's Tmpl palette too; R17 must be merged before R13, R14 and R18, which add or change keys. Full text: section 7, "R17".
-
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| **R17** | **URGENT: a selection survives every key (bug)** | ron, Sonnet (Opus review) | `p1/ron-m4a-selection` | now | ~0.5–1 d |
-| R13 | Dead layers off (quote, Shift + ◀ ▶), plus S2's Menu-row fix, Decimals move, dead-key haptic | ron, Sonnet | `p1/ron-m4a-dead` | R17 | ~0.5 d |
+| R13 | Dead layers off (quote, Shift + ◀ ▶), plus S2's Menu-row fix, Decimals move, dead-key haptic | ron, Sonnet | `p1/ron-m4a-dead` | now | ~0.5 d |
 | R16 | Undo on Shift + Cancel (P13) | ron, Sonnet | `p1/ron-m4a-undo` | R13 | ~0.5 d |
 | R14 | The exponent key (`ᴇ`) | ron, **Opus** | `p1/ron-m4a-exp` | R16 | ~1 d |
 | R18 | The Shift palettes: Shift + 6 relations and logic, Shift + 9 symbols and Greek | ron, **Opus** | `p1/ron-m4a-shiftpal` | R14 | ~1.5 d |
@@ -97,62 +94,6 @@ Backlog step 12, when the Tab One is connected (rules section 6). On the device:
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R17 (URGENT): a selection survives every key, branch `p1/ron-m4a-selection`
-Owner's bug report, 2026-10-13 ([feedback.md](../feedback.md) #37): with some entry selected, ÷ divides the whole selection, but the abs key replaces it with an empty `|□|`. Sandra's investigation (same day, probed in the real app with Playwright on Chromium, Pixel 7 profile, `?engine=fake`, MathLive 0.111.1) found that it is not only abs, and that one form of it gives a wrong number without any warning. Do this package **now**, before R13. R10 rewrote much of `spec/keyboard.yaml` (the `templates:` palette), so the yaml line numbers below are as of `fbe96ff`: find each template by its key id, and include the palette's own templates (`keyboard.palette`) in the every-key test. Size ~0.5–1 d. Sonnet is enough because the change is small and a spec-wide test guards it; the Opus review (section 8a) must check the contract below, not only that the tests pass.
-
-**Why it is urgent.** CLAUDE.md principle 3 says no silent wrong answers. A user who selects `1+2` and presses x² sees `1+2²` and Enter gives 5 instead of 9. The deleted-selection cases are less dangerous (the user sees the empty box) but they cost retyping on a calculator whose point is speed. Both hit the key set that R10 (Tmpl palette), R14 (the exponent key) and R4 (Find inserts functions) are about to extend, so the rule has to exist, and be tested for every key, before they land.
-
-**The evidence (reproduce it first; it is also the failing test).** Type `1 + 2`, select everything (`mf.executeCommand("selectAll")`), press one key, read `window.pascaline.entry.value`. For the one-atom case type `4 + 2` and select only the `2` (`mf.selection = { ranges: [[2, 3]] }`).
-
-| Key (layer) | Template in `spec/keyboard.yaml` | `1+2` selected, today | Wanted |
-|---|---|---|---|
-| ÷, a/b | `\frac{#@}{#?}` | `\frac{1+2}{□}` | unchanged |
-| `( )`, √, ⁿ√ | `\left(#0\right)`, `\sqrt{#0}`, `\sqrt[#?]{#0}` | `(1+2)`, `√(1+2)`, `ⁿ√(1+2)` | unchanged |
-| **abs** (Shift + (−)) | `\left\|#?\right\|` | `\left\|□\right\|` (selection gone) | `\left\|1+2\right\|` |
-| **sin, cos, tan, ln, log** | `\sin\left(#?\right)` … | `\sin\left(□\right)` (selection gone) | `\sin\left(1+2\right)` |
-| **sin⁻¹, cos⁻¹, tan⁻¹, eˣ, 10ˣ** (Shift) | `\arcsin\left(#?\right)`, `\exponentialE^{#?}`, `10^{#?}` | empty argument (selection gone) | selection inside the argument or exponent |
-| **approx** (Shift + Enter) | `\operatorname{approx}\left(#?\right)` | `\operatorname{approx}\left(□\right)` | `\operatorname{approx}\left(1+2\right)` |
-| **x²** | `#@^{2}` | **`1+2^2`** (wrong value) | `\left(1+2\right)^2` |
-| **xʸ** | `#@^{#?}` | **`1+2^{□}`** (wrong value) | `\left(1+2\right)^{□}` |
-| **x⁻¹** (Shift + ÷) | `#@^{-1}` | **`1+2^{-1}`** (wrong value) | `\left(1+2\right)^{-1}` |
-
-With only the `2` of `4+2` selected the same keys give `4+sin(□)`, `4+approx(□)` (the `2` is deleted) and `4+2^2` (fine, because the base is one atom; keep it without brackets). The one-line entry setting has the same gaps: the `line:` variants of √ (`\operatorname{sqrt}\left(#?\right)`, `spec/keyboard.yaml` line 176) and of xʸ and x² (`\char"5E …`, lines 113 and 172) use `#?` or a bare caret, so a selection is lost or mis-bound there too. Line numbers are as of `fbe96ff`.
-
-**Cause.** The controller passes every key's template to MathLive's `insert()` (`app/src/entry/controller.ts` `apply()`, the `insert` case, with `selectionMode: "placeholder"`), and `insert()` replaces the selection. What survives depends on the token in the template:
-- `#@` = the selection, or the atom before the cursor when nothing is selected. It is pasted as raw LaTeX, which is why `#@^{2}` binds the exponent to the last character of `1+2`.
-- `#0` = the selection, or a placeholder when nothing is selected. Safe.
-- `#?` = always an empty placeholder. The selection is discarded.
-
-`EntryController.run()` has a bracket-wrapping rule for the `#@^` keys (L8, `selectCompound()` and the branch at `controller.ts:230`), but `selectCompound()` returns false at once when the selection is not collapsed (`controller.ts:277`), so the rule never runs for an explicit selection. The yaml header documents the three tokens but does not say which one a key must use, so each key got whichever its author wrote.
-
-**The contract to build (write it into the code, the yaml header and the tests).**
-1. A non-empty selection is the **argument** of any key whose template has an argument slot. Functions and exponent keys put it inside their brackets or exponent; ÷ and a/b take it as the numerator (already so); roots take it as the radicand (already so); **power keys take it as the base, in brackets unless it is a single plain term**.
-2. Keys with **no argument slot** (π, ∞, i, ∡, ▸ store, Ans, the exponent mark) and **operators and typed characters** (+, −, ×, digits, letters, `.`, `,`) replace the selection, as typing does in any editor. Do not change that.
-3. With **nothing selected** every key behaves exactly as today (placeholder, or the L8/L9 compound rules). The change must not alter a single existing key sequence without a selection.
-4. The rule is checked for **every** key, so a key added later (R10's Tmpl palette, R14, R4's Find) cannot silently break it.
-
-**Work, in this order (test first, CLAUDE.md "every bug fixed gets a regression test first").**
-1. **Failing tests first.** Commit them failing, or in one commit with the fix if the project's hooks need green commits; say which in the report.
-   - `app/src/keyboard/keyboard.test.ts`: using `templates(kb)` (`keyboard.ts:221`), every insert template, in both the normal and the `line` variant, contains `#@` or `#0`, unless `keyId/layer/variant` is in an explicit `NO_ARGUMENT` list in the test (π, ∞, i, ∡, ▸, Ans, `eex`, and the plain `\div`, `\times`-style line variants). A new key must be added to the list on purpose, with a reason next to it. Also assert that a `#@^` template is never combined with a plain `^` in `line` form (`\left(#@\right)^…` is the accepted shape, as in the x⁻¹ line variant today).
-   - `app/test/selection.spec.ts` (new, Playwright, Pixel 7 profile like the other specs): for every key and layer in `spec/keyboard.yaml` that has an insert action (read the list from the loaded keyboard through the test hook `window.pascaline`, or from the yaml with the `yaml` package the app already depends on, so new keys are included automatically), with `1+2` selected, press it (Shift and Alpha through the tap helpers as in the other specs; one-line mode too, via the setting) and assert that the entry value still contains `1+2` unless the key is in the replace list of rule 2. Add the exact expected strings of the table above for abs, sin, x², xʸ, x⁻¹, approx and √ (these are `derived`: `(1+2)^2` is 9). Add the one-atom case (`4+2`, the `2` selected: `4+sin(2)`, `4+2^2`, no brackets) and the no-selection case for each of those keys (unchanged).
-   - Also run the LaTeX of the x² and x⁻¹ cases through `latexToGiac` in a vitest and expect Giac text that evaluates to 9 and 1/3 (`(1+2)^2`, `(1+2)^(-1)`), so the value, not only the string, is checked.
-2. **Templates in `spec/keyboard.yaml`.** Change the argument placeholder from `#?` to `#0` in: abs (line 185), sin, cos, tan, ln, log (lines 122, 131, 140, 149, 158), sin⁻¹, cos⁻¹, tan⁻¹, eˣ, 10ˣ (lines 123, 132, 141, 150, 159), approx (line 199), and the `line:` variant of √ (line 176). Do not touch `\frac{#@}{#?}`, `\sqrt[#?]{#0}` (the `#?` there is the index, on purpose) or `\left(#0\right)`. The `sample` fields do not change. Fix the existing tests that name the old strings (for example `keyboard.test.ts` line 112, `\operatorname{sqrt}\left(#?\right)`).
-3. **Find's function inserts.** `functionInsert()` in `app/src/find/rank.ts:35` builds `\operatorname{id}\left(#?\right)` for every tier-1 function; change it to `#0` too, and update `app/src/find/insert.test.ts` (line 14 builds the same string; its `fill()` on line 15 replaces `#?` only, so make it replace `#0` as well). R4 (Find UI) inserts these, and a selected expression should become the argument of `normald_cdf(…)` as it does for sin. docs/04 lines 238 and 268 name the `#?` form: put the corrected text in the report's "For shared files", do not edit docs/04.
-4. **The power keys with a selection (`controller.ts`).** In `run()`, extend the branch at line 230 so that a template starting with `#@^` also takes the bracketed form when the selection is **not collapsed** and is not a single plain term, giving `\left(#@\right)^{2}` (the existing code already does `\left(#@\right)${a.latex.slice(2)}`). A "single plain term" is a number (`/^[\d.]+$/`), one letter, or a chip (`isChipLatex`); read the selected LaTeX with `mf.getValue(mf.selection, "latex")` or the ranges equivalent. Keep `selectCompound()` for the collapsed case as it is. Check by probe that after the key the caret sits after the closing bracket or in the exponent placeholder as it does for the collapsed case, and that Shift, Alpha and the queued keys (R8/R9 loading queue) take the same path.
-5. **Do not widen the scope.** No change to digits, operators, Backspace, paste, history-row insertion (`insert()`, `controller.ts:175`, replaces a selection on purpose) or the exponent key; R14 replaces `eex` with a typed character and keeps rule 2.
-6. **Document the contract where the next author will read it:** the template paragraph of the `spec/keyboard.yaml` header (the `#?` / `#@` / `#0` lines): say that an argument slot must be `#0` (or `#@` for a prefix argument) and `#?` only for slots that are not the main argument (the index of ⁿ√, the denominator, the second operand), and point to the two tests. The research note `docs/research/r6-pipelines.md` is not yours: put its text in the report.
-
-**Gate.** Typecheck 0; vitest all pass (the new template test included); e2e all pass (the new `selection.spec.ts` included; also run `keys.spec.ts`, `entry.spec.ts`, `flicks.spec.ts` and `gestures.spec.ts`, because the key paths are shared); the golden gate is not needed (no parser or engine change), but the round-trip test of the samples must still pass; start chunk size reported (expect no change).
-
-**Report adds:**
-- The table above, re-run after the fix (before and after), as the **Tests** evidence.
-- The list of keys in `NO_ARGUMENT` with their reasons.
-- **For shared files:** a `docs/decisions.md` entry "A selection is the argument of the key (R17)" with the four contract rules; the corrected `functionInsert` text for docs/04 (3.3 and the line at 268); one sentence for `docs/research/r6-pipelines.md` section 1 (the EntryController line); the backlog tick.
-- **Needs a decision:** (a) whether the real G2 wraps a selection for function keys (the owner asked for this behaviour; it is **not** verified on the G2 or the Virtual Calculator, so no `source: device` is claimed; add it to the optional spot-check list in `spec/mapping/vc-2026-10-11/SPOT-CHECK.md` only if the owner wants); (b) whether operators should wrap a selection (we say no, rule 2); (c) the bracket rule for a one-term selection of a name such as `ab` (we bracket anything that is not a number, one letter or a chip).
-- **Not done:** anything from the list in step 5.
-
-**Expected outcome for the owner to try on the APK (3 lines, section 5a):** select `1+2`, press x²: `(1+2)²` = 9. Select it and press sin or the abs shift: the selection is inside. Select just a `2` in `4+2` and press x²: `4+2²`.
 
 ### ron, R13: dead layers off, branch `p1/ron-m4a-dead`
 P12 points 7 and 8 ([06-keypad-vs-g2.md](../06-keypad-vs-g2.md) section 3). In `spec/keyboard.yaml`: remove the `alpha` layer of `d0` (the quote mark) and the `shift` layers of `left` and `right` (`|◀`, `▶|`, `moveToMathfieldStart/End`); the gestures comment loses "shift ◀ = |◀"; the keys dim in those layers (the R6 rule) and a flick there shows ✕. Remove what only they used. List the free Shift cells in the report. (`!` gets its cell in R18's Shift + 9 palette.) **Plus three items from S2** ([research/r8-menus.md](../research/r8-menus.md) I1, I3, I8): (a) **Menu with a picked history row acts on that row** (today it drops the pick and copies the last result: `App.svelte:179-209`, `clipboard/actions.svelte.ts:57-61`); regression e2e first: three results, ▲ twice, Menu, Copy gives the middle one; (b) "Decimals in Fixed" moves from the Mode sheet to Settings › Format key cycle, as a value row under the Fixed tick (`views/modeSheet.ts`); (c) a key that does nothing in the open view (Menu in Symb, Tmpl in Plot, Fmt in an app) gives the dead-key double haptic of docs/05 3.7. Gate: keyboard test, gestures and flicks e2e, copy and status e2e, typecheck, vitest. No parser change.

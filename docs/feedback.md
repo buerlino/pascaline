@@ -97,7 +97,7 @@ The R9 APK: flick up on a key = its shift function, flick down = its letter, in 
 
 | # | Owner's point | Triage |
 |---|---|---|
-| 37 | With some entry selected, ÷ divides the whole selection, but the abs key replaces it with an empty `\|□\|`. Does this happen for other functions too, and how do we fix it for the future of the implementation? | **URGENT: R17**, first after R10's merge. Sandra's probe (2026-10-13): yes, abs, sin, cos, tan, ln, log, their Shift forms, eˣ, 10ˣ and approx delete the selection; x², xʸ and x⁻¹ bind to the last character only (`1+2` selected, x² gives `1+2²`, a wrong value without a warning). ÷, a/b, ( ), √ and ⁿ√ are fine. Cause and fix: brief section 7, R17 |
+| 37 | With some entry selected, ÷ divides the whole selection, but the abs key replaces it with an empty `\|□\|`. Does this happen for other functions too, and how do we fix it for the future of the implementation? | **Fixed in R17** (`c1efccf`): a selection is the argument of every key with an argument slot, and the power keys bracket it (decisions.md "A selection is the argument of the key"). Waiting for the owner's notes on the APK |
 
 ## 2026-10-13: waiting for the owner's notes on R10
 

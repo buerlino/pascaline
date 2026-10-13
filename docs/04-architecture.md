@@ -235,7 +235,7 @@ interface FindItem {
 }
 ```
 
-**Amended 2026-10-13 (G4, user):** in the index file a tier-1 function has no `insert`; `prepare()` fills in `\operatorname{name}\left(#?\right)` at load (saves about 70 kB raw), so `FindItem.insert` stays required after loading. A unit whose qalc factor is uncertain or approximate (solar_mass, cal_fifteen, cal_mean, u, Da, the Planck and atomic units) keeps `dim` and has no `si`.
+**Amended 2026-10-13 (G4, user):** in the index file a tier-1 function has no `insert`; `prepare()` fills in `\operatorname{name}\left(#0\right)` at load (saves about 70 kB raw), so `FindItem.insert` stays required after loading. A unit whose qalc factor is uncertain or approximate (solar_mass, cal_fifteen, cal_mean, u, Da, the Planck and atomic units) keeps `dim` and has no `si`.
 
 Live items (variables, user functions) have the same shape with `kind: "var" | "userfn"`, built at run time (3.4).
 
@@ -265,7 +265,7 @@ No usage boost (P11), so the same query always gives the same order (docs/03 rul
 ### 3.6 Insertion and tokens
 - MathLive macros on the entry field, all `captureSelection: true, expand: false` (`MacroDefinition` in `mathlive/types/core-types.d.ts:146-155`), so the cursor cannot enter a chip and `getValue()` keeps the macro: `\const{ID}`, `\unit{ID}` (unit view only), `\pfx{p}`, `\res{n}`, `\ans`. Verified (R2, 2026-10-12): MathLive 0.111.1 keeps expand:false macros in the value (`entry/macros.test.ts`, `app/test/chips.spec.ts`). The chip macros take a second argument that is only what they show: `\res{k}{shown LaTeX}`, `\const{ID}{symbol LaTeX}`; a macro definition cannot look up a value, so the display travels in the LaTeX and the value in the chip table. A Find item's `insert` for a constant is `\const{ID}{symbol}`, ID being the item id without `const:`.
 - **Parser:** `\const{ID}` becomes, in Home, CAS and Solve, the constant's exact value as a rational literal (`299792458`, `(667430/10^16)`), and the parser reports `inexact` when the constant has an uncertainty, so the result is `≈` (2.4). In the unit view it becomes the qalc name. **Chips carry their own values** (Henri, 2026-10-12, at review): when a `\const` chip is inserted, its value and uncertainty are copied from the index into the entry's chip table, which each history item stores beside the entry LaTeX (as it stores `full` for `\res`). The parser reads the table, never the index, so parsing stays synchronous and a recalled entry after a relaunch needs no index load. History keeps the chip in the entry LaTeX, so a recalled entry shows `G`, not 6.6743E-11.
-- Functions insert `\operatorname{name}\left(#?\right)`; templates insert their LaTeX, each with a parser rule and round-trip case.
+- Functions insert `\operatorname{name}\left(#0\right)` (`#0`: a selection becomes the argument, R17); templates insert their LaTeX, each with a parser rule and round-trip case.
 
 ### 3.7 Keys inside Find
 Every key types its Alpha letter in lower case (no Alpha press); Shift + key types the key's primary character (digits, `.`); the space key types a space; ⌫ deletes; ▲▼ and the trackpad move the selection; Enter inserts; Esc or Cancel closes. Vars opens Find filtered to variables; ⌫ on an empty query removes the filter. Digits do not pick, unlike the other sheets, because queries need them (`g0`, `log10`, `e24`).
