@@ -69,7 +69,7 @@ The header row (`App.svelte` `<header>`) becomes a slim status bar, one line, at
  Function › Plot                DEG · ENG 6             
 ```
 
-- **Left: where you are**, app and view. Views are switched with Symb/Plot/Num and Home/CAS keys, so the tabs repeat the keys; one tap on the place name still opens the Apps sheet for touch users.
+- **Left: where you are**, app and view. **Since P12 the place name is the switch:** one tap changes Home ↔ CAS (the Home and CAS keys are gone), and R15a decides how Symb, Plot and Num are reached from it; the hit area is larger than the 28 px line. The Apps key still opens the Apps sheet.
 - **Right: the mode chips.** Angle (`RAD`/`DEG`, coloured when not the default), format and digits, the Shift/Alpha state (`⇧`, `α`, `α🔒`), a busy spinner. **A tap on a chip toggles or cycles it** (angle: 1 tap; format: opens the Mode sheet at that row). This fixes finding 6 and makes DEG/RAD one tap.
 - Height freed by the tabs goes to the history (about 30 px on a phone).
 
@@ -95,8 +95,8 @@ One row of up to 6 touch buttons directly above the entry line. Its content foll
 
 Split by how often a thing changes:
 
-- **Mode sheet** (Shift + CAS, and a tap on a status chip): angle, format, digits, decimals in Fixed, entry (textbook/one-line). Each row is a sheet item; ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes. Digits and decimals open a list of presets on a digit or Enter (digits 4 6 8 10 12 15 20 25 30; decimals 0 1 2 3 4 5 6 8 10 12), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: Shift + CAS, ▶, Enter (3 keys) or one tap on the chip; 20 digits: Shift + CAS, 3, 7 (3 keys).
-- **Settings** (Shift + Home/CAS, and the last item of the Mode sheet): Format key cycle (a list of switches), haptics (on/off, strength on Android only, length), decimal comma, theme, about and licences; the first two are built (R8), theme comes with R12b, the rest later. Same sheet keys; no native `<select>` (they open the system picker, which the keypad cannot drive).
+- **Mode sheet** (a tap on a status chip; Shift + CAS until R15b removes that key, P12): angle, format, digits, decimals in Fixed, entry (textbook/one-line). Each row is a sheet item; ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes. Digits and decimals open a list of presets on a digit or Enter (digits 4 6 8 10 12 15 20 25 30; decimals 0 1 2 3 4 5 6 8 10 12), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: one tap on the chip (Shift + CAS, ▶, Enter until R15b); 20 digits: chip, 3, 7.
+- **Settings** (the last item of the Mode sheet; Shift + Home/CAS until R15b, P12): Format key cycle (a list of switches), haptics (on/off, strength on Android only, length), decimal comma, theme, about and licences; the first two are built (R8), theme comes with R12b, the rest later. Same sheet keys; no native `<select>` (they open the system picker, which the keypad cannot drive).
 - This uses the duplicate Settings cell (finding 2) for the Mode sheet. **Keypad layout question for the owner:** this changes the meaning of Shift + CAS, not its position or the visual keypad. The reference opens CAS settings there, so the habit fits.
 
 ### 3.5 History rows
@@ -185,5 +185,5 @@ Each with my recommendation; the plan assumes the recommended answer.
 5. **Hold-and-drag** is removed (P11); the sheet keys never mention it.
 6. **Letters in sheets:** a tap on a digit key picks a row, a tap on any other key types its letter, a flick down types the letter on any key (after flicks, R9).
 7. **Theme:** a setting System / Light / Dark; Dark by default on Android, System in the PWA.
-8. **Decisions in section 6:** 1 yes; 2 yes, limited as in point 2; 3 yes (Shift + CAS = Mode sheet, Shift + Home/CAS = Settings, the G2's places for CAS and Home settings); 4 yes, with the setting of point 7.
+8. **Decisions in section 6:** 1 yes; 2 yes, limited as in point 2; 3 yes (Shift + CAS = Mode sheet, Shift + Home/CAS = Settings, the G2's places for CAS and Home settings; replaced by P12: the keys go and the status line takes over); 4 yes, with the setting of point 7.
 9. **Packages:** U0 with the removal of hold-and-drag is R6; U1 is R7; U2 and U4 are R8; U3 (Home/CAS rows) is R11; U5 and U7 with the theme setting are R12; U6 is deferred. The order is milestone 4a (backlog).

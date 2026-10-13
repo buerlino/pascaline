@@ -63,6 +63,28 @@ The R6 APK (hold-and-drag gone, legends on their own line, dead keys dimmed per 
 |---|---|---|
 | 26 | Flicks must work instantly: press and slide up in one motion. Having to press, wait, then flick feels terrible. | built in R9 (`cd4719f`): distance only, no hold time; a press-slide-lift under 100 ms is a flick (e2e gate). The press-wait-slide feel was probably the old hold-and-drag (K2) of the R5 APK, which R6 removed (to confirm with the owner) |
 
+## 2026-10-13 (sixth round: keypad review against the G2)
+
+The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad-vs-g2.md)). Decided as P12.
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 27 | a/b will become a toggle for special views like polar / real-imaginary, fractions, etc. | decided: P12 point 1; R10 |
+| 28 | Home and CAS: first "shift and alpha of one key, the main key shows the mode"; then: "we don't need to show the current mode on the main button, I want to switch only via the top bar where it says which mode you are in, so we save 2 buttons." | decided: P12 point 2; R15 |
+| 29 | The other app keys use up vertical space too: move the arrows one line down and clean up the top section (the menu keys etc.). | decided: P12 point 3; R15a mockups first |
+| 30 | I don't like 10^ as the scientific notation: it needs so much space and only hurts the formula's readability. Use an E, and give the button a better name than EEX or ×10^. | decided: P12 point 4; R14 |
+| 31 | Leave x/y for now. | decided: P12 point 5 |
+| 32 | The menus have to be revamped in the step where we add the other menus (fractions etc.); add it as an open point and analyse all menus. | open point A; S2 |
+| 33 | I don't think we need quotes now that Python is gone. Decide. | decided: P12 point 7 (removed); R13 |
+| 34 | We don't need the line jump, because the whole arrow pad is a 2D cursor. | decided: P12 point 8 (removed); R13 |
+| 35 | Info, Notes and User omitted: good. | decided: P12 point 9 |
+
+## 2026-10-13 (seventh round: undo)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 36 | An undo action: select some math, press delete, and be able to undo it. How easy is it, does it make sense, how would we trigger it? | accepted by the owner 2026-10-13, without rule 12's week: MathLive's undo already works on the line; P13, package R16 (Shift + Cancel, flick up) |
+
 ## 2026-10-13: waiting for the owner's notes on R7
 
 The R7 APK: every list (Apps, the view menus, the Home Menu, a history row's long press) opens on one sheet. Try Menu + Enter to repeat the last pick, ◀/Esc out of a submenu (the path is in the title), and the Function Plot menu with no function defined (reason lines; does row 1 hide under the top fade?). Open defaults: decisions.md "Needs the user", R7.
@@ -70,3 +92,9 @@ The R7 APK: every list (Apps, the view menus, the Home Menu, a history row's lon
 ## 2026-10-13: waiting for the owner's notes on R9
 
 The R9 APK: flick up on a key = its shift function, flick down = its letter, in one motion (no wait); a bubble shows what the lift fires, sliding back cancels. Lock flicks: up on Shift, down/up on Alpha. Settings > Shift / Alpha taps counts the taps for the P7 point 4 decision. To judge: the 20 px arm and 12 px cancel distances, and the tick (key vibration on in Settings).
+
+## 2026-10-13 (seventh round: a bug found while using the phone)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 37 | With some entry selected, ÷ divides the whole selection, but the abs key replaces it with an empty `\|□\|`. Does this happen for other functions too, and how do we fix it for the future of the implementation? | **URGENT: R17**, first after R10's merge. Sandra's probe (2026-10-13): yes, abs, sin, cos, tan, ln, log, their Shift forms, eˣ, 10ˣ and approx delete the selection; x², xʸ and x⁻¹ bind to the last character only (`1+2` selected, x² gives `1+2²`, a wrong value without a warning). ÷, a/b, ( ), √ and ⁿ√ are fine. Cause and fix: brief section 7, R17 |

@@ -17,7 +17,7 @@ How to read each area: **today** (verified), **decision** (one, with the reason)
 8. **Find is one static index generated at build time** (Giac's English help lines, libqalculate's units, constants and prefixes, our alias file), searched by our own ranking code on the main thread, fetched when idle after the engine is ready and parsed on first open (section 3).
 9. **Constants, units, prefixes and results enter the entry line as atomic MathLive macros** (`\const{ID}`, `\unit{ID}`, `\pfx{p}`, `\res{n}`, `\ans`); qalc never sees text the user typed (3.6, 4.3).
 10. **The unit view parses units with our P1 parser** and sends qalc only whitelisted names; qalc's default "try exact" mode is verified exact for SI-defined factors; our adapter turns qalc's silent non-answers (mismatched sums, misused temperatures) into messages (section 4).
-11. **Keys:** Math = Find, Vars = Find on variables, Shift + Math = Memory, Tmpl = templates, Shift + Tmpl = the unit view (units after the formula, P11), View = compact keypad (K4), Shift + View = Copy, Shift + Menu = Paste, Shift + `+` = Ans, Shift + 5 = `[ ]`, Shift + 8 = `{ }`, Shift + 4 = matrix editor, Shift + `−` = Base, Help = context help (5.1).
+11. **Keys** (every difference from the G2 and its reason: [06-keypad-vs-g2.md](06-keypad-vs-g2.md)): Math = Find, Vars = Find on variables, Shift + Math = Memory, Tmpl = templates, Shift + Tmpl = the unit view (units after the formula, P11), View = compact keypad (K4), Shift + View = Copy, Shift + Menu = Paste, Shift + `+` = Ans, Shift + 5 = `[ ]`, Shift + 8 = `{ }`, Shift + 4 = matrix editor, Shift + `−` = Base, Help = context help (5.1).
 12. **State:** one IndexedDB store with a schema version; user definitions are persisted and replayed at start, so variables survive a relaunch (6.2).
 13. **The qalc engine build joins `build.sh` in milestone 4**, because the Find index takes its constant values and unit factors from it; the qalc worker and the unit view stay milestone 5 (7.1).
 14. **New gates:** an automated size test, the task benchmark, the Find query test, marks in the golden files, `units.yaml`, a per-key Find timing on the Tab One (7.3).
@@ -369,6 +369,13 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Tmpl (row 3, col 2) [r4c3] | nothing | template list (EN5, milestone 6); nothing before | P8 |
 | Shift + Tmpl | nothing | the unit view (unit slots) | P11; reference: Units |
 | Alpha on Vars, Math, Tmpl | A, B, C | unchanged | P4 |
+| a b/c (row 3, col 4) [r4c5] | inserts a fraction | toggles the form of the last result: decimal ↔ fraction, polar ↔ rectangular (R10); the fraction template is on ÷ and in Tmpl | G2 item 29, P11, P12 |
+| Exponent key (row 6, col 0) [r7c1] | `×10^` template, legend ×10ⁿ | types the E mark `ᴇ`, legend `ᴇ` (R14); Shift stays Sto ▶ | P12 |
+| App key (Home/CAS) [r3c1] and CAS [r3c5] | two keys, each with a Shift layer (Settings, Mode) | **no keys**: the status line's place name switches Home ↔ CAS; the Mode sheet is a status chip (R15) | P12 |
+| Symb, Plot, Num, arrow pad, top cluster | rows 0–2 | folded into the status line if R15a confirms; the pad moves one line down; fewer rows (R15) | P12 |
+| Alpha + 0 (quote mark) | `"` | removed (R13) | P12 |
+| Shift + ◀, Shift + ▶ | line start, line end | removed (R13); a tap on the formula puts the cursor there | P12 |
+| Shift + 6, Shift + 9 | nothing; ∞ | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ (R18) | P12, owner 2026-10-13 |
 | View (row 1, col 4) [r2c4] | gap | compact keypad toggle (K4) | P7 point 5 |
 | Shift + View | gap | Copy (full value of the selected or last result) | reference: Copy |
 | Menu (row 2, col 4) [r3c4] | app menus only | Home/CAS: Copy, Copy as shown, Copy exact, Copy LaTeX, Paste, Share session, Clear history | P8 |
