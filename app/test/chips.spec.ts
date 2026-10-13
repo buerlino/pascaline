@@ -81,7 +81,7 @@ test("÷, x² and x⁻¹ after a chip take the whole chip", async ({ page }) => 
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.25"); // (−1/2)² = 1/4, not −(1/2)²
   await lastResult(page).tap();
   await tap(page, ["div", "d2"]);
-  expect(await entryValue(page)).toBe("\\frac{\\res{1}{0.25}}{2}");
+  expect(await entryValue(page)).toBe("\\frac{\\res{2}{0.25}}{2}"); // chip 2: the counter no longer restarts at Enter (R16)
   await tap(page, ["enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.125");
   await lastResult(page).tap();

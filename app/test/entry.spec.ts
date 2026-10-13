@@ -66,7 +66,7 @@ test("L5: tapping a result puts it on the entry line, in Home and CAS", async ({
   await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", "x+1");
   await tap(page, ["d2", "mul"]);
   await lastResult(page).tap();
-  expect(await entryValue(page)).toBe("2\\times\\res{1}{x+1}");
+  expect(await entryValue(page)).toBe("2\\times\\res{2}{x+1}"); // the second chip of the session: the counter no longer restarts at Enter (R16)
   await tap(page, ["enter"]);
   await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", /2\\left\(x\+1\\right\)|2x\+2/);
 });
