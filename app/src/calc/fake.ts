@@ -11,6 +11,7 @@ import {
   type SolveOutcome,
   type SolveRequest,
   type TableRequest,
+  type UserName,
 } from "./port.ts";
 
 import { safePrecision } from "../engine/homeEval.ts";
@@ -61,6 +62,10 @@ export class FakeCalc implements Calc {
   }
   table(req: TableRequest): Promise<HomeResult[][]> {
     return this.run(req.xs.map((x) => req.fns.map((f) => echo(`${f}|${req.variable ?? "x"}=${x}`))));
+  }
+  /** The fake engine keeps no definitions. */
+  names(): Promise<UserName[]> {
+    return Promise.resolve([]);
   }
   cancel(): Promise<void> {
     this.reject?.(new CalcCancelled());

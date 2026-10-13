@@ -191,7 +191,10 @@ def evaluate(expr: str, dps: int, digits=None):
 
 
 def case_digits(case: dict) -> int:
-    return int((case.get("settings") or {}).get("digits", DIGITS))
+    """The digits the result is shown with: settings.shown (CAS evalf(x,n) shows n digits, decisions M4-6), else the
+    digits setting."""
+    s = case.get("settings") or {}
+    return int(s.get("shown", s.get("digits", DIGITS)))
 
 
 def stability_dps(digits: int):

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
-import { CalcCancelled, type Calc, type CasOutcome, type HomeOutcome } from "../calc/port.ts";
+import { CalcCancelled, type Calc, type CasOutcome, type HomeOutcome, type UserName } from "../calc/port.ts";
 import type { ComplexValue } from "../engine/format.ts";
 import { safePrecision } from "../engine/homeEval.ts";
 import { Session } from "./session.svelte.ts";
@@ -139,5 +139,23 @@ describe("alpha lock (L3)", () => {
     expect(s.shift).toBe(true);
     s.toggleAlpha();
     expect([s.alpha, s.shift, s.alphaLock, s.capsLock]).toEqual([false, false, false, false]);
+  });
+});
+
+describe("Session user names (docs/04 3.4)", () => {
+  it("reads the engine's names when it is ready and after each finished job", async () => {
+    let names: UserName[] = [{ name: "A", kind: "var", preview: "5", view: "home", time: 1 }];
+    class NamesCalc extends ValueCalc {
+      override names() {
+        return Promise.resolve(names);
+      }
+    }
+    const s = new Session(new NamesCalc(), memoryKv());
+    await new Promise((r) => setTimeout(r, 0));
+    expect(s.userNames.map((u) => u.name)).toEqual(["A"]);
+    names = [...names, { name: "f", kind: "fn", preview: "(x)->x^2", view: "home", time: 2 }];
+    await s.submit("f(x):=x^2");
+    await new Promise((r) => setTimeout(r, 0));
+    expect(s.userNames.map((u) => `${u.name}:${u.kind}`)).toEqual(["A:var", "f:fn"]);
   });
 });

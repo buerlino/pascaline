@@ -308,7 +308,8 @@ export type Mark = "=" | "≈" | "⚠";
 
 /** Why a value gets ⚠ even when its digits agree (docs/04 section 2.4 rule 3):
  *  "unaudited": a float that Giac's numeric code returned for a function not on the audited list;
- *  "unchecked": only one evaluation gave a value, so nothing could be compared. */
+ *  "unchecked": nothing could be compared: only one evaluation gave a value, or every evaluation gave 0 for a value
+ *  that is not exactly 0 (numeric.ts). */
 export type PrecisionWarn = "unaudited" | "unchecked";
 
 /** The engine's facts about one result (a subset of HomeResult, so the formatter does not depend on the engine). */

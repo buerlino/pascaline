@@ -9,6 +9,9 @@
 //    multiple roots alike (plain Newton is only linear on x²=0).
 // 5. Residual check: |f(root)| / max(1, |left(root)|, |right(root)|) at `workDigits`; above `warnRel` → ⚠.
 //    A sign change whose "root" fails the check is a pole or jump (tan(x) at π/2): the search goes on.
+// 6. Second polish (decisions M4-8): the root is polished again at workDigits+20 into `pasx2`. The digits on which
+//    pasx and pasx2 agree are the confirmed ones (numericResult in solve.ts): a root that cancellation in f leaves
+//    right to 25 digits is shown with 25 and ⚠, not with 30.
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests).
 // Giac variable names have no underscore: `name_d`, `name_f` … parse as a value with a unit.
 import { toExactLiterals, type Giac } from "./homeEval.ts";
@@ -101,23 +104,37 @@ export function solve1(
 
   const f = (x: number) => num(ev(`evalf(subst(pasf,${v}=${x}))`));
 
-  /** Polish pasx at workDigits; returns the last relative step (0 when f is exactly 0). */
-  const polish = (steps: number): number => {
-    ev(`Digits:=${s.workDigits}`);
+  /** Polish the Giac variable x (pasx) at `digits` (workDigits); returns the last relative step (0 when f is exactly 0). */
+  const polish = (steps: number, x = "pasx", digits = s.workDigits): number => {
+    ev(`Digits:=${digits}`);
     let rel = Infinity;
     for (let i = 0; i < steps; i++) {
-      ev(`pasv:=evalf(subst([pasf,pasfa,pasfb],${v}=pasx))`);
+      ev(`pasv:=evalf(subst([pasf,pasfa,pasfb],${v}=${x}))`);
       if (ev("pasv[0]==0") === "true") return 0;
       const st = ev("passt:=evalf(pasv[0]*pasv[1]/(pasv[1]^2-pasv[0]*pasv[2]))");
       const step = num(st);
       if (step === undefined) break;
-      ev("pasx:=pasx-passt");
-      const x = num(ev("pasx"));
-      if (x === undefined) break;
-      rel = Math.abs(step) / Math.max(Math.abs(x), 1e-300);
-      if (rel < 10 ** -(s.workDigits - 3)) break;
+      ev(`${x}:=${x}-passt`);
+      const xv = num(ev(x));
+      if (xv === undefined) break;
+      rel = Math.abs(step) / Math.max(Math.abs(xv), 1e-300);
+      if (rel < 10 ** -(digits - 3)) break;
     }
     return rel;
+  };
+
+  /** Step 6: pasx polished again at workDigits+20, into pasx2 (an exact root is copied). */
+  const polishAgain = (): void => {
+    const W2 = s.workDigits + 20;
+    ev(`Digits:=${W2}`);
+    if (ev("type(pasx)") === "integer" || ev("type(pasx)") === "rational") {
+      ev("pasx2:=pasx");
+      return;
+    }
+    // evalf widens an MPFR value without loss; exact() would round it to a nearby simple fraction (2/3 for
+    // 0.6666666667666…, a triple root where the polish cannot move).
+    ev(`pasx2:=evalf(pasx,${W2})`);
+    polish(8, "pasx2", W2);
   };
 
   /** Relative residual of pasx at workDigits. */
@@ -176,6 +193,7 @@ export function solve1(
 
   const finish = (method: SolveMethod, info: string, rr: number, bracket?: [number, number]): SolveResult => {
     const exact = snap();
+    polishAgain();
     return done({ ok: true, display: show(), method, info: exact ? `${info}; exact root (checked by CAS)` : info, bracket, residualRel: rr, warn: rr > s.warnRel });
   };
 

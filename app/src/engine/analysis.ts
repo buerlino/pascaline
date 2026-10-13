@@ -4,7 +4,7 @@
 // user comes from here (D7), never from the plot evaluator. Synchronous, UI-free.
 import { homeEval, toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
 import { num, solve1, type SolveSettings } from "./solve1.ts";
-import { numericResult, SOLVE_HARD_TIMEOUT_S, solveSettingsFor, withUnassigned } from "./solve.ts";
+import { numericResult, SECOND_POLISH, SOLVE_HARD_TIMEOUT_S, solveSettingsFor, withUnassigned } from "./solve.ts";
 
 /** Time Giac may spend on an exact definite integral when Romberg did not converge (seconds). */
 const EXACT_INT_S = 0.5;
@@ -90,9 +90,15 @@ function run(giac: Giac, req: AnalysisRequest, v: string, h: HomeSettings, t0: n
       if (!r.ok) return notFound(r);
       ev(`Digits:=${W}`);
       ev(`pasxr:=pasx`);
-      const x = numericResult(giac, "pasxr", s.digits, W);
+      // solve1 also polished the root at W+20 (pasx2, decisions M4-8): the digits on which the two agree are shown.
+      const W2 = W + SECOND_POLISH;
+      ev(`pasxr2:=pasx2`);
+      const x = numericResult(giac, "pasxr", s.digits, W, 0, { expr: "pasxr2", work: W2 });
       // At a root that passed the residual check, f is 0 to work precision: show 0, not 3E-30.
-      const y = numericResult(giac, req.kind === "root" && !r.warn ? "0" : `evalf(${at(`(${f})`, "pasxr")},${W})`, s.digits, W);
+      const y =
+        req.kind === "root" && !r.warn
+          ? numericResult(giac, "0", s.digits, W)
+          : numericResult(giac, `evalf(${at(`(${f})`, "pasxr")},${W})`, s.digits, W, 0, { expr: `evalf(${at(`(${f})`, "pasxr2")},${W2})`, work: W2 });
       let extremum: AnalysisResult["extremum"];
       let info = r.info;
       if (req.kind === "extremum") {

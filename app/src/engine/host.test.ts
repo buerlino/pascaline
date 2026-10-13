@@ -30,11 +30,13 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     expect(host.home("1-0.9-0.1", defaultHomeSettings).result.display).toBe("0");
   });
 
-  it("Home: a definition is logged for replay in its exact form", () => {
+  it("Home: a variable is logged as its exact value, a function as its definition", () => {
     const r = host.home("hb:=0.1", defaultHomeSettings);
     expect(r.result.display).toBe("0.1");
-    expect(r.replay).toEqual(["hb:=(1/10^1)"]);
-    expect(host.home("1/3", defaultHomeSettings).replay).toEqual([]);
+    expect(r.defs).toMatchObject([{ set: { name: "hb", kind: "var", cmds: ["hb:=(1/10)"], preview: "0.1", view: "home" } }]);
+    expect(host.home("1/3", defaultHomeSettings).defs).toEqual([]);
+    expect(host.home("hf(x):=x^2+0.5", defaultHomeSettings).defs).toMatchObject([{ set: { name: "hf", kind: "fn", cmds: ["hf(x):=x^2+(5/10^1)"] } }]);
+    expect(host.home("purge(hb)", defaultHomeSettings).defs).toEqual([{ purge: ["hb"] }]);
   });
 
   it("CAS: 1/2+1/6 stays exact (derived: 2/3) with a LaTeX fraction", () => {

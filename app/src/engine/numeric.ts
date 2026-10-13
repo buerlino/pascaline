@@ -11,6 +11,10 @@
 //   fsolve, or evalf typed by the user). The input is run again: with a double (Digits ≤ 14) and with MPFR at P when a
 //   function in it is not audited (two different routines), or at P and P+20 when every function is audited.
 // - float fallback: the input was evaluated in floating point at W and again at W+20.
+// An `evalf(e,n)` typed in the input would pin every evaluation to n digits, so the two would agree on whatever n digits
+// give: each evaluation raises it with its own precision (decisions M4-6). A stored variable holding a float carries the
+// facts it was stored with (defs.ts); a result computed from it inherits them, and is checked again with the variable
+// moved in its last confirmed digit (decisions M4-7).
 import {
   confirmedDigits,
   decimalFromRational,
@@ -54,11 +58,109 @@ export function hasFloat(text: string): boolean {
   return FLOAT_LITERAL.test(text);
 }
 
+// --- evalf(e,n), approx(e,n): the precision an input asks for (decisions M4-6) ---------------------------------------
+
+/** Index of the bracket that closes the one at `open` (`(`, `[` or `{`), skipping strings; -1 when there is none. */
+function closing(s: string, open: number): number {
+  let depth = 0;
+  for (let k = open; k < s.length; k++) {
+    const ch = s.charAt(k);
+    if (ch === '"') {
+      const end = s.indexOf('"', k + 1);
+      if (end < 0) return -1;
+      k = end;
+    } else if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") {
+      depth--;
+      if (depth === 0) return k;
+    }
+  }
+  return -1;
+}
+
+/** The top-level comma-separated parts of an argument list. */
+function topLevelArgs(s: string): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let k = 0; k < s.length; k++) {
+    const ch = s.charAt(k);
+    if (ch === '"') {
+      const end = s.indexOf('"', k + 1);
+      k = end < 0 ? s.length : end;
+    } else if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") depth--;
+    else if (ch === "," && depth === 0) {
+      out.push(s.slice(start, k));
+      start = k + 1;
+    }
+  }
+  out.push(s.slice(start));
+  return out;
+}
+
+const PRECISION_CALL = /"[^"]*"|\b(?:evalf|approx)\s*\(/g;
+const INTEGER = /^\s*\d+\s*$/;
+
+/** Every `evalf(e,n)` and `approx(e,n)` in `input` whose n is an integer literal, with n replaced by `at(n)`. */
+export function withAskedPrecision(input: string, at: (n: number) => number): string {
+  let out = "";
+  let i = 0;
+  for (;;) {
+    PRECISION_CALL.lastIndex = i;
+    const m = PRECISION_CALL.exec(input);
+    if (!m) return out + input.slice(i);
+    const end = PRECISION_CALL.lastIndex;
+    if (m[0].startsWith('"')) {
+      out += input.slice(i, end);
+      i = end;
+      continue;
+    }
+    const open = end - 1;
+    const close = closing(input, open);
+    if (close < 0) return out + input.slice(i);
+    const args = topLevelArgs(input.slice(open + 1, close));
+    out += input.slice(i, open + 1);
+    out +=
+      args.length === 2 && INTEGER.test(args[1]!)
+        ? `${withAskedPrecision(args[0]!, at)},${at(parseInt(args[1]!, 10))}`
+        : withAskedPrecision(input.slice(open + 1, close), at);
+    out += ")";
+    i = close + 1;
+  }
+}
+
+/** Most digits an `evalf(e,n)` may ask the display for (beyond it the digits setting applies). */
+export const MAX_ASKED_DIGITS = 1000;
+
+/** n when the whole input is `evalf(e,n)` or `approx(e,n)` with an integer literal 1 ≤ n ≤ MAX_ASKED_DIGITS: the
+ *  digits CAS shows the result with (decisions M4-6); null otherwise. */
+export function askedDigits(input: string): number | null {
+  const t = input.trim();
+  const m = /^(?:evalf|approx)\s*\(/.exec(t);
+  if (!m) return null;
+  const open = m[0].length - 1;
+  if (closing(t, open) !== t.length - 1) return null;
+  const args = topLevelArgs(t.slice(open + 1, -1));
+  if (args.length !== 2 || !INTEGER.test(args[1]!)) return null;
+  const n = parseInt(args[1]!, 10);
+  return n >= 1 && n <= MAX_ASKED_DIGITS ? n : null;
+}
+
 /** Names called in a Giac input (`romberg(exp(-x^2),x,0,1)` → romberg, exp). Strings are skipped. */
 export function functionsIn(input: string): string[] {
   const out: string[] = [];
   const re = /"[^"]*"|([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
   for (let m = re.exec(input); m; m = re.exec(input)) if (m[1] && !out.includes(m[1])) out.push(m[1]);
+  return out;
+}
+
+/** Names in an input that are not called (`B*2+f(x)` → B, x). Strings are skipped. */
+export function namesIn(input: string): string[] {
+  const out: string[] = [];
+  // Number literals first, so the exponent of 2e5 is not read as a name.
+  const re = /"[^"]*"|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?|([A-Za-z_][A-Za-z0-9_]*)(\s*\()?/g;
+  for (let m = re.exec(input); m; m = re.exec(input)) if (m[1] && !m[2] && !out.includes(m[1])) out.push(m[1]);
   return out;
 }
 
@@ -225,6 +327,14 @@ function confirmedComplex(a: ComplexValue, b: ComplexValue, aPrecision: number, 
 }
 
 /**
+ * A value that is 0 in every evaluation but not known to be exactly 0 (not an exact rational) has no confirmed digit:
+ * `exp(10^-70)-1` is 0 at any working precision. It gets ⚠ without a count, never ≈ 0 (owner, 2026-10-13, G3).
+ */
+function zeroUnconfirmed(f: ElementFacts): ElementFacts {
+  return !f.exactRational && !f.warn && isZero(f.value.re) && isZero(f.value.im) ? { ...f, warn: "unchecked" } : f;
+}
+
+/**
  * Facts for every element of the stored exact result `name` (its printed text is `exactText`): exact rationals by
  * BigInt, everything else by the symbolic agreement check (P against P+20, then P+20 against P+40). Null when some
  * element is not a number.
@@ -261,7 +371,7 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
         value = C[k]!;
       }
     }
-    return { value, exactRational: false, reliableDigits: reliable, big: false };
+    return zeroUnconfirmed({ value, exactRational: false, reliableDigits: reliable, big: false });
   });
 }
 
@@ -279,17 +389,18 @@ export function floatFacts(
   restoreDigits: number,
 ): ElementFacts[] | null {
   const P = valuePrecision(digits);
-  const at = (d: number, slot: string): { re: DecimalValue; im: DecimalValue }[] | null =>
+  // `asked`: the precision an evalf(e,n) in the input runs at in this evaluation (M4-6).
+  const at = (d: number, slot: string, asked: (n: number) => number = (n) => Math.max(n, d)): { re: DecimalValue; im: DecimalValue }[] | null =>
     withDigits(giac, d, restoreDigits, () => {
       if (expr !== null) {
-        const out = giac.eval(`${slot}:=(${expr})`);
+        const out = giac.eval(`${slot}:=(${withAskedPrecision(expr, asked)})`);
         if (isError(out)) return null;
       }
       return readParts(giac, expr === null ? name : slot, shape, (part) => giac.eval(part), P);
     });
   const unaudited = expr === null || !isAudited(expr);
   const facts = (v: { re: DecimalValue; im: DecimalValue }[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
-    v.map((value, k) => ({ value, exactRational: false, reliableDigits: Math.min(reliable(k), P), big: false, ...(warn ? { warn } : {}) }));
+    v.map((value, k) => zeroUnconfirmed({ value, exactRational: false, reliableDigits: Math.min(reliable(k), P), big: false, ...(warn ? { warn } : {}) }));
   if (expr === null) {
     // A stateful input that cannot be run again: the value as printed, one-sided.
     const d = digits <= DOUBLE_DIGITS ? DOUBLE_DIGITS : digits;
@@ -297,7 +408,7 @@ export function floatFacts(
     return v && facts(v, () => Math.min(digits, d), "unchecked");
   }
   if (unaudited) {
-    const D = at(DOUBLE_DIGITS, "pasd");
+    const D = at(DOUBLE_DIGITS, "pasd", () => DOUBLE_DIGITS);
     const M = at(P, "pasm");
     const fnWarn: PrecisionWarn = "unaudited";
     if (D && M) {
@@ -314,11 +425,20 @@ export function floatFacts(
     }
     return null;
   }
-  const A = at(P, "pasm");
-  const B = A && at(P + 20, "pasm2");
+  const A = at(P, "pasm", (n) => Math.max(n, P));
+  const B = A && at(P + 20, "pasm2", (n) => Math.max(n, P) + 20);
   if (A && B) {
+    const reliable = B.map((b, k) => confirmedComplex(A[k]!, b, P, P));
+    if (reliable.some((n) => n < digits)) {
+      // Rule 2: once more, P+20 against P+40 (a cancellation only needs more working digits).
+      const C = at(P + 40, "pasm3", (n) => Math.max(n, P) + 40);
+      if (C) {
+        giac.eval(`${name}:=pasm3`);
+        return facts(C, (k) => Math.max(reliable[k]!, confirmedComplex(B[k]!, C[k]!, P + 20, P)));
+      }
+    }
     giac.eval(`${name}:=pasm2`);
-    return facts(B, (k) => confirmedComplex(A[k]!, B[k]!, P, P));
+    return facts(B, (k) => reliable[k]!);
   }
   if (A) {
     giac.eval(`${name}:=pasm`);
@@ -361,7 +481,8 @@ export function floatPathFacts(
   W: number,
   digits: number,
 ): { facts: ElementFacts[]; shape: Shape } | { error: string } {
-  const run = (d: number, slot: string): string => withDigits(giac, d, digits, () => giac.eval(`${slot}:=(${expr})`));
+  const run = (d: number, slot: string): string =>
+    withDigits(giac, d, digits, () => giac.eval(`${slot}:=(${withAskedPrecision(expr, (n) => Math.max(n, W) + (d - W))})`));
   const read = (d: number, slot: string, shape: Shape) =>
     withDigits(giac, d, digits, () => readParts(giac, slot, shape, (part) => giac.eval(part), valuePrecision(digits)));
   const outA = run(W, once ? name : "pasf");
@@ -377,9 +498,44 @@ export function floatPathFacts(
     giac.eval(`${name}:=pasf`);
     return { facts: A.map((value) => ({ value, exactRational: false, reliableDigits: Math.min(digits, W - 10), warn: "unchecked", big: false })), shape };
   }
-  return { facts: B.map((value, k) => ({ value, exactRational: false, reliableDigits: Math.min(confirmedComplex(A[k]!, value, W, W), valuePrecision(digits)), big: false })), shape };
+  return { facts: B.map((value, k) => zeroUnconfirmed({ value, exactRational: false, reliableDigits: Math.min(confirmedComplex(A[k]!, value, W, W), valuePrecision(digits)), big: false })), shape };
 }
 
+
+/**
+ * Decisions M4-7: the digits of each element of a result that survive the uncertainty of the stored variables it was
+ * computed from. `expr` (decimals exact) is evaluated again at P with every variable in `moved` set to X·(1+10^-n), n
+ * its confirmed digits, and compared with `values` (the result as computed). The variables are set back afterwards (a
+ * Cancel in between restarts the engine, which replays them from the definitions log). Null when the second
+ * evaluation gives no number of the same shape.
+ */
+export function perturbedDigits(
+  giac: Giac,
+  expr: string,
+  shape: Shape,
+  values: readonly ComplexValue[],
+  moved: readonly { name: string; n: number }[],
+  digits: number,
+  restoreDigits: number,
+): number[] | null {
+  const P = valuePrecision(digits);
+  return withDigits(giac, P, restoreDigits, () => {
+    moved.forEach((m, k) => giac.eval(`pasq${k}:=${m.name}`));
+    try {
+      for (const m of moved) giac.eval(`${m.name}:=${m.name}*(1+10^(-${Math.max(0, Math.trunc(m.n))}))`);
+      const out = giac.eval(`paspt:=(${expr})`);
+      if (isError(out)) return null;
+      const v = readParts(giac, "paspt", shape, (part) => giac.eval(part), P);
+      if (!v || v.length !== values.length) return null;
+      return v.map((pv, k) => confirmedComplex(pv, values[k]!, P, P));
+    } finally {
+      moved.forEach((m, k) => {
+        giac.eval(`${m.name}:=pasq${k}`);
+        giac.eval(`purge(pasq${k})`);
+      });
+    }
+  });
+}
 
 /** Our formatted number text (`-1.5E-7`, `1-2*i`, `[a,b]`, `[[a,b],[c,d]]`) as LaTeX for the CAS view. */
 export function numberLatex(text: string): string {

@@ -30,3 +30,19 @@ test("keys pressed before MathLive has loaded are queued and replayed", async ({
   await page.waitForFunction(() => window.pascaline.entry.field !== undefined, undefined, { timeout: 20_000 });
   expect(await entryValue(page)).toBe("\\frac13");
 });
+
+test("a definition survives a reload (docs/04 6.2: the defs log is stored and replayed at engine start)", async ({ page }) => {
+  await open(page, "");
+  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await tap(page, ["d5", "shift", "eex", "alpha", "vars", "enter"]); // 5▶A
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+  await page.waitForTimeout(800); // the history and the defs log are written asynchronously
+  await page.reload();
+  await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.pascaline.entry.ready);
+  await tap(page, ["alpha", "vars", "mul", "d2", "enter"]); // A×2
+  await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+  await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", "10"); // derived: 5·2
+  // Vars and Find read the user's names from the session (docs/04 3.4)
+  expect(await page.evaluate(() => window.pascaline.session.userNames.map((u) => `${u.name}:${u.kind}`))).toEqual(["A:var"]);
+});

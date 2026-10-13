@@ -265,8 +265,10 @@ function giacFunctions(aide, curated, exclude) {
     const id = `fn:${e.names[0]}`;
     if (items.has(id)) continue;
     items.set(id, {
-      // tier 1 is "documented only": name and English line; syntax and example stay in Giac's help (size budget)
-      id, kind: "fn", names: e.names, title: e.names[0], desc: shortLine(e.en), tier: 1, insert: opInsert(e.names[0]),
+      // tier 1 is "documented only": name and English line; syntax and example stay in Giac's help (size budget).
+      // No insert: it is always \operatorname{name}\left(#?\right), which prepare() in app/src/find/rank.ts fills in
+      // (about 70 kB of the 400 kB raw budget, decisions.md G4 item 1).
+      id, kind: "fn", names: e.names, title: e.names[0], desc: shortLine(e.en), tier: 1,
     });
   }
   for (const n of excluded) if (!byName.has(n) && !all.some((e) => e.names.includes(n))) fail(`find/functions.yaml exclude: no Giac command ${n}`);

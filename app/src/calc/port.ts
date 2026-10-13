@@ -6,6 +6,8 @@ import type { ComplexValue, NumberFormat as EngineFormat, PrecisionWarn } from "
 import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRequest, TableRequest } from "../engine/types.ts";
 
 export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest } from "../engine/types.ts";
+export type { UserName } from "../engine/defs.ts";
+import type { UserName } from "../engine/defs.ts";
 export { CAS_SOFT_BUDGET_MS, IDENT } from "../engine/types.ts";
 
 export type AngleUnit = "rad" | "deg";
@@ -52,6 +54,8 @@ export interface HomeOutcome {
   shape?: [number, number];
   /** ⚠ although the digits agree: an un-audited function's float, or a value evaluated only once (markOf, format.ts). */
   warn?: PrecisionWarn;
+  /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): drawn with these, not the digits setting. */
+  digits?: number;
 }
 
 export interface CasOutcome {
@@ -85,6 +89,8 @@ export interface Calc {
   analyze(req: AnalysisRequest, settings: CalcSettings): Promise<AnalysisResult>;
   /** Function app Num table and trace: rows by x, cells as Home shows them. One engine call. */
   table(req: TableRequest, settings: CalcSettings): Promise<HomeResult[][]>;
+  /** The user's variables and functions (Vars, Find's live items; docs/04 3.4), stored ones included once read. */
+  names(): Promise<UserName[]>;
   /** Stop the running job. Variables survive. Resolves when the engine can take calls again. */
   cancel(): Promise<void>;
 }

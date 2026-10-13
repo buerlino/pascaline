@@ -9,11 +9,13 @@
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
 //              median ≤ 500 ms
 //   precision  tests/golden/precision.yaml (docs/04 2.3 regression list, 20/30-digit cases): Home and CAS at the case's
-//              digits, value and mark. A case with `status: pending` is known to fail until its fix: it never fails
-//              the gate, and is listed as still pending or now passing. A result shown with ⚠ n (fewer confirmed
-//              digits than asked) must equal `expect` rounded to those n digits.
-//   solve      Solve strategy: 1-D (solve1.ts), systems and polynomials (solve.ts); every case matches in
-//              every round, and no ⚠ unless the case has status "warn"
+//              digits, value and mark; `before:` inputs run first on the same engine. A case with `status: pending` is
+//              known to fail until its fix: it never fails the gate, and is listed as still pending or now passing. A
+//              result shown with ⚠ n (fewer confirmed digits than asked) must equal `expect` rounded to those n digits.
+//   solve      Solve strategy: 1-D (solve1.ts), one equation through the engine (kind one), systems and polynomials
+//              (solve.ts), at the case's digits; every case matches in every round, and no ⚠ (a failed residual check
+//              or fewer confirmed digits than asked) unless the case has status "warn"; a root shown with ⚠ n must
+//              equal `expect` rounded to those n digits
 //   function   Function analysis and Num table (analysis.ts), same rules
 //   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed
 //   parser     LaTeX → Giac (our parser) equals the intended expression, decided by Giac; gaps never fail.
@@ -50,7 +52,8 @@ interface Case {
   a?: string;
   b?: string;
   xs?: string[];
-  settings?: { angle?: "rad" | "deg"; digits?: number };
+  /** `shown`: the digits the result is shown with when the input asks for them (CAS evalf(x,n), decisions M4-6). */
+  settings?: { angle?: "rad" | "deg"; digits?: number; shown?: number };
   expect?: Expect;
   /** home.yaml, precision.yaml: the mark before the result (docs/04 2.4), checked by oracle.py; by this gate once the engine reports it. */
   mark?: "=" | "≈" | "⚠";
@@ -59,7 +62,8 @@ interface Case {
   status?: string;
   /** parser.yaml: input settings for this case (L6). */
   options?: { decimalComma?: boolean; realOddRoots?: boolean };
-  /** parser.yaml: entries typed before this one (e.g. a function definition, L6). */
+  /** parser.yaml: entries typed before this one (e.g. a function definition, L6). precision.yaml: inputs evaluated
+   *  first in the same view and engine (a stored variable, decisions M4-7). */
   before?: string[];
   /** parser.yaml: the input must be rejected by the parser (docs/04 2.3 #1). */
   error?: boolean;
@@ -175,14 +179,19 @@ async function stagePrecision(): Promise<void> {
     const problems: string[] = [];
     let mark: MarkInfo | null;
     let shown: string;
-    const digits = c.settings?.digits ?? 12;
+    const setting = c.settings?.digits ?? 12;
+    // The digits the result is shown with: the setting, or what the input asked for (CAS evalf(x,n), M4-6).
+    const digits = c.settings?.shown ?? setting;
     if (c.kind === "cas") {
-      const r = host.cas(c.input!, { ...defaultCasSettings, digits }).result;
+      const cs = { ...defaultCasSettings, digits: setting };
+      for (const b of c.before ?? []) host.cas(b, cs);
+      const r = host.cas(c.input!, cs).result;
       shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
       // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it).
       mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
     } else {
-      const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits };
+      const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
+      for (const b of c.before ?? []) host.home(b, s);
       const r = host.home(c.input!, s).result;
       shown = r.ok ? r.display : `error: ${r.display}`;
       mark = markOf(r, { format: "STD", digits });
@@ -217,31 +226,60 @@ async function stagePrecision(): Promise<void> {
   );
 }
 
-/** What a case produced: the shown text(s), and whether ⚠ was raised. */
+/** What a case produced: the shown text(s), and whether ⚠ was raised. `n`: per shown value, the confirmed digits when
+ *  it is shown with ⚠ n (fewer than the case's digits); `expect` is then compared rounded to them. */
 interface Got {
   shown: Expect;
   warn: boolean;
+  n?: (number | undefined)[];
+}
+
+/** ⚠ n of one result at `digits` (undefined when every digit shown is confirmed), and whether it carries ⚠ at all. */
+function confirmedN(r: HomeResult, digits: number): { n: number | undefined; warn: boolean } {
+  const m = markOf(r, { format: "STD", digits });
+  return { n: m?.mark === "⚠" && m.n !== undefined && m.n < digits ? Math.max(1, m.n) : undefined, warn: m?.mark === "⚠" };
+}
+
+/** The results' texts, ⚠ n per result, and whether any is ⚠. */
+function shownOf(rs: HomeResult[], digits: number): { shown: string[]; n: (number | undefined)[]; warn: boolean } {
+  const cs = rs.map((r) => confirmedN(r, digits));
+  return { shown: rs.map((r) => r.display), n: cs.map((c) => c.n), warn: cs.some((c) => c.warn) };
+}
+
+/** `expect` with each entry rounded to the digits its result was shown with (⚠ n). */
+function expectShown(expect: Expect | undefined, n: (number | undefined)[] | undefined): Expect | undefined {
+  if (expect === undefined || !n?.some((x) => x !== undefined)) return expect;
+  const at = (e: Expect, k: number | undefined): Expect => (k === undefined || typeof e !== "string" ? e : (expectAt(e, k) ?? `${e} (cannot round to ${k})`));
+  if (typeof expect === "string") return at(expect, n[0]);
+  return expect.map((e, i) => at(e, n[i]));
 }
 
 const same = (a: Expect, b: Expect | undefined): boolean => JSON.stringify(a) === JSON.stringify(b);
 const str = (x: string | string[] | undefined): string => (Array.isArray(x) ? x[0]! : x!);
 const list = (x: string | string[] | undefined): string[] => (Array.isArray(x) ? x : [x!]);
 
+const caseSettings = (c: Case): HomeSettings => ({ ...defaultHomeSettings, digits: c.settings?.digits ?? defaultHomeSettings.digits });
+
 function solveCase(host: EngineHost, g: GiacApi, c: Case): Got {
+  const s = caseSettings(c);
   if (!c.kind) {
     const r: SolveResult = solve1(g, str(c.eq), str(c.var), str(c.guess), defaultSolveSettings);
     return { shown: r.display, warn: r.warn };
   }
   const r =
     c.kind === "poly"
-      ? host.solve({ kind: "poly", equation: str(c.eq), unknown: str(c.var) }, defaultHomeSettings)
-      : host.solve({ kind: "equations", equations: list(c.eq), unknowns: list(c.var), guesses: list(c.guess) }, defaultHomeSettings);
-  if (r.ok) return { shown: r.roots.map((x) => x.result.display), warn: r.warn };
+      ? host.solve({ kind: "poly", equation: str(c.eq), unknown: str(c.var) }, s)
+      : host.solve({ kind: "equations", equations: list(c.eq), unknowns: list(c.var), guesses: list(c.guess) }, s);
+  if (r.ok) {
+    const o = shownOf(r.roots.map((x) => x.result), s.digits);
+    // One equation (kind one): a single root, shown as a string like the solve1 cases.
+    return { shown: c.kind === "one" ? o.shown[0]! : o.shown, n: o.n, warn: r.warn || o.warn };
+  }
   return { shown: r.error === "bad-input" && c.kind === "poly" ? "not a polynomial" : r.error === "no-root" ? "no root found" : r.info, warn: r.warn };
 }
 
 function functionCase(host: EngineHost, c: Case): Got {
-  const s = defaultHomeSettings;
+  const s = caseSettings(c);
   if (c.kind === "table") {
     const rows = host.table({ fns: list(c.f), xs: c.xs!, variable: str(c.var ?? "x") }, s);
     return { shown: rows.map((row) => row.map((x) => x.display)), warn: false };
@@ -257,9 +295,12 @@ function functionCase(host: EngineHost, c: Case): Got {
           ? host.analyze({ kind: "intersection", f, g: c.g!, x0: c.x0!, lo: c.lo, hi: c.hi, variable }, s)
           : host.analyze({ kind: c.kind === "extremum" ? "extremum" : "root", f, x0: c.x0!, lo: c.lo, hi: c.hi, variable }, s);
   if (!r.ok) return { shown: r.error === "no-root" ? (c.kind === "area" ? "no area" : "no root found") : r.info, warn: r.warn };
-  if (c.kind === "slope" || c.kind === "area") return { shown: r.value!.display, warn: r.warn };
-  const xy = [r.x!.display, r.y!.display];
-  return { shown: c.kind === "extremum" ? [...xy, r.extremum!] : xy, warn: r.warn };
+  if (c.kind === "slope" || c.kind === "area") {
+    const o = shownOf([r.value!], s.digits);
+    return { shown: o.shown[0]!, n: o.n, warn: r.warn || o.warn };
+  }
+  const o = shownOf([r.x!, r.y!], s.digits);
+  return { shown: c.kind === "extremum" ? [...o.shown, r.extremum!] : o.shown, n: o.n, warn: r.warn || o.warn };
 }
 
 /** Runs every case of `file` ROUNDS times on fresh engines; a case passes when every round shows `expect`
@@ -278,10 +319,10 @@ async function stageCases(stage: string, file: string, run: (host: EngineHost, g
   for (const c of cs) {
     const rs = runs.get(c.id)!;
     const wantWarn = c.status === "warn";
-    if (rs.every((x) => same(x.shown, c.expect) && x.warn === wantWarn)) pass++;
+    if (rs.every((x) => same(x.shown, expectShown(c.expect, x.n)) && x.warn === wantWarn)) pass++;
     else
       console.log(
-        `  ${stage} ${c.id}: got ${rs.map((x) => `${JSON.stringify(x.shown)}${x.warn ? " ⚠" : ""}`).join(" / ")}, expect ${JSON.stringify(c.expect)}${wantWarn ? " ⚠" : ""}`,
+        `  ${stage} ${c.id}: got ${rs.map((x) => `${JSON.stringify(x.shown)}${x.warn ? ` ⚠${x.n?.some((k) => k !== undefined) ? JSON.stringify(x.n) : ""}` : ""}`).join(" / ")}, expect ${JSON.stringify(c.expect)}${wantWarn ? " ⚠" : ""}`,
       );
   }
   report(stage, pass === cs.length, `${pass}/${cs.length} match, rounds ${ROUNDS}`);

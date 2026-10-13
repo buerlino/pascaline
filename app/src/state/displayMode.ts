@@ -50,6 +50,8 @@ export interface ResultFacts {
   /** A numeric list or matrix: its elements, each with its own value and facts. */
   items?: PrecisionFacts[];
   shape?: [number, number];
+  /** The digits the input asked for (CAS `evalf(e,n)`, decisions M4-6): drawn with these, not the digits setting. */
+  digits?: number;
 }
 
 /** What a history item knows about its number. */
@@ -158,7 +160,8 @@ export function renderNumeric(
   ctx: DisplayContext,
 ): { text: string; latex: string } | undefined {
   const m = mode ?? ctx.format;
-  const opts = (f: keyof typeof BASE): FormatOptions => ({ format: BASE[f], digits: ctx.digits, fixed: ctx.fixDecimals });
+  const digits = r.facts?.digits ?? ctx.digits;
+  const opts = (f: keyof typeof BASE): FormatOptions => ({ format: BASE[f], digits, fixed: ctx.fixDecimals });
   const base = baseMode(mode, ctx);
   if (!r.value) {
     // a numeric list or matrix: our formatter draws every element
@@ -188,7 +191,7 @@ export function markFor(r: NumericResult, mode: FmtMode | undefined, ctx: Displa
   if (!p) return null;
   const m = mode ?? ctx.format;
   const base = baseMode(mode, ctx);
-  const o: FormatOptions = { format: BASE[base], digits: ctx.digits, fixed: ctx.fixDecimals };
+  const o: FormatOptions = { format: BASE[base], digits: r.facts?.digits ?? ctx.digits, fixed: ctx.fixDecimals };
   let info: MarkInfo | null;
   if ((m === "frac" || m === "mixed") && r.rational && r.value) info = p.exactRational ? { mark: "=" } : markOf(p, o);
   else {
