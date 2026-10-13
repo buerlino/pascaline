@@ -57,7 +57,8 @@ compound units: 4; worst `kg·m²/s³`, 9). Gate: median ≤ 4 (P8 rule 2).
 3. **qalc's default result unit** turns a torque into joules and noise densities into webers; the empty end slot
    needs its own rule (r7 5.4 point 7).
 
-## For shared files (the review session applies these)
+## For shared files
+**Applied on this branch after the owner accepted (2026-10-13)**, as DECIDED rather than PROPOSED: docs/decisions.md (S1 entry, P11 note), docs/backlog.md (S1 done, milestone 5 step 4 rewritten, step 5 and G7 wording; no "Needs the user" line, since it is decided), docs/04 (4.3–4.4 replaced, 4.2 load trigger, 5.1 rows, Appendix C Rankine). Not applied: tests/tasks/tasks.yaml (the flick notation comes with R9; do it when milestone 5 starts). The original text, kept for the record:
 - **docs/decisions.md, "Needs the user"** (new entry, top):
   > **2026-10-13 S1: unit-slot layout (P11). PROPOSED by sandra, needs the user.** The paper test passes: a unit
   > takes 2 presses at the median over 50 common units (gate ≤ 4), with flicks; G2 taps alone give 5.5 (fail), a

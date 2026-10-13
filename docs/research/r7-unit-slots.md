@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R7: Unit slots, the paper test (package S1, 2026-10-13)
 
-sandra, for the owner. The question (P11, brief S1): can units added *after* the formula, typed letter by letter into
+sandra, for the owner. **Accepted by the owner 2026-10-13** (decisions.md S1); section 7 is now docs/04 4.3–4.4. The question (P11, brief S1): can units added *after* the formula, typed letter by letter into
 unit slots, reach a unit in 4 presses or fewer at the median (P8 rule 2: a unit must beat typing `E-10`)? And which
 case pitfalls has the entry to guard against? Layout: `spec/keyboard.yaml` `unit_slot:` (line 310). Count:
 `tools/probes/unit-presses.mjs`. Everything below can be rerun with that probe; qalc facts use the built qalc
