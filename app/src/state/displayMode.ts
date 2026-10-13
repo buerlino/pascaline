@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Two keys change how the last result is drawn (R10, the owner's split of 2026-10-13):
 // - the Format key (fmt) cycles its notation: Standard, Scientific, Engineering, Prefixes, Fixed;
-// - the a b/c key (on an empty line) cycles its form: decimal ↔ fraction (as on the G2), a+bi ↔ polar, mixed if ticked.
+// - the a b/c key (on an empty line) toggles its form: decimal ↔ fraction (as on the G2), a+bi ↔ polar; one cycle per
+//   result type, so the key needs no setting (P12).
 // Plain logic, no Svelte: which modes apply to a result, what comes next, and how a result is drawn in a mode.
 // All number formatting is engine/format.ts (our own formatter), never JS Number.toString.
 import {
@@ -24,17 +25,16 @@ import { complexToLatex, fractionToLatex, homeResultToLatex, polarToLatex } from
 
 export type FmtMode = "std" | "sci" | "eng" | "pfx" | "fix" | "frac" | "mixed" | "polar";
 
-/** Every mode a result can be drawn in, in canonical order. */
+/** Every mode a result can be drawn in, in canonical order. "mixed" is reached by neither key since R10 (the mixed
+ *  number is a Tmpl template); it stays so a stored result drawn mixed before keeps its drawing. */
 export const FMT_MODES: readonly FmtMode[] = ["std", "sci", "eng", "pfx", "fix", "frac", "mixed", "polar"];
-/** The Format key's modes (the order of its Settings ticks). */
+/** The Format key's modes (the order of its Settings ticks): the notations. */
 export const NOTATION_MODES: readonly FmtMode[] = ["std", "sci", "eng", "pfx", "fix"];
 export const DEFAULT_FMT_CYCLE: readonly FmtMode[] = ["std", "sci", "eng"];
 
-/** The a b/c key's forms (the order of its Settings ticks). */
-export type FormMode = "frac" | "mixed" | "polar";
-export const FORM_MODES: readonly FormMode[] = ["frac", "mixed", "polar"];
-/** Fraction as on the G2 (2.5 ↔ 5/2, no mixed number: owner, 2026-10-13); polar is ours. */
-export const DEFAULT_FORM_CYCLE: readonly FormMode[] = ["frac", "polar"];
+/** The a b/c key's forms: fraction as on the G2 (2.5 ↔ 5/2, no mixed number: owner, 2026-10-13); polar is ours. */
+export type FormMode = "frac" | "polar";
+export const FORM_MODES: readonly FormMode[] = ["frac", "polar"];
 /** A step of the a b/c cycle on an item: a form, or "dec" = the decimal of a CAS result (whose base is exact). */
 export type FormStep = FormMode | "dec";
 export const isFormStep = (x: unknown): x is FormStep => x === "dec" || (FORM_MODES as readonly unknown[]).includes(x);
@@ -86,22 +86,17 @@ export interface Facts {
   rational: boolean;
   /** A rational that is not whole (its fraction differs from the integer). */
   properFraction: boolean;
-  /** A rational whose mixed form differs from its fraction (|n| > d, not whole). */
-  mixedDiffers: boolean;
 }
 
 export function factsOf(r: NumericResult): Facts {
   const numeric = r.value !== undefined;
   const rational = r.rational !== undefined && !(numeric && !isZero((r.value as ComplexValue).im));
-  const n = rational ? BigInt((r.rational as Rational).n) : 0n;
   const d = rational ? BigInt((r.rational as Rational).d) : 1n;
-  const abs = n < 0n ? -n : n;
   return {
     numeric,
     complex: numeric && !isZero((r.value as ComplexValue).im),
     rational,
     properFraction: rational && d !== 1n,
-    mixedDiffers: rational && d !== 1n && abs > d,
   };
 }
 
@@ -119,34 +114,17 @@ export function normalizeCycle(modes: readonly unknown[] | undefined): FmtMode[]
   return picked.length > 0 ? picked : [...DEFAULT_FMT_CYCLE];
 }
 
-/** The a b/c key's ticked forms, in canonical order; never empty. */
-export function normalizeForms(modes: readonly unknown[] | undefined): FormMode[] {
-  const picked = FORM_MODES.filter((m) => modes?.includes(m));
-  return picked.length > 0 ? picked : [...DEFAULT_FORM_CYCLE];
-}
-
 /**
- * The a b/c key: the form after `current` (undefined = the base form). Home (`exactBase` false): the base is the
- * decimal (in the result's notation), then each ticked form that changes the drawing. CAS (`exactBase` true): the
- * base is the exact result, then its decimal ("dec", for a fraction), then the ticked forms except the fraction (the exact result
- * already is one). null: nothing to switch (no other form applies, e.g. a whole number or a symbolic result).
+ * The a b/c key: the form after `current` (undefined = the base form). Each result type has one toggle: a fraction
+ * that is not whole goes decimal ↔ fraction, a complex number a+bi ↔ polar. Home (`exactBase` false): the base is the
+ * decimal (in the result's notation). CAS (`exactBase` true): the base is the exact result, which already is the
+ * fraction, so a fraction toggles with its decimal ("dec"). null: nothing to switch (a whole number, a symbolic result).
  */
-export function nextForm(
-  current: FormStep | undefined,
-  ticked: readonly FormMode[],
-  f: Facts,
-  exactBase: boolean,
-): { form: FormStep | undefined } | null {
+export function nextForm(current: FormStep | undefined, f: Facts, exactBase: boolean): { form: FormStep | undefined } | null {
   if (!f.numeric) return null;
-  const shows = (m: FormMode): boolean =>
-    m === "frac" ? f.properFraction && !exactBase : m === "mixed" ? f.mixedDiffers : f.complex;
-  const forms = FORM_MODES.filter((m) => ticked.includes(m) && shows(m));
-  // a CAS decimal only when it differs from the exact result (5/2 → 2.5; 5 stays 5)
-  const dec: FormStep[] = exactBase && f.properFraction ? ["dec"] : [];
-  const seq: (FormStep | undefined)[] = [undefined, ...dec, ...forms];
-  if (seq.length < 2) return null;
-  const i = seq.indexOf(current);
-  return { form: seq[(i + 1) % seq.length] };
+  const other: FormStep | null = f.complex ? "polar" : f.properFraction ? (exactBase ? "dec" : "frac") : null;
+  if (other === null) return null;
+  return { form: current === other ? undefined : other };
 }
 
 /**

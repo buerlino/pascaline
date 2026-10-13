@@ -56,10 +56,9 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
     expect(s.settings.format).toBe("std"); // and not the global setting
   });
 
-  it("Fixed is a notation of the Format key; fraction and mixed are a b/c forms (R10)", async () => {
+  it("Fixed is a notation of the Format key; the fraction is a b/c's form (R10)", async () => {
     const s = new Session(await engineCalc(), memoryKv());
     s.setFmtMode("fix", true);
-    s.setFormMode("mixed", true);
     await s.submit("\\frac73");
     const seen: string[] = [];
     for (let i = 0; i < 4; i++) {
@@ -69,11 +68,11 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
     // from Standard: sci, eng, fix, std (derived: 7/3 = 2.3333…, exponent 0)
     expect(seen).toEqual(["2.33333333333E0", "2.33333333333E0", "2.3333", "2.33333333333"]);
     const forms: string[] = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       await s.cycleForm();
       forms.push(text(s));
     }
-    expect(forms).toEqual(["7/3", "2 1/3", "2.33333333333"]);
+    expect(forms).toEqual(["7/3", "2.33333333333"]);
     // the Format key leaves a form: back to the number in its notation
     await s.cycleForm();
     await s.cycleFormat();

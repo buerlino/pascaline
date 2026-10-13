@@ -18,8 +18,6 @@ import { homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
 import {
   DEFAULT_FMT_CYCLE,
-  DEFAULT_FORM_CYCLE,
-  FORM_MODES,
   factsOf,
   isFmtMode,
   isFormStep,
@@ -27,10 +25,8 @@ import {
   nextForm,
   nextMode,
   normalizeCycle,
-  normalizeForms,
   renderNumeric,
   type FmtMode,
-  type FormMode,
   type FormStep,
   type Polar,
   type Rational,
@@ -54,8 +50,6 @@ export interface Settings extends CalcSettings {
   entry: EntryMode;
   /** Notations the Format key (fmt) cycles through, in canonical order. */
   fmtCycle: FmtMode[];
-  /** Forms the a b/c key cycles through on an empty line (R10), in canonical order. */
-  formCycle: FormMode[];
   /** Decimals of the Fixed mode. */
   fixDecimals: number;
   haptics: HapticsSettings;
@@ -70,7 +64,6 @@ export const defaultSettings: Settings = {
   format: "std",
   entry: "textbook",
   fmtCycle: [...DEFAULT_FMT_CYCLE],
-  formCycle: [...DEFAULT_FORM_CYCLE],
   fixDecimals: 4,
   haptics: { on: false, strength: 50, ms: 15 },
 };
@@ -180,9 +173,6 @@ export function migrateSettings(saved: unknown): { settings: Settings; migrated:
   if (x["entry"] === "textbook" || x["entry"] === "line") s.entry = x["entry"];
   if (typeof x["digits"] === "number" && Number.isFinite(x["digits"])) s.digits = clampDigits(x["digits"]);
   if (Array.isArray(x["fmtCycle"])) s.fmtCycle = normalizeCycle(x["fmtCycle"].filter(isFmtMode));
-  // R10: fraction, mixed and polar moved from the Format key to a b/c; forms ticked there before come along
-  if (Array.isArray(x["formCycle"])) s.formCycle = normalizeForms(x["formCycle"]);
-  else if (Array.isArray(x["fmtCycle"])) s.formCycle = normalizeForms([...DEFAULT_FORM_CYCLE, ...x["fmtCycle"].filter((m) => (FORM_MODES as readonly unknown[]).includes(m))]);
   if (typeof x["fixDecimals"] === "number" && Number.isFinite(x["fixDecimals"])) s.fixDecimals = clamp(x["fixDecimals"], 0, 12);
   const h = x["haptics"];
   if (h && typeof h === "object") {
@@ -354,14 +344,6 @@ export class Session {
     if (on) ticked.add(mode);
     else ticked.delete(mode);
     this.settings.fmtCycle = normalizeCycle([...ticked]);
-    this.save();
-  }
-  /** Settings > a b/c cycle: tick or untick a form (never all off: then the default comes back). */
-  setFormMode(mode: FormMode, on: boolean): void {
-    const ticked = new Set(this.settings.formCycle);
-    if (on) ticked.add(mode);
-    else ticked.delete(mode);
-    this.settings.formCycle = normalizeForms([...ticked]);
     this.save();
   }
   setFixDecimals(n: number): void {
@@ -570,14 +552,14 @@ export class Session {
   }
 
   /**
-   * The a b/c key on an empty line (R10): show the last result of the current view in its next form (decimal ↔
-   * fraction as on the G2; a+bi ↔ polar; mixed when ticked in Settings). Changes that result only. Resolves true
+   * The a b/c key on an empty line (R10): show the last result of the current view in its other form (decimal ↔
+   * fraction as on the G2; a+bi ↔ polar). Changes that result only. Resolves true
    * when the display changed; false when no other form applies (a whole number, a symbolic result).
    */
   async cycleForm(): Promise<boolean> {
     const item = this.items.at(-1);
     if (!item || item.status !== "done" || this.busy) return false;
-    const next = nextForm(item.form, this.settings.formCycle, factsOf(item), item.view === "cas");
+    const next = nextForm(item.form, factsOf(item), item.view === "cas");
     if (!next) return false;
     if (next.form === "polar" && item.value && item.polar?.angle !== this.settings.angle && !(await this.computePolar(item, item.value)))
       return false;

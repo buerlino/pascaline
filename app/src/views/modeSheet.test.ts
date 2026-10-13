@@ -90,7 +90,6 @@ describe("Settings sheet", () => {
     expect(byId("haptics")?.value).toBe("Off");
     expect(byId("ms")?.disabled).toBe(true);
     s.level.move(1);
-    s.level.move(1); // past the a b/c cycle (R10)
     expect(s.level.current?.id).toBe("haptics");
     s.right();
     expect(session.settings.haptics.on).toBe(true);
@@ -115,17 +114,5 @@ describe("Settings sheet", () => {
     for (const n of [1, 3, 5]) s.pickNumber(n); // all off: back to the default cycle
     expect(session.settings.fmtCycle).toEqual(["std", "sci", "eng"]);
     expect(s.depth).toBe(2);
-  });
-  it("the a b/c cycle (R10): fraction and polar by default, mixed can be ticked, never empty", () => {
-    const s = settings();
-    s.level.move(1);
-    expect(s.enter()).toEqual({ kind: "stay" });
-    expect(s.level.title).toBe("a b/c key cycle");
-    const marked = () => s.level.items.filter((i) => i.selected).map((i) => i.id);
-    expect(marked()).toEqual(["frac", "polar"]);
-    s.pickNumber(2); // Mixed on
-    expect(session.settings.formCycle).toEqual(["frac", "mixed", "polar"]);
-    for (const n of [1, 2, 3]) s.pickNumber(n); // all off: back to the default
-    expect(session.settings.formCycle).toEqual(["frac", "polar"]);
   });
 });

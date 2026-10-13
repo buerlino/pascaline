@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The Mode sheet and Settings (docs/05 3.4 with section 7), as lists for the one sheet (sheet.svelte.ts). Mode holds
 // what changes in a session: angle, format, digits, decimals, entry. Settings holds what is set once: the Format key's
-// and the a b/c key's cycles (R10) and the key vibration. A row with a value is changed in place: ◀ ▶ step it, a digit key or a tap steps it
+// cycle and the key vibration. A row with a value is changed in place: ◀ ▶ step it, a digit key or a tap steps it
 // forward, Enter closes. No native <select> or number input: the keypad drives all of it.
 import type { MenuItem } from "../apps/types.ts";
 import type { AngleUnit, NumberFormat } from "../calc/port.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength } from "../input/haptics.ts";
-import { FORM_MODES, NOTATION_MODES } from "../state/displayMode.ts";
+import { NOTATION_MODES } from "../state/displayMode.ts";
 import { MAX_DIGITS, type EntryMode, type Session } from "../state/session.svelte.ts";
 
 const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
@@ -104,22 +104,6 @@ export function settingsItems(session: Session): MenuItem[] {
             return s.fmtCycle.includes(mode);
           },
           run: () => session.setFmtMode(mode, !s.fmtCycle.includes(mode)),
-        })),
-      },
-    },
-    {
-      id: "formCycle",
-      label: t("settings.formCycle"),
-      submenu: {
-        title: t("settings.formCycle"),
-        items: FORM_MODES.map((mode) => ({
-          id: mode,
-          label: t(`settings.fmt.${mode}` as MessageKey),
-          keep: true,
-          get selected() {
-            return s.formCycle.includes(mode);
-          },
-          run: () => session.setFormMode(mode, !s.formCycle.includes(mode)),
         })),
       },
     },
