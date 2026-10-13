@@ -114,10 +114,10 @@ Three parallel tracks per milestone. A milestone is done when its benchmark task
 
 ### Solve bugs (found in G3, 2026-10-13)
 Solve and Function are frozen for features, not for bugs (owner, 2026-10-13). Found while adding G3's 30-digit cases; they predate G3. Each gets a golden case first, then the fix.
-- **SB1. Residual check too strict at 12 digits.** s30-wilk7's equation (`expand(product(x-k/7,k,1,25))=0`, guess 3.4, in `tests/golden/solve.yaml`) gives "no root found" at digits 12; the residual check at W = 30 rejects a good root of that polynomial.
-- **SB2. Newton does not converge on a quadruple root:** `expand((x-1/3)^4)=0` finds no root.
-- **SB3. Not the nearest root:** for a guess of 15.33 the bracket search returns the root 3.333, not the root nearest the guess.
-- **SB4. A list takes its weakest element's mark for every element:** `[romberg(exp(-x^2),x,0,1),1/3]` shows 1/3 with ⚠13 (`floatFacts` marks every element with the weakest). Home, not Solve, but found with them.
+- [x] **SB1. Done (G5, merge commit below).** Residual check too strict at 12 digits: s30-wilk7's equation (`expand(product(x-k/7,k,1,25))=0`, guess 3.4, in `tests/golden/solve.yaml`) gives "no root found" at digits 12; the residual check at W = 30 rejects a good root of that polynomial.
+- [x] **SB2. Done (G5).** Newton did not converge on a quadruple root: `expand((x-1/3)^4)=0` finds no root.
+- **SB3. Not the nearest root (open: the equation is missing, see decisions.md "Needs the user"):** for a guess of 15.33 the bracket search returns the root 3.333, not the root nearest the guess.
+- [x] **SB4. Done (G5).** A list took its weakest element's mark for every element:** `[romberg(exp(-x^2),x,0,1),1/3]` shows 1/3 with ⚠13 (`floatFacts` marks every element with the weakest). Home, not Solve, but found with them.
 
 ### Follow-ups from the G2 answers (Virtual Calculator, 2026-10-12)
 Each row is a difference between our default and what the reference does (answers in `tests/golden/g2.yaml`, summary in `docs/decisions.md` "G2 answers 2026-10-12"). The user picks which to follow. (G5 went with the Python app; G6 is R10; G7 is the unit view.)

@@ -166,14 +166,6 @@ docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on 
 
 ### Night packages (section 0c)
 
-### gorge, G5: solver bugs SB1–SB4, branch `p1/gorge-m4-sb`
-Backlog "Solve bugs". For each bug, in this order: the golden case (expected value from `oracle.py` or `derived`, never from memory), a commit where it fails, the fix, a commit where it passes. Files: `app/src/engine/` (`solve1.ts`, `numeric.ts`, `homeEval.ts`), `tests/golden/`. Keep every existing solve and precision case passing.
-- **SB1:** `s30-wilk7`'s equation at digits 12 gives "no root found"; the residual check at W = 30 rejects a good root. A root that substitutes back within the rounding bound of the expanded polynomial is accepted; a wrong root is still rejected or marked `⚠`.
-- **SB2:** `expand((x-1/3)^4)=0` finds no root. It must find a root near 1/3 (`derived`) with the mark the agreement check gives, never "no root found" and never `=`; a multiple root confirms fewer digits, and the mark must say so.
-- **SB3:** the bracket search returns 3.333, not the root nearest the guess 15.33. The equation is in G3's report (`git show 29231d7`, `git log --grep=G3`); if it is not there, put SB3 under "Needs a decision" and skip it. Fix: the nearest root to the guess, or the bracket nearest the guess first.
-- **SB4:** `[romberg(exp(-x^2),x,0,1),1/3]` marks 1/3 with ⚠13 (`floatFacts` gives every element the weakest mark). Each element carries its own mark; the list's mark is still the weakest. Check how Home draws per-element marks today; if it draws one mark per list, keep the list mark and put per-element display under "For shared files" as a ron follow-up.
-Gate: golden gate, `solve.test.ts`, vitest, e2e `solve.spec.ts`.
-
 ### gorge, G6: the §2.3 audit, branch `p1/gorge-m4-prec`
 Milestone 4 gate: "no §2.3 item #1–#9 is left". For #1–#6, #8 and #9 (#7 is moot): find the regression case (`tests/golden/`), run it, and record fixed (case id, commit) or open. Fix what is open and belongs to milestone 4, each regression case first: #2 (`normald_icdf` and the other inverse functions marked `⚠` and not tier 0; the polish is m6), #5 (a ≤ 14-digit fallback with `⚠` instead of the input as text). Anything open that is not m4 goes in the report with its milestone. Report: the new "Fix" column text for docs/04 §2.3 under "For shared files". Gate: golden gate, oracle check (`oracle.py`), vitest.
 
