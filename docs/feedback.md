@@ -58,3 +58,7 @@ The one place for the owner's points from using the app (docs/03 section 0, rule
 ## 2026-10-13: waiting for the owner's notes on R6
 
 The R6 APK (hold-and-drag gone, legends on their own line, dead keys dimmed per layer, the Plot hint above the axes) is on the phone.
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 26 | Flicks must work instantly: press and slide up in one motion. Having to press, wait, then flick feels terrible. | decided: added to R9 in the brief (distance only, no hold time; a press-slide-lift under 100 ms is a flick; e2e gate). No flicks are built yet (R9 not started); the press-wait-slide feel was probably the old hold-and-drag (K2) of the R5 APK, which R6 removed (to confirm with the owner) |
