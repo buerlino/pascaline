@@ -10,8 +10,10 @@ export type SheetKey =
   | { kind: "enter" }
   /** ▶: open the highlighted submenu. */
   | { kind: "right" }
-  /** ◀ and Esc: back one level (the root closes). */
+  /** Esc: back one level (the root closes). */
   | { kind: "back" }
+  /** ◀: step a setting down, else back one level (the root closes). */
+  | { kind: "left" }
   /** Cancel: close every level. */
   | { kind: "close" }
   /** A tap on a key that is not a digit types its letter into the filter (no Alpha press needed). */
@@ -29,7 +31,7 @@ const BY_ID: Readonly<Record<string, SheetKey>> = {
   down: { kind: "move", by: 1 },
   enter: { kind: "enter" },
   right: { kind: "right" },
-  left: { kind: "back" },
+  left: { kind: "left" },
   esc: { kind: "back" },
   cancel: { kind: "close" },
   bksp: { kind: "backspace" },

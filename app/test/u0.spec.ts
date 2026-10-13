@@ -15,7 +15,7 @@ test("finding 4: with Alpha lock on, a digit picks from the open Apps list; it d
   await tap(page, ["d1"]);
   expect(await entryValue(page)).toBe(""); // not "Y"
   await expect(page.getByTestId("apps")).toBeHidden();
-  await expect(page.locator(".appname")).toBeVisible(); // item 1 was opened
+  await expect(page.getByTestId("place")).toHaveAttribute("data-app", /.+/); // item 1 was opened
   // the lock is still on: the sheet never touched the modifiers
   await expect(page.locator('[data-key="alpha"]')).toHaveAttribute("data-locked", "true");
 });

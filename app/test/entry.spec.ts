@@ -64,7 +64,7 @@ test("L5: tapping a result puts it on the entry line, in Home and CAS", async ({
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.5");
   // CAS: the chip x+1 is one factor, so 2×(x+1) stays a product
   await tap(page, ["app"]);
-  await expect(page.locator('[data-view="cas"]')).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
   await tap(page, ["x", "add", "d1", "enter"]);
   await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", "x+1");
   await tap(page, ["d2", "mul"]);

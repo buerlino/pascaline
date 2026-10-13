@@ -30,7 +30,7 @@ test("Home: 1-0.9-0.1 gives 0", async ({ page }) => {
 
 test("CAS: 1 a/b 3 + 1 a/b 6 Enter is drawn as a stacked one half (G2 item 17)", async ({ page }) => {
   await tap(page, ["app"]);
-  await expect(page.locator('[data-view="cas"]')).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
   await tap(page, ["d1", "frac", "d3", "right", "add", "d1", "frac", "d6", "enter"]);
   const res = lastResult(page).locator(".math");
   await expect(res).toBeVisible();

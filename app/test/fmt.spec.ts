@@ -6,11 +6,32 @@ import { open, tap } from "./helpers.ts";
 const lastText = (page: Page) => page.locator('[data-testid="result"] .result').last();
 const ready = (page: Page) => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
 
+const sheet = (page: Page) => page.getByTestId("menu");
+/** Shift + Home/CAS: the Settings sheet. */
 async function openSettings(page: Page): Promise<void> {
   await tap(page, ["shift", "app"]);
-  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(sheet(page)).toBeVisible();
+  await expect(page.getByTestId("sheet-title")).toHaveText("Settings");
 }
-const closeSettings = (page: Page) => page.getByRole("button", { name: "Close" }).click();
+/** Shift + CAS: the Mode sheet. */
+async function openMode(page: Page): Promise<void> {
+  await tap(page, ["shift", "cas"]);
+  await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
+}
+const closeSheet = (page: Page) => tap(page, ["cancel"]);
+/** Tick (or untick) forms of the Format key cycle: Settings, Enter on the first row, a tap per form, Cancel. */
+async function toggleCycle(page: Page, modes: string[]): Promise<void> {
+  await openSettings(page);
+  await tap(page, ["enter"]);
+  for (const m of modes) await sheet(page).locator(`[data-id="${m}"]`).tap();
+  await closeSheet(page);
+}
+/** A setting's list of values (Mode sheet, Digits row): Shift + CAS, the row's digit, then the value's digit. */
+async function pickDigits(page: Page, valueKey: string): Promise<void> {
+  await openMode(page);
+  await tap(page, ["d3", valueKey]);
+  await expect(sheet(page)).toBeHidden();
+}
 
 test("fmt shows 1/3 in Standard, Scientific, Engineering and back, for that result only", async ({ page }) => {
   await open(page, "");
@@ -34,10 +55,7 @@ test("fmt shows 1/3 in Standard, Scientific, Engineering and back, for that resu
 test("fmt with Fraction ticked: 7/3 shows as 7/3 and 2 1/3", async ({ page }) => {
   await open(page, "");
   await ready(page);
-  await openSettings(page);
-  await page.locator('[data-mode="frac"]').check();
-  await page.locator('[data-mode="mixed"]').check();
-  await closeSettings(page);
+  await toggleCycle(page, ["frac", "mixed"]);
   await tap(page, ["d7", "div", "d3", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "2.33333333333");
   // std -> sci -> eng -> frac -> mixed
@@ -51,23 +69,23 @@ test("fmt with Fraction ticked: 7/3 shows as 7/3 and 2 1/3", async ({ page }) =>
 test("the Format key cycle and the vibration settings persist across a reload", async ({ page }) => {
   await open(page, "");
   await ready(page);
+  await toggleCycle(page, ["eng", "fix"]);
+  // key vibration: ▼ ▶ switches it on, ▼ ▼ ▶ ×5 sets the length from 15 to 40 ms
   await openSettings(page);
-  await page.locator('[data-mode="eng"]').uncheck();
-  await page.locator('[data-mode="fix"]').check();
-  await page.getByTestId("haptics-on").check();
-  await page.getByTestId("haptics-ms").fill("40");
+  await tap(page, ["down", "right", "down", "down", "right", "right", "right", "right", "right"]);
+  await closeSheet(page);
   await page.waitForTimeout(500);
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined);
   await page.waitForFunction(() => window.pascaline.session.settings.haptics.on === true);
   await openSettings(page);
-  await expect(page.locator('[data-mode="eng"]')).not.toBeChecked();
-  await expect(page.locator('[data-mode="fix"]')).toBeChecked();
-  await expect(page.locator('[data-mode="std"]')).toBeChecked();
-  await expect(page.getByTestId("haptics-on")).toBeChecked();
-  await expect(page.getByTestId("haptics-ms")).toHaveValue("40");
+  await expect(sheet(page).locator('[data-id="haptics"] [data-testid="sheet-value"]')).toHaveText("On");
+  await expect(sheet(page).locator('[data-id="ms"] [data-testid="sheet-value"]')).toHaveText("40 ms");
   // the web build cannot set the strength
-  await expect(page.getByTestId("haptics-strength")).toBeDisabled();
+  await expect(sheet(page).locator('[data-id="strength"]')).toBeDisabled();
+  await tap(page, ["enter"]);
+  const marked = await sheet(page).locator('[data-selected="true"]').evaluateAll((els) => els.map((e) => e.getAttribute("data-id")));
+  expect(marked).toEqual(["std", "sci", "fix"]);
   expect(await page.evaluate(() => window.pascaline.session.settings.haptics)).toEqual({ on: true, strength: 50, ms: 40 });
 });
 
@@ -82,13 +100,14 @@ test("key vibration: off by default, and on it calls navigator.vibrate on key-do
   await tap(page, ["d1", "d2"]);
   expect(await vib()).toEqual([]);
   await openSettings(page);
-  await page.getByTestId("haptics-on").check();
-  await closeSettings(page);
-  expect(await vib()).toEqual([]);
+  await tap(page, ["down", "right"]);
+  expect(await vib()).toEqual([]); // switched on by the ▶ key, which went down while it was still off
+  await closeSheet(page);
+  expect(await vib()).toEqual([15]); // the Cancel key that closed the sheet: the default length, one call per key
   await tap(page, ["d3"]);
-  expect(await vib()).toEqual([15]); // the default length; one call per key
-  await page.locator('[data-key="d4"]').dispatchEvent("pointerdown");
   expect(await vib()).toEqual([15, 15]);
+  await page.locator('[data-key="d4"]').dispatchEvent("pointerdown");
+  expect(await vib()).toEqual([15, 15, 15]);
 });
 
 const markOfLast = (page: Page) => page.getByTestId("mark").last();
@@ -108,9 +127,7 @@ test("marks: = for an exact value shown in full, ≈ for digits of an irrational
   // the old "approximate" note is gone
   await expect(page.getByText("approximate", { exact: true })).toHaveCount(0);
   // the Format key shows the third as an exact fraction: =
-  await openSettings(page);
-  await page.locator('[data-mode="frac"]').check();
-  await closeSettings(page);
+  await toggleCycle(page, ["frac"]);
   await tap(page, ["fmt", "fmt", "fmt"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "1/3");
   await expect(markOfLast(page)).toHaveText("=");
@@ -119,12 +136,8 @@ test("marks: = for an exact value shown in full, ≈ for digits of an irrational
 test("30 digits: the setting takes 30, Home draws 30 digits and 1/3 stays ≈", async ({ page }) => {
   await open(page, "");
   await ready(page);
-  await openSettings(page);
-  const digits = page.locator('input[type="number"]').first();
-  await digits.fill("45");
-  await digits.blur();
+  await pickDigits(page, "d9"); // 4 6 8 10 12 15 20 25 30
   expect(await page.evaluate(() => window.pascaline.session.settings.digits)).toBe(30);
-  await closeSettings(page);
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", `0.${"3".repeat(30)}`);
   await expect(markOfLast(page)).toHaveText("≈");
@@ -133,12 +146,9 @@ test("30 digits: the setting takes 30, Home draws 30 digits and 1/3 stays ≈", 
 test("PFX: 2500 draws as 2.500 k with a thin space and an accented prefix, from Settings and from the Format key", async ({ page }) => {
   await open(page, "");
   await ready(page);
-  await openSettings(page);
-  const digits = page.locator('input[type="number"]').first();
-  await digits.fill("4");
-  await digits.blur();
-  await page.locator('[data-mode="pfx"]').check();
-  await closeSettings(page);
+  await pickDigits(page, "d1");
+  expect(await page.evaluate(() => window.pascaline.session.settings.digits)).toBe(4);
+  await toggleCycle(page, ["pfx"]);
   await tap(page, ["d2", "d5", "d0", "d0", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "2500");
   await expect(markOfLast(page)).toHaveText("=");
@@ -148,9 +158,9 @@ test("PFX: 2500 draws as 2.500 k with a thin space and an accented prefix, from 
   await expect(lastText(page).locator(".pfx")).toHaveText("k");
   await expect(markOfLast(page)).toHaveText("=");
   // as the global format too
-  await openSettings(page);
-  await page.getByRole("dialog").locator("select").nth(1).selectOption("pfx");
-  await closeSettings(page);
+  await page.getByTestId("chip-format").tap(); // the Mode sheet on its Format row; ▶ ×3: Standard → … → Prefixes
+  await tap(page, ["right", "right", "right", "enter"]);
+  expect(await page.evaluate(() => window.pascaline.session.settings.format)).toBe("pfx");
   await tap(page, ["d1", "d2", "d0", "d0", "d0", "d0", "enter"]);
   await expect(lastText(page)).toHaveAttribute("data-text", "120.0 k");
   // tapping the result puts a chip with the full value on the line, never the prefix text

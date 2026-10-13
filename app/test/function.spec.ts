@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 async function defineTwo(page: Page): Promise<void> {
   await tap(page, ["symb"]);
   await expect(page.locator('[data-app="function"]')).toBeVisible();
-  await expect(page.locator('[data-view="symb"]')).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "symb");
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await tap(page, ["sin", "x", "enter"]);
   await tap(page, ["down"]);
@@ -99,7 +99,7 @@ test("Function: definitions, window and view survive a reload", async ({ page })
   await page.reload();
   await page.waitForFunction(() => window.pascaline?.shell?.current !== undefined, undefined, { timeout: 20_000 });
   await expect(page.locator('[data-app="function"]')).toBeVisible();
-  await expect(page.locator('[data-view="plot"]')).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
   await tap(page, ["symb"]);
   await expect(page.locator('[data-name="F2"] .math')).toHaveAttribute("data-latex", "x^3-2x");
 });
@@ -180,7 +180,7 @@ test("Apps key lists the apps; Home/CAS key goes back to Home", async ({ page })
   await tap(page, ["d2"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   await tap(page, ["app"]);
-  await expect(page.locator('[data-view="home"]')).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "home");
   await tap(page, ["d1", "add", "d1", "enter"]);
   await expect(page.locator('[data-testid="result"] .result').last()).toHaveAttribute("data-text", "2");
 });

@@ -3,11 +3,11 @@
 import raw from "../../../spec/keyboard.yaml";
 
 export type Special =
-  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "app" | "cas" | "settings" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt" | "copy" | "paste"
+  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "app" | "cas" | "settings" | "mode" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt" | "copy" | "paste"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
 export const SPECIALS: readonly Special[] = [
-  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "none",
+  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "none",
 ];
 
 export type Action = ActionBody & {
@@ -22,7 +22,7 @@ export type ActionBody =
   | { kind: "insert"; latex: string; sample?: readonly [string, string] }
   /** A MathLive editing command. */
   | { kind: "cmd"; name: string }
-  /** Handled by the app (shift, alpha, enter, clear, cancel, Home/CAS, settings, apps and their views, menu). */
+  /** Handled by the app (shift, alpha, enter, clear, cancel, Home/CAS, settings, mode, apps and their views, menu). */
   | { kind: "special"; name: Special };
 
 export type Layer = "primary" | "shift" | "alpha";

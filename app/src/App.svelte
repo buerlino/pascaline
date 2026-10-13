@@ -3,7 +3,7 @@
   import { onMount } from "svelte";
   import { APPS } from "./apps/registry.ts";
   import type { AppShell } from "./apps/shell.svelte.ts";
-  import { VIEW_IDS, type NavDir, type ViewId } from "./apps/types.ts";
+  import type { NavDir } from "./apps/types.ts";
   import type { ClipActions } from "./clipboard/actions.svelte.ts";
   import { startsWithAns } from "./entry/ans.ts";
   import { ANS_CHIP } from "./entry/macros.ts";
@@ -15,7 +15,7 @@
   import { resultToEntry } from "./render/insertable.ts";
   import type { HistoryItem, Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
-  import Settings from "./views/Settings.svelte";
+  import { modeItems, settingsItems } from "./views/modeSheet.ts";
   import Sheet from "./views/Sheet.svelte";
   import { sheetKey } from "./views/sheetKeys.ts";
 
@@ -85,6 +85,18 @@
     else entry.clear();
   }
 
+  /** Shift + Home/CAS: the Settings sheet (docs/05 3.4). It opens on its first row, whatever was picked last. */
+  function openSettings(): void {
+    picked = null;
+    shell.showMenu(t("settings.title"), settingsItems(session), { remember: false });
+  }
+  /** Shift + CAS, or a tap on a status chip (`at`: the row to start on): the Mode sheet. Without `at` it starts on
+   *  Angle, so Shift + CAS, ▶, Enter always switches the angle unit (3 keys). */
+  function openMode(at?: string): void {
+    picked = null;
+    shell.showMenu(t("mode.title"), modeItems(session, openSettings), { remember: false, at });
+  }
+
   function special(name: Extract<ActionBody, { kind: "special" }>["name"]): void {
     switch (name) {
       case "enter":
@@ -112,7 +124,10 @@
         session.setView("cas");
         break;
       case "settings":
-        session.settingsOpen = true;
+        openSettings();
+        break;
+      case "mode":
+        openMode();
         break;
       case "apps":
         shell.toggleApps();
@@ -219,6 +234,9 @@
       case "right":
         shell.picked(sheet.right());
         return true;
+      case "left":
+        if (!sheet.left() && !sheet.back()) shell.closeSheet();
+        return true;
       case "back":
         if (!sheet.back()) shell.closeSheet();
         return true;
@@ -250,7 +268,7 @@
   /** A key fires. `layer` (a trackpad step, a flick) overrides the Shift/Alpha state for this key only. */
   function press(key: Key, layer?: Layer): void {
     const pk = key.actions.primary;
-    const switches = pk?.kind === "special" && ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings"].includes(pk.name);
+    const switches = pk?.kind === "special" && ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings", "mode"].includes(pk.name);
     if (shell.loading !== null && !switches) {
       waiting.push([key, layer]);
       if (waiting.length === 1)
@@ -285,43 +303,45 @@
     entry.run(action, key.id);
   }
 
-  const showSoftCancel = $derived(session.busy || shell.busy);
+  const busy = $derived(session.busy || shell.busy);
   const appName = $derived(shell.app ? t(APPS.find((a) => a.id === shell.app)?.name as MessageKey) : "");
-  const appViews = $derived<readonly ViewId[]>(shell.instance?.views ?? (shell.app ? VIEW_IDS : []));
+  /** Where you are (docs/05 3.2): Home, CAS, or an app and its view. */
+  const place = $derived(shell.app === null ? t(`view.${session.view}`) : `${appName} › ${t(`view.${shell.view}`)}`);
+  const angle = $derived(session.settings.angle);
+  /** The status line is not a place for typing: a tap on it must not take the caret out of the entry line. */
+  const noFocus = (e: Event): void => e.preventDefault();
 </script>
 
 <main class="app">
-  <header>
-    <div class="tabs" role="tablist">
+  <!-- the status line (docs/05 3.2): where you are, the mode chips, Shift/Alpha, busy. At most 28 px (docs/03 rule 9). -->
+  <!-- svelte-ignore a11y_no_static_element_interactions (only keeps the caret in the entry line; the buttons inside are the controls) -->
+  <header data-testid="status" data-engine={session.engineState} data-busy={busy} onpointerdown={noFocus}>
+    <button
+      type="button"
+      class="place"
+      data-testid="place"
+      data-app={shell.app ?? ""}
+      data-view={shell.app === null ? session.view : shell.view}
+      aria-label={t("status.place", { place })}
+      onclick={() => shell.toggleApps()}>{place}</button>
+    <span class="chips">
+      {#if session.engineState === "starting"}<span class="note">{t("engine.starting")}</span>{/if}
+      {#if session.engineState === "failed"}<span class="note">{t("engine.error")}</span>{/if}
       <button
         type="button"
-        role="tab"
-        aria-selected={shell.app === null && session.view === "home"}
-        data-view="home"
-        onclick={() => {
-          shell.close();
-          session.setView("home");
-        }}>{t("view.home")}</button>
-      <button
-        type="button"
-        role="tab"
-        aria-selected={shell.app === null && session.view === "cas"}
-        data-view="cas"
-        onclick={() => {
-          shell.close();
-          session.setView("cas");
-        }}>{t("view.cas")}</button>
-      {#if shell.app !== null}
-        <span class="appname" data-app={shell.app}>{appName}</span>
-        {#each appViews as v (v)}
-          <button type="button" role="tab" aria-selected={shell.view === v} data-view={v} onclick={() => void shell.setView(v)}
-            >{t(`view.${v}`)}</button>
-        {/each}
-      {/if}
-    </div>
-    <span class="status" data-engine={session.engineState} data-busy={showSoftCancel}>
-      {#if session.engineState === "starting"}{t("engine.starting")}{/if}
-      {#if session.engineState === "failed"}{t("engine.error")}{/if}
+        class="chip"
+        data-testid="chip-angle"
+        data-angle={angle}
+        data-changed={angle !== "rad"}
+        aria-label={t("status.angle", { angle: t(`angle.${angle}`) })}
+        onclick={() => session.setAngle(angle === "rad" ? "deg" : "rad")}>{angle === "rad" ? "RAD" : "DEG"}</button>
+      <span class="pill" aria-label={t("status.format", { format: t(`format.${session.settings.format}`) })}>
+        <button type="button" class="chip" data-testid="chip-format" onclick={() => openMode("format")}>{session.settings.format.toUpperCase()}</button>
+        <button type="button" class="chip" data-testid="chip-digits" onclick={() => openMode("digits")}>{session.settings.digits}</button>
+      </span>
+      {#if session.shift}<span class="mod" data-testid="mod-shift">⇧</span>{/if}
+      {#if session.alphaLock}<span class="mod" data-testid="mod-alpha">α🔒</span>{:else if session.alpha}<span class="mod" data-testid="mod-alpha">α</span>{/if}
+      {#if busy}<span class="busy" role="status" aria-label={t("status.busy")} data-testid="busy">⟳</span>{/if}
     </span>
   </header>
 
@@ -376,8 +396,6 @@
     onpress={press}
     ontouch={touched}
   />
-
-  {#if session.settingsOpen}<Settings {session} />{/if}
 </main>
 
 <style>
@@ -392,34 +410,69 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 12px;
+    gap: 8px;
+    box-sizing: border-box;
+    height: 28px;
+    padding: 0 8px;
     border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    line-height: 1;
   }
-  .tabs {
+  header button {
+    all: unset;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+  .place {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding: 5px 6px;
+    border-radius: 6px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .chips {
     display: flex;
+    align-items: center;
     gap: 4px;
-  }
-  .tabs {
-    flex-wrap: wrap;
-    gap: 2px;
-  }
-  .tabs button {
-    font: inherit;
-    font-size: 15px;
-    padding: 6px 9px;
-    border-radius: 8px;
-    border: 0;
-    background: transparent;
+    flex: none;
     color: var(--muted);
   }
-  .tabs button[aria-selected="true"] {
-    background: var(--panel);
-    color: var(--text);
+  .chip {
+    padding: 5px 6px;
+    border-radius: 6px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .chip[data-changed="true"] {
+    color: var(--shift);
     font-weight: 700;
   }
-  .status {
-    font-size: 13px;
-    color: var(--muted);
+  .pill {
+    display: flex;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+  }
+  .mod {
+    color: var(--shift);
+    font-weight: 700;
+  }
+  .busy {
+    color: var(--shift);
+    display: inline-block;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .busy {
+      animation: none;
+    }
   }
   .screen {
     position: relative;
@@ -438,13 +491,6 @@
   .loading {
     margin: auto;
     color: var(--muted);
-  }
-  .appname {
-    align-self: center;
-    margin: 0 4px 0 6px;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--shift);
   }
   .notice {
     position: relative;

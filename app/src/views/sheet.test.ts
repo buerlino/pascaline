@@ -162,6 +162,67 @@ describe("Sheet: the letter filter", () => {
   });
 });
 
+describe("Sheet: settings changed in place (docs/05 3.4)", () => {
+  const value = { v: 1 };
+  const row = (id: string, extra: Partial<MenuItem> = {}): MenuItem => ({
+    id,
+    label: id,
+    get value() {
+      return String(value.v);
+    },
+    adjust: (by) => void (value.v += by),
+    ...extra,
+  });
+
+  it("▶ and ◀ step the highlighted value; a digit or a tap steps it forward and the sheet stays; Enter closes", () => {
+    value.v = 1;
+    const s = new Sheet("m", "Mode", () => [row("a"), item("b")]);
+    expect(s.right()).toEqual({ kind: "stay" });
+    expect(value.v).toBe(2);
+    expect(s.left()).toBe(true);
+    expect(value.v).toBe(1);
+    expect(s.pickNumber(1)).toEqual({ kind: "stay" });
+    expect(s.activate(0)).toEqual({ kind: "stay" });
+    expect(value.v).toBe(3);
+    expect(s.enter().kind).toBe("run"); // picked as it stands: shell.picked closes the sheet
+    expect(value.v).toBe(3);
+  });
+  it("◀ on a row that is not a setting is not taken (it goes back), and a disabled setting does not step", () => {
+    value.v = 1;
+    const s = new Sheet("m", "Mode", () => [item("b"), row("a", { disabled: true })]);
+    expect(s.left()).toBe(false);
+    s.level.move(1);
+    expect(s.right()).toEqual({ kind: "stay" });
+    expect(s.left()).toBe(false);
+    expect(value.v).toBe(1);
+  });
+  it("a setting with a list of values: a digit opens the list, Enter opens it too, the current value is marked and highlighted", () => {
+    value.v = 20;
+    const list = [4, 12, 20].map((n) => ({ id: String(n), label: String(n), get selected() { return value.v === n; }, run: () => void (value.v = n) }));
+    const s = new Sheet("m", "Mode", () => [row("digits", { submenu: { title: "Digits", items: list } })]);
+    expect(s.pickNumber(1)).toEqual({ kind: "stay" });
+    expect(s.depth).toBe(2);
+    expect(s.level.current?.id).toBe("20");
+    const at12 = s.pickNumber(2);
+    expect(at12.kind).toBe("run");
+    if (at12.kind === "run") at12.item.run?.();
+    expect(value.v).toBe(12);
+  });
+  it("a switch (keep) runs and the sheet stays", () => {
+    const s = new Sheet("m", "Cycle", () => [item("x", { keep: true }), item("y")]);
+    expect(s.pickNumber(1)).toEqual({ kind: "stay" });
+    expect(s.enter()).toEqual({ kind: "stay" });
+    expect(ran).toEqual(["x", "x"]);
+  });
+  it("remember: false always starts on the first row, and `at` starts on the row asked for", () => {
+    const items = () => [item("a"), item("b"), item("c")];
+    new Sheet("m", "Mode", items).pickNumber(3);
+    expect(new Sheet("m", "Mode", items, { remember: false }).level.current?.id).toBe("a");
+    expect(new Sheet("m", "Mode", items, { remember: false, at: "b" }).level.current?.id).toBe("b");
+    expect(new Sheet("m", "Mode", items, { at: "nope" }).level.current?.id).toBe("c");
+  });
+});
+
 describe("sheet keys (docs/05 3.1)", () => {
   it("digits pick 1…9 and 0 = 10, whatever the layer", () => {
     expect(sheetKey(key("d1"), false)).toEqual({ kind: "pick", n: 1 });
@@ -171,7 +232,7 @@ describe("sheet keys (docs/05 3.1)", () => {
     expect(sheetKey(key("up"), false)).toEqual({ kind: "move", by: -1 });
     expect(sheetKey(key("down"), false)).toEqual({ kind: "move", by: 1 });
     expect(sheetKey(key("right"), false)).toEqual({ kind: "right" });
-    expect(sheetKey(key("left"), false)).toEqual({ kind: "back" });
+    expect(sheetKey(key("left"), false)).toEqual({ kind: "left" });
     expect(sheetKey(key("esc"), false)).toEqual({ kind: "back" });
     expect(sheetKey(key("enter"), false)).toEqual({ kind: "enter" });
     expect(sheetKey(key("cancel"), false)).toEqual({ kind: "close" });

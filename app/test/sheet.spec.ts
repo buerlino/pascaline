@@ -149,7 +149,7 @@ test("Menu opens and closes the view's menu; Apps switches to the Apps sheet and
 test("a key that changes place closes the sheet and goes there (CAS)", async ({ page }) => {
   await tap(page, ["menu", "cas"]);
   await expect(sheet(page)).toHaveCount(0);
-  await expect(page.locator('[data-view="cas"]')).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
 });
 
 test("the last pick is remembered per sheet: Apps + Enter opens the app picked last", async ({ page }) => {

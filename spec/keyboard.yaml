@@ -19,7 +19,7 @@
 #                                  Any action may carry `line: <action>`, used instead of it when the
 #                                  one-line entry mode is on (a linear form of the same key).
 #   { cmd: "moveToNextChar" }      a MathLive editing command
-#   { special: shift|alpha|enter|clear|cancel|esc|app|cas|settings|apps|symb|plot|num|menu|none }   handled by the app
+#   { special: shift|alpha|enter|clear|cancel|esc|app|cas|settings|mode|apps|symb|plot|num|menu|none }   handled by the app
 # Missing layer: the key does nothing in that layer, except that alpha falls back to primary.
 # Empty line (docs/04 2.8, app/src/entry/ans.ts): in Home and CAS, + − × ÷ xʸ x² and x⁻¹ on an empty entry line
 # insert Ans (the \ans chip) first, as on the reference; (−) stays negation. Only when the view has a result.
@@ -61,13 +61,13 @@ keys:
       primary: { special: none }, shift: { special: copy }, source: virtual-calc }  # r2c4
   - { id: cancel, row: 1, col: 5, cls: ctl, label: { primary: "$key.cancel" }, primary: { special: cancel }, source: assumed }  # ours (P4 item 6): stops a running job, closes a list, else clears the line; in a gap under Esc (r2c5)
   - { id: app, row: 2, col: 0, cls: nav, label: { primary: "$key.app", shift: "$key.settings" },
-      primary: { special: app }, shift: { special: settings }, source: assumed }  # at the reference's Home key (r3c1, shift Settings); ours toggles Home/CAS and leaves an app (P4 item 6)
+      primary: { special: app }, shift: { special: settings }, source: assumed }  # at the reference's Home key (r3c1, shift Settings = the Settings sheet: Format key cycle, key vibration); ours toggles Home/CAS and leaves an app (P4 item 6)
   - { id: num, row: 2, col: 1, cls: nav, label: { primary: "$key.num" }, primary: { special: num }, source: virtual-calc }  # r3c2
   - { id: down, row: 2, col: 2, span: 2, cls: ctl, label: { primary: "▼" }, primary: { cmd: moveDown }, source: virtual-calc }  # pad down
   - { id: menu, row: 2, col: 4, cls: nav, label: { primary: "$key.menu", shift: "$key.paste" },
       primary: { special: menu }, shift: { special: paste }, source: assumed }  # at r3c4; our Menu opens the current view's menu (P4 item 6); shift Paste reads one number from the clipboard (docs/04 2.6)
-  - { id: cas, row: 2, col: 5, cls: nav, label: { primary: "$key.cas", shift: "$key.settings" },
-      primary: { special: cas }, shift: { special: settings }, source: virtual-calc }  # r3c5 (CAS; shift CAS Settings, ours is the one Settings sheet)
+  - { id: cas, row: 2, col: 5, cls: nav, label: { primary: "$key.cas", shift: "$key.mode" },
+      primary: { special: cas }, shift: { special: mode }, source: virtual-calc }  # r3c5 (CAS; shift CAS = the G2's CAS settings place, ours is the Mode sheet: angle, format, digits, decimals, entry; docs/05 3.4)
 
   # ---- row 3 (r4). Planned (P8, docs/04 section 5.1): Vars = Find on variables, Math = Find, shift Math = Memory,
   # Tmpl = templates, shift Tmpl = the Units app. Not built yet, so `special: none`; the Alpha letters stay.
