@@ -11,9 +11,6 @@ import { ANS_CHIP, CHIP_MACROS, constChip, isChipLatex, resChip } from "./macros
 export const CARET = '\\char"5E ';
 
 const FRAC = "\\frac{#@}{#?}";
-const MIXED = "\\tfrac{#?}{#?}";
-/** A whole number right before the cursor (not part of a decimal, a name or a group). */
-const WHOLE_BEFORE = /(?:^|[^\d.}A-Za-z_^])\d+$/;
 /** An atom a bare ^ would not read as raising whole (L8): a fraction or a root. */
 const COMPOUND = /^\\(?:[dt]?frac|sqrt)(?![A-Za-z])/;
 const MIXED_FRAC = /^\\tfrac(?![A-Za-z])/;
@@ -199,13 +196,9 @@ export class EntryController {
     this.mf?.focus();
   }
 
-  /** The field value right after the a/b key made a fraction from a whole number (see run), else undefined. */
-  private mixedAfter: string | undefined;
-
   /**
-   * Run a type / insert / cmd action. Specials belong to the app and are not handled here.
-   * `keyId` "frac" (a/b): pressed again right after it turned a whole number into a fraction's numerator,
-   * it makes a mixed number instead (2 a/b a/b 1 ▶ 2 → 2½, as \tfrac; L2, assumed, G2 item 29, backlog G6).
+   * Run a type / insert / cmd action. Specials belong to the app and are not handled here. (The a b/c key's
+   * empty-line cycle is the app's: here it is the stacked fraction. The mixed number is in the Tmpl palette, R10.)
    */
   run(a: ActionBody, keyId?: string): void {
     if (a.kind === "special") return;
@@ -214,16 +207,11 @@ export class EntryController {
       return;
     }
     const mf = this.mf;
-    const isFrac = keyId === "frac" && isDivide(a);
-    if (isFrac && this.mixedAfter !== undefined && this.mixedAfter === mf.value) {
-      this.mixedAfter = undefined;
-      mf.executeCommand("undo");
-      mf.insert(MIXED, { selectionMode: "placeholder", format: "latex" });
+    if (a.kind === "cmd" && a.name === "moveToNextChar" && this.nextBox(mf)) {
       mf.focus();
       return;
     }
     if (isBinaryOperator(a, keyId)) this.endExponent(mf);
-    const whole = isFrac && WHOLE_BEFORE.test(mf.getValue(0, mf.position, "latex"));
     if (a.kind === "insert" && a.latex.includes("#@") && this.selectChip(mf)) {
       // a chip is one term: ÷, a/b, x², xʸ, x⁻¹ take all of it, and it draws as one box, so no brackets
       this.apply(mf, a);
@@ -233,8 +221,19 @@ export class EntryController {
       // L9: with the term selected, #@ takes all of it as the numerator: \frac{\frac12}{□}
       this.apply(mf, a);
     } else this.apply(mf, a);
-    this.mixedAfter = whole ? mf.value : undefined;
     mf.focus();
+  }
+
+  /**
+   * ▶ in a template (R10): while an empty box is still ahead of the cursor, ▶ goes to it, as the arrows walk the
+   * boxes on the reference. MathLive's own step would stop on every mark between boxes (∂, d, the evaluate-at bar,
+   * the brackets of a body) and type into the wrong place. With no empty box ahead, ▶ is the plain step. True: moved.
+   */
+  private nextBox(mf: MathfieldElement): boolean {
+    // (an empty box the cursor stands in is not part of what follows it: an empty box is skipped, as on the reference)
+    if (!mf.getValue(mf.position, mf.lastOffset, "latex").includes("\\placeholder")) return false;
+    mf.executeCommand("moveToNextPlaceholder");
+    return true;
   }
 
   /**

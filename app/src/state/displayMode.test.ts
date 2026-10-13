@@ -8,6 +8,7 @@ import {
   isApplicable,
   nextMode,
   normalizeCycle,
+  nextForm,
   markFor,
   markText,
   renderNumeric,
@@ -44,7 +45,7 @@ describe("nextMode", () => {
     }
     expect(seen).toEqual(["std", "sci", undefined, "std"]);
   });
-  it("skips modes that do not apply to the result", () => {
+  it("skips modes that do not apply to the result (nextMode itself still knows every mode)", () => {
     const all: FmtMode[] = ["std", "frac", "mixed", "polar"];
     const decimal = factsOf({ value: real(25n, 10n) }); // 2.5 without an exact fraction
     expect(nextMode("std", all, decimal, false)).toEqual({ mode: "std" }); // only std applies
@@ -60,9 +61,37 @@ describe("nextMode", () => {
 
 describe("cycle setting", () => {
   it("is kept in canonical order, and never empty", () => {
-    expect(normalizeCycle(["polar", "sci", "bogus", "std"])).toEqual(["std", "sci", "polar"]);
+    // the Format key keeps notations only; fraction, mixed and polar are a b/c's forms (R10)
+    expect(normalizeCycle(["polar", "sci", "bogus", "std"])).toEqual(["std", "sci"]);
     expect(normalizeCycle([])).toEqual(["std", "sci", "eng"]);
     expect(normalizeCycle(undefined)).toEqual(["std", "sci", "eng"]);
+  });
+});
+
+// The a b/c key (R10): one toggle per result type (P12): decimal ↔ fraction as on the G2 (2.5 ↔ 5/2, owner
+// 2026-10-13), a+bi ↔ polar.
+describe("a b/c forms", () => {
+  const twoAndHalf = factsOf({ value: real(25n, 10n), rational: { n: "5", d: "2" } });
+  const seven3 = factsOf({ value: real(-7n, 3n), rational: { n: "-7", d: "3" } });
+  const five = factsOf({ value: real(5n, 1n), rational: { n: "5", d: "1" } });
+  const complex = factsOf({ value: { re: q(1n), im: q(1n) } });
+  it("Home: decimal ↔ fraction, never a mixed number (the mixed number is a Tmpl template)", () => {
+    expect(nextForm(undefined, twoAndHalf, false)).toEqual({ form: "frac" });
+    expect(nextForm("frac", twoAndHalf, false)).toEqual({ form: undefined });
+    expect(nextForm(undefined, seven3, false)).toEqual({ form: "frac" });
+    expect(nextForm("frac", seven3, false)).toEqual({ form: undefined });
+  });
+  it("complex: a+bi ↔ polar; nothing to switch for a whole number or a symbol", () => {
+    expect(nextForm(undefined, complex, false)).toEqual({ form: "polar" });
+    expect(nextForm("polar", complex, false)).toEqual({ form: undefined });
+    expect(nextForm(undefined, complex, true)).toEqual({ form: "polar" });
+    expect(nextForm(undefined, five, false)).toBeNull();
+    expect(nextForm(undefined, factsOf({}), false)).toBeNull();
+  });
+  it("CAS: exact 5/2 ↔ 2.5 (the exact result already is the fraction)", () => {
+    expect(nextForm(undefined, twoAndHalf, true)).toEqual({ form: "dec" });
+    expect(nextForm("dec", twoAndHalf, true)).toEqual({ form: undefined });
+    expect(nextForm(undefined, five, true)).toBeNull();
   });
   it("polar is offered only for complex results, fractions only for exact rationals", () => {
     expect(isApplicable("polar", factsOf(third))).toBe(false);

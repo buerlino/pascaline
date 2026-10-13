@@ -51,13 +51,17 @@ export class Level {
 
   /** Reopening starts on the last pick (false: always on the first row, for a sheet whose ◀ ▶ change values). */
   private readonly remember: boolean;
+  /** A grid of this many columns (the Tmpl palette, R10): ▲ ▼ ◀ ▶ move in two dimensions, no numbers, no filter.
+   *  Undefined: a list. */
+  readonly columns: number | undefined;
 
-  constructor(title: string, source: () => readonly MenuItem[], memo: string, opts?: { filterable?: boolean; remember?: boolean; at?: string }) {
+  constructor(title: string, source: () => readonly MenuItem[], memo: string, opts?: SheetOptions) {
     this.title = title;
     this.source = source;
     this.memo = memo;
     this.remember = opts?.remember ?? true;
-    this.filterable = opts?.filterable ?? source().length > FILTER_ABOVE;
+    this.columns = opts?.columns;
+    this.filterable = this.columns === undefined && (opts?.filterable ?? source().length > FILTER_ABOVE);
     this.highlight = this.start(opts?.at);
   }
 
@@ -100,13 +104,39 @@ export class Level {
     return (rows.find((r) => !r.item.disabled) ?? rows[0])?.index ?? -1;
   }
 
-  /** ▲ ▼: the next row up or down, round the ends. Disabled rows can be highlighted (their reason is read there). */
+  /** ▲ ▼: the next row up or down, round the ends. Disabled rows can be highlighted (their reason is read there).
+   *  In a grid: the cell above or below, round the ends of its column. */
   move(by: 1 | -1): void {
+    if (this.columns !== undefined) return this.gridMove(by * this.columns, true);
     const rows = this.rows;
     if (rows.length === 0) return;
     const at = rows.findIndex((r) => r.index === this.highlight);
     const next = at < 0 ? (by > 0 ? 0 : rows.length - 1) : (at + by + rows.length) % rows.length;
     this.highlight = (rows[next] as Row).index;
+  }
+
+  /** ◀ ▶ in a grid: the cell before or after in reading order, round the ends of the grid. */
+  step(by: 1 | -1): void {
+    this.gridMove(by, false);
+  }
+
+  private gridMove(by: number, column: boolean): void {
+    const n = this.items.length;
+    const cols = this.columns ?? 1;
+    if (n === 0) return;
+    if (this.highlight < 0) {
+      this.highlight = 0;
+      return;
+    }
+    let next = this.highlight + by;
+    if (column) {
+      // round the ends of the column: from the last row back to the first, and the other way
+      const col = this.highlight % cols;
+      const last = col + cols * Math.floor((n - 1 - col) / cols);
+      if (next < 0) next = last;
+      else if (next >= n) next = col;
+    } else next = (next + n) % n;
+    this.highlight = next;
   }
 
   /** A letter typed into the filter (false: this level has no filter). */
@@ -126,6 +156,14 @@ export class Level {
   }
 }
 
+export interface SheetOptions {
+  filterable?: boolean;
+  remember?: boolean;
+  at?: string;
+  /** A grid of this many columns (see Level.columns). */
+  columns?: number;
+}
+
 /** What a pick did: opened a submenu or did nothing (the sheet stays), or chose an item to run (the sheet closes). */
 export type Picked = { kind: "stay" } | { kind: "run"; item: MenuItem };
 const STAY: Picked = { kind: "stay" };
@@ -135,7 +173,7 @@ export class Sheet {
   readonly id: string;
   levels = $state.raw<Level[]>([]);
 
-  constructor(id: string, title: string, items: () => readonly MenuItem[], opts?: { filterable?: boolean; remember?: boolean; at?: string }) {
+  constructor(id: string, title: string, items: () => readonly MenuItem[], opts?: SheetOptions) {
     this.id = id;
     this.levels = [new Level(title, items, id, opts)];
   }
@@ -151,8 +189,9 @@ export class Sheet {
     return this.levels.map((l) => l.title).join(" › ");
   }
 
-  /** Digit keys and taps: the row numbered `n` (1…10) on screen. */
+  /** Digit keys and taps: the row numbered `n` (1…10) on screen. A grid has no numbers: a digit does nothing there. */
   pickNumber(n: number): Picked {
+    if (this.level.columns !== undefined) return STAY;
     const row = this.level.rows.find((r) => r.n === n);
     return row ? this.activate(row.index) : STAY;
   }
@@ -164,6 +203,10 @@ export class Sheet {
 
   /** ▶: step the highlighted setting up, else open the highlighted item's submenu (only an item that has one). */
   right(): Picked {
+    if (this.level.columns !== undefined) {
+      this.level.step(1);
+      return STAY;
+    }
     const item = this.level.current;
     if (item && !item.disabled && item.adjust) {
       item.adjust(1);
@@ -174,6 +217,10 @@ export class Sheet {
 
   /** ◀ on a setting changed in place: step it down. False when the highlighted item is not one (◀ then goes back). */
   left(): boolean {
+    if (this.level.columns !== undefined) {
+      this.level.step(-1);
+      return true;
+    }
     const item = this.level.current;
     if (!item || item.disabled || !item.adjust) return false;
     item.adjust(-1);

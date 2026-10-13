@@ -202,7 +202,18 @@ function ser(e: Json, o: SerializeOptions): Out {
       return { s: `(${re.s}+${wrap(im, 3)}*i)`, p: 5 };
     }
     case "Degrees":
-      return { s: `${wrap(ser(a0, o), 3)}*pi/180`, p: 2 };
+      // degrees in every angle mode (R10): (pi/180)^angle_radian() is pi/180 in radians and 1 in degrees, read when
+      // evaluated, so a stored definition stays right after the mode changes
+      return { s: `${wrap(ser(a0, o), 3)}*(pi/180)^angle_radian()`, p: 2 };
+    case "Subst": // the evaluate-at template (R10): e at x = a
+      return { s: `subst(${ser(a0, o).s},${ser(a1, o).s}=${wrap(ser(args[2] as Json, o), 1)})`, p: 5 };
+    case "Piecewise": {
+      // the piecewise template (R10): piecewise(condition, value, …); an equation as a condition is a test (==)
+      const cond = (c: Json): string =>
+        isHead(c, "Equal") ? `${wrap(ser(c[1] as Json, o), 1)}==${wrap(ser(c[2] as Json, o), 1)}` : ser(c, o).s;
+      const parts = args.flatMap((p) => (isHead(p, "Pair") ? [cond(p[2] as Json), ser(p[1] as Json, o).s] : []));
+      return { s: `piecewise(${parts.join(",")})`, p: 5 };
+    }
     case "Apply": {
       const f = a0;
       if (isHead(f, "InverseFunction")) {

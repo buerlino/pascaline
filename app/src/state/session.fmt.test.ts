@@ -56,35 +56,64 @@ describe.skipIf(!giacAvailable())("Format key (real Giac)", () => {
     expect(s.settings.format).toBe("std"); // and not the global setting
   });
 
-  it("Fraction and Mixed fraction for an exact rational, Fixed for any number", async () => {
+  it("Fixed is a notation of the Format key; the fraction is a b/c's form (R10)", async () => {
     const s = new Session(await engineCalc(), memoryKv());
-    s.setFmtMode("frac", true);
-    s.setFmtMode("mixed", true);
     s.setFmtMode("fix", true);
     await s.submit("\\frac73");
     const seen: string[] = [];
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 4; i++) {
       await s.cycleFormat();
       seen.push(text(s));
     }
-    // from Standard: sci, eng, fix, frac, mixed, std (derived: 7/3 = 2.3333…, exponent 0)
-    expect(seen).toEqual(["2.33333333333E0", "2.33333333333E0", "2.3333", "7/3", "2 1/3", "2.33333333333"]);
+    // from Standard: sci, eng, fix, std (derived: 7/3 = 2.3333…, exponent 0)
+    expect(seen).toEqual(["2.33333333333E0", "2.33333333333E0", "2.3333", "2.33333333333"]);
+    const forms: string[] = [];
+    for (let i = 0; i < 2; i++) {
+      await s.cycleForm();
+      forms.push(text(s));
+    }
+    expect(forms).toEqual(["7/3", "2.33333333333"]);
+    // the Format key leaves a form: back to the number in its notation
+    await s.cycleForm();
+    await s.cycleFormat();
+    expect(text(s)).toBe("2.33333333333");
   });
 
-  it("polar for a complex result (engine abs and arg), and back to a+b*i", async () => {
+  it("a b/c: 2.5 ↔ 5/2 (G2 item 29, device); a whole number has no other form", async () => {
     const s = new Session(await engineCalc(), memoryKv());
-    s.setFmtMode("polar", true);
+    await s.submit("\\frac52");
+    expect(text(s)).toBe("2.5");
+    expect(await s.cycleForm()).toBe(true);
+    expect(text(s)).toBe("5/2");
+    expect(await s.cycleForm()).toBe(true);
+    expect(text(s)).toBe("2.5");
+    await s.submit("2+3");
+    expect(await s.cycleForm()).toBe(false);
+    expect(text(s)).toBe("5");
+  });
+
+  it("a b/c in CAS: exact 5/2 → 2.5 → 5/2", async () => {
+    const s = new Session(await engineCalc(), memoryKv());
+    s.setView("cas");
+    const cas = (x: Session): string => x.display(x.cas.at(-1)!).text;
+    await s.submit("\\frac52");
+    expect(cas(s)).toBe("5/2");
+    await s.cycleForm();
+    expect(cas(s)).toBe("2.5");
+    await s.cycleForm();
+    expect(cas(s)).toBe("5/2");
+  });
+
+  it("a b/c: polar for a complex result (engine abs and arg), and back to a+b*i", async () => {
+    const s = new Session(await engineCalc(), memoryKv());
     await s.submit("3+4\\mathrm{i}", "3+4*i");
     expect(text(s)).toBe("3+4*i");
-    await s.cycleFormat(); // std -> sci
-    await s.cycleFormat(); // sci -> eng
-    await s.cycleFormat(); // eng -> polar
-    expect(text(s)).toBe("5.00000000000E0∡0.927295218002".replace("5.00000000000E0", "5"));
+    await s.cycleForm(); // -> polar
+    expect(text(s)).toBe("5∡0.927295218002"); // oracle: atan(4/3)
+    await s.cycleForm(); // -> a+b*i
+    expect(text(s)).toBe("3+4*i");
     s.setAngle("deg");
-    await s.cycleFormat(); // polar -> std
-    await s.cycleFormat(); // std -> sci
-    await s.cycleFormat(); // sci -> eng
-    await s.cycleFormat(); // eng -> polar, now in degrees
+    await s.cycleForm(); // -> polar, now in degrees
     expect(text(s)).toBe("5∡53.1301023542"); // oracle: atan(4/3) in degrees
   });
 

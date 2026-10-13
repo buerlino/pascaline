@@ -7,7 +7,7 @@ import type { MenuItem } from "../apps/types.ts";
 import type { AngleUnit, NumberFormat } from "../calc/port.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { hasStrength } from "../input/haptics.ts";
-import { FMT_MODES } from "../state/displayMode.ts";
+import { NOTATION_MODES } from "../state/displayMode.ts";
 import { MAX_DIGITS, type EntryMode, type Session } from "../state/session.svelte.ts";
 
 const ANGLES: readonly AngleUnit[] = ["rad", "deg"];
@@ -96,7 +96,7 @@ export function settingsItems(session: Session): MenuItem[] {
       label: t("settings.fmtCycle"),
       submenu: {
         title: t("settings.fmtCycle"),
-        items: FMT_MODES.map((mode) => ({
+        items: NOTATION_MODES.map((mode) => ({
           id: mode,
           label: t(`settings.fmt.${mode}` as MessageKey),
           keep: true,

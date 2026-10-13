@@ -42,6 +42,8 @@ export interface MenuItem {
   /** Picking the item runs it, or opens this follow-up list in place of the menu (e.g. Intersection: with which?). */
   run?(): void;
   readonly submenu?: SubMenu;
+  /** In a grid sheet (the Tmpl palette): the cell drawn as math; `label` is then its spoken name. */
+  readonly latex?: string;
 }
 
 export interface SubMenu {

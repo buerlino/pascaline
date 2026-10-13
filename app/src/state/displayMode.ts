@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The Format key (fmt): cycles the display of the last result through the modes ticked in Settings.
+// Two keys change how the last result is drawn (R10, the owner's split of 2026-10-13):
+// - the Format key (fmt) cycles its notation: Standard, Scientific, Engineering, Prefixes, Fixed;
+// - the a b/c key (on an empty line) toggles its form: decimal ↔ fraction (as on the G2), a+bi ↔ polar; one cycle per
+//   result type, so the key needs no setting (P12).
 // Plain logic, no Svelte: which modes apply to a result, what comes next, and how a result is drawn in a mode.
 // All number formatting is engine/format.ts (our own formatter), never JS Number.toString.
 import {
@@ -22,9 +25,19 @@ import { complexToLatex, fractionToLatex, homeResultToLatex, polarToLatex } from
 
 export type FmtMode = "std" | "sci" | "eng" | "pfx" | "fix" | "frac" | "mixed" | "polar";
 
-/** Canonical order of the cycle (the order of the Settings checkboxes). */
+/** Every mode a result can be drawn in, in canonical order. "mixed" is reached by neither key since R10 (the mixed
+ *  number is a Tmpl template); it stays so a stored result drawn mixed before keeps its drawing. */
 export const FMT_MODES: readonly FmtMode[] = ["std", "sci", "eng", "pfx", "fix", "frac", "mixed", "polar"];
+/** The Format key's modes (the order of its Settings ticks): the notations. */
+export const NOTATION_MODES: readonly FmtMode[] = ["std", "sci", "eng", "pfx", "fix"];
 export const DEFAULT_FMT_CYCLE: readonly FmtMode[] = ["std", "sci", "eng"];
+
+/** The a b/c key's forms: fraction as on the G2 (2.5 ↔ 5/2, no mixed number: owner, 2026-10-13); polar is ours. */
+export type FormMode = "frac" | "polar";
+export const FORM_MODES: readonly FormMode[] = ["frac", "polar"];
+/** A step of the a b/c cycle on an item: a form, or "dec" = the decimal of a CAS result (whose base is exact). */
+export type FormStep = FormMode | "dec";
+export const isFormStep = (x: unknown): x is FormStep => x === "dec" || (FORM_MODES as readonly unknown[]).includes(x);
 
 export const isFmtMode = (x: unknown): x is FmtMode => typeof x === "string" && (FMT_MODES as readonly string[]).includes(x);
 
@@ -71,14 +84,19 @@ export interface Facts {
   numeric: boolean;
   complex: boolean;
   rational: boolean;
+  /** A rational that is not whole (its fraction differs from the integer). */
+  properFraction: boolean;
 }
 
 export function factsOf(r: NumericResult): Facts {
   const numeric = r.value !== undefined;
+  const rational = r.rational !== undefined && !(numeric && !isZero((r.value as ComplexValue).im));
+  const d = rational ? BigInt((r.rational as Rational).d) : 1n;
   return {
     numeric,
     complex: numeric && !isZero((r.value as ComplexValue).im),
-    rational: r.rational !== undefined && !(numeric && !isZero((r.value as ComplexValue).im)),
+    rational,
+    properFraction: rational && d !== 1n,
   };
 }
 
@@ -90,10 +108,23 @@ export function isApplicable(mode: FmtMode, f: Facts): boolean {
   return true;
 }
 
-/** The ticked modes, in canonical order, keeping only valid ones; never empty. */
+/** The Format key's ticked modes, in canonical order, keeping only notations; never empty. */
 export function normalizeCycle(modes: readonly unknown[] | undefined): FmtMode[] {
-  const picked = FMT_MODES.filter((m) => modes?.includes(m));
+  const picked = NOTATION_MODES.filter((m) => modes?.includes(m));
   return picked.length > 0 ? picked : [...DEFAULT_FMT_CYCLE];
+}
+
+/**
+ * The a b/c key: the form after `current` (undefined = the base form). Each result type has one toggle: a fraction
+ * that is not whole goes decimal ↔ fraction, a complex number a+bi ↔ polar. Home (`exactBase` false): the base is the
+ * decimal (in the result's notation). CAS (`exactBase` true): the base is the exact result, which already is the
+ * fraction, so a fraction toggles with its decimal ("dec"). null: nothing to switch (a whole number, a symbolic result).
+ */
+export function nextForm(current: FormStep | undefined, f: Facts, exactBase: boolean): { form: FormStep | undefined } | null {
+  if (!f.numeric) return null;
+  const other: FormStep | null = f.complex ? "polar" : f.properFraction ? (exactBase ? "dec" : "frac") : null;
+  if (other === null) return null;
+  return { form: current === other ? undefined : other };
 }
 
 /**

@@ -10,14 +10,11 @@ test.beforeEach(async ({ page }) => {
 
 const lastResult = (page: Page) => page.locator('[data-testid="result"]').last().locator(".result");
 
-test("L2: 2 a/b a/b 1 ▶ 2 is the mixed number 2½; ×2 gives 5", async ({ page }) => {
-  await tap(page, ["d2", "frac", "frac", "d1", "right", "d2", "right", "mul", "d2"]);
-  expect(await entryValue(page)).toBe("2\\tfrac12\\times2");
-  await tap(page, ["enter"]);
-  await expect(lastResult(page)).toHaveAttribute("data-text", "5");
-  // one a/b keeps the plain fraction: 1 a/b 4 → ¼ = 0.25
+test("a b/c while typing is the stacked fraction; pressed twice it is two fractions, no mixed number (R10)", async ({ page }) => {
   await tap(page, ["d1", "frac", "d4", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.25");
+  await tap(page, ["d2", "frac", "frac", "d1", "right", "d2"]);
+  expect(await entryValue(page)).not.toContain("tfrac");
 });
 
 test("L3: alpha twice locks capitals, alpha again unlocks; shift alpha alpha locks lower case", async ({ page }) => {

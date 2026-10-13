@@ -3,11 +3,11 @@
 import raw from "../../../spec/keyboard.yaml";
 
 export type Special =
-  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "app" | "cas" | "settings" | "mode" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt" | "copy" | "paste"
+  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "app" | "cas" | "settings" | "mode" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt" | "copy" | "paste" | "tmpl"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
 export const SPECIALS: readonly Special[] = [
-  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "none",
+  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl", "none",
 ];
 
 export type Action = ActionBody & {
@@ -40,7 +40,30 @@ export interface Key {
   /** Legends per layer; a string starting with "$" is an i18n key. */
   readonly label: Readonly<Partial<Record<Layer, string>>>;
   readonly actions: Readonly<Partial<Record<Layer, Action>>>;
-  readonly source: Source;
+  /** Absent in the built app (src/keyboard/shipped.ts). */
+  readonly source?: Source;
+}
+
+/** A template action (and its one-line form, if any). */
+export type InsertAction = Extract<ActionBody, { kind: "insert" }> & { readonly line?: ActionBody };
+
+/** One cell of the template palette (the Tmpl key; spec/keyboard.yaml `templates:`). */
+export interface PaletteItem {
+  readonly id: string;
+  readonly row: number;
+  readonly col: number;
+  /** The template of a key (`key`, `layer`: the same action, one-line form included) or its own insert action. */
+  readonly key?: string;
+  readonly layer?: Layer;
+  readonly action: InsertAction;
+  /** Our reading of the reference, to confirm on the device (false in the built app). */
+  readonly check: boolean;
+}
+
+export interface Palette {
+  readonly columns: number;
+  /** In reading order (row by row). */
+  readonly items: readonly PaletteItem[];
 }
 
 export interface Keyboard {
@@ -52,6 +75,8 @@ export interface Keyboard {
   readonly rows: number;
   readonly keys: readonly Key[];
   readonly byId: ReadonlyMap<string, Key>;
+  /** The Tmpl palette; empty when the spec has none. */
+  readonly palette: Palette;
 }
 
 export class KeyboardSpecError extends Error {}
@@ -113,6 +138,8 @@ function parseBody(v: unknown, where: string): ActionBody {
 /** Validate the parsed YAML and build the lookup tables. Throws KeyboardSpecError with the position of the problem. */
 export function loadKeyboard(doc: unknown): Keyboard {
   if (!isObj(doc) || doc["schema"] !== 1) throw new KeyboardSpecError("keyboard.yaml: schema must be 1");
+  // the built app's copy has no `source` and no `sample` (src/keyboard/shipped.ts); tests load the whole file
+  const shipped = doc["shipped"] === true;
   const columns = int(doc, "columns", "keyboard.yaml");
   const rowColumns = new Map<number, number>();
   const rc = doc["row_columns"];
@@ -146,8 +173,8 @@ export function loadKeyboard(doc: unknown): Keyboard {
     }
     const cls = str(item, "cls", where) as KeyClass;
     if (!CLASSES.includes(cls)) throw new KeyboardSpecError(`${where}: unknown cls '${cls}'`);
-    const source = str(item, "source", where) as Source;
-    if (!SOURCES.includes(source)) throw new KeyboardSpecError(`${where}: unknown source '${source}'`);
+    const source = shipped ? undefined : (str(item, "source", where) as Source);
+    if (source !== undefined && !SOURCES.includes(source)) throw new KeyboardSpecError(`${where}: unknown source '${source}'`);
     const labelRaw = item["label"];
     if (!isObj(labelRaw)) throw new KeyboardSpecError(`${where}: 'label' must be a mapping`);
     const label: Partial<Record<Layer, string>> = {};
@@ -162,14 +189,55 @@ export function loadKeyboard(doc: unknown): Keyboard {
     for (const layer of ["shift", "alpha"] as const)
       if ((label[layer] !== undefined) !== (actions[layer] !== undefined))
         throw new KeyboardSpecError(`${where}: ${layer} needs both a label and an action`);
-    const key: Key = { id, row, col, span, cls, label, actions, source };
+    const key: Key = { id, row, col, span, cls, label, actions, ...(source ? { source } : {}) };
     keys.push(key);
     byId.set(id, key);
   }
   const rows = keys.reduce((m, k) => Math.max(m, k.row + 1), 0);
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
   const units = [columns, ...rowColumns.values()].reduce((a, b) => (a * b) / gcd(a, b), 1);
-  return { columns, rowColumns, units, rows, keys, byId };
+  const palette = loadPalette(doc["templates"], byId, shipped);
+  return { columns, rowColumns, units, rows, keys, byId, palette };
+}
+
+/** The `templates:` section: a grid of cells, each the template of a key or its own insert action with a sample. */
+function loadPalette(v: unknown, byId: ReadonlyMap<string, Key>, shipped: boolean): Palette {
+  if (v === undefined) return { columns: 1, items: [] };
+  if (!isObj(v)) throw new KeyboardSpecError("templates: must be a mapping");
+  const columns = int(v, "columns", "templates");
+  const list = v["items"];
+  if (!Array.isArray(list)) throw new KeyboardSpecError("templates: 'items' must be a list");
+  const items: PaletteItem[] = [];
+  const ids = new Set<string>();
+  const cells = new Set<string>();
+  for (const it of list) {
+    if (!isObj(it)) throw new KeyboardSpecError("templates: every item must be a mapping");
+    const id = str(it, "id", "template");
+    const where = `template '${id}'`;
+    if (ids.has(id)) throw new KeyboardSpecError(`${where}: duplicate id`);
+    ids.add(id);
+    const row = int(it, "row", where);
+    const col = int(it, "col", where);
+    if (col >= columns) throw new KeyboardSpecError(`${where}: col ${col} is outside ${columns} columns`);
+    if (cells.has(`${row},${col}`)) throw new KeyboardSpecError(`${where}: position ${row},${col} is taken`);
+    cells.add(`${row},${col}`);
+    const check = it["check"] === true;
+    if (it["key"] !== undefined) {
+      if (it["insert"] !== undefined) throw new KeyboardSpecError(`${where}: either 'key' or 'insert', not both`);
+      const keyId = str(it, "key", where);
+      const layer = str(it, "layer", where) as Layer;
+      if (!LAYERS.includes(layer)) throw new KeyboardSpecError(`${where}: unknown layer '${layer}'`);
+      const action = byId.get(keyId)?.actions[layer];
+      if (action?.kind !== "insert") throw new KeyboardSpecError(`${where}: key '${keyId}' has no template in its ${layer} layer`);
+      items.push({ id, row, col, key: keyId, layer, action: action as InsertAction, check });
+    } else {
+      const action = parseAction({ insert: it["insert"], sample: it["sample"] }, where);
+      if (action.kind !== "insert" || (!action.sample && !shipped)) throw new KeyboardSpecError(`${where}: needs 'insert' and 'sample'`);
+      items.push({ id, row, col, action: action as InsertAction, check });
+    }
+  }
+  items.sort((a, b) => a.row - b.row || a.col - b.col);
+  return { columns, items };
 }
 
 /** Number of cells in a row. */
@@ -218,9 +286,13 @@ export interface Template {
   readonly sample?: readonly [string, string];
 }
 
-/** Every LaTeX template on the keyboard, including the one-line variants (each needs a parser case). */
+/** Every LaTeX template on the keyboard, including the one-line variants and the palette's own templates (keyId
+ *  `tmpl:<id>`); each needs a parser case. */
 export function templates(kb: Keyboard): Template[] {
   const out: Template[] = [];
+  for (const p of kb.palette.items)
+    if (p.key === undefined)
+      out.push({ keyId: `tmpl:${p.id}`, layer: "primary", variant: "normal", latex: p.action.latex, ...(p.action.sample ? { sample: p.action.sample } : {}) });
   for (const key of kb.keys)
     for (const layer of LAYERS) {
       const a = key.actions[layer];
