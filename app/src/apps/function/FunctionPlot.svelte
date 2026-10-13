@@ -237,10 +237,15 @@
     position: absolute;
     inset: 0;
   }
+  /* a hint sits in a box at the top of the board, above the axes, never drawn over them */
   .note {
     position: absolute;
-    inset: 40% 0 auto;
+    inset: 8px 12px auto;
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 8px;
     text-align: center;
+    background: var(--panel);
     color: var(--muted);
     pointer-events: none;
   }

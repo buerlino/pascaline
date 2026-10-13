@@ -1,8 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
   import { legend } from "../i18n/index.ts";
-  import { KeyHold, PAD_KEYS, REPEAT_KEYS, Repeat, Stepper, type PadDir } from "./gestures.ts";
-  import { gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
+  import { PAD_KEYS, REPEAT_KEYS, Repeat, Stepper, type PadDir } from "./gestures.ts";
+  import { fitLegends } from "./fit.ts";
+  import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
 
   let {
     shift,
@@ -32,6 +33,35 @@
     (k.actions.primary?.kind === "special" && k.actions.primary.name === "shift" && shift) ||
     (k.actions.primary?.kind === "special" && k.actions.primary.name === "alpha" && alpha);
 
+  /** A key that does nothing in the current layer (a key we don't have yet, or a layer it has no function in). */
+  const dead = (k: Key): boolean => {
+    const p = k.actions.primary;
+    if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return false; // the modifiers work in every layer
+    const a = actionFor(k, shift, alpha);
+    return !a || (a.kind === "special" && a.name === "none");
+  };
+
+  // Every face and legend is shrunk until it fits its key: never cut, never overlapping (U0, docs/05 3.7).
+  let padEl: HTMLDivElement | undefined = $state();
+  $effect(() => {
+    // re-fit when the layer changes (the faces change with it) and when the pad's width does
+    void shift;
+    void alpha;
+    if (!padEl) return;
+    const pad = padEl;
+    fitLegends(pad);
+    if (typeof ResizeObserver === "undefined") return;
+    let width = pad.clientWidth;
+    const ro = new ResizeObserver(() => {
+      if (pad.clientWidth !== width) {
+        width = pad.clientWidth;
+        fitLegends(pad);
+      }
+    });
+    ro.observe(pad);
+    return () => ro.disconnect();
+  });
+
   // ---- gestures (docs/decisions.md P7). One pointer handler on the whole pad, one gesture per finger.
   // The trackpad (K1): the four arrow keys are its tap zones; a drag steps in 2D (gestures.ts), a tap is one step.
   const isPadKey = (k: Key): boolean => (PAD_KEYS as readonly string[]).includes(k.id);
@@ -44,15 +74,13 @@
     return { rows: `${Math.min(...rows) + 1} / ${Math.max(...rows) + 2}`, cols: `${Math.min(...starts)} / ${Math.max(...ends)}` };
   })();
 
-  // Hold and drag (K2): any other key fires when the finger lifts; held still for HOLD_MS it is the 2D cursor
-  // (the keys dim) until the finger lifts. ⌫ fires on touch and repeats while held instead.
+  // Any other key fires when the finger lifts (flicks, R9, need the lift); a slip or a long hold is still that key.
+  // ⌫ fires on touch and repeats while held instead.
   type Gesture =
     | { kind: "pad"; key: Key | undefined; x0: number; y0: number; steps: Stepper }
-    | { kind: "key"; x0: number; y0: number; hold: KeyHold }
+    | { kind: "key"; key: Key | undefined }
     | { kind: "repeat"; repeat: Repeat };
   const gestures = new Map<number, Gesture>();
-  let padEl: HTMLDivElement | undefined = $state();
-  let cursor = $state(false);
   $effect(() => () => {
     for (const g of gestures.values()) cancel(g);
     gestures.clear();
@@ -89,27 +117,13 @@
     const [x0, y0] = [ev.clientX, ev.clientY];
     if (target === "pad" || (target && isPadKey(target)))
       gestures.set(ev.pointerId, { kind: "pad", key: target === "pad" ? undefined : target, x0, y0, steps: new Stepper() });
-    else {
-      // a key, or a gap between keys: the hold works anywhere on the keypad
-      const hold = new KeyHold({
-        cursor: () => {
-          cursor = true;
-          ontouch();
-        },
-        step,
-        tap: () => target && onpress(target),
-        end: () => (cursor = false),
-      });
-      gestures.set(ev.pointerId, { kind: "key", x0, y0, hold });
-    }
+    else gestures.set(ev.pointerId, { kind: "key", key: target });
   }
 
   function move(ev: PointerEvent): void {
     const g = gestures.get(ev.pointerId);
-    if (!g || g.kind === "repeat") return;
-    const [dx, dy] = [ev.clientX - g.x0, ev.clientY - g.y0];
-    if (g.kind === "key") g.hold.move(dx, dy);
-    else for (const dir of g.steps.move(dx, dy)) step(dir);
+    if (!g || g.kind !== "pad") return;
+    for (const dir of g.steps.move(ev.clientX - g.x0, ev.clientY - g.y0)) step(dir);
   }
 
   function step(dir: PadDir): void {
@@ -129,19 +143,19 @@
 
   /**
    * The finger lifts (or another one comes down): a trackpad touch without a step was a tap on its zone, a key
-   * touch before the hold is the key, a hold ends the cursor, ⌫ stops repeating.
+   * touch is the key, ⌫ stops repeating.
    */
   function finish(g: Gesture): void {
     if (g.kind === "pad") {
       if (g.steps.count === 0 && g.key) onpress(g.key);
-    } else if (g.kind === "key") g.hold.release();
-    else g.repeat.stop();
+    } else if (g.kind === "key") {
+      if (g.key) onpress(g.key);
+    } else g.repeat.stop();
   }
 
-  /** The browser took the touch (a scroll, a system gesture): nothing fires, the cursor mode ends. */
+  /** The browser took the touch (a scroll, a system gesture): nothing fires. */
   function cancel(g: Gesture): void {
-    if (g.kind === "key") g.hold.cancel();
-    else if (g.kind === "repeat") g.repeat.stop();
+    if (g.kind === "repeat") g.repeat.stop();
   }
 
   function cancelled(ev: PointerEvent): void {
@@ -156,7 +170,6 @@
   class="pad"
   class:shifted={shift}
   class:alphaed={alpha}
-  data-cursor={cursor ? "true" : undefined}
   style:grid-template-columns={`repeat(${keyboard.units}, 1fr)`}
   bind:this={padEl}
   onpointerdown={down}
@@ -177,12 +190,14 @@
       data-locked={key.id === "alpha" && alphaLock ? "true" : undefined}
       style:grid-row={key.row + 1}
       style:grid-column={`${gridPlace(keyboard, key).start} / span ${gridPlace(keyboard, key).span}`}
-      data-reserved={key.actions.primary?.kind === "special" && key.actions.primary.name === "none" ? "true" : undefined}
+      data-dead={dead(key) ? "true" : undefined}
       data-zone={isPadKey(key) ? "true" : undefined}
     >
-      <span class="main">{face(key)}</span>
-      {#if hint(key)}<span class="shiftlegend">{hint(key)}</span>{/if}
-      {#if alphaHint(key)}<span class="alphalegend">{alphaHint(key)}</span>{/if}
+      <span class="legends">
+        <span class="alphalegend" data-fit="legend">{alphaHint(key)}</span>
+        <span class="shiftlegend" data-fit="legend">{hint(key)}</span>
+      </span>
+      <span class="main" data-fit="face">{face(key)}</span>
     </button>
   {/each}
 </div>
@@ -199,9 +214,15 @@
     touch-action: none;
     -webkit-touch-callout: none;
   }
+  /* Each key has its own legend line above the face (never overlapping it); fit.ts shrinks what is too wide. */
   .key {
     position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: var(--legend-h) 1fr;
     min-height: 48px;
+    min-width: 0;
+    padding: 0 var(--key-pad) 2px;
     border: 0;
     border-radius: 8px;
     color: var(--text);
@@ -209,6 +230,22 @@
     font-size: 20px;
     background: var(--key-num);
     -webkit-tap-highlight-color: transparent;
+  }
+  .legends {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 2px;
+    height: var(--legend-h);
+    line-height: var(--legend-h);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .main {
+    align-self: center;
+    justify-self: center;
+    white-space: nowrap;
+    line-height: 1.1;
   }
   .key:active {
     filter: brightness(1.4);
@@ -247,37 +284,19 @@
     filter: none;
     opacity: 1;
   }
-  /* hold and drag (K2): the keys dim while the keypad is the cursor */
-  .key,
-  .trackpad {
-    transition: opacity 0.12s;
-  }
-  .pad[data-cursor="true"] .key,
-  .pad[data-cursor="true"] .trackpad {
-    opacity: 0.3;
-  }
-  /* a key whose function we don't have yet: only its letter matters */
-  .key[data-reserved="true"] .main {
-    opacity: 0.4;
-    font-size: 14px;
+  /* a key that does nothing in this layer (and only in this layer) is dimmed, still readable */
+  .key[data-dead="true"] .main {
+    color: var(--text-dead);
   }
   .key.enter {
     background: var(--key-enter);
-    color: #fff;
+    color: var(--on-enter);
     font-size: 16px;
   }
   .shiftlegend {
-    position: absolute;
-    top: 2px;
-    right: 6px;
-    font-size: 11px;
     color: var(--shift);
   }
   .alphalegend {
-    position: absolute;
-    top: 2px;
-    left: 6px;
-    font-size: 11px;
     color: var(--alpha);
   }
   .shifted .main {
@@ -285,6 +304,16 @@
   }
   .alphaed .main {
     color: var(--alpha);
+  }
+  /* Enter keeps one colour in every layer: the coloured text would not read on its green */
+  .key.enter .main,
+  .key.enter .shiftlegend,
+  .key.enter .alphalegend {
+    color: var(--on-enter);
+  }
+  .shifted .key[data-dead="true"] .main,
+  .alphaed .key[data-dead="true"] .main {
+    color: var(--text-dead);
   }
   .key[aria-pressed="true"] {
     outline: 2px solid var(--shift);
