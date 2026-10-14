@@ -116,7 +116,7 @@ Three parallel tracks per milestone. A milestone is done when its benchmark task
 Solve and Function are frozen for features, not for bugs (owner, 2026-10-13). Found while adding G3's 30-digit cases; they predate G3. Each gets a golden case first, then the fix.
 - [x] **SB1. Done (G5, merge commit below).** Residual check too strict at 12 digits: s30-wilk7's equation (`expand(product(x-k/7,k,1,25))=0`, guess 3.4, in `tests/golden/solve.yaml`) gives "no root found" at digits 12; the residual check at W = 30 rejects a good root of that polynomial.
 - [x] **SB2. Done (G5).** Newton did not converge on a quadruple root: `expand((x-1/3)^4)=0` finds no root.
-- **SB3. Not the nearest root (fix package G5f1, night shift 2026-10-14):** `expand(product(x-k-1/3,k,1,20))=0` with guess 15.33 returns 3.33333333333 (info "sign change in [-4.2924, 5.5188]"), not 15.3333333333 (46/3); guess 10.3 returns 1.33333333333, not 31/3 (probe 2026-10-14; the equation is from the G3 session).
+- [x] **SB3. Done (G5f1).** Not the nearest root: `expand(product(x-k-1/3,k,1,20))=0` with guess 15.33 returns 3.33333333333 (info "sign change in [-4.2924, 5.5188]"), not 15.3333333333 (46/3); guess 10.3 returns 1.33333333333, not 31/3 (probe 2026-10-14; the equation is from the G3 session).
 - [x] **SB4. Done (G5).** A list took its weakest element's mark for every element:** `[romberg(exp(-x^2),x,0,1),1/3]` shows 1/3 with ⚠13 (`floatFacts` marks every element with the weakest). Home, not Solve, but found with them.
 
 ### Follow-ups from the G2 answers (Virtual Calculator, 2026-10-12)
