@@ -30,7 +30,7 @@ What already works and stays: the keypad's colour grouping, live faces for the S
 
 These sit under the three principles in CLAUDE.md and decide the details below.
 
-1. **The keypad drives everything.** Every screen, list and dialog can be used with keys alone. Touch is a shortcut, never the only way (the G2 habit, and the fastest way on a phone held in one hand).
+1. **The keypad drives everything.** Every screen, list and dialog can be used with keys alone. Touch is a shortcut, never the only way (the G2 habit, and the fastest way on a phone held in one hand). A sheet over the keypad is the exception on a phone: its rows sit where the keys were, so a tap on a row is the key press, and the top cluster still moves, goes back and closes (3.1); a hardware keyboard drives every sheet and Settings with keys alone.
 2. **One way to choose.** Every choice (apps, menus, Find, templates, settings values, history actions) uses the same sheet with the same keys (section 3.1). Learn it once.
 3. **State is always visible.** Angle mode, format, digits, Shift/Alpha, a running job and the current place are always on screen, in the same spot.
 4. **Nothing is lost without notice.** No key goes "through" an open sheet; a dead key looks dead and gives a short haptic "no".
@@ -42,7 +42,7 @@ These sit under the three principles in CLAUDE.md and decide the details below.
 
 ### 3.1 One sheet for every list (replaces `PickList`)
 
-A sheet slides up from just above the entry line and covers the history or view, never the keypad. Inside a sheet:
+A pick sheet (Apps, every Menu, Mode, Tmpl, the Shift palettes) rises over the keypad's maths rows (rows 3–9), anchored at the keypad's bottom edge where the thumb is, and sized to its rows. It never covers the top cluster (rows 0–2), whose keys keep the jobs in the table below; no key moves (docs/03 rule 8). A pick closes it and the user goes on typing; a tap in the viewport closes it; maths keys a short sheet leaves visible keep their sheet job (a digit picks its row), dimmed. A list that takes letters (Find, any filtered list) stays above the keypad, over the history or view, because its query needs the letter keys. Inside a sheet:
 
 | Key | Action |
 |---|---|
@@ -56,7 +56,7 @@ A sheet slides up from just above the entry line and covers the history or view,
 | Menu | Closes the sheet (the same key opens and closes it) |
 
 - **Remembers the last pick** per sheet: reopening a menu highlights the item used last, so a repeated action is Menu + Enter (2 keys).
-- **Scroll cue:** a fade at the cut edge plus a count ("7 items") in the title row when not everything fits (fixes finding 5). The sheet may grow over the entry line when it needs the room.
+- **Fit, then scroll:** rows and grid cells shrink to the room, from their normal size down to a floor (list rows 36 px, grid cells 44 px); only below the floor does the sheet scroll, with a fade at the cut edge and a count ("7 items") in the title row (fixes finding 5). A grid has no title row: its title and × share the hint line. Shift + 6 draws each cell over the key that picks it (7 8 9 ÷ / 4 5 6 × / 1 2 3).
 - **Disabled items** stay in place (numbers never shift) and say why on a second line ("Define a function first").
 - Built once as `Sheet.svelte` plus a small model (`items`, `submenu`, `lastPick`, `filter`). Find (EN1), the template list (EN5), Base (EN6), the Units suggestions (EN2) and Settings values all use it. Find adds its preview pane and ranking but keeps the same keys.
 
@@ -95,8 +95,8 @@ One row of up to 6 touch buttons directly above the entry line. Its content foll
 
 Split by how often a thing changes:
 
-- **Mode sheet** (a tap on a status chip; Shift + CAS until R15b removes that key, P12): angle, format, digits, entry (textbook/one-line); the decimals of Fixed are in Settings › Format key cycle (R13). Each row is a sheet item; ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes. Digits open a list of presets on a digit or Enter (4 6 8 10 12 15 20 25 30), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: one tap on the chip (by keys Shift, CAS, ▶, Enter: 4 presses, 3 with a flick up on CAS, until R15b); 20 digits: digits chip, Enter, 7 (by keys Shift, CAS, 3, 7).
-- **Settings** (the last item of the Mode sheet; Shift + Home/CAS until R15b, P12): Format key cycle (a list of switches), haptics (on/off, strength on Android only, length), decimal comma, theme, about and licences; the first two are built (R8), theme comes with R12b, the rest later. Same sheet keys; no native `<select>` (they open the system picker, which the keypad cannot drive).
+- **Mode sheet** (a tap on a status chip; Shift + CAS until R15b removes that key, P12): angle, format, digits, entry (textbook/one-line); the decimals of Fixed are in Settings › Format key cycle (R13). Each row is a sheet item over the keypad (3.1); ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes; each value also has ◀ ▶ buttons for the thumb. Digits open a list of presets on a digit or Enter (4 6 8 10 12 15 20 25 30), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: one tap on the chip (by keys Shift, CAS, ▶, Enter: 4 presses, 3 with a flick up on CAS, until R15b); 20 digits: digits chip, Enter, 7 (by keys Shift, CAS, 3, 7).
+- **Settings** (the last item of the Mode sheet; Shift + Home/CAS until R15b, P12): a page over everything (status line, viewport and keypad), because it is set once and the user wants to see all of it (R21). One scrolling page with sections instead of submenus: Format key cycle (its switches and Decimals), haptics (on/off, strength on Android only, length), Shift / Alpha taps, then decimal comma, theme (R12b), user keys (R15b), about and licences. Every value has ◀ ▶ buttons of at least 44 px; a switch toggles on a tap. Closed by ×, Android back or Esc; a hardware keyboard drives it with the sheet keys. No native `<select>` (they open the system picker, which the keypad cannot drive).
 - This uses the duplicate Settings cell (finding 2) for the Mode sheet. **Keypad layout question for the owner:** this changes the meaning of Shift + CAS, not its position or the visual keypad. The reference opens CAS settings there, so the habit fits.
 
 ### 3.5 History rows
