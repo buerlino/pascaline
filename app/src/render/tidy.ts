@@ -113,13 +113,42 @@ function subscriptNames(s: string): string {
  */
 function greekNames(s: string): string {
   return s
-    .replace(/\\(beta|gamma|Gamma|epsilon)_(?![A-Za-z0-9{])(?=([A-Za-z]?))/g, (_, n: string, letter: string) =>
+    .replace(/\\(beta|gamma|Gamma|epsilon|Phi|Psi)_(?![A-Za-z0-9{])(?=([A-Za-z]?))/g, (_, n: string, letter: string) =>
       `\\${n === "epsilon" ? "varepsilon" : n}${letter ? " " : ""}`)
     .replace(/\\phi(?![A-Za-z])/g, "\\varphi");
 }
 
+/**
+ * R18f1: a ≠ test that stays as typed comes back from latex() as a call, `\mathrm{!=}\left(a,b\right)`; drawn a≠b.
+ * The comma that splits it is the one outside every bracket.
+ */
+function notEqualCalls(s: string): string {
+  const head = "\\mathrm{!=}\\left(";
+  let at = s.indexOf(head);
+  while (at >= 0) {
+    const start = at + head.length;
+    let depth = 0;
+    let comma = -1;
+    let end = -1;
+    for (let i = start; i < s.length && end < 0; i++) {
+      const c = s[i];
+      if (c === "(" || c === "[" || c === "{") depth++;
+      else if (c === ")" || c === "]" || c === "}") {
+        if (depth === 0) end = i;
+        else depth--;
+      } else if (c === "," && depth === 0 && comma < 0) comma = i;
+    }
+    if (end < 0 || comma < 0 || !s.slice(start, end + 1).endsWith("\\right)")) return s;
+    const close = end + 1 - "\\right)".length;
+    s = `${s.slice(0, at)}${s.slice(start, comma)}\\ne ${s.slice(comma + 1, close)}${s.slice(end + 1)}`;
+    at = s.indexOf(head, at);
+  }
+  return s;
+}
+
 export function tidyGiacLatex(raw: string): string {
   let s = raw.trim();
+  s = notEqualCalls(s);
   s = greekNames(s);
   s = subscriptNames(s);
   // matrices

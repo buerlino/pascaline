@@ -38,8 +38,31 @@ const CONST: Record<string, string> = {
   PositiveInfinity: "inf", NegativeInfinity: "(-inf)", ComplexInfinity: "infinity",
 };
 const REL: Record<string, string> = {
-  Equal: "=", NotEqual: "!=", Less: "<", LessEqual: "<=", Greater: ">", GreaterEqual: ">=",
+  Equal: "=", Less: "<", LessEqual: "<=", Greater: ">", GreaterEqual: ">=",
 };
+
+/** The Giac name Home and CAS read after a test to learn that a side held a float (engine/homeEval.ts, same name). */
+export const EQ_INEXACT_FLAG = "pasinexact";
+
+/**
+ * R18f1: `a == b` and `a ≠ b` as value tests (decisions "2026-10-14 R18 defaults" point 6). Giac's own `==` compares
+ * the expressions, so `x==2` (x free) and `sin(1)^2+cos(1)^2==1` both gave an exact-looking false. Here the test is
+ * true when the difference simplifies to exact 0; false when the difference has no free names and is an exact rational,
+ * or its 30-digit value is clearly not 0 against the sides (an evaluation at 30 digits is off by about 10^-30 of the
+ * sides, so 10^-20 leaves a wide margin); otherwise it stays as typed, like `x>0`. ≠ is the exact negation. A side
+ * with a float in it (`evalf(pi)`, a romberg value) sets EQ_INEXACT_FLAG, and the result then carries the approximate
+ * mark: a float can only be compared to its own digits.
+ */
+function equalityTest(a: Out, b: Out, negate: boolean): Out {
+  const [yes, no, rel] = negate ? ["false", "true", "!="] : ["true", "false", "=="];
+  const kept = `'${wrap(a, 1)}${rel}${wrap(b, 1)}'`;
+  const big = (v: string): string => `max(abs(evalf(${v},30)))`;
+  const test =
+    `{if(string(exact(d_))!=string(d_))sto(1,${EQ_INEXACT_FLAG});` +
+    `when(simplify(d_)==0*d_,${yes},when(lname(d_)==[] and (type(d_)==integer or type(d_)==rational or ` +
+    `${big("d_")}>10^-20*max(${big("a_")},${big("b_")})),${no},${kept}))}`;
+  return { s: `((a_,b_)->((d_)->${test})(a_-b_))(${a.s},${b.s})`, p: 5 };
+}
 
 const LOGIC: Record<string, string> = { And: "and", Or: "or" };
 
@@ -257,9 +280,10 @@ function ser(e: Json, o: SerializeOptions): Out {
     return { s: `${wrap(ser(a0, o), 2)}*(cos(${t})+i*sin(${t}))`, p: 2 };
   }
   if (head === "Assign") return { s: `${wrap(ser(a0, o), 1)}:=${wrap(ser(a1, o), 0)}`, p: 0 };
-  // R18, the Shift + 6 palette: == tests equality (true/false), unlike = which makes an equation; the logic words
-  // bracket every operand that is not an atom, so Giac's precedence never decides
-  if (head === "EqualTest") return { s: `${wrap(ser(a0, o), 1)}==${wrap(ser(a1, o), 1)}`, p: 0 };
+  // R18, the Shift + 6 palette: == tests equality (true/false), unlike = which makes an equation; ≠ is its negation
+  // (R18f1: by value, never Giac's structural ==). The logic words bracket every operand that is not an atom, so
+  // Giac's precedence never decides
+  if (head === "EqualTest" || head === "NotEqual") return equalityTest(ser(a0, o), ser(a1, o), head === "NotEqual");
   if (head in LOGIC) return { s: args.map((a) => wrap(ser(a, o), 5)).join(` ${LOGIC[head] as string} `), p: 0 };
   if (head === "Xor") {
     // not Giac's xor: it gives 0 when an operand is symbolic, so (x>0) xor (x<1) would be a silent wrong answer

@@ -67,6 +67,8 @@ export interface CasOutcome {
   error?: CalcError;
   /** The result as a number, when it is one. */
   numeric?: HomeResult;
+  /** A true or false that rests on a float (an == or ≠ test, R18f1). */
+  approximate?: boolean;
 }
 
 /** Thrown by home()/cas() when Cancel stopped the job. */

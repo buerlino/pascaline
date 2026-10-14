@@ -75,6 +75,19 @@ for (const [name, keys, entry, result] of BY_KEY)
     await expect(lastResult(page)).toHaveAttribute("data-text", result);
   });
 
+// R18f1: == tests values, never Giac's structural == (decisions "2026-10-14 R18 defaults" point 6)
+test("x == 2 with x free stays x==2, never false; sin(1)²+cos(1)² == 1 is true; a float side is marked ≈", async ({ page }) => {
+  await tap(page, ["x", ...S6, "d4", "d2", "enter"]);
+  await expect(lastResult(page)).toHaveAttribute("data-text", "(x==2)");
+  await expect(lastRow(page).getByTestId("mark")).toHaveCount(0);
+  await page.evaluate(() => window.pascaline.session.submit("\\sin\\left(1\\right)^2+\\cos\\left(1\\right)^2==1"));
+  await expect(lastResult(page)).toHaveAttribute("data-text", "true");
+  await expect(lastRow(page).getByTestId("mark")).toHaveCount(0);
+  await page.evaluate(() => window.pascaline.session.submit("\\operatorname{evalf}\\left(\\pi\\right)==\\pi"));
+  await expect(lastResult(page)).toHaveAttribute("data-text", "true");
+  await expect(lastRow(page).getByTestId("mark")).toHaveText("≈");
+});
+
 // MathLive writes \operatorname{AND} on an empty line and \operatorname{\mathrm{AND}} after a term; the parser reads both
 test("Shift + 6 by tap: every cell, between 2 and 3", async ({ page }) => {
   const cells: [string, string][] = [

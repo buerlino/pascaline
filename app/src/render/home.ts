@@ -32,18 +32,36 @@ export function polarToLatex(p: FormattedPolar): string {
   return `${n(p.r)}\\mathbin{\\measuredangle}${n(p.theta)}`;
 }
 
-/** The Greek variable names as Giac prints them (input/parse.ts GREEK, R18; beta_, gamma_, Gamma_, epsilon_ stand in
- *  for names Giac keeps), and the letter each one is drawn as. Kept here, not imported, so the parser stays lazy. */
+/** The Greek variable names as Giac prints them (input/parse.ts GREEK, R18; beta_, gamma_, Gamma_, epsilon_, Phi_,
+ *  Psi_ stand in for names Giac keeps), and the letter each one is drawn as. Kept here, not imported, so the parser
+ *  stays lazy. */
 const GREEK_NAME =
-  /(?<![A-Za-z0-9_\\])(alpha|beta_|gamma_|delta|epsilon_|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|rho|sigma|tau|phi|chi|psi|omega|Gamma_|Delta|Theta|Lambda|Sigma|Phi|Psi|Omega)(?![A-Za-z0-9_])/g;
+  /(?<![A-Za-z0-9_\\])(alpha|beta_|gamma_|delta|epsilon_|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|rho|sigma|tau|phi|chi|psi|omega|Gamma_|Delta|Theta|Lambda|Sigma|Phi_|Psi_|Omega)(?![A-Za-z0-9_])/g;
 const greekLetter = (name: string): string => {
   const n = name.replace(/_$/, "");
   return `\\${n === "epsilon" ? "varepsilon" : n === "phi" ? "varphi" : n} `;
 };
 
+/** Brackets that pair up and never close below depth 0. */
+function balanced(s: string): boolean {
+  let depth = 0;
+  for (const c of s) {
+    if (c === "(") depth++;
+    else if (c === ")" && --depth < 0) return false;
+  }
+  return depth === 0;
+}
+
+/** R18f1: an equality test that stays as typed is printed `(x==2)` or `x<>2`; drawn as x==2 and x≠2. */
+function relationText(s: string): string {
+  const inner = /^\((.*)\)$/.exec(s)?.[1];
+  const t = inner !== undefined && /==|<>/.test(inner) && balanced(inner) ? inner : s;
+  return t.replace(/<>/g, "\\ne ");
+}
+
 /** `-1.5E-7` / `1.5×10^-7` style display strings -> LaTeX. Anything else is drawn as typed. */
 export function homeResultToLatex(display: string): string {
-  const s = display.trim();
+  const s = relationText(display.trim());
   const sci = /^([+-]?\d+(?:\.\d+)?)\s*(?:E|e|×10\^)\s*([+-]?\d+)$/.exec(s);
   if (sci) return `${sci[1]}\\times10^{${sci[2]}}`;
   return s

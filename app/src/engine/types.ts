@@ -44,6 +44,8 @@ export interface CasResult {
   /** The result as a number, when it is one with a float in it (docs/04 section 2.9): the value the mark, the copy and
    *  the digits setting work on. Exact CAS results (`1/3`, `sqrt(2)`) have none: they get no mark. */
   numeric?: HomeResult;
+  /** A true or false that rests on a float (an == or ≠ test, R18f1): drawn with the approximate mark. */
+  approximate?: boolean;
 }
 
 export interface EvalResult {

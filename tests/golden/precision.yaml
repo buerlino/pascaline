@@ -6,6 +6,7 @@
 #   kind        absent = Home (exact-first), "cas" = the CAS view (host.cas, `text`)
 #   settings    { digits: N } significant digits (default 12); angle as in home.yaml; `shown: N` the digits the result is
 #               shown with when the input asks for them (CAS `evalf(x,n)`, decisions M4-6); the oracle rounds to it
+#   latex       instead of `input`: what the keys type, through our parser first (with `before`), R18f1
 #   before      inputs evaluated first, in the same view and engine (a stored variable, decisions M4-7)
 #   expect      the text shown, in STD at `digits`; for source: oracle, written by tests/golden/oracle.py
 #               (`oracle.py --write precision.yaml`, evaluated at digits+20 and digits+50 and required to agree)
@@ -88,3 +89,16 @@ cases:
   # --- found in G3, not fixed: a value that cancels to 0 at every precision tried is shown as an exact-looking 0 -------
   - { id: "prec-zero-cancel", input: "exp(10^-70)-1", mark: "⚠", source: "derived", note: "the true value is 1.0000…E-70; evalf at P, P+20 and P+40 all give 0. Two zeros confirm no digit of a value that is not exactly 0: ⚠ without a count, never ≈ 0 (owner, 2026-10-13, G3 decision 1). Mark-only: the shown text is 0" }
   - { id: "prec-zero-cancel-cas", kind: "cas", input: "evalf(exp(10^-70)-1)", mark: "⚠", source: "derived", note: "the same on the float path (floatFacts): the float 0 is not known to be exactly 0 (owner, 2026-10-13, G3 decision 1)" }
+  # --- R18f1 (2026-10-14): == and ≠ test values, never Giac's structural == (decisions "2026-10-14 R18 defaults" point 6).
+  # Typed as latex (the test form is the parser's). A true or false that rests on a float is "≈", written by hand with a
+  # note; an exact test is not a number and carries no mark.
+  - { id: "prec-eq-free-name", latex: "x==2", expect: "(x==2)", source: "derived", note: "x is free: stays as typed (drawn x==2), never false; it showed false before R18f1" }
+  - { id: "prec-eq-trig-1", latex: "\\sin\\left(1\\right)^2+\\cos\\left(1\\right)^2==1", expect: "true", source: "derived", note: "showed false before R18f1" }
+  - { id: "prec-ne-trig-1", latex: "\\sin\\left(1\\right)^2+\\cos\\left(1\\right)^2\\ne1", expect: "false", source: "derived", note: "showed true before R18f1" }
+  - { id: "prec-ne-free-name", latex: "x\\ne2", expect: "x<>2", source: "derived", note: "stays as typed; Giac prints ≠ as <>, drawn as ≠" }
+  - { id: "prec-eq-evalf-pi", latex: "\\operatorname{evalf}\\left(\\pi\\right)==\\pi", expect: "true", mark: "≈", source: "derived", note: "a float side: true only to the float's own digits" }
+  - { id: "prec-ne-evalf-pi", latex: "\\operatorname{evalf}\\left(\\pi\\right)\\ne\\pi", expect: "false", mark: "≈", source: "derived", note: "the negation, also approximate" }
+  - { id: "prec-eq-romberg", latex: "\\operatorname{romberg}\\left(e^{-x^2},x,0,1\\right)==0.746824132812", expect: "false", mark: "≈", source: "derived", note: "the integral is sqrt(pi)/2*erf(1) = 0.746824132812427…, not the 12 digits typed; romberg's float makes it approximate" }
+  - { id: "prec-eq-stored-romberg", latex: "\\beta==1", before: ["\\beta:=\\operatorname{romberg}\\left(e^{-x^2},x,0,1\\right)"], expect: "false", mark: "≈", source: "derived", note: "a stored float side (decisions M4-7)" }
+  - { id: "prec-eq-cas-evalf-pi", kind: "cas", latex: "\\operatorname{evalf}\\left(\\pi\\right)==\\pi", expect: "true", mark: "≈", source: "derived", note: "the same in CAS" }
+  - { id: "prec-greek-Psi", latex: "\\Psi+1", before: ["\\Psi:=3"], oracle: "F(4)", expect: "4", mark: "=", source: "derived", note: "Giac keeps Psi (Psi:=3 is refused): the parser names it Psi_ (R18f1)" }
