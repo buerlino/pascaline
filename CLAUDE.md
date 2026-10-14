@@ -127,6 +127,7 @@ node engine/qalc/smoke.mjs engine/qalc/_out/dev            # desktop smoke test 
 
 # Coordinator team (docs/shifts/rules.md + brief.md; agents in .claude/agents/); keeps the laptop awake while it runs
 systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline shift" claude --agent henri
+tools/henri-next.sh <n>                                    # hand over to a fresh headless henri_<n>; spawning rules (never `background: true` in agent files): docs/shifts/rules.md section 4a
 
 # Advisor: architecture and research questions, with evidence (.claude/agents/sandra.md; probes in tools/probes/)
 claude --agent sandra
