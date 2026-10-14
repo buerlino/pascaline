@@ -4,6 +4,7 @@
   import { t } from "../i18n/index.ts";
   import { CAS_SOFT_BUDGET_MS } from "../calc/port.ts";
   import Math from "../render/Math.svelte";
+  import { mathlive } from "../render/mathlive.svelte.ts";
   import { markText } from "../state/displayMode.ts";
   import type { MarkInfo } from "../engine/format.ts";
   import type { HistoryItem } from "../state/session.svelte.ts";
@@ -98,6 +99,10 @@
     void tick().then(() => scroller?.querySelector('[data-selected="true"]')?.scrollIntoView({ block: "nearest" }));
   });
 
+  // A running row is as high as a one-line result: an invisible "0" drawn as a result is (MathLive's line box is
+  // 0.4 px higher than a text line, so no CSS number would match). Made once, not per Enter (renderStats).
+  const strut = $derived(mathlive.mod?.convertLatexToMarkup("0") ?? "0");
+
   // After CAS_SOFT_BUDGET_MS a running job gets a prominent Cancel (D3).
   let now = $state(performance.now());
   $effect(() => {
@@ -124,8 +129,9 @@
       </button>
       <div class="out" data-testid="result">
         {#if item.status === "pending"}
-          <span class="working">{t("history.working")}</span>
-          <button type="button" class="cancel" class:prominent={now - item.startedAt > CAS_SOFT_BUDGET_MS} onclick={oncancel}>
+          <span class="strut" aria-hidden="true">{@html strut}</span>
+          <span class="working late">{t("history.working")}</span>
+          <button type="button" class="cancel late" class:prominent={now - item.startedAt > CAS_SOFT_BUDGET_MS} onclick={oncancel}>
             {t("history.cancel")}
           </button>
         {:else if item.status === "cancelled"}
@@ -217,6 +223,14 @@
   .working {
     font-size: 14px;
     color: var(--muted);
+  }
+  .strut {
+    visibility: hidden;
+    width: 0;
+  }
+  .working,
+  .cancel {
+    align-self: center;
   }
   .error {
     font-size: 16px;

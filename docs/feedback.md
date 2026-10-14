@@ -4,7 +4,7 @@
 The one place for the owner's points from using the app (docs/03 section 0, rule 12). Newest first. Each point is kept in the owner's words (shortened) and gets one triage:
 
 - **bug**: fixed now, regression test first;
-- **feel**: goes into the next feel package (milestone 4a tasks F1–F7 in [backlog.md](backlog.md));
+- **feel**: goes into the next feel package (milestone 4a tasks F1–F8 in [backlog.md](backlog.md));
 - **idea**: waits a week, then must pass rule 5 (G2 flow, a G2 friction removed, or more trust) before it gets a task;
 - **decided**: became a decision (the id says where).
 

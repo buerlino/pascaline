@@ -44,7 +44,7 @@
           {#each app.report.roots as r, i (i)}<li>{@render label(app.report.names[0] ?? "")} = {r}{#if app.report.rootWarns?.[i]}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</li>{/each}
         </ol>
       {/if}
-      <p class="info">
+      <p class="info" class:late={app.report.info === t("history.working")}>
         {#if app.report.warn}<span class="warn" title={t("solve.warnTitle")}>⚠</span>{/if}
         <span data-testid="solve-info">{app.report.info}</span>
       </p>

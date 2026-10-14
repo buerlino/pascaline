@@ -202,7 +202,7 @@
           <span class="pair"><span class="k">{l.label}</span> <span class="v" data-testid={`readout-${l.label}`} use:longpress={l.cell ? () => void app.copyReadout(l) : undefined}>{l.value}</span>{#if l.warn}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</span>
         {/each}
         {#if app.readout.info}
-          <span class="info" class:warn={app.readout.warn} data-testid="readout-info"
+          <span class="info" class:warn={app.readout.warn} class:late={app.readout.info === t("history.working")} data-testid="readout-info"
             >{#if app.readout.warn}⚠ {/if}{app.readout.info}</span>
         {/if}
       {:else}
