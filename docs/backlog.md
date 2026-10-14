@@ -92,7 +92,7 @@ Three parallel tracks per milestone. A milestone is done when its benchmark task
 11. **Size test** (annabell). *Done (A1, 1b595af):* `app/scripts/size-check.ts`, run by `npm run build` (so by `build.sh`); start chunk = entry + static imports, JS only.
 12. **Device** (annabell). APK for the owner; L7 cold start on the Tab One; Enter p95 at digits 12/20/30 (`?bench=1&digits=N`, §2.5); Find per key (`?bench=find`, §3.2); clipboard and share checks (§2.6). Gate: the Tab One bars of §8.3.
 
-**Milestone 4 gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left; the size test; the Tab One bars.
+**Milestone 4 gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left (G6 audit done: all fixed except the #2 value polish, EN7 in m6, by decision); the size test; the Tab One bars.
 
 **Milestone 5: Units** (~2 weeks; P3 plan as amended, 03 section 4, docs/04 section 4)
 1. **U1. qalc worker and client** (gorge, ~2 d). `engine/qalc/glue.cc` returning JSON (exact fraction or P-digit decimal, unit parts, dimension, uncertainty, qalc's approximate flag; §4.2), `UnitEngine` worker and client (`app/src/units/`), `Calc.units()`, lazy load, cancel. Check the open items: currency data in the compiled definitions, the Rankine name (Appendix C). Tests: worker tests (cancel, lazy), smoke cases. Gate: Vitest, golden smoke.

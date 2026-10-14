@@ -166,9 +166,6 @@ docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on 
 
 ### Night packages (section 0c)
 
-### gorge, G6: the §2.3 audit, branch `p1/gorge-m4-prec`
-Milestone 4 gate: "no §2.3 item #1–#9 is left". For #1–#6, #8 and #9 (#7 is moot): find the regression case (`tests/golden/`), run it, and record fixed (case id, commit) or open. Fix what is open and belongs to milestone 4, each regression case first: #2 (`normald_icdf` and the other inverse functions marked `⚠` and not tier 0; the polish is m6), #5 (a ≤ 14-digit fallback with `⚠` instead of the input as text). Anything open that is not m4 goes in the report with its milestone. Report: the new "Fix" column text for docs/04 §2.3 under "For shared files". Gate: golden gate, oracle check (`oracle.py`), vitest.
-
 ### ron, R19: M4-10 and the `mod` parser bug, branch `p1/ron-m4-fix`
 - **M4-10** (decided 2026-10-12, decisions.md): (1) the Function Plot readout lines (root, extremum, intersection, area) get `⚠` when the value behind the line is warned; (2) a Solve `⚠` is kept across a reload (stored with the app state). A regression test first for each.
 - **`\operatorname{mod}(a,b)`** (from G4, backlog milestone 4 step 7): the parser emits Giac `mod(a,b)`, which is an error. Emit the Giac form that gives what Find's `mod` entry says (read its insert and preview in the index); probe it with `node engine/giac/smoke.mjs`. Round-trip cases with a positive and a negative first argument, values `derived` from the definition Find states; if Find states no sign rule, record the negative case `assumed` with a G2-checklist question.
