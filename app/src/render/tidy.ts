@@ -124,24 +124,17 @@ function greekNames(s: string): string {
  */
 function notEqualCalls(s: string): string {
   const head = "\\mathrm{!=}\\left(";
-  let at = s.indexOf(head);
-  while (at >= 0) {
-    const start = at + head.length;
+  for (let at = s.indexOf(head); at >= 0; at = s.indexOf(head, at + 1)) {
     let depth = 0;
-    let comma = -1;
-    let end = -1;
-    for (let i = start; i < s.length && end < 0; i++) {
-      const c = s[i];
-      if (c === "(" || c === "[" || c === "{") depth++;
-      else if (c === ")" || c === "]" || c === "}") {
-        if (depth === 0) end = i;
-        else depth--;
-      } else if (c === "," && depth === 0 && comma < 0) comma = i;
+    let comma = 0;
+    let i = at + head.length;
+    for (; i < s.length && depth >= 0; i++) {
+      const c = s.charAt(i);
+      depth += "([{".includes(c) ? 1 : ")]}".includes(c) ? -1 : 0;
+      if (c === "," && !depth && !comma) comma = i;
     }
-    if (end < 0 || comma < 0 || !s.slice(start, end + 1).endsWith("\\right)")) return s;
-    const close = end + 1 - "\\right)".length;
-    s = `${s.slice(0, at)}${s.slice(start, comma)}\\ne ${s.slice(comma + 1, close)}${s.slice(end + 1)}`;
-    at = s.indexOf(head, at);
+    // i is just past the ")" of the closing \right)
+    if (depth < 0 && comma) s = `${s.slice(0, at)}${s.slice(at + head.length, comma)}\\ne ${s.slice(comma + 1, i - 7)}${s.slice(i)}`;
   }
   return s;
 }
