@@ -4,7 +4,7 @@
 The one place for the owner's points from using the app (docs/03 section 0, rule 12). Newest first. Each point is kept in the owner's words (shortened) and gets one triage:
 
 - **bug**: fixed now, regression test first;
-- **feel**: goes into the next feel package (milestone 4a tasks F1–F10 in [backlog.md](backlog.md));
+- **feel**: goes into the next feel package (milestone 4a tasks F1–F23 in [backlog.md](backlog.md));
 - **idea**: waits a week, then must pass rule 5 (G2 flow, a G2 friction removed, or more trust) before it gets a task;
 - **decided**: became a decision (the id says where).
 
@@ -123,3 +123,10 @@ The R14 APK: the exponent key's legend is now `ᴇ`. Type 1.5 ᴇ (−) 3: the l
 | 42 | A dedicated units keyboard: even if the presses add up, it is not easy to remember the Alpha and Shift + Alpha combinations for a unit like kN. Prefixes on the left, units on the right: pick a prefix (it is now selected for the slot), then one or more units, then a big Enter like the G2's (maybe the same spot) puts the combined unit in the slot and moves to the next slot. | decided: P14 (decisions.md, 2026-10-14) with #43's amendment: [research/r9-unit-pad.md](research/r9-unit-pad.md), `spec/unit-pad.yaml`; packages S5, G7, R24a–R24d in the brief |
 | 43 | "I like your P14." Should the pad be user configurable? Rather not: one would spend a lot of time optimizing something that has a clear optimum (maybe not the same for everybody). Let the user change a few buttons, like the user keys, for the special units of their own workflow; the base units need the best arrangement, found by research, since some units are used much more often, like e, n, s among letters. Then: "let the number of user cells be undefined for now." | decided: P14 with user cells, their number open (decisions.md). Package S5 counts how often engineers use each unit, finds the cheapest arrangement under P14's fixed rules, scores 1 to 6 user cells and proposes a number; the owner accepts the arrangement before R24b draws it |
 | 44 | Make the implementation into smaller work packages, so a session does not run out of tokens. | done: R24 is now R24a–R24d (brief section 0d), one concern each, about a day or less, each with its own short reading list |
+
+## 2026-10-14 (tenth round: a deep analysis around F9 and F10)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 45 | Are there more bugs like F9 and F10 in the same areas, patterns and edge cases? A deep analysis. | **feel, bugs F11–F23** (backlog milestone 4a items 21–33). Found by Playwright probes: every keyboard template under ⌫ and Del, a digit typed at every cursor position, and focus and touch cases around leaving the app. **Focus:** a held ⌫ keeps deleting while the app is away and focuses the field again (F11); a touch the app never saw end fires on the next key (F12); a key pressed less than 60 ms before leaving focuses the field after `dropFocus` (F13); on desktop, a mouse ⌫ released off the keypad never stops (F14). The notification shade or share sheet, twice, has the same cause as F9 (R22's test gains it). **⌫ and Del:** after `)` (F15); the hardware keys bypass our path (F16); powers (F17: `2 + x² ⌫ ⌫` gives 2²), fractions and roots (F18), lim Σ Π ∫ (F19), matrices and piecewise (F20), log base, EQ, DMS and evaluate-at (F21). **Neighbours:** 10ˣ after a digit gives 510² (F22); the cursor stops between sin and `(`, where a 7 gives sin 7(2) = sin 14 (F23). Rules: decisions.md "⌫ and Del keep a template whole" and "Nothing takes focus while the app is away". G2 items 46–51 |
+| 46 | Many small work packages with everything on the behaviour, how to reproduce it and how to fix it (or left open), written into the docs. | done: packages R25a–R25c (focus and touches), R26a–R26h (the ⌫ grid test, then one template family each), R27a–R27b (10ˣ after a digit, cursor stops) in brief sections 0b and 7, each a quarter to one day. R27a waits for G2 item 48 and the owner's pick |

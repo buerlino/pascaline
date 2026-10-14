@@ -7,6 +7,12 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-14 F22: 10ˣ after a digit (package R27a). OPEN, after G2 item 48.** `5 10ˣ 2` shows `510²` and computes 260 100, where 5·10² = 500 was likely meant. Options:
+  - (a) after a digit, the key inserts `×10^□`;
+  - (b) the parser refuses a number that runs into a 10ˣ (needs a marked group in the LaTeX);
+  - (c) leave it, since the line shows what it computes.
+  
+  **Recommendation:** (a), if the G2 gives 5·10² for the same keys. The details are in the brief, R27a.
 - **2026-10-14 R15b: 48 px cluster rows or today's height. OPEN, judge on the phone.** D is drawn with 48 px rows (viewport about 0.38 instead of 0.354). **Recommendation:** build 48 px after the device run on the Tab One (backlog Needs the user item 7), keep it if a Shift tap and the fit pass stay fast and the keys are easy to hit.
 - **2026-10-13 P12 open points (keypad review, [06-keypad-vs-g2.md](06-keypad-vs-g2.md) section 4). OPEN.**
   A. **Menu audit: done** (S2, accepted by the owner 2026-10-13; entry "S2: one menu system" under Decided proposals). B. **Status-line switch:** hit area, press count against the G2's one key, and the fallback if the bar is slow (R15a). C. **`!` (factorial):** settled by the owner (2026-10-13, answer to R10): it goes in the Shift + 9 palette (R18). **Recommendation:** judge B on the R15 APK.
@@ -169,17 +175,40 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-14 ⌫ and Del keep a template whole (F15–F21, R26a–R26h; G2 items 46, 47, 49 and 51 to confirm)
+- **Choice:** "⌫ at a bracket" (below) extended to every template the keys build (‸ is the cursor; "box" is a □ of the template). After any ⌫ or Del:
+  1. **No half template:** never a half pair (`\left.` with a real `\right)`, or the reverse; the evaluate-at template owns its `\left.`), never an exponent, subscript or limits without its base, never a template that lost a box or a mark (`EQ(,□)`, `\lim_{\to□}`, a matrix cell without its □).
+  2. **A box is never deleted:** an emptied box shows □ again. The marks between boxes (the comma of EQ, → of lim, = of Σ and Π, ∂, the `\,` and d of ∫, ° ′ ″, the evaluate-at bar, the `if` of piecewise) and the brackets go only with their whole template.
+  3. **⌫ inside a template stays inside it:** at the start of any box but the first, ⌫ steps to the end of the box before it (as ◀) and deletes nothing; Del at the end of any box but the last steps to the next one. ⌫ never jumps out of a box and deletes what stands before the template.
+  4. **⌫ at the start of the first box** removes the template, as "⌫ at a bracket" says: at once when every box is empty; with the content kept when only the main box (`#0` in `spec/keyboard.yaml`) holds something. When another box holds something (a bound, an index, a second cell, a typed exponent), the first ⌫ selects the whole template and a second ⌫ deletes it, so nothing from two boxes is ever joined. Del at the end of the last box is the mirror.
+  5. **⌫ right after a template** steps into its last box, as it already does after a root or a fraction, and deletes nothing; it never removes a closing bracket alone (F15), and a filled matrix is no longer deleted whole by one ⌫. Del right before a template is the mirror.
+  6. **An exponent stays on its base:** ⌫ never moves an exponent onto another base (`5eˣ` with the e deleted is not `5^…`); when ⌫ empties a base that carries an exponent, the base shows □.
+  7. **Every way in takes this path:** the ⌫ key, Shift + ⌫ (Del), their auto-repeat, and the hardware Backspace and Delete keys (F16).
+  8. **Repeated ⌫ from the end of the line empties it, and so does repeated Del from the start.** R26a's grid test checks points 1–8 on every template.
+- **Why:** these are the shapes behind F10 and F15–F21 (Playwright probe over all 32 templates, 2026-10-14): a line that ⌫ cannot finish (24 of 32 templates once a digit is typed in the first box), debris that ⌫ cannot reach (18 of 32 right after inserting), and content moved to where it changes the number (`2 + x² ⌫ ⌫` gave `2²`, `5 eˣ 2 3 ◀ ◀ ⌫ ⌫` gave `5²³`). One rule for every template keeps "one ⌫ undoes one key press" and principle 3. Done through the public API (selection, `insert`, offsets) in `app/src/entry/delete.ts` (R23 creates it), not by patching MathLive.
+- **Alternatives:** MathLive's own delete (the bugs); select-then-delete for every template (two presses for every mistaken key); a patch to MathLive's `onDelete` (a fork to maintain).
+- **Would change if:** a G2 answer differs. Item 46 asks about ⌫ after a closing bracket (point 5), 47 about the start of a denominator or an exponent (point 3), 49 about a log base digit, and 51 about ⌫ in an empty matrix. The G2 way wins unless it breaks point 1. Also if the owner finds the select step of point 4 slow on the phone.
+
+### 2026-10-14 Nothing takes focus while the app is away (F11–F14, R25a–R25c)
+- **Choice:**
+  1. The keypad ends every gesture when the page hides and, on touch screens, when the window loses focus. It is treated like a `pointercancel`: nothing fires and ⌫'s auto-repeat stops.
+  2. ⌫'s press takes pointer capture like every other key, so its lift is seen wherever it happens.
+  3. A capturing `focusin` listener in `app/src/main.ts` drops any focus that arrives while the page is hidden, or while the window is blurred on a touch screen, whatever caused it: MathLive's 60 ms late focus, a repeat timer, an insert after an `await`.
+- **Why:** `dropFocus` drops only the focus that exists when the app leaves. Timers bring it back afterwards (F11, F13), and a touch the app never saw end fires on the next key (F12). One guard at the focus event covers every cause, present and future, including MathLive's internal timer, which the public API cannot cancel.
+- **Alternatives:** chase each caller one by one (MathLive's timer would still need the guard).
+- **Would change if:** a focus while away turns out to be needed (none known). If Android sends a cancel for every touch when the app leaves, point 1 is only a second line of defence.
+
 ### 2026-10-14 ⌫ at a bracket (F10, R23; G2 item 44 to confirm)
 - **Choice:** ⌫ with the cursor right after an opening bracket removes the whole template the bracket belongs to and keeps what was inside, with the cursor where the opening bracket was. A function's brackets go with its name: `log(‸2+3)` → `‸2+3` (‸ is the cursor); `log(log(□))` ⌫ → `log(□)` ⌫ → empty line, one ⌫ per log key. A plain pair `( )`, `| |` or `{ }` loses both brackets: `5(‸2)` → `5‸2`. An empty pair goes the same way. Shift + ⌫ (Del) right before a closing bracket is the mirror case. The rule never leaves half a pair (`\left.…\right)`) on the line.
 - **Why:** it is the rule ⌫ already follows at the start of a root, a fraction's part or a box on our line (one rule for every template), and each key press is undone by one ⌫. The name must go with the brackets: the parser reads `\log2+3` as `log10(2)+3` (`tools/probes/parse.ts`, 2026-10-14), so keeping it would change the meaning of `log(2+3)` without a mark.
 - **Alternatives:** keep MathLive's invisible bracket and make the second ⌫ step out (it still leaves a syntax error on the line); drop only the brackets and keep the name (the meaning trap above); delete the name before the pair and keep the brackets (`(2+3)`).
-- **Would change if:** the owner's G2 does something else for `SIN(23)` and `5(2)` with ⌫ right after `(` (G2 item 44). Then the G2 way wins, unless it leaves a half pair.
+- **Would change if:** the owner's G2 does something else for `SIN(23)` and `5(2)` with ⌫ right after `(` (G2 item 44). Then the G2 way wins, unless it leaves a half pair. Extended to every template by "⌫ and Del keep a template whole" (above).
 
 ### 2026-10-14 Focus on return: MathLive's own restore is off (F9, R22)
 - **Choice:** `MathfieldElement.restoreFocusWhenDocumentFocused = false`, set with the other statics in `EntryController.create()`. Focus on return is ours alone: `dropFocus` in `app/src/main.ts` drops it when the app hides, and the next key press focuses the entry.
 - **Why:** MathLive's restore focuses the field again after a window blur and focus, and on Android a focus on return opens the system keyboard whatever `inputmode` says (K0). It is the second path behind feedback #38.
 - **Alternatives:** keep it and disarm it with a synthetic `focusin` after `dropFocus` (depends on MathLive's internals).
-- **Would change if:** a desktop browser loses the caret after switching windows (R22 checks that the hardware keyboard still types without a click).
+- **Would change if:** a desktop browser loses the caret after switching windows (R22 checks that the hardware keyboard still types without a click). The other ways a focus comes back while away are in "Nothing takes focus while the app is away" (above).
 
 ### 2026-10-14 Working… after 150 ms (F8)
 - **Choice:** "Working…" and Cancel of a running job (Home, CAS, the Function readout, the Solve info line) are drawn only after 150 ms, through the CSS class `.late` in `app/src/style.css`. They keep their space while hidden. The Cancel key works from 0 ms.

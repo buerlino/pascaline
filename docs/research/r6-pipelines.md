@@ -61,7 +61,33 @@
 - **Focus is late:** `onFocus` focuses the hidden keyboard sink (a `SPAN`) 60 ms after `mf.focus()`, so a test must wait about 150 ms before it reads the focus.
 - **Focus restore:** `MathfieldElement.restoreFocusWhenDocumentFocused` (default on). Every blur of the field arms "next window `blur`, then next window `focus`: focus the field", and only a document `focusin` or `click` disarms it. That brings the system keyboard back on Android (backlog F9).
 - **⌫ at a bracket:** `onDelete` on a `\left…\right` pair, with the cursor at the start of its body, sets the opening bracket to `.` while the closing one is real, and moves nothing. The next ⌫ does the same again, so the line is stuck (backlog F10). A pair that holds only a placeholder is removed whole instead (`\log\left(\log\left(□\right)\right)` ⌫ → `\log\left(\log\right)`). ⌫ at the start of a root or a box dissolves it and keeps the content.
+- **A focus cannot be taken back during its 60 ms:** `focus()` on a blurred field sets it "focused" at once and starts the timer. Nothing in the public API cancels it: `blur()` finds no focused sink, and `onBlur` returns early while `focusBlurInProgress` is set. So a `dropFocus` in those 60 ms is undone (backlog F13; `mathlive.mjs` 40255–40303).
+- **⌫ per kind of template** (`onDelete`, `mathlive.mjs` 31706–31870; probe over all 32 templates, 2026-10-14; backlog F15–F21):
+  - **Bracket pairs:** ⌫ right after the pair sets the closing bracket to `.` and moves into the body. The `)` disappears and the line reads `sin(2`.
+  - **Roots (`surd`):**
+    - ⌫ at the start of the body dissolves the root and keeps its content: `5√(‸23)` → `523`.
+    - An index emptied by ⌫ disappears from the LaTeX: `\sqrt[3]{8}` minus the 3 is `\sqrt8`, and Enter computes √8.
+    - ⌫ at the start of the index leaves the root and puts the cursor before it.
+  - **Fractions (`genfrac`):** ⌫ at the start of the denominator joins both parts (`\frac{5}{23}` → `523`). At the start of the numerator it steps out before the fraction.
+  - **Powers, limits, ∫ Σ Π (`subsup`, `extensible-symbol`):**
+    - ⌫ at the start of a script steps out to just after the base. The next ⌫ deletes the base, and the script stays as an orphan `^{…}` that sticks to whatever comes before it.
+    - A script emptied by ⌫ is removed.
+  - **`\log` and `\ln`:** any ⌫ inside their subscript deletes the whole operator (line 31863).
+  - **Arrays (matrix, piecewise):** ⌫ at the start of a cell does nothing. ⌫ right after the array deletes it whole.
+- **A placeholder is an atom:** ⌫ in an empty box deletes the □ itself, so the box leaves the LaTeX (`EQ(,□)`, `\lim_{\to□}`, a matrix cell with nothing in it).
+- **Hardware keys go straight to MathLive:** a physical Backspace or Delete never passes through `EntryController.run`. Only `^` in one-line mode, Enter and Escape are caught (`app/src/entry/controller.ts` 113–131), so a ⌫ fix in `run` misses them (backlog F16).
+- **◀ and ▶ visit every offset:**
+  - Between a function name and its `\left` (`\sin‸\left(2\right)`; a 7 there is read as sin(7·2)).
+  - Inside `\operatorname{…}` (EQ, approx), inside `\text{if }` and inside `\mathrm{d}`.
+  
+  The trackpad steps through the same ones. `nextBox` skips them only while an empty box lies ahead (backlog F23).
 - **Probing the entry:** a scratch spec in `app/test/` that taps keys and logs `window.pascaline.entry.value` after each one (helpers `tap`, `drag`, `touch` in `app/test/helpers.ts`; `?engine=fake` is enough for the entry). Delete it afterwards.
+  - To check every template, drive `window.pascaline.entry.run({kind, …})` (the key path).
+  - To read each line state as the parser does, call `(await import("/src/input/parser.ts")).loadParser()` inside `page.evaluate`, then `latexToGiacInfo(value, { chips: {} })`.
+  - To simulate leaving the app, redefine `document.hidden` and dispatch `visibilitychange` and the window `blur` and `focus` events (`leaveAndReturn` in `app/test/softkeyboard.spec.ts`).
+  - Write the results with `writeFileSync` from the test, since `console.log` from the page is not shown.
+
+  R26a turns the template probe into a test.
 
 ## 8. Where docs and code disagreed (2026-10-12), and the lesson
 

@@ -4,7 +4,7 @@
 **Night shift 2026-10-14:** henri runs the queue in section 0c; for that shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` after the merges of R17, S2, R13, R16, R14 (2026-10-13) and R18 (2026-10-14). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R14, R16, R17, R18. **Next:** R22 and R23 (the entry bugs F9 and F10, 2026-10-14), then R21, then R15b (the owner approved layout D on 2026-10-14), after one device run on the Tab One. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` after the merges of R17, S2, R13, R16, R14 (2026-10-13) and R18 (2026-10-14). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R14, R16, R17, R18. **Next:** R22 and R23 (the entry bugs F9 and F10, 2026-10-14), then the small entry-bug packages R25a–R27b (F11–F23, found by probing on 2026-10-14; recommended order R25a, R25b, R25c, R26a–R26h, then R27b, with R27a when G2 item 48 is answered), then R21, then R15b (the owner approved layout D on 2026-10-14), after one device run on the Tab One. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ## 0c. Night shift 2026-10-14: henri's plan (owner, 2026-10-14)
 The owner planned this shift in advance. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first** (the week is at 75%): the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for tomorrow.
@@ -76,13 +76,26 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 |---|---|---|---|---|---|
 | R22 | Bug F9: the system keyboard on return, again | ron, Sonnet | `p1/ron-m4a-refocus` | now | ~0.5 d |
 | R23 | Bug F10: ⌫ stuck at a bracket | ron, **Opus** | `p1/ron-m4a-bksp` | R22 (same file); G2 item 44 answered, or start on the default | ~1 d |
+| R25a | Bugs F11, F12: gestures end when the app goes away | ron, Sonnet | `p1/ron-m4a-awaygest` | R22 | ~0.5 d |
+| R25b | Bug F14: ⌫ held with a mouse | ron, Sonnet | `p1/ron-m4a-mouserepeat` | R25a (same file) | ~0.25 d |
+| R25c | Bug F13: no focus while the app is away | ron, Sonnet | `p1/ron-m4a-focusguard` | R22 (same test file) | ~0.25 d |
+| R26a | The ⌫ grid test over every template (F10, F15–F21) | ron, Sonnet | `p1/ron-m4a-bkspgrid` | R23 | ~0.5 d |
+| R26b | Bug F16: the hardware Backspace and Delete | ron, Sonnet | `p1/ron-m4a-hwdelete` | R23 | ~0.25 d |
+| R26c | Bug F15: ⌫ right after a closing bracket | ron, **Opus** | `p1/ron-m4a-bkspclose` | R26a, R26b; G2 item 46 answered, or start on the default | ~0.5 d |
+| R26d | Bug F17: powers and exponents | ron, **Opus** | `p1/ron-m4a-bksppow` | R26c (same file); G2 item 47 | ~0.5–1 d |
+| R26e | Bug F18: fractions and roots | ron, **Opus** | `p1/ron-m4a-bkspfrac` | R26d; G2 item 47 | ~0.5 d |
+| R26f | Bug F19: lim, Σ, Π, ∫ | ron, **Opus** | `p1/ron-m4a-bksplimits` | R26e | ~0.5 d |
+| R26g | Bug F20: matrices, vectors, piecewise | ron, **Opus** | `p1/ron-m4a-bksparray` | R26f; G2 item 51 | ~0.5 d |
+| R26h | Bug F21: log base, EQ, DMS, evaluate-at bounds | ron, **Opus** | `p1/ron-m4a-bkspmarks` | R26g; G2 item 49 | ~0.5 d |
+| R27a | Bug F22: 10ˣ after a digit joins the number | ron, **Opus** | `p1/ron-m4a-tenpow` | G2 item 48 answered and the owner's pick of the fix | ~0.5 d |
+| R27b | Bug F23: cursor stops where no box is | ron, **Opus** | `p1/ron-m4a-cursorstops` | R26h (same file); G2 item 50 | ~0.5–1 d |
 | R21 | Pick sheets over the keypad, Settings over everything | ron, **Opus** | `p1/ron-m4a-fit` | R23; runs before R15b | ~2 d |
 | R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | a device run on the Tab One (backlog Needs the user item 7) | ~2 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R15b | ~1 d |
 | R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R11 (draws the final keypad, so after R15b) | ~0.5 d |
 | R12b | Visual pass: implementation (U5, U7, theme) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner | ~2.5 d |
 
-**No waiting for a tried APK** (owner, 2026-10-13): each ron package still ends with an APK on the owner's phone (section 8a step 5a), but the next package starts as soon as the review has merged it; the owner's notes come back through feedback.md as feel items. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names). Sonnet elsewhere, with an Opus review per package.
+**No waiting for a tried APK** (owner, 2026-10-13): each ron package still ends with an APK on the owner's phone (section 8a step 5a), but the next package starts as soon as the review has merged it; the owner's notes come back through feedback.md as feel items. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R26c–R27b (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R25a–R26b are small and pinned by their tests.
 
 ## 0a. Work packages (milestone 4), after 4a
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04.
@@ -177,10 +190,10 @@ Report against the §8.3 bars. A miss goes under "Needs a decision" with the num
 
 ### ron, R22: the system keyboard on return, again (bug F9), branch `p1/ron-m4a-refocus`
 Backlog F9 (cause and proof there; decisions.md "Focus on return"). Read `app/src/main.ts` (`dropFocus`), `EntryController.create()` in `app/src/entry/controller.ts`, `app/test/softkeyboard.spec.ts`, and r6-pipelines section 7. Commits in this order:
-1. **Test first** (`app/test/softkeyboard.spec.ts`, failing on today's code): extend `leaveAndReturn` with the two event orders (window `blur` then hidden, and hidden then `blur`), then three away-and-back cycles in a row. After each return, wait 150 ms (MathLive focuses 60 ms late) and check that nothing editable is focused. Run it twice: after a tap on a digit, and after a trackpad drag (`drag(page, "left", -30, 0)`). Then a digit key still types.
+1. **Test first** (`app/test/softkeyboard.spec.ts`, failing on today's code): extend `leaveAndReturn` with the two event orders (window `blur` then hidden, and hidden then `blur`), then three away-and-back cycles in a row. After each return, wait 150 ms (MathLive focuses 60 ms late) and check that nothing editable is focused. Run it twice: after a tap on a digit, and after a trackpad drag (`drag(page, "left", -30, 0)`). Add a third case with window `blur` and `focus` only, no hide, three times. That is the notification shade, the share sheet or a permission prompt (feedback #45). Today the second cycle focuses the keyboard sink (Playwright, 2026-10-14). Then a digit key still types.
 2. **Fix:** `Field.restoreFocusWhenDocumentFocused = false` in `create()`, beside `fontsDirectory` and the other statics, with a one-line comment that names K0/F9. Keep `dropFocus`.
 3. **Check what the restore did for us,** by hand, since synthetic window events do not move the real focus: `npm run dev` in desktop Firefox, type on the line, switch windows (Alt+Tab) and back, type on the hardware keyboard. The browser should restore the focus by itself. If the keys no longer reach the line, put it under "Needs a decision" (the fix would be `entry.focus()` on window `focus`, on `pointer: fine` only) instead of building it.
-4. **Report.** The owner checks the APK by hand: drag on the arrow keys, switch away and back three times, fast. Then the same after plain taps. Shared-file text: backlog F9 "Done", the decisions entry if the build differs.
+4. **Report.** The owner checks the APK by hand: drag on the arrow keys, switch away and back three times, fast. Then the same after plain taps, and pull the notification shade down and up twice. Shared-file text: backlog F9 "Done", the decisions entry if the build differs.
 Gate: softkeyboard e2e green (it fails without the fix), gestures and flicks e2e green, start chunk unchanged.
 
 ### ron, R23: ⌫ stuck at a bracket (bug F10), branch `p1/ron-m4a-bksp`
@@ -192,10 +205,376 @@ Backlog F10 (cause and the stuck cases there); the rule is decisions.md "⌫ at 
    - Shift + ⌫ (Del) right before a closing bracket: the mirror cases.
    - No line the keys can build ever holds `\left.` with a real `\right)` (or the reverse) after a ⌫, except the evaluate-at template, which owns its `\left.`.
    - ⌫ still removes one character, one chip (`captureSelection`) and one ᴇ as today (the R14 and R16 cases stay green), and Shift + Cancel (undo) brings the deleted template back whole.
-2. **Fix** in `EntryController.run`: before MathLive's `deleteBackward` (and `deleteForward`), when the cursor is at the start (end) of a pair's body, select the template (the name before the pair when the same key inserted it: `\log`, `\sin`, `\ln`, `\operatorname{…}`, a `\log_{…}` with its base; else the pair alone) and replace it with the body's LaTeX, leaving the cursor where the opening bracket was. An empty function body becomes nothing; then, as for log log, the outer body gets its placeholder back. Public MathLive API only (`getElementInfo`, offsets, `selection`, `insert`); no patch to MathLive. If the pair is the evaluate-at bar, the whole template follows the same rule (body kept, bounds dropped); say in the report if that feels wrong.
+2. **Fix** in `EntryController.run`: before MathLive's `deleteBackward` (and `deleteForward`), when the cursor is at the start (end) of a pair's body, select the template (the name before the pair when the same key inserted it: `\log`, `\sin`, `\ln`, `\operatorname{…}`, a `\log_{…}` with its base; else the pair alone) and replace it with the body's LaTeX, leaving the cursor where the opening bracket was. An empty function body becomes nothing; then, as for log log, the outer body gets its placeholder back. Public MathLive API only (`getElementInfo`, offsets, `selection`, `insert`); no patch to MathLive. Put the ⌫/Del logic in a new plain-TS module `app/src/entry/delete.ts`, called from `run`: R26b–R26h extend it for every other template (decisions.md "⌫ and Del keep a template whole"). If the pair is the evaluate-at bar, the whole template follows the same rule (body kept, bounds dropped); say in the report if that feels wrong.
 3. **Parser message** (`app/src/input/parse.ts`): a `\left.` closed by anything but the bar says "unmatched bracket", not "expected the evaluate-at bar". Its parser case (an error case, `derived`) goes in the same commit.
-4. **Report** with the G2 item 44 answer, if the owner gave one. Shared-file text: backlog F10 "Done", the decisions entry if the build differs, r6 section 7 if MathLive behaved otherwise.
+4. **Report** with the G2 item 44 answer, if the owner gave one. Not in R23: the hardware Backspace (R26b), ⌫ right after a closing bracket (R26c), the other templates (R26d–R26h). Shared-file text: backlog F10 "Done", the decisions entry if the build differs, r6 section 7 if MathLive behaved otherwise.
 Gate: `bksp.spec.ts` green (it fails without the fix), `selection.spec.ts`, `undo.spec.ts`, `entry.spec.ts`, `chips.spec.ts`, `tmpl.spec.ts`, gestures e2e green; vitest and the golden gate (parser changed); start chunk within 0.5 kB gzip.
+
+### The entry-bug packages R25a–R27b (bugs F11–F23, found by probing 2026-10-14)
+These are small packages, one concern each, each with its own short reading list. Read only what your package names.
+- Backlog milestone 4a items 21–33 have the summary.
+- The rules are in decisions.md "⌫ and Del keep a template whole" and "Nothing takes focus while the app is away".
+- r6-pipelines section 7 explains how MathLive behaves and how to probe it.
+- Every "behaviour today" below was reproduced in Playwright (Pixel 7 profile, `?engine=fake`, 2026-10-14). ‸ is the cursor.
+- The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
+- **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
+- A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
+
+### ron, R25a: gestures end when the app goes away (bugs F11, F12), branch `p1/ron-m4a-awaygest`
+Read: `app/src/keyboard/Keypad.svelte` (the gesture code, lines 81–236), `app/src/keyboard/gestures.ts` (`Repeat`), `app/test/helpers.ts` (`touch`), `app/test/gestures.spec.ts`, decisions.md "Nothing takes focus while the app is away" point 1.
+
+**Behaviour today:**
+- **F11:**
+  1. Type `1`…`9`, then hold ⌫: `touch(page, "bksp")`, with no lift.
+  2. Fire the window `blur`, then hide the page (`document.hidden` true, then `visibilitychange`).
+  3. The auto-repeat keeps running: the line is `12345678` at the hide and empty 1 s later.
+  4. Every repeat calls `run()`, which calls `mf.focus()`. The keyboard sink (`SPAN.ML__keyboard-sink`) is focused while away and still on return. On Android that opens the system keyboard (K0). Same result with MathLive's restore on or off, so R22 does not fix it.
+- **F12:** `touch(page, "d7")` with no lift, hide and show the page, then tap 2. The line is `72`. The 7's gesture stayed in the `gestures` map, and the next `pointerdown` finishes it (`down()`, line 151, `finish(g)` fires its key). A trackpad touch left behind the same way fires its arrow on the next key.
+
+**Reachable on a phone?** Only if Android sends no `pointercancel` for a touch that is down while the app leaves (a second finger on the nav button, or the home gesture). Not checked on a device. The fix is cheap either way, and it also covers a lost `pointerup`.
+
+**Fix:**
+- Add a `cancelAll()` in Keypad.svelte: it runs `cancel()` on every gesture, clears the map and hides the bubble.
+- Call it on `visibilitychange` when hidden, on `pagehide`, and on window `blur` when `matchMedia("(pointer: coarse)")` matches.
+- Add the listeners in the component's `$effect` and remove them on destroy.
+- Nothing fires and ⌫ stops, as on `pointercancel`.
+
+**Commits:**
+1. **Tests** (`gestures.spec.ts`): F11 (the line is unchanged 1 s after the hide, and nothing editable is focused) and F12 (`2`, not `72`). The same two with window `blur` only, no hide. A trackpad touch interrupted by a hide fires no arrow on the next key.
+2. **Fix.**
+3. **Report.** The owner's APK check: hold ⌫ with one finger, press the home button with the other hand, then come back. The line is as it was, and no system keyboard shows.
+
+Gate: gestures, flicks and softkeyboard e2e green; start chunk unchanged (±0.1 kB).
+
+### ron, R25b: ⌫ held with a mouse (bug F14), branch `p1/ron-m4a-mouserepeat`
+Read: `app/src/keyboard/Keypad.svelte` `down()` (lines 146–172) and `cancelled()`; `app/test/gestures.spec.ts`.
+
+**Behaviour today** (desktop, mouse):
+1. Type 12 digits.
+2. `page.mouse.down()` on ⌫, wait 100 ms.
+3. Move to y = 60 (over the history) and `mouse.up()`.
+4. Result: 11 digits at the release, and the line is empty 0.8 s later. The repeat goes on until the next press on the keypad.
+
+**Cause:** the ⌫ branch returns before `padEl?.setPointerCapture(ev.pointerId)` (line 163). A mouse has no implicit capture (a touch has), so the `pointerup` lands outside the pad and `up()` never runs.
+
+**Fix:**
+- Take the capture before the ⌫ branch: move the `try { setPointerCapture }` above it.
+- Also stop the repeat on `lostpointercapture`.
+
+**Commits:**
+1. **Test** (`gestures.spec.ts`): the case above. The line keeps its 11 digits 0.8 s after the release.
+2. **Fix.**
+3. **Report.**
+
+Gate: gestures e2e green; the touch ⌫ repeat tests unchanged.
+
+### ron, R25c: no focus while the app is away (bug F13), branch `p1/ron-m4a-focusguard`
+Read: `app/src/main.ts` (`dropFocus`, lines 36–51), `app/test/softkeyboard.spec.ts` (`leaveAndReturn`, `focused`), r6-pipelines section 7 ("Focus is late", "A focus cannot be taken back during its 60 ms"), decisions.md "Nothing takes focus while the app is away" point 3.
+
+**Behaviour today:**
+1. Type 1, leave and return (`leaveAndReturn`). The field is blurred.
+2. In one `page.evaluate`: `entry.run({ kind: "type", text: "2" })`, then window `blur`, then the page hidden.
+3. Right after the hide nothing is focused. 200 ms later the keyboard sink is, with MathLive's restore on or off.
+
+**Cause:**
+- `mf.focus()` on a blurred field focuses the sink 60 ms later, in a timer (`mathlive.mjs` 40266–40303).
+- `dropFocus` runs before the timer and finds nothing to blur.
+- Hard to hit by hand (a key less than 60 ms before leaving), but every later async focus takes the same road: an auto-repeat (F11), an insert after an `await` (paste, `clipboard/actions.svelte.ts` 104–114).
+
+**Fix:**
+- Add a capturing `focusin` listener on `document` in `main.ts`.
+- When `document.hidden` is true, or on `pointer: coarse` while `!document.hasFocus()`, it calls `dropFocus()`.
+- Check that a focus on the sink inside the shadow root reaches the listener (`focusin` is composed). If not, listen on the field's shadow root as well.
+- If a blur inside the event does not hold, defer it with `queueMicrotask`.
+
+**Commits:**
+1. **Test** (`softkeyboard.spec.ts`): the case above; nothing editable is focused 200 ms after the hide.
+2. **Fix.**
+3. **Report.**
+
+Gate: softkeyboard e2e green (fails without the fix); start chunk unchanged.
+
+### ron, R26a: the ⌫ grid test over every template, branch `p1/ron-m4a-bkspgrid`
+Test only, no app code. Read: `spec/keyboard.yaml` (every `insert:` that holds a template, including `templates:`), `app/test/helpers.ts`, R23's `app/test/bksp.spec.ts`, r6-pipelines section 7, decisions.md "⌫ and Del keep a template whole".
+
+**Build** `app/test/bksp-grid.spec.ts`.
+- **Templates:** every one the keys insert, read from keyboard.yaml so that a new key joins the grid by itself. There were 32 on 2026-10-14: the function keys, `( )`, `| |`, the power keys, eˣ, 10ˣ, √, ⁿ√, ÷, the one-line inserts, and every Tmpl cell.
+- **How:** drive the entry through `window.pascaline.entry.run` (the same path as a key). Read the line after each step and parse it with `loadParser()` from `/src/input/parser.ts` in the page.
+- **Scenarios** (each with at most 16 steps):
+  - `empty`: the template on an empty line, then ⌫ until the line is empty.
+  - `content`: 5, the template, 2, then ⌫ until the line is empty.
+  - `fromEnd`: the same, with the cursor moved to the end first.
+  - `boxStart`: 5, the template, 2 3, ◀ ◀ (the cursor at the start of the first box), then ⌫ until the line is empty.
+  - `delFromStart`: 5, the template, 2, the cursor to the start, then Del until the line is empty.
+  - `delBeforeClose`: the template, 2, then Del until the line is empty.
+  - `nested`: the template twice, then ⌫ until the line is empty.
+- **Checks after each step** (the rule's points):
+  - No half pair outside evaluate-at (1).
+  - No `^` or `_` at the start of a group or after an operator (1, 6).
+  - No lost box or lone mark (2).
+  - No ⌫ deleted something before the template while the cursor was in it (3).
+  - No exponent moved to a new base (6).
+- **Checks at the end:** the line is empty (8), and no step was a no-op except ⌫ at the line's start or Del at its end.
+- **Known failures:** mark each failing case `test.fail()` with its bug id in the title (F10, F15–F21), so the suite is green and each later package flips its own cases.
+- **The probe of 2026-10-14 found** (with F10, before R23):
+  - In `empty`, 18 of 32 templates leave debris: EQ, one-line x⁻¹, xʸ, x², x⁻¹, ⁿ√, evaluate-at, piecewise, matrix, row, column, lim, ∫, mixed, Σ, Π, log base, DMS.
+  - In `content`, 24 of 32 never reach the empty line: all ten bracket templates, plus ⁿ√, evaluate-at, ∂, piecewise, the three matrices, lim, ∫, mixed, Σ, Π, log base and DMS.
+
+Gate: the grid green (with its `test.fail` marks) in under 60 s. The report lists the number of `test.fail` cases per bug id.
+
+### ron, R26b: the hardware Backspace and Delete take our path (bug F16), branch `p1/ron-m4a-hwdelete`
+Read: `app/src/entry/controller.ts` lines 109–131 (the capturing `keydown` listener for `^`) and `app/src/entry/delete.ts` (from R23).
+
+**Behaviour today:** desktop, log log, then four presses of the hardware Backspace (`page.keyboard.press("Backspace")`). The line is stuck at `\log\left.\right)`, the bug R23 fixes for the on-screen ⌫.
+
+**Cause:** a physical key goes straight to MathLive's own keydown handler. `EntryController.run` sees only the on-screen keys, and R23's fix and every R26 package live in `run`.
+
+**Fix:**
+- In the capturing `keydown` listener (controller.ts line 113), Backspace becomes `this.run({ kind: "cmd", name: "deleteBackward" })` and Delete becomes `deleteForward`, each with `preventDefault` and `stopPropagation`.
+- A held key arrives as repeated keydowns and takes the same path.
+- Ctrl + Backspace (delete a word): leave it to MathLive, or route it too, and say which in the report.
+
+**Commits:**
+1. **Tests** (`bksp.spec.ts`): log log by the hardware Backspace reaches the empty line; Delete before a closing bracket, the mirror.
+2. **Fix.**
+3. **Report.**
+
+Gate: bksp, entry and undo e2e green.
+
+### ron, R26c: ⌫ right after a closing bracket (bug F15), branch `p1/ron-m4a-bkspclose`
+Read: `app/src/entry/delete.ts`, `app/test/bksp-grid.spec.ts`, decisions.md "⌫ and Del keep a template whole" point 5 (G2 item 46 may overrule it).
+
+**Behaviour today:**
+- `sin 2 ▶ ⌫` (the cursor after `)`, then ⌫) leaves `\sin\left(2\right.`: the `)` is gone, the cursor sits after the 2, and the line reads `sin(2`.
+- No key types `)` back, so `sin 2 ▶ ⌫ ⌫ 3` gives `sin(3`, and Enter says "expected closing ) at '.'". That is an error, not a wrong number.
+- Every pair does this: the function keys, `( )`, `| |` (`5|2|‸ ⌫` → `5|2`), the one-line √ and x⁻¹, and the brackets inside lim, Σ, Π and log base.
+- From the end of the line, `5 sin 2` ⌫ ⌫ ⌫ … does reach the empty line, through `sin(2`, `sin(`, `sin`.
+
+**Cause:** `onDelete` on a `\left…\right` pair from outside (`mathlive.mjs` 31712–31734, the branch that is not at the start). While the opening bracket is real, it sets the closing one to `.`.
+
+**Fix (default):**
+- ⌫ right after a pair, or after a function's pair (R23's name rule), moves the cursor to the end of the body and deletes nothing. ⌫ after a root or a fraction already does this.
+- Del right before a function name or an opening bracket moves to the start of the body.
+- Once the body is empty, the emptied box shows □ (point 2) and R23's rule removes the template on the next ⌫.
+
+**Commits:**
+1. **Tests:** flip the grid's F15 cases. By keys:
+   - `sin 2 ▶ ⌫` → `\sin\left(2\right)`, with the cursor after the 2.
+   - `sin 2 ▶ ⌫ ⌫` → `\sin\left(\placeholder{}\right)`.
+   - One more ⌫ → the empty line.
+   - Del mirrors each case.
+2. **Fix.**
+3. **Report** with the G2 item 46 answer.
+
+Gate: bksp-grid (its F15 cases pass), bksp, selection, undo and tmpl e2e green.
+
+### ron, R26d: powers and exponents (bug F17), branch `p1/ron-m4a-bksppow`
+Templates: x² `#@^{2}`, xʸ `#@^{#?}`, x⁻¹ `#@^{-1}`, eˣ `\exponentialE^{#0}`, 10ˣ `10^{#0}`, the one-line x⁻¹ `\left(#@\right)^{-1}`. Read: `app/src/entry/delete.ts`, `app/src/entry/controller.ts` (`isPower`, `selectCompound`), the grid, decisions.md "⌫ and Del keep a template whole" points 3, 4 and 6.
+
+**Behaviour today:**
+- `2 + x² ⌫ ⌫` → `2^2`. The first ⌫ deletes the empty base □ and leaves `2+^2`; the second deletes the +, and the exponent lands on the 2. Enter computes 4.
+- x² on an empty line with no history (`\placeholder{}^2`), then ⌫ → `^2`. After that ⌫ does nothing, because the cursor sits before an exponent with no base. xʸ and x⁻¹ behave the same.
+- `5 xʸ 2 3 ◀ ◀ ⌫ ⌫` → `^{23}`. The first ⌫ at the start of the exponent moves the cursor out, just after the 5; the second deletes the 5 and leaves the exponent alone.
+- `5 eˣ 2 3 ◀ ◀ ⌫ ⌫` → `5^{23}`. The second ⌫ deletes the e, and the exponent moves onto the 5: 5·e²³ became 5²³, computed without an error.
+- `5 10ˣ 2 3 ◀ ◀ ⌫ ⌫` → `51^{23}`, then `5^{23}`, then `^{23}`. Each ⌫ deletes a digit of the base under the exponent.
+- `10ˣ` on an empty line, ⌫ ⌫ ⌫ passes through `10` and `1`.
+
+**Cause:**
+- MathLive keeps an exponent as a branch of its base atom. A placeholder base is an atom that ⌫ deletes.
+- The exponent then becomes a lone `subsup` atom that attaches to whatever stands before it (`mathlive.mjs` 31797–31861, `deleteBackward` 31872).
+
+**Fix** (default points 3, 4 and 6; the details are for the package to settle and report):
+- ⌫ at the start of an exponent steps to the end of the base, as ◀ does, and deletes nothing.
+- A ⌫ that would empty a base carrying an exponent leaves □ as the base.
+- ⌫ in an empty base:
+  - removes the whole power when the exponent is the key's own (x², x⁻¹) or empty;
+  - selects the power first when the exponent holds typed content.
+- **Open:** whether 10ˣ's and eˣ's bases (10, e) count as the key's own and go with the exponent in one ⌫. Recommended: yes, so that `10ˣ ⌫` empties the line.
+
+**Commits:**
+1. **Tests:** flip the grid's F17 cases. By keys:
+   - `2 + x² ⌫ ⌫` → `2`.
+   - x² ⌫ with no history → the empty line.
+   - `5 eˣ 2 3 ◀ ◀ ⌫ ⌫` never puts an exponent on the 5.
+   - `5 xʸ 2 3 ◀ ◀ ⌫` leaves the cursor after the 5, and the line keeps `5^{23}`.
+   - One more ⌫ gives `\placeholder{}^{23}`.
+2. **Fix** in `delete.ts`.
+3. **Report** with the G2 item 47 answer (second part).
+
+Gate: bksp-grid F17 cases pass; selection (R17's power keys), entry and undo e2e; vitest.
+
+### ron, R26e: fractions and roots (bug F18), branch `p1/ron-m4a-bkspfrac`
+Templates: ÷ and a b/c (`\frac{#@}{#?}`), √ (`\sqrt{#0}`), ⁿ√ (`\sqrt[#?]{#0}`), the mixed number (`#@\tfrac{#?}{#?}`), ∂ (`\frac{\partial#0}{\partial#?}`). Read: `app/src/entry/delete.ts`, `controller.ts` (`selectCompound`, L8/L9), the grid, decisions.md "⌫ and Del keep a template whole" points 2–4.
+
+**Behaviour today:**
+- ⁿ√ on an empty line, ⌫ with the cursor in the empty index → `\sqrt{\placeholder{}}`, with the cursor before it. ⌫ then does nothing, and the n-th root template has become a square root.
+- `\sqrt[3]{8}` with the cursor after the 3, ⌫ → the LaTeX is `\sqrt8`, so Enter computes √8. The emptied index disappears from the LaTeX; typing 4 at once gives `\sqrt[4]{8}` back.
+- `5 ⁿ√ 2 3 ◀ ◀ ⌫` (the cursor at the start of the index) moves the cursor out. The next ⌫ deletes the 5, and `\sqrt[23]{□}` stays in front of the cursor for good.
+- The mixed number on an empty line, ⌫ → `\tfrac{□}{□}` stays, with the cursor at 0. `5 mixed 2 3 ◀ ◀ ⌫ ⌫` → `\tfrac{23}{□}`: the whole part is deleted, and the line says "a mixed number needs a whole number before its fraction".
+- `5 ∂ 2 3 ◀ ◀ ⌫` deletes the ∂ mark alone (`5\frac{23}{\partial□}`). The next ⌫ moves out of the fraction, the one after deletes the 5, and then ⌫ is stuck.
+- ÷ twice on an empty line with no history (a nested fraction), then ⌫ → `\frac{}{\placeholder{}}`: an empty numerator without □, stuck.
+- `5 ÷ 2 3 ◀ ◀ ⌫` (the start of the denominator) → `523`. This is MathLive's unwrap. It goes away under point 3, where ⌫ steps to the end of the numerator.
+- `5 √ 2 3 ◀ ◀ ⌫` → `523`. This follows the accepted F10 rule (content kept, as `5(‸2)` gives `52`). Leave it as built.
+
+**Cause:**
+- `onDelete` for `surd` (`mathlive.mjs` 31737–31768): an emptied index branch is removed, and the cursor goes before the root.
+- `onDelete` for `genfrac` (31769–31796): at the start of the second part, the two parts are joined.
+- Placeholders are deleted as atoms.
+
+**Fix** (points 2–4):
+- An emptied index or part keeps its □.
+- ⌫ at the start of the denominator steps to the end of the numerator.
+- ⌫ at the start of ⁿ√'s index (its first box) follows point 4: it selects the root first when the radicand holds something, and removes it otherwise.
+- The mixed number and ∂ follow the same rules with their boxes. The ∂ marks go only with the template.
+
+**Commits:**
+1. **Tests:** flip the grid's F18 cases, and add the cases above by keys.
+2. **Fix.**
+3. **Report** with the G2 item 47 answer (first part).
+
+Gate: bksp-grid F18; selection (the L8/L9 fraction and root cases), tmpl and undo e2e; vitest.
+
+### ron, R26f: lim, Σ, Π and ∫ (bug F19), branch `p1/ron-m4a-bksplimits`
+Templates: `\lim_{#?\to#?}\left(#0\right)`, `\sum_{#?=#?}^{#?}\left(#0\right)`, `\prod_{…}`, `\int_{#?}^{#?}#0\,\mathrm{d}#?`. Read: `app/src/entry/delete.ts`, the grid, decisions.md "⌫ and Del keep a template whole" points 1–5.
+
+**Behaviour today:**
+- Each of them on an empty line, then ⌫: the first box's □ is deleted and ⌫ does nothing more.
+  - lim: `\lim_{\to□}(□)`.
+  - Σ: `\sum_{=□}^{□}(□)`.
+  - ∫: `\int^{□}□\,d□`, with the lower limit gone.
+- `5 lim 2 3 ◀ ◀ ⌫ ⌫`: the cursor moves out of the box and the 5 is deleted. The template stays, and the cursor stays in front of it.
+- From the end of the line (`5 lim 2`, cursor at the end, ⌫ repeatedly):
+  1. The bracket goes alone (F15).
+  2. Then the boxes and marks go one by one: `\lim_{2\to}`, `\lim_2`.
+  3. A bare `\lim` is left that ⌫ cannot remove, because the cursor ends before it. `\sum`, `\prod` and `\int` end the same way.
+- Del: `lim 2` then Del repeatedly deletes the → (`\lim_{2□}`), and then the boxes merge (`\lim_2\left(□\right)`). Σ loses its =, and ∫ loses its `\,` and d (`\int_2□`). No key types any of them back.
+
+**Cause:**
+- The bounds of these operators are `subsup` or `extensible-symbol` branches (`mathlive.mjs` 31797–31861).
+- An emptied branch is removed, and ⌫ at the start of a branch moves out in front of the operator.
+- The marks (→, =, `\,`, d) are plain atoms.
+
+**Fix** (points 1–5 and the Del mirror): the operator, its marks and its boxes are one template.
+
+**Commits:**
+1. **Tests:** the grid's F19 cases, and the cases above by keys, Del included.
+2. **Fix.**
+3. **Report.**
+
+Gate: bksp-grid F19; tmpl e2e; vitest.
+
+### ron, R26g: matrices, vectors and piecewise (bug F20), branch `p1/ron-m4a-bksparray`
+Templates: the 2×2 matrix, the row and column vectors, piecewise (all Tmpl cells). Read: `app/src/entry/delete.ts`, the grid, decisions.md "⌫ and Del keep a template whole" points 2–5.
+
+**Behaviour today:**
+- Each of them on an empty line, then ⌫: the first cell's □ is deleted (`\begin{pmatrix} & □\\ …`), and ⌫ does nothing more. The cursor stays in the empty cell.
+- ⌫ at the start of a cell with content (`2 3 ◀ ◀ ⌫`) does nothing.
+- ⌫ right after a filled matrix deletes the whole matrix in one press: `5`, the matrix, `2`, cursor to the end, ⌫ → `5`. Undo brings it back.
+- Del from before it does the same.
+- In piecewise, the cursor also stops inside `\text{if }` (R27b).
+
+**Cause:**
+- `ArrayAtom`: `onDelete` handles only multiline arrays, through `deleteRow` (`mathlive.mjs` 31709).
+- A cell is a branch, and ⌫ at the start of a branch is not handled.
+- Placeholders are deleted as atoms.
+
+**Fix:**
+- An emptied cell keeps its □ (point 2).
+- ⌫ at the start of a cell steps to the end of the cell before it, in reading order; Del is the mirror (point 3).
+- At the first cell, point 4 applies: the empty template goes in one ⌫, and a filled one is selected first.
+- ⌫ right after the template steps into its last cell (point 5).
+- **Open:** whether ⌫ at the start of a row should remove an empty row, as MathLive's `deleteRow` does for multiline arrays. Default: no, the template's shape stays (2×2, 1×2, 2×1, two lines).
+
+**Commits:**
+1. **Tests:** the grid's F20 cases and the cases above.
+2. **Fix.**
+3. **Report** with the G2 item 51 answer.
+
+Gate: bksp-grid F20; tmpl e2e; vitest.
+
+### ron, R26h: log base, EQ, DMS and the evaluate-at bounds (bug F21), branch `p1/ron-m4a-bkspmarks`
+Templates: `\log_{#?}\left(#0\right)`, `\operatorname{EQ}\left(#0,#?\right)`, `#?\degree#?\prime#?\doubleprime`, `\left.#0\right|_{#?=#?}`. Read: `app/src/entry/delete.ts`, the grid, decisions.md "⌫ and Del keep a template whole" points 1–4.
+
+**Behaviour today:**
+- **Log base:**
+  - Tmpl log base, 16 in the base, then one ⌫: the whole `\log_{16}` goes and `\left(□\right)` is left. One ⌫ undid three key presses.
+  - `5 logbase 2 3 ◀ ◀ ⌫` does the same, and the next ⌫ deletes the 5.
+  - On an empty line, ⌫ leaves `(□)`.
+- **EQ:**
+  - EQ on an empty line, then ⌫ → `EQ(,□)`: the first box is gone and a bare comma is left. After that ⌫ is stuck (F10's loop).
+  - Del before the comma deletes it, and the boxes merge (`EQ(2□)`).
+- **DMS:**
+  - On an empty line, ⌫ leaves `°□′□″`, with the cursor before it.
+  - `5 DMS 2 3 ◀ ◀ ⌫` deletes the 5 (`23°…`).
+  - Del deletes the marks one by one (`2□′□″`).
+- **Evaluate-at:**
+  - On an empty line, ⌫ with the cursor in the empty body leaves `_{□=□}`, a subscript without its bar, and is stuck. The body cases are R23's.
+  - Del right before the bar removes it and leaves `2_{□=□}`.
+
+**Cause:**
+- Log base: a MathLive special case, where any ⌫ in the subscript of `\log` or `\ln` deletes the whole operator (`mathlive.mjs` 31863).
+- EQ and DMS: the comma and ° ′ ″ are plain atoms, and the placeholders are atoms too.
+- Evaluate-at: a pair with `\left.` and an empty body is removed whole, and its subscript stays behind.
+
+**Fix** (points 1–4 and the Del mirror):
+- In the log base, ⌫ deletes one character. To avoid MathLive's special case, select the one atom before the cursor and delete the selection: that goes through `deleteRange`, not `onDelete`. Check that it does.
+- The comma, ° ′ ″ and the bar are marks of their template.
+
+**Commits:**
+1. **Tests:** the grid's F21 cases and the cases above by keys.
+2. **Fix.**
+3. **Report** with the G2 item 49 answer.
+
+Gate: bksp-grid F21 (after this the grid should hold no `test.fail` left); tmpl, bksp and undo e2e; vitest.
+
+### ron, R27a: 10ˣ after a digit joins the number (bug F22), branch `p1/ron-m4a-tenpow`
+**Starts only after G2 item 48 is answered and the owner has picked the fix.** Read: the `log` key in `spec/keyboard.yaml` (line 175, Shift = `10^{#0}`), the DMS cell, `app/src/input/parse.ts` (number tokens), decisions.md "The exponent mark (R14)".
+
+**Behaviour today:**
+- `5 10ˣ 2` shows `510²` (LaTeX `510^2`), and Enter computes 510² = 260 100. Someone who meant 5·10² = 500 sees a plausible line.
+- The same join happens with 5, the DMS cell and 2 3 → `523°`.
+- The exponent key ᴇ is the right key for 5·10², but a G2 hand also reaches for Shift + LOG.
+
+**Cause:** the template's digits go straight after the 5, in the same number. The LaTeX cannot tell `510^2` from a typed 510².
+
+**Fix (open, for the owner):**
+- (a) After a digit, insert `\times10^{#0}`. The line shows 5×10², which is what was meant.
+- (b) Keep the template, and have the parser refuse a number that runs into a 10ˣ. This needs a mark in the LaTeX, such as the group `{10}^{…}`, and a parser rule with a round trip.
+- (c) Leave it as it is: the line shows 510², which is what it computes.
+
+Recommendation: (a), if the G2 shows `5*10^2` or similar. DMS is the same question at a lower priority, since no engineer types a digit right before a DMS cell.
+
+**Commits:**
+1. **Test** by keys (`entry.spec.ts`).
+2. **Fix.**
+3. **Report.**
+
+Gate: entry, selection and tmpl e2e; vitest, plus the golden gate if the parser changes.
+
+### ron, R27b: the cursor stops where no box is (bug F23), branch `p1/ron-m4a-cursorstops`
+Read: `app/src/entry/controller.ts` (`run`, `nextBox` line 266), `app/src/keyboard/Keypad.svelte` `step()` (a trackpad step is the arrow key's `run`), r6-pipelines section 7 ("◀ and ▶ visit every offset").
+
+**Behaviour today:** ◀ and ▶ visit every offset from one end to the other, and a trackpad drag steps through the same ones. Setting `mf.position` to each offset and typing 7 gives:
+- **Between a function name and its bracket:** `\sin‸\left(2\right)` → `\sin7\left(2\right)`, drawn "sin 7 (2)", which the parser reads as sin(7·2) = sin 14 with no mark. The log base does the same: `\log_2‸\left(8\right)` → 7 gives log₂(56).
+- **Inside names:** EQ (offsets 1–3), approx, NOT and the one-line sqrt. A 7 gives `\operatorname{7\mathrm{EQ}}`, an error.
+- **Inside the `if ` of piecewise** (offsets 4–6 and 13–15) and **inside the d of ∫** (`\mathrm{d7}`): errors.
+- Each of these is one more trackpad step: a drag across `approx(…)` crosses six letters.
+
+**Cause:** MathLive's cursor visits every atom boundary. `nextBox` skips marks only while an empty box is still ahead.
+
+**Fix** (direction; the details are open):
+- In `run`, after `moveToNextChar` or `moveToPreviousChar` (keys and trackpad steps alike), keep stepping while the new position is not a stop. A non-stop is a position inside an `\operatorname`, `\text` or `\mathrm` group, or between a function name and the `\left` it was inserted with.
+- Alternative: make the names atomic for the cursor, as the chips are (MathLive macros with `captureSelection`). That changes the LaTeX the parser reads.
+- Open for the owner (G2 item 50): whether the parser should also refuse a bare function name followed by a term and a bracket (`sin 7(2)`), whatever the cursor does.
+
+**Commits:**
+1. **Tests** (new `app/test/cursor.spec.ts`):
+   - The offsets that ◀ and ▶ visit for sin, EQ, approx, piecewise and ∫.
+   - A digit typed at every offset the keys reach lands in a box, or is refused.
+2. **Fix.**
+3. **Report** with the G2 item 50 answer.
+
+Gate: cursor, gestures, tmpl, selection and bksp-grid e2e green; the trackpad presses in the task benchmark do not go up.
 
 ### ron, R21: pick sheets over the keypad, Settings over everything, branch `p1/ron-m4a-fit`
 The owner's frictions (2026-10-14): a sheet in the viewport is far from the thumb while typing, the Tmpl grid scrolls on the phone, Settings is too small. Decided: decisions.md "R21" (binding); the target text is already in docs/05 2 (rule 1), 3.1 and 3.4 and docs/03 rule 8. Read those, decisions.md "Sheet defaults (R7)", "Mode and Settings sheets (R8)", "S2: one menu system", and `app/src/views/` (`Sheet.svelte`, `sheet.svelte.ts`, `sheetKeys.ts`, `modeSheet.ts`) with the sheet parts of `App.svelte`, `apps/shell.svelte.ts` and `keyboard/Keypad.svelte`. Commits in this order:

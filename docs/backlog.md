@@ -12,7 +12,7 @@ The one place for "where are we and what's left". The architecture is [04-archit
 | MVP milestone 2: Function app + Solve app | **Done** 2026-10-11 |
 | Virtual Calculator mapping | **Done** 2026-10-11 (data merged, 632dab4). Second session 2026-10-12 answered the last G2 items (19–22, 24–31); see "Follow-ups from the G2 answers" below |
 | MVP milestone 3: Python | **Done** 2026-10-11 (desktop gates, S8+ and Tab One device numbers; report docs/shifts/2026-10-11-m3-report.md) |
-| Milestone 4a: feel (P11) | **Next** (2026-10-13): the owner's first daily use; packages R5–R23 and S1–S2 below (brief section 0b). R5–R10, R13, R14, R16, R17 and R18 are done; R15a (mockups, `docs/mockups/top-cluster.html`) is done; **next: R22 and R23** (the entry bugs F9 and F10), then R21, then R15b (layout D approved 2026-10-14, Home and CAS on U2/U3; after one device run on the Tab One, Needs the user item 7) |
+| Milestone 4a: feel (P11) | **Next** (2026-10-13): the owner's first daily use; packages R5–R27b and S1–S2 below (brief section 0b). R5–R10, R13, R14, R16, R17 and R18 are done; R15a (mockups, `docs/mockups/top-cluster.html`) is done; **next: R22 and R23** (the entry bugs F9 and F10), then the small entry-bug packages R25a–R27b (F11–F23, found by probing 2026-10-14), then R21, then R15b (layout D approved 2026-10-14, Home and CAS on U2/U3; after one device run on the Tab One, Needs the user item 7) |
 | Engineer core: milestones 4 (Find and trust), 5 (Units), 6 (Structure) | **After 4a** (P8, 2026-10-12; gorge's index work G4 continues in parallel). Plan: [03-feature-analysis.md](03-feature-analysis.md) section 8; tasks below |
 | MVP release (Play testing track + web app, docs/02 section 8) | **Not scheduled** (user, 2026-10-12: not a priority). R1 (offline web app) done; R2–R4 open |
 | v1, v2 | Not started; most of v1 is deferred behind the engineer core (P8) |
@@ -47,6 +47,15 @@ The two debts grow with every milestone:
    - **48 px cluster rows or today's height:** judge on the R15b APK (decisions.md).
    - **G2 items 41 (&), 42 (→) and 43 (`7 mod −3`)** on the Virtual Calculator (`tests/golden/g2.yaml`), and **45** (in CAS, does Alpha + key type the capital or the lower case?).
    - **G2 item 44 (⌫ right after an opening bracket)** on your G2, before R23 starts: `SIN(23)` with the cursor right after `(`, then ⌫; the same with `5(2)`. One minute, and it settles the F10 rule (decisions.md "⌫ at a bracket").
+   - **G2 items 46–51 (⌫, 10ˣ and the cursor in templates)** on your G2, each before its package (about five minutes in all):
+     - 46: ⌫ after `)`, before R26c.
+     - 47: ⌫ at the start of a denominator or an exponent, before R26e.
+     - 48: `5`, 10ˣ, `2`, before R27a, which waits for it.
+     - 49: ⌫ on a log base digit, before R26h.
+     - 50: whether the cursor can stop between SIN and `(`, before R27b.
+     - 51: ⌫ in an empty matrix, before R26g.
+     
+     Unanswered items go on the defaults in decisions.md "⌫ and Del keep a template whole".
    - **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app. Copy what you need from the old app's history and definitions, then uninstall `org.pascaline.app`.
 
 6. **Upstream reports to send** (owner; todo, 2026-10-13). Each with a minimal case; the Giac ones go with the Parisse email of item 5, the qalc ones can go to GitHub issues at any time.
@@ -81,6 +90,66 @@ The owner's first days of daily use ([feedback.md](feedback.md)) and the UI plan
 18. **R21. Pick sheets over the keypad, Settings over everything** (owner, 2026-10-14: a sheet in the viewport is far from the thumb, the Tmpl grid scrolls on the phone, Settings is too small; decisions.md "R21"). Runs **before R15b** (R15b rebases on it). Apps, Menus, Mode, Tmpl and the Shift palettes rise over the maths rows (3–9) from the keypad's bottom edge, never over the top cluster, and fit their rows (floors 36 px rows, 44 px cells); Shift + 6 cells sit over their keys; Settings is a page over everything with sections. Package text: [shifts/brief.md](shifts/brief.md) section 7. *~2 d; ron, Opus.*
 19. **F9. The system keyboard on return, again** (bug, owner 2026-10-14, feedback #38). It happens after a trackpad drag and a quick switch away and back, twice. **Cause:** MathLive 0.111.1 has `MathfieldElement.restoreFocusWhenDocumentFocused`, on by default. When the field loses focus (also through our `dropFocus` in `app/src/main.ts`), MathLive arms a listener: on the next window `blur`, then the next window `focus`, it focuses the field again (`mathlive.mjs` `onBlur`; only a document `focusin` or `click` disarms it). Our blur comes inside the window `blur` event, so the first return is clean and the second one refocuses. When the page hides before the window blurs, every return refocuses. Playwright (2026-10-14, Pixel 7 profile) shows it after taps and after a drag, in both event orders. **Proved:** with the switch off, three away-and-back cycles leave nothing focused, and the next key types. Package **R22** (brief section 7). *~0.5 d; ron, Sonnet.*
 20. **F10. ⌫ stuck at a bracket** (bug, owner 2026-10-14, feedback #39). `log(log(□))`, then ⌫ ⌫ ⌫ stops at `log )`, and every further ⌫ does nothing. **Cause:** MathLive's `onDelete` for a `\left…\right` pair, with the cursor at the start of its body: while the closing bracket is real, it sets the opening one to `.` (invisible) and leaves the cursor where it was. The next ⌫ takes the same branch again, forever. Shift + ⌫ (Del) at the end of a body is the mirror case. It hits every bracket on our line, not only log (Playwright, 2026-10-14): `log(2` ⌫ ⌫ sticks at `\log\left.\right)`; `( )` the same; ⌫ right after the opening bracket of `sin(23)` or `5(2)` sticks at once. Not a silent wrong answer: the parser rejects `\left.…\right)` (its message, "expected the evaluate-at bar", is wrong for this case). Package **R23** (brief section 7), rule in decisions.md "⌫ at a bracket". *~1 d; ron, Opus.*
+
+**Entry bugs F11–F23, found by probing around F9 and F10** (owner's request for a deep analysis, 2026-10-14, feedback #45 and #46). The probes were Playwright, Pixel 7 profile, `?engine=fake`:
+- every keyboard template (32) × seven ⌫/Del scenarios, with every line state parsed;
+- a digit typed at every cursor position of 15 filled templates;
+- focus and gesture cases with simulated hide, show, blur and focus.
+
+The full behaviour, the steps to reproduce, the causes (file:line) and the fix directions are in the package texts (brief section 7). The rules are in decisions.md "⌫ and Del keep a template whole" and "Nothing takes focus while the app is away". None of them gives a wrong number with no visible sign. The worst ones (F17, F18, F22, F23) leave a line that looks plausible and computes something the user did not mean. Every package touches `app/src/entry/` or the keypad, so they run one at a time.
+
+F9's notification shade case belongs to R22 (same cause, same fix; its test gains blur-and-focus cycles without a hide).
+
+21. **F11. ⌫ held while the app goes away keeps deleting.** The auto-repeat timer has no end when the lift never arrives. `12345678` is empty after 1 s away. Every repeat focuses the field, so the system keyboard is up on return (K0). Package **R25a**. *~0.5 d with F12; ron, Sonnet.*
+22. **F12. A touch the app never saw end fires on the next key.** Hold 7, leave and come back, tap 2: the line is `72`. The next `pointerdown` finishes the stale gesture (`Keypad.svelte` line 151). Package **R25a**.
+23. **F13. A key pressed less than 60 ms before leaving focuses the field while away.** MathLive focuses its keyboard sink 60 ms after `mf.focus()`, in a timer that `dropFocus` cannot cancel. Hard to hit by hand, but every later async focus takes the same road. Package **R25c**. *~0.25 d; ron, Sonnet.*
+24. **F14. Desktop: ⌫ held with the mouse and released off the keypad never stops.** The line is empty 0.8 s later. The ⌫ path returns before `setPointerCapture` (`Keypad.svelte` line 163). Package **R25b**. *~0.25 d; ron, Sonnet.*
+25. **F15. ⌫ right after a closing bracket removes it alone.** `sin 2 ▶ ⌫` → `sin(2`. No key can type `)` back, so the line only gives "expected closing )". This hits every pair, including those of lim, Σ, Π and log base. Package **R26c** (after the grid test **R26a**). *~0.5 d; ron, Opus.*
+26. **F16. The hardware Backspace and Delete keys bypass `EntryController.run`.** log log, then four hardware Backspaces, is stuck at `log )` even after R23. Package **R26b**. *~0.25 d; ron, Sonnet.*
+27. **F17. Powers lose or move their exponent.**
+    - `2 + x² ⌫ ⌫` → `2²` (computes 4).
+    - x² on an empty line, then ⌫ → a lone `²` that ⌫ cannot remove.
+    - `5 xʸ 2 3 ◀ ◀ ⌫ ⌫` → `^{23}` alone.
+    - `5 eˣ 2 3 ◀ ◀ ⌫ ⌫` → `5²³`.
+    - `5 10ˣ 2 3 ◀ ◀ ⌫ ⌫` → `51²³`.
+
+    Package **R26d**. *~0.5–1 d; ron, Opus.*
+28. **F18. Fractions and roots.**
+    - ⁿ√ on an empty line, then ⌫ → `√□`, stuck.
+    - Deleting the index digit of `³√8` leaves `\sqrt8`, and Enter computes √8.
+    - ⌫ at the start of the index or of a mixed number's part deletes the digit before the template and leaves the template.
+    - ∂ loses its mark alone.
+    - A nested fraction is left with an empty numerator with no □.
+    - `5 ÷ 2 3 ◀ ◀ ⌫` → `523`.
+
+    Package **R26e**. *~0.5 d; ron, Opus.*
+29. **F19. lim, Σ, Π, ∫.**
+    - ⌫ in the empty first box deletes the box (`lim_{→□}`), then nothing more happens.
+    - ⌫ from a first box deletes the digit before the template.
+    - From the end of the line, ⌫ leaves a bare `\lim` that it cannot remove.
+    - Del deletes →, =, `\,` and d, and no key types them back.
+
+    Package **R26f**. *~0.5 d; ron, Opus.*
+30. **F20. Matrices, vectors, piecewise.**
+    - ⌫ in the empty first cell deletes its □, then nothing more happens.
+    - ⌫ at the start of a filled cell does nothing.
+    - One ⌫ right after a filled matrix deletes all of it.
+
+    Package **R26g**. *~0.5 d; ron, Opus.*
+31. **F21. Log base, EQ, DMS, the evaluate-at bounds.**
+    - One ⌫ in the log base deletes the whole `log₁₆`. This is MathLive's special case for `\log` and `\ln`, `mathlive.mjs` line 31863.
+    - EQ becomes `EQ(,□)` and is stuck.
+    - DMS and evaluate-at leave `°□′□″` and `_{□=□}` that ⌫ cannot reach.
+    - Del deletes their marks one by one.
+
+    Package **R26h**. *~0.5 d; ron, Opus.*
+32. **F22. 10ˣ after a digit joins the number.** `5 10ˣ 2` shows `510²` and computes 260 100. DMS after a digit gives `523°`. **The fix needs the owner** after G2 item 48. Package **R27a**. *~0.5 d; ron, Opus.*
+33. **F23. The cursor stops where no box is.**
+    - ◀, ▶ and every trackpad step stop between a function name and its bracket. A 7 typed there gives `sin 7(2)`, which is computed as sin 14 with no mark.
+    - They also stop inside EQ, approx, NOT, the one-line sqrt, the `if` of piecewise and the d of ∫. A digit typed there gives an error.
+    - Each of these is one more trackpad step.
+
+    Package **R27b**. *~0.5–1 d; ron, Opus.*
 
 In parallel (no UI): **S5** (sandra, now): the unit pad's arrangement and the number of user cells, measured from how often engineers use each unit (it asks you for your own top units first); then **G7** (gorge): Find data for the unit pad and the units menu (brief section 0d). G4 and G3 merged (milestone 4 steps 7 and 10); **S1** (sandra): the unit-slot paper test. *Done (`afa7f00`): median 2 presses over 50 units (gate ≤ 4), with flicks; layout accepted by the owner 2026-10-13 ([research/r7-unit-slots.md](research/r7-unit-slots.md), decisions.md S1).* After 4a: R4 Find UI (on the sheet, G2-style Math menu), A4 device bars.
 
