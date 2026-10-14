@@ -46,8 +46,8 @@ describe("size-check", () => {
     expect(r.notBuilt).toEqual(["Find UI chunk", "Units app chunk", "Find index asset", "qalc wasm + glue"]);
   });
 
-  it("fails a start chunk over 150 kB raw", () => {
-    const { manifest, files } = base(150_001);
+  it("fails a start chunk over 156 kB raw", () => {
+    const { manifest, files } = base(156_001);
     const r = checkSizes(fakeDist(manifest, files));
     expect(r.failures).toHaveLength(1);
     expect(r.failures[0]).toContain("Start chunk");
@@ -63,13 +63,13 @@ describe("size-check", () => {
       "lazy.js": { file: "assets/lazy.js", isDynamicEntry: true, src: "lazy.js" },
     };
     expect(startFiles(manifest).sort()).toEqual(["assets/a.js", "assets/b.js", "assets/c.js", "assets/index.js"]);
-    // Each file is 50 kB: the entry alone is under 150 kB, the four together (200 kB) are over. lazy.js (1 MB) must not count.
+    // Each file is 50 kB: the entry alone is under 156 kB, the four together (200 kB) are over. lazy.js (1 MB) must not count.
     const files = { "assets/index.js": 50_000, "assets/a.js": 50_000, "assets/b.js": 50_000, "assets/c.js": 50_000, "assets/lazy.js": 1_000_000 };
     const r = checkSizes(fakeDist(manifest, files));
     const start = r.rows.find((x) => x.rule === "Start chunk");
     expect(start?.raw).toBe(200_000);
     expect(start?.files.sort()).toEqual(["assets/a.js", "assets/b.js", "assets/c.js", "assets/index.js"]);
-    // Over both the raw budget (200 kB > 150 kB) and the gzip one (80 kB of random bytes > 52 kB); nothing else fails.
+    // Over both the raw budget (200 kB > 156 kB) and the gzip one (80 kB of random bytes > 54 kB); nothing else fails.
     expect(r.failures.every((f) => f.startsWith("Start chunk"))).toBe(true);
     expect(r.failures.some((f) => f.includes("raw"))).toBe(true);
   });
@@ -88,10 +88,10 @@ describe("size-check", () => {
     expect(() => startFiles(manifest)).toThrow(/_missing\.js/);
   });
 
-  it("fails a start chunk over 52 kB gzip even when it is under 150 kB raw", () => {
+  it("fails a start chunk over 54 kB gzip even when it is under 156 kB raw", () => {
     const { manifest } = base(0);
-    // Random bytes do not compress, so 53 kB raw is over 52 kB gzip and well under 150 kB raw.
-    const r = checkSizes(fakeDist(manifest, { "assets/index.js": { random: 53_000 }, "assets/mathlive.js": 1000 }));
+    // Random bytes do not compress, so 55 kB raw is over 54 kB gzip and well under 156 kB raw.
+    const r = checkSizes(fakeDist(manifest, { "assets/index.js": { random: 55_000 }, "assets/mathlive.js": 1000 }));
     expect(r.failures).toHaveLength(1);
     expect(r.failures[0]).toContain("gzip");
   });

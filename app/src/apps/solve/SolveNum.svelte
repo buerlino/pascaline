@@ -4,6 +4,7 @@
   // answer). ▲▼ or a tap select one; the entry line edits it; Menu → Solve. Below: the info line, with ⚠
   // when the residual check failed, and the polynomial roots when asked for.
   import { t } from "../../i18n/index.ts";
+  import { longpress } from "../longpress.ts";
   import type { SolveApp } from "./app.svelte.ts";
 
   let { app }: { app: SolveApp } = $props();
@@ -28,7 +29,7 @@
             <th>
               <button type="button" onpointerdown={(e) => e.preventDefault()} onclick={() => app.selectUnknown(name)}>{@render label(name)}</button>
             </th>
-            <td data-value={app.value(name)} data-solved={app.report?.ok && app.report.names.includes(name) && !app.report.roots}>
+            <td use:longpress={() => void app.copyValue(name)} data-value={app.value(name)} data-solved={app.report?.ok && app.report.names.includes(name) && !app.report.roots}>
               {app.fmtValue(name)}{#if app.warned[name]}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}
             </td>
           </tr>

@@ -7,6 +7,7 @@
   import { onMount } from "svelte";
   import { t } from "../../i18n/index.ts";
   import { mark } from "../../marks.ts";
+  import { longpress } from "../longpress.ts";
   import { plotHook } from "./plotHook.ts";
   import { CURVE_COLORS, DEFAULT_X, type FunctionApp, type PlotWindow } from "./app.svelte.ts";
 
@@ -198,7 +199,7 @@
     <div class="readout" data-testid="readout">
       {#if app.readout}
         {#each app.readout.lines as l (l.label)}
-          <span class="pair"><span class="k">{l.label}</span> <span class="v" data-testid={`readout-${l.label}`}>{l.value}</span>{#if l.warn}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</span>
+          <span class="pair"><span class="k">{l.label}</span> <span class="v" data-testid={`readout-${l.label}`} use:longpress={l.cell ? () => void app.copyReadout(l) : undefined}>{l.value}</span>{#if l.warn}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</span>
         {/each}
         {#if app.readout.info}
           <span class="info" class:warn={app.readout.warn} data-testid="readout-info"
