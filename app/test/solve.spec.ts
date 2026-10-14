@@ -127,3 +127,26 @@ test("Solve: equations and values are stored", async ({ page }) => {
   await tap(page, ["menu", "d1"]);
   await expect(value(page, "x")).toHaveText("-1.41421356237"); // oracle -sqrt(2), solve.yaml sqrt2-neg
 });
+
+test("Solve: the ⚠ of an answer is kept across a reload (M4-10)", async ({ page }) => {
+  await openSolve(page);
+  await tap(page, ["x", "pow", "d2", "right", "shift", "dot", "d2", "enter"]);
+  await tap(page, ["num"]);
+  await setValue(page, "x", ["d1"]);
+  await tap(page, ["menu", "d1"]);
+  await expect(value(page, "x")).toHaveText("1.41421356237");
+  await expect(page.locator('[data-testid="solve-table"] [data-testid="mark"]')).toHaveCount(0);
+  // an answer with fewer confirmed digits than shown carries the flag (set as solve() sets it from isWarned)
+  await page.evaluate(() => {
+    const app = window.pascaline.shell.loaded.solve!.instance as unknown as { warned: Record<string, boolean>; save(): void };
+    app.warned = { x: true };
+    app.save();
+  });
+  await page.evaluate(() => window.pascaline.shell.flush());
+  await page.reload();
+  await page.waitForFunction(() => window.pascaline !== undefined && window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await tap(page, ["apps", "d2"]);
+  await tap(page, ["num"]);
+  await expect(value(page, "x")).toContainText("1.41421356237");
+  await expect(page.locator('[data-testid="solve-table"] [data-testid="mark"]')).toHaveText("⚠");
+});

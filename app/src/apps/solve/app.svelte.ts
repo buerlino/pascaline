@@ -33,6 +33,8 @@ interface Stored {
   slots: SlotsJson;
   values: Record<string, string>;
   selected: string;
+  /** M4-10: the ⚠ of each answer, kept across a reload */
+  warned?: Record<string, boolean>;
 }
 
 /** An equation typed on the entry line as Giac text, or why it does not parse. */
@@ -280,6 +282,8 @@ export class SolveApp implements AppInstance {
     if (s.values && typeof s.values === "object")
       this.values = Object.fromEntries(Object.entries(s.values).filter(([k, v]) => IDENT.test(k) && typeof v === "string" && parseDec(v)));
     if (typeof s.selected === "string" && IDENT.test(s.selected)) this.selected = s.selected;
+    if (s.warned && typeof s.warned === "object")
+      this.warned = Object.fromEntries(Object.entries(s.warned).filter(([k, v]) => v === true && k in this.values));
   }
   save(): void {
     this.saveTimer ??= setTimeout(() => this.flush(), 300);
@@ -287,7 +291,7 @@ export class SolveApp implements AppInstance {
   flush(): void {
     if (this.saveTimer !== undefined) clearTimeout(this.saveTimer);
     this.saveTimer = undefined;
-    const s: Stored = { slots: this.slots.toJSON(), values: { ...this.values }, selected: this.selected };
+    const s: Stored = { slots: this.slots.toJSON(), values: { ...this.values }, selected: this.selected, warned: { ...this.warned } };
     void this.host.kv.set("app.solve", s);
   }
 }

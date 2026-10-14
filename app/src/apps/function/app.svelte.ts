@@ -32,7 +32,7 @@ export interface Mark {
 }
 export interface Readout {
   /** Label and value pairs, already formatted. */
-  lines: { label: string; value: string }[];
+  lines: { label: string; value: string; /** ⚠: the value behind the line is warned (M4-10) */ warn?: boolean }[];
   info: string;
   warn: boolean;
 }
@@ -473,15 +473,17 @@ export class FunctionApp implements AppInstance {
       return;
     }
     const lines: Readout["lines"] = [];
+    // M4-10: a number line is marked when the engine flagged the result or the cell shows more digits than confirmed
+    const w = (c: Cell | undefined): boolean => r.warn || this.warned(c);
     const xn = cellNumber(r.x);
     const yn = cellNumber(r.y);
     if (kind === "area") {
       lines.push({ label: t("fcn.areaRange"), value: `${this.fmtX(a ?? "")} … ${this.fmtX(b ?? "")}` });
-      lines.push({ label: t("fcn.area"), value: this.fmt(r.value) });
+      lines.push({ label: t("fcn.area"), value: this.fmt(r.value), warn: w(r.value) });
     } else {
-      if (r.x) lines.push({ label: "x", value: this.fmt(r.x) });
-      if (r.y) lines.push({ label: "y", value: this.fmt(r.y) });
-      if (kind === "slope") lines.push({ label: t("fcn.slope"), value: this.fmt(r.value) });
+      if (r.x) lines.push({ label: "x", value: this.fmt(r.x), warn: w(r.x) });
+      if (r.y) lines.push({ label: "y", value: this.fmt(r.y), warn: w(r.y) });
+      if (kind === "slope") lines.push({ label: t("fcn.slope"), value: this.fmt(r.value), warn: w(r.value) });
       if (kind === "extremum" && r.extremum) lines.push({ label: t("fcn.kind"), value: t(`fcn.${r.extremum}`) });
     }
     this.readout = { lines, info: r.info, warn: r.warn };
