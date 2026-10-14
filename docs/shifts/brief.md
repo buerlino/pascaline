@@ -32,7 +32,6 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 3 | G5 solver bugs SB1–SB4 (section 7) | gorge, Sonnet | `p1/gorge-m4-sb` | 1 h + review |
 | 4 | **Opus pass 1** on steps 1–3, then its FIX packages | Opus | — | 20 min + fixes |
 | 5 | G6 the §2.3 audit (section 7) | gorge, Sonnet | `p1/gorge-m4-prec` | 1 h + review |
-| 6 | R19 M4-10 and the `mod` parser bug (section 7) | ron, Sonnet | `p1/ron-m4-fix` | 45 min + review |
 | 7 | R20 Solve and analysis copy (section 7) | ron, Sonnet | `p1/ron-m4-copy` | 45 min + review |
 | 8 | **Opus pass 2** on what came after pass 1, then its FIX packages | Opus | — | 20 min + fixes |
 | 9 | Shift report, then stop (the henri started after step 8) | henri_n | — | 10 min |
@@ -165,11 +164,6 @@ docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on 
 **R12a:** read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a menu sheet, the Mode sheet, Settings, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change. **R12b** (started with the owner's notes): design tokens in one file (docs/05 3.10: colours per role, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component; history rows (3.5); **theme setting System / Light / Dark, Dark by default on Android, System in the PWA**; press feedback within one frame; `prefers-reduced-motion`. Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
 
 ### Night packages (section 0c)
-
-### ron, R19: M4-10 and the `mod` parser bug, branch `p1/ron-m4-fix`
-- **M4-10** (decided 2026-10-12, decisions.md): (1) the Function Plot readout lines (root, extremum, intersection, area) get `⚠` when the value behind the line is warned; (2) a Solve `⚠` is kept across a reload (stored with the app state). A regression test first for each.
-- **`\operatorname{mod}(a,b)`** (from G4, backlog milestone 4 step 7): the parser emits Giac `mod(a,b)`, which is an error. Emit the Giac form that gives what Find's `mod` entry says (read its insert and preview in the index); probe it with `node engine/giac/smoke.mjs`. Round-trip cases with a positive and a negative first argument, values `derived` from the definition Find states; if Find states no sign rule, record the negative case `assumed` with a G2-checklist question.
-Gate: parser round trips, golden gate (parser change), e2e for both M4-10 points, size test.
 
 ### ron, R20: Solve and analysis copy, branch `p1/ron-m4-copy`
 Backlog milestone 4 step 9, open part; docs/04 §2.6 row "Solve root, analysis value": the default copy (Shift + View, long press) copies the full value, and the Menu has "as shown". Use A3's `ClipboardPort` (`app/src/clipboard/`) and its full-value formatter; no new copy path. Covers the Solve roots and the Function Plot readout values. List and matrix element copy are not in this package. Gate: e2e for each from keys and from touch (paste back gives the same value, P5), size test.

@@ -184,3 +184,28 @@ test("Apps key lists the apps; Home/CAS key goes back to Home", async ({ page })
   await tap(page, ["d1", "add", "d1", "enter"]);
   await expect(page.locator('[data-testid="result"] .result').last()).toHaveAttribute("data-text", "2");
 });
+
+test("Function: a warned root puts ⚠ on its readout lines, a clean one does not (M4-10)", async ({ page }) => {
+  await defineTwo(page);
+  await tap(page, ["plot"]);
+  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  await tap(page, ["down"]);
+  await tap(page, Array<string>(10).fill("right"));
+  await tap(page, ["menu", "d1"]); // Root
+  await expect(page.getByTestId("readout-x")).toHaveText("1.41421356237");
+  await expect(page.getByTestId("readout").getByTestId("mark")).toHaveCount(0);
+  // the same root with fewer confirmed digits than shown: the x line gets the mark, the digits stay
+  await page.evaluate(() => {
+    const app = window.pascaline.shell.loaded.function!.instance as unknown as {
+      fc: { analyze(...a: unknown[]): Promise<{ x?: Record<string, unknown>; y?: Record<string, unknown> }> };
+    };
+    const orig = app.fc.analyze.bind(app.fc);
+    app.fc.analyze = async (...a) => {
+      const r = await orig(...a);
+      for (const c of [r.x, r.y]) if (c) Object.assign(c, { exactRational: false, reliableDigits: 4 });
+      return r;
+    };
+  });
+  await tap(page, ["menu", "d1"]);
+  await expect(page.getByTestId("readout").getByTestId("mark")).toHaveText(["⚠"]); // x only: y is the exact 0 at a checked root
+});

@@ -97,8 +97,12 @@ function symbolText(e: Json): string | undefined {
   return s;
 }
 
+/** Giac's own `mod` is the modular-number constructor (an error as a call); Find's `mod` is irem (Euclidean,
+ *  never negative: irem(-7,3) = 2), so the written word is renamed. */
+const CALL_NAME: Readonly<Record<string, string>> = { mod: "irem" };
+
 function call(name: string, args: Json[], o: SerializeOptions): Out {
-  return { s: `${name}(${args.map((a) => ser(a, o).s).join(",")})`, p: 5 };
+  return { s: `${CALL_NAME[name] ?? name}(${args.map((a) => ser(a, o).s).join(",")})`, p: 5 };
 }
 
 function lambdaBody(f: Json, o: SerializeOptions): { body: Json; v?: string } {
