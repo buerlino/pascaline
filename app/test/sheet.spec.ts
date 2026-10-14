@@ -184,7 +184,7 @@ test("disabled rows stay in place with their number and say why; picking one doe
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await tap(page, ["plot", "menu"]); // no function defined
   const rows = sheet(page).getByRole("menuitem");
-  await expect(rows).toHaveCount(6);
+  await expect(rows).toHaveCount(8);
   await expect(rows.first()).toBeDisabled();
   await expect(rows.first().locator(".reason")).toHaveText("Define a function first");
   await expect(sheet(page).getByRole("menuitem", { name: "6 Default window" })).toBeEnabled();
