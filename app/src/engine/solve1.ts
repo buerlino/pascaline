@@ -105,7 +105,14 @@ export function solve1(
   ev(`pasfb:=diff(pasfa,${v})`);
   ev(`Digits:=${s.digits}`);
 
-  const f = (x: number) => num(ev(`evalf(subst(pasf,${v}=${x}))`));
+  // Sign tests run at workDigits on the exact point: at 12 digits an expanded degree-20 polynomial is rounding
+  // noise near x = 15, which made the bracket search see sign changes that are not there (SB3).
+  const f = (x: number) => {
+    ev(`Digits:=${s.workDigits}`);
+    const r = num(ev(`evalf(subst(pasf,${v}=exact(${x})))`));
+    ev(`Digits:=${s.digits}`);
+    return r;
+  };
 
   /** Polish the Giac variable x (pasx) at `digits` (workDigits); returns the last relative step (0 when f is exactly 0). */
   const polish = (steps: number, x = "pasx", digits = s.workDigits): number => {
@@ -247,6 +254,23 @@ export function solve1(
     return done({ ok: true, display: show(), method, info: exact ? `${info}; exact root (checked by CAS)` : info, bracket, residualRel: rr, warn: rr > s.warnRel });
   };
 
+  /** Bisection on [a, b] with the sign tests of f (workDigits); returns the midpoint of the last interval. */
+  const bisect = (a: number, b: number): number => {
+    let fa = f(a);
+    for (let i = 0; i < 60 && fa !== undefined; i++) {
+      const mid = (a + b) / 2;
+      if (mid === a || mid === b) break;
+      const fm = f(mid);
+      if (fm === undefined) break;
+      if (fm === 0) return mid;
+      if (Math.sign(fm) === Math.sign(fa)) {
+        a = mid;
+        fa = fm;
+      } else b = mid;
+    }
+    return (a + b) / 2;
+  };
+
   // 2. bracket search
   const x0 = num(ev(`evalf(${guess})`));
   if (x0 === undefined) return done({ ok: false, display: "guess is not a real number", method: "none", info: "", warn: false });
@@ -287,11 +311,9 @@ export function solve1(
         ev(`Digits:=${s.digits}`);
         const out = ev(`fsolve(pasf,${v}=${br.a}..${br.b},brent_solver)`);
         const m = /^\[([^,\]]+)/.exec(out);
-        if (!m || num(m[1] ?? "") === undefined) {
-          rejected++;
-          continue;
-        }
-        setX(m[1] ?? "");
+        const xb = m ? num(m[1] ?? "") : undefined;
+        if (xb === undefined || xb < br.a || xb > br.b) setX(String(bisect(br.a, br.b)));
+        else setX(m![1] ?? "");
       }
       ev("pasy:=pasx");
       let a = accept();
@@ -299,6 +321,18 @@ export function solve1(
       if (!br.zero && (xp === undefined || xp < br.a || xp > br.b)) {
         ev("pasx:=pasy"); // polish left the bracket: keep Brent's value
         a = { ok: residual() <= s.warnRel, rr: residual() };
+      }
+      if (!br.zero && !a.ok) {
+        // Brent runs in doubles: on an expanded high-degree polynomial its sign tests near the root are rounding
+        // noise (SB3). Bisect with sign tests at workDigits instead, then polish again.
+        setX(String(bisect(br.a, br.b)));
+        ev("pasy:=pasx");
+        a = accept();
+        const xq = num(ev("pasx"));
+        if (xq === undefined || xq < br.a || xq > br.b) {
+          ev("pasx:=pasy");
+          a = { ok: residual() <= s.warnRel, rr: residual() };
+        }
       }
       if (!a.ok) {
         rejected++; // a sign change (or double-precision zero) that isn't a root: pole, jump or underflow
