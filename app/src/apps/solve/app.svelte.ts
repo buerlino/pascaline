@@ -12,6 +12,7 @@ import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { EMARK } from "../../entry/macros.ts";
 import { mathJsonToGiac, SerializeError } from "../../input/emit.ts";
 import { parseLatex } from "../../input/parse.ts";
+import { tc } from "../../clipboard/strings.ts";
 import { t } from "../../i18n/index.ts";
 import { parseDec, plainNumber, showDecimal } from "../decimal.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
@@ -33,6 +34,8 @@ interface Stored {
   slots: SlotsJson;
   values: Record<string, string>;
   selected: string;
+  /** The full value (Copy, docs/04 2.6) of the unknowns a solve answered; an edit drops it. */
+  copies?: Record<string, string>;
 }
 
 /** An equation typed on the entry line as Giac text, or why it does not parse. */
@@ -62,6 +65,8 @@ export class SolveApp implements AppInstance {
   /** Variables whose answer has fewer confirmed digits than shown: the table marks them ⚠ (docs/04 2.4). */
   warned = $state<Record<string, boolean>>({});
   report = $state<SolveReport | undefined>(undefined);
+  /** The full value of each answered unknown, as Copy gives it (every confirmed digit, up to 40); absent = the stored value. */
+  copies = $state<Record<string, string>>({});
 
   private jobs = $state(0);
   private readonly host: AppHost;
@@ -109,6 +114,7 @@ export class SolveApp implements AppInstance {
       const v = plainNumber(latex);
       if (v === undefined) return;
       this.values = { ...this.values, [this.selected]: v };
+      this.dropCopy(this.selected);
       this.warned = { ...this.warned, [this.selected]: false };
       this.report = undefined;
       this.loadEntry();
@@ -133,9 +139,45 @@ export class SolveApp implements AppInstance {
     return false;
   }
 
+  // ---- Copy (docs/04 section 2.6): the full value of a root; Menu: as shown
+  copyText(view: ViewId): Promise<string | undefined> | undefined {
+    return view === "num" && this.selected ? this.fullOf(this.selected) : undefined;
+  }
+  /** Every confirmed digit of the unknown's value (the engine's, when a solve gave it), else the stored value. */
+  async fullOf(name: string): Promise<string> {
+    await this.settling; // the answer's full text is still being made (the copy code loads on first use)
+    return this.copies[name] ?? this.value(name);
+  }
+  async copyValue(name: string, shown = false): Promise<void> {
+    this.host.copy(shown ? this.fmtValue(name) : await this.fullOf(name));
+  }
+  private settling: Promise<void> = Promise.resolve();
+  private dropCopy(name: string): void {
+    if (!(name in this.copies)) return;
+    const { [name]: _gone, ...rest } = this.copies;
+    this.copies = rest;
+  }
+  /** Keep the full value of an answer next to the stored one (lazy: the copy code is not in the start chunk). */
+  private async keepFull(name: string, display: string, r: Parameters<typeof isWarned>[0] & { full?: string }): Promise<void> {
+    const { copyFull } = await import("../../clipboard/impl.ts");
+    const text = copyFull({
+      latex: "",
+      status: "done",
+      text: display,
+      ...(r.value ? { value: r.value } : {}),
+      ...(r.full !== undefined ? { full: r.full } : {}),
+      ...(r.reliableDigits !== undefined ? { reliableDigits: r.reliableDigits } : {}),
+    });
+    if (text !== undefined && this.values[name] === display.replace("E", "e")) {
+      this.copies = { ...this.copies, [name]: text };
+      this.save();
+    }
+  }
+
   menu(view: ViewId): MenuItem[] {
     if (view !== "num") return [];
     const none = !this.selected || this.active.length === 0;
+    const noValue = !this.selected;
     return [
       { id: "solve", label: t("solve.solve"), disabled: none, reason: t("why.noEquation"), run: () => void this.solve() },
       {
@@ -145,6 +187,8 @@ export class SolveApp implements AppInstance {
         reason: none ? t("why.noEquation") : t("why.oneEquation"),
         run: () => void this.polyRoots(),
       },
+      { id: "copy", label: tc("clip.copy"), disabled: noValue, reason: t("why.noEquation"), run: () => void this.copyValue(this.selected) },
+      { id: "shown", label: tc("clip.asShown"), disabled: noValue, reason: t("why.noEquation"), run: () => void this.copyValue(this.selected, true) },
     ];
   }
 
@@ -246,7 +290,10 @@ export class SolveApp implements AppInstance {
     };
     // A single real root becomes the value, like a solve.
     const real = r.roots.filter((x) => x.result.value && x.result.value.im.digits === "");
-    if (r.ok && real.length === 1) this.setFromResult(name, real[0]!.result.display, isWarned(real[0]!.result, s));
+    if (r.ok && real.length === 1) {
+      this.setFromResult(name, real[0]!.result.display, isWarned(real[0]!.result, s));
+      this.settling = this.keepFull(name, real[0]!.result.display, real[0]!.result);
+    }
   }
 
   private failText(r: SolveOutcome): string {
@@ -257,7 +304,12 @@ export class SolveApp implements AppInstance {
   }
 
   private apply(names: string[], r: SolveOutcome): void {
-    if (r.ok) for (const root of r.roots) if (root.name) this.setFromResult(root.name, root.result.display, isWarned(root.result, this.host.settings));
+    if (r.ok)
+      for (const root of r.roots)
+        if (root.name) {
+          this.setFromResult(root.name, root.result.display, isWarned(root.result, this.host.settings));
+          this.settling = Promise.all([this.settling, this.keepFull(root.name, root.result.display, root.result)]).then(() => undefined);
+        }
     // A failure is flagged like a failed residual check: nothing was substituted back successfully.
     this.report = { names, ok: r.ok, warn: r.warn || !r.ok, info: r.ok ? r.info : this.failText(r) };
     this.loadEntry();
@@ -268,6 +320,7 @@ export class SolveApp implements AppInstance {
     if (parseDec(v)) {
       this.values = { ...this.values, [name]: v };
       this.warned = { ...this.warned, [name]: warn };
+      this.dropCopy(name);
     }
   }
 
@@ -280,6 +333,8 @@ export class SolveApp implements AppInstance {
     if (s.values && typeof s.values === "object")
       this.values = Object.fromEntries(Object.entries(s.values).filter(([k, v]) => IDENT.test(k) && typeof v === "string" && parseDec(v)));
     if (typeof s.selected === "string" && IDENT.test(s.selected)) this.selected = s.selected;
+    if (s.copies && typeof s.copies === "object")
+      this.copies = Object.fromEntries(Object.entries(s.copies).filter(([k, v]) => k in this.values && typeof v === "string" && /^-?\d[\d.]*(E-?\d+)?$/.test(v)));
   }
   save(): void {
     this.saveTimer ??= setTimeout(() => this.flush(), 300);
@@ -287,7 +342,7 @@ export class SolveApp implements AppInstance {
   flush(): void {
     if (this.saveTimer !== undefined) clearTimeout(this.saveTimer);
     this.saveTimer = undefined;
-    const s: Stored = { slots: this.slots.toJSON(), values: { ...this.values }, selected: this.selected };
+    const s: Stored = { slots: this.slots.toJSON(), values: { ...this.values }, selected: this.selected, copies: { ...this.copies } };
     void this.host.kv.set("app.solve", s);
   }
 }

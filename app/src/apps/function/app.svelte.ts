@@ -32,7 +32,7 @@ export interface Mark {
 }
 export interface Readout {
   /** Label and value pairs, already formatted. */
-  lines: { label: string; value: string }[];
+  lines: { label: string; value: string; /** The engine number behind the line, for Copy. */ cell?: Cell; /** The line Shift + View copies. */ primary?: boolean }[];
   info: string;
   warn: boolean;
 }
@@ -176,6 +176,8 @@ export class FunctionApp implements AppInstance {
         { id: "slope", label: t("fcn.slope"), disabled: none, reason: why, run: () => void this.analyze("slope") },
         { id: "area", label: t("fcn.area"), disabled: none, reason: why, run: () => this.startArea() },
         { id: "default", label: t("plot.defaultWindow"), run: () => this.defaultWindow() },
+        { id: "copy", label: tc("clip.copy"), disabled: !this.copyLine(), reason: tc("clip.noResult"), run: () => void this.copyReadout(this.copyLine()) },
+        { id: "shown", label: tc("clip.asShown"), disabled: !this.copyLine(), reason: tc("clip.noResult"), run: () => void this.copyReadout(this.copyLine(), true) },
       ];
     }
     if (view === "num")
@@ -189,7 +191,27 @@ export class FunctionApp implements AppInstance {
 
   // ---- Copy (docs/04 section 2.6): the Num table as CSV, full values
   copyText(view: ViewId): Promise<string | undefined> | undefined {
+    if (view === "plot") {
+      const l = this.copyLine();
+      return l ? this.readoutFull(l) : undefined;
+    }
     return view === "num" ? this.numCsv() : undefined;
+  }
+  /** The readout line Shift + View copies: the answer of the last analysis. */
+  copyLine(): Readout["lines"][number] | undefined {
+    return this.readout?.lines.find((l) => l.primary && l.cell?.ok);
+  }
+  /** A readout line's value with every confirmed digit (the engine's full value, up to 40). */
+  async readoutFull(l: Readout["lines"][number]): Promise<string | undefined> {
+    if (!l.cell) return undefined;
+    const { copyFull } = await import("../../clipboard/impl.ts");
+    return this.csvCell(l.cell, copyFull) || undefined;
+  }
+  /** Copy a readout line (long press, Menu): full, or as shown. */
+  async copyReadout(l: Readout["lines"][number] | undefined, shown = false): Promise<void> {
+    if (!l) return;
+    const text = shown ? l.value : await this.readoutFull(l);
+    if (text !== undefined) this.host.copy(text);
   }
   private async copyNum(): Promise<void> {
     const csv = await this.numCsv();
@@ -477,11 +499,11 @@ export class FunctionApp implements AppInstance {
     const yn = cellNumber(r.y);
     if (kind === "area") {
       lines.push({ label: t("fcn.areaRange"), value: `${this.fmtX(a ?? "")} … ${this.fmtX(b ?? "")}` });
-      lines.push({ label: t("fcn.area"), value: this.fmt(r.value) });
+      lines.push({ label: t("fcn.area"), value: this.fmt(r.value), cell: r.value, primary: true });
     } else {
-      if (r.x) lines.push({ label: "x", value: this.fmt(r.x) });
-      if (r.y) lines.push({ label: "y", value: this.fmt(r.y) });
-      if (kind === "slope") lines.push({ label: t("fcn.slope"), value: this.fmt(r.value) });
+      if (r.x) lines.push({ label: "x", value: this.fmt(r.x), cell: r.x, primary: kind !== "slope" });
+      if (r.y) lines.push({ label: "y", value: this.fmt(r.y), cell: r.y });
+      if (kind === "slope") lines.push({ label: t("fcn.slope"), value: this.fmt(r.value), cell: r.value, primary: true });
       if (kind === "extremum" && r.extremum) lines.push({ label: t("fcn.kind"), value: t(`fcn.${r.extremum}`) });
     }
     this.readout = { lines, info: r.info, warn: r.warn };
