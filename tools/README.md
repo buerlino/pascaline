@@ -20,4 +20,11 @@ All of them use `$ANDROID_SERIAL` (default: the Tab One). Smaller helpers (usage
 - `shots.py`: cold-start a page N times and keep a screenshot of each.
 - `tap-seq.py`: tap a sequence and report whether the system keyboard is shown after each tap.
 
+Night-shift coordinators (docs/shifts/rules.md section 4a):
+```bash
+tools/henri-next.sh <n>     # start henri_<n> (or the next free number) as a detached headless session; output in .coord/henri_<n>.out
+# check after editing .claude/agents/* or the script: the call must come back FOREGROUND
+CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 timeout 600 claude --model sonnet --effort low --permission-mode auto -p 'Test only. Call the Agent tool once with subagent_type "ron", model "haiku", run_in_background false, prompt "Test only: reply with the single word PONG." Then reply with one line: FOREGROUND or BACKGROUND (how the call came back), then what the agent returned.'
+```
+
 Desktop probes (no device): `tools/probes/` checks what the engine, the parser and the qalc and Find data do today; see its README.

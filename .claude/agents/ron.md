@@ -5,7 +5,6 @@ model: opus
 effort: high
 permissionMode: auto
 isolation: worktree
-background: true
 color: blue
 ---
 

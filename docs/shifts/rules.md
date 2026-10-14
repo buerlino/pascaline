@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Shift rules (every shift)
 
-The standing rules for a coordinator shift: Henri and the workers gorge, ron and annabell (`.claude/agents/`). sandra is the owner's advisor (`.claude/agents/sandra.md`): Henri may spawn her for a research or architecture task; she writes docs, probes and proposals, not feature code, and never touches devices. They bind together with `CLAUDE.md`. The shift's own goal, tasks, definition of done and per-worker assignments are in [brief.md](brief.md); where the two differ, the brief wins for that shift. Section numbers match the old single-file brief (sections 0, 2, 7 and 8 are in the brief), so the agent files' references still work. **In manual mode (no coordinator) read only sections 1, 3, 5, 6 and 9;** sections 4, 10 and 11 are for a coordinator shift.
+The standing rules for a coordinator shift: Henri and the workers gorge, ron and annabell (`.claude/agents/`). sandra is the owner's advisor (`.claude/agents/sandra.md`): Henri may spawn her for a research or architecture task; she writes docs, probes and proposals, not feature code, and never touches devices. They bind together with `CLAUDE.md`. The shift's own goal, tasks, definition of done and per-worker assignments are in [brief.md](brief.md); where the two differ, the brief wins for that shift. Section numbers match the old single-file brief (sections 0, 2, 7 and 8 are in the brief), so the agent files' references still work. **In manual mode (no coordinator) read only sections 1, 3, 5, 6 and 9;** sections 4, 4a, 10 and 11 are for a coordinator shift.
 
 ## 1. Principles
 The three principles in CLAUDE.md decide every default:
@@ -35,10 +35,18 @@ The three principles in CLAUDE.md decide every default:
 
 ## 4. Start-up sequence
 1. Run `date`, `git switch phase-1 && git status` (should be clean), `adb devices -l` and `tools/devlock.sh status`. Append a new dated section to `.coord/log.md` and log every assignment, merge, decision and problem.
-2. **Spawn the workers the brief names** (`subagent_type`: `ron`, `gorge`, `annabell`; background, each in its own worktree). Each spawn prompt says: "Do the setup in rules section 5, then start your task 1 in the brief."
+2. **Spawn the workers the brief names** (`subagent_type`: `ron`, `gorge`, `annabell`; each in its own worktree; foreground or background as section 4a says). Each spawn prompt says: "Do the setup in rules section 5, then start your task 1 in the brief."
 3. **Roll call.** Message each worker: `ROLL CALL: reply "READY <name> <your agent id>" plus one line on your first step.` Then send everyone the list of agent IDs. Workers can't message each other by name.
 4. **Device watcher:** a background command or Monitor (with a timeout, re-armed when it expires). It prints a line whenever `adb devices` changes. Forward every change to annabell. `unauthorized` needs a human tap: log it.
 5. Let the workers run. You wake up on a report, a device change or a message.
+
+## 4a. Spawning agents: foreground and background (every coordinator; learned 2026-10-14)
+A background agent lives only as long as the session that spawned it is waiting for it. On 2026-10-14 the headless henri_2 lost a worker this way: the worker agent files forced the background, and a headless session (`claude -p`) stops its background agents 10 minutes after its last turn.
+- **Agent files never set `background: true`.** The coordinator chooses per spawn with `run_in_background`; the frontmatter must not override it. Check this when an agent file is added or edited.
+- **A headless coordinator** (`claude -p`, as started by `tools/henri-next.sh`) **spawns in the foreground only** (`run_in_background: false`): its session ends with its turn, so a background agent has no one to report to. The script also sets `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`, so a stray background agent is not stopped after 10 minutes. Start a headless coordinator only through that script.
+- **An interactive coordinator** may spawn in the background and wake on the notification; it never ends its session while an agent it spawned is running.
+- **If a spawn comes back as a background launch when you asked for the foreground,** log it, wait for its notification, and do not end the session; then the next Opus pass or the owner fixes the agent file.
+- **Test after any change to agent files or the script:** a headless session that spawns the worker with a one-word prompt must report the call as foreground (the command is in `tools/README.md`).
 
 ## 5. Worker setup (every worker, first)
 - In your worktree: `git switch -c p1/<name>-<shift> phase-1`. **Commit small and often**, at least every 30–45 minutes of work.
