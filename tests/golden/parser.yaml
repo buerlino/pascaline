@@ -297,6 +297,8 @@ cases:
   - { id: "functions-11", latex: "\\operatorname{abs}\\left(x\\right)", expect: "abs(x)", source: "derived", group: "functions" }
   - { id: "functions-12", latex: "f\\left(x,y\\right)", expect: "f(x,y)", source: "derived", group: "functions" }
   - { id: "functions-13", latex: "f\\left(g\\left(x\\right)\\right)", expect: "f(g(x))", source: "derived", group: "functions" }
+  - { id: "functions-14", latex: "\\operatorname{mod}\\left(7,3\\right)", expect: "1", source: "derived", group: "functions" }
+  - { id: "functions-15", latex: "\\operatorname{mod}\\left(-7,3\\right)", expect: "2", source: "derived", group: "functions", note: "Find states the remainder is never negative (fn:irem); -7 = -3*3 + 2" }
   # --- decimals
   - { id: "decimals-01", latex: "1.5", expect: "3/2", source: "derived", group: "decimals" }
   - { id: "decimals-02", latex: "0.1+0.2", expect: "3/10", source: "derived", group: "decimals" }
