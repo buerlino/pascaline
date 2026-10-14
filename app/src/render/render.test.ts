@@ -45,6 +45,12 @@ const cases: [string, string][] = [
   ["\\epsilon_^{2}+\\sqrt{\\Gamma_}", "\\varepsilon^{2}+\\sqrt{\\Gamma}"],
   ["\\sin\\left(\\gamma_\\right)", "\\sin\\left(\\gamma\\right)"],
   ["\\phi^{2}", "\\varphi^{2}"],
+  // R18f1: Phi_ and Psi_ (Giac latex() of Psi_+1 and Phi_^2), and a ≠ test kept as typed (latex('(x+1)!=2'),
+  // latex('f(x,y)!=[1,2]'); engine build of 2026-10-14)
+  ["\\Psi_+1", "\\Psi+1"],
+  ["\\Phi_^{2}", "\\Phi^{2}"],
+  ["\\mathrm{!=}\\left(x+1,2\\right)", "x+1\\ne 2"],
+  ["\\mathrm{!=}\\left(f(x,y),[1,2]\\right)", "f\\left(x,y\\right)\\ne [1,2]"],
 ];
 
 describe("tidyGiacLatex", () => {
@@ -66,6 +72,13 @@ describe("homeResultToLatex", () => {
     expect(homeResultToLatex("+infinity")).toBe("+\\infty"); // Giac's print of inf (∞ on Shift + 9)
     expect(homeResultToLatex("-infinity")).toBe("-\\infty");
     expect(homeResultToLatex("beta_2+zeta1")).toBe("beta_2+zeta1"); // not Greek names: left alone
+    expect(homeResultToLatex("Psi_+Phi_")).toBe("\\Psi +\\Phi "); // R18f1
+  });
+  it("draws an equality test kept as typed without Giac's brackets, ≠ as ≠ (R18f1)", () => {
+    expect(homeResultToLatex("(x==2)")).toBe("x==2");
+    expect(homeResultToLatex("((x+1)==2)")).toBe("(x+1)==2");
+    expect(homeResultToLatex("x<>2")).toBe("x\\ne 2");
+    expect(homeResultToLatex("(x+1)*(x-1)")).toBe("(x+1)\\cdot (x-1)"); // not one bracket pair: left alone
   });
   it("keeps plain decimals", () => {
     expect(homeResultToLatex("0.333333333333")).toBe("0.333333333333");

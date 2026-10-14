@@ -432,7 +432,8 @@ export class Session {
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.display : errorText(r.error, r.display);
-        live.approximate = r.approximate;
+        // A true or false from an inexact chip is as approximate as the chip (R18f1; decisions M4-4)
+        live.approximate = r.approximate || (live.inexactInput === true && /^(true|false)$/.test(r.display));
         if (r.value) live.value = r.value;
         if (r.ok) {
           const f = factsFrom(r);
@@ -465,6 +466,11 @@ export class Session {
           if (full.length <= FULL_LIMIT) {
             live.full = full;
             live.fullExact = !isDigitsText(full);
+          }
+          // A true or false that rests on a float, or on an inexact chip, is marked approximate (R18f1)
+          if (r.approximate || (live.inexactInput === true && /^(true|false)$/.test(r.text))) {
+            live.approximate = true;
+            live.facts = { exactRational: false, reliableDigits: null };
           }
           // A result with a float in it comes with its value and facts (docs/04 2.9): drawn by our formatter, marked.
           const n = r.numeric;

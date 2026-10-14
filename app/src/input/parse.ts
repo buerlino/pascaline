@@ -141,7 +141,8 @@ function tokenize(src: string, decimalComma = false): Tok[] {
 /**
  * Greek letters are variable names (R18), never units (μ, Ω) or Giac's own names. Giac reads most of them as plain
  * names, but some are taken: `epsilon` is a setting (it evaluates to 1e-12), `Gamma` is the Gamma function and cannot
- * be stored, and `beta`, `gamma` stay clear of the Beta and Euler names. Those get a trailing `_`, which Giac's latex()
+ * be stored, `beta`, `gamma` stay clear of the Beta and Euler names, and `Phi`, `Psi` are reserved (`Psi:=3` is
+ * refused, R18f1). Those get a trailing `_`, which Giac's latex()
  * draws as the letter and a stray `_` (render/tidy.ts removes it). One letter is one name: \epsilon and \varepsilon,
  * \phi and \varphi, \theta and \vartheta are the same variable.
  */
@@ -150,7 +151,7 @@ export const GREEK: Readonly<Record<string, string>> = {
   zeta: "zeta", eta: "eta", theta: "theta", vartheta: "theta", iota: "iota", kappa: "kappa", lambda: "lambda",
   mu: "mu", nu: "nu", xi: "xi", rho: "rho", sigma: "sigma", tau: "tau", phi: "phi", varphi: "phi", chi: "chi",
   psi: "psi", omega: "omega", Gamma: "Gamma_", Delta: "Delta", Theta: "Theta", Lambda: "Lambda", Sigma: "Sigma",
-  Phi: "Phi", Psi: "Psi", Omega: "Omega",
+  Phi: "Phi_", Psi: "Psi_", Omega: "Omega",
 };
 const CONSTS: Record<string, string> = {
   pi: "Pi", exponentialE: "ExponentialE", imaginaryI: "ImaginaryUnit", infty: "PositiveInfinity",

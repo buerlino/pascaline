@@ -285,7 +285,10 @@ def check_mark(case: dict, write: bool) -> list:
         return [] if mark in (None, "⚠") else ["mark without expect needs ⚠ (a mark-only case has no value to derive from)"]
     want = derived_mark(case)
     if want is None:
-        return [f"mark {mark!r} on a case whose expect is not a number"] if mark else []
+        # A true or false that rests on a float (an == test, R18f1) is "≈": written by hand, with a note.
+        if not mark or (mark == "≈" and case.get("note")):
+            return []
+        return [f"mark {mark!r} on a case whose expect is not a number (only a hand-written ≈ with a note)"]
     if mark == want:
         return []
     if write:

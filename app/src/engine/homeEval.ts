@@ -118,6 +118,10 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "k:=n-1-p; m:=floor(a*10^k+1/2); return sign(x)*m/10^k; }",
 };
 
+/** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not
+ *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to. */
+export const EQ_INEXACT_FLAG = "pasinexact";
+
 /** The names of our definitions that `input` mentions. */
 export function definitionsUsedBy(input: string): string[] {
   return Object.keys(ENGINE_DEFINITIONS).filter((name) => new RegExp(`\\b${name}\\b`).test(input));
@@ -353,7 +357,11 @@ export function homeEval(
   // Other stateful inputs (f(x):=…, purge, assume, =>) must not run twice.
   const once = !asg && isStateful(input);
   const exactBody = toExactLiterals(body);
+  const test = input.includes(EQ_INEXACT_FLAG);
+  if (test) giac.eval(`purge(${EQ_INEXACT_FLAG})`);
   const exactOut = giac.eval(`${ans}:=(${exactBody})`);
+  // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate.
+  const inexactTest = test && giac.eval(EQ_INEXACT_FLAG) === "1";
   const exactMs = now() - t0;
   const W = Math.max(s.workDigits, s.digits + 10);
   const defined = definedBy(input);
@@ -392,7 +400,7 @@ export function homeEval(
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
     const text = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
     store();
-    return done({ ok: true, display: text, exact: text, path: "exact", approximate: false, tieRisk: false, exactRational: false, reliableDigits: null });
+    return done({ ok: true, display: text, exact: text, path: "exact", approximate: inexactTest, tieRisk: false, exactRational: false, reliableDigits: null });
   };
   if (!shape) return symbolic();
 

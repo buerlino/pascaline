@@ -8,6 +8,7 @@ import {
   definedBy,
   definitionsUsedBy,
   ENGINE_DEFINITIONS,
+  EQ_INEXACT_FLAG,
   floatsAsEvalf,
   homeEval,
   homeSetupCommands,
@@ -323,6 +324,8 @@ export class EngineHost {
     });
     // P9 (docs/04 section 2.9): typed decimals are exact rationals, as in Home; approx() gives decimals.
     const exactInput = toExactLiterals(input);
+    const test = input.includes(EQ_INEXACT_FLAG);
+    if (test) this.giac.eval(`purge(${EQ_INEXACT_FLAG})`);
     let text: string;
     try {
       text = this.strict.eval(`pcasans:=(${exactInput})`);
@@ -355,10 +358,12 @@ export class EngineHost {
     }
     // This build leaves x*x unevaluated (no top-level "regroup" autosimplify), and latex() then draws x·x as "xx".
     if (text.includes("*")) text = regrouped(this.giac, "pcasans", text);
+    // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate.
+    const approximate = test && this.giac.eval(EQ_INEXACT_FLAG) === "1";
     const tex = this.giac.eval("latex(pcasans)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
-      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0 },
+      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}) },
       defs: defsOf(text, hasFloat(text) ? { reliableDigits: null, warn: "unchecked" } : null),
     };
   }

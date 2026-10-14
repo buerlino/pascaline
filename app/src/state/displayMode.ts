@@ -74,6 +74,8 @@ export interface NumericResult {
   facts?: ResultFacts;
   /** An inexact chip went into the input: the result is never marked "=" (decisions M4-4). */
   inexactInput?: boolean;
+  /** The engine called the result approximate; read for a non-number only (a true or false from a float, R18f1). */
+  approximate?: boolean;
   rational?: Rational;
   polar?: Polar;
   /** The mode chosen with the Format key for this result; undefined: the global setting (Home) or exact (CAS). */
@@ -172,6 +174,7 @@ function precisionOf(r: NumericResult): (PrecisionFacts & { shape?: [number, num
     ...(f.items ? { items: f.items } : {}),
     ...(f.shape ? { shape: f.shape } : {}),
     ...(r.value ? { value: r.value } : {}),
+    ...(r.approximate ? { approximate: true } : {}),
   };
 }
 

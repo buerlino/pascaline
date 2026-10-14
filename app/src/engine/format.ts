@@ -321,6 +321,8 @@ export interface PrecisionFacts {
   warn?: PrecisionWarn;
   /** A numeric list or matrix: its elements (the list's own value is absent). */
   items?: PrecisionFacts[];
+  /** Only read when there is no value: a true or false that rests on a float (an == or ≠ test, R18f1) is ≈. */
+  approximate?: boolean;
 }
 
 export interface MarkInfo {
@@ -371,6 +373,7 @@ function weakest(a: MarkInfo, b: MarkInfo): MarkInfo {
 
 /**
  * The mark for a result shown in format `o` (docs/04 section 2.4); null for a non-number.
+ * A non-number gets none, except a true or false resting on a float (`approximate`, R18f1), which is `≈`.
  * `=` needs an exact rational shown in full; `⚠ n` when fewer than the shown digits are confirmed; `⚠` with
  * `warn` for an un-audited or unchecked float; `≈` otherwise. A list or matrix gets its weakest element's mark.
  */
@@ -386,7 +389,7 @@ export function markOf(f: PrecisionFacts, o: FormatOptions): MarkInfo | null {
     return m;
   }
   const v = f.value;
-  if (!v) return null;
+  if (!v) return f.approximate === true ? { mark: "≈" } : null;
   const parts = [v.re, v.im].filter((p) => !isZero(p));
   if (f.reliableDigits !== null && parts.some((p) => digitsShown(p, o) > Math.max(1, f.reliableDigits!))) {
     return { mark: "⚠", n: Math.max(0, f.reliableDigits), ...(f.warn ? { warn: f.warn } : {}) };

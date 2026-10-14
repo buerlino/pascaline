@@ -182,17 +182,21 @@ async function stagePrecision(): Promise<void> {
     const setting = c.settings?.digits ?? 12;
     // The digits the result is shown with: the setting, or what the input asked for (CAS evalf(x,n), M4-6).
     const digits = c.settings?.shown ?? setting;
+    // A case written as `latex` (what the keys type) goes through our parser first, its `before` entries too (R18f1).
+    const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
+    const input = c.latex !== undefined ? latexToGiac(c.latex) : c.input!;
     if (c.kind === "cas") {
       const cs = { ...defaultCasSettings, digits: setting };
-      for (const b of c.before ?? []) host.cas(b, cs);
-      const r = host.cas(c.input!, cs).result;
+      for (const b of c.before ?? []) host.cas(giacOf(b), cs);
+      const r = host.cas(input, cs).result;
       shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
-      // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it).
-      mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
+      // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it); a
+      // true or false resting on a float is approximate (R18f1).
+      mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : r.ok && r.approximate ? { mark: "≈" } : null;
     } else {
       const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
-      for (const b of c.before ?? []) host.home(b, s);
-      const r = host.home(c.input!, s).result;
+      for (const b of c.before ?? []) host.home(giacOf(b), s);
+      const r = host.home(input, s).result;
       shown = r.ok ? r.display : `error: ${r.display}`;
       mark = markOf(r, { format: "STD", digits });
     }
