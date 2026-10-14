@@ -69,6 +69,8 @@ export interface CasOutcome {
   numeric?: HomeResult;
   /** A true or false that rests on a float (an == or ≠ test, R18f1). */
   approximate?: boolean;
+  /** That float comes from an unaudited function (R18f2): the mark is ⚠. */
+  warn?: "unaudited";
 }
 
 /** Thrown by home()/cas() when Cancel stopped the job. */

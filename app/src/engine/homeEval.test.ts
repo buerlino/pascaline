@@ -1,18 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Pure parts of exact-first Home. Every expected value here is `derived` (exact arithmetic by hand).
 import { describe, expect, it } from "vitest";
-import { EQ_INEXACT_FLAG, toExactLiterals } from "./homeEval.ts";
-import { EQ_INEXACT_FLAG as EMITTED_FLAG, mathJsonToGiac } from "../input/emit.ts";
+import { EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, toExactLiterals } from "./homeEval.ts";
+import { EQ_DIFF as EMITTED_DIFF, EQ_INEXACT_FLAG as EMITTED_FLAG, EQ_VERDICT as EMITTED_VERDICT, mathJsonToGiac } from "../input/emit.ts";
 import { markOf } from "./format.ts";
 
 describe("the == test's float flag (R18f1)", () => {
   it("is spelled the same in the parser's test form and in Home", () => {
     expect(EMITTED_FLAG).toBe(EQ_INEXACT_FLAG);
+    expect(EMITTED_DIFF).toBe(EQ_DIFF);
+    expect(EMITTED_VERDICT).toBe(EQ_VERDICT);
     expect(mathJsonToGiac(["EqualTest", "x", 2])).toContain(`sto(1,${EQ_INEXACT_FLAG})`);
   });
   it("makes a true or false resting on a float approximate; other non-numbers stay unmarked", () => {
     expect(markOf({ exactRational: false, reliableDigits: null, approximate: true }, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
     expect(markOf({ exactRational: false, reliableDigits: null }, { format: "STD", digits: 12 })).toBeNull();
+    // R18f2: a float from an unaudited function gives ⚠; a warned non-number that is not a test stays unmarked
+    expect(markOf({ exactRational: false, reliableDigits: null, approximate: true, warn: "unaudited" }, { format: "STD", digits: 12 })).toEqual({ mark: "⚠", warn: "unaudited" });
+    expect(markOf({ exactRational: false, reliableDigits: null, warn: "unchecked" }, { format: "STD", digits: 12 })).toBeNull();
   });
 });
 

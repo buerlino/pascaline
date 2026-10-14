@@ -5,7 +5,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const measure = process.env.PASCALINE_MEASURE === '1';
 
 const config: CapacitorConfig = {
-  appId: 'org.pascaline.app',
+  appId: 'io.github.buerlino.pascaline',
   appName: 'Pascaline',
   webDir: 'dist',
   loggingBehavior: measure ? 'production' : 'none',

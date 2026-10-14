@@ -16,14 +16,17 @@
 import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn } from "./format.ts";
 import {
   askedDigits,
+  DOUBLE_DIGITS,
   doubleFallback,
   exactFacts,
   floatFacts,
   floatPathFacts,
   hasFloat,
+  isAudited,
   rationalValue,
   shapeOf,
   valuePrecision,
+  withDigits,
   type ElementFacts,
   type Giac,
   type Shape,
@@ -119,8 +122,46 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
 };
 
 /** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not
- *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to. */
+ *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to.
+ *  EQ_DIFF below is purged with it for the same reason. */
 export const EQ_INEXACT_FLAG = "pasinexact";
+/** R18f2: where a float-side test leaves its difference, and the verdict it reads (input/emit.ts spells the same). */
+export const EQ_DIFF = "pasdiff";
+export const EQ_VERDICT = "pasverdict";
+
+/**
+ * R18f2: the verdict for an input holding one == or ≠ test with a float side (EQ_INEXACT_FLAG set by its first run).
+ * A float can only be compared to its own digits (decisions "2026-10-14 R18 defaults" point 6), so the test runs again
+ * at the double precision and at P, and the two differences decide, like a value's confirmed digits (docs/04 2.4):
+ * the difference is 0 within its own spread → equal; the two agree to their first digit → not equal; else open (the
+ * test stays as typed). A side with an unaudited function can hide its own error from this check (normald_icdf is a
+ * double inside at any precision), so it never answers "not equal", and the result carries ⚠.
+ * Sets EQ_VERDICT for the caller's final run; null (nothing set) for a stateful input or more than one test.
+ */
+export function decideFloatTest(giac: Giac, input: string, digits: number): { warn?: "unaudited" } | null {
+  if (input.split(`sto(1,${EQ_INEXACT_FLAG})`).length !== 2) return null;
+  const run = (d: number, slot: string): boolean =>
+    withDigits(giac, d, digits, () => {
+      giac.eval(`purge(${EQ_DIFF})`);
+      return !isError(giac.eval(input)) && !isError(giac.eval(`${slot}:=${EQ_DIFF}`));
+    });
+  const P = valuePrecision(digits);
+  const ran = run(DOUBLE_DIGITS, "pasdd") && run(P, "pasdm");
+  const v = ran
+    ? withDigits(giac, P, digits, () => giac.eval("when(abs(pasdd-pasdm)<abs(pasdm)/2,1,when(abs(pasdm)<=abs(pasdd-pasdm),0,2))"))
+    : "2";
+  const unaudited = !isAudited(testSides(input));
+  const verdict = v === "0" ? 0 : v === "1" && !unaudited ? 1 : 2;
+  giac.eval(`purge(pasdd,pasdm,${EQ_DIFF})`);
+  giac.eval(`${EQ_VERDICT}:=${verdict}`);
+  return unaudited ? { warn: "unaudited" } : {};
+}
+
+/** The two sides of the test form in `input` (`(a_-b_))(A,B)`), the test helpers left out. */
+function testSides(input: string): string {
+  const k = input.indexOf("(a_-b_))(");
+  return k < 0 ? input : input.slice(k + 9);
+}
 
 /** The names of our definitions that `input` mentions. */
 export function definitionsUsedBy(input: string): string[] {
@@ -358,10 +399,16 @@ export function homeEval(
   const once = !asg && isStateful(input);
   const exactBody = toExactLiterals(body);
   const test = input.includes(EQ_INEXACT_FLAG);
-  if (test) giac.eval(`purge(${EQ_INEXACT_FLAG})`);
-  const exactOut = giac.eval(`${ans}:=(${exactBody})`);
-  // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate.
+  if (test) giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
+  let exactOut = giac.eval(`${ans}:=(${exactBody})`);
+  // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate, and
+  // decided by its own digits (R18f2): run once more with the verdict set.
   const inexactTest = test && giac.eval(EQ_INEXACT_FLAG) === "1";
+  const decided = inexactTest && !once ? decideFloatTest(giac, exactBody, s.digits) : null;
+  if (decided) {
+    exactOut = giac.eval(`${ans}:=(${exactBody})`);
+    giac.eval(`purge(${EQ_VERDICT})`);
+  }
   const exactMs = now() - t0;
   const W = Math.max(s.workDigits, s.digits + 10);
   const defined = definedBy(input);
@@ -400,7 +447,7 @@ export function homeEval(
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
     const text = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
     store();
-    return done({ ok: true, display: text, exact: text, path: "exact", approximate: inexactTest, tieRisk: false, exactRational: false, reliableDigits: null });
+    return done({ ok: true, display: text, exact: text, path: "exact", approximate: inexactTest, ...(decided?.warn ? { warn: decided.warn } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
   if (!shape) return symbolic();
 

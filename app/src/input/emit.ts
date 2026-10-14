@@ -43,6 +43,9 @@ const REL: Record<string, string> = {
 
 /** The Giac name Home and CAS read after a test to learn that a side held a float (engine/homeEval.ts, same name). */
 export const EQ_INEXACT_FLAG = "pasinexact";
+/** R18f2: the difference of a float-side test, and the verdict the engine host sets for it (0 equal, 1 not, 2 open). */
+export const EQ_DIFF = "pasdiff";
+export const EQ_VERDICT = "pasverdict";
 
 /**
  * R18f1: `a == b` and `a ≠ b` as value tests (decisions "2026-10-14 R18 defaults" point 6). Giac's own `==` compares
@@ -50,17 +53,21 @@ export const EQ_INEXACT_FLAG = "pasinexact";
  * true when the difference simplifies to exact 0; false when the difference has no free names and is an exact rational,
  * or its 30-digit value is clearly not 0 against the sides (an evaluation at 30 digits is off by about 10^-30 of the
  * sides, so 10^-20 leaves a wide margin); otherwise it stays as typed, like `x>0`. ≠ is the exact negation. A side
- * with a float in it (`evalf(pi)`, a romberg value) sets EQ_INEXACT_FLAG, and the result then carries the approximate
- * mark: a float can only be compared to its own digits.
+ * with a float in it (`evalf(pi)`, a romberg value) sets EQ_INEXACT_FLAG, stores the difference in EQ_DIFF and takes
+ * its answer from EQ_VERDICT (R18f2): a float can only be compared to its own digits, so the engine host runs the test
+ * at two precisions and sets the verdict (engine/numeric.ts decideFloatTest). Without a verdict (a test inside a
+ * stored function) a float side stays as typed.
  */
 function equalityTest(a: Out, b: Out, negate: boolean): Out {
   const [yes, no, rel] = negate ? ["false", "true", "!="] : ["true", "false", "=="];
   const kept = `'${wrap(a, 1)}${rel}${wrap(b, 1)}'`;
   const big = (v: string): string => `max(abs(evalf(${v},30)))`;
+  const float = "string(exact(d_))!=string(d_)";
   const test =
-    `{if(string(exact(d_))!=string(d_))sto(1,${EQ_INEXACT_FLAG});` +
+    `{if(${float}){sto(1,${EQ_INEXACT_FLAG});sto(d_,${EQ_DIFF})};` +
+    `when(${float},when(${EQ_VERDICT}==0,${yes},when(${EQ_VERDICT}==1,${no},${kept})),` +
     `when(simplify(d_)==0*d_,${yes},when(lname(d_)==[] and (type(d_)==integer or type(d_)==rational or ` +
-    `${big("d_")}>10^-20*max(${big("a_")},${big("b_")})),${no},${kept}))}`;
+    `${big("d_")}>10^-20*max(${big("a_")},${big("b_")})),${no},${kept})))}`;
   return { s: `((a_,b_)->((d_)->${test})(a_-b_))(${a.s},${b.s})`, p: 5 };
 }
 

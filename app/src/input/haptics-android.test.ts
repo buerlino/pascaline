@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 const read = (p: string): string => readFileSync(new URL(`../../../android/app/src/main/${p}`, import.meta.url), "utf8");
 
 describe("PascalineHaptics Android side", () => {
-  const plugin = read("java/org/pascaline/app/PascalineHapticsPlugin.java");
+  const plugin = read("java/io/github/buerlino/pascaline/PascalineHapticsPlugin.java");
   it("is named and shaped as haptics.ts expects", () => {
     expect(plugin).toContain('name = "PascalineHaptics"');
     expect(plugin).toMatch(/@PluginMethod\s+public void vibrate\(/);
@@ -16,7 +16,7 @@ describe("PascalineHaptics Android side", () => {
     expect(plugin).toContain("hasAmplitudeControl");
   });
   it("is registered before super.onCreate and the manifest has VIBRATE", () => {
-    const main = read("java/org/pascaline/app/MainActivity.java");
+    const main = read("java/io/github/buerlino/pascaline/MainActivity.java");
     expect(main.indexOf("registerPlugin(PascalineHapticsPlugin.class)")).toBeGreaterThan(0);
     expect(main.indexOf("registerPlugin(")).toBeLessThan(main.indexOf("super.onCreate"));
     expect(read("AndroidManifest.xml")).toContain("android.permission.VIBRATE");

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# DRAFT F-Droid recipe for fdroiddata (metadata/org.pascaline.app.yml). Never submitted; the application id is a placeholder.
+# DRAFT F-Droid recipe for fdroiddata (metadata/io.github.buerlino.pascaline.yml). Never submitted; the application id is final (owner, 2026-10-14).
 # Modelled on net.alexbarry.alexgames (Debian emscripten in the build VM) and com.graphhopper.maps (Capacitor).
 # Status: untested in fdroidserver (see fdroid/README.md). commit: below is a placeholder until a release tag exists.
 Categories:

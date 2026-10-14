@@ -39,7 +39,7 @@ export class EngineCalc implements Calc {
   async cas(giac: string, s: CalcSettings): Promise<CasOutcome> {
     try {
       const r = await this.engine.cas(giac, { ...defaultCasSettings, digits: s.digits, angle: s.angle });
-      return { ok: r.ok, text: r.text, latex: r.latex, ...(r.numeric ? { numeric: r.numeric } : {}), ...(r.approximate ? { approximate: true } : {}), ...(r.error ? { error: r.error } : {}) };
+      return { ok: r.ok, text: r.text, latex: r.latex, ...(r.numeric ? { numeric: r.numeric } : {}), ...(r.approximate ? { approximate: true } : {}), ...(r.warn ? { warn: r.warn } : {}), ...(r.error ? { error: r.error } : {}) };
     } catch (e) {
       throw e instanceof EngineCancelled ? new CalcCancelled() : e;
     }

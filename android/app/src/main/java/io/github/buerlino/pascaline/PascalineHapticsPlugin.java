@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-package org.pascaline.app;
+package io.github.buerlino.pascaline;
 
 import android.content.Context;
 import android.os.Build;

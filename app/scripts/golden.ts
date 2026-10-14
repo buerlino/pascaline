@@ -192,7 +192,7 @@ async function stagePrecision(): Promise<void> {
       shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
       // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it); a
       // true or false resting on a float is approximate (R18f1).
-      mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : r.ok && r.approximate ? { mark: "≈" } : null;
+      mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : r.ok && r.approximate ? (r.warn ? { mark: "⚠" } : { mark: "≈" }) : null;
     } else {
       const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
       for (const b of c.before ?? []) host.home(giacOf(b), s);

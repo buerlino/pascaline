@@ -8,7 +8,10 @@ import {
   definedBy,
   definitionsUsedBy,
   ENGINE_DEFINITIONS,
+  decideFloatTest,
+  EQ_DIFF,
   EQ_INEXACT_FLAG,
+  EQ_VERDICT,
   floatsAsEvalf,
   homeEval,
   homeSetupCommands,
@@ -325,7 +328,7 @@ export class EngineHost {
     // P9 (docs/04 section 2.9): typed decimals are exact rationals, as in Home; approx() gives decimals.
     const exactInput = toExactLiterals(input);
     const test = input.includes(EQ_INEXACT_FLAG);
-    if (test) this.giac.eval(`purge(${EQ_INEXACT_FLAG})`);
+    if (test) this.giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
     let text: string;
     try {
       text = this.strict.eval(`pcasans:=(${exactInput})`);
@@ -335,6 +338,12 @@ export class EngineHost {
     }
     if (isError(text)) return fail(text, isTimeout(text) ? "timeout" : "engine");
     const stateful = isStateful(input);
+    // An == or ≠ test on a float side: decided by its own digits, as in Home (R18f2).
+    const decided = test && !stateful && this.giac.eval(EQ_INEXACT_FLAG) === "1" ? decideFloatTest(this.giac, exactInput, Math.trunc(s.digits)) : null;
+    if (decided) {
+      text = this.strict.eval(`pcasans:=(${exactInput})`);
+      this.giac.eval(`purge(${EQ_VERDICT})`);
+    }
     const asg = simpleAssignment(input);
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
       stateful ? this.defsAfter(input, [exactInput], preview, facts, "cas", Math.trunc(s.digits)) : [];
@@ -363,7 +372,7 @@ export class EngineHost {
     const tex = this.giac.eval("latex(pcasans)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
-      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}) },
+      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(decided?.warn ? { warn: decided.warn } : {}) },
       defs: defsOf(text, hasFloat(text) ? { reliableDigits: null, warn: "unchecked" } : null),
     };
   }

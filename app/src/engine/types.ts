@@ -46,6 +46,8 @@ export interface CasResult {
   numeric?: HomeResult;
   /** A true or false that rests on a float (an == or ≠ test, R18f1): drawn with the approximate mark. */
   approximate?: boolean;
+  /** That float comes from an unaudited function (R18f2): drawn with ⚠. */
+  warn?: "unaudited";
 }
 
 export interface EvalResult {

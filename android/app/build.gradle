@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "org.pascaline.app"
+    namespace = "io.github.buerlino.pascaline"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "org.pascaline.app"
+        applicationId "io.github.buerlino.pascaline"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

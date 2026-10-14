@@ -470,7 +470,7 @@ export class Session {
           // A true or false that rests on a float, or on an inexact chip, is marked approximate (R18f1)
           if (r.approximate || (live.inexactInput === true && /^(true|false)$/.test(r.text))) {
             live.approximate = true;
-            live.facts = { exactRational: false, reliableDigits: null };
+            live.facts = { exactRational: false, reliableDigits: null, ...(r.warn ? { warn: r.warn } : {}) };
           }
           // A result with a float in it comes with its value and facts (docs/04 2.9): drawn by our formatter, marked.
           const n = r.numeric;

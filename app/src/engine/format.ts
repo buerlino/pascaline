@@ -389,7 +389,8 @@ export function markOf(f: PrecisionFacts, o: FormatOptions): MarkInfo | null {
     return m;
   }
   const v = f.value;
-  if (!v) return f.approximate === true ? { mark: "≈" } : null;
+  // No value: an == or ≠ test resting on a float (R18f1); ⚠ when a side has an unaudited function (R18f2).
+  if (!v) return f.approximate === true ? (f.warn ? { mark: "⚠", warn: f.warn } : { mark: "≈" }) : null;
   const parts = [v.re, v.im].filter((p) => !isZero(p));
   if (f.reliableDigits !== null && parts.some((p) => digitsShown(p, o) > Math.max(1, f.reliableDigits!))) {
     return { mark: "⚠", n: Math.max(0, f.reliableDigits), ...(f.warn ? { warn: f.warn } : {}) };

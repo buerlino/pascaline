@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # F-Droid draft
 
-`org.pascaline.app.yml` is a draft of the fdroiddata recipe. It is **never submitted**; the application id is a placeholder.
+`io.github.buerlino.pascaline.yml` is a draft of the fdroiddata recipe. It is **never submitted**; the application id is final (owner, 2026-10-14).
 
 How it builds, and how it differs from `./build.sh`:
 - `build.sh` builds the engine in a podman container (P2). The F-Droid build VM cannot nest that, so the recipe installs the **same Debian `emscripten` package** (3.1.69+dfsg-3 in trixie) and runs the same scripts with `EMSDK_DIR=system`. F-Droid then builds the APK with its own Gradle (`gradle: yes`) and signs it itself.

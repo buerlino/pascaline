@@ -5,8 +5,8 @@
 #   tools/device-build.sh [--measure] [--install] [--serial S] [--engine-dir DIR]
 #
 # Engine: --engine-dir, else $GIAC_OUT, else the main checkout's engine/giac/_out/gsl (works from a worktree).
-# Signed with the throwaway key in android/_keys/ (gitignored). --install runs `adb install -r` for
-# org.pascaline.app only (never other apps); annabell only. --measure adds the timing marks (never for release).
+# Signed with the one throwaway key in ~/.cache/pascaline/keys/ (build.sh). --install runs `adb install -r` for
+# io.github.buerlino.pascaline only (never other apps); annabell only. --measure adds the timing marks (never for release).
 # Output: prints the APK path on the last line (dist/pascaline.apk). build.sh takes the host-cpu lock.
 set -euo pipefail
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""On-device measurements of our app (org.pascaline.app) on one device: $ANDROID_SERIAL, default the Tab One.
+"""On-device measurements of our app (io.github.buerlino.pascaline) on one device: $ANDROID_SERIAL, default the Tab One.
 
   tools/device_run.py status                       # battery, temperature, WebView, app version
   tools/device_run.py start  [--runs 7] [--mode cold|warm|first]
@@ -19,7 +19,7 @@ waits for; default engine-ready), APK (for --mode first; default the Gradle rele
 import argparse, json, os, re, statistics, subprocess, sys, time
 
 SERIAL = os.environ.get("ANDROID_SERIAL", "HA24BZ2Y")
-PKG = "org.pascaline.app"
+PKG = "io.github.buerlino.pascaline"
 ACT = f"{PKG}/.MainActivity"
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, ".."))

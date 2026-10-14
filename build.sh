@@ -10,10 +10,10 @@
 #   --qalc-dir D     use an existing libqalculate build (qalc.mjs + qalc.wasm in D); default builds it like the engine (engine/qalc/build-wasm.sh: dev with --dev, else release container)
 #   --no-units       skip libqalculate (the Find index then holds functions only; the Units app is milestone 5)
 #   --measure        measurement build: timing marks to logcat (PASCALINE_MEASURE=1); never for release
-#   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with a throwaway key in android/_keys/
-#   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs org.pascaline.app only
+#   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with the throwaway key in ~/.cache/pascaline/keys/ (PASCALINE_KEYS)
+#   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs io.github.buerlino.pascaline only
 # Output: dist/pascaline.apk (last line printed). Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libxml2/libqalculate cache), ANDROID_HOME (default ~/Android/Sdk),
-# NO_LOCK=1 (the caller holds the host-cpu lock).
+# PASCALINE_KEYS (the throwaway signing key's folder, default ~/.cache/pascaline/keys), NO_LOCK=1 (the caller holds the host-cpu lock).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
@@ -73,7 +73,12 @@ INDEX_ARGS=(); (( WITH_UNITS )) || INDEX_ARGS=(--no-units)
 
 # 4. Gradle
 if (( SIGN )); then
-  KEYS="$ROOT/android/_keys"
+  # One key for every checkout and worktree (outside git), so an install over the last one keeps the app's data;
+  # android/_keys/ of the main checkout is where it lived until 2026-10-14 and is moved here once.
+  KEYS="${PASCALINE_KEYS:-${PASCALINE_CACHE:-$HOME/.cache/pascaline}/keys}"
+  if [[ ! -f "$KEYS/throwaway.jks" && -f "$ROOT/android/_keys/throwaway.jks" ]]; then
+    mkdir -p "$KEYS" && cp -p "$ROOT/android/_keys/throwaway.jks" "$KEYS/"
+  fi
   if [[ ! -f "$KEYS/throwaway.jks" ]]; then
     mkdir -p "$KEYS"
     keytool -genkeypair -keystore "$KEYS/throwaway.jks" -alias throwaway -keyalg RSA -keysize 2048 -validity 3650 \
@@ -111,7 +116,7 @@ cp "$SRC" dist/pascaline.apk
 if (( INSTALL )); then
   ADB=(adb); [[ -n "$SERIAL" ]] && ADB=(adb -s "$SERIAL")
   if ! "${ADB[@]}" install -r dist/pascaline.apk >&2; then
-    "${ADB[@]}" uninstall org.pascaline.app >&2   # signature clash: remove our own app only
+    "${ADB[@]}" uninstall io.github.buerlino.pascaline >&2   # signature clash: remove our own app only
     "${ADB[@]}" install dist/pascaline.apk >&2
   fi
 fi
