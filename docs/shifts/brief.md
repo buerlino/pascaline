@@ -101,6 +101,25 @@ claude --agent <ron|gorge|annabell> --model <sonnet|opus> "Do package <ID> in do
 
 Check `/model` once at the start: the agent files pin `model: opus`, and the flag should override it. A package that runs out of usage can be resumed (`claude --continue` in the same terminal) or restarted with the same command: the agent finds its branch and continues from its last commit.
 
+## 0d. Packages from the owner's discussion of 2026-10-14 (the Alpha keys, Find, the unit pad, the laptop connection)
+Each waits for what its row says; none changes the 0b packages or their order. Background: [feedback.md](../feedback.md) #40–#44, decisions.md "The letters stay" and P14 (decided 2026-10-14), [research/r9-unit-pad.md](../research/r9-unit-pad.md), backlog "Parked ideas" (the laptop connection).
+
+**The unit pad is built in small packages** (owner, 2026-10-14: a session should not run out of tokens): one concern each, about a day or less, with its own short reading list. Read only what your package names. In order: S5 finds the arrangement; G7 puts every id in Find; R24a to R24d build the entry. R24a needs no UI and can start as soon as G7 is merged.
+
+| # | Package | Agent, model | Branch | Start when | Size |
+|---|---|---|---|---|---|
+| S5 | The unit pad's arrangement and its user cells (research) | sandra, Opus | `p1/sandra-padlayout` | now | ~1 d |
+| G7 | Find data for the unit pad and the units menu | gorge, Sonnet | `p1/gorge-m5-finddata` | S5 merged (its test reads the final arrangement); no UI, so it can run beside a ron package | ~0.5 d |
+| R24a | The slot model (no UI) | ron, **Opus** | `p1/ron-m5-unitslot` | G7 merged | ~0.5 d |
+| R24b | The pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | the owner accepted S5's arrangement; R21 merged | ~1 d |
+| R24c | The unit view entry: slots, Enter, evaluation | ron, **Opus** | `p1/ron-m5-unitview` | R24a, R24b and milestone 5 items 1–2 (U1, U2) merged | ~1 d |
+| R24d | Find in a slot and the user cells | ron, Sonnet | `p1/ron-m5-usercells` | R24c, R4 and R15b merged | ~0.5 d |
+| S4 | The laptop connection: design note | sandra, Opus | `p1/sandra-connector` | the owner's go (parked until about 2026-10-20) | ~0.5 d |
+
+**Why these models:** R24a builds the slot model the parser reads and R24c ties pad, slots and evaluation together, so a mistake there corrupts unit entry everywhere (Opus, as R9 and R18). R24b draws on R21's layer and R24d stores cells as R15b stores the user keys; each follows an existing pattern and its tests pin it (Sonnet). G7 is data and one test (Sonnet). S4 and S5 are research with probes (sandra runs Opus).
+
+**Not packaged yet:** the rest of backlog milestone 5 item 4, the result view (value, mark, unit, dimension, one-tap alternatives, `units.targets`, the `\res` chip back to Home). It gets its packages when U1 and U2 are merged, since their reports fix what a result carries.
+
 ## 2. Read before you start (every package)
 Read only the sections named here and in your package, not whole files: find them with `grep -n '^#' <file>`, then read that range. Every file you read is sent again on every later turn.
 - **Your first step:** make your own worktree from `phase-1`, never switch branches in the main checkout (other packages run there at the same time):
@@ -202,6 +221,122 @@ docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on 
 
 ### ron, R12a and R12b: visual pass, branch `p1/ron-m4a-look`
 **R12a:** read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a menu sheet, the Mode sheet, Settings, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change. **R12b** (started with the owner's notes): design tokens in one file (docs/05 3.10: colours per role, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component; history rows (3.5); **theme setting System / Light / Dark, Dark by default on Android, System in the PWA**; press feedback within one frame; `prefers-reduced-motion`. Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
+
+### Packages of section 0d
+
+### sandra, S5: the unit pad's arrangement and its user cells, branch `p1/sandra-padlayout`
+P14 is decided (decisions.md) with the owner's amendment (feedback #43): one fixed base arrangement for everyone, measured, not guessed, plus a few user cells for the units of one's own work. The draft in `spec/unit-pad.yaml` was arranged by hand. Find the arrangement that costs the fewest presses for the units engineers use most, as a keyboard gives its best keys to the most used letters. Read: r9 sections 1–3 and 6, decisions.md P14, `spec/unit-pad.yaml`, docs/04 5.2 (the counting rule), and in `tools/probes/unit-presses.mjs` the `UNITS` list and `typePad`. No app code.
+0. **Ask the owner first** for their own most used units (10 to 20, with prefixes, such as kN, MPa, mm) and their field. Their list is one source among the others, not the whole answer.
+1. **How often each unit is used.** Count units in open engineering text, with at least three fields weighted equally (mechanical and civil; electrical; chemical, process and HVAC), since principle 2 asks for one pad with no split by discipline. Candidate sources: open textbooks (OpenStax, CC BY), Wikipedia's engineering articles, the unit tables of open standards. Add the task benchmark (`tests/tasks/tasks.yaml`), S1's 50 units and the owner's list. Download once into a gitignored cache, record each file's SHA-256, then count offline (`tools/probes/unit-freq/`, under the probe rules). Count a prefixed unit as prefix plus unit (kN = k + N) and a compound by its factors, and keep the compound counts as well. Result: `tools/probes/unit-weights.yaml` (Find id, weight, sources).
+2. **The cost:** docs/04 5.2 (tap 1, flick 1, Shift or Alpha 1), with the taps-only count beside it, since S1 showed the pad must pass without flicks. A tie goes to the tap over the flick, then to keeping a quantity's units on one cell. Use no reach model unless there is measured data, and say so.
+3. **Fixed, do not move:**
+   - Shift, Alpha, ⌫, Enter and Math (Find) at their places.
+   - ÷, ×, x² and xʸ as the operators.
+   - The prefixes on the number keys, biggest first.
+   - One quantity per cell, with its SI unit on the tap unless the data shows another unit of that quantity is used far more. K against °C is the known case (r9 open point 2): answer it from the data.
+4. **Search:** a probe `tools/probes/pad-arrange.mjs` that scores an arrangement (weighted mean presses, with flicks and with taps only) and searches under these rules (exhaustive or a local search; say which, and why it is enough). Print the draft's score, the best found and what moved. Add `--weights` to `unit-presses.mjs`, so it prints the weighted mean beside the median.
+5. **How many user cells** (the owner left the number open; their first idea was about four). Score the best arrangement with 1 to 6 base cells given up to user cells, so you know what each cell costs the base units. Propose a number from that curve, with the cells next to each other so they are easy to find. Give them defaults: the most used units that got no base cell, with the owner's units first.
+6. **Write:**
+   - `spec/unit-pad.yaml` with the result: schema 2, with a `user:` list holding the cells and their defaults.
+   - r9 sections 1, 3 and 6, rewritten for the result.
+   - A static phone-size mockup, `docs/mockups/unit-pad.html` (light and dark, like `top-cluster.html`), so the owner can judge it on the phone.
+   - In the report, the proposal "P14 arrangement" for decisions.md "Needs the user": the grid, the number of user cells and the curve behind it, K or °C, and the units that left the pad.
+
+Gate:
+- On S1's 50 units, the median is ≤ 2 both with flicks and with taps only.
+- The weighted mean beats the draft's, or equals it with the reason given.
+- Each of the owner's units takes ≤ 3 presses, or the reason is named.
+- Every id on the pad is a Find id, or it is listed for G7.
+
+### gorge, G7: Find data for the unit pad and the units menu, branch `p1/gorge-m5-finddata`
+Backlog milestone 5 item 4 (its `add_to_find` part) and docs/research/r9-unit-pad.md section 7. Starts after S5, so the test reads the final arrangement. No UI.
+1. **Test first** (`app/src/find/specids.test.ts`, failing on today's index): every unit and prefix id in `spec/unit-pad.yaml` (the user cells' defaults included) and every grid entry of `spec/units-menu.yaml` (the `first` lists, with products such as `ft*lbf`, `Btu/h` or `m^3/h` split into their factors, and the prefixes) resolves to a Find item (`unit:<id>`, `pfx:<id>`); the constants in `constants.lists` resolve to `const:<id>` (Math's e, π and i excepted). Today it fails at least on `Ah`; add the ids S5's report lists as missing, and list every failure in the report.
+2. **Add** `add_to_find` (kip, fbm, Ah, mAh) and the constants StdT and StdP to the curated data (`find/units.yaml`), each with a `checks` entry whose size is exact from its definition (`derived` or `oracle`), and query phrases for them in `tests/tasks/find-queries.yaml` ("ampere hour", "kip", "board foot", "standard temperature").
+3. **r7 section 3's list:** `mmH2O` and `percent` are not in today's index, although r7 assumed Find carried them. Find out why (qalc data, a generator skip; `percent` and `ppm` are qalc constants, not units). Then either add the unit with a check, or write the reason into `find/units.yaml`'s comments. `%` gets no unit cell (r9 section 3).
+4. **Size:** the index stays within budget (≤ 400 kB raw, ≤ 100 kB gzip; G4 left it at 395 kB raw); report the new size.
+5. **Report** with the shared-file text for the backlog (milestone 5 item 4: the `add_to_find` part done).
+
+Gate: the new test, the query test (every phrase in the top 3, at least 90 % first), `npm run index` clean, the size budget.
+
+### sandra, S4: the laptop connection, design note, branch `p1/sandra-connector`
+Starts on the owner's go (a parked idea, decided around 2026-10-20). Read: feedback #5b, #17, #40; backlog "Parked ideas" (the shape as written 2026-10-14); docs/04 3.4 (live entries) and 6.2 (the `defs` log); decisions.md P11 (Python removed); CLAUDE.md's F-Droid rules (offline, no network). Write `docs/research/r10-connector.md`, and put the proposal for decisions.md "Needs the user" in your report. Answer each point with evidence (probes in `tools/probes/`):
+1. **The file:** format (Giac definitions `name(args):=body`, one comment line per function with a one-line description; optional test lines checked at import, so a library carries its own golden cases?), encoding, size limit, and what an import refuses (anything stateful beyond a definition).
+2. **Onto the phone without the INTERNET permission:** a file input in the Capacitor WebView (does it open Android's picker without a plugin? probe it in Chromium; the device check is annabell's later), "open with" or share to the app (an intent filter; what Capacitor needs; MIT plugins only), the File System Access API in the PWA. Recommend one.
+3. **Import and export:** into the `defs` log with a name-clash rule and the `DATA_VERSION` stamp; the replay time at 200 definitions; how the functions appear in Vars and Find (kind `userfn`, description from the comment) and on a user key (U1–U3); export the other way.
+4. **The laptop side:** the desktop web app as the test bench (same engine, same marks); a small Node command around `app/src/engine/nodeGiac.ts` that runs a library file and its tests (the MCP or AI hook would sit on the same). Cost and licence of each part.
+5. Removal test, cost per worker, what would change it. No feature code: probes and the note only.
+
+### ron, R24a: the slot model, branch `p1/ron-m5-unitslot`
+The first of four unit-pad packages, with no UI. Read: r9 section 2 (the rules), docs/04 4.3 (Grammar per slot), r7 section 5.4 (the guards), and `typePad` in `tools/probes/unit-presses.mjs`.
+1. **The MathLive check first** (r7 section 8; R24c depends on it). Check that a read-only MathLive field with one `\placeholder[id]{}` per slot shows a slot's LaTeX (a unit with a power, a stacked ÷), and that our key routing reaches the active prompt. Use a throwaway e2e and keep it out of the commit. If it fails, put the evidence under "Needs a decision", and build the model anyway: it does not depend on the display.
+2. **Tests first** (`app/src/units/slot.test.ts`), one per rule of r9 sections 2.2–2.6:
+   - A prefix arms; another replaces it; the same one again disarms it.
+   - Units in a row multiply; one ÷ per slot.
+   - ², ³, ⁴ and ⁻¹ act on the unit before, √ on the unit after.
+   - ⌫ removes the last token.
+   - A prefix alone and a second ÷ are refused, with a message from the i18n table.
+
+   Also, for every unit of the probe's 50 and of S5's weights list, the model's qalc text equals `typePad`'s or its canonical form.
+3. **The model** (`app/src/units/slot.ts`, plain TS): a token list per slot (prefix id, unit id, power, the place of the ÷). It gives:
+   - the LaTeX shown;
+   - the qalc text, from whitelisted ids only;
+   - the reading in words, from Find's titles. A prefixed pair outside Find's list is marked (S1 guard 3).
+
+   Its input is pad actions (`prefix`, `unit`, `per`, `power`, `sqrt`, `delete`), never keys, so R24b and R24c plug into it.
+
+Gate: the tests, typecheck, and the start chunk unchanged (nothing imports the model yet). Report: the MathLive check's result and the action names, for R24b.
+
+### ron, R24b: the pad drawn over the keys, branch `p1/ron-m5-unitpad`
+Starts when the owner has accepted S5's arrangement and R21 is merged. No slots yet: the pad emits R24a's actions. Read: r9 section 1, `spec/unit-pad.yaml`, R21's layer (Shift + 6 drawn over its keys), `keyboard/fit.ts` and R9's legend drawing.
+1. **Tests first**:
+   - A Vitest for the loader. Every key id is a maths key of `spec/keyboard.yaml`, no key holds two cells, and every unit or prefix id is a Find id.
+   - An e2e (`app/test/unitpad-draw.spec.ts`), by keys and by touch. Every cell, by tap, flick up, flick down, Shift then the cell and Alpha then the cell, emits its action. A user cell emits its unit.
+2. **Load lazily** (a dynamic import with the unit view), never in the start chunk.
+3. **Draw** over the maths rows with R21's layer, each cell on its key's box. Prefix cells get their own colour token. Each cell shows up to three legends, fitted by `fit.ts`. The user cells are marked, and an empty one shows a dim "+".
+4. **Route every press** through the keypad's own gesture code (tap, flick, bubble, haptic), mapped by key id and layer. A dev-only switch (`?pad=1`) shows the pad for the gallery until R24c opens it from the units key.
+5. **Gallery:** the pad in light and dark, at 360 × 740 and 412 × 915.
+
+Gate:
+- The tests pass, and the gestures and flicks e2e are unchanged.
+- Every legend fits at 360 px within the fit code's 8 px floor, or the report names the cells that do not.
+- The size test passes, with the start chunk unchanged.
+- The owner has reviewed the gallery.
+
+### ron, R24c: the unit view entry, branch `p1/ron-m5-unitview`
+Starts when R24a, R24b and milestone 5 items 1–2 (U1 the qalc worker, U2 the adapter) are merged. Read: r9 sections 2.1, 2.7 and 2.8, docs/04 4.3, and the reports of R24a and R24b.
+1. **Tests first** (`app/test/unitpad.spec.ts`), by keys and by touch:
+   - The units key on a line, on a picked history row, and on an empty line (quantity 1) opens the slots with the pad up.
+   - Pad presses fill the active slot, and the reading under the formula follows every press.
+   - Enter goes to the next slot, Enter in the end slot evaluates, and a flick up on Enter evaluates at once.
+   - ◀ ▶ move between slots, and Esc keeps the slots with the line.
+
+   Also replay as e2e the 44 of the probe's 50 units that sit on the draft pad, each within the probe's count. The other six go through Find in R24d. Tasks t02 and t04 must be within their plans.
+2. **Build:**
+   - The read-only formula with a slot after every number, as R24a's check found.
+   - R24a's model per slot, with R24b's pad up while a slot is active.
+   - Evaluation through U2's adapter, with the result shown as U2 returns it. The full result view is not packaged yet (section 0d).
+3. **`spec/keyboard.yaml`:** `unit_slot:` loses `letters`, `symbols`, `ops` and `exponent_leave`. The probe's `--pad` mode becomes its default, and the letter modes stay for comparison.
+4. **Report** with the shared-file text: docs/04 4.3 rewritten for the pad, the status line at the top of r7, and backlog milestone 5 item 4.
+
+Gate:
+- `unitpad.spec.ts` passes.
+- The probe's medians are ≤ 2, both with flicks and with taps only.
+- t02 and t04 are within their plans.
+- The gestures and flicks e2e and the keyboard test pass.
+- The size test passes, with the start chunk unchanged.
+
+### ron, R24d: Find in a slot and the user cells, branch `p1/ron-m5-usercells`
+Starts when R24c, R4 (Find) and R15b (the user keys and their storage) are merged. Read: r9 section 2.9, decisions.md P14 (the user cells), R15b's user-key code and its storage key in `state/storage.ts`, and R4's report.
+1. **Tests first:**
+   - Math in a slot opens Find on units and prefixes, and an empty query shows the units menu by category (`spec/units-menu.yaml`).
+   - A pick lands in the slot as tokens: a prefixed unit becomes a prefix plus a unit.
+   - The six of the probe's 50 units that are not on the pad, each within the probe's Find count.
+   - A user cell is set from a Find hit ("Put on the unit pad", choosing the cell and its tap, up or down) and from Settings › Unit pad. It survives a restart and can be reset to its default.
+   - An empty user cell opens Find.
+2. **Build:** store the cells in the stamped store beside the user keys (a key such as `unitPadCells`), on the same code path as U1–U3 wherever it fits. A user cell holds one Find unit, with or without a prefix (MPa, mmH₂O). Its defaults come from `spec/unit-pad.yaml` `user:`.
+3. **Gallery:** Find in a slot, the units menu, and a user cell being set.
+
+Gate: the tests, the Find query test unchanged, and the size test.
 
 ### Night packages (section 0c)
 

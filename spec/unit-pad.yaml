@@ -1,0 +1,88 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# The unit pad (P14, DECIDED by the owner 2026-10-14; the owner's idea, worked out in docs/research/r9-unit-pad.md).
+# Nothing in the app reads this file yet; tools/probes/unit-presses.mjs --pad counts presses from it. The arrangement
+# below is the hand-drawn draft: package S5 replaces it with the measured one and a `user:` list (the user cells, their
+# number open). Packages R24a-R24d build it, and it replaces the letters and the `symbols` of `unit_slot:` in
+# spec/keyboard.yaml (R24c). It is its own file so the start chunk does not carry it (the app
+# bundles keyboard.yaml whole); the unit view loads it lazily with the qalc worker.
+#
+# In a unit slot the maths rows (3-9) show the pad: each cell lies exactly on the key under it (the R21 rule for
+# anything drawn over the keypad), so no key moves and a press on a key is a press on its cell. The top cluster stays
+# as it is: ◀ ▶ go to the previous and next slot, Esc leaves the unit view, Cancel and Menu as always.
+#
+#   row 3   C ↑Ah    | Find     | T ↑Wb    | Hz ↑rpm  | ° ↑rad   | ⌫
+#   row 4   ³ ↑⁴     | A        | V        | Ω ↑S     | F        | H
+#   row 5   ² ↑√     | J ↑Wh ↓eV| W ↑hp    | L ↑gal   | Enter (next slot; ↑ evaluate now)
+#   row 6   mol      | G ↑T     | M        | m ↑ft ↓in| ÷ per ↑⁻¹
+#   row 7   Alpha    | k ↓h     | c        | g ↑lb ↓t | × ·
+#   row 8   Shift    | m        | µ        | s ↑h ↓min| N ↑lbf ↓kgf
+#   row 9   (yours)  | n        | p ↓f     | K ↑°C ↓°F| Pa ↑bar ↓psi
+#
+# Reading it: the prefixes sit where the digits are (they are powers of ten), in reading order from the biggest (G, top
+# left) to the smallest (p); the next column holds the base units m, g, s, K; the operator column keeps ÷ and × and
+# adds force and pressure; the function rows hold electricity (A V Ω F H), then C T Hz °, then J W L. Each cell is one
+# quantity (or a reciprocal or close partner: Ω and S, T and Wb, Hz and rpm, C and Ah): its SI unit on the tap, the
+# common other units of the same quantity on the flicks, their legends drawn on the cell (up top left, down bottom
+# left, as R9 draws them). Shift then a cell gives its up item and Alpha then a cell its down item, so the G2's taps
+# reach everything without flicks. The prefix cells have their own colour, so the prefix m and the metre m never look
+# alike.
+#
+# Rules (r9 section 2): a prefix arms (highlighted) and the next unit takes it; another prefix replaces it, the same
+# one again disarms it; units in a row multiply (no × needed: m then s is m·s, the prefix m then s is ms); ÷ makes the
+# rest of the slot the denominator (one ÷ per slot, the SI's one-solidus rule); ², ³, ⁴ and ⁻¹ act on the unit
+# before, √ on the unit after; ⌫ removes the last token. The slot fills as you press and its reading in words shows
+# under the formula (S1 guard 2: it still catches a slip from M to m). Enter goes to the next slot (an empty slot
+# means no unit); after the last unit slot comes the end slot "→ should be", where Enter evaluates; a flick up on
+# Enter (Shift + Enter) evaluates from any slot. Math opens Find on units, for everything not on the pad; with an
+# empty query it shows the units menu (spec/units-menu.yaml), so the G2's way (Units, category, unit) is still there.
+#
+# Ids: Find's unit ids (`unit:<id>` in the index) and prefix ids (`pfx:<id>`; u = µ). `Ah` is in units-menu.yaml
+# `add_to_find` (package G7 adds it). `yours`: the draft's one user cell, set from Find as the user keys U1-U3; S5
+# decides how many user cells there are.
+schema: 1
+source: assumed   # ours (P14, 2026-10-14); a hand-drawn draft until package S5 measures the arrangement
+
+keep:
+  - { key: math, does: find }        # Find on units; an empty query shows the units menu
+  - { key: bksp, does: delete }      # the last token
+  - { key: enter, does: next, up: evaluate }
+  - { key: shift, does: shift }      # next cell: its up item
+  - { key: alpha, does: alpha }      # next cell: its down item
+
+ops:
+  - { key: div, tap: per, up: inverse }
+  - { key: mul, tap: product }
+  - { key: sq, tap: square, up: sqrt }
+  - { key: pow, tap: cube, up: fourth }
+
+prefixes:
+  - { key: d7, tap: G, up: T }
+  - { key: d8, tap: M }
+  - { key: d4, tap: k, down: h }
+  - { key: d5, tap: c }
+  - { key: d1, tap: m }
+  - { key: d2, tap: u }
+  - { key: d0, tap: n }
+  - { key: dot, tap: p, down: f }
+
+units:
+  - { key: d9, quantity: length, tap: m, up: ft, down: in }
+  - { key: d6, quantity: mass, tap: g, up: lb, down: t }
+  - { key: d3, quantity: time, tap: s, up: h, down: min }
+  - { key: space, quantity: temperature, tap: K, up: oC, down: oF }
+  - { key: sub, quantity: force, tap: N, up: lbf, down: kgf }
+  - { key: add, quantity: pressure, tap: Pa, up: bar, down: psi }
+  - { key: neg, quantity: energy, tap: J, up: Wh, down: eV }
+  - { key: paren, quantity: power, tap: W, up: hp }
+  - { key: comma, quantity: volume, tap: L, up: gal }
+  - { key: sin, quantity: current, tap: A }
+  - { key: cos, quantity: voltage, tap: V }
+  - { key: tan, quantity: resistance, tap: ohm, up: S }
+  - { key: ln, quantity: capacitance, tap: F }
+  - { key: log, quantity: inductance, tap: H }
+  - { key: vars, quantity: charge, tap: C, up: Ah }
+  - { key: tmpl, quantity: magnetic, tap: T, up: Wb }
+  - { key: x, quantity: frequency, tap: Hz, up: rpm }
+  - { key: frac, quantity: angle, tap: deg, up: rad }
+  - { key: emark, quantity: amount, tap: mol }
+  - { key: fmt, quantity: yours, tap: null }

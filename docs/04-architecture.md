@@ -311,14 +311,18 @@ Worker 3, loaded on the first press of the units key; never at start. Same patte
 **Memory with two workers alive (to verify, annabell, U5):** `dumpsys meminfo` PSS on the Tab One with Giac and qalc loaded, then a 10-minute mixed session. Gate: no low-memory kill.
 
 ### 4.3 Decision: the unit view (entry, parsing, results)
-- **Entry (P11, layout in `spec/keyboard.yaml` `unit_slot:`, press count in docs/research/r7-unit-slots.md):** the
+- **Entry (P11, P14; layout in `spec/unit-pad.yaml`, press counts in docs/research/r9-unit-pad.md):** the
   units key (Shift + Tmpl, a flick up on Tmpl) on an entry line or a picked history row shows the same formula,
   read-only, with an empty unit slot after every number and an optional end slot "→ should be". On an empty line
   it opens one slot (quantity 1) and the end slot. ◀ ▶ jump between slots, never through the formula; a tap on
-  the formula still puts the cursor there. Numbers belong in the formula: digits in a slot are only exponents.
+  the formula still puts the cursor there. Numbers belong in the formula: in a slot the number keys are prefixes.
   Built on MathLive's prompts: a read-only mathfield with `\placeholder[id]{}` per slot (`getPromptRange`,
   `getPromptValue`, MathLive 0.111.1 `types/mathfield-element.d.ts:781-810`) **(to verify, ron, first step: a
-  stacked fraction inside a prompt, and our key handling routed to the prompt)**.
+  stacked fraction inside a prompt, and our key handling routed to the prompt)**. **The unit pad (P14, decided
+  2026-10-14):** in a slot the maths rows are prefix and unit cells drawn over the keys (R21's layer), in one fixed
+  arrangement measured by package S5, plus a few user cells set from Find (their number from S5). A slot holds unit
+  ids, never text; Enter goes to the next slot and evaluates in the end slot; Math opens Find on units. The rules
+  below stay.
 - **Grammar per slot:** a product of factors with `×`, one `÷` (the rest is the denominator), powers, `x⁻¹`, `√`.
   A factor is one symbol from Find's unit list: an exact symbol first, then prefix + symbol. The parser in
   `units` mode emits qalc text from these whitelisted names only (the generator's round-trip check, 3.3).
@@ -369,6 +373,8 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Tmpl (row 3, col 2) [r4c3] | the 6 × 3 template palette (R10) | unchanged; picked by arrows, Enter or a tap (docs/research/r8-menus.md, rule M1) | P8, P11, R10 |
 | Shift + Tmpl | nothing | the unit view (unit slots) | P11; reference: Units |
 | Alpha on Vars, Math, Tmpl | A, B, C | unchanged | P4 |
+| The letters A–Z, `#`, `:`, `;` (Alpha layer, flick down) | as on the reference | **stay** (owner, 2026-10-14): Find's keyboard (3.7), names (Home A–Z, CAS symbols, user functions), hex digits A–F (5.4); not the unit slots, which get the unit pad (P14) | decisions.md "The letters stay" |
+| Alpha key [r8c1] | one-shot Alpha, lock flicks | stays; a merge with Shift is decided on the tap counter (P7 point 4, about 2026-10-20); if merged, its cell becomes a fourth user key U4 | P7, 2026-10-14 |
 | a b/c (row 3, col 4) [r4c5] | inserts a fraction | toggles the form of the last result: decimal ↔ fraction, polar ↔ rectangular (R10); the fraction template is on ÷ and in Tmpl | G2 item 29, P11, P12 |
 | Exponent key (row 6, col 0) [r7c1] | `×10^` template, legend ×10ⁿ | types the E mark `ᴇ` (`\emark`, one token), legend `ᴇ`; Shift stays Sto ▶ | P12 |
 | App key (Home/CAS) [r3c1] and CAS [r3c5] | two keys, each with a Shift layer (Settings, Mode) | **no keys**: the status line's place name switches Home ↔ CAS; the Mode sheet is a status chip and Shift + Apps; the Apps sheet lists Home and CAS first (R15) | P12; S2 |
@@ -388,8 +394,8 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + 8 [r7c3] | nothing | `{ }` list template (EN5) | reference |
 | Shift + 4 [r8c2] | nothing | matrix editor (EN5) | reference: Matrix |
 | Shift + 7 [r7c2] | nothing | list editor, deferred with Statistics | reference: List |
-| Unit slots | — | `spec/keyboard.yaml` `unit_slot:` (r7): flick down lower case, flick up capital, tap µ on (−), Ω on the comma, ° on a b/c; `→` is the end slot reached with ▶; `±` per r7 section 7, open point 3 | P11, S1 (owner, 2026-10-13) |
-| Arrow cells after K3 (6 cells) | trackpad | not assigned in advance: they get the shifted functions pressed most often in the task benchmark | measured, not guessed |
+| Unit slots | — | the unit pad (`spec/unit-pad.yaml`, docs/research/r9-unit-pad.md): prefix and unit cells drawn over the maths rows, the arrangement measured by S5, a few user cells set from Find; Enter goes to the next slot, `→` is the end slot; `±` per r7 section 7, open point 3. Until R24c, `spec/keyboard.yaml` `unit_slot:` still holds S1's letters | P11, S1 (owner, 2026-10-13); P14 (owner, 2026-10-14) |
+| Unassigned Shift cells (14, counted 2026-10-14) | nothing | Shift + Symb, Plot, Num (the reference's Setup, omitted); Shift + ▲ ▼ ◀ ▶ (2 presses: the trackpad has no flicks); Shift + Vars; Shift + a b/c; Shift + `( )`; Shift + `,`; Shift + 1; Shift + 0; Shift + Fmt. Plus U1 (empty) and U2, U3 (Home, CAS by default) with their Shift layers (R15b). Not assigned in advance: they get the functions pressed most often in the task benchmark | measured, not guessed (decisions.md "The letters stay") |
 | Prefix chips | — | a strip above the keypad, only after a number, only if task 3 shows a gain | P8 |
 
 

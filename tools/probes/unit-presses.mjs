@@ -12,6 +12,9 @@
 //                                                      keys type digits only in an exponent, as in every mode): the
 //                                                      fallback if flicks go
 //   node tools/probes/unit-presses.mjs --no-auto-leave an exponent needs ▶ before the next unit
+//   node tools/probes/unit-presses.mjs --pad           the unit pad of P14 (spec/unit-pad.yaml, docs/research/r9-unit-pad.md):
+//                                                      prefix and unit cells instead of letters; add --taps for Shift or
+//                                                      Alpha + cell instead of flicks
 //   node tools/probes/unit-presses.mjs --read BTU lbm  what qalc's own parser reads for each text, and nothing else
 //   QALC_OUT=<dir with qalc.mjs> node tools/probes/unit-presses.mjs   (default: engine/qalc/_out/dev of this checkout
 //                                                                    or of the main checkout; skipped if none)
@@ -30,6 +33,7 @@ const argv = process.argv.slice(2);
 const args = new Set(argv);
 const READ = argv[0] === '--read' ? argv.slice(1) : null;
 const LOCK = args.has('--lower-lock');
+const PAD = args.has('--pad');
 const FLICKS = !args.has('--taps') && !LOCK;
 const AUTO_LEAVE = !args.has('--no-auto-leave');
 
@@ -197,6 +201,55 @@ function typeUnit(u) {
   return { presses, missing, qalc };
 }
 
+// ---- The unit pad (P14, --pad): every unit, prefix and operator is a cell on a key (spec/unit-pad.yaml). A target
+// unit is typed from its `parts`: the factors with a positive exponent, then ÷ and the rest. A product that the pad
+// has as one cell (Wh = W·h) is typed as that cell. Units in a row multiply, so no × is needed.
+const pad = PAD ? parseYaml(readFileSync(join(root, 'spec/unit-pad.yaml'), 'utf8')) : null;
+const padCell = (list) => {
+  const m = new Map();
+  for (const c of list ?? []) for (const how of ['tap', 'up', 'down']) if (c[how]) m.set(c[how], { key: c.key, how });
+  return m;
+};
+const padUnit = padCell(pad?.units);
+const padPfx = padCell(pad?.prefixes);
+const padOp = padCell(pad?.ops);
+const cellPress = ({ key, how }) =>
+  how === 'tap' ? [key] : FLICKS ? [(how === 'up' ? '↑' : '↓') + key] : [how === 'up' ? 'shift' : 'alpha', key];
+const QALC_SYM = { u: 'µ', oC: '°C', oF: '°F', deg: '°', ohm: 'Ω' };
+const POWER_OP = { 2: 'square', 3: 'cube', 4: 'fourth' };
+
+function typePad(parts) {
+  const toks = parts.split(' ').map((p) => {
+    const [name, e] = p.split('^');
+    const [pfx, unit] = name.includes(':') ? name.split(':') : [null, name];
+    return { pfx, unit, exp: e === undefined ? 1 : Number(e) };
+  });
+  for (let i = 0; i + 1 < toks.length; i++) {
+    const [a, b] = [toks[i], toks[i + 1]];
+    if (a.exp === 1 && b.exp === 1 && !b.pfx && padUnit.has(a.unit + b.unit)) toks.splice(i, 2, { ...a, unit: a.unit + b.unit });
+  }
+  const presses = [];
+  const missing = [];
+  const op = (name) => (padOp.has(name) ? presses.push(...cellPress(padOp.get(name))) : missing.push(name));
+  const factor = (t, e) => {
+    if (e === 0.5) op('sqrt');
+    if (t.pfx) padPfx.has(t.pfx) ? presses.push(...cellPress(padPfx.get(t.pfx))) : missing.push(t.pfx + '-');
+    padUnit.has(t.unit) ? presses.push(...cellPress(padUnit.get(t.unit))) : missing.push(t.unit);
+    if (e !== 1 && e !== 0.5) POWER_OP[e] ? op(POWER_OP[e]) : missing.push('^' + e);
+  };
+  const num = toks.filter((t) => t.exp > 0);
+  const den = toks.filter((t) => t.exp < 0);
+  for (const t of num) factor(t, t.exp);
+  if (den.length) op('per');
+  for (const t of den) factor(t, -t.exp);
+  const sym = (t) => (t.pfx ? QALC_SYM[t.pfx] ?? t.pfx : '') + (QALC_SYM[t.unit] ?? t.unit);
+  const term = (t, e) => (e === 0.5 ? `sqrt(${sym(t)})` : sym(t) + (e === 1 ? '' : '^' + e));
+  const numText = num.map((t) => term(t, t.exp)).join('*') || '1';
+  const qalc = den.length ? `${numText}/(${den.map((t) => term(t, -t.exp)).join('*')})` : numText;
+  const meant = toks.map((t) => (t.pfx ? t.pfx + ':' : '') + t.unit + (t.exp === 1 ? '' : '^' + t.exp)).sort().join(' ');
+  return { presses, missing, qalc, meant };
+}
+
 // ---- Counting (skipped with --read)
 if (READ) await readOnly();
 const median = (xs) => {
@@ -204,14 +257,16 @@ const median = (xs) => {
   const n = s.length;
   return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
 };
-const rows = UNITS.map((x) => ({ ...x, ...typeUnit(x.u) }));
-const extra = EXTRA.map((x) => ({ ...x, ...typeUnit(x.u) }));
+const type = (x) => (PAD ? typePad(x.parts) : typeUnit(x.u));
+const rows = UNITS.map((x) => ({ ...x, ...type(x) }));
+const extra = EXTRA.map((x) => ({ ...x, ...type(x) }));
 const counts = rows.map((r) => r.presses.length);
 const isCompound = (u) => /[/·²³⁻]/.test(u);
 const single = rows.filter((r) => !isCompound(r.u)).map((r) => r.presses.length);
 const compound = rows.filter((r) => isCompound(r.u)).map((r) => r.presses.length);
 
-console.log(`unit slot press count (${FLICKS ? 'flicks' : LOCK ? 'no flicks, lower-case lock in the slot' : 'taps only, the G2 way'}; exponent leave: ${autoLeave ? 'auto' : '▶'})`);
+const mode = FLICKS ? 'flicks' : LOCK ? 'no flicks, lower-case lock in the slot' : 'taps only, the G2 way';
+console.log(PAD ? `unit pad press count (P14; ${mode})` : `unit slot press count (${mode}; exponent leave: ${autoLeave ? 'auto' : '▶'})`);
 console.log(`  ${rows.length} units: median ${median(counts)}, mean ${(counts.reduce((a, b) => a + b, 0) / counts.length).toFixed(2)}, max ${Math.max(...counts)}`);
 console.log(`  ${single.length} single units: median ${median(single)}; ${compound.length} compound units: median ${median(compound)}`);
 console.log(`  gate (P8 rule 2, median <= 4): ${median(counts) <= 4 ? 'PASS' : 'FAIL'}`);
@@ -228,22 +283,26 @@ for (const r of rows) console.log(`  ${String(r.presses.length).padStart(2)}  ${
 
 console.log('\nextra units (not in the median)');
 for (const r of extra)
-  console.log(`  ${String(r.presses.length).padStart(2)}  ${r.u.padEnd(10)} ${r.presses.join(' ').padEnd(44)} ${r.missing.length ? 'CANNOT TYPE ' + r.missing.join(' ') : ''}`);
+  console.log(`  ${String(r.presses.length).padStart(2)}  ${r.u.padEnd(10)} ${r.presses.join(' ').padEnd(44)} ${r.missing.length ? (PAD ? 'Find: ' : 'CANNOT TYPE ') + r.missing.join(' ') : ''}`);
 const missing = new Set([...rows, ...extra].flatMap((r) => r.missing));
-console.log(`\nsymbols the layout cannot type: ${missing.size ? [...missing].join(' ') : 'none'}`);
+console.log(`\n${PAD ? 'not on the pad (Math: Find on units)' : 'symbols the layout cannot type'}: ${missing.size ? [...missing].join(' ') : 'none'}`);
 if (rows.some((r) => r.missing.length)) console.log('  (some are in the 50: their counts above are too low)');
 
 // ---- Whole tasks (cursor and slot moves counted). The units key is Shift + Tmpl, or one flick up on Tmpl.
 const unitsKey = FLICKS ? ['↑tmpl'] : ['shift', 'tmpl'];
 const pi = FLICKS ? ['↑d3'] : ['shift', 'd3'];
 const t = (name, budget, seq) => console.log(`  ${String(seq.length).padStart(2)}  ${name}${budget ? `  (tasks.yaml plan: ${budget})` : ''}`);
-const P = (u) => typeUnit(u).presses;
-console.log('\ntasks (sequences built from the same rules; docs/research/r7-unit-slots.md section 4)');
-t('t02 72, units key, km/h → m/s', 15, ['d7', 'd2', ...unitsKey, ...P('km/h'), 'right', ...P('m/s'), 'enter']);
-t('t02 72, units key, km/h, no end slot (result 20 m/s)', null, ['d7', 'd2', ...unitsKey, ...P('km/h'), 'enter']);
-t('t04 2×π×25 then units: mm on 25, → m', 14, ['d2', 'mul', ...pi, 'mul', 'd2', 'd5', ...unitsKey, 'right', ...P('mm'), 'right', ...P('m'), 'enter']);
-t('t04 the same, no end slot', null, ['d2', 'mul', ...pi, 'mul', 'd2', 'd5', ...unitsKey, 'right', ...P('mm'), 'enter']);
-t('P11 kg·m²/s³ → W, empty line (unit check)', null, [...unitsKey, ...P('kg·m²/s³'), 'right', ...P('W'), 'enter']);
+const byU = new Map([...UNITS, ...EXTRA].map((x) => [x.u, x]));
+const P = (u) => (PAD ? typePad(byU.get(u).parts) : typeUnit(u)).presses;
+// On the pad, Enter goes to the next slot and evaluates in the end slot; a flick up on Enter evaluates from any slot.
+const next = PAD ? ['enter'] : ['right'];
+const evalNow = PAD ? (FLICKS ? ['↑enter'] : ['shift', 'enter']) : ['enter'];
+console.log(`\ntasks (sequences built from the same rules; docs/research/${PAD ? 'r9-unit-pad.md section 3' : 'r7-unit-slots.md section 4'})`);
+t('t02 72, units key, km/h → m/s', 15, ['d7', 'd2', ...unitsKey, ...P('km/h'), ...next, ...P('m/s'), 'enter']);
+t('t02 72, units key, km/h, no end slot (result 20 m/s)', null, ['d7', 'd2', ...unitsKey, ...P('km/h'), ...evalNow]);
+t('t04 2×π×25 then units: mm on 25, → m', 14, ['d2', 'mul', ...pi, 'mul', 'd2', 'd5', ...unitsKey, ...next, ...P('mm'), ...next, ...P('m'), 'enter']);
+t('t04 the same, no end slot', null, ['d2', 'mul', ...pi, 'mul', 'd2', 'd5', ...unitsKey, ...next, ...P('mm'), ...evalNow]);
+t('P11 kg·m²/s³ → W, empty line (unit check)', null, [...unitsKey, ...P('kg·m²/s³'), ...next, ...P('W'), 'enter']);
 t('baseline 72 ÷ 3.6 (no unit checked)', 7, ['d7', 'd2', 'div', 'd3', 'dot', 'd6', 'enter']);
 
 // ---- qalc: is each typed unit read as meant, and what do the same letters in the wrong case give?
@@ -298,9 +357,10 @@ console.log(`\nqalc (${qdir}): each unit as typed, read by qalc's own parser`);
 let bad = 0;
 for (const r of [...rows, ...extra].filter((x) => !x.missing.length)) {
   const got = reading(r.qalc);
-  if (got !== canon(r.parts)) {
+  const meant = r.meant ?? canon(r.parts);
+  if (got !== meant && got !== canon(r.parts)) { // a pad cell for a product (Wh) reads back as its parts (W h)
     bad++;
-    console.log(`  MISREAD  ${r.u.padEnd(10)} qalc text ${r.qalc.padEnd(12)} reads ${got}, meant ${r.parts}`);
+    console.log(`  MISREAD  ${r.u.padEnd(10)} qalc text ${r.qalc.padEnd(12)} reads ${got}, meant ${meant}`);
   }
 }
 console.log(`  ${bad === 0 ? 'every typed unit reads as meant' : `${bad} misread (our whitelist must take these, not qalc's parser)`}`);
@@ -308,6 +368,10 @@ console.log(`  ${bad === 0 ? 'every typed unit reads as meant' : `${bad} misread
 // The same letters in another case (ASCII letters only): caught (not a unit), or silently another unit? "SAME DIM" is
 // the worst kind: the dimension matches, so neither the end slot nor a dimension check can see it; only the live
 // reading under the slot shows it.
+if (PAD) {
+  console.log('\nwrong case: not possible on the pad (no letters are typed); a slip to a neighbouring cell (M for m) is what the live reading must catch');
+  process.exit(0);
+}
 console.log('\nwrong case (single units of the list): caught = not a unit; silent = another valid unit, with its SI base dimension');
 const flip = (ch) => (ch === ch.toUpperCase() ? ch.toLowerCase() : ch.toUpperCase());
 const variants = (s) => {

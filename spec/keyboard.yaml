@@ -324,6 +324,8 @@ keys:
 #             error that names the factor and offers the near symbols (kw: kW?). A prefix alone (k, M, G) is an
 #             error, never a constant (qalc reads G as the gravitational constant).
 # `source: assumed`: ours (P11, 2026-10-13); the units key position is the reference's (G2 item 30).
+# P14 (decided 2026-10-14, docs/research/r9-unit-pad.md) replaces letters, symbols and ops with the unit pad in
+# spec/unit-pad.yaml; package R24c removes them here.
 unit_slot:
   letters: { flick_down: lower, flick_up: upper }
   symbols:
