@@ -35,6 +35,23 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
 
 Newest first. Where an entry changed an earlier document, that document now carries the result.
 
+- **2026-10-14 The package path: three lanes. DECIDED by the owner (2026-10-14).** After an analysis of every open package (brief section 0, "The path").
+  - **Choice:**
+    - The ron lane keeps one package at a time, with two moves against the order signed off on 2026-10-13. R11 goes before R15b, since it uses no key R15b moves. R4 goes between R12a and R12b: Find is built while the owner looks at the mockups, and the token pass then covers it.
+    - The gorge lane starts milestone 5's engine work now (G10–G13, backlog milestone 5 items 1–3) plus C9 (G14). This is also the night queue.
+    - The device run before R15b is a package (A4a). It gathers every device check that waits for no later package.
+    - Big packages are split, after the owner's rule for the unit pad (about a day or less): R21 into R21a and R21b, R4 into R4a and R4b, A4 into A4a and A4b, R12b into R12b and R12c, milestone 5 item 1 into G10 and G11, item 2 into G12 and R28.
+    - The night of 2026-10-14's Opus pass 2 and report are dropped: the owner's verification (`ef857a6`) did that work.
+  - **Why:**
+    - R24c waited for milestone 5 items 1 and 2, which had no package, while gorge had nothing queued.
+    - R15b waited for a device run that had no package, and R11 and R12 were chained behind it without needing it.
+    - R21's Settings page closed on `popstate`, which nothing on Android fires. Capacitor 8.5.3 has no back handling and `@capacitor/app` is not installed, so R21b adds a `MainActivity` callback (backlog C8).
+    - R15b promised the user keys' Find setting "with R4", and R4's text did not have it; R4b has it now.
+    - P11's reason for doing 4a first (Find and the unit view sit on the keypad and the screen) does not touch a worker, a check layer or a data audit.
+  - **Ids:** new gorge packages start at G10, since G8 and G9 are ids in the backlog's G2 follow-ups. U2's parser half is R28, since R25a–R27b are taken.
+  - **Alternatives:** everything serial as signed off (gorge idle, R24c blocked); Find right after R21b (possible; it uses no key R15b moves); one APK-free night lane of small ron packages instead of gorge's (they need the owner's G2 answers and APK checks).
+  - **Would change if:** the owner wants Find sooner (then R4a after R21b); a gorge package needs a UI decision; the device run cannot happen before R15b is due (then the owner decides whether R15b waits for it).
+
 - **2026-10-14 P14: the unit pad, a units keyboard for the unit slots. DECIDED by the owner (2026-10-14), with user cells and a measured arrangement.** The owner's idea (feedback #42): in a unit slot, a pad of prefix cells and unit cells instead of letters, a prefix then one or more units, Enter to the next slot. Worked out in [research/r9-unit-pad.md](research/r9-unit-pad.md), layout as data in [spec/unit-pad.yaml](../spec/unit-pad.yaml), counted by `tools/probes/unit-presses.mjs --pad`.
   - **Choice:** the pad replaces S1's letters inside a slot (`unit_slot:` letters and symbols). The slots, the end slot, the grammar, the live reading and every result rule of docs/04 4.3 stay. Fixed: Shift, Alpha, ⌫, Enter, ÷, ×, x², xʸ and Math keep their places and roles; the prefixes sit on the number keys, biggest first; one quantity per cell, its SI unit on the tap and other units of that quantity on the flicks. Enter goes to the next slot and evaluates in the end slot (a flick up on Enter evaluates at once). Math opens Find on units, and an empty query shows the units menu.
   - **The owner's amendment (feedback #43):** the pad is not free to rearrange. **The base arrangement is one fixed layout for everyone, found by research** (package S5): how often engineers use each unit, and the cheapest cells for the most used ones, as a keyboard gives its best keys to e, n and s. **A few user cells** take the units of one's own work. Each has a tap and two flicks like every cell, is set from Find like the user keys U1–U3, and ships with a default from S5. **The number of user cells is open** (owner, 2026-10-14): S5 measures what each cell taken from the base layout costs and proposes a number (the owner's first idea: about four). **Why:** a fully configurable pad invites endless tuning of something with a clear optimum, and the same unit on the same cell for everyone keeps rule 8; a few cells cover what one field needs.

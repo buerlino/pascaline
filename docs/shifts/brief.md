@@ -1,41 +1,64 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Shift brief: milestone 4a "feel", then the rest of milestone 4 "Find and trust" (shifts `m4a` and `m4`, run by the owner)
+# Shift brief: milestone 4a "feel" and milestone 4 "Find and trust", with milestone 5's engine work beside them (run by the owner)
 
-**Night shift 2026-10-14:** henri runs the queue in section 0c; for that shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
+**Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` after the merges of R17, S2, R13, R16, R14 (2026-10-13) and R18 (2026-10-14). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R14, R16, R17, R18. **Next:** R22 and R23 (the entry bugs F9 and F10, 2026-10-14), then the small entry-bug packages R25a–R27b (F11–F23, found by probing on 2026-10-14; recommended order R25a, R25b, R25c, R26a–R26h, then R27b, with R27a when G2 item 48 is answered), then R21, then R15b (the owner approved layout D on 2026-10-14), after one device run on the Tab One. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2) and F8. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
-## 0c. Night shift 2026-10-14: henri's plan (owner, 2026-10-14)
-The owner planned this shift in advance. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first** (the week is at 75%): the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for tomorrow.
+### The path (owner, 2026-10-14; decisions.md "The package path")
+Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
+- **ron, one package at a time** (the owner's day work; each ends with an APK on the phone):
+  1. R22, R23 (the entry bugs F9 and F10).
+  2. The entry-bug packages: R25a, R25b, R25c, R26a–R26h, then R27b. R27a comes when G2 item 48 is answered.
+  3. R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
+  4. R11 (history-row actions), while annabell's device run A4a takes place.
+  5. R15b (the top cluster, after A4a's report).
+  6. R12a (mockups). While the owner looks at them: R4a (Find on Math), then R4b (Vars, Memory, the user keys).
+  7. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion).
+  
+  The unit-pad packages of 0d (R24a–R24d) and R28 (0e) go in when their prerequisites are merged.
+- **gorge, beside ron** (no UI; the night queue of 0c): G10, G11, G12, G13, G14 (section 0e). G7 comes when S5 is merged (0d).
+- **annabell:** A4a when the owner connects the Tab One, after R21b and before R15b. A4b after R4b, which completes milestone 4.
+- **sandra:** S5 now; S4 on the owner's go (0d).
 
-### Rules for this shift (they replace rules sections 4, 10 and 11, but not 4a, and change section 8a)
+**Why this order:**
+- R11 uses no key that R15b moves, so it fills the wait for the device run.
+- R4a fills the wait for the owner's pick of the mockups, and R12b's token pass then covers Find too.
+- gorge's packages have no UI, and R24c needs milestone 5 items 1 and 2.
+- Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b and R4a stay whole, since each half would leave the keypad or Find half built.
+
+## 0c. Night shifts: henri's plan (owner, 2026-10-14)
+The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (section 0e): engine packages with no UI, no APK and no device, checked by their golden and unit tests. The ron lane runs by day, when the owner can try each APK.
+
+### Rules for a night shift (they replace rules sections 4, 10 and 11, but not 4a, and change section 8a)
 1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
 2. **A fresh agent for every step:** each package, each review, each fix round and each Opus pass is a new spawn. Never SendMessage to give an agent a second task. Prompts are the templates below with the blanks filled in, nothing more (the agents read the brief themselves).
 3. **Spawn in the foreground** (`run_in_background: false`): the call returns when the agent is done (rules section 4a: if a call still comes back as a background launch, log it and wait for its notification, never end the session). This is needed because henri_2 and later run headless, and a headless session ends with its turn. Do not poll, sleep, read diffs, run tests or builds, or read files beyond this brief and `.coord/log.md`.
-4. **No APKs, no devices:** skip section 8a step 5a and its feedback.md line. Nobody runs `adb` or `build.sh`. annabell is not used tonight.
-5. **Models:** workers run Sonnet, effort medium. One exception: R18 runs Opus (signed in 0b), effort medium. Reviews run Sonnet, effort medium (section 8a says Opus; tonight Sonnet). Opus passes run Opus, effort medium.
+4. **No APKs, no devices:** skip section 8a step 5a and its feedback.md line. Nobody runs `adb` or `build.sh`. annabell is not used at night.
+5. **Models:** workers run Sonnet, effort medium (the model in the queue table wins if it says otherwise). Reviews run Sonnet, effort medium (section 8a says Opus; at night Sonnet). Opus passes run Opus, effort medium.
 6. **henri decides nothing.** A question, a blocked worker, a conflict or anything this section does not settle: log it and hand it to the next Opus pass (run that pass at once if the question blocks the queue). **Follow every Opus-pass recommendation as written.** Plan changes go to the owner through `docs/decisions.md` "Needs the user", written by the Opus pass.
-7. **Start-up:** `date`; `git switch phase-1 && git status` (must be clean; if not, stop and log); `tools/devlock.sh status`. henri_1 appends a section "2026-10-14 night" to `.coord/log.md`; a later henri logs `START henri_<n>` under it and reads the log from the last HANDOVER on. No roll call, no device watcher.
+7. **Start-up:** `date`; `git switch phase-1 && git status` (must be clean; if not, stop and log); `tools/devlock.sh status`. henri_1 appends a section "<date> night" to `.coord/log.md`; a later henri logs `START henri_<n>` under it and reads the log from the last HANDOVER on. No roll call, no device watcher.
 8. **Log:** one line per step in `.coord/log.md`: the time from `date +%H:%M` (never estimated), step, agent and model, outcome, commit. The log is the queue state: on a resume, read it and continue from the first step not done.
 9. **Usage limit:** if a spawn fails or you hit a limit, log the time, the queue position and `STOPPED henri_<n>`, and end without starting a next henri. No retry loops. The owner resumes with `tools/henri-next.sh <n+1>` (or interactively: `claude --agent henri "Resume the night shift from .coord/log.md."`).
 10. **Worker gone without a report** (no report commit): spawn one fresh worker with the same prompt (it continues from the branch's last commit). If that one also fails, log it, leave the branch, and go on with the next package.
-11. **A fresh henri after every Opus pass** (owner, 2026-10-14). The owner's interactive session is henri_1. Once an Opus pass has replied, log its reply in full (its FIX lines and QUEUE are the next henri's orders), then log `HANDOVER henri_<n> → henri_<n+1>; next: <step>`, run `tools/henri-next.sh <n+1>` (it takes the next free number if that one was used, and starts a detached headless session that reads this brief and the log; output in `.coord/henri_<n+1>.out`), and end your turn. Do nothing more after that, even if woken: the new henri owns the queue. Your number n is in your prompt (henri_1 if none). The final pass (step 8) hands over the same way; that henri does its FIX packages and the report.
+11. **A fresh henri after every Opus pass** (owner, 2026-10-14). The owner's interactive session is henri_1. Once an Opus pass has replied, log its reply in full (its FIX lines and QUEUE are the next henri's orders), then log `HANDOVER henri_<n> → henri_<n+1>; next: <step>`, run `tools/henri-next.sh <n+1>` (it takes the next free number if that one was used, and starts a detached headless session that reads this brief and the log; output in `.coord/henri_<n+1>.out`), and end your turn. Do nothing more after that, even if woken: the new henri owns the queue. Your number n is in your prompt (henri_1 if none). The final pass (step 7) hands over the same way; that henri does its FIX packages and the report.
 
-### The queue
-Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" verdict adds a fix round (fresh worker, then a fresh review), at most two rounds; after the second "NOT MERGED" leave the branch unmerged, log it, go on. **Opus pass:** after every three finished packages (merged or left unmerged; fix packages from a pass count), and step 8 at the end of the queue. Step 8 is the last pass: the FIX packages it orders get only their Sonnet review, then the report.
+### The queue (the next night: the gorge lane of section 0e)
+Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" verdict adds a fix round (fresh worker, then a fresh review), at most two rounds; after the second "NOT MERGED" leave the branch unmerged, log it, go on. **Opus pass:** after every three finished packages (merged or left unmerged; fix packages from a pass count), and step 7 at the end of the queue. Step 7 is the last pass: the FIX packages it orders get only their Sonnet review, then the report. A package already merged by day is skipped (log it).
 
 | Step | What | Agent, model | Branch | Est. |
 |---|---|---|---|---|
-| 1 | R18 Shift palettes (section 7) | ron, **Opus** | `p1/ron-m4a-shiftpal` | 2 h + review |
-| 2 | R15a top-cluster mockups (section 7; ends with the page; the owner picks in the morning) | ron, Sonnet | `p1/ron-m4a-top` | 30 min + review |
-| 3 | G5 solver bugs SB1–SB4 (section 7) | gorge, Sonnet | `p1/gorge-m4-sb` | 1 h + review |
+| 1 | G10 qalc glue: the result JSON (section 7) | gorge, Sonnet | `p1/gorge-m5-glue` | 1 h + review |
+| 2 | G11 the `UnitEngine` worker and client (section 7) | gorge, Sonnet | `p1/gorge-m5-worker` | 1.5 h + review |
+| 3 | G12 the units checks and `units.yaml` (section 7) | gorge, Sonnet | `p1/gorge-m5-adapter` | 1.5 h + review |
 | 4 | **Opus pass 1** on steps 1–3, then its FIX packages | Opus | — | 20 min + fixes |
-| 5 | G6 the §2.3 audit (section 7) | gorge, Sonnet | `p1/gorge-m4-prec` | 1 h + review |
-| 8 | **Opus pass 2** on what came after pass 1, then its FIX packages | Opus | — | 20 min + fixes |
-| 9 | Shift report, then stop (the henri started after step 8) | henri_n | — | 10 min |
+| 5 | G13 the hp patch and the data audit (section 7) | gorge, Sonnet | `p1/gorge-m5-qalcdata` | 1 h + review |
+| 6 | G14 exact results marked ≈ (section 7) | gorge, Sonnet | `p1/gorge-m4-marks` | 45 min + review |
+| 7 | **Opus pass 2** (the last) on what came after pass 1, then its FIX packages | Opus | — | 20 min + fixes |
+| 8 | Shift report, then stop (the henri started after step 7) | henri_n | — | 10 min |
 
-Not tonight: R15b (layout D approved; waits for a device run) and everything after it in 0b, R4 and A4 (after 4a), milestone 5.
+Not at night: the ron lane (by day, with the owner's APK checks), devices (A4a, A4b), S5, and G7 (it waits for S5).
 
 ### Prompt templates (Agent tool; `run_in_background: false`; `effort: "medium"`)
 **Worker** (`subagent_type` = the agent in the table, `model` = its model):
@@ -66,11 +89,11 @@ NOTES: <at most three lines for the shift report>
 ```
 henri runs each FIX as a package (the Worker template with "Do package …" replaced by the FIX prompt and `<branch>` by the FIX branch, then a review), then continues with QUEUE.
 
-### Shift report (step 9, the last henri)
-`docs/shifts/2026-10-14-night-report.md`, short and plain, from the log and the agents' replies (log `SHIFT DONE` at the end; start no further henri): what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (pick an R15a layout; items under "Needs the user"); the queue left for tomorrow. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
+### Shift report (step 8, the last henri)
+`docs/shifts/<date>-night-report.md`, short and plain, from the log and the agents' replies (log `SHIFT DONE` at the end; start no further henri): what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (items under "Needs the user"); the queue left for the next night. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
-Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a that are not done (R4, A4) come after 4a.
+Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a (R4a, R4b, A4b) run between R12a and R12b (section 0, "The path"); A4a is in this table because R15b waits for it.
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
@@ -89,21 +112,27 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R26h | Bug F21: log base, EQ, DMS, evaluate-at bounds | ron, **Opus** | `p1/ron-m4a-bkspmarks` | R26g; G2 item 49 | ~0.5 d |
 | R27a | Bug F22: 10ˣ after a digit joins the number | ron, **Opus** | `p1/ron-m4a-tenpow` | G2 item 48 answered and the owner's pick of the fix | ~0.5 d |
 | R27b | Bug F23: cursor stops where no box is | ron, **Opus** | `p1/ron-m4a-cursorstops` | R26h (same file); G2 item 50 | ~0.5–1 d |
-| R21 | Pick sheets over the keypad, Settings over everything | ron, **Opus** | `p1/ron-m4a-fit` | R23; runs before R15b | ~2 d |
-| R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | a device run on the Tab One (backlog Needs the user item 7) | ~2 d |
-| R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R15b | ~1 d |
-| R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R11 (draws the final keypad, so after R15b) | ~0.5 d |
-| R12b | Visual pass: implementation (U5, U7, theme) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner | ~2.5 d |
+| R21a | Pick sheets over the keypad, and fit | ron, **Opus** | `p1/ron-m4a-fit` | R27b (the entry-bug packages; R27a may come later) | ~1.5 d |
+| R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R21a | ~0.75 d |
+| A4a | Device run before R15b | annabell, Sonnet | `p1/annabell-m4a-device` | R21b; the owner connects the Tab One (and the S8+) | ~0.5 d |
+| R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R21b (runs while A4a takes place) | ~1 d |
+| R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | R11, and A4a's report says R15b may start | ~2 d |
+| R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R15b (it draws the final keypad) | ~0.5 d |
+| R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
+| R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-**No waiting for a tried APK** (owner, 2026-10-13): each ron package still ends with an APK on the owner's phone (section 8a step 5a), but the next package starts as soon as the review has merged it; the owner's notes come back through feedback.md as feel items. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R26c–R27b (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R25a–R26b are small and pinned by their tests.
+**No waiting for a tried APK** (owner, 2026-10-13): each ron package still ends with an APK on the owner's phone (section 8a step 5a), but the next package starts as soon as the review has merged it; the owner's notes come back through feedback.md as feel items. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R25a–R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
-## 0a. Work packages (milestone 4), after 4a
-Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04.
+## 0a. Work packages (milestone 4), between R12a and R12b
+Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
 
 | # | Package | Backlog step | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|
-| R4 | Find UI (EN1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R7 (the sheet), after 4a | ~3 d |
-| A4 | Device bars on the Tab One | 12 | annabell, Sonnet | `p1/annabell-m4-device` | R4; Tab One connected | ~0.5 d |
+| R4a | Find on Math (EN1, part 1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R12a done (the owner looks at the mockups meanwhile); R21b | ~2 d |
+| R4b | Vars, Memory and the user keys from Find (EN1, part 2) | 8 | ron, Sonnet | `p1/ron-m4-vars` | R4a and R15b | ~1 d |
+| A4b | Find timing on the Tab One | 12 | annabell, Sonnet | `p1/annabell-m4-find` | R4b; Tab One connected | ~0.25 d |
+
+If the owner wants Find sooner, R4a can go right after R21b: it uses no key that R15b moves.
 
 ### How to start a package
 From the main checkout (`/home/nordmu/Documents/source99/pascaline`), one terminal per package:
@@ -113,6 +142,20 @@ claude --agent <ron|gorge|annabell> --model <sonnet|opus> "Do package <ID> in do
 ```
 
 Check `/model` once at the start: the agent files pin `model: opus`, and the flag should override it. A package that runs out of usage can be resumed (`claude --continue` in the same terminal) or restarted with the same command: the agent finds its branch and continues from its last commit.
+
+## 0e. The gorge lane: milestone 5's engine work, beside the ron lane (owner, 2026-10-14)
+Backlog milestone 5 items 1–3, and C9, with no UI: a worker, a check layer, data and marks. They run now, beside the ron lane and as the night queue (0c), because R24c needs items 1 and 2. P11's reason for doing milestone 4a first (Find and the unit view sit on the keypad and the screen) does not touch them. Where 0d says "milestone 5 items 1–2 (U1, U2) merged", read G10, G11, G12 and R28. New gorge ids start at G10, because G8 and G9 are ids in the backlog's G2 follow-ups.
+
+| # | Package | Backlog | Agent, model | Branch | Start when merged | Size |
+|---|---|---|---|---|---|---|
+| G10 | qalc glue: the result JSON | m5 item 1 | gorge, Sonnet | `p1/gorge-m5-glue` | now | ~0.75 d |
+| G11 | The `UnitEngine` worker and client | m5 item 1 | gorge, Sonnet | `p1/gorge-m5-worker` | G10 | ~1 d |
+| G12 | The units checks, marks and `units.yaml` | m5 item 2 (gorge half) | gorge, Sonnet | `p1/gorge-m5-adapter` | G11 | ~1 d |
+| G13 | The hp patch and the data audit | m5 item 3 | gorge, Sonnet | `p1/gorge-m5-qalcdata` | G12 | ~1 d |
+| G14 | Exact results marked ≈ | C9 | gorge, Sonnet | `p1/gorge-m4-marks` | now (any time; Home only) | ~0.5 d |
+| R28 | Units mode in the parser | m5 item 2 (ron half) | ron, **Opus** | `p1/ron-m5-unitparse` | R24a and G12; before R24c | ~1 d |
+
+**Why these models:** G10–G14 follow existing patterns (the Giac worker, the golden gate, the Find checks), and their golden and unit tests pin them; each gets an Opus pass at night. R28 adds parser rules with round trips (Opus, as R14 and R18).
 
 ## 0d. Packages from the owner's discussion of 2026-10-14 (the Alpha keys, Find, the unit pad, the laptop connection)
 Each waits for what its row says; none changes the 0b packages or their order. Background: [feedback.md](../feedback.md) #40–#44, decisions.md "The letters stay" and P14 (decided 2026-10-14), [research/r9-unit-pad.md](../research/r9-unit-pad.md), backlog "Parked ideas" (the laptop connection).
@@ -146,8 +189,8 @@ Read only the sections named here and in your package, not whole files: find the
 - `docs/backlog.md` "Engineer core", milestone 4: your step's text (files, tests, gate).
 - **From 2026-10-13:** `docs/decisions.md` P11, docs/03 section 0 rules 5–13 (they bind every package: one interaction model, keys never move, vertical space, removal tests), `docs/05-ui-plan.md` with its section 7, and `docs/feedback.md`.
 - `docs/decisions.md`: P8, P9, P10 and the defaults entry "2026-10-12 Architecture for the engineer core". These are decided; don't reopen them. If a docs/04 decision turns out wrong in the code, don't change it silently: finish what you can, and put the evidence under "Needs a decision" in your report.
-- Not in this milestone: the unit view and the qalc worker (milestone 5), matrices, bases and everyday functions (milestone 6), Help = context help (milestone 6), prefix entry chips (gated by task 3).
-- **No coordinator to message.** Stay inside the files your package names. Shared files (`CLAUDE.md`, `docs/*`, `THIRD_PARTY.md`, `.claude/agents/*`) are not yours. Put the text for them in your report, and the review session applies it. Devices are only for A4.
+- Not in milestone 4: the unit view (milestone 5: its engine work is section 0e, its entry section 0d), matrices, bases and everyday functions (milestone 6), Help = context help (milestone 6), prefix entry chips (gated by task 3).
+- **No coordinator to message.** Stay inside the files your package names. Shared files (`CLAUDE.md`, `docs/*`, `THIRD_PARTY.md`, `.claude/agents/*`) are not yours. Put the text for them in your report, and the review session applies it. Devices are only for A4a and A4b.
 
 ### Your report (every package)
 End with a commit whose message body is the report. The review session reads it with `git log -1`. It holds:
@@ -162,11 +205,12 @@ Then end your turn.
 
 ## 7. Packages
 
-### ron, R4: Find UI, branch `p1/ron-m4-find`
-Backlog step 8.
-- **Keys:** Math = Find, Vars = Find on variables, Shift + Math = Memory (§5.1).
+### ron, R4a: Find on Math, branch `p1/ron-m4-find`
+Backlog step 8, its Find part. Starts when R12a is done and R21b is merged.
+- **Key:** Math = Find (§5.1).
 - **Inside Find:** keys follow §3.7, ranking §3.5 (`app/src/find/rank.ts`), preview and insertion §3.6.
-- **Content:** live items from `defined` (§3.4); `?bench=find`. No usage ranking and no `find.usage` (P11); an empty query shows the G2-style Math menu (fixed categories in a fixed order), numbered: on an empty query digits pick a category, after a letter they type (S2 rule M1). Built on R7's sheet (docs/05 3.1, 3.6 and section 7); letters: a tap on a non-digit key, a flick down on any key.
+- **Where:** Find takes letters (inside Find every key types its letter), so it is a letter list in R21's sense: it stays above the keypad, where the sheets were before R21a, and is not drawn over the keypad (decisions.md "R21"). It is built on the sheet (docs/05 3.1, 3.6 and section 7). Letters: a tap on a non-digit key, a flick down on any key. Esc and Android back close it (R21b's helper).
+- **Content:** the index items; `?bench=find`. No usage ranking and no `find.usage` (P11). An empty query shows the G2-style Math menu (fixed categories in a fixed order), numbered: on an empty query digits pick a category, after a letter they type (S2 rule M1).
 - **Loading:** Find is a lazy chunk, and the index is fetched only when the browser is idle after the engine is ready.
 - **Data:** the generated index (G4, merged): `prepare()` and `search()` in `app/src/find/rank.ts`. The schema is fixed by §3.3; a change goes under "Needs a decision".
 
@@ -175,16 +219,18 @@ Gate:
 - ranking unit tests
 - the query test
 - the size test
+- no index request before idle
 
-### annabell, A4: device bars, branch `p1/annabell-m4-device`
-Backlog step 12, when the Tab One is connected (rules section 6). On the device:
-- install an APK built from `phase-1`, and leave it for the owner to try
-- cold start (L7)
-- Enter p95 at digits 12, 20 and 30 (`?bench=1&digits=N`, 5 cold runs)
-- Find per key (`?bench=find`)
-- whether `navigator.clipboard` and `navigator.share` work in WebView 131
+### ron, R4b: Vars, Memory and the user keys from Find, branch `p1/ron-m4-vars`
+Backlog step 8, the rest. Starts when R4a and R15b are merged. Read R4a's report, docs/04 3.4 and 5.1, R15b's user-key code and its storage key in `state/storage.ts`.
+- **Vars** = Find on the user's variables and functions: the live items from `defined` (§3.4), with R4a's keys, preview and insertion.
+- **Shift + Math = Memory:** the same list with delete and clear all (§5.1).
+- **User keys:** Settings › User keys (the place R21b left) sets U1–U3 and their Shift layers from Find, in R15b's stamped store. Reset gives back the defaults of `spec/keyboard.yaml` (U2 = Home, U3 = CAS). R15b's text promised this setting "with R4".
 
-Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
+Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a user key set from Find and pressed again after a reload); task 5 unchanged; the size test.
+
+### annabell, A4b: Find timing on the Tab One, branch `p1/annabell-m4-find`
+Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is connected (rules section 6). Find per key (`?bench=find`, §3.2) against the §8.3 bar; a miss goes under "Needs a decision" with the number (docs/04 says what changes: incremental Find). Leave an APK built from `phase-1` on the Tab One for the owner. Then the report says whether milestone 4's gate (section 8) is complete.
 
 ### Milestone 4a packages (section 0b)
 
@@ -192,7 +238,7 @@ Report against the §8.3 bars. A miss goes under "Needs a decision" with the num
 Backlog F9 (cause and proof there; decisions.md "Focus on return"). Read `app/src/main.ts` (`dropFocus`), `EntryController.create()` in `app/src/entry/controller.ts`, `app/test/softkeyboard.spec.ts`, and r6-pipelines section 7. Commits in this order:
 1. **Test first** (`app/test/softkeyboard.spec.ts`, failing on today's code): extend `leaveAndReturn` with the two event orders (window `blur` then hidden, and hidden then `blur`), then three away-and-back cycles in a row. After each return, wait 150 ms (MathLive focuses 60 ms late) and check that nothing editable is focused. Run it twice: after a tap on a digit, and after a trackpad drag (`drag(page, "left", -30, 0)`). Add a third case with window `blur` and `focus` only, no hide, three times. That is the notification shade, the share sheet or a permission prompt (feedback #45). Today the second cycle focuses the keyboard sink (Playwright, 2026-10-14). Then a digit key still types.
 2. **Fix:** `Field.restoreFocusWhenDocumentFocused = false` in `create()`, beside `fontsDirectory` and the other statics, with a one-line comment that names K0/F9. Keep `dropFocus`.
-3. **Check what the restore did for us,** by hand, since synthetic window events do not move the real focus: `npm run dev` in desktop Firefox, type on the line, switch windows (Alt+Tab) and back, type on the hardware keyboard. The browser should restore the focus by itself. If the keys no longer reach the line, put it under "Needs a decision" (the fix would be `entry.focus()` on window `focus`, on `pointer: fine` only) instead of building it.
+3. **What the restore did for us on a desktop** cannot be checked by an agent, since synthetic window events do not move the real focus. It is the owner's check after the merge; write it into the report: `npm run dev` in desktop Firefox, type on the line, switch windows (Alt+Tab) and back, type on the hardware keyboard. The browser should restore the focus by itself. If the keys no longer reach the line, the fix is `entry.focus()` on window `focus`, on `pointer: fine` only (a follow-up, not part of R22).
 4. **Report.** The owner checks the APK by hand: drag on the arrow keys, switch away and back three times, fast. Then the same after plain taps, and pull the notification shade down and up twice. Shared-file text: backlog F9 "Done", the decisions entry if the build differs.
 Gate: softkeyboard e2e green (it fails without the fix), gestures and flicks e2e green, start chunk unchanged.
 
@@ -576,10 +622,10 @@ Read: `app/src/entry/controller.ts` (`run`, `nextBox` line 266), `app/src/keyboa
 
 Gate: cursor, gestures, tmpl, selection and bksp-grid e2e green; the trackpad presses in the task benchmark do not go up.
 
-### ron, R21: pick sheets over the keypad, Settings over everything, branch `p1/ron-m4a-fit`
-The owner's frictions (2026-10-14): a sheet in the viewport is far from the thumb while typing, the Tmpl grid scrolls on the phone, Settings is too small. Decided: decisions.md "R21" (binding); the target text is already in docs/05 2 (rule 1), 3.1 and 3.4 and docs/03 rule 8. Read those, decisions.md "Sheet defaults (R7)", "Mode and Settings sheets (R8)", "S2: one menu system", and `app/src/views/` (`Sheet.svelte`, `sheet.svelte.ts`, `sheetKeys.ts`, `modeSheet.ts`) with the sheet parts of `App.svelte`, `apps/shell.svelte.ts` and `keyboard/Keypad.svelte`. Commits in this order:
+### ron, R21a: pick sheets over the keypad, branch `p1/ron-m4a-fit`
+The owner's frictions (2026-10-14): a sheet in the viewport is far from the thumb while typing, the Tmpl grid scrolls on the phone, Settings is too small. R21 is built in two packages: R21a the pick sheets, R21b the Settings page. Where 0d says "R21 merged" (R24b), read R21a. Decided: decisions.md "R21" (binding); the target text is already in docs/05 2 (rule 1), 3.1 and 3.4 and docs/03 rule 8. Read those, decisions.md "Sheet defaults (R7)", "Mode and Settings sheets (R8)", "S2: one menu system", and `app/src/views/` (`Sheet.svelte`, `sheet.svelte.ts`, `sheetKeys.ts`, `modeSheet.ts`) with the sheet parts of `App.svelte`, `apps/shell.svelte.ts` and `keyboard/Keypad.svelte`. Commits in this order:
 1. **Tests first** (`app/test/fit.spec.ts`, failing on today's code), at 412 × 915:
-   - **Keys never move:** the box of every key is the same before a sheet opens, while it is open and after it closes (Apps, Menu, Mode, Tmpl, Shift + 6, Shift + 9, Settings).
+   - **Keys never move:** the box of every key is the same before a sheet opens, while it is open and after it closes (Apps, Menu, Mode, Tmpl, Shift + 6, Shift + 9; R21b adds Settings).
    - **Where:** a pick sheet's bottom edge is the keypad's bottom edge, its top is not above the top of keypad row 3, and `elementFromPoint` at the centre of ▲, ▼, ◀, ▶, Esc, Cancel and Menu hits that key while the sheet is open.
    - **Fit:** every pick sheet shows all its items without a scroll (`scrollHeight <= clientHeight`): Apps, the Home Menu, the Function Plot and Solve menus, Mode, Mode › Significant digits (9 rows), Tmpl, Shift + 6, Shift + 9; at 360 × 740 the same for Tmpl, Shift + 6, Shift + 9 and Mode.
    - **Flow:** a tap on a Tmpl cell closes the sheet, puts the template on the line with the cursor in its first box, and the next digit key types into it. Shift + 6: the `≤` cell's box covers the 8 key's box.
@@ -587,19 +633,164 @@ The owner's frictions (2026-10-14): a sheet in the viewport is far from the thum
 3. **Fit** (`Sheet.svelte`): rows and cells shrink to the room, from today's size down to the floor: list rows 36 px (font and padding together; the number column stays), grid cells 44 px (today 58 px for Tmpl, 46 px for the Shift palettes); below the floor, today's scroll cue and count. Grids have no title row: the title, the highlighted cell's name and × share the hint line. Two-line rows (disabled reasons) count their own height. CSS where it can (a custom property set from one ResizeObserver), no per-frame work.
 4. **Shift + 6 over its keys:** each relations cell is drawn over the key in its `pick:` (keyboard.yaml `relations:`), using the keys' boxes; the cells without a key (none today) and Shift + 9 and Tmpl stay a grid.
 5. **Mode for the thumb:** each value row gets ◀ ▶ buttons (at least 44 × 44 px) beside the value; a tap on the row still steps forward.
-6. **Settings page** (new `app/src/views/SettingsPage.svelte`; `modeSheet.ts` keeps the item lists): opened where Settings opens today (Mode's last row; Shift + Home/CAS until R15b); it covers the whole window, status line included. One scrolling page with section headings instead of submenus: Format key cycle (its switches and Decimals), Vibration (on, strength, length), Shift / Alpha taps (counts, reset). A value row: label, value, ◀ ▶ buttons of at least 44 × 44 px; a switch row toggles on a tap; disabled rows keep their reason. Close: × in the header, Android back (push a history entry on open, close on `popstate`; no new dependency), Esc on a hardware keyboard. Hardware keys: ▲ ▼ move, ◀ ▶ step, Enter or space toggles, Esc closes. Leave a place for Theme (R12b), User keys (R15b) and About; build none.
-7. **Gallery:** Home menu, Mode, Mode › digits, Tmpl, Shift + 6, Shift + 9 over the keypad, the Settings page, Tmpl and Mode at 360 × 740; light and dark; rebuild.
-8. **Report** ("For shared files": anything in docs/05 3.1 and 3.4 the build changed; R7 open point 5, the Function Plot reasons, judged again with the new rows; the code comments that said "never over the keypad" are yours to fix).
-Gate: `fit.spec.ts` green; `sheet.spec.ts`, `status.spec.ts` (viewport share unchanged), the Mode and Settings e2e (rewritten where they opened Settings as a sheet), gestures and flicks e2e green; Settings e2e by touch, by hardware keys and by `history.back()`; start chunk within the budget (156 kB raw, 54 kB gzip; the Settings page loads lazily if it grows the chunk by more than 1 kB); gallery rebuilt. Not in this package: R15b's keys, the theme, Find.
+6. **Gallery:** Home menu, Mode, Mode › digits, Tmpl, Shift + 6, Shift + 9 over the keypad, Tmpl and Mode at 360 × 740; light and dark; rebuild.
+7. **Report** ("For shared files": anything in docs/05 3.1 the build changed; R7 open point 5, the Function Plot reasons, judged again with the new rows; the code comments that said "never over the keypad" are yours to fix).
+Gate: `fit.spec.ts` green; `sheet.spec.ts`, `status.spec.ts` (viewport share unchanged), the Mode e2e, gestures and flicks e2e green; start chunk within the budget (156 kB raw, 54 kB gzip); gallery rebuilt. Not in this package: the Settings page (R21b), R15b's keys, the theme, Find.
+
+### ron, R21b: the Settings page and Android back, branch `p1/ron-m4a-settings`
+Starts when R21a is merged. Decided: decisions.md "R21" (the Settings page) and backlog C8 (Android back). Read decisions.md "R21" and "Mode and Settings sheets (R8)", docs/05 3.4, R21a's report, `app/src/views/modeSheet.ts`, the Settings and sheet parts of `App.svelte`, and `android/app/src/main/java/io/github/buerlino/pascaline/MainActivity.java`.
+
+**Why back needs Java:** Capacitor 8.5.3 has no back handling of its own (no `onBackPressed` or `canGoBack` in its Android sources), `@capacitor/app` is not installed, and `MainActivity` does not override back. So on the APK the back gesture leaves the app whatever the page does, while a `history.back()` e2e passes in Chromium all the same (checked 2026-10-14).
+
+Commits in this order:
+1. **Tests first:**
+   - Settings e2e by touch, by hardware keys and by `history.back()`.
+   - `fit.spec.ts` "keys never move" gains Settings.
+   - `history.back()` closes an open pick sheet, and the next key works as before.
+   - Opening and closing Settings or a sheet five times leaves the history length as it was, so back with nothing open leaves the app.
+2. **Settings page** (new `app/src/views/SettingsPage.svelte`; `modeSheet.ts` keeps the item lists):
+   - **Where:** opened where Settings opens today (Mode's last row; Shift + Home/CAS until R15b). It covers the whole window, status line included.
+   - **Layout:** one scrolling page with section headings instead of submenus: Format key cycle (its switches and Decimals), Vibration (on, strength, length), Shift / Alpha taps (counts, reset).
+   - **Rows:** a value row has its label, its value and ◀ ▶ buttons of at least 44 × 44 px; a switch row toggles on a tap; disabled rows keep their reason.
+   - **Close:** × in the header, Android back, Esc on a hardware keyboard.
+   - **Hardware keys:** ▲ ▼ move, ◀ ▶ step, Enter or space toggles, Esc closes.
+   - **Leave a place** for Theme (R12c), User keys (R4b) and About; build none.
+3. **Back acts as Esc for the open layer:**
+   - One small helper pushes a history entry when Settings or a pick sheet opens, and closes that layer on `popstate`.
+   - Closing the layer by Esc, ×, a pick or a tap in the viewport takes its entry back, so the history never grows.
+   - With nothing open, back leaves the app as today.
+   - No new dependency. R4a's Find uses the same helper.
+4. **Java** (in `android/`, annabell's folder; allowed for this one file): in `MainActivity`, an `OnBackPressedCallback` calls the WebView's `goBack()` when `canGoBack()` is true; otherwise it lets the default run, so the app leaves. About 15 lines. A4a checks it on the device.
+5. **Gallery:** the Settings page, light and dark, at 412 × 915 and 360 × 740; rebuild.
+6. **Report.** "For shared files": backlog C8 done in R21b, with the device check in A4a; docs/05 3.4 if the page differs.
+
+Gate: the Settings e2e (touch, hardware keys, `history.back()`), `fit.spec.ts`, `sheet.spec.ts`, `status.spec.ts`, the Mode e2e (rewritten where it opened Settings as a sheet), gestures e2e green; the Java compiles (`./build.sh --dev --unsigned` under the host-cpu lock); start chunk within the budget (the Settings page loads lazily if it grows the chunk by more than 1 kB); gallery rebuilt.
+
+### annabell, A4a: device run before R15b, branch `p1/annabell-m4a-device`
+Starts when R21b is merged and the owner connects the Tab One, with the S8+ for the WebView checks (rules section 6). One device session for every check that waits for no later package: backlog Needs the user item 7, milestone 4 step 12 without Find, C6, the C8 check and K1. In order:
+1. **Build:** a full `./build.sh` from `phase-1` with the qalc step (no `--no-units`). This closes milestone 4 steps 6 and 7's open "full `./build.sh` run". Then fix C6:
+   - `tools/device_run.py status|start` report the build type of a `--measure` build;
+   - `tools/stay-awake.sh` restores from any worktree.
+2. **Tab One, against the §8.3 bars** (medians of ≥ 5 runs, with device, Android, WebView and build type):
+   - cold start (L7): keyboard usable and engine ready;
+   - a Shift tap and the fit pass;
+   - Enter p95 at digits 12, 20 and 30 (`?bench=1&digits=N`, 5 cold runs);
+   - the replay of 200 definitions (milestone 4 step 10);
+   - the start-chunk raise: keyboard usable may not move by more than 50 ms against the numbers of 2026-10-12;
+   - R21a's sheet rise: within one frame and 120 ms.
+3. **Behaviour on the devices:**
+   - `navigator.clipboard` and `navigator.share` in WebView 131;
+   - Android back (R21b) closes Settings and an open sheet, and leaves the app from an empty Home;
+   - K1's `touch-action: none`: no scroll or zoom side effects;
+   - the flick thresholds (20 px arm, 12 px cancel): misfires in a minute of typing;
+   - whether Android sends `pointercancel` for a touch held while the app leaves (R25a's open question);
+   - ᴇ drawn on the S8+'s Chrome 101 WebView.
+4. Leave an APK built from `phase-1` on the Tab One for the owner to try.
+
+Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20). The report ends with one line: whether R15b may start.
 
 ### ron, R15b: top cluster, branch `p1/ron-m4a-top`
-P12 points 2 and 3 and open point B. **R15a is done:** `docs/mockups/top-cluster.html` holds the layouts A, B, C and the press table. **The owner turned down A, B and C (2026-10-14); the page now holds layout D** (the cross stays, every key at its G2 place, three free keys U1–U3 with Shift layers, 48 px cluster rows; decisions.md). **R15b:** build D (approved by the owner 2026-10-14) with **U2 = Home and U3 = CAS as defaults** in `spec/keyboard.yaml` (decisions.md "R15a: layout D"); the free keys get their slots and storage here (a stamped key in `state/storage.ts`), their Find-based setting comes with R4. Edit the grid in `spec/keyboard.yaml` (the maths rows 3–9 do not move), replace the `app` and `cas` keys by the user keys U2 and U3 with those defaults (their old Shift layers go), make the place name a button, move the pad, keep the `cancel` key's id and its Shift layer (Undo, R16), update the trackpad zones, the legends, `tools/probes/unit-presses.mjs` and every test that names a moved key; keys typed while an app loads (R8) now include the status taps; remove `app` and `cas` (and `symb`/`plot`/`num` if they fold) from `PASS` in `views/sheetKeys.ts` and `AT_ONCE` in `App.svelte`; the place-name tap no longer opens Apps (`status.spec.ts` changes). Gate: e2e for each path in the press table, viewport share not below R8's 0.354, keyboard test, gallery, gestures and flicks e2e. Shared-file text in the report.
+P12 points 2 and 3 and open point B. **R15a is done:** `docs/mockups/top-cluster.html` holds the layouts A, B, C and the press table. **The owner turned down A, B and C (2026-10-14); the page now holds layout D** (the cross stays, every key at its G2 place, three free keys U1–U3 with Shift layers, 48 px cluster rows; decisions.md). **R15b:** build D (approved by the owner 2026-10-14) with **U2 = Home and U3 = CAS as defaults** in `spec/keyboard.yaml` (decisions.md "R15a: layout D"); the free keys get their slots and storage here (a stamped key in `state/storage.ts`), their Find-based setting comes with R4b. Edit the grid in `spec/keyboard.yaml` (the maths rows 3–9 do not move), replace the `app` and `cas` keys by the user keys U2 and U3 with those defaults (their old Shift layers go), make the place name a button, move the pad, keep the `cancel` key's id and its Shift layer (Undo, R16), update the trackpad zones, the legends, `tools/probes/unit-presses.mjs` and every test that names a moved key; keys typed while an app loads (R8) now include the status taps; remove `app` and `cas` (and `symb`/`plot`/`num` if they fold) from `PASS` in `views/sheetKeys.ts` and `AT_ONCE` in `App.svelte`; the place-name tap no longer opens Apps (`status.spec.ts` changes). Gate: e2e for each path in the press table, viewport share not below R8's 0.354, keyboard test, gallery, gestures and flicks e2e. Shared-file text in the report.
 
 ### ron, R11: history-row actions, branch `p1/ron-m4a-rows`
-docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on an empty line picks a row (exists); a row of buttons appears above the entry line: Insert · Recall · Copy · Store ▶ · Delete; hidden while typing; **the Menu is one fixed list of nine (S2, accepted): 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Copy as › (as shown, exact, LaTeX), 7 Paste, 8 Share session, 9 Clear history**, the same numbers whether or not a row is picked, acting on the picked row, else the last result (Delete: the last row); the buttons are items 1–5; the long press opens the same list on its row. Build the actions as one list used by the buttons, Menu and long press, so the "results mode" idea can reuse it. Gate: e2e per action from keys and from touch; task benchmark has no task with more presses; history performance test unchanged.
+Starts when R21b is merged; it runs before R15b, since it uses no key that R15b moves (Menu keeps its G2 place in layout D), and its Menu rises over the keypad as R21a built. docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on an empty line picks a row (exists); a row of buttons appears above the entry line: Insert · Recall · Copy · Store ▶ · Delete; hidden while typing; **the Menu is one fixed list of nine (S2, accepted): 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Copy as › (as shown, exact, LaTeX), 7 Paste, 8 Share session, 9 Clear history**, the same numbers whether or not a row is picked, acting on the picked row, else the last result (Delete: the last row); the buttons are items 1–5; the long press opens the same list on its row. Build the actions as one list used by the buttons, Menu and long press, so the "results mode" idea can reuse it. Gate: e2e per action from keys and from touch; task benchmark has no task with more presses; history performance test unchanged.
 
-### ron, R12a and R12b: visual pass, branch `p1/ron-m4a-look`
-**R12a:** read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a menu sheet, the Mode sheet, Settings, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change. **R12b** (started with the owner's notes): design tokens in one file (docs/05 3.10: colours per role, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component; history rows (3.5); **theme setting System / Light / Dark, Dark by default on Android, System in the PWA**; press feedback within one frame; `prefers-reduced-motion`. Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
+### ron, R12a, R12b and R12c: visual pass, branches `p1/ron-m4a-look` (R12a, R12b) and `p1/ron-m4a-theme` (R12c)
+**R12a** (after R15b): read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a pick sheet over the keypad, the Mode sheet, the Settings page, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change; R4a and R4b run meanwhile.
+
+**R12b** (started with the owner's notes, after R4b, so Find is in the pass): design tokens in one file (docs/05 3.10: colours per role, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component, Find's included; history rows (3.5). Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
+
+**R12c** (after R12b): **theme setting System / Light / Dark on R21b's Settings page, Dark by default on Android, System in the PWA**; press feedback within one frame; `prefers-reduced-motion`. Gate: contrast test in both themes; e2e for the setting (it survives a reload); gallery rebuilt; start chunk within 0.5 kB of before.
+
+### Packages of section 0e
+
+### gorge, G10: qalc glue, the result JSON, branch `p1/gorge-m5-glue`
+Backlog milestone 5 item 1, part 1. No UI. Read docs/04 4.1, 4.2, 8.2 (`Quantity`, `UnitError`) and Appendix C; `engine/qalc/glue.cc` (today `qalc_set_precision`, `qalc_parse`, `qalc_print`, `qalc_eval`: JSON for the Find index generator), `engine/qalc/smoke.mjs`, `engine/qalc/cases.yaml` with `check.py` and `run-cases.mjs` (the 26 spike cases).
+1. **Tests first:** a Node test beside `smoke.mjs` (or `run-cases.mjs` extended) that calls the new entry point and checks the JSON, failing on today's glue. Use docs/04 4.1's table, sources `derived` or `oracle` only:
+   - `72 km/h to m/s` = 20, exact;
+   - `1 in to mm` = 127/5, exact;
+   - `1/3 m to cm` = 100/3, exact;
+   - `90 deg to rad`, approximate, at P digits;
+   - `G` with its uncertainty;
+   - `(12.34 ± 0.05) m * (3.2 ± 0.1) m` with its uncertainty;
+   - the dimension of `1 lbf`;
+   - an unknown name gives an error with qalc's message.
+2. **The entry point** returns one JSON result per call, with the fields of docs/04 8.2's `Quantity`:
+   - the number as an exact fraction when qalc's structure is not approximate, else a decimal at P = max(40, digits + 10);
+   - the unit part as canonical qalc names with exponents;
+   - the dimension (from `convertToBaseUnits`), the value in SI base units, the uncertainty and qalc's approximate flag;
+   - or an error.
+   
+   Keep the generator's entry points working.
+3. **Appendix C's open items:** whether currency data is in the compiled definitions (currencies stay off), and the Rankine name.
+4. **Build** with `engine/qalc/build-wasm.sh dev` under the host-cpu lock. The release build is milestone 5 item 5's.
+
+Gate: the new test, `node engine/qalc/smoke.mjs engine/qalc/_out/dev`, `python3 engine/qalc/check.py` as before, `npm run index` clean with the new build. Report: the JSON shape with two examples, for G11.
+
+### gorge, G11: the `UnitEngine` worker and client, branch `p1/gorge-m5-worker`
+Backlog milestone 5 item 1, part 2. Starts when G10 is merged. No UI. Read docs/04 4.2, 6.1 and 8.2 (`Calc.units()`, `UnitEngine`), G10's report, and the Giac worker's pattern in `app/src/engine/` (`workerEngine.ts`, `giac.worker.ts`, `protocol.ts`).
+1. **Tests first** (Vitest in `app/src/units/`, with the qalc dev build from `QALC_OUT`):
+   - `evaluate()` returns G10's result as a `Quantity` or a `UnitError`;
+   - `cancel()` terminates and respawns the worker, and the next call works;
+   - nothing loads qalc before the first call (lazy);
+   - a cancel during the load.
+2. **Build** the worker and client in `app/src/units/` on the Giac worker's pattern: an async interface, a module worker, Cancel = terminate and respawn, nothing to replay. Add `Calc.units()` as docs/04 8.2 names it. Nothing in the start chunk imports it.
+
+Gate: the worker tests, typecheck, vitest; the size test (start chunk unchanged). Report: the client's API, for G12, R28 and R24c.
+
+### gorge, G12: the units checks, marks and `units.yaml`, branch `p1/gorge-m5-adapter`
+Backlog milestone 5 item 2, the gorge half (the parser half is R28). Starts when G11 is merged. No UI and no parser: the input is qalc text from whitelisted names, as R24a's slot model and R28 will build it. Read docs/04 2.4 (marks), 2.7 (SI prefixes), 4.3 ("Our adapter checks", "Result", "Temperature", "Logarithmic units") and 8.2 (`UnitError`), G11's report, `app/scripts/golden.ts`.
+1. **Tests first:** `tests/golden/units.yaml` in the golden gate. Take the 26 spike cases of `engine/qalc/cases.yaml` (temperature, prefixes, dimension errors, uncertainty, exactness marks), plus:
+   - `72 km/h → m/s` = 20 `=`;
+   - `1 in → mm` = 25.4 `=`;
+   - the checks below.
+   
+   Sources `derived` or `oracle` only. hp and mmHg stay out until G13.
+2. **The checks** (`app/src/units/`), on what qalc lets through:
+   - **One term:** the formula with its units must give a single term (number × units), else "Units don't match: L vs T", naming the term.
+   - **Temperature:** an absolute temperature only alone. `20 °C → °F` = 68; `20 °C × 2` is refused with "Use K or Δ°C for a temperature difference".
+   - **End slot:** with an end slot, a dimension mismatch names both dimensions.
+   - **Logarithmic units:** conversions only (dB, dBm, Np).
+   
+   Messages go through the i18n table.
+3. **The result:**
+   - the mark by the 2.4 rules, with qalc's approximate flag as the engine fact;
+   - the value through our formatter at the digits setting;
+   - the unit shown: the units typed when they fit the dimension, else SI with an SI prefix (2.7);
+   - the dimension as `L·T⁻¹`.
+   
+   `units.targets` and the way back to Home are the result view's (0d, not packaged yet).
+4. **Golden runner:** `npm run golden` runs `units.yaml` with the qalc build (`QALC_OUT`) and reports its count.
+
+Gate: the golden gate passes with the units section; vitest; typecheck. Report: the input and output of the checks, for R28 and R24c; the counts for `tests/golden/README.md`.
+
+### gorge, G13: the hp patch and the data audit, branch `p1/gorge-m5-qalcdata`
+Backlog milestone 5 item 3 (P3 decision 3; docs/04 2.3 #10 and 4.5). Starts when G12 is merged. No UI. Read `engine/giac/patches/README.md` (the pattern), `engine/qalc/build-wasm.sh`, `find/units.yaml` (its `checks` and `known` entries), `tools/find-index/generate.mjs`, backlog "Needs the user" item 6.
+1. **Tests first:** in `units.yaml`, failing on today's build:
+   - `1 hp → W` = 745.69987158227022 W (550 ft·lbf/s, `derived`);
+   - `1 mmHg → Pa` = 133.322387415 Pa (13.5951 g/cm³ × 1 mm × 9.80665 m/s², `derived`).
+2. **The patch:** `engine/qalc/patches/` with a README, a minimal patch of `units.xml`, applied by `build-wasm.sh`. The SHA-checked tarball stays untouched.
+3. **The audit, once:** every unit and constant in Find's index against its exact definition and CODATA 2022. Each difference becomes a patch with a case, or a `known` entry with its reason. The `known` marks on hp and mmHg in `find/units.yaml` come out; the index build fails until they do, by design.
+4. **Upstream:** the report holds the text of the libqalculate issues for the owner (backlog "Needs the user" item 6).
+
+Gate: the golden gate (units), `npm run index` clean, the qalc dev build. The release build picks the patch up through `build-wasm.sh`; annabell checks it in milestone 5 item 5.
+
+### gorge, G14: exact results marked ≈, branch `p1/gorge-m4-marks`
+Backlog C9. Home only; can run at any time. Read docs/04 2.4, `app/src/engine/homeEval.ts`, `markOf()` in `app/src/engine/format.ts`, `decideFloatTest` in `app/src/engine/homeEval.ts` (R18f2), and the render of an unevaluated test (`app/src/render/home.ts`).
+1. **Tests first** (golden, `derived`):
+   - `mod(7.5,2)` = 1.5 with the `=` mark: the typed 7.5 is exact (15/2), and so is the remainder 3/2.
+   - A test that stays as typed shows its decimal as typed: `romberg(exp(-x^2),x,0,1)==0.746824132812` is drawn with `0.746824132812`, not `746824132812/10^12`.
+2. **Fix** where the mark goes wrong (the exact-first path, the agreement check or `markOf`) and where the rewritten literal reaches the display. The render file is ron's; the change there stays as small as the fix needs.
+
+Gate: the golden gate (home, precision), vitest, typecheck.
+
+### ron, R28: units mode in the parser, branch `p1/ron-m5-unitparse`
+Backlog milestone 5 item 2, the ron half. **Its text is written when R24a has reported** (the slot tokens) **and G12 has reported** (the checks' input). Until then nobody starts it. Scope from the backlog:
+- `\pm` (uncertainty) and `\to` (the end slot), in units mode only;
+- the formula with its slots as qalc text, from whitelisted names only;
+- a round trip per token.
+
+It must be merged before R24c.
 
 ### Packages of section 0d
 
@@ -717,8 +908,6 @@ Starts when R24c, R4 (Find) and R15b (the user keys and their storage) are merge
 
 Gate: the tests, the Find query test unchanged, and the size test.
 
-### Night packages (section 0c)
-
 ## 8. Definition of done
 - **Each branch:** typecheck 0; `npm run index` (with `QALC_OUT=<main checkout>/engine/qalc/_out/dev` in a worktree), then `FIND_INDEX=required npm test`, all pass (the Find query test fails rather than skips without the full index); e2e all pass (the known-flaky `solve.spec.ts` persistence test may be re-run once); SPDX headers; `git commit -s` with the trailer (`Claude Opus 5.5` or `Claude Sonnet 5.5`, whichever model ran); the report commit; start chunk size reported for UI packages.
 - **Milestone 4 is done when:**
@@ -735,7 +924,7 @@ claude --model opus "Review and merge package <ID>: follow section 8a of docs/sh
 ```
 The reviewer works in the main checkout on `phase-1`:
 1. `git status` is clean, and the prerequisites in the table are merged. If not, stop and say so.
-2. Use the package's branch from the table in 0a or 0b (4a branches are `p1/<name>-m4a-<pkg>`). Read the report (`git log -1 p1/<name>-m4-<pkg>`) and the diff (`git diff phase-1...p1/<name>-m4-<pkg>`) against the backlog step and the docs/04 sections it names. Check the claims:
+2. Use the package's branch from its table (0a, 0b, 0d or 0e). Read the report (`git log -1 <branch>`) and the diff (`git diff phase-1...<branch>`) against the backlog step and the docs/04 sections it names. Check the claims:
    - expected values come from the oracle or are `derived`
    - every new token has its round-trip case
    - no file outside the package's scope is changed
@@ -749,9 +938,9 @@ The reviewer works in the main checkout on `phase-1`:
    - apply the report's "For shared files" text
    - tick the backlog step with the commit
    - put "Needs a decision" items under "Needs the user" in `docs/decisions.md`; when the owner decides one, move it to "Decided proposals"
-   - **rewrite, don't amend:** where the package changes what a doc says, change that text in place (no "amended"/"superseded" notes or strikeouts; git keeps the history), and remove the finished package's text from section 7 of this brief and its row from 0a/0b
+   - **rewrite, don't amend:** where the package changes what a doc says, change that text in place (no "amended"/"superseded" notes or strikeouts; git keeps the history), and remove the finished package's text from section 7 of this brief and its row from its table
    - remove the worktree, then `git branch -d`
    - commit with `git commit -s`
    - never push
-5a. **After merging a ron package (4a), build and install the owner's APK** from the main checkout: `./build.sh --engine-dir engine/giac/_out/gsl --no-units --install` (the script takes the host-cpu lock). Install only `org.pascaline.app`, on the owner's phone (the only device the owner connects for this). Then tell the owner what to try, in three lines at most, and append a line to `docs/feedback.md` "waiting for the owner's notes on <package>".
+5a. **After merging a ron package (4a), build and install the owner's APK** from the main checkout: `./build.sh --engine-dir engine/giac/_out/gsl --no-units --install` (the script takes the host-cpu lock). Install only `io.github.buerlino.pascaline`, on the owner's phone (the only device the owner connects for this). Then tell the owner what to try, in three lines at most, and append a line to `docs/feedback.md` "waiting for the owner's notes on <package>".
 6. When a merge completes milestone 4: write `docs/shifts/<date>-m4-report.md` (rules section 11, step 5) and add milestone 4 to docs/02 section 12. The report says what the owner should try on the APK: marks, Find, copy and paste, and the empty-line Ans.
