@@ -118,7 +118,7 @@ Newest first. Where an entry changed an earlier document, that document now carr
   - **Find is a G2-style Math menu (accepted 2026-10-13).** The Math key opens fixed categories in a fixed order, so the same keys always reach the same function; typing letters on our keypad filters it. No usage-based ranking (docs/04 3.5): the same query always gives the same order (docs/03 rule 8).
   - **Function and Solve frozen (confirmed by the owner 2026-10-13).** The owner uses Home daily and CAS sometimes. Both apps stay (G2 flow, already built and tested) but get no new features; the effort goes to Home and CAS.
   - **UI plan accepted (owner, 2026-10-13):** [05-ui-plan.md](05-ui-plan.md) with its section 7 (Find without recents; history-row buttons for Home/CAS only; status bar ≤ 28 px; tablet layout deferred; Shift + CAS = Mode sheet, Shift + Home/CAS = Settings; theme setting System / Light / Dark, Dark by default on Android). The merged order is milestone 4a in the backlog; packages in `docs/shifts/brief.md`.
-  - **Keyboard on return (K0 again):** returning to the app with the entry focused opened the system keyboard. Android restores focus on return and ignores `inputmode=none` then; the app now drops the focus when it is hidden or (on touch screens) when the window loses focus. Regression test in `app/test/softkeyboard.spec.ts`.
+  - **Keyboard on return (K0 again):** returning to the app with the entry focused opened the system keyboard. Android restores focus on return and ignores `inputmode=none` then; the app now drops the focus when it is hidden or (on touch screens) when the window loses focus. Regression test in `app/test/softkeyboard.spec.ts`. MathLive's own focus restore was a second path to the same bug (F9, package R22; defaults entry "Focus on return").
 - **2026-10-12 P10: Giac's English help lines in Find (EN1). ACCEPTED by the user (2026-10-12).** Proposed by sandra. Find's preview shows each function's syntax, one line and an example from Giac's `doc/aide_cas`. R5 reads the English lines as GPL-3.0-or-later (Giac's README), with an inconsistency in the README that only B. Parisse can resolve.
   **Recommendation:** build with the English lines now (only English, never the French lines; generated at build time, nothing committed), and add the confirmation question to the planned email to Parisse (backlog "Needs the user" 5) before any public release. Cost: none now. Alternative: our own one-line descriptions only (about 2 days of writing for the curated set; the other ~1,500 commands would show no help).
 - **2026-10-12 P6: Python compatibility with the reference (G5, G2 items 27 and 28). WITHDRAWN (2026-10-13):** the Python app is removed (P11). The proposal is in git history (`b2f1e7e:docs/decisions.md`).
@@ -156,6 +156,18 @@ Newest first. Where an entry changed an earlier document, that document now carr
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-14 ⌫ at a bracket (F10, R23; G2 item 44 to confirm)
+- **Choice:** ⌫ with the cursor right after an opening bracket removes the whole template the bracket belongs to and keeps what was inside, with the cursor where the opening bracket was. A function's brackets go with its name: `log(‸2+3)` → `‸2+3` (‸ is the cursor); `log(log(□))` ⌫ → `log(□)` ⌫ → empty line, one ⌫ per log key. A plain pair `( )`, `| |` or `{ }` loses both brackets: `5(‸2)` → `5‸2`. An empty pair goes the same way. Shift + ⌫ (Del) right before a closing bracket is the mirror case. The rule never leaves half a pair (`\left.…\right)`) on the line.
+- **Why:** it is the rule ⌫ already follows at the start of a root, a fraction's part or a box on our line (one rule for every template), and each key press is undone by one ⌫. The name must go with the brackets: the parser reads `\log2+3` as `log10(2)+3` (`tools/probes/parse.ts`, 2026-10-14), so keeping it would change the meaning of `log(2+3)` without a mark.
+- **Alternatives:** keep MathLive's invisible bracket and make the second ⌫ step out (it still leaves a syntax error on the line); drop only the brackets and keep the name (the meaning trap above); delete the name before the pair and keep the brackets (`(2+3)`).
+- **Would change if:** the owner's G2 does something else for `SIN(23)` and `5(2)` with ⌫ right after `(` (G2 item 44). Then the G2 way wins, unless it leaves a half pair.
+
+### 2026-10-14 Focus on return: MathLive's own restore is off (F9, R22)
+- **Choice:** `MathfieldElement.restoreFocusWhenDocumentFocused = false`, set with the other statics in `EntryController.create()`. Focus on return is ours alone: `dropFocus` in `app/src/main.ts` drops it when the app hides, and the next key press focuses the entry.
+- **Why:** MathLive's restore focuses the field again after a window blur and focus, and on Android a focus on return opens the system keyboard whatever `inputmode` says (K0). It is the second path behind feedback #38.
+- **Alternatives:** keep it and disarm it with a synthetic `focusin` after `dropFocus` (depends on MathLive's internals).
+- **Would change if:** a desktop browser loses the caret after switching windows (R22 checks that the hardware keyboard still types without a click).
 
 ### 2026-10-14 Working… after 150 ms (F8)
 - **Choice:** "Working…" and Cancel of a running job (Home, CAS, the Function readout, the Solve info line) are drawn only after 150 ms, through the CSS class `.late` in `app/src/style.css`. They keep their space while hidden. The Cancel key works from 0 ms.

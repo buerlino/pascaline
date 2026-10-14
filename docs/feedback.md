@@ -4,7 +4,7 @@
 The one place for the owner's points from using the app (docs/03 section 0, rule 12). Newest first. Each point is kept in the owner's words (shortened) and gets one triage:
 
 - **bug**: fixed now, regression test first;
-- **feel**: goes into the next feel package (milestone 4a tasks F1–F8 in [backlog.md](backlog.md));
+- **feel**: goes into the next feel package (milestone 4a tasks F1–F10 in [backlog.md](backlog.md));
 - **idea**: waits a week, then must pass rule 5 (G2 flow, a G2 friction removed, or more trust) before it gets a task;
 - **decided**: became a decision (the id says where).
 
@@ -106,3 +106,10 @@ The R10 APK: Tmpl opens the 6 × 3 template palette (arrows move, Enter or a tap
 ## 2026-10-13: waiting for the owner's notes on R14
 
 The R14 APK: the exponent key's legend is now `ᴇ`. Type 1.5 ᴇ (−) 3: the line shows `1.5ᴇ-3` tight, one ⌫ removes the ᴇ, Enter gives 0.0015. On an empty line ᴇ starts with `1ᴇ`. Check that the WebView draws ᴇ on the key and on the line (if not: one line in `entry/macros.ts`).
+
+## 2026-10-14 (eighth round: two entry bugs found while using the phone)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 38 | The system keyboard comes back after switching apps again: move the cursor with a drag on the arrow keys, then switch away and back quickly, back and forth. | **feel, bug F9, package R22.** MathLive's own "restore focus" brings it back. When our hide handler blurs the field, MathLive arms "on the next window blur, then focus, focus the field again". So the second return focuses it (the first, too, when the page hides before the window blurs). In Playwright this happens after plain taps as well, not only after a drag (backlog F9) |
+| 39 | log, log (`log(log(□))`), then ⌫ again and again: it stops at `log(` and deletes nothing more. | **feel, bug F10, package R23.** Not only log: any bracket pair whose content is gone (`log(2` ⌫ ⌫), and ⌫ right after any opening bracket with content (`sin(‸23)`, ‸ the cursor). MathLive turns `(` into an invisible bracket, then does the same again on every press. The half-deleted pair is a syntax error, never a wrong number (backlog F10) |

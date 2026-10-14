@@ -15,7 +15,7 @@ Pascaline is an **open-source precision engineering tool** for Android (also PWA
 
 Background reading (read before larger design decisions):
 - [docs/04-architecture.md](docs/04-architecture.md): **the architecture for the engineer goal** (2026-10-12): precision chain and marks, Find, the unit view, keys, state, build, gates and budgets. Supersedes docs/02 where they differ.
-- [docs/research/r6-pipelines.md](docs/research/r6-pipelines.md): how a key press, a number, a build and a check flow through the code today, engine and qalc behaviour learned by probing, and how to check a claim fast (probes in `tools/probes/`).
+- [docs/research/r6-pipelines.md](docs/research/r6-pipelines.md): how a key press, a number, a build and a check flow through the code today, engine, qalc and MathLive behaviour learned by probing, and how to check a claim fast (probes in `tools/probes/`).
 - [docs/06-keypad-vs-g2.md](docs/06-keypad-vs-g2.md): every difference between our keypad and the G2's, with its reason (decision P12). Read before changing a key.
 - [docs/02-architecture-plan.md](docs/02-architecture-plan.md): the original plan. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
 - [docs/01-feasibility-report.md](docs/01-feasibility-report.md): the original study. **Section 3 (legal) is binding**; the rest is superseded by 02.

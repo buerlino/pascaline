@@ -4,7 +4,7 @@
 **Night shift 2026-10-14:** henri runs the queue in section 0c; for that shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` after the merges of R17, S2, R13, R16, R14 (2026-10-13) and R18 (2026-10-14). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R14, R16, R17, R18. **Next:** R15b (the owner approved layout D on 2026-10-14), after one device run on the Tab One. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` after the merges of R17, S2, R13, R16, R14 (2026-10-13) and R18 (2026-10-14). Merged: milestone 4 packages G0–G4, R1–R3, A1–A3; milestone 4a packages R5, A5, R6, S1, R7, R8, R9, R10, R13, R14, R16, R17, R18. **Next:** R22 and R23 (the entry bugs F9 and F10, 2026-10-14), then R21, then R15b (the owner approved layout D on 2026-10-14), after one device run on the Tab One. S2 is done: its menu rules (decisions.md "S2: one menu system", accepted 2026-10-13) add items to R18, R15, R11 and R4, written into their text below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history (`git show b2f1e7e:docs/shifts/brief.md`). Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ## 0c. Night shift 2026-10-14: henri's plan (owner, 2026-10-14)
 The owner planned this shift in advance. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first** (the week is at 75%): the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for tomorrow.
@@ -74,7 +74,9 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R21 | Pick sheets over the keypad, Settings over everything | ron, **Opus** | `p1/ron-m4a-fit` | now; runs before R15b | ~2 d |
+| R22 | Bug F9: the system keyboard on return, again | ron, Sonnet | `p1/ron-m4a-refocus` | now | ~0.5 d |
+| R23 | Bug F10: ⌫ stuck at a bracket | ron, **Opus** | `p1/ron-m4a-bksp` | R22 (same file); G2 item 44 answered, or start on the default | ~1 d |
+| R21 | Pick sheets over the keypad, Settings over everything | ron, **Opus** | `p1/ron-m4a-fit` | R23; runs before R15b | ~2 d |
 | R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | a device run on the Tab One (backlog Needs the user item 7) | ~2 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R15b | ~1 d |
 | R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R11 (draws the final keypad, so after R15b) | ~0.5 d |
@@ -153,6 +155,28 @@ Backlog step 12, when the Tab One is connected (rules section 6). On the device:
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20, incremental Find).
 
 ### Milestone 4a packages (section 0b)
+
+### ron, R22: the system keyboard on return, again (bug F9), branch `p1/ron-m4a-refocus`
+Backlog F9 (cause and proof there; decisions.md "Focus on return"). Read `app/src/main.ts` (`dropFocus`), `EntryController.create()` in `app/src/entry/controller.ts`, `app/test/softkeyboard.spec.ts`, and r6-pipelines section 7. Commits in this order:
+1. **Test first** (`app/test/softkeyboard.spec.ts`, failing on today's code): extend `leaveAndReturn` with the two event orders (window `blur` then hidden, and hidden then `blur`), then three away-and-back cycles in a row. After each return, wait 150 ms (MathLive focuses 60 ms late) and check that nothing editable is focused. Run it twice: after a tap on a digit, and after a trackpad drag (`drag(page, "left", -30, 0)`). Then a digit key still types.
+2. **Fix:** `Field.restoreFocusWhenDocumentFocused = false` in `create()`, beside `fontsDirectory` and the other statics, with a one-line comment that names K0/F9. Keep `dropFocus`.
+3. **Check what the restore did for us,** by hand, since synthetic window events do not move the real focus: `npm run dev` in desktop Firefox, type on the line, switch windows (Alt+Tab) and back, type on the hardware keyboard. The browser should restore the focus by itself. If the keys no longer reach the line, put it under "Needs a decision" (the fix would be `entry.focus()` on window `focus`, on `pointer: fine` only) instead of building it.
+4. **Report.** The owner checks the APK by hand: drag on the arrow keys, switch away and back three times, fast. Then the same after plain taps. Shared-file text: backlog F9 "Done", the decisions entry if the build differs.
+Gate: softkeyboard e2e green (it fails without the fix), gestures and flicks e2e green, start chunk unchanged.
+
+### ron, R23: ⌫ stuck at a bracket (bug F10), branch `p1/ron-m4a-bksp`
+Backlog F10 (cause and the stuck cases there); the rule is decisions.md "⌫ at a bracket" (binding unless G2 item 44 says otherwise; if the owner has answered it, the G2 way wins, unless it leaves a half pair). Read `app/src/entry/controller.ts` (`run`, `selectCompound`: how to find the atom a cursor sits in from offsets and depths), the `bksp` key in `spec/keyboard.yaml`, every `\left` template in `spec/keyboard.yaml` (function keys, `paren`, abs, lists, the Tmpl cells, the evaluate-at bar `\left. … \right|_{…}`), and r6-pipelines section 7. Commits in this order:
+1. **Tests first** (`app/test/bksp.spec.ts`, failing on today's code), by keys, the line read after each ⌫:
+   - log log, then ⌫ until the line is empty: `\log\left(\placeholder{}\right)` after one ⌫, the empty line after two. The same for sin, ln, √ (as a control), and the Tmpl log base.
+   - log 2 ⌫ ⌫ → the empty line; `( )` 2 ⌫ ⌫ → the empty line.
+   - sin 2 3 ◀ ◀ ⌫ → `23`, cursor before the 2; 5 `( )` 2 ◀ ⌫ → `52`; abs with content, the same.
+   - Shift + ⌫ (Del) right before a closing bracket: the mirror cases.
+   - No line the keys can build ever holds `\left.` with a real `\right)` (or the reverse) after a ⌫, except the evaluate-at template, which owns its `\left.`.
+   - ⌫ still removes one character, one chip (`captureSelection`) and one ᴇ as today (the R14 and R16 cases stay green), and Shift + Cancel (undo) brings the deleted template back whole.
+2. **Fix** in `EntryController.run`: before MathLive's `deleteBackward` (and `deleteForward`), when the cursor is at the start (end) of a pair's body, select the template (the name before the pair when the same key inserted it: `\log`, `\sin`, `\ln`, `\operatorname{…}`, a `\log_{…}` with its base; else the pair alone) and replace it with the body's LaTeX, leaving the cursor where the opening bracket was. An empty function body becomes nothing; then, as for log log, the outer body gets its placeholder back. Public MathLive API only (`getElementInfo`, offsets, `selection`, `insert`); no patch to MathLive. If the pair is the evaluate-at bar, the whole template follows the same rule (body kept, bounds dropped); say in the report if that feels wrong.
+3. **Parser message** (`app/src/input/parse.ts`): a `\left.` closed by anything but the bar says "unmatched bracket", not "expected the evaluate-at bar". Its parser case (an error case, `derived`) goes in the same commit.
+4. **Report** with the G2 item 44 answer, if the owner gave one. Shared-file text: backlog F10 "Done", the decisions entry if the build differs, r6 section 7 if MathLive behaved otherwise.
+Gate: `bksp.spec.ts` green (it fails without the fix), `selection.spec.ts`, `undo.spec.ts`, `entry.spec.ts`, `chips.spec.ts`, `tmpl.spec.ts`, gestures e2e green; vitest and the golden gate (parser changed); start chunk within 0.5 kB gzip.
 
 ### ron, R21: pick sheets over the keypad, Settings over everything, branch `p1/ron-m4a-fit`
 The owner's frictions (2026-10-14): a sheet in the viewport is far from the thumb while typing, the Tmpl grid scrolls on the phone, Settings is too small. Decided: decisions.md "R21" (binding); the target text is already in docs/05 2 (rule 1), 3.1 and 3.4 and docs/03 rule 8. Read those, decisions.md "Sheet defaults (R7)", "Mode and Settings sheets (R8)", "S2: one menu system", and `app/src/views/` (`Sheet.svelte`, `sheet.svelte.ts`, `sheetKeys.ts`, `modeSheet.ts`) with the sheet parts of `App.svelte`, `apps/shell.svelte.ts` and `keyboard/Keypad.svelte`. Commits in this order:

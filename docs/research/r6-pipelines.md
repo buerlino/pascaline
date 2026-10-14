@@ -56,7 +56,14 @@
 - **Names:** `degC` → coulomb·degree, `BTU` → byte·tesla·…, `mu0` → 0 kg, `epsilon0` → 0 J·bit, `NA` → N·A, `R` → röntgen, `h` → hour, `g` → gram, `e` → Euler's number. The real names: `°C`/`oC`, `Btu`, `magnetic_constant`/`μ_0`/`mu_0`, `electric_constant`/`ε_0`/`epsilon_0`, `elementary_charge`, `k_B`, `planck`, `c`.
 - **Data files:** `units.xml.in` has 426 unit definitions (a count of `<unit` gives 982 because of nested references), `variables.xml.in` 166 constants plus 18 built-in, `prefixes.xml.in` 34; names carry flags before `:` (`ar:c,speed_of_light`, `au:Ω,r:ohm,p:ohms`); constants have a `uncertainty` attribute; some are formulas (μ₀ = 2hα/(c e²)), which need qalc to evaluate.
 
-## 7. Where docs and code disagreed (2026-10-12), and the lesson
+## 7. MathLive behaviour learned by probing (0.111.1, Playwright Pixel 7 profile, 2026-10-14)
+
+- **Focus is late:** `onFocus` focuses the hidden keyboard sink (a `SPAN`) 60 ms after `mf.focus()`, so a test must wait about 150 ms before it reads the focus.
+- **Focus restore:** `MathfieldElement.restoreFocusWhenDocumentFocused` (default on). Every blur of the field arms "next window `blur`, then next window `focus`: focus the field", and only a document `focusin` or `click` disarms it. That brings the system keyboard back on Android (backlog F9).
+- **⌫ at a bracket:** `onDelete` on a `\left…\right` pair, with the cursor at the start of its body, sets the opening bracket to `.` while the closing one is real, and moves nothing. The next ⌫ does the same again, so the line is stuck (backlog F10). A pair that holds only a placeholder is removed whole instead (`\log\left(\log\left(□\right)\right)` ⌫ → `\log\left(\log\right)`). ⌫ at the start of a root or a box dissolves it and keeps the content.
+- **Probing the entry:** a scratch spec in `app/test/` that taps keys and logs `window.pascaline.entry.value` after each one (helpers `tap`, `drag`, `touch` in `app/test/helpers.ts`; `?engine=fake` is enough for the entry). Delete it afterwards.
+
+## 8. Where docs and code disagreed (2026-10-12), and the lesson
 
 - The "L7 size test" named in plans did not exist.
 - docs/03 listed `Ans` in Home; no key or parser rule reaches it.
@@ -66,7 +73,7 @@
 
 **Lesson:** check claims in the code, the engine and the data, never in the docs alone; cite `file:line` or a probe; mark the rest (to verify) with who checks it and how.
 
-## 8. How to check a claim quickly
+## 9. How to check a claim quickly
 
 | Question | How |
 |---|---|
