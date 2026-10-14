@@ -5,7 +5,6 @@ model: sonnet
 effort: medium
 permissionMode: auto
 isolation: worktree
-background: true
 color: green
 ---
 

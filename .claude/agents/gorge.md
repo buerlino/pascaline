@@ -5,7 +5,6 @@ model: opus
 effort: medium
 permissionMode: auto
 isolation: worktree
-background: true
 color: orange
 ---
 
