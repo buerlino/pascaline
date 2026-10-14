@@ -431,7 +431,7 @@ One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
 
 ### 6.3 Decision: start-up and bytes
 - Today (`vite build`, 2026-10-12): start chunk `index` 142.62 kB (49.64 kB gzip); MathLive 807.73 kB (222.09 kB gzip) after the keypad; lazy: Function 19.6 kB, JSXGraph chunk 1,035.31 kB (258.52 kB gzip), Solve 8.2 kB, Python 377.18 kB (127.99 kB gzip), the Giac worker 25.68 kB; Giac wasm 9.75 MB; the whole build 13 MB, all precached by the service worker after the engine is up. After R5 (2026-10-13, the Python chunk and MicroPython wasm gone): start chunk 131.57 kB (45.82 kB gzip), precache total 12.2 MB.
-- Budgets in 8.3. New code for Find, Units, copy and the matrix editor lives in lazy chunks; the start chunk may grow by the key handlers and the mark (≤ 150 kB, ≤ 52 kB gzip).
+- Budgets in 8.3. New code for Find, Units, copy and the matrix editor lives in lazy chunks; the start chunk may grow by the key handlers and the mark (≤ 156 kB, ≤ 54 kB gzip; raised from 150 / 52 by the owner, 2026-10-14).
 - **The size test** (annabell, milestone 4): `app/scripts/size-check.ts` reads Vite's manifest (`build.manifest: true`) and fails when a chunk passes its budget; `npm run build` and `build.sh` run it.
 
 ---
@@ -573,7 +573,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 | Item | Budget | Today | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 150 kB raw, ≤ 52 kB gzip | 132.62 / 45.98 kB (after R3) | size test |
+| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 148.81 / 51.93 kB (2026-10-14, after R18f1) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | prototype 282 / 68 kB | size test |

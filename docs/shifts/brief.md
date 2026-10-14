@@ -37,7 +37,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 8 | **Opus pass 2** on what came after pass 1, then its FIX packages | Opus | — | 20 min + fixes |
 | 9 | Shift report, then stop (the henri started after step 8) | henri_n | — | 10 min |
 
-Not tonight: R15b (layout B picked 2026-10-14; next shift) and everything after it in 0b, R4 and A4 (after 4a), milestone 5.
+Not tonight: R15b (waits for the owner's yes to layout D) and everything after it in 0b, R4 and A4 (after 4a), milestone 5.
 
 ### Prompt templates (Agent tool; `run_in_background: false`; `effort: "medium"`)
 **Worker** (`subagent_type` = the agent in the table, `model` = its model):
@@ -76,7 +76,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | now: the owner picked layout B (2026-10-14) | ~2 d |
+| R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | the owner's yes to layout D | ~2 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R15b | ~1 d |
 | R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R11 (draws the final keypad, so after R15b) | ~0.5 d |
 | R12b | Visual pass: implementation (U5, U7, theme) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner | ~2.5 d |
@@ -156,7 +156,7 @@ Report against the §8.3 bars. A miss goes under "Needs a decision" with the num
 ### Milestone 4a packages (section 0b)
 
 ### ron, R15b: top cluster, branch `p1/ron-m4a-top`
-P12 points 2 and 3 and open point B. **R15a is done:** `docs/mockups/top-cluster.html` holds the layouts A, B, C and the press table. **The owner picked B with the 96 × 48 px hit area (2026-10-14).** **R15b:** build layout B. Edit the grid in `spec/keyboard.yaml` (the maths rows 3–9 do not move), remove the `app` and `cas` keys and their Shift layers, make the place name a button, move the pad, keep the `cancel` key's id and its Shift layer (Undo, R16), update the trackpad zones, the legends, `tools/probes/unit-presses.mjs` and every test that names a moved key; keys typed while an app loads (R8) now include the status taps; remove `app` and `cas` (and `symb`/`plot`/`num` if they fold) from `PASS` in `views/sheetKeys.ts` and `AT_ONCE` in `App.svelte`; the place-name tap no longer opens Apps (`status.spec.ts` changes). Gate: e2e for each path in the press table, viewport share not below R8's 0.354, keyboard test, gallery, gestures and flicks e2e. Shared-file text in the report.
+P12 points 2 and 3 and open point B. **R15a is done:** `docs/mockups/top-cluster.html` holds the layouts A, B, C and the press table. **The owner turned down A, B and C (2026-10-14); the page now holds layout D** (the cross stays, every key at its G2 place, three free keys U1–U3 with Shift layers, 48 px cluster rows; decisions.md). **R15b:** build D once the owner says yes; the free keys get their slots and storage here, their Find-based setting comes with R4. Edit the grid in `spec/keyboard.yaml` (the maths rows 3–9 do not move), remove the `app` and `cas` keys and their Shift layers, make the place name a button, move the pad, keep the `cancel` key's id and its Shift layer (Undo, R16), update the trackpad zones, the legends, `tools/probes/unit-presses.mjs` and every test that names a moved key; keys typed while an app loads (R8) now include the status taps; remove `app` and `cas` (and `symb`/`plot`/`num` if they fold) from `PASS` in `views/sheetKeys.ts` and `AT_ONCE` in `App.svelte`; the place-name tap no longer opens Apps (`status.spec.ts` changes). Gate: e2e for each path in the press table, viewport share not below R8's 0.354, keyboard test, gallery, gestures and flicks e2e. Shared-file text in the report.
 
 ### ron, R11: history-row actions, branch `p1/ron-m4a-rows`
 docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on an empty line picks a row (exists); a row of buttons appears above the entry line: Insert · Recall · Copy · Store ▶ · Delete; hidden while typing; **the Menu is one fixed list of nine (S2, accepted): 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Copy as › (as shown, exact, LaTeX), 7 Paste, 8 Share session, 9 Clear history**, the same numbers whether or not a row is picked, acting on the picked row, else the last result (Delete: the last row); the buttons are items 1–5; the long press opens the same list on its row. Build the actions as one list used by the buttons, Menu and long press, so the "results mode" idea can reuse it. Gate: e2e per action from keys and from touch; task benchmark has no task with more presses; history performance test unchanged.

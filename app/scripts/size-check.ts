@@ -90,7 +90,7 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   };
   const dynamic = (prefix: string): string[] => chunks.filter((c) => c.isDynamicEntry && normalSrc(c.src).startsWith(prefix)).map((c) => c.file);
 
-  add("Start chunk", startFiles(manifest), { rawMax: 150 * KB, gzipMax: 52 * KB });
+  add("Start chunk", startFiles(manifest), { rawMax: 156 * KB, gzipMax: 54 * KB });
   add("MathLive chunk", chunks.filter((c) => /(^|\/)mathlive\/mathlive\.min\.m?js$/.test(normalSrc(c.src))).map((c) => c.file), { rawMax: 830 * KB });
   add("Find UI chunk", dynamic("src/find/"), { rawMax: 30 * KB });
   add("Units app chunk", dynamic("src/apps/units/"), { rawMax: 30 * KB });
