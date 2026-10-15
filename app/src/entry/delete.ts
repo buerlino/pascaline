@@ -125,7 +125,8 @@ function keepBox(mf: Field, c: number, dir: -1 | 1): boolean {
 // MathLive keeps an exponent as an atom of its own (latex `^…`) right after its base, its box one level deeper:
 // `5^{23}` is 1 `5`, 2 (the exponent's sentinel), 3 `2`, 4 `3`, 5 `^{23}`. Deleting the base leaves the exponent on
 // whatever stands before it, and a box emptied by ⌫ disappears. Points 3, 4 and 6 of "⌫ and Del keep a template
-// whole": ⌫ at the start of the exponent steps to the end of the base; a press that would empty the base leaves □;
+// whole": ⌫ at the start of the exponent steps to the end of the base (an empty exponent on a typed base goes alone,
+// the owner 2026-10-15); a press that would empty the base leaves □;
 // ⌫ in an empty base removes the power when its exponent is empty or the key's own (x², x⁻¹) and selects it first
 // when the exponent holds typed content. The bases of eˣ and 10ˣ are the key's own marks and go with the exponent.
 
@@ -190,7 +191,8 @@ function powerOfBox(mf: Field, s: number): Power | undefined {
  * ⌫ (dir −1) or Del (dir +1) at a power. `c` is the cursor, or the edge of a selected □ (cursor()). True: handled.
  * The atom the press would delete (or the □ it acts on) decides:
  * - the exponent's sentinel: ⌫ at the start of the exponent steps to the end of the base (point 3); Del at the end of
- *   the base steps into the exponent. An empty exponent on a □ base or a mark (eˣ, 10ˣ) is an empty template: it goes.
+ *   the base steps into the exponent. An empty exponent on a □ base or a mark (eˣ, 10ˣ) is an empty template: it goes
+ *   whole; on a typed base ⌫ removes it alone.
  * - the exponent atom: ⌫ right after the power steps into the exponent (point 5); Del at the end of the exponent, its
  *   last box, removes the empty or own exponent (the whole power on a □ base or a mark) and selects a typed one with
  *   its base first (point 4).
@@ -209,7 +211,7 @@ function deleteAtPower(mf: Field, c: number, dir: -1 | 1): boolean {
     const p = powerOfBox(mf, t);
     if (!p) return false;
     if (p.x === "empty" && (p.kind === "empty" || p.kind === "mark")) return removePower(mf, p);
-    if (dir < 0) toBase(mf, p);
+    if (dir < 0) exponentStart(mf, p);
     else toExponent(mf, p, "start");
     return true;
   }
@@ -226,7 +228,7 @@ function deleteAtPower(mf: Field, c: number, dir: -1 | 1): boolean {
   if (box && box.q === t + 1 && atomStart(mf, t) === t - 1) {
     if (tl === PLACEHOLDER) {
       if (box.x === "empty" && (box.kind === "empty" || box.kind === "mark")) return removePower(mf, box);
-      if (dir < 0) toBase(mf, box);
+      if (dir < 0) exponentStart(mf, box);
       else exponentEnd(mf, box);
       return true;
     }
@@ -274,10 +276,23 @@ function toExponent(mf: Field, p: Power, at: "start" | "end"): void {
 function exponentEnd(mf: Field, p: Power): void {
   if (p.x === "typed") mf.selection = { ranges: [[p.start, p.q]] };
   else if (p.kind === "empty" || p.kind === "mark") removePower(mf, p);
-  else {
-    mf.selection = { ranges: [[p.base, p.q]] };
-    mf.executeCommand("deleteBackward");
-  }
+  else removeExponent(mf, p);
+}
+
+/**
+ * ⌫ at the start of the exponent: an empty one on a typed base goes alone, the cursor after the base (the owner,
+ * 2026-10-15: `5 xʸ ⌫` gives 5, one ⌫ per key press); any other steps to the end of the base. A bracket base steps
+ * too: its pair may be the key's own (the one-line x⁻¹, `\left(#@\right)^{-1}`), and alone it would be a lone mark.
+ */
+function exponentStart(mf: Field, p: Power): void {
+  if (p.x === "empty" && p.kind === "typed") removeExponent(mf, p);
+  else toBase(mf, p);
+}
+
+/** Remove the exponent and keep the base, the cursor after it. */
+function removeExponent(mf: Field, p: Power): void {
+  mf.selection = { ranges: [[p.base, p.q]] };
+  mf.executeCommand("deleteBackward");
 }
 
 /** Remove the whole power; a box it filled shows □ again. */

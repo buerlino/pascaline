@@ -115,10 +115,11 @@ test("5 xʸ ⌫ gives 5: an empty exponent on a typed base goes alone, the curso
   expect(await entryValue(page)).toBe("57");
 });
 
-test("the same on a bracket base: ( 1 + 2 ) xʸ ⌫ gives (1+2)", async ({ page }) => {
+test("a bracket base steps (its pair may be the one-line x⁻¹'s own): ( 1 + 2 ) xʸ ⌫ keeps the power", async ({ page }) => {
   await tap(page, ["paren", "d1", "add", "d2", "right", "pow"]);
   expect(await entryValue(page)).toBe(`\\left(1+2\\right)^{${PH}}`);
-  expect(await bksp(page)).toBe("\\left(1+2\\right)");
+  expect(await bksp(page)).toBe(`\\left(1+2\\right)^{${PH}}`);
+  expect(await position(page)).toBe(5); // right after the pair
 });
 
 test("a typed exponent still steps: 5 xʸ 2 ◀ ⌫ keeps 5^2 with the cursor after the 5", async ({ page }) => {
