@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. R18f3 (a closed `==` test shows an exact 0, F35; a silent wrong answer, so it goes first). Then the entry-bug packages: R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30).
+  1. R18f3 (a closed `==` test shows an exact 0, F35; a silent wrong answer, so it goes first). Then the entry-bug packages: R43 (▶ stops at the end of a box that holds a template, F34), R45 (hardware keys take the keypad's path, F38; once the owner says yes), then R34 (the line survives a kill, F30).
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -17,7 +17,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   6. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): G15, G20, R29, R30, G19, G24, then the unit evaluator G16, G17, G18 (or G10–G12 if G15 says P15 falls), G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): G15, G20, R29, then G27 and R44 once the owner says yes (silent wrong answers from the architecture check of 2026-10-15, F36 and F37), R30, G19, G24, then the unit evaluator G16, G17, G18 (or G10–G12 if G15 says P15 falls), G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A4a when the owner connects the Tab One, after R21b and before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -222,6 +222,8 @@ The milestone 5 packages that P15 brings (G15–G18, G25) are in 0e. Every "beha
 |---|---|---|---|---|---|---|---|
 | G20 | The stored values a CAS result used: the engine half | F28 | night | gorge, Sonnet | `p1/gorge-m4-uses` | now | ~0.5 d |
 | R29 | Where a number ends | F24, F25 | night | ron, **Opus** | `p1/ron-m4-numbers` | now | ~0.5 d |
+| G27 | A result that is not a number but holds a float gets ⚠ | F36 (architecture check, 2026-10-15) | night | gorge, Sonnet | `p1/gorge-m4-symfloat` | the owner's yes (decisions.md "Needs the user", 2026-10-15) | ~0.25 d |
+| R44 | A long result's chip keeps its value, and Ans is never dropped | F37 (architecture check, 2026-10-15) | night | ron, Sonnet | `p1/ron-m4-longchip` | the owner's yes; R29 (chips, same tests) | ~0.25 d |
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
 | G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
 | G24 | A memory cap for the Giac worker | F32 | night | gorge, Sonnet | `p1/gorge-m4-memcap` | now | ~0.5 d |
@@ -230,7 +232,8 @@ The milestone 5 packages that P15 brings (G15–G18, G25) are in 0e. Every "beha
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23; and G18 if P15 holds | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
-| R34 | The line survives a kill | F30 | day | ron, Sonnet | `p1/ron-m4a-keepline` | R43 | ~0.5 d |
+| R45 | Hardware keys take the keypad's path: arrows, ⌫, Del, letters | F38 (architecture check, 2026-10-15) | day | ron, Sonnet | `p1/ron-m4a-hwpath` | R43 (same files), and the owner's yes | ~0.5 d |
+| R34 | The line survives a kill | F30 | day | ron, Sonnet | `p1/ron-m4a-keepline` | R43 (R45 if the owner said yes) | ~0.5 d |
 | R35 | A lighter start chunk | review item 11 | day | ron, Sonnet | `p1/ron-m4a-slim` | R34 | ~0.5 d |
 | R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | R11 and G20 | ~0.5 d |
 | R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | R32 (same file) and G22 | ~0.5 d |
@@ -379,7 +382,7 @@ A small package, one concern, with its own short reading list. Read only what th
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
 
 ### ron, R43: ▶ stops at the end of a box that holds a template (bug F34), branch `p1/ron-m4a-boxend`
-Read: `app/src/entry/controller.ts` (`run`, `nextBox`), `app/src/entry/stops.ts` (R27b's stop rule), `app/test/tmpl.spec.ts`, r6-pipelines section 7 ("▶ jumps to any empty box ahead"), decisions.md "The cursor goes where the user aims" point 2.
+Read: `app/src/entry/controller.ts` (`run`, `nextBox`), `app/src/entry/stops.ts` (R27b's stop rule), `app/src/entry/delete.ts` (`boxTemplate()`, `startsBox()`, `endsBox()`), docs/04 5.5 (one box model), `app/test/tmpl.spec.ts`, `app/test/bksp-grid.spec.ts` (how a grid reads the templates from the yaml), r6-pipelines section 7 ("▶ jumps to any empty box ahead"), decisions.md "The cursor goes where the user aims" point 2.
 
 **Behaviour today:**
 - ÷ ÷ 1 ▶ 2 ▶: the cursor goes from the inner denominator straight to the empty outer denominator (offset 8 of `\frac{\frac12}{□}`). Offset 6, the end of the outer numerator after ½, is skipped. A 3 typed next lands in the outer denominator: `\frac{\frac12}{3}`.
@@ -394,7 +397,7 @@ Read: `app/src/entry/controller.ts` (`run`, `nextBox`), `app/src/entry/stops.ts`
 
 **Fix** (direction; R27b's stop rule may already carry part of it):
 - Before the jump, look at where the plain step lands. If it leaves the template the cursor is in (the depth drops) and lands at the end of the box that holds it, make the plain step and stop there. The next ▶ jumps to the empty box as today.
-- "The end of a box" from the public API: the next offset starts another box (`getElementInfo(o + 1).latex` is "", the `first` atom MathLive puts at the start of a branch, at a depth ≥ the offset's own) or sits higher up (a smaller depth). In `\frac{\frac12}{□}`, offset 6 (depth 1) is followed by offset 7, the denominator's `first` (latex "", depth 1).
+- "The end of a box": take it from `endsBox()` in `delete.ts` (line 1013), not from a new test (docs/04 5.5, the architecture check of 2026-10-15). It already knows the plain case (the next offset is the next box's `first` atom, latex "", or sits higher up: in `\frac{\frac12}{□}`, offset 6 is followed by the denominator's `first`, offset 7) and the boxes that end at a mark, which the plain test misses: EQ's comma, DMS's ° and ′, lim's →, the = of Σ, Π and evaluate-at, ∫'s `\,` d. Move the box model (`boxTemplate()`, `startsBox()`, `endsBox()` and their helpers) into `app/src/entry/boxes.ts` and import it from `delete.ts`, `stops.ts` and the controller, so "a box" is written once. If the move outgrows the half day, export `endsBox()` from `delete.ts` instead and say so in the report.
 - Anywhere else R10's jump stays: in `\frac{x^{2}+1}{□}` with the cursor in the exponent, ▶ still goes to the denominator, since the + follows the power in the same box. Whether ▶ should stop after x² there too is the second question of G2 item 57.
 - Rejected: jump only to an empty box of the template the cursor is in. ∫ and ∂ are sequences of atoms, not one atom, so R10's stops on their marks would come back.
 - ◀ is not changed: it already stops at offset 6. The trackpad's steps to the right take the same path (`step()` calls `run`).
@@ -404,6 +407,8 @@ Read: `app/src/entry/controller.ts` (`run`, `nextBox`), `app/src/entry/stops.ts`
    - The four sequences above give `\frac{\frac123}{□}`, `\frac{x^2+1}{□}`, `\frac{\sqrt2+1}{□}` and `1+\frac{\frac234}{□}`.
    - One more ▶ from there reaches the outer denominator.
    - R10's walks through ∫, ∂ and evaluate-at are unchanged.
+   - The same at a mark: ▶ from the end of ½ in `EQ(½,□)` and in `½°□′□″` stops at the end of that box (the plain test above would jump).
+   - **A cursor grid** (`app/test/cursor-grid.spec.ts`, built like R26a's ⌫ grid: every template read from `spec/keyboard.yaml`, so a new key joins by itself): filled with a digit in each box and with each box empty in turn, ▶ from the line start to the end and ◀ back stop at the start and the end of every box and at no other place (`isStop()` true at each stop). Mark today's failures `test.fail()` with F34, as R26a did; the fix removes them.
 2. **Fix.**
 3. **Report** with the G2 item 57 answer, and the task benchmark's press counts (a task with a power or a root at the end of a numerator needs one more ▶).
 
@@ -761,7 +766,7 @@ Starts on the owner's go (a parked idea, decided around 2026-10-20). Read: feedb
 
 ### ron, R24a: the slot model, branch `p1/ron-m5-unitslot`
 The first of four unit-pad packages, with no UI. Read: r9 section 2 (the rules), docs/04 4.3 (Grammar per slot), r7 section 5.4 (the guards), and `typePad` in `tools/probes/unit-presses.mjs`.
-1. **The MathLive check first** (r7 section 8; R24c depends on it). Check that a read-only MathLive field with one `\placeholder[id]{}` per slot shows a slot's LaTeX (a unit with a power, a stacked ÷), and that our key routing reaches the active prompt. Use a throwaway e2e and keep it out of the commit. If it fails, put the evidence under "Needs a decision", and build the model anyway: it does not depend on the display.
+1. **The MathLive check: done** (sandra, throwaway probe, 2026-10-15; docs/04 4.3 and r6 section 7). Prompt values hold a stacked fraction, powers, products, √ and a prefixed unit, and ◀ ▶ go prompt to prompt in a read-only field. Two consequences for the model: MathLive merges neighbouring upright names when it reads a prompt back (`\mathrm{k}\mathrm{\Omega}` → `\mathrm{k\Omega}`), so the token list is the only source and the LaTeX is output only; and the field is written only through `setPromptValue` (R24c).
 2. **Tests first** (`app/src/units/slot.test.ts`), one per rule of r9 sections 2.2–2.6:
    - A prefix arms; another replaces it; the same one again disarms it.
    - Units in a row multiply; one ÷ per slot.
@@ -805,7 +810,7 @@ Starts when R24a, R24b, R28 and the unit evaluator (G16, G17, G25; G10–G12 if 
 
    Also replay as e2e the 44 of the probe's 50 units that sit on the draft pad, each within the probe's count. The other six go through Find in R24d. Tasks t02 and t04 must be within their plans.
 2. **Build:**
-   - The read-only formula with a slot after every number, as R24a's check found.
+   - The read-only formula with a slot after every number (docs/04 4.3). Write a slot only with `setPromptValue` from R24a's model: `insert()` with the caret outside a prompt still changes the read-only formula (probe, 2026-10-15). Keys reach the active slot through `press()` (docs/04 5.5 point 2: the slot owns the key while it is active), never through `EntryController.run`; give the unit view's field a capture `keydown` like `entry/hwkeys.ts`, so a hardware key reaches the pad's actions or does nothing, and never types into a prompt as MathLive text.
    - R24a's model per slot, with R24b's pad up while a slot is active.
    - Evaluation through the unit evaluator (`Calc.units()`), with the result shown as it returns it. The full result view is not packaged yet (section 0d).
 3. **`spec/keyboard.yaml`:** `unit_slot:` loses `letters`, `symbols`, `ops` and `exponent_leave`. The probe's `--pad` mode becomes its default, and the letter modes stay for comparison.
@@ -833,6 +838,50 @@ Gate: the tests, the Find query test unchanged, and the size test.
 
 ### Packages of section 0f
 Every package here: tests first (they fail on today's code), then the fix, then the report commit (section 2). The finding, its evidence and the decision are in decisions.md "The deep-dive review"; the backlog line is under "Trust and robustness".
+
+### gorge, G27: a result that is not a number but holds a float gets ⚠ (F36), branch `p1/gorge-m4-symfloat`
+From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #17). Starts when the owner says yes (decisions.md "Needs the user"). Read: docs/04 2.3 #17 and 2.4 (the mark rules, "unless they hold a float"), `app/src/engine/homeEval.ts` (`symbolic()`), `app/src/engine/host.ts` (`cas()`: the non-numeric return, and `defsOf(…, { warn: "unchecked" })` beside it), `app/src/engine/format.ts` (`markOf` for a result with no value), the CAS branch of `finish()` in `app/src/state/session.svelte.ts`.
+
+**Behaviour today** (`FACTS=1 node tools/probes/engine.ts …`, and with `MODE=cas`, 2026-10-15):
+- Home and CAS `evalf(x+sin(10^22))` → `x-0.54764225985`, no mark. Right: x − 0.852200849767… (`oracle`, mpmath at 40 digits: sin(10²²) = −0.8522008497671888…), so every digit shown is wrong.
+- `evalf(x^2-2=0)` → `x^2-2.0=0.0` and `evalf([1/3,x])` → `[0.333333333333,x]`, no mark.
+
+**Cause:** a non-number got no mark (docs/04 2.4 before 2026-10-15). Home's `symbolic()` returns `exactRational: false`, `reliableDigits: null` and no `warn`; CAS returns no facts; so `markOf` (no value, not `approximate`) gives none. The definitions log already records the same text as unchecked.
+
+**Commits:**
+1. **Tests** (failing today), `source: oracle` or `derived`: Home cases in `tests/golden/home.yaml` with mark `⚠` (no count) for the three inputs; the same in CAS (the golden gate's CAS cases if a stage reads them, else a Vitest in `app/src/engine/host.test.ts`); guards that keep no mark: `x+1/3`, `factor(x^2-1)`; a guard that a numeric float result keeps its own mark.
+2. **Fix:** when the text of a non-number holds a float literal (`hasFloat`), the result carries `approximate: true` and `warn: "unchecked"` (Home: `symbolic()`; CAS: the non-numeric return), so `markOf` gives `⚠`, the way an undecided `==` test on a float already does (R18f1, R18f2). Check that the history row draws it in both views (the session keeps CAS facts only when `r.approximate` is set).
+3. **Report:** the cases, and every golden or e2e case whose mark changed.
+
+Gate: golden gate; vitest; typecheck. Not in this package: a check per float that could earn `≈` (docs/04 2.4 says when it would be worth it).
+
+### ron, R44: a long result's chip keeps its value, and Ans is never dropped (F37), branch `p1/ron-m4-longchip`
+From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #18). Starts when the owner says yes, after R29 (the same chip code and tests). Read: docs/04 2.3 #18 and 2.8, `app/src/state/session.svelte.ts` (`finish()` around line 446, `chipFor`, `lastChip`), `app/src/App.svelte` (`insertResult`, the Ans-first branch of `run()`), `app/src/engine/homeEval.ts:485` (what `full` holds), `app/src/input/parse.ts:634` (a missing chip).
+
+**Behaviour today** (probes 2026-10-15): Home `2^10000` shows `≈ 1.99506311688E3010` (right). Tap it, `×1`, Enter: `= 1.99506311688E3010`, marked exact, for a value that is not 2^10000. Then `+3` on the empty line gives `= 3`, not Ans + 3.
+
+**Cause:** `finish()` keeps `r.exact ?? r.full` as the chip value, and only when it is ≤ 2 kB. 2^10000's exact text has 3,011 digits, so the item gets no chip: `insertResult` inserts the drawn LaTeX (`1.99506311688\times10^{3010}`, an exact number to the parser), and `lastChip()` gives nothing, so Ans-first inserts no `\ans` and the parser reads `+3` as 3. `homeEval` already puts the right value in `r.full`: the exact text up to 2 kB, else the P-digit decimal.
+
+**Commits:**
+1. **Tests** (failing today; e2e in `app/test/chips.spec.ts` with the real engine, since the value matters): tap `2^10000`, `×1` → mark `≈` and the first 15 digits 1.99506311688075 (`oracle`); `2^10000` then `+3` → the line starts with Ans and the result is `≈ 1.99506311688E3010`; a short exact result still gives an exact chip (`1/3`, tap, `×3` → `= 1`, docs/04 2.3 #8).
+2. **Fix:** the chip value is the engine's `full` (CAS: `numeric.full` when there is one), with `fullExact` following it. Ans-first inserts `\ans` whenever the view has a finished result; a result with no chip value (a symbolic text over 2 kB) then fails at Enter with a message that says why (today's text, "Ans: no result to use in this view yet", is wrong for it). The drawn LaTeX goes in only for a result that is not a number.
+3. **Report.**
+
+Gate: chips, entry and tasks e2e; vitest; typecheck; the start chunk within its budget.
+
+### ron, R45: hardware keys take the keypad's path: arrows, ⌫, Del and letters (F38), branch `p1/ron-m4a-hwpath`
+From the architecture check of 2026-10-15 (sandra; docs/04 5.5 points 1 and 2). Starts when R43 is merged and the owner says yes; before R4a, since Find takes letters. Read: docs/04 5.5, `app/src/entry/hwkeys.ts`, `app/src/App.svelte` (`press`, `run`, `historyKey`, `sheetPress`), `app/test/hwkeys.spec.ts`.
+
+**Behaviour today** (code, 2026-10-15):
+- The arrow keys are not caught: `hwkeys.ts:133` lets every key name longer than one character through to MathLive, which stops between sin and its bracket and inside names (R27b removed those stops for the keypad, `stops.ts`), skips R10's ▶ jump, and ▲ on an empty line picks no history row.
+- Backspace, Delete and letters call `EntryController.run` directly (`hwkeys.ts:128-131`, `:149`), past `press()`: a picked row is not dropped first, and an open sheet does not see them. Whether a letter then types into the line behind an open sheet: the first test finds out.
+
+**Commits:**
+1. **Tests** (failing today), in `app/test/hwkeys.spec.ts`: ArrowRight and ArrowLeft through `\sin\left(2\right)` and `\frac{\frac12}{□}` visit exactly the positions ▶ and ◀ visit; ArrowUp on an empty line with history picks the last row and Enter inserts it; with the Tmpl sheet open, a hardware digit picks (as today), and a letter and Backspace do what the keypad's keys do there.
+2. **Fix:** `hwkeys.ts` turns Backspace into `bksp`, Delete into `bksp` in the Shift layer, and the four arrows into `left`, `right`, `up`, `down`, all through `onKey` → `press()`. A letter goes through `press()` too (a small entry in App for a typed letter, which runs the sheet, picked-row and app checks before `entry.run`), so Find (R4a) and the unit slots (R24c) receive hardware letters like keypad ones. Shift + arrows (selection), Home and End stay with MathLive.
+3. **Report:** anything a hardware key did before that it no longer does.
+
+Gate: hwkeys, cursor, tmpl, sheet and keys e2e; the ⌫ grid; typecheck; the start chunk within its budget (`hwkeys.ts` stays lazy).
 
 ### gorge, G20: the stored values a CAS result used, the engine half (F28), branch `p1/gorge-m4-uses`
 Backlog F28; decisions.md "Home and CAS share one Giac context". No UI. Read:

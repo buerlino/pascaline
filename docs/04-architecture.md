@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Pascaline architecture for the precision-engineering goal
 
-*sandra, 2026-10-12. Base: `phase-1` at b7734af. **This document supersedes [02-architecture-plan.md](02-architecture-plan.md) wherever the two differ.** docs/02 stays the record of the original plan and of the reasoning that still holds (solver choice in section 4, licence and F-Droid in sections 10–11). Binding inputs: CLAUDE.md (goal, three principles, hard rules), [03-feature-analysis.md](03-feature-analysis.md) (the owner's design rules), [decisions.md](decisions.md) P8. Every "today" statement cites `file:line` or a probe; Appendix A lists the probes and how to rerun them. **(to verify)** marks what was not checked, with who checks it and how (Appendix C).*
+*sandra, 2026-10-12. Base: `phase-1` at b7734af. **This document supersedes [02-architecture-plan.md](02-architecture-plan.md) wherever the two differ.** docs/02 stays the record of the original plan and of the reasoning that still holds (solver choice in section 4, licence and F-Droid in sections 10–11). Binding inputs: CLAUDE.md (goal, three principles, hard rules), [03-feature-analysis.md](03-feature-analysis.md) (the owner's design rules), [decisions.md](decisions.md) P8. Every "today" statement cites `file:line` or a probe; Appendix A lists the probes and how to rerun them. **(to verify)** marks what was not checked, with who checks it and how (Appendix C). **Checked again on 2026-10-15** against `phase-1` at 3aa1a66, after milestone 4a's entry work (R22–R31, R42): the "today" statements below were brought up to date where the code had moved; 2.3 #17–#18 and 5.5 are new (#19 is the Opus pass's F35) (report: [shifts/2026-10-15-sandra-archcheck-report.md](shifts/2026-10-15-sandra-archcheck-report.md)).*
 
 How to read each area: **today** (verified), **decision** (one, with the reason), **alternatives** (one line each), **budgets and gates**, **risks**, **what would change it**. Sections 1–7 follow the brief's areas 3.1–3.7. Section 8 has the component diagram, the interface list and the budget table.
 
 ## 0. The decisions on one page
 
-1. **One mark on every Home and CAS number:** `=` the decimal shown is the exact value; `≈` rounded, and every digit shown is right; `⚠` fewer reliable digits than asked, or a failed check. The engine supplies the facts, our formatter decides the mark for the format shown (2.4).
+1. **One mark on every Home and CAS number:** `=` the decimal shown is the exact value; `≈` rounded, and every digit shown is right; `⚠` fewer reliable digits than asked, or a failed check. The engine supplies the facts, our formatter decides the mark for the format shown (2.4). A result that is not a number but holds a float (`x-0.54764225985`) gets `⚠`, since nobody checked its digits (2.3 #17).
 2. **No digit is shown that the engine has not confirmed:** non-rational values are evaluated at two precisions and only agreeing digits are shown; floats that Giac's numeric code returns on the "exact" path are `⚠` until the function has passed an accuracy audit, and inverse functions are substituted back like Solve roots (2.4, 2.5).
 3. **Digits up to 30**, working precision `max(30, digits+10)`, value precision `max(40, digits+10)` (2.5).
 4. **Results are reused as chips that carry the full value**; Ans on Shift + `+`; an operator typed on an empty line starts with Ans, as on the reference (2.8).
@@ -16,7 +16,7 @@ How to read each area: **today** (verified), **decision** (one, with the reason)
 7. *(Python `calc.eval`: removed with the Python app, P11; 2.10.)*
 8. **Find is one static index generated at build time** (Giac's English help lines, libqalculate's units, constants and prefixes, our alias file), searched by our own ranking code on the main thread, fetched when idle after the engine is ready and parsed on first open (section 3).
 9. **Constants, units, prefixes and results enter the entry line as atomic MathLive macros** (`\const{ID}`, `\unit{ID}`, `\pfx{p}`, `\res{n}`, `\ans`); qalc never sees text the user typed (3.6, 4.3).
-10. **The unit view parses units with our P1 parser** and sends qalc only whitelisted names; qalc's default "try exact" mode is verified exact for SI-defined factors; our adapter turns qalc's silent non-answers (mismatched sums, misused temperatures) into messages (section 4).
+10. *(P15, decided by the owner 2026-10-14 if G15's check passes; G15 is running: the unit view computes in the Giac worker with the Find index's exact factors, and libqalculate is used only at build time. If G15 holds, its merge rewrites items 10 and 13, section 4's engine parts, 6.1, 8.1–8.3 and Appendix C. Until then they describe the fallback.)* **The unit view parses units with our P1 parser** and sends qalc only whitelisted names; qalc's default "try exact" mode is verified exact for SI-defined factors; our adapter turns qalc's silent non-answers (mismatched sums, misused temperatures) into messages (section 4).
 11. **Keys** (every difference from the G2 and its reason: [06-keypad-vs-g2.md](06-keypad-vs-g2.md)): Math = Find, Vars = Find on variables, Shift + Math = Memory, Tmpl = templates, Shift + Tmpl = the unit view (units after the formula, P11), View = compact keypad (K4), Shift + View = Copy, Shift + Menu = Paste, Shift + `+` = Ans, Shift + 5 = `[ ]`, Shift + 8 = `{ }`, Shift + 4 = matrix editor, Shift + `−` = Base, Help = context help (5.1).
 12. **State:** one IndexedDB store with a schema version; user definitions are persisted and replayed at start, so variables survive a relaunch (6.2).
 13. **The qalc engine build joins `build.sh` in milestone 4**, because the Find index takes its constant values and unit factors from it; the qalc worker and the unit view stay milestone 5 (7.1).
@@ -55,18 +55,18 @@ The top risks are in section 9.
 
 | Module | Faster | More trustworthy | Works against the goal today | Cost |
 |---|---|---|---|---|
-| Keyboard (`spec/keyboard.yaml`, `keyboard/`) | the reference's logical layout; hold-and-drag cursor (K2; removed by P11, 2026-10-13) | — | Vars, Math, Tmpl do nothing (`special: none`, `spec/keyboard.yaml:68-70`); no Ans key; no copy or paste | in the start chunk (142.6 kB total) |
-| Entry, MathLive (`entry/controller.ts`) | textbook entry; result insertion (L5) | — | inserting a result inserts the **rounded** digits shown (`App.svelte:132`, `:270`) | 808 kB chunk after the keypad |
-| Parser (`input/parse.ts`, `emit.ts`) | one rule per key | rejects unknown input | `0xFF` typed with the keys becomes `0*x*F*F` = 0 (probe, 2.3 #1); `\mathrm{…}` tokens are rejected (`parse.ts:540`) | 16 kB min |
-| Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel restores definitions | the definitions log is stored in IndexedDB and replayed at start (G3, 6.2) | Giac 9.75 MB wasm |
-| Home evaluation (`engine/homeEval.ts`) | 92 ms p95 | exact-first, 123/123 golden | a rounded result is `approximate: false` (`homeEval.ts:242`); lists, matrices and `solve` show Giac's raw text (`homeEval.ts:235-239`); floats returned by Giac's numeric functions count as exact (2.3 #2–#4) | — |
-| Formatter (`engine/format.ts`) | re-formats without the engine | BigInt, one rounding | `tieRisk` is computed but nothing reads it (grep: only engine files) | in the start chunk |
-| History and settings (`state/session.svelte.ts`, `storage.ts`) | history survives a relaunch | — | digits capped at 15 (`session.svelte.ts:86`, `Settings.svelte:22`); no schema version | — |
+| Keyboard (`spec/keyboard.yaml`, `keyboard/`) | the reference's logical layout; the trackpad (K1) and flicks (R9) | — | Vars and Math do nothing yet (`special: none`, `spec/keyboard.yaml:96-97`; Find is R4a, R4b) | in the start chunk (151.9 kB raw, 53.0 kB gzip with the rest of it, 2026-10-15) |
+| Entry, MathLive (`entry/`: `controller.ts`, `delete.ts`, `stops.ts`, `hwkeys.ts`) | textbook entry; results as chips (R2); ⌫ keeps templates whole (R23–R26h); the cursor stops only at boxes (R27b) | — | a result whose exact text is over 2 kB goes back as its rounded digits, and Ans is lost after it (2.3 #18); hardware arrows, ⌫ and letters skip part of the key path; what a box is, is written three times (5.5) | 808 kB chunk after the keypad; `delete.ts` and the others 15 kB, lazy |
+| Parser (`input/parse.ts`, `emit.ts`) | one rule per key | rejects unknown input | a second decimal point and a digit touching a chip still parse (2.3 #11, #12: R29); one-line `÷` binds unlike the G2 (#13: R30) | 25.6 kB lazy (`parse` chunk, out of the start chunk since M4-3) |
+| Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel and a crash restart the worker and replay the definitions; definitions survive a relaunch (G3) | no memory cap (F32: G24); a stored definition that crashes the worker restarts it forever (F31: G19) | Giac 9.75 MB wasm |
+| Home evaluation (`engine/homeEval.ts`) | 92 ms p95 | exact-first; marks and the agreement check (G0, G2) | a result that is not a number but holds a float is shown unmarked, with digits nobody checked (2.3 #17); `normald_icdf`'s value is not polished yet (#2, EN7) | — |
+| Formatter (`engine/format.ts`) | re-formats without the engine | BigInt, one rounding | `tieRisk` is computed but nothing reads it; the agreement check covers the case (2.4 rule 4) | in the start chunk |
+| History and settings (`state/session.svelte.ts`, `storage.ts`) | history survives a relaunch | digits ≤ 30, settings schema 2, every stored value stamped (`storage.ts` `DATA_VERSION`) | a half-typed line is lost when Android kills the app (F30: R34) | — |
 | Function app | Plot 56 fps on the Tab One | every number shown comes from the engine (`apps/function/compile.ts` header) | — | 19.6 kB + JSXGraph 1,035 kB lazy |
 | Solve app | — | every root substituted back, ⚠ on failure | — | 8.2 kB lazy |
-| CAS view (`host.ts:151-177`) | — | exact results | float results unmarked and sometimes wrong (2.3 #6) | — |
-| PWA and Capacitor shell | offline; wasm stored uncompressed (R2) | no trackers, no INTERNET permission (C5) | — | the whole build is precached: 13 MB today |
-| Build (`build.sh`, P2 container) | — | reproducible engine | no automated size gate (the "L7 size test" in the backlog does not exist: no test reads chunk sizes) | — |
+| CAS view (`host.ts` `cas()`) | — | exact results; typed decimals exact (P9); a numeric result with a float drawn and marked by our formatter | a symbolic result with a float in it is unmarked and can be wrong (2.3 #17); a value stored in Home is used without a sign (#15: G20, R32) | — |
+| PWA and Capacitor shell | offline; wasm stored uncompressed (R2) | no trackers, no INTERNET permission (C5) | — | the whole build is precached: 12.3 MB (2026-10-15) |
+| Build (`build.sh`, P2 container) | — | reproducible engine; the size test (A1) runs in `npm run build` | no CI (C3; the local `npm run gate` is A6) | — |
 
 ---
 
@@ -74,7 +74,7 @@ The top risks are in section 9.
 
 ### 2.1 Today, per path
 
-All "probe" rows ran on the dev engine `engine/giac/_out/gsl` through `EngineHost` (Appendix A).
+All "probe" rows ran on the dev engine `engine/giac/_out/gsl` through `EngineHost` (Appendix A). *This table is the state of 2026-10-12, before the marks. Since G0, G2 and R3 every numeric row is marked by 2.4's rules and the line numbers have moved; what is still shown without its mark is 2.3 #17 and #18 (checked 2026-10-15).*
 
 | Path | Where | Working precision | Rounding | What the user sees | Marked today |
 |---|---|---|---|---|---|
@@ -91,7 +91,7 @@ All "probe" rows ran on the dev engine `engine/giac/_out/gsl` through `EngineHos
 | CAS approximate | `host.ts:79` (`Digits` = Home digits) | Giac floats, decimals read as binary | Giac's printing, not our formatter | `1-0.9-0.1` → `1.7763568394e-15`; `evalf(sin(10^22))` → `-0.54764225985`; `1e16+1-1e16` → `0.0` (probes) | no |
 | Unit view (milestone 5) | section 4 | qalc, "try exact" | — | — | — |
 
-**Reuse and copy today.** No clipboard, share or CSV code exists (03 section 2, grep). Tapping a result, or Up then Enter, inserts the LaTeX of the displayed text (`App.svelte:132`, `:270`), so the rounded digits. The engine keeps `pasans` and `pcasans`, but nothing reaches them: `Ans` typed with Alpha parses as `A*n*s` (probe), and the reference's Ans key (Shift + `+`) is "not ours yet" (`spec/keyboard.yaml`, key `add`).
+**Reuse and copy on 2026-10-12** (since then results are chips, R2, and copy and paste exist, A3). No clipboard, share or CSV code exists (03 section 2, grep). Tapping a result, or Up then Enter, inserts the LaTeX of the displayed text (`App.svelte:132`, `:270`), so the rounded digits. The engine keeps `pasans` and `pcasans`, but nothing reaches them: `Ans` typed with Alpha parses as `A*n*s` (probe), and the reference's Ans key (Shift + `+`) is "not ours yet" (`spec/keyboard.yaml`, key `add`).
 
 ### 2.2 Where the facts live
 
@@ -119,8 +119,11 @@ Each item becomes a regression case before its fix (CLAUDE.md). Values marked `o
 | 14 | Hardware keyboard `1e-3`: the parser gives `1*exp(1)-3` | `≈ -0.281718171541` | 0.001 (`derived`) | fixed (R31): `e` after a number's digits is ᴇ |
 | 15 | CAS after Home `3 ▶ x`: `int(x^2,x)`; `factor(x^2-1)` | `9*x`; `8`, with no sign that x held 3 | the answer for the stored x, saying so | G20, R32 (F28) |
 | 16 | DEG: `exp(i*90)`; `exp(i*pi)` | `= i`; `-1` | −0.448073616129+0.893996663601·i (`derived`) if `exp` ignores the angle mode, as `exp(i*pi)` = −1 already does | G21, after G2 item 54 (F29) |
+| 17 | Home or CAS, a result that is not a number but holds a float: `evalf(x+sin(10^22))`; `evalf(x^2-2=0)` (probe 2026-10-15, `FACTS=1 node tools/probes/engine.ts`) | `x-0.54764225985`, no mark (`exactRational: false`, `reliableDigits: null`, no `warn`, so `markOf` returns none); `x^2-2.0=0.0`, no mark | x − 0.852200849767… (`oracle`): wrong from the first digit | `⚠` on every non-number with a float in it, as the defs log already records it (`host.ts` `defsOf(…, { warn: "unchecked" })`); G27 (F36) |
+| 18 | Home `2^10000`, tap the result, `×1` (probe 2026-10-15) | `= 1.99506311688E3010`: the exact text has 3,011 digits, over the 2 kB chip limit, so the session keeps no chip (`session.svelte.ts:446` takes `r.exact` before `r.full`) and the rounded digits go in as an exact number (`App.svelte:79`). After it, `+3` on the empty line is `= 3`, not Ans + 3 (`lastChip()` gives nothing, so no `\ans` goes in, and the parser reads `+3` as 3) | `≈ 1.99506311688E3010` (the value is still 2^10000, `oracle` 1.995063116880758…E3010); Ans + 3 | the chip takes the engine's `full` (`homeEval.ts:485` already gives the P-digit decimal when the exact text is long); Ans-first never drops silently; R44 (F37) |
+| 19 | Home or CAS, a closed `==` test Giac cannot decide: `cos(π/7)−cos(2π/7)+cos(3π/7) == 1/2` (Opus pass, probe 2026-10-15) | `= 0` | true (`derived`) | R18f3 (F35; backlog "Trust and robustness" item 22) |
 
-At the default 12 digits in Home, #1 and #2 show wrong digits today; #3–#5 appear only above 15 digits, which the setting does not allow yet, so they gate EN3(a). #11–#16 were found by the deep-dive review (2026-10-14, decisions.md "The deep-dive review"); each gets its regression case first, in the package named.
+At the default 12 digits in Home, #1 and #2 show wrong digits today; #3–#5 appear only above 15 digits, which the setting does not allow yet, so they gate EN3(a). #11–#16 were found by the deep-dive review (2026-10-14, decisions.md "The deep-dive review"), #17 and #18 by the architecture check and #19 by the Opus pass, both 2026-10-15; each gets its regression case first, in the package named.
 
 ### 2.4 Decision: the mark and the agreement check
 
@@ -128,7 +131,7 @@ At the default 12 digits in Home, #1 and #2 show wrong digits today; #3–#5 app
 - **`=`** when all of these hold: the engine says the value is an exact rational (exact path, Giac returned `p/q`); the text shown in the current format is exactly `p/q` (our formatter knows: the `sticky` flag and the digits cut off); no input was inexact (a constant with a CODATA uncertainty, or a result chip whose value is not exact, 2.8). Examples: `1/4` → `= 0.25`; `0.1+0.2` → `= 0.3`; `1e300*1e300` → `= 1E600`; `1/4` in FIX 1 → `≈ 0.3`.
 - **`≈`** for every other number, provided every digit shown is confirmed: `1/3`, `sqrt(2)`, `2^200` in STD, the float fallbacks, constants with an uncertainty.
 - **`⚠ n`** when fewer than `digits` digits are confirmed: the result is shown with the `n` confirmed digits and the mark says so. Solve and analysis keep their existing ⚠ for a failed residual check.
-- No mark for non-numbers (symbolic results). A list or matrix of numbers gets one mark, the weakest of its elements, and every element is formatted by our formatter (today Giac's text: 2.1).
+- No mark for non-numbers (symbolic results), **unless they hold a float**: then `⚠` without a count, since nobody checked its digits (2.3 #17; principle 3 decides it: "flagged"). A check per float that could earn `≈` is not worth building until the `⚠` proves noisy in daily use. A list or matrix of numbers gets one mark, the weakest of its elements, and every element is formatted by our formatter (today Giac's text: 2.1).
 
 Num tables and the Solve and analysis results show only `⚠` (a mark on every cell would be clutter; their view header says "rounded to n digits"). The existing "approximate" note goes away: `≈` covers it.
 
@@ -136,7 +139,7 @@ Num tables and the Solve and analysis results show only `⚠` (a mark on every c
 1. An exact rational needs no check: BigInt is exact.
 2. Any other value is evaluated at precision P = `max(40, digits+10)` and again at P + 20. The confirmed digits are the largest n at which both values, widened by their difference (plus one ulp), round alike (G2; stricter than "common digits less one" at ties). If fewer than `digits` agree, the check runs once more at P + 20 against P + 40. If they cover the shown digits, the mark is `≈`; otherwise `⚠ n`. A float from a function that is not audited shows `⚠` without a count (M4-5): two of Giac's routines can agree on wrong digits.
 3. A value that Giac's numeric code returned as a float on the "exact" path (the exact output is a float literal, as `normald_icdf` gives `-1.2815515655446`) is re-evaluated once with `Digits` on the other side of 14 (double ↔ MPFR) and compared the same way. If one side has no value (2.3 #5), the other side's digits are shown, at most 15 for a double. Such a value gets `⚠` unless every function in the input is on the audited list (tier 0, 3.3), because agreement between two of Giac's routines does not prove either right (2.3 #2).
-4. A `tieRisk` value (`format.ts:134`) is re-evaluated at P + 20 before rounding, so the flag finally has a reader.
+4. *(Not built, and not needed: rule 2 already compares P with P + 20, so a value so near a tie that the two do not round alike loses that digit. `tieRisk` (`format.ts:140`, set in `homeEval.ts:325`) still has no reader; drop it when `homeEval.ts` is next touched. Checked 2026-10-15.)*
 
 Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, probe timings) and one more evaluation only for the rare float-returning inputs.
 
@@ -194,7 +197,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 ### 2.9 Decision: CAS
 
-- A CAS result that contains a float gets `≈`, and its numbers are drawn by our formatter at the digits setting (`CasResult` gains the numeric value when the result is a number, 8.2); its text and LaTeX come from `numeric`, never Giac's float. Exact CAS results get no mark. An explicit precision (`evalf(x,50)`) is honoured: that many digits, only the confirmed ones (M4-6).
+- A CAS result that is a number with a float gets its mark from our formatter (`≈`, or `⚠` by 2.4), and a symbolic result with a float gets `⚠` (2.4; 2.3 #17); numbers are drawn by our formatter at the digits setting (`CasResult` gains the numeric value when the result is a number, 8.2); its text and LaTeX come from `numeric`, never Giac's float. Exact CAS results get no mark. An explicit precision (`evalf(x,50)`) is honoured: that many digits, only the confirmed ones (M4-6).
 - **P9 (accepted by the user, 2026-10-12):** typed decimals in CAS become exact rationals before evaluation, as in Home (`toExactLiterals`); `approx()` (Shift + Enter) gives decimals. This removes 2.3 #6 at the source (the mark alone would show `≈ 1.7763568394E-15` for `1-0.9-0.1`: marked, but not right). The visible change: `1.5x` shows as `3/2·x`, where the reference CAS keeps `1.5·x`. The `bench` stage of the golden gate runs in CAS mode, so its decimal inputs are re-checked.
 
 ### 2.10 Decision: Python
@@ -210,7 +213,7 @@ Removed (P11, 2026-10-13; R5 the app side, A5 the build side). The Python app, i
 ## 3. Find (EN1)
 
 ### 3.1 Today
-- Vars, Math and Tmpl do nothing (`spec/keyboard.yaml:68-70`). Lists open on the sheet (`app/src/views/Sheet.svelte`, model `sheet.svelte.ts`, keys `sheetKeys.ts`; docs/05 3.1): numbered rows, digit keys pick, and lists longer than 10 items take a letter filter.
+- Vars and Math do nothing yet (`spec/keyboard.yaml:96-97`); Tmpl opens the template palette (R10). Lists open on the sheet (`app/src/views/Sheet.svelte`, model `sheet.svelte.ts`, keys `sheetKeys.ts`; docs/05 3.1): numbered rows, digit keys pick, and lists longer than 10 items take a letter filter.
 - Any `\operatorname{name}\left(…\right)` reaches Giac as `name(…)` (probe: `\operatorname{par}\left(4.7,10\right)` → `par(4.7,10)`), so inserting a function needs no new parser rule.
 - **Data, checked 2026-10-12:** Giac's `doc/aide_cas` has 1,780 entries, each with an English line (average 80 characters) next to syntax and example lines. libqalculate 5.13.1 `units.xml.in` 426 unit definitions (prefixed forms are not separate entries; a plain count of `<unit` tags gives 982 because 556 of them are references inside definitions), `variables.xml.in` 184 constants (166 plus 18 built-in) with name kinds (`ar:c,speed_of_light`) and an `uncertainty` attribute, `prefixes.xml.in` 34 prefixes. `aide_cas` also lists Giac's own units and constants (`_kph`, `_c_`), which must not enter the index (P3 decision 1).
 - **Prototype measurements** (`tools/probes/find/`, reading the pinned tarballs): an index of names, English lines, titles and values, without Giac's `_` entries: 2,179 items (1,569 functions, 426 units, 184 constants), 282 kB JSON, 68 kB gzip, 59 kB brotli. A tiered ranking in plain JS over it: p50 0.82 ms, p95 1.04 ms per key on the desktop (20 queries × 20 rounds; a first scratch run with Giac's `_` entries, 2,390 items, gave p95 1.23 ms). It already ranks `speed` → c, `kph` → km/h, `ohm` → Ω, `normlad` → normald.
@@ -245,7 +248,7 @@ interface FindItem {
 
 Live items (variables, user functions) have the same shape with `kind: "var" | "userfn"`, built at run time (3.4).
 
-**Format and size:** `find-index.<hash>.json`, a Vite asset outside every chunk. Budget ≤ 400 kB raw, ≤ 100 kB gzip (prototype: 282 / 68; G4: 395 / 74.5, so the raw budget is nearly used up, see decisions.md G4). **i18n:** English titles and descriptions in the index; another language is an overlay file `find-index.<lang>.json` keyed by id with its own titles and aliases, merged at load. The structure allows it now; only English ships.
+**Format and size:** `find-index.<hash>.json`, a Vite asset outside every chunk. Budget ≤ 400 kB raw, ≤ 100 kB gzip (prototype: 282 / 68; G4: 395 / 74.5; since G3 left the tier-1 inserts to `prepare()`: 325.7 / 67.1 kB for 1,850 items, generated 2026-10-15). **i18n:** English titles and descriptions in the index; another language is an overlay file `find-index.<lang>.json` keyed by id with its own titles and aliases, merged at load. The structure allows it now; only English ships.
 
 **Generation, from source at build time** (gorge; `tools/find-index/generate.mjs`, Node, no network; run by `build.sh` after the engines, and by `npm run index` in development; output gitignored under `app/src/find/_gen/`):
 1. Giac `doc/aide_cas` from the pinned tarball: names, the English line (`2 …`) only, never French (R5), syntax and examples; entries starting with `_` dropped.
@@ -287,6 +290,8 @@ Budgets: index ≤ 100 kB gzip; key → list ≤ 16 ms p95 on the Tab One; Find 
 
 ## 4. Units: the unit view (EN2, P3 as amended by P8 and P11)
 
+**P15 (decided by the owner 2026-10-14 if G15's check passes; G15 is running):** the unit view computes in the Giac worker that is already loaded, with the Find index's exact factors (in the index of 2026-10-15, 399 of 435 units have `si` and 434 a `dim`), and libqalculate is used only at build time, as the index's source. If G15 holds, its merge rewrites 4.1, 4.2, 4.4 and 4.5 (and 6.1, 8.1–8.3, Appendix C); 4.3's entry and rules stay. Until then the engine parts of this section describe the plan before P15, which is the fallback (G10–G12).
+
 There is no separate Units app (P11): units are added *after* the formula, in unit slots, in the unit view opened by the units key (decisions.md P11 and S1; layout and press count in `docs/research/r7-unit-slots.md`). qalc does the unit arithmetic in its own worker; our parser and adapter decide what reaches it.
 
 ### 4.1 Today (the qalc spike build, probed 2026-10-12)
@@ -323,8 +328,14 @@ Worker 3, loaded on the first press of the units key; never at start. Same patte
   it opens one slot (quantity 1) and the end slot. ◀ ▶ jump between slots, never through the formula; a tap on
   the formula still puts the cursor there. Numbers belong in the formula: in a slot the number keys are prefixes.
   Built on MathLive's prompts: a read-only mathfield with `\placeholder[id]{}` per slot (`getPromptRange`,
-  `getPromptValue`, MathLive 0.111.1 `types/mathfield-element.d.ts:781-810`) **(to verify, ron, first step: a
-  stacked fraction inside a prompt, and our key handling routed to the prompt)**. **The unit pad (P14, decided
+  `getPromptValue`, MathLive 0.111.1 `types/mathfield-element.d.ts:781-810`). **Checked 2026-10-15** (sandra, a
+  throwaway Playwright probe, Pixel 7 profile): `setPromptValue` takes a stacked fraction, a power, a product, `√`
+  and a prefixed unit, and `getPromptValue` gives each back; in a read-only field ◀ ▶ (`moveToNextChar`) go prompt
+  to prompt (u1 → u2 → end slot) and never into the formula. Two traps: `insert()` with the caret outside a prompt
+  still changes the read-only formula (`72` became `972`), and MathLive merges neighbouring upright names
+  (`\mathrm{k}\mathrm{\Omega}` reads back as `\mathrm{k\Omega}`). So a slot's tokens live in R24a's model and are never
+  read back from the field, and the unit view writes a slot only with `setPromptValue`, never through
+  `EntryController.run` (5.5). Not checked: how tall a stacked unit draws in a prompt (R24c's gallery). **The unit pad (P14, decided
   2026-10-14):** in a slot the maths rows are prefix and unit cells drawn over the keys (R21's layer), in one fixed
   arrangement measured by package S5, plus a few user cells set from Find (their number from S5). A slot holds unit
   ids, never text; Enter goes to the next slot and evaluates in the end slot; Math opens Find on units. The rules
@@ -418,6 +429,26 @@ Every key press counts 1, Shift and Alpha included; letters typed in Find count 
 - **A base is a display mode of an integer result**, like the Format key's modes, not a property of the value. Shift + `−` opens the Base menu (HEX, BIN, OCT, DEC for the last result). Word size (8, 16, 32, 64) and signed (two's complement) or unsigned are settings. A non-integer gives a message.
 - **Entry:** `0x…`, `0b…`, `0o…` become one literal token in the parser (Giac reads `0xFF` as 255: probe); hex digits A–F are the Alpha letters. Today the same keys give `0*x*F*F` (2.3 #1), so milestone 4 makes it an error and milestone 6 a literal.
 - **Bitwise:** `bitand`, `bitor`, `bitxor` work (probe); shifts and rotations as EN7 definitions that respect the word size.
+
+### 5.5 Decision: the entry line, one key path and one box model (architecture check, 2026-10-15)
+
+**Today** (`phase-1` at 3aa1a66; code read, and the probes named):
+- **The key path:** keypad → `App.svelte` `press()` (Shift and Alpha, an open sheet, keys queued while an app loads) → `run()` (the layer's action, a picked history row, Ans first on an empty line, the a b/c form cycle) → `EntryController.run` (`entry/controller.ts:276`). `run` has ten branches before MathLive's own command: ▶ to the next empty box (`nextBox`), ⌫ and Del at a template (`delete.ts`), text mode back to maths, ᴇ on an empty line, 10ˣ after a digit, an E number, a selection under a power or DMS, a chip, a compound term before a power or ÷; after an arrow, `settle()` (`stops.ts`).
+- **Hardware keys** (`hwkeys.ts`): digits, operators and `e` after a number take the keypad's path (`onKey` → `press()`). Backspace, Delete and letters call `EntryController.run` directly (`hwkeys.ts:128-131`, `:149`), past `press()`'s sheet and picked-row handling. The arrow keys are not caught at all (`hwkeys.ts:133` lets every key name longer than one character through), so MathLive moves the caret by its own rules: no `settle()`, no ▶ jump, no ▲ history pick. Whether the field keeps the focus while a sheet is open, so a hardware letter types behind it, is **(to verify, ron, R45's first test)**.
+- **What a box is** is written three times: `delete.ts` (`boxTemplate()` with ten recognisers keyed on MathLive's atom LaTeX, beside `Template` for bracket pairs and `Power` for exponents; `startsBox()`, `endsBox()` at `delete.ts:1013`), `stops.ts` (`isStop()`, its own regexes for names and marks; it shares only `NAME`), and `nextBox` (any `\placeholder` after the cursor: the cause of F34). R43's package text proposed a fourth test (the next offset's LaTeX is empty, or the depth drops), which misses the boxes that end at a mark: EQ's comma and DMS's ° and ′, which `endsBox()` knows **(to verify, ron, in R43's tests: ▶ from the end of ½ in `EQ(½,□)` and in `½°□′□″`)**.
+- **The term before the cursor** is scanned five times: `selectENumber`, `selectCompound`, `selectChip`, `afterDigit` (controller) and `afterNumber` (hwkeys); R29 adds the parser's side of "where a number ends".
+- **Tests:** the ⌫ grid (`app/test/bksp-grid.spec.ts`) reads every template from `spec/keyboard.yaml`, so a new key joins it by itself. The cursor has no grid (`cursor.spec.ts` and `tmpl.spec.ts` list cases), which is how F34 got through.
+- **The unit view's field** (4.3): read-only with prompts; `insert()` outside a prompt changes it, and the hardware-key handler is attached to the entry field only.
+
+**Decision:**
+1. **One key path.** Every key, from the keypad or a hardware keyboard, goes through `press()`. `hwkeys.ts` only turns a character or key name into a keypad key id and layer (Backspace = `bksp`, Delete = `bksp` in the Shift layer, the arrows = `left`, `right`, `up`, `down`), and a letter into a typed letter that `press()` routes like a keypad letter. Then an open sheet, a picked row, Find (R4a) and the unit slots (R24c) see hardware keys exactly as keypad keys. Package R45.
+2. **One owner per key press.** `press()` hands the key to whatever owns it now: an open sheet, Find, a unit slot, a picked history row, or the entry line. Two exist (`sheetPress`, `historyKey`); Find and the slots make four. The unit view never sends keys through `EntryController.run`: its slots change only through R24a's model and `setPromptValue`. The common seam is built with the second new owner (R24c), not before.
+3. **One box model.** `delete.ts`'s model of a template's boxes (`boxTemplate()`, `startsBox()`, `endsBox()`) moves to `entry/boxes.ts`, and `stops.ts` and `nextBox` read it. R43 takes the end of a box from `endsBox()` instead of a new test, and adds a cursor grid beside the ⌫ grid: for every template in `spec/keyboard.yaml`, ▶ from the line start to the end and ◀ back stop at the start and the end of every box and nowhere else.
+4. **A new template** brings, in its commit, a parser rule with its round trip (as before) and a recogniser in `boxes.ts` when its LaTeX shape is new; the grids read the yaml and need nothing.
+
+**Alternatives:** a template registry that describes each key's boxes as data (cleaner, but every recogniser would be rewritten at once, and the grids already catch a missing one); leave the three models (each new template, the unit view and R29 then add more copies that drift apart, as F34 shows).
+**Risks:** the recognisers read MathLive's atom LaTeX (`\text{i}`, `\mathrm{d}`, `\,`), so a MathLive upgrade can break them without a type error; both grids are the guard and run before any upgrade merges. `delete.ts` has 1,105 lines: moving the model is mechanical but touches every ⌫ rule, so R43's gate keeps the ⌫ grid green.
+**Would change if:** R43 finds the move larger than its half day; then R43 only exports `endsBox()` from `delete.ts` and the move becomes a package of its own.
 
 ---
 
@@ -533,6 +564,7 @@ interface HomeResult {                                   // existing fields kept
   items?: HomeResult[];                                  // new: elements of a numeric list or matrix (rows flattened, with shape)
   shape?: [number, number];
   digits?: number;                                       // the digits evalf(e,n)/approx(e,n) asked for: shown with these (G3)
+  warn?: "unaudited" | "unchecked";                      // ⚠ although the digits agree (M4-5); from G27 also a non-number with a float
 }
 interface CasResult { /* ok, text, latex, timedOut, error, engineMs */ numeric?: HomeResult; }  // new: when the result is a number
 
@@ -585,13 +617,13 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 | Item | Budget | Today | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 148.81 / 51.93 kB (2026-10-14, after R18f1) | size test |
+| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 151.94 / 53.01 kB (2026-10-15, `phase-1` at 3aa1a66: 0.99 kB gzip left, so R35 comes before R21a) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
-| Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | prototype 282 / 68 kB | size test |
-| Unit view chunk | ≤ 30 kB raw | — | size test |
-| qalc wasm + glue | ≤ 1.0 MB brotli | spike 0.93 MB + 21 kB | size test |
-| Precache total | ≤ 18 MB | 13 MB | size test |
+| Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (generated, 2026-10-15) | size test (once Find loads it) |
+| Unit view chunk | ≤ 30 kB raw | — | size test; **its rule looks for `src/apps/units/`** (`app/scripts/size-check.ts:96`), while G16 and R24a put the code in `app/src/units/`, so the budget would never fire: the first of them to add a lazy chunk there points the rule at it |
+| qalc wasm + glue | ≤ 1.0 MB brotli | spike 0.93 MB + 21 kB; the row goes if G15 says P15 holds | size test |
+| Precache total | ≤ 18 MB | 12.3 MB (2026-10-15) | size test |
 
 "Start chunk" is the entry's JavaScript plus every chunk it imports statically (Vite manifest `imports`, transitively), as `app/scripts/size-check.ts` measures it. The entry's CSS is not counted (25.8 kB raw, 9.0 kB gzip on 2026-10-12): the budget was set on the JavaScript figure. CSS gets its own line if it grows past 40 kB raw.
 | Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with `defs` replay | 662 / 995 ms | device runs |
@@ -612,6 +644,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 3. **qalc's silent acceptance** of misread names, mismatched sums and offset-unit arithmetic. Mitigation: chips only, the generator's round-trip check, the adapter's single-term and temperature checks, `units.yaml`.
 4. **Tab One budgets for the new work** (Find per key, digits 30, two workers' memory) are desktop estimates until annabell measures them.
 5. **Pace on parser- and keyboard-heavy work** (03 risk 5): milestone 4 adds five token kinds and several key behaviours. Mitigation: each token lands with its round-trip case; ron's tasks are ordered so the harness (EN0) and the chips land before Find's UI.
+6. **The entry's box model is written three times** (5.5): every new template, the unit view and R29 would add copies, and the stop and ⌫ rules drift apart (F34 was one). Mitigation: one model in `entry/boxes.ts`, a cursor grid beside the ⌫ grid (R43), one key path for hardware keys (R45).
 
 ---
 
@@ -641,7 +674,9 @@ interface ClipboardPort {                                // new (m4): navigator.
 |---|---|---|---|
 | Digits 30 latency on the Tab One | annabell (m4) | `?bench=1&digits=12/20/30`, 5 cold runs | cap at 30 or 20 (2.5) |
 | Find per-key time on the Tab One | annabell (m4) | `?bench=find` | main thread or incremental/worker (3.2) |
-| MathLive keeps `expand: false` macros and draws chips distinctly | ron (m4, first EN1 task) | unit test + Playwright screenshot | token design (3.6); fallback: `\mathrm{const:ID}` with a parser rule |
+| MathLive keeps `expand: false` macros and draws chips distinctly | answered (R2) | `entry/macros.test.ts`, `app/test/chips.spec.ts` | token design (3.6): no fallback needed |
+| MathLive prompts in a read-only field (the unit slots) | answered 2026-10-15 (sandra, throwaway probe) | 4.3: values with fractions and powers round-trip, ◀ ▶ go prompt to prompt; `insert()` outside a prompt still edits the formula | R24a step 1, R24c (5.5 point 2) |
+| The stacked unit's height in a prompt | ron (R24c) | gallery at 360 × 740 | the row height of the unit view |
 | `navigator.clipboard` in WebView 131; `navigator.share` absent | annabell (m4) | on the Tab One APK | whether the Capacitor plugins are needed (2.6) |
 | Two workers' memory | annabell (m5) | `dumpsys meminfo`, 10-minute session | qalc worker idle shutdown (4.2) |
 | qalc release build (container) size and time | annabell (m4) | `engine/qalc/build-wasm.sh release` | size budget, build time |
