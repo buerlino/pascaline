@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // ⌫ and Del at a template (R23, bug F10; R26c, bug F15; R26d, bug F17; R26e, bug F18; decisions.md "⌫ at a bracket"
-// and "⌫ and Del keep a template whole"; R26f, bug F19). MathLive's own delete at the start of a `\left…\right` body
+// and "⌫ and Del keep a template whole"; R26f, bug F19; R26g, bug F20). MathLive's own delete at the start of a `\left…\right` body
 // turns the opening bracket into `\left.` and is stuck there, right after a pair it turns the closing bracket into
 // `\right.`, a deleted base leaves its exponent on whatever stands before it, a fraction or a root loses an emptied box
-// or joins its parts, and lim, Σ, Π and ∫ lose their bounds and marks; this module takes those presses first. Public
-// MathLive API only: offsets, `getElementInfo`, `selection`, `position`, `getValue`, `insert`. Plain TS; R26g–R26h
-// extend it to the other templates.
+// or joins its parts, lim, Σ, Π and ∫ lose their bounds and marks, and a matrix or piecewise loses an emptied cell, is
+// stuck at the start of a cell and goes whole from right after it; this module takes those presses first. Public
+// MathLive API only: offsets, `getElementInfo`, `selection`, `position`, `getValue`, `insert`. Plain TS; R26h extends
+// it to the last templates.
 //
 // How MathLive numbers a line: offset o is the cursor position after atom o. An atom's parts (a pair's body, a
 // script's branches) come before the atom itself, one level deeper, and each branch starts with an empty sentinel.
@@ -32,6 +33,10 @@ const INT = /^\\int(?![A-Za-z])/;
 /** ∫'s marks before its variable: a thin space and an upright d. */
 const THIN = "\\,";
 const DIFF = "\\mathrm{d}";
+/** A matrix, a vector or piecewise: a table whose cells are its boxes (R26g). */
+const ARRAY = /^\\begin\{(?:[pbvBV]?matrix|cases)\}/;
+/** Piecewise's mark at the start of each condition cell: the letters of `\text{if }`. */
+const IF_MARK = ["\\text{i}", "\\text{f}", "\\text{ }"];
 
 /** One template around a bracket pair: [name] pair [scripts], as offsets. */
 interface Template {
@@ -321,7 +326,7 @@ function removePower(mf: Field, p: Power): true {
 
 /**
  * One box, as positions: `from` its sentinel (or the mark or atom it starts after: lim's →, the = of Σ and Π, ∫'s
- * operator and d), `s` where its content starts (after a ∂ mark), `e` its last offset.
+ * operator and d), `s` where its content starts (after a ∂ mark or piecewise's `if`), `e` its last offset.
  */
 interface Box {
   from: number;
@@ -329,7 +334,7 @@ interface Box {
   e: number;
 }
 
-/** A fraction or a root with its boxes, as offsets. */
+/** A fraction, a root, lim, Σ, Π, ∫ or a table with its boxes, as offsets. */
 interface BoxTemplate {
   /** The position before the template and the offset of its atom: the range that holds all of it. */
   start: number;
@@ -361,11 +366,15 @@ interface BoxTemplate {
 
 const DIGIT = /^\d$/;
 
-/** The fraction, root, lim, Σ, Π or ∫ whose atom is at `q` (for lim, Σ and Π, also their bracket's), or undefined. */
+/**
+ * The fraction, root, lim, Σ, Π, ∫ or table whose atom is at `q` (for lim, Σ and Π, also their bracket's), or
+ * undefined.
+ */
 function boxTemplate(mf: Field, q: number): BoxTemplate | undefined {
   if (q < 1 || q > mf.lastOffset) return undefined;
   const l = latexAt(mf, q);
   if (BIGOP.test(l)) return bigOp(mf, q);
+  if (ARRAY.test(l)) return table(mf, q);
   if (isPair(mf, q)) {
     const x = atomStart(mf, q);
     const t = x > 0 && depthAt(mf, x) === depthAt(mf, q) ? bigOp(mf, x) : undefined;
@@ -439,6 +448,7 @@ function startsBox(mf: Field, o: number): boolean {
   const l = latexAt(mf, o);
   if (d > 0 && (l === "" || opMark(mf, o))) return true;
   if (d > 0 && l === "\\partial" && latexAt(mf, o - 1) === "" && depthAt(mf, o - 1) === d) return true;
+  if (d > 0 && ifMarkEnd(mf, o)) return true;
   return INT.test(l) || l === DIFF;
 }
 
@@ -570,6 +580,39 @@ function removeBoxes(mf: Field, t: BoxTemplate): void {
   mf.selection = { ranges: [[t.start, t.end]] };
   if (fillsRange(mf, t.start, t.end)) mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
   else mf.executeCommand("deleteBackward");
+}
+
+// ---- matrices, vectors and piecewise (R26g, F20) ----------------------------------------------------------------------
+// MathLive keeps a table as one atom whose cells are its branches, before it and one level deeper, in reading order
+// (row by row), each from its empty sentinel: `5\begin{pmatrix}2 & □\\ □ & □\end{pmatrix}` is 1 `5`, 2 (cell 1), 3 `2`,
+// 4 (cell 2), 5 □, 6 (cell 3), 7 □, 8 (cell 4), 9 □, 10 the table. Piecewise's condition cells start with the three
+// letters of `\text{if }`, the template's mark. Its own delete removes the □ of an emptied cell (a cell with nothing in
+// it, then stuck), does nothing at the start of a cell (only a multiline array's row goes, through `deleteRow`), and
+// deletes a filled table whole from right after it. Points 2-5 of "⌫ and Del keep a template whole" instead, through
+// deleteAtBoxes: every cell is a box, none is the main one (a filled table is selected first), and no row is removed:
+// the table keeps the shape its key gave it (the brief's default; G2 item 51 to confirm).
+
+/** The table whose atom is at `q`: one box per cell, a condition's from after its `if` mark. */
+function table(mf: Field, q: number): BoxTemplate | undefined {
+  const d = depthAt(mf, q);
+  const a = atomStart(mf, q);
+  const sentinels: number[] = [];
+  for (let o = a + 1; o < q; o++) if (depthAt(mf, o) === d + 1 && latexAt(mf, o) === "") sentinels.push(o);
+  if (sentinels.length === 0) return undefined;
+  const boxes = sentinels.map((f, i) => {
+    const e = (sentinels[i + 1] ?? q) - 1;
+    const s = f + IF_MARK.length <= e && ifMarkEnd(mf, f + IF_MARK.length) ? f + IF_MARK.length : f;
+    return { from: f, s, e };
+  });
+  return { start: a, end: q, boxes, whole: false };
+}
+
+/** True if `o` is the last letter of piecewise's `if` mark, right after a cell's sentinel. */
+function ifMarkEnd(mf: Field, o: number): boolean {
+  const n = IF_MARK.length;
+  const d = depthAt(mf, o);
+  if (o - n < 0 || latexAt(mf, o - n) !== "" || depthAt(mf, o - n) !== d) return false;
+  return IF_MARK.every((m, i) => latexAt(mf, o - n + 1 + i) === m && depthAt(mf, o - n + 1 + i) === d);
 }
 
 // ---- lim, Σ, Π and ∫ (R26f, F19) -----------------------------------------------------------------------------------

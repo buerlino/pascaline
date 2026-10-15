@@ -57,7 +57,7 @@ async function filledMatrix(page: Page): Promise<string> {
 }
 
 // ---- an empty table goes in one ⌫ (point 4) ----------------------------------------------------------------------------
-for (const [name, latex] of [["the 2×2 matrix", MATRIX], ["the row vector", ROW], ["the column vector", COL], ["piecewise", CASES]] as const) {
+for (const [name, latex, cells] of [["the 2×2 matrix", MATRIX, 4], ["the row vector", ROW, 2], ["the column vector", COL, 2], ["piecewise", CASES, 4]] as const) {
   test(`${name} on an empty line, then ⌫ empties the line`, async ({ page }) => {
     await insert(page, latex);
     expect(await bksp(page)).toBe("");
@@ -70,15 +70,19 @@ for (const [name, latex] of [["the 2×2 matrix", MATRIX], ["the row vector", ROW
     expect(await bksp(page)).toBe("");
   });
 
-  test(`${name}, then Del from before it: into the first cell, then the empty table goes`, async ({ page }) => {
+  test(`5 ${name}, Del from right before it: into the first cell, through the cells, then the empty table goes`, async ({ page }) => {
     await tap(page, ["d5"]);
     await insert(page, latex);
-    await cmd(page, "moveToMathfieldStart");
-    await cmd(page, "moveToNextChar");
     const line = await entryValue(page);
-    expect(await del(page)).toBe(line); // into the first cell: nothing deleted
-    expect(await selected(page)).toBe(PH);
-    expect(await del(page)).toBe("5");
+    await page.evaluate(() => {
+      if (window.pascaline.entry.field) window.pascaline.entry.field.position = 1; // right after the 5
+    });
+    // into the first cell, then on to the start of each later cell: nothing deleted (points 5 and 3)
+    for (let i = 0; i < cells; i++) {
+      expect(await del(page)).toBe(line);
+      expect(await selected(page)).toBe(PH);
+    }
+    expect(await del(page)).toBe("5"); // Del at the end of the last cell: the empty table goes (point 4)
   });
 }
 
