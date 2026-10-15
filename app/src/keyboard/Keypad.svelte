@@ -171,17 +171,19 @@
     gestures.clear();
     const target = targetOf(ev);
     if (target) ontouch();
+    // a mouse has no implicit capture (a touch has): without it the release outside the pad is never seen
+    try {
+      padEl?.setPointerCapture(ev.pointerId);
+    } catch {
+      // a synthetic event without an active pointer: the gesture still works while the finger stays on the pad
+    }
+
     if (target && target !== "pad" && REPEAT_KEYS.includes(target.id)) {
       onpress(target);
       // the repeats keep the layer of the first press (Shift ⌫ = Del), which used up a one-shot Shift
       const layer: Layer = alpha ? "alpha" : shift ? "shift" : "primary";
       gestures.set(ev.pointerId, { kind: "repeat", repeat: new Repeat(() => onpress(target, layer)) });
       return;
-    }
-    try {
-      padEl?.setPointerCapture(ev.pointerId);
-    } catch {
-      // a synthetic event without an active pointer: the gesture still works while the finger stays on the pad
     }
     const [x0, y0] = [ev.clientX, ev.clientY];
     if (target === "pad" || (target && isPadKey(target)))
@@ -264,6 +266,7 @@
   onpointermove={move}
   onpointerup={up}
   onpointercancel={cancelled}
+  onlostpointercapture={cancelled}
   onclick={(ev) => ev.preventDefault()}
   role="presentation"
 >
