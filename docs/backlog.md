@@ -39,7 +39,7 @@ The two debts grow with every milestone:
 2. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 3a. **P12 open points** (decisions.md): A menu audit done (S2, accepted), B the status-line switch (the owner decides). C is settled: `!` goes in the Shift + 9 palette (R18).
 3. **More UI points** (owner, 2026-10-13: "I will gather more points that bother me"): into [feedback.md](feedback.md), for F6; UI feedback sessions on each feel APK.
-4. **Open proposals** in [decisions.md](decisions.md) "Needs the user": the architecture check's three small packages G27, R44, R45 (yes or no; 2026-10-15), F29 (`exp` in DEG mode, after G2 item 54), M4-2 (task benchmark questions, at milestone 5) and P7 point 4 (Shift/Alpha merge: read Settings › Shift / Alpha taps around 2026-10-20; if merged, the freed cell becomes U4). When S5 starts, it asks for your 10–20 most used units; later its proposal "P14 arrangement" (the grid and the number of user cells) needs your yes.
+4. **Open proposals** in [decisions.md](decisions.md) "Needs the user": F29 (`exp` in DEG mode, after G2 item 54), M4-2 (task benchmark questions, at milestone 5) and P7 point 4 (Shift/Alpha merge: read Settings › Shift / Alpha taps around 2026-10-20; if merged, the freed cell becomes U4). When S5 starts, it asks for your 10–20 most used units; later its proposal "P14 arrangement" (the grid and the number of user cells) needs your yes.
 5. **Later, not now** (user, 2026-10-11: first a usable prototype): the email to Bernard Parisse (draft in `../outreach/`; add the question from P10: may the English entries of `aide_cas` be shipped in a GPL-3.0-or-later app? Needed before any public release), the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
 
 7. **Owner's list from the 2026-10-14 verification:**
@@ -159,9 +159,9 @@ The owner's deep dive (feedback #47): 24 findings, all accepted (decisions.md "T
 20. **One gate command.** **A6** (the local half of C3).
 21. **Outside testers.** **S8** writes the protocol; "Needs the user" item 8.
 22. **F35. A closed `==` test that cannot be decided shows an exact 0.** `cos(π/7)−cos(2π/7)+cos(3π/7) == 1/2` is true (`derived`), but Home shows `0` and CAS `0`, with the exact mark; `e^(π√163) == 640320³+744` also shows `0` (Opus pass, probe 2026-10-15). **Cause:** R18f1's "as typed" form `'a==b'` (`app/src/input/emit.ts` equalityTest) is evaluated again by Giac's structural `==` once no name is free; `x==2` and every `≠` stay as typed. A silent wrong answer: it goes first in the ron lane. **R18f3**. *~0.5 d; ron, Opus.*
-23. **F36. A result that is not a number but holds a float shows Giac's digits unmarked:** `evalf(x+sin(10^22))` is `x-0.54764225985` in Home and CAS, every digit wrong (x − 0.852200849767…, `oracle`). **G27** (night), after the owner's yes (architecture check, 2026-10-15; docs/04 2.3 #17).
-24. **F37. A result whose exact text is over 2 kB loses its chip:** `2^10000` tapped `×1` is `= 1.99506311688E3010`, and `+3` after it is 3, not Ans + 3. **R44** (night), after the owner's yes (docs/04 2.3 #18).
-25. **F38. Hardware keys take two paths:** the arrows use MathLive's own steps, and ⌫, Del and letters skip `press()` (sheets, a picked row, later Find). **R45** (day, after R43), after the owner's yes (docs/04 5.5).
+23. **F36. A result that is not a number but holds a float shows Giac's digits unmarked:** `evalf(x+sin(10^22))` is `x-0.54764225985` in Home and CAS, every digit wrong (x − 0.852200849767…, `oracle`). **G27** (night) (architecture check, 2026-10-15, the owner's yes; docs/04 2.3 #17).
+24. **F37. A result whose exact text is over 2 kB loses its chip:** `2^10000` tapped `×1` is `= 1.99506311688E3010`, and `+3` after it is 3, not Ans + 3. **R44** (night) (docs/04 2.3 #18).
+25. **F38. Hardware keys take two paths:** the arrows use MathLive's own steps, and ⌫, Del and letters skip `press()` (sheets, a picked row, later Find). **R45** (day, after R43) (docs/04 5.5).
 
 Also from the review: the unit view on Giac (P15, milestone 5 items 1–3 below) and MathLive on the upstream list ("Needs the user" item 6).
 

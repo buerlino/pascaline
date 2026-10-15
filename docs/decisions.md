@@ -7,18 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
-- **2026-10-15 Architecture check after 4a's entry work: three small packages. OPEN, needs a yes.** (sandra; evidence in docs/04 2.3 #17–#18 and 5.5, report [shifts/2026-10-15-sandra-archcheck-report.md](shifts/2026-10-15-sandra-archcheck-report.md); package texts in brief section 7.)
-  **Recommendation: yes to all three.** Two are silent wrong answers, and the third closes a second key path before Find and the unit slots depend on it.
-  1. **G27** (gorge, night, ~0.25 d), F36: a result that is not a number but holds a float gets `⚠`. Today `evalf(x+sin(10^22))` shows `x-0.54764225985` with no mark in Home and CAS; the right value is x − 0.852200849767… (`oracle`). docs/04 2.4 now says a non-number with a float is `⚠`, since nobody checked its digits (principle 3).
-  2. **R44** (ron, night, ~0.25 d), F37: a result whose exact text is over 2 kB keeps a chip with its P-digit value. Today `2^10000`, tapped, `×1` shows `= 1.99506311688E3010` (marked exact, but it is no longer 2^10000), and `+3` on the empty line after it gives 3 instead of Ans + 3.
-  3. **R45** (ron, day, ~0.5 d, after R43), F38: hardware keys take the keypad's path. Today the arrow keys use MathLive's own steps (they stop between sin and its bracket, which R27b removed for the keypad, and ▲ picks no history row), and Backspace, Delete and letters skip `press()`, so an open sheet or a picked row does not see them.
-
-  **Cost:** about 1 d in all. The one visible change is a `⚠` on symbolic results with floats (`evalf(x+sqrt(2))` too, although its digits are right).
-  **Alternatives:** fold G27 into G14 (both are marks, but G14 is exact results marked `≈`, another concern); leave R45 until a desktop user hits it (R4a then needs the same fix for Find's letters).
-  **Would change if:** the `⚠` on symbolic results proves noisy in daily use; then a check per float, `≈` when its digits agree at two precisions, replaces the flat `⚠`.
-
-  Made without a decision, since they change no scope: R43 takes the end of a box from `delete.ts`'s `endsBox()` (one box model, `entry/boxes.ts`) and adds a cursor grid beside the ⌫ grid; R24a's MathLive check is done (docs/04 4.3), and R24c writes slots only through `setPromptValue`.
-
 - **2026-10-14 F29: `exp` in DEG mode (package G21). OPEN, after G2 item 54.** In DEG, Giac reads the imaginary part of an exponential as degrees: `exp(i*90)` = `i` (marked `=`), `exp(i*1)` = cos 1° + i·sin 1°, `exp(1+i*90)` = 2.71828182846·i. Yet `exp(i*pi)` = −1, the radian answer. In RAD, `exp(i*90)` = −0.448073616129+0.893996663601·i (`derived`: cos 90 + i·sin 90). One mode cannot read both ways and be right (probe 2026-10-14).
   **Recommendation:** `exp` ignores the angle mode, as its mathematical meaning does (principle 3). If the G2 also reads degrees, the polar `∡` entry stays the way to type an angle in degrees. G21 waits for item 54 so that the owner sees the G2's answer before it starts.
 - **2026-10-14 R15b: 48 px cluster rows or today's height. OPEN, judge on the phone.** D is drawn with 48 px rows (viewport about 0.38 instead of 0.354). **Recommendation:** build 48 px after the device run on the Tab One (backlog Needs the user item 7), keep it if a Shift tap and the fit pass stay fast and the keys are easy to hit.
@@ -42,6 +30,18 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
 ## Decided proposals (2026-10-12 to 2026-10-15)
 
 Newest first. Where an entry changed an earlier document, that document now carries the result.
+
+- **2026-10-15 Architecture check after 4a's entry work: three small packages. DECIDED by the owner (2026-10-15): yes to all three.** (sandra; evidence in docs/04 2.3 #17–#18 and 5.5, report [shifts/2026-10-15-sandra-archcheck-report.md](shifts/2026-10-15-sandra-archcheck-report.md); package texts in brief section 7.)
+  **Why:** Two are silent wrong answers, and the third closes a second key path before Find and the unit slots depend on it.
+  1. **G27** (gorge, night, ~0.25 d), F36: a result that is not a number but holds a float gets `⚠`. Today `evalf(x+sin(10^22))` shows `x-0.54764225985` with no mark in Home and CAS; the right value is x − 0.852200849767… (`oracle`). docs/04 2.4 now says a non-number with a float is `⚠`, since nobody checked its digits (principle 3).
+  2. **R44** (ron, night, ~0.25 d), F37: a result whose exact text is over 2 kB keeps a chip with its P-digit value. Today `2^10000`, tapped, `×1` shows `= 1.99506311688E3010` (marked exact, but it is no longer 2^10000), and `+3` on the empty line after it gives 3 instead of Ans + 3.
+  3. **R45** (ron, day, ~0.5 d, after R43), F38: hardware keys take the keypad's path. Today the arrow keys use MathLive's own steps (they stop between sin and its bracket, which R27b removed for the keypad, and ▲ picks no history row), and Backspace, Delete and letters skip `press()`, so an open sheet or a picked row does not see them.
+
+  **Cost:** about 1 d in all. The one visible change is a `⚠` on symbolic results with floats (`evalf(x+sqrt(2))` too, although its digits are right).
+  **Alternatives:** fold G27 into G14 (both are marks, but G14 is exact results marked `≈`, another concern); leave R45 until a desktop user hits it (R4a then needs the same fix for Find's letters).
+  **Would change if:** the `⚠` on symbolic results proves noisy in daily use; then a check per float, `≈` when its digits agree at two precisions, replaces the flat `⚠`.
+
+  Made without a decision, since they change no scope: R43 takes the end of a box from `delete.ts`'s `endsBox()` (one box model, `entry/boxes.ts`) and adds a cursor grid beside the ⌫ grid; R24a's MathLive check is done (docs/04 4.3), and R24c writes slots only through `setPromptValue`.
 
 - **2026-10-15 F22: 10ˣ and DMS after a digit (package R27a). DECIDED by the owner (2026-10-15), before G2 item 48 was answered.** 10ˣ after a digit or a decimal point inserts `×10^□`, so `5 10ˣ 2` is 5×10² = 500 (it was `510²` = 260 100); elsewhere it stays the plain `10^□` (`x10³` is x·10³). DMS takes the number before it as its degrees (`#@`), as the mixed number takes its whole part: `5 DMS 2 ▶ 3` is 5°2′3″. R26d's 10ˣ mark counts only a 10 with no digit before it, so `110²` is a typed power of 110. G2 item 48 stays open to confirm: if the G2 shows 510², the owner may revisit. One edge left as is: MathLive's `#@` takes `2x` whole, but ⌫ and the parser treat only the x as the degrees, so `2x°15′` parses as 2·(x°15′).
 - **2026-10-15 R26h: three DMS points. DECIDED by the owner (2026-10-15).** (1) The three grid cases that waited for F22 pass since R27a, and the grid has no test.fail left. (2) ⌫ right before typed degrees (`x+‸23°□′□″`) acts on the line, and the template stays whole. (3) The grid's "a DMS box lost" check flags a ° at a line or box start or after an operator, so a DMS nested in another's degrees passes. 2 and 3 accepted as built.

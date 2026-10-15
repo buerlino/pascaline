@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. R18f3 (a closed `==` test shows an exact 0, F35; a silent wrong answer, so it goes first). Then the entry-bug packages: R43 (▶ stops at the end of a box that holds a template, F34), R45 (hardware keys take the keypad's path, F38; once the owner says yes), then R34 (the line survives a kill, F30).
+  1. R18f3 (a closed `==` test shows an exact 0, F35; a silent wrong answer, so it goes first). Then the entry-bug packages: R43 (▶ stops at the end of a box that holds a template, F34), R45 (hardware keys take the keypad's path, F38; the owner said yes 2026-10-15), then R34 (the line survives a kill, F30).
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -17,7 +17,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   6. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): G15, G20, R29, then G27 and R44 once the owner says yes (silent wrong answers from the architecture check of 2026-10-15, F36 and F37), R30, G19, G24, then the unit evaluator G16, G17, G18 (or G10–G12 if G15 says P15 falls), G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): G15, G20, R29, then G27 and R44 (silent wrong answers from the architecture check; the owner said yes 2026-10-15, F36 and F37), R30, G19, G24, then the unit evaluator G16, G17, G18 (or G10–G12 if G15 says P15 falls), G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A4a when the owner connects the Tab One, after R21b and before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -41,7 +41,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **S7 early:** every later session reads less.
 
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14)
-The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's three parser-only packages (R29, R30, R39): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
+The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's three parser-only packages (R29, R30, R39) and R44 (the chip value, no UI): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
 
 ### Rules for a night shift (they replace rules sections 4, 10 and 11, but not 4a, and change section 8a)
 1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
@@ -68,7 +68,9 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 1 | G15 units on Giac: the check (decides P15) | gorge, **Opus** | `p1/gorge-m5-giacunits` | 1.5 h + review |
 | 2 | G20 the stored values a CAS result used (F28, engine half) | gorge, Sonnet | `p1/gorge-m4-uses` | 1 h + review |
 | 3 | R29 where a number ends (F24, F25) | ron, **Opus** | `p1/ron-m4-numbers` | 1 h + review |
-| 4 | **Opus pass 1** on steps 1–3 (and P15's gate), then its FIX packages | Opus | — | 30 min + fixes |
+| 3a | G27 a result that is not a number but holds a float gets ⚠ (F36; owner's yes 2026-10-15) | gorge, Sonnet | `p1/gorge-m4-symfloat` | 45 min + review |
+| 3b | R44 a long result's chip keeps its value, Ans never dropped (F37; after R29) | ron, Sonnet | `p1/ron-m4-longchip` | 45 min + review |
+| 4 | **Opus pass 1** on steps 1–3b (and P15's gate), then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
 | 6 | G19 a safe start (F31) | gorge, Sonnet | `p1/gorge-m4-safestart` | 1 h + review |
 | 7 | G24 a memory cap for the Giac worker (F32) | gorge, Sonnet | `p1/gorge-m4-memcap` | 1 h + review |
@@ -222,8 +224,8 @@ The milestone 5 packages that P15 brings (G15–G18, G25) are in 0e. Every "beha
 |---|---|---|---|---|---|---|---|
 | G20 | The stored values a CAS result used: the engine half | F28 | night | gorge, Sonnet | `p1/gorge-m4-uses` | now | ~0.5 d |
 | R29 | Where a number ends | F24, F25 | night | ron, **Opus** | `p1/ron-m4-numbers` | now | ~0.5 d |
-| G27 | A result that is not a number but holds a float gets ⚠ | F36 (architecture check, 2026-10-15) | night | gorge, Sonnet | `p1/gorge-m4-symfloat` | the owner's yes (decisions.md "Needs the user", 2026-10-15) | ~0.25 d |
-| R44 | A long result's chip keeps its value, and Ans is never dropped | F37 (architecture check, 2026-10-15) | night | ron, Sonnet | `p1/ron-m4-longchip` | the owner's yes; R29 (chips, same tests) | ~0.25 d |
+| G27 | A result that is not a number but holds a float gets ⚠ | F36 (architecture check, 2026-10-15) | night | gorge, Sonnet | `p1/gorge-m4-symfloat` | now (the owner said yes, 2026-10-15) | ~0.25 d |
+| R44 | A long result's chip keeps its value, and Ans is never dropped | F37 (architecture check, 2026-10-15) | night | ron, Sonnet | `p1/ron-m4-longchip` | R29 (chips, same tests) | ~0.25 d |
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
 | G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
 | G24 | A memory cap for the Giac worker | F32 | night | gorge, Sonnet | `p1/gorge-m4-memcap` | now | ~0.5 d |
@@ -232,8 +234,8 @@ The milestone 5 packages that P15 brings (G15–G18, G25) are in 0e. Every "beha
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23; and G18 if P15 holds | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
-| R45 | Hardware keys take the keypad's path: arrows, ⌫, Del, letters | F38 (architecture check, 2026-10-15) | day | ron, Sonnet | `p1/ron-m4a-hwpath` | R43 (same files), and the owner's yes | ~0.5 d |
-| R34 | The line survives a kill | F30 | day | ron, Sonnet | `p1/ron-m4a-keepline` | R43 (R45 if the owner said yes) | ~0.5 d |
+| R45 | Hardware keys take the keypad's path: arrows, ⌫, Del, letters | F38 (architecture check, 2026-10-15) | day | ron, Sonnet | `p1/ron-m4a-hwpath` | R43 (same files) | ~0.5 d |
+| R34 | The line survives a kill | F30 | day | ron, Sonnet | `p1/ron-m4a-keepline` | R45 | ~0.5 d |
 | R35 | A lighter start chunk | review item 11 | day | ron, Sonnet | `p1/ron-m4a-slim` | R34 | ~0.5 d |
 | R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | R11 and G20 | ~0.5 d |
 | R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | R32 (same file) and G22 | ~0.5 d |
@@ -840,7 +842,7 @@ Gate: the tests, the Find query test unchanged, and the size test.
 Every package here: tests first (they fail on today's code), then the fix, then the report commit (section 2). The finding, its evidence and the decision are in decisions.md "The deep-dive review"; the backlog line is under "Trust and robustness".
 
 ### gorge, G27: a result that is not a number but holds a float gets ⚠ (F36), branch `p1/gorge-m4-symfloat`
-From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #17). Starts when the owner says yes (decisions.md "Needs the user"). Read: docs/04 2.3 #17 and 2.4 (the mark rules, "unless they hold a float"), `app/src/engine/homeEval.ts` (`symbolic()`), `app/src/engine/host.ts` (`cas()`: the non-numeric return, and `defsOf(…, { warn: "unchecked" })` beside it), `app/src/engine/format.ts` (`markOf` for a result with no value), the CAS branch of `finish()` in `app/src/state/session.svelte.ts`.
+From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #17). Starts now (the owner said yes, 2026-10-15). Read: docs/04 2.3 #17 and 2.4 (the mark rules, "unless they hold a float"), `app/src/engine/homeEval.ts` (`symbolic()`), `app/src/engine/host.ts` (`cas()`: the non-numeric return, and `defsOf(…, { warn: "unchecked" })` beside it), `app/src/engine/format.ts` (`markOf` for a result with no value), the CAS branch of `finish()` in `app/src/state/session.svelte.ts`.
 
 **Behaviour today** (`FACTS=1 node tools/probes/engine.ts …`, and with `MODE=cas`, 2026-10-15):
 - Home and CAS `evalf(x+sin(10^22))` → `x-0.54764225985`, no mark. Right: x − 0.852200849767… (`oracle`, mpmath at 40 digits: sin(10²²) = −0.8522008497671888…), so every digit shown is wrong.
@@ -856,7 +858,7 @@ From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #17). Starts when
 Gate: golden gate; vitest; typecheck. Not in this package: a check per float that could earn `≈` (docs/04 2.4 says when it would be worth it).
 
 ### ron, R44: a long result's chip keeps its value, and Ans is never dropped (F37), branch `p1/ron-m4-longchip`
-From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #18). Starts when the owner says yes, after R29 (the same chip code and tests). Read: docs/04 2.3 #18 and 2.8, `app/src/state/session.svelte.ts` (`finish()` around line 446, `chipFor`, `lastChip`), `app/src/App.svelte` (`insertResult`, the Ans-first branch of `run()`), `app/src/engine/homeEval.ts:485` (what `full` holds), `app/src/input/parse.ts:634` (a missing chip).
+From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #18). Starts when R29 is merged (the same chip code and tests; the owner said yes, 2026-10-15). Read: docs/04 2.3 #18 and 2.8, `app/src/state/session.svelte.ts` (`finish()` around line 446, `chipFor`, `lastChip`), `app/src/App.svelte` (`insertResult`, the Ans-first branch of `run()`), `app/src/engine/homeEval.ts:485` (what `full` holds), `app/src/input/parse.ts:634` (a missing chip).
 
 **Behaviour today** (probes 2026-10-15): Home `2^10000` shows `≈ 1.99506311688E3010` (right). Tap it, `×1`, Enter: `= 1.99506311688E3010`, marked exact, for a value that is not 2^10000. Then `+3` on the empty line gives `= 3`, not Ans + 3.
 
@@ -870,7 +872,7 @@ From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #18). Starts when
 Gate: chips, entry and tasks e2e; vitest; typecheck; the start chunk within its budget.
 
 ### ron, R45: hardware keys take the keypad's path: arrows, ⌫, Del and letters (F38), branch `p1/ron-m4a-hwpath`
-From the architecture check of 2026-10-15 (sandra; docs/04 5.5 points 1 and 2). Starts when R43 is merged and the owner says yes; before R4a, since Find takes letters. Read: docs/04 5.5, `app/src/entry/hwkeys.ts`, `app/src/App.svelte` (`press`, `run`, `historyKey`, `sheetPress`), `app/test/hwkeys.spec.ts`.
+From the architecture check of 2026-10-15 (sandra; docs/04 5.5 points 1 and 2). Starts when R43 is merged (the owner said yes, 2026-10-15); before R4a, since Find takes letters. Read: docs/04 5.5, `app/src/entry/hwkeys.ts`, `app/src/App.svelte` (`press`, `run`, `historyKey`, `sheetPress`), `app/test/hwkeys.spec.ts`.
 
 **Behaviour today** (code, 2026-10-15):
 - The arrow keys are not caught: `hwkeys.ts:133` lets every key name longer than one character through to MathLive, which stops between sin and its bracket and inside names (R27b removed those stops for the keypad, `stops.ts`), skips R10's ▶ jump, and ▲ on an empty line picks no history row.
