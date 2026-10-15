@@ -281,7 +281,7 @@ Each entry: the choice, why, the alternatives, and what would change it.
 ### 2026-10-14 Nothing takes focus while the app is away (F11–F14, R25a–R25c)
 - **Choice:**
   1. The keypad ends every gesture when the page hides and, on touch screens, when the window loses focus. It is treated like a `pointercancel`: nothing fires and ⌫'s auto-repeat stops.
-  2. ⌫'s press takes pointer capture like every other key, so its lift is seen wherever it happens.
+  2. ⌫'s press takes pointer capture like every other key, so its lift is seen wherever it happens; a lost capture stops the repeat (R25b).
   3. A capturing `focusin` listener in `app/src/main.ts` drops any focus that arrives while the page is hidden, or while the window is blurred on a touch screen, whatever caused it: MathLive's 60 ms late focus, a repeat timer, an insert after an `await`.
 - **Why:** `dropFocus` drops only the focus that exists when the app leaves. Timers bring it back afterwards (F11, F13), and a touch the app never saw end fires on the next key (F12). One guard at the focus event covers every cause, present and future, including MathLive's internal timer, which the public API cannot cancel.
 - **Alternatives:** chase each caller one by one (MathLive's timer would still need the guard).
