@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30).
+  1. The entry-bug packages: R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30).
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -128,7 +128,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R27b | Bug F23: cursor stops where no box is | ron, **Opus** | `p1/ron-m4a-cursorstops` | R26h (same file); G2 item 50 | ~0.5–1 d |
 | R43 | Bug F34: ▶ skips the end of a box that holds a template | ron, **Opus** | `p1/ron-m4a-boxend` | R27b (same function, `run`); G2 item 57 answered, or start on the default | ~0.5 d |
 | R21a | Pick sheets over the keypad, and fit | ron, **Opus** | `p1/ron-m4a-fit` | R35 (section 0f; it follows the entry-bug packages) | ~1.5 d |
 | R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R21a | ~0.75 d |
@@ -345,43 +344,18 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### The entry-bug packages R27b and R43 (bug F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
-These are small packages, one concern each, each with its own short reading list. Read only what your package names.
+### The entry-bug package R43 (bug F34, the owner's report of 2026-10-15)
+A small package, one concern, with its own short reading list. Read only what the package names.
 - Backlog milestone 4a items 21–35 have the summary.
-- The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
+- The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away", "The cursor stops only at a box" and "The cursor goes where the user aims".
 - r6-pipelines section 7 explains how MathLive behaves and how to probe it.
-- Every "behaviour today" below was reproduced in Playwright (Pixel 7 profile, `?engine=fake`, 2026-10-14; R43 on 2026-10-15). ‸ is the cursor.
+- Every "behaviour today" below was reproduced in Playwright (Pixel 7 profile, `?engine=fake`, 2026-10-15). ‸ is the cursor.
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
-- **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
+- **Tests first**: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
 
-### ron, R27b: the cursor stops where no box is (bug F23), branch `p1/ron-m4a-cursorstops`
-Read: `app/src/entry/controller.ts` (`run`, `nextBox` line 266), `app/src/keyboard/Keypad.svelte` `step()` (a trackpad step is the arrow key's `run`), r6-pipelines section 7 ("◀ and ▶ visit every offset").
-
-**Behaviour today:** ◀ and ▶ visit every offset from one end to the other, and a trackpad drag steps through the same ones. Setting `mf.position` to each offset and typing 7 gives:
-- **Between a function name and its bracket:** `\sin‸\left(2\right)` → `\sin7\left(2\right)`, drawn "sin 7 (2)", which the parser reads as sin(7·2) = sin 14 with no mark. The log base does the same: `\log_2‸\left(8\right)` → 7 gives log₂(56).
-- **Inside names:** EQ (offsets 1–3), approx, NOT and the one-line sqrt. A 7 gives `\operatorname{7\mathrm{EQ}}`, an error.
-- **Inside the `if ` of piecewise** (offsets 4–6 and 13–15) and **inside the d of ∫** (`\mathrm{d7}`): errors.
-- Each of these is one more trackpad step: a drag across `approx(…)` crosses six letters.
-
-**Cause:** MathLive's cursor visits every atom boundary. `nextBox` skips marks only while an empty box is still ahead.
-
-**Fix** (direction; the details are open):
-- In `run`, after `moveToNextChar` or `moveToPreviousChar` (keys and trackpad steps alike), keep stepping while the new position is not a stop. A non-stop is a position inside an `\operatorname`, `\text` or `\mathrm` group, or between a function name and the `\left` it was inserted with.
-- Alternative: make the names atomic for the cursor, as the chips are (MathLive macros with `captureSelection`). That changes the LaTeX the parser reads.
-- Open for the owner (G2 item 50): whether the parser should also refuse a bare function name followed by a term and a bracket (`sin 7(2)`), whatever the cursor does.
-
-**Commits:**
-1. **Tests** (new `app/test/cursor.spec.ts`):
-   - The offsets that ◀ and ▶ visit for sin, EQ, approx, piecewise and ∫.
-   - A digit typed at every offset the keys reach lands in a box, or is refused.
-2. **Fix.**
-3. **Report** with the G2 item 50 answer.
-
-Gate: cursor, gestures, tmpl, selection and bksp-grid e2e green; the trackpad presses in the task benchmark do not go up.
-
 ### ron, R43: ▶ stops at the end of a box that holds a template (bug F34), branch `p1/ron-m4a-boxend`
-Read: `app/src/entry/controller.ts` (`run`, `nextBox` line 266, and R27b's stop rule), `app/test/tmpl.spec.ts`, r6-pipelines section 7 ("▶ jumps to any empty box ahead"), decisions.md "The cursor goes where the user aims" point 2.
+Read: `app/src/entry/controller.ts` (`run`, `nextBox`), `app/src/entry/stops.ts` (R27b's stop rule), `app/test/tmpl.spec.ts`, r6-pipelines section 7 ("▶ jumps to any empty box ahead"), decisions.md "The cursor goes where the user aims" point 2.
 
 **Behaviour today:**
 - ÷ ÷ 1 ▶ 2 ▶: the cursor goes from the inner denominator straight to the empty outer denominator (offset 8 of `\frac{\frac12}{□}`). Offset 6, the end of the outer numerator after ½, is skipped. A 3 typed next lands in the outer denominator: `\frac{\frac12}{3}`.
@@ -392,7 +366,7 @@ Read: `app/src/entry/controller.ts` (`run`, `nextBox` line 266, and R27b's stop 
 - Not affected, since no empty box is ahead: the outer denominator already filled (▶ is the plain step and stops after ½); the inner fraction in the denominator (`\frac{1}{\frac23}`, ▶ 4 gives `\frac{1}{\frac234}`); a root around a fraction (`\sqrt{\frac12}`, ▶ 3 gives `\sqrt{\frac123}`).
 - The way there today: ◀ from the start of the outer denominator reaches offset 6.
 
-**Cause:** `nextBox` (line 266). While `\placeholder` appears anywhere between the cursor and the end of the line, ▶ is `moveToNextPlaceholder`. R10 added it so that ▶ skips the marks between the boxes of one template (∂, d, the evaluate-at bar, the brackets of a body). It also skips the end of the box that holds the template the cursor leaves.
+**Cause:** `nextBox` (line 339). While `\placeholder` appears anywhere between the cursor and the end of the line, ▶ is `moveToNextPlaceholder`. R10 added it so that ▶ skips the marks between the boxes of one template (∂, d, the evaluate-at bar, the brackets of a body). It also skips the end of the box that holds the template the cursor leaves.
 
 **Fix** (direction; R27b's stop rule may already carry part of it):
 - Before the jump, look at where the plain step lands. If it leaves the template the cursor is in (the depth drops) and lands at the end of the box that holds it, make the plain step and stop there. The next ▶ jumps to the empty box as today.

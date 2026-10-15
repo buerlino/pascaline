@@ -257,6 +257,14 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-15 The cursor stops only at a box (F23, R27b; G2 item 50 to confirm)
+- **Choice:**
+  1. ◀ ▶ ▲ ▼ and every trackpad step skip the inside of a name, the gap between a function name and its bracket, the places right before a template's marks (piecewise's `if `, ∫'s d, ∂, the evaluate-at subscript) and right after ∫'s d. ▲ ▼ settle to the left. After `if ` a key types maths.
+  2. The parser refuses a bare function name followed by a term and a bracket: `sin 7(2)`, `sin x(x+1)`, `ln 7(2)`, `log₂ 7(8)` give "put its whole argument in the brackets". `sin 2x`, `sin x cos x` and `sin(2)(3)` read as before (owner, 2026-10-15: "I accept your recommendation on item 50").
+- **Why:** a 7 between sin and its bracket gave sin(7·2) with no mark, and one inside a name broke it. The cursor rule removes the stops; the parser rule also covers a tap there, pasted LaTeX and a hardware keyboard (principle 3).
+- **Alternatives:** make names atomic MathLive macros (changes the LaTeX the parser reads; rejected); settle the cursor after a tap too (the parser rule already covers it).
+- **Would change if:** the G2 (item 50) lets the cursor stop between SIN and its bracket and reads what is typed there.
+
 ### 2026-10-15 Hardware keys take the keypad's path (F27, R31)
 - **Choice:**
   1. A hardware `-` is the − key (sub), so on an empty line after a result it starts with Ans, like `+ * / ^`; the (−) key stays on the keypad.

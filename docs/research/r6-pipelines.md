@@ -81,11 +81,7 @@
   - **EQ, DMS, evaluate-at:** EQ's comma and evaluate-at's = are plain atoms in their branch; DMS stands on the line itself, ° ′ ″ plain atoms, its degrees with no left edge in the LaTeX; the key takes the number before it as its degrees (`#@`, R27a). Evaluate-at is a `\left.…\right|` pair and a subscript atom right after it. Our way around it: `equation()`, `dmsAt()`, `evalAt()` through `deleteAtBoxes()` (R26h).
 - **A placeholder is an atom:** ⌫ in an empty box deletes the □ itself, so the box leaves the LaTeX (`EQ(,□)`, `\lim_{\to□}`, a matrix cell with nothing in it). The last atom of a fraction's part is followed by the next part's sentinel on the same level, not by a lower one (`endsBox()`).
 - **Hardware keys take the keypad's path** (R26b, R31): Backspace, Delete and every printable ASCII key go through `app/src/entry/hwkeys.ts` (a capture `keydown` on the field, loaded with MathLive). A character a keypad key types presses that key through App `press`; `e`/`E` after a number's digits is ᴇ; letters type themselves; characters no key types do nothing. Enter and Escape are caught by the controller; Ctrl/Alt/Meta combinations and non-ASCII characters still go to MathLive.
-- **◀ and ▶ visit every offset:**
-  - Between a function name and its `\left` (`\sin‸\left(2\right)`; a 7 there is read as sin(7·2)).
-  - Inside `\operatorname{…}` (EQ, approx), inside `\text{if }` and inside `\mathrm{d}`.
-  
-  The trackpad steps through the same ones. `nextBox` skips them only while an empty box lies ahead (backlog F23).
+- **◀ and ▶ visit every offset in MathLive:** between a function name and its `\left`, inside `\operatorname{…}` and `\text{if }`, around ∫'s `\mathrm{d}`. Our arrows and the trackpad skip them (`app/src/entry/stops.ts`, R27b); a tap can still land there, and the parser refuses `\sin7\left(2\right)`. Right after a `\text` atom MathLive's mode is text, so a typed key goes into the text unless the field is switched to maths first (`run` does).
 - **▶ jumps to any empty box ahead:** while `\placeholder` appears anywhere after the cursor, `nextBox` makes ▶ `moveToNextPlaceholder`. So the end of a box that holds a template is skipped while a later box is empty: ÷ ÷ 1 ▶ 2 ▶ lands in the outer denominator, not after ½ (backlog F34). ◀ still stops there.
 - **A finger tap places the caret twice** (2026-10-15, backlog F33):
   - `onPointerDown` (`mathlive.mjs` 34364) places it with `offsetFromPoint`, the same for mouse and touch, and that is right.
