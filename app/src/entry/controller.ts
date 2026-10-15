@@ -120,6 +120,13 @@ export class EntryController {
     mf.addEventListener(
       "keydown",
       (ev) => {
+        // R26b (F16): a physical Backspace or Delete takes the on-screen key's path (run: R23 and the R26 rules live there)
+        if ((ev.key === "Backspace" || ev.key === "Delete") && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.isComposing) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          this.run({ kind: "cmd", name: ev.key === "Backspace" ? "deleteBackward" : "deleteForward" });
+          return;
+        }
         if (ev.key !== "^" || !this.lineMode) return;
         ev.preventDefault();
         ev.stopPropagation();
