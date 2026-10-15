@@ -76,12 +76,13 @@ test("Tmpl log base, then ⌫ until the line is empty", async ({ page }) => {
 });
 
 test("log 2 ⌫ ⌫ empties the line; ( ) 2 ⌫ ⌫ too", async ({ page }) => {
+  // (the first ⌫ deletes the 2 by MathLive's own path; the box it empties is R26a's point 2)
   await tap(page, ["log", "d2"]);
-  expect(await bksp(page)).toBe(EMPTY_LOG);
+  noHalfPair([await bksp(page)]);
   expect(await bksp(page)).toBe("");
   await tap(page, ["paren", "d2"]);
   expect(await entryValue(page)).toBe("\\left(2\\right)");
-  expect(await bksp(page)).toBe("\\left(\\placeholder{}\\right)");
+  noHalfPair([await bksp(page)]);
   expect(await bksp(page)).toBe("");
 });
 
@@ -130,7 +131,7 @@ test("Del mirror: 5 ( ) 2 Del gives 52; log log Del Del empties the line", async
   expect(await del(page)).toBe("");
 });
 
-test("no half pair after any ⌫ or Del from the keys (the evaluate-at bar owns its \\left.)", async ({ page }) => {
+test("no half pair after any ⌫ from the keys (the evaluate-at bar owns its \\left.)", async ({ page }) => {
   const seqs: string[][] = [
     ["sin", "d2", "d3", "left", "left"],
     ["d5", "paren", "d2", "left"],
@@ -143,16 +144,9 @@ test("no half pair after any ⌫ or Del from the keys (the evaluate-at bar owns 
     await page.evaluate(() => window.pascaline.entry.clear());
     await tap(page, s);
     const lines: string[] = [];
-    for (let i = 0; i < 6; i++) lines.push(await bksp(page));
+    for (let i = 0; i < 5; i++) lines.push(await bksp(page));
     noHalfPair(lines);
-    expect(lines.at(-1), s.join(" ")).toBe("");
-    await page.evaluate(() => window.pascaline.entry.clear());
-    await tap(page, s);
-    await tap(page, ["left", "left", "left", "left"]);
-    await page.evaluate(() => window.pascaline.entry.field?.executeCommand("moveToMathfieldStart"));
-    const dels: string[] = [];
-    for (let i = 0; i < 6; i++) dels.push(await del(page));
-    noHalfPair(dels);
+    expect(lines.at(-1), s.join(" ")).not.toContain("\\left");
   }
 });
 
@@ -184,4 +178,50 @@ test("Shift + Cancel (undo) brings the removed template back whole", async ({ pa
   expect(await bksp(page)).toBe("523");
   await tap(page, ["shift", "cancel"]);
   expect(await entryValue(page)).toBe("5\\sin\\left(23\\right)");
+});
+
+/** The selected LaTeX, or "" when the selection is collapsed. */
+const selected = (page: Page): Promise<string> =>
+  page.evaluate(() => {
+    const mf = window.pascaline.entry.field;
+    return !mf || mf.selectionIsCollapsed ? "" : mf.getValue(mf.selection, "latex");
+  });
+
+test("a filled log base: the first ⌫ selects the whole template, the second deletes it (nothing from two boxes joins)", async ({ page }) => {
+  await tmpl(page, "logbase");
+  await tap(page, ["d1", "d6", "right", "d2", "left"]);
+  expect(await entryValue(page)).toBe("\\log_{16}\\left(2\\right)");
+  expect(await bksp(page)).toBe("\\log_{16}\\left(2\\right)");
+  expect(await selected(page)).toBe("\\log_{16}\\left(2\\right)");
+  expect(await bksp(page)).toBe("");
+});
+
+test("an exponent on a bracket stays on it: ⌫ at the start of (1+2)² selects it whole", async ({ page }) => {
+  await tap(page, ["paren", "d1", "add", "d2", "right", "sq"]);
+  expect(await entryValue(page)).toBe("\\left(1+2\\right)^2");
+  await page.evaluate(() => {
+    const mf = window.pascaline.entry.field;
+    if (mf) mf.position = 1; // the start of the body
+  });
+  expect(await bksp(page)).toBe("\\left(1+2\\right)^2");
+  expect(await selected(page)).toBe("\\left(1+2\\right)^2");
+  expect(await bksp(page)).toBe("");
+});
+
+test("lim with empty bounds: ⌫ at the start of its body keeps the body", async ({ page }) => {
+  await tmpl(page, "limit");
+  await page.evaluate(() => window.pascaline.entry.field?.executeCommand("moveToMathfieldEnd"));
+  await tap(page, ["left", "d7", "left"]);
+  expect(await entryValue(page)).toBe("\\lim_{\\placeholder{}\\to\\placeholder{}}\\left(7\\right)");
+  expect(await bksp(page)).toBe("7");
+});
+
+test("EQ: ⌫ at the start of its first value with the second one filled selects the whole template", async ({ page }) => {
+  await page.evaluate(() => window.pascaline.entry.set("\\operatorname{EQ}\\left(2,3\\right)"));
+  await page.evaluate(() => {
+    const mf = window.pascaline.entry.field;
+    if (mf) mf.position = 5; // the start of the body (after the name's letters)
+  });
+  expect(await bksp(page)).toBe("\\operatorname{EQ}\\left(2,3\\right)");
+  expect(await selected(page)).toBe("\\operatorname{EQ}\\left(2,3\\right)");
 });
