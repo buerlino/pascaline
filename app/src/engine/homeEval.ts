@@ -97,6 +97,13 @@ export interface HomeResult {
   warn?: PrecisionWarn;
   /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): the result is shown with them, not the setting. */
   digits?: number;
+  /** Giac `latex()` of a result that is not a number (raw; the view tidies it up and draws it, as in CAS). R18f3. */
+  latex?: string;
+}
+
+/** Giac prints a string result in double quotes; latex() returns one. */
+export function unquote(s: string): string {
+  return s.length >= 2 && s.startsWith('"') && s.endsWith('"') ? s.slice(1, -1) : s;
 }
 
 /** Placeholder precision facts until the engine fills them (docs/04 section 8.2): no claim of exactness, `full` = the display. */
@@ -451,9 +458,13 @@ export function homeEval(
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
     const text = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
     store();
-    return done({ ok: true, display: text, exact: text, path: "exact", approximate: inexactTest, ...(decided?.warn ? { warn: decided.warn } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
+    // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
+    const tex = giac.eval(`latex(${ans})`);
+    const latex = isError(tex) ? {} : { latex: unquote(tex) };
+    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest, ...(decided?.warn ? { warn: decided.warn } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
-  if (!shape) return symbolic();
+  // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
+  if (!shape || /==|<>/.test(exactOut)) return symbolic();
 
   if (hasFloat(exactOut)) {
     // Giac's numeric code returned a float on the exact path (rule 3). `evalf(e,n)` alone is shown with the n digits it

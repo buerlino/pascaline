@@ -441,7 +441,8 @@ export class Session {
         }
         const q = r.value ? rationalOf(r.exact) : undefined;
         if (q) live.rational = q;
-        if (r.ok) live.resultLatex = homeResultToLatex(r.display);
+        // A result that is not a number is drawn from Giac's latex(), as in CAS (R18f3); numbers from our formatter.
+        if (r.ok) live.resultLatex = r.latex !== undefined ? tidyGiacLatex(r.latex) : homeResultToLatex(r.display);
         // The chip value: the exact fraction when there is one, else the engine's full value (every confirmed digit)
         const full = r.exact ?? r.full;
         if (r.ok && full && full.length <= FULL_LIMIT) {
