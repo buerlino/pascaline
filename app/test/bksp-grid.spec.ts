@@ -2,7 +2,7 @@
 // R26a: the ⌫ grid. Every template the keys insert (read from spec/keyboard.yaml, so a new key joins by itself) goes
 // through seven scenarios of ⌫ and Del, and every line they leave is checked against "⌫ and Del keep a template whole"
 // (docs/decisions.md, points 1-8). No app code: the cases that fail today are marked test.fail() with their bug id
-// (R26c-R26h flipped F15 and F17-F21; three DMS cases wait for F22, R27a), so the suite is green and the package that
+// (R26c-R26h flipped F15 and F17-F21, R27a the last three DMS cases, F22), so the suite is green and the package that
 // fixes a case removes it from KNOWN_FAIL. The checks are derived from the rule, not from today's output.
 //
 // How: one page for the whole file; a scenario is one page.evaluate that runs its steps through
@@ -202,7 +202,8 @@ function check(s: Scenario, tmpl: Tmpl, base: Map<string, number>, run: Run, del
   // (Del from the start); the base must still end the prefix (R26d)
   const typedFive = s === "content" || s === "fromEnd" || s === "boxStart" || s === "delFromStart";
   const before = typedFive && !tmpl.latex.includes("#@") ? "5" : "";
-  const powBase = basePrefix?.startsWith(before) ? basePrefix.slice(before.length) : basePrefix;
+  // (after a digit 10ˣ inserts ×10^□, R27a: the × stands between the 5 and the base, and is no part of it)
+  const powBase = (basePrefix?.startsWith(before) ? basePrefix.slice(before.length) : basePrefix)?.replace(/^\\times/, "");
   const PH = "\\placeholder{}";
   const keepsBase = (now: string): boolean =>
     powBase === undefined || [powBase, PH, powBase.replace("5", PH)].some((b) => b !== "" && now.endsWith(b));
@@ -245,14 +246,8 @@ function check(s: Scenario, tmpl: Tmpl, base: Map<string, number>, run: Run, del
 }
 
 // ---- cases that fail today: "name|scenario", removed by the package that fixes them -----------------------------------
-// F22 (R27a): DMS's degrees have no left edge, so the 5 typed before the template joins them (`5 DMS 2` is 52°). ⌫ then
-// treats the 5 as a digit of the degrees: it empties them to □ (content, fromEnd) or deletes the 5 from the start of
-// the 23 (boxStart). They pass once a digit no longer runs into the template.
-const KNOWN_FAIL = new Map<string, string>([
-  ["tmpl:dms|boxStart", "F22"],
-  ["tmpl:dms|content", "F22"],
-  ["tmpl:dms|fromEnd", "F22"],
-]);
+// (none left: R27a's DMS takes the 5 typed before it as its degrees, so the last three, F22, pass)
+const KNOWN_FAIL = new Map<string, string>([]);
 
 // ---- the suite ------------------------------------------------------------------------------------------------------
 let page: Page;

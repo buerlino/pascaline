@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
 const PH = "\\placeholder{}";
 const LOGB = "\\log_{#?}\\left(#0\\right)";
 const EQ = "\\operatorname{EQ}\\left(#0,#?\\right)";
-const DMS = "#?\\degree#?\\prime#?\\doubleprime";
+const DMS = "#@\\degree#?\\prime#?\\doubleprime";
 const EVAL = "\\left.#0\\right|_{#?=#?}";
 /** (MathLive writes a one-character base without braces) */
 const logb = (b: string, a: string): string => `\\log_${b.length === 1 ? b : `{${b}}`}\\left(${a}\\right)`;
@@ -179,10 +179,8 @@ test("DMS 2 3 ▶ 4 ▶ 6, ⌫ from the end of the line: the marks stay, each em
   expect(await bksp(page)).toBe(dms("23", "4", PH));
   expect(await bksp(page)).toBe(dms("23", "4", PH)); // to the end of the minutes
   expect(await bksp(page)).toBe(dms("23", PH, PH));
-  expect(await bksp(page)).toBe(dms("23", PH, PH)); // to the end of the degrees
-  expect(await bksp(page)).toBe(dms("2", PH, PH));
-  expect(await bksp(page)).toBe(dms(PH, PH, PH));
-  expect(await bksp(page)).toBe("");
+  expect(await bksp(page)).toBe("23"); // only the degrees, the key's argument, hold something: they stay (R27a)
+  expect(await bksp(page)).toBe("2");
 });
 
 test("DMS 2, then Del: the marks stay, every box is visited, then the template is selected and goes", async ({ page }) => {
@@ -207,12 +205,12 @@ test("DMS 3 0 ▶ 1 5 ◀ ◀, ⌫ at the start of the minutes steps to the end 
   expect(await bksp(page)).toBe(dms("3", "15", PH));
 });
 
-test("x DMS 2 3 ◀ ◀ ⌫: before typed degrees the cursor is on the line, so ⌫ deletes the x and the template stays whole", async ({ page }) => {
-  await tap(page, ["x"]);
+test("x + DMS 2 3 ◀ ◀ ⌫: before typed degrees the cursor is on the line, so ⌫ deletes the + and the template stays whole", async ({ page }) => {
+  await tap(page, ["x", "add"]);
   await insert(page, DMS);
   await tap(page, ["d2", "d3", "left", "left"]);
-  expect(await entryValue(page)).toBe(`x${dms("23", PH, PH)}`);
-  expect(await bksp(page)).toBe(dms("23", PH, PH));
+  expect(await entryValue(page)).toBe(`x+${dms("23", PH, PH)}`);
+  expect(await bksp(page)).toBe(`x${dms("23", PH, PH)}`);
 });
 
 // ---- evaluate-at ----------------------------------------------------------------------------------------------------

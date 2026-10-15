@@ -445,8 +445,10 @@ templates:
       row: 2
       col: 5
       desc: "degrees, minutes, seconds □°□′□″"
-      insert: "#?\\degree#?\\prime#?\\doubleprime"
+      insert: "#@\\degree#?\\prime#?\\doubleprime"
       sample: ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*(pi/180)^angle_radian()"]
+      # R27a (F22): a number typed before the cell is its degrees (5 DMS → 5°□′□″, the cursor in the minutes), as the
+      # mixed number takes its whole part; a typed digit would otherwise join the degrees with no edge between them
   source: device
 
 # ---- The Shift palettes (R18; the owner's G2, photos and screenshots of 2026-10-13, cell for cell). Same schema and

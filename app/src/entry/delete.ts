@@ -198,8 +198,12 @@ function powerAt(mf: Field, q: number): Power | undefined {
   else if (isPair(mf, b)) kind = "pair";
   else if (bl === "\\exponentialE") kind = "mark";
   else if (bl === "0" && start === b - 1 && b - 1 > 0 && latexAt(mf, b - 1) === "1" && depthAt(mf, b - 1) === d) {
-    kind = "mark"; // 10ˣ
-    start = b - 2;
+    // 10ˣ, unless a digit stands before the 10: after one the key puts ×10^□ (R27a), so 110² is a typed power of 110
+    const n = b - 2;
+    if (n === 0 || depthAt(mf, n) !== d || !isNumberPart(latexAt(mf, n))) {
+      kind = "mark";
+      start = n;
+    }
   }
   const xl = mf.getValue(b + 1, q - 1, "latex");
   const x = xl === "" || xl === PLACEHOLDER ? "empty" : kind !== "mark" && /^(?:2|-1|\{-1\})$/.test(xl) ? "own" : "typed";
@@ -853,7 +857,8 @@ function atomAfter(mf: Field, c: number): number {
 // ---- DMS (R26h, F21) ------------------------------------------------------------------------------------------------
 // DMS stands on the line itself, its marks plain atoms: `23\degree4\prime6\doubleprime` is 1 `2`, 2 `3`, 3 °, 4 `4`,
 // 5 ′, 6 `6`, 7 ″. The minutes and the seconds lie between the marks. The degrees have no left edge: they are the
-// number (or □) right before the °, so a digit typed before the template joins them (`5 DMS 2` is 52°, F22, R27a's).
+// number (or □) right before the °. The key takes a number typed before it as its degrees (`#@`, R27a: `5 DMS 2` is
+// 5°2′), the box a #@ key took, as a mixed number's whole part.
 // A DMS inserted on another's □ fills that box: `□°□′□″°□′□″` is a DMS whose degrees are a DMS. MathLive's own delete
 // takes each mark and each □ as an atom (`°□′□″` on an empty line). Points 2-5 of "⌫ and Del keep a template whole"
 // instead, through deleteAtBoxes: no box is the main one (as a table), and the start of typed degrees is a place on
@@ -880,7 +885,8 @@ function dmsAt(mf: Field, x: number): BoxTemplate | undefined {
       if (m < 0) return undefined;
       const first = degreesOf(mf, x);
       const boxes = [first, { from: x, s: x, e: m - 1 }, { from: m, s: m, e: o - 1 }];
-      return { start: first.s, end: o, boxes, whole: true };
+      // the degrees are the key's argument (#@, R27a): when only they hold something, ⌫ in another box keeps them
+      return { start: first.s, end: o, boxes, whole: true, arg: 0 };
     }
   }
   return undefined;

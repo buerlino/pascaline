@@ -41,6 +41,14 @@ function isPower(a: ActionBody): boolean {
   return a.kind === "insert" && (a.latex.startsWith("#@^") || a.latex.startsWith(CARET));
 }
 
+/** DMS (Tmpl palette, R27a): its degrees are the key's argument (`#@`), as a power's base is. */
+function isDms(a: ActionBody): boolean {
+  return a.kind === "insert" && a.latex.startsWith("#@\\degree");
+}
+
+/** The 10ˣ key (Shift + LOG). */
+const TEN_POW = "10^{#0}";
+
 /** One plain term: a number, one letter or a chip. A power key raises it without brackets; anything else gets them. */
 function isPlainTerm(latex: string): boolean {
   const l = latex.trim();
@@ -283,12 +291,18 @@ export class EntryController {
       mf.focus();
       return;
     }
+    if (a.kind === "insert" && a.latex === TEN_POW && this.afterDigit(mf)) {
+      // R27a (F22): after a digit its 10 would join the number (5 10ˣ 2 was 510²); the line says 5×10² instead
+      this.apply(mf, { ...a, latex: `\\times${TEN_POW}` });
+      mf.focus();
+      return;
+    }
     // R14: a number with an exponent mark is one term, so x², xʸ, x⁻¹, ÷ and a/b take all of it (1.5ᴇ-3 ÷ 2 is not 1.5ᴇ-3/2
     // with the 3 alone as the numerator); a power puts it in brackets below, since it is not a plain term
     if (a.kind === "insert" && a.latex.includes("#@")) this.selectENumber(mf);
-    if (a.kind === "insert" && isPower(a) && !mf.selectionIsCollapsed) {
+    if (a.kind === "insert" && (isPower(a) || isDms(a)) && !mf.selectionIsCollapsed) {
       // R17: a selection is the base of a power key, in brackets unless it is one plain term (#@^{2} alone would raise
-      // only its last character: 1+2 selected, x² gave 1+2² = 5)
+      // only its last character: 1+2 selected, x² gave 1+2² = 5); the same for DMS's degrees (1+2° is 1 + 2°)
       const rest = a.latex.startsWith("#@") ? a.latex.slice(2) : a.latex;
       const base = isPlainTerm(mf.getValue(mf.selection, "latex")) ? "#@" : "\\left(#@\\right)";
       this.apply(mf, { ...a, latex: base + rest });
@@ -302,6 +316,13 @@ export class EntryController {
       this.apply(mf, a);
     } else this.apply(mf, a);
     mf.focus();
+  }
+
+  /** True if the atom before the cursor (or the selection) is a digit or a decimal point. */
+  private afterDigit(mf: MathfieldElement): boolean {
+    const [a, b] = mf.selection.ranges[0] ?? [mf.position, mf.position];
+    const o = Math.min(a, b);
+    return o > 0 && /^[\d.]$/.test(mf.getElementInfo(o)?.latex ?? "");
   }
 
   /**
