@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  1. The entry-bug packages: R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -128,7 +128,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R26h | Bug F21: log base, EQ, DMS, evaluate-at bounds | ron, **Opus** | `p1/ron-m4a-bkspmarks` | R26g; G2 item 49 | ~0.5 d |
 | R27a | Bug F22: 10ˣ after a digit joins the number | ron, **Opus** | `p1/ron-m4a-tenpow` | G2 item 48 answered and the owner's pick of the fix | ~0.5 d |
 | R27b | Bug F23: cursor stops where no box is | ron, **Opus** | `p1/ron-m4a-cursorstops` | R26h (same file); G2 item 50 | ~0.5–1 d |
 | R43 | Bug F34: ▶ skips the end of a box that holds a template | ron, **Opus** | `p1/ron-m4a-boxend` | R27b (same function, `run`); G2 item 57 answered, or start on the default | ~0.5 d |
@@ -141,7 +140,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26h–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
@@ -347,7 +346,7 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### The entry-bug packages R26h–R27b and R43 (bugs F21–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
+### The entry-bug packages R27a, R27b and R43 (bugs F22, F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
 - Backlog milestone 4a items 21–35 have the summary.
 - The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
@@ -356,41 +355,6 @@ These are small packages, one concern each, each with its own short reading list
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R26h: log base, EQ, DMS and the evaluate-at bounds (bug F21), branch `p1/ron-m4a-bkspmarks`
-Templates: `\log_{#?}\left(#0\right)`, `\operatorname{EQ}\left(#0,#?\right)`, `#?\degree#?\prime#?\doubleprime`, `\left.#0\right|_{#?=#?}`. Read: `app/src/entry/delete.ts`, the grid, decisions.md "⌫ and Del keep a template whole" points 1–4.
-
-**Behaviour today:**
-- **Log base:**
-  - Tmpl log base, 16 in the base, then one ⌫: the whole `\log_{16}` goes and `\left(□\right)` is left. One ⌫ undid three key presses.
-  - `5 logbase 2 3 ◀ ◀ ⌫` does the same, and the next ⌫ deletes the 5.
-  - On an empty line, ⌫ leaves `(□)`.
-- **EQ:**
-  - EQ on an empty line, then ⌫ → `EQ(,□)`: the first box is gone and a bare comma is left. After that ⌫ is stuck (F10's loop).
-  - Del before the comma deletes it, and the boxes merge (`EQ(2□)`).
-- **DMS:**
-  - On an empty line, ⌫ leaves `°□′□″`, with the cursor before it.
-  - `5 DMS 2 3 ◀ ◀ ⌫` deletes the 5 (`23°…`).
-  - Del deletes the marks one by one (`2□′□″`).
-- **Evaluate-at:**
-  - On an empty line, ⌫ with the cursor in the empty body leaves `_{□=□}`, a subscript without its bar, and is stuck. The body cases are R23's.
-  - Del right before the bar removes it and leaves `2_{□=□}`.
-
-**Cause:**
-- Log base: a MathLive special case, where any ⌫ in the subscript of `\log` or `\ln` deletes the whole operator (`mathlive.mjs` 31863).
-- EQ and DMS: the comma and ° ′ ″ are plain atoms, and the placeholders are atoms too.
-- Evaluate-at: a pair with `\left.` and an empty body is removed whole, and its subscript stays behind.
-
-**Fix** (points 1–4 and the Del mirror):
-- In the log base, ⌫ deletes one character. To avoid MathLive's special case, select the one atom before the cursor and delete the selection: that goes through `deleteRange`, not `onDelete`. Check that it does.
-- The comma, ° ′ ″ and the bar are marks of their template.
-
-**Commits:**
-1. **Tests:** the grid's F21 cases and the cases above by keys.
-2. **Fix.**
-3. **Report** with the G2 item 49 answer.
-
-Gate: bksp-grid F21 (after this the grid should hold no `test.fail` left); tmpl, bksp and undo e2e; vitest.
 
 ### ron, R27a: 10ˣ after a digit joins the number (bug F22), branch `p1/ron-m4a-tenpow`
 **Starts only after G2 item 48 is answered and the owner has picked the fix.** Read: the `log` key in `spec/keyboard.yaml` (line 175, Shift = `10^{#0}`), the DMS cell, `app/src/input/parse.ts` (number tokens), decisions.md "The exponent mark (R14)".
