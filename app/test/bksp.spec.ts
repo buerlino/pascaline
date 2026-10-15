@@ -249,3 +249,138 @@ test("hardware Delete is the mirror: sin 2 3 then Delete keeps 23; log log Delet
   await page.keyboard.press("Delete");
   expect(await entryValue(page)).toBe("");
 });
+
+// R26c (F15): ⌫ right after a pair steps into its body and deletes nothing (decisions.md "⌫ and Del keep a template
+// whole", point 5); MathLive alone set the closing bracket to `\right.`, and no key types it back. Del right before a
+// function name or an opening bracket is the mirror. An emptied body shows □ (point 2), and the next ⌫ removes the
+// template (R23). G2 item 46 is open: these follow the default.
+const PAIRS: [keys: string[], open: string, close: string][] = [
+  [["sin"], "\\sin\\left(", "\\right)"],
+  [["shift", "sin"], "\\arcsin\\left(", "\\right)"],
+  [["cos"], "\\cos\\left(", "\\right)"],
+  [["tan"], "\\tan\\left(", "\\right)"],
+  [["ln"], "\\ln\\left(", "\\right)"],
+  [["log"], "\\log\\left(", "\\right)"],
+  [["paren"], "\\left(", "\\right)"],
+  [["shift", "neg"], "\\left|", "\\right|"],
+  [["shift", "enter"], "\\operatorname{approx}\\left(", "\\right)"],
+];
+
+for (const [keys, open, close] of PAIRS) {
+  test(`${keys.join(" ")} 2 ▶ ⌫ steps into the body; ⌫ ⌫ then empties the line`, async ({ page }) => {
+    await tap(page, [...keys, "d2", "right"]);
+    expect(await entryValue(page)).toBe(`${open}2${close}`);
+    expect(await bksp(page)).toBe(`${open}2${close}`);
+    await tap(page, ["d7"]);
+    expect(await entryValue(page)).toBe(`${open}27${close}`);
+    await tap(page, ["right"]);
+    expect(await bksp(page)).toBe(`${open}27${close}`);
+    expect(await bksp(page)).toBe(`${open}2${close}`);
+    expect(await bksp(page)).toBe(`${open}\\placeholder{}${close}`);
+    expect(await bksp(page)).toBe("");
+  });
+}
+
+test("sin 2 ▶ ⌫ ⌫ 3 gives sin(3), not sin(3 with the bracket gone", async ({ page }) => {
+  await tap(page, ["sin", "d2", "right"]);
+  expect(await bksp(page)).toBe("\\sin\\left(2\\right)");
+  expect(await bksp(page)).toBe("\\sin\\left(\\placeholder{}\\right)");
+  await tap(page, ["d3"]);
+  expect(await entryValue(page)).toBe("\\sin\\left(3\\right)");
+});
+
+test("5 |2| ▶ ⌫ keeps both bars; a function inside a sum keeps its pair", async ({ page }) => {
+  await tap(page, ["d5", "shift", "neg", "d2", "right"]);
+  expect(await bksp(page)).toBe("5\\left|2\\right|");
+  await page.evaluate(() => window.pascaline.entry.clear());
+  await tap(page, ["d1", "add", "log", "d2", "right"]);
+  expect(await bksp(page)).toBe("1+\\log\\left(2\\right)");
+  await tap(page, ["d5"]);
+  expect(await entryValue(page)).toBe("1+\\log\\left(25\\right)");
+});
+
+test("sin sin 2 ▶ ▶ then ⌫ until the line is empty: one step at a time, no half pair", async ({ page }) => {
+  await tap(page, ["sin", "sin", "d2", "right", "right"]);
+  const s = (body: string): string => `\\sin\\left(${body}\\right)`;
+  expect(await entryValue(page)).toBe(s(s("2")));
+  expect(await bksp(page)).toBe(s(s("2"))); // into the outer body
+  expect(await bksp(page)).toBe(s(s("2"))); // into the inner body
+  expect(await bksp(page)).toBe(s(s("\\placeholder{}")));
+  expect(await bksp(page)).toBe(s("\\placeholder{}"));
+  expect(await bksp(page)).toBe("");
+});
+
+test("from the end of 5 sin 2, ⌫ reaches the empty line with no half pair", async ({ page }) => {
+  await tap(page, ["d5", "sin", "d2", "right"]);
+  const lines: string[] = [];
+  for (let i = 0; i < 5; i++) lines.push(await bksp(page));
+  noHalfPair(lines);
+  expect(lines).toEqual(["5\\sin\\left(2\\right)", "5\\sin\\left(\\placeholder{}\\right)", "5", "", ""]);
+});
+
+test("the one-line √: √ 2 ▶ ⌫ steps into the body; the name goes with its pair", async ({ page }) => {
+  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await tap(page, ["shift", "sq", "d2", "right"]);
+  const open = "\\operatorname{sqrt}\\left(";
+  expect(await entryValue(page)).toBe(`${open}2\\right)`);
+  expect(await bksp(page)).toBe(`${open}2\\right)`);
+  expect(await bksp(page)).toBe(`${open}\\placeholder{}\\right)`);
+  expect(await bksp(page)).toBe("");
+});
+
+/** Put the cursor at the start of the line. */
+const toStart = (page: Page): Promise<void> =>
+  page.evaluate(() => window.pascaline.entry.field?.executeCommand("moveToMathfieldStart")).then(() => undefined);
+
+test("Del mirror: Del right before a function name steps to the start of its body and deletes nothing", async ({ page }) => {
+  await tap(page, ["sin", "d2"]);
+  await toStart(page);
+  expect(await del(page)).toBe("\\sin\\left(2\\right)");
+  await tap(page, ["d7"]);
+  expect(await entryValue(page)).toBe("\\sin\\left(72\\right)");
+  await toStart(page);
+  expect(await del(page)).toBe("\\sin\\left(72\\right)");
+  expect(await del(page)).toBe("\\sin\\left(2\\right)");
+  expect(await del(page)).toBe("\\sin\\left(\\placeholder{}\\right)");
+  expect(await del(page)).toBe("");
+});
+
+test("Del mirror: before an opening bracket, and from the start of 5 sin 2 to the empty line", async ({ page }) => {
+  await tap(page, ["d5", "shift", "neg", "d2"]);
+  await toStart(page);
+  expect(await del(page)).toBe("\\left|2\\right|");
+  expect(await del(page)).toBe("\\left|2\\right|");
+  await tap(page, ["d7"]);
+  expect(await entryValue(page)).toBe("\\left|72\\right|");
+  await page.evaluate(() => window.pascaline.entry.clear());
+  await tap(page, ["d5", "sin", "d2"]);
+  await toStart(page);
+  const lines: string[] = [];
+  for (let i = 0; i < 5; i++) lines.push(await del(page));
+  noHalfPair(lines);
+  expect(lines).toEqual([
+    "\\sin\\left(2\\right)",
+    "\\sin\\left(2\\right)",
+    "\\sin\\left(\\placeholder{}\\right)",
+    "",
+    "",
+  ]);
+});
+
+test("Shift + Cancel (undo) after sin 2 ▶ ⌫ ⌫ brings the 2 back", async ({ page }) => {
+  await tap(page, ["sin", "d2", "right"]);
+  await bksp(page);
+  expect(await bksp(page)).toBe("\\sin\\left(\\placeholder{}\\right)");
+  await tap(page, ["shift", "cancel"]);
+  expect(await entryValue(page)).toBe("\\sin\\left(2\\right)");
+});
+
+test("hardware Backspace right after a closing bracket takes the same path", async ({ page }) => {
+  await tap(page, ["sin", "d2", "right"]);
+  await page.keyboard.press("Backspace");
+  expect(await entryValue(page)).toBe("\\sin\\left(2\\right)");
+  await page.keyboard.press("Backspace");
+  expect(await entryValue(page)).toBe("\\sin\\left(\\placeholder{}\\right)");
+  await page.keyboard.press("Backspace");
+  expect(await entryValue(page)).toBe("");
+});
