@@ -3,7 +3,7 @@
 // keys pressed before it is ready are queued and replayed in order, so the keypad is usable at once.
 import type { MathfieldElement } from "mathlive";
 import { constKey, pruneChips, resKey, type Chip, type ChipTable } from "../input/chips.ts";
-import type { ActionBody } from "../keyboard/keyboard.ts";
+import type { ActionBody, Layer } from "../keyboard/keyboard.ts";
 import { mathlive } from "../render/mathlive.svelte.ts";
 import { ANS_CHIP, EMARK, ENTRY_MACROS, constChip, isChipLatex, resChip } from "./macros.ts";
 
@@ -58,6 +58,8 @@ export class EntryController {
   private queue: ActionBody[] = [];
   /** ⌫ and Del at a template (entry/delete.ts, R23): loaded with MathLive, outside the start chunk. */
   private deleteAt: typeof import("./delete.ts").deleteAtTemplate | undefined;
+  /** Backspace, Delete and the printable keys of a hardware keyboard (entry/hwkeys.ts, R26b, R31): loaded with MathLive. */
+  private hwKey: typeof import("./hwkeys.ts").hardwareKey | undefined;
   private pendingValue: string | undefined;
   /** The values of the chips on the line (docs/04 3.6); keys as in input/chips.ts. */
   private table: ChipTable = {};
@@ -65,8 +67,10 @@ export class EntryController {
   /** Called for a physical Enter / Escape (desktop convenience). */
   onEnter: () => void = () => {};
   onEscape: () => void = () => {};
-  /** One-line entry mode (settings): a typed ^ is a literal caret, not a raised exponent (L4). */
-  lineMode = false;
+  /** A keypad key pressed from a hardware keyboard (R31): the shell runs it as a tap in that layer. */
+  onKey: (id: string, layer: Layer) => void = () => {};
+  /** A hardware key that does nothing (R31): the shell's dead-key feedback. */
+  onDead: () => void = () => {};
 
   /** Resolves when the entry line is on the page and the queued keys have been replayed. */
   ready: Promise<void> = Promise.resolve();
@@ -81,8 +85,9 @@ export class EntryController {
   load(): Promise<void> {
     if (this.started) return this.ready;
     this.started = true;
-    this.ready = Promise.all([mathlive.load(), import("./delete.ts")]).then(([m, d]) => {
+    this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts")]).then(([m, d, h]) => {
       this.deleteAt = d.deleteAtTemplate;
+      this.hwKey = h.hardwareKey;
       return this.create(m.MathfieldElement);
     });
     return this.ready;
@@ -120,17 +125,10 @@ export class EntryController {
     mf.addEventListener(
       "keydown",
       (ev) => {
-        // R26b (F16): a physical Backspace or Delete takes the on-screen key's path (run: R23 and the R26 rules live there)
-        if ((ev.key === "Backspace" || ev.key === "Delete") && !ev.ctrlKey && !ev.metaKey && !ev.altKey && !ev.isComposing) {
-          ev.preventDefault();
-          ev.stopPropagation();
-          this.run({ kind: "cmd", name: ev.key === "Backspace" ? "deleteBackward" : "deleteForward" });
-          return;
-        }
-        if (ev.key !== "^" || !this.lineMode) return;
+        // R26b, R31 (F16, F27): Backspace, Delete and the printable keys take the keypad's path (entry/hwkeys.ts)
+        if (!this.hwKey?.(ev, this)) return;
         ev.preventDefault();
         ev.stopPropagation();
-        mf.insert(CARET, { format: "latex" });
       },
       { capture: true },
     );

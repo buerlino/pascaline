@@ -149,7 +149,7 @@ test.describe("on the engine", () => {
   test("1e-3 is 1ᴇ-3 on the line and 0.001, exact (it was 1·e − 3 = −0.281718171541 ≈)", async ({ page }) => {
     await page.keyboard.type("1e-3");
     expect(await entryValue(page)).toBe("1\\emark-3");
-    await expect(page.locator("math-field")).toHaveText(/1ᴇ-3/);
+    await expect(page.locator("math-field")).toHaveText(/1ᴇ−3/) // drawn with a minus sign;
     await page.keyboard.press("Enter");
     await resultIs(page, "0.001", 1);
     await markIs(page, "=");
@@ -172,7 +172,7 @@ test.describe("on the engine", () => {
 
   test(") leaves the bracket pair from inside a fraction in it: (1/2)*4 = 2", async ({ page }) => {
     await page.keyboard.type("(1/2)*4");
-    expect(await entryValue(page)).toBe("\\left(\\frac{1}{2}\\right)\\times4");
+    expect(await entryValue(page)).toBe("\\left(\\frac12\\right)\\times4");
     await page.keyboard.press("Enter");
     await resultIs(page, "2", 1);
   });
