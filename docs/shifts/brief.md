@@ -4,12 +4,12 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8, R22, R25a, R23, R25b and R25c. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8, R22, R25a, R23, R25b, R25c and R42. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R42 (a finger tap lands where it went down, F33), R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  1. The entry-bug packages: R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -129,7 +129,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R42 | Bug F33: a finger tap lands where it went down | ron, Sonnet | `p1/ron-m4a-tapcaret` | now | ~0.25 d |
 | R26a | The ⌫ grid test over every template (F10, F15–F21) | ron, Sonnet | `p1/ron-m4a-bkspgrid` | R23 | ~0.5 d |
 | R26b | Bug F16: the hardware Backspace and Delete | ron, Sonnet | `p1/ron-m4a-hwdelete` | R23 | ~0.25 d |
 | R26c | Bug F15: ⌫ right after a closing bracket | ron, **Opus** | `p1/ron-m4a-bkspclose` | R26a, R26b; G2 item 46 answered, or start on the default | ~0.5 d |
@@ -150,7 +149,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a, R26b and R42 are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
@@ -357,46 +356,15 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### The entry-bug packages R26a–R27b, R42 and R43 (bugs F15–F23, found by probing 2026-10-14; F33 and F34, the owner's report of 2026-10-15)
+### The entry-bug packages R26a–R27b and R43 (bugs F15–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
 - Backlog milestone 4a items 21–35 have the summary.
 - The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
 - r6-pipelines section 7 explains how MathLive behaves and how to probe it.
-- Every "behaviour today" below was reproduced in Playwright (Pixel 7 profile, `?engine=fake`, 2026-10-14; R42 and R43 on 2026-10-15). ‸ is the cursor.
+- Every "behaviour today" below was reproduced in Playwright (Pixel 7 profile, `?engine=fake`, 2026-10-14; R43 on 2026-10-15). ‸ is the cursor.
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R42: a finger tap lands where it went down (bug F33), branch `p1/ron-m4a-tapcaret`
-Read: `EntryController.create()` in `app/src/entry/controller.ts`, `app/test/helpers.ts`, `app/test/selection.spec.ts`, r6-pipelines section 7 ("A finger tap places the caret twice"), decisions.md "The cursor goes where the user aims" point 1.
-
-**Behaviour today** (the owner hit it on the phone, 2026-10-15; reproduced with `page.touchscreen.tap` against `page.mouse.click` at the same point):
-1. ÷ ÷ 1 ▶ 2 ▶ gives `\frac{\frac12}{□}`.
-2. Tap 1–8 px right of the inner ½, at its height. A mouse click puts the cursor at the end of the outer numerator (offset 6), as it should. A finger tap puts it at offset 0, the start of the whole line: a 9 typed next gives `9\frac{\frac12}{□}`.
-3. Tap on the right edge of ½ (0–2 px inside). The mouse gives offset 3 (after the 1); a finger gives offset 1, the start of the outer numerator: `\frac{9\frac12}{□}`.
-4. Not only nested fractions. On 8 lines (`123+456`, `\frac{12}{34}`, `\frac{\frac12}{□}`, `\frac{\frac12}{3}`, `\frac{1}{\frac23}`, `\sqrt{\frac12}`, `2^{3}+1`, `\sin\left(2\right)+1`), a tap 1.5 px inside the right edge of every atom, starting with the cursor at the end and at the start: touch and mouse differ at 11 of 40 points. Every one is at the right edge of a fraction, a root, a power or a bracket pair, and the finger lands at the start of the line or of the box (`\frac{12}{34}`, right edge: mouse 3, finger 0). Digits and operators are not affected.
-
-**Cause:**
-- MathLive's `onPointerDown` (`mathlive.mjs` 34364) places the caret with `offsetFromPoint`, the same for mouse and touch. That result is right.
-- On the lift, for touch only, the window `pointerup` listener of `MathfieldElement.onPointerDown` places it a second time: `if (evt.pointerType === "touch" && this.selectionIsCollapsed) this.position = offset` (line 41468), with `offset` from `getOffsetFromPoint`.
-- That second hit test reads atom bounds from `atomBoundsCache` (`getAtomBounds`, line 12853), which are out of date after the first placement. Proof: with the caret set to offset 6, `getOffsetFromPoint` at the same point gives 0; after `_mathfield.atomBoundsCache.clear()` it gives 6.
-
-**Fix** (tried in the probe: then 40 of 40 points match the mouse):
-- In `create()`, a `pointerdown` listener on the field records `mf.position` in a microtask (after MathLive's own handler), when the pointer is a touch and the selection is collapsed.
-- A window `pointerup` listener puts that position back in a `setTimeout(0)` (after MathLive's second placement), if the selection is still collapsed and the position differs.
-- A drag that selects leaves a selection, and a double tap selects a group, so neither is touched.
-- Alternative: clear the private `atomBoundsCache` in a capturing `pointerup` (one line, but it breaks on a MathLive upgrade). Report it upstream either way (backlog "Needs the user" item 6).
-
-**Left open:** after the fix, the strip right of an inner fraction that ends the outer numerator is about 8 px wide in the Pixel 7 profile (from the inner fraction's right edge to the end of the outer bar; a tap 10 px right lands after the whole fraction). A finger may miss it. Whether to widen it, for example so that a tap on the outer fraction's right part at the numerator's height lands at the end of the numerator, is left for the owner.
-
-**Commits:**
-1. **Tests** (`selection.spec.ts`, or a new `tap.spec.ts`):
-   - The 8 lines above: a `page.touchscreen.tap` at each atom's right edge lands where `page.mouse.click` does. MathLive counts a second tap within 5 px and 500 ms as a double tap, so set the line again and wait 550 ms before each tap.
-   - The nested case: tap right of ½, then 9 gives `\frac{\frac129}{□}`.
-2. **Fix.**
-3. **Report.**
-
-Gate: the new test fails on today's code; selection, gestures, entry and chips e2e green; start chunk unchanged (±0.1 kB).
 
 ### ron, R26a: the ⌫ grid test over every template, branch `p1/ron-m4a-bkspgrid`
 Test only, no app code. Read: `spec/keyboard.yaml` (every `insert:` that holds a template, including `templates:`), `app/test/helpers.ts`, R23's `app/test/bksp.spec.ts`, r6-pipelines section 7, decisions.md "⌫ and Del keep a template whole".
