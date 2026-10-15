@@ -236,7 +236,7 @@ test("∫ 1 ▶ 2 ▶ x ▶ x: ⌫ at the end shows □ for the variable, and th
 test("∫ 1 ▶ 2 ▶ x ▶ x, ⌫ at the start of the integrand steps to the end of the upper bound", async ({ page }) => {
   await insert(page, INT);
   await tap(page, ["d1", "right", "d2", "right", "x", "right", "x"]);
-  await tap(page, ["left", "left", "left", "left"]);
+  await tap(page, ["left", "left"]); // over the variable and the d, then to the start of the integrand (R27b)
   const line = "\\int_1^2x\\,\\mathrm{d}x";
   expect(await bksp(page)).toBe(line);
   await tap(page, ["d0"]);
@@ -268,28 +268,33 @@ test("∫ 1 ▶ 2 ▶ x ▶ x + 3: ⌫ deletes the 3 and the + as usual, then re
   expect(await bksp(page)).toBe(`\\int_1^2x\\,\\mathrm{d}${PH}`);
 });
 
-// ---- the stops that are no box (◀ and ▶ reach them until R27b, F23) -----------------------------------------------------
-test("lim x ▶ 0 ▶ 5 ◀ ◀: between the bounds and the bracket, ⌫ steps to the end of the target and Del into the body", async ({ page }) => {
+// ---- the places that are no box: ◀ and ▶ skip them since R27b (F23), a tap can still put the cursor there ---------------
+/** Put the cursor at offset `o`, as a tap there does. */
+const at = (page: Page, o: number): Promise<void> => page.evaluate((o) => void (window.pascaline.entry.field!.position = o), o);
+
+test("lim x ▶ 0 ▶ 5, the cursor between the bounds and the bracket, ⌫ steps to the end of the target and Del into the body", async ({ page }) => {
   await insert(page, LIM);
-  await tap(page, ["x", "right", "d0", "right", "d5", "left", "left"]);
+  await tap(page, ["x", "right", "d0", "right", "d5"]);
+  await at(page, 5); // between the bounds and the bracket
   const line = "\\lim_{x\\to0}\\left(5\\right)";
   expect(await bksp(page)).toBe(line);
   await tap(page, ["d1"]);
   expect(await entryValue(page)).toBe("\\lim_{x\\to01}\\left(5\\right)");
-  await tap(page, ["right"]);
+  await at(page, 6); // the gap again (▶ goes on into the body)
   expect(await del(page)).toBe("\\lim_{x\\to01}\\left(5\\right)");
   await tap(page, ["d2"]);
   expect(await entryValue(page)).toBe("\\lim_{x\\to01}\\left(25\\right)");
 });
 
-test("∫ 1 ▶ 2 ▶ x ▶ x ◀ ◀: between \\, and d, ⌫ steps to the end of the integrand and Del to the variable", async ({ page }) => {
+test("∫ 1 ▶ 2 ▶ x ▶ x, the cursor between \\, and d, ⌫ steps to the end of the integrand and Del to the variable", async ({ page }) => {
   await insert(page, INT);
-  await tap(page, ["d1", "right", "d2", "right", "x", "right", "x", "left", "left"]);
+  await tap(page, ["d1", "right", "d2", "right", "x", "right", "x"]);
+  await at(page, 7); // between \, and d
   const line = "\\int_1^2x\\,\\mathrm{d}x";
   expect(await bksp(page)).toBe(line);
   await tap(page, ["d3"]);
   expect(await entryValue(page)).toBe("\\int_1^2x3\\,\\mathrm{d}x");
-  await tap(page, ["right"]);
+  await at(page, 8); // between \, and d again (▶ goes on over the d)
   expect(await del(page)).toBe("\\int_1^2x3\\,\\mathrm{d}x");
   expect(await del(page)).toBe(`\\int_1^2x3\\,\\mathrm{d}${PH}`);
 });

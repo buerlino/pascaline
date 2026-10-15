@@ -21,7 +21,7 @@ type Field = Pick<
 
 const PLACEHOLDER = "\\placeholder{}";
 /** A function name a key inserts together with its pair: the name goes with the brackets. */
-const NAME =
+export const NAME =
   /^\\(?:operatorname\{(?:\\mathrm\{[^{}]*\}|[^{}]*)\}|(?:arc)?(?:sin|cos|tan|cot|sec|csc)h?|ln|log|lg|exp|lim|sum|prod|det|gcd|lcm|max|min|arg|Re|Im)(?![A-Za-z])/;
 /** A name whose parts are letters, not boxes. */
 const LETTERS = /^\\(?:operatorname|mathrm)\{/;
