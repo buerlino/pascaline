@@ -136,6 +136,7 @@ export class EntryController {
         this.onEscape();
       }
     });
+    this.keepTouchCaret(mf);
     if (this.pendingValue !== undefined) mf.value = this.pendingValue;
     this.pendingValue = undefined;
     // Replay the queued keys one by one through the same path as a live keypress. Keys that arrive while
@@ -143,6 +144,32 @@ export class EntryController {
     mf.focus();
     mf.executeCommand("moveToMathfieldEnd");
     while (this.queue.length > 0) this.run(this.queue.shift() as ActionBody);
+  }
+
+  /**
+   * R42 (F33): MathLive places the caret on pointerdown and, for touch only, a second time on pointerup from atom bounds
+   * that the first placement made stale (right of a fraction, root, power or bracket pair the second hit lands at the
+   * start of the line or box). Remember the first (right) caret and put it back after the second. A selection (drag,
+   * double tap) is left alone. A mouse click never needed this.
+   */
+  private keepTouchCaret(mf: MathfieldElement): void {
+    let down: number | undefined;
+    mf.addEventListener("pointerdown", (ev) => {
+      down = undefined;
+      if (ev.pointerType !== "touch") return;
+      // A microtask runs after MathLive's own pointerdown handler (inside the shadow root) has placed the caret.
+      queueMicrotask(() => {
+        if (mf.selectionIsCollapsed) down = mf.position;
+      });
+    });
+    window.addEventListener("pointerup", (ev) => {
+      const want = down;
+      down = undefined;
+      if (want === undefined || ev.pointerType !== "touch") return;
+      setTimeout(() => {
+        if (mf.selectionIsCollapsed && mf.position !== want) mf.position = want;
+      }, 0);
+    });
   }
 
   /** The field's hidden textarea must never summon the system keyboard (inputmode=none, again after upgrade). */
