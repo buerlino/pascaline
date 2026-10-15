@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  1. The entry-bug packages: R26d–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -128,7 +128,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R26c | Bug F15: ⌫ right after a closing bracket | ron, **Opus** | `p1/ron-m4a-bkspclose` | R26a, R26b; G2 item 46 answered, or start on the default | ~0.5 d |
 | R26d | Bug F17: powers and exponents | ron, **Opus** | `p1/ron-m4a-bksppow` | R26c (same file); G2 item 47 | ~0.5–1 d |
 | R26e | Bug F18: fractions and roots | ron, **Opus** | `p1/ron-m4a-bkspfrac` | R26d; G2 item 47 | ~0.5 d |
 | R26f | Bug F19: lim, Σ, Π, ∫ | ron, **Opus** | `p1/ron-m4a-bksplimits` | R26e | ~0.5 d |
@@ -146,7 +145,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26d–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
@@ -352,7 +351,7 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### The entry-bug packages R26c–R27b and R43 (bugs F15–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
+### The entry-bug packages R26d–R27b and R43 (bugs F17–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
 - Backlog milestone 4a items 21–35 have the summary.
 - The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
@@ -361,33 +360,6 @@ These are small packages, one concern each, each with its own short reading list
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R26c: ⌫ right after a closing bracket (bug F15), branch `p1/ron-m4a-bkspclose`
-Read: `app/src/entry/delete.ts`, `app/test/bksp-grid.spec.ts`, decisions.md "⌫ and Del keep a template whole" point 5 (G2 item 46 may overrule it).
-
-**Behaviour today:**
-- `sin 2 ▶ ⌫` (the cursor after `)`, then ⌫) leaves `\sin\left(2\right.`: the `)` is gone, the cursor sits after the 2, and the line reads `sin(2`.
-- No key types `)` back, so `sin 2 ▶ ⌫ ⌫ 3` gives `sin(3`, and Enter says "expected closing ) at '.'". That is an error, not a wrong number.
-- Every pair does this: the function keys, `( )`, `| |` (`5|2|‸ ⌫` → `5|2`), the one-line √ and x⁻¹, and the brackets inside lim, Σ, Π and log base.
-- From the end of the line, `5 sin 2` ⌫ ⌫ ⌫ … does reach the empty line, through `sin(2`, `sin(`, `sin`.
-
-**Cause:** `onDelete` on a `\left…\right` pair from outside (`mathlive.mjs` 31712–31734, the branch that is not at the start). While the opening bracket is real, it sets the closing one to `.`.
-
-**Fix (default):**
-- ⌫ right after a pair, or after a function's pair (R23's name rule), moves the cursor to the end of the body and deletes nothing. ⌫ after a root or a fraction already does this.
-- Del right before a function name or an opening bracket moves to the start of the body.
-- Once the body is empty, the emptied box shows □ (point 2) and R23's rule removes the template on the next ⌫.
-
-**Commits:**
-1. **Tests:** flip the grid's F15 cases. By keys:
-   - `sin 2 ▶ ⌫` → `\sin\left(2\right)`, with the cursor after the 2.
-   - `sin 2 ▶ ⌫ ⌫` → `\sin\left(\placeholder{}\right)`.
-   - One more ⌫ → the empty line.
-   - Del mirrors each case.
-2. **Fix.**
-3. **Report** with the G2 item 46 answer.
-
-Gate: bksp-grid (its F15 cases pass), bksp, selection, undo and tmpl e2e green.
 
 ### ron, R26d: powers and exponents (bug F17), branch `p1/ron-m4a-bksppow`
 Templates: x² `#@^{2}`, xʸ `#@^{#?}`, x⁻¹ `#@^{-1}`, eˣ `\exponentialE^{#0}`, 10ˣ `10^{#0}`, the one-line x⁻¹ `\left(#@\right)^{-1}`. Read: `app/src/entry/delete.ts`, `app/src/entry/controller.ts` (`isPower`, `selectCompound`), the grid, decisions.md "⌫ and Del keep a template whole" points 3, 4 and 6.
