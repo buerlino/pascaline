@@ -97,14 +97,34 @@ test("5 eˣ 2 ⌫ ⌫ gives 5: the emptied exponent shows □, then the power go
   expect(await bksp(page)).toBe("5");
 });
 
-test("x² from the end: ⌫ steps into the exponent, the emptied exponent shows □, and the line ends empty", async ({ page }) => {
+test("x² from the end: ⌫ steps into the exponent, the emptied exponent shows □, then the exponent goes alone", async ({ page }) => {
   await tap(page, ["d5", "sq"]);
   expect(await entryValue(page)).toBe("5^2");
   expect(await bksp(page)).toBe("5^2"); // into the exponent
   expect(await bksp(page)).toBe(`5^{${PH}}`);
-  expect(await bksp(page)).toBe(`5^{${PH}}`); // to the end of the base
-  expect(await bksp(page)).toBe(`${PH}^{${PH}}`);
+  expect(await bksp(page)).toBe("5");
   expect(await bksp(page)).toBe("");
+});
+
+// the owner, 2026-10-15: an empty exponent on a typed base goes alone in one ⌫ (one ⌫ per key press)
+test("5 xʸ ⌫ gives 5: an empty exponent on a typed base goes alone, the cursor after the 5", async ({ page }) => {
+  await tap(page, ["d5", "pow"]);
+  expect(await entryValue(page)).toBe(`5^{${PH}}`);
+  expect(await bksp(page)).toBe("5");
+  await tap(page, ["d7"]);
+  expect(await entryValue(page)).toBe("57");
+});
+
+test("the same on a bracket base: ( 1 + 2 ) xʸ ⌫ gives (1+2)", async ({ page }) => {
+  await tap(page, ["paren", "d1", "add", "d2", "right", "pow"]);
+  expect(await entryValue(page)).toBe(`\\left(1+2\\right)^{${PH}}`);
+  expect(await bksp(page)).toBe("\\left(1+2\\right)");
+});
+
+test("a typed exponent still steps: 5 xʸ 2 ◀ ⌫ keeps 5^2 with the cursor after the 5", async ({ page }) => {
+  await tap(page, ["d5", "pow", "d2", "left"]);
+  expect(await bksp(page)).toBe("5^2");
+  expect(await position(page)).toBe(1);
 });
 
 test("an exponent stays on a letter: 2 L x², ⌫ after the L leaves 2□², not 2²", async ({ page }) => {
