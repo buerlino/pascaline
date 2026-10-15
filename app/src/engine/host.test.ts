@@ -85,4 +85,35 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     expect(host.eval("pasans").output).toBe("1/2");
     expect(host.eval("pcasans").output).toBe("x^2");
   });
+  describe("CAS: the stored values a result used (F28, G20)", () => {
+    const home = (i: string) => host.home(i, defaultHomeSettings);
+    const cas = (i: string) => host.cas(i, defaultCasSettings).result;
+
+    it("lists a stored variable with its preview and the view it was stored in", () => {
+      home("ux:=3");
+      const r = cas("int(ux^2,ux)");
+      expect(r.uses).toEqual([{ name: "ux", preview: "3", view: "home" }]);
+      cas("uy:=7");
+      expect(cas("uy+1").uses).toEqual([{ name: "uy", preview: "7", view: "cas" }]);
+    });
+
+    it("lists nothing for a name the input assigns itself", () => {
+      home("uz:=3");
+      const r = cas("uz:=5");
+      expect(r.uses).toBeUndefined();
+    });
+
+    it("does not list a user function called by name", () => {
+      cas("uf(t):=t^2");
+      const r = cas("uf(2)");
+      expect(r.text).toBe("4");
+      expect(r.uses).toBeUndefined();
+    });
+
+    it("is absent when no stored variable appears, and Home results have none", () => {
+      home("ua:=2");
+      expect(cas("1/2+1/6").uses).toBeUndefined();
+      expect("uses" in home("ua+1").result).toBe(false);
+    });
+  });
 });
