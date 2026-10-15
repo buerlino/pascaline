@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  1. The entry-bug packages: R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30).
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -128,10 +128,9 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R27a | Bug F22: 10ˣ after a digit joins the number | ron, **Opus** | `p1/ron-m4a-tenpow` | G2 item 48 answered and the owner's pick of the fix | ~0.5 d |
 | R27b | Bug F23: cursor stops where no box is | ron, **Opus** | `p1/ron-m4a-cursorstops` | R26h (same file); G2 item 50 | ~0.5–1 d |
 | R43 | Bug F34: ▶ skips the end of a box that holds a template | ron, **Opus** | `p1/ron-m4a-boxend` | R27b (same function, `run`); G2 item 57 answered, or start on the default | ~0.5 d |
-| R21a | Pick sheets over the keypad, and fit | ron, **Opus** | `p1/ron-m4a-fit` | R35 (section 0f; it follows the entry-bug packages, R27a may come later) | ~1.5 d |
+| R21a | Pick sheets over the keypad, and fit | ron, **Opus** | `p1/ron-m4a-fit` | R35 (section 0f; it follows the entry-bug packages) | ~1.5 d |
 | R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R21a | ~0.75 d |
 | A4a | Device run before R15b | annabell, Sonnet | `p1/annabell-m4a-device` | R21b; the owner connects the Tab One (and the S8+) | ~0.5 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R21b (runs while A4a takes place) | ~1 d |
@@ -346,7 +345,7 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### The entry-bug packages R27a, R27b and R43 (bugs F22, F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
+### The entry-bug packages R27b and R43 (bug F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
 - Backlog milestone 4a items 21–35 have the summary.
 - The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
@@ -355,30 +354,6 @@ These are small packages, one concern each, each with its own short reading list
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R27a: 10ˣ after a digit joins the number (bug F22), branch `p1/ron-m4a-tenpow`
-**Starts only after G2 item 48 is answered and the owner has picked the fix.** Read: the `log` key in `spec/keyboard.yaml` (line 175, Shift = `10^{#0}`), the DMS cell, `app/src/input/parse.ts` (number tokens), decisions.md "The exponent mark (R14)".
-
-**Behaviour today:**
-- `5 10ˣ 2` shows `510²` (LaTeX `510^2`), and Enter computes 510² = 260 100. Someone who meant 5·10² = 500 sees a plausible line.
-- The same join happens with 5, the DMS cell and 2 3 → `523°`.
-- The exponent key ᴇ is the right key for 5·10², but a G2 hand also reaches for Shift + LOG.
-
-**Cause:** the template's digits go straight after the 5, in the same number. The LaTeX cannot tell `510^2` from a typed 510².
-
-**Fix (open, for the owner):**
-- (a) After a digit, insert `\times10^{#0}`. The line shows 5×10², which is what was meant.
-- (b) Keep the template, and have the parser refuse a number that runs into a 10ˣ. This needs a mark in the LaTeX, such as the group `{10}^{…}`, and a parser rule with a round trip.
-- (c) Leave it as it is: the line shows 510², which is what it computes.
-
-Recommendation: (a), if the G2 shows `5*10^2` or similar. With (a) or (b), also narrow R26d's 10ˣ mark in `powerAt()` (`app/src/entry/delete.ts`) to a 10 that no digit precedes: today any `10^` counts as the mark, so `110^{2}` with ⌫ after the 0 selects `10^{2}` instead of deleting the 0. DMS is the same question at a lower priority, since no engineer types a digit right before a DMS cell.
-
-**Commits:**
-1. **Test** by keys (`entry.spec.ts`).
-2. **Fix.**
-3. **Report.**
-
-Gate: entry, selection and tmpl e2e; vitest, plus the golden gate if the parser changes.
 
 ### ron, R27b: the cursor stops where no box is (bug F23), branch `p1/ron-m4a-cursorstops`
 Read: `app/src/entry/controller.ts` (`run`, `nextBox` line 266), `app/src/keyboard/Keypad.svelte` `step()` (a trackpad step is the arrow key's `run`), r6-pipelines section 7 ("◀ and ▶ visit every offset").

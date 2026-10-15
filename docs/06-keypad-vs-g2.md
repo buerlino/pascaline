@@ -32,6 +32,8 @@ The legend is missing on the keytop only because the feature is not built; the k
 | `(−)` where the G2 prints `+/−` | behaviour is identical: the G2 key inserts a minus sign and does not toggle (keys.yaml r6c2). The label is the honest one |
 | Shift + x = y, where the G2 has Define | kept for now (owner, 2026-10-13). Revisit when typing `f(x):=…` shows up as a friction |
 | Shift + a b/c (DMS) omitted | DMS is in Tmpl (owner, 2026-10-13) |
+| Tmpl's DMS cell takes the number before the cursor as its degrees | as the mixed number takes its whole part: `5`, then the cell, is 5°□′□″, where the typed 5 would otherwise join the degrees with no edge between them (owner, 2026-10-15, R27a) |
+| Shift + LOG (10ˣ) after a digit inserts ×10ˣ | `5`, 10ˣ, `2` is 5×10² = 500; the plain template would read 510² (F22; owner, 2026-10-15, R27a). Ours until G2 item 48 says otherwise |
 | Tmpl's mixed-number cell takes the number before the cursor as its whole part | on the G2 the typed number stays outside the cell's brackets, so `2`, then the cell, reads as 2 × (□/□) (G2 item 36); ours gives 2 □/□ = 2 + □/□ |
 | Lower-case and `sin⁻¹`-style legends, ⌫ glyph, text labels for icons | our own look (clean-room rule); the logical position is the G2's |
 | Shift + 9: & and Å are refused with a message | what & does on the G2 is not known (G2 item 41); Å is the ångström, a unit, and Home is unit-free (P8); the unit view reads Å from Find (milestone 5) |
