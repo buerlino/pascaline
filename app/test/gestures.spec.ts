@@ -152,3 +152,18 @@ for (const via of ["hide", "blur", "pagehide"] as const) {
     expect(await entryValue(page)).toBe("1239");
   });
 }
+
+test("F14: a ⌫ held with a mouse stops at the release, even outside the keypad", async ({ page }) => {
+  await tap(page, ["d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d1", "d2", "d3"]);
+  const box = await page.locator('[data-key="bksp"]').boundingBox();
+  if (!box) throw new Error("bksp is not visible");
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(100);
+  await page.mouse.move(box.x + box.width / 2, 60);
+  await page.mouse.up();
+  const at = await entryValue(page);
+  expect(at).toBe("12345678912".slice(0, 11));
+  await page.waitForTimeout(800);
+  expect(await entryValue(page)).toBe(at);
+});
