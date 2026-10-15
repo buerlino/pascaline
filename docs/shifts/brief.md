@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30).
+  1. R18f3 (a closed `==` test shows an exact 0, F35; a silent wrong answer, so it goes first). Then the entry-bug packages: R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30).
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -32,7 +32,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
   - **Day packages sit next to the code they share:**
     - R34 ends the entry-bug group (the same files, `main.ts` and `controller.ts`).
-    - R35 comes before R21a, whose gate is the start-chunk budget: 1.34 kB gzip are left (52.66 of 54 kB, after R25c, 2026-10-15).
+    - R35 comes before R21a, whose gate is the start-chunk budget: 0.99 kB gzip are left (53.01 of 54 kB, after R27b, Opus pass of 2026-10-15).
   - **Trust features after the code they build on:**
     - R32 and R36 add a line to the history rows R11 builds.
     - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
@@ -128,6 +128,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
+| R18f3 | Bug F35: a closed `==` test shows an exact 0 | ron, **Opus** | `p1/ron-m4-eqkept` | now (the Opus pass of 2026-10-15) | ~0.5 d |
 | R43 | Bug F34: ▶ skips the end of a box that holds a template | ron, **Opus** | `p1/ron-m4a-boxend` | R27b (same function, `run`); G2 item 57 answered, or start on the default | ~0.5 d |
 | R21a | Pick sheets over the keypad, and fit | ron, **Opus** | `p1/ron-m4a-fit` | R35 (section 0f; it follows the entry-bug packages) | ~1.5 d |
 | R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R21a | ~0.75 d |
@@ -343,6 +344,29 @@ Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a us
 Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is connected (rules section 6). Find per key (`?bench=find`, §3.2) against the §8.3 bar; a miss goes under "Needs a decision" with the number (docs/04 says what changes: incremental Find). Leave an APK built from `phase-1` on the Tab One for the owner. Then the report says whether milestone 4's gate (section 8) is complete.
 
 ### Milestone 4a packages (section 0b)
+
+### ron, R18f3: an undecided `==` test stays as typed (bug F35), branch `p1/ron-m4-eqkept`
+From the Opus pass of 2026-10-15. Read: decisions.md "2026-10-14 R18 defaults" point 6 and "R18f2: a float side is compared to its own digits" (Decided proposals), `app/src/input/emit.ts` (`equalityTest`, lines 50–74), `app/src/engine/homeEval.ts` (`decideFloatTest` and the test handling near line 400), `app/src/engine/host.ts` (lines 325–375), and the `prec-eq-*` and `prec-ne-*` cases in `tests/golden/precision.yaml`. Probe with `tools/probes/parse.ts` and `tools/probes/engine.ts` (`MODE=cas` and `MODE=raw` too).
+
+**Behaviour today** (probe 2026-10-15):
+- `\cos\left(\frac{\pi}{7}\right)-\cos\left(\frac{2\pi}{7}\right)+\cos\left(\frac{3\pi}{7}\right)==\frac{1}{2}` is true in exact maths (`derived`: a classical identity; the 40-digit difference is 0). Home shows `0` with the exact mark, and CAS shows text `0`.
+- `e^{\pi\sqrt{163}}==640320^{3}+744` shows `0` too. The 50-digit difference is −7.5E-13, so false is right by luck: the 30-digit check sees only cancellation noise against sides of 2.6E17, so the rule leaves the test as typed, and that form is lost the same way.
+- Right today, and they must stay right: `x==2` stays `(x==2)`, `(pi+10^-25)==pi` stays as typed, and every `≠` that the rule leaves open stays as typed (`<>`, drawn ≠).
+
+**Cause:** the kept branch of `equalityTest` returns the quoted form `'a==b'`. Once no name is free, a later evaluation turns it into Giac's structural `==`. That `==` compares expressions, which is the very bug R18f1 fixed. The result is `0` and not `false`, so the evaluation that does it may sit after the test form, in Home's or CAS's result path. Find it first.
+
+**Fix** (direction): the kept form must reach the display as the test the user typed, never as Giac's own verdict. Use `quote`/`hold`, a stand-in that a render rule draws as a == b, or an end to the re-evaluation. The rule itself is unchanged: true when the difference simplifies to exact 0; false when it has no free names and is clearly not 0; otherwise as typed.
+
+**Commits:**
+1. **Tests** (failing today), in `tests/golden/precision.yaml`, `source: derived`:
+   - `prec-eq-closed-open`: the cos identity above stays as typed, never `0` or `false`.
+   - its CAS twin.
+   - `prec-eq-ramanujan`: e^{π√163} against 640320³+744, as typed or `false`, never `0`.
+   - `prec-ne-closed-open`: the cos identity with ≠ stays as typed (a guard; it passes today).
+2. **Fix.**
+3. **Report.**
+
+Gate: golden gate (all `prec-eq-*`/`prec-ne-*` and the parser round trips green), vitest, typecheck, and the size check (0.99 kB gzip left in the start chunk).
 
 ### The entry-bug package R43 (bug F34, the owner's report of 2026-10-15)
 A small package, one concern, with its own short reading list. Read only what the package names.
