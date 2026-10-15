@@ -208,11 +208,16 @@ test("an exponent on a bracket stays on it: ⌫ at the start of (1+2)² selects 
   expect(await bksp(page)).toBe("");
 });
 
-test("lim with empty bounds: ⌫ at the start of its body keeps the body", async ({ page }) => {
+// (R26f: the body is lim's last box, so ⌫ at its start steps back through the bounds, "keep a template whole" point
+// 3; at the start of the first bound, with only the body typed, the body stays, point 4)
+test("lim with empty bounds: ⌫ at the start of its body steps back through the bounds, then keeps the body", async ({ page }) => {
   await tmpl(page, "limit");
   await page.evaluate(() => window.pascaline.entry.field?.executeCommand("moveToMathfieldEnd"));
   await tap(page, ["left", "d7", "left"]);
-  expect(await entryValue(page)).toBe("\\lim_{\\placeholder{}\\to\\placeholder{}}\\left(7\\right)");
+  const line = "\\lim_{\\placeholder{}\\to\\placeholder{}}\\left(7\\right)";
+  expect(await entryValue(page)).toBe(line);
+  expect(await bksp(page)).toBe(line); // to the target's □
+  expect(await bksp(page)).toBe(line); // to the variable's □
   expect(await bksp(page)).toBe("7");
 });
 
