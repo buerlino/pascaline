@@ -58,7 +58,7 @@ export const EQ_VERDICT = "pasverdict";
  * at two precisions and sets the verdict (engine/numeric.ts decideFloatTest). Without a verdict (a test inside a
  * stored function) a float side stays as typed.
  */
-function equalityTest(a: Out, b: Out, negate: boolean): Out {
+export function equalityTest(a: Out, b: Out, negate: boolean): Out {
   const [yes, no, rel] = negate ? ["false", "true", "!="] : ["true", "false", "=="];
   const kept = `'${wrap(a, 1)}${rel}${wrap(b, 1)}'`;
   const big = (v: string): string => `max(abs(evalf(${v},30)))`;

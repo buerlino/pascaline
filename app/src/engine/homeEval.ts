@@ -290,8 +290,12 @@ export const FULL_EXACT_MAX = 2048;
  * `regroup` on the stored answer `name` (x*x -> x^2), kept only when it merges equal factors, i.e. has
  * fewer "*" than `text`. Otherwise regroup would just reorder (factor's (x-1)*(x+1) -> (x+1)*(x-1))
  * and `text` and the stored answer stay as they were.
+ * A text holding `==` is an equality test the rule left as typed (input/emit.ts equalityTest): regroup evaluates it as
+ * Giac's structural `==`, so `cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)==1/2` (true) became 0 and `x*x==x^2` became 1 (F35,
+ * R18f3). It is left alone. (`<>` comes back from regroup untouched, probe 2026-10-15.)
  */
 export function regrouped(giac: Giac, name: string, text: string): string {
+  if (text.includes("==")) return text;
   const out = giac.eval(`regroup(${name})`);
   if (isError(out) || out === "undef" || out.split("*").length >= text.split("*").length) return text;
   giac.eval(`${name}:=regroup(${name})`);
