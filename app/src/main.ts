@@ -49,6 +49,12 @@ document.addEventListener("visibilitychange", () => {
   dropFocus();
 });
 addEventListener("blur", () => matchMedia("(pointer: coarse)").matches && dropFocus());
+// A focus can also arrive while the app is away: MathLive focuses its keyboard sink 60 ms after mf.focus(), in a
+// timer dropFocus cannot cancel, and a repeat timer or an insert after an await does the same (F11, F13). Drop any
+// focus that lands while the page is hidden, or while a touch screen's window is blurred. focusin is composed, so
+// it reaches document from inside MathLive's shadow root.
+const away = (): boolean => document.hidden || (matchMedia("(pointer: coarse)").matches && !document.hasFocus());
+document.addEventListener("focusin", () => away() && dropFocus(), true);
 
 mount(App, { target: document.getElementById("app") as HTMLElement, props: { session, entry, shell } });
 
