@@ -3,7 +3,7 @@
 // keyboard, so whatever element has focus after a switch must keep the system keyboard closed: inputmode=none
 // and no EditContext (Chrome's EditContext on Android ignores inputmode).
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { drag, entryValue, open, tap } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
@@ -45,20 +45,34 @@ test("switching apps never focuses an element that opens the system keyboard", a
 /** The deepest focused element is editable (the entry field's input, or an editor). */
 const editableFocused = (page: Page) => focused(page).then((f) => f.editable);
 
-/** Leave the app as Android does on a swipe or the app switcher: the window loses focus, then the page is hidden. */
-async function leaveAndReturn(page: Page, via: "hidden" | "blur"): Promise<void> {
+type Leave = "hidden" | "blur" | "blur-hidden" | "hidden-blur" | "blur-focus";
+
+/**
+ * Leave the app and come back. Android blurs the window and hides the page on a swipe or the app switcher, in
+ * either order ("blur-hidden", "hidden-blur"); the notification shade, the share sheet or a permission prompt only
+ * blur and refocus the window ("blur-focus"). "hidden" and "blur" are one event alone.
+ */
+async function leaveAndReturn(page: Page, via: Leave): Promise<void> {
   await page.evaluate((how) => {
-    if (how === "blur") return void window.dispatchEvent(new Event("blur"));
-    Object.defineProperty(document, "hidden", { value: true, configurable: true });
-    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
-    document.dispatchEvent(new Event("visibilitychange"));
+    const blur = (): boolean => window.dispatchEvent(new Event("blur"));
+    const hide = (): void => {
+      Object.defineProperty(document, "hidden", { value: true, configurable: true });
+      Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+      document.dispatchEvent(new Event("visibilitychange"));
+    };
+    for (const step of how.split("-")) {
+      if (step === "blur") blur();
+      else if (step === "hidden") hide();
+    }
   }, via);
-  await page.evaluate(() => {
-    Object.defineProperty(document, "hidden", { value: false, configurable: true });
-    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
-    document.dispatchEvent(new Event("visibilitychange"));
+  await page.evaluate((how) => {
+    if (how !== "blur-focus") {
+      Object.defineProperty(document, "hidden", { value: false, configurable: true });
+      Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+      document.dispatchEvent(new Event("visibilitychange"));
+    }
     window.dispatchEvent(new Event("focus"));
-  });
+  }, via);
 }
 
 // Regression (user, 2026-10-13): returning to the app with the entry field focused opened the system keyboard.
@@ -72,5 +86,37 @@ for (const via of ["hidden", "blur"] as const) {
     expect(await editableFocused(page), "nothing editable is focused after returning").toBe(false);
     await tap(page, ["d2"]);
     await expect.poll(() => entryValue(page)).toBe("12");
+  });
+}
+
+// Regression (user, 2026-10-14, F9): MathLive's own focus restore (restoreFocusWhenDocumentFocused) refocused the
+// entry on the second return, or on every return when the page hid before the window blurred, and the system
+// keyboard opened again. Three cycles in a row, after a tap and after a trackpad drag, in both event orders, and
+// the notification shade (window blur and focus, no hide). MathLive focuses 60 ms late, so wait before reading.
+const starts = {
+  tap: (page: Page) => tap(page, ["d1"]),
+  drag: async (page: Page) => {
+    await tap(page, ["d1"]);
+    await drag(page, "left", -30, 0);
+  },
+};
+const cycles: [keyof typeof starts, Leave][] = [
+  ["tap", "blur-hidden"],
+  ["tap", "hidden-blur"],
+  ["drag", "blur-hidden"],
+  ["drag", "hidden-blur"],
+  ["tap", "blur-focus"],
+];
+for (const [start, via] of cycles) {
+  test(`three returns (${via}) after a ${start} leave nothing focused, and keys still type`, async ({ page }) => {
+    await starts[start](page);
+    expect(await editableFocused(page), "the entry is focused while typing").toBe(true);
+    for (let i = 1; i <= 3; i++) {
+      await leaveAndReturn(page, via);
+      await page.waitForTimeout(150);
+      expect(await editableFocused(page), `nothing editable is focused after return ${i}`).toBe(false);
+    }
+    await tap(page, ["d2"]);
+    await expect.poll(() => entryValue(page)).toContain("2");
   });
 }
