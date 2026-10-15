@@ -131,9 +131,28 @@
     bubble = { x: g.el.offsetLeft + g.el.offsetWidth / 2, y: g.el.offsetTop, dir: st, text: text || "✕", none: text === "" };
   }
   const gestures = new Map<number, Gesture>();
-  $effect(() => () => {
+  /** The app goes away (home, app switcher, a lost pointerup): every gesture ends and nothing fires. */
+  function cancelAll(): void {
     for (const g of gestures.values()) cancel(g);
     gestures.clear();
+    hideBubble();
+  }
+  $effect(() => {
+    const onHide = (): void => {
+      if (document.hidden) cancelAll();
+    };
+    const onBlur = (): void => {
+      if (matchMedia("(pointer: coarse)").matches) cancelAll();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    addEventListener("pagehide", cancelAll);
+    addEventListener("blur", onBlur);
+    return () => {
+      document.removeEventListener("visibilitychange", onHide);
+      removeEventListener("pagehide", cancelAll);
+      removeEventListener("blur", onBlur);
+      cancelAll();
+    };
   });
 
   function targetOf(ev: PointerEvent): Key | "pad" | undefined {
