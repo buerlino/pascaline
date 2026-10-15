@@ -141,6 +141,12 @@ cases:
   - { id: "trig-31", latex: "\\cot\\left(x\\right)", expect: "cot(x)", source: "derived", group: "trig" }
   - { id: "trig-32", latex: "\\sin\\left(\\cos\\left(x\\right)\\right)", expect: "sin(cos(x))", source: "derived", group: "trig" }
   - { id: "trig-33", latex: "\\sin\\left(x\\right)\\left(x+1\\right)", expect: "sin(x)*(x+1)", source: "derived", group: "trig" }
+  # R27b (F23, G2 item 50, owner 2026-10-15): a bare name whose argument runs on into a bracket reads two ways (sin 7(2): sin 14 or sin(7)·2), so it is refused
+  - { id: "trig-34", latex: "\\sin7\\left(2\\right)", error: true, source: "derived", group: "trig", note: "sin(7·2) or sin(7)·2" }
+  - { id: "trig-35", latex: "\\sin x\\left(x+1\\right)", error: true, source: "derived", group: "trig" }
+  - { id: "trig-36", latex: "\\ln7\\left(2\\right)", error: true, source: "derived", group: "trig" }
+  - { id: "trig-37", latex: "\\log_27\\left(8\\right)", error: true, source: "derived", group: "trig", note: "a 7 between log₂ and its bracket" }
+  - { id: "trig-38", latex: "\\sin\\left(2\\right)\\left(3\\right)", expect: "sin(2)*3", source: "derived", group: "trig", note: "the bracket right after the name is the argument" }
   # --- log-exp-constants
   - { id: "log-exp-constants-01", latex: "\\ln\\left(x\\right)", expect: "ln(x)", source: "derived", group: "log-exp-constants" }
   - { id: "log-exp-constants-02", latex: "\\ln x", expect: "ln(x)", source: "derived", group: "log-exp-constants" }

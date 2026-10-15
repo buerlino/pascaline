@@ -84,3 +84,11 @@ describe("store and polar entry (P4)", () => {
   for (const [latex, giac] of forms) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
   it("store needs a name after ▶", () => expect(() => latexToGiac("5\\blacktriangleright 3")).toThrow());
 });
+
+// R27b (F23, G2 item 50, owner 2026-10-15): a term between a bare function name and a bracket reads two ways
+describe("a bare function name before a term and a bracket (G2 item 50)", () => {
+  for (const latex of ["\\sin7\\left(2\\right)", "\\sin x\\left(x+1\\right)", "\\ln7\\left(2\\right)", "\\log_27\\left(8\\right)"])
+    it(`${latex} is refused`, () => expect(() => latexToGiac(latex)).toThrow(/brackets/));
+  for (const [latex, giac] of [["\\sin 2x", "sin(2*x)"], ["\\sin x\\cos x", "sin(x)*cos(x)"], ["\\sin\\left(2\\right)\\left(3\\right)", "sin(2)*(3)"]] as const)
+    it(`${latex} still reads`, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
+});
