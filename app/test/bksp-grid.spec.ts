@@ -195,6 +195,15 @@ function check(s: Scenario, tmpl: Tmpl, base: Map<string, number>, run: Run, del
   const prefixOf = (v: string): string | undefined => (v.includes("^") ? v.slice(0, v.indexOf("^")) : undefined);
   const isPower = tmpl.bug === "F17";
   const basePrefix = prefixOf(run.setup.value);
+  // the base itself: the prefix without the 5 typed before the template (a #@ template takes that 5 as its base).
+  // Point 6 allows two changes: the base emptied to □ (its 5 replaced by □), and the text before the template deleted
+  // (Del from the start); the base must still end the prefix (R26d)
+  const typedFive = s === "content" || s === "fromEnd" || s === "boxStart" || s === "delFromStart";
+  const before = typedFive && !tmpl.latex.includes("#@") ? "5" : "";
+  const powBase = basePrefix?.startsWith(before) ? basePrefix.slice(before.length) : basePrefix;
+  const PH = "\\placeholder{}";
+  const keepsBase = (now: string): boolean =>
+    powBase === undefined || [powBase, PH, powBase.replace("5", PH)].some((b) => b !== "" && now.endsWith(b));
   // (a prefix argument #@ takes the 5 into the template, so it is not "before" it)
   const startsWith5 = (s === "content" || s === "fromEnd" || s === "boxStart") && !tmpl.latex.includes("#@");
   const all = [run.setup, ...run.steps];
@@ -208,7 +217,7 @@ function check(s: Scenario, tmpl: Tmpl, base: Map<string, number>, run: Run, del
     // point 6: an exponent stays on its base
     if (s !== "nested" && isPower && alive && basePrefix !== undefined) {
       const now = prefixOf(snap.value);
-      if (now !== undefined && now !== basePrefix) note(i, snap, `exponent moved from base "${basePrefix}" to "${now}"`);
+      if (now !== undefined && !keepsBase(now)) note(i, snap, `exponent moved from base "${basePrefix}" to "${now}"`);
     }
   });
   // point 8: the line ends empty; no press was a no-op except ⌫ at the start or Del at the end
@@ -235,36 +244,10 @@ function check(s: Scenario, tmpl: Tmpl, base: Map<string, number>, run: Run, del
 
 // ---- cases that fail today: "name|scenario", removed by the package that fixes them -----------------------------------
 const KNOWN_FAIL = new Set<string>([
-  "div/shift/line|boxStart",
-  "div/shift/line|content",
-  "div/shift/line|delFromStart",
-  "div/shift/line|fromEnd",
-  "div/shift/line|nested",
-  "div/shift|boxStart",
-  "div/shift|content",
-  "div/shift|empty",
-  "div/shift|fromEnd",
   "frac/primary|content",
   "frac/primary|delFromStart",
   "frac/primary|fromEnd",
   "frac/primary|nested",
-  "ln/shift|boxStart",
-  "ln/shift|content",
-  "ln/shift|delBeforeClose",
-  "ln/shift|delFromStart",
-  "ln/shift|empty",
-  "ln/shift|fromEnd",
-  "ln/shift|nested",
-  "log/shift|boxStart",
-  "log/shift|content",
-  "log/shift|delBeforeClose",
-  "log/shift|delFromStart",
-  "log/shift|fromEnd",
-  "log/shift|nested",
-  "pow/primary|boxStart",
-  "pow/primary|content",
-  "pow/primary|empty",
-  "pow/primary|fromEnd",
   "pow/shift|boxStart",
   "pow/shift|content",
   "pow/shift|delBeforeClose",
@@ -276,10 +259,6 @@ const KNOWN_FAIL = new Set<string>([
   "rel:eq|delFromStart",
   "rel:eq|fromEnd",
   "rel:eq|nested",
-  "sq/primary|boxStart",
-  "sq/primary|content",
-  "sq/primary|empty",
-  "sq/primary|fromEnd",
   "sq/shift|content",
   "sq/shift|delBeforeClose",
   "sq/shift|fromEnd",
