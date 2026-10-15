@@ -28,6 +28,12 @@
     if (host) entry.setHost(host);
     entry.onEnter = enter;
     entry.onEscape = () => void cancel();
+    // R31 (F27): a hardware keyboard's printable keys are taps of the keypad key with that character
+    entry.onKey = (id, layer) => {
+      const key = keyboard.byId.get(id);
+      if (key) press(key, layer);
+    };
+    entry.onDead = dead;
   });
   let host: HTMLElement | undefined = $state();
   let entryHeight = $state(0);
@@ -51,9 +57,6 @@
     if (clip) run(clip);
     else void loadClip().then(run);
   }
-  $effect(() => {
-    entry.lineMode = session.settings.entry === "line";
-  });
   $effect(() => {
     // (a browser without requestIdleCallback loads it on the first use)
     if (session.engineState === "ready" && "requestIdleCallback" in window) requestIdleCallback(() => void loadClip(), { timeout: 3000 });
