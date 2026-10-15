@@ -1380,7 +1380,7 @@ Add a one-page printable task sheet (`docs/mockups/outside-test.html`). Gate: th
 claude --model opus "Review and merge package <ID>: follow section 8a of docs/shifts/brief.md."
 ```
 The reviewer works in the main checkout on `phase-1`:
-1. `git status` is clean, and the prerequisites in the table are merged. If not, stop and say so.
+1. `git status` is clean, and the prerequisites in the table are merged. The package's worktree is clean, its report is the branch's last commit, and the worker's session has ended (no `claude --agent <worker>` for this package in `ps`). If not, stop and say so.
 2. Use the package's branch from its table (0a, 0b, 0d or 0e). Read the report (`git log -1 <branch>`) and the diff (`git diff phase-1...<branch>`) against the backlog step and the docs/04 sections it names. Check the claims:
    - expected values come from the oracle or are `derived`
    - every new token has its round-trip case
