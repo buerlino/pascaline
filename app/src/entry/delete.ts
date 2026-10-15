@@ -337,6 +337,8 @@ interface BoxTemplate {
    * press, as an empty exponent on a typed base (the owner, 2026-10-15, R26d).
    */
   arg?: number;
+  /** A plain fraction (÷, a b/c): ⌫ at the start of its denominator joins the parts, as on the G2 (item 47). */
+  joins?: boolean;
 }
 
 const DIGIT = /^\d$/;
@@ -367,7 +369,7 @@ function boxTemplate(mf: Field, q: number): BoxTemplate | undefined {
     // (no whole part at all, as when a mixed number went in on another's □: its whole box is empty, of no width)
     return { start: s, end: q, boxes: [{ from: s, s, e: a }, ...boxes], whole: true, main: 0, arg: 0 };
   }
-  return { ...t, main: 0, arg: 0 };
+  return { ...t, main: 0, arg: 0, joins: true };
 }
 
 /** The template owning the box sentinel at `o` (the first atom after it that sits higher up). */
@@ -419,7 +421,7 @@ function toBox(mf: Field, b: Box, at: "start" | "end"): void {
  * - right after (Del: right before) the template: into its last (first) box, nothing deleted (point 5);
  * - at the start of a box but the first (Del: the end of a box but the last): to the end of the box before (the start
  *   of the next one), nothing deleted (point 3), unless only the key's argument holds something: then the template
- *   goes and the argument stays;
+ *   goes and the argument stays; a plain fraction joins its parts instead, the cursor between them (G2 item 47);
  * - at the start of the first box (Del: the end of the last): the template goes when every box is empty, keeps the
  *   main box's content when only it holds something, and is selected first otherwise (point 4);
  * - on a box's only atom: □ shows again, selected (point 2).
@@ -453,7 +455,8 @@ function deleteAtBoxes(mf: Field, c: number, dir: -1 | 1): boolean {
     // (a mixed number's typed whole part: the cursor before its digits is on the line, not in a box)
     if (t.whole && k === 0 && !empty && !sel) return false;
     if (k > 0) {
-      if (onlyArg(mf, t)) keep(mf, t, t.arg as number, "after");
+      if (t.joins) join(mf, t);
+      else if (onlyArg(mf, t)) keep(mf, t, t.arg as number, "after");
       else toBox(mf, t.boxes[k - 1] as Box, "end");
     } else firstOrLast(mf, t, "before");
     return true;
@@ -465,7 +468,8 @@ function deleteAtBoxes(mf: Field, c: number, dir: -1 | 1): boolean {
     return true;
   }
   if (dir > 0 && (c === b.e || empty)) {
-    if (k < n - 1) toBox(mf, t.boxes[k + 1] as Box, "start");
+    if (k < n - 1 && t.joins) join(mf, t);
+    else if (k < n - 1) toBox(mf, t.boxes[k + 1] as Box, "start");
     else firstOrLast(mf, t, "after");
     return true;
   }
@@ -488,6 +492,26 @@ function firstOrLast(mf: Field, t: BoxTemplate, mode: "before" | "after"): void 
   if (!held.some(Boolean)) removeBoxes(mf, t);
   else if (t.main !== undefined && held.every((h, i) => h === (i === t.main))) keep(mf, t, t.main, mode);
   else mf.selection = { ranges: [[t.start, t.end]] };
+}
+
+/**
+ * ⌫ at the start of a fraction's denominator, or Del at the end of its numerator: the fraction goes and its parts
+ * stand side by side, the cursor between them (the owner's G2, item 47: 5/23 → 5‸23). An empty part adds nothing;
+ * two empty parts remove the fraction (□ again where it filled a box).
+ */
+function join(mf: Field, t: BoxTemplate): void {
+  const [num, den] = t.boxes as [Box, Box];
+  const part = (b: Box): string => (boxEmpty(mf, b) ? "" : mf.getValue(b.s, b.e, "latex"));
+  const a = part(num);
+  const b = part(den);
+  if (a === "" && b === "") {
+    removeBoxes(mf, t);
+    return;
+  }
+  mf.selection = { ranges: [[t.start, t.end]] };
+  mf.insert(a + b, { format: "latex", selectionMode: "after" });
+  // the numerator's atoms keep their count of offsets, so the cursor goes right after them
+  mf.position = t.start + (a === "" ? 0 : num.e - num.s);
 }
 
 /** Replace the template by the content of box `k`, the cursor before or after it. */
