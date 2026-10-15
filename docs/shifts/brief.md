@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R26f–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  1. The entry-bug packages: R26g, R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -128,7 +128,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R26f | Bug F19: lim, Σ, Π, ∫ | ron, **Opus** | `p1/ron-m4a-bksplimits` | R26e | ~0.5 d |
 | R26g | Bug F20: matrices, vectors, piecewise | ron, **Opus** | `p1/ron-m4a-bksparray` | R26f; G2 item 51 | ~0.5 d |
 | R26h | Bug F21: log base, EQ, DMS, evaluate-at bounds | ron, **Opus** | `p1/ron-m4a-bkspmarks` | R26g; G2 item 49 | ~0.5 d |
 | R27a | Bug F22: 10ˣ after a digit joins the number | ron, **Opus** | `p1/ron-m4a-tenpow` | G2 item 48 answered and the owner's pick of the fix | ~0.5 d |
@@ -143,7 +142,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26f–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26g–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
@@ -349,7 +348,7 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### The entry-bug packages R26f–R27b and R43 (bugs F19–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
+### The entry-bug packages R26g–R27b and R43 (bugs F20–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
 - Backlog milestone 4a items 21–35 have the summary.
 - The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
@@ -358,35 +357,6 @@ These are small packages, one concern each, each with its own short reading list
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R26f: lim, Σ, Π and ∫ (bug F19), branch `p1/ron-m4a-bksplimits`
-Templates: `\lim_{#?\to#?}\left(#0\right)`, `\sum_{#?=#?}^{#?}\left(#0\right)`, `\prod_{…}`, `\int_{#?}^{#?}#0\,\mathrm{d}#?`. Read: `app/src/entry/delete.ts`, the grid, decisions.md "⌫ and Del keep a template whole" points 1–5.
-
-**Behaviour today:**
-- Each of them on an empty line, then ⌫: the first box's □ is deleted and ⌫ does nothing more.
-  - lim: `\lim_{\to□}(□)`.
-  - Σ: `\sum_{=□}^{□}(□)`.
-  - ∫: `\int^{□}□\,d□`, with the lower limit gone.
-- `5 lim 2 3 ◀ ◀ ⌫ ⌫`: the cursor moves out of the box and the 5 is deleted. The template stays, and the cursor stays in front of it.
-- From the end of the line (`5 lim 2`, cursor at the end, ⌫ repeatedly):
-  1. The bracket goes alone (F15).
-  2. Then the boxes and marks go one by one: `\lim_{2\to}`, `\lim_2`.
-  3. A bare `\lim` is left that ⌫ cannot remove, because the cursor ends before it. `\sum`, `\prod` and `\int` end the same way.
-- Del: `lim 2` then Del repeatedly deletes the → (`\lim_{2□}`), and then the boxes merge (`\lim_2\left(□\right)`). Σ loses its =, and ∫ loses its `\,` and d (`\int_2□`). No key types any of them back.
-
-**Cause:**
-- The bounds of these operators are `subsup` or `extensible-symbol` branches (`mathlive.mjs` 31797–31861).
-- An emptied branch is removed, and ⌫ at the start of a branch moves out in front of the operator.
-- The marks (→, =, `\,`, d) are plain atoms.
-
-**Fix** (points 1–5 and the Del mirror): the operator, its marks and its boxes are one template.
-
-**Commits:**
-1. **Tests:** the grid's F19 cases, and the cases above by keys, Del included.
-2. **Fix.**
-3. **Report.**
-
-Gate: bksp-grid F19; tmpl e2e; vitest.
 
 ### ron, R26g: matrices, vectors and piecewise (bug F20), branch `p1/ron-m4a-bksparray`
 Templates: the 2×2 matrix, the row and column vectors, piecewise (all Tmpl cells). Read: `app/src/entry/delete.ts`, the grid, decisions.md "⌫ and Del keep a template whole" points 2–5.

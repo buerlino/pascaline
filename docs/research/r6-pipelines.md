@@ -75,6 +75,7 @@
   - **Limits, ∫ Σ Π (`subsup`, `extensible-symbol`):**
     - ⌫ at the start of a script steps out to just after the base. The next ⌫ deletes the base, and the script stays as an orphan `^{…}` that sticks to whatever comes before it.
     - A script emptied by ⌫ is removed.
+    - ∫'s integrand and variable are not branches: they stand on the operator's own level, after it (`\mathrm{d}` is one atom, `\,` another). Our way around it: `bigOp()` through `deleteAtBoxes()` (R26f).
   - **`\log` and `\ln`:** any ⌫ inside their subscript deletes the whole operator (line 31863).
   - **Arrays (matrix, piecewise):** ⌫ at the start of a cell does nothing. ⌫ right after the array deletes it whole.
 - **A placeholder is an atom:** ⌫ in an empty box deletes the □ itself, so the box leaves the LaTeX (`EQ(,□)`, `\lim_{\to□}`, a matrix cell with nothing in it). The last atom of a fraction's part is followed by the next part's sentinel on the same level, not by a lower one (`endsBox()`).
