@@ -143,3 +143,7 @@ The R14 APK: the exponent key's legend is now `ᴇ`. Type 1.5 ᴇ (−) 3: the l
 | # | Owner's point | Triage |
 |---|---|---|
 | 49 | "When you have a fraction in a fraction and press ▶, it does not go to the end of the inner fraction (inside the main fraction) but somewhere else, so you cannot add to the fraction; and pressing with the finger at the end does not put the cursor there either." | **feel, bugs F33 and F34** (backlog milestone 4a items 34 and 35). Two causes, both reproduced: ▶ jumps to any empty box ahead, so the end of the numerator is skipped while the denominator is empty (F34, also after a power or a root: x²/(+1)); a finger tap at the right edge of a fraction, root, power or bracket lands at the start of the line, since MathLive places the caret a second time on a touch lift from stale bounds (F33; 11 of 40 test points). Packages R42 and R43, rule in decisions.md "The cursor goes where the user aims", G2 item 57 |
+
+## 2026-10-15: waiting for the owner's notes on R22
+
+The R22 APK (F9): MathLive's own focus restore is off. Move the cursor with a drag on the arrow keys, switch away and back three times, fast; then the same after plain taps; then pull the notification shade down and up twice. The system keyboard must never open, and the next key types. On the desktop: `npm run dev` in Firefox, type on the line, Alt+Tab away and back, type on the hardware keyboard; if the keys no longer reach the line, say so (the follow-up is in decisions.md "Focus on return").

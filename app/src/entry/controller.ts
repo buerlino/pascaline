@@ -89,6 +89,8 @@ export class EntryController {
     Field.soundsDirectory = null;
     Field.plonkSound = null;
     Field.keypressSound = null;
+    // Off: it refocuses the entry when the window regains focus, which opens the system keyboard on return (K0, F9).
+    Field.restoreFocusWhenDocumentFocused = false;
     const mf = new Field();
     // MathLive only accepts options once the field is mounted, and it is only fully laid out a frame later.
     const mounted = new Promise<void>((resolve) => {

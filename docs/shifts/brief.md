@@ -4,12 +4,12 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2) and F8. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8 and R22. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work; each ends with an APK on the phone):
-  1. R22, R23 (the entry bugs F9 and F10).
+  1. R23 (the entry bug F10).
   2. The entry-bug packages: R25a, R25b, R25c, R42 (a finger tap lands where it went down, F33), R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   3. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   4. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
@@ -130,12 +130,11 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R22 | Bug F9: the system keyboard on return, again | ron, Sonnet | `p1/ron-m4a-refocus` | now | ~0.5 d |
-| R23 | Bug F10: ⌫ stuck at a bracket | ron, **Opus** | `p1/ron-m4a-bksp` | R22 (same file); G2 item 44 answered, or start on the default | ~1 d |
-| R25a | Bugs F11, F12: gestures end when the app goes away | ron, Sonnet | `p1/ron-m4a-awaygest` | R22 | ~0.5 d |
+| R23 | Bug F10: ⌫ stuck at a bracket | ron, **Opus** | `p1/ron-m4a-bksp` | now; G2 item 44 answered, or start on the default | ~1 d |
+| R25a | Bugs F11, F12: gestures end when the app goes away | ron, Sonnet | `p1/ron-m4a-awaygest` | now | ~0.5 d |
 | R25b | Bug F14: ⌫ held with a mouse | ron, Sonnet | `p1/ron-m4a-mouserepeat` | R25a (same file) | ~0.25 d |
-| R25c | Bug F13: no focus while the app is away | ron, Sonnet | `p1/ron-m4a-focusguard` | R22 (same test file) | ~0.25 d |
-| R42 | Bug F33: a finger tap lands where it went down | ron, Sonnet | `p1/ron-m4a-tapcaret` | R25c (R22 edits the same `create()`) | ~0.25 d |
+| R25c | Bug F13: no focus while the app is away | ron, Sonnet | `p1/ron-m4a-focusguard` | now | ~0.25 d |
+| R42 | Bug F33: a finger tap lands where it went down | ron, Sonnet | `p1/ron-m4a-tapcaret` | R25c | ~0.25 d |
 | R26a | The ⌫ grid test over every template (F10, F15–F21) | ron, Sonnet | `p1/ron-m4a-bkspgrid` | R23 | ~0.5 d |
 | R26b | Bug F16: the hardware Backspace and Delete | ron, Sonnet | `p1/ron-m4a-hwdelete` | R23 | ~0.25 d |
 | R26c | Bug F15: ⌫ right after a closing bracket | ron, **Opus** | `p1/ron-m4a-bkspclose` | R26a, R26b; G2 item 46 answered, or start on the default | ~0.5 d |
@@ -361,14 +360,6 @@ Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a us
 Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is connected (rules section 6). Find per key (`?bench=find`, §3.2) against the §8.3 bar; a miss goes under "Needs a decision" with the number (docs/04 says what changes: incremental Find). Leave an APK built from `phase-1` on the Tab One for the owner. Then the report says whether milestone 4's gate (section 8) is complete.
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R22: the system keyboard on return, again (bug F9), branch `p1/ron-m4a-refocus`
-Backlog F9 (cause and proof there; decisions.md "Focus on return"). Read `app/src/main.ts` (`dropFocus`), `EntryController.create()` in `app/src/entry/controller.ts`, `app/test/softkeyboard.spec.ts`, and r6-pipelines section 7. Commits in this order:
-1. **Test first** (`app/test/softkeyboard.spec.ts`, failing on today's code): extend `leaveAndReturn` with the two event orders (window `blur` then hidden, and hidden then `blur`), then three away-and-back cycles in a row. After each return, wait 150 ms (MathLive focuses 60 ms late) and check that nothing editable is focused. Run it twice: after a tap on a digit, and after a trackpad drag (`drag(page, "left", -30, 0)`). Add a third case with window `blur` and `focus` only, no hide, three times. That is the notification shade, the share sheet or a permission prompt (feedback #45). Today the second cycle focuses the keyboard sink (Playwright, 2026-10-14). Then a digit key still types.
-2. **Fix:** `Field.restoreFocusWhenDocumentFocused = false` in `create()`, beside `fontsDirectory` and the other statics, with a one-line comment that names K0/F9. Keep `dropFocus`.
-3. **What the restore did for us on a desktop** cannot be checked by an agent, since synthetic window events do not move the real focus. It is the owner's check after the merge; write it into the report: `npm run dev` in desktop Firefox, type on the line, switch windows (Alt+Tab) and back, type on the hardware keyboard. The browser should restore the focus by itself. If the keys no longer reach the line, the fix is `entry.focus()` on window `focus`, on `pointer: fine` only (a follow-up, not part of R22).
-4. **Report.** The owner checks the APK by hand: drag on the arrow keys, switch away and back three times, fast. Then the same after plain taps, and pull the notification shade down and up twice. Shared-file text: backlog F9 "Done", the decisions entry if the build differs.
-Gate: softkeyboard e2e green (it fails without the fix), gestures and flicks e2e green, start chunk unchanged.
 
 ### ron, R23: ⌫ stuck at a bracket (bug F10), branch `p1/ron-m4a-bksp`
 Backlog F10 (cause and the stuck cases there); the rule is decisions.md "⌫ at a bracket" (binding unless G2 item 44 says otherwise; if the owner has answered it, the G2 way wins, unless it leaves a half pair). Read `app/src/entry/controller.ts` (`run`, `selectCompound`: how to find the atom a cursor sits in from offsets and depths), the `bksp` key in `spec/keyboard.yaml`, every `\left` template in `spec/keyboard.yaml` (function keys, `paren`, abs, lists, the Tmpl cells, the evaluate-at bar `\left. … \right|_{…}`), and r6-pipelines section 7. Commits in this order:

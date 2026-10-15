@@ -295,7 +295,7 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Choice:** `MathfieldElement.restoreFocusWhenDocumentFocused = false`, set with the other statics in `EntryController.create()`. Focus on return is ours alone: `dropFocus` in `app/src/main.ts` drops it when the app hides, and the next key press focuses the entry.
 - **Why:** MathLive's restore focuses the field again after a window blur and focus, and on Android a focus on return opens the system keyboard whatever `inputmode` says (K0). It is the second path behind feedback #38.
 - **Alternatives:** keep it and disarm it with a synthetic `focusin` after `dropFocus` (depends on MathLive's internals).
-- **Would change if:** a desktop browser loses the caret after switching windows (R22 checks that the hardware keyboard still types without a click). The other ways a focus comes back while away are in "Nothing takes focus while the app is away" (above).
+- **Would change if:** a desktop browser loses the caret after switching windows. The owner's check (agents cannot make it, since synthetic window events do not move the real focus): `npm run dev` in desktop Firefox, type on the line, Alt+Tab away and back, type on the hardware keyboard. If the keys no longer reach the line, the follow-up is `entry.focus()` on window `focus`, on `pointer: fine` only. The other ways a focus comes back while away are in "Nothing takes focus while the app is away" (above).
 
 ### 2026-10-14 Working… after 150 ms (F8)
 - **Choice:** "Working…" and Cancel of a running job (Home, CAS, the Function readout, the Solve info line) are drawn only after 150 ms, through the CSS class `.late` in `app/src/style.css`. They keep their space while hidden. The Cancel key works from 0 ms.
