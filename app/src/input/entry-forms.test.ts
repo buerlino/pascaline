@@ -87,8 +87,9 @@ describe("store and polar entry (P4)", () => {
 
 // R27b (F23, G2 item 50, owner 2026-10-15): a term between a bare function name and a bracket reads two ways
 describe("a bare function name before a term and a bracket (G2 item 50)", () => {
-  for (const latex of ["\\sin7\\left(2\\right)", "\\sin x\\left(x+1\\right)", "\\ln7\\left(2\\right)", "\\log_27\\left(8\\right)"])
+  // R27c: also when the term ends in a constant (cos 2π(x): cos(2π)·x or cos(2πx)) or the bracket is |…| (sin 2|x|)
+  for (const latex of ["\\sin7\\left(2\\right)", "\\sin x\\left(x+1\\right)", "\\ln7\\left(2\\right)", "\\log_27\\left(8\\right)", "\\cos2\\pi\\left(x\\right)", "\\sin2\\left|x\\right|", "\\sin x\\left|x\\right|"])
     it(`${latex} is refused`, () => expect(() => latexToGiac(latex)).toThrow(/brackets/));
-  for (const [latex, giac] of [["\\sin 2x", "sin(2*x)"], ["\\sin x\\cos x", "sin(x)*cos(x)"], ["\\sin\\left(2\\right)\\left(3\\right)", "sin(2)*(3)"]] as const)
+  for (const [latex, giac] of [["\\sin 2x", "sin(2*x)"], ["\\sin x\\cos x", "sin(x)*cos(x)"], ["\\sin\\left(2\\right)\\left(3\\right)", "sin(2)*(3)"], ["\\cos2\\pi x", "cos(2*pi*x)"], ["\\sin\\left|x\\right|", "sin(abs(x))"], ["\\cos2\\pi\\times\\left(x\\right)", "cos(2*pi)*(x)"]] as const)
     it(`${latex} still reads`, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
 });

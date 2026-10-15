@@ -147,6 +147,10 @@ cases:
   - { id: "trig-36", latex: "\\ln7\\left(2\\right)", error: true, source: "derived", group: "trig" }
   - { id: "trig-37", latex: "\\log_27\\left(8\\right)", error: true, source: "derived", group: "trig", note: "a 7 between log₂ and its bracket" }
   - { id: "trig-38", latex: "\\sin\\left(2\\right)\\left(3\\right)", expect: "sin(2)*3", source: "derived", group: "trig", note: "the bracket right after the name is the argument" }
+  # R27c: the same refusal when the term ends in a constant or the bracket is an absolute value
+  - { id: "trig-39", latex: "\\cos2\\pi\\left(x\\right)", error: true, source: "derived", group: "trig", note: "cos(2π)·x or cos(2πx)" }
+  - { id: "trig-40", latex: "\\sin2\\left|x\\right|", error: true, source: "derived", group: "trig", note: "sin(2)·|x| or sin(2|x|)" }
+  - { id: "trig-41", latex: "\\cos2\\pi x", expect: "cos(2*pi*x)", source: "derived", group: "trig", note: "no bracket: the whole term is the argument" }
   # --- log-exp-constants
   - { id: "log-exp-constants-01", latex: "\\ln\\left(x\\right)", expect: "ln(x)", source: "derived", group: "log-exp-constants" }
   - { id: "log-exp-constants-02", latex: "\\ln x", expect: "ln(x)", source: "derived", group: "log-exp-constants" }
