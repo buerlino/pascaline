@@ -4,18 +4,17 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8, R22 and R25a. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8, R22, R25a and R23. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. R23 (the entry bug F10).
-  2. The entry-bug packages: R25b, R25c, R42 (a finger tap lands where it went down, F33), R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
-  3. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
-  4. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
-  5. R15b (the top cluster, after A4a's report).
-  6. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
-  7. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
+  1. The entry-bug packages: R25b, R25c, R42 (a finger tap lands where it went down, F33), R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
+  3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
+  4. R15b (the top cluster, after A4a's report).
+  5. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
+  6. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
 - **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): G15, G20, R29, R30, G19, G24, then the unit evaluator G16, G17, G18 (or G10–G12 if G15 says P15 falls), G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
@@ -130,7 +129,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R23 | Bug F10: ⌫ stuck at a bracket | ron, **Opus** | `p1/ron-m4a-bksp` | now; G2 item 44 answered, or start on the default | ~1 d |
 | R25b | Bug F14: ⌫ held with a mouse | ron, Sonnet | `p1/ron-m4a-mouserepeat` | now | ~0.25 d |
 | R25c | Bug F13: no focus while the app is away | ron, Sonnet | `p1/ron-m4a-focusguard` | now | ~0.25 d |
 | R42 | Bug F33: a finger tap lands where it went down | ron, Sonnet | `p1/ron-m4a-tapcaret` | R25c | ~0.25 d |
@@ -360,20 +358,6 @@ Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a us
 Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is connected (rules section 6). Find per key (`?bench=find`, §3.2) against the §8.3 bar; a miss goes under "Needs a decision" with the number (docs/04 says what changes: incremental Find). Leave an APK built from `phase-1` on the Tab One for the owner. Then the report says whether milestone 4's gate (section 8) is complete.
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R23: ⌫ stuck at a bracket (bug F10), branch `p1/ron-m4a-bksp`
-Backlog F10 (cause and the stuck cases there); the rule is decisions.md "⌫ at a bracket" (binding unless G2 item 44 says otherwise; if the owner has answered it, the G2 way wins, unless it leaves a half pair). Read `app/src/entry/controller.ts` (`run`, `selectCompound`: how to find the atom a cursor sits in from offsets and depths), the `bksp` key in `spec/keyboard.yaml`, every `\left` template in `spec/keyboard.yaml` (function keys, `paren`, abs, lists, the Tmpl cells, the evaluate-at bar `\left. … \right|_{…}`), and r6-pipelines section 7. Commits in this order:
-1. **Tests first** (`app/test/bksp.spec.ts`, failing on today's code), by keys, the line read after each ⌫:
-   - log log, then ⌫ until the line is empty: `\log\left(\placeholder{}\right)` after one ⌫, the empty line after two. The same for sin, ln, √ (as a control), and the Tmpl log base.
-   - log 2 ⌫ ⌫ → the empty line; `( )` 2 ⌫ ⌫ → the empty line.
-   - sin 2 3 ◀ ◀ ⌫ → `23`, cursor before the 2; 5 `( )` 2 ◀ ⌫ → `52`; abs with content, the same.
-   - Shift + ⌫ (Del) right before a closing bracket: the mirror cases.
-   - No line the keys can build ever holds `\left.` with a real `\right)` (or the reverse) after a ⌫, except the evaluate-at template, which owns its `\left.`.
-   - ⌫ still removes one character, one chip (`captureSelection`) and one ᴇ as today (the R14 and R16 cases stay green), and Shift + Cancel (undo) brings the deleted template back whole.
-2. **Fix** in `EntryController.run`: before MathLive's `deleteBackward` (and `deleteForward`), when the cursor is at the start (end) of a pair's body, select the template (the name before the pair when the same key inserted it: `\log`, `\sin`, `\ln`, `\operatorname{…}`, a `\log_{…}` with its base; else the pair alone) and replace it with the body's LaTeX, leaving the cursor where the opening bracket was. An empty function body becomes nothing; then, as for log log, the outer body gets its placeholder back. Public MathLive API only (`getElementInfo`, offsets, `selection`, `insert`); no patch to MathLive. Put the ⌫/Del logic in a new plain-TS module `app/src/entry/delete.ts`, called from `run`: R26b–R26h extend it for every other template (decisions.md "⌫ and Del keep a template whole"). If the pair is the evaluate-at bar, the whole template follows the same rule (body kept, bounds dropped); say in the report if that feels wrong.
-3. **Parser message** (`app/src/input/parse.ts`): a `\left.` closed by anything but the bar says "unmatched bracket", not "expected the evaluate-at bar". Its parser case (an error case, `derived`) goes in the same commit.
-4. **Report** with the G2 item 44 answer, if the owner gave one. Not in R23: the hardware Backspace (R26b), ⌫ right after a closing bracket (R26c), the other templates (R26d–R26h). Shared-file text: backlog F10 "Done", the decisions entry if the build differs, r6 section 7 if MathLive behaved otherwise.
-Gate: `bksp.spec.ts` green (it fails without the fix), `selection.spec.ts`, `undo.spec.ts`, `entry.spec.ts`, `chips.spec.ts`, `tmpl.spec.ts`, gestures e2e green; vitest and the golden gate (parser changed); start chunk within 0.5 kB gzip.
 
 ### The entry-bug packages R25b–R27b, R42 and R43 (bugs F13–F23, found by probing 2026-10-14; F33 and F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
