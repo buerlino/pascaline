@@ -68,6 +68,8 @@ export class EntryController {
   private deleteAt: typeof import("./delete.ts").deleteAtTemplate | undefined;
   /** Backspace, Delete and the printable keys of a hardware keyboard (entry/hwkeys.ts, R26b, R31): loaded with MathLive. */
   private hwKey: typeof import("./hwkeys.ts").hardwareKey | undefined;
+  /** After an arrow step, step on to where a key types into a box (entry/stops.ts, R27b): loaded with MathLive. */
+  private settle: typeof import("./stops.ts").settle | undefined;
   private pendingValue: string | undefined;
   /** The values of the chips on the line (docs/04 3.6); keys as in input/chips.ts. */
   private table: ChipTable = {};
@@ -93,9 +95,10 @@ export class EntryController {
   load(): Promise<void> {
     if (this.started) return this.ready;
     this.started = true;
-    this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts")]).then(([m, d, h]) => {
+    this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts"), import("./stops.ts")]).then(([m, d, h, s]) => {
       this.deleteAt = d.deleteAtTemplate;
       this.hwKey = h.hardwareKey;
+      this.settle = s.settle;
       return this.create(m.MathfieldElement);
     });
     return this.ready;
@@ -285,6 +288,8 @@ export class EntryController {
         return;
       }
     }
+    // R27b (F23): right after piecewise's `if ` MathLive would type text; our keys only ever type maths
+    if (a.kind !== "cmd" && mf.mode === "text") mf.mode = "math";
     if (isEMark(a) && mf.value === "") {
       // the mark on an empty line gets a leading 1, as on the reference (1ᴇ; spec/mapping/vc-2026-10-11/keys.yaml r7c1)
       this.apply(mf, { kind: "insert", latex: `1${EMARK}` });
@@ -315,6 +320,7 @@ export class EntryController {
       // L9: with the term selected, #@ takes all of it as the numerator: \frac{\frac12}{□}
       this.apply(mf, a);
     } else this.apply(mf, a);
+    if (a.kind === "cmd") this.settle?.(mf, a.name); // R27b (F23): ◀ ▶ ▲ ▼ and the trackpad stop only at a box
     mf.focus();
   }
 
