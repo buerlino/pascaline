@@ -157,6 +157,22 @@ test("5/23 with the cursor at the end of the numerator, Del joins the parts (the
   expect(await position(page)).toBe(1);
 });
 
+// review: the parts' LaTeX was glued with no separator, so a numerator ending in a control word ran into a letter
+// (\pi + x gave \pix, one unknown command)
+test("π ÷ x ◀ ⌫ joins the parts as π‸x, not one unknown command", async ({ page }) => {
+  await tap(page, ["shift", "d3", "div", "x", "left"]);
+  expect(await entryValue(page)).toBe("\\frac{\\pi}{x}");
+  expect(await bksp(page)).toBe("\\pi x");
+  expect(await position(page)).toBe(1);
+});
+
+test("π ÷ x ◀ ◀ Del at the end of the numerator joins the parts as π‸x (the mirror)", async ({ page }) => {
+  await tap(page, ["shift", "d3", "div", "x", "left", "left"]);
+  expect(await entryValue(page)).toBe("\\frac{\\pi}{x}");
+  expect(await del(page)).toBe("\\pi x");
+  expect(await position(page)).toBe(1);
+});
+
 // ---- the mixed number -----------------------------------------------------------------------------------------------
 test("the mixed number on an empty line, then ⌫ empties the line", async ({ page }) => {
   await insert(page, MIXED);
