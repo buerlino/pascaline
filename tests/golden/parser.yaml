@@ -425,6 +425,7 @@ cases:
   - { id: "tmpl-evalat-02", latex: "\\left.\\frac{\\partial x^3}{\\partial x}\\right|_{x=2}", expect: "12", source: "derived", group: "tmpl" }
   - { id: "tmpl-evalat-03", latex: "\\left.x+y\\right|_{y=2x}", expect: "3*x", source: "derived", group: "tmpl" }
   - { id: "tmpl-evalat-04", latex: "\\left.x^2\\right|_{3}", error: true, source: "derived", group: "tmpl", note: "the bar needs variable = value" }
+  - { id: "tmpl-evalat-05", latex: "\\log\\left.2\\right)", error: true, source: "derived", group: "tmpl", note: "half a pair (F10): the message says unmatched bracket, not the evaluate-at bar" }
   - { id: "tmpl-deriv-01", latex: "\\frac{\\partial x^2+3x}{\\partial x}", expect: "2*x+3", source: "derived", group: "tmpl" }
   - { id: "tmpl-deriv-02", latex: "\\frac{\\partial\\sin\\left(t\\right)}{\\partial t}", expect: "cos(t)", source: "derived", group: "tmpl" }
   - { id: "tmpl-deriv-03", latex: "\\frac{\\partial x_1^2}{\\partial x_1}", expect: "2*x_1", source: "derived", group: "tmpl" }

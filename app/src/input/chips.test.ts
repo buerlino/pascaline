@@ -76,3 +76,11 @@ describe("chip table", () => {
     expect(validChips({})).toBeUndefined();
   });
 });
+
+describe("bracket messages (F10)", () => {
+  it("a \\left. closed by a real bracket is an unmatched bracket, not a missing evaluate-at bar", () => {
+    expect(() => latexToGiac("\\log\\left.2\\right)")).toThrow(/unmatched bracket/);
+    expect(() => latexToGiac("\\left.\\right)")).toThrow(/unmatched bracket/);
+    expect(() => latexToGiac("\\left.x^2\\right|")).toThrow(/evaluate-at bar/);
+  });
+});

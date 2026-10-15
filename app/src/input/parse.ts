@@ -469,12 +469,16 @@ class Parser {
 
   /** `\left. e \right|_{x=a}`: e evaluated at x = a (the evaluate-at template, R10). The `\left.` is consumed. */
   private evaluateAt(): Json {
+    // a \left. closed by a real bracket is half a pair (MathLive's ⌫ at a bracket, F10), not a missing bar
+    const unmatched = (u: Tok | undefined): boolean => u?.t === "close" && u.v !== "|" && u.v !== ".";
+    if (unmatched(this.peek())) throw new SerializeError("unmatched bracket");
     const e = this.relation();
     const t = this.peek();
     if (t?.t === "close" && t.v === ".") {
       this.pos++;
       return ["Delimiter", e];
     }
+    if (unmatched(t)) throw new SerializeError("unmatched bracket");
     if (t?.t !== "close" || t.v !== "|" || !this.isCh("_", 1)) this.fail("expected the evaluate-at bar |");
     this.pos += 2;
     const at = this.arg();

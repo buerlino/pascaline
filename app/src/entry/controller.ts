@@ -56,6 +56,8 @@ export class EntryController {
   private mf: MathfieldElement | undefined;
   private host: HTMLElement | undefined;
   private queue: ActionBody[] = [];
+  /** ⌫ and Del at a template (entry/delete.ts, R23): loaded with MathLive, outside the start chunk. */
+  private deleteAt: typeof import("./delete.ts").deleteAtTemplate | undefined;
   private pendingValue: string | undefined;
   /** The values of the chips on the line (docs/04 3.6); keys as in input/chips.ts. */
   private table: ChipTable = {};
@@ -79,7 +81,10 @@ export class EntryController {
   load(): Promise<void> {
     if (this.started) return this.ready;
     this.started = true;
-    this.ready = mathlive.load().then((m) => this.create(m.MathfieldElement));
+    this.ready = Promise.all([mathlive.load(), import("./delete.ts")]).then(([m, d]) => {
+      this.deleteAt = d.deleteAtTemplate;
+      return this.create(m.MathfieldElement);
+    });
     return this.ready;
   }
 
@@ -232,6 +237,13 @@ export class EntryController {
     if (a.kind === "cmd" && a.name === "moveToNextChar" && this.nextBox(mf)) {
       mf.focus();
       return;
+    }
+    if (a.kind === "cmd" && (a.name === "deleteBackward" || a.name === "deleteForward")) {
+      // R23 (F10): ⌫ and Del at a bracket keep the template whole (entry/delete.ts); else MathLive's own delete
+      if (this.deleteAt?.(mf, a.name === "deleteBackward" ? -1 : 1)) {
+        mf.focus();
+        return;
+      }
     }
     if (isEMark(a) && mf.value === "") {
       // the mark on an empty line gets a leading 1, as on the reference (1ᴇ; spec/mapping/vc-2026-10-11/keys.yaml r7c1)
