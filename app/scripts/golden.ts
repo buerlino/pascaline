@@ -173,7 +173,7 @@ const LOOKS_NUMERIC = /^-?(\d+(\.\d+)?|\.\d+)(E[+-]?\d+)?([+-](\d+(\.\d+)?(E[+-]
 
 async function stagePrecision(): Promise<void> {
   const cs = cases("precision.yaml");
-  const host = new EngineHost(await freshGiac());
+  const shared = new EngineHost(await freshGiac());
   let active = 0;
   let activePass = 0;
   const pending: string[] = [];
@@ -183,6 +183,8 @@ async function stagePrecision(): Promise<void> {
     const problems: string[] = [];
     let mark: MarkInfo | null;
     let shown: string;
+    // A case that stores names in Home (`beforeHome`) gets its own engine, so the stored x does not reach later cases.
+    const host = c.beforeHome?.length ? new EngineHost(await freshGiac()) : shared;
     const setting = c.settings?.digits ?? 12;
     // The digits the result is shown with: the setting, or what the input asked for (CAS evalf(x,n), M4-6).
     const digits = c.settings?.shown ?? setting;
