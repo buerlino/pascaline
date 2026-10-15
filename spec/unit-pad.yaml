@@ -4,7 +4,7 @@
 # below is the hand-drawn draft: package S5 replaces it with the measured one and a `user:` list (the user cells, their
 # number open). Packages R24a-R24d build it, and it replaces the letters and the `symbols` of `unit_slot:` in
 # spec/keyboard.yaml (R24c). It is its own file so the start chunk does not carry it (the app
-# bundles keyboard.yaml whole); the unit view loads it lazily with the qalc worker.
+# bundles keyboard.yaml whole); the unit view loads it lazily, with its unit factors (decisions.md P15).
 #
 # In a unit slot the maths rows (3-9) show the pad: each cell lies exactly on the key under it (the R21 rule for
 # anything drawn over the keypad), so no key moves and a press on a key is a press on its cell. The top cluster stays

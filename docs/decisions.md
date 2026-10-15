@@ -13,6 +13,8 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
   - (c) leave it, since the line shows what it computes.
   
   **Recommendation:** (a), if the G2 gives 5·10² for the same keys. The details are in the brief, R27a.
+- **2026-10-14 F29: `exp` in DEG mode (package G21). OPEN, after G2 item 54.** In DEG, Giac reads the imaginary part of an exponential as degrees: `exp(i*90)` = `i` (marked `=`), `exp(i*1)` = cos 1° + i·sin 1°, `exp(1+i*90)` = 2.71828182846·i. Yet `exp(i*pi)` = −1, the radian answer. In RAD, `exp(i*90)` = −0.448073616129+0.893996663601·i (`derived`: cos 90 + i·sin 90). One mode cannot read both ways and be right (probe 2026-10-14).
+  **Recommendation:** `exp` ignores the angle mode, as its mathematical meaning does (principle 3). If the G2 also reads degrees, the polar `∡` entry stays the way to type an angle in degrees. G21 waits for item 54 so that the owner sees the G2's answer before it starts.
 - **2026-10-14 R15b: 48 px cluster rows or today's height. OPEN, judge on the phone.** D is drawn with 48 px rows (viewport about 0.38 instead of 0.354). **Recommendation:** build 48 px after the device run on the Tab One (backlog Needs the user item 7), keep it if a Shift tap and the fit pass stay fast and the keys are easy to hit.
 - **2026-10-13 P12 open points (keypad review, [06-keypad-vs-g2.md](06-keypad-vs-g2.md) section 4). OPEN.**
   A. **Menu audit: done** (S2, accepted by the owner 2026-10-13; entry "S2: one menu system" under Decided proposals). B. **Status-line switch:** hit area, press count against the G2's one key, and the fallback if the bar is slow (R15a). C. **`!` (factorial):** settled by the owner (2026-10-13, answer to R10): it goes in the Shift + 9 palette (R18). **Recommendation:** judge B on the R15 APK.
@@ -35,10 +37,70 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
 
 Newest first. Where an entry changed an earlier document, that document now carries the result.
 
+- **2026-10-14 P15: the unit view computes on Giac; libqalculate only at build time. DECIDED by the owner (2026-10-14), if G15's check passes.** From the deep-dive review (item 7).
+  - **Choice:**
+    - The unit view's arithmetic runs in the Giac worker that is already loaded. Each unit token becomes its exact SI factor from the Find index times base-dimension symbols, and Giac computes exactly.
+    - A result that is not one number times one product of dimensions is a mismatch ("Units don't match: L vs T"). A conversion divides by the target and must leave a pure number.
+    - Temperatures, logarithmic units and the first-order uncertainty are our rules on top (G17, G18).
+    - libqalculate stays in the build: the Find index takes its unit factors, constants and uncertainties from it (G4), and `build.sh` keeps step 1c. It no longer ships in the APK.
+  - **Why** (probes, 2026-10-14):
+    - The index holds an exact SI factor for 399 of its 435 units and a dimension for 434.
+    - Giac gives `72 km/h → m/s` = 20 and `4.7 kΩ × 2.2 nF` = 517/50000000 s, both exactly. It keeps `1 m + 1 s` as a visible sum.
+    - It gives t10's first-order uncertainty as sqrt(387089)/500 = 1.2443 (`derived`). qalc prints ±1.3, which fits neither the first-order nor the worst-case rule (M4-2).
+    - It removes:
+      - a 0.95 MB brotli lazy wasm and a third worker, with its open memory question on the 3.9 GB Tab One;
+      - the adapter for what qalc accepts silently (docs/04 4.1: mismatched sums, `20 °C × 2`, misread names);
+      - the mapping of qalc's approximate flag onto our marks.
+
+      Home's marks, agreement check, chips and golden oracle apply to units unchanged.
+    - The checks qalc lacks are ours already (docs/04 4.3). The arithmetic left is multiplying exact rationals.
+  - **Cost:**
+    - Our code for dimensions, temperatures, dB/dBm/Np and first-order uncertainty, each with golden cases.
+    - 36 units have no exact factor: Planck and atomic units, u and Da, solar mass, the 15 °C and mean calories, hp, mmHg and the logarithmic units. Each needs a CODATA value with its uncertainty, our exact factor (G13) or a rule (G17).
+    - A long CAS job in the same worker delays a conversion until Cancel.
+  - **Gate (package G15, before any other milestone 5 engine work):**
+    - Every one of the 26 spike cases, docs/04 4.1's table, tasks t02, t04 and t10, and S1's 50 units gives qalc's value, or differs where qalc is wrong (`derived` or `oracle`).
+    - The mismatch and temperature cases are caught.
+    - p95 ≤ 5 ms per evaluation on the desktop.
+    - Every unit on the draft pad and in S1's 50 has a factor or a named owner (G13, G17).
+
+    The Opus pass after G15 checks the gate and says which path the queue takes.
+  - **Turned down:** the qalc worker as planned (G10–G12 stay written as the fallback); Giac's own units (`_m`, `_kph`: P3 decision 1; fewer units, and wrong data such as the US quart).
+  - **Would change if:** G15 misses its gate (then G10–G12 run as written, and this entry says why); a later unit need (currency, a non-linear unit) has no clean exact form; the shared worker makes the unit view feel slow on the Tab One.
+- **2026-10-14 The deep-dive review: 24 findings, all accepted. DECIDED by the owner (2026-10-14).** The owner asked for a deep dive: any pitfall, anything to do differently, ideas never mentioned. Every finding was checked on the dev engine or in the code, and the package texts carry the evidence. The owner: "I fully agree with all items"; the packages are small and placed by importance, then dependencies (feedback #47, #48). Packages: brief sections 0e (P15) and 0f; the order: brief section 0.
+  - **Silent wrong answers (principle 3), first:**
+    - F24: `2.5.3` is 2.5·0.3 = 0.75. A second decimal point in a number is an error (R29).
+    - F25: a digit typed next to a result chip multiplies with no sign of it. Tap the result 0.5 and type 3: the line shows the chip (a shaded 0.5) and a 3 with no × between them, and Enter gives 1.5; the G2 pastes the result as text, so its 3 makes 0.53. A number touching a `\res` chip is an error that names the fix (R29).
+    - F26: one-line `1/2x` is 1/(2x) here and (1/2)·x on the G2 (item 6); `6÷2(1+2)` is 1. In a flat line ÷ binds like ×, left to right, and implicit multiplication does not bind tighter (R30; G2 item 53 checks `6÷2(1+2)`).
+    - F27: a hardware keyboard's `1e-3` is 1·e − 3. An e or E right after a number's digits is ᴇ, and every hardware key takes the path of the on-screen key with that character (R31).
+    - F28: a value stored in Home is used by CAS without a sign. A CAS result names the stored values it used (G20 engine, R32 the line; entry "Home and CAS share one Giac context").
+    - F29: DEG mode reads `exp(i*90)` as `i`. OPEN under "Needs the user", after G2 item 54.
+  - **Robustness:**
+    - F30: the half-typed line survives a kill (R34).
+    - F31: a stored definition that crashes the worker no longer loops the start. After two failed starts the engine starts without the log and says so (G19).
+    - F32: the Giac worker gets a memory cap, so a runaway job fails inside it (G24; A4a checks it on the Tab One).
+    - The start chunk gets lighter before R21a instead of a second budget raise (R35: `@capacitor/core` out of it).
+  - **Decisions looked at again:**
+    - P5 (b) is revised (entry P5): Home takes the real odd root (R39).
+    - ⚠ with no confirmed digit shows no digit, and the agreement check raises precision further while it is cheap (G23). `sin(10^100)` shows `⚠ -0.4` today, from Giac's values at 40 and 60 digits, which are wrong; from 80 digits on Giac gives −0.372376123661… (`oracle` at 150 digits).
+  - **New, each passing rule 5 (c), more trust:**
+    - A picked history row says why it has its mark (G22 the reasons as engine facts, R36 the line).
+    - Names that hold a value are marked on the entry line, if MathLive can draw it without changing the LaTeX (R33 starts with that check and drops the item if not).
+    - **The angle check:** in RAD, sin, cos or tan of a whole multiple of 15 from 15 to 360 gets a hint, with one tap to add `°`; in DEG, an argument with π gets the reverse (R37). Removal test: unused for two weeks.
+    - Digits past a CODATA constant's uncertainty are drawn muted in Home; the copy keeps them (G26, R40).
+    - One backup file of history, definitions, settings and user keys: S6 finds the way in and out without INTERNET, R38a exports, R38b restores. S4 later reuses S6's answer.
+    - Keys carry labels for TalkBack (R41), and A4a checks the largest system font size.
+  - **Process:**
+    - The shared docs go on a diet with a size budget (S7): one file per package text, finished decisions to an archive, one "check on the phone" list.
+    - One `npm run gate` command prints one line per gate (A6; most of C3 without GitHub).
+    - MathLive joins the upstream list (backlog "Needs the user" item 6).
+    - A protocol for three outside testers before the unit pad and Find are frozen (S8; the owner runs the session).
+  - **Would change if:** a package's first step disproves its finding (it reports and stops); the owner hits a message added here (F25, F26) often enough that it costs more than it saves. For F25, the entry would then put a visible × there.
+
 - **2026-10-14 The package path: three lanes. DECIDED by the owner (2026-10-14).** After an analysis of every open package (brief section 0, "The path").
   - **Choice:**
     - The ron lane keeps one package at a time, with two moves against the order signed off on 2026-10-13. R11 goes before R15b, since it uses no key R15b moves. R4 goes between R12a and R12b: Find is built while the owner looks at the mockups, and the token pass then covers it.
-    - The gorge lane starts milestone 5's engine work now (G10–G13, backlog milestone 5 items 1–3) plus C9 (G14). This is also the night queue.
+    - The gorge lane starts milestone 5's engine work now (backlog milestone 5 items 1–3) plus C9 (G14). This is also the night queue. Since P15 (same day) it starts with the check G15, then the unit evaluator G16–G18 and G25, then G13; G10–G12 are the fallback. The deep-dive fixes with no UI join the queue by importance ("The deep-dive review").
     - The device run before R15b is a package (A4a). It gathers every device check that waits for no later package.
     - Big packages are split, after the owner's rule for the unit pad (about a day or less): R21 into R21a and R21b, R4 into R4a and R4b, A4 into A4a and A4b, R12b into R12b and R12c, milestone 5 item 1 into G10 and G11, item 2 into G12 and R28.
     - The night of 2026-10-14's Opus pass 2 and report are dropped: the owner's verification (`ef857a6`) did that work.
@@ -185,12 +247,20 @@ Newest first. Where an entry changed an earlier document, that document now carr
   4. **Touch in the entry line:** tapping places the cursor (MathLive does this natively); a Playwright test proves it. The `( )` key inserts the pair with the cursor inside.
   5. **Format details (user, 2026-10-11 evening):** Scientific and Engineering use E notation as on the reference (`1.5E-9`, `15E-10` in Engineering, `15E10`); the number of decimals for Fixed is a Settings field (default 4, our choice). Built on `p1/ron-fmt`.
 - **2026-10-11 P5: behaviour differences in Home and Solve (from the mapping). DECIDED, see below.** The reference: (a) gives an error for `sqrt(-4)` and `asin(2)` in default settings, where we give complex results; (b) gives the real root −2 for `(-8)^(1/3)`, where we give the principal complex root; (c) seems to round ties half-to-even at 12 digits (marked unsure); (d) in Solve returns the guess with "Extremum found" or a huge finite value with "Zero" where we say "no root found". **Recommendation:** follow (b) by default (the real odd root is what an engineer expects; the L6 parser already has the setting) and (a) only as a "real mode" setting, default complex (engineers work with phasors); keep ours for (c) until a real-G2 check, and keep our clearer Solve messages in (d).
-  **DECIDED by the user (2026-10-11 evening):** (a) keep ours: roots and inverse functions of out-of-range values give the complex answer (`sqrt(-4)` = 2·i); no real mode for now. (b) keep ours: `(-8)^(1/3)` gives the principal complex root (1+1.73205080757·i), not −2; the ∛/ⁿ√ key template keeps the real odd root (∛-8 = −2, L6), which is a different operation. (c) keep ours until a real-G2 check. (d) keep our Solve wording. No code change.
+  **DECIDED by the user (2026-10-11 evening):** (a) keep ours: roots and inverse functions of out-of-range values give the complex answer (`sqrt(-4)` = 2·i); no real mode for now. (b) **revised by the owner on 2026-10-14** (deep-dive review, decisions "Deep-dive review" below): the 2026-10-11 choice predates the G2 goal (P11), so Home now follows the G2: `(-8)^(1/3)` = −2, as the ∛/ⁿ√ template already gives (L6). A power whose exponent is a literal fraction p/q with q odd takes the real root in Home, Solve and Function; CAS keeps the principal root. Package R39. (c) keep ours until a real-G2 check. (d) keep our Solve wording.
 - **2026-10-11 P3 integration plan (`docs/p3-units-plan.md`, gorge). DECIDED by the user (2026-10-11 evening): all eight defaults accepted.** (1) libqalculate is the only units database, Giac units are not used; (2) Units and Constants are pickers in the Menu key's menu, no key relabelling (the reference's key for units goes on the G2 checklist); (3) the `hp` typo gets a one-number local patch, and the user sends the upstream report; (4) interval arithmetic and exact mode in qalc off; (5) no idle preload, load on first unit use; (6) units only in scalar expressions in v1, with a clear message for mixed unit/CAS input; (7) qalc's CODATA constants replace the "physical constants menu" backlog item; (8) scheduled after the MVP basics, before Statistics (L1 is done). Not built yet; the user picks the start. **Amended 2026-10-12 by P8:** (2) and (6) changed (Find instead of pickers; units only where units are entered); **by P11:** units are entered in the unit view (docs/04 section 4); the start is milestone 5.
 
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-15 The cursor goes where the user aims (F33, F34; R42, R43; G2 item 57 to confirm)
+- **Choice:**
+  1. A finger tap puts the cursor where the finger went down, as a mouse click does. MathLive's second placement on the lift (touch only) is undone.
+  2. ▶ that leaves a template and lands at the end of the box that holds it stops there, before it goes on to an empty box: ÷ ÷ 1 ▶ 2 ▶ stands after ½ in the numerator, and the next ▶ goes to the empty denominator. Everywhere else R10's rule stays: while an empty box lies ahead, ▶ jumps to it over the marks between boxes.
+- **Why:** both bugs put the next key somewhere the user did not aim, with no way to aim better: the end of a numerator that holds a fraction, a power or a root is skipped by ▶ (x²/(+1) instead of (x²+1)/□) and, on the phone, a tap there lands at the start of the line. The mouse path shows MathLive's first placement is right (11 of 40 tap points differ only for touch; backlog F33).
+- **Alternatives:** for 1, clear MathLive's private bounds cache before its second placement (one line, but it breaks on an upgrade). For 2, let ▶ jump only within the template the cursor is in; rejected, since ∫ and ∂ are sequences of atoms and their marks would become stops again.
+- **Would change if:** the G2 (item 57) stops ▶ after a power in the middle of a box too, so point 2 widens; the owner finds the strip after an inner fraction too narrow to tap on the R42 APK (about 8 px), so a wider target is added.
 
 ### 2026-10-14 ⌫ and Del keep a template whole (F15–F21, R26a–R26h; G2 items 46, 47, 49 and 51 to confirm)
 - **Choice:** "⌫ at a bracket" (below) extended to every template the keys build (‸ is the cursor; "box" is a □ of the template). After any ⌫ or Del:
@@ -316,7 +386,8 @@ Each entry: the choice, why, the alternatives, and what would change it.
 - **Choice:** one engine context, so user variables are shared between Home and CAS. Each view keeps its own `Ans` (Giac variables `pasans` for Home, `pcasans` for CAS).
 - **Why:** one worker (D2 starts it at launch), no second copy of the 9.8 MB engine in memory. Variables defined in CAS are usable in Home without copying.
 - **Alternatives:** two contexts (double the memory and start-up time), or one shared `Ans` (Home decimals would leak into exact CAS work).
-- **Would change if:** the reference shows that Home and CAS keep separate variables (not asked yet; a candidate for the next Virtual Calculator session).
+- **Known cost (deep-dive review, 2026-10-14):** a value stored in Home is used by CAS without a sign. After Home `3 ▶ x` (the x key types lower-case x in every view), CAS `int(x^2,x)` gives `9*x` and `factor(x^2-1)` gives `8`, and the stored x is replayed after every relaunch (backlog F28). So a CAS result names every stored value it used (packages G20 and R32).
+- **Would change if:** the reference shows that Home and CAS keep separate variables (G2 item 52).
 
 ### 2026-10-11 CAS time budget
 - **Choice:** CAS has a 10 s soft budget (`CAS_SOFT_BUDGET_MS`), after which the UI makes Cancel prominent. Giac's own `timeout 600` is only a safety net. No automatic fallback in CAS (D3).

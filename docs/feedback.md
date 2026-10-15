@@ -4,7 +4,7 @@
 The one place for the owner's points from using the app (docs/03 section 0, rule 12). Newest first. Each point is kept in the owner's words (shortened) and gets one triage:
 
 - **bug**: fixed now, regression test first;
-- **feel**: goes into the next feel package (milestone 4a tasks F1–F23 in [backlog.md](backlog.md));
+- **feel**: goes into the next feel package (milestone 4a tasks F1–F23, F33 and F34 in [backlog.md](backlog.md));
 - **idea**: waits a week, then must pass rule 5 (G2 flow, a G2 friction removed, or more trust) before it gets a task;
 - **decided**: became a decision (the id says where).
 
@@ -130,3 +130,16 @@ The R14 APK: the exponent key's legend is now `ᴇ`. Type 1.5 ᴇ (−) 3: the l
 |---|---|---|
 | 45 | Are there more bugs like F9 and F10 in the same areas, patterns and edge cases? A deep analysis. | **feel, bugs F11–F23** (backlog milestone 4a items 21–33). Found by Playwright probes: every keyboard template under ⌫ and Del, a digit typed at every cursor position, and focus and touch cases around leaving the app. **Focus:** a held ⌫ keeps deleting while the app is away and focuses the field again (F11); a touch the app never saw end fires on the next key (F12); a key pressed less than 60 ms before leaving focuses the field after `dropFocus` (F13); on desktop, a mouse ⌫ released off the keypad never stops (F14). The notification shade or share sheet, twice, has the same cause as F9 (R22's test gains it). **⌫ and Del:** after `)` (F15); the hardware keys bypass our path (F16); powers (F17: `2 + x² ⌫ ⌫` gives 2²), fractions and roots (F18), lim Σ Π ∫ (F19), matrices and piecewise (F20), log base, EQ, DMS and evaluate-at (F21). **Neighbours:** 10ˣ after a digit gives 510² (F22); the cursor stops between sin and `(`, where a 7 gives sin 7(2) = sin 14 (F23). Rules: decisions.md "⌫ and Del keep a template whole" and "Nothing takes focus while the app is away". G2 items 46–51 |
 | 46 | Many small work packages with everything on the behaviour, how to reproduce it and how to fix it (or left open), written into the docs. | done: packages R25a–R25c (focus and touches), R26a–R26h (the ⌫ grid test, then one template family each), R27a–R27b (10ˣ after a digit, cursor stops) in brief sections 0b and 7, each a quarter to one day. R27a waits for G2 item 48 and the owner's pick |
+
+## 2026-10-14 (eleventh round: a deep dive into the whole app)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 47 | "Do you see any pitfall or something that should be done differently? Or ideas that were never mentioned in the docs? Do a deep dive and report anything you find." Then, on the report of 24 findings: "I fully agree with all items." | **decided:** decisions.md "The deep-dive review", P15 (the unit view computes on Giac, if G15's check passes) and P5 (b) revised. Bugs F24–F32 (backlog "Trust and robustness"), the rest as packages in brief sections 0e and 0f |
+| 48 | Add extensive work packages, in small packages, placed in the order Opus set: by importance, then by the dependencies. | **done:** brief sections 0 ("The path"), 0c (the night queue), 0e and 0f; about 30 packages of at most a day, most of half a day |
+
+## 2026-10-15 (twelfth round: a fraction in a fraction)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 49 | "When you have a fraction in a fraction and press ▶, it does not go to the end of the inner fraction (inside the main fraction) but somewhere else, so you cannot add to the fraction; and pressing with the finger at the end does not put the cursor there either." | **feel, bugs F33 and F34** (backlog milestone 4a items 34 and 35). Two causes, both reproduced: ▶ jumps to any empty box ahead, so the end of the numerator is skipped while the denominator is empty (F34, also after a power or a root: x²/(+1)); a finger tap at the right edge of a fraction, root, power or bracket lands at the start of the line, since MathLive places the caret a second time on a touch lift from stale bounds (F33; 11 of 40 test points). Packages R42 and R43, rule in decisions.md "The cursor goes where the user aims", G2 item 57 |

@@ -81,11 +81,17 @@
   - Inside `\operatorname{…}` (EQ, approx), inside `\text{if }` and inside `\mathrm{d}`.
   
   The trackpad steps through the same ones. `nextBox` skips them only while an empty box lies ahead (backlog F23).
+- **▶ jumps to any empty box ahead:** while `\placeholder` appears anywhere after the cursor, `nextBox` makes ▶ `moveToNextPlaceholder`. So the end of a box that holds a template is skipped while a later box is empty: ÷ ÷ 1 ▶ 2 ▶ lands in the outer denominator, not after ½ (backlog F34). ◀ still stops there.
+- **A finger tap places the caret twice** (2026-10-15, backlog F33):
+  - `onPointerDown` (`mathlive.mjs` 34364) places it with `offsetFromPoint`, the same for mouse and touch, and that is right.
+  - On the lift, for touch only, the window `pointerup` of `MathfieldElement.onPointerDown` places it again (line 41468), from `atomBoundsCache` bounds that are out of date after the first move. At the right edge of a fraction, root, power or bracket it lands at the start of the line or of the box.
+  - A mouse never takes the second path, so desktop tests miss it: compare `page.touchscreen.tap` with `page.mouse.click` at the same point.
 - **Probing the entry:** a scratch spec in `app/test/` that taps keys and logs `window.pascaline.entry.value` after each one (helpers `tap`, `drag`, `touch` in `app/test/helpers.ts`; `?engine=fake` is enough for the entry). Delete it afterwards.
   - To check every template, drive `window.pascaline.entry.run({kind, …})` (the key path).
   - To read each line state as the parser does, call `(await import("/src/input/parser.ts")).loadParser()` inside `page.evaluate`, then `latexToGiacInfo(value, { chips: {} })`.
   - To simulate leaving the app, redefine `document.hidden` and dispatch `visibilitychange` and the window `blur` and `focus` events (`leaveAndReturn` in `app/test/softkeyboard.spec.ts`).
   - Write the results with `writeFileSync` from the test, since `console.log` from the page is not shown.
+  - For taps, set the line again and wait 550 ms before each one: MathLive counts a tap within 5 px and 500 ms of the last one as a double tap, which selects a group.
 
   R26a turns the template probe into a test.
 

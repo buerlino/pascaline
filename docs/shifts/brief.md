@@ -1,35 +1,49 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Shift brief: milestone 4a "feel" and milestone 4 "Find and trust", with milestone 5's engine work beside them (run by the owner)
+# Shift brief: milestone 4a "feel" and milestone 4 "Find and trust", with milestone 5's engine work and the deep-dive fixes beside them (run by the owner)
 
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
 `phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2) and F8. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
-### The path (owner, 2026-10-14; decisions.md "The package path")
+### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work; each ends with an APK on the phone):
   1. R22, R23 (the entry bugs F9 and F10).
-  2. The entry-bug packages: R25a, R25b, R25c, R26a–R26h, then R27b. R27a comes when G2 item 48 is answered.
-  3. R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
-  4. R11 (history-row actions), while annabell's device run A4a takes place.
+  2. The entry-bug packages: R25a, R25b, R25c, R42 (a finger tap lands where it went down, F33), R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  3. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
+  4. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   5. R15b (the top cluster, after A4a's report).
-  6. R12a (mockups). While the owner looks at them: R4a (Find on Math), then R4b (Vars, Memory, the user keys).
-  7. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion).
-  
-  The unit-pad packages of 0d (R24a–R24d) and R28 (0e) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c): G10, G11, G12, G13, G14 (section 0e). G7 comes when S5 is merged (0d).
-- **annabell:** A4a when the owner connects the Tab One, after R21b and before R15b. A4b after R4b, which completes milestone 4.
-- **sandra:** S5 now; S4 on the owner's go (0d).
+  6. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
+  7. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
+
+  The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): G15, G20, R29, R30, G19, G24, then the unit evaluator G16, G17, G18 (or G10–G12 if G15 says P15 falls), G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **annabell:** A4a when the owner connects the Tab One, after R21b and before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
+- **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
 **Why this order:**
 - R11 uses no key that R15b moves, so it fills the wait for the device run.
 - R4a fills the wait for the owner's pick of the mockups, and R12b's token pass then covers Find too.
 - gorge's packages have no UI, and R24c needs milestone 5 items 1 and 2.
 - Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b and R4a stay whole, since each half would leave the keypad or Find half built.
+- **The deep-dive packages (0f, and G15–G18 and G25 in 0e) go by importance, then by what they need:**
+  - **G15 comes first.** One check decides whether the three planned qalc packages G10–G12 are needed at all (P15).
+  - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29, R30, G20.
+  - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
+  - **Day packages sit next to the code they share:**
+    - R31 goes right after R26b, which owns the same hardware-key handler.
+    - R34 ends the entry-bug group (the same files, `main.ts` and `controller.ts`).
+    - R35 comes before R21a, whose gate is the start-chunk budget: 1.6 kB gzip are left (52.41 of 54 kB, 2026-10-14).
+  - **Trust features after the code they build on:**
+    - R32 and R36 add a line to the history rows R11 builds.
+    - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
+    - R41 labels the keys once R15b and R12 have placed and styled them.
+    - R40 needs G26 and a muted token from R12b.
+  - **S7 early:** every later session reads less.
 
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14)
-The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (section 0e): engine packages with no UI, no APK and no device, checked by their golden and unit tests. The ron lane runs by day, when the owner can try each APK.
+The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's three parser-only packages (R29, R30, R39): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
 
 ### Rules for a night shift (they replace rules sections 4, 10 and 11, but not 4a, and change section 8a)
 1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
@@ -42,23 +56,42 @@ The owner plans each night in advance, and the queue below is the next night's. 
 8. **Log:** one line per step in `.coord/log.md`: the time from `date +%H:%M` (never estimated), step, agent and model, outcome, commit. The log is the queue state: on a resume, read it and continue from the first step not done.
 9. **Usage limit:** if a spawn fails or you hit a limit, log the time, the queue position and `STOPPED henri_<n>`, and end without starting a next henri. No retry loops. The owner resumes with `tools/henri-next.sh <n+1>` (or interactively: `claude --agent henri "Resume the night shift from .coord/log.md."`).
 10. **Worker gone without a report** (no report commit): spawn one fresh worker with the same prompt (it continues from the branch's last commit). If that one also fails, log it, leave the branch, and go on with the next package.
-11. **A fresh henri after every Opus pass** (owner, 2026-10-14). The owner's interactive session is henri_1. Once an Opus pass has replied, log its reply in full (its FIX lines and QUEUE are the next henri's orders), then log `HANDOVER henri_<n> → henri_<n+1>; next: <step>`, run `tools/henri-next.sh <n+1>` (it takes the next free number if that one was used, and starts a detached headless session that reads this brief and the log; output in `.coord/henri_<n+1>.out`), and end your turn. Do nothing more after that, even if woken: the new henri owns the queue. Your number n is in your prompt (henri_1 if none). The final pass (step 7) hands over the same way; that henri does its FIX packages and the report.
+11. **A fresh henri after every Opus pass** (owner, 2026-10-14). The owner's interactive session is henri_1. Once an Opus pass has replied, log its reply in full (its FIX lines and QUEUE are the next henri's orders), then log `HANDOVER henri_<n> → henri_<n+1>; next: <step>`, run `tools/henri-next.sh <n+1>` (it takes the next free number if that one was used, and starts a detached headless session that reads this brief and the log; output in `.coord/henri_<n+1>.out`), and end your turn. Do nothing more after that, even if woken: the new henri owns the queue. Your number n is in your prompt (henri_1 if none). The final pass hands over the same way; that henri does its FIX packages and the report.
 
-### The queue (the next night: the gorge lane of section 0e)
-Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" verdict adds a fix round (fresh worker, then a fresh review), at most two rounds; after the second "NOT MERGED" leave the branch unmerged, log it, go on. **Opus pass:** after every three finished packages (merged or left unmerged; fix packages from a pass count), and step 7 at the end of the queue. Step 7 is the last pass: the FIX packages it orders get only their Sonnet review, then the report. A package already merged by day is skipped (log it).
+### The queue (the next nights: the gorge lane of sections 0e and 0f)
+Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" verdict adds a fix round (fresh worker, then a fresh review), at most two rounds; after the second "NOT MERGED" leave the branch unmerged, log it, go on. **Opus pass:** after every three finished packages (merged or left unmerged; fix packages from a pass count), and the last pass at the end of the queue (step 22). The last pass's FIX packages get only their Sonnet review, then the report. A package already merged by day is skipped (log it).
+
+**P15 decides steps 9–13.** Opus pass 1 checks G15's gate (decisions.md P15) and writes it into `QUEUE`:
+- if P15 holds, steps 9–13 run as listed;
+- if P15 falls, steps 9–11 are G10, G11 and G12 (section 7), step 13 is dropped, and G26 brings its own first-order rule.
 
 | Step | What | Agent, model | Branch | Est. |
 |---|---|---|---|---|
-| 1 | G10 qalc glue: the result JSON (section 7) | gorge, Sonnet | `p1/gorge-m5-glue` | 1 h + review |
-| 2 | G11 the `UnitEngine` worker and client (section 7) | gorge, Sonnet | `p1/gorge-m5-worker` | 1.5 h + review |
-| 3 | G12 the units checks and `units.yaml` (section 7) | gorge, Sonnet | `p1/gorge-m5-adapter` | 1.5 h + review |
-| 4 | **Opus pass 1** on steps 1–3, then its FIX packages | Opus | — | 20 min + fixes |
-| 5 | G13 the hp patch and the data audit (section 7) | gorge, Sonnet | `p1/gorge-m5-qalcdata` | 1 h + review |
-| 6 | G14 exact results marked ≈ (section 7) | gorge, Sonnet | `p1/gorge-m4-marks` | 45 min + review |
-| 7 | **Opus pass 2** (the last) on what came after pass 1, then its FIX packages | Opus | — | 20 min + fixes |
-| 8 | Shift report, then stop (the henri started after step 7) | henri_n | — | 10 min |
+| 1 | G15 units on Giac: the check (decides P15) | gorge, **Opus** | `p1/gorge-m5-giacunits` | 1.5 h + review |
+| 2 | G20 the stored values a CAS result used (F28, engine half) | gorge, Sonnet | `p1/gorge-m4-uses` | 1 h + review |
+| 3 | R29 where a number ends (F24, F25) | ron, **Opus** | `p1/ron-m4-numbers` | 1 h + review |
+| 4 | **Opus pass 1** on steps 1–3 (and P15's gate), then its FIX packages | Opus | — | 30 min + fixes |
+| 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
+| 6 | G19 a safe start (F31) | gorge, Sonnet | `p1/gorge-m4-safestart` | 1 h + review |
+| 7 | G24 a memory cap for the Giac worker (F32) | gorge, Sonnet | `p1/gorge-m4-memcap` | 1 h + review |
+| 8 | **Opus pass 2** on steps 5–7 | Opus | — | 20 min + fixes |
+| 9 | G16 the unit evaluator: factors, dimensions, one term, the end slot | gorge, **Opus** | `p1/gorge-m5-unitcore` | 2 h + review |
+| 10 | G17 temperatures and logarithmic units | gorge, Sonnet | `p1/gorge-m5-unittemp` | 1 h + review |
+| 11 | G18 uncertainty, first order | gorge, Sonnet | `p1/gorge-m5-unitunc` | 1 h + review |
+| 12 | **Opus pass 3** on steps 9–11 | Opus | — | 20 min + fixes |
+| 13 | G25 the unit a result is shown in | gorge, Sonnet | `p1/gorge-m5-unitshow` | 1 h + review |
+| 14 | G13 the hp and mmHg factors and the data audit | gorge, Sonnet | `p1/gorge-m5-qalcdata` | 1 h + review |
+| 15 | G22 why the mark: the reasons as facts | gorge, Sonnet | `p1/gorge-m4-why` | 1 h + review |
+| 16 | **Opus pass 4** on steps 13–15 | Opus | — | 20 min + fixes |
+| 17 | R39 the real odd root in Home (P5 b) | ron, **Opus** | `p1/ron-m4-oddroot` | 45 min + review |
+| 18 | G14 exact results marked ≈ (C9) | gorge, Sonnet | `p1/gorge-m4-marks` | 45 min + review |
+| 19 | G23 more precision before ⚠ | gorge, Sonnet | `p1/gorge-m4-escalate` | 1 h + review |
+| 20 | **Opus pass 5** on steps 17–19 | Opus | — | 20 min + fixes |
+| 21 | G26 the digits a constant's uncertainty leaves | gorge, **Opus** | `p1/gorge-m4-constunc` | 1.5 h + review |
+| 22 | **Opus pass 6** (the last) on what came after pass 5, then its FIX packages | Opus | — | 20 min + fixes |
+| 23 | Shift report, then stop (the henri started after step 22) | henri_n | — | 10 min |
 
-Not at night: the ron lane (by day, with the owner's APK checks), devices (A4a, A4b), S5, and G7 (it waits for S5).
+Not at night: the rest of the ron lane (by day, with the owner's APK checks); devices (A4a, A4b); A6; A7 and A8 (the release path); sandra (S4–S8); G7 (it waits for S5); and G21 (it waits for G2 item 54 and the owner's decision on F29).
 
 ### Prompt templates (Agent tool; `run_in_background: false`; `effort: "medium"`)
 **Worker** (`subagent_type` = the agent in the table, `model` = its model):
@@ -89,7 +122,7 @@ NOTES: <at most three lines for the shift report>
 ```
 henri runs each FIX as a package (the Worker template with "Do package …" replaced by the FIX prompt and `<branch>` by the FIX branch, then a review), then continues with QUEUE.
 
-### Shift report (step 8, the last henri)
+### Shift report (the last step, the last henri)
 `docs/shifts/<date>-night-report.md`, short and plain, from the log and the agents' replies (log `SHIFT DONE` at the end; start no further henri): what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (items under "Needs the user"); the queue left for the next night. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
@@ -102,6 +135,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R25a | Bugs F11, F12: gestures end when the app goes away | ron, Sonnet | `p1/ron-m4a-awaygest` | R22 | ~0.5 d |
 | R25b | Bug F14: ⌫ held with a mouse | ron, Sonnet | `p1/ron-m4a-mouserepeat` | R25a (same file) | ~0.25 d |
 | R25c | Bug F13: no focus while the app is away | ron, Sonnet | `p1/ron-m4a-focusguard` | R22 (same test file) | ~0.25 d |
+| R42 | Bug F33: a finger tap lands where it went down | ron, Sonnet | `p1/ron-m4a-tapcaret` | R25c (R22 edits the same `create()`) | ~0.25 d |
 | R26a | The ⌫ grid test over every template (F10, F15–F21) | ron, Sonnet | `p1/ron-m4a-bkspgrid` | R23 | ~0.5 d |
 | R26b | Bug F16: the hardware Backspace and Delete | ron, Sonnet | `p1/ron-m4a-hwdelete` | R23 | ~0.25 d |
 | R26c | Bug F15: ⌫ right after a closing bracket | ron, **Opus** | `p1/ron-m4a-bkspclose` | R26a, R26b; G2 item 46 answered, or start on the default | ~0.5 d |
@@ -112,7 +146,8 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R26h | Bug F21: log base, EQ, DMS, evaluate-at bounds | ron, **Opus** | `p1/ron-m4a-bkspmarks` | R26g; G2 item 49 | ~0.5 d |
 | R27a | Bug F22: 10ˣ after a digit joins the number | ron, **Opus** | `p1/ron-m4a-tenpow` | G2 item 48 answered and the owner's pick of the fix | ~0.5 d |
 | R27b | Bug F23: cursor stops where no box is | ron, **Opus** | `p1/ron-m4a-cursorstops` | R26h (same file); G2 item 50 | ~0.5–1 d |
-| R21a | Pick sheets over the keypad, and fit | ron, **Opus** | `p1/ron-m4a-fit` | R27b (the entry-bug packages; R27a may come later) | ~1.5 d |
+| R43 | Bug F34: ▶ skips the end of a box that holds a template | ron, **Opus** | `p1/ron-m4a-boxend` | R27b (same function, `run`); G2 item 57 answered, or start on the default | ~0.5 d |
+| R21a | Pick sheets over the keypad, and fit | ron, **Opus** | `p1/ron-m4a-fit` | R35 (section 0f; it follows the entry-bug packages, R27a may come later) | ~1.5 d |
 | R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R21a | ~0.75 d |
 | A4a | Device run before R15b | annabell, Sonnet | `p1/annabell-m4a-device` | R21b; the owner connects the Tab One (and the S8+) | ~0.5 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R21b (runs while A4a takes place) | ~1 d |
@@ -121,7 +156,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-**No waiting for a tried APK** (owner, 2026-10-13): each ron package still ends with an APK on the owner's phone (section 8a step 5a), but the next package starts as soon as the review has merged it; the owner's notes come back through feedback.md as feel items. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R25a–R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+**No waiting for a tried APK** (owner, 2026-10-13): each ron package still ends with an APK on the owner's phone (section 8a step 5a), but the next package starts as soon as the review has merged it; the owner's notes come back through feedback.md as feel items. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R25a–R26b and R42 are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
@@ -144,18 +179,31 @@ claude --agent <ron|gorge|annabell> --model <sonnet|opus> "Do package <ID> in do
 Check `/model` once at the start: the agent files pin `model: opus`, and the flag should override it. A package that runs out of usage can be resumed (`claude --continue` in the same terminal) or restarted with the same command: the agent finds its branch and continues from its last commit.
 
 ## 0e. The gorge lane: milestone 5's engine work, beside the ron lane (owner, 2026-10-14)
-Backlog milestone 5 items 1–3, and C9, with no UI: a worker, a check layer, data and marks. They run now, beside the ron lane and as the night queue (0c), because R24c needs items 1 and 2. P11's reason for doing milestone 4a first (Find and the unit view sit on the keypad and the screen) does not touch them. Where 0d says "milestone 5 items 1–2 (U1, U2) merged", read G10, G11, G12 and R28. New gorge ids start at G10, because G8 and G9 are ids in the backlog's G2 follow-ups.
+Backlog milestone 5 items 1–3, and C9, with no UI: an evaluator, its rules, data and marks. They run now, beside the ron lane and as the night queue (0c), because R24c needs items 1 and 2. P11's reason for doing milestone 4a first (Find and the unit view sit on the keypad and the screen) does not touch them.
+
+**P15 (decisions.md; the owner, 2026-10-14, if G15's check passes):** the unit view computes on Giac, in the worker that is already loaded, with the exact factors of the Find index. libqalculate stays at build time, as the index's source. So G15 checks P15 first. On its gate, items 1 and 2 are G16, G17, G18 and G25. G10–G12, the qalc worker and its adapter as planned before P15, are the fallback: they run only if G15's Opus pass says P15 falls.
+
+Where 0d says "milestone 5 items 1–2 (U1, U2) merged", read the unit evaluator (G16, G17, G25, or G10–G12 on the fallback) and R28. New gorge ids start at G10, because G8 and G9 are ids in the backlog's G2 follow-ups; the deep-dive packages G19–G24 and G26 are in 0f.
 
 | # | Package | Backlog | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|
-| G10 | qalc glue: the result JSON | m5 item 1 | gorge, Sonnet | `p1/gorge-m5-glue` | now | ~0.75 d |
-| G11 | The `UnitEngine` worker and client | m5 item 1 | gorge, Sonnet | `p1/gorge-m5-worker` | G10 | ~1 d |
-| G12 | The units checks, marks and `units.yaml` | m5 item 2 (gorge half) | gorge, Sonnet | `p1/gorge-m5-adapter` | G11 | ~1 d |
-| G13 | The hp patch and the data audit | m5 item 3 | gorge, Sonnet | `p1/gorge-m5-qalcdata` | G12 | ~1 d |
+| G15 | Units on Giac: the check (decides P15) | m5 items 1–2 | gorge, **Opus** | `p1/gorge-m5-giacunits` | now | ~0.5 d |
+| G16 | The unit evaluator: factors, dimensions, one term, the end slot | m5 item 1 | gorge, **Opus** | `p1/gorge-m5-unitcore` | G15, and its Opus pass says P15 holds | ~1 d |
+| G17 | Temperatures and logarithmic units | m5 item 2 | gorge, Sonnet | `p1/gorge-m5-unittemp` | G16 | ~0.5 d |
+| G18 | Uncertainty, first order | m5 item 2 | gorge, Sonnet | `p1/gorge-m5-unitunc` | G16 | ~0.5 d |
+| G25 | The unit a result is shown in | m5 item 2 | gorge, Sonnet | `p1/gorge-m5-unitshow` | G16 | ~0.5 d |
+| G13 | The hp and mmHg factors and the data audit | m5 item 3 | gorge, Sonnet | `p1/gorge-m5-qalcdata` | G16 (G12 on the fallback) | ~1 d |
 | G14 | Exact results marked ≈ | C9 | gorge, Sonnet | `p1/gorge-m4-marks` | now (any time; Home only) | ~0.5 d |
-| R28 | Units mode in the parser | m5 item 2 (ron half) | ron, **Opus** | `p1/ron-m5-unitparse` | R24a and G12; before R24c | ~1 d |
+| R28 | Units mode in the parser | m5 item 2 (ron half) | ron, **Opus** | `p1/ron-m5-unitparse` | R24a and G16 (G12 on the fallback); before R24c | ~1 d |
+| G10 | *Fallback only:* qalc glue, the result JSON | m5 item 1 | gorge, Sonnet | `p1/gorge-m5-glue` | G15's Opus pass says P15 falls | ~0.75 d |
+| G11 | *Fallback only:* the `UnitEngine` worker and client | m5 item 1 | gorge, Sonnet | `p1/gorge-m5-worker` | G10 | ~1 d |
+| G12 | *Fallback only:* the units checks, marks and `units.yaml` | m5 item 2 (gorge half) | gorge, Sonnet | `p1/gorge-m5-adapter` | G11 | ~1 d |
 
-**Why these models:** G10–G14 follow existing patterns (the Giac worker, the golden gate, the Find checks), and their golden and unit tests pin them; each gets an Opus pass at night. R28 adds parser rules with round trips (Opus, as R14 and R18).
+**Why these models:**
+- G15 decides an architecture question, and G16 is the arithmetic every unit result rests on (Opus).
+- G17, G18, G25, G13 and G14 follow G16's pattern or the golden gate, and their cases pin them; each gets an Opus pass at night (Sonnet).
+- R28 adds parser rules with round trips (Opus, as R14 and R18).
+- G10–G12 follow the Giac worker's pattern (Sonnet).
 
 ## 0d. Packages from the owner's discussion of 2026-10-14 (the Alpha keys, Find, the unit pad, the laptop connection)
 Each waits for what its row says; none changes the 0b packages or their order. Background: [feedback.md](../feedback.md) #40–#44, decisions.md "The letters stay" and P14 (decided 2026-10-14), [research/r9-unit-pad.md](../research/r9-unit-pad.md), backlog "Parked ideas" (the laptop connection).
@@ -168,13 +216,93 @@ Each waits for what its row says; none changes the 0b packages or their order. B
 | G7 | Find data for the unit pad and the units menu | gorge, Sonnet | `p1/gorge-m5-finddata` | S5 merged (its test reads the final arrangement); no UI, so it can run beside a ron package | ~0.5 d |
 | R24a | The slot model (no UI) | ron, **Opus** | `p1/ron-m5-unitslot` | G7 merged | ~0.5 d |
 | R24b | The pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | the owner accepted S5's arrangement; R21 merged | ~1 d |
-| R24c | The unit view entry: slots, Enter, evaluation | ron, **Opus** | `p1/ron-m5-unitview` | R24a, R24b and milestone 5 items 1–2 (U1, U2) merged | ~1 d |
+| R24c | The unit view entry: slots, Enter, evaluation | ron, **Opus** | `p1/ron-m5-unitview` | R24a, R24b, R28 and the unit evaluator (G16, G17, G25; G10–G12 if P15 falls) merged | ~1 d |
 | R24d | Find in a slot and the user cells | ron, Sonnet | `p1/ron-m5-usercells` | R24c, R4 and R15b merged | ~0.5 d |
 | S4 | The laptop connection: design note | sandra, Opus | `p1/sandra-connector` | the owner's go (parked until about 2026-10-20) | ~0.5 d |
 
 **Why these models:** R24a builds the slot model the parser reads and R24c ties pad, slots and evaluation together, so a mistake there corrupts unit entry everywhere (Opus, as R9 and R18). R24b draws on R21's layer and R24d stores cells as R15b stores the user keys; each follows an existing pattern and its tests pin it (Sonnet). G7 is data and one test (Sonnet). S4 and S5 are research with probes (sandra runs Opus).
 
-**Not packaged yet:** the rest of backlog milestone 5 item 4, the result view (value, mark, unit, dimension, one-tap alternatives, `units.targets`, the `\res` chip back to Home). It gets its packages when U1 and U2 are merged, since their reports fix what a result carries.
+**Not packaged yet:** the rest of backlog milestone 5 item 4, the result view (value, mark, unit, dimension, one-tap alternatives, `units.targets`, the `\res` chip back to Home). It gets its packages when G16 and G25 are merged (G10–G12 if P15 falls), since their reports fix what a result carries.
+
+## 0f. Packages from the deep-dive review (owner, 2026-10-14)
+The owner asked for a deep dive (feedback #47) and accepted all 24 findings. They are in decisions.md "The deep-dive review", P15 and P5. **Each package is small:** one concern, about a day or less, with its own reading list (the owner, feedback #48). Read only what your package names.
+
+The order is by importance, then by what each needs (section 0, "The path"):
+1. silent wrong answers;
+2. robustness;
+3. trust features;
+4. process.
+
+The milestone 5 packages that P15 brings (G15–G18, G25) are in 0e. Every "behaviour today" below was probed on 2026-10-14, on the dev engine (`tools/probes/engine.ts`, `tools/probes/parse.ts`) or in the code.
+
+| # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
+|---|---|---|---|---|---|---|---|
+| G20 | The stored values a CAS result used: the engine half | F28 | night | gorge, Sonnet | `p1/gorge-m4-uses` | now | ~0.5 d |
+| R29 | Where a number ends | F24, F25 | night | ron, **Opus** | `p1/ron-m4-numbers` | now | ~0.5 d |
+| R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
+| G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
+| G24 | A memory cap for the Giac worker | F32 | night | gorge, Sonnet | `p1/gorge-m4-memcap` | now | ~0.5 d |
+| G22 | Why the mark: the reasons as facts | review item 14 | night | gorge, Sonnet | `p1/gorge-m4-why` | now | ~0.5 d |
+| R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R30 (same file) | ~0.25 d |
+| G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
+| G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23; and G18 if P15 holds | ~0.75 d |
+| G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
+| R31 | Hardware keys take the keypad's path | F27 | day | ron, Sonnet | `p1/ron-m4a-hwkeys` | R26b (the same handler) | ~0.5 d |
+| R34 | The line survives a kill | F30 | day | ron, Sonnet | `p1/ron-m4a-keepline` | R43 | ~0.5 d |
+| R35 | A lighter start chunk | review item 11 | day | ron, Sonnet | `p1/ron-m4a-slim` | R34 | ~0.5 d |
+| R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | R11 and G20 | ~0.5 d |
+| R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | R32 (same file) and G22 | ~0.5 d |
+| R33 | Names with a value, marked on the line | review item 15 | day | ron, Sonnet | `p1/ron-m4a-namemarks` | R4b | ~0.5 d |
+| R37 | The angle check | review item 16 | day | ron, Sonnet | `p1/ron-m4a-anglecheck` | R33 | ~0.75 d |
+| R41 | Key labels for TalkBack | review item 19 | day | ron, Sonnet | `p1/ron-m4a-labels` | R12c | ~0.5 d |
+| R40 | Muted digits past a constant's uncertainty | review item 17 | day | ron, Sonnet | `p1/ron-m4a-constdigits` | R41 and G26 | ~0.5 d |
+| R38a | The backup: export everything | review item 18 | day | ron, Sonnet | `p1/ron-m4-backup` | S6, and the owner's yes to its proposal | ~0.5 d |
+| R38b | The backup: restore from a file | review item 18 | day | ron, **Opus** | `p1/ron-m4-restore` | R38a | ~0.75 d |
+| A6 | One gate command | review item 21 | any time | annabell, Sonnet | `p1/annabell-gate` | now (no device) | ~0.5 d |
+| S7 | The docs diet | review item 20 | sandra | sandra, Opus | `p1/sandra-docsdiet` | S5, and no package waiting for its review | ~0.5 d |
+| S6 | Files in and out without INTERNET: the backup | review item 18 | sandra | sandra, Opus | `p1/sandra-files` | S7 | ~0.5 d |
+| S8 | The outside-test protocol | review item 24 | sandra | sandra, Opus | `p1/sandra-outside` | S6 | ~0.25 d |
+
+**Why these models:**
+- **Opus:**
+  - R29, R30 and R39 change parser rules, and a slip there computes a different number (as R14 and R18).
+  - G26 is precision maths every inexact constant passes through.
+  - R38b overwrites the user's stored data.
+  - The sandra packages are research and rewriting (sandra runs Opus).
+- **Sonnet:** everything else follows an existing pattern and is pinned by its tests.
+
+**Not a package:**
+- The MathLive bug report (review item 23) is in backlog "Needs the user" item 6.
+- The "check on the phone" list (item 22) is S7's step 5.
+- The largest-font check (item 19) is in A4a.
+
+## 0g. The release path (owner, 2026-10-15)
+The goal: pushing a tag `vX.Y.Z` builds, gates, signs and publishes the APK on GitHub, from clean source and with the owner's key, never from the laptop. The owner has stored the keystore secrets in the GitHub repo (2026-10-15). Found in the code on 2026-10-15:
+- `android/app/build.gradle` lines 23–37 know only the alias `throwaway`, and fall back to the password `pascaline-throwaway`.
+- `build.sh` lines 75–88 sign with the throwaway key unless `--unsigned` is passed. There is no release mode, so a release could silently get the throwaway key.
+- `versionCode 1` / `versionName "1.0"` are placeholders. The F-Droid draft says 0.2.0 / 2.
+- There is no `.github/`.
+
+| # | Package | Lane | Agent, model | Branch | Start when merged | Size |
+|---|---|---|---|---|---|---|
+| A7 | Release signing and the version number | any time | annabell, Sonnet | `p1/annabell-release` | the owner's go | ~0.5 d |
+| A8 | The release workflow | any time | annabell, **Opus** | `p1/annabell-releaseci` | A7 | ~0.5 d |
+
+**Defaults (proposed 2026-10-15; the owner confirms them with the table below):**
+- The first release is **v0.1.0, versionCode 1, a GitHub pre-release**.
+- The version is written as literal numbers in `build.gradle`, not derived from the tag. The F-Droid draft (`UpdateCheckMode: Tags`, `AutoUpdateMode: Version`) reads it there (docs/02 section 8). The workflow fails when the tag is not `v<versionName>`.
+- The golden gate runs on the release engine **before** anything is signed.
+- Pushing the tag is the owner's act; no agent pushes a tag.
+
+**The owner fills in before A7 starts** (names only; the values stay in GitHub):
+
+| What | GitHub secret name | Note |
+|---|---|---|
+| keystore, base64 | `TODO` | `base64 -w0 release.jks` |
+| store password | `TODO` | |
+| key alias | `TODO` (secret or plain value) | |
+| key password | `TODO` | same as the store password? |
+| certificate SHA-256 | (plain, goes in the repo) | `keytool -list -v -keystore release.jks` → `SHA256:` line |
 
 ## 2. Read before you start (every package)
 Read only the sections named here and in your package, not whole files: find them with `grep -n '^#' <file>`, then read that range. Every file you read is sent again on every later turn.
@@ -256,12 +384,12 @@ Backlog F10 (cause and the stuck cases there); the rule is decisions.md "⌫ at 
 4. **Report** with the G2 item 44 answer, if the owner gave one. Not in R23: the hardware Backspace (R26b), ⌫ right after a closing bracket (R26c), the other templates (R26d–R26h). Shared-file text: backlog F10 "Done", the decisions entry if the build differs, r6 section 7 if MathLive behaved otherwise.
 Gate: `bksp.spec.ts` green (it fails without the fix), `selection.spec.ts`, `undo.spec.ts`, `entry.spec.ts`, `chips.spec.ts`, `tmpl.spec.ts`, gestures e2e green; vitest and the golden gate (parser changed); start chunk within 0.5 kB gzip.
 
-### The entry-bug packages R25a–R27b (bugs F11–F23, found by probing 2026-10-14)
+### The entry-bug packages R25a–R27b, R42 and R43 (bugs F11–F23, found by probing 2026-10-14; F33 and F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
-- Backlog milestone 4a items 21–33 have the summary.
-- The rules are in decisions.md "⌫ and Del keep a template whole" and "Nothing takes focus while the app is away".
+- Backlog milestone 4a items 21–35 have the summary.
+- The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
 - r6-pipelines section 7 explains how MathLive behaves and how to probe it.
-- Every "behaviour today" below was reproduced in Playwright (Pixel 7 profile, `?engine=fake`, 2026-10-14). ‸ is the cursor.
+- Every "behaviour today" below was reproduced in Playwright (Pixel 7 profile, `?engine=fake`, 2026-10-14; R42 and R43 on 2026-10-15). ‸ is the cursor.
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
@@ -339,6 +467,37 @@ Read: `app/src/main.ts` (`dropFocus`, lines 36–51), `app/test/softkeyboard.spe
 3. **Report.**
 
 Gate: softkeyboard e2e green (fails without the fix); start chunk unchanged.
+
+### ron, R42: a finger tap lands where it went down (bug F33), branch `p1/ron-m4a-tapcaret`
+Read: `EntryController.create()` in `app/src/entry/controller.ts`, `app/test/helpers.ts`, `app/test/selection.spec.ts`, r6-pipelines section 7 ("A finger tap places the caret twice"), decisions.md "The cursor goes where the user aims" point 1.
+
+**Behaviour today** (the owner hit it on the phone, 2026-10-15; reproduced with `page.touchscreen.tap` against `page.mouse.click` at the same point):
+1. ÷ ÷ 1 ▶ 2 ▶ gives `\frac{\frac12}{□}`.
+2. Tap 1–8 px right of the inner ½, at its height. A mouse click puts the cursor at the end of the outer numerator (offset 6), as it should. A finger tap puts it at offset 0, the start of the whole line: a 9 typed next gives `9\frac{\frac12}{□}`.
+3. Tap on the right edge of ½ (0–2 px inside). The mouse gives offset 3 (after the 1); a finger gives offset 1, the start of the outer numerator: `\frac{9\frac12}{□}`.
+4. Not only nested fractions. On 8 lines (`123+456`, `\frac{12}{34}`, `\frac{\frac12}{□}`, `\frac{\frac12}{3}`, `\frac{1}{\frac23}`, `\sqrt{\frac12}`, `2^{3}+1`, `\sin\left(2\right)+1`), a tap 1.5 px inside the right edge of every atom, starting with the cursor at the end and at the start: touch and mouse differ at 11 of 40 points. Every one is at the right edge of a fraction, a root, a power or a bracket pair, and the finger lands at the start of the line or of the box (`\frac{12}{34}`, right edge: mouse 3, finger 0). Digits and operators are not affected.
+
+**Cause:**
+- MathLive's `onPointerDown` (`mathlive.mjs` 34364) places the caret with `offsetFromPoint`, the same for mouse and touch. That result is right.
+- On the lift, for touch only, the window `pointerup` listener of `MathfieldElement.onPointerDown` places it a second time: `if (evt.pointerType === "touch" && this.selectionIsCollapsed) this.position = offset` (line 41468), with `offset` from `getOffsetFromPoint`.
+- That second hit test reads atom bounds from `atomBoundsCache` (`getAtomBounds`, line 12853), which are out of date after the first placement. Proof: with the caret set to offset 6, `getOffsetFromPoint` at the same point gives 0; after `_mathfield.atomBoundsCache.clear()` it gives 6.
+
+**Fix** (tried in the probe: then 40 of 40 points match the mouse):
+- In `create()`, a `pointerdown` listener on the field records `mf.position` in a microtask (after MathLive's own handler), when the pointer is a touch and the selection is collapsed.
+- A window `pointerup` listener puts that position back in a `setTimeout(0)` (after MathLive's second placement), if the selection is still collapsed and the position differs.
+- A drag that selects leaves a selection, and a double tap selects a group, so neither is touched.
+- Alternative: clear the private `atomBoundsCache` in a capturing `pointerup` (one line, but it breaks on a MathLive upgrade). Report it upstream either way (backlog "Needs the user" item 6).
+
+**Left open (the owner judges on the APK):** after the fix, the strip right of an inner fraction that ends the outer numerator is about 8 px wide in the Pixel 7 profile (from the inner fraction's right edge to the end of the outer bar; a tap 10 px right lands after the whole fraction). A finger may miss it. Whether to widen it, for example so that a tap on the outer fraction's right part at the numerator's height lands at the end of the numerator, waits for the owner's feel of the R42 APK.
+
+**Commits:**
+1. **Tests** (`selection.spec.ts`, or a new `tap.spec.ts`):
+   - The 8 lines above: a `page.touchscreen.tap` at each atom's right edge lands where `page.mouse.click` does. MathLive counts a second tap within 5 px and 500 ms as a double tap, so set the line again and wait 550 ms before each tap.
+   - The nested case: tap right of ½, then 9 gives `\frac{\frac129}{□}`.
+2. **Fix.**
+3. **Report.** The owner's APK check: ÷ ÷ 1 ▶ 2, then tap just right of ½ and type 3: the 3 is in the top, after ½.
+
+Gate: the new test fails on today's code; selection, gestures, entry and chips e2e green; start chunk unchanged (±0.1 kB).
 
 ### ron, R26a: the ⌫ grid test over every template, branch `p1/ron-m4a-bkspgrid`
 Test only, no app code. Read: `spec/keyboard.yaml` (every `insert:` that holds a template, including `templates:`), `app/test/helpers.ts`, R23's `app/test/bksp.spec.ts`, r6-pipelines section 7, decisions.md "⌫ and Del keep a template whole".
@@ -622,6 +781,37 @@ Read: `app/src/entry/controller.ts` (`run`, `nextBox` line 266), `app/src/keyboa
 
 Gate: cursor, gestures, tmpl, selection and bksp-grid e2e green; the trackpad presses in the task benchmark do not go up.
 
+### ron, R43: ▶ stops at the end of a box that holds a template (bug F34), branch `p1/ron-m4a-boxend`
+Read: `app/src/entry/controller.ts` (`run`, `nextBox` line 266, and R27b's stop rule), `app/test/tmpl.spec.ts`, r6-pipelines section 7 ("▶ jumps to any empty box ahead"), decisions.md "The cursor goes where the user aims" point 2.
+
+**Behaviour today:**
+- ÷ ÷ 1 ▶ 2 ▶: the cursor goes from the inner denominator straight to the empty outer denominator (offset 8 of `\frac{\frac12}{□}`). Offset 6, the end of the outer numerator after ½, is skipped. A 3 typed next lands in the outer denominator: `\frac{\frac12}{3}`.
+- The same for every template at the end of an earlier box while a later box of the outer template is empty:
+  - ÷ x xʸ 2 ▶ + 1 gives `\frac{x^2}{+1}`, where the owner meant (x²+1)/□.
+  - ÷ √ (Shift + x²) 2 ▶ + 1 gives `\frac{\sqrt2}{+1}`.
+  - 1 + ÷ 2 ÷ 3 ▶ 4 gives `1+\frac{\frac23}{4}`.
+- Not affected, since no empty box is ahead: the outer denominator already filled (▶ is the plain step and stops after ½); the inner fraction in the denominator (`\frac{1}{\frac23}`, ▶ 4 gives `\frac{1}{\frac234}`); a root around a fraction (`\sqrt{\frac12}`, ▶ 3 gives `\sqrt{\frac123}`).
+- The way there today: ◀ from the start of the outer denominator reaches offset 6.
+
+**Cause:** `nextBox` (line 266). While `\placeholder` appears anywhere between the cursor and the end of the line, ▶ is `moveToNextPlaceholder`. R10 added it so that ▶ skips the marks between the boxes of one template (∂, d, the evaluate-at bar, the brackets of a body). It also skips the end of the box that holds the template the cursor leaves.
+
+**Fix** (direction; R27b's stop rule may already carry part of it):
+- Before the jump, look at where the plain step lands. If it leaves the template the cursor is in (the depth drops) and lands at the end of the box that holds it, make the plain step and stop there. The next ▶ jumps to the empty box as today.
+- "The end of a box" from the public API: the next offset starts another box (`getElementInfo(o + 1).latex` is "", the `first` atom MathLive puts at the start of a branch, at a depth ≥ the offset's own) or sits higher up (a smaller depth). In `\frac{\frac12}{□}`, offset 6 (depth 1) is followed by offset 7, the denominator's `first` (latex "", depth 1).
+- Anywhere else R10's jump stays: in `\frac{x^{2}+1}{□}` with the cursor in the exponent, ▶ still goes to the denominator, since the + follows the power in the same box. Whether ▶ should stop after x² there too is the second question of G2 item 57.
+- Rejected: jump only to an empty box of the template the cursor is in. ∫ and ∂ are sequences of atoms, not one atom, so R10's stops on their marks would come back.
+- ◀ is not changed: it already stops at offset 6. The trackpad's steps to the right take the same path (`step()` calls `run`).
+
+**Commits:**
+1. **Tests** (`tmpl.spec.ts`, or R27b's `cursor.spec.ts`):
+   - The four sequences above give `\frac{\frac123}{□}`, `\frac{x^2+1}{□}`, `\frac{\sqrt2+1}{□}` and `1+\frac{\frac234}{□}`.
+   - One more ▶ from there reaches the outer denominator.
+   - R10's walks through ∫, ∂ and evaluate-at are unchanged.
+2. **Fix.**
+3. **Report** with the G2 item 57 answer, and the task benchmark's press counts (a task with a power or a root at the end of a numerator needs one more ▶).
+
+Gate: tmpl, cursor, entry, gestures and bksp-grid e2e green.
+
 ### ron, R21a: pick sheets over the keypad, branch `p1/ron-m4a-fit`
 The owner's frictions (2026-10-14): a sheet in the viewport is far from the thumb while typing, the Tmpl grid scrolls on the phone, Settings is too small. R21 is built in two packages: R21a the pick sheets, R21b the Settings page. Where 0d says "R21 merged" (R24b), read R21a. Decided: decisions.md "R21" (binding); the target text is already in docs/05 2 (rule 1), 3.1 and 3.4 and docs/03 rule 8. Read those, decisions.md "Sheet defaults (R7)", "Mode and Settings sheets (R8)", "S2: one menu system", and `app/src/views/` (`Sheet.svelte`, `sheet.svelte.ts`, `sheetKeys.ts`, `modeSheet.ts`) with the sheet parts of `App.svelte`, `apps/shell.svelte.ts` and `keyboard/Keypad.svelte`. Commits in this order:
 1. **Tests first** (`app/test/fit.spec.ts`, failing on today's code), at 412 × 915:
@@ -684,7 +874,10 @@ Starts when R21b is merged and the owner connects the Tab One, with the S8+ for 
    - K1's `touch-action: none`: no scroll or zoom side effects;
    - the flick thresholds (20 px arm, 12 px cancel): misfires in a minute of typing;
    - whether Android sends `pointercancel` for a touch held while the app leaves (R25a's open question);
-   - ᴇ drawn on the S8+'s Chrome 101 WebView.
+   - ᴇ drawn on the S8+'s Chrome 101 WebView;
+   - the largest system font size (Android Settings › Display): do the keypad, the status line and a sheet still fit? If not, the report names what breaks (deep-dive item 19);
+   - if G24 is merged: the input its report names goes past the memory cap, ends in the "Out of memory" message, and the app stays up;
+   - if R35 is merged: the first tap after a cold start vibrates.
 4. Leave an APK built from `phase-1` on the Tab One for the owner to try.
 
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20). The report ends with one line: whether R15b may start.
@@ -704,8 +897,132 @@ Starts when R21b is merged; it runs before R15b, since it uses no key that R15b 
 
 ### Packages of section 0e
 
-### gorge, G10: qalc glue, the result JSON, branch `p1/gorge-m5-glue`
-Backlog milestone 5 item 1, part 1. No UI. Read docs/04 4.1, 4.2, 8.2 (`Quantity`, `UnitError`) and Appendix C; `engine/qalc/glue.cc` (today `qalc_set_precision`, `qalc_parse`, `qalc_print`, `qalc_eval`: JSON for the Find index generator), `engine/qalc/smoke.mjs`, `engine/qalc/cases.yaml` with `check.py` and `run-cases.mjs` (the 26 spike cases).
+### gorge, G15: units on Giac, the check (decides P15), branch `p1/gorge-m5-giacunits`
+decisions.md P15: this package's gate is P15's. No app code: a probe and a report. Read:
+- decisions.md P15;
+- docs/04 4.1 and 4.3;
+- `engine/qalc/cases.yaml` with `run-cases.mjs` (the 26 spike cases);
+- `tests/tasks/tasks.yaml` (t02, t04, t10);
+- `UNITS` in `tools/probes/unit-presses.mjs`, and `spec/unit-pad.yaml`;
+- the generated index (`npm run index`, then `app/src/find/_gen/find-index.json`: each unit's `si` and `dim`, each prefix's power);
+- `tools/probes/engine.ts` (how a probe loads Giac).
+
+**Found in the review** (2026-10-14, raw Giac):
+- `normal(72*(5/18)*dL/dT/(dL/dT))` = 20;
+- `4.7 kΩ × 2.2 nF` = 517/50000000·dT;
+- `normal(dL+dT)` stays a sum;
+- the first-order σ of t10 = sqrt(387089)/500 = 1.24432953834585 (`derived`).
+
+The index has `si` for 399 of 435 units and `dim` for 434.
+
+Steps:
+1. **The probe** `tools/probes/units-giac.mjs` (probe rules: read-only, output to `_out/`):
+   - **Tokens:** each unit token (prefix id, unit id, power) becomes its exact factor times one Giac symbol per base dimension of the index's `dim` keys. Name the symbols so they cannot clash with a user's, as the engine's other `pas…` names do.
+   - **Quantities:** a quantity is a number times its units, and `normal()` gives the result.
+   - **One term:** the result must be a number times one product of the dimension symbols. Otherwise it names the two dimensions (`1 m + 1 s` → L vs T).
+   - **Conversion:** divide by the target's factor and dimensions; a pure number must be left.
+   - **Temperatures and logarithmic units:** only detected (an offset or log unit inside arithmetic is flagged). Their rules are G17's.
+   - **Uncertainty:** first order, sqrt(Σ (∂f/∂xᵢ · σᵢ)²) with Giac's `diff`, for t10 and the spike's uncertainty cases.
+2. **Run every case both ways:** Giac with the index's factors, and qalc's own answer from the dev build (`engine/qalc/_out/dev`, as `run-cases.mjs` runs it). The cases:
+   - the 26 spike cases and docs/04 4.1's table;
+   - t02, t04 and t10;
+   - `1 <unit> → SI` for each of S1's 50 units and each unit on the draft pad.
+3. **Settle every difference** with a value from the oracle or a derivation that says which side is right. hp and mmHg are known: qalc is wrong (backlog "Needs the user" item 6).
+4. **Measure:** desktop p95 per evaluation (Giac warm, 3 rounds, the last timed) and Giac calls per evaluation.
+5. **List** the 36 units without `si`, by group, and what each needs: a CODATA value with its uncertainty (as a constant), our exact factor (G13), or a rule (G17 for the logarithmic units).
+
+Gate (P15's):
+- every case equal, or the difference is qalc's error shown by a `derived` or `oracle` value;
+- `1 m + 1 s` and `20 °C × 2` are caught;
+- t10's uncertainty is 1.2443295383… (`derived`);
+- p95 ≤ 5 ms per evaluation on the desktop;
+- every unit on the draft pad and in S1's 50 has a factor or a named owner (G13, G17).
+
+**Report:**
+- the table of cases (Giac, qalc, verdict), the numbers, and the gate line by line;
+- it ends with **"P15 holds"** or **"P15 falls"**.
+
+If P15 holds, "For shared files" gives the text that replaces:
+- docs/04 4.1 (today), 4.2 (the engine: the Giac worker, no third worker), 4.4 (budgets: no qalc chunk; the factors come with the index), 6.1, 8.1, 8.2 (`Calc.units()` and `UnitEngine` on the Giac worker, with G16's input), 8.3 (the qalc row goes) and Appendix C (the two-worker memory row goes);
+- CLAUDE.md's architecture lines (Worker 3 goes; libqalculate at build time only);
+- THIRD_PARTY.md's libqalculate line: its data ships in the Find index, not its code in the APK.
+
+### gorge, G16: the unit evaluator: factors, dimensions, one term, the end slot, branch `p1/gorge-m5-unitcore`
+Backlog milestone 5 item 1 (P15). Starts when G15 is merged and its Opus pass says P15 holds. No UI. Read:
+- decisions.md P15, and G15's report and probe;
+- docs/04 2.4 (marks), and 4.3 and 8.2 as G15's merge left them;
+- `app/src/engine/host.ts` (`home()`: how a request runs in the worker);
+- `app/src/engine/numeric.ts` (the agreement check);
+- `app/src/find/rank.ts` (`prepare()`, the item shape);
+- `app/src/calc/port.ts`.
+
+Commits in this order:
+1. **Tests first.**
+   - `tests/golden/units.yaml`, a new section of the golden gate, sources `derived` or `oracle`:
+     - the conversions and prefixes of the 26 spike cases;
+     - `72 km/h → m/s` = 20 `=`, and `1 in → mm` = 25.4 `=`;
+     - `1/3 m → cm` = 100/3, shown ≈ 33.3333333333;
+     - `1 lbf → N` exact;
+     - a mismatch: `1 m + 1 s` gives "Units don't match: L vs T";
+     - an end slot that does not fit names both dimensions;
+     - a unit with no factor is refused with a message naming it.
+
+     Temperatures, logarithmic units and ± wait for G17 and G18.
+   - A Vitest for the builder (tokens → Giac text): prefixes, powers, ÷, √, and a user cell's prefixed unit.
+2. **The input:**
+   - the formula as Giac text from our parser, with a placeholder per slot (`pasu1`, `pasu2`, …);
+   - per slot, R24a's token list (prefix id, unit id, power, the place of the ÷);
+   - the optional end slot.
+
+   The factor table comes from the Find index (units' `si` and `dim`, prefixes' powers of ten). It loads with the unit view, never in the start chunk. The report gives the exact input type, for R28 and R24c.
+3. **The evaluator** (`app/src/units/`, plain TS, plus a `units` request in the Giac worker beside `home`, so Cancel works as for Home):
+   - it substitutes each slot by its factor times the dimension symbols, evaluates exactly, checks for one term, and converts to the end slot when there is one;
+   - the result is a `Quantity` (docs/04 8.2): the value as an exact fraction or P digits, the dimension, and the SI value;
+   - its mark comes from the same facts and `markOf()` as Home: an irrational value goes through the agreement check, as in Home.
+4. **`Calc.units()`** returns it (docs/04 8.2, as G15's merge rewrote it).
+
+Gate: the golden gate with the units section; vitest; typecheck; the size test (start chunk unchanged). Report: the input type and two examples, for R28, R24c, G17, G18 and G25.
+
+### gorge, G17: temperatures and logarithmic units, branch `p1/gorge-m5-unittemp`
+Backlog milestone 5 item 2 (P15). Starts when G16 is merged. Read docs/04 4.3 ("Temperature", "Logarithmic units"), G16's report, and its section of `units.yaml`.
+1. **Tests first** (`units.yaml`, `derived`):
+   - `20 °C → °F` = 68 `=`; `100 °F → °C` = 340/9; `300 K → °C` = 537/20; `20 °C → K` = 5863/20.
+   - `20 °C × 2` and `20 °C + 5 K` are refused: "Use K or Δ°C for a temperature difference".
+   - Δ°C and Δ°F (Find items), K and °R work as differences.
+   - `1 W → dBm` = 30; `1 Np → dB` = 20/ln(10) ≈ 8.68588963807.
+   - A dB value inside a product is refused: "dB converts only".
+2. **The rules** in the evaluator:
+   - An absolute temperature (°C, °F) is allowed only alone, as the whole quantity, and converts with its offset.
+   - A logarithmic unit (dB, dBm, dBW, Np, B) is allowed only alone, and converts by its log rule.
+   - Messages go through the i18n table.
+
+Gate: golden gate (units), vitest, typecheck.
+
+### gorge, G18: uncertainty, first order, branch `p1/gorge-m5-unitunc`
+Backlog milestone 5 item 2 (P15); it settles decisions.md M4-2 point 2. Starts when G16 is merged. Read docs/04 2.6 (copy) and 4.3, G15's report (its uncertainty sketch), G16's report, and t10 in `tests/tasks/tasks.yaml`.
+1. **Tests first** (`units.yaml`):
+   - `(12.34 ± 0.05) m × (3.2 ± 0.1) m` = 39.488 ± 1.2443295383… m² (`derived`, first order), shown as 39.5 ± 1.2 m², the uncertainty to 2 significant digits (docs/04 2.6);
+   - a sum, a quotient, a power and a `sqrt` of uncertain values (`derived`);
+   - a value without ± carries no uncertainty;
+   - a constant chip with a CODATA uncertainty (G) carries it.
+2. **The rule:** σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²), computed exactly by Giac (`diff`), with the inputs treated as independent, then evaluated to P digits. A result with a σ is always `≈`.
+3. **M4-2 point 2:** the report gives the shared-file text: docs/04's `39.5 ± 1.3` becomes `39.5 ± 1.2`, and t10 gets its expected value.
+
+Gate: golden gate (units), vitest, typecheck.
+
+### gorge, G25: the unit a result is shown in, branch `p1/gorge-m5-unitshow`
+Backlog milestone 5 item 2 (P15; docs/04 4.3 "Result"). Starts when G16 is merged. Read docs/04 2.7 (SI prefixes) and 4.3 "Result", and G16's report.
+1. **Tests first** (`units.yaml`):
+   - Without an end slot, a result is shown in the units typed when they fit its dimension: `5 N × 2 m` stays N·m, not J.
+   - Otherwise it is shown in SI with an SI prefix: `4.7 kΩ × 2.2 nF` = 10.34 µs.
+   - The dimension text: `L·T⁻¹`, `M·L²·T⁻²`.
+   - An end slot always wins.
+2. **Build** the choice and the dimension text into the result (`Quantity.unit`, `Quantity.dimension`). `units.targets` and the way back to Home belong to the result view (0d, not packaged yet).
+
+Gate: golden gate (units), vitest.
+
+### gorge, G10 (fallback only): qalc glue, the result JSON, branch `p1/gorge-m5-glue`
+**Fallback only** (decisions.md P15): it runs only if G15's Opus pass says P15 falls. Backlog milestone 5 item 1, part 1. No UI. Read docs/04 4.1, 4.2, 8.2 (`Quantity`, `UnitError`) and Appendix C; `engine/qalc/glue.cc` (today `qalc_set_precision`, `qalc_parse`, `qalc_print`, `qalc_eval`: JSON for the Find index generator), `engine/qalc/smoke.mjs`, `engine/qalc/cases.yaml` with `check.py` and `run-cases.mjs` (the 26 spike cases).
 1. **Tests first:** a Node test beside `smoke.mjs` (or `run-cases.mjs` extended) that calls the new entry point and checks the JSON, failing on today's glue. Use docs/04 4.1's table, sources `derived` or `oracle` only:
    - `72 km/h to m/s` = 20, exact;
    - `1 in to mm` = 127/5, exact;
@@ -727,8 +1044,8 @@ Backlog milestone 5 item 1, part 1. No UI. Read docs/04 4.1, 4.2, 8.2 (`Quantity
 
 Gate: the new test, `node engine/qalc/smoke.mjs engine/qalc/_out/dev`, `python3 engine/qalc/check.py` as before, `npm run index` clean with the new build. Report: the JSON shape with two examples, for G11.
 
-### gorge, G11: the `UnitEngine` worker and client, branch `p1/gorge-m5-worker`
-Backlog milestone 5 item 1, part 2. Starts when G10 is merged. No UI. Read docs/04 4.2, 6.1 and 8.2 (`Calc.units()`, `UnitEngine`), G10's report, and the Giac worker's pattern in `app/src/engine/` (`workerEngine.ts`, `giac.worker.ts`, `protocol.ts`).
+### gorge, G11 (fallback only): the `UnitEngine` worker and client, branch `p1/gorge-m5-worker`
+**Fallback only** (decisions.md P15). Backlog milestone 5 item 1, part 2. Starts when G10 is merged. No UI. Read docs/04 4.2, 6.1 and 8.2 (`Calc.units()`, `UnitEngine`), G10's report, and the Giac worker's pattern in `app/src/engine/` (`workerEngine.ts`, `giac.worker.ts`, `protocol.ts`).
 1. **Tests first** (Vitest in `app/src/units/`, with the qalc dev build from `QALC_OUT`):
    - `evaluate()` returns G10's result as a `Quantity` or a `UnitError`;
    - `cancel()` terminates and respawns the worker, and the next call works;
@@ -738,8 +1055,8 @@ Backlog milestone 5 item 1, part 2. Starts when G10 is merged. No UI. Read docs/
 
 Gate: the worker tests, typecheck, vitest; the size test (start chunk unchanged). Report: the client's API, for G12, R28 and R24c.
 
-### gorge, G12: the units checks, marks and `units.yaml`, branch `p1/gorge-m5-adapter`
-Backlog milestone 5 item 2, the gorge half (the parser half is R28). Starts when G11 is merged. No UI and no parser: the input is qalc text from whitelisted names, as R24a's slot model and R28 will build it. Read docs/04 2.4 (marks), 2.7 (SI prefixes), 4.3 ("Our adapter checks", "Result", "Temperature", "Logarithmic units") and 8.2 (`UnitError`), G11's report, `app/scripts/golden.ts`.
+### gorge, G12 (fallback only): the units checks, marks and `units.yaml`, branch `p1/gorge-m5-adapter`
+**Fallback only** (decisions.md P15). Backlog milestone 5 item 2, the gorge half (the parser half is R28). Starts when G11 is merged. No UI and no parser: the input is qalc text from whitelisted names, as R24a's slot model and R28 will build it. Read docs/04 2.4 (marks), 2.7 (SI prefixes), 4.3 ("Our adapter checks", "Result", "Temperature", "Logarithmic units") and 8.2 (`UnitError`), G11's report, `app/scripts/golden.ts`.
 1. **Tests first:** `tests/golden/units.yaml` in the golden gate. Take the 26 spike cases of `engine/qalc/cases.yaml` (temperature, prefixes, dimension errors, uncertainty, exactness marks), plus:
    - `72 km/h → m/s` = 20 `=`;
    - `1 in → mm` = 25.4 `=`;
@@ -764,16 +1081,26 @@ Backlog milestone 5 item 2, the gorge half (the parser half is R28). Starts when
 
 Gate: the golden gate passes with the units section; vitest; typecheck. Report: the input and output of the checks, for R28 and R24c; the counts for `tests/golden/README.md`.
 
-### gorge, G13: the hp patch and the data audit, branch `p1/gorge-m5-qalcdata`
-Backlog milestone 5 item 3 (P3 decision 3; docs/04 2.3 #10 and 4.5). Starts when G12 is merged. No UI. Read `engine/giac/patches/README.md` (the pattern), `engine/qalc/build-wasm.sh`, `find/units.yaml` (its `checks` and `known` entries), `tools/find-index/generate.mjs`, backlog "Needs the user" item 6.
-1. **Tests first:** in `units.yaml`, failing on today's build:
+### gorge, G13: the hp and mmHg factors and the data audit, branch `p1/gorge-m5-qalcdata`
+Backlog milestone 5 item 3 (P3 decision 3; docs/04 2.3 #10 and 4.5). Starts when G16 is merged (G12 on the fallback). No UI. Read:
+- decisions.md P15;
+- `find/units.yaml` (its `checks` and `known` entries) and `tools/find-index/generate.mjs`;
+- backlog "Needs the user" item 6;
+- on the fallback only: `engine/giac/patches/README.md` (the pattern) and `engine/qalc/build-wasm.sh`.
+
+Steps:
+1. **Tests first** (`units.yaml`, failing today):
    - `1 hp → W` = 745.69987158227022 W (550 ft·lbf/s, `derived`);
    - `1 mmHg → Pa` = 133.322387415 Pa (13.5951 g/cm³ × 1 mm × 9.80665 m/s², `derived`).
-2. **The patch:** `engine/qalc/patches/` with a README, a minimal patch of `units.xml`, applied by `build-wasm.sh`. The SHA-checked tarball stays untouched.
-3. **The audit, once:** every unit and constant in Find's index against its exact definition and CODATA 2022. Each difference becomes a patch with a case, or a `known` entry with its reason. The `known` marks on hp and mmHg in `find/units.yaml` come out; the index build fails until they do, by design.
+2. **The factors.** With P15 the unit view reads the index's factors, so the fix lives in the index:
+   - `find/units.yaml` gives hp and mmHg their exact factors (`derived`), and the generator takes ours over qalc's;
+   - a check fails once qalc's data agrees, so the override comes out then (today's `known` mark, turned round).
+
+   On the fallback (qalc at run time): a minimal patch of `units.xml` in `engine/qalc/patches/` with a README, applied by `build-wasm.sh`. The SHA-checked tarball stays untouched.
+3. **The audit, once:** every unit and constant in Find's index against its exact definition and CODATA 2022. Each difference becomes an override (or, on the fallback, a patch) with a case, or a `known` entry with its reason.
 4. **Upstream:** the report holds the text of the libqalculate issues for the owner (backlog "Needs the user" item 6).
 
-Gate: the golden gate (units), `npm run index` clean, the qalc dev build. The release build picks the patch up through `build-wasm.sh`; annabell checks it in milestone 5 item 5.
+Gate: the golden gate (units) and `npm run index` clean. On the fallback also the qalc dev build; the release build picks the patch up through `build-wasm.sh`, and annabell checks it in milestone 5 item 5.
 
 ### gorge, G14: exact results marked ≈, branch `p1/gorge-m4-marks`
 Backlog C9. Home only; can run at any time. Read docs/04 2.4, `app/src/engine/homeEval.ts`, `markOf()` in `app/src/engine/format.ts`, `decideFloatTest` in `app/src/engine/homeEval.ts` (R18f2), and the render of an unevaluated test (`app/src/render/home.ts`).
@@ -785,9 +1112,9 @@ Backlog C9. Home only; can run at any time. Read docs/04 2.4, `app/src/engine/ho
 Gate: the golden gate (home, precision), vitest, typecheck.
 
 ### ron, R28: units mode in the parser, branch `p1/ron-m5-unitparse`
-Backlog milestone 5 item 2, the ron half. **Its text is written when R24a has reported** (the slot tokens) **and G12 has reported** (the checks' input). Until then nobody starts it. Scope from the backlog:
+Backlog milestone 5 item 2, the ron half. **Its text is written when R24a has reported** (the slot tokens) **and G16 has reported** (the evaluator's input; G12 on the fallback). Until then nobody starts it. Scope from the backlog:
 - `\pm` (uncertainty) and `\to` (the end slot), in units mode only;
-- the formula with its slots as qalc text, from whitelisted names only;
+- the formula as Giac text with a placeholder per slot, the slots as R24a's tokens (G16's input; on the fallback, qalc text from whitelisted names only);
 - a round trip per token.
 
 It must be merged before R24c.
@@ -831,7 +1158,7 @@ Gate: the new test, the query test (every phrase in the top 3, at least 90 % fir
 ### sandra, S4: the laptop connection, design note, branch `p1/sandra-connector`
 Starts on the owner's go (a parked idea, decided around 2026-10-20). Read: feedback #5b, #17, #40; backlog "Parked ideas" (the shape as written 2026-10-14); docs/04 3.4 (live entries) and 6.2 (the `defs` log); decisions.md P11 (Python removed); CLAUDE.md's F-Droid rules (offline, no network). Write `docs/research/r10-connector.md`, and put the proposal for decisions.md "Needs the user" in your report. Answer each point with evidence (probes in `tools/probes/`):
 1. **The file:** format (Giac definitions `name(args):=body`, one comment line per function with a one-line description; optional test lines checked at import, so a library carries its own golden cases?), encoding, size limit, and what an import refuses (anything stateful beyond a definition).
-2. **Onto the phone without the INTERNET permission:** a file input in the Capacitor WebView (does it open Android's picker without a plugin? probe it in Chromium; the device check is annabell's later), "open with" or share to the app (an intent filter; what Capacitor needs; MIT plugins only), the File System Access API in the PWA. Recommend one.
+2. **Onto the phone without the INTERNET permission:** take S6's answer (`docs/research/r11-files.md`, the backup file's way in and out), and add only what a library file needs beyond it.
 3. **Import and export:** into the `defs` log with a name-clash rule and the `DATA_VERSION` stamp; the replay time at 200 definitions; how the functions appear in Vars and Find (kind `userfn`, description from the comment) and on a user key (U1–U3); export the other way.
 4. **The laptop side:** the desktop web app as the test bench (same engine, same marks); a small Node command around `app/src/engine/nodeGiac.ts` that runs a library file and its tests (the MCP or AI hook would sit on the same). Cost and licence of each part.
 5. Removal test, cost per worker, what would change it. No feature code: probes and the note only.
@@ -846,10 +1173,10 @@ The first of four unit-pad packages, with no UI. Read: r9 section 2 (the rules),
    - ⌫ removes the last token.
    - A prefix alone and a second ÷ are refused, with a message from the i18n table.
 
-   Also, for every unit of the probe's 50 and of S5's weights list, the model's qalc text equals `typePad`'s or its canonical form.
+   Also, for every unit of the probe's 50 and of S5's weights list, the model's tokens give the same prefixes, units and powers as `typePad`'s parts.
 3. **The model** (`app/src/units/slot.ts`, plain TS): a token list per slot (prefix id, unit id, power, the place of the ÷). It gives:
    - the LaTeX shown;
-   - the qalc text, from whitelisted ids only;
+   - the token list the unit evaluator reads (G16; on the fallback, qalc text from whitelisted ids only, for G12);
    - the reading in words, from Find's titles. A prefixed pair outside Find's list is marked (S1 guard 3).
 
    Its input is pad actions (`prefix`, `unit`, `per`, `power`, `sqrt`, `delete`), never keys, so R24b and R24c plug into it.
@@ -873,7 +1200,7 @@ Gate:
 - The owner has reviewed the gallery.
 
 ### ron, R24c: the unit view entry, branch `p1/ron-m5-unitview`
-Starts when R24a, R24b and milestone 5 items 1–2 (U1 the qalc worker, U2 the adapter) are merged. Read: r9 sections 2.1, 2.7 and 2.8, docs/04 4.3, and the reports of R24a and R24b.
+Starts when R24a, R24b, R28 and the unit evaluator (G16, G17, G25; G10–G12 if P15 falls) are merged. Read: r9 sections 2.1, 2.7 and 2.8, docs/04 4.3, and the reports of R24a and R24b.
 1. **Tests first** (`app/test/unitpad.spec.ts`), by keys and by touch:
    - The units key on a line, on a picked history row, and on an empty line (quantity 1) opens the slots with the pad up.
    - Pad presses fill the active slot, and the reading under the formula follows every press.
@@ -884,7 +1211,7 @@ Starts when R24a, R24b and milestone 5 items 1–2 (U1 the qalc worker, U2 the a
 2. **Build:**
    - The read-only formula with a slot after every number, as R24a's check found.
    - R24a's model per slot, with R24b's pad up while a slot is active.
-   - Evaluation through U2's adapter, with the result shown as U2 returns it. The full result view is not packaged yet (section 0d).
+   - Evaluation through the unit evaluator (`Calc.units()`), with the result shown as it returns it. The full result view is not packaged yet (section 0d).
 3. **`spec/keyboard.yaml`:** `unit_slot:` loses `letters`, `symbols`, `ops` and `exponent_leave`. The probe's `--pad` mode becomes its default, and the letter modes stay for comparison.
 4. **Report** with the shared-file text: docs/04 4.3 rewritten for the pad, the status line at the top of r7, and backlog milestone 5 item 4.
 
@@ -907,6 +1234,598 @@ Starts when R24c, R4 (Find) and R15b (the user keys and their storage) are merge
 3. **Gallery:** Find in a slot, the units menu, and a user cell being set.
 
 Gate: the tests, the Find query test unchanged, and the size test.
+
+### Packages of section 0f
+Every package here: tests first (they fail on today's code), then the fix, then the report commit (section 2). The finding, its evidence and the decision are in decisions.md "The deep-dive review"; the backlog line is under "Trust and robustness".
+
+### gorge, G20: the stored values a CAS result used, the engine half (F28), branch `p1/gorge-m4-uses`
+Backlog F28; decisions.md "Home and CAS share one Giac context". No UI. Read:
+- `app/src/engine/host.ts`: `cas()`, `home()`, `namesIn` and `byName`;
+- `app/src/engine/defs.ts` (`DefEntry`: kind, preview, view);
+- `CasResult` in `app/src/engine/types.ts`;
+- `tests/golden/README.md` (a case that runs a sequence).
+
+**Behaviour today** (dev engine, 2026-10-14):
+- Home `x:=3` (keys: 3, Sto ▶, x; the x key types lower-case x in every view), then CAS:
+  - `int(x^2,x)` → `9*x`;
+  - `factor(x^2-1)` → `8`;
+  - `expand((x+1)^2)` → `16`.
+- `diff(x^2,x)` → `2*x` and `solve(x^2=4,x)` → `[-2,2]`: they quote their variable.
+- The stored x is replayed at every start, so the surprise can come a week later.
+- Solve and Function are not affected: they substitute locally.
+
+Commits in this order:
+1. **Tests first:**
+   - golden cases for the three CAS inputs after the Home assignment, each with the result Giac gives for x = 3 (`derived`) and `uses: [x]`;
+   - a Vitest on `host.cas()`:
+     - `uses` lists x with its preview and the view it was stored in;
+     - an input that assigns the name itself (`x:=5` in CAS) lists nothing for x;
+     - a user function's name (`f(t):=t^2`, then `f(2)`) is not listed: a call is meant;
+     - Home results get no `uses`, since a stored A is what Home is for.
+2. **Build:** `CasResult.uses?: { name: string; preview: string; view: "home" | "cas" }[]`. It holds every variable of the definitions log (kind `var`) whose name appears in the input (`namesIn`), absent when there is none.
+
+Gate: golden gate, vitest, typecheck. Report: the field and an example, for R32.
+
+### ron, R32: the stored values under a CAS result (F28, UI half), branch `p1/ron-m4a-uses`
+Starts when R11 and G20 are merged. Read:
+- G20's report;
+- `app/src/views/History.svelte` (a CAS row) and R11's row code;
+- `app/src/i18n/en.ts`;
+- docs/03 rule 9 (vertical space).
+
+Commits in this order:
+1. **Tests first** (`app/test/uses.spec.ts`):
+   - Home `3 ▶ x`, then CAS `factor(x^2-1)`: under the result, a muted line "x = 3 · stored in Home";
+   - a CAS result without a stored name has no line;
+   - the line comes back after a reload (the history item stores `uses`).
+2. **Build:**
+   - The line goes under the CAS result, in the mark's muted style: one line, with "+2" after three names.
+   - A tap on it does nothing new. Actions live in the picked row's Menu (R11), and Memory (R4b) deletes a stored value.
+
+Gate: the e2e, the history performance test unchanged, the viewport share unchanged, start chunk within 0.3 kB gzip. **Removal test**, for the report: if the owner finds the line noisy after two weeks, it is shown only for values stored in another view.
+
+### ron, R29: where a number ends (F24, F25), branch `p1/ron-m4-numbers`
+Backlog F24 and F25. Parser only, no UI (night queue). Read:
+- `app/src/input/parse.ts`: the lexer's number branch (lines 99–120) and `atom`;
+- `app/src/input/chips.ts`, and `app/src/entry/macros.ts` (how a chip is drawn);
+- `tests/golden/parser.yaml` (the arithmetic and implicit-multiplication groups);
+- `tools/probes/parse.ts`.
+
+**Behaviour today** (`tools/probes/parse.ts`):
+- **F24:**
+  - `2.5.3` → `2.5*.3`: 0.75, marked `=`. The keys type it: 2 . 5 . 3.
+  - `1..5` → `1.*.5`, and `.5.5` → `.5*.5`.
+- **F25** (with a chip table):
+  - `\res{1}{0.5}3` → `(1/2)*3`;
+  - `3\res{1}{0.5}` → `3*(1/2)`;
+  - `\res{1}{0.5}\res{2}{0.25}` → `(1/2)*(1/4)`.
+
+  The chip is a shaded box with the result's digits, so the line shows [0.5]3 with no × between them. On the G2 a tapped result lands as text, and a digit typed after it extends the number (0.53). `\ans3` is drawn as [Ans]3 and stays as it is.
+
+Commits in this order:
+1. **Tests first** (`parser.yaml`, error cases, `derived`):
+   - every input above is an error;
+   - kept as today: `\ans3`, `2\pi`, `3x`, `5.` (a trailing point), `\left(2\right)3`, `\res{1}{0.5}\times3`, a constant chip after a number (`2\const{c}{c}`: a symbol, not digits), and every keyboard template's round trip.
+2. **Fix:**
+   - A second decimal point (or decimal comma) inside a number is an error: "a number has one decimal point".
+   - A number directly before or after a `\res` chip, or two `\res` chips side by side, is an error that names the fix: "put × between a result and a number".
+   - Messages go through the i18n keys the parser uses.
+3. **G2 items 55 and 56:** if the owner has answered them, the report says so. An answer that differs goes under "Needs a decision"; the error stays the default (principle 3).
+
+Gate: the parser golden cases, the golden gate (parser), vitest, typecheck.
+
+### ron, R30: ÷ in a flat line (F26), branch `p1/ron-m4-flatdiv`
+Backlog F26. Parser only (night queue). Starts when R29 is merged (same file). Read:
+- `app/src/input/parse.ts` `term()` (lines 355–376): ÷ and / take `signedImplicit()` on their right, so an implicit product binds tighter than the division;
+- `tests/golden/g2.yaml` item 6;
+- `parser.yaml` (the arithmetic, fractions and implicit-multiplication groups);
+- the `line:` inserts in `spec/keyboard.yaml` (one-line ÷ is `\div`).
+
+**Behaviour today:**
+- `1/2x` → `1/(2*x)`;
+- `6\div2\left(1+2\right)` → `6/(2*(1+2))` = 1;
+- `1\div2\sqrt{3}` → `1/(2*sqrt(3))`;
+- `8\div2\times4` → `8/2*4` = 16.
+
+Textbook entry is not affected: there ÷ makes a stacked fraction.
+
+**On the G2** (item 6, Virtual Calculator): pasted one-line `1/2x` is (1/2)·x. Typed in textbook entry without →, `1 ÷ 2 x` is 1/(2x), which our stacked fraction already gives. Item 6's answer says "matches our rule"; it no longer does.
+
+Commits in this order:
+1. **Tests first** (`parser.yaml`, `derived` from the G2's rule in item 6):
+   - `1/2x` → `1/2*x`;
+   - `6\div2\left(1+2\right)` → `6/2*(1+2)` = 9;
+   - `1\div2\sqrt{3}` → `1/2*sqrt(3)`;
+   - `a\div bc` → `a/b*c`;
+   - unchanged: `\frac{1}{2x}`, `\frac{1}{2}x`, `8\div2\times4`, `1\div x^{2}` (a power is one factor), and every keyboard template's round trip.
+2. **Fix:** in a flat line, ÷ and / take one factor on their right (a number, a name, a power, a function call or a bracket). The product then goes on left to right, as with ×.
+3. **G2 item 53** (`6÷2(1+2)` in one-line entry): if it is answered, the report says so. A different answer goes under "Needs a decision".
+
+Gate: the parser golden cases, the golden gate (parser), vitest; the task benchmark unchanged.
+
+### ron, R39: the real odd root in Home (P5 b), branch `p1/ron-m4-oddroot`
+decisions.md P5 (b), as revised on 2026-10-14. Parser only (night queue). Starts when R30 is merged (same file). Read:
+- `app/src/input/emit.ts`: `realOddRoots` (line 13) and the root template (lines 205–215);
+- where Home, Solve, Function and CAS set their serialize options;
+- `app/src/input/emit-js.ts`, the plot evaluator;
+- `tests/golden/g2.yaml` items 4 and 11;
+- `parser.yaml` (roots and powers).
+
+**Behaviour today:**
+- `\sqrt[3]{-8}` → `surd(-8,3)` = −2 (L6).
+- In Home, `\left(-8\right)^{\frac{1}{3}}` gives the principal root, 1+1.73205080757·i.
+- The G2 gives −2 for `(-8)^(1/3)` in Home (items 4 and 11, Virtual Calculator).
+
+Commits in this order:
+1. **Tests first** (`parser.yaml` and `home.yaml`: `virtual-calc` for −2, `derived` otherwise). In Home:
+   - `\left(-8\right)^{\frac{1}{3}}` = −2;
+   - `\left(-8\right)^{\frac{2}{3}}` = 4;
+   - `\left(-32\right)^{\frac{1}{5}}` = −2;
+   - with −8 stored in X, `X^{\frac{1}{3}}` = −2;
+   - an even denominator keeps the principal root: `\left(-8\right)^{\frac{1}{2}}` = 2.82842712475·i, as `sqrt(-8)` (P5 a);
+   - an exponent that is not a literal fraction keeps Giac's power.
+
+   In CAS, `(-8)^(1/3)` is unchanged. In the plot evaluator, `x^{1/3}` at x = −8 is −2.
+2. **Fix:** with `realOddRoots`, now set for Home, Solve and Function but not CAS, a power whose exponent is a literal fraction p/q in lowest terms, with q odd, becomes `surd(base,q)^p`. The plot evaluator does the same.
+
+Gate: parser and home golden cases, the golden gate, vitest.
+
+### gorge, G19: a safe start (F31), branch `p1/gorge-m4-safestart`
+Backlog F31. No UI beyond one message. Read:
+- `app/src/engine/workerEngine.ts`: `start()` and `onerror` (lines 210–235), and the stored log's `define` message (lines 79–100);
+- `app/src/engine/host.ts` `restore()` (lines 166–179);
+- `app/src/engine/defs.ts` and `app/src/state/storage.ts`.
+
+**Behaviour today:**
+- `restore()` replays every stored definition with no guard.
+- If one of them crashes the worker (out of memory, an engine abort), `onerror` restarts it and replays the same log again, and again.
+- So the engine is never ready, and only clearing the app's data gets out, which loses the history and every definition.
+- The risk grows once S4 imports libraries into the log.
+
+Commits in this order:
+1. **Tests first** (`workerEngine.test.ts`, with its fake worker):
+   - a log whose replay crashes the worker twice: the third start runs without the log, `ready()` resolves, and the client reports `safeStart: { skipped: n }`;
+   - the stored log stays untouched (for Memory and for R38a's export);
+   - a replayed entry that only gives a Giac error does not count as a crash: the rest replays, as today.
+2. **Build:**
+   - Count failed starts in the stamped store, so a crash that kills the whole app counts too: write the count before the replay and clear it once `ready` is reached.
+   - At two failed starts, start without the log and say so once, in a history line from the i18n table: "Your stored definitions were not loaded because they stopped the engine; Memory lists them."
+   - The App side of that line is one small change in `App.svelte`, which the review accepts as part of this package.
+
+Gate: vitest, typecheck, the start-up e2e unchanged, `replayMs` unchanged.
+
+### gorge, G24: a memory cap for the Giac worker (F32), branch `p1/gorge-m4-memcap`
+Backlog F32. Read:
+- `engine/giac/build-wasm.sh` (line 188: `-sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB`, no `MAXIMUM_MEMORY`, so Emscripten's default of 2 GB) and `engine/giac/build-wasm-release.sh`;
+- `app/src/engine/workerEngine.ts` (`onerror`, line 222: a crash restarts and replays);
+- `app/src/i18n/en.ts`.
+
+**Today:**
+- A CAS job that keeps allocating can grow the worker toward 2 GB.
+- On the 3.9 GB Tab One, Android may then kill the whole app (the worker lives in the WebView's renderer), not just the worker.
+- The user sees the app restart and loses the half-typed line (F30).
+
+Commits in this order:
+1. **Tests first** (Node, with the dev build):
+   - a job that goes past the cap ends in an "out of memory" result, not a hang, and the next call works after the restart and replay;
+   - in `workerEngine.test.ts`: a worker error during a call gives the caller a `memory` error, with the i18n message "Out of memory: the engine was restarted".
+
+   Name the input that goes past the cap in the report, for A4a.
+2. **Build:**
+   - `-sMAXIMUM_MEMORY=1GB` in the dev and release scripts (the P2 container's flags too);
+   - `-sABORTING_MALLOC=1` if a failed allocation does not abort by default;
+   - the client turns a worker abort during a call into that error.
+3. **Rebuild** the dev engine under the host-cpu lock. Run the golden gate and `scripts/compare-engines.ts` against the build before; nothing may differ.
+
+Gate: the golden gate, the new tests, `compare-engines.ts` clean. The device check (the app stays up on the Tab One) is A4a's.
+
+### gorge, G22: why the mark, the reasons as facts, branch `p1/gorge-m4-why`
+Deep-dive item 14; R36 shows these reasons. No UI. Read:
+- docs/04 2.4;
+- `app/src/engine/numeric.ts` (the agreement check, `fnWarn`, the audited list);
+- `app/src/engine/homeEval.ts` (`HomeResult.warn`) and `inherited` in `app/src/engine/host.ts`;
+- `PrecisionWarn` in `app/src/engine/format.ts`.
+
+Commits in this order:
+1. **Tests first** (Vitest on `host.home()` and `host.cas()`):
+   - `normald_icdf(10^-10)` → `why: { unaudited: ["normald_icdf"] }`;
+   - a result from a stored float → `why: { inherited: ["B"] }`;
+   - a value evaluated only once (`BesselJ(1,2)` at 30 digits, the double fallback) → `why: { once: true }`;
+   - an exact rational → no `why`.
+2. **Build:** `HomeResult.why?: { unaudited?: string[]; inherited?: string[]; once?: boolean }`, filled where the warning is decided today: the function names the audit does not cover, and the stored names whose facts were inherited. A constant's uncertainty is not sent to the engine: R36 reads it from the chip table in the app.
+
+Gate: vitest, the golden gate (home, precision), typecheck. Report: the field, for R36.
+
+### gorge, G23: more precision before ⚠, and no unconfirmed digit, branch `p1/gorge-m4-escalate`
+Deep-dive item 13. Starts when G22 is merged (same file). Read:
+- docs/04 2.4 rule 2;
+- `app/src/engine/numeric.ts`: `exactFacts` (lines 335–378) and the float path's steps (lines 445–475);
+- `formatConfirmed` in `app/src/engine/format.ts`;
+- `tests/golden/precision.yaml`;
+- `tools/probes/digits-cost.ts`.
+
+**Behaviour today:** `sin(10^100)` shows `⚠ -0.4`, with `reliableDigits` 0.
+- Giac's 40- and 60-digit values are wrong, since reducing 10^100 modulo 2π needs about 100 digits.
+- Its 80-digit value is right: −0.37237612366127668826… (`oracle`, mpmath at 150 digits).
+- The check stops at P+40, so a digit is shown that nothing confirmed.
+
+Commits in this order:
+1. **Tests first** (`precision.yaml`, `oracle`):
+   - `sin(10^100)` = ≈ −0.372376123661;
+   - `sin(10^2000)`, which no evaluation within the budget confirms, shows `⚠` and no digit.
+2. **Build:**
+   - On the exact path, while fewer than `digits` agree, keep doubling the extra precision (P+80, P+160, …, at most 1000 digits) within 50 ms per result on the desktop, and stop at the first agreement.
+   - `reliableDigits` 0 shows no digit. The app's text for it, "⚠ no digit confirmed", goes through the i18n table, a one-line change in `format.ts` or the render.
+
+Gate: the golden gate (precision, home). The 123 Home inputs keep their desktop timings (`DIGITS_LIST=12,30 node tools/probes/digits-cost.ts`, p95 within 10 %).
+
+### gorge, G26: the digits a constant's uncertainty leaves, branch `p1/gorge-m4-constunc`
+Deep-dive item 17; R40 shows it. Starts when G23 is merged (same file) and, if P15 holds, G18 (its first-order rule). On the P15 fallback it brings its own rule. Read:
+- decisions.md "The deep-dive review";
+- docs/04 2.4 and 3.6 (constant chips carry value and uncertainty);
+- `app/src/input/chips.ts` and `latex-to-giac.ts` (`inexact`);
+- G18's report.
+
+**Today:** a Home result from a constant with a CODATA uncertainty is marked `≈` and shows every digit.
+- G·5.972ᴇ24 shows 12 digits, while G's relative uncertainty is 2.2·10⁻⁵.
+- `≈` promises that every digit shown is right. That holds for the CODATA value, not for the quantity it measures.
+
+Commits in this order:
+1. **Tests first** (Vitest on `host.home()`, `derived`):
+   - an input with its inexact constants as names (`pasc_G`) and a table `{ G: { value, unc } }` gives `uncDigits`: the digit position after which the first-order σ makes the digits uncertain;
+   - two constants combine by the first-order rule;
+   - an exact constant (c) gives none;
+   - without the table, everything is as today.
+2. **Build:** `home()` takes the optional table, substitutes the values, evaluates as today, computes σ (G18's rule), and reports `uncDigits` (absent when no constant is inexact). The parser's switch that sends constants as names is R40's.
+
+Gate: vitest; the golden gate (home, precision) unchanged without the table.
+
+### gorge, G21: `exp` ignores the angle mode (F29), branch `p1/gorge-m4-expdeg`
+Backlog F29. Starts when G2 item 54 is answered and the owner has decided F29 (decisions.md "Needs the user"). This text is the recommended fix; if the owner decides otherwise, the review gives the package the new rule. Read:
+- decisions.md F29;
+- `casSetupCommands` and `useHomeMode` in `app/src/engine/host.ts` (how DEG is set);
+- `tests/golden/g2.yaml` item 54.
+
+**Behaviour today** (DEG):
+- `exp(i*90)` = `i`, marked `=`;
+- `exp(i*1)` = 0.999847695156+0.0174524064373·i, which is cos 1° + i·sin 1°;
+- `exp(1+i*90)` = 2.71828182846·i;
+- yet `exp(i*pi)` = −1.
+
+In RAD, `exp(i*90)` = −0.448073616129+0.893996663601·i.
+
+Commits in this order:
+1. **Tests first** (`home.yaml` and a CAS case, `derived`): in DEG, the four inputs give their RAD values. `cos(90)+i*sin(90)` stays `i` in DEG (cos and sin are angle functions), and `polar` entry with `∡` keeps degrees.
+2. **Fix:** find where Giac applies the angle mode to `exp` of an imaginary argument, and evaluate `exp` (and `e^`) without it, by a rewrite in the host or a Giac setting. If the fix is a Giac patch, follow `engine/giac/patches/README.md` and write the upstream report for the owner.
+
+Gate: the golden gate; the trig cases in DEG unchanged.
+
+### ron, R31: hardware keys take the keypad's path (F27), branch `p1/ron-m4a-hwkeys`
+Backlog F27. Starts when R26b is merged: R26b routes the hardware Backspace and Delete through `EntryController.run`, and this package uses the same handler. Read:
+- R26b's report and code;
+- `app/src/entry/controller.ts`: the `keydown` listeners (lines 111–131) and `inlineShortcuts = {}` (line 106);
+- the keys' primary actions in `spec/keyboard.yaml`;
+- `tools/probes/parse.ts`.
+
+**Behaviour today** (a desktop, or a Bluetooth keyboard on the phone or the Tab One). MathLive takes the keys; ours only Enter, Escape and ^ in line mode:
+- `1e-3` → `1*exp(1)-3` = −0.281718171541, marked `≈`;
+- `2.5e3` → `2.5*exp(1)*3`, and `1E-3` → `1*E-3`;
+- `pi` → `p*i`, and `sqrt(2)` → `s*q*r*t*(2)`;
+- `2**3` → a syntax error.
+
+S4's plan tests libraries in the desktop web app, so this path will be used.
+
+Commits in this order:
+1. **Tests first** (`app/test/hwkeys.spec.ts`, `page.keyboard`):
+   - `1e-3` Enter → 0.001 `=`, with `1ᴇ-3` on the line; `2.5E3` → 2500 `=`;
+   - a grid over every printable ASCII character. Each one either does what the keypad key with that character does (digits, `.`, `+ - * / ^ ( ) ,`) or types itself as a name letter, as today. None may leave a line that parses to something other than the same keys pressed on the keypad.
+2. **Fix:** route hardware `keydown` through `run()`, as R26b does for Backspace.
+   - `e` or `E` right after a number's digits (or its point) inserts ᴇ (`\emark`).
+   - `*` is ×, and `/` is the ÷ key (a stacked fraction in textbook entry).
+   - Letters stay letters. A function's name is reached through Find (R4a), on the desktop as on the phone.
+
+Gate: the hwkeys e2e; the softkeyboard, gestures and keys e2e green; start chunk unchanged.
+
+### ron, R34: the line survives a kill (F30), branch `p1/ron-m4a-keepline`
+Backlog F30. Starts when R43 is merged, so the entry files have settled. Read:
+- `app/src/main.ts` (`flush`, lines 31–49);
+- `app/src/state/session.svelte.ts` (`flushHistory`, `restoreHistory`);
+- `app/src/entry/controller.ts` (`pendingValue`, `create()`);
+- `app/src/input/chips.ts` (`pruneChips`, `validChips`);
+- `app/src/state/storage.ts` (the stamped store);
+- `app/test/persist.spec.ts`.
+
+**Behaviour today:**
+- On hide, the app writes the history, the apps' state and the place, but not the entry line.
+- Android kills a background app when memory runs short (the Tab One with a camera or a PDF open). A half-typed formula is then gone on return.
+- Function and Solve keep their slots (`shell.flush()`).
+
+Commits in this order:
+1. **Tests first** (`persist.spec.ts`):
+   - type a line with a fraction and a result chip, hide the page (`visibilitychange`), reload: the line and the chip come back with the cursor at the end, and Enter computes the same value;
+   - Home and CAS each keep their own line, and an empty line stays empty;
+   - a stored line whose chip entry is missing comes back without that chip, still parseable.
+2. **Build:**
+   - On hide, store `{ view, latex, chips }` for each view in the stamped store (key `entry`, stamped like the other keys).
+   - At start, restore it after the history and before the first key; keys typed while loading still queue (decisions.md R8).
+   - Clear it on Enter.
+
+Gate: the persist, softkeyboard and chips e2e green; start chunk within 0.3 kB gzip.
+
+### ron, R35: a lighter start chunk, branch `p1/ron-m4a-slim`
+Deep-dive item 11; decisions.md "Start chunk: budget raised to 156 kB raw, 54 kB gzip". Starts when R34 is merged, and comes before R21a, whose gate is that budget. Read:
+- `app/scripts/size-check.ts`;
+- `app/src/input/haptics.ts`, and every import of `vibrate` and `hasStrength`;
+- `app/vite.config.ts`.
+
+**Today** (`vite build` with source maps, 2026-10-14): the start chunk is 150.11 kB raw, 52.41 kB gzip. Its largest parts:
+
+| Source | Raw |
+|---|---|
+| `session.svelte.ts` | 10.3 kB |
+| `App.svelte` | 8.8 kB |
+| `@capacitor/core` (imported only by `haptics.ts`, for `registerPlugin` and `Capacitor`) | 7.8 kB |
+| `spec/keyboard.yaml` | 7.6 kB |
+| `format.ts` | 5.7 kB |
+| `keyboard.ts` | 5.6 kB |
+| `controller.ts` | 5.5 kB |
+| `en.ts` | 5.2 kB |
+| `Keypad.svelte` | 5.2 kB |
+| `modeSheet.ts` | 4.0 kB |
+| `Sheet.svelte` + `sheet.svelte.ts` | 6.8 kB |
+| `displayMode.ts` | 3.1 kB |
+| `History.svelte` | 3.1 kB |
+
+Commits in this order:
+1. **The probe** `tools/probes/start-chunk.mjs`: it builds with source maps into `_out/` and prints the start chunk's bytes per source, so later packages see what they add. The table above came from this method.
+2. **Haptics:**
+   - `haptics.ts` loads `@capacitor/core` with a dynamic import once the browser is idle after the keypad is drawn.
+   - Until then `vibrate` uses `navigator.vibrate`, so the first tap of a cold start may vibrate without its strength.
+   - `hasStrength()` reads a flag the load sets.
+3. **One more cut, if it is clean:** the Mode sheet's item lists (`modeSheet.ts`) load on the first Mode or Settings open. Leave the sheet itself to R21a.
+
+Gate: the size test, with the start chunk at least 2 kB gzip under today's 52.41 kB; the Mode and Settings e2e green; desktop keyboard-usable mark (`?bench=1`) not later. Report: the probe's table before and after.
+
+### ron, R36: a picked row says why it has its mark, branch `p1/ron-m4a-why`
+Deep-dive item 14. Starts when R32 (same file) and G22 are merged. Read:
+- G22's report;
+- docs/04 2.4, and `markOf()` in `app/src/engine/format.ts`;
+- R11's row code (the action line above the entry line) and `app/src/input/chips.ts` (a constant chip's `unc`);
+- `app/src/i18n/en.ts`.
+
+Commits in this order:
+1. **Tests first** (`app/test/why.spec.ts`). Pick a row (▲); the line R11 shows above the entry line gives the reason in one line:
+   - `1/4` → "= exact";
+   - `1/3` → "≈ rounded: the exact value is 1/3";
+   - `normald_icdf(10^-10)` → "⚠ 9 of 12 digits confirmed · normald_icdf is not checked";
+   - a result with G → "≈ uses G (± 1.5·10⁻¹⁵)";
+   - a result from a stored float → "≈ uses B, itself rounded".
+
+   Solve's residual ⚠ is out of scope.
+2. **Build:** the reason comes from G22's facts and the chip table, through the i18n table. It shows in the row's action line while the row is picked, and nowhere else (rule 9).
+
+Gate: the e2e, R11's row e2e, the viewport share unchanged, start chunk within 0.3 kB gzip.
+
+### ron, R33: names with a value, marked on the line, branch `p1/ron-m4a-namemarks`
+Deep-dive item 15. Starts when R4b is merged: Vars and Memory list the same names. Read:
+- `app/src/entry/macros.ts` and `app/src/entry/controller.ts`;
+- R4b's report (the live names) and `Calc.names()` (docs/04 3.4).
+
+Commits in this order:
+1. **The MathLive check first.** Can a name on the line be drawn in another colour without changing the LaTeX the parser reads? Try three ways in a throwaway e2e:
+   - CSS on MathLive's rendered atoms, found by their text;
+   - `applyStyle` on a range;
+   - a macro wrapper that the parser strips.
+
+   If none keeps `getValue()`, the cursor and ⌫ as they are, stop here: the report says so, and the item drops (decisions.md "The deep-dive review", would change if).
+2. **Tests first** (e2e):
+   - after Home `3 ▶ X`, an X typed on the line is drawn in the stored-name colour, in Home and in CAS;
+   - after Memory deletes X, the next X is plain;
+   - the parser's output is unchanged (the round trips).
+3. **Build:** the session's stored names, refreshed after each definition; the marking happens on render only.
+
+Gate: the e2e, the round trips, the parser golden cases unchanged; start chunk within 0.3 kB gzip.
+
+### ron, R37: the angle check, branch `p1/ron-m4a-anglecheck`
+Deep-dive item 16. Starts when R33 is merged. Read:
+- decisions.md "The deep-dive review" (the rule and its removal test);
+- `app/src/input/parse.ts` (`Degrees` and the `°` rule, lines 427–467);
+- the history row and R11's action line;
+- the angle setting in `app/src/state/session.svelte.ts`;
+- `app/src/state/taps.svelte.ts` (R9's counter).
+
+**The rule:**
+- In RAD, a trig function (sin, cos, tan, sec, csc, cot) whose whole argument is a literal whole multiple of 15, from 15 to 360, gets a hint under its result: "RAD · sin 30° = 0.5? Tap for DEG".
+- In DEG, a trig argument that contains π gets "DEG · π in the angle: RAD?".
+- A tap switches the angle setting and runs the line again as a new row, the G2 way of fixing it.
+- The hint uses no line when it is not shown (rule 9).
+
+Commits in this order:
+1. **Tests first:**
+   - a unit test for the detector, on the parsed tree;
+   - e2e: RAD `sin(30)` shows the hint, and a tap gives DEG and a new row `= 0.5`;
+   - RAD `sin(0.5)`, `sin(30x)`, `sin(7)` and `sin(30°)` show none;
+   - DEG `sin(π/6)` shows it, and DEG `sin(30)` does not.
+2. **Build:** the detector works on the parsed tree, where the parser knows the argument is a literal. The hint uses the result row's muted style.
+3. **Removal test:** count hints shown and taken (as R9's tap counter, in Settings). If none is taken in two weeks of use, the code goes (docs/03 rule 11).
+
+Gate: the e2e, the parser tests, start chunk within 0.3 kB gzip.
+
+### ron, R41: key labels for TalkBack, branch `p1/ron-m4a-labels`
+Deep-dive item 19. Starts when R12c is merged: R15b places the keys and R12 styles them. Read:
+- `app/src/keyboard/Keypad.svelte` (the key `<button>`, line 253);
+- the labels per layer in `spec/keyboard.yaml`;
+- `app/src/i18n/en.ts` and `app/test/keys.spec.ts`.
+
+**Today:** no key has an accessible name (`aria-label` appears 0 times in `Keypad.svelte`). A screen reader reads the legends as drawn: "x⁻¹", "ᴇ", or nothing for an icon key.
+
+Commits in this order:
+1. **Tests first:**
+   - a Vitest over `spec/keyboard.yaml`: every key and layer has a name in the i18n table ("sine", "x to the minus one", "E for the exponent", "Shift");
+   - e2e: Playwright's accessibility snapshot of the keypad and of each sheet has no unnamed button, and a key's Shift and Alpha layers are in its description ("Shift: arc sine").
+2. **Build:** `aria-label` and `aria-description` on the buttons, from i18n keys per key id and layer (English only). No visual change.
+
+Gate: the tests, the keys and gestures e2e, start chunk within 0.5 kB gzip (if the names grow it more, they load with the i18n table lazily). The first device run after R41 tries TalkBack for a minute.
+
+### ron, R40: muted digits past a constant's uncertainty, branch `p1/ron-m4a-constdigits`
+Deep-dive item 17. Starts when R41 and G26 are merged; it uses R12b's colour tokens. Read:
+- G26's report;
+- `app/src/input/latex-to-giac.ts` (the chip table, `inexact`);
+- `app/src/views/History.svelte`;
+- R12b's token file;
+- `app/src/style.test.ts` (contrast).
+
+Commits in this order:
+1. **Tests first** (e2e):
+   - Home, G (inserted by Find or as `\const{G}{G}`) × 5.972ᴇ24, Enter: the digits past G26's `uncDigits` are drawn with the muted token, and the mark stays `≈`;
+   - copy still gives every digit;
+   - a result with only exact constants (c) has no muted digit;
+   - the same cut at 30 digits.
+2. **Build:**
+   - The parser sends an inexact constant chip as its name (`pasc_<id>`), and the app passes the chip table's value and σ to `home()` (G26).
+   - The row draws the digits past `uncDigits` in one muted span.
+
+Gate: the e2e, the contrast test (the muted digits keep R12b's contrast floor for text), start chunk within 0.3 kB gzip.
+
+### ron, R38a and R38b: the backup, export and restore, branches `p1/ron-m4-backup` and `p1/ron-m4-restore`
+Deep-dive item 18. **Their texts are written when S6 has reported** (the way a file goes in and out without INTERNET) and the owner has said yes to its proposal; until then nobody starts them. Scope:
+- **R38a, export:** one file (JSON, each part with its `DATA_VERSION` stamp) holding the history, the definitions, the settings, the user keys (and the unit-pad cells once they exist), sent out by S6's way.
+- **R38b, restore:** read the file back, check it, show what it holds, then replace or merge as the user picks, through the stamped migrations. A file from a newer version is refused.
+
+Gate (both): an e2e round trip, export → clear → restore, gives the same state.
+
+### annabell, A6: one gate command, branch `p1/annabell-gate`
+Deep-dive item 21; the local half of backlog C3. Any time, beside the ron lane (no device). Read:
+- the scripts in `app/package.json`, `app/scripts/size-check.ts` and `app/scripts/golden.ts`;
+- sections 8 and 8a of this brief;
+- the test lines in `.claude/agents/*`.
+
+Commits in this order:
+1. **`npm run gate`** (`app/scripts/gate.ts`). It runs:
+   - typecheck;
+   - `npm run index` when the index is missing;
+   - Vitest with `FIND_INDEX=required`;
+   - e2e;
+   - the golden gate, when engine or parser code changed against `phase-1` (`git diff --name-only phase-1...`);
+   - the size test;
+   - a docs-size check (S7 sets the budgets; until then it only reports the sizes).
+
+   Each check prints **one line**, such as `PASS typecheck 0 errors (12 s)` or `FAIL e2e 2 of 214: solve.spec.ts:40, …`, with its full log in `app/_out/gate/<name>.log` (gitignored).
+   - The exit code is non-zero on any FAIL.
+   - `--quick` runs typecheck and Vitest only.
+   - The known-flaky persistence test is re-run once, as section 8 allows.
+2. **Tests:** a Vitest for the summary, which reads Vitest's and Playwright's JSON reporters, not their text.
+3. **Report:**
+   - the shared-file text for section 8 ("each branch: `npm run gate` passes") and 8a step 3, and for the agent files' test lines;
+   - backlog C3: the GitHub workflow stays the owner's OK.
+
+Gate: `npm run gate` passes on `phase-1` and fails on a branch with a broken test. Show both in the report.
+
+### annabell, A7: release signing and the version number, branch `p1/annabell-release`
+Section 0g. Starts on the owner's go, with 0g's secret table filled in. Read: `build.sh`; `android/app/build.gradle`; `fdroid/io.github.buerlino.pascaline.yml` and `fdroid/README.md`. No device; the real key never touches this machine.
+
+Commits in this order:
+1. **Gradle reads the whole key from the environment.** It reads `PASCALINE_KEYSTORE`, `PASCALINE_KEYSTORE_PASS`, `PASCALINE_KEY_ALIAS` and `PASCALINE_KEY_PASS`. The defaults (`throwaway` / `pascaline-throwaway`) apply only when `PASCALINE_KEY_ALIAS` is unset, so dev builds keep working unchanged. No password or path is committed.
+2. **`./build.sh --release`.**
+   - It fails before any build step when one of the four variables is missing, when the keystore file does not exist, or when the alias is `throwaway`. It never creates or falls back to the throwaway key.
+   - It refuses `--dev`, `--measure`, `--unsigned` and `--no-units`. It allows `--engine-dir` and `--qalc-dir`, since A8 gates the engine first and then hands it in.
+   - After Gradle, it runs `apksigner verify --print-certs` (build-tools under `ANDROID_HOME`) and compares the certificate's SHA-256 with `android/release-cert.sha256` (one line, from 0g's table; the fingerprint is public). On a mismatch it deletes the APK and fails.
+   - It writes `dist/pascaline-<versionName>.apk` and `dist/pascaline-<versionName>.apk.sha256`, as well as `dist/pascaline.apk`.
+   - Update the header comment of `build.sh`.
+3. **The version.** Set `versionCode 1` and `versionName "0.1.0"` in `build.gradle`. Add `tools/check-version.sh vX.Y.Z`: exit 0 when the tag equals `v<versionName>`, otherwise print both and exit 1. In the F-Droid draft, set versionName, commit and CurrentVersion to 0.1.0 / `v0.1.0`, and versionCode and CurrentVersionCode to 1.
+4. **Tests:** a small shell test (`tools/test-release-guard.sh`, no Gradle run) that checks each refusal in step 2 and `check-version.sh` on a match and a mismatch. Also: `./build.sh --dev --engine-dir … --qalc-dir …` still produces a throwaway-signed APK.
+5. **Report:** the shared-file text for backlog R2 and C4, `fdroid/README.md` (the version item is done), and CLAUDE.md's Commands line for `build.sh` (`--release`).
+
+Gate: the refusal test passes; a dev build still installs over the last one (the same throwaway key); `check-version.sh v0.1.0` passes and `v0.1.1` fails.
+
+### annabell, A8: the release workflow, branch `p1/annabell-releaseci`
+Section 0g. Starts when A7 is merged. **Opus:** it handles the signing key on a machine we do not own. Read: `build.sh` (after A7); `engine/giac/build-wasm-release.sh` and `engine/qalc/build-wasm.sh` (`CONTAINER_ENGINE`, `NO_LOCK`); `app/scripts/golden.ts`; this section's 0g.
+
+Write `.github/workflows/release.yml`:
+- **Trigger:** `push` of tags `v*`, and `workflow_dispatch` with a tag input (a re-run of a tag). Runner `ubuntu-24.04` (it has podman). `permissions: contents: write`, nothing more. `concurrency` per tag. `timeout-minutes: 120`: a 4-core runner needs about 20–40 min for the two container builds, not the 5 min of the 16-core laptop.
+- **Every action is pinned to a full commit SHA**, with the version in a comment (checkout, setup-java 21, setup-node 22). No third-party actions beyond these; the release is created with `gh release create` and `GITHUB_TOKEN`.
+- **Steps, in this order:**
+  1. `tools/check-version.sh "$GITHUB_REF_NAME"`.
+  2. Engine and qalc in the pinned container, with `NO_LOCK=1`.
+  3. The golden gate on `engine/giac/_out/release` (absolute `GIAC_OUT`). It must print `GOLDEN GATE PASSED`, or the job stops **before** the key is decoded.
+  4. Decode the keystore into `$RUNNER_TEMP` (mode 600), then `NO_LOCK=1 ./build.sh --release --engine-dir … --qalc-dir …`. The secrets go in as `env:` of this step only, never into a `run:` line or `echo`. An `if: always()` step deletes the keystore.
+  5. `gh release create "$TAG" dist/pascaline-<v>.apk dist/pascaline-<v>.apk.sha256 --prerelease` when the major version is 0 or the tag has a `-`. The notes give the commit, the engine and qalc `SHA256SUMS`, and the certificate fingerprint.
+- **Not in this package:** the PR/CI checks (backlog C3, which builds on A6), and the F-Droid submission (C4).
+
+Also write **`docs/release.md`**, the owner's one-page checklist: bump versionCode and versionName (and the F-Droid draft) in one commit on `master`; `git tag -s vX.Y.Z` (or `-a`); `git push origin vX.Y.Z`; watch the run; check the SHA-256 and `apksigner verify --print-certs` on the downloaded APK; install over the last release. It also says what a failed run leaves behind (nothing is published) and how to re-run.
+
+Gate: the workflow passes `actionlint` (run once with `npx` or a container; it is not added to the repo). On a fork or on a throwaway tag `v0.0.1-test` from a test branch (the owner's OK, and the owner pushes it), the run ends with a pre-release whose APK verifies against `android/release-cert.sha256`; then the test release and tag are deleted. Show the run's log lines in the report. Then the owner pushes `v0.1.0`.
+
+### sandra, S7: the docs diet, branch `p1/sandra-docsdiet`
+Deep-dive items 20 and 22. Starts when S5 is merged and no package waits for its review. The owner merges it before the next review starts, because it moves text the reviews edit. Read: this brief's sections 0, 2, 8 and 8a; rules.md section 9; the sizes below.
+
+**Today** (2026-10-14; about 4 characters per token):
+- decisions.md 108 kB, the brief 154 kB with section 0f, docs/04 76 kB, backlog.md 43 kB, the cleanup audit 93 kB.
+- A fresh henri reads the whole brief, and a review session reads and edits backlog, decisions and the brief at every merge.
+- One fact (P14) sits in seven files.
+
+Steps:
+1. **One file per package:** section 7 moves to `docs/shifts/packages/<ID>.md`, one file each. Finished packages are deleted (git keeps them). The brief keeps sections 0 (the path and the tables, each row linking its file), 0c, 2, 8 and 8a, and a package session reads only its own file.
+2. **Decisions:** "Decided proposals" keeps what still binds, as Choice, Why (one line) and Would change if. The rest moves to `docs/archive/decisions-2026-10.md`, read only when a decision is questioned.
+3. **Backlog:** one or two lines per open item, linking its package and decision. No causes and no steps to reproduce: they live in the package file.
+4. **docs/04:** "today" statements that are now history (section 1.2's table, 2.1's "Marked today" column) are made current or cut.
+5. **One "Check on the phone" list** at the top of feedback.md: every open judgment that waits for the owner's hands, each with a box. It covers:
+   - R7's defaults, R9's thresholds, R10's cells, R14's ᴇ;
+   - F8 in the WebView, K1, the 48 px rows, P12 B;
+   - each new APK's line from section 8a step 5a.
+
+   The scattered "waiting for the owner's notes" sections move into it.
+6. **Archive:** the cleanup audit and the finished shift reports go to `docs/archive/`.
+7. **Budgets**, which A6's gate checks: the brief ≤ 25 kB, backlog ≤ 20 kB, decisions ≤ 40 kB, docs/04 ≤ 70 kB, a package file ≤ 6 kB.
+
+Nothing current may be lost: the report lists every moved section and where it went, and the review checks three facts at random from each file.
+
+Gate: every link resolves (a small check in `tools/`), the budgets hold, and a package started from the new layout finds its text in one read.
+
+### sandra, S6: files in and out without INTERNET, the backup, branch `p1/sandra-files`
+Deep-dive item 18. It also answers S4's point 2 (how a file reaches the phone), which S4 then reuses. Starts when S7 is merged. Read:
+- CLAUDE.md's offline and F-Droid rules, and `android/app/src/main/AndroidManifest.xml` (no INTERNET);
+- `share` in `app/src/clipboard/port.ts`;
+- `app/src/state/storage.ts` (the keys, `DATA_VERSION`, the migrations) and docs/04 6.2;
+- backlog "Needs the user" item 7: the move to the new app id had no backup.
+
+Answer each point with probes (Chromium; the device checks are annabell's, later):
+1. **Out:**
+   - the Web Share API with a file in the Capacitor WebView (`navigator.canShare({ files })` on WebView 131);
+   - a download (`<a download>`) in the WebView and in the PWA;
+   - `@capacitor/filesystem` with `@capacitor/share` (MIT: their size, and what they need in the manifest).
+
+   Recommend one that needs no new permission.
+2. **In:**
+   - `<input type="file">` in the WebView: does it open Android's picker without a plugin?
+   - "open with": an intent filter for the file type, and what `MainActivity` needs;
+   - the File System Access API in the PWA.
+3. **The file:**
+   - JSON, one part per stored key with its stamp;
+   - what it holds: history, definitions, settings, user keys, and later the unit-pad cells;
+   - its size at the limits (200 rows in each view, 500 definitions);
+   - what a restore refuses (a newer version, a broken stamp);
+   - merge or replace.
+4. **Write** `docs/research/r11-files.md`. The report gives:
+   - the proposal for decisions.md "Needs the user", as one recommendation;
+   - the texts of R38a and R38b for section 7.
+
+### sandra, S8: the outside-test protocol, branch `p1/sandra-outside`
+Deep-dive item 24. Starts when S6 is merged. Read:
+- docs/03 rules 1, 2 and 13;
+- `tests/tasks/tasks.yaml` and `tests/tasks/find-queries.yaml`;
+- decisions.md P14;
+- backlog "Needs the user" item 0 (the owner's own hand timing).
+
+Write `docs/research/r12-outside-test.md`, for two 30-minute rounds that the owner runs:
+- **Who:** three engineers or engineering students who have not seen the keys, from at least two fields.
+- **When:** round 1 after R4b (Find); round 2 after R24c (the unit pad), before R24d's user cells are set.
+- **What they do:** the ten tasks; ten Find queries in their own words ("type what you would call it"); five units on the pad from a printed list.
+- **What is recorded:** presses (the tap counter), time, misses, the words they typed (new aliases for `find-queries.yaml`), and where they hesitated.
+- **Privacy:** no data leaves the phone, the owner takes the notes, and no names are kept.
+- **What comes back:** rows in feedback.md, marked "outside".
+
+Add a one-page printable task sheet (`docs/mockups/outside-test.html`). Gate: the owner can run round 1 with the sheet and an APK and nothing else.
 
 ## 8. Definition of done
 - **Each branch:** typecheck 0; `npm run index` (with `QALC_OUT=<main checkout>/engine/qalc/_out/dev` in a worktree), then `FIND_INDEX=required npm test`, all pass (the Find query test fails rather than skips without the full index); e2e all pass (the known-flaky `solve.spec.ts` persistence test may be re-run once); SPDX headers; `git commit -s` with the trailer (`Claude Opus 5.5` or `Claude Sonnet 5.5`, whichever model ran); the report commit; start chunk size reported for UI packages.

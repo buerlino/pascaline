@@ -54,7 +54,7 @@ The owner asked for prefixes on the left and units on the right. The far left co
 8. **Enter goes to the next slot** (the owner's flow); an empty slot means no unit. After the last unit slot comes the end slot, where Enter evaluates. A flick up on Enter (Shift + Enter) evaluates from any slot. This differs from S1, where Enter evaluated at once and ▶ moved on. ◀ ▶ in the top cluster still move between slots, and Esc leaves the unit view and keeps the slots with the line.
 9. **Math opens Find on units** for everything not on the pad. Inside Find the keys type letters again (docs/04 3.7), and an empty query shows the units menu by category ([spec/units-menu.yaml](../../spec/units-menu.yaml)). So the G2's way (Units, category, unit) is still there, one press away.
 
-The slot holds a list of tokens (prefix id, unit id, power, the ÷ position), never typed text. Its qalc text is built from these whitelisted ids only (docs/04 4.3), which the probe does: `typePad` in `tools/probes/unit-presses.mjs`.
+The slot holds a list of tokens (prefix id, unit id, power, the ÷ position), never typed text. The engine text is built from these whitelisted ids only (docs/04 4.3): under P15 the unit evaluator turns them into exact factors in Giac (package G16), and on the fallback into qalc text, as the probe's `typePad` in `tools/probes/unit-presses.mjs` does.
 
 ## 3. Press count
 
