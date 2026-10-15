@@ -352,6 +352,11 @@ interface BoxTemplate {
    * d), each with the index of the box before it: ⌫ there steps to the end of that box, Del to the start of the next.
    */
   gaps?: Map<number, number>;
+  /**
+   * ∫: its last box, the variable, ends on the line with nothing to close it. Del at its end with more on the line
+   * after it acts on what follows, as after any template; at the end of the line it is the end of the last box.
+   */
+  open?: boolean;
 }
 
 const DIGIT = /^\d$/;
@@ -486,6 +491,7 @@ function deleteAtBoxes(mf: Field, c: number, dir: -1 | 1): boolean {
   const b = t.boxes[k] as Box;
   const n = t.boxes.length;
   const empty = boxEmpty(mf, b);
+  if (dir > 0 && !sel && t.open && k === n - 1 && c === b.e && !endsBox(mf, c)) return false;
   if (dir < 0 && (c <= b.s || (empty && c <= b.e))) {
     // (a mixed number's typed whole part: the cursor before its digits is on the line, not in a box)
     if (t.whole && k === 0 && !empty && !sel) return false;
@@ -609,7 +615,7 @@ function bigOp(mf: Field, x: number): BoxTemplate | undefined {
     const v = m + 1;
     const e = v <= mf.lastOffset && depthAt(mf, v) === d && atomStart(mf, v) === m && !BIGOP.test(latexAt(mf, v)) ? v : m;
     boxes.push({ from: m, s: m, e });
-    return { start, end: e, boxes, whole: false, main, gaps };
+    return { start, end: e, boxes, whole: false, main, gaps, open: true };
   }
   let p = x + 1;
   while (p <= mf.lastOffset && depthAt(mf, p) > d) p++;

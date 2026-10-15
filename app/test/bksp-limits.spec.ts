@@ -293,3 +293,10 @@ test("∫ 1 ▶ 2 ▶ x ▶ x ◀ ◀: between \\, and d, ⌫ steps to the end o
   expect(await del(page)).toBe("\\int_1^2x3\\,\\mathrm{d}x");
   expect(await del(page)).toBe(`\\int_1^2x3\\,\\mathrm{d}${PH}`);
 });
+
+test("∫ 1 ▶ 2 ▶ x ▶ x + 3 ◀ ◀: Del right after the variable deletes the +, as after any template", async ({ page }) => {
+  await insert(page, INT);
+  await tap(page, ["d1", "right", "d2", "right", "x", "right", "x", "add", "d3", "left", "left"]);
+  expect(await del(page)).toBe("\\int_1^2x\\,\\mathrm{d}x3");
+  expect(await selected(page)).toBe("");
+});
