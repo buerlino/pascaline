@@ -508,8 +508,10 @@ function join(mf: Field, t: BoxTemplate): void {
     removeBoxes(mf, t);
     return;
   }
+  // a control word that ends the numerator would take a letter that starts the denominator (\pi + x is not \pix)
+  const gap = /\\[A-Za-z]+$/.test(a) && /^[A-Za-z]/.test(b) ? " " : "";
   mf.selection = { ranges: [[t.start, t.end]] };
-  mf.insert(a + b, { format: "latex", selectionMode: "after" });
+  mf.insert(a + gap + b, { format: "latex", selectionMode: "after" });
   // the numerator's atoms keep their count of offsets, so the cursor goes right after them
   mf.position = t.start + (a === "" ? 0 : num.e - num.s);
 }
