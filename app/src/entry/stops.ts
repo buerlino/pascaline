@@ -10,10 +10,13 @@ import { NAME } from "./delete.ts";
 
 type Field = Pick<MathfieldElement, "getElementInfo" | "lastOffset" | "position" | "selectionIsCollapsed" | "executeCommand">;
 
-/** The atom right after the cursor is a mark, not a box: piecewise's `if `, ∫'s d, ∂, the evaluate-at subscript. */
-const MARK_AHEAD = /^(?:\\text\{|\\mathrm\{|\\partial(?![A-Za-z])|_)/;
-/** A name drawn from letters: the cursor never goes between them. */
-const LETTERS = /^\\operatorname\{/;
+/** The atom right after the cursor is a mark, not a box: piecewise's `if `, ∂, the evaluate-at subscript (∫'s d: `intD`). */
+const MARK_AHEAD = /^(?:\\text\{|\\partial(?![A-Za-z])|_)/;
+/** An atom with parts but no box: a name drawn from letters, the i and eˣ keys' upright letter. The cursor never goes in. */
+const NO_BOX = /^\\(?:operatorname\{|imaginaryI$|exponentialE$)/;
+/** ∫'s d is the template's `\,\mathrm{d}` (as in delete.ts); another upright letter (an i or e in a recalled line) is an atom. */
+const THIN = "\\,";
+const DIFF = "\\mathrm{d}";
 
 const latexAt = (mf: Field, o: number): string => mf.getElementInfo(o)?.latex ?? "";
 const depthAt = (mf: Field, o: number): number => mf.getElementInfo(o)?.depth ?? 0;
@@ -37,17 +40,22 @@ function owner(mf: Field, c: number): string {
   return "";
 }
 
+/** The atom ending at offset `o` is ∫'s d: `\mathrm{d}` right after `\,` on the same level. */
+const intD = (mf: Field, o: number): boolean =>
+  latexAt(mf, o) === DIFF && latexAt(mf, o - 1) === THIN && depthAt(mf, o - 1) === depthAt(mf, o);
+
 /**
- * True if a key typed at position `c` lands in a box. Not a stop: inside a name (`\operatorname`), right after ∫'s
- * upright d (a digit there joins it: `\mathrm{d7}`), right before a mark (`if `, ∫'s `\,` d, ∂, the evaluate-at
+ * True if a key typed at position `c` lands in a box. Not a stop: inside a name (`\operatorname`, the i and eˣ atoms), right
+ * after ∫'s upright d (a digit there joins it: `\mathrm{d7}`), right before a mark (`if `, ∫'s `\,` d, ∂, the evaluate-at
  * subscript), and between a function name and its bracket (G2 item 50).
  */
 export function isStop(mf: Field, c: number): boolean {
-  if (LETTERS.test(owner(mf, c))) return false;
+  if (NO_BOX.test(owner(mf, c))) return false;
+  if (intD(mf, c)) return false;
   const before = latexAt(mf, c);
-  if (before.startsWith("\\mathrm{")) return false;
   const next = atomAfter(mf, c);
   if (MARK_AHEAD.test(next)) return false;
+  if (before === THIN && next === DIFF) return false;
   return !(NAME.test(before) && next.startsWith("\\left"));
 }
 

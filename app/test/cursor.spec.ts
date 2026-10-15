@@ -2,7 +2,8 @@
 // R27b (F23): the cursor stops only where a key can type into a box. ◀, ▶, ▲, ▼ and every trackpad step skip the
 // positions inside a name (EQ, approx, NOT, the one-line sqrt, AND), inside the `if ` of piecewise and the d of ∫,
 // between a function name and its bracket (sin‸(2) was read as sin(7·2) after a 7), and before the marks ∂ and the
-// evaluate-at subscript. Lines and offsets probed in MathLive 0.111.1 (Pixel 7 profile, `?engine=fake`, 2026-10-15);
+// evaluate-at subscript; R27c: an upright letter that is not ∫'s d (an i or e in a recalled line) is a stop on either
+// side. Lines and offsets probed in MathLive 0.111.1 (Pixel 7 profile, `?engine=fake`, 2026-10-15);
 // the expected lines are what a 7 typed at each stop gives (derived: the 7 lands in the box at the cursor).
 import { expect, test, type Page } from "@playwright/test";
 import { drag, entryValue, open, recordVibrations, tap, vibrations } from "./helpers.ts";
@@ -42,6 +43,12 @@ const STOPS: [string, [number, string][]][] = [
   ["\\sum_{k=1}^{3}\\left(k\\right)", [[0, "7\\sum_{k=1}^3\\left(k\\right)"], [1, "\\sum_{7k=1}^3\\left(k\\right)"], [2, "\\sum_{k7=1}^3\\left(k\\right)"], [3, "\\sum_{k=71}^3\\left(k\\right)"], [4, "\\sum_{k=17}^3\\left(k\\right)"], [5, "\\sum_{k=1}^{73}\\left(k\\right)"], [6, "\\sum_{k=1}^{37}\\left(k\\right)"], [8, "\\sum_{k=1}^3\\left(7k\\right)"], [9, "\\sum_{k=1}^3\\left(k7\\right)"], [10, "\\sum_{k=1}^3\\left(k\\right)7"]]],
   ["\\frac{\\partial x^2}{\\partial x}", [[0, "7\\frac{\\partial x^2}{\\partial x}"], [2, "\\frac{\\partial7x^2}{\\partial x}"], [3, "\\frac{\\partial x7^2}{\\partial x}"], [4, "\\frac{\\partial x^{72}}{\\partial x}"], [5, "\\frac{\\partial x^{27}}{\\partial x}"], [6, "\\frac{\\partial x^27}{\\partial x}"], [8, "\\frac{\\partial x^2}{\\partial7x}"], [9, "\\frac{\\partial x^2}{\\partial x7}"], [10, "\\frac{\\partial x^2}{\\partial x}7"]]],
   ["\\left.x^2\\right|_{x=3}", [[0, "7\\left.x^2\\right|_{x=3}"], [1, "\\left.7x^2\\right|_{x=3}"], [2, "\\left.x7^2\\right|_{x=3}"], [3, "\\left.x^{72}\\right|_{x=3}"], [4, "\\left.x^{27}\\right|_{x=3}"], [5, "\\left.x^27\\right|_{x=3}"], [7, "\\left.x^2\\right|_{7x=3}"], [8, "\\left.x^2\\right|_{x7=3}"], [9, "\\left.x^2\\right|_{x=73}"], [10, "\\left.x^2\\right|_{x=37}"], [11, "\\left.x^2\\right|_{x=3}7"]]],
+  // R27c: only ∫'s d is a mark; an i or e typed as an upright letter (a recalled or pasted line) is a plain atom
+  ["3+2\\mathrm{i}", [[0, "73+2\\mathrm{i}"], [1, "37+2\\mathrm{i}"], [2, "3+72\\mathrm{i}"], [3, "3+27\\mathrm{i}"], [4, "3+2\\mathrm{i}7"]]],
+  ["2\\mathrm{e}", [[0, "72\\mathrm{e}"], [1, "27\\mathrm{e}"], [2, "2\\mathrm{e}7"]]],
+  // the i and eˣ keys' atoms hold an upright letter inside; the cursor never goes in (e‸² is MathLive's own stop, left as is)
+  ["2\\imaginaryI", [[0, "72\\imaginaryI"], [1, "27\\imaginaryI"], [4, "2\\imaginaryI7"]]],
+  ["\\exponentialE^{2}", [[0, "7\\exponentialE^2"], [3, "\\exponentialE7^2"], [4, "\\exponentialE^{72}"], [5, "\\exponentialE^{27}"], [6, "\\exponentialE^27"]]],
   // a name one level down (in a numerator)
   ["\\frac{\\operatorname{EQ}\\left(1,2\\right)}{3}", [[0, "7\\frac{\\operatorname{EQ}\\left(1,2\\right)}{3}"], [1, "\\frac{7\\operatorname{EQ}\\left(1,2\\right)}{3}"], [6, "\\frac{\\operatorname{EQ}\\left(71,2\\right)}{3}"], [7, "\\frac{\\operatorname{EQ}\\left(17,2\\right)}{3}"], [8, "\\frac{\\operatorname{EQ}\\left(1,72\\right)}{3}"], [9, "\\frac{\\operatorname{EQ}\\left(1,27\\right)}{3}"], [10, "\\frac{\\operatorname{EQ}\\left(1,2\\right)7}{3}"], [11, "\\frac{\\operatorname{EQ}\\left(1,2\\right)}{73}"], [12, "\\frac{\\operatorname{EQ}\\left(1,2\\right)}{37}"], [13, "\\frac{\\operatorname{EQ}\\left(1,2\\right)}{3}7"]]],
 ];
