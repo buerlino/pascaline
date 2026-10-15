@@ -69,7 +69,9 @@
     - An index emptied by ⌫ disappears from the LaTeX: `\sqrt[3]{8}` minus the 3 is `\sqrt8`, and Enter computes √8.
     - ⌫ at the start of the index leaves the root and puts the cursor before it.
   - **Fractions (`genfrac`):** ⌫ at the start of the denominator joins both parts (`\frac{5}{23}` → `523`). At the start of the numerator it steps out before the fraction.
-  - **Powers, limits, ∫ Σ Π (`subsup`, `extensible-symbol`):**
+  - **Powers:** an exponent is an atom of its own (`^…`, its box one level deeper) right after its base. ⌫ at the start of the exponent steps out after the base, and the next ⌫ deletes the base and leaves the exponent on whatever stands before it. Del at the end of a base deletes the whole exponent with its content (`5‸^{23}` → `5`), and Del before a one-atom base deletes both (`‸5^{3}` → empty). Our way around it: `deleteAtPower()` (R26d).
+  - **A selection that is all of a pair's body:** MathLive's delete removes the pair with it (`keepSelectedBox()`, R26d).
+  - **Limits, ∫ Σ Π (`subsup`, `extensible-symbol`):**
     - ⌫ at the start of a script steps out to just after the base. The next ⌫ deletes the base, and the script stays as an orphan `^{…}` that sticks to whatever comes before it.
     - A script emptied by ⌫ is removed.
   - **`\log` and `\ln`:** any ⌫ inside their subscript deletes the whole operator (line 31863).
