@@ -314,7 +314,27 @@ export class EngineHost {
     return { result, defs };
   }
 
+  /** The stored variables a CAS input reads (F28): names in it that the log holds as values, not the ones it assigns
+   *  itself. Taken before the input runs, since it may change the log. */
+  private usesOf(input: string): NonNullable<CasResult["uses"]> {
+    const asg = simpleAssignment(input);
+    const target = asg ? asg.name : (definedBy(input)?.name ?? indexedTarget(input));
+    return namesIn(asg ? asg.rhs : input)
+      .filter((n) => n !== target)
+      .flatMap((n) => {
+        const e = this.byName.get(n);
+        return e?.kind === "var" ? [{ name: n, preview: e.preview, view: e.view }] : [];
+      });
+  }
+
   cas(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
+    const used = this.usesOf(input);
+    const out = this.casRun(input, s);
+    if (used.length && out.result.ok) out.result.uses = used;
+    return out;
+  }
+
+  private casRun(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     this.need(input);
     this.useMode(`cas${JSON.stringify(s)}`, () => {
       for (const c of casSetupCommands(s)) this.giac.eval(c);

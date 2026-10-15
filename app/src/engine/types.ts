@@ -41,6 +41,10 @@ export interface CasResult {
   /** Why !ok, for the UI's own (translated) message: Giac's text stays in `text`. */
   error?: "syntax" | "timeout" | "engine";
   engineMs: number;
+  /** The stored variables (definitions log, kind var) whose names appear in the input, with the preview they hold and
+   *  the view they were stored in (F28: a value stored in Home changes a CAS result). Absent when there is none; a
+   *  name the input assigns itself and a called function are not listed. */
+  uses?: { name: string; preview: string; view: "home" | "cas" }[];
   /** The result as a number, when it is one with a float in it (docs/04 section 2.9): the value the mark, the copy and
    *  the digits setting work on. Exact CAS results (`1/3`, `sqrt(2)`) have none: they get no mark. */
   numeric?: HomeResult;
