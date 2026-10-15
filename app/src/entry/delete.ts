@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // ⌫ and Del at a template (R23, bug F10; R26c, bug F15; R26d, bug F17; R26e, bug F18; decisions.md "⌫ at a bracket"
-// and "⌫ and Del keep a template whole"). MathLive's own delete at the start of a `\left…\right` body turns the opening
-// bracket into `\left.` and is stuck there, right after a pair it turns the closing bracket into `\right.`, a deleted
-// base leaves its exponent on whatever stands before it, and a fraction or a root loses an emptied box or joins its
-// parts; this module takes those presses first. Public MathLive API only: offsets, `getElementInfo`, `selection`,
-// `position`, `getValue`, `insert`. Plain TS; R26f–R26h extend it to the other templates.
+// and "⌫ and Del keep a template whole"; R26f, bug F19). MathLive's own delete at the start of a `\left…\right` body
+// turns the opening bracket into `\left.` and is stuck there, right after a pair it turns the closing bracket into
+// `\right.`, a deleted base leaves its exponent on whatever stands before it, a fraction or a root loses an emptied box
+// or joins its parts, and lim, Σ, Π and ∫ lose their bounds and marks; this module takes those presses first. Public
+// MathLive API only: offsets, `getElementInfo`, `selection`, `position`, `getValue`, `insert`. Plain TS; R26g–R26h
+// extend it to the other templates.
 //
 // How MathLive numbers a line: offset o is the cursor position after atom o. An atom's parts (a pair's body, a
 // script's branches) come before the atom itself, one level deeper, and each branch starts with an empty sentinel.
@@ -25,6 +26,12 @@ const NAME =
 const LETTERS = /^\\(?:operatorname|mathrm)\{/;
 /** The marks between a template's boxes (evaluate-at, lim, Σ, Π): part of the template, never content. */
 const MARK = /^(?:=|\\to)$/;
+/** lim, Σ, Π and ∫: an operator whose bounds are its scripts (R26f). */
+const BIGOP = /^\\(?:lim|sum|prod|int)(?![A-Za-z])/;
+const INT = /^\\int(?![A-Za-z])/;
+/** ∫'s marks before its variable: a thin space and an upright d. */
+const THIN = "\\,";
+const DIFF = "\\mathrm{d}";
 
 /** One template around a bracket pair: [name] pair [scripts], as offsets. */
 interface Template {
@@ -72,8 +79,8 @@ function removeTemplate(mf: Field, t: Template, dir: -1 | 1): boolean {
 /**
  * ⌫ right after a pair (dir −1), or Del right before a pair or the function name that owns it (dir +1): the cursor
  * steps into the body, to its end (start), and nothing is deleted (point 5, F15). A body that holds only □ gets the □
- * selected, as after the key, so the next press removes the template. A name with boxes of its own (a log base,
- * lim's or Σ's bounds) is left to MathLive here (R26f, R26h). True: handled.
+ * selected, as after the key, so the next press removes the template. A name with boxes of its own is not stepped
+ * into here: lim's, Σ's and Π's bounds are deleteAtBoxes' (R26f), a log base is left to MathLive (R26h). True: handled.
  */
 function stepIn(mf: Field, c: number, dir: -1 | 1): boolean {
   let q: number;
@@ -299,9 +306,7 @@ function removeExponent(mf: Field, p: Power): void {
 /** Remove the whole power; a box it filled shows □ again. */
 function removePower(mf: Field, p: Power): true {
   mf.selection = { ranges: [[p.start, p.q]] };
-  const d = depthAt(mf, p.q);
-  const fills = d > 0 && startsBox(mf, p.start) && endsBox(mf, p.q);
-  if (fills) mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
+  if (fillsRange(mf, p.start, p.q)) mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
   else mf.executeCommand("deleteBackward");
   return true;
 }
@@ -314,7 +319,10 @@ function removePower(mf: Field, p: Power): true {
 // Points 2-5 of "⌫ and Del keep a template whole" instead, for ÷ and a b/c, √, ⁿ√, ∂ (its ∂ marks start its boxes)
 // and the mixed number (its whole part, the digits or □ right before `\tfrac`, is its first box).
 
-/** One box, as positions: `from` its sentinel, `s` where its content starts (after a ∂ mark), `e` its last offset. */
+/**
+ * One box, as positions: `from` its sentinel (or the mark or atom it starts after: lim's →, the = of Σ and Π, ∫'s
+ * operator and d), `s` where its content starts (after a ∂ mark), `e` its last offset.
+ */
 interface Box {
   from: number;
   s: number;
@@ -339,14 +347,25 @@ interface BoxTemplate {
   arg?: number;
   /** A plain fraction (÷, a b/c): ⌫ at the start of its denominator joins the parts, as on the G2 (item 47). */
   joins?: boolean;
+  /**
+   * Positions inside the template that are no box (lim's between its scripts and its bracket, ∫'s between `\,` and
+   * d), each with the index of the box before it: ⌫ there steps to the end of that box, Del to the start of the next.
+   */
+  gaps?: Map<number, number>;
 }
 
 const DIGIT = /^\d$/;
 
-/** The fraction or root whose atom is at `q`, or undefined. */
+/** The fraction, root, lim, Σ, Π or ∫ whose atom is at `q` (for lim, Σ and Π, also their bracket's), or undefined. */
 function boxTemplate(mf: Field, q: number): BoxTemplate | undefined {
   if (q < 1 || q > mf.lastOffset) return undefined;
   const l = latexAt(mf, q);
+  if (BIGOP.test(l)) return bigOp(mf, q);
+  if (isPair(mf, q)) {
+    const x = atomStart(mf, q);
+    const t = x > 0 && depthAt(mf, x) === depthAt(mf, q) ? bigOp(mf, x) : undefined;
+    return t?.end === q ? t : undefined;
+  }
   if (!/^\\(?:t?frac|sqrt)(?![A-Za-z])/.test(l)) return undefined;
   const d = depthAt(mf, q);
   const a = atomStart(mf, q);
@@ -382,8 +401,11 @@ function ownerOf(mf: Field, o: number): BoxTemplate | undefined {
   return t?.boxes.some((b) => b.from === o) ? t : undefined;
 }
 
-/** The fraction or root with a box that holds position `c` (the innermost), and that box's index. */
-function locate(mf: Field, c: number): { t: BoxTemplate; k: number } | undefined {
+/**
+ * The template with a box that holds position `c` (the innermost), and that box's index; `gap` when `c` is one of the
+ * template's positions that are no box (`k` is then the box before it).
+ */
+function locate(mf: Field, c: number): { t: BoxTemplate; k: number; gap?: true } | undefined {
   const d = depthAt(mf, c);
   // a mixed number's whole part, on the template's own level: the digits or □ after c, then the fraction
   let o = c + 1;
@@ -391,21 +413,28 @@ function locate(mf: Field, c: number): { t: BoxTemplate; k: number } | undefined
   const m = o <= mf.lastOffset && depthAt(mf, o) === d + 1 ? ownerOf(mf, o) : undefined;
   const w = m?.whole ? m.boxes[0] : undefined;
   if (m && w && c >= w.from && c <= w.e) return { t: m, k: 0 };
+  // a gap of lim, Σ or Π, or ∫'s integrand or variable: on c's own level
+  const op = onLevel(mf, c);
+  if (op) return op;
   // the box below the line: its sentinel is the nearest offset at or before c on c's level
   if (d === 0) return undefined;
   o = c;
   while (o > 0 && !(depthAt(mf, o) === d && latexAt(mf, o) === "")) o--;
   const t = ownerOf(mf, o);
-  const k = t ? t.boxes.findIndex((b) => b.from === o) : -1;
+  const k = t ? t.boxes.findIndex((b) => c >= b.from && c <= b.e) : -1;
   return t && k >= 0 ? { t, k } : undefined;
 }
 
-/** True if position `o` starts a box: its sentinel, or the ∂ mark that opens a box of ∂. */
+/**
+ * True if position `o` starts a box: its sentinel, the ∂ mark that opens a box of ∂, the → or = of lim, Σ and Π, or
+ * ∫'s operator and d (its integrand and its variable start right after them, on the line itself).
+ */
 function startsBox(mf: Field, o: number): boolean {
   const d = depthAt(mf, o);
-  if (d === 0) return false;
   const l = latexAt(mf, o);
-  return l === "" || (l === "\\partial" && latexAt(mf, o - 1) === "" && depthAt(mf, o - 1) === d);
+  if (d > 0 && (l === "" || opMark(mf, o))) return true;
+  if (d > 0 && l === "\\partial" && latexAt(mf, o - 1) === "" && depthAt(mf, o - 1) === d) return true;
+  return INT.test(l) || l === DIFF;
 }
 
 const boxEmpty = (mf: Field, b: Box): boolean => b.e === b.s || (b.e === b.s + 1 && latexAt(mf, b.e) === PLACEHOLDER);
@@ -432,7 +461,7 @@ function deleteAtBoxes(mf: Field, c: number, dir: -1 | 1): boolean {
   if (!sel) {
     if (dir < 0) {
       const t = boxTemplate(mf, c);
-      if (t) {
+      if (t?.end === c) {
         toBox(mf, t.boxes[t.boxes.length - 1] as Box, "end");
         return true;
       }
@@ -448,6 +477,12 @@ function deleteAtBoxes(mf: Field, c: number, dir: -1 | 1): boolean {
   const at = locate(mf, c);
   if (!at) return false;
   const { t, k } = at;
+  if (at.gap) {
+    // a position that is no box: as the start of the box after it (⌫) or the end of the box before it (Del)
+    if (sel) return false;
+    toBox(mf, t.boxes[dir < 0 ? k : k + 1] as Box, dir < 0 ? "end" : "start");
+    return true;
+  }
   const b = t.boxes[k] as Box;
   const n = t.boxes.length;
   const empty = boxEmpty(mf, b);
@@ -527,10 +562,107 @@ function keep(mf: Field, t: BoxTemplate, k: number, mode: "before" | "after"): v
 /** Remove the whole template; a box it filled shows □ again. */
 function removeBoxes(mf: Field, t: BoxTemplate): void {
   mf.selection = { ranges: [[t.start, t.end]] };
-  const d = depthAt(mf, t.end);
-  const fills = d > 0 && depthAt(mf, t.start) === d && startsBox(mf, t.start) && endsBox(mf, t.end);
-  if (fills) mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
+  if (fillsRange(mf, t.start, t.end)) mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
   else mf.executeCommand("deleteBackward");
+}
+
+// ---- lim, Σ, Π and ∫ (R26f, F19) -----------------------------------------------------------------------------------
+// MathLive keeps their bounds as the script branches of one operator atom, before it and one level deeper:
+// `\lim_{x\to0}\left(2\right)` is 1 (the script's sentinel), 2 `x`, 3 `\to`, 4 `0`, 5 the operator, 6 (the body), 7 `2`,
+// 8 the pair. A branch holds two boxes when a mark splits it (lim's →, the = of Σ and Π). lim, Σ and Π end with their
+// bracket body, the main box. ∫'s integrand and variable are on the operator's own level: the integrand runs from the
+// operator to its `\,` and d, and the variable is the one atom after the d. Its own delete removes an emptied bound,
+// steps out in front of the operator at the start of a bound, and deletes the marks alone. Points 2-5 of "⌫ and Del
+// keep a template whole" instead, through deleteAtBoxes, with two positions that are no box (gaps): between lim's (Σ's,
+// Π's) scripts and its bracket, and between ∫'s `\,` and d, where ◀ and ▶ stop today (F23, R27b).
+
+/** The lim, Σ, Π or ∫ whose operator atom is at `x`, or undefined (a ∫ that lost its d, a lim without its bracket). */
+function bigOp(mf: Field, x: number): BoxTemplate | undefined {
+  const l = latexAt(mf, x);
+  if (!BIGOP.test(l)) return undefined;
+  const d = depthAt(mf, x);
+  const start = atomStart(mf, x);
+  // the bounds: each branch from its sentinel, split at its first mark
+  const froms: number[] = [];
+  let marked = false;
+  for (let o = start + 1; o < x; o++) {
+    if (depthAt(mf, o) !== d + 1) continue;
+    const lo = latexAt(mf, o);
+    if (lo === "") {
+      froms.push(o);
+      marked = false;
+    } else if (!marked && MARK.test(lo)) {
+      froms.push(o);
+      marked = true;
+    }
+  }
+  const boxes: Box[] = froms.map((f, i) => ({ from: f, s: f, e: (froms[i + 1] ?? x) - 1 }));
+  const gaps = new Map<number, number>();
+  if (INT.test(l)) {
+    const m = diffOf(mf, x);
+    if (m === undefined) return undefined;
+    const thin = m - 1 > x && latexAt(mf, m - 1) === THIN ? m - 1 : m;
+    boxes.push({ from: x, s: x, e: thin - 1 });
+    const main = boxes.length - 1;
+    if (thin < m) gaps.set(thin, main);
+    // the variable: the one atom after d, with no parts (□ or a letter)
+    const v = m + 1;
+    const e = v <= mf.lastOffset && depthAt(mf, v) === d && atomStart(mf, v) === m && !BIGOP.test(latexAt(mf, v)) ? v : m;
+    boxes.push({ from: m, s: m, e });
+    return { start, end: e, boxes, whole: false, main, gaps };
+  }
+  let p = x + 1;
+  while (p <= mf.lastOffset && depthAt(mf, p) > d) p++;
+  if (p > mf.lastOffset || !isPair(mf, p) || atomStart(mf, p) !== x) return undefined;
+  if (boxes.length > 0) gaps.set(x, boxes.length - 1);
+  boxes.push({ from: x + 1, s: x + 1, e: p - 1 });
+  return { start, end: p, boxes, whole: false, main: boxes.length - 1, gaps };
+}
+
+/** The d of the ∫ at `x`: the first one on its level that no ∫ inside its integrand takes, within its box. */
+function diffOf(mf: Field, x: number): number | undefined {
+  const d = depthAt(mf, x);
+  let open = 0;
+  for (let o = x + 1; o <= mf.lastOffset; o++) {
+    const od = depthAt(mf, o);
+    if (od < d) return undefined;
+    if (od > d) continue;
+    const l = latexAt(mf, o);
+    if (l === "") return undefined; // the next box of the template the ∫ stands in
+    if (INT.test(l)) open++;
+    else if (l === DIFF) {
+      if (open === 0) return o;
+      open--;
+    }
+  }
+  return undefined;
+}
+
+/** The innermost lim, Σ, Π or ∫ on c's level with a gap at `c` or a box there that holds it (∫'s integrand, variable). */
+function onLevel(mf: Field, c: number): { t: BoxTemplate; k: number; gap?: true } | undefined {
+  const d = depthAt(mf, c);
+  let best: { t: BoxTemplate; k: number; gap?: true } | undefined;
+  for (let x = 1; x <= c && x <= mf.lastOffset; x++) {
+    if (depthAt(mf, x) !== d || !BIGOP.test(latexAt(mf, x))) continue;
+    const t = bigOp(mf, x);
+    if (!t) continue;
+    const g = t.gaps?.get(c);
+    if (g !== undefined) best = { t, k: g, gap: true };
+    else {
+      const k = t.boxes.findIndex((b) => c >= b.from && c <= b.e);
+      if (k >= 0) best = { t, k };
+    }
+  }
+  return best;
+}
+
+/** True if `o` is the → of lim or the = of Σ or Π: a mark that starts a box. */
+function opMark(mf: Field, o: number): boolean {
+  const d = depthAt(mf, o);
+  if (d === 0 || !MARK.test(latexAt(mf, o))) return false;
+  let q = o + 1;
+  while (q <= mf.lastOffset && depthAt(mf, q) >= d) q++;
+  return q <= mf.lastOffset && depthAt(mf, q) === d - 1 && BIGOP.test(latexAt(mf, q)) && !INT.test(latexAt(mf, q));
 }
 
 /**
@@ -546,9 +678,11 @@ function keepSelectedBox(mf: Field): boolean {
   const a = Math.min(...r[0]);
   const b = Math.max(...r[0]);
   const d = depthAt(mf, a);
-  if (d === 0 || latexAt(mf, a) !== "" || b <= a || depthAt(mf, b) !== d) return false;
+  if (!startsBox(mf, a) || b <= a || depthAt(mf, b) !== d) return false;
   if (!endsBox(mf, b)) return false;
   for (let o = a + 1; o < b; o++) if (depthAt(mf, o) < d) return false;
+  // (one box only: no mark of lim, Σ, Π or ∫ inside the selection)
+  for (let o = a + 1; o <= b; o++) if (depthAt(mf, o) === d && (opMark(mf, o) || isIntMark(mf, o))) return false;
   if (mf.getValue(a, b, "latex") === PLACEHOLDER) return false;
   mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
   return true;
@@ -569,13 +703,26 @@ const depthAt = (mf: Field, o: number): number => mf.getElementInfo(o)?.depth ??
 
 /**
  * True if offset `o` is the last of its box: the line ends, the level drops, or the next box of the same template
- * starts (its sentinel, on the same level: a numerator's last atom is followed by the denominator's sentinel).
+ * starts (its sentinel, on the same level: a numerator's last atom is followed by the denominator's sentinel; the → of
+ * lim, the = of Σ and Π; ∫'s `\,` and d after its integrand).
  */
 function endsBox(mf: Field, o: number): boolean {
   if (o >= mf.lastOffset) return true;
   const d = depthAt(mf, o);
   const n = depthAt(mf, o + 1);
-  return n < d || (n === d && d > 0 && latexAt(mf, o + 1) === "");
+  if (n !== d) return n < d;
+  return (d > 0 && (latexAt(mf, o + 1) === "" || opMark(mf, o + 1))) || isIntMark(mf, o + 1);
+}
+
+/** True if `o` is ∫'s `\,` or d (only ∫ inserts them). */
+function isIntMark(mf: Field, o: number): boolean {
+  const l = latexAt(mf, o);
+  return l === DIFF || (l === THIN && latexAt(mf, o + 1) === DIFF);
+}
+
+/** True if the range from position `start` to offset `end` is all of a box: a template there leaves □ behind. */
+function fillsRange(mf: Field, start: number, end: number): boolean {
+  return depthAt(mf, start) === depthAt(mf, end) && startsBox(mf, start) && endsBox(mf, end);
 }
 const latexAt = (mf: Field, o: number): string => mf.getElementInfo(o)?.latex ?? "";
 
@@ -658,9 +805,7 @@ function template(mf: Field, q: number): Template {
   return { start, end, main: [body, mainEnd], othersEmpty };
 }
 
-/** True if the template is all of a box below the line (a fraction's part, an outer body): it leaves □ behind. */
+/** True if the template is all of a box (a fraction's part, an outer body, ∫'s integrand): it leaves □ behind. */
 function fillsBox(mf: Field, t: Template): boolean {
-  const d = depthAt(mf, t.end);
-  if (d === 0 || depthAt(mf, t.start) !== d || !startsBox(mf, t.start)) return false;
-  return endsBox(mf, t.end);
+  return fillsRange(mf, t.start, t.end);
 }

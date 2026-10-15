@@ -267,3 +267,29 @@ test("∫ 1 ▶ 2 ▶ x ▶ x + 3: ⌫ deletes the 3 and the + as usual, then re
   expect(await bksp(page)).toBe("\\int_1^2x\\,\\mathrm{d}x");
   expect(await bksp(page)).toBe(`\\int_1^2x\\,\\mathrm{d}${PH}`);
 });
+
+// ---- the stops that are no box (◀ and ▶ reach them until R27b, F23) -----------------------------------------------------
+test("lim x ▶ 0 ▶ 5 ◀ ◀: between the bounds and the bracket, ⌫ steps to the end of the target and Del into the body", async ({ page }) => {
+  await insert(page, LIM);
+  await tap(page, ["x", "right", "d0", "right", "d5", "left", "left"]);
+  const line = "\\lim_{x\\to0}\\left(5\\right)";
+  expect(await bksp(page)).toBe(line);
+  await tap(page, ["d1"]);
+  expect(await entryValue(page)).toBe("\\lim_{x\\to01}\\left(5\\right)");
+  await tap(page, ["right"]);
+  expect(await del(page)).toBe("\\lim_{x\\to01}\\left(5\\right)");
+  await tap(page, ["d2"]);
+  expect(await entryValue(page)).toBe("\\lim_{x\\to01}\\left(25\\right)");
+});
+
+test("∫ 1 ▶ 2 ▶ x ▶ x ◀ ◀: between \\, and d, ⌫ steps to the end of the integrand and Del to the variable", async ({ page }) => {
+  await insert(page, INT);
+  await tap(page, ["d1", "right", "d2", "right", "x", "right", "x", "left", "left"]);
+  const line = "\\int_1^2x\\,\\mathrm{d}x";
+  expect(await bksp(page)).toBe(line);
+  await tap(page, ["d3"]);
+  expect(await entryValue(page)).toBe("\\int_1^2x3\\,\\mathrm{d}x");
+  await tap(page, ["right"]);
+  expect(await del(page)).toBe("\\int_1^2x3\\,\\mathrm{d}x");
+  expect(await del(page)).toBe(`\\int_1^2x3\\,\\mathrm{d}${PH}`);
+});
