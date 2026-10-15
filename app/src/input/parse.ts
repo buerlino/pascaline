@@ -813,6 +813,8 @@ class Parser {
       if (!this.startsFactor()) this.fail(`\\${name} needs an argument`);
       parts.push(this.postfix());
       while (this.startsFactor() && !(this.peek() as Tok).v.startsWith("\\") && !((this.peek() as Tok).t === "cmd" && (this.peek() as Tok).v in FUNCS)) {
+        // R27b (F23, G2 item 50): sin 7(2) reads as sin 14 or sin(7)·2, so a bracket after the term is refused
+        if ((this.peek() as Tok).t === "open") this.fail(`${name}: put its whole argument in the brackets, as ${name}(…)`);
         parts.push(this.postfix());
       }
       args = [parts.length === 1 ? (parts[0] as Json) : ["Multiply", ...parts]];
