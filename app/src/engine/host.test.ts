@@ -93,6 +93,9 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   const ans = (value: string): string => latexToGiac("\\ans", { chips: { ans: { value, exact: true } } });
   it("Home and CAS: an open test with a product stays as typed, never Giac's 0 (derived)", () => {
     expect(host.home(latexToGiac("xy==2"), defaultHomeSettings).result.display).toBe("((x*y)==2)");
+    // drawn from Giac's latex() (owner, 2026-10-15), as CAS does; numbers keep our formatter (no latex)
+    expect(host.home(latexToGiac("xy==2"), defaultHomeSettings).result.latex).toBe("(x\\cdot y)==2");
+    expect(host.home("1/3", defaultHomeSettings).result.latex).toBeUndefined();
     expect(host.cas(latexToGiac("xy==2"), defaultCasSettings).result.text).toBe("((x*y)==2)");
   });
   it("Home and CAS: Ans holding an open test stays as typed (derived)", () => {
@@ -100,12 +103,15 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     expect(host.home(ans(CLOSED), defaultHomeSettings).result.display).toBe(CLOSED);
     expect(host.cas(ans(CLOSED), defaultCasSettings).result.text).toBe(CLOSED);
     expect(host.home(ans("(x*y)<>2"), defaultHomeSettings).result.display).toBe("(x*y)<>2");
+    expect(host.home(ans("[((x*y)==2),1]"), defaultHomeSettings).result.display).toBe("[((x*y)==2),1]");
+    expect(host.home(ans("((x<>2) and ((y==3)))"), defaultHomeSettings).result.display).toBe("((x<>2) and ((y==3)))");
   });
   it("Home: Ans holding an open test is decided once its names have values (derived)", () => {
     host.home("pasw:=2", defaultHomeSettings);
     expect(host.home(ans("(pasw==2)"), defaultHomeSettings).result.display).toBe("true");
     expect(host.home(ans("pasw<>3"), defaultHomeSettings).result.display).toBe("true");
     expect(host.home(ans("((pasw*pasw)==5)"), defaultHomeSettings).result.display).toBe("false");
+    expect(host.home(ans("[(pasw==2),(pasw<>2),(x==2)]"), defaultHomeSettings).result.display).toBe("[true,false,(x==2)]");
     host.home("purge(pasw)", defaultHomeSettings);
   });
 });

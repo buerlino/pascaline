@@ -41,9 +41,20 @@ describe("chipToGiac", () => {
     }
     expect(chipToGiac("((x*y)==2)")).toContain("'((x*y))==(2)'");
   });
-  it("refuses a value that holds a test inside it (it cannot be carried as typed)", () => {
-    expect(() => chipToGiac("[(x==2),1]")).toThrow(SerializeError);
-    expect(() => chipToGiac("((x==2)) and ((y>1))")).toThrow(SerializeError);
+  it("carries every test inside a list, an and or a sum, and leaves the rest as it is (R18f3)", () => {
+    const tests = (g: string): number => g.split(`sto(1,${EQ_INEXACT_FLAG})`).length - 1;
+    for (const [v, n] of [["[((x*y)==2),1]", 1], ["[(x+1)<>2,(x==y)]", 2], ["((x<>2) and ((y==3)))", 2], ["not((x==2))", 1], ["(x==2)+1", 1], ["[[(x==2)]]", 1], ["(x==2)=y", 1]] as const) {
+      const g = chipToGiac(v);
+      expect(tests(g), v).toBe(n);
+      expect(g, v).not.toMatch(/(^|[^'])\((x|\(x\*y\))==/); // no == left outside the quoted kept form
+    }
+    expect(chipToGiac("[((x*y)==2),1]")).toMatch(/^\(\[\(\(\(a_,b_\)->.*\),1\]\)$/);
+  });
+  it("refuses a test it cannot carry as typed", () => {
+    expect(() => chipToGiac("x<>2=y")).toThrow(SerializeError); // beside another relation
+    expect(() => chipToGiac('["a",(x==2)]')).toThrow(SerializeError); // a string
+    expect(() => chipToGiac("(x==2")).toThrow(SerializeError); // unbalanced
+    expect(() => chipToGiac("(==2)")).toThrow(SerializeError); // a missing side
   });
   it("refuses statements", () => {
     expect(() => chipToGiac("1;purge(a)")).toThrow(SerializeError);

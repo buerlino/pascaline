@@ -88,6 +88,21 @@ test("x == 2 with x free stays x==2, never false; sin(1)²+cos(1)² == 1 is true
   await expect(lastRow(page).getByTestId("mark")).toHaveText("≈");
 });
 
+// R18f3 (F35): an open test with no free name, or with a product, stays as typed, never Giac's 0; Home draws it from
+// Giac's latex() (π, not "pi"); Ans carries it as the test again
+test("a closed == the rule leaves open stays as typed and is drawn as maths; Ans keeps it", async ({ page }) => {
+  await page.evaluate(() =>
+    window.pascaline.session.submit("\\cos\\left(\\frac{\\pi}{7}\\right)-\\cos\\left(\\frac{2\\pi}{7}\\right)+\\cos\\left(\\frac{3\\pi}{7}\\right)==\\frac{1}{2}"));
+  await expect(lastResult(page)).toHaveAttribute("data-text", "((cos(pi/7)-cos(2*pi/7)+cos(3*pi/7))==(1/2))");
+  await expect(lastResult(page)).toContainText("π");
+  await expect(lastResult(page)).not.toContainText("pi");
+  await expect(lastRow(page).getByTestId("mark")).toHaveCount(0);
+  await page.evaluate(() => window.pascaline.session.submit("xy==2"));
+  await expect(lastResult(page)).toHaveAttribute("data-text", "((x*y)==2)");
+  await page.evaluate(() => window.pascaline.session.submit("\\ans"));
+  await expect(lastResult(page)).toHaveAttribute("data-text", "((x*y)==2)");
+});
+
 // MathLive writes \operatorname{AND} on an empty line and \operatorname{\mathrm{AND}} after a term; the parser reads both
 test("Shift + 6 by tap: every cell, between 2 and 3", async ({ page }) => {
   const cells: [string, string][] = [
