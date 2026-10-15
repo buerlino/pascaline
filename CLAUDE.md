@@ -57,9 +57,8 @@ Capacitor shell (Android / iOS / desktop / plain web PWA)
 └─ UI (TypeScript): keyboard (spec/keyboard.yaml), MathLive entry and output (MathPrint),
    app framework Symb/Plot/Num, JSXGraph views, spreadsheet
    └─ MathEngine (async interface)
-      ├─ Worker 1: giac.wasm (+ GSL, GMP, MPFR): CAS + Home + numeric solving
-      └─ Worker 3: libqalculate (the unit view; lazy; milestone 5, P3 as amended by P8 and P11)
-   Find: a static index generated at build time, searched on the main thread (lazy)
+      └─ Worker 1: giac.wasm (+ GSL, GMP, MPFR): CAS + Home + numeric solving + the unit view (milestone 5, P15)
+   Find: a static index generated at build time (unit factors and constants from libqalculate, build time only), searched on the main thread (lazy)
 Storage: IndexedDB (state) + Capacitor Filesystem (import/export)
 ```
 
@@ -75,7 +74,7 @@ Key decisions (reasons in docs/02 and the decision logs):
 TypeScript (strict, no `any`), Vite, **Svelte 5** for the app shell (D1; keyboard, parser and engine client stay plain TS), MathLive (MIT), JSXGraph (LGPL/MIT), Capacitor (MIT), Emscripten, Giac (GPL-3.0+), GMP/MPFR (LGPL), GSL (GPL-3.0+), Vitest, Playwright.
 
 ## Repo layout
-`app/` (web app), `engine/giac/` (engine build + patches), `engine/qalc/` (libqalculate build), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `tests/golden/` (golden cases), `tests/engine/`, `tools/` (device tools), `docs/`, `fastlane/`, `fdroid/`, `logo/`, `build.sh` (clean source → APK; the F-Droid recipe mirrors it, see `fdroid/README.md`), `spike/` (Phase 0 record and the P3 qalc spike).
+`app/` (web app), `engine/giac/` (engine build + patches), `engine/qalc/` (libqalculate build, for the Find index), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `tests/golden/` (golden cases), `tests/engine/`, `tools/` (device tools), `docs/`, `fastlane/`, `fdroid/`, `logo/`, `build.sh` (clean source → APK; the F-Droid recipe mirrors it, see `fdroid/README.md`), `spike/` (Phase 0 record and the P3 qalc spike).
 
 ## This machine (checked 2026-10-10)
 - Rocky Linux 10.2, 16 cores, 28 GB RAM
@@ -121,7 +120,7 @@ PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads ./build.sh              
 # Release engine: Debian's Emscripten 3.1.69 in a pinned debian:trixie container (P2; works on scratch copies, takes the host-cpu lock)
 engine/giac/build-wasm-release.sh                          # → engine/giac/_out/release/giac.{mjs,wasm} + SHA256SUMS
 
-# libqalculate 5.13.1 → wasm (P3/P8; Find index in milestone 4, unit view in 5; build.sh step 1c, --no-units skips it)
+# libqalculate 5.13.1 → wasm (the Find index's unit factors and constants; build time only, P15; build.sh step 1c, --no-units skips it)
 engine/qalc/build-wasm.sh [dev|release]                    # dev = ~/emsdk → engine/qalc/_out/dev/; release = trixie container → engine/qalc/_out/release/ + SHA256SUMS
 node engine/qalc/smoke.mjs engine/qalc/_out/dev            # desktop smoke test (72 km/h to m/s)
 

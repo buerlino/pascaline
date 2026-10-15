@@ -12,13 +12,13 @@ Everything here is built from source by scripts in this repository. Spike-only t
 | MPFR | 4.2.2 (tarball SHA-256 `b67ba038…ce01`) | LGPL-3.0-or-later | https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz | GPG signature checked (Vincent Lefèvre) |
 | GSL | 2.8 (tarball SHA-256 `6a99eeed…3190`) | GPL-3.0-or-later | https://ftp.gnu.org/gnu/gsl/gsl-2.8.tar.gz | GPG signature checked (Patrick Alken). Numeric solvers behind Giac `fsolve` (decided 2026-10-10) |
 
-## Units and constants engine (engine/qalc/build-wasm.sh; built in milestone 4 for the Find index, shipped in the app from milestone 5)
+## Units and constants data (engine/qalc/build-wasm.sh; built for the Find index at build time; not shipped in the app, P15)
 
 The libxml2 and libqalculate tarballs are SHA-256-checked by the script.
 
 | Component | Version | Licence | Source | Notes |
 |---|---|---|---|---|
-| libqalculate | 5.13.1 (tarball SHA-256 `cf8d3eaf…d1b01d3cc3`; pinned at first download 2026-10-11, upstream publishes no hash) | GPL-2.0-or-later | https://github.com/Qalculate/libqalculate/releases/download/v5.13.1/libqalculate-5.13.1.tar.gz | Find index values and unit factors (milestone 4), Units app (milestone 5). Compiled-in definitions, no curl/icu/readline/NLS. Release build in the pinned trixie container, reproducible |
+| libqalculate | 5.13.1 (tarball SHA-256 `cf8d3eaf…d1b01d3cc3`; pinned at first download 2026-10-11, upstream publishes no hash) | GPL-2.0-or-later | https://github.com/Qalculate/libqalculate/releases/download/v5.13.1/libqalculate-5.13.1.tar.gz | Build time only (P15): the Find index's unit factors, constants and uncertainties. Its data ships in the Find index; its code is not in the APK. Compiled-in definitions, no curl/icu/readline/NLS. Release build in the pinned trixie container, reproducible |
 | libxml2 | 2.15.1 (SHA-256 `c008bac0…c39bc54c`, matches upstream `.sha256sum`) | MIT | https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.1.tar.xz | required by libqalculate to parse its definitions; built without iconv, zlib, ICU, HTTP, threads, validation |
 
 ## Find index data (tools/find-index/generate.mjs)

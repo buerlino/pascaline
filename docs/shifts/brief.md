@@ -4,7 +4,7 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8, R22, R25a, R23, R25b, R25c and R42. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8, R22, R25a, R23, R25b, R25c and R42; milestone 5's check G15 (P15 holds, 2026-10-15). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
@@ -17,7 +17,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   6. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): G15, G20, R29, then G27 and R44 (silent wrong answers from the architecture check; the owner said yes 2026-10-15, F36 and F37), R30, G19, G24, then the unit evaluator G16, G17, G18 (or G10–G12 if G15 says P15 falls), G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): G20, R29, then G27 and R44 (silent wrong answers from the architecture check; the owner said yes 2026-10-15, F36 and F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A4a when the owner connects the Tab One, after R21b and before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -26,8 +26,8 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
 - R4a fills the wait for the owner's pick of the mockups, and R12b's token pass then covers Find too.
 - gorge's packages have no UI, and R24c needs milestone 5 items 1 and 2.
 - Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b and R4a stay whole, since each half would leave the keypad or Find half built.
-- **The deep-dive packages (0f, and G15–G18 and G25 in 0e) go by importance, then by what they need:**
-  - **G15 comes first.** One check decides whether the three planned qalc packages G10–G12 are needed at all (P15).
+- **The deep-dive packages (0f, and G16–G18 and G25 in 0e) go by importance, then by what they need:**
+  - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29, R30, G20.
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
   - **Day packages sit next to the code they share:**
@@ -59,18 +59,16 @@ The owner plans each night in advance, and the queue below is the next night's. 
 ### The queue (the next nights: the gorge lane of sections 0e and 0f)
 Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" verdict adds a fix round (fresh worker, then a fresh review), at most two rounds; after the second "NOT MERGED" leave the branch unmerged, log it, go on. **Opus pass:** after every three finished packages (merged or left unmerged; fix packages from a pass count), and the last pass at the end of the queue (step 22). The last pass's FIX packages get only their Sonnet review, then the report. A package already merged by day is skipped (log it).
 
-**P15 decides steps 9–13.** Opus pass 1 checks G15's gate (decisions.md P15) and writes it into `QUEUE`:
-- if P15 holds, steps 9–13 run as listed;
-- if P15 falls, steps 9–11 are G10, G11 and G12 (section 7), step 13 is dropped, and G26 brings its own first-order rule.
+**P15 holds** (G15, merged by day 2026-10-15, `7f32949`): steps 9–13 run as listed.
 
 | Step | What | Agent, model | Branch | Est. |
 |---|---|---|---|---|
-| 1 | G15 units on Giac: the check (decides P15) | gorge, **Opus** | `p1/gorge-m5-giacunits` | 1.5 h + review |
+| 1 | G15 units on Giac: the check (decides P15): merged by day (`7f32949`), skip | gorge, **Opus** | `p1/gorge-m5-giacunits` | — |
 | 2 | G20 the stored values a CAS result used (F28, engine half) | gorge, Sonnet | `p1/gorge-m4-uses` | 1 h + review |
 | 3 | R29 where a number ends (F24, F25) | ron, **Opus** | `p1/ron-m4-numbers` | 1 h + review |
 | 3a | G27 a result that is not a number but holds a float gets ⚠ (F36; owner's yes 2026-10-15) | gorge, Sonnet | `p1/gorge-m4-symfloat` | 45 min + review |
 | 3b | R44 a long result's chip keeps its value, Ans never dropped (F37; after R29) | ron, Sonnet | `p1/ron-m4-longchip` | 45 min + review |
-| 4 | **Opus pass 1** on steps 1–3b (and P15's gate), then its FIX packages | Opus | — | 30 min + fixes |
+| 4 | **Opus pass 1** on steps 2–3b, then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
 | 6 | G19 a safe start (F31) | gorge, Sonnet | `p1/gorge-m4-safestart` | 1 h + review |
 | 7 | G24 a memory cap for the Giac worker (F32) | gorge, Sonnet | `p1/gorge-m4-memcap` | 1 h + review |
@@ -166,26 +164,25 @@ Check `/model` once at the start: the agent files pin `model: opus`, and the fla
 ## 0e. The gorge lane: milestone 5's engine work, beside the ron lane (owner, 2026-10-14)
 Backlog milestone 5 items 1–3, and C9, with no UI: an evaluator, its rules, data and marks. They run now, beside the ron lane and as the night queue (0c), because R24c needs items 1 and 2. P11's reason for doing milestone 4a first (Find and the unit view sit on the keypad and the screen) does not touch them.
 
-**P15 (decisions.md; the owner, 2026-10-14, if G15's check passes):** the unit view computes on Giac, in the worker that is already loaded, with the exact factors of the Find index. libqalculate stays at build time, as the index's source. So G15 checks P15 first. On its gate, items 1 and 2 are G16, G17, G18 and G25. G10–G12, the qalc worker and its adapter as planned before P15, are the fallback: they run only if G15's Opus pass says P15 falls.
+**P15 (decisions.md; the owner, 2026-10-14; G15's check passed 2026-10-15):** the unit view computes on Giac, in the worker that is already loaded, with the exact factors of the Find index. libqalculate stays at build time, as the index's source. Items 1 and 2 are G16, G17, G18 and G25. G10–G12, the qalc worker and its adapter as planned before P15, stay written as the fallback and are not run.
 
 Where 0d says "milestone 5 items 1–2 (U1, U2) merged", read the unit evaluator (G16, G17, G25, or G10–G12 on the fallback) and R28. New gorge ids start at G10, because G8 and G9 are ids in the backlog's G2 follow-ups; the deep-dive packages G19–G24 and G26 are in 0f.
 
 | # | Package | Backlog | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|
-| G15 | Units on Giac: the check (decides P15) | m5 items 1–2 | gorge, **Opus** | `p1/gorge-m5-giacunits` | now | ~0.5 d |
-| G16 | The unit evaluator: factors, dimensions, one term, the end slot | m5 item 1 | gorge, **Opus** | `p1/gorge-m5-unitcore` | G15, and its Opus pass says P15 holds | ~1 d |
+| G16 | The unit evaluator: factors, dimensions, one term, the end slot | m5 item 1 | gorge, **Opus** | `p1/gorge-m5-unitcore` | now (G15 merged; P15 holds) | ~1 d |
 | G17 | Temperatures and logarithmic units | m5 item 2 | gorge, Sonnet | `p1/gorge-m5-unittemp` | G16 | ~0.5 d |
 | G18 | Uncertainty, first order | m5 item 2 | gorge, Sonnet | `p1/gorge-m5-unitunc` | G16 | ~0.5 d |
 | G25 | The unit a result is shown in | m5 item 2 | gorge, Sonnet | `p1/gorge-m5-unitshow` | G16 | ~0.5 d |
 | G13 | The hp and mmHg factors and the data audit | m5 item 3 | gorge, Sonnet | `p1/gorge-m5-qalcdata` | G16 (G12 on the fallback) | ~1 d |
 | G14 | Exact results marked ≈ | C9 | gorge, Sonnet | `p1/gorge-m4-marks` | now (any time; Home only) | ~0.5 d |
 | R28 | Units mode in the parser | m5 item 2 (ron half) | ron, **Opus** | `p1/ron-m5-unitparse` | R24a and G16 (G12 on the fallback); before R24c | ~1 d |
-| G10 | *Fallback only:* qalc glue, the result JSON | m5 item 1 | gorge, Sonnet | `p1/gorge-m5-glue` | G15's Opus pass says P15 falls | ~0.75 d |
+| G10 | *Fallback only:* qalc glue, the result JSON | m5 item 1 | gorge, Sonnet | `p1/gorge-m5-glue` | P15 falls (it held: G15); not run | ~0.75 d |
 | G11 | *Fallback only:* the `UnitEngine` worker and client | m5 item 1 | gorge, Sonnet | `p1/gorge-m5-worker` | G10 | ~1 d |
 | G12 | *Fallback only:* the units checks, marks and `units.yaml` | m5 item 2 (gorge half) | gorge, Sonnet | `p1/gorge-m5-adapter` | G11 | ~1 d |
 
 **Why these models:**
-- G15 decides an architecture question, and G16 is the arithmetic every unit result rests on (Opus).
+- G16 is the arithmetic every unit result rests on (Opus).
 - G17, G18, G25, G13 and G14 follow G16's pattern or the golden gate, and their cases pin them; each gets an Opus pass at night (Sonnet).
 - R28 adds parser rules with round trips (Opus, as R14 and R18).
 - G10–G12 follow the Giac worker's pattern (Sonnet).
@@ -218,7 +215,7 @@ The order is by importance, then by what each needs (section 0, "The path"):
 3. trust features;
 4. process.
 
-The milestone 5 packages that P15 brings (G15–G18, G25) are in 0e. Every "behaviour today" below was probed on 2026-10-14, on the dev engine (`tools/probes/engine.ts`, `tools/probes/parse.ts`) or in the code.
+The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "behaviour today" below was probed on 2026-10-14, on the dev engine (`tools/probes/engine.ts`, `tools/probes/parse.ts`) or in the code.
 
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
@@ -500,64 +497,19 @@ Starts when R21b is merged; it runs before R15b, since it uses no key that R15b 
 
 ### Packages of section 0e
 
-### gorge, G15: units on Giac, the check (decides P15), branch `p1/gorge-m5-giacunits`
-decisions.md P15: this package's gate is P15's. No app code: a probe and a report. Read:
-- decisions.md P15;
-- docs/04 4.1 and 4.3;
-- `engine/qalc/cases.yaml` with `run-cases.mjs` (the 26 spike cases);
-- `tests/tasks/tasks.yaml` (t02, t04, t10);
-- `UNITS` in `tools/probes/unit-presses.mjs`, and `spec/unit-pad.yaml`;
-- the generated index (`npm run index`, then `app/src/find/_gen/find-index.json`: each unit's `si` and `dim`, each prefix's power);
-- `tools/probes/engine.ts` (how a probe loads Giac).
-
-**Found in the review** (2026-10-14, raw Giac):
-- `normal(72*(5/18)*dL/dT/(dL/dT))` = 20;
-- `4.7 kΩ × 2.2 nF` = 517/50000000·dT;
-- `normal(dL+dT)` stays a sum;
-- the first-order σ of t10 = sqrt(387089)/500 = 1.24432953834585 (`derived`).
-
-The index has `si` for 399 of 435 units and `dim` for 434.
-
-Steps:
-1. **The probe** `tools/probes/units-giac.mjs` (probe rules: read-only, output to `_out/`):
-   - **Tokens:** each unit token (prefix id, unit id, power) becomes its exact factor times one Giac symbol per base dimension of the index's `dim` keys. Name the symbols so they cannot clash with a user's, as the engine's other `pas…` names do.
-   - **Quantities:** a quantity is a number times its units, and `normal()` gives the result.
-   - **One term:** the result must be a number times one product of the dimension symbols. Otherwise it names the two dimensions (`1 m + 1 s` → L vs T).
-   - **Conversion:** divide by the target's factor and dimensions; a pure number must be left.
-   - **Temperatures and logarithmic units:** only detected (an offset or log unit inside arithmetic is flagged). Their rules are G17's.
-   - **Uncertainty:** first order, sqrt(Σ (∂f/∂xᵢ · σᵢ)²) with Giac's `diff`, for t10 and the spike's uncertainty cases.
-2. **Run every case both ways:** Giac with the index's factors, and qalc's own answer from the dev build (`engine/qalc/_out/dev`, as `run-cases.mjs` runs it). The cases:
-   - the 26 spike cases and docs/04 4.1's table;
-   - t02, t04 and t10;
-   - `1 <unit> → SI` for each of S1's 50 units and each unit on the draft pad.
-3. **Settle every difference** with a value from the oracle or a derivation that says which side is right. hp and mmHg are known: qalc is wrong (backlog "Needs the user" item 6).
-4. **Measure:** desktop p95 per evaluation (Giac warm, 3 rounds, the last timed) and Giac calls per evaluation.
-5. **List** the 36 units without `si`, by group, and what each needs: a CODATA value with its uncertainty (as a constant), our exact factor (G13), or a rule (G17 for the logarithmic units).
-
-Gate (P15's):
-- every case equal, or the difference is qalc's error shown by a `derived` or `oracle` value;
-- `1 m + 1 s` and `20 °C × 2` are caught;
-- t10's uncertainty is 1.2443295383… (`derived`);
-- p95 ≤ 5 ms per evaluation on the desktop;
-- every unit on the draft pad and in S1's 50 has a factor or a named owner (G13, G17).
-
-**Report:**
-- the table of cases (Giac, qalc, verdict), the numbers, and the gate line by line;
-- it ends with **"P15 holds"** or **"P15 falls"**.
-
-If P15 holds, "For shared files" gives the text that replaces:
-- docs/04 4.1 (today), 4.2 (the engine: the Giac worker, no third worker), 4.4 (budgets: no qalc chunk; the factors come with the index), 6.1, 8.1, 8.2 (`Calc.units()` and `UnitEngine` on the Giac worker, with G16's input), 8.3 (the qalc row goes) and Appendix C (the two-worker memory row goes);
-- CLAUDE.md's architecture lines (Worker 3 goes; libqalculate at build time only);
-- THIRD_PARTY.md's libqalculate line: its data ships in the Find index, not its code in the APK.
-
 ### gorge, G16: the unit evaluator: factors, dimensions, one term, the end slot, branch `p1/gorge-m5-unitcore`
-Backlog milestone 5 item 1 (P15). Starts when G15 is merged and its Opus pass says P15 holds. No UI. Read:
+Backlog milestone 5 item 1 (P15). Starts now (G15 merged 2026-10-15; P15 holds). No UI. Read:
 - decisions.md P15, and G15's report and probe;
-- docs/04 2.4 (marks), and 4.3 and 8.2 as G15's merge left them;
+- docs/04 2.4 (marks), and 4.2, 4.3 and 8.2 as G15's merge left them;
 - `app/src/engine/host.ts` (`home()`: how a request runs in the worker);
 - `app/src/engine/numeric.ts` (the agreement check);
 - `app/src/find/rank.ts` (`prepare()`, the item shape);
 - `app/src/calc/port.ts`.
+
+Defaults from G15 (decisions.md "G15: rpm → Hz, and the units with no exact factor"):
+- a bare number inside sin, cos or tan follows the Home angle mode, as Home does (the probe read it as radians);
+- `rpm → Hz` and `rad/s → Hz` are refused (angle·T⁻¹ vs T⁻¹), since rad stays in the dimension key;
+- a unit with no exact factor (the 24 Planck, atomic and natural units, the solar mass) is refused with a message naming it, until G13 adds it.
 
 Commits in this order:
 1. **Tests first.**
@@ -625,7 +577,7 @@ Backlog milestone 5 item 2 (P15; docs/04 4.3 "Result"). Starts when G16 is merge
 Gate: golden gate (units), vitest.
 
 ### gorge, G10 (fallback only): qalc glue, the result JSON, branch `p1/gorge-m5-glue`
-**Fallback only** (decisions.md P15): it runs only if G15's Opus pass says P15 falls. Backlog milestone 5 item 1, part 1. No UI. Read docs/04 4.1, 4.2, 8.2 (`Quantity`, `UnitError`) and Appendix C; `engine/qalc/glue.cc` (today `qalc_set_precision`, `qalc_parse`, `qalc_print`, `qalc_eval`: JSON for the Find index generator), `engine/qalc/smoke.mjs`, `engine/qalc/cases.yaml` with `check.py` and `run-cases.mjs` (the 26 spike cases).
+**Fallback only** (decisions.md P15): it would run only if P15 fell; G15 showed that it holds (2026-10-15). Backlog milestone 5 item 1, part 1. No UI. Read docs/04 4.1, 4.2, 8.2 (`Quantity`, `UnitError`) and Appendix C; `engine/qalc/glue.cc` (today `qalc_set_precision`, `qalc_parse`, `qalc_print`, `qalc_eval`: JSON for the Find index generator), `engine/qalc/smoke.mjs`, `engine/qalc/cases.yaml` with `check.py` and `run-cases.mjs` (the 26 spike cases).
 1. **Tests first:** a Node test beside `smoke.mjs` (or `run-cases.mjs` extended) that calls the new entry point and checks the JSON, failing on today's glue. Use docs/04 4.1's table, sources `derived` or `oracle` only:
    - `72 km/h to m/s` = 20, exact;
    - `1 in to mm` = 127/5, exact;

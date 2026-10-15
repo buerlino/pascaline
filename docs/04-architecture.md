@@ -16,10 +16,10 @@ How to read each area: **today** (verified), **decision** (one, with the reason)
 7. *(Python `calc.eval`: removed with the Python app, P11; 2.10.)*
 8. **Find is one static index generated at build time** (Giac's English help lines, libqalculate's units, constants and prefixes, our alias file), searched by our own ranking code on the main thread, fetched when idle after the engine is ready and parsed on first open (section 3).
 9. **Constants, units, prefixes and results enter the entry line as atomic MathLive macros** (`\const{ID}`, `\unit{ID}`, `\pfx{p}`, `\res{n}`, `\ans`); qalc never sees text the user typed (3.6, 4.3).
-10. *(P15, decided by the owner 2026-10-14 if G15's check passes; G15 is running: the unit view computes in the Giac worker with the Find index's exact factors, and libqalculate is used only at build time. If G15 holds, its merge rewrites items 10 and 13, section 4's engine parts, 6.1, 8.1–8.3 and Appendix C. Until then they describe the fallback.)* **The unit view parses units with our P1 parser** and sends qalc only whitelisted names; qalc's default "try exact" mode is verified exact for SI-defined factors; our adapter turns qalc's silent non-answers (mismatched sums, misused temperatures) into messages (section 4).
+10. **The unit view computes on Giac (P15):** our P1 parser reads unit tokens (Find ids). Each becomes its exact SI factor from the Find index times base-dimension symbols, and Giac computes exactly in the worker that is already loaded. The evaluator refuses mismatched sums, absolute temperatures in arithmetic and functions of quantities with units (section 4).
 11. **Keys** (every difference from the G2 and its reason: [06-keypad-vs-g2.md](06-keypad-vs-g2.md)): Math = Find, Vars = Find on variables, Shift + Math = Memory, Tmpl = templates, Shift + Tmpl = the unit view (units after the formula, P11), View = compact keypad (K4), Shift + View = Copy, Shift + Menu = Paste, Shift + `+` = Ans, Shift + 5 = `[ ]`, Shift + 8 = `{ }`, Shift + 4 = matrix editor, Shift + `−` = Base, Help = context help (5.1).
 12. **State:** one IndexedDB store with a schema version; user definitions are persisted and replayed at start, so variables survive a relaunch (6.2).
-13. **The qalc engine build joins `build.sh` in milestone 4**, because the Find index takes its constant values and unit factors from it; the qalc worker and the unit view stay milestone 5 (7.1).
+13. **The qalc engine build joins `build.sh` in milestone 4**, because the Find index takes its constant values and unit factors from it. It stays a build-time tool (P15); the unit view is milestone 5 (7.1).
 14. **New gates:** an automated size test, the task benchmark, the Find query test, marks in the golden files, `units.yaml`, a per-key Find timing on the Tab One (7.3).
 
 The top risks are in section 9.
@@ -89,7 +89,7 @@ All "probe" rows ran on the dev engine `engine/giac/_out/gsl` through `EngineHos
 | Function Plot | `input/emit-js.ts` | JS doubles | — | drawing only; trace values come from the engine | — |
 | CAS exact | `host.ts:163-174` | exact | none | 2D LaTeX | — |
 | CAS approximate | `host.ts:79` (`Digits` = Home digits) | Giac floats, decimals read as binary | Giac's printing, not our formatter | `1-0.9-0.1` → `1.7763568394e-15`; `evalf(sin(10^22))` → `-0.54764225985`; `1e16+1-1e16` → `0.0` (probes) | no |
-| Unit view (milestone 5) | section 4 | qalc, "try exact" | — | — | — |
+| Unit view (milestone 5) | section 4 | Giac, exact factors from the Find index (P15) | — | — | — |
 
 **Reuse and copy on 2026-10-12** (since then results are chips, R2, and copy and paste exist, A3). No clipboard, share or CSV code exists (03 section 2, grep). Tapping a result, or Up then Enter, inserts the LaTeX of the displayed text (`App.svelte:132`, `:270`), so the rounded digits. The engine keeps `pasans` and `pcasans`, but nothing reaches them: `Ans` typed with Alpha parses as `A*n*s` (probe), and the reference's Ans key (Shift + `+`) is "not ours yet" (`spec/keyboard.yaml`, key `add`).
 
@@ -288,38 +288,50 @@ Budgets: index ≤ 100 kB gzip; key → list ≤ 16 ms p95 on the Tab One; Find 
 
 ---
 
-## 4. Units: the unit view (EN2, P3 as amended by P8 and P11)
+## 4. Units: the unit view (EN2, P3 as amended by P8, P11 and P15)
 
-**P15 (decided by the owner 2026-10-14 if G15's check passes; G15 is running):** the unit view computes in the Giac worker that is already loaded, with the Find index's exact factors (in the index of 2026-10-15, 399 of 435 units have `si` and 434 a `dim`), and libqalculate is used only at build time, as the index's source. If G15 holds, its merge rewrites 4.1, 4.2, 4.4 and 4.5 (and 6.1, 8.1–8.3, Appendix C); 4.3's entry and rules stay. Until then the engine parts of this section describe the plan before P15, which is the fallback (G10–G12).
+**P15 (decided by the owner 2026-10-14; G15's check passed 2026-10-15):** the unit view computes in the Giac worker that is already loaded, with the Find index's exact factors (399 of its 435 units have `si` and 434 a `dim`). libqalculate is used only at build time, as the index's source.
 
-There is no separate Units app (P11): units are added *after* the formula, in unit slots, in the unit view opened by the units key (decisions.md P11 and S1; layout and press count in `docs/research/r7-unit-slots.md`). qalc does the unit arithmetic in its own worker; our parser and adapter decide what reaches it.
+There is no separate Units app (P11): units are added *after* the formula, in unit slots, in the unit view opened by the units key (decisions.md P11 and S1; layout and press count in `docs/research/r7-unit-slots.md`). Giac does the unit arithmetic in the worker that is already loaded, with the Find index's exact factors (P15). Our parser decides what reaches it, and the evaluator checks the result.
 
-### 4.1 Today (the qalc spike build, probed 2026-10-12)
-I relinked the spike's libraries (`../pascaline-deps/qalc-spike/build/prefix`, libqalculate 5.13.1) with a throwaway probe glue that reports qalc's own approximation flags (Appendix A). Default evaluation options, so `APPROXIMATION_TRY_EXACT`, precision 12.
+### 4.1 Today (units on Giac, probed 2026-10-15, G15)
+`tools/probes/units-giac.mjs` turns each unit token into its exact SI factor from the Find index times one symbol per base dimension (`pasdimL` … `pasdimB`; the angle `pasdimA` is one of them), and Giac's `normal()` computes exactly. Against qalc 5.13.1 and mpmath:
 
-| Input | Result (fraction form / decimal) | qalc approximate? |
+| Input | Giac | qalc |
 |---|---|---|
-| `72 km/h to m/s` | 20 m/s | no |
-| `1 in to mm`; `1 ft to m`; `1 mph to m/s` | 127/5 mm; 381/1250 m; 1397/3125 m/s | no |
-| `1 lbf to N` | 8896443230521/2000000000000 N = 4.44822161526 N | no (the 12-digit print is rounded: print flag set) |
-| `1/3 m to cm` | 100/3 cm = 33.3333333333 cm | no (print rounded) |
-| `20 °C to K`; `100 °F to °C`; `300 K to °C` | 5863/20 K; 340/9 °C; 537/20 °C | no |
-| `c`; `planck`; `k_B`; `1 eV to J` | exact (SI-defined since 2019) | no |
-| `G`; `electron_mass` | 6.67430E-11 ± 0.00015E-11 m³/(kg·s²); value ± uncertainty | yes |
-| `90 deg to rad`; `1 Np to dB`; `sqrt(2) m` | 1.57079632679 rad; 8.68588963807 dB; 1.41421356237 m | yes |
-| `1 W to dBm`; `4.7 kΩ`; `1 µF * 4.7 kΩ` | 30 dBm; 4700 Ω; 47/10000 s | no |
-| `(12.34 ± 0.05) m * (3.2 ± 0.1) m` | 39.5 ± 1.3 m² | yes |
-| `1 m + 1 s` | `1 m + 1 s` (**no error**) | no |
-| `20 °C + 5 °C`; `20 °C * 2` | 25 °C; 40 °C (**accepted**) | no |
-| `1 hp to W` | 745.699987158 W, exact rational (**wrong**, 2.3 #10) | no |
-| `degC`, `BTU`, `mu0`, `epsilon0`, `NA`, `R`, `h`, `g`, `e` | coulomb·degree; byte·tesla·…; 0 kg; 0 J·bit; N·A; röntgen; hour; gram; Euler's number | — |
-| precision 30: `1 lbf to N`; `90 deg to rad` | 4.4482216152605 N exact; 1.57079632679489661923132169164 rad | no; yes |
+| `72 km/h → m/s`; `1 in → mm`; `1/3 m → cm` | 20; 127/5; 100/3 | the same |
+| `1 lbf → N`; `4.7 kΩ × 2.2 nF`; `√2 m` | 8896443230521/2000000000000; 517/50000000 s; √2 m | the same |
+| `20 °C → K`; `100 °F → °C`; `20 °C → °F` | 5863/20; 340/9; 68 | the same |
+| `90° → rad`; `60 rpm → rad/s`; `sin(30°)` | π/2; 2π; 1/2 | the same |
+| `(12.34 ± 0.05) m × (3.2 ± 0.1) m` | 4936/125 ± √387089/500 m² (first order) | the same σ; prints ±1.3 |
+| `1 m + 1 s`; `1 m → s` | "Units don't match: L vs T" | `1 m + 1 s`; `1 m` (no error) |
+| `20 °C + 5 °C`; `20 °C × 2` | refused (absolute temperature) | 25 °C; 40 °C |
+| `ln(2 m)`; `sin(2 m)` | refused | left unevaluated |
+| `1 rpm → Hz`; `1 rad/s → Hz` | refused: angle·T⁻¹ vs T⁻¹ | 0.1047 Hz·rad; 1 Hz·rad |
+| `1 hp → W`; `1 mmHg → Pa` | refused: no factor yet (G13) | 745.699987158 W; 133.322368421 Pa (both wrong) |
+| `1 Np → dB`; `1 W → dBm` | flagged: logarithmic (G17) | 8.68588963807 dB; 30 dBm |
 
-Calls took 0.2–28 ms in Node (the first conversion 28 ms). So: **"try exact" gives exact SI conversions** (the P8 question is answered: `72 km/h → m/s` = 20 exactly, `1 in → mm` = 25.4 exactly); qalc reports approximation reliably for π, logarithms and uncertainties; and qalc silently accepts mismatched sums, offset-unit arithmetic and misread names.
+The 26 spike cases, tasks t02, t04, t10 and these rows agree with qalc, except where qalc is wrong (oracle). Every unit in S1's 50 and on the draft pad has the same SI factor in both; qalc's SI form drops rad. On the desktop an evaluation takes median 0.5 ms and p95 1.5–3.2 ms, in one Giac call. A half power (nV/√Hz) takes 8 ms.
 
-### 4.2 Decision: the `UnitEngine` and its worker
-Worker 3, loaded on the first press of the units key; never at start. Same pattern as Giac: an async interface, a module worker, Cancel = terminate and respawn (qalc runs on the calling thread, no pthreads; nothing to replay, since each call is self-contained and the unit view keeps its own Ans app-side). Interface in 8.2. The glue (`engine/qalc/glue.cc`, from the spike) returns one JSON result per call: the number as an exact fraction when qalc's structure is not approximate, else a decimal at precision P = `max(40, digits+10)`; the unit part as canonical qalc names with exponents; the dimension (from `convertToBaseUnits`); the uncertainty; qalc's approximate flag.
-**Memory with two workers alive (to verify, annabell, U5):** `dumpsys meminfo` PSS on the Tab One with Giac and qalc loaded, then a 10-minute mixed session. Gate: no low-memory kill.
+36 index units have no exact factor:
+- 4 logarithmic (G17);
+- hp and mmHg (G13: qalc's data is wrong);
+- nat, trit and Hart (G13: exact irrational factors);
+- the 15 °C and the mean calorie (G13);
+- 24 Planck, atomic and natural units and the solar mass: values with an uncertainty. They are refused with a message naming them until G13 adds them.
+
+### 4.2 Decision: the unit evaluator on the Giac worker (P15)
+There is no third worker. The unit view's arithmetic is a `units` request in worker 1, beside `home`, so Cancel works as in Home: terminate, respawn and replay the definitions. The factor table (units' `si` and `dim`, prefixes' powers of ten) comes from the Find index. It loads with the unit view, never in the start chunk.
+
+The evaluator (`app/src/units/`, G16):
+- substitutes each slot's tokens by factor × dimension symbols and evaluates exactly with `normal()`;
+- checks for one term: each exponent d·∂f/∂d / f must be a number;
+- converts to the end slot, where the quotient must be a pure number;
+- returns a `Quantity` whose mark comes from Home's facts and `markOf()`. An irrational value goes through the agreement check.
+
+sin, cos and tan take an angle or a pure number; the angle dimension is dropped inside them. Any other function of a quantity with units is refused. On top of this come G17's rules for temperatures and logarithmic units, and G18's first-order uncertainty (σ² = Σ(∂f/∂xᵢ·σᵢ)², with Giac's `diff`).
+
+libqalculate stays in the build only, as the source of the index's factors, constants and uncertainties (`build.sh` step 1c). The cost: a long CAS job in the same worker delays a conversion until Cancel.
 
 ### 4.3 Decision: the unit view (entry, parsing, results)
 - **Entry (P11, P14; layout in `spec/unit-pad.yaml`, press counts in docs/research/r9-unit-pad.md):** the
@@ -342,18 +354,18 @@ Worker 3, loaded on the first press of the units key; never at start. Same patte
   below stay.
 - **Grammar per slot:** a product of factors with `×`, one `÷` (the rest is the denominator), powers, `x⁻¹`, `√`.
   A factor is one symbol from Find's unit list: an exact symbol first, then prefix + symbol. The parser in
-  `units` mode emits qalc text from these whitelisted names only (the generator's round-trip check, 3.3).
+  `units` mode emits unit and prefix ids from these whitelisted names only (the generator's round-trip check, 3.3).
   **Alternative rejected:** qalc's own parser, which reads `BTU`, `lbm`, `var`, `Kg`, `pa`, `G` as other things
   (docs/research/r7-unit-slots.md section 5.2).
 - **Live reading:** under the slot, in words; a prefixed unit outside Find's common list is marked; a factor that
   is no symbol is an error naming it with the near symbols. A prefix alone is an error.
-- **Our adapter checks what qalc lets through:** the formula with its units must give a single term (number ×
+- **The evaluator checks:** the formula with its units must give a single term (number ×
   units), else "Units don't match: L vs T" naming the term (P11); an absolute temperature in arithmetic → "Use K
   or Δ°C for a temperature difference"; with an end slot, a dimension mismatch is an error naming both.
 - **Result:** value (exact fraction or P-digit decimal) through our formatter at the digits setting, the mark by
-  the 2.4 rules with qalc's approximate flag as the engine fact, the unit drawn upright, the dimension as `L·T⁻¹`.
+  the 2.4 rules from the same engine facts as Home, the unit drawn upright, the dimension as `L·T⁻¹`.
   With an end slot: in that unit. Without: in the units typed when they fit the result's dimension (so a torque
-  stays `N·m`, qalc would say `J`), else SI with an SI prefix (2.7); one tap gives the SI base form and the last
+  stays `N·m`, SI would say `J`), else SI with an SI prefix (2.7); one tap gives the SI base form and the last
   unit used for that dimension (IndexedDB `units.targets`, `{dimKey: unitId}`).
 - **Temperature:** `°C` and `°F` are absolute and allowed only alone (`20 °C → °F` = 68, `derived`); differences
   are `K`, `°R`, or the Find items `Δ°C`, `Δ°F`. Golden cases for each, and the rejected `20 °C × 2`.
@@ -363,16 +375,17 @@ Worker 3, loaded on the first press of the units key; never at start. Same patte
   label says the unit was dropped. The line itself keeps its slots, so the units key shows them again.
 
 ### 4.4 Budgets and gates
-qalc chunk +0.93 MB brotli, lazy: loaded on the first press of the units key, never at start (a Playwright test
-asserts no `qalc.*` request in a session without it); first result < 1 s on the Tab One; `units.yaml` in the
-golden gate; **a unit in ≤ 4 presses at the median** (`tools/probes/unit-presses.mjs`, then the same list as an
+No engine chunk: the unit view's UI chunk (≤ 30 kB raw) and its factor table from the Find index load on the
+first press of the units key, never at start; a Playwright test asserts that neither is requested in a session
+without it. First result < 1 s on the Tab One; desktop p95 ≤ 5 ms per evaluation (G15: 1.5–3.2 ms). Also:
+`units.yaml` in the golden gate; **a unit in ≤ 4 presses at the median** (`tools/probes/unit-presses.mjs`, then the same list as an
 e2e replay); benchmark tasks 1–4 and 10 within budget (plans from S1: t02 12, t04 13); the owner's hand
 timing (rule 2).
 
 Open points for milestone 5 (each with a default): r7 section 7.
 
 ### 4.5 Risks, would change
-Risks: qalc data errors beyond `hp` (the one-off audit against CODATA and exact definitions); memory with two workers. Would change if the owner, after using the unit view, wants `5 km + 300 m` in Home (P8: the same worker behind a setting; the token design already supports it).
+Risks: errors in the index's factors beyond hp and mmHg (G13's audit against CODATA and exact definitions); a long CAS job delays a conversion until Cancel. Would change if the owner, after using the unit view, wants `5 km + 300 m` in Home (P8: the same worker behind a setting; the token design already supports it).
 
 ---
 
@@ -456,7 +469,7 @@ Every key press counts 1, Shift and Alpha included; letters typed in Find count 
 
 ### 6.1 Topology and contracts
 - **Today:** the main thread runs the UI, keyboard, parser and formatter; worker 1 is Giac (started at launch, D2); the MicroPython worker went with the Python app (P11). Each cancels by terminate and respawn; Giac replays the definitions (`workerEngine.ts:148-156`).
-- **Decision:** worker 3 is qalc (the unit view, milestone 5; worker 2 was MicroPython, removed by P11). Find needs no worker (3.2). Nothing new needs an engine on the main thread. Interface changes are listed in 8.2: `HomeResult` gains the facts for the mark (`exactRational`, `reliableDigits`), `full` (the copy and chip value) and `defined`; `CasResult` gains the numeric value when the result is a number.
+- **Decision:** there is no worker 3: the unit view computes on worker 1, Giac (P15, milestone 5; worker 2 was MicroPython, removed by P11). Find needs no worker (3.2). Nothing new needs an engine on the main thread. Interface changes are listed in 8.2: `HomeResult` gains the facts for the mark (`exactRational`, `reliableDigits`), `full` (the copy and chip value) and `defined`; `CasResult` gains the numeric value when the result is a number. `MathEngine` and `Calc` gain `units()` (G16).
 
 ### 6.2 Decision: one storage plan
 One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
@@ -488,7 +501,7 @@ One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
 ### 7.2 Licences
 | Piece | Licence | Compatible | THIRD_PARTY.md |
 |---|---|---|---|
-| libqalculate 5.13.1 (shipped from milestone 5; its data in the index from milestone 4) | GPL-2.0-or-later | yes (combined work GPL-3.0) | move from "spike only" to shipped |
+| libqalculate 5.13.1 (build time only, P15: its data ships in the Find index, its code not in the APK) | GPL-2.0-or-later | yes (combined work GPL-3.0) | listed as the index's data source |
 | libxml2 2.15.1 | MIT | yes | same |
 | Giac `aide_cas`, English lines | GPL-3.0-or-later (R5) | yes | new "Find index data" section |
 | `@capacitor/share` 8.x (if the WebView check confirms it is needed) | MIT | yes | add with the code |
@@ -523,19 +536,18 @@ Capacitor shell (Android) / PWA (service worker precaches everything after the e
    ├─ Keypad + key layers (spec/keyboard.yaml)       ─┐
    ├─ Entry line: MathLive + macros (\const \unit      │ key → action
    │  \pfx \res \ans)                                  │
-   ├─ Parser P1 (LaTeX → Giac text | qalc text)       ─┤
+   ├─ Parser P1 (LaTeX → Giac text | unit tokens)     ─┤
    ├─ Formatter + marks (format.ts, pure)              │
    ├─ Views: Home, CAS, Function, Solve,               │
    │  Units (m5), Find palette (lazy), Matrix editor   │
    ├─ Find: index (lazy asset) + ranking (rank.ts)     │
    ├─ Clipboard / share port                           │
    └─ Session state ── Kv (IndexedDB: settings, history, defs, units.*)
-        │ Calc port (views)                                      │ UnitEngine (m5)
-        ▼                                                        ▼
-   Worker 1: Giac + GSL + GMP + MPFR                         Worker 3: libqalculate
-   (launch; Home, CAS, Solve,                                + libxml2 + GMP + MPFR
-    analysis, table; defs replay)                            (unit view; stateless)
-Build: build.sh → engines (container) → Find index generator (Node + qalc) → Vite (size test) → Capacitor → Gradle
+        │ Calc port (views)
+        ▼
+   Worker 1: Giac + GSL + GMP + MPFR
+   (launch; Home, CAS, Solve, analysis, table, units (m5); defs replay)
+Build: build.sh → engines (container; libqalculate for the index only) → Find index generator (Node + qalc) → Vite (size test) → Capacitor → Gradle
 ```
 
 ### 8.2 Interfaces (every async interface)
@@ -552,6 +564,7 @@ interface MathEngine {
   table(req: TableRequest, s: HomeSettings): Promise<HomeResult[][]>;
   eval(input: string): Promise<EvalResult>;            // tools and benchmarks only
   definitions(): Promise<readonly DefEntry[]>;          // the defs log (6.2), the stored one included once read (G3)
+  units(req: UnitRequest, s: HomeSettings): Promise<Quantity | UnitError>;  // new (m5, G16): a request in worker 1
   cancel(): Promise<EngineTimings>;
   dispose(): void;
 }
@@ -578,28 +591,28 @@ interface Calc {                                         // views; mirrors MathE
   table(req: TableRequest, s: CalcSettings): Promise<HomeResult[][]>;
   names(): Promise<UserName[]>;                         // the user's names from the defs log (3.4, G3)
   cancel(): Promise<void>;
-  units(): Promise<UnitEngine>;                          // new (m5): loaded on first call
+  units(req: UnitRequest, s: CalcSettings): Promise<Quantity | UnitError>;  // new (m5): the factor table loads on the first call
 }
 
 
 // Worker protocol (G3): home/cas/eval responses carry `defs: DefChange[]`; request {type:"define", defs} → {type:"defined", replayMs}.
 
-interface UnitEngine {                                   // new (m5), worker 3
-  ready(): Promise<UnitTimings>;                         // instantiate, init (definitions), ready
-  evaluate(qalcText: string, s: { digits: number }): Promise<Quantity | UnitError>;  // text from our emitter only
-  cancel(): Promise<UnitTimings>;                        // terminate + respawn; nothing to replay
-  dispose(): void;
+interface UnitRequest {                                  // new (m5); G16 fixes the exact type
+  formula: string;                                       // Giac text from our parser, a placeholder per slot (pasu1, pasu2, …)
+  slots: UnitToken[][];                                  // R24a's tokens per slot
+  end?: UnitToken[];                                     // the optional end slot
 }
 interface Quantity {
   value: { p: string; q: string } | { decimal: string };  // exact fraction, or P digits
-  approximate: boolean;                                    // qalc's own flag
-  uncertainty?: string;
-  unit: { id: string; exp: number }[];                     // canonical qalc names
-  dimension: string;                                       // "kg1m1s-2"
+  exactRational: boolean;                                  // the facts for markOf(), as in HomeResult
+  reliableDigits: number | null;
+  uncertainty?: string;                                    // G18
+  dimension: string;                                       // the index's key, "kg1m1s-2"
   si?: { p: string; q: string } | { decimal: string };     // the value in SI base units
   ms: number;
 }
-type UnitError = { error: "dimension"; dims: [string, string] } | { error: "temperature" | "unknown" | "engine"; detail: string };
+type UnitError = { error: "dimension"; dims: [string, string] }
+  | { error: "temperature" | "logarithmic" | "nofactor" | "function" | "engine"; detail: string };
 
 interface FindIndex {                                    // new (m4), main thread
   load(lang?: string): Promise<void>;                    // fetch + parse the asset (and a language overlay)
@@ -622,7 +635,6 @@ interface ClipboardPort {                                // new (m4): navigator.
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (generated, 2026-10-15) | size test (once Find loads it) |
 | Unit view chunk | ≤ 30 kB raw | — | size test; **its rule looks for `src/apps/units/`** (`app/scripts/size-check.ts:96`), while G16 and R24a put the code in `app/src/units/`, so the budget would never fire: the first of them to add a lazy chunk there points the rule at it |
-| qalc wasm + glue | ≤ 1.0 MB brotli | spike 0.93 MB + 21 kB; the row goes if G15 says P15 holds | size test |
 | Precache total | ≤ 18 MB | 12.3 MB (2026-10-15) | size test |
 
 "Start chunk" is the entry's JavaScript plus every chunk it imports statically (Vite manifest `imports`, transitively), as `app/scripts/size-check.ts` measures it. The entry's CSS is not counted (25.8 kB raw, 9.0 kB gzip on 2026-10-12): the budget was set on the JavaScript figure. CSS gets its own line if it grows past 40 kB raw.
@@ -630,7 +642,8 @@ interface ClipboardPort {                                // new (m4): navigator.
 | Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | 92 ms at 12 | device runs |
 | Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` |
 | Find open | ≤ 100 ms warm, ≤ 300 ms cold | — | device runs |
-| Units first result (Tab One) | < 1 s | S8+ 626 ms (spike page) | device runs |
+| Units first result (Tab One) | < 1 s | — (no engine to load; S8+ 626 ms was the qalc spike page) | device runs |
+| Unit evaluation (desktop) | p95 ≤ 5 ms | 1.5–3.2 ms (G15 probe) | `tools/probes/units-giac.mjs`, then the golden units section |
 | `defs` replay | ≤ 50 ms at 200 definitions | — | device runs |
 | Key presses | each task within its budget; a unit ≤ 4 at the median | — | task benchmark |
 | Find quality | 100 % top 3, ≥ 90 % first | — | query test |
@@ -641,7 +654,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 1. **Correlated numeric errors in Giac** (2.3 #2): the agreement check catches most wrong digits, not all. Mitigation: tier-0 audit with domain-edge golden cases, upstream reports, `⚠` rather than silence.
 2. **Find quality** depends on aliases and real queries, not code. Mitigation: the 100-phrase gate from day one and the owner adding misses.
-3. **qalc's silent acceptance** of misread names, mismatched sums and offset-unit arithmetic. Mitigation: chips only, the generator's round-trip check, the adapter's single-term and temperature checks, `units.yaml`.
+3. **A wrong unit factor or a missed unit check** (misread names, mismatched sums, offset-unit arithmetic). Mitigation: chips only, the generator's round-trip check, the evaluator's single-term and temperature checks (P15), `units.yaml`.
 4. **Tab One budgets for the new work** (Find per key, digits 30, two workers' memory) are desktop estimates until annabell measures them.
 5. **Pace on parser- and keyboard-heavy work** (03 risk 5): milestone 4 adds five token kinds and several key behaviours. Mitigation: each token lands with its round-trip case; ron's tasks are ordered so the harness (EN0) and the chips land before Find's UI.
 6. **The entry's box model is written three times** (5.5): every new template, the unit view and R29 would add copies, and the stop and ⌫ rules drift apart (F34 was one). Mitigation: one model in `entry/boxes.ts`, a cursor grid beside the ⌫ grid (R43), one key path for hardware keys (R45).
@@ -678,8 +691,6 @@ interface ClipboardPort {                                // new (m4): navigator.
 | MathLive prompts in a read-only field (the unit slots) | answered 2026-10-15 (sandra, throwaway probe) | 4.3: values with fractions and powers round-trip, ◀ ▶ go prompt to prompt; `insert()` outside a prompt still edits the formula | R24a step 1, R24c (5.5 point 2) |
 | The stacked unit's height in a prompt | ron (R24c) | gallery at 360 × 740 | the row height of the unit view |
 | `navigator.clipboard` in WebView 131; `navigator.share` absent | annabell (m4) | on the Tab One APK | whether the Capacitor plugins are needed (2.6) |
-| Two workers' memory | annabell (m5) | `dumpsys meminfo`, 10-minute session | qalc worker idle shutdown (4.2) |
-| qalc release build (container) size and time | annabell (m4) | `engine/qalc/build-wasm.sh release` | size budget, build time |
-| qalc compiled-in currency data | gorge (m4/U1) | grep the generated definitions; size with and without | strip or not (4.3) |
+| qalc release build (container) size and time | annabell (m4) | `engine/qalc/build-wasm.sh release` | build time only (nothing ships) |
 | qalc name for Rankine (Δ°F) | answered (S1) | `°R` reads as Rankine, 1 °R = 5/9 K (r7 section 8) | temperature tokens (4.3) |
 | Units first result on the Tab One | annabell (m5) | device run of the unit view | lazy-load bar (4.4) |
