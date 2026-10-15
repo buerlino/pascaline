@@ -47,9 +47,8 @@ The two debts grow with every milestone:
    - **48 px cluster rows or today's height:** the owner decides (decisions.md).
    - **G2 items 41 (&), 42 (→) and 43 (`7 mod −3`)** on the Virtual Calculator (`tests/golden/g2.yaml`), and **45** (in CAS, does Alpha + key type the capital or the lower case?).
    - **G2 item 44 (⌫ right after an opening bracket)** on your G2: `SIN(23)` with the cursor right after `(`, then ⌫; the same with `5(2)`. One minute. R23 built the default (decisions.md "⌫ at a bracket"); if the G2 does otherwise, the G2 way wins unless it leaves a half pair.
-   - **G2 items 46–51 (⌫, 10ˣ and the cursor in templates)** on your G2, each before its package (about five minutes in all):
+   - **G2 items 46 and 48–51 (⌫, 10ˣ and the cursor in templates)** on your G2, each before its package (about five minutes in all):
      - 46: ⌫ after `)` (R26c built the default; if the G2 differs, the step-in is `stepIn()` in `app/src/entry/delete.ts`).
-     - 47: ⌫ at the start of a denominator or an exponent, before R26e.
      - 48: `5`, 10ˣ, `2`, before R27a, which waits for it.
      - 49: ⌫ on a log base digit, before R26h.
      - 50: whether the cursor can stop between SIN and `(`, before R27b.
@@ -118,16 +117,8 @@ F9's notification shade case had the same cause and the same fix; R22's test cov
 24. **F14. Desktop: ⌫ held with the mouse and released off the keypad never stops.** The line is empty 0.8 s later. The ⌫ path returned before `setPointerCapture`. **Done** (`fc35b07`, R25b): ⌫ takes the capture like every other key, and a lost capture stops the repeat; regression case in `app/test/gestures.spec.ts`.
 25. **F15. ⌫ right after a closing bracket removes it alone.** **Done** (`262aaa8`, R26c): ⌫ right after a pair steps into its body and deletes nothing; Del before a name or an opening bracket is the mirror; an emptied body shows □ (`app/src/entry/delete.ts`). Regression cases in `app/test/bksp.spec.ts` and the grid's F15 cases (`app/test/bksp-grid.spec.ts`: 112 known failures left, was 172). On the default: G2 item 46 open.
 26. **F16. The hardware Backspace and Delete keys bypass `EntryController.run`.** log log, then four hardware Backspaces, is stuck at `log )` even after R23. **Done** (`bd69733`, R26b): the capturing `keydown` handler (`app/src/entry/hwkeys.ts` since R31) sends Backspace and Delete through `run()`; Ctrl, Alt and Meta combinations stay with MathLive. Regression cases in `app/test/bksp.spec.ts`.
-27. **F17. Powers lose or move their exponent.** **Done** (`f9e6525`, R26d): ⌫ at the start of an exponent steps to the end of its base, and an empty exponent on a typed base goes alone (`5 xʸ ⌫` → `5`); an emptied base shows □; ⌫ in a □ base removes the power, or selects it first when the exponent holds typed content; eˣ's e and 10ˣ's 10 go with their exponent (`app/src/entry/delete.ts`). Regression cases in `app/test/bksp-pow.spec.ts` and the grid's F17 cases (82 known failures left, was 112). On the default: G2 item 47 open.
-28. **F18. Fractions and roots.**
-    - ⁿ√ on an empty line, then ⌫ → `√□`, stuck.
-    - Deleting the index digit of `³√8` leaves `\sqrt8`, and Enter computes √8.
-    - ⌫ at the start of the index or of a mixed number's part deletes the digit before the template and leaves the template.
-    - ∂ loses its mark alone.
-    - A nested fraction is left with an empty numerator with no □.
-    - `5 ÷ 2 3 ◀ ◀ ⌫` → `523`.
-
-    Package **R26e**. *~0.5 d; ron, Opus.*
+27. **F17. Powers lose or move their exponent.** **Done** (`f9e6525`, R26d): ⌫ at the start of an exponent steps to the end of its base, and an empty exponent on a typed base goes alone (`5 xʸ ⌫` → `5`); an emptied base shows □; ⌫ in a □ base removes the power, or selects it first when the exponent holds typed content; eˣ's e and 10ˣ's 10 go with their exponent (`app/src/entry/delete.ts`). Regression cases in `app/test/bksp-pow.spec.ts` and the grid's F17 cases (82 known failures left, was 112).
+28. **F18. Fractions and roots.** **Done** (`08fe122`, R26e): an emptied index or part shows □; ⌫ at the start of a radicand, ∂'s denominator or a mixed number's fraction steps to the end of the box before; ⌫ at the start of the first box removes, keeps the main box or selects first (ⁿ√ selects whenever anything is typed); ∂ marks go only with their template; `5 ÷ ⌫` gives 5 (`app/src/entry/delete.ts`). Regression cases in `app/test/bksp-frac.spec.ts` and the grid's F18 cases (54 known failures left, was 82). ⌫ at the start of a denominator joins the parts (`5‸23`), as on the owner's G2 (item 47).
 29. **F19. lim, Σ, Π, ∫.**
     - ⌫ in the empty first box deletes the box (`lim_{→□}`), then nothing more happens.
     - ⌫ from a first box deletes the digit before the template.

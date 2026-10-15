@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R26e–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  1. The entry-bug packages: R26f–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -128,7 +128,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R26e | Bug F18: fractions and roots | ron, **Opus** | `p1/ron-m4a-bkspfrac` | R26d; G2 item 47 | ~0.5 d |
 | R26f | Bug F19: lim, Σ, Π, ∫ | ron, **Opus** | `p1/ron-m4a-bksplimits` | R26e | ~0.5 d |
 | R26g | Bug F20: matrices, vectors, piecewise | ron, **Opus** | `p1/ron-m4a-bksparray` | R26f; G2 item 51 | ~0.5 d |
 | R26h | Bug F21: log base, EQ, DMS, evaluate-at bounds | ron, **Opus** | `p1/ron-m4a-bkspmarks` | R26g; G2 item 49 | ~0.5 d |
@@ -144,7 +143,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26e–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26f–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
@@ -350,7 +349,7 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### The entry-bug packages R26e–R27b and R43 (bugs F18–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
+### The entry-bug packages R26f–R27b and R43 (bugs F19–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
 - Backlog milestone 4a items 21–35 have the summary.
 - The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
@@ -359,37 +358,6 @@ These are small packages, one concern each, each with its own short reading list
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R26e: fractions and roots (bug F18), branch `p1/ron-m4a-bkspfrac`
-Templates: ÷ and a b/c (`\frac{#@}{#?}`), √ (`\sqrt{#0}`), ⁿ√ (`\sqrt[#?]{#0}`), the mixed number (`#@\tfrac{#?}{#?}`), ∂ (`\frac{\partial#0}{\partial#?}`). Read: `app/src/entry/delete.ts`, `controller.ts` (`selectCompound`, L8/L9), the grid, decisions.md "⌫ and Del keep a template whole" points 2–4.
-
-**Behaviour today:**
-- ⁿ√ on an empty line, ⌫ with the cursor in the empty index → `\sqrt{\placeholder{}}`, with the cursor before it. ⌫ then does nothing, and the n-th root template has become a square root.
-- `\sqrt[3]{8}` with the cursor after the 3, ⌫ → the LaTeX is `\sqrt8`, so Enter computes √8. The emptied index disappears from the LaTeX; typing 4 at once gives `\sqrt[4]{8}` back.
-- `5 ⁿ√ 2 3 ◀ ◀ ⌫` (the cursor at the start of the index) moves the cursor out. The next ⌫ deletes the 5, and `\sqrt[23]{□}` stays in front of the cursor for good.
-- The mixed number on an empty line, ⌫ → `\tfrac{□}{□}` stays, with the cursor at 0. `5 mixed 2 3 ◀ ◀ ⌫ ⌫` → `\tfrac{23}{□}`: the whole part is deleted, and the line says "a mixed number needs a whole number before its fraction".
-- `5 ∂ 2 3 ◀ ◀ ⌫` deletes the ∂ mark alone (`5\frac{23}{\partial□}`). The next ⌫ moves out of the fraction, the one after deletes the 5, and then ⌫ is stuck.
-- ÷ twice on an empty line with no history (a nested fraction), then ⌫ → `\frac{}{\placeholder{}}`: an empty numerator without □, stuck.
-- `5 ÷ 2 3 ◀ ◀ ⌫` (the start of the denominator) → `523`. This is MathLive's unwrap. It goes away under point 3, where ⌫ steps to the end of the numerator.
-- `5 √ 2 3 ◀ ◀ ⌫` → `523`. This follows the accepted F10 rule (content kept, as `5(‸2)` gives `52`). Leave it as built.
-
-**Cause:**
-- `onDelete` for `surd` (`mathlive.mjs` 31737–31768): an emptied index branch is removed, and the cursor goes before the root.
-- `onDelete` for `genfrac` (31769–31796): at the start of the second part, the two parts are joined.
-- Placeholders are deleted as atoms.
-
-**Fix** (points 2–4):
-- An emptied index or part keeps its □.
-- ⌫ at the start of the denominator steps to the end of the numerator.
-- ⌫ at the start of ⁿ√'s index (its first box) follows point 4: it selects the root first when the radicand holds something, and removes it otherwise.
-- The mixed number and ∂ follow the same rules with their boxes. The ∂ marks go only with the template.
-
-**Commits:**
-1. **Tests:** flip the grid's F18 cases, and add the cases above by keys.
-2. **Fix.**
-3. **Report** with the G2 item 47 answer (first part).
-
-Gate: bksp-grid F18; selection (the L8/L9 fraction and root cases), tmpl and undo e2e; vitest.
 
 ### ron, R26f: lim, Σ, Π and ∫ (bug F19), branch `p1/ron-m4a-bksplimits`
 Templates: `\lim_{#?\to#?}\left(#0\right)`, `\sum_{#?=#?}^{#?}\left(#0\right)`, `\prod_{…}`, `\int_{#?}^{#?}#0\,\mathrm{d}#?`. Read: `app/src/entry/delete.ts`, the grid, decisions.md "⌫ and Del keep a template whole" points 1–5.

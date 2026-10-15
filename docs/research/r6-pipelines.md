@@ -68,7 +68,8 @@
     - ⌫ at the start of the body dissolves the root and keeps its content: `5√(‸23)` → `523`.
     - An index emptied by ⌫ disappears from the LaTeX: `\sqrt[3]{8}` minus the 3 is `\sqrt8`, and Enter computes √8.
     - ⌫ at the start of the index leaves the root and puts the cursor before it.
-  - **Fractions (`genfrac`):** ⌫ at the start of the denominator joins both parts (`\frac{5}{23}` → `523`). At the start of the numerator it steps out before the fraction.
+    - Our way around it: `deleteAtBoxes()` (R26e).
+  - **Fractions (`genfrac`):** ⌫ at the start of the denominator joins both parts (`\frac{5}{23}` → `523`). At the start of the numerator it steps out before the fraction. Our way around it: `deleteAtBoxes()` (R26e).
   - **Powers:** an exponent is an atom of its own (`^…`, its box one level deeper) right after its base. ⌫ at the start of the exponent steps out after the base, and the next ⌫ deletes the base and leaves the exponent on whatever stands before it. Del at the end of a base deletes the whole exponent with its content (`5‸^{23}` → `5`), and Del before a one-atom base deletes both (`‸5^{3}` → empty). Our way around it: `deleteAtPower()` (R26d).
   - **A selection that is all of a pair's body:** MathLive's delete removes the pair with it (`keepSelectedBox()`, R26d).
   - **Limits, ∫ Σ Π (`subsup`, `extensible-symbol`):**
@@ -76,7 +77,7 @@
     - A script emptied by ⌫ is removed.
   - **`\log` and `\ln`:** any ⌫ inside their subscript deletes the whole operator (line 31863).
   - **Arrays (matrix, piecewise):** ⌫ at the start of a cell does nothing. ⌫ right after the array deletes it whole.
-- **A placeholder is an atom:** ⌫ in an empty box deletes the □ itself, so the box leaves the LaTeX (`EQ(,□)`, `\lim_{\to□}`, a matrix cell with nothing in it).
+- **A placeholder is an atom:** ⌫ in an empty box deletes the □ itself, so the box leaves the LaTeX (`EQ(,□)`, `\lim_{\to□}`, a matrix cell with nothing in it). The last atom of a fraction's part is followed by the next part's sentinel on the same level, not by a lower one (`endsBox()`).
 - **Hardware keys take the keypad's path** (R26b, R31): Backspace, Delete and every printable ASCII key go through `app/src/entry/hwkeys.ts` (a capture `keydown` on the field, loaded with MathLive). A character a keypad key types presses that key through App `press`; `e`/`E` after a number's digits is ᴇ; letters type themselves; characters no key types do nothing. Enter and Escape are caught by the controller; Ctrl/Alt/Meta combinations and non-ASCII characters still go to MathLive.
 - **◀ and ▶ visit every offset:**
   - Between a function name and its `\left` (`\sin‸\left(2\right)`; a 7 there is read as sin(7·2)).
