@@ -5,7 +5,6 @@ import type { MathfieldElement } from "mathlive";
 import { constKey, pruneChips, resKey, type Chip, type ChipTable } from "../input/chips.ts";
 import type { ActionBody } from "../keyboard/keyboard.ts";
 import { mathlive } from "../render/mathlive.svelte.ts";
-import { deleteAtTemplate } from "./delete.ts";
 import { ANS_CHIP, EMARK, ENTRY_MACROS, constChip, isChipLatex, resChip } from "./macros.ts";
 
 /** The literal caret of the one-line mode, as MathLive serialises it (the parser reads it as a power). */
@@ -57,6 +56,8 @@ export class EntryController {
   private mf: MathfieldElement | undefined;
   private host: HTMLElement | undefined;
   private queue: ActionBody[] = [];
+  /** ⌫ and Del at a template (entry/delete.ts, R23): loaded with MathLive, outside the start chunk. */
+  private deleteAt: typeof import("./delete.ts").deleteAtTemplate | undefined;
   private pendingValue: string | undefined;
   /** The values of the chips on the line (docs/04 3.6); keys as in input/chips.ts. */
   private table: ChipTable = {};
@@ -80,7 +81,10 @@ export class EntryController {
   load(): Promise<void> {
     if (this.started) return this.ready;
     this.started = true;
-    this.ready = mathlive.load().then((m) => this.create(m.MathfieldElement));
+    this.ready = Promise.all([mathlive.load(), import("./delete.ts")]).then(([m, d]) => {
+      this.deleteAt = d.deleteAtTemplate;
+      return this.create(m.MathfieldElement);
+    });
     return this.ready;
   }
 
@@ -236,7 +240,7 @@ export class EntryController {
     }
     if (a.kind === "cmd" && (a.name === "deleteBackward" || a.name === "deleteForward")) {
       // R23 (F10): ⌫ and Del at a bracket keep the template whole (entry/delete.ts); else MathLive's own delete
-      if (deleteAtTemplate(mf, a.name === "deleteBackward" ? -1 : 1)) {
+      if (this.deleteAt?.(mf, a.name === "deleteBackward" ? -1 : 1)) {
         mf.focus();
         return;
       }
