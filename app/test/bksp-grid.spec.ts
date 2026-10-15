@@ -2,8 +2,8 @@
 // R26a: the ⌫ grid. Every template the keys insert (read from spec/keyboard.yaml, so a new key joins by itself) goes
 // through seven scenarios of ⌫ and Del, and every line they leave is checked against "⌫ and Del keep a template whole"
 // (docs/decisions.md, points 1-8). No app code: the cases that fail today are marked test.fail() with their bug id
-// (F15, F17-F21), so the suite is green and each later package (R26c-R26h) flips its own cases by removing them from
-// KNOWN_FAIL. The checks are derived from the rule, not from today's output.
+// (R26c-R26h flipped F15 and F17-F21; three DMS cases wait for F22, R27a), so the suite is green and the package that
+// fixes a case removes it from KNOWN_FAIL. The checks are derived from the rule, not from today's output.
 //
 // How: one page for the whole file; a scenario is one page.evaluate that runs its steps through
 // `window.pascaline.entry.run` (the same path as a key) and returns the line, the cursor and the selection after
@@ -165,7 +165,9 @@ function lineProblems(raw: string): string[] {
   if (/\{\}/.test(line)) out.push("empty group");
   if (/[(,]\s*,|,\s*\\right\)|\\left\(\s*,/.test(line)) out.push("EQ without a box");
   if (/(\{|\\to|=)\s*(\\to|=|\})/.test(line.replace(/\\to\}/g, "\\to }"))) out.push("a box lost next to →, = or }");
-  if (/\\(degree|prime)\s*\\(prime|doubleprime)|(^|\\doubleprime)\s*\\degree/.test(line)) out.push("a DMS box lost");
+  // (degrees lost: a ° at the start of the line or a box, or after an operator; a ″ right before a ° is a DMS that fills
+  // another's degrees, as a DMS inserted on its □ leaves it)
+  if (/\\(degree|prime)\s*\\(prime|doubleprime)|(^|[{+\-=,&]|\\times|\\div|\\left[(|.])\s*\\degree/.test(line)) out.push("a DMS box lost");
   if (/(\\begin\{[a-z]+\}|\\\\|&)\s*(&|\\\\|\\end)/.test(line)) out.push("a matrix or piecewise cell lost");
   if (/\\text\{if \}\s*(\\\\|\\end)/.test(line)) out.push("piecewise condition lost");
   if (/\\partial\}|\\mathrm\{d\}\s*$|\\,\s*\\mathrm\{d\}\s*\}/.test(line)) out.push("∂ or d without its box");
@@ -243,22 +245,13 @@ function check(s: Scenario, tmpl: Tmpl, base: Map<string, number>, run: Run, del
 }
 
 // ---- cases that fail today: "name|scenario", removed by the package that fixes them -----------------------------------
-const KNOWN_FAIL = new Set<string>([
-  "rel:eq|content",
-  "rel:eq|delBeforeClose",
-  "rel:eq|delFromStart",
-  "rel:eq|fromEnd",
-  "rel:eq|nested",
-  "tmpl:dms|boxStart",
-  "tmpl:dms|content",
-  "tmpl:dms|delBeforeClose",
-  "tmpl:dms|delFromStart",
-  "tmpl:dms|empty",
-  "tmpl:dms|fromEnd",
-  "tmpl:dms|nested",
-  "tmpl:evalat|fromEnd",
-  "tmpl:logbase|content",
-  "tmpl:logbase|delFromStart",
+// F22 (R27a): DMS's degrees have no left edge, so the 5 typed before the template joins them (`5 DMS 2` is 52°). ⌫ then
+// treats the 5 as a digit of the degrees: it empties them to □ (content, fromEnd) or deletes the 5 from the start of
+// the 23 (boxStart). They pass once a digit no longer runs into the template.
+const KNOWN_FAIL = new Map<string, string>([
+  ["tmpl:dms|boxStart", "F22"],
+  ["tmpl:dms|content", "F22"],
+  ["tmpl:dms|fromEnd", "F22"],
 ]);
 
 // ---- the suite ------------------------------------------------------------------------------------------------------
@@ -282,7 +275,7 @@ test("the grid has the templates the keys insert (32 on 2026-10-14)", () => {
 for (const tmpl of TEMPLATES) {
   for (const s of SCENARIOS) {
     const id = `${tmpl.name}|${s}`;
-    const title = `${tmpl.bug} ${tmpl.name} (${tmpl.mode}) ${s}`;
+    const title = `${KNOWN_FAIL.get(id) ?? tmpl.bug} ${tmpl.name} (${tmpl.mode}) ${s}`;
     test(title, async () => {
       if (KNOWN_FAIL.has(id)) test.fail();
       const key = `${tmpl.mode}|${tmpl.latex}`;

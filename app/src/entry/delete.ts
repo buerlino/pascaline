@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // ⌫ and Del at a template (R23, bug F10; R26c, bug F15; R26d, bug F17; R26e, bug F18; decisions.md "⌫ at a bracket"
-// and "⌫ and Del keep a template whole"; R26f, bug F19; R26g, bug F20). MathLive's own delete at the start of a `\left…\right` body
+// and "⌫ and Del keep a template whole"; R26f, bug F19; R26g, bug F20; R26h, bug F21). MathLive's own delete at the start of a `\left…\right` body
 // turns the opening bracket into `\left.` and is stuck there, right after a pair it turns the closing bracket into
 // `\right.`, a deleted base leaves its exponent on whatever stands before it, a fraction or a root loses an emptied box
 // or joins its parts, lim, Σ, Π and ∫ lose their bounds and marks, and a matrix or piecewise loses an emptied cell, is
-// stuck at the start of a cell and goes whole from right after it; this module takes those presses first. Public
-// MathLive API only: offsets, `getElementInfo`, `selection`, `position`, `getValue`, `insert`. Plain TS; R26h extends
-// it to the last templates.
+// stuck at the start of a cell and goes whole from right after it, any ⌫ in a log base deletes the whole log, and EQ's
+// comma, DMS's ° ′ ″ and the evaluate-at bar go as plain atoms (R26h, F21); this module takes those presses first.
+// Public MathLive API only: offsets, `getElementInfo`, `selection`, `position`, `getValue`, `insert`. Plain TS.
 //
 // How MathLive numbers a line: offset o is the cursor position after atom o. An atom's parts (a pair's body, a
 // script's branches) come before the atom itself, one level deeper, and each branch starts with an empty sentinel.
@@ -37,24 +37,35 @@ const DIFF = "\\mathrm{d}";
 const ARRAY = /^\\begin\{(?:[pbvBV]?matrix|cases)\}/;
 /** Piecewise's mark at the start of each condition cell: the letters of `\text{if }`. */
 const IF_MARK = ["\\text{i}", "\\text{f}", "\\text{ }"];
+/** A log with a base: the name's subscript is the base box (R26h). */
+const LOG_BASE = /^\\(?:log|ln)_/;
+/** EQ's name: a comma splits its bracket into two boxes (R26h). */
+const EQ_NAME = /^\\operatorname\{(?:\\mathrm\{EQ\}|EQ)\}$/;
+/** DMS's marks: degrees ° minutes ′ seconds ″ (R26h). */
+const DEG = "\\degree";
+const MIN = "\\prime";
+const SEC = "\\doubleprime";
+/** What stands before a ° without being its degrees: a box's start, an operator, a relation, another mark. */
+const NOT_DEGREES = /^(?:|[+\-=,<>:]|\\(?:times|div|cdot|pm|mp|le|ge|ne|leq|geq|neq|to|degree|prime|doubleprime))$/;
 
 /** One template around a bracket pair: [name] pair [scripts], as offsets. */
 interface Template {
   /** The position before the template and the offset of its last atom: the range that holds all of it. */
   start: number;
   end: number;
-  /** The main box: the body up to its first comma (EQ), as a position range. */
+  /** The main box: the body, as a position range (EQ's two boxes are deleteAtBoxes', R26h). */
   main: [number, number];
-  /** True when every box but the main one is empty: the name's scripts, the scripts after the pair, the later cells. */
+  /** True when every box but the main one is empty: the name's scripts, the scripts after the pair. */
   othersEmpty: boolean;
 }
 
 /**
  * ⌫ (dir −1) at the start of a pair's body, or Del (dir +1) at its end. Removes the template and keeps the main
  * box's content, the cursor where the opening (closing) bracket was; an empty template goes whole, and a box it
- * leaves empty shows □ again. When another box holds something (a log base, a bound, an exponent on the pair, EQ's
- * second value), the first press selects the whole template instead and the next one deletes it, so nothing from two
- * boxes is joined. True: handled; false: MathLive's own delete applies.
+ * leaves empty shows □ again. When another box holds something (an exponent on the pair), the first press selects
+ * the whole template instead and the next one deletes it, so nothing from two boxes is joined. Templates with boxes of
+ * their own (fractions, roots, lim, Σ, Π, ∫, tables, the log base, EQ, DMS, evaluate-at) are deleteAtBoxes' first.
+ * True: handled; false: MathLive's own delete applies.
  */
 export function deleteAtTemplate(mf: Field, dir: -1 | 1): boolean {
   if (keepSelectedBox(mf)) return true;
@@ -65,7 +76,23 @@ export function deleteAtTemplate(mf: Field, dir: -1 | 1): boolean {
   const t = dir < 0 ? fromStart(mf, c) : fromEnd(mf, c);
   if (t) return removeTemplate(mf, t, dir);
   if (!mf.selectionIsCollapsed) return false;
-  return stepIn(mf, c, dir) || keepBox(mf, c, dir);
+  return stepIn(mf, c, dir) || keepBox(mf, c, dir) || inLogBase(mf, c, dir);
+}
+
+/**
+ * ⌫ inside a log base, where nothing above applied (a character of a base with more than one): MathLive's own ⌫ there
+ * deletes the whole log with its base (`onDelete`, mathlive.mjs 31863). Select the one atom before the cursor and
+ * delete the selection instead: that goes through `deleteRange`, which deletes only it (R26h). True: handled.
+ */
+function inLogBase(mf: Field, c: number, dir: -1 | 1): boolean {
+  const d = depthAt(mf, c);
+  if (dir > 0 || c < 1 || d === 0 || latexAt(mf, c) === "") return false;
+  let q = c + 1;
+  while (q <= mf.lastOffset && depthAt(mf, q) >= d) q++;
+  if (q > mf.lastOffset || depthAt(mf, q) !== d - 1 || !LOG_BASE.test(latexAt(mf, q))) return false;
+  mf.selection = { ranges: [[atomStart(mf, c), c]] };
+  mf.executeCommand("deleteBackward");
+  return true;
 }
 
 /** Remove template `t`, or select it when another box holds something (the R23 rule above). */
@@ -85,7 +112,7 @@ function removeTemplate(mf: Field, t: Template, dir: -1 | 1): boolean {
  * ⌫ right after a pair (dir −1), or Del right before a pair or the function name that owns it (dir +1): the cursor
  * steps into the body, to its end (start), and nothing is deleted (point 5, F15). A body that holds only □ gets the □
  * selected, as after the key, so the next press removes the template. A name with boxes of its own is not stepped
- * into here: lim's, Σ's and Π's bounds are deleteAtBoxes' (R26f), a log base is left to MathLive (R26h). True: handled.
+ * into here: lim's, Σ's and Π's bounds and a log base are deleteAtBoxes' (R26f, R26h). True: handled.
  */
 function stepIn(mf: Field, c: number, dir: -1 | 1): boolean {
   let q: number;
@@ -367,17 +394,31 @@ interface BoxTemplate {
 const DIGIT = /^\d$/;
 
 /**
- * The fraction, root, lim, Σ, Π, ∫ or table whose atom is at `q` (for lim, Σ and Π, also their bracket's), or
- * undefined.
+ * The fraction, root, lim, Σ, Π, ∫, table, log base, EQ, DMS or evaluate-at whose atom is at `q` (for lim, Σ, Π, the
+ * log base, EQ and evaluate-at, also their bracket's; for EQ its name's; for evaluate-at its subscript's; for DMS its
+ * ″), or undefined.
  */
 function boxTemplate(mf: Field, q: number): BoxTemplate | undefined {
   if (q < 1 || q > mf.lastOffset) return undefined;
   const l = latexAt(mf, q);
   if (BIGOP.test(l)) return bigOp(mf, q);
   if (ARRAY.test(l)) return table(mf, q);
+  if (LOG_BASE.test(l)) return logBase(mf, q);
+  if (l === SEC) return dmsEndingAt(mf, q);
+  if (EQ_NAME.test(l)) {
+    const p = pairAfter(mf, q);
+    return p === undefined ? undefined : equation(mf, q, p);
+  }
+  if (l.startsWith("_")) {
+    const p = atomStart(mf, q);
+    return p > 0 && isEvalPair(mf, p) ? evalAt(mf, p) : undefined;
+  }
   if (isPair(mf, q)) {
+    if (isEvalPair(mf, q)) return evalAt(mf, q);
     const x = atomStart(mf, q);
-    const t = x > 0 && depthAt(mf, x) === depthAt(mf, q) ? bigOp(mf, x) : undefined;
+    if (x < 1 || depthAt(mf, x) !== depthAt(mf, q)) return undefined;
+    const xl = latexAt(mf, x);
+    const t = LOG_BASE.test(xl) ? logBase(mf, x) : EQ_NAME.test(xl) ? equation(mf, x, q) : bigOp(mf, x);
     return t?.end === q ? t : undefined;
   }
   if (!/^\\(?:t?frac|sqrt)(?![A-Za-z])/.test(l)) return undefined;
@@ -417,9 +458,11 @@ function ownerOf(mf: Field, o: number): BoxTemplate | undefined {
 
 /**
  * The template with a box that holds position `c` (the innermost), and that box's index; `gap` when `c` is one of the
- * template's positions that are no box (`k` is then the box before it).
+ * template's positions that are no box (`k` is then the box before it). `onLine`: a collapsed ⌫, for which the start of
+ * DMS's typed degrees is a place on the line, not in the template (its first box has no left edge; as a mixed number's
+ * whole part).
  */
-function locate(mf: Field, c: number): { t: BoxTemplate; k: number; gap?: true } | undefined {
+function locate(mf: Field, c: number, onLine: boolean): { t: BoxTemplate; k: number; gap?: true } | undefined {
   const d = depthAt(mf, c);
   // a mixed number's whole part, on the template's own level: the digits or □ after c, then the fraction
   let o = c + 1;
@@ -427,8 +470,8 @@ function locate(mf: Field, c: number): { t: BoxTemplate; k: number; gap?: true }
   const m = o <= mf.lastOffset && depthAt(mf, o) === d + 1 ? ownerOf(mf, o) : undefined;
   const w = m?.whole ? m.boxes[0] : undefined;
   if (m && w && c >= w.from && c <= w.e) return { t: m, k: 0 };
-  // a gap of lim, Σ or Π, or ∫'s integrand or variable: on c's own level
-  const op = onLevel(mf, c);
+  // a gap of lim, Σ, Π or evaluate-at, ∫'s integrand or variable, a box of DMS: on c's own level
+  const op = onLevel(mf, c, onLine);
   if (op) return op;
   // the box below the line: its sentinel is the nearest offset at or before c on c's level
   if (d === 0) return undefined;
@@ -440,15 +483,18 @@ function locate(mf: Field, c: number): { t: BoxTemplate; k: number; gap?: true }
 }
 
 /**
- * True if position `o` starts a box: its sentinel, the ∂ mark that opens a box of ∂, the → or = of lim, Σ and Π, or
- * ∫'s operator and d (its integrand and its variable start right after them, on the line itself).
+ * True if position `o` starts a box: its sentinel, the ∂ mark that opens a box of ∂, the → or = of lim, Σ, Π and
+ * evaluate-at, EQ's comma, ∫'s operator and d (its integrand and its variable start right after them, on the line
+ * itself), DMS's ° and ′. DMS's degrees have no mark at their start: isDegrees.
  */
 function startsBox(mf: Field, o: number): boolean {
   const d = depthAt(mf, o);
   const l = latexAt(mf, o);
-  if (d > 0 && (l === "" || opMark(mf, o))) return true;
+  if (d > 0 && (l === "" || boxMark(mf, o))) return true;
   if (d > 0 && l === "\\partial" && latexAt(mf, o - 1) === "" && depthAt(mf, o - 1) === d) return true;
   if (d > 0 && ifMarkEnd(mf, o)) return true;
+  // DMS: its ° and ′ start the minutes and the seconds (its degrees: isDegrees)
+  if ((l === DEG || l === MIN) && dmsMark(mf, o)) return true;
   return INT.test(l) || l === DIFF;
 }
 
@@ -481,15 +527,15 @@ function deleteAtBoxes(mf: Field, c: number, dir: -1 | 1): boolean {
         return true;
       }
     } else {
-      // (a mixed number starts with its whole part: Del there deletes a typed digit, or acts in the □, below)
-      const t = c < mf.lastOffset ? ownerOf(mf, c + 1) : undefined;
+      // (a mixed number and DMS start with their whole part or degrees: Del there acts in that box, below)
+      const t = c < mf.lastOffset ? (ownerOf(mf, c + 1) ?? boxTemplate(mf, atomAfter(mf, c))) : undefined;
       if (t?.start === c && !t.whole) {
         toBox(mf, t.boxes[0] as Box, "start");
         return true;
       }
     }
   }
-  const at = locate(mf, c);
+  const at = locate(mf, c, dir < 0 && !sel);
   if (!at) return false;
   const { t, k } = at;
   if (at.gap) {
@@ -687,31 +733,229 @@ function diffOf(mf: Field, x: number): number | undefined {
   return undefined;
 }
 
-/** The innermost lim, Σ, Π or ∫ on c's level with a gap at `c` or a box there that holds it (∫'s integrand, variable). */
-function onLevel(mf: Field, c: number): { t: BoxTemplate; k: number; gap?: true } | undefined {
+/**
+ * The innermost template on c's level with a gap at `c` or a box there that holds it: lim, Σ, Π or ∫ (∫'s integrand and
+ * variable), evaluate-at (its gap between the bar and the bounds), DMS (all its boxes; see locate for `onLine`).
+ */
+function onLevel(mf: Field, c: number, onLine: boolean): { t: BoxTemplate; k: number; gap?: true } | undefined {
   const d = depthAt(mf, c);
   let best: { t: BoxTemplate; k: number; gap?: true } | undefined;
-  for (let x = 1; x <= c && x <= mf.lastOffset; x++) {
-    if (depthAt(mf, x) !== d || !BIGOP.test(latexAt(mf, x))) continue;
-    const t = bigOp(mf, x);
-    if (!t) continue;
+  const consider = (t: BoxTemplate | undefined): void => {
+    if (!t || (best && best.t.end - best.t.start <= t.end - t.start)) return;
     const g = t.gaps?.get(c);
     if (g !== undefined) best = { t, k: g, gap: true };
     else {
       const k = t.boxes.findIndex((b) => c >= b.from && c <= b.e);
-      if (k >= 0) best = { t, k };
+      const first = t.boxes[0] as Box;
+      if (k < 0 || (k === 0 && onLine && t.whole && c === first.s && !boxEmpty(mf, first))) return;
+      best = { t, k };
     }
+  };
+  for (let x = 1; x <= mf.lastOffset; x++) {
+    if (depthAt(mf, x) !== d) continue;
+    const l = latexAt(mf, x);
+    if (x <= c && BIGOP.test(l)) consider(bigOp(mf, x));
+    else if (x === c && isEvalPair(mf, x)) consider(evalAt(mf, x));
+    else if (l === DEG) consider(dmsAt(mf, x));
   }
   return best;
 }
 
-/** True if `o` is the → of lim or the = of Σ or Π: a mark that starts a box. */
-function opMark(mf: Field, o: number): boolean {
+// ---- log base, EQ and evaluate-at (R26h, F21) ------------------------------------------------------------------------
+// A log base is the subscript of the `\log_{…}` name, before it and one level deeper: `\log_{16}\left(□\right)` is
+// 1 (the base's sentinel), 2 `1`, 3 `6`, 4 the name, 5 (the bracket's body), 6 □, 7 the pair; the bracket holds the
+// main box (#0). EQ's bracket holds two boxes split by its first comma, a mark. Evaluate-at is a pair `\left.…\right|`
+// (its body the main box) and a subscript atom right after it whose = splits it into the variable and the value:
+// `\left.2\right|_{x=3}` is 1 (body), 2 `2`, 3 the pair, 4 (subscript), 5 `x`, 6 `=`, 7 `3`, 8 the subscript; position 3,
+// between the bar and the subscript, is no box (a gap). MathLive's own delete removes the whole log on any ⌫ in its
+// base, deletes the comma and the = as plain atoms and the □ as an atom (`EQ(,□)`, `_{x=}`), and leaves the subscript
+// without its bar. Points 2-5 of "⌫ and Del keep a template whole" instead, through deleteAtBoxes.
+
+/** The log with a base whose name atom is at `x`: the base, then the bracket's body (the main box). */
+function logBase(mf: Field, x: number): BoxTemplate | undefined {
+  const d = depthAt(mf, x);
+  const start = atomStart(mf, x);
+  if (start + 1 >= x || depthAt(mf, start + 1) !== d + 1) return undefined;
+  const q = pairAfter(mf, x);
+  if (q === undefined) return undefined;
+  const boxes = [
+    { from: start + 1, s: start + 1, e: x - 1 },
+    { from: x + 1, s: x + 1, e: q - 1 },
+  ];
+  return { start, end: q, boxes, whole: false, main: 1 };
+}
+
+/** EQ with its name at `x` and its pair at `q`: two boxes, split by the first comma of the body. */
+function equation(mf: Field, x: number, q: number): BoxTemplate | undefined {
+  const d = depthAt(mf, q);
+  if (atomStart(mf, q) !== x) return undefined;
+  const body = x + 1;
+  let comma = -1;
+  for (let o = body + 1; o < q; o++) {
+    if (depthAt(mf, o) === d + 1 && latexAt(mf, o) === ",") {
+      comma = o;
+      break;
+    }
+  }
+  if (comma < 0) return undefined;
+  const boxes = [
+    { from: body, s: body, e: comma - 1 },
+    { from: comma, s: comma, e: q - 1 },
+  ];
+  return { start: atomStart(mf, x), end: q, boxes, whole: false, main: 0 };
+}
+
+const isEvalPair = (mf: Field, o: number): boolean => {
+  const l = latexAt(mf, o);
+  return l.startsWith("\\left.") && l.endsWith("\\right|");
+};
+
+/** Evaluate-at with its pair at `p`: the body, then the variable and the value of the subscript after it. */
+function evalAt(mf: Field, p: number): BoxTemplate | undefined {
+  const d = depthAt(mf, p);
+  let s = p + 1;
+  while (s <= mf.lastOffset && depthAt(mf, s) > d) s++;
+  if (s === p + 1 || s > mf.lastOffset || depthAt(mf, s) !== d || !latexAt(mf, s).startsWith("_")) return undefined;
+  if (atomStart(mf, s) !== p) return undefined;
+  let eq = -1;
+  for (let o = p + 2; o < s; o++) {
+    if (depthAt(mf, o) === d + 1 && latexAt(mf, o) === "=") {
+      eq = o;
+      break;
+    }
+  }
+  if (eq < 0) return undefined;
+  const a = atomStart(mf, p);
+  const boxes = [
+    { from: a + 1, s: a + 1, e: p - 1 },
+    { from: p + 1, s: p + 1, e: eq - 1 },
+    { from: eq, s: eq, e: s - 1 },
+  ];
+  return { start: a, end: s, boxes, whole: false, main: 0, gaps: new Map([[p, 0]]) };
+}
+
+/** The pair right after the atom at `x` (on its level), or undefined. */
+function pairAfter(mf: Field, x: number): number | undefined {
+  const d = depthAt(mf, x);
+  let q = x + 1;
+  while (q <= mf.lastOffset && depthAt(mf, q) > d) q++;
+  return q <= mf.lastOffset && depthAt(mf, q) === d && isPair(mf, q) && atomStart(mf, q) === x ? q : undefined;
+}
+
+/** The atom right after position `c` on its level (its parts skipped), or 0 when there is none. */
+function atomAfter(mf: Field, c: number): number {
+  const d = depthAt(mf, c);
+  let p = c + 1;
+  while (p <= mf.lastOffset && depthAt(mf, p) > d) p++;
+  return p <= mf.lastOffset && depthAt(mf, p) === d && atomStart(mf, p) === c ? p : 0;
+}
+
+// ---- DMS (R26h, F21) ------------------------------------------------------------------------------------------------
+// DMS stands on the line itself, its marks plain atoms: `23\degree4\prime6\doubleprime` is 1 `2`, 2 `3`, 3 °, 4 `4`,
+// 5 ′, 6 `6`, 7 ″. The minutes and the seconds lie between the marks. The degrees have no left edge: they are the
+// number (or □) right before the °, so a digit typed before the template joins them (`5 DMS 2` is 52°, F22, R27a's).
+// A DMS inserted on another's □ fills that box: `□°□′□″°□′□″` is a DMS whose degrees are a DMS. MathLive's own delete
+// takes each mark and each □ as an atom (`°□′□″` on an empty line). Points 2-5 of "⌫ and Del keep a template whole"
+// instead, through deleteAtBoxes: no box is the main one (as a table), and the start of typed degrees is a place on
+// the line, not in the template (as a mixed number's whole part): ⌫ there deletes what stands before.
+
+/** The DMS whose ° is at `x`: ° box ′ box ″ on one level, its degrees before the °; undefined for a lone mark. */
+function dmsAt(mf: Field, x: number): BoxTemplate | undefined {
+  if (latexAt(mf, x) !== DEG) return undefined;
+  const d = depthAt(mf, x);
+  let m = -1;
+  for (let o = x + 1; o <= mf.lastOffset; o++) {
+    const od = depthAt(mf, o);
+    if (od < d) return undefined;
+    if (od > d) continue;
+    const l = latexAt(mf, o);
+    if (l === "") return undefined; // the next box of the template the DMS stands in
+    if (l === DEG) {
+      const inner = dmsAt(mf, o); // a DMS in the minutes or the seconds
+      if (inner) o = inner.end;
+    } else if (l === MIN) {
+      if (m >= 0) return undefined;
+      m = o;
+    } else if (l === SEC) {
+      if (m < 0) return undefined;
+      const first = degreesOf(mf, x);
+      const boxes = [first, { from: x, s: x, e: m - 1 }, { from: m, s: m, e: o - 1 }];
+      return { start: first.s, end: o, boxes, whole: true };
+    }
+  }
+  return undefined;
+}
+
+/** The degrees box of the ° at `x`: a □, the digits before it, a whole DMS, or one other atom; empty after an operator. */
+function degreesOf(mf: Field, x: number): Box {
+  const b = x - 1;
+  const l = latexAt(mf, b);
+  const inner = l === SEC ? dmsEndingAt(mf, b) : undefined;
+  if (inner) return { from: inner.start, s: inner.start, e: b };
+  if (b < 1 || NOT_DEGREES.test(l)) return { from: b, s: b, e: b };
+  if (l === PLACEHOLDER) return { from: b - 1, s: b - 1, e: b };
+  const d = depthAt(mf, x);
+  if (isNumberPart(l)) {
+    let i = b;
+    while (i > 1 && depthAt(mf, i - 1) === d && isNumberPart(latexAt(mf, i - 1))) i--;
+    return { from: i - 1, s: i - 1, e: b };
+  }
+  const s = atomStart(mf, b);
+  return { from: s, s, e: b };
+}
+
+/** The DMS whose ″ is at `q`. */
+function dmsEndingAt(mf: Field, q: number): BoxTemplate | undefined {
+  if (latexAt(mf, q) !== SEC) return undefined;
+  const d = depthAt(mf, q);
+  for (let y = q - 1; y > 0; y--) {
+    const yd = depthAt(mf, y);
+    if (yd < d) break;
+    if (yd > d) continue;
+    const l = latexAt(mf, y);
+    if (l === "") break;
+    if (l === DEG) {
+      const t = dmsAt(mf, y);
+      if (t?.end === q) return t;
+    }
+  }
+  return undefined;
+}
+
+/** The DMS whose ° ′ or ″ is at `o`, or undefined (a lone mark, typed by its own key). */
+function dmsMark(mf: Field, o: number): BoxTemplate | undefined {
+  const l = latexAt(mf, o);
+  if (l === DEG) return dmsAt(mf, o);
+  if (l !== MIN && l !== SEC) return undefined;
   const d = depthAt(mf, o);
-  if (d === 0 || !MARK.test(latexAt(mf, o))) return false;
+  for (let y = o - 1; y > 0; y--) {
+    const yd = depthAt(mf, y);
+    if (yd < d) break;
+    if (yd > d) continue;
+    const yl = latexAt(mf, y);
+    if (yl === "") break;
+    if (yl === DEG) {
+      const t = dmsAt(mf, y);
+      if (t && (t.end === o || t.boxes[2]?.from === o)) return t;
+    }
+  }
+  return undefined;
+}
+
+/** True if the range from position `s` to offset `e` is all of a DMS's degrees (its ° right after `e`). */
+function isDegrees(mf: Field, s: number, e: number): boolean {
+  return e < mf.lastOffset && depthAt(mf, e + 1) === depthAt(mf, s) && dmsAt(mf, e + 1)?.start === s;
+}
+
+/** True if `o` is a mark that starts a box below the line: lim's →, the = of Σ, Π and evaluate-at, EQ's comma. */
+function boxMark(mf: Field, o: number): boolean {
+  const d = depthAt(mf, o);
+  const l = latexAt(mf, o);
+  if (d === 0 || !(MARK.test(l) || l === ",")) return false;
   let q = o + 1;
   while (q <= mf.lastOffset && depthAt(mf, q) >= d) q++;
-  return q <= mf.lastOffset && depthAt(mf, q) === d - 1 && BIGOP.test(latexAt(mf, q)) && !INT.test(latexAt(mf, q));
+  if (q > mf.lastOffset || depthAt(mf, q) !== d - 1) return false;
+  return boxTemplate(mf, q)?.boxes.some((b) => b.from === o) ?? false;
 }
 
 /**
@@ -727,11 +971,16 @@ function keepSelectedBox(mf: Field): boolean {
   const a = Math.min(...r[0]);
   const b = Math.max(...r[0]);
   const d = depthAt(mf, a);
-  if (!startsBox(mf, a) || b <= a || depthAt(mf, b) !== d) return false;
+  if (!(startsBox(mf, a) || isDegrees(mf, a, b)) || b <= a || depthAt(mf, b) !== d) return false;
   if (!endsBox(mf, b)) return false;
   for (let o = a + 1; o < b; o++) if (depthAt(mf, o) < d) return false;
-  // (one box only: no mark of lim, Σ, Π or ∫ inside the selection)
-  for (let o = a + 1; o <= b; o++) if (depthAt(mf, o) === d && (opMark(mf, o) || isIntMark(mf, o))) return false;
+  // (one box only: no mark of lim, Σ, Π, ∫, evaluate-at or EQ inside the selection, nor one of a DMS it cuts through)
+  for (let o = a + 1; o <= b; o++) {
+    if (depthAt(mf, o) !== d) continue;
+    if (boxMark(mf, o) || isIntMark(mf, o)) return false;
+    const m = dmsMark(mf, o);
+    if (m && (m.start < a || m.end > b)) return false;
+  }
   if (mf.getValue(a, b, "latex") === PLACEHOLDER) return false;
   mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
   return true;
@@ -753,14 +1002,14 @@ const depthAt = (mf: Field, o: number): number => mf.getElementInfo(o)?.depth ??
 /**
  * True if offset `o` is the last of its box: the line ends, the level drops, or the next box of the same template
  * starts (its sentinel, on the same level: a numerator's last atom is followed by the denominator's sentinel; the → of
- * lim, the = of Σ and Π; ∫'s `\,` and d after its integrand).
+ * lim, the = of Σ, Π and evaluate-at, EQ's comma; ∫'s `\,` and d after its integrand; a mark of DMS).
  */
 function endsBox(mf: Field, o: number): boolean {
   if (o >= mf.lastOffset) return true;
   const d = depthAt(mf, o);
   const n = depthAt(mf, o + 1);
   if (n !== d) return n < d;
-  return (d > 0 && (latexAt(mf, o + 1) === "" || opMark(mf, o + 1))) || isIntMark(mf, o + 1);
+  return (d > 0 && (latexAt(mf, o + 1) === "" || boxMark(mf, o + 1))) || isIntMark(mf, o + 1) || dmsMark(mf, o + 1) !== undefined;
 }
 
 /** True if `o` is ∫'s `\,` or d (only ∫ inserts them). */
@@ -771,7 +1020,8 @@ function isIntMark(mf: Field, o: number): boolean {
 
 /** True if the range from position `start` to offset `end` is all of a box: a template there leaves □ behind. */
 function fillsRange(mf: Field, start: number, end: number): boolean {
-  return depthAt(mf, start) === depthAt(mf, end) && startsBox(mf, start) && endsBox(mf, end);
+  if (depthAt(mf, start) !== depthAt(mf, end)) return false;
+  return (startsBox(mf, start) && endsBox(mf, end)) || isDegrees(mf, start, end);
 }
 const latexAt = (mf: Field, o: number): string => mf.getElementInfo(o)?.latex ?? "";
 
@@ -813,7 +1063,7 @@ function fromEnd(mf: Field, c: number): Template | undefined {
 function empty(mf: Field, from: number, to: number): boolean {
   for (let o = from; o <= to; o++) {
     const l = latexAt(mf, o);
-    if (l !== "" && l !== PLACEHOLDER && !MARK.test(l) && l !== ",") return false;
+    if (l !== "" && l !== PLACEHOLDER && !MARK.test(l)) return false;
   }
   return true;
 }
@@ -840,18 +1090,7 @@ function template(mf: Field, q: number): Template {
     othersEmpty &&= empty(mf, end + 1, s - 1);
     end = s;
   }
-  // a function's later cells (EQ(a, b)): the main box ends at the first comma
-  let mainEnd = q - 1;
-  if (named) {
-    for (let o = body + 1; o < q; o++) {
-      if (depthAt(mf, o) === de + 1 && latexAt(mf, o) === ",") {
-        mainEnd = o - 1;
-        othersEmpty &&= empty(mf, o, q - 1);
-        break;
-      }
-    }
-  }
-  return { start, end, main: [body, mainEnd], othersEmpty };
+  return { start, end, main: [body, q - 1], othersEmpty };
 }
 
 /** True if the template is all of a box (a fraction's part, an outer body, ∫'s integrand): it leaves □ behind. */

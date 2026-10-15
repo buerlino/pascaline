@@ -187,10 +187,14 @@ const selected = (page: Page): Promise<string> =>
     return !mf || mf.selectionIsCollapsed ? "" : mf.getValue(mf.selection, "latex");
   });
 
-test("a filled log base: the first ⌫ selects the whole template, the second deletes it (nothing from two boxes joins)", async ({ page }) => {
+test("a filled log base: ⌫ at the start of the argument steps into the base; at the start of the base it selects the whole template, then deletes it (nothing from two boxes joins)", async ({ page }) => {
   await tmpl(page, "logbase");
   await tap(page, ["d1", "d6", "right", "d2", "left"]);
   expect(await entryValue(page)).toBe("\\log_{16}\\left(2\\right)");
+  // (R26h: the base is a box; point 3 of "⌫ and Del keep a template whole")
+  expect(await bksp(page)).toBe("\\log_{16}\\left(2\\right)");
+  expect(await selected(page)).toBe("");
+  await tap(page, ["left", "left"]);
   expect(await bksp(page)).toBe("\\log_{16}\\left(2\\right)");
   expect(await selected(page)).toBe("\\log_{16}\\left(2\\right)");
   expect(await bksp(page)).toBe("");
