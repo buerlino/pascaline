@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  1. The entry-bug packages: R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -129,8 +129,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R26a | The ⌫ grid test over every template (F10, F15–F21) | ron, Sonnet | `p1/ron-m4a-bkspgrid` | R23 | ~0.5 d |
-| R26b | Bug F16: the hardware Backspace and Delete | ron, Sonnet | `p1/ron-m4a-hwdelete` | R23 | ~0.25 d |
 | R26c | Bug F15: ⌫ right after a closing bracket | ron, **Opus** | `p1/ron-m4a-bkspclose` | R26a, R26b; G2 item 46 answered, or start on the default | ~0.5 d |
 | R26d | Bug F17: powers and exponents | ron, **Opus** | `p1/ron-m4a-bksppow` | R26c (same file); G2 item 47 | ~0.5–1 d |
 | R26e | Bug F18: fractions and roots | ron, **Opus** | `p1/ron-m4a-bkspfrac` | R26d; G2 item 47 | ~0.5 d |
@@ -356,7 +354,7 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### The entry-bug packages R26a–R27b and R43 (bugs F15–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
+### The entry-bug packages R26c–R27b and R43 (bugs F15–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
 - Backlog milestone 4a items 21–35 have the summary.
 - The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
@@ -365,53 +363,6 @@ These are small packages, one concern each, each with its own short reading list
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R26a: the ⌫ grid test over every template, branch `p1/ron-m4a-bkspgrid`
-Test only, no app code. Read: `spec/keyboard.yaml` (every `insert:` that holds a template, including `templates:`), `app/test/helpers.ts`, R23's `app/test/bksp.spec.ts`, r6-pipelines section 7, decisions.md "⌫ and Del keep a template whole".
-
-**Build** `app/test/bksp-grid.spec.ts`.
-- **Templates:** every one the keys insert, read from keyboard.yaml so that a new key joins the grid by itself. There were 32 on 2026-10-14: the function keys, `( )`, `| |`, the power keys, eˣ, 10ˣ, √, ⁿ√, ÷, the one-line inserts, and every Tmpl cell.
-- **How:** drive the entry through `window.pascaline.entry.run` (the same path as a key). Read the line after each step and parse it with `loadParser()` from `/src/input/parser.ts` in the page.
-- **Scenarios** (each with at most 16 steps):
-  - `empty`: the template on an empty line, then ⌫ until the line is empty.
-  - `content`: 5, the template, 2, then ⌫ until the line is empty.
-  - `fromEnd`: the same, with the cursor moved to the end first.
-  - `boxStart`: 5, the template, 2 3, ◀ ◀ (the cursor at the start of the first box), then ⌫ until the line is empty.
-  - `delFromStart`: 5, the template, 2, the cursor to the start, then Del until the line is empty.
-  - `delBeforeClose`: the template, 2, then Del until the line is empty.
-  - `nested`: the template twice, then ⌫ until the line is empty.
-- **Checks after each step** (the rule's points):
-  - No half pair outside evaluate-at (1).
-  - No `^` or `_` at the start of a group or after an operator (1, 6).
-  - No lost box or lone mark (2).
-  - No ⌫ deleted something before the template while the cursor was in it (3).
-  - No exponent moved to a new base (6).
-- **Checks at the end:** the line is empty (8), and no step was a no-op except ⌫ at the line's start or Del at its end.
-- **Known failures:** mark each failing case `test.fail()` with its bug id in the title (F10, F15–F21), so the suite is green and each later package flips its own cases.
-- **The probe of 2026-10-14 found** (with F10, before R23):
-  - In `empty`, 18 of 32 templates leave debris: EQ, one-line x⁻¹, xʸ, x², x⁻¹, ⁿ√, evaluate-at, piecewise, matrix, row, column, lim, ∫, mixed, Σ, Π, log base, DMS.
-  - In `content`, 24 of 32 never reach the empty line: all ten bracket templates, plus ⁿ√, evaluate-at, ∂, piecewise, the three matrices, lim, ∫, mixed, Σ, Π, log base and DMS.
-
-Gate: the grid green (with its `test.fail` marks) in under 60 s. The report lists the number of `test.fail` cases per bug id.
-
-### ron, R26b: the hardware Backspace and Delete take our path (bug F16), branch `p1/ron-m4a-hwdelete`
-Read: `app/src/entry/controller.ts` lines 109–131 (the capturing `keydown` listener for `^`) and `app/src/entry/delete.ts` (from R23).
-
-**Behaviour today:** desktop, log log, then four presses of the hardware Backspace (`page.keyboard.press("Backspace")`). The line is stuck at `\log\left.\right)`, the bug R23 fixes for the on-screen ⌫.
-
-**Cause:** a physical key goes straight to MathLive's own keydown handler. `EntryController.run` sees only the on-screen keys, and R23's fix and every R26 package live in `run`.
-
-**Fix:**
-- In the capturing `keydown` listener (controller.ts line 113), Backspace becomes `this.run({ kind: "cmd", name: "deleteBackward" })` and Delete becomes `deleteForward`, each with `preventDefault` and `stopPropagation`.
-- A held key arrives as repeated keydowns and takes the same path.
-- Ctrl + Backspace (delete a word): leave it to MathLive, or route it too, and say which in the report.
-
-**Commits:**
-1. **Tests** (`bksp.spec.ts`): log log by the hardware Backspace reaches the empty line; Delete before a closing bracket, the mirror.
-2. **Fix.**
-3. **Report.**
-
-Gate: bksp, entry and undo e2e green.
 
 ### ron, R26c: ⌫ right after a closing bracket (bug F15), branch `p1/ron-m4a-bkspclose`
 Read: `app/src/entry/delete.ts`, `app/test/bksp-grid.spec.ts`, decisions.md "⌫ and Del keep a template whole" point 5 (G2 item 46 may overrule it).
