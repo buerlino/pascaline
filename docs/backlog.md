@@ -141,7 +141,7 @@ The owner's deep dive (feedback #47): 24 findings, all accepted (decisions.md "T
 2. **F25. A digit typed next to a result chip multiplies:** tap 0.5, type 3: 1.5, with no × on the line. **R29**.
 3. **F26. One-line `1/2x` is 1/(2x)**, (1/2)·x on the G2 (item 6); `6÷2(1+2)` is 1. **R30** (night).
 4. **F27. A hardware keyboard's `1e-3` is e − 3** (−0.28, marked ≈). **Done** (`2aaa9d6`, R31): a character a keypad key types presses that key, `e`/`E` after a number's digits is ᴇ, letters type themselves, and characters no key types do nothing (`app/src/entry/hwkeys.ts`). Regression cases and a grid over printable ASCII in `app/test/hwkeys.spec.ts`.
-5. **F28. A value stored in Home is used by CAS without a sign:** after `3 ▶ x`, `int(x^2,x)` = 9x and `factor(x^2-1)` = 8, across relaunches. **G20** (night), then **R32** (after R11).
+5. **F28. A value stored in Home is used by CAS without a sign:** after `3 ▶ x`, `int(x^2,x)` = 9x and `factor(x^2-1)` = 8, across relaunches. **Engine half done** (`462c163`, G20): `CasResult.uses` lists the stored variables (kind `var`) whose names appear in a CAS input, with their preview and the view they were stored in; absent when none; a name the input assigns itself and a called function are not listed; Home results have none. Open point: a name the input binds is listed too (decisions.md "Needs the user", G20). **R32** (after R11) is the UI half.
 6. **F29. DEG reads `exp(i*90)` as i**, but `exp(i*pi)` stays −1. **G21**, after G2 item 54 and the owner's decision.
 7. **F30. A half-typed line is lost when Android kills the app.** **R34** (end of the entry-bug group).
 8. **F31. A stored definition that crashes the worker loops the start forever.** **G19** (night).

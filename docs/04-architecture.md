@@ -64,7 +64,7 @@ The top risks are in section 9.
 | History and settings (`state/session.svelte.ts`, `storage.ts`) | history survives a relaunch | digits ≤ 30, settings schema 2, every stored value stamped (`storage.ts` `DATA_VERSION`) | a half-typed line is lost when Android kills the app (F30: R34) | — |
 | Function app | Plot 56 fps on the Tab One | every number shown comes from the engine (`apps/function/compile.ts` header) | — | 19.6 kB + JSXGraph 1,035 kB lazy |
 | Solve app | — | every root substituted back, ⚠ on failure | — | 8.2 kB lazy |
-| CAS view (`host.ts` `cas()`) | — | exact results; typed decimals exact (P9); a numeric result with a float drawn and marked by our formatter | a symbolic result with a float in it is unmarked and can be wrong (2.3 #17); a value stored in Home is used without a sign (#15: G20, R32) | — |
+| CAS view (`host.ts` `cas()`) | — | exact results; typed decimals exact (P9); a numeric result with a float drawn and marked by our formatter | a symbolic result with a float in it is unmarked and can be wrong (2.3 #17); a value stored in Home is used without a sign (#15: the engine lists it in `uses`, G20; R32 draws the line) | — |
 | PWA and Capacitor shell | offline; wasm stored uncompressed (R2) | no trackers, no INTERNET permission (C5) | — | the whole build is precached: 12.3 MB (2026-10-15) |
 | Build (`build.sh`, P2 container) | — | reproducible engine; the size test (A1) runs in `npm run build` | no CI (C3; the local `npm run gate` is A6) | — |
 
@@ -469,7 +469,7 @@ Every key press counts 1, Shift and Alpha included; letters typed in Find count 
 
 ### 6.1 Topology and contracts
 - **Today:** the main thread runs the UI, keyboard, parser and formatter; worker 1 is Giac (started at launch, D2); the MicroPython worker went with the Python app (P11). Each cancels by terminate and respawn; Giac replays the definitions (`workerEngine.ts:148-156`).
-- **Decision:** there is no worker 3: the unit view computes on worker 1, Giac (P15, milestone 5; worker 2 was MicroPython, removed by P11). Find needs no worker (3.2). Nothing new needs an engine on the main thread. Interface changes are listed in 8.2: `HomeResult` gains the facts for the mark (`exactRational`, `reliableDigits`), `full` (the copy and chip value) and `defined`; `CasResult` gains the numeric value when the result is a number. `MathEngine` and `Calc` gain `units()` (G16).
+- **Decision:** there is no worker 3: the unit view computes on worker 1, Giac (P15, milestone 5; worker 2 was MicroPython, removed by P11). Find needs no worker (3.2). Nothing new needs an engine on the main thread. Interface changes are listed in 8.2: `HomeResult` gains the facts for the mark (`exactRational`, `reliableDigits`), `full` (the copy and chip value) and `defined`; `CasResult` gains the numeric value when the result is a number, and `uses`, the stored variables the input read (G20). `MathEngine` and `Calc` gain `units()` (G16).
 
 ### 6.2 Decision: one storage plan
 One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
@@ -579,7 +579,8 @@ interface HomeResult {                                   // existing fields kept
   digits?: number;                                       // the digits evalf(e,n)/approx(e,n) asked for: shown with these (G3)
   warn?: "unaudited" | "unchecked";                      // ⚠ although the digits agree (M4-5); from G27 also a non-number with a float
 }
-interface CasResult { /* ok, text, latex, timedOut, error, engineMs */ numeric?: HomeResult; }  // new: when the result is a number
+interface CasResult { /* ok, text, latex, timedOut, error, engineMs */ numeric?: HomeResult;  // new: when the result is a number
+  uses?: { name: string; preview: string; view: "home" | "cas" }[]; }  // new (G20): the stored variables (defs log, kind var) named in the input; absent when none
 
 interface Calc {                                         // views; mirrors MathEngine with CalcSettings
   ready(): Promise<void>;

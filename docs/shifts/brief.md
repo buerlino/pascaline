@@ -4,20 +4,20 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8, R22, R25a, R23, R25b, R25c and R42; milestone 5's check G15 (P15 holds, 2026-10-15). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8, R22, R25a, R23, R25b, R25c and R42; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive package G20 (F28's engine half, 2026-10-15). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
   1. R18f3 (a closed `==` test shows an exact 0, F35; a silent wrong answer, so it goes first). Then the entry-bug packages: R43 (▶ stops at the end of a box that holds a template, F34), R45 (hardware keys take the keypad's path, F38; the owner said yes 2026-10-15), then R34 (the line survives a kill, F30).
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
-  3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
+  3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
   4. R15b (the top cluster, after A4a's report).
   5. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
   6. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): G20, R29, then G27 and R44 (silent wrong answers from the architecture check; the owner said yes 2026-10-15, F36 and F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then G27 and R44 (silent wrong answers from the architecture check; the owner said yes 2026-10-15, F36 and F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A4a when the owner connects the Tab One, after R21b and before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -28,7 +28,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
 - Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b and R4a stay whole, since each half would leave the keypad or Find half built.
 - **The deep-dive packages (0f, and G16–G18 and G25 in 0e) go by importance, then by what they need:**
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
-  - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29, R30, G20.
+  - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
   - **Day packages sit next to the code they share:**
     - R34 ends the entry-bug group (the same files, `main.ts` and `controller.ts`).
@@ -64,7 +64,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | Step | What | Agent, model | Branch | Est. |
 |---|---|---|---|---|
 | 1 | G15 units on Giac: the check (decides P15): merged by day (`7f32949`), skip | gorge, **Opus** | `p1/gorge-m5-giacunits` | — |
-| 2 | G20 the stored values a CAS result used (F28, engine half) | gorge, Sonnet | `p1/gorge-m4-uses` | 1 h + review |
+| 2 | G20 the stored values a CAS result used (F28, engine half): merged by day (`462c163`), skip | gorge, Sonnet | `p1/gorge-m4-uses` | — |
 | 3 | R29 where a number ends (F24, F25) | ron, **Opus** | `p1/ron-m4-numbers` | 1 h + review |
 | 3a | G27 a result that is not a number but holds a float gets ⚠ (F36; owner's yes 2026-10-15) | gorge, Sonnet | `p1/gorge-m4-symfloat` | 45 min + review |
 | 3b | R44 a long result's chip keeps its value, Ans never dropped (F37; after R29) | ron, Sonnet | `p1/ron-m4-longchip` | 45 min + review |
@@ -219,7 +219,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
-| G20 | The stored values a CAS result used: the engine half | F28 | night | gorge, Sonnet | `p1/gorge-m4-uses` | now | ~0.5 d |
 | R29 | Where a number ends | F24, F25 | night | ron, **Opus** | `p1/ron-m4-numbers` | now | ~0.5 d |
 | G27 | A result that is not a number but holds a float gets ⚠ | F36 (architecture check, 2026-10-15) | night | gorge, Sonnet | `p1/gorge-m4-symfloat` | now (the owner said yes, 2026-10-15) | ~0.25 d |
 | R44 | A long result's chip keeps its value, and Ans is never dropped | F37 (architecture check, 2026-10-15) | night | ron, Sonnet | `p1/ron-m4-longchip` | R29 (chips, same tests) | ~0.25 d |
@@ -234,7 +233,7 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | R45 | Hardware keys take the keypad's path: arrows, ⌫, Del, letters | F38 (architecture check, 2026-10-15) | day | ron, Sonnet | `p1/ron-m4a-hwpath` | R43 (same files) | ~0.5 d |
 | R34 | The line survives a kill | F30 | day | ron, Sonnet | `p1/ron-m4a-keepline` | R45 | ~0.5 d |
 | R35 | A lighter start chunk | review item 11 | day | ron, Sonnet | `p1/ron-m4a-slim` | R34 | ~0.5 d |
-| R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | R11 and G20 | ~0.5 d |
+| R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | R11 | ~0.5 d |
 | R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | R32 (same file) and G22 | ~0.5 d |
 | R33 | Names with a value, marked on the line | review item 15 | day | ron, Sonnet | `p1/ron-m4a-namemarks` | R4b | ~0.5 d |
 | R37 | The angle check | review item 16 | day | ron, Sonnet | `p1/ron-m4a-anglecheck` | R33 | ~0.75 d |
@@ -837,37 +836,9 @@ From the architecture check of 2026-10-15 (sandra; docs/04 5.5 points 1 and 2). 
 
 Gate: hwkeys, cursor, tmpl, sheet and keys e2e; the ⌫ grid; typecheck; the start chunk within its budget (`hwkeys.ts` stays lazy).
 
-### gorge, G20: the stored values a CAS result used, the engine half (F28), branch `p1/gorge-m4-uses`
-Backlog F28; decisions.md "Home and CAS share one Giac context". No UI. Read:
-- `app/src/engine/host.ts`: `cas()`, `home()`, `namesIn` and `byName`;
-- `app/src/engine/defs.ts` (`DefEntry`: kind, preview, view);
-- `CasResult` in `app/src/engine/types.ts`;
-- `tests/golden/README.md` (a case that runs a sequence).
-
-**Behaviour today** (dev engine, 2026-10-14):
-- Home `x:=3` (keys: 3, Sto ▶, x; the x key types lower-case x in every view), then CAS:
-  - `int(x^2,x)` → `9*x`;
-  - `factor(x^2-1)` → `8`;
-  - `expand((x+1)^2)` → `16`.
-- `diff(x^2,x)` → `2*x` and `solve(x^2=4,x)` → `[-2,2]`: they quote their variable.
-- The stored x is replayed at every start, so the surprise can come a week later.
-- Solve and Function are not affected: they substitute locally.
-
-Commits in this order:
-1. **Tests first:**
-   - golden cases for the three CAS inputs after the Home assignment, each with the result Giac gives for x = 3 (`derived`) and `uses: [x]`;
-   - a Vitest on `host.cas()`:
-     - `uses` lists x with its preview and the view it was stored in;
-     - an input that assigns the name itself (`x:=5` in CAS) lists nothing for x;
-     - a user function's name (`f(t):=t^2`, then `f(2)`) is not listed: a call is meant;
-     - Home results get no `uses`, since a stored A is what Home is for.
-2. **Build:** `CasResult.uses?: { name: string; preview: string; view: "home" | "cas" }[]`. It holds every variable of the definitions log (kind `var`) whose name appears in the input (`namesIn`), absent when there is none.
-
-Gate: golden gate, vitest, typecheck. Report: the field and an example, for R32.
-
 ### ron, R32: the stored values under a CAS result (F28, UI half), branch `p1/ron-m4a-uses`
-Starts when R11 and G20 are merged. Read:
-- G20's report;
+Starts when R11 is merged (G20 is, `462c163`). Read:
+- G20's report (`git log -1 dd0f65c`) and the open point decisions.md "G20: a name the input binds";
 - `app/src/views/History.svelte` (a CAS row) and R11's row code;
 - `app/src/i18n/en.ts`;
 - docs/03 rule 9 (vertical space).
