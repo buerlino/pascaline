@@ -51,7 +51,6 @@ const NO_ARGUMENT_CELLS = new Set([
   "matrix22",
   "rowvec",
   "colvec", // cells of a matrix are not an argument
-  "dms", // three boxes of equal standing: none is the argument
 ]);
 
 const act = (key: Record<string, unknown>, layer: Layer, line: boolean): Act | undefined => {
@@ -157,7 +156,7 @@ const ROWS: Row[] = [
   ["sin", "primary", "\\sin\\left(1+2\\right)", "4+\\sin\\left(2\\right)", `4+2\\sin\\left(${BOX}\\right)`],
   ["sin", "shift", "\\arcsin\\left(1+2\\right)", "4+\\arcsin\\left(2\\right)", `4+2\\arcsin\\left(${BOX}\\right)`],
   ["ln", "shift", "\\exponentialE^{1+2}", "4+\\exponentialE^2", `4+2\\exponentialE^{${BOX}}`],
-  ["log", "shift", "10^{1+2}", "4+10^2", `4+210^{${BOX}}`],
+  ["log", "shift", "10^{1+2}", "4+10^2", `4+2\\times10^{${BOX}}`],
   ["enter", "shift", "\\operatorname{approx}\\left(1+2\\right)", "4+\\operatorname{approx}\\left(2\\right)", `4+2\\operatorname{\\mathrm{approx}}\\left(${BOX}\\right)`],
   ["sq", "primary", "\\left(1+2\\right)^2", "4+2^2", "4+2^2"],
   ["pow", "primary", `\\left(1+2\\right)^{${BOX}}`, `4+2^{${BOX}}`, `4+2^{${BOX}}`],

@@ -83,12 +83,12 @@ test("5 eˣ 2 3 ◀ ◀ ⌫ ⌫ never puts the exponent on the 5: the second ⌫
   expect(await bksp(page)).toBe("5");
 });
 
-test("5 10ˣ 2 3 ◀ ◀ ⌫ ⌫ never shortens the 10: the power goes whole", async ({ page }) => {
+test("5 10ˣ 2 3 ◀ ◀ ⌫ ⌫ never shortens the 10: the power goes whole (after a digit the key is ×10ˣ, R27a)", async ({ page }) => {
   await tap(page, ["d5", "shift", "log", "d2", "d3", "left", "left"]);
-  expect(await bksp(page)).toBe("510^{23}");
-  expect(await bksp(page)).toBe("510^{23}");
+  expect(await bksp(page)).toBe("5\\times10^{23}");
+  expect(await bksp(page)).toBe("5\\times10^{23}");
   expect(await selected(page)).toBe("10^{23}");
-  expect(await bksp(page)).toBe("5");
+  expect(await bksp(page)).toBe("5\\times");
 });
 
 test("5 eˣ 2 ⌫ ⌫ gives 5: the emptied exponent shows □, then the power goes", async ({ page }) => {

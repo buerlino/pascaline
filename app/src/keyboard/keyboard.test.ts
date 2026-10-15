@@ -126,7 +126,6 @@ describe("keyboard spec", () => {
     "tmpl:matrix22/primary/normal": "the cells of a matrix are not an argument",
     "tmpl:rowvec/primary/normal": "the cells of a matrix are not an argument",
     "tmpl:colvec/primary/normal": "the cells of a matrix are not an argument",
-    "tmpl:dms/primary/normal": "three boxes of equal standing: none is the argument",
     // R18, Shift + 6: relations and the infix logic words are operators (NOT and EQ take the selection)
     ...Object.fromEntries(["lt", "le", "gt", "ge", "eqeq", "ne", "and", "or", "xor"].map((id) => [`rel:${id}/primary/normal`, "an operator"])),
     // R18, Shift + 9: every cell is a character: operators (!, →, °, ′, ″, &), constants (∞) and names (Å, Greek)
