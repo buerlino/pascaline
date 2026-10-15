@@ -100,12 +100,27 @@ test("√ 2 then Del at the end of the root keeps the 2", async ({ page }) => {
 });
 
 // ---- fractions ------------------------------------------------------------------------------------------------------
-test("5 ÷ 2 3 ◀ ◀ ⌫ steps to the end of the numerator and keeps 5/23", async ({ page }) => {
+// G2 item 47 (the owner's G2, 2026-10-15): ⌫ at the start of the denominator dissolves the fraction and joins its
+// parts, the cursor between them (5‸23)
+test("5 ÷ 2 3 ◀ ◀ ⌫ joins the parts as on the G2: 5‸23", async ({ page }) => {
   await tap(page, ["d5", "div", "d2", "d3", "left", "left"]);
-  expect(await bksp(page)).toBe("\\frac{5}{23}");
-  expect(await position(page)).toBe(2);
+  expect(await bksp(page)).toBe("523");
+  expect(await position(page)).toBe(1);
   await tap(page, ["d7"]);
-  expect(await entryValue(page)).toBe("\\frac{57}{23}");
+  expect(await entryValue(page)).toBe("5723");
+});
+
+test("÷ ▶ 2 3 ◀ ◀ ⌫ with an empty numerator leaves 23, the cursor before it", async ({ page }) => {
+  await tap(page, ["div", "right", "d2", "d3", "left", "left"]);
+  expect(await entryValue(page)).toBe(`\\frac{${PH}}{23}`);
+  expect(await bksp(page)).toBe("23");
+  expect(await position(page)).toBe(0);
+});
+
+test("÷ inside a sum: 1 + 5 ÷ 2 3 ◀ ◀ ⌫ joins only the fraction's parts", async ({ page }) => {
+  await tap(page, ["d1", "add", "d5", "div", "d2", "d3", "left", "left"]);
+  expect(await bksp(page)).toBe("1+523");
+  expect(await position(page)).toBe(3);
 });
 
 for (const key of ["div", "frac"]) {
@@ -134,11 +149,12 @@ test("2 + ÷ 2 ▶ 3 4 ◀ ◀ ◀ ◀ ⌫ at the start of the numerator selects
   expect(await bksp(page)).toBe("2+");
 });
 
-test("5/23 with the cursor at the end of the numerator, Del steps to the start of the denominator", async ({ page }) => {
-  await tap(page, ["d5", "div", "d2", "d3", "left", "left", "bksp"]);
-  expect(await del(page)).toBe("\\frac{5}{23}");
-  await tap(page, ["d1"]);
-  expect(await entryValue(page)).toBe("\\frac{5}{123}");
+test("5/23 with the cursor at the end of the numerator, Del joins the parts (the mirror of ⌫): 5‸23", async ({ page }) => {
+  await tap(page, ["d5", "div", "d2", "d3", "left", "left", "left"]);
+  expect(await entryValue(page)).toBe("\\frac{5}{23}");
+  expect(await position(page)).toBe(2);
+  expect(await del(page)).toBe("523");
+  expect(await position(page)).toBe(1);
 });
 
 // ---- the mixed number -----------------------------------------------------------------------------------------------
