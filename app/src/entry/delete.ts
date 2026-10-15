@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// ⌫ and Del at a template (R23, bug F10; decisions.md "⌫ at a bracket" and "⌫ and Del keep a template whole").
-// MathLive's own delete at the start of a `\left…\right` body turns the opening bracket into `\left.` and is stuck
-// there; this module takes those presses first. Public MathLive API only: offsets, `getElementInfo`, `selection`,
-// `getValue`, `insert`. Plain TS; R26b–R26h extend it to every other template.
+// ⌫ and Del at a template (R23, bug F10; R26c, bug F15; decisions.md "⌫ at a bracket" and "⌫ and Del keep a template
+// whole"). MathLive's own delete at the start of a `\left…\right` body turns the opening bracket into `\left.` and is
+// stuck there, and right after a pair it turns the closing bracket into `\right.`; this module takes those presses
+// first. Public MathLive API only: offsets, `getElementInfo`, `selection`, `position`, `getValue`, `insert`. Plain TS;
+// R26d–R26h extend it to every other template.
 //
 // How MathLive numbers a line: offset o is the cursor position after atom o. An atom's parts (a pair's body, a
 // script's branches) come before the atom itself, one level deeper, and each branch starts with an empty sentinel.
@@ -18,7 +19,7 @@ type Field = Pick<
 const PLACEHOLDER = "\\placeholder{}";
 /** A function name a key inserts together with its pair: the name goes with the brackets. */
 const NAME =
-  /^\\(?:operatorname\{[^{}]*\}|(?:arc)?(?:sin|cos|tan|cot|sec|csc)h?|ln|log|lg|exp|lim|sum|prod|det|gcd|lcm|max|min|arg|Re|Im)(?![A-Za-z])/;
+  /^\\(?:operatorname\{(?:\\mathrm\{[^{}]*\}|[^{}]*)\}|(?:arc)?(?:sin|cos|tan|cot|sec|csc)h?|ln|log|lg|exp|lim|sum|prod|det|gcd|lcm|max|min|arg|Re|Im)(?![A-Za-z])/;
 /** A name whose parts are letters, not boxes. */
 const LETTERS = /^\\(?:operatorname|mathrm)\{/;
 /** The marks between a template's boxes (evaluate-at, lim, Σ, Π): part of the template, never content. */
@@ -46,7 +47,13 @@ export function deleteAtTemplate(mf: Field, dir: -1 | 1): boolean {
   const c = cursor(mf, dir);
   if (c === undefined) return false;
   const t = dir < 0 ? fromStart(mf, c) : fromEnd(mf, c);
-  if (!t) return false;
+  if (t) return removeTemplate(mf, t, dir);
+  if (!mf.selectionIsCollapsed) return false;
+  return stepIn(mf, c, dir) || keepBox(mf, c, dir);
+}
+
+/** Remove template `t`, or select it when another box holds something (the R23 rule above). */
+function removeTemplate(mf: Field, t: Template, dir: -1 | 1): boolean {
   mf.selection = { ranges: [[t.start, t.end]] };
   if (!t.othersEmpty) return true;
   const content = mf.getValue(t.main[0], t.main[1], "latex");
@@ -55,6 +62,59 @@ export function deleteAtTemplate(mf: Field, dir: -1 | 1): boolean {
   } else if (fillsBox(mf, t)) {
     mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
   } else mf.executeCommand("deleteBackward");
+  return true;
+}
+
+/**
+ * ⌫ right after a pair (dir −1), or Del right before a pair or the function name that owns it (dir +1): the cursor
+ * steps into the body, to its end (start), and nothing is deleted (point 5, F15). A body that holds only □ gets the □
+ * selected, as after the key, so the next press removes the template. A name with boxes of its own (a log base,
+ * lim's or Σ's bounds) is left to MathLive here (R26f, R26h). True: handled.
+ */
+function stepIn(mf: Field, c: number, dir: -1 | 1): boolean {
+  let q: number;
+  if (dir < 0) {
+    q = c;
+    if (q === 0 || !isPair(mf, q)) return false;
+  } else {
+    const d = depthAt(mf, c);
+    let p = c + 1;
+    while (p <= mf.lastOffset && depthAt(mf, p) > d) p++;
+    if (p > mf.lastOffset || depthAt(mf, p) !== d || atomStart(mf, p) !== c) return false;
+    if (isPair(mf, p)) q = p;
+    else {
+      const name = latexAt(mf, p);
+      // the name must own no box: no parts, or only its letters
+      if (!NAME.test(name) || (p !== c + 1 && !LETTERS.test(name))) return false;
+      q = p + 1;
+      while (q <= mf.lastOffset && depthAt(mf, q) > d) q++;
+      if (q > mf.lastOffset || !isPair(mf, q) || atomStart(mf, q) !== p) return false;
+    }
+  }
+  const s = atomStart(mf, q) + 1; // the body's sentinel
+  if (q - 1 === s + 1 && latexAt(mf, q - 1) === PLACEHOLDER) mf.selection = { ranges: [[s, q - 1]] };
+  else mf.position = dir < 0 ? q - 1 : s;
+  return true;
+}
+
+/**
+ * ⌫ right after (Del right before) the only atom of a pair's body: the body shows □ again instead of going empty
+ * (point 2), with the □ selected, so the next press removes the template (R23) and a digit typed now fills the box.
+ * A lone □ there is the empty body itself: the press removes the template. True: handled.
+ */
+function keepBox(mf: Field, c: number, dir: -1 | 1): boolean {
+  const a = dir < 0 ? c : c + 1; // the atom the press would delete
+  if (a < 2 || a >= mf.lastOffset) return false;
+  const d = depthAt(mf, a);
+  const s = a - 1;
+  if (d === 0 || depthAt(mf, s) !== d || latexAt(mf, s) !== "") return false; // an atom with parts, or not the first
+  if (!isPair(mf, a + 1) || depthAt(mf, a + 1) !== d - 1 || atomStart(mf, a + 1) + 1 !== s) return false;
+  if (latexAt(mf, a) === PLACEHOLDER) {
+    const t = dir < 0 ? fromStart(mf, s) : fromEnd(mf, a);
+    return t ? removeTemplate(mf, t, dir) : false;
+  }
+  mf.selection = { ranges: [[s, a]] };
+  mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
   return true;
 }
 

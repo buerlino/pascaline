@@ -263,7 +263,7 @@ const PAIRS: [keys: string[], open: string, close: string][] = [
   [["log"], "\\log\\left(", "\\right)"],
   [["paren"], "\\left(", "\\right)"],
   [["shift", "neg"], "\\left|", "\\right|"],
-  [["shift", "enter"], "\\operatorname{approx}\\left(", "\\right)"],
+  [["shift", "enter"], "\\operatorname{\\mathrm{approx}}\\left(", "\\right)"],
 ];
 
 for (const [keys, open, close] of PAIRS) {
@@ -321,7 +321,7 @@ test("from the end of 5 sin 2, ⌫ reaches the empty line with no half pair", as
 test("the one-line √: √ 2 ▶ ⌫ steps into the body; the name goes with its pair", async ({ page }) => {
   await page.evaluate(() => window.pascaline.session.setEntry("line"));
   await tap(page, ["shift", "sq", "d2", "right"]);
-  const open = "\\operatorname{sqrt}\\left(";
+  const open = "\\operatorname{\\mathrm{sqrt}}\\left(";
   expect(await entryValue(page)).toBe(`${open}2\\right)`);
   expect(await bksp(page)).toBe(`${open}2\\right)`);
   expect(await bksp(page)).toBe(`${open}\\placeholder{}\\right)`);
