@@ -91,7 +91,7 @@ Newest first. Where an entry changed an earlier document, that document now carr
     - One backup file of history, definitions, settings and user keys: S6 finds the way in and out without INTERNET, R38a exports, R38b restores. S4 later reuses S6's answer.
     - Keys carry labels for TalkBack (R41), and A4a checks the largest system font size.
   - **Process:**
-    - The shared docs go on a diet with a size budget (S7): one file per package text, finished decisions to an archive, one "check on the phone" list.
+    - The shared docs go on a diet with a size budget (S7): one file per package text, finished decisions to an archive.
     - One `npm run gate` command prints one line per gate (A6; most of C3 without GitHub).
     - MathLive joins the upstream list (backlog "Needs the user" item 6).
     - A protocol for three outside testers before the unit pad and Find are frozen (S8; the owner runs the session).

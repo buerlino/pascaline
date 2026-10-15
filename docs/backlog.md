@@ -37,14 +37,14 @@ The two debts grow with every milestone:
 0. **Later, in milestone 5:** time ten tasks by hand, E-notation against units (the rule 2 speed gate).
 1. **G2 spot checks on the real G2** (optional, about 15 minutes): item 8 (tie rounding, typed with the keys) and the list in `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`. The Virtual Calculator answers are already in `tests/golden/g2.yaml`.
 2. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-3a. **P12 open points** (decisions.md): A menu audit done (S2, accepted), B the status-line switch (judge on the R15 APK). C is settled: `!` goes in the Shift + 9 palette (R18).
+3a. **P12 open points** (decisions.md): A menu audit done (S2, accepted), B the status-line switch (the owner decides). C is settled: `!` goes in the Shift + 9 palette (R18).
 3. **More UI points** (owner, 2026-10-13: "I will gather more points that bother me"): into [feedback.md](feedback.md), for F6; UI feedback sessions on each feel APK.
 4. **Open proposals** in [decisions.md](decisions.md) "Needs the user": F29 (`exp` in DEG mode, after G2 item 54), M4-2 (task benchmark questions, at milestone 5) and P7 point 4 (Shift/Alpha merge: read Settings › Shift / Alpha taps around 2026-10-20; if merged, the freed cell becomes U4). When S5 starts, it asks for your 10–20 most used units; later its proposal "P14 arrangement" (the grid and the number of user cells) needs your yes.
 5. **Later, not now** (user, 2026-10-11: first a usable prototype): the email to Bernard Parisse (draft in `../outreach/`; add the question from P10: may the English entries of `aide_cas` be shipped in a GPL-3.0-or-later app? Needed before any public release), the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
 
 7. **Owner's list from the 2026-10-14 verification:**
    - **Device run before R15b** = package **A4a** (brief section 7), after R21b: plug in the Tab One and the S8+ then. It measures start-up, a Shift tap, Enter p95 and the start-chunk raise (would change if keyboard-usable moves by more than 50 ms), and checks the flick thresholds, ᴇ on the S8+'s Chrome 101 WebView, K1's touch-action and Android back.
-   - **48 px cluster rows or today's height:** judge on the R15b APK (decisions.md).
+   - **48 px cluster rows or today's height:** the owner decides (decisions.md).
    - **G2 items 41 (&), 42 (→) and 43 (`7 mod −3`)** on the Virtual Calculator (`tests/golden/g2.yaml`), and **45** (in CAS, does Alpha + key type the capital or the lower case?).
    - **G2 item 44 (⌫ right after an opening bracket)** on your G2, before R23 starts: `SIN(23)` with the cursor right after `(`, then ⌫; the same with `5(2)`. One minute, and it settles the F10 rule (decisions.md "⌫ at a bracket").
    - **G2 items 46–51 (⌫, 10ˣ and the cursor in templates)** on your G2, each before its package (about five minutes in all):
@@ -78,7 +78,7 @@ The two debts grow with every milestone:
 ## Tasks
 
 ### Milestone 4a: feel (P11, 2026-10-13; order signed off by the owner 2026-10-13)
-The owner's first days of daily use ([feedback.md](feedback.md)) and the UI plan ([05-ui-plan.md](05-ui-plan.md), accepted with its section 7). Runs before the rest of milestone 4, because Find and the unit view sit on the keypad and the screen layout. Each ron package ends with an APK on the owner's phone (built by the review session); the next package starts as soon as the review has merged it, without waiting for the APK to be tried (owner, 2026-10-13; docs/03 rule 10). Packages, models and branches: [shifts/brief.md](shifts/brief.md) section 0b.
+The owner's first days of daily use ([feedback.md](feedback.md)) and the UI plan ([05-ui-plan.md](05-ui-plan.md), accepted with its section 7). Runs before the rest of milestone 4, because Find and the unit view sit on the keypad and the screen layout. The next package starts as soon as the review has merged the one before (docs/03 rule 10). Packages, models and branches: [shifts/brief.md](shifts/brief.md) section 0b.
 
 Done items are cut to one line (the full text is in git history and the merge commits). The order of the open ones is in [shifts/brief.md](shifts/brief.md) section 0, "The path".
 
@@ -112,7 +112,7 @@ The full behaviour, the steps to reproduce, the causes (file:line) and the fix d
 
 F9's notification shade case had the same cause and the same fix; R22's test covers it (window blur and focus without a hide).
 
-21. **F11. ⌫ held while the app goes away keeps deleting.** The auto-repeat timer has no end when the lift never arrives. `12345678` is empty after 1 s away. Every repeat focuses the field, so the system keyboard is up on return (K0). **Done** (`0906653`, R25a): the keypad's `cancelAll()` ends every gesture on hide, `pagehide` and (touch screens) window blur; regression cases in `app/test/gestures.spec.ts`. *Open: the owner's APK check, and whether Android sends `pointercancel` there (A4a).*
+21. **F11. ⌫ held while the app goes away keeps deleting.** The auto-repeat timer has no end when the lift never arrives. `12345678` is empty after 1 s away. Every repeat focuses the field, so the system keyboard is up on return (K0). **Done** (`0906653`, R25a): the keypad's `cancelAll()` ends every gesture on hide, `pagehide` and (touch screens) window blur; regression cases in `app/test/gestures.spec.ts`. *Open: whether Android sends `pointercancel` there (A4a).*
 22. **F12. A touch the app never saw end fires on the next key.** Hold 7, leave and come back, tap 2: the line is `72`. The next `pointerdown` finishes the stale gesture (`Keypad.svelte` line 151). **Done** (`0906653`, R25a, with F11), held keys and trackpad touches alike.
 23. **F13. A key pressed less than 60 ms before leaving focuses the field while away.** MathLive focuses its keyboard sink 60 ms after `mf.focus()`, in a timer that `dropFocus` cannot cancel. Hard to hit by hand, but every later async focus takes the same road. Package **R25c**. *~0.25 d; ron, Sonnet.*
 24. **F14. Desktop: ⌫ held with the mouse and released off the keypad never stops.** The line is empty 0.8 s later. The ⌫ path returns before `setPointerCapture` (`Keypad.svelte` line 163). Package **R25b**. *~0.25 d; ron, Sonnet.*
@@ -193,7 +193,7 @@ The owner's deep dive (feedback #47): 24 findings, all accepted (decisions.md "T
 16. **Muted digits past a constant's uncertainty.** **G26** (night), **R40** (last).
 17. **One backup file.** **S6**, then **R38a** and **R38b**.
 18. **Key labels for TalkBack**, and the largest system font size checked in A4a. **R41**.
-19. **The docs diet**, with size budgets and one "check on the phone" list. **S7** (backlog C10).
+19. **The docs diet**, with size budgets. **S7** (backlog C10).
 20. **One gate command.** **A6** (the local half of C3).
 21. **Outside testers.** **S8** writes the protocol; "Needs the user" item 8.
 
@@ -214,7 +214,7 @@ Three parallel tracks per milestone. A milestone is done when its benchmark task
 9. **EN4. Copy, paste, share, export** (annabell). *Done (A3, 291bc2e):* `ClipboardPort` on `navigator.clipboard` (no plugin yet; A4 checks the Tab One WebView), Shift + View / Shift + Menu, Home/CAS Menu, long press on a row, Num CSV; the shared device lock (M4-9). *Done (R20, Solve root and Function Plot readout copy: Shift + View, long press, Menu Copy / Copy as shown).* **Open:** list and matrix element copy, the decimal-comma setting (the code takes the option). When that setting is built: `selectENumber` in `app/src/entry/controller.ts` (R14) finds an E number's mantissa by digits and `.` only, so ÷, a/b or a power key after a pasted `1,5ᴇ-3` would take only `5ᴇ-3` (a silent wrong numerator); make it read the comma too, with an e2e case.
 10. **Definitions survive a relaunch** (gorge). *Done (G3, 56ffab1):* the defs log in IndexedDB, replayed as values (symbolic values first); `userNames` via `Calc.names()`; replay 10.8 ms for 200 definitions on the desktop. **Open:** the Tab One bar with 200 definitions (A4a).
 11. **Size test** (annabell). *Done (A1, 1b595af):* `app/scripts/size-check.ts`, run by `npm run build` (so by `build.sh`); start chunk = entry + static imports, JS only.
-12. **Device** (annabell; packages **A4a**, everything but Find, before R15b, and **A4b**, Find per key, after R4b). APK for the owner; L7 cold start on the Tab One; Enter p95 at digits 12/20/30 (`?bench=1&digits=N`, §2.5); Find per key (`?bench=find`, §3.2); clipboard and share checks (§2.6). Gate: the Tab One bars of §8.3.
+12. **Device** (annabell; packages **A4a**, everything but Find, before R15b, and **A4b**, Find per key, after R4b). L7 cold start on the Tab One; Enter p95 at digits 12/20/30 (`?bench=1&digits=N`, §2.5); Find per key (`?bench=find`, §3.2); clipboard and share checks (§2.6). Gate: the Tab One bars of §8.3.
 
 **Milestone 4 gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left (G6 audit done: all fixed except the #2 value polish, EN7 in m6, by decision); the size test; the Tab One bars.
 

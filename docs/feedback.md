@@ -72,7 +72,7 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 | 27 | a/b will become a toggle for special views like polar / real-imaginary, fractions, etc. | decided: P12 point 1; R10 |
 | 28 | Home and CAS: first "shift and alpha of one key, the main key shows the mode"; then: "we don't need to show the current mode on the main button, I want to switch only via the top bar where it says which mode you are in, so we save 2 buttons." | decided: P12 point 2; R15 |
 | 29 | The other app keys use up vertical space too: move the arrows one line down and clean up the top section (the menu keys etc.). | decided: P12 point 3; R15a mockups first |
-| 30 | I don't like 10^ as the scientific notation: it needs so much space and only hurts the formula's readability. Use an E, and give the button a better name than EEX or ×10^. | decided: P12 point 4; **built in R14** (`d614260`). Waiting for the owner's notes on the APK |
+| 30 | I don't like 10^ as the scientific notation: it needs so much space and only hurts the formula's readability. Use an E, and give the button a better name than EEX or ×10^. | decided: P12 point 4; **built in R14** (`d614260`). |
 | 31 | Leave x/y for now. | decided: P12 point 5 |
 | 32 | The menus have to be revamped in the step where we add the other menus (fractions etc.); add it as an open point and analyse all menus. | open point A; S2 |
 | 33 | I don't think we need quotes now that Python is gone. Decide. | decided: P12 point 7; built in R13 |
@@ -85,27 +85,11 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 |---|---|---|
 | 36 | An undo action: select some math, press delete, and be able to undo it. How easy is it, does it make sense, how would we trigger it? | accepted by the owner 2026-10-13, without rule 12's week: MathLive's undo already works on the line; P13, package R16 (Shift + Cancel, flick up) |
 
-## 2026-10-13: waiting for the owner's notes on R7
-
-The R7 APK: every list (Apps, the view menus, the Home Menu, a history row's long press) opens on one sheet. Try Menu + Enter to repeat the last pick, ◀/Esc out of a submenu (the path is in the title), and the Function Plot menu with no function defined (reason lines; does row 1 hide under the top fade?). Open defaults: decisions.md "Needs the user", R7.
-
-## 2026-10-13: waiting for the owner's notes on R9
-
-The R9 APK: flick up on a key = its shift function, flick down = its letter, in one motion (no wait); a bubble shows what the lift fires, sliding back cancels. Lock flicks: up on Shift, down/up on Alpha. Settings > Shift / Alpha taps counts the taps for the P7 point 4 decision. To judge: the 20 px arm and 12 px cancel distances, and the tick (key vibration on in Settings).
-
 ## 2026-10-13 (seventh round: a bug found while using the phone)
 
 | # | Owner's point | Triage |
 |---|---|---|
-| 37 | With some entry selected, ÷ divides the whole selection, but the abs key replaces it with an empty `\|□\|`. Does this happen for other functions too, and how do we fix it for the future of the implementation? | **Fixed in R17** (`c1efccf`): a selection is the argument of every key with an argument slot, and the power keys bracket it (decisions.md "A selection is the argument of the key"). Waiting for the owner's notes on the APK |
-
-## 2026-10-13: waiting for the owner's notes on R10
-
-The R10 APK: Tmpl opens the 6 × 3 template palette (arrows move, Enter or a tap inserts, ▶ walks the empty boxes). On an empty line a b/c toggles the last result 2.5 ↔ 5/2 and 3+4i ↔ polar; the Format key keeps Std/Sci/Eng/Pfx/Fix only. To check on the G2: the three unsure cells (evaluate-at r1c3, row vector r2c5, mixed number r3c2; G2 items 34–36), and whether the □ cells and the ′ ″ of DMS draw well in the WebView.
-
-## 2026-10-13: waiting for the owner's notes on R14
-
-The R14 APK: the exponent key's legend is now `ᴇ`. Type 1.5 ᴇ (−) 3: the line shows `1.5ᴇ-3` tight, one ⌫ removes the ᴇ, Enter gives 0.0015. On an empty line ᴇ starts with `1ᴇ`. Check that the WebView draws ᴇ on the key and on the line (if not: one line in `entry/macros.ts`).
+| 37 | With some entry selected, ÷ divides the whole selection, but the abs key replaces it with an empty `\|□\|`. Does this happen for other functions too, and how do we fix it for the future of the implementation? | **Fixed in R17** (`c1efccf`): a selection is the argument of every key with an argument slot, and the power keys bracket it (decisions.md "A selection is the argument of the key"). |
 
 ## 2026-10-14 (eighth round: two entry bugs found while using the phone)
 
@@ -143,11 +127,3 @@ The R14 APK: the exponent key's legend is now `ᴇ`. Type 1.5 ᴇ (−) 3: the l
 | # | Owner's point | Triage |
 |---|---|---|
 | 49 | "When you have a fraction in a fraction and press ▶, it does not go to the end of the inner fraction (inside the main fraction) but somewhere else, so you cannot add to the fraction; and pressing with the finger at the end does not put the cursor there either." | **feel, bugs F33 and F34** (backlog milestone 4a items 34 and 35). Two causes, both reproduced: ▶ jumps to any empty box ahead, so the end of the numerator is skipped while the denominator is empty (F34, also after a power or a root: x²/(+1)); a finger tap at the right edge of a fraction, root, power or bracket lands at the start of the line, since MathLive places the caret a second time on a touch lift from stale bounds (F33; 11 of 40 test points). Packages R42 and R43, rule in decisions.md "The cursor goes where the user aims", G2 item 57 |
-
-## 2026-10-15: waiting for the owner's notes on R22
-
-The R22 APK (F9): MathLive's own focus restore is off. Move the cursor with a drag on the arrow keys, switch away and back three times, fast; then the same after plain taps; then pull the notification shade down and up twice. The system keyboard must never open, and the next key types. On the desktop: `npm run dev` in Firefox, type on the line, Alt+Tab away and back, type on the hardware keyboard; if the keys no longer reach the line, say so (the follow-up is in decisions.md "Focus on return").
-
-## 2026-10-15: waiting for the owner's notes on R25a
-
-The R25a APK (F11, F12): every keypad gesture ends when the app goes away. Hold ⌫ with one finger, press home with the other hand, come back: the line is as it was and no system keyboard shows. Then hold 7, leave and come back, tap 2: the line is `2`, not `72`.

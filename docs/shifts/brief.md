@@ -8,7 +8,7 @@
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
-- **ron, one package at a time** (the owner's day work; each ends with an APK on the phone):
+- **ron, one package at a time** (the owner's day work):
   1. R23 (the entry bug F10).
   2. The entry-bug packages: R25b, R25c, R42 (a finger tap lands where it went down, F33), R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   3. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
@@ -49,7 +49,7 @@ The owner plans each night in advance, and the queue below is the next night's. 
 1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
 2. **A fresh agent for every step:** each package, each review, each fix round and each Opus pass is a new spawn. Never SendMessage to give an agent a second task. Prompts are the templates below with the blanks filled in, nothing more (the agents read the brief themselves).
 3. **Spawn in the foreground** (`run_in_background: false`): the call returns when the agent is done (rules section 4a: if a call still comes back as a background launch, log it and wait for its notification, never end the session). This is needed because henri_2 and later run headless, and a headless session ends with its turn. Do not poll, sleep, read diffs, run tests or builds, or read files beyond this brief and `.coord/log.md`.
-4. **No APKs, no devices:** skip section 8a step 5a and its feedback.md line. Nobody runs `adb` or `build.sh`. annabell is not used at night.
+4. **No devices:** nobody runs `adb` or `build.sh`. annabell is not used at night.
 5. **Models:** workers run Sonnet, effort medium (the model in the queue table wins if it says otherwise). Reviews run Sonnet, effort medium (section 8a says Opus; at night Sonnet). Opus passes run Opus, effort medium.
 6. **henri decides nothing.** A question, a blocked worker, a conflict or anything this section does not settle: log it and hand it to the next Opus pass (run that pass at once if the question blocks the queue). **Follow every Opus-pass recommendation as written.** Plan changes go to the owner through `docs/decisions.md` "Needs the user", written by the Opus pass.
 7. **Start-up:** `date`; `git switch phase-1 && git status` (must be clean; if not, stop and log); `tools/devlock.sh status`. henri_1 appends a section "<date> night" to `.coord/log.md`; a later henri logs `START henri_<n>` under it and reads the log from the last HANDOVER on. No roll call, no device watcher.
@@ -91,14 +91,14 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 22 | **Opus pass 6** (the last) on what came after pass 5, then its FIX packages | Opus | — | 20 min + fixes |
 | 23 | Shift report, then stop (the henri started after step 22) | henri_n | — | 10 min |
 
-Not at night: the rest of the ron lane (by day, with the owner's APK checks); devices (A4a, A4b); A6; A7 and A8 (the release path); sandra (S4–S8); G7 (it waits for S5); and G21 (it waits for G2 item 54 and the owner's decision on F29).
+Not at night: the rest of the ron lane (by day); devices (A4a, A4b); A6; A7 and A8 (the release path); sandra (S4–S8); G7 (it waits for S5); and G21 (it waits for G2 item 54 and the owner's decision on F29).
 
 ### Prompt templates (Agent tool; `run_in_background: false`; `effort: "medium"`)
 **Worker** (`subagent_type` = the agent in the table, `model` = its model):
 > Do package `<ID>` in docs/shifts/brief.md section 7, under the night-shift rules of section 0c. You already run in your own worktree: skip the `git worktree add` step of section 2 and run `git switch -c <branch> phase-1` there (or `git switch <branch>` if the branch exists, and continue from its last commit). End with the report commit of section 2, then reply in at most five lines: branch, last commit, done or not done.
 
 **Review** (`subagent_type: "general-purpose"`, `model: "sonnet"`):
-> Review and merge package `<ID>` (branch `<branch>`): follow section 8a of docs/shifts/brief.md with the night changes of section 0c (skip step 5a; for a docs-only package such as R15a, skip the test runs). Reply in at most ten lines: `MERGED <merge commit>`, or `NOT MERGED` with the findings (at most five, each with file:line and the fix), plus any item you put under "Needs the user".
+> Review and merge package `<ID>` (branch `<branch>`): follow section 8a of docs/shifts/brief.md with the night changes of section 0c (for a docs-only package such as R15a, skip the test runs). Reply in at most ten lines: `MERGED <merge commit>`, or `NOT MERGED` with the findings (at most five, each with file:line and the fix), plus any item you put under "Needs the user".
 
 **Fix round** (same agent and model as the package):
 > Fix the review findings for package `<ID>` on branch `<branch>` (docs/shifts/brief.md section 0c rules; you already run in your own worktree: `git switch <branch>` there): `<the findings, verbatim>`. End with a report commit, then reply in at most five lines.
@@ -154,7 +154,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-**No waiting for a tried APK** (owner, 2026-10-13): each ron package still ends with an APK on the owner's phone (section 8a step 5a), but the next package starts as soon as the review has merged it; the owner's notes come back through feedback.md as feel items. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R25b–R26b and R42 are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R25b–R26b and R42 are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
@@ -271,7 +271,6 @@ The milestone 5 packages that P15 brings (G15–G18, G25) are in 0e. Every "beha
 
 **Not a package:**
 - The MathLive bug report (review item 23) is in backlog "Needs the user" item 6.
-- The "check on the phone" list (item 22) is S7's step 5.
 - The largest-font check (item 19) is in A4a.
 
 ## 0g. The release path (owner, 2026-10-15)
@@ -327,7 +326,9 @@ End with a commit whose message body is the report. The review session reads it 
 - **Needs a decision:** anything left open.
 - **Not done:** what's missing.
 
-Then end your turn.
+Then end your turn with two commands for the owner, ready to paste, and nothing to try on a device:
+- the review: `claude --model opus "Review and merge package <ID>: follow section 8a of docs/shifts/brief.md."`
+- the next package once this one is merged: the next ID on "The path" (section 0) whose prerequisites will then be met, as section 0a "How to start a package" writes it, with the agent and model from its table.
 
 ## 7. Packages
 
@@ -452,14 +453,14 @@ Read: `EntryController.create()` in `app/src/entry/controller.ts`, `app/test/hel
 - A drag that selects leaves a selection, and a double tap selects a group, so neither is touched.
 - Alternative: clear the private `atomBoundsCache` in a capturing `pointerup` (one line, but it breaks on a MathLive upgrade). Report it upstream either way (backlog "Needs the user" item 6).
 
-**Left open (the owner judges on the APK):** after the fix, the strip right of an inner fraction that ends the outer numerator is about 8 px wide in the Pixel 7 profile (from the inner fraction's right edge to the end of the outer bar; a tap 10 px right lands after the whole fraction). A finger may miss it. Whether to widen it, for example so that a tap on the outer fraction's right part at the numerator's height lands at the end of the numerator, waits for the owner's feel of the R42 APK.
+**Left open:** after the fix, the strip right of an inner fraction that ends the outer numerator is about 8 px wide in the Pixel 7 profile (from the inner fraction's right edge to the end of the outer bar; a tap 10 px right lands after the whole fraction). A finger may miss it. Whether to widen it, for example so that a tap on the outer fraction's right part at the numerator's height lands at the end of the numerator, is left for the owner.
 
 **Commits:**
 1. **Tests** (`selection.spec.ts`, or a new `tap.spec.ts`):
    - The 8 lines above: a `page.touchscreen.tap` at each atom's right edge lands where `page.mouse.click` does. MathLive counts a second tap within 5 px and 500 ms as a double tap, so set the line again and wait 550 ms before each tap.
    - The nested case: tap right of ½, then 9 gives `\frac{\frac129}{□}`.
 2. **Fix.**
-3. **Report.** The owner's APK check: ÷ ÷ 1 ▶ 2, then tap just right of ½ and type 3: the 3 is in the top, after ½.
+3. **Report.**
 
 Gate: the new test fails on today's code; selection, gestures, entry and chips e2e green; start chunk unchanged (±0.1 kB).
 
@@ -842,7 +843,6 @@ Starts when R21b is merged and the owner connects the Tab One, with the S8+ for 
    - the largest system font size (Android Settings › Display): do the keypad, the status line and a sheet still fit? If not, the report names what breaks (deep-dive item 19);
    - if G24 is merged: the input its report names goes past the memory cap, ends in the "Out of memory" message, and the app stays up;
    - if R35 is merged: the first tap after a cold start vibrates.
-4. Leave an APK built from `phase-1` on the Tab One for the owner to try.
 
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20). The report ends with one line: whether R15b may start.
 
@@ -1100,7 +1100,7 @@ P14 is decided (decisions.md) with the owner's amendment (feedback #43): one fix
 6. **Write:**
    - `spec/unit-pad.yaml` with the result: schema 2, with a `user:` list holding the cells and their defaults.
    - r9 sections 1, 3 and 6, rewritten for the result.
-   - A static phone-size mockup, `docs/mockups/unit-pad.html` (light and dark, like `top-cluster.html`), so the owner can judge it on the phone.
+   - A static phone-size mockup, `docs/mockups/unit-pad.html` (light and dark, like `top-cluster.html`), so the owner can judge it.
    - In the report, the proposal "P14 arrangement" for decisions.md "Needs the user": the grid, the number of user cells and the curve behind it, K or °C, and the units that left the pad.
 
 Gate:
@@ -1733,14 +1733,8 @@ Steps:
 2. **Decisions:** "Decided proposals" keeps what still binds, as Choice, Why (one line) and Would change if. The rest moves to `docs/archive/decisions-2026-10.md`, read only when a decision is questioned.
 3. **Backlog:** one or two lines per open item, linking its package and decision. No causes and no steps to reproduce: they live in the package file.
 4. **docs/04:** "today" statements that are now history (section 1.2's table, 2.1's "Marked today" column) are made current or cut.
-5. **One "Check on the phone" list** at the top of feedback.md: every open judgment that waits for the owner's hands, each with a box. It covers:
-   - R7's defaults, R9's thresholds, R10's cells, R14's ᴇ;
-   - F8 in the WebView, K1, the 48 px rows, P12 B;
-   - each new APK's line from section 8a step 5a.
-
-   The scattered "waiting for the owner's notes" sections move into it.
-6. **Archive:** the cleanup audit and the finished shift reports go to `docs/archive/`.
-7. **Budgets**, which A6's gate checks: the brief ≤ 25 kB, backlog ≤ 20 kB, decisions ≤ 40 kB, docs/04 ≤ 70 kB, a package file ≤ 6 kB.
+5. **Archive:** the cleanup audit and the finished shift reports go to `docs/archive/`.
+6. **Budgets**, which A6's gate checks: the brief ≤ 25 kB, backlog ≤ 20 kB, decisions ≤ 40 kB, docs/04 ≤ 70 kB, a package file ≤ 6 kB.
 
 Nothing current may be lost: the report lists every moved section and where it went, and the review checks three facts at random from each file.
 
@@ -1825,5 +1819,5 @@ The reviewer works in the main checkout on `phase-1`:
    - remove the worktree, then `git branch -d`
    - commit with `git commit -s`
    - never push
-5a. **After merging a ron package (4a), build and install the owner's APK** from the main checkout: `./build.sh --engine-dir engine/giac/_out/gsl --no-units --install` (the script takes the host-cpu lock). Install only `io.github.buerlino.pascaline`, on the owner's phone (the only device the owner connects for this). Then tell the owner what to try, in three lines at most, and append a line to `docs/feedback.md` "waiting for the owner's notes on <package>".
-6. When a merge completes milestone 4: write `docs/shifts/<date>-m4-report.md` (rules section 11, step 5) and add milestone 4 to docs/02 section 12. The report says what the owner should try on the APK: marks, Find, copy and paste, and the empty-line Ans.
+6. When a merge completes milestone 4: write `docs/shifts/<date>-m4-report.md` (rules section 11, step 5) and add milestone 4 to docs/02 section 12.
+7. **End with the next command** for the owner, ready to paste, and nothing to try on a device: when merged, the start command of the next package on "The path" (section 0) whose prerequisites are now met, as section 0a "How to start a package" writes it, with the agent and model from its table; when not merged, the fix command of step 4 with the findings filled in.
