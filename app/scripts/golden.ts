@@ -65,6 +65,10 @@ interface Case {
   /** parser.yaml: entries typed before this one (e.g. a function definition, L6). precision.yaml: inputs evaluated
    *  first in the same view and engine (a stored variable, decisions M4-7). */
   before?: string[];
+  /** precision.yaml, kind cas: inputs run first in Home on the same engine (a value stored there, G20). */
+  beforeHome?: string[];
+  /** precision.yaml, kind cas: the stored names the CAS result must list as used (G20); [] means none. */
+  uses?: string[];
   /** parser.yaml: the input must be rejected by the parser (docs/04 2.3 #1). */
   error?: boolean;
   /** parser.yaml: the entry's chip table (\res, \ans, \const), keyed as in app/src/input/chips.ts. */
@@ -169,7 +173,7 @@ const LOOKS_NUMERIC = /^-?(\d+(\.\d+)?|\.\d+)(E[+-]?\d+)?([+-](\d+(\.\d+)?(E[+-]
 
 async function stagePrecision(): Promise<void> {
   const cs = cases("precision.yaml");
-  const host = new EngineHost(await freshGiac());
+  const shared = new EngineHost(await freshGiac());
   let active = 0;
   let activePass = 0;
   const pending: string[] = [];
@@ -179,6 +183,8 @@ async function stagePrecision(): Promise<void> {
     const problems: string[] = [];
     let mark: MarkInfo | null;
     let shown: string;
+    // A case that stores names in Home (`beforeHome`) gets its own engine, so the stored x does not reach later cases.
+    const host = c.beforeHome?.length ? new EngineHost(await freshGiac()) : shared;
     const setting = c.settings?.digits ?? 12;
     // The digits the result is shown with: the setting, or what the input asked for (CAS evalf(x,n), M4-6).
     const digits = c.settings?.shown ?? setting;
@@ -187,8 +193,13 @@ async function stagePrecision(): Promise<void> {
     const input = c.latex !== undefined ? latexToGiac(c.latex) : c.input!;
     if (c.kind === "cas") {
       const cs = { ...defaultCasSettings, digits: setting };
+      for (const b of c.beforeHome ?? []) host.home(giacOf(b), { ...defaultHomeSettings, digits: setting });
       for (const b of c.before ?? []) host.cas(giacOf(b), cs);
       const r = host.cas(input, cs).result;
+      if (c.uses) {
+        const got = (r.uses ?? []).map((u) => u.name).join(",");
+        if (got !== c.uses.join(",")) problems.push(`uses [${got}], expect [${c.uses.join(",")}]`);
+      }
       shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
       // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it); a
       // true or false resting on a float is approximate (R18f1).

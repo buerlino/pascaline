@@ -12,7 +12,7 @@ the ⚠, and every other case must not.
 | File | Cases | What |
 |---|---|---|
 | `home.yaml` | 144 | exact-first Home, STD 12 digits (3 `assumed`: tie rule, G2 item 8; 1 `device`: G2 item 16); every case has a `mark:` (67 `=`, 77 `≈`); 21 are the accuracy cases of Find tier-0 functions, derived and checked by `oracle.py` |
-| `precision.yaml` | 75 (74 active, 1 `pending`) | docs/04 section 2.3 regression list (#2–#6, #9) and the 20/30-digit `oracle` cases; `settings: { digits: N }`; `kind: cas` for the CAS view; mark-only cases (no `expect`) for results whose true digits are out of reach |
+| `precision.yaml` | 80 (79 active, 1 `pending`) | docs/04 section 2.3 regression list (#2–#6, #9) and the 20/30-digit `oracle` cases; `settings: { digits: N }`; `kind: cas` for the CAS view (`beforeHome:` runs inputs in Home first, `uses:` lists the stored names the result must report, G20); mark-only cases (no `expect`) for results whose true digits are out of reach |
 | `solve.yaml` | 42 | Solve: 1-D (nearest root to the guess), systems (`kind: system`), polynomials (`kind: poly`) |
 | `function.yaml` | 25 | Function app: Plot analysis (root, extremum, intersection, slope, area) and Num table rows |
 | `bench.yaml` | 55 | benchmark inputs (timing set; 14 `derived` values checked) |
