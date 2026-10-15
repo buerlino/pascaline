@@ -128,6 +128,9 @@ export class EntryController {
     mf.smartMode = false;
     mf.inlineShortcuts = {};
     mf.removeExtraneousParentheses = true;
+    // R27c: a typed key takes no style from its neighbour. MathLive's default gave a 7 next to an upright letter that
+    // letter's style, on the side its hidden style bias picked: 2\mathrm{i} 7 became \mathrm{i7}, one unknown name.
+    mf.onInsertStyle = () => ({});
     mf.macros = { ...mf.macros, ...ENTRY_MACROS };
     const enforce = (): void => this.forceNoSystemKeyboard();
     void customElements.whenDefined("math-field").then(() => requestAnimationFrame(enforce));
