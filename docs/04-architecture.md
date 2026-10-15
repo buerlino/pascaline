@@ -116,7 +116,7 @@ Each item becomes a regression case before its fix (CLAUDE.md). Values marked `o
 | 11 | Home, keys `2` `.` `5` `.` `3` Enter: the parser gives `2.5*.3` (probe 2026-10-14) | `0.75`, marked `=` | not a number: an error (`derived`) | R29 (backlog F24) |
 | 12 | Home, tap the result 0.5, then `3`: `\res{1}{0.5}3` → `(1/2)*3` | `1.5`; the line shows the chip and a 3 with no × | an error naming the fix (the G2 pastes the result as text, so its 3 makes 0.53) | R29 (F25) |
 | 13 | Home, one-line entry: `1/2x` → `1/(2*x)`; `6÷2(1+2)` → `6/(2*(1+2))` | 1/(2x); `1` | (1/2)·x and 9: the G2's one-line rule (G2 item 6) | R30 (F26) |
-| 14 | Hardware keyboard `1e-3`: the parser gives `1*exp(1)-3` | `≈ -0.281718171541` | 0.001 (`derived`) | R31 (F27) |
+| 14 | Hardware keyboard `1e-3`: the parser gives `1*exp(1)-3` | `≈ -0.281718171541` | 0.001 (`derived`) | fixed (R31): `e` after a number's digits is ᴇ |
 | 15 | CAS after Home `3 ▶ x`: `int(x^2,x)`; `factor(x^2-1)` | `9*x`; `8`, with no sign that x held 3 | the answer for the stored x, saying so | G20, R32 (F28) |
 | 16 | DEG: `exp(i*90)`; `exp(i*pi)` | `= i`; `-1` | −0.448073616129+0.893996663601·i (`derived`) if `exp` ignores the angle mode, as `exp(i*pi)` = −1 already does | G21, after G2 item 54 (F29) |
 

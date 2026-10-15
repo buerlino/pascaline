@@ -75,7 +75,7 @@
   - **`\log` and `\ln`:** any ⌫ inside their subscript deletes the whole operator (line 31863).
   - **Arrays (matrix, piecewise):** ⌫ at the start of a cell does nothing. ⌫ right after the array deletes it whole.
 - **A placeholder is an atom:** ⌫ in an empty box deletes the □ itself, so the box leaves the LaTeX (`EQ(,□)`, `\lim_{\to□}`, a matrix cell with nothing in it).
-- **Hardware keys go straight to MathLive:** a physical Backspace or Delete never passes through `EntryController.run`. Only `^` in one-line mode, Enter and Escape are caught (`app/src/entry/controller.ts` 113–131), so a ⌫ fix in `run` misses them (backlog F16).
+- **Hardware keys take the keypad's path** (R26b, R31): Backspace, Delete and every printable ASCII key go through `app/src/entry/hwkeys.ts` (a capture `keydown` on the field, loaded with MathLive). A character a keypad key types presses that key through App `press`; `e`/`E` after a number's digits is ᴇ; letters type themselves; characters no key types do nothing. Enter and Escape are caught by the controller; Ctrl/Alt/Meta combinations and non-ASCII characters still go to MathLive.
 - **◀ and ▶ visit every offset:**
   - Between a function name and its `\left` (`\sin‸\left(2\right)`; a 7 there is read as sin(7·2)).
   - Inside `\operatorname{…}` (EQ, approx), inside `\text{if }` and inside `\mathrm{d}`.

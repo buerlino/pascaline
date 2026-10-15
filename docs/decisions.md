@@ -7,6 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-15 R31: `'` and `"` from a hardware keyboard. OPEN, optional.** Today they do nothing, since no keypad key types them. They could insert the symbols palette's ′ and ″ (minutes, seconds). **Recommendation:** leave them dead until the owner reaches for them on a desktop.
 - **2026-10-14 F22: 10ˣ after a digit (package R27a). OPEN, after G2 item 48.** `5 10ˣ 2` shows `510²` and computes 260 100, where 5·10² = 500 was likely meant. Options:
   - (a) after a digit, the key inserts `×10^□`;
   - (b) the parser refuses a number that runs into a 10ˣ (needs a marked group in the LaTeX);
@@ -255,6 +256,14 @@ Newest first. Where an entry changed an earlier document, that document now carr
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-15 Hardware keys take the keypad's path (F27, R31)
+- **Choice:**
+  1. A hardware `-` is the − key (sub), so on an empty line after a result it starts with Ans, like `+ * / ^`; the (−) key stays on the keypad.
+  2. ASCII characters no key types (`\ [ ] { } ' " $ % & ? @ ~` and the backtick) do nothing. `'` and `"` are not minutes and seconds, `%` is not /100: no keypad key types them.
+- **Why:** the G2's flow, and the Ans chip is visible on the line; a line typed on a hardware keyboard must parse as the same keys pressed on the keypad.
+- **Alternatives:** for 1, (−) on an empty line.
+- **Would change if:** for 1, owner use on a desktop; for 2, a key or palette item that types one of these characters.
 
 ### 2026-10-15 The cursor goes where the user aims (F33, F34; R42, R43; G2 item 57 to confirm)
 - **Choice:**

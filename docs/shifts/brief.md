@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  1. The entry-bug packages: R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -31,7 +31,6 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29, R30, G20.
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
   - **Day packages sit next to the code they share:**
-    - R31 goes right after R26b, which owns the same hardware-key handler.
     - R34 ends the entry-bug group (the same files, `main.ts` and `controller.ts`).
     - R35 comes before R21a, whose gate is the start-chunk budget: 1.34 kB gzip are left (52.66 of 54 kB, after R25c, 2026-10-15).
   - **Trust features after the code they build on:**
@@ -238,7 +237,6 @@ The milestone 5 packages that P15 brings (G15–G18, G25) are in 0e. Every "beha
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23; and G18 if P15 holds | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
-| R31 | Hardware keys take the keypad's path | F27 | day | ron, Sonnet | `p1/ron-m4a-hwkeys` | R26b (the same handler) | ~0.5 d |
 | R34 | The line survives a kill | F30 | day | ron, Sonnet | `p1/ron-m4a-keepline` | R43 | ~0.5 d |
 | R35 | A lighter start chunk | review item 11 | day | ron, Sonnet | `p1/ron-m4a-slim` | R34 | ~0.5 d |
 | R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | R11 and G20 | ~0.5 d |
@@ -1316,32 +1314,6 @@ Commits in this order:
 2. **Fix:** find where Giac applies the angle mode to `exp` of an imaginary argument, and evaluate `exp` (and `e^`) without it, by a rewrite in the host or a Giac setting. If the fix is a Giac patch, follow `engine/giac/patches/README.md` and write the upstream report for the owner.
 
 Gate: the golden gate; the trig cases in DEG unchanged.
-
-### ron, R31: hardware keys take the keypad's path (F27), branch `p1/ron-m4a-hwkeys`
-Backlog F27. Starts when R26b is merged: R26b routes the hardware Backspace and Delete through `EntryController.run`, and this package uses the same handler. Read:
-- R26b's report and code;
-- `app/src/entry/controller.ts`: the `keydown` listeners (lines 111–131) and `inlineShortcuts = {}` (line 106);
-- the keys' primary actions in `spec/keyboard.yaml`;
-- `tools/probes/parse.ts`.
-
-**Behaviour today** (a desktop, or a Bluetooth keyboard on the phone or the Tab One). MathLive takes the keys; ours only Enter, Escape and ^ in line mode:
-- `1e-3` → `1*exp(1)-3` = −0.281718171541, marked `≈`;
-- `2.5e3` → `2.5*exp(1)*3`, and `1E-3` → `1*E-3`;
-- `pi` → `p*i`, and `sqrt(2)` → `s*q*r*t*(2)`;
-- `2**3` → a syntax error.
-
-S4's plan tests libraries in the desktop web app, so this path will be used.
-
-Commits in this order:
-1. **Tests first** (`app/test/hwkeys.spec.ts`, `page.keyboard`):
-   - `1e-3` Enter → 0.001 `=`, with `1ᴇ-3` on the line; `2.5E3` → 2500 `=`;
-   - a grid over every printable ASCII character. Each one either does what the keypad key with that character does (digits, `.`, `+ - * / ^ ( ) ,`) or types itself as a name letter, as today. None may leave a line that parses to something other than the same keys pressed on the keypad.
-2. **Fix:** route hardware `keydown` through `run()`, as R26b does for Backspace.
-   - `e` or `E` right after a number's digits (or its point) inserts ᴇ (`\emark`).
-   - `*` is ×, and `/` is the ÷ key (a stacked fraction in textbook entry).
-   - Letters stay letters. A function's name is reached through Find (R4a), on the desktop as on the phone.
-
-Gate: the hwkeys e2e; the softkeyboard, gestures and keys e2e green; start chunk unchanged.
 
 ### ron, R34: the line survives a kill (F30), branch `p1/ron-m4a-keepline`
 Backlog F30. Starts when R43 is merged, so the entry files have settled. Read:
