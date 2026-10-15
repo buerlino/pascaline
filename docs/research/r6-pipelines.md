@@ -77,7 +77,7 @@
     - A script emptied by ⌫ is removed.
     - ∫'s integrand and variable are not branches: they stand on the operator's own level, after it (`\mathrm{d}` is one atom, `\,` another). Our way around it: `bigOp()` through `deleteAtBoxes()` (R26f).
   - **`\log` and `\ln`:** any ⌫ inside their subscript deletes the whole operator (line 31863).
-  - **Arrays (matrix, piecewise):** ⌫ at the start of a cell does nothing. ⌫ right after the array deletes it whole.
+  - **Arrays (matrix, piecewise):** ⌫ at the start of a cell does nothing. ⌫ right after the array deletes it whole. Each cell is a branch of the array atom, in reading order, from its empty sentinel one level deeper; piecewise's condition cells start with the three atoms `\text{i}`, `\text{f}`, `\text{ }`. Our way around it: `table()` through `deleteAtBoxes()` (R26g).
 - **A placeholder is an atom:** ⌫ in an empty box deletes the □ itself, so the box leaves the LaTeX (`EQ(,□)`, `\lim_{\to□}`, a matrix cell with nothing in it). The last atom of a fraction's part is followed by the next part's sentinel on the same level, not by a lower one (`endsBox()`).
 - **Hardware keys take the keypad's path** (R26b, R31): Backspace, Delete and every printable ASCII key go through `app/src/entry/hwkeys.ts` (a capture `keydown` on the field, loaded with MathLive). A character a keypad key types presses that key through App `press`; `e`/`E` after a number's digits is ᴇ; letters type themselves; characters no key types do nothing. Enter and Escape are caught by the controller; Ctrl/Alt/Meta combinations and non-ASCII characters still go to MathLive.
 - **◀ and ▶ visit every offset:**

@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R26g, R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  1. The entry-bug packages: R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   4. R15b (the top cluster, after A4a's report).
@@ -128,7 +128,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R26g | Bug F20: matrices, vectors, piecewise | ron, **Opus** | `p1/ron-m4a-bksparray` | R26f; G2 item 51 | ~0.5 d |
 | R26h | Bug F21: log base, EQ, DMS, evaluate-at bounds | ron, **Opus** | `p1/ron-m4a-bkspmarks` | R26g; G2 item 49 | ~0.5 d |
 | R27a | Bug F22: 10ˣ after a digit joins the number | ron, **Opus** | `p1/ron-m4a-tenpow` | G2 item 48 answered and the owner's pick of the fix | ~0.5 d |
 | R27b | Bug F23: cursor stops where no box is | ron, **Opus** | `p1/ron-m4a-cursorstops` | R26h (same file); G2 item 50 | ~0.5–1 d |
@@ -142,7 +141,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26g–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26h–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
@@ -348,7 +347,7 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### The entry-bug packages R26g–R27b and R43 (bugs F20–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
+### The entry-bug packages R26h–R27b and R43 (bugs F21–F23, found by probing 2026-10-14; F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
 - Backlog milestone 4a items 21–35 have the summary.
 - The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
@@ -357,35 +356,6 @@ These are small packages, one concern each, each with its own short reading list
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R26g: matrices, vectors and piecewise (bug F20), branch `p1/ron-m4a-bksparray`
-Templates: the 2×2 matrix, the row and column vectors, piecewise (all Tmpl cells). Read: `app/src/entry/delete.ts`, the grid, decisions.md "⌫ and Del keep a template whole" points 2–5.
-
-**Behaviour today:**
-- Each of them on an empty line, then ⌫: the first cell's □ is deleted (`\begin{pmatrix} & □\\ …`), and ⌫ does nothing more. The cursor stays in the empty cell.
-- ⌫ at the start of a cell with content (`2 3 ◀ ◀ ⌫`) does nothing.
-- ⌫ right after a filled matrix deletes the whole matrix in one press: `5`, the matrix, `2`, cursor to the end, ⌫ → `5`. Undo brings it back.
-- Del from before it does the same.
-- In piecewise, the cursor also stops inside `\text{if }` (R27b).
-
-**Cause:**
-- `ArrayAtom`: `onDelete` handles only multiline arrays, through `deleteRow` (`mathlive.mjs` 31709).
-- A cell is a branch, and ⌫ at the start of a branch is not handled.
-- Placeholders are deleted as atoms.
-
-**Fix:**
-- An emptied cell keeps its □ (point 2).
-- ⌫ at the start of a cell steps to the end of the cell before it, in reading order; Del is the mirror (point 3).
-- At the first cell, point 4 applies: the empty template goes in one ⌫, and a filled one is selected first.
-- ⌫ right after the template steps into its last cell (point 5).
-- **Open:** whether ⌫ at the start of a row should remove an empty row, as MathLive's `deleteRow` does for multiline arrays. Default: no, the template's shape stays (2×2, 1×2, 2×1, two lines).
-
-**Commits:**
-1. **Tests:** the grid's F20 cases and the cases above.
-2. **Fix.**
-3. **Report** with the G2 item 51 answer.
-
-Gate: bksp-grid F20; tmpl e2e; vitest.
 
 ### ron, R26h: log base, EQ, DMS and the evaluate-at bounds (bug F21), branch `p1/ron-m4a-bkspmarks`
 Templates: `\log_{#?}\left(#0\right)`, `\operatorname{EQ}\left(#0,#?\right)`, `#?\degree#?\prime#?\doubleprime`, `\left.#0\right|_{#?=#?}`. Read: `app/src/entry/delete.ts`, the grid, decisions.md "⌫ and Del keep a template whole" points 1–4.
