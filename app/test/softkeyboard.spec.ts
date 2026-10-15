@@ -120,3 +120,22 @@ for (const [start, via] of cycles) {
     await expect.poll(() => entryValue(page)).toContain("2");
   });
 }
+
+// Regression (F13, R25c): MathLive focuses its keyboard sink 60 ms after mf.focus() on a blurred field, in a timer
+// dropFocus cannot cancel. A key pressed just before the app is left therefore focused the field while away, and
+// Android opened the system keyboard on return. A focus event that arrives while the app is away must be dropped.
+test("a key pressed just before leaving does not focus the entry while away", async ({ page }) => {
+  await tap(page, ["d1"]);
+  await leaveAndReturn(page, "blur-hidden");
+  await page.waitForTimeout(150);
+  expect(await editableFocused(page), "blurred after the first leave").toBe(false);
+  await page.evaluate(() => {
+    void window.pascaline.entry.run({ kind: "type", text: "2" });
+    window.dispatchEvent(new Event("blur"));
+    Object.defineProperty(document, "hidden", { value: true, configurable: true });
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.waitForTimeout(200);
+  expect(await editableFocused(page), "nothing editable is focused 200 ms after the hide").toBe(false);
+});
