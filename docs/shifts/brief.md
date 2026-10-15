@@ -4,13 +4,13 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8 and R22. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1 and R18f2), F8, R22 and R25a. The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work; each ends with an APK on the phone):
   1. R23 (the entry bug F10).
-  2. The entry-bug packages: R25a, R25b, R25c, R42 (a finger tap lands where it went down, F33), R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
+  2. The entry-bug packages: R25b, R25c, R42 (a finger tap lands where it went down, F33), R26a, R26b, R31 (hardware keys, F27), R26c–R26h, R27b, R43 (▶ stops at the end of a box that holds a template, F34), then R34 (the line survives a kill, F30). R27a comes when G2 item 48 is answered.
   3. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   4. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark), once G20 and G22 are merged; if they are not yet, the lane goes on and they follow.
   5. R15b (the top cluster, after A4a's report).
@@ -34,7 +34,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **Day packages sit next to the code they share:**
     - R31 goes right after R26b, which owns the same hardware-key handler.
     - R34 ends the entry-bug group (the same files, `main.ts` and `controller.ts`).
-    - R35 comes before R21a, whose gate is the start-chunk budget: 1.6 kB gzip are left (52.41 of 54 kB, 2026-10-14).
+    - R35 comes before R21a, whose gate is the start-chunk budget: 1.47 kB gzip are left (52.53 of 54 kB, after R25a, 2026-10-15).
   - **Trust features after the code they build on:**
     - R32 and R36 add a line to the history rows R11 builds.
     - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
@@ -131,8 +131,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
 | R23 | Bug F10: ⌫ stuck at a bracket | ron, **Opus** | `p1/ron-m4a-bksp` | now; G2 item 44 answered, or start on the default | ~1 d |
-| R25a | Bugs F11, F12: gestures end when the app goes away | ron, Sonnet | `p1/ron-m4a-awaygest` | now | ~0.5 d |
-| R25b | Bug F14: ⌫ held with a mouse | ron, Sonnet | `p1/ron-m4a-mouserepeat` | R25a (same file) | ~0.25 d |
+| R25b | Bug F14: ⌫ held with a mouse | ron, Sonnet | `p1/ron-m4a-mouserepeat` | now | ~0.25 d |
 | R25c | Bug F13: no focus while the app is away | ron, Sonnet | `p1/ron-m4a-focusguard` | now | ~0.25 d |
 | R42 | Bug F33: a finger tap lands where it went down | ron, Sonnet | `p1/ron-m4a-tapcaret` | R25c | ~0.25 d |
 | R26a | The ⌫ grid test over every template (F10, F15–F21) | ron, Sonnet | `p1/ron-m4a-bkspgrid` | R23 | ~0.5 d |
@@ -155,7 +154,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-**No waiting for a tried APK** (owner, 2026-10-13): each ron package still ends with an APK on the owner's phone (section 8a step 5a), but the next package starts as soon as the review has merged it; the owner's notes come back through feedback.md as feel items. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R25a–R26b and R42 are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+**No waiting for a tried APK** (owner, 2026-10-13): each ron package still ends with an APK on the owner's phone (section 8a step 5a), but the next package starts as soon as the review has merged it; the owner's notes come back through feedback.md as feel items. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R26c–R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R25b–R26b and R42 are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
@@ -375,7 +374,7 @@ Backlog F10 (cause and the stuck cases there); the rule is decisions.md "⌫ at 
 4. **Report** with the G2 item 44 answer, if the owner gave one. Not in R23: the hardware Backspace (R26b), ⌫ right after a closing bracket (R26c), the other templates (R26d–R26h). Shared-file text: backlog F10 "Done", the decisions entry if the build differs, r6 section 7 if MathLive behaved otherwise.
 Gate: `bksp.spec.ts` green (it fails without the fix), `selection.spec.ts`, `undo.spec.ts`, `entry.spec.ts`, `chips.spec.ts`, `tmpl.spec.ts`, gestures e2e green; vitest and the golden gate (parser changed); start chunk within 0.5 kB gzip.
 
-### The entry-bug packages R25a–R27b, R42 and R43 (bugs F11–F23, found by probing 2026-10-14; F33 and F34, the owner's report of 2026-10-15)
+### The entry-bug packages R25b–R27b, R42 and R43 (bugs F13–F23, found by probing 2026-10-14; F33 and F34, the owner's report of 2026-10-15)
 These are small packages, one concern each, each with its own short reading list. Read only what your package names.
 - Backlog milestone 4a items 21–35 have the summary.
 - The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away" and "The cursor goes where the user aims".
@@ -384,32 +383,6 @@ These are small packages, one concern each, each with its own short reading list
 - The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
 - **Tests first** in every package: the new test fails on today's code. Then the fix, then the report commit (section 2).
 - A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R25a: gestures end when the app goes away (bugs F11, F12), branch `p1/ron-m4a-awaygest`
-Read: `app/src/keyboard/Keypad.svelte` (the gesture code, lines 81–236), `app/src/keyboard/gestures.ts` (`Repeat`), `app/test/helpers.ts` (`touch`), `app/test/gestures.spec.ts`, decisions.md "Nothing takes focus while the app is away" point 1.
-
-**Behaviour today:**
-- **F11:**
-  1. Type `1`…`9`, then hold ⌫: `touch(page, "bksp")`, with no lift.
-  2. Fire the window `blur`, then hide the page (`document.hidden` true, then `visibilitychange`).
-  3. The auto-repeat keeps running: the line is `12345678` at the hide and empty 1 s later.
-  4. Every repeat calls `run()`, which calls `mf.focus()`. The keyboard sink (`SPAN.ML__keyboard-sink`) is focused while away and still on return. On Android that opens the system keyboard (K0). Same result with MathLive's restore on or off, so R22 does not fix it.
-- **F12:** `touch(page, "d7")` with no lift, hide and show the page, then tap 2. The line is `72`. The 7's gesture stayed in the `gestures` map, and the next `pointerdown` finishes it (`down()`, line 151, `finish(g)` fires its key). A trackpad touch left behind the same way fires its arrow on the next key.
-
-**Reachable on a phone?** Only if Android sends no `pointercancel` for a touch that is down while the app leaves (a second finger on the nav button, or the home gesture). Not checked on a device. The fix is cheap either way, and it also covers a lost `pointerup`.
-
-**Fix:**
-- Add a `cancelAll()` in Keypad.svelte: it runs `cancel()` on every gesture, clears the map and hides the bubble.
-- Call it on `visibilitychange` when hidden, on `pagehide`, and on window `blur` when `matchMedia("(pointer: coarse)")` matches.
-- Add the listeners in the component's `$effect` and remove them on destroy.
-- Nothing fires and ⌫ stops, as on `pointercancel`.
-
-**Commits:**
-1. **Tests** (`gestures.spec.ts`): F11 (the line is unchanged 1 s after the hide, and nothing editable is focused) and F12 (`2`, not `72`). The same two with window `blur` only, no hide. A trackpad touch interrupted by a hide fires no arrow on the next key.
-2. **Fix.**
-3. **Report.** The owner's APK check: hold ⌫ with one finger, press the home button with the other hand, then come back. The line is as it was, and no system keyboard shows.
-
-Gate: gestures, flicks and softkeyboard e2e green; start chunk unchanged (±0.1 kB).
 
 ### ron, R25b: ⌫ held with a mouse (bug F14), branch `p1/ron-m4a-mouserepeat`
 Read: `app/src/keyboard/Keypad.svelte` `down()` (lines 146–172) and `cancelled()`; `app/test/gestures.spec.ts`.
@@ -864,7 +837,7 @@ Starts when R21b is merged and the owner connects the Tab One, with the S8+ for 
    - Android back (R21b) closes Settings and an open sheet, and leaves the app from an empty Home;
    - K1's `touch-action: none`: no scroll or zoom side effects;
    - the flick thresholds (20 px arm, 12 px cancel): misfires in a minute of typing;
-   - whether Android sends `pointercancel` for a touch held while the app leaves (R25a's open question);
+   - whether Android sends `pointercancel` for a touch held while the app leaves (F11 and F12 are fixed in the app either way);
    - ᴇ drawn on the S8+'s Chrome 101 WebView;
    - the largest system font size (Android Settings › Display): do the keypad, the status line and a sheet still fit? If not, the report names what breaks (deep-dive item 19);
    - if G24 is merged: the input its report names goes past the memory cap, ends in the "Out of memory" message, and the app stays up;

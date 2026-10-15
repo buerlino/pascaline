@@ -147,3 +147,7 @@ The R14 APK: the exponent key's legend is now `ᴇ`. Type 1.5 ᴇ (−) 3: the l
 ## 2026-10-15: waiting for the owner's notes on R22
 
 The R22 APK (F9): MathLive's own focus restore is off. Move the cursor with a drag on the arrow keys, switch away and back three times, fast; then the same after plain taps; then pull the notification shade down and up twice. The system keyboard must never open, and the next key types. On the desktop: `npm run dev` in Firefox, type on the line, Alt+Tab away and back, type on the hardware keyboard; if the keys no longer reach the line, say so (the follow-up is in decisions.md "Focus on return").
+
+## 2026-10-15: waiting for the owner's notes on R25a
+
+The R25a APK (F11, F12): every keypad gesture ends when the app goes away. Hold ⌫ with one finger, press home with the other hand, come back: the line is as it was and no system keyboard shows. Then hold 7, leave and come back, tap 2: the line is `2`, not `72`.
