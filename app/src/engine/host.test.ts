@@ -6,6 +6,7 @@ import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { formatComplex } from "./format.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { latexToGiac } from "../input/latex-to-giac.ts";
 
 describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   let host: EngineHost;
@@ -84,5 +85,27 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     host.cas("x^2", defaultCasSettings);
     expect(host.eval("pasans").output).toBe("1/2");
     expect(host.eval("pcasans").output).toBe("x^2");
+  });
+
+  // R18f3 (F35): a test the rule leaves open stays as typed, also when a later step meets it again: the result path
+  // (regroup) and an Ans chip that carries it. Giac's own `==` would compare the expressions: 0, 1 or false.
+  const CLOSED = "((cos(pi/7)-cos(2*pi/7)+cos(3*pi/7))==(1/2))"; // true in exact maths (derived), simplify cannot tell
+  const ans = (value: string): string => latexToGiac("\\ans", { chips: { ans: { value, exact: true } } });
+  it("Home and CAS: an open test with a product stays as typed, never Giac's 0 (derived)", () => {
+    expect(host.home(latexToGiac("xy==2"), defaultHomeSettings).result.display).toBe("((x*y)==2)");
+    expect(host.cas(latexToGiac("xy==2"), defaultCasSettings).result.text).toBe("((x*y)==2)");
+  });
+  it("Home and CAS: Ans holding an open test stays as typed (derived)", () => {
+    expect(host.home(ans("((x*y)==2)"), defaultHomeSettings).result.display).toBe("((x*y)==2)");
+    expect(host.home(ans(CLOSED), defaultHomeSettings).result.display).toBe(CLOSED);
+    expect(host.cas(ans(CLOSED), defaultCasSettings).result.text).toBe(CLOSED);
+    expect(host.home(ans("(x*y)<>2"), defaultHomeSettings).result.display).toBe("(x*y)<>2");
+  });
+  it("Home: Ans holding an open test is decided once its names have values (derived)", () => {
+    host.home("pasw:=2", defaultHomeSettings);
+    expect(host.home(ans("(pasw==2)"), defaultHomeSettings).result.display).toBe("true");
+    expect(host.home(ans("pasw<>3"), defaultHomeSettings).result.display).toBe("true");
+    expect(host.home(ans("((pasw*pasw)==5)"), defaultHomeSettings).result.display).toBe("false");
+    host.home("purge(pasw)", defaultHomeSettings);
   });
 });
