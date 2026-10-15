@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// ⌫ and Del at a template (R23, bug F10; R26c, bug F15; R26d, bug F17; decisions.md "⌫ at a bracket" and "⌫ and Del
-// keep a template whole"). MathLive's own delete at the start of a `\left…\right` body turns the opening bracket into
-// `\left.` and is stuck there, right after a pair it turns the closing bracket into `\right.`, and a deleted base leaves
-// its exponent on whatever stands before it; this module takes those presses first. Public MathLive API only:
-// offsets, `getElementInfo`, `selection`, `position`, `getValue`, `insert`. Plain TS; R26e–R26h extend it to every
-// other template.
+// ⌫ and Del at a template (R23, bug F10; R26c, bug F15; R26d, bug F17; R26e, bug F18; decisions.md "⌫ at a bracket"
+// and "⌫ and Del keep a template whole"). MathLive's own delete at the start of a `\left…\right` body turns the opening
+// bracket into `\left.` and is stuck there, right after a pair it turns the closing bracket into `\right.`, a deleted
+// base leaves its exponent on whatever stands before it, and a fraction or a root loses an emptied box or joins its
+// parts; this module takes those presses first. Public MathLive API only: offsets, `getElementInfo`, `selection`,
+// `position`, `getValue`, `insert`. Plain TS; R26f–R26h extend it to the other templates.
 //
 // How MathLive numbers a line: offset o is the cursor position after atom o. An atom's parts (a pair's body, a
 // script's branches) come before the atom itself, one level deeper, and each branch starts with an empty sentinel.
@@ -49,6 +49,7 @@ export function deleteAtTemplate(mf: Field, dir: -1 | 1): boolean {
   const c = cursor(mf, dir);
   if (c === undefined) return false;
   if (deleteAtPower(mf, c, dir)) return true;
+  if (deleteAtBoxes(mf, c, dir)) return true;
   const t = dir < 0 ? fromStart(mf, c) : fromEnd(mf, c);
   if (t) return removeTemplate(mf, t, dir);
   if (!mf.selectionIsCollapsed) return false;
@@ -299,10 +300,211 @@ function removeExponent(mf: Field, p: Power): void {
 function removePower(mf: Field, p: Power): true {
   mf.selection = { ranges: [[p.start, p.q]] };
   const d = depthAt(mf, p.q);
-  const fills = d > 0 && latexAt(mf, p.start) === "" && (p.q === mf.lastOffset || depthAt(mf, p.q + 1) < d);
+  const fills = d > 0 && startsBox(mf, p.start) && endsBox(mf, p.q);
   if (fills) mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
   else mf.executeCommand("deleteBackward");
   return true;
+}
+
+// ---- fractions and roots (R26e, F18) -------------------------------------------------------------------------------
+// MathLive keeps a fraction or a root as one atom whose boxes (branches) come before it, one level deeper, each from
+// its empty sentinel: `5\frac{2}{3}` is 1 `5`, 2 (numerator), 3 `2`, 4 (denominator), 5 `3`, 6 the fraction; an index
+// comes before the radicand. Its own delete removes an emptied box (`\sqrt[3]{8}` minus the 3 is `\sqrt8`), joins
+// the parts at the start of a denominator, leaves a root at the start of its index, and deletes ∂ marks alone.
+// Points 2-5 of "⌫ and Del keep a template whole" instead, for ÷ and a b/c, √, ⁿ√, ∂ (its ∂ marks start its boxes)
+// and the mixed number (its whole part, the digits or □ right before `\tfrac`, is its first box).
+
+/** One box, as positions: `from` its sentinel, `s` where its content starts (after a ∂ mark), `e` its last offset. */
+interface Box {
+  from: number;
+  s: number;
+  e: number;
+}
+
+/** A fraction or a root with its boxes, as offsets. */
+interface BoxTemplate {
+  /** The position before the template and the offset of its atom: the range that holds all of it. */
+  start: number;
+  end: number;
+  boxes: Box[];
+  /** True for the mixed number: its first box is the whole part, on the template's own level. */
+  whole: boolean;
+  /** The box whose content stays when ⌫ in the first box removes the template (point 4); none for ⁿ√ (brief R26e). */
+  main?: number;
+  /**
+   * The box a #@ key took from the line (a fraction's numerator, a mixed number's whole part). When it alone holds
+   * something, ⌫ at the start of any other box removes the template and keeps it: `5 ÷ ⌫` gives 5, one ⌫ per key
+   * press, as an empty exponent on a typed base (the owner, 2026-10-15, R26d).
+   */
+  arg?: number;
+}
+
+const DIGIT = /^\d$/;
+
+/** The fraction or root whose atom is at `q`, or undefined. */
+function boxTemplate(mf: Field, q: number): BoxTemplate | undefined {
+  if (q < 1 || q > mf.lastOffset) return undefined;
+  const l = latexAt(mf, q);
+  if (!/^\\(?:t?frac|sqrt)(?![A-Za-z])/.test(l)) return undefined;
+  const d = depthAt(mf, q);
+  const a = atomStart(mf, q);
+  const sentinels: number[] = [];
+  for (let o = a + 1; o < q; o++) if (depthAt(mf, o) === d + 1 && latexAt(mf, o) === "") sentinels.push(o);
+  if (sentinels.length === 0) return undefined;
+  const boxes = sentinels.map((s, i) => ({ from: s, s, e: (sentinels[i + 1] ?? q) - 1 }));
+  const t = { start: a, end: q, boxes, whole: false };
+  if (l.startsWith("\\sqrt")) return boxes.length === 1 ? { ...t, main: 0 } : t;
+  // ∂: both parts start with the mark, which belongs to the template
+  if (boxes.length === 2 && boxes.every((b) => b.e > b.s && latexAt(mf, b.s + 1) === "\\partial")) {
+    for (const b of boxes) b.s += 1;
+    return { ...t, main: 0 };
+  }
+  if (l.startsWith("\\tfrac")) {
+    // the mixed number's whole part: a □, or the digits before the fraction
+    let s = a;
+    if (latexAt(mf, a) === PLACEHOLDER) s = a - 1;
+    else while (s > 0 && depthAt(mf, s) === d && DIGIT.test(latexAt(mf, s))) s--;
+    // (no whole part at all, as when a mixed number went in on another's □: its whole box is empty, of no width)
+    return { start: s, end: q, boxes: [{ from: s, s, e: a }, ...boxes], whole: true, main: 0, arg: 0 };
+  }
+  return { ...t, main: 0, arg: 0 };
+}
+
+/** The template owning the box sentinel at `o` (the first atom after it that sits higher up). */
+function ownerOf(mf: Field, o: number): BoxTemplate | undefined {
+  const d = depthAt(mf, o);
+  if (d === 0 || latexAt(mf, o) !== "") return undefined;
+  let q = o + 1;
+  while (q <= mf.lastOffset && depthAt(mf, q) >= d) q++;
+  const t = boxTemplate(mf, q);
+  return t?.boxes.some((b) => b.from === o) ? t : undefined;
+}
+
+/** The fraction or root with a box that holds position `c` (the innermost), and that box's index. */
+function locate(mf: Field, c: number): { t: BoxTemplate; k: number } | undefined {
+  const d = depthAt(mf, c);
+  // a mixed number's whole part, on the template's own level: the digits or □ after c, then the fraction
+  let o = c + 1;
+  while (o <= mf.lastOffset && depthAt(mf, o) === d && (DIGIT.test(latexAt(mf, o)) || latexAt(mf, o) === PLACEHOLDER)) o++;
+  const m = o <= mf.lastOffset && depthAt(mf, o) === d + 1 ? ownerOf(mf, o) : undefined;
+  const w = m?.whole ? m.boxes[0] : undefined;
+  if (m && w && c >= w.from && c <= w.e) return { t: m, k: 0 };
+  // the box below the line: its sentinel is the nearest offset at or before c on c's level
+  if (d === 0) return undefined;
+  o = c;
+  while (o > 0 && !(depthAt(mf, o) === d && latexAt(mf, o) === "")) o--;
+  const t = ownerOf(mf, o);
+  const k = t ? t.boxes.findIndex((b) => b.from === o) : -1;
+  return t && k >= 0 ? { t, k } : undefined;
+}
+
+/** True if position `o` starts a box: its sentinel, or the ∂ mark that opens a box of ∂. */
+function startsBox(mf: Field, o: number): boolean {
+  const d = depthAt(mf, o);
+  if (d === 0) return false;
+  const l = latexAt(mf, o);
+  return l === "" || (l === "\\partial" && latexAt(mf, o - 1) === "" && depthAt(mf, o - 1) === d);
+}
+
+const boxEmpty = (mf: Field, b: Box): boolean => b.e === b.s || (b.e === b.s + 1 && latexAt(mf, b.e) === PLACEHOLDER);
+
+/** The cursor at the end (start) of box `b`; a box that holds only □ gets it selected, as after the key. */
+function toBox(mf: Field, b: Box, at: "start" | "end"): void {
+  if (b.e === b.s + 1 && latexAt(mf, b.e) === PLACEHOLDER) mf.selection = { ranges: [[b.s, b.e]] };
+  else mf.position = at === "start" ? b.s : b.e;
+}
+
+/**
+ * ⌫ (dir −1) or Del (dir +1) at a fraction or a root. `c` is the cursor, or the edge of a selected □. True: handled.
+ * - right after (Del: right before) the template: into its last (first) box, nothing deleted (point 5);
+ * - at the start of a box but the first (Del: the end of a box but the last): to the end of the box before (the start
+ *   of the next one), nothing deleted (point 3), unless only the key's argument holds something: then the template
+ *   goes and the argument stays;
+ * - at the start of the first box (Del: the end of the last): the template goes when every box is empty, keeps the
+ *   main box's content when only it holds something, and is selected first otherwise (point 4);
+ * - on a box's only atom: □ shows again, selected (point 2).
+ * Anything else (a character inside a box with more than one) is MathLive's own delete.
+ */
+function deleteAtBoxes(mf: Field, c: number, dir: -1 | 1): boolean {
+  const sel = !mf.selectionIsCollapsed;
+  if (!sel) {
+    if (dir < 0) {
+      const t = boxTemplate(mf, c);
+      if (t) {
+        toBox(mf, t.boxes[t.boxes.length - 1] as Box, "end");
+        return true;
+      }
+    } else {
+      // (a mixed number starts with its whole part: Del there deletes a typed digit, or acts in the □, below)
+      const t = c < mf.lastOffset ? ownerOf(mf, c + 1) : undefined;
+      if (t?.start === c && !t.whole) {
+        toBox(mf, t.boxes[0] as Box, "start");
+        return true;
+      }
+    }
+  }
+  const at = locate(mf, c);
+  if (!at) return false;
+  const { t, k } = at;
+  const b = t.boxes[k] as Box;
+  const n = t.boxes.length;
+  const empty = boxEmpty(mf, b);
+  if (dir < 0 && (c <= b.s || (empty && c <= b.e))) {
+    // (a mixed number's typed whole part: the cursor before its digits is on the line, not in a box)
+    if (t.whole && k === 0 && !empty && !sel) return false;
+    if (k > 0) {
+      if (onlyArg(mf, t)) keep(mf, t, t.arg as number, "after");
+      else toBox(mf, t.boxes[k - 1] as Box, "end");
+    } else firstOrLast(mf, t, "before");
+    return true;
+  }
+  if (dir > 0 && !sel && !empty && c < b.s) {
+    // Del before a ∂ mark acts after it: the mark goes only with its template
+    mf.position = b.s;
+    if (!deleteAtTemplate(mf, 1)) mf.executeCommand("deleteForward");
+    return true;
+  }
+  if (dir > 0 && (c === b.e || empty)) {
+    if (k < n - 1) toBox(mf, t.boxes[k + 1] as Box, "start");
+    else firstOrLast(mf, t, "after");
+    return true;
+  }
+  // the box's only atom: □ shows again
+  if (sel || b.e !== b.s + 1 || atomStart(mf, b.e) !== b.s) return false;
+  if (dir < 0 ? c !== b.e : c !== b.s) return false;
+  mf.selection = { ranges: [[b.s, b.e]] };
+  mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
+  return true;
+}
+
+/** True if the key's argument box holds something and every other box is empty. */
+function onlyArg(mf: Field, t: BoxTemplate): boolean {
+  return t.arg !== undefined && t.boxes.every((b, i) => (i === t.arg) !== boxEmpty(mf, b));
+}
+
+/** ⌫ at the start of the first box, or Del at the end of the last (point 4). */
+function firstOrLast(mf: Field, t: BoxTemplate, mode: "before" | "after"): void {
+  const held = t.boxes.map((b) => !boxEmpty(mf, b));
+  if (!held.some(Boolean)) removeBoxes(mf, t);
+  else if (t.main !== undefined && held.every((h, i) => h === (i === t.main))) keep(mf, t, t.main, mode);
+  else mf.selection = { ranges: [[t.start, t.end]] };
+}
+
+/** Replace the template by the content of box `k`, the cursor before or after it. */
+function keep(mf: Field, t: BoxTemplate, k: number, mode: "before" | "after"): void {
+  const b = t.boxes[k] as Box;
+  const content = mf.getValue(b.s, b.e, "latex");
+  mf.selection = { ranges: [[t.start, t.end]] };
+  mf.insert(content, { format: "latex", selectionMode: mode });
+}
+
+/** Remove the whole template; a box it filled shows □ again. */
+function removeBoxes(mf: Field, t: BoxTemplate): void {
+  mf.selection = { ranges: [[t.start, t.end]] };
+  const d = depthAt(mf, t.end);
+  const fills = d > 0 && depthAt(mf, t.start) === d && startsBox(mf, t.start) && endsBox(mf, t.end);
+  if (fills) mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
+  else mf.executeCommand("deleteBackward");
 }
 
 /**
@@ -319,7 +521,7 @@ function keepSelectedBox(mf: Field): boolean {
   const b = Math.max(...r[0]);
   const d = depthAt(mf, a);
   if (d === 0 || latexAt(mf, a) !== "" || b <= a || depthAt(mf, b) !== d) return false;
-  if (b !== mf.lastOffset && depthAt(mf, b + 1) >= d) return false;
+  if (!endsBox(mf, b)) return false;
   for (let o = a + 1; o < b; o++) if (depthAt(mf, o) < d) return false;
   if (mf.getValue(a, b, "latex") === PLACEHOLDER) return false;
   mf.insert(PLACEHOLDER, { format: "latex", selectionMode: "placeholder" });
@@ -338,6 +540,17 @@ function cursor(mf: Field, dir: -1 | 1): number | undefined {
 }
 
 const depthAt = (mf: Field, o: number): number => mf.getElementInfo(o)?.depth ?? 0;
+
+/**
+ * True if offset `o` is the last of its box: the line ends, the level drops, or the next box of the same template
+ * starts (its sentinel, on the same level: a numerator's last atom is followed by the denominator's sentinel).
+ */
+function endsBox(mf: Field, o: number): boolean {
+  if (o >= mf.lastOffset) return true;
+  const d = depthAt(mf, o);
+  const n = depthAt(mf, o + 1);
+  return n < d || (n === d && d > 0 && latexAt(mf, o + 1) === "");
+}
 const latexAt = (mf: Field, o: number): string => mf.getElementInfo(o)?.latex ?? "";
 
 /** The position before atom `o` (its parts skipped). */
@@ -422,6 +635,6 @@ function template(mf: Field, q: number): Template {
 /** True if the template is all of a box below the line (a fraction's part, an outer body): it leaves □ behind. */
 function fillsBox(mf: Field, t: Template): boolean {
   const d = depthAt(mf, t.end);
-  if (d === 0 || depthAt(mf, t.start) !== d || latexAt(mf, t.start) !== "") return false;
-  return t.end === mf.lastOffset || depthAt(mf, t.end + 1) < d;
+  if (d === 0 || depthAt(mf, t.start) !== d || !startsBox(mf, t.start)) return false;
+  return endsBox(mf, t.end);
 }
