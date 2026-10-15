@@ -225,3 +225,27 @@ test("EQ: ⌫ at the start of its first value with the second one filled selects
   expect(await bksp(page)).toBe("\\operatorname{EQ}\\left(2,3\\right)");
   expect(await selected(page)).toBe("\\operatorname{EQ}\\left(2,3\\right)");
 });
+
+// R26b (F16): the hardware Backspace and Delete take the same path as the on-screen keys
+test("hardware Backspace: log log, then four presses reach the empty line", async ({ page }) => {
+  await tap(page, ["log", "log"]);
+  await page.keyboard.press("Backspace");
+  expect(await entryValue(page)).toBe(EMPTY_LOG);
+  await page.keyboard.press("Backspace");
+  expect(await entryValue(page)).toBe("");
+  await page.keyboard.press("Backspace");
+  await page.keyboard.press("Backspace");
+  expect(await entryValue(page)).toBe("");
+});
+
+test("hardware Delete is the mirror: sin 2 3 then Delete keeps 23; log log Delete Delete empties the line", async ({ page }) => {
+  await tap(page, ["sin", "d2", "d3"]);
+  await page.keyboard.press("Delete");
+  expect(await entryValue(page)).toBe("23");
+  await page.evaluate(() => window.pascaline.entry.clear());
+  await tap(page, ["log", "log"]);
+  await page.keyboard.press("Delete");
+  expect(await entryValue(page)).toBe(EMPTY_LOG);
+  await page.keyboard.press("Delete");
+  expect(await entryValue(page)).toBe("");
+});
