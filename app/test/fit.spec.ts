@@ -65,6 +65,16 @@ test.describe("at 412 × 915", () => {
     await open(page);
   });
 
+  test("keys never move: Settings (a page over everything) open and closed again", async ({ page }) => {
+    const before = await keyBoxes(page);
+    await tap(page, ["shift", "app"]);
+    await expect(page.getByTestId("settings")).toBeVisible();
+    expect(await keyBoxes(page)).toEqual(before);
+    await tap(page, ["cancel"]);
+    await expect(page.getByTestId("settings")).toBeHidden();
+    expect(await keyBoxes(page)).toEqual(before);
+  });
+
   for (const name of ["apps", "home menu", "mode", "tmpl", "shift 6", "shift 9"])
     test(`keys never move: ${name} open and closed again`, async ({ page }) => {
       const before = await keyBoxes(page);

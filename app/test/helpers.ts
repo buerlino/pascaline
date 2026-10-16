@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 
 /**
  * Tap keys by their id in spec/keyboard.yaml (d0..d9, div, frac, shift, enter, ...). A key under an open pick sheet
- * (R21a: the sheet is drawn over the maths rows) cannot be touched: the sheet's row or cell is where it was, and
+ * (R21a: the sheet is drawn over the maths rows; R21b: the Settings page over everything) cannot be touched: the sheet's row or cell is where it was, and
  * fit.spec.ts taps those. Its key path stays for a hardware keyboard (docs/05 2 rule 1), so such a key is pressed the
  * way a hardware key is (R31: the keypad key with that character), in the current Shift/Alpha state.
  */
@@ -14,7 +14,7 @@ export async function tap(page: Page, ids: string[]): Promise<void> {
       if (!k) return false;
       const r = k.getBoundingClientRect();
       const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-      return el !== null && !k.contains(el) && el.closest('[role="menu"]') !== null;
+      return el !== null && !k.contains(el) && el.closest('[role="menu"], [data-testid="settings"]') !== null;
     }, id);
   const press = (id: string): Promise<void> => page.evaluate((id) => window.pascaline.entry.onKey(id, undefined as never), id);
   for (const id of ids) {

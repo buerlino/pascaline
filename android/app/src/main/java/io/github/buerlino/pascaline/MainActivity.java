@@ -6,6 +6,7 @@ import android.os.Process;
 import android.os.SystemClock;
 import android.util.Log;
 import android.webkit.WebView;
+import androidx.activity.OnBackPressedCallback;
 import com.getcapacitor.BridgeActivity;
 
 /**
@@ -20,12 +21,14 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(PascalineHapticsPlugin.class); // local plugin; must come before super.onCreate
         if (!BuildConfig.MEASURE) {
             super.onCreate(savedInstanceState);
+            installBack();
             return;
         }
         long procStartEpoch = System.currentTimeMillis() - (SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime());
         long t0 = System.currentTimeMillis();
         Log.i(TAG, "proc-start epoch=" + procStartEpoch);
         super.onCreate(savedInstanceState);
+        installBack();
         long t1 = System.currentTimeMillis();
         Log.i(TAG, "activity-created epoch=" + t1 + " sinceProc=" + (t1 - procStartEpoch) + " superOnCreateMs=" + (t1 - t0));
         // `am start --es path "/?bench=1"` loads that page instead (device_run.py bench)
@@ -35,5 +38,25 @@ public class MainActivity extends BridgeActivity {
             final String url = getBridge().getAppUrl() + (path.startsWith("/") ? path : "/" + path);
             wv.post(() -> wv.loadUrl(url));
         }
+    }
+
+    /**
+     * Android back acts as Esc for the open layer (R21b, backlog C8). Capacitor has no back handling of its own: the page
+     * pushes a history entry while Settings or a sheet is open (app/src/input/backLayer.ts), and back pops it with the
+     * WebView's goBack(); with nothing open canGoBack() is false and the default runs, so the app leaves.
+     */
+    private void installBack() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                WebView wv = getBridge() != null ? getBridge().getWebView() : null;
+                if (wv != null && wv.canGoBack()) {
+                    wv.goBack();
+                    return;
+                }
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+            }
+        });
     }
 }

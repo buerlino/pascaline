@@ -129,6 +129,8 @@ export const en = {
   "mode.entry": "Entry",
   "mode.settings": "Settings",
   "settings.title": "Settings",
+  "settings.close": "Close settings",
+  "settings.vibration": "Vibration",
   "angle.rad": "Radians",
   "angle.deg": "Degrees",
   "format.std": "Standard",

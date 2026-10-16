@@ -91,6 +91,7 @@ requestAnimationFrame(() =>
     const idle = (f: () => void): void => (typeof requestIdleCallback === "function" ? void requestIdleCallback(f) : void setTimeout(f, 200));
     idle(() => void loadNative());
     idle(() => void import("./views/modeSheet.ts")); // fetched when idle, so the first Mode or Settings open is not slower
+    idle(() => void Promise.all([import("./views/SettingsPage.svelte"), import("./views/settingsPage.svelte.ts")])); // the Settings page (R21b), likewise
     idle(() => void loadSheetView().catch(() => {})); // the sheet's view, likewise (R46)
     // The history is read after the keypad is up, so it does not compete with the first paint. The kept line comes
     // after it (an Ans on it is the restored last result) and only into the view it was typed in.
