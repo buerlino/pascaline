@@ -16,7 +16,9 @@
   import { resultToEntry } from "./render/insertable.ts";
   import type { HistoryItem, Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
-  import { modeItems, settingsItems } from "./views/modeSheet.ts";
+  // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
+  let modeSheet: typeof import("./views/modeSheet.ts") | null = null;
+  const loadModeSheet = async (): Promise<typeof import("./views/modeSheet.ts")> => (modeSheet ??= await import("./views/modeSheet.ts"));
   import Sheet from "./views/Sheet.svelte";
   import { sheetFlick, sheetKey } from "./views/sheetKeys.ts";
   import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
@@ -119,15 +121,17 @@
   }
 
   /** Shift + Home/CAS: the Settings sheet (docs/05 3.4). It opens on its first row, whatever was picked last. */
-  function openSettings(): void {
+  async function openSettings(): Promise<void> {
+    const m = await loadModeSheet();
     picked = null;
-    shell.showMenu(t("settings.title"), settingsItems(session), { remember: false });
+    shell.showMenu(t("settings.title"), m.settingsItems(session), { remember: false });
   }
   /** Shift + CAS, or a tap on a status chip (`at`: the row to start on): the Mode sheet. Without `at` it starts on
    *  Angle, so Shift + CAS, ▶, Enter always switches the angle unit (3 keys). */
-  function openMode(at?: string): void {
+  async function openMode(at?: string): Promise<void> {
+    const m = await loadModeSheet();
     picked = null;
-    shell.showMenu(t("mode.title"), modeItems(session, openSettings), { remember: false, at });
+    shell.showMenu(t("mode.title"), m.modeItems(session, () => void openSettings()), { remember: false, at });
   }
 
   function special(name: Extract<ActionBody, { kind: "special" }>["name"]): void {
@@ -157,10 +161,10 @@
         session.setView("cas");
         break;
       case "settings":
-        openSettings();
+        void openSettings();
         break;
       case "mode":
-        openMode();
+        void openMode();
         break;
       case "apps":
         shell.toggleApps();
@@ -444,8 +448,8 @@
         aria-label={t("status.angle", { angle: t(`angle.${angle}`) })}
         onclick={() => session.setAngle(angle === "rad" ? "deg" : "rad")}>{angle === "rad" ? "RAD" : "DEG"}</button>
       <span class="pill" aria-label={t("status.format", { format: t(`format.${session.settings.format}`) })}>
-        <button type="button" class="chip" data-testid="chip-format" onclick={() => openMode("format")}>{session.settings.format.toUpperCase()}</button>
-        <button type="button" class="chip" data-testid="chip-digits" onclick={() => openMode("digits")}>{session.settings.digits}</button>
+        <button type="button" class="chip" data-testid="chip-format" onclick={() => void openMode("format")}>{session.settings.format.toUpperCase()}</button>
+        <button type="button" class="chip" data-testid="chip-digits" onclick={() => void openMode("digits")}>{session.settings.digits}</button>
       </span>
       {#if session.shiftLock}<span class="mod" data-testid="mod-shift">⇧🔒</span>{:else if session.shift}<span class="mod" data-testid="mod-shift">⇧</span>{/if}
       {#if session.alphaLock}<span class="mod" data-testid="mod-alpha">α🔒</span>{:else if session.alpha}<span class="mod" data-testid="mod-alpha">α</span>{/if}
