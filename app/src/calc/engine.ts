@@ -15,6 +15,7 @@ import {
 } from "../engine/types.ts";
 import { WorkerEngine } from "../engine/workerEngine.ts";
 import { userNamesOf } from "../engine/defs.ts";
+import { mark } from "../marks.ts";
 import { CalcCancelled, type Calc, type CalcSettings, type CasOutcome, type HomeOutcome, type UserName } from "./port.ts";
 
 export class EngineCalc implements Calc {
@@ -24,7 +25,9 @@ export class EngineCalc implements Calc {
   }
 
   async ready(): Promise<void> {
-    await this.engine.ready();
+    const t = await this.engine.ready();
+    // measurement builds only (marks.ts): what tools/device_run.py reads as instantiateMs, initMs and replayMs
+    mark("engine-timings", { instantiateMs: t.instantiateMs, initMs: t.initMs, replayMs: t.replayMs, readyMs: t.readyMs });
   }
 
   async home(giac: string, s: CalcSettings): Promise<HomeOutcome> {

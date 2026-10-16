@@ -6,12 +6,14 @@
 #   tools/stay-awake.sh <serial> --restore  # put the saved settings back
 #
 # Only touches: global stay_on_while_plugged_in, system screen_off_timeout. Originals are saved
-# to .coord/devices/<serial>.orig the first time and never overwritten.
+# to the main checkout's .coord/devices/<serial>.orig the first time and never overwritten.
 set -euo pipefail
 
 SERIAL="${1:?usage: stay-awake.sh <serial> [--restore]}"
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COORD="${PASCALINE_COORD:-$REPO/.coord}"
+# the main checkout's .coord, from any worktree (as devlock.sh does), so --restore works wherever it runs
+COMMON="$(git -C "$REPO" rev-parse --path-format=absolute --git-common-dir)"
+COORD="${PASCALINE_COORD:-$(dirname "$COMMON")/.coord}"
 DIR="$COORD/devices"
 mkdir -p "$DIR"
 ORIG="$DIR/$SERIAL.orig"
