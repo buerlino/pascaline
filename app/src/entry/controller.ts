@@ -70,6 +70,8 @@ export class EntryController {
   private hwKey: typeof import("./hwkeys.ts").hardwareKey | undefined;
   /** After an arrow step, step on to where a key types into a box (entry/stops.ts, R27b): loaded with MathLive. */
   private settle: typeof import("./stops.ts").settle | undefined;
+  /** ▶ in a template: to the next empty box, or the end of the box it leaves (entry/stops.ts, R10, R43): loaded with MathLive. */
+  private nextBox: typeof import("./stops.ts").nextBox | undefined;
   private pendingValue: string | undefined;
   /** The values of the chips on the line (docs/04 3.6); keys as in input/chips.ts. */
   private table: ChipTable = {};
@@ -99,6 +101,7 @@ export class EntryController {
       this.deleteAt = d.deleteAtTemplate;
       this.hwKey = h.hardwareKey;
       this.settle = s.settle;
+      this.nextBox = s.nextBox;
       return this.create(m.MathfieldElement);
     });
     return this.ready;
@@ -280,7 +283,7 @@ export class EntryController {
       return;
     }
     const mf = this.mf;
-    if (a.kind === "cmd" && a.name === "moveToNextChar" && this.nextBox(mf)) {
+    if (a.kind === "cmd" && a.name === "moveToNextChar" && this.nextBox?.(mf)) {
       mf.focus();
       return;
     }
@@ -332,18 +335,6 @@ export class EntryController {
     const [a, b] = mf.selection.ranges[0] ?? [mf.position, mf.position];
     const o = Math.min(a, b);
     return o > 0 && /^[\d.]$/.test(mf.getElementInfo(o)?.latex ?? "");
-  }
-
-  /**
-   * ▶ in a template (R10): while an empty box is still ahead of the cursor, ▶ goes to it, as the arrows walk the
-   * boxes on the reference. MathLive's own step would stop on every mark between boxes (∂, d, the evaluate-at bar,
-   * the brackets of a body) and type into the wrong place. With no empty box ahead, ▶ is the plain step. True: moved.
-   */
-  private nextBox(mf: MathfieldElement): boolean {
-    // (an empty box the cursor stands in is not part of what follows it: an empty box is skipped, as on the reference)
-    if (!mf.getValue(mf.position, mf.lastOffset, "latex").includes("\\placeholder")) return false;
-    mf.executeCommand("moveToNextPlaceholder");
-    return true;
   }
 
   /**

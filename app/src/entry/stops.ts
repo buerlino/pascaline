@@ -4,22 +4,19 @@
 // as sin(7·2) with no mark, and one inside EQ, approx, NOT, AND, the `if ` of piecewise or the d of ∫ broke the name.
 // After an arrow step the controller calls `settle`, which keeps stepping the same way while the cursor is not at a
 // stop (▲ and ▼ settle to the left: before the name they landed in). Loaded with MathLive, outside the start chunk.
-// Public MathLive API only; offsets as in delete.ts (an atom's parts come before it, one level deeper).
+// ▶ in a template goes on to the next empty box (R10), but stops first at the end of the box that holds the template it
+// leaves (R43, bug F34): `nextBox`. Public MathLive API only; offsets and boxes as in boxes.ts (an atom's parts come
+// before it, one level deeper).
 import type { MathfieldElement } from "mathlive";
-import { NAME } from "./delete.ts";
+import { DIFF, NAME, THIN, depthAt, dmsMark, endsBox, latexAt } from "./boxes.ts";
 
-type Field = Pick<MathfieldElement, "getElementInfo" | "lastOffset" | "position" | "selectionIsCollapsed" | "executeCommand">;
+type Field = Pick<MathfieldElement, "getElementInfo" | "lastOffset" | "position" | "selectionIsCollapsed" | "executeCommand" | "getValue">;
 
 /** The atom right after the cursor is a mark, not a box: piecewise's `if `, ∂, the evaluate-at subscript (∫'s d: `intD`). */
 const MARK_AHEAD = /^(?:\\text\{|\\partial(?![A-Za-z])|_)/;
 /** An atom with parts but no box: a name drawn from letters, the i and eˣ keys' upright letter. The cursor never goes in. */
 const NO_BOX = /^\\(?:operatorname\{|imaginaryI$|exponentialE$)/;
-/** ∫'s d is the template's `\,\mathrm{d}` (as in delete.ts); another upright letter (an i or e in a recalled line) is an atom. */
-const THIN = "\\,";
-const DIFF = "\\mathrm{d}";
-
-const latexAt = (mf: Field, o: number): string => mf.getElementInfo(o)?.latex ?? "";
-const depthAt = (mf: Field, o: number): number => mf.getElementInfo(o)?.depth ?? 0;
+// (∫'s d is the template's `\,\mathrm{d}`, THIN and DIFF; another upright letter, an i or e in a recalled line, is an atom.)
 
 /** The atom right after position `c` on its level, or "" where its box ends (a next box starts with "" too). */
 function atomAfter(mf: Field, c: number): string {
@@ -75,4 +72,33 @@ export function settle(mf: Field, cmd: string): void {
     mf.executeCommand(step);
     if (mf.position === at) return;
   }
+}
+
+/**
+ * ▶ in a template (R10): while an empty box is still ahead of the cursor, ▶ goes to it, as the arrows walk the boxes on
+ * the reference. MathLive's own step would stop on every mark between boxes (∂, d, the evaluate-at bar, the brackets
+ * of a body) and type into the wrong place. With no empty box ahead, ▶ is the plain step (false: not handled here).
+ * R43 (F34): a step that leaves the template the cursor is in and lands at the end of the box that holds it stops there
+ * first: ÷ x xʸ 2 ▶ + 1 is (x²+1)/□, no longer x²/(+1); the next ▶ goes on to the empty box. True: moved.
+ */
+export function nextBox(mf: Field): boolean {
+  // (an empty box the cursor stands in is not part of what follows it: an empty box is skipped, as on the reference)
+  const c = mf.position;
+  if (!mf.getValue(c, mf.lastOffset, "latex").includes("\\placeholder")) return false;
+  if (leavesToBoxEnd(mf, c)) mf.position = c + 1;
+  else mf.executeCommand("moveToNextPlaceholder");
+  return true;
+}
+
+/**
+ * True if the plain step from `c` (the cursor, or the end of a selected □) leaves the template `c` is in and lands at
+ * the end of a box (endsBox: before the next box's sentinel, a mark such as EQ's comma, ∫'s `\,` d or a DMS mark, or
+ * where the level drops). That step goes over the template's own atom, which comes right after its last box: a
+ * fraction, a root, a power, a bracket pair or a script, one level up (the depth drops), or DMS's ″ on its own level.
+ * Elsewhere R10's jump stays: in `\frac{x^{2}+1}{□}` the + follows the power in the same box.
+ */
+function leavesToBoxEnd(mf: Field, c: number): boolean {
+  const p = c + 1;
+  if (p > mf.lastOffset || !endsBox(mf, p)) return false;
+  return depthAt(mf, p) < depthAt(mf, c) || dmsMark(mf, p)?.end === p;
 }
