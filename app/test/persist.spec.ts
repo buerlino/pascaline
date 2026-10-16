@@ -97,7 +97,7 @@ test("a half-typed line with a fraction and a result chip survives a kill (F30)"
   expect(await entryValue(third)).toBe("");
 });
 
-test("Home and CAS each keep their own line, and an empty line stays empty", async ({ page }) => {
+test("Home and CAS share one line, kept with the view it was typed in; an empty line stays empty", async ({ page }) => {
   await open(page);
   await tap(page, ["d2", "add", "d3"]);
   await hide(page);
@@ -135,6 +135,57 @@ test("keys typed while the kept line loads go after it", async ({ page }) => {
   await next.waitForFunction(() => window.pascaline?.entry.field !== undefined, undefined, { timeout: 20_000 });
   await next.evaluate(() => window.pascaline.entry.ready);
   expect(await entryValue(next)).toBe("234");
+});
+
+// R34 review: a hide before the kept line is on the field must leave the stored line alone (the field's value is
+// still empty), so a second kill does not lose it.
+test("a hide while the field still loads after a kill keeps the stored line", async ({ page }) => {
+  await open(page);
+  await tap(page, ["d2", "add", "d3"]);
+  await hide(page);
+  // the second start: MathLive held back 3 s, so the store answers first and the hide falls in the wait
+  const slow = await page.context().newPage();
+  await slow.route(/\.vite\/deps\/mathlive/, async (r) => {
+    await new Promise((res) => setTimeout(res, 3000));
+    await r.continue();
+  });
+  await slow.goto("/?engine=fake");
+  await slow.locator('[data-key="d3"]').waitFor();
+  await slow.waitForTimeout(800);
+  expect(await slow.evaluate(() => window.pascaline.entry.field)).toBeUndefined();
+  await hide(slow);
+  // killed while hidden: a third start on the same store
+  const third = await relaunch(slow, "engine=fake");
+  expect(await entryValue(third)).toBe("2+3");
+});
+
+test("a kept line the store hands over after the 1 s cap is kept for the next start", async ({ page }) => {
+  await open(page);
+  await tap(page, ["d2", "add", "d3"]);
+  await hide(page);
+  // the second start: the store answers the read of the kept line after 1.5 s, past the field's 1 s wait
+  const late = await page.context().newPage();
+  await late.addInitScript(() => {
+    const get = IDBObjectStore.prototype.get;
+    IDBObjectStore.prototype.get = function (this: IDBObjectStore, key: IDBValidKey | IDBKeyRange) {
+      const req = get.call(this, key);
+      if (key !== "entry") return req;
+      const desc = Object.getOwnPropertyDescriptor(IDBRequest.prototype, "onsuccess");
+      Object.defineProperty(req, "onsuccess", {
+        set(fn: ((ev: Event) => void) | null) {
+          desc?.set?.call(req, fn && ((ev: Event) => setTimeout(() => fn.call(req, ev), 1500)));
+        },
+        get: () => desc?.get?.call(req),
+      });
+      return req;
+    };
+  });
+  await open(late, "engine=fake");
+  expect(await entryValue(late)).toBe(""); // the cap fired: the field came up without the kept line
+  await late.waitForTimeout(2000); // the late answer has arrived
+  await hide(late);
+  const third = await relaunch(late, "engine=fake");
+  expect(await entryValue(third)).toBe("2+3");
 });
 
 test("a kept line whose chip entry is missing comes back without that chip, still parseable", async ({ page }) => {
