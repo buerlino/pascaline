@@ -54,8 +54,11 @@ public class MainActivity extends BridgeActivity {
                     wv.goBack();
                     return;
                 }
+                // Re-enable afterwards: since Android 12 back on the root activity only moves the task to the
+                // background, so the activity lives on and must handle back again after it returns from recents.
                 setEnabled(false);
                 getOnBackPressedDispatcher().onBackPressed();
+                setEnabled(true);
             }
         });
     }
