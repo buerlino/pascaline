@@ -25,3 +25,42 @@ describe("vibrate (web build)", () => {
     expect(() => vibrate(0.5, 15)).not.toThrow();
   });
 });
+
+describe("vibrate (native build, R35)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.doUnmock("@capacitor/core");
+    vi.resetModules();
+  });
+
+  it("uses navigator.vibrate and reports no strength until loadNative has run, then the plugin with an amplitude", async () => {
+    const plugin = { vibrate: vi.fn(() => Promise.resolve()) };
+    vi.doMock("@capacitor/core", () => ({
+      Capacitor: { isNativePlatform: () => true, isPluginAvailable: () => true },
+      registerPlugin: () => plugin,
+    }));
+    const web = vi.fn(() => true);
+    vi.stubGlobal("navigator", { vibrate: web });
+    vi.resetModules();
+    const h = await import("./haptics.ts");
+    expect(h.hasStrength()).toBe(false);
+    h.vibrate(0.5, 15);
+    expect(web).toHaveBeenCalledWith(15);
+    expect(plugin.vibrate).not.toHaveBeenCalled();
+    await h.loadNative();
+    expect(h.hasStrength()).toBe(true);
+    h.vibrate(0.5, 15);
+    expect(plugin.vibrate).toHaveBeenCalledWith({ ms: 15, amplitude: 128 });
+  });
+
+  it("stays on the web call when the plugin is not there", async () => {
+    vi.doMock("@capacitor/core", () => ({
+      Capacitor: { isNativePlatform: () => false, isPluginAvailable: () => false },
+      registerPlugin: () => ({}),
+    }));
+    vi.resetModules();
+    const h = await import("./haptics.ts");
+    await h.loadNative();
+    expect(h.hasStrength()).toBe(false);
+  });
+});

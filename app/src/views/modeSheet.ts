@@ -79,7 +79,6 @@ export function modeItems(session: Session, openSettings: () => void): MenuItem[
 export function settingsItems(session: Session): MenuItem[] {
   const s = session.settings;
   const off = () => !s.haptics.on;
-  const strengthAvailable = hasStrength();
   return [
     {
       id: "fmtCycle",
@@ -126,7 +125,7 @@ export function settingsItems(session: Session): MenuItem[] {
         return `${s.haptics.strength} %`;
       },
       get disabled() {
-        return off() || !strengthAvailable;
+        return off() || !hasStrength(); // read on each look: the native plugin may load after this open
       },
       get reason() {
         return off() ? t("settings.haptics.off") : t("settings.haptics.webNote");

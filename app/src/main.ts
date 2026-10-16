@@ -14,6 +14,7 @@ import { renderStats } from "./render/mathlive.svelte.ts";
 import { Session } from "./state/session.svelte.ts";
 import { AppShell } from "./apps/shell.svelte.ts";
 import { idbKv } from "./state/storage.ts";
+import { loadNative } from "./input/haptics.ts";
 import { plotHook } from "./apps/function/plotHook.ts";
 
 const entry = new EntryController();
@@ -85,6 +86,10 @@ void calc.ready().then(() => {
 requestAnimationFrame(() =>
   requestAnimationFrame(() => {
     mark("keyboard-ready");
+    // Key vibration with strength needs @capacitor/core, which stays out of the start chunk (R35): load it when idle.
+    const idle = (f: () => void): void => (typeof requestIdleCallback === "function" ? void requestIdleCallback(f) : void setTimeout(f, 200));
+    idle(() => void loadNative());
+    idle(() => void import("./views/modeSheet.ts")); // fetched when idle, so the first Mode or Settings open is not slower
     // The history is read after the keypad is up, so it does not compete with the first paint. The kept line comes
     // after it (an Ans on it is the restored last result) and only into the view it was typed in.
     const history = session.restoreHistory();
