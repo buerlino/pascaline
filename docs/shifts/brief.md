@@ -4,20 +4,19 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a and R46; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46 and R21b; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. R21b (the Settings page and Android back).
-  2. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
-  3. R15b (the top cluster, after A4a's report).
-  4. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
-  5. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
+  1. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
+  2. R15b (the top cluster, after A4a's report).
+  3. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
+  4. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
 - **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
-- **annabell:** A4a when the owner connects the Tab One, after R21b and before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
+- **annabell:** A4a when the owner connects the Tab One (R21b is merged), before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
 **Why this order:**
@@ -29,7 +28,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
-  - **Day packages sit next to the code they share:** the start-chunk budget has 3.85 kB gzip left (50.15 of 54 kB, after R46 took the sheet's view out, 2026-10-16), with R21b, R11, R15b and R12b to come.
+  - **Day packages sit next to the code they share:** the start-chunk budget has 3.75 kB gzip left (50.25 of 54 kB after R21b, 2026-10-16; R46 took the sheet's view out, and R21b's page loads lazily), with R11, R15b and R12b to come.
   - **Trust features after the code they build on:**
     - R32 and R36 add a line to the history rows R11 builds.
     - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
@@ -125,26 +124,25 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R46 (now) | ~0.75 d |
-| A4a | Device run before R15b | annabell, Sonnet | `p1/annabell-m4a-device` | R21b; the owner connects the Tab One (and the S8+) | ~0.5 d |
-| R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R21b (runs while A4a takes place) | ~1 d |
+| A4a | Device run before R15b | annabell, Sonnet | `p1/annabell-m4a-device` | now (R21b is merged); the owner connects the Tab One (and the S8+) | ~0.5 d |
+| R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | now (R21b is merged; runs while A4a takes place) | ~1 d |
 | R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | R11, and A4a's report says R15b may start | ~2 d |
 | R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R15b (it draws the final keypad) | ~0.5 d |
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R21b, R11 and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R11 and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
 
 | # | Package | Backlog step | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|
-| R4a | Find on Math (EN1, part 1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R12a done (the owner looks at the mockups meanwhile); R21b | ~2 d |
+| R4a | Find on Math (EN1, part 1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R12a done (the owner looks at the mockups meanwhile) | ~2 d |
 | R4b | Vars, Memory and the user keys from Find (EN1, part 2) | 8 | ron, Sonnet | `p1/ron-m4-vars` | R4a and R15b | ~1 d |
 | A4b | Find timing on the Tab One | 12 | annabell, Sonnet | `p1/annabell-m4-find` | R4b; Tab One connected | ~0.25 d |
 
-If the owner wants Find sooner, R4a can go right after R21b: it uses no key that R15b moves.
+If the owner wants Find sooner, R4a can go now: it uses no key that R15b moves.
 
 ### How to start a package
 From the main checkout (`/home/nordmu/Documents/source99/pascaline`), one terminal per package:
@@ -309,10 +307,10 @@ Then end your turn with two commands for the owner, ready to paste, and nothing 
 ## 7. Packages
 
 ### ron, R4a: Find on Math, branch `p1/ron-m4-find`
-Backlog step 8, its Find part. Starts when R12a is done and R21b is merged.
+Backlog step 8, its Find part. Starts when R12a is done.
 - **Key:** Math = Find (§5.1).
 - **Inside Find:** keys follow §3.7, ranking §3.5 (`app/src/find/rank.ts`), preview and insertion §3.6.
-- **Where:** Find takes letters (inside Find every key types its letter), so it is a letter list in R21's sense: it stays above the keypad, where the sheets were before R21a, and is not drawn over the keypad (decisions.md "R21"). It is built on the sheet (docs/05 3.1, 3.6 and section 7). Letters: a tap on a non-digit key, a flick down on any key. Esc and Android back close it (R21b's helper).
+- **Where:** Find takes letters (inside Find every key types its letter), so it is a letter list in R21's sense: it stays above the keypad, where the sheets were before R21a, and is not drawn over the keypad (decisions.md "R21"). It is built on the sheet (docs/05 3.1, 3.6 and section 7). Letters: a tap on a non-digit key, a flick down on any key. Esc and Android back close it (R21b's `openLayer()` in `app/src/input/backLayer.ts`).
 - **Content:** the index items; `?bench=find`. No usage ranking and no `find.usage` (P11). An empty query shows the G2-style Math menu (fixed categories in a fixed order), numbered: on an empty query digits pick a category, after a letter they type (S2 rule M1).
 - **Loading:** Find is a lazy chunk, and the index is fetched only when the browser is idle after the engine is ready.
 - **Data:** the generated index (G4, merged): `prepare()` and `search()` in `app/src/find/rank.ts`. The schema is fixed by §3.3; a change goes under "Needs a decision".
@@ -337,37 +335,8 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### ron, R21b: the Settings page and Android back, branch `p1/ron-m4a-settings`
-Starts now (R46 is merged). Decided: decisions.md "R21" (the Settings page) and backlog C8 (Android back). Read decisions.md "R21" and "Mode and Settings sheets (R8)", docs/05 3.4, R21a's report, `app/src/views/modeSheet.ts`, the Settings and sheet parts of `App.svelte`, and `android/app/src/main/java/io/github/buerlino/pascaline/MainActivity.java`.
-
-**Why back needs Java:** Capacitor 8.5.3 has no back handling of its own (no `onBackPressed` or `canGoBack` in its Android sources), `@capacitor/app` is not installed, and `MainActivity` does not override back. So on the APK the back gesture leaves the app whatever the page does, while a `history.back()` e2e passes in Chromium all the same (checked 2026-10-14).
-
-Commits in this order:
-1. **Tests first:**
-   - Settings e2e by touch, by hardware keys and by `history.back()`.
-   - `fit.spec.ts` "keys never move" gains Settings.
-   - `history.back()` closes an open pick sheet, and the next key works as before.
-   - Opening and closing Settings or a sheet five times leaves the history length as it was, so back with nothing open leaves the app.
-2. **Settings page** (new `app/src/views/SettingsPage.svelte`; `modeSheet.ts` keeps the item lists):
-   - **Where:** opened where Settings opens today (Mode's last row; Shift + Home/CAS until R15b). It covers the whole window, status line included.
-   - **Layout:** one scrolling page with section headings instead of submenus: Format key cycle (its switches and Decimals), Vibration (on, strength, length), Shift / Alpha taps (counts, reset).
-   - **Rows:** a value row has its label, its value and ◀ ▶ buttons of at least 44 × 44 px; a switch row toggles on a tap; disabled rows keep their reason.
-   - **Close:** × in the header, Android back, Esc on a hardware keyboard.
-   - **Hardware keys:** ▲ ▼ move, ◀ ▶ step, Enter or space toggles, Esc closes.
-   - **Leave a place** for Theme (R12c), User keys (R4b) and About; build none.
-3. **Back acts as Esc for the open layer:**
-   - One small helper pushes a history entry when Settings or a pick sheet opens, and closes that layer on `popstate`.
-   - Closing the layer by Esc, ×, a pick or a tap in the viewport takes its entry back, so the history never grows.
-   - With nothing open, back leaves the app as today.
-   - No new dependency. R4a's Find uses the same helper.
-4. **Java** (in `android/`, annabell's folder; allowed for this one file): in `MainActivity`, an `OnBackPressedCallback` calls the WebView's `goBack()` when `canGoBack()` is true; otherwise it lets the default run, so the app leaves. About 15 lines. A4a checks it on the device.
-5. **Gallery:** the Settings page, light and dark, at 412 × 915 and 360 × 740; rebuild.
-6. **Report.** "For shared files": backlog C8 done in R21b, with the device check in A4a; docs/05 3.4 if the page differs.
-
-Gate: the Settings e2e (touch, hardware keys, `history.back()`), `fit.spec.ts`, `sheet.spec.ts`, `status.spec.ts`, the Mode e2e (rewritten where it opened Settings as a sheet), gestures e2e green; the Java compiles (`./build.sh --dev --unsigned` under the host-cpu lock); start chunk within the budget (the Settings page loads lazily if it grows the chunk by more than 1 kB); gallery rebuilt.
-
 ### annabell, A4a: device run before R15b, branch `p1/annabell-m4a-device`
-Starts when R21b is merged and the owner connects the Tab One, with the S8+ for the WebView checks (rules section 6). One device session for every check that waits for no later package: backlog Needs the user item 7, milestone 4 step 12 without Find, C6, the C8 check and K1. In order:
+Starts when the owner connects the Tab One, with the S8+ for the WebView checks (rules section 6). One device session for every check that waits for no later package: backlog Needs the user item 7, milestone 4 step 12 without Find, C6, the C8 check and K1. In order:
 1. **Build:** a full `./build.sh` from `phase-1` with the qalc step (no `--no-units`). This closes milestone 4 steps 6 and 7's open "full `./build.sh` run". Then fix C6:
    - `tools/device_run.py status|start` report the build type of a `--measure` build;
    - `tools/stay-awake.sh` restores from any worktree.
@@ -380,7 +349,7 @@ Starts when R21b is merged and the owner connects the Tab One, with the S8+ for 
    - R21a's sheet rise: within one frame and 120 ms.
 3. **Behaviour on the devices:**
    - `navigator.clipboard` and `navigator.share` in WebView 131;
-   - Android back (R21b) closes Settings and an open sheet, and leaves the app from an empty Home;
+   - Android back (R21b): from an empty Home it leaves the app; reopened from recents, back closes an open Settings page and an open pick sheet, and the app stays (the `MainActivity` callback re-enables itself);
    - K1's `touch-action: none`: no scroll or zoom side effects;
    - the flick thresholds (20 px arm, 12 px cancel): misfires in a minute of typing;
    - whether Android sends `pointercancel` for a touch held while the app leaves (F11 and F12 are fixed in the app either way);
@@ -395,7 +364,7 @@ Report against the §8.3 bars. A miss goes under "Needs a decision" with the num
 P12 points 2 and 3 and open point B. **R15a is done:** `docs/mockups/top-cluster.html` holds the layouts A, B, C and the press table. **The owner turned down A, B and C (2026-10-14); the page now holds layout D** (the cross stays, every key at its G2 place, three free keys U1–U3 with Shift layers, 48 px cluster rows; decisions.md). **R15b:** build D (approved by the owner 2026-10-14) with **U2 = Home and U3 = CAS as defaults** in `spec/keyboard.yaml` (decisions.md "R15a: layout D"); the free keys get their slots and storage here (a stamped key in `state/storage.ts`), their Find-based setting comes with R4b. Edit the grid in `spec/keyboard.yaml` (the maths rows 3–9 do not move), replace the `app` and `cas` keys by the user keys U2 and U3 with those defaults (their old Shift layers go), make the place name a button, move the pad, keep the `cancel` key's id and its Shift layer (Undo, R16), update the trackpad zones, the legends, `tools/probes/unit-presses.mjs` and every test that names a moved key; keys typed while an app loads (R8) now include the status taps; remove `app` and `cas` (and `symb`/`plot`/`num` if they fold) from `PASS` in `views/sheetKeys.ts` and `AT_ONCE` in `App.svelte`; the place-name tap no longer opens Apps (`status.spec.ts` changes). Gate: e2e for each path in the press table, viewport share not below R8's 0.354, keyboard test, gallery, gestures and flicks e2e. Shared-file text in the report.
 
 ### ron, R11: history-row actions, branch `p1/ron-m4a-rows`
-Starts when R21b is merged; it runs before R15b, since it uses no key that R15b moves (Menu keeps its G2 place in layout D), and its Menu rises over the keypad as R21a built. docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on an empty line picks a row (exists); a row of buttons appears above the entry line: Insert · Recall · Copy · Store ▶ · Delete; hidden while typing; **the Menu is one fixed list of nine (S2, accepted): 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Copy as › (as shown, exact, LaTeX), 7 Paste, 8 Share session, 9 Clear history**, the same numbers whether or not a row is picked, acting on the picked row, else the last result (Delete: the last row); the buttons are items 1–5; the long press opens the same list on its row. Build the actions as one list used by the buttons, Menu and long press, so the "results mode" idea can reuse it. Gate: e2e per action from keys and from touch; task benchmark has no task with more presses; history performance test unchanged.
+Starts now; it runs before R15b, since it uses no key that R15b moves (Menu keeps its G2 place in layout D), and its Menu rises over the keypad as R21a built. docs/05 3.3 and 3.5 limited by section 7 point 2: **Home and CAS only.** ▲ on an empty line picks a row (exists); a row of buttons appears above the entry line: Insert · Recall · Copy · Store ▶ · Delete; hidden while typing; **the Menu is one fixed list of nine (S2, accepted): 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Copy as › (as shown, exact, LaTeX), 7 Paste, 8 Share session, 9 Clear history**, the same numbers whether or not a row is picked, acting on the picked row, else the last result (Delete: the last row); the buttons are items 1–5; the long press opens the same list on its row. Build the actions as one list used by the buttons, Menu and long press, so the "results mode" idea can reuse it. Gate: e2e per action from keys and from touch; task benchmark has no task with more presses; history performance test unchanged.
 
 ### ron, R12a, R12b and R12c: visual pass, branches `p1/ron-m4a-look` (R12a, R12b) and `p1/ron-m4a-theme` (R12c)
 **R12a** (after R15b): read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a pick sheet over the keypad, the Mode sheet, the Settings page, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change; R4a and R4b run meanwhile.
