@@ -37,7 +37,8 @@ entry.onClear = () => keeper.save(null);
 const flush = (): void => {
   session.flushHistory();
   shell.flush();
-  keeper.save(shell.app === null ? lineRecord(session.view, entry.value, entry.chips) : null);
+  // before the kept line is on the field (or the line was typed or cleared) the stored line stays as it is
+  if (entry.settled) keeper.save(shell.app === null ? lineRecord(session.view, entry.value, entry.chips) : null);
 };
 // Leaving the app (a swipe, the app switcher): drop the focus. Android restores focus to the focused element when
 // the app comes back and opens the system keyboard on it, inputmode=none or not (K0, user 2026-10-13). The next key

@@ -75,6 +75,11 @@ export class EntryController {
   private pendingValue: string | undefined;
   /** R34: the line was set or cleared before the field was up, so a line kept from before a kill no longer applies. */
   private keptStale = false;
+  /**
+   * R34: the line on the field is the user's to store: the kept-line read answered within the 1 s cap (the kept line,
+   * if any, went on the field), or the line was typed or set since start.
+   */
+  private touched = false;
   /** The values of the chips on the line (docs/04 3.6); keys as in input/chips.ts. */
   private table: ChipTable = {};
   private nextRes = 1;
@@ -102,17 +107,18 @@ export class EntryController {
   /**
    * Start loading MathLive; safe to call once. `kept` is the line kept from before a kill (R34): it goes on the line
    * before the queued keys are replayed, unless the line was set or cleared meanwhile. A store that never answers
-   * delays the field by at most a second.
+   * delays the field by at most a second; its line then stays stored for the next start (`settled`).
    */
   load(kept?: Promise<{ latex: string; chips: ChipTable } | undefined>): Promise<void> {
     if (this.started) return this.ready;
     this.started = true;
-    const line = Promise.race([kept, new Promise<undefined>((resolve) => setTimeout(resolve, 1000))]).catch(() => undefined);
+    const line = Promise.race([kept, new Promise<null>((resolve) => setTimeout(resolve, 1000, null))]).catch(() => null);
     this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts"), import("./stops.ts"), line]).then(([m, d, h, s, l]) => {
       this.deleteAt = d.deleteAtTemplate;
       this.hwKey = h.hardwareKey;
       this.settle = s.settle;
       this.nextBox = s.nextBox;
+      if (l !== null) this.touched = true;
       if (l && !this.keptStale) this.pendingValue = this.adopt(l.latex, l.chips) + (this.pendingValue ?? "");
       return this.create(m.MathfieldElement);
     });
@@ -178,6 +184,8 @@ export class EntryController {
     mf.focus();
     mf.executeCommand("moveToMathfieldEnd");
     while (this.queue.length > 0) this.run(this.queue.shift() as ActionBody);
+    // what MathLive edits itself (a paste, a character outside ASCII); a set of the value is silent
+    mf.addEventListener("input", () => (this.touched = true));
   }
 
   /**
@@ -218,6 +226,14 @@ export class EntryController {
   get field(): MathfieldElement | undefined {
     return this.mf;
   }
+  /**
+   * R34: the line may be stored on a hide, over the line kept from before a kill. Not while the field loads (its
+   * value is still empty, the kept line not on it yet) unless the line was set or cleared meanwhile; and not after the
+   * store answered too late for the kept line to go on the field, until the line is typed, set or cleared.
+   */
+  get settled(): boolean {
+    return this.keptStale || (this.mf !== undefined && this.touched);
+  }
   get value(): string {
     return this.mf ? this.mf.value : (this.pendingValue ?? "");
   }
@@ -236,6 +252,7 @@ export class EntryController {
   }
   /** Put a previous entry back on the line, with the values of its chips. */
   set(latex: string, chips: ChipTable = {}): void {
+    this.touched = true;
     latex = this.adopt(latex, chips);
     if (!this.mf) {
       this.pendingValue = latex;
@@ -266,6 +283,7 @@ export class EntryController {
   }
   /** Insert LaTeX at the cursor (a history result, L5). */
   insert(latex: string): void {
+    this.touched = true;
     if (!this.mf) {
       this.pendingValue = (this.pendingValue ?? "") + latex;
       return;
@@ -298,6 +316,7 @@ export class EntryController {
    */
   run(a: ActionBody): void {
     if (a.kind === "special") return;
+    this.touched = true;
     if (!this.mf) {
       this.queue.push(a);
       return;
