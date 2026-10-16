@@ -167,7 +167,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 ### 2.6 Decision: copy and paste
 
-| What | Default copy (Shift + View, long press) | Menu: as shown | Menu: exact | Menu: LaTeX |
+| What | Copy (Shift + View; Menu 3) | Menu 6, Copy as › As shown | Copy as › Exact | Copy as › LaTeX |
 |---|---|---|---|---|
 | Home or CAS number | full value: every confirmed digit up to P (40), trailing zeros dropped, `.` (`,` with the decimal-comma setting), plain for 1E-4 ≤ \|x\| < 1E21, else `d.ddd…E±k` | display text, without the mark | Giac's exact text when it exists (`1/3`, `sqrt(2)`) | the result LaTeX |
 | Complex | `a+b*i`, each part as above | yes | yes | yes |
@@ -414,7 +414,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + 6, Shift + 9 | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ | built (R18) | P12, owner 2026-10-13 |
 | View (row 1, col 4) [r2c4] | gap | compact keypad toggle (K4) | P7 point 5 |
 | Shift + View | Copy (A3) | Copy (full value of the selected or last result) | reference: Copy |
-| Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: Copy, Copy as shown, Copy exact, Copy LaTeX, Paste, Share session, Clear history (A3) | Home/CAS, from R11 (S2): Insert, Recall, Copy, Store ▶, Delete, Copy as ›, Paste, Share session, Clear history, on the picked row, else the last result | P8; S2 (accepted 2026-10-13) |
+| Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: one list of nine (R11): 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Copy as › (As shown, Exact, LaTeX), 7 Paste, 8 Share session, 9 Clear history, on the picked row, else the last result (Delete: the last row); a picked row's buttons are items 1–5, the long press on a row opens the same list (`ClipActions.menu`) | unchanged | P8; S2 (accepted 2026-10-13) |
 | Shift + Menu | Paste a number (A3) | unchanged | reference: Paste |
 | Help (row 0, col 4) [r1c4] | gap | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; uses the index; P8 left Help free, so the owner may veto |
 | row 1, col 0 | gap | stays empty | no reference key there |

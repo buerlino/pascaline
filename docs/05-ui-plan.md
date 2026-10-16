@@ -89,7 +89,7 @@ One row of up to 6 touch buttons directly above the entry line. Its content foll
 
 - Each soft key is also reachable without touch: **Menu** opens the full list for the view (the soft keys are the first items, in the same order, so their numbers are 1–6). So "Plot → Trace" is either one tap or Menu + 2.
 - Tap targets at least 44 px high; a label of at most 8 characters; an item with a submenu shows `›`.
-- Long press on a history row (today's only path to row actions) stays as a shortcut.
+- Home/CAS (R11): the picked row's buttons are items 1–5 of the Menu's list of nine (S2), so Menu + 1 is the same as a tap on Insert. A long press on a row opens the same nine on that row.
 
 ### 3.4 The Mode sheet and Settings (fixes finding 7)
 
