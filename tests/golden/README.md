@@ -11,8 +11,8 @@ the ⚠, and every other case must not.
 
 | File | Cases | What |
 |---|---|---|
-| `home.yaml` | 144 | exact-first Home, STD 12 digits (3 `assumed`: tie rule, G2 item 8; 1 `device`: G2 item 16); every case has a `mark:` (67 `=`, 77 `≈`); 21 are the accuracy cases of Find tier-0 functions, derived and checked by `oracle.py` |
-| `precision.yaml` | 80 (79 active, 1 `pending`) | docs/04 section 2.3 regression list (#2–#6, #9) and the 20/30-digit `oracle` cases; `settings: { digits: N }`; `kind: cas` for the CAS view (`beforeHome:` runs inputs in Home first, `uses:` lists the stored names the result must report, G20); mark-only cases (no `expect`) for results whose true digits are out of reach |
+| `home.yaml` | 147 | exact-first Home, STD 12 digits (3 `assumed`: tie rule, G2 item 8; 1 `device`: G2 item 16); every case has a `mark:` (67 `=`, 77 `≈`, 3 `⚠`: a non-number that holds a float, G27); 21 are the accuracy cases of Find tier-0 functions, derived and checked by `oracle.py` |
+| `precision.yaml` | 91 (90 active, 1 `pending`) | docs/04 section 2.3 regression list (#2–#6, #9, #17) and the 20/30-digit `oracle` cases; `settings: { digits: N }`; `kind: cas` for the CAS view (`beforeHome:` runs inputs in Home first, `uses:` lists the stored names the result must report, G20); mark-only cases (no `expect`) for results whose true digits are out of reach |
 | `solve.yaml` | 42 | Solve: 1-D (nearest root to the guess), systems (`kind: system`), polynomials (`kind: poly`) |
 | `function.yaml` | 25 | Function app: Plot analysis (root, extremum, intersection, slope, area) and Num table rows |
 | `bench.yaml` | 55 | benchmark inputs (timing set; 14 `derived` values checked) |
@@ -22,7 +22,8 @@ the ⚠, and every other case must not.
 **Marks (docs/04 section 2.4).** In `home.yaml` and `precision.yaml` every case whose `expect` is a number has `mark:`.
 `oracle.py` derives it: `=` when the oracle value equals the shown text exactly, `≈` when the text is rounded. `⚠` is
 never derived: it is written by hand for functions whose result the engine cannot confirm, and needs a `note`.
-A case with a mark and no `expect` is mark-only (the gate checks the mark, and that the answer is still a number). The gate
+A case with a mark and no `expect` is mark-only (the gate checks the mark, and that an answer came back: a number, or a
+non-number that holds a float, never the input echoed back). The gate
 checks marks from EN3-engine on, when the engine result carries one; until then it only counts them.
 
 **Pending.** `status: "pending"` (precision.yaml) marks a regression case written before its fix. The gate runs

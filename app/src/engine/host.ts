@@ -384,12 +384,16 @@ export class EngineHost {
     // This build leaves x*x unevaluated (no top-level "regroup" autosimplify), and latex() then draws x·x as "xx".
     if (text.includes("*")) text = regrouped(this.giac, "pcasans", text);
     // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate.
-    const approximate = test && this.giac.eval(EQ_INEXACT_FLAG) === "1";
+    // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4),
+    // as the definitions log records it.
+    const unchecked = hasFloat(text);
+    const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked;
+    const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
     const tex = this.giac.eval("latex(pcasans)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
-      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(decided?.warn ? { warn: decided.warn } : {}) },
-      defs: defsOf(text, hasFloat(text) ? { reliableDigits: null, warn: "unchecked" } : null),
+      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(warn ? { warn } : {}) },
+      defs: defsOf(text, unchecked ? { reliableDigits: null, warn: "unchecked" } : null),
     };
   }
 

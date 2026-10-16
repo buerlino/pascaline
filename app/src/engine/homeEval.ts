@@ -461,7 +461,10 @@ export function homeEval(
     // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
     const tex = giac.eval(`latex(${ans})`);
     const latex = isError(tex) ? {} : { latex: unquote(tex) };
-    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest, ...(decided?.warn ? { warn: decided.warn } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
+    // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
+    const unchecked = hasFloat(text);
+    const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
+    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();
