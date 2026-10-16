@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { FakeCalc } from "../calc/fake.ts";
 import { Session } from "../state/session.svelte.ts";
 import type { Kv } from "../state/storage.ts";
-import { modeItems, settingsItems } from "./modeSheet.ts";
+import { modeItems, settingsSections } from "./modeSheet.ts";
+import { SettingsPage } from "./settingsPage.svelte.ts";
 import { Sheet, forgetPicks } from "./sheet.svelte.ts";
 
 const memoryKv = (): Kv => {
@@ -14,7 +15,8 @@ const memoryKv = (): Kv => {
 let session: Session;
 let opened = 0;
 const mode = (at?: string) => new Sheet("mode", "Mode", () => modeItems(session, () => opened++), { remember: false, at });
-const settings = () => new Sheet("settings", "Settings", () => settingsItems(session), { remember: false });
+const settings = () => new SettingsPage(settingsSections(session));
+const at = (p: SettingsPage, id: string) => p.rows.findIndex((r) => r.id === id);
 
 beforeEach(() => {
   forgetPicks();
@@ -81,46 +83,66 @@ describe("Mode sheet", () => {
   });
 });
 
-describe("Settings sheet", () => {
+describe("Settings page", () => {
+  it("has one section per block and every row on one page, no submenus", () => {
+    const p = settings();
+    expect(p.sections.map((x) => x.id)).toEqual(["fmtCycle", "vibration", "taps"]);
+    expect(p.rows.some((r) => r.submenu)).toBe(false);
+    expect(p.current?.id).toBe("std");
+  });
   it("Format key cycle: the Decimals row sits under the Fixed tick and steps in place", () => {
-    const s = settings();
-    expect(s.level.current?.id).toBe("fmtCycle");
-    s.enter();
-    const ids = s.level.items.map((i) => i.id);
-    expect(ids.indexOf("decimals")).toBe(ids.indexOf("fix") + 1);
-    while (s.level.current?.id !== "decimals") s.level.move(1);
-    s.left();
+    const p = settings();
+    expect(at(p, "decimals")).toBe(at(p, "fix") + 1);
+    p.highlight = at(p, "decimals");
+    p.step(-1);
     expect(session.settings.fixDecimals).toBe(3);
   });
   it("key vibration: ▶ switches it on; strength (the browser cannot set it) and length follow", () => {
-    const s = settings();
-    const byId = (id: string) => s.level.items.find((i) => i.id === id);
+    const p = settings();
+    const byId = (id: string) => p.rows.find((i) => i.id === id);
     expect(byId("haptics")?.value).toBe("Off");
     expect(byId("ms")?.disabled).toBe(true);
-    s.level.move(1);
-    expect(s.level.current?.id).toBe("haptics");
-    s.right();
+    p.highlight = at(p, "haptics");
+    p.step(1);
     expect(session.settings.haptics.on).toBe(true);
     expect(byId("ms")?.disabled).toBe(false);
     expect(byId("strength")?.disabled).toBe(true); // web build
-    s.level.move(1);
-    s.level.move(1);
-    s.right();
+    p.highlight = at(p, "ms");
+    p.step(1);
     expect(session.settings.haptics.ms).toBe(20);
     expect(byId("ms")?.value).toBe("20 ms");
+    p.highlight = at(p, "strength");
+    expect(p.step(1)).toBe(false); // disabled: nothing happens
   });
-  it("the Format key cycle: picking a form ticks or unticks it, the sheet stays, and the cycle is never empty", () => {
-    const s = settings();
-    expect(s.enter()).toEqual({ kind: "stay" });
-    expect(s.level.title).toBe("Format key cycle");
-    const marked = () => s.level.items.filter((i) => i.selected).map((i) => i.id);
+  it("a tick toggles on Enter or a tap and the cycle is never empty", () => {
+    const p = settings();
+    const marked = () => p.rows.filter((i) => i.selected).map((i) => i.id);
     expect(marked()).toEqual(["std", "sci", "eng"]);
-    s.pickNumber(5); // Fixed
-    s.pickNumber(2); // Scientific off
+    p.activate(at(p, "fix"));
+    p.activate(at(p, "sci")); // Scientific off
     expect(marked()).toEqual(["std", "eng", "fix"]);
     expect(session.settings.fmtCycle).toEqual(["std", "eng", "fix"]);
-    for (const n of [1, 3, 5]) s.pickNumber(n); // all off: back to the default cycle
+    for (const id of ["std", "eng", "fix"]) p.activate(at(p, id)); // all off: back to the default cycle
     expect(session.settings.fmtCycle).toEqual(["std", "sci", "eng"]);
-    expect(s.depth).toBe(2);
+  });
+  it("▲ ▼ walk every row round the ends; an information row does nothing; Reset runs", () => {
+    const p = settings();
+    p.move(-1);
+    expect(p.current?.id).toBe("reset");
+    p.move(1);
+    expect(p.highlight).toBe(0);
+    p.activate(at(p, "since"));
+    expect(p.step(1)).toBe(false);
+    session.taps.counts.shift = 4;
+    p.activate(at(p, "reset"));
+    expect(session.taps.counts.shift).toBe(0);
+  });
+  it("keys: Esc and Cancel close, Menu-like keys pass, digits and letters do nothing", () => {
+    const p = settings();
+    expect(p.key({ kind: "back" })).toBe("close");
+    expect(p.key({ kind: "close" })).toBe("close");
+    expect(p.key({ kind: "pass" })).toBe("pass");
+    expect(p.key({ kind: "pick", n: 3 })).toBe("stay");
+    expect(p.key({ kind: "letter", ch: "a" })).toBe("stay");
   });
 });

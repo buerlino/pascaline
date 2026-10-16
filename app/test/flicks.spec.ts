@@ -248,12 +248,12 @@ test("Shift and Alpha taps stay as on the G2 (one-shot, Alpha twice locks) and a
   expect(await taps(page)).toEqual({ shift: 2, alpha: 5 });
   // the counter in Settings (Shift + Home/CAS), with its reset
   await tap(page, ["shift", "app"]);
-  const row = page.locator('[role="menuitem"][data-id="taps"]');
-  await expect(row.getByTestId("sheet-value")).toHaveText("⇧ 3 · α 5"); // the Shift that opened Settings counts too
-  await row.tap();
-  await expect(page.locator('[role="menuitem"][data-id="since"]').getByTestId("sheet-value")).toHaveText(/^\d{4}-\d\d-\d\d$/);
-  await page.locator('[role="menuitem"][data-id="reset"]').tap();
-  await expect(page.locator('[role="menuitem"][data-id="shift"]').getByTestId("sheet-value")).toHaveText("0");
+  const value = (id: string) => page.locator(`[data-testid="settings"] [data-id="${id}"]`).getByTestId("settings-value");
+  await expect(value("shift")).toHaveText("3"); // the Shift that opened Settings counts too
+  await expect(value("alpha")).toHaveText("5");
+  await expect(value("since")).toHaveText(/^\d{4}-\d\d-\d\d$/);
+  await page.locator('[data-testid="settings"] [data-id="reset"]').tap();
+  await expect(value("shift")).toHaveText("0");
   // stored on the device: still zero after a relaunch (the write waits a second)
   await page.waitForTimeout(1300);
   await page.reload();

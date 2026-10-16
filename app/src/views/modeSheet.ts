@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The Mode sheet and Settings (docs/05 3.4 with section 7), as lists for the one sheet (sheet.svelte.ts). Mode holds
+// The Mode sheet's list and the Settings page's sections (docs/05 3.4 with section 7). Mode (one sheet, sheet.svelte.ts) holds
 // what changes in a session: angle, format, digits, decimals, entry. Settings holds what is set once: the Format key's
 // cycle and the key vibration. A row with a value is changed in place: ◀ ▶ step it, a digit key or a tap steps it
 // forward, Enter closes. No native <select> or number input: the keypad drives all of it.
@@ -75,102 +75,103 @@ export function modeItems(session: Session, openSettings: () => void): MenuItem[
   ];
 }
 
-/** The Settings sheet's rows. */
-export function settingsItems(session: Session): MenuItem[] {
+/** One headed block of the Settings page. */
+export interface SettingsSection {
+  readonly id: string;
+  readonly title: string;
+  readonly hint?: string;
+  readonly items: MenuItem[];
+}
+
+/** The Settings page's sections (R21b): one scrolling page with headings instead of submenus. A tick (`selected` with
+ *  `run`) is a switch; a row with `adjust` steps with ◀ ▶; a row with a value only is information. Theme (R12c), User
+ *  keys (R4b) and About (R21b leaves the places) are added here as sections when their packages come. */
+export function settingsSections(session: Session): SettingsSection[] {
   const s = session.settings;
   const off = () => !s.haptics.on;
   return [
     {
       id: "fmtCycle",
-      label: t("settings.fmtCycle"),
-      submenu: {
-        title: t("settings.fmtCycle"),
-        items: NOTATION_MODES.flatMap((mode): MenuItem[] => {
-          const tick: MenuItem = {
-            id: mode,
-            label: t(`settings.fmt.${mode}` as MessageKey),
-            keep: true,
-            get selected() {
-              return s.fmtCycle.includes(mode);
-            },
-            run: () => session.setFmtMode(mode, !s.fmtCycle.includes(mode)),
-          };
-          if (mode !== "fix") return [tick];
-          // the decimals Fixed shows, right under its tick (S2 I3): changed in place with ◀ ▶
-          const decimals: MenuItem = {
-            id: "decimals",
-            label: t("mode.decimals"),
-            keep: true,
-            get value() {
-              return String(s.fixDecimals);
-            },
-            adjust: (by) => session.setFixDecimals(s.fixDecimals + by),
-          };
-          return [tick, decimals];
-        }),
-      },
+      title: t("settings.fmtCycle"),
+      hint: t("settings.fmtCycle.hint"),
+      items: NOTATION_MODES.flatMap((mode): MenuItem[] => {
+        const tick: MenuItem = {
+          id: mode,
+          label: t(`settings.fmt.${mode}` as MessageKey),
+          keep: true,
+          get selected() {
+            return s.fmtCycle.includes(mode);
+          },
+          run: () => session.setFmtMode(mode, !s.fmtCycle.includes(mode)),
+        };
+        if (mode !== "fix") return [tick];
+        // the decimals Fixed shows, right under its tick (S2 I3): changed in place with ◀ ▶
+        const decimals: MenuItem = {
+          id: "decimals",
+          label: t("mode.decimals"),
+          keep: true,
+          get value() {
+            return String(s.fixDecimals);
+          },
+          adjust: (by) => session.setFixDecimals(s.fixDecimals + by),
+        };
+        return [tick, decimals];
+      }),
     },
     {
-      id: "haptics",
-      label: t("settings.haptics"),
-      get value() {
-        return t(s.haptics.on ? "settings.on" : "settings.off");
-      },
-      adjust: () => session.setHaptics({ on: !s.haptics.on }),
+      id: "vibration",
+      title: t("settings.vibration"),
+      items: [
+        {
+          id: "haptics",
+          label: t("settings.haptics"),
+          get value() {
+            return t(s.haptics.on ? "settings.on" : "settings.off");
+          },
+          adjust: () => session.setHaptics({ on: !s.haptics.on }),
+        },
+        {
+          id: "strength",
+          label: t("settings.haptics.strength"),
+          get value() {
+            return `${s.haptics.strength} %`;
+          },
+          get disabled() {
+            return off() || !hasStrength(); // read on each look: the native plugin may load after this open
+          },
+          get reason() {
+            return off() ? t("settings.haptics.off") : t("settings.haptics.webNote");
+          },
+          adjust: (by) => session.setHaptics({ strength: s.haptics.strength + 10 * by }),
+        },
+        {
+          id: "ms",
+          label: t("settings.haptics.ms"),
+          get value() {
+            return `${s.haptics.ms} ms`;
+          },
+          get disabled() {
+            return off();
+          },
+          get reason() {
+            return t("settings.haptics.off");
+          },
+          adjust: (by) => session.setHaptics({ ms: s.haptics.ms + 5 * by }),
+        },
+      ],
     },
-    {
-      id: "strength",
-      label: t("settings.haptics.strength"),
-      get value() {
-        return `${s.haptics.strength} %`;
-      },
-      get disabled() {
-        return off() || !hasStrength(); // read on each look: the native plugin may load after this open
-      },
-      get reason() {
-        return off() ? t("settings.haptics.off") : t("settings.haptics.webNote");
-      },
-      adjust: (by) => session.setHaptics({ strength: s.haptics.strength + 10 * by }),
-    },
-    {
-      id: "ms",
-      label: t("settings.haptics.ms"),
-      get value() {
-        return `${s.haptics.ms} ms`;
-      },
-      get disabled() {
-        return off();
-      },
-      get reason() {
-        return t("settings.haptics.off");
-      },
-      adjust: (by) => session.setHaptics({ ms: s.haptics.ms + 5 * by }),
-    },
-    tapsItem(session),
+    { id: "taps", title: t("settings.taps"), items: tapsItems(session) },
   ];
 }
 
 /** The Shift and Alpha tap counter (R9, P7 point 4): the counts, since when, and a reset. Counted on this device only,
- *  never sent anywhere. */
-function tapsItem(session: Session): MenuItem {
+ *  never sent anywhere. The first three rows are information. */
+function tapsItems(session: Session): MenuItem[] {
   const taps = session.taps;
-  const counts = (): { shift: string; alpha: string } => ({ shift: String(taps.counts.shift), alpha: String(taps.counts.alpha) });
-  return {
-    id: "taps",
-    label: t("settings.taps"),
-    get value() {
-      return t("settings.taps.value", counts());
-    },
-    submenu: {
-      title: t("settings.taps"),
-      items: [
-        // information rows: picking one does nothing (the sheet stays)
-        { id: "shift", label: t("settings.taps.shift"), keep: true, get value() { return counts().shift; } },
-        { id: "alpha", label: t("settings.taps.alpha"), keep: true, get value() { return counts().alpha; } },
-        { id: "since", label: t("settings.taps.since"), keep: true, get value() { return taps.counts.since || "—"; } },
-        { id: "reset", label: t("settings.taps.reset"), keep: true, run: () => taps.reset() },
-      ],
-    },
-  };
+  return [
+    { id: "shift", label: t("settings.taps.shift"), keep: true, get value() { return String(taps.counts.shift); } },
+    { id: "alpha", label: t("settings.taps.alpha"), keep: true, get value() { return String(taps.counts.alpha); } },
+    { id: "since", label: t("settings.taps.since"), keep: true, get value() { return taps.counts.since || "—"; } },
+    { id: "reset", label: t("settings.taps.reset"), keep: true, run: () => taps.reset() },
+  ];
 }
-

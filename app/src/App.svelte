@@ -9,6 +9,7 @@
   import { ANS_CHIP } from "./entry/macros.ts";
   import type { EntryController } from "./entry/controller.ts";
   import { t, type MessageKey } from "./i18n/index.ts";
+  import { openLayer } from "./input/backLayer.ts";
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
   import { loadShiftPalettes, shiftPalettes } from "./keyboard/palettes.ts";
@@ -25,9 +26,23 @@
   // the model and the keys stay here. A key that opens a sheet before it is in waits in the queue.
   import { loadSheetView, sheetChunk } from "./views/sheetView.svelte.ts";
   import { sheetFlick, sheetKey } from "./views/sheetKeys.ts";
+  // The Settings page (R21b) is its own chunk: its code loads when idle, or on the first open.
+  type SettingsUi = { C: (typeof import("./views/SettingsPage.svelte"))["default"]; SettingsPage: (typeof import("./views/settingsPage.svelte.ts"))["SettingsPage"] };
+  let settingsUi: SettingsUi | null = null;
+  const loadSettingsUi = async (): Promise<SettingsUi> => {
+    if (settingsUi) return settingsUi;
+    const [v, m] = await Promise.all([import("./views/SettingsPage.svelte"), import("./views/settingsPage.svelte.ts")]);
+    return (settingsUi = { C: v.default, SettingsPage: m.SettingsPage });
+  };
+
   import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
 
   let { session, entry, shell }: { session: Session; entry: EntryController; shell: AppShell } = $props();
+
+  /** The open Settings page and its model (null: closed). */
+  let settings = $state.raw<{ C: SettingsUi["C"]; page: InstanceType<SettingsUi["SettingsPage"]> } | null>(null);
+  const settingsOpen = $derived(settings !== null);
+  const sheetOpen = $derived(shell.sheet !== null);
 
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {
@@ -118,6 +133,7 @@
   }
 
   async function cancel(): Promise<void> {
+    if (settings) return closeSettings();
     if (await shell.cancel()) return;
     if (await session.cancel()) return;
     entry.clear();
@@ -150,13 +166,38 @@
     entry.run(paletteAction(p, session.settings.entry === "line"));
   }
 
-  /** Shift + Home/CAS: the Settings sheet (docs/05 3.4). It opens on its first row, whatever was picked last. */
+  /** Shift + Home/CAS, or Mode's last row: the Settings page over everything (R21b, docs/05 3.4). It opens on its
+   *  first row. */
   function openSettings(): void {
-    onModeSheet((m) => {
+    const show = (m: NonNullable<typeof modeSheet>, ui: NonNullable<typeof settingsUi>): void => {
       picked = null;
-      shell.showMenu(t("settings.title"), m.settingsItems(session), { remember: false });
-    });
+      shell.closeSheet();
+      settings = { C: ui.C, page: new ui.SettingsPage(m.settingsSections(session)) };
+    };
+    if (modeSheet && settingsUi) return show(modeSheet, settingsUi);
+    // every key meanwhile waits in the queue (decisions.md R8), so none of them lands on the line before the page is there
+    sheetLoad = Promise.all([loadModeSheet(), loadSettingsUi()]).then(
+      ([m, ui]) => {
+        sheetLoad = null;
+        show(m, ui);
+      },
+      () => {
+        sheetLoad = null; // the chunk did not load: the queued keys run without the page
+      },
+    );
   }
+  function closeSettings(): void {
+    settings = null;
+  }
+  // Android back is Esc for the open layer (R21b): the page, or a pick sheet, owns one history entry while it is open.
+  $effect(() => {
+    if (!settingsOpen) return;
+    return openLayer(closeSettings);
+  });
+  $effect(() => {
+    if (!sheetOpen) return;
+    return openLayer(() => shell.closeSheet());
+  });
   /** Shift + CAS, or a tap on a status chip (`at`: the row to start on): the Mode sheet. Without `at` it starts on
    *  Angle, so Shift + CAS, ▶, Enter always switches the angle unit (3 keys). */
   function openMode(at?: string): void {
@@ -378,6 +419,22 @@
     }
   }
 
+  /** A key while the Settings page is open (R21b): ▲ ▼ move, ◀ ▶ step, Enter toggles, Esc and Cancel close; a key that
+   *  changes place closes the page and goes there; no key goes through to the entry line. */
+  function settingsPress(key: Key, layer: Layer | undefined): boolean {
+    const page = settings?.page;
+    if (!page) return false;
+    const k = layer === "alpha" || layer === "shift" ? ({ kind: "none" } as const) : sheetKey(key, false);
+    const what = page.key(k);
+    if (what === "close") closeSettings();
+    else if (what === "pass") {
+      const p = key.actions.primary;
+      closeSettings();
+      if (p?.kind === "special" && p.name !== "menu") special(p.name); // Menu just closes the page
+    }
+    return true;
+  }
+
   // Keys pressed while an app's code is loading wait for it, so nothing typed is lost (like MathLive's queue). Each
   // waits with the layer it was pressed in (Shift and Alpha act at once), so "Plot, Shift, CAS" typed fast opens the
   // Mode sheet as it would after the load (decisions.md R8). A key whose action changes place, opens a sheet or
@@ -396,7 +453,7 @@
     for (const w of keys)
       if (shell.loading !== null || sheetLoad !== null) wait(w); // another app started loading meanwhile
       else if ("letter" in w) typeLetter(w.letter);
-      else if (!(shell.sheet && sheetPress(w.key, w.layer))) run(w.key, w.mods); // a sheet opened meanwhile takes its keys
+      else if (!((settings && settingsPress(w.key, w.layer)) || (shell.sheet && sheetPress(w.key, w.layer)))) run(w.key, w.mods); // a page or sheet opened meanwhile takes its keys
   }
 
   const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols"];
@@ -411,6 +468,7 @@
   function press(key: Key, layer?: Layer): void {
     const p = key.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(p.name, layer);
+    if (settings && settingsPress(key, layer)) return;
     if (shell.sheet && sheetPress(key, layer)) return;
     const mods = modsFor(layer);
     session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
@@ -427,6 +485,7 @@
 
   /** A letter from a hardware keyboard (R45, F38): what the keypad's letter key does in this place. */
   function typeLetter(ch: string): void {
+    if (settings) return; // the page takes no letters
     const sheet = shell.sheet;
     if (sheet) {
       if (sheet.level.filterable) sheet.level.type(ch);
@@ -574,6 +633,10 @@
     {/if}
   </div>
 </main>
+
+{#if settings}
+  <settings.C page={settings.page} onclose={closeSettings} />
+{/if}
 
 {#snippet sheetView(sheet: NonNullable<typeof shell.sheet>, over: "keypad" | "view")}
   {#if sheetChunk.C}

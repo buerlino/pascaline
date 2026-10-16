@@ -164,19 +164,31 @@ const shots: Shot[] = [
   {
     id: "home-settings",
     group: "Home",
-    title: "Settings (Shift + Home/CAS)",
+    title: "Settings page (Shift + Home/CAS, R21b): over everything, a heading per section",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "app", "down", "right"]);
+      await tap(p, ["shift", "app", "down", "down", "right"]);
     },
   },
   {
-    id: "home-settings-cycle",
+    id: "home-settings-vibration",
     group: "Home",
-    title: "Settings, Format key cycle",
+    title: "Settings page, scrolled to Vibration (switched on, strength disabled with its reason)",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "app", "enter"]);
+      await tap(p, ["shift", "app"]);
+      await p.locator('[data-testid="settings"] [data-id="haptics"]').tap();
+      await p.locator('[data-testid="settings"] [data-id="strength"]').scrollIntoViewIfNeeded();
+    },
+  },
+  {
+    id: "home-settings-small",
+    group: "Small phone (360 × 740)",
+    title: "Settings page (R21b)",
+    viewport: { width: 360, height: 740 },
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["shift", "app", "down", "down", "right"]);
     },
   },
   {

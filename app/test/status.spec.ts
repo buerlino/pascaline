@@ -157,17 +157,19 @@ test("Shift and Alpha do nothing while the Mode sheet is open, and Esc goes back
   await expect(sheet(page)).toBeHidden();
 });
 
-test("the last row of the Mode sheet opens Settings; Shift + Home/CAS opens Settings directly; the Menu key closes either", async ({ page }) => {
+test("the last row of the Mode sheet opens the Settings page; Shift + Home/CAS opens it directly; the Menu key closes it", async ({ page }) => {
   await open(page);
+  const settings = page.getByTestId("settings");
   await tap(page, ["shift", "cas", "d5"]);
-  await expect(page.getByTestId("sheet-title")).toHaveText("Settings");
+  await expect(settings).toBeVisible();
+  await expect(sheet(page)).toBeHidden(); // the Mode sheet gave way to the page
   await tap(page, ["menu"]);
-  await expect(sheet(page)).toBeHidden();
+  await expect(settings).toBeHidden();
   await tap(page, ["shift", "app"]);
-  await expect(page.getByTestId("sheet-title")).toHaveText("Settings");
-  await expect(active(page)).toHaveAttribute("data-id", "fmtCycle");
+  await expect(page.getByTestId("settings-title")).toHaveText("Settings");
+  await expect(settings.locator('[data-active="true"]')).toHaveAttribute("data-id", "std");
   await tap(page, ["menu"]);
-  await expect(sheet(page)).toBeHidden();
+  await expect(settings).toBeHidden();
 });
 
 test("the sheets work inside an app, and the angle unit set there is the one the app uses", async ({ page }) => {
