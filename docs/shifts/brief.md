@@ -9,7 +9,7 @@
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. R21b (the Settings page and Android back).
+  1. R46 (the sheet's view leaves the start chunk), R21b (the Settings page and Android back).
   2. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
   3. R15b (the top cluster, after A4a's report).
   4. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
@@ -29,7 +29,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
-  - **Day packages sit next to the code they share:** the start-chunk budget has 1.10 kB gzip left (52.90 of 54 kB, after R21a, 2026-10-16), with R15b, R11 and R12b to come (decisions.md "R21a: 1.10 kB gzip left").
+  - **Day packages sit next to the code they share:** the start-chunk budget has 1.10 kB gzip left (52.90 of 54 kB, after R21a, 2026-10-16), with R21b, R11, R15b and R12b to come. So R46 takes the sheet's view out of the start chunk first (decisions.md "R21a: the sheet's view leaves the start chunk"), before R21b adds the Settings page and before A4a measures start-up on the device.
   - **Trust features after the code they build on:**
     - R32 and R36 add a line to the history rows R11 builds.
     - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
@@ -125,7 +125,8 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R21a | ~0.75 d |
+| R46 | The sheet's view leaves the start chunk | ron, Sonnet | `p1/ron-m4a-lazysheet` | R21a (now) | ~0.5 d |
+| R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R46 | ~0.75 d |
 | A4a | Device run before R15b | annabell, Sonnet | `p1/annabell-m4a-device` | R21b; the owner connects the Tab One (and the S8+) | ~0.5 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R21b (runs while A4a takes place) | ~1 d |
 | R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | R11, and A4a's report says R15b may start | ~2 d |
@@ -337,8 +338,20 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
+### ron, R46: the sheet's view leaves the start chunk, branch `p1/ron-m4a-lazysheet`
+Starts now (R21a is merged). Decided: decisions.md "R21a: the sheet's view leaves the start chunk" (owner, 2026-10-16). After R21a the start chunk is 52.90 of 54 kB gzip. `node tools/probes/start-chunk.mjs` (2026-10-16) puts `views/Sheet.svelte` at 6.2 kB raw and `views/sheetFit.ts` at 2.2 kB raw in it; both only draw an open sheet. The sheet model (`sheet.svelte.ts`), `sheetKeys.ts` and the shell stay in the start chunk: the keys drive them. Read R35's commits (`git log --format='%h %s' 445fdbf^1..445fdbf^2`, then `git show c60e7ba 9dc238d -- app/src/App.svelte app/src/main.ts`), the parts of `App.svelte` with `loadModeSheet`, `sheetLoad`, `wait` and `replay`, the sheet parts of `App.svelte` that R21a wrote (the `.layer`, the catcher, the `sheetView` snippet), and decisions.md "Mode and Settings sheets (R8)".
+
+Commits in this order:
+1. **Tests first** (failing on today's code):
+   - The size test (`app/scripts/size-check.ts`) fails when `views/Sheet.svelte` or `views/sheetFit.ts` is in the start chunk (from the build manifest, the way the probe finds the start chunk's files).
+   - e2e, with the sheet chunk's request held back (`page.route`): Menu, then 2, typed before the chunk is in, picks row 2 once it is; Tmpl then a cell's key does the same; Cancel while it waits closes nothing that is not open and leaves the line as it was. No key is lost or run twice.
+2. **The split:** `App.svelte` imports `Sheet.svelte` (and with it `sheetFit.ts`) dynamically. The chunk is fetched when idle after the keypad is drawn, beside the Mode lists (`main.ts`). A key that opens a sheet before the chunk is in waits in the R8 queue, as the Mode sheet's keys do since R35; once it is in, nothing waits. Move `tmplSheet.ts` too if only an open sheet needs it (its `paletteAction` runs on a key today, so check first).
+3. **Report** ("Numbers": the start chunk before and after, raw and gzip; the sheet chunk's size; desktop `?bench=1` keyboard-ready before and after. "For shared files": docs/04 8.3's start-chunk row, decisions.md's budget entry, the brief's free room).
+
+Gate: the new size test and e2e green; `fit.spec.ts`, `sheet.spec.ts`, `status.spec.ts`, the Mode e2e, `tmpl.spec.ts`, `shiftpal.spec.ts`, gestures and `hwkeys.spec.ts` green; the start chunk at least 2 kB gzip smaller than 52.90 kB; gallery unchanged (rebuild and compare the sheet shots).
+
 ### ron, R21b: the Settings page and Android back, branch `p1/ron-m4a-settings`
-Starts when R21a is merged. Decided: decisions.md "R21" (the Settings page) and backlog C8 (Android back). Read decisions.md "R21" and "Mode and Settings sheets (R8)", docs/05 3.4, R21a's report, `app/src/views/modeSheet.ts`, the Settings and sheet parts of `App.svelte`, and `android/app/src/main/java/io/github/buerlino/pascaline/MainActivity.java`.
+Starts when R46 is merged. Decided: decisions.md "R21" (the Settings page) and backlog C8 (Android back). Read decisions.md "R21" and "Mode and Settings sheets (R8)", docs/05 3.4, R21a's report, `app/src/views/modeSheet.ts`, the Settings and sheet parts of `App.svelte`, and `android/app/src/main/java/io/github/buerlino/pascaline/MainActivity.java`.
 
 **Why back needs Java:** Capacitor 8.5.3 has no back handling of its own (no `onBackPressed` or `canGoBack` in its Android sources), `@capacitor/app` is not installed, and `MainActivity` does not override back. So on the APK the back gesture leaves the app whatever the page does, while a `history.back()` e2e passes in Chromium all the same (checked 2026-10-14).
 

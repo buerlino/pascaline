@@ -7,7 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
-- **2026-10-16 R21a: 1.10 kB gzip left in the start chunk. OPEN.** After R21a the start chunk is 52.90 of 54 kB gzip, with R15b, R11 and R12b still to come. **Recommendation:** if R15b or R11 needs more, move `Sheet.svelte` and `sheetFit.ts` into a chunk loaded when idle after the keypad is drawn, as R35 did with the Mode lists (the key queue for a sheet that is loading already exists). That frees several kB without raising the budget.
 - **2026-10-16 R34: the start-chunk allowance, and one line per view. OPEN.**
   1. **The start chunk:** R34 adds 0.37 kB gzip (53.62 of 54 kB), 0.07 kB over its package gate of +0.3 kB. The last 0.07 kB is the review fix that keeps the stored line when a hide comes before it is on the field (a second kill lost it). **Recommendation:** accept it; it is a correctness fix (principle 3), the 54 kB budget holds, and R35 has since cut the start chunk to 51.36 kB gzip.
   2. **One line per view:** the R34 package text asked that "Home and CAS each keep their own line", but Home and CAS share one entry line (the Home/CAS key keeps what is typed), so R34 keeps that one line with the view it was typed in and brings it back only there. **Recommendation:** keep the shared line; if the owner wants a line per view, check the G2 first (does it keep a separate entry line in Home and CAS?), then a small ron package, since it changes the Home/CAS switch.
@@ -39,10 +38,11 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
   **Recommendation:** keep 1–4 until the owner misses something; confirm 5 on the phone. Points 1 and 2 can only be tried once a list longer than 10 items exists (R4 Find).
 - **2026-10-12 P7 point 4: merging Shift and Alpha into one key. OPEN.** Decided on R9's local Shift/Alpha tap counter (Settings > Shift / Alpha taps, built in `cd4719f`) after a week of flick use (P11): the owner reads it around 2026-10-20. If merged, the freed cell becomes a fourth user key U4 (2026-10-14). Details in P7 below.
 
-## Decided proposals (2026-10-12 to 2026-10-15)
+## Decided proposals (2026-10-12 to 2026-10-16)
 
 Newest first. Where an entry changed an earlier document, that document now carries the result.
 
+- **2026-10-16 R21a: the sheet's view leaves the start chunk. DECIDED by the owner (2026-10-16): yes.** After R21a the start chunk is 52.90 of 54 kB gzip (1.10 kB left), with R21b, R11, R15b and R12b still to come. `views/Sheet.svelte` (6.2 kB raw) and `views/sheetFit.ts` (2.2 kB raw) only draw an open sheet (`tools/probes/start-chunk.mjs`, 2026-10-16), so they move into a chunk fetched when idle after the keypad is drawn, as R35 did with the Mode lists; a key that opens a sheet before the chunk is in waits in the R8 queue. The budget stays at 54 kB gzip. Package **R46** (ron, Sonnet, ~0.5 d), before R21b, so that A4a measures it on the device.
 - **2026-10-15 Architecture check after 4a's entry work: three small packages. DECIDED by the owner (2026-10-15): yes to all three.** (sandra; evidence in docs/04 2.3 #17–#18 and 5.5, report [shifts/2026-10-15-sandra-archcheck-report.md](shifts/2026-10-15-sandra-archcheck-report.md); package texts in brief section 7.)
   **Why:** Two are silent wrong answers, and the third closes a second key path before Find and the unit slots depend on it.
   1. **G27** (gorge, night, ~0.25 d), F36: a result that is not a number but holds a float gets `⚠`. **Done** (`adb2e3a`). Today `evalf(x+sin(10^22))` shows `x-0.54764225985` with no mark in Home and CAS; the right value is x − 0.852200849767… (`oracle`). docs/04 2.4 now says a non-number with a float is `⚠`, since nobody checked its digits (principle 3).
