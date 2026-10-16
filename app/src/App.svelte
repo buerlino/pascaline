@@ -26,13 +26,19 @@
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {
     if (host) entry.setHost(host);
-    entry.onEnter = enter;
+    // R45: a hardware Enter is the Enter key (a picked row, an open sheet), not a bare submit
+    entry.onEnter = () => {
+      const key = keyboard.byId.get("enter");
+      if (key) press(key, "primary");
+      else enter();
+    };
     entry.onEscape = () => void cancel();
     // R31 (F27): a hardware keyboard's printable keys are taps of the keypad key with that character
     entry.onKey = (id, layer) => {
       const key = keyboard.byId.get(id);
       if (key) press(key, layer);
     };
+    entry.onLetter = typeLetter;
     entry.onDead = dead;
   });
   let host: HTMLElement | undefined = $state();
@@ -327,17 +333,20 @@
   // Mode sheet as it would after the load (decisions.md R8). A key whose action changes place, opens a sheet or
   // cancels runs at once.
   const AT_ONCE: readonly string[] = ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings", "mode"];
-  let waiting: { key: Key; mods: Mods }[] = [];
-  function wait(key: Key, mods: Mods): void {
-    waiting.push({ key, mods });
+  // A hardware letter (R45) waits in the same queue, as a `letter`.
+  type Waiting = { key: Key; mods: Mods } | { letter: string };
+  let waiting: Waiting[] = [];
+  function wait(w: Waiting): void {
+    waiting.push(w);
     if (waiting.length === 1) void shell.opening.then(replay);
   }
   function replay(): void {
     const keys = waiting;
     waiting = [];
-    for (const { key, mods } of keys)
-      if (shell.loading !== null) wait(key, mods); // another app started loading meanwhile
-      else run(key, mods);
+    for (const w of keys)
+      if (shell.loading !== null) wait(w); // another app started loading meanwhile
+      else if ("letter" in w) typeLetter(w.letter);
+      else run(w.key, w.mods);
   }
 
   /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
@@ -350,9 +359,23 @@
     session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
     if (shell.loading !== null) {
       const a = actionFor(key, mods.shift, mods.alpha);
-      if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait(key, mods);
+      if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait({ key, mods });
     }
     run(key, mods);
+  }
+
+  /** A letter from a hardware keyboard (R45, F38): what the keypad's letter key does in this place. */
+  function typeLetter(ch: string): void {
+    const sheet = shell.sheet;
+    if (sheet) {
+      if (sheet.level.filterable) sheet.level.type(ch);
+      return;
+    }
+    if (shell.loading !== null) return wait({ letter: ch });
+    picked = null;
+    session.clearModifiers();
+    if (shell.app !== null && !shell.showsEntry) return dead();
+    entry.run({ kind: "type", text: ch });
   }
 
   /** Shift and Alpha: a tap is the G2's one-shot (L3's double taps lock), counted for P7 point 4; a flick locks

@@ -3,7 +3,7 @@
 // keypad's path, so the line they leave parses as the same keys pressed on the keypad. Before, MathLive took them with
 // its own rules: `1e-3` was 1·e − 3, `*` stayed a bare star, `\` started a LaTeX command and `|` swallowed the rest of
 // the line.
-// - Backspace and Delete are ⌫ and Del (R26b, F16).
+// - Backspace and Delete are ⌫ and Del (R26b, F16); the arrows are the pad's keys (R45, F38).
 // - A character a keypad key types runs that key (in that layer) through the shell, as a tap would: digits, `.`, `+`,
 //   `-` (the − key: on an empty line it starts with Ans), `,`, space, and `=` `_` (Shift) and `#` `:` `;` (Alpha).
 // - `*` is ×, `/` is ÷ (a stacked fraction in textbook entry), `^` is xʸ, `(` is the bracket pair ( ) and `|` the
@@ -24,6 +24,8 @@ export interface HwTarget {
   run(a: ActionBody): void;
   /** Press a keypad key in a layer, as a tap would (the shell's path: Ans first, one-line forms, open sheets). */
   onKey(id: string, layer: Layer): void;
+  /** A typed letter, through the shell's checks (open sheet, picked row, apps) before it reaches the line. */
+  onLetter(ch: string): void;
   /** A key that does nothing here (docs/05 3.7). */
   onDead(): void;
 }
@@ -46,6 +48,8 @@ const KEYS: Readonly<Record<string, readonly [string, Layer]>> = {
   ":": ["sub", "alpha"],
   ";": ["add", "alpha"],
 };
+/** The arrow keys and the keypad keys they press (R45); with Shift they stay with MathLive (selection). */
+const ARROWS: Readonly<Record<string, string>> = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
 /** The Shift palettes' symbols that are one ASCII character (spec/keyboard.yaml `relations` lt, gt; `symbols` fact). */
 const PALETTE = new Set(["<", ">", "!"]);
 
@@ -55,9 +59,15 @@ export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
   const mf = t.field;
   if (!mf || ev.isComposing) return false;
   if ((ev.ctrlKey || ev.metaKey || ev.altKey) && !ev.getModifierState("AltGraph")) return false;
+  // R45 (F38): Backspace is ⌫, Delete is Shift + ⌫ (Del) and the arrows are the pad's keys, all through the shell's
+  // path. Shift + arrows (selection), Home and End stay with MathLive.
   if (ch === "Backspace" || ch === "Delete") {
-    // R26b (F16): the on-screen key's path (run: R23 and the R26 rules live there)
-    t.run({ kind: "cmd", name: ch === "Backspace" ? "deleteBackward" : "deleteForward" });
+    t.onKey("bksp", ch === "Backspace" ? "primary" : "shift");
+    return true;
+  }
+  const arrow = ARROWS[ch];
+  if (arrow && !ev.shiftKey) {
+    t.onKey(arrow, "primary");
     return true;
   }
   if (ch.length !== 1) return false;
@@ -76,7 +86,7 @@ export function hardwareKey(ev: KeyboardEvent, t: HwTarget): boolean {
   const k = KEYS[ch];
   if (k) t.onKey(k[0], k[1]);
   else if (PALETTE.has(ch)) t.run({ kind: "insert", latex: ch });
-  else if (/^[A-Za-z]$/.test(ch)) t.run({ kind: "type", text: ch });
+  else if (/^[A-Za-z]$/.test(ch)) t.onLetter(ch);
   else t.onDead();
   return true;
 }

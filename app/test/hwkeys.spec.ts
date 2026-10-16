@@ -216,3 +216,88 @@ test.describe("on the engine", () => {
     expect(await entryValue(page)).toBe("7");
   });
 });
+
+// ---- R45 (F38): arrows, ⌫, Del and letters take the keypad's path ----------------------------------------------------
+test.describe("R45: the path of a hardware key", () => {
+  test.beforeEach(async ({ page }) => {
+    await open(page);
+    await page.evaluate(() => window.pascaline.entry.focus());
+  });
+  const positions = async (page: Page, latex: string, how: (key: "left" | "right") => Promise<void>, key: "left" | "right"): Promise<number[]> => {
+    await page.evaluate(([l, k]) => {
+      const mf = window.pascaline.entry.field;
+      if (!mf) throw new Error("no field");
+      mf.value = l as string;
+      mf.position = k === "right" ? 0 : mf.lastOffset;
+      mf.focus();
+    }, [latex, key]);
+    const seen: number[] = [];
+    for (let i = 0; i < 14; i++) {
+      seen.push(await page.evaluate(() => window.pascaline.entry.field?.position ?? -1));
+      await how(key);
+    }
+    return seen;
+  };
+  for (const latex of ["\\sin\\left(2\\right)", "\\frac{\\frac12}{\\placeholder{}}"]) {
+    for (const key of ["right", "left"] as const) {
+      test(`${key === "right" ? "ArrowRight" : "ArrowLeft"} visits the positions of ${key === "right" ? "▶" : "◀"} through ${latex}`, async ({ page }) => {
+        const hw = await positions(page, latex, (k) => page.keyboard.press(k === "right" ? "ArrowRight" : "ArrowLeft"), key);
+        const kp = await positions(page, latex, (k) => tap(page, [k]), key);
+        expect(hw).toEqual(kp);
+      });
+    }
+  }
+
+  test("ArrowUp on an empty line with history picks the last row and Enter inserts it", async ({ page }) => {
+    await page.keyboard.type("12");
+    await page.keyboard.press("Enter");
+    await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("Enter");
+    expect(await entryValue(page)).toBe("\\res{1}{12}"); // the row's result as a chip that carries its value (L5)
+  });
+
+  test("with Tmpl open: a hardware letter and Backspace leave the line and the sheet as the keypad's keys do", async ({ page }) => {
+    const state = async (): Promise<[string, boolean]> => [await entryValue(page), await page.getByTestId("menu").isVisible()];
+    await page.evaluate(() => window.pascaline.entry.focus());
+    await tap(page, ["tmpl"]);
+    await expect(page.getByTestId("menu")).toBeVisible();
+    await page.evaluate(() => window.pascaline.entry.focus()); // the field keeps focus while a sheet is open
+    await page.keyboard.type("h");
+    expect(await state()).toEqual(["", true]);
+    await page.keyboard.press("Backspace");
+    const hw = await state();
+    await tap(page, ["bksp"]);
+    expect(hw).toEqual(await state());
+    expect(hw).toEqual(["", true]);
+  });
+
+  test("in a filtering sheet: hardware letters filter, Backspace takes one back, a digit picks its row", async ({ page }) => {
+    await page.evaluate(() => {
+      const w = window as unknown as { ran: string[] };
+      w.ran = [];
+      const names = ["hour", "hertz", "henry", "gauss", "coulomb", "candela", "kelvin", "kilogram", "joule", "lux", "lumen", "newton", "ohm", "pascal"];
+      window.pascaline.shell.showMenu("Test", names.map((n) => ({ id: n, label: n, run: () => void w.ran.push(n) })));
+      window.pascaline.entry.focus();
+    });
+    const items = page.getByTestId("menu").getByRole("menuitem");
+    await page.keyboard.type("h");
+    await expect(page.getByTestId("sheet-filter")).toHaveText("h");
+    await page.keyboard.type("e");
+    await expect(items).toHaveText(["1hertz", "2henry"]);
+    await page.keyboard.press("Backspace");
+    await expect(items).toHaveCount(3);
+    await page.keyboard.type("e");
+    await page.keyboard.press("2");
+    expect(await page.evaluate(() => (window as unknown as { ran: string[] }).ran)).toEqual(["henry"]);
+    expect(await entryValue(page)).toBe("");
+  });
+
+  test("2x typed fast while Function first opens waits for the load, as keypad keys do", async ({ page }) => {
+    await page.evaluate(() => window.pascaline.entry.focus());
+    await tap(page, ["symb"]); // the app's code loads on its first open
+    await page.keyboard.type("2x");
+    await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+    await expect.poll(() => entryValue(page)).toBe("2x");
+  });
+});
