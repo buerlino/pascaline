@@ -69,10 +69,10 @@ export interface CasOutcome {
   error?: CalcError;
   /** The result as a number, when it is one. */
   numeric?: HomeResult;
-  /** A true or false that rests on a float (an == or ≠ test, R18f1). */
+  /** A true or false that rests on a float (an == or ≠ test, R18f1), or a non-number with a float in it (G27). */
   approximate?: boolean;
-  /** That float comes from an unaudited function (R18f2): the mark is ⚠. */
-  warn?: "unaudited";
+  /** The mark is ⚠: that float comes from an unaudited function (R18f2), or sits in a non-number nobody checked (G27). */
+  warn?: PrecisionWarn;
 }
 
 /** Thrown by home()/cas() when Cancel stopped the job. */

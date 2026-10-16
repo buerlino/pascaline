@@ -163,3 +163,7 @@ cases:
   - { id: "mat-inv", input: "inv([[1,2],[3,4]])[1][0]", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived" }
   - { id: "mat-tran", input: "tran([[1,2],[3,4]])[0][1]", oracle: "F(3)", expect: "3", mark: "=", source: "derived" }
   - { id: "vec-cross", input: "cross([1,2,3],[4,5,6])[1]", oracle: "F(6)", expect: "6", mark: "=", source: "derived" }
+  # --- G27 (F36, docs/04 2.3 #17): a result that is not a number but holds a float is ⚠ without a count ------------
+  - { id: "symfloat-evalf-x+sin1e22", input: "evalf(x+sin(10^22))", mark: "⚠", source: "derived", note: "mark-only: Giac shows x-0.54764225985, but sin(10^22) = -0.8522008497671888… (oracle, mpmath at 40 and 80 digits), so every digit shown is wrong. Nobody checked the float in a non-number, so it is ⚠ (docs/04 2.4); it had no mark before G27" }
+  - { id: "symfloat-evalf-equation", input: "evalf(x^2-2=0)", expect: "x^2-2.0=0.0", mark: "⚠", source: "derived", note: "a float in an equation: right here, but unchecked, so ⚠; no mark before G27" }
+  - { id: "symfloat-evalf-list", input: "evalf([1/3,x])", expect: "[0.333333333333,x]", mark: "⚠", source: "derived", note: "1/3 to 12 digits next to a free name: the list is not a number, its float unchecked, so ⚠; no mark before G27" }

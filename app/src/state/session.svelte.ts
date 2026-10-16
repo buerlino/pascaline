@@ -468,7 +468,8 @@ export class Session {
             live.full = full;
             live.fullExact = !isDigitsText(full);
           }
-          // A true or false that rests on a float, or on an inexact chip, is marked approximate (R18f1)
+          // A true or false that rests on a float, or on an inexact chip, is marked approximate (R18f1); a non-number
+          // with a float in it comes approximate and unchecked, so ⚠ (G27)
           if (r.approximate || (live.inexactInput === true && /^(true|false)$/.test(r.text))) {
             live.approximate = true;
             live.facts = { exactRational: false, reliableDigits: null, ...(r.warn ? { warn: r.warn } : {}) };

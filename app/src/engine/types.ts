@@ -2,6 +2,7 @@
 // The only way UI code talks to maths (CLAUDE.md). Implementations run Giac off the main thread.
 import type { HomeResult, HomeSettings } from "./homeEval.ts";
 import type { DefEntry } from "./defs.ts";
+import type { PrecisionWarn } from "./format.ts";
 
 export type { HomeResult, HomeSettings };
 
@@ -48,10 +49,11 @@ export interface CasResult {
   /** The result as a number, when it is one with a float in it (docs/04 section 2.9): the value the mark, the copy and
    *  the digits setting work on. Exact CAS results (`1/3`, `sqrt(2)`) have none: they get no mark. */
   numeric?: HomeResult;
-  /** A true or false that rests on a float (an == or ≠ test, R18f1): drawn with the approximate mark. */
+  /** A true or false that rests on a float (an == or ≠ test, R18f1), or a non-number with a float in it (G27): drawn
+   *  with the approximate mark. */
   approximate?: boolean;
-  /** That float comes from an unaudited function (R18f2): drawn with ⚠. */
-  warn?: "unaudited";
+  /** ⚠: that float comes from an unaudited function (R18f2), or sits in a non-number nobody checked (G27). */
+  warn?: PrecisionWarn;
 }
 
 export interface EvalResult {
