@@ -333,17 +333,20 @@
   // Mode sheet as it would after the load (decisions.md R8). A key whose action changes place, opens a sheet or
   // cancels runs at once.
   const AT_ONCE: readonly string[] = ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings", "mode"];
-  let waiting: { key: Key; mods: Mods }[] = [];
-  function wait(key: Key, mods: Mods): void {
-    waiting.push({ key, mods });
+  // A hardware letter (R45) waits in the same queue, as a `letter`.
+  type Waiting = { key: Key; mods: Mods } | { letter: string };
+  let waiting: Waiting[] = [];
+  function wait(w: Waiting): void {
+    waiting.push(w);
     if (waiting.length === 1) void shell.opening.then(replay);
   }
   function replay(): void {
     const keys = waiting;
     waiting = [];
-    for (const { key, mods } of keys)
-      if (shell.loading !== null) wait(key, mods); // another app started loading meanwhile
-      else run(key, mods);
+    for (const w of keys)
+      if (shell.loading !== null) wait(w); // another app started loading meanwhile
+      else if ("letter" in w) typeLetter(w.letter);
+      else run(w.key, w.mods);
   }
 
   /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
@@ -356,7 +359,7 @@
     session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
     if (shell.loading !== null) {
       const a = actionFor(key, mods.shift, mods.alpha);
-      if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait(key, mods);
+      if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait({ key, mods });
     }
     run(key, mods);
   }
@@ -368,6 +371,7 @@
       if (sheet.level.filterable) sheet.level.type(ch);
       return;
     }
+    if (shell.loading !== null) return wait({ letter: ch });
     picked = null;
     session.clearModifiers();
     if (shell.app !== null && !shell.showsEntry) return dead();

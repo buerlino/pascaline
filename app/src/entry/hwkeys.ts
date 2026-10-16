@@ -48,8 +48,9 @@ const KEYS: Readonly<Record<string, readonly [string, Layer]>> = {
   ":": ["sub", "alpha"],
   ";": ["add", "alpha"],
 };
-/** The Shift palettes' symbols that are one ASCII character (spec/keyboard.yaml `relations` lt, gt; `symbols` fact). */
+/** The arrow keys and the keypad keys they press (R45); with Shift they stay with MathLive (selection). */
 const ARROWS: Readonly<Record<string, string>> = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
+/** The Shift palettes' symbols that are one ASCII character (spec/keyboard.yaml `relations` lt, gt; `symbols` fact). */
 const PALETTE = new Set(["<", ">", "!"]);
 
 /** Handle a keydown on the entry line. True: handled, and the caller stops the event. */
