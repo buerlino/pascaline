@@ -7,6 +7,9 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-16 R34: the start-chunk allowance, and one line per view. OPEN.**
+  1. **The start chunk:** R34 adds 0.37 kB gzip (53.62 of 54 kB), 0.07 kB over its package gate of +0.3 kB. The last 0.07 kB is the review fix that keeps the stored line when a hide comes before it is on the field (a second kill lost it). **Recommendation:** accept it; it is a correctness fix (principle 3), the 54 kB budget holds, and R35, next in the ron lane, exists to cut the start chunk.
+  2. **One line per view:** the R34 package text asked that "Home and CAS each keep their own line", but Home and CAS share one entry line (the Home/CAS key keeps what is typed), so R34 keeps that one line with the view it was typed in and brings it back only there. **Recommendation:** keep the shared line; if the owner wants a line per view, check the G2 first (does it keep a separate entry line in Home and CAS?), then a small ron package, since it changes the Home/CAS switch.
 - **2026-10-16 R43: ▶ in DMS on a selected □, and G2 item 57. OPEN.**
   1. **DMS on a selected □:** R17 brackets a selected □ under a power key or DMS. sin, Tmpl DMS gives sin((□)°□′□″), and since R43, 3 0 ▶ stops after (30), so the minutes need ▶ ▶. **Recommendation:** DMS takes a selected lone □ bare (a small ron package in `controller.ts` `run`, with the ⌫ grid as its guard); the power keys keep the bracket, since x² on x²'s □ base needs it.
   2. **G2 item 57** (backlog "Needs the user"): if the G2 does not stop after x² at the end of a numerator, point 2 of "The cursor goes where the user aims" narrows; if it stops after x² in the middle of a box too, it widens.
@@ -95,7 +98,7 @@ Newest first. Where an entry changed an earlier document, that document now carr
     - F28: a value stored in Home is used by CAS without a sign. A CAS result names the stored values it used (G20 engine, R32 the line; entry "Home and CAS share one Giac context").
     - F29: DEG mode reads `exp(i*90)` as `i`. OPEN under "Needs the user", after G2 item 54.
   - **Robustness:**
-    - F30: the half-typed line survives a kill (R34).
+    - F30: the half-typed line survives a kill (R34). **Done** (`98a7ff7`).
     - F31: a stored definition that crashes the worker no longer loops the start. After two failed starts the engine starts without the log and says so (G19).
     - F32: the Giac worker gets a memory cap, so a runaway job fails inside it (G24; A4a checks it on the Tab One).
     - The start chunk gets lighter before R21a instead of a second budget raise (R35: `@capacitor/core` out of it).
@@ -272,6 +275,16 @@ Newest first. Where an entry changed an earlier document, that document now carr
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-16 The kept line (F30, R34)
+- **Choice:**
+  1. One record, `{ view, latex, chips }`, under the stamped key `entry`, written on hide (`main.ts` `flush`) and cleared by every clear of the line (Enter, Esc, an app view). With an app open nothing is kept: an app's line belongs to the app.
+  2. It comes back at start after the settings and the history (an Ans on it is then the restored last result), only into the view it was typed in (a CAS line in Home would be computed the numeric way), cursor at the end, before any keys typed meanwhile. The field waits for it at most 1 s.
+  3. A hide stores the line only once it is settled: the kept line is on the field, or the line was typed, set or cleared since start. Before that (the field still loading, or the store answered after the 1 s cap) the stored line stays as it is, so a second kill does not lose it.
+  4. A result chip without its table entry (a damaged store) comes back as the digits it showed; a constant chip without one is dropped, since its symbol alone would be read as a name.
+- **Why:** Android kills a background app when memory runs short; the hide event always comes before a kill.
+- **Alternatives:** write the line on every edit (a store write per key); one line per view ("Needs the user").
+- **Would change if:** the owner wants one line per view.
 
 ### 2026-10-15 R18f3 (owner): Home draws a non-number from latex()
 - **Choice:** a Home result that is not a number is drawn from Giac's `latex()` through `tidyGiacLatex`, as in CAS; numbers keep our formatter. In `tidyGiacLatex` a top-level `==` loses the brackets round its sides (`xy==2`, as `a≠b`), and a digit keeps its `·` before a fraction, since `2\frac{\pi}{7}` reads as the mixed number 2 + π/7 (this changes CAS too).

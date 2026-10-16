@@ -61,7 +61,7 @@ The top risks are in section 9.
 | Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel and a crash restart the worker and replay the definitions; definitions survive a relaunch (G3) | no memory cap (F32: G24); a stored definition that crashes the worker restarts it forever (F31: G19) | Giac 9.75 MB wasm |
 | Home evaluation (`engine/homeEval.ts`) | 92 ms p95 | exact-first; marks and the agreement check (G0, G2) | `normald_icdf`'s value is not polished yet (#2, EN7) | — |
 | Formatter (`engine/format.ts`) | re-formats without the engine | BigInt, one rounding | `tieRisk` is computed but nothing reads it; the agreement check covers the case (2.4 rule 4) | in the start chunk |
-| History and settings (`state/session.svelte.ts`, `storage.ts`) | history survives a relaunch | digits ≤ 30, settings schema 2, every stored value stamped (`storage.ts` `DATA_VERSION`) | a half-typed line is lost when Android kills the app (F30: R34) | — |
+| History and settings (`state/session.svelte.ts`, `storage.ts`) | history and the half-typed line survive a relaunch and a kill (R34) | digits ≤ 30, settings schema 2, every stored value stamped (`storage.ts` `DATA_VERSION`) | — | — |
 | Function app | Plot 56 fps on the Tab One | every number shown comes from the engine (`apps/function/compile.ts` header) | — | 19.6 kB + JSXGraph 1,035 kB lazy |
 | Solve app | — | every root substituted back, ⚠ on failure | — | 8.2 kB lazy |
 | CAS view (`host.ts` `cas()`) | — | exact results; typed decimals exact (P9); a numeric result with a float drawn and marked by our formatter | a value stored in Home is used without a sign (#15: the engine lists it in `uses`, G20; R32 draws the line) | — |
@@ -632,7 +632,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 | Item | Budget | Today | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 152.42 / 53.16 kB (2026-10-16, `phase-1` at c836230: 0.84 kB gzip left, so R35 comes before R21a) | size test |
+| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 153.73 / 53.62 kB (2026-10-16, `phase-1` after R34: 0.38 kB gzip left, so R35 comes before R21a) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (generated, 2026-10-15) | size test (once Find loads it) |

@@ -4,17 +4,16 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43 and R45; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45 and R34; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug package R34 (the line survives a kill, F30).
-  2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
-  3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
-  4. R15b (the top cluster, after A4a's report).
-  5. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
-  6. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
+  1. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
+  2. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
+  3. R15b (the top cluster, after A4a's report).
+  4. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
+  5. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
 - **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
@@ -30,9 +29,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
-  - **Day packages sit next to the code they share:**
-    - R34 ends the entry-bug group (the same files, `main.ts` and `controller.ts`).
-    - R35 comes before R21a, whose gate is the start-chunk budget: 0.84 kB gzip are left (53.16 of 54 kB, after R18f3, 2026-10-16).
+  - **Day packages sit next to the code they share:** R35 comes before R21a, whose gate is the start-chunk budget: 0.38 kB gzip are left (53.62 of 54 kB, after R34, 2026-10-16).
   - **Trust features after the code they build on:**
     - R32 and R36 add a line to the history rows R11 builds.
     - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
@@ -227,7 +224,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23; and G18 if P15 holds | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
-| R34 | The line survives a kill | F30 | day | ron, **Opus** | `p1/ron-m4a-keepline` | R45 | ~0.5 d |
 | R35 | A lighter start chunk | review item 11 | day | ron, Sonnet | `p1/ron-m4a-slim` | R34 | ~0.5 d |
 | R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | R11 | ~0.5 d |
 | R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | R32 (same file) and G22 | ~0.5 d |
@@ -970,32 +966,6 @@ Commits in this order:
 2. **Fix:** find where Giac applies the angle mode to `exp` of an imaginary argument, and evaluate `exp` (and `e^`) without it, by a rewrite in the host or a Giac setting. If the fix is a Giac patch, follow `engine/giac/patches/README.md` and write the upstream report for the owner.
 
 Gate: the golden gate; the trig cases in DEG unchanged.
-
-### ron, R34: the line survives a kill (F30), branch `p1/ron-m4a-keepline`
-Backlog F30. Starts when R43 is merged, so the entry files have settled. Read:
-- `app/src/main.ts` (`flush`, lines 31–49);
-- `app/src/state/session.svelte.ts` (`flushHistory`, `restoreHistory`);
-- `app/src/entry/controller.ts` (`pendingValue`, `create()`);
-- `app/src/input/chips.ts` (`pruneChips`, `validChips`);
-- `app/src/state/storage.ts` (the stamped store);
-- `app/test/persist.spec.ts`.
-
-**Behaviour today:**
-- On hide, the app writes the history, the apps' state and the place, but not the entry line.
-- Android kills a background app when memory runs short (the Tab One with a camera or a PDF open). A half-typed formula is then gone on return.
-- Function and Solve keep their slots (`shell.flush()`).
-
-Commits in this order:
-1. **Tests first** (`persist.spec.ts`):
-   - type a line with a fraction and a result chip, hide the page (`visibilitychange`), reload: the line and the chip come back with the cursor at the end, and Enter computes the same value;
-   - Home and CAS each keep their own line, and an empty line stays empty;
-   - a stored line whose chip entry is missing comes back without that chip, still parseable.
-2. **Build:**
-   - On hide, store `{ view, latex, chips }` for each view in the stamped store (key `entry`, stamped like the other keys).
-   - At start, restore it after the history and before the first key; keys typed while loading still queue (decisions.md R8).
-   - Clear it on Enter.
-
-Gate: the persist, softkeyboard and chips e2e green; start chunk within 0.3 kB gzip.
 
 ### ron, R35: a lighter start chunk, branch `p1/ron-m4a-slim`
 Deep-dive item 11; decisions.md "Start chunk: budget raised to 156 kB raw, 54 kB gzip". Starts when R34 is merged, and comes before R21a, whose gate is that budget. Read:
