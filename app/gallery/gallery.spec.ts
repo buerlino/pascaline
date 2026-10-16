@@ -16,6 +16,8 @@ interface Shot {
   readonly title: string;
   /** Sets the screen up from a fresh Home. */
   readonly setup: (page: Page) => Promise<void>;
+  /** Another phone size than the Pixel 7's 412 × 915 (R21a: the small phone, 360 × 740). */
+  readonly viewport?: { width: number; height: number };
 }
 
 const ready = async (page: Page): Promise<void> => {
@@ -123,7 +125,7 @@ const shots: Shot[] = [
   {
     id: "home-mode",
     group: "Home",
-    title: "Mode sheet (Shift + CAS): angle, format, digits, decimals, entry",
+    title: "Mode sheet (Shift + CAS) over the keypad: each value with ◀ ▶ for the thumb",
     setup: async (p) => {
       await someHistory(p);
       await tap(p, ["shift", "cas"]);
@@ -132,10 +134,31 @@ const shots: Shot[] = [
   {
     id: "home-mode-digits",
     group: "Home",
-    title: "Mode sheet, Significant digits (current value marked)",
+    title: "Mode sheet, Significant digits (current value marked): nine rows fit over the keypad",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "cas", "d3"]);
+      await tap(p, ["shift", "cas"]);
+      await p.getByRole("menuitem", { name: "3 Significant digits" }).tap(); // the 3 key is under the sheet
+    },
+  },
+  {
+    id: "home-mode-small",
+    group: "Small phone (360 × 740)",
+    title: "Mode sheet over the keypad, with ◀ ▶ for the thumb",
+    viewport: { width: 360, height: 740 },
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["shift", "cas"]);
+    },
+  },
+  {
+    id: "home-tmpl-small",
+    group: "Small phone (360 × 740)",
+    title: "Tmpl palette over the keypad, no scroll",
+    viewport: { width: 360, height: 740 },
+    setup: async (p) => {
+      await someHistory(p);
+      await tap(p, ["tmpl"]);
     },
   },
   {
@@ -159,7 +182,7 @@ const shots: Shot[] = [
   {
     id: "home-tmpl",
     group: "Home",
-    title: "Tmpl palette (R10): the 6 × 3 grid, its name on the hint line",
+    title: "Tmpl palette over the keypad (R10, R21a): the title, the cell's name and × on the hint line",
     setup: async (p) => {
       await someHistory(p);
       await tap(p, ["tmpl", "down", "down", "down", "right", "right"]);
@@ -168,7 +191,7 @@ const shots: Shot[] = [
   {
     id: "home-relations",
     group: "Home",
-    title: "Shift + 6 palette (R18): relations and logic, each cell with the key that picks it",
+    title: "Shift + 6 palette (R18, R21a): each cell drawn over the key that picks it",
     setup: async (p) => {
       await someHistory(p);
       await tap(p, ["shift", "d6", "down", "right"]);
@@ -177,7 +200,7 @@ const shots: Shot[] = [
   {
     id: "home-symbols",
     group: "Home",
-    title: "Shift + 9 palette (R18): symbols and Greek, 8 × 3",
+    title: "Shift + 9 palette (R18): symbols and Greek, 8 × 3, over the keypad",
     setup: async (p) => {
       await someHistory(p);
       await tap(p, ["shift", "d9", "down", "right"]);
@@ -301,7 +324,7 @@ for (const shot of shots)
   test(shot.id, async ({ browser }) => {
     const files: Partial<Record<Theme, string>> = {};
     for (const theme of THEMES) {
-      const context = await browser.newContext({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true, colorScheme: theme });
+      const context = await browser.newContext({ viewport: shot.viewport ?? { width: 412, height: 915 }, deviceScaleFactor: 2, hasTouch: true, isMobile: true, colorScheme: theme });
       const page = await context.newPage();
       try {
         await open(page, "");

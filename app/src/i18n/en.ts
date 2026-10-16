@@ -51,6 +51,8 @@ export const en = {
   "menu.title": "Menu",
   "sheet.back": "Back",
   "sheet.count": "{n} items",
+  "sheet.stepDown": "Previous value",
+  "sheet.stepUp": "Next value",
   "sheet.noMatch": "No match",
   "tmpl.title": "Templates",
   "tmpl.frac": "Fraction",

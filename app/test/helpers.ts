@@ -1,9 +1,35 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import type { Page } from "@playwright/test";
 
-/** Tap keys by their id in spec/keyboard.yaml (d0..d9, div, frac, shift, enter, ...). */
+/**
+ * Tap keys by their id in spec/keyboard.yaml (d0..d9, div, frac, shift, enter, ...). A key under an open pick sheet
+ * (R21a: the sheet is drawn over the maths rows) cannot be touched: the sheet's row or cell is where it was, and
+ * fit.spec.ts taps those. Its key path stays for a hardware keyboard (docs/05 2 rule 1), so such a key is pressed the
+ * way a hardware key is (R31: the keypad key with that character), in the current Shift/Alpha state.
+ */
 export async function tap(page: Page, ids: string[]): Promise<void> {
-  for (const id of ids) await page.locator(`[data-key="${id}"]`).tap();
+  const covered = (id: string): Promise<boolean> =>
+    page.evaluate((id) => {
+      const k = document.querySelector(`[data-key="${id}"]`);
+      if (!k) return false;
+      const r = k.getBoundingClientRect();
+      const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+      return el !== null && !k.contains(el) && el.closest('[role="menu"]') !== null;
+    }, id);
+  const press = (id: string): Promise<void> => page.evaluate((id) => window.pascaline.entry.onKey(id, undefined as never), id);
+  for (const id of ids) {
+    if (await covered(id)) {
+      await press(id);
+      continue;
+    }
+    try {
+      await page.locator(`[data-key="${id}"]`).tap({ timeout: 3000 });
+    } catch (e) {
+      // a sheet whose code was still loading (the Mode sheet, R35) rose over the key meanwhile
+      if (!(await covered(id))) throw e;
+      await press(id);
+    }
+  }
 }
 
 export const entryValue = (page: Page): Promise<string> => page.evaluate(() => window.pascaline.entry.value);

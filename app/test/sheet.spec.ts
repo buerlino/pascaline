@@ -186,7 +186,9 @@ test("disabled rows stay in place with their number and say why; picking one doe
   const rows = sheet(page).getByRole("menuitem");
   await expect(rows).toHaveCount(8);
   await expect(rows.first()).toBeDisabled();
-  await expect(rows.first().locator(".reason")).toHaveText("Define a function first");
+  // five neighbouring rows share their reason: it is said once, under the last of them (R21a, R7 open point 5)
+  await expect(sheet(page).locator(".reason")).toHaveText(["Define a function first", "No result yet"]);
+  await expect(rows.nth(4).locator(".reason")).toHaveText("Define a function first");
   await expect(sheet(page).getByRole("menuitem", { name: "6 Default window" })).toBeEnabled();
   await expect(active(page)).toHaveAttribute("data-id", "default"); // the highlight starts on the first live row
   await tap(page, ["d1"]);
@@ -204,12 +206,15 @@ test("touch: a tap on a row picks it, ‹ goes back, a tap beside the sheet clos
   expect(await ran(page)).toEqual(["y"]);
   await expect(sheet(page)).toHaveCount(0);
   await list(page, "Test", FIVE);
-  await sheet(page).click({ position: { x: 5, y: 5 } }); // the dimmed area above the sheet
+  await page.getByTestId("sheet-catch").click({ position: { x: 5, y: 5 } }); // the viewport, above the keypad
+  await expect(sheet(page)).toHaveCount(0);
+  await list(page, "Units", UNITS); // a list that takes letters, over the view: the dimmed area above it
+  await sheet(page).click({ position: { x: 5, y: 5 } });
   await expect(sheet(page)).toHaveCount(0);
   expect(await ran(page)).toEqual([]);
 });
 
-test("the sheet sits just above the entry line while its rows fit, and takes the entry line's room when they need it", async ({ page }) => {
+test("a short list goes over the keypad; a list that takes letters stays above it and takes the entry line's room when its rows need it", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" }); // no rise animation: the boxes are final at once
   const bottoms = async () => {
     const [s, e, k] = await Promise.all([sheet(page).getByRole("menu").boundingBox(), page.locator(".entry").boundingBox(), page.locator(".pad").boundingBox()]);
@@ -218,10 +223,10 @@ test("the sheet sits just above the entry line while its rows fit, and takes the
   };
   await list(page, "Test", ["one", "two"]);
   let b = await bottoms();
-  expect(b.sheet).toBeLessThanOrEqual(b.entryTop + 1);
+  expect(b.sheet).toBeGreaterThan(b.keypadTop + 100); // over the keypad (R21a; fit.spec.ts has the details)
   await tap(page, ["cancel"]);
   await list(page, "Units", UNITS);
   b = await bottoms();
   expect(b.sheet).toBeGreaterThan(b.entryTop + 10);
-  expect(b.sheet).toBeLessThanOrEqual(b.keypadTop + 1); // never over the keypad
+  expect(b.sheet).toBeLessThanOrEqual(b.keypadTop + 1); // a list that takes letters never covers the keypad
 });
