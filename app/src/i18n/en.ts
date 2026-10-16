@@ -116,6 +116,8 @@ export const en = {
   "mark.warn": "Warning: fewer digits are confirmed than shown",
   "history.actions": "Row actions",
   "history.recall": "Use this entry again",
+  "history.usesHome": "stored in Home",
+  "history.usesCas": "stored in CAS",
   "history.insert": "Put this result on the entry line",
   "error.syntax": "Syntax error",
   "error.timeout": "Stopped: it took too long",

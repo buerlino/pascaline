@@ -7,7 +7,7 @@
   import { mathlive } from "../render/mathlive.svelte.ts";
   import { markText } from "../state/displayMode.ts";
   import type { MarkInfo } from "../engine/format.ts";
-  import type { HistoryItem } from "../state/session.svelte.ts";
+  import type { HistoryItem, UsedValue } from "../state/session.svelte.ts";
 
   let {
     items,
@@ -56,6 +56,18 @@
   function tapped(act: () => void): void {
     if (longPressed) longPressed = false;
     else act();
+  }
+
+  // F28: the stored values a CAS result read, in one muted line: at most three names, then "+n". When all come from
+  // one view it is said once at the end; otherwise after each name.
+  const USES_SHOWN = 3;
+  const viewText = (v: UsedValue["view"]): string => t(v === "home" ? "history.usesHome" : "history.usesCas");
+  function usesLine(uses: UsedValue[]): string {
+    const shown = uses.slice(0, USES_SHOWN);
+    const once = uses.every((u) => u.view === uses[0]?.view);
+    const names = shown.map((u) => `${u.name} = ${u.preview}${once ? "" : ` (${viewText(u.view)})`}`).join(", ");
+    const more = uses.length > shown.length ? ` +${uses.length - shown.length}` : "";
+    return `${names}${more}${once ? ` · ${viewText(uses[0]!.view)}` : ""}`;
   }
 
   let scroller: HTMLElement | undefined = $state();
@@ -148,6 +160,9 @@
           </button>
         {/if}
       </div>
+      {#if item.status === "done" && item.uses?.length}
+        <div class="uses" data-testid="uses">{usesLine(item.uses)}</div>
+      {/if}
     </article>
   {/each}
 </section>
@@ -215,6 +230,15 @@
     font-size: 20px;
     color: var(--muted);
     white-space: nowrap;
+  }
+  .uses {
+    align-self: flex-end;
+    max-width: 100%;
+    font-size: 14px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .mark[data-mark="⚠"] {
     color: var(--error);
