@@ -4,12 +4,12 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c and R42; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42 and R43; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R43 (▶ stops at the end of a box that holds a template, F34), R45 (hardware keys take the keypad's path, F38; the owner said yes 2026-10-15), then R34 (the line survives a kill, F30).
+  1. The entry-bug packages: R45 (hardware keys take the keypad's path, F38; the owner said yes 2026-10-15), then R34 (the line survives a kill, F30).
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
   4. R15b (the top cluster, after A4a's report).
@@ -128,7 +128,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R43 | Bug F34: ▶ skips the end of a box that holds a template | ron, **Opus** | `p1/ron-m4a-boxend` | R27b (same function, `run`); G2 item 57 answered, or start on the default | ~0.5 d |
 | R21a | Pick sheets over the keypad, and fit | ron, **Opus** | `p1/ron-m4a-fit` | R35 (section 0f; it follows the entry-bug packages) | ~1.5 d |
 | R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R21a | ~0.75 d |
 | A4a | Device run before R15b | annabell, Sonnet | `p1/annabell-m4a-device` | R21b; the owner connects the Tab One (and the S8+) | ~0.5 d |
@@ -343,49 +342,6 @@ Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a us
 Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is connected (rules section 6). Find per key (`?bench=find`, §3.2) against the §8.3 bar; a miss goes under "Needs a decision" with the number (docs/04 says what changes: incremental Find). Leave an APK built from `phase-1` on the Tab One for the owner. Then the report says whether milestone 4's gate (section 8) is complete.
 
 ### Milestone 4a packages (section 0b)
-
-### The entry-bug package R43 (bug F34, the owner's report of 2026-10-15)
-A small package, one concern, with its own short reading list. Read only what the package names.
-- Backlog milestone 4a items 21–35 have the summary.
-- The rules are in decisions.md "⌫ and Del keep a template whole", "Nothing takes focus while the app is away", "The cursor stops only at a box" and "The cursor goes where the user aims".
-- r6-pipelines section 7 explains how MathLive behaves and how to probe it.
-- Every "behaviour today" below was reproduced in Playwright (Pixel 7 profile, `?engine=fake`, 2026-10-15). ‸ is the cursor.
-- The key names are the ids of `spec/keyboard.yaml`, and a Tmpl cell is driven by `window.pascaline.entry.run({ kind: "insert", latex })`.
-- **Tests first**: the new test fails on today's code. Then the fix, then the report commit (section 2).
-- A G2 item that is answered before the package starts wins over the default, unless it breaks point 1 of "⌫ and Del keep a template whole".
-
-### ron, R43: ▶ stops at the end of a box that holds a template (bug F34), branch `p1/ron-m4a-boxend`
-Read: `app/src/entry/controller.ts` (`run`, `nextBox`), `app/src/entry/stops.ts` (R27b's stop rule), `app/src/entry/delete.ts` (`boxTemplate()`, `startsBox()`, `endsBox()`), docs/04 5.5 (one box model), `app/test/tmpl.spec.ts`, `app/test/bksp-grid.spec.ts` (how a grid reads the templates from the yaml), r6-pipelines section 7 ("▶ jumps to any empty box ahead"), decisions.md "The cursor goes where the user aims" point 2.
-
-**Behaviour today:**
-- ÷ ÷ 1 ▶ 2 ▶: the cursor goes from the inner denominator straight to the empty outer denominator (offset 8 of `\frac{\frac12}{□}`). Offset 6, the end of the outer numerator after ½, is skipped. A 3 typed next lands in the outer denominator: `\frac{\frac12}{3}`.
-- The same for every template at the end of an earlier box while a later box of the outer template is empty:
-  - ÷ x xʸ 2 ▶ + 1 gives `\frac{x^2}{+1}`, where the owner meant (x²+1)/□.
-  - ÷ √ (Shift + x²) 2 ▶ + 1 gives `\frac{\sqrt2}{+1}`.
-  - 1 + ÷ 2 ÷ 3 ▶ 4 gives `1+\frac{\frac23}{4}`.
-- Not affected, since no empty box is ahead: the outer denominator already filled (▶ is the plain step and stops after ½); the inner fraction in the denominator (`\frac{1}{\frac23}`, ▶ 4 gives `\frac{1}{\frac234}`); a root around a fraction (`\sqrt{\frac12}`, ▶ 3 gives `\sqrt{\frac123}`).
-- The way there today: ◀ from the start of the outer denominator reaches offset 6.
-
-**Cause:** `nextBox` (line 339). While `\placeholder` appears anywhere between the cursor and the end of the line, ▶ is `moveToNextPlaceholder`. R10 added it so that ▶ skips the marks between the boxes of one template (∂, d, the evaluate-at bar, the brackets of a body). It also skips the end of the box that holds the template the cursor leaves.
-
-**Fix** (direction; R27b's stop rule may already carry part of it):
-- Before the jump, look at where the plain step lands. If it leaves the template the cursor is in (the depth drops) and lands at the end of the box that holds it, make the plain step and stop there. The next ▶ jumps to the empty box as today.
-- "The end of a box": take it from `endsBox()` in `delete.ts` (line 1013), not from a new test (docs/04 5.5, the architecture check of 2026-10-15). It already knows the plain case (the next offset is the next box's `first` atom, latex "", or sits higher up: in `\frac{\frac12}{□}`, offset 6 is followed by the denominator's `first`, offset 7) and the boxes that end at a mark, which the plain test misses: EQ's comma, DMS's ° and ′, lim's →, the = of Σ, Π and evaluate-at, ∫'s `\,` d. Move the box model (`boxTemplate()`, `startsBox()`, `endsBox()` and their helpers) into `app/src/entry/boxes.ts` and import it from `delete.ts`, `stops.ts` and the controller, so "a box" is written once. If the move outgrows the half day, export `endsBox()` from `delete.ts` instead and say so in the report.
-- Anywhere else R10's jump stays: in `\frac{x^{2}+1}{□}` with the cursor in the exponent, ▶ still goes to the denominator, since the + follows the power in the same box. Whether ▶ should stop after x² there too is the second question of G2 item 57.
-- Rejected: jump only to an empty box of the template the cursor is in. ∫ and ∂ are sequences of atoms, not one atom, so R10's stops on their marks would come back.
-- ◀ is not changed: it already stops at offset 6. The trackpad's steps to the right take the same path (`step()` calls `run`).
-
-**Commits:**
-1. **Tests** (`tmpl.spec.ts`, or R27b's `cursor.spec.ts`):
-   - The four sequences above give `\frac{\frac123}{□}`, `\frac{x^2+1}{□}`, `\frac{\sqrt2+1}{□}` and `1+\frac{\frac234}{□}`.
-   - One more ▶ from there reaches the outer denominator.
-   - R10's walks through ∫, ∂ and evaluate-at are unchanged.
-   - The same at a mark: ▶ from the end of ½ in `EQ(½,□)` and in `½°□′□″` stops at the end of that box (the plain test above would jump).
-   - **A cursor grid** (`app/test/cursor-grid.spec.ts`, built like R26a's ⌫ grid: every template read from `spec/keyboard.yaml`, so a new key joins by itself): filled with a digit in each box and with each box empty in turn, ▶ from the line start to the end and ◀ back stop at the start and the end of every box and at no other place (`isStop()` true at each stop). Mark today's failures `test.fail()` with F34, as R26a did; the fix removes them.
-2. **Fix.**
-3. **Report** with the G2 item 57 answer, and the task benchmark's press counts (a task with a power or a root at the end of a numerator needs one more ▶).
-
-Gate: tmpl, cursor, entry, gestures and bksp-grid e2e green.
 
 ### ron, R21a: pick sheets over the keypad, branch `p1/ron-m4a-fit`
 The owner's frictions (2026-10-14): a sheet in the viewport is far from the thumb while typing, the Tmpl grid scrolls on the phone, Settings is too small. R21 is built in two packages: R21a the pick sheets, R21b the Settings page. Where 0d says "R21 merged" (R24b), read R21a. Decided: decisions.md "R21" (binding); the target text is already in docs/05 2 (rule 1), 3.1 and 3.4 and docs/03 rule 8. Read those, decisions.md "Sheet defaults (R7)", "Mode and Settings sheets (R8)", "S2: one menu system", and `app/src/views/` (`Sheet.svelte`, `sheet.svelte.ts`, `sheetKeys.ts`, `modeSheet.ts`) with the sheet parts of `App.svelte`, `apps/shell.svelte.ts` and `keyboard/Keypad.svelte`. Commits in this order:
