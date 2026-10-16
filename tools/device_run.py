@@ -46,14 +46,15 @@ def battery():
 
 def env_info():
     web = re.search(r"\(name, version\): \((.*)\)", sh("dumpsys webviewupdate")) or None
-    ver = re.search(r"versionName=(\S+)", sh(f"dumpsys package {PKG}"))
-    # same data stay-awake.sh recorded, with the current build type
-    dbg = "DEBUGGABLE" in sh(f"dumpsys package {PKG}")
+    pkg = sh(f"dumpsys package {PKG}")
+    ver = re.search(r"versionName=(\S+)", pkg)
+    # build type: debug (debuggable), measure (build.sh --measure puts -measure in the versionName), else release
+    build = "debug" if "DEBUGGABLE" in pkg else ("measure" if ver and ver.group(1).endswith("-measure") else "release")
     return {
         "device": sh("getprop ro.product.model").strip(),
         "android": sh("getprop ro.build.version.release").strip() + " (SDK " + sh("getprop ro.build.version.sdk").strip() + ")",
         "webview": (web.group(1) if web else sh("dumpsys webviewupdate | grep -m1 -i 'current webview'").strip()),
-        "build": "debug" if dbg else "release",
+        "build": build,
         "appVersion": ver.group(1) if ver else "?",
     }
 
