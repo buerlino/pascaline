@@ -4,7 +4,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
-import { formatComplex } from "./format.ts";
+import { formatComplex, markOf, type FormatOptions } from "./format.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 
@@ -144,5 +144,53 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     expect(host.home(ans("((pasw*pasw)==5)"), defaultHomeSettings).result.display).toBe("false");
     expect(host.home(ans("[(pasw==2),(pasw<>2),(x==2)]"), defaultHomeSettings).result.display).toBe("[true,false,(x==2)]");
     host.home("purge(pasw)", defaultHomeSettings);
+  });
+
+  // G27 (F36, docs/04 2.3 #17): a result that is not a number but holds a float is ⚠ without a count, in Home and CAS.
+  describe("a non-number with a float in it (G27, F36)", () => {
+    const o: FormatOptions = { format: "STD", digits: 12 };
+    const home = (i: string) => host.home(i, defaultHomeSettings).result;
+    const cas = (i: string) => host.cas(i, defaultCasSettings).result;
+    const SYMFLOAT = ["evalf(x+sin(10^22))", "evalf(x^2-2=0)", "evalf([1/3,x])"];
+
+    it("Home: ⚠ (unchecked), with Giac's text kept", () => {
+      for (const i of SYMFLOAT) {
+        const r = home(i);
+        expect(r, i).toMatchObject({ ok: true, approximate: true, warn: "unchecked" });
+        expect(markOf(r, o), i).toEqual({ mark: "⚠", warn: "unchecked" });
+      }
+      expect(home("evalf(x^2-2=0)").display).toBe("x^2-2.0=0.0");
+    });
+
+    it("CAS: approximate and unchecked, so the history row draws ⚠", () => {
+      for (const i of SYMFLOAT) {
+        const r = cas(i);
+        expect(r, i).toMatchObject({ ok: true, approximate: true, warn: "unchecked" });
+        expect(r.numeric, i).toBeUndefined();
+      }
+      expect(cas("evalf([1/3,x])").text).toBe("[0.333333333333,x]");
+    });
+
+    it("guards: an exact non-number keeps no mark (derived)", () => {
+      for (const i of ["x+1/3", "factor(x^2-1)", "x+0.5"]) {
+        const h = home(i);
+        expect(h.approximate, i).toBe(false);
+        expect(h.warn, i).toBeUndefined();
+        expect(markOf(h, o), i).toBeNull();
+        const c = cas(i);
+        expect(c.approximate, i).toBeUndefined();
+        expect(c.warn, i).toBeUndefined();
+        expect(c.numeric, i).toBeUndefined();
+      }
+    });
+
+    it("guards: a float that is a number keeps its own mark (oracle: sqrt(2) = 1.41421356237…)", () => {
+      expect(markOf(home("evalf(sqrt(2))"), o)).toEqual({ mark: "≈" });
+      const c = cas("evalf(sqrt(2))");
+      expect(c.numeric && markOf(c.numeric, o)).toEqual({ mark: "≈" });
+      expect(c.approximate).toBeUndefined();
+      // an unaudited function's float stays ⚠ "unaudited", not "unchecked"
+      expect(markOf(home("BesselJ(1,2)"), o)).toMatchObject({ mark: "⚠", warn: "unaudited" });
+    });
   });
 });

@@ -7,7 +7,7 @@
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
-//              median ≤ 500 ms
+//              median ≤ 500 ms; a mark-only case (no `expect`) checks the mark and that an answer came back
 //   precision  tests/golden/precision.yaml (docs/04 2.3 regression list, 20/30-digit cases): Home and CAS at the case's
 //              digits, value and mark; `before:` inputs run first on the same engine. A case with `status: pending` is
 //              known to fail until its fix: it never fails the gate, and is listed as still pending or now passing. A
@@ -29,6 +29,7 @@ import { EngineHost, type GiacApi } from "../src/engine/host.ts";
 import { defaultHomeSettings, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
 import { decimalFromString, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
+import { hasFloat } from "../src/engine/numeric.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
 import type { ChipTable } from "../src/input/chips.ts";
@@ -135,11 +136,12 @@ async function stageHome(): Promise<void> {
     const got = rs.map((x) => markText(markOf(x, { format: "STD", digits: 12 })));
     const markOk = !c.mark || got.every((m) => m?.startsWith(c.mark!));
     if (c.mark) marks++;
-    const ok = rs.every((x) => x.display === c.expect) && markOk;
+    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, c.input!)) : rs.every((x) => x.display === c.expect);
+    const ok = answered && markOk;
     const med = median(rs.map((x) => x.totalMs));
     maxMed = Math.max(maxMed, med);
     if (ok) pass++;
-    else console.log(`  home ${c.id}: got ${rs.map((x, k) => `${got[k] ?? "-"} ${x.display}`).join(" / ")}, expect ${c.mark ?? ""} ${c.expect}`);
+    else console.log(`  home ${c.id}: got ${rs.map((x, k) => `${got[k] ?? "-"} ${x.display}`).join(" / ")}, expect ${c.mark ?? ""} ${c.expect ?? "(mark only)"}`);
     if (!(med <= HOME_LIMIT_MS)) {
       slow++;
       console.log(`  home ${c.id}: median ${med.toFixed(1)} ms > ${HOME_LIMIT_MS} ms (${shown})`);
@@ -170,6 +172,12 @@ function expectAt(expect: string, n: number): string | null {
 }
 
 const LOOKS_NUMERIC = /^-?(\d+(\.\d+)?|\.\d+)(E[+-]?\d+)?([+-](\d+(\.\d+)?(E[+-]?\d+)?\*)?i)?$/;
+
+/** A mark-only case still needs an answer: a number, or a non-number that holds a float (G27: its ⚠ is the mark the
+ *  case checks). The input echoed back (BesselJ(1,2) at 30 digits) is a lost result. */
+function lostAnswer(shown: string, input: string): boolean {
+  return !LOOKS_NUMERIC.test(shown) && !(hasFloat(shown) && shown !== input);
+}
 
 async function stagePrecision(): Promise<void> {
   const cs = cases("precision.yaml");
@@ -218,7 +226,7 @@ async function stagePrecision(): Promise<void> {
       else if (shown !== want) problems.push(`got ${shown}, expect ${want}${want !== c.expect ? ` (${c.expect} at ${mark?.n} digits)` : ""}`);
     }
     // A mark-only case still needs an answer: the input echoed back (BesselJ(1,2) at 30 digits) is a lost result.
-    if (c.expect === undefined && !LOOKS_NUMERIC.test(shown)) problems.push(`answer is not a number: ${shown}`);
+    if (c.expect === undefined && lostAnswer(shown, input)) problems.push(`answer is not a number: ${shown}`);
     if (c.mark) {
       marksChecked++;
       if (!mark || mark.mark !== c.mark) problems.push(`mark ${markText(mark) ?? "none"}, expect ${c.mark}`);
