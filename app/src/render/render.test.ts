@@ -51,6 +51,17 @@ const cases: [string, string][] = [
   ["\\Phi_^{2}", "\\Phi^{2}"],
   ["\\mathrm{!=}\\left(x+1,2\\right)", "x+1\\ne 2"],
   ["\\mathrm{!=}\\left(f(x,y),[1,2]\\right)", "f\\left(x,y\\right)\\ne [1,2]"],
+  // R18f3: an == test kept as typed (latex() of the kept cos(pi/7) identity, of x*y==2 and of a list holding one;
+  // engine build of 2026-10-15) loses the brackets round its sides; a digit keeps its sign before a fraction, which
+  // would otherwise read as a mixed number (2 + π/7)
+  [
+    "(\\cos\\left(\\frac{\\pi }{7}\\right)-\\cos\\left(2\\cdot \\frac{\\pi }{7}\\right)+\\cos\\left(3\\cdot \\frac{\\pi }{7}\\right))==(\\frac{1}{2})",
+    "\\cos\\left(\\frac{\\pi}{7}\\right)-\\cos\\left(2\\cdot \\frac{\\pi}{7}\\right)+\\cos\\left(3\\cdot \\frac{\\pi}{7}\\right)==\\frac{1}{2}",
+  ],
+  ["(x\\cdot y)==2", "xy==2"],
+  ["(e^{\\pi  \\sqrt{163}})==(640320^{3}+744)", "\\mathrm{e}^{\\pi \\sqrt{163}}==640320^{3}+744"],
+  ["[(x\\cdot y)==2,1]", "[\\left(xy\\right)==2,1]"],
+  ["x\\cdot \\frac{1}{2}", "x\\frac{1}{2}"],
 ];
 
 describe("tidyGiacLatex", () => {

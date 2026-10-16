@@ -56,6 +56,8 @@ export interface HomeOutcome {
   warn?: PrecisionWarn;
   /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): drawn with these, not the digits setting. */
   digits?: number;
+  /** Giac latex() of a result that is not a number (raw; the view tidies it and draws it, as in CAS). */
+  latex?: string;
 }
 
 export interface CasOutcome {

@@ -4,7 +4,7 @@
 import { describe, expect, it } from "vitest";
 import { chipToGiac } from "./chip-giac.ts";
 import { pruneChips, validChips, type ChipTable } from "./chips.ts";
-import { SerializeError } from "./emit.ts";
+import { EQ_INEXACT_FLAG, SerializeError } from "./emit.ts";
 import { latexToGiac, latexToGiacInfo } from "./latex-to-giac.ts";
 
 /** Exact SI 2019 constants (derived: exact by definition) and G with an uncertainty: a stand-in until G4's index. */
@@ -32,6 +32,29 @@ describe("chipToGiac", () => {
     expect(chipToGiac("1/3")).toBe("(1/3)");
     expect(chipToGiac("sqrt(2)/2")).toBe("(sqrt(2)/2)");
     expect(chipToGiac("x+1")).toBe("(x+1)");
+  });
+  it("carries an open == or ≠ test as the value test again, never as Giac's structural == (R18f3)", () => {
+    for (const v of ["(x==2)", "((x*y)==2)", "((cos(pi/7)-cos(2*pi/7)+cos(3*pi/7))==(1/2))", "x<>2", "(x*y)<>(2)"]) {
+      const g = chipToGiac(v);
+      expect(g, v).toContain(`sto(1,${EQ_INEXACT_FLAG})`);
+      expect(g, v).toMatch(v.includes("<>") ? /'\(.*\)!=\(.*\)'/ : /'\(.*\)==\(.*\)'/);
+    }
+    expect(chipToGiac("((x*y)==2)")).toContain("'((x*y))==(2)'");
+  });
+  it("carries every test inside a list, an and or a sum, and leaves the rest as it is (R18f3)", () => {
+    const tests = (g: string): number => g.split(`sto(1,${EQ_INEXACT_FLAG})`).length - 1;
+    for (const [v, n] of [["[((x*y)==2),1]", 1], ["[(x+1)<>2,(x==y)]", 2], ["((x<>2) and ((y==3)))", 2], ["not((x==2))", 1], ["(x==2)+1", 1], ["[[(x==2)]]", 1], ["(x==2)=y", 1]] as const) {
+      const g = chipToGiac(v);
+      expect(tests(g), v).toBe(n);
+      expect(g, v).not.toMatch(/(^|[^'])\((x|\(x\*y\))==/); // no == left outside the quoted kept form
+    }
+    expect(chipToGiac("[((x*y)==2),1]")).toMatch(/^\(\[\(\(\(a_,b_\)->.*\),1\]\)$/);
+  });
+  it("refuses a test it cannot carry as typed", () => {
+    expect(() => chipToGiac("x<>2=y")).toThrow(SerializeError); // beside another relation
+    expect(() => chipToGiac('["a",(x==2)]')).toThrow(SerializeError); // a string
+    expect(() => chipToGiac("(x==2")).toThrow(SerializeError); // unbalanced
+    expect(() => chipToGiac("(==2)")).toThrow(SerializeError); // a missing side
   });
   it("refuses statements", () => {
     expect(() => chipToGiac("1;purge(a)")).toThrow(SerializeError);

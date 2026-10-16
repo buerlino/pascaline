@@ -80,6 +80,31 @@ function unparen(g: string): string {
   return t.slice(6, -7).trim();
 }
 
+/**
+ * R18f3: an == test that stays as typed comes back from latex() with each compound side in brackets,
+ * `\left(xy\right)==2`; == binds more loosely than any side, so the brackets go (drawn xy==2, as a≠b is).
+ */
+function equalitySides(s: string): string {
+  let depth = 0;
+  let at = -1;
+  for (let i = 0; i < s.length; i++) {
+    if (s.startsWith("\\left(", i)) {
+      depth++;
+      i += 5;
+    } else if (s.startsWith("\\right)", i)) {
+      depth--;
+      i += 6;
+    } else if (s[i] === "\\") i++;
+    else if ("{[".includes(s.charAt(i))) depth++;
+    else if ("}]".includes(s.charAt(i))) depth--;
+    else if (depth === 0 && s.startsWith("==", i)) {
+      if (at >= 0) return s;
+      at = i++;
+    }
+  }
+  return at < 0 ? s : `${unparen(s.slice(0, at))}==${unparen(s.slice(at + 2))}`;
+}
+
 const GIAC_FUNCS: Record<string, string> = {
   asin: "\\arcsin", acos: "\\arccos", atan: "\\arctan", asinh: "\\operatorname{arsinh}", acosh: "\\operatorname{arcosh}",
   atanh: "\\operatorname{artanh}",
@@ -89,12 +114,14 @@ const GIAC_FUNCS: Record<string, string> = {
  * A product sign between a factor and a letter, command or bracket is implicit in textbook maths.
  * The left factor is a whole token: a \command (\pi, \alpha, \infty), a digit, a single letter that is not
  * the tail of a command, "}" or "\right)". A command followed by a letter keeps a space (\pi x).
+ * A digit keeps its sign before a fraction: 2\frac{\pi}{7} reads as the mixed number 2 + π/7 (Home draws mixed
+ * fractions that way), so it stays 2\cdot\frac{\pi}{7} (R18f3).
  */
 function implicitProducts(s: string): string {
   const left = String.raw`(\\[A-Za-z]+|\d|(?<!\\[A-Za-z]*)[A-Za-z]|\}|\\right\))`;
   const right = String.raw`(?=(\\left\(|\\(?!cdot|times)[A-Za-z]+|[A-Za-z]))`;
-  return s.replace(new RegExp(`${left}\\s*\\\\cdot\\s*${right}`, "g"), (_, l: string, r: string) =>
-    l.startsWith("\\") && l !== "\\right)" && /^[A-Za-z]/.test(r) ? `${l} ` : l);
+  return s.replace(new RegExp(`${left}\\s*\\\\cdot\\s*${right}`, "g"), (m: string, l: string, r: string) =>
+    /^\d$/.test(l) && r === "\\frac" ? m : l.startsWith("\\") && l !== "\\right)" && /^[A-Za-z]/.test(r) ? `${l} ` : l);
 }
 
 /**
@@ -150,6 +177,7 @@ export function tidyGiacLatex(raw: string): string {
   s = s.replace(/\\mathrm\{(asin|acos|atan|asinh|acosh|atanh)\}/g, (_, f: string) => GIAC_FUNCS[f] as string);
   s = s.replace(/\\mathrm\{factorial\}\\left\(([^()]*)\\right\)/g, "\\left($1\\right)!");
   s = sizeBrackets(s);
+  s = equalitySides(s);
   s = stripFracParens(s);
   s = s.replace(/\*/g, "\\cdot ");
   s = s.replace(/(?<![A-Za-z\\])e\^/g, "\\mathrm{e}^");

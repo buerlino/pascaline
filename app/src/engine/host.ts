@@ -21,6 +21,7 @@ import {
   safePrecision,
   simpleAssignment,
   toExactLiterals,
+  unquote,
 } from "./homeEval.ts";
 import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
@@ -79,11 +80,6 @@ function isError(out: string): boolean {
 
 function isTimeout(out: string): boolean {
   return isError(out) && /interrupt/i.test(out);
-}
-
-/** Giac prints a string result in double quotes; latex() returns one. */
-function unquote(s: string): string {
-  return s.length >= 2 && s.startsWith('"') && s.endsWith('"') ? s.slice(1, -1) : s;
 }
 
 /** Commands that put Giac into CAS mode (D3). Home's are homeSetupCommands() in homeEval.ts. */
