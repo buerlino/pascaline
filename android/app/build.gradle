@@ -9,7 +9,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         // A measurement build says so in its versionName, so tools/device_run.py can report the build type.
-        versionName (System.getenv('PASCALINE_MEASURE') == '1') ? "1.0-measure" : "1.0"
+        versionName = (System.getenv('PASCALINE_MEASURE') == '1') ? "1.0-measure" : "1.0"
         // Measurement builds (PASCALINE_MEASURE=1) log timing marks to logcat; normal builds never do.
         buildConfigField "boolean", "MEASURE", (System.getenv('PASCALINE_MEASURE') == '1') ? "true" : "false"
         aaptOptions {

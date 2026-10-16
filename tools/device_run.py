@@ -132,9 +132,10 @@ def start_once(mode, timeout=60):
         if "engine-ready" in marks:
             er = marks["engine-ready"]
             rec["engineReadyMs"] = int(er["epoch"]) - p0
-            for key, field in (("instantiateMs", "instantiateMs"), ("initMs", "initMs"), ("workerReadyMs", "readyMs")):
-                if field in er:
-                    rec[key] = float(er[field])
+            tm = marks.get("engine-timings", er)   # engine-timings: instantiateMs, initMs, replayMs, readyMs
+            for key, field in (("instantiateMs", "instantiateMs"), ("initMs", "initMs"), ("replayMs", "replayMs"), ("workerReadyMs", "readyMs")):
+                if field in tm:
+                    rec[key] = float(tm[field])
         if "first-result" in marks:
             rec["firstResultMs"] = int(marks["first-result"]["epoch"]) - p0
     except KeyError:
@@ -165,7 +166,7 @@ def cmd_start(a):
             time.sleep(60)
         recs.append(start_once(a.mode))
         time.sleep(2)
-    keys = ["totalTime", "waitTime", "activityMs", "jsStartMs", "keyboardReadyMs", "engineReadyMs", "instantiateMs", "initMs", "firstResultMs"]
+    keys = ["totalTime", "waitTime", "activityMs", "jsStartMs", "keyboardReadyMs", "engineReadyMs", "instantiateMs", "initMs", "replayMs", "firstResultMs"]
     log_result({"kind": "start", "mode": a.mode, "runs": a.runs, "before": pre, "after": battery(), **env_info(),
                 "summary": summarize(recs, keys), "raw": recs})
 

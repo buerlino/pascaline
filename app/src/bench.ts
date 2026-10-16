@@ -28,6 +28,19 @@ async function enter(session: Session, giac: string): Promise<{ ms: number; item
   return { ms, item: session.cas[session.cas.length - 1] as HistoryItem };
 }
 
+/**
+ * ?bench=defs: seed 200 definitions (150 values, 50 functions) into the persisted log, once. Then cold-start the app
+ * (tools/device_run.py start): the engine-timings mark reports replayMs for them (docs/04 section 6.2, bar 50 ms).
+ */
+export async function runDefsBench(session: Session): Promise<void> {
+  while (session.engineState === "starting") await sleep(20);
+  session.setView("cas");
+  for (let i = 1; i <= 150; i++) await enter(session, `dv${i}:=${i}/7+${i}`);
+  for (let i = 1; i <= 50; i++) await enter(session, `df${i}(x):=x^2+${i}*x+sin(${i})`);
+  await sleep(2000); // the log is saved to IndexedDB a moment after the last change
+  mark("defs-seeded");
+}
+
 export async function runBench(session: Session): Promise<void> {
   const doc = raw as { cases: Case[] };
   while (session.engineState === "starting") await sleep(20);
