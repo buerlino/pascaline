@@ -73,6 +73,8 @@ export class EntryController {
   /** ▶ in a template: to the next empty box, or the end of the box it leaves (entry/stops.ts, R10, R43): loaded with MathLive. */
   private nextBox: typeof import("./stops.ts").nextBox | undefined;
   private pendingValue: string | undefined;
+  /** R34: the line was set or cleared before the field was up, so a line kept from before a kill no longer applies. */
+  private keptStale = false;
   /** The values of the chips on the line (docs/04 3.6); keys as in input/chips.ts. */
   private table: ChipTable = {};
   private nextRes = 1;
@@ -85,6 +87,8 @@ export class EntryController {
   onLetter: (ch: string) => void = () => {};
   /** A hardware key that does nothing (R31): the shell's dead-key feedback. */
   onDead: () => void = () => {};
+  /** The line was emptied (Enter, Esc, an app view): main.ts clears the kept line (R34). */
+  onClear: () => void = () => {};
 
   /** Resolves when the entry line is on the page and the queued keys have been replayed. */
   ready: Promise<void> = Promise.resolve();
@@ -95,15 +99,21 @@ export class EntryController {
     this.host = host;
   }
 
-  /** Start loading MathLive; safe to call once. */
-  load(): Promise<void> {
+  /**
+   * Start loading MathLive; safe to call once. `kept` is the line kept from before a kill (R34): it goes on the line
+   * before the queued keys are replayed, unless the line was set or cleared meanwhile. A store that never answers
+   * delays the field by at most a second.
+   */
+  load(kept?: Promise<{ latex: string; chips: ChipTable } | undefined>): Promise<void> {
     if (this.started) return this.ready;
     this.started = true;
-    this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts"), import("./stops.ts")]).then(([m, d, h, s]) => {
+    const line = Promise.race([kept, new Promise<undefined>((resolve) => setTimeout(resolve, 1000))]).catch(() => undefined);
+    this.ready = Promise.all([mathlive.load(), import("./delete.ts"), import("./hwkeys.ts"), import("./stops.ts"), line]).then(([m, d, h, s, l]) => {
       this.deleteAt = d.deleteAtTemplate;
       this.hwKey = h.hardwareKey;
       this.settle = s.settle;
       this.nextBox = s.nextBox;
+      if (l && !this.keptStale) this.pendingValue = this.adopt(l.latex, l.chips) + (this.pendingValue ?? "");
       return this.create(m.MathfieldElement);
     });
     return this.ready;
@@ -218,12 +228,27 @@ export class EntryController {
   clear(): void {
     this.queue = [];
     this.pendingValue = undefined;
+    this.keptStale = true;
+    this.onClear();
     // The chip table and the counter stay (R16): Shift + Cancel undoes Esc and Enter, and the chips it brings back must
     // still be worth what they were. The `chips` getter only hands out the chips on the line.
     if (this.mf) this.mf.value = "";
   }
   /** Put a previous entry back on the line, with the values of its chips. */
   set(latex: string, chips: ChipTable = {}): void {
+    latex = this.adopt(latex, chips);
+    if (!this.mf) {
+      this.pendingValue = latex;
+      this.queue = [];
+      this.keptStale = true;
+      return;
+    }
+    this.mf.value = latex;
+    this.mf.focus();
+    this.mf.executeCommand("moveToMathfieldEnd");
+  }
+  /** Take a line's chips into the table; returns the line with any renumbered result chips. */
+  private adopt(latex: string, chips: ChipTable): string {
     // R16: a result key that already holds another value (an entry an undo can still bring back) is never
     // overwritten: the recalled chip gets a fresh number, in the LaTeX and in the table.
     const top = Math.max(0, ...Object.keys(chips).map((k) => (k.startsWith("res:") ? Number(k.slice(4)) : 0)));
@@ -237,14 +262,7 @@ export class EntryController {
         this.table[resKey(k)] = chip;
       } else this.table[key] = chip;
     }
-    if (!this.mf) {
-      this.pendingValue = latex;
-      this.queue = [];
-      return;
-    }
-    this.mf.value = latex;
-    this.mf.focus();
-    this.mf.executeCommand("moveToMathfieldEnd");
+    return latex;
   }
   /** Insert LaTeX at the cursor (a history result, L5). */
   insert(latex: string): void {

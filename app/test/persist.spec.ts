@@ -81,7 +81,7 @@ test("a half-typed line with a fraction and a result chip survives a kill (F30)"
   await lastResult(page).locator(".result").tap();
   await tap(page, ["add", "d1", "div", "d2"]);
   const line = await entryValue(page);
-  expect(line).toBe("\\res{1}{0.333333333333}+\\frac{1}{2}");
+  expect(line).toBe("\\res{1}{0.333333333333}+\\frac12");
   const chips = await page.evaluate(() => window.pascaline.entry.chips);
   await hide(page);
   const next = await relaunch(page, "");

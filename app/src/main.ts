@@ -9,6 +9,7 @@ import App from "./App.svelte";
 import { createCalc } from "./calc/index.ts";
 import type { Calc } from "./calc/port.ts";
 import { EntryController } from "./entry/controller.ts";
+import { lineKeeper, lineRecord } from "./entry/keep.ts";
 import { renderStats } from "./render/mathlive.svelte.ts";
 import { Session } from "./state/session.svelte.ts";
 import { AppShell } from "./apps/shell.svelte.ts";
@@ -29,10 +30,14 @@ if (import.meta.env.VITE_MEASURE === "1") {
 session.saveDelayMs = 400;
 const shell = new AppShell(calc, idbKv, entry, () => session.settings);
 const place = shell.restorePlace();
-void session.restoreSettings();
+const settingsRead = session.restoreSettings();
+// R34 (F30): the half-typed Home/CAS line survives a kill (an app's line belongs to the app, which keeps its slots).
+const keeper = lineKeeper(idbKv);
+entry.onClear = () => keeper.save(null);
 const flush = (): void => {
   session.flushHistory();
   shell.flush();
+  keeper.save(shell.app === null ? lineRecord(session.view, entry.value, entry.chips) : null);
 };
 // Leaving the app (a swipe, the app switcher): drop the focus. Android restores focus to the focused element when
 // the app comes back and opens the system keyboard on it, inputmode=none or not (K0, user 2026-10-13). The next key
@@ -79,9 +84,10 @@ void calc.ready().then(() => {
 requestAnimationFrame(() =>
   requestAnimationFrame(() => {
     mark("keyboard-ready");
-    void entry.load();
-    // The history is read after the keypad is up, so it does not compete with the first paint.
-    void session.restoreHistory();
+    // The history is read after the keypad is up, so it does not compete with the first paint. The kept line comes
+    // after it (an Ans on it is the restored last result) and only into the view it was typed in.
+    const history = session.restoreHistory();
+    void entry.load(Promise.all([settingsRead, history]).then(() => keeper.read(session.view)));
     // An app that was open at the last exit comes back once the keypad is up (its code loads lazily).
     void place.then((app) => app && shell.open(app));
   }),
