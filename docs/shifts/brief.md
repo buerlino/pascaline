@@ -4,7 +4,7 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c and R42; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive package G20 (F28's engine half, 2026-10-15). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c and R42; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
@@ -17,7 +17,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   6. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then G27 and R44 (silent wrong answers from the architecture check; the owner said yes 2026-10-15, F36 and F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A4a when the owner connects the Tab One, after R21b and before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -66,7 +66,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 1 | G15 units on Giac: the check (decides P15): merged by day (`7f32949`), skip | gorge, **Opus** | `p1/gorge-m5-giacunits` | — |
 | 2 | G20 the stored values a CAS result used (F28, engine half): merged by day (`462c163`), skip | gorge, Sonnet | `p1/gorge-m4-uses` | — |
 | 3 | R29 where a number ends (F24, F25) | ron, **Opus** | `p1/ron-m4-numbers` | 1 h + review |
-| 3a | G27 a result that is not a number but holds a float gets ⚠ (F36; owner's yes 2026-10-15) | gorge, Sonnet | `p1/gorge-m4-symfloat` | 45 min + review |
+| 3a | G27 a result that is not a number but holds a float gets ⚠ (F36): merged by day (`adb2e3a`), skip | gorge, Sonnet | `p1/gorge-m4-symfloat` | — |
 | 3b | R44 a long result's chip keeps its value, Ans never dropped (F37; after R29) | ron, Sonnet | `p1/ron-m4-longchip` | 45 min + review |
 | 4 | **Opus pass 1** on steps 2–3b, then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
@@ -219,7 +219,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
 | R29 | Where a number ends | F24, F25 | night | ron, **Opus** | `p1/ron-m4-numbers` | now | ~0.5 d |
-| G27 | A result that is not a number but holds a float gets ⚠ | F36 (architecture check, 2026-10-15) | night | gorge, Sonnet | `p1/gorge-m4-symfloat` | now (the owner said yes, 2026-10-15) | ~0.25 d |
 | R44 | A long result's chip keeps its value, and Ans is never dropped | F37 (architecture check, 2026-10-15) | night | ron, Sonnet | `p1/ron-m4-longchip` | R29 (chips, same tests) | ~0.25 d |
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
 | G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
@@ -767,22 +766,6 @@ Gate: the tests, the Find query test unchanged, and the size test.
 
 ### Packages of section 0f
 Every package here: tests first (they fail on today's code), then the fix, then the report commit (section 2). The finding, its evidence and the decision are in decisions.md "The deep-dive review"; the backlog line is under "Trust and robustness".
-
-### gorge, G27: a result that is not a number but holds a float gets ⚠ (F36), branch `p1/gorge-m4-symfloat`
-From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #17). Starts now (the owner said yes, 2026-10-15). Read: docs/04 2.3 #17 and 2.4 (the mark rules, "unless they hold a float"), `app/src/engine/homeEval.ts` (`symbolic()`), `app/src/engine/host.ts` (`cas()`: the non-numeric return, and `defsOf(…, { warn: "unchecked" })` beside it), `app/src/engine/format.ts` (`markOf` for a result with no value), the CAS branch of `finish()` in `app/src/state/session.svelte.ts`.
-
-**Behaviour today** (`FACTS=1 node tools/probes/engine.ts …`, and with `MODE=cas`, 2026-10-15):
-- Home and CAS `evalf(x+sin(10^22))` → `x-0.54764225985`, no mark. Right: x − 0.852200849767… (`oracle`, mpmath at 40 digits: sin(10²²) = −0.8522008497671888…), so every digit shown is wrong.
-- `evalf(x^2-2=0)` → `x^2-2.0=0.0` and `evalf([1/3,x])` → `[0.333333333333,x]`, no mark.
-
-**Cause:** a non-number got no mark (docs/04 2.4 before 2026-10-15). Home's `symbolic()` returns `exactRational: false`, `reliableDigits: null` and no `warn`; CAS returns no facts; so `markOf` (no value, not `approximate`) gives none. The definitions log already records the same text as unchecked.
-
-**Commits:**
-1. **Tests** (failing today), `source: oracle` or `derived`: Home cases in `tests/golden/home.yaml` with mark `⚠` (no count) for the three inputs; the same in CAS (the golden gate's CAS cases if a stage reads them, else a Vitest in `app/src/engine/host.test.ts`); guards that keep no mark: `x+1/3`, `factor(x^2-1)`; a guard that a numeric float result keeps its own mark.
-2. **Fix:** when the text of a non-number holds a float literal (`hasFloat`), the result carries `approximate: true` and `warn: "unchecked"` (Home: `symbolic()`; CAS: the non-numeric return), so `markOf` gives `⚠`, the way an undecided `==` test on a float already does (R18f1, R18f2). Check that the history row draws it in both views (the session keeps CAS facts only when `r.approximate` is set).
-3. **Report:** the cases, and every golden or e2e case whose mark changed.
-
-Gate: golden gate; vitest; typecheck. Not in this package: a check per float that could earn `≈` (docs/04 2.4 says when it would be worth it).
 
 ### ron, R44: a long result's chip keeps its value, and Ans is never dropped (F37), branch `p1/ron-m4-longchip`
 From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #18). Starts when R29 is merged (the same chip code and tests; the owner said yes, 2026-10-15). Read: docs/04 2.3 #18 and 2.8, `app/src/state/session.svelte.ts` (`finish()` around line 446, `chipFor`, `lastChip`), `app/src/App.svelte` (`insertResult`, the Ans-first branch of `run()`), `app/src/engine/homeEval.ts:485` (what `full` holds), `app/src/input/parse.ts:634` (a missing chip).

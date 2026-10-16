@@ -59,12 +59,12 @@ The top risks are in section 9.
 | Entry, MathLive (`entry/`: `controller.ts`, `delete.ts`, `stops.ts`, `hwkeys.ts`) | textbook entry; results as chips (R2); ⌫ keeps templates whole (R23–R26h); the cursor stops only at boxes (R27b) | — | a result whose exact text is over 2 kB goes back as its rounded digits, and Ans is lost after it (2.3 #18); hardware arrows, ⌫ and letters skip part of the key path; what a box is, is written three times (5.5) | 808 kB chunk after the keypad; `delete.ts` and the others 15 kB, lazy |
 | Parser (`input/parse.ts`, `emit.ts`) | one rule per key | rejects unknown input | a second decimal point and a digit touching a chip still parse (2.3 #11, #12: R29); one-line `÷` binds unlike the G2 (#13: R30) | 25.6 kB lazy (`parse` chunk, out of the start chunk since M4-3) |
 | Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel and a crash restart the worker and replay the definitions; definitions survive a relaunch (G3) | no memory cap (F32: G24); a stored definition that crashes the worker restarts it forever (F31: G19) | Giac 9.75 MB wasm |
-| Home evaluation (`engine/homeEval.ts`) | 92 ms p95 | exact-first; marks and the agreement check (G0, G2) | a result that is not a number but holds a float is shown unmarked, with digits nobody checked (2.3 #17); `normald_icdf`'s value is not polished yet (#2, EN7) | — |
+| Home evaluation (`engine/homeEval.ts`) | 92 ms p95 | exact-first; marks and the agreement check (G0, G2) | `normald_icdf`'s value is not polished yet (#2, EN7) | — |
 | Formatter (`engine/format.ts`) | re-formats without the engine | BigInt, one rounding | `tieRisk` is computed but nothing reads it; the agreement check covers the case (2.4 rule 4) | in the start chunk |
 | History and settings (`state/session.svelte.ts`, `storage.ts`) | history survives a relaunch | digits ≤ 30, settings schema 2, every stored value stamped (`storage.ts` `DATA_VERSION`) | a half-typed line is lost when Android kills the app (F30: R34) | — |
 | Function app | Plot 56 fps on the Tab One | every number shown comes from the engine (`apps/function/compile.ts` header) | — | 19.6 kB + JSXGraph 1,035 kB lazy |
 | Solve app | — | every root substituted back, ⚠ on failure | — | 8.2 kB lazy |
-| CAS view (`host.ts` `cas()`) | — | exact results; typed decimals exact (P9); a numeric result with a float drawn and marked by our formatter | a symbolic result with a float in it is unmarked and can be wrong (2.3 #17); a value stored in Home is used without a sign (#15: the engine lists it in `uses`, G20; R32 draws the line) | — |
+| CAS view (`host.ts` `cas()`) | — | exact results; typed decimals exact (P9); a numeric result with a float drawn and marked by our formatter | a value stored in Home is used without a sign (#15: the engine lists it in `uses`, G20; R32 draws the line) | — |
 | PWA and Capacitor shell | offline; wasm stored uncompressed (R2) | no trackers, no INTERNET permission (C5) | — | the whole build is precached: 12.3 MB (2026-10-15) |
 | Build (`build.sh`, P2 container) | — | reproducible engine; the size test (A1) runs in `npm run build` | no CI (C3; the local `npm run gate` is A6) | — |
 
@@ -74,7 +74,7 @@ The top risks are in section 9.
 
 ### 2.1 Today, per path
 
-All "probe" rows ran on the dev engine `engine/giac/_out/gsl` through `EngineHost` (Appendix A). *This table is the state of 2026-10-12, before the marks. Since G0, G2 and R3 every numeric row is marked by 2.4's rules and the line numbers have moved; what is still shown without its mark is 2.3 #17 and #18 (checked 2026-10-15).*
+All "probe" rows ran on the dev engine `engine/giac/_out/gsl` through `EngineHost` (Appendix A). *This table is the state of 2026-10-12, before the marks. Since G0, G2 and R3 every numeric row is marked by 2.4's rules and the line numbers have moved; what is still shown without its mark is 2.3 #18 (checked 2026-10-15; #17 fixed by G27, 2026-10-16).*
 
 | Path | Where | Working precision | Rounding | What the user sees | Marked today |
 |---|---|---|---|---|---|
@@ -119,7 +119,7 @@ Each item becomes a regression case before its fix (CLAUDE.md). Values marked `o
 | 14 | Hardware keyboard `1e-3`: the parser gives `1*exp(1)-3` | `≈ -0.281718171541` | 0.001 (`derived`) | fixed (R31): `e` after a number's digits is ᴇ |
 | 15 | CAS after Home `3 ▶ x`: `int(x^2,x)`; `factor(x^2-1)` | `9*x`; `8`, with no sign that x held 3 | the answer for the stored x, saying so | G20, R32 (F28) |
 | 16 | DEG: `exp(i*90)`; `exp(i*pi)` | `= i`; `-1` | −0.448073616129+0.893996663601·i (`derived`) if `exp` ignores the angle mode, as `exp(i*pi)` = −1 already does | G21, after G2 item 54 (F29) |
-| 17 | Home or CAS, a result that is not a number but holds a float: `evalf(x+sin(10^22))`; `evalf(x^2-2=0)` (probe 2026-10-15, `FACTS=1 node tools/probes/engine.ts`) | `x-0.54764225985`, no mark (`exactRational: false`, `reliableDigits: null`, no `warn`, so `markOf` returns none); `x^2-2.0=0.0`, no mark | x − 0.852200849767… (`oracle`): wrong from the first digit | `⚠` on every non-number with a float in it, as the defs log already records it (`host.ts` `defsOf(…, { warn: "unchecked" })`); G27 (F36) |
+| 17 | Home or CAS, a result that is not a number but holds a float: `evalf(x+sin(10^22))`; `evalf(x^2-2=0)` (probe 2026-10-15, `FACTS=1 node tools/probes/engine.ts`) | `x-0.54764225985`, no mark (`exactRational: false`, `reliableDigits: null`, no `warn`, so `markOf` returns none); `x^2-2.0=0.0`, no mark | x − 0.852200849767… (`oracle`): wrong from the first digit | fixed (G27, `adb2e3a`): `⚠` on every non-number with a float in it, as the defs log records it (`approximate`, `warn: "unchecked"`) |
 | 18 | Home `2^10000`, tap the result, `×1` (probe 2026-10-15) | `= 1.99506311688E3010`: the exact text has 3,011 digits, over the 2 kB chip limit, so the session keeps no chip (`session.svelte.ts:446` takes `r.exact` before `r.full`) and the rounded digits go in as an exact number (`App.svelte:79`). After it, `+3` on the empty line is `= 3`, not Ans + 3 (`lastChip()` gives nothing, so no `\ans` goes in, and the parser reads `+3` as 3) | `≈ 1.99506311688E3010` (the value is still 2^10000, `oracle` 1.995063116880758…E3010); Ans + 3 | the chip takes the engine's `full` (`homeEval.ts:485` already gives the P-digit decimal when the exact text is long); Ans-first never drops silently; R44 (F37) |
 | 19 | Home or CAS, a closed `==` test Giac cannot decide: `cos(π/7)−cos(2π/7)+cos(3π/7) == 1/2` (Opus pass, probe 2026-10-15) | `= 0` | true (`derived`) | fixed (`c836230`, R18f3): stays as typed |
 
@@ -577,9 +577,10 @@ interface HomeResult {                                   // existing fields kept
   items?: HomeResult[];                                  // new: elements of a numeric list or matrix (rows flattened, with shape)
   shape?: [number, number];
   digits?: number;                                       // the digits evalf(e,n)/approx(e,n) asked for: shown with these (G3)
-  warn?: "unaudited" | "unchecked";                      // ⚠ although the digits agree (M4-5); from G27 also a non-number with a float
+  warn?: "unaudited" | "unchecked";                      // ⚠ although the digits agree (M4-5); also a non-number with a float (G27)
 }
 interface CasResult { /* ok, text, latex, timedOut, error, engineMs */ numeric?: HomeResult;  // new: when the result is a number
+  approximate?: boolean; warn?: "unaudited" | "unchecked";  // ⚠ or ≈ for a non-number: an == test on a float (R18f1, R18f2), or a float in a non-number (G27)
   uses?: { name: string; preview: string; view: "home" | "cas" }[]; }  // new (G20): the stored variables (defs log, kind var) named in the input; absent when none
 
 interface Calc {                                         // views; mirrors MathEngine with CalcSettings
