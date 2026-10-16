@@ -83,7 +83,7 @@ All "probe" rows ran on the dev engine `engine/giac/_out/gsl` through `EngineHos
 | Home "exact" path, but Giac's numeric code returns a float (`normald_icdf`, `romberg`, `fsolve`, `BesselJ`) | `homeEval.ts:219` then `:168` | whatever Giac's routine gives: a double at `Digits` ≤ 14, its own MPFR code above | once, from a value with unknown accuracy | can be wrong (2.3 #2, #4) | no |
 | Home exact-big (`2^200`) | `homeEval.ts:243-247` | exact; Ans becomes a 30-digit float (`:246`) | once | `1.60693804426E60` | no |
 | Home float-timeout, float-error | `homeEval.ts:190-196` | Giac floats at `workDigits` = 30, decimals read as binary | once | the number | "approximate" note (`History.svelte:106`) |
-| Home non-number (lists, matrices, symbols, `solve`) | `homeEval.ts:235-239`, `render/home.ts` | exact | none | Giac's text: `[1/3,2]`, `[[-2,1],[3/2,-1/2]]`, `list[-sqrt(2),sqrt(2)]` (probe) | no |
+| Home non-number (lists, matrices, symbols, `solve`) | `homeEval.ts` `symbolic()`, `render/tidy.ts` | exact | none | Giac's text, drawn from Giac's `latex()` as in CAS (R18f3): `[1/3,2]`, `[[-2,1],[3/2,-1/2]]`, `list[-sqrt(2),sqrt(2)]` (probe) | no |
 | Solve, Function analysis | `solve.ts:17`, `:66` | `max(30, digits+10)`; residual at work precision, relative ≤ 1e-15 | once | the number | `approximate: true`; ⚠ when the residual check fails |
 | Function Num | `analysis.ts:31-43` (each cell is `homeEval`) | as Home | as Home | the number | no |
 | Function Plot | `input/emit-js.ts` | JS doubles | — | drawing only; trace values come from the engine | — |
@@ -121,7 +121,7 @@ Each item becomes a regression case before its fix (CLAUDE.md). Values marked `o
 | 16 | DEG: `exp(i*90)`; `exp(i*pi)` | `= i`; `-1` | −0.448073616129+0.893996663601·i (`derived`) if `exp` ignores the angle mode, as `exp(i*pi)` = −1 already does | G21, after G2 item 54 (F29) |
 | 17 | Home or CAS, a result that is not a number but holds a float: `evalf(x+sin(10^22))`; `evalf(x^2-2=0)` (probe 2026-10-15, `FACTS=1 node tools/probes/engine.ts`) | `x-0.54764225985`, no mark (`exactRational: false`, `reliableDigits: null`, no `warn`, so `markOf` returns none); `x^2-2.0=0.0`, no mark | x − 0.852200849767… (`oracle`): wrong from the first digit | `⚠` on every non-number with a float in it, as the defs log already records it (`host.ts` `defsOf(…, { warn: "unchecked" })`); G27 (F36) |
 | 18 | Home `2^10000`, tap the result, `×1` (probe 2026-10-15) | `= 1.99506311688E3010`: the exact text has 3,011 digits, over the 2 kB chip limit, so the session keeps no chip (`session.svelte.ts:446` takes `r.exact` before `r.full`) and the rounded digits go in as an exact number (`App.svelte:79`). After it, `+3` on the empty line is `= 3`, not Ans + 3 (`lastChip()` gives nothing, so no `\ans` goes in, and the parser reads `+3` as 3) | `≈ 1.99506311688E3010` (the value is still 2^10000, `oracle` 1.995063116880758…E3010); Ans + 3 | the chip takes the engine's `full` (`homeEval.ts:485` already gives the P-digit decimal when the exact text is long); Ans-first never drops silently; R44 (F37) |
-| 19 | Home or CAS, a closed `==` test Giac cannot decide: `cos(π/7)−cos(2π/7)+cos(3π/7) == 1/2` (Opus pass, probe 2026-10-15) | `= 0` | true (`derived`) | R18f3 (F35; backlog "Trust and robustness" item 22) |
+| 19 | Home or CAS, a closed `==` test Giac cannot decide: `cos(π/7)−cos(2π/7)+cos(3π/7) == 1/2` (Opus pass, probe 2026-10-15) | `= 0` | true (`derived`) | fixed (`c836230`, R18f3): stays as typed |
 
 At the default 12 digits in Home, #1 and #2 show wrong digits today; #3–#5 appear only above 15 digits, which the setting does not allow yet, so they gate EN3(a). #11–#16 were found by the deep-dive review (2026-10-14, decisions.md "The deep-dive review"), #17 and #18 by the architecture check and #19 by the Opus pass, both 2026-10-15; each gets its regression case first, in the package named.
 
@@ -631,7 +631,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 | Item | Budget | Today | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 151.94 / 53.01 kB (2026-10-15, `phase-1` at 3aa1a66: 0.99 kB gzip left, so R35 comes before R21a) | size test |
+| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 152.42 / 53.16 kB (2026-10-16, `phase-1` at c836230: 0.84 kB gzip left, so R35 comes before R21a) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (generated, 2026-10-15) | size test (once Find loads it) |
