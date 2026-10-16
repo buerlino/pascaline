@@ -35,7 +35,7 @@ The top risks are in section 9.
 | Id | Measure | Budget | Enforced by |
 |---|---|---|---|
 | E1 | Key presses per task | each active task within its budget; a unit in ≤ 4 presses at the median (rule 2) | `tests/tasks/tasks.yaml` replayed by Playwright (EN0) |
-| E2 | Enter → drawn result, Home and CAS | p95 < 150 ms on the Tab One (today 92 ms) | `?bench=1` on the device (annabell), each release |
+| E2 | Enter → drawn result, Home and CAS | p95 < 150 ms on the Tab One (138–160 ms at 12 digits, A4a 2026-10-16) | `?bench=1` on the device (annabell), each release |
 | E3 | Find: key → updated list | p95 ≤ 16 ms on the Tab One | `?bench=find` (new), milestone 4 gate |
 | E4 | Start | keyboard usable < 1 s, engine ready < 1.5 s on the Tab One (today 662 / 995 ms) | device runs (`tools/device_run.py`), each release |
 | E5 | First use of a lazy part | Units first result < 1 s; Find open → list ≤ 100 ms warm, ≤ 300 ms cold | device runs |
@@ -159,7 +159,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 - `sigfig` and our other Giac definitions load on first use, not at engine start (G2).
 - The agreement check (2.4) is what makes 20 and 30 digits honest: without it, 2.3 #3–#5 would go out unmarked.
 - **Latency, measured on the desktop** (123 `home.yaml` inputs through `EngineHost`, 3 rounds, last round timed): digits 12 p50 0.15 ms / p95 2.74 ms; digits 30 p50 0.14 ms / p95 3.63 ms; the same max (the 300 ms budget case) and no case changed path. This is cheap because the exact path already uses a 40-digit `evalf` and the float fallback already runs at 30 digits; Giac's switch to MPFR above 14 digits only affects floats that Giac itself computes.
-- **Tab One measurement (annabell, milestone 4):** the 55 `bench.yaml` and 123 `home.yaml` inputs at digits 12, 20 and 30 (a `digits` parameter for `?bench=1`), medians of 5 cold runs. **Gate:** p95 at 30 digits < 150 ms and ≤ 1.3 × the 12-digit p95. If it fails, the setting stops at 20 and Settings says why.
+- **Tab One measurement (annabell, milestone 4):** the 55 `bench.yaml` and 123 `home.yaml` inputs at digits 12, 20 and 30 (a `digits` parameter for `?bench=1`), medians of 5 cold runs. **Gate:** p95 at 30 digits < 150 ms and ≤ 1.3 × the 12-digit p95. If it fails, the setting stops at 20 and Settings says why. **Measured (A4a, 2026-10-16):** p95 147–149 ms at 30 digits, 149–152 at 20, 138–160 at 12: the gate holds and the setting keeps 30. The cost is not driven by digits (decisions.md "A4a" point 1).
 
 **Alternatives:** keep 15 (no reason was ever given; engineers comparing with reference data need more); unlimited digits (the 40-digit value path and the screen width set a natural limit at 30).
 
@@ -483,7 +483,7 @@ One IndexedDB database `pascaline`, store `kv` (as today, `storage.ts`). Keys:
 | `app.function`, `app.solve` | per app | exist |
 | `units.targets`, `units.history` | last target per dimension; the unit view's history | new (milestone 5) |
 
-**Every value is stamped** with `DATA_VERSION` (`storage.ts`, 2026-10-14): `{ "@pascaline": n, value }`; a value without the stamp was stored before versions (version 0). On read, the steps in `MIGRATIONS` for that key run from its version up, and the value is written back stamped. Raise the version with a step whenever a stored shape or the meaning of stored Giac text changes (a parser rename such as Φ → `Phi_` must rewrite the stored `defs`). **Migration of `settings`:** `schema` absent means 1; a restore keeps validating field by field and writes back `schema: 2`. Built as written (R3): `session.migrateSettings` validates every field. **Replay budget:** `defs` replay ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` is already in `EngineTimings`). Desktop: 10.8 ms for 200 definitions (G3). **Why persist definitions:** a calculator keeps its memory; today the history shows `5▶A` after a relaunch while `A` is undefined.
+**Every value is stamped** with `DATA_VERSION` (`storage.ts`, 2026-10-14): `{ "@pascaline": n, value }`; a value without the stamp was stored before versions (version 0). On read, the steps in `MIGRATIONS` for that key run from its version up, and the value is written back stamped. Raise the version with a step whenever a stored shape or the meaning of stored Giac text changes (a parser rename such as Φ → `Phi_` must rewrite the stored `defs`). **Migration of `settings`:** `schema` absent means 1; a restore keeps validating field by field and writes back `schema: 2`. Built as written (R3): `session.migrateSettings` validates every field. **Replay budget:** `defs` replay ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` is already in `EngineTimings`). Desktop: 10.8 ms for 200 definitions (G3); Tab One: 291 ms (A4a, 2026-10-16), over the budget (decisions.md "A4a" point 2). **Why persist definitions:** a calculator keeps its memory; today the history shows `5▶A` after a relaunch while `A` is undefined.
 
 ### 6.3 Decision: start-up and bytes
 - Today (`vite build`, 2026-10-12): start chunk `index` 142.62 kB (49.64 kB gzip); MathLive 807.73 kB (222.09 kB gzip) after the keypad; lazy: Function 19.6 kB, JSXGraph chunk 1,035.31 kB (258.52 kB gzip), Solve 8.2 kB, Python 377.18 kB (127.99 kB gzip), the Giac worker 25.68 kB; Giac wasm 9.75 MB; the whole build 13 MB, all precached by the service worker after the engine is up. After R5 (2026-10-13, the Python chunk and MicroPython wasm gone): start chunk 131.57 kB (45.82 kB gzip), precache total 12.2 MB.
@@ -632,7 +632,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 | Item | Budget | Today | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 141.33 / 50.15 kB (2026-10-16, `phase-1` after R46: 3.85 kB gzip left; the sheet's view is its own chunk, 8.65 kB raw JS and 4.96 kB CSS; `tools/probes/start-chunk.mjs` lists the bytes per source) | size test |
+| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 144.73 / 50.78 kB (2026-10-16, `phase-1` after A4a: 3.22 kB gzip left; the sheet's view is its own chunk since R46, 8.65 kB raw JS and 4.96 kB CSS; `tools/probes/start-chunk.mjs` lists the bytes per source) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (generated, 2026-10-15) | size test (once Find loads it) |
@@ -640,13 +640,13 @@ interface ClipboardPort {                                // new (m4): navigator.
 | Precache total | ≤ 18 MB | 12.3 MB (2026-10-15) | size test |
 
 "Start chunk" is the entry's JavaScript plus every chunk it imports statically (Vite manifest `imports`, transitively), as `app/scripts/size-check.ts` measures it. The entry's CSS is not counted (25.8 kB raw, 9.0 kB gzip on 2026-10-12): the budget was set on the JavaScript figure. CSS gets its own line if it grows past 40 kB raw.
-| Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with `defs` replay | 662 / 995 ms | device runs |
-| Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | 92 ms at 12 | device runs |
+| Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with `defs` replay | 688 / about 1060 ms; 1489 ms engine ready with 200 definitions (A4a, 2026-10-16) | device runs |
+| Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | 138–160 ms at 12, 147–149 at 30 (A4a) | device runs |
 | Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` |
 | Find open | ≤ 100 ms warm, ≤ 300 ms cold | — | device runs |
 | Units first result (Tab One) | < 1 s | — (no engine to load; S8+ 626 ms was the qalc spike page) | device runs |
 | Unit evaluation (desktop) | p95 ≤ 5 ms | 1.5–3.2 ms (G15 probe) | `tools/probes/units-giac.mjs`, then the golden units section |
-| `defs` replay | ≤ 50 ms at 200 definitions | — | device runs |
+| `defs` replay | ≤ 50 ms at 200 definitions | 291 ms (A4a): a miss | device runs |
 | Key presses | each task within its budget; a unit ≤ 4 at the median | — | task benchmark |
 | Find quality | 100 % top 3, ≥ 90 % first | — | query test |
 
@@ -687,12 +687,12 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 | Item | Who | How | Decides |
 |---|---|---|---|
-| Digits 30 latency on the Tab One | annabell (m4) | `?bench=1&digits=12/20/30`, 5 cold runs | cap at 30 or 20 (2.5) |
+| Digits 30 latency on the Tab One | answered (A4a, 2026-10-16) | p95 147–149 ms at 30 digits, within 1.3 × the 12-digit p95 | the setting keeps 30 (2.5) |
 | Find per-key time on the Tab One | annabell (m4) | `?bench=find` | main thread or incremental/worker (3.2) |
 | MathLive keeps `expand: false` macros and draws chips distinctly | answered (R2) | `entry/macros.test.ts`, `app/test/chips.spec.ts` | token design (3.6): no fallback needed |
 | MathLive prompts in a read-only field (the unit slots) | answered 2026-10-15 (sandra, throwaway probe) | 4.3: values with fractions and powers round-trip, ◀ ▶ go prompt to prompt; `insert()` outside a prompt still edits the formula | R24a step 1, R24c (5.5 point 2) |
 | The stacked unit's height in a prompt | ron (R24c) | gallery at 360 × 740 | the row height of the unit view |
-| `navigator.clipboard` in WebView 131; `navigator.share` absent | annabell (m4) | on the Tab One APK | whether the Capacitor plugins are needed (2.6) |
+| `navigator.clipboard` in WebView 131; `navigator.share` absent | answered (A4a, 2026-10-16) | `writeText` works; `readText` is denied (NotAllowedError); `navigator.share` is undefined | Paste needs a native plugin (decisions.md "A4a" point 5); share falls back to copy (2.6) |
 | qalc release build (container) size and time | annabell (m4) | `engine/qalc/build-wasm.sh release` | build time only (nothing ships) |
 | qalc name for Rankine (Δ°F) | answered (S1) | `°R` reads as Rankine, 1 °R = 5/9 K (r7 section 8) | temperature tokens (4.3) |
 | Units first result on the Tab One | annabell (m5) | device run of the unit view | lazy-load bar (4.4) |

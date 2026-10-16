@@ -4,19 +4,19 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11 and R32; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32 and the device run A4a (2026-10-16); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
   1. R36 (why a row has its mark) once G22 is merged; if it is not yet, the lane goes on and R36 follows.
-  2. R15b (the top cluster, after A4a's report).
+  2. R15b (the top cluster): now.
   3. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
   4. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
 - **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then G28 (a name the input binds is not a used value; the owner said yes 2026-10-16, F28), R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
-- **annabell:** A4a when the owner connects the Tab One (R21b is merged), before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
+- **annabell:** A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
 **Why this order:**
@@ -85,7 +85,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 22 | **Opus pass 6** (the last) on what came after pass 5, then its FIX packages | Opus | — | 20 min + fixes |
 | 23 | Shift report, then stop (the henri started after step 22) | henri_n | — | 10 min |
 
-Not at night: the rest of the ron lane (by day); devices (A4a, A4b); A6; A7 and A8 (the release path); sandra (S4–S8); G7 (it waits for S5); and G21 (it waits for G2 item 54 and the owner's decision on F29).
+Not at night: the rest of the ron lane (by day); devices (A4b); A6; A7 and A8 (the release path); sandra (S4–S8); G7 (it waits for S5); and G21 (it waits for G2 item 54 and the owner's decision on F29).
 
 ### Prompt templates (Agent tool; `run_in_background: false`; `effort: "medium"`)
 **Worker** (`subagent_type` = the agent in the table, `model` = its model):
@@ -120,12 +120,11 @@ henri runs each FIX as a package (the Worker template with "Do package …" repl
 `docs/shifts/<date>-night-report.md`, short and plain, from the log and the agents' replies (log `SHIFT DONE` at the end; start no further henri): what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (items under "Needs the user"); the queue left for the next night. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
-Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a (R4a, R4b, A4b) run between R12a and R12b (section 0, "The path"); A4a is in this table because R15b waits for it.
+Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a (R4a, R4b, A4b) run between R12a and R12b (section 0, "The path").
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| A4a | Device run before R15b | annabell, Sonnet | `p1/annabell-m4a-device` | now (R21b is merged); the owner connects the Tab One (and the S8+) | ~0.5 d |
-| R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | A4a's report says R15b may start (R11 is merged) | ~2 d |
+| R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | now (A4a and R11 are merged) | ~2 d |
 | R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R15b (it draws the final keypad) | ~0.5 d |
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
@@ -133,7 +132,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
-Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two and A4 in two (A4a is in 0b); where 0d says "R4 merged", read R4a and R4b.
+Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two; A4b is the second device run (the first, A4a, is done); where 0d says "R4 merged", read R4a and R4b.
 
 | # | Package | Backlog step | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|
@@ -243,7 +242,7 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 
 **Not a package:**
 - The MathLive bug report (review item 23) is in backlog "Needs the user" item 6.
-- The largest-font check (item 19) is in A4a.
+- The largest-font check (item 19) was done in A4a; what breaks is in decisions.md "A4a" point 4.
 
 ## 0g. The release path (owner, 2026-10-15)
 The goal: pushing a tag `vX.Y.Z` builds, gates, signs and publishes the APK on GitHub, from clean source and with the owner's key, never from the laptop. The owner has stored the keystore secrets in the GitHub repo (2026-10-15). Found in the code on 2026-10-15:
@@ -287,7 +286,7 @@ Read only the sections named here and in your package, not whole files: find the
 - **From 2026-10-13:** `docs/decisions.md` P11, docs/03 section 0 rules 5–13 (they bind every package: one interaction model, keys never move, vertical space, removal tests), `docs/05-ui-plan.md` with its section 7, and `docs/feedback.md`.
 - `docs/decisions.md`: P8, P9, P10 and the defaults entry "2026-10-12 Architecture for the engineer core". These are decided; don't reopen them. If a docs/04 decision turns out wrong in the code, don't change it silently: finish what you can, and put the evidence under "Needs a decision" in your report.
 - Not in milestone 4: the unit view (milestone 5: its engine work is section 0e, its entry section 0d), matrices, bases and everyday functions (milestone 6), Help = context help (milestone 6), prefix entry chips (gated by task 3).
-- **No coordinator to message.** Stay inside the files your package names. Shared files (`CLAUDE.md`, `docs/*`, `THIRD_PARTY.md`, `.claude/agents/*`) are not yours. Put the text for them in your report, and the review session applies it. Devices are only for A4a and A4b.
+- **No coordinator to message.** Stay inside the files your package names. Shared files (`CLAUDE.md`, `docs/*`, `THIRD_PARTY.md`, `.claude/agents/*`) are not yours. Put the text for them in your report, and the review session applies it. Devices are only for A4b.
 
 ### Your report (every package)
 End with a commit whose message body is the report. The review session reads it with `git log -1`. It holds:
@@ -333,31 +332,6 @@ Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a us
 Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is connected (rules section 6). Find per key (`?bench=find`, §3.2) against the §8.3 bar; a miss goes under "Needs a decision" with the number (docs/04 says what changes: incremental Find). Leave an APK built from `phase-1` on the Tab One for the owner. Then the report says whether milestone 4's gate (section 8) is complete.
 
 ### Milestone 4a packages (section 0b)
-
-### annabell, A4a: device run before R15b, branch `p1/annabell-m4a-device`
-Starts when the owner connects the Tab One, with the S8+ for the WebView checks (rules section 6). One device session for every check that waits for no later package: backlog Needs the user item 7, milestone 4 step 12 without Find, C6, the C8 check and K1. In order:
-1. **Build:** a full `./build.sh` from `phase-1` with the qalc step (no `--no-units`). This closes milestone 4 steps 6 and 7's open "full `./build.sh` run". Then fix C6:
-   - `tools/device_run.py status|start` report the build type of a `--measure` build;
-   - `tools/stay-awake.sh` restores from any worktree.
-2. **Tab One, against the §8.3 bars** (medians of ≥ 5 runs, with device, Android, WebView and build type):
-   - cold start (L7): keyboard usable and engine ready;
-   - a Shift tap and the fit pass;
-   - Enter p95 at digits 12, 20 and 30 (`?bench=1&digits=N`, 5 cold runs);
-   - the replay of 200 definitions (milestone 4 step 10);
-   - the start-chunk raise: keyboard usable may not move by more than 50 ms against the numbers of 2026-10-12;
-   - R21a's sheet rise: within one frame and 120 ms.
-3. **Behaviour on the devices:**
-   - `navigator.clipboard` and `navigator.share` in WebView 131;
-   - Android back (R21b): from an empty Home it leaves the app; reopened from recents, back closes an open Settings page and an open pick sheet, and the app stays (the `MainActivity` callback re-enables itself);
-   - K1's `touch-action: none`: no scroll or zoom side effects;
-   - the flick thresholds (20 px arm, 12 px cancel): misfires in a minute of typing;
-   - whether Android sends `pointercancel` for a touch held while the app leaves (F11 and F12 are fixed in the app either way);
-   - ᴇ drawn on the S8+'s Chrome 101 WebView;
-   - the largest system font size (Android Settings › Display): do the keypad, the status line and a sheet still fit? If not, the report names what breaks (deep-dive item 19);
-   - if G24 is merged: the input its report names goes past the memory cap, ends in the "Out of memory" message, and the app stays up;
-   - the first tap after a cold start vibrates (R35 loads the strength plugin later).
-
-Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20). The report ends with one line: whether R15b may start.
 
 ### ron, R15b: top cluster, branch `p1/ron-m4a-top`
 P12 points 2 and 3 and open point B. **R15a is done:** `docs/mockups/top-cluster.html` holds the layouts A, B, C and the press table. **The owner turned down A, B and C (2026-10-14); the page now holds layout D** (the cross stays, every key at its G2 place, three free keys U1–U3 with Shift layers, 48 px cluster rows; decisions.md). **R15b:** build D (approved by the owner 2026-10-14) with **U2 = Home and U3 = CAS as defaults** in `spec/keyboard.yaml` (decisions.md "R15a: layout D"); the free keys get their slots and storage here (a stamped key in `state/storage.ts`), their Find-based setting comes with R4b. Edit the grid in `spec/keyboard.yaml` (the maths rows 3–9 do not move), replace the `app` and `cas` keys by the user keys U2 and U3 with those defaults (their old Shift layers go), make the place name a button, move the pad, keep the `cancel` key's id and its Shift layer (Undo, R16), update the trackpad zones, the legends, `tools/probes/unit-presses.mjs` and every test that names a moved key; keys typed while an app loads (R8) now include the status taps; remove `app` and `cas` (and `symb`/`plot`/`num` if they fold) from `PASS` in `views/sheetKeys.ts` and `AT_ONCE` in `App.svelte`; the place-name tap no longer opens Apps (`status.spec.ts` changes). Gate: e2e for each path in the press table, viewport share not below R8's 0.354, keyboard test, gallery, gestures and flicks e2e. Shared-file text in the report.
@@ -807,14 +781,14 @@ Commits in this order:
    - a job that goes past the cap ends in an "out of memory" result, not a hang, and the next call works after the restart and replay;
    - in `workerEngine.test.ts`: a worker error during a call gives the caller a `memory` error, with the i18n message "Out of memory: the engine was restarted".
 
-   Name the input that goes past the cap in the report, for A4a.
+   Name the input that goes past the cap in the report, for the device check.
 2. **Build:**
    - `-sMAXIMUM_MEMORY=1GB` in the dev and release scripts (the P2 container's flags too);
    - `-sABORTING_MALLOC=1` if a failed allocation does not abort by default;
    - the client turns a worker abort during a call into that error.
 3. **Rebuild** the dev engine under the host-cpu lock. Run the golden gate and `scripts/compare-engines.ts` against the build before; nothing may differ.
 
-Gate: the golden gate, the new tests, `compare-engines.ts` clean. The device check (the app stays up on the Tab One) is A4a's.
+Gate: the golden gate, the new tests, `compare-engines.ts` clean. The device check (the app stays up on the Tab One) waits for the next device run.
 
 ### gorge, G28: a name the input binds is not a used value (F28), branch `p1/gorge-m4-bound`
 Decided by the owner 2026-10-16 (decisions.md "G20: a name the input binds"). No UI: R32's line under a CAS result shows what `uses` lists. Read:

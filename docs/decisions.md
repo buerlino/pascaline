@@ -7,6 +7,12 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-16 A4a: five misses from the device run. OPEN.** The Tab One run (Android 15, WebView 131, measure build; report `d276ad6`) met the cold start (688 ms keyboard usable, +26 ms against 2026-10-12; engine ready about 1060 ms), the Shift tap (p95 34 ms) and the 30-digit gate (p95 147–149 ms, so the setting keeps 30). Five things miss:
+  1. **Enter p95 at 12 digits:** 138–160 ms against < 150 (p50 about 61). On 2026-10-11 it was 92–114 ms, before G0's agreement check; 20 and 30 digits are no slower, so capping digits would not help, and the dev engine gives the same as the release engine. **Recommendation:** keep the agreement check (principle 3: correctness wins over speed) and accept the borderline p95 for now; if it must come down, a small gorge probe first names the bench cases that set the p95.
+  2. **The `defs` replay:** 291 ms (p50) for 200 definitions (150 values, 50 functions) against ≤ 50 ms; desktop 10.8 ms. Engine ready is then 1489 ms, 11 ms inside its 1.5 s bar. **Recommendation:** a small gorge package that finds where the replay time goes on the device (`?bench=defs` seeds the log) and cuts it, before S6's backup or S4's library import can grow the log.
+  3. **The sheet rise:** a Tmpl sheet is in the DOM 73 ms (p50; p95 85–90) after the tap, against "within one frame"; the 100 ms rise after it holds. Repeated opens are as slow, so it is not the chunk fetch. **Recommendation:** profile it with `?bench=keypad` inside R12c, which reworks press feedback and motion on the same path, rather than a package of its own.
+  4. **The largest system font (Android Settings › Display):** 1.3 fits; at 1.5 the Home/CAS face is clipped and the legends touch the faces; at 2.0 the legends (Copy, Clear, Undo, Settings, letters) overlap the faces and the status line is tight. The Tmpl sheet fits. The fit pass does not shrink the Home/CAS face. **Recommendation:** add it to R41 (the accessibility package): the fit pass covers the Home/CAS face, with gallery cases at font scale 1.5 and 2.0.
+  5. **Paste:** `navigator.clipboard.readText` is denied in WebView 131 (NotAllowedError), so Paste shows "The clipboard is not available"; `writeText` works. `navigator.share` is undefined, so Share falls back to copy. **Recommendation:** a small annabell package adds the Capacitor clipboard plugin (MIT, offline) for Paste, and Share keeps the copy fallback.
 - **2026-10-16 R34: the start-chunk allowance, and one line per view. OPEN.**
   1. **The start chunk:** R34 adds 0.37 kB gzip (53.62 of 54 kB), 0.07 kB over its package gate of +0.3 kB. The last 0.07 kB is the review fix that keeps the stored line when a hide comes before it is on the field (a second kill lost it). **Recommendation:** accept it; it is a correctness fix (principle 3), the 54 kB budget holds, and R35 has since cut the start chunk to 51.36 kB gzip.
   2. **One line per view:** the R34 package text asked that "Home and CAS each keep their own line", but Home and CAS share one entry line (the Home/CAS key keeps what is typed), so R34 keeps that one line with the view it was typed in and brings it back only there. **Recommendation:** keep the shared line; if the owner wants a line per view, check the G2 first (does it keep a separate entry line in Home and CAS?), then a small ron package, since it changes the Home/CAS switch.
@@ -18,7 +24,7 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
   **Recommendation:** keep both refusals in G16 (written into its package text). For (1), G25 adds a cycle unit (rev), so that rpm → rev/s and rev/s → Hz work.
 - **2026-10-14 F29: `exp` in DEG mode (package G21). OPEN, after G2 item 54.** In DEG, Giac reads the imaginary part of an exponential as degrees: `exp(i*90)` = `i` (marked `=`), `exp(i*1)` = cos 1° + i·sin 1°, `exp(1+i*90)` = 2.71828182846·i. Yet `exp(i*pi)` = −1, the radian answer. In RAD, `exp(i*90)` = −0.448073616129+0.893996663601·i (`derived`: cos 90 + i·sin 90). One mode cannot read both ways and be right (probe 2026-10-14).
   **Recommendation:** `exp` ignores the angle mode, as its mathematical meaning does (principle 3). If the G2 also reads degrees, the polar `∡` entry stays the way to type an angle in degrees. G21 waits for item 54 so that the owner sees the G2's answer before it starts.
-- **2026-10-14 R15b: 48 px cluster rows or today's height. OPEN, judge on the phone.** D is drawn with 48 px rows (viewport about 0.38 instead of 0.354). **Recommendation:** build 48 px after the device run on the Tab One (backlog Needs the user item 7), keep it if a Shift tap and the fit pass stay fast and the keys are easy to hit.
+- **2026-10-14 R15b: 48 px cluster rows or today's height. OPEN, judge on the phone.** D is drawn with 48 px rows (viewport about 0.38 instead of 0.354). **Recommendation:** build 48 px; the device run A4a gave a Shift tap p95 of 34 ms and a fit pass p95 of 7 ms on the Tab One, so keep 48 px if the keys are easy to hit and those two stay near these numbers.
 - **2026-10-13 P12 open points (keypad review, [06-keypad-vs-g2.md](06-keypad-vs-g2.md) section 4). OPEN.**
   A. **Menu audit: done** (S2, accepted by the owner 2026-10-13; entry "S2: one menu system" under Decided proposals). B. **Status-line switch:** hit area, press count against the G2's one key, and the fallback if the bar is slow (R15a). C. **`!` (factorial):** settled by the owner (2026-10-13, answer to R10): it goes in the Shift + 9 palette (R18). **Recommendation:** judge B on the R15 APK.
 - **2026-10-12 M4-2: Task benchmark questions (from R1). PROPOSED, needs the user.**
@@ -101,7 +107,7 @@ Newest first. Where an entry changed an earlier document, that document now carr
   - **Robustness:**
     - F30: the half-typed line survives a kill (R34). **Done** (`98a7ff7`).
     - F31: a stored definition that crashes the worker no longer loops the start. After two failed starts the engine starts without the log and says so (G19).
-    - F32: the Giac worker gets a memory cap, so a runaway job fails inside it (G24; A4a checks it on the Tab One).
+    - F32: the Giac worker gets a memory cap, so a runaway job fails inside it (G24; the Tab One check waits for the next device run).
     - The start chunk gets lighter before R21a instead of a second budget raise (R35: `@capacitor/core` out of it).
   - **Decisions looked at again:**
     - P5 (b) is revised (entry P5): Home takes the real odd root (R39).
@@ -112,7 +118,7 @@ Newest first. Where an entry changed an earlier document, that document now carr
     - **The angle check:** in RAD, sin, cos or tan of a whole multiple of 15 from 15 to 360 gets a hint, with one tap to add `°`; in DEG, an argument with π gets the reverse (R37). Removal test: unused for two weeks.
     - Digits past a CODATA constant's uncertainty are drawn muted in Home; the copy keeps them (G26, R40).
     - One backup file of history, definitions, settings and user keys: S6 finds the way in and out without INTERNET, R38a exports, R38b restores. S4 later reuses S6's answer.
-    - Keys carry labels for TalkBack (R41), and A4a checks the largest system font size.
+    - Keys carry labels for TalkBack (R41), and A4a checked the largest system font size (1.5 and up clip the Home/CAS face).
   - **Process:**
     - The shared docs go on a diet with a size budget (S7): one file per package text, finished decisions to an archive.
     - One `npm run gate` command prints one line per gate (A6; most of C3 without GitHub).
