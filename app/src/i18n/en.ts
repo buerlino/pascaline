@@ -114,6 +114,7 @@ export const en = {
   "mark.exact": "Exact: every digit shown is the value",
   "mark.approx": "Approximate: the digits shown are confirmed",
   "mark.warn": "Warning: fewer digits are confirmed than shown",
+  "history.actions": "Row actions",
   "history.recall": "Use this entry again",
   "history.insert": "Put this result on the entry line",
   "error.syntax": "Syntax error",

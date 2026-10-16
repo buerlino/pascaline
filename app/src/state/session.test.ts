@@ -111,6 +111,30 @@ describe("Session history", () => {
   });
 });
 
+describe("deleting a row (R11)", () => {
+  it("removes that row only, in the open view, and writes the store", async () => {
+    const kv = memoryKv();
+    const s = new Session(new ValueCalc(), kv);
+    for (const e of ["1", "2", "3"]) await s.submit(e);
+    const second = s.home[1];
+    if (!second) throw new Error("no second row");
+    expect(s.removeItem(second)).toBe(true);
+    expect(s.home.map((i) => i.latex)).toEqual(["1", "3"]);
+    expect((kv.data.get("history") as { home: { latex: string }[] }).home.map((i) => i.latex)).toEqual(["1", "3"]);
+    expect(s.removeItem(second)).toBe(false); // already gone
+  });
+
+  it("refuses a row that is still running", async () => {
+    const s = new Session(new ValueCalc(), memoryKv());
+    await s.submit("1");
+    const row = s.home[0];
+    if (!row) throw new Error("no row");
+    row.status = "pending";
+    expect(s.removeItem(row)).toBe(false);
+    expect(s.home).toHaveLength(1);
+  });
+});
+
 describe("alpha lock (L3)", () => {
   it("alpha is one-shot; alpha twice locks; alpha again unlocks", () => {
     const s = new Session(new FakeCalc(), memoryKv());

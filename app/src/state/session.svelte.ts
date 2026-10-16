@@ -591,6 +591,17 @@ export class Session {
     }
   }
 
+  /** Delete one row of the open view (R11). A running row is not deleted: Cancel stops it first. */
+  removeItem(item: HistoryItem): boolean {
+    const list = this.items;
+    const k = list.findIndex((i) => i.id === item.id);
+    const found = list[k];
+    if (!found || found.status === "pending") return false;
+    list.splice(k, 1);
+    this.saveHistory();
+    return true;
+  }
+
   clearHistory(): void {
     if (this.view === "home") this.home.length = 0;
     else this.cas.length = 0;

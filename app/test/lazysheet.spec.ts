@@ -38,14 +38,14 @@ test("Tmpl, then Enter, typed before the chunk is in, inserts the fraction once 
   await expect(sheet(page)).toBeHidden();
 });
 
-test("Menu, then 7, typed before the chunk is in, picks the seventh row (Clear history) once it is", async ({ page }) => {
+test("Menu, then 9, typed before the chunk is in, picks the ninth row (Clear history) once it is", async ({ page }) => {
   const release = await hold(page);
   await open(page);
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["d1", "enter"]);
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
-  await tap(page, ["menu", "d7"]);
-  expect(await entryValue(page)).toBe(""); // the 7 was not typed into the line
+  await tap(page, ["menu", "d9"]);
+  expect(await entryValue(page)).toBe(""); // the 9 was not typed into the line
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
   release();
   await expect(page.locator('[data-testid="result"]')).toHaveCount(0);

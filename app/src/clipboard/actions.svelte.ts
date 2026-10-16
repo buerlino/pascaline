@@ -19,6 +19,14 @@ const impl = () => import("./impl.ts");
 
 const NOTICE_MS = 2200;
 
+/** What the row actions do on the entry line; App owns these (a tap on a row uses them before this code has loaded). */
+export interface RowOps {
+  /** Put the result on the line as a chip (a tap on it). */
+  insert(item: HistoryItem): void;
+  /** Put the entry back on the line, with its chips (a tap on it). */
+  recall(item: HistoryItem): void;
+}
+
 export class ClipActions {
   /** The short message on screen ("Copied"), or null. */
   notice = $state<string | null>(null);
@@ -27,14 +35,16 @@ export class ClipActions {
   private readonly session: Session;
   private readonly shell: AppShell;
   private readonly entry: EntryController;
+  private readonly ops: RowOps;
   private readonly givenPort: ClipboardPort | undefined;
   private readonly decimalComma: () => boolean;
 
   /** `decimalComma`: the decimal comma setting (docs/04 section 6.2); not a setting yet. */
-  constructor(session: Session, shell: AppShell, entry: EntryController, port?: ClipboardPort, decimalComma: () => boolean = () => false) {
+  constructor(session: Session, shell: AppShell, entry: EntryController, ops: RowOps, port?: ClipboardPort, decimalComma: () => boolean = () => false) {
     this.session = session;
     this.shell = shell;
     this.entry = entry;
+    this.ops = ops;
     this.givenPort = port;
     this.decimalComma = decimalComma;
   }
@@ -133,41 +143,98 @@ export class ClipActions {
     return this.copyRaw(text, tc("clip.sharedAsCopy"));
   }
 
-  /** The Home/CAS Menu (docs/04 section 5.1), or the actions of one history row. */
-  menu(row?: HistoryItem, full = false): MenuItem[] {
+  /** The row an action means: the picked one, else the newest finished result. Recall also takes an error or a
+   *  cancelled entry when it is picked (its input comes back). */
+  private recallable(row?: HistoryItem): HistoryItem | undefined {
+    return row && row.status !== "pending" ? row : this.target(row);
+  }
+
+  /** Insert: the result as a chip on the entry line. */
+  insertRow(row?: HistoryItem): boolean {
+    const i = this.target(row);
+    if (!i || !this.shell.showsEntry) return false;
+    this.ops.insert(i);
+    return true;
+  }
+  /** Recall: the entry back on the line. */
+  recallRow(row?: HistoryItem): boolean {
+    const i = this.recallable(row);
+    if (!i || !this.shell.showsEntry) return false;
+    this.ops.recall(i);
+    return true;
+  }
+  /** Store ▶: the result and the store arrow on the line, the cursor ready for the variable's name (value ▶ name). */
+  storeRow(row?: HistoryItem): boolean {
+    if (!this.insertRow(row)) return false;
+    this.entry.insert("\\blacktriangleright");
+    return true;
+  }
+  /** Delete: the picked row, else the last row of the view. A running row is not deleted. */
+  deleteRow(row?: HistoryItem): boolean {
+    const i = row ?? this.session.items.at(-1);
+    if (!i) return false;
+    if (!this.session.removeItem(i)) {
+      this.say(tc("clip.working"));
+      return false;
+    }
+    return true;
+  }
+
+  /** The Home/CAS Menu (docs/05 3.3, S2 rule M2): one fixed list of nine, the same numbers with or without a picked
+   *  row, acting on that row, else on the last result. The row buttons are items 1-5, the long press shows all nine. */
+  menu(row?: HistoryItem): MenuItem[] {
     const i = this.target(row);
     const none = i === undefined;
-    const why = tc("clip.noResult"); // a disabled item says why on its second line (docs/05 3.1)
+    // A disabled item says why on its second line (docs/05 3.1). With an empty history it says nothing: the screen says
+    // "Type a calculation" already, and nine rows with a reason line do not fit over the keypad (fit.spec.ts).
+    const empty = this.session.items.length === 0;
+    const why = empty ? undefined : tc("clip.noResult");
+    const last = row ?? this.session.items.at(-1);
+    const noLine = !this.shell.showsEntry;
     const copies: MenuItem[] = [
-      { id: "copy", label: tc("clip.copy"), disabled: none, reason: why, run: () => void this.copy(row) },
-      { id: "shown", label: tc("clip.asShown"), disabled: none, reason: why, run: () => void this.copyShown(row) },
+      { id: "shown", label: tc("clip.subShown"), disabled: none, reason: why, run: () => void this.copyShown(row) },
       {
         id: "exact",
-        label: tc("clip.exact"),
+        label: tc("clip.subExact"),
         disabled: none || copyExact(i) === undefined,
         reason: none ? why : tc("clip.noExact"),
         run: () => void this.copyExact(row),
       },
-      { id: "latex", label: tc("clip.latex"), disabled: none, reason: why, run: () => void this.copyLatex(row) },
+      { id: "latex", label: tc("clip.subLatex"), disabled: none, reason: why, run: () => void this.copyLatex(row) },
     ];
-    if (row && !full) return copies;
     const finished = this.session.items.some((x) => x.status === "done" || x.status === "error");
     return [
-      ...copies,
+      { id: "insert", label: tc("clip.insert"), disabled: none || noLine, reason: why, run: () => void this.insertRow(row) },
+      { id: "recall", label: tc("clip.recall"), disabled: this.recallable(row) === undefined || noLine, reason: why, run: () => void this.recallRow(row) },
+      { id: "copy", label: tc("clip.copy"), disabled: none, reason: why, run: () => void this.copy(row) },
+      { id: "store", label: tc("clip.store"), disabled: none || noLine, reason: why, run: () => void this.storeRow(row) },
+      {
+        id: "delete",
+        label: tc("clip.delete"),
+        disabled: last === undefined || last.status === "pending",
+        reason: last === undefined ? undefined : tc("clip.working"),
+        run: () => void this.deleteRow(row),
+      },
+      { id: "copyAs", label: tc("clip.copyAs"), disabled: none, reason: why, submenu: { title: tc("clip.copyAs"), items: copies } },
       { id: "paste", label: tc("clip.paste"), run: () => void this.paste() },
       { id: "share", label: tc("clip.share"), disabled: !finished, reason: why, run: () => void this.shareSession() },
-      { id: "clear", label: tc("clip.clear"), disabled: this.session.items.length === 0, reason: tc("clip.noHistory"), run: () => this.session.clearHistory() },
+      { id: "clear", label: tc("clip.clear"), disabled: empty, run: () => this.session.clearHistory() },
     ];
   }
 
-  /** Menu with a picked row: the whole Home/CAS list, its copies acting on that row. */
-  openMenu(item: HistoryItem): void {
-    this.shell.showMenu(tc("clip.title"), this.menu(item, true), { remember: false });
+  /** The row buttons above the entry line: items 1-5 of the list, for the picked row. */
+  rowButtons(row: HistoryItem): MenuItem[] {
+    return this.menu(row).slice(0, 5);
   }
 
-  /** A long press on a history row: its copy actions, over the history. */
+  /** Menu with a picked row (R13): the whole list, acting on that row. */
+  openMenu(item: HistoryItem): void {
+    this.shell.showMenu(tc("clip.title"), this.menu(item), { remember: false });
+  }
+
+  /** A long press on a history row: the same list, on that row, over the history. */
   openRowMenu(item: HistoryItem): void {
     if (item.status !== "done") return;
-    this.shell.showMenu(tc("clip.rowTitle"), this.menu(item));
+    this.openMenu(item);
   }
 }
