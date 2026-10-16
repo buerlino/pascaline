@@ -2,7 +2,7 @@
 // R8: the status line (docs/05 3.2), the Mode sheet (Shift + CAS) and Settings (Shift + Home/CAS) (3.4). The real
 // engine for the angle test (GIAC_OUT); the fake one for the rest.
 import { expect, test, type Page } from "@playwright/test";
-import { open, tap } from "./helpers.ts";
+import { entryValue, open, tap } from "./helpers.ts";
 
 const lastText = (page: Page) => page.locator('[data-testid="result"] .result').last();
 const ready = (page: Page) => page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
@@ -94,6 +94,24 @@ test("DEG → RAD in 3 keys: Shift + CAS, ▶, Enter; the sheet opens on Angle e
   // the pick before this one (Digits) does not move the start
   await tap(page, ["shift", "cas", "d3", "cancel", "shift", "cas"]);
   await expect(active(page)).toHaveAttribute("data-id", "angle");
+});
+
+test("keys typed while the Mode sheet's code loads wait for it, and are not typed into the line (R35)", async ({ page }) => {
+  let release = (): void => {};
+  const gate = new Promise<void>((r) => (release = r));
+  await page.route(/\/src\/views\/modeSheet\.ts/, async (route) => {
+    await gate;
+    await route.continue();
+  });
+  await open(page);
+  expect(await angle(page)).toBe("rad");
+  await tap(page, ["d1", "shift", "cas", "right", "enter"]);
+  expect(await entryValue(page)).toBe("1"); // nothing evaluated yet, nothing typed
+  release();
+  await expect.poll(() => angle(page)).toBe("deg"); // the sheet opened, ▶ stepped Angle, Enter closed it
+  await expect(sheet(page)).toBeHidden();
+  expect(await entryValue(page)).toBe("1");
+  await expect(page.locator('[data-testid="result"]')).toHaveCount(0);
 });
 
 test("digits to 20 in 3 keys: Shift + CAS, 3, 7", async ({ page }) => {

@@ -19,6 +19,8 @@
   // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
   let modeSheet: typeof import("./views/modeSheet.ts") | null = null;
   const loadModeSheet = async (): Promise<typeof import("./views/modeSheet.ts")> => (modeSheet ??= await import("./views/modeSheet.ts"));
+  /** Set while the first Mode or Settings open waits for that code. */
+  let sheetLoad: Promise<void> | null = null;
   import Sheet from "./views/Sheet.svelte";
   import { sheetFlick, sheetKey } from "./views/sheetKeys.ts";
   import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
@@ -121,17 +123,33 @@
   }
 
   /** Shift + Home/CAS: the Settings sheet (docs/05 3.4). It opens on its first row, whatever was picked last. */
-  async function openSettings(): Promise<void> {
-    const m = await loadModeSheet();
-    picked = null;
-    shell.showMenu(t("settings.title"), m.settingsItems(session), { remember: false });
+  function openSettings(): void {
+    onModeSheet((m) => {
+      picked = null;
+      shell.showMenu(t("settings.title"), m.settingsItems(session), { remember: false });
+    });
   }
   /** Shift + CAS, or a tap on a status chip (`at`: the row to start on): the Mode sheet. Without `at` it starts on
    *  Angle, so Shift + CAS, ▶, Enter always switches the angle unit (3 keys). */
-  async function openMode(at?: string): Promise<void> {
-    const m = await loadModeSheet();
-    picked = null;
-    shell.showMenu(t("mode.title"), m.modeItems(session, () => void openSettings()), { remember: false, at });
+  function openMode(at?: string): void {
+    onModeSheet((m) => {
+      picked = null;
+      shell.showMenu(t("mode.title"), m.modeItems(session, openSettings), { remember: false, at });
+    });
+  }
+  /** Run `open` at once when the lists are loaded; else after the load, with every key meanwhile waiting in the queue
+   *  (decisions.md R8), so none of them lands on the line before the sheet is there. */
+  function onModeSheet(open: (m: NonNullable<typeof modeSheet>) => void): void {
+    if (modeSheet) return open(modeSheet);
+    sheetLoad = loadModeSheet().then(
+      (m) => {
+        sheetLoad = null;
+        open(m);
+      },
+      () => {
+        sheetLoad = null; // the chunk did not load: the queued keys run without the sheet
+      },
+    );
   }
 
   function special(name: Extract<ActionBody, { kind: "special" }>["name"]): void {
@@ -161,10 +179,10 @@
         session.setView("cas");
         break;
       case "settings":
-        void openSettings();
+        openSettings();
         break;
       case "mode":
-        void openMode();
+        openMode();
         break;
       case "apps":
         shell.toggleApps();
@@ -338,19 +356,19 @@
   // cancels runs at once.
   const AT_ONCE: readonly string[] = ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings", "mode"];
   // A hardware letter (R45) waits in the same queue, as a `letter`.
-  type Waiting = { key: Key; mods: Mods } | { letter: string };
+  type Waiting = { key: Key; mods: Mods; layer?: Layer } | { letter: string };
   let waiting: Waiting[] = [];
   function wait(w: Waiting): void {
     waiting.push(w);
-    if (waiting.length === 1) void shell.opening.then(replay);
+    if (waiting.length === 1) void Promise.all([shell.opening, sheetLoad]).then(replay);
   }
   function replay(): void {
     const keys = waiting;
     waiting = [];
     for (const w of keys)
-      if (shell.loading !== null) wait(w); // another app started loading meanwhile
+      if (shell.loading !== null || sheetLoad !== null) wait(w); // another app started loading meanwhile
       else if ("letter" in w) typeLetter(w.letter);
-      else run(w.key, w.mods);
+      else if (!(shell.sheet && sheetPress(w.key, w.layer))) run(w.key, w.mods); // a sheet opened meanwhile takes its keys
   }
 
   /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
@@ -361,9 +379,10 @@
     if (shell.sheet && sheetPress(key, layer)) return;
     const mods = modsFor(layer);
     session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
+    if (sheetLoad !== null) return wait({ key, mods, layer });
     if (shell.loading !== null) {
       const a = actionFor(key, mods.shift, mods.alpha);
-      if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait({ key, mods });
+      if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait({ key, mods, layer });
     }
     run(key, mods);
   }
@@ -375,7 +394,7 @@
       if (sheet.level.filterable) sheet.level.type(ch);
       return;
     }
-    if (shell.loading !== null) return wait({ letter: ch });
+    if (shell.loading !== null || sheetLoad !== null) return wait({ letter: ch });
     picked = null;
     session.clearModifiers();
     if (shell.app !== null && !shell.showsEntry) return dead();
@@ -448,8 +467,8 @@
         aria-label={t("status.angle", { angle: t(`angle.${angle}`) })}
         onclick={() => session.setAngle(angle === "rad" ? "deg" : "rad")}>{angle === "rad" ? "RAD" : "DEG"}</button>
       <span class="pill" aria-label={t("status.format", { format: t(`format.${session.settings.format}`) })}>
-        <button type="button" class="chip" data-testid="chip-format" onclick={() => void openMode("format")}>{session.settings.format.toUpperCase()}</button>
-        <button type="button" class="chip" data-testid="chip-digits" onclick={() => void openMode("digits")}>{session.settings.digits}</button>
+        <button type="button" class="chip" data-testid="chip-format" onclick={() => openMode("format")}>{session.settings.format.toUpperCase()}</button>
+        <button type="button" class="chip" data-testid="chip-digits" onclick={() => openMode("digits")}>{session.settings.digits}</button>
       </span>
       {#if session.shiftLock}<span class="mod" data-testid="mod-shift">⇧🔒</span>{:else if session.shift}<span class="mod" data-testid="mod-shift">⇧</span>{/if}
       {#if session.alphaLock}<span class="mod" data-testid="mod-alpha">α🔒</span>{:else if session.alpha}<span class="mod" data-testid="mod-alpha">α</span>{/if}
