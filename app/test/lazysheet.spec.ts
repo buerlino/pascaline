@@ -38,6 +38,31 @@ test("Tmpl, then Enter, typed before the chunk is in, inserts the fraction once 
   await expect(sheet(page)).toBeHidden();
 });
 
+test("Menu, then 7, typed before the chunk is in, picks the seventh row (Clear history) once it is", async ({ page }) => {
+  const release = await hold(page);
+  await open(page);
+  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await tap(page, ["d1", "enter"]);
+  await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
+  await tap(page, ["menu", "d7"]);
+  expect(await entryValue(page)).toBe(""); // the 7 was not typed into the line
+  await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
+  release();
+  await expect(page.locator('[data-testid="result"]')).toHaveCount(0);
+  await expect(sheet(page)).toBeHidden();
+  expect(await entryValue(page)).toBe("");
+});
+
+test("Shift + 6, then a cell's key, typed before the chunk is in, picks that cell once it is: 2 ≤ 3", async ({ page }) => {
+  const release = await hold(page);
+  await open(page);
+  await tap(page, ["d2", "shift", "d6", "d8", "d3"]);
+  expect(await entryValue(page)).toBe("2");
+  release();
+  await expect.poll(() => entryValue(page)).toBe("2\\le3");
+  await expect(sheet(page)).toBeHidden();
+});
+
 test("Cancel while the chunk waits closes nothing that is not open and leaves the line as it was", async ({ page }) => {
   const release = await hold(page);
   await open(page);
