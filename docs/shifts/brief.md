@@ -4,12 +4,12 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34 and R35; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35 and R21a; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
+  1. R21b (the Settings page and Android back).
   2. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
   3. R15b (the top cluster, after A4a's report).
   4. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
@@ -29,7 +29,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
-  - **Day packages sit next to the code they share:** R21a's gate is the start-chunk budget: 2.64 kB gzip are left (51.36 of 54 kB, after R35, 2026-10-16).
+  - **Day packages sit next to the code they share:** the start-chunk budget has 1.10 kB gzip left (52.90 of 54 kB, after R21a, 2026-10-16), with R15b, R11 and R12b to come (decisions.md "R21a: 1.10 kB gzip left").
   - **Trust features after the code they build on:**
     - R32 and R36 add a line to the history rows R11 builds.
     - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
@@ -125,7 +125,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R21a | Pick sheets over the keypad, and fit | ron, **Opus** | `p1/ron-m4a-fit` | R35 (section 0f; it follows the entry-bug packages) | ~1.5 d |
 | R21b | The Settings page, and Android back | ron, Sonnet | `p1/ron-m4a-settings` | R21a | ~0.75 d |
 | A4a | Device run before R15b | annabell, Sonnet | `p1/annabell-m4a-device` | R21b; the owner connects the Tab One (and the S8+) | ~0.5 d |
 | R11 | History-row actions, Home and CAS (U3) | ron, Sonnet | `p1/ron-m4a-rows` | R21b (runs while A4a takes place) | ~1 d |
@@ -192,7 +191,7 @@ Each waits for what its row says; none changes the 0b packages or their order. B
 | S5 | The unit pad's arrangement and its user cells (research) | sandra, Opus | `p1/sandra-padlayout` | now | ~1 d |
 | G7 | Find data for the unit pad and the units menu | gorge, Sonnet | `p1/gorge-m5-finddata` | S5 merged (its test reads the final arrangement); no UI, so it can run beside a ron package | ~0.5 d |
 | R24a | The slot model (no UI) | ron, **Opus** | `p1/ron-m5-unitslot` | G7 merged | ~0.5 d |
-| R24b | The pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | the owner accepted S5's arrangement; R21 merged | ~1 d |
+| R24b | The pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | the owner accepted S5's arrangement; R21a merged | ~1 d |
 | R24c | The unit view entry: slots, Enter, evaluation | ron, **Opus** | `p1/ron-m5-unitview` | R24a, R24b, R28 and the unit evaluator (G16, G17, G25; G10–G12 if P15 falls) merged | ~1 d |
 | R24d | Find in a slot and the user cells | ron, Sonnet | `p1/ron-m5-usercells` | R24c, R4 and R15b merged | ~0.5 d |
 | S4 | The laptop connection: design note | sandra, Opus | `p1/sandra-connector` | the owner's go (parked until about 2026-10-20) | ~0.5 d |
@@ -337,21 +336,6 @@ Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a us
 Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is connected (rules section 6). Find per key (`?bench=find`, §3.2) against the §8.3 bar; a miss goes under "Needs a decision" with the number (docs/04 says what changes: incremental Find). Leave an APK built from `phase-1` on the Tab One for the owner. Then the report says whether milestone 4's gate (section 8) is complete.
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R21a: pick sheets over the keypad, branch `p1/ron-m4a-fit`
-The owner's frictions (2026-10-14): a sheet in the viewport is far from the thumb while typing, the Tmpl grid scrolls on the phone, Settings is too small. R21 is built in two packages: R21a the pick sheets, R21b the Settings page. Where 0d says "R21 merged" (R24b), read R21a. Decided: decisions.md "R21" (binding); the target text is already in docs/05 2 (rule 1), 3.1 and 3.4 and docs/03 rule 8. Read those, decisions.md "Sheet defaults (R7)", "Mode and Settings sheets (R8)", "S2: one menu system", and `app/src/views/` (`Sheet.svelte`, `sheet.svelte.ts`, `sheetKeys.ts`, `modeSheet.ts`) with the sheet parts of `App.svelte`, `apps/shell.svelte.ts` and `keyboard/Keypad.svelte`. Commits in this order:
-1. **Tests first** (`app/test/fit.spec.ts`, failing on today's code), at 412 × 915:
-   - **Keys never move:** the box of every key is the same before a sheet opens, while it is open and after it closes (Apps, Menu, Mode, Tmpl, Shift + 6, Shift + 9; R21b adds Settings).
-   - **Where:** a pick sheet's bottom edge is the keypad's bottom edge, its top is not above the top of keypad row 3, and `elementFromPoint` at the centre of ▲, ▼, ◀, ▶, Esc, Cancel and Menu hits that key while the sheet is open.
-   - **Fit:** every pick sheet shows all its items without a scroll (`scrollHeight <= clientHeight`): Apps, the Home Menu, the Function Plot and Solve menus, Mode, Mode › Significant digits (9 rows), Tmpl, Shift + 6, Shift + 9; at 360 × 740 the same for Tmpl, Shift + 6, Shift + 9 and Mode.
-   - **Flow:** a tap on a Tmpl cell closes the sheet, puts the template on the line with the cursor in its first box, and the next digit key types into it. Shift + 6: the `≤` cell's box covers the 8 key's box.
-2. **Over the keypad** (`Sheet.svelte`, `App.svelte`, the model only if it must): mount the pick sheets in a layer over the keypad's maths rows, anchored at its bottom edge and as tall as its rows need, up to the top of row 3; the top cluster stays uncovered and live. Keep every sheet key job (`sheetKeys.ts`) for the keys still visible; a maths key a short sheet leaves visible is dimmed and keeps its sheet job (a digit picks its row; nothing types into the line, rule 4). A tap in the viewport closes the sheet. A list that takes letters (filterable, Find later) stays where sheets are today, above the keypad. The rise animation stays within one frame and 120 ms (rule 6).
-3. **Fit** (`Sheet.svelte`): rows and cells shrink to the room, from today's size down to the floor: list rows 36 px (font and padding together; the number column stays), grid cells 44 px (today 58 px for Tmpl, 46 px for the Shift palettes); below the floor, today's scroll cue and count. Grids have no title row: the title, the highlighted cell's name and × share the hint line. Two-line rows (disabled reasons) count their own height. CSS where it can (a custom property set from one ResizeObserver), no per-frame work.
-4. **Shift + 6 over its keys:** each relations cell is drawn over the key in its `pick:` (keyboard.yaml `relations:`), using the keys' boxes; the cells without a key (none today) and Shift + 9 and Tmpl stay a grid.
-5. **Mode for the thumb:** each value row gets ◀ ▶ buttons (at least 44 × 44 px) beside the value; a tap on the row still steps forward.
-6. **Gallery:** Home menu, Mode, Mode › digits, Tmpl, Shift + 6, Shift + 9 over the keypad, Tmpl and Mode at 360 × 740; light and dark; rebuild.
-7. **Report** ("For shared files": anything in docs/05 3.1 the build changed; R7 open point 5, the Function Plot reasons, judged again with the new rows; the code comments that said "never over the keypad" are yours to fix).
-Gate: `fit.spec.ts` green; `sheet.spec.ts`, `status.spec.ts` (viewport share unchanged), the Mode e2e, gestures and flicks e2e green; start chunk within the budget (156 kB raw, 54 kB gzip); gallery rebuilt. Not in this package: the Settings page (R21b), R15b's keys, the theme, Find.
 
 ### ron, R21b: the Settings page and Android back, branch `p1/ron-m4a-settings`
 Starts when R21a is merged. Decided: decisions.md "R21" (the Settings page) and backlog C8 (Android back). Read decisions.md "R21" and "Mode and Settings sheets (R8)", docs/05 3.4, R21a's report, `app/src/views/modeSheet.ts`, the Settings and sheet parts of `App.svelte`, and `android/app/src/main/java/io/github/buerlino/pascaline/MainActivity.java`.
@@ -664,7 +648,7 @@ The first of four unit-pad packages, with no UI. Read: r9 section 2 (the rules),
 Gate: the tests, typecheck, and the start chunk unchanged (nothing imports the model yet). Report: the MathLive check's result and the action names, for R24b.
 
 ### ron, R24b: the pad drawn over the keys, branch `p1/ron-m5-unitpad`
-Starts when the owner has accepted S5's arrangement and R21 is merged. No slots yet: the pad emits R24a's actions. Read: r9 section 1, `spec/unit-pad.yaml`, R21's layer (Shift + 6 drawn over its keys), `keyboard/fit.ts` and R9's legend drawing.
+Starts when the owner has accepted S5's arrangement and R21a is merged. No slots yet: the pad emits R24a's actions. Read: r9 section 1, `spec/unit-pad.yaml`, R21's layer (Shift + 6 drawn over its keys), `keyboard/fit.ts` and R9's legend drawing.
 1. **Tests first**:
    - A Vitest for the loader. Every key id is a maths key of `spec/keyboard.yaml`, no key holds two cells, and every unit or prefix id is a Find id.
    - An e2e (`app/test/unitpad-draw.spec.ts`), by keys and by touch. Every cell, by tap, flick up, flick down, Shift then the cell and Alpha then the cell, emits its action. A user cell emits its unit.

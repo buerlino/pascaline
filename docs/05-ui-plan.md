@@ -57,7 +57,7 @@ A pick sheet (Apps, every Menu, Mode, Tmpl, the Shift palettes) rises over the k
 
 - **Remembers the last pick** per sheet: reopening a menu highlights the item used last, so a repeated action is Menu + Enter (2 keys).
 - **Fit, then scroll:** rows and grid cells shrink to the room, from their normal size down to a floor (list rows 36 px, grid cells 44 px); only below the floor does the sheet scroll, with a fade at the cut edge and a count ("7 items") in the title row (fixes finding 5). A grid has no title row: its title and × share the hint line. Shift + 6 draws each cell over the key that picks it (7 8 9 ÷ / 4 5 6 × / 1 2 3).
-- **Disabled items** stay in place (numbers never shift) and say why on a second line ("Define a function first").
+- **Disabled items** stay in place (numbers never shift) and say why on a second line, once for a run of neighbouring rows with the same reason, under the last of them ("Define a function first").
 - Built once as `Sheet.svelte` plus a small model (`items`, `submenu`, `lastPick`, `filter`). Find (EN1), the template list (EN5), Base (EN6), the Units suggestions (EN2) and Settings values all use it. Find adds its preview pane and ranking but keeps the same keys.
 
 ### 3.2 A status bar instead of the tab row

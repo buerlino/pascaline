@@ -632,7 +632,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 | Item | Budget | Today | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 144.72 / 51.36 kB (2026-10-16, `phase-1` after R35: 2.64 kB gzip left; `tools/probes/start-chunk.mjs` lists the bytes per source) | size test |
+| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 149.50 / 52.90 kB (2026-10-16, `phase-1` after R21a: 1.10 kB gzip left; `tools/probes/start-chunk.mjs` lists the bytes per source) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (generated, 2026-10-15) | size test (once Find loads it) |
