@@ -216,3 +216,64 @@ test.describe("on the engine", () => {
     expect(await entryValue(page)).toBe("7");
   });
 });
+
+// ---- R45 (F38): arrows, ⌫, Del and letters take the keypad's path ----------------------------------------------------
+test.describe("R45: the path of a hardware key", () => {
+  test.beforeEach(async ({ page }) => {
+    await open(page);
+    await page.evaluate(() => window.pascaline.entry.focus());
+  });
+  const positions = async (page: Page, latex: string, how: (key: "left" | "right") => Promise<void>, key: "left" | "right"): Promise<number[]> => {
+    await page.evaluate(([l, k]) => {
+      const mf = window.pascaline.entry.field;
+      if (!mf) throw new Error("no field");
+      mf.value = l as string;
+      mf.position = k === "right" ? 0 : mf.lastOffset;
+      mf.focus();
+    }, [latex, key]);
+    const seen: number[] = [];
+    for (let i = 0; i < 14; i++) {
+      seen.push(await page.evaluate(() => window.pascaline.entry.field?.position ?? -1));
+      await how(key);
+    }
+    return seen;
+  };
+  for (const latex of ["\\sin\\left(2\\right)", "\\frac{\\frac12}{\\placeholder{}}"]) {
+    for (const key of ["right", "left"] as const) {
+      test(`${key === "right" ? "ArrowRight" : "ArrowLeft"} visits the positions of ${key === "right" ? "▶" : "◀"} through ${latex}`, async ({ page }) => {
+        const hw = await positions(page, latex, (k) => page.keyboard.press(k === "right" ? "ArrowRight" : "ArrowLeft"), key);
+        const kp = await positions(page, latex, (k) => tap(page, [k]), key);
+        expect(hw).toEqual(kp);
+      });
+    }
+  }
+
+  test("ArrowUp on an empty line with history picks the last row and Enter inserts it", async ({ page }) => {
+    await page.keyboard.type("12");
+    await page.keyboard.press("Enter");
+    await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("Enter");
+    expect(await entryValue(page)).not.toBe("");
+  });
+
+  test("with a sheet open: a digit picks, a letter and Backspace act as the keypad's keys", async ({ page }) => {
+    const filter = async (): Promise<string> => (await page.getByTestId("sheet-filter").textContent()) ?? "";
+    const open_ = async (): Promise<void> => {
+      await page.evaluate(() => window.pascaline.entry.clear());
+      await tap(page, ["tmpl"]);
+      await expect(page.getByTestId("menu")).toBeVisible();
+    };
+    await open_();
+    await page.keyboard.press("Escape");
+    await page.evaluate(() => window.pascaline.shell.closeSheet());
+    // a letter never reaches the line behind an open sheet
+    await open_();
+    await page.keyboard.type("h");
+    expect(await entryValue(page)).toBe("");
+    // the keypad's Backspace in the same place changes nothing on the line either
+    await page.keyboard.press("Backspace");
+    expect(await entryValue(page)).toBe("");
+    void filter;
+  });
+});

@@ -26,13 +26,19 @@
   // The shell paints first; main.ts then loads MathLive, which puts the field into this element.
   onMount(() => {
     if (host) entry.setHost(host);
-    entry.onEnter = enter;
+    // R45: a hardware Enter is the Enter key (a picked row, an open sheet), not a bare submit
+    entry.onEnter = () => {
+      const key = keyboard.byId.get("enter");
+      if (key) press(key, "primary");
+      else enter();
+    };
     entry.onEscape = () => void cancel();
     // R31 (F27): a hardware keyboard's printable keys are taps of the keypad key with that character
     entry.onKey = (id, layer) => {
       const key = keyboard.byId.get(id);
       if (key) press(key, layer);
     };
+    entry.onLetter = typeLetter;
     entry.onDead = dead;
   });
   let host: HTMLElement | undefined = $state();
@@ -353,6 +359,19 @@
       if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait(key, mods);
     }
     run(key, mods);
+  }
+
+  /** A letter from a hardware keyboard (R45, F38): what the keypad's letter key does in this place. */
+  function typeLetter(ch: string): void {
+    const sheet = shell.sheet;
+    if (sheet) {
+      if (sheet.level.filterable) sheet.level.type(ch);
+      return;
+    }
+    picked = null;
+    session.clearModifiers();
+    if (shell.app !== null && !shell.showsEntry) return dead();
+    entry.run({ kind: "type", text: ch });
   }
 
   /** Shift and Alpha: a tap is the G2's one-shot (L3's double taps lock), counted for P7 point 4; a flick locks

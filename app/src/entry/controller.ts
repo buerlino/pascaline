@@ -81,6 +81,8 @@ export class EntryController {
   onEscape: () => void = () => {};
   /** A keypad key pressed from a hardware keyboard (R31): the shell runs it as a tap in that layer. */
   onKey: (id: string, layer: Layer) => void = () => {};
+  /** A letter typed on a hardware keyboard (R45): the shell's checks first, then the line. */
+  onLetter: (ch: string) => void = () => {};
   /** A hardware key that does nothing (R31): the shell's dead-key feedback. */
   onDead: () => void = () => {};
 
