@@ -35,6 +35,13 @@ const pickMenu = async (page: Page, label: string): Promise<void> => {
   await page.getByRole("menuitem", { name: new RegExp(`^\\d ${label}$`) }).click();
 };
 
+/** Menu → 6 Copy as › → the item. */
+const pickCopyAs = async (page: Page, label: string): Promise<void> => {
+  await tap(page, ["menu", "d6"]);
+  await expect(page.getByTestId("menu")).toBeVisible();
+  await page.getByRole("menuitem", { name: new RegExp(`^\\d ${label}$`) }).click();
+};
+
 test("Shift + View copies the full value of the last result, not the 12 shown digits", async ({ page }) => {
   await thirds(page);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.666666666667");
@@ -94,14 +101,14 @@ test("copy → paste gives the value back (P5)", async ({ page }) => {
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.001"); // 2.5E-4 × 4
 });
 
-test("Menu: Copy as shown, Copy exact, Copy LaTeX", async ({ page }) => {
+test("Menu: Copy as › As shown, Exact, LaTeX", async ({ page }) => {
   await tap(page, ["d1", "div", "d3", "enter"]);
   await done(page, 1);
-  await pickMenu(page, "Copy as shown");
+  await pickCopyAs(page, "As shown");
   await expect.poll(() => clipboard(page)).toBe("0.333333333333");
-  await pickMenu(page, "Copy exact");
+  await pickCopyAs(page, "Exact");
   await expect.poll(() => clipboard(page)).toBe("1/3");
-  await pickMenu(page, "Copy LaTeX");
+  await pickCopyAs(page, "LaTeX");
   await expect.poll(() => clipboard(page)).toContain("0.333333333333");
   await pickMenu(page, "Copy");
   await expect.poll(() => clipboard(page)).toBe(THIRD);
@@ -110,12 +117,12 @@ test("Menu: Copy as shown, Copy exact, Copy LaTeX", async ({ page }) => {
 test("Menu: Copy exact is on for an exact result and off for one that is only digits", async ({ page }) => {
   await tap(page, ["d2", "sq", "enter"]);
   await done(page, 1);
-  await tap(page, ["menu"]);
-  await expect(page.getByRole("menuitem", { name: /Copy exact$/ })).toBeEnabled(); // 2² = 4
+  await tap(page, ["menu", "d6"]);
+  await expect(page.getByRole("menuitem", { name: /Exact$/ })).toBeEnabled(); // 2² = 4
   await tap(page, ["cancel", "shift", "enter", "d1", "div", "d3", "enter"]); // approx(1/3)
   await done(page, 2);
-  await tap(page, ["menu"]);
-  await expect(page.getByRole("menuitem", { name: /Copy exact$/ })).toBeDisabled(); // approx(1/3) is digits only
+  await tap(page, ["menu", "d6"]);
+  await expect(page.getByRole("menuitem", { name: /Exact$/ })).toBeDisabled(); // approx(1/3) is digits only
 });
 
 test("Menu: Share session shares, or copies one line per entry when the device cannot share", async ({ page }) => {
@@ -148,7 +155,7 @@ test("Menu: Clear history empties the view", async ({ page }) => {
   await expect(page.locator('[data-status="done"]')).toHaveCount(0);
 });
 
-test("a long press on a history row opens its copy actions, and the lift does not insert the result", async ({ page }) => {
+test("a long press on a history row opens the Menu list on that row, and the lift does not insert the result", async ({ page }) => {
   await thirds(page);
   const first = page.locator('[data-testid="result"] .result').first();
   const box = await first.boundingBox();
@@ -158,7 +165,7 @@ test("a long press on a history row opens its copy actions, and the lift does no
   await page.waitForTimeout(700);
   await expect(page.getByTestId("menu")).toBeVisible();
   await page.mouse.up();
-  await expect(page.getByRole("menuitem")).toHaveCount(4);
+  await expect(page.getByRole("menuitem")).toHaveCount(9);
   await page.getByRole("menuitem", { name: /^\d Copy$/ }).click();
   await expect.poll(() => clipboard(page)).toBe(THIRD); // the first row, not the last
   expect(await entryValue(page)).toBe("");

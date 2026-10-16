@@ -97,7 +97,7 @@
   let clipLoading: Promise<ClipActions> | undefined;
   function loadClip(): Promise<ClipActions> {
     clipLoading ??= import("./clipboard/actions.svelte.ts").then((m) => {
-      const c = new m.ClipActions(session, shell, entry);
+      const c = new m.ClipActions(session, shell, entry, { insert: insertResult, recall: (item) => entry.set(item.latex, item.chips) });
       shell.clip = c;
       shell.homeMenu = () => c.menu();
       clip = c;
@@ -306,6 +306,7 @@
       picked = null;
       if (!isCmd("moveUp") || n === 0 || entry.value !== "") return false;
       picked = n - 1;
+      void loadClip(); // the row buttons come from its list
       return true;
     }
     if (isCmd("moveUp")) {
@@ -581,8 +582,8 @@
           selected={picked}
           display={(item) => session.display(item)}
           mark={(item) => session.mark(item)}
-          onrecall={(item) => entry.set(item.latex, item.chips)}
-          oninsert={insertResult}
+          onrecall={(item) => { picked = null; entry.set(item.latex, item.chips); }}
+          oninsert={(item) => { picked = null; insertResult(item); }}
           oncancel={() => void cancel()}
           onlongpress={(item) => withClip((c) => c.openRowMenu(item))}
         />
@@ -595,6 +596,18 @@
     </div>
 
     {#if clip?.notice}<div class="notice" role="status" data-testid="notice">{clip.notice}</div>{/if}
+
+    <!-- R11: the picked row's actions, items 1-5 of the Menu (docs/05 3.3); shown only while a row is picked -->
+    {#if clip && shell.app === null && picked !== null}
+      {@const row = session.items[picked]}
+      {#if row}
+      <div class="rowbar" role="toolbar" aria-label={t("history.actions")} data-testid="row-actions">
+        {#each clip.rowButtons(row) as b (b.id)}
+          <button type="button" disabled={b.disabled} onpointerdown={noFocus} onclick={() => { picked = null; b.run?.(); }}>{b.label}</button>
+        {/each}
+      </div>
+      {/if}
+    {/if}
 
     <div class="entry" class:hidden={!shell.showsEntry} aria-label={t("entry.label")} bind:clientHeight={entryHeight}>
       {#if shell.entryLabel}<span class="entrylabel" data-testid="entry-label">{shell.entryLabel}</span>{/if}
@@ -761,6 +774,25 @@
   }
   .loading {
     margin: auto;
+    color: var(--muted);
+  }
+  .rowbar {
+    display: flex;
+    gap: 6px;
+    padding: 4px 12px;
+  }
+  .rowbar button {
+    flex: 1;
+    min-height: 44px;
+    font: inherit;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    padding: 0 4px;
+  }
+  .rowbar button:disabled {
     color: var(--muted);
   }
   .notice {
