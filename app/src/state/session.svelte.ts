@@ -100,7 +100,23 @@ export interface HistoryItem {
   fullExact?: boolean;
   /** An inexact chip went into the input, so the result is never marked "=" (docs/04 2.4, decisions M4-4). */
   inexactInput?: boolean;
+  /** CAS: the stored values the input read, each with the view that stored it (F28); absent when there is none. */
+  uses?: UsedValue[];
   startedAt: number;
+}
+
+export interface UsedValue {
+  name: string;
+  preview: string;
+  view: View;
+}
+
+/** A stored `uses` read back from IndexedDB: the well-formed entries only. */
+function validUses(x: unknown): UsedValue[] | undefined {
+  const ok = (Array.isArray(x) ? (x as Partial<UsedValue>[]) : []).filter(
+    (u): u is UsedValue => typeof u?.name === "string" && typeof u.preview === "string" && (u.view === "home" || u.view === "cas"),
+  );
+  return ok.length ? ok : undefined;
 }
 
 const HISTORY_LIMIT = 200;
@@ -189,7 +205,7 @@ export function migrateSettings(saved: unknown): { settings: Settings; migrated:
 
 /** A stored history item with a fresh id; chip fields that do not have their shape are dropped. */
 function restoredItem(i: HistoryItem, id: number): HistoryItem {
-  const { chips, full, fullExact, facts, ...rest } = i as HistoryItem & { form?: unknown };
+  const { chips, full, fullExact, facts, uses, ...rest } = i as HistoryItem & { form?: unknown };
   const { form, ...base } = rest;
   const out: HistoryItem = { ...base, id };
   if (isFormStep(form)) out.form = form;
@@ -197,6 +213,8 @@ function restoredItem(i: HistoryItem, id: number): HistoryItem {
   if (f) out.facts = f;
   const c = validChips(chips);
   if (c) out.chips = c;
+  const u = validUses(uses);
+  if (u) out.uses = u;
   if (typeof full === "string" && full.length <= FULL_LIMIT) {
     out.full = full;
     out.fullExact = fullExact === true;
@@ -456,6 +474,7 @@ export class Session {
         live.text = r.ok ? r.text : errorText(r.error, r.text);
         if (r.ok) {
           live.resultLatex = tidyGiacLatex(r.latex);
+          if (r.uses?.length) live.uses = r.uses;
           // A plain number (3/4, 2.5): the Format key can show it in the other forms.
           const q = rationalOf(r.text);
           const dec = q ? decimalFromRational(BigInt(q.n), BigInt(q.d)) : decimalFromString(r.text);

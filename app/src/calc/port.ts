@@ -73,6 +73,8 @@ export interface CasOutcome {
   approximate?: boolean;
   /** The mark is ⚠: that float comes from an unaudited function (R18f2), or sits in a non-number nobody checked (G27). */
   warn?: PrecisionWarn;
+  /** The stored variables the input read, with the view that stored each (F28); absent when there is none. */
+  uses?: { name: string; preview: string; view: "home" | "cas" }[];
 }
 
 /** Thrown by home()/cas() when Cancel stopped the job. */
