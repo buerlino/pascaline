@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { checkSizes, startFiles } from "./size-check.ts";
+import { checkSizes, checkSplits, startFiles } from "./size-check.ts";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -133,5 +133,14 @@ describe("size-check", () => {
     const dist = mkdtempSync(join(tmpdir(), "size-check-"));
     dirs.push(dist);
     expect(() => checkSizes(dist)).toThrow(/manifest/);
+  });
+
+  it("fails when the sheet's view is not its own chunk, or is loaded at start (R46)", () => {
+    const { manifest, files } = base(1000);
+    expect(checkSplits(fakeDist(manifest, files))[0]).toContain("src/views/Sheet.svelte");
+    const lazy = { "src/views/Sheet.svelte": { file: "assets/sheet.js", src: "src/views/Sheet.svelte", isDynamicEntry: true } };
+    expect(checkSplits(fakeDist({ ...manifest, ...lazy }, { ...files, "assets/sheet.js": 1000 }))).toEqual([]);
+    const atStart = { ...manifest, "index.html": { ...manifest["index.html"], imports: ["src/views/Sheet.svelte"] }, ...lazy };
+    expect(checkSplits(fakeDist(atStart, { ...files, "assets/sheet.js": 1000 }))[0]).toContain("loaded at start");
   });
 });

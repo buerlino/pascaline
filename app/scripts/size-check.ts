@@ -101,6 +101,22 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   return { present, absent };
 }
 
+/** Views that only draw an open sheet stay out of the start chunk (R46): each must be its own dynamic chunk, not in `startFiles`. */
+export const LAZY_VIEWS = ["src/views/Sheet.svelte"];
+
+/** Failures for lazy views that are missing as a dynamic chunk, or that are loaded at start. */
+export function checkSplits(dist: string): string[] {
+  const manifest = readManifest(dist);
+  const start = new Set(startFiles(manifest));
+  const failures: string[] = [];
+  for (const src of LAZY_VIEWS) {
+    const chunk = Object.values(manifest).find((c) => c.isDynamicEntry && normalSrc(c.src) === src);
+    if (chunk === undefined) failures.push(`${src} is not a dynamic chunk: it is in the start chunk (import it with import())`);
+    else if (start.has(chunk.file)) failures.push(`${src} (${chunk.file}) is loaded at start`);
+  }
+  return failures;
+}
+
 const kB = (n: number): string => `${(n / KB).toFixed(2)} kB`;
 
 /** Measure `dist` against the budgets. Pure apart from reading files; the CLI prints and sets the exit code. */
@@ -147,6 +163,7 @@ if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(
   }
   try {
     const report = checkSizes(dist);
+    report.failures.push(...checkSplits(dist));
     console.log(`size-check: ${dist}\n${format(report)}`);
     if (report.failures.length > 0) {
       console.error(`\nsize-check FAILED:\n${report.failures.map((f) => `  ${f}`).join("\n")}\nA budget changes only together with docs/04-architecture.md section 8.3.`);

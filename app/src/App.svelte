@@ -21,7 +21,9 @@
   const loadModeSheet = async (): Promise<typeof import("./views/modeSheet.ts")> => (modeSheet ??= await import("./views/modeSheet.ts"));
   /** Set while the first Mode or Settings open waits for that code. */
   let sheetLoad: Promise<void> | null = null;
-  import Sheet from "./views/Sheet.svelte";
+  // The sheet's view (Sheet.svelte with sheetFit.ts) is its own chunk, fetched when idle after the keypad is drawn (R46);
+  // the model and the keys stay here. A key that opens a sheet before it is in waits in the queue.
+  import { loadSheetView, sheetChunk } from "./views/sheetView.svelte.ts";
   import { sheetFlick, sheetKey } from "./views/sheetKeys.ts";
   import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
 
@@ -166,9 +168,9 @@
   /** Run `open` at once when the lists are loaded; else after the load, with every key meanwhile waiting in the queue
    *  (decisions.md R8), so none of them lands on the line before the sheet is there. */
   function onModeSheet(open: (m: NonNullable<typeof modeSheet>) => void): void {
-    if (modeSheet) return open(modeSheet);
-    sheetLoad = loadModeSheet().then(
-      (m) => {
+    if (modeSheet && sheetChunk.C) return open(modeSheet);
+    sheetLoad = Promise.all([loadModeSheet(), loadSheetView()]).then(
+      ([m]) => {
         sheetLoad = null;
         open(m);
       },
@@ -397,6 +399,13 @@
       else if (!(shell.sheet && sheetPress(w.key, w.layer))) run(w.key, w.mods); // a sheet opened meanwhile takes its keys
   }
 
+  const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols"];
+  /** Does this key open a sheet? (Mode and Settings load the view with their lists.) */
+  function opensSheet(key: Key, mods: Mods): boolean {
+    const a = actionFor(key, mods.shift, mods.alpha);
+    return a?.kind === "special" && SHEET_KEYS.includes(a.name);
+  }
+
   /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
    *  ("shift") or down ("alpha"). */
   function press(key: Key, layer?: Layer): void {
@@ -405,6 +414,9 @@
     if (shell.sheet && sheetPress(key, layer)) return;
     const mods = modsFor(layer);
     session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
+    if (sheetLoad === null && sheetChunk.C === null && opensSheet(key, mods)) {
+      sheetLoad = loadSheetView().catch(() => {}).finally(() => (sheetLoad = null)); // if it fails, the queued keys run without a sheet
+    }
     if (sheetLoad !== null) return wait({ key, mods, layer });
     if (shell.loading !== null) {
       const a = actionFor(key, mods.shift, mods.alpha);
@@ -564,7 +576,8 @@
 </main>
 
 {#snippet sheetView(sheet: NonNullable<typeof shell.sheet>, over: "keypad" | "view")}
-  <Sheet
+  {#if sheetChunk.C}
+  <sheetChunk.C
     {sheet}
     {over}
     testid={shell.switcherOpen ? "apps" : "menu"}
@@ -574,6 +587,7 @@
     onback={() => sheet.back()}
     onclose={() => shell.closeSheet()}
   />
+  {/if}
 {/snippet}
 
 <style>
