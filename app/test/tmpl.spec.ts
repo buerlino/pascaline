@@ -54,7 +54,8 @@ const FILLS: [string, string[], string, string | undefined][] = [
   ["deriv", ["x", "sq", "right", "x"], "\\frac{\\partial x^2}{\\partial x}", undefined],
   ["cases", ["x", "right", "x", "shift", "dot", "d0", "right", "d1", "right", "x", "shift", "dot", "d1"], "\\begin{cases}x & \\text{if }x=0\\\\ 1 & \\text{if }x=1\\end{cases}", undefined],
   ["matrix22", ["d1", "right", "d2", "right", "d3", "right", "d4"], "\\begin{pmatrix}1 & 2\\\\ 3 & 4\\end{pmatrix}", undefined],
-  ["limit", ["x", "right", "d0", "right", "div", "sin", "x", "right", "x"], "\\lim_{x\\to0}\\left(\\frac{\\sin\\left(x\\right)}{x}\\right)", "1"],
+  // (R43, F34: ▶ out of sin's bracket stops at the end of the numerator; the next ▶ goes to the denominator)
+  ["limit", ["x", "right", "d0", "right", "div", "sin", "x", "right", "right", "x"], "\\lim_{x\\to0}\\left(\\frac{\\sin\\left(x\\right)}{x}\\right)", "1"],
   ["integral", ["neg", "d1", "right", "d1", "d0", "right", "x", "sq", "right", "x"], "\\int_{-1}^{10}x^2\\,\\mathrm{d}x", "333.666666667"],
   ["rowvec", ["d1", "right", "d2"], "\\begin{pmatrix}1 & 2\\end{pmatrix}", undefined],
   ["colvec", ["d1", "right", "d2"], "\\begin{pmatrix}1\\\\ 2\\end{pmatrix}", undefined],
@@ -93,7 +94,9 @@ test("DMS: 30°15′36″ is 30.26 in DEG and sin(30°0′0″) = 0.5 in RAD and
     await page.evaluate((a) => window.pascaline.session.setAngle(a), angle);
     await tap(page, ["sin"]);
     await insert(page, "dms");
-    await tap(page, ["d3", "d0", "right", "d0", "right", "d0", "enter"]);
+    // the key takes sin's selected □ as its degrees, in brackets (R17): `(30)`. R43: ▶ out of the bracket stops at the
+    // end of the degrees box, the next ▶ goes to the minutes
+    await tap(page, ["d3", "d0", "right", "right", "d0", "right", "d0", "enter"]);
     await expect(lastResult(page)).toHaveAttribute("data-text", "0.5");
   }
 });

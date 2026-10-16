@@ -59,41 +59,7 @@ const CONTEXTS: [string, string, string][] = [
   ["∫'s integrand", "\\int_{1}^{1}", "\\,\\mathrm{d}\\placeholder{}"],
 ];
 
-const KNOWN_FAIL = new Set<string>([
-  "cos/primary",
-  "cos/shift",
-  "div/shift",
-  "enter/shift",
-  "frac/primary",
-  "ln/primary",
-  "ln/shift",
-  "log/primary",
-  "log/shift",
-  "neg/shift",
-  "paren/primary",
-  "pow/primary",
-  "pow/shift",
-  "rel:eq",
-  "rel:not",
-  "sin/primary",
-  "sin/shift",
-  "sq/primary",
-  "sq/shift",
-  "tan/primary",
-  "tan/shift",
-  "tmpl:cases",
-  "tmpl:colvec",
-  "tmpl:deriv",
-  "tmpl:dms",
-  "tmpl:evalat",
-  "tmpl:limit",
-  "tmpl:logbase",
-  "tmpl:matrix22",
-  "tmpl:mixed",
-  "tmpl:product",
-  "tmpl:rowvec",
-  "tmpl:sum",
-]);
+const KNOWN_FAIL = new Set<string>([]);
 
 let page: Page;
 test.beforeAll(async ({ browser }) => {

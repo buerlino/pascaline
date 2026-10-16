@@ -146,8 +146,6 @@ test("▲ and ▼ never leave the cursor inside a name", async ({ page }) => {
 // R43 (F34): ▶ from the end of a template's last box stops at the end of the box that holds it, even when an empty box
 // of the outer template is ahead; the next ▶ goes to that box (R10). The expected lines are what the next keys give
 // when typed at the end of the outer box (derived: they land after the template, in the same box).
-/** True until the fix: the F34 cases fail on today's code. */
-const F34_OPEN = true;
 const F34: [string[], string[], string][] = [
   [["div", "div", "d1", "right", "d2", "right"], ["d3"], "\\frac{\\frac123}{\\placeholder{}}"],
   [["div", "x", "pow", "d2", "right"], ["add", "d1"], "\\frac{x^2+1}{\\placeholder{}}"],
@@ -164,7 +162,6 @@ const atLastBox = (page: Page): Promise<boolean> =>
 
 for (const [keys, more, line] of F34) {
   test(`F34: ${keys.join(" ")} stops at the end of the box, then ${more.join(" ")} gives ${line}`, async ({ page }) => {
-    test.fail(F34_OPEN, "F34 (R43)");
     await tap(page, keys);
     await tap(page, more);
     expect(await entryValue(page)).toBe(line);
@@ -174,7 +171,6 @@ for (const [keys, more, line] of F34) {
 }
 
 test("F34 at a mark: ▶ from the end of ½ stops before EQ's comma and before DMS's °", async ({ page }) => {
-  test.fail(F34_OPEN, "F34 (R43)");
   // EQ(½,□): 10 is the end of its first box (11 the comma); ½°□′□″: 5 is the end of the degrees (6 the °)
   for (const [line, from, end] of [
     ["\\operatorname{EQ}\\left(\\frac12,\\placeholder{}\\right)", 9, 10],
