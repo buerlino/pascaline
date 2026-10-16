@@ -142,3 +142,81 @@ test("▲ and ▼ never leave the cursor inside a name", async ({ page }) => {
   const o = await position(page);
   expect(o >= 4 && o <= 11, `▼ landed on ${o}`).toBe(false);
 });
+
+// R43 (F34): ▶ from the end of a template's last box stops at the end of the box that holds it, even when an empty box
+// of the outer template is ahead; the next ▶ goes to that box (R10). The expected lines are what the next keys give
+// when typed at the end of the outer box (derived: they land after the template, in the same box).
+/** True until the fix: the F34 cases fail on today's code. */
+const F34_OPEN = true;
+const F34: [string[], string[], string][] = [
+  [["div", "div", "d1", "right", "d2", "right"], ["d3"], "\\frac{\\frac123}{\\placeholder{}}"],
+  [["div", "x", "pow", "d2", "right"], ["add", "d1"], "\\frac{x^2+1}{\\placeholder{}}"],
+  [["div", "shift", "sq", "d2", "right"], ["add", "d1"], "\\frac{\\sqrt2+1}{\\placeholder{}}"],
+  [["d1", "add", "div", "d2", "div", "d3", "right"], ["d4"], "1+\\frac{\\frac234}{\\placeholder{}}"],
+];
+
+/** The outer template's empty box is selected (where R10's ▶ puts the cursor), and it is the line's last box. */
+const atLastBox = (page: Page): Promise<boolean> =>
+  page.evaluate(() => {
+    const mf = window.pascaline.entry.field!;
+    return mf.getValue(mf.selection, "latex") === "\\placeholder{}" && mf.position >= mf.lastOffset - 1;
+  });
+
+for (const [keys, more, line] of F34) {
+  test(`F34: ${keys.join(" ")} stops at the end of the box, then ${more.join(" ")} gives ${line}`, async ({ page }) => {
+    test.fail(F34_OPEN, "F34 (R43)");
+    await tap(page, keys);
+    await tap(page, more);
+    expect(await entryValue(page)).toBe(line);
+    await tap(page, ["right"]);
+    expect(await atLastBox(page)).toBe(true);
+  });
+}
+
+test("F34 at a mark: ▶ from the end of ½ stops before EQ's comma and before DMS's °", async ({ page }) => {
+  test.fail(F34_OPEN, "F34 (R43)");
+  // EQ(½,□): 10 is the end of its first box (11 the comma); ½°□′□″: 5 is the end of the degrees (6 the °)
+  for (const [line, from, end] of [
+    ["\\operatorname{EQ}\\left(\\frac12,\\placeholder{}\\right)", 9, 10],
+    ["\\frac12\\degree\\placeholder{}\\prime\\placeholder{}\\doubleprime", 4, 5],
+  ] as const) {
+    await set(page, line, from);
+    await tap(page, ["right"]);
+    expect(await position(page)).toBe(end);
+    await tap(page, ["right"]);
+    expect(await page.evaluate(() => {
+      const mf = window.pascaline.entry.field!;
+      return mf.getValue(mf.selection, "latex");
+    })).toBe("\\placeholder{}");
+  }
+});
+
+test("R10's walks are unchanged: a digit and ▶ per box fill ∫, ∂, evaluate-at, lim, Σ, Π, piecewise and a matrix in order", async ({ page }) => {
+  const TEMPLATES = [
+    "\\int_{#?}^{#?}#0\\,\\mathrm{d}#?",
+    "\\frac{\\partial#0}{\\partial#?}",
+    "\\left.#0\\right|_{#?=#?}",
+    "\\lim_{#?\\to#?}\\left(#0\\right)",
+    "\\sum_{#?=#?}^{#?}\\left(#0\\right)",
+    "\\prod_{#?=#?}^{#?}\\left(#0\\right)",
+    "\\begin{cases}#? & \\text{if }#?\\\\ #? & \\text{if }#?\\end{cases}",
+    "\\begin{pmatrix}#? & #?\\\\ #? & #?\\end{pmatrix}",
+  ];
+  const got = await page.evaluate((templates) => {
+    const entry = window.pascaline.entry;
+    return templates.map((t) => {
+      let k = 0;
+      const want = t.replace(/#[@?0]/g, () => String(++k)); // digit k in box k
+      entry.clear();
+      entry.run({ kind: "insert", latex: t });
+      for (let i = 1; i <= k; i++) {
+        if (i > 1) entry.run({ kind: "cmd", name: "moveToNextChar" });
+        entry.run({ kind: "type", text: String(i) });
+      }
+      return [entry.value, want] as const;
+    });
+  }, TEMPLATES);
+  // (MathLive writes a one-character script without braces: `_1` where the template has `_{1}`)
+  const plain = (l: string): string => l.replace(/([_^])\{(.)\}/g, "$1$2");
+  for (const [value, want] of got) expect(value).toBe(plain(want));
+});
