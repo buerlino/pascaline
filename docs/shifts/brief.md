@@ -4,23 +4,22 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b and R11; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11 and R32; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. R32 (the stored values under a CAS result, F28), while annabell's device run A4a takes place. Then R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
+  1. R36 (why a row has its mark) once G22 is merged; if it is not yet, the lane goes on and R36 follows.
   2. R15b (the top cluster, after A4a's report).
   3. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
   4. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then G28 (a name the input binds is not a used value; the owner said yes 2026-10-16, F28), R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A4a when the owner connects the Tab One (R21b is merged), before R15b. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
 **Why this order:**
-- R32 uses no key that R15b moves, so it fills the wait for the device run.
 - R4a fills the wait for the owner's pick of the mockups, and R12b's token pass then covers Find too.
 - gorge's packages have no UI, and R24c needs milestone 5 items 1 and 2.
 - Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b and R4a stay whole, since each half would leave the keypad or Find half built.
@@ -28,9 +27,9 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
-  - **Day packages sit next to the code they share:** the start-chunk budget has 3.51 kB gzip left (50.49 of 54 kB after R11, 2026-10-16; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R15b and R12b to come.
+  - **Day packages sit next to the code they share:** the start-chunk budget has 3.23 kB gzip left (50.77 of 54 kB after R32, 2026-10-16; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R15b and R12b to come.
   - **Trust features after the code they build on:**
-    - R32 and R36 add a line to the history rows R11 built.
+    - R36 adds a line to the history rows R11 built.
     - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
     - R41 labels the keys once R15b and R12 have placed and styled them.
     - R40 needs G26 and a muted token from R12b.
@@ -64,7 +63,8 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 3 | R29 where a number ends (F24, F25) | ron, **Opus** | `p1/ron-m4-numbers` | 1 h + review |
 | 3a | G27 a result that is not a number but holds a float gets ⚠ (F36): merged by day (`adb2e3a`), skip | gorge, Sonnet | `p1/gorge-m4-symfloat` | — |
 | 3b | R44 a long result's chip keeps its value, Ans never dropped (F37; after R29) | ron, Sonnet | `p1/ron-m4-longchip` | 45 min + review |
-| 4 | **Opus pass 1** on steps 2–3b, then its FIX packages | Opus | — | 30 min + fixes |
+| 3c | G28 a name the input binds is not a used value (F28) | gorge, Sonnet | `p1/gorge-m4-bound` | 45 min + review |
+| 4 | **Opus pass 1** on steps 2–3c, then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
 | 6 | G19 a safe start (F31) | gorge, Sonnet | `p1/gorge-m4-safestart` | 1 h + review |
 | 7 | G24 a memory cap for the Giac worker (F32) | gorge, Sonnet | `p1/gorge-m4-memcap` | 1 h + review |
@@ -215,13 +215,13 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
 | G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
 | G24 | A memory cap for the Giac worker | F32 | night | gorge, Sonnet | `p1/gorge-m4-memcap` | now | ~0.5 d |
+| G28 | A name the input binds is not a used value | F28 (decisions.md "G20: a name the input binds") | night | gorge, Sonnet | `p1/gorge-m4-bound` | now (G20 and R32 are merged) | ~0.25 d |
 | G22 | Why the mark: the reasons as facts | review item 14 | night | gorge, Sonnet | `p1/gorge-m4-why` | now | ~0.5 d |
 | R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R30 (same file) | ~0.25 d |
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23; and G18 if P15 holds | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
-| R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | now (R11 is merged) | ~0.5 d |
-| R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | R32 (same file) and G22 | ~0.5 d |
+| R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | G22 (R32, same file, is merged) | ~0.5 d |
 | R33 | Names with a value, marked on the line | review item 15 | day | ron, Sonnet | `p1/ron-m4a-namemarks` | R4b | ~0.5 d |
 | R37 | The angle check | review item 16 | day | ron, Sonnet | `p1/ron-m4a-anglecheck` | R33 | ~0.75 d |
 | R41 | Key labels for TalkBack | review item 19 | day | ron, Sonnet | `p1/ron-m4a-labels` | R12c | ~0.5 d |
@@ -681,24 +681,6 @@ From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #18). Starts when
 
 Gate: chips, entry and tasks e2e; vitest; typecheck; the start chunk within its budget.
 
-### ron, R32: the stored values under a CAS result (F28, UI half), branch `p1/ron-m4a-uses`
-Starts now (R11 is merged, `4c963b2`; G20 is, `462c163`). Read:
-- G20's report (`git log -1 dd0f65c`) and the open point decisions.md "G20: a name the input binds";
-- `app/src/views/History.svelte` (a CAS row) and R11's row code;
-- `app/src/i18n/en.ts`;
-- docs/03 rule 9 (vertical space).
-
-Commits in this order:
-1. **Tests first** (`app/test/uses.spec.ts`):
-   - Home `3 ▶ x`, then CAS `factor(x^2-1)`: under the result, a muted line "x = 3 · stored in Home";
-   - a CAS result without a stored name has no line;
-   - the line comes back after a reload (the history item stores `uses`).
-2. **Build:**
-   - The line goes under the CAS result, in the mark's muted style: one line, with "+2" after three names.
-   - A tap on it does nothing new. Actions live in the picked row's Menu (R11), and Memory (R4b) deletes a stored value.
-
-Gate: the e2e, the history performance test unchanged, the viewport share unchanged, start chunk within 0.3 kB gzip. **Removal test**, for the report: if the owner finds the line noisy after two weeks, it is shown only for values stored in another view.
-
 ### ron, R29: where a number ends (F24, F25), branch `p1/ron-m4-numbers`
 Backlog F24 and F25. Parser only, no UI (night queue). Read:
 - `app/src/input/parse.ts`: the lexer's number branch (lines 99–120) and `atom`;
@@ -834,6 +816,22 @@ Commits in this order:
 
 Gate: the golden gate, the new tests, `compare-engines.ts` clean. The device check (the app stays up on the Tab One) is A4a's.
 
+### gorge, G28: a name the input binds is not a used value (F28), branch `p1/gorge-m4-bound`
+Decided by the owner 2026-10-16 (decisions.md "G20: a name the input binds"). No UI: R32's line under a CAS result shows what `uses` lists. Read:
+- G20's report (`git log -1 dd0f65c`) and `usesOf()` in `app/src/engine/host.ts`;
+- the decision's probes (decisions.md, the entry named above);
+- the `prec-G20-*` cases in `tests/golden/precision.yaml`.
+
+Commits in this order:
+1. **Probe** (`tools/probes/engine.ts`, after Home `x:=3`): each command of the CAS menu and each tier-0 function that takes a variable argument: does its result depend on the stored 3? The list goes in the report.
+2. **Tests first** (golden cases in `precision.yaml`, `beforeHome: ["x:=3"]`, `derived`):
+   - no `uses` on `diff(x^2,x)`, `solve(x^2=4,x)`, `seq(x^2,x,1,3)`, `sum(x,x,1,4)`, `f(x):=x^2` and `x->x^2`;
+   - `int(x^2,x)` keeps `uses: ["x"]`;
+   - `x:=x+1` → 4 with `uses: ["x"]`.
+3. **Build:** `usesOf()` skips a function's parameters in `f(x):=` and `x->`, and the variable argument of the commands the probe found quoting it; an assignment lists its target when its right-hand side reads it. A command the probe does not settle keeps listing the name: a hint too many is noise, a hint missing hides a stored value.
+
+Gate: the golden gate (precision), vitest, typecheck; R32's `app/test/uses.spec.ts` unchanged and passing.
+
 ### gorge, G22: why the mark, the reasons as facts, branch `p1/gorge-m4-why`
 Deep-dive item 14; R36 shows these reasons. No UI. Read:
 - docs/04 2.4;
@@ -916,7 +914,7 @@ Commits in this order:
 Gate: the golden gate; the trig cases in DEG unchanged.
 
 ### ron, R36: a picked row says why it has its mark, branch `p1/ron-m4a-why`
-Deep-dive item 14. Starts when R32 (same file) and G22 are merged. Read:
+Deep-dive item 14. Starts when G22 is merged (R32, same file, is). Read:
 - G22's report;
 - docs/04 2.4, and `markOf()` in `app/src/engine/format.ts`;
 - R11's row code (the action line above the entry line) and `app/src/input/chips.ts` (a constant chip's `unc`);
