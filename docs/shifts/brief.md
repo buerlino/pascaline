@@ -4,12 +4,12 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45 and R34; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34 and R35; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
+  1. R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   2. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
   3. R15b (the top cluster, after A4a's report).
   4. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
@@ -29,7 +29,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
-  - **Day packages sit next to the code they share:** R35 comes before R21a, whose gate is the start-chunk budget: 0.38 kB gzip are left (53.62 of 54 kB, after R34, 2026-10-16).
+  - **Day packages sit next to the code they share:** R21a's gate is the start-chunk budget: 2.64 kB gzip are left (51.36 of 54 kB, after R35, 2026-10-16).
   - **Trust features after the code they build on:**
     - R32 and R36 add a line to the history rows R11 builds.
     - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
@@ -224,7 +224,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23; and G18 if P15 holds | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
-| R35 | A lighter start chunk | review item 11 | day | ron, Sonnet | `p1/ron-m4a-slim` | R34 | ~0.5 d |
 | R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | R11 | ~0.5 d |
 | R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | R32 (same file) and G22 | ~0.5 d |
 | R33 | Names with a value, marked on the line | review item 15 | day | ron, Sonnet | `p1/ron-m4a-namemarks` | R4b | ~0.5 d |
@@ -404,7 +403,7 @@ Starts when R21b is merged and the owner connects the Tab One, with the S8+ for 
    - ᴇ drawn on the S8+'s Chrome 101 WebView;
    - the largest system font size (Android Settings › Display): do the keypad, the status line and a sheet still fit? If not, the report names what breaks (deep-dive item 19);
    - if G24 is merged: the input its report names goes past the memory cap, ends in the "Out of memory" message, and the app stays up;
-   - if R35 is merged: the first tap after a cold start vibrates.
+   - the first tap after a cold start vibrates (R35 loads the strength plugin later).
 
 Report against the §8.3 bars. A miss goes under "Needs a decision" with the number; docs/04 says what changes (digits capped at 20). The report ends with one line: whether R15b may start.
 
@@ -966,40 +965,6 @@ Commits in this order:
 2. **Fix:** find where Giac applies the angle mode to `exp` of an imaginary argument, and evaluate `exp` (and `e^`) without it, by a rewrite in the host or a Giac setting. If the fix is a Giac patch, follow `engine/giac/patches/README.md` and write the upstream report for the owner.
 
 Gate: the golden gate; the trig cases in DEG unchanged.
-
-### ron, R35: a lighter start chunk, branch `p1/ron-m4a-slim`
-Deep-dive item 11; decisions.md "Start chunk: budget raised to 156 kB raw, 54 kB gzip". Starts when R34 is merged, and comes before R21a, whose gate is that budget. Read:
-- `app/scripts/size-check.ts`;
-- `app/src/input/haptics.ts`, and every import of `vibrate` and `hasStrength`;
-- `app/vite.config.ts`.
-
-**Today** (`vite build` with source maps, 2026-10-14): the start chunk is 150.11 kB raw, 52.41 kB gzip. Its largest parts:
-
-| Source | Raw |
-|---|---|
-| `session.svelte.ts` | 10.3 kB |
-| `App.svelte` | 8.8 kB |
-| `@capacitor/core` (imported only by `haptics.ts`, for `registerPlugin` and `Capacitor`) | 7.8 kB |
-| `spec/keyboard.yaml` | 7.6 kB |
-| `format.ts` | 5.7 kB |
-| `keyboard.ts` | 5.6 kB |
-| `controller.ts` | 5.5 kB |
-| `en.ts` | 5.2 kB |
-| `Keypad.svelte` | 5.2 kB |
-| `modeSheet.ts` | 4.0 kB |
-| `Sheet.svelte` + `sheet.svelte.ts` | 6.8 kB |
-| `displayMode.ts` | 3.1 kB |
-| `History.svelte` | 3.1 kB |
-
-Commits in this order:
-1. **The probe** `tools/probes/start-chunk.mjs`: it builds with source maps into `_out/` and prints the start chunk's bytes per source, so later packages see what they add. The table above came from this method.
-2. **Haptics:**
-   - `haptics.ts` loads `@capacitor/core` with a dynamic import once the browser is idle after the keypad is drawn.
-   - Until then `vibrate` uses `navigator.vibrate`, so the first tap of a cold start may vibrate without its strength.
-   - `hasStrength()` reads a flag the load sets.
-3. **One more cut, if it is clean:** the Mode sheet's item lists (`modeSheet.ts`) load on the first Mode or Settings open. Leave the sheet itself to R21a.
-
-Gate: the size test, with the start chunk at least 2 kB gzip under today's 52.41 kB; the Mode and Settings e2e green; desktop keyboard-usable mark (`?bench=1`) not later. Report: the probe's table before and after.
 
 ### ron, R36: a picked row says why it has its mark, branch `p1/ron-m4a-why`
 Deep-dive item 14. Starts when R32 (same file) and G22 are merged. Read:
