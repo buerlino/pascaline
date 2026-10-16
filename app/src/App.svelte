@@ -12,7 +12,7 @@
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
   import { loadShiftPalettes, shiftPalettes } from "./keyboard/palettes.ts";
-  import { actionFor, keyboard, type ActionBody, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
+  import { actionFor, keyboard, MATHS_ROW, type ActionBody, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { HistoryItem, Session } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
@@ -47,6 +47,32 @@
   });
   let host: HTMLElement | undefined = $state();
   let entryHeight = $state(0);
+
+  // The pick sheets' layer (R21a): from the top of the first maths row to the keypad's bottom edge, measured once per
+  // resize of the keypad.
+  let keysEl: HTMLDivElement | undefined = $state();
+  let mathsTop = $state(0);
+  /** A tap in the viewport closes a pick sheet; a click left over from the press that opened it does not. */
+  let catchPressed = false;
+  $effect(() => {
+    void shell.sheet;
+    catchPressed = false;
+  });
+  const firstMaths = keyboard.keys.find((k) => k.row === MATHS_ROW);
+  const keyBox = (id: string): DOMRect | undefined => keysEl?.querySelector(`[data-key="${id}"]`)?.getBoundingClientRect();
+  $effect(() => {
+    const el = keysEl;
+    if (!el || !firstMaths) return;
+    const place = (): void => {
+      const k = keyBox(firstMaths.id);
+      if (k) mathsTop = k.top - el.getBoundingClientRect().top;
+    };
+    place();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(place);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
 
   // Copy, paste and share (docs/04 2.6) load after the engine is ready, once the browser is idle (not in the start chunk).
   // The shell reaches them for the apps (AppHost.copy) and for the Home/CAS Menu.
@@ -504,32 +530,51 @@
       <div class="field" bind:this={host}></div>
     </div>
 
-    <!-- the sheet rises from just above the entry line, over the history or view; it takes the entry line's room only
-         when its rows need it, and never covers the keypad (docs/05 3.1) -->
-    {#if shell.sheet}
-      {@const sheet = shell.sheet}
-      <Sheet
-        {sheet}
-        testid={shell.switcherOpen ? "apps" : "menu"}
-        below={entryHeight}
-        ontap={(i) => shell.picked(sheet.activate(i))}
-        onback={() => sheet.back()}
-        onclose={() => shell.closeSheet()}
-      />
+    <!-- a list that takes letters rises from just above the entry line, over the history or view, and takes the entry
+         line's room only when its rows need it; while a pick sheet is over the keypad, a tap in the viewport closes it
+         (docs/05 3.1) -->
+    {#if shell.sheet?.letters}
+      {@render sheetView(shell.sheet, "view")}
+    {:else if shell.sheet}
+      <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions (the Esc and Cancel keys close it too) -->
+      <div class="catch" data-testid="sheet-catch" onpointerdown={(e) => { noFocus(e); catchPressed = true; }} onclick={() => {
+        if (catchPressed) shell.closeSheet();
+        catchPressed = false;
+      }}></div>
     {/if}
   </div>
 
-  <Keypad
-    shift={session.shift}
-    alpha={session.alpha}
-    alphaLock={session.alphaLock}
-    capsLock={session.capsLock}
-    shiftLock={session.shiftLock}
-    sheet={shell.sheet ? { filter: shell.sheet.level.filterable } : undefined}
-    onpress={press}
-    ontouch={touched}
-  />
+  <div class="keys" bind:this={keysEl}>
+    <Keypad
+      shift={session.shift}
+      alpha={session.alpha}
+      alphaLock={session.alphaLock}
+      capsLock={session.capsLock}
+      shiftLock={session.shiftLock}
+      sheet={shell.sheet ? { filter: shell.sheet.level.filterable } : undefined}
+      onpress={press}
+      ontouch={touched}
+    />
+    <!-- a pick sheet rises over the maths rows (3–9), anchored at the keypad's bottom edge; the top cluster stays
+         uncovered and live, and no key moves (decisions.md "R21") -->
+    {#if shell.sheet && !shell.sheet.letters}
+      <div class="layer" style:top="{mathsTop}px">{@render sheetView(shell.sheet, "keypad")}</div>
+    {/if}
+  </div>
 </main>
+
+{#snippet sheetView(sheet: NonNullable<typeof shell.sheet>, over: "keypad" | "view")}
+  <Sheet
+    {sheet}
+    {over}
+    testid={shell.switcherOpen ? "apps" : "menu"}
+    below={entryHeight}
+    {keyBox}
+    ontap={(i) => shell.picked(sheet.activate(i))}
+    onback={() => sheet.back()}
+    onclose={() => shell.closeSheet()}
+  />
+{/snippet}
 
 <style>
   .app {
@@ -620,6 +665,22 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+  .keys {
+    position: relative;
+  }
+  .layer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    pointer-events: none; /* the keys a short sheet leaves visible stay live; the sheet itself takes its taps */
+  }
+  .catch {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
   }
   .loading {
     margin: auto;

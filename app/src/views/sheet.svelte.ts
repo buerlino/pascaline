@@ -172,10 +172,15 @@ export class Sheet {
   /** Names the sheet for the remembered pick: `apps`, `menu:<place>`, `list:<title>`. */
   readonly id: string;
   levels = $state.raw<Level[]>([]);
+  /** The list takes letters (a long list, Find later): it stays above the keypad, whose letter keys its query needs.
+   *  Every other sheet is drawn over the keypad's maths rows (decisions.md "R21"). Fixed when it opens. */
+  readonly letters: boolean;
 
   constructor(id: string, title: string, items: () => readonly MenuItem[], opts?: SheetOptions) {
     this.id = id;
-    this.levels = [new Level(title, items, id, opts)];
+    const root = new Level(title, items, id, opts);
+    this.levels = [root];
+    this.letters = root.filterable;
   }
 
   get level(): Level {
@@ -233,6 +238,14 @@ export class Sheet {
     if (!item || item.disabled || !item.adjust) return false;
     item.adjust(-1);
     return true;
+  }
+
+  /** A tap on a row's ◀ or ▶ button (R21a): step that setting and highlight its row. */
+  adjustAt(index: number, by: 1 | -1): void {
+    const item = this.level.items[index];
+    if (!item || item.disabled || !item.adjust) return;
+    this.level.highlight = index;
+    item.adjust(by);
   }
 
   /** ◀ and Esc: back one level. False at the root: the caller closes the sheet. */

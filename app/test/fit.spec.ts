@@ -41,7 +41,8 @@ const OPENERS: Record<string, (page: Page) => Promise<void>> = {
   },
   mode: (page) => tap(page, ["shift", "cas"]),
   "mode digits": async (page) => {
-    await tap(page, ["shift", "cas", "d3"]); // the digits row opens its presets
+    await tap(page, ["shift", "cas"]);
+    await sheet(page).getByRole("menuitem", { name: "3 Significant digits" }).tap(); // the 3 key is under the sheet: its row is where it was
     await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Significant digits");
   },
   tmpl: (page) => tap(page, ["tmpl"]),

@@ -28,7 +28,8 @@ export interface MenuItem {
   /** Already translated. */
   readonly label: string;
   readonly disabled?: boolean;
-  /** Why it is disabled, shown on a second line (already translated; docs/05 3.1). */
+  /** Why it is disabled, shown on a second line, once for neighbouring rows with the same reason (already translated;
+   *  docs/05 3.1). */
   readonly reason?: string;
   /** A setting's current value, drawn at the right of the row (already translated). Read on every draw. */
   readonly value?: string;

@@ -285,6 +285,10 @@ export function gridPlace(kb: Keyboard, key: Key): { start: number; span: number
 /** The shipped layout. */
 export const keyboard: Keyboard = loadKeyboard(raw);
 
+/** The first of the maths rows (3–9): a pick sheet is drawn over them, never over the top cluster (rows 0–2), whose
+ *  keys move, go back and close (decisions.md "R21"). */
+export const MATHS_ROW = 3;
+
 /** The action a key triggers in the given modifier state (alpha falls back to primary; shift never does).
  *  Alpha types the capital letter, shift + alpha its lower case (as on the reference, P4). */
 export function actionFor(key: Key, shift: boolean, alpha: boolean, oneLine = false): ActionBody | undefined {
