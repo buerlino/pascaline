@@ -4,12 +4,12 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42 and R43; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43 and R45; milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
-  1. The entry-bug packages: R45 (hardware keys take the keypad's path, F38; the owner said yes 2026-10-15), then R34 (the line survives a kill, F30).
+  1. The entry-bug package R34 (the line survives a kill, F30).
   2. R35 (a lighter start chunk), R21a (pick sheets over the keypad), R21b (the Settings page and Android back).
   3. R11 (history-row actions), while annabell's device run A4a takes place. Then R32 (the stored values under a CAS result, F28) and R36 (why a row has its mark, once G22 is merged; if it is not yet, the lane goes on and R36 follows).
   4. R15b (the top cluster, after A4a's report).
@@ -227,8 +227,7 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23; and G18 if P15 holds | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
-| R45 | Hardware keys take the keypad's path: arrows, ⌫, Del, letters | F38 (architecture check, 2026-10-15) | day | ron, Sonnet | `p1/ron-m4a-hwpath` | R43 (same files) | ~0.5 d |
-| R34 | The line survives a kill | F30 | day | ron, Sonnet | `p1/ron-m4a-keepline` | R45 | ~0.5 d |
+| R34 | The line survives a kill | F30 | day | ron, **Opus** | `p1/ron-m4a-keepline` | R45 | ~0.5 d |
 | R35 | A lighter start chunk | review item 11 | day | ron, Sonnet | `p1/ron-m4a-slim` | R34 | ~0.5 d |
 | R32 | The stored values under a CAS result | F28 | day | ron, Sonnet | `p1/ron-m4a-uses` | R11 | ~0.5 d |
 | R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | R32 (same file) and G22 | ~0.5 d |
@@ -303,6 +302,7 @@ Read only the sections named here and in your package, not whole files: find the
 End with a commit whose message body is the report. The review session reads it with `git log -1`. It holds:
 - **Done:** what was built, item by item against the backlog step.
 - **Tests:** typecheck, vitest, e2e and golden counts as run.
+  A test that passes on the old code is not a regression test: change it until it fails there, or list it under "Not done".
 - **Numbers:** for example the start chunk size before and after, or timings.
 - **For shared files:** exact text for the backlog, decisions, THIRD_PARTY.md, docs/04.
 - **Needs a decision:** anything left open.
@@ -736,20 +736,6 @@ From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #18). Starts when
 3. **Report.**
 
 Gate: chips, entry and tasks e2e; vitest; typecheck; the start chunk within its budget.
-
-### ron, R45: hardware keys take the keypad's path: arrows, ⌫, Del and letters (F38), branch `p1/ron-m4a-hwpath`
-From the architecture check of 2026-10-15 (sandra; docs/04 5.5 points 1 and 2). Starts when R43 is merged (the owner said yes, 2026-10-15); before R4a, since Find takes letters. Read: docs/04 5.5, `app/src/entry/hwkeys.ts`, `app/src/App.svelte` (`press`, `run`, `historyKey`, `sheetPress`), `app/test/hwkeys.spec.ts`.
-
-**Behaviour today** (code, 2026-10-15):
-- The arrow keys are not caught: `hwkeys.ts:133` lets every key name longer than one character through to MathLive, which stops between sin and its bracket and inside names (R27b removed those stops for the keypad, `stops.ts`), skips R10's ▶ jump, and ▲ on an empty line picks no history row.
-- Backspace, Delete and letters call `EntryController.run` directly (`hwkeys.ts:128-131`, `:149`), past `press()`: a picked row is not dropped first, and an open sheet does not see them. Whether a letter then types into the line behind an open sheet: the first test finds out.
-
-**Commits:**
-1. **Tests** (failing today), in `app/test/hwkeys.spec.ts`: ArrowRight and ArrowLeft through `\sin\left(2\right)` and `\frac{\frac12}{□}` visit exactly the positions ▶ and ◀ visit; ArrowUp on an empty line with history picks the last row and Enter inserts it; with the Tmpl sheet open, a hardware digit picks (as today), and a letter and Backspace do what the keypad's keys do there.
-2. **Fix:** `hwkeys.ts` turns Backspace into `bksp`, Delete into `bksp` in the Shift layer, and the four arrows into `left`, `right`, `up`, `down`, all through `onKey` → `press()`. A letter goes through `press()` too (a small entry in App for a typed letter, which runs the sheet, picked-row and app checks before `entry.run`), so Find (R4a) and the unit slots (R24c) receive hardware letters like keypad ones. Shift + arrows (selection), Home and End stay with MathLive.
-3. **Report:** anything a hardware key did before that it no longer does.
-
-Gate: hwkeys, cursor, tmpl, sheet and keys e2e; the ⌫ grid; typecheck; the start chunk within its budget (`hwkeys.ts` stays lazy).
 
 ### ron, R32: the stored values under a CAS result (F28, UI half), branch `p1/ron-m4a-uses`
 Starts when R11 is merged (G20 is, `462c163`). Read:
