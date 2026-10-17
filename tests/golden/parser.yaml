@@ -323,6 +323,15 @@ cases:
   - { id: "decimals-11", latex: "1.5\\times10^{3}", expect: "1500", source: "derived", group: "decimals" }
   - { id: "decimals-12", latex: "2.5\\times10^{-3}", expect: "1/400", source: "derived", group: "decimals" }
   - { id: "decimals-13", latex: "6.02\\times10^{23}", expect: "602*10^21", source: "derived", group: "decimals" }
+  # where a number ends (R29, F24): a second decimal point (or comma) inside a number is an error, never a product
+  - { id: "decimals-e01", latex: "2.5.3", error: true, source: "derived", group: "decimals", note: "keys 2 . 5 . 3; was 2.5*.3 = 0.75, marked = (F24)" }
+  - { id: "decimals-e02", latex: "1..5", error: true, source: "derived", group: "decimals", note: "was 1.*.5" }
+  - { id: "decimals-e03", latex: ".5.5", error: true, source: "derived", group: "decimals", note: "was .5*.5" }
+  - { id: "decimals-e04", latex: "1.5.", error: true, source: "derived", group: "decimals", note: "a trailing point after a decimal part" }
+  - { id: "decimals-14", latex: "5.", expect: "5", source: "derived", group: "decimals", note: "one trailing point is the number" }
+  - { id: "decimals-15", latex: "2.5\\times.3", expect: "3/4", source: "derived", group: "decimals", note: "a point after × starts a new number" }
+  - { id: "decimals-16", latex: "5.\\times.5", expect: "5/2", source: "derived", group: "decimals" }
+  - { id: "decimals-17", latex: "\\left(2\\right)3", expect: "6", source: "derived", group: "decimals", note: "a bracket ends the number: drawn (2)3" }
   # --- the exponent mark ᴇ (R14, P12 point 4): the exponent key types \emark (drawn ᴇ, U+1D07) as one token;
   # <number>ᴇ<signed whole number> is number × 10^n exactly, as the ×10^ template above was. Anything else is an error.
   - { id: "emark-01", latex: "1.5\\emark3", expect: "1500", source: "derived", group: "emark" }
@@ -380,6 +389,11 @@ cases:
   - { id: "l6-comma-03", latex: "\\max\\left(1{,}5;2\\right)", expect: "max(1.5,2)", options: { decimalComma: true }, source: "derived", group: "l6" }
   - { id: "l6-comma-04", latex: "\\left\\{0{,}25;3\\right\\}", expect: "[0.25,3]", options: { decimalComma: true }, source: "derived", group: "l6" }
   - { id: "l6-comma-05", latex: "\\max\\left(1,5\\right)", expect: "max(1,5)", source: "derived", group: "l6" }
+  - { id: "l6-comma-e01", latex: "\\max\\left(2,5,3\\right)", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "two decimal commas (R29, F24): was max(2.5,3)" }
+  - { id: "l6-comma-e02", latex: "2{,}5.3", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "a comma, then a point: was 2.5*.3" }
+  - { id: "l6-comma-e03", latex: "\\max\\left(2.5,3\\right)", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "a point, then a comma: was max(2.5,3)" }
+  - { id: "l6-comma-e04", latex: "2{,}5{,}3", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "two decimal commas as MathLive writes them" }
+  - { id: "l6-comma-06", latex: "\\max\\left(2.5;3\\right)", expect: "max(5/2,3)", options: { decimalComma: true }, source: "derived", group: "l6", note: "with the decimal comma, ; separates the arguments" }
   - { id: "l6-fn-01", latex: "p\\left(x\\right):=x^{2}+1", expect: "p(x):=x^2+1", source: "derived", group: "l6" }
   - { id: "l6-fn-02", latex: "p\\left(3\\right)", expect: "p(3)", before: ["p\\left(x\\right):=x^{2}+1"], source: "derived", group: "l6" }
   - { id: "l6-fn-03", latex: "p\\left(3\\right)", expect: "p*3", source: "derived", group: "l6" }
@@ -415,7 +429,7 @@ cases:
   - { id: "chip-res-02", latex: "\\res{1}{0.333333333333}", expect: "3333333333333333333333333333333333333333/10^40", chips: { "res:1": { value: "0.3333333333333333333333333333333333333333", exact: false } }, source: "derived", group: "chips", note: "a decimal value is an exact rational literal of its digits" }
   - { id: "chip-res-03", latex: "\\frac{\\res{1}{0.25}}{2}", expect: "1/8", chips: { "res:1": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-04", latex: "\\res{2}{-0.5}^2", expect: "1/4", chips: { "res:2": { value: "-1/2", exact: true } }, source: "derived", group: "chips", note: "the power takes the whole chip: (-1/2)^2" }
-  - { id: "chip-res-05", latex: "2\\res{1}{\\frac{\\sqrt{2}}{2}}", expect: "sqrt(2)", chips: { "res:1": { value: "sqrt(2)/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-05", latex: "2\\times\\res{1}{\\frac{\\sqrt{2}}{2}}", expect: "sqrt(2)", chips: { "res:1": { value: "sqrt(2)/2", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-06", latex: "\\res{1}{1.5\\cdot10^{-30}}+\\res{2}{x+1}", expect: "15/10^31+x+1", chips: { "res:1": { value: "1.5E-30", exact: false }, "res:2": { value: "x+1", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-07", latex: "3-\\res{1}{x+1}", expect: "2-x", chips: { "res:1": { value: "x+1", exact: true } }, source: "derived", group: "chips", note: "a sum stays one factor" }
   - { id: "chip-res-08", latex: "\\res{3}{7}", error: true, source: "derived", group: "chips", note: "a chip without its value is an error, never a guess" }
@@ -429,6 +443,22 @@ cases:
   - { id: "chip-const-02", latex: "\\frac{\\const{h}{h}}{\\const{e}{e}}", expect: "(662607015/10^42)/(1602176634/10^28)", chips: { "const:h": { value: "6.62607015E-34", exact: true }, "const:e": { value: "1.602176634E-19", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-const-03", latex: "\\const{G}{G}", expect: "667430/10^16", chips: { "const:G": { value: "6.67430E-11", exact: false, unc: "0.00015E-11" } }, source: "derived", group: "chips" }
   - { id: "chip-const-04", latex: "\\const{k_B}{k_{B}}\\times300", expect: "1380649*3/10^27", chips: { "const:k_B": { value: "1.380649E-23", exact: true } }, source: "derived", group: "chips" }
+  # where a number ends at a chip (R29, F25): the result chip shows its digits, so [0.5]3 reads as 0.53 (on the G2 a
+  # digit typed after an inserted result extends it, G2 item 56); a number beside a result chip, or two result chips
+  # side by side, is an error. Ans and a constant draw a name, not digits, so they multiply as 2x does.
+  - { id: "chip-res-e01", latex: "\\res{1}{0.5}3", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "was (1/2)*3 (F25)" }
+  - { id: "chip-res-e02", latex: "3\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "was 3*(1/2)" }
+  - { id: "chip-res-e03", latex: "\\res{1}{0.5}\\res{2}{0.25}", error: true, chips: { "res:1": { value: "1/2", exact: true }, "res:2": { value: "1/4", exact: true } }, source: "derived", group: "chips", note: "was (1/2)*(1/4)" }
+  - { id: "chip-res-e04", latex: "\\res{1}{0.5}.5", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-e05", latex: "2\\res{1}{\\frac{\\sqrt{2}}{2}}", error: true, chips: { "res:1": { value: "sqrt(2)/2", exact: true } }, source: "derived", group: "chips", note: "a number before any result chip, whatever it shows" }
+  - { id: "chip-res-e06", latex: "\\res{1}{0{,}5}3", error: true, options: { decimalComma: true }, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-e07", latex: "1\\emark3\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a number with its exponent" }
+  - { id: "chip-res-09", latex: "\\res{1}{0.5}\\times3", expect: "3/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "with × it is the product" }
+  - { id: "chip-res-10", latex: "3\\times\\res{1}{0.5}", expect: "3/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-11", latex: "\\res{1}{0.5}\\times\\res{2}{0.25}", expect: "1/8", chips: { "res:1": { value: "1/2", exact: true }, "res:2": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-12", latex: "\\res{1}{0.5}x", expect: "x/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a letter is not a digit: drawn [0.5]x, as 2x" }
+  - { id: "chip-ans-07", latex: "\\ans3", expect: "21", chips: { "ans": { value: "7", exact: true } }, source: "derived", group: "chips", note: "drawn [Ans]3: a name, as x3" }
+  - { id: "chip-const-05", latex: "2\\const{c}{c}", expect: "599584916", chips: { "const:c": { value: "299792458", exact: true } }, source: "derived", group: "chips", note: "a symbol, not digits" }
   # --- R10 (2026-10-13): the Tmpl palette (spec/keyboard.yaml `templates:`). Each template as MathLive writes it when
   # filled from the keys (app/test/tmpl.spec.ts types the same samples); expected values derived by hand.
   - { id: "tmpl-evalat-01", latex: "\\left.x^2\\right|_{x=3}", expect: "9", source: "derived", group: "tmpl" }
