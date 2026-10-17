@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Shift brief: milestone 4a "feel" and milestone 4 "Find and trust", with milestone 5's engine work and the deep-dive fixes beside them (run by the owner)
 
-**Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
+**Night shifts:** `scripts/night.sh` runs the queue in section 0c through the pipeline (rules section 4); for a night shift 0c wins over everything below. **By day (user, 2026-10-12)** the owner starts each package with `scripts/pipeline.sh <agent> "<ID>" --model <m>` (rules section 4: worker, checks, audit, merge in one run), or by hand as its own `claude --agent <name>` session followed by a review session (section 8a). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins.
 
 ## 0. State at start
 `phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15), G27 (F36, 2026-10-16), R44 (F37), G24 (F32), G19 (F31), R29 (F24, F25) and R30 (F26, 2026-10-17). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (bug F42, fixed by R46f1, 2026-10-17). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
@@ -37,21 +37,19 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
     - R40 needs G26 and a muted token from R12b.
   - **S7 early:** every later session reads less.
 
-## 0c. Night shifts: henri's plan (owner, 2026-10-14)
-The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's parser-only packages (R51, R39, R52): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
+## 0c. Night shifts: henri's plan (owner, 2026-10-14; pipeline 2026-10-18)
+The owner plans each night in advance, and the queue below is the next night's. `scripts/night.sh` runs it (rules section 4): for every decision it starts a fresh henri (Sonnet, Read-only) who sees this section and the log's tail and replies with one `scripts/pipeline.sh` line; the script runs that line and asks again. **henri executes and decides nothing.** **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it; whatever is not done stays in the queue for the next night, which resumes from the log. The night queue is the gorge lane (sections 0e and 0f) plus ron's parser-only packages (R51, R39, R52): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK.
 
-### Rules for a night shift (they replace rules sections 4, 10 and 11, but not 4a, and change section 8a)
-1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
-2. **A fresh agent for every step:** each package, each review, each fix round and each Opus pass is a new spawn. Never SendMessage to give an agent a second task. Prompts are the templates below with the blanks filled in, nothing more (the agents read the brief themselves).
-3. **Spawn in the foreground** (`run_in_background: false`): the call returns when the agent is done (rules section 4a: if a call still comes back as a background launch, log it and wait for its notification, never end the session). This is needed because henri_2 and later run headless, and a headless session ends with its turn. Do not poll, sleep, read diffs, run tests or builds, or read files beyond this brief and `.coord/log.md`.
-4. **No devices:** nobody runs `adb` or `build.sh`. annabell is not used at night.
-5. **Models:** workers run Sonnet, effort medium (the model in the queue table wins if it says otherwise). Reviews run Sonnet, effort medium (section 8a says Opus; at night Sonnet). Opus passes run Opus, effort medium.
-6. **henri decides nothing.** A question, a blocked worker, a conflict or anything this section does not settle: log it and hand it to the next Opus pass (run that pass at once if the question blocks the queue). **Follow every Opus-pass recommendation as written.** Plan changes go to the owner through `docs/decisions.md` "Needs the user", written by the Opus pass.
-7. **Start-up:** `date`; `git switch phase-1 && git status` (must be clean; if not, stop and log); `tools/devlock.sh status`. henri_1 appends a section "<date> night" to `.coord/log.md`; a later henri logs `START henri_<n>` under it and reads the log from the last HANDOVER on. No roll call, no device watcher.
-8. **Log:** one line per step in `.coord/log.md`: the time from `date +%H:%M` (never estimated), step, agent and model, outcome, commit. The log is the queue state: on a resume, read it and continue from the first step not done.
-9. **Usage limit:** if a spawn fails or you hit a limit, log the time, the queue position and `STOPPED henri_<n>`, and end without starting a next henri. No retry loops. The owner resumes with `tools/henri-next.sh <n+1>` (or interactively: `claude --agent henri "Resume the night shift from .coord/log.md."`).
-10. **Worker gone without a report** (no report commit): spawn one fresh worker with the same prompt (it continues from the branch's last commit). If that one also fails, log it, leave the branch, and go on with the next package.
-11. **A fresh henri after every Opus pass** (owner, 2026-10-14). The owner's interactive session is henri_1. Once an Opus pass has replied, log its reply in full (its FIX lines and QUEUE are the next henri's orders), then log `HANDOVER henri_<n> → henri_<n+1>; next: <step>`, run `tools/henri-next.sh <n+1>` (it takes the next free number if that one was used, and starts a detached headless session that reads this brief and the log; output in `.coord/henri_<n+1>.out`), and end your turn. Do nothing more after that, even if woken: the new henri owns the queue. Your number n is in your prompt (henri_1 if none). The final pass hands over the same way; that henri does its FIX packages and the report.
+### Rules for a night shift (they replace rules section 4's day use and change section 8a)
+1. **One pipeline run at a time**, and never a worker started any other way. A package is `scripts/pipeline.sh <agent> "<ID>" --model <model from the table>`: fresh worker, checks, at most two fix rounds, sofia's audit (Sonnet at night; section 8a's Opus review is for the day), merge. Its RESULT line in the log is the step's state.
+2. **No devices:** nobody runs `adb` or `build.sh`. annabell is not used at night.
+3. **henri decides nothing.** A question, a blocked worker, a conflict or anything this section does not settle: the pipeline logs it, and henri hands it to the next Opus pass (at once, if it blocks the queue). **Follow every Opus-pass recommendation as written.** Plan changes go to the owner through `docs/decisions.md` "Needs the user", written by the Opus pass.
+4. **Workers tick their own backlog line** and file their "Needs the user" items on their branch (rules section 5); the audit sees them in the diff. Section 2's "the review session applies it" does not apply at night.
+5. **Opus pass:** `scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"` after every three finished packages (merged or left unmerged; fix packages from a pass count), and the last pass at the end of the queue (step 22). Each FIX line of its reply runs as `scripts/pipeline.sh <agent> "<prompt>" --id <ID>f1 --branch <branch> --model <m>`, then QUEUE is followed. The last pass's FIX packages get only their audit, then the report.
+6. **Log:** the pipeline writes one line per step in `.coord/log.md` (time from `date`, step, agent and model, outcome, commit); `night.sh` logs each henri reply. The log is the queue state: henri continues from the first step without a RESULT line.
+7. **Usage limit:** the pipeline exits 75 and `night.sh` waits 30 minutes and retries, at most six times, then logs `STOPPED`. No retry loops in agents. The owner resumes with `scripts/night.sh` again.
+8. **Worker gone without a report** (no commit): the pipeline logs `NOT MERGED (no commits)` and keeps the worktree; henri runs the same step once more (the pipeline resumes the branch). If that one also fails, go on with the next package.
+9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`.
 
 ### The queue (the next nights: the gorge lane of sections 0e and 0f)
 Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" verdict adds a fix round (fresh worker, then a fresh review), at most two rounds; after the second "NOT MERGED" leave the branch unmerged, log it, go on. **Opus pass:** after every three finished packages (merged or left unmerged; fix packages from a pass count), and the last pass at the end of the queue (step 22). The last pass's FIX packages get only their Sonnet review, then the report. A package already merged by day is skipped (log it).
@@ -91,25 +89,18 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 
 Not at night: the rest of the ron lane (by day); devices (A4b); A6; A7 and A8 (the release path); sandra (S4–S8); G7 (it waits for S5); and G21 (it waits for G2 item 54 and the owner's decision on F29).
 
-### Prompt templates (Agent tool; `run_in_background: false`; `effort: "medium"`)
-**Worker** (`subagent_type` = the agent in the table, `model` = its model):
-> Do package `<ID>` in docs/shifts/brief.md section 7, under the night-shift rules of section 0c. You already run in your own worktree: skip the `git worktree add` step of section 2 and run `git switch -c <branch> phase-1` there (or `git switch <branch>` if the branch exists, and continue from its last commit). End with the report commit of section 2, then reply in at most five lines: branch, last commit, done or not done.
-
-**Review** (`subagent_type: "general-purpose"`, `model: "sonnet"`):
-> Review and merge package `<ID>` (branch `<branch>`): follow section 8a of docs/shifts/brief.md with the night changes of section 0c (for a docs-only package such as R15a, skip the test runs). Reply in at most ten lines: `MERGED <merge commit>`, or `NOT MERGED` with the findings (at most five, each with file:line and the fix), plus any item you put under "Needs the user".
-
-**Fix round** (same agent and model as the package):
-> Fix the review findings for package `<ID>` on branch `<branch>` (docs/shifts/brief.md section 0c rules; you already run in your own worktree: `git switch <branch>` there): `<the findings, verbatim>`. End with a report commit, then reply in at most five lines.
-
-**Opus pass** (`subagent_type: "general-purpose"`, `model: "opus"`):
-> Opus pass `<n>` of the night shift: follow "Opus pass" in docs/shifts/brief.md section 0c for packages `<IDs with their merge commits or unmerged branches>`. Open questions from the log: `<lines, or none>`.
+### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
+- `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus>`: the next queue step not done (skip steps the table or the log marks merged or skipped).
+- `scripts/pipeline.sh <agent> "<FIX prompt, verbatim>" --id <IDf1> --branch <branch> --model <m>`: a FIX line of the last Opus pass, one per call, in order.
+- `scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"`.
+- `scripts/pipeline.sh report`, then `SHIFT DONE`.
 
 ### Opus pass (instructions for the Opus agent)
-You are the shift's quality gate and its decision-maker; henri executes your reply literally. Work in the main checkout on `phase-1`; no code changes.
+You are the shift's quality gate and its decision-maker; henri executes your reply literally. Work in the worktree where `phase-1` is checked out (the pipeline tells you which); no code changes.
 1. For each package: its text in section 7, its report (`git log -1 <merge>^2`, or the branch tip if unmerged), its diff (`git diff <merge>^1 <merge>`), and the Sonnet review's verdict from `.coord/log.md`.
 2. Run once on `phase-1` (from `app/`, with absolute `GIAC_OUT`): typecheck, `npm run index` then `FIND_INDEX=required npm test`, e2e, and the golden gate when engine or parser code changed. Take `tools/devlock.sh acquire host-cpu opus 1800` around them.
 3. Check what a Sonnet review tends to miss: wrong or invented expected values (sources), a missing round trip, silent wrong numbers or marks (principle 3), scope, keys that moved, tests that pass for the wrong reason.
-4. Decide each "Needs a decision" item of these packages and each open question from the log: a default within the plan goes into `docs/decisions.md` (rules section 9); a plan change goes under "Needs the user" with your recommendation in one sentence. Commit those doc changes on `phase-1` with `git commit -s` and the Opus trailer.
+4. Decide each "Needs a decision" item of these packages and each open question from the log: a default within the plan goes into `docs/decisions.md` (rules section 9); a plan change goes under "Needs the user" with your recommendation in one sentence. Apply the "For shared files" text of the packages' reports and remove each merged package's block from section 7 and its row from its table. Commit those doc changes on `phase-1` with `git commit -s` and the Opus trailer.
 5. Reply in exactly this form (one FIX line per needed fix package; fix IDs are `<ID>f1`, `<ID>f2`):
 ```
 OPUS PASS <n>
@@ -118,10 +109,10 @@ FIX <ID>f1: agent <ron|gorge>, model <sonnet|opus>, branch <new branch from phas
 QUEUE: unchanged | <the remaining steps in a new order, or steps to drop>
 NOTES: <at most three lines for the shift report>
 ```
-henri runs each FIX as a package (the Worker template with "Do package …" replaced by the FIX prompt and `<branch>` by the FIX branch, then a review), then continues with QUEUE.
+henri runs each FIX as a package (`scripts/pipeline.sh <agent> "<prompt>" --id <ID>f1 --branch <branch> --model <m>`), then continues with QUEUE.
 
-### Shift report (the last step, the last henri)
-`docs/shifts/<date>-night-report.md`, short and plain, from the log and the agents' replies (log `SHIFT DONE` at the end; start no further henri): what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (items under "Needs the user"); the queue left for the next night. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
+### Shift report (the last step)
+`docs/shifts/<date>-night-report.md`, short and plain, from the log (`scripts/pipeline.sh report` starts a fresh writer with the log's night section on stdin): what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (items under "Needs the user"); the queue left for the next night. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
 
 ## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
 Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a (R4a, R4b, A4b) run between R12a and R12b (section 0, "The path").
