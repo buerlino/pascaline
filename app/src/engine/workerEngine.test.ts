@@ -283,6 +283,26 @@ class CrashOnReplayWorker implements WorkerLike {
   terminate(): void {}
 }
 
+/** Like CrashOnReplayWorker, but the failure is a fatal reply marked memory (G24), not an onerror. Bounded, so a
+ *  restart loop ends the test with a wrong worker count instead of hanging it. */
+class FatalOnReplayWorker implements WorkerLike {
+  static made = 0;
+  onmessage: ((ev: { data: Response }) => void) | null = null;
+  onerror: ((ev: { message?: string }) => void) | null = null;
+  inits: DefEntry[][] = [];
+  private readonly lenient = ++FatalOnReplayWorker.made > 40;
+  postMessage(msg: Request): void {
+    const bad = !this.lenient && ((msg.type === "init" && msg.replay.length > 0) || msg.type === "define");
+    if (msg.type === "init") this.inits.push(msg.replay);
+    setTimeout(() => {
+      if (bad) this.onmessage?.({ data: { id: msg.id, type: "fatal", message: "out of memory", memory: true } });
+      else if (msg.type === "init") this.onmessage?.({ data: { id: msg.id, type: "ready", instantiateMs: 1, initMs: 1, replayMs: 0 } });
+      else if (msg.type === "define") this.onmessage?.({ data: { id: msg.id, type: "defined", replayMs: 1 } });
+    }, 0);
+  }
+  terminate(): void {}
+}
+
 /** Answers init and define. */
 class OkWorker extends StuckWorker {
   override postMessage(msg: Request): void {
@@ -320,6 +340,21 @@ describe("WorkerEngine safe start (G19, F31)", () => {
     expect(store.saved).toEqual([entry("A", "A:=1"), entry("B", "B:=2")]);
     expect((await engine.definitions()).map((e) => e.name)).toEqual(["A", "B"]);
     // the count is cleared once ready
+    expect(store.starts).toBe(0);
+    engine.dispose();
+  });
+
+  it("a replay that runs out of memory (a fatal reply marked memory) counts as a failed start too: no restart loop", async () => {
+    FatalOnReplayWorker.made = 0;
+    const workers: FatalOnReplayWorker[] = [];
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1"), entry("B", "B:=2")];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new FatalOnReplayWorker()), workers.at(-1)!), defs: store });
+    const t = await engine.ready();
+    expect(workers).toHaveLength(3);
+    expect(t.safeStart).toEqual({ skipped: 2 });
+    expect(workers.at(-1)!.inits.at(-1)).toEqual([]);
+    expect(store.saved).toEqual([entry("A", "A:=1"), entry("B", "B:=2")]);
     expect(store.starts).toBe(0);
     engine.dispose();
   });

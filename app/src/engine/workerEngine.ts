@@ -273,6 +273,16 @@ export class WorkerEngine implements MathEngine {
     this.pending.clear();
   }
 
+  /** The worker died (an error event, or a fatal reply marked memory): a clean worker takes its place and replays the
+   *  log. G19: a crash before the replay finished is a failed start; the second one leaves the stored log out. */
+  private restartAfterCrash(err: Error): void {
+    const wasReached = this.reached;
+    this.stop(err);
+    if (!wasReached && this.log.length && this.attempts >= MAX_FAILED_STARTS) this.leaveOut(this.stored());
+    else this.beginAttempt();
+    this.start();
+  }
+
   private start(): void {
     const t0 = performance.now();
     this.startedAt = t0;
@@ -287,21 +297,12 @@ export class WorkerEngine implements MathEngine {
         if (!ev.data.memory) return void p.reject(new Error(ev.data.message));
         // G24: the heap only grows, and an aborted module is dead: reject the call and start a clean worker.
         p.reject(new EngineMemoryError(ev.data.message));
-        if (this.worker === w) {
-          this.stop(new EngineMemoryError(ev.data.message));
-          this.start();
-        }
+        if (this.worker === w) this.restartAfterCrash(new EngineMemoryError(ev.data.message));
       } else p.resolve(ev.data);
     };
     // A crash (e.g. out of memory) rejects what is pending and takes the same restart + replay path as Cancel.
     w.onerror = (ev) => {
-      if (this.worker !== w) return;
-      const wasReached = this.reached;
-      this.stop(new EngineMemoryError(ev.message || "engine crashed"));
-      // G19: a crash before the replay finished is a failed start; the second one leaves the stored log out.
-      if (!wasReached && this.log.length && this.attempts >= MAX_FAILED_STARTS) this.leaveOut(this.stored());
-      else this.beginAttempt();
-      this.start();
+      if (this.worker === w) this.restartAfterCrash(new EngineMemoryError(ev.message || "engine crashed"));
     };
     this.readyPromise = this.post({ type: "init", baseUrl: this.baseUrl, replay: [...this.log] }).then((r) => {
       if (r.type !== "ready") throw new Error(`unexpected ${r.type}`);
