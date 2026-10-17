@@ -16,12 +16,22 @@ import {
 import { WorkerEngine } from "../engine/workerEngine.ts";
 import { userNamesOf } from "../engine/defs.ts";
 import { mark } from "../marks.ts";
-import { CalcCancelled, type Calc, type CalcSettings, type CasOutcome, type HomeOutcome, type UserName } from "./port.ts";
+import { CalcCancelled, type Calc, type CalcSettings, type CasOutcome, type HomeOutcome, type Quantity, type UnitError, type UnitRequest, type UserName } from "./port.ts";
+import type { IndexItem } from "../find/types.ts";
+import type { FactorTable } from "../units/factors.ts";
+
+export interface EngineCalcOptions {
+  /** The Find index's items, for the unit view's factor table (docs/04 4.2); read on the first units() call. */
+  findIndex?: () => Promise<readonly IndexItem[]>;
+}
 
 export class EngineCalc implements Calc {
   private readonly engine: MathEngine;
-  constructor(engine: MathEngine = new WorkerEngine()) {
+  private readonly findIndex: (() => Promise<readonly IndexItem[]>) | undefined;
+  private unitTable: Promise<FactorTable> | null = null;
+  constructor(engine: MathEngine = new WorkerEngine(), o: EngineCalcOptions = {}) {
     this.engine = engine;
+    this.findIndex = o.findIndex;
   }
 
   async ready(): Promise<{ safeStart?: { skipped: number } }> {
@@ -63,6 +73,24 @@ export class EngineCalc implements Calc {
 
   table(req: TableRequest, s: CalcSettings): Promise<HomeResult[][]> {
     return mapCancel(this.engine.table(req, homeSettings(s)));
+  }
+
+  async units(req: UnitRequest, s: CalcSettings): Promise<Quantity | UnitError> {
+    // The builder and the factor table load with the unit view, never in the start chunk (docs/04 4.4).
+    const { buildJob, factorTable } = await import("../units/build.ts");
+    const load = this.findIndex;
+    if (!load) return { error: "engine", detail: "no Find index for the unit factors" };
+    this.unitTable ??= load().then(factorTable);
+    let table: FactorTable;
+    try {
+      table = await this.unitTable;
+    } catch (e) {
+      this.unitTable = null;
+      return { error: "engine", detail: `the Find index did not load: ${e instanceof Error ? e.message : String(e)}` };
+    }
+    const job = buildJob(req, table);
+    if ("error" in job) return job;
+    return mapCancel(this.engine.units(job, homeSettings(s)));
   }
 
   async names(): Promise<UserName[]> {

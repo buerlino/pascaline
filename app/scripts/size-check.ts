@@ -93,7 +93,8 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   add("Start chunk", startFiles(manifest), { rawMax: 156 * KB, gzipMax: 54 * KB });
   add("MathLive chunk", chunks.filter((c) => /(^|\/)mathlive\/mathlive\.min\.m?js$/.test(normalSrc(c.src))).map((c) => c.file), { rawMax: 830 * KB });
   add("Find UI chunk", dynamic("src/find/"), { rawMax: 30 * KB });
-  add("Units app chunk", dynamic("src/apps/units/"), { rawMax: 30 * KB });
+  // The unit view (G16): Calc.units() loads the builder and the factor table from src/units/ on its first call.
+  add("Unit view chunk", dynamic("src/units/"), { rawMax: 30 * KB });
   // The index and qalc have no fixed place yet (G4 and A2 decide); these match by location and name, so they apply wherever they land.
   add("Find index asset", all.filter((f) => f.startsWith("find/") || /(^|\/)find-index[^/]*$/.test(f)), { rawMax: 400 * KB, gzipMax: 100 * KB });
   add("qalc wasm + glue", all.filter((f) => /(^|\/)qalc[^/]*\.(wasm|mjs|js)$/.test(f)), { brotliMax: 1 * MB });
