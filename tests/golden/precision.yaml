@@ -135,6 +135,8 @@ cases:
   - { id: "prec-G28-arrow", kind: "cas", input: "x->x^2", beforeHome: ["x:=3"], uses: [], expect: " (x)->x^2", source: "derived", note: "x is the arrow's parameter, not the stored 3" }
   - { id: "prec-G28-assign-reads", kind: "cas", input: "x:=x+1", beforeHome: ["x:=3"], uses: ["x"], expect: "4", source: "derived", note: "the right-hand side reads the stored 3, so x is a used value although the input assigns it" }
   - { id: "prec-G28-diff-outside", kind: "cas", input: "diff(x^2,x)+x", beforeHome: ["x:=3"], uses: ["x"], expect: "2*x+3", source: "derived", note: "x outside the quoting call is the stored 3" }
+  - { id: "prec-G28-arrow-called", kind: "cas", input: "(x->x^2)(2)+x", beforeHome: ["x:=3"], uses: ["x"], expect: "7", source: "derived", note: "the arrow binds x in its own body only: 2^2 + the stored 3 = 7, so x is a used value" }
+  - { id: "prec-G28-apply-arrow", kind: "cas", input: "apply(x->x^2,[1,2])", beforeHome: ["x:=3"], uses: [], expect: "[1,4]", source: "derived", note: "x is the arrow's parameter, the stored 3 is not read: [1^2,2^2]" }
   # --- G27 (F36, docs/04 2.3 #17): a CAS result that is not a number but holds a float is ⚠ without a count (Home: home.yaml)
   - { id: "prec-17-cas-evalf-x+sin1e22", kind: "cas", input: "evalf(x+sin(10^22))", mark: "⚠", source: "derived", note: "mark-only: Giac shows x-0.54764225985, but sin(10^22) = -0.8522008497671888… (oracle, mpmath at 40 and 80 digits): every digit shown is wrong. No mark before G27" }
   - { id: "prec-17-cas-evalf-equation", kind: "cas", input: "evalf(x^2-2=0)", expect: "x^2-2.0=0.0", mark: "⚠", source: "derived", note: "a float in an equation, unchecked; no mark before G27" }

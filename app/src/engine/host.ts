@@ -125,6 +125,25 @@ const QUOTING: [string, number, number[], number][] = [
   ["integrate", 1, [0, 1], 4],
 ];
 
+/** Index where the body of an arrow that starts at `from` ends: the first top-level comma, the unmatched ) ] or }, or
+ *  the end of `text`. */
+function arrowBodyEnd(text: string, from: number): number {
+  let depth = 0;
+  for (let i = from; i < text.length; i++) {
+    const c = text[i]!;
+    if (c === '"') {
+      const q = text.indexOf('"', i + 1);
+      if (q < 0) return text.length;
+      i = q;
+    } else if (c === "(" || c === "[" || c === "{") depth++;
+    else if (c === ")" || c === "]" || c === "}") {
+      if (depth === 0) return i;
+      depth--;
+    } else if (c === "," && depth === 0) return i;
+  }
+  return text.length;
+}
+
 /** Replaces, in the places a name is bound, its occurrences by "_" so that `namesIn` skips them: a function's
  *  parameters in `f(x):=` and `x->` / `(x,y)->`, and the variable argument of the QUOTING commands. */
 function maskBound(input: string): string {
@@ -134,8 +153,17 @@ function maskBound(input: string): string {
   // f(x,y):=body and (x,y)->body / x->body: the parameters are bound in the body (the head is not scanned: f is called).
   const fn = /^\s*[A-Za-z][A-Za-z0-9_]*\s*\(([^()]*)\)\s*:=([\s\S]*)$/.exec(out);
   if (fn) out = mask(fn[2]!, fn[1]!.split(",").map((v) => v.trim()));
-  const arrow = /(?:\(([^()]*)\)|([A-Za-z_][A-Za-z0-9_]*))\s*->/.exec(out);
-  if (arrow) out = out.slice(0, arrow.index) + mask(out.slice(arrow.index), (arrow[1] ?? arrow[2]!).split(",").map((v) => v.trim()));
+  // Every arrow binds its parameters in its own body only: from the -> to the first top-level comma, the unmatched
+  // ) or ], or the end of the input.
+  const arrow = /(?:\(([^()]*)\)|([A-Za-z_][A-Za-z0-9_]*))\s*->/g;
+  for (let m = arrow.exec(out); m; m = arrow.exec(out)) {
+    const start = m.index + m[0].length;
+    const end = arrowBodyEnd(out, start);
+    // The parameter list itself is masked too; it is not a read of the stored value.
+    const masked = mask(out.slice(m.index, end), (m[1] ?? m[2]!).split(",").map((v) => v.trim()));
+    out = out.slice(0, m.index) + masked + out.slice(end);
+    arrow.lastIndex = m.index + masked.indexOf("->") + 2; // a nested arrow in the body is found next
+  }
   // A quoting command: its variable is bound in the arguments listed, not in the others (limit's point, a sum's bounds).
   for (const [cmd, vi, bindIn, min] of QUOTING) {
     const re = new RegExp(`\\b${cmd}\\s*\\(`, "g");
