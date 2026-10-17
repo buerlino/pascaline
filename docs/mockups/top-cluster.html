@@ -56,7 +56,7 @@ td.n { white-space: nowrap; }
 
 <h2>Common</h2>
 <ul>
-  <li>No Home key and no CAS key. The status line's place name is a button: one tap switches Home and CAS. Its tap target is 96 x 48 px (accepted by the owner, 2026-10-14): the line plus 20 px below it, which takes taps from the top-left corner of the history. R15b checks this against tapping into a formula.</li>
+  <li>No Home key and no CAS key. The status line's place name is a button: one tap switches Home and CAS. Its tap target is 96 x 28 px from the left edge, the line's full height (R15b: the 20 px below the line belong to the top history row's formula and to F1's slot; decided by the owner 2026-10-17).</li>
   <li>The Mode sheet is a chip on the line (as built). Mode is also on Shift + Apps (a keys-only path, S2); Settings stays the last row of Mode.</li>
   <li>The Apps sheet lists 1 Home, 2 CAS, then the apps, so Home and CAS work by keys alone too.</li>
   <li>The maths rows 3 to 9 do not move. Esc, Cancel (Shift = Undo), View (Shift = Copy) and Menu (Shift = Paste) keep their ids and layers.</li>
@@ -94,12 +94,12 @@ td.n { white-space: nowrap; }
 </ul>
 
 <h2>Rows and viewport</h2>
-<p class="muted">Pixel 7 (412 x 915), estimates; R15b re-measures with <code>status.spec.ts</code>. Floor 0.35 (docs/03 rule 9). The top-cluster keys are navigation keys, smaller on the G2 as well, so D draws them at 48 px instead of about 56 px. 48 px is the usual minimum touch size.</p>
+<p class="muted">Pixel 7 (412 x 915), measured by R15b with <code>status.spec.ts</code>. Floor 0.35 (docs/03 rule 9). Today's cluster rows are 36 px, not about 56 px as first estimated, so 48 px rows would shrink the viewport below the floor: D is built at today's 36 px (decisions.md "R15b").</p>
 <div class="tablewrap"><table>
 <tr><th>Layout</th><th>Cluster rows</th><th>Cluster row height</th><th>Viewport share (est.)</th></tr>
-<tr><td>Today</td><td class="n">3</td><td class="n">about 56 px</td><td class="n">0.354</td></tr>
-<tr><td>D</td><td class="n">3</td><td class="n">48 px</td><td class="n">about 0.38</td></tr>
-<tr><td>D at today's height</td><td class="n">3</td><td class="n">about 56 px</td><td class="n">0.354</td></tr>
+<tr><td>Before R15b</td><td class="n">3</td><td class="n">36 px</td><td class="n">0.354</td></tr>
+<tr><td>D at 48 px</td><td class="n">3</td><td class="n">48 px</td><td class="n">about 0.311</td></tr>
+<tr><td>D as built (R15b)</td><td class="n">3</td><td class="n">36 px</td><td class="n">0.354</td></tr>
 </table></div>
 
 <h2>Presses</h2>
@@ -119,12 +119,12 @@ td.n { white-space: nowrap; }
 <p>If after a week the 28 px line feels far from the thumb, the switch also goes on the keypad without a new key: a flick down on Apps goes to Home or CAS, whichever is not open (the Shift layer is already Mode). The Apps sheet path (Apps, 1 or 2) works from day one.</p>
 
 <h2>Recommendation</h2>
-<p class="rec"><strong>D with 48 px cluster rows.</strong> It keeps the cross and every key at its G2 place, leaves no empty cell, and gives back about 3 points of viewport. The three free keys are where new things go without moving any other key. If 48 px feels small on the phone, go back to today's height; nothing else changes.</p>
+<p class="rec"><strong>D, built in R15b at today's 36 px rows.</strong> It keeps the cross and every key at its G2 place and leaves no empty cell. The three free keys are where new things go without moving any other key. The 48 px rows first proposed were based on an estimate of today's rows (about 56 px); measured, they are 36 px, and 48 px would put the viewport below its floor.</p>
 
 <h2>For the owner</h2>
 <ul>
-  <li>D: yes or no?</li>
-  <li>48 px cluster rows, or today's height?</li>
+  <li>D: approved (2026-10-14), built in R15b.</li>
+  <li>Cluster rows: 36 px, decided by the owner 2026-10-17; judge on the APK.</li>
 </ul>
 </body>
 </html>

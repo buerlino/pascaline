@@ -4,15 +4,14 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32 and the device run A4a (2026-10-16); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16) and R15b (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
   1. R36 (why a row has its mark) once G22 is merged; if it is not yet, the lane goes on and R36 follows.
-  2. R15b (the top cluster): now.
-  3. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
-  4. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
+  2. R12a (mockups): now. While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
+  3. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
 - **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then G28 (a name the input binds is not a used value; the owner said yes 2026-10-16, F28), R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
@@ -27,7 +26,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
-  - **Day packages sit next to the code they share:** the start-chunk budget has 3.23 kB gzip left (50.77 of 54 kB after R32, 2026-10-16; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R15b and R12b to come.
+  - **Day packages sit next to the code they share:** the start-chunk budget has 2.27 kB gzip left (51.73 of 54 kB after R15b, 2026-10-17; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R12b to come.
   - **Trust features after the code they build on:**
     - R36 adds a line to the history rows R11 built.
     - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
@@ -124,7 +123,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | now (A4a and R11 are merged) | ~2 d |
 | R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R15b (it draws the final keypad) | ~0.5 d |
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
@@ -332,9 +330,6 @@ Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a us
 Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is connected (rules section 6). Find per key (`?bench=find`, §3.2) against the §8.3 bar; a miss goes under "Needs a decision" with the number (docs/04 says what changes: incremental Find). Leave an APK built from `phase-1` on the Tab One for the owner. Then the report says whether milestone 4's gate (section 8) is complete.
 
 ### Milestone 4a packages (section 0b)
-
-### ron, R15b: top cluster, branch `p1/ron-m4a-top`
-P12 points 2 and 3 and open point B. **R15a is done:** `docs/mockups/top-cluster.html` holds the layouts A, B, C and the press table. **The owner turned down A, B and C (2026-10-14); the page now holds layout D** (the cross stays, every key at its G2 place, three free keys U1–U3 with Shift layers, 48 px cluster rows; decisions.md). **R15b:** build D (approved by the owner 2026-10-14) with **U2 = Home and U3 = CAS as defaults** in `spec/keyboard.yaml` (decisions.md "R15a: layout D"); the free keys get their slots and storage here (a stamped key in `state/storage.ts`), their Find-based setting comes with R4b. Edit the grid in `spec/keyboard.yaml` (the maths rows 3–9 do not move), replace the `app` and `cas` keys by the user keys U2 and U3 with those defaults (their old Shift layers go), make the place name a button, move the pad, keep the `cancel` key's id and its Shift layer (Undo, R16), update the trackpad zones, the legends, `tools/probes/unit-presses.mjs` and every test that names a moved key; keys typed while an app loads (R8) now include the status taps; remove `app` and `cas` (and `symb`/`plot`/`num` if they fold) from `PASS` in `views/sheetKeys.ts` and `AT_ONCE` in `App.svelte`; the place-name tap no longer opens Apps (`status.spec.ts` changes). Gate: e2e for each path in the press table, viewport share not below R8's 0.354, keyboard test, gallery, gestures and flicks e2e. Shared-file text in the report.
 
 ### ron, R12a, R12b and R12c: visual pass, branches `p1/ron-m4a-look` (R12a, R12b) and `p1/ron-m4a-theme` (R12c)
 **R12a** (after R15b): read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a pick sheet over the keypad, the Mode sheet, the Settings page, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change; R4a and R4b run meanwhile.

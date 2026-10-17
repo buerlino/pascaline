@@ -407,8 +407,9 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Alpha key [r8c1] | one-shot Alpha, lock flicks | stays; a merge with Shift is decided on the tap counter (P7 point 4, about 2026-10-20); if merged, its cell becomes a fourth user key U4 | P7, 2026-10-14 |
 | a b/c (row 3, col 4) [r4c5] | inserts a fraction | toggles the form of the last result: decimal ↔ fraction, polar ↔ rectangular (R10); the fraction template is on ÷ and in Tmpl | G2 item 29, P11, P12 |
 | Exponent key (row 6, col 0) [r7c1] | `×10^` template, legend ×10ⁿ | types the E mark `ᴇ` (`\emark`, one token), legend `ᴇ`; Shift stays Sto ▶ | P12 |
-| App key (Home/CAS) [r3c1] and CAS [r3c5] | two keys, each with a Shift layer (Settings, Mode) | **no keys**: the status line's place name switches Home ↔ CAS; the Mode sheet is a status chip and Shift + Apps; the Apps sheet lists Home and CAS first (R15) | P12; S2 |
-| Symb, Plot, Num, arrow pad, top cluster | rows 0–2 | folded into the status line if R15a confirms; the pad moves one line down; fewer rows (R15) | P12 |
+| App key (Home/CAS) [r3c1] and CAS [r3c5] | U2 and U3 (free keys, Home and CAS by default; R15b) | U2 and U3 (free keys, Home and CAS by default; R15b); the status line's place name switches Home ↔ CAS; Mode on Shift + Apps; the Apps sheet lists Home and CAS first | P12; S2; decisions.md "R15a: layout D" |
+| Apps [r1c1] | the Apps sheet: 1 Home, 2 CAS, then the apps; Shift + Apps = Mode (R15b) | unchanged | S2 point 4 (the G2's Shift + Apps, Info, is omitted) |
+| Symb, Plot, Num, arrow pad, top cluster | rows 0–2 | unchanged places (layout D, R15b): no row folded, the pad stays, rows 36 px | P12; decisions.md "R15b" |
 | Alpha + 0 (quote mark) | `"` | removed (R13) | P12 |
 | Shift + ◀, Shift + ▶ | line start, line end | removed (R13); a tap on the formula puts the cursor there | P12 |
 | Shift + 6, Shift + 9 | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ | built (R18) | P12, owner 2026-10-13 |
@@ -416,8 +417,8 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + View | Copy (A3) | Copy (full value of the selected or last result) | reference: Copy |
 | Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: one list of nine (R11): 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Copy as › (As shown, Exact, LaTeX), 7 Paste, 8 Share session, 9 Clear history, on the picked row, else the last result (Delete: the last row); a picked row's buttons are items 1–5, the long press on a row opens the same list (`ClipActions.menu`) | unchanged | P8; S2 (accepted 2026-10-13) |
 | Shift + Menu | Paste a number (A3) | unchanged | reference: Paste |
-| Help (row 0, col 4) [r1c4] | gap | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; uses the index; P8 left Help free, so the owner may veto |
-| row 1, col 0 | gap | stays empty | no reference key there |
+| Help (row 0, col 4) [r1c4] | dimmed dead key (R15b) | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; uses the index; P8 left Help free, so the owner may veto |
+| row 1, col 0 | U1, a free key (empty; R15b) | set from Find (R4b) | no reference key there |
 | Shift + `+` [r10c5] | Ans (`\ans`, R2) | unchanged | reference |
 | Shift + `−` [r9c5] | nothing | Base: show the last result in HEX, BIN, OCT, DEC; word size (EN6) | reference: Base |
 | Shift + 5 [r8c3] | nothing | `[ ]` vector or matrix template (EN5) | reference |
@@ -425,7 +426,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + 4 [r8c2] | nothing | matrix editor (EN5) | reference: Matrix |
 | Shift + 7 [r7c2] | nothing | list editor, deferred with Statistics | reference: List |
 | Unit slots | — | the unit pad (`spec/unit-pad.yaml`, docs/research/r9-unit-pad.md): prefix and unit cells drawn over the maths rows, the arrangement measured by S5, a few user cells set from Find; Enter goes to the next slot, `→` is the end slot; `±` per r7 section 7, open point 3. Until R24c, `spec/keyboard.yaml` `unit_slot:` still holds S1's letters | P11, S1 (owner, 2026-10-13); P14 (owner, 2026-10-14) |
-| Unassigned Shift cells (14, counted 2026-10-14) | nothing | Shift + Symb, Plot, Num (the reference's Setup, omitted); Shift + ▲ ▼ ◀ ▶ (2 presses: the trackpad has no flicks); Shift + Vars; Shift + a b/c; Shift + `( )`; Shift + `,`; Shift + 1; Shift + 0; Shift + Fmt. Plus U1 (empty) and U2, U3 (Home, CAS by default) with their Shift layers (R15b). Not assigned in advance: they get the functions pressed most often in the task benchmark | measured, not guessed (decisions.md "The letters stay") |
+| Unassigned Shift cells (14, counted 2026-10-14) | nothing | Shift + Symb, Plot, Num (the reference's Setup, omitted); Shift + ▲ ▼ ◀ ▶ (2 presses: the trackpad has no flicks); Shift + Vars; Shift + a b/c; Shift + `( )`; Shift + `,`; Shift + 1; Shift + 0; Shift + Fmt. Plus U1 (empty) and U2, U3 (Home, CAS by default) with their Shift layers (built, R15b; set from Find with R4b). Not assigned in advance: they get the functions pressed most often in the task benchmark | measured, not guessed (decisions.md "The letters stay") |
 | Prefix chips | — | a strip above the keypad, only after a number, only if task 3 shows a gain | P8 |
 
 
