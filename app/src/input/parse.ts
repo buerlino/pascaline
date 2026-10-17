@@ -27,6 +27,12 @@ const LOGIC = "logic:";
 /** The Å of the Shift + 9 palette (R18), refused with a message. */
 const ARING = "aring";
 
+/** The length of a decimal comma at `j` ("," or MathLive's "{,}"), 0 if there is none or the setting is off. */
+function commaAt(src: string, j: number, decimalComma: boolean): number {
+  if (!decimalComma) return 0;
+  return src[j] === "," ? 1 : src.startsWith("{,}", j) ? 3 : 0;
+}
+
 /** decimalComma (L6): "3,5" and MathLive's "3{,}5" are the number 3.5; use ";" between arguments then. */
 function tokenize(src: string, decimalComma = false): Tok[] {
   const out: Tok[] = [];
@@ -99,24 +105,30 @@ function tokenize(src: string, decimalComma = false): Tok[] {
     } else if (isDigit(c) || (c === "." && isDigit(src[i + 1]))) {
       let j = i;
       while (isDigit(src[j])) j++;
-      while (isDigit(src[j])) j++;
-      const comma = !decimalComma ? 0 : src[j] === "," ? 1 : src.startsWith("{,}", j) ? 3 : 0;
+      const comma = commaAt(src, j, decimalComma);
+      let v: string;
       if (src[j] === "." && isDigit(src[j + 1])) {
         j++;
         while (isDigit(src[j])) j++;
+        v = src.slice(i, j);
       } else if (comma && isDigit(src[j + comma])) {
         const intPart = src.slice(i, j);
         j += comma;
         const k = j;
         while (isDigit(src[j])) j++;
-        out.push({ t: "num", v: `${intPart}.${src.slice(k, j)}` });
-        i = j;
-        continue;
+        v = `${intPart}.${src.slice(k, j)}`;
       } else if (src[j] === "." && c !== ".") {
         // "5." alone: treat the dot as part of the number
         j++;
+        v = src.slice(i, j);
+      } else v = src.slice(i, j);
+      // F24 (R29): a second decimal separator right after a number with one (2.5.3, 1..5, 2,5,3) is not a product
+      if (v.includes(".")) {
+        if (src[j] === ".") throw new SerializeError("a number has one decimal point");
+        const c2 = commaAt(src, j, decimalComma);
+        if (c2 && isDigit(src[j + c2])) throw new SerializeError("a number has one decimal comma");
       }
-      out.push({ t: "num", v: src.slice(i, j) });
+      out.push({ t: "num", v });
       i = j;
     } else if (c === "\u1D07") {
       out.push({ t: "cmd", v: EMARK });
@@ -212,6 +224,9 @@ class Parser {
   private readonly chips: ChipTable;
   /** Set when a chip with an inexact value is used. */
   inexact = false;
+  /** F25 (R29): the token index right after the last number literal, and right after the last result chip. */
+  private numEnd = -1;
+  private resEnd = -1;
   constructor(toks: Tok[], o: ParseOptions) {
     this.toks = toks;
     this.user = o.userFunctions ?? new Set(["f", "g", "h"]);
@@ -415,8 +430,24 @@ class Parser {
 
   private implicit(): Json {
     const parts: Json[] = [this.postfix()];
-    while (this.startsFactor()) parts.push(this.postfix());
+    while (this.startsFactor()) {
+      this.besideResult();
+      parts.push(this.postfix());
+    }
     return parts.length === 1 ? (parts[0] as Json) : ["Multiply", ...parts];
+  }
+
+  /**
+   * F25 (R29): a result chip draws its digits, so [0.5]3, 3[0.5] and [0.5][0.25] read as one number (on the G2 an
+   * inserted result is text, and a digit typed after it extends it). A number directly beside a result chip, or two
+   * result chips side by side, is refused rather than multiplied. Ans and a constant draw a name and multiply as 2x.
+   */
+  private besideResult(): void {
+    const t = this.peek();
+    const res = t?.t === "cmd" && t.v === "res";
+    if (this.pos === this.resEnd && res) throw new SerializeError("put × between two results");
+    if ((this.pos === this.resEnd && t?.t === "num") || (this.pos === this.numEnd && res))
+      throw new SerializeError("put × between a result and a number");
   }
 
   private postfix(): Json {
@@ -541,7 +572,11 @@ class Parser {
       case "num": {
         this.basePrefix(tok);
         this.pos++;
-        if (this.isCmd(EMARK)) return this.eNumber(tok.v);
+        if (this.isCmd(EMARK)) {
+          const e = this.eNumber(tok.v);
+          this.numEnd = this.pos;
+          return e;
+        }
         const num = { num: tok.v.replace(/^0+(?=\d)/, "") };
         // a whole number directly before \tfrac is a mixed number (the Tmpl mixed-number template, R10): 2\tfrac12 = 2+1/2
         if (/^\d+$/.test(tok.v) && this.isCmd("tfrac")) {
@@ -550,6 +585,7 @@ class Parser {
           const b = this.arg();
           return ["Delimiter", ["Add", num, ["Divide", a, b]]];
         }
+        this.numEnd = this.pos;
         return num;
       }
       case "open": {
@@ -690,6 +726,7 @@ class Parser {
         const k = this.groupText();
         if (!/^\d+$/.test(k)) throw new SerializeError(`unsupported result chip ${k}`);
         this.skipGroup();
+        this.resEnd = this.pos;
         return this.chip(resKey(k), "result chip");
       }
       case "ans":
