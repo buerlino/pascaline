@@ -79,3 +79,4 @@ tools/probes/_out/
 
 # UI gallery screenshots (app/gallery/, npm run gallery)
 app/test/gallery/
+app/_out/
