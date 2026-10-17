@@ -5,6 +5,7 @@ import type { Request, Response } from "./protocol.ts";
 import { applyDefChanges, replayOrder, validDefs, type DefChange, type DefEntry } from "./defs.ts";
 import {
   EngineCancelled,
+  EngineMemoryError,
   type CasResult,
   type AnalysisRequest,
   type AnalysisResult,
@@ -216,13 +217,20 @@ export class WorkerEngine implements MathEngine {
       const p = this.pending.get(ev.data.id);
       if (!p) return;
       this.pending.delete(ev.data.id);
-      if (ev.data.type === "fatal") p.reject(new Error(ev.data.message));
-      else p.resolve(ev.data);
+      if (ev.data.type === "fatal") {
+        if (!ev.data.memory) return void p.reject(new Error(ev.data.message));
+        // G24: the heap only grows, and an aborted module is dead: reject the call and start a clean worker.
+        p.reject(new EngineMemoryError(ev.data.message));
+        if (this.worker === w) {
+          this.stop(new EngineMemoryError(ev.data.message));
+          this.start();
+        }
+      } else p.resolve(ev.data);
     };
     // A crash (e.g. out of memory) rejects what is pending and takes the same restart + replay path as Cancel.
     w.onerror = (ev) => {
       if (this.worker !== w) return;
-      this.stop(new Error(ev.message || "engine crashed"));
+      this.stop(new EngineMemoryError(ev.message || "engine crashed"));
       this.start();
     };
     this.readyPromise = this.post({ type: "init", baseUrl: this.baseUrl, replay: [...this.log] }).then((r) => {

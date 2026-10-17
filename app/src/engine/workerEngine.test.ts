@@ -5,7 +5,7 @@ import type { Request, Response } from "./protocol.ts";
 import { createRequestHandler } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { EngineCancelled, defaultCasSettings } from "./types.ts";
+import { EngineCancelled, EngineMemoryError, defaultCasSettings } from "./types.ts";
 import { WorkerEngine, type WorkerLike } from "./workerEngine.ts";
 import type { DefEntry } from "./defs.ts";
 
@@ -67,6 +67,48 @@ describe("WorkerEngine cancel (stand-in worker)", () => {
     await job;
     expect(workers).toHaveLength(2);
     await engine.ready();
+    engine.dispose();
+  });
+});
+
+describe("WorkerEngine out of memory (G24, F32)", () => {
+  it("a worker error during a call is a memory error, and the engine restarts", async () => {
+    const workers: StuckWorker[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new StuckWorker()), workers.at(-1)!) });
+    await engine.ready();
+    const job = expect(engine.cas("ranm(40000,40000)", defaultCasSettings)).rejects.toBeInstanceOf(EngineMemoryError);
+    await new Promise((r) => setTimeout(r, 5));
+    workers[0]!.onerror?.({ message: "Aborted(OOM)" });
+    await job;
+    expect(workers).toHaveLength(2);
+    await engine.ready();
+    engine.dispose();
+  });
+
+  it("a thrown allocation failure inside the worker (a fatal reply marked memory) is a memory error, and the worker restarts", async () => {
+    const workers: StuckWorker[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new StuckWorker()), workers.at(-1)!) });
+    await engine.ready();
+    const job = expect(engine.cas("makemat(1,30000,30000)", defaultCasSettings)).rejects.toBeInstanceOf(EngineMemoryError);
+    // the id of the call just posted is the highest one the stand-in saw; reply to it
+    const w = workers[0]!;
+    await new Promise((r) => setTimeout(r, 5)); // the call is posted once the (empty) store has answered
+    w.onmessage?.({ data: { id: 2, type: "fatal", message: "[object WebAssembly.Exception]", memory: true } });
+    await job;
+    expect(workers).toHaveLength(2);
+    expect(w.terminated).toBe(true);
+    engine.dispose();
+  });
+
+  it("a fatal reply that is not about memory stays a plain error and does not restart", async () => {
+    const workers: StuckWorker[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new StuckWorker()), workers.at(-1)!) });
+    await engine.ready();
+    const job = expect(engine.cas("1+", defaultCasSettings)).rejects.not.toBeInstanceOf(EngineMemoryError);
+    await new Promise((r) => setTimeout(r, 5));
+    workers[0]!.onmessage?.({ data: { id: 2, type: "fatal", message: "boom" } });
+    await job;
+    expect(workers).toHaveLength(1);
     engine.dispose();
   });
 });
