@@ -18,6 +18,9 @@ main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"; cd "$main"
 coord="${PASCALINE_COORD:-$main/.coord}"; tasks="$main/.tasks"
 today="$(date +%F)"; arch="$tasks/archive/$today"; report="$tasks/gc-$today.md"
 mkdir -p "$tasks/archive"
+# The path audit reads CLAUDE.md, docs/ and the repo paths of phase-1, not of whatever the main checkout has out.
+integ="$(git worktree list --porcelain | awk '/^worktree /{w=$2} /^branch refs\/heads\/phase-1$/{print w}')"
+[[ -n "$integ" ]] || integ="$main"
 act() { if [[ $apply -eq 1 ]]; then "$@"; else echo "would: $*"; fi; }
 {
   echo "# GC $today ($( [[ $apply -eq 1 ]] && echo applied || echo dry run ))"
@@ -36,7 +39,8 @@ act() { if [[ $apply -eq 1 ]]; then "$@"; else echo "would: $*"; fi; }
   for f in "$coord"/tmpbuild/* $(find "$coord" -maxdepth 1 -name 'henri_*.out' -mtime +2 2>/dev/null); do
     [[ -e "$f" ]] || continue; act rm -rf "$f"; echo "- $f"
   done
-  echo; echo "## Stale paths in CLAUDE.md and docs/README.md"
+  echo; echo "## Stale paths in CLAUDE.md and docs/README.md (phase-1 worktree $integ)"
+  cd "$integ"
   for doc in CLAUDE.md docs/README.md; do
     [[ -f "$doc" ]] || { echo "- $doc is missing"; continue; }
     grep -oE '\b(app|docs|engine|tools|tests|spec|scripts|android|spike|find|fdroid|fastlane|logo)/[A-Za-z0-9_./-]*(\.[a-z]+|/)' "$doc" | sort -u |
@@ -48,6 +52,7 @@ act() { if [[ $apply -eq 1 ]]; then "$@"; else echo "would: $*"; fi; }
   done
   echo; echo "## Reports in docs/shifts/ older than 14 days (candidates for the owner; tracked, not moved)"
   find docs/shifts -name '*-report.md' -mtime +14 | sort | sed 's/^/- /'
+  cd "$main"
   echo; echo "## Worktrees and branches"; git worktree list | sed 's/^/- /'
   echo "- merged into phase-1, deletable with git branch -d: $(git branch --merged phase-1 --format='%(refname:short)' | grep -vE '^(master|phase-1)$' | tr '\n' ' ')"
 } | tee "$report"
