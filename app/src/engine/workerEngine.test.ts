@@ -403,6 +403,18 @@ describe("WorkerEngine safe start (G19, F31)", () => {
     engine.dispose();
   });
 
+  it("a purge of a skipped name after a safe start removes it from the store and from definitions()", async () => {
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1"), entry("B", "B:=2")];
+    store.starts = 2;
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new OkWorker(), defs: store });
+    expect((await engine.ready()).safeStart).toEqual({ skipped: 2 });
+    (engine as unknown as { keep(c: unknown[]): void }).keep([{ purge: ["A"] }]);
+    expect((store.saved as DefEntry[]).map((e) => e.name)).toEqual(["B"]);
+    expect((await engine.definitions()).map((e) => e.name)).toEqual(["B"]);
+    engine.dispose();
+  });
+
   it("a crash after a safe start replays what was defined since, not nothing", async () => {
     const workers: OkWorker[] = [];
     const store = new CountingStore();

@@ -151,6 +151,9 @@ export class WorkerEngine implements MathEngine {
   private keep(changes: readonly DefChange[]): void {
     if (!changes.length) return;
     this.log = applyDefChanges(this.log, changes);
+    // a purge reaches the entries a safe start left out too, or stored() would bring the name back (G19)
+    const purges = changes.filter((c) => "purge" in c);
+    if (this.skipped.length && purges.length) this.skipped = applyDefChanges(this.skipped, purges);
     if (this.storeOk) this.store?.save(this.stored());
   }
 
