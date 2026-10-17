@@ -20,7 +20,7 @@ test.beforeEach(async ({ page }) => {
 async function storedInHome(page: Page): Promise<void> {
   await tap(page, ["d3", "shift", "emark", "x", "enter"]); // 3▶x
   await done(page, 1);
-  await tap(page, ["app"]);
+  await tap(page, ["u3"]);
 }
 
 test("a stored value a CAS result used is named under it", async ({ page }) => {
@@ -33,7 +33,7 @@ test("a stored value a CAS result used is named under it", async ({ page }) => {
 });
 
 test("a CAS result without a stored name has no line", async ({ page }) => {
-  await tap(page, ["app"]);
+  await tap(page, ["u3"]);
   await submit(page, "\\operatorname{factor}\\left(x^2-1\\right)");
   await done(page, 1);
   await expect(uses(page)).toHaveCount(0);
@@ -54,7 +54,7 @@ test("the line comes back after a reload", async ({ page }) => {
 test("after three names the rest is counted: +1", async ({ page }) => {
   for (const [v, n] of [[1, "x"], [2, "y"], [3, "z"], [4, "A"], [5, "A"]]) await submit(page, `${v}\\blacktriangleright ${n}`);
   await done(page, 5);
-  await tap(page, ["app"]);
+  await tap(page, ["u3"]);
   await submit(page, "x+y+z+A");
   await done(page, 1);
   await expect(uses(page)).toHaveText("x = 1, y = 2, z = 3 +1 · stored in Home");

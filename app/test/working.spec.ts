@@ -74,7 +74,7 @@ test("the Cancel key stops a job before Working… shows", async ({ page }) => {
 
 test("Solve: its Working… line shows only after 150 ms", async ({ page }) => {
   await open(page, "engine=fake&delay=600");
-  await tap(page, ["apps", "d2"]);
+  await tap(page, ["apps", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   await tap(page, ["symb", "x", "shift", "dot", "d5", "enter", "num"]);
   await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"]')).toBeVisible();

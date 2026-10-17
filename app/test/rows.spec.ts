@@ -151,13 +151,13 @@ test("the row buttons cost no viewport: the keypad does not move", async ({ page
 test("CAS has the same buttons and its own rows", async ({ page }) => {
   await tap(page, ["d1", "d2", "enter"]);
   await done(page, 1);
-  await tap(page, ["cas", "d3", "d4", "enter"]);
+  await tap(page, ["u3", "d3", "d4", "enter"]);
   await done(page, 1); // the CAS history is separate
   await tap(page, ["up"]);
   await expect(bar(page).getByRole("button")).toHaveText(["Insert", "Recall", "Copy", "Store ▶", "Delete"]);
   await bar(page).getByRole("button", { name: "Delete" }).tap();
   await expect(page.locator('[data-status="done"]')).toHaveCount(0);
-  await tap(page, ["app"]);
+  await tap(page, ["u2"]);
   await done(page, 1); // Home still has its row
   await tap(page, ["menu"]);
   await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveCount(9);

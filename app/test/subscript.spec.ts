@@ -37,7 +37,7 @@ test("L1 Home: x_1 is a variable, not a unit", async ({ page }) => {
 });
 
 test("L1 CAS: x_1÷x_1+x_2·x_1 is drawn as 1+x₂x₁", async ({ page }) => {
-  await tap(page, ["app"]);
+  await tap(page, ["u3"]);
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
   await name(page, "x", "1");
   await tap(page, ["div"]);
@@ -54,7 +54,7 @@ test("L1 CAS: x_1÷x_1+x_2·x_1 is drawn as 1+x₂x₁", async ({ page }) => {
 });
 
 test("L1 Solve: unknowns x_1, x_2 solve the 2×2 system x_1+x_2=3, x_1-x_2=1", async ({ page }) => {
-  await tap(page, ["apps", "d2"]);
+  await tap(page, ["apps", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   await tap(page, ["symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E1:");

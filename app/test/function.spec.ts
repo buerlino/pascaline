@@ -174,12 +174,12 @@ test("keys typed while the app's code is still loading are kept (regression)", a
   await expect(page.locator('[data-name="F2"] .math')).toHaveAttribute("data-latex", "\\frac{1}{x}");
 });
 
-test("Apps key lists the apps; Home/CAS key goes back to Home", async ({ page }) => {
+test("Apps key lists Home, CAS and the apps; U2 (Home by default) goes back to Home", async ({ page }) => {
   await tap(page, ["apps"]);
   await expect(page.getByTestId("apps")).toBeVisible();
-  await tap(page, ["d2"]);
+  await tap(page, ["d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
-  await tap(page, ["app"]);
+  await tap(page, ["u2"]);
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "home");
   await tap(page, ["d1", "add", "d1", "enter"]);
   await expect(page.locator('[data-testid="result"] .result').last()).toHaveAttribute("data-text", "2");

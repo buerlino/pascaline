@@ -36,7 +36,7 @@ async function longPress(page: Page, el: Locator): Promise<void> {
 
 /** Solve: x·e^x = 5 from guess 1, solved; the Num view is open. */
 async function solved(page: Page): Promise<void> {
-  await tap(page, ["apps", "d2", "symb"]);
+  await tap(page, ["apps", "d4", "symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E1:");
   await tap(page, ["x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "num"]);
   const row = page.locator('[data-testid="solve-table"] tr[data-name="x"]');
@@ -74,7 +74,7 @@ test("Solve: the full root survives a reload; an edit drops it", async ({ page }
   await page.waitForTimeout(800); // the store write is debounced
   await page.reload();
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["apps", "d2", "num"]);
+  await tap(page, ["apps", "d4", "num"]);
   await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"] td')).toHaveText("1.32672466524");
   await tap(page, ["shift", "view"]);
   await expect.poll(async () => digits(await clipboard(page))).toBeGreaterThan(25);

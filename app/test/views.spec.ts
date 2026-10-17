@@ -29,7 +29,7 @@ test("Home: 1-0.9-0.1 gives 0", async ({ page }) => {
 });
 
 test("CAS: 1 a/b 3 + 1 a/b 6 Enter is drawn as a stacked one half (G2 item 17)", async ({ page }) => {
-  await tap(page, ["app"]);
+  await tap(page, ["u3"]);
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
   await tap(page, ["d1", "frac", "d3", "right", "add", "d1", "frac", "d6", "enter"]);
   const res = lastResult(page).locator(".math");
@@ -39,14 +39,14 @@ test("CAS: 1 a/b 3 + 1 a/b 6 Enter is drawn as a stacked one half (G2 item 17)",
 });
 
 test("CAS: √8 is drawn as 2√2 (G2 item 17)", async ({ page }) => {
-  await tap(page, ["app", "shift", "sq", "d8", "enter"]);
+  await tap(page, ["u3", "shift", "sq", "d8", "enter"]);
   const res = lastResult(page).locator(".math");
   await expect(res).toBeVisible();
   expect(await res.getAttribute("data-latex")).toBe("2\\sqrt{2}");
 });
 
 test("CAS: π × x is drawn as πx, never as an unknown command like \\pix", async ({ page }) => {
-  await tap(page, ["app", "shift", "d3", "mul", "x", "enter"]);
+  await tap(page, ["u3", "shift", "d3", "mul", "x", "enter"]);
   const res = lastResult(page).locator(".math");
   await expect(res).toBeVisible();
   const latex = await res.getAttribute("data-latex");
@@ -69,7 +69,7 @@ test("Cancel stops a long CAS job; history and variables survive", async ({ page
   await page.evaluate(() => window.pascaline.entry.set("a:=7"));
   await tap(page, ["enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();
-  await tap(page, ["app"]);
+  await tap(page, ["u3"]);
   await page.evaluate(() =>
     window.pascaline.entry.set(
       "\\operatorname{ifactor}\\left(\\operatorname{nextprime}\\left(10^{32}\\right)\\times\\operatorname{nextprime}\\left(10^{33}\\right)\\right)",
@@ -81,7 +81,7 @@ test("Cancel stops a long CAS job; history and variables survive", async ({ page
   await expect(page.locator(".working")).toHaveCount(0);
   await expect(page.locator('[data-status="cancelled"]')).toHaveCount(1);
   // the engine is back and the variable is still there
-  await tap(page, ["app"]);
+  await tap(page, ["u2"]);
   await page.evaluate(() => window.pascaline.entry.set("a+1"));
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]').last()).toBeVisible({ timeout: 20_000 });

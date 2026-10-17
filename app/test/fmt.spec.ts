@@ -8,15 +8,15 @@ const ready = (page: Page) => page.waitForFunction(() => window.pascaline.sessio
 
 const sheet = (page: Page) => page.getByTestId("menu");
 const settingsPage = (page: Page) => page.getByTestId("settings");
-/** Shift + Home/CAS: the Settings page. */
+/** Shift + Apps, 5: the Settings page (the last row of Mode). */
 async function openSettings(page: Page): Promise<void> {
-  await tap(page, ["shift", "app"]);
+  await tap(page, ["shift", "apps", "d5"]);
   await expect(settingsPage(page)).toBeVisible();
   await expect(page.getByTestId("settings-title")).toHaveText("Settings");
 }
-/** Shift + CAS: the Mode sheet. */
+/** Shift + Apps: the Mode sheet. */
 async function openMode(page: Page): Promise<void> {
-  await tap(page, ["shift", "cas"]);
+  await tap(page, ["shift", "apps"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
 }
 const closeSheet = (page: Page) => tap(page, ["cancel"]);
