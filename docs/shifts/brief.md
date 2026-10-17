@@ -4,7 +4,7 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47, R44 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (fix R46f1, bug F42). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15), G27 (F36, 2026-10-16), R44 (F37) and G24 (F32, 2026-10-17). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (fix R46f1, bug F42). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
@@ -16,7 +16,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   R50a (three palettes as a mockup; docs only, no app code) can run any time beside the lane, so the owner's pick is ready before R50b.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): R29, R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): R29, R30, G19, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A9 (key vibration, F41) as soon as the owner's phone is connected: it needs a phone with a motor, and the Tab One has none. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -70,7 +70,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 4 | **Opus pass 1** on steps 2–3c, then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
 | 6 | G19 a safe start (F31) | gorge, Sonnet | `p1/gorge-m4-safestart` | 1 h + review |
-| 7 | G24 a memory cap for the Giac worker (F32) | gorge, Sonnet | `p1/gorge-m4-memcap` | 1 h + review |
+| 7 | G24 a memory cap for the Giac worker (F32): merged by day (`cc095e3`), skip | gorge, Sonnet | `p1/gorge-m4-memcap` | — |
 | 8 | **Opus pass 2** on steps 5–7 | Opus | — | 20 min + fixes |
 | 9 | G16 the unit evaluator: factors, dimensions, one term, the end slot | gorge, **Opus** | `p1/gorge-m5-unitcore` | 2 h + review |
 | 10 | G17 temperatures and logarithmic units | gorge, Sonnet | `p1/gorge-m5-unittemp` | 1 h + review |
@@ -223,7 +223,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | R29 | Where a number ends | F24, F25 | night | ron, **Opus** | `p1/ron-m4-numbers` | now | ~0.5 d |
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
 | G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
-| G24 | A memory cap for the Giac worker | F32 | night | gorge, Sonnet | `p1/gorge-m4-memcap` | now | ~0.5 d |
 | G22 | Why the mark: the reasons as facts | review item 14 | night | gorge, Sonnet | `p1/gorge-m4-why` | now | ~0.5 d |
 | R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R30 (same file) | ~0.25 d |
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
@@ -867,31 +866,6 @@ Commits in this order:
    - The App side of that line is one small change in `App.svelte`, which the review accepts as part of this package.
 
 Gate: vitest, typecheck, the start-up e2e unchanged, `replayMs` unchanged.
-
-### gorge, G24: a memory cap for the Giac worker (F32), branch `p1/gorge-m4-memcap`
-Backlog F32. Read:
-- `engine/giac/build-wasm.sh` (line 188: `-sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB`, no `MAXIMUM_MEMORY`, so Emscripten's default of 2 GB) and `engine/giac/build-wasm-release.sh`;
-- `app/src/engine/workerEngine.ts` (`onerror`, line 222: a crash restarts and replays);
-- `app/src/i18n/en.ts`.
-
-**Today:**
-- A CAS job that keeps allocating can grow the worker toward 2 GB.
-- On the 3.9 GB Tab One, Android may then kill the whole app (the worker lives in the WebView's renderer), not just the worker.
-- The user sees the app restart and loses the half-typed line (F30).
-
-Commits in this order:
-1. **Tests first** (Node, with the dev build):
-   - a job that goes past the cap ends in an "out of memory" result, not a hang, and the next call works after the restart and replay;
-   - in `workerEngine.test.ts`: a worker error during a call gives the caller a `memory` error, with the i18n message "Out of memory: the engine was restarted".
-
-   Name the input that goes past the cap in the report, for the device check.
-2. **Build:**
-   - `-sMAXIMUM_MEMORY=1GB` in the dev and release scripts (the P2 container's flags too);
-   - `-sABORTING_MALLOC=1` if a failed allocation does not abort by default;
-   - the client turns a worker abort during a call into that error.
-3. **Rebuild** the dev engine under the host-cpu lock. Run the golden gate and `scripts/compare-engines.ts` against the build before; nothing may differ.
-
-Gate: the golden gate, the new tests, `compare-engines.ts` clean. The device check (the app stays up on the Tab One) waits for the next device run.
 
 ### gorge, G22: why the mark, the reasons as facts, branch `p1/gorge-m4-why`
 Deep-dive item 14; R36 shows these reasons. No UI. Read:
