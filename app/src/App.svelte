@@ -16,6 +16,7 @@
   import { actionFor, keyboard, MATHS_ROW, type ActionBody, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
+  import { canPick, pickAfter, pickAtOrBefore } from "./state/pickRows.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
@@ -314,19 +315,21 @@
     const items = session.items;
     const n = items.length;
     const isCmd = (name: string) => action.kind === "cmd" && action.name === name;
-    if (picked === null || picked >= n) {
+    // a "note" row (the safe-start line) is drawn without a pick, so it is never picked
+    if (picked === null || picked >= n || !canPick(items, picked)) {
       picked = null;
       if (!isCmd("moveUp") || n === 0 || entry.value !== "") return false;
-      picked = n - 1;
+      picked = pickAtOrBefore(items, n - 1);
+      if (picked === null) return false; // only notes: Up does its normal job
       void loadClip(); // the row buttons come from its list
       return true;
     }
     if (isCmd("moveUp")) {
-      picked = Math.max(0, picked - 1);
+      picked = pickAtOrBefore(items, picked - 1) ?? picked;
       return true;
     }
     if (isCmd("moveDown")) {
-      picked = picked + 1 < n ? picked + 1 : null;
+      picked = pickAfter(items, picked);
       return true;
     }
     const item = items[picked];

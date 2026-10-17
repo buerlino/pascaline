@@ -264,3 +264,182 @@ describe.skipIf(!giacAvailable())("WorkerEngine definitions across a relaunch (r
     e.dispose();
   }, 10_000);
 });
+
+// --- G19 (F31): a safe start ---------------------------------------------------------------------------------------
+
+/** Answers init and define like StuckWorker, but crashes (onerror) whenever it is asked to replay definitions. */
+class CrashOnReplayWorker implements WorkerLike {
+  onmessage: ((ev: { data: Response }) => void) | null = null;
+  onerror: ((ev: { message?: string }) => void) | null = null;
+  inits: DefEntry[][] = [];
+  postMessage(msg: Request): void {
+    const crash = (msg.type === "init" && msg.replay.length > 0) || msg.type === "define";
+    if (msg.type === "init") this.inits.push(msg.replay);
+    setTimeout(() => {
+      if (crash) this.onerror?.({ message: "out of memory" });
+      else if (msg.type === "init") this.onmessage?.({ data: { id: msg.id, type: "ready", instantiateMs: 1, initMs: 1, replayMs: 0 } });
+    }, 0);
+  }
+  terminate(): void {}
+}
+
+/** Like CrashOnReplayWorker, but the failure is a fatal reply marked memory (G24), not an onerror. Bounded, so a
+ *  restart loop ends the test with a wrong worker count instead of hanging it. */
+class FatalOnReplayWorker implements WorkerLike {
+  static made = 0;
+  onmessage: ((ev: { data: Response }) => void) | null = null;
+  onerror: ((ev: { message?: string }) => void) | null = null;
+  inits: DefEntry[][] = [];
+  private readonly lenient = ++FatalOnReplayWorker.made > 40;
+  postMessage(msg: Request): void {
+    const bad = !this.lenient && ((msg.type === "init" && msg.replay.length > 0) || msg.type === "define");
+    if (msg.type === "init") this.inits.push(msg.replay);
+    setTimeout(() => {
+      if (bad) this.onmessage?.({ data: { id: msg.id, type: "fatal", message: "out of memory", memory: true } });
+      else if (msg.type === "init") this.onmessage?.({ data: { id: msg.id, type: "ready", instantiateMs: 1, initMs: 1, replayMs: 0 } });
+      else if (msg.type === "define") this.onmessage?.({ data: { id: msg.id, type: "defined", replayMs: 1 } });
+    }, 0);
+  }
+  terminate(): void {}
+}
+
+/** Answers init and define. */
+class OkWorker extends StuckWorker {
+  override postMessage(msg: Request): void {
+    super.postMessage(msg);
+    if (msg.type === "define") setTimeout(() => this.onmessage?.({ data: { id: msg.id, type: "defined", replayMs: 1 } }), 0);
+  }
+}
+
+const entry = (name: string, cmd: string): DefEntry => ({ name, kind: "var", cmds: [cmd], preview: "1", view: "home", time: 1 });
+
+/** MemoryStore with the failed-starts counter. */
+class CountingStore extends MemoryStore {
+  starts = 0;
+  startWrites: number[] = [];
+  loadStarts(): Promise<number> {
+    return Promise.resolve(this.starts);
+  }
+  saveStarts(n: number): void {
+    this.starts = n;
+    this.startWrites.push(n);
+  }
+}
+
+describe("WorkerEngine safe start (G19, F31)", () => {
+  it("a log whose replay crashes the worker twice: the third start runs without it, and says so", async () => {
+    const workers: CrashOnReplayWorker[] = [];
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1"), entry("B", "B:=2")];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new CrashOnReplayWorker()), workers.at(-1)!), defs: store });
+    const t = await engine.ready();
+    expect(t.safeStart).toEqual({ skipped: 2 });
+    expect(workers.at(-1)!.inits.at(-1)).toEqual([]);
+    expect(workers).toHaveLength(3);
+    // the stored log is untouched, and Memory still lists the skipped entries
+    expect(store.saved).toEqual([entry("A", "A:=1"), entry("B", "B:=2")]);
+    expect((await engine.definitions()).map((e) => e.name)).toEqual(["A", "B"]);
+    // the count is cleared once ready
+    expect(store.starts).toBe(0);
+    engine.dispose();
+  });
+
+  it("a replay that runs out of memory (a fatal reply marked memory) counts as a failed start too: no restart loop", async () => {
+    FatalOnReplayWorker.made = 0;
+    const workers: FatalOnReplayWorker[] = [];
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1"), entry("B", "B:=2")];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new FatalOnReplayWorker()), workers.at(-1)!), defs: store });
+    const t = await engine.ready();
+    expect(workers).toHaveLength(3);
+    expect(t.safeStart).toEqual({ skipped: 2 });
+    expect(workers.at(-1)!.inits.at(-1)).toEqual([]);
+    expect(store.saved).toEqual([entry("A", "A:=1"), entry("B", "B:=2")]);
+    expect(store.starts).toBe(0);
+    engine.dispose();
+  });
+
+  it("two failed starts in earlier launches: this launch starts without the log", async () => {
+    const workers: CrashOnReplayWorker[] = [];
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1")];
+    store.starts = 2;
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new CrashOnReplayWorker()), workers.at(-1)!), defs: store });
+    expect((await engine.ready()).safeStart).toEqual({ skipped: 1 });
+    expect(workers).toHaveLength(1);
+    expect(store.saved).toEqual([entry("A", "A:=1")]);
+    // the safe start is a start that worked: the count goes back to 0, so the next launch tries the log again
+    expect(store.starts).toBe(0);
+    engine.dispose();
+  });
+
+  it("a launch with no stored log clears an old count once ready", async () => {
+    const store = new CountingStore();
+    store.starts = 2;
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new OkWorker(), defs: store });
+    await engine.ready();
+    expect(store.starts).toBe(0);
+    engine.dispose();
+  });
+
+  it("a launch that works leaves no safeStart, and the count goes back to 0", async () => {
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1")];
+    store.starts = 1;
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new OkWorker(), defs: store });
+    expect((await engine.ready()).safeStart).toBeUndefined();
+    expect(store.starts).toBe(0);
+    engine.dispose();
+  });
+
+  it("a new definition made in a safe start is stored beside the skipped ones", async () => {
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1")];
+    store.starts = 2;
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new OkWorker(), defs: store });
+    await engine.ready();
+    (engine as unknown as { keep(c: unknown[]): void }).keep([{ set: entry("C", "C:=3") }]);
+    expect((store.saved as DefEntry[]).map((e) => e.name).sort()).toEqual(["A", "C"]);
+    engine.dispose();
+  });
+
+  it("a purge of a skipped name after a safe start removes it from the store and from definitions()", async () => {
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1"), entry("B", "B:=2")];
+    store.starts = 2;
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new OkWorker(), defs: store });
+    expect((await engine.ready()).safeStart).toEqual({ skipped: 2 });
+    (engine as unknown as { keep(c: unknown[]): void }).keep([{ purge: ["A"] }]);
+    expect((store.saved as DefEntry[]).map((e) => e.name)).toEqual(["B"]);
+    expect((await engine.definitions()).map((e) => e.name)).toEqual(["B"]);
+    engine.dispose();
+  });
+
+  it("a crash after a safe start replays what was defined since, not nothing", async () => {
+    const workers: OkWorker[] = [];
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1")];
+    store.starts = 2;
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new OkWorker()), workers.at(-1)!), defs: store });
+    await engine.ready();
+    (engine as unknown as { keep(c: unknown[]): void }).keep([{ set: entry("C", "C:=3") }]);
+    workers[0]!.onerror?.({ message: "out of memory" });
+    await engine.ready();
+    expect(workers).toHaveLength(2);
+    expect(workers[1]!.inits.at(-1)!.map((e) => e.name)).toEqual(["C"]);
+    expect((store.saved as DefEntry[]).map((e) => e.name).sort()).toEqual(["A", "C"]);
+    engine.dispose();
+  });
+});
+
+describe.skipIf(!giacAvailable())("WorkerEngine safe start (real Giac in process)", () => {
+  it("a replayed entry that only gives a Giac error is no crash: the rest replays", async () => {
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=)("), entry("B", "B:=5")];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new InProcessWorker(), defs: store });
+    const t = await engine.ready();
+    expect(t.safeStart).toBeUndefined();
+    expect((await engine.home("B", defaultHomeSettings)).display).toBe("5");
+    engine.dispose();
+  }, 10_000);
+});

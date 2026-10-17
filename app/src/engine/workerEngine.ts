@@ -32,7 +32,14 @@ export interface WorkerLike {
 export interface DefsStore {
   load(): Promise<unknown>;
   save(log: readonly DefEntry[]): void;
+  /** G19: starts that began a replay of the log and never got ready (0 when absent). Written before a replay, cleared
+   *  once ready, so a crash that kills the whole app counts too. */
+  loadStarts?(): Promise<number>;
+  saveStarts?(n: number): void;
 }
+
+/** Failed starts after which the stored log is left out of the replay (G19). */
+export const MAX_FAILED_STARTS = 2;
 
 export interface WorkerEngineOptions {
   /** Base URL under which `engine/giac.mjs` is served (Vite's BASE_URL by default). */
@@ -79,6 +86,15 @@ export class WorkerEngine implements MathEngine {
   private stopError: Error = new EngineCancelled();
   /** The replay of the stored definitions on first launch (part of the first ready()). */
   private defined: Promise<number> = Promise.resolve(0);
+  /** G19: replays begun and not finished (mirrors the store's count). */
+  private attempts = 0;
+  /** The current worker has finished its replay. */
+  private reached = false;
+  /** The first launch's replay (the `define` message) is still the one that decides "ready". */
+  private firstPending = true;
+  /** G19: entries of the stored log left out because their replay stopped the engine; still stored, still listed. */
+  private skipped: DefEntry[] = [];
+  private safe: { skipped: number } | undefined;
 
   constructor(opts: WorkerEngineOptions = {}) {
     this.baseUrl = opts.baseUrl ?? defaultBaseUrl();
@@ -87,16 +103,25 @@ export class WorkerEngine implements MathEngine {
     // The worker starts at once (the wasm loads while the store is read); the stored definitions follow as their own
     // message, posted before any call (calls wait for the gate, and this callback is the gate's first).
     this.start();
+    const first = this.readyPromise;
     this.gate = this.loadStored().then((stored) => {
       this.gateOpen = true;
-      if (!stored.length) return;
+      // No replay to wait for (nothing stored, or a safe start): the first worker being ready is the whole start.
+      const noReplay = () => (this.defined = first.then(() => (this.reach(), 0)));
+      if (!stored.length) return void noReplay();
+      if (this.attempts >= MAX_FAILED_STARTS) {
+        this.leaveOut(stored);
+        noReplay();
+        return;
+      }
+      this.beginAttempt(stored.length);
       this.log = applyDefChanges(this.log, stored.map((e) => ({ set: e })));
       this.defined = this.post({ type: "define", defs: stored }).then((r) => (r.type === "defined" ? r.replayMs : 0));
-      this.defined.catch(() => {});
+      this.defined.then(() => this.reach(), () => {});
     });
-    const first = this.readyPromise;
     this.readyPromise = Promise.all([first, this.gate.then(() => this.defined)]).then(([t, ms]) => ({
       ...t,
+      ...(this.safe ? { safeStart: this.safe } : {}),
       replayMs: t.replayMs + ms,
       readyMs: Math.max(t.readyMs, performance.now() - this.startedAt),
     }));
@@ -110,10 +135,11 @@ export class WorkerEngine implements MathEngine {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<"timeout">((resolve) => (timer = setTimeout(() => resolve("timeout"), DEFS_LOAD_TIMEOUT_MS)));
     try {
-      const x = await Promise.race([this.store.load(), timeout]);
+      const x = await Promise.race([Promise.all([this.store.load(), this.store.loadStarts?.() ?? 0]), timeout]);
       if (x === "timeout") return [];
       this.storeOk = true;
-      return validDefs(x);
+      this.attempts = typeof x[1] === "number" && x[1] > 0 ? Math.trunc(x[1]) : 0;
+      return validDefs(x[0]);
     } catch {
       return [];
     } finally {
@@ -125,11 +151,50 @@ export class WorkerEngine implements MathEngine {
   private keep(changes: readonly DefChange[]): void {
     if (!changes.length) return;
     this.log = applyDefChanges(this.log, changes);
-    if (this.storeOk) this.store?.save(this.log);
+    // a purge reaches the entries a safe start left out too, or stored() would bring the name back (G19)
+    const purges = changes.filter((c) => "purge" in c);
+    if (this.skipped.length && purges.length) this.skipped = applyDefChanges(this.skipped, purges);
+    if (this.storeOk) this.store?.save(this.stored());
   }
 
-  ready(): Promise<EngineTimings> {
-    return this.readyPromise;
+  /** The log as stored: what is live plus what a safe start left out (G19). */
+  private stored(): readonly DefEntry[] {
+    return this.skipped.length ? applyDefChanges(this.skipped, this.log.map((e) => ({ set: e }))) : this.log;
+  }
+
+  private writeAttempts(n: number): void {
+    this.attempts = n;
+    if (this.storeOk) this.store?.saveStarts?.(n);
+  }
+
+  /** A replay of `n` entries begins: count it before it runs. */
+  private beginAttempt(n = this.log.length): void {
+    if (n > 0) this.writeAttempts(this.attempts + 1);
+  }
+
+  /** The replay finished: the engine is ready with its log. */
+  private reach(): void {
+    this.reached = true;
+    if (this.attempts > 0) this.writeAttempts(0);
+  }
+
+  /** Starts without these entries: they stay in the store and in definitions(), and are said to be skipped. */
+  private leaveOut(entries: readonly DefEntry[]): void {
+    this.skipped = [...entries];
+    this.log = [];
+    this.safe = { skipped: entries.length };
+  }
+
+  /** Resolves when the engine is ready. A start that a crash replaced (G19) is waited for in its place. */
+  async ready(): Promise<EngineTimings> {
+    for (;;) {
+      const p = this.readyPromise;
+      try {
+        return await p;
+      } catch (e) {
+        if (this.readyPromise === p) throw e;
+      }
+    }
   }
 
   async home(input: string, settings: HomeSettings): Promise<HomeResult> {
@@ -178,7 +243,9 @@ export class WorkerEngine implements MathEngine {
   }
 
   cancel(): Promise<EngineTimings> {
+    const wasReached = this.reached;
     this.stop(new EngineCancelled());
+    if (wasReached) this.beginAttempt(); // a Cancel during the start is the same attempt, not a new one
     this.start();
     return this.readyPromise;
   }
@@ -190,7 +257,7 @@ export class WorkerEngine implements MathEngine {
   /** The definitions log, once the stored one has been read (Vars, Find's live items, docs/04 3.4). */
   async definitions(): Promise<readonly DefEntry[]> {
     await this.gate;
-    return this.log;
+    return this.stored();
   }
 
   /** Commands replayed into a fresh worker, in replay order (for tests and diagnostics). */
@@ -200,6 +267,7 @@ export class WorkerEngine implements MathEngine {
 
   private stop(err: Error): void {
     this.generation++;
+    this.firstPending = false;
     this.stopError = err;
     this.worker.onmessage = null;
     this.worker.onerror = null;
@@ -208,11 +276,22 @@ export class WorkerEngine implements MathEngine {
     this.pending.clear();
   }
 
+  /** The worker died (an error event, or a fatal reply marked memory): a clean worker takes its place and replays the
+   *  log. G19: a crash before the replay finished is a failed start; the second one leaves the stored log out. */
+  private restartAfterCrash(err: Error): void {
+    const wasReached = this.reached;
+    this.stop(err);
+    if (!wasReached && this.log.length && this.attempts >= MAX_FAILED_STARTS) this.leaveOut(this.stored());
+    else this.beginAttempt();
+    this.start();
+  }
+
   private start(): void {
     const t0 = performance.now();
     this.startedAt = t0;
     const w = this.createWorker();
     this.worker = w;
+    this.reached = false;
     w.onmessage = (ev) => {
       const p = this.pending.get(ev.data.id);
       if (!p) return;
@@ -221,21 +300,17 @@ export class WorkerEngine implements MathEngine {
         if (!ev.data.memory) return void p.reject(new Error(ev.data.message));
         // G24: the heap only grows, and an aborted module is dead: reject the call and start a clean worker.
         p.reject(new EngineMemoryError(ev.data.message));
-        if (this.worker === w) {
-          this.stop(new EngineMemoryError(ev.data.message));
-          this.start();
-        }
+        if (this.worker === w) this.restartAfterCrash(new EngineMemoryError(ev.data.message));
       } else p.resolve(ev.data);
     };
     // A crash (e.g. out of memory) rejects what is pending and takes the same restart + replay path as Cancel.
     w.onerror = (ev) => {
-      if (this.worker !== w) return;
-      this.stop(new EngineMemoryError(ev.message || "engine crashed"));
-      this.start();
+      if (this.worker === w) this.restartAfterCrash(new EngineMemoryError(ev.message || "engine crashed"));
     };
     this.readyPromise = this.post({ type: "init", baseUrl: this.baseUrl, replay: [...this.log] }).then((r) => {
       if (r.type !== "ready") throw new Error(`unexpected ${r.type}`);
-      return { instantiateMs: r.instantiateMs, initMs: r.initMs, replayMs: r.replayMs, readyMs: performance.now() - t0 };
+      if (!this.firstPending) this.reach();
+      return { ...(this.safe ? { safeStart: this.safe } : {}), instantiateMs: r.instantiateMs, initMs: r.initMs, replayMs: r.replayMs, readyMs: performance.now() - t0 };
     });
     // Callers observe failures through ready() or their own call; avoid an unhandled rejection here.
     this.readyPromise.catch(() => {});

@@ -132,6 +132,9 @@
     <div class="earlier" bind:this={sentinel} aria-hidden="true"></div>
   {/if}
   {#each shown as item, k (item.id)}
+    {#if item.status === "note"}
+      <div class="item note" data-status="note" data-testid="safe-start" role="status">{item.text}</div>
+    {:else}
     <article class="item" data-status={item.status}
       onpointerdown={(e) => pressStart(e, item)} onpointerup={endPress} onpointercancel={endPress}
       oncontextmenu={(e) => e.preventDefault()}
@@ -164,6 +167,7 @@
         <div class="uses" data-testid="uses">{usesLine(item.uses)}</div>
       {/if}
     </article>
+    {/if}
   {/each}
 </section>
 

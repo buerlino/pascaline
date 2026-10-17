@@ -86,7 +86,8 @@ export class CalcCancelled extends Error {
 }
 
 export interface Calc {
-  ready(): Promise<void>;
+  /** Resolves when the engine can take calls; `safeStart` when it started without the stored definitions (G19). */
+  ready(): Promise<{ safeStart?: { skipped: number } } | void>;
   home(giac: string, settings: CalcSettings): Promise<HomeOutcome>;
   cas(giac: string, settings: CalcSettings): Promise<CasOutcome>;
   /** Solve app: equations from guesses (1-D or a system), or all roots of a polynomial. */

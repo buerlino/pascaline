@@ -127,6 +127,7 @@ export const en = {
   "error.memory": "Out of memory: the engine was restarted",
   "engine.starting": "Starting the engine…",
   "engine.error": "The engine failed to start.",
+  "engine.safeStart": "Your stored definitions were not loaded because they stopped the engine; Memory lists them.",
   "mode.title": "Mode",
   "mode.angle": "Angle",
   "mode.format": "Number format",

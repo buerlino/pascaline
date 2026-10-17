@@ -4,6 +4,7 @@ import { FakeCalc } from "../calc/fake.ts";
 import { CalcCancelled, type Calc, type CasOutcome, type HomeOutcome, type UserName } from "../calc/port.ts";
 import type { ComplexValue } from "../engine/format.ts";
 import { safePrecision } from "../engine/homeEval.ts";
+import { t } from "../i18n/index.ts";
 import { Session } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
 
@@ -26,7 +27,7 @@ const third: ComplexValue = {
 
 /** A Home engine that returns a numeric value, and a CAS that echoes. */
 class ValueCalc extends FakeCalc implements Calc {
-  override ready = (): Promise<void> => Promise.resolve();
+  override ready = (): Promise<{ safeStart?: { skipped: number } } | void> => Promise.resolve();
   override home(): Promise<HomeOutcome> {
     return Promise.resolve({ ok: true, display: "0.333333333333", approximate: false, ...safePrecision("0.333333333333"), value: third });
   }
@@ -232,5 +233,38 @@ describe("Session user names (docs/04 3.4)", () => {
     await s.submit("f(x):=x^2");
     await new Promise((r) => setTimeout(r, 0));
     expect(s.userNames.map((u) => `${u.name}:${u.kind}`)).toEqual(["A:var", "f:fn"]);
+  });
+});
+
+describe("Session safe start (G19, F31)", () => {
+  class SafeCalc extends ValueCalc {
+    override ready = (): Promise<{ safeStart?: { skipped: number } } | void> => Promise.resolve({ safeStart: { skipped: 2 } });
+  }
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+
+  it("says it once, as a history line in the i18n table (not a header note), and does not store it", async () => {
+    const kv = memoryKv();
+    const s = new Session(new SafeCalc(), kv);
+    await tick();
+    for (const list of [s.home, s.cas]) {
+      expect(list).toHaveLength(1);
+      expect(list[0]?.status).toBe("note");
+      expect(list[0]?.text).toBe(t("engine.safeStart"));
+    }
+    // the next entry does not say it again, and a note is no result: Ans, Copy and the stored history skip it
+    await s.submit("\\frac13");
+    expect(s.home.map((i) => i.status)).toEqual(["note", "done"]);
+    expect(s.hasResult("home")).toBe(true);
+    s.flushHistory();
+    const saved = kv.data.get("history") as { home: { status: string }[]; cas: unknown[] };
+    expect(saved.home.map((i) => i.status)).toEqual(["done"]);
+    expect(saved.cas).toEqual([]);
+  });
+
+  it("a launch that is not a safe start adds no line", async () => {
+    const s = new Session(new ValueCalc(), memoryKv());
+    await tick();
+    expect(s.home).toHaveLength(0);
+    expect(s.cas).toHaveLength(0);
   });
 });

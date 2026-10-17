@@ -69,7 +69,8 @@ export const defaultSettings: Settings = {
   haptics: { on: false, strength: 50, ms: 15 },
 };
 
-export type ItemStatus = "pending" | "done" | "error" | "cancelled";
+/** "note" is a line the app says itself (G19's safe start): text only, no entry and no result, and never stored. */
+export type ItemStatus = "pending" | "done" | "error" | "cancelled" | "note";
 export interface HistoryItem {
   id: number;
   view: View;
@@ -257,12 +258,30 @@ export class Session {
     this.calc = calc;
     this.taps = new TapCounter(kv);
     calc.ready().then(
-      () => {
+      (info) => {
+        if (info?.safeStart) this.note(t("engine.safeStart"));
         this.engineState = "ready";
         void this.refreshNames();
       },
       () => (this.engineState = "failed"),
     );
+  }
+
+  /** Says something once as a history line, in both views (the definitions are shared, and the open view may still be
+   *  restoring). Notes are not stored: the saved history keeps finished entries only. */
+  private note(text: string): void {
+    for (const view of ["home", "cas"] as const) {
+      (view === "home" ? this.home : this.cas).push({
+        id: this.nextId++,
+        view,
+        latex: "",
+        status: "note",
+        resultLatex: "",
+        text,
+        approximate: false,
+        startedAt: performance.now(),
+      });
+    }
   }
 
   /** Reads the user's names again from the engine's definitions log (after a job that may have changed it). */
