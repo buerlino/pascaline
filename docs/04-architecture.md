@@ -17,7 +17,7 @@ How to read each area: **today** (verified), **decision** (one, with the reason)
 8. **Find is one static index generated at build time** (Giac's English help lines, libqalculate's units, constants and prefixes, our alias file), searched by our own ranking code on the main thread, fetched when idle after the engine is ready and parsed on first open (section 3).
 9. **Constants, units, prefixes and results enter the entry line as atomic MathLive macros** (`\const{ID}`, `\unit{ID}`, `\pfx{p}`, `\res{n}`, `\ans`); qalc never sees text the user typed (3.6, 4.3).
 10. **The unit view computes on Giac (P15):** our P1 parser reads unit tokens (Find ids). Each becomes its exact SI factor from the Find index times base-dimension symbols, and Giac computes exactly in the worker that is already loaded. The evaluator refuses mismatched sums, absolute temperatures in arithmetic and functions of quantities with units (section 4).
-11. **Keys** (every difference from the G2 and its reason: [06-keypad-vs-g2.md](06-keypad-vs-g2.md)): Math = Find, Vars = Find on variables, Shift + Math = Memory, Tmpl = templates, Shift + Tmpl = the unit view (units after the formula, P11), View = compact keypad (K4), Shift + View = Copy, Shift + Menu = Paste, Shift + `+` = Ans, Shift + 5 = `[ ]`, Shift + 8 = `{ }`, Shift + 4 = matrix editor, Shift + `−` = Base, Help = context help (5.1).
+11. **Keys** (every difference from the G2 and its reason: [06-keypad-vs-g2.md](06-keypad-vs-g2.md)): Math = Find, Vars = Find on variables, Shift + Math = Memory, Tmpl = templates, Shift + Tmpl = the unit view (units after the formula, P11), View = results mode (P16, R53), Shift + View = Copy, Shift + Menu = Paste, Shift + `+` = Ans, Shift + 5 = `[ ]`, Shift + 8 = `{ }`, Shift + 4 = matrix editor, Shift + `−` = Base, Help = context help (5.1).
 12. **State:** one IndexedDB store with a schema version; user definitions are persisted and replayed at start, so variables survive a relaunch (6.2).
 13. **The qalc engine build joins `build.sh` in milestone 4**, because the Find index takes its constant values and unit factors from it. It stays a build-time tool (P15); the unit view is milestone 5 (7.1).
 14. **New gates:** an automated size test, the task benchmark, the Find query test, marks in the golden files, `units.yaml`, a per-key Find timing on the Tab One (7.3).
@@ -413,7 +413,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Alpha + 0 (quote mark) | `"` | removed (R13) | P12 |
 | Shift + ◀, Shift + ▶ | line start, line end | removed (R13); a tap on the formula puts the cursor there | P12 |
 | Shift + 6, Shift + 9 | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ | built (R18) | P12, owner 2026-10-13 |
-| View (row 1, col 4) [r2c4] | gap | compact keypad toggle (K4) | P7 point 5 |
+| View (row 1, col 4) [r2c4] | gap | results mode: the keypad collapses to a slice (P16, R53); Shift = Help | P7 point 5, P16 |
 | Shift + View | Copy (A3) | Copy (full value of the selected or last result) | reference: Copy |
 | Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: one list of nine (R11): 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Copy as › (As shown, Exact, LaTeX), 7 Paste, 8 Share session, 9 Clear history, on the picked row, else the last result (Delete: the last row); a picked row's buttons are items 1–5, the long press on a row opens the same list (`ClipActions.menu`) | unchanged | P8; S2 (accepted 2026-10-13) |
 | Shift + Menu | Paste a number (A3) | unchanged | reference: Paste |

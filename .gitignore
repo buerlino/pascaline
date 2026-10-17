@@ -79,3 +79,9 @@ tools/probes/_out/
 
 # UI gallery screenshots (app/gallery/, npm run gallery)
 app/test/gallery/
+
+# Pipeline (scripts/pipeline.sh): task bundles, run logs, the counter and the archive
+.tasks/
+# Test coverage output
+coverage/
+.nyc_output/
