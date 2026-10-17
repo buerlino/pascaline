@@ -582,7 +582,7 @@ interface HomeResult {                                   // existing fields kept
 }
 interface CasResult { /* ok, text, latex, timedOut, error, engineMs */ numeric?: HomeResult;  // new: when the result is a number
   approximate?: boolean; warn?: "unaudited" | "unchecked";  // ⚠ or ≈ for a non-number: an == test on a float (R18f1, R18f2), or a float in a non-number (G27)
-  uses?: { name: string; preview: string; view: "home" | "cas" }[]; }  // new (G20): the stored variables (defs log, kind var) named in the input; absent when none
+  uses?: { name: string; preview: string; view: "home" | "cas" }[]; }  // new (G20): the stored variables (defs log, kind var) the input reads, not the names it binds (G28); absent when none
 
 interface Calc {                                         // views; mirrors MathEngine with CalcSettings
   ready(): Promise<void>;

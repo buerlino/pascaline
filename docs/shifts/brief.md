@@ -14,7 +14,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   3. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then G28 (a name the input binds is not a used value; the owner said yes 2026-10-16, F28), R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -62,7 +62,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 3 | R29 where a number ends (F24, F25) | ron, **Opus** | `p1/ron-m4-numbers` | 1 h + review |
 | 3a | G27 a result that is not a number but holds a float gets ⚠ (F36): merged by day (`adb2e3a`), skip | gorge, Sonnet | `p1/gorge-m4-symfloat` | — |
 | 3b | R44 a long result's chip keeps its value, Ans never dropped (F37; after R29) | ron, Sonnet | `p1/ron-m4-longchip` | 45 min + review |
-| 3c | G28 a name the input binds is not a used value (F28) | gorge, Sonnet | `p1/gorge-m4-bound` | 45 min + review |
+| 3c | G28 a name the input binds is not a used value (F28): merged by day (`79e8b0f`), skip | gorge, Sonnet | `p1/gorge-m4-bound` | — |
 | 4 | **Opus pass 1** on steps 2–3c, then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
 | 6 | G19 a safe start (F31) | gorge, Sonnet | `p1/gorge-m4-safestart` | 1 h + review |
@@ -212,7 +212,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
 | G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
 | G24 | A memory cap for the Giac worker | F32 | night | gorge, Sonnet | `p1/gorge-m4-memcap` | now | ~0.5 d |
-| G28 | A name the input binds is not a used value | F28 (decisions.md "G20: a name the input binds") | night | gorge, Sonnet | `p1/gorge-m4-bound` | now (G20 and R32 are merged) | ~0.25 d |
 | G22 | Why the mark: the reasons as facts | review item 14 | night | gorge, Sonnet | `p1/gorge-m4-why` | now | ~0.5 d |
 | R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R30 (same file) | ~0.25 d |
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
@@ -784,22 +783,6 @@ Commits in this order:
 3. **Rebuild** the dev engine under the host-cpu lock. Run the golden gate and `scripts/compare-engines.ts` against the build before; nothing may differ.
 
 Gate: the golden gate, the new tests, `compare-engines.ts` clean. The device check (the app stays up on the Tab One) waits for the next device run.
-
-### gorge, G28: a name the input binds is not a used value (F28), branch `p1/gorge-m4-bound`
-Decided by the owner 2026-10-16 (decisions.md "G20: a name the input binds"). No UI: R32's line under a CAS result shows what `uses` lists. Read:
-- G20's report (`git log -1 dd0f65c`) and `usesOf()` in `app/src/engine/host.ts`;
-- the decision's probes (decisions.md, the entry named above);
-- the `prec-G20-*` cases in `tests/golden/precision.yaml`.
-
-Commits in this order:
-1. **Probe** (`tools/probes/engine.ts`, after Home `x:=3`): each command of the CAS menu and each tier-0 function that takes a variable argument: does its result depend on the stored 3? The list goes in the report.
-2. **Tests first** (golden cases in `precision.yaml`, `beforeHome: ["x:=3"]`, `derived`):
-   - no `uses` on `diff(x^2,x)`, `solve(x^2=4,x)`, `seq(x^2,x,1,3)`, `sum(x,x,1,4)`, `f(x):=x^2` and `x->x^2`;
-   - `int(x^2,x)` keeps `uses: ["x"]`;
-   - `x:=x+1` → 4 with `uses: ["x"]`.
-3. **Build:** `usesOf()` skips a function's parameters in `f(x):=` and `x->`, and the variable argument of the commands the probe found quoting it; an assignment lists its target when its right-hand side reads it. A command the probe does not settle keeps listing the name: a hint too many is noise, a hint missing hides a stored value.
-
-Gate: the golden gate (precision), vitest, typecheck; R32's `app/test/uses.spec.ts` unchanged and passing.
 
 ### gorge, G22: why the mark, the reasons as facts, branch `p1/gorge-m4-why`
 Deep-dive item 14; R36 shows these reasons. No UI. Read:
