@@ -3,6 +3,7 @@
 import type { HomeResult, HomeSettings } from "./homeEval.ts";
 import type { DefEntry } from "./defs.ts";
 import type { PrecisionWarn } from "./format.ts";
+import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
 export type { HomeResult, HomeSettings };
 
@@ -180,6 +181,8 @@ export interface MathEngine {
   analyze(req: AnalysisRequest, settings: HomeSettings): Promise<AnalysisResult>;
   /** Num table: rows by x, each cell what Home shows for fn at x. One engine call. */
   table(req: TableRequest, settings: HomeSettings): Promise<HomeResult[][]>;
+  /** The unit view (G16, docs/04 4.2): a job built by units/build.ts, evaluated in Home's mode. */
+  units(job: UnitJob, settings: HomeSettings): Promise<Quantity | UnitError>;
   /** Raw Giac call in whatever mode the engine is in (tools and benchmarks; not the UI). */
   eval(input: string): Promise<EvalResult>;
   /** The definitions log (docs/04 6.2): what the user defined, the stored log included once it has been read. */
