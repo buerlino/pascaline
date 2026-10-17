@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { legend } from "../i18n/index.ts";
 import { stamp, unstamp, USER_KEYS, type Kv } from "../state/storage.ts";
 import { actionFor, KeyboardSpecError, keyboard, labelFor, type Key } from "./keyboard.ts";
-import { cleanUserKeys, USER_KEY_IDS, UserKeys } from "./userKeys.svelte.ts";
+import { USER_KEY_IDS, UserKeys } from "./userKeys.svelte.ts";
 
 function memKv(): Kv & { data: Map<string, unknown> } {
   const data = new Map<string, unknown>();
@@ -91,15 +91,22 @@ describe("user keys (R15b)", () => {
       u3: "nonsense",
       sin: { primary: { label: "cos", action: { type: "c" } } },
     };
-    expect(cleanUserKeys(stored)).toEqual({ u1: { primary: stored.u1.primary }, u2: { primary: null } });
-    expect(cleanUserKeys(null)).toEqual({});
     const kv = memKv();
     kv.data.set(USER_KEYS, stored);
     const u = new UserKeys(kv);
     await u.restore();
+    expect(actionFor(u.resolve(key("u1")), false, false)).toEqual({ kind: "insert", latex: "\\sinh\\left(#0\\right)" });
     expect(u.resolve(key("u1")).actions.shift).toBeUndefined();
     expect(u.isEmpty(key("u2"))).toBe(true);
+    expect(u.resolve(key("u2")).actions.alpha).toBeUndefined(); // a free key has no alpha layer
     expect(u.resolve(key("u3"))).toBe(key("u3"));
+    for (const bad of [null, "x", 7]) {
+      const k = memKv();
+      k.data.set(USER_KEYS, bad);
+      const v = new UserKeys(k);
+      await v.restore();
+      expect(v.resolve(key("u2"))).toBe(key("u2"));
+    }
   });
 
   it("a label that starts with $ is the user's text, never a message key", () => {

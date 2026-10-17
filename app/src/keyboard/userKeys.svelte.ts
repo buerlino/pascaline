@@ -22,7 +22,8 @@ export type StoredUserKeys = Record<string, Partial<Record<UserLayer, UserBindin
 /** The free keys, in layout order (U1, U2, U3). */
 export const USER_KEY_IDS: readonly string[] = keyboard.keys.filter((k) => k.user).map((k) => k.id);
 
-/** A stored binding that still means something (a known key, a valid action, a label); else undefined. */
+/** A stored binding that still means something (a valid action and a label), null for an emptied slot; else undefined:
+ *  an older or damaged record never breaks the keypad, the slot just keeps its default. */
 function valid(b: unknown): { label: string; action: Action } | null | undefined {
   if (b === null) return null;
   if (typeof b !== "object" || b === null) return undefined;
@@ -36,27 +37,9 @@ function valid(b: unknown): { label: string; action: Action } | null | undefined
   }
 }
 
-/** The stored record with only what is valid: an older or damaged record never breaks the keypad. */
-export function cleanUserKeys(v: unknown): StoredUserKeys {
-  const out: StoredUserKeys = {};
-  if (typeof v !== "object" || v === null) return out;
-  for (const id of USER_KEY_IDS) {
-    const slots = (v as Record<string, unknown>)[id];
-    if (typeof slots !== "object" || slots === null) continue;
-    for (const layer of USER_LAYERS) {
-      const b = (slots as Record<string, unknown>)[layer];
-      if (b === undefined || valid(b) === undefined) continue;
-      (out[id] ??= {})[layer] = b as UserBinding | null;
-    }
-  }
-  return out;
-}
-
 export class UserKeys {
-  /** The user's slots (only the ones that differ from the defaults are stored). */
+  /** The user's slots (only the ones that differ from the defaults are stored); each is checked when it is used. */
   private stored = $state<StoredUserKeys>({});
-  /** The resolved keys, built again only when a slot changes. */
-  private cache = new Map<string, Key>();
   private readonly kv: Kv;
 
   constructor(kv: Kv) {
@@ -66,18 +49,14 @@ export class UserKeys {
   /** Read the stored slots (at launch; until then the keys show their defaults). */
   async restore(): Promise<void> {
     const v = await this.kv.get<unknown>(USER_KEYS);
-    if (v === undefined) return;
-    this.cache.clear();
-    this.stored = cleanUserKeys(v);
+    if (typeof v === "object" && v !== null) this.stored = v as StoredUserKeys;
   }
 
   /** The key as it is drawn and fires: a free key with the user's slots over its defaults; any other key unchanged. */
   resolve(key: Key): Key {
     if (!key.user) return key;
-    const slots = this.stored[key.id];
-    if (!slots) return key;
-    const hit = this.cache.get(key.id);
-    if (hit) return hit;
+    const slots = this.slots(key.id);
+    if (Object.keys(slots).length === 0) return key;
     const label = { ...key.label };
     const actions = { ...key.actions };
     for (const layer of USER_LAYERS) {
@@ -96,9 +75,7 @@ export class UserKeys {
       label.primary = "$key.user";
       actions.primary = { kind: "special", name: "none" };
     }
-    const k: Key = { ...key, label, actions };
-    this.cache.set(key.id, k);
-    return k;
+    return { ...key, label, actions };
   }
 
   /** Does this free key hold nothing in its tap layer (drawn as an empty slot)? */
@@ -114,13 +91,13 @@ export class UserKeys {
       if (binding.label === "") throw new KeyboardSpecError(`${id} ${layer}: a binding needs a label`);
       parseAction(binding.action, `${id} ${layer}`);
     }
-    this.write({ ...this.stored, [id]: { ...this.stored[id], [layer]: binding } });
+    this.write({ ...this.stored, [id]: { ...this.slots(id), [layer]: binding } });
   }
 
   /** Give a slot back its default from spec/keyboard.yaml; without arguments, every slot. */
   reset(id?: string, layer?: UserLayer): void {
     if (id === undefined) return this.write({});
-    const slots = { ...this.stored[id] };
+    const slots = { ...this.slots(id) };
     if (layer === undefined) for (const l of USER_LAYERS) delete slots[l];
     else delete slots[layer];
     const next = { ...this.stored };
@@ -129,8 +106,13 @@ export class UserKeys {
     this.write(next);
   }
 
+  /** A key's stored slots ({} for none, or for a damaged record). */
+  private slots(id: string): Partial<Record<UserLayer, UserBinding | null>> {
+    const s = this.stored[id];
+    return typeof s === "object" && s !== null ? s : {};
+  }
+
   private write(next: StoredUserKeys): void {
-    this.cache.clear();
     this.stored = next;
     void this.kv.set(USER_KEYS, $state.snapshot(next));
   }

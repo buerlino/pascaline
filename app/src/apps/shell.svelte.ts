@@ -148,7 +148,7 @@ export class AppShell {
     a.show?.(v);
   }
 
-  /** Back to Home/CAS (the Home/CAS key from inside an app). */
+  /** Back to Home/CAS (the place name, U2, U3 or the Apps sheet from inside an app). */
   close(): void {
     if (this.app !== null) this.lastApp = this.app;
     this.app = null;

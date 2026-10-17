@@ -422,7 +422,7 @@
         return true;
       case "pass": {
         // read by what the key is, not by the layer: Menu, Apps and Tmpl toggle their sheet, a key that changes place
-        // (Home/CAS, CAS, Symb, Plot, Num) closes it and goes there
+        // (the place name, a user key that holds Home or CAS, Symb, Plot, Num) closes it and goes there
         const p = key.actions.primary;
         if (p?.kind !== "special") return true;
         if (p.name !== "menu" && p.name !== "apps" && p.name !== "tmpl") shell.closeSheet();
