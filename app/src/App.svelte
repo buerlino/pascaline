@@ -477,12 +477,22 @@
     return a?.kind === "special" && SHEET_KEYS.includes(a.name);
   }
 
+  /** F42: a sheet is open but its chunk is not in (a long press on a history row opens one before the idle load), so
+   *  nothing is drawn and no key may reach it. Start the load; the caller queues its key (R8), which then runs on the
+   *  drawn sheet. If the chunk does not load, the sheet closes and the queued keys run without it. */
+  function sheetUndrawn(): boolean {
+    if (!shell.sheet || sheetChunk.C) return false;
+    sheetLoad ??= loadSheetView().catch(() => shell.closeSheet()).finally(() => (sheetLoad = null));
+    return true;
+  }
+
   /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
    *  ("shift") or down ("alpha"). */
   function press(key: Key, layer?: Layer): void {
     const p = key.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(p.name, layer);
     if (settings && settingsPress(key, layer)) return;
+    if (sheetUndrawn()) return wait({ key, mods: modsFor(layer), layer });
     if (shell.sheet && sheetPress(key, layer)) return;
     const mods = modsFor(layer);
     session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
@@ -500,6 +510,7 @@
   /** A letter from a hardware keyboard (R45, F38): what the keypad's letter key does in this place. */
   function typeLetter(ch: string): void {
     if (settings) return; // the page takes no letters
+    if (sheetUndrawn()) return wait({ letter: ch });
     const sheet = shell.sheet;
     if (sheet) {
       if (sheet.level.filterable) sheet.level.type(ch);
