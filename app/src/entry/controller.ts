@@ -191,25 +191,36 @@ export class EntryController {
   /**
    * R42 (F33): MathLive places the caret on pointerdown and, for touch only, a second time on pointerup from atom bounds
    * that the first placement made stale (right of a fraction, root, power or bracket pair the second hit lands at the
-   * start of the line or box). Remember the first (right) caret and put it back after the second. A selection (drag,
-   * double tap) is left alone. A mouse click never needed this.
+   * start of the line or box). Remember the first (right) caret and put it back after the second. A mouse click never
+   * needed this. R47 (F39): then, for touch and mouse alike, a caret where ◀ ▶ cannot stop (between a function's name
+   * and its bracket, inside a name) moves forward to the next stop, as ▶ would settle (stops.ts). A selection (drag,
+   * double tap) is left alone.
    */
   private keepTouchCaret(mf: MathfieldElement): void {
     let down: number | undefined;
+    let onField = false;
     mf.addEventListener("pointerdown", (ev) => {
       down = undefined;
+      onField = true;
       if (ev.pointerType !== "touch") return;
       // A microtask runs after MathLive's own pointerdown handler (inside the shadow root) has placed the caret.
       queueMicrotask(() => {
         if (mf.selectionIsCollapsed) down = mf.position;
       });
     });
+    window.addEventListener("pointercancel", () => {
+      onField = false;
+      down = undefined;
+    });
     window.addEventListener("pointerup", (ev) => {
       const want = down;
       down = undefined;
-      if (want === undefined || ev.pointerType !== "touch") return;
+      if (!onField) return;
+      onField = false;
       setTimeout(() => {
-        if (mf.selectionIsCollapsed && mf.position !== want) mf.position = want;
+        if (!mf.selectionIsCollapsed) return;
+        if (want !== undefined && ev.pointerType === "touch" && mf.position !== want) mf.position = want;
+        this.settle?.(mf, "moveToNextChar");
       }, 0);
     });
   }
