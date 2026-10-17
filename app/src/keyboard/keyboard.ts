@@ -3,15 +3,21 @@
 import raw from "../../../spec/keyboard.yaml";
 
 export type Special =
-  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "app" | "cas" | "settings" | "mode" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt" | "copy" | "paste" | "tmpl"
+  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "settings" | "mode" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt" | "copy" | "paste" | "tmpl"
+  /** Places (R15b): Home, CAS (from an app too), and the status line's switch: Home ↔ CAS, or back from an app. */
+  | "home" | "cas" | "switch"
   /** The Shift palettes (R18): Shift + 6 relations and logic, Shift + 9 symbols and Greek. */
   | "relations" | "symbols"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
 export const SPECIALS: readonly Special[] = [
-  "shift", "alpha", "enter", "clear", "cancel", "esc", "app", "cas", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
-  "relations", "symbols", "none",
+  "shift", "alpha", "enter", "clear", "cancel", "esc", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
+  "home", "cas", "switch", "relations", "symbols", "none",
 ];
+
+/** The first of the maths rows (3–9): a pick sheet is drawn over them, never over the top cluster (rows 0–2), whose
+ *  keys move, go back and close (decisions.md "R21"). */
+export const MATHS_ROW = 3;
 
 export type Action = ActionBody & {
   /** Replacement in one-line entry mode (settings): used instead of this action when entry is linear. */
@@ -45,6 +51,8 @@ export interface Key {
   readonly actions: Readonly<Partial<Record<Layer, Action>>>;
   /** Absent in the built app (src/keyboard/shipped.ts). */
   readonly source?: Source;
+  /** A free key (U1–U3, R15b): its layers are defaults the user can replace (userKeys.svelte.ts). */
+  readonly user?: true;
 }
 
 /** A template action (and its one-line form, if any). */
@@ -115,7 +123,8 @@ function int(o: Obj, k: string, where: string): number {
   return v;
 }
 
-function parseAction(v: unknown, where: string): Action {
+/** An action in the yaml form of spec/keyboard.yaml (`{ insert: … }`, `{ special: … }`, …); throws KeyboardSpecError. */
+export function parseAction(v: unknown, where: string): Action {
   const { line, ...rest } = isObj(v) ? v : ({} as Obj);
   const body = parseBody(isObj(v) ? rest : v, where);
   if (line === undefined) return body;
@@ -209,7 +218,9 @@ export function loadKeyboard(doc: unknown): Keyboard {
       if ((label[layer] !== undefined) !== (a !== undefined))
         throw new KeyboardSpecError(`${where}: ${layer} needs both a label and an action`);
     }
-    const key: Key = { id, row, col, span, cls, label, actions, ...(source ? { source } : {}) };
+    const user = item["user"] === true;
+    if (user && (actions.alpha !== undefined || row >= MATHS_ROW)) throw new KeyboardSpecError(`${where}: a user key sits in the top cluster and has no alpha layer`);
+    const key: Key = { id, row, col, span, cls, label, actions, ...(source ? { source } : {}), ...(user ? { user: true as const } : {}) };
     keys.push(key);
     byId.set(id, key);
   }
@@ -284,10 +295,6 @@ export function gridPlace(kb: Keyboard, key: Key): { start: number; span: number
 
 /** The shipped layout. */
 export const keyboard: Keyboard = loadKeyboard(raw);
-
-/** The first of the maths rows (3–9): a pick sheet is drawn over them, never over the top cluster (rows 0–2), whose
- *  keys move, go back and close (decisions.md "R21"). */
-export const MATHS_ROW = 3;
 
 /** The action a key triggers in the given modifier state (alpha falls back to primary; shift never does).
  *  Alpha types the capital letter, shift + alpha its lower case (as on the reference, P4). */

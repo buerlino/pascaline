@@ -22,14 +22,35 @@ describe("keyboard spec", () => {
     expect([3, 4, 5, 6, 7, 8, 9].map((r) => cellsIn(keyboard, r))).toEqual([6, 6, 6, 5, 5, 5, 5]);
   });
 
-  it("rows 3-9 (the reference's r4-r10) are full; the upper cluster has the reference's gaps", () => {
+  it("every row is full: rows 3-9 (the reference's r4-r10), and the upper cluster of layout D (no gaps, R15b)", () => {
     for (let r = 0; r < keyboard.rows; r++) {
       const used = keyboard.keys.filter((k) => k.row === r).reduce((n, k) => n + k.span, 0);
-      if (r >= 3) expect(used, `row ${r}`).toBe(cellsIn(keyboard, r));
-      else if (r < 2) expect(used, `row ${r}`).toBeLessThan(cellsIn(keyboard, r)); // Help, View, r2c1: not ours yet
+      expect(used, `row ${r}`).toBe(cellsIn(keyboard, r));
     }
     expect(gridPlace(keyboard, keyboard.byId.get("enter") as Key)).toEqual({ start: 21, span: 10 });
     expect(gridPlace(keyboard, keyboard.byId.get("div") as Key)).toEqual({ start: 25, span: 6 });
+  });
+
+  it("the upper cluster is layout D (R15a, R15b): every key at its G2 place, the free keys U1-U3 in the other cells", () => {
+    const at = (r: number) => keyboard.keys.filter((k) => k.row === r).sort((a, b) => a.col - b.col).map((k) => k.id);
+    expect(at(0)).toEqual(["apps", "symb", "up", "help", "esc"]);
+    expect(at(1)).toEqual(["u1", "plot", "left", "right", "view", "cancel"]);
+    expect(at(2)).toEqual(["u2", "num", "down", "menu", "u3"]);
+    expect(keyboard.keys.filter((k) => k.user).map((k) => k.id)).toEqual(["u1", "u2", "u3"]);
+    // no Home/CAS key (P12 point 2): the defaults of U2 and U3 are Home and CAS, with empty Shift layers; U1 ships empty
+    expect(keyboard.byId.has("app") || keyboard.byId.has("cas")).toBe(false);
+    const k = (id: string) => keyboard.byId.get(id) as Key;
+    expect(k("u2").actions).toEqual({ primary: { kind: "special", name: "home" } });
+    expect(k("u3").actions).toEqual({ primary: { kind: "special", name: "cas" } });
+    expect(k("u1").actions).toEqual({ primary: { kind: "special", name: "none" } });
+    expect([k("u1").label.primary, k("u2").label.primary, k("u3").label.primary]).toEqual(["$key.user", "$key.home", "$key.cas"]);
+    // Mode on Shift + Apps (S2 point 4); Help drawn dimmed, a dead key until milestone 6; Cancel keeps Undo (R16)
+    expect(actionFor(k("apps"), true, false)).toEqual({ kind: "special", name: "mode" });
+    expect(actionFor(k("help"), false, false)).toEqual({ kind: "special", name: "none" });
+    expect(actionFor(k("cancel"), true, false)).toEqual({ kind: "cmd", name: "undo" });
+    // the cluster keeps no alpha letters (vertical space): a user key may not take one, nor sit in a maths row
+    const bad = (extra: string) => () => loadKeyboard(parse(spec.replace("{ id: u1, row: 1, col: 0, cls: nav, user: true,", `{ id: u1, row: 1, col: 0, cls: nav, user: true, ${extra}`)));
+    expect(bad("alpha: { type: Q },")).toThrow(KeyboardSpecError);
   });
 
   it("every key says where it comes from", () => {

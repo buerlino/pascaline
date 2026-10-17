@@ -15,7 +15,8 @@
   import { loadShiftPalettes, shiftPalettes } from "./keyboard/palettes.ts";
   import { actionFor, keyboard, MATHS_ROW, type ActionBody, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
-  import type { HistoryItem, Session } from "./state/session.svelte.ts";
+  import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
+  import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
   let modeSheet: typeof import("./views/modeSheet.ts") | null = null;
@@ -37,7 +38,11 @@
 
   import { paletteAction, paletteItems } from "./views/tmplSheet.ts";
 
-  let { session, entry, shell }: { session: Session; entry: EntryController; shell: AppShell } = $props();
+  let { session, entry, shell, userKeys }: { session: Session; entry: EntryController; shell: AppShell; userKeys: UserKeys } = $props();
+
+  /** The status line's place name as a key (R15b): its tap takes the same path as a key press (an open sheet or the
+   *  Settings page gives way, it runs at once while an app loads, and waits while a sheet's code loads). */
+  const PLACE_KEY: Key = { id: "place", row: 0, col: 0, span: 1, cls: "nav", label: { primary: "" }, actions: { primary: { kind: "special", name: "switch" } } };
 
   /** The open Settings page and its model (null: closed). */
   let settings = $state.raw<{ C: SettingsUi["C"]; page: InstanceType<SettingsUi["SettingsPage"]> } | null>(null);
@@ -57,9 +62,10 @@
     // R31 (F27): a hardware keyboard's printable keys are taps of the keypad key with that character
     entry.onKey = (id, layer) => {
       const key = keyboard.byId.get(id);
-      if (key) press(key, layer);
+      if (key) press(userKeys.resolve(key), layer);
     };
     entry.onLetter = typeLetter;
+    shell.goTo = goTo; // the Apps sheet's Home and CAS rows
     entry.onDead = dead;
   });
   let host: HTMLElement | undefined = $state();
@@ -132,6 +138,13 @@
     else entry.insert(resultToEntry(shown)); // too long for a chip: as drawn
   }
 
+  /** Home or CAS, from anywhere (an app too). */
+  function goTo(view: View): void {
+    picked = null;
+    shell.close();
+    session.setView(view);
+  }
+
   async function cancel(): Promise<void> {
     if (settings) return closeSettings();
     if (await shell.cancel()) return;
@@ -166,8 +179,8 @@
     entry.run(paletteAction(p, session.settings.entry === "line"));
   }
 
-  /** Shift + Home/CAS, or Mode's last row: the Settings page over everything (R21b, docs/05 3.4). It opens on its
-   *  first row. */
+  /** Mode's last row (or a user key that holds Settings): the Settings page over everything (R21b, docs/05 3.4). It
+   *  opens on its first row. */
   function openSettings(): void {
     const show = (m: NonNullable<typeof modeSheet>, ui: NonNullable<typeof settingsUi>): void => {
       picked = null;
@@ -198,8 +211,8 @@
     if (!sheetOpen) return;
     return openLayer(() => shell.closeSheet());
   });
-  /** Shift + CAS, or a tap on a status chip (`at`: the row to start on): the Mode sheet. Without `at` it starts on
-   *  Angle, so Shift + CAS, ▶, Enter always switches the angle unit (3 keys). */
+  /** Shift + Apps, or a tap on a status chip (`at`: the row to start on): the Mode sheet. Without `at` it starts on
+   *  Angle, so Shift + Apps, ▶, Enter always switches the angle unit (3 keys, 2 with a flick up on Apps). */
   function openMode(at?: string): void {
     onModeSheet((m) => {
       picked = null;
@@ -236,16 +249,15 @@
         // Esc clears the entry line (an open sheet takes Esc first; a running job is the Cancel key's business).
         entry.clear();
         break;
-      case "app":
-        // Home/CAS key: from an app back to Home/CAS, else switch between the two.
+      case "switch":
+        // the place name (R15b): from an app back to Home/CAS, else switch between the two
         picked = null;
         if (shell.app !== null) shell.close();
         else session.toggleView();
         break;
+      case "home":
       case "cas":
-        picked = null;
-        shell.close();
-        session.setView("cas");
+        goTo(name); // U2 and U3 by default (layout D), and the Apps sheet's first two rows
         break;
       case "settings":
         openSettings();
@@ -437,10 +449,11 @@
   }
 
   // Keys pressed while an app's code is loading wait for it, so nothing typed is lost (like MathLive's queue). Each
-  // waits with the layer it was pressed in (Shift and Alpha act at once), so "Plot, Shift, CAS" typed fast opens the
+  // waits with the layer it was pressed in (Shift and Alpha act at once), so "Plot, Shift, Apps" typed fast opens the
   // Mode sheet as it would after the load (decisions.md R8). A key whose action changes place, opens a sheet or
-  // cancels runs at once.
-  const AT_ONCE: readonly string[] = ["cancel", "esc", "app", "cas", "apps", "symb", "plot", "num", "settings", "mode"];
+  // cancels runs at once: the status line's place name too (it goes through press(), R15b), and a user key while it
+  // holds Home or CAS; a user key that holds anything else waits like the key it stands for.
+  const AT_ONCE: readonly string[] = ["cancel", "esc", "home", "cas", "switch", "apps", "symb", "plot", "num", "settings", "mode"];
   // A hardware letter (R45) waits in the same queue, as a `letter`.
   type Waiting = { key: Key; mods: Mods; layer?: Layer } | { letter: string };
   let waiting: Waiting[] = [];
@@ -542,7 +555,8 @@
 </script>
 
 <main class="app">
-  <!-- the status line (docs/05 3.2): where you are, the mode chips, Shift/Alpha, busy. At most 28 px (docs/03 rule 9). -->
+  <!-- the status line (docs/05 3.2): where you are, the mode chips, Shift/Alpha, busy. At most 28 px (docs/03 rule 9).
+       The place name is the Home ↔ CAS switch (P12 point 2, R15b); in an app it goes back to Home/CAS. -->
   <!-- svelte-ignore a11y_no_static_element_interactions (only keeps the caret in the entry line; the buttons inside are the controls) -->
   <header data-testid="status" data-engine={session.engineState} data-busy={busy} onpointerdown={noFocus}>
     <button
@@ -551,8 +565,9 @@
       data-testid="place"
       data-app={shell.app ?? ""}
       data-view={shell.app === null ? session.view : shell.view}
-      aria-label={t("status.place", { place })}
-      onclick={() => shell.toggleApps()}>{place}</button>
+      data-switch={shell.app === null ? "true" : undefined}
+      aria-label={shell.app === null ? t("status.place", { place }) : t("status.placeApp", { place, view: t(`view.${session.view}`) })}
+      onclick={() => press(PLACE_KEY, "primary")}>{place}</button>
     <span class="chips">
       {#if session.engineState === "starting"}<span class="note">{t("engine.starting")}</span>{/if}
       {#if session.engineState === "failed"}<span class="note">{t("engine.error")}</span>{/if}
@@ -630,6 +645,7 @@
 
   <div class="keys" bind:this={keysEl}>
     <Keypad
+      {userKeys}
       shift={session.shift}
       alpha={session.alpha}
       alphaLock={session.alphaLock}
@@ -691,15 +707,29 @@
     box-sizing: border-box;
     cursor: pointer;
   }
+  /* The place name is a button (R15b). Its target is the line's full height and at least 96 px wide; it does not reach
+     below the line, where the top history row's formula and an app's first slot take their own taps (R15b report). */
   .place {
-    min-width: 0;
+    flex: none;
+    max-width: 60%;
+    min-width: 96px;
+    height: 28px;
+    margin-left: -8px; /* from the screen's left edge */
+    padding: 0 8px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    padding: 5px 6px;
-    border-radius: 6px;
+    line-height: 28px;
     font-weight: 700;
     color: var(--text);
+  }
+  .place[data-switch="true"]::after {
+    content: " ⇄";
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .place:active {
+    background: var(--key-nav);
   }
   .chips {
     display: flex;
