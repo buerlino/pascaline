@@ -539,7 +539,7 @@
       // G2; while typing it is the stacked fraction below
       void session.cycleForm();
       return;
-    } else if (entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.lastChip()) {
+    } else if (entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.hasResult()) {
       entry.insertAns(); // docs/04 2.8: an operator on an empty line starts with Ans
     }
     entry.run(action);
