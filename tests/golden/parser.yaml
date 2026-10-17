@@ -33,6 +33,17 @@ cases:
   - { id: "arithmetic-25", latex: "a\\div b\\times c", expect: "a/b*c", source: "derived", group: "arithmetic" }
   - { id: "arithmetic-26", latex: "0", expect: "0", source: "derived", group: "arithmetic" }
   - { id: "arithmetic-27", latex: "007", expect: "7", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-28", latex: "1/2x", expect: "1/2*x", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ and / take one factor on their right (a number, a name, a power, a call or a bracket), then the product goes on left to right, as with × (the G2 one-line rule, item 6)" }
+  - { id: "arithmetic-29", latex: "6\\div2\\left(1+2\\right)", expect: "6/2*(1+2)", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-30", latex: "1\\div2\\sqrt{3}", expect: "1/2*sqrt(3)", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-31", latex: "a\\div bc", expect: "a/b*c", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-32", latex: "1\\div2\\pi", expect: "pi/2", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-33", latex: "1\\div-2x", expect: "-x/2", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-34", latex: "1\\div2x\\div3y", expect: "x*y/6", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-35", latex: "1\\div2\\char\"5E 3x", expect: "x/8", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-36", latex: "1\\div x^{2}", expect: "1/x^2", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): unchanged" }
+  - { id: "arithmetic-37", latex: "2x\\div4", expect: "x/2", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): unchanged" }
+  - { id: "arithmetic-38", latex: "1\\div2^{3}x", expect: "x/8", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
   # --- fractions
   - { id: "fractions-01", latex: "\\frac12", expect: "1/2", source: "derived", group: "fractions" }
   - { id: "fractions-02", latex: "\\frac{1}{2}", expect: "1/2", source: "derived", group: "fractions" }
