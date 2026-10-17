@@ -94,9 +94,10 @@ const checks: Check[] = [
     name: "vitest",
     run: () => {
       const json = join(outDir, "vitest.json");
+      const engine = giacOut(); // the real-engine tests are skipped without it
       const go = (files: string[] = []): Summary => {
         rmSync(json, { force: true });
-        run("vitest", "npx", ["vitest", "run", "--reporter=json", `--outputFile=${json}`, ...files], { FIND_INDEX: "required" });
+        run("vitest", "npx", ["vitest", "run", "--reporter=json", `--outputFile=${json}`, ...files], { FIND_INDEX: "required", ...(engine ? { GIAC_OUT: engine } : {}) });
         return summarizeVitest(readJson(json));
       };
       const first = go();
