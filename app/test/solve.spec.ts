@@ -19,6 +19,32 @@ async function openSolve(page: Page): Promise<void> {
 
 const value = (page: Page, name: string) => page.locator(`[data-testid="solve-table"] tr[data-name="${name}"] td`);
 
+/** Flush the shell, then wait until IndexedDB holds the Solve record that `ok` accepts. `kv.set` is fire-and-forget, so a
+ *  reload right after `flush()` can come before the write on a busy host (B13). */
+async function flushStored(page: Page, ok: (rec: { values?: Record<string, string>; warned?: Record<string, boolean> }) => boolean): Promise<void> {
+  await page.evaluate(() => window.pascaline.shell.flush());
+  await expect
+    .poll(
+      async () => {
+        const rec = await page.evaluate(
+          () =>
+            new Promise<{ value?: unknown } | undefined>((resolve, reject) => {
+              const req = indexedDB.open("pascaline", 1);
+              req.onerror = () => reject(req.error);
+              req.onsuccess = () => {
+                const get = req.result.transaction("kv", "readonly").objectStore("kv").get("app.solve");
+                get.onsuccess = () => resolve(get.result as { value?: unknown } | undefined); // stamped by storage.ts
+                get.onerror = () => reject(get.error);
+              };
+            }),
+        );
+        return rec?.value !== undefined && ok(rec.value as Parameters<typeof ok>[0]);
+      },
+      { timeout: 10_000 },
+    )
+    .toBe(true);
+}
+
 /** In Num: select `name` and type a new value (Clear first: the entry holds the current value). */
 async function setValue(page: Page, name: string, keys: string[]): Promise<void> {
   await page.locator(`[data-testid="solve-table"] tr[data-name="${name}"] th button`).tap();
@@ -118,7 +144,7 @@ test("Solve: equations and values are stored", async ({ page }) => {
   await tap(page, ["x", "pow", "d2", "right", "shift", "dot", "d2", "enter"]);
   await tap(page, ["num"]);
   await setValue(page, "x", ["sub", "d3"]);
-  await page.evaluate(() => window.pascaline.shell.flush());
+  await flushStored(page, (r) => r.values?.["x"] === "-3");
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined && window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["apps", "d4"]);
@@ -142,7 +168,7 @@ test("Solve: the ⚠ of an answer is kept across a reload (M4-10)", async ({ pag
     app.warned = { x: true };
     app.save();
   });
-  await page.evaluate(() => window.pascaline.shell.flush());
+  await flushStored(page, (r) => r.warned?.["x"] === true);
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined && window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["apps", "d4"]);
