@@ -86,6 +86,22 @@ export function playwrightFailures(report: unknown): string[] {
   return out;
 }
 
+/** The failing specs of a Playwright report with file, line and title. */
+export function playwrightFailedSpecs(report: unknown): { file: string; line: number; title: string }[] {
+  const out: { file: string; line: number; title: string }[] = [];
+  const walk = (s: PwSuite): void => {
+    for (const spec of s.specs ?? []) if (spec.ok === false) out.push({ file: base(spec.file ?? "?"), line: spec.line ?? 0, title: spec.title ?? "" });
+    for (const c of s.suites ?? []) walk(c);
+  };
+  for (const s of (report as PwReport | null)?.suites ?? []) walk(s);
+  return out;
+}
+
+/** The two solve.spec.ts tests that reload the page and read what was stored (brief section 8: the known-flaky persistence test). */
+export function isSolveReloadFailure(f: { file: string; title: string }): boolean {
+  return f.file === "solve.spec.ts" && /equations and values are stored|kept across a reload/.test(f.title);
+}
+
 /** Playwright's `--reporter=json`. */
 export function summarizePlaywright(report: unknown): Summary {
   const r = report as PwReport | null;

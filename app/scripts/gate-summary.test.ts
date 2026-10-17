@@ -3,7 +3,7 @@
 // Vitest's and Playwright's JSON reporters.
 import { describe, expect, it } from "vitest";
 import {
-  formatLine, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
+  formatLine, isSolveReloadFailure, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
 } from "./gate-summary.ts";
 
 const vitestOk = {
@@ -51,6 +51,16 @@ describe("playwright report", () => {
     const r = pw(2, [spec("solve.spec.ts", 40, false), spec("keys.spec.ts", 7, false), spec("keys.spec.ts", 9, true)]);
     expect(playwrightFailures(r)).toEqual(["solve.spec.ts:40", "keys.spec.ts:7"]);
     expect(summarizePlaywright(r)).toEqual({ ok: false, detail: "2 of 7 failed: solve.spec.ts:40, keys.spec.ts:7" });
+  });
+  it("re-runs only the solve.spec.ts reload tests, by title", () => {
+    const t = (file: string, line: number, title: string) => ({ title, file, line, ok: false });
+    const reload = t("solve.spec.ts", 142, "Solve: equations and values are stored");
+    const reload2 = t("solve.spec.ts", 157, "Solve: the ⚠ of an answer is kept across a reload (M4-10)");
+    const other = t("solve.spec.ts", 55, "Solve: x·e^x=5 with guess 1 gives the oracle root and the info line");
+    const ok = (r: ReturnType<typeof t>[]) => playwrightFailedSpecs(pw(r.length, r)).every(isSolveReloadFailure);
+    expect(ok([reload, reload2])).toBe(true);
+    expect(ok([reload, other])).toBe(false);
+    expect(ok([reload, t("keys.spec.ts", 142, "Solve: equations and values are stored")])).toBe(false);
   });
   it("fails on errors outside tests and on no report", () => {
     expect(summarizePlaywright(pw(0, [spec("a.spec.ts", 1, true)], { errors: [{ message: "boom\nmore" }] })).detail).toContain("boom");

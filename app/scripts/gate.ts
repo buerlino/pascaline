@@ -11,7 +11,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } 
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  duration, formatLine, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
+  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
   type DocSize, type Summary,
 } from "./gate-summary.ts";
 
@@ -56,9 +56,10 @@ const mainCheckout = ((): string => {
   return common ? resolve(common, "..") : repo;
 })();
 
-const changed = ((): string[] => {
+/** The files changed against the base, or null when the diff fails (no such branch): then nothing is known and golden runs. */
+const changed = ((): string[] | null => {
   const r = spawnSync("git", ["diff", "--name-only", `${base}...`], { cwd: repo, encoding: "utf8" });
-  return r.status === 0 ? r.stdout.split("\n").filter(Boolean) : [];
+  return r.status === 0 ? r.stdout.split("\n").filter(Boolean) : null;
 })();
 /** Engine-side or parser code: what the golden gate checks (CLAUDE.md: every engine build; brief section 8a step 3). */
 const goldenPaths = [/^engine\/giac\//, /^app\/src\/engine\//, /^app\/src\/input\//, /^tests\/golden\//, /^app\/scripts\/golden\.ts$/];
@@ -126,11 +127,11 @@ const checks: Check[] = [
       };
       const first = go();
       if (first.ok) return first;
-      // brief section 8: the known-flaky persistence test of solve.spec.ts may be re-run once, and only it
-      const failed = playwrightFailures(readJson(json));
-      if (failed.length > 0 && failed.every((f) => f.startsWith("solve.spec.ts"))) {
+      // brief section 8: the known-flaky persistence (reload) test of solve.spec.ts may be re-run once, and only it
+      const failed = playwrightFailedSpecs(readJson(json));
+      if (failed.length > 0 && failed.every(isSolveReloadFailure)) {
         const again = go(["solve.spec.ts"]);
-        if (again.ok) return { ok: true, detail: `${again.detail} (solve.spec.ts re-run once, it was flaky: ${failed.join(", ")})` };
+        if (again.ok) return { ok: true, detail: `${again.detail} (solve.spec.ts reload test re-run once, it was flaky: ${failed.map((f) => `${f.file}:${f.line}`).join(", ")})` };
       }
       return first;
     },
@@ -139,6 +140,7 @@ const checks: Check[] = [
     name: "golden",
     skip: () => {
       if (quick) return "--quick";
+      if (changed === null) return null; // cannot diff: run it (the line says so)
       const hit = changed.filter((f) => goldenPaths.some((p) => p.test(f)));
       return hit.length === 0 ? `no engine or parser change against ${base}` : null;
     },
@@ -146,7 +148,8 @@ const checks: Check[] = [
       const engine = giacOut();
       if (!engine) return { ok: false, detail: "no engine build: set GIAC_OUT (absolute)" };
       const r = run("golden", "npm", ["run", "golden"], { GIAC_OUT: engine });
-      return summarizeGolden(r.out, r.code);
+      const s = summarizeGolden(r.out, r.code);
+      return changed === null ? { ...s, detail: `${s.detail} (cannot diff against ${base}, so run)` } : s;
     },
   },
   {
