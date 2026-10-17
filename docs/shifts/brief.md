@@ -10,19 +10,22 @@
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
   1. R36 (why a row has its mark) once G22 is merged; if it is not yet, the lane goes on and R36 follows.
-  2. R15c1–R15c4 (the R3 top cluster, decided 2026-10-17): now, in order. Then R12a (mockups), which draws the final keypad. While the owner looks at the mockups: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
+  2. R47 and R48 (bugs F39 and F40, owner 2026-10-17): now, before or beside R15c1, which shares no file with them; R48 before R15c3. R15c1–R15c4 (the R3 top cluster, decided 2026-10-17): now, in order. Then R49 (Settings rows) and R50b (the palette the owner picked in R50a). Then R12a (mockups), which draws the final keypad. While the owner looks at the mockups: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
   3. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
+
+  R50a (three palettes as a mockup; docs only, no app code) can run any time beside the lane, so the owner's pick is ready before R50b.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
 - **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
-- **annabell:** A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
+- **annabell:** A9 (key vibration, F41) as soon as the owner's phone is connected: it needs a phone with a motor, and the Tab One has none. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
 **Why this order:**
 - R4a fills the wait for the owner's pick of the mockups, and R12b's token pass then covers Find too.
 - gorge's packages have no UI, and R24c needs milestone 5 items 1 and 2.
 - Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b, R15c2 and R4a stay whole, since each half would leave the keypad or Find half built.
-- **R15c goes first:** it changes keys the hand is learning. Every week of use on D makes the change harder (docs/03 rule 8). R12a draws the keypad, R4b sets the user keys and R41 labels the keys, so all three wait for it.
+- **Bugs first** (feedback.md: a bug is fixed now, regression test first): R47 and R48 are small and touch no key R15c moves. R48 goes before R15c3, whose Alpha faces follow its rule. A9 waits only for the phone.
+- **R15c goes first** among the feel packages: it changes keys the hand is learning. Every week of use on D makes the change harder (docs/03 rule 8). R12a draws the keypad, R4b sets the user keys and R41 labels the keys, so all three wait for it.
 - **The deep-dive packages (0f, and G16–G18 and G25 in 0e) go by importance, then by what they need:**
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
@@ -124,15 +127,21 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
+| R47 | ⌫ between a function's name and its bracket (F39) | ron, **Opus** | `p1/ron-m4a-bkspname` | none: start now | ~0.5 d |
+| R48 | Shift + Alpha: the faces show lower case (F40) | ron, Sonnet | `p1/ron-m4a-lowerfaces` | none: start now | ~0.25 d |
+| A9 | Key vibration on the owner's phone (F41) | annabell, Sonnet | `p1/annabell-haptics` | the owner's phone connected | ~0.5 d |
 | R15c1 | The status line takes Apps, Menu and the views | ron, Sonnet | `p1/ron-m4a-statusline` | none: start now | ~0.75 d |
 | R15c2 | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | `p1/ron-m4a-cluster` | R15c1 | ~1.5 d |
 | R15c3 | The user keys' Alpha layer | ron, Sonnet | `p1/ron-m4a-useralpha` | R15c2 | ~0.5 d |
 | R15c4 | First-start tips | ron, Sonnet | `p1/ron-m4a-tips` | R15c2 | ~0.5 d |
-| R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R15c4 (it draws the final keypad) | ~0.5 d |
+| R49 | Settings as a list of rows, each with its own page | ron, Sonnet | `p1/ron-m4a-settings` | R15c4 (it adds a Settings row) | ~0.75 d |
+| R50a | Three colour palettes, light and dark: a mockup | ron, Sonnet | `p1/ron-m4a-palette` | none: any time (docs only) | ~0.5 d |
+| R50b | The picked palette in the app | ron, Sonnet | `p1/ron-m4a-palette` (same) | R50a picked by the owner, and R49 | ~0.5 d |
+| R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R50b (it draws the final keypad in the final colours) | ~0.5 d |
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b and R15c2 (move keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the mockup steps (R15a, R50a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b and R15c2 (move keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b, R43 and R47 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two; A4b is the second device run (the first, A4a, is done); where 0d says "R4 merged", read R4a and R4b.
@@ -403,10 +412,66 @@ Read first, for all four: decisions.md "R15c" (the layout, the layers, the costs
 - **Tests:** e2e: a fresh profile shows it; a reload does not; the Settings row shows it again; a key press only closes it. A gallery case, light and dark.
 - **Gate:** as R15c1.
 
-### ron, R12a, R12b and R12c: visual pass, branches `p1/ron-m4a-look` (R12a, R12b) and `p1/ron-m4a-theme` (R12c)
-**R12a** (after R15c4): read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a pick sheet over the keypad, the Mode sheet, the Settings page, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change; R4a and R4b run meanwhile.
+### ron, R47: ⌫ between a function's name and its bracket (F39), branch `p1/ron-m4a-bkspname`
+**Opus:** the ⌫ and tap paths run on every key press. Starts now. Read backlog milestone 4a item 36 (F39) and feedback #51; decisions.md "⌫ and Del keep a template whole"; `app/src/entry/stops.ts` (`isStop`, `settle`); `keepTouchCaret` in `app/src/entry/controller.ts` (R42); `deleteAtTemplate`, `stepIn` and `fromStart` in `app/src/entry/delete.ts`.
+- **Reproduced** (Playwright, Pixel 7 profile, `?engine=fake`, 2026-10-17): log 1 0 0, the cursor at offset 1 (between `\log` and `\left(`), ⌫ → `\left(100\right)` with the cursor at 0, and ⌫ again changes nothing. The same with `ln(2)` and an empty `log(□)`. ◀ never stops there (its walk is 5 4 3 2 0), but a finger tap does: on `log(100)` a tap 35, 41 or 47 px from the field's left edge lands at offset 1.
+- **The owner's words were "stuck at log".** Ask for the exact key sequence first, or try the obvious variants on the phone (a tap on `log`, on `(`, after a recall). A different path becomes a case of its own in this package.
+- **Fix, two halves:**
+  1. **A tap never leaves the cursor where ◀ ▶ cannot stop.** After a tap places a collapsed caret (touch and mouse, after R42's correction), a position that is not `isStop()` moves forward to the next stop, as `settle(mf, "moveToNextChar")` does: into the body for `log‸(`, past the name for an `\operatorname`. A selection (drag, double tap) is left alone.
+  2. **⌫ at that position acts as at the start of the body:** the template goes and its content stays (`100`, the cursor where the name was), as decisions.md "⌫ and Del keep a template whole" point 4 says. Del right before the name is unchanged. This covers whatever else can still put the cursor there (a hardware keyboard, a set position).
+- **Tests first** (regression before the fix):
+  - e2e by touch: a tap at the name's right edge, then ⌫ until the line is empty, one change per press;
+  - for every named function key (`log`, `ln`, the trig keys, their inverses, and the one-line forms): the cursor set between the name and its bracket, then ⌫, `derived` from the rule;
+  - the bksp suites stay green.
+- **Gate:** typecheck, unit and e2e tests (`bksp*.spec.ts`, `cursor*.spec.ts`, `tap.spec.ts`), and the start chunk within +0.1 kB gzip (`delete.ts` and `stops.ts` load with MathLive).
 
-**R12b** (started with the owner's notes, after R4b, so Find is in the pass): design tokens in one file (docs/05 3.10: colours per role, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component, Find's included; history rows (3.5). Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
+### ron, R48: Shift + Alpha, the faces show lower case (F40), branch `p1/ron-m4a-lowerfaces`
+Starts now; before R15c3. Read backlog item 37 (F40) and feedback #52; `labelFor` and `layerAction` in `app/src/keyboard/keyboard.ts`; `face`, `hint` and `alphaHint` in `app/src/keyboard/Keypad.svelte`; the lock flags in `app/src/state/session.svelte.ts` (`capsLock` is the lower-case lock: it keeps Shift on with Alpha).
+- **The face shows what a tap types.** With Alpha and Shift both on (Shift + Alpha one-shot, or the lower-case lock), a key whose Alpha action is its own letter shows it in lower case. `labelFor` takes the same condition as `layerAction`, so the two cannot drift apart again. Keys whose Alpha layer falls back to the primary keep their face.
+- **The flick bubble and the letter legend follow the same rule:** a flick down shows and types the same case.
+- **Tests:** a unit test of `labelFor` for the four states (none, Alpha, Shift + Alpha, the two locks); e2e: Shift Alpha shows `a` on the A key and types `a`; Alpha alone shows `A`; the lower-case lock shows lower case until it is released; a gallery case of the lower-case layer, light and dark.
+- **Gate:** typecheck, unit and e2e tests, the gallery rebuilt, and the start chunk within +0.05 kB gzip.
+
+### annabell, A9: key vibration on the owner's phone (F41), branch `p1/annabell-haptics`
+Starts when the owner's phone is connected (take the device lock; not the Tab One, which has no motor). Read backlog item 38 (F41) and feedback #50; `app/src/input/haptics.ts`; `touched()` and `dead()` in `app/src/App.svelte`; `loadNative()` in `app/src/main.ts`; `android/app/src/main/java/io/github/buerlino/pascaline/PascalineHapticsPlugin.java` and its registration in `MainActivity.java`; decisions.md "P7" point 3 (the setting and its defaults).
+- **Find the cause first, with logs, not guesses.** Install a measure build (`./build.sh --dev --measure --install <serial>`), switch Key vibration on, tap keys, and read logcat: the plugin logs `PASCALINE_HAPTICS` for every native pulse (measure builds only), and `adb shell dumpsys vibrator_manager` lists recent vibrations. In this order:
+  1. **No `PASCALINE_HAPTICS` line:** the native plugin is never used, so every pulse goes to `navigator.vibrate`, which the Android WebView may ignore. Check `Capacitor.isPluginAvailable("PascalineHaptics")` and the dynamic import in `loadNative()`.
+  2. **Lines, but nothing felt:** the pulse is too short or too weak for the motor (15 ms at amplitude 128). Try longer pulses and full amplitude; on API 29+ try `VibrationEffect.createPredefined(EFFECT_TICK)` or `View.performHapticFeedback(KEYBOARD_TAP)`, which follow the system's own touch-feedback strength.
+  3. **Lines, and dumpsys shows the vibration ignored or scaled to zero:** the system's vibration settings (Android 13+ applies its touch-feedback intensity by usage). Set the usage on the `VibrationAttributes`.
+- **Fix** the cause found, in the plugin or in `haptics.ts`. If the defaults (50 %, 15 ms) cannot be felt, propose new ones in the report, measured on the phone.
+- **Tests:** a unit test for any TS change (the existing `recordVibrations` e2e helper covers the web path); on the phone: the logcat lines and the dumpsys entries for ten key taps, and the owner feels them.
+- **Report:** the phone, the Android version, the cause with its log lines, and what changed.
+
+### ron, R49: Settings as a list of rows, each with its own page, branch `p1/ron-m4a-settings`
+Starts when R15c4 is merged (it adds a Settings row). Read decisions.md "Settings: a list of rows" (the shape, and the owner's answer if there is one) and "R21" point 4; `settingsSections()` in `app/src/views/modeSheet.ts`; `app/src/views/SettingsPage.svelte` and `settingsPage.svelte.ts`; `app/src/input/backLayer.ts` (Android back).
+- **The list:** one row per section, with its current value and ›: Format key cycle (the ticked notations), Key vibration (`Off`, or `On · 50 % · 15 ms`), Shift / Alpha taps (`settings.taps.value`), the first-start tips row of R15c4. A row opens its page, titled `Settings › <section>`.
+- **Back:** ◀, Esc and Android back go from a page to the list, on the row that was open; from the list they close Settings; × closes Settings from anywhere. Digits pick rows and ▶ or Enter opens one, as in every sheet (S2).
+- **Key vibration's page:** its three rows as today, plus **Try it**, which fires one pulse at the current values (and the dead-key double pulse is unchanged).
+- Later sections (Theme R12c, User keys R4b, About) are added as rows; leave a comment where.
+- **Tests:** e2e by touch and by keys: the list; each row opens its page and back returns to the list on the same row; values change in place as before; Try it fires one pulse (`recordVibrations`); Android back walks page → list → closed. `settings.spec.ts` moves to the new paths.
+- **Docs:** docs/05 section 3 (Settings) and decisions.md "R21" point 4 (a pointer to the new entry).
+- **Gate:** typecheck, unit and e2e tests, the gallery rebuilt (the list and each page, light and dark), and the start chunk unchanged (Settings loads lazily).
+
+### ron, R50a and R50b: a nicer colour scheme, light and dark (feedback #53), branch `p1/ron-m4a-palette`
+Read feedback #53; `app/src/style.css` (today's tokens, dark in `:root`, light in the `prefers-color-scheme: light` block) and `app/src/style.test.ts` (the contrast test); docs/05 3.10; [mockups/top-cluster-r15c.html](../mockups/top-cluster-r15c.html) (the R3 keypad to draw on). Clean room (CLAUDE.md): our own colours, nothing taken from any HP skin or screenshot.
+
+**R50a: three palettes as a mockup** (docs only, no app code; any time).
+- One static page, `docs/mockups/palettes-r50.html`, that opens on the phone. Each palette has a short name and one idea, for example a calm graphite with one warm accent, a cool blue-grey, and a high-contrast one.
+- Each palette is drawn in light and dark at phone size on the same scene: the status line with its chips, Home history with an exact result, a ≈ result and a ⚠ row, the entry line with an Ans chip, the R3 keypad with Shift and Alpha legends, a key on, a dead key, and a pick sheet over the keypad.
+- Each palette lists its value for every role token of `style.css` (`--bg`, `--panel`, `--line`, the five key kinds, `--key-enter`, `--text`, `--text-dead`, `--muted`, `--shift`, `--alpha`, `--error`, `--chip-bg`), plus any new role it needs, such as the ≈ and ⚠ marks, the picked row and focus.
+- **Contrast, shown on the page:** text on its background at least 4.5:1, legends and dead keys at least 3:1 (as `style.test.ts`). Shift and Alpha legends stay distinguishable for the common colour-vision deficiencies, since they also differ by position.
+- End the package. The owner picks a palette, or a mix, on the phone.
+
+**R50b: the picked palette in the app** (after the owner's pick, and R49).
+- The picked values go into the existing tokens of `style.css`, dark and light.
+- Any colour written directly in a component that the new palette touches moves to a token. R12b later puts the whole token file in place on these values.
+- `style.test.ts` covers every new text/background pair.
+- **Gate:** typecheck, unit tests (the contrast test), the gallery rebuilt light and dark and looked at by the owner on the phone, and the start chunk within +0.1 kB gzip.
+
+### ron, R12a, R12b and R12c: visual pass, branches `p1/ron-m4a-look` (R12a, R12b) and `p1/ron-m4a-theme` (R12c)
+**R12a** (after R50b, on the palette the owner picked): read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a pick sheet over the keypad, the Mode sheet, the Settings page, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change; R4a and R4b run meanwhile.
+
+**R12b** (started with the owner's notes, after R4b, so Find is in the pass): design tokens in one file (docs/05 3.10: colours per role, with R50b's values, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component, Find's included; history rows (3.5). Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
 
 **R12c** (after R12b): **theme setting System / Light / Dark on R21b's Settings page, Dark by default on Android, System in the PWA**; press feedback within one frame; `prefers-reduced-motion`. Gate: contrast test in both themes; e2e for the setting (it survives a reload); gallery rebuilt; start chunk within 0.5 kB of before.
 

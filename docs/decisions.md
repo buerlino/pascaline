@@ -7,6 +7,13 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-17 Settings: a list of rows, each with a page of its own. OPEN (the owner's ask, the shape proposed).** The owner (feedback #50): "the settings must be cleaned up so vibration is a submenu or so". Today Settings is one scrolling page of sections ("R21" point 4: sections instead of submenus): the Format key cycle (six rows), Key vibration (three), the Shift / Alpha taps (four). Theme, User keys, the first-start tips and About are still to come (R12c, R4b, R15c4, R21b's places).
+  - **Recommendation: every section becomes one row** with its current value and ›, for example `Key vibration   On · 50 % · 15 ms ›`. The row opens the section's page, titled `Settings › Key vibration`. ◀, Esc and Android back go back to the list, on the same row, and × closes Settings. Digits pick rows, and ▶ or Enter opens one, as in every sheet (S2).
+  - The Key vibration page keeps its three rows and adds **"Try it"**, which fires one pulse at the current values, so strength and length are judged by hand. A9 uses it too.
+  - **Why:** the first look at Settings fits on one screen, and stays that way when the four new sections arrive. A page for vibration alone would give one screen two patterns.
+  - **Alternative:** only Key vibration on a page, the rest as today. Package R49 builds the recommendation unless the owner picks this.
+  - **Changes:** "R21" point 4 and docs/05 section 3 (Settings), in R49.
+
 - **2026-10-17 R15c: Store from the last result in two keys. OPEN.** R3 has no Store key, since Shift + ᴇ already stores (owner, 2026-10-17). **Recommendation: Shift + ᴇ (Store ▶) on an empty line starts with Ans**, as + − × ÷ do (docs/04 2.8): `Ans ▶`, then the name. Assumed to be the G2's behaviour; G2 item 58 checks it. A small change in `entry/ans.ts`, done in R15c2 if the owner says yes.
 
 - **2026-10-16 A4a: five misses from the device run. OPEN.** The Tab One run (Android 15, WebView 131, measure build; report `d276ad6`) met the cold start (688 ms keyboard usable, +26 ms against 2026-10-12; engine ready about 1060 ms), the Shift tap (p95 34 ms) and the 30-digit gate (p95 147–149 ms, so the setting keeps 30). Five things miss:
