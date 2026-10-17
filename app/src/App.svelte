@@ -556,6 +556,7 @@
     <span class="chips">
       {#if session.engineState === "starting"}<span class="note">{t("engine.starting")}</span>{/if}
       {#if session.engineState === "failed"}<span class="note">{t("engine.error")}</span>{/if}
+      {#if session.skippedDefs}<span class="note" data-testid="safe-start">{t("engine.safeStart")}</span>{/if}
       <button
         type="button"
         class="chip"

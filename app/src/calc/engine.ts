@@ -24,10 +24,11 @@ export class EngineCalc implements Calc {
     this.engine = engine;
   }
 
-  async ready(): Promise<void> {
+  async ready(): Promise<{ safeStart?: { skipped: number } }> {
     const t = await this.engine.ready();
     // measurement builds only (marks.ts): what tools/device_run.py reads as instantiateMs, initMs and replayMs
     mark("engine-timings", { instantiateMs: t.instantiateMs, initMs: t.initMs, replayMs: t.replayMs, readyMs: t.readyMs });
+    return t.safeStart ? { safeStart: t.safeStart } : {};
   }
 
   async home(giac: string, s: CalcSettings): Promise<HomeOutcome> {

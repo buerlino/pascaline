@@ -238,6 +238,8 @@ export class Session {
   cas = $state<HistoryItem[]>([]);
   /** Set when the engine is starting or failed to start. */
   engineState = $state<"starting" | "ready" | "failed">("starting");
+  /** G19: how many stored definitions the engine started without (they stopped it twice); null: none. Cleared by the next entry. */
+  skippedDefs = $state<number | null>(null);
   /** The user's variables and functions, the stored ones included (Vars, Find's live items; docs/04 3.4, 6.2). */
   userNames = $state<UserName[]>([]);
 
@@ -256,7 +258,8 @@ export class Session {
     this.calc = calc;
     this.taps = new TapCounter(kv);
     calc.ready().then(
-      () => {
+      (info) => {
+        if (info?.safeStart) this.skippedDefs = info.safeStart.skipped;
         this.engineState = "ready";
         void this.refreshNames();
       },
@@ -385,6 +388,7 @@ export class Session {
    * the job has finished, failed or been cancelled.
    */
   submit(latex: string, giacOverride?: string, chips: ChipTable = {}): Promise<void> | undefined {
+    this.skippedDefs = null; // the safe-start note (G19) is said once
     if (latex.trim() === "" || this.busy) return undefined;
     const view = this.view;
     const list = view === "home" ? this.home : this.cas;

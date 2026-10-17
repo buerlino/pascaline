@@ -73,6 +73,8 @@ export interface EngineTimings {
   replayMs: number;
   /** Worker construction to "ready" as seen from the caller (includes the above). */
   readyMs: number;
+  /** G19: the stored definitions stopped the engine twice, so it started without them (still stored; Memory lists them). */
+  safeStart?: { skipped: number };
 }
 
 // --- Solve app and Function analysis (docs/02 section 4) ------------------------------------

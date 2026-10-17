@@ -12,5 +12,5 @@ export function createCalc(): Calc {
     if (q.get("engine") === "fake") return new FakeCalc(Number(q.get("delay") ?? 0));
   }
   // The definitions log is kept in IndexedDB (docs/04 6.2), so variables survive a relaunch.
-  return new EngineCalc(new WorkerEngine({ defs: { load: () => idbKv.get<unknown>("defs"), save: (log) => void idbKv.set("defs", log) } }));
+  return new EngineCalc(new WorkerEngine({ defs: { load: () => idbKv.get<unknown>("defs"), save: (log) => void idbKv.set("defs", log), loadStarts: async () => (await idbKv.get<number>("defsStarts")) ?? 0, saveStarts: (n) => void idbKv.set("defsStarts", n) } }));
 }
