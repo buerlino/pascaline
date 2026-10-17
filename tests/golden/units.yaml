@@ -33,7 +33,7 @@ cases:
   - { id: "c06", input: "{=gas_constant}", oracle: "F('6.02214076e23')*F('1.380649e-23')", expect: "8.31446261815", mark: "≈", exact: "207861565453831/25000000000000", dim: "K-1kg1m2mol-1s-2", source: "oracle", note: "R = N_A·k exactly (SI 2019)" }
   - { id: "c07", input: "{=g_0}", oracle: "F('9.80665')", expect: "9.80665", mark: "=", exact: "196133/20000", dim: "m1s-2", source: "derived" }
   # --- the package's cases (brief G16) ---
-  - { id: "d01", input: "72*{k:m / h}", to: "m / s", oracle: "F(72*1000,3600)", expect: "20", mark: "=", exact: "20", source: "derived", note: "task t02" }
+  - { id: "d01", input: "72*{k:m / h}", to: "m / s", oracle: "F(72*1000,3600)", expect: "20", mark: "=", exact: "20", si: "20", si_oracle: "F(20)", source: "derived", note: "task t02" }
   - { id: "d02", input: "1*{in}", to: "m:m", oracle: "F('25.4')", expect: "25.4", mark: "=", exact: "127/5", source: "derived" }
   - { id: "d05", input: "1/3*{m}", to: "c:m", oracle: "F(100,3)", expect: "33.3333333333", mark: "≈", exact: "100/3", si: "1/3", si_oracle: "F(1,3)", source: "derived" }
   - { id: "d15", input: "1*{m}+1*{s}", message: "Units don't match: L vs T", source: "derived" }
