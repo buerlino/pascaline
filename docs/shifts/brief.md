@@ -10,7 +10,7 @@
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
   1. R36 (why a row has its mark) once G22 is merged; if it is not yet, the lane goes on and R36 follows.
-  2. R12a (mockups): now. While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
+  2. R15c1–R15c4 (the R3 top cluster, decided 2026-10-17): now, in order. Then R12a (mockups), which draws the final keypad. While the owner looks at the mockups: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
   3. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
@@ -21,7 +21,8 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
 **Why this order:**
 - R4a fills the wait for the owner's pick of the mockups, and R12b's token pass then covers Find too.
 - gorge's packages have no UI, and R24c needs milestone 5 items 1 and 2.
-- Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b and R4a stay whole, since each half would leave the keypad or Find half built.
+- Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b, R15c2 and R4a stay whole, since each half would leave the keypad or Find half built.
+- **R15c goes first:** it changes keys the hand is learning. Every week of use on D makes the change harder (docs/03 rule 8). R12a draws the keypad, R4b sets the user keys and R41 labels the keys, so all three wait for it.
 - **The deep-dive packages (0f, and G16–G18 and G25 in 0e) go by importance, then by what they need:**
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
@@ -29,8 +30,8 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **Day packages sit next to the code they share:** the start-chunk budget has 2.27 kB gzip left (51.73 of 54 kB after R15b, 2026-10-17; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R12b to come.
   - **Trust features after the code they build on:**
     - R36 adds a line to the history rows R11 built.
-    - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
-    - R41 labels the keys once R15b and R12 have placed and styled them.
+    - R33 and R37 touch no key that R15c moves, and R12b's tokens style them.
+    - R41 labels the keys once R15c and R12 have placed and styled them.
     - R40 needs G26 and a muted token from R12b.
   - **S7 early:** every later session reads less.
 
@@ -123,11 +124,15 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R15b (it draws the final keypad) | ~0.5 d |
+| R15c1 | The status line takes Apps, Menu and the views | ron, Sonnet | `p1/ron-m4a-statusline` | none: start now | ~0.75 d |
+| R15c2 | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | `p1/ron-m4a-cluster` | R15c1 | ~1.5 d |
+| R15c3 | The user keys' Alpha layer | ron, Sonnet | `p1/ron-m4a-useralpha` | R15c2 | ~0.5 d |
+| R15c4 | First-start tips | ron, Sonnet | `p1/ron-m4a-tips` | R15c2 | ~0.5 d |
+| R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R15c4 (it draws the final keypad) | ~0.5 d |
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b and R15c2 (move keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two; A4b is the second device run (the first, A4a, is done); where 0d says "R4 merged", read R4a and R4b.
@@ -135,10 +140,10 @@ Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). T
 | # | Package | Backlog step | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|
 | R4a | Find on Math (EN1, part 1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R12a done (the owner looks at the mockups meanwhile) | ~2 d |
-| R4b | Vars, Memory and the user keys from Find (EN1, part 2) | 8 | ron, Sonnet | `p1/ron-m4-vars` | R4a and R15b | ~1 d |
+| R4b | Vars, Memory and the user keys from Find (EN1, part 2) | 8 | ron, Sonnet | `p1/ron-m4-vars` | R4a and R15c3 | ~1 d |
 | A4b | Find timing on the Tab One | 12 | annabell, Sonnet | `p1/annabell-m4-find` | R4b; Tab One connected | ~0.25 d |
 
-If the owner wants Find sooner, R4a can go now: it uses no key that R15b moves.
+If the owner wants Find sooner, R4a can go now: it uses no key that R15c moves.
 
 ### How to start a package
 From the main checkout (`/home/nordmu/Documents/source99/pascaline`), one terminal per package:
@@ -318,10 +323,10 @@ Gate:
 - no index request before idle
 
 ### ron, R4b: Vars, Memory and the user keys from Find, branch `p1/ron-m4-vars`
-Backlog step 8, the rest. Starts when R4a and R15b are merged. Read R4a's report, docs/04 3.4 and 5.1, R15b's user-key code and its storage key in `state/storage.ts`.
+Backlog step 8, the rest. Starts when R4a and R15c3 are merged. Read R4a's report, docs/04 3.4 and 5.1, the user-key code (`keyboard/userKeys.svelte.ts`, with R15c3's Alpha layer) and its storage key in `state/storage.ts`.
 - **Vars** = Find on the user's variables and functions: the live items from `defined` (§3.4), with R4a's keys, preview and insertion.
 - **Shift + Math = Memory:** the same list with delete and clear all (§5.1).
-- **User keys:** Settings › User keys (the place R21b left) sets U1–U3 and their Shift layers from Find, in R15b's stamped store. Reset gives back the defaults of `spec/keyboard.yaml` (U2 = Home, U3 = CAS). R15b's text promised this setting "with R4".
+- **User keys:** Settings › User keys (the place R21b left) sets U1–U6 and their Shift and Alpha layers (18 slots) from Find, in R15b's stamped store. Besides Find's functions, units and constants, a slot can hold a place or a sheet: Home, CAS, Apps, Menu, Mode, Settings (decisions.md "R15c" costs: the keys-only paths). Reset empties a slot, since every slot ships empty after R15c2. R15b's text promised this setting "with R4".
 
 Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a user key set from Find and pressed again after a reload); task 5 unchanged; the size test.
 
@@ -330,8 +335,76 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
+### ron, R15c1–R15c4: the R3 top cluster (decisions.md "R15c", owner 2026-10-17)
+Read first, for all four: decisions.md "R15c" (the layout, the layers, the costs) and the open item "R15c: the free key's Shift layer" above it; [mockups/top-cluster-r15c.html](../mockups/top-cluster-r15c.html), option R3; docs/06 (every difference from the G2); decisions.md "R15b" (the place name's target and the place actions). **The owner's prototype** of R3 is `/home/nordmu/Documents/source99/pascaline/.coord/r15c-prototype.patch` (not in git; `git apply` it in a scratch worktree to see it run). It has a test switch, `?cluster=r3`, a Settings section and `keyboard/clusterTest.ts`. None of these is to be built. Take its shapes and commands, not its structure. Its free key holds Recall and Store, which the owner dropped (the key is View and Help). It showed that `\frac{12}{34}`, Shift + ⇤, 5 gives `\frac{12}{534}`, and that a drag from the pad's hub steps the cursor.
+
+**R15c1: the status line takes Apps, Menu and the views** (branch `p1/ron-m4a-statusline`). D's keys stay until R15c2, so for one package both paths work.
+- **The place name opens the Apps sheet** (special `apps`, through `press()` as `PLACE_KEY` does today), in Home, CAS and every app. It is drawn with ▾ instead of ⇄. The Apps sheet already lists Home and CAS first. The Home ↔ CAS switch on the name goes. Keep R15b's 96 × 28 px target and update the name's aria-label.
+- **In an app: Symb, Plot and Num tabs** beside the name, the current one marked. Each tab goes through `press()` with a key whose special is `symb`, `plot` or `num`, so the sheet, queue and AT_ONCE rules hold. The name then shows only the app's name.
+- **☰ at the right end** (special `menu`, through `press()`): the view's menu. On a picked row it opens the row's menu (R13, `historyKey` already does this). The target is at least 36 × 28 px.
+- **Every ☰ menu ends with Settings.** In the Home/CAS list it is item 10 (key 0 picks it; S2's fixed numbers 1–9 stay), and in each app view's menu it is the last row.
+- The status line stays 28 px (docs/03 rule 9) and fits at 360 px width in an app with the chips, DEG/RAD and ☰, with no overflow; the tabs may shrink before the chips do.
+- **Tests:** e2e by touch and by keys where keys apply:
+  - the name opens Apps, and Home and CAS are reached from it;
+  - the tabs switch views in Function and Solve;
+  - ☰ opens the Home menu, and on a picked row the row's menu;
+  - Settings is the last ☰ row.
+  R15b's place-switch tests change to the new behaviour.
+- **Docs:** docs/05 3.2 (the status line) and docs/06 section 3 point 2 and section 4 B.
+- **Gate:** typecheck, unit and e2e tests, the gallery rebuilt, and the start chunk at most +0.4 kB gzip (2.27 kB left before R15c).
+
+**R15c2: the R3 keys** (branch `p1/ron-m4a-cluster`, **Opus**: it moves keys that every test names, as R15b did; it stays whole). Starts when R15c1 is merged.
+- **`spec/keyboard.yaml` rows 0–2** as decisions.md "R15c" points 1–5:
+  - `u1`–`u6` in columns 0–1, all empty;
+  - `up` (row 0, columns 2–3), `left` and `right` (row 1), `down` (row 2, columns 2–3);
+  - `view` | `esc`, `undo` | `copy`, `lstart` | `lend` in columns 4–5.
+  - `source: assumed` for every new key, and the cluster's comments rewritten.
+  - `apps`, `symb`, `plot`, `num`, `help`, `menu` and `cancel` go.
+- **Actions:**
+  - `esc` (Shift `clear`) takes today's Cancel job, then Esc's: it stops a running job, closes Settings, goes back one sheet level (`sheetKeys.ts`: `esc` → back; the `cancel` entry goes), drops a picked row, and otherwise clears the line. A hardware Escape is this key. The special `cancel` goes.
+  - `undo` (Shift `redo`): MathLive `undo` and `redo`.
+  - `copy` (Shift `paste`): the specials as they are.
+  - `lstart` and `lend`: `moveToMathfieldStart` and `moveToMathfieldEnd`; Shift: `moveToGroupStart` and `moveToGroupEnd`.
+  - `view`: the keypad toggle on tap (legend View), Help on Shift (legend Help). Both are `special: none` until built, so the key is drawn dimmed, as D's Help and View are.
+  - In an app view without an entry line, ⇤ ⇥, Undo and Redo are dead keys.
+  - Store on an empty line (`Ans ▶`) follows the owner's answer to the open item; with no answer yet, it stays as it is.
+- **The round pad:** the trackpad surface is drawn round (`border-radius: 50%` on the existing surface, the four zones unchanged), with a dashed hub ring at the centre that does nothing on a tap.
+- **The user keys:** six keys, each with a tap and a Shift layer (R15c3 adds Alpha). Stored slots of `u1`–`u3` stay valid. D's Home and CAS defaults on U2 and U3 go (accepted in the decision).
+- **Tests:** every test that names a removed key moves to the new keys or to the status line (R15c1). New e2e:
+  - ⇤ ⇥ at the line's ends;
+  - Shift + ⇤ ⇥ in a numerator and in an exponent, `derived`: `\frac{12}{34}`, Shift + ⇤, 5 → `\frac{12}{534}`;
+  - Undo, then Redo;
+  - Esc stops a running job (from the Cancel tests), goes back a sheet level, drops a pick, and clears the line;
+  - the Copy and Paste key;
+  - a drag that starts on the hub and one that starts on ▲.
+  `keyboard.test.ts`: the cluster has no letter line and six user keys. i18n: every legend.
+- **Docs:**
+  - docs/04 5.1 (the key table);
+  - docs/06: section 1 (Help), section 2 (the Cancel and Shift + Apps rows go), section 3 points 2, 3 and 8, and a row for every R15c difference with its reason;
+  - backlog K4 (the toggle is on R3's View key, row 0, column 4);
+  - CLAUDE.md is not touched.
+- **Gate:** typecheck; unit, e2e and gesture tests; the gallery rebuilt; the viewport share on the Pixel 7 profile still 0.354 (floor 0.35); the start chunk within budget; `npm run golden` unchanged (no engine change).
+
+**R15c3: the user keys' Alpha layer** (branch `p1/ron-m4a-useralpha`). Starts when R15c2 is merged.
+- The loader allows `alpha` on a user key.
+- `USER_LAYERS` gains `alpha`. `resolve`, `set` and `reset` work per layer, and a stored record of the old two-layer shape still loads.
+- An empty Alpha slot falls back to the tap layer, as every key's missing Alpha layer does (`spec/keyboard.yaml`).
+- A flick down or Alpha + the key fires the Alpha slot.
+- The cluster keeps no letter line: the face shows the Alpha binding while Alpha is on, and the flick bubble shows it while armed.
+- **Tests:** `userKeys.test.ts` (three layers, the old record, fallback); e2e: a user key with an Alpha binding (set through the model in the test) fires it by flick down and by Alpha + tap, and keeps it after a reload.
+- **Gate:** as R15c1.
+
+**R15c4: first-start tips** (branch `p1/ron-m4a-tips`). Starts when R15c2 is merged.
+- A one-time overlay over the app, in its own lazy chunk, never in the start chunk.
+- It dims the screen and rings the place name and ☰, measured from their boxes. Two tips: "Tap the name for your apps, Home and CAS" and "Tap ☰ for the menu: copy, paste, settings". A "Got it" button.
+- Any tap or key closes it; the key does nothing else. Android back closes it (`openLayer`).
+- It is shown once, with the flag stored in the kv store. A Settings row ("Show the first-start tips") shows it again.
+- It follows `prefers-reduced-motion`.
+- **Tests:** e2e: a fresh profile shows it; a reload does not; the Settings row shows it again; a key press only closes it. A gallery case, light and dark.
+- **Gate:** as R15c1.
+
 ### ron, R12a, R12b and R12c: visual pass, branches `p1/ron-m4a-look` (R12a, R12b) and `p1/ron-m4a-theme` (R12c)
-**R12a** (after R15b): read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a pick sheet over the keypad, the Mode sheet, the Settings page, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change; R4a and R4b run meanwhile.
+**R12a** (after R15c4): read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a pick sheet over the keypad, the Mode sheet, the Settings page, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change; R4a and R4b run meanwhile.
 
 **R12b** (started with the owner's notes, after R4b, so Find is in the pass): design tokens in one file (docs/05 3.10: colours per role, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component, Find's included; history rows (3.5). Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
 

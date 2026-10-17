@@ -52,6 +52,17 @@ The legend is missing on the keytop only because the feature is not built; the k
 9. **Info, Notes and User stay omitted** (section 2).
 10. **The G2's Shift palettes come back** (owner's answers to R10): Shift + 6 relations and logic, Shift + 9 symbols and Greek with `!`. Package R18.
 
+## 3a. Decided by the owner on 2026-10-17 (R15c; being built in R15c1–R15c4)
+The top cluster becomes R3 (decisions.md "R15c"), and this file is rewritten row by row as the packages land (R15c2 does the key rows). In short:
+- **The arrows keep the G2's round pad.** Its centre is the drag hub, with no OK key.
+- **Apps, Mode, Symb, Plot, Num, Menu, Cancel and the Help key leave the keypad.**
+  - Apps is the place name on the status line; Menu is ☰ there; Symb, Plot and Num are tabs in an app; Mode is on the chips.
+  - Esc takes Cancel's job.
+  - Copy, Paste and Undo get keys of their own.
+  - Help moves to Shift + View; View (the keypad toggle) keeps a key, in R3's wing.
+- **New keys:** Redo, and ⇤ ⇥ with the box ends on Shift. This reverses section 3 point 8 by its removal test.
+- **The user keys:** U1–U6, each with tap, Shift and Alpha.
+
 ## 4. Open points
 - **A. Menu audit. Done** (S2, [research/r8-menus.md](research/r8-menus.md)); its seven rules were accepted by the owner on 2026-10-13 (decisions.md "S2: one menu system"). Key-level results: Mode is on Shift + Apps (R15b); R10's Tmpl palette stays as built.
 - **B. The status-line switch. Built** (R15b): a 96 × 28 px target from the left edge (the strip below the line belongs to the history and to F1's slot); Home ↔ CAS is 1 tap, or 1 key (U2, U3), or 2 keys (Apps, 1 or 2), against the G2's one key. Judge on the APK; if the owner finds the bar slow, a layer of an existing key (a flick on Apps) takes the switch, with no new key.

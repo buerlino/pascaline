@@ -7,6 +7,8 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-17 R15c: Store from the last result in two keys. OPEN.** R3 has no Store key, since Shift + ᴇ already stores (owner, 2026-10-17). **Recommendation: Shift + ᴇ (Store ▶) on an empty line starts with Ans**, as + − × ÷ do (docs/04 2.8): `Ans ▶`, then the name. Assumed to be the G2's behaviour; G2 item 58 checks it. A small change in `entry/ans.ts`, done in R15c2 if the owner says yes.
+
 - **2026-10-16 A4a: five misses from the device run. OPEN.** The Tab One run (Android 15, WebView 131, measure build; report `d276ad6`) met the cold start (688 ms keyboard usable, +26 ms against 2026-10-12; engine ready about 1060 ms), the Shift tap (p95 34 ms) and the 30-digit gate (p95 147–149 ms, so the setting keeps 30). Five things miss:
   1. **Enter p95 at 12 digits:** 138–160 ms against < 150 (p50 about 61). On 2026-10-11 it was 92–114 ms, before G0's agreement check; 20 and 30 digits are no slower, so capping digits would not help, and the dev engine gives the same as the release engine. **Recommendation:** keep the agreement check (principle 3: correctness wins over speed) and accept the borderline p95 for now; if it must come down, a small gorge probe first names the bench cases that set the p95.
   2. **The `defs` replay:** 291 ms (p50) for 200 definitions (150 values, 50 functions) against ≤ 50 ms; desktop 10.8 ms. Engine ready is then 1489 ms, 11 ms inside its 1.5 s bar. **Recommendation:** a small gorge package that finds where the replay time goes on the device (`?bench=defs` seeds the log) and cuts it, before S6's backup or S4's library import can grow the log.
@@ -42,6 +44,47 @@ The owner's open items are in [backlog.md](backlog.md), "Needs the user". Propos
 ## Decided proposals (2026-10-12 to 2026-10-17)
 
 Newest first. Where an entry changed an earlier document, that document now carries the result.
+
+- **2026-10-17 R15c: the top cluster becomes R3, and Apps, Menu and the views move to the status line. DECIDED by the owner (2026-10-17).** In daily use the owner found D's app keys redundant with the status line and wants no key without a job. Options and the choice are in [mockups/top-cluster-r15c.html](mockups/top-cluster-r15c.html). R3 was tried against R4 in the app (a test switch; the prototype is `.coord/r15c-prototype.patch`, not in git). Built in packages R15c1–R15c4 (brief section 0b); docs/04 5.1, docs/05 3.2, docs/06 and the comments of `spec/keyboard.yaml` follow there.
+  1. **Layout.** Rows 0–2, 6 columns, 36 px rows; the viewport stays 0.354.
+     - Columns 0–1: the user keys U1–U6 (U1 U2 / U3 U4 / U5 U6).
+     - Columns 2–3: a round pad: ▲ on top, ◀ ▶ in the middle, ▼ below. It is one drag surface (K1), with a dashed hub at the centre. There is no OK key, since Enter already puts a picked row on the line.
+     - Columns 4–5: View | Esc, Undo | Copy, ⇤ | ⇥.
+  2. **Layers.** Esc: Shift = Clear. Undo: Shift = Redo. Copy: Shift = Paste. ⇤ goes to the line's start and ⇥ to its end; Shift + ⇤ and Shift + ⇥ go to the start and end of the box the cursor is in, such as a numerator or an exponent (the owner's ask; MathLive `moveToGroupStart` and `moveToGroupEnd`). View: Shift = Help.
+  3. **Esc and Cancel become one key, Esc.** It stops a running job, closes Settings, goes back one sheet level, drops a picked row, and otherwise clears the line. Cancel's "close every level" goes; a tap in the viewport still closes a pick sheet.
+  4. **View, the free key (owner, 2026-10-17):** a tap is the keypad toggle, Shift is Help. Both are planned and not built, so the key is dimmed until then, as Help and View are today.
+     - The toggle is K4's compact keypad or "results mode", whichever the owner picks around 2026-10-20. A compact keypad keeps the top cluster, so the toggle stays in reach.
+     - Help is context help from the Find index (milestone 6).
+     - It sits where D has View (row 1, column 4), next to the G2's own View key.
+     - Recall and Store were drafted for this key and dropped. A tap on a history row's result already inserts it and a tap on its input recalls it (R11), and Shift + ᴇ stores.
+  5. **The user keys U1–U6 have three layers each: tap, Shift and Alpha (18 slots).** All ship empty, and Settings › User keys sets them from Find (R4b). The Alpha layer is a flick down or Alpha + the key. The cluster keeps no letter line, so the Alpha binding shows in the flick bubble, and on the face while Alpha is on.
+  6. **Gone from the keypad:** Apps, Mode (Shift + Apps), Symb, Plot, Num, Menu and Cancel; the Help key (Help moves to Shift + View). Copy (on Shift + View), Paste (on Shift + Menu) and Undo (on Shift + Cancel) get keys of their own, and U2 and U3 lose their Home and CAS defaults.
+  7. **The status line.**
+     - The place name opens the Apps sheet (Home and CAS are its first rows; drawn with ▾), in Home, CAS and the apps.
+     - In an app, Symb, Plot and Num are tabs beside the name.
+     - A ☰ button at the right end opens the view's Menu; with a row picked, the row's menu (R13). Every ☰ menu ends with Settings.
+     - Mode stays on the chips.
+  8. **First start:** a one-time overlay rings the place name and ☰: "Tap the name for your apps, Home and CAS" and "Tap ☰ for the menu: copy, paste, settings". Any tap closes it, and Settings shows it again.
+  - **Why:**
+    - Every key has a job (the owner: no useless keys).
+    - The arrows, the part of the cluster the hand knows, keep the G2's round pad and its flow.
+    - The editing actions an engineer reaches for get one key each: undo and redo, and the ends of the line and of a box.
+    - The user keys go from three keys with two layers (6 slots) to six keys with three (18 slots).
+  - **Costs, accepted by the owner:**
+    - Home ↔ CAS takes 2 taps (the name, then a row) instead of 1.
+    - There is no keys-only path to Apps, Menu, Mode or Settings unless a user key holds them, so S2 point 4's keys-only path to Mode goes.
+    - A G2 hand that looks for Apps, Symb, Plot or Num finds the status line instead.
+  - **Rules:**
+    - docs/03 rule 8 (keys never move) allowed the owner one change of the top cluster before the layout is learned (P12 point 3). R15c uses it again, before any release; after R15c the cluster is fixed like the maths keys.
+    - P12 point 8 removed the line jumps from Shift + ◀ ▶, with a removal test. The owner missed the jump, so the test fires: the jumps come back as the ⇤ and ⇥ keys, not as Shift on the arrows.
+  - **Alternatives:**
+    - D as built.
+    - R1 and R2: a wide pad on a grid of their own, off the maths columns.
+    - R4: a 3 × 3 cross with ⇤ ⇥ and Undo Redo in the corners. Tried in the app: a drag that starts on a corner fires the corner key.
+    - R5: keys 39 px wide.
+  - **Would change if:**
+    - The 2-tap Home ↔ CAS proves slow in daily use. Then a flick on the place name switches, or a user key holds it.
+    - A hardware-keyboard user needs Apps or Menu. Then keyboard shortcuts give them.
 
 - **2026-10-17 R15b: cluster rows 36 px, the place name's target 96 × 28 px, Home and CAS stay place actions. DECIDED by the owner (2026-10-17).** R15b built layout D (`4e039ab`).
   1. **Cluster rows stay 36 px.** The mockup took today's rows for about 56 px, so 48 px would have given a viewport of about 0.38. Measured on the Pixel 7 profile they are 36 px (min-height of `.key.nav`); 48 px rows would add 36 px to the keypad and drop the viewport from 0.354 to about 0.311, below the floor (0.35). D's text allows today's height.
