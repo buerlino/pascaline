@@ -43,7 +43,7 @@ describe("size-check", () => {
     const r = checkSizes(fakeDist(manifest, files));
     expect(r.failures).toEqual([]);
     expect(r.rows.map((x) => x.rule)).toEqual(["Start chunk", "MathLive chunk", "Precache total"]);
-    expect(r.notBuilt).toEqual(["Find UI chunk", "Units app chunk", "Find index asset", "qalc wasm + glue"]);
+    expect(r.notBuilt).toEqual(["Find UI chunk", "Unit view chunk", "Find index asset", "qalc wasm + glue"]);
   });
 
   it("fails a start chunk over 156 kB raw", () => {
@@ -108,7 +108,7 @@ describe("size-check", () => {
       {
         ...manifest,
         "src/find/FindPalette.svelte": { file: "assets/find.js", src: "src/find/FindPalette.svelte", isDynamicEntry: true },
-        "src/apps/units/index.ts": { file: "assets/units.js", src: "src/apps/units/index.ts", isDynamicEntry: true },
+        "src/units/build.ts": { file: "assets/units.js", src: "src/units/build.ts", isDynamicEntry: true },
       },
       { ...files, "assets/find.js": 30_001, "assets/units.js": 30_000, "find/index.json": { random: 400_001 }, "qalc/qalc.wasm": { random: 1_000_001 }, "qalc/qalc.mjs": 1000 },
     );
@@ -116,7 +116,7 @@ describe("size-check", () => {
     expect(r.notBuilt).toEqual([]);
     const failed = r.failures.map((f) => f.split(":")[0]);
     expect(failed).toContain("Find UI chunk");
-    expect(failed).not.toContain("Units app chunk"); // exactly at 30 kB is allowed
+    expect(failed).not.toContain("Unit view chunk"); // exactly at 30 kB is allowed
     expect(failed).toContain("Find index asset");
     expect(failed).toContain("qalc wasm + glue");
   });
