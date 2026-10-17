@@ -4,7 +4,7 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (fix R46f1, bug F42). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47, R44 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (fix R46f1, bug F42). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
@@ -16,7 +16,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   R50a (three palettes as a mockup; docs only, no app code) can run any time beside the lane, so the owner's pick is ready before R50b.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): R29, R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A9 (key vibration, F41) as soon as the owner's phone is connected: it needs a phone with a motor, and the Tab One has none. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -39,7 +39,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **S7 early:** every later session reads less.
 
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14)
-The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's three parser-only packages (R29, R30, R39) and R44 (the chip value, no UI): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
+The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's three parser-only packages (R29, R30, R39): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
 
 ### Rules for a night shift (they replace rules sections 4, 10 and 11, but not 4a, and change section 8a)
 1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
@@ -65,7 +65,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 2 | G20 the stored values a CAS result used (F28, engine half): merged by day (`462c163`), skip | gorge, Sonnet | `p1/gorge-m4-uses` | — |
 | 3 | R29 where a number ends (F24, F25) | ron, **Opus** | `p1/ron-m4-numbers` | 1 h + review |
 | 3a | G27 a result that is not a number but holds a float gets ⚠ (F36): merged by day (`adb2e3a`), skip | gorge, Sonnet | `p1/gorge-m4-symfloat` | — |
-| 3b | R44 a long result's chip keeps its value, Ans never dropped (F37; after R29) | ron, Sonnet | `p1/ron-m4-longchip` | 45 min + review |
+| 3b | R44 a long result's chip keeps its value, Ans never dropped (F37): merged by day (`f170d20`), skip | ron, Sonnet | `p1/ron-m4-longchip` | — |
 | 3c | G28 a name the input binds is not a used value (F28): merged by day (`79e8b0f`), skip | gorge, Sonnet | `p1/gorge-m4-bound` | — |
 | 4 | **Opus pass 1** on steps 2–3c, then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
@@ -221,7 +221,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
 | R29 | Where a number ends | F24, F25 | night | ron, **Opus** | `p1/ron-m4-numbers` | now | ~0.5 d |
-| R44 | A long result's chip keeps its value, and Ans is never dropped | F37 (architecture check, 2026-10-15) | night | ron, Sonnet | `p1/ron-m4-longchip` | R29 (chips, same tests) | ~0.25 d |
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
 | G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
 | G24 | A memory cap for the Giac worker | F32 | night | gorge, Sonnet | `p1/gorge-m4-memcap` | now | ~0.5 d |
@@ -758,20 +757,6 @@ Gate: the tests, the Find query test unchanged, and the size test.
 
 ### Packages of section 0f
 Every package here: tests first (they fail on today's code), then the fix, then the report commit (section 2). The finding, its evidence and the decision are in decisions.md "The deep-dive review"; the backlog line is under "Trust and robustness".
-
-### ron, R44: a long result's chip keeps its value, and Ans is never dropped (F37), branch `p1/ron-m4-longchip`
-From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #18). Starts when R29 is merged (the same chip code and tests; the owner said yes, 2026-10-15). Read: docs/04 2.3 #18 and 2.8, `app/src/state/session.svelte.ts` (`finish()` around line 446, `chipFor`, `lastChip`), `app/src/App.svelte` (`insertResult`, the Ans-first branch of `run()`), `app/src/engine/homeEval.ts:485` (what `full` holds), `app/src/input/parse.ts:634` (a missing chip).
-
-**Behaviour today** (probes 2026-10-15): Home `2^10000` shows `≈ 1.99506311688E3010` (right). Tap it, `×1`, Enter: `= 1.99506311688E3010`, marked exact, for a value that is not 2^10000. Then `+3` on the empty line gives `= 3`, not Ans + 3.
-
-**Cause:** `finish()` keeps `r.exact ?? r.full` as the chip value, and only when it is ≤ 2 kB. 2^10000's exact text has 3,011 digits, so the item gets no chip: `insertResult` inserts the drawn LaTeX (`1.99506311688\times10^{3010}`, an exact number to the parser), and `lastChip()` gives nothing, so Ans-first inserts no `\ans` and the parser reads `+3` as 3. `homeEval` already puts the right value in `r.full`: the exact text up to 2 kB, else the P-digit decimal.
-
-**Commits:**
-1. **Tests** (failing today; e2e in `app/test/chips.spec.ts` with the real engine, since the value matters): tap `2^10000`, `×1` → mark `≈` and the first 15 digits 1.99506311688075 (`oracle`); `2^10000` then `+3` → the line starts with Ans and the result is `≈ 1.99506311688E3010`; a short exact result still gives an exact chip (`1/3`, tap, `×3` → `= 1`, docs/04 2.3 #8).
-2. **Fix:** the chip value is the engine's `full` (CAS: `numeric.full` when there is one), with `fullExact` following it. Ans-first inserts `\ans` whenever the view has a finished result; a result with no chip value (a symbolic text over 2 kB) then fails at Enter with a message that says why (today's text, "Ans: no result to use in this view yet", is wrong for it). The drawn LaTeX goes in only for a result that is not a number.
-3. **Report.**
-
-Gate: chips, entry and tasks e2e; vitest; typecheck; the start chunk within its budget.
 
 ### ron, R29: where a number ends (F24, F25), branch `p1/ron-m4-numbers`
 Backlog F24 and F25. Parser only, no UI (night queue). Read:
