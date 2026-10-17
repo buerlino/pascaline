@@ -4,13 +4,13 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (fix R46f1, bug F42). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (fix R46f1, bug F42). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
   1. R36 (why a row has its mark) once G22 is merged; if it is not yet, the lane goes on and R36 follows.
-  2. R47 and R48 (bugs F39 and F40, owner 2026-10-17): now, before or beside R15c1, which shares no file with them; R48 before R15c3. R15c1–R15c4 (the R3 top cluster, decided 2026-10-17): now, in order. Then R49 (Settings rows) and R50b (the palette the owner picked in R50a). Then R12a (mockups), which draws the final keypad. While the owner looks at the mockups: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
+  2. R48 (bug F40, owner 2026-10-17): now, before or beside R15c1, which shares no file with it; R48 before R15c3. R15c1–R15c4 (the R3 top cluster, decided 2026-10-17): now, in order. Then R49 (Settings rows) and R50b (the palette the owner picked in R50a). Then R12a (mockups), which draws the final keypad. While the owner looks at the mockups: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
   3. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
 
   R50a (three palettes as a mockup; docs only, no app code) can run any time beside the lane, so the owner's pick is ready before R50b.
@@ -24,7 +24,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
 - R4a fills the wait for the owner's pick of the mockups, and R12b's token pass then covers Find too.
 - gorge's packages have no UI, and R24c needs milestone 5 items 1 and 2.
 - Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b, R15c2 and R4a stay whole, since each half would leave the keypad or Find half built.
-- **Bugs first** (feedback.md: a bug is fixed now, regression test first): R47 and R48 are small and touch no key R15c moves. R48 goes before R15c3, whose Alpha faces follow its rule. A9 waits only for the phone.
+- **Bugs first** (feedback.md: a bug is fixed now, regression test first): R48 is small and touches no key R15c moves. R48 goes before R15c3, whose Alpha faces follow its rule. A9 waits only for the phone.
 - **R15c goes first** among the feel packages: it changes keys the hand is learning. Every week of use on D makes the change harder (docs/03 rule 8). R12a draws the keypad, R4b sets the user keys and R41 labels the keys, so all three wait for it.
 - **The deep-dive packages (0f, and G16–G18 and G25 in 0e) go by importance, then by what they need:**
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
@@ -127,7 +127,6 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R47 | ⌫ between a function's name and its bracket (F39) | ron, **Opus** | `p1/ron-m4a-bkspname` | none: start now | ~0.5 d |
 | R48 | Shift + Alpha: the faces show lower case (F40) | ron, Sonnet | `p1/ron-m4a-lowerfaces` | none: start now | ~0.25 d |
 | A9 | Key vibration on the owner's phone (F41) | annabell, Sonnet | `p1/annabell-haptics` | the owner's phone connected | ~0.5 d |
 | R15c1 | The status line takes Apps, Menu and the views | ron, Sonnet | `p1/ron-m4a-statusline` | none: start now | ~0.75 d |
@@ -411,19 +410,6 @@ Read first, for all four: decisions.md "R15c" (the layout, the layers, the costs
 - It follows `prefers-reduced-motion`.
 - **Tests:** e2e: a fresh profile shows it; a reload does not; the Settings row shows it again; a key press only closes it. A gallery case, light and dark.
 - **Gate:** as R15c1.
-
-### ron, R47: ⌫ between a function's name and its bracket (F39), branch `p1/ron-m4a-bkspname`
-**Opus:** the ⌫ and tap paths run on every key press. Starts now. Read backlog milestone 4a item 36 (F39) and feedback #51; decisions.md "⌫ and Del keep a template whole"; `app/src/entry/stops.ts` (`isStop`, `settle`); `keepTouchCaret` in `app/src/entry/controller.ts` (R42); `deleteAtTemplate`, `stepIn` and `fromStart` in `app/src/entry/delete.ts`.
-- **Reproduced** (Playwright, Pixel 7 profile, `?engine=fake`, 2026-10-17): log 1 0 0, the cursor at offset 1 (between `\log` and `\left(`), ⌫ → `\left(100\right)` with the cursor at 0, and ⌫ again changes nothing. The same with `ln(2)` and an empty `log(□)`. ◀ never stops there (its walk is 5 4 3 2 0), but a finger tap does: on `log(100)` a tap 35, 41 or 47 px from the field's left edge lands at offset 1.
-- **The owner's words were "stuck at log".** Ask for the exact key sequence first, or try the obvious variants on the phone (a tap on `log`, on `(`, after a recall). A different path becomes a case of its own in this package.
-- **Fix, two halves:**
-  1. **A tap never leaves the cursor where ◀ ▶ cannot stop.** After a tap places a collapsed caret (touch and mouse, after R42's correction), a position that is not `isStop()` moves forward to the next stop, as `settle(mf, "moveToNextChar")` does: into the body for `log‸(`, past the name for an `\operatorname`. A selection (drag, double tap) is left alone.
-  2. **⌫ at that position acts as at the start of the body:** the template goes and its content stays (`100`, the cursor where the name was), as decisions.md "⌫ and Del keep a template whole" point 4 says. Del right before the name is unchanged. This covers whatever else can still put the cursor there (a hardware keyboard, a set position).
-- **Tests first** (regression before the fix):
-  - e2e by touch: a tap at the name's right edge, then ⌫ until the line is empty, one change per press;
-  - for every named function key (`log`, `ln`, the trig keys, their inverses, and the one-line forms): the cursor set between the name and its bracket, then ⌫, `derived` from the rule;
-  - the bksp suites stay green.
-- **Gate:** typecheck, unit and e2e tests (`bksp*.spec.ts`, `cursor*.spec.ts`, `tap.spec.ts`), and the start chunk within +0.1 kB gzip (`delete.ts` and `stops.ts` load with MathLive).
 
 ### ron, R48: Shift + Alpha, the faces show lower case (F40), branch `p1/ron-m4a-lowerfaces`
 Starts now; before R15c3. Read backlog item 37 (F40) and feedback #52; `labelFor` and `layerAction` in `app/src/keyboard/keyboard.ts`; `face`, `hint` and `alphaHint` in `app/src/keyboard/Keypad.svelte`; the lock flags in `app/src/state/session.svelte.ts` (`capsLock` is the lower-case lock: it keeps Shift on with Alpha).
