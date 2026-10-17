@@ -47,7 +47,7 @@ while (( steps < max_steps )); do
       # henri's package commands always audit with sonnet (brief 0c); pass and report take no such option
       [[ "$cmd" == scripts/pipeline.sh\ pass\ * || "$cmd" == "scripts/pipeline.sh report" || "$cmd" == *--audit-model* ]] || cmd="$cmd --audit-model sonnet"
       cmdout="$(mktemp)"
-      eval "timeout 14400 $cmd" > "$cmdout" 2>&1; rc=$?
+      (cd "$integ" && eval "timeout 14400 $cmd") > "$cmdout" 2>&1; rc=$?
       set -e
       cat "$cmdout" >> "$out"
       say "rc=$rc: $(tail -n 1 "$cmdout")"
