@@ -1,0 +1,1321 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+note: "Written by tools/probes/unit-freq/count.mjs (S5). A unit counts at most 3 times per article. weight: the share of all unit uses, each field 0.30 of the whole (its share of its own uses), the task benchmark 0.05, S1's 50 units 0.05. Ids are Find's (u = µ, oC = °C, deg = °, ohm = Ω); find: false = not in Find today (G7)."
+shares:
+  mechanical_civil: 0.3
+  electrical: 0.3
+  chemical_process_hvac: 0.3
+  tasks: 0.05
+  s1: 0.05
+uses:
+  mechanical_civil: 457
+  electrical: 823
+  chemical_process_hvac: 419
+  tasks: 8
+  s1: 50
+units:
+  - id: m
+    weight: 0.2292
+    find: true
+  - id: W
+    weight: 0.1079
+    find: true
+  - id: oC
+    weight: 0.0647
+    find: true
+  - id: V
+    weight: 0.0637
+    find: true
+  - id: g
+    weight: 0.0627
+    find: true
+  - id: h
+    weight: 0.0609
+    find: true
+  - id: s
+    weight: 0.0517
+    find: true
+  - id: Hz
+    weight: 0.0438
+    find: true
+  - id: K
+    weight: 0.0393
+    find: true
+  - id: deg
+    weight: 0.0381
+    find: true
+  - id: A
+    weight: 0.0364
+    find: true
+  - id: J
+    weight: 0.0329
+    find: true
+  - id: Pa
+    weight: 0.0328
+    find: true
+  - id: in
+    weight: 0.0293
+    find: true
+  - id: ft
+    weight: 0.0287
+    find: true
+  - id: oF
+    weight: 0.0265
+    find: true
+  - id: ohm
+    weight: 0.0243
+    find: true
+  - id: L
+    weight: 0.0169
+    find: true
+  - id: min
+    weight: 0.0166
+    find: true
+  - id: N
+    weight: 0.0155
+    find: true
+  - id: F
+    weight: 0.0144
+    find: true
+  - id: psi
+    weight: 0.0142
+    find: true
+  - id: lb
+    weight: 0.0129
+    find: true
+  - id: mol
+    weight: 0.012
+    find: true
+  - id: rpm
+    weight: 0.0119
+    find: true
+  - id: hp
+    weight: 0.0114
+    find: true
+  - id: bar
+    weight: 0.0106
+    find: true
+  - id: Btu
+    weight: 0.0079
+    find: true
+  - id: atm
+    weight: 0.0068
+    find: true
+  - id: t
+    weight: 0.0064
+    find: true
+  - id: T
+    weight: 0.0062
+    find: true
+  - id: mi
+    weight: 0.0061
+    find: true
+  - id: dB
+    weight: 0.006
+    find: true
+  - id: knot
+    weight: 0.0044
+    find: true
+  - id: gal
+    weight: 0.0043
+    find: true
+  - id: H
+    weight: 0.0043
+    find: true
+  - id: d
+    weight: 0.0041
+    find: true
+  - id: mph
+    weight: 0.004
+    find: true
+  - id: lbf
+    weight: 0.0039
+    find: true
+  - id: cal
+    weight: 0.0034
+    find: true
+  - id: S
+    weight: 0.0025
+    find: true
+  - id: P
+    weight: 0.0021
+    find: true
+  - id: St
+    weight: 0.0021
+    find: true
+  - id: TR
+    weight: 0.0021
+    find: false
+  - id: PS
+    weight: 0.002
+    find: true
+  - id: s_ton
+    weight: 0.002
+    find: true
+  - id: ksi
+    weight: 0.002
+    find: true
+  - id: rad
+    weight: 0.0017
+    find: true
+  - id: lm
+    weight: 0.0011
+    find: true
+  - id: C
+    weight: 0.0011
+    find: true
+  - id: var
+    weight: 0.0007
+    find: false
+  - id: bbl
+    weight: 0.0007
+    find: true
+  - id: Torr
+    weight: 0.0007
+    find: true
+  - id: Sv
+    weight: 0.0007
+    find: true
+  - id: yd
+    weight: 0.0007
+    find: true
+  - id: l_ton
+    weight: 0.0007
+    find: true
+  - id: cfm
+    weight: 0.0007
+    find: true
+  - id: eV
+    weight: 0.0004
+    find: true
+  - id: thou
+    weight: 0.0004
+    find: true
+prefixes:
+  - id: k
+    weight: 0.1666
+    find: true
+  - id: m
+    weight: 0.0802
+    find: true
+  - id: M
+    weight: 0.0483
+    find: true
+  - id: u
+    weight: 0.0275
+    find: true
+  - id: G
+    weight: 0.0188
+    find: true
+  - id: c
+    weight: 0.0178
+    find: true
+  - id: n
+    weight: 0.0096
+    find: true
+  - id: p
+    weight: 0.0051
+    find: true
+  - id: T
+    weight: 0.0032
+    find: true
+  - id: E
+    weight: 0.0026
+    find: true
+  - id: f
+    weight: 0.0011
+    find: true
+  - id: P
+    weight: 0.0004
+    find: true
+expressions:
+  - parts: oC
+    weight: 0.0607
+    sources:
+      mechanical_civil: 17
+      electrical: 31
+      chemical_process_hvac: 52
+      s1: 1
+  - parts: m:m
+    weight: 0.0478
+    sources:
+      mechanical_civil: 36
+      electrical: 17
+      chemical_process_hvac: 15
+      tasks: 1
+      s1: 1
+  - parts: m
+    weight: 0.0447
+    sources:
+      mechanical_civil: 30
+      electrical: 14
+      chemical_process_hvac: 9
+      tasks: 2
+      s1: 1
+  - parts: deg
+    weight: 0.0374
+    sources:
+      mechanical_civil: 23
+      electrical: 33
+      chemical_process_hvac: 13
+      s1: 1
+  - parts: V
+    weight: 0.0346
+    sources:
+      mechanical_civil: 4
+      electrical: 81
+      chemical_process_hvac: 2
+      s1: 1
+  - parts: k:W
+    weight: 0.0271
+    sources:
+      mechanical_civil: 8
+      electrical: 20
+      chemical_process_hvac: 19
+      s1: 1
+  - parts: Hz
+    weight: 0.0267
+    sources:
+      mechanical_civil: 7
+      electrical: 54
+      chemical_process_hvac: 2
+      s1: 1
+  - parts: oF
+    weight: 0.0258
+    sources:
+      mechanical_civil: 11
+      electrical: 1
+      chemical_process_hvac: 24
+      s1: 1
+  - parts: in
+    weight: 0.0242
+    sources:
+      mechanical_civil: 20
+      electrical: 8
+      chemical_process_hvac: 10
+      s1: 1
+  - parts: ft
+    weight: 0.0194
+    sources:
+      mechanical_civil: 17
+      electrical: 6
+      chemical_process_hvac: 7
+      s1: 1
+  - parts: K
+    weight: 0.0191
+    sources:
+      mechanical_civil: 4
+      electrical: 7
+      chemical_process_hvac: 18
+      s1: 1
+  - parts: h
+    weight: 0.019
+    sources:
+      mechanical_civil: 12
+      electrical: 14
+      chemical_process_hvac: 7
+      s1: 1
+  - parts: m s^-1
+    weight: 0.0179
+    sources:
+      mechanical_civil: 7
+      electrical: 1
+      chemical_process_hvac: 8
+      tasks: 1
+      s1: 1
+  - parts: M:W
+    weight: 0.0179
+    sources:
+      mechanical_civil: 7
+      electrical: 13
+      chemical_process_hvac: 12
+  - parts: W
+    weight: 0.0165
+    sources:
+      mechanical_civil: 1
+      electrical: 27
+      chemical_process_hvac: 7
+      s1: 1
+  - parts: k:ohm
+    weight: 0.0157
+    sources:
+      electrical: 6
+      tasks: 2
+      s1: 1
+  - parts: A
+    weight: 0.0154
+    sources:
+      mechanical_civil: 3
+      electrical: 34
+      s1: 1
+  - parts: u:m
+    weight: 0.0146
+    sources:
+      mechanical_civil: 12
+      electrical: 4
+      chemical_process_hvac: 6
+      s1: 1
+  - parts: psi
+    weight: 0.0142
+    sources:
+      mechanical_civil: 7
+      chemical_process_hvac: 12
+      s1: 1
+  - parts: k:m h^-1
+    weight: 0.0129
+    sources:
+      mechanical_civil: 7
+      electrical: 1
+      chemical_process_hvac: 1
+      tasks: 1
+      s1: 1
+  - parts: k:g
+    weight: 0.0124
+    sources:
+      mechanical_civil: 8
+      electrical: 3
+      chemical_process_hvac: 7
+      s1: 1
+  - parts: rpm
+    weight: 0.0119
+    sources:
+      mechanical_civil: 11
+      electrical: 7
+      chemical_process_hvac: 3
+  - parts: M:Pa
+    weight: 0.0117
+    sources:
+      mechanical_civil: 13
+      chemical_process_hvac: 3
+      s1: 1
+  - parts: k:m
+    weight: 0.0111
+    sources:
+      mechanical_civil: 6
+      electrical: 13
+      chemical_process_hvac: 2
+      s1: 1
+  - parts: m^2
+    weight: 0.0109
+    sources:
+      electrical: 4
+      chemical_process_hvac: 3
+      tasks: 1
+      s1: 1
+  - parts: hp
+    weight: 0.0107
+    sources:
+      mechanical_civil: 7
+      electrical: 7
+      chemical_process_hvac: 5
+  - parts: bar
+    weight: 0.0099
+    sources:
+      mechanical_civil: 7
+      chemical_process_hvac: 6
+      s1: 1
+  - parts: k:V
+    weight: 0.0098
+    sources:
+      electrical: 27
+  - parts: k:Pa
+    weight: 0.0098
+    sources:
+      mechanical_civil: 8
+      chemical_process_hvac: 5
+      s1: 1
+  - parts: s
+    weight: 0.0098
+    sources:
+      mechanical_civil: 4
+      electrical: 15
+      chemical_process_hvac: 1
+      s1: 1
+  - parts: J
+    weight: 0.0088
+    sources:
+      mechanical_civil: 2
+      electrical: 6
+      chemical_process_hvac: 6
+      s1: 1
+  - parts: c:m
+    weight: 0.0085
+    sources:
+      mechanical_civil: 8
+      electrical: 1
+      chemical_process_hvac: 4
+  - parts: L
+    weight: 0.0085
+    sources:
+      mechanical_civil: 7
+      chemical_process_hvac: 4
+      s1: 1
+  - parts: k:Hz
+    weight: 0.008
+    sources:
+      electrical: 22
+  - parts: g
+    weight: 0.0072
+    sources:
+      mechanical_civil: 5
+      electrical: 2
+      chemical_process_hvac: 3
+      s1: 1
+  - parts: atm
+    weight: 0.0068
+    sources:
+      electrical: 1
+      chemical_process_hvac: 9
+  - parts: min
+    weight: 0.0068
+    sources:
+      electrical: 12
+      chemical_process_hvac: 2
+      s1: 1
+  - parts: lb
+    weight: 0.0068
+    sources:
+      mechanical_civil: 6
+      chemical_process_hvac: 4
+  - parts: m^3
+    weight: 0.0065
+    sources:
+      mechanical_civil: 3
+      chemical_process_hvac: 5
+      s1: 1
+  - parts: n:m
+    weight: 0.0064
+    sources:
+      mechanical_civil: 1
+      electrical: 9
+      chemical_process_hvac: 2
+      s1: 1
+  - parts: N
+    weight: 0.0063
+    sources:
+      mechanical_civil: 8
+      s1: 1
+  - parts: mi
+    weight: 0.0061
+    sources:
+      mechanical_civil: 6
+      electrical: 6
+  - parts: G:W
+    weight: 0.0061
+    sources:
+      electrical: 3
+      chemical_process_hvac: 7
+  - parts: m:A
+    weight: 0.0061
+    sources:
+      electrical: 8
+      chemical_process_hvac: 3
+      s1: 1
+  - parts: dB
+    weight: 0.006
+    sources:
+      mechanical_civil: 2
+      electrical: 11
+      chemical_process_hvac: 1
+  - parts: t
+    weight: 0.0057
+    sources:
+      mechanical_civil: 6
+      electrical: 3
+      chemical_process_hvac: 1
+  - parts: W K^-1 m^-1
+    weight: 0.0053
+    sources:
+      chemical_process_hvac: 6
+      s1: 1
+  - parts: M:Hz
+    weight: 0.0051
+    sources:
+      electrical: 14
+  - parts: h k:W
+    weight: 0.005
+    sources:
+      electrical: 7
+      chemical_process_hvac: 2
+      s1: 1
+  - parts: G:Pa
+    weight: 0.005
+    sources:
+      mechanical_civil: 7
+      electrical: 1
+  - parts: knot
+    weight: 0.0044
+    sources:
+      mechanical_civil: 4
+      electrical: 1
+      chemical_process_hvac: 2
+  - parts: A k:V
+    weight: 0.0044
+    sources:
+      electrical: 12
+  - parts: Btu h^-1
+    weight: 0.0043
+    sources:
+      chemical_process_hvac: 6
+  - parts: g mol^-1
+    weight: 0.0041
+    sources:
+      mechanical_civil: 3
+      chemical_process_hvac: 3
+  - parts: ft min^-1
+    weight: 0.004
+    sources:
+      mechanical_civil: 5
+      chemical_process_hvac: 1
+  - parts: mph
+    weight: 0.004
+    sources:
+      mechanical_civil: 5
+      chemical_process_hvac: 1
+  - parts: M:J k:g^-1
+    weight: 0.0038
+    sources:
+      mechanical_civil: 2
+      electrical: 1
+      chemical_process_hvac: 3
+  - parts: m s^-2
+    weight: 0.0038
+    sources:
+      mechanical_civil: 1
+      chemical_process_hvac: 3
+      s1: 1
+  - parts: N m
+    weight: 0.0036
+    sources:
+      mechanical_civil: 4
+      s1: 1
+  - parts: k:J mol^-1
+    weight: 0.0036
+    sources:
+      chemical_process_hvac: 5
+  - parts: ohm
+    weight: 0.0036
+    sources:
+      electrical: 7
+      s1: 1
+  - parts: m:m^2
+    weight: 0.0033
+    sources:
+      electrical: 9
+  - parts: G:Hz
+    weight: 0.0033
+    sources:
+      electrical: 9
+  - parts: u:F
+    weight: 0.0032
+    sources:
+      electrical: 6
+      s1: 1
+  - parts: m:s
+    weight: 0.0032
+    sources:
+      electrical: 6
+      s1: 1
+  - parts: J K^-1 k:g^-1
+    weight: 0.0031
+    sources:
+      chemical_process_hvac: 3
+      s1: 1
+  - parts: d
+    weight: 0.0031
+    sources:
+      mechanical_civil: 3
+      electrical: 3
+  - parts: p:F
+    weight: 0.0029
+    sources:
+      electrical: 8
+  - parts: k:A
+    weight: 0.0029
+    sources:
+      electrical: 8
+  - parts: k:cal k:g^-1
+    weight: 0.0027
+    sources:
+      mechanical_civil: 3
+      chemical_process_hvac: 1
+  - parts: lbf
+    weight: 0.0026
+    sources:
+      mechanical_civil: 4
+  - parts: m:V
+    weight: 0.0026
+    sources:
+      electrical: 7
+  - parts: T:W h
+    weight: 0.0025
+    sources:
+      electrical: 3
+      chemical_process_hvac: 2
+  - parts: M:J
+    weight: 0.0025
+    sources:
+      electrical: 1
+      chemical_process_hvac: 3
+  - parts: u:s
+    weight: 0.0025
+    sources:
+      mechanical_civil: 1
+      electrical: 5
+  - parts: F
+    weight: 0.0025
+    sources:
+      mechanical_civil: 1
+      electrical: 5
+  - parts: W h
+    weight: 0.0025
+    sources:
+      mechanical_civil: 1
+      electrical: 5
+  - parts: Pa
+    weight: 0.0024
+    sources:
+      chemical_process_hvac: 2
+      s1: 1
+  - parts: k:g m^-3
+    weight: 0.0024
+    sources:
+      mechanical_civil: 1
+      chemical_process_hvac: 1
+      s1: 1
+  - parts: in^2
+    weight: 0.0023
+    sources:
+      mechanical_civil: 3
+      electrical: 1
+  - parts: A M:V
+    weight: 0.0022
+    sources:
+      electrical: 6
+  - parts: W h k:g^-1
+    weight: 0.0022
+    sources:
+      electrical: 6
+  - parts: W h L^-1
+    weight: 0.0022
+    sources:
+      electrical: 6
+  - parts: c:P
+    weight: 0.0021
+    sources:
+      chemical_process_hvac: 3
+  - parts: c:St
+    weight: 0.0021
+    sources:
+      chemical_process_hvac: 3
+  - parts: gal min^-1
+    weight: 0.0021
+    sources:
+      chemical_process_hvac: 3
+  - parts: J K^-1 mol^-1
+    weight: 0.0021
+    sources:
+      chemical_process_hvac: 3
+  - parts: K m^2 W^-1
+    weight: 0.0021
+    sources:
+      chemical_process_hvac: 3
+  - parts: gal
+    weight: 0.0021
+    sources:
+      chemical_process_hvac: 3
+  - parts: T
+    weight: 0.002
+    sources:
+      mechanical_civil: 2
+      electrical: 2
+  - parts: PS
+    weight: 0.002
+    sources:
+      mechanical_civil: 3
+  - parts: g h^-1 k:W^-1
+    weight: 0.002
+    sources:
+      mechanical_civil: 3
+  - parts: m:g k:g^-1
+    weight: 0.002
+    sources:
+      mechanical_civil: 3
+  - parts: s_ton
+    weight: 0.002
+    sources:
+      mechanical_civil: 3
+  - parts: E:N
+    weight: 0.002
+    sources:
+      mechanical_civil: 3
+  - parts: lb ft^-1
+    weight: 0.002
+    sources:
+      mechanical_civil: 3
+  - parts: ksi
+    weight: 0.002
+    sources:
+      mechanical_civil: 3
+  - parts: G:T
+    weight: 0.002
+    sources:
+      mechanical_civil: 3
+  - parts: k:W k:g^-1
+    weight: 0.0018
+    sources:
+      electrical: 5
+  - parts: A h
+    weight: 0.0018
+    sources:
+      electrical: 5
+  - parts: k:J
+    weight: 0.0018
+    sources:
+      electrical: 1
+      chemical_process_hvac: 2
+  - parts: H
+    weight: 0.0018
+    sources:
+      mechanical_civil: 1
+      electrical: 3
+  - parts: m^2 g^-1
+    weight: 0.0018
+    sources:
+      mechanical_civil: 1
+      electrical: 3
+  - parts: Pa s
+    weight: 0.0017
+    sources:
+      chemical_process_hvac: 1
+      s1: 1
+  - parts: W m^-2
+    weight: 0.0017
+    sources:
+      mechanical_civil: 1
+      s1: 1
+  - parts: m:ohm
+    weight: 0.0015
+    sources:
+      electrical: 4
+  - parts: u:V
+    weight: 0.0015
+    sources:
+      electrical: 4
+  - parts: n:F
+    weight: 0.0015
+    sources:
+      electrical: 4
+  - parts: k:J k:g^-1
+    weight: 0.0015
+    sources:
+      electrical: 4
+  - parts: h m:A
+    weight: 0.0015
+    sources:
+      electrical: 4
+  - parts: W k:g^-1
+    weight: 0.0015
+    sources:
+      electrical: 4
+  - parts: TR
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: L s^-1
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: g m^-2
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: m^2 s^-1
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: m:Pa s
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: K^-1
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: Btu lb^-1
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: J mol^-1
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: J k:g^-1 oC^-1
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: k:m^3
+    weight: 0.0014
+    sources:
+      chemical_process_hvac: 2
+  - parts: rad s^-1
+    weight: 0.0014
+    sources:
+      electrical: 1
+      s1: 1
+  - parts: ft^2
+    weight: 0.0013
+    sources:
+      mechanical_civil: 2
+  - parts: k:g k:W^-1
+    weight: 0.0013
+    sources:
+      mechanical_civil: 2
+  - parts: m min^-1
+    weight: 0.0013
+    sources:
+      mechanical_civil: 2
+  - parts: K^2
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: M:ohm
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: u:V oC^-1
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: K^3
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: K^4
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: M:V m^-1
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: G:W h
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: M:W h
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: h k:W m^-2
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: p:m
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: A V
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: u:T
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: m:T
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: m ohm
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: f:F
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: n:s
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: p:s
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: F g^-1
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: lm W^-1
+    weight: 0.0011
+    sources:
+      electrical: 3
+  - parts: W c:m^-2
+    weight: 0.0011
+    sources:
+      electrical: 1
+      chemical_process_hvac: 1
+  - parts: k:N
+    weight: 0.001
+    sources:
+      s1: 1
+  - parts: L min^-1
+    weight: 0.001
+    sources:
+      s1: 1
+  - parts: k:g m^2 s^-3
+    weight: 0.001
+    sources:
+      s1: 1
+  - parts: m:W
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: u:H
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: k:F
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: m:H
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: M:var
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: u:A
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: M:V
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: S m^-1
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: m:S c:m^-1
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: k:W L^-1
+    weight: 0.0007
+    sources:
+      electrical: 2
+  - parts: ft s^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: W ohm K^-2
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: Btu W^-1 h^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: H^2
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: bar g
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: m:g
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: c:m^2
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: m:m^2 s^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: mol L^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: L^2
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: s u:Pa
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: s^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: lb h^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: bbl
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: J K^-1 g^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: Btu lb^-1 oF^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: cal g^-1 oC^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: J K^-1
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: Torr
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: Sv
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: m:C
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: m:S
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: Btu
+    weight: 0.0007
+    sources:
+      chemical_process_hvac: 1
+  - parts: N m^-2
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: s min^-1
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: ft lbf min^-1
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: in m
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: k:g c:m^-2
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: t d^-1
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: G:J
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: N m:m^-2
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: u:g m^-3
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: yd^3
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: in lb
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: N m:m^-1
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: m:m N^-1
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: E:L
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: k:g L^-1
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: m:g m^-3
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: V deg
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: l_ton
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: T:K
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: TR^3
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: ft lbf
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: lb hp^-1
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: cfm
+    weight: 0.0007
+    sources:
+      mechanical_civil: 1
+  - parts: u:ohm
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: in m:m^2
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: J k:g^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: k:V^2
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: C
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: G:S
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: m:V u:s^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: P:V W
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: k:W m^-2
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: k:m^2
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: G:W in
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: m:V oC^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: eV
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: m:V V^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: W c:m^-3
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: k:V m^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: rad
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: n:H m^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: n:V
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: Hz ohm
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: thou
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: W g^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: F c:m^-3
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: in oC
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: F c:m^-2
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: M:J L^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: V F^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: h d^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: m:A c:m^-2
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: m:F c:m^-2
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: V Hz^-1
+    weight: 0.0004
+    sources:
+      electrical: 1
+  - parts: V in
+    weight: 0.0004
+    sources:
+      electrical: 1
