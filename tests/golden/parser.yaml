@@ -453,11 +453,16 @@ cases:
   - { id: "chip-res-e05", latex: "2\\res{1}{\\frac{\\sqrt{2}}{2}}", error: true, chips: { "res:1": { value: "sqrt(2)/2", exact: true } }, source: "derived", group: "chips", note: "a number before any result chip, whatever it shows" }
   - { id: "chip-res-e06", latex: "\\res{1}{0{,}5}3", error: true, options: { decimalComma: true }, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-e07", latex: "1\\emark3\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a number with its exponent" }
+  - { id: "chip-res-e08", latex: "\\sin2\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a function without brackets: its bare argument is a product too" }
+  - { id: "chip-res-e09", latex: "\\sin\\res{1}{0.5}3", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-e10", latex: "\\cos\\res{1}{0.5}\\res{2}{0.25}", error: true, chips: { "res:1": { value: "1/2", exact: true }, "res:2": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-e11", latex: "\\ln2\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-09", latex: "\\res{1}{0.5}\\times3", expect: "3/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "with × it is the product" }
   - { id: "chip-res-10", latex: "3\\times\\res{1}{0.5}", expect: "3/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-11", latex: "\\res{1}{0.5}\\times\\res{2}{0.25}", expect: "1/8", chips: { "res:1": { value: "1/2", exact: true }, "res:2": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-12", latex: "\\res{1}{0.5}x", expect: "x/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a letter is not a digit: drawn [0.5]x, as 2x" }
   - { id: "chip-ans-07", latex: "\\ans3", expect: "21", chips: { "ans": { value: "7", exact: true } }, source: "derived", group: "chips", note: "drawn [Ans]3: a name, as x3" }
+  - { id: "chip-ans-08", latex: "\\sin2\\ans", expect: "sin(14)", chips: { "ans": { value: "7", exact: true } }, source: "derived", group: "chips", note: "Ans in a bare function argument multiplies as 2x" }
   - { id: "chip-const-05", latex: "2\\const{c}{c}", expect: "599584916", chips: { "const:c": { value: "299792458", exact: true } }, source: "derived", group: "chips", note: "a symbol, not digits" }
   # --- R10 (2026-10-13): the Tmpl palette (spec/keyboard.yaml `templates:`). Each template as MathLive writes it when
   # filled from the keys (app/test/tmpl.spec.ts types the same samples); expected values derived by hand.

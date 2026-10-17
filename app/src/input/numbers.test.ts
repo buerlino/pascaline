@@ -77,6 +77,15 @@ describe("a number beside a result chip (F25)", () => {
   it("two result chips side by side are an error", () => {
     expect(message("\\res{1}{0.5}\\res{2}{0.25}")).toBe("put × between two results");
   });
+  it.each(["\\sin2\\res{1}{0.5}", "\\sin\\res{1}{0.5}3", "\\ln2\\res{1}{0.5}"])(
+    "in a function's bare argument, %s is an error",
+    (latex) => {
+      expect(message(latex)).toBe("put × between a result and a number");
+    },
+  );
+  it("two result chips in a function's bare argument are an error", () => {
+    expect(message("\\cos\\res{1}{0.5}\\res{2}{0.25}")).toBe("put × between two results");
+  });
   it.each([
     ["\\res{1}{0.5}\\times3", "(1/2)*3"],
     ["3\\times\\res{1}{0.5}", "3*(1/2)"],
@@ -86,6 +95,7 @@ describe("a number beside a result chip (F25)", () => {
     ["\\frac{\\res{1}{0.25}}{2}", "(1/2)/2"],
     ["\\ans3", "(7)*3"],
     ["2\\ans", "2*(7)"],
+    ["\\sin2\\ans", "sin(2*(7))"],
     ["2\\const{c}{c}", "2*(299792458)"],
   ])("%s is kept as %s", (latex, out) => {
     expect(giac(latex)).toBe(out);
