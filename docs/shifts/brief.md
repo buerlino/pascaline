@@ -16,7 +16,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   R50a (three palettes as a mockup; docs only, no app code) can run any time beside the lane, so the owner's pick is ready before R50b.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's two parser-only packages R30 and R39): R30, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's parser-only packages R30, R51, R39 and R52): R30, R51, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, R52, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A9 (key vibration, F41) as soon as the owner's phone is connected: it needs a phone with a motor, and the Tab One has none. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -28,7 +28,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
 - **R15c goes first** among the feel packages: it changes keys the hand is learning. Every week of use on D makes the change harder (docs/03 rule 8). R12a draws the keypad, R4b sets the user keys and R41 labels the keys, so all three wait for it.
 - **The deep-dive packages (0f, and G16–G18 and G25 in 0e) go by importance, then by what they need:**
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
-  - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R30 (G20 and R29 are merged).
+  - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R30 and R51 (G20 and R29 are merged).
   - **Day packages sit next to the code they share:** the start-chunk budget has 1.32 kB gzip left (52.68 of 54 kB after G19, 2026-10-17; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R12b to come.
   - **Trust features after the code they build on:**
     - R36 adds a line to the history rows R11 built.
@@ -38,7 +38,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **S7 early:** every later session reads less.
 
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14)
-The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's two parser-only packages (R30, R39): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
+The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's parser-only packages (R30, R51, R39, R52): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
 
 ### Rules for a night shift (they replace rules sections 4, 10 and 11, but not 4a, and change section 8a)
 1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
@@ -68,6 +68,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 3c | G28 a name the input binds is not a used value (F28): merged by day (`79e8b0f`), skip | gorge, Sonnet | `p1/gorge-m4-bound` | — |
 | 4 | **Opus pass 1** on steps 2–3c, then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
+| 5a | R51 a space between two numbers (F43) | ron, **Opus** | `p1/ron-m4-numspace` | 45 min + review |
 | 6 | G19 a safe start (F31): merged by day (`5ad277e`), skip | gorge, Sonnet | `p1/gorge-m4-safestart` | — |
 | 7 | G24 a memory cap for the Giac worker (F32): merged by day (`cc095e3`), skip | gorge, Sonnet | `p1/gorge-m4-memcap` | — |
 | 8 | **Opus pass 2** on steps 5–7 | Opus | — | 20 min + fixes |
@@ -80,6 +81,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 15 | G22 why the mark: the reasons as facts | gorge, Sonnet | `p1/gorge-m4-why` | 1 h + review |
 | 16 | **Opus pass 4** on steps 13–15 | Opus | — | 20 min + fixes |
 | 17 | R39 the real odd root in Home (P5 b) | ron, **Opus** | `p1/ron-m4-oddroot` | 45 min + review |
+| 17a | R52 the parser's messages in i18n | ron, Sonnet | `p1/ron-m4-parsemsg` | 1 h + review |
 | 18 | G14 exact results marked ≈ (C9) | gorge, Sonnet | `p1/gorge-m4-marks` | 45 min + review |
 | 19 | G23 more precision before ⚠ | gorge, Sonnet | `p1/gorge-m4-escalate` | 1 h + review |
 | 20 | **Opus pass 5** on steps 17–19 | Opus | — | 20 min + fixes |
@@ -220,8 +222,10 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | now (R29, same file, is merged) | ~0.5 d |
+| R51 | A space between two numbers | F43 | night | ron, **Opus** | `p1/ron-m4-numspace` | R30 (same file) | ~0.25 d |
 | G22 | Why the mark: the reasons as facts | review item 14 | night | gorge, Sonnet | `p1/gorge-m4-why` | now | ~0.5 d |
-| R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R30 (same file) | ~0.25 d |
+| R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R51 (same file) | ~0.25 d |
+| R52 | The parser's messages in i18n | R29 decision 1 | night | ron, Sonnet | `p1/ron-m4-parsemsg` | R39 (it touches every parser message) | ~0.5 d |
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23; and G18 if P15 holds | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
@@ -239,7 +243,7 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 
 **Why these models:**
 - **Opus:**
-  - R30 and R39 change parser rules, and a slip there computes a different number (as R14 and R18).
+  - R30, R51 and R39 change parser rules, and a slip there computes a different number (as R14 and R18).
   - G26 is precision maths every inexact constant passes through.
   - R38b overwrites the user's stored data.
   - The sandra packages are research and rewriting (sandra runs Opus).
@@ -783,8 +787,26 @@ Commits in this order:
 
 Gate: the parser golden cases, the golden gate (parser), vitest; the task benchmark unchanged.
 
+### ron, R51: a space between two numbers (F43), branch `p1/ron-m4-numspace`
+Backlog F43; decisions.md "R29: the parser's messages, and a space between two numbers" point 2 (owner, 2026-10-17). Parser only (night queue). Starts when R30 is merged (same file). Read:
+- `app/src/input/parse.ts`: `SPACING` (line 16), the whitespace skip in `tokenize` (line 44), the number branch, and `besideResult()` (R29's "where a number ends");
+- what the space key (`spec/keyboard.yaml` r10c4, `type: " "`) puts on the line, and whether a pasted or copied result can carry digit groups (`\,`);
+- `app/src/input/numbers.test.ts` and `parser.yaml` (groups "decimals" and "chips").
+
+**Behaviour today** (`tools/probes/parse.ts`): `2 3`, `2\ 3`, `2\,3`, `2\;3` and `2\quad3` → `2*3`; `1\,000` → `1*0` = 0; `2.5\ .3` → `2.5*.3`. The line shows two numbers with a gap, no ×.
+
+Commits in this order:
+1. **Tests first** (`parser.yaml` error cases and `numbers.test.ts` messages, `derived`):
+   - every input above is an error, "put × between two numbers"; so is a number with its ᴇ exponent before a space and a number (`1\emark3\ 2`);
+   - kept as today: `2\ x`, `x\ 2`, `2\ \pi`, `\sin\ 2`, `2\times\ 3`, `\left(2\right)\ 3`, a space after a command (`2\times 3`, MathLive's own), and every keyboard template's round trip;
+   - a result chip, a space and a number is already R29's error: one case pins it.
+2. **Fix:** a number, then spacing (a space or a spacing command), then a number is an error that names the fix. Spacing anywhere else stays nothing, as today.
+3. **G2 item 59:** if the owner has answered it, the report says so. An answer of 6 goes under "Needs a decision"; any other answer keeps the error.
+
+Gate: the parser golden cases, the golden gate (parser), vitest, typecheck.
+
 ### ron, R39: the real odd root in Home (P5 b), branch `p1/ron-m4-oddroot`
-decisions.md P5 (b), as revised on 2026-10-14. Parser only (night queue). Starts when R30 is merged (same file). Read:
+decisions.md P5 (b), as revised on 2026-10-14. Parser only (night queue). Starts when R51 is merged (same file). Read:
 - `app/src/input/emit.ts`: `realOddRoots` (line 13) and the root template (lines 205–215);
 - where Home, Solve, Function and CAS set their serialize options;
 - `app/src/input/emit-js.ts`, the plot evaluator;
@@ -809,6 +831,21 @@ Commits in this order:
 2. **Fix:** with `realOddRoots`, now set for Home, Solve and Function but not CAS, a power whose exponent is a literal fraction p/q in lowest terms, with q odd, becomes `surd(base,q)^p`. The plot evaluator does the same.
 
 Gate: parser and home golden cases, the golden gate, vitest.
+
+### ron, R52: the parser's messages in i18n, branch `p1/ron-m4-parsemsg`
+decisions.md "R29: the parser's messages, and a space between two numbers" point 1 (owner, 2026-10-17). No new behaviour (night queue). Starts when R39 is merged: it touches every parser message. Read:
+- `app/src/i18n/index.ts` and `app/src/i18n/enPalettes.ts` (a table loaded with its own chunk, not the start chunk);
+- `SerializeError` in `app/src/input/emit.ts`, and `fail()` and the throws in `app/src/input/parse.ts`;
+- where Home shows a parser message (`app/src/state/session.svelte.ts`, the `SerializeError` catch);
+- decisions.md M4-3 (the parser chunk is lazy).
+
+**Today:** about 75 messages are English text written into `new SerializeError(…)` or `fail(…)`: parse.ts 55, emit.ts 11, chip-giac.ts 7, emit-js.ts and latex-to-giac.ts one each. Some carry a name (`${name}: put its whole argument in the brackets, as ${name}(…)`).
+
+Commits in this order:
+1. **Tests first:** a Vitest check that no `SerializeError` or `fail` in `app/src/input/` takes a string literal or template, only a key from the table; it fails on today's code. The existing message tests (`numbers.test.ts` and the others that read `.message`) stay as they are, so the text Home shows does not change.
+2. **Fix:** `app/src/i18n/enParser.ts`, keys `parse.*` with `{name}` placeholders, imported by the input modules only, so it rides in the parser chunk. `SerializeError` takes a key and its values and keeps the English text as its `message`, so the Home catch is unchanged.
+
+Gate: vitest, typecheck, the golden gate (parser), the start-chunk size test (no change).
 
 ### gorge, G22: why the mark, the reasons as facts, branch `p1/gorge-m4-why`
 Deep-dive item 14; R36 shows these reasons. No UI. Read:
