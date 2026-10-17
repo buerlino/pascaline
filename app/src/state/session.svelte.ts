@@ -6,6 +6,7 @@ import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../i
 import { SerializeError } from "../input/errors.ts";
 import { loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
+import { EngineMemoryError } from "../engine/types.ts";
 import {
   decimalFromRational,
   decimalFromString,
@@ -512,7 +513,7 @@ export class Session {
         live.status = "cancelled";
       } else {
         live.status = "error";
-        live.text = e instanceof Error ? e.message : String(e);
+        live.text = e instanceof EngineMemoryError ? t("error.memory") : e instanceof Error ? e.message : String(e);
       }
     }
   }

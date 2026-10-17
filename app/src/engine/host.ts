@@ -445,6 +445,13 @@ export class EngineHost {
   }
 }
 
+/** G24: a failed allocation reaches us as a C++ exception (`WebAssembly.Exception`, from `new`) or as an abort
+ *  (GMP, or the heap at its cap). The engine is not trusted after either: the client restarts it. */
+function isMemoryFailure(e: unknown): boolean {
+  if (typeof WebAssembly !== "undefined" && "Exception" in WebAssembly && e instanceof (WebAssembly as unknown as { Exception: new () => object }).Exception) return true;
+  return /\bOOM\b|out of memory|cannot enlarge memory|^Aborted/i.test(e instanceof Error ? e.message : String(e));
+}
+
 /** Builds the message handler used by the worker: init loads Giac, then requests go to EngineHost. */
 export function createRequestHandler(load: GiacLoader, post: (r: Response) => void): (req: Request) => Promise<void> {
   // Calls that arrive while init is still loading the engine wait for it, in arrival order (a Plot
@@ -495,7 +502,7 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           break;
       }
     } catch (e) {
-      post({ id: req.id, type: "fatal", message: e instanceof Error ? e.message : String(e) });
+      post({ id: req.id, type: "fatal", message: e instanceof Error ? e.message : String(e), ...(isMemoryFailure(e) ? { memory: true as const } : {}) });
     }
   };
 }

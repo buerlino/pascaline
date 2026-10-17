@@ -122,6 +122,7 @@ export const en = {
   "error.syntax": "Syntax error",
   "error.timeout": "Stopped: it took too long",
   "error.engine": "The calculation failed",
+  "error.memory": "Out of memory: the engine was restarted",
   "engine.starting": "Starting the engine…",
   "engine.error": "The engine failed to start.",
   "mode.title": "Mode",
