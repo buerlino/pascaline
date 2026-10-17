@@ -14,6 +14,13 @@ What to read, and where each fact lives. One place per fact: status and tasks in
 - [CONTRIBUTING.md](../CONTRIBUTING.md): contributor rules (clean room, DCO, dependencies, golden-test sources); keep it consistent with this file.
 - Outreach drafts (r/calculators post, email to Bernard Parisse) are kept **outside the repo** in `../outreach/`. The user sends these personally.
 
+## The rest of docs/ (what each file is for)
+- [03-feature-analysis.md](03-feature-analysis.md): **section 0 is binding** (the owner's design rules and the removal tests); the engineer-core plan and gates (section 8).
+- [05-ui-plan.md](05-ui-plan.md): the UI plan for milestone 4a (its section 7 wins where it differs); [feedback.md](feedback.md): the owner's feedback inbox, dated, in the owner's words (docs/03 rule 12).
+- [shifts/rules.md](shifts/rules.md) (the standing rules for every agent; section 4 is the pipeline) and [shifts/brief.md](shifts/brief.md) (the packages, the lanes, the night queue); reports in [shifts/](shifts/).
+- Research notes: [research/r7-unit-slots.md](research/r7-unit-slots.md), [research/r8-menus.md](research/r8-menus.md), [research/r9-unit-pad.md](research/r9-unit-pad.md) (the unit view's entry), [research/r4-building-blocks.md](research/r4-building-blocks.md), [research/r2-wasm-start.md](research/r2-wasm-start.md), [research/engineer-needs.md](research/engineer-needs.md), [research/fdroid-feasibility.md](research/fdroid-feasibility.md), [research/giac-help-licence.md](research/giac-help-licence.md); [p3-units-plan.md](p3-units-plan.md) (the units plan as amended by P15).
+- History only: [cleanup-audit-2026-10-12.md](cleanup-audit-2026-10-12.md), [research/python-notes.md](research/python-notes.md) (the Python app, removed by P11). S7 (the docs diet) moves these to `docs/archive/`.
+
 ## Architecture (summary; details in [04-architecture.md](04-architecture.md) section 8)
 ```
 Capacitor shell (Android / iOS / desktop / plain web PWA)
