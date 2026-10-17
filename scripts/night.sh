@@ -25,14 +25,14 @@ say() { printf '%s %s\n' "$(date +%H:%M)" "$*" | tee -a "$out"; }
 grep -q "^## $(date +%F) night" "$coord/log.md" 2>/dev/null || printf '\n## %s night\n' "$(date +%F)" >> "$coord/log.md"
 log "night.sh started (max $max_steps steps)"
 export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
-steps=0; limits=0; bad=0
+steps=0; limits=0; bad=0; declare -A norsl=()
 henri_prompt='You are henri, the night coordinator. Read docs/shifts/brief.md section 0c (the rules, the queue table and the Opus pass) and the tail of .coord/log.md on stdin. Reply with exactly one line and nothing else: the next command to run, one of
-  scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus>                      (the next queue step not done; skip steps the table or the log marks merged or skipped)
-  scripts/pipeline.sh <agent> "<FIX prompt, verbatim>" --id <IDf1> --branch <branch> --model <m>   (a FIX line of the last Opus pass, one per call, in order)
+  scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model sonnet   (the next queue step not done; skip steps the table or the log marks merged or skipped)
+  scripts/pipeline.sh <agent> "<FIX prompt, verbatim>" --id <IDf1> --branch <branch> --model <m> --audit-model sonnet   (a FIX line of the last Opus pass, one per call, in order)
   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"   (after every 3 finished packages since the last pass, and at the end)
   scripts/pipeline.sh report                                                     (after the last pass and its FIX packages)
   SHIFT DONE                                                                     (after the report)
-A RESULT line in the log means that step is finished (MERGED or NOT MERGED); never repeat a finished step. Follow the last Opus pass QUEUE line. Decide nothing else.'
+A RESULT line in the log means that step is finished (MERGED, NOT MERGED or SKIPPED); never repeat a finished step. Follow the last Opus pass QUEUE line. Decide nothing else.'
 while (( steps < max_steps )); do
   n=$((steps + 1))
   # shellcheck disable=SC2016
@@ -43,9 +43,20 @@ while (( steps < max_steps )); do
     scripts/pipeline.sh\ *)
       if [[ "$cmd" =~ [\;\&\|\`\$\<\>] ]]; then bad=$((bad + 1)); log "night.sh: refused command with shell metacharacters"; (( bad >= 2 )) && exit 1; steps=$((steps + 1)); continue; fi
       bad=0; set +e
-      eval "timeout 14400 $cmd" >> "$out" 2>&1; rc=$?
+      # henri's package commands always audit with sonnet (brief 0c); pass and report take no such option
+      [[ "$cmd" == scripts/pipeline.sh\ pass\ * || "$cmd" == "scripts/pipeline.sh report" || "$cmd" == *--audit-model* ]] || cmd="$cmd --audit-model sonnet"
+      cmdout="$(mktemp)"
+      eval "timeout 14400 $cmd" > "$cmdout" 2>&1; rc=$?
       set -e
-      say "rc=$rc: $(tail -n 1 "$out")"
+      cat "$cmdout" >> "$out"
+      say "rc=$rc: $(tail -n 1 "$cmdout")"
+      if [[ $rc -ne 75 ]] && ! grep -q '^RESULT ' "$cmdout"; then
+        # no RESULT line: the step counts as NOT MERGED; the same command twice is SKIPPED (brief 0c rule 8)
+        norsl["$cmd"]=$(( ${norsl["$cmd"]:-0} + 1 ))
+        if (( ${norsl["$cmd"]} >= 2 )); then log "RESULT -: SKIPPED ($cmd: no RESULT line twice); do not repeat it"
+        else log "RESULT -: NOT MERGED ($cmd: no RESULT line, rc=$rc)"; fi
+      fi
+      rm -f "$cmdout"
       if [[ $rc -eq 75 ]]; then
         limits=$((limits + 1)); (( limits > 6 )) && { log "STOPPED night.sh: usage limit 6 times"; exit 1; }
         log "night.sh: usage limit, waiting $limit_wait s"; sleep "$limit_wait"

@@ -7,7 +7,11 @@
 #       --branch B          branch (default: the package heading's branch, or p1/<agent>-<slug>)
 #       --id ID             the package ID when the task is free text (a FIX package: G17f1)
 #       --model M           worker model: sonnet (default) or opus;  --effort E (default medium)
-#       --audit-model M     sofia's model for the diff audit (default sonnet)
+#       --audit-model M     sofia's model for the diff audit: auto (default: opus when --model opus or the diff
+#                           touches app/src/input/, app/src/engine/, engine/ or spec/keyboard.yaml, else sonnet),
+#                           sonnet or opus
+#       --no-worker         review-only: the branch must exist; phase-1 is merged into it first (a conflict is a
+#                           fix round for <agent>), then the checks, the audit and the merge as usual
 #       --checks LIST       auto (default), none, or a comma list of typecheck,vitest,e2e,golden
 #       --no-merge          stop after the audit; print the merge command instead
 #       --dry-run           print the bundle and the commands; start no agent, make no worktree
@@ -20,7 +24,13 @@
 # rounds fed only the failing output → sofia audits `git diff -U5 phase-1...<branch>` plus the
 # acceptance criteria → `git merge --no-ff --signoff` into phase-1 → worktree and branch removed.
 # Progress goes to .tasks/<n>-<id>/run.log and one line per step to .coord/log.md; stdout gets
-# only the final RESULT line. Exit 0 merged, 1 not merged, 75 usage limit (henri stops, night.sh waits).
+# only the final RESULT line, on every exit (die too: "RESULT #n ID: NOT MERGED (why)", or
+# "RESULT -: NOT STARTED (why)" before a run number exists). Exit 0 merged, 1 not merged, 2 not started
+# or failed early, 75 usage limit (henri stops, night.sh waits).
+# Environment: PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR (tarball caches, default: the main checkout's
+# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT, QALC_OUT; PW_PORT=$((5200 + n % 100)) is
+# exported to the worker, the fix rounds and the checks, so parallel runs never share a dev server.
+# Locks: host-cpu around the checks, integ (600 s) around the merge into phase-1.
 set -euo pipefail
 
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
@@ -29,6 +39,7 @@ coord="${PASCALINE_COORD:-$main/.coord}"
 tasks="$main/.tasks"
 mkdir -p "$tasks/archive" "$coord"
 export PASCALINE_DL_DIR="${PASCALINE_DL_DIR:-$main/engine/giac/_downloads}"
+export PASCALINE_QALC_DL_DIR="${PASCALINE_QALC_DL_DIR:-$main/engine/qalc/_downloads}"
 export GIAC_OUT="${GIAC_OUT:-$main/engine/giac/_out/gsl}"
 [[ -n "${QALC_OUT:-}" ]] || { [[ -n "$(ls -A "$main/engine/qalc/_out/dev" 2>/dev/null)" ]] && export QALC_OUT="$main/engine/qalc/_out/dev"; } || true
 export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
@@ -39,7 +50,17 @@ audit_tools=(--allowedTools Read,Grep,Glob --disallowedTools Bash,Edit,Write,Age
 
 log() { [[ ! -s "$coord/log.md" || -z "$(tail -c1 "$coord/log.md")" ]] || echo >> "$coord/log.md"; printf -- '- %s %s\n' "$(date +%H:%M)" "$*" >> "$coord/log.md"; }
 runlog() { printf '%s %s\n' "$(date +%H:%M:%S)" "$*" >> "$run/run.log"; }
-die() { echo "pipeline: $*" >&2; exit 2; }
+# Every exit prints one RESULT line; runno and id are set once the run has a number and an ID.
+runno=""; id=""
+die() {
+  echo "pipeline: $*" >&2
+  if [[ -n "$runno" ]]; then
+    [[ "${dry:-0}" -eq 1 ]] || log "pipeline #$runno $id: NOT MERGED ($*)"; echo "RESULT #$runno $id: NOT MERGED ($*)"
+  else
+    [[ "${dry:-0}" -eq 1 ]] || log "pipeline: NOT STARTED ($*)"; echo "RESULT -: NOT STARTED ($*)"
+  fi
+  exit 2
+}
 
 # The worktree where phase-1 is checked out (never switch branches in the main checkout).
 integ_dir() {
@@ -62,10 +83,11 @@ link_shared() {
 
 # ---------- subcommand: pass ----------
 if [[ "${1:-}" == "pass" ]]; then
-  n="${2:?usage: pipeline.sh pass <n> \"<IDs>\" [\"<open questions>\"]}"; ids="${3:?IDs}"; open="${4:-none}"
+  [[ $# -ge 3 ]] || die "usage: pipeline.sh pass <n> \"<IDs>\" [\"<open questions>\"]"
+  n="$2"; ids="$3"; open="${4:-none}"
   ensure_integ; run="$tasks/pass-$n"; mkdir -p "$run"
   log "Opus pass $n: spawned sofia (opus) on: $ids; waiting."
-  prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
+  prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Take the integration lock around the doc commit: tools/devlock.sh acquire integ pass-$n 600 before it, tools/devlock.sh release integ pass-$n right after. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
   set +e
   (cd "$integ" && timeout 7200 claude -p --agent sofia --model opus --effort medium "${claude_common[@]}" -n "pass-$n" "$prompt") > "$run/reply.md" 2> "$run/stderr.log"
   rc=$?; set -e
@@ -80,20 +102,21 @@ fi
 if [[ "${1:-}" == "report" ]]; then
   ensure_integ; run="$tasks/report-$(date +%F)"; mkdir -p "$run"
   log "Shift report: spawned sonnet writer; waiting."
-  prompt="Write the shift report of docs/shifts/brief.md section 0c (\"Shift report\") for the night section of .coord/log.md (the log is on stdin). You run in the phase-1 worktree $integ: commit the report there with git commit -s and the Sonnet trailer. Never push. Reply with the commit hash only."
+  prompt="Write the shift report of docs/shifts/brief.md section 0c (\"Shift report\") for the night section of .coord/log.md (the log is on stdin). You run in the phase-1 worktree $integ: commit the report there with git commit -s and the Sonnet trailer, holding the integration lock around the commit (tools/devlock.sh acquire integ report 600 before, tools/devlock.sh release integ report after). Never push. Reply with the commit hash only."
   tail -n 400 "$coord/log.md" | (cd "$integ" && timeout 1800 claude -p --model sonnet --effort medium "${claude_common[@]}" -n report "$prompt") > "$run/reply.md" 2> "$run/stderr.log" || true
   log "Shift report: $(tail -n1 "$run/reply.md")"; echo "RESULT report: $(tail -n1 "$run/reply.md")"; exit 0
 fi
 
 # ---------- a package ----------
-agent="${1:?usage: pipeline.sh <ron|gorge|annabell|sandra> \"<ID or task>\" [options]}"; task="${2:?task}"; shift 2
+[[ $# -ge 2 ]] || die "usage: pipeline.sh <ron|gorge|annabell|sandra> \"<ID or task>\" [options]"
+agent="$1"; task="$2"; shift 2
 case "$agent" in ron|gorge|annabell|sandra) ;; *) die "unknown agent $agent";; esac
-branch=""; id=""; model="sonnet"; effort="medium"; audit_model="sonnet"; checks="auto"; merge=1; dry=0
+branch=""; id=""; model="sonnet"; effort="medium"; audit_model="auto"; checks="auto"; merge=1; dry=0; nowork=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --branch) branch="$2"; shift 2;; --id) id="$2"; shift 2;; --model) model="$2"; shift 2;;
     --effort) effort="$2"; shift 2;; --audit-model) audit_model="$2"; shift 2;; --checks) checks="$2"; shift 2;;
-    --no-merge) merge=0; shift;; --dry-run) dry=1; shift;; *) die "unknown option $1";;
+    --no-merge) merge=0; shift;; --no-worker) nowork=1; shift;; --dry-run) dry=1; shift;; *) die "unknown option $1";;
   esac
 done
 
@@ -104,13 +127,16 @@ brief="$integ/docs/shifts/brief.md"
 spec_file="$(mktemp)"; trap 'rm -f "$spec_file"' EXIT
 if [[ "$task" =~ ^[A-Z][0-9]+[a-z0-9]*$ ]]; then
   id="${id:-$task}"
-  start="$(grep -nE "^### [a-z]+, .*\\b$task\\b" "$brief" | head -n1 | cut -d: -f1 || true)"
-  [[ -n "$start" ]] || die "package $task has no '### <agent>, $task' heading in brief section 7"
+  start="$(grep -nE "^### [a-z]+, $task:" "$brief" | head -n1 | cut -d: -f1 || true)"
+  [[ -n "$start" ]] || die "package $task has no '### <agent>, $task:' heading in $brief"
   end="$(awk -v s="$start" 'NR>s && /^##/ {print NR-1; exit}' "$brief")"; : "${end:=$(wc -l < "$brief")}"
   sed -n "${start},${end}p" "$brief" > "$spec_file"
   heading="$(sed -n "${start}p" "$brief")"
   # shellcheck disable=SC2016
-  [[ -n "$branch" ]] || branch="$(grep -oE 'branch `[^`]+`' <<<"$heading" | head -n1 | sed 's/branch `//; s/`//')"
+  if [[ -z "$branch" ]]; then
+    branch="$(grep -oE 'branch `[^`]+`' <<<"$heading" | head -n1 | sed 's/branch `//; s/`$//' || true)"
+    [[ -n "$branch" ]] || die "package $task: the heading in $brief has no branch \`...\`: $heading"
+  fi
 else
   printf '%s\n' "$task" > "$spec_file"
   id="${id:-task}"
@@ -124,6 +150,7 @@ n=$(( $(cat "$counter") + 1 ))
 run="$tasks/$(printf '%03d' "$n")-$slug"
 if [[ $dry -eq 1 ]]; then run="$(mktemp -d)"; fi
 mkdir -p "$run"
+export PW_PORT=$((5200 + n % 100))  # a dev-server port per run (app/playwright.config.ts)
 
 # The bundle: spec, the files it names (capped), the report format and the definition of done.
 bundle="$run/spec.md"
@@ -153,18 +180,25 @@ worker_prompt="You are $agent in pipeline run $n for package $id. The task bundl
 wt="$main/.claude/worktrees/pl-$(printf '%03d' "$n")-$slug"
 if [[ $dry -eq 1 ]]; then
   echo "DRY RUN: pipeline run $n, package $id, agent $agent ($model, $effort), branch $branch"
-  echo "integration worktree: $integ"; echo "worker worktree: $wt"; echo "checks: $checks; merge: $merge; audit model: $audit_model"
+  echo "PASCALINE_QALC_DL_DIR=$PASCALINE_QALC_DL_DIR PASCALINE_DL_DIR=$PASCALINE_DL_DIR PW_PORT=$PW_PORT"
+  echo "integration worktree: $integ"; echo "worker worktree: $wt"; echo "checks: $checks; merge: $merge; audit model: $audit_model; no-worker: $nowork"
   echo "--- bundle ($bundle, $(wc -l < "$bundle") lines) ---"; cat "$bundle"
   echo "--- commands ---"
   echo "git worktree add $wt -b $branch phase-1   (or: git worktree add $wt $branch, when the branch exists)"
-  echo "cat $bundle | claude -p --agent $agent --model $model --effort $effort ${claude_common[*]} ${worker_tools[*]} -n pl-$n-$agent \"<worker prompt>\""
+  if [[ $nowork -eq 1 ]]; then
+    echo "(--no-worker: no worker; git -C $wt merge phase-1 first, a conflict is a fix round for $agent)"
+  else
+    echo "cat $bundle | claude -p --agent $agent --model $model --effort $effort ${claude_common[*]} ${worker_tools[*]} -n pl-$n-$agent \"<worker prompt>\""
+  fi
   echo "checks in $wt/app: typecheck; npm run index && FIND_INDEX=required npm test; e2e when app/ changed; golden when engine or parser changed"
-  echo "git diff -U5 phase-1...$branch | claude -p --agent sofia --model $audit_model ${audit_tools[*]} \"AUDIT ...\""
-  echo "git -C $integ merge --no-ff --signoff $branch; git worktree remove $wt; git branch -d $branch"
-  rm -rf "$run"; exit 0
+  echo "git diff -U5 phase-1...$branch | claude -p --agent sofia --model ${audit_model/auto/<auto: opus for --model opus or app/src/input/, app/src/engine/, engine/, spec/keyboard.yaml; else sonnet>} ${audit_tools[*]} \"AUDIT ...\""
+  echo "git -C $integ merge --no-ff --signoff $branch; git worktree remove $wt; git branch -d $branch   (under: tools/devlock.sh acquire integ pipeline-$n 600)"
+  echo "environment for the worker, the fix rounds and the checks: PASCALINE_QALC_DL_DIR, PASCALINE_DL_DIR, PW_PORT=$PW_PORT"
+  rm -rf "$run"; echo "RESULT #$n $id: DRY RUN (nothing started)"; exit 0
 fi
 
-echo "$n" > "$counter"
+if [[ $nowork -eq 1 ]]; then git show-ref --verify --quiet "refs/heads/$branch" || die "--no-worker: branch $branch does not exist"; fi
+echo "$n" > "$counter"; runno="$n"
 log "pipeline #$n $id ($agent, $model) on $branch: started; bundle $bundle"
 runlog "start $id $agent $model $branch"
 
@@ -233,15 +267,44 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
   return 0
 }
 
-# Round 0: the worker.
-run_agent "pl-$n-$agent" "$run/worker-0.log" "$agent" "$model" "$effort" "$bundle" "$worker_prompt" "${worker_tools[@]}"
-log "pipeline #$n $id: worker done, $(git -C "$wt" log -1 --format=%h) — $(tail -n 1 "$run/worker-0.log" | cut -c1-120)"
+# sofia's model: auto = opus for --model opus or a diff in the input, engine client, engine or key layout.
+resolve_audit_model() {
+  if [[ "$audit_model" != "auto" ]]; then echo "$audit_model"
+  elif [[ "$model" == "opus" ]] || changed | grep -qE '^(app/src/input/|app/src/engine/|engine/|spec/keyboard\.yaml)'; then echo opus
+  else echo sonnet; fi
+}
+
+# Round 0: the worker (or, with --no-worker, the merge of phase-1 into the branch).
+rounds=0
+if [[ $nowork -eq 0 ]]; then
+  run_agent "pl-$n-$agent" "$run/worker-0.log" "$agent" "$model" "$effort" "$bundle" "$worker_prompt" "${worker_tools[@]}"
+  log "pipeline #$n $id: worker done, $(git -C "$wt" log -1 --format=%h) — $(tail -n 1 "$run/worker-0.log" | cut -c1-120)"
+else
+  # Review-only: bring phase-1 into the branch first; a conflict is a fix round for the agent.
+  log "pipeline #$n $id: review-only (--no-worker); merging phase-1 into $branch"
+  if ! git -C "$wt" merge --no-edit --signoff phase-1 > "$run/premerge.log" 2>&1; then
+    conflicts="$(git -C "$wt" diff --name-only --diff-filter=U)"
+    if [[ -z "$conflicts" ]]; then
+      git -C "$wt" merge --abort >/dev/null 2>&1 || true
+      die "merge of phase-1 into $branch failed without conflicts: $(tail -n 1 "$run/premerge.log")"
+    fi
+    { echo "## merging phase-1 into $branch conflicts in:"; echo "$conflicts"; echo
+      for f in $conflicts; do echo "### $f"; grep -nE '^(<<<<<<<|=======|>>>>>>>)' "$wt/$f" | head -n 40; done; } > "$run/fail-1.txt"
+    rounds=1
+    run_agent "fix-$n-1" "$run/fix-1.log" "$agent" "$model" "$effort" "$run/fail-1.txt" "You are $agent on branch $branch in your own worktree, a merge of phase-1 is in progress with conflicts (files and conflict markers on stdin) for package $id. Resolve every conflict keeping both sides' intent, git add the files and finish the merge with git commit -s (and your model's trailer). Run the typecheck. Reply in at most three lines." "${worker_tools[@]}"
+    if git -C "$wt" rev-parse -q --verify MERGE_HEAD >/dev/null || [[ -n "$(git -C "$wt" diff --name-only --diff-filter=U)" ]]; then
+      git -C "$wt" merge --abort >/dev/null 2>&1 || true
+      die "conflicts merging phase-1 into $branch not resolved (files: $(tr '\n' ' ' <<<"$conflicts"); worktree $wt kept)"
+    fi
+    log "pipeline #$n $id: conflicts with phase-1 resolved by $agent"
+  fi
+fi
 if [[ -z "$(git -C "$wt" log --oneline "phase-1..HEAD")" ]]; then
   log "pipeline #$n $id: NOT MERGED (no commits on $branch)"; echo "RESULT #$n $id: NOT MERGED (no commits; worktree $wt kept)"; exit 1
 fi
 
 # Fix rounds: the checks and the audit share at most two rounds.
-rounds=0; verdict=""
+verdict=""
 while :; do
   if ! run_checks "$rounds"; then
     log "pipeline #$n $id: checks failed (round $rounds): $(head -n 1 "$run/fail-$rounds.txt")"
@@ -251,7 +314,7 @@ while :; do
     git -C "$wt" diff -U5 "phase-1...HEAD" > "$run/audit-$rounds.diff"
     { cat "$run/criteria.md"; echo; echo "## Diff (git diff -U5 phase-1...$branch, $(wc -l < "$run/audit-$rounds.diff") lines)"; cat "$run/audit-$rounds.diff"; } > "$run/audit-$rounds.in"
     audit_prompt="AUDIT pipeline run $n, package $id, branch $branch. On stdin: the acceptance criteria, then the diff against phase-1 (the deterministic checks passed). Judge the diff against the criteria and docs/rules-core.md only; read other files only to check a claim in the diff. Look for: a criterion not met; expected values without a trustworthy source; a new parser token without its round-trip case; a fixed bug without a regression test; files outside the task's scope; keys that move; missing SPDX lines; a dependency missing from THIRD_PARTY.md. Reply with the single word APPROVED on the first line, or FIX on the first line followed by at most five findings, each with file:line, the concrete failure and the fix. Nothing else."
-    run_agent "audit-$n-$rounds" "$run/audit-$rounds.log" sofia "$audit_model" medium "$run/audit-$rounds.in" "$audit_prompt" "${audit_tools[@]}"
+    run_agent "audit-$n-$rounds" "$run/audit-$rounds.log" sofia "$(resolve_audit_model)" medium "$run/audit-$rounds.in" "$audit_prompt" "${audit_tools[@]}"
     verdict="$(grep -m1 -oE '^(APPROVED|FIX)' "$run/audit-$rounds.log" || true)"
     if [[ "$verdict" == "APPROVED" ]]; then log "pipeline #$n $id: audit APPROVED (round $rounds)"; break; fi
     log "pipeline #$n $id: audit ${verdict:-unclear} (round $rounds): $(grep -vE '^(FIX|APPROVED)?$' "$run/audit-$rounds.log" | head -n 1 | cut -c1-120)"
@@ -272,6 +335,7 @@ done
 if [[ $merge -eq 0 ]]; then
   echo "RESULT #$n $id: APPROVED, not merged (--no-merge); merge: git -C $integ merge --no-ff --signoff $branch"; exit 0
 fi
+tools/devlock.sh acquire integ "pipeline-$n" 600 >/dev/null || die "integ lock busy; approved branch $branch kept at $(git -C "$wt" log -1 --format=%h)"
 if git -C "$integ" merge --no-ff --signoff -m "Merge $branch: $id (pipeline run $n)" "$branch" > "$run/merge.log" 2>&1; then
   mc="$(git -C "$integ" rev-parse --short HEAD)"
   git worktree remove --force "$wt" >/dev/null 2>&1 || true
@@ -285,6 +349,7 @@ else
   result="RESULT #$n $id: NOT MERGED (merge conflict; branch $branch, worktree $wt kept)"
   rc=1
 fi
+tools/devlock.sh release integ "pipeline-$n" >/dev/null || true
 # Garbage collection every 3rd finished task.
 if (( n % 3 == 0 )); then "$main/scripts/gc.sh" --apply >> "$run/run.log" 2>&1 || log "pipeline #$n: gc failed (see $run/run.log)"; fi
 echo "$result"; exit $rc
