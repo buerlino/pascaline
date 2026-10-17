@@ -150,6 +150,14 @@ export interface TableRequest {
   variable?: string;
 }
 
+/** G24: the engine ran out of memory (an allocation failed or the worker crashed); it was restarted. */
+export class EngineMemoryError extends Error {
+  constructor(detail = "out of memory") {
+    super(detail);
+    this.name = "EngineMemoryError";
+  }
+}
+
 export class EngineCancelled extends Error {
   constructor() {
     super("cancelled");

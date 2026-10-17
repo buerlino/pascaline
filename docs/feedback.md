@@ -127,3 +127,12 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 | # | Owner's point | Triage |
 |---|---|---|
 | 49 | "When you have a fraction in a fraction and press ▶, it does not go to the end of the inner fraction (inside the main fraction) but somewhere else, so you cannot add to the fraction; and pressing with the finger at the end does not put the cursor there either." | **feel, bugs F33 and F34** (backlog milestone 4a items 34 and 35). Two causes, both reproduced: ▶ jumps to any empty box ahead, so the end of the numerator is skipped while the denominator is empty (F34, also after a power or a root: x²/(+1)); a finger tap at the right edge of a fraction, root, power or bracket lands at the start of the line, since MathLive places the caret a second time on a touch lift from stale bounds (F33; 11 of 40 test points). Packages R42 and R43, rule in decisions.md "The cursor goes where the user aims", G2 item 57 |
+
+## 2026-10-17 (thirteenth round: vibration, ⌫ on log, lower-case faces, colours)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 50 | "Vibration does not work. The settings must be cleaned up so vibration is a submenu or so." | **bug F41** (backlog milestone 4a item 38; package A9 on the owner's phone: it was never tried on a phone with a motor, since the Tab One has none). **feel:** Settings as a short list of rows, each with a page of its own (package R49; decisions.md "Settings: a list of rows") |
+| 51 | "Pressing ⌫ on a log() used to be stuck at log(, now it is stuck at log, I think." | **bug F39** (backlog item 36, package R47). Reproduced in Playwright: a finger tap can put the cursor between `log` and `(`, where ◀ ▶ never stop; ⌫ there deletes only the name, leaving `(100)` with the cursor at the line's start, and every further ⌫ does nothing. Fixed in R47 (the tap case); *the owner's exact key sequence is still to confirm (backlog "Needs the user" item 7)* |
+| 52 | "If you press Shift + Alpha, the letters on the keypad are still upper case; they should switch to show they are now lower case." | **bug F40** (backlog item 37, package R48): the keys type lower case, but the faces still show capitals |
+| 53 | "The colour scheme of the app is not good; I want something nicer, light and dark." | **feel:** packages R50a (three palettes, light and dark, as a mockup for the owner's pick) and R50b (the pick in the app's colour tokens), before R12's visual pass |

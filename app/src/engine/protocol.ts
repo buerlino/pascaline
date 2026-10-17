@@ -27,4 +27,4 @@ export type Response =
   | { id: number; type: "unknowns"; result: string[] }
   | { id: number; type: "analyze"; result: AnalysisResult }
   | { id: number; type: "table"; result: HomeResult[][] }
-  | { id: number; type: "fatal"; message: string };
+  | { id: number; type: "fatal"; message: string; memory?: true };

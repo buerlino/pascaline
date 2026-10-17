@@ -22,12 +22,11 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Difference | Reason |
 |---|---|
 | Cancel key under Esc | Fmt took the On slot, which is where the G2 interrupts a job; every engine call must be cancellable (CLAUDE.md maths rules). P4 item 6. Shift + Cancel is Undo for the entry line (P13, R16) |
-| Shift + CAS = Mode sheet, Shift + Home = Settings | the G2 keeps its settings on those cells; docs/05 3.4. **Replaced by P12** (section 3 point 2: the keys go, the status line takes over) |
+| Shift + Apps = Mode sheet, in place of the G2's Info; Settings is Mode's last row | the G2's Info page is blank, no feature behind it (rule 4); S2 point 4 gives Mode a keys-only path there (R15b). The G2's Home and CAS cells hold the free keys U2 and U3 (section 3 point 2), whose Shift layers ship empty |
 | Shift + Symb, Plot, Num (Setup) omitted | the same settings sit in the Mode sheet and in the Plot and Num menus (Window, Start, Step); nothing is lost |
 | Shift + Vars (Chars) omitted | Find covers named symbols (docs/04 5.1) |
 | Shift + 1 (Program) omitted | no PPL and no Python (P11); programs are Giac definitions |
 | Shift + `,` (Eval) and Shift + `( )` (tick marks) omitted | "evaluate at" comes with the Tmpl palette; quoting is not used for engineering work |
-| Shift + Apps (Info) omitted | the G2's Info page is blank; no feature behind it (rule 4) |
 | Shift + 0 (Notes) and Shift + Help (User) omitted | no notes feature; the User keyboard is a parked idea (feedback #17) |
 | `(−)` where the G2 prints `+/−` | behaviour is identical: the G2 key inserts a minus sign and does not toggle (keys.yaml r6c2). The label is the honest one |
 | Shift + x = y, where the G2 has Define | kept for now (owner, 2026-10-13). Revisit when typing `f(x):=…` shows up as a friction |
@@ -43,8 +42,8 @@ The legend is missing on the keytop only because the feature is not built; the k
 
 ## 3. Decided by the owner on 2026-10-13 (P12)
 1. **a/b becomes a toggle for the form of the last result**: decimal ↔ fraction, polar ↔ rectangular (real + imaginary), and later forms of the same kind. The fraction template stays on ÷ and in Tmpl. The Fmt key keeps the number formats (Std, Sci, Eng, Fix, Pfx); its cycle has no fraction, mixed or polar entries. Built in R10 (`f296a92`).
-2. **No Home or CAS key; the status line is the switch.** The App key (Home/CAS) and the CAS key go; no key shows the current mode. The place name on the status line says where you are, and a tap on it switches (Home ↔ CAS in one tap). (R15 layout D, 2026-10-14: the two cells stay, as the free keys U2 and U3 with Home and CAS as their defaults, since D gets its space from shorter rows and dropping them saved nothing.) The Mode sheet is a tap on a status chip (as built), and Settings is the last item of the Mode sheet. Package R15. It rewrites rule 9's wording "switching lives on the keys, not in bars" (docs/03).
-3. **Same for the other view keys, and a cleaner top section.** Symb, Plot and Num are folded into the status line the same way if R15a confirms it (every view stays one action away); the arrow pad moves one line down; the top cluster (menu keys, Esc, Cancel, View, Help) is tidied so it takes fewer rows. R15a draws the options, R15b builds the approved one. Rules 6 and 8 allow this only as the owner's one-off decision for the top cluster, before the layout is learned; the maths keys below do not move.
+2. **No Home or CAS key; the status line is the switch.** The App key (Home/CAS) and the CAS key go; no key shows the current mode. The place name on the status line says where you are, and a tap on it switches (Home ↔ CAS in one tap). (R15 layout D, 2026-10-14: the two cells stay, as the free keys U2 and U3 with Home and CAS as their defaults, since D gets its space from shorter rows and dropping them saved nothing.) The Mode sheet is a tap on a status chip (as built), and Settings is the last item of the Mode sheet. Built in R15b (layout D): no key moved, U2 and U3 hold Home and CAS. It rewrites rule 9's wording "switching lives on the keys, not in bars" (docs/03).
+3. **Same for the other view keys, and a cleaner top section.** Symb, Plot and Num are folded into the status line the same way if R15a confirms it (every view stays one action away); the arrow pad moves one line down; the top cluster (menu keys, Esc, Cancel, View, Help) is tidied so it takes fewer rows. R15a drew the options; the owner chose layout D, built in R15b: no key moved, no row folded, the pad stays. Rules 6 and 8 allow this only as the owner's one-off decision for the top cluster, before the layout is learned; the maths keys below do not move.
 4. **The exponent key types an E mark instead of the `×10^` template.** The template needs space, hurts the formula's readability and caused the silent wrong exponent of M4-2 (`2.2E-9 × 4.7E3`). The key becomes `ᴇ` (the mark the G2 also draws), is no longer called EEX or ×10ⁿ, and its legend is `ᴇ`. Results keep the E notation of the Sci and Eng formats (`1.5E-9`). Built in R14: the key (id `emark`) inserts `\emark`, drawn ᴇ as one token; on an empty line it types 1ᴇ as the G2 does; ÷ and the power keys take the whole number.
 5. **Shift + x = y stays** (section 2).
 6. **Menus are revamped in the step that adds the next menus** (the Tmpl palette and the form toggle of R10): see open point A.
@@ -53,9 +52,20 @@ The legend is missing on the keytop only because the feature is not built; the k
 9. **Info, Notes and User stay omitted** (section 2).
 10. **The G2's Shift palettes come back** (owner's answers to R10): Shift + 6 relations and logic, Shift + 9 symbols and Greek with `!`. Package R18.
 
+## 3a. Decided by the owner on 2026-10-17 (R15c; being built in R15c1–R15c4)
+The top cluster becomes R3 (decisions.md "R15c"), and this file is rewritten row by row as the packages land (R15c2 does the key rows). In short:
+- **The arrows keep the G2's round pad.** Its centre is the drag hub, with no OK key.
+- **Apps, Mode, Symb, Plot, Num, Menu, Cancel and the Help key leave the keypad.**
+  - Apps is the place name on the status line; Menu is ☰ there; Symb, Plot and Num are tabs in an app; Mode is on the chips.
+  - Esc takes Cancel's job.
+  - Copy, Paste and Undo get keys of their own.
+  - Help moves to Shift + View; View (the keypad toggle) keeps a key, in R3's wing.
+- **New keys:** Redo, and ⇤ ⇥ with the box ends on Shift. This reverses section 3 point 8 by its removal test.
+- **The user keys:** U1–U6, each with tap, Shift and Alpha.
+
 ## 4. Open points
-- **A. Menu audit. Done** (S2, [research/r8-menus.md](research/r8-menus.md)); its seven rules were accepted by the owner on 2026-10-13 (decisions.md "S2: one menu system"). Key-level results: Mode moves to Shift + Apps when R15 removes Shift + CAS; R10's Tmpl palette stays as built.
-- **B. The status-line switch.** A 28 px line is below a comfortable touch target and sits far from the thumb. R15a must give the place name a larger hit area than its drawn height, state the press count for Home ↔ CAS against the G2's one key, and keep the fallback: if the owner finds the bar slow after a week, a layer of an existing key (candidate: a flick on Apps) takes the switch, with no new key.
+- **A. Menu audit. Done** (S2, [research/r8-menus.md](research/r8-menus.md)); its seven rules were accepted by the owner on 2026-10-13 (decisions.md "S2: one menu system"). Key-level results: Mode is on Shift + Apps (R15b); R10's Tmpl palette stays as built.
+- **B. The status-line switch. Built** (R15b): a 96 × 28 px target from the left edge (the strip below the line belongs to the history and to F1's slot); Home ↔ CAS is 1 tap, or 1 key (U2, U3), or 2 keys (Apps, 1 or 2), against the G2's one key. Judge on the APK; if the owner finds the bar slow, a layer of an existing key (a flick on Apps) takes the switch, with no new key.
 - **C. `!` (factorial). Settled** (owner, 2026-10-13): it goes in the Shift + 9 palette, as on the G2 (R18).
 
 ## 5. About the comparison file this was built from

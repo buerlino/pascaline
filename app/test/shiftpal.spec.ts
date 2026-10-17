@@ -209,7 +209,7 @@ test("Greek letters are variables, β too (Giac's Beta name is kept free): 3 ▶
 });
 
 test("CAS draws the stand-in names as their letters: 2γ² is 2\\gamma^{2}, not gamma_", async ({ page }) => {
-  await tap(page, ["app"]); // Home → CAS
+  await tap(page, ["u3"]); // Home → CAS
   await tap(page, ["d2"]);
   await tapCell(page, "d9", "gamma");
   await tap(page, ["sq", "enter"]);

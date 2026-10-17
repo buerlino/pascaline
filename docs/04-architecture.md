@@ -120,7 +120,7 @@ Each item becomes a regression case before its fix (CLAUDE.md). Values marked `o
 | 15 | CAS after Home `3 ▶ x`: `int(x^2,x)`; `factor(x^2-1)` | `9*x`; `8`, with no sign that x held 3 | the answer for the stored x, saying so | G20, R32 (F28) |
 | 16 | DEG: `exp(i*90)`; `exp(i*pi)` | `= i`; `-1` | −0.448073616129+0.893996663601·i (`derived`) if `exp` ignores the angle mode, as `exp(i*pi)` = −1 already does | G21, after G2 item 54 (F29) |
 | 17 | Home or CAS, a result that is not a number but holds a float: `evalf(x+sin(10^22))`; `evalf(x^2-2=0)` (probe 2026-10-15, `FACTS=1 node tools/probes/engine.ts`) | `x-0.54764225985`, no mark (`exactRational: false`, `reliableDigits: null`, no `warn`, so `markOf` returns none); `x^2-2.0=0.0`, no mark | x − 0.852200849767… (`oracle`): wrong from the first digit | fixed (G27, `adb2e3a`): `⚠` on every non-number with a float in it, as the defs log records it (`approximate`, `warn: "unchecked"`) |
-| 18 | Home `2^10000`, tap the result, `×1` (probe 2026-10-15) | `= 1.99506311688E3010`: the exact text has 3,011 digits, over the 2 kB chip limit, so the session keeps no chip (`session.svelte.ts:446` takes `r.exact` before `r.full`) and the rounded digits go in as an exact number (`App.svelte:79`). After it, `+3` on the empty line is `= 3`, not Ans + 3 (`lastChip()` gives nothing, so no `\ans` goes in, and the parser reads `+3` as 3) | `≈ 1.99506311688E3010` (the value is still 2^10000, `oracle` 1.995063116880758…E3010); Ans + 3 | the chip takes the engine's `full` (`homeEval.ts:485` already gives the P-digit decimal when the exact text is long); Ans-first never drops silently; R44 (F37) |
+| 18 | Home `2^10000`, tap the result, `×1` (probe 2026-10-15) | `= 1.99506311688E3010`: the chip held the P-digit decimal marked exact, so the rounded digits went on as an exact number; a symbolic result over 2 kB kept no chip, and Ans-first then dropped Ans silently | `≈ 1.99506311688E3010` (the value is still 2^10000, `oracle` 1.995063116880758…E3010); Ans + 3 | fixed (R44, F37): a chip cut from a longer value is inexact; Ans-first inserts `\ans` whenever the view has a finished result, and one with no chip value fails at Enter saying why |
 | 19 | Home or CAS, a closed `==` test Giac cannot decide: `cos(π/7)−cos(2π/7)+cos(3π/7) == 1/2` (Opus pass, probe 2026-10-15) | `= 0` | true (`derived`) | fixed (`c836230`, R18f3): stays as typed |
 
 At the default 12 digits in Home, #1 and #2 show wrong digits today; #3–#5 appear only above 15 digits, which the setting does not allow yet, so they gate EN3(a). #11–#16 were found by the deep-dive review (2026-10-14, decisions.md "The deep-dive review"), #17 and #18 by the architecture check and #19 by the Opus pass, both 2026-10-15; each gets its regression case first, in the package named.
@@ -407,8 +407,9 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Alpha key [r8c1] | one-shot Alpha, lock flicks | stays; a merge with Shift is decided on the tap counter (P7 point 4, about 2026-10-20); if merged, its cell becomes a fourth user key U4 | P7, 2026-10-14 |
 | a b/c (row 3, col 4) [r4c5] | inserts a fraction | toggles the form of the last result: decimal ↔ fraction, polar ↔ rectangular (R10); the fraction template is on ÷ and in Tmpl | G2 item 29, P11, P12 |
 | Exponent key (row 6, col 0) [r7c1] | `×10^` template, legend ×10ⁿ | types the E mark `ᴇ` (`\emark`, one token), legend `ᴇ`; Shift stays Sto ▶ | P12 |
-| App key (Home/CAS) [r3c1] and CAS [r3c5] | two keys, each with a Shift layer (Settings, Mode) | **no keys**: the status line's place name switches Home ↔ CAS; the Mode sheet is a status chip and Shift + Apps; the Apps sheet lists Home and CAS first (R15) | P12; S2 |
-| Symb, Plot, Num, arrow pad, top cluster | rows 0–2 | folded into the status line if R15a confirms; the pad moves one line down; fewer rows (R15) | P12 |
+| App key (Home/CAS) [r3c1] and CAS [r3c5] | U2 and U3 (free keys, Home and CAS by default; R15b) | U2 and U3 (free keys, Home and CAS by default; R15b); the status line's place name switches Home ↔ CAS; Mode on Shift + Apps; the Apps sheet lists Home and CAS first | P12; S2; decisions.md "R15a: layout D" |
+| Apps [r1c1] | the Apps sheet: 1 Home, 2 CAS, then the apps; Shift + Apps = Mode (R15b) | unchanged | S2 point 4 (the G2's Shift + Apps, Info, is omitted) |
+| Symb, Plot, Num, arrow pad, top cluster | rows 0–2 | unchanged places (layout D, R15b): no row folded, the pad stays, rows 36 px | P12; decisions.md "R15b" |
 | Alpha + 0 (quote mark) | `"` | removed (R13) | P12 |
 | Shift + ◀, Shift + ▶ | line start, line end | removed (R13); a tap on the formula puts the cursor there | P12 |
 | Shift + 6, Shift + 9 | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ | built (R18) | P12, owner 2026-10-13 |
@@ -416,8 +417,8 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + View | Copy (A3) | Copy (full value of the selected or last result) | reference: Copy |
 | Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: one list of nine (R11): 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Copy as › (As shown, Exact, LaTeX), 7 Paste, 8 Share session, 9 Clear history, on the picked row, else the last result (Delete: the last row); a picked row's buttons are items 1–5, the long press on a row opens the same list (`ClipActions.menu`) | unchanged | P8; S2 (accepted 2026-10-13) |
 | Shift + Menu | Paste a number (A3) | unchanged | reference: Paste |
-| Help (row 0, col 4) [r1c4] | gap | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; uses the index; P8 left Help free, so the owner may veto |
-| row 1, col 0 | gap | stays empty | no reference key there |
+| Help (row 0, col 4) [r1c4] | dimmed dead key (R15b) | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; uses the index; P8 left Help free, so the owner may veto |
+| row 1, col 0 | U1, a free key (empty; R15b) | set from Find (R4b) | no reference key there |
 | Shift + `+` [r10c5] | Ans (`\ans`, R2) | unchanged | reference |
 | Shift + `−` [r9c5] | nothing | Base: show the last result in HEX, BIN, OCT, DEC; word size (EN6) | reference: Base |
 | Shift + 5 [r8c3] | nothing | `[ ]` vector or matrix template (EN5) | reference |
@@ -425,7 +426,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + 4 [r8c2] | nothing | matrix editor (EN5) | reference: Matrix |
 | Shift + 7 [r7c2] | nothing | list editor, deferred with Statistics | reference: List |
 | Unit slots | — | the unit pad (`spec/unit-pad.yaml`, docs/research/r9-unit-pad.md): prefix and unit cells drawn over the maths rows, the arrangement measured by S5, a few user cells set from Find; Enter goes to the next slot, `→` is the end slot; `±` per r7 section 7, open point 3. Until R24c, `spec/keyboard.yaml` `unit_slot:` still holds S1's letters | P11, S1 (owner, 2026-10-13); P14 (owner, 2026-10-14) |
-| Unassigned Shift cells (14, counted 2026-10-14) | nothing | Shift + Symb, Plot, Num (the reference's Setup, omitted); Shift + ▲ ▼ ◀ ▶ (2 presses: the trackpad has no flicks); Shift + Vars; Shift + a b/c; Shift + `( )`; Shift + `,`; Shift + 1; Shift + 0; Shift + Fmt. Plus U1 (empty) and U2, U3 (Home, CAS by default) with their Shift layers (R15b). Not assigned in advance: they get the functions pressed most often in the task benchmark | measured, not guessed (decisions.md "The letters stay") |
+| Unassigned Shift cells (14, counted 2026-10-14) | nothing | Shift + Symb, Plot, Num (the reference's Setup, omitted); Shift + ▲ ▼ ◀ ▶ (2 presses: the trackpad has no flicks); Shift + Vars; Shift + a b/c; Shift + `( )`; Shift + `,`; Shift + 1; Shift + 0; Shift + Fmt. Plus U1 (empty) and U2, U3 (Home, CAS by default) with their Shift layers (built, R15b; set from Find with R4b). Not assigned in advance: they get the functions pressed most often in the task benchmark | measured, not guessed (decisions.md "The letters stay") |
 | Prefix chips | — | a strip above the keypad, only after a number, only if task 3 shows a gain | P8 |
 
 
@@ -581,7 +582,7 @@ interface HomeResult {                                   // existing fields kept
 }
 interface CasResult { /* ok, text, latex, timedOut, error, engineMs */ numeric?: HomeResult;  // new: when the result is a number
   approximate?: boolean; warn?: "unaudited" | "unchecked";  // ⚠ or ≈ for a non-number: an == test on a float (R18f1, R18f2), or a float in a non-number (G27)
-  uses?: { name: string; preview: string; view: "home" | "cas" }[]; }  // new (G20): the stored variables (defs log, kind var) named in the input; absent when none
+  uses?: { name: string; preview: string; view: "home" | "cas" }[]; }  // new (G20): the stored variables (defs log, kind var) the input reads, not the names it binds (G28); absent when none
 
 interface Calc {                                         // views; mirrors MathEngine with CalcSettings
   ready(): Promise<void>;

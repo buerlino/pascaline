@@ -1,0 +1,247 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Top cluster refined</title>
+<style>
+:root { --page: #f4f5f7; --ink: #1a1d22; --muted: #5b6575; --rule: #b9c0cc; --card: #ffffff; --ok: #1f6f54; --warn: #b05a00; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #14161a; --ink: #e8ebef; --muted: #98a2b3; --rule: #3a4250; --card: #1d2026; --ok: #5fc9a0; --warn: #f0a050; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; max-width: 1340px; margin-inline: auto; }
+h1 { font-size: 1.5rem; margin: 0 0 4px; }
+h2 { font-size: 1.2rem; margin: 32px 0 6px; padding-top: 8px; border-top: 1px solid var(--rule); }
+h3 { font-size: 1.02rem; margin: 0 0 4px; }
+p, li { max-width: 80ch; }
+.muted { color: var(--muted); }
+.bar { position: sticky; top: 0; z-index: 2; background: var(--page); padding: 8px 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; border-bottom: 1px solid var(--rule); }
+.bar button { font: inherit; font-size: 13px; padding: 2px 10px; border-radius: 6px; border: 1px solid var(--rule); background: var(--card); color: var(--ink); cursor: pointer; }
+.bar button[aria-pressed="true"] { background: var(--ok); color: #fff; border-color: var(--ok); }
+.bar a { font-size: 13px; color: var(--ink); text-decoration: none; padding: 1px 6px; border-radius: 4px; background: var(--card); border: 1px solid var(--rule); }
+.cards { display: flex; flex-wrap: wrap; gap: 28px 32px; }
+.card { flex: 0 1 430px; min-width: 0; }
+.spec { font-size: 13px; margin: 2px 0 8px; display: grid; grid-template-columns: max-content 1fr; gap: 0 10px; }
+.spec dt { color: var(--muted); }
+.spec dd { margin: 0; }
+.warn { color: var(--warn); }
+.pc { font-size: 13px; margin: 6px 0 0; }
+.pair { display: flex; flex-wrap: wrap; gap: 12px; }
+body[data-show="dark"] .phone.light, body[data-show="light"] .phone.dark { display: none; }
+/* A 412 px wide phone at full scale: status line, a strip of screen, the cluster, a ghost of maths row 3. */
+.phone { width: 412px; max-width: 100%; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; font-size: 14px; }
+.phone.dark { --bg: #14161a; --panel: #1d2026; --line: #3a4250; --text: #e8ebef; --muted: #98a2b3; --k-nav: #2e3a33; --k-ctl: #4a3a2a; --k-user: #3a2f4a; --acc: #b9a2e6; --shift: #e0b25c; --alpha: #6fc3e8; --chip: #24486a; --tab: #2e3a33; --tab-on: #1f6f54; }
+.phone.light { --bg: #f4f5f7; --panel: #e4e7ec; --line: #b9c0cc; --text: #1a1d22; --muted: #5b6575; --k-nav: #d6e8dc; --k-ctl: #f2dcc2; --k-user: #e6dcf5; --acc: #6b4fa8; --shift: #9a6a10; --alpha: #1b6f99; --chip: #cfe3f7; --tab: #d6e8dc; --tab-on: #1f6f54; }
+.phone { background: var(--bg); color: var(--text); }
+.status { height: 28px; display: flex; align-items: center; gap: 5px; padding: 0 6px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 13px; }
+.status .place { font-weight: 700; }
+.status .sep { color: var(--muted); }
+.status .tab { padding: 1px 7px; border-radius: 4px; background: var(--tab); }
+.status .tab.on { background: var(--tab-on); color: #fff; }
+.status .grow { flex: 1; }
+.status .chip { background: var(--chip); border-radius: 4px; padding: 0 5px; font-size: 12px; }
+.screen { display: grid; place-items: center; color: var(--muted); border-bottom: 1px solid var(--line); font-size: 12px; text-align: center; }
+.kp { padding: 6px; }
+.grid { display: grid; grid-auto-rows: 15px; gap: 6px; }
+.k { position: relative; display: grid; place-items: center; border-radius: 6px; border: 1px solid var(--line); line-height: 1; font-size: 14px; min-width: 0; }
+.k .s, .k .a { position: absolute; top: 2px; font-size: 9px; max-width: 46%; overflow: hidden; white-space: nowrap; }
+.k .s { left: 4px; color: var(--shift); }
+.k .a { right: 4px; color: var(--alpha); }
+.k.has .p { margin-top: 9px; }
+.k.nav { background: var(--k-nav); }
+.k.ctl { background: var(--k-ctl); }
+.k.user { background: transparent; border: 1px dashed var(--acc); color: var(--acc); font-size: 12px; }
+.k.mini { background: var(--k-nav); font-size: 12px; margin: 3px; border-radius: 10px; opacity: .9; }
+.k.void { border: 1px dashed var(--line); color: var(--muted); font-size: 10px; background: repeating-linear-gradient(45deg, transparent 0 6px, color-mix(in srgb, var(--line) 35%, transparent) 6px 7px); }
+.k.dead { opacity: .45; }
+.k.disc, .k.surf { border: none; background: transparent; }
+.ring { position: relative; height: 100%; aspect-ratio: 1; max-width: 100%; border-radius: 50%; background: var(--k-ctl); border: 1px solid var(--line); }
+.ring i, .pad9 i { position: absolute; font-style: normal; font-size: 15px; }
+.ring .n { top: 7%; left: 50%; transform: translateX(-50%); }
+.ring .s2 { bottom: 7%; left: 50%; transform: translateX(-50%); }
+.ring .w { left: 8%; top: 50%; transform: translateY(-50%); }
+.ring .e { right: 8%; top: 50%; transform: translateY(-50%); }
+.ring b, .pad9 b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 34%; aspect-ratio: 1; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); display: grid; place-items: center; font-size: 11px; font-weight: 500; }
+.pad9 { position: absolute; inset: 0; border-radius: 10px; background: var(--k-ctl); border: 1px solid var(--line); }
+.pad9 .n { top: 6px; left: 50%; transform: translateX(-50%); }
+.pad9 .s2 { bottom: 6px; left: 50%; transform: translateX(-50%); }
+.pad9 .w { left: 12px; top: 50%; transform: translateY(-50%); }
+.pad9 .e { right: 12px; top: 50%; transform: translateY(-50%); }
+.pad9 b { width: 40px; }
+.ghost { margin-top: 6px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.ghost div { height: 36px; border: 1px dashed var(--line); border-radius: 6px; display: grid; place-items: center; font-size: 11px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.legend .lu::before { border: 1px dashed #8a6fd0; }
+.legend .ls::before { background: #e0b25c; }
+.legend .la::before { background: #6fc3e8; }
+.legend .lv::before { border: 1px dashed #98a2b3; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { border: 1px solid var(--rule); padding: 3px 8px; text-align: left; vertical-align: top; }
+th { background: var(--card); }
+.tablewrap { overflow-x: auto; }
+.status .menu { font-size: 16px; padding: 0 6px; border-radius: 4px; background: var(--tab); line-height: 22px; }
+.status .caret { font-size: 10px; color: var(--muted); margin-left: 2px; }
+.k.hub { border: 1px dashed var(--line); border-radius: 50%; background: transparent; margin: 4px; color: var(--muted); font-size: 10px; }
+.ring .hubdot { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 26%; aspect-ratio: 1; border-radius: 50%; border: 1px dashed var(--line); }
+.phone { position: relative; }
+.overlay { position: absolute; inset: 0; background: rgba(0,0,0,.62); color: #fff; font-size: 13px; }
+.overlay .ring1, .overlay .ring2 { position: absolute; top: 2px; height: 24px; border: 2px solid #ffd166; border-radius: 6px; }
+.overlay .ring1 { left: 2px; width: 82px; }
+.overlay .ring2 { right: 2px; width: 34px; }
+.overlay .tip { position: absolute; background: #ffd166; color: #1a1d22; border-radius: 8px; padding: 6px 9px; line-height: 1.35; max-width: 175px; }
+.overlay .t1 { left: 8px; top: 40px; }
+.overlay .t2 { right: 8px; top: 40px; text-align: right; }
+.overlay .tip::before { content: ""; position: absolute; top: -6px; border: 6px solid transparent; border-top: 0; border-bottom-color: #ffd166; }
+.overlay .t1::before { left: 26px; }
+.overlay .t2::before { right: 12px; }
+.overlay .got { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); background: #1f6f54; color: #fff; border-radius: 8px; padding: 6px 18px; font-weight: 600; }
+.pick { border-left: 4px solid var(--ok); padding: 6px 12px; background: var(--card); }
+</style>
+</head>
+<body data-show="dark">
+<h1>Top cluster: refined</h1>
+<p class="muted">2026-10-17, R15c round 4. Your four picks (1A, 1B, 2C, 5B), refined with your notes, plus one hybrid of 2C and 5B. Full scale on a 412 px wide phone; under each cluster a ghost of maths row 3. Nothing here is built.</p>
+
+<h2>What changed for all of them</h2>
+<ul>
+  <li><strong>No OK key.</strong> OK did what Enter already does: with a history row picked (▲ on an empty line), Enter puts it on the line (App.svelte, the history pick). So the pad centre is now just the hub of the drag surface, not a key.</li>
+  <li><strong>Apps and Menu move to the status line,</strong> as you said: tap the place name (&ldquo;Function ▾&rdquo;) for the Apps sheet (Home and CAS are its first two rows), tap ☰ at the right end for Menu, where Settings, Copy, Paste and Clear history already are. Mode stays on the chips. With a history row picked, ☰ acts on that row (as the Menu key does today).</li>
+  <li><strong>New keys:</strong> ⇤ start of the line, ⇥ end of the line, Undo, Redo. Esc is always top right (its G2 cell), Shift + Esc = Clear.</li>
+  <li><strong>First boot:</strong> an overlay points at the two tappable parts of the status line (drawn at the end).</li>
+  <li><strong>The cost, once:</strong> Home &#8644; CAS becomes 2 taps (place name, then Home or CAS), and there is no key-only way to Apps or Menu. If you miss either, put Home, CAS, Apps or Menu on a user key: every user key can hold them.</li>
+</ul>
+<p class="legend"><span class="lu">user key (U1&hellip;)</span><span class="ls">Shift layer</span><span class="la">Alpha layer</span></p>
+
+<div class="bar" id="bar">
+  <button type="button" data-show="dark" aria-pressed="true">Dark</button>
+  <button type="button" data-show="light" aria-pressed="false">Light</button>
+  <button type="button" data-show="both" aria-pressed="false">Both</button>
+  <span class="muted" style="font-size:13px">Jump:</span>
+  <span id="jump" style="display:contents"></span>
+</div>
+
+<div id="out"></div>
+
+<h2 id="boot">First boot: the status-line overlay</h2>
+<p class="muted">Shown once, over whichever layout wins (drawn here over R3). Any tap closes it; it can be reopened from Menu › Help.</p>
+<div class="pair" id="bootph"></div>
+
+<h2 id="summary">Summary</h2>
+<div class="tablewrap"><table id="sum">
+<tr><th>ID</th><th>From</th><th>Title</th><th>Columns</th><th>Snaps to maths</th><th>User keys (slots)</th><th>Right side</th><th>Smallest key</th></tr>
+</table></div>
+
+<h2>Chosen: R3 (owner, 2026-10-17)</h2>
+<p class="pick"><strong>R3 (your 2C with six keys on the right).</strong> Every key is full size (62 × 36 px) and on the maths grid, the round pad is the G2's shape, and the right wing reads in pairs that match the pad: ⇤ ⇥ sit level with ◀ ▶, Undo/Redo below, Copy and Esc on top with Esc in its G2 cell. R5 is the one to look at if you want 5B's corners kept on the pad itself; its corner keys are narrower (39 px).</p>
+
+<script>
+const key = (r, c, rs, cs, cls, p, s = '', a = '') => ({ r, c, rs, cs, cls, p, s, a });
+let uN = 0;
+const U = (r, c, rs = 2, cs = 1) => key(r, c, rs, cs, 'user', `U${++uN}`);
+const op = (o, r, c, rs = 2, cs = 1, cls = 'nav') => key(r, c, rs, cs, cls, o[0], o[1] || '', o[2] || '');
+const ESC = ['Esc', 'Clear'], COPY = ['Copy', 'Paste'], UNDO = ['Undo'], REDO = ['Redo'], HOME = ['⇤'], END = ['⇥'], UNDO_R = ['Undo', 'Redo'];
+const A = (r, c, rs, cs, p) => key(r, c, rs, cs, 'ctl', p);
+const disc = (r, c, rs, cs) => ({ r, c, rs, cs, cls: 'disc', html: '<div class="ring"><i class="n">▲</i><i class="w">◀</i><i class="e">▶</i><i class="s2">▼</i><span class="hubdot"></span></div>' });
+// The wide pad without OK: ▲ and ▼ full width, ◀ and ▶ half each.
+const widePad = (r, c, w3) => [A(r, c, 2, w3, '▲'), A(r + 2, c, 2, w3 / 2, '◀'), A(r + 2, c + w3 / 2, 2, w3 / 2, '▶'), A(r + 4, c, 2, w3, '▼')];
+// The chosen R3 wing (owner, 2026-10-17): View | Esc / Undo | Copy / ⇤ | ⇥; Shift on ⇤ ⇥ = the ends of the box.
+const VIEW_H = ['View', 'Help'], UNDO_R2 = ['Undo', 'Redo'], HOME_B = ['⇤', '⇤□'], END_B = ['⇥', '□⇥'];
+const right6final = (c) => [op(VIEW_H, 1, c), op(ESC, 1, c + 1), op(UNDO_R2, 3, c), op(COPY, 3, c + 1), op(HOME_B, 5, c), op(END_B, 5, c + 1)];
+const right6 = (c, w) => [op(COPY, 1, c, 2, w), op(ESC, 1, c + w, 2, w), op(HOME, 3, c, 2, w), op(END, 3, c + w, 2, w), op(UNDO, 5, c, 2, w), op(REDO, 5, c + w, 2, w)];
+
+const opts = [];
+const add = (o) => { uN = 0; o.cells = o.build(); opts.push(o); };
+
+add({ id: 'R1', from: '1A', title: 'Wide pad, 2×2 right wing', N: 32, H: 6, cols: '2.5 + 3 + 2.5 (own grid)', snap: false,
+  note: 'Your 1A without OK: ◀ and ▶ now share the middle row, each half the pad wide. Esc moved to the top right. The right wing is Undo and Esc on top (tall keys), ⇤ and ⇥ below. Redo is Shift + Undo; Copy and Paste are in ☰.',
+  pro: 'Big, calm keys; the biggest ◀ ▶ of all.', con: 'Redo and Copy are one step further away; columns off the maths grid.',
+  right: 'Undo (Shift Redo), Esc, ⇤, ⇥',
+  build: () => [...[1, 3, 5].flatMap((r) => [U(r, 1, 2, 5), U(r, 6, 2, 5)]), ...widePad(1, 11, 12),
+    op(UNDO_R, 1, 23, 3, 5), op(ESC, 1, 28, 3, 5), op(HOME, 4, 23, 3, 5), op(END, 4, 28, 3, 5)] });
+
+add({ id: 'R2', from: '1B', title: 'Wide pad, 6 + 6 mirror', N: 32, H: 6, cols: '2.5 + 3 + 2.5 (own grid)', snap: false,
+  note: 'Your 1B with Menu, Mode, Apps and Cancel gone and the line keys added: Copy and Esc on top, ⇤ ⇥ level with ◀ ▶, Undo and Redo at the bottom.',
+  pro: 'Full mirror symmetry; every editing action is one tap.', con: 'Columns off the maths grid; 45 px wide keys.',
+  right: 'Copy (Shift Paste), Esc, ⇤, ⇥, Undo, Redo',
+  build: () => [...[1, 3, 5].flatMap((r) => [U(r, 1, 2, 5), U(r, 6, 2, 5)]), ...widePad(1, 11, 12), ...right6(23, 5)] });
+
+add({ id: 'R3', from: '2C', title: 'Round pad, 6 + 6: CHOSEN (owner, 2026-10-17)', N: 6, H: 6, cols: '2 + 2 + 2', snap: true,
+  note: 'Chosen after a try in the app. The round pad has no OK; its centre is the hub of the drag. The wing as refined: View, the keypad toggle (Shift Help), and Esc (Shift Clear); Undo (Shift Redo) and Copy (Shift Paste); ⇤ and ⇥, whose Shift layers go to the start and end of the box the cursor is in. Package R15c (docs/shifts/brief.md).',
+  pro: 'Symmetrical, every key full size, on the maths grid; the pad is the G2’s round shape.', con: 'The round pad is 2 columns wide, so ◀ and ▶ are closer together than on the wide pad.',
+  right: 'View (Help), Esc (Clear), Undo (Redo), Copy (Paste), ⇤ (⇤□), ⇥ (□⇥)',
+  build: () => [...[1, 3, 5].flatMap((r) => [U(r, 1), U(r, 2)]), disc(1, 3, 6, 2), ...right6final(5)] });
+
+add({ id: 'R4', from: '5B', title: 'Cross with corner keys', N: 6, H: 6, cols: '2 + 3 + 1', snap: true,
+  note: 'Your 5B: ⇤ ⇥ in the top corners, Undo and Redo in the bottom corners, the centre a hub. The right column is two tall keys: Esc (top, its G2 cell) and Copy.',
+  pro: 'Line and undo keys sit right at the arrows, where you use them.', con: 'Two separate groups of editing keys (corners and right column).',
+  right: 'Esc, Copy (Shift Paste)',
+  build: () => [...[1, 3, 5].flatMap((r) => [U(r, 1), U(r, 2)]),
+    key(1, 3, 2, 1, 'mini', '⇤'), A(1, 4, 2, 1, '▲'), key(1, 5, 2, 1, 'mini', '⇥'), A(3, 3, 2, 1, '◀'), key(3, 4, 2, 1, 'hub', ''), A(3, 5, 2, 1, '▶'),
+    key(5, 3, 2, 1, 'mini', 'Undo'), A(5, 4, 2, 1, '▼'), key(5, 5, 2, 1, 'mini', 'Redo'), op(ESC, 1, 6, 3), op(COPY, 4, 6, 3)] });
+
+add({ id: 'R5', from: '2C + 5B', title: 'Round pad with corner keys', N: 18, H: 6, cols: '2 + 3 + 1', snap: true,
+  note: 'The round pad of 2C inside the 3-column square of 5B: ⇤ and Undo to its left, ⇥ and Redo to its right, in the space the circle leaves free. Esc and Copy as two tall keys on the right.',
+  pro: 'Round pad plus one-tap line and undo keys, all on the maths grid.', con: 'The corner keys are narrow (39 px).',
+  right: 'Esc, Copy (Shift Paste)',
+  build: () => [...[1, 3, 5].flatMap((r) => [U(r, 1, 2, 3), U(r, 4, 2, 3)]),
+    key(1, 7, 3, 2, 'nav', '⇤'), key(4, 7, 3, 2, 'nav', 'Undo'), disc(1, 9, 6, 5), key(1, 14, 3, 2, 'nav', '⇥'), key(4, 14, 3, 2, 'nav', 'Redo'),
+    op(ESC, 1, 16, 3, 3), op(COPY, 4, 16, 3, 3)] });
+
+const INNER = 400;
+const px = (o) => ({ w: (INNER - (o.N - 1) * 6) / o.N, h: (u) => u * 15 + (u - 1) * 6 });
+const status = '<span class="place">Function<span class="caret">▾</span></span><span class="sep">›</span><span class="tab">Symb</span><span class="tab on">Plot</span><span class="tab">Num</span><span class="grow"></span><span class="chip">DEG</span><span class="chip">STD</span><span class="chip">12</span><span class="menu">☰</span>';
+function cell(k) {
+  const pos = `grid-row:${k.r} / span ${k.rs};grid-column:${k.c} / span ${k.cs}`;
+  if (k.html) return `<div class="k ${k.cls}" style="${pos}">${k.html}</div>`;
+  const lay = (k.s ? `<span class="s">${k.s}</span>` : '') + (k.a ? `<span class="a">${k.a}</span>` : '');
+  return `<div class="k ${k.cls}${lay ? ' has' : ''}" style="${pos}">${lay}<span class="p">${k.p}</span></div>`;
+}
+function phone(theme, o, overlay = '') {
+  return `<div class="phone ${theme}" role="img" aria-label="${o.id}, ${theme}"><div class="status">${status}</div>`
+    + `<div class="screen" style="height:90px">history and entry line<br>viewport 0.354</div>`
+    + `<div class="kp"><div class="grid" style="grid-template-columns:repeat(${o.N},1fr);grid-template-rows:repeat(${o.H},15px)">${o.cells.map(cell).join('')}</div>`
+    + `<div class="ghost">${['Vars', 'Math', 'Tmpl', 'x', '', ''].map((t) => `<div>${t}</div>`).join('')}</div></div>${overlay}</div>`;
+}
+function smallest(o) {
+  const { w, h } = px(o);
+  let best = null;
+  for (const k of o.cells) {
+    if (k.html || /hub/.test(k.cls)) continue;
+    const kw = k.cs * w + (k.cs - 1) * 6, kh = h(k.rs);
+    const m = /mini/.test(k.cls) ? 6 : 0; // the small keys' margin
+    if (!best || kw - m < best.kw || (kw - m === best.kw && kh - m < best.kh)) best = { kw: kw - m, kh: kh - m };
+  }
+  const txt = `${Math.round(best.kw)} × ${Math.round(best.kh)} px`;
+  return best.kw < 42 || best.kh < 36 ? `<span class="warn">${txt} ⚠</span>` : txt;
+}
+const users = (o) => { const n = o.cells.filter((k) => k.cls === 'user').length; return `${n} (${n * 3})`; };
+
+document.getElementById('out').innerHTML = '<div class="cards">' + opts.map((o) =>
+  `<div class="card" id="o${o.id}"><h3>${o.id}: ${o.title} <span class="muted">(from ${o.from})</span></h3>`
+  + `<dl class="spec"><dt>Grid</dt><dd>3 rows · ${o.cols} · ${o.snap ? 'snaps to the 6 maths columns' : '<span class="warn">own grid, off the maths columns</span>'}</dd>`
+  + `<dt>Keys</dt><dd>${users(o)} user · right: ${o.right} · smallest ${smallest(o)}</dd></dl>`
+  + `<div class="pair">${phone('dark', o)}${phone('light', o)}</div>`
+  + `<p class="pc">${o.note}</p><p class="pc"><strong>+</strong> ${o.pro}<br><strong>&minus;</strong> ${o.con}</p></div>`).join('') + '</div>';
+const ov = '<div class="overlay"><span class="ring1"></span><span class="ring2"></span>'
+  + '<div class="tip t1"><strong>Tap the name</strong> for your apps, Home and CAS.</div>'
+  + '<div class="tip t2"><strong>Tap ☰</strong> for the menu:<br>copy, paste, settings.</div>'
+  + '<div class="got">Got it</div></div>';
+const r3 = opts.find((o) => o.id === 'R3');
+document.getElementById('bootph').innerHTML = phone('dark', r3, ov) + phone('light', r3, ov);
+document.getElementById('jump').innerHTML = opts.map((o) => `<a href="#o${o.id}">${o.id}</a>`).join('') + '<a href="#boot">First boot</a><a href="#summary">Summary</a>';
+document.getElementById('sum').innerHTML += opts.map((o) => `<tr><td><a href="#o${o.id}">${o.id}</a></td><td>${o.from}</td><td>${o.title}</td><td>${o.cols}</td><td>${o.snap ? 'yes' : 'no'}</td><td>${users(o)}</td><td>${o.right}</td><td>${smallest(o)}</td></tr>`).join('');
+
+const bar = document.getElementById('bar');
+function show(mode) {
+  document.body.dataset.show = mode;
+  bar.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.show === mode)));
+  try { localStorage.setItem('cluster-theme', mode); } catch { /* private window */ }
+}
+bar.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) show(b.dataset.show); });
+try { const m = localStorage.getItem('cluster-theme'); if (m) show(m); } catch { /* no storage */ }
+</script>
+</body>
+</html>

@@ -108,6 +108,106 @@ const CONSTANT_NAMES: ReadonlySet<string> = new Set(["i", "pi", "e", "infinity",
 
 const IDENT_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 
+/** Variable arguments the probe (tools/probes/bound.ts, G28) found quoted: the result does not change when the name
+ *  holds a value. [command, index of the variable argument, indexes of the arguments it is bound in, min arguments].
+ *  A command not listed keeps listing the name: a hint too many is noise, a hint missing hides a stored value. */
+const QUOTING: [string, number, number[], number][] = [
+  ["diff", 1, [0, 1], 2],
+  ["solve", 1, [0, 1], 2],
+  ["csolve", 1, [0, 1], 2],
+  ["fsolve", 1, [0, 1], 2],
+  ["linsolve", 1, [0, 1], 2],
+  ["limit", 1, [0, 1], 3],
+  ["sum", 1, [0, 1], 4],
+  ["product", 1, [0, 1], 4],
+  ["seq", 1, [0, 1], 4],
+  ["int", 1, [0, 1], 4], // only the definite form: int(x^2,x) reads the stored value (Giac evaluates the integrand)
+  ["integrate", 1, [0, 1], 4],
+];
+
+/** Index where the body of an arrow that starts at `from` ends: the first top-level comma, the unmatched ) ] or }, or
+ *  the end of `text`. */
+function arrowBodyEnd(text: string, from: number): number {
+  let depth = 0;
+  for (let i = from; i < text.length; i++) {
+    const c = text[i]!;
+    if (c === '"') {
+      const q = text.indexOf('"', i + 1);
+      if (q < 0) return text.length;
+      i = q;
+    } else if (c === "(" || c === "[" || c === "{") depth++;
+    else if (c === ")" || c === "]" || c === "}") {
+      if (depth === 0) return i;
+      depth--;
+    } else if (c === "," && depth === 0) return i;
+  }
+  return text.length;
+}
+
+/** Replaces, in the places a name is bound, its occurrences by "_" so that `namesIn` skips them: a function's
+ *  parameters in `f(x):=` and `x->` / `(x,y)->`, and the variable argument of the QUOTING commands. */
+function maskBound(input: string): string {
+  const mask = (text: string, vars: string[]): string =>
+    text.replace(/"[^"]*"|([A-Za-z_][A-Za-z0-9_]*)/g, (m, id?: string) => (id && vars.includes(id) ? "_" : m));
+  let out = input;
+  // f(x,y):=body and (x,y)->body / x->body: the parameters are bound in the body (the head is not scanned: f is called).
+  const fn = /^\s*[A-Za-z][A-Za-z0-9_]*\s*\(([^()]*)\)\s*:=([\s\S]*)$/.exec(out);
+  if (fn) out = mask(fn[2]!, fn[1]!.split(",").map((v) => v.trim()));
+  // Every arrow binds its parameters in its own body only: from the -> to the first top-level comma, the unmatched
+  // ) or ], or the end of the input.
+  const arrow = /(?:\(([^()]*)\)|([A-Za-z_][A-Za-z0-9_]*))\s*->/g;
+  for (let m = arrow.exec(out); m; m = arrow.exec(out)) {
+    const start = m.index + m[0].length;
+    const end = arrowBodyEnd(out, start);
+    // The parameter list itself is masked too; it is not a read of the stored value.
+    const masked = mask(out.slice(m.index, end), (m[1] ?? m[2]!).split(",").map((v) => v.trim()));
+    out = out.slice(0, m.index) + masked + out.slice(end);
+    arrow.lastIndex = m.index + masked.indexOf("->") + 2; // a nested arrow in the body is found next
+  }
+  // A quoting command: its variable is bound in the arguments listed, not in the others (limit's point, a sum's bounds).
+  for (const [cmd, vi, bindIn, min] of QUOTING) {
+    const re = new RegExp(`\\b${cmd}\\s*\\(`, "g");
+    for (let m = re.exec(out); m; m = re.exec(out)) {
+      const open = m.index + m[0].length - 1;
+      const close = matching(out, open);
+      if (close < 0) continue;
+      const args = splitTop(out.slice(open + 1, close));
+      if (args.length < min) continue;
+      const vars = namesIn(args[vi]!);
+      const masked = args.map((a, i) => (bindIn.includes(i) ? mask(a, vars) : a));
+      out = out.slice(0, open + 1) + masked.join(",") + out.slice(close);
+    }
+  }
+  return out;
+}
+
+function matching(s: string, open: number): number {
+  let depth = 0;
+  for (let k = open; k < s.length; k++) {
+    const ch = s.charAt(k);
+    if (ch === "(" || ch === "[") depth++;
+    else if ((ch === ")" || ch === "]") && --depth === 0) return k;
+  }
+  return -1;
+}
+
+function splitTop(s: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let k = 0; k < s.length; k++) {
+    const ch = s.charAt(k);
+    if (ch === "(" || ch === "[") depth++;
+    else if (ch === ")" || ch === "]") depth--;
+    else if (ch === "," && depth === 0) {
+      parts.push(s.slice(start, k));
+      start = k + 1;
+    }
+  }
+  parts.push(s.slice(start));
+  return parts;
+}
+
 /** `L[2]:=…`: an element of a stored list or matrix (the whole variable is what changes). */
 function indexedTarget(input: string): string | null {
   const m = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\[[^\]]*\]\s*:=/.exec(input);
@@ -310,12 +410,15 @@ export class EngineHost {
     return { result, defs };
   }
 
-  /** The stored variables a CAS input reads (F28): names in it that the log holds as values, not the ones it assigns
-   *  itself. Taken before the input runs, since it may change the log. */
+  /** The stored variables a CAS input reads (F28): names in it that the log holds as values, except the names the
+   *  input binds (see `maskBound`). An assignment lists its own target when its right side reads it (`x:=x+1`).
+   *  Taken before the input runs, since it may change the log. */
   private usesOf(input: string): NonNullable<CasResult["uses"]> {
     const asg = simpleAssignment(input);
-    const target = asg ? asg.name : (definedBy(input)?.name ?? indexedTarget(input));
-    return namesIn(asg ? asg.rhs : input)
+    const def = asg ? undefined : definedBy(input);
+    const target = asg ? undefined : (def?.name ?? indexedTarget(input));
+    const text = asg ? asg.rhs : input;
+    return namesIn(maskBound(text))
       .filter((n) => n !== target)
       .flatMap((n) => {
         const e = this.byName.get(n);
@@ -445,6 +548,13 @@ export class EngineHost {
   }
 }
 
+/** G24: a failed allocation reaches us as a C++ exception (`WebAssembly.Exception`, from `new`) or as an abort
+ *  (GMP, or the heap at its cap). The engine is not trusted after either: the client restarts it. */
+function isMemoryFailure(e: unknown): boolean {
+  if (typeof WebAssembly !== "undefined" && "Exception" in WebAssembly && e instanceof (WebAssembly as unknown as { Exception: new () => object }).Exception) return true;
+  return /\bOOM\b|out of memory|cannot enlarge memory|^Aborted/i.test(e instanceof Error ? e.message : String(e));
+}
+
 /** Builds the message handler used by the worker: init loads Giac, then requests go to EngineHost. */
 export function createRequestHandler(load: GiacLoader, post: (r: Response) => void): (req: Request) => Promise<void> {
   // Calls that arrive while init is still loading the engine wait for it, in arrival order (a Plot
@@ -495,7 +605,7 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           break;
       }
     } catch (e) {
-      post({ id: req.id, type: "fatal", message: e instanceof Error ? e.message : String(e) });
+      post({ id: req.id, type: "fatal", message: e instanceof Error ? e.message : String(e), ...(isMemoryFailure(e) ? { memory: true as const } : {}) });
     }
   };
 }

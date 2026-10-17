@@ -239,7 +239,15 @@ describe("sheet keys (docs/05 3.1)", () => {
     expect(sheetKey(key("bksp"), false)).toEqual({ kind: "backspace" });
   });
   it("Shift, Alpha, Menu, Apps and the keys that change place keep their own job", () => {
-    for (const id of ["shift", "alpha", "menu", "apps", "app", "cas", "symb", "plot", "num"]) expect(sheetKey(key(id), false), id).toEqual({ kind: "pass" });
+    // u2, u3: the free keys with their defaults Home and CAS (R15b)
+    for (const id of ["shift", "alpha", "menu", "apps", "u2", "u3", "symb", "plot", "num"]) expect(sheetKey(key(id), false), id).toEqual({ kind: "pass" });
+  });
+  it("a free key that holds no place does nothing in a sheet (R15b): it never types through", () => {
+    expect(sheetKey(key("u1"), true)).toEqual({ kind: "none" }); // empty
+    const sinh: Key = { ...key("u2"), actions: { primary: { kind: "insert", latex: "\\sinh\\left(#0\\right)" } } };
+    expect(sheetKey(sinh, true)).toEqual({ kind: "none" });
+    const settings: Key = { ...key("u2"), actions: { primary: { kind: "special", name: "settings" } } };
+    expect(sheetKey(settings, false)).toEqual({ kind: "none" });
   });
   it("a non-digit key types its letter into a long list's filter, and does nothing in a short list", () => {
     expect(sheetKey(key("sin"), true)).toEqual({ kind: "letter", ch: "G" });

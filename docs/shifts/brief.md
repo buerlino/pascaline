@@ -4,39 +4,42 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32 and the device run A4a (2026-10-16); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15) and G27 (F36, 2026-10-16). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15), G27 (F36, 2026-10-16), R44 (F37) and G24 (F32, 2026-10-17). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (fix R46f1, bug F42). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
 - **ron, one package at a time** (the owner's day work):
   1. R36 (why a row has its mark) once G22 is merged; if it is not yet, the lane goes on and R36 follows.
-  2. R15b (the top cluster): now.
-  3. R12a (mockups). While the owner looks at them: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
-  4. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
+  2. R48 (bug F40, owner 2026-10-17): now, before or beside R15c1, which shares no file with it; R48 before R15c3. R15c1–R15c4 (the R3 top cluster, decided 2026-10-17): now, in order. Then R49 (Settings rows) and R50b (the palette the owner picked in R50a). Then R12a (mockups), which draws the final keypad. While the owner looks at the mockups: R4a (Find on Math), R4b (Vars, Memory, the user keys), R33 (names with a value, marked on the line), R37 (the angle check).
+  3. R12b (tokens and history rows), R12c (theme, press feedback, reduced motion), R41 (key labels for TalkBack), then R40 (muted digits past a constant's uncertainty) once G26 is merged.
+
+  R50a (three palettes as a mockup; docs only, no app code) can run any time beside the lane, so the owner's pick is ready before R50b.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39, and R44, which changes no UI): R29, then G28 (a name the input binds is not a used value; the owner said yes 2026-10-16, F28), R44 (a silent wrong answer from the architecture check; the owner said yes 2026-10-15, F37), R30, G19, G24, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
-- **annabell:** A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): R29, R30, G19, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **annabell:** A9 (key vibration, F41) as soon as the owner's phone is connected: it needs a phone with a motor, and the Tab One has none. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
 **Why this order:**
 - R4a fills the wait for the owner's pick of the mockups, and R12b's token pass then covers Find too.
 - gorge's packages have no UI, and R24c needs milestone 5 items 1 and 2.
-- Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b and R4a stay whole, since each half would leave the keypad or Find half built.
+- Big packages are split where they split cleanly (the owner's rule for the unit pad: about a day or less). R15b, R15c2 and R4a stay whole, since each half would leave the keypad or Find half built.
+- **Bugs first** (feedback.md: a bug is fixed now, regression test first): R48 is small and touches no key R15c moves. R48 goes before R15c3, whose Alpha faces follow its rule. A9 waits only for the phone.
+- **R15c goes first** among the feel packages: it changes keys the hand is learning. Every week of use on D makes the change harder (docs/03 rule 8). R12a draws the keypad, R4b sets the user keys and R41 labels the keys, so all three wait for it.
 - **The deep-dive packages (0f, and G16–G18 and G25 in 0e) go by importance, then by what they need:**
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
   - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
-  - **Day packages sit next to the code they share:** the start-chunk budget has 3.23 kB gzip left (50.77 of 54 kB after R32, 2026-10-16; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R15b and R12b to come.
+  - **Day packages sit next to the code they share:** the start-chunk budget has 2.27 kB gzip left (51.73 of 54 kB after R15b, 2026-10-17; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R12b to come.
   - **Trust features after the code they build on:**
     - R36 adds a line to the history rows R11 built.
-    - R33 and R37 touch no key that R15b moves, and R12b's tokens style them.
-    - R41 labels the keys once R15b and R12 have placed and styled them.
+    - R33 and R37 touch no key that R15c moves, and R12b's tokens style them.
+    - R41 labels the keys once R15c and R12 have placed and styled them.
     - R40 needs G26 and a muted token from R12b.
   - **S7 early:** every later session reads less.
 
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14)
-The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's three parser-only packages (R29, R30, R39) and R44 (the chip value, no UI): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
+The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's three parser-only packages (R29, R30, R39): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
 
 ### Rules for a night shift (they replace rules sections 4, 10 and 11, but not 4a, and change section 8a)
 1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
@@ -62,12 +65,12 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 2 | G20 the stored values a CAS result used (F28, engine half): merged by day (`462c163`), skip | gorge, Sonnet | `p1/gorge-m4-uses` | — |
 | 3 | R29 where a number ends (F24, F25) | ron, **Opus** | `p1/ron-m4-numbers` | 1 h + review |
 | 3a | G27 a result that is not a number but holds a float gets ⚠ (F36): merged by day (`adb2e3a`), skip | gorge, Sonnet | `p1/gorge-m4-symfloat` | — |
-| 3b | R44 a long result's chip keeps its value, Ans never dropped (F37; after R29) | ron, Sonnet | `p1/ron-m4-longchip` | 45 min + review |
-| 3c | G28 a name the input binds is not a used value (F28) | gorge, Sonnet | `p1/gorge-m4-bound` | 45 min + review |
+| 3b | R44 a long result's chip keeps its value, Ans never dropped (F37): merged by day (`f170d20`), skip | ron, Sonnet | `p1/ron-m4-longchip` | — |
+| 3c | G28 a name the input binds is not a used value (F28): merged by day (`79e8b0f`), skip | gorge, Sonnet | `p1/gorge-m4-bound` | — |
 | 4 | **Opus pass 1** on steps 2–3c, then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
 | 6 | G19 a safe start (F31) | gorge, Sonnet | `p1/gorge-m4-safestart` | 1 h + review |
-| 7 | G24 a memory cap for the Giac worker (F32) | gorge, Sonnet | `p1/gorge-m4-memcap` | 1 h + review |
+| 7 | G24 a memory cap for the Giac worker (F32): merged by day (`cc095e3`), skip | gorge, Sonnet | `p1/gorge-m4-memcap` | — |
 | 8 | **Opus pass 2** on steps 5–7 | Opus | — | 20 min + fixes |
 | 9 | G16 the unit evaluator: factors, dimensions, one term, the end slot | gorge, **Opus** | `p1/gorge-m5-unitcore` | 2 h + review |
 | 10 | G17 temperatures and logarithmic units | gorge, Sonnet | `p1/gorge-m5-unittemp` | 1 h + review |
@@ -124,12 +127,20 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|
-| R15b | Top cluster: implementation | ron, **Opus** | `p1/ron-m4a-top` (same) | now (A4a and R11 are merged) | ~2 d |
-| R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R15b (it draws the final keypad) | ~0.5 d |
+| R48 | Shift + Alpha: the faces show lower case (F40) | ron, Sonnet | `p1/ron-m4a-lowerfaces` | none: start now | ~0.25 d |
+| A9 | Key vibration on the owner's phone (F41) | annabell, Sonnet | `p1/annabell-haptics` | the owner's phone connected | ~0.5 d |
+| R15c1 | The status line takes Apps, Menu and the views | ron, Sonnet | `p1/ron-m4a-statusline` | none: start now | ~0.75 d |
+| R15c2 | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | `p1/ron-m4a-cluster` | R15c1 | ~1.5 d |
+| R15c3 | The user keys' Alpha layer | ron, Sonnet | `p1/ron-m4a-useralpha` | R15c2 | ~0.5 d |
+| R15c4 | First-start tips | ron, Sonnet | `p1/ron-m4a-tips` | R15c2 | ~0.5 d |
+| R49 | Settings as a list of rows, each with its own page | ron, Sonnet | `p1/ron-m4a-settings` | R15c4 (it adds a Settings row) | ~0.75 d |
+| R50a | Three colour palettes, light and dark: a mockup | ron, Sonnet | `p1/ron-m4a-palette` | none: any time (docs only) | ~0.5 d |
+| R50b | The picked palette in the app | ron, Sonnet | `p1/ron-m4a-palette` (same) | R50a picked by the owner, and R49 | ~0.5 d |
+| R12a | Visual pass: mockups for the owner | ron, Sonnet | `p1/ron-m4a-look` | R50b (it draws the final keypad in the final colours) | ~0.5 d |
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-look` (same) | R12a approved by the owner, and R4b (so Find is in the pass) | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | ~1 d |
 
-A package starts as soon as the review has merged the one before it. Only the two mockup steps (R15a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b (moves keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b and R43 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R12a–R12c follow existing patterns.
+A package starts as soon as the review has merged the one before it. Only the mockup steps (R15a, R50a, R12a) wait, for the owner's pick. **Why these models:** Opus where a mistake breaks entry for every later package: R7 (the sheet every list is built on), R9 (a gesture classifier that misfires corrupts typing), R10, R14 and R18 (parser rules and round trips), R15b and R15c2 (move keys that every test names), R21a (the layer every pick sheet and the unit pad are drawn on), R27a, R27b, R43 and R47 (the ⌫ and cursor paths run on every key press; a wrong step deletes or moves what the user typed). Sonnet elsewhere, with an Opus review per package; R26a and R26b are small and pinned by their tests, and R12a–R12c follow existing patterns.
 
 ## 0a. Work packages (milestone 4), between R12a and R12b
 Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two; A4b is the second device run (the first, A4a, is done); where 0d says "R4 merged", read R4a and R4b.
@@ -137,10 +148,10 @@ Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). T
 | # | Package | Backlog step | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|
 | R4a | Find on Math (EN1, part 1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R12a done (the owner looks at the mockups meanwhile) | ~2 d |
-| R4b | Vars, Memory and the user keys from Find (EN1, part 2) | 8 | ron, Sonnet | `p1/ron-m4-vars` | R4a and R15b | ~1 d |
+| R4b | Vars, Memory and the user keys from Find (EN1, part 2) | 8 | ron, Sonnet | `p1/ron-m4-vars` | R4a and R15c3 | ~1 d |
 | A4b | Find timing on the Tab One | 12 | annabell, Sonnet | `p1/annabell-m4-find` | R4b; Tab One connected | ~0.25 d |
 
-If the owner wants Find sooner, R4a can go now: it uses no key that R15b moves.
+If the owner wants Find sooner, R4a can go now: it uses no key that R15c moves.
 
 ### How to start a package
 From the main checkout (`/home/nordmu/Documents/source99/pascaline`), one terminal per package:
@@ -210,11 +221,8 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
 | R29 | Where a number ends | F24, F25 | night | ron, **Opus** | `p1/ron-m4-numbers` | now | ~0.5 d |
-| R44 | A long result's chip keeps its value, and Ans is never dropped | F37 (architecture check, 2026-10-15) | night | ron, Sonnet | `p1/ron-m4-longchip` | R29 (chips, same tests) | ~0.25 d |
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
 | G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
-| G24 | A memory cap for the Giac worker | F32 | night | gorge, Sonnet | `p1/gorge-m4-memcap` | now | ~0.5 d |
-| G28 | A name the input binds is not a used value | F28 (decisions.md "G20: a name the input binds") | night | gorge, Sonnet | `p1/gorge-m4-bound` | now (G20 and R32 are merged) | ~0.25 d |
 | G22 | Why the mark: the reasons as facts | review item 14 | night | gorge, Sonnet | `p1/gorge-m4-why` | now | ~0.5 d |
 | R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R30 (same file) | ~0.25 d |
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
@@ -321,10 +329,10 @@ Gate:
 - no index request before idle
 
 ### ron, R4b: Vars, Memory and the user keys from Find, branch `p1/ron-m4-vars`
-Backlog step 8, the rest. Starts when R4a and R15b are merged. Read R4a's report, docs/04 3.4 and 5.1, R15b's user-key code and its storage key in `state/storage.ts`.
+Backlog step 8, the rest. Starts when R4a and R15c3 are merged. Read R4a's report, docs/04 3.4 and 5.1, the user-key code (`keyboard/userKeys.svelte.ts`, with R15c3's Alpha layer) and its storage key in `state/storage.ts`.
 - **Vars** = Find on the user's variables and functions: the live items from `defined` (§3.4), with R4a's keys, preview and insertion.
 - **Shift + Math = Memory:** the same list with delete and clear all (§5.1).
-- **User keys:** Settings › User keys (the place R21b left) sets U1–U3 and their Shift layers from Find, in R15b's stamped store. Reset gives back the defaults of `spec/keyboard.yaml` (U2 = Home, U3 = CAS). R15b's text promised this setting "with R4".
+- **User keys:** Settings › User keys (the place R21b left) sets U1–U6 and their Shift and Alpha layers (18 slots) from Find, in R15b's stamped store. Besides Find's functions, units and constants, a slot can hold a place or a sheet: Home, CAS, Apps, Menu, Mode, Settings (decisions.md "R15c" costs: the keys-only paths). Reset empties a slot, since every slot ships empty after R15c2. R15b's text promised this setting "with R4".
 
 Gate: e2e per path by keys and by touch (Vars, Memory delete and clear all, a user key set from Find and pressed again after a reload); task 5 unchanged; the size test.
 
@@ -333,13 +341,121 @@ Backlog step 12, its Find part. Starts when R4b is merged and the Tab One is con
 
 ### Milestone 4a packages (section 0b)
 
-### ron, R15b: top cluster, branch `p1/ron-m4a-top`
-P12 points 2 and 3 and open point B. **R15a is done:** `docs/mockups/top-cluster.html` holds the layouts A, B, C and the press table. **The owner turned down A, B and C (2026-10-14); the page now holds layout D** (the cross stays, every key at its G2 place, three free keys U1–U3 with Shift layers, 48 px cluster rows; decisions.md). **R15b:** build D (approved by the owner 2026-10-14) with **U2 = Home and U3 = CAS as defaults** in `spec/keyboard.yaml` (decisions.md "R15a: layout D"); the free keys get their slots and storage here (a stamped key in `state/storage.ts`), their Find-based setting comes with R4b. Edit the grid in `spec/keyboard.yaml` (the maths rows 3–9 do not move), replace the `app` and `cas` keys by the user keys U2 and U3 with those defaults (their old Shift layers go), make the place name a button, move the pad, keep the `cancel` key's id and its Shift layer (Undo, R16), update the trackpad zones, the legends, `tools/probes/unit-presses.mjs` and every test that names a moved key; keys typed while an app loads (R8) now include the status taps; remove `app` and `cas` (and `symb`/`plot`/`num` if they fold) from `PASS` in `views/sheetKeys.ts` and `AT_ONCE` in `App.svelte`; the place-name tap no longer opens Apps (`status.spec.ts` changes). Gate: e2e for each path in the press table, viewport share not below R8's 0.354, keyboard test, gallery, gestures and flicks e2e. Shared-file text in the report.
+### ron, R15c1–R15c4: the R3 top cluster (decisions.md "R15c", owner 2026-10-17)
+Read first, for all four: decisions.md "R15c" (the layout, the layers, the costs) and the open item "R15c: the free key's Shift layer" above it; [mockups/top-cluster-r15c.html](../mockups/top-cluster-r15c.html), option R3; docs/06 (every difference from the G2); decisions.md "R15b" (the place name's target and the place actions). **The owner's prototype** of R3 is `/home/nordmu/Documents/source99/pascaline/.coord/r15c-prototype.patch` (not in git; `git apply` it in a scratch worktree to see it run). It has a test switch, `?cluster=r3`, a Settings section and `keyboard/clusterTest.ts`. None of these is to be built. Take its shapes and commands, not its structure. Its free key holds Recall and Store, which the owner dropped (the key is View and Help). It showed that `\frac{12}{34}`, Shift + ⇤, 5 gives `\frac{12}{534}`, and that a drag from the pad's hub steps the cursor.
+
+**R15c1: the status line takes Apps, Menu and the views** (branch `p1/ron-m4a-statusline`). D's keys stay until R15c2, so for one package both paths work.
+- **The place name opens the Apps sheet** (special `apps`, through `press()` as `PLACE_KEY` does today), in Home, CAS and every app. It is drawn with ▾ instead of ⇄. The Apps sheet already lists Home and CAS first. The Home ↔ CAS switch on the name goes. Keep R15b's 96 × 28 px target and update the name's aria-label.
+- **In an app: Symb, Plot and Num tabs** beside the name, the current one marked. Each tab goes through `press()` with a key whose special is `symb`, `plot` or `num`, so the sheet, queue and AT_ONCE rules hold. The name then shows only the app's name.
+- **☰ at the right end** (special `menu`, through `press()`): the view's menu. On a picked row it opens the row's menu (R13, `historyKey` already does this). The target is at least 36 × 28 px.
+- **Every ☰ menu ends with Settings.** In the Home/CAS list it is item 10 (key 0 picks it; S2's fixed numbers 1–9 stay), and in each app view's menu it is the last row.
+- The status line stays 28 px (docs/03 rule 9) and fits at 360 px width in an app with the chips, DEG/RAD and ☰, with no overflow; the tabs may shrink before the chips do.
+- **Tests:** e2e by touch and by keys where keys apply:
+  - the name opens Apps, and Home and CAS are reached from it;
+  - the tabs switch views in Function and Solve;
+  - ☰ opens the Home menu, and on a picked row the row's menu;
+  - Settings is the last ☰ row.
+  R15b's place-switch tests change to the new behaviour.
+- **Docs:** docs/05 3.2 (the status line) and docs/06 section 3 point 2 and section 4 B.
+- **Gate:** typecheck, unit and e2e tests, the gallery rebuilt, and the start chunk at most +0.4 kB gzip (2.27 kB left before R15c).
+
+**R15c2: the R3 keys** (branch `p1/ron-m4a-cluster`, **Opus**: it moves keys that every test names, as R15b did; it stays whole). Starts when R15c1 is merged.
+- **`spec/keyboard.yaml` rows 0–2** as decisions.md "R15c" points 1–5:
+  - `u1`–`u6` in columns 0–1, all empty;
+  - `up` (row 0, columns 2–3), `left` and `right` (row 1), `down` (row 2, columns 2–3);
+  - `view` | `esc`, `undo` | `copy`, `lstart` | `lend` in columns 4–5.
+  - `source: assumed` for every new key, and the cluster's comments rewritten.
+  - `apps`, `symb`, `plot`, `num`, `help`, `menu` and `cancel` go.
+- **Actions:**
+  - `esc` (Shift `clear`) takes today's Cancel job, then Esc's: it stops a running job, closes Settings, goes back one sheet level (`sheetKeys.ts`: `esc` → back; the `cancel` entry goes), drops a picked row, and otherwise clears the line. A hardware Escape is this key. The special `cancel` goes.
+  - `undo` (Shift `redo`): MathLive `undo` and `redo`.
+  - `copy` (Shift `paste`): the specials as they are.
+  - `lstart` and `lend`: `moveToMathfieldStart` and `moveToMathfieldEnd`; Shift: `moveToGroupStart` and `moveToGroupEnd`.
+  - `view`: the keypad toggle on tap (legend View), Help on Shift (legend Help). Both are `special: none` until built, so the key is drawn dimmed, as D's Help and View are.
+  - In an app view without an entry line, ⇤ ⇥, Undo and Redo are dead keys.
+  - Store on an empty line (`Ans ▶`) follows the owner's answer to the open item; with no answer yet, it stays as it is.
+- **The round pad:** the trackpad surface is drawn round (`border-radius: 50%` on the existing surface, the four zones unchanged), with a dashed hub ring at the centre that does nothing on a tap.
+- **The user keys:** six keys, each with a tap and a Shift layer (R15c3 adds Alpha). Stored slots of `u1`–`u3` stay valid. D's Home and CAS defaults on U2 and U3 go (accepted in the decision).
+- **Tests:** every test that names a removed key moves to the new keys or to the status line (R15c1). New e2e:
+  - ⇤ ⇥ at the line's ends;
+  - Shift + ⇤ ⇥ in a numerator and in an exponent, `derived`: `\frac{12}{34}`, Shift + ⇤, 5 → `\frac{12}{534}`;
+  - Undo, then Redo;
+  - Esc stops a running job (from the Cancel tests), goes back a sheet level, drops a pick, and clears the line;
+  - the Copy and Paste key;
+  - a drag that starts on the hub and one that starts on ▲.
+  `keyboard.test.ts`: the cluster has no letter line and six user keys. i18n: every legend.
+- **Docs:**
+  - docs/04 5.1 (the key table);
+  - docs/06: section 1 (Help), section 2 (the Cancel and Shift + Apps rows go), section 3 points 2, 3 and 8, and a row for every R15c difference with its reason;
+  - backlog K4 (the toggle is on R3's View key, row 0, column 4);
+  - CLAUDE.md is not touched.
+- **Gate:** typecheck; unit, e2e and gesture tests; the gallery rebuilt; the viewport share on the Pixel 7 profile still 0.354 (floor 0.35); the start chunk within budget; `npm run golden` unchanged (no engine change).
+
+**R15c3: the user keys' Alpha layer** (branch `p1/ron-m4a-useralpha`). Starts when R15c2 is merged.
+- The loader allows `alpha` on a user key.
+- `USER_LAYERS` gains `alpha`. `resolve`, `set` and `reset` work per layer, and a stored record of the old two-layer shape still loads.
+- An empty Alpha slot falls back to the tap layer, as every key's missing Alpha layer does (`spec/keyboard.yaml`).
+- A flick down or Alpha + the key fires the Alpha slot.
+- The cluster keeps no letter line: the face shows the Alpha binding while Alpha is on, and the flick bubble shows it while armed.
+- **Tests:** `userKeys.test.ts` (three layers, the old record, fallback); e2e: a user key with an Alpha binding (set through the model in the test) fires it by flick down and by Alpha + tap, and keeps it after a reload.
+- **Gate:** as R15c1.
+
+**R15c4: first-start tips** (branch `p1/ron-m4a-tips`). Starts when R15c2 is merged.
+- A one-time overlay over the app, in its own lazy chunk, never in the start chunk.
+- It dims the screen and rings the place name and ☰, measured from their boxes. Two tips: "Tap the name for your apps, Home and CAS" and "Tap ☰ for the menu: copy, paste, settings". A "Got it" button.
+- Any tap or key closes it; the key does nothing else. Android back closes it (`openLayer`).
+- It is shown once, with the flag stored in the kv store. A Settings row ("Show the first-start tips") shows it again.
+- It follows `prefers-reduced-motion`.
+- **Tests:** e2e: a fresh profile shows it; a reload does not; the Settings row shows it again; a key press only closes it. A gallery case, light and dark.
+- **Gate:** as R15c1.
+
+### ron, R48: Shift + Alpha, the faces show lower case (F40), branch `p1/ron-m4a-lowerfaces`
+Starts now; before R15c3. Read backlog item 37 (F40) and feedback #52; `labelFor` and `layerAction` in `app/src/keyboard/keyboard.ts`; `face`, `hint` and `alphaHint` in `app/src/keyboard/Keypad.svelte`; the lock flags in `app/src/state/session.svelte.ts` (`capsLock` is the lower-case lock: it keeps Shift on with Alpha).
+- **The face shows what a tap types.** With Alpha and Shift both on (Shift + Alpha one-shot, or the lower-case lock), a key whose Alpha action is its own letter shows it in lower case. `labelFor` takes the same condition as `layerAction`, so the two cannot drift apart again. Keys whose Alpha layer falls back to the primary keep their face.
+- **The flick bubble and the letter legend follow the same rule:** a flick down shows and types the same case.
+- **Tests:** a unit test of `labelFor` for the four states (none, Alpha, Shift + Alpha, the two locks); e2e: Shift Alpha shows `a` on the A key and types `a`; Alpha alone shows `A`; the lower-case lock shows lower case until it is released; a gallery case of the lower-case layer, light and dark.
+- **Gate:** typecheck, unit and e2e tests, the gallery rebuilt, and the start chunk within +0.05 kB gzip.
+
+### annabell, A9: key vibration on the owner's phone (F41), branch `p1/annabell-haptics`
+Starts when the owner's phone is connected (take the device lock; not the Tab One, which has no motor). Read backlog item 38 (F41) and feedback #50; `app/src/input/haptics.ts`; `touched()` and `dead()` in `app/src/App.svelte`; `loadNative()` in `app/src/main.ts`; `android/app/src/main/java/io/github/buerlino/pascaline/PascalineHapticsPlugin.java` and its registration in `MainActivity.java`; decisions.md "P7" point 3 (the setting and its defaults).
+- **Find the cause first, with logs, not guesses.** Install a measure build (`./build.sh --dev --measure --install <serial>`), switch Key vibration on, tap keys, and read logcat: the plugin logs `PASCALINE_HAPTICS` for every native pulse (measure builds only), and `adb shell dumpsys vibrator_manager` lists recent vibrations. In this order:
+  1. **No `PASCALINE_HAPTICS` line:** the native plugin is never used, so every pulse goes to `navigator.vibrate`, which the Android WebView may ignore. Check `Capacitor.isPluginAvailable("PascalineHaptics")` and the dynamic import in `loadNative()`.
+  2. **Lines, but nothing felt:** the pulse is too short or too weak for the motor (15 ms at amplitude 128). Try longer pulses and full amplitude; on API 29+ try `VibrationEffect.createPredefined(EFFECT_TICK)` or `View.performHapticFeedback(KEYBOARD_TAP)`, which follow the system's own touch-feedback strength.
+  3. **Lines, and dumpsys shows the vibration ignored or scaled to zero:** the system's vibration settings (Android 13+ applies its touch-feedback intensity by usage). Set the usage on the `VibrationAttributes`.
+- **Fix** the cause found, in the plugin or in `haptics.ts`. If the defaults (50 %, 15 ms) cannot be felt, propose new ones in the report, measured on the phone.
+- **Tests:** a unit test for any TS change (the existing `recordVibrations` e2e helper covers the web path); on the phone: the logcat lines and the dumpsys entries for ten key taps, and the owner feels them.
+- **Report:** the phone, the Android version, the cause with its log lines, and what changed.
+
+### ron, R49: Settings as a list of rows, each with its own page, branch `p1/ron-m4a-settings`
+Starts when R15c4 is merged (it adds a Settings row). Read decisions.md "Settings: a list of rows" (the shape, and the owner's answer if there is one) and "R21" point 4; `settingsSections()` in `app/src/views/modeSheet.ts`; `app/src/views/SettingsPage.svelte` and `settingsPage.svelte.ts`; `app/src/input/backLayer.ts` (Android back).
+- **The list:** one row per section, with its current value and ›: Format key cycle (the ticked notations), Key vibration (`Off`, or `On · 50 % · 15 ms`), Shift / Alpha taps (`settings.taps.value`), the first-start tips row of R15c4. A row opens its page, titled `Settings › <section>`.
+- **Back:** ◀, Esc and Android back go from a page to the list, on the row that was open; from the list they close Settings; × closes Settings from anywhere. Digits pick rows and ▶ or Enter opens one, as in every sheet (S2).
+- **Key vibration's page:** its three rows as today, plus **Try it**, which fires one pulse at the current values (and the dead-key double pulse is unchanged).
+- Later sections (Theme R12c, User keys R4b, About) are added as rows; leave a comment where.
+- **Tests:** e2e by touch and by keys: the list; each row opens its page and back returns to the list on the same row; values change in place as before; Try it fires one pulse (`recordVibrations`); Android back walks page → list → closed. `settings.spec.ts` moves to the new paths.
+- **Docs:** docs/05 section 3 (Settings) and decisions.md "R21" point 4 (a pointer to the new entry).
+- **Gate:** typecheck, unit and e2e tests, the gallery rebuilt (the list and each page, light and dark), and the start chunk unchanged (Settings loads lazily).
+
+### ron, R50a and R50b: a nicer colour scheme, light and dark (feedback #53), branch `p1/ron-m4a-palette`
+Read feedback #53; `app/src/style.css` (today's tokens, dark in `:root`, light in the `prefers-color-scheme: light` block) and `app/src/style.test.ts` (the contrast test); docs/05 3.10; [mockups/top-cluster-r15c.html](../mockups/top-cluster-r15c.html) (the R3 keypad to draw on). Clean room (CLAUDE.md): our own colours, nothing taken from any HP skin or screenshot.
+
+**R50a: three palettes as a mockup** (docs only, no app code; any time).
+- One static page, `docs/mockups/palettes-r50.html`, that opens on the phone. Each palette has a short name and one idea, for example a calm graphite with one warm accent, a cool blue-grey, and a high-contrast one.
+- Each palette is drawn in light and dark at phone size on the same scene: the status line with its chips, Home history with an exact result, a ≈ result and a ⚠ row, the entry line with an Ans chip, the R3 keypad with Shift and Alpha legends, a key on, a dead key, and a pick sheet over the keypad.
+- Each palette lists its value for every role token of `style.css` (`--bg`, `--panel`, `--line`, the five key kinds, `--key-enter`, `--text`, `--text-dead`, `--muted`, `--shift`, `--alpha`, `--error`, `--chip-bg`), plus any new role it needs, such as the ≈ and ⚠ marks, the picked row and focus.
+- **Contrast, shown on the page:** text on its background at least 4.5:1, legends and dead keys at least 3:1 (as `style.test.ts`). Shift and Alpha legends stay distinguishable for the common colour-vision deficiencies, since they also differ by position.
+- End the package. The owner picks a palette, or a mix, on the phone.
+
+**R50b: the picked palette in the app** (after the owner's pick, and R49).
+- The picked values go into the existing tokens of `style.css`, dark and light.
+- Any colour written directly in a component that the new palette touches moves to a token. R12b later puts the whole token file in place on these values.
+- `style.test.ts` covers every new text/background pair.
+- **Gate:** typecheck, unit tests (the contrast test), the gallery rebuilt light and dark and looked at by the owner on the phone, and the start chunk within +0.1 kB gzip.
 
 ### ron, R12a, R12b and R12c: visual pass, branches `p1/ron-m4a-look` (R12a, R12b) and `p1/ron-m4a-theme` (R12c)
-**R12a** (after R15b): read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a pick sheet over the keypad, the Mode sheet, the Settings page, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change; R4a and R4b run meanwhile.
+**R12a** (after R50b, on the palette the owner picked): read the owner's UI points in `docs/feedback.md` (and anything added since); make mockups as one static HTML page (Home with history, a pick sheet over the keypad, the Mode sheet, the Settings page, Plot; light and dark at phone size) in `docs/mockups/` and end the package. The owner reviews them on the phone and says what to change; R4a and R4b run meanwhile.
 
-**R12b** (started with the owner's notes, after R4b, so Find is in the pass): design tokens in one file (docs/05 3.10: colours per role, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component, Find's included; history rows (3.5). Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
+**R12b** (started with the owner's notes, after R4b, so Find is in the pass): design tokens in one file (docs/05 3.10: colours per role, with R50b's values, type scale, 4 px spacing, radii, motion); no colour or size written directly in a component, Find's included; history rows (3.5). Gate: contrast test, gallery reviewed by the owner, start chunk within 2 kB of before.
 
 **R12c** (after R12b): **theme setting System / Light / Dark on R21b's Settings page, Dark by default on Android, System in the PWA**; press feedback within one frame; `prefers-reduced-motion`. Gate: contrast test in both themes; e2e for the setting (it survives a reload); gallery rebuilt; start chunk within 0.5 kB of before.
 
@@ -641,20 +757,6 @@ Gate: the tests, the Find query test unchanged, and the size test.
 ### Packages of section 0f
 Every package here: tests first (they fail on today's code), then the fix, then the report commit (section 2). The finding, its evidence and the decision are in decisions.md "The deep-dive review"; the backlog line is under "Trust and robustness".
 
-### ron, R44: a long result's chip keeps its value, and Ans is never dropped (F37), branch `p1/ron-m4-longchip`
-From the architecture check of 2026-10-15 (sandra; docs/04 2.3 #18). Starts when R29 is merged (the same chip code and tests; the owner said yes, 2026-10-15). Read: docs/04 2.3 #18 and 2.8, `app/src/state/session.svelte.ts` (`finish()` around line 446, `chipFor`, `lastChip`), `app/src/App.svelte` (`insertResult`, the Ans-first branch of `run()`), `app/src/engine/homeEval.ts:485` (what `full` holds), `app/src/input/parse.ts:634` (a missing chip).
-
-**Behaviour today** (probes 2026-10-15): Home `2^10000` shows `≈ 1.99506311688E3010` (right). Tap it, `×1`, Enter: `= 1.99506311688E3010`, marked exact, for a value that is not 2^10000. Then `+3` on the empty line gives `= 3`, not Ans + 3.
-
-**Cause:** `finish()` keeps `r.exact ?? r.full` as the chip value, and only when it is ≤ 2 kB. 2^10000's exact text has 3,011 digits, so the item gets no chip: `insertResult` inserts the drawn LaTeX (`1.99506311688\times10^{3010}`, an exact number to the parser), and `lastChip()` gives nothing, so Ans-first inserts no `\ans` and the parser reads `+3` as 3. `homeEval` already puts the right value in `r.full`: the exact text up to 2 kB, else the P-digit decimal.
-
-**Commits:**
-1. **Tests** (failing today; e2e in `app/test/chips.spec.ts` with the real engine, since the value matters): tap `2^10000`, `×1` → mark `≈` and the first 15 digits 1.99506311688075 (`oracle`); `2^10000` then `+3` → the line starts with Ans and the result is `≈ 1.99506311688E3010`; a short exact result still gives an exact chip (`1/3`, tap, `×3` → `= 1`, docs/04 2.3 #8).
-2. **Fix:** the chip value is the engine's `full` (CAS: `numeric.full` when there is one), with `fullExact` following it. Ans-first inserts `\ans` whenever the view has a finished result; a result with no chip value (a symbolic text over 2 kB) then fails at Enter with a message that says why (today's text, "Ans: no result to use in this view yet", is wrong for it). The drawn LaTeX goes in only for a result that is not a number.
-3. **Report.**
-
-Gate: chips, entry and tasks e2e; vitest; typecheck; the start chunk within its budget.
-
 ### ron, R29: where a number ends (F24, F25), branch `p1/ron-m4-numbers`
 Backlog F24 and F25. Parser only, no UI (night queue). Read:
 - `app/src/input/parse.ts`: the lexer's number branch (lines 99–120) and `atom`;
@@ -764,47 +866,6 @@ Commits in this order:
    - The App side of that line is one small change in `App.svelte`, which the review accepts as part of this package.
 
 Gate: vitest, typecheck, the start-up e2e unchanged, `replayMs` unchanged.
-
-### gorge, G24: a memory cap for the Giac worker (F32), branch `p1/gorge-m4-memcap`
-Backlog F32. Read:
-- `engine/giac/build-wasm.sh` (line 188: `-sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB`, no `MAXIMUM_MEMORY`, so Emscripten's default of 2 GB) and `engine/giac/build-wasm-release.sh`;
-- `app/src/engine/workerEngine.ts` (`onerror`, line 222: a crash restarts and replays);
-- `app/src/i18n/en.ts`.
-
-**Today:**
-- A CAS job that keeps allocating can grow the worker toward 2 GB.
-- On the 3.9 GB Tab One, Android may then kill the whole app (the worker lives in the WebView's renderer), not just the worker.
-- The user sees the app restart and loses the half-typed line (F30).
-
-Commits in this order:
-1. **Tests first** (Node, with the dev build):
-   - a job that goes past the cap ends in an "out of memory" result, not a hang, and the next call works after the restart and replay;
-   - in `workerEngine.test.ts`: a worker error during a call gives the caller a `memory` error, with the i18n message "Out of memory: the engine was restarted".
-
-   Name the input that goes past the cap in the report, for the device check.
-2. **Build:**
-   - `-sMAXIMUM_MEMORY=1GB` in the dev and release scripts (the P2 container's flags too);
-   - `-sABORTING_MALLOC=1` if a failed allocation does not abort by default;
-   - the client turns a worker abort during a call into that error.
-3. **Rebuild** the dev engine under the host-cpu lock. Run the golden gate and `scripts/compare-engines.ts` against the build before; nothing may differ.
-
-Gate: the golden gate, the new tests, `compare-engines.ts` clean. The device check (the app stays up on the Tab One) waits for the next device run.
-
-### gorge, G28: a name the input binds is not a used value (F28), branch `p1/gorge-m4-bound`
-Decided by the owner 2026-10-16 (decisions.md "G20: a name the input binds"). No UI: R32's line under a CAS result shows what `uses` lists. Read:
-- G20's report (`git log -1 dd0f65c`) and `usesOf()` in `app/src/engine/host.ts`;
-- the decision's probes (decisions.md, the entry named above);
-- the `prec-G20-*` cases in `tests/golden/precision.yaml`.
-
-Commits in this order:
-1. **Probe** (`tools/probes/engine.ts`, after Home `x:=3`): each command of the CAS menu and each tier-0 function that takes a variable argument: does its result depend on the stored 3? The list goes in the report.
-2. **Tests first** (golden cases in `precision.yaml`, `beforeHome: ["x:=3"]`, `derived`):
-   - no `uses` on `diff(x^2,x)`, `solve(x^2=4,x)`, `seq(x^2,x,1,3)`, `sum(x,x,1,4)`, `f(x):=x^2` and `x->x^2`;
-   - `int(x^2,x)` keeps `uses: ["x"]`;
-   - `x:=x+1` → 4 with `uses: ["x"]`.
-3. **Build:** `usesOf()` skips a function's parameters in `f(x):=` and `x->`, and the variable argument of the commands the probe found quoting it; an assignment lists its target when its right-hand side reads it. A command the probe does not settle keeps listing the name: a hint too many is noise, a hint missing hides a stored value.
-
-Gate: the golden gate (precision), vitest, typecheck; R32's `app/test/uses.spec.ts` unchanged and passing.
 
 ### gorge, G22: why the mark, the reasons as facts, branch `p1/gorge-m4-why`
 Deep-dive item 14; R36 shows these reasons. No UI. Read:

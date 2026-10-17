@@ -6,6 +6,7 @@ import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../i
 import { SerializeError } from "../input/errors.ts";
 import { loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
+import { EngineMemoryError } from "../engine/types.ts";
 import {
   decimalFromRational,
   decimalFromString,
@@ -410,6 +411,13 @@ export class Session {
     // Read and write through the proxy in the list from here on.
     const live = list[list.length - 1] as HistoryItem;
     if (list.length > HISTORY_LIMIT) list.splice(0, list.length - HISTORY_LIMIT);
+    if (!ans && this.hasResult(view) && /\\ans(?![a-zA-Z])/.test(latex)) {
+      // A finished result with no chip value (a symbolic text over 2 kB, R44): say why, not "no result yet"
+      live.status = "error";
+      live.text = "Ans: the last result is too long to reuse (over 2 kB)";
+      this.saveHistory();
+      return Promise.resolve();
+    }
     return this.finish(live, view, latex, table, giacOverride).finally(() => {
       this.saveHistory();
       if (live.status === "done") void this.refreshNames();
@@ -420,6 +428,11 @@ export class Session {
   chipFor(item: HistoryItem): Chip | undefined {
     if (item.status !== "done" || item.full === undefined) return undefined;
     return { value: item.full, exact: item.fullExact === true };
+  }
+  /** Whether the view has a finished result (Ans-first inserts \\ans then, R44). */
+  hasResult(view: View = this.view): boolean {
+    const list = view === "home" ? this.home : this.cas;
+    return list.some((item) => item.status === "done");
   }
   /** The last finished result of a view, as Ans. */
   lastChip(view: View = this.view): Chip | undefined {
@@ -465,11 +478,13 @@ export class Session {
         if (q) live.rational = q;
         // A result that is not a number is drawn from Giac's latex(), as in CAS (R18f3); numbers from our formatter.
         if (r.ok) live.resultLatex = r.latex !== undefined ? tidyGiacLatex(r.latex) : homeResultToLatex(r.display);
-        // The chip value: the exact fraction when there is one, else the engine's full value (every confirmed digit)
-        const full = r.exact ?? r.full;
+        // The chip value: the exact text when it fits in 2 kB, else the engine's `full` (the P-digit decimal), never
+        // nothing for a number (R44, F37). A decimal cut from a longer exact text is not exact, though the value is.
+        const full = r.exact !== undefined && r.exact.length <= FULL_LIMIT ? r.exact : r.full || r.exact;
         if (r.ok && full && full.length <= FULL_LIMIT) {
           live.full = full;
-          live.fullExact = !r.approximate && (r.exact !== undefined || r.exactRational || !isDigitsText(full));
+          const cut = (r.exact !== undefined && full !== r.exact) || r.value?.re.sticky === true || r.value?.im.sticky === true;
+          live.fullExact = !r.approximate && !cut && (r.exact !== undefined || r.exactRational || !isDigitsText(full));
         }
       } else {
         const r = await this.calc.cas(giac, s);
@@ -516,7 +531,7 @@ export class Session {
         live.status = "cancelled";
       } else {
         live.status = "error";
-        live.text = e instanceof Error ? e.message : String(e);
+        live.text = e instanceof EngineMemoryError ? t("error.memory") : e instanceof Error ? e.message : String(e);
       }
     }
   }

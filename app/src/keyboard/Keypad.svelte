@@ -6,8 +6,10 @@
   import { fitLegends } from "./fit.ts";
   import { actionFor, gridPlace, keyboard, labelFor, type Key, type Layer } from "./keyboard.ts";
   import { letterOf, sheetKey } from "../views/sheetKeys.ts";
+  import type { UserKeys } from "./userKeys.svelte.ts";
 
   let {
+    userKeys,
     shift,
     alpha,
     alphaLock = false,
@@ -17,6 +19,8 @@
     onpress,
     ontouch = () => {},
   }: {
+    /** The free keys' slots (U1–U3, R15b): drawn and fired with the user's actions over the defaults. */
+    userKeys: UserKeys;
     shift: boolean;
     alpha: boolean;
     alphaLock?: boolean;
@@ -36,6 +40,8 @@
   // The face shows what a tap gives (the active layer). The legends show what the flicks give (P7 point 2): the shift
   // function at the top left (flick up), the letter at the bottom left (flick down). A legend the face already shows
   // is left out; the Shift layer's legend stays under the alpha lock, where a flick up still gives it (`=` in a name).
+  /** The keys as drawn and fired: the free keys with the user's slots. */
+  const keys = $derived(keyboard.keys.map((k) => userKeys.resolve(k)));
   const face = (k: Key): string =>
     legend(labelFor(k, shift, alpha) || k.label.primary || "");
   const hint = (k: Key): string => (shift && !alpha) || !k.label.shift ? "" : legend(k.label.shift);
@@ -159,7 +165,8 @@
     const el = ev.target instanceof Element ? ev.target.closest<HTMLElement>("[data-key],[data-trackpad]") : null;
     if (!el) return undefined;
     if (el.dataset["trackpad"] !== undefined) return "pad";
-    return keyboard.byId.get(el.dataset["key"] ?? "");
+    const k = keyboard.byId.get(el.dataset["key"] ?? "");
+    return k && userKeys.resolve(k);
   }
 
   function down(ev: PointerEvent): void {
@@ -271,7 +278,7 @@
   role="presentation"
 >
   {#if padArea}<div class="trackpad" data-trackpad style:grid-row={padArea.rows} style:grid-column={padArea.cols}></div>{/if}
-  {#each keyboard.keys as key (key.id)}
+  {#each keys as key (key.id)}
     <button
       type="button"
       class={`key ${key.cls}`}
@@ -284,6 +291,7 @@
       data-dead={dead(key) ? "true" : undefined}
       data-zone={isPadKey(key) ? "true" : undefined}
       data-letters={letterRows.has(key.row) ? "true" : undefined}
+      data-user={key.user ? (userKeys.isEmpty(key) ? "empty" : "set") : undefined}
     >
       <span class="shiftlegend" data-fit="legend">{hint(key)}</span>
       <span class="main" data-fit="face">{face(key)}</span>
@@ -369,6 +377,14 @@
     min-height: 36px;
     background: var(--key-nav);
     font-size: 15px;
+  }
+  /* a free key (U1–U3, R15b): an empty one is an outlined slot, a set one has a thin edge (the user's own key) */
+  .key[data-user="empty"] {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+  .key[data-user="set"] {
+    box-shadow: inset 0 0 0 1px var(--muted);
   }
   /* the trackpad and Cancel in the upper cluster: as low as the app keys beside them */
   .key[data-key="cancel"],

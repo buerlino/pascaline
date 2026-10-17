@@ -59,6 +59,7 @@ test("a finger tap puts the caret where a mouse click does", async ({ page }) =>
       for (const p of await edges(page)) {
         await setLine(page, latex, atEnd);
         await page.mouse.click(p.x, p.y);
+        await page.waitForTimeout(50); // R47: a click, like a tap, settles off a stop after pointerup
         const m = await caret(page);
         await setLine(page, latex, atEnd);
         await page.touchscreen.tap(p.x, p.y);

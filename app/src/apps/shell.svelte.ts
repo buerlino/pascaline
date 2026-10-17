@@ -148,7 +148,7 @@ export class AppShell {
     a.show?.(v);
   }
 
-  /** Back to Home/CAS (the Home/CAS key from inside an app). */
+  /** Back to Home/CAS (the place name, U2, U3 or the Apps sheet from inside an app). */
   close(): void {
     if (this.app !== null) this.lastApp = this.app;
     this.app = null;
@@ -187,10 +187,16 @@ export class AppShell {
   get paletteOpen(): boolean {
     return this.sheet !== null && PALETTE_IDS.includes(this.sheet.id);
   }
-  /** Apps key: the Apps sheet, or close it when it is open. */
+  /** Home and CAS, the first two rows of the Apps sheet (S2 point 4, R15b): set by the app shell (App.svelte). */
+  goTo: ((view: "home" | "cas") => void) | undefined;
+  /** Apps key: the Apps sheet (1 Home, 2 CAS, then the apps), or close it when it is open. */
   toggleApps(): void {
     if (this.switcherOpen) this.sheet = null;
-    else this.sheet = new Sheet("apps", t("apps.title"), () => APPS.map((a) => ({ id: a.id, label: t(a.name), run: () => void this.open(a.id) })));
+    else
+      this.sheet = new Sheet("apps", t("apps.title"), () => [
+        ...(["home", "cas"] as const).map((v) => ({ id: v, label: t(`view.${v}`), run: () => this.goTo?.(v) })),
+        ...APPS.map((a) => ({ id: a.id, label: t(a.name), run: () => void this.open(a.id) })),
+      ]);
   }
   /** Menu key: the open view's menu, or close the open sheet. False when the view has no menu (a dead key). */
   toggleMenu(): boolean {

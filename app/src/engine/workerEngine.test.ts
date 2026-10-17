@@ -5,7 +5,7 @@ import type { Request, Response } from "./protocol.ts";
 import { createRequestHandler } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { EngineCancelled, defaultCasSettings } from "./types.ts";
+import { EngineCancelled, EngineMemoryError, defaultCasSettings } from "./types.ts";
 import { WorkerEngine, type WorkerLike } from "./workerEngine.ts";
 import type { DefEntry } from "./defs.ts";
 
@@ -67,6 +67,48 @@ describe("WorkerEngine cancel (stand-in worker)", () => {
     await job;
     expect(workers).toHaveLength(2);
     await engine.ready();
+    engine.dispose();
+  });
+});
+
+describe("WorkerEngine out of memory (G24, F32)", () => {
+  it("a worker error during a call is a memory error, and the engine restarts", async () => {
+    const workers: StuckWorker[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new StuckWorker()), workers.at(-1)!) });
+    await engine.ready();
+    const job = expect(engine.cas("ranm(40000,40000)", defaultCasSettings)).rejects.toBeInstanceOf(EngineMemoryError);
+    await new Promise((r) => setTimeout(r, 5));
+    workers[0]!.onerror?.({ message: "Aborted(OOM)" });
+    await job;
+    expect(workers).toHaveLength(2);
+    await engine.ready();
+    engine.dispose();
+  });
+
+  it("a thrown allocation failure inside the worker (a fatal reply marked memory) is a memory error, and the worker restarts", async () => {
+    const workers: StuckWorker[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new StuckWorker()), workers.at(-1)!) });
+    await engine.ready();
+    const job = expect(engine.cas("makemat(1,30000,30000)", defaultCasSettings)).rejects.toBeInstanceOf(EngineMemoryError);
+    // the id of the call just posted is the highest one the stand-in saw; reply to it
+    const w = workers[0]!;
+    await new Promise((r) => setTimeout(r, 5)); // the call is posted once the (empty) store has answered
+    w.onmessage?.({ data: { id: 2, type: "fatal", message: "[object WebAssembly.Exception]", memory: true } });
+    await job;
+    expect(workers).toHaveLength(2);
+    expect(w.terminated).toBe(true);
+    engine.dispose();
+  });
+
+  it("a fatal reply that is not about memory stays a plain error and does not restart", async () => {
+    const workers: StuckWorker[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new StuckWorker()), workers.at(-1)!) });
+    await engine.ready();
+    const job = expect(engine.cas("1+", defaultCasSettings)).rejects.not.toBeInstanceOf(EngineMemoryError);
+    await new Promise((r) => setTimeout(r, 5));
+    workers[0]!.onmessage?.({ data: { id: 2, type: "fatal", message: "boom" } });
+    await job;
+    expect(workers).toHaveLength(1);
     engine.dispose();
   });
 });
@@ -291,6 +333,17 @@ describe("WorkerEngine safe start (G19, F31)", () => {
     expect((await engine.ready()).safeStart).toEqual({ skipped: 1 });
     expect(workers).toHaveLength(1);
     expect(store.saved).toEqual([entry("A", "A:=1")]);
+    // the safe start is a start that worked: the count goes back to 0, so the next launch tries the log again
+    expect(store.starts).toBe(0);
+    engine.dispose();
+  });
+
+  it("a launch with no stored log clears an old count once ready", async () => {
+    const store = new CountingStore();
+    store.starts = 2;
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new OkWorker(), defs: store });
+    await engine.ready();
+    expect(store.starts).toBe(0);
     engine.dispose();
   });
 
@@ -311,6 +364,22 @@ describe("WorkerEngine safe start (G19, F31)", () => {
     const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new OkWorker(), defs: store });
     await engine.ready();
     (engine as unknown as { keep(c: unknown[]): void }).keep([{ set: entry("C", "C:=3") }]);
+    expect((store.saved as DefEntry[]).map((e) => e.name).sort()).toEqual(["A", "C"]);
+    engine.dispose();
+  });
+
+  it("a crash after a safe start replays what was defined since, not nothing", async () => {
+    const workers: OkWorker[] = [];
+    const store = new CountingStore();
+    store.saved = [entry("A", "A:=1")];
+    store.starts = 2;
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new OkWorker()), workers.at(-1)!), defs: store });
+    await engine.ready();
+    (engine as unknown as { keep(c: unknown[]): void }).keep([{ set: entry("C", "C:=3") }]);
+    workers[0]!.onerror?.({ message: "out of memory" });
+    await engine.ready();
+    expect(workers).toHaveLength(2);
+    expect(workers[1]!.inits.at(-1)!.map((e) => e.name)).toEqual(["C"]);
     expect((store.saved as DefEntry[]).map((e) => e.name).sort()).toEqual(["A", "C"]);
     engine.dispose();
   });

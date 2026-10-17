@@ -13,6 +13,7 @@ and `app/node_modules` (`cd app && npm ci`); Node 22 runs the `.ts` files direct
 | Probe | What it answers | Example |
 |---|---|---|
 | `engine.ts` | what Home shows for an input (path, display, value, flags), what CAS returns, or a raw Giac call | `node tools/probes/engine.ts 'normald_icdf(10^-10)'`; `MODE=cas …`; `MODE=raw …`; `DIGITS=30 …`; `FACTS=1 …` adds the mark facts (`exactRational`, `reliableDigits`, `warn`, `full`; in CAS `numeric`) |
+| `bound.ts` | which CAS commands quote their variable: each input with x free and after Home `x:=3`, same result or not (G28: the names `uses` skips) | `node tools/probes/bound.ts ['limit(1/x,x,0)' …]` |
 | `parse.ts` | what our LaTeX parser sends to Giac for keyboard LaTeX, or why it refuses | `node tools/probes/parse.ts '0xFF' '4.7k'` |
 | `digits-cost.ts` | desktop time and path changes of the 123 `home.yaml` inputs at several digits settings | `DIGITS_LIST=12,20,30 node tools/probes/digits-cost.ts` |
 | `qalc/link.sh`, `qalc/run.mjs` | libqalculate's exactness flags, name collisions and silent non-answers (needs the P3 spike's static libraries; the link takes the host-cpu lock, about a minute) | `tools/probes/qalc/link.sh` then `node tools/probes/qalc/run.mjs '72 km/h to m/s' 'mu0'` |

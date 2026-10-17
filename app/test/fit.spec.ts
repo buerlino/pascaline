@@ -35,13 +35,13 @@ const OPENERS: Record<string, (page: Page) => Promise<void>> = {
   },
   "solve menu": async (page) => {
     await tap(page, ["apps"]);
-    await sheet(page).getByRole("menuitem", { name: "2 Solve" }).click();
+    await sheet(page).getByRole("menuitem", { name: "4 Solve" }).click();
     await expect(page.locator('[data-app="solve"]')).toBeVisible();
     await tap(page, ["num", "menu"]); // no equation: every row disabled
   },
-  mode: (page) => tap(page, ["shift", "cas"]),
+  mode: (page) => tap(page, ["shift", "apps"]),
   "mode digits": async (page) => {
-    await tap(page, ["shift", "cas"]);
+    await tap(page, ["shift", "apps"]);
     await sheet(page).getByRole("menuitem", { name: "3 Significant digits" }).tap(); // the 3 key is under the sheet: its row is where it was
     await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Significant digits");
   },
@@ -67,7 +67,7 @@ test.describe("at 412 × 915", () => {
 
   test("keys never move: Settings (a page over everything) open and closed again", async ({ page }) => {
     const before = await keyBoxes(page);
-    await tap(page, ["shift", "app"]);
+    await tap(page, ["shift", "apps", "d5"]);
     await expect(page.getByTestId("settings")).toBeVisible();
     expect(await keyBoxes(page)).toEqual(before);
     await tap(page, ["cancel"]);
@@ -152,10 +152,10 @@ test.describe("at 412 × 915", () => {
       ids.map((id) => {
         const r = document.querySelector(`[data-key="${id}"]`)?.getBoundingClientRect();
         return r ? document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest<HTMLElement>("[data-key]")?.dataset["key"] : undefined;
-      }), ["d7", "sin", "tmpl"]);
-    expect(hits).toEqual(["d7", "sin", "tmpl"]); // the Apps sheet is two rows high
+      }), ["sq", "sin", "tmpl"]);
+    expect(hits).toEqual(["sq", "sin", "tmpl"]); // the Apps sheet is four rows high (Home, CAS, the two apps; R15b)
     await expect(page.getByTestId("sheet-dim")).toBeVisible();
-    await tap(page, ["d7", "sin"]); // 7 picks row 7 (there is none), sin has no job in a short list
+    await tap(page, ["sq", "sin"]); // neither has a job in a short list
     await expect(sheet(page)).toBeVisible();
     expect(await entryValue(page)).toBe("");
     await tap(page, ["tmpl"]); // Tmpl keeps its job: it opens its palette in place of Apps
@@ -166,7 +166,7 @@ test.describe("at 412 × 915", () => {
 
   test("a digit key under the sheet still picks its row (by a hardware key)", async ({ page }) => {
     await openSheet(page, "apps");
-    await page.keyboard.press("2");
+    await page.keyboard.press("4");
     await expect(page.locator('[data-app="solve"]')).toBeVisible();
   });
 

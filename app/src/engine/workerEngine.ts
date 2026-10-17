@@ -5,6 +5,7 @@ import type { Request, Response } from "./protocol.ts";
 import { applyDefChanges, replayOrder, validDefs, type DefChange, type DefEntry } from "./defs.ts";
 import {
   EngineCancelled,
+  EngineMemoryError,
   type CasResult,
   type AnalysisRequest,
   type AnalysisResult,
@@ -102,11 +103,15 @@ export class WorkerEngine implements MathEngine {
     // The worker starts at once (the wasm loads while the store is read); the stored definitions follow as their own
     // message, posted before any call (calls wait for the gate, and this callback is the gate's first).
     this.start();
+    const first = this.readyPromise;
     this.gate = this.loadStored().then((stored) => {
       this.gateOpen = true;
-      if (!stored.length) return;
+      // No replay to wait for (nothing stored, or a safe start): the first worker being ready is the whole start.
+      const noReplay = () => (this.defined = first.then(() => (this.reach(), 0)));
+      if (!stored.length) return void noReplay();
       if (this.attempts >= MAX_FAILED_STARTS) {
         this.leaveOut(stored);
+        noReplay();
         return;
       }
       this.beginAttempt(stored.length);
@@ -114,7 +119,6 @@ export class WorkerEngine implements MathEngine {
       this.defined = this.post({ type: "define", defs: stored }).then((r) => (r.type === "defined" ? r.replayMs : 0));
       this.defined.then(() => this.reach(), () => {});
     });
-    const first = this.readyPromise;
     this.readyPromise = Promise.all([first, this.gate.then(() => this.defined)]).then(([t, ms]) => ({
       ...t,
       ...(this.safe ? { safeStart: this.safe } : {}),
@@ -279,14 +283,21 @@ export class WorkerEngine implements MathEngine {
       const p = this.pending.get(ev.data.id);
       if (!p) return;
       this.pending.delete(ev.data.id);
-      if (ev.data.type === "fatal") p.reject(new Error(ev.data.message));
-      else p.resolve(ev.data);
+      if (ev.data.type === "fatal") {
+        if (!ev.data.memory) return void p.reject(new Error(ev.data.message));
+        // G24: the heap only grows, and an aborted module is dead: reject the call and start a clean worker.
+        p.reject(new EngineMemoryError(ev.data.message));
+        if (this.worker === w) {
+          this.stop(new EngineMemoryError(ev.data.message));
+          this.start();
+        }
+      } else p.resolve(ev.data);
     };
     // A crash (e.g. out of memory) rejects what is pending and takes the same restart + replay path as Cancel.
     w.onerror = (ev) => {
       if (this.worker !== w) return;
       const wasReached = this.reached;
-      this.stop(new Error(ev.message || "engine crashed"));
+      this.stop(new EngineMemoryError(ev.message || "engine crashed"));
       // G19: a crash before the replay finished is a failed start; the second one leaves the stored log out.
       if (!wasReached && this.log.length && this.attempts >= MAX_FAILED_STARTS) this.leaveOut(this.stored());
       else this.beginAttempt();

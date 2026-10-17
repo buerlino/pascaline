@@ -246,8 +246,8 @@ test("Shift and Alpha taps stay as on the G2 (one-shot, Alpha twice locks) and a
   await flick(page, "alpha", "down");
   await flick(page, "alpha", "down");
   expect(await taps(page)).toEqual({ shift: 2, alpha: 5 });
-  // the counter in Settings (Shift + Home/CAS), with its reset
-  await tap(page, ["shift", "app"]);
+  // the counter in Settings (Shift + Apps, 5), with its reset
+  await tap(page, ["shift", "apps", "d5"]);
   const value = (id: string) => page.locator(`[data-testid="settings"] [data-id="${id}"]`).getByTestId("settings-value");
   await expect(value("shift")).toHaveText("3"); // the Shift that opened Settings counts too
   await expect(value("alpha")).toHaveText("5");
@@ -279,14 +279,14 @@ test("inside a sheet a flick down types the letter on any key, digits too; a tap
   expect(await entryValue(page)).toBe("");
 });
 
-test("keys typed while an app loads keep their layer: Plot, Shift, CAS opens the Mode sheet (decisions.md R8)", async ({ page }) => {
+test("keys typed while an app loads keep their layer: Plot, Shift, Apps opens the Mode sheet (decisions.md R8)", async ({ page }) => {
   let release = (): void => {};
   const gate = new Promise<void>((r) => (release = r));
   await page.route(/\/src\/apps\/function\/index\.ts/, async (route) => {
     await gate;
     await route.continue();
   });
-  await tap(page, ["plot", "shift", "cas"]);
+  await tap(page, ["plot", "shift", "apps"]);
   expect(await page.evaluate(() => window.pascaline.shell.loading)).toBe("function");
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
   release();

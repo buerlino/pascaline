@@ -20,7 +20,7 @@ const sheet = (page: Page) => page.getByTestId("menu");
 test("Apps, then 2, typed before the sheet's chunk is in, opens the second app once it is", async ({ page }) => {
   const release = await hold(page);
   await open(page);
-  await tap(page, ["d1", "apps", "d2"]);
+  await tap(page, ["d1", "apps", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toHaveCount(0);
   expect(await entryValue(page)).toBe("1"); // the 2 was not typed into the line
   release();

@@ -20,7 +20,8 @@ export type SheetKey =
   | { kind: "letter"; ch: string }
   | { kind: "backspace" }
   /** The key keeps its own job: Shift and Alpha (their state is kept as it is), and the keys that change place
-   *  (Menu, Apps and Tmpl toggle their sheet; Home/CAS, CAS, Symb, Plot, Num close it and go there). */
+   *  (Menu, Apps and Tmpl toggle their sheet; Symb, Plot, Num, a user key that holds Home or CAS, and the status
+   *  line's place name close it and go there). A user key that holds anything else does nothing in a sheet. */
   | { kind: "pass" }
   /** Does nothing in a sheet. */
   | { kind: "none" };
@@ -36,7 +37,7 @@ const BY_ID: Readonly<Record<string, SheetKey>> = {
   cancel: { kind: "close" },
   bksp: { kind: "backspace" },
 };
-const PASS: readonly string[] = ["shift", "alpha", "menu", "apps", "tmpl", "app", "cas", "symb", "plot", "num"];
+const PASS: readonly string[] = ["shift", "alpha", "menu", "apps", "tmpl", "home", "cas", "switch", "symb", "plot", "num"];
 
 /** The key's letter: its Alpha layer when that types one letter (A on Vars … Z on 2). */
 export function letterOf(key: Key): string | undefined {
