@@ -6,8 +6,6 @@ import { dimSymbols, isExponent } from "./dims.ts";
 import type { FactorTable } from "./factors.ts";
 import type { UnitError, UnitJob, UnitRequest, UnitSlot, UnitToken } from "./types.ts";
 
-export { factorTable } from "./factors.ts";
-
 /** The logarithmic units (G17 writes their rules): any unit with the Np dimension, and these. */
 const LOGARITHMIC: ReadonlySet<string> = new Set(["dB", "bel", "Np", "dBm", "dBW"]);
 

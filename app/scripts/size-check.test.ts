@@ -108,7 +108,7 @@ describe("size-check", () => {
       {
         ...manifest,
         "src/find/FindPalette.svelte": { file: "assets/find.js", src: "src/find/FindPalette.svelte", isDynamicEntry: true },
-        "src/units/build.ts": { file: "assets/units.js", src: "src/units/build.ts", isDynamicEntry: true },
+        "src/units/calc.ts": { file: "assets/units.js", src: "src/units/calc.ts", isDynamicEntry: true },
       },
       { ...files, "assets/find.js": 30_001, "assets/units.js": 30_000, "find/index.json": { random: 400_001 }, "qalc/qalc.wasm": { random: 1_000_001 }, "qalc/qalc.mjs": 1000 },
     );

@@ -45,8 +45,6 @@ export interface Quantity {
   /** The number in the end slot's unit, or in SI base units without one. Home's facts (display at the digits
    *  setting, value, exactRational, reliableDigits, full, warn, exact), so markOf() marks it as Home. */
   value: HomeResult;
-  /** The number in SI base units (the same object as `value` without an end slot). */
-  si: HomeResult;
   /** The dimension key, as the index writes it ("kg1m1s-2"; "" for a pure number). null for an exact 0, whose
    *  dimension is lost. */
   dimension: string | null;
@@ -67,6 +65,6 @@ export type UnitError =
   /** Anything else (a syntax error, a timeout, a bad request): the detail is for the log, not for the user. */
   | { error: "engine"; detail: string };
 
-export function isUnitError(r: Quantity | UnitError): r is UnitError {
+export function isUnitError<T extends object>(r: T | UnitError): r is UnitError {
   return "error" in r;
 }

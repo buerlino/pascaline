@@ -23,7 +23,7 @@ function stub(answer: (job: UnitJob) => Promise<unknown>): { engine: MathEngine;
 describe("Calc.units (G16)", () => {
   it("reads the index once and sends the built job", async () => {
     let reads = 0;
-    const { engine, jobs } = stub(async () => ({ value: { display: "2" }, si: { display: "2" }, dimension: "m1", ms: 0 }));
+    const { engine, jobs } = stub(async () => ({ value: { display: "2" }, dimension: "m1", ms: 0 }));
     const calc = new EngineCalc(engine, { findIndex: async () => (reads++, items) });
     const req = { formula: "2*pasu1", slots: [{ tokens: [{ unit: "m" }] }] };
     expect(await calc.units(req, settings)).toMatchObject({ dimension: "m1" });
