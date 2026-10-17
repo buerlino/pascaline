@@ -127,6 +127,14 @@ cases:
   - { id: "prec-G20-stored-expand", kind: "cas", input: "expand((x+1)^2)", beforeHome: ["x:=3"], uses: ["x"], expect: "16", source: "derived", note: "(3+1)^2 = 16" }
   - { id: "prec-G20-quoted-diff", kind: "cas", input: "diff(x^2,x)", beforeHome: ["x:=3"], expect: "2*x", source: "derived", note: "diff quotes its variable, so the stored x does not change the result (the list of used names is not checked here: the name appears in the input)" }
   - { id: "prec-G20-x-free-after", kind: "cas", input: "int(x^2,x)", uses: [], expect: "x^3/3", source: "derived", note: "regression for the G20 review: the x:=3 of the cases above lives on their own engine, so x is free here and the result is the antiderivative, with no used names" }
+  - { id: "prec-G28-diff", kind: "cas", input: "diff(x^2,x)", beforeHome: ["x:=3"], uses: [], expect: "2*x", source: "derived", note: "diff quotes its variable: the stored 3 does not change the result (probe tools/probes/bound.ts), so x is not a used value" }
+  - { id: "prec-G28-solve", kind: "cas", input: "solve(x^2=4,x)", beforeHome: ["x:=3"], uses: [], expect: "list[-2,2]", source: "derived", note: "solve quotes its variable (probe)" }
+  - { id: "prec-G28-seq", kind: "cas", input: "seq(x^2,x,1,3)", beforeHome: ["x:=3"], uses: [], expect: "[1,4,9]", source: "derived", note: "seq binds x (probe)" }
+  - { id: "prec-G28-sum", kind: "cas", input: "sum(x,x,1,4)", beforeHome: ["x:=3"], uses: [], expect: "10", source: "derived", note: "sum binds x: 1+2+3+4 (probe)" }
+  - { id: "prec-G28-fn", kind: "cas", input: "f(x):=x^2", beforeHome: ["x:=3"], uses: [], expect: " (x)->x^2", source: "derived", note: "x is f's parameter, not the stored 3" }
+  - { id: "prec-G28-arrow", kind: "cas", input: "x->x^2", beforeHome: ["x:=3"], uses: [], expect: " (x)->x^2", source: "derived", note: "x is the arrow's parameter, not the stored 3" }
+  - { id: "prec-G28-assign-reads", kind: "cas", input: "x:=x+1", beforeHome: ["x:=3"], uses: ["x"], expect: "4", source: "derived", note: "the right-hand side reads the stored 3, so x is a used value although the input assigns it" }
+  - { id: "prec-G28-diff-outside", kind: "cas", input: "diff(x^2,x)+x", beforeHome: ["x:=3"], uses: ["x"], expect: "2*x+3", source: "derived", note: "x outside the quoting call is the stored 3" }
   # --- G27 (F36, docs/04 2.3 #17): a CAS result that is not a number but holds a float is ⚠ without a count (Home: home.yaml)
   - { id: "prec-17-cas-evalf-x+sin1e22", kind: "cas", input: "evalf(x+sin(10^22))", mark: "⚠", source: "derived", note: "mark-only: Giac shows x-0.54764225985, but sin(10^22) = -0.8522008497671888… (oracle, mpmath at 40 and 80 digits): every digit shown is wrong. No mark before G27" }
   - { id: "prec-17-cas-evalf-equation", kind: "cas", input: "evalf(x^2-2=0)", expect: "x^2-2.0=0.0", mark: "⚠", source: "derived", note: "a float in an equation, unchecked; no mark before G27" }
