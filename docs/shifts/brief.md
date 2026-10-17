@@ -4,7 +4,7 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15), G27 (F36, 2026-10-16), R44 (F37), G24 (F32), G19 (F31) and R29 (F24, F25, 2026-10-17). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (bug F42, fixed by R46f1, 2026-10-17). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15), G27 (F36, 2026-10-16), R44 (F37), G24 (F32), G19 (F31), R29 (F24, F25) and R30 (F26, 2026-10-17). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (bug F42, fixed by R46f1, 2026-10-17). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
@@ -16,7 +16,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   R50a (three palettes as a mockup; docs only, no app code) can run any time beside the lane, so the owner's pick is ready before R50b.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's parser-only packages R30, R51, R39 and R52): R30, R51, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, R52, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's parser-only packages R51, R39 and R52): R51, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, R52, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A9 (key vibration, F41) as soon as the owner's phone is connected: it needs a phone with a motor, and the Tab One has none. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -28,7 +28,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
 - **R15c goes first** among the feel packages: it changes keys the hand is learning. Every week of use on D makes the change harder (docs/03 rule 8). R12a draws the keypad, R4b sets the user keys and R41 labels the keys, so all three wait for it.
 - **The deep-dive packages (0f, and G16–G18 and G25 in 0e) go by importance, then by what they need:**
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
-  - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R30 and R51 (G20 and R29 are merged).
+  - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R51 (G20, R29 and R30 are merged).
   - **Day packages sit next to the code they share:** the start-chunk budget has 1.32 kB gzip left (52.68 of 54 kB after G19, 2026-10-17; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R12b to come.
   - **Trust features after the code they build on:**
     - R36 adds a line to the history rows R11 built.
@@ -38,7 +38,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   - **S7 early:** every later session reads less.
 
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14)
-The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's parser-only packages (R30, R51, R39, R52): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
+The owner plans each night in advance, and the queue below is the next night's. henri (Sonnet, medium) **executes it and decides nothing**: he spawns one fresh agent per step with the prompts below, waits, logs, and spawns the next. After each Opus pass he hands over to a fresh henri (rule 11), so no henri carries a long context. **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it. Whatever is not done stays in the queue for the next night. The night queue is the gorge lane (sections 0e and 0f) plus ron's parser-only packages (R51, R39, R52): no UI, no APK and no device, each checked by its golden, parser and unit tests. The rest of the ron lane runs by day, when the owner can try each APK. The queue is longer than one night: whatever is not done stays for the next one, which resumes from the log.
 
 ### Rules for a night shift (they replace rules sections 4, 10 and 11, but not 4a, and change section 8a)
 1. **One agent at a time.** Never two workers, or a worker and a reviewer, at once.
@@ -67,7 +67,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 3b | R44 a long result's chip keeps its value, Ans never dropped (F37): merged by day (`f170d20`), skip | ron, Sonnet | `p1/ron-m4-longchip` | — |
 | 3c | G28 a name the input binds is not a used value (F28): merged by day (`79e8b0f`), skip | gorge, Sonnet | `p1/gorge-m4-bound` | — |
 | 4 | **Opus pass 1** on steps 2–3c, then its FIX packages | Opus | — | 30 min + fixes |
-| 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
+| 5 | R30 ÷ in a flat line (F26): merged by day (`6348baf`), skip | ron, **Opus** | `p1/ron-m4-flatdiv` | — |
 | 5a | R51 a space between two numbers (F43) | ron, **Opus** | `p1/ron-m4-numspace` | 45 min + review |
 | 6 | G19 a safe start (F31): merged by day (`5ad277e`), skip | gorge, Sonnet | `p1/gorge-m4-safestart` | — |
 | 7 | G24 a memory cap for the Giac worker (F32): merged by day (`cc095e3`), skip | gorge, Sonnet | `p1/gorge-m4-memcap` | — |
@@ -221,8 +221,7 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
-| R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | now (R29, same file, is merged) | ~0.5 d |
-| R51 | A space between two numbers | F43 | night | ron, **Opus** | `p1/ron-m4-numspace` | R30 (same file) | ~0.25 d |
+| R51 | A space between two numbers | F43 | night | ron, **Opus** | `p1/ron-m4-numspace` | now (R30, same file, is merged) | ~0.25 d |
 | G22 | Why the mark: the reasons as facts | review item 14 | night | gorge, Sonnet | `p1/gorge-m4-why` | now | ~0.5 d |
 | R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R51 (same file) | ~0.25 d |
 | R52 | The parser's messages in i18n | R29 decision 1 | night | ron, Sonnet | `p1/ron-m4-parsemsg` | R39 (it touches every parser message) | ~0.5 d |
@@ -243,7 +242,7 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 
 **Why these models:**
 - **Opus:**
-  - R30, R51 and R39 change parser rules, and a slip there computes a different number (as R14 and R18).
+  - R51 and R39 change parser rules, and a slip there computes a different number (as R14 and R18).
   - G26 is precision maths every inexact constant passes through.
   - R38b overwrites the user's stored data.
   - The sandra packages are research and rewriting (sandra runs Opus).
@@ -758,37 +757,8 @@ Gate: the tests, the Find query test unchanged, and the size test.
 ### Packages of section 0f
 Every package here: tests first (they fail on today's code), then the fix, then the report commit (section 2). The finding, its evidence and the decision are in decisions.md "The deep-dive review"; the backlog line is under "Trust and robustness".
 
-### ron, R30: ÷ in a flat line (F26), branch `p1/ron-m4-flatdiv`
-Backlog F26. Parser only (night queue). Read:
-- `app/src/input/parse.ts` `term()` (lines 369–391): ÷ and / take `signedImplicit()` on their right, so an implicit product binds tighter than the division;
-- `tests/golden/g2.yaml` item 6;
-- `parser.yaml` (the arithmetic, fractions and implicit-multiplication groups);
-- the `line:` inserts in `spec/keyboard.yaml` (one-line ÷ is `\div`).
-
-**Behaviour today:**
-- `1/2x` → `1/(2*x)`;
-- `6\div2\left(1+2\right)` → `6/(2*(1+2))` = 1;
-- `1\div2\sqrt{3}` → `1/(2*sqrt(3))`;
-- `8\div2\times4` → `8/2*4` = 16.
-
-Textbook entry is not affected: there ÷ makes a stacked fraction.
-
-**On the G2** (item 6, Virtual Calculator): pasted one-line `1/2x` is (1/2)·x. Typed in textbook entry without →, `1 ÷ 2 x` is 1/(2x), which our stacked fraction already gives. Item 6's answer says "matches our rule"; it no longer does.
-
-Commits in this order:
-1. **Tests first** (`parser.yaml`, `derived` from the G2's rule in item 6):
-   - `1/2x` → `1/2*x`;
-   - `6\div2\left(1+2\right)` → `6/2*(1+2)` = 9;
-   - `1\div2\sqrt{3}` → `1/2*sqrt(3)`;
-   - `a\div bc` → `a/b*c`;
-   - unchanged: `\frac{1}{2x}`, `\frac{1}{2}x`, `8\div2\times4`, `1\div x^{2}` (a power is one factor), and every keyboard template's round trip.
-2. **Fix:** in a flat line, ÷ and / take one factor on their right (a number, a name, a power, a function call or a bracket). The product then goes on left to right, as with ×.
-3. **G2 item 53** (`6÷2(1+2)` in one-line entry): if it is answered, the report says so. A different answer goes under "Needs a decision".
-
-Gate: the parser golden cases, the golden gate (parser), vitest; the task benchmark unchanged.
-
 ### ron, R51: a space between two numbers (F43), branch `p1/ron-m4-numspace`
-Backlog F43; decisions.md "R29: the parser's messages, and a space between two numbers" point 2 (owner, 2026-10-17). Parser only (night queue). Starts when R30 is merged (same file). Read:
+Backlog F43; decisions.md "R29: the parser's messages, and a space between two numbers" point 2 (owner, 2026-10-17). Parser only (night queue). Starts now (R30, same file, is merged). Read:
 - `app/src/input/parse.ts`: `SPACING` (line 16), the whitespace skip in `tokenize` (line 44), the number branch, and `besideResult()` (R29's "where a number ends");
 - what the space key (`spec/keyboard.yaml` r10c4, `type: " "`) puts on the line, and whether a pasted or copied result can carry digit groups (`\,`);
 - `app/src/input/numbers.test.ts` and `parser.yaml` (groups "decimals" and "chips").

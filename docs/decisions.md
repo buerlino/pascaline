@@ -157,7 +157,7 @@ Newest first. Where an entry changed an earlier document, that document now carr
   - **Silent wrong answers (principle 3), first:**
     - F24: `2.5.3` was 2.5·0.3 = 0.75. A second decimal point in a number is an error (R29). **Done** (`9b391d9`).
     - F25: a digit typed next to a result chip multiplies with no sign of it. Tap the result 0.5 and type 3: the line shows the chip (a shaded 0.5) and a 3 with no × between them, and Enter gives 1.5; the G2 pastes the result as text, so its 3 makes 0.53. A number touching a `\res` chip is an error that names the fix (R29). **Done** (`9b391d9`).
-    - F26: one-line `1/2x` is 1/(2x) here and (1/2)·x on the G2 (item 6); `6÷2(1+2)` is 1. In a flat line ÷ binds like ×, left to right, and implicit multiplication does not bind tighter (R30; G2 item 53 checks `6÷2(1+2)`).
+    - F26: one-line `1/2x` is 1/(2x) here and (1/2)·x on the G2 (item 6); `6÷2(1+2)` is 1. In a flat line ÷ binds like ×, left to right, and implicit multiplication does not bind tighter (R30; G2 item 53 checks `6÷2(1+2)`). **Done** (`6348baf`).
     - F27: a hardware keyboard's `1e-3` is 1·e − 3. An e or E right after a number's digits is ᴇ, and every hardware key takes the path of the on-screen key with that character (R31).
     - F28: a value stored in Home is used by CAS without a sign. A CAS result names the stored values it used (G20 engine, R32 the line; entry "Home and CAS share one Giac context").
     - F29: DEG mode reads `exp(i*90)` as `i`. OPEN under "Needs the user", after G2 item 54.
