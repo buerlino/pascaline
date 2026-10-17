@@ -19,7 +19,7 @@ while IFS= read -r line; do
   out="$("$script" "$agent" "$pid" --dry-run 2>&1)"; rc=$?
   [[ $rc -eq 0 ]] || { fail "$agent $pid: exit $rc: $(tail -n 1 <<<"$out")"; continue; }
   grep -qF "branch $br" <<<"$out" || fail "$agent $pid: dry run does not print branch $br"
-done < <(grep -E '^### [a-z]+, ' "$integ/docs/shifts/brief.md")
+done < <(sed -n '/^## 7. Packages/,/^## [^7]/p' "$integ/docs/shifts/brief.md" | grep -E '^### [a-z]+, ')
 [[ $count -gt 0 ]] || fail "no package headings found"
 
 out="$("$script" ron R9999x --dry-run 2>&1)"; rc=$?

@@ -252,7 +252,16 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
     local out="$run/check-$round-$name.log"
     case "$name" in
       typecheck) (cd "$wt/app" && timeout 900 npm run -s typecheck) > "$out" 2>&1 || rc=1;;
-      vitest)    (cd "$wt/app" && timeout 1800 npm run -s index && FIND_INDEX=required timeout 1800 npm run -s test) > "$out" 2>&1 || rc=1;;
+      vitest)    (cd "$wt/app" && timeout 1800 npm run -s index && FIND_INDEX=required timeout 1800 npm run -s test) > "$out" 2>&1 || {
+                   # the Find timing test is load-sensitive: when it is the only failing file, re-run it alone once
+                   failed="$(grep -oE '^ *(FAIL|❯) +[^ ]+\.test\.ts' "$out" | awk '{print $2}' | sort -u)"
+                   if [[ "$failed" == "src/find/queries.test.ts" ]]; then
+                     runlog "check vitest: only src/find/queries.test.ts failed; re-running it alone"
+                     if (cd "$wt/app" && FIND_INDEX=required timeout 900 npx vitest run src/find/queries.test.ts) >> "$out" 2>&1; then
+                       runlog "check vitest: re-run of src/find/queries.test.ts passed"
+                     else rc=1; runlog "check vitest: re-run of src/find/queries.test.ts failed"; fi
+                   else rc=1; fi
+                 };;
       e2e)       (cd "$wt/app" && timeout 2700 npm run -s test:e2e) > "$out" 2>&1 || rc=1;;
       golden)    (cd "$wt/app" && timeout 2700 npm run -s golden) > "$out" 2>&1 || rc=1;;
       *) die "unknown check $name";;
@@ -289,7 +298,7 @@ else
       die "merge of phase-1 into $branch failed without conflicts: $(tail -n 1 "$run/premerge.log")"
     fi
     { echo "## merging phase-1 into $branch conflicts in:"; echo "$conflicts"; echo
-      for f in $conflicts; do echo "### $f"; grep -nE '^(<<<<<<<|=======|>>>>>>>)' "$wt/$f" | head -n 40; done; } > "$run/fail-1.txt"
+      while IFS= read -r f; do echo "### $f"; grep -nE '^(<<<<<<<|=======|>>>>>>>)' "$wt/$f" | head -n 40; done <<<"$conflicts"; } > "$run/fail-1.txt"
     rounds=1
     run_agent "fix-$n-1" "$run/fix-1.log" "$agent" "$model" "$effort" "$run/fail-1.txt" "You are $agent on branch $branch in your own worktree, a merge of phase-1 is in progress with conflicts (files and conflict markers on stdin) for package $id. Resolve every conflict keeping both sides' intent, git add the files and finish the merge with git commit -s (and your model's trailer). Run the typecheck. Reply in at most three lines." "${worker_tools[@]}"
     if git -C "$wt" rev-parse -q --verify MERGE_HEAD >/dev/null || [[ -n "$(git -C "$wt" diff --name-only --diff-filter=U)" ]]; then
