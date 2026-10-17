@@ -852,6 +852,8 @@ class Parser {
       while (this.startsFactor() && !(this.peek() as Tok).v.startsWith("\\") && !((this.peek() as Tok).t === "cmd" && (this.peek() as Tok).v in FUNCS)) {
         // R27b (F23, G2 item 50): sin 7(2) reads as sin 14 or sin(7)·2, so a bracket after the term is refused
         if ((this.peek() as Tok).t === "open") this.fail(`${name}: put its whole argument in the brackets, as ${name}(…)`);
+        // F25 (R29): the bare argument is an implicit product too, so \sin2[0.5] is refused as 2[0.5] is
+        this.besideResult();
         parts.push(this.postfix());
       }
       args = [parts.length === 1 ? (parts[0] as Json) : ["Multiply", ...parts]];
