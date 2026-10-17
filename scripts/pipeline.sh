@@ -348,7 +348,7 @@ tools/devlock.sh acquire integ "pipeline-$n" 600 >/dev/null || die "integ lock b
 if git -C "$integ" merge --no-ff --signoff -m "Merge $branch: $id (pipeline run $n)" "$branch" > "$run/merge.log" 2>&1; then
   mc="$(git -C "$integ" rev-parse --short HEAD)"
   git worktree remove --force "$wt" >/dev/null 2>&1 || true
-  git branch -d "$branch" >/dev/null 2>&1 || true
+  git -C "$integ" branch -d "$branch" >/dev/null 2>&1 || true
   log "pipeline #$n $id: MERGED $mc"
   result="RESULT #$n $id: MERGED $mc"
   rc=0

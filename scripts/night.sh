@@ -12,10 +12,11 @@
 set -euo pipefail
 max_steps=40; limit_wait=1800
 while [[ $# -gt 0 ]]; do case "$1" in --max-steps) max_steps="$2"; shift 2;; --limit-wait) limit_wait="$2"; shift 2;; *) echo "usage: scripts/night.sh [--max-steps N] [--limit-wait S]" >&2; exit 2;; esac; done
+self="$(readlink -f "$0")"
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"; cd "$main"
 coord="${PASCALINE_COORD:-$main/.coord}"; tasks="$main/.tasks"; mkdir -p "$tasks" "$coord"
 if [[ -z "${PASCALINE_NIGHT_INHIBITED:-}" ]] && command -v systemd-inhibit >/dev/null; then
-  PASCALINE_NIGHT_INHIBITED=1 exec systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline night shift" "$0" --max-steps "$max_steps" --limit-wait "$limit_wait"
+  PASCALINE_NIGHT_INHIBITED=1 exec systemd-inhibit --what=sleep:idle:handle-lid-switch --why="Pascaline night shift" "$self" --max-steps "$max_steps" --limit-wait "$limit_wait"
 fi
 integ="$(git worktree list --porcelain | awk '/^worktree /{w=$2} /^branch refs\/heads\/phase-1$/{print w}')"
 [[ -n "$integ" ]] || { integ="$main/.claude/worktrees/phase-1"; git worktree add "$integ" phase-1 >/dev/null; }
