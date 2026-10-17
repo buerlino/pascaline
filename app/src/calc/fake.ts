@@ -27,7 +27,7 @@ export class FakeCalc implements Calc {
   constructor(delayMs = 0) {
     this.delayMs = delayMs;
   }
-  ready(): Promise<void> {
+  ready(): Promise<{ safeStart?: { skipped: number } } | void> {
     return Promise.resolve();
   }
   private run<T>(v: T): Promise<T> {
