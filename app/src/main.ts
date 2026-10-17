@@ -15,6 +15,7 @@ import { renderStats } from "./render/mathlive.svelte.ts";
 import { Session } from "./state/session.svelte.ts";
 import { AppShell } from "./apps/shell.svelte.ts";
 import { idbKv } from "./state/storage.ts";
+import { UserKeys } from "./keyboard/userKeys.svelte.ts";
 import { loadNative } from "./input/haptics.ts";
 import { plotHook } from "./apps/function/plotHook.ts";
 
@@ -36,6 +37,9 @@ session.saveDelayMs = 400;
 const shell = new AppShell(calc, idbKv, entry, () => session.settings);
 const place = shell.restorePlace();
 const settingsRead = session.restoreSettings();
+// the free keys U1–U3 (R15b): their defaults are drawn first, the user's slots replace them when read
+const userKeys = new UserKeys(idbKv);
+void userKeys.restore();
 // R34 (F30): the half-typed Home/CAS line survives a kill (an app's line belongs to the app, which keeps its slots).
 const keeper = lineKeeper(idbKv);
 entry.onClear = () => keeper.save(null);
@@ -67,15 +71,15 @@ addEventListener("blur", () => matchMedia("(pointer: coarse)").matches && dropFo
 const away = (): boolean => document.hidden || (matchMedia("(pointer: coarse)").matches && !document.hasFocus());
 document.addEventListener("focusin", () => away() && dropFocus(), true);
 
-mount(App, { target: document.getElementById("app") as HTMLElement, props: { session, entry, shell } });
+mount(App, { target: document.getElementById("app") as HTMLElement, props: { session, entry, shell, userKeys } });
 
 // Test hook (desktop Playwright): read the entry line and the session without reaching into the DOM.
 declare global {
   interface Window {
-    pascaline: { entry: EntryController; session: Session; shell: AppShell; calc: Calc; plot: typeof plotHook; renderStats: { count: number } };
+    pascaline: { entry: EntryController; session: Session; shell: AppShell; userKeys: UserKeys; calc: Calc; plot: typeof plotHook; renderStats: { count: number } };
   }
 }
-window.pascaline = { entry, session, shell, calc, plot: plotHook, renderStats };
+window.pascaline = { entry, session, shell, userKeys, calc, plot: plotHook, renderStats };
 
 // Offline support (web build only): after the engine is up and the browser is idle, so the install's downloads
 // (the whole build, ~10 MB with both wasm files) never compete with the first paint or the engine's own load.

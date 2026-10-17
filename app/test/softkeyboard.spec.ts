@@ -35,10 +35,10 @@ test("switching apps never focuses an element that opens the system keyboard", a
   await tap(page, ["symb"]);
   await expect(page.locator('[data-app="function"]')).toBeVisible();
   await expectNoSystemKeyboard(page, "Function Symb");
-  await tap(page, ["apps", "d2"]);
+  await tap(page, ["apps", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   await expectNoSystemKeyboard(page, "Solve");
-  await tap(page, ["apps", "d1", "symb"]);
+  await tap(page, ["apps", "d3", "symb"]);
   await expectNoSystemKeyboard(page, "Function Symb again");
 });
 

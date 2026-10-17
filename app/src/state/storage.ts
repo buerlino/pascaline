@@ -11,6 +11,10 @@ export interface Kv {
 const DB = "pascaline";
 const STORE = "kv";
 
+/** The free keys U1–U3 (R15b): per key id and layer (`primary`, `shift`), the user's `{ label, action }` or null for a
+ *  slot the user emptied; a slot that is absent has its default from spec/keyboard.yaml (keyboard/userKeys.svelte.ts). */
+export const USER_KEYS = "userKeys";
+
 /**
  * The format version of every stored value. Raise it, with a step in MIGRATIONS, whenever a stored shape or the meaning
  * of stored text changes: definitions are Giac text that holds our internal names (R18f1 renamed Φ and Ψ to Phi_ and

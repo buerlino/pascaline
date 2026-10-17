@@ -21,7 +21,7 @@ test.beforeEach(async ({ page }) => {
 
 test.describe("by touch", () => {
   test("× closes it; it covers the whole window, status line included", async ({ page }) => {
-    await tap(page, ["shift", "app"]);
+    await tap(page, ["shift", "apps", "d5"]);
     await expect(page_(page)).toBeVisible();
     const [box, win] = await Promise.all([page_(page).boundingBox(), page.evaluate(() => [innerWidth, innerHeight])]);
     expect(box).toMatchObject({ x: 0, y: 0 });
@@ -32,7 +32,7 @@ test.describe("by touch", () => {
   });
 
   test("sections instead of submenus; a tick toggles; ◀ ▶ buttons are at least 44 × 44 px", async ({ page }) => {
-    await tap(page, ["shift", "app"]);
+    await tap(page, ["shift", "apps", "d5"]);
     await expect(page_(page)).toBeVisible();
     expect(await page.locator('[data-testid="settings"] section').evaluateAll((els) => els.map((e) => e.getAttribute("data-section")))).toEqual(["fmtCycle", "vibration", "taps"]);
     await expect(row(page, "pfx")).toHaveAttribute("aria-checked", "false");
@@ -46,7 +46,7 @@ test.describe("by touch", () => {
   });
 
   test("a disabled row keeps its reason", async ({ page }) => {
-    await tap(page, ["shift", "app"]);
+    await tap(page, ["shift", "apps", "d5"]);
     await expect(row(page, "ms").getByTestId("settings-reason")).toHaveText("Switch key vibration on first");
     await row(page, "haptics").tap();
     await expect(row(page, "ms").getByTestId("settings-reason")).toHaveCount(0);
@@ -55,7 +55,7 @@ test.describe("by touch", () => {
 
 test.describe("by hardware keys", () => {
   test("▲ ▼ move, ◀ ▶ step, Enter or space toggles, Esc closes", async ({ page }) => {
-    await tap(page, ["shift", "app"]);
+    await tap(page, ["shift", "apps", "d5"]);
     const active = page_(page).locator('[data-active="true"]');
     await expect(active).toHaveAttribute("data-id", "std");
     await page.keyboard.press("ArrowDown");
@@ -79,7 +79,7 @@ test.describe("by hardware keys", () => {
   });
 
   test("the keypad's keys drive it too: ▼ ▶ switches vibration on, Cancel closes", async ({ page }) => {
-    await tap(page, ["shift", "app"]);
+    await tap(page, ["shift", "apps", "d5"]);
     await tap(page, ["down", "down", "down", "down", "down", "down", "right"]);
     expect(await page.evaluate(() => window.pascaline.session.settings.haptics.on)).toBe(true);
     await tap(page, ["d5", "cancel"]);
@@ -90,7 +90,7 @@ test.describe("by hardware keys", () => {
 
 test.describe("Android back (history.back())", () => {
   test("back closes the page, and the next key works as before", async ({ page }) => {
-    await tap(page, ["shift", "app"]);
+    await tap(page, ["shift", "apps", "d5"]);
     await expect(page_(page)).toBeVisible();
     await back(page);
     await expect(page_(page)).toBeHidden();
@@ -107,10 +107,12 @@ test.describe("Android back (history.back())", () => {
     expect(await page.evaluate(() => window.pascaline.entry.value)).toBe("7");
   });
 
+  // R15b: Settings is reached through the Mode sheet only; before the fix in backLayer.ts the page's entry was pushed
+  // before the sheet's was taken back, so every open after the first left one entry behind
   test("opening and closing the page or a sheet five times leaves the history as it was", async ({ page }) => {
     const before = await historyLength(page);
     for (let i = 0; i < 5; i++) {
-      await tap(page, ["shift", "app"]);
+      await tap(page, ["shift", "apps", "d5"]);
       await expect(page_(page)).toBeVisible();
       expect(await historyLength(page)).toBe(before + 1);
       await [() => tap(page, ["esc"]), () => page.getByTestId("settings-close").tap(), () => tap(page, ["cancel"]), () => tap(page, ["menu"]), () => page.keyboard.press("Escape")][i]!();
@@ -128,7 +130,7 @@ test.describe("Android back (history.back())", () => {
   });
 
   test("Mode then Settings (a sheet gives way to the page) takes one entry; back closes the page only", async ({ page }) => {
-    await tap(page, ["shift", "cas", "d5"]);
+    await tap(page, ["shift", "apps", "d5"]);
     await expect(page_(page)).toBeVisible();
     await back(page);
     await expect(page_(page)).toBeHidden();

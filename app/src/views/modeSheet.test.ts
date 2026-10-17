@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 
 describe("Mode sheet", () => {
-  it("opens on Angle, shows its value, and ▶ then Enter switches RAD → DEG and closes (3 keys with Shift + CAS)", () => {
+  it("opens on Angle, shows its value, and ▶ then Enter switches RAD → DEG and closes (3 keys with Shift + Apps)", () => {
     const s = mode();
     expect(s.level.current?.id).toBe("angle");
     expect(s.level.current?.value).toBe("Radians");
@@ -54,7 +54,7 @@ describe("Mode sheet", () => {
     s.left();
     expect(session.settings.format).toBe("pfx");
   });
-  it("Digits: ◀ ▶ step by one within 1…30; a digit key opens a list that marks the current value; a pick sets it (Shift + CAS, 3, 7 = 20)", () => {
+  it("Digits: ◀ ▶ step by one within 1…30; a digit key opens a list that marks the current value; a pick sets it (Shift + Apps, 3, 7 = 20)", () => {
     const s = mode("digits");
     s.right();
     expect(session.settings.digits).toBe(13);

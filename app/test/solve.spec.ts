@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 
 /** Apps → Solve → Symb. */
 async function openSolve(page: Page): Promise<void> {
-  await tap(page, ["apps", "d2"]);
+  await tap(page, ["apps", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   await tap(page, ["symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E1:");
@@ -121,7 +121,7 @@ test("Solve: equations and values are stored", async ({ page }) => {
   await page.evaluate(() => window.pascaline.shell.flush());
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined && window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["apps", "d2"]);
+  await tap(page, ["apps", "d4"]);
   await tap(page, ["num"]);
   await expect(value(page, "x")).toHaveAttribute("data-value", "-3");
   await tap(page, ["menu", "d1"]);
@@ -145,7 +145,7 @@ test("Solve: the ⚠ of an answer is kept across a reload (M4-10)", async ({ pag
   await page.evaluate(() => window.pascaline.shell.flush());
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined && window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["apps", "d2"]);
+  await tap(page, ["apps", "d4"]);
   await tap(page, ["num"]);
   await expect(value(page, "x")).toContainText("1.41421356237");
   await expect(page.locator('[data-testid="solve-table"] [data-testid="mark"]')).toHaveText("⚠");

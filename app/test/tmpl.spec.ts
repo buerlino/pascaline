@@ -128,7 +128,7 @@ test("a b/c on an empty line: 2.5 ↔ 5/2 (as on the G2), a+bi ↔ polar; while 
 });
 
 test("a b/c in CAS: exact 5/2 ↔ 2.5", async ({ page }) => {
-  await tap(page, ["cas", "d5", "div", "d2", "enter"]);
+  await tap(page, ["u3", "d5", "div", "d2", "enter"]);
   const last = page.locator('[data-testid="result"]').last().locator(".math");
   await expect(last).toHaveAttribute("data-latex", "\\frac{5}{2}");
   await tap(page, ["frac"]);

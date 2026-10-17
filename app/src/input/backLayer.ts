@@ -13,6 +13,16 @@ const stack: Layer[] = [];
 let ownPops = 0;
 /** Layers that opened while one of our own pops was pending: pushed when it arrives (a push before it would be undone). */
 const waiting: Layer[] = [];
+/** Layers opened in this task, pushed at its end: a layer that gives way to another in the same update (the Mode sheet
+ *  to the Settings page, R15b) is then taken back first, whatever order the two are seen in. */
+const opening: Layer[] = [];
+
+function settle(): void {
+  for (const l of opening.splice(0)) {
+    if (ownPops > 0) waiting.push(l);
+    else push(l);
+  }
+}
 let listening = false;
 
 function push(layer: Layer): void {
@@ -41,9 +51,14 @@ export function openLayer(close: () => void): () => void {
     listening = true;
   }
   const layer: Layer = { close };
-  if (ownPops > 0) waiting.push(layer);
-  else push(layer);
+  opening.push(layer);
+  if (opening.length === 1) queueMicrotask(settle);
   return () => {
+    const o = opening.indexOf(layer);
+    if (o >= 0) {
+      opening.splice(o, 1); // opened and closed in the same task: it never had an entry
+      return;
+    }
     const w = waiting.indexOf(layer);
     if (w >= 0) {
       waiting.splice(w, 1);

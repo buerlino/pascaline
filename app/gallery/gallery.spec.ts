@@ -125,10 +125,10 @@ const shots: Shot[] = [
   {
     id: "home-mode",
     group: "Home",
-    title: "Mode sheet (Shift + CAS) over the keypad: each value with ◀ ▶ for the thumb",
+    title: "Mode sheet (Shift + Apps) over the keypad: each value with ◀ ▶ for the thumb",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "cas"]);
+      await tap(p, ["shift", "apps"]);
     },
   },
   {
@@ -137,7 +137,7 @@ const shots: Shot[] = [
     title: "Mode sheet, Significant digits (current value marked): nine rows fit over the keypad",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "cas"]);
+      await tap(p, ["shift", "apps"]);
       await p.getByRole("menuitem", { name: "3 Significant digits" }).tap(); // the 3 key is under the sheet
     },
   },
@@ -148,7 +148,7 @@ const shots: Shot[] = [
     viewport: { width: 360, height: 740 },
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "cas"]);
+      await tap(p, ["shift", "apps"]);
     },
   },
   {
@@ -164,10 +164,10 @@ const shots: Shot[] = [
   {
     id: "home-settings",
     group: "Home",
-    title: "Settings page (Shift + Home/CAS, R21b): over everything, a heading per section",
+    title: "Settings page (Mode's last row, R21b): over everything, a heading per section",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "app", "down", "down", "right"]);
+      await tap(p, ["shift", "apps", "d5", "down", "down", "right"]);
     },
   },
   {
@@ -176,7 +176,7 @@ const shots: Shot[] = [
     title: "Settings page, scrolled to Vibration (switched on, strength disabled with its reason)",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "app"]);
+      await tap(p, ["shift", "apps", "d5"]);
       await p.locator('[data-testid="settings"] [data-id="haptics"]').tap();
       await p.locator('[data-testid="settings"] [data-id="strength"]').scrollIntoViewIfNeeded();
     },
@@ -188,7 +188,7 @@ const shots: Shot[] = [
     viewport: { width: 360, height: 740 },
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "app", "down", "down", "right"]);
+      await tap(p, ["shift", "apps", "d5", "down", "down", "right"]);
     },
   },
   {
@@ -224,7 +224,7 @@ const shots: Shot[] = [
     group: "CAS",
     title: "CAS with exact results",
     setup: async (p) => {
-      await tap(p, ["cas", "d1", "frac", "d3", "right", "add", "d1", "frac", "d6", "enter"]);
+      await tap(p, ["u3", "d1", "frac", "d3", "right", "add", "d1", "frac", "d6", "enter"]);
       await doneCount(p, 1);
       await tap(p, ["shift", "sq", "d8", "enter"]);
       await doneCount(p, 2);
@@ -301,7 +301,7 @@ const shots: Shot[] = [
     group: "Solve",
     title: "Solve, Symb",
     setup: async (p) => {
-      await tap(p, ["apps", "d2", "symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter"]);
+      await tap(p, ["apps", "d4", "symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter"]);
       await settle(p);
     },
   },
@@ -310,7 +310,7 @@ const shots: Shot[] = [
     group: "Solve",
     title: "Solve, Num",
     setup: async (p) => {
-      await tap(p, ["apps", "d2", "symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "num"]);
+      await tap(p, ["apps", "d4", "symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "num"]);
       await settle(p);
     },
   },
@@ -319,7 +319,7 @@ const shots: Shot[] = [
     group: "Solve",
     title: "Solve, menu",
     setup: async (p) => {
-      await tap(p, ["apps", "d2", "symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "num", "menu"]);
+      await tap(p, ["apps", "d4", "symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "num", "menu"]);
       await settle(p);
     },
   },

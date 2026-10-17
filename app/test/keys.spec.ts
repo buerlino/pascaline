@@ -354,7 +354,7 @@ test("shift + is Ans, the view's last result", async ({ page }) => {
   await tap(page, ["mul", "d3", "enter"]);
   await resultIs(page, "3", 2); // derived: 2 + (1/3)·3, Ans carries 1/3 exactly
   // CAS has its own Ans
-  await tap(page, ["app", "x", "add", "d1", "enter"]);
+  await tap(page, ["u3", "x", "add", "d1", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await tap(page, ["d2", "mul", "shift", "add", "enter"]);
   await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", /2\\left\(x\+1\\right\)|2x\+2/);
