@@ -51,6 +51,14 @@ export function summarizeVitest(report: unknown): Summary {
   return { ok: true, detail: `${r.numPassedTests} tests in ${files} files${skipped}` };
 }
 
+/** The failed tests of a Vitest report as `{ file, title }` (full path of the file), for the gate's one re-run of a timing test. */
+export function vitestFailures(report: unknown): { file: string; title: string }[] {
+  const out: { file: string; title: string }[] = [];
+  for (const f of (report as VitestReport | null)?.testResults ?? [])
+    for (const a of f.assertionResults ?? []) if (a.status === "failed") out.push({ file: f.name ?? "?", title: a.fullName ?? "?" });
+  return out;
+}
+
 interface PwSpec {
   title?: string;
   file?: string;
@@ -102,9 +110,9 @@ export function duration(ms: number): string {
   return s < 120 ? `${s} s` : `${Math.round(s / 60)} min`;
 }
 
-/** svelte-check's last line carries the counts: `svelte-check found 0 errors and 0 warnings`. */
+/** svelte-check's counts: `COMPLETED 578 FILES 0 ERRORS 0 WARNINGS …` (its machine output, what CI shows) or `svelte-check found 0 errors and 0 warnings`. */
 export function summarizeTypecheck(out: string, exitCode: number): Summary {
-  const m = /found (\d+) errors? and (\d+) warnings?/.exec(out);
+  const m = /found (\d+) errors? and (\d+) warnings?/.exec(out) ?? /(\d+) ERRORS (\d+) WARNINGS/.exec(out);
   if (!m) return { ok: false, detail: exitCode === 0 ? "no count in the output" : `exit ${exitCode}, no count in the output` };
   const errors = Number(m[1]);
   const warnings = Number(m[2]);

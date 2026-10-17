@@ -3,7 +3,7 @@
 // Vitest's and Playwright's JSON reporters.
 import { describe, expect, it } from "vitest";
 import {
-  formatLine, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest,
+  formatLine, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
 } from "./gate-summary.ts";
 
 const vitestOk = {
@@ -26,6 +26,10 @@ describe("vitest report", () => {
   it("fails on no report and on zero tests", () => {
     expect(summarizeVitest(null).ok).toBe(false);
     expect(summarizeVitest({ ...vitestOk, numTotalTests: 0, numPassedTests: 0 }).ok).toBe(false);
+  });
+  it("lists the failed tests with their file", () => {
+    const r = { ...vitestOk, numFailedTests: 1, testResults: [{ name: "/x/a.test.ts", status: "failed", assertionResults: [{ status: "failed", fullName: "a one" }, { status: "passed", fullName: "a two" }] }] };
+    expect(vitestFailures(r)).toEqual([{ file: "/x/a.test.ts", title: "a one" }]);
   });
   it("counts skipped tests without failing", () => {
     expect(summarizeVitest({ ...vitestOk, numPendingTests: 2 }).detail).toBe("3 tests in 2 files, 2 skipped");
@@ -58,6 +62,8 @@ describe("tool output", () => {
   it("typecheck: counts, and a warning fails (--threshold warning)", () => {
     expect(summarizeTypecheck("svelte-check found 0 errors and 0 warnings", 0)).toEqual({ ok: true, detail: "0 errors" });
     expect(summarizeTypecheck("svelte-check found 2 errors and 1 warning", 1)).toEqual({ ok: false, detail: "2 errors, 1 warnings" });
+    expect(summarizeTypecheck('1 COMPLETED 578 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS', 0)).toEqual({ ok: true, detail: "0 errors" });
+    expect(summarizeTypecheck('1 COMPLETED 578 FILES 3 ERRORS 0 WARNINGS 1 FILES_WITH_PROBLEMS', 1).ok).toBe(false);
     expect(summarizeTypecheck("crash", 1).ok).toBe(false);
   });
   it("golden: needs the PASSED line and exit 0", () => {

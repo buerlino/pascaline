@@ -5,13 +5,13 @@
 //                           # parser code changed against phase-1), size test, docs sizes
 //   npm run gate -- --quick # typecheck and vitest only
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
-// QALC_OUT for `npm run index`, PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
+// QALC_OUT, PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  duration, formatLine, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest,
+  duration, formatLine, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
   type DocSize, type Summary,
 } from "./gate-summary.ts";
 
@@ -46,10 +46,15 @@ function readJson(path: string): unknown {
 function giacOut(): string | null {
   const env = process.env["GIAC_OUT"];
   if (env) return isAbsolute(env) ? env : resolve(env);
-  const common = spawnSync("git", ["rev-parse", "--git-common-dir"], { cwd: repo, encoding: "utf8" }).stdout.trim();
-  const candidates = [join(repo, "engine/giac/_out/gsl"), join(resolve(repo, common, ".."), "engine/giac/_out/gsl")];
+  const candidates = [join(repo, "engine/giac/_out/gsl"), join(mainCheckout, "engine/giac/_out/gsl")];
   return candidates.find((c) => existsSync(join(c, "giac.mjs"))) ?? null;
 }
+
+/** The main checkout (the first worktree): where the shared download cache and engine builds live when this is a worktree. */
+const mainCheckout = ((): string => {
+  const common = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: repo, encoding: "utf8" }).stdout.trim();
+  return common ? resolve(common, "..") : repo;
+})();
 
 const changed = ((): string[] => {
   const r = spawnSync("git", ["diff", "--name-only", `${base}...`], { cwd: repo, encoding: "utf8" });
@@ -76,7 +81,12 @@ const checks: Check[] = [
     name: "index",
     skip: () => (existsSync(join(app, "src/find/_gen/find-index.json")) ? "present" : null),
     run: () => {
-      const r = run("index", "npm", ["run", "index"]);
+      // in a worktree: the main checkout's tarball cache and libqalculate build (rules section 5)
+      const r = run("index", "npm", ["run", "index"], {
+        PASCALINE_DL_DIR: process.env["PASCALINE_DL_DIR"] ?? join(mainCheckout, "engine/giac/_downloads"),
+        PASCALINE_QALC_DL_DIR: process.env["PASCALINE_QALC_DL_DIR"] ?? join(mainCheckout, "engine/qalc/_downloads"),
+        QALC_OUT: process.env["QALC_OUT"] ?? join(mainCheckout, "engine/qalc/_out/dev"),
+      });
       return { ok: r.code === 0, detail: r.code === 0 ? "generated" : `exit ${r.code}: ${r.out.trim().split("\n").slice(-1)[0]}` };
     },
   },
@@ -84,8 +94,21 @@ const checks: Check[] = [
     name: "vitest",
     run: () => {
       const json = join(outDir, "vitest.json");
-      run("vitest", "npx", ["vitest", "run", "--reporter=json", `--outputFile=${json}`], { FIND_INDEX: "required" });
-      return summarizeVitest(readJson(json));
+      const go = (files: string[] = []): Summary => {
+        rmSync(json, { force: true });
+        run("vitest", "npx", ["vitest", "run", "--reporter=json", `--outputFile=${json}`, ...files], { FIND_INDEX: "required" });
+        return summarizeVitest(readJson(json));
+      };
+      const first = go();
+      if (first.ok) return first;
+      // A wall-clock test (the Find query's p95) fails when the whole suite runs in parallel on this machine, which is the
+      // gate's own load. Only those tests are run once more, alone; any other failure stays a FAIL.
+      const failed = vitestFailures(readJson(json));
+      if (failed.length > 0 && failed.every((f) => /takes well under/.test(f.title))) {
+        const again = go([...new Set(failed.map((f) => f.file))]);
+        if (again.ok) return { ok: true, detail: `${again.detail} (timing test re-run alone: ${failed.map((f) => f.title.slice(0, 40)).join(", ")})` };
+      }
+      return first;
     },
   },
   {
