@@ -7,6 +7,10 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-17 G19: after a safe start, the next launch tries the stored definitions again. OPEN.** A safe start clears the failed-start count once the engine is ready (`workerEngine.ts` `reach()`), so the next launch replays the whole log again; if it still crashes, the engine crashes twice more before it starts without it and says so. Memory can now remove a skipped definition (a purge reaches the entries a safe start left out), which ends the loop for good.
+  - **Recommendation: keep it as built.** A crash that came from a passing shortage (low memory on the phone at that moment) costs nothing on the next launch, and a definition that always crashes costs two restarts per launch until Memory removes it.
+  - **Alternative:** keep the count until the log changes (a purge or a new definition), so later launches start at once without the log and show the line again; a passing crash then hides the definitions until the user acts. A small gorge change in `workerEngine.ts` if the owner prefers it.
+
 - **2026-10-17 Settings: a list of rows, each with a page of its own. OPEN (the owner's ask, the shape proposed).** The owner (feedback #50): "the settings must be cleaned up so vibration is a submenu or so". Today Settings is one scrolling page of sections ("R21" point 4: sections instead of submenus): the Format key cycle (six rows), Key vibration (three), the Shift / Alpha taps (four). Theme, User keys, the first-start tips and About are still to come (R12c, R4b, R15c4, R21b's places).
   - **Recommendation: every section becomes one row** with its current value and ›, for example `Key vibration   On · 50 % · 15 ms ›`. The row opens the section's page, titled `Settings › Key vibration`. ◀, Esc and Android back go back to the list, on the same row, and × closes Settings. Digits pick rows, and ▶ or Enter opens one, as in every sheet (S2).
   - The Key vibration page keeps its three rows and adds **"Try it"**, which fires one pulse at the current values, so strength and length are judged by hand. A9 uses it too.
@@ -157,7 +161,7 @@ Newest first. Where an entry changed an earlier document, that document now carr
     - F29: DEG mode reads `exp(i*90)` as `i`. OPEN under "Needs the user", after G2 item 54.
   - **Robustness:**
     - F30: the half-typed line survives a kill (R34). **Done** (`98a7ff7`).
-    - F31: a stored definition that crashes the worker no longer loops the start. After two failed starts the engine starts without the log and says so (G19).
+    - F31: a stored definition that crashes the worker no longer loops the start. After two failed starts the engine starts without the log and says so (G19). **Done** (`5ad277e`).
     - F32: the Giac worker gets a memory cap, so a runaway job fails inside it (G24; the Tab One check waits for the next device run).
     - The start chunk gets lighter before R21a instead of a second budget raise (R35: `@capacitor/core` out of it).
   - **Decisions looked at again:**

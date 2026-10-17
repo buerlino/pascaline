@@ -4,7 +4,7 @@
 **Night shifts:** henri runs the queue in section 0c; for a night shift 0c wins over everything below and over rules sections 4, 10 and 11. **Manual mode (user, 2026-10-12)** otherwise: there is no coordinator. The owner starts each work package as its own session and, when it is done, a short review session that checks and merges it (section 8a). The standing rules in [rules.md](rules.md) still apply (sections 1, 3, 5, 6, 9). Where they say "Henri" or "message", read this brief instead; where the two differ, this brief wins.
 
 ## 0. State at start
-`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15), G27 (F36, 2026-10-16), R44 (F37) and G24 (F32, 2026-10-17). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (bug F42, fixed by R46f1, 2026-10-17). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
+`phase-1` on 2026-10-14. Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1, R18f2 and R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46, R21b, R11, R32, the device run A4a (2026-10-16), R15b, R47 and the flaky-test fix B13 (2026-10-17); milestone 5's check G15 (P15 holds, 2026-10-15); the deep-dive packages G20 (F28's engine half, 2026-10-15), G27 (F36, 2026-10-16), R44 (F37), G24 (F32) and G19 (F31, 2026-10-17). The night shift of 2026-10-14 ended after R20 (owner); the owner's verification of 2026-10-14 (`ef857a6`) took the place of its second Opus pass and its report. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28: all ok except R46 (bug F42, fixed by R46f1, 2026-10-17). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts below. No package waits for an APK to be tried (owner, 2026-10-13): a package starts when the one before it is merged. The text of finished packages is in git history. Left for the owner: the unmerged `p1/ron-eve-gestures` (the old flick classifier; backlog C7).
 
 ### The path (owner, 2026-10-14; decisions.md "The package path" and "The deep-dive review")
 Three lanes run side by side. Each table below gives a package's prerequisites; this is the order.
@@ -16,7 +16,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
   R50a (three palettes as a mockup; docs only, no app code) can run any time beside the lane, so the owner's pick is ready before R50b.
 
   The unit-pad packages of 0d (R24a–R24d), R28 (0e) and the backup packages R38a and R38b (0f) go in when their prerequisites are merged.
-- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): R29, R30, G19, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
+- **gorge, beside ron** (no UI; the night queue of 0c, which also carries ron's three parser-only packages R29, R30 and R39): R29, R30, then the unit evaluator G16, G17, G18, G25, G13, G22, R39, G14, G23, G26 (sections 0e and 0f). G7 comes when S5 is merged (0d); G21 when G2 item 54 is answered and the owner has decided F29.
 - **annabell:** A9 (key vibration, F41) as soon as the owner's phone is connected: it needs a phone with a motor, and the Tab One has none. A6 (one gate command) any time, beside the ron lane: it needs no device. A4b after R4b, which completes milestone 4. A7 and A8 (the release path, section 0g) when the owner says go; they need no device.
 - **sandra:** S5 now; then S7 (the docs diet, when no package waits for its review), S6 (files in and out: the backup), S8 (the outside-test protocol). S4 on the owner's go (0d).
 
@@ -29,8 +29,7 @@ Three lanes run side by side. Each table below gives a package's prerequisites; 
 - **The deep-dive packages (0f, and G16–G18 and G25 in 0e) go by importance, then by what they need:**
   - **P15 holds** (G15, 2026-10-15): the unit evaluator is G16–G18 and G25 on Giac, and the three qalc packages G10–G12 are not needed.
   - **Silent wrong answers next (principle 3).** F24–F26 and F28's engine half are parser or engine work with no UI. So they lead the night queue and do not wait for the ron lane: R29 and R30 (G20 is merged).
-  - **Robustness after that.** G19 and G24 are cheap, and G19 must be in before S4 imports libraries into the definitions log.
-  - **Day packages sit next to the code they share:** the start-chunk budget has 2.27 kB gzip left (51.73 of 54 kB after R15b, 2026-10-17; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R12b to come.
+  - **Day packages sit next to the code they share:** the start-chunk budget has 1.32 kB gzip left (52.68 of 54 kB after G19, 2026-10-17; R46 took the sheet's view out, R21b's page and R11's row actions load lazily), with R12b to come.
   - **Trust features after the code they build on:**
     - R36 adds a line to the history rows R11 built.
     - R33 and R37 touch no key that R15c moves, and R12b's tokens style them.
@@ -69,7 +68,7 @@ Estimates are wall-clock guesses. Each package is: worker, then review; a "fix" 
 | 3c | G28 a name the input binds is not a used value (F28): merged by day (`79e8b0f`), skip | gorge, Sonnet | `p1/gorge-m4-bound` | — |
 | 4 | **Opus pass 1** on steps 2–3c, then its FIX packages | Opus | — | 30 min + fixes |
 | 5 | R30 ÷ in a flat line (F26) | ron, **Opus** | `p1/ron-m4-flatdiv` | 1 h + review |
-| 6 | G19 a safe start (F31) | gorge, Sonnet | `p1/gorge-m4-safestart` | 1 h + review |
+| 6 | G19 a safe start (F31): merged by day (`5ad277e`), skip | gorge, Sonnet | `p1/gorge-m4-safestart` | — |
 | 7 | G24 a memory cap for the Giac worker (F32): merged by day (`cc095e3`), skip | gorge, Sonnet | `p1/gorge-m4-memcap` | — |
 | 8 | **Opus pass 2** on steps 5–7 | Opus | — | 20 min + fixes |
 | 9 | G16 the unit evaluator: factors, dimensions, one term, the end slot | gorge, **Opus** | `p1/gorge-m5-unitcore` | 2 h + review |
@@ -222,7 +221,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 |---|---|---|---|---|---|---|---|
 | R29 | Where a number ends | F24, F25 | night | ron, **Opus** | `p1/ron-m4-numbers` | now | ~0.5 d |
 | R30 | ÷ in a flat line | F26 | night | ron, **Opus** | `p1/ron-m4-flatdiv` | R29 (same file) | ~0.5 d |
-| G19 | A safe start | F31 | night | gorge, Sonnet | `p1/gorge-m4-safestart` | now | ~0.5 d |
 | G22 | Why the mark: the reasons as facts | review item 14 | night | gorge, Sonnet | `p1/gorge-m4-why` | now | ~0.5 d |
 | R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R30 (same file) | ~0.25 d |
 | G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
@@ -842,30 +840,6 @@ Commits in this order:
 2. **Fix:** with `realOddRoots`, now set for Home, Solve and Function but not CAS, a power whose exponent is a literal fraction p/q in lowest terms, with q odd, becomes `surd(base,q)^p`. The plot evaluator does the same.
 
 Gate: parser and home golden cases, the golden gate, vitest.
-
-### gorge, G19: a safe start (F31), branch `p1/gorge-m4-safestart`
-Backlog F31. No UI beyond one message. Read:
-- `app/src/engine/workerEngine.ts`: `start()` and `onerror` (lines 210–235), and the stored log's `define` message (lines 79–100);
-- `app/src/engine/host.ts` `restore()` (lines 166–179);
-- `app/src/engine/defs.ts` and `app/src/state/storage.ts`.
-
-**Behaviour today:**
-- `restore()` replays every stored definition with no guard.
-- If one of them crashes the worker (out of memory, an engine abort), `onerror` restarts it and replays the same log again, and again.
-- So the engine is never ready, and only clearing the app's data gets out, which loses the history and every definition.
-- The risk grows once S4 imports libraries into the log.
-
-Commits in this order:
-1. **Tests first** (`workerEngine.test.ts`, with its fake worker):
-   - a log whose replay crashes the worker twice: the third start runs without the log, `ready()` resolves, and the client reports `safeStart: { skipped: n }`;
-   - the stored log stays untouched (for Memory and for R38a's export);
-   - a replayed entry that only gives a Giac error does not count as a crash: the rest replays, as today.
-2. **Build:**
-   - Count failed starts in the stamped store, so a crash that kills the whole app counts too: write the count before the replay and clear it once `ready` is reached.
-   - At two failed starts, start without the log and say so once, in a history line from the i18n table: "Your stored definitions were not loaded because they stopped the engine; Memory lists them."
-   - The App side of that line is one small change in `App.svelte`, which the review accepts as part of this package.
-
-Gate: vitest, typecheck, the start-up e2e unchanged, `replayMs` unchanged.
 
 ### gorge, G22: why the mark, the reasons as facts, branch `p1/gorge-m4-why`
 Deep-dive item 14; R36 shows these reasons. No UI. Read:
