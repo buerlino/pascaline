@@ -153,7 +153,8 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const dimension = src.kind === "term" ? dimKeyOf(src.exps) : null;
   if (dimension !== null && job.end && dimension !== dimKeyOf(dst.exps)) return { error: "dimension", dims: [dimension, dimKeyOf(dst.exps)], end: true };
   const num = src.kind === "term" ? src.num : "0";
-  const done = (value: HomeResult): Quantity => ({ value, dimension, ms: performance.now() - t0 });
+  const si = job.end && src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};
+  const done = (value: HomeResult): Quantity => ({ value, dimension, ...si, ms: performance.now() - t0 });
   const exact = rationalQuotient(num, dst.num);
   if (exact !== null) {
     const r = rationalValue(exact, valuePrecision(Math.trunc(s.digits)))!;

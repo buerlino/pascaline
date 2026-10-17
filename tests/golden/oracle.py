@@ -43,7 +43,7 @@ MARK_FILES = {"home.yaml", "precision.yaml", "units.yaml"}
 MARKS = {"=", "≈", "⚠"}
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "assumed"}
 KEYS = ["id", "kind", "input", "to", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
-        "options", "before", "code", "file", "home", "expect", "mark", "exact", "dim", "message", "source", "g2", "status", "group", "cat", "note"]
+        "options", "before", "code", "file", "home", "expect", "mark", "exact", "dim", "si", "si_oracle", "message", "source", "g2", "status", "group", "cat", "note"]
 CASE_LINE = re.compile(r"^\s*- (\{.*\})\s*$")
 
 
@@ -242,14 +242,14 @@ def equals_shown(value, shown) -> bool:
 EXACT_NUMBER = re.compile(r"(?<![A-Za-z_0-9.])(\d+)(?![\d.])")
 
 
-def check_exact(case: dict) -> list:
-    """units.yaml: Giac's exact text of the value (`exact`) must equal the oracle's value: rationals exactly, anything
-    else (pi, sqrt) to 50 digits, the text read with the oracle's names."""
-    if "exact" not in case or "oracle" not in case:
+def check_exact(case: dict, key: str = "exact", oracle_key: str = "oracle") -> list:
+    """units.yaml: Giac's exact text of the value (`exact`, or the SI value `si` against `si_oracle`) must equal the
+    oracle's value: rationals exactly, anything else (pi, sqrt) to 50 digits, the text read with the oracle's names."""
+    if key not in case or oracle_key not in case:
         return []
     mp.dps = 70
-    want = eval(case["oracle"], namespace())  # expressions come from our own case files
-    text = case["exact"]
+    want = eval(case[oracle_key], namespace())  # expressions come from our own case files
+    text = case[key]
     if re.fullmatch(r"-?\d+(/\d+)?", text):
         got = Fraction(text)
     else:
@@ -259,9 +259,9 @@ def check_exact(case: dict) -> list:
     if isinstance(got, int):
         got = Fraction(got)
     if isinstance(want, Fraction) and isinstance(got, Fraction):
-        return [] if want == got else [f"exact {case['exact']!r} but the oracle gives {want}"]
+        return [] if want == got else [f"{key} {text!r} but the oracle gives {want}"]
     w, g = mp.mpmathify(M(want)), mp.mpmathify(M(got))
-    return [] if abs(w - g) <= mp.mpf(10) ** -50 * max(1, abs(w)) else [f"exact {case['exact']!r} is {mp.nstr(g, 20)}, the oracle {mp.nstr(w, 20)}"]
+    return [] if abs(w - g) <= mp.mpf(10) ** -50 * max(1, abs(w)) else [f"{key} {text!r} is {mp.nstr(g, 20)}, the oracle {mp.nstr(w, 20)}"]
 
 
 def derived_mark(case: dict):
@@ -368,7 +368,7 @@ def check_file(path: Path, write: bool, g2_items: set) -> int:
                     problems.append(f"cross-check ({src}): expect {case.get('expect')!r} but oracle {v30!r}")
         if path.name in MARK_FILES:
             problems += check_mark(case, write)
-        problems += check_exact(case)
+        problems += check_exact(case) + check_exact(case, "si", "si_oracle")
         for p in problems:
             print(f"PROBLEM {path.name} {cid}: {p}")
         bad += len(problems)

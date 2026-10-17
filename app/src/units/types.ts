@@ -48,6 +48,9 @@ export interface Quantity {
   /** The dimension key, as the index writes it ("kg1m1s-2"; "" for a pure number). null for an exact 0, whose
    *  dimension is lost. */
   dimension: string | null;
+  /** With an end slot: Giac's exact text of the number in SI base units (G25 picks a unit to show from it).
+   *  Absent without an end slot (value is in SI then), for an exact 0, or when the text is too long to keep. */
+  si?: string;
   ms: number;
 }
 

@@ -79,10 +79,13 @@ interface Case {
   beforeHome?: string[];
   /** precision.yaml, kind cas: the stored names the CAS result must list as used (G20); [] means none. */
   uses?: string[];
-  /** units.yaml: the end slot; the exact text, the dimension key (null: an exact 0) and a refusal's message. */
+  /** units.yaml: the end slot; the exact text, the dimension key (null: an exact 0), the SI value's exact text with
+   *  an end slot (si_oracle checks it in oracle.py) and a refusal's message. */
   to?: string;
   exact?: string;
   dim?: string | null;
+  si?: string;
+  si_oracle?: string;
   message?: string;
   /** parser.yaml: the input must be rejected by the parser (docs/04 2.3 #1). */
   error?: boolean;
@@ -388,13 +391,13 @@ const UNIT_P95_MS = 5;
 function unitGot(r: Quantity | UnitError, c: Case): string {
   if (isUnitError(r)) return `refused: ${unitErrorMessage(r)}`;
   const m = markText(markOf(r.value, { format: "STD", digits: 12 }));
-  return `${m ?? "-"} ${r.value.display} exact ${r.value.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(r.dimension)}` : ""}`;
+  return `${m ?? "-"} ${r.value.display} exact ${r.value.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(r.dimension)}` : ""}${c.si !== undefined ? ` si ${r.si ?? "-"}` : ""}`;
 }
 
-/** The same text for what the case expects; `dim` is checked where the case gives it. */
+/** The same text for what the case expects; `dim` and `si` are checked where the case gives them. */
 function unitWant(c: Case): string {
   if (c.message !== undefined) return `refused: ${c.message}`;
-  return `${c.mark ?? "-"} ${str(c.expect as string)} exact ${c.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(c.dim)}` : ""}`;
+  return `${c.mark ?? "-"} ${str(c.expect as string)} exact ${c.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(c.dim)}` : ""}${c.si !== undefined ? ` si ${c.si}` : ""}`;
 }
 
 async function stageUnits(): Promise<void> {
