@@ -2,7 +2,7 @@
 // Round trip: LaTeX -> Giac string (our parser), then Giac decides whether it equals the intended Giac
 // expression: simplify((a)-(b)) == 0, else numeric evaluation at 3 random points.
 // Needs an engine build: GIAC_OUT=<dir with giac.mjs> (default $PASCALINE_MAIN/engine/giac/_out/gsl or the repo's own).
-// The 296 general cases live in tests/golden/parser.yaml (npm run golden); this file covers the keyboard templates.
+// The general cases live in tests/golden/parser.yaml (npm run golden); this file covers the keyboard templates.
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";

@@ -1,0 +1,63 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+# Docs index
+
+What to read, and where each fact lives. One place per fact: status and tasks in [backlog.md](backlog.md), decisions in [decisions.md](decisions.md), the binding rules in [rules-core.md](rules-core.md). The garbage collection of the pipeline (`scripts/gc.sh`) checks that every path named here exists.
+
+## Read before larger design decisions
+
+- [04-architecture.md](04-architecture.md): **the architecture for the engineer goal** (2026-10-12): precision chain and marks, Find, the unit view, keys, state, build, gates and budgets. Supersedes docs/02 where they differ.
+- [research/r6-pipelines.md](research/r6-pipelines.md): how a key press, a number, a build and a check flow through the code today, engine, qalc and MathLive behaviour learned by probing, and how to check a claim fast (probes in `tools/probes/`).
+- [06-keypad-vs-g2.md](06-keypad-vs-g2.md): every difference between our keypad and the G2's, with its reason (decision P12). Read before changing a key.
+- [02-architecture-plan.md](02-architecture-plan.md): the original plan. Stack, app→component mapping, solver choice, effort, F-Droid, licence.
+- [01-feasibility-report.md](01-feasibility-report.md): the original study. **Section 3 (legal) is binding**; the rest is superseded by 02.
+- Decisions: Phase 0 results and defaults D1–D9, P1, P2 in [spike/RESULTS.md](../spike/RESULTS.md) and [spike/DECISIONS.md](../spike/DECISIONS.md); from Phase 1 on in [decisions.md](decisions.md).
+- [CONTRIBUTING.md](../CONTRIBUTING.md): contributor rules (clean room, DCO, dependencies, golden-test sources); keep it consistent with this file.
+- Outreach drafts (r/calculators post, email to Bernard Parisse) are kept **outside the repo** in `../outreach/`. The user sends these personally.
+
+## The rest of docs/ (what each file is for)
+- [03-feature-analysis.md](03-feature-analysis.md): **section 0 is binding** (the owner's design rules and the removal tests); the engineer-core plan and gates (section 8).
+- [05-ui-plan.md](05-ui-plan.md): the UI plan for milestone 4a (its section 7 wins where it differs); [feedback.md](feedback.md): the owner's feedback inbox, dated, in the owner's words (docs/03 rule 12).
+- [shifts/rules.md](shifts/rules.md) (the standing rules for every agent; section 4 is the pipeline) and [shifts/brief.md](shifts/brief.md) (the packages, the lanes, the night queue); reports in [shifts/](shifts/).
+- Research notes: [research/r7-unit-slots.md](research/r7-unit-slots.md), [research/r8-menus.md](research/r8-menus.md), [research/r9-unit-pad.md](research/r9-unit-pad.md) (the unit view's entry), [research/r4-building-blocks.md](research/r4-building-blocks.md), [research/r2-wasm-start.md](research/r2-wasm-start.md), [research/engineer-needs.md](research/engineer-needs.md), [research/fdroid-feasibility.md](research/fdroid-feasibility.md), [research/giac-help-licence.md](research/giac-help-licence.md); [p3-units-plan.md](p3-units-plan.md) (the units plan as amended by P15).
+- History only: [cleanup-audit-2026-10-12.md](cleanup-audit-2026-10-12.md), [research/python-notes.md](research/python-notes.md) (the Python app, removed by P11). S7 (the docs diet) moves these to `docs/archive/`.
+
+## Architecture (summary; details in [04-architecture.md](04-architecture.md) section 8)
+```
+Capacitor shell (Android / iOS / desktop / plain web PWA)
+└─ UI (TypeScript): keyboard (spec/keyboard.yaml), MathLive entry and output (MathPrint),
+   app framework Symb/Plot/Num, JSXGraph views, spreadsheet
+   └─ MathEngine (async interface)
+      └─ Worker 1: giac.wasm (+ GSL, GMP, MPFR): CAS + Home + numeric solving + the unit view (milestone 5, P15)
+   Find: a static index generated at build time (unit factors and constants from libqalculate, build time only), searched on the main thread (lazy)
+Storage: IndexedDB (state) + Capacitor Filesystem (import/export)
+```
+
+Key decisions (reasons in docs/02 and the decision logs):
+- **MathPrint everywhere:** textbook entry driven only by our keyboard (÷ makes a stacked fraction); results drawn in 2D from Giac `latex()` by MathLive, never raw engine text. One-line entry is a setting.
+- **Our own LaTeX-subset parser** (P1) turns MathLive's LaTeX into Giac input and plot evaluators. Each keyboard template needs a parser rule and a round-trip case in the same commit.
+- **Home = Giac "exact-first":** decimals become exact fractions, results are rounded to 12 digits and shown as decimals (`1÷3` → `0.333333333333`), with a float fallback when numbers get too big or slow. Exact 2D results belong to the **CAS** view.
+- **No PPL, no Python** (P11: the Python app was removed in milestone 4a). Programs are Giac function definitions.
+- **Solving: GSL inside the Giac wasm** (bracket + Brent, Newton/Steffensen, `hybrids`/`hybridsj` for systems, `proot` for polynomials). **Every root is substituted back**, with a ⚠ when the residual is large.
+- **Releases build the engine with Debian's Emscripten** in a pinned `debian:trixie` container (P2); emsdk 6.0.12 is for development. Every engine build that ships must pass the golden gate.
+
+
+## Stack (pin exact versions in package files and THIRD_PARTY.md)
+TypeScript (strict, no `any`), Vite, **Svelte 5** for the app shell (D1; keyboard, parser and engine client stay plain TS), MathLive (MIT), JSXGraph (LGPL/MIT), Capacitor (MIT), Emscripten, Giac (GPL-3.0+), GMP/MPFR (LGPL), GSL (GPL-3.0+), Vitest, Playwright.
+
+
+## This machine (checked 2026-10-10)
+- Rocky Linux 10.2, 16 cores, 28 GB RAM
+- Node 22.23 / npm 10.9 (no pnpm, so use npm), Python 3.12, CMake 3.31, GNU Make 4.4, git 2.52
+- Java 21 (OK for Capacitor/Gradle), Android SDK at `~/Android/Sdk` (`adb` works; `sdkmanager` prints a deprecation warning but works)
+- Docker 29 and Podman 5 available (useful for reproducible Emscripten / fdroidserver builds)
+- Emscripten SDK 6.0.12 is installed in `~/emsdk` (see Commands).
+- Browsers: Firefox 140 ESR only. Playwright installs its own Chromium (`npx playwright install chromium`).
+- A local checkout of **fdroiddata** is at `../fdroiddata`. Reference recipes: `metadata/com.graphhopper.maps.yml` (Capacitor), `metadata/net.alexbarry.alexgames.yml` (Emscripten).
+
+
+## Glossary
+- **Home**: numeric calculator view. **CAS**: symbolic view (Giac).
+- **Symb / Plot / Num**: the three views of every app (definition, graph, table).
+- **Giac**: the C++ CAS by B. Parisse and R. De Graeve (Grenoble). The real Prime uses it too.
+- **KhiCAS**: Parisse's calculator UI for Giac. A source of ideas and possibly code (GPL).
+- **Golden case**: input + settings + expected output + `source:`.
