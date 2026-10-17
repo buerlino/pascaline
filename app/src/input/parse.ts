@@ -381,8 +381,16 @@ class Parser {
         this.pos++;
         left = ["Multiply", left, this.signedImplicit()];
       } else if (this.isCmd("div") || this.isCh("/")) {
+        // F26 (R30): ÷ and / only appear in a flat line (in textbook entry ÷ makes a stacked fraction). There they take
+        // one factor on their right (a number, a name, a power, a function call or a bracket), and the product then goes
+        // on left to right, as with ×: 1/2x = (1/2)·x and 6÷2(1+2) = 9, the G2's one-line rule (G2 item 6).
         this.pos++;
-        left = ["Divide", left, this.signedImplicit()];
+        const parts: Json[] = [["Divide", left, this.signedFactor()]];
+        while (this.startsFactor()) {
+          this.besideResult();
+          parts.push(this.postfix());
+        }
+        left = parts.length === 1 ? (parts[0] as Json) : ["Multiply", ...parts];
       } else if (this.isCmd("bmod")) {
         this.pos++;
         left = ["Mod", left, this.implicit()];
@@ -396,6 +404,15 @@ class Parser {
       return ["Negate", this.signedImplicit()];
     }
     return this.implicit();
+  }
+
+  /** One factor after ÷ or / (F26), with its signs: 1÷-2x = (1/(-2))·x. */
+  private signedFactor(): Json {
+    if (this.isCh("-")) {
+      this.pos++;
+      return ["Negate", this.signedFactor()];
+    }
+    return this.postfix();
   }
 
   /** Differential marker (d x or \mathrm{d}x) at the current position: tokens it spans, else 0. */
