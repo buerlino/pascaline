@@ -225,15 +225,19 @@ test("Function in DEG: sin(x) is drawn in degrees; the curve is 0 at 180 and 1 a
   expect(Math.abs(await y(180))).toBeLessThan(1e-12); // radians would give -0.801
   expect(await y(90)).toBeCloseTo(1, 12);
   // a window around 180, the trace at 180 reads 0 (the engine's value, in DEG)
-  const app = (): void => {
-    const f = window.pascaline.shell.loaded.function!.instance as unknown as {
-      setWindow(w: { xmin: number; xmax: number; ymin: number; ymax: number }): void;
-      traceTo(x: number): void;
-    };
-    f.setWindow({ xmin: 0, xmax: 360, ymin: -2, ymax: 2 });
+  // move the board itself (it reports the window back to the app, as a pan would)
+  await page.evaluate(() => {
+    const b = window.pascaline.plot.board as unknown as { setBoundingBox(bb: number[], keep: boolean): void };
+    b.setBoundingBox([0, 2, 360, -2], false);
+  });
+  await page.waitForFunction(() => {
+    const f = window.pascaline.shell.loaded.function!.instance as unknown as { win: { xmax: number } | null };
+    return f.win !== null && f.win.xmax > 300;
+  });
+  await page.evaluate(() => {
+    const f = window.pascaline.shell.loaded.function!.instance as unknown as { traceTo(x: number): void };
     f.traceTo(180);
-  };
-  await page.evaluate(app);
+  });
   await expect(page.getByTestId("trace-x")).toHaveText("180");
   await expect(page.getByTestId("trace-y")).toHaveAttribute("data-text", "0");
   // Root from the trace at about 175 gives 180 (the drawn curve crosses there too)
