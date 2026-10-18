@@ -344,6 +344,10 @@ function zeroUnconfirmed(f: ElementFacts): ElementFacts {
   return !f.exactRational && !f.warn && isZero(f.value.re) && isZero(f.value.im) ? { ...f, warn: "unchecked" } : f;
 }
 
+/** Most working digits an agreement step uses, and the time the steps beyond P+40 may take per result (G23). */
+export const MAX_EVAL_DIGITS = 1000;
+const EXTRA_BUDGET_MS = 50;
+
 /**
  * Facts for every element of the stored exact result `name` (its printed text is `exactText`): exact rationals by
  * BigInt, everything else by the symbolic agreement check (P against P+20, then P+20 against P+40). Null when some
@@ -369,17 +373,30 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
   const A = evalfAt(P);
   const B = A && evalfAt(P + 20);
   if (!A || !B) return null;
-  let C: { re: DecimalValue; im: DecimalValue }[] | null | undefined;
+  // Further steps: P+20 against P+40, then the extra precision doubles (P+80, P+160, …, at most MAX_EVAL_DIGITS) while
+  // fewer than `digits` agree and the budget lasts; the first agreement stops it (G23). Each level is read once and
+  // shared by all elements.
+  const levels: ({ re: DecimalValue; im: DecimalValue }[] | null)[] = [A, B];
+  const precs = [P, P + 20];
+  const t0 = Date.now();
+  const more = (i: number): boolean => {
+    if (i < levels.length) return levels[i] !== null;
+    if (levels[i - 1] === null) return false;
+    const prec = P + 40 * 2 ** (i - 2);
+    if (prec > MAX_EVAL_DIGITS || (i > 2 && Date.now() - t0 > EXTRA_BUDGET_MS)) return false;
+    levels[i] = evalfAt(prec);
+    precs[i] = prec;
+    return true;
+  };
   return facts.map((f, k) => {
     if (f) return f;
     let reliable = confirmedComplex(A[k]!, B[k]!, P, P);
     let value = B[k]!;
-    if (reliable < digits) {
-      C ??= evalfAt(P + 40);
-      if (C) {
-        reliable = Math.max(reliable, confirmedComplex(B[k]!, C[k]!, P + 20, P));
-        value = C[k]!;
-      }
+    for (let i = 2; reliable < digits && more(i); i++) {
+      const next = levels[i];
+      if (!next) break;
+      reliable = Math.max(reliable, confirmedComplex(levels[i - 1]![k]!, next[k]!, precs[i - 1]!, P));
+      value = next[k]!;
     }
     return zeroUnconfirmed({ value, exactRational: false, reliableDigits: reliable, big: false });
   });

@@ -156,10 +156,11 @@
         {:else}
           {@const d = display(item)}
           {@const m = mark(item)}
-          {#if m}<span class="mark" data-mark={m.mark} data-testid="mark" title={t(`mark.${m.mark === "=" ? "exact" : m.mark === "≈" ? "approx" : "warn"}`)}>{markText(m)}</span>{/if}
+          {@const noDigit = m?.mark === "⚠" && m.n === 0 && !m.warn}
+          {#if m}<span class="mark" data-mark={m.mark} data-testid="mark" title={t(`mark.${m.mark === "=" ? "exact" : m.mark === "≈" ? "approx" : "warn"}`)}>{noDigit ? t("mark.noDigit") : markText(m)}</span>{/if}
           <button type="button" class="result" data-text={d.text} title={t("history.insert")}
             onpointerdown={(e) => e.preventDefault()} onclick={() => tapped(() => oninsert(item))}>
-            <Math latex={d.latex} />
+            {#if !noDigit}<Math latex={d.latex} />{/if}
           </button>
         {/if}
       </div>
