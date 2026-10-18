@@ -172,7 +172,14 @@ function eng(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
   return { neg: r.neg, mantissa, exponent: e3 };
 }
 
+/** FIX: a non-zero value whose every shown decimal would be 0 falls back to SCI with f decimals (G2 item 60: 4.7ᴇ-6 → 4.7000ᴇ-6). */
 function fix(v: DecimalValue, f: number, rounding: Rounding): FormattedNumber {
+  const r = fixPlain(v, f, rounding);
+  if (!isZero(v) && /^0(\.0*)?$/.test(r.mantissa)) return sci(v, f + 1, rounding);
+  return r;
+}
+
+function fixPlain(v: DecimalValue, f: number, rounding: Rounding): FormattedNumber {
   const zero: FormattedNumber = { neg: false, mantissa: f > 0 ? `0.${"0".repeat(f)}` : "0", exponent: null };
   if (isZero(v)) return zero;
   const keep = v.exp + 1 + f; // significant digits up to the last decimal place
@@ -345,13 +352,20 @@ export interface MarkInfo {
 /** Significant digits that `o` shows for v (FIX: the digits up to the last decimal place, at least 1). */
 function digitsShown(v: DecimalValue, o: FormatOptions): number {
   if (o.format !== "FIX") return o.digits;
+  if (fixFallsBack(v, o)) return (o.fixed ?? 4) + 1;
   return Math.max(1, v.exp + 1 + (o.fixed ?? 4));
+}
+
+/** FIX shows a non-zero v in scientific notation (every shown decimal would be 0). */
+function fixFallsBack(v: DecimalValue, o: FormatOptions): boolean {
+  return o.format === "FIX" && !isZero(v) && /^0(\.0*)?$/.test(fixPlain(v, o.fixed ?? 4, o.rounding ?? "half-away").mantissa);
 }
 
 /** The text in format `o` is exactly v: nothing non-zero is cut off. */
 function shownExactly(v: DecimalValue, o: FormatOptions): boolean {
   if (isZero(v)) return true;
   if (v.sticky) return false;
+  if (fixFallsBack(v, o)) return v.digits.length <= (o.fixed ?? 4) + 1;
   if (o.format === "FIX") return v.digits.length - (v.exp + 1) <= (o.fixed ?? 4);
   return v.digits.length <= o.digits;
 }
