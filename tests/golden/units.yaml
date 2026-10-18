@@ -9,9 +9,10 @@
 # lost); with an end slot, `si` is the exact text of the value in SI base units, checked against `si_oracle`. A
 # refused case has `message` (the text the user reads) instead.
 # `settings: { angle: deg }`: a bare number in sin, cos and tan follows the Home angle mode (G15 default, decisions.md).
-# Temperatures with their offsets and logarithmic units (G17) and ± (G18) come later; until then they are refused.
+# G17: °C, °F and the logarithmic units (dB, bel, Np, dBm, dBW) are allowed only alone and convert by their offset or level
+# rule; ± (G18) comes later.
 cases:
-  # --- the 26 spike cases (engine/qalc/cases.yaml): the conversions and prefixes; u05 and u06 (°F, °C) are G17's ---
+  # --- the 26 spike cases (engine/qalc/cases.yaml): the conversions and prefixes; u05 and u06 are t01 and t02 below ---
   - { id: "u01", input: "5*{k:m / h}", to: "m / s", oracle: "F(5000,3600)", expect: "1.38888888889", mark: "≈", exact: "25/18", source: "derived" }
   - { id: "u02", input: "60*{mph}", to: "k:m / h", oracle: "60*1760*F('0.9144')/1000", expect: "96.56064", mark: "=", exact: "301752/3125", si: "16764/625", si_oracle: "60*1760*F('0.9144')/3600", source: "derived" }
   - { id: "u03", input: "1*{in}", to: "c:m", oracle: "F('0.9144')/36*100", expect: "2.54", mark: "=", exact: "127/50", si: "127/5000", si_oracle: "F('0.0254')", source: "derived" }
@@ -64,5 +65,30 @@ cases:
   - { id: "d41", input: "5*{m}-5*{m}", oracle: "F(0)", expect: "0", mark: "=", exact: "0", dim: null, source: "derived", note: "an exact 0 has lost its dimension" }
   - { id: "d42", input: "{=G}", expect: "6.6743E-11", mark: "≈", exact: "66743/1000000000000000", dim: "kg-1m3s-2", source: "derived", note: "G has a CODATA uncertainty: never = (decisions M4-4), as in Home; G18 adds its ±" }
   - { id: "d43", input: "20*{oC}*2", message: "Use K or Δ°C for a temperature difference", source: "derived" }
-  - { id: "d44", input: "2*{dB}*3*{m}", message: "dB is a logarithmic unit: not supported yet", source: "derived", note: "G17 writes the rules for dB, dBm, Np" }
+  - { id: "d44", input: "2*{dB}*3*{m}", message: "dB converts only", source: "derived", note: "a logarithmic unit is allowed only alone" }
   - { id: "d45", input: "y*{m}", message: "Not a number: y", source: "derived", note: "a free name in the formula" }
+  # --- G17: temperatures and logarithmic units (docs/04 4.3) ---
+  - { id: "t01", input: "20*{oC}", to: "oF", oracle: "F(20)*9/5+32", expect: "68", mark: "=", exact: "68", source: "derived", note: "an absolute temperature alone converts with its offset" }
+  - { id: "t02", input: "100*{oF}", to: "oC", oracle: "(F(100)-32)*5/9", expect: "37.7777777778", mark: "≈", exact: "340/9", source: "derived" }
+  - { id: "t03", input: "300*{K}", to: "oC", oracle: "F(300)-F('273.15')", expect: "26.85", mark: "=", exact: "537/20", source: "derived" }
+  - { id: "t05", input: "20*{oC}", to: "K", oracle: "F(20)+F('273.15')", expect: "293.15", mark: "=", exact: "5863/20", si: "5863/20", si_oracle: "F(20)+F('273.15')", source: "derived" }
+  - { id: "t06", input: "20*{oC}", oracle: "F(20)+F('273.15')", expect: "293.15", mark: "=", exact: "5863/20", dim: "K1", source: "derived", note: "without an end slot: in K" }
+  - { id: "t07", input: "20*{oC}+5*{K}", message: "Use K or Δ°C for a temperature difference", source: "derived" }
+  - { id: "t08", input: "2*{oC}/{s}", message: "Use K or Δ°C for a temperature difference", source: "derived", note: "not alone: a division" }
+  - { id: "t09", input: "2+3*{oF}", message: "Use K or Δ°C for a temperature difference", source: "derived", note: "2+3 °F is not (2+3) °F" }
+  - { id: "t10", input: "20*{oC}", to: "m", message: "Units don't match: Θ vs L", source: "derived" }
+  - { id: "t11", input: "10*{K}", to: "oR", oracle: "F(10)*9/5", expect: "18", mark: "=", exact: "18", source: "derived", note: "K, °R and Δ°C, Δ°F are differences" }
+  - { id: "t12", input: "5*{K}+3*{K}", oracle: "F(8)", expect: "8", mark: "=", exact: "8", dim: "K1", source: "derived", note: "a difference in arithmetic" }
+  - { id: "t13", input: "18*{oR}", to: "K", oracle: "F(10)", expect: "10", mark: "=", exact: "10", source: "derived" }
+  - { id: "t14", input: "0*{K}", to: "oC", oracle: "-F('273.15')", expect: "-273.15", mark: "=", exact: "-5463/20", source: "derived", note: "an exact 0 K is the absolute zero" }
+  - { id: "l01", input: "1*{W}", to: "dBm", oracle: "10*log10(1000)", expect: "30", mark: "=", exact: "30", source: "derived", note: "10·log10(P / 1 mW)" }
+  - { id: "l02", input: "1*{Np}", to: "dB", oracle: "20/ln(10)", expect: "8.68588963807", mark: "≈", exact: "20/ln(10)", source: "derived", note: "the field-quantity convention: 1 Np = 20/ln 10 dB" }
+  - { id: "l03", input: "30*{dBm}", to: "W", oracle: "F(1)", expect: "1", mark: "=", exact: "1", source: "derived" }
+  - { id: "l04", input: "0*{dBW}", to: "dBm", oracle: "F(30)", expect: "30", mark: "=", exact: "30", source: "derived" }
+  - { id: "l05", input: "3*{dB}", to: "Np", oracle: "3*ln(10)/20", expect: "0.345387763949", mark: "≈", exact: "3/20*ln(10)", source: "derived" }
+  - { id: "l06", input: "1*{u:W}", to: "dBm", oracle: "F(-30)", expect: "-30", mark: "=", exact: "-30", source: "derived", note: "1 µW is 0.001 of the 1 mW reference" }
+  - { id: "l07", input: "20*{dB}", to: "bel", oracle: "F(2)", expect: "2", mark: "=", exact: "2", source: "derived", note: "1 bel = 10 dB" }
+  - { id: "l08", input: "1*{dB}+2*{dB}", message: "dB converts only", source: "derived" }
+  - { id: "l09", input: "2*{dBm}*3", message: "dBm converts only", source: "derived" }
+  - { id: "l10", input: "5*{dBm}", to: "dB", message: "Units don't match: M·L²·T⁻³ vs Np", source: "derived" }
+  - { id: "l11", input: "1*{m}", to: "k:dB", message: "dB converts only", source: "derived", note: "a prefix on a logarithmic unit" }

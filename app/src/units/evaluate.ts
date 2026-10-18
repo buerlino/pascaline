@@ -20,6 +20,10 @@ const ANY_DIM = BASES.map((b) => `has(y,${b.symbol})`).join(" or ");
  * - pasua(x): the argument of sin, cos and tan: an angle (the rad dimension once, its value in rad) is given in the
  *   angle mode; a pure number is taken as it is, in the angle mode, as Home does (G15 default); anything else gives
  *   the free symbol pasubad, which pasuq finds;
+ * - pasup(m): 10^m, as a whole number for an integer m, else exp(m·ln 10), which pasuq reads (it cannot read the
+ *   algebraic number 10^(3/20)): the ratio of a level given in dB, bel or dBm;
+ * - pasul(e): the exact value of a level (a logarithm), the shorter of normal() and simplify() ("-30", not
+ *   "-10*ln(1000)/ln(10)"; "20*ln(2)/ln(10)", not simplify's longer form);
  * - pasun(f,g): the number of f in the unit g (the agreement check runs it again at higher precision).
  */
 export const UNIT_DEFINITIONS: readonly string[] = [
@@ -32,6 +36,8 @@ export const UNIT_DEFINITIONS: readonly string[] = [
   `pasua(x):={local w,y; if (x==0) return 0; w:=normal(pasdimA*diff(x,pasdimA)/x); y:=normal(subst(x,pasdimA,1)); ` +
     `if ((w!=0 and w!=1) or ${ANY_DIM}) return pasubad; if (w==1 and angle_radian==0) return normal(y*180/pi); return y; }`,
   ...["sin", "cos", "tan"].map((f) => `pasu${f}(x):=${f}(pasua(x))`),
+  `pasup(m):={if (denom(normal(m))==1) return 10^m; return exp(m*ln(10)); }`,
+  `pasul(e):={local r,s; r:=normal(e); s:=simplify(r); if (length(string(s))<length(string(r))) return s; return r; }`,
   `pasun(f,g):={local a,b; a:=pasuq(normal(f)); b:=pasuq(normal(g)); return normal(a[2]/b[2]); }`,
 ];
 
@@ -155,14 +161,22 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const num = src.kind === "term" ? src.num : "0";
   const si = job.end && src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};
   const done = (value: HomeResult): Quantity => ({ value, dimension, ...si, ms: performance.now() - t0 });
-  const exact = rationalQuotient(num, dst.num);
+  // An end slot in °C or °F: the SI number less the offset (K = a·x + b, the end slot holds a); in dB, dBm or Np: the
+  // level of the ratio to its reference. Both give the number of Giac's text, not a rational quotient.
+  const shifted = job.endOffset !== undefined ? giac.eval(`normal((${num})-(${job.endOffset}))`) : num;
+  if (isError(shifted)) return { error: "engine", detail: shifted };
+  const exact = job.endLog === undefined ? rationalQuotient(shifted, dst.num) : null;
   if (exact !== null) {
     const r = rationalValue(exact, valuePrecision(Math.trunc(s.digits)))!;
     const big = [r.p, r.q].some((x) => (x < 0n ? -x : x).toString().length > s.maxExactDigits);
     return done(result([{ value: { re: r.v, im: rationalValue("0")!.v }, exactRational: true, reliableDigits: null, big }], exact, s, job.inexact, false));
   }
-  giac.eval(src.kind === "term" ? "pasuv:=normal(pasuR[0][2]/pasuR[1][2])" : "pasuv:=0");
-  const value = numberOf(giac, "pasuv", `pasun(${f},${g})`, s, job.inexact);
+  if (src.kind === "zero" && job.endLog !== undefined) return { error: "engine", detail: "the level of 0" };
+  const ratio = job.endOffset !== undefined ? `(${shifted})/pasuR[1][2]` : `${src.kind === "term" ? "pasuR[0][2]" : "0"}/pasuR[1][2]`;
+  const rerun = job.endOffset !== undefined ? `((pasuq(normal(${f}))[2]-(${job.endOffset}))/pasuq(normal(${g}))[2])` : `pasun(${f},${g})`;
+  const level = (r: string): string => job.endLog!.replace(/pasux/g, `(${r})`);
+  giac.eval(job.endLog !== undefined ? `pasuv:=pasul(${level(ratio)})` : `pasuv:=normal(${ratio})`);
+  const value = numberOf(giac, "pasuv", job.endLog !== undefined ? `pasul(${level(rerun)})` : rerun, s, job.inexact);
   if (value) return done(value);
   // Not a number: a free name in it is the user's to fix; anything else (a timeout in the check) is the engine's.
   const names = giac.eval("lname(pasuv)");
