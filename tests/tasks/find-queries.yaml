@@ -35,7 +35,7 @@ queries:
   - { query: "faraday", expect: "const:faraday" }
   - { query: "stefan boltzmann", expect: "const:sigma" }
   - { query: "fine structure", expect: "const:alpha" }
-  # Units (40)
+  # Units (46)
   - { query: "kph", expect: "unit:km/h" }
   - { query: "km/h", expect: "unit:km/h" }
   - { query: "mph", expect: "unit:mph" }
@@ -76,6 +76,12 @@ queries:
   - { query: "litre", expect: "unit:L" }
   - { query: "gallon", expect: "unit:gal", note: "the U.S. gallon" }
   - { query: "electronvolt", expect: "unit:eV" }
+  - { query: "ampere hour", expect: "unit:Ah" }
+  - { query: "kip", expect: "unit:kip", note: "1000 lbf" }
+  - { query: "board foot", expect: "unit:fbm" }
+  - { query: "revolution", expect: "unit:rev", note: "the cycle unit (G25), no longer a name of tr" }
+  - { query: "ton of refrigeration", expect: "unit:TR" }
+  - { query: "standard temperature", expect: "const:StdT" }
   # Prefixes (5)
   - { query: "kilo", expect: "pfx:k" }
   - { query: "micro", expect: "pfx:u" }

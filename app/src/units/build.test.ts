@@ -13,7 +13,7 @@ const unit = (id: string, si: string | undefined, dim: string | undefined, symbo
 });
 const pfx = (id: string, si: string, symbol = id): IndexItem => ({ id: `pfx:${id}`, kind: "pfx", names: [id], title: id, si, tier: 0, insert: `\\pfx{${id}}{\\mathrm{${symbol}}}` });
 const table = factorTable([
-  unit("m", "1", "m1"), unit("h", "3600", "s1"), unit("s", "1", "s1"), unit("Hz", "1", "s-1"), unit("V", "1", "A-1kg1m2s-3"),
+  unit("m", "1", "m1"), unit("h", "3600", "s1"), unit("s", "1", "s1"), unit("Hz", "1", "s-1"), unit("rev", "1", ""), unit("rpm", "1/60", "s-1"), unit("V", "1", "A-1kg1m2s-3"),
   unit("N", "1", "kg1m1s-2"), unit("deg", "pi/180", "rad1", "1°"), unit("oC", "1+5463/20", "K1", "°C"), unit("dB", undefined, "Np1"),
   unit("dBm", undefined, "kg1m2s-3"), unit("hp", undefined, "kg1m2s-3"), unit("Np", "1", "Np1"), unit("km/h", "5/18", "m1s-1"),
   pfx("k", "1000"), pfx("n", "1/1000000000"), pfx("u", "1/1000000", "µ"), pfx("Ki", "1024"),
