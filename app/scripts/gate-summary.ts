@@ -153,20 +153,14 @@ export function summarizeSize(out: string, exitCode: number): Summary {
   return { ok: false, detail: bad.length > 0 ? `${bad.length} over: ${bad.slice(0, 3).join("; ")}` : `exit ${exitCode}` };
 }
 
-/** A docs-size budget row: file, bytes, limit (null = only reported until S7 sets one). */
-export interface DocSize {
-  file: string;
-  bytes: number;
-  limit: number | null;
-}
-
-/** Reports the sizes. A limit is enforced once one is set (S7); none is set today, so this never fails. */
-export function summarizeDocs(sizes: DocSize[]): Summary {
-  const over = sizes.filter((d) => d.limit !== null && d.bytes > d.limit);
-  const kb = (n: number): string => `${(n / 1000).toFixed(1)} kB`;
-  const list = sizes.map((d) => `${d.file} ${kb(d.bytes)}${d.limit !== null ? `/${kb(d.limit)}` : ""}`).join(", ");
-  if (over.length > 0) return { ok: false, detail: `over budget: ${over.map((d) => d.file).join(", ")} (${list})` };
-  return { ok: true, detail: `${list}${sizes.every((d) => d.limit === null) ? " (reported only until S7 sets budgets)" : ""}` };
+/** `node tools/docs-check.mjs` (S7): its last line is the summary; on a failure the lines before it name each one. */
+export function summarizeDocs(out: string, exitCode: number): Summary {
+  const lines = out.split("\n").map((l) => l.trim()).filter((l) => l !== "");
+  const last = lines.at(-1) ?? "";
+  if (exitCode === 0 && last.startsWith("docs ok: ")) return { ok: true, detail: last.slice("docs ok: ".length) };
+  const failures = lines.filter((l) => /^(link|path|budget|package): /.test(l));
+  if (failures.length === 0) return { ok: false, detail: `exit ${exitCode}` };
+  return { ok: false, detail: `${failures.length} failed: ${failures.slice(0, 3).map((l) => l.slice(0, 100)).join("; ")}` };
 }
 
 /** Engine-side, parser, unit or Find code: what the golden gate checks (CLAUDE.md: every engine build; brief section 8a step 3). */
