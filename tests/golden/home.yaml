@@ -174,3 +174,5 @@ cases:
   - { id: "r39-neg8^1/2", latex: "\\left(-8\\right)^{\\frac{1}{2}}", oracle: "2*sqrt(2)*I", expect: "2.82842712475*i", mark: "≈", source: "derived", note: "an even denominator keeps the principal root (P5 a)" }
   - { id: "r39-neg8^0.2", latex: "\\left(-8\\right)^{0.2}", oracle: "power(-8, mpf(1)/5)", expect: "1.22624046096+0.89091584445*i", mark: "≈", source: "oracle", note: "not a literal fraction: Giac's principal power" }
   - { id: "r39-X^1/3", latex: "X^{\\frac{1}{3}}", before: ["X:=-8"], oracle: "F(-2)", expect: "-2", mark: "=", source: "derived", note: "with -8 stored in X; last, so X stays out of the cases above" }
+  # --- G14: an exact result built from typed decimals is "=" -----------------------------------------------------
+  - { id: "g14-mod-7.5-2", latex: "\\operatorname{mod}\\left(7.5,2\\right)", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "the typed 7.5 is exact (15/2) and so is the remainder 3/2" }

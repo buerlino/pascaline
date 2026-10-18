@@ -37,3 +37,11 @@ describe("toExactLiterals", () => {
     expect(toExactLiterals(input)).toBe(out);
   });
 });
+
+describe("restoreLiterals (G14)", () => {
+  it("puts typed decimals back into a kept test", async () => {
+    const { restoreLiterals } = await import("./homeEval.ts");
+    expect(restoreLiterals("((f(x))==(746824132812/10^12))", "f(x)==0.746824132812")).toBe("((f(x))==0.746824132812)");
+    expect(restoreLiterals("(x==(1/10^3))", "x==1/10^3")).toBe("(x==(1/10^3))");
+  });
+});
