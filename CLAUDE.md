@@ -13,7 +13,7 @@ node engine/giac/smoke.mjs 'factor(x^4-1)'                 # engine smoke test (
 cd app && npm ci && npm run dev                            # http://localhost:5173 (?engine=fake echoes input)
 npm run typecheck && npm run index && FIND_INDEX=required npm test   # svelte-check + Vitest (from app/; absolute GIAC_OUT for engine tests)
 npm run gate [-- --quick]                                  # from app/: every check in one command, one line each (A6)
-GIAC_OUT=<abs dir> npm run test:e2e                        # Playwright key-sequence tests
+PW_PORT=<free port> GIAC_OUT=<abs dir> npm run test:e2e    # Playwright key-sequence tests; fails at once if the port is in use
 GIAC_OUT=<abs dir> npm run golden                          # engine gate; must end in GOLDEN GATE PASSED
 GIAC_OUT=<abs dir> npm run gallery                         # every view and layer → app/test/gallery/index.html
 tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # mpmath oracle (venv: tests/golden/README.md)

@@ -408,7 +408,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 **Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the steps in `MIGRATIONS` for that key run from its version up, and the value is written back stamped. Raise the version with a step whenever a stored shape or the meaning of stored Giac text changes (a parser rename such as Φ → `Phi_` must rewrite the stored `defs`). **Replay budget:** ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` in `EngineTimings`): 291 ms on 2026-10-16 (A4a); G29 batched 200 Giac calls into 8, and A12 re-measures. **Why persist definitions:** a calculator keeps its memory.
 
 ### 6.3 Decision: start-up and bytes
-- The sizes and budgets are in 8.3. New code for Find, units, copy and the matrix editor lives in lazy chunks; the start chunk grows only by key handlers and marks (≤ 156 kB, ≤ 54 kB gzip; owner, 2026-10-14).
+- The sizes and budgets are in 8.3. New code for Find, units, copy and the matrix editor lives in lazy chunks; the start chunk grows only by key handlers and marks (≤ 175 kB, ≤ 60 kB gzip; owner, 2026-10-19).
 - **The size test** (A1): `app/scripts/size-check.ts` reads Vite's manifest and fails when a chunk passes its budget; `npm run build` and `build.sh` run it.
 
 
@@ -484,7 +484,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 53.16 kB gzip after G30f1 (`99beb2e`, 2026-10-18); `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test |
+| Start chunk | ≤ 175 kB raw, ≤ 60 kB gzip | 53.16 kB gzip after G30f1 (`99beb2e`, 2026-10-18); `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB (2026-10-12) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
