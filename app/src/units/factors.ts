@@ -37,6 +37,14 @@ function symbolOf(it: IndexItem): string {
 
 const bare = (id: string): string => id.slice(id.indexOf(":") + 1);
 
+/** The cycle unit (G25, decisions.md "G15"): a revolution is a count of cycles, a pure number, so `rev/s` is a
+ *  frequency like Hz and `rpm` = 1 rev/min = 1/60 Hz with no 2π. It replaces qalc's rpm (π/30 rad/s), whose rad would
+ *  make `1 rpm → Hz` the 2π trap. `tr` (turn) stays 2π rad: an angle. The index has "rev" only as a name of `tr`. */
+const CYCLES: ReadonlyMap<string, UnitFactor> = new Map([
+  ["rev", { si: "1", dim: "", symbol: "rev" }],
+  ["rpm", { si: "1/60", dim: "s-1", symbol: "rpm" }],
+]);
+
 export function factorTable(items: readonly IndexItem[]): FactorTable {
   const units = new Map<string, UnitFactor>();
   const prefixes = new Map<string, { si: string; symbol: string }>();
@@ -47,5 +55,6 @@ export function factorTable(items: readonly IndexItem[]): FactorTable {
     else if (it.kind === "const" && it.value)
       consts.set(bare(it.id), { value: it.value, ...(it.unc ? { unc: it.unc } : {}), ...(it.dim !== undefined ? { dim: it.dim } : {}), symbol: symbolOf(it) });
   }
+  for (const [id, u] of CYCLES) units.set(id, u);
   return { units, prefixes, consts };
 }

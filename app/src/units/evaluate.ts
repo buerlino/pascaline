@@ -6,7 +6,7 @@
 // agreement check), so markOf() marks it as Home. Synchronous, UI-free. Only erasable TypeScript syntax.
 import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type HomeSettings } from "../engine/homeEval.ts";
 import { exactFacts, floatFacts, hasFloat, rationalValue, splitList, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
-import { BASES, dimKeyOf, isExponent, parseDimKey } from "./dims.ts";
+import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siUnit } from "./dims.ts";
 import { isUnitError, type Quantity, type Uncertainty, type UnitError, type UnitJob } from "./types.ts";
 import { shownWithUncertainty, uncertaintyText } from "./uncertainty.ts";
 
@@ -176,17 +176,38 @@ function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string 
   return { value, text, shown };
 }
 
+const PREFIXES: Readonly<Record<number, string>> = { [-15]: "f", [-12]: "p", [-9]: "n", [-6]: "µ", [-3]: "m", 0: "", 3: "k", 6: "M", 9: "G", 12: "T", 15: "P" };
+
+/** The unit a result without an end slot is shown in (G25): the first typed unit of the job that has the result's
+ *  dimension, else the SI unit with the SI prefix that puts the number from 1 to 999. `factor` is its factor to SI. */
+function chosenUnit(giac: Giac, job: UnitJob, dimension: string, num: string): { text: string; factor: string } {
+  const typed = job.shows?.find((u) => u.dim === dimension);
+  if (typed) return { text: typed.text, factor: typed.factor };
+  const si = siUnit(dimension);
+  const base = { text: si.text, factor: "1" };
+  if (!si.prefixable) return base;
+  const v = Math.abs(Number(giac.eval(`evalf(${num})`))) * 10 ** -si.prefixable.exp10;
+  if (!(v > 0) || !Number.isFinite(v)) return base;
+  const e = Number(v.toExponential(11).split("e")[1]);
+  // Mass stops at kg (a tonne is 1000 kg, not 1 Mg).
+  const k = Math.min(Math.floor(e / 3) * 3, si.prefixable.symbol === "g" ? 3 : 15);
+  const pfx = PREFIXES[k];
+  if (pfx === undefined) return base;
+  const exp10 = k + si.prefixable.exp10;
+  return { text: pfx + si.prefixable.symbol, factor: exp10 >= 0 ? `${10n ** BigInt(exp10)}` : `1/${10n ** BigInt(-exp10)}` };
+}
+
 /** Evaluates a job in the engine's current (Home) mode. One Giac call when the value is rational; the agreement
  *  check's calls otherwise. */
 export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | UnitError {
   const t0 = performance.now();
   const f = withAngles(toExactLiterals(job.expr));
-  const g = job.end ? withAngles(toExactLiterals(job.end)) : "1";
+  let g = job.end ? withAngles(toExactLiterals(job.end)) : "1";
   const out = giac.eval(`pasuR:=[pasuq(normal(${f})),pasuq(normal(${g}))]`);
   if (isError(out)) return { error: "engine", detail: out };
   const both = splitList(out);
   const src = both?.[0] !== undefined ? checked(both[0]) : null;
-  const dst = both?.[1] !== undefined ? checked(both[1]) : null;
+  let dst = both?.[1] !== undefined ? checked(both[1]) : null;
   if (!src || !dst) return { error: "engine", detail: out };
   const bad = refusal(src) ?? refusal(dst);
   if (bad) return bad;
@@ -194,11 +215,26 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const dimension = src.kind === "term" ? dimKeyOf(src.exps) : null;
   if (dimension !== null && job.end && dimension !== dimKeyOf(dst.exps)) return { error: "dimension", dims: [dimension, dimKeyOf(dst.exps)], end: true };
   const num = src.kind === "term" ? src.num : "0";
-  const si = job.end && src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};
+  const si = src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};
+  let unit = job.endUnit ?? "";
+  // No end slot: the typed unit that fits, else the SI unit with a prefix (an absolute temperature stays in K).
+  if (!job.end && dimension !== null && !job.absTemp) {
+    const c = chosenUnit(giac, job, dimension, num);
+    unit = c.text;
+    if (c.factor !== "1") {
+      g = c.factor;
+      const out2 = giac.eval(`pasuR:=[pasuR[0],pasuq(normal(${g}))]`);
+      const re = isError(out2) ? null : splitList(out2);
+      const d2 = re?.[1] !== undefined ? checked(re[1]) : null;
+      if (!d2 || d2.kind !== "term") return { error: "engine", detail: out2 };
+      dst = d2;
+    }
+  } else if (!job.end && dimension !== null) unit = siUnit(dimension).text;
+  const dst0 = dst;
   const done = (value: HomeResult, valueExpr: string): Quantity | UnitError => {
-    const unc = job.unc ? uncertainty(giac, job, src, dst, valueExpr, dimension, s) : null;
+    const unc = job.unc ? uncertainty(giac, job, src, dst0, valueExpr, dimension, s) : null;
     if (unc && isUnitError(unc)) return unc;
-    return { value, dimension, ...si, ...(unc ? { unc } : {}), ms: performance.now() - t0 };
+    return { value, dimension, dimensionText: dimension === null ? null : dimensionText(dimension), unit, ...si, ...(unc ? { unc } : {}), ms: performance.now() - t0 };
   };
   if (job.absTemp && src.kind === "term" && giac.eval(`sign(${num})`).trim() === "-1") return { error: "belowzero" };
   // An end slot in °C or °F: the SI number less the offset (K = a·x + b, the end slot holds a); in dB, dBm or Np: the

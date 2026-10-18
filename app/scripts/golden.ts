@@ -84,6 +84,9 @@ interface Case {
   to?: string;
   exact?: string;
   dim?: string | null;
+  /** units.yaml, G25: the unit the value is shown in ("" for a pure number) and the dimension as text. */
+  unit?: string;
+  dimtext?: string;
   si?: string;
   si_oracle?: string;
   /** units.yaml, G18: σ at 2 significant digits ("none" for a result with no uncertainty), the value with it
@@ -396,13 +399,13 @@ const UNIT_P95_MS = 5;
 function unitGot(r: Quantity | UnitError, c: Case): string {
   if (isUnitError(r)) return `refused: ${unitErrorMessage(r)}`;
   const m = markText(markOf(r.value, { format: "STD", digits: 12 }));
-  return `${m ?? "-"} ${r.value.display} exact ${r.value.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(r.dimension)}` : ""}${c.si !== undefined ? ` si ${r.si ?? "-"}` : ""}${c.unc !== undefined ? ` unc ${r.unc?.text ?? "none"}` : ""}${c.shown !== undefined ? ` shown ${r.unc?.shown ?? "-"}` : ""}`;
+  return `${m ?? "-"} ${r.value.display} exact ${r.value.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(r.dimension)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(r.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(r.dimensionText)}` : ""}${c.si !== undefined ? ` si ${r.si ?? "-"}` : ""}${c.unc !== undefined ? ` unc ${r.unc?.text ?? "none"}` : ""}${c.shown !== undefined ? ` shown ${r.unc?.shown ?? "-"}` : ""}`;
 }
 
 /** The same text for what the case expects; `dim` and `si` are checked where the case gives them. */
 function unitWant(c: Case): string {
   if (c.message !== undefined) return `refused: ${c.message}`;
-  return `${c.mark ?? "-"} ${str(c.expect as string)} exact ${c.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(c.dim)}` : ""}${c.si !== undefined ? ` si ${c.si}` : ""}${c.unc !== undefined ? ` unc ${c.unc}` : ""}${c.shown !== undefined ? ` shown ${c.shown}` : ""}`;
+  return `${c.mark ?? "-"} ${str(c.expect as string)} exact ${c.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(c.dim)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(c.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(c.dimtext)}` : ""}${c.si !== undefined ? ` si ${c.si}` : ""}${c.unc !== undefined ? ` unc ${c.unc}` : ""}${c.shown !== undefined ? ` shown ${c.shown}` : ""}`;
 }
 
 async function stageUnits(): Promise<void> {
