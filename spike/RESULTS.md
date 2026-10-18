@@ -207,7 +207,7 @@ Phase 0 is closed and Phase 1 replaced these spikes. Their results stay above; t
 | `input/` | Q2: MathLive with our keyboard | `app/` (entry, keyboard) |
 | `plot/` | Q4, Q6: plot FPS, MicroPython and Pyodide device pages | `app/` Function Plot (JSXGraph, D7), `python/` |
 | `android/` | Q1: Capacitor overlay for the spike shell | the tracked `android/` project, `build.sh` |
-| `python/` scripts | Q4: MicroPython build, Node and Pyodide benchmarks | `python/build-micropython.sh`, `python/smoke.mjs`; the notes are `docs/research/python-notes.md` |
+| `python/` scripts | Q4: MicroPython build, Node and Pyodide benchmarks | `python/build-micropython.sh`, `python/smoke.mjs`; the notes are `docs/archive/python-notes.md` |
 | `research/` scripts | `trixie-build.sh` (P2 container build), `coverage-probe.mjs` (R3) | `engine/giac/build-wasm-release.sh`; the five notes are in `docs/research/` |
 | `node/` | Node smoke tests, variant compare, prebuilt smoke | `engine/giac/smoke.mjs`; `app/scripts/compare-engines.ts` |
 

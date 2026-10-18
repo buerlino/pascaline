@@ -87,9 +87,11 @@ describe("tool output", () => {
     expect(summarizeSize(out, 1)).toEqual({ ok: false, detail: "2 over: start chunk 300 kB > 250 kB; find 9 > 8" });
     expect(summarizeSize("size-check passed", 0).ok).toBe(true);
   });
-  it("docs: reports sizes, fails only over a set limit", () => {
-    expect(summarizeDocs([{ file: "a.md", bytes: 30_000, limit: null }]).ok).toBe(true);
-    expect(summarizeDocs([{ file: "a.md", bytes: 30_000, limit: 25_000 }]).ok).toBe(false);
+  it("docs: tools/docs-check.mjs's summary line, and its first failures when it fails (S7's budgets)", () => {
+    expect(summarizeDocs("docs ok: 319 links and paths; backlog.md 12.4/20 kB", 0)).toEqual({ ok: true, detail: "319 links and paths; backlog.md 12.4/20 kB" });
+    const bad = "budget: docs/backlog.md is 21.0 kB, over 20 kB\nlink: docs/a.md → b.md (no docs/b.md)\ndocs FAILED (2): 310 links and paths";
+    expect(summarizeDocs(bad, 1)).toEqual({ ok: false, detail: "2 failed: budget: docs/backlog.md is 21.0 kB, over 20 kB; link: docs/a.md → b.md (no docs/b.md)" });
+    expect(summarizeDocs("", 1)).toEqual({ ok: false, detail: "exit 1" });
   });
 });
 

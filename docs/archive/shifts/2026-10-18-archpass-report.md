@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Architecture pass report (2026-10-18)
 
-The findings of the mid-development architecture pass (a plain session, branch `p1/archpass` from `p1/pipeline-remodel`), with their evidence: `file:line`, probes and command output. The decisions the owner took on them are P16 and P17 in [decisions.md](../decisions.md); the packages are in [brief.md](brief.md) section 7 (A10 first). Sections 1–8 follow the pass's brief: pipeline, code architecture, correctness, speed, build and gates, docs, packages, ideas. Phase 1 notes, copied verbatim; "P-A" … "P-M" are the pipeline findings A10 fixes.
+The findings of the mid-development architecture pass (a plain session, branch `p1/archpass` from `p1/pipeline-remodel`), with their evidence: `file:line`, probes and command output. The decisions the owner took on them are P16 and P17 in [decisions.md](../../decisions.md); the packages are in [brief.md](../../shifts/brief.md) section 7 (A10 first). Sections 1–8 follow the pass's brief: pipeline, code architecture, correctness, speed, build and gates, docs, packages, ideas. Phase 1 notes, copied verbatim; "P-A" … "P-M" are the pipeline findings A10 fixes.
 
 Worktree: .claude/worktrees/archpass, branch p1/archpass from p1/pipeline-remodel (f9514a8 = phase-1 239463e + pipeline commit). phase-1 itself has no scripts/; the owner said "go ahead" to branch from the pipeline branch.
 

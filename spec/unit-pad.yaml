@@ -44,7 +44,7 @@
 # Ids: Find's unit ids (`unit:<id>` in the index) and prefix ids (`pfx:<id>`; u = µ, oC = °C, deg = °, ohm = Ω).
 # `label:` where the cell shows another name than the id (Find's `thou` is the mil of US electrical work). Find lacks
 # `TR` (the ton of refrigeration, 12 000 Btu_IT/h = 3516.852842066666... W, derived): package G7 adds it (S5's report,
-# docs/shifts/2026-10-17-sandra-padlayout-report.md, lists it with the other ids Find lacks).
+# docs/archive/shifts/2026-10-17-sandra-padlayout-report.md, lists it with the other ids Find lacks).
 schema: 2
 source: derived   # S5 (2026-10-17): tools/probes/pad-arrange.mjs on tools/probes/unit-weights.yaml; the owner decides the proposal (decisions.md "P14 arrangement")
 

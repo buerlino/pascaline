@@ -28,3 +28,5 @@ CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 timeout 600 claude --model sonnet --effor
 ```
 
 Desktop probes (no device): `tools/probes/` checks what the engine, the parser and the qalc and Find data do today; see its README.
+
+Docs check (no device): `node tools/docs-check.mjs` checks every Markdown link and the docs' size budgets, and while brief section 7 exists, that it equals `docs/shifts/packages/`; `npm run gate` runs it (S7).

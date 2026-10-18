@@ -62,7 +62,7 @@ The word list is a guard, not a proof: a body can still loop forever or run out 
 
 ## 2. Onto the phone without the INTERNET permission
 
-S6's answer (`docs/research/r11-files.md`) does not exist yet (S6 starts after S7); this section lists the candidates and what each needs, and S6 settles them on WebView 131. Today's manifest: one activity with the launcher filter only, a `FileProvider` (from the Capacitor template), and `VIBRATE` as the only permission (`android/app/src/main/AndroidManifest.xml:20-23, 27-35, 41`). The file itself reaches the phone the user's way (USB cable into Downloads, a sync app the user already runs): the app never touches the network.
+S6's answer (its note r11, files, in docs/research/) does not exist yet (S6 starts after S7); this section lists the candidates and what each needs, and S6 settles them on WebView 131. Today's manifest: one activity with the launcher filter only, a `FileProvider` (from the Capacitor template), and `VIBRATE` as the only permission (`android/app/src/main/AndroidManifest.xml:20-23, 27-35, 41`). The file itself reaches the phone the user's way (USB cable into Downloads, a sync app the user already runs): the app never touches the network.
 
 | Way in | Manifest | Code | Note |
 |---|---|---|---|

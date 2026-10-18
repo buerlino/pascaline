@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Docs index
 
-What to read, and where each fact lives. One place per fact: status and tasks in [backlog.md](backlog.md), decisions in [decisions.md](decisions.md), the binding rules in [rules-core.md](rules-core.md). The garbage collection of the pipeline (`scripts/gc.sh`) checks that every path named here exists.
+What to read, and where each fact lives. One place per fact: status and tasks in [backlog.md](backlog.md), decisions in [decisions.md](decisions.md), the binding rules in [rules-core.md](rules-core.md), one file per open work package in [shifts/packages/](shifts/packages/). The garbage collection of the pipeline (`scripts/gc.sh`) checks that every path named here exists; `node tools/docs-check.mjs` checks every link and the size budgets (brief ≤ 25 kB, backlog ≤ 20 kB, decisions ≤ 40 kB, docs/04 ≤ 70 kB, a package file ≤ 6 kB), and `npm run gate` runs it.
 
 ## Read before larger design decisions
 
@@ -17,9 +17,9 @@ What to read, and where each fact lives. One place per fact: status and tasks in
 ## The rest of docs/ (what each file is for)
 - [03-feature-analysis.md](03-feature-analysis.md): **section 0 is binding** (the owner's design rules and the removal tests); the engineer-core plan and gates (section 8).
 - [05-ui-plan.md](05-ui-plan.md): the UI plan for milestone 4a (its section 7 wins where it differs); [feedback.md](feedback.md): the owner's feedback inbox, dated, in the owner's words (docs/03 rule 12).
-- [shifts/rules.md](shifts/rules.md) (the standing rules for every agent; section 4 is the pipeline) and [shifts/brief.md](shifts/brief.md) (the packages, the lanes, the night queue); reports in [shifts/](shifts/).
-- Research notes: [research/r7-unit-slots.md](research/r7-unit-slots.md), [research/r8-menus.md](research/r8-menus.md), [research/r9-unit-pad.md](research/r9-unit-pad.md) (the unit view's entry), [research/r4-building-blocks.md](research/r4-building-blocks.md), [research/r2-wasm-start.md](research/r2-wasm-start.md), [research/engineer-needs.md](research/engineer-needs.md), [research/fdroid-feasibility.md](research/fdroid-feasibility.md), [research/giac-help-licence.md](research/giac-help-licence.md); [p3-units-plan.md](p3-units-plan.md) (the units plan as amended by P15).
-- History only: [cleanup-audit-2026-10-12.md](cleanup-audit-2026-10-12.md), [research/python-notes.md](research/python-notes.md) (the Python app, removed by P11). S7 (the docs diet) moves these to `docs/archive/`.
+- [shifts/rules.md](shifts/rules.md) (the standing rules for every agent; section 4 is the pipeline), [shifts/brief.md](shifts/brief.md) (the path, the table of open packages, the night queue) and [shifts/packages/](shifts/packages/) (one file per open package, in the shape the pipeline bundles); new shift reports land in [shifts/](shifts/).
+- Research notes: [research/r7-unit-slots.md](research/r7-unit-slots.md), [research/r8-menus.md](research/r8-menus.md), [research/r9-unit-pad.md](research/r9-unit-pad.md) (the unit view's entry), [research/r10-connector.md](research/r10-connector.md) (the library file), [research/r13-results-mode.md](research/r13-results-mode.md) (results mode), [research/night-shift-check-2026-10-18.md](research/night-shift-check-2026-10-18.md) (the first night's check), [research/r4-building-blocks.md](research/r4-building-blocks.md), [research/r2-wasm-start.md](research/r2-wasm-start.md), [research/engineer-needs.md](research/engineer-needs.md), [research/fdroid-feasibility.md](research/fdroid-feasibility.md), [research/giac-help-licence.md](research/giac-help-licence.md); [p3-units-plan.md](p3-units-plan.md) (the units plan as amended by P15).
+- History only, in [archive/](archive/): the full decision log to 2026-10-18 ([archive/decisions-2026-10.md](archive/decisions-2026-10.md), read when a decision is questioned), the backlog with its done items ([archive/backlog-2026-10.md](archive/backlog-2026-10.md)), the finished shift reports ([archive/shifts/](archive/shifts/)), the cleanup audit of 2026-10-12 ([archive/cleanup-audit-2026-10-12.md](archive/cleanup-audit-2026-10-12.md)) and the Python notes ([archive/python-notes.md](archive/python-notes.md); the app was removed by P11).
 
 ## Architecture (summary; details in [04-architecture.md](04-architecture.md) section 8)
 ```

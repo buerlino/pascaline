@@ -1,31 +1,78 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Shift brief: milestone 4a "feel" and milestone 4 "Find and trust", with milestone 5's engine work and the deep-dive fixes beside them (run by the owner)
+# Shift brief: milestone 4a "feel" and milestone 4 "Find and trust", with milestone 5's unit view beside them (run by the owner)
 
-**Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Section 7 holds one block per package in the shape the pipeline bundles (section 2).
+**Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). **Until A14 is merged, section 7 is the pipeline's copy of those files:** edit a package in both places; `node tools/docs-check.mjs` fails when they differ.
 
-## 0. State at start
-`phase-1` on 2026-10-18 (architecture pass, decisions.md P17). Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1–R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46 (with R46f1), R21b, R11, R32, A4a (2026-10-16), R15b, R47, B13; milestone 5's check G15 (P15 holds); the deep-dive packages G20, G27, R44, G24, G19, R29, R30. **Merged by the pipeline** (night of 2026-10-18, audited by Opus pass 1): A6 (`130c12f`), G16 (`1bfd594`), G17 (`a4496d5`); audited by Opus pass 2: G17f1 (`17fdfad`), G18 (`5b7e0d8`), G25 (`d9b177a`); audited by Opus pass 3: G18f1 (`76e3eb6`), G25f1 (`211f0db`), G13 (`d08e955`); audited by Opus pass 6: G22f1 (`7556623`), R52 (`7c8c2c7`), G14 (`7635cfc`); audited by Opus pass 7: G14f1 (`9930ad6`), G26 (`eb5eef2`), S4 (`40c4bea`, the scope waits for the owner); audited by Opus pass 11: G33 with G33f1 (`d4ff602`, the replay budget not met: decisions.md G33); audited by Opus pass 12: G33f2 (`e0e8cc4`); audited by Opus pass 13: G33f3 (`c613cea`, upper-case loop keywords refused); audited by Opus pass 14: G7 (`de9b388`), R24a (`d904baa`, fix R24af1 for the reading in words), G32 (`36b9936`). Audited by Opus pass 15: R24af1 (`a5e4d1b`), R28 (`376ab86`, fix R28f1 for the sign of a number with ±); fix G30f1 for the start chunk over budget. Audited by Opus pass 16: R28f1 (`83b8aee`), G30f1 (`99beb2e`, the start chunk 53.16 kB), G31 (`383fabe`, fix G31f1 for the digits FIX shows in its fallback). Audited by Opus pass 17: G31f1 (`5ec5a5d`), G21 (`cfa8b74`, fix G21f1 so the helper name pasexp is never shown; the symbolic gap waits for the owner, decisions.md "Needs the user"), R12a (`9aacb29`, the visual-pass mockups, review-only merge). Audited by Opus pass 18: G21f1 (`a2259eb`), R48 (`21240ab`, the faces show lower case under Shift + Alpha), R58 (`df3cad8`, CAS Alpha types lower case; Shift + Alpha there is the capital until G2 item 45 is checked further). The pipeline has not merged a package yet: A10 fixes what stops it (decisions.md P17) and runs first, by day, with `PASCALINE_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads` set in the shell. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history. Left for the owner: `git branch -D p1/ron-eve-gestures` (the old flick classifier, K2 removed by P11; agents never use `-D`).
+## 0. State and the path
+`phase-1` on 2026-10-18, after Opus pass 18 (R58, `df3cad8`). Every merge and its commit: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history.
 
-### The path (owner, 2026-10-14; rewritten 2026-10-18 after the owner's answers in the architecture pass)
+### The path (owner, 2026-10-14; rewritten 2026-10-18 after the architecture pass and S7)
 **By day, one pipeline at a time** (owner, 2026-10-18), in this order; each starts when the one before is merged:
-1. **A10** (the pipeline fixes; night-safe, but it must be in before the first night).
-2. **R48** (bug F40), then **R15c1 → R15c2 → R15c3 → R15c4** (the R3 top cluster, decided 2026-10-17), **R55** (digit groups in drawn results: half a day, render only, no key moved), **R49** (Settings rows), **R50b** (the palette the owner picked from R50a's mockup), **R57** (the decimal comma as a setting, on R49's page pattern).
-3. **R4a** (Find on Math), **R4b** (Vars, Memory, the user keys), **R53** (results mode on the View key, after S9's note), **R36** (why the mark; G22 is merged by then), **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (needs G26).
-4. The unit pad: **R24b** (when the owner accepted S5's arrangement) → **R24c** (when R24a, R24b, R28, G16, G17 and G25 are merged) → **R24d** (after R4b).
-5. annabell by day: **A9** and **A11** (Paste and Share) as soon as a device is connected; **A12** (the defs replay on the Tab One; G29 is merged); **A4b** after R4b; **A7 → A8** on the owner's go (section 0g).
+1. **A14** (the pipeline reads the package files; section 7 goes).
+2. **R15c1 → R15c2 → R15c3 → R15c4** (the R3 top cluster, decided 2026-10-17), **R55** (digit groups: half a day, render only), **R49** (Settings rows), **R50b** (the palette the owner picks from R50a's mockup), **R57** (the decimal comma, on R49's page pattern).
+3. **R4a** (Find on Math), **R4b** (Vars, Memory, the user keys), **R53** (results mode on the View key), **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40**.
+4. The unit pad: **R24b** → **R24c** → **R24d** (after R4b).
+5. annabell by day: **A9** and **A11** as soon as a device is connected; **A12** (G29 is merged); **A4b** after R4b; **A7 → A8** on the owner's go.
+6. After S6: **R59** (also after R4b; G33 is merged), **R38a → R38b** (the owner's yes to S6's proposal first).
 
-**At night** (section 0c): the gorge lane, the parser-only ron packages, the sandra docs packages and the review-only merges. Nothing that needs an APK, a device or an eye on the UI. The feature-analysis packages of section 0h join both: R56, G29, R54, G30 and R58 at night, R55, R57, A11 and A12 by day.
+**At night** (section 0c): the sandra docs packages (S6, S8) and the review-only merges. Nothing that needs an APK, a device or an eye on the UI. The gorge lane has no open package: G21b waits for the owner (decisions.md "Needs the user", G21).
 
 **Why this order:**
-- A10 first: without it every pipeline run fails its Vitest check (the qalc tarball dir) and nine packages cannot start (combined blocks). It is the only package that runs before the pipeline is whole.
-- Bugs first (feedback.md): R48 is small and touches no key R15c moves; R48 before R15c3, whose Alpha faces follow its rule. A9 waits only for the phone.
+- A14 first: until it is merged every package text lives twice.
 - R15c goes first among the feel packages: it changes keys the hand is learning (docs/03 rule 8). R4b sets the user keys, R53 uses the View key, R41 labels the keys, so all wait for it.
-- G16 before G22: both change `app/src/engine/host.ts` and `protocol.ts`.
-- Silent wrong answers next (principle 3): R51, R39, G22, G23, G14 lead the night queue after the unit evaluator's successors.
-- Trust features after the code they build on: R36 after G22; R33 and R37 after Find; R40 after G26 and R12b's tokens.
-- S7 (the docs diet) runs alone, on a night when nothing else is queued after it, because it moves the texts every package edits.
-- Feature analysis (section 0h): R56 is a bug (a stored function stops being callable after a relaunch), so it leads the night queue's open steps; G29 before S4's import and R38b's restore grow the log the replay reads; R55 before R49 because it is half a day of render code the owner then reads every day; R57 after R49 (its page pattern) and R50b (the palette lands first); R58 waits for the owner's check of G2 item 45.
-- The start-chunk budget has 1.02 kB gzip left (52.98 of 54 kB, the `phase-1` build of 2026-10-18; docs/04 8.3): every UI package reports its delta.
+- R55 before R49: half a day of render code the owner then reads every day; R57 after R49 (its page pattern) and R50b (the palette lands first).
+- Trust features after the code they build on: R33 and R37 after Find; R40 after G26 and R12b's tokens.
+- The start chunk is 53.16 of 54 kB gzip (G30f1, `99beb2e`; docs/04 8.3): every UI package reports its delta.
+
+### The open packages
+| # | Package | Agent, model | Lane | Starts when merged | Size |
+|---|---|---|---|---|---|
+| [A14](packages/A14.md) | The pipeline reads the package files | annabell, Sonnet | day, first | S7 | ~0.25 d |
+| [R15c1](packages/R15c1.md) | The status line takes Apps, Menu and the views | ron, Sonnet | day | A14 | ~0.75 d |
+| [R15c2](packages/R15c2.md) | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | day | R15c1 | ~1.5 d |
+| [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | R15c2 | ~0.5 d |
+| [R15c4](packages/R15c4.md) | First-start tips | ron, Sonnet | day | R15c2 | ~0.5 d |
+| [R55](packages/R55.md) | Digit groups in drawn results | ron, Sonnet | day | R15c4 | ~0.5 d |
+| [R49](packages/R49.md) | Settings as a list of rows, each with its own page | ron, Sonnet | day | R15c4 | ~0.75 d |
+| [R50b](packages/R50b.md) | The picked palette in the app | ron, Sonnet | day | the owner's pick from R50a, and R49 | ~0.5 d |
+| [R57](packages/R57.md) | The decimal comma as a setting | ron, Sonnet | day | R49 and R50b | ~1 d |
+| [R4a](packages/R4a.md) | Find on Math (EN1, part 1; backlog m4 step 8) | ron, Sonnet | day | R15c chain (path step 2) | ~2 d |
+| [R4b](packages/R4b.md) | Vars, Memory and the user keys from Find (EN1, part 2) | ron, Sonnet | day | R4a and R15c3 | ~1 d |
+| [R53](packages/R53.md) | Results mode on the View key (P16, S9) | ron, **Opus** | day | R15c2 and R4b | ~1.5 d |
+| [R36](packages/R36.md) | A picked row says why it has its mark | ron, Sonnet | day | G22 (merged) | ~0.5 d |
+| [R33](packages/R33.md) | Names with a value, marked on the line | ron, Sonnet | day | R4b | ~0.5 d |
+| [R37](packages/R37.md) | The angle check | ron, Sonnet | day | R33 | ~0.75 d |
+| [R12b](packages/R12b.md) | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | day | R4b and R53 | ~1.5 d |
+| [R12c](packages/R12c.md) | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | day | R12b | ~1 d |
+| [R41](packages/R41.md) | Key labels for TalkBack | ron, Sonnet | day | R12c | ~0.5 d |
+| [R40](packages/R40.md) | Muted digits past a constant's uncertainty | ron, Sonnet | day | R41 (G26 merged) | ~0.5 d |
+| [R24b](packages/R24b.md) | The unit pad drawn over the keys | ron, Sonnet | day | now (S5 accepted, R24a merged) | ~1 d |
+| [R24c](packages/R24c.md) | The unit view entry: slots, Enter, evaluation | ron, **Opus** | day | R24b | ~1 d |
+| [R24d](packages/R24d.md) | Find in a slot and the user cells | ron, Sonnet | day | R24c and R4b | ~0.5 d |
+| [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b and S6 | ~0.5 d |
+| [R38a](packages/R38a.md) | The backup: export everything | ron, Sonnet | day | S6, and the owner's yes to its proposal | ~0.5 d |
+| [R38b](packages/R38b.md) | The backup: restore from a file | ron, **Opus** | day | R38a | ~0.75 d |
+| [A9](packages/A9.md) | Key vibration on the owner's phone (F41) | annabell, Sonnet | day (device) | the owner's phone connected | ~0.5 d |
+| [A11](packages/A11.md) | Paste and Share on Android | annabell, Sonnet | day (device) | a device connected | ~0.5 d |
+| [A12](packages/A12.md) | The defs replay re-measured on the Tab One | annabell, Sonnet | day (device) | the Tab One connected | ~0.25 d |
+| [A4b](packages/A4b.md) | Find timing on the Tab One (backlog m4 step 12) | annabell, Sonnet | day (device) | R4b; the Tab One connected | ~0.25 d |
+| [A7](packages/A7.md) | Release signing and the version number | annabell, Sonnet | any time | the owner's go | ~0.5 d |
+| [A8](packages/A8.md) | The release workflow | annabell, **Opus** | day | A7 | ~0.5 d |
+| [S7](packages/S7.md) | The docs diet | sandra, Opus | night, alone | S5 | ~0.5 d |
+| [S6](packages/S6.md) | Files in and out without INTERNET: the backup | sandra, Opus | night | S7 | ~0.5 d |
+| [S8](packages/S8.md) | The outside-test protocol | sandra, Opus | night | S6 | ~0.25 d |
+
+**Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package: R15c2 (it moves keys every test names), R53 (it hides the keypad; a wrong state leaves no keys), R24c (pad, slots and evaluation together), R38b (it overwrites stored data), A8 (the signing key on a machine we do not own); sandra runs Opus. Sonnet elsewhere: each follows an existing pattern and its tests pin it. The audit model follows P17.
+
+**Not packaged yet:** the unit result view (backlog m5 item 4: value, mark, unit, dimension, one-tap alternatives, `units.targets`, the `\res` chip back to Home), now that G16 and G25 are merged; milestone 6 (EN5–EN7, Help). **Not a package:** the MathLive bug report (backlog "Upstream reports"); the largest system font is in R41.
+
+**How to start a package** (from any checkout, one at a time by day):
+```bash
+scripts/pipeline.sh <ron|gorge|annabell|sandra> "<ID>" --model <sonnet|opus>   # the table gives agent and model; the audit model follows P17
+scripts/pipeline.sh <agent> "<ID>" --no-worker                                 # a finished branch: review-only merge
+scripts/pipeline.sh <agent> "<ID>" --dry-run                                   # see the bundle first
+```
+The RESULT line says `MERGED <commit>`, `NOT MERGED (<why>)` or `LIMIT`. A package left unmerged keeps its branch and worktree; the same command resumes it.
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14; pipeline 2026-10-18; queue rewritten 2026-10-18 evening, after the night check)
 The owner plans each night in advance, and the queue below is the next nights'. `scripts/night.sh` runs it (rules section 4): for every decision it starts a fresh henri (Sonnet, Read-only) who sees this section and the log's tail and replies with one `scripts/pipeline.sh` line; the script runs that line and asks again. **henri executes and decides nothing.** **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it; whatever is not done stays in the queue for the next night, which resumes from the log. The night queue holds what needs no APK, no device and no eye on the UI (owner, 2026-10-18): the gorge lane, the parser-only ron packages (R28, R24a, R56, R54), the sandra docs packages (S7, S6, S8) and the review-only merges of finished branches. The rest of the ron lane runs by day. The first night (2026-10-18) merged 22 packages; its check is [research/night-shift-check-2026-10-18.md](../research/night-shift-check-2026-10-18.md); A13 (its pipeline fixes) is merged.
 
@@ -40,7 +87,7 @@ The owner plans each night in advance, and the queue below is the next nights'. 
 8. **A step that ends without a RESULT line** (the pipeline died: a busy lock, a dirty phase-1 worktree; A10 makes every exit print one): henri runs the same step once more; if the log then shows it twice without a RESULT, he skips it and goes on. **Worker gone without a report** (no commit): the pipeline logs `NOT MERGED (no commits)` and keeps the worktree; henri runs the same step once more (the pipeline resumes the branch). If that one also fails, go on with the next package.
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`.
 
-### The queue (the next nights; S5 must be merged by the owner)
+### The queue (the next nights)
 Estimates are wall-clock guesses. A package already merged by day is skipped (log it). A step whose prerequisite is not merged (the "after" column) is skipped for that night and stays in the queue. The audit model follows rule 1 (Opus for gorge). The order is by importance (the bug, the budget miss, then the unit chain, then the gains), then by what each needs.
 
 | Step | What | Agent, model | Branch | After | Est. |
@@ -52,7 +99,7 @@ Estimates are wall-clock guesses. A package already merged by day is skipped (lo
 | 19 | **Opus pass 5** (the last) on what came after pass 4, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 20 | Shift report, then stop | — | — | — | 10 min |
 
-Not at night: the rest of the ron lane (by day; section 0), with R55, R57 (section 0h: the owner looks at them) and R59 (the library rows, after G33, R4b and S6); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); R38a and R38b (their texts are completed by S6's report).
+Not at night: the ron lane (by day; section 0); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); R59, R38a and R38b (their texts are completed by S6's report).
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model <sonnet, or opus for gorge>`: the next queue step not done (skip steps the table or the log marks merged or skipped, and steps whose "after" is not merged).
@@ -63,10 +110,10 @@ Not at night: the rest of the ron lane (by day; section 0), with R55, R57 (secti
 
 ### Opus pass (instructions for the Opus agent)
 You are the shift's quality gate and its decision-maker; henri executes your reply literally. Work in the worktree where `phase-1` is checked out (the pipeline tells you which); no code changes.
-1. For each package: its block in section 7, its report (`git log -1 <merge>^2`, or the branch tip if unmerged), its diff (`git diff <merge>^1 <merge>`), and the audit's verdict from `.coord/log.md`.
+1. For each package: its package file (`docs/shifts/packages/<ID>.md`), its report (`git log -1 <merge>^2`, or the branch tip if unmerged), its diff (`git diff <merge>^1 <merge>`), and the audit's verdict from `.coord/log.md`.
 2. Run once on `phase-1` (from `app/`, with absolute `GIAC_OUT`, `PASCALINE_DL_DIR` and `PASCALINE_QALC_DL_DIR`): typecheck, `npm run index` then `FIND_INDEX=required npm test`, e2e, and the golden gate when engine or parser code changed. Take `tools/devlock.sh acquire host-cpu opus 1800` around them.
 3. Check what an audit tends to miss: wrong or invented expected values (sources), a missing round trip, silent wrong numbers or marks (principle 3), scope, keys that moved, tests that pass for the wrong reason.
-4. Decide each "Needs a decision" item of these packages and each open question from the log: a default within the plan goes into `docs/decisions.md` (rules section 9); a plan change goes under "Needs the user" with your recommendation in one sentence. Apply the "For shared files" text of the packages' reports and remove each merged package's block from section 7 and its row from its table. Commit those doc changes on `phase-1` with `git commit -s` and the Opus trailer, under `tools/devlock.sh acquire integ opus 600` (A10).
+4. Decide each "Needs a decision" item of these packages and each open question from the log: a default within the plan goes into `docs/decisions.md` (rules section 9); a plan change goes under "Needs the user" with your recommendation in one sentence. Apply the "For shared files" text of the packages' reports, delete each merged package's file (until A14 is merged, also its block in section 7) and its row from section 0's table, and run `node tools/docs-check.mjs`. Commit those doc changes on `phase-1` with `git commit -s` and the Opus trailer, under `tools/devlock.sh acquire integ opus 600` (A10).
 5. Reply in exactly this form, nothing before `OPUS PASS` and nothing after NOTES, and no backtick or `$` in a FIX prompt (`night.sh` refuses the line; name files and code in plain words). Never edit a DECIDED entry of decisions.md on a proposal that is still OPEN; put the change under the proposal. One FIX line per needed fix package; fix IDs are `<ID>f1`, `<ID>f2`:
 ```
 OPUS PASS <n>
@@ -80,159 +127,8 @@ henri runs each FIX as a package, then continues with QUEUE.
 ### Shift report (the last step)
 `docs/shifts/<date>-night-report.md`, short and plain, from the log (`scripts/pipeline.sh report` starts a fresh writer with the log's night section on stdin): what was merged (with commits); what is unmerged and why; the Opus passes' NOTES; what the owner must do (items under "Needs the user"); the queue left for the next night. Commit it on `phase-1` with `git commit -s` and the Sonnet trailer. Never push.
 
-## 0b. Milestone 4a packages (P11, signed off by the owner 2026-10-13): **do these first**
-Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the UI plan ([05-ui-plan.md](../05-ui-plan.md); its **section 7 wins** where it differs). Backlog "Milestone 4a" is binding. The m4 packages of 0a (R4a, R4b, A4b) run between R12a and R12b (section 0, "The path").
-
-| # | Package | Agent, model | Branch | Start when merged | Lane | Size |
-|---|---|---|---|---|---|---|
-| R48 | Shift + Alpha: the faces show lower case (F40) | ron, Sonnet | `p1/ron-m4a-lowerfaces` | A10 | night (the owner, 2026-10-18) | ~0.25 d |
-| A9 | Key vibration on the owner's phone (F41) | annabell, Sonnet | `p1/annabell-haptics` | the owner's phone connected | day | ~0.5 d |
-| R15c1 | The status line takes Apps, Menu and the views | ron, Sonnet | `p1/ron-m4a-statusline` | R48 | day | ~0.75 d |
-| R15c2 | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | `p1/ron-m4a-cluster` | R15c1 | day | ~1.5 d |
-| R15c3 | The user keys' Alpha layer | ron, Sonnet | `p1/ron-m4a-useralpha` | R15c2 | day | ~0.5 d |
-| R15c4 | First-start tips | ron, Sonnet | `p1/ron-m4a-tips` | R15c2 | day | ~0.5 d |
-| R49 | Settings as a list of rows, each with its own page | ron, Sonnet | `p1/ron-m4a-settings` | R15c4 (it adds a Settings row) | day | ~0.75 d |
-| R50b | The picked palette in the app | ron, Sonnet | `p1/ron-m4a-palette` | R50a picked by the owner, and R49 | day | ~0.5 d |
-| R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-tokens` | R12a merged, R4b, R53 | day | ~1.5 d |
-| R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | day | ~1 d |
-| R53 | Results mode on the View key (P16; S9 decided 2026-10-18) | ron, **Opus** | `p1/ron-m4a-results` | R15c2, R4b | day | ~1.5 d |
-
-**Why these models:** Opus where a mistake breaks entry for every later package: R15c2 (moves keys that every test names), R53 (hides the keypad and adds the viewport's controls; a wrong state leaves no keys). Sonnet elsewhere, with the audit model of P17 (Opus when the diff touches the parser, the engine or `spec/keyboard.yaml`).
-
-## 0a. Work packages (milestone 4), between R12a and R12b
-Goal: milestone 4 of P8, built to [04-architecture.md](../04-architecture.md). The task text in `docs/backlog.md` "Engineer core, milestone 4" is binding. Each package names its backlog step; § numbers point into docs/04. R4 is split in two; A4b is the second device run (the first, A4a, is done); where 0d says "R4 merged", read R4a and R4b.
-
-| # | Package | Backlog step | Agent, model | Branch | Start when merged | Lane | Size |
-|---|---|---|---|---|---|---|---|
-| R4a | Find on Math (EN1, part 1) | 8 | ron, Sonnet | `p1/ron-m4-find` | R12a merged (the owner looks at the mockups meanwhile) | day | ~2 d |
-| R4b | Vars, Memory and the user keys from Find (EN1, part 2) | 8 | ron, Sonnet | `p1/ron-m4-vars` | R4a and R15c3 | day | ~1 d |
-| A4b | Find timing on the Tab One | 12 | annabell, Sonnet | `p1/annabell-m4-find` | R4b; Tab One connected | day | ~0.25 d |
-
-### How to start a package
-From any checkout of the repo, one at a time by day (owner, 2026-10-18):
-
-```bash
-export PASCALINE_QALC_DL_DIR=/home/nordmu/Documents/source99/pascaline/engine/qalc/_downloads   # until A10 is merged
-scripts/pipeline.sh <ron|gorge|annabell|sandra> "<ID>" --model <sonnet|opus>      # the table gives agent and model; the audit model follows P17
-scripts/pipeline.sh <agent> "<ID>" --no-worker                                    # a finished branch: review-only merge (A10)
-scripts/pipeline.sh <agent> "<ID>" --dry-run                                      # see the bundle first
-```
-
-The RESULT line says `MERGED <commit>`, `NOT MERGED (<why>)` or `LIMIT`. A package left unmerged keeps its branch and worktree; the same command resumes it.
-## 0e. The gorge lane: milestone 5's engine work, beside the ron lane (owner, 2026-10-14)
-Backlog milestone 5 items 1–3, and C9, with no UI: an evaluator, its rules, data and marks. They run as the night queue (0c), because R24c needs items 1 and 2. P11's reason for doing milestone 4a first (Find and the unit view sit on the keypad and the screen) does not touch them.
-
-**P15 (decisions.md; the owner, 2026-10-14; G15's check passed 2026-10-15):** the unit view computes on Giac, in the worker that is already loaded, with the exact factors of the Find index. libqalculate stays at build time, as the index's source. The qalc-worker fallback (G10–G12) was written for the case that P15 fell; it held, and the texts were removed on 2026-10-18 (git history, commit before P17).
-
-Where 0d says "milestone 5 items 1–2 (U1, U2) merged", read G16, G17, G25 and R28. New gorge ids start at G10, because G8 and G9 are ids in the backlog's G2 follow-ups; the deep-dive packages G19–G24 and G26 are in 0f.
-
-| # | Package | Backlog | Agent, model | Branch | Start when merged | Lane | Size |
-|---|---|---|---|---|---|---|---|
-| R28 | Units mode in the parser | m5 item 2 (ron half) | ron, **Opus** | `p1/ron-m5-unitparse` | R24a and G16; before R24c | night | ~1 d |
-
-**Why these models:** G16 is the arithmetic every unit result rests on (Opus). G17, G18, G25, G13 and G14 follow G16's pattern or the golden gate, and their cases pin them (Sonnet, Opus pass at night). R28 adds parser rules with round trips (Opus, as R14 and R18).
-
-## 0d. Packages from the owner's discussion of 2026-10-14 (the Alpha keys, Find, the unit pad, the laptop connection)
-Each waits for what its row says; none changes the 0b packages or their order. Background: [feedback.md](../feedback.md) #40–#44, decisions.md "The letters stay" and P14 (decided 2026-10-14), [research/r9-unit-pad.md](../research/r9-unit-pad.md), backlog "Parked ideas" (the laptop connection).
-
-**The unit pad is built in small packages** (owner, 2026-10-14: a session should not run out of tokens): one concern each, about a day or less, with its own short reading list. Read only what your package names. In order: S5 finds the arrangement; G7 puts every id in Find; R24a to R24d build the entry. R24a needs no UI and can start as soon as G7 is merged.
-
-| # | Package | Agent, model | Branch | Start when | Lane | Size |
-|---|---|---|---|---|---|---|
-| S5 | The unit pad's arrangement and its user cells (research) | sandra, Opus | `p1/sandra-padlayout` | merged by the owner (2026-10-18; P14 arrangement accepted) | owner | ~1 d |
-| R24b | The pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | the owner accepted S5's arrangement; R21a merged | day | ~1 d |
-| R24c | The unit view entry: slots, Enter, evaluation | ron, **Opus** | `p1/ron-m5-unitview` | R24a, R24b, R28, G16, G17 and G25 merged | day | ~1 d |
-| R24d | Find in a slot and the user cells | ron, Sonnet | `p1/ron-m5-usercells` | R24c and R4b merged | day | ~0.5 d |
-| R59 | The library rows: import and export | ron, Sonnet | `p1/ron-m4-library` | G33, R4b and S6 merged | day | ~0.5 d |
-
-**Why these models:** R24a builds the slot model the parser reads and R24c ties pad, slots and evaluation together, so a mistake there corrupts unit entry everywhere (Opus, as R9 and R18). R24b draws on R21's layer and R24d stores cells as R15b stores the user keys; each follows an existing pattern and its tests pin it (Sonnet). G7 is data and one test (Sonnet). S4 and S5 are research with probes (sandra runs Opus).
-
-**Not packaged yet:** the rest of backlog milestone 5 item 4, the result view (value, mark, unit, dimension, one-tap alternatives, `units.targets`, the `\res` chip back to Home). It gets its packages when G16 and G25 are merged , since their reports fix what a result carries.
-
-## 0f. Packages from the deep-dive review (owner, 2026-10-14)
-The owner asked for a deep dive (feedback #47) and accepted all 24 findings. They are in decisions.md "The deep-dive review", P15 and P5. **Each package is small:** one concern, about a day or less, with its own reading list (the owner, feedback #48). Read only what your package names.
-
-The order is by importance, then by what each needs (section 0, "The path"):
-1. silent wrong answers;
-2. robustness;
-3. trust features;
-4. process.
-
-The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "behaviour today" in the package blocks was probed on 2026-10-14, on the dev engine (`tools/probes/engine.ts`, `tools/probes/parse.ts`) or in the code. A10 (the pipeline fixes, P17) is the first package of the process lane.
-
-| # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
-|---|---|---|---|---|---|---|---|
-| A10 | The pipeline fixes and the review-only mode (P17) | architecture pass | first, by day | annabell, Sonnet | `p1/annabell-pipeline` | now | ~0.5 d |
-| R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | G22 (R32, same file, is merged) | ~0.5 d |
-| R33 | Names with a value, marked on the line | review item 15 | day | ron, Sonnet | `p1/ron-m4a-namemarks` | R4b | ~0.5 d |
-| R37 | The angle check | review item 16 | day | ron, Sonnet | `p1/ron-m4a-anglecheck` | R33 | ~0.75 d |
-| R41 | Key labels for TalkBack | review item 19 | day | ron, Sonnet | `p1/ron-m4a-labels` | R12c | ~0.5 d |
-| R40 | Muted digits past a constant's uncertainty | review item 17 | day | ron, Sonnet | `p1/ron-m4a-constdigits` | R41 and G26 | ~0.5 d |
-| R38a | The backup: export everything | review item 18 | day | ron, Sonnet | `p1/ron-m4-backup` | S6, and the owner's yes to its proposal | ~0.5 d |
-| R38b | The backup: restore from a file | review item 18 | day | ron, **Opus** | `p1/ron-m4-restore` | R38a | ~0.75 d |
-| S7 | The docs diet | review item 20 | night, alone | sandra, Opus | `p1/sandra-docsdiet` | S5 merged; the last package of its night | ~0.5 d |
-| S6 | Files in and out without INTERNET: the backup | review item 18 | night | sandra, Opus | `p1/sandra-files` | S7 | ~0.5 d |
-| S8 | The outside-test protocol | review item 24 | night | sandra, Opus | `p1/sandra-outside` | S6 | ~0.25 d |
-
-**Why these models:**
-- **Opus:**
-  - R51 and R39 change parser rules, and a slip there computes a different number (as R14 and R18).
-  - G26 is precision maths every inexact constant passes through.
-  - R38b overwrites the user's stored data.
-  - The sandra packages are research and rewriting (sandra runs Opus).
-- **Sonnet:** everything else follows an existing pattern and is pinned by its tests. G32 and G33 follow G17's and `defs.ts`'s patterns; the night audit of a gorge package is Opus (P17 point 3, revised 2026-10-18).
-
-**Not a package:**
-- The MathLive bug report (review item 23) is in backlog "Needs the user" item 6.
-- The largest-font check (item 19) was done in A4a; what breaks is in decisions.md "A4a" point 4.
-
-## 0g. The release path (owner, 2026-10-15)
-The goal: pushing a tag `vX.Y.Z` builds, gates, signs and publishes the APK on GitHub, from clean source and with the owner's key, never from the laptop. The owner has stored the keystore secrets in the GitHub repo (2026-10-15). Found in the code on 2026-10-15:
-- `android/app/build.gradle` lines 23–37 know only the alias `throwaway`, and fall back to the password `pascaline-throwaway`.
-- `build.sh` lines 75–88 sign with the throwaway key unless `--unsigned` is passed. There is no release mode, so a release could silently get the throwaway key.
-- `versionCode 1` / `versionName "1.0"` are placeholders. The F-Droid draft says 0.2.0 / 2.
-- There is no `.github/`.
-
-| # | Package | Lane | Agent, model | Branch | Start when merged | Size |
-|---|---|---|---|---|---|---|
-| A7 | Release signing and the version number | any time | annabell, Sonnet | `p1/annabell-release` | the owner's go | ~0.5 d |
-| A8 | The release workflow | any time | annabell, **Opus** | `p1/annabell-releaseci` | A7 | ~0.5 d |
-
-**Defaults (proposed 2026-10-15; the owner confirms them with the table below):**
-- The first release is **v0.1.0, versionCode 1, a GitHub pre-release**.
-- The version is written as literal numbers in `build.gradle`, not derived from the tag. The F-Droid draft (`UpdateCheckMode: Tags`, `AutoUpdateMode: Version`) reads it there (docs/02 section 8). The workflow fails when the tag is not `v<versionName>`.
-- The golden gate runs on the release engine **before** anything is signed.
-- Pushing the tag is the owner's act; no agent pushes a tag.
-
-**The owner fills in before A7 starts** (names only; the values stay in GitHub):
-
-| What | GitHub secret name | Note |
-|---|---|---|
-| keystore, base64 | `TODO` | `base64 -w0 release.jks` |
-| store password | `TODO` | |
-| key alias | `TODO` (secret or plain value) | |
-| key password | `TODO` | same as the store password? |
-| certificate SHA-256 | (plain, goes in the repo) | `keytool -list -v -keystore release.jks` → `SHA256:` line |
-
-## 0h. Packages from the feature analysis (owner, 2026-10-18)
-A read-and-probe pass over the app on `phase-1` (sandra, 2026-10-18: the dev engine through `tools/probes/engine.ts` and `parse.ts`, a formatter probe, the gallery) against four sources: frictions in daily engineering tasks, gaps in milestones 4–6, silent-wrong-answer risks, and what the engine already has. Nine candidates passed docs/03 section 0 and the owner's answers (decisions.md "Feature analysis 2026-10-18"); six were dropped there. **Each package is small:** one concern, about a day or less, with its own reading list.
-
-The order is by importance, then by what each needs: the bug first, then the budget miss, then the entry and display gains, then the one that waits for a check on the reference calculator.
-
-| # | Package | Source | Lane | Agent, model | Branch | Start when merged | Size |
-|---|---|---|---|---|---|---|---|
-| A12 | The defs replay re-measured on the Tab One | A4a point 2 | day (device) | annabell, Sonnet | `p1/annabell-replay` | G29; the Tab One connected | ~0.25 d |
-| A11 | Paste and Share on Android (the Capacitor clipboard and share plugins) | A4a point 5 | day (device) | annabell, Sonnet | `p1/annabell-clipboard` | A10; a device connected | ~0.5 d |
-| R55 | Digit groups in drawn results | G2 item 15; principle 3 | day | ron, Sonnet | `p1/ron-m4a-digitgroups` | R15c4 | ~0.5 d |
-| R57 | The decimal comma as a setting | the owner types with a comma daily | day | ron, Sonnet | `p1/ron-m4a-decimalcomma` | R49 and R50b | ~1 d |
-| R58 | CAS letters lower case on Alpha (conditional) | G2 item 45 | night | ron, Sonnet | `p1/ron-m4a-casalpha` | G2 item 45 answered "lower case", and R48 | ~0.25 d |
-
-**Why these models:** R54 decides what a name followed by a bracket means and adds a template with its parser round trips (Opus, as R51 and R39). The rest follow a pattern and are pinned by their tests (Sonnet; the audit model follows P17).
-
-**Dropped in the analysis** (one line each, so nobody proposes them again without new evidence): a float fallback for Σ over thousands of terms (one timeout on a stale branch, 329 ms on `phase-1`); refusing Store ▶ into `i` (Giac accepts `i:=2` and ignores it, `i^2` stays −1); Enter on an empty line repeating the last entry (no G2 source, no reported friction); the unit-chunk size rule (already fixed, `app/scripts/size-check.ts:97`); a `stdev` naming trap (handled in `find/functions.yaml`); formatter rounding at 999.99… and the prefixes beyond Q (correct in the probe).
-
 ## 2. Read before you start (every package)
-The pipeline hands you a bundle: your block from section 7, the first 400 lines of every file the block names by repo path, the report format below and the definition of done of section 8. Read further files by section (`grep -n '^#' <file>`, then the range), never whole files: every file you read is sent again on every later turn. The big shared docs are named in the blocks by bare name on purpose (`decisions.md "R15c"`, `backlog.md item 37`), so they stay out of the bundle: open only the section named.
+The pipeline hands you a bundle: your package file (`docs/shifts/packages/<ID>.md`), the first 400 lines of every file the block names by repo path, the report format below and the definition of done of section 8. Read further files by section (`grep -n '^#' <file>`, then the range), never whole files: every file you read is sent again on every later turn. The big shared docs are named in the blocks by bare name on purpose (`decisions.md "R15c"`, `backlog.md item 37`), so they stay out of the bundle: open only the section named.
 - Your worktree and branch exist (`p1/<name>-<slug>` from `phase-1`, made by the pipeline); never switch branches in the main checkout. The shared paths and locks of rules section 5 (`GIAC_OUT`, `PASCALINE_DL_DIR`, `PASCALINE_QALC_DL_DIR`, `tools/devlock.sh` for heavy work) are set by the pipeline.
 - [04-architecture.md](../04-architecture.md) sections 0 and 8, and the sections your package names. Where docs/04 and docs/02 differ, docs/04 wins.
 - **From 2026-10-13:** `docs/decisions.md` P11, docs/03 section 0 rules 5–13 (they bind every package: one interaction model, keys never move, vertical space, removal tests), `docs/05-ui-plan.md` with its section 7, and `docs/feedback.md`.
@@ -253,26 +149,17 @@ End with a commit whose message body is the report. The audit and the Opus pass 
 Then reply as the pipeline's prompt asks (at most five lines). Nobody is waiting for messages.
 
 ## 7. Packages
-One block per package, in the shape the pipeline bundles: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; day = the owner tries it); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff). A finished package's block is removed by the Opus pass.
+The pipeline's copy of [packages/](packages/) until A14 is merged: edit a package here and in its file (`node tools/docs-check.mjs` fails when they differ); A14 deletes this section. The shape of a block: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; day = the owner tries it); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
-### annabell, A10: the pipeline fixes and the review-only mode (P17), branch `p1/annabell-pipeline`
-**Lane:** night-safe (scripts and tools only; no device), but it runs **first, by day**, because nothing else merges before it. Start it with `PASCALINE_QALC_DL_DIR=/home/nordmu/Documents/source99/pascaline/engine/qalc/_downloads` exported in the shell: the running pipeline needs it for its own Vitest check (fix 1 below).
-**Read:** `scripts/pipeline.sh`, `scripts/night.sh`, `scripts/gc.sh`, `tools/devlock.sh`, `tools/devlock.test.sh` (the pattern for a shell test), `app/playwright.config.ts` (`PW_PORT`), `tools/find-index/generate.mjs` lines 36–60 (the tarball dirs), decisions.md P17, rules.md section 4, this brief's sections 0c and 2.
-Evidence (`docs/shifts/2026-10-18-archpass-report.md`, section "Pipeline findings"): in a worktree `npm run index` fails with `missing …/engine/qalc/_downloads/libqalculate-5.13.1.tar.gz (set PASCALINE_QALC_DL_DIR)`; `scripts/pipeline.sh ron R12c --dry-run` exited 1 with no message (the heading said "branches"); `ron R15c3 --dry-run` said "has no heading"; no RESULT line is printed by `die`; `git merge-tree` shows `p1/gorge-m5-unitcore` conflicts with phase-1 in `tests/golden/README.md`.
-Commits in this order:
-1. **Test first:** `scripts/pipeline.test.sh` (no agent is started): for every `### <agent>, <ID>:` heading of brief section 7 in the phase-1 worktree, `scripts/pipeline.sh <agent> <ID> --dry-run` exits 0 and prints the heading's branch; a made-up ID exits 2 with a message naming it; with `PASCALINE_QALC_DL_DIR` unset the dry run still prints the dir it will export. The test fails on today's script.
-2. **Environment:** export `PASCALINE_QALC_DL_DIR="${PASCALINE_QALC_DL_DIR:-$main/engine/qalc/_downloads}"` beside `PASCALINE_DL_DIR`; `PW_PORT=$((5200 + n % 100))` exported to the worker, the fix rounds and the checks.
-3. **No silent exit:** the branch lookup from the heading never fails the script silently; a heading without `branch \`…\`` or an ID without a heading ends in `die` with the ID and the file named.
-4. **A RESULT line on every exit:** `die` prints `RESULT #<n> <ID>: NOT MERGED (<why>)` (or `RESULT -: NOT STARTED (<why>)` before a run number exists) to stdout and logs one line; the lock wait stays 1800 s. `night.sh`: a pipeline command whose output has no RESULT line counts like `NOT MERGED`; the same command twice without a RESULT is logged `SKIPPED` and henri is told so through the log (rule 8 of section 0c).
-5. **`--no-worker`** (review-only): the branch must exist; its worktree is reused or made; `git merge phase-1` into it first (a conflict is a fix round for `<agent>` with the conflict markers' files as the failing output; the worker resolves and commits); then the checks, the audit and the merge as today. The run's ID is the package's; the bundle is the block as usual (the auditor's criteria).
-6. **`--audit-model auto`** (the new default): `opus` when `--model opus` or `git diff --name-only phase-1...HEAD` touches `app/src/input/`, `app/src/engine/`, `engine/` or `spec/keyboard.yaml`, else `sonnet`. `night.sh`'s henri commands pass `--audit-model sonnet` explicitly (0c).
-7. **Locks:** `tools/devlock.sh acquire integ pipeline-<n> 600` around the merge into phase-1 and, in the `pass` subcommand's prompt, the instruction to take `integ` around the doc commit. `gc.sh` runs its path audit in the phase-1 worktree (`integ_dir`), not in the main checkout.
-8. **Docs in the report:** the text for CLAUDE.md's pipeline lines (`--no-worker`, `--audit-model`, the two tarball dirs), rules.md section 4 (the options and the review-only step) and this brief's section 8 (the env line).
+### annabell, A14: the pipeline reads the package files, branch `p1/annabell-pkgfiles`
+**Lane:** night-safe (scripts and docs only), but it runs **first, by day**, right after S7: until it is merged every package text lives twice, in brief section 7 and in `docs/shifts/packages/` (`node tools/docs-check.mjs` checks they are the same). **Starts when:** S7 is merged.
+**Read:** `scripts/pipeline.sh` (the spec lookup, about lines 130–150, and the bundle's report part); `scripts/pipeline.test.sh`; `tools/docs-check.mjs`; S7's report (`git log` of its merge: the exact change to `scripts/pipeline.sh` and the texts below); rules.md section 4 point 1; this brief's header and sections 0c, 2 and 8a.
+1. **Test first:** `scripts/pipeline.test.sh` runs the dry run for every file of `docs/shifts/packages/` in the phase-1 worktree (agent, ID and branch from the file's first line) instead of every heading of section 7; a made-up ID still exits 2 with a message naming it. It fails on today's script once section 7 is gone.
+2. **The lookup:** an ID's spec is `docs/shifts/packages/<ID>.md` in the phase-1 worktree, whose first line is the heading the branch is read from; a missing file ends in `die` naming the ID and the path. The bundle's report part ends at `## 8.` instead of `## 7.`. The header comment says so.
+3. **The texts:** delete brief section 7 and the sentences that call it the pipeline's copy (the header, 0c's Opus pass point 4, 8a); rules.md section 4 point 1 and the agents' files say "the package file" (exact text in S7's report; the agents' files as text in the report).
 **Done when:**
-- `scripts/pipeline.test.sh` passes on the branch and fails on phase-1's script (both runs in the report).
-- `scripts/pipeline.sh gorge G16 --dry-run` and `ron R15c3 --dry-run` print a bundle each.
-- Every `exit` path of pipeline.sh prints one RESULT line (grep the script: no `die` without it).
-- `--no-worker`, `--audit-model auto` and `PW_PORT` are in the header comment and in `--dry-run`'s command list.
+- `scripts/pipeline.test.sh` passes on the branch; `scripts/pipeline.sh ron R15c1 --dry-run` prints a bundle whose task is `docs/shifts/packages/R15c1.md`.
+- The brief has no section 7 and `node tools/docs-check.mjs` passes (the whole brief ≤ 25 kB).
 - No application code is changed (`app/src/` untouched).
 
 ### ron, R15c1: the status line takes Apps, Menu and the views, branch `p1/ron-m4a-statusline`
@@ -457,9 +344,9 @@ Commits in this order:
 **Lane:** day. **Opus.** **Starts when:** R24a, R24b, R28, G16, G17 and G25 are merged.
 **Read:** `docs/research/r9-unit-pad.md` sections 2.1, 2.7 and 2.8; docs/04 4.3 and 5.5 point 2 (the slot owns the key while it is active); the reports of R24a, R24b, R28 and G16; `app/src/units/types.ts`; `app/src/units/calc.ts` (`Calc.units()` lazy); `app/src/calc/engine.ts` (`EngineCalc` takes the index as an option: wire it); `app/src/App.svelte` (`press()`: the second key owner beside the sheet); `app/src/entry/controller.ts` and `app/src/entry/hwkeys.ts` (the capture `keydown` pattern); `spec/keyboard.yaml` (`unit_slot:`); `tools/probes/unit-presses.mjs`; `tests/tasks/tasks.yaml` (t02, t04).
 - The read-only formula with a slot after every number (docs/04 4.3). Write a slot only with `setPromptValue` from R24a's model: `insert()` with the caret outside a prompt still changes the read-only formula. Keys reach the active slot through `press()`, never through `EntryController.run`; give the unit view's field a capture `keydown` like `entry/hwkeys.ts`, so a hardware key reaches the pad's actions or does nothing. R24a's model per slot, with R24b's pad up while a slot is active. Evaluation through `Calc.units()` with R28's parser output, the result shown as it returns it (the full result view is not packaged yet).
-- The reading in words: add British, American and Johnson to `PROPER` in `app/src/units/slot.ts` ("British thermal unit", decisions.md "Opus pass 15 defaults" point 4), with a test.
+- The reading in words: add British, American and Johnson to `PROPER` in `app/src/units/slot.ts` ("British thermal unit", archive/decisions-2026-10.md "Opus pass 15 defaults" point 4), with a test.
 - `spec/keyboard.yaml`: `unit_slot:` loses `letters`, `symbols`, `ops` and `exponent_leave`; the probe's `--pad` mode becomes its default.
-- **Report:** the shared-file text: docs/04 4.3 rewritten for the pad, the status line at the top of r7, and backlog milestone 5 item 4.
+- **Report:** the shared-file text: docs/04 4.3 rewritten for the pad, the status line at the top of r7, and backlog m5 item 4.
 **Done when:**
 - `app/test/unitpad.spec.ts` by keys and by touch: the units key on a line, on a picked history row, and on an empty line (quantity 1) opens the slots with the pad up; pad presses fill the active slot, and the reading under the formula follows every press; Enter goes to the next slot, Enter in the end slot evaluates, a flick up on Enter evaluates at once; ◀ ▶ move between slots, and Esc keeps the slots with the line; 44 of the probe's 50 units replayed, each within the probe's count.
 - The probe's medians are ≤ 2, with flicks and with taps only; t02 and t04 within their plans (`npm run test:tasks`).
@@ -516,7 +403,7 @@ Commits in this order:
 
 ### annabell, A9: key vibration on the owner's phone (F41), branch `p1/annabell-haptics`
 **Lane:** day (a phone with a motor; take the device lock; not the Tab One). **Starts when:** the owner's phone is connected.
-**Read:** backlog.md item 38 (F41) and feedback.md #50; `app/src/input/haptics.ts`; `app/src/App.svelte` (`touched()`, `dead()`); `app/src/main.ts` (`loadNative()`); `android/app/src/main/java/io/github/buerlino/pascaline/PascalineHapticsPlugin.java` and `android/app/src/main/java/io/github/buerlino/pascaline/MainActivity.java` (its registration); decisions.md "P7" point 3 (the setting and its defaults); `tools/README.md` (devices).
+**Read:** feedback.md #50 (never tried on a phone with a motor: A4a ran on the Tab One, which has none); `app/src/input/haptics.ts`; `app/src/App.svelte` (`touched()`, `dead()`); `app/src/main.ts` (`loadNative()`); `android/app/src/main/java/io/github/buerlino/pascaline/PascalineHapticsPlugin.java` and `android/app/src/main/java/io/github/buerlino/pascaline/MainActivity.java` (its registration); decisions.md "P7" point 3 (the setting and its defaults); `tools/README.md` (devices).
 - **Find the cause first, with logs, not guesses.** Install a measure build (`./build.sh --dev --measure --install <serial>`), switch Key vibration on, tap keys, and read logcat: the plugin logs `PASCALINE_HAPTICS` for every native pulse (measure builds only), and `adb shell dumpsys vibrator_manager` lists recent vibrations. In this order: (1) no `PASCALINE_HAPTICS` line: the native plugin is never used, so every pulse goes to `navigator.vibrate`, which the Android WebView may ignore: check `Capacitor.isPluginAvailable("PascalineHaptics")` and the dynamic import in `loadNative()`; (2) lines, but nothing felt: the pulse is too short or too weak (15 ms at amplitude 128): try longer pulses and full amplitude; on API 29+ `VibrationEffect.createPredefined(EFFECT_TICK)` or `View.performHapticFeedback(KEYBOARD_TAP)`; (3) lines, and dumpsys shows the vibration ignored or scaled to zero: the system's vibration settings (Android 13+ applies its touch-feedback intensity by usage): set the usage on the `VibrationAttributes`.
 - **Fix** the cause found, in the plugin or in `haptics.ts`. If the defaults (50 %, 15 ms) cannot be felt, propose new ones in the report, measured on the phone.
 **Done when:**
@@ -529,19 +416,30 @@ Commits in this order:
 **Done when:** the medians of ≥ 5 runs with device, Android, WebView and build type are in the report and in `.coord/device-runs.jsonl`; the backlog step 12 line and the milestone 4 gate line are ticked or the miss is a proposal in decisions.md.
 
 ### annabell, A7: release signing and the version number, branch `p1/annabell-release`
-**Lane:** night-safe in itself (no device; the real key never touches this machine), but it **starts on the owner's go** with section 0g's secret table filled in.
-**Read:** section 0g of this brief; `build.sh`; `android/app/build.gradle`; `fdroid/io.github.buerlino.pascaline.yml`; `fdroid/README.md`; `tools/devlock.test.sh` (the shell-test pattern).
+**Lane:** night-safe in itself (no device; the real key never touches this machine), but it **starts on the owner's go** with the secret table below filled in. Goal (owner, 2026-10-15): pushing a tag `vX.Y.Z` builds, gates, signs and publishes the APK on GitHub, from clean source and with the owner's key, never from the laptop; the defaults are decisions.md "The release path".
+**Read:** decisions.md "The release path"; `build.sh`; `android/app/build.gradle`; `fdroid/io.github.buerlino.pascaline.yml`; `fdroid/README.md`; `tools/devlock.test.sh` (the shell-test pattern).
 1. **Gradle reads the whole key from the environment:** `PASCALINE_KEYSTORE`, `PASCALINE_KEYSTORE_PASS`, `PASCALINE_KEY_ALIAS`, `PASCALINE_KEY_PASS`. The defaults (`throwaway` / `pascaline-throwaway`) apply only when `PASCALINE_KEY_ALIAS` is unset, so dev builds keep working unchanged. No password or path is committed.
-2. **`./build.sh --release`:** it fails before any build step when one of the four variables is missing, when the keystore file does not exist, or when the alias is `throwaway`; it never creates or falls back to the throwaway key; it refuses `--dev`, `--measure`, `--unsigned` and `--no-units`, allows `--engine-dir` and `--qalc-dir`; after Gradle it runs `apksigner verify --print-certs` and compares the certificate's SHA-256 with `android/release-cert.sha256` (one line, from 0g's table); on a mismatch it deletes the APK and fails; it writes `dist/pascaline-<versionName>.apk` and `.apk.sha256` as well as `dist/pascaline.apk`; the header comment is updated.
+2. **`./build.sh --release`:** it fails before any build step when one of the four variables is missing, when the keystore file does not exist, or when the alias is `throwaway`; it never creates or falls back to the throwaway key; it refuses `--dev`, `--measure`, `--unsigned` and `--no-units`, allows `--engine-dir` and `--qalc-dir`; after Gradle it runs `apksigner verify --print-certs` and compares the certificate's SHA-256 with `android/release-cert.sha256` (one line, from the table below); on a mismatch it deletes the APK and fails; it writes `dist/pascaline-<versionName>.apk` and `.apk.sha256` as well as `dist/pascaline.apk`; the header comment is updated.
 3. **The version:** `versionCode 1` and `versionName "0.1.0"` in `build.gradle`; `tools/check-version.sh vX.Y.Z` (exit 0 when the tag equals `v<versionName>`, else print both and exit 1); the F-Droid draft set to 0.1.0 / `v0.1.0` and 1.
 4. **Report:** the shared-file text for backlog R2 and C4, `fdroid/README.md` (the version item is done), and CLAUDE.md's Commands line for `build.sh` (`--release`).
+**Found in the code (2026-10-15):** `android/app/build.gradle` lines 23–37 know only the alias `throwaway` and fall back to the password `pascaline-throwaway`; `build.sh` lines 75–88 sign with the throwaway key unless `--unsigned` is passed, with no release mode, so a release could silently get the throwaway key; `versionCode 1` / `versionName "1.0"` are placeholders (the F-Droid draft says 0.2.0 / 2); there is no `.github/`.
+**The owner fills in before A7 starts** (names only; the values stay in GitHub; the keystore secrets are stored there since 2026-10-15):
+
+| What | GitHub secret name | Note |
+|---|---|---|
+| keystore, base64 | `TODO` | `base64 -w0 release.jks` |
+| store password | `TODO` | |
+| key alias | `TODO` (secret or plain value) | |
+| key password | `TODO` | same as the store password? |
+| certificate SHA-256 | (plain, goes in the repo) | `keytool -list -v -keystore release.jks` → `SHA256:` line |
+
 **Done when:**
 - `tools/test-release-guard.sh` (no Gradle run) checks each refusal of step 2 and `check-version.sh` on a match (`v0.1.0`) and a mismatch (`v0.1.1`), and passes.
 - `./build.sh --dev --engine-dir … --qalc-dir …` still produces a throwaway-signed APK (the command and its last line in the report).
 
 ### annabell, A8: the release workflow, branch `p1/annabell-releaseci`
 **Lane:** day (the owner pushes the test tag). **Opus** (it handles the signing key on a machine we do not own). **Starts when:** A7 is merged.
-**Read:** section 0g; `build.sh` (after A7); `engine/giac/build-wasm-release.sh` and `engine/qalc/build-wasm.sh` (`CONTAINER_ENGINE`, `NO_LOCK`); `app/scripts/golden.ts`; `tools/check-version.sh`.
+**Read:** decisions.md "The release path"; A7's report (the secret names); `build.sh` (after A7); `engine/giac/build-wasm-release.sh` and `engine/qalc/build-wasm.sh` (`CONTAINER_ENGINE`, `NO_LOCK`); `app/scripts/golden.ts`; `tools/check-version.sh`.
 Write `.github/workflows/release.yml`: trigger `push` of tags `v*` and `workflow_dispatch` with a tag input; runner `ubuntu-24.04` (podman); `permissions: contents: write`, nothing more; `concurrency` per tag; `timeout-minutes: 120`; every action pinned to a full commit SHA with the version in a comment (checkout, setup-java 21, setup-node 22), no other third-party action; the release created with `gh release create` and `GITHUB_TOKEN`. Steps in order: (1) `tools/check-version.sh "$GITHUB_REF_NAME"`; (2) engine and qalc in the pinned container with `NO_LOCK=1`; (3) the golden gate on `engine/giac/_out/release` (absolute `GIAC_OUT`), which must print `GOLDEN GATE PASSED` before the key is decoded; (4) decode the keystore into `$RUNNER_TEMP` (mode 600), then `NO_LOCK=1 ./build.sh --release --engine-dir … --qalc-dir …` with the secrets as `env:` of this step only, never in a `run:` line or `echo`, and an `if: always()` step that deletes the keystore; (5) `gh release create "$TAG" dist/pascaline-<v>.apk dist/pascaline-<v>.apk.sha256 --prerelease` when the major version is 0 or the tag has a `-`, with notes giving the commit, the engine and qalc `SHA256SUMS` and the certificate fingerprint. Not in this package: the PR/CI checks (backlog C3, which builds on A6) and the F-Droid submission (C4).
 Also write `docs/release.md`, the owner's one-page checklist: bump versionCode and versionName (and the F-Droid draft) in one commit on `master`; `git tag -s vX.Y.Z` (or `-a`); `git push origin vX.Y.Z`; watch the run; check the SHA-256 and `apksigner verify --print-certs` on the downloaded APK; install over the last release; what a failed run leaves behind (nothing is published) and how to re-run.
 **Done when:**
@@ -549,7 +447,7 @@ Also write `docs/release.md`, the owner's one-page checklist: bump versionCode a
 - On a throwaway tag `v0.0.1-test` from a test branch (the owner's OK, and the owner pushes it), the run ends with a pre-release whose APK verifies against `android/release-cert.sha256`; then the test release and tag are deleted. Then the owner pushes `v0.1.0`.
 
 ### annabell, A11: Paste and Share on Android, branch `p1/annabell-clipboard`
-**Lane:** day (the Tab One is enough for Paste: WebView 131 denies `readText` there; the owner's phone for Share when it is connected). **Starts when:** A10 is merged and a device is connected; it can share the day with A9. decisions.md "A4a" point 5 (decided 2026-10-18: both plugins).
+**Lane:** day (the Tab One is enough for Paste: WebView 131 denies `readText` there; the owner's phone for Share when it is connected). **Starts when:** a device is connected; it can share the day with A9. decisions.md "A4a" point 5 (decided 2026-10-18: both plugins).
 **Read:** `app/src/clipboard/port.ts` (`ClipboardPort`: `writeText`, `readText`, `share`) and `impl.ts`; `app/src/clipboard/port.test.ts`; `app/src/App.svelte` line 107 (the clipboard chunk is a dynamic import); `app/src/input/haptics.ts` lines 10–25 (`loadNative`: `@capacitor/core` is loaded when idle, `isPluginAvailable`); `build.sh` line 72 (`npx cap sync android`); `THIRD_PARTY.md` (the table); `app/scripts/size-check.ts` (the chunk rules); `android/app/src/main/AndroidManifest.xml` (VIBRATE only, C5); `docs/rules-core.md`; docs/04 2.6 and 8.2; `app/test/copy.spec.ts`.
 - **Dependencies:** `@capacitor/clipboard` and `@capacitor/share`, the 8.x versions matching `@capacitor/core` 8.5.3, MIT, offline, no permission; pinned in `package.json`; two rows in THIRD_PARTY.md (name, version, licence, URL, "offline; no permission").
 - **The port:** on a native platform with the plugins available, a `ClipboardPort` on `Clipboard.read`/`write` and `Share.share({ title, text })`, loaded inside the clipboard chunk (never in the start chunk); the web port stays for the PWA and when a plugin is missing. The text path is unchanged (`paste.ts` reads what comes back).
@@ -564,10 +462,6 @@ Also write `docs/release.md`, the owner's one-page checklist: bump versionCode a
 **Read:** G29's report; decisions.md "A4a" point 2; `tools/README.md` (measure builds, `device_run.py`); `app/src/bench.ts` (`?bench=defs`); `.coord/device-runs.jsonl` (the A4a row to compare with).
 - A measure build from `phase-1`; seed the log with `?bench=defs`; cold start seven times; record the replay p50 and p95 and engine ready with 200 definitions, with device, Android, WebView and build type (rules section 3).
 **Done when:** the row is in `.coord/device-runs.jsonl` and the report; replay ≤ 50 ms and engine ready < 1.5 s, or the miss with the number and the next lever (values replayed lazily) under "Needs the user"; decisions.md "A4a" point 2 and docs/04 8.3's "Today" column get the number (text in the report).
-
-### sandra, S5: the unit pad's arrangement and its user cells, branch `p1/sandra-padlayout`
-**Lane:** the owner's own (in progress in the main checkout, uncommitted on 2026-10-18: `docs/mockups/unit-pad.html`, `tools/probes/pad-arrange.mjs`, `tools/probes/find-cost.mjs`, `tools/probes/unit-freq/`, `tools/probes/unit-weights.yaml`, the report `docs/shifts/2026-10-17-sandra-padlayout-report.md`, and edits to `spec/unit-pad.yaml`, r9, the probes README, `unit-presses.mjs`, backlog.md and decisions.md). Not run by the pipeline; the owner commits and merges it (by hand, or `scripts/pipeline.sh sandra S5 --no-worker` after the commit). G7, R24a and S7 wait for it.
-**Done when (the owner's own check):** on S1's 50 units the median is ≤ 2 with flicks and with taps only; the weighted mean beats the draft's or equals it with the reason given; each of the owner's units takes ≤ 3 presses or the reason is named; every id on the pad is a Find id or is listed for G7; `spec/unit-pad.yaml` schema 2 with `user:`; the proposal "P14 arrangement" is under decisions.md "Needs the user".
 
 ### sandra, S7: the docs diet, branch `p1/sandra-docsdiet`
 **Lane:** night-safe, **alone**: the last package of its night, and the owner starts nothing until it is merged, because it moves the texts every package edits. **Starts when:** S5 is merged. Deep-dive items 20 and 22.
@@ -584,19 +478,18 @@ Also write `docs/release.md`, the owner's one-page checklist: bump versionCode a
 
 ### sandra, S6: files in and out without INTERNET, the backup, branch `p1/sandra-files`
 **Lane:** night-safe (Chromium probes; the device checks are annabell's, later). **Starts when:** S7 is merged. Deep-dive item 18; it also answers S4's point 2.
-**Read:** `docs/rules-core.md` (offline, F-Droid); `android/app/src/main/AndroidManifest.xml` (no INTERNET); `app/src/clipboard/port.ts` (`share`); `app/src/state/storage.ts` (the keys, `DATA_VERSION`, the migrations); docs/04 6.2; backlog.md "Needs the user" item 7 (the move to the new app id had no backup); `THIRD_PARTY.md` (for any plugin).
+**Read:** `docs/rules-core.md` (offline, F-Droid); `android/app/src/main/AndroidManifest.xml` (no INTERNET); `app/src/clipboard/port.ts` (`share`); `app/src/state/storage.ts` (the keys, `DATA_VERSION`, the migrations); docs/04 6.2; backlog.md "Needs the user" (the move to the new app id had no backup); `THIRD_PARTY.md` (for any plugin).
 1. **Out:** the Web Share API with a file in the Capacitor WebView (`navigator.canShare({ files })` on WebView 131); a download (`<a download>`) in the WebView and in the PWA; `@capacitor/filesystem` with `@capacitor/share` (MIT: their size, and what they need in the manifest). Recommend one that needs no new permission.
 2. **In:** `<input type="file">` in the WebView (does it open Android's picker without a plugin, and does it keep the system keyboard closed?); "open with": an intent filter for the file type, and what `MainActivity` needs; the File System Access API in the PWA.
 3. **The file:** JSON, one part per stored key with its stamp; what it holds (history, definitions, settings, user keys, later the unit-pad cells); its size at the limits (200 rows in each view, 500 definitions); what a restore refuses (a newer version, a broken stamp); merge or replace.
 **Done when:**
-- `docs/research/r11-files.md` exists with the three answers and their probes; the report gives the proposal for decisions.md "Needs the user" as one recommendation and the completed step lists of R38a and R38b for section 7; nothing under `app/` or `android/` changed.
+- `docs/research/r11-files.md` exists with the three answers and their probes; the report gives the proposal for decisions.md "Needs the user" as one recommendation and the completed step lists of R38a and R38b for their package files; nothing under `app/` or `android/` changed.
 
 ### sandra, S8: the outside-test protocol, branch `p1/sandra-outside`
 **Lane:** night-safe. **Starts when:** S6 is merged. Deep-dive item 24.
-**Read:** `docs/03-feature-analysis.md` rules 1, 2 and 13; `tests/tasks/tasks.yaml`; `tests/tasks/find-queries.yaml`; decisions.md P14; backlog.md "Needs the user" items 0 and 8.
+**Read:** `docs/03-feature-analysis.md` rules 1, 2 and 13; `tests/tasks/tasks.yaml`; `tests/tasks/find-queries.yaml`; decisions.md P14; backlog.md "Needs the user" (the hand timing, the outside testers).
 Write `docs/research/r12-outside-test.md` for two 30-minute rounds that the owner runs: three engineers or engineering students who have not seen the keys, from at least two fields; round 1 after R4b (Find), round 2 after R24c (the unit pad), before R24d's user cells are set; the ten tasks, ten Find queries in their own words, five units on the pad from a printed list; recorded: presses (the tap counter), time, misses, the words they typed (new aliases for `find-queries.yaml`), where they hesitated; privacy: no data leaves the phone, the owner takes the notes, no names are kept; what comes back: rows in feedback.md marked "outside". Add a one-page printable task sheet, `docs/mockups/outside-test.html`.
 **Done when:** the note and the sheet exist; the owner can run round 1 with the sheet and an APK and nothing else (the report says what the owner prints and installs); nothing under `app/` changed.
-
 ## 8. Definition of done
 - **Each branch:** typecheck 0; `npm run index` (with `PASCALINE_DL_DIR`, `PASCALINE_QALC_DL_DIR` and `QALC_OUT` pointing at the main checkout's caches and build, as the pipeline sets them), then `FIND_INDEX=required npm test`, all pass (the Find query test fails rather than skips without the full index); e2e all pass (the known-flaky `solve.spec.ts` persistence test and the Find 16 ms timing test may be re-run once); the golden gate when engine or parser code changed; by hand, `npm run gate` (from `app/`; `-- --quick` while working) runs all of these, the size test and a docs-size report in one command; SPDX headers; `git commit -s` with the trailer of the model that ran; the report commit; the start chunk size reported for UI packages; every "Done when" line of the block met or listed under "Not done".
 - **Milestone 4 is done when:**
@@ -608,4 +501,4 @@ Write `docs/research/r12-outside-test.md` for two 30-minute rounds that the owne
   - the Tab One bars of §8.3 hold, or a measured miss is written up as a proposal in `docs/decisions.md`
 
 ## 8a. Review and merge
-Every review and merge is a pipeline run (rules section 4; CLAUDE.md): the audit by sofia on `git diff -U5 phase-1...<branch>` plus the block's "Done when" lines, then `git merge --no-ff --signoff` into `phase-1`. A finished branch from before the pipeline is merged with `scripts/pipeline.sh <agent> "<ID>" --no-worker` (A10). The Opus pass (section 0c) applies the reports' shared-file text, removes merged blocks from section 7 and their rows from the tables, and files proposals under "Needs the user". When a merge completes milestone 4, the Opus pass writes `docs/shifts/<date>-m4-report.md` and adds milestone 4 to docs/02 section 12. Never push.
+Every review and merge is a pipeline run (rules section 4; CLAUDE.md): the audit by sofia on `git diff -U5 phase-1...<branch>` plus the block's "Done when" lines, then `git merge --no-ff --signoff` into `phase-1`. A finished branch from before the pipeline is merged with `scripts/pipeline.sh <agent> "<ID>" --no-worker` (A10). The Opus pass (section 0c) applies the reports' shared-file text, deletes merged package files (and, until A14, their blocks in section 7) and their rows from section 0's table, and files proposals under "Needs the user". When a merge completes milestone 4, the Opus pass writes `docs/shifts/<date>-m4-report.md` and adds milestone 4 to docs/02 section 12. Never push.

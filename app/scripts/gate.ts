@@ -7,12 +7,12 @@
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
 // QALC_OUT, PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
-  type DocSize, type Summary,
+  type Summary,
 } from "./gate-summary.ts";
 
 const app = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -164,10 +164,9 @@ const checks: Check[] = [
     name: "docs",
     skip: () => (quick ? "--quick" : null),
     run: () => {
-      // S7 sets the budgets (brief S7 step: brief ≤ 25 kB, backlog ≤ 20 kB, decisions ≤ 40 kB, docs/04 ≤ 70 kB); until then: sizes only
-      const files = ["docs/shifts/brief.md", "docs/backlog.md", "docs/decisions.md", "docs/04-architecture.md"];
-      const sizes: DocSize[] = files.map((f) => ({ file: f.replace(/^docs\//, ""), bytes: statSync(join(repo, f)).size, limit: null }));
-      return summarizeDocs(sizes);
+      // S7: every link resolves, and the brief, backlog, decisions, docs/04 and each package file stay within their budgets
+      const r = run("docs", "node", [join(repo, "tools/docs-check.mjs")], {}, 60_000, repo);
+      return summarizeDocs(r.out, r.code);
     },
   },
 ];
