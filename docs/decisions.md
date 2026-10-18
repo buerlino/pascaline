@@ -7,9 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
-- **2026-10-18 R24af1: units without an exact factor never make a pair. OPEN.** The slot counts a Find id such as kDa as k + Da only when the index gives both an exact `si` and the same `dim`. Da, kDa and u have no `si` (a measured value), so k + Da reads "kilodalton" in the warning colour.
-  - **Recommendation:** gorge gives such units their CODATA factor as a decimal fraction in the index, or marks a known pair in the generator; until then the mark stays.
-  - **Why:** a mark on a true pair costs one colour; a missing mark on a false pair (m + in as "minute") gives a wrong reading.
 - **2026-10-18 G33: the library replay misses G29's budget about tenfold; what gates R59. OPEN (Opus pass 10).** 200 library programs replay in about 21 ms (median) on the desktop; at G29's desktop-to-Tab One ratio (291/10.8) that is about 570 ms on the Tab One against the 50 ms budget (G33's report and its printed test). G33 merges after its fix package G33f1 with this recorded as not met, because nothing reaches the import before R59 (defaults, Opus pass 10).
   - **Recommendation:** R59 starts only after A12 has measured a 200-program library on the Tab One; if that is over 50 ms, a gorge package for lazy definition of functions (r10 section 3.2: a function is defined on its first use, not at start) comes before R59.
   - **Why:** the replay runs on every start, so an imported library would cost every user half a second of start-up on the slowest device; the estimate is a ratio, not a measurement, so A12 decides whether the lever is needed. **Would change if** A12 measures the replay inside 50 ms.
@@ -398,6 +395,12 @@ Newest first. Where an entry changed an earlier document, that document now carr
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-18 Opus pass 15 defaults (R24af1, R28)
+1. **R24af1: a unit without an exact factor never makes a pair, and k + Da stays marked** (R24af1's open question). Da, kDa and u have no exact `si` in the index (a measured value), so k + Da reads "kilodalton" in the warning colour; kDa itself is a Find unit and is picked unmarked. A mark on a true pair costs one colour, a missing mark on a false pair (m + in as "minute") gives a wrong reading. *Would change if* the index gives measured units a factor the pair test can compare (a gorge package then).
+2. **R28: the sign of a number with ± goes inside `pasupm`** (pass 2 point 1, pass 3's note): −20 ± 0.5 in °C must be `pasupm(-20,0.5)*pasu1`. R28 writes `-pasupm(20,0.5)*pasu1`, which G16's builder refuses as a temperature difference; fix package R28f1.
+3. **G30 put the start chunk over its budget** (found in this pass, not by R24af1 or R28): `npm run size` on phase-1 `376ab86` gives 54.39 kB gzip of 54.00 kB; the E-series tables reach the main thread through `homeEval.ts`'s `ENGINE_DEFINITIONS` (start chunk 52.87 kB at `9a0baa3`, then +1.2 kB at `681b2ba`). The tables belong in the worker only; fix package G30f1. The pipeline's checks do not run `npm run size`, so the merge did not see it.
+4. **R24af1: titleWords lower-cases British, American and Johnson** ("british thermal unit", Btu is tier 0; "american point", "johnson pica"). R24c adds them to PROPER with a test, since it touches the reading anyway.
 
 ### 2026-10-18 Opus pass 14 defaults (G7, R24a, G32)
 1. **G7: a cycle is a count, so `rev`, `revolution` and `cycle` are names of `rev`, not of `tr`** (G15); `tr` keeps `turn` and `pla`. qalc's `cyc` is dropped from `tr` and is on no item (Find finds `rev` from "cycle"). StdT = 273.15 K (0 °C) and StdP = 101325 Pa (1 atm) are `derived`, exact by definition; IUPAC's current STP (since 1982) uses 100 kPa, StdP is the older 1 atm, which V_m101 goes with. *Would change if* the owner wants `cycle` back on `tr`, or the 100 kPa STP as a second constant.

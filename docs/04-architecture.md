@@ -353,7 +353,9 @@ libqalculate stays in the build only, as the source of the index's factors, cons
   arrangement measured by package S5, plus a few user cells set from Find (their number from S5). A slot holds unit
   ids, never text; Enter goes to the next slot and evaluates in the end slot; Math opens Find on units. The rules
   below stay.
-- **Grammar per slot:** a product of factors with `×`, one `÷` (the rest is the denominator), powers, `x⁻¹`, `√`.
+- **Grammar per slot:** a product of factors with `×`, one `÷` (the rest is the denominator), powers, `x⁻¹`, `√`. The formula comes from
+  the parser's units mode (R28): a prompt after a number is pasu<n> in the order written, a constant is pask<j>, `±`
+  after a number is pasupm(value,σ), and `\to` before the last prompt is the end slot.
   A factor is one symbol from Find's unit list: an exact symbol first, then prefix + symbol. The parser in
   `units` mode emits unit and prefix ids from these whitelisted names only (the generator's round-trip check, 3.3).
   **Alternative rejected:** qalc's own parser, which reads `BTU`, `lbm`, `var`, `Kg`, `pa`, `G` as other things
