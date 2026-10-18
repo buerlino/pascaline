@@ -1,0 +1,330 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// The library file (S4, decisions.md "S4", docs/research/r10-connector.md): a UTF-8 text file of Giac definitions, each
+// with a one-line description and optional `// test:` lines. Read and checked as a whole, refused as a whole, defined
+// through the engine's cas() as if typed (so the defs log gets its entries from the one existing path), then tested.
+// Loaded lazily by whoever imports (dynamic import); nothing in the start chunk imports it. The engine is reached through
+// the small LibraryEngine interface, so this file runs in the Worker, in Node and in tests alike. Only erasable syntax.
+import { applyDefChanges, DESC_MAX, MAX_DEFS, replayOrder, type DefChange, type DefEntry } from "./defs.ts";
+import { definedBy, ENGINE_DEFINITIONS, isStateful, simpleAssignment } from "./homeEval.ts";
+import { defaultCasSettings, type CasResult } from "./types.ts";
+import { DATA_VERSION, migratedText } from "../state/storage.ts";
+
+/** r10 section 1.2: the limits of one file. */
+export const LIB_MAX_BYTES = 256 * 1024;
+export const LIB_MAX_DEFS = 200;
+const HEADER = /^\/\/ pascaline library (\d+)$/;
+const NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
+/** Words that change the engine's state when a body runs (probe 2026-10-18: `Digits:=5` inside a body stays set after
+ *  the call; `purge(beam)` inside a body removes beam from the engine while the log still lists it; `read("f")` aborts
+ *  the module). A guard, not a proof. */
+const STATE_WORDS = /\b(Digits|angle_radian|purge|restart|reset|rm_all_vars|assume|additionally|read|write|sto|cas_setup|DIGITS|HAngle|complex_mode)\b|=>/;
+
+export interface LibTest {
+  expr: string;
+  /** 1-based line in the file. */
+  line: number;
+}
+export interface LibDef {
+  name: string;
+  kind: "fn" | "var";
+  /** The definition as written (several lines for a program). */
+  text: string;
+  desc: string;
+  tests: LibTest[];
+  line: number;
+}
+export interface LibFile {
+  /** The version in the stamp line (already accepted: at most DATA_VERSION). */
+  version: number;
+  defs: LibDef[];
+}
+
+/** A refusal: the first problem in the file, with its line (0: the file as a whole) and plain words. */
+export class LibError extends Error {
+  line: number;
+  constructor(line: number, msg: string) {
+    super(line ? `line ${line}: ${msg}` : msg);
+    this.name = "LibError";
+    this.line = line;
+  }
+}
+
+/** Top-level ";" (outside brackets, braces and strings) with something after it: a second statement. */
+function topLevelSemicolon(s: string): boolean {
+  let depth = 0;
+  let str = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]!;
+    if (c === '"') str = !str;
+    else if (str) continue;
+    else if ("([{".includes(c)) depth++;
+    else if (")]}".includes(c)) depth--;
+    else if (c === ";" && depth === 0 && s.slice(i + 1).trim() !== "") return true;
+  }
+  return false;
+}
+
+const NOSTR = (s: string): string => s.replace(/"[^"]*"/g, '""');
+/** Every name the (string-free) text stores into: `a:=`, `a[i]:=` (any nesting in the index), `a=<`, `a+=` (also -= *= /=),
+ *  `a++`, `a--`, `++a`, `--a`. Returns the base names. */
+function storedNames(s: string): string[] {
+  const out: string[] = [];
+  for (const m of s.matchAll(/(?<![A-Za-z0-9_.])[A-Za-z][A-Za-z0-9_]*/g)) {
+    const name = m[0];
+    let i = m.index + name.length;
+    for (;;) {
+      while (/\s/.test(s[i] ?? "")) i++;
+      if (s[i] !== "[") break;
+      let d = 0;
+      for (; i < s.length; i++) {
+        if (s[i] === "[") d++;
+        else if (s[i] === "]" && --d === 0) break;
+      }
+      if (d !== 0) break;
+      i++;
+    }
+    const after = s.slice(i, i + 2);
+    const before = s.slice(0, m.index).replace(/\s+$/, "").slice(-2);
+    if (after === ":=" || after === "=<" || /^[-+*/]=$/.test(after) || after === "++" || after === "--" || before === "++" || before === "--") out.push(name);
+  }
+  return out;
+}
+
+/** The expression stores into some name anywhere outside strings (a test line must not). */
+function assigns(s: string): boolean {
+  return /:=|=<|[-+*/]=|\+\+|--/.test(NOSTR(s));
+}
+
+function balanced(s: string): boolean {
+  let d = 0;
+  for (const c of s.replace(/"[^"]*"/g, "")) d += "([{".includes(c) ? 1 : ")]}".includes(c) ? -1 : 0;
+  return d <= 0;
+}
+
+/** A name a function body stores into that is neither a parameter nor declared `local`: a global the call would change.
+ *  Covers `f(x):=…` and `f:=x->…`; a plain value has no body. */
+function globalAssigned(text: string): string | undefined {
+  const head = /^\s*[A-Za-z][A-Za-z0-9_]*\s*\(([^()]*)\)\s*:=/.exec(text);
+  const arrow = head ? null : /^\s*[A-Za-z][A-Za-z0-9_]*\s*:=\s*(?:\(([^()]*)\)|([A-Za-z][A-Za-z0-9_]*))\s*->/.exec(text);
+  const h = head ?? arrow;
+  if (!h) return undefined;
+  const body = NOSTR(text.slice(h[0].length));
+  const own = new Set((h[1] ?? h[2] ?? "").split(",").map((p) => p.trim()).filter(Boolean));
+  for (const m of body.matchAll(/\blocal\s+([^;]+);/g)) for (const n of m[1]!.split(",")) own.add(n.trim().split(/\s|:=/)[0]!);
+  return storedNames(body).find((n) => !own.has(n));
+}
+
+/** Reads a library file: encoding, size, stamp, blocks, every rule that needs no engine (r10 section 1.3). Throws a
+ *  LibError for the first problem. A string is taken as the text of a file already decoded. */
+export function parseLibrary(input: Uint8Array | string): LibFile {
+  const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
+  if (bytes.length > LIB_MAX_BYTES) throw new LibError(0, `the file is over ${LIB_MAX_BYTES / 1024} kB`);
+  let text: string;
+  try {
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    throw new LibError(0, "the file is not UTF-8 text");
+  }
+  const lines = text.replace(/^﻿/, "").replace(/\r\n?/g, "\n").split("\n");
+  const h = HEADER.exec(lines[0]!.trim());
+  if (!h) throw new LibError(1, `the first line must be \`// pascaline library ${DATA_VERSION}\``);
+  const version = Number(h[1]);
+  if (version > DATA_VERSION) throw new LibError(1, `made by a newer Pascaline (version ${version}; this one reads up to ${DATA_VERSION})`);
+  // The same migration steps as the stored defs (storage.ts), on the text below the stamp.
+  const body = migratedText("library", lines.slice(1).join("\n"), version);
+  const rest = body.split("\n");
+  const defs: LibDef[] = [];
+  let lastComment: { text: string; line: number } | null = null;
+  for (let i = 0; i < rest.length; i++) {
+    const lineNo = i + 2; // rest[0] is file line 2
+    const raw = rest[i]!;
+    const t = raw.trim();
+    if (t === "") {
+      lastComment = null;
+      continue;
+    }
+    if (t.startsWith("//")) {
+      const test = /^\/\/\s*test:\s*(.+)$/.exec(t);
+      if (test) {
+        const d = defs[defs.length - 1];
+        if (!d) throw new LibError(lineNo, "a test line before any definition");
+        const expr = test[1]!.trim();
+        const word = STATE_WORDS.exec(expr);
+        if (word) throw new LibError(lineNo, `the test changes the engine's state (${word[0]})`);
+        if (assigns(expr)) throw new LibError(lineNo, "a test must not assign a name (`:=`, `++`, `+=`, `=<`)");
+        if (topLevelSemicolon(expr)) throw new LibError(lineNo, "one expression per test: a second statement follows `;`");
+        d.tests.push({ expr, line: lineNo });
+      } else lastComment = { text: t.replace(/^\/\/\s*/, ""), line: lineNo };
+      continue;
+    }
+    if (/^\s/.test(raw)) throw new LibError(lineNo, "an indented line outside a definition");
+    // A definition: this line, plus the following ones while a bracket is open or the line is indented / a closing bracket.
+    const start = i;
+    let block = raw;
+    while (i + 1 < rest.length && (!balanced(block) || /^(\s+\S|[}\]\)])/.test(rest[i + 1]!))) block += "\n" + rest[++i];
+    const at = start + 2;
+    if (!balanced(block)) throw new LibError(at, "a bracket is never closed");
+    const def = definedBy(block);
+    const asg = simpleAssignment(block);
+    if (!def) throw new LibError(at, "only definitions may stand in a library (`name(args):=…` or `name:=…`)");
+    if (topLevelSemicolon(block)) throw new LibError(at, "one definition per block: a second statement follows `;`");
+    const bodyText = block.replace(/^[^:]*:=/, "");
+    const word = STATE_WORDS.exec(bodyText);
+    if (word) throw new LibError(at, `the body changes the engine's state (${word[0]})`);
+    const g = globalAssigned(block);
+    if (g) throw new LibError(at, `the body assigns ${g}, which is not local: declare it with \`local ${g};\``);
+    if (asg && isStateful(asg.rhs)) throw new LibError(at, "a value must not itself define or change anything");
+    if (!NAME.test(def.name)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
+    if (def.name in ENGINE_DEFINITIONS || def.name.startsWith("pasc_") || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
+    if (defs.some((d) => d.name === def.name)) throw new LibError(at, `${def.name} is defined twice in this file`);
+    if (!lastComment || lastComment.line !== at - 1) throw new LibError(at, `${def.name} needs its one-line description on the line above`);
+    if (lastComment.text.length > DESC_MAX) throw new LibError(lastComment.line, `the description is over ${DESC_MAX} characters`);
+    defs.push({ name: def.name, kind: def.kind, text: block, desc: lastComment.text, tests: [], line: at });
+    lastComment = null;
+  }
+  if (defs.length > LIB_MAX_DEFS) throw new LibError(0, `more than ${LIB_MAX_DEFS} definitions`);
+  return { version, defs };
+}
+
+/** What the import needs of an engine: EngineHost has both (in the Worker, cas() and eval() answer synchronously). */
+export interface LibraryEngine {
+  cas(input: string, s: typeof defaultCasSettings): { result: Pick<CasResult, "ok" | "error">; defs: DefChange[] };
+  eval(input: string): { output: string; ok: boolean };
+}
+
+/** Names the file would add, leave as they are (same commands) or replace (different commands, the user's own). */
+export interface ImportPlan {
+  added: string[];
+  same: string[];
+  replaced: string[];
+}
+
+export interface TestFailure {
+  line: number;
+  expr: string;
+  /** What the expression gave. */
+  got: string;
+}
+
+export type ImportResult =
+  | {
+      ok: true;
+      plan: ImportPlan;
+      /** The changes for the defs log (descriptions included); the caller applies and stores them. */
+      changes: DefChange[];
+      /** The log after the changes. */
+      log: DefEntry[];
+      tests: number;
+      ms: number;
+    }
+  | {
+      ok: false;
+      /** First reason, in plain words (with its line where there is one). */
+      error: string;
+      line: number;
+      plan?: ImportPlan;
+      /** Own names the file would replace; set when that is the (only) reason: nothing was defined. Import again with
+       *  `replace: true` once the user has seen the list. */
+      clashes?: string[];
+      failures?: TestFailure[];
+      /** The engine was changed before the problem showed: the caller restarts it from the unchanged log
+       *  (WorkerEngine.cancel path) and does not store anything. */
+      dirty: boolean;
+    };
+
+function fail(error: string, line: number, extra: Partial<Extract<ImportResult, { ok: false }>> = {}): ImportResult {
+  return { ok: false, error, line, dirty: false, ...extra };
+}
+
+/** One `// pascaline library` import into an engine that holds `log`. Checks the rest against the engine (built-in
+ *  names, own names, the log's size), defines every definition through cas(), runs the tests, and returns the changes. */
+export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly DefEntry[], opts: { replace?: boolean } = {}): ImportResult {
+  const t0 = performance.now();
+  const byName = new Map(log.filter((e) => e.kind !== "other").map((e) => [e.name, e]));
+  const plan: ImportPlan = { added: [], same: [], replaced: [] };
+  for (const d of lib.defs) {
+    const old = byName.get(d.name);
+    if (old) {
+      if (sameDefinition(engine, d, old)) plan.same.push(d.name);
+      else plan.replaced.push(d.name);
+    } else {
+      if (engine.eval(`type(${d.name})`).output.trim() === "func") return fail(`line ${d.line}: ${d.name} is a built-in function`, d.line, { plan });
+      plan.added.push(d.name);
+    }
+  }
+  if (log.length + plan.added.length > MAX_DEFS) {
+    return fail(`the definitions would pass ${MAX_DEFS} (now ${log.length}, new ${plan.added.length}); the oldest would be dropped`, 0, { plan });
+  }
+  if (plan.replaced.length && !opts.replace) {
+    return fail(`${plan.replaced.length} of your own names would be replaced: ${plan.replaced.join(", ")}`, 0, { plan, clashes: plan.replaced });
+  }
+  let out = [...log];
+  const changes: DefChange[] = [];
+  for (const d of lib.defs) {
+    const old = byName.get(d.name);
+    let mine: DefChange[];
+    if (plan.same.includes(d.name)) {
+      // Unchanged commands; only a changed description is news.
+      if (!old || old.desc === d.desc) continue;
+      mine = [{ set: { ...old, desc: d.desc } }];
+    } else {
+      const r = engine.cas(d.text, defaultCasSettings);
+      if (!r.result.ok) return fail(`line ${d.line}: ${d.name}: ${r.result.error ?? "the engine refused it"}`, d.line, { plan, dirty: true });
+      mine = r.defs.map((c) => ("set" in c && c.set.name === d.name ? { set: { ...c.set, desc: d.desc } } : c));
+    }
+    changes.push(...mine);
+    out = applyDefChanges(out, mine);
+  }
+  const failures: TestFailure[] = [];
+  let tests = 0;
+  for (const d of lib.defs) {
+    for (const t of d.tests) {
+      tests++;
+      const v = engine.eval(t.expr);
+      const got = v.output.trim();
+      if (!v.ok || (got !== "true" && got !== "1")) failures.push({ line: t.line, expr: t.expr, got });
+    }
+  }
+  if (failures.length) {
+    const f = failures[0]!;
+    const more = failures.length > 1 ? ` (and ${failures.length - 1} more)` : "";
+    return fail(`line ${f.line}: test failed: ${f.expr} gave ${f.got}${more}`, f.line, { plan, failures, dirty: true });
+  }
+  return { ok: true, plan, changes, log: out, tests, ms: performance.now() - t0 };
+}
+
+/** A library value or function that is the same as the log's entry: the same commands (a function), or a value that
+ *  evaluates to what the log holds (the log keeps `B:=(10)`, not `B:=A*2`). */
+function sameDefinition(engine: LibraryEngine, d: LibDef, old: DefEntry): boolean {
+  if (old.cmds.join("\n") === d.text) return true;
+  const asg = d.kind === "var" && old.kind === "var" ? simpleAssignment(d.text) : null;
+  if (!asg) return false;
+  const v = engine.eval(asg.rhs);
+  return v.ok && !/\bundef\b/.test(v.output) && old.cmds.length === 1 && old.cmds[0] === `${d.name}:=(${v.output.trim()})`;
+}
+
+/** A function typed on the phone has no description: its name and arguments stand for it. */
+function describe(e: DefEntry): string {
+  const text = e.desc ?? (e.kind === "fn" ? (/^\s*([A-Za-z][A-Za-z0-9_]*\s*\([^()]*\))/.exec(e.cmds[0]!)?.[1] ?? e.name) : e.preview ? `${e.name} = ${e.preview}` : e.name);
+  return text.replace(/\s+/g, " ").trim().slice(0, DESC_MAX) || e.name;
+}
+
+/** The log's functions and exact values as a library file (the same text `parseLibrary` reads). Left out, with the
+ *  reason: assumptions and inputs kept as typed (no single name), and values that hold a float (their mark facts have no
+ *  place in a library; the backup carries them). Tests are not kept on the phone. */
+export function exportLibrary(log: readonly DefEntry[]): { text: string; skipped: { name: string; why: string }[] } {
+  const out = [`// pascaline library ${DATA_VERSION}`];
+  const skipped: { name: string; why: string }[] = [];
+  for (const e of replayOrder(log)) {
+    if (e.kind === "assume" || e.kind === "other") {
+      if (e.kind === "assume") skipped.push({ name: e.name, why: "an assumption, not a definition" });
+      continue;
+    }
+    if (e.facts) {
+      skipped.push({ name: e.name, why: "a measured value, in the backup only" });
+      continue;
+    }
+    out.push("", `// ${describe(e)}`, e.cmds.join("\n"));
+  }
+  return { text: out.join("\n") + "\n", skipped };
+}

@@ -20,7 +20,7 @@ export const USER_KEYS = "userKeys";
  * of stored text changes: definitions are Giac text that holds our internal names (R18f1 renamed Φ and Ψ to Phi_ and
  * Psi_), so a rename or a parser fix must rewrite what older versions stored. 0 = stored before versions (2026-10-14).
  */
-export const DATA_VERSION = 1;
+export const DATA_VERSION = 2;
 /** The stamp's field; no value stored before versions has it. */
 const STAMP = "@pascaline";
 
@@ -29,6 +29,8 @@ type Migrations = Record<number, Record<string, (value: unknown) => unknown>>;
 const MIGRATIONS: Migrations = {
   // 0 → 1: only the stamp is new.
   0: {},
+  // 1 → 2: a definitions entry may carry `desc` (G33); nothing to rewrite.
+  1: {},
 };
 
 /** A value as stored: stamped with the version it was written in. */
@@ -49,6 +51,11 @@ export function unstamp(key: string, stored: unknown, steps: Migrations = MIGRAT
     if (step) value = step(value);
   }
   return { value, upgraded: from < DATA_VERSION };
+}
+
+/** Plain text (a library file, G33) written in `from`, brought up to DATA_VERSION by the same steps as the stored `defs`. */
+export function migratedText(key: string, text: string, from: number, steps: Migrations = MIGRATIONS): string {
+  return String(unstamp(key, { [STAMP]: from, value: text }, steps).value);
 }
 
 function open(): Promise<IDBDatabase> {
