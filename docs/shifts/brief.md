@@ -8,7 +8,7 @@
 
 ### The path (owner, 2026-10-14; rewritten 2026-10-18 after the architecture pass and S7)
 **By day, one pipeline at a time** (owner, 2026-10-18), in this order; each starts when the one before is merged:
-1. **A14** (the pipeline reads the package files; section 7 goes), then **A15** (the pipeline enforces its audit model, size and docs checks), both before the next night.
+1. **A15** (the pipeline enforces its audit model, size and docs checks; A14 is done), before the next night.
 2. **R50b** (Pascaline in the app, half a day on the phone), **R15c1 → R15c2 → R15c3 → R15c4** (the R3 top cluster), **R55** (digit groups), **R49** (Settings rows), **R57** (the decimal comma, on R49's page pattern), **R50e** (Appearance; R50c, R50d at night).
 3. **R4a** (Find on Math), **R4b** (Vars, Memory, the user keys), **R53** (results mode on the View key), **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40**.
 4. The unit pad: **R24b** → **R24c** → **R24d** (after R4b).
@@ -27,7 +27,7 @@
 ### The open packages
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A14](packages/A14.md) | The pipeline reads the package files | annabell, Sonnet | day, first | S7 | ~0.25 d |
+| [A14](packages/A14.md) | The pipeline reads the package files | annabell, Sonnet | done | S7 | ~0.25 d |
 | [A15](packages/A15.md) | The pipeline enforces its rules | annabell, Sonnet | day, before the next night | A14 | ~0.5 d |
 | [G34](packages/G34.md) | A carried value keeps what it showed when the angle mode changes | gorge, **Opus** | night | A15 | ~1 d |
 | [G21b](packages/G21b.md) | exp ignores the angle mode inside Giac; pasexp goes | gorge, **Opus** | night | G34; S14's route P | ~1 d |
