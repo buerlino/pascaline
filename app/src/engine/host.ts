@@ -19,11 +19,13 @@ import {
   regrouped,
   resultFromFacts,
   safePrecision,
+  symbolicWhy,
+  testSides,
   simpleAssignment,
   toExactLiterals,
   unquote,
 } from "./homeEval.ts";
-import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -364,8 +366,12 @@ export class EngineHost {
       return { value: e.value!, exactRational: false, reliableDigits: n, ...(w ? { warn: w } : {}), big: false };
     });
     const b = resultFromFacts(facts, shape, digits, r.path, true, r.totalMs);
+    // Only the names behind a ⚠: one with a warning, or one known to fewer digits than the setting shows.
+    const causes = used.filter((u) => u.facts.warn !== undefined || (u.facts.reliableDigits !== null && u.facts.reliableDigits < digits)).map((u) => u.name);
+    const why = { ...(r.why ?? {}), ...(causes.length ? { inherited: causes } : {}) };
     return {
       ...b,
+      ...(Object.keys(why).length ? { why } : {}),
       ...(r.exact !== undefined ? { exact: r.exact } : {}),
       ...(r.defined ? { defined: r.defined } : {}),
       ...(r.digits !== undefined ? { digits: r.digits } : {}),
@@ -481,6 +487,8 @@ export class EngineHost {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
         if (asked !== null) numeric.digits = asked;
         const body = asg ? asg.rhs : input;
+        const why = whyOf(facts, stateful ? null : exactInput);
+        if (why) numeric.why = why;
         numeric = this.inherited(numeric, body, stateful ? null : exactInput, digits, Math.trunc(s.digits));
         return {
           result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },
@@ -496,10 +504,11 @@ export class EngineHost {
     const unchecked = hasFloat(text);
     const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked;
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
+    const why = symbolicWhy(warn, testSides(exactInput));
     const tex = this.giac.eval("latex(pcasans)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
-      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(warn ? { warn } : {}) },
+      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(warn ? { warn } : {}), ...(why ? { why } : {}) },
       defs: defsOf(text, unchecked ? { reliableDigits: null, warn: "unchecked" } : null),
     };
   }
