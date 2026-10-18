@@ -164,7 +164,7 @@ The owner's deep dive (feedback #47): 24 findings, all accepted (decisions.md "T
 9. **F32. The Giac worker has no memory cap** (up to 2 GB on the 3.9 GB Tab One). **Done** (`cc095e3`, G24): `-sMAXIMUM_MEMORY=1GB` in build-wasm.sh (the release build too); a failed allocation or a worker crash gives "Out of memory: the engine was restarted" and a restart with the replay (`tests/engine/memcap-test.mjs`; device input `makemat(1,30000,30000)` in CAS); the app staying up on the Tab One waits for the next device run (A4a ran before G24).
 10. **The start chunk is lighter. Done** (`445fdbf`, R35): `@capacitor/core` and the Mode/Settings lists load when idle after the keypad is drawn (keys typed while the Mode sheet's code loads wait in the R8 queue), so 2.64 kB gzip are left before R21a (51.36 of 54 kB, 2026-10-16). `tools/probes/start-chunk.mjs` prints what fills the chunk, per source.
 11. **P5 (b) revised:** Home's `(-8)^(1/3)` = −2, as on the G2. **R39** (night).
-12. **⚠ with no confirmed digit shows a digit** (`sin(10^100)` → `⚠ -0.4`), and the check stops at P+40. **G23** (night).
+12. **⚠ with no confirmed digit shows a digit** (`sin(10^100)` → `⚠ -0.4`), and the check stops at P+40. **G23** (night) — done.
 13. **Why the mark:** a picked row says why. **G22** (night, done), **R36** (after G22).
 14. **Names with a value, marked on the line.** **R33** (with Find; it starts with a MathLive check and may drop).
 15. **The angle check** (RAD `sin(30)`, DEG `sin(π/6)`), with a removal test. **R37** (with Find).
