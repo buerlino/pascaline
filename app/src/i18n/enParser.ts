@@ -74,6 +74,7 @@ export const enParser = {
   "parse.unknownName": "unknown name {e}",
   "parse.unsupportedNode2": "unsupported node",
   "parse.unsupported": "unsupported {h}",
+  "parse.cannotPlot": "cannot plot: {msg}",
   "parse.logicTakes": "{text} takes {count}",
   "parse.atToken": "{msg} at '{tok}'",
   "parse.atEnd": "{msg} at end of input",

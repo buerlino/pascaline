@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // A chip's value as Giac text (docs/04 section 2.8). Part of the parser chunk: only the parser needs it.
-import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
-import { SerializeError } from "./errors.ts";
+import { parseError } from "../i18n/enParser.ts";
 import { equalityTest } from "./emit.ts";
 
 const DECIMAL = /^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/;

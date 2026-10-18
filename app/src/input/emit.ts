@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // MathJSON (Compute Engine's shape, also produced by our own parser) -> Giac input string.
-import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
+import { parseError } from "../i18n/enParser.ts";
 import { SerializeError } from "./errors.ts";
 
 export { SerializeError };

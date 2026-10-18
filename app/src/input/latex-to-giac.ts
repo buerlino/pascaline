@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // LaTeX -> Giac with our own parser (no Compute Engine). Same output stage as serialize.ts.
-import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
-import { SerializeError, mathJsonToGiac, type Json, type SerializeOptions } from "./emit.ts";
+import { parseError } from "../i18n/enParser.ts";
+import { mathJsonToGiac, type Json, type SerializeOptions } from "./emit.ts";
 import type { ChipTable } from "./chips.ts";
 import { parseLatexInfo } from "./parse.ts";
-
-export { SerializeError };
 
 export interface LatexToGiacOptions extends SerializeOptions {
   /** L6 setting: decimal comma input ("3,5" = 3.5; ";" separates arguments). */

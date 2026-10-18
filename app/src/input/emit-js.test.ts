@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Plot-function compiler: LaTeX -> JS (emit-js.ts) against hand-written JS reference functions.
 import { describe, expect, it } from "vitest";
-import { toFn } from "./emit-js.ts";
+import { latexToJs, toFn } from "./emit-js.ts";
 
 const cases: [string, (x: number) => number][] = [
   ["\\sin\\left(x\\right)", (x) => Math.sin(x)],
@@ -59,4 +59,10 @@ describe("latex to JS (plot evaluator)", () => {
       expect(() => toFn(bad)).toThrow();
     });
   }
+});
+
+describe("plot errors", () => {
+  it("keep the 'cannot plot: ' prefix", () => {
+    expect(() => latexToJs("q+1")).toThrow("cannot plot: unknown name q");
+  });
 });

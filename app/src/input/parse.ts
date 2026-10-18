@@ -5,7 +5,7 @@
 import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
 import { ANS_KEY, constKey, resKey, type ChipTable } from "./chips.ts";
 import { chipToGiac } from "./chip-giac.ts";
-import { SerializeError, type Json } from "./emit.ts";
+import type { Json } from "./emit.ts";
 
 type Tok =
   /** gap (F43, R51): spacing (a space or a spacing command) separates this number from a number just before it. */

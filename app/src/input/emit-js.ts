@@ -2,8 +2,8 @@
 // MathJSON -> JavaScript expression source for plotting: real numbers only, one or more named variables,
 // fully parenthesised, so the result can be compiled once with new Function and called allocation-free.
 // 1/0 gives Infinity and invalid points (sqrt(-1), ln(-1)) give NaN, which curve renderers treat as a break.
-import { parseError, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
-import { SerializeError, oddIndex, oddRootExponent, type Json } from "./emit.ts";
+import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
+import { oddIndex, oddRootExponent, type Json } from "./emit.ts";
 import { parseLatex } from "./parse.ts";
 
 const FN1: Record<string, string> = {
@@ -60,7 +60,7 @@ function js(e: Json, vars: ReadonlySet<string>): string {
   }
 }
 function fail(key: ParseKey, vars?: ParseVars): never {
-  throw parseError(key, vars);
+  throw parseError("parse.cannotPlot", { msg: parseText(key, vars) });
 }
 
 /** JS source of the expression, e.g. `(Math.sin(x)*Math.pow(x,3))`. */
