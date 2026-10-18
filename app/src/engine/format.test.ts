@@ -301,6 +301,13 @@ describe("formatConfirmed: only confirmed digits are shown", () => {
     expect(formatConfirmed(f("123.456789", 5), { format: "FIX", digits: 12, fixed: 4 })).toBe("123.46");
     expect(formatConfirmed(f("123456.789", 3), { format: "FIX", digits: 12, fixed: 2 })).toBe("1.23E5");
   });
+  it("FIX in its SCI fallback draws only confirmed digits (G31f1)", () => {
+    const o: FormatOptions = { format: "FIX", digits: 12, fixed: 4 };
+    expect(formatConfirmed(f("4.7123456e-6", 3), o)).toBe("4.71E-6");
+    expect(formatConfirmed(f("4.7123456e-6", 1), o)).toBe("5E-6");
+    expect(formatConfirmed({ value: { re: v("4.7e-6"), im: ZERO_VALUE }, exactRational: true, reliableDigits: null }, o)).toBe("4.7000E-6");
+    expect(formatConfirmed(f("0.000123", 3), o)).toBe("0.0001");
+  });
   it("lists and matrices", () => {
     const it2 = [f("1.5", null), f("0.333333333333333", 3)];
     expect(formatConfirmed({ exactRational: false, reliableDigits: 3, items: it2 }, { format: "STD", digits: 12 })).toBe("[1.5,0.333]");

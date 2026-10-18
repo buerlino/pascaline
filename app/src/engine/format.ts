@@ -382,7 +382,8 @@ export function confirmedOptions(value: ComplexValue, reliableDigits: number | n
   if (parts.every((v) => digitsShown(v, o) <= n)) return o;
   if (o.format !== "FIX") return { ...o, digits: Math.min(o.digits, n) };
   let fixed = o.fixed ?? 4;
-  for (const v of parts) fixed = Math.min(fixed, n - (v.exp + 1));
+  // A part in the SCI fallback shows fixed + 1 significant digits, so fixed is n - 1 there.
+  for (const v of parts) fixed = Math.min(fixed, fixFallsBack(v, o) ? n - 1 : n - (v.exp + 1));
   return fixed >= 0 ? { ...o, fixed } : { ...o, format: "SCI", digits: n };
 }
 
