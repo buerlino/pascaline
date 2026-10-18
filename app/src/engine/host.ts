@@ -25,6 +25,7 @@ import {
   toExactLiterals,
   unquote,
 } from "./homeEval.ts";
+import { eseriesDefinition } from "./eseries.ts";
 import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
@@ -247,7 +248,7 @@ export class EngineHost {
   need(text: string): void {
     for (const name of definitionsUsedBy(text)) {
       if (this.loaded.has(name)) continue;
-      this.giac.eval(ENGINE_DEFINITIONS[name]!);
+      this.giac.eval(ENGINE_DEFINITIONS[name] ?? eseriesDefinition());
       this.loaded.add(name);
     }
   }
