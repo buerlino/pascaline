@@ -31,6 +31,8 @@ aliases:
   "unit:um": ["micrometre", "micrometer"]
   "unit:mm": ["millimetre", "millimeter"]
   "unit:km": ["kilometre", "kilometer"]
+  "unit:K": ["Δ°C", "ΔC", "delta degC"]
+  "unit:oR": ["Δ°F", "ΔF", "delta degF"]
   "unit:oC": ["degC", "deg C", "degree celsius"]
   "unit:oF": ["degF", "deg F", "degree fahrenheit"]
   "unit:L": ["liter", "litre"]

@@ -15,7 +15,7 @@ const pfx = (id: string, si: string, symbol = id): IndexItem => ({ id: `pfx:${id
 const table = factorTable([
   unit("m", "1", "m1"), unit("h", "3600", "s1"), unit("s", "1", "s1"), unit("Hz", "1", "s-1"), unit("V", "1", "A-1kg1m2s-3"),
   unit("N", "1", "kg1m1s-2"), unit("deg", "pi/180", "rad1", "1°"), unit("oC", "1+5463/20", "K1", "°C"), unit("dB", undefined, "Np1"),
-  unit("dBm", undefined, "kg1m2s-3"), unit("hp", undefined, "kg1m2s-3"), unit("km/h", "5/18", "m1s-1"),
+  unit("dBm", undefined, "kg1m2s-3"), unit("hp", undefined, "kg1m2s-3"), unit("Np", "1", "Np1"), unit("km/h", "5/18", "m1s-1"),
   pfx("k", "1000"), pfx("n", "1/1000000000"), pfx("u", "1/1000000", "µ"), pfx("Ki", "1024"),
   { id: "const:c", kind: "const", names: ["c"], title: "c", value: "299792458", dim: "m1s-1", tier: 0, insert: "\\const{c}{c}" },
   { id: "const:G", kind: "const", names: ["G"], title: "G", value: "6.67430E-11", unc: "1.5E-15", dim: "kg-1m3s-2", tier: 0, insert: "\\const{G}{G}" },
@@ -57,13 +57,29 @@ describe("unit view builder (G16)", () => {
     expect(buildJob({ formula: "2*pask1", slots: [], consts: ["c"] }, table)).toMatchObject({ inexact: false });
   });
   it("refuses an absolute temperature, a logarithmic unit and a unit with no factor, naming it", () => {
-    const refuse = (u: string) => buildJob({ formula: "2*pasu1", slots: [{ tokens: [{ unit: u }] }] }, table);
+    const refuse = (u: string, formula = "2*pasu1*3") => buildJob({ formula, slots: [{ tokens: [{ unit: u }] }] }, table);
     expect(refuse("oC")).toEqual({ error: "temperature", unit: "°C" });
     expect(refuse("dB")).toEqual({ error: "logarithmic", unit: "dB" });
-    expect(refuse("dBm")).toEqual({ error: "logarithmic", unit: "dBm" });
-    expect(refuse("hp")).toEqual({ error: "nofactor", unit: "hp" });
+    expect(refuse("dBm", "2+pasu1")).toEqual({ error: "logarithmic", unit: "dBm" });
+    expect(refuse("oC", "2+3*pasu1")).toEqual({ error: "temperature", unit: "°C" });
+    expect(refuse("oC", "2*pasu1+pasu2")).toEqual({ error: "temperature", unit: "°C" });
+    expect(buildJob({ formula: "2*pasu1", slots: [{ tokens: [{ prefix: "k", unit: "dB" }] }] }, table)).toEqual({ error: "logarithmic", unit: "dB" });
+    expect(refuse("hp", "2*pasu1")).toEqual({ error: "nofactor", unit: "hp" });
     expect(unitErrorMessage({ error: "nofactor", unit: "hp" })).toBe("No exact factor for hp yet");
     expect(unitErrorMessage({ error: "temperature", unit: "°C" })).toBe("Use K or Δ°C for a temperature difference");
+    expect(unitErrorMessage({ error: "logarithmic", unit: "dB" })).toBe("dB converts only");
+  });
+  it("an absolute temperature or a logarithmic unit alone is its kelvin or ratio value; at the end, offset or level", () => {
+    const one = (u: string, formula = "20*pasu1") => buildJob({ formula, slots: [{ tokens: [{ unit: u }] }] }, table);
+    expect(one("oC")).toEqual({ expr: "(((1)*(20)+(5463/20))*pasdimK^(1))", inexact: false });
+    expect(one("oC", "-(1+2)*3*pasu1")).toMatchObject({ expr: "(((1)*(-(1+2)*3)+(5463/20))*pasdimK^(1))" });
+    expect(one("dB", "pasu1")).toEqual({ expr: "((pasup((1)/20))*(1)*pasdimNp^(1))", inexact: false });
+    expect(one("Np", "3*pasu1")).toMatchObject({ expr: "((exp(3))*(1)*pasdimNp^(1))" });
+    const to = (u: string) => buildJob({ formula: "2*pasu1", slots: [{ tokens: [{ unit: "m" }] }], end: { tokens: [{ unit: u }] } }, table);
+    expect(to("oC")).toMatchObject({ end: "((1)*pasdimK^(1))", endOffset: "5463/20" });
+    expect(to("dBm")).toMatchObject({ end: "((1/1000)*pasdimM^(1)*pasdimL^(2)*pasdimT^(-3))", endLog: "10*log10(pasux)" });
+    expect(to("Np")).toMatchObject({ endLog: "ln(pasux)" });
+    expect(buildJob({ formula: "2*pasu1", slots: [{ tokens: [{ unit: "m" }] }], end: { tokens: [{ unit: "dB" }, { unit: "m" }] } }, table)).toEqual({ error: "logarithmic", unit: "dB" });
   });
   it("refuses a request that does not fit together", () => {
     const one = { tokens: [{ unit: "m" }] };

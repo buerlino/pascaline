@@ -37,6 +37,11 @@ export interface UnitJob {
   expr: string;
   /** The end slot's factor × dimension symbols. */
   end?: string;
+  /** The end slot is an absolute temperature (°C, °F): the offset b in K = a·x + b, as exact text (end holds a). */
+  endOffset?: string;
+  /** The end slot is a logarithmic unit: the level as Giac text of `pasux`, the ratio to the end slot's reference
+   *  (end holds the reference, 1 mW for dBm): `20*log10(pasux)` for dB. */
+  endLog?: string;
   /** A constant with an uncertainty went in: never "=" (decisions M4-4), as in Home. */
   inexact: boolean;
 }
@@ -58,8 +63,8 @@ export interface Quantity {
 export type UnitError =
   /** Terms or the end slot do not fit: the dimension keys (two or more; the end slot's last). */
   | { error: "dimension"; dims: string[]; end?: true }
-  /** An absolute temperature (°C, °F) in arithmetic (G17 adds the conversions alone), a logarithmic unit (G17), a
-   *  unit with no exact factor (G13); `unit` is its symbol. */
+  /** An absolute temperature (°C, °F) or a logarithmic unit anywhere but alone (G17: alone it converts), a unit with
+   *  no exact factor (G13); `unit` is its symbol. */
   | { error: "temperature" | "logarithmic" | "nofactor"; unit: string }
   /** A function of a quantity with units (sin, cos and tan take an angle or a pure number). */
   | { error: "function" }

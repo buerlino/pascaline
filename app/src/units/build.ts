@@ -3,11 +3,16 @@
 // constant, the slots as tokens) becomes a UnitJob, Giac text in which every unit is its exact SI factor from the
 // Find index times the dimension symbols of dims.ts. Main thread, plain TS, no engine.
 import { dimSymbols, isExponent } from "./dims.ts";
-import type { FactorTable } from "./factors.ts";
+import type { FactorTable, UnitFactor } from "./factors.ts";
 import type { UnitError, UnitJob, UnitRequest, UnitSlot, UnitToken } from "./types.ts";
 
-/** The logarithmic units (G17 writes their rules): any unit with the Np dimension, and these. */
-const LOGARITHMIC: ReadonlySet<string> = new Set(["dB", "bel", "Np", "dBm", "dBW"]);
+/** The logarithmic units: any unit with the Np dimension, and these. Each is a level of a ratio to a reference:
+ *  `k`·log10 of the field ratio (dB 20, bel 2) or the power ratio (dBm, dBW 10), Np the ln of the field ratio; `ref`
+ *  the reference in SI (1 mW for dBm). 1 Np = 20/ln(10) dB, as the field-quantity convention has it. */
+const LOGARITHMIC: ReadonlyMap<string, { k: number | "ln"; ref: string }> = new Map([
+  ["dB", { k: 20, ref: "1" }], ["bel", { k: 2, ref: "1" }], ["Np", { k: "ln", ref: "1" }],
+  ["dBm", { k: 10, ref: "1/1000" }], ["dBW", { k: 10, ref: "1" }],
+]);
 
 class Refused extends Error {
   readonly why: UnitError;
@@ -51,6 +56,63 @@ export function slotGiac(slot: UnitSlot, table: FactorTable): string {
   return `(${slot.tokens.map((t, i) => tokenGiac(t, i >= per, table)).join("*")})`;
 }
 
+const isAffine = (u: UnitFactor): boolean => u.si?.includes("+") === true;
+const isLog = (id: string, u: UnitFactor): boolean => LOGARITHMIC.has(id) || /Np/.test(u.dim ?? "");
+
+/** The first token of a slot that is an absolute temperature or a logarithmic unit, or null. */
+function specialIn(slot: UnitSlot, table: FactorTable): { id: string; u: UnitFactor; bare: boolean } | null {
+  for (const t of slot.tokens) {
+    const u = table.units.get(t.unit);
+    if (u && (isAffine(u) || isLog(t.unit, u)))
+      return { id: t.unit, u, bare: slot.tokens.length === 1 && slot.per === undefined && t.prefix === undefined && (t.power ?? "1") === "1" };
+  }
+  return null;
+}
+
+const refuseSpecial = (id: string, u: UnitFactor): Refused => new Refused({ error: isLog(id, u) ? "logarithmic" : "temperature", unit: u.symbol });
+
+/** The number part of a formula that is only `number*pasuN` (or `pasuN`): a unit-free factor with no +/- outside
+ *  parentheses (2+3*pasu1 is not (2+3)*pasu1), else null. */
+function aloneNumber(formula: string, n: number): string | null {
+  const m = /^\s*(?:(.+?)\s*\*\s*)?pasu(\d+)\s*$/.exec(formula);
+  if (!m || Number(m[2]) !== n) return null;
+  const num = m[1]?.trim() ?? "1";
+  if (!/^[0-9.+\-*/^()\s]+$/.test(num.replace(/\bpi\b/g, "1"))) return null;
+  let depth = 0;
+  for (let i = 0; i < num.length; i++) {
+    const c = num[i]!;
+    if (c === "(") depth++;
+    else if (c === ")" && --depth < 0) return null;
+    else if (depth === 0 && (c === "+" || c === "-") && num.slice(0, i).trim() !== "" && !/[*/^(]\s*$/.test(num.slice(0, i))) return null;
+  }
+  return depth === 0 ? num : null;
+}
+
+/** A source quantity that is alone and absolute: °C, °F by K = a·x + b, a logarithmic unit by its level's ratio. */
+function specialSource(id: string, u: UnitFactor, num: string): string {
+  const dims = dimSymbols(u.dim ?? "");
+  const rule = LOGARITHMIC.get(id);
+  if (isLog(id, u)) {
+    if (!rule) throw refuseSpecial(id, u);
+    const ratio = rule.k === "ln" ? `exp(${num})` : `pasup((${num})/${rule.k})`;
+    return `((${ratio})*(${rule.ref})${dims ? `*${dims}` : ""})`;
+  }
+  const [a, b] = u.si!.split("+");
+  return `(((${a})*(${num})+(${b}))${dims ? `*${dims}` : ""})`;
+}
+
+/** The end slot °C, °F or a logarithmic unit: its factor (a, or the reference) and the offset or the level rule. */
+function specialEnd(id: string, u: UnitFactor): { end: string; endOffset?: string; endLog?: string } {
+  const dims = dimSymbols(u.dim ?? "");
+  const rule = LOGARITHMIC.get(id);
+  if (isLog(id, u)) {
+    if (!rule) throw refuseSpecial(id, u);
+    return { end: `((${rule.ref})${dims ? `*${dims}` : ""})`, endLog: rule.k === "ln" ? "ln(pasux)" : `${rule.k}*log10(pasux)` };
+  }
+  const [a, b] = u.si!.split("+");
+  return { end: `((${a})${dims ? `*${dims}` : ""})`, endOffset: b! };
+}
+
 /** A constant as Giac text: its value times its dimension symbols (the worker makes the decimal exact). */
 function constGiac(id: string, table: FactorTable): { giac: string; inexact: boolean } {
   const c = table.consts.get(id);
@@ -60,11 +122,29 @@ function constGiac(id: string, table: FactorTable): { giac: string; inexact: boo
   return { giac: `((${c.value})${dims ? `*${dims}` : ""})`, inexact: c.unc !== undefined };
 }
 
+/** The end slot's part of a job. */
+function endJob(req: UnitRequest, table: FactorTable): Pick<UnitJob, "end" | "endOffset" | "endLog"> {
+  if (!req.end) return {};
+  const x = specialIn(req.end, table);
+  if (!x) return { end: slotGiac(req.end, table) };
+  if (!x.bare) throw refuseSpecial(x.id, x.u);
+  return specialEnd(x.id, x.u);
+}
+
 const PLACEHOLDER = /\bpas([uk])(\d+)\b/g;
 
 /** The UnitJob for a request, or why it is refused before Giac sees it. */
 export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitError {
   try {
+    // An absolute temperature or a logarithmic unit is allowed only alone, as the whole quantity.
+    const sp = req.slots.map((s) => specialIn(s, table));
+    const alone = sp.findIndex((x) => x !== null);
+    if (alone >= 0) {
+      const x = sp[alone]!;
+      const num = x.bare && req.slots.length === 1 && !req.consts?.length ? aloneNumber(req.formula, alone + 1) : null;
+      if (num === null) throw refuseSpecial(x.id, x.u);
+      return { expr: specialSource(x.id, x.u, num), ...endJob(req, table), inexact: false };
+    }
     const slots = req.slots.map((s) => slotGiac(s, table));
     const consts = (req.consts ?? []).map((id) => constGiac(id, table));
     const used = new Set<string>();
@@ -79,7 +159,7 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
     if (/\bpas/.test(expr.replace(/\bpasdim[A-Za-z]+\b/g, ""))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
     return {
       expr,
-      ...(req.end ? { end: slotGiac(req.end, table) } : {}),
+      ...endJob(req, table),
       inexact: consts.some((c) => c.inexact),
     };
   } catch (e) {
