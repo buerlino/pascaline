@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Where a number ends (R29, backlog F24 and F25): a second decimal point inside a number, and a number beside a
-// result chip, are errors with a message that names the fix, never a silent product. The values of the kept forms
-// are checked by Giac in tests/golden/parser.yaml (groups "decimals", "l6" and "chips"); here the messages and the
-// Giac text, with no engine.
+// Where a number ends (R29, backlog F24 and F25; R51, F43): a second decimal point inside a number, a number beside a
+// result chip, and two numbers with spacing between them are errors with a message that names the fix, never a silent
+// product. The values of the kept forms are checked by Giac in tests/golden/parser.yaml (groups "decimals", "l6" and
+// "chips"); here the messages and the Giac text, with no engine.
 import { describe, expect, it } from "vitest";
 import type { ChipTable } from "./chips.ts";
 import { SerializeError } from "./emit.ts";
@@ -97,6 +97,34 @@ describe("a number beside a result chip (F25)", () => {
     ["2\\ans", "2*(7)"],
     ["\\sin2\\ans", "sin(2*(7))"],
     ["2\\const{c}{c}", "2*(299792458)"],
+  ])("%s is kept as %s", (latex, out) => {
+    expect(giac(latex)).toBe(out);
+  });
+});
+
+describe("a space between two numbers (F43, R51)", () => {
+  it.each(["2 3", "2\\ 3", "2\\,3", "2\\;3", "2\\quad3", "1\\,000", "2.5\\ .3", "1\\emark3\\ 2", "1\\emark-3\\ 2", "\\sin2\\ 3"])(
+    "%s is an error",
+    (latex) => {
+      expect(message(latex)).toBe("put × between two numbers");
+    },
+  );
+  it("with the decimal comma too", () => {
+    expect(message("2{,}5\\ 3", true)).toBe("put × between two numbers");
+  });
+  it("a space between a result chip and a number is still F25's error", () => {
+    expect(message("\\res{1}{0.5}\\ 3")).toBe("put × between a result and a number");
+  });
+  it.each([
+    ["2\\ x", "2*x"],
+    ["x\\ 2", "x*2"],
+    ["2\\ \\pi", "2*pi"],
+    ["\\sin\\ 2", "sin(2)"],
+    ["2\\times\\ 3", "2*3"],
+    ["\\left(2\\right)\\ 3", "(2)*3"],
+    ["2\\times 3", "2*3"],
+    ["\\frac1 2", "1/2"],
+    ["\\res{1}{1\\,000}\\times2", "(1/2)*2"],
   ])("%s is kept as %s", (latex, out) => {
     expect(giac(latex)).toBe(out);
   });
