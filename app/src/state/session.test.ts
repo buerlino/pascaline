@@ -268,3 +268,16 @@ describe("Session safe start (G19, F31)", () => {
     expect(s.cas).toHaveLength(0);
   });
 });
+
+describe("P5 (b), R39: the real odd root of a power", () => {
+  it("Home sends surd for a p/q exponent with q odd; CAS keeps Giac's power", async () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    await s.submit("\\left(-8\\right)^{\\frac{1}{3}}");
+    await s.submit("\\left(-8\\right)^{\\frac{2}{3}}");
+    await s.submit("\\left(-8\\right)^{\\frac{1}{2}}");
+    expect(s.home.map((i) => i.text)).toEqual(["surd((-8),3)", "surd((-8),3)^2", "(-8)^(1/2)"]);
+    s.setView("cas");
+    await s.submit("\\left(-8\\right)^{\\frac{1}{3}}");
+    expect(s.cas[0]?.text).toBe("(-8)^(1/3)");
+  });
+});

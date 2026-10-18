@@ -147,7 +147,10 @@ async function stageHome(): Promise<void> {
     const host = new EngineHost(await freshGiac());
     for (const c of cs) {
       const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
-      runs.get(c.id)!.push(host.home(c.input!, s).result);
+      // A case written as `latex` goes through our parser with Home's options (R39: realOddRoots), its `before` too
+      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
+      for (const b of c.before ?? []) host.home(giacOf(b), s);
+      runs.get(c.id)!.push(host.home(c.latex !== undefined ? giacOf(c.latex) : c.input!, s).result);
     }
   }
   let pass = 0;

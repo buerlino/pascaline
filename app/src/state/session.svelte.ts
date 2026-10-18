@@ -466,7 +466,7 @@ export class Session {
       else {
         const parser = await loadParser();
         if (live.status !== "pending") return; // Cancel came while the parser chunk was loading
-        const p = parser.latexToGiacInfo(latex, { chips });
+        const p = parser.latexToGiacInfo(latex, { chips, realOddRoots: view === "home" }); // P5 (b), R39: not CAS
         giac = p.giac;
         if (p.inexact) live.inexactInput = true;
       }

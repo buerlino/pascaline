@@ -9,8 +9,48 @@ export type Json = number | string | { num: string } | { sym: string } | { str: 
 export interface SerializeOptions {
   /** Single-letter names treated as functions when followed by (...), e.g. f(x). Others multiply. */
   userFunctions?: ReadonlySet<string>;
-  /** L6 setting (default on; the reference gives -2 for (-8)^(1/3), G2 items 4/11, but our power form stays complex, P5(b)): an n-th root with odd whole n is the real root (∛(-8) = -2). */
+  /**
+   * L6 and P5 (b), R39. The root template: an n-th root with odd whole n is the real root (∛(-8) = -2) unless this is
+   * false. The power form only when this is true (Home, Solve and Function set it; CAS does not): a power whose
+   * exponent is a literal fraction p/q (reduced) with q odd is the real root, (-8)^(1/3) = -2 as on the G2 (items 4
+   * and 11). An even q, or any other exponent, keeps the principal root.
+   */
   realOddRoots?: boolean;
+}
+
+function wholeText(e: Json | undefined): string | undefined {
+  const v = typeof e === "object" && e !== null && !Array.isArray(e) && "num" in e ? e.num : undefined;
+  return v !== undefined && /^\d+$/.test(v) ? v : undefined;
+}
+
+function gcd(a: bigint, b: bigint): bigint {
+  while (b !== 0n) [a, b] = [b, a % b];
+  return a;
+}
+
+/**
+ * The exponent is a literal fraction of whole numbers (`1/3`, `-2/3`, `\frac{-1}{5}`, in brackets or not) whose
+ * reduced denominator is odd and above 1: its reduced p and q, as text. Otherwise undefined.
+ */
+export function oddRootExponent(e: Json | undefined): { p: string; q: string } | undefined {
+  let neg = false;
+  let x = e;
+  for (;;) {
+    if (Array.isArray(x) && x[0] === "Delimiter" && x.length === 2) x = x[1] as Json;
+    else if (Array.isArray(x) && x[0] === "Negate" && x.length === 2) [neg, x] = [!neg, x[1] as Json];
+    else break;
+  }
+  if (!Array.isArray(x) || (x[0] !== "Divide" && x[0] !== "Rational") || x.length !== 3) return undefined;
+  let num = x[1] as Json;
+  if (Array.isArray(num) && num[0] === "Negate" && num.length === 2) [neg, num] = [!neg, num[1] as Json];
+  const [a, b] = [wholeText(num), wholeText(x[2] as Json)];
+  if (a === undefined || b === undefined) return undefined;
+  let [p, q] = [BigInt(a), BigInt(b)];
+  if (q === 0n || p === 0n) return undefined;
+  const g = gcd(p, q);
+  [p, q] = [p / g, q / g];
+  if (q === 1n || q % 2n === 0n) return undefined;
+  return { p: (neg ? "-" : "") + String(p), q: String(q) };
 }
 
 /** The root index is an odd whole number literal (3, 5, ...). */
@@ -204,12 +244,18 @@ function ser(e: Json, o: SerializeOptions): Out {
     case "Power": {
       if (a0 === "ExponentialE" || a0 === "e") return call("exp", [a1], o); // e^x -> exp(x), not exp(1)^x
       const base = ser(a0, o);
+      // P5 (b), R39: (-8)^(1/3) = -2 in Home, Solve and Function; surd(b,q)^p is the real q-th root to the power p
+      const odd = o.realOddRoots === true ? oddRootExponent(a1) : undefined;
+      if (odd) {
+        const root = `surd(${base.s},${odd.q})`;
+        return odd.p === "1" ? { s: root, p: 5 } : { s: `${root}^${odd.p.startsWith("-") ? `(${odd.p})` : odd.p}`, p: 4 };
+      }
       const ex = ser(a1, o);
       return { s: `${wrap(base, 5)}^${wrap(ex, 5)}`, p: 4 };
     }
     case "Root": {
-      // L6 default (root template only; our power form stays complex, P5(b)): an odd whole-number index gives the real root, so ∛(-8) = -2
-      // (Giac surd). Otherwise, or with realOddRoots off, the principal root x^(1/n).
+      // L6 default: an odd whole-number index gives the real root, so ∛(-8) = -2 (Giac surd); the power form follows
+      // only with realOddRoots on (P5 (b), above). Otherwise, or with realOddRoots false, the principal root x^(1/n).
       if (o.realOddRoots !== false && oddIndex(a1)) return call("surd", [a0, a1], o);
       return { s: `${wrap(ser(a0, o), 5)}^(1/${wrap(ser(a1, o), 5)})`, p: 4 };
     }

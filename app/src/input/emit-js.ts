@@ -2,7 +2,7 @@
 // MathJSON -> JavaScript expression source for plotting: real numbers only, one or more named variables,
 // fully parenthesised, so the result can be compiled once with new Function and called allocation-free.
 // 1/0 gives Infinity and invalid points (sqrt(-1), ln(-1)) give NaN, which curve renderers treat as a break.
-import { SerializeError, oddIndex, type Json } from "./emit.ts";
+import { SerializeError, oddIndex, oddRootExponent, type Json } from "./emit.ts";
 import { parseLatex } from "./parse.ts";
 
 const FN1: Record<string, string> = {
@@ -36,7 +36,14 @@ function js(e: Json, vars: ReadonlySet<string>): string {
     case "Negate": return `(-${r(0)})`;
     case "Multiply": return `(${a.map((_, i) => r(i)).join("*")})`;
     case "Divide": return `(${r(0)}/${r(1)})`;
-    case "Power": return `Math.pow(${r(0)},${r(1)})`;
+    case "Power": {
+      // Same as emit.ts with realOddRoots (P5 (b), R39): an exponent p/q with q odd takes the real q-th root
+      const odd = oddRootExponent(a[1]);
+      if (odd === undefined) return `Math.pow(${r(0)},${r(1)})`;
+      const b = r(0);
+      const root = odd.q === "3" ? `Math.cbrt(${b})` : `(Math.sign(${b})*Math.pow(Math.abs(${b}),1/${odd.q}))`;
+      return odd.p === "1" ? root : `Math.pow(${root},${odd.p})`;
+    }
     case "Delimiter": return r(0);
     case "Degrees": return `(${r(0)}*Math.PI/180)`;
     case "Root":
