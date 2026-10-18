@@ -61,7 +61,7 @@ const shots: Shot[] = [
   { id: "layer-shift", group: "Keypad layers", title: "Shift layer", setup: (p) => tap(p, ["shift"]) },
   { id: "layer-alpha", group: "Keypad layers", title: "Alpha layer", setup: (p) => tap(p, ["alpha"]) },
   { id: "layer-alpha-lock", group: "Keypad layers", title: "Alpha lock (capitals)", setup: (p) => tap(p, ["alpha", "alpha"]) },
-  { id: "layer-lower-lock", group: "Keypad layers", title: "Lower-case lock", setup: (p) => tap(p, ["alpha", "alpha", "alpha"]) },
+  { id: "layer-lower-lock", group: "Keypad layers", title: "Lower-case lock", setup: (p) => tap(p, ["shift", "alpha", "alpha"]) },
   { id: "layer-shift-alpha", group: "Keypad layers", title: "Shift then Alpha (lower case)", setup: (p) => tap(p, ["shift", "alpha"]) },
   // ---- Home
   { id: "home-history", group: "Home", title: "Home with history", setup: someHistory },

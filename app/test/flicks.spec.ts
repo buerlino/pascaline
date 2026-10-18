@@ -311,3 +311,20 @@ test("a typed key waiting for the load keeps its layer, and a Shift pressed afte
   // the last Shift was used up by the flick, as a one-shot is by any key
   expect((await mods(page)).shift).toBe(false);
 });
+
+test("F40: Shift + Alpha shows and types lower case; Alpha alone capitals; the lower-case lock until released", async ({ page }) => {
+  const face = (id: string) => page.locator(`[data-key="${id}"] .main`);
+  await tap(page, ["alpha"]);
+  await expect(face("vars")).toHaveText("A");
+  await tap(page, ["vars"]);
+  await tap(page, ["shift", "alpha"]);
+  await expect(face("vars")).toHaveText("a");
+  await tap(page, ["vars"]);
+  expect(await entryValue(page)).toBe("Aa");
+  await tap(page, ["shift", "alpha", "alpha"]); // the lower-case lock
+  await tap(page, ["vars"]);
+  await expect(face("vars")).toHaveText("a");
+  expect(await entryValue(page)).toBe("Aaa");
+  await tap(page, ["alpha"]); // released
+  await expect(face("vars")).not.toHaveText("a");
+});
