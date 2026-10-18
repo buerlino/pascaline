@@ -15,10 +15,11 @@ A match with the G2 alone justifies nothing. Between two equal readings, the one
 Values not printed by a probe come from the oracle or are `derived`. MathLive's own behaviour is quoted from the regression findings (F10–F23, backlog archive). It was not re-run here, since that needs Playwright. Line numbers are on `8745db1`.
 
 **Result.** Most rows are kept:
-- 36 rows: by P3, by P2, or because they are the engine's own result;
-- 1 row widened (item 40);
-- 4 rows S14 decides;
-- 3 dropped, each with a package: R39's power form in Home (R66; Function and Solve keep it, rows 2b, 2c), the half-even option (G45), and G42's G2-waiting parts (G42 rewritten).
+- 36 rows kept: by P3, by P2, or because they are the engine's own result;
+- 1 row widened (20, item 40; R68);
+- 1 row decided and built (8, R58b; R67);
+- 2 rows S14 decides (9, 10);
+- 4 rows dropped, each with a package: 2a → R66 (R39's power form in Home; Function and Solve keep it, rows 2b, 2c), 4 → G45 (the half-even option), 5 and 6 → G42 rewritten (its G2-waiting parts).
 
 R58b gets its build package (R67), and item 40 gets its own (R68).
 
