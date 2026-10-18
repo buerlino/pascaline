@@ -626,6 +626,8 @@ cases:
   - { id: "units-11", latex: "\\left(2.5\\pm0.1\\placeholder[u1]{}\\right)^{2}", options: { units: true }, formula: "(pasupm(2.5,0.1)*pasu1)^2", slots: ["m"], expect: "25/4*pasdimL^2", source: "derived", group: "units" }
   - { id: "units-12", latex: "9.81\\pm2\\emark-3\\placeholder[u1]{}", options: { units: true }, formula: "pasupm(9.81,2e-3)*pasu1", slots: ["m / s^2"], expect: "981/100*pasdimL/pasdimT^2", source: "derived", group: "units", note: "σ may be an ᴇ number" }
   - { id: "units-13", latex: "2{,}5\\placeholder[u1]{}", options: { units: true, decimalComma: true }, formula: "2.5*pasu1", slots: ["h"], expect: "9000*pasdimT", source: "derived", group: "units" }
+  - { id: "units-14", latex: "-20\\pm0.5\\placeholder[u1]{}", options: { units: true }, formula: "pasupm(-20,0.5)*pasu1", slots: ["oC"], expect: "5063/20*pasdimK", source: "derived", group: "units", note: "the sign goes inside the pasupm call, so °C sees a lone number (decisions Opus pass 2): -20 + 273.15 K" }
+  - { id: "units-15", latex: "-20\\pm0.5\\placeholder[u1]{}", options: { units: true }, formula: "pasupm(-20,0.5)*pasu1", slots: ["m"], expect: "-20*pasdimL", source: "derived", group: "units" }
   - { id: "units-e01", latex: "5\\pm1", error: true, source: "derived", group: "units", note: "± outside units mode" }
   - { id: "units-e02", latex: "12.34\\pm0.05", error: true, source: "derived", group: "units", note: "± outside units mode" }
   - { id: "units-e03", latex: "5\\to", error: true, source: "derived", group: "units", note: "→ outside units mode is the function arrow, which needs a name" }

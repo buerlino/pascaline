@@ -7,6 +7,11 @@ import { latexToGiacInfo } from "./latex-to-giac.ts";
 const units = (latex: string) => latexToGiacInfo(latex, { units: true });
 
 describe("units mode (R28)", () => {
+  it("a minus before a ± value goes inside its pasupm call; a double minus cancels", () => {
+    expect(units("-20\\pm0.5\\placeholder[u1]{}").giac).toBe("pasupm(-20,0.5)*pasu1");
+    expect(units("--20\\pm0.5\\placeholder[u1]{}").giac).toBe("pasupm(20,0.5)*pasu1");
+    expect(latexToGiacInfo("-20\\placeholder[u1]{}", { units: true }).giac).toBe("-20*pasu1");
+  });
   it("names the slots in the order written, whatever their ids", () => {
     const r = units("3\\placeholder[u2]{\\mathrm{m}}+4\\placeholder[u1]{}");
     expect(r.giac).toBe("3*pasu1+4*pasu2");

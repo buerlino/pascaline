@@ -431,7 +431,7 @@ class Parser {
   private term(): Json {
     if (this.isCh("-")) {
       this.pos++;
-      return ["Negate", this.term()];
+      return this.negate(this.term());
     }
     if (this.isCh("+")) {
       this.pos++;
@@ -460,10 +460,32 @@ class Parser {
     }
   }
 
+  /** Unary minus. In units mode a sign before a ± value goes inside its pasupm call (-20±0.5 u is pasupm(-20,0.5)·u,
+   *  decisions Opus pass 2), and a double minus cancels; elsewhere it is Negate. */
+  private negate(x: Json): Json {
+    if (this.units) {
+      const f = (e: Json): Json | null => {
+        if (!Array.isArray(e)) return null;
+        if (e[0] === "Call" && e[1] === "pasupm") {
+          const v = e[2] as Json;
+          return ["Call", "pasupm", Array.isArray(v) && v[0] === "Negate" ? (v[1] as Json) : ["Negate", v], ...e.slice(3)] as Json;
+        }
+        if ((e[0] === "Multiply" || e[0] === "Divide") && e.length > 1) {
+          const l = f(e[1] as Json);
+          return l ? ([e[0], l, ...e.slice(2)] as Json) : null;
+        }
+        return null;
+      };
+      const r = f(x);
+      if (r) return r;
+    }
+    return ["Negate", x];
+  }
+
   private signedImplicit(): Json {
     if (this.isCh("-")) {
       this.pos++;
-      return ["Negate", this.signedImplicit()];
+      return this.negate(this.signedImplicit());
     }
     return this.implicit();
   }
@@ -472,7 +494,7 @@ class Parser {
   private signedFactor(): Json {
     if (this.isCh("-")) {
       this.pos++;
-      return ["Negate", this.signedFactor()];
+      return this.negate(this.signedFactor());
     }
     return this.postfix();
   }
