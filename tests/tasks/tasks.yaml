@@ -145,7 +145,7 @@ tasks:
     title: Mean and standard deviation of ten readings
     milestone: 6
     status: pending
-    needs: "lists you can enter (EN5, milestone 6); statistics itself is deferred"
+    needs: "mean() and stddevp() from Find (R4a; the budget comes with it); the list is Shift + 8 (R54)"
     budget: null
     keys: null
     data: ["9.81", "9.79", "9.83", "9.80", "9.82", "9.78", "9.84", "9.81", "9.80", "9.82"]
@@ -154,7 +154,10 @@ tasks:
       value: ["9.81", "0.01825741858350553711523232609336007113176"]
       stdev_population: "0.01732050807568877293527446341505872366943"
     source: oracle    # mean = 981/100 and sum of squares = 3/1000 exactly; roots by mpmath 1.3.0, 40 digits
-    baseline: null    # no list entry today
+    baseline:
+      note: "the mean only, as (sum) ÷ 10: Shift + 8 types the list (R54), but mean() and stddevp() need Find (R4a); letters typed with Alpha are a product (m·e·a·n), not a name"
+      keys: [paren, d9, dot, d8, d1, add, d9, dot, d7, d9, add, d9, dot, d8, d3, add, d9, dot, d8, d0, add, d9, dot, d8, d2, add, d9, dot, d7, d8, add, d9, dot, d8, d4, add, d9, dot, d8, d1, add, d9, dot, d8, d0, add, d9, dot, d8, d2, right, div, d1, d0, enter]
+      text: "9.81"
     compare: { g2_virtual_calc: null, phone_calculator: null }
 
   - id: t10
