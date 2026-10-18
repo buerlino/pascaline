@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // LaTeX -> Giac with our own parser (no Compute Engine). Same output stage as serialize.ts.
+import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
 import { SerializeError, mathJsonToGiac, type Json, type SerializeOptions } from "./emit.ts";
 import type { ChipTable } from "./chips.ts";
 import { parseLatexInfo } from "./parse.ts";
@@ -39,7 +40,7 @@ export function latexToGiac(latex: string, o: LatexToGiacOptions = {}): string {
 
 /** The Giac text, and whether an inexact chip went into it (then the result is never marked "=", docs/04 2.4). */
 export function latexToGiacInfo(latex: string, o: LatexToGiacOptions = {}): { giac: string; inexact: boolean } {
-  if (latex.trim() === "") throw new SerializeError("empty input");
+  if (latex.trim() === "") throw parseError("parse.emptyInput");
   const user = o.userFunctions ?? userFunctions();
   const { json, inexact } = parseLatexInfo(latex, {
     userFunctions: user,
