@@ -10,7 +10,8 @@
 import { CalcCancelled, engineFormat, IDENT, type Calc, type KnownValue, type SolveOutcome } from "../../calc/port.ts";
 import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { EMARK } from "../../entry/macros.ts";
-import { mathJsonToGiac, SerializeError } from "../../input/emit.ts";
+import { mathJsonToGiac } from "../../input/emit.ts";
+import { parseFailText } from "../../input/errors.ts";
 import { parseLatex } from "../../input/parse.ts";
 import { tc } from "../../clipboard/strings.ts";
 import { t } from "../../i18n/index.ts";
@@ -44,9 +45,9 @@ interface Stored {
 export function compileEquation(latex: string): { giac: string; error: string } {
   if (latex.trim() === "") return { giac: "", error: "" };
   try {
-    return { giac: mathJsonToGiac(parseLatex(latex)), error: "" };
+    return { giac: mathJsonToGiac(parseLatex(latex), { realOddRoots: true }), error: "" };
   } catch (e) {
-    return { giac: "", error: e instanceof SerializeError ? e.message : String(e) };
+    return { giac: "", error: parseFailText(e) };
   }
 }
 

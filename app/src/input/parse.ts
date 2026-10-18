@@ -2,14 +2,17 @@
 // Hand-written parser for the LaTeX subset MathLive produces from our keyboard (and Giac's latex() style).
 // It yields the same MathJSON shapes as Compute Engine's raw parse, so emit.ts serves both parsers.
 // Unknown or ambiguous input throws SerializeError instead of guessing.
+import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
 import { ANS_KEY, constKey, resKey, type ChipTable } from "./chips.ts";
 import { chipToGiac } from "./chip-giac.ts";
-import { SerializeError, type Json } from "./emit.ts";
+import type { Json } from "./emit.ts";
 
 type Tok =
-  | { t: "num"; v: string }
+  /** gap (F43, R51): spacing (a space or a spacing command) separates this number from a number just before it. */
+  | { t: "num"; v: string; gap?: true }
   | { t: "ch"; v: string }
-  | { t: "cmd"; v: string }
+  /** id: a MathLive prompt `\placeholder[id]{…}` (R28), whose v is "placeholder". */
+  | { t: "cmd"; v: string; id?: string }
   | { t: "open"; v: string }
   | { t: "close"; v: string };
 
@@ -26,6 +29,28 @@ const EMARK = "emark";
 const LOGIC = "logic:";
 /** The Å of the Shift + 9 palette (R18), refused with a message. */
 const ARING = "aring";
+/** The id of a MathLive prompt token `\placeholder[id]{…}` (R28, the unit view's slots), else undefined. Its body is
+ *  skipped: a slot's units live in R24a's model and are never read back from the LaTeX (docs/04 4.3). */
+const promptId = (t: Tok | undefined): string | undefined => (t?.t === "cmd" ? t.id : undefined);
+
+/** The end of a `{…}` group starting at `j` (braces balanced, `\{` and `\}` skipped), or -1. */
+function groupEnd(src: string, j: number): number {
+  if (src[j] !== "{") return -1;
+  let depth = 0;
+  for (let k = j; k < src.length; k++) {
+    const c = src[k];
+    if (c === "\\") k++;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return k + 1;
+  }
+  return -1;
+}
+
+/** The length of a decimal comma at `j` ("," or MathLive's "{,}"), 0 if there is none or the setting is off. */
+function commaAt(src: string, j: number, decimalComma: boolean): number {
+  if (!decimalComma) return 0;
+  return src[j] === "," ? 1 : src.startsWith("{,}", j) ? 3 : 0;
+}
 
 /** decimalComma (L6): "3,5" and MathLive's "3{,}5" are the number 3.5; use ";" between arguments then. */
 function tokenize(src: string, decimalComma = false): Tok[] {
@@ -33,22 +58,38 @@ function tokenize(src: string, decimalComma = false): Tok[] {
   let i = 0;
   const n = src.length;
   const isDigit = (c: string | undefined) => c !== undefined && c >= "0" && c <= "9";
+  // F43 (R51): spacing was skipped right after the token out[gapAt - 1]
+  let gapAt = -1;
   while (i < n) {
     const c = src[i] as string;
     if (c === " " || c === "\n" || c === "\t") {
+      gapAt = out.length;
       i++;
     } else if (c === "\\") {
       let j = i + 1;
       while (j < n && /[A-Za-z]/.test(src[j] as string)) j++;
       const name = j > i + 1 ? src.slice(i + 1, j) : (src[j++] ?? "");
       i = j;
-      if (SPACING.has(name)) continue;
+      if (SPACING.has(name)) {
+        gapAt = out.length;
+        continue;
+      }
       if (name === "mathbin") {
         // P4: the polar sign is entered as \mathbin{\measuredangle} so that a following ÷ does not absorb it into the numerator
         const m = /^\{\s*\\measuredangle\s*\}/.exec(src.slice(i));
         if (m) {
           i += m[0].length;
           out.push({ t: "cmd", v: "measuredangle" });
+          continue;
+        }
+      }
+      if (name === "placeholder") {
+        // R28: a named prompt, one token; the id is letters and digits (u1, end)
+        const m = /^\[([A-Za-z0-9]+)\]\s*/.exec(src.slice(i));
+        const end = m ? groupEnd(src, i + m[0].length) : -1;
+        if (m && end > 0) {
+          i = end;
+          out.push({ t: "cmd", v: "placeholder", id: m[1] as string });
           continue;
         }
       }
@@ -99,24 +140,31 @@ function tokenize(src: string, decimalComma = false): Tok[] {
     } else if (isDigit(c) || (c === "." && isDigit(src[i + 1]))) {
       let j = i;
       while (isDigit(src[j])) j++;
-      while (isDigit(src[j])) j++;
-      const comma = !decimalComma ? 0 : src[j] === "," ? 1 : src.startsWith("{,}", j) ? 3 : 0;
+      const comma = commaAt(src, j, decimalComma);
+      let v: string;
       if (src[j] === "." && isDigit(src[j + 1])) {
         j++;
         while (isDigit(src[j])) j++;
+        v = src.slice(i, j);
       } else if (comma && isDigit(src[j + comma])) {
         const intPart = src.slice(i, j);
         j += comma;
         const k = j;
         while (isDigit(src[j])) j++;
-        out.push({ t: "num", v: `${intPart}.${src.slice(k, j)}` });
-        i = j;
-        continue;
+        v = `${intPart}.${src.slice(k, j)}`;
       } else if (src[j] === "." && c !== ".") {
         // "5." alone: treat the dot as part of the number
         j++;
+        v = src.slice(i, j);
+      } else v = src.slice(i, j);
+      // F24 (R29): a second decimal separator right after a number with one (2.5.3, 1..5, 2,5,3) is not a product
+      if (v.includes(".")) {
+        if (src[j] === ".") throw parseError("parse.onePoint");
+        const c2 = commaAt(src, j, decimalComma);
+        if (c2 && isDigit(src[j + c2])) throw parseError("parse.oneComma");
       }
-      out.push({ t: "num", v: src.slice(i, j) });
+      // F43 (R51): the parser refuses a number after a number and spacing (2 3, 1\,000), never a silent product
+      out.push(gapAt === out.length && out[out.length - 1]?.t === "num" ? { t: "num", v, gap: true } : { t: "num", v });
       i = j;
     } else if (c === "\u1D07") {
       out.push({ t: "cmd", v: EMARK });
@@ -192,6 +240,19 @@ export interface ParseOptions {
   decimalComma?: boolean;
   /** The entry's chip table: the values of its \res, \ans and \const chips (input/chips.ts). */
   chips?: ChipTable;
+  /** R28, the unit view (docs/04 4.3): a prompt after a number is its unit slot, `\pm` after a number its standard
+   *  uncertainty, a constant chip stays a constant and `\to` before the last prompt marks the end slot. */
+  units?: boolean;
+}
+
+/** R28: what units mode found besides the formula, for G16's UnitRequest. */
+export interface UnitsInfo {
+  /** The prompt ids of the unit slots in the order written: `pasu<i>` is slots[i-1]. */
+  slots: string[];
+  /** Find constant ids without "const:": `pask<j>` is consts[j-1]; a constant used twice is one entry. */
+  consts: string[];
+  /** The prompt id of the end slot after `\to`, if there is one. */
+  end?: string;
 }
 
 /** What the parser found besides the expression. */
@@ -199,6 +260,8 @@ export interface ParseInfo {
   json: Json;
   /** A chip whose value is not exact was used, so the result cannot be marked "=" (docs/04 2.4). */
   inexact: boolean;
+  /** Units mode only. */
+  units?: UnitsInfo;
 }
 
 /** Letters that start a base prefix after a lone 0 (0x, 0b, 0o), and what may follow them. */
@@ -210,20 +273,26 @@ class Parser {
   private user: ReadonlySet<string>;
   private toks: Tok[];
   private readonly chips: ChipTable;
+  /** R28: units mode and what it found (null outside units mode). */
+  readonly units: UnitsInfo | null;
   /** Set when a chip with an inexact value is used. */
   inexact = false;
+  /** F25 (R29): the token index right after the last number literal, and right after the last result chip. */
+  private numEnd = -1;
+  private resEnd = -1;
   constructor(toks: Tok[], o: ParseOptions) {
     this.toks = toks;
     this.user = o.userFunctions ?? new Set(["f", "g", "h"]);
     this.chips = o.chips ?? {};
+    this.units = o.units ? { slots: [], consts: [] } : null;
   }
 
   private peek(k = 0): Tok | undefined {
     return this.toks[this.pos + k];
   }
-  private fail(msg: string): never {
+  private fail(key: ParseKey, vars?: ParseVars): never {
     const t = this.peek();
-    throw new SerializeError(`${msg}${t ? ` at '${t.v}'` : " at end of input"}`);
+    throw parseError(t ? "parse.atToken" : "parse.atEnd", { msg: parseText(key, vars), tok: t ? t.v : "" });
   }
   private isCh(v: string, k = 0): boolean {
     const t = this.peek(k);
@@ -234,19 +303,27 @@ class Parser {
     return t?.t === "cmd" && t.v === v;
   }
   private expectCh(v: string): void {
-    if (!this.isCh(v)) this.fail(`expected '${v}'`);
+    if (!this.isCh(v)) this.fail("parse.expected", { v });
     this.pos++;
   }
   private expectClose(kind: string): void {
     const t = this.peek();
-    if (t?.t !== "close" || t.v !== kind) this.fail(`expected closing ${kind}`);
+    if (t?.t !== "close" || t.v !== kind) this.fail("parse.expectedClosing", { kind });
     this.pos++;
   }
 
   parseAll(): Json {
-    if (this.toks.length === 0) throw new SerializeError("empty input");
+    if (this.toks.length === 0) throw parseError("parse.emptyInput");
     const e = this.relation();
-    if (this.pos < this.toks.length) this.fail("unexpected token");
+    if (this.units && this.isCmd("to")) {
+      // R28: → and the end slot close the line
+      this.pos++;
+      const end = promptId(this.peek());
+      if (end === undefined) throw parseError("parse.toNeedsEndSlot");
+      this.units.end = end;
+      this.pos++;
+    }
+    if (this.pos < this.toks.length) this.fail("parse.unexpectedToken");
     return e;
   }
 
@@ -275,17 +352,17 @@ class Parser {
     if (def) this.user = new Set([...this.user, def]);
     const left = this.logicOr();
     // R18: x → body (Shift + 9) is a function of x, Giac's ->; (x, y) → body takes two
-    if (this.isCmd("rightarrow") || this.isCmd("to")) {
+    if (this.isCmd("rightarrow") || (!this.units && this.isCmd("to"))) {
       this.pos++;
       const vars = Array.isArray(left) && left[0] === "Tuple" ? left.slice(1) : [left];
-      if (!vars.every((v) => typeof v === "string")) throw new SerializeError("→ needs a variable name before it (x → x²)");
+      if (!vars.every((v) => typeof v === "string")) throw parseError("parse.needsAVariable");
       return ["Lambda", ["Tuple", ...vars], this.relation()];
     }
     // P4: store, value ▶ name (shift of the exponent key); the same as name := value.
     if (this.isCmd("blacktriangleright")) {
       this.pos++;
       const name = this.additive();
-      if (typeof name !== "string") this.fail("expected a name after ▶");
+      if (typeof name !== "string") this.fail("parse.expectedAName");
       return ["Assign", name, left];
     }
     if (this.isCh(":") && this.isCh("=", 1)) {
@@ -354,7 +431,7 @@ class Parser {
   private term(): Json {
     if (this.isCh("-")) {
       this.pos++;
-      return ["Negate", this.term()];
+      return this.negate(this.term());
     }
     if (this.isCh("+")) {
       this.pos++;
@@ -366,8 +443,16 @@ class Parser {
         this.pos++;
         left = ["Multiply", left, this.signedImplicit()];
       } else if (this.isCmd("div") || this.isCh("/")) {
+        // F26 (R30): ÷ and / only appear in a flat line (in textbook entry ÷ makes a stacked fraction). There they take
+        // one factor on their right (a number, a name, a power, a function call or a bracket), and the product then goes
+        // on left to right, as with ×: 1/2x = (1/2)·x and 6÷2(1+2) = 9, the G2's one-line rule (G2 item 6).
         this.pos++;
-        left = ["Divide", left, this.signedImplicit()];
+        const parts: Json[] = [["Divide", left, this.signedFactor()]];
+        while (this.startsFactor()) {
+          this.besideResult();
+          parts.push(this.postfix());
+        }
+        left = parts.length === 1 ? (parts[0] as Json) : ["Multiply", ...parts];
       } else if (this.isCmd("bmod")) {
         this.pos++;
         left = ["Mod", left, this.implicit()];
@@ -375,12 +460,43 @@ class Parser {
     }
   }
 
+  /** Unary minus. In units mode a sign before a ± value goes inside its pasupm call (-20±0.5 u is pasupm(-20,0.5)·u,
+   *  decisions Opus pass 2), and a double minus cancels; elsewhere it is Negate. */
+  private negate(x: Json): Json {
+    if (this.units) {
+      const f = (e: Json): Json | null => {
+        if (!Array.isArray(e)) return null;
+        if (e[0] === "Call" && e[1] === "pasupm") {
+          const v = e[2] as Json;
+          return ["Call", "pasupm", Array.isArray(v) && v[0] === "Negate" ? (v[1] as Json) : ["Negate", v], ...e.slice(3)] as Json;
+        }
+        if ((e[0] === "Multiply" || e[0] === "Divide") && e.length > 1) {
+          const l = f(e[1] as Json);
+          return l ? ([e[0], l, ...e.slice(2)] as Json) : null;
+        }
+        return null;
+      };
+      const r = f(x);
+      if (r) return r;
+    }
+    return ["Negate", x];
+  }
+
   private signedImplicit(): Json {
     if (this.isCh("-")) {
       this.pos++;
-      return ["Negate", this.signedImplicit()];
+      return this.negate(this.signedImplicit());
     }
     return this.implicit();
+  }
+
+  /** One factor after ÷ or / (F26), with its signs: 1÷-2x = (1/(-2))·x. */
+  private signedFactor(): Json {
+    if (this.isCh("-")) {
+      this.pos++;
+      return this.negate(this.signedFactor());
+    }
+    return this.postfix();
   }
 
   /** Differential marker (d x or \mathrm{d}x) at the current position: tokens it spans, else 0. */
@@ -405,6 +521,8 @@ class Parser {
         return !(this.noDiff > 0 && this.diffLen() > 0);
       case "cmd":
         if (t.v === "mathrm" && this.noDiff > 0 && this.diffLen() > 0) return false;
+        // R28: in units mode a prompt or ± with no number before it reaches atom(), which says why it is refused
+        if (this.units && (t.id !== undefined || t.v === "pm")) return true;
         // the exponent mark after something that is not a number: atom() refuses it with a message
         // Å and & (R18) too, so that 5Å reaches the message that says why it is refused
         return FACTOR_CMDS.has(t.v) || t.v in FUNCS || t.v in CONSTS || t.v in GREEK || t.v === EMARK || t.v === ARING || t.v === "&";
@@ -415,8 +533,24 @@ class Parser {
 
   private implicit(): Json {
     const parts: Json[] = [this.postfix()];
-    while (this.startsFactor()) parts.push(this.postfix());
+    while (this.startsFactor()) {
+      this.besideResult();
+      parts.push(this.postfix());
+    }
     return parts.length === 1 ? (parts[0] as Json) : ["Multiply", ...parts];
+  }
+
+  /**
+   * F25 (R29): a result chip draws its digits, so [0.5]3, 3[0.5] and [0.5][0.25] read as one number (on the G2 an
+   * inserted result is text, and a digit typed after it extends it). A number directly beside a result chip, or two
+   * result chips side by side, is refused rather than multiplied. Ans and a constant draw a name and multiply as 2x.
+   */
+  private besideResult(): void {
+    const t = this.peek();
+    const res = t?.t === "cmd" && t.v === "res";
+    if (this.pos === this.resEnd && res) throw parseError("parse.timesBetweenResults");
+    if ((this.pos === this.resEnd && t?.t === "num") || (this.pos === this.numEnd && res))
+      throw parseError("parse.timesResultNumber");
   }
 
   private postfix(): Json {
@@ -429,7 +563,7 @@ class Parser {
           base = this.dms(base);
         } else {
           base = ["Power", base, this.script()];
-          if (this.isCh("^")) this.fail("ambiguous double superscript, use braces");
+          if (this.isCh("^")) this.fail("parse.ambiguousDoubleSuperscript");
         }
       } else if (this.isCmd(CARET)) {
         // a^b typed literally: the exponent is the next signed factor (2^34 = 2^(34); 2^-1; right-associative)
@@ -471,19 +605,19 @@ class Parser {
   private evaluateAt(): Json {
     // a \left. closed by a real bracket is half a pair (MathLive's ⌫ at a bracket, F10), not a missing bar
     const unmatched = (u: Tok | undefined): boolean => u?.t === "close" && u.v !== "|" && u.v !== ".";
-    if (unmatched(this.peek())) throw new SerializeError("unmatched bracket");
+    if (unmatched(this.peek())) throw parseError("parse.unmatchedBracket");
     const e = this.relation();
     const t = this.peek();
     if (t?.t === "close" && t.v === ".") {
       this.pos++;
       return ["Delimiter", e];
     }
-    if (unmatched(t)) throw new SerializeError("unmatched bracket");
-    if (t?.t !== "close" || t.v !== "|" || !this.isCh("_", 1)) this.fail("expected the evaluate-at bar |");
+    if (unmatched(t)) throw parseError("parse.unmatchedBracket");
+    if (t?.t !== "close" || t.v !== "|" || !this.isCh("_", 1)) this.fail("parse.expectedTheEvaluate");
     this.pos += 2;
     const at = this.arg();
     if (!Array.isArray(at) || at[0] !== "Equal" || typeof at[1] !== "string")
-      throw new SerializeError("evaluate at: write variable = value under the bar");
+      throw parseError("parse.evaluateAtWrite");
     return ["Subst", e, at[1], at[2] as Json];
   }
 
@@ -514,7 +648,7 @@ class Parser {
     let s = "";
     while (!this.isCh("}")) {
       const t = this.peek();
-      if (!t) this.fail("unterminated group");
+      if (!t) this.fail("parse.unterminatedGroup");
       s += (t as Tok).v;
       this.pos++;
     }
@@ -535,22 +669,30 @@ class Parser {
   // ---- atoms ----
   private atom(): Json {
     const t = this.peek();
-    if (!t) this.fail("unexpected end of input");
+    if (!t) this.fail("parse.unexpectedEndOf");
     const tok = t as Tok;
     switch (tok.t) {
       case "num": {
+        // F43 (R51): the line shows two numbers with a gap and no ×; checked here, so a chip's drawn digits are skipped
+        if (tok.gap) throw parseError("parse.timesBetweenNumbers");
         this.basePrefix(tok);
         this.pos++;
-        if (this.isCmd(EMARK)) return this.eNumber(tok.v);
+        if (this.isCmd(EMARK)) {
+          const e = this.unitsAfter(this.eNumber(tok.v));
+          this.numEnd = this.pos;
+          return e;
+        }
         const num = { num: tok.v.replace(/^0+(?=\d)/, "") };
         // a whole number directly before \tfrac is a mixed number (the Tmpl mixed-number template, R10): 2\tfrac12 = 2+1/2
         if (/^\d+$/.test(tok.v) && this.isCmd("tfrac")) {
           this.pos++;
           const a = this.arg();
           const b = this.arg();
-          return ["Delimiter", ["Add", num, ["Divide", a, b]]];
+          return this.unitsAfter(["Delimiter", ["Add", num, ["Divide", a, b]]]);
         }
-        return num;
+        const e = this.unitsAfter(num);
+        this.numEnd = this.pos;
+        return e;
       }
       case "open": {
         this.pos++;
@@ -565,11 +707,9 @@ class Parser {
           return ["Abs", e];
         }
         if (tok.v === "{") {
-          // L6: braces make a list, as the reference keyboard's { } key does (Giac input has no other use for them here)
-          if (this.peek()?.t === "close" && (this.peek() as Tok).v === "}") {
-            this.pos++;
-            return ["List"];
-          }
+          // L6: braces make a list, as the list key (Shift + 8, R54) does (Giac input has no other use for them here); an
+          // empty one is refused, as empty parentheses are: Giac's [] is no answer to a list the user did not fill
+          if (this.peek()?.t === "close" && (this.peek() as Tok).v === "}") throw parseError("parse.emptyList");
           return ["List", ...this.list("}")];
         }
         if (tok.v === "floor" || tok.v === "ceil") {
@@ -577,14 +717,14 @@ class Parser {
           this.expectClose(tok.v);
           return [tok.v === "floor" ? "Floor" : "Ceil", e];
         }
-        throw new SerializeError(`unsupported delimiter ${tok.v}`);
+        throw parseError("parse.unsupportedDelimiter", { v: tok.v });
       }
       case "close":
-        return this.fail("unexpected closing delimiter");
+        return this.fail("parse.unexpectedClosingDelimiter");
       case "ch": {
         if (tok.v === "{") return this.arg();
         if (/^[A-Za-z]$/.test(tok.v)) return this.symbol(tok.v);
-        return this.fail("unexpected token");
+        return this.fail("parse.unexpectedToken");
       }
       case "cmd":
         return this.command(tok.v);
@@ -604,15 +744,39 @@ class Parser {
       this.pos++;
     }
     const t = this.peek();
-    if (t?.t !== "num") throw new SerializeError("ᴇ needs a whole-number exponent after it (1.5ᴇ-3)");
-    if (!/^\d+$/.test(t.v)) throw new SerializeError(`the exponent after ᴇ must be a whole number, not ${t.v}`);
+    if (t?.t !== "num") throw parseError("parse.needsAWhole");
+    if (!/^\d+$/.test(t.v)) throw parseError("parse.theExponentAfter", { v: t.v });
     this.pos++;
-    if (this.isCmd(EMARK)) throw new SerializeError("a number has one ᴇ exponent");
+    if (this.isCmd(EMARK)) throw parseError("parse.oneExponent");
     // x², xʸ after the number put it in brackets; a bare power here would read as 1.5ᴇ3² = 1.5·10⁹ to some, (1.5ᴇ3)² to others
-    if (this.isCh("^") || this.isCmd(CARET)) throw new SerializeError("put the ᴇ number in brackets before raising it to a power");
+    if (this.isCh("^") || this.isCmd(CARET)) throw parseError("parse.putTheNumber");
     const m = mant.replace(/^0+(?=\d)/, "").replace(/\.$/, "").replace(/^\./, "0.");
     const e = t.v.replace(/^0+(?=\d)/, "");
     return { num: `${m}e${sign}${e}` };
+  }
+
+  /**
+   * R28, units mode: after a number, `\pm σ` makes it an uncertain value, `pasupm(value,σ)` (G18; σ a plain number,
+   * the standard uncertainty in the slot's unit), and a prompt is its unit slot, `pasu<i>` multiplying it.
+   */
+  private unitsAfter(n: Json): Json {
+    if (!this.units) return n;
+    let v = n;
+    if (this.isCmd("pm")) {
+      this.pos++;
+      const t = this.peek();
+      if (t?.t !== "num" || t.gap) throw parseError("parse.pmNeedsSigma");
+      this.pos++;
+      v = ["Call", "pasupm", n, this.isCmd(EMARK) ? this.eNumber(t.v) : { num: t.v.replace(/^0+(?=\d)/, "") }];
+    }
+    const id = promptId(this.peek());
+    if (id !== undefined) {
+      this.pos++;
+      if (this.units.slots.includes(id)) throw parseError("parse.slotTwice", { id });
+      this.units.slots.push(id);
+      v = ["Multiply", v, `pasu${this.units.slots.length}`];
+    }
+    return v;
   }
 
   /**
@@ -625,13 +789,13 @@ class Parser {
     const q = this.peek(2);
     const after = p?.t === "ch" ? BASE_PREFIX[p.v] : undefined;
     if (!after || !q || (q.t !== "num" && q.t !== "ch") || !after.test(q.v)) return;
-    throw new SerializeError(`0${(p as Tok).v}… numbers in other bases are not supported yet: type the value in decimal`);
+    throw parseError("parse.numbersInOther", { v: (p as Tok).v });
   }
 
   /** The value of a chip from the table, as one factor; a missing chip is an error, never a guess. */
   private chip(key: string, what: string): Json {
     const c = this.chips[key];
-    if (!c) throw new SerializeError(key === ANS_KEY ? "Ans: no result to use in this view yet" : `${what}: its value is missing`);
+    if (!c) throw key === ANS_KEY ? parseError("parse.ansNone") : parseError("parse.valueMissing", { what });
     if (!c.exact) this.inexact = true;
     return ["Chip", { str: chipToGiac(c.value) }];
   }
@@ -641,7 +805,7 @@ class Parser {
     this.expectCh("{");
     for (let depth = 1; depth > 0; this.pos++) {
       const t = this.peek();
-      if (!t) this.fail("unterminated group");
+      if (!t) this.fail("parse.unterminatedGroup");
       if (t?.t === "ch" && t.v === "{") depth++;
       else if (t?.t === "ch" && t.v === "}") depth--;
     }
@@ -653,7 +817,7 @@ class Parser {
     if (this.isCh("_")) {
       this.pos++;
       const sub = this.isCh("{") ? this.groupText() : this.shortText();
-      if (!/^[A-Za-z0-9]+$/.test(sub)) throw new SerializeError(`unsupported subscript ${sub}`);
+      if (!/^[A-Za-z0-9]+$/.test(sub)) throw parseError("parse.unsupportedSubscript", { sub });
       name = `${letter}_${sub}`;
     }
     if (this.peek()?.t === "open" && (this.peek() as Tok).v === "(" && this.user.has(letter) && name === letter) {
@@ -664,7 +828,7 @@ class Parser {
   }
   private shortText(): string {
     const t = this.peek();
-    if (!t || (t.t !== "num" && t.t !== "ch")) this.fail("expected subscript");
+    if (!t || (t.t !== "num" && t.t !== "ch")) this.fail("parse.expectedSubscript");
     const tok = t as Tok;
     const s = tok.v.slice(0, 1);
     if (tok.t === "num" && tok.v.length > 1) this.toks[this.pos] = { t: "num", v: tok.v.slice(1) };
@@ -673,7 +837,9 @@ class Parser {
   }
 
   private command(name: string): Json {
-    if (name === EMARK) throw new SerializeError("type the number before ᴇ (1.5ᴇ-3)");
+    if (name === EMARK) throw parseError("parse.typeTheNumber");
+    if (this.units && promptId(this.peek()) !== undefined) throw parseError("parse.slotNeedsNumber");
+    if (this.units && name === "pm") throw parseError("parse.pmNeedsNumber");
     if (name in CONSTS) {
       this.pos++;
       return CONSTS[name] as string;
@@ -688,8 +854,9 @@ class Parser {
         // \res{k}{shown}: a history result (docs/04 2.8)
         this.pos++;
         const k = this.groupText();
-        if (!/^\d+$/.test(k)) throw new SerializeError(`unsupported result chip ${k}`);
+        if (!/^\d+$/.test(k)) throw parseError("parse.unsupportedResultChip", { k });
         this.skipGroup();
+        this.resEnd = this.pos;
         return this.chip(resKey(k), "result chip");
       }
       case "ans":
@@ -700,12 +867,18 @@ class Parser {
         this.pos++;
         const id = this.groupText();
         this.skipGroup();
+        if (this.units) {
+          // R28: the unit view takes the constant with its dimension from the Find index (G16), as `pask<j>`
+          if (!/^[A-Za-z0-9_]+$/.test(id)) throw parseError("parse.valueMissing", { what: `constant ${id}` });
+          if (!this.units.consts.includes(id)) this.units.consts.push(id);
+          return `pask${this.units.consts.indexOf(id) + 1}`;
+        }
         return this.chip(constKey(id), `constant ${id}`);
       }
       case "tfrac":
         // the mixed-number template (Tmpl, R10) makes \tfrac only after a whole number (read in atom); anything else
         // before it would silently multiply (x\tfrac12 = x/2), so it is refused
-        throw new SerializeError("a mixed number needs a whole number before its fraction");
+        throw parseError("parse.aMixedNumber");
       case "frac":
       case "dfrac": {
         const d = this.tryPartial() ?? this.tryDerivative();
@@ -758,10 +931,10 @@ class Parser {
         const logic = LOGIC_FUNCS[text];
         if (logic) {
           // R18: NOT(a) and EQ(a, b) from the Shift + 6 palette
-          if (!(this.peek()?.t === "open" && (this.peek() as Tok).v === "(")) throw new SerializeError(`${text} needs brackets: ${text}(…)`);
+          if (!(this.peek()?.t === "open" && (this.peek() as Tok).v === "(")) throw parseError("parse.needsBrackets", { text });
           this.pos++;
           const args = this.list(")");
-          if (args.length !== logic.args) throw new SerializeError(`${text} takes ${logic.args === 1 ? "one argument" : `${logic.args} arguments`}`);
+          if (args.length !== logic.args) throw parseError("parse.logicTakes", { text, count: logic.args === 1 ? "one argument" : `${logic.args} arguments` });
           return [logic.head, ...args];
         }
         if (text in ABS_LIKE || NAMED_FUNCS.has(text) || text.length > 1) {
@@ -772,16 +945,16 @@ class Parser {
             return head ? [head, ...args] : ["Call", text, ...args];
           }
         }
-        throw new SerializeError(`unsupported name \\${name}{${text}} (units are not supported yet)`);
+        throw parseError("parse.unsupportedNameUnits", { name, text });
       }
       case "&":
         // R18: the Shift + 9 palette has & as the G2's does; what it means there is not known yet (G2 checklist)
-        throw new SerializeError("& has no meaning here yet; for logic use AND (Shift + 6)");
+        throw parseError("parse.hasNoMeaning");
       case ARING:
         // R18: Å is the ångström, a unit; Home is unit-free (P8), so it is refused, never read as a name
-        throw new SerializeError("Å is a unit (the ångström): units come with the unit view");
+        throw parseError("parse.isAUnit");
       default:
-        throw new SerializeError(`unsupported command \\${name}`);
+        throw parseError("parse.unsupportedCommand", { name });
     }
   }
 
@@ -810,11 +983,13 @@ class Parser {
     } else {
       // no parentheses: \sin x, \sin 2x, \ln x; stops before the next function
       const parts: Json[] = [];
-      if (!this.startsFactor()) this.fail(`\\${name} needs an argument`);
+      if (!this.startsFactor()) this.fail("parse.needsAnArgument", { name });
       parts.push(this.postfix());
       while (this.startsFactor() && !(this.peek() as Tok).v.startsWith("\\") && !((this.peek() as Tok).t === "cmd" && (this.peek() as Tok).v in FUNCS)) {
         // R27b (F23, G2 item 50): sin 7(2) reads as sin 14 or sin(7)·2, so a bracket after the term is refused
-        if ((this.peek() as Tok).t === "open") this.fail(`${name}: put its whole argument in the brackets, as ${name}(…)`);
+        if ((this.peek() as Tok).t === "open") this.fail("parse.putItsWhole", { name });
+        // F25 (R29): the bare argument is an implicit product too, so \sin2[0.5] is refused as 2[0.5] is
+        this.besideResult();
         parts.push(this.postfix());
       }
       args = [parts.length === 1 ? (parts[0] as Json) : ["Multiply", ...parts]];
@@ -831,16 +1006,16 @@ class Parser {
   private tryPartial(): Json | undefined {
     if (!this.isCh("{", 1) || !this.isCmd("partial", 2)) return undefined;
     this.pos += 3;
-    if (this.isCh("}")) throw new SerializeError("derivative: the expression goes after ∂ in the numerator");
+    if (this.isCh("}")) throw parseError("parse.derivativeTheExpression");
     const body = this.relation();
     this.expectCh("}");
     this.expectCh("{");
-    if (!this.isCmd("partial")) this.fail("derivative: expected ∂ before the variable");
+    if (!this.isCmd("partial")) this.fail("parse.derivativeExpectedBefore");
     this.pos++;
     const v = this.peek();
-    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("derivative: expected a variable after ∂");
+    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("parse.derivativeExpectedA");
     const name = this.symbol((v as Tok).v);
-    if (typeof name !== "string") this.fail("derivative: expected a variable after ∂");
+    if (typeof name !== "string") this.fail("parse.derivativeExpectedA");
     this.expectCh("}");
     return ["D", body, name];
   }
@@ -916,12 +1091,12 @@ class Parser {
     const body = this.additive();
     this.noDiff--;
     const len = this.diffLen();
-    if (len === 0) this.fail("integral needs dx");
+    if (len === 0) this.fail("parse.integralNeedsDx");
     this.pos += len; // the d marker; the variable follows
     const v = (this.peek() as Tok).v;
     this.pos++;
     if (lo === undefined && hi === undefined) return ["Integrate", body, v];
-    if (lo === undefined || hi === undefined) throw new SerializeError("integral needs both limits");
+    if (lo === undefined || hi === undefined) throw parseError("parse.integralNeedsBoth");
     return ["Integrate", body, ["Tuple", v, lo, hi]];
   }
 
@@ -930,7 +1105,7 @@ class Parser {
     this.expectCh("_");
     this.expectCh("{");
     const v = this.peek();
-    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("expected index variable");
+    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("parse.expectedIndexVariable");
     this.pos++;
     this.expectCh("=");
     const lo = this.additive();
@@ -946,9 +1121,9 @@ class Parser {
     this.expectCh("_");
     this.expectCh("{");
     const v = this.peek();
-    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("expected limit variable");
+    if (v?.t !== "ch" || !/^[A-Za-z]$/.test(v.v)) this.fail("parse.expectedLimitVariable");
     this.pos++;
-    if (!this.isCmd("to")) this.fail("expected \\to");
+    if (!this.isCmd("to")) this.fail("parse.expectedTo");
     this.pos++;
     const start = this.pos;
     let depth = 0;
@@ -979,14 +1154,14 @@ class Parser {
   private matrix(): Json {
     this.pos++;
     const env = this.groupText();
-    if (!["pmatrix", "bmatrix", "matrix", "cases"].includes(env)) throw new SerializeError(`unsupported environment ${env}`);
+    if (!["pmatrix", "bmatrix", "matrix", "cases"].includes(env)) throw parseError("parse.unsupportedEnvironment", { env });
     const rows: Json[] = [];
     let row: Json[] = [];
     for (;;) {
       // the piecewise template (Tmpl, R10) writes "if" before each condition
       if (env === "cases" && row.length === 1 && this.isCmd("text")) {
         this.pos++;
-        if (this.groupText().trim() !== "if") this.fail("piecewise: expected 'if'");
+        if (this.groupText().trim() !== "if") this.fail("parse.piecewiseExpectedIf");
       }
       row.push(this.relation());
       if (this.isCh("&")) {
@@ -998,13 +1173,13 @@ class Parser {
       } else break;
     }
     rows.push(["List", ...row]);
-    if (!this.isCmd("end")) this.fail("expected \\end");
+    if (!this.isCmd("end")) this.fail("parse.expectedEnd");
     this.pos++;
-    if (this.groupText() !== env) throw new SerializeError("mismatched \\end");
+    if (this.groupText() !== env) throw parseError("parse.mismatchedEnd");
     if (env === "cases") {
       // value & if condition, one row each: piecewise(condition, value, …)
       const pairs = rows.map((r) => (r as Json[]).slice(1));
-      if (pairs.some((p) => p.length !== 2)) throw new SerializeError("piecewise: each line needs a value and a condition");
+      if (pairs.some((p) => p.length !== 2)) throw parseError("parse.piecewiseEachLine");
       return ["Piecewise", ...pairs.map((p) => ["Pair", p[0] as Json, p[1] as Json] as Json)];
     }
     return ["Matrix", ["List", ...rows]];
@@ -1018,5 +1193,5 @@ export function parseLatex(latex: string, o: ParseOptions = {}): Json {
 export function parseLatexInfo(latex: string, o: ParseOptions = {}): ParseInfo {
   const p = new Parser(tokenize(latex, o.decimalComma), o);
   const json = p.parseAll();
-  return { json, inexact: p.inexact };
+  return { json, inexact: p.inexact, ...(p.units ? { units: p.units } : {}) };
 }

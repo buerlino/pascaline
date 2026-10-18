@@ -24,6 +24,31 @@ describe("literal caret (L4)", () => {
   });
 });
 
+// F26 (R30): in a flat line (one-line entry, or pasted text) ÷ and / take one factor on their right: a number, a name, a
+// power, a function call or a bracket. The product then goes on left to right, as with ×. That is the G2's one-line rule
+// (G2 item 6: pasted 1/2x is (1/2)·x). Textbook entry is not affected: there ÷ makes a stacked fraction. Expected text derived.
+describe("÷ in a flat line (F26)", () => {
+  const flat: [string, string][] = [
+    ["1/2x", "(1/2)*x"],
+    ["6\\div2\\left(1+2\\right)", "(6/2)*(1+2)"],
+    ["1\\div2\\sqrt{3}", "(1/2)*sqrt(3)"],
+    ["a\\div bc", "(a/b)*c"],
+    ["1\\div2\\pi", "(1/2)*pi"],
+    ["1\\div-2x", "(1/(-2))*x"],
+    ["1\\div2x\\div3y", "((1/2)*x/3)*y"],
+    [`1\\div2${C}3x`, "(1/2^3)*x"],
+    ["1\\div2^{3}x", "(1/2^3)*x"],
+    // unchanged
+    ["8\\div2\\times4", "(8/2)*4"],
+    ["1\\div x^{2}", "1/x^2"],
+    ["2x\\div4", "2*x/4"],
+    ["\\frac{1}{2x}", "1/(2*x)"],
+    ["\\frac{1}{2}x", "(1/2)*x"],
+    ["1\\div\\left(2x\\right)", "1/(2*x)"],
+  ];
+  for (const [latex, giac] of flat) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
+});
+
 // The mixed-number template of the Tmpl palette (R10; L2's a/b-twice is gone) writes a whole number, then \tfrac.
 // A plain \frac after a number stays a product (docs/decisions.md "Mixed numbers"). Expected text derived.
 describe("mixed numbers (Tmpl)", () => {

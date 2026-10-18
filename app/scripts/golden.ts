@@ -3,7 +3,7 @@
 // build that ships (CLAUDE.md). Exit 0 only if every stage passes.
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
-//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, parser
+//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, units, parser
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
@@ -18,22 +18,35 @@
 //              equal `expect` rounded to those n digits
 //   function   Function analysis and Num table (analysis.ts), same rules
 //   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed
+//   units      tests/golden/units.yaml: the unit view (G16) on the Find index's factors (app/src/find/_gen, `npm run index`):
+//              value, mark, exact text and dimension, or the refusal's message, the same in every round; desktop p95 of
+//              an evaluation ≤ 5 ms (docs/04 8.3), warm, each case at its fastest of five passes
 //   parser     LaTeX → Giac (our parser) equals the intended expression, decided by Giac; gaps never fail.
 //              A case with `error: true` passes when the parser rejects the input (a message, never a guess);
-//              `chips:` is the entry's chip table (\res, \ans, \const; docs/04 section 3.6)
+//              `chips:` is the entry's chip table (\res, \ans, \const; docs/04 section 3.6). R28: a case with
+//              `options: { units: true }` is the unit view's formula: `formula` is the exact text the parser must give,
+//              `slots` (and `to`) the slots in unit-case.ts syntax, and `expect` the Giac text G16's builder makes from
+//              them (needs the Find index, as the units stage does)
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, type GiacApi } from "../src/engine/host.ts";
-import { defaultHomeSettings, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
+import { defaultHomeSettings, ENGINE_DEFINITIONS, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
 import { decimalFromString, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { hasFloat } from "../src/engine/numeric.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
 import type { ChipTable } from "../src/input/chips.ts";
-import { latexToGiac, resetUserFunctions, SerializeError } from "../src/input/latex-to-giac.ts";
+import { DEFAULT_USER_FUNCTIONS, latexToGiac, latexToGiacInfo, type UnitsInfo } from "../src/input/latex-to-giac.ts";
+import { SerializeError } from "../src/input/errors.ts";
+import { buildJob } from "../src/units/build.ts";
+import { factorTable, type FactorTable } from "../src/units/factors.ts";
+import { unitErrorMessage } from "../src/units/messages.ts";
+import { isUnitError, type Quantity, type UnitError } from "../src/units/types.ts";
+import type { IndexItem } from "../src/find/types.ts";
+import { requestOf, slotOf } from "./unit-case.ts";
 
 type Expect = string | Expect[];
 
@@ -62,7 +75,10 @@ interface Case {
   g2?: number;
   status?: string;
   /** parser.yaml: input settings for this case (L6). */
-  options?: { decimalComma?: boolean; realOddRoots?: boolean };
+  options?: { decimalComma?: boolean; realOddRoots?: boolean; units?: boolean };
+  /** parser.yaml, units mode (R28): the exact UnitRequest.formula and the slots, in unit-case.ts syntax. */
+  formula?: string;
+  slots?: string[];
   /** parser.yaml: entries typed before this one (e.g. a function definition, L6). precision.yaml: inputs evaluated
    *  first in the same view and engine (a stored variable, decisions M4-7). */
   before?: string[];
@@ -70,6 +86,22 @@ interface Case {
   beforeHome?: string[];
   /** precision.yaml, kind cas: the stored names the CAS result must list as used (G20); [] means none. */
   uses?: string[];
+  /** units.yaml: the end slot; the exact text, the dimension key (null: an exact 0), the SI value's exact text with
+   *  an end slot (si_oracle checks it in oracle.py) and a refusal's message. */
+  to?: string;
+  exact?: string;
+  dim?: string | null;
+  /** units.yaml, G25: the unit the value is shown in ("" for a pure number) and the dimension as text. */
+  unit?: string;
+  dimtext?: string;
+  si?: string;
+  si_oracle?: string;
+  /** units.yaml, G18: σ at 2 significant digits ("none" for a result with no uncertainty), the value with it
+   *  ("39.5 ± 1.2") and an oracle expression for σ (oracle.py checks σ against it). */
+  unc?: string;
+  shown?: string;
+  unc_oracle?: string;
+  message?: string;
   /** parser.yaml: the input must be rejected by the parser (docs/04 2.3 #1). */
   error?: boolean;
   /** parser.yaml: the entry's chip table (\res, \ans, \const), keyed as in app/src/input/chips.ts. */
@@ -122,7 +154,10 @@ async function stageHome(): Promise<void> {
     const host = new EngineHost(await freshGiac());
     for (const c of cs) {
       const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
-      runs.get(c.id)!.push(host.home(c.input!, s).result);
+      // A case written as `latex` goes through our parser with Home's options (R39: realOddRoots), its `before` too
+      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
+      for (const b of c.before ?? []) host.home(giacOf(b), s);
+      runs.get(c.id)!.push(host.home(c.latex !== undefined ? giacOf(c.latex) : c.input!, s).result);
     }
   }
   let pass = 0;
@@ -200,7 +235,7 @@ async function stagePrecision(): Promise<void> {
     const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
     const input = c.latex !== undefined ? latexToGiac(c.latex) : c.input!;
     if (c.kind === "cas") {
-      const cs = { ...defaultCasSettings, digits: setting };
+      const cs = { ...defaultCasSettings, angle: c.settings?.angle ?? "rad", digits: setting };
       for (const b of c.beforeHome ?? []) host.home(giacOf(b), { ...defaultHomeSettings, digits: setting });
       for (const b of c.before ?? []) host.cas(giacOf(b), cs);
       const r = host.cas(input, cs).result;
@@ -368,6 +403,70 @@ async function stageBench(): Promise<void> {
   report("bench", pass === checked, `${pass}/${checked} expect match, ${cs.length} run, errors: ${errors.length ? errors.join(", ") : "none"}`);
 }
 
+const UNIT_P95_MS = 5;
+
+/** What a units case got, as text to compare and print. */
+function unitGot(r: Quantity | UnitError, c: Case): string {
+  if (isUnitError(r)) return `refused: ${unitErrorMessage(r)}`;
+  const m = markText(markOf(r.value, { format: "STD", digits: 12 }));
+  return `${m ?? "-"} ${r.value.display} exact ${r.value.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(r.dimension)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(r.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(r.dimensionText)}` : ""}${c.si !== undefined ? ` si ${r.si ?? "-"}` : ""}${c.unc !== undefined ? ` unc ${r.unc?.text ?? "none"}` : ""}${c.shown !== undefined ? ` shown ${r.unc?.shown ?? "-"}` : ""}`;
+}
+
+/** The same text for what the case expects; `dim` and `si` are checked where the case gives them. */
+function unitWant(c: Case): string {
+  if (c.message !== undefined) return `refused: ${c.message}`;
+  return `${c.mark ?? "-"} ${str(c.expect as string)} exact ${c.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(c.dim)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(c.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(c.dimtext)}` : ""}${c.si !== undefined ? ` si ${c.si}` : ""}${c.unc !== undefined ? ` unc ${c.unc}` : ""}${c.shown !== undefined ? ` shown ${c.shown}` : ""}`;
+}
+
+async function stageUnits(): Promise<void> {
+  const cs = cases("units.yaml");
+  const indexFile = process.env.FIND_INDEX_JSON ?? `${root}app/src/find/_gen/find-index.json`;
+  if (!existsSync(indexFile)) {
+    report("units", false, `no Find index at ${indexFile}: run npm run index (QALC_OUT=<main checkout>/engine/qalc/_out/dev in a worktree)`);
+    return;
+  }
+  const table = factorTable(JSON.parse(readFileSync(indexFile, "utf8")) as IndexItem[]);
+  const settingsOf = (c: Case): HomeSettings => ({ ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" });
+  const jobs = cs.map((c) => buildJob(requestOf(c.input!, c.to, table), table));
+  const runs = new Map<string, string[]>(cs.map((c) => [c.id, []]));
+  let host: EngineHost | null = null;
+  for (let r = 0; r < ROUNDS; r++) {
+    host = new EngineHost(await freshGiac());
+    cs.forEach((c, k) => {
+      const job = jobs[k]!;
+      runs.get(c.id)!.push(unitGot(isUnitError(job) ? job : host!.units(job, settingsOf(c)), c));
+    });
+  }
+  let pass = 0;
+  for (const c of cs) {
+    const want = unitWant(c);
+    const got = runs.get(c.id)!;
+    if (got.every((g) => g === want)) pass++;
+    else console.log(`  units ${c.id}: got ${[...new Set(got)].join(" / ")}, expect ${want}`);
+  }
+  // Warm timing: one pass to warm up, then five timed passes; each case counts with its fastest pass, so another
+  // process on the desktop does not fail the gate (the device bar is measured on the device, docs/04 8.3).
+  const best = new Map<string, number>();
+  for (let r = 0; r < 6; r++) {
+    cs.forEach((c, k) => {
+      const job = jobs[k]!;
+      if (isUnitError(job)) return;
+      const t0 = performance.now();
+      host!.units(job, settingsOf(c));
+      const t = performance.now() - t0;
+      if (r > 0) best.set(c.id, Math.min(best.get(c.id) ?? Infinity, t));
+    });
+  }
+  const times = [...best.values()];
+  const sorted = [...times].sort((a, b) => a - b);
+  const p95 = sorted[Math.min(sorted.length - 1, Math.ceil(0.95 * sorted.length) - 1)] ?? 0;
+  report(
+    "units",
+    pass === cs.length && p95 <= UNIT_P95_MS,
+    `${pass}/${cs.length} match (value, mark, exact, dimension, or the refusal), rounds ${ROUNDS}; desktop warm (best of 5) median ${median(times).toFixed(2)} ms, p95 ${p95.toFixed(2)} ms (≤ ${UNIT_P95_MS}), max ${(sorted.at(-1) ?? 0).toFixed(2)} ms`,
+  );
+}
+
 function equalByGiac(g: GiacApi, a: string, b: string): { ok: boolean; how: string } {
   if (a === b) return { ok: true, how: "identical" };
   const ea = g.eval(a);
@@ -392,9 +491,33 @@ function equalByGiac(g: GiacApi, a: string, b: string): { ok: boolean; how: stri
   return { ok: true, how: "numeric" };
 }
 
+let unitTable: FactorTable | null | undefined;
+
+/** R28: a units-mode case: the formula as written, the slots and the end slot it names, and the Giac text G16's builder
+ *  makes from it with the Find index's factors, compared by Giac. */
+function unitsCase(g: GiacApi, c: Case, formula: string, u: UnitsInfo | undefined): { ok: boolean; how: string } {
+  if (formula !== c.formula) return { ok: false, how: `formula ${formula}, want ${c.formula}` };
+  if (!u || u.slots.length !== (c.slots ?? []).length) return { ok: false, how: `slots ${JSON.stringify(u?.slots)}, want ${(c.slots ?? []).length}` };
+  if ((u.end !== undefined) !== (c.to !== undefined)) return { ok: false, how: `end slot ${u.end ?? "none"}, want ${c.to ?? "none"}` };
+  if (unitTable === undefined) {
+    const indexFile = process.env.FIND_INDEX_JSON ?? `${root}app/src/find/_gen/find-index.json`;
+    unitTable = existsSync(indexFile) ? factorTable(JSON.parse(readFileSync(indexFile, "utf8")) as IndexItem[]) : null;
+  }
+  if (!unitTable) return { ok: false, how: "no Find index: run npm run index" };
+  const table = unitTable;
+  const job = buildJob(
+    { formula, slots: (c.slots ?? []).map((s) => slotOf(s, table)), ...(u.consts.length ? { consts: u.consts } : {}), ...(c.to !== undefined ? { end: slotOf(c.to, table) } : {}) },
+    table,
+  );
+  if (isUnitError(job)) return { ok: false, how: `builder refused: ${JSON.stringify(job)}` };
+  return equalByGiac(g, job.expr, c.expect as string);
+}
+
 async function stageParser(): Promise<void> {
   const cs = cases("parser.yaml");
   const g = await freshGiac();
+  // The parser emits our own names (pasmod); the host loads them on first use, here they are all loaded.
+  for (const def of Object.values(ENGINE_DEFINITIONS)) g.eval(def);
   let pass = 0;
   let run = 0;
   let gaps = 0;
@@ -403,11 +526,21 @@ async function stageParser(): Promise<void> {
     let produced: string;
     let r: { ok: boolean; how: string };
     try {
-      resetUserFunctions();
-      const o = { ...(c.options ?? {}), ...(c.chips ? { chips: c.chips } : {}) };
-      for (const b of c.before ?? []) latexToGiac(b, o);
-      produced = latexToGiac(c.latex!, o);
-      r = c.error ? { ok: false, how: "accepted, but must be an error" } : equalByGiac(g, produced, c.expect as string);
+      // A function a `before` entry defines is a call in what follows, as the session counts it (R56)
+      const userFunctions = new Set(DEFAULT_USER_FUNCTIONS);
+      const o = { ...(c.options ?? {}), ...(c.chips ? { chips: c.chips } : {}), userFunctions };
+      for (const b of c.before ?? []) {
+        const d = latexToGiacInfo(b, o).defines;
+        if (d) userFunctions.add(d);
+      }
+      if (c.options?.units && !c.error) {
+        const u = latexToGiacInfo(c.latex!, o);
+        produced = u.giac;
+        r = unitsCase(g, c, u.giac, u.units);
+      } else {
+        produced = latexToGiac(c.latex!, o);
+        r = c.error ? { ok: false, how: "accepted, but must be an error" } : equalByGiac(g, produced, c.expect as string);
+      }
     } catch (e) {
       produced = "";
       const msg = e instanceof Error ? e.message : String(e);
@@ -436,6 +569,7 @@ if (want("precision")) await stagePrecision();
 if (want("solve")) await stageCases("solve", "solve.yaml", solveCase);
 if (want("function")) await stageCases("function", "function.yaml", (host, _g, c) => functionCase(host, c));
 if (want("bench")) await stageBench();
+if (want("units")) await stageUnits();
 if (want("parser")) await stageParser();
 const failed = summary.filter((s) => !s.ok);
 console.log(failed.length ? `\nGOLDEN GATE FAILED: ${failed.map((s) => s.stage).join(", ")}` : "\nGOLDEN GATE PASSED");

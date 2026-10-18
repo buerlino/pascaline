@@ -3,9 +3,10 @@
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
 import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat, type UserName } from "../calc/port.ts";
 import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
-import { SerializeError } from "../input/errors.ts";
+import { parseFailText } from "../input/errors.ts";
 import { loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
+import { EngineMemoryError } from "../engine/types.ts";
 import {
   decimalFromRational,
   decimalFromString,
@@ -68,7 +69,8 @@ export const defaultSettings: Settings = {
   haptics: { on: false, strength: 50, ms: 15 },
 };
 
-export type ItemStatus = "pending" | "done" | "error" | "cancelled";
+/** "note" is a line the app says itself (G19's safe start): text only, no entry and no result, and never stored. */
+export type ItemStatus = "pending" | "done" | "error" | "cancelled" | "note";
 export interface HistoryItem {
   id: number;
   view: View;
@@ -243,6 +245,9 @@ export class Session {
 
   private nextId = 1;
   private readonly calc: Calc;
+  /** Settles once the stored names were first read (or the engine failed): a parse waits for it, so a function from
+   *  before a relaunch is a call from the first Enter on (R56). */
+  private readonly namesRead: Promise<void>;
 
   private readonly kv: Kv;
   /** 0 = write the history at once (tests); the app sets a delay so Enter does not wait for the store. */
@@ -255,13 +260,33 @@ export class Session {
     this.kv = kv;
     this.calc = calc;
     this.taps = new TapCounter(kv);
-    calc.ready().then(
-      () => {
+    this.namesRead = calc.ready().then(
+      (info) => {
+        if (info?.safeStart) this.note(t("engine.safeStart"));
         this.engineState = "ready";
-        void this.refreshNames();
+        return this.refreshNames();
       },
-      () => (this.engineState = "failed"),
+      () => {
+        this.engineState = "failed";
+      },
     );
+  }
+
+  /** Says something once as a history line, in both views (the definitions are shared, and the open view may still be
+   *  restoring). Notes are not stored: the saved history keeps finished entries only. */
+  private note(text: string): void {
+    for (const view of ["home", "cas"] as const) {
+      (view === "home" ? this.home : this.cas).push({
+        id: this.nextId++,
+        view,
+        latex: "",
+        status: "note",
+        resultLatex: "",
+        text,
+        approximate: false,
+        startedAt: performance.now(),
+      });
+    }
   }
 
   /** Reads the user's names again from the engine's definitions log (after a job that may have changed it). */
@@ -271,6 +296,13 @@ export class Session {
     } catch {
       /* the engine restarts on its own; the next job refreshes the list */
     }
+  }
+
+  /** A function the engine just took (`p(x):=…`) counts for the next parse at once; the names read after the job
+   *  (refreshNames) then replace this entry with the log's own (R56). */
+  private noteFunction(name: string, view: View, preview: string): void {
+    const rest = this.userNames.filter((u) => u.name !== name);
+    this.userNames = [...rest, { name, kind: "fn", preview, view, time: Date.now() }];
   }
 
   get items(): HistoryItem[] {
@@ -406,6 +438,13 @@ export class Session {
     // Read and write through the proxy in the list from here on.
     const live = list[list.length - 1] as HistoryItem;
     if (list.length > HISTORY_LIMIT) list.splice(0, list.length - HISTORY_LIMIT);
+    if (!ans && this.hasResult(view) && /\\ans(?![a-zA-Z])/.test(latex)) {
+      // A finished result with no chip value (a symbolic text over 2 kB, R44): say why, not "no result yet"
+      live.status = "error";
+      live.text = "Ans: the last result is too long to reuse (over 2 kB)";
+      this.saveHistory();
+      return Promise.resolve();
+    }
     return this.finish(live, view, latex, table, giacOverride).finally(() => {
       this.saveHistory();
       if (live.status === "done") void this.refreshNames();
@@ -416,6 +455,11 @@ export class Session {
   chipFor(item: HistoryItem): Chip | undefined {
     if (item.status !== "done" || item.full === undefined) return undefined;
     return { value: item.full, exact: item.fullExact === true };
+  }
+  /** Whether the view has a finished result (Ans-first inserts \\ans then, R44). */
+  hasResult(view: View = this.view): boolean {
+    const list = view === "home" ? this.home : this.cas;
+    return list.some((item) => item.status === "done");
   }
   /** The last finished result of a view, as Ans. */
   lastChip(view: View = this.view): Chip | undefined {
@@ -429,18 +473,22 @@ export class Session {
 
   private async finish(live: HistoryItem, view: View, latex: string, chips: ChipTable, giacOverride?: string): Promise<void> {
     let giac: string;
+    let defines: string | undefined;
     try {
       if (giacOverride !== undefined) giac = giacOverride;
       else {
-        const parser = await loadParser();
-        if (live.status !== "pending") return; // Cancel came while the parser chunk was loading
-        const p = parser.latexToGiacInfo(latex, { chips });
+        const [parser] = await Promise.all([loadParser(), this.namesRead]);
+        if (live.status !== "pending") return; // Cancel came while the parser chunk or the names were loading
+        // R56: single letters are calls when the user's names (Home and CAS share them) hold them as functions
+        const userFunctions = parser.userFunctionsOf(this.userNames);
+        const p = parser.latexToGiacInfo(latex, { chips, userFunctions, ...(view === "home" ? { realOddRoots: true } : {}) }); // P5 (b), R39: CAS leaves it unset, so ∛ stays surd
         giac = p.giac;
+        defines = p.defines;
         if (p.inexact) live.inexactInput = true;
       }
     } catch (e) {
       live.status = "error";
-      live.text = e instanceof SerializeError ? e.message : String(e);
+      live.text = parseFailText(e);
       return;
     }
     const s: CalcSettings = { digits: this.settings.digits, angle: this.settings.angle, format: this.settings.format };
@@ -461,11 +509,13 @@ export class Session {
         if (q) live.rational = q;
         // A result that is not a number is drawn from Giac's latex(), as in CAS (R18f3); numbers from our formatter.
         if (r.ok) live.resultLatex = r.latex !== undefined ? tidyGiacLatex(r.latex) : homeResultToLatex(r.display);
-        // The chip value: the exact fraction when there is one, else the engine's full value (every confirmed digit)
-        const full = r.exact ?? r.full;
+        // The chip value: the exact text when it fits in 2 kB, else the engine's `full` (the P-digit decimal), never
+        // nothing for a number (R44, F37). A decimal cut from a longer exact text is not exact, though the value is.
+        const full = r.exact !== undefined && r.exact.length <= FULL_LIMIT ? r.exact : r.full || r.exact;
         if (r.ok && full && full.length <= FULL_LIMIT) {
           live.full = full;
-          live.fullExact = !r.approximate && (r.exact !== undefined || r.exactRational || !isDigitsText(full));
+          const cut = (r.exact !== undefined && full !== r.exact) || r.value?.re.sticky === true || r.value?.im.sticky === true;
+          live.fullExact = !r.approximate && !cut && (r.exact !== undefined || r.exactRational || !isDigitsText(full));
         }
       } else {
         const r = await this.calc.cas(giac, s);
@@ -506,13 +556,14 @@ export class Session {
           }
         }
       }
+      if (defines && live.status === "done") this.noteFunction(defines, view, live.text);
     } catch (e) {
       if (live.status !== "pending") return;
       if (e instanceof CalcCancelled) {
         live.status = "cancelled";
       } else {
         live.status = "error";
-        live.text = e instanceof Error ? e.message : String(e);
+        live.text = e instanceof EngineMemoryError ? t("error.memory") : e instanceof Error ? e.message : String(e);
       }
     }
   }

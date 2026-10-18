@@ -62,6 +62,10 @@ interface Template {
  */
 export function deleteAtTemplate(mf: Field, dir: -1 | 1): boolean {
   if (keepSelectedBox(mf)) return true;
+  if (dir < 0 && mf.selectionIsCollapsed) {
+    const s = nameGap(mf, mf.position);
+    if (s !== undefined) mf.position = s;
+  }
   const c = cursor(mf, dir);
   if (c === undefined) return false;
   if (deleteAtPower(mf, c, dir)) return true;
@@ -70,6 +74,21 @@ export function deleteAtTemplate(mf: Field, dir: -1 | 1): boolean {
   if (t) return removeTemplate(mf, t, dir);
   if (!mf.selectionIsCollapsed) return false;
   return stepIn(mf, c, dir) || keepBox(mf, c, dir) || inLogBase(mf, c, dir);
+}
+
+/**
+ * R47 (F39): `c` is the gap between a function's name and its pair (`log‸(`), where ◀ ▶ never stop (stops.ts) but a
+ * set position or a hardware key can still leave the cursor. MathLive's own ⌫ there deleted the name alone, leaving
+ * `(100)`. ⌫ there acts as at the start of the body (point 4): returns the body's sentinel, or undefined. Del there is
+ * already point 5's step into the body (`stepIn`).
+ */
+function nameGap(mf: Field, c: number): number | undefined {
+  if (c < 1 || !NAME.test(latexAt(mf, c))) return undefined;
+  const d = depthAt(mf, c);
+  let q = c + 1;
+  while (q <= mf.lastOffset && depthAt(mf, q) > d) q++;
+  if (q > mf.lastOffset || depthAt(mf, q) !== d || !isPair(mf, q) || atomStart(mf, q) !== c) return undefined;
+  return c + 1;
 }
 
 /**

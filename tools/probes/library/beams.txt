@@ -1,0 +1,25 @@
+// pascaline library 1
+// SPDX-License-Identifier: GPL-3.0-or-later
+// A sample library for tools/probes/library.ts (docs/research/r10-connector.md section 1).
+
+// Maximum bending moment of a simply supported beam under a uniform load q over span L: q·L²/8
+beam_M(q,L):=q*L^2/8
+// test: beam_M(2,4) == 4
+// test: simplify(beam_M(q,2*L) - 4*beam_M(q,L)) == 0
+
+// Mid-span deflection of that beam: 5·q·L⁴/(384·E·I)
+beam_w(q,L,E,I):=5*q*L^4/(384*E*I)
+// test: beam_w(384,1,5,1) == 1
+
+// Sum of a^k/k for k = 1..n (a program with local names and a loop)
+sumpow(a,n):={
+  local s,k;
+  s:=0;
+  for (k:=1;k<=n;k++) { s:=s+a^k/k; }
+  return s;
+}
+// test: sumpow(2,3) == 2+2+8/3
+
+// Standard gravity in m/s² (exact, CGPM 1901)
+g0:=980665/100000
+// test: g0 == 9.80665

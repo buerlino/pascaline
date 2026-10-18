@@ -14,7 +14,7 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Tmpl | the template palette (R10) | feedback #3, P11 |
 | Shift + Math | Memory (Find on variables and functions, with delete) | docs/04 5.1 |
 | Shift + Tmpl | the unit view (milestone 5) | P11, S1 |
-| Shift + 4, 5, 8 | matrix editor, `[ ]`, `{ }` (EN5, milestone 6) | docs/04 5.1 |
+| Shift + 4, 5 | matrix editor, `[ ]` (EN5, milestone 6) | docs/04 5.1 |
 | Shift + 7 (List) | deferred with Statistics | docs/04 5.1 |
 | Shift + − (Base) | Base menu (EN6, milestone 6) | docs/04 5.4 |
 
@@ -52,6 +52,17 @@ The legend is missing on the keytop only because the feature is not built; the k
 9. **Info, Notes and User stay omitted** (section 2).
 10. **The G2's Shift palettes come back** (owner's answers to R10): Shift + 6 relations and logic, Shift + 9 symbols and Greek with `!`. Package R18.
 
+## 3a. Decided by the owner on 2026-10-17 (R15c; being built in R15c1–R15c4)
+The top cluster becomes R3 (decisions.md "R15c"), and this file is rewritten row by row as the packages land (R15c2 does the key rows). In short:
+- **The arrows keep the G2's round pad.** Its centre is the drag hub, with no OK key.
+- **Apps, Mode, Symb, Plot, Num, Menu, Cancel and the Help key leave the keypad.**
+  - Apps is the place name on the status line; Menu is ☰ there; Symb, Plot and Num are tabs in an app; Mode is on the chips.
+  - Esc takes Cancel's job.
+  - Copy, Paste and Undo get keys of their own.
+  - Help moves to Shift + View; View (the keypad toggle) keeps a key, in R3's wing.
+- **New keys:** Redo, and ⇤ ⇥ with the box ends on Shift. This reverses section 3 point 8 by its removal test.
+- **The user keys:** U1–U6, each with tap, Shift and Alpha.
+
 ## 4. Open points
 - **A. Menu audit. Done** (S2, [research/r8-menus.md](research/r8-menus.md)); its seven rules were accepted by the owner on 2026-10-13 (decisions.md "S2: one menu system"). Key-level results: Mode is on Shift + Apps (R15b); R10's Tmpl palette stays as built.
 - **B. The status-line switch. Built** (R15b): a 96 × 28 px target from the left edge (the strip below the line belongs to the history and to F1's slot); Home ↔ CAS is 1 tap, or 1 key (U2, U3), or 2 keys (Apps, 1 or 2), against the G2's one key. Judge on the APK; if the owner finds the bar slow, a layer of an existing key (a flick on Apps) takes the switch, with no new key.
@@ -59,5 +70,5 @@ The legend is missing on the keytop only because the feature is not built; the k
 
 ## 5. About the comparison file this was built from
 An outside review produced a YAML list of differences (`gemini-code-1791904688276.yaml`, not kept in the repo). Read it with two caveats:
-1. **It lists planned keys as removed or omitted.** Help, the Math and Tmpl keys and the shifted Memory, Units, Matrix, `[ ]`, `{ }` and Base layers are planned (section 1), not dropped. Two small errors: it says the clone's `(−)` replaced a `+/−` toggle (the G2 key does not toggle), and that Alpha + 0 inserts a single quote mark (it types one double-quote character; now removed).
+1. **It lists planned keys as removed or omitted.** Help, the Math and Tmpl keys and the shifted Memory, Units, Matrix, `[ ]` and Base layers are planned (section 1, `{ }` is built: R54), not dropped. Two small errors: it says the clone's `(−)` replaced a `+/−` toggle (the G2 key does not toggle), and that Alpha + 0 inserts a single quote mark (it types one double-quote character; now removed).
 2. **It misses differences that are already documented:** the Menu key's contents (Home/CAS actions: copy, paste, share, clear history, P8), Shift + Menu = Paste (a number from the clipboard, where the G2 lists past entries; docs/04 2.6), and the unit-slot overrides (µ on `(−)`, Ω on the comma, ° on a b/c, flick letters; `unit_slot:` in `spec/keyboard.yaml`).

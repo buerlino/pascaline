@@ -73,3 +73,47 @@ test("Cancel while the chunk waits closes nothing that is not open and leaves th
   expect(await entryValue(page)).toBe("1");
   await expect(page.locator('[data-testid="result"]')).toHaveCount(0);
 });
+
+/** A finger held on the first history row for 700 ms (the long press is 500 ms), then lifted. */
+async function longPressFirstRow(page: Page): Promise<void> {
+  const box = await page.locator('[data-testid="result"] .result').first().boundingBox();
+  if (!box) throw new Error("no result row");
+  await page.mouse.move(box.x + 4, box.y + 4);
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await page.mouse.up();
+}
+
+async function twoRows(page: Page): Promise<void> {
+  await open(page);
+  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await tap(page, ["d1", "enter", "d2", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+}
+const texts = (page: Page) => page.locator('[data-testid="result"] .result').evaluateAll((els) => els.map((e) => e.getAttribute("data-text")));
+
+test("F42: a long press on a row before the chunk is in, then 5, picks nothing of the hidden list; the 5 runs once it is", async ({ page }) => {
+  const release = await hold(page);
+  await twoRows(page);
+  await tap(page, ["d3"]); // a line to keep
+  await longPressFirstRow(page);
+  await tap(page, ["d5"]);
+  await expect(sheet(page)).toHaveCount(0); // nothing is drawn yet
+  expect(await texts(page)).toEqual(["1", "2"]); // Delete did not run on the hidden list
+  expect(await entryValue(page)).toBe("3"); // and the 5 was not typed into the line
+  release();
+  await expect.poll(() => texts(page)).toEqual(["2"]); // the queued 5 is Delete on the pressed row, once
+  await expect(sheet(page)).toBeHidden();
+  expect(await entryValue(page)).toBe("3");
+});
+
+test("F42: a long press on a row before the chunk is in shows the menu once it is", async ({ page }) => {
+  const release = await hold(page);
+  await twoRows(page);
+  await longPressFirstRow(page);
+  await expect(sheet(page)).toHaveCount(0);
+  expect(await texts(page)).toEqual(["1", "2"]);
+  release();
+  await expect(sheet(page).getByRole("menuitem")).toHaveCount(9);
+  expect(await texts(page)).toEqual(["1", "2"]);
+});

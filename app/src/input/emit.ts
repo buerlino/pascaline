@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // MathJSON (Compute Engine's shape, also produced by our own parser) -> Giac input string.
+import { parseError } from "../i18n/enParser.ts";
 import { SerializeError } from "./errors.ts";
 
 export { SerializeError };
@@ -9,8 +10,48 @@ export type Json = number | string | { num: string } | { sym: string } | { str: 
 export interface SerializeOptions {
   /** Single-letter names treated as functions when followed by (...), e.g. f(x). Others multiply. */
   userFunctions?: ReadonlySet<string>;
-  /** L6 setting (default on; the reference gives -2 for (-8)^(1/3), G2 items 4/11, but our power form stays complex, P5(b)): an n-th root with odd whole n is the real root (∛(-8) = -2). */
+  /**
+   * L6 and P5 (b), R39. The root template: an n-th root with odd whole n is the real root (∛(-8) = -2) unless this is
+   * false. The power form only when this is true (Home, Solve and Function set it; CAS does not): a power whose
+   * exponent is a literal fraction p/q (reduced) with q odd is the real root, (-8)^(1/3) = -2 as on the G2 (items 4
+   * and 11). An even q, or any other exponent, keeps the principal root.
+   */
   realOddRoots?: boolean;
+}
+
+function wholeText(e: Json | undefined): string | undefined {
+  const v = typeof e === "object" && e !== null && !Array.isArray(e) && "num" in e ? e.num : undefined;
+  return v !== undefined && /^\d+$/.test(v) ? v : undefined;
+}
+
+function gcd(a: bigint, b: bigint): bigint {
+  while (b !== 0n) [a, b] = [b, a % b];
+  return a;
+}
+
+/**
+ * The exponent is a literal fraction of whole numbers (`1/3`, `-2/3`, `\frac{-1}{5}`, in brackets or not) whose
+ * reduced denominator is odd and above 1: its reduced p and q, as text. Otherwise undefined.
+ */
+export function oddRootExponent(e: Json | undefined): { p: string; q: string } | undefined {
+  let neg = false;
+  let x = e;
+  for (;;) {
+    if (Array.isArray(x) && x[0] === "Delimiter" && x.length === 2) x = x[1] as Json;
+    else if (Array.isArray(x) && x[0] === "Negate" && x.length === 2) [neg, x] = [!neg, x[1] as Json];
+    else break;
+  }
+  if (!Array.isArray(x) || (x[0] !== "Divide" && x[0] !== "Rational") || x.length !== 3) return undefined;
+  let num = x[1] as Json;
+  if (Array.isArray(num) && num[0] === "Negate" && num.length === 2) [neg, num] = [!neg, num[1] as Json];
+  const [a, b] = [wholeText(num), wholeText(x[2] as Json)];
+  if (a === undefined || b === undefined) return undefined;
+  let [p, q] = [BigInt(a), BigInt(b)];
+  if (q === 0n || p === 0n) return undefined;
+  const g = gcd(p, q);
+  [p, q] = [p / g, q / g];
+  if (q === 1n || q % 2n === 0n) return undefined;
+  return { p: (neg ? "-" : "") + String(p), q: String(q) };
 }
 
 /** The root index is an odd whole number literal (3, 5, ...). */
@@ -28,7 +69,7 @@ const FN: Record<string, string> = {
   Exp: "exp", Ln: "ln", Lg: "log10", Abs: "abs", Floor: "floor", Ceil: "ceil", Round: "round",
   Sqrt: "sqrt", Sign: "sign", Max: "max", Min: "min", Gcd: "gcd", Lcm: "lcm", GCD: "gcd", LCM: "lcm",
   Binomial: "comb", Factorial: "factorial", Re: "re", Im: "im", Conjugate: "conj", Arg: "arg",
-  Determinant: "det", Transpose: "tran", Inverse: "inv", Gamma: "Gamma", Mod: "irem", Rem: "irem",
+  Determinant: "det", Transpose: "tran", Inverse: "inv", Gamma: "Gamma", Mod: "pasmod", Rem: "pasmod",
 };
 const INVERSE: Record<string, string> = {
   Sin: "asin", Cos: "acos", Tan: "atan", Sinh: "asinh", Cosh: "acosh", Tanh: "atanh",
@@ -83,13 +124,13 @@ function isHead(e: Json, h: string): e is Json[] {
 
 function numberText(e: Json): string | undefined {
   if (typeof e === "number") {
-    if (!Number.isFinite(e)) throw new SerializeError("non-finite number");
+    if (!Number.isFinite(e)) throw parseError("parse.nonFiniteNumber");
     return String(e).replace("e+", "e");
   }
   if (typeof e === "object" && !Array.isArray(e) && "num" in e) {
     const n = e.num.replace(/[\s_]/g, "");
     if (/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(n) || /^[+-]?(Infinity|NaN)$/.test(n)) return n;
-    throw new SerializeError(`unsupported number literal ${e.num}`);
+    throw parseError("parse.unsupportedNumberLiteral", { num: e.num });
   }
   if (typeof e === "string" && /^[+-]?\d+(\.\d+)?$/.test(e)) return e;
   return undefined;
@@ -105,8 +146,9 @@ function symbolText(e: Json): string | undefined {
 }
 
 /** Giac's own `mod` is the modular-number constructor (an error as a call); Find's `mod` is irem (Euclidean,
- *  never negative: irem(-7,3) = 2), so the written word is renamed. */
-const CALL_NAME: Readonly<Record<string, string>> = { mod: "irem" };
+ *  never negative: irem(-7,3) = 2), so the written word is renamed to our pasmod (homeEval.ts ENGINE_DEFINITIONS:
+ *  irem for integers, and the same remainder for a rational, where irem is an error). */
+const CALL_NAME: Readonly<Record<string, string>> = { mod: "pasmod", irem: "pasmod" };
 
 function call(name: string, args: Json[], o: SerializeOptions): Out {
   return { s: `${CALL_NAME[name] ?? name}(${args.map((a) => ser(a, o).s).join(",")})`, p: 5 };
@@ -160,11 +202,11 @@ function ser(e: Json, o: SerializeOptions): Out {
   if (n !== undefined) return { s: n, p: n.startsWith("-") ? 3 : 5 };
   const sym = symbolText(e);
   if (sym !== undefined) {
-    if (sym === "Nothing") throw new SerializeError("empty input");
+    if (sym === "Nothing") throw parseError("parse.emptyInput");
     if (sym in CONST) return { s: CONST[sym] as string, p: 5 };
     return { s: sym, p: 5 };
   }
-  if (!Array.isArray(e)) throw new SerializeError(`unsupported node ${JSON.stringify(e)}`);
+  if (!Array.isArray(e)) throw parseError("parse.unsupportedNode", { json: JSON.stringify(e) });
   const head = e[0] as string;
   const args = e.slice(1) as Json[];
   const a0 = args[0] as Json;
@@ -172,11 +214,11 @@ function ser(e: Json, o: SerializeOptions): Out {
   switch (head) {
     case "Chip": // our own parser: a chip's value, already Giac text in brackets (input/chips.ts)
       if (typeof a0 === "object" && a0 !== null && !Array.isArray(a0) && "str" in a0) return { s: a0.str, p: 5 };
-      throw new SerializeError("bad chip");
+      throw parseError("parse.badChip");
     case "Call": // our own parser: ["Call", name, ...args]
       return call(a0 as string, args.slice(1), o);
     case "Error":
-      throw new SerializeError(`parse error ${JSON.stringify(e)}`);
+      throw parseError("parse.parseError", { json: JSON.stringify(e) });
     case "Add": {
       let s = "";
       args.forEach((a, i) => {
@@ -204,12 +246,18 @@ function ser(e: Json, o: SerializeOptions): Out {
     case "Power": {
       if (a0 === "ExponentialE" || a0 === "e") return call("exp", [a1], o); // e^x -> exp(x), not exp(1)^x
       const base = ser(a0, o);
+      // P5 (b), R39: (-8)^(1/3) = -2 in Home, Solve and Function; surd(b,q)^p is the real q-th root to the power p
+      const odd = o.realOddRoots === true ? oddRootExponent(a1) : undefined;
+      if (odd) {
+        const root = `surd(${base.s},${odd.q})`;
+        return odd.p === "1" ? { s: root, p: 5 } : { s: `${root}^${odd.p.startsWith("-") ? `(${odd.p})` : odd.p}`, p: 4 };
+      }
       const ex = ser(a1, o);
       return { s: `${wrap(base, 5)}^${wrap(ex, 5)}`, p: 4 };
     }
     case "Root": {
-      // L6 default (root template only; our power form stays complex, P5(b)): an odd whole-number index gives the real root, so ∛(-8) = -2
-      // (Giac surd). Otherwise, or with realOddRoots off, the principal root x^(1/n).
+      // L6 default: an odd whole-number index gives the real root, so ∛(-8) = -2 (Giac surd); the power form follows
+      // only with realOddRoots on (P5 (b), above). Otherwise, or with realOddRoots false, the principal root x^(1/n).
       if (o.realOddRoots !== false && oddIndex(a1)) return call("surd", [a0, a1], o);
       return { s: `${wrap(ser(a0, o), 5)}^(1/${wrap(ser(a1, o), 5)})`, p: 4 };
     }
@@ -221,7 +269,7 @@ function ser(e: Json, o: SerializeOptions): Out {
       return { s: `ln(${ser(a0, o).s})/ln(2)`, p: 2 };
     case "Delimiter": {
       const inner = args.length ? ser(a0, o) : undefined;
-      if (!inner) throw new SerializeError("empty parentheses");
+      if (!inner) throw parseError("parse.emptyParentheses");
       return { s: `(${inner.s})`, p: 5 };
     }
     case "Sequence":
@@ -256,12 +304,12 @@ function ser(e: Json, o: SerializeOptions): Out {
         const inv = INVERSE[f[1] as string];
         if (inv) return call(inv, args.slice(1), o);
       }
-      throw new SerializeError(`unsupported Apply ${JSON.stringify(e)}`);
+      throw parseError("parse.unsupportedApply", { json: JSON.stringify(e) });
     }
     case "Sum":
     case "Product": {
       const lim = a1;
-      if (!isHead(lim, "Tuple")) throw new SerializeError(`${head} needs limits`);
+      if (!isHead(lim, "Tuple")) throw parseError("parse.needsLimits", { head });
       const v = symbolText(lim[1] as Json);
       return {
         s: `${head === "Sum" ? "sum" : "product"}(${ser(lambdaBody(a0, o).body, o).s},${v},${ser(lim[2] as Json, o).s},${ser(lim[3] as Json, o).s})`,
@@ -306,12 +354,12 @@ function ser(e: Json, o: SerializeOptions): Out {
   // R18, Shift + 9: x → body, Giac's function arrow
   if (head === "Lambda" && isHead(a0, "Tuple")) {
     const vars = a0.slice(1).map((v) => symbolText(v as Json) ?? "");
-    if (vars.some((v) => v === "")) throw new SerializeError("→ needs variable names before it");
+    if (vars.some((v) => v === "")) throw parseError("parse.needsVariableNames");
     return { s: `(${vars.join(",")})->${ser(a1, o).s}`, p: 0 };
   }
   if (head in REL) return { s: `${wrap(ser(a0, o), 1)}${REL[head]}${wrap(ser(a1, o), 1)}`, p: 0 };
   if (head in FN) return call(FN[head] as string, args, o);
-  throw new SerializeError(`unsupported head ${head}`);
+  throw parseError("parse.unsupportedHead", { head });
 }
 
 export function mathJsonToGiac(e: Json, o: SerializeOptions = {}): string {

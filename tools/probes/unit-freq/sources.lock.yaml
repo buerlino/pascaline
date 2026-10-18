@@ -1,0 +1,605 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Written by fetch.mjs on 2026-10-17: each article's revision and the SHA-256 of its wikitext in the cache.
+mechanical_civil:
+  - title: Beam (structure)
+    page: Beam (structure)
+    revid: 1359179589
+    file: Beam_structure_.wiki
+    sha256: 1105569cfff3cb61c7861b0958d07029b4365f6d76a0403b25c15ec98a7ab383
+  - title: Bending
+    page: Bending
+    revid: 1351473367
+    file: Bending.wiki
+    sha256: bbcf3c0e192aee02fd428bc984cd91d9e63edbaf26884d74efc19e40eeb37713
+  - title: Stress (mechanics)
+    page: Stress (mechanics)
+    revid: 1370311866
+    file: Stress_mechanics_.wiki
+    sha256: af3ce9a59c5157dde0a8a831745ce4dd62ba29b0793d91731e5054bc30fff314
+  - title: Young's modulus
+    page: Young's modulus
+    revid: 1379142985
+    file: Young_s_modulus.wiki
+    sha256: 56e5b5b3f5555e681fa21edc0bfdcba854a41e6205dd6862df69ef1ae5b04c09
+  - title: Yield (engineering)
+    page: Yield (engineering)
+    revid: 1368584646
+    file: Yield_engineering_.wiki
+    sha256: c8d32902200845dc2a25daee762600ed9316d8f1678a3104ed6df60c6a3b08cf
+  - title: Ultimate tensile strength
+    page: Ultimate tensile strength
+    revid: 1356978255
+    file: Ultimate_tensile_strength.wiki
+    sha256: 95f8a97927f5b3e32c70e58c87095a5c9bb737ebff4fd8a802abecb8bc5cdaa8
+  - title: Torque
+    page: Torque
+    revid: 1373522769
+    file: Torque.wiki
+    sha256: bc1a1d16a05b7e19843229de50285bac55e26dde3716a852d4d509d633ee84f6
+  - title: Rolling-element bearing
+    page: Rolling-element bearing
+    revid: 1380703192
+    file: Rolling_element_bearing.wiki
+    sha256: c0d6de8141769de8ef39c1523c8c5e0f255882a6d8b6f1430eaae27f9bad2817
+  - title: Gear
+    page: Gear
+    revid: 1380681664
+    file: Gear.wiki
+    sha256: 350ee3b98eafc9b7017e08193d4a5315e81335bd65a4daac23b6858ec212f5a4
+  - title: Drive shaft
+    page: Drive shaft
+    revid: 1380035463
+    file: Drive_shaft.wiki
+    sha256: 5b06d63a33df3d092a7e86bcbae96aa09ab458a33b065aa0cc9b22d703fb5ee5
+  - title: Concrete
+    page: Concrete
+    revid: 1380557742
+    file: Concrete.wiki
+    sha256: 85ec6e8cff53d40aa5afb9265177fceeee29344d3a754eba6227a56e32615014
+  - title: Reinforced concrete
+    page: Reinforced concrete
+    revid: 1375796040
+    file: Reinforced_concrete.wiki
+    sha256: 460104b1f54ecd58aba24618a6e2d60a93ebc9304267cd76d02a64fa88649804
+  - title: Prestressed concrete
+    page: Prestressed concrete
+    revid: 1379675389
+    file: Prestressed_concrete.wiki
+    sha256: 3809f5730799c17d3d2b2912e07df788d187ea36a9f2b438ed2763d600c7f7f4
+  - title: Structural steel
+    page: Structural steel
+    revid: 1365653645
+    file: Structural_steel.wiki
+    sha256: a4a7348f7ca454978a82f52760196335c5b00dd6e0373ec78e2c06aec37cf1e1
+  - title: Bolted joint
+    page: Bolted joint
+    revid: 1339910620
+    file: Bolted_joint.wiki
+    sha256: ec5a45e56b5a444e16e5c8cfc352198cde63561f22fd4548f1a3c48930422d64
+  - title: Spring (device)
+    page: Spring (device)
+    revid: 1380203360
+    file: Spring_device_.wiki
+    sha256: 3cd00d3a48f6ed43971e249a0fed835cd09219aade73b008639551eca4381db7
+  - title: Fatigue (material)
+    page: Fatigue (material)
+    revid: 1380067535
+    file: Fatigue_material_.wiki
+    sha256: 9033f10b83a6519017a5b75fbb80c9dc229312c2ecdc3df464b3a71b150adda0
+  - title: Buckling
+    page: Buckling
+    revid: 1362996017
+    file: Buckling.wiki
+    sha256: 07ba97c595485823b2935b16b9533224eb21a6f6913a9a6230d6df4ae5dd0b79
+  - title: Deflection (engineering)
+    page: Deflection (engineering)
+    revid: 1315389755
+    file: Deflection_engineering_.wiki
+    sha256: 8c44f00dc4daf45166269ec0b8155458043a966a83dc1d4a74600347240f2794
+  - title: Internal combustion engine
+    page: Internal combustion engine
+    revid: 1377075087
+    file: Internal_combustion_engine.wiki
+    sha256: 4a9d4d493ae458c9ff82d4d2a13573142b21e45a26e5e3af4dc67c10d477bec8
+  - title: Diesel engine
+    page: Diesel engine
+    revid: 1379115403
+    file: Diesel_engine.wiki
+    sha256: 3b9d3de0002500d30929c1f13e3c192d95cf11415a9f494a501fdf4e0b910d1f
+  - title: Hydraulic cylinder
+    page: Hydraulic cylinder
+    revid: 1373421738
+    file: Hydraulic_cylinder.wiki
+    sha256: 952b23957467650081d289d7a2a390bb46d90b87faf377abd79cc6152d31aef9
+  - title: Truss
+    page: Truss
+    revid: 1352695137
+    file: Truss.wiki
+    sha256: 2263e7bfa299d154645701d8e60d7ff9d2c63fd38940c65af141c2c3c00eb37e
+  - title: Suspension bridge
+    page: Suspension bridge
+    revid: 1371689942
+    file: Suspension_bridge.wiki
+    sha256: 2ae8b291a6df83aadbb24d2f13ef9322e3010fedf1037268ed9db0ea8a57fc36
+  - title: Shallow foundation
+    page: Shallow foundation
+    revid: 1359598265
+    file: Shallow_foundation.wiki
+    sha256: 355d936558f62f12a2c1fa7d9fd19bbca001466fc76f4e12c68fa1fcc278685f
+  - title: Deep foundation
+    page: Piling
+    revid: 1371189117
+    file: Deep_foundation.wiki
+    sha256: 18a49d984cab91d03b2d036b2f663fd41b7121c11243ed8254adbb867528a496
+  - title: Soil mechanics
+    page: Soil mechanics
+    revid: 1377467059
+    file: Soil_mechanics.wiki
+    sha256: 93fc0dbf090a89e302e574b4b9495e3d8ddea00153975c802ef5c5607ca391e1
+  - title: Retaining wall
+    page: Retaining wall
+    revid: 1380307885
+    file: Retaining_wall.wiki
+    sha256: cfb2dfe8c0d2c4864a48c7525ff076697fcbdf6eaeb3ab58db6f2a8cd910873d
+  - title: Pressure vessel
+    page: Pressure vessel
+    revid: 1379671594
+    file: Pressure_vessel.wiki
+    sha256: 99c7000d5fad39d7f34d1d783c2cd2e6b2b1e16706f5cb054a24137b399686d4
+  - title: Welding
+    page: Welding
+    revid: 1380773455
+    file: Welding.wiki
+    sha256: 1e7db2b02d4bd0d064428a020cc05037ee6912edcf1fc5e15bd5cf8a34931384
+  - title: Friction
+    page: Friction
+    revid: 1380681290
+    file: Friction.wiki
+    sha256: 375558310168b782cfedad5f98f750e5e1c3f2f7084d546323f9dec2292e9b5d
+  - title: Second moment of area
+    page: Second moment of area
+    revid: 1342166681
+    file: Second_moment_of_area.wiki
+    sha256: ccf9da7a9bea3f2e943f8fa66fe44762cb2d00c8d13d7b2682acb6aa032411bf
+  - title: Flywheel
+    page: Flywheel
+    revid: 1376669162
+    file: Flywheel.wiki
+    sha256: e89c61611ab0d6a9cfbc4edbd22f3a8264f09956236609b0b293f0b3f1345298
+  - title: Belt (mechanical)
+    page: Belt (mechanical)
+    revid: 1241115019
+    file: Belt_mechanical_.wiki
+    sha256: dd841534973a9f10b16a485821b1801ec94cf8d6d8d48f0c0a3c6c108da585aa
+  - title: Crane (machine)
+    page: Crane (machine)
+    revid: 1378303157
+    file: Crane_machine_.wiki
+    sha256: 204418c70c43f9d47ac1c10853a6ed4e6fd2243d6db1124acc99c796c6e40d76
+  - title: Elevator
+    page: Elevator
+    revid: 1380465810
+    file: Elevator.wiki
+    sha256: 633f7f646a4eb6c80c4e7b6eeadaf7b76fe844d6c64c685cd5c7d65a05183c9c
+  - title: Rebar
+    page: Rebar
+    revid: 1376113134
+    file: Rebar.wiki
+    sha256: fa970518c2831c1a5e07f3083494528e0f9fbba45dde003844c45a876515cede
+  - title: Asphalt concrete
+    page: Asphalt concrete
+    revid: 1380653285
+    file: Asphalt_concrete.wiki
+    sha256: b7273ee2c5a094d943a24424ce583f0df26a68b4294078f87eec9b474abd03f0
+  - title: Disc brake
+    page: Disc brake
+    revid: 1371744086
+    file: Disc_brake.wiki
+    sha256: b5c5cbf65ee443ae9914df2aa84754e3165bd1935c0b217e1e0d6d184a166592
+  - title: Gas turbine
+    page: Gas-turbine engine
+    revid: 1380694983
+    file: Gas_turbine.wiki
+    sha256: cdd4dfd0cb20f5e8acdfc0567552127d43aad7b3d0102be177e88100e5e61076
+electrical:
+  - title: Ohm's law
+    page: Ohm's law
+    revid: 1366731572
+    file: Ohm_s_law.wiki
+    sha256: b1824e5317e3640877fa36a939241c46dee0ee9ef45cd6653e2d2b7d9ad9a48a
+  - title: Resistor
+    page: Resistor
+    revid: 1377807468
+    file: Resistor.wiki
+    sha256: d0ac361933cd81fff3b2dca665a4d156ad5f4ae71abeba65965936951979bcdf
+  - title: Capacitor
+    page: Capacitor
+    revid: 1375788837
+    file: Capacitor.wiki
+    sha256: 47ad97544d854d69b6ac3c42585448049dab8238310682e587381b258ba1d456
+  - title: Inductor
+    page: Inductor
+    revid: 1378549022
+    file: Inductor.wiki
+    sha256: b3329e45bf80062c88ad54ea04d74f259146cc1f69a9d16144bb8b528c603fc6
+  - title: Transformer
+    page: Transformer
+    revid: 1380778663
+    file: Transformer.wiki
+    sha256: 5af5077d34a1a86ef9d0665ccb7fd623d3c6b77e5857e0ecf5931f9f304ea572
+  - title: Electric motor
+    page: Electric motor
+    revid: 1379184351
+    file: Electric_motor.wiki
+    sha256: 6105facfc5d11e274a52ca4e4b4f04f845738b40b46c434b328e428531186d23
+  - title: Induction motor
+    page: Induction motor
+    revid: 1377291714
+    file: Induction_motor.wiki
+    sha256: 345227369054dce6a78f86db2b1dcf891eb294bf6d84febe719d2b8bea7f4bcf
+  - title: Three-phase electric power
+    page: Three-phase electric power
+    revid: 1377580197
+    file: Three_phase_electric_power.wiki
+    sha256: 34c1351a2d53a5c7226741852fc865cbe6ea3be49470971c1247576983db47a4
+  - title: Power factor
+    page: Power factor
+    revid: 1368985371
+    file: Power_factor.wiki
+    sha256: 10201ae5742e353e739784442705716fcf7d19c0f53d06a5efe709812f0dd8d6
+  - title: Electric battery
+    page: Electric battery
+    revid: 1373978617
+    file: Electric_battery.wiki
+    sha256: fa46f3edc615e854831b0f729f4bfab6a1b7c8d42cc9b1387ebb616d82cb4dab
+  - title: Lithium-ion battery
+    page: Lithium-ion battery
+    revid: 1380093173
+    file: Lithium_ion_battery.wiki
+    sha256: 3c630880adce9b924dfdbdce85ddc5f302ce96d885016e079eca795e288f2385
+  - title: Power cable
+    page: Power cable
+    revid: 1359853432
+    file: Power_cable.wiki
+    sha256: edbc4cda0b3684f1058581c59a8be8375cfa5101bca782d7f47d3e1c24796791
+  - title: Circuit breaker
+    page: Circuit breaker
+    revid: 1373727333
+    file: Circuit_breaker.wiki
+    sha256: 805b1003e306fc81a8fd3b3b07875e96b8c7392ba77cb3082ab00a10b851febd
+  - title: Operational amplifier
+    page: Operational amplifier
+    revid: 1378476597
+    file: Operational_amplifier.wiki
+    sha256: 9f8775d3954db5be482d47ae29117636654ad0a4d6ddf3e6134e03eed1aa7b3a
+  - title: RC circuit
+    page: RC circuit
+    revid: 1379781599
+    file: RC_circuit.wiki
+    sha256: b98946b09a41fcd3a7a97685c7bc41e0ca53c49fa5805d93bceba90e22eca90e
+  - title: RLC circuit
+    page: RLC circuit
+    revid: 1371945755
+    file: RLC_circuit.wiki
+    sha256: e9c84d0b8392314d40c4fcdd35cc0a3d40df3ff600108fe14339aea1c7c04519
+  - title: Electric generator
+    page: Electric generator
+    revid: 1376334918
+    file: Electric_generator.wiki
+    sha256: 0e6845491cd38b2ff6947cc28c3e78ed4a28f4fc9fea6e340a3550cceb59df8c
+  - title: Photovoltaic system
+    page: Photovoltaic system
+    revid: 1372535688
+    file: Photovoltaic_system.wiki
+    sha256: 88a90946c846645ba78cbd399b07990075d079a7246abf13ada9a235c64c1f17
+  - title: Electricity meter
+    page: Electricity meter
+    revid: 1378636570
+    file: Electricity_meter.wiki
+    sha256: c05aabdd0772e1e30946d04c128362916007d10060cc3d7dfb00431d6e82949b
+  - title: Mains electricity
+    page: Mains electricity
+    revid: 1377629122
+    file: Mains_electricity.wiki
+    sha256: 6b5424c1e7fbe67f6128d3736c95bd92fb2cef76f837c5d6a52238af966a06f4
+  - title: Diode
+    page: Diode
+    revid: 1373727382
+    file: Diode.wiki
+    sha256: c58b9433150bd25d22be4ca168558499d682cdec38a6c1f6373bf883a66f755e
+  - title: Bipolar junction transistor
+    page: Bipolar junction transistor
+    revid: 1379043939
+    file: Bipolar_junction_transistor.wiki
+    sha256: 46bc6b6bc04981c0e69620ee308dababf500b1d7460713b0dcc80bd44d36295e
+  - title: MOSFET
+    page: MOSFET
+    revid: 1380670359
+    file: MOSFET.wiki
+    sha256: dbbffe5df2cbd06982fd920cdbbe19ee4c1a7dd7e011f1c1fb8f47fa02fa4876
+  - title: Voltage regulator
+    page: Voltage regulator
+    revid: 1379986731
+    file: Voltage_regulator.wiki
+    sha256: 84834b1e31c35ce926cba49149673cd125395f3dc0cae65aea12fa1f5b173f25
+  - title: Switched-mode power supply
+    page: Switched-mode power supply
+    revid: 1378032592
+    file: Switched_mode_power_supply.wiki
+    sha256: 8db147e6d7381681d0b396d8f93372fc1e844c22b1555a79dec3d8b109577f57
+  - title: Electric power transmission
+    page: Electric power transmission
+    revid: 1368143694
+    file: Electric_power_transmission.wiki
+    sha256: 59363a7773d5c45b1e5c2a65b27e7b36ea6a706c0ca66c5d553c5d98437109ef
+  - title: Ground (electricity)
+    page: Ground (electricity)
+    revid: 1376325747
+    file: Ground_electricity_.wiki
+    sha256: 50916c1671d6d586aa2ab42ce238ec2ed2eedf6c859bbd10eab966b4cf73cbe6
+  - title: Fuse (electrical)
+    page: Fuse (electrical)
+    revid: 1373727450
+    file: Fuse_electrical_.wiki
+    sha256: c66b15587918d7bb23ef5ebb8d9a466c95671c963cb604f96c2fb35d29fdaa03
+  - title: Electrical impedance
+    page: Electrical impedance
+    revid: 1363009092
+    file: Electrical_impedance.wiki
+    sha256: a7f0f34fe5975c7e78be911efe76da61d73e86fa5bef24c50972e175ed36e978
+  - title: Skin effect
+    page: Skin effect
+    revid: 1305941429
+    file: Skin_effect.wiki
+    sha256: d270197fa202a3a16b5847e66b36dac523edeec3f25d2017b8bd9dff91f7cd8e
+  - title: Johnson–Nyquist noise
+    page: Johnson–Nyquist noise
+    revid: 1375770605
+    file: Johnson_Nyquist_noise.wiki
+    sha256: c80217e88f8246b4d774a52046ea407b17f3c464e33444b2efcd276f72791768
+  - title: Analog-to-digital converter
+    page: Analog-to-digital converter
+    revid: 1375648206
+    file: Analog_to_digital_converter.wiki
+    sha256: 3cec59d07fa40fe1de24975d3cc39f283677a5f32f396d7091bd3a335df65626
+  - title: Power inverter
+    page: Power inverter
+    revid: 1371308651
+    file: Power_inverter.wiki
+    sha256: 9c203128a34963a917965e7537345f09aa2dd120c12cb0e2cec212bdf651900a
+  - title: American wire gauge
+    page: American wire gauge
+    revid: 1368481761
+    file: American_wire_gauge.wiki
+    sha256: 9ae4be8b20050ad01cd7b309042f4929b1096b3dee256e55562b4b706eb7f199
+  - title: Supercapacitor
+    page: Supercapacitor
+    revid: 1380317119
+    file: Supercapacitor.wiki
+    sha256: 1d361e7dd7f92b787905ad4bab599ca1f6b04f77c145035d92cf34859eb96696
+  - title: Light-emitting diode
+    page: Light-emitting diode
+    revid: 1377021952
+    file: Light_emitting_diode.wiki
+    sha256: b12034fb3894768f21e73fd6b41fa262769255403179894fbd1b42aa863d99ca
+  - title: Electrical substation
+    page: Substation
+    revid: 1380123015
+    file: Electrical_substation.wiki
+    sha256: 53f40ed24d4449b83f9963807adcb83557ccf9ad9f3fc1e7c6645216529bcdd9
+  - title: Uninterruptible power supply
+    page: Uninterruptible power supply
+    revid: 1372628605
+    file: Uninterruptible_power_supply.wiki
+    sha256: 5aa8853792e6d3cfca9bc68f4bf0ed632572477f7259ec02128242b5d3188393
+  - title: Variable-frequency drive
+    page: Variable-frequency drive
+    revid: 1367459418
+    file: Variable_frequency_drive.wiki
+    sha256: 84502fb59bd7cee7bf35bbb74056bb92105dd6bf1db18ef286c48edaaf5ec05d
+  - title: Electric power distribution
+    page: Electric power distribution
+    revid: 1377733465
+    file: Electric_power_distribution.wiki
+    sha256: f500b51f120fbbf80780add4a66dbebc1984c15b1f024796d849dae1ea5e5228
+chemical_process_hvac:
+  - title: Heat exchanger
+    page: Heat exchanger
+    revid: 1379846150
+    file: Heat_exchanger.wiki
+    sha256: 7cb14ee0725b5abf15021514037eebaf65c14f9eb58450ff446a27778a81a4fa
+  - title: Heat transfer coefficient
+    page: Heat transfer coefficient
+    revid: 1375683472
+    file: Heat_transfer_coefficient.wiki
+    sha256: 951b1b9f48d3bc561d5f387f53ae154d464a75a34e448297d55b0d9af17e692d
+  - title: Thermal conductivity and resistivity
+    page: Thermal conductivity and resistivity
+    revid: 1378063978
+    file: Thermal_conductivity_and_resistivity.wiki
+    sha256: 0c51eabf90847fd442104e8f1016079819f7a7aece1c5bc3479f0db6265d4d73
+  - title: Heat pump
+    page: Heat pump
+    revid: 1380594737
+    file: Heat_pump.wiki
+    sha256: 4699a986d8dbc9481088bc7ad359abf4b7ce4eb105ca18a0b25094fb4b061c8c
+  - title: Chiller
+    page: Chiller
+    revid: 1372330394
+    file: Chiller.wiki
+    sha256: 3caded85979d015aa30368fd05c6a454e1ee247ef2ea4b7e5c102a1aab1ea86a
+  - title: Air conditioning
+    page: Air conditioning
+    revid: 1380764635
+    file: Air_conditioning.wiki
+    sha256: 01a9bea3df66aa8a11569b7ebc8020b47fb2b84f89c67f985c92433ab8575e80
+  - title: Heating, ventilation, and air conditioning
+    page: Heating, ventilation, and air conditioning
+    revid: 1373843768
+    file: Heating_ventilation_and_air_conditioning.wiki
+    sha256: caf812ccb69bf31941a44065eb9b589eb0842b4896b2c6f4f56097da38ea0fdc
+  - title: Boiler
+    page: Boiler
+    revid: 1376361150
+    file: Boiler.wiki
+    sha256: 6ef9041ebfe69b10094183a8a234ef6cf578dfccfc27befe9dd0e7d86faf588f
+  - title: Steam
+    page: Steam
+    revid: 1357704696
+    file: Steam.wiki
+    sha256: 6f0d21b02b0fd325c8c92058b514e57d4879035792724563c2aa1c018ff0ff60
+  - title: Fractional distillation
+    page: Fractional distillation
+    revid: 1375549926
+    file: Fractional_distillation.wiki
+    sha256: d8242e2e12679ca0cd14b06daa404a8e6f8781bd53e2d82582bf6164f7f55593
+  - title: Pump
+    page: Pump
+    revid: 1364830689
+    file: Pump.wiki
+    sha256: 55022a06b0bca7a6302e726f6b183a35a1b1950eef90b990ccad21a0738dfb2d
+  - title: Centrifugal pump
+    page: Centrifugal pump
+    revid: 1373998212
+    file: Centrifugal_pump.wiki
+    sha256: 401848fbf262e8a79a383ea659fce4a14b89563228d872c9b42c38410a91742d
+  - title: Gas compressor
+    page: Compressor
+    revid: 1376162770
+    file: Gas_compressor.wiki
+    sha256: c28898c48eee5331494613cdbed8f9a76dc9bde70a94618a19d22b15eb6f5737
+  - title: Mechanical fan
+    page: Fan (machine)
+    revid: 1378061047
+    file: Mechanical_fan.wiki
+    sha256: 9cea92fe01356edfdee6aedff5f471d64b89692e20c71badb39fa5f351d5fffc
+  - title: Duct (flow)
+    page: Duct (flow)
+    revid: 1372924331
+    file: Duct_flow_.wiki
+    sha256: 5d2a3809429de86edcee3f19498cd1beceeaa5f0f600f3e77b3506a5aadfdf3c
+  - title: Pipe flow
+    page: Pipe flow
+    revid: 1297043616
+    file: Pipe_flow.wiki
+    sha256: 00e20ab0786656f8fcaa1a4f3b415f22d31bac37f2bf1ef0b9d21d263795f861
+  - title: Darcy–Weisbach equation
+    page: Darcy–Weisbach equation
+    revid: 1355237618
+    file: Darcy_Weisbach_equation.wiki
+    sha256: 80f6e64bf0c9808ec5336e44fd2b332b413af88cd24921015359437b593b7dcc
+  - title: Viscosity
+    page: Viscosity
+    revid: 1380569527
+    file: Viscosity.wiki
+    sha256: b39e80289443aba97a24aee7e1c5d1f907f5ccbfbf80c3b0b89cb5afde755ebd
+  - title: Flow measurement
+    page: Flow measurement
+    revid: 1365753664
+    file: Flow_measurement.wiki
+    sha256: 9abb6001341c22d15faaaf2fb70a51f934dbde36414f6f61f191024c4db3d40a
+  - title: Psychrometrics
+    page: Psychrometrics
+    revid: 1375683326
+    file: Psychrometrics.wiki
+    sha256: 30e764e3caeccd478923d93bf9c7831ce54b78aa3495064e0460fcf465bc56e1
+  - title: Cooling tower
+    page: Cooling tower
+    revid: 1378633910
+    file: Cooling_tower.wiki
+    sha256: 35dfb5903e65087cc39141ac50b1b28a76ddcd1ea7b03833e4a6841acf835554
+  - title: Vapor-compression refrigeration
+    page: Vapor-compression refrigeration
+    revid: 1375050685
+    file: Vapor_compression_refrigeration.wiki
+    sha256: 7399dac3e65b7a652f12d856122d7bc3b9240de654a87ab0e9fcd534b1b96f75
+  - title: Enthalpy of vaporization
+    page: Enthalpy of vaporization
+    revid: 1378383544
+    file: Enthalpy_of_vaporization.wiki
+    sha256: 922c9a5e9c9cc1d3d681c8903fa55ac325f6da0ef3cbc52292f8a7b36d8d723a
+  - title: Specific heat capacity
+    page: Specific heat capacity
+    revid: 1373006509
+    file: Specific_heat_capacity.wiki
+    sha256: 6bea5571fb4b1397d54fcde44dfe9e9a82c0b672eedf951eb01a457de23bb48d
+  - title: Chemical reactor
+    page: Chemical reactor
+    revid: 1365456657
+    file: Chemical_reactor.wiki
+    sha256: 9a157029ee8246b766873ea5e73f6cbd8aa9d1f3f2e8fadec9c2a341f4907919
+  - title: Mass flow rate
+    page: Mass flow rate
+    revid: 1356995623
+    file: Mass_flow_rate.wiki
+    sha256: 5ddd58cb772fdcf6eedb4fcb02acfc2b9a6869bda5cf6698b522b43b22d3fc25
+  - title: Volumetric flow rate
+    page: Volumetric flow rate
+    revid: 1341552301
+    file: Volumetric_flow_rate.wiki
+    sha256: d9f575f4d3e8711892f342286c0370d3de296f531c6670ae7bfcf90d9cfd0449
+  - title: Orifice plate
+    page: Orifice plate
+    revid: 1379574065
+    file: Orifice_plate.wiki
+    sha256: 9c9133ce1ee7aa5ce6d25f7fe65db59531b1ddbeca1addc07cba6fa50e6af4fa
+  - title: Control valve
+    page: Control valve
+    revid: 1357926704
+    file: Control_valve.wiki
+    sha256: 98fa779fa887082f0e42d8bca72cb10f18653db8507a488be933d5b63084588e
+  - title: Natural gas
+    page: Natural gas
+    revid: 1380371206
+    file: Natural_gas.wiki
+    sha256: ec64b2778a5e47a49be3629c86410907ab6aba34056beb618dc638c16672f2f4
+  - title: Heat of combustion
+    page: Heat of combustion
+    revid: 1378383787
+    file: Heat_of_combustion.wiki
+    sha256: aba9b8357dad269964792cbd67a08902de947f04a9572b2e48e8ef5a07d9a666
+  - title: Cogeneration
+    page: Cogeneration
+    revid: 1375057204
+    file: Cogeneration.wiki
+    sha256: 275e33940452abba5b929ce2a2b46c67434953a81dab18627eb663cd32aa4a66
+  - title: Thermal insulation
+    page: Thermal insulation
+    revid: 1375683766
+    file: Thermal_insulation.wiki
+    sha256: 604055e54ed0e1eee14cf403516dd8b7dc41432c47acc89ea10371ba2eb2da49
+  - title: R-value (insulation)
+    page: R-value (insulation)
+    revid: 1375683636
+    file: R_value_insulation_.wiki
+    sha256: 74135d16819ea2b5098cb0baa5a0c62db7f23a04ead5ac797219ac9a17b4d0e2
+  - title: Coefficient of performance
+    page: Coefficient of performance
+    revid: 1378929492
+    file: Coefficient_of_performance.wiki
+    sha256: f7ac74f66f5a0b22e0c644aeb6b7a08d8562f8528ec2c24215258fc681465c3f
+  - title: Condenser (heat transfer)
+    page: Condenser (heat transfer)
+    revid: 1343739853
+    file: Condenser_heat_transfer_.wiki
+    sha256: 50b464af198ea459a0c248ec562c05dff58a533d039553b9ee002308c749d424
+  - title: Steam turbine
+    page: Steam turbine
+    revid: 1376109825
+    file: Steam_turbine.wiki
+    sha256: 00ce4b82cdf42fbd6a794c60e42f791b35e5c527538e7bf83c85d9aec466a811
+  - title: Water heating
+    page: Water heating
+    revid: 1375580352
+    file: Water_heating.wiki
+    sha256: 65acf395a3c23c3f0bfb353f7fd8ad8831e8071931705fe3554db8f82801b4fa
+  - title: Radiator (heating)
+    page: Radiator (heating)
+    revid: 1356608023
+    file: Radiator_heating_.wiki
+    sha256: 5a7c131e6fb3ba781e13382eec2d23c111998d280f30ca468f7962fd397b476d
+  - title: Air handler
+    page: Air handler
+    revid: 1373636997
+    file: Air_handler.wiki
+    sha256: 9c80bebce358a0b002dd3ce932b34c2c1c831370bba77cb7d31c230a480f18db

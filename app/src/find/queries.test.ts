@@ -4,6 +4,7 @@
 // Needs the full generated index: `npm run index` with a qalc build. Skipped with a warning when it is missing or
 // holds functions only (a --no-units build); FIND_INDEX=required (the merge gate, docs/shifts/brief.md) fails instead.
 import { existsSync, readFileSync } from "node:fs";
+import { cpus, loadavg } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
@@ -22,10 +23,10 @@ const doc = parse(readFileSync(join(here, "../../../tests/tasks/find-queries.yam
 const active = doc.queries.filter((q) => q.status !== "pending");
 
 describe("find-queries.yaml", () => {
-  it("has 100 active phrases and 10 pending ones, no duplicates", () => {
+  it("has 108 active phrases and 8 pending ones, no duplicates", () => {
     expect(doc.schema).toBe(1);
-    expect(active.length).toBe(100);
-    expect(doc.queries.length - active.length).toBe(10);
+    expect(active.length).toBe(108);
+    expect(doc.queries.length - active.length).toBe(8);
     expect(new Set(doc.queries.map((q) => q.query)).size).toBe(doc.queries.length);
     for (const q of doc.queries) expect(q.query, q.query).toBe(q.query.toLowerCase()); // Find types lower case only
   });
@@ -93,8 +94,11 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
     times.sort((a, b) => a - b);
     const p95 = times[Math.floor(times.length * 0.95)] ?? 0;
     console.log(`find queries: ${keys.length} keys, p50 ${(times[times.length >> 1] ?? 0).toFixed(2)} ms, p95 ${p95.toFixed(2)} ms`);
+    // On a busy host (1-minute load above the core count) a wall-clock bar says nothing; the device gate ?bench=find is the real one (B13).
+    const busy = loadavg()[0] ?? 0;
+    if (busy > cpus().length) { console.warn(`find queries: host load ${busy.toFixed(1)} > ${cpus().length} cores; the p95 assertion is skipped`); return; }
     expect(p95).toBeLessThan(8);
-  });
+  }, 60_000); // 3 rounds over every key take over 5 s on a loaded host; the load check above, not vitest's timeout, decides
 });
 
 it("finds the full generated index (otherwise the query test was skipped)", () => {

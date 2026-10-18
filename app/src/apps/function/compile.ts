@@ -2,7 +2,8 @@
 // A Function-app definition, parsed once by our parser (P1) into the Giac text the engine evaluates and
 // the JS evaluator Plot draws with (D7: drawing only; every number shown comes from the engine).
 // The variable is x, the key on the keyboard; X (shift + alpha) means the same.
-import { mathJsonToGiac, SerializeError, type Json } from "../../input/emit.ts";
+import { mathJsonToGiac, type Json } from "../../input/emit.ts";
+import { parseFailText } from "../../input/errors.ts";
 import { jsonToJs } from "../../input/emit-js.ts";
 import { parseLatex } from "../../input/parse.ts";
 
@@ -27,9 +28,9 @@ export function compileDefinition(latex: string): Compiled {
   let giac: string;
   try {
     json = renameX(parseLatex(latex));
-    giac = mathJsonToGiac(json);
+    giac = mathJsonToGiac(json, { realOddRoots: true }); // P5 (b), R39
   } catch (e) {
-    return { giac: "", error: e instanceof SerializeError ? e.message : String(e) };
+    return { giac: "", error: parseFailText(e) };
   }
   if (Array.isArray(json) && typeof json[0] === "string" && /^(Equal|Less|Greater|LessEqual|GreaterEqual|NotEqual)$/.test(json[0]))
     return { giac: "", error: "not a function of x" };

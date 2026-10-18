@@ -2,12 +2,14 @@
 // Round trip: LaTeX -> Giac string (our parser), then Giac decides whether it equals the intended Giac
 // expression: simplify((a)-(b)) == 0, else numeric evaluation at 3 random points.
 // Needs an engine build: GIAC_OUT=<dir with giac.mjs> (default $PASCALINE_MAIN/engine/giac/_out/gsl or the repo's own).
-// The 296 general cases live in tests/golden/parser.yaml (npm run golden); this file covers the keyboard templates.
+// The general cases live in tests/golden/parser.yaml (npm run golden); this file covers the keyboard templates.
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
 import { keyboard, templates } from "../keyboard/keyboard.ts";
+import { ENGINE_DEFINITIONS } from "../engine/homeEval.ts";
+import { eseriesDefinition } from "../engine/eseries.ts";
 import { SAMPLE_CHIPS } from "./chips.ts";
 import { latexToGiac } from "./latex-to-giac.ts";
 
@@ -54,6 +56,8 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
     const M = await mod.default({ print: () => {}, printErr: () => {} });
     (M.cwrap("giac_init", "number", []) as () => number)();
     giac = M.cwrap("giac_eval", "string", ["string"]) as GiacEval;
+    // The parser emits our own names (pasmod); the host loads them on first use.
+    for (const def of [...Object.values(ENGINE_DEFINITIONS), eseriesDefinition()]) giac(def);
   }, 60_000);
 
   // Rule: every keyboard template (spec/keyboard.yaml) has a parser rule and a round-trip case.

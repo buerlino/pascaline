@@ -386,7 +386,7 @@ function unitLatex(printed) {
 /** Units, prefixes and physical constants from libqalculate's data files, checked and valued by the qalc build. */
 async function qalcItems(q, xml, ours, aliases) {
   const items = [];
-  const stats = { units: 0, unitsSkipped: [], composites: 0, prefixes: 0, consts: 0, constsSkipped: [], noSi: [], siChecked: 0 };
+  const stats = { units: 0, unitsSkipped: [], composites: 0, prefixes: 0, consts: 0, constsSkipped: [], noSi: [], overrides: [], siChecked: 0 };
 
   // --- prefixes
   const pfxBySym = new Map(); // ascii symbol -> {decimal exponent | binary exponent}
@@ -498,7 +498,7 @@ async function qalcItems(q, xml, ours, aliases) {
   for (const u of ours.units ?? []) {
     const expect = parseParts(u.parts, pfxBySym);
     if (!expect) { fail(`find/units.yaml ${u.id}: bad parts "${u.parts}"`); continue; }
-    unitDefs.push({ id: u.id, expect, names: u.names ?? [], title: u.title ?? autoTitle(expect, byRef, pfxBySym), cat: "ours", nonlinear: false, ours: true });
+    unitDefs.push({ id: u.id, text: u.text, symbol: u.symbol, expect, names: u.names ?? [], title: u.title ?? autoTitle(expect, byRef, pfxBySym), cat: "ours", nonlinear: false, ours: true });
   }
   function hasNonlinear(d) {
     const b = child(d.el, "base");
@@ -518,13 +518,14 @@ async function qalcItems(q, xml, ours, aliases) {
       continue;
     }
     // round trip: the id parses to exactly the expected unit leaves
-    const ls = leaves(q.parse(u.id));
+    const qt = u.text ?? u.id; // the qalc text, where the id itself does not parse (kip, fbm)
+    const ls = leaves(q.parse(qt));
     if (!ls || leafKey(ls) !== leafKey(u.expect)) {
-      const msg = `${where}: id "${u.id}" parses to ${JSON.stringify(q.parse(u.id))}`;
+      const msg = `${where}: ${u.text ? "text" : "id"} "${qt}" parses to ${JSON.stringify(q.parse(qt))}`;
       if (u.ours) fail(msg); else { notes.push(msg); stats.unitsSkipped.push(`${u.def?.ref} (id does not parse back)`); }
       continue;
     }
-    const printed = q.print(u.id).replace(/μ/g, "µ"); // the micro sign, as on keyboards and in the SI brochure
+    const printed = (u.symbol ?? q.print(qt)).replace(/μ/g, "µ"); // the micro sign, as on keyboards and in the SI brochure
     const symbol = printed.replace(/^1 /, "").replace(/\s*∕\s*/g, "/").replace(/\s*⋅\s*/g, "·");
     let names = uniq([u.id, symbol, ...u.names]);
     names = uniq(names.flatMap((n) => (/[µμ]/.test(n) ? [n.replace(/μ/g, "µ"), n.replace(/µ/g, "μ")] : [n])));
@@ -532,9 +533,9 @@ async function qalcItems(q, xml, ours, aliases) {
     const item = { id: `unit:${u.id}`, kind: "unit", names, title: u.title, tier: 0, insert: "" };
     // the SI factor and dimension
     let si = null;
-    const ex = q.eval(u.id, 2);
+    const ex = q.eval(qt, 2);
     let base = siOf(ex.tree);
-    if (base && base.dec) { const exact = siOf(q.eval(u.id, 3).tree); if (exact && !exact.dec) base = exact; }
+    if (base && base.dec) { const exact = siOf(q.eval(qt, 3).tree); if (exact && !exact.dec) base = exact; }
     if (base) item.dim = dimKey(base.dims);
     if (u.nonlinear) {
       // °C, °F: affine (factor and offset, from f(0) and f(1)); dB, Np, dBm: logarithmic, no factor
@@ -553,13 +554,13 @@ async function qalcItems(q, xml, ours, aliases) {
       const want = evalProduct(check.si);
       const got = base && !base.dec && !base.piPow ? base.coef : null;
       const same = !!got && feq(got, want);
-      if (!same && check.known) {
-        // a known qalc data error (check.known says where it is tracked): no factor rather than a wrong one
-        notes.push(`${item.id}: qalc's factor ${si} differs from the definition ${check.si} (${check.known}); si left out`);
-        stats.noSi.push(`${u.id} (qalc's factor differs from its definition: ${check.known})`);
-        si = null;
+      if (!same && check.override) {
+        // a known qalc data error (check.override says why): our exact factor replaces qalc's (G13)
+        notes.push(`${item.id}: qalc's factor ${si} differs from the definition ${check.si} (${check.override}); ours is used`);
+        si = ftext(want);
+        stats.overrides.push(`${u.id} (${check.override})`);
       } else if (!same) fail(`${item.id}: qalc's factor ${si} differs from the definition ${check.si}`);
-      else if (check.known) fail(`${item.id}: matches its definition now; remove "known" from find/units.yaml checks`);
+      else if (check.override) fail(`${item.id}: qalc matches its definition now; remove "override" from find/units.yaml checks`);
     }
     if (si !== null) item.si = si;
     item.insert = `\\unit{${u.id}}{${unitLatex(printed)}}`;
@@ -567,6 +568,23 @@ async function qalcItems(q, xml, ours, aliases) {
     seenIds.set(u.id, item);
     items.push(item);
     stats.units++;
+  }
+
+  // --- units qalc lacks or has differently (find/units.yaml `defined`): exact `si` and `dim` from the definition.
+  // `replace` takes the place of qalc's unit of that id; `dropNames` takes names off another item (rev off tr).
+  for (const d of ours.defined ?? []) {
+    if (!d.id || d.si === undefined || d.dim === undefined || !d.title || !d.source) { fail(`find/units.yaml defined ${d.id ?? "?"}: needs id, title, si, dim, source`); continue; }
+    const at = items.findIndex((i) => i.id === `unit:${d.id}`);
+    if (at >= 0 && !d.replace) { fail(`find/units.yaml defined ${d.id}: qalc has this unit; say "replace: true" to take its place`); continue; }
+    if (at < 0 && d.replace) { fail(`find/units.yaml defined ${d.id}: replace: true, but qalc has no such unit`); continue; }
+    try { frac(evalProduct(d.si).n); } catch { fail(`find/units.yaml defined ${d.id}: bad si "${d.si}"`); continue; }
+    const item = { id: `unit:${d.id}`, kind: "unit", names: uniq([d.id, ...(d.names ?? [])]), title: d.title, dim: d.dim, si: ftext(evalProduct(d.si)), tier: 0, insert: `\\unit{${d.id}}{\\mathrm{${d.symbol ?? d.id}}}` };
+    if (at >= 0) { notes.push(`unit:${d.id}: qalc's ${items[at].si} (${items[at].dim}) replaced by ours ${item.si} (${d.source})`); items[at] = item; } else items.push(item);
+    stats.siChecked++;
+  }
+  for (const [id, names] of Object.entries(ours.dropNames ?? {})) {
+    const it = items.find((i) => i.id === id);
+    if (!it) fail(`find/units.yaml dropNames: no item ${id}`); else it.names = it.names.filter((n) => !names.includes(n));
   }
 
   // --- physical constants
@@ -622,9 +640,32 @@ async function qalcItems(q, xml, ours, aliases) {
     const check = ours.checks?.[item.id];
     if (check !== undefined) {
       stats.siChecked++;
-      if (!exact || !feq(r.piPow ? frac(0n) : r.coef, evalProduct(check.value))) fail(`${item.id}: qalc gives ${item.value}, the definition ${check.value}`);
+      if (check.override && !exact) {
+        // CODATA 2022 (NIST allascii) differs from qalc's value or uncertainty: ours replaces it (G13); fails once qalc agrees
+        const sameV = feq(decFrac(item.value), decFrac(check.value)), sameU = check.unc === undefined || feq(decFrac(item.unc), decFrac(check.unc));
+        if (sameV && sameU) fail(`${item.id}: qalc matches CODATA now; remove "override" from find/units.yaml checks`);
+        else {
+          notes.push(`${item.id}: qalc gives ${item.value} ± ${item.unc}, CODATA 2022 ${check.value} ± ${check.unc ?? item.unc} (${check.override}); ours is used`);
+          stats.overrides.push(`${id} (${check.override})`);
+          item.value = check.value;
+          if (check.unc !== undefined) item.unc = check.unc;
+        }
+      } else if (!exact || !feq(r.piPow ? frac(0n) : r.coef, evalProduct(check.value))) fail(`${item.id}: qalc gives ${item.value}, the definition ${check.value}`);
     }
     items.push(item);
+    stats.consts++;
+  }
+  // --- constants of ours (find/units.yaml constants.define): exact value, unit text parsed by qalc for the dimension
+  for (const [id, c] of Object.entries(ours.constants?.define ?? {})) {
+    if (items.some((i) => i.id === `const:${id}`)) { fail(`find/units.yaml constants.define ${id}: qalc has this constant`); continue; }
+    const r = siOf(q.eval(c.unit, 2).tree);
+    if (!c.value || !c.title || !c.source || !r || r.dec || r.piPow || !feq(r.coef, frac(1n))) { fail(`find/units.yaml constants.define ${id}: needs value, title, source and a unit of SI base units`); continue; }
+    const check = ours.checks?.[`const:${id}`];
+    if (!check || !feq(decFrac(check.value), decFrac(c.value))) { fail(`find/units.yaml constants.define ${id}: a checks entry with the same value is required`); continue; }
+    stats.siChecked++;
+    const sym = aliases.symbols?.[`const:${id}`];
+    items.push({ id: `const:${id}`, kind: "const", names: uniq([id, ...(c.names ?? [])]), title: c.title, value: c.value, unit: unitText(r.dims), dim: dimKey(r.dims), tier: 0,
+      insert: `\\const{${id}}{${sym ? symbolLatex(sym) : `\\mathrm{${latexName(id)}}`}}` });
     stats.consts++;
   }
   return { items, stats };
@@ -743,7 +784,7 @@ console.log(`find-index: ${json.length} bytes raw, ${gz} bytes gzip, ${(performa
   ` (aide_cas: ${fns.entries} entries, ${fns.dropped} left out: ${Object.entries(fns.skipped).map(([k, v]) => `${v} ${k}`).join(", ")})`);
 if (qstats) {
   console.log(`find-index: qalc: ${qstats.units} units (${qstats.composites} composites), ${qstats.prefixes} prefixes, ${qstats.consts} constants; ` +
-    `${qstats.unitsSkipped.length} units and ${qstats.constsSkipped.length} constants skipped, ${qstats.noSi.length} units without si, ${qstats.siChecked} values checked against definitions`);
+    `${qstats.unitsSkipped.length} units and ${qstats.constsSkipped.length} constants skipped, ${qstats.noSi.length} units without si, ${qstats.siChecked} values checked against definitions, ${qstats.overrides.length} overridden`);
   if (VERBOSE) {
     console.log(`  units skipped: ${qstats.unitsSkipped.join(", ")}`);
     console.log(`  constants skipped: ${qstats.constsSkipped.join(", ")}`);

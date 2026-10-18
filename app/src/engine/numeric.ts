@@ -23,6 +23,7 @@ import {
   type ComplexValue,
   type DecimalValue,
   type PrecisionWarn,
+  type PrecisionWhy,
 } from "./format.ts";
 
 export interface Giac {
@@ -45,10 +46,10 @@ export function valuePrecision(digits: number): number {
  */
 export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
   "evalf", "approx",
-  "sqrt", "exp", "ln", "log", "log10", "sin", "cos", "tan", "asin", "acos", "atan",
+  "sqrt", "exp", "pasexp", "ln", "log", "log10", "sin", "cos", "tan", "asin", "acos", "atan",
   "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
   "abs", "re", "im", "conj", "arg", "sign", "floor", "ceil", "round", "frac", "max", "min",
-  "sigfig",
+  "sigfig", "par", "eseries",
 ]);
 
 const FLOAT_LITERAL = /(?<![A-Za-z_0-9.])(?:\d+\.\d*|\.\d+|\d+(?=e[+-]?\d))(?:e[+-]?\d+)?/;
@@ -162,6 +163,15 @@ export function namesIn(input: string): string[] {
   const re = /"[^"]*"|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?|([A-Za-z_][A-Za-z0-9_]*)(\s*\()?/g;
   for (let m = re.exec(input); m; m = re.exec(input)) if (m[1] && !m[2] && !out.includes(m[1])) out.push(m[1]);
   return out;
+}
+
+/** Why the facts of a float result carry a warning (`why` of HomeResult); undefined when nothing is to be said.
+ *  `expr`: the input as it was run again, null when it could not be (a value evaluated once). */
+export function whyOf(facts: readonly ElementFacts[], expr: string | null): PrecisionWhy | undefined {
+  const unaudited = expr !== null && facts.some((f) => f.warn === "unaudited") ? functionsIn(expr).filter((f) => !AUDITED_FUNCTIONS.has(f)) : [];
+  const once = facts.some((f) => f.warn === "unchecked" && !(isZero(f.value.re) && isZero(f.value.im))) || (expr === null && facts.some((f) => f.warn));
+  if (!unaudited.length && !once) return undefined;
+  return { ...(unaudited.length ? { unaudited } : {}), ...(once ? { once: true } : {}) };
 }
 
 /** Every function in the input is on the audited list. */
@@ -334,6 +344,10 @@ function zeroUnconfirmed(f: ElementFacts): ElementFacts {
   return !f.exactRational && !f.warn && isZero(f.value.re) && isZero(f.value.im) ? { ...f, warn: "unchecked" } : f;
 }
 
+/** Most working digits an agreement step uses, and the time the steps beyond P+40 may take per result (G23). */
+export const MAX_EVAL_DIGITS = 1000;
+const EXTRA_BUDGET_MS = 50;
+
 /**
  * Facts for every element of the stored exact result `name` (its printed text is `exactText`): exact rationals by
  * BigInt, everything else by the symbolic agreement check (P against P+20, then P+20 against P+40). Null when some
@@ -359,17 +373,30 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
   const A = evalfAt(P);
   const B = A && evalfAt(P + 20);
   if (!A || !B) return null;
-  let C: { re: DecimalValue; im: DecimalValue }[] | null | undefined;
+  // Further steps: P+20 against P+40, then the extra precision doubles (P+80, P+160, …, at most MAX_EVAL_DIGITS) while
+  // fewer than `digits` agree and the budget lasts; the first agreement stops it (G23). Each level is read once and
+  // shared by all elements.
+  const levels: ({ re: DecimalValue; im: DecimalValue }[] | null)[] = [A, B];
+  const precs = [P, P + 20];
+  const t0 = Date.now();
+  const more = (i: number): boolean => {
+    if (i < levels.length) return levels[i] !== null;
+    if (levels[i - 1] === null) return false;
+    const prec = P + 40 * 2 ** (i - 2);
+    if (prec > MAX_EVAL_DIGITS || (i > 2 && Date.now() - t0 > EXTRA_BUDGET_MS)) return false;
+    levels[i] = evalfAt(prec);
+    precs[i] = prec;
+    return true;
+  };
   return facts.map((f, k) => {
     if (f) return f;
     let reliable = confirmedComplex(A[k]!, B[k]!, P, P);
     let value = B[k]!;
-    if (reliable < digits) {
-      C ??= evalfAt(P + 40);
-      if (C) {
-        reliable = Math.max(reliable, confirmedComplex(B[k]!, C[k]!, P + 20, P));
-        value = C[k]!;
-      }
+    for (let i = 2; reliable < digits && more(i); i++) {
+      const next = levels[i];
+      if (!next) break;
+      reliable = Math.max(reliable, confirmedComplex(levels[i - 1]![k]!, next[k]!, precs[i - 1]!, P));
+      value = next[k]!;
     }
     return zeroUnconfirmed({ value, exactRational: false, reliableDigits: reliable, big: false });
   });

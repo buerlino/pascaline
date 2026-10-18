@@ -69,6 +69,9 @@ cases:
   - { id: "sigfig-tie-25-1", input: "sigfig(25,1)", oracle: "F(30)", expect: "30", mark: "=", source: "derived" }
   - { id: "sigfig-sqrt2-3", input: "sigfig(sqrt(2),3)", oracle: "F(141,100)", expect: "1.41", mark: "=", source: "derived", note: "an irrational x: the rounded value is exact" }
   - { id: "sigfig-exp-1000-2", input: "sigfig(exp(-1000),2)", oracle: "F(51,10**436)", expect: "5.1E-435", mark: "=", source: "derived", note: "exp(-1000) = 5.0759588975…E-435 (oracle)" }
+  # --- G23: more precision before the warning --------------------------------------------------------------------
+  - { id: "prec-G23-sin-1e100", input: "sin(10^100)", oracle: "sin(10**100)", expect: "-0.372376123661", mark: "≈", source: "oracle", note: "Giac's 40- and 60-digit values are wrong (the reduction modulo 2*pi needs about 100 digits), the 80-digit one is right; the check keeps doubling the extra precision until two evaluations agree. Showed ⚠ -0.4 before G23" }
+  - { id: "prec-G23-sin-1e2000", input: "sin(10^2000)", mark: "⚠", source: "derived", note: "no evaluation up to 1000 digits confirms a digit (the reduction needs over 2000): ⚠ with no digit confirmed. Mark-only" }
   # --- 2.3 #9: 1/3 and 1/4 look alike without the mark ---------------------------------------------------------------
   - { id: "prec-9-third", input: "1/3", oracle: "F(1,3)", expect: "0.333333333333", mark: "≈", source: "oracle", note: "needs the mark in the engine result (EN3-engine); the value already passes" }
   - { id: "prec-9-quarter", input: "1/4", oracle: "F(1,4)", expect: "0.25", mark: "=", source: "derived", note: "needs the mark in the engine result (EN3-engine); the value already passes" }
@@ -98,7 +101,7 @@ cases:
   - { id: "prec-ne-free-name", latex: "x\\ne2", expect: "x<>2", source: "derived", note: "stays as typed; Giac prints ≠ as <>, drawn as ≠" }
   - { id: "prec-eq-evalf-pi", latex: "\\operatorname{evalf}\\left(\\pi\\right)==\\pi", expect: "true", mark: "≈", source: "derived", note: "a float side: true only to the float's own digits" }
   - { id: "prec-ne-evalf-pi", latex: "\\operatorname{evalf}\\left(\\pi\\right)\\ne\\pi", expect: "false", mark: "≈", source: "derived", note: "the negation, also approximate" }
-  - { id: "prec-eq-romberg", latex: "\\operatorname{romberg}\\left(e^{-x^2},x,0,1\\right)==0.746824132812", expect: "((romberg(exp(-x^2),x,0,1))==(746824132812/10^12))", mark: "⚠", source: "derived", note: "R18f2: the integral is 0.746824132812427…, 4.3E-13 from the 12 digits typed, but romberg's own error is about 7E-14 and it is unaudited, so its float cannot say not equal: stays as typed (R18f1 showed false ≈)" }
+  - { id: "prec-eq-romberg", latex: "\\operatorname{romberg}\\left(e^{-x^2},x,0,1\\right)==0.746824132812", expect: "((romberg(exp(-x^2),x,0,1))==0.746824132812)", mark: "⚠", source: "derived", note: "R18f2: the integral is 0.746824132812427…, 4.3E-13 from the 12 digits typed, but romberg's own error is about 7E-14 and it is unaudited, so its float cannot say not equal: stays as typed (R18f1 showed false ≈; G14: the decimal is drawn as typed, not as 746824132812/10^12)" }
   - { id: "prec-eq-stored-romberg", latex: "\\beta==1", before: ["\\beta:=\\operatorname{romberg}\\left(e^{-x^2},x,0,1\\right)"], expect: "false", mark: "≈", source: "derived", note: "a stored float side (decisions M4-7)" }
   - { id: "prec-eq-cas-evalf-pi", kind: "cas", latex: "\\operatorname{evalf}\\left(\\pi\\right)==\\pi", expect: "true", mark: "≈", source: "derived", note: "the same in CAS" }
   # --- R18f2 (2026-10-14): a float side is compared to its own digits (the test at 14 and at P digits; decisions
@@ -141,3 +144,4 @@ cases:
   - { id: "prec-17-cas-evalf-x+sin1e22", kind: "cas", input: "evalf(x+sin(10^22))", mark: "⚠", source: "derived", note: "mark-only: Giac shows x-0.54764225985, but sin(10^22) = -0.8522008497671888… (oracle, mpmath at 40 and 80 digits): every digit shown is wrong. No mark before G27" }
   - { id: "prec-17-cas-evalf-equation", kind: "cas", input: "evalf(x^2-2=0)", expect: "x^2-2.0=0.0", mark: "⚠", source: "derived", note: "a float in an equation, unchecked; no mark before G27" }
   - { id: "prec-17-cas-evalf-list", kind: "cas", input: "evalf([1/3,x])", expect: "[0.333333333333,x]", mark: "⚠", source: "derived", note: "1/3 to 12 digits next to a free name, unchecked; no mark before G27" }
+  - { id: "g21-cas-deg-exp-i90", kind: "cas", input: "evalf(exp(i*90))", settings: { angle: "deg" }, oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "derived", note: "G21 (F29): the CAS view in DEG reads exp like RAD; DEG gave i" }

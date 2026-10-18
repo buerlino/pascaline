@@ -35,7 +35,7 @@ queries:
   - { query: "faraday", expect: "const:faraday" }
   - { query: "stefan boltzmann", expect: "const:sigma" }
   - { query: "fine structure", expect: "const:alpha" }
-  # Units (40)
+  # Units (46)
   - { query: "kph", expect: "unit:km/h" }
   - { query: "km/h", expect: "unit:km/h" }
   - { query: "mph", expect: "unit:mph" }
@@ -76,13 +76,19 @@ queries:
   - { query: "litre", expect: "unit:L" }
   - { query: "gallon", expect: "unit:gal", note: "the U.S. gallon" }
   - { query: "electronvolt", expect: "unit:eV" }
+  - { query: "ampere hour", expect: "unit:Ah" }
+  - { query: "kip", expect: "unit:kip", note: "1000 lbf" }
+  - { query: "board foot", expect: "unit:fbm" }
+  - { query: "revolution", expect: "unit:rev", note: "the cycle unit (G25), no longer a name of tr" }
+  - { query: "ton of refrigeration", expect: "unit:TR" }
+  - { query: "standard temperature", expect: "const:StdT" }
   # Prefixes (5)
   - { query: "kilo", expect: "pfx:k" }
   - { query: "micro", expect: "pfx:u" }
   - { query: "nano", expect: "pfx:n" }
   - { query: "mega", expect: "pfx:M" }
   - { query: "pico", expect: "pfx:p" }
-  # Functions (30)
+  # Functions (32)
   - { query: "sqrt", expect: "fn:sqrt" }
   - { query: "square root", expect: "fn:sqrt" }
   - { query: "cube root", expect: "tmpl:cbrt" }
@@ -113,9 +119,9 @@ queries:
   - { query: "inverse matrix", expect: "fn:inv" }
   - { query: "transpose", expect: "fn:tran" }
   - { query: "cross product", expect: "fn:cross" }
+  - { query: "parallel", expect: "fn:par", note: "resistors in parallel (G30)" }
+  - { query: "e24", expect: "fn:eseries", note: "E-series rounding (G30)" }
   # Milestone 6 (pending)
-  - { query: "parallel", expect: "fn:par", note: "par() arrives with EN7", status: pending }
-  - { query: "e24", expect: "fn:eseries", note: "E-series rounding, EN7", status: pending }
   - { query: "hex", expect: "tmpl:base", note: "number bases, EN6", status: pending }
   - { query: "dot product", expect: "fn:dot", note: "curated in EN5", status: pending }
   - { query: "rms", expect: "fn:rms", note: "EN7", status: pending }

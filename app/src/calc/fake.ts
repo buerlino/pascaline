@@ -11,6 +11,8 @@ import {
   type SolveOutcome,
   type SolveRequest,
   type TableRequest,
+  type Quantity,
+  type UnitError,
   type UserName,
 } from "./port.ts";
 
@@ -27,7 +29,7 @@ export class FakeCalc implements Calc {
   constructor(delayMs = 0) {
     this.delayMs = delayMs;
   }
-  ready(): Promise<void> {
+  ready(): Promise<{ safeStart?: { skipped: number } } | void> {
     return Promise.resolve();
   }
   private run<T>(v: T): Promise<T> {
@@ -62,6 +64,10 @@ export class FakeCalc implements Calc {
   }
   table(req: TableRequest): Promise<HomeResult[][]> {
     return this.run(req.xs.map((x) => req.fns.map((f) => echo(`${f}|${req.variable ?? "x"}=${x}`))));
+  }
+  /** The fake engine has no unit factors. */
+  units(): Promise<Quantity | UnitError> {
+    return this.run({ error: "engine", detail: "fake engine" });
   }
   /** The fake engine keeps no definitions. */
   names(): Promise<UserName[]> {

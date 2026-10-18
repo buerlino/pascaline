@@ -35,6 +35,8 @@ export interface DefEntry {
   time: number;
   /** Replay before every other entry: a symbolic value (names in it must still be unassigned when it is set again). */
   early?: boolean;
+  /** One line saying what it is (a library's comment above the definition, G33), at most DESC_MAX characters. */
+  desc?: string;
 }
 
 export type DefChange = { set: DefEntry } | { purge: string[] };
@@ -43,6 +45,8 @@ export type DefChange = { set: DefEntry } | { purge: string[] };
 export const MAX_DEFS = 500;
 /** Longest preview kept. */
 export const PREVIEW_MAX = 200;
+/** Longest description kept. */
+export const DESC_MAX = 120;
 
 /** Entries with the same key replace each other: the name, or the command itself for kind "other". */
 export function keyOf(e: DefEntry): string {
@@ -105,6 +109,7 @@ export function validDefs(x: unknown): DefEntry[] {
       view: e["view"] === "cas" ? "cas" : "home",
       time: typeof e["time"] === "number" && Number.isFinite(e["time"]) ? e["time"] : 0,
       ...(e["early"] === true ? { early: true } : {}),
+      ...(typeof e["desc"] === "string" && e["desc"] ? { desc: e["desc"].slice(0, DESC_MAX) } : {}),
     });
   }
   return out.slice(-MAX_DEFS);
@@ -118,13 +123,14 @@ export interface UserName {
   view: "home" | "cas";
   time: number;
   facts?: NameFacts;
+  desc?: string;
 }
 
 export function userNamesOf(log: readonly DefEntry[]): UserName[] {
   const out: UserName[] = [];
   for (const e of log) {
     if (e.kind !== "var" && e.kind !== "fn") continue;
-    out.push({ name: e.name, kind: e.kind, preview: e.preview, view: e.view, time: e.time, ...(e.facts ? { facts: e.facts } : {}) });
+    out.push({ name: e.name, kind: e.kind, preview: e.preview, view: e.view, time: e.time, ...(e.facts ? { facts: e.facts } : {}), ...(e.desc ? { desc: e.desc } : {}) });
   }
   return out;
 }

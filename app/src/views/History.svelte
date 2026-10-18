@@ -5,7 +5,7 @@
   import { CAS_SOFT_BUDGET_MS } from "../calc/port.ts";
   import Math from "../render/Math.svelte";
   import { mathlive } from "../render/mathlive.svelte.ts";
-  import { markText } from "../state/displayMode.ts";
+  import { markText, noDigit as hasNoDigit } from "../state/displayMode.ts";
   import type { MarkInfo } from "../engine/format.ts";
   import type { HistoryItem, UsedValue } from "../state/session.svelte.ts";
 
@@ -132,6 +132,9 @@
     <div class="earlier" bind:this={sentinel} aria-hidden="true"></div>
   {/if}
   {#each shown as item, k (item.id)}
+    {#if item.status === "note"}
+      <div class="item note" data-status="note" data-testid="safe-start" role="status">{item.text}</div>
+    {:else}
     <article class="item" data-status={item.status}
       onpointerdown={(e) => pressStart(e, item)} onpointerup={endPress} onpointercancel={endPress}
       oncontextmenu={(e) => e.preventDefault()}
@@ -153,10 +156,11 @@
         {:else}
           {@const d = display(item)}
           {@const m = mark(item)}
-          {#if m}<span class="mark" data-mark={m.mark} data-testid="mark" title={t(`mark.${m.mark === "=" ? "exact" : m.mark === "≈" ? "approx" : "warn"}`)}>{markText(m)}</span>{/if}
+          {@const noDigit = hasNoDigit(m)}
+          {#if m}<span class="mark" data-mark={m.mark} data-testid="mark" title={t(`mark.${m.mark === "=" ? "exact" : m.mark === "≈" ? "approx" : "warn"}`)}>{noDigit ? t("mark.noDigit") : markText(m)}</span>{/if}
           <button type="button" class="result" data-text={d.text} title={t("history.insert")}
             onpointerdown={(e) => e.preventDefault()} onclick={() => tapped(() => oninsert(item))}>
-            <Math latex={d.latex} />
+            {#if !noDigit}<Math latex={d.latex} />{/if}
           </button>
         {/if}
       </div>
@@ -164,6 +168,7 @@
         <div class="uses" data-testid="uses">{usesLine(item.uses)}</div>
       {/if}
     </article>
+    {/if}
   {/each}
 </section>
 

@@ -129,8 +129,8 @@ async function runScenario(page: Page, tmpl: Tmpl, ops: Op[], del: string): Prom
 // ---- the checks -----------------------------------------------------------------------------------------------------
 const MARK_RE = new RegExp(
   [
-    String.raw`\\left[(|.]`,
-    String.raw`\\right[)|.]`,
+    String.raw`\\left(?:[(|.]|\\\{)`,
+    String.raw`\\right(?:[)|.]|\\\})`,
     String.raw`\\(?:sin|cos|tan|arcsin|arccos|arctan|ln|log|exponentialE|sqrt|frac|tfrac|partial|lim|int|sum|prod|to|degree|prime|doubleprime|div|operatorname|begin|end)(?![A-Za-z])`,
     String.raw`\\text\{if \}`,
     String.raw`\\mathrm\{d\}`,
@@ -152,15 +152,15 @@ function lineProblems(raw: string): string[] {
   const out: string[] = [];
   const line = raw.replace(/\\placeholder\{\}/g, "□"); // an empty box is a □, not an empty group
   // no half pair: every \left has its \right; a \left. belongs only to the evaluate-at bar; a \right. to nothing
-  const lefts = count(line, /\\left[(|[.]/g);
-  const rights = count(line, /\\right[)|\].]/g);
+  const lefts = count(line, /\\left(?:[(|[.]|\\\{)/g);
+  const rights = count(line, /\\right(?:[)|\].]|\\\})/g);
   if (lefts !== rights) out.push("half pair");
   if (count(line, /\\left\./g) > count(line, /\\right\|_/g)) out.push("\\left. without an evaluate-at bar");
   if (/\\right\./.test(line)) out.push("\\right.");
   // no exponent or subscript without a base: at the start of the line or of a group, after an operator or a bracket
-  if (/(^|[{+\-=,]|\\times|\\div|\\left[(|.]|&)\s*[\^_]/.test(line)) out.push("^ or _ without a base");
+  if (/(^|[{+\-=,]|\\times|\\div|\\left(?:[(|.]|\\\{)|&)\s*[\^_]/.test(line)) out.push("^ or _ without a base");
   // an emptied bracket body keeps its box: \left(\right) with nothing inside is a lost □ (point 2)
-  if (/\\left[(|[.]\s*\\right/.test(line)) out.push("an emptied box without □");
+  if (/\\left(?:[(|[.]|\\\{)\s*\\right/.test(line)) out.push("an emptied box without □");
   // no box deleted: an empty group, an empty slot next to a mark, two marks side by side
   if (/\{\}/.test(line)) out.push("empty group");
   if (/[(,]\s*,|,\s*\\right\)|\\left\(\s*,/.test(line)) out.push("EQ without a box");

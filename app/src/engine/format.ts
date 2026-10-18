@@ -172,7 +172,14 @@ function eng(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
   return { neg: r.neg, mantissa, exponent: e3 };
 }
 
+/** FIX: a non-zero value whose every shown decimal would be 0 falls back to SCI with f decimals (G2 item 60: 4.7ᴇ-6 → 4.7000ᴇ-6). */
 function fix(v: DecimalValue, f: number, rounding: Rounding): FormattedNumber {
+  const r = fixPlain(v, f, rounding);
+  if (!isZero(v) && /^0(\.0*)?$/.test(r.mantissa)) return sci(v, f + 1, rounding);
+  return r;
+}
+
+function fixPlain(v: DecimalValue, f: number, rounding: Rounding): FormattedNumber {
   const zero: FormattedNumber = { neg: false, mantissa: f > 0 ? `0.${"0".repeat(f)}` : "0", exponent: null };
   if (isZero(v)) return zero;
   const keep = v.exp + 1 + f; // significant digits up to the last decimal place
@@ -312,6 +319,16 @@ export type Mark = "=" | "≈" | "⚠";
  *  that is not exactly 0 (numeric.ts). */
 export type PrecisionWarn = "unaudited" | "unchecked";
 
+/** The reasons behind a ⚠, as facts for the chip that explains the mark (docs/04 section 8.2; the app words them):
+ *  `unaudited`: the called functions the audit does not cover; `inherited`: the stored names whose facts (a warning, or
+ *  fewer confirmed digits) changed the result's mark; `once`: the value could be evaluated only once, so nothing was compared. A constant's uncertainty is
+ *  not sent: the app reads it from the chip table. It sits on the top-level result only, never on `items`. */
+export interface PrecisionWhy {
+  unaudited?: string[];
+  inherited?: string[];
+  once?: boolean;
+}
+
 /** The engine's facts about one result (a subset of HomeResult, so the formatter does not depend on the engine). */
 export interface PrecisionFacts {
   value?: ComplexValue;
@@ -335,13 +352,20 @@ export interface MarkInfo {
 /** Significant digits that `o` shows for v (FIX: the digits up to the last decimal place, at least 1). */
 function digitsShown(v: DecimalValue, o: FormatOptions): number {
   if (o.format !== "FIX") return o.digits;
+  if (fixFallsBack(v, o)) return (o.fixed ?? 4) + 1;
   return Math.max(1, v.exp + 1 + (o.fixed ?? 4));
+}
+
+/** FIX shows a non-zero v in scientific notation (every shown decimal would be 0). */
+function fixFallsBack(v: DecimalValue, o: FormatOptions): boolean {
+  return o.format === "FIX" && !isZero(v) && /^0(\.0*)?$/.test(fixPlain(v, o.fixed ?? 4, o.rounding ?? "half-away").mantissa);
 }
 
 /** The text in format `o` is exactly v: nothing non-zero is cut off. */
 function shownExactly(v: DecimalValue, o: FormatOptions): boolean {
   if (isZero(v)) return true;
   if (v.sticky) return false;
+  if (fixFallsBack(v, o)) return v.digits.length <= (o.fixed ?? 4) + 1;
   if (o.format === "FIX") return v.digits.length - (v.exp + 1) <= (o.fixed ?? 4);
   return v.digits.length <= o.digits;
 }
@@ -358,7 +382,8 @@ export function confirmedOptions(value: ComplexValue, reliableDigits: number | n
   if (parts.every((v) => digitsShown(v, o) <= n)) return o;
   if (o.format !== "FIX") return { ...o, digits: Math.min(o.digits, n) };
   let fixed = o.fixed ?? 4;
-  for (const v of parts) fixed = Math.min(fixed, n - (v.exp + 1));
+  // A part in the SCI fallback shows fixed + 1 significant digits, so fixed is n - 1 there.
+  for (const v of parts) fixed = Math.min(fixed, fixFallsBack(v, o) ? n - 1 : n - (v.exp + 1));
   return fixed >= 0 ? { ...o, fixed } : { ...o, format: "SCI", digits: n };
 }
 

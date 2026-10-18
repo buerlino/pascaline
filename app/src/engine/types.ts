@@ -2,9 +2,11 @@
 // The only way UI code talks to maths (CLAUDE.md). Implementations run Giac off the main thread.
 import type { HomeResult, HomeSettings } from "./homeEval.ts";
 import type { DefEntry } from "./defs.ts";
-import type { PrecisionWarn } from "./format.ts";
+import type { ConstEntry, ConstTable } from "./constUnc.ts";
+import type { PrecisionWarn, PrecisionWhy } from "./format.ts";
+import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
-export type { HomeResult, HomeSettings };
+export type { ConstEntry, ConstTable, HomeResult, HomeSettings };
 
 export interface CasSettings {
   angle: "rad" | "deg";
@@ -54,6 +56,8 @@ export interface CasResult {
   approximate?: boolean;
   /** ⚠: that float comes from an unaudited function (R18f2), or sits in a non-number nobody checked (G27). */
   warn?: PrecisionWarn;
+  /** The reasons behind `warn` for a non-number (G22): the same facts as HomeResult.why; a number has them on `numeric`. */
+  why?: PrecisionWhy;
 }
 
 export interface EvalResult {
@@ -73,6 +77,8 @@ export interface EngineTimings {
   replayMs: number;
   /** Worker construction to "ready" as seen from the caller (includes the above). */
   readyMs: number;
+  /** G19: the stored definitions stopped the engine twice, so it started without them (still stored; Memory lists them). */
+  safeStart?: { skipped: number };
 }
 
 // --- Solve app and Function analysis (docs/02 section 4) ------------------------------------
@@ -148,6 +154,14 @@ export interface TableRequest {
   variable?: string;
 }
 
+/** G24: the engine ran out of memory (an allocation failed or the worker crashed); it was restarted. */
+export class EngineMemoryError extends Error {
+  constructor(detail = "out of memory") {
+    super(detail);
+    this.name = "EngineMemoryError";
+  }
+}
+
 export class EngineCancelled extends Error {
   constructor() {
     super("cancelled");
@@ -158,8 +172,9 @@ export class EngineCancelled extends Error {
 export interface MathEngine {
   /** Resolves once the engine can take calls. */
   ready(): Promise<EngineTimings>;
-  /** Exact-first Home evaluation: a decimal result rounded to `settings.digits`. */
-  home(input: string, settings: HomeSettings): Promise<HomeResult>;
+  /** Exact-first Home evaluation: a decimal result rounded to `settings.digits`. `consts` (G26): the constants the
+   *  input holds by name (`pasc_<id>`), with value and uncertainty; a result from an inexact one carries `uncDigits`. */
+  home(input: string, settings: HomeSettings, consts?: ConstTable): Promise<HomeResult>;
   /** Exact CAS evaluation plus `latex()` of the result. */
   cas(input: string, settings: CasSettings): Promise<CasResult>;
   /** Solve app: equations from guesses, or all roots of a polynomial. Residual-checked. */
@@ -170,6 +185,8 @@ export interface MathEngine {
   analyze(req: AnalysisRequest, settings: HomeSettings): Promise<AnalysisResult>;
   /** Num table: rows by x, each cell what Home shows for fn at x. One engine call. */
   table(req: TableRequest, settings: HomeSettings): Promise<HomeResult[][]>;
+  /** The unit view (G16, docs/04 4.2): a job built by units/build.ts, evaluated in Home's mode. */
+  units(job: UnitJob, settings: HomeSettings): Promise<Quantity | UnitError>;
   /** Raw Giac call in whatever mode the engine is in (tools and benchmarks; not the UI). */
   eval(input: string): Promise<EvalResult>;
   /** The definitions log (docs/04 6.2): what the user defined, the stored log included once it has been read. */

@@ -128,6 +128,14 @@ cases:
   - { id: "cx-(1+i)^10", input: "(1+i)^10", oracle: "32*I", expect: "32*i", mark: "=", source: "derived" }
   - { id: "cx-1/(1+i)", input: "1/(1+i)", oracle: "1/(1+I)", expect: "0.5-0.5*i", mark: "=", source: "derived" }
   - { id: "cx-e^ipi", input: "exp(i*pi)", oracle: "F(-1)", expect: "-1", mark: "=", source: "derived" }
+  # --- G21 (F29, G2 item 54): exp ignores the angle mode, as the G2 does; trig and polar entry keep degrees ---------------
+  - { id: "g21-deg-exp-i90", input: "exp(i*90)", settings: { angle: "deg" }, oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "derived", g2: 54, note: "DEG gave i, marked =; the RAD value (cos 90 + i sin 90, 90 radians)" }
+  - { id: "g21-deg-exp-i1", input: "exp(i*1)", settings: { angle: "deg" }, oracle: "exp(I)", expect: "0.540302305868+0.841470984808*i", mark: "≈", source: "derived", g2: 54, note: "DEG gave cos 1° + i sin 1°" }
+  - { id: "g21-deg-exp-1+i90", input: "exp(1+i*90)", settings: { angle: "deg" }, oracle: "exp(1+90*I)", expect: "-1.21799036854+2.43013488537*i", mark: "≈", source: "derived", g2: 54, note: "DEG gave 2.71828182846*i" }
+  - { id: "g21-deg-exp-ipi", input: "exp(i*pi)", settings: { angle: "deg" }, oracle: "F(-1)", expect: "-1", mark: "=", source: "derived", g2: 54, note: "unchanged: -1 in DEG too" }
+  - { id: "g21-rad-exp-i90", input: "exp(i*90)", oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "derived", g2: 54 }
+  - { id: "g21-deg-cos+isin90", input: "cos(90)+i*sin(90)", settings: { angle: "deg" }, oracle: "I", expect: "i", mark: "=", source: "derived", note: "trig keeps degrees" }
+  - { id: "g21-deg-polar-2-90", input: "2*(cos(90)+i*sin(90))", settings: { angle: "deg" }, oracle: "2*I", expect: "2*i", mark: "=", source: "derived", note: "what polar entry 2∡90 emits (emit.ts PolarComplex): degrees stay" }
   - { id: "cx-ln-1", input: "ln(-1)", oracle: "pi*I", expect: "3.14159265359*i", mark: "≈", source: "oracle" }
   - { id: "cx-i^i", input: "i^i", oracle: "exp(-pi/2)", expect: "0.207879576351", mark: "≈", source: "oracle" }
   - { id: "cx-abs", input: "abs(3+4*i)", oracle: "F(5)", expect: "5", mark: "=", source: "derived" }
@@ -135,7 +143,7 @@ cases:
   - { id: "cx-quotient", input: "(2+3*i)/(4-5*i)", oracle: "(2+3*I)/(4-5*I)", expect: "-0.170731707317+0.536585365854*i", mark: "≈", source: "oracle" }
   - { id: "cx-decimal", input: "(0.1+0.2*i)*3", oracle: "F('0.3')+F('0.6')*I", expect: "0.3+0.6*i", mark: "=", source: "derived" }
   - { id: "cx-asin2", input: "asin(2)", oracle: "mp.asin(2)", expect: "1.57079632679-1.31695789692*i", mark: "≈", source: "oracle", g2: 10, note: "principal branch on the cut: conventions differ; G2 checklist item" }
-  - { id: "cx-cbrt-neg8", input: "(-8)^(1/3)", oracle: "power(-8, mpf(1)/3)", expect: "1+1.73205080757*i", mark: "≈", source: "oracle", g2: 11, note: "principal complex root; whether the G2 gives -2 is a checklist item" }
+  - { id: "cx-cbrt-neg8", input: "(-8)^(1/3)", oracle: "power(-8, mpf(1)/3)", expect: "1+1.73205080757*i", mark: "≈", source: "oracle", g2: 11, note: "Giac text, not through our parser: Giac's principal root. Home's entry gives -2 (r39 cases below)" }
   # --- rounding/integer functions -------------------------------------------------------------------
   - { id: "int-floor2.5", input: "floor(2.5)", oracle: "F(2)", expect: "2", mark: "=", source: "derived" }
   - { id: "int-ceil-2.5", input: "ceil(-2.5)", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived" }
@@ -152,6 +160,8 @@ cases:
   - { id: "fn-comb", input: "comb(52,5)", oracle: "F(factorial(52)//(factorial(5)*factorial(47)))", expect: "2598960", mark: "=", source: "derived" }
   - { id: "stat-mean", input: "mean([1,2,3,4])", oracle: "F(10,4)", expect: "2.5", mark: "=", source: "derived" }
   - { id: "stat-stddevp-sample", input: "stddevp([2,4,4,4,5,5,7,9])", oracle: "sqrt(F(32,7))", expect: "2.1380899353", mark: "≈", source: "oracle", note: "Giac's stddevp is the sample deviation (n-1), stddev the population one" }
+  - { id: "t09-mean", latex: "\\operatorname{mean}\\left(\\left\\{9.81,9.79,9.83,9.80,9.82,9.78,9.84,9.81,9.80,9.82\\right\\}\\right)", oracle: "F(981,100)", expect: "9.81", mark: "=", source: "oracle", note: "task t09's readings, the list from Shift + 8 (R54)" }
+  - { id: "t09-stddevp", latex: "\\operatorname{stddevp}\\left(\\left\\{9.81,9.79,9.83,9.80,9.82,9.78,9.84,9.81,9.80,9.82\\right\\}\\right)", oracle: "sqrt(F(3,1000)/9)", expect: "0.0182574185835", mark: "≈", source: "oracle", note: "sample deviation (n-1) of t09's readings; the sum of squares about 9.81 is 3/1000 exactly" }
   - { id: "stat-stddev-population", input: "stddev([2,4,4,4,5,5,7,9])", oracle: "F(2)", expect: "2", mark: "=", source: "derived" }
   - { id: "stat-variance", input: "variance([2,4,4,4,5,5,7,9])", oracle: "F(4)", expect: "4", mark: "=", source: "derived", note: "population variance" }
   - { id: "stat-normald_cdf1.96", input: "normald_cdf(1.96)", oracle: "erfc(-M(F('1.96'))/sqrt(2))/2", expect: "0.975002104852", mark: "≈", source: "oracle" }
@@ -167,3 +177,27 @@ cases:
   - { id: "symfloat-evalf-x+sin1e22", input: "evalf(x+sin(10^22))", mark: "⚠", source: "derived", note: "mark-only: Giac shows x-0.54764225985, but sin(10^22) = -0.8522008497671888… (oracle, mpmath at 40 and 80 digits), so every digit shown is wrong. Nobody checked the float in a non-number, so it is ⚠ (docs/04 2.4); it had no mark before G27" }
   - { id: "symfloat-evalf-equation", input: "evalf(x^2-2=0)", expect: "x^2-2.0=0.0", mark: "⚠", source: "derived", note: "a float in an equation: right here, but unchecked, so ⚠; no mark before G27" }
   - { id: "symfloat-evalf-list", input: "evalf([1/3,x])", expect: "[0.333333333333,x]", mark: "⚠", source: "derived", note: "1/3 to 12 digits next to a free name: the list is not a number, its float unchecked, so ⚠; no mark before G27" }
+  # --- P5 (b), R39: Home's entry (through our parser, realOddRoots on) takes the real odd root of a power --------------
+  - { id: "r39-neg8^1/3", latex: "\\left(-8\\right)^{\\frac{1}{3}}", oracle: "F(-2)", expect: "-2", mark: "=", source: "virtual-calc", g2: 11, note: "the G2 gives -2 in Home (items 4 and 11)" }
+  - { id: "r39-neg8^2/3", latex: "\\left(-8\\right)^{\\frac{2}{3}}", oracle: "F(4)", expect: "4", mark: "=", source: "derived" }
+  - { id: "r39-neg32^1/5", latex: "\\left(-32\\right)^{\\frac{1}{5}}", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived" }
+  - { id: "r39-neg8^1/2", latex: "\\left(-8\\right)^{\\frac{1}{2}}", oracle: "2*sqrt(2)*I", expect: "2.82842712475*i", mark: "≈", source: "derived", note: "an even denominator keeps the principal root (P5 a)" }
+  - { id: "r39-neg8^0.2", latex: "\\left(-8\\right)^{0.2}", oracle: "power(-8, mpf(1)/5)", expect: "1.22624046096+0.89091584445*i", mark: "≈", source: "oracle", note: "not a literal fraction: Giac's principal power" }
+  - { id: "r39-X^1/3", latex: "X^{\\frac{1}{3}}", before: ["X:=-8"], oracle: "F(-2)", expect: "-2", mark: "=", source: "derived", note: "with -8 stored in X; last, so X stays out of the cases above" }
+  # --- G14: an exact result built from typed decimals is "=" -----------------------------------------------------
+  - { id: "g14-mod-7.5-2", latex: "\\operatorname{mod}\\left(7.5,2\\right)", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "the typed 7.5 is exact (15/2) and so is the remainder 3/2" }
+  # --- G14f1: Find's irem and \bmod take a typed decimal (exact 15/2) and a free name ---------------------------------
+  - { id: "g14f1-irem-7.5-2", latex: "\\operatorname{irem}\\left(7.5,2\\right)", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "Find's Remainder (mod) inserts irem; Giac's irem is an error on 15/2, so irem becomes pasmod" }
+  - { id: "g14f1-bmod-7.5-2", latex: "7.5\\bmod 2", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "the \\bmod operator emits pasmod, not irem" }
+  - { id: "g14f1-bmod-x-3", latex: "x\\bmod 3", expect: "x-3*floor(x/3)", source: "derived", note: "irem(x,3) gave x, marked = (silent wrong answer); pasmod(x,3) = x-3*floor(x/3)" }
+  - { id: "g14f1-eq-bare-decimal", latex: "x==0.5+y", expect: "(x==(0.5+y))", source: "derived", note: "the kept test shows the typed 0.5, not 5/10^1 (bare form)" }
+  # --- G30 (EN7a): par and eseries, our Giac definitions (homeEval.ts ENGINE_DEFINITIONS, eseries.ts tables) --------------
+  - { id: "fn-par", input: "par(4700,10000)", oracle: "F(4700*10000,4700+10000)", expect: "3197.27891156", mark: "≈", source: "derived", note: "470000/147, exact in Giac; task t01" }
+  - { id: "fn-par-3", input: "par(10,10,10)", oracle: "F(10,3)", expect: "3.33333333333", mark: "≈", source: "derived", note: "n-ary" }
+  - { id: "fn-par-zero", input: "par(0,5)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "a short circuit in parallel: exactly 0" }
+  - { id: "fn-eseries", input: "eseries(24,3870)", oracle: "F(3900)", expect: "3900", mark: "=", source: "derived", note: "IEC 60063 E24: 3.6, 3.9, 4.3; task t06" }
+  - { id: "fn-eseries-e12", input: "eseries(12,4.6)", oracle: "F('4.7')", expect: "4.7", mark: "=", source: "derived", note: "E12: 3.9, 4.7, 5.6; the typed decimal is exact" }
+  - { id: "fn-eseries-e96", input: "eseries(96,0.00123)", oracle: "F('0.00124')", expect: "0.00124", mark: "=", source: "derived", note: "E96 in x's decade: 1.21, 1.24" }
+  - { id: "fn-eseries-tie", input: "eseries(24,3.45)", oracle: "F('3.6')", expect: "3.6", mark: "=", source: "derived", note: "3.45 is the absolute midpoint of 3.3 and 3.6; nearest is the smaller ratio (3.45^2 = 11.9025 > 3.3·3.6 = 11.88), so 3.6" }
+  - { id: "fn-eseries-ratio", input: "eseries(6,1.24)", oracle: "F('1.5')", expect: "1.5", mark: "=", source: "derived", note: "absolute nearest is 1.0 (0.24 < 0.26), ratio nearest is 1.5 (1.24^2 = 1.5376 > 1.0·1.5): the ratio decides" }
+  - { id: "fn-eseries-n-error", input: "eseries(7,5)", expect: "GIAC_ERROR: \"eseries: n must be 6, 12, 24, 48, 96 or 192\" Error: Bad Argument Value", source: "derived", note: "an n outside E6, E12, E24, E48, E96, E192 is an error naming them" }

@@ -1,31 +1,36 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # The unit pad (P14, DECIDED by the owner 2026-10-14; the owner's idea, worked out in docs/research/r9-unit-pad.md).
-# Nothing in the app reads this file yet; tools/probes/unit-presses.mjs --pad counts presses from it. The arrangement
-# below is the hand-drawn draft: package S5 replaces it with the measured one and a `user:` list (the user cells, their
-# number open). Packages R24a-R24d build it, and it replaces the letters and the `symbols` of `unit_slot:` in
-# spec/keyboard.yaml (R24c). It is its own file so the start chunk does not carry it (the app
-# bundles keyboard.yaml whole); the unit view loads it lazily, with its unit factors (decisions.md P15).
+# Nothing in the app reads this file yet; tools/probes/unit-presses.mjs --pad counts presses from it and
+# tools/probes/pad-arrange.mjs scores it. The arrangement is the measured one of package S5 (r9 section 1): which units
+# get a cell comes from how often engineers use them (tools/probes/unit-weights.yaml, three fields weighted equally),
+# the rest from S5's fixed rules. Packages R24a-R24d build it, and it replaces the letters and the `symbols` of
+# `unit_slot:` in spec/keyboard.yaml (R24c). It is its own file so the start chunk does not carry it (the app bundles
+# keyboard.yaml whole); the unit view loads it lazily, with its unit factors (decisions.md P15).
 #
 # In a unit slot the maths rows (3-9) show the pad: each cell lies exactly on the key under it (the R21 rule for
-# anything drawn over the keypad), so no key moves and a press on a key is a press on its cell. The top cluster stays
-# as it is: ◀ ▶ go to the previous and next slot, Esc leaves the unit view, Cancel and Menu as always.
+# anything drawn over the keypad), so no key moves and a press on a key is a press on its cell. In the top cluster the
+# six user keys U1-U6 show the user unit cells (`user:` below); the rest of the cluster stays as it is: ◀ ▶ go to the
+# previous and next slot, Esc leaves the unit view, Cancel as always.
 #
-#   row 3   C ↑Ah    | Find     | T ↑Wb    | Hz ↑rpm  | ° ↑rad   | ⌫
-#   row 4   ³ ↑⁴     | A        | V        | Ω ↑S     | F        | H
-#   row 5   ² ↑√     | J ↑Wh ↓eV| W ↑hp    | L ↑gal   | Enter (next slot; ↑ evaluate now)
-#   row 6   mol      | G ↑T     | M        | m ↑ft ↓in| ÷ per ↑⁻¹
-#   row 7   Alpha    | k ↓h     | c        | g ↑lb ↓t | × ·
-#   row 8   Shift    | m        | µ        | s ↑h ↓min| N ↑lbf ↓kgf
-#   row 9   (yours)  | n        | p ↓f     | K ↑°C ↓°F| Pa ↑bar ↓psi
+#   row 3   mi ↑yd ↓mil | Find      | knot ↑mph | Hz ↑rpm   | ° ↑rad    | ⌫
+#   row 4   ³ ↑⁴        | A         | V         | Ω ↑S      | F         | T
+#   row 5   ² ↑√        | J ↑Wh ↓Btu| W ↑hp ↓TR | L ↑gal ↓bbl | Enter (next slot; ↑ evaluate now)
+#   row 6   mol         | G ↑T      | M         | m ↑ft ↓in | ÷ per ↑⁻¹
+#   row 7   Alpha       | k ↓h      | c         | g ↑lb ↓t  | × ·
+#   row 8   Shift       | m         | µ         | s ↑h ↓min | N ↑lbf
+#   row 9   atm ↑ksi ↓Torr | n      | p ↓f      | K ↑°C ↓°F | Pa ↑bar ↓psi
+#   user    U1 dB | U2 H | U3 ton ↑l ton (short and long ton) | U4 cal ↑eV | U5 d | U6 P ↑St   (defaults; each key tap, ↑, ↓)
 #
 # Reading it: the prefixes sit where the digits are (they are powers of ten), in reading order from the biggest (G, top
 # left) to the smallest (p); the next column holds the base units m, g, s, K; the operator column keeps ÷ and × and
-# adds force and pressure; the function rows hold electricity (A V Ω F H), then C T Hz °, then J W L. Each cell is one
-# quantity (or a reciprocal or close partner: Ω and S, T and Wb, Hz and rpm, C and Ah): its SI unit on the tap, the
-# common other units of the same quantity on the flicks, their legends drawn on the cell (up top left, down bottom
-# left, as R9 draws them). Shift then a cell gives its up item and Alpha then a cell its down item, so the G2's taps
-# reach everything without flicks. The prefix cells have their own colour, so the prefix m and the metre m never look
-# alike.
+# adds force and pressure; row 4 holds electricity (A V Ω F T), row 5 energy, power and volume, row 3 the second
+# length cell, speed, frequency and angle. Each cell is one quantity (or a reciprocal or close partner: Ω and S, Hz and
+# rpm, ° and rad): its SI unit on the tap unless another unit of it is used at least twice as much (none is, at S5's
+# weighting: °C is 1.65 times K, so K keeps the tap; decisions.md "P14 arrangement"), the commonest other units on the
+# flicks, their legends drawn on the cell (up top left, down bottom left, as R9 draws them). Shift then a cell gives
+# its up item and Alpha then a cell its down item, so the G2's taps reach everything without flicks. The prefix cells
+# have their own colour, so the prefix m and the metre m never look alike. Where a cell sits is not scored (there is no
+# measured reach data); a quantity the draft had keeps its key, and the new cells sit next to their kin.
 #
 # Rules (r9 section 2): a prefix arms (highlighted) and the next unit takes it; another prefix replaces it, the same
 # one again disarms it; units in a row multiply (no × needed: m then s is m·s, the prefix m then s is ms); ÷ makes the
@@ -36,11 +41,12 @@
 # Enter (Shift + Enter) evaluates from any slot. Math opens Find on units, for everything not on the pad; with an
 # empty query it shows the units menu (spec/units-menu.yaml), so the G2's way (Units, category, unit) is still there.
 #
-# Ids: Find's unit ids (`unit:<id>` in the index) and prefix ids (`pfx:<id>`; u = µ). `Ah` is in units-menu.yaml
-# `add_to_find` (package G7 adds it). `yours`: the draft's one user cell, set from Find as the user keys U1-U3; S5
-# decides how many user cells there are.
-schema: 1
-source: assumed   # ours (P14, 2026-10-14); a hand-drawn draft until package S5 measures the arrangement
+# Ids: Find's unit ids (`unit:<id>` in the index) and prefix ids (`pfx:<id>`; u = µ, oC = °C, deg = °, ohm = Ω).
+# `label:` where the cell shows another name than the id (Find's `thou` is the mil of US electrical work). Find lacks
+# `TR` (the ton of refrigeration, 12 000 Btu_IT/h = 3516.852842066666... W, derived): package G7 adds it (S5's report,
+# docs/shifts/2026-10-17-sandra-padlayout-report.md, lists it with the other ids Find lacks).
+schema: 2
+source: derived   # S5 (2026-10-17): tools/probes/pad-arrange.mjs on tools/probes/unit-weights.yaml; the owner decides the proposal (decisions.md "P14 arrangement")
 
 keep:
   - { key: math, does: find }        # Find on units; an empty query shows the units menu
@@ -65,24 +71,40 @@ prefixes:
   - { key: d0, tap: n }
   - { key: dot, tap: p, down: f }
 
+# The 20 unit cells, in the draft's key order. The value in each comment is the cell's measured worth: the weighted
+# presses it saves per unit typed, per mille (pad-arrange.mjs), so the last cells are the ones a change would drop.
 units:
-  - { key: d9, quantity: length, tap: m, up: ft, down: in }
-  - { key: d6, quantity: mass, tap: g, up: lb, down: t }
-  - { key: d3, quantity: time, tap: s, up: h, down: min }
-  - { key: space, quantity: temperature, tap: K, up: oC, down: oF }
-  - { key: sub, quantity: force, tap: N, up: lbf, down: kgf }
-  - { key: add, quantity: pressure, tap: Pa, up: bar, down: psi }
-  - { key: neg, quantity: energy, tap: J, up: Wh, down: eV }
-  - { key: paren, quantity: power, tap: W, up: hp }
-  - { key: comma, quantity: volume, tap: L, up: gal }
-  - { key: sin, quantity: current, tap: A }
-  - { key: cos, quantity: voltage, tap: V }
-  - { key: tan, quantity: resistance, tap: ohm, up: S }
-  - { key: ln, quantity: capacitance, tap: F }
-  - { key: log, quantity: inductance, tap: H }
-  - { key: vars, quantity: charge, tap: C, up: Ah }
-  - { key: tmpl, quantity: magnetic, tap: T, up: Wb }
-  - { key: x, quantity: frequency, tap: Hz, up: rpm }
-  - { key: frac, quantity: angle, tap: deg, up: rad }
-  - { key: emark, quantity: amount, tap: mol }
-  - { key: fmt, quantity: yours, tap: null }
+  - { key: d9, quantity: length, tap: m, up: ft, down: in }               # 604.8
+  - { key: d6, quantity: mass, tap: g, up: lb, down: t }                  # 178.0
+  - { key: d3, quantity: time, tap: s, up: h, down: min }                 # 250.8
+  - { key: space, quantity: temperature, tap: K, up: oC, down: oF }       # 391.2; °C on the tap is the owner's choice
+  - { key: sub, quantity: force, tap: N, up: lbf }                        # 76.8
+  - { key: add, quantity: pressure, tap: Pa, up: bar, down: psi }         # 182.5
+  - { key: neg, quantity: energy, tap: J, up: Wh, down: Btu }             # 109.6
+  - { key: paren, quantity: power, tap: W, up: hp, down: TR }             # 224.1; TR: G7 adds it to Find
+  - { key: comma, quantity: volume, tap: L, up: gal, down: bbl }          # 52.9
+  - { key: sin, quantity: current, tap: A }                               # 97.9
+  - { key: cos, quantity: voltage, tap: V }                               # 128.4
+  - { key: tan, quantity: resistance, tap: ohm, up: S }                   # 65.3
+  - { key: ln, quantity: capacitance, tap: F }                            # 35.8
+  - { key: log, quantity: magnetic, tap: T }                              # 20.4
+  - { key: vars, quantity: length, tap: mi, up: yd, down: thou, label: { down: mil } }   # 22.0
+  - { key: tmpl, quantity: speed, tap: knot, up: mph }                    # 33.6
+  - { key: x, quantity: frequency, tap: Hz, up: rpm }                     # 156.1
+  - { key: frac, quantity: angle, tap: deg, up: rad }                     # 119.7
+  - { key: emark, quantity: amount, tap: mol }                            # 35.7
+  - { key: fmt, quantity: pressure, tap: atm, up: ksi, down: Torr }       # 36.7
+
+# The user unit cells: U1-U6 in the top cluster while a unit slot is open (the owner, 2026-10-17), tap, up and down
+# each, so 18 slots that take no base cell. The user sets each slot from Find (with R4b's setting for the user keys,
+# stored apart from them: a user key's function means nothing in a unit slot) or empties it. The defaults are the units
+# without a base cell that save the most over all fields (one pad for every field, no startup question), grouped by
+# quantity; the rest is free for the user's own units. Measured worth: the six defaults take the weighted mean from
+# 1.859 to 1.795 presses (flicks); every unit of the corpus that saves anything fits in 15 slots (r9 section 6).
+user:
+  - { key: u1, quantity: level, tap: dB }
+  - { key: u2, quantity: inductance, tap: H }
+  - { key: u3, quantity: mass, tap: s_ton, up: l_ton, label: { tap: ton, up: l ton } }
+  - { key: u4, quantity: energy, tap: cal, up: eV }
+  - { key: u5, quantity: time, tap: d }
+  - { key: u6, quantity: viscosity, tap: P, up: St }

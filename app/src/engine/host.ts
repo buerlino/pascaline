@@ -6,6 +6,7 @@ import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import {
   definedBy,
+  expIgnoresAngle,
   definitionsUsedBy,
   ENGINE_DEFINITIONS,
   decideFloatTest,
@@ -19,14 +20,20 @@ import {
   regrouped,
   resultFromFacts,
   safePrecision,
+  symbolicWhy,
+  testSides,
   simpleAssignment,
   toExactLiterals,
   unquote,
 } from "./homeEval.ts";
-import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { eseriesDefinition } from "./eseries.ts";
+import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
+import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
+import { constUncDigits, withConstValues, type ConstTable } from "./constUnc.ts";
+import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
 
 /** What the host needs from a loaded Giac module (engine/giac/wasm/api.cc). */
@@ -230,6 +237,8 @@ export class EngineHost {
 
   /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
   private readonly loaded = new Set<string>();
+  /** UNIT_DEFINITIONS are loaded (the first units request). */
+  private unitsLoaded = false;
 
   /** This engine's copy of the definitions log (defs.ts): what the user's names hold, and the mark facts of the
    *  variables that hold floats (decisions M4-7). */
@@ -240,7 +249,7 @@ export class EngineHost {
   need(text: string): void {
     for (const name of definitionsUsedBy(text)) {
       if (this.loaded.has(name)) continue;
-      this.giac.eval(ENGINE_DEFINITIONS[name]!);
+      this.giac.eval(ENGINE_DEFINITIONS[name] ?? eseriesDefinition());
       this.loaded.add(name);
     }
   }
@@ -264,12 +273,38 @@ export class EngineHost {
    *  Symbolic values first, while every name in them is still free (defs.ts). Returns the time it took. */
   restore(entries: readonly DefEntry[]): number {
     const t0 = performance.now();
+    // G29: values and functions go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost.
+    // Assumptions and inputs kept as typed go alone. A batch that printed an error or warning (not the `// Success` notes of functions) or returned an error is run again one command at a
+    // time (values and functions can be set twice), so one bad entry never takes the entries after it down (G19).
+    let batch: string[] = [];
+    let names: string[] = [];
+    const flush = (): void => {
+      if (!batch.length) return;
+      this.giac.clearMessages();
+      const out = this.giac.eval(batch.join(";") + ";");
+      // Any message or error result: a syntax error, or a reserved name that aborts the rest of the batch (`pi:=3`).
+      if (batch.length > 1 && (/error|reserved word|not allowed/i.test(this.giac.messages()) || /^GIAC_ERROR/.test(out))) {
+        // Errors only: a warning (`declared as global`) is no reason to run twice. The names are purged first, so a
+        // rerun sees them as free again, as in the first run (G3: S:=(K*x+1) must not meet a K set by the aborted run).
+        for (const n of names) this.giac.eval(`purge(${n})`);
+        for (const c of batch) this.giac.eval(c);
+      }
+      batch = [];
+      names = [];
+    };
     for (const e of replayOrder(entries)) {
-      for (const c of e.cmds) {
-        this.need(c); // a replayed definition may use one of ours
-        this.giac.eval(c);
+      const plain = (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!);
+      for (const c of e.cmds) this.need(c); // a replayed definition may use one of ours
+      if (plain) {
+        batch.push(e.cmds[0]!);
+        names.push(e.name);
+        if (batch.length >= REPLAY_BATCH) flush();
+      } else {
+        flush();
+        for (const c of e.cmds) this.giac.eval(c);
       }
     }
+    flush();
     this.record(entries.map((e) => ({ set: e })));
     return performance.now() - t0;
   }
@@ -350,6 +385,7 @@ export class EngineHost {
     const moved = used.filter((u) => u.facts.reliableDigits !== null).map((u) => ({ name: u.name, n: u.facts.reliableDigits! }));
     const shape = shapeOfResult(r);
     let pert: number[] | null | undefined;
+    let once = false;
     if (expr !== null && moved.length && !IDENT_NAME.test(expr.trim())) {
       pert = perturbedDigits(this.giac, expr, shape, els.map((e) => e.value!), moved, digits, restoreDigits);
     }
@@ -357,11 +393,19 @@ export class EngineHost {
       let n = Math.min(e.reliableDigits ?? P, cap);
       if (pert) n = Math.min(n, pert[k]!);
       const w = warn ?? e.warn ?? (pert === null ? "unchecked" : undefined);
+      if (pert === null && !warn && !e.warn) once = true;
       return { value: e.value!, exactRational: false, reliableDigits: n, ...(w ? { warn: w } : {}), big: false };
     });
     const b = resultFromFacts(facts, shape, digits, r.path, true, r.totalMs);
+    // Only the names behind a ⚠: one with a warning, or one known to fewer digits than the setting shows.
+    const lost = pert ? pert.some((d) => d < digits) : false;
+    const causes = used
+      .filter((u) => u.facts.warn !== undefined || (u.facts.reliableDigits !== null && (u.facts.reliableDigits < digits || lost)))
+      .map((u) => u.name);
+    const why = { ...(r.why ?? {}), ...(causes.length ? { inherited: causes } : {}), ...(once ? { once: true as const } : {}) };
     return {
       ...b,
+      ...(Object.keys(why).length ? { why } : {}),
       ...(r.exact !== undefined ? { exact: r.exact } : {}),
       ...(r.defined ? { defined: r.defined } : {}),
       ...(r.digits !== undefined ? { digits: r.digits } : {}),
@@ -376,7 +420,23 @@ export class EngineHost {
     return { reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}) };
   }
 
-  home(input: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
+  /**
+   * `consts` (G26): the constants the input holds by name (`pasc_<id>`) with their values and uncertainties. The
+   * values are put in and the input evaluates as without the table; a numeric result from an inexact constant then
+   * carries `uncDigits` (constUnc.ts). Without the table, nothing changes.
+   */
+  home(input: string, s: HomeSettings, consts?: ConstTable): { result: HomeResult; defs: DefChange[] } {
+    if (!consts) return this.homeRun(input, s);
+    const named = input;
+    const out = this.homeRun(withConstValues(input, consts), s);
+    const asg = simpleAssignment(named);
+    if (isStateful(named) && !asg) return out;
+    const n = constUncDigits(this.giac, asg ? asg.rhs : named, consts, out.result, Math.trunc(out.result.digits ?? s.digits));
+    return n === undefined ? out : { ...out, result: { ...out.result, uncDigits: n } };
+  }
+
+  private homeRun(typed: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
+    const input = expIgnoresAngle(typed, s.angle);
     this.need(input);
     this.useHomeMode(s);
     const t0 = performance.now();
@@ -433,7 +493,8 @@ export class EngineHost {
     return out;
   }
 
-  private casRun(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
+  private casRun(typed: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
+    const input = expIgnoresAngle(typed, s.angle);
     this.need(input);
     this.useMode(`cas${JSON.stringify(s)}`, () => {
       for (const c of casSetupCommands(s)) this.giac.eval(c);
@@ -477,6 +538,8 @@ export class EngineHost {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
         if (asked !== null) numeric.digits = asked;
         const body = asg ? asg.rhs : input;
+        const why = whyOf(facts, stateful ? null : exactInput);
+        if (why) numeric.why = why;
         numeric = this.inherited(numeric, body, stateful ? null : exactInput, digits, Math.trunc(s.digits));
         return {
           result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },
@@ -492,10 +555,11 @@ export class EngineHost {
     const unchecked = hasFloat(text);
     const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked;
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
+    const why = symbolicWhy(warn, testSides(exactInput));
     const tex = this.giac.eval("latex(pcasans)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
-      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(warn ? { warn } : {}) },
+      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(warn ? { warn } : {}), ...(why ? { why } : {}) },
       defs: defsOf(text, unchecked ? { reliableDigits: null, warn: "unchecked" } : null),
     };
   }
@@ -514,6 +578,22 @@ export class EngineHost {
     this.need(JSON.stringify(req));
     this.useSolveMode(s);
     return analyze(this.giac, req, s);
+  }
+
+  /** The unit view (G16, docs/04 4.2): in Home's mode (angle, budget, digits), with our unit definitions loaded on the
+   *  first request. A syntax error or a timeout is an engine error, never a value. */
+  units(job: UnitJob, s: HomeSettings): Quantity | UnitError {
+    if (!this.unitsLoaded) {
+      for (const d of UNIT_DEFINITIONS) this.giac.eval(d);
+      this.unitsLoaded = true;
+    }
+    this.useHomeMode(s);
+    try {
+      return unitEval(this.strict, job, s);
+    } catch (e) {
+      if (e instanceof GiacSyntaxError) return { error: "engine", detail: e.message };
+      throw e;
+    }
   }
 
   /** Num table cells are Home evaluations, in Home mode (same budget per cell). */
@@ -548,6 +628,29 @@ export class EngineHost {
   }
 }
 
+/** Commands per Giac call in a replay (G29; tools/probes/replay-cost.mjs: 10–50 are as fast, 200 in one call is not). */
+export const REPLAY_BATCH = 25;
+
+/** Brackets and quotes pair up: a command with a stray one would swallow what follows it in a batch. */
+function balanced(cmd: string): boolean {
+  let depth = 0;
+  let quote = false;
+  for (const ch of cmd) {
+    if (ch === '"') quote = !quote;
+    else if (quote) continue;
+    else if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") if (--depth < 0) return false;
+  }
+  return depth === 0 && !quote;
+}
+
+/** G24: a failed allocation reaches us as a C++ exception (`WebAssembly.Exception`, from `new`) or as an abort
+ *  (GMP, or the heap at its cap). The engine is not trusted after either: the client restarts it. */
+function isMemoryFailure(e: unknown): boolean {
+  if (typeof WebAssembly !== "undefined" && "Exception" in WebAssembly && e instanceof (WebAssembly as unknown as { Exception: new () => object }).Exception) return true;
+  return /\bOOM\b|out of memory|cannot enlarge memory|^Aborted/i.test(e instanceof Error ? e.message : String(e));
+}
+
 /** Builds the message handler used by the worker: init loads Giac, then requests go to EngineHost. */
 export function createRequestHandler(load: GiacLoader, post: (r: Response) => void): (req: Request) => Promise<void> {
   // Calls that arrive while init is still loading the engine wait for it, in arrival order (a Plot
@@ -579,7 +682,7 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           post({ id: req.id, type: "result", ...host.eval(req.input) });
           break;
         case "home":
-          post({ id: req.id, type: "home", ...host.home(req.input, req.settings) });
+          post({ id: req.id, type: "home", ...host.home(req.input, req.settings, req.consts) });
           break;
         case "cas":
           post({ id: req.id, type: "cas", ...host.cas(req.input, req.settings) });
@@ -596,9 +699,12 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
         case "table":
           post({ id: req.id, type: "table", result: host.table(req.req, req.settings) });
           break;
+        case "units":
+          post({ id: req.id, type: "units", result: host.units(req.job, req.settings) });
+          break;
       }
     } catch (e) {
-      post({ id: req.id, type: "fatal", message: e instanceof Error ? e.message : String(e) });
+      post({ id: req.id, type: "fatal", message: e instanceof Error ? e.message : String(e), ...(isMemoryFailure(e) ? { memory: true as const } : {}) });
     }
   };
 }

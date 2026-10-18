@@ -33,6 +33,17 @@ cases:
   - { id: "arithmetic-25", latex: "a\\div b\\times c", expect: "a/b*c", source: "derived", group: "arithmetic" }
   - { id: "arithmetic-26", latex: "0", expect: "0", source: "derived", group: "arithmetic" }
   - { id: "arithmetic-27", latex: "007", expect: "7", source: "derived", group: "arithmetic" }
+  - { id: "arithmetic-28", latex: "1/2x", expect: "1/2*x", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ and / take one factor on their right (a number, a name, a power, a call or a bracket), then the product goes on left to right, as with × (the G2 one-line rule, item 6)" }
+  - { id: "arithmetic-29", latex: "6\\div2\\left(1+2\\right)", expect: "6/2*(1+2)", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-30", latex: "1\\div2\\sqrt{3}", expect: "1/2*sqrt(3)", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-31", latex: "a\\div bc", expect: "a/b*c", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-32", latex: "1\\div2\\pi", expect: "pi/2", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-33", latex: "1\\div-2x", expect: "-x/2", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-34", latex: "1\\div2x\\div3y", expect: "x*y/6", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-35", latex: "1\\div2\\char\"5E 3x", expect: "x/8", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
+  - { id: "arithmetic-36", latex: "1\\div x^{2}", expect: "1/x^2", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): unchanged" }
+  - { id: "arithmetic-37", latex: "2x\\div4", expect: "x/2", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): unchanged" }
+  - { id: "arithmetic-38", latex: "1\\div2^{3}x", expect: "x/8", source: "derived", g2: 6, group: "arithmetic", note: "F26 (R30): in a flat line ÷ takes one factor, then the product goes on left to right" }
   # --- fractions
   - { id: "fractions-01", latex: "\\frac12", expect: "1/2", source: "derived", group: "fractions" }
   - { id: "fractions-02", latex: "\\frac{1}{2}", expect: "1/2", source: "derived", group: "fractions" }
@@ -107,6 +118,17 @@ cases:
   - { id: "roots-14", latex: "\\sqrt{\\sqrt{x}}", expect: "x^(1/4)", source: "derived", group: "roots" }
   - { id: "roots-15", latex: "\\frac{\\sqrt{3}}{2}", expect: "sqrt(3)/2", source: "derived", group: "roots" }
   - { id: "roots-16", latex: "\\frac{-b+\\sqrt{b^2-4ac}}{2a}", expect: "(-b+sqrt(b^2-4*a*c))/(2*a)", source: "derived", group: "roots" }
+  # P5 (b), R39: with realOddRoots (Home, Solve, Function; not CAS) a power with a literal exponent p/q, q odd, is the real root
+  - { id: "roots-17", latex: "\\left(-8\\right)^{\\frac{1}{3}}", options: { realOddRoots: true }, expect: "-2", source: "virtual-calc", g2: 11, group: "roots", note: "the G2 gives -2 in Home (items 4 and 11)" }
+  - { id: "roots-18", latex: "\\left(-8\\right)^{\\frac{2}{3}}", options: { realOddRoots: true }, expect: "4", source: "derived", group: "roots", note: "(real cube root)^2 = (-2)^2" }
+  - { id: "roots-19", latex: "\\left(-32\\right)^{\\frac{1}{5}}", options: { realOddRoots: true }, expect: "-2", source: "derived", group: "roots" }
+  - { id: "roots-20", latex: "\\left(-8\\right)^{1/3}", options: { realOddRoots: true }, expect: "-2", source: "derived", group: "roots", note: "a flat / in the exponent is the same literal fraction" }
+  - { id: "roots-21", latex: "\\left(-8\\right)^{-\\frac{1}{3}}", options: { realOddRoots: true }, expect: "-1/2", source: "derived", group: "roots" }
+  - { id: "roots-22", latex: "\\left(-8\\right)^{\\frac{2}{6}}", options: { realOddRoots: true }, expect: "-2", source: "derived", group: "roots", note: "the fraction is reduced first: 2/6 is 1/3 (default, decisions R39)" }
+  - { id: "roots-23", latex: "x^{\\frac{1}{3}}", options: { realOddRoots: true }, expect: "surd(x,3)", source: "derived", group: "roots" }
+  - { id: "roots-24", latex: "\\left(-8\\right)^{\\frac{1}{2}}", options: { realOddRoots: true }, expect: "2*sqrt(2)*i", source: "derived", group: "roots", note: "an even denominator keeps the principal root (P5 a)" }
+  - { id: "roots-25", latex: "\\left(-8\\right)^{0.2}", options: { realOddRoots: true }, expect: "(-8)^0.2", source: "derived", group: "roots", note: "not a literal fraction: Giac's (principal) power" }
+  - { id: "roots-26", latex: "\\left(-8\\right)^{\\frac{1}{3}}", expect: "(-8)^(1/3)", source: "derived", group: "roots", note: "CAS (no realOddRoots): the principal root, unchanged" }
   # --- trig
   - { id: "trig-01", latex: "\\sin\\left(x\\right)", expect: "sin(x)", source: "derived", group: "trig" }
   - { id: "trig-02", latex: "\\cos\\left(x\\right)", expect: "cos(x)", source: "derived", group: "trig" }
@@ -267,7 +289,7 @@ cases:
   - { id: "misc-more-05", latex: "\\int_0^1 x^2\\,dx+1", expect: "4/3", source: "derived", group: "misc-more" }
   - { id: "misc-more-06", latex: "\\int\\frac{1}{x}\\,dx", expect: "ln(abs(x))", source: "derived", group: "misc-more" }
   - { id: "misc-more-07", latex: "\\overline{z}", expect: "conj(z)", source: "derived", group: "misc-more" }
-  - { id: "misc-more-08", latex: "x\\bmod 3", expect: "irem(x,3)", source: "derived", group: "misc-more" }
+  - { id: "misc-more-08", latex: "x\\bmod 3", expect: "pasmod(x,3)", source: "derived", group: "misc-more" }
   - { id: "misc-more-09", latex: "\\det\\left(\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\right)", expect: "-2", source: "derived", group: "misc-more" }
   - { id: "misc-more-10", latex: "\\lim_{x\\to0^+}\\frac{1}{x}", expect: "inf", source: "derived", group: "misc-more" }
   - { id: "misc-more-11", latex: "\\lim_{x\\to0^-}\\frac{1}{x}", expect: "-inf", source: "derived", group: "misc-more" }
@@ -281,6 +303,11 @@ cases:
   - { id: "lists-matrices-03", latex: "\\begin{bmatrix}1&0\\\\0&1\\end{bmatrix}", expect: "[[1,0],[0,1]]", source: "derived", group: "lists-matrices" }
   - { id: "lists-matrices-04", latex: "\\begin{pmatrix}1&2&3\\end{pmatrix}", expect: "[[1,2,3]]", source: "derived", group: "lists-matrices" }
   - { id: "lists-matrices-05", latex: "\\begin{pmatrix}1\\\\2\\\\3\\end{pmatrix}", expect: "[[1],[2],[3]]", source: "derived", group: "lists-matrices" }
+  # the list key, Shift + 8 (R54): `\left\{…\right\}` is a Giac list (the empty one: l6-list-02)
+  - { id: "lists-matrices-06", latex: "\\left\\{1,2,3\\right\\}", expect: "[1,2,3]", source: "derived", group: "lists-matrices" }
+  - { id: "lists-matrices-07", latex: "\\left\\{5\\right\\}", expect: "[5]", source: "derived", group: "lists-matrices" }
+  - { id: "lists-matrices-08", latex: "\\left\\{\\res{1}{0.25},2\\right\\}", expect: "[1/4,2]", chips: { "res:1": { value: "1/4", exact: true } }, source: "derived", group: "lists-matrices", note: "a chip is an element" }
+  - { id: "lists-matrices-09", latex: "\\operatorname{mean}\\left(\\left\\{1,2,3,4\\right\\}\\right)", expect: "5/2", source: "derived", group: "lists-matrices" }
   # --- complex
   - { id: "complex-01", latex: "\\imaginaryI", expect: "i", source: "derived", group: "complex" }
   - { id: "complex-02", latex: "i", expect: "i", source: "derived", group: "complex" }
@@ -323,6 +350,33 @@ cases:
   - { id: "decimals-11", latex: "1.5\\times10^{3}", expect: "1500", source: "derived", group: "decimals" }
   - { id: "decimals-12", latex: "2.5\\times10^{-3}", expect: "1/400", source: "derived", group: "decimals" }
   - { id: "decimals-13", latex: "6.02\\times10^{23}", expect: "602*10^21", source: "derived", group: "decimals" }
+  # where a number ends (R29, F24): a second decimal point (or comma) inside a number is an error, never a product
+  - { id: "decimals-e01", latex: "2.5.3", error: true, source: "derived", group: "decimals", note: "keys 2 . 5 . 3; was 2.5*.3 = 0.75, marked = (F24)" }
+  - { id: "decimals-e02", latex: "1..5", error: true, source: "derived", group: "decimals", note: "was 1.*.5" }
+  - { id: "decimals-e03", latex: ".5.5", error: true, source: "derived", group: "decimals", note: "was .5*.5" }
+  - { id: "decimals-e04", latex: "1.5.", error: true, source: "derived", group: "decimals", note: "a trailing point after a decimal part" }
+  # a space between two numbers (R51, F43): the space key or a spacing command between two numbers is an error, never a
+  # product with no × on the line; spacing anywhere else stays nothing
+  - { id: "decimals-e05", latex: "2 3", error: true, source: "derived", group: "decimals", note: "was 2*3 = 6" }
+  - { id: "decimals-e06", latex: "2\\ 3", error: true, source: "derived", group: "decimals", note: "the space key; was 2*3" }
+  - { id: "decimals-e07", latex: "2\\,3", error: true, source: "derived", group: "decimals", note: "was 2*3" }
+  - { id: "decimals-e08", latex: "2\\;3", error: true, source: "derived", group: "decimals", note: "was 2*3" }
+  - { id: "decimals-e09", latex: "2\\quad3", error: true, source: "derived", group: "decimals", note: "was 2*3" }
+  - { id: "decimals-e10", latex: "1\\,000", error: true, source: "derived", group: "decimals", note: "a thin space as a digit group; was 1*0 = 0" }
+  - { id: "decimals-e11", latex: "2.5\\ .3", error: true, source: "derived", group: "decimals", note: "was 2.5*.3 = 0.75" }
+  - { id: "decimals-e12", latex: "1\\emark3\\ 2", error: true, source: "derived", group: "decimals", note: "a number with its exponent; was 1000*2" }
+  - { id: "decimals-e13", latex: "1\\emark-3\\ 2", error: true, source: "derived", group: "decimals", note: "was 2/1000" }
+  - { id: "decimals-18", latex: "2\\ x", source: "derived", group: "decimals", expect: "2*x", note: "a space before a name stays nothing" }
+  - { id: "decimals-19", latex: "x\\ 2", source: "derived", group: "decimals", expect: "x*2" }
+  - { id: "decimals-20", latex: "2\\ \\pi", source: "derived", group: "decimals", expect: "2*pi" }
+  - { id: "decimals-21", latex: "\\sin\\ 2", source: "derived", group: "decimals", expect: "sin(2)" }
+  - { id: "decimals-22", latex: "2\\times\\ 3", source: "derived", group: "decimals", expect: "6" }
+  - { id: "decimals-23", latex: "\\left(2\\right)\\ 3", source: "derived", group: "decimals", expect: "6", note: "a bracket ends the number" }
+  - { id: "decimals-24", latex: "2\\times 3", source: "derived", group: "decimals", expect: "6", note: "a space after a command" }
+  - { id: "decimals-14", latex: "5.", expect: "5", source: "derived", group: "decimals", note: "one trailing point is the number" }
+  - { id: "decimals-15", latex: "2.5\\times.3", expect: "3/4", source: "derived", group: "decimals", note: "a point after × starts a new number" }
+  - { id: "decimals-16", latex: "5.\\times.5", expect: "5/2", source: "derived", group: "decimals" }
+  - { id: "decimals-17", latex: "\\left(2\\right)3", expect: "6", source: "derived", group: "decimals", note: "a bracket ends the number: drawn (2)3" }
   # --- the exponent mark ᴇ (R14, P12 point 4): the exponent key types \emark (drawn ᴇ, U+1D07) as one token;
   # <number>ᴇ<signed whole number> is number × 10^n exactly, as the ×10^ template above was. Anything else is an error.
   - { id: "emark-01", latex: "1.5\\emark3", expect: "1500", source: "derived", group: "emark" }
@@ -372,7 +426,7 @@ cases:
   - { id: "l6-root-05", latex: "\\sqrt[3]{-8}", expect: "(-8)^(1/3)", options: { realOddRoots: false }, source: "derived", group: "l6" }
   - { id: "l6-root-06", latex: "\\sqrt[n]{x}", expect: "x^(1/n)", source: "derived", group: "l6" }
   - { id: "l6-list-01", latex: "\\left\\{x,x^{2},3\\right\\}", expect: "[x,x^2,3]", source: "derived", group: "l6" }
-  - { id: "l6-list-02", latex: "\\left\\{\\right\\}", expect: "[]", source: "derived", group: "l6" }
+  - { id: "l6-list-02", latex: "\\left\\{\\right\\}", error: true, source: "derived", group: "l6", note: "an empty list is refused with a message, never [] (R54)" }
   - { id: "l6-list-03", latex: "\\{1,\\frac{1}{2}\\}", expect: "[1,1/2]", source: "derived", group: "l6" }
   - { id: "l6-list-04", latex: "\\left\\{\\left\\{1,2\\right\\},\\left\\{3\\right\\}\\right\\}", expect: "[[1,2],[3]]", source: "derived", group: "l6" }
   - { id: "l6-comma-01", latex: "3{,}5+1", expect: "3.5+1", options: { decimalComma: true }, source: "derived", group: "l6" }
@@ -380,6 +434,11 @@ cases:
   - { id: "l6-comma-03", latex: "\\max\\left(1{,}5;2\\right)", expect: "max(1.5,2)", options: { decimalComma: true }, source: "derived", group: "l6" }
   - { id: "l6-comma-04", latex: "\\left\\{0{,}25;3\\right\\}", expect: "[0.25,3]", options: { decimalComma: true }, source: "derived", group: "l6" }
   - { id: "l6-comma-05", latex: "\\max\\left(1,5\\right)", expect: "max(1,5)", source: "derived", group: "l6" }
+  - { id: "l6-comma-e01", latex: "\\max\\left(2,5,3\\right)", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "two decimal commas (R29, F24): was max(2.5,3)" }
+  - { id: "l6-comma-e02", latex: "2{,}5.3", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "a comma, then a point: was 2.5*.3" }
+  - { id: "l6-comma-e03", latex: "\\max\\left(2.5,3\\right)", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "a point, then a comma: was max(2.5,3)" }
+  - { id: "l6-comma-e04", latex: "2{,}5{,}3", error: true, options: { decimalComma: true }, source: "derived", group: "l6", note: "two decimal commas as MathLive writes them" }
+  - { id: "l6-comma-06", latex: "\\max\\left(2.5;3\\right)", expect: "max(5/2,3)", options: { decimalComma: true }, source: "derived", group: "l6", note: "with the decimal comma, ; separates the arguments" }
   - { id: "l6-fn-01", latex: "p\\left(x\\right):=x^{2}+1", expect: "p(x):=x^2+1", source: "derived", group: "l6" }
   - { id: "l6-fn-02", latex: "p\\left(3\\right)", expect: "p(3)", before: ["p\\left(x\\right):=x^{2}+1"], source: "derived", group: "l6" }
   - { id: "l6-fn-03", latex: "p\\left(3\\right)", expect: "p*3", source: "derived", group: "l6" }
@@ -415,7 +474,7 @@ cases:
   - { id: "chip-res-02", latex: "\\res{1}{0.333333333333}", expect: "3333333333333333333333333333333333333333/10^40", chips: { "res:1": { value: "0.3333333333333333333333333333333333333333", exact: false } }, source: "derived", group: "chips", note: "a decimal value is an exact rational literal of its digits" }
   - { id: "chip-res-03", latex: "\\frac{\\res{1}{0.25}}{2}", expect: "1/8", chips: { "res:1": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-04", latex: "\\res{2}{-0.5}^2", expect: "1/4", chips: { "res:2": { value: "-1/2", exact: true } }, source: "derived", group: "chips", note: "the power takes the whole chip: (-1/2)^2" }
-  - { id: "chip-res-05", latex: "2\\res{1}{\\frac{\\sqrt{2}}{2}}", expect: "sqrt(2)", chips: { "res:1": { value: "sqrt(2)/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-05", latex: "2\\times\\res{1}{\\frac{\\sqrt{2}}{2}}", expect: "sqrt(2)", chips: { "res:1": { value: "sqrt(2)/2", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-06", latex: "\\res{1}{1.5\\cdot10^{-30}}+\\res{2}{x+1}", expect: "15/10^31+x+1", chips: { "res:1": { value: "1.5E-30", exact: false }, "res:2": { value: "x+1", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-07", latex: "3-\\res{1}{x+1}", expect: "2-x", chips: { "res:1": { value: "x+1", exact: true } }, source: "derived", group: "chips", note: "a sum stays one factor" }
   - { id: "chip-res-08", latex: "\\res{3}{7}", error: true, source: "derived", group: "chips", note: "a chip without its value is an error, never a guess" }
@@ -429,6 +488,29 @@ cases:
   - { id: "chip-const-02", latex: "\\frac{\\const{h}{h}}{\\const{e}{e}}", expect: "(662607015/10^42)/(1602176634/10^28)", chips: { "const:h": { value: "6.62607015E-34", exact: true }, "const:e": { value: "1.602176634E-19", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-const-03", latex: "\\const{G}{G}", expect: "667430/10^16", chips: { "const:G": { value: "6.67430E-11", exact: false, unc: "0.00015E-11" } }, source: "derived", group: "chips" }
   - { id: "chip-const-04", latex: "\\const{k_B}{k_{B}}\\times300", expect: "1380649*3/10^27", chips: { "const:k_B": { value: "1.380649E-23", exact: true } }, source: "derived", group: "chips" }
+  # where a number ends at a chip (R29, F25): the result chip shows its digits, so [0.5]3 reads as 0.53 (on the G2 a
+  # digit typed after an inserted result extends it, G2 item 56); a number beside a result chip, or two result chips
+  # side by side, is an error. Ans and a constant draw a name, not digits, so they multiply as 2x does.
+  - { id: "chip-res-e01", latex: "\\res{1}{0.5}3", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "was (1/2)*3 (F25)" }
+  - { id: "chip-res-e02", latex: "3\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "was 3*(1/2)" }
+  - { id: "chip-res-e03", latex: "\\res{1}{0.5}\\res{2}{0.25}", error: true, chips: { "res:1": { value: "1/2", exact: true }, "res:2": { value: "1/4", exact: true } }, source: "derived", group: "chips", note: "was (1/2)*(1/4)" }
+  - { id: "chip-res-e04", latex: "\\res{1}{0.5}.5", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-e05", latex: "2\\res{1}{\\frac{\\sqrt{2}}{2}}", error: true, chips: { "res:1": { value: "sqrt(2)/2", exact: true } }, source: "derived", group: "chips", note: "a number before any result chip, whatever it shows" }
+  - { id: "chip-res-e06", latex: "\\res{1}{0{,}5}3", error: true, options: { decimalComma: true }, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-e07", latex: "1\\emark3\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a number with its exponent" }
+  - { id: "chip-res-e08", latex: "\\sin2\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a function without brackets: its bare argument is a product too" }
+  - { id: "chip-res-e09", latex: "\\sin\\res{1}{0.5}3", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-e10", latex: "\\cos\\res{1}{0.5}\\res{2}{0.25}", error: true, chips: { "res:1": { value: "1/2", exact: true }, "res:2": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-e11", latex: "\\ln2\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-e12", latex: "\\res{1}{0.5}\\ 3", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a space between a result and a number: still F25 (R51)" }
+  - { id: "chip-res-13", latex: "\\res{1}{1\\,000}\\times2", expect: "2000", chips: { "res:1": { value: "1000", exact: true } }, source: "derived", group: "chips", note: "spacing in what a chip draws is not read (R51)" }
+  - { id: "chip-res-09", latex: "\\res{1}{0.5}\\times3", expect: "3/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "with × it is the product" }
+  - { id: "chip-res-10", latex: "3\\times\\res{1}{0.5}", expect: "3/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-11", latex: "\\res{1}{0.5}\\times\\res{2}{0.25}", expect: "1/8", chips: { "res:1": { value: "1/2", exact: true }, "res:2": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
+  - { id: "chip-res-12", latex: "\\res{1}{0.5}x", expect: "x/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a letter is not a digit: drawn [0.5]x, as 2x" }
+  - { id: "chip-ans-07", latex: "\\ans3", expect: "21", chips: { "ans": { value: "7", exact: true } }, source: "derived", group: "chips", note: "drawn [Ans]3: a name, as x3" }
+  - { id: "chip-ans-08", latex: "\\sin2\\ans", expect: "sin(14)", chips: { "ans": { value: "7", exact: true } }, source: "derived", group: "chips", note: "Ans in a bare function argument multiplies as 2x" }
+  - { id: "chip-const-05", latex: "2\\const{c}{c}", expect: "599584916", chips: { "const:c": { value: "299792458", exact: true } }, source: "derived", group: "chips", note: "a symbol, not digits" }
   # --- R10 (2026-10-13): the Tmpl palette (spec/keyboard.yaml `templates:`). Each template as MathLive writes it when
   # filled from the keys (app/test/tmpl.spec.ts types the same samples); expected values derived by hand.
   - { id: "tmpl-evalat-01", latex: "\\left.x^2\\right|_{x=3}", expect: "9", source: "derived", group: "tmpl" }
@@ -526,3 +608,35 @@ cases:
   - { id: "pal-greek-09", latex: "\\Sigma+\\sigma+\\delta+\\theta+\\lambda+\\rho+\\tau+\\chi", expect: "Sigma+sigma+delta+theta+lambda+rho+tau+chi", source: "derived", group: "palettes" }
   - { id: "pal-greek-10", latex: "\\Psi+1", expect: "Psi_+1", source: "derived", group: "palettes", note: "R18f1: Giac keeps Psi and Phi (Psi:=3 is refused); precision.yaml prec-greek-Psi stores 3 and gets 4" }
   - { id: "pal-greek-11", latex: "\\Phi^2", expect: "Phi_^2", source: "derived", group: "palettes" }
+  # --- R28 (2026-10-18): units mode, the unit view's formula (docs/04 4.3). `options: { units: true }`; a prompt
+  # \placeholder[id]{…} after a number is its unit slot, pasu<i> in the order written (its body is never read: the slot's
+  # units come from R24a's model); \const{ID}{…} is pask<j>; \pm after a number is pasupm(value,sigma) (G18); \to before
+  # the last prompt is the end slot. `formula` is the exact text; `slots` and `to` (app/scripts/unit-case.ts syntax) go
+  # with it through G16's builder (app/src/units/build.ts) to the Giac text `expect`, values derived by hand.
+  - { id: "units-01", latex: "72\\placeholder[u1]{}", options: { units: true }, formula: "72*pasu1", slots: ["k:m / h"], expect: "20*pasdimL/pasdimT", source: "derived", group: "units", note: "72·1000/3600 = 20 m/s" }
+  - { id: "units-02", latex: "\\frac{100\\placeholder[u1]{}}{4\\placeholder[u2]{}}", options: { units: true }, formula: "100*pasu1/(4*pasu2)", slots: ["k:m", "h"], expect: "125/18*pasdimL/pasdimT", source: "derived", group: "units", note: "100000/14400 m/s" }
+  - { id: "units-03", latex: "72\\placeholder[u1]{}\\div2\\placeholder[u2]{}", options: { units: true }, formula: "72*pasu1/(2*pasu2)", slots: ["m", "s"], expect: "36*pasdimL/pasdimT", source: "derived", group: "units", note: "a flat ÷ takes the number with its slot" }
+  - { id: "units-04", latex: "12.34\\pm0.05\\placeholder[u1]{}", options: { units: true }, formula: "pasupm(12.34,0.05)*pasu1", slots: ["m"], expect: "1234/100*pasdimL", source: "derived", group: "units", note: "G18: the ± goes before the slot; the builder puts the value in" }
+  - { id: "units-05", latex: "1.5\\emark-3\\placeholder[u1]{}", options: { units: true }, formula: "1.5e-3*pasu1", slots: ["k:m"], expect: "3/2*pasdimL", source: "derived", group: "units", note: "an ᴇ number is one number before its slot" }
+  - { id: "units-06", latex: "2\\placeholder[u1]{}\\times\\const{c}{c}", options: { units: true }, formula: "(2*pasu1)*pask1", slots: ["s"], expect: "599584916*pasdimL", source: "derived", group: "units", note: "a constant needs no chip value: the builder takes it from the index with its dimension" }
+  - { id: "units-07", latex: "\\const{c}{c}\\times\\const{c}{c}\\times3\\placeholder[u1]{}", options: { units: true }, formula: "(pask1*pask1)*(3*pasu1)", slots: ["k:g"], expect: "269626553621045292*pasdimM*pasdimL^2/pasdimT^2", source: "derived", group: "units", note: "the same constant twice is one pask; 3·299792458² kg·m²/s²" }
+  - { id: "units-08", latex: "5\\placeholder[u1]{}\\to\\placeholder[end]{\\mathrm{m}}", options: { units: true }, formula: "5*pasu1", slots: ["k:m"], to: "m", expect: "5000*pasdimL", source: "derived", group: "units", note: "\\to and the end slot close the line; the end slot's body is not read" }
+  - { id: "units-09", latex: "3\\placeholder[u1]{}+20\\placeholder[u2]{}", options: { units: true }, formula: "3*pasu1+20*pasu2", slots: ["m", "c:m"], expect: "16/5*pasdimL", source: "derived", group: "units" }
+  - { id: "units-10", latex: "-20\\placeholder[u1]{}", options: { units: true }, formula: "-20*pasu1", slots: ["oC"], expect: "5063/20*pasdimK", source: "derived", group: "units", note: "°C alone: -20 + 273.15 K" }
+  - { id: "units-11", latex: "\\left(2.5\\pm0.1\\placeholder[u1]{}\\right)^{2}", options: { units: true }, formula: "(pasupm(2.5,0.1)*pasu1)^2", slots: ["m"], expect: "25/4*pasdimL^2", source: "derived", group: "units" }
+  - { id: "units-12", latex: "9.81\\pm2\\emark-3\\placeholder[u1]{}", options: { units: true }, formula: "pasupm(9.81,2e-3)*pasu1", slots: ["m / s^2"], expect: "981/100*pasdimL/pasdimT^2", source: "derived", group: "units", note: "σ may be an ᴇ number" }
+  - { id: "units-13", latex: "2{,}5\\placeholder[u1]{}", options: { units: true, decimalComma: true }, formula: "2.5*pasu1", slots: ["h"], expect: "9000*pasdimT", source: "derived", group: "units" }
+  - { id: "units-14", latex: "-20\\pm0.5\\placeholder[u1]{}", options: { units: true }, formula: "pasupm(-20,0.5)*pasu1", slots: ["oC"], expect: "5063/20*pasdimK", source: "derived", group: "units", note: "the sign goes inside the pasupm call, so °C sees a lone number (decisions Opus pass 2): -20 + 273.15 K" }
+  - { id: "units-15", latex: "-20\\pm0.5\\placeholder[u1]{}", options: { units: true }, formula: "pasupm(-20,0.5)*pasu1", slots: ["m"], expect: "-20*pasdimL", source: "derived", group: "units" }
+  - { id: "units-e01", latex: "5\\pm1", error: true, source: "derived", group: "units", note: "± outside units mode" }
+  - { id: "units-e02", latex: "12.34\\pm0.05", error: true, source: "derived", group: "units", note: "± outside units mode" }
+  - { id: "units-e03", latex: "5\\to", error: true, source: "derived", group: "units", note: "→ outside units mode is the function arrow, which needs a name" }
+  - { id: "units-e04", latex: "72\\placeholder[u1]{}", error: true, source: "derived", group: "units", note: "a prompt outside units mode" }
+  - { id: "units-e05", latex: "x\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "a slot with no number before it" }
+  - { id: "units-e06", latex: "\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "a slot with no number before it" }
+  - { id: "units-e07", latex: "\\left(2\\right)\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "a bracket is not a number" }
+  - { id: "units-e08", latex: "\\pm0.1\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "± with no number before it" }
+  - { id: "units-e09", latex: "5\\pm x\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "σ is a plain number" }
+  - { id: "units-e10", latex: "5\\placeholder[u1]{}\\to", options: { units: true }, error: true, source: "derived", group: "units", note: "→ with no end slot" }
+  - { id: "units-e11", latex: "5\\placeholder[u1]{}\\to\\placeholder[end]{}+1", options: { units: true }, error: true, source: "derived", group: "units", note: "the end slot ends the line" }
+  - { id: "units-e12", latex: "5\\placeholder[u1]{}+6\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "one prompt id per slot" }

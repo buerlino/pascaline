@@ -1,0 +1,149 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# The unit view (P15, docs/04 4.2-4.3; G16): the formula with its unit slots, evaluated on Giac with the Find index's
+# exact factors (app/src/units). Run by the golden gate (stage "units", app/scripts/golden.ts) and checked by oracle.py.
+#
+# `input`: Giac text with each unit slot in braces and each constant as {=id}; `to`: the end slot (app/scripts/
+# unit-case.ts has the syntax: "k:m" is km, " / " the ÷, "Hz^-1/2" a power). Without `to` the value is in SI base
+# units. `expect` is the value shown at 12 digits (STD), `mark` its mark, `exact` Giac's exact text of it, `dim` the
+# dimension key of the result as the index writes it ("" for a pure number; null for an exact 0, whose dimension is
+# lost); with an end slot, `si` is the exact text of the value in SI base units, checked against `si_oracle`. A
+# refused case has `message` (the text the user reads) instead.
+# `settings: { angle: deg }`: a bare number in sin, cos and tan follows the Home angle mode (G15 default, decisions.md).
+# G17: °C, °F and the logarithmic units (dB, bel, Np, dBm, dBW) are allowed only alone and convert by their offset or level
+# rule. G18: an uncertain value is `pasupm(value,sigma)` in the input (R28's parser writes it; sigma in the same unit, every
+# one independent); σ = sqrt(Σ (∂f/∂xᵢ·σᵢ)²), first order, exact in Giac. `unc` is σ at 2 significant digits (docs/04 2.6;
+# "none": the result carries no σ), `unc_oracle` σ by the oracle, `shown` the value rounded to σ's last digit with it. A
+# result with a σ is always ≈.
+# G25: `unit` is the unit the value is shown in ("" for a pure number), `dimtext` the dimension as text. Without an end slot the
+# units typed are kept when they fit the result's dimension (one unit, a product with factor 1 like N·m, or the only slot),
+# else SI with an SI prefix (µs, kJ, m/s); an end slot always wins. `rev` is a count of cycles (a pure number): rpm = 1/60 Hz.
+cases:
+  # --- the 26 spike cases (engine/qalc/cases.yaml): the conversions and prefixes; u05 and u06 are t01 and t02 below ---
+  - { id: "u01", input: "5*{k:m / h}", to: "m / s", oracle: "F(5000,3600)", expect: "1.38888888889", mark: "≈", exact: "25/18", source: "derived" }
+  - { id: "u02", input: "60*{mph}", to: "k:m / h", oracle: "60*1760*F('0.9144')/1000", expect: "96.56064", mark: "=", exact: "301752/3125", si: "16764/625", si_oracle: "60*1760*F('0.9144')/3600", source: "derived" }
+  - { id: "u03", input: "1*{in}", to: "c:m", oracle: "F('0.9144')/36*100", expect: "2.54", mark: "=", exact: "127/50", si: "127/5000", si_oracle: "F('0.0254')", source: "derived" }
+  - { id: "u04", input: "1*{atm}", to: "Pa", oracle: "F(101325)", expect: "101325", mark: "=", exact: "101325", source: "derived" }
+  - { id: "u07", input: "1*{k:W h}", to: "J", oracle: "F(1000*3600)", expect: "3600000", mark: "=", exact: "3600000", source: "derived" }
+  - { id: "u08", input: "1*{eV}", to: "J", oracle: "F('1.602176634e-19')", expect: "1.602176634E-19", mark: "=", exact: "801088317/5000000000000000000000000000", source: "derived" }
+  - { id: "u09", input: "1*{lbf}", to: "N", oracle: "F('0.45359237')*F('9.80665')", expect: "4.44822161526", mark: "≈", exact: "8896443230521/2000000000000", source: "oracle" }
+  - { id: "u10", input: "1*{hp}", to: "W", oracle: "550*F('0.3048')*F('0.45359237')*F('9.80665')", expect: "745.699871582", mark: "≈", exact: "37284993579113511/50000000000000", source: "derived", note: "G13: 550 ft·lbf/s = 745.69987158227022 W; qalc's 745.6999871… W was wrong" }
+  - { id: "u11", input: "1*{bar}", to: "psi", oracle: "F(100000)/(F('0.45359237')*F('9.80665')/F('0.0254')**2)", expect: "14.503773773", mark: "≈", exact: "129032000000000/8896443230521", source: "oracle" }
+  - { id: "u12", input: "1*{L}", to: "m^3", oracle: "F(1,1000)", expect: "0.001", mark: "=", exact: "1/1000", source: "derived" }
+  - { id: "u13", input: "1*{nmi}", to: "m", oracle: "F(1852)", expect: "1852", mark: "=", exact: "1852", source: "derived" }
+  - { id: "u14", input: "1*{rad}", to: "deg", oracle: "180/pi", expect: "57.2957795131", mark: "≈", exact: "180/pi", si: "1", si_oracle: "F(1)", source: "oracle" }
+  - { id: "u15", input: "3*{m}*4*{s}", oracle: "F(12)", expect: "12", mark: "=", exact: "12", dim: "m1s1", source: "derived" }
+  - { id: "c01", input: "{=c}", oracle: "F(299792458)", expect: "299792458", mark: "=", exact: "299792458", dim: "m1s-1", source: "derived" }
+  - { id: "c02", input: "{=planck}", oracle: "F('6.62607015e-34')", expect: "6.62607015E-34", mark: "=", exact: "132521403/200000000000000000000000000000000000000000", dim: "kg1m2s-1", source: "derived" }
+  - { id: "c03", input: "{=N_A}", oracle: "F('6.02214076e23')", expect: "6.02214076E23", mark: "=", exact: "602214076000000000000000", dim: "mol-1", source: "derived" }
+  - { id: "c04", input: "{=k_B}", oracle: "F('1.380649e-23')", expect: "1.380649E-23", mark: "=", exact: "1380649/100000000000000000000000000000", dim: "K-1kg1m2s-2", source: "derived" }
+  - { id: "c05", input: "{=q_e}", oracle: "F('1.602176634e-19')", expect: "1.602176634E-19", mark: "=", exact: "801088317/5000000000000000000000000000", dim: "A1s1", source: "derived" }
+  - { id: "c06", input: "{=gas_constant}", oracle: "F('6.02214076e23')*F('1.380649e-23')", expect: "8.31446261815", mark: "≈", exact: "207861565453831/25000000000000", dim: "K-1kg1m2mol-1s-2", source: "oracle", note: "R = N_A·k exactly (SI 2019)" }
+  - { id: "c07", input: "{=g_0}", oracle: "F('9.80665')", expect: "9.80665", mark: "=", exact: "196133/20000", dim: "m1s-2", source: "derived" }
+  # --- the package's cases (brief G16) ---
+  - { id: "d01", input: "72*{k:m / h}", to: "m / s", oracle: "F(72*1000,3600)", expect: "20", mark: "=", exact: "20", si: "20", si_oracle: "F(20)", source: "derived", note: "task t02" }
+  - { id: "d02", input: "1*{in}", to: "m:m", oracle: "F('25.4')", expect: "25.4", mark: "=", exact: "127/5", source: "derived" }
+  - { id: "d05", input: "1/3*{m}", to: "c:m", oracle: "F(100,3)", expect: "33.3333333333", mark: "≈", exact: "100/3", si: "1/3", si_oracle: "F(1,3)", source: "derived" }
+  - { id: "d15", input: "1*{m}+1*{s}", message: "Units don't match: L vs T", source: "derived" }
+  - { id: "d23", input: "1*{m}", to: "s", message: "Units don't match: L vs T", source: "derived", note: "an end slot that does not fit names both dimensions" }
+  - { id: "d33", input: "1*{m}+1*{s}+1*{kg}", message: "Units don't match: M vs L vs T", source: "derived", note: "every dimension, in the order they are written" }
+  - { id: "d34", input: "1*{m^2}", to: "c:m^2", oracle: "F(10000)", expect: "10000", mark: "=", exact: "10000", source: "derived", note: "the prefix is inside the power: cm² = (cm)²" }
+  - { id: "d35", input: "2*{k:N}*3*{m}", oracle: "F(6)", expect: "6", mark: "=", exact: "6", dim: "kg1m2s-2", unit: "kN·m", source: "derived", note: "a prefixed unit as a user cell holds it; one prefixed token, so the typed product is kept (decisions 2026-10-18 point 4)" }
+  - { id: "d35b", input: "2*{lbf}*3*{ft}", oracle: "F(6)", expect: "6", mark: "=", exact: "6", dim: "kg1m2s-2", unit: "lbf·ft", source: "derived", note: "no prefix, factor not 1: the typed product is kept" }
+  # --- G15's defaults (decisions.md "G15: rpm → Hz, and the units with no exact factor") ---
+  - { id: "d27", input: "1*{rad / s}", to: "Hz", message: "Units don't match: T⁻¹·angle vs T⁻¹", source: "derived", note: "rad stays in the dimension key" }
+  - { id: "d28", input: "1*{rpm}", to: "Hz", oracle: "F(1,60)", expect: "0.0166666666667", mark: "≈", exact: "1/60", source: "derived", note: "G25: rpm is 1 rev/min, a frequency (rev is a pure count of cycles): no 2π trap" }
+  - { id: "d29", input: "60*{rpm}", to: "rad / s", message: "rpm counts turns: write tr/min for an angular speed", source: "derived", note: "G32: a revolution is a count, not an angle: 2π rad needs the angle written (use tr, the turn)" }
+  - { id: "d29b", input: "60*{rpm}+1*{rad / s}", message: "rpm counts turns: write tr/min for an angular speed", source: "derived", note: "G32: the same refusal when rpm and an angle meet in a sum" }
+  - { id: "d26", input: "sin(30*{deg})", oracle: "F(1,2)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "an angle unit inside sin" }
+  - { id: "d36", input: "sin(30*{deg})", settings: { angle: "deg" }, oracle: "F(1,2)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "an angle unit is the same in either mode" }
+  - { id: "d37", input: "sin(30)", settings: { angle: "deg" }, oracle: "sind(30)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "a bare number follows the Home angle mode (G15 default)" }
+  - { id: "d38", input: "sin(30)", oracle: "sin(30)", expect: "-0.988031624093", mark: "≈", exact: "sin(30)", dim: "", source: "oracle", note: "a bare number follows the Home angle mode: radians" }
+  - { id: "d39", input: "asin(1/2)", settings: { angle: "deg" }, oracle: "asind(F(1,2))", expect: "30", mark: "=", exact: "30", dim: "", source: "derived", note: "an inverse function gives a number in the Home angle mode, as Home does" }
+  - { id: "d30", input: "ln(2*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived" }
+  - { id: "d31", input: "sin(2*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived" }
+  # --- docs/04 4.1's table and the evaluator's own rules ---
+  - { id: "d10", input: "sqrt(2)*{m}", oracle: "sqrt(2)", expect: "1.41421356237", mark: "≈", exact: "sqrt(2)", dim: "m1", source: "oracle" }
+  - { id: "d11", input: "4.7*{k:ohm}", oracle: "F(4700)/1000", expect: "4.7", mark: "=", exact: "47/10", dim: "A-2kg1m2s-3", unit: "kΩ", source: "derived", note: "G25: a single slot is shown as typed" }
+  - { id: "d12", input: "1*{u:F}*4.7*{k:ohm}", oracle: "F(47,10)", expect: "4.7", mark: "=", exact: "47/10", dim: "s1", unit: "ms", source: "derived", note: "G25: µF·kΩ is not a unit anyone writes: SI with a prefix" }
+  - { id: "d13", input: "4.7*{k:ohm}*2.2*{n:F}", oracle: "F(517,50)", expect: "10.34", mark: "=", exact: "517/50", dim: "s1", unit: "µs", dimtext: "T", source: "derived", note: "docs/04 4.1: 4.7 kΩ × 2.2 nF = 10.34 µs (G25)" }
+  - { id: "d25", input: "1*{Btu}", to: "J", oracle: "F('1055.05585262')", expect: "1055.05585262", mark: "=", exact: "52752792631/50000000", source: "derived", note: "International Table Btu" }
+  - { id: "d32", input: "1*{n:V Hz^-1/2}", oracle: "F(1,10**9)", expect: "1E-9", mark: "=", exact: "1/1000000000", dim: "A-1kg1m2s-5/2", source: "derived", note: "a half power: V·Hz^(-1/2)" }
+  - { id: "t04", input: "2*pi*25*{m:m}", oracle: "2*pi*25", expect: "157.079632679", mark: "≈", exact: "50*pi", dim: "m1", unit: "mm", source: "oracle", note: "task t04: a single slot is shown as typed (G25)" }
+  - { id: "d40", input: "sqrt(2*9.81*{m / s^2}*2*{m})", oracle: "sqrt(2*F('9.81')*2)", expect: "6.26418390535", mark: "≈", exact: "3*sqrt(109)/5", dim: "m1s-1", source: "oracle", note: "√ of a quantity with units: the dimensions are positive, so √(m²) is m, not |m|" }
+  - { id: "d41", input: "5*{m}-5*{m}", oracle: "F(0)", expect: "0", mark: "=", exact: "0", dim: null, source: "derived", note: "an exact 0 has lost its dimension" }
+  - { id: "d42", input: "{=G}", oracle: "F('6.6743e-11')", expect: "6.6743E-11", mark: "≈", exact: "66743/1000000000000000", dim: "kg-1m3s-2", unit: "m³/(kg·s²)", unc: "1.5E-15", unc_oracle: "F('1.5e-15')", shown: "6.67430E-11 ± 1.5E-15", source: "derived", note: "G has a CODATA uncertainty: never = (decisions M4-4), as in Home, and it carries its ±" }
+  - { id: "d43", input: "20*{oC}*2", message: "Use K or Δ°C for a temperature difference", source: "derived" }
+  - { id: "d44", input: "2*{dB}*3*{m}", message: "dB converts only", source: "derived", note: "a logarithmic unit is allowed only alone" }
+  - { id: "d45", input: "y*{m}", message: "Not a number: y", source: "derived", note: "a free name in the formula" }
+  # --- G17: temperatures and logarithmic units (docs/04 4.3) ---
+  - { id: "t01", input: "20*{oC}", to: "oF", oracle: "F(20)*9/5+32", expect: "68", mark: "=", exact: "68", source: "derived", note: "an absolute temperature alone converts with its offset" }
+  - { id: "t02", input: "100*{oF}", to: "oC", oracle: "(F(100)-32)*5/9", expect: "37.7777777778", mark: "≈", exact: "340/9", source: "derived" }
+  - { id: "t03", input: "300*{K}", to: "oC", oracle: "F(300)-F('273.15')", expect: "26.85", mark: "=", exact: "537/20", source: "derived" }
+  - { id: "t05", input: "20*{oC}", to: "K", oracle: "F(20)+F('273.15')", expect: "293.15", mark: "=", exact: "5863/20", si: "5863/20", si_oracle: "F(20)+F('273.15')", source: "derived" }
+  - { id: "t06", input: "20*{oC}", oracle: "F(20)+F('273.15')", expect: "293.15", mark: "=", exact: "5863/20", dim: "K1", source: "derived", note: "without an end slot: in K" }
+  - { id: "t07", input: "20*{oC}+5*{K}", message: "Use K or Δ°C for a temperature difference", source: "derived" }
+  - { id: "t08", input: "2*{oC}/{s}", message: "Use K or Δ°C for a temperature difference", source: "derived", note: "not alone: a division" }
+  - { id: "t09", input: "2+3*{oF}", message: "Use K or Δ°C for a temperature difference", source: "derived", note: "2+3 °F is not (2+3) °F" }
+  - { id: "t10", input: "20*{oC}", to: "m", message: "Units don't match: Θ vs L", source: "derived" }
+  - { id: "t11", input: "10*{K}", to: "oR", oracle: "F(10)*9/5", expect: "18", mark: "=", exact: "18", source: "derived", note: "K, °R and Δ°C, Δ°F are differences" }
+  - { id: "t12", input: "5*{K}+3*{K}", oracle: "F(8)", expect: "8", mark: "=", exact: "8", dim: "K1", source: "derived", note: "a difference in arithmetic" }
+  - { id: "t13", input: "18*{oR}", to: "K", oracle: "F(10)", expect: "10", mark: "=", exact: "10", source: "derived" }
+  - { id: "t14", input: "0*{K}", to: "oC", oracle: "-F('273.15')", expect: "-273.15", mark: "=", exact: "-5463/20", source: "derived", note: "an exact 0 K is the absolute zero" }
+  - { id: "l01", input: "1*{W}", to: "dBm", oracle: "10*log10(1000)", expect: "30", mark: "=", exact: "30", source: "derived", note: "10·log10(P / 1 mW)" }
+  - { id: "l02", input: "1*{Np}", to: "dB", oracle: "20/ln(10)", expect: "8.68588963807", mark: "≈", exact: "20/ln(10)", source: "derived", note: "the field-quantity convention: 1 Np = 20/ln 10 dB" }
+  - { id: "l03", input: "30*{dBm}", to: "W", oracle: "F(1)", expect: "1", mark: "=", exact: "1", source: "derived" }
+  - { id: "l04", input: "0*{dBW}", to: "dBm", oracle: "F(30)", expect: "30", mark: "=", exact: "30", source: "derived" }
+  - { id: "l05", input: "3*{dB}", to: "Np", oracle: "3*ln(10)/20", expect: "0.345387763949", mark: "≈", exact: "3/20*ln(10)", source: "derived" }
+  - { id: "l06", input: "1*{u:W}", to: "dBm", oracle: "F(-30)", expect: "-30", mark: "=", exact: "-30", source: "derived", note: "1 µW is 0.001 of the 1 mW reference" }
+  - { id: "l07", input: "20*{dB}", to: "bel", oracle: "F(2)", expect: "2", mark: "=", exact: "2", source: "derived", note: "1 bel = 10 dB" }
+  - { id: "l08", input: "1*{dB}+2*{dB}", message: "dB converts only", source: "derived" }
+  - { id: "l09", input: "2*{dBm}*3", message: "dBm converts only", source: "derived" }
+  - { id: "l10", input: "5*{dBm}", to: "dB", message: "Units don't match: M·L²·T⁻³ vs Np", source: "derived" }
+  - { id: "l11", input: "1*{m}", to: "k:dB", message: "dB converts only", source: "derived", note: "a prefix on a logarithmic unit" }
+  # --- G17f1: Opus pass 1 findings ---
+  - { id: "l12", input: "20*{dB}", message: "dB converts only", source: "derived", note: "no end slot: a lone dB has no SI unit (was 10 with dim Np)" }
+  - { id: "l13", input: "2*{Np}", message: "Np converts only", source: "derived", note: "no end slot: refused (was exp(2) with dim Np)" }
+  - { id: "l14", input: "-1*{W}", to: "dBm", message: "A level needs a positive value", source: "derived", note: "was the complex 30+13.64i" }
+  - { id: "l15", input: "0*{W}", to: "dBm", message: "A level needs a positive value", source: "derived", note: "was the engine error" }
+  - { id: "t15", input: "-300*{oC}", to: "K", message: "Below absolute zero", source: "derived", note: "was -26.85" }
+  - { id: "t16", input: "1.5e3*{oC}", to: "K", oracle: "F(1500)+F('273.15')", expect: "1773.15", mark: "=", exact: "35463/20", source: "derived", note: "E notation as the parser writes it" }
+  # --- G18: uncertainty, first order (docs/04 2.6; decisions M4-2 point 2) ---
+  - { id: "g01", input: "pasupm(12.34,0.05)*{m}*pasupm(3.2,0.1)*{m}", oracle: "F('12.34')*F('3.2')", expect: "39.488", mark: "≈", exact: "4936/125", dim: "m2", unc: "1.2", unc_oracle: "sqrt((F('3.2')*F('0.05'))**2+(F('12.34')*F('0.1'))**2)", shown: "39.5 ± 1.2", source: "derived", note: "task t10: σ = 1.2443295383… m², first order, never =" }
+  - { id: "g02", input: "pasupm(10.0,0.3)*{m}+pasupm(2.5,0.4)*{m}", oracle: "F('12.5')", expect: "12.5", mark: "≈", exact: "25/2", dim: "m1", unc: "0.50", unc_oracle: "sqrt(F('0.3')**2+F('0.4')**2)", shown: "12.50 ± 0.50", source: "derived", note: "a sum: σ² adds" }
+  - { id: "g03", input: "pasupm(10,0.2)*{m}/(pasupm(4,0.1)*{s})", oracle: "F('2.5')", expect: "2.5", mark: "≈", exact: "5/2", dim: "m1s-1", unc: "0.080", unc_oracle: "F('2.5')*sqrt((F('0.2')/10)**2+(F('0.1')/4)**2)", shown: "2.500 ± 0.080", source: "derived", note: "a quotient: relative σ² add" }
+  - { id: "g04", input: "(pasupm(2.0,0.1)*{m})^3", oracle: "F(8)", expect: "8", mark: "≈", exact: "8", dim: "m3", unc: "1.2", unc_oracle: "3*F(2)**2*F('0.1')", shown: "8.0 ± 1.2", source: "derived", note: "a power: n·x^(n-1)·σ" }
+  - { id: "g05", input: "sqrt(pasupm(9,0.6)*{m^2})", oracle: "F(3)", expect: "3", mark: "≈", exact: "3", dim: "m1", unc: "0.10", unc_oracle: "F('0.6')/(2*3)", shown: "3.00 ± 0.10", source: "derived", note: "a square root: σ/(2√x)" }
+  - { id: "g06", input: "12.34*{m}*3.2*{m}", oracle: "F('12.34')*F('3.2')", expect: "39.488", mark: "=", exact: "4936/125", dim: "m2", unc: "none", source: "derived", note: "a value without ± carries no uncertainty and stays =" }
+  - { id: "g07", input: "pasupm(12.34,0.05)*{m}*pasupm(3.2,0.1)*{m}", to: "c:m^2", oracle: "F('12.34')*F('3.2')*10000", expect: "394880", mark: "≈", exact: "394880", unc: "12000", unc_oracle: "sqrt((F('3.2')*F('0.05'))**2+(F('12.34')*F('0.1'))**2)*10000", shown: "395000 ± 12000", source: "derived", note: "an end slot scales σ like the value" }
+  - { id: "g08", input: "pasupm(1,0.1)*{W}", to: "dBm", oracle: "10*log10(1000)", expect: "30", mark: "≈", exact: "30", unc: "0.43", unc_oracle: "10/ln(10)*F('0.1')", shown: "30.00 ± 0.43", source: "derived", note: "a level end slot: σ through d(10·log10 x)/dx" }
+  - { id: "g09", input: "pasupm(5,0.2)*{m}-pasupm(5,0.2)*{m}", oracle: "F(0)", expect: "0", mark: "≈", exact: "0", unc: "0.28", unc_oracle: "sqrt(2)*F('0.2')", shown: "0.00 ± 0.28", source: "derived", note: "two inputs are independent, so σ does not cancel" }
+  # --- G18f1: Opus pass 2 findings (decisions.md "2026-10-18 Opus pass 2 defaults") ---
+  - { id: "t17", input: "-1*{K}", to: "oC", message: "Below absolute zero", source: "derived", note: "below 0 K is refused whatever the source unit (was -274.15)" }
+  - { id: "g10", input: "pasupm(5,0)*{m}", oracle: "F(5)", expect: "5", mark: "≈", exact: "5", dim: "m1", unc: "0", unc_oracle: "F(0)", shown: "5 ± 0", source: "derived", note: "a σ of 0 shows the value as Home does (was 5.00000000000000000000000000000 ± 0)" }
+  - { id: "g11", input: "pasupm(20,0.5)*{oC}", to: "K", oracle: "F(20)+F('273.15')", expect: "293.15", mark: "≈", exact: "5863/20", unc: "0.50", unc_oracle: "F('0.5')", shown: "293.15 ± 0.50", source: "derived", note: "an uncertain absolute temperature alone: the offset drops out of σ (was refused)" }
+  - { id: "g12", input: "pasupm(68,0.9)*{oF}", to: "oC", oracle: "(F(68)-32)*5/9", expect: "20", mark: "≈", exact: "20", unc: "0.50", unc_oracle: "F('0.9')*5/9", shown: "20.00 ± 0.50", source: "derived", note: "σ is scaled by the factor 5/9 only" }
+  - { id: "g13", input: "pasupm(3,0.1)*{dB}", to: "Np", message: "dB converts only", source: "derived", note: "a logarithmic unit with ± keeps the logarithmic refusal" }
+  - { id: "g14", input: "sin(pasupm(30,1))", settings: { angle: "deg" }, oracle: "F(1,2)", expect: "0.5", mark: "≈", exact: "1/2", dim: "", unc: "0.015", unc_oracle: "cos(pi/6)*pi/180", shown: "0.500 ± 0.015", source: "derived", note: "± inside sin in the degree mode: σ = cos 30°·π/180" }
+  - { id: "g15", input: "sin(pasupm(30,1)*{deg})", oracle: "F(1,2)", expect: "0.5", mark: "≈", exact: "1/2", dim: "", unc: "0.015", unc_oracle: "cos(pi/6)*pi/180", shown: "0.500 ± 0.015", source: "derived", note: "± on an angle unit in the radian mode" }
+  - { id: "g16", input: "sin(pasupm(0.5,0.01))", oracle: "sin(F('0.5'))", expect: "0.479425538604", mark: "≈", exact: "sin(1/2)", dim: "", unc: "0.0088", unc_oracle: "cos(F('0.5'))*F('0.01')", shown: "0.4794 ± 0.0088", source: "derived", note: "± inside sin in the radian mode" }
+  # --- G25: the unit a result is shown in (docs/04 4.3 "Result"), the dimension text, the cycle unit rev ---
+  - { id: "n01", input: "5*{N}*2*{m}", oracle: "F(10)", expect: "10", mark: "=", exact: "10", dim: "kg1m2s-2", unit: "N·m", dimtext: "M·L²·T⁻²", source: "derived", note: "typed N and m fit: N·m, not J" }
+  - { id: "n02", input: "5*{N}*2*{m}", to: "J", oracle: "F(10)", expect: "10", mark: "=", exact: "10", unit: "J", source: "derived", note: "an end slot always wins" }
+  - { id: "n03", input: "100*{k:m}/(2*{h})", oracle: "F(100000,7200)", expect: "13.8888888889", mark: "≈", exact: "125/9", dim: "m1s-1", unit: "m/s", dimtext: "L·T⁻¹", source: "derived", note: "km/h is not typed as one slot: SI, no prefix on a compound unit" }
+  - { id: "n04", input: "2*{k:W}*3*{h}", oracle: "F(6)", expect: "6", mark: "=", exact: "6", dim: "kg1m2s-2", unit: "kW·h", source: "derived", note: "one prefixed token: kW·h is kept" }
+  - { id: "n05", input: "60*{rpm}", to: "rev / s", oracle: "F(1)", expect: "1", mark: "=", exact: "1", source: "derived", note: "rpm → rev/s" }
+  - { id: "n06", input: "2*{rev / s}", to: "Hz", oracle: "F(2)", expect: "2", mark: "=", exact: "2", unit: "Hz", source: "derived", note: "rev/s → Hz" }
+  - { id: "n07", input: "1*{m}/(1*{k:m})", oracle: "F(1,1000)", expect: "0.001", mark: "=", exact: "1/1000", dim: "", unit: "", dimtext: "1", source: "derived", note: "a pure number has no unit" }
+  - { id: "n08", input: "1.5*{N}*{s^2}/{k:m}", oracle: "F('1.5')", expect: "1.5", mark: "=", exact: "3/2", dim: "kg1", unit: "g", dimtext: "M", source: "derived", note: "1.5 g: the gram takes the prefix, not the kilogram" }
+  - { id: "n09", input: "2*{k:N}*{s^2}/{m}", oracle: "F(2000)", expect: "2000", mark: "=", exact: "2000", dim: "kg1", unit: "kg", source: "derived", note: "mass stops at kg" }
+  - { id: "n10", input: "5*{k:m}+3*{k:m}", oracle: "F(8)", expect: "8", mark: "=", exact: "8", dim: "m1", unit: "km", source: "derived", note: "a sum is shown in the unit of a term" }
+  - { id: "n11", input: "pasupm(4.7,0.1)*{k:ohm}*2.2*{n:F}", oracle: "F('1.034e-5')*10**6", expect: "10.34", mark: "≈", exact: "517/50", dim: "s1", unit: "µs", unc: "0.22", unc_oracle: "F('0.1')*1000*F('2.2e-9')*10**6", shown: "10.34 ± 0.22", source: "derived", note: "σ is scaled to the shown unit µs like the value" }
+  - { id: "n12", input: "pasupm(2,0.1)*{k:W}*3*{h}", oracle: "F(6)", expect: "6", mark: "≈", exact: "6", dim: "kg1m2s-2", unit: "kW·h", unc: "0.30", unc_oracle: "F('0.1')*3", shown: "6.00 ± 0.30", source: "derived", note: "σ is scaled to the shown unit kW·h like the value" }
+  - { id: "n13", input: "3*{m / s K}", oracle: "F(3)", expect: "3", mark: "=", exact: "3", dim: "K-1m1s-1", unit: "m/(s·K)", source: "derived", note: "several factors below the /: bracketed" }
+  - { id: "n14", input: "1*{rev}", to: "rad", message: "rev counts turns: write tr for an angle", source: "derived", note: "G32" }
+  - { id: "n15", input: "60*{tr / min}", to: "rad / s", oracle: "2*pi", expect: "6.28318530718", mark: "≈", exact: "2*pi", source: "derived", note: "G32: tr is the turn, 2π rad" }
+  # --- G13: the factors and constants where our exact definition replaces qalc's (find/units.yaml checks, override) ---
+  - { id: "q01", input: "1*{mmHg}", to: "Pa", oracle: "F('13.5951')*F('0.001')*F('9.80665')*1000", expect: "133.322387415", mark: "=", exact: "26664477483/200000000", source: "derived", note: "13.5951 g/cm³ × 1 mm × 9.80665 m/s² = 133.322387415 Pa (NIST SP 811); qalc has 1 Torr (133.322368… Pa)" }
+  - { id: "q02", input: "1*{inHg}", to: "Pa", oracle: "F('13.5951')*F('0.0254')*F('9.80665')*1000", expect: "3386.38864034", mark: "≈", exact: "3386388640341/1000000000", source: "derived", note: "the conventional inch of mercury is 25.4 mmHg; qalc's follows its Torr" }
+  - { id: "q03", input: "{=Z_0}", oracle: "F('376.730313412')", expect: "376.730313412", mark: "≈", exact: "94182578353/250000000", dim: "A-2kg1m2s-3", unc: "5.9E-8", unc_oracle: "F('5.9e-8')", shown: "376.730313412 ± 5.9E-8", source: "reference", note: "NIST CODATA 2022, allascii.txt: 376.730 313 412(59) Ω; qalc has 5.8E-8" }
+  - { id: "q04", input: "{=muon_compton_wavelength}", oracle: "F('1.173444110e-14')*10**15", expect: "11.7344411", mark: "≈", exact: "117344411/10000000", dim: "m1", unit: "fm", unc: "2.6E-7", unc_oracle: "F('2.6e-22')*10**15", shown: "11.73444110 ± 2.6E-7", source: "reference", note: "NIST CODATA 2022, allascii.txt: 1.173 444 110(26) e-14 m, shown in fm; qalc has ...111" }

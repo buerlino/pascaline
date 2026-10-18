@@ -1,0 +1,130 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# S5 (the unit pad's arrangement): the English Wikipedia articles whose units are counted, 40 per field, three fields
+# weighted equally (principle 2: one pad, no split by discipline). Chosen as the everyday subjects of each field's
+# design work (components, machines, plant, the quantities sized in practice), not physics or history articles.
+# fetch.mjs downloads each one once into tools/probes/_out/unit-freq/cache/ (gitignored) and records its revision and
+# SHA-256 in sources.lock.yaml; count.mjs counts offline from the cache and checks every SHA-256 first.
+# Licence: Wikipedia text is CC BY-SA 4.0. Nothing of it is kept in git; only counts are.
+mechanical_civil:
+  - Beam (structure)
+  - Bending
+  - Stress (mechanics)
+  - Young's modulus
+  - Yield (engineering)
+  - Ultimate tensile strength
+  - Torque
+  - Rolling-element bearing
+  - Gear
+  - Drive shaft
+  - Concrete
+  - Reinforced concrete
+  - Prestressed concrete
+  - Structural steel
+  - Bolted joint
+  - Spring (device)
+  - Fatigue (material)
+  - Buckling
+  - Deflection (engineering)
+  - Internal combustion engine
+  - Diesel engine
+  - Hydraulic cylinder
+  - Truss
+  - Suspension bridge
+  - Shallow foundation
+  - Deep foundation
+  - Soil mechanics
+  - Retaining wall
+  - Pressure vessel
+  - Welding
+  - Friction
+  - Second moment of area
+  - Flywheel
+  - Belt (mechanical)
+  - Crane (machine)
+  - Elevator
+  - Rebar
+  - Asphalt concrete
+  - Disc brake
+  - Gas turbine
+electrical:
+  - Ohm's law
+  - Resistor
+  - Capacitor
+  - Inductor
+  - Transformer
+  - Electric motor
+  - Induction motor
+  - Three-phase electric power
+  - Power factor
+  - Electric battery
+  - Lithium-ion battery
+  - Power cable
+  - Circuit breaker
+  - Operational amplifier
+  - RC circuit
+  - RLC circuit
+  - Electric generator
+  - Photovoltaic system
+  - Electricity meter
+  - Mains electricity
+  - Diode
+  - Bipolar junction transistor
+  - MOSFET
+  - Voltage regulator
+  - Switched-mode power supply
+  - Electric power transmission
+  - Ground (electricity)
+  - Fuse (electrical)
+  - Electrical impedance
+  - Skin effect
+  - Johnson–Nyquist noise
+  - Analog-to-digital converter
+  - Power inverter
+  - American wire gauge
+  - Supercapacitor
+  - Light-emitting diode
+  - Electrical substation
+  - Uninterruptible power supply
+  - Variable-frequency drive
+  - Electric power distribution
+chemical_process_hvac:
+  - Heat exchanger
+  - Heat transfer coefficient
+  - Thermal conductivity and resistivity
+  - Heat pump
+  - Chiller
+  - Air conditioning
+  - Heating, ventilation, and air conditioning
+  - Boiler
+  - Steam
+  - Fractional distillation
+  - Pump
+  - Centrifugal pump
+  - Gas compressor
+  - Mechanical fan
+  - Duct (flow)
+  - Pipe flow
+  - Darcy–Weisbach equation
+  - Viscosity
+  - Flow measurement
+  - Psychrometrics
+  - Cooling tower
+  - Vapor-compression refrigeration
+  - Enthalpy of vaporization
+  - Specific heat capacity
+  - Chemical reactor
+  - Mass flow rate
+  - Volumetric flow rate
+  - Orifice plate
+  - Control valve
+  - Natural gas
+  - Heat of combustion
+  - Cogeneration
+  - Thermal insulation
+  - R-value (insulation)
+  - Coefficient of performance
+  - Condenser (heat transfer)
+  - Steam turbine
+  - Water heating
+  - Radiator (heating)
+  - Air handler

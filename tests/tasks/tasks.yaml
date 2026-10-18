@@ -27,7 +27,7 @@ tasks:
     title: Parallel combination 4.7k ‖ 10k (resistors)
     milestone: 6
     status: pending
-    needs: "par() from EN7 (milestone 6) through Find, prefix chips (milestone 5, gated by t03)"
+    needs: "Find (R4a), prefix chips (milestone 5, gated by t03)"
     budget: 14
     # Math, p a r, Enter (par(), cursor inside); 4 . 7 chip-k , 1 0 chip-k, Enter. With 4700 typed the count is the same
     keys: [math, emark, vars, d8, enter, d4, dot, d7, {tap: "prefix:k"}, comma, d1, d0, {tap: "prefix:k"}, enter]
@@ -106,7 +106,7 @@ tasks:
     title: Nearest E24 value to 3.87k
     milestone: 6
     status: pending
-    needs: "eseries() from EN7 (milestone 6) through Find"
+    needs: "Find (R4a)"
     budget: 12
     # Math, e s Enter (eseries(), cursor inside), 2 4 , 3 8 7 0, Enter
     keys: [math, frac, d9, enter, d2, d4, comma, d3, d8, d7, d0, enter]
@@ -145,7 +145,7 @@ tasks:
     title: Mean and standard deviation of ten readings
     milestone: 6
     status: pending
-    needs: "lists you can enter (EN5, milestone 6); statistics itself is deferred"
+    needs: "mean() and stddevp() from Find (R4a; the budget comes with it); the list is Shift + 8 (R54)"
     budget: null
     keys: null
     data: ["9.81", "9.79", "9.83", "9.80", "9.82", "9.78", "9.84", "9.81", "9.80", "9.82"]
@@ -154,7 +154,10 @@ tasks:
       value: ["9.81", "0.01825741858350553711523232609336007113176"]
       stdev_population: "0.01732050807568877293527446341505872366943"
     source: oracle    # mean = 981/100 and sum of squares = 3/1000 exactly; roots by mpmath 1.3.0, 40 digits
-    baseline: null    # no list entry today
+    baseline:
+      note: "the mean only, as (sum) ÷ 10: Shift + 8 types the list (R54), but mean() and stddevp() need Find (R4a); letters typed with Alpha are a product (m·e·a·n), not a name"
+      keys: [paren, d9, dot, d8, d1, add, d9, dot, d7, d9, add, d9, dot, d8, d3, add, d9, dot, d8, d0, add, d9, dot, d8, d2, add, d9, dot, d7, d8, add, d9, dot, d8, d4, add, d9, dot, d8, d1, add, d9, dot, d8, d0, add, d9, dot, d8, d2, right, div, d1, d0, enter]
+      text: "9.81"
     compare: { g2_virtual_calc: null, phone_calculator: null }
 
   - id: t10
@@ -165,7 +168,7 @@ tasks:
     budget: 31
     # Shift Tmpl; ( 1 2 . 3 4 ± 0 . 0 5 ) m Enter; × ; ( 3 . 2 ± 0 . 1 ) m Enter; Enter. ± is Shift (−) in the Units layer
     keys: [shift, tmpl, paren, d1, d2, dot, d3, d4, shift, neg, d0, dot, d0, d5, right, neg, enter, mul, paren, d3, dot, d2, shift, neg, d0, dot, d1, right, neg, enter, enter]
-    expect: { value: "39.488", uncertainty: "1.244329538345851532731350590709587226327", unit: "m^2" }
+    expect: { value: "39.488", uncertainty: "1.244329538345851532731350590709587226327", shown: "39.5 ± 1.2", unit: "m^2" }
     source: derived   # first-order propagation of independent errors: sqrt((3.2·0.05)² + (12.34·0.1)²); arithmetic by mpmath 1.3.0
     baseline: null    # no ± today
     compare: { g2_virtual_calc: null, phone_calculator: null }

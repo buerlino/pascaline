@@ -88,3 +88,41 @@ test("÷, x² and x⁻¹ after a chip take the whole chip", async ({ page }) => 
   await tap(page, ["shift", "div", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "8");
 });
+
+// R44 (F37): a result whose exact text is over 2 kB keeps the engine's P-digit value as its chip, and Ans is never dropped.
+test("a long result's chip keeps its value, marked approximate (2^10000 × 1)", async ({ page }) => {
+  await open(page, "");
+  await ready(page);
+  await tap(page, ["d2", "pow", "d1", "d0", "d0", "d0", "d0", "right", "enter"]);
+  await expect(lastResult(page)).toContainText("1.99506311688");
+  await lastResult(page).tap();
+  await tap(page, ["mul", "d1", "enter"]);
+  const r = lastResult(page);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+  await expect(r).toContainText("1.99506311688");
+  expect(await r.getAttribute("data-text")).not.toMatch(/^=/);
+  const chip = await page.evaluate(() => Object.values(window.pascaline.session.home.at(-1)?.chips ?? {})[0]);
+  expect(chip?.value.startsWith("1.99506311688075")).toBe(true); // oracle 2^10000
+  expect(chip?.exact).toBe(false);
+});
+
+test("an operator on an empty line after a long result starts with Ans", async ({ page }) => {
+  await open(page, "");
+  await ready(page);
+  await tap(page, ["d2", "pow", "d1", "d0", "d0", "d0", "d0", "right", "enter"]);
+  await expect(lastResult(page)).toContainText("1.99506311688");
+  await tap(page, ["add", "d3"]);
+  expect(await entryValue(page)).toMatch(/^\\ans/);
+  await tap(page, ["enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+  await expect(lastResult(page)).toContainText("1.99506311688");
+});
+
+test("a short exact result still gives an exact chip (1/3 × 3 = 1)", async ({ page }) => {
+  await open(page, "");
+  await ready(page);
+  await tap(page, ["d1", "div", "d3", "enter"]);
+  await lastResult(page).tap();
+  await tap(page, ["mul", "d3", "enter"]);
+  await expect(lastResult(page)).toHaveAttribute("data-text", "1");
+});

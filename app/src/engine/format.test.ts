@@ -165,11 +165,26 @@ describe("FIX (decimals after the point)", () => {
   it("carries into a new digit and handles values below the last place", () => {
     expect(fix(99999n, 10000n, 4)).toBe("9.9999");
     expect(fix(999996n, 100000n, 4)).toBe("10.0000"); // 9.99996
-    expect(fix(1n, 100000n, 4)).toBe("0.0000"); // 0.00001
-    expect(fix(-1n, 100000n, 4)).toBe("0.0000"); // no negative zero
+    expect(fix(1n, 100000n, 4)).toBe("1.0000E-5"); // 0.00001 never draws as 0.0000
+    expect(fix(-1n, 100000n, 4)).toBe("-1.0000E-5");
     expect(fix(5n, 100000n, 4)).toBe("0.0001"); // 0.00005, half away
-    expect(fix(5n, 100000n, 4, "half-even")).toBe("0.0000");
+    expect(fix(5n, 100000n, 4, "half-even")).toBe("5.0000E-5"); // rounds to 0 in half-even, so SCI
     expect(fix(0n, 1n, 3)).toBe("0.000");
+  });
+  it("falls back to SCI when every shown decimal would be 0 (G2 item 60)", () => {
+    const o: FormatOptions = { format: "FIX", digits: 12, fixed: 4 };
+    expect(toText(formatReal(decimalFromString("4.7e-6")!, o))).toBe("4.7000E-6");
+    expect(toText(formatReal(decimalFromString("-4.7e-6")!, o))).toBe("-4.7000E-6");
+    expect(toText(formatReal(decimalFromString("1e-7")!, o))).toBe("1.0000E-7");
+    expect(toText(formatReal(decimalFromString("0.000123")!, o))).toBe("0.0001");
+    expect(toText(formatReal(ZERO_VALUE, o))).toBe("0.0000");
+  });
+  it("marks: a value drawn in the SCI fallback is never = unless shown whole; zero stays =", () => {
+    const o: FormatOptions = { format: "FIX", digits: 12, fixed: 4 };
+    const ex = (s: string) => ({ value: { re: decimalFromString(s)!, im: ZERO_VALUE }, exactRational: true, reliableDigits: null });
+    expect(markOf(ex("4.7e-6"), o)).toEqual({ mark: "=" }); // 4.7000E-6 is the value
+    expect(markOf(ex("1.23456e-6"), o)).toEqual({ mark: "≈" });
+    expect(markOf(ex("0"), o)).toEqual({ mark: "=" });
   });
   it("applies to both parts of a complex number", () => {
     expect(formatComplex({ re: q(1n, 3n), im: q(-2n, 3n) }, { format: "FIX", digits: 12, fixed: 2 }).text).toBe("0.33-0.67*i");
@@ -285,6 +300,13 @@ describe("formatConfirmed: only confirmed digits are shown", () => {
   it("FIX shows fewer decimals, and SCI when not even the integer part is confirmed", () => {
     expect(formatConfirmed(f("123.456789", 5), { format: "FIX", digits: 12, fixed: 4 })).toBe("123.46");
     expect(formatConfirmed(f("123456.789", 3), { format: "FIX", digits: 12, fixed: 2 })).toBe("1.23E5");
+  });
+  it("FIX in its SCI fallback draws only confirmed digits (G31f1)", () => {
+    const o: FormatOptions = { format: "FIX", digits: 12, fixed: 4 };
+    expect(formatConfirmed(f("4.7123456e-6", 3), o)).toBe("4.71E-6");
+    expect(formatConfirmed(f("4.7123456e-6", 1), o)).toBe("5E-6");
+    expect(formatConfirmed({ value: { re: v("4.7e-6"), im: ZERO_VALUE }, exactRational: true, reliableDigits: null }, o)).toBe("4.7000E-6");
+    expect(formatConfirmed(f("0.000123", 3), o)).toBe("0.0001");
   });
   it("lists and matrices", () => {
     const it2 = [f("1.5", null), f("0.333333333333333", 3)];

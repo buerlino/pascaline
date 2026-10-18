@@ -4,6 +4,7 @@ import { FakeCalc } from "../calc/fake.ts";
 import { CalcCancelled, type Calc, type CasOutcome, type HomeOutcome, type UserName } from "../calc/port.ts";
 import type { ComplexValue } from "../engine/format.ts";
 import { safePrecision } from "../engine/homeEval.ts";
+import { t } from "../i18n/index.ts";
 import { Session } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
 
@@ -26,7 +27,7 @@ const third: ComplexValue = {
 
 /** A Home engine that returns a numeric value, and a CAS that echoes. */
 class ValueCalc extends FakeCalc implements Calc {
-  override ready = (): Promise<void> => Promise.resolve();
+  override ready = (): Promise<{ safeStart?: { skipped: number } } | void> => Promise.resolve();
   override home(): Promise<HomeOutcome> {
     return Promise.resolve({ ok: true, display: "0.333333333333", approximate: false, ...safePrecision("0.333333333333"), value: third });
   }
@@ -232,5 +233,95 @@ describe("Session user names (docs/04 3.4)", () => {
     await s.submit("f(x):=x^2");
     await new Promise((r) => setTimeout(r, 0));
     expect(s.userNames.map((u) => `${u.name}:${u.kind}`)).toEqual(["A:var", "f:fn"]);
+  });
+});
+
+describe("Session user functions for the parser (R56)", () => {
+  const fn = (name: string, kind: UserName["kind"] = "fn"): UserName => ({ name, kind, preview: "", view: "home", time: 1 });
+  /** The fake engine echoes the Giac text it gets; names() answers from the list, or never once `hang` is set. */
+  class NamesEcho extends FakeCalc {
+    constructor(public list: UserName[], public hang = false) {
+      super();
+    }
+    override names(): Promise<UserName[]> {
+      return this.hang ? new Promise<UserName[]>(() => {}) : Promise.resolve(this.list);
+    }
+  }
+  const sent = (s: Session): string => s.home[s.home.length - 1]?.text ?? "";
+
+  it("a single-letter function from the stored names is a call from the first Enter on", async () => {
+    const s = new Session(new NamesEcho([fn("p")]), memoryKv());
+    await s.submit("p\\left(2\\right)"); // straight after the start: the parse waits for the names
+    expect(sent(s)).toBe("p(2)");
+  });
+  it("a stored value or no entry at all leaves it a product; Home and CAS read the same names", async () => {
+    const s = new Session(new NamesEcho([fn("p", "var")]), memoryKv());
+    await s.submit("p\\left(2\\right)");
+    expect(sent(s)).toBe("p*(2)");
+    s.setView("cas");
+    await s.submit("q\\left(2\\right)");
+    expect(s.cas[s.cas.length - 1]?.text).toBe("q*(2)");
+  });
+  it("a function defined in this session is a call before its names are read back", async () => {
+    const calc = new NamesEcho([]);
+    const s = new Session(calc, memoryKv());
+    await new Promise((r) => setTimeout(r, 0)); // the names read at the start has answered
+    calc.hang = true; // the read after the definition does not answer before the next Enter
+    await s.submit("p\\left(x\\right):=x^{2}");
+    await s.submit("p\\left(2\\right)");
+    expect(sent(s)).toBe("p(2)");
+  });
+});
+
+describe("Session safe start (G19, F31)", () => {
+  class SafeCalc extends ValueCalc {
+    override ready = (): Promise<{ safeStart?: { skipped: number } } | void> => Promise.resolve({ safeStart: { skipped: 2 } });
+  }
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+
+  it("says it once, as a history line in the i18n table (not a header note), and does not store it", async () => {
+    const kv = memoryKv();
+    const s = new Session(new SafeCalc(), kv);
+    await tick();
+    for (const list of [s.home, s.cas]) {
+      expect(list).toHaveLength(1);
+      expect(list[0]?.status).toBe("note");
+      expect(list[0]?.text).toBe(t("engine.safeStart"));
+    }
+    // the next entry does not say it again, and a note is no result: Ans, Copy and the stored history skip it
+    await s.submit("\\frac13");
+    expect(s.home.map((i) => i.status)).toEqual(["note", "done"]);
+    expect(s.hasResult("home")).toBe(true);
+    s.flushHistory();
+    const saved = kv.data.get("history") as { home: { status: string }[]; cas: unknown[] };
+    expect(saved.home.map((i) => i.status)).toEqual(["done"]);
+    expect(saved.cas).toEqual([]);
+  });
+
+  it("a launch that is not a safe start adds no line", async () => {
+    const s = new Session(new ValueCalc(), memoryKv());
+    await tick();
+    expect(s.home).toHaveLength(0);
+    expect(s.cas).toHaveLength(0);
+  });
+});
+
+describe("P5 (b), R39: the real odd root of a power", () => {
+  it("Home sends surd for a p/q exponent with q odd; CAS keeps Giac's power", async () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    await s.submit("\\left(-8\\right)^{\\frac{1}{3}}");
+    await s.submit("\\left(-8\\right)^{\\frac{2}{3}}");
+    await s.submit("\\left(-8\\right)^{\\frac{1}{2}}");
+    expect(s.home.map((i) => i.text)).toEqual(["surd((-8),3)", "surd((-8),3)^2", "(-8)^(1/2)"]);
+    s.setView("cas");
+    await s.submit("\\left(-8\\right)^{\\frac{1}{3}}");
+    expect(s.cas[0]?.text).toBe("(-8)^(1/3)");
+  });
+
+  it("CAS keeps the root template's real cube root (L6)", async () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    s.setView("cas");
+    await s.submit("\\sqrt[3]{-8}");
+    expect(s.cas[0]?.text).toBe("surd(-8,3)");
   });
 });

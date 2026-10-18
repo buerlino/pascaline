@@ -12,6 +12,7 @@ The UI talks to maths only through `MathEngine` (`types.ts`); `WorkerEngine` is 
 | `host.ts` | engine side, synchronous, UI-free: Home/CAS modes (D3), syntax-error detection, replay log. Also runs in Node |
 | `homeEval.ts` | exact-first Home (from the Phase 0 spike, 123/123 oracle cases); results carry a `value` and the precision facts; `sigfig` and our other engine definitions |
 | `numeric.ts` | honest precision (docs/04 2.4): reads values, shapes (lists, matrices), the agreement check at two precisions, the re-evaluation of floats from Giac's numeric code, the double fallback |
+| `constUnc.ts` | G26: constants sent by name (`pasc_<id>`) with a table of values and CODATA σ; the first-order σ of a Home result and its `uncDigits` |
 | `format.ts` | Home number formatter (D5): STD/SCI/ENG/FIX/PFX from a BigInt-derived `DecimalValue`, no engine round trip; `markOf()` and `formatConfirmed()` turn the engine's facts into the mark and the digits shown |
 | `nodeGiac.ts` | loads a Giac build in Node for tests and the golden runner (`GIAC_MJS`, `GIAC_OUT`, else `engine/giac/_out/gsl`) |
 

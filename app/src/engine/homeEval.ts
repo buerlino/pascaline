@@ -13,9 +13,11 @@
 //
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
-import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn } from "./format.ts";
+import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
+  AUDITED_FUNCTIONS,
+  functionsIn,
   DOUBLE_DIGITS,
   doubleFallback,
   exactFacts,
@@ -26,6 +28,7 @@ import {
   rationalValue,
   shapeOf,
   valuePrecision,
+  whyOf,
   withDigits,
   type ElementFacts,
   type Giac,
@@ -95,10 +98,16 @@ export interface HomeResult {
   shape?: [number, number];
   /** ⚠ although the digits agree: an un-audited function's float, or a value that could be evaluated only once. */
   warn?: PrecisionWarn;
+  /** The reasons behind the ⚠ as facts, for the chip that explains it (R36, docs/04 8.2). Absent for an exact result. */
+  why?: PrecisionWhy;
   /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): the result is shown with them, not the setting. */
   digits?: number;
   /** Giac `latex()` of a result that is not a number (raw; the view tidies it up and draws it, as in CAS). R18f3. */
   latex?: string;
+  /** G26: significant digits of the shown value before the digit position of the first-order σ that the inexact
+   *  constants of the input leave (EngineHost.home's table); the digits from there on are uncertain. Absent when no
+   *  inexact constant went in by name, or the result is not one real number. */
+  uncDigits?: number;
 }
 
 /** Giac prints a string result in double quotes; latex() returns one. */
@@ -119,6 +128,11 @@ export function safePrecision(display: string): Pick<HomeResult, "exactRational"
  * the wrong side at 999.95); an irrational x is first evaluated with n+30 digits.
  */
 export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
+  // Find's `mod` (input/emit.ts): Euclidean, never negative. Giac's irem is an error on a rational (irem(15/2,2)), and
+  // typed decimals are exact rationals, so mod(7.5,2) fell to the float path and was marked ≈ (G14).
+  pasmod:
+    "pasmod(a,b):={ if (type(a)==integer and type(b)==integer) return irem(a,b); " +
+    "if (b==0) return a; return a-abs(b)*floor(a/abs(b)); }",
   sigfig:
     "sigfig(x,n):={ local a,p,k,m; " +
     'if (type(n)!=integer or n<1) throw("sigfig: n must be a positive integer"); ' +
@@ -126,7 +140,23 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     'if (type(x)!=integer and type(x)!=rational) { x:=evalf(x,n+30); if (type(x)!=real) throw("sigfig: x must be a real number"); } ' +
     "a:=abs(x); p:=floor(evalf(log10(a),30)); while (10^p>a) p:=p-1; while (10^(p+1)<=a) p:=p+1; " +
     "k:=n-1-p; m:=floor(a*10^k+1/2); return sign(x)*m/10^k; }",
+  // F29/G21: Giac in DEG reads the imaginary part of an exponential as degrees (exp(i*90) = i) but exp(i*pi) as
+  // radians; the G2 ignores the angle mode for e^x (item 54). In DEG, host.ts rewrites exp( to pasexp(: a complex
+  // argument z becomes exp(re z)*(cos b + i sin b) with b = im z in degrees, which DEG evaluates as radians.
+  pasexp:
+    "pasexp(z):={ local b; if (angle_radian==1 or type(evalf(z))!=DOM_COMPLEX) return exp(z); " +
+    "b:=normal(im(z)*180/pi); return exp(re(z))*(cos(b)+i*sin(b)); }",
+  // G30 (EN7a): n resistors in parallel, 1/(1/a+1/b+…), exact; a zero argument gives exactly 0. Giac hands the
+  // arguments of a call to a one-parameter function as one sequence, which [a] makes a list.
+  par:
+    "par(a):={ local l,s,k; l:=[a]; if (size(l)==0) throw(\"par: needs at least one value\"); " +
+    "for (k:=0;k<size(l);k:=k+1) { if (l[k]==0) return 0; } " +
+    "s:=0; for (k:=0;k<size(l);k:=k+1) s:=s+1/l[k]; return normal(1/s); }",
 };
+
+/** Definitions whose text is built engine-side (host.ts) so their tables stay out of the start chunk: G30 `eseries`
+ *  (IEC 60063 preferred value nearest to x in x's decade, eseries.ts). Only the names are known here. */
+export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries"];
 
 /** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not
  *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to.
@@ -165,14 +195,29 @@ export function decideFloatTest(giac: Giac, input: string, digits: number): { wa
 }
 
 /** The two sides of the test form in `input` (`(a_-b_))(A,B)`), the test helpers left out. */
-function testSides(input: string): string {
+export function testSides(input: string): string {
   const k = input.indexOf("(a_-b_))(");
   return k < 0 ? input : input.slice(k + 9);
 }
 
+/** The `why` of a symbolic result's `warn`: the unaudited functions of the test sides (R18f2), or that nothing was
+ *  compared ("unchecked"); undefined when there is nothing to say. */
+export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): PrecisionWhy | undefined {
+  if (warn === "unchecked") return { once: true };
+  if (warn !== "unaudited") return undefined;
+  const unaudited = functionsIn(sides).filter((n) => !AUDITED_FUNCTIONS.has(n));
+  return unaudited.length ? { unaudited } : undefined;
+}
+
 /** The names of our definitions that `input` mentions. */
 export function definitionsUsedBy(input: string): string[] {
-  return Object.keys(ENGINE_DEFINITIONS).filter((name) => new RegExp(`\\b${name}\\b`).test(input));
+  return [...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES].filter((name) => new RegExp(`\\b${name}\\b`).test(input));
+}
+
+/** F29/G21: in DEG, `exp(` becomes `pasexp(` (see ENGINE_DEFINITIONS) outside strings; in RAD the text is unchanged. */
+export function expIgnoresAngle(input: string, angle: "rad" | "deg"): string {
+  if (angle === "rad") return input;
+  return input.replace(/"[^"]*"|\bexp(\s*\()/g, (m, paren?: string) => (paren === undefined ? m : `pasexp${paren}`));
 }
 
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */
@@ -234,6 +279,28 @@ function rewriteDecimals(input: string, f: (mant: string, exp10: number) => stri
  *  identifiers (`x1`, `0x1F`) and strings alone. */
 export function toExactLiterals(input: string): string {
   return rewriteDecimals(input, exactRational);
+}
+
+/** Puts the typed decimals back into a text Giac printed with the exact rationals of toExactLiterals(`typed`):
+ *  a test that stays as typed shows `0.746824132812`, not `(746824132812/10^12)` (G14). Only the spelled forms are
+ *  replaced, and only for literals that `typed` holds. */
+export function restoreLiterals(text: string, typed: string): string {
+  let out = text;
+  rewriteDecimals(typed, (mant, exp10) => {
+    const lit = exp10 ? `${mant}e${exp10}` : mant;
+    const rat = exactRational(mant, exp10);
+    if (rat.startsWith("(")) {
+      out = out.split(rat).join(lit);
+      // the bare m/10^k a sum or product leaves without brackets; not inside 5/10^12 or 15/10^1
+      const bare = rat.slice(1, -1);
+      if (bare.includes("/10^")) {
+        const re = new RegExp(`(?<![\\w.^])${bare.replace(/[\\^*+?.()|[\]{}$]/g, "\\$&")}(?![\\w.])`, "g");
+        out = out.replace(re, lit);
+      }
+    }
+    return rat;
+  });
+  return out;
 }
 
 /**
@@ -434,9 +501,9 @@ export function homeEval(
     exactMs,
     totalMs: now() - t0,
   });
-  const fromBuilt = (b: Built, path: HomePath, approximate: boolean, exact: string | undefined, full: string): HomeResult => {
+  const fromBuilt = (b: Built, path: HomePath, approximate: boolean, exact: string | undefined, full: string, why?: PrecisionWhy): HomeResult => {
     const { decimal: _d, ...rest } = b;
-    return done({ ok: true, ...rest, ...(exact !== undefined ? { exact } : {}), path, approximate, full });
+    return done({ ok: true, ...rest, ...(why ? { why } : {}), ...(exact !== undefined ? { exact } : {}), path, approximate, full });
   };
   const failed = (display: string, path: HomePath, exact?: string): HomeResult =>
     done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, tieRisk: false, exactRational: false, reliableDigits: null });
@@ -446,7 +513,7 @@ export function homeEval(
     if ("error" in f) return failed(f.error, path, exact);
     store();
     const b = build(f.facts, f.shape, s.digits, path, true);
-    return fromBuilt(b, path, true, exact, b.decimal);
+    return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
   };
 
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
@@ -456,7 +523,9 @@ export function homeEval(
   const symbolic = (): HomeResult => {
     // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
-    const text = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
+    const shown = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
+    // An open test shows its decimals as typed, not as the exact rationals the engine read (G14).
+    const text = /==|<>/.test(shown) ? restoreLiterals(shown, body) : shown;
     store();
     // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
     const tex = giac.eval(`latex(${ans})`);
@@ -464,7 +533,8 @@ export function homeEval(
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
     const unchecked = hasFloat(text);
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
-    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
+    const why = symbolicWhy(warn, testSides(exactBody));
+    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(why ? { why } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();
@@ -478,7 +548,7 @@ export function homeEval(
     if (!facts) return symbolic();
     store();
     const b = build(facts, shape, digits, "exact", true);
-    const r = fromBuilt(b, "exact", true, exactOut, b.decimal);
+    const r = fromBuilt(b, "exact", true, exactOut, b.decimal, whyOf(facts, once ? null : exactBody));
     return asked !== null ? { ...r, digits: asked } : r;
   }
 
@@ -488,7 +558,7 @@ export function homeEval(
     if (!d) return symbolic();
     store();
     const b = build([d], shape, s.digits, "exact", true);
-    return fromBuilt(b, "exact", true, exactOut, b.decimal);
+    return fromBuilt(b, "exact", true, exactOut, b.decimal, { once: true });
   }
   let exactText = exactOut;
   if (shape.kind === "scalar" && !facts[0]!.exactRational) {

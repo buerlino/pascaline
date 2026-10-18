@@ -47,6 +47,22 @@ test("a definition survives a reload (docs/04 6.2: the defs log is stored and re
   expect(await page.evaluate(() => window.pascaline.session.userNames.map((u) => `${u.name}:${u.kind}`))).toEqual(["A:var"]);
 });
 
+test("a single-letter function survives a reload (R56: the parser reads the stored names, not this session's parses)", async ({ page }) => {
+  await open(page, "");
+  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  // p(x):=x²: shift alpha P is a lower-case p, alpha − is ":", shift . is "="
+  await tap(page, ["shift", "alpha", "emark", "paren", "x", "right", "alpha", "sub", "shift", "dot", "x", "sq", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+  await page.waitForTimeout(800); // the history and the defs log are written asynchronously
+  await page.reload();
+  await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await page.evaluate(() => window.pascaline.entry.ready);
+  await tap(page, ["shift", "alpha", "emark", "paren", "d2", "enter"]); // p(2)
+  await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+  await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", "4"); // derived: 2²
+  await expect(page.getByTestId("mark").last()).toHaveAttribute("data-mark", "=");
+});
+
 // R34 (F30): Android kills a background app when memory runs short; the half-typed line must survive it. A kill
 // fires no pagehide, so the "kill" here is a hide (visibilitychange) followed by a fresh page on the same store,
 // with the old page left as it was.

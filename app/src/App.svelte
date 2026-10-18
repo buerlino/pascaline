@@ -16,6 +16,8 @@
   import { actionFor, keyboard, MATHS_ROW, type ActionBody, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
+  import { noDigit } from "./state/displayMode.ts";
+  import { canPick, pickAfter, pickAtOrBefore } from "./state/pickRows.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
@@ -132,7 +134,8 @@
 
   /** L5 and docs/04 2.8: a tapped or picked result goes on the line as a chip that carries its full value. */
   function insertResult(item: HistoryItem): void {
-    const shown = session.display(item).latex;
+    // a result with no confirmed digit goes on the line as the bare warning mark, never as its unconfirmed number
+    const shown = noDigit(session.mark(item)) ? "⚠" : session.display(item).latex;
     const chip = session.chipFor(item);
     if (chip) entry.insertResult(shown, chip);
     else entry.insert(resultToEntry(shown)); // too long for a chip: as drawn
@@ -314,19 +317,21 @@
     const items = session.items;
     const n = items.length;
     const isCmd = (name: string) => action.kind === "cmd" && action.name === name;
-    if (picked === null || picked >= n) {
+    // a "note" row (the safe-start line) is drawn without a pick, so it is never picked
+    if (picked === null || picked >= n || !canPick(items, picked)) {
       picked = null;
       if (!isCmd("moveUp") || n === 0 || entry.value !== "") return false;
-      picked = n - 1;
+      picked = pickAtOrBefore(items, n - 1);
+      if (picked === null) return false; // only notes: Up does its normal job
       void loadClip(); // the row buttons come from its list
       return true;
     }
     if (isCmd("moveUp")) {
-      picked = Math.max(0, picked - 1);
+      picked = pickAtOrBefore(items, picked - 1) ?? picked;
       return true;
     }
     if (isCmd("moveDown")) {
-      picked = picked + 1 < n ? picked + 1 : null;
+      picked = pickAfter(items, picked);
       return true;
     }
     const item = items[picked];
@@ -477,12 +482,22 @@
     return a?.kind === "special" && SHEET_KEYS.includes(a.name);
   }
 
+  /** F42: a sheet is open but its chunk is not in (a long press on a history row opens one before the idle load), so
+   *  nothing is drawn and no key may reach it. Start the load; the caller queues its key (R8), which then runs on the
+   *  drawn sheet. If the chunk does not load, the sheet closes and the queued keys run without it. */
+  function sheetUndrawn(): boolean {
+    if (!shell.sheet || sheetChunk.C) return false;
+    sheetLoad ??= loadSheetView().catch(() => shell.closeSheet()).finally(() => (sheetLoad = null));
+    return true;
+  }
+
   /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
    *  ("shift") or down ("alpha"). */
   function press(key: Key, layer?: Layer): void {
     const p = key.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(p.name, layer);
     if (settings && settingsPress(key, layer)) return;
+    if (sheetUndrawn()) return wait({ key, mods: modsFor(layer), layer });
     if (shell.sheet && sheetPress(key, layer)) return;
     const mods = modsFor(layer);
     session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
@@ -500,6 +515,7 @@
   /** A letter from a hardware keyboard (R45, F38): what the keypad's letter key does in this place. */
   function typeLetter(ch: string): void {
     if (settings) return; // the page takes no letters
+    if (sheetUndrawn()) return wait({ letter: ch });
     const sheet = shell.sheet;
     if (sheet) {
       if (sheet.level.filterable) sheet.level.type(ch);
@@ -539,7 +555,7 @@
       // G2; while typing it is the stacked fraction below
       void session.cycleForm();
       return;
-    } else if (entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.lastChip()) {
+    } else if (entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.hasResult()) {
       entry.insertAns(); // docs/04 2.8: an operator on an empty line starts with Ans
     }
     entry.run(action);
