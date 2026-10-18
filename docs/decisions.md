@@ -343,6 +343,11 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-18 Opus pass 6 defaults (G22f1, R52, G14)
+1. **R52, `SerializeError` takes the finished English text plus the key and its values;** `parseError(key, vars)` in `app/src/i18n/enParser.ts` is what every error site calls. `errors.ts` is in the start chunk and must not import the table (M4-3). *Would change if* a second language comes: then the catch shows the text for `key` and `vars` instead of `message`.
+2. **R52's start-chunk growth is accepted:** +0.04 kB gzip (52.90 → 52.94 kB), where the package asked for none; it is the key and values on `SerializeError`. *Would change if* the budget runs out before milestone 4a ends.
+3. **R52, the phrases built from parts stay English values** (`one argument` / `N arguments` in `parse.logicTakes`, the ` at '…'` suffix in `parse.atToken`): a translation needs its own plural keys. *Would change if* a second language is planned.
+
 ### 2026-10-18 Opus pass 5 defaults (G22f1, G23f1, R39)
 1. **G22f1 is merged review-only, not redone.** Its last check round failed e2e at load 12 on 16 cores; on the branch merged with phase-1 `0f5ca8e` the pass found e2e 1018 passed (1 skipped), vitest 914/914, typecheck 0 errors and GOLDEN GATE PASSED, and its new host.test.ts case fails on phase-1's `host.ts` (`why` undefined). The one conflict, `app/src/find/queries.test.ts`, keeps phase-1's 60 s timeout (R39 fix round 2) and drops the branch's 30 s. *Would change if* the review-only run fails e2e again (then it is a real failure for gorge).
 2. **G22f1, when the perturbation check costs digits, every stored name with a known digit count is named**, not only the one that moved the result: the check perturbs them together, so it cannot tell which. *Would change if* R36's owner review finds the list too long in practice.

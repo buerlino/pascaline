@@ -4,7 +4,7 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Section 7 holds one block per package in the shape the pipeline bundles (section 2).
 
 ## 0. State at start
-`phase-1` on 2026-10-18 (architecture pass, decisions.md P17). Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1–R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46 (with R46f1), R21b, R11, R32, A4a (2026-10-16), R15b, R47, B13; milestone 5's check G15 (P15 holds); the deep-dive packages G20, G27, R44, G24, G19, R29, R30. **Merged by the pipeline** (night of 2026-10-18, audited by Opus pass 1): A6 (`130c12f`), G16 (`1bfd594`), G17 (`a4496d5`); audited by Opus pass 2: G17f1 (`17fdfad`), G18 (`5b7e0d8`), G25 (`d9b177a`); audited by Opus pass 3: G18f1 (`76e3eb6`), G25f1 (`211f0db`), G13 (`d08e955`). **Finished on its branch, not merged** (review-only mode of A10): R12a (`p1/ron-m4a-look`, the visual-pass mockups, waiting for the owner's look). **In progress by the owner:** S5 (`p1/sandra-padlayout`, uncommitted in the main checkout). The pipeline has not merged a package yet: A10 fixes what stops it (decisions.md P17) and runs first, by day, with `PASCALINE_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads` set in the shell. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history. Left for the owner: `git branch -D p1/ron-eve-gestures` (the old flick classifier, K2 removed by P11; agents never use `-D`).
+`phase-1` on 2026-10-18 (architecture pass, decisions.md P17). Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1–R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46 (with R46f1), R21b, R11, R32, A4a (2026-10-16), R15b, R47, B13; milestone 5's check G15 (P15 holds); the deep-dive packages G20, G27, R44, G24, G19, R29, R30. **Merged by the pipeline** (night of 2026-10-18, audited by Opus pass 1): A6 (`130c12f`), G16 (`1bfd594`), G17 (`a4496d5`); audited by Opus pass 2: G17f1 (`17fdfad`), G18 (`5b7e0d8`), G25 (`d9b177a`); audited by Opus pass 3: G18f1 (`76e3eb6`), G25f1 (`211f0db`), G13 (`d08e955`); audited by Opus pass 6: G22f1 (`7556623`), R52 (`7c8c2c7`), G14 (`7635cfc`, fix G14f1 open). **Finished on its branch, not merged** (review-only mode of A10): R12a (`p1/ron-m4a-look`, the visual-pass mockups, waiting for the owner's look). **In progress by the owner:** S5 (`p1/sandra-padlayout`, uncommitted in the main checkout). The pipeline has not merged a package yet: A10 fixes what stops it (decisions.md P17) and runs first, by day, with `PASCALINE_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads` set in the shell. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history. Left for the owner: `git branch -D p1/ron-eve-gestures` (the old flick classifier, K2 removed by P11; agents never use `-D`).
 
 ### The path (owner, 2026-10-14; rewritten 2026-10-18 after the owner's answers in the architecture pass)
 **By day, one pipeline at a time** (owner, 2026-10-18), in this order; each starts when the one before is merged:
@@ -24,7 +24,7 @@
 - Silent wrong answers next (principle 3): R51, R39, G22, G23, G14 lead the night queue after the unit evaluator's successors.
 - Trust features after the code they build on: R36 after G22; R33 and R37 after Find; R40 after G26 and R12b's tokens.
 - S7 (the docs diet) runs alone, on a night when nothing else is queued after it, because it moves the texts every package edits.
-- The start-chunk budget has 1.32 kB gzip left (52.68 of 54 kB after G19): every UI package reports its delta.
+- The start-chunk budget has 1.06 kB gzip left (52.94 of 54 kB after R52): every UI package reports its delta.
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14; pipeline 2026-10-18; queue rewritten 2026-10-18)
 The owner plans each night in advance, and the queue below is the next nights'. `scripts/night.sh` runs it (rules section 4): for every decision it starts a fresh henri (Sonnet, Read-only) who sees this section and the log's tail and replies with one `scripts/pipeline.sh` line; the script runs that line and asks again. **henri executes and decides nothing.** **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it; whatever is not done stays in the queue for the next night, which resumes from the log. The night queue holds what needs no APK, no device and no eye on the UI (owner, 2026-10-18): the gorge lane, the parser-only ron packages (R51, R39, R52, R28, R24a), the sandra docs packages (S4, S9, S7, S6, S8, R50a) and the review-only merges of finished branches. The rest of the ron lane runs by day.
 
@@ -155,7 +155,6 @@ Where 0d says "milestone 5 items 1–2 (U1, U2) merged", read G16, G17, G25 and 
 
 | # | Package | Backlog | Agent, model | Branch | Start when merged | Lane | Size |
 |---|---|---|---|---|---|---|---|
-| G14 | Exact results marked ≈ | C9 | gorge, Sonnet | `p1/gorge-m4-marks` | G23 (same files as the marks lane) | night | ~0.5 d |
 | R28 | Units mode in the parser | m5 item 2 (ron half) | ron, **Opus** | `p1/ron-m5-unitparse` | R24a and G16; before R24c | night | ~1 d |
 
 **Why these models:** G16 is the arithmetic every unit result rests on (Opus). G17, G18, G25, G13 and G14 follow G16's pattern or the golden gate, and their cases pin them (Sonnet, Opus pass at night). R28 adds parser rules with round trips (Opus, as R14 and R18).
@@ -193,7 +192,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
 | A10 | The pipeline fixes and the review-only mode (P17) | architecture pass | first, by day | annabell, Sonnet | `p1/annabell-pipeline` | now | ~0.5 d |
-| R52 | The parser's messages in i18n | R29 decision 1 | night | ron, Sonnet | `p1/ron-m4-parsemsg` | R39 (it touches every parser message) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23 and G18 | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
 | R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | G22 (R32, same file, is merged) | ~0.5 d |
@@ -538,15 +536,6 @@ Write `docs/research/r13-results-mode.md`:
 - e2e: Math in a slot opens Find on units and prefixes, and an empty query shows the units menu by category; a pick lands in the slot as tokens (a prefixed unit becomes a prefix plus a unit); the six of the probe's 50 units that are not on the pad, each within the probe's Find count; a user cell is set from a Find hit ("Put on the unit pad", choosing the cell and its tap, up or down) and from Settings › Unit pad, survives a restart and resets to its default; an empty user cell opens Find.
 - The Find query test unchanged; the size test passes; the gallery has Find in a slot, the units menu and a user cell being set.
 
-### ron, R52: the parser's messages in i18n, branch `p1/ron-m4-parsemsg`
-**Lane:** night-safe (no new behaviour). **Starts when:** R39 is merged (it touches every parser message). decisions.md "R29: the parser's messages, and a space between two numbers" point 1 (owner, 2026-10-17).
-**Read:** `app/src/i18n/index.ts` and `app/src/i18n/enPalettes.ts` (a table loaded with its own chunk, not the start chunk); `app/src/input/emit.ts` (`SerializeError`); `app/src/input/parse.ts` (`fail()` and the throws); `app/src/input/chip-giac.ts`; `app/src/input/emit-js.ts`; `app/src/input/latex-to-giac.ts`; `app/src/state/session.svelte.ts` (the `SerializeError` catch); `app/src/apps/solve/app.svelte.ts` line 49 and `app/src/apps/function/compile.ts` line 32 (two more copies of the same catch: fold them into one helper); decisions.md M4-3 (the parser chunk is lazy).
-**Today:** about 75 messages are English text written into `new SerializeError(…)` or `fail(…)`: parse.ts 55, emit.ts 11, chip-giac.ts 7, emit-js.ts and latex-to-giac.ts one each. Some carry a name (`${name}: put its whole argument in the brackets, as ${name}(…)`).
-- **Fix:** `app/src/i18n/enParser.ts`, keys `parse.*` with `{name}` placeholders, imported by the input modules only, so it rides in the parser chunk. `SerializeError` takes a key and its values and keeps the English text as its `message`, so the Home catch is unchanged.
-**Done when:**
-- A Vitest check that no `SerializeError` or `fail` in `app/src/input/` takes a string literal or template, only a key from the table; it fails on today's code. The existing message tests (`numbers.test.ts` and the others that read `.message`) stay as they are, so the text Home shows does not change.
-- Vitest, typecheck, the golden gate (parser) and the size test (start chunk unchanged; the parser chunk's delta in the report) pass.
-
 ### ron, R38a: the backup: export everything, branch `p1/ron-m4-backup`
 **Lane:** day. **Starts when:** S6 is merged and the owner has said yes to its proposal; **its steps are completed by S6's report** (the way a file goes out without INTERNET). Until then nobody starts it. Deep-dive item 18.
 **Read:** `docs/research/r11-files.md` (S6); `app/src/state/storage.ts` (the keys, `DATA_VERSION`, the migrations); `app/src/clipboard/port.ts` (`share`); docs/04 6.2.
@@ -558,14 +547,6 @@ Write `docs/research/r13-results-mode.md`:
 **Read:** `docs/research/r11-files.md` (S6); R38a's report; `app/src/state/storage.ts`; `app/src/input/backLayer.ts`.
 - Read the file back, check it, show what it holds, then replace or merge as the user picks, through the stamped migrations. A file from a newer version is refused.
 **Done when:** an e2e round trip export → clear → restore gives the same state; a newer-version file is refused with a message; typecheck, vitest and e2e pass.
-
-### gorge, G14: exact results marked ≈, branch `p1/gorge-m4-marks`
-**Lane:** night-safe. **Starts when:** G23 is merged (same files as the marks lane). Backlog C9; Home only.
-**Read:** docs/04 2.4; `app/src/engine/homeEval.ts` (`decideFloatTest`, the exact-first path); `app/src/engine/format.ts` (`markOf()`); `app/src/render/home.ts` (the render of an unevaluated test; ron's file: the change there stays as small as the fix needs); `tests/golden/home.yaml`; `tests/golden/precision.yaml`.
-- Fix where the mark goes wrong (the exact-first path, the agreement check or `markOf`) and where the rewritten literal reaches the display.
-**Done when:**
-- Golden cases, `derived`, failing on today's code: `mod(7.5,2)` = 1.5 with the `=` mark (the typed 7.5 is exact, 15/2, and so is the remainder 3/2); a test that stays as typed shows its decimal as typed: `romberg(exp(-x^2),x,0,1)==0.746824132812` is drawn with `0.746824132812`, not `746824132812/10^12`.
-- The golden gate (home, precision), vitest and typecheck pass.
 
 ### gorge, G26: the digits a constant's uncertainty leaves, branch `p1/gorge-m4-constunc`
 **Lane:** night-safe. **Opus** (precision maths every inexact constant passes through). **Starts when:** G23 and G18 are merged (G18's first-order rule). Deep-dive item 17; R40 shows it.
