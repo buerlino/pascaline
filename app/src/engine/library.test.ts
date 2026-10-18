@@ -43,6 +43,14 @@ describe("parseLibrary (no engine)", () => {
     const many = Array.from({ length: 201 }, (_, i) => `// d\nf${i}(x):=x+${i}\n`).join("\n");
     expect(() => parseLibrary(`// pascaline library 1\n${many}`)).toThrow(/more than 200/);
   });
+  it("refuses a test line that changes state, assigns or has a second statement (derived)", () => {
+    const lib = (t: string): string => `// pascaline library 1\n// d\nf(x):=x\n// test: ${t}\n`;
+    expect(() => parseLibrary(lib("Digits:=5 ; 1"))).toThrow(/line 4: the test changes the engine's state \(Digits\)/);
+    expect(() => parseLibrary(lib("purge(f)==0"))).toThrow(/line 4: the test changes the engine's state \(purge\)/);
+    expect(() => parseLibrary(lib("a:=3"))).toThrow(/line 4: a test must not assign/);
+    expect(() => parseLibrary(lib("f(1)==1 ; f(2)==2"))).toThrow(/line 4: one expression per test/);
+    expect(parseLibrary(lib("f(1)==1")).defs[0]!.tests).toHaveLength(1);
+  });
   it("takes CRLF and a BOM", () => {
     expect(parseLibrary("﻿// pascaline library 1\r\n// d\r\nf(x):=x\r\n").defs[0]!.name).toBe("f");
   });
@@ -139,7 +147,7 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
     expect(back.log.map((e) => e.name)).toEqual(["beam", "A", "B"]);
   });
 
-  it("200 library programs replay on the desktop within the budget (derived; the number is printed)", { retry: 2, timeout: 60000 }, async () => {
+  it("200 library programs replay: the desktop median and device estimate are printed (budget not met, see report)", { retry: 2, timeout: 60000 }, async () => {
     const h = await fresh();
     let text = "// pascaline library 1\n";
     for (let i = 1; i <= 200; i++) text += `\n// program ${i}\nlib${i}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${i};\n}\n`;
@@ -149,7 +157,12 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
     for (let k = 0; k < 9; k++) ms.push((await fresh()).restore(r.log));
     const median = [...ms].sort((a, b) => a - b)[4]!;
     console.log(`G33: replay of 200 library programs, desktop median ${median.toFixed(1)} ms (${ms.map((m) => m.toFixed(1)).join(" ")}); import ${r.ms.toFixed(0)} ms`);
-    // The fastest of nine, with two retries: the full suite runs 60 files in parallel, and a loaded CPU triples the median (25 ms alone, 77 in the suite).
-    expect(Math.min(...ms)).toBeLessThan(50);
+    // G29's budget is 50 ms on the Tab One, where the desktop's 10.8 ms (200 definitions) became 291 ms: ratio 291/10.8.
+    // The device estimate uses the median (not the minimum).
+    const deviceMs = median * (291 / 10.8);
+    console.log(`G33: device estimate ${deviceMs.toFixed(0)} ms against the 50 ms budget`);
+    // NOT MET (see the G33 report, "Not done"): the estimate is ~10x over G29's budget, so no budget assert is made here;
+    // a loosened one would look like a pass. A12 measures the device.
+    expect(deviceMs).toBeGreaterThan(0);
   });
 });

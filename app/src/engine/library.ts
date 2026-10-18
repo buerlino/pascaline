@@ -64,6 +64,21 @@ function topLevelSemicolon(s: string): boolean {
   return false;
 }
 
+/** A top-level `:=` (outside brackets, braces and strings): the expression assigns a name. */
+function topLevelAssign(s: string): boolean {
+  let depth = 0;
+  let str = false;
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]!;
+    if (c === '"') str = !str;
+    else if (str) continue;
+    else if ("([{".includes(c)) depth++;
+    else if (")]}".includes(c)) depth--;
+    else if (c === ":" && s[i + 1] === "=" && depth === 0) return true;
+  }
+  return false;
+}
+
 function balanced(s: string): boolean {
   let d = 0;
   for (const c of s.replace(/"[^"]*"/g, "")) d += "([{".includes(c) ? 1 : ")]}".includes(c) ? -1 : 0;
@@ -115,7 +130,12 @@ export function parseLibrary(input: Uint8Array | string): LibFile {
       if (test) {
         const d = defs[defs.length - 1];
         if (!d) throw new LibError(lineNo, "a test line before any definition");
-        d.tests.push({ expr: test[1]!.trim(), line: lineNo });
+        const expr = test[1]!.trim();
+        const word = STATE_WORDS.exec(expr);
+        if (word) throw new LibError(lineNo, `the test changes the engine's state (${word[0]})`);
+        if (topLevelAssign(expr)) throw new LibError(lineNo, "a test must not assign a name (`:=`)");
+        if (topLevelSemicolon(expr)) throw new LibError(lineNo, "one expression per test: a second statement follows `;`");
+        d.tests.push({ expr, line: lineNo });
       } else lastComment = { text: t.replace(/^\/\/\s*/, ""), line: lineNo };
       continue;
     }
