@@ -53,15 +53,19 @@ Estimates are wall-clock guesses. A package already merged by day is skipped (lo
 | 9 | R28 units mode in the parser | ron, **Opus** | `p1/ron-m5-unitparse` | R24a, G16 | 1 h |
 | 12 | **Opus pass 3** on steps 9–11 | Opus | — | — | 20 min + fixes |
 | 13 | G31 FIX never hides a nonzero value (section 0h) | gorge, Sonnet | `p1/gorge-m4-fixzero` | G2 item 60 answered | 45 min |
-| 14 | R58 CAS letters lower case on Alpha (conditional; section 0h) | ron, Sonnet | `p1/ron-m4a-casalpha` | G2 item 45 answered "lower case", R48 | 45 min |
+| 13a | G21 `exp` ignores the angle mode (G2 item 54 answered, F29 decided 2026-10-18) | gorge, Sonnet | `p1/gorge-m4-expdeg` | — | 45 min |
+| 13b | R12a review-only merge (`--no-worker`; the owner looked 2026-10-18) | ron | `p1/ron-m4a-look` | — | 15 min |
+| 13c | **Opus pass 3a** on steps 13–13b | Opus | — | — | 20 min + fixes |
+| 13d | R48 Shift + Alpha: the faces show lower case (by night, the owner 2026-10-18) | ron, Sonnet | `p1/ron-m4a-lowerfaces` | — | 45 min |
+| 14 | R58 CAS letters lower case on Alpha (G2 item 45 answered "lower case", 2026-10-18) | ron, Sonnet | `p1/ron-m4a-casalpha` | R48 | 45 min |
 | 15 | S7 the docs diet (alone: the last package of its night; the owner starts nothing until it is merged) | sandra, Opus | `p1/sandra-docsdiet` | S5 merged | 1.5 h |
-| 16 | **Opus pass 4** on steps 13–15 | Opus | — | — | 20 min + fixes |
+| 16 | **Opus pass 4** on steps 13d–15 | Opus | — | — | 20 min + fixes |
 | 17 | S6 files in and out without INTERNET | sandra, Opus | `p1/sandra-files` | S7 | 1 h |
 | 18 | S8 the outside-test protocol | sandra, Opus | `p1/sandra-outside` | S6 | 30 min |
 | 19 | **Opus pass 5** (the last) on what came after pass 4, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 20 | Shift report, then stop | — | — | — | 10 min |
 
-Not at night: the rest of the ron lane (by day; section 0), with R55, R57 (section 0h: the owner looks at them) and R59 (the library rows, after G33, R4b and S6); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); G21 (it waits for G2 item 54 and the owner's decision on F29); R38a and R38b (their texts are completed by S6's report).
+Not at night: the rest of the ron lane (by day; section 0), with R55, R57 (section 0h: the owner looks at them) and R59 (the library rows, after G33, R4b and S6); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); R38a and R38b (their texts are completed by S6's report).
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model <sonnet, or opus for gorge>`: the next queue step not done (skip steps the table or the log marks merged or skipped, and steps whose "after" is not merged).
@@ -94,7 +98,7 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 
 | # | Package | Agent, model | Branch | Start when merged | Lane | Size |
 |---|---|---|---|---|---|---|
-| R48 | Shift + Alpha: the faces show lower case (F40) | ron, Sonnet | `p1/ron-m4a-lowerfaces` | A10 | day | ~0.25 d |
+| R48 | Shift + Alpha: the faces show lower case (F40) | ron, Sonnet | `p1/ron-m4a-lowerfaces` | A10 | night (the owner, 2026-10-18) | ~0.25 d |
 | A9 | Key vibration on the owner's phone (F41) | annabell, Sonnet | `p1/annabell-haptics` | the owner's phone connected | day | ~0.5 d |
 | R15c1 | The status line takes Apps, Menu and the views | ron, Sonnet | `p1/ron-m4a-statusline` | R48 | day | ~0.75 d |
 | R15c2 | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | `p1/ron-m4a-cluster` | R15c1 | day | ~1.5 d |
@@ -291,7 +295,7 @@ Commits in this order:
 - No application code is changed (`app/src/` untouched).
 
 ### ron, R48: Shift + Alpha, the faces show lower case (F40), branch `p1/ron-m4a-lowerfaces`
-**Lane:** day. **Starts when:** A10 is merged; before R15c3.
+**Lane:** night (the owner, 2026-10-18: the auditor checks the faces in the gallery; the owner looks on the phone the next day). **Starts when:** A10 is merged; before R15c3.
 **Read:** backlog.md item 37 (F40) and feedback.md #52; `app/src/keyboard/keyboard.ts` (`labelFor`, `layerAction`); `app/src/keyboard/Keypad.svelte` (`face`, `hint`, `alphaHint`); `app/src/state/session.svelte.ts` (the lock flags; `capsLock` is the lower-case lock: it keeps Shift on with Alpha); `app/src/keyboard/keyboard.test.ts`.
 - **The face shows what a tap types.** With Alpha and Shift both on (Shift + Alpha one-shot, or the lower-case lock), a key whose Alpha action is its own letter shows it in lower case. `labelFor` takes the same condition as `layerAction`, so the two cannot drift apart again. Keys whose Alpha layer falls back to the primary keep their face.
 - **The flick bubble and the letter legend follow the same rule:** a flick down shows and types the same case.
@@ -372,7 +376,7 @@ Commits in this order:
 - Typecheck and unit tests pass; the gallery rebuilt light and dark; the start chunk within +0.1 kB gzip (the number in the report).
 
 ### ron, R12a: visual pass, the mockups for the owner: review-only merge, branch `p1/ron-m4a-look`
-**Lane:** day (the owner looks first). **Starts when:** the owner has looked at `docs/mockups/` on the branch (`p1/ron-m4a-look`, 2 commits: `8e8fa19`, `1672208`) and said what to change; run as `scripts/pipeline.sh ron R12a --no-worker` (A10). The branch is 43 commits behind phase-1 and merges clean (`git merge-tree`, 2026-10-18).
+**Lane:** night (the owner looked on 2026-10-18: "the mockup looks good"; feedback.md #54 and #55 go to R12b and R50b). **Starts when:** the owner has looked at `docs/mockups/` on the branch (`p1/ron-m4a-look`, 2 commits: `8e8fa19`, `1672208`) and said what to change; run as `scripts/pipeline.sh ron R12a --no-worker` (A10). The branch is 43 commits behind phase-1 and merges clean (`git merge-tree`, 2026-10-18).
 **Read:** the branch's report (`git log -1 p1/ron-m4a-look`); `docs/feedback.md` (the owner's notes on the mockups).
 **Done when:**
 - The branch merges into phase-1 with the mockups under `docs/mockups/`, no app code; the owner's change requests are listed in the report commit of the merge or in feedback.md for R12b.

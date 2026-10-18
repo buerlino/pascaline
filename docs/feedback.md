@@ -136,3 +136,10 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 | 51 | "Pressing ⌫ on a log() used to be stuck at log(, now it is stuck at log, I think." | **bug F39** (backlog item 36, package R47). Reproduced in Playwright: a finger tap can put the cursor between `log` and `(`, where ◀ ▶ never stop; ⌫ there deletes only the name, leaving `(100)` with the cursor at the line's start, and every further ⌫ does nothing. Fixed in R47 (the tap case); *the owner's exact key sequence is still to confirm (backlog "Needs the user" item 7)* |
 | 52 | "If you press Shift + Alpha, the letters on the keypad are still upper case; they should switch to show they are now lower case." | **bug F40** (backlog item 37, package R48): the keys type lower case, but the faces still show capitals |
 | 53 | "The colour scheme of the app is not good; I want something nicer, light and dark." | **feel:** packages R50a (three palettes, light and dark, as a mockup for the owner's pick) and R50b (the pick in the app's colour tokens), before R12's visual pass |
+
+## 2026-10-18 (fourteenth round: the R12a mockups)
+
+| # | Owner's point | Triage |
+|---|---|---|
+| 54 | On `docs/mockups/visual-pass.html` (R12a): "the mockup looks good", but "the entry field is very narrow". | **feel:** R12a merges as is; R12b (tokens and history rows) gives the entry line more height |
+| 55 | On the same mockups: "the colors should be nicer". | **feel:** the palette is R50a's pick (`docs/mockups/palettes-r50.html`, still the owner's to choose) and R50b; R12b uses those tokens |
