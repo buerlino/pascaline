@@ -7,7 +7,8 @@ import { chipToGiac } from "./chip-giac.ts";
 import { SerializeError, type Json } from "./emit.ts";
 
 type Tok =
-  | { t: "num"; v: string }
+  /** gap (F43, R51): spacing (a space or a spacing command) separates this number from a number just before it. */
+  | { t: "num"; v: string; gap?: true }
   | { t: "ch"; v: string }
   | { t: "cmd"; v: string }
   | { t: "open"; v: string }
@@ -39,16 +40,22 @@ function tokenize(src: string, decimalComma = false): Tok[] {
   let i = 0;
   const n = src.length;
   const isDigit = (c: string | undefined) => c !== undefined && c >= "0" && c <= "9";
+  // F43 (R51): spacing was skipped right after the token out[gapAt - 1]
+  let gapAt = -1;
   while (i < n) {
     const c = src[i] as string;
     if (c === " " || c === "\n" || c === "\t") {
+      gapAt = out.length;
       i++;
     } else if (c === "\\") {
       let j = i + 1;
       while (j < n && /[A-Za-z]/.test(src[j] as string)) j++;
       const name = j > i + 1 ? src.slice(i + 1, j) : (src[j++] ?? "");
       i = j;
-      if (SPACING.has(name)) continue;
+      if (SPACING.has(name)) {
+        gapAt = out.length;
+        continue;
+      }
       if (name === "mathbin") {
         // P4: the polar sign is entered as \mathbin{\measuredangle} so that a following ÷ does not absorb it into the numerator
         const m = /^\{\s*\\measuredangle\s*\}/.exec(src.slice(i));
@@ -128,7 +135,8 @@ function tokenize(src: string, decimalComma = false): Tok[] {
         const c2 = commaAt(src, j, decimalComma);
         if (c2 && isDigit(src[j + c2])) throw new SerializeError("a number has one decimal comma");
       }
-      out.push({ t: "num", v });
+      // F43 (R51): the parser refuses a number after a number and spacing (2 3, 1\,000), never a silent product
+      out.push(gapAt === out.length && out[out.length - 1]?.t === "num" ? { t: "num", v, gap: true } : { t: "num", v });
       i = j;
     } else if (c === "\u1D07") {
       out.push({ t: "cmd", v: EMARK });
@@ -587,6 +595,8 @@ class Parser {
     const tok = t as Tok;
     switch (tok.t) {
       case "num": {
+        // F43 (R51): the line shows two numbers with a gap and no ×; checked here, so a chip's drawn digits are skipped
+        if (tok.gap) throw new SerializeError("put × between two numbers");
         this.basePrefix(tok);
         this.pos++;
         if (this.isCmd(EMARK)) {
