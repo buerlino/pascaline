@@ -12,7 +12,7 @@
 2. **R48** (bug F40), then **R15c1 → R15c2 → R15c3 → R15c4** (the R3 top cluster, decided 2026-10-17), **R55** (digit groups in drawn results: half a day, render only, no key moved), **R49** (Settings rows), **R50b** (the palette the owner picked from R50a's mockup), the review-only merge of **R12a** once the owner has looked at the mockups, **R57** (the decimal comma as a setting, on R49's page pattern).
 3. **R4a** (Find on Math), **R4b** (Vars, Memory, the user keys), **R53** (results mode on the View key, after S9's note), **R36** (why the mark; G22 is merged by then), **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (needs G26).
 4. The unit pad: **R24b** (when the owner accepted S5's arrangement) → **R24c** (when R24a, R24b, R28, G16, G17 and G25 are merged) → **R24d** (after R4b).
-5. annabell by day: **A9** and **A11** (Paste and Share) as soon as a device is connected; **A12** (the defs replay on the Tab One) once G29 is merged; **A4b** after R4b; **A7 → A8** on the owner's go (section 0g).
+5. annabell by day: **A9** and **A11** (Paste and Share) as soon as a device is connected; **A12** (the defs replay on the Tab One; G29 is merged); **A4b** after R4b; **A7 → A8** on the owner's go (section 0g).
 
 **At night** (section 0c): the gorge lane, the parser-only ron packages, the sandra docs packages and the review-only merges. Nothing that needs an APK, a device or an eye on the UI. The feature-analysis packages of section 0h join both: R56, G29, R54, G30, G31 and R58 at night, R55, R57, A11 and A12 by day.
 
@@ -27,7 +27,7 @@
 - Feature analysis (section 0h): R56 is a bug (a stored function stops being callable after a relaunch), so it leads the night queue's open steps; G29 before S4's import and R38b's restore grow the log the replay reads; R55 before R49 because it is half a day of render code the owner then reads every day; R57 after R49 (its page pattern) and R50b (the palette lands first); G31 and R58 wait for the owner's checks of G2 items 60 and 45.
 - The start-chunk budget has 1.02 kB gzip left (52.98 of 54 kB, the `phase-1` build of 2026-10-18; docs/04 8.3): every UI package reports its delta.
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14; pipeline 2026-10-18; queue rewritten 2026-10-18 evening, after the night check)
-The owner plans each night in advance, and the queue below is the next nights'. `scripts/night.sh` runs it (rules section 4): for every decision it starts a fresh henri (Sonnet, Read-only) who sees this section and the log's tail and replies with one `scripts/pipeline.sh` line; the script runs that line and asks again. **henri executes and decides nothing.** **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it; whatever is not done stays in the queue for the next night, which resumes from the log. The night queue holds what needs no APK, no device and no eye on the UI (owner, 2026-10-18): the gorge lane, the parser-only ron packages (R28, R24a, R56, R54), the sandra docs packages (S7, S6, S8) and the review-only merges of finished branches. The rest of the ron lane runs by day. The first night (2026-10-18) merged 22 packages; its check is [research/night-shift-check-2026-10-18.md](../research/night-shift-check-2026-10-18.md), and **A13 (the pipeline fixes from that check) must be merged by day before the next night starts.**
+The owner plans each night in advance, and the queue below is the next nights'. `scripts/night.sh` runs it (rules section 4): for every decision it starts a fresh henri (Sonnet, Read-only) who sees this section and the log's tail and replies with one `scripts/pipeline.sh` line; the script runs that line and asks again. **henri executes and decides nothing.** **Low usage comes first:** the aim is to make the 5-hour window last, not to fill it; whatever is not done stays in the queue for the next night, which resumes from the log. The night queue holds what needs no APK, no device and no eye on the UI (owner, 2026-10-18): the gorge lane, the parser-only ron packages (R28, R24a, R56, R54), the sandra docs packages (S7, S6, S8) and the review-only merges of finished branches. The rest of the ron lane runs by day. The first night (2026-10-18) merged 22 packages; its check is [research/night-shift-check-2026-10-18.md](../research/night-shift-check-2026-10-18.md); A13 (its pipeline fixes) is merged.
 
 ### Rules for a night shift (they replace rules section 4's day use)
 1. **One pipeline run at a time**, and never a worker started any other way. A package is `scripts/pipeline.sh <agent> "<ID>" --model <model from the table> --audit-model <sonnet, or opus for a gorge package>`: fresh worker, checks, at most two fix rounds, sofia's audit (P17 point 3 as revised on 2026-10-18: Opus for the gorge lane at night, Sonnet for ron and sandra; by day `auto`), merge. A review-only merge is `scripts/pipeline.sh <agent> "<ID>" --no-worker --audit-model <the same rule>` (A10): phase-1 merged into the branch, checks, audit, merge; a conflict or a FIX is a fix round for the package's agent. Its RESULT line in the log is the step's state.
@@ -40,13 +40,11 @@ The owner plans each night in advance, and the queue below is the next nights'. 
 8. **A step that ends without a RESULT line** (the pipeline died: a busy lock, a dirty phase-1 worktree; A10 makes every exit print one): henri runs the same step once more; if the log then shows it twice without a RESULT, he skips it and goes on. **Worker gone without a report** (no commit): the pipeline logs `NOT MERGED (no commits)` and keeps the worktree; henri runs the same step once more (the pipeline resumes the branch). If that one also fails, go on with the next package.
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`.
 
-### The queue (the next nights; A13 must be merged by day before the first, and S5 by the owner)
+### The queue (the next nights; S5 must be merged by the owner)
 Estimates are wall-clock guesses. A package already merged by day is skipped (log it). A step whose prerequisite is not merged (the "after" column) is skipped for that night and stays in the queue. The audit model follows rule 1 (Opus for gorge). The order is by importance (the bug, the budget miss, then the unit chain, then the gains), then by what each needs.
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 1 | R56 a user's function is known to the parser after a relaunch (bug; section 0h) | ron, **Opus** | `p1/ron-m4-userfns` | — | 45 min |
-| 2 | G29 the defs replay inside its budget (section 0h) | gorge, Sonnet | `p1/gorge-m4-replay` | — | 1 h |
 | 3 | G7 Find data for the unit pad | gorge, Sonnet | `p1/gorge-m5-finddata` | S5 merged by the owner | 45 min |
 | 4 | **Opus pass 1** on steps 1–3 | Opus | — | — | 20 min + fixes |
 | 5 | R24a the slot model | ron, **Opus** | `p1/ron-m5-unitslot` | G7 | 1 h |
@@ -66,7 +64,7 @@ Estimates are wall-clock guesses. A package already merged by day is skipped (lo
 | 19 | **Opus pass 5** (the last) on what came after pass 4, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 20 | Shift report, then stop | — | — | — | 10 min |
 
-Not at night: A13 (day, first: the night runs on it); the rest of the ron lane (by day; section 0), with R55, R57 (section 0h: the owner looks at them) and R59 (the library rows, after G33, R4b and S6); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); G21 (it waits for G2 item 54 and the owner's decision on F29); R38a and R38b (their texts are completed by S6's report).
+Not at night: the rest of the ron lane (by day; section 0), with R55, R57 (section 0h: the owner looks at them) and R59 (the library rows, after G33, R4b and S6); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); G21 (it waits for G2 item 54 and the owner's decision on F29); R38a and R38b (their texts are completed by S6's report).
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model <sonnet, or opus for gorge>`: the next queue step not done (skip steps the table or the log marks merged or skipped, and steps whose "after" is not merged).
@@ -190,7 +188,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | R40 | Muted digits past a constant's uncertainty | review item 17 | day | ron, Sonnet | `p1/ron-m4a-constdigits` | R41 and G26 | ~0.5 d |
 | R38a | The backup: export everything | review item 18 | day | ron, Sonnet | `p1/ron-m4-backup` | S6, and the owner's yes to its proposal | ~0.5 d |
 | R38b | The backup: restore from a file | review item 18 | day | ron, **Opus** | `p1/ron-m4-restore` | R38a | ~0.75 d |
-| A13 | The pipeline after the night of 2026-10-18 (A6f1 folded in) | night check | day, first | annabell, Sonnet | `p1/annabell-pipeline2` | now | ~0.5 d |
 | S7 | The docs diet | review item 20 | night, alone | sandra, Opus | `p1/sandra-docsdiet` | S5 merged; the last package of its night | ~0.5 d |
 | S6 | Files in and out without INTERNET: the backup | review item 18 | night | sandra, Opus | `p1/sandra-files` | S7 | ~0.5 d |
 | S8 | The outside-test protocol | review item 24 | night | sandra, Opus | `p1/sandra-outside` | S6 | ~0.25 d |
@@ -201,7 +198,7 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
   - G26 is precision maths every inexact constant passes through.
   - R38b overwrites the user's stored data.
   - The sandra packages are research and rewriting (sandra runs Opus).
-- **Sonnet:** everything else follows an existing pattern and is pinned by its tests. A13 changes shell scripts with a fixture test; G32 and G33 follow G17's and `defs.ts`'s patterns; the night audit of a gorge package is Opus (P17 point 3, revised 2026-10-18).
+- **Sonnet:** everything else follows an existing pattern and is pinned by its tests. G32 and G33 follow G17's and `defs.ts`'s patterns; the night audit of a gorge package is Opus (P17 point 3, revised 2026-10-18).
 
 **Not a package:**
 - The MathLive bug report (review item 23) is in backlog "Needs the user" item 6.
@@ -242,8 +239,6 @@ The order is by importance, then by what each needs: the bug first, then the bud
 
 | # | Package | Source | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
-| R56 | A user's function is known to the parser after a relaunch | bug (probe) | night | ron, **Opus** | `p1/ron-m4-userfns` | now | ~0.25 d |
-| G29 | The defs replay inside its budget | A4a point 2 | night | gorge, Sonnet | `p1/gorge-m4-replay` | now | ~0.5 d |
 | A12 | The defs replay re-measured on the Tab One | A4a point 2 | day (device) | annabell, Sonnet | `p1/annabell-replay` | G29; the Tab One connected | ~0.25 d |
 | A11 | Paste and Share on Android (the Capacitor clipboard and share plugins) | A4a point 5 | day (device) | annabell, Sonnet | `p1/annabell-clipboard` | A10; a device connected | ~0.5 d |
 | R54 | The list key: Shift + 8 inserts `{ }` | tasks t08, t09; Find's list functions | night | ron, **Opus** | `p1/ron-m4-listkey` | now | ~0.5 d |
@@ -253,7 +248,7 @@ The order is by importance, then by what each needs: the bug first, then the bud
 | G31 | FIX never hides a nonzero value | formatter probe | night | gorge, Sonnet | `p1/gorge-m4-fixzero` | G2 item 60 answered (the owner, Virtual Calculator) | ~0.25 d |
 | R58 | CAS letters lower case on Alpha (conditional) | G2 item 45 | night | ron, Sonnet | `p1/ron-m4a-casalpha` | G2 item 45 answered "lower case", and R48 | ~0.25 d |
 
-**Why these models:** R56 and R54 decide what a name followed by a bracket means and add a template with its parser round trips (Opus, as R51 and R39). The rest follow a pattern and are pinned by their tests (Sonnet; the audit model follows P17).
+**Why these models:** R54 decides what a name followed by a bracket means and adds a template with its parser round trips (Opus, as R51 and R39). The rest follow a pattern and are pinned by their tests (Sonnet; the audit model follows P17).
 
 **Dropped in the analysis** (one line each, so nobody proposes them again without new evidence): a float fallback for Σ over thousands of terms (one timeout on a stale branch, 329 ms on `phase-1`); refusing Store ▶ into `i` (Giac accepts `i:=2` and ignores it, `i^2` stays −1); Enter on an empty line repeating the last entry (no G2 source, no reported friction); the unit-chunk size rule (already fixed, `app/scripts/size-check.ts:97`); a `stdev` naming trap (handled in `find/functions.yaml`); formatter rounding at 999.99… and the prefixes beyond Q (correct in the probe).
 
@@ -550,15 +545,6 @@ Commits in this order:
 - Read the file back, check it, show what it holds, then replace or merge as the user picks, through the stamped migrations. A file from a newer version is refused.
 **Done when:** an e2e round trip export → clear → restore gives the same state; a newer-version file is refused with a message; typecheck, vitest and e2e pass.
 
-### ron, R56: a user's function is known to the parser after a relaunch, branch `p1/ron-m4-userfns`
-**Lane:** night-safe. **Opus** (it decides whether `p(2)` is a call or a product). **Starts when:** now. Feature analysis 2026-10-18 (section 0h).
-**Read:** `app/src/input/latex-to-giac.ts` lines 15–27 (`DEFAULT_USER_FUNCTIONS`, the module-level `defined` set, `userFunctions()`) and 42–50 (`noteDefinition`); `app/src/input/parse.ts` line 195 (single letters need to be listed; longer names are always calls); `app/src/engine/defs.ts` (`UserName`, `userNamesOf`); `app/src/calc/engine.ts` line 81 (`names()`); `app/src/state/session.svelte.ts` lines 244 and 290 (`userNames`) and where it calls `latexToGiac`; `app/test/persist.spec.ts` ("a definition survives a reload").
-**Behaviour today** (probe `tools/probes/parse.ts`, 2026-10-18): in one session `p\left(x\right):=x^{2}` then `p\left(2\right)` gives `p(2)`; in a fresh process `p\left(2\right)` gives `p*(2)`, because only this session's parses fill `defined`, and the defs replay (G3) never passes the parser. Giac then shows a function text (`(x)->2*x^2`), not 4: no wrong number, but a stored function stops working after every relaunch.
-Commits in this order:
-1. **Tests first:** a Vitest on `latexToGiac` with `userFunctions` built from a `UserName` list that holds a single-letter function (`p(2)` → `p(2)`; `F(2)` with F a value → `F*(2)`); an e2e in `persist.spec.ts`: define `p(x):=x^2` with the keys, reload, `p(2)` Enter shows `= 4`. Both fail on today's code.
-2. **Fix:** every parse takes `userFunctions` from the live `userNames` (kind function, single letters) plus the defaults f, g, h; the module-level `defined` set goes (or becomes a cache of that list), so Memory's delete (R4b) needs no hook. Home and CAS share the set, as they share the engine.
-**Done when:** the two tests pass; the parser golden cases are unchanged (`npm run golden`, parser); typecheck and vitest pass; the start chunk is unchanged (the parser chunk is lazy, M4-3).
-
 ### ron, R54: the list key, Shift + 8 inserts `{ }`, branch `p1/ron-m4-listkey`
 **Lane:** night-safe. **Opus** (a template with its parser round trips, as R18). **Starts when:** now. Feature analysis 2026-10-18; docs/04 5.1 and 5.3 (`[ ]` and the growing matrix stay EN5, milestone 6: the owner, 2026-10-18).
 **Read:** `spec/keyboard.yaml`, the `d8` key (line 242) and the `sq` key (lines 192–206) as the pattern for a Shift template with `sample` and `line`; `app/src/input/parse.ts` line 19 (`lbrace`) and lines 100 and 635 (`\left\{…\right\}` is a list, L6); `app/src/entry/boxes.ts` (a pair's body; a new template's recogniser lives here, docs/04 5.5); `app/test/cursor-grid.spec.ts` and `app/test/bksp-grid.spec.ts` (every template of keyboard.yaml); `app/src/keyboard/keyboard.test.ts` (samples, NO_ARGUMENT); `tests/golden/parser.yaml` group "lists-matrices"; `tests/tasks/tasks.yaml` t09; `docs/06-keypad-vs-g2.md` section 1.
@@ -617,16 +603,6 @@ Commits in this order:
 - `app/src/find/specids.test.ts` (failing on today's index): every unit and prefix id in `spec/unit-pad.yaml` and every grid entry of `spec/units-menu.yaml` (products such as `ft*lbf`, `Btu/h`, `m^3/h` split into their factors, and the prefixes) resolves to a Find item (`unit:<id>`, `pfx:<id>`); the constants in `constants.lists` resolve to `const:<id>` (e, π and i excepted).
 - The query test passes (every phrase in the top 3, at least 90 % first); `npm run index` is clean; the index within budget (≤ 400 kB raw, ≤ 100 kB gzip; the size in the report).
 
-### gorge, G29: the defs replay inside its budget, branch `p1/gorge-m4-replay`
-**Lane:** night-safe. **Starts when:** now. decisions.md "A4a" point 2 (decided 2026-10-18: a package); docs/04 8.3 (`defs` replay ≤ 50 ms at 200 definitions).
-**Read:** `app/src/engine/workerEngine.ts` lines 89–130 (the `define` message, `replayMs`); `app/src/engine/giac.worker.ts` (how `define` replays the entries); `app/src/engine/defs.ts` (`DefEntry.cmds`, `replayOrder`, `validDefs`; symbolic values first, G3); `app/src/bench.ts` lines 32–41 (`?bench=defs`: 150 values, 50 functions); `app/src/engine/workerEngine.test.ts` line 134 (`replayCommands`); `app/src/engine/defs.test.ts`; `app/test/safestart.spec.ts` (G19: a Giac error in a replayed entry is no crash); `tests/engine/memcap-test.mjs` (the shape of a Node engine test); `tools/probes/README.md` (the table a new probe joins).
-**Behaviour today:** 291 ms (p50) on the Tab One for 200 definitions against the 50 ms bar, 10.8 ms on the desktop (A4a); engine ready is then 1489 ms, 11 ms inside its 1.5 s bar. S4's library import and R38b's restore will grow the log.
-Commits in this order:
-1. **Measure first:** `tools/probes/replay-cost.mjs` (read-only; a README row): the `?bench=defs` log replayed on the dev engine in Node: engine calls per entry kind, time per entry, and the share of the total that is per-call overhead (a worker round trip or a `caseval`) against Giac's own work.
-2. **Cut it:** the replay sends the log in as few calls as the measurement justifies (one statement per batch, or one `caseval` for the values), keeps G3's order and G19's isolation (an entry's error never stops the rest), and keeps `replayMs` honest.
-3. **Pin it:** a Vitest or Node test that counts the engine calls for 200 entries (the number the measurement justified) and fails on today's code.
-**Done when:** the probe's numbers before and after are in the report (desktop p50 of the replay, calls per 200 entries); the order and safe-start tests pass; the golden gate and `memcap-test.mjs` pass; no change to the start chunk (worker code). The device bar is A12's.
-
 ### gorge, G30: `par` and `eseries` as engine definitions (EN7a), branch `p1/gorge-m6-par-eseries`
 **Lane:** night-safe. **Starts when:** now. Feature analysis 2026-10-18: the two EN7 functions the benchmark tasks t01 and t06 need; the rest of EN7 stays in milestone 6.
 **Read:** `app/src/engine/homeEval.ts` lines 123–140 (`ENGINE_DEFINITIONS`: `pasmod`, `sigfig`; loaded on the first input that names them, never on the engine-ready path); `find/functions.yaml` (tier 0: `id`, `names`, `giac`, `syntax`, `golden`); `app/src/find/insert.test.ts`; `tests/golden/home.yaml` (a case line; `stat-stddevp-sample` as the pattern); `tests/tasks/tasks.yaml` t01 and t06 (the values, `derived`); `tests/tasks/find-queries.yaml` lines 117–118 (`parallel`, `e24`: pending); docs/03 section 5 EN7; docs/04 3.3.
@@ -659,21 +635,6 @@ Commits in this order:
 **Done when:**
 - Vitest with the real engine, `derived`: `library/beams.txt` imports with its descriptions and its tests pass; each of the thirteen `bad-*.txt` is refused for its one reason (the probe's table); a clash with an own name is listed, not overwritten; an export re-imports to the same log.
 - The replay of 200 library definitions stays inside G29's budget on the desktop (the number in the report); typecheck, vitest and the golden gate (home) pass; the start chunk unchanged (the module is lazy). The report gives R59 the module's API.
-
-### annabell, A13: the pipeline after the night of 2026-10-18, branch `p1/annabell-pipeline2`
-**Lane:** day, first: the next night runs on it (no device). **Starts when:** now. From [research/night-shift-check-2026-10-18.md](../research/night-shift-check-2026-10-18.md) Part 2 (the evidence per item is there: `.tasks/archive/2026-10-18/015-g22f1/`, `022-g26/`, `.tasks/pass-4/reply.md`). A6f1 (Opus pass 1) is folded in as item 5.
-**Read:** `scripts/pipeline.sh` (`run_checks`, the `vitest` case and its re-run of `src/find/queries.test.ts`, `excerpt`, the `pass` subcommand); `scripts/night.sh` (the metacharacter branch and every `exit 1`); `app/scripts/gate.ts` (`goldenPaths`, the `index` check's skip); section 0c of this brief (rule 1, henri's prompt in `night.sh`, the Opus pass instructions); `docs/shifts/rules.md` section 4 step 3.
-1. **Vitest without colour, so the re-run fires:** the check runs vitest with `FORCE_COLOR=0` (or `--reporter=basic`) and the failing-file grep strips escape codes first. Today the grep `^ *(FAIL|❯)` never matches `^[[41m^[[1m FAIL`, so the one-time re-run of the Find timing test never ran (run 15 of 2026-10-18, `check-1-vitest.log:103`).
-2. **A timing-only failure is re-run once before it counts as a fix round:** a list `TIMING_CHECKS` in `pipeline.sh` (the Find 16 ms/key test, the golden `units` p95 bar, the `solve.spec.ts` persistence test, the clipboard poll `copy.spec.ts` "copy → paste gives the value back"); when every failing item of a check is on the list, that check runs again once, logged `re-run (timing)`; a second failure is a fix round as today. Four of the night's twelve fix rounds were such failures.
-3. **`night.sh` says why it stopped:** `STOPPED night.sh: henri's reply refused twice` (and the same for the "no pipeline command" exit) is logged and printed before any `exit 1`; henri's prompt says: no backtick, no `$` in a FIX prompt. Today two refusals end the night silently (02:16 on 2026-10-18, 6 h 49 min lost).
-4. **The `pass` subcommand exports `PW_PORT=$((5290 + n))`** and names it in the pass prompt, so a pass's e2e never meets a dev server from another checkout (pass 4 met pid 4016472 on port 5181).
-5. **A6f1:** the golden gate also runs when `app/src/units/`, `app/scripts/unit-case.ts`, `find/` or `tools/find-index/` change, in `gate.ts` `goldenPaths` and in `pipeline.sh`'s auto checks; the gate regenerates the Find index when `find/` or `tools/find-index/` changed against the base. Rules section 4 step 3 names the paths (the report gives the text).
-6. **The audit model at night:** `pipeline.sh` takes `--audit-model auto` as today; section 0c rule 1 (already written) says Opus for a gorge package. Nothing to build beyond a line in the `--dry-run` output that prints the audit model, so the owner can check a night command.
-**Done when:**
-- A test (`app/scripts/pipeline-logs.test.ts`, vitest, no engine) feeds a copy of `check-1-vitest.log` from `.tasks/archive/2026-10-18/015-g22f1/` (put under `tests/fixtures/pipeline/`) to the failing-file logic (moved into a small script the shell calls, or re-implemented in the test from the same grep) and gets `src/find/queries.test.ts`; a log with the Find test and another file failing gets both (no re-run); a golden log failing only on the `units` p95 line is classed timing. It fails on today's grep.
-- `gate-summary.test.ts` or a new test shows a change in `app/src/units/evaluate.ts` alone selects golden, and a change in `find/aliases.yaml` regenerates the index.
-- `scripts/pipeline.sh gorge "G32" --dry-run` prints the audit model; `scripts/pipeline.sh pass 99 "x" --dry-run` (add `--dry-run` to `pass`) prints the port and starts nothing.
-- typecheck and vitest pass; the report gives the text for rules section 4 step 3.
 
 ### annabell, A9: key vibration on the owner's phone (F41), branch `p1/annabell-haptics`
 **Lane:** day (a phone with a motor; take the device lock; not the Tab One). **Starts when:** the owner's phone is connected.
