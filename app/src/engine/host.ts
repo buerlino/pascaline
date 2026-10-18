@@ -356,6 +356,7 @@ export class EngineHost {
     const moved = used.filter((u) => u.facts.reliableDigits !== null).map((u) => ({ name: u.name, n: u.facts.reliableDigits! }));
     const shape = shapeOfResult(r);
     let pert: number[] | null | undefined;
+    let once = false;
     if (expr !== null && moved.length && !IDENT_NAME.test(expr.trim())) {
       pert = perturbedDigits(this.giac, expr, shape, els.map((e) => e.value!), moved, digits, restoreDigits);
     }
@@ -363,12 +364,16 @@ export class EngineHost {
       let n = Math.min(e.reliableDigits ?? P, cap);
       if (pert) n = Math.min(n, pert[k]!);
       const w = warn ?? e.warn ?? (pert === null ? "unchecked" : undefined);
+      if (pert === null && !warn && !e.warn) once = true;
       return { value: e.value!, exactRational: false, reliableDigits: n, ...(w ? { warn: w } : {}), big: false };
     });
     const b = resultFromFacts(facts, shape, digits, r.path, true, r.totalMs);
     // Only the names behind a ⚠: one with a warning, or one known to fewer digits than the setting shows.
-    const causes = used.filter((u) => u.facts.warn !== undefined || (u.facts.reliableDigits !== null && u.facts.reliableDigits < digits)).map((u) => u.name);
-    const why = { ...(r.why ?? {}), ...(causes.length ? { inherited: causes } : {}) };
+    const lost = pert ? pert.some((d) => d < digits) : false;
+    const causes = used
+      .filter((u) => u.facts.warn !== undefined || (u.facts.reliableDigits !== null && (u.facts.reliableDigits < digits || lost)))
+      .map((u) => u.name);
+    const why = { ...(r.why ?? {}), ...(causes.length ? { inherited: causes } : {}), ...(once ? { once: true as const } : {}) };
     return {
       ...b,
       ...(Object.keys(why).length ? { why } : {}),

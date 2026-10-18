@@ -206,6 +206,12 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect(home("B*2").why).toEqual({ inherited: ["B"] });
       expect(host.cas("B*2", defaultCasSettings).result.numeric?.why).toEqual({ inherited: ["B"] });
     });
+    it("a stored name whose move costs digits below the setting is named", () => {
+      host.home("G:=evalf(sqrt(2))", defaultHomeSettings);
+      const r = home("G-1.414213562373095048801688724");
+      expect(r.reliableDigits).toBeLessThan(12);
+      expect(r.why).toEqual({ inherited: ["G"] });
+    });
     it("a value evaluated only once says so", () => {
       expect(home("BesselJ(1,2)", 30).why).toEqual({ once: true });
     });
