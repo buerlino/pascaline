@@ -285,6 +285,11 @@ def check_unc(case: dict) -> list:
         return [] if case.get("unc", "none") == "none" and "shown" not in case else ["unc without unc_oracle"]
     mp.dps = 70
     sigma = eval(case["unc_oracle"], namespace())  # expressions come from our own case files
+    if M(sigma) == 0:  # a σ of 0 (G18f1): "0", and the value as Home shows it (`expect`) is left as it is
+        out = [] if case.get("unc") == "0" else [f"unc {case.get('unc')!r} but the oracle gives '0'"]
+        if "shown" in case and case["shown"] != f"{case.get('expect')} ± 0":
+            out.append(f"shown {case['shown']!r} but the oracle gives {case.get('expect')} ± 0")
+        return out
     text, place = two_digits(sigma)
     out = [] if case.get("unc") == text else [f"unc {case.get('unc')!r} but the oracle gives {text!r}"]
     if "shown" in case:

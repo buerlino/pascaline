@@ -264,11 +264,22 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
     const alone = sp.findIndex((x) => x !== null);
     if (alone >= 0) {
       const x = sp[alone]!;
-      const num = x.bare && req.slots.length === 1 && !req.consts?.length ? aloneNumber(req.formula, alone + 1) : null;
+      const lone = x.bare && req.slots.length === 1 && !req.consts?.length;
+      // A single pasupm(value,sigma) is the lone number of °C and °F (G18f1): K = a·x + b gives σ = a·σx, the offset drops out.
+      const uvars: UncVar[] = [];
+      const withPm = lone && !isLog(x.id, x.u) && req.formula.includes("pasupm(");
+      const symbolic = withPm ? uncertainValues(req.formula, uvars) : "";
+      const pm = withPm && uvars.length === 1 && new RegExp(`^\\s*pasv1\\s*\\*\\s*pasu${alone + 1}\\s*$`).test(symbolic);
+      const num = pm ? "pasv1" : lone && !withPm ? aloneNumber(req.formula, alone + 1) : null;
       if (num === null) throw refuseSpecial(x.id, x.u);
       // No end slot: °C, °F give K, dBm, dBW give W; a dB, bel or Np ratio has no SI unit (20 dB is not 10).
       if (isLog(x.id, x.u) && !req.end && x.id !== "dBm" && x.id !== "dBW") throw refuseSpecial(x.id, x.u);
-      return { expr: specialSource(x.id, x.u, num), ...endJob(req, table), ...(isAffine(x.u) ? { absTemp: true as const } : {}), inexact: false };
+      const abs = isAffine(x.u) ? { absTemp: true as const } : {};
+      if (pm) {
+        const v = uvars[0]!;
+        return { expr: specialSource(x.id, x.u, `(${v.value})`), ...endJob(req, table), ...abs, inexact: true, unc: { expr: specialSource(x.id, x.u, "pasv1"), vars: uvars } };
+      }
+      return { expr: specialSource(x.id, x.u, num), ...endJob(req, table), ...abs, inexact: false };
     }
     const slots = req.slots.map((s) => slotGiac(s, table));
     const vars: UncVar[] = [];

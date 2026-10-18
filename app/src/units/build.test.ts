@@ -89,6 +89,10 @@ describe("unit view builder (G16)", () => {
     expect(one("dBm", "3*pasu1")).toMatchObject({ expr: expect.stringContaining("pasup((3)/10)") });
     expect(one("oC", "1.5e-3*pasu1")).toMatchObject({ expr: expect.stringContaining("(1.5e-3)") });
     expect(one("oC", "2e3-1*pasu1")).toMatchObject({ error: "temperature" });
+    expect(one("oC", "pasupm(20,0.5)*pasu1")).toMatchObject({ absTemp: true, inexact: true, unc: { vars: [{ name: "pasv1", value: "20", sigma: "0.5" }] } });
+    expect(one("oC", "pasupm(20,0.5)*pasu1")).toMatchObject({ expr: expect.stringContaining("(20)") });
+    expect(one("oC", "pasupm(20,0.5)*2*pasu1")).toMatchObject({ error: "temperature" });
+    expect(one("dB", "pasupm(3,0.1)*pasu1")).toEqual({ error: "logarithmic", unit: "dB" });
     const to = (u: string) => buildJob({ formula: "2*pasu1", slots: [{ tokens: [{ unit: "m" }] }], end: { tokens: [{ unit: u }] } }, table);
     expect(to("oC")).toMatchObject({ end: "((1)*pasdimK^(1))", endOffset: "5463/20" });
     expect(to("dBm")).toMatchObject({ end: "((1/1000)*pasdimM^(1)*pasdimL^(2)*pasdimT^(-3))", endLog: "10*log10(pasux)" });
