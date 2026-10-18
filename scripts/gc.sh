@@ -11,13 +11,14 @@
 #    *.err logs in archived runs. Nothing tracked by git, nothing in engine/giac/_downloads or spike/prebuilt.
 # 3. Audit: every repo path named in CLAUDE.md and docs/README.md must exist; reports in docs/shifts/
 #    older than 14 days are listed as candidates. Tracked files are never moved or deleted here: the
-#    audit's findings go to .tasks/gc-<date>.md for the owner (or the next Opus pass).
+#    audit's findings go to .tasks/gc-<date>.md (a dry run: gc-<date>-dry.md) for the owner (or the next Opus pass).
 set -euo pipefail
 apply=0; [[ "${1:-}" == "--apply" ]] && apply=1
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"; cd "$main"
 coord="${PASCALINE_COORD:-$main/.coord}"; tasks="$main/.tasks"
 today="$(date +%F)"; arch="$tasks/archive/$today"; report="$tasks/gc-$today.md"
 mkdir -p "$tasks/archive"
+[[ $apply -eq 1 ]] || report="$tasks/gc-$today-dry.md"  # a dry run never overwrites the day's applied report
 # The path audit reads CLAUDE.md, docs/ and the repo paths of phase-1, not of whatever the main checkout has out.
 integ="$(git worktree list --porcelain | awk '/^worktree /{w=$2} /^branch refs\/heads\/phase-1$/{print w}')"
 [[ -n "$integ" ]] || integ="$main"
