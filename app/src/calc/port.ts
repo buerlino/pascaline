@@ -8,6 +8,8 @@ import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRe
 export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest } from "../engine/types.ts";
 export type { UserName } from "../engine/defs.ts";
 import type { UserName } from "../engine/defs.ts";
+import type { Quantity, UnitError, UnitRequest } from "../units/types.ts";
+export type { Quantity, UnitError, UnitRequest, UnitSlot, UnitToken } from "../units/types.ts";
 export { CAS_SOFT_BUDGET_MS, IDENT } from "../engine/types.ts";
 
 export type AngleUnit = "rad" | "deg";
@@ -100,6 +102,9 @@ export interface Calc {
   table(req: TableRequest, settings: CalcSettings): Promise<HomeResult[][]>;
   /** The user's variables and functions (Vars, Find's live items; docs/04 3.4), stored ones included once read. */
   names(): Promise<UserName[]>;
+  /** The unit view (G16, docs/04 4.2): the formula with its unit slots, evaluated exactly with the Find index's
+   *  factors (loaded on the first call, never at start) in the Giac worker; Cancel stops it as it stops Home. */
+  units(req: UnitRequest, settings: CalcSettings): Promise<Quantity | UnitError>;
   /** Stop the running job. Variables survive. Resolves when the engine can take calls again. */
   cancel(): Promise<void>;
 }

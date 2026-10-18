@@ -16,12 +16,20 @@ import {
 import { WorkerEngine } from "../engine/workerEngine.ts";
 import { userNamesOf } from "../engine/defs.ts";
 import { mark } from "../marks.ts";
-import { CalcCancelled, type Calc, type CalcSettings, type CasOutcome, type HomeOutcome, type UserName } from "./port.ts";
+import { CalcCancelled, type Calc, type CalcSettings, type CasOutcome, type HomeOutcome, type Quantity, type UnitError, type UnitRequest, type UserName } from "./port.ts";
+import type { IndexItem } from "../find/types.ts";
+
+export interface EngineCalcOptions {
+  /** The Find index's items, for the unit view's factor table (docs/04 4.2); read on the first units() call. */
+  findIndex?: () => Promise<readonly IndexItem[]>;
+}
 
 export class EngineCalc implements Calc {
   private readonly engine: MathEngine;
-  constructor(engine: MathEngine = new WorkerEngine()) {
+  private readonly findIndex: (() => Promise<readonly IndexItem[]>) | undefined;
+  constructor(engine: MathEngine = new WorkerEngine(), o: EngineCalcOptions = {}) {
     this.engine = engine;
+    this.findIndex = o.findIndex;
   }
 
   async ready(): Promise<{ safeStart?: { skipped: number } }> {
@@ -63,6 +71,11 @@ export class EngineCalc implements Calc {
 
   table(req: TableRequest, s: CalcSettings): Promise<HomeResult[][]> {
     return mapCancel(this.engine.table(req, homeSettings(s)));
+  }
+
+  units(req: UnitRequest, s: CalcSettings): Promise<Quantity | UnitError> {
+    // The builder and the factor table load with the unit view, never in the start chunk (docs/04 4.4).
+    return mapCancel(import("../units/calc.ts").then((m) => m.evaluateUnits(this.engine, this.findIndex, req, homeSettings(s))));
   }
 
   async names(): Promise<UserName[]> {

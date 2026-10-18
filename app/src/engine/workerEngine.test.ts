@@ -58,6 +58,17 @@ describe("WorkerEngine cancel (stand-in worker)", () => {
     engine.dispose();
   });
 
+  it("a unit-view job is cancelled like Home (G16)", async () => {
+    const workers: StuckWorker[] = [];
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new StuckWorker()), workers.at(-1)!) });
+    await engine.ready();
+    const job = expect(engine.units({ expr: "2*(((1)*pasdimL^(1)))", inexact: false }, defaultHomeSettings)).rejects.toBeInstanceOf(EngineCancelled);
+    await engine.cancel();
+    await job;
+    expect(workers).toHaveLength(2);
+    engine.dispose();
+  });
+
   it("a worker crash restarts like Cancel", async () => {
     const workers: StuckWorker[] = [];
     const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => (workers.push(new StuckWorker()), workers.at(-1)!) });
@@ -125,6 +136,20 @@ describe.skipIf(!giacAvailable())("WorkerEngine (real Giac in process)", () => {
     expect(t.replayMs).toBeGreaterThanOrEqual(0);
     expect((await engine.cas("f(3)", defaultCasSettings)).text).toBe("10");
     expect((await engine.home("a*4", defaultHomeSettings)).display).toBe("2");
+    engine.dispose();
+  });
+});
+
+describe.skipIf(!giacAvailable())("WorkerEngine unit view (real Giac in process, G16)", () => {
+  it("a job reads a stored Home variable, and works again in the worker a Cancel starts", async () => {
+    const engine = new WorkerEngine({ baseUrl: "/", createWorker: () => new InProcessWorker() });
+    await engine.ready();
+    await engine.home("ua:=0.5", defaultHomeSettings);
+    const job = { expr: "ua*(((1000)*(1)*pasdimL^(1)))", end: "(((1)*pasdimL^(1)))", inexact: false };
+    const first = await engine.units(job, defaultHomeSettings);
+    expect(first).toMatchObject({ value: { display: "500", exactRational: true }, dimension: "m1" }); // derived: 0.5 km = 500 m
+    await engine.cancel();
+    expect(await engine.units(job, defaultHomeSettings)).toMatchObject({ value: { display: "500" }, dimension: "m1" });
     engine.dispose();
   });
 });

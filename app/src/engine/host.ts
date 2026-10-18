@@ -27,6 +27,8 @@ import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex,
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
+import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
+import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
 
 /** What the host needs from a loaded Giac module (engine/giac/wasm/api.cc). */
@@ -230,6 +232,8 @@ export class EngineHost {
 
   /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
   private readonly loaded = new Set<string>();
+  /** UNIT_DEFINITIONS are loaded (the first units request). */
+  private unitsLoaded = false;
 
   /** This engine's copy of the definitions log (defs.ts): what the user's names hold, and the mark facts of the
    *  variables that hold floats (decisions M4-7). */
@@ -516,6 +520,22 @@ export class EngineHost {
     return analyze(this.giac, req, s);
   }
 
+  /** The unit view (G16, docs/04 4.2): in Home's mode (angle, budget, digits), with our unit definitions loaded on the
+   *  first request. A syntax error or a timeout is an engine error, never a value. */
+  units(job: UnitJob, s: HomeSettings): Quantity | UnitError {
+    if (!this.unitsLoaded) {
+      for (const d of UNIT_DEFINITIONS) this.giac.eval(d);
+      this.unitsLoaded = true;
+    }
+    this.useHomeMode(s);
+    try {
+      return unitEval(this.strict, job, s);
+    } catch (e) {
+      if (e instanceof GiacSyntaxError) return { error: "engine", detail: e.message };
+      throw e;
+    }
+  }
+
   /** Num table cells are Home evaluations, in Home mode (same budget per cell). */
   table(req: TableRequest, s: HomeSettings): HomeResult[][] {
     this.need(JSON.stringify(req));
@@ -602,6 +622,9 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           break;
         case "table":
           post({ id: req.id, type: "table", result: host.table(req.req, req.settings) });
+          break;
+        case "units":
+          post({ id: req.id, type: "units", result: host.units(req.job, req.settings) });
           break;
       }
     } catch (e) {

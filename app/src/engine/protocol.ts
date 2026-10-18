@@ -2,6 +2,7 @@
 // Messages between WorkerEngine (main thread) and the engine host (inside the worker).
 import type { DefChange, DefEntry } from "./defs.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
+import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
 export type Request =
   | { id: number; type: "init"; baseUrl: string; replay: DefEntry[] }
@@ -13,7 +14,9 @@ export type Request =
   | { id: number; type: "solve"; req: SolveRequest; settings: HomeSettings }
   | { id: number; type: "unknowns"; equations: string[] }
   | { id: number; type: "analyze"; req: AnalysisRequest; settings: HomeSettings }
-  | { id: number; type: "table"; req: TableRequest; settings: HomeSettings };
+  | { id: number; type: "table"; req: TableRequest; settings: HomeSettings }
+  /** The unit view (G16): a job built from the Find index's factors (units/build.ts), evaluated in Home's mode. */
+  | { id: number; type: "units"; job: UnitJob; settings: HomeSettings };
 
 /** `defs`: what an input defined or purged (defs.ts); the client keeps the log, stores it and gives it to a fresh
  *  worker after a Cancel, a crash or a relaunch. */
@@ -27,4 +30,5 @@ export type Response =
   | { id: number; type: "unknowns"; result: string[] }
   | { id: number; type: "analyze"; result: AnalysisResult }
   | { id: number; type: "table"; result: HomeResult[][] }
+  | { id: number; type: "units"; result: Quantity | UnitError }
   | { id: number; type: "fatal"; message: string; memory?: true };
