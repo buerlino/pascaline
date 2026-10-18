@@ -63,6 +63,16 @@ describe("parseLibrary (no engine)", () => {
     expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ local a,k; a[k[1]]:=x; return x; }\n").defs).toHaveLength(1);
     expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ x++; return \"a++\"; }\n").defs).toHaveLength(1);
   });
+  it("refuses a loop variable, an inner function and a storing value; accepts them local (derived)", () => {
+    const p = (d: string): string => `// pascaline library 1\n// d\n${d}\n`;
+    for (const l of ["for k from 1 to n do od;", "for k in [1,2] do od;", "pour k de 1 jusque n faire fpour;"])
+      expect(() => parseLibrary(p(`f(n):={ ${l} return n; }`)), l).toThrow(/assigns k, which is not local/);
+    expect(parseLibrary(p("f(n):={ local k; for k from 1 to n do od; return n; }")).defs).toHaveLength(1);
+    expect(() => parseLibrary(p("f(x):={ g(y):=y+1; return x; }"))).toThrow(/assigns g, which is not local/);
+    expect(parseLibrary(p("f(x):={ local g; g(y):=y+1; return x; }")).defs).toHaveLength(1);
+    expect(() => parseLibrary(p("v:=a++"))).toThrow(/assigns a, which is not local/);
+    expect(() => parseLibrary(p("v:=(a+=10)"))).toThrow(/assigns a, which is not local/);
+  });
   it("refuses a test line that assigns anywhere, by := ++ -- op= or =< (derived)", () => {
     const lib = (t: string): string => `// pascaline library 1\n// d\nf(x):=x\n// test: ${t}\n`;
     for (const t of ["(a:=5)==5", "f(a++)==1", "f(--a)==1", "f(a+=1)==1", "f(a-=1)==1", "f(a*=2)==1", "f(a/=2)==1", "f(a=<5)==1", "f(a[1]:=2)==1"])
