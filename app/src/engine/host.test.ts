@@ -275,4 +275,59 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect("why" in home("1/3")).toBe(false);
     });
   });
+  // G26 (deep-dive item 17): the digits a constant's uncertainty leaves. All values derived by hand from the table:
+  // G = 6.67430E-11 with σ = 0.00015E-11 (CODATA 2018, as the chip table holds it, input/chips.test.ts).
+  describe("uncDigits from a constant's uncertainty (G26)", () => {
+    const G = { value: "6.67430E-11", unc: "0.00015E-11" };
+    const C = { value: "299792458" };
+    const home = (i: string, consts?: Parameters<EngineHost["home"]>[2], digits = 12) => host.home(i, { ...defaultHomeSettings, digits }, consts).result;
+    const facts = (r: ReturnType<typeof home>) => ({ ...r, exactMs: 0, totalMs: 0 });
+
+    it("G·5.972ᴇ24: σ = 1.5E-15·5.972E24 = 8.958E9 under a value of 3.98589196E14, so 5 digits hold (derived)", () => {
+      const r = home("pasc_G*5.972E24", { G });
+      expect(r.uncDigits).toBe(5);
+      // the value is what the input with G's digits gives today
+      const { uncDigits, ...rest } = r;
+      expect(facts(rest as typeof r)).toEqual(facts(home("(6.67430E-11)*5.972E24")));
+      expect(home("pasc_G*5.972E24", { G }, 30).uncDigits).toBe(5);
+    });
+
+    it("G alone: 6.6743E-11 ± 1.5E-15 keeps 4 digits; an assignment's right side counts (derived)", () => {
+      expect(home("pasc_G", { G }).uncDigits).toBe(4);
+      expect(home("hgu:=pasc_G*2", { G }).uncDigits).toBe(5); // 1.33486E-10 ± 3E-15
+      host.home("purge(hgu)", defaultHomeSettings);
+    });
+
+    it("two constants combine in quadrature, not by sum or by the larger one (derived)", () => {
+      const a = { value: "3", unc: "0.6" };
+      const b = { value: "4", unc: "0.6" };
+      // 7 ± sqrt(0.36+0.36) = 0.849: 1 digit (a plain sum, 1.2, would leave 0)
+      expect(home("pasc_a+pasc_b", { a, b }).uncDigits).toBe(1);
+      // 20·4 = 80 ± sqrt((4·0.2)²+(20·0.035)²) = sqrt(0.64+0.49) = 1.063: 1 digit (the larger term, 0.8, would leave 2)
+      expect(home("pasc_a*pasc_b", { a: { value: "20", unc: "0.2" }, b: { value: "4", unc: "0.035" } }).uncDigits).toBe(1);
+    });
+
+    it("σ follows the angle mode: sin(a) with a = 30 ± 1 (derived)", () => {
+      const a = { value: "30", unc: "1" };
+      // degrees: 0.5 ± cos(30°)·π/180 = 0.0151, so 1 digit; radians: sin(30) = -0.988 ± |cos(30)| = 0.154, so 0
+      expect(host.home("sin(pasc_a)", { ...defaultHomeSettings, angle: "deg" }, { a }).result.uncDigits).toBe(1);
+      expect(host.home("sin(pasc_a)", defaultHomeSettings, { a }).result.uncDigits).toBe(0);
+    });
+
+    it("an exact constant (c) gives none; nor does a σ of 0", () => {
+      const r = home("pasc_c*2", { c: C });
+      expect(r.display).toBe("599584916");
+      expect("uncDigits" in r).toBe(false);
+      expect("uncDigits" in home("pasc_c*2", { c: { value: "299792458", unc: "0" } })).toBe(false);
+      expect("uncDigits" in home("pasc_G-pasc_G", { G })).toBe(false);
+      expect(home("pasc_c*pasc_G", { c: C, G }).uncDigits).toBe(5); // 2.0009E-2 ± 4.497E-7: digits at 1E-2…1E-6 hold (derived)
+    });
+
+    it("without the table everything is as today", () => {
+      expect("uncDigits" in home("(6.67430E-11)*5.972E24")).toBe(false);
+      expect(facts(home("1/3", {}))).toEqual(facts(home("1/3")));
+      expect(home("pasc_G*2").display).toBe(home("pasc_G*2", {}).display);
+      expect("uncDigits" in home("pasc_G*2")).toBe(false);
+    });
+  });
 });

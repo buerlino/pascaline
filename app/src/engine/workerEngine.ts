@@ -20,6 +20,7 @@ import {
   type MathEngine,
 } from "./types.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
+import type { ConstTable } from "./constUnc.ts";
 
 /** The part of a Worker that WorkerEngine uses (lets tests drive it without a browser). */
 export interface WorkerLike {
@@ -198,8 +199,8 @@ export class WorkerEngine implements MathEngine {
     }
   }
 
-  async home(input: string, settings: HomeSettings): Promise<HomeResult> {
-    const r = await this.call({ type: "home", input, settings });
+  async home(input: string, settings: HomeSettings, consts?: ConstTable): Promise<HomeResult> {
+    const r = await this.call({ type: "home", input, settings, ...(consts ? { consts } : {}) });
     if (r.type !== "home") throw new Error(`unexpected ${r.type}`);
     this.keep(r.defs);
     return r.result;

@@ -30,6 +30,7 @@ import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntr
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
+import { constUncDigits, withConstValues, type ConstTable } from "./constUnc.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
 
@@ -391,7 +392,22 @@ export class EngineHost {
     return { reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}) };
   }
 
-  home(input: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
+  /**
+   * `consts` (G26): the constants the input holds by name (`pasc_<id>`) with their values and uncertainties. The
+   * values are put in and the input evaluates as without the table; a numeric result from an inexact constant then
+   * carries `uncDigits` (constUnc.ts). Without the table, nothing changes.
+   */
+  home(input: string, s: HomeSettings, consts?: ConstTable): { result: HomeResult; defs: DefChange[] } {
+    if (!consts) return this.homeRun(input, s);
+    const named = input;
+    const out = this.homeRun(withConstValues(input, consts), s);
+    const asg = simpleAssignment(named);
+    if (isStateful(named) && !asg) return out;
+    const n = constUncDigits(this.giac, asg ? asg.rhs : named, consts, out.result, Math.trunc(out.result.digits ?? s.digits));
+    return n === undefined ? out : { ...out, result: { ...out.result, uncDigits: n } };
+  }
+
+  private homeRun(input: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
     this.need(input);
     this.useHomeMode(s);
     const t0 = performance.now();
@@ -620,7 +636,7 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           post({ id: req.id, type: "result", ...host.eval(req.input) });
           break;
         case "home":
-          post({ id: req.id, type: "home", ...host.home(req.input, req.settings) });
+          post({ id: req.id, type: "home", ...host.home(req.input, req.settings, req.consts) });
           break;
         case "cas":
           post({ id: req.id, type: "cas", ...host.cas(req.input, req.settings) });
