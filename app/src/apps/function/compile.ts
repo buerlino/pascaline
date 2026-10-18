@@ -27,7 +27,7 @@ export function compileDefinition(latex: string): Compiled {
   let giac: string;
   try {
     json = renameX(parseLatex(latex));
-    giac = mathJsonToGiac(json);
+    giac = mathJsonToGiac(json, { realOddRoots: true }); // P5 (b), R39
   } catch (e) {
     return { giac: "", error: e instanceof SerializeError ? e.message : String(e) };
   }
