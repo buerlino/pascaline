@@ -53,6 +53,8 @@ functions:
   - { id: "fn:inv", title: "Inverse (matrix)", desc: "Inverse of a square matrix, or 1/x.", names: ["inverse", "inverse matrix", "matrix inverse"], giac: "inv", syntax: "inv(M)", golden: "mat-inv" }
   - { id: "fn:tran", title: "Transpose", desc: "Transpose of a matrix.", names: ["transpose"], giac: "tran", syntax: "tran(M)", golden: "mat-tran" }
   - { id: "fn:cross", title: "Cross product", desc: "Cross product of two 3-vectors.", names: ["cross product", "vector product"], giac: "cross", syntax: "cross(u, v)", golden: "vec-cross" }
+  - { id: "fn:par", title: "Resistors in parallel", desc: "1/(1/a + 1/b + …) for any number of values, exact; a zero gives 0.", names: ["parallel", "‖", "resistors in parallel"], giac: "par", syntax: "par(a, b, …)", golden: "fn-par" }
+  - { id: "fn:eseries", title: "Preferred value (E series)", desc: "The IEC 60063 value of E6, E12, E24, E48, E96 or E192 nearest to x, in x's decade: eseries(24, 3870) = 3900.", names: ["e24", "e12", "e96", "preferred value", "standard resistor"], giac: "eseries", syntax: "eseries(n, x)", golden: "fn-eseries" }
 
 # Giac commands left out of the index: they need Xcas's windows, turtle, files, folders, sound or command
 # history, none of which exists in Pascaline (Giac's own ans() is not our Ans). Entries whose English line says

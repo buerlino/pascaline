@@ -13,6 +13,7 @@
 //
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
+import { eseriesDefinition } from "./eseries.ts";
 import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
@@ -140,6 +141,14 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     'if (type(x)!=integer and type(x)!=rational) { x:=evalf(x,n+30); if (type(x)!=real) throw("sigfig: x must be a real number"); } ' +
     "a:=abs(x); p:=floor(evalf(log10(a),30)); while (10^p>a) p:=p-1; while (10^(p+1)<=a) p:=p+1; " +
     "k:=n-1-p; m:=floor(a*10^k+1/2); return sign(x)*m/10^k; }",
+  // G30 (EN7a): n resistors in parallel, 1/(1/a+1/b+…), exact; a zero argument gives exactly 0. Giac hands the
+  // arguments of a call to a one-parameter function as one sequence, which [a] makes a list.
+  par:
+    "par(a):={ local l,s,k; l:=[a]; if (size(l)==0) throw(\"par: needs at least one value\"); " +
+    "for (k:=0;k<size(l);k:=k+1) { if (l[k]==0) return 0; } " +
+    "s:=0; for (k:=0;k<size(l);k:=k+1) s:=s+1/l[k]; return normal(1/s); }",
+  // G30 (EN7a): the IEC 60063 preferred value nearest to x in x's decade (eseries.ts).
+  eseries: eseriesDefinition(),
 };
 
 /** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not

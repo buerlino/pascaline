@@ -49,7 +49,7 @@ export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
   "sqrt", "exp", "ln", "log", "log10", "sin", "cos", "tan", "asin", "acos", "atan",
   "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
   "abs", "re", "im", "conj", "arg", "sign", "floor", "ceil", "round", "frac", "max", "min",
-  "sigfig",
+  "sigfig", "par", "eseries",
 ]);
 
 const FLOAT_LITERAL = /(?<![A-Za-z_0-9.])(?:\d+\.\d*|\.\d+|\d+(?=e[+-]?\d))(?:e[+-]?\d+)?/;
