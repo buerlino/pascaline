@@ -23,7 +23,7 @@ Route P would need a separate Giac patch for each of nine paths, and each patch 
 | D7 calculus in DEG: antiderivatives, desolve, laplace, ilaplace, definite integrals, limit, series; and 3 that are right today | 12 | 3 / 7 / 2 (limit and series: "works only in radian mode") | 12 right |
 | D8 the plot against Root | 2 | 1 / 1 / 0 (curve −0.801 at 180) | 2 right (JS `Math.sin(pasdeg*x)`) |
 | D12 complex power of a negative number | 3 | 0 / 3 / 0 | 3 right |
-| Findings 1–4: stored values, Ans and `\res` text, exp stored or built by Giac, functions defined in RAD or by a library | 11 | 0 / 11 / 0 | 11 right |
+| Findings 1–4: stored values, Ans and `\res` text, exp stored or built by Giac, functions defined in RAD or by a library | 10 | 0 / 10 / 0 | 10 right |
 | Controls (functions called in both modes, sin, asin, arg, polar entry, the ° template, e^(iπ)) | 9 | 9 / 0 / 0 | 9 right |
 | Unit view (`sin(30)`, `sin(30°)`, `asin(1/2)·2 m` in both modes) | 4 | 4 / 0 / 0 | 4 right |
 | **Total** | **52** | **18 / 32 / 2** | **52 / 0 / 0** |
