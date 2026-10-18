@@ -98,7 +98,7 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
     const busy = loadavg()[0] ?? 0;
     if (busy > cpus().length) { console.warn(`find queries: host load ${busy.toFixed(1)} > ${cpus().length} cores; the p95 assertion is skipped`); return; }
     expect(p95).toBeLessThan(8);
-  }, 30_000);
+  }, 60_000); // 3 rounds over every key take over 5 s on a loaded host; the load check above, not vitest's timeout, decides
 });
 
 it("finds the full generated index (otherwise the query test was skipped)", () => {

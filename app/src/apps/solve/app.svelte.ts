@@ -44,7 +44,7 @@ interface Stored {
 export function compileEquation(latex: string): { giac: string; error: string } {
   if (latex.trim() === "") return { giac: "", error: "" };
   try {
-    return { giac: mathJsonToGiac(parseLatex(latex)), error: "" };
+    return { giac: mathJsonToGiac(parseLatex(latex), { realOddRoots: true }), error: "" };
   } catch (e) {
     return { giac: "", error: e instanceof SerializeError ? e.message : String(e) };
   }

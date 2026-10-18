@@ -118,6 +118,17 @@ cases:
   - { id: "roots-14", latex: "\\sqrt{\\sqrt{x}}", expect: "x^(1/4)", source: "derived", group: "roots" }
   - { id: "roots-15", latex: "\\frac{\\sqrt{3}}{2}", expect: "sqrt(3)/2", source: "derived", group: "roots" }
   - { id: "roots-16", latex: "\\frac{-b+\\sqrt{b^2-4ac}}{2a}", expect: "(-b+sqrt(b^2-4*a*c))/(2*a)", source: "derived", group: "roots" }
+  # P5 (b), R39: with realOddRoots (Home, Solve, Function; not CAS) a power with a literal exponent p/q, q odd, is the real root
+  - { id: "roots-17", latex: "\\left(-8\\right)^{\\frac{1}{3}}", options: { realOddRoots: true }, expect: "-2", source: "virtual-calc", g2: 11, group: "roots", note: "the G2 gives -2 in Home (items 4 and 11)" }
+  - { id: "roots-18", latex: "\\left(-8\\right)^{\\frac{2}{3}}", options: { realOddRoots: true }, expect: "4", source: "derived", group: "roots", note: "(real cube root)^2 = (-2)^2" }
+  - { id: "roots-19", latex: "\\left(-32\\right)^{\\frac{1}{5}}", options: { realOddRoots: true }, expect: "-2", source: "derived", group: "roots" }
+  - { id: "roots-20", latex: "\\left(-8\\right)^{1/3}", options: { realOddRoots: true }, expect: "-2", source: "derived", group: "roots", note: "a flat / in the exponent is the same literal fraction" }
+  - { id: "roots-21", latex: "\\left(-8\\right)^{-\\frac{1}{3}}", options: { realOddRoots: true }, expect: "-1/2", source: "derived", group: "roots" }
+  - { id: "roots-22", latex: "\\left(-8\\right)^{\\frac{2}{6}}", options: { realOddRoots: true }, expect: "-2", source: "derived", group: "roots", note: "the fraction is reduced first: 2/6 is 1/3 (default, decisions R39)" }
+  - { id: "roots-23", latex: "x^{\\frac{1}{3}}", options: { realOddRoots: true }, expect: "surd(x,3)", source: "derived", group: "roots" }
+  - { id: "roots-24", latex: "\\left(-8\\right)^{\\frac{1}{2}}", options: { realOddRoots: true }, expect: "2*sqrt(2)*i", source: "derived", group: "roots", note: "an even denominator keeps the principal root (P5 a)" }
+  - { id: "roots-25", latex: "\\left(-8\\right)^{0.2}", options: { realOddRoots: true }, expect: "(-8)^0.2", source: "derived", group: "roots", note: "not a literal fraction: Giac's (principal) power" }
+  - { id: "roots-26", latex: "\\left(-8\\right)^{\\frac{1}{3}}", expect: "(-8)^(1/3)", source: "derived", group: "roots", note: "CAS (no realOddRoots): the principal root, unchanged" }
   # --- trig
   - { id: "trig-01", latex: "\\sin\\left(x\\right)", expect: "sin(x)", source: "derived", group: "trig" }
   - { id: "trig-02", latex: "\\cos\\left(x\\right)", expect: "cos(x)", source: "derived", group: "trig" }

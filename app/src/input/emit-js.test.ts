@@ -13,6 +13,14 @@ const cases: [string, (x: number) => number][] = [
   ["\\sqrt[3]{x}", (x) => Math.cbrt(x)], // L6: real odd roots for the root template (derived), also for x < 0
   ["\\sqrt[5]{x}", (x) => Math.sign(x) * Math.pow(Math.abs(x), 1 / 5)],
   ["\\sqrt[4]{x}", (x) => Math.pow(x, 1 / 4)],
+  // P5 (b), R39: a power with a literal p/q exponent, q odd, is the real root, as in Home (derived)
+  ["x^{1/3}", (x) => Math.cbrt(x)],
+  ["x^{\\frac{2}{3}}", (x) => Math.cbrt(x) ** 2],
+  ["x^{\\frac{1}{5}}", (x) => Math.sign(x) * Math.abs(x) ** (1 / 5)],
+  ["x^{-\\frac{1}{3}}", (x) => 1 / Math.cbrt(x)],
+  ["x^{\\frac{2}{6}}", (x) => Math.cbrt(x)], // reduced first: 2/6 is 1/3
+  ["x^{\\frac{1}{2}}", (x) => Math.pow(x, 1 / 2)], // even q: NaN for x < 0, as before
+  ["x^{0.2}", (x) => Math.pow(x, 0.2)], // not a literal fraction
   ["\\ln\\left(x\\right)", (x) => Math.log(x)],
   ["\\log\\left(x\\right)", (x) => Math.log10(x)],
   ["\\exponentialE^{-x^2}", (x) => Math.exp(-(x * x))],
@@ -31,6 +39,10 @@ const cases: [string, (x: number) => number][] = [
 const xs = [-3.7, -2, -1, -0.5, 0, 0.001, 0.5, 1, 2, 3.3, 10];
 
 describe("latex to JS (plot evaluator)", () => {
+  it("x^{1/3} at x = -8 is -2 (R39)", () => {
+    expect(toFn("x^{1/3}")(-8)).toBe(-2);
+    expect(toFn("x^{\\frac{2}{3}}")(-8)).toBeCloseTo(4, 12);
+  });
   for (const [latex, ref] of cases) {
     it(latex, () => {
       const f = toFn(latex);
