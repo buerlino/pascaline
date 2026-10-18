@@ -271,12 +271,29 @@ export class EngineHost {
    *  Symbolic values first, while every name in them is still free (defs.ts). Returns the time it took. */
   restore(entries: readonly DefEntry[]): number {
     const t0 = performance.now();
+    // G29: values and functions go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost.
+    // Assumptions and inputs kept as typed go alone. A batch that left a syntax error is run again one command at a
+    // time (values and functions can be set twice), so one bad entry never takes the entries after it down (G19).
+    let batch: string[] = [];
+    const flush = (): void => {
+      if (!batch.length) return;
+      this.giac.clearMessages();
+      this.giac.eval(batch.join(";") + ";");
+      if (batch.length > 1 && /syntax error/.test(this.giac.messages())) for (const c of batch) this.giac.eval(c);
+      batch = [];
+    };
     for (const e of replayOrder(entries)) {
-      for (const c of e.cmds) {
-        this.need(c); // a replayed definition may use one of ours
-        this.giac.eval(c);
+      const plain = (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!);
+      for (const c of e.cmds) this.need(c); // a replayed definition may use one of ours
+      if (plain) {
+        batch.push(e.cmds[0]!);
+        if (batch.length >= REPLAY_BATCH) flush();
+      } else {
+        flush();
+        for (const c of e.cmds) this.giac.eval(c);
       }
     }
+    flush();
     this.record(entries.map((e) => ({ set: e })));
     return performance.now() - t0;
   }
@@ -596,6 +613,22 @@ export class EngineHost {
     apply();
     this.modeKey = key;
   }
+}
+
+/** Commands per Giac call in a replay (G29; tools/probes/replay-cost.mjs: 10–50 are as fast, 200 in one call is not). */
+export const REPLAY_BATCH = 25;
+
+/** Brackets and quotes pair up: a command with a stray one would swallow what follows it in a batch. */
+function balanced(cmd: string): boolean {
+  let depth = 0;
+  let quote = false;
+  for (const ch of cmd) {
+    if (ch === '"') quote = !quote;
+    else if (quote) continue;
+    else if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") if (--depth < 0) return false;
+  }
+  return depth === 0 && !quote;
 }
 
 /** G24: a failed allocation reaches us as a C++ exception (`WebAssembly.Exception`, from `new`) or as an abort

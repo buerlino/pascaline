@@ -331,3 +331,38 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     });
   });
 });
+
+describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few engine calls (G29)", () => {
+  const mk = (name: string, kind: "var" | "fn" | "other", cmd: string, extra: object = {}) =>
+    ({ name, kind, cmds: [cmd], preview: "", view: "cas" as const, time: 0, ...extra });
+  const counting = async () => {
+    const { giac } = await loadNodeGiac();
+    const calls: string[] = [];
+    return { giac: { ...giac, eval: (s: string) => (calls.push(s), giac.eval(s)) }, calls, raw: giac };
+  };
+
+  it("200 definitions take at most 10 engine calls (was 200), and every name is set", async () => {
+    const { giac, calls, raw } = await counting();
+    const log = [
+      ...Array.from({ length: 150 }, (_, i) => mk(`dv${i + 1}`, "var", `dv${i + 1}:=(${i + 1}/7+${i + 1})`)),
+      ...Array.from({ length: 50 }, (_, i) => mk(`df${i + 1}`, "fn", `df${i + 1}(x):=x^2+${i + 1}*x+sin(${i + 1})`)),
+    ];
+    new EngineHost(giac).restore(log);
+    expect(calls.length).toBeLessThanOrEqual(10);
+    expect(raw.eval("dv7*7")).toBe("56"); // derived: 7*(1+7)
+    expect(raw.eval("df3(0)")).toBe("sin(3)");
+  });
+
+  it("G3's order: a symbolic value goes first, even inside a batch", async () => {
+    const { giac, raw } = await counting();
+    new EngineHost(giac).restore([mk("K", "var", "K:=(5)"), mk("S", "var", "S:=(K*x+1)", { early: true })]);
+    expect(raw.eval("S")).toBe("K*x+1"); // S was set while K was free, so it still holds the name K
+    expect(raw.eval("K")).toBe("5");
+  });
+
+  it("G19: a broken entry never stops the ones after it, in a batch or alone", async () => {
+    const { giac, raw } = await counting();
+    new EngineHost(giac).restore([mk("a1", "var", "a1:=(1)"), mk("bad", "var", "bad:=(2"), mk("a3", "var", "a3:=(3)"), mk("o", "other", "o1,o2:=4,5"), mk("a5", "var", "a5:=(5)")]);
+    expect(raw.eval("a1+a3+a5+o1+o2")).toBe("18"); // derived: 1+3+5+4+5
+  });
+});
