@@ -386,7 +386,7 @@ function unitLatex(printed) {
 /** Units, prefixes and physical constants from libqalculate's data files, checked and valued by the qalc build. */
 async function qalcItems(q, xml, ours, aliases) {
   const items = [];
-  const stats = { units: 0, unitsSkipped: [], composites: 0, prefixes: 0, consts: 0, constsSkipped: [], noSi: [], siChecked: 0 };
+  const stats = { units: 0, unitsSkipped: [], composites: 0, prefixes: 0, consts: 0, constsSkipped: [], noSi: [], overrides: [], siChecked: 0 };
 
   // --- prefixes
   const pfxBySym = new Map(); // ascii symbol -> {decimal exponent | binary exponent}
@@ -553,13 +553,13 @@ async function qalcItems(q, xml, ours, aliases) {
       const want = evalProduct(check.si);
       const got = base && !base.dec && !base.piPow ? base.coef : null;
       const same = !!got && feq(got, want);
-      if (!same && check.known) {
-        // a known qalc data error (check.known says where it is tracked): no factor rather than a wrong one
-        notes.push(`${item.id}: qalc's factor ${si} differs from the definition ${check.si} (${check.known}); si left out`);
-        stats.noSi.push(`${u.id} (qalc's factor differs from its definition: ${check.known})`);
-        si = null;
+      if (!same && check.override) {
+        // a known qalc data error (check.override says why): our exact factor replaces qalc's (G13)
+        notes.push(`${item.id}: qalc's factor ${si} differs from the definition ${check.si} (${check.override}); ours is used`);
+        si = ftext(want);
+        stats.overrides.push(`${u.id} (${check.override})`);
       } else if (!same) fail(`${item.id}: qalc's factor ${si} differs from the definition ${check.si}`);
-      else if (check.known) fail(`${item.id}: matches its definition now; remove "known" from find/units.yaml checks`);
+      else if (check.override) fail(`${item.id}: qalc matches its definition now; remove "override" from find/units.yaml checks`);
     }
     if (si !== null) item.si = si;
     item.insert = `\\unit{${u.id}}{${unitLatex(printed)}}`;
@@ -622,7 +622,17 @@ async function qalcItems(q, xml, ours, aliases) {
     const check = ours.checks?.[item.id];
     if (check !== undefined) {
       stats.siChecked++;
-      if (!exact || !feq(r.piPow ? frac(0n) : r.coef, evalProduct(check.value))) fail(`${item.id}: qalc gives ${item.value}, the definition ${check.value}`);
+      if (check.override && !exact) {
+        // CODATA 2022 (NIST allascii) differs from qalc's value or uncertainty: ours replaces it (G13); fails once qalc agrees
+        const sameV = feq(decFrac(item.value), decFrac(check.value)), sameU = check.unc === undefined || feq(decFrac(item.unc), decFrac(check.unc));
+        if (sameV && sameU) fail(`${item.id}: qalc matches CODATA now; remove "override" from find/units.yaml checks`);
+        else {
+          notes.push(`${item.id}: qalc gives ${item.value} ± ${item.unc}, CODATA 2022 ${check.value} ± ${check.unc ?? item.unc} (${check.override}); ours is used`);
+          stats.overrides.push(`${id} (${check.override})`);
+          item.value = check.value;
+          if (check.unc !== undefined) item.unc = check.unc;
+        }
+      } else if (!exact || !feq(r.piPow ? frac(0n) : r.coef, evalProduct(check.value))) fail(`${item.id}: qalc gives ${item.value}, the definition ${check.value}`);
     }
     items.push(item);
     stats.consts++;
@@ -743,7 +753,7 @@ console.log(`find-index: ${json.length} bytes raw, ${gz} bytes gzip, ${(performa
   ` (aide_cas: ${fns.entries} entries, ${fns.dropped} left out: ${Object.entries(fns.skipped).map(([k, v]) => `${v} ${k}`).join(", ")})`);
 if (qstats) {
   console.log(`find-index: qalc: ${qstats.units} units (${qstats.composites} composites), ${qstats.prefixes} prefixes, ${qstats.consts} constants; ` +
-    `${qstats.unitsSkipped.length} units and ${qstats.constsSkipped.length} constants skipped, ${qstats.noSi.length} units without si, ${qstats.siChecked} values checked against definitions`);
+    `${qstats.unitsSkipped.length} units and ${qstats.constsSkipped.length} constants skipped, ${qstats.noSi.length} units without si, ${qstats.siChecked} values checked against definitions, ${qstats.overrides.length} overridden`);
   if (VERBOSE) {
     console.log(`  units skipped: ${qstats.unitsSkipped.join(", ")}`);
     console.log(`  constants skipped: ${qstats.constsSkipped.join(", ")}`);
