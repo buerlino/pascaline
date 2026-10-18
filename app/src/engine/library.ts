@@ -65,9 +65,30 @@ function topLevelSemicolon(s: string): boolean {
 }
 
 const NOSTR = (s: string): string => s.replace(/"[^"]*"/g, '""');
-/** Every way Giac stores into a name: `a:=`, `a[i]:=`, `a=<`, `a+=` (also -= *= /=), `a++`, `a--`, `++a`, `--a`.
- *  Each match carries the base name in group 1 or 2. */
-const STORE = /(?<![A-Za-z0-9_.])([A-Za-z][A-Za-z0-9_]*)\s*(?:\[[^\]]*\]\s*)*(?::=|=<|[-+*/]=|\+\+|--)|(?:\+\+|--)\s*([A-Za-z][A-Za-z0-9_]*)/g;
+/** Every name the (string-free) text stores into: `a:=`, `a[i]:=` (any nesting in the index), `a=<`, `a+=` (also -= *= /=),
+ *  `a++`, `a--`, `++a`, `--a`. Returns the base names. */
+function storedNames(s: string): string[] {
+  const out: string[] = [];
+  for (const m of s.matchAll(/(?<![A-Za-z0-9_.])[A-Za-z][A-Za-z0-9_]*/g)) {
+    const name = m[0];
+    let i = m.index + name.length;
+    for (;;) {
+      while (/\s/.test(s[i] ?? "")) i++;
+      if (s[i] !== "[") break;
+      let d = 0;
+      for (; i < s.length; i++) {
+        if (s[i] === "[") d++;
+        else if (s[i] === "]" && --d === 0) break;
+      }
+      if (d !== 0) break;
+      i++;
+    }
+    const after = s.slice(i, i + 2);
+    const before = s.slice(0, m.index).replace(/\s+$/, "").slice(-2);
+    if (after === ":=" || after === "=<" || /^[-+*/]=$/.test(after) || after === "++" || after === "--" || before === "++" || before === "--") out.push(name);
+  }
+  return out;
+}
 
 /** The expression stores into some name anywhere outside strings (a test line must not). */
 function assigns(s: string): boolean {
@@ -90,11 +111,7 @@ function globalAssigned(text: string): string | undefined {
   const body = NOSTR(text.slice(h[0].length));
   const own = new Set((h[1] ?? h[2] ?? "").split(",").map((p) => p.trim()).filter(Boolean));
   for (const m of body.matchAll(/\blocal\s+([^;]+);/g)) for (const n of m[1]!.split(",")) own.add(n.trim().split(/\s|:=/)[0]!);
-  for (const m of body.matchAll(STORE)) {
-    const n = m[1] ?? m[2]!;
-    if (!own.has(n)) return n;
-  }
-  return undefined;
+  return storedNames(body).find((n) => !own.has(n));
 }
 
 /** Reads a library file: encoding, size, stamp, blocks, every rule that needs no engine (r10 section 1.3). Throws a

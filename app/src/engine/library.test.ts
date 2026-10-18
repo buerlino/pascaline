@@ -52,7 +52,7 @@ describe("parseLibrary (no engine)", () => {
     expect(parseLibrary(lib("f(1)==1")).defs[0]!.tests).toHaveLength(1);
   });
   it("refuses every form of storing into a global in a body, for fn and arrow definitions (derived)", () => {
-    const forms = ["a++", "a--", "++a", "--a", "a+=1", "a-=1", "a*=2", "a/=2", "a=<5", "a[1]:=x", "a:=1"];
+    const forms = ["a++", "a--", "++a", "--a", "a+=1", "a-=1", "a*=2", "a/=2", "a=<5", "a[1]:=x", "a:=1", "a[k[1]]:=x", "a[b[1]]++", "a[f(1)][2]+=1"];
     for (const f of forms) {
       for (const d of [`f(x):={ ${f}; return x; }`, `f:=x->{ ${f}; return x; }`, `f:=(x,y)->{ ${f}; return x; }`]) {
         expect(() => parseLibrary(`// pascaline library 1\n// d\n${d}\n`), d).toThrow(/the body assigns a, which is not local/);
@@ -60,6 +60,7 @@ describe("parseLibrary (no engine)", () => {
     }
     expect(() => parseLibrary("// pascaline library 1\n// d\ng(x):={ b[1]:=x; return x; }\n")).toThrow(/assigns b,/);
     expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ local a,k; a++; a+=1; for (k:=1;k<3;k++) { a[1]:=k; } return x; }\n").defs).toHaveLength(1);
+    expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ local a,k; a[k[1]]:=x; return x; }\n").defs).toHaveLength(1);
     expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ x++; return \"a++\"; }\n").defs).toHaveLength(1);
   });
   it("refuses a test line that assigns anywhere, by := ++ -- op= or =< (derived)", () => {
