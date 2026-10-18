@@ -7,6 +7,30 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-18 S9: results mode, the slice and the first action set. OPEN.** The shape of P16, with its evidence and R53's package text: [research/r13-results-mode.md](research/r13-results-mode.md).
+  - **Recommendation:**
+    - View's tap slides the keypad down to a **44 px slice**. A tap on the slice, Android back, a hardware Escape (after Esc's own jobs) and Insert, Recall or Store ▶ bring it back. The mode is in Home and CAS only.
+    - While collapsed, **a tap on a history row picks it**, and R11's action line shows **six** actions: Insert, Recall, Copy, Store ▶, Delete and the new **Plot**, which draws a CAS row in x in the Function app.
+    - Plot becomes **Menu item 6**: 7 Copy as, 8 Paste, 9 Share, 0 Clear, and Settings becomes the last row without a digit.
+    - Move and merge are not built. Unit check (the unit view on the row with no end slot) comes after R24c.
+    - The test: if fewer than 14 collapses by View, or fewer than 10 actions run while collapsed, in 14 days, the mode goes. An action used fewer than 3 times goes.
+  - **Why:**
+    - The slice is the smallest touch target (docs/05 3.3). It gives the viewport 470 px (share 0.354 → 0.914, about 5.4 more rows of fractions, Pixel 7 profile; `tools/probes/results-geometry.mjs`) and costs nothing with the keypad up.
+    - The actions reuse R11's line and list, so no new bar and no new gesture is added (rule 7). The one change is that a tap picks while the keys are gone, and that state is visible.
+    - Merge costs 4 presses either way (no gain, rule 5), and move changes no value.
+    - Plot is the one named action that removes a G2 friction now.
+  - **Cost:** R53 ≈ 1.5 d (ron, Opus). With the keypad up, the ten tasks are unchanged; started collapsed, each costs 1 press more. Settings by keys goes from ☰ 0 to ☰ ▲ Enter.
+  - **Alternatives:**
+    - an 8 px grip (+36 px, too small to hit);
+    - a live row 0 of the cluster as the slice (48 px; a tap on it is then sometimes a key, against "tapping the slice brings it back");
+    - Plot as an unnumbered row (S2's numbers stay, but the line's sixth button is no longer Menu item 6, docs/05 3.3);
+    - taps keep recall and insert while collapsed (picking only by long press or a hardware ▲).
+  - **Would change it:**
+    - the owner meant merge as something other than "A op B";
+    - a wrong tap-to-pick in daily use (then picking only by long press);
+    - the counters after two weeks;
+    - a wish for the collapse in Plot (then a Menu item ends a Signed area, P7 point 5).
+
 - **2026-10-18 S4: what a library file carries. OPEN.** The laptop connection is a plain-text file of Giac definitions with one-line descriptions and test lines, checked as a whole on import (design and evidence: [research/r10-connector.md](research/r10-connector.md)).
   - **Recommendation: definitions only (functions and exact values, in and out); settings and the user-key slots travel only in the backup file** (S6, R38a/R38b).
   - **Why:** a library is written, tested and shared; settings and key slots are one device's state, and a shared file that changed someone's digits or rebound their keys on import would be a surprise (principle 3). The backup already carries them, so a new phone loses nothing.
