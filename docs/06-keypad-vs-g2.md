@@ -14,7 +14,8 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Tmpl | the template palette (R10) | feedback #3, P11 |
 | Shift + Math | Memory (Find on variables and functions, with delete) | docs/04 5.1 |
 | Shift + Tmpl | the unit view (milestone 5) | P11, S1 |
-| Shift + 4, 5, 8 | matrix editor, `[ ]`, `{ }` (EN5, milestone 6) | docs/04 5.1 |
+| Shift + 4, 5 | matrix editor, `[ ]` (EN5, milestone 6) | docs/04 5.1 |
+| Shift + 8 | `{ }`, the list template (R54, feature analysis 2026-10-18) | docs/04 5.1; brief section 0h |
 | Shift + 7 (List) | deferred with Statistics | docs/04 5.1 |
 | Shift + − (Base) | Base menu (EN6, milestone 6) | docs/04 5.4 |
 
