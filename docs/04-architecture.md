@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Pascaline architecture for the precision-engineering goal
 
-*sandra, 2026-10-12; checked against the code on 2026-10-15 (2.3 #17–#19 and 5.5 came from that check: [archive/shifts/2026-10-15-sandra-archcheck-report.md](archive/shifts/2026-10-15-sandra-archcheck-report.md)) and made current by the docs diet (S7, 2026-10-18); the 2026-10-12 "today" tables are in git history. **This document supersedes [02-architecture-plan.md](02-architecture-plan.md) wherever the two differ.** docs/02 stays the record of the original plan and of the reasoning that still holds (solver choice in section 4, licence and F-Droid in sections 10–11). Binding inputs: CLAUDE.md (goal, three principles, hard rules), [03-feature-analysis.md](03-feature-analysis.md) (the owner's design rules), [decisions.md](decisions.md) P8. A claim about the code cites the file or a probe (`tools/probes/`, its README; Appendix A); **(to verify)** marks what was not checked, with who checks it and how (Appendix C).*
+*sandra, 2026-10-12; checked against the code on 2026-10-15 ([archive/shifts/2026-10-15-sandra-archcheck-report.md](archive/shifts/2026-10-15-sandra-archcheck-report.md)), made current by the docs diets (S7, 2026-10-18; S10, 2026-10-19, which moved the probe results and the regression list to [research/r12-evidence.md](research/r12-evidence.md)). **This document supersedes [02-architecture-plan.md](02-architecture-plan.md) wherever the two differ.** docs/02 stays the record of the original plan and of the reasoning that still holds (solver choice in section 4, licence and F-Droid in sections 10–11). Binding inputs: [rules-core.md](rules-core.md) (goal, three principles, hard rules), [03-feature-analysis.md](03-feature-analysis.md) (the owner's design rules), [decisions.md](decisions.md) P8. A claim about the code cites the file or a probe (`tools/probes/`, its README; Appendix A); **(to verify)** marks what was not checked, with who checks it and how (Appendix C).*
 
 How to read each area: **state** (verified), **decision** (one, with the reason), **alternatives** (one line each), **budgets and gates**, **risks**, **what would change it**. Section 8 has the component diagram, the interfaces and the budget table.
 
@@ -16,8 +16,8 @@ How to read each area: **state** (verified), **decision** (one, with the reason)
 7. *(Python: removed with the app, P11.)*
 8. **Find is one static index generated at build time** (Giac's English help lines, libqalculate's units, constants and prefixes, our alias file), searched by our own ranking code on the main thread, fetched when idle after the engine is ready and parsed on first open (section 3).
 9. **Constants, units, prefixes and results enter the entry line as atomic MathLive macros** (`\const{ID}`, `\unit{ID}`, `\pfx{p}`, `\res{n}`, `\ans`), never as free text (3.6, 4.3).
-10. **The unit view computes on Giac (P15):** our P1 parser reads unit tokens (Find ids). Each becomes its exact SI factor from the Find index times base-dimension symbols, and Giac computes exactly in the worker that is already loaded. The evaluator refuses mismatched sums, absolute temperatures in arithmetic and functions of quantities with units (section 4).
-11. **Keys** (every difference from the G2 and its reason: [06-keypad-vs-g2.md](06-keypad-vs-g2.md)): Math = Find, Vars = Find on variables, Shift + Math = Memory, Tmpl = templates, Shift + Tmpl = the unit view (units after the formula, P11), View = results mode (P16, R53), Shift + View = Copy, Shift + Menu = Paste, Shift + `+` = Ans, Shift + 5 = `[ ]`, Shift + 8 = `{ }`, Shift + 4 = matrix editor, Shift + `−` = Base, Help = context help (5.1).
+10. **The unit view computes on Giac (P15)**, exactly, in the worker already loaded: each unit token (a Find id) becomes its exact SI factor from the Find index times base-dimension symbols. The evaluator refuses mismatched sums, absolute temperatures in arithmetic and functions of quantities with units (section 4).
+11. **Keys:** Math = Find, Shift + Tmpl = the unit view (P11), View = results mode (P16), Shift + View and Shift + Menu = Copy and Paste, Shift + `+` = Ans; every cell in 5.1, every difference from the G2 and its reason in [06-keypad-vs-g2.md](06-keypad-vs-g2.md).
 12. **State:** one IndexedDB store with a schema version; user definitions are persisted and replayed at start, so variables survive a relaunch (6.2).
 13. **The qalc build runs in `build.sh` at build time only** (A2): the Find index takes its constant values and unit factors from it (P15; 7.1).
 14. **New gates:** an automated size test, the task benchmark, the Find query test, marks in the golden files, `units.yaml`, a per-key Find timing on the Tab One (7.3).
@@ -35,9 +35,9 @@ The top risks are in section 9.
 | Id | Measure | Budget | Enforced by |
 |---|---|---|---|
 | E1 | Key presses per task | each active task within its budget; a unit in ≤ 4 presses at the median (rule 2) | `tests/tasks/tasks.yaml` replayed by Playwright (EN0) |
-| E2 | Enter → drawn result, Home and CAS | p95 < 150 ms on the Tab One (138–160 ms at 12 digits, A4a 2026-10-16) | `?bench=1` on the device (annabell), each release |
+| E2 | Enter → drawn result, Home and CAS | p95 < 150 ms on the Tab One | `?bench=1` on the device (annabell), each release |
 | E3 | Find: key → updated list | p95 ≤ 16 ms on the Tab One | `?bench=find` (A4b), milestone 4 gate |
-| E4 | Start | keyboard usable < 1 s, engine ready < 1.5 s on the Tab One (688 / about 1060 ms, A4a) | device runs (`tools/device_run.py`), each release |
+| E4 | Start | keyboard usable < 1 s, engine ready < 1.5 s on the Tab One | device runs (`tools/device_run.py`), each release |
 | E5 | First use of a lazy part | Units first result < 1 s; Find open → list ≤ 100 ms warm, ≤ 300 ms cold | device runs |
 | E6 | Bytes | budgets in section 8.3 | size test (6.3) on every build |
 
@@ -52,22 +52,7 @@ The top risks are in section 9.
 | P5 | Copy | copy → paste gives the same value to every confirmed digit | e2e test per copy action (EN4) |
 
 ### 1.2 Every module against the goal
-
-| Module | Faster | More trustworthy | Open against the goal | Cost |
-|---|---|---|---|---|
-| Keyboard (`spec/keyboard.yaml`, `keyboard/`) | the reference's logical layout; the trackpad (K1) and flicks (R9) | — | Vars and Math do nothing until Find (R4a, R4b) | in the start chunk (8.3) |
-| Entry, MathLive (`entry/`) | textbook entry; results as chips (R2); ⌫ keeps templates whole; the cursor stops only at boxes; one key path for every key (5.5) | errors name the fix (R29–R31, R51) | — | the MathLive chunk after the keypad; `entry/` modules lazy |
-| Parser (`input/parse.ts`, `emit.ts`) | one rule per key | rejects what our keys cannot produce | — | its own lazy chunk (M4-3) |
-| Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel and a crash restart the worker and replay the definitions; definitions survive a relaunch (G3); a safe start without them after two failed starts (G19); a 1 GB memory cap (G24) | the `defs` replay over its Tab One bar (G29 cut it, A12 re-measures) | Giac 9.75 MB wasm |
-| Home evaluation (`engine/homeEval.ts`) | p95 well under the bar on the desktop | exact-first; marks and the agreement check (2.4) | `normald_icdf`'s value is not polished (2.3 #2, EN7) | — |
-| Formatter (`engine/format.ts`) | re-formats without the engine | BigInt, one rounding | `tieRisk` has no reader (2.4 rule 4) | in the start chunk |
-| History and settings (`state/`) | history and the half-typed line survive a relaunch and a kill (R34) | digits ≤ 30, every stored value stamped (`DATA_VERSION`) | — | — |
-| Function and Solve apps | Plot 56 fps on the Tab One | every number from the engine; every root substituted back, ⚠ on failure | frozen for features (P11) | lazy chunks |
-| CAS view (`host.ts` `cas()`) | — | exact results; typed decimals exact (P9); floats marked; the stored values a result used are listed (G20, R32) | — | — |
-| Unit view (`units/`) | — | exact factors and dimension checks on Giac (P15) | the entry is not built (R24b–R24d) | a lazy chunk (8.3) |
-| PWA and Capacitor shell | offline; wasm stored uncompressed | no trackers, no INTERNET permission (C5) | — | the build is precached (8.3) |
-| Build (`build.sh`, P2 container) | — | reproducible engine; the size test runs in `npm run build`; `npm run gate` (A6) | no CI (C3) | — |
-
+What each module does for speed and trust, what is still open against the goal and what it costs, as of 2026-10-18: [research/r12-evidence.md](research/r12-evidence.md) section 5. The open points are backlog packages; the costs are 8.3's budgets.
 
 ---
 
@@ -95,29 +80,7 @@ Every Home and CAS number is marked by 2.4's rules; the agreement check runs on 
 Only the engine knows the path, whether a value is an exact rational, and how many digits are confirmed. Only the app knows the display format the user picked and whether an input was a measured constant. So the engine reports facts and the app's formatter (pure functions in `format.ts`, run on the main thread) turns them into the mark for whatever format is on screen. A settings or Format-key change re-marks the history without the engine, as it already re-formats it.
 
 ### 2.3 Paths that showed a wrong or unmarked value
-
-Each became a regression case before its fix (CLAUDE.md); #7 was Python's `calc.eval`, removed with the app. Values marked `oracle` come from mpmath at 40 digits (`tests/golden/.venv`). All are fixed except #2's value polish (EN7, milestone 6), which keeps its `⚠`. #11–#16 came from the deep-dive review (2026-10-14), #17–#18 from the architecture check and #19 from the Opus pass (2026-10-15).
-
-| # | Input and path | Shown before the fix | Correct value | Fix |
-|---|---|---|---|---|
-| 1 | Home, keys `0` `x` Alpha-F Alpha-F: `0*x*F*F` | `0`, exact | 255 (`derived`) | R2: `0x`/`0b`/`0o` with letters is an error; a literal in EN6 |
-| 2 | Home `normald_icdf(10^-10)`, 12 digits | `-6.36134035799`, no mark | −6.36134090240… (`oracle`): wrong from the 8th digit; Giac's two evaluations agree on 9 digits | mark: `⚠`, unaudited (`715e1e8`). **Open:** the value polish by substituting back (a 40-digit `fsolve(normald_cdf(x)=10^-10, …)` agrees with the oracle to 32 digits), EN7; case `prec-2-normald_icdf-value` pending |
-| 3 | Home `UTPN(10)` at 30 digits | wrong from the 17th digit | 7.619853024160526065973…E-24 (`oracle`) | agreement check at P, P+20, P+40 (`715e1e8`) |
-| 4 | Home `romberg(exp(-x^2),x,0,1)` at 30 digits | wrong from the 17th digit | 0.746824132812427025399467436132 (`oracle`) | `⚠` until romberg is audited (2.4 rule 3, M4-1) |
-| 5 | Home `BesselJ(1,2)` at 15–30 digits | the input as text (no MPFR path) | 0.576724807757 (`oracle`) | a ≤ 14-digit fallback with `⚠` |
-| 6 | CAS `1-0.9-0.1`; `evalf(sin(10^22))`; `1e16+1-1e16` | `1.7763568394E-15`; `-0.54764225985`; `0.0` | 0; −0.852200849767… (`oracle`); 1 | marks in CAS and exact decimals (P9) |
-| 8 | Home `1/3`, tap the result, `×3` | `0.999999999999` | 1 | result chips carry the full value (R2) |
-| 9 | Home `1/3` and `1/4` | alike | — | the mark |
-| 10 | Units `1 hp → W` (qalc data) | 745.699987158 W, flagged exact | 745.69987158227… W (`derived`) | our exact factor in the Find index (G13; golden u10) |
-| 11 | Home `2.5.3` | `0.75` | an error | R29 |
-| 12 | Home, tap 0.5, type `3` | `1.5`, no × shown | an error naming the fix | R29 |
-| 13 | One-line `1/2x`; `6÷2(1+2)` | 1/(2x); 1 | (1/2)·x; 9 (G2 item 6) | R30 |
-| 14 | Hardware keyboard `1e-3` | `≈ -0.281718171541` | 0.001 | R31 |
-| 15 | CAS after Home `3 ▶ x`: `int(x^2,x)` | `9*x`, no sign of the stored x | the answer, saying x was used | G20, R32 |
-| 16 | DEG `exp(i*90)` | `= i` | −0.448073616129+0.893996663601·i (`derived`) | G21 (F29); an exp Giac builds itself: decisions.md G21 |
-| 17 | `evalf(x+sin(10^22))` | `x-0.54764225985`, no mark | x − 0.852200849767… (`oracle`) | `⚠` on a non-number with a float (G27) |
-| 18 | Home `2^10000`, tap, `×1` | `= 1.99506311688E3010` | `≈` (the chip was cut) | R44 |
-| 19 | `cos(π/7)−cos(2π/7)+cos(3π/7) == 1/2` | `= 0` | true (`derived`) | stays as typed (R18f3) |
+Nineteen paths (#1–#19) showed a wrong or unmarked number. Each became a regression case before its fix; all are fixed except #2's value polish (`normald_icdf`, EN7), which keeps its `⚠`. Their lesson is 2.4. The list (input, what was shown, the right value with its `source:`, the fix) is [research/r12-evidence.md](research/r12-evidence.md) section 1, rows numbered as before: "2.3 #n" in the code and the golden files is row n there.
 
 ### 2.4 Decision: the mark and the agreement check
 
@@ -133,7 +96,7 @@ Num tables and the Solve and analysis results show only `⚠` (a mark on every c
 1. An exact rational needs no check: BigInt is exact.
 2. Any other value is evaluated at precision P = `max(40, digits+10)` and again at P + 20. The confirmed digits are the largest n at which both values, widened by their difference (plus one ulp), round alike (G2; stricter than "common digits less one" at ties). If fewer than `digits` agree, the check runs once more at P + 20 against P + 40. If they cover the shown digits, the mark is `≈`; otherwise `⚠ n`. A float from a function that is not audited shows `⚠` without a count (M4-5): two of Giac's routines can agree on wrong digits.
 3. A value that Giac's numeric code returned as a float on the "exact" path (the exact output is a float literal, as `normald_icdf` gives `-1.2815515655446`) is re-evaluated once with `Digits` on the other side of 14 (double ↔ MPFR) and compared the same way. If one side has no value (2.3 #5), the other side's digits are shown, at most 15 for a double. Such a value gets `⚠` unless every function in the input is on the audited list (tier 0, 3.3), because agreement between two of Giac's routines does not prove either right (2.3 #2).
-4. *(Not built, and not needed: rule 2 already compares P with P + 20, so a value so near a tie that the two do not round alike loses that digit. `tieRisk` (`format.ts:140`, set in `homeEval.ts:325`) still has no reader; drop it when `homeEval.ts` is next touched. Checked 2026-10-15.)*
+4. *(Not needed: rule 2's comparison of P with P + 20 already drops a digit at a tie. `tieRisk` (`format.ts:140`, set in `homeEval.ts:417`) has no reader; drop it when `homeEval.ts` is next touched. Checked 2026-10-19.)*
 
 Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, probe timings) and one more evaluation only for the rare float-returning inputs.
 
@@ -152,7 +115,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 - Home's working precision is `max(30, digits+10)` (as Solve's) and the value precision P = `max(40, digits+10)`; `DECIMAL_KEEP` (`format.ts`) follows it, so rounding at 30 digits keeps 10 guard digits.
 - `sigfig` and our other Giac definitions load on first use, not at engine start (G2).
 - The agreement check (2.4) is what makes 20 and 30 digits honest: without it, 2.3 #3–#5 would go out unmarked.
-- **Latency:** on the desktop (123 `home.yaml` inputs) digits 12 p95 2.74 ms, digits 30 p95 3.63 ms, no case changed path. **Tab One gate:** p95 at 30 digits < 150 ms and ≤ 1.3 × the 12-digit p95, else the setting stops at 20. **Measured (A4a, 2026-10-16):** 147–149 ms at 30 digits, 149–152 at 20, 138–160 at 12: the gate holds and the setting keeps 30; the cost is not driven by digits (decisions.md "A4a" point 1).
+- **Latency gate (Tab One):** p95 at 30 digits < 150 ms and ≤ 1.3 × the 12-digit p95, else the setting stops at 20. It holds (A4a, 2026-10-16), so the setting keeps 30; the desktop and device numbers are in [research/r12-evidence.md](research/r12-evidence.md) section 3.
 
 **Alternatives:** keep 15 (engineers comparing with reference data need more); unlimited digits (the 40-digit value path and the screen width set a natural limit at 30).
 
@@ -171,7 +134,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 | Session (Menu, Share) | text: one line per entry, `input = result` with the mark, full values | — | — | — |
 
 **Paste** (Shift + Menu, or Menu → Paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts); it enters as the keyboard's own LaTeX (`1.5\emark-3`, drawn `1.5ᴇ-3`), so the parser sees only what our keys produce. Anything else gives the message "Paste: not a number". Pasting a result copied from Pascaline gives the same value back (P5).
-**Mechanics:** `navigator.clipboard` in a secure context (Capacitor serves `https://localhost`): `writeText` works on the Tab One's WebView 131, `readText` is denied there and `navigator.share` is undefined (A4a), so the APK gets `@capacitor/clipboard` and `@capacitor/share` (A11); the PWA keeps `navigator.clipboard` and `navigator.share` where it exists, else copy.
+**Mechanics:** `navigator.clipboard` in a secure context (Capacitor serves `https://localhost`): the Tab One's WebView 131 denies `readText` and has no `navigator.share` (A4a), so the APK gets `@capacitor/clipboard` and `@capacitor/share` (A11); the PWA keeps `navigator.clipboard` and `navigator.share` where it exists, else copy.
 
 **Alternatives:** copy the displayed text by default (hides digits, against principle 3); copy the exact form by default (`1/3` pastes badly into spreadsheets and code).
 
@@ -205,9 +168,9 @@ Removed with the app (P11, 2026-10-13).
 ## 3. Find (EN1)
 
 ### 3.1 State
-- Vars and Math do nothing until R4a and R4b; Tmpl opens the template palette (R10). Lists open on the sheet (`app/src/views/Sheet.svelte`, model `sheet.svelte.ts`, keys `sheetKeys.ts`; docs/05 3.1): numbered rows, digit keys pick, lists longer than 10 items take a letter filter.
+- Vars and Math do nothing until R4a and R4b; Tmpl opens the template palette (R10). Lists open on the sheet (`app/src/views/Sheet.svelte`; docs/05 3.1).
 - Any `\operatorname{name}\left(…\right)` reaches Giac as `name(…)`, so inserting a function needs no new parser rule.
-- **The index exists** (G4, `tools/find-index/generate.mjs`; G3 and G13 since): 1,850 items, 325.7 kB raw, 67.1 kB gzip (2026-10-15), from Giac's `doc/aide_cas` (1,780 entries, English lines only), libqalculate 5.13.1's units, constants and prefixes, and our files `find/aliases.yaml`, `find/functions.yaml` and `find/units.yaml`. `app/src/find/rank.ts` (`prepare()`, `search()`) passes the query test 100/100 first; the desktop prototype ranked at p95 1.04–1.23 ms per key.
+- **The index exists** (G4; generator `tools/find-index/generate.mjs`, sources and schema in 3.3; ranking `app/src/find/rank.ts`, `prepare()` and `search()`): its size and the query score are in 8.3, the item counts and the prototype's timing in [research/r12-evidence.md](research/r12-evidence.md) section 6.
 
 ### 3.2 Decision: where it runs
 **Main thread.** 1.2 ms per key on the desktop leaves room for a 10× slower Tab One inside 16 ms; a worker would add a message round trip per key. **Gate:** `?bench=find` replays 50 queries one character at a time, timing key → list rendered; p95 ≤ 16 ms on the Tab One (annabell). If it misses, first filter incrementally (each key narrows the previous candidates), then move ranking to a worker.
@@ -216,7 +179,7 @@ Removed with the app (P11, 2026-10-13).
 
 **Schema** (one JSON array; ids are stable and become the token IDs; the type is `FindItem` in `app/src/find/types.ts`): `id` (`fn:stddev`, `const:c`, `unit:km/h`, `pfx:k`, `tmpl:…`), `kind`, `names` (what a user may type, searched in lower case), `title` (English; other languages in overlay files keyed by id), `desc` (one line: ours for tier 0, else Giac's English help line or qalc's title), `syntax` and `example` (functions), `value` and `unc` (a constant's exact decimal text and its standard uncertainty, absent when exact), `unit` (a constant's), `dim` (the dimension key, 4.3), `si` (a unit's exact factor to SI base as p/q; an offset for °C and °F), `tier` (0: curated, audited, ranked first; 1: documented only) and `insert` (the LaTeX the entry line receives).
 
-In the index file a tier-1 function has no `insert` (G4, the user's choice of 2026-10-13); `prepare()` fills in `\operatorname{name}\left(#0\right)` at load (saves about 70 kB raw), so `FindItem.insert` stays required after loading. A unit whose qalc factor is uncertain or approximate (solar_mass, cal_fifteen, cal_mean, u, Da, the Planck and atomic units) keeps `dim` and has no `si`; where qalc's data is wrong, `find/units.yaml` gives our exact factor as an `override` (G13: hp, mmHg, inHg and 13 CODATA 2022 constants), and the build fails once qalc agrees.
+In the index file a tier-1 function has no `insert` (G4, the user's choice of 2026-10-13); `prepare()` fills in `\operatorname{name}\left(#0\right)` at load (saves about 70 kB raw), so `FindItem.insert` stays required after loading. A unit whose qalc factor is uncertain or approximate (the list: [r12](research/r12-evidence.md) section 2) keeps `dim` and has no `si`; where qalc's data is wrong, `find/units.yaml` gives our exact factor as an `override` (G13: hp, mmHg, inHg and 13 CODATA 2022 constants), and the build fails once qalc agrees.
 
 Live items (variables, user functions) have the same shape with `kind: "var" | "userfn"`, built at run time (3.4).
 
@@ -225,14 +188,14 @@ Live items (variables, user functions) have the same shape with `kind: "var" | "
 **Generation, from source at build time** (gorge; `tools/find-index/generate.mjs`, Node, no network; run by `build.sh` after the engines, and by `npm run index` in development; output gitignored under `app/src/find/_gen/`):
 1. Giac `doc/aide_cas` from the pinned tarball: names, the English line (`2 …`) only, never French (R5), syntax and examples; entries starting with `_` dropped.
 2. libqalculate 5.13.1 `units.xml.in`, `variables.xml.in`, `prefixes.xml.in` from the pinned tarball; `currencies.xml.in`, `elements`, `planets`, `datasets` skipped.
-3. **Values from the built qalc engine run in Node:** each constant's value, uncertainty and unit; each unit's SI factor; a round-trip check that every unit and constant ID parses back to itself. The check is needed: qalc reads `mu0` as 0 kg, `degC` as coulomb·degree, `BTU` as byte·tesla·…, `h` as hour (probes, 2026-10-12). Formula-defined constants (μ₀, ε₀, the Bohr magneton) need qalc to evaluate them, which is why `build.sh` builds qalc (7.1).
-4. Our own files: `find/aliases.yaml` (what users type and the data lacks: `kph`, `c0`, `eps0`, `degC`, `stdev`; per item id) and `find/functions.yaml` (tier 0: the curated functions, each with our own one-line description and the id of its golden accuracy case), plus the common prefixed units as items (`km`, `mm`, `µm`, `kN`, `MPa`, `kW`, `mA`, `kΩ`, `µF`, `MHz`, `kWh`, …: our list).
+3. **Values from the built qalc engine run in Node:** each constant's value, uncertainty and unit; each unit's SI factor; a round-trip check that every unit and constant ID parses back to itself. The check is needed: qalc misreads common names (`mu0`, `degC`, `BTU`, `h`: [r6](research/r6-pipelines.md) section 6). Formula-defined constants (μ₀, ε₀, the Bohr magneton) need qalc to evaluate them, which is why `build.sh` builds qalc (7.1).
+4. Our own files: `find/aliases.yaml` (what users type and the data lacks, such as `kph`, `eps0`, `degC`; per item id), `find/functions.yaml` (tier 0: each function with our own one-line description and the id of its golden accuracy case) and `find/units.yaml` (our overrides and the common prefixed units as items: `km`, `MPa`, `kΩ`, …).
 
 **Tier 0** is the audited set: every tier-0 function has a golden case at 12 digits against the oracle, including the edges of its domain (where 2.3 #2 was found). Tier 1 is everything else Giac documents, ranked below tier 0 and labelled "not checked" in the preview.
 
 **When it loads:** fetched when the browser is idle after the engine is ready (the same hook as the service worker registration in `main.ts`), parsed on the first Find open; if Find opens first, it fetches then. Never in the start chunk (size test).
 
-**Licences:** THIRD_PARTY.md "Find index data" (Giac's English `aide_cas` lines under GPL-3.0-or-later, P10, with B. Parisse's confirmation before any public release; libqalculate's data files, GPL-2.0-or-later; our own files). The About screen credits both.
+**Licences:** 7.2 (Giac's English lines under P10, with B. Parisse's confirmation before any public release); the About screen credits Giac and libqalculate.
 
 **Alternatives:** generating at run time from the engines (costs start-up and memory); committing the generated JSON (F-Droid: generated data in git is not our source); all 1,780 Giac commands at the same rank (buries what engineers use under graph theory and geometry).
 
@@ -265,25 +228,7 @@ Budgets: 8.3. Risks: alias quality (only the query test and real use show it); t
 There is no separate Units app (P11): units are added *after* the formula, in unit slots, in the unit view opened by the units key (decisions.md P11 and S1; layout and press counts in `docs/research/r7-unit-slots.md` and `docs/research/r9-unit-pad.md`). **P15 (decided 2026-10-14; G15's check passed 2026-10-15):** Giac does the unit arithmetic in the worker that is already loaded, with the Find index's exact factors; libqalculate is used only at build time, as the index's source. Our parser decides what reaches Giac, and the evaluator checks the result.
 
 ### 4.1 Evidence: units on Giac (G15's probe, 2026-10-15)
-`tools/probes/units-giac.mjs` turns each unit token into its exact SI factor from the Find index times one symbol per base dimension (`pasdimL` … `pasdimB`; the angle `pasdimA` is one of them), and Giac's `normal()` computes exactly. Against qalc 5.13.1 and mpmath (the rows G13, G17 and G25 changed since show what the evaluator gives now):
-
-| Input | Giac | qalc |
-|---|---|---|
-| `72 km/h → m/s`; `1 in → mm`; `1/3 m → cm` | 20; 127/5; 100/3 | the same |
-| `1 lbf → N`; `4.7 kΩ × 2.2 nF`; `√2 m` | 8896443230521/2000000000000; 517/50000000 s; √2 m | the same |
-| `20 °C → K`; `100 °F → °C`; `20 °C → °F` | 5863/20; 340/9; 68 | the same |
-| `90° → rad`; `60 rpm → rad/s`; `sin(30°)` | π/2; refused: T⁻¹ vs T⁻¹·angle (rpm counts revolutions, G25); 1/2 | π/2; 2π; 1/2 |
-| `(12.34 ± 0.05) m × (3.2 ± 0.1) m` | 4936/125 ± √387089/500 m² (first order) | the same σ; prints ±1.3 |
-| `1 m + 1 s`; `1 m → s` | "Units don't match: L vs T" | `1 m + 1 s`; `1 m` (no error) |
-| `20 °C + 5 °C`; `20 °C × 2` | refused (absolute temperature) | 25 °C; 40 °C |
-| `ln(2 m)`; `sin(2 m)` | refused | left unevaluated |
-| `1 rpm → Hz`; `1 rad/s → Hz` | 1/60 (rev is a count of cycles, G25); refused: T⁻¹·angle vs T⁻¹ | 0.1047 Hz·rad; 1 Hz·rad |
-| `1 hp → W`; `1 mmHg → Pa` | 745.69987158227… W (golden u10); 133.322387415 Pa: our exact factors (G13) | 745.699987158 W; 133.322368421 Pa (both wrong) |
-| `1 Np → dB`; `1 W → dBm` | 20/ln 10 = 8.68588963807 dB; 30 dBm (G17, golden l01, l02) | 8.68588963807 dB; 30 dBm |
-
-The 26 spike cases, tasks t02, t04, t10 and these rows agree with qalc, except where qalc is wrong (oracle). Every unit in S1's 50 and on the draft pad has the same SI factor in both; qalc's SI form drops rad. On the desktop an evaluation takes median 0.5 ms and p95 1.5–3.2 ms, in one Giac call. A half power (nV/√Hz) takes 8 ms.
-
-G15 counted 36 index units without an exact factor. G13 gave hp and mmHg ours, and G17 handles the 4 logarithmic units by rule; the rest (nat, trit and Hart; the 15 °C and the mean calorie; 24 Planck, atomic and natural units and the solar mass, which are values with an uncertainty) are refused with a message naming the unit (`nofactor`).
+G15's probe (`tools/probes/units-giac.mjs`) computed the spike's cases, the tasks and S1's 50 units exactly in Giac with the Find index's factors, in one call of median 0.5 ms on the desktop. It agreed with qalc 5.13.1 except where qalc is wrong (`hp`, `mmHg`: oracle) or gives no error (`1 m + 1 s`). The table and the units refused for want of an exact factor (`nofactor`): [research/r12-evidence.md](research/r12-evidence.md) section 2.
 
 ### 4.2 Decision: the unit evaluator on the Giac worker (P15)
 There is no third worker. The unit view's arithmetic is a `units` request in worker 1, beside `home`, so Cancel works as in Home: terminate, respawn and replay the definitions. The factor table (units' `si` and `dim`, prefixes' powers of ten) comes from the Find index. It loads with the unit view, never in the start chunk.
@@ -297,10 +242,8 @@ The evaluator (`app/src/units/`, G16):
 
 sin, cos and tan take an angle or a pure number; the angle dimension is dropped inside them. Any other function of a quantity with units is refused. On top of this come G17's rules for temperatures and logarithmic units, and G18's first-order uncertainty (σ² = Σ(∂f/∂xᵢ·σᵢ)², with Giac's `diff`): the formula writes an uncertain number as `pasupm(value,sigma)` (two plain numbers, σ a standard uncertainty in the unit of the slot after it, each one an independent input); the builder turns each into a symbol (`UnitJob.unc`), and a result with a σ is never `=`.
 
-The cost: a long CAS job in the same worker delays a conversion until Cancel.
-
 ### 4.3 Decision: the unit view (entry, parsing, results)
-- **Entry (P11, P14; layout in `spec/unit-pad.yaml`, press counts in docs/research/r9-unit-pad.md):** the units key (Shift + Tmpl, a flick up on Tmpl) on an entry line or a picked history row shows the same formula, read-only, with an empty unit slot after every number and an optional end slot "→ should be"; on an empty line one slot (quantity 1) and the end slot. ◀ ▶ jump between slots, never through the formula. In a slot the maths rows are the unit pad's prefix and unit cells drawn over the keys (R21's layer; S5's arrangement and 18 user slots), the number keys are prefixes, a slot holds unit ids, never text; Enter goes to the next slot and evaluates in the end slot; Math opens Find on units. Built on MathLive's prompts (a read-only field with `\placeholder[id]{}` per slot): a probe of 2026-10-15 showed `setPromptValue` and `getPromptValue` round-trip fractions, powers, products, `√` and prefixed units, and ◀ ▶ go prompt to prompt; but `insert()` with the caret outside a prompt still changes the formula (`72` became `972`), and MathLive merges neighbouring upright names (`\mathrm{k}\mathrm{\Omega}` reads back as `\mathrm{k\Omega}`). So a slot's tokens live in R24a's model, never read back from the field, and the unit view writes a slot only with `setPromptValue`, never through `EntryController.run` (5.5).
+- **Entry (P11, P14; layout in `spec/unit-pad.yaml`, press counts in docs/research/r9-unit-pad.md):** the units key (Shift + Tmpl, a flick up on Tmpl) on an entry line or a picked history row shows the same formula, read-only, with an empty unit slot after every number and an optional end slot "→ should be"; on an empty line one slot (quantity 1) and the end slot. ◀ ▶ jump between slots, never through the formula. In a slot the maths rows are the unit pad's prefix and unit cells drawn over the keys (R21's layer; S5's arrangement and 18 user slots), the number keys are prefixes, a slot holds unit ids, never text; Enter goes to the next slot and evaluates in the end slot; Math opens Find on units. Built on MathLive's prompts (a read-only field with `\placeholder[id]{}` per slot): prompts round-trip every slot shape, but `insert()` outside a prompt still edits the formula and MathLive merges neighbouring upright names (probe: [r6](research/r6-pipelines.md) section 7, "Prompts in a read-only field"). So a slot's tokens live in R24a's model, never read back from the field, and the unit view writes a slot only with `setPromptValue`, never through `EntryController.run` (5.5).
 - **Grammar per slot:** a product of factors with `×`, one `÷` (the rest is the denominator), powers, `x⁻¹`, `√`. The formula comes from the parser's units mode (R28): a prompt after a number is pasu<n> in the order written, a constant is pask<j>, `±` after a number is pasupm(value,σ), and `\to` before the last prompt is the end slot. A factor is one symbol from Find's unit list: an exact symbol first, then prefix + symbol. The parser in `units` mode emits unit and prefix ids from these whitelisted names only (the generator's round-trip check, 3.3). **Alternative rejected:** qalc's own parser, which reads `BTU`, `lbm`, `var`, `Kg`, `pa`, `G` as other things (docs/research/r7-unit-slots.md section 5.2).
 - **Live reading:** under the slot, in words; a prefixed unit outside Find's common list is marked; a factor that is no symbol is an error naming it with the near symbols. A prefix alone is an error.
 - **The evaluator checks:** the formula with its units must give a single term (number × units), else "Units don't match: L vs T" naming the term (P11); an absolute temperature in arithmetic → "Use K or Δ°C for a temperature difference"; with an end slot, a dimension mismatch is an error naming both.
@@ -368,11 +311,7 @@ Every key press counts 1, Shift and Alpha included; letters typed in Find count 
 
 ### 5.5 Decision: the entry line, one key path and one box model (architecture check, 2026-10-15)
 
-**State** (code read 2026-10-15, R43 and R45 merged since):
-- **The key path:** keypad → `App.svelte` `press()` (Shift and Alpha, an open sheet, keys queued while an app loads) → `run()` (the layer's action, a picked history row, Ans first on an empty line, the a b/c form cycle) → `EntryController.run` (`entry/controller.ts`), whose branches handle ▶ to the next empty box, ⌫ and Del at a template (`delete.ts`), ᴇ, 10ˣ after a digit, an E number, a selection under a power or DMS, a chip and a compound term before a power or ÷; after an arrow, `settle()` (`stops.ts`). Hardware keys (`hwkeys.ts`) map to keypad keys and go through `press()`; a letter goes through `typeLetter`, which runs the same checks.
-- **What a box is:** one model, `entry/boxes.ts` (`boxTemplate()`, `startsBox()`, `endsBox()`), read by `delete.ts`, `stops.ts` and `nextBox`; `isStop()` keeps its own regexes for names and marks. The term before the cursor is still scanned in five places (`selectENumber`, `selectCompound`, `selectChip`, `afterDigit`, `afterNumber`), and the parser has its own side of where a number ends (R29).
-- **Tests:** the ⌫ grid (`app/test/bksp-grid.spec.ts`) and the cursor grid (`app/test/cursor-grid.spec.ts`) read every template from `spec/keyboard.yaml`, so a new key joins them by itself.
-- **The unit view's field** (4.3): read-only with prompts; `insert()` outside a prompt changes it, and the hardware-key handler is attached to the entry field only.
+**State:** the key path step by step is [r6](research/r6-pipelines.md) section 1; the box model, its tests and the unit view's field as read on 2026-10-15 are [research/r12-evidence.md](research/r12-evidence.md) section 4.
 
 **Decision:**
 1. **One key path** (built, R45): every key, from the keypad or a hardware keyboard, goes through `press()`; `hwkeys.ts` only maps a character or key name to a keypad key id and layer, so an open sheet, a picked row, Find and the unit slots see hardware keys exactly as keypad keys.
@@ -405,7 +344,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 | `userKeys`, `taps`, `app.function`, `app.solve` | the user keys' slots; R9's Shift/Alpha tap counter; per app (R53 adds `uses`, its counters) |
 | `units.targets`, `units.history` | the last target per dimension; the unit view's history (milestone 5) |
 
-**Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the steps in `MIGRATIONS` for that key run from its version up, and the value is written back stamped. Raise the version with a step whenever a stored shape or the meaning of stored Giac text changes (a parser rename such as Φ → `Phi_` must rewrite the stored `defs`). **Replay budget:** ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` in `EngineTimings`): 291 ms on 2026-10-16 (A4a); G29 batched 200 Giac calls into 8, and A12 re-measures. **Why persist definitions:** a calculator keeps its memory.
+**Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the steps in `MIGRATIONS` for that key run from its version up, and the value is written back stamped. Raise the version with a step whenever a stored shape or the meaning of stored Giac text changes (a parser rename such as Φ → `Phi_` must rewrite the stored `defs`). **Replay budget:** ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` in `EngineTimings`) (state in 8.3). **Why persist definitions:** a calculator keeps its memory.
 
 ### 6.3 Decision: start-up and bytes
 - The sizes and budgets are in 8.3. New code for Find, units, copy and the matrix editor lives in lazy chunks; the start chunk grows only by key handlers and marks (≤ 175 kB, ≤ 60 kB gzip; owner, 2026-10-19).
@@ -420,13 +359,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 `build.sh`: fetch (SHA-256 checked) → Giac (container, P2) → **qalc** (`engine/qalc/build-wasm.sh [dev|release]`, promoted from `spike/qalc`, release in the same pinned trixie container; GMP and MPFR tarballs shared with Giac) → **Find index generator** (Node, from the unpacked tarballs and the qalc build) → app build (size test) → Capacitor → Gradle. `--no-units` skips qalc; the index then holds functions only and Find still works. `npm run index` in development does the same when no qalc build is present, with a warning. Everything generated stays out of git; F-Droid's recipe mirrors `build.sh` and gains the libxml2 and libqalculate tarballs with their SHA-256. Build time with qalc (A2, 2026-10-12): the release container build of qalc takes 7.5–8 min; the wasm is 949 kB brotli and byte-reproducible; nothing of it ships (P15). **Why qalc is built:** the index takes constant values, uncertainties and unit factors from it (3.3 step 3). **Alternative:** values from the oracle venv (not part of `build.sh`, a second source of truth).
 
 ### 7.2 Licences
-| Piece | Licence | Compatible | THIRD_PARTY.md |
-|---|---|---|---|
-| libqalculate 5.13.1 (build time only, P15: its data ships in the Find index, its code not in the APK) | GPL-2.0-or-later | yes (combined work GPL-3.0) | listed as the index's data source |
-| libxml2 2.15.1 | MIT | yes | same |
-| Giac `aide_cas`, English lines | GPL-3.0-or-later (R5) | yes | new "Find index data" section |
-| `@capacitor/share`, `@capacitor/clipboard` 8.x (A11: the WebView denies `readText` and has no `navigator.share`) | MIT | yes | add with the code |
-| Search library | none (own code) | — | — |
+Every piece and its licence is in [THIRD_PARTY.md](../THIRD_PARTY.md): libqalculate 5.13.1 (GPL-2.0-or-later, build time only, P15: its data ships in the Find index, its code not), libxml2 (MIT), Giac's English `aide_cas` lines (GPL-3.0-or-later, R5) in "Find index data". All are compatible with GPL-3.0. `@capacitor/share` and `@capacitor/clipboard` 8.x (MIT) join it with A11's code; Find's search is our own code.
 
 ### 7.3 Decision: tests and gates
 
@@ -476,7 +409,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 - **`HomeResult`** (`engine/homeEval.ts`) carries, beside the display and timings, the facts for the mark: `exactRational`, `reliableDigits` (null = exact); `full` (the copy and chip value: exact text or P digits); `defined` (what a stateful input defined); `items` and `shape` for a numeric list or matrix; `digits` (what `evalf(e,n)` asked for); `warn` (`unaudited`, or `unchecked` for a non-number with a float); `why` (G22: `unaudited`, `inherited`, `once`; R36 words them); `uncDigits` (G26: the digits before the first digit of the CODATA σ; R40 mutes the rest).
 - **`CasResult`:** `numeric` when the result is a number; `approximate`, `warn` and `why` for a non-number; `uses` (G20: the stored variables the input read, not the names it binds).
 - **`Calc`:** the same calls with `CalcSettings`, plus `names()` (the user's names, 3.4) and `units(req, s)` (a lazy chunk; the factor table loads on the first call).
-- **Units** (`app/src/units/types.ts`): `UnitRequest` (the formula from our parser with `pasu<n>` per slot, `pask<n>` per constant and `pasupm(value,sigma)` per ±; `slots`; `consts`; the `end` slot), `UnitSlot` and `UnitToken` (prefix, unit, power; the prefix is inside the power), `UnitJob` (Giac text with every unit as factor × dimension symbols; the end slot's offset or level; `unc` with a symbol per uncertain input; `shows`, the typed units a result may be shown in), `Quantity` (`value` as a `HomeResult`, `dimension` and `dimensionText`, null for an exact 0; `unit`; `si`; `unc` with σ to two significant digits), `UnitError` (`dimension`, `temperature`, `logarithmic`, `nofactor`, `level`, `belowzero`, `function`, `symbolic`, `engine`; the message is `unitErrorMessage()` in `units/messages.ts`).
+- **Units** (`app/src/units/types.ts`, the fields there): `UnitRequest` (our parser's formula with `pasu<n>` per slot, `pask<n>` per constant, `pasupm(value,sigma)` per ±; the slots, constants and end slot) → `UnitJob` (Giac text, every unit as factor × dimension symbols, built by `units/build.ts`) → `Quantity` (value as a `HomeResult`, dimension, unit, σ) or `UnitError` (its kinds and `unitErrorMessage()` in `units/messages.ts`).
 - **Find** (main thread): `FindItem` (`app/src/find/types.ts`, the schema of 3.3); the planned `FindIndex` with `load(lang?)` and a synchronous `search(query, ctx)` within 16 ms (R4a).
 - **`Kv`** (`state/storage.ts`): `get`, `set`. **`ClipboardPort`** (`app/src/clipboard/port.ts`): `writeText`, `readText`, `share` (false when the platform cannot share; then copy); A11 adds the Capacitor plugins behind it.
 
@@ -484,12 +417,12 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 60 kB gzip | 53.16 kB gzip after G30f1 (`99beb2e`, 2026-10-18); `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test |
-| MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB (2026-10-12) | size test |
+| Start chunk | ≤ 175 kB raw, ≤ 60 kB gzip | 53.28 kB gzip on `cb1c74c` (2026-10-18, check-2026-10-19); `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test |
+| MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
-| Unit view chunk | ≤ 30 kB raw | 3.83 kB (G16, 2026-10-18) | size test (rule on `src/units/`) |
-| Precache total | ≤ 18 MB | 12.3 MB (2026-10-15) | size test |
+| Unit view chunk | ≤ 30 kB raw | 9.44 kB (2026-10-18) | size test (rule on `src/units/`) |
+| Precache total | ≤ 18 MB | 12.4 MB (2026-10-18) | size test |
 | Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with the `defs` replay | 688 / about 1060 ms; 1489 ms engine ready with 200 definitions (A4a, 2026-10-16) | device runs |
 | Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | 138–160 ms at 12, 147–149 at 30 (A4a) | device runs |
 | Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` (A4b) |
@@ -517,10 +450,10 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 ---
 
 ## Appendix A: probes
-The probes behind this document are in `tools/probes/` (its README says how to run each): `engine.ts` (Home and CAS paths through `EngineHost`, `FACTS=1` for the facts), `parse.ts` (the parser), `digits-cost.ts`, `units-giac.mjs` (G15), `find/` (the index prototype), `start-chunk.mjs`, `bound.ts`, `replay-cost.mjs`, `unit-presses.mjs`, `results-geometry.mjs`. Oracle values: `tests/golden/.venv/bin/python -I -c "import mpmath as m; m.mp.dps=40; …"` (`sqrt(2)*erfinv(2p-1)` for `normald_icdf`, `quad(exp(-x^2),[0,1])`, `erfc(10/sqrt(2))/2`, `besselj`, `airyai`). The 2026-10-12 qalc glue was a throwaway (git history).
+The probes behind this document are in `tools/probes/` (its README says how to run each): `engine.ts` (Home and CAS paths through `EngineHost`, `FACTS=1` for the facts), `parse.ts` (the parser), `digits-cost.ts`, `units-giac.mjs` (G15), `find/` (the index prototype), `start-chunk.mjs`, `bound.ts`, `replay-cost.mjs`, `unit-presses.mjs`, `results-geometry.mjs`. What they found is in [research/r12-evidence.md](research/r12-evidence.md); oracle values come from mpmath in `tests/golden/.venv` (the expressions: r12 section 1).
 
 ## Appendix B: the Find queries
-The phrases are `tests/tasks/find-queries.yaml` (3.8): 100 active ones (25 constants, 40 units, 5 prefixes, 30 functions) and the pending ones whose items arrive in milestone 6. Some are ambiguous on purpose (`newton`, `kb`, `db`): the top-3 rule tolerates that, and the first hit shows how good the ranking is. The owner adds a phrase whenever Find misses one.
+The phrases are `tests/tasks/find-queries.yaml` (3.8): 100 active ones (25 constants, 40 units, 5 prefixes, 30 functions) and the pending ones for milestone 6. Some are ambiguous on purpose (`newton`, `kb`, `db`): the top-3 rule tolerates that.
 
 ## Appendix C: open items (to verify), who, how
 
