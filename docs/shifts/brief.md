@@ -46,11 +46,15 @@
 | [G41](packages/G41.md) | σ beyond first order at a stationary point | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G37](packages/G37.md) | °C and °F inside a compound unit are an interval | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G40](packages/G40.md) | Angles in the unit view: inverses, ω·r, rpm | gorge, **Opus** | night | A15; before R24c | ~0.75 d |
-| [G42](packages/G42.md) | median, round and quartiles as the G2 and our display | gorge, Sonnet | night | A15 (round: G2 item 66) | ~0.5 d |
+| [G42](packages/G42.md) | The median of an even list, and percentile | gorge, Sonnet | night | A15 | ~0.5 d |
 | [G43](packages/G43.md) | The golden gate checks invariants across settings | gorge, Sonnet | night | A15 (store part: G34) | ~0.5 d |
 | [G44](packages/G44.md) | Inverse distribution functions polished | gorge, **Opus** | night | A15 | ~0.5 d |
 | [S11](packages/S11.md) | The unit result view as packages (R60–R63) | sandra, Opus | night | A14 | ~0.5 d |
 | [S12](packages/S12.md) | Engine defaults, not G2 copies: the audit, then its removal packages | sandra, Opus | night, first | nothing | ~0.5 d |
+| [G45](packages/G45.md) | One tie rule; the G2's Home answers on record | gorge, **Opus** | night | S12 | ~0.25 d |
+| [R66](packages/R66.md) | The power form keeps Giac's principal root in Home | ron, **Opus** | night | S12 | ~0.25 d |
+| [R67](packages/R67.md) | Letters e and i are names (R58b) | ron, **Opus** | night | S12, R66 | ~0.5 d |
+| [R68](packages/R68.md) | ᴇ's leading 1 after an operator | ron, **Opus** | night | S12 | ~0.25 d |
 | [R15c1](packages/R15c1.md) | The status line takes Apps, Menu and the views | ron, Sonnet | day | R50b | ~0.75 d |
 | [R15c2](packages/R15c2.md) | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | day | R15c1 | ~1.5 d |
 | [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | R15c2 | ~0.5 d |
@@ -119,7 +123,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 26 | R65 marks through Ans and chips: session | ron, Opus | `p1/ron-m4-chipfacts` | G49 | 1 h |
 | 27 | G36 FIX shows no unconfirmed digit in a complex number | gorge, Sonnet | `p1/gorge-m4-fixcomplex` | A15 | 30 min |
 | 28 | G50 complex arguments of the audited functions | gorge, Opus | `p1/gorge-m4-complexaudit` | A15 | 1.5 h |
-| 29 | G42 median, round, quartiles | gorge, Sonnet | `p1/gorge-m4-stats` | A15 | 1 h |
+| 29 | G42 median of an even list, percentile | gorge, Sonnet | `p1/gorge-m4-stats` | A15 | 1 h |
 | 30 | G37 °C inside a compound unit is an interval | gorge, Opus | `p1/gorge-m5-degcompound` | G35 | 1 h |
 | 31 | G40 angles in the unit view | gorge, Opus | `p1/gorge-m5-angles` | A15 | 1.5 h |
 | 32 | G43 invariants across settings in the gate | gorge, Sonnet | `p1/gorge-m4-invariants` | G34 | 1 h |
@@ -130,8 +134,12 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 37 | S8 the outside-test protocol | sandra, Opus | `p1/sandra-outside` | S6 | 30 min |
 | 38 | R50c the theme generator and four more families | ron, Sonnet | `p1/ron-m4a-themegen` | R50b | 1.5 h |
 | 39 | R50d Plain keys and High contrast in the components | ron, Sonnet | `p1/ron-m4a-plainkeys` | R50c | 1 h |
-| 40 | **The last Opus pass** on what came after pass 19, then its FIX packages | Opus | — | — | 20 min + fixes |
-| 41 | Shift report, then stop | — | — | — | 10 min |
+| 40 | G45 one tie rule, the G2's Home answers on record | gorge, Opus | `p1/gorge-m4-g2records` | S12 | 45 min |
+| 41 | R66 the power form keeps Giac's principal root | ron, Opus | `p1/ron-m4-noR39` | S12 | 45 min |
+| 42 | R67 letters e and i are names | ron, Opus | `p1/ron-m4-eiNames` | S12, R66 | 1 h |
+| 43 | R68 ᴇ's leading 1 after an operator | ron, Opus | `p1/ron-m4-emark1` | S12 | 45 min |
+| 44 | **The last Opus pass** on what came after pass 19, then its FIX packages | Opus | — | — | 20 min + fixes |
+| 45 | Shift report, then stop | — | — | — | 10 min |
 
 Not in the queue: the ron lane's day packages (section 0; R64a, R65, R50c and R50d are queue steps); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); R59, R38a and R38b (after S6's report).
 
