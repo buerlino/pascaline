@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<title>Unit pad</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: an explanation column beside two live phones (light and dark) that share one slot state. Tokens as top-cluster-r15c.html. */
+:root { --page: #f4f5f7; --ink: #1a1d22; --muted: #5b6575; --rule: #b9c0cc; --card: #ffffff; --ok: #1f6f54; --warn: #b05a00; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #14161a; --ink: #e8ebef; --muted: #98a2b3; --rule: #3a4250; --card: #1d2026; --ok: #5fc9a0; --warn: #f0a050; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --page: #14161a; --ink: #e8ebef; --muted: #98a2b3; --rule: #3a4250; --card: #1d2026; --ok: #5fc9a0; --warn: #f0a050; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; }
+main { max-width: 1340px; margin-inline: auto; padding-block: 16px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 1.5rem; margin: 0 0 4px; text-wrap: balance; }
+h2 { font-size: 1.15rem; margin: 28px 0 6px; padding-top: 8px; border-top: 1px solid var(--rule); text-wrap: balance; }
+p, li { max-width: 72ch; }
+.muted { color: var(--muted); }
+.warn { color: var(--warn); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--page); padding: 8px 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; border-bottom: 1px solid var(--rule); font-size: 13px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--page); }
+.bar button { font: inherit; padding: 2px 10px; border-radius: 6px; border: 1px solid var(--rule); background: var(--card); color: var(--ink); cursor: pointer; }
+.bar button[aria-pressed="true"] { background: var(--ok); color: #fff; border-color: var(--ok); }
+.bar label { display: inline-flex; gap: 4px; align-items: center; }
+.layout { display: flex; flex-wrap: wrap; gap: 24px 32px; margin-top: 16px; align-items: flex-start; }
+.phones { display: flex; flex-wrap: wrap; gap: 16px; min-width: 0; }
+.side { flex: 1 1 340px; min-width: 0; }
+table { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { border-bottom: 1px solid var(--rule); padding: 3px 8px; text-align: left; vertical-align: top; }
+.tw { overflow-x: auto; }
+kbd { font: 12px ui-monospace, monospace; border: 1px solid var(--rule); border-radius: 4px; padding: 0 4px; background: var(--card); }
+body[data-show="dark"] .phone.light, body[data-show="light"] .phone.dark { display: none; }
+:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+
+/* The phone: 412 px wide at full scale. */
+.phone { width: 412px; max-width: 100%; border: 1px solid var(--rule); border-radius: 12px; overflow: hidden; font-size: 14px; background: var(--bg); color: var(--text); user-select: none; -webkit-user-select: none; }
+.phone.light { --bg: #f4f5f7; --panel: #e4e7ec; --line: #b9c0cc; --text: #1a1d22; --muted: #5b6575; --k-nav: #d6e8dc; --k-ctl: #f2dcc2; --k-unit: #ffffff; --k-op: #dde3ec; --k-pfx: #d3ecee; --pfx-ink: #0e6670; --k-user: #efe8f9; --acc: #6b4fa8; --shift: #9a6a10; --alpha: #1b6f99; --chip: #cfe3f7; --slot: #ffffff; --on: #0e6670; --enter: #1f6f54; }
+.phone.dark { --bg: #14161a; --panel: #1d2026; --line: #3a4250; --text: #e8ebef; --muted: #98a2b3; --k-nav: #2e3a33; --k-ctl: #4a3a2a; --k-unit: #262a31; --k-op: #2c3340; --k-pfx: #183a3e; --pfx-ink: #7fd6de; --k-user: #2c2538; --acc: #b9a2e6; --shift: #e0b25c; --alpha: #6fc3e8; --chip: #24486a; --slot: #1d2026; --on: #7fd6de; --enter: #2f8a6a; }
+.status { height: 28px; display: flex; align-items: center; gap: 6px; padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 13px; }
+.status .place { font-weight: 700; }
+.status .grow { flex: 1; }
+.status .chip { background: var(--chip); border-radius: 4px; padding: 0 5px; font-size: 12px; }
+.status .latch { border-radius: 4px; padding: 0 5px; font-size: 12px; font-weight: 700; }
+.status .latch.s { background: var(--shift); color: var(--bg); }
+.status .latch.a { background: var(--alpha); color: var(--bg); }
+.screen { height: 176px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; border-bottom: 1px solid var(--line); }
+.screen .hist { color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding-bottom: 4px; }
+.screen .grow { flex: 1; }
+.formula { font: 21px/1.4 "Cambria Math", "STIX Two Math", "Latin Modern Math", Georgia, serif; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.slot { min-width: 36px; min-height: 32px; padding: 0 6px; border: 1px dashed var(--line); border-radius: 4px; background: var(--slot); display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
+.slot.on { border: 2px solid var(--on); }
+.slot .armed { font-family: system-ui, sans-serif; font-size: 13px; padding: 0 4px; border-radius: 3px; background: var(--k-pfx); color: var(--pfx-ink); outline: 1px solid var(--pfx-ink); }
+.slot .caret { width: 1.5px; height: 22px; background: var(--on); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .slot .caret { animation: none; } }
+.slot .ph { color: var(--muted); font: italic 12px system-ui, sans-serif; }
+.formula .arrow { color: var(--muted); }
+.reading { font-size: 13px; min-height: 20px; }
+.reading b { font-weight: 600; }
+.reading .dim { color: var(--muted); font-variant-numeric: tabular-nums; }
+.msg { font-size: 12px; color: var(--muted); min-height: 18px; }
+.msg.err { color: var(--warn); }
+.kp { padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.g6, .g5 { display: grid; gap: 6px; }
+.g6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.cluster { grid-auto-rows: 36px; }
+.maths6 { grid-auto-rows: 46px; }
+.g5 { grid-template-columns: repeat(5, minmax(0, 1fr)); grid-auto-rows: 46px; }
+.c { position: relative; display: grid; place-items: center; border-radius: 7px; border: 1px solid var(--line); background: var(--k-unit); color: var(--text); font: inherit; padding: 0; min-width: 0; cursor: pointer; touch-action: none; line-height: 1; }
+.c .t { font-size: 17px; font-weight: 500; }
+.c .u, .c .d { position: absolute; left: 5px; font-size: 10px; max-width: calc(100% - 10px); overflow: hidden; white-space: nowrap; }
+.c .u { top: 3px; color: var(--shift); }
+.c .d { bottom: 3px; color: var(--alpha); }
+.c .under { position: absolute; right: 4px; bottom: 2px; font-size: 9px; color: var(--muted); opacity: .8; display: none; }
+.phones[data-under="1"] .c .under { display: block; }
+.c.pfx { background: var(--k-pfx); color: var(--pfx-ink); }
+.c.pfx .t { font-style: italic; font-weight: 600; }
+.c.pfx.armed { outline: 2px solid var(--pfx-ink); outline-offset: -2px; }
+.c.op { background: var(--k-op); }
+.c.ctl { background: var(--k-ctl); }
+.c.ctl .t, .c.nav .t, .c.keep .t { font-size: 13px; font-weight: 500; }
+.c.nav { background: var(--k-nav); }
+.c.keep { background: var(--k-nav); }
+.c.enter { background: var(--enter); color: #fff; border-color: var(--enter); }
+.c.enter .u { color: #fff; opacity: .9; }
+.c.user { background: var(--k-user); border: 1px dashed var(--acc); }
+.c.user .t { font-size: 14px; }
+.c.user .tag { position: absolute; right: 4px; top: 2px; font-size: 9px; color: var(--acc); }
+.c.user.empty .t { color: var(--acc); font-size: 18px; opacity: .7; }
+.c.free { background: transparent; border: 1px dashed var(--line); color: var(--muted); cursor: default; }
+.c.free .t { font-size: 11px; }
+.c.latched { box-shadow: inset 0 0 0 2px var(--shift); }
+.c.latched.a { box-shadow: inset 0 0 0 2px var(--alpha); }
+.c:active { filter: brightness(.92); }
+.ring { grid-row: span 3; grid-column: span 2; position: relative; display: grid; place-items: center; }
+.ring .disc { position: relative; height: 100%; aspect-ratio: 1; max-width: 100%; border-radius: 50%; background: var(--k-ctl); border: 1px solid var(--line); }
+.ring button { position: absolute; font: 15px system-ui, sans-serif; background: none; border: 0; color: var(--text); cursor: pointer; padding: 6px; }
+.ring .n { top: 2%; left: 50%; transform: translateX(-50%); }
+.ring .s2 { bottom: 2%; left: 50%; transform: translateX(-50%); }
+.ring .w { left: 3%; top: 50%; transform: translateY(-50%); }
+.ring .e { right: 3%; top: 50%; transform: translateY(-50%); }
+.ring .hub { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 34%; aspect-ratio: 1; border-radius: 50%; border: 1px dashed var(--line); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; margin-top: 6px; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--rule); vertical-align: -2px; margin-right: 4px; }
+</style>
+</head>
+<body data-show="both">
+<main>
+<h1>Unit pad</h1>
+<p class="muted">Package S5, 2026-10-17. The <strong>measured</strong> arrangement of <code>spec/unit-pad.yaml</code> (which units get a cell comes from how often engineers use them), drawn over the keypad, with the six user cells on U1–U6. <strong>Tap the cells: it works.</strong> Flick a cell up or down with the mouse or a finger, or use Shift or Alpha first, like the G2's taps. Nothing here computes a result.</p>
+
+<div class="bar" role="toolbar" aria-label="View">
+  <span class="muted">Show</span>
+  <button type="button" id="show-both" data-show="both" aria-pressed="true">Light and dark</button>
+  <button type="button" id="show-light" data-show="light" aria-pressed="false">Light</button>
+  <button type="button" id="show-dark" data-show="dark" aria-pressed="false">Dark</button>
+  <label><input type="checkbox" id="under"> The keys underneath</label>
+  <button type="button" id="reset">Example again</button>
+  <button type="button" id="empty">Empty slots</button>
+</div>
+
+<div class="layout">
+  <div class="phones" id="phones"></div>
+  <div class="side">
+    <h2 style="margin-top:0;border:0;padding:0">How to read it</h2>
+    <ul>
+      <li><strong>Big letter = tap.</strong> Top left (amber) = flick up, or Shift then the cell. Bottom left (blue) = flick down, or Alpha then the cell.</li>
+      <li><strong>Teal cells are prefixes</strong>, on the number keys from the biggest (G) to the smallest (p). A prefix lights up and waits; the next unit takes it. The same prefix again drops it.</li>
+      <li><strong>Units side by side multiply</strong> (N then m = N·m). <kbd>÷</kbd> puts the rest under the line, once per slot. <kbd>²</kbd> <kbd>³</kbd> and ⁻¹ act on the unit before; √ on the unit after.</li>
+      <li><strong>Enter</strong> goes to the next slot; flick up on Enter evaluates. <kbd>◀</kbd> <kbd>▶</kbd> also move between slots. <kbd>⌫</kbd> removes the last piece.</li>
+      <li><strong>Math</strong> opens Find on units, for everything that has no cell (Å, mmHg, cfm …).</li>
+      <li>The line under the formula reads the unit in words with its dimension. It is the only guard against a slip to the neighbouring prefix (M for m).</li>
+    </ul>
+    <div class="legend">
+      <span><span class="sw" style="background:#d3ecee"></span>prefix</span>
+      <span><span class="sw" style="background:#ffffff"></span>unit (one quantity per cell)</span>
+      <span><span class="sw" style="background:#dde3ec"></span>÷ × and powers</span>
+      <span><span class="sw" style="background:#efe8f9;border-style:dashed"></span>yours (U1–U6)</span>
+    </div>
+
+    <h2>What the measurement proposes</h2>
+    <ol>
+      <li><strong>One pad for every engineer</strong> (your call, and P14). The same unit is always on the same cell, so the hand learns it.</li>
+      <li><strong>20 unit cells, chosen by use.</strong> Counted in 120 engineering articles, 40 each from mechanical/civil, electrical and process/HVAC, weighted equally. The same 20 quantities come out however the counts are weighted.</li>
+      <li><strong>New on the pad:</strong> Btu, TR, bbl, knot, mph, mi, yd, mil, atm, ksi, Torr. <strong>Gone:</strong> C, Ah, Wb, kgf (Find), H and eV (now user-cell defaults).</li>
+      <li><strong>The user cells are the user keys U1–U6</strong> while a slot is open: a tap and two flicks each, 18 slots, no shared cell taken. Defaults: the most used units without a cell (dB, H, ton, cal, eV, d, P, St); 9 slots stay free for your own units.</li>
+    </ol>
+
+    <h2>For you to decide</h2>
+    <ul>
+      <li><strong>K or °C on the tap.</strong> Recommended: K (the SI unit, and the one inside W/(m·K)); °C is one flick up. °C is used 1.65× as much as K, under the "twice as much" that would give it the tap. With taps only, °C on the tap would save 0.025 presses per unit.</li>
+      <li><strong>Your own units.</strong> The process/HVAC list here is assumed from the counts. Tell me the units you type that take more than 2 presses.</li>
+    </ul>
+
+    <h2>Presses</h2>
+    <p class="muted" style="font-size:13px">S1's 50 units (median, the gate) and the mean weighted by measured use, counted by <code>tools/probes/unit-presses.mjs</code> and <code>pad-arrange.mjs</code>. A flick, Shift and Alpha count 1 each.</p>
+    <div class="tw"><table>
+      <thead><tr><th>Entry</th><th>Median, 50</th><th>Weighted mean</th><th>Gate (median ≤ 4)</th></tr></thead>
+      <tbody>
+        <tr><td>Letters, with flicks</td><td>2</td><td>2.36</td><td>pass</td></tr>
+        <tr><td>Letters, taps only</td><td>5.5</td><td>5.54</td><td class="warn">fail</td></tr>
+        <tr><td>Draft pad, with flicks</td><td>2</td><td>1.97</td><td>pass</td></tr>
+        <tr><td>Draft pad, taps only</td><td>2</td><td>2.29</td><td>pass</td></tr>
+        <tr><td><strong>This pad, with flicks</strong></td><td><strong>2</strong></td><td><strong>1.86</strong> (1.80 with U1–U6)</td><td>pass</td></tr>
+        <tr><td><strong>This pad, taps only</strong></td><td><strong>2</strong></td><td><strong>2.19</strong> (2.13 with U1–U6)</td><td>pass</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</div>
+</main>
+
+<script>
+// Units: symbol, name, dimension [L, M, T, I, Θ, N] (mass in kg, so the gram carries M).
+const U = {
+  m: ['m', 'metre', [1,0,0,0,0,0]], ft: ['ft', 'foot', [1,0,0,0,0,0]], in: ['in', 'inch', [1,0,0,0,0,0]],
+  g: ['g', 'gram', [0,1,0,0,0,0]], lb: ['lb', 'pound', [0,1,0,0,0,0]], t: ['t', 'tonne', [0,1,0,0,0,0]],
+  s: ['s', 'second', [0,0,1,0,0,0]], h: ['h', 'hour', [0,0,1,0,0,0]], min: ['min', 'minute', [0,0,1,0,0,0]],
+  K: ['K', 'kelvin', [0,0,0,0,1,0]], oC: ['°C', 'degree Celsius', [0,0,0,0,1,0]], oF: ['°F', 'degree Fahrenheit', [0,0,0,0,1,0]],
+  N: ['N', 'newton', [1,1,-2,0,0,0]], lbf: ['lbf', 'pound-force', [1,1,-2,0,0,0]], kgf: ['kgf', 'kilogram-force', [1,1,-2,0,0,0]],
+  Pa: ['Pa', 'pascal', [-1,1,-2,0,0,0]], bar: ['bar', 'bar', [-1,1,-2,0,0,0]], psi: ['psi', 'pound per square inch', [-1,1,-2,0,0,0]],
+  J: ['J', 'joule', [2,1,-2,0,0,0]], Wh: ['Wh', 'watt hour', [2,1,-2,0,0,0]], eV: ['eV', 'electronvolt', [2,1,-2,0,0,0]],
+  W: ['W', 'watt', [2,1,-3,0,0,0]], hp: ['hp', 'horsepower', [2,1,-3,0,0,0]], TR: ['TR', 'ton of refrigeration', [2,1,-3,0,0,0]],
+  L: ['L', 'litre', [3,0,0,0,0,0]], gal: ['gal', 'gallon', [3,0,0,0,0,0]], bbl: ['bbl', 'barrel', [3,0,0,0,0,0]],
+  A: ['A', 'ampere', [0,0,0,1,0,0]], V: ['V', 'volt', [2,1,-3,-1,0,0]], ohm: ['Ω', 'ohm', [2,1,-3,-2,0,0]], S: ['S', 'siemens', [-2,-1,3,2,0,0]],
+  F: ['F', 'farad', [-2,-1,4,2,0,0]], H: ['H', 'henry', [2,1,-2,-2,0,0]], C: ['C', 'coulomb', [0,0,1,1,0,0]], Ah: ['Ah', 'ampere hour', [0,0,1,1,0,0]],
+  T: ['T', 'tesla', [0,1,-2,-1,0,0]], Wb: ['Wb', 'weber', [2,1,-2,-1,0,0]], Hz: ['Hz', 'hertz', [0,0,-1,0,0,0]], rpm: ['rpm', 'revolution per minute', [0,0,-1,0,0,0]],
+  deg: ['°', 'degree', [0,0,0,0,0,0], 'angle'], rad: ['rad', 'radian', [0,0,0,0,0,0], 'angle'], mol: ['mol', 'mole', [0,0,0,0,0,1]],
+  atm: ['atm', 'standard atmosphere', [-1,1,-2,0,0,0]], mmHg: ['mmHg', 'millimetre of mercury', [-1,1,-2,0,0,0]], Torr: ['Torr', 'torr', [-1,1,-2,0,0,0]],
+  Btu: ['Btu', 'British thermal unit', [2,1,-2,0,0,0]], cal: ['cal', 'calorie', [2,1,-2,0,0,0]], kcal: ['kcal', 'kilocalorie', [2,1,-2,0,0,0]],
+  mi: ['mi', 'mile', [1,0,0,0,0,0]], yd: ['yd', 'yard', [1,0,0,0,0,0]], thou: ['mil', 'mil', [1,0,0,0,0,0]],
+  knot: ['knot', 'knot', [1,0,-1,0,0,0]], mph: ['mph', 'mile per hour', [1,0,-1,0,0,0]], ksi: ['ksi', 'kilopound per square inch', [-1,1,-2,0,0,0]],
+  cfm: ['cfm', 'cubic foot per minute', [3,0,-1,0,0,0]], d: ['d', 'day', [0,0,1,0,0,0]], dB: ['dB', 'decibel', [0,0,0,0,0,0]],
+  s_ton: ['ton', 'short ton', [0,1,0,0,0,0]], l_ton: ['l ton', 'long ton', [0,1,0,0,0,0]], P: ['P', 'poise', [-1,1,-1,0,0,0]], St: ['St', 'stokes', [2,0,-1,0,0,0]],
+};
+const P = { G: ['G', 'giga'], T: ['T', 'tera'], M: ['M', 'mega'], k: ['k', 'kilo'], h: ['h', 'hecto'], c: ['c', 'centi'], m: ['m', 'milli'], u: ['µ', 'micro'], n: ['n', 'nano'], p: ['p', 'pico'], f: ['f', 'femto'] };
+
+// A cell's layers: [kind, id]. kinds: pfx, unit, op, keep.
+const pu = (tap, up, down) => ({ tap: tap && ['pfx', tap], up: up && ['pfx', up], down: down && ['pfx', down] });
+const un = (tap, up, down) => ({ tap: tap && ['unit', tap], up: up && ['unit', up], down: down && ['unit', down] });
+// Rows 3-5: six columns. Rows 6-9: five. `under` is the keypad's own label.
+const R6 = [
+  [ { cls: '', under: 'Vars', ...un('mi', 'yd', 'thou') }, { cls: 'keep', under: 'Math', label: 'Find', tap: ['keep', 'find'] }, { cls: '', under: 'Tmpl', ...un('knot', 'mph') },
+    { cls: '', under: 'x', ...un('Hz', 'rpm') }, { cls: '', under: 'a b/c', ...un('deg', 'rad') }, { cls: 'ctl', under: '⌫', label: '⌫', tap: ['keep', 'bksp'] } ],
+  [ { cls: 'op', under: 'xʸ', label: '³', ulabel: '⁴', tap: ['op', 'p3'], up: ['op', 'p4'] }, { cls: '', under: 'sin', ...un('A') }, { cls: '', under: 'cos', ...un('V') },
+    { cls: '', under: 'tan', ...un('ohm', 'S') }, { cls: '', under: 'ln', ...un('F') }, { cls: '', under: 'log', ...un('T') } ],
+  [ { cls: 'op', under: 'x²', label: '²', ulabel: '√', tap: ['op', 'p2'], up: ['op', 'sqrt'] }, { cls: '', under: '(−)', ...un('J', 'Wh', 'Btu') }, { cls: '', under: '( )', ...un('W', 'hp', 'TR') },
+    { cls: '', under: ',', ...un('L', 'gal', 'bbl') }, { cls: 'enter', span: 2, under: 'Enter', label: 'Enter', ulabel: 'evaluate', tap: ['keep', 'enter'], up: ['keep', 'eval'] } ],
+];
+const R5 = [
+  [ { cls: '', under: 'ᴇ', ...un('mol') }, { cls: 'pfx', under: '7', ...pu('G', 'T') }, { cls: 'pfx', under: '8', ...pu('M') }, { cls: '', under: '9', ...un('m', 'ft', 'in') },
+    { cls: 'op', under: '÷', label: '÷', ulabel: '⁻¹', tap: ['op', 'per'], up: ['op', 'inv'] } ],
+  [ { cls: 'ctl', under: 'Alpha', label: 'Alpha', tap: ['keep', 'alpha'] }, { cls: 'pfx', under: '4', ...pu('k', null, 'h') }, { cls: 'pfx', under: '5', ...pu('c') },
+    { cls: '', under: '6', ...un('g', 'lb', 't') }, { cls: 'op', under: '×', label: '×', tap: ['op', 'times'] } ],
+  [ { cls: 'ctl', under: 'Shift', label: 'Shift', tap: ['keep', 'shift'] }, { cls: 'pfx', under: '1', ...pu('m') }, { cls: 'pfx', under: '2', ...pu('u') },
+    { cls: '', under: '3', ...un('s', 'h', 'min') }, { cls: '', under: '−', ...un('N', 'lbf') } ],
+  [ { cls: '', under: 'Fmt', ...un('atm', 'ksi', 'Torr') }, { cls: 'pfx', under: '0', ...pu('n') }, { cls: 'pfx', under: '.', ...pu('p', null, 'f') },
+    { cls: '', under: '␣', ...un('K', 'oC', 'oF') }, { cls: '', under: '+', ...un('Pa', 'bar', 'psi') } ],
+];
+// The user cells U1-U6, spec/unit-pad.yaml `user:` (the defaults: the most used units without a base cell).
+const USER = [ un('dB'), un('H'), un('s_ton', 'l_ton'), un('cal', 'eV'), un('d'), un('P', 'St') ];
+
+// State: the formula "72 [slot] → [end slot]".
+let slots, active, armed, sqrtNext, latch, msg, msgErr;
+const unitTok = (pfx, id, pow = 1, root = false) => ({ t: 'u', pfx, id, pow, root });
+function example() {
+  slots = [ [unitTok('k', 'm'), { t: 'per' }, unitTok(null, 'h')], [unitTok(null, 'm'), { t: 'per' }, unitTok(null, 's')] ];
+  active = 1; armed = null; sqrtNext = false; latch = null; say('t02 of the task list: 72 km/h → m/s. Press Enter or ⌫, or tap a slot.');
+}
+function emptySlots() { slots = [[], []]; active = 0; armed = null; sqrtNext = false; latch = null; say('Empty slots. Try k, N, m: kN·m.'); }
+function say(t, err = false) { msg = t; msgErr = err; }
+
+const sup = (n) => String(n).replace(/-/g, '⁻').replace(/\d/g, (d) => '⁰¹²³⁴⁵⁶⁷⁸⁹'[d]);
+function sym(tok) {
+  const p = tok.pfx ? P[tok.pfx][0] : '';
+  return (tok.root ? '√' : '') + p + U[tok.id][0] + (tok.pow !== 1 ? sup(tok.pow) : '');
+}
+function parts(list) {
+  const i = list.findIndex((x) => x.t === 'per');
+  const num = (i < 0 ? list : list.slice(0, i)).filter((x) => x.t === 'u');
+  const den = i < 0 ? [] : list.slice(i + 1).filter((x) => x.t === 'u');
+  return { num, den, per: i >= 0 };
+}
+function show(list) {
+  const { num, den, per } = parts(list);
+  let s = num.map(sym).join('·');
+  if (per) s += (num.length ? '' : '1') + '/' + (den.length > 1 ? '(' + den.map(sym).join('·') + ')' : den.map(sym).join(''));
+  return s;
+}
+function words(tok) {
+  const n = (tok.pfx ? P[tok.pfx][1] : '') + U[tok.id][1];
+  let w = tok.pow === 2 ? 'square ' + n : tok.pow === 3 ? 'cubic ' + n : tok.pow === 4 ? n + ' to the fourth' : tok.pow === -1 ? 'reciprocal ' + n : n;
+  return tok.root ? 'root ' + w : w;
+}
+function reading(list) {
+  const { num, den, per } = parts(list);
+  if (!num.length && !den.length) return '';
+  let w = num.map(words).join(' ');
+  if (per) w += (num.length ? ' ' : '') + 'per ' + den.map(words).join(' ');
+  const d = [0,0,0,0,0,0]; let angle = false;
+  for (const [toks, sgn] of [[num, 1], [den, -1]]) for (const tok of toks) {
+    const f = sgn * tok.pow * (tok.root ? 0.5 : 1);
+    U[tok.id][2].forEach((v, k) => { d[k] += v * f; });
+    if (U[tok.id][3]) angle = true;
+  }
+  const names = ['L', 'M', 'T', 'I', 'Θ', 'N'];
+  let dim = names.map((nm, k) => d[k] === 0 ? '' : nm + (d[k] === 1 ? '' : Number.isInteger(d[k]) ? sup(d[k]) : '^(' + d[k] + ')')).filter(Boolean).join(' ');
+  if (!dim) dim = angle ? 'angle (dimensionless)' : 'dimensionless';
+  return '<b>' + w + '</b> <span class="dim">· ' + dim + '</span>';
+}
+
+function act(cell, layer) {
+  if (!cell) return;
+  let use = layer;
+  if (layer === 'tap' && latch) { use = latch === 's' ? 'up' : 'down'; }
+  const a = cell[use] || (use !== 'tap' ? null : null);
+  const wasLatch = latch; latch = null;
+  if (!a) {
+    if (cell.user) say('Empty user cell: you set it from Find, like the user keys.');
+    else say('Nothing on this cell' + (use === 'up' ? ' flicked up' : use === 'down' ? ' flicked down' : '') + '.', true);
+    return render();
+  }
+  const [kind, id] = a; const slot = slots[active];
+  if (kind === 'keep') {
+    if (id === 'shift' || id === 'alpha') { const l = id === 'shift' ? 's' : 'a'; latch = wasLatch === l ? null : l; say(latch ? (l === 's' ? 'Shift: the next cell gives its upper unit.' : 'Alpha: the next cell gives its lower unit.') : ''); }
+    else if (id === 'find') say('Find opens on units: type a few letters, Enter takes the first hit (not in this mockup).');
+    else if (id === 'bksp') {
+      if (armed) { armed = null; say('Prefix dropped.'); }
+      else if (sqrtNext) { sqrtNext = false; say('√ dropped.'); }
+      else if (slot.length) { const tk = slot[slot.length - 1]; if (tk.t === 'u' && (tk.pow !== 1)) { tk.pow = 1; } else if (tk.t === 'u' && tk.root) { tk.root = false; } else slot.pop(); say(''); }
+      else say('The slot is empty.');
+    }
+    else if (id === 'enter') {
+      if (armed) say('A prefix alone: add a unit, or press the prefix again to drop it.', true);
+      else if (active < slots.length - 1) { active++; say(''); }
+      else say('Enter in the end slot evaluates: 72 km/h in m/s (not computed in this mockup).');
+    }
+    else if (id === 'eval') say(armed ? 'A prefix alone: add a unit first.' : 'Evaluates from this slot (not computed in this mockup).', !!armed);
+  } else if (kind === 'pfx') {
+    if (armed === id) { armed = null; say('Prefix dropped.'); } else { armed = id; say(P[id][1] + ': the next unit takes it.'); }
+  } else if (kind === 'unit') {
+    slot.push(unitTok(armed, id, 1, sqrtNext)); armed = null; sqrtNext = false; say('');
+  } else if (kind === 'op') {
+    const last = [...slot].reverse().find((x) => x.t === 'u' || x.t === 'per');
+    if (id === 'per') { if (slot.some((x) => x.t === 'per')) say('One ÷ per slot (the SI rule). Put the rest under the same line.', true); else if (armed) say('A prefix alone: add a unit first.', true); else { slot.push({ t: 'per' }); say(''); } }
+    else if (id === 'times') say('Units side by side already multiply; × just shows the dot.');
+    else if (id === 'sqrt') { sqrtNext = true; say('√: acts on the next unit.'); }
+    else { const pw = { p2: 2, p3: 3, p4: 4, inv: -1 }[id]; if (!last || last.t !== 'u' || slot[slot.length - 1].t !== 'u') say('A power acts on the unit before it; there is none.', true); else { last.pow = pw; say(''); } }
+  }
+  render();
+}
+
+function cellHtml(c, i, r) {
+  const lab = (a, fallback) => a ? (a[0] === 'pfx' ? P[a[1]][0] : a[0] === 'unit' ? U[a[1]][0] : fallback) : '';
+  const t = c.label || lab(c.tap, '');
+  const up = c.ulabel || lab(c.up, '');
+  const dn = lab(c.down, '');
+  const cls = ['c', c.cls].concat(c.cls === 'pfx' && c.tap && armed === c.tap[1] ? ['armed'] : [])
+    .concat(c.tap && c.tap[1] === 'shift' && latch === 's' ? ['latched'] : []).concat(c.tap && c.tap[1] === 'alpha' && latch === 'a' ? ['latched', 'a'] : []).join(' ');
+  const span = c.span ? ` style="grid-column: span ${c.span}"` : '';
+  const aria = [t, up && 'up ' + up, dn && 'down ' + dn].filter(Boolean).join(', ');
+  return `<button type="button" class="${cls}" data-r="${r}" data-i="${i}"${span} aria-label="${aria}"><span class="t">${t}</span>${up ? `<span class="u">${up}</span>` : ''}${dn ? `<span class="d">${dn}</span>` : ''}<span class="under">${c.under || ''}</span></button>`;
+}
+function userHtml(c, i) {
+  const t = c.tap ? U[c.tap[1]][0] : '+';
+  const up = c.up ? U[c.up[1]][0] : '', dn = c.down ? U[c.down[1]][0] : '';
+  return `<button type="button" class="c user${c.tap ? '' : ' empty'}" data-r="u" data-i="${i}" aria-label="U${i + 1}: ${c.tap ? [t, up && 'up ' + up, dn && 'down ' + dn].filter(Boolean).join(', ') : 'empty'}"><span class="tag">U${i + 1}</span><span class="t">${t}</span>${up ? `<span class="u">${up}</span>` : ''}${dn ? `<span class="d">${dn}</span>` : ''}<span class="under">U${i + 1}</span></button>`;
+}
+function phoneHtml(theme) {
+  const slotHtml = (list, k) => {
+    const on = k === active;
+    const body = show(list);
+    const tail = on ? (armed ? `<span class="armed">${P[armed][0]}…</span>` : '') + (sqrtNext ? '<span class="armed">√…</span>' : '') + '<span class="caret"></span>' : '';
+    return `<span class="slot${on ? ' on' : ''}" data-slot="${k}">${body || (on ? '' : '<span class="ph">' + (k === slots.length - 1 ? 'should be' : 'unit') + '</span>')}${tail}</span>`;
+  };
+  const U6 = USER.map((c, i) => userHtml(c, i));
+  const cluster = `<div class="g6 cluster">
+    ${U6[0]}${U6[1]}<div class="ring"><div class="disc"><button type="button" class="n" data-nav="up" aria-label="up">▲</button><button type="button" class="w" data-nav="left" aria-label="previous slot">◀</button><button type="button" class="e" data-nav="right" aria-label="next slot">▶</button><button type="button" class="s2" data-nav="down" aria-label="down">▼</button><span class="hub"></span></div></div>
+    <button type="button" class="c nav" data-nav="view"><span class="t">View</span></button><button type="button" class="c ctl" data-nav="esc"><span class="t">Esc</span></button>
+    ${U6[2]}${U6[3]}<button type="button" class="c nav" data-nav="undo"><span class="t">Undo</span></button><button type="button" class="c nav" data-nav="copy"><span class="t">Copy</span></button>
+    ${U6[4]}${U6[5]}<button type="button" class="c nav" data-nav="home"><span class="t">⇤</span></button><button type="button" class="c nav" data-nav="end"><span class="t">⇥</span></button>
+  </div>`;
+  const rows6 = `<div class="g6 maths6">${R6.map((row, r) => row.map((c, i) => cellHtml(c, i, 'a' + r)).join('')).join('')}</div>`;
+  const rows5 = `<div class="g5">${R5.map((row, r) => row.map((c, i) => cellHtml(c, i, 'b' + r)).join('')).join('')}</div>`;
+  return `<div class="phone ${theme}" aria-label="Unit pad, ${theme}">
+    <div class="status"><span class="place">Home ▾</span><span class="chip">DEG</span><span class="chip">units</span>${latch ? `<span class="latch ${latch}">${latch === 's' ? 'Shift' : 'Alpha'}</span>` : ''}<span class="grow"></span><span>☰</span></div>
+    <div class="screen">
+      <div class="hist"><span>9.81·12</span><span>117.72</span></div>
+      <div class="grow"></div>
+      <div class="formula"><span>72</span>${slotHtml(slots[0], 0)}<span class="arrow">→</span>${slotHtml(slots[1], 1)}</div>
+      <div class="reading">${reading(slots[active])}</div>
+      <div class="msg${msgErr ? ' err' : ''}">${msg}</div>
+    </div>
+    <div class="kp">${cluster}${rows6}${rows5}</div>
+  </div>`;
+}
+const phones = document.getElementById('phones');
+function render() { phones.innerHTML = phoneHtml('light') + phoneHtml('dark'); }
+function cellOf(el) {
+  const r = el.dataset.r, i = +el.dataset.i;
+  if (r === 'u') return { ...USER[i], user: true };
+  return r[0] === 'a' ? R6[+r.slice(1)][i] : R5[+r.slice(1)][i];
+}
+// Tap, flick up, flick down (pointer); keyboard Enter or Space is a tap.
+let down = null, lastPointer = 0;
+phones.addEventListener('pointerdown', (e) => { const b = e.target.closest('button[data-r]'); if (!b) return; down = { b, y: e.clientY }; try { b.setPointerCapture(e.pointerId); } catch (_) {} });
+phones.addEventListener('pointerup', (e) => {
+  if (!down) return; const { b, y } = down; down = null; lastPointer = Date.now();
+  const dy = e.clientY - y; act(cellOf(b), dy < -16 ? 'up' : dy > 16 ? 'down' : 'tap');
+});
+phones.addEventListener('pointercancel', () => { down = null; });
+phones.addEventListener('click', (e) => {
+  const s = e.target.closest('[data-slot]'); if (s) { active = +s.dataset.slot; armed = null; sqrtNext = false; say(''); return render(); }
+  const n = e.target.closest('[data-nav]');
+  if (n) {
+    const k = n.dataset.nav;
+    if (k === 'left' && active > 0) { active--; armed = null; say(''); }
+    else if (k === 'right' && active < slots.length - 1) { active++; armed = null; say(''); }
+    else if (k === 'esc') say('Esc leaves the unit view; the slots stay with the line.');
+    else if (k === 'left' || k === 'right') say('No slot further that way.');
+    else say('Works as on the normal keypad.');
+    return render();
+  }
+  const b = e.target.closest('button[data-r]'); if (!b || Date.now() - lastPointer < 400) return; act(cellOf(b), 'tap');
+});
+document.querySelectorAll('.bar button[data-show]').forEach((b) => b.addEventListener('click', () => {
+  document.body.dataset.show = b.dataset.show;
+  document.querySelectorAll('.bar button[data-show]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+}));
+document.getElementById('under').addEventListener('change', (e) => { phones.dataset.under = e.target.checked ? '1' : '0'; });
+document.getElementById('reset').addEventListener('click', () => { example(); render(); });
+document.getElementById('empty').addEventListener('click', () => { emptySlots(); render(); });
+example(); render();
+</script>
+</body>
+</html>

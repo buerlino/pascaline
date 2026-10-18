@@ -14,7 +14,13 @@
 //   node tools/probes/unit-presses.mjs --no-auto-leave an exponent needs ▶ before the next unit
 //   node tools/probes/unit-presses.mjs --pad           the unit pad of P14 (spec/unit-pad.yaml, docs/research/r9-unit-pad.md):
 //                                                      prefix and unit cells instead of letters; add --taps for Shift or
-//                                                      Alpha + cell instead of flicks
+//                                                      Alpha + cell instead of flicks; the user cells U1-U6 count with
+//                                                      their defaults (`user:`), --no-user leaves them out
+//   node tools/probes/unit-presses.mjs --pad --weights tools/probes/unit-weights.yaml
+//                                                      also the weighted mean over the measured unit uses (S5,
+//                                                      unit-freq/count.mjs): a unit or prefix not on the pad costs its
+//                                                      Find trip (find-cost.mjs); without --pad, units the letters
+//                                                      cannot type are left out and their share is printed
 //   node tools/probes/unit-presses.mjs --read BTU lbm  what qalc's own parser reads for each text, and nothing else
 //   QALC_OUT=<dir with qalc.mjs> node tools/probes/unit-presses.mjs   (default: engine/qalc/_out/dev of this checkout
 //                                                                    or of the main checkout; skipped if none)
@@ -36,6 +42,7 @@ const LOCK = args.has('--lower-lock');
 const PAD = args.has('--pad');
 const FLICKS = !args.has('--taps') && !LOCK;
 const AUTO_LEAVE = !args.has('--no-auto-leave');
+const WEIGHTS = args.has('--weights') ? argv[argv.indexOf('--weights') + 1] : null;
 
 // ---- The list: 50 units an engineer types, each with why it is on the list. Sources:
 //   SI2, SI4, SI5, SI6, SI8  SI Brochure, 9th edition (BIPM, V4.01, June 2026), Tables 2 (base units), 4 (the 22
@@ -210,13 +217,23 @@ const padCell = (list) => {
   for (const c of list ?? []) for (const how of ['tap', 'up', 'down']) if (c[how]) m.set(c[how], { key: c.key, how });
   return m;
 };
-const padUnit = padCell(pad?.units);
+const NO_USER = args.has('--no-user');
+const padUnit = padCell([...(pad?.units ?? []), ...(NO_USER ? [] : pad?.user ?? [])]); // the user cells U1-U6 with their defaults (schema 2), unless --no-user
 const padPfx = padCell(pad?.prefixes);
 const padOp = padCell(pad?.ops);
 const cellPress = ({ key, how }) =>
   how === 'tap' ? [key] : FLICKS ? [(how === 'up' ? '↑' : '↓') + key] : [how === 'up' ? 'shift' : 'alpha', key];
 const QALC_SYM = { u: 'µ', oC: '°C', oF: '°F', deg: '°', ohm: 'Ω' };
 const POWER_OP = { 2: 'square', 3: 'cube', 4: 'fourth' };
+// The written form of `parts` for the letters (typeUnit): k:W h → kW·h, W m^-1 K^-1 → W/(m·K), s^-1 → s⁻¹.
+const SUP_OF = { 2: '²', 3: '³', 4: '⁴' };
+function written(parts) {
+  const toks = parts.split(' ').map((p) => { const [n, e] = p.split('^'); const [pfx, unit] = n.includes(':') ? n.split(':') : [null, n]; return { pfx, unit, exp: e === undefined ? 1 : Number(e) }; });
+  const w = (t, e) => (t.pfx ? QALC_SYM[t.pfx] ?? t.pfx : '') + (QALC_SYM[t.unit] ?? t.unit) + (e === 1 ? '' : SUP_OF[e] ?? '?');
+  const num = toks.filter((t) => t.exp > 0).map((t) => w(t, t.exp)), den = toks.filter((t) => t.exp < 0).map((t) => w(t, -t.exp));
+  if (!num.length) return den.length === 1 ? den[0] + '⁻¹' : '?';
+  return num.join('·') + (den.length ? '/' + (den.length > 1 ? `(${den.join('·')})` : den[0]) : '');
+}
 
 function typePad(parts) {
   const toks = parts.split(' ').map((p) => {
@@ -224,17 +241,24 @@ function typePad(parts) {
     const [pfx, unit] = name.includes(':') ? name.split(':') : [null, name];
     return { pfx, unit, exp: e === undefined ? 1 : Number(e) };
   });
-  for (let i = 0; i + 1 < toks.length; i++) {
-    const [a, b] = [toks[i], toks[i + 1]];
-    if (a.exp === 1 && b.exp === 1 && !b.pfx && padUnit.has(a.unit + b.unit)) toks.splice(i, 2, { ...a, unit: a.unit + b.unit });
+  for (let i = 0; i < toks.length; i++) for (let j = 0; j < toks.length; j++) { // in any order: h k:W is kWh
+    const [a, b] = [toks[i], toks[j]];
+    if (i !== j && a && b && Math.abs(a.exp) === 1 && b.exp === a.exp && !b.pfx && padUnit.has(a.unit + b.unit)) {
+      toks[i] = { ...a, unit: a.unit + b.unit };
+      toks.splice(j, 1);
+      if (j < i) i--;
+    }
   }
   const presses = [];
   const missing = [];
+  const finds = []; // units typed through Find (for --weights: Find's prefixed item may be cheaper, kcal)
   const op = (name) => (padOp.has(name) ? presses.push(...cellPress(padOp.get(name))) : missing.push(name));
   const factor = (t, e) => {
     if (e === 0.5) op('sqrt');
+    const before = presses.length;
     if (t.pfx) padPfx.has(t.pfx) ? presses.push(...cellPress(padPfx.get(t.pfx))) : missing.push(t.pfx + '-');
-    padUnit.has(t.unit) ? presses.push(...cellPress(padUnit.get(t.unit))) : missing.push(t.unit);
+    if (padUnit.has(t.unit)) presses.push(...cellPress(padUnit.get(t.unit)));
+    else { missing.push(t.unit); finds.push({ pfx: t.pfx, unit: t.unit, pfxPresses: presses.length - before }); }
     if (e !== 1 && e !== 0.5) POWER_OP[e] ? op(POWER_OP[e]) : missing.push('^' + e);
   };
   const num = toks.filter((t) => t.exp > 0);
@@ -247,7 +271,7 @@ function typePad(parts) {
   const numText = num.map((t) => term(t, t.exp)).join('*') || '1';
   const qalc = den.length ? `${numText}/(${den.map((t) => term(t, -t.exp)).join('*')})` : numText;
   const meant = toks.map((t) => (t.pfx ? t.pfx + ':' : '') + t.unit + (t.exp === 1 ? '' : '^' + t.exp)).sort().join(' ');
-  return { presses, missing, qalc, meant };
+  return { presses, missing, qalc, meant, finds };
 }
 
 // ---- Counting (skipped with --read)
@@ -266,10 +290,36 @@ const single = rows.filter((r) => !isCompound(r.u)).map((r) => r.presses.length)
 const compound = rows.filter((r) => isCompound(r.u)).map((r) => r.presses.length);
 
 const mode = FLICKS ? 'flicks' : LOCK ? 'no flicks, lower-case lock in the slot' : 'taps only, the G2 way';
-console.log(PAD ? `unit pad press count (P14; ${mode})` : `unit slot press count (${mode}; exponent leave: ${autoLeave ? 'auto' : '▶'})`);
+console.log(PAD ? `unit pad press count (P14; ${mode}${pad.user && !NO_USER ? '; with the user cells\' defaults' : ''})` : `unit slot press count (${mode}; exponent leave: ${autoLeave ? 'auto' : '▶'})`);
 console.log(`  ${rows.length} units: median ${median(counts)}, mean ${(counts.reduce((a, b) => a + b, 0) / counts.length).toFixed(2)}, max ${Math.max(...counts)}`);
 console.log(`  ${single.length} single units: median ${median(single)}; ${compound.length} compound units: median ${median(compound)}`);
 console.log(`  gate (P8 rule 2, median <= 4): ${median(counts) <= 4 ? 'PASS' : 'FAIL'}`);
+if (WEIGHTS) { // S5: the weighted mean over the measured unit uses, beside the median
+  const W = parseYaml(readFileSync(resolve(WEIGHTS), 'utf8'));
+  const fc = PAD ? await import(pathToFileURL(join(root, 'tools/probes/find-cost.mjs')).href) : null;
+  let sum = 0, wsum = 0, left = 0, viaFind = 0;
+  for (const x of W.expressions) {
+    if (PAD) {
+      const r = typePad(x.parts);
+      // a missing prefix costs its Find trip; a missing unit its Find trip, or Find's prefixed item instead of the
+      // prefix cell and the unit (kcal), whichever is cheaper (as pad-arrange.mjs counts it)
+      let extra = r.missing.filter((m) => m.endsWith('-')).reduce((a, m) => a + fc.findCost('pfx:' + m.slice(0, -1)), 0);
+      for (const f of r.finds) {
+        const item = f.pfx && fc.pairItem(f.pfx, f.unit);
+        extra += Math.min(fc.unitFind(f.unit), item ? fc.findCost(item) - f.pfxPresses : Infinity);
+      }
+      if (r.missing.length) viaFind += x.weight;
+      sum += x.weight * (r.presses.length + extra); wsum += x.weight;
+    } else {
+      const r = typeUnit(written(x.parts));
+      if (r.missing.length) { left += x.weight; continue; }
+      sum += x.weight * r.presses.length; wsum += x.weight;
+    }
+  }
+  const tot = wsum + left;
+  console.log(`  weighted mean over ${W.expressions.length} measured unit expressions (${WEIGHTS}): ${(sum / wsum).toFixed(3)}` +
+    (PAD ? `; ${(100 * viaFind / tot).toFixed(1)} % of the uses take Find for a part` : `; ${(100 * left / tot).toFixed(1)} % of the uses cannot be typed and are left out`));
+}
 const hist = {};
 for (const n of counts) hist[n] = (hist[n] ?? 0) + 1;
 console.log(`  presses: ${Object.entries(hist).map(([n, k]) => `${n}:${k}`).join('  ')}`);
