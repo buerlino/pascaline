@@ -343,6 +343,11 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-18 R39 defaults (the real odd root of a power, P5 b)
+1. **A literal fraction is reduced first:** `(-8)^(2/6)` is `(-8)^(1/3)` = −2, so one exponent value never gives two answers. A literal is whole numbers over whole numbers, in brackets or not, with a minus before it or in its numerator (`-2/3`, `\frac{-1}{3}`); `0.2`, `x/3` and `1/(1+2)` keep Giac's principal power. *Would change if* the G2 gives the principal root for `(-8)^(2/6)`.
+2. **The root template stays the real root in CAS** (`realOddRoots` unset leaves ∛ as surd, L6); only the power form follows the view. *Would change if* the owner wants CAS's ∛(-8) principal too.
+3. **Giac text in Home stays Giac's:** a Home golden case written as Giac text (`cx-cbrt-neg8`, `(-8)^(1/3)`) does not pass our parser and keeps the principal root; what a user types always goes through the parser. *Would change if* Home ever takes raw Giac text from the user.
+
 ### 2026-10-18 Opus pass 4 defaults (G22, G23, R51)
 1. **R51, G2 item 59 is still unanswered** (`tests/golden/g2.yaml`), so a number, spacing and a number stays the error "put × between two numbers", as R29 point 2 decided. *Would change if* the owner's G2 answer is 6 (then the owner decides again).
 2. **G23, the 50 ms budget is checked between levels.** A synchronous Giac call cannot be stopped partway, so one level can run past the budget. The checked inputs stay far below it: `sin(10^2000)` costs about 12 ms when run alone, and the 123 Home inputs keep their p95 (3.17/3.94 ms before, 3.14/3.87 ms after, at 12/30 digits). Probed on phase-1 `f970848`: the result's digits match the oracle for `sin(10^k)` at k = 100, 300 and 500, k = 700 gives `⚠ 1` with the value −1 (oracle −0.99999882), and k = 600, 900 and 2000 show no digit. *Would change if* a device measurement (A4b-style) puts a Home input over the 50 ms budget.
