@@ -7,6 +7,10 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-18 G21: in DEG, an exponential that Giac builds itself still reads degrees. OPEN (Opus pass 17).** G21 (`cfa8b74`) rewrites what the user types (exp becomes the helper pasexp), so every typed exp follows F29. An exp that Giac makes later is not rewritten: in the CAS view in DEG, `subst(exp(i*x),x=90)` gives `exp(90*i)`, and `re` of that is `0`, with no mark, where the RAD value is cos 90 = −0.448073616129 (probe on phase-1 `9aacb29`; `evalf` of the same gives the right −0.448073616129+0.893996663601·i). `int(exp(i*x),x,0,90)` gives `(-i)*exp(90*i)+i`, the same kind of term.
+  - **Recommendation:** a gorge package G21b (Opus, night-safe, about half a day) that finds where Giac's exact simplification of exp of an imaginary multiple applies the angle mode and patches it (engine/giac/patches/README.md, with the upstream report), then drops the pasexp rewrite if the patch covers the typed case too.
+  - **Why:** it is a silent wrong value (principle 3), but only after a symbolic step in DEG, which is rare for engineers who work in RAD for complex numbers; the typed cases are right today. **Would change if** you prefer an error or a ⚠ mark for any exact exp with an imaginary part in DEG instead of the patch.
+
 - **2026-10-18 G33: the library replay misses G29's budget about tenfold; what gates R59. OPEN (Opus pass 10).** 200 library programs replay in about 21 ms (median) on the desktop; at G29's desktop-to-Tab One ratio (291/10.8) that is about 570 ms on the Tab One against the 50 ms budget (G33's report and its printed test). G33 merges after its fix package G33f1 with this recorded as not met, because nothing reaches the import before R59 (defaults, Opus pass 10).
   - **Recommendation:** R59 starts only after A12 has measured a 200-program library on the Tab One; if that is over 50 ms, a gorge package for lazy definition of functions (r10 section 3.2: a function is defined on its first use, not at start) comes before R59.
   - **Why:** the replay runs on every start, so an imported library would cost every user half a second of start-up on the slowest device; the estimate is a ratio, not a measurement, so A12 decides whether the lever is needed. **Would change if** A12 measures the replay inside 50 ms.
@@ -395,6 +399,11 @@ Newest first. Where an entry changed an earlier document, that document now carr
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-18 Opus pass 17 defaults (G31f1, G21, R12a)
+1. **G21: in DEG the host rewrites a typed exp to the helper pasexp** (outside strings, in Home and CAS; definitions keep pasexp, which checks the angle mode when it runs, so a function defined in DEG is right in RAD too). The exact result of `exp(i*90)` in DEG is `cos(16200/π)+i·sin(16200/π)`: correct in degrees, and it evaluates to −0.448073616129+0.893996663601·i. *Would change if* a Giac patch (G21b, "Needs the user") makes the rewrite unneeded.
+2. **G21f1: the helper's name is never shown.** On `cfa8b74`, `g(x):=exp(i*x)` in DEG shows `(x)->pasexp(i*x)` in Home and the CAS view, and the LaTeX draws pasexp; every shown text and LaTeX turns pasexp back into exp, which means the same thing there.
+3. **R12a: the mockups merge as they are**; the owner's notes (feedback.md #54, a taller entry line, and #55, nicer colours) go to R12b and R50b.
 
 ### 2026-10-18 Opus pass 16 defaults (R28f1, G30f1, G31)
 1. **G31: Fixed switches to scientific with the same number of decimals when every shown decimal would be 0 for a nonzero value** (G2 item 60, virtual-calc): in Fixed 4, 4.7ᴇ-6 is 4.7000ᴇ-6 and 0.000123 is 0.0001; the sign is kept, 0 stays 0.0000, and the mark follows the text shown. *Would change if* a device check differs.
