@@ -82,11 +82,15 @@ function checked(text: string): Checked | null {
 }
 
 /** Why a checked answer is not one term, or null when it is. */
-function refusal(c: Checked): UnitError | null {
+function refusal(c: Checked, job: UnitJob): UnitError | null {
   if (c.kind === "function" || c.kind === "trig") return { error: "function" };
   if (c.kind === "sum") {
     if (c.terms.some((t) => !t.every(isExponent))) return { error: "function" };
     const dims = [...new Set(c.terms.map(dimKeyOf))].sort(byDimension);
+    if (dims.length === 2) {
+      const cy = cycleRefusal(job, dims[0]!, dims[1]!);
+      if (cy) return cy;
+    }
     return dims.length > 1 ? { error: "dimension", dims } : { error: "function" };
   }
   return null;
@@ -217,7 +221,7 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const src = both?.[0] !== undefined ? checked(both[0]) : null;
   let dst = both?.[1] !== undefined ? checked(both[1]) : null;
   if (!src || !dst) return { error: "engine", detail: out };
-  const bad = refusal(src) ?? refusal(dst);
+  const bad = refusal(src, job) ?? refusal(dst, job);
   if (bad) return bad;
   if (dst.kind !== "term") return { error: "engine", detail: "an end slot of 0" };
   const dimension = src.kind === "term" ? dimKeyOf(src.exps) : null;

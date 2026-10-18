@@ -53,6 +53,7 @@ cases:
   - { id: "d27", input: "1*{rad / s}", to: "Hz", message: "Units don't match: T⁻¹·angle vs T⁻¹", source: "derived", note: "rad stays in the dimension key" }
   - { id: "d28", input: "1*{rpm}", to: "Hz", oracle: "F(1,60)", expect: "0.0166666666667", mark: "≈", exact: "1/60", source: "derived", note: "G25: rpm is 1 rev/min, a frequency (rev is a pure count of cycles): no 2π trap" }
   - { id: "d29", input: "60*{rpm}", to: "rad / s", message: "rpm counts turns: write tr/min for an angular speed", source: "derived", note: "G32: a revolution is a count, not an angle: 2π rad needs the angle written (use tr, the turn)" }
+  - { id: "d29b", input: "60*{rpm}+1*{rad / s}", message: "rpm counts turns: write tr/min for an angular speed", source: "derived", note: "G32: the same refusal when rpm and an angle meet in a sum" }
   - { id: "d26", input: "sin(30*{deg})", oracle: "F(1,2)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "an angle unit inside sin" }
   - { id: "d36", input: "sin(30*{deg})", settings: { angle: "deg" }, oracle: "F(1,2)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "an angle unit is the same in either mode" }
   - { id: "d37", input: "sin(30)", settings: { angle: "deg" }, oracle: "sind(30)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "a bare number follows the Home angle mode (G15 default)" }
