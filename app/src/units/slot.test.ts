@@ -15,22 +15,34 @@ import type { UnitSlot } from "./types.ts";
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "../../..");
 
-const unit = (id: string, sym: string, title: string): IndexItem =>
-  ({ id: `unit:${id}`, kind: "unit", names: [id], title, tier: 0, insert: `\\unit{${id}}{\\mathrm{${sym}}}` });
-const pfx = (id: string, sym: string, title: string): IndexItem =>
-  ({ id: `pfx:${id}`, kind: "pfx", names: [id], title, tier: 0, insert: `\\pfx{${id}}{\\mathrm{${sym}}}` });
+const unit = (id: string, sym: string, title: string, si?: string, dim?: string): IndexItem =>
+  ({ id: `unit:${id}`, kind: "unit", names: [id], title, tier: 0, insert: `\\unit{${id}}{\\mathrm{${sym}}}`,
+    ...(si !== undefined ? { si } : {}), ...(dim !== undefined ? { dim } : {}) });
+const pfx = (id: string, sym: string, title: string, si?: string): IndexItem =>
+  ({ id: `pfx:${id}`, kind: "pfx", names: [id], title, tier: 0, insert: `\\pfx{${id}}{\\mathrm{${sym}}}`, ...(si !== undefined ? { si } : {}) });
 
-// Items as the Find index writes them (titles and inserts copied from the generated index, 2026-10-18).
+// Items as the Find index writes them (titles, inserts, si and dim copied from the generated index, 2026-10-18).
 const ITEMS: IndexItem[] = [
-  pfx("k", "k", "Kilo (10^3)"), pfx("M", "M", "Mega (10^6)"), pfx("m", "m", "Milli (10^-3)"),
-  pfx("u", "µ", "Micro (10^-6)"), pfx("n", "n", "Nano (10^-9)"), pfx("G", "G", "Giga (10^9)"),
-  unit("m", "m", "Meter"), unit("km", "km", "Kilometer"), unit("mm", "mm", "Millimeter"), unit("N", "N", "Newton"),
-  unit("kN", "kN", "Kilonewton"), unit("s", "s", "Second"), unit("ms", "ms", "Millisecond"), unit("h", "h", "Hour"),
-  unit("J", "J", "Joule"), unit("g", "g", "Gram"), unit("kg", "kg", "Kilogram"), unit("K", "K", "Kelvin"),
-  unit("V", "V", "Volt"), unit("Hz", "Hz", "Hertz"), unit("Pa", "Pa", "Pascal"), unit("MPa", "MPa", "Megapascal"),
-  unit("ohm", "Ω", "Ohm"), unit("kohm", "kΩ", "Kiloohm (kΩ)"), unit("oC", "°C", "Degree Celsius"),
-  unit("deg", "1°", "Degree"), unit("s_ton", "s_ton", "Short Ton"), unit("Wh", "W\\cdot\\,h", "Watt hour"),
-  unit("W", "W", "Watt"), unit("kWh", "kW\\cdot\\,h", "Kilowatt hour"), unit("um", "µm", "Micrometer"),
+  pfx("k", "k", "Kilo (10^3)", "1000"), pfx("M", "M", "Mega (10^6)", "1000000"), pfx("m", "m", "Milli (10^-3)", "1/1000"),
+  pfx("u", "µ", "Micro (10^-6)", "1/1000000"), pfx("n", "n", "Nano (10^-9)", "1/1000000000"), pfx("G", "G", "Giga (10^9)", "1000000000"),
+  pfx("d", "d", "Deci (10^-1)", "1/10"),
+  unit("m", "m", "Meter", "1", "m1"), unit("km", "km", "Kilometer", "1000", "m1"), unit("mm", "mm", "Millimeter", "1/1000", "m1"),
+  unit("N", "N", "Newton", "1", "kg1m1s-2"), unit("kN", "kN", "Kilonewton", "1000", "kg1m1s-2"), unit("s", "s", "Second", "1", "s1"),
+  unit("ms", "ms", "Millisecond", "1/1000", "s1"), unit("h", "h", "Hour", "3600", "s1"),
+  unit("J", "J", "Joule", "1", "kg1m2s-2"), unit("g", "g", "Gram", "1/1000", "kg1"), unit("kg", "kg", "Kilogram", "1", "kg1"),
+  unit("K", "K", "Kelvin", "1", "K1"), unit("V", "V", "Volt", "1", "A-1kg1m2s-3"), unit("Hz", "Hz", "Hertz", "1", "s-1"),
+  unit("Pa", "Pa", "Pascal", "1", "kg1m-1s-2"), unit("MPa", "MPa", "Megapascal", "1000000", "kg1m-1s-2"),
+  unit("ohm", "Ω", "Ohm", "1", "A-2kg1m2s-3"), unit("kohm", "kΩ", "Kiloohm (kΩ)", "1000", "A-2kg1m2s-3"),
+  unit("oC", "°C", "Degree Celsius", "1+5463/20", "K1"), unit("deg", "1°", "Degree", "pi/180", "rad1"),
+  unit("s_ton", "s_ton", "Short Ton", "45359237/50000", "kg1"), unit("Wh", "W\\cdot\\,h", "Watt hour", "3600", "kg1m2s-2"),
+  unit("W", "W", "Watt", "1", "kg1m2s-3"), unit("kWh", "kW\\cdot\\,h", "Kilowatt hour", "3600000", "kg1m2s-2"),
+  unit("um", "µm", "Micrometer", "1/1000000", "m1"),
+  // Pairs whose ids are other units (R24af1): m + in is min, d + B is dB, n + mi is nmi.
+  unit("in", "in", "Inch", "127/5000", "m1"), unit("min", "min", "Minute", "60", "s1"), unit("B", "B", "Byte (8-bit)", "8", "bit1"),
+  unit("dB", "dB", "Decibel", undefined, "Np1"), unit("mi", "mi", "Mile", "201168/125", "m1"),
+  unit("nmi", "nmi", "Nautical Mile", "1852", "m1"),
+  // A pair with pi in its factor (kcmil is k + cmil).
+  unit("cmil", "cmil", "Circular Mil", "16129*pi/10^14", "m2"), unit("kcmil", "kcmil", "Thousand of Circular Mil", "16129*pi/10^11", "m2"),
 ];
 const CAT = slotCatalogue(ITEMS);
 
@@ -231,6 +243,31 @@ describe("the reading in words (r7 5.4 guards 2 and 3)", () => {
     expect(typed([P("m"), U("m")]).reading.marked).toBe(false);
     expect(typed([P("M"), U("s")]).reading.marked).toBe(true);
     expect(typed([P("M"), U("Pa"), PER, U("m")]).reading.marked).toBe(false);
+  });
+  it("marks a pair whose id is another unit (m + in is not min, d + B is not dB, n + mi is not nmi): R24af1", () => {
+    expect(typed([P("m"), U("in")]).reading).toEqual({ text: "milliinch", marked: true, parts: [{ text: "milliinch", marked: true }] });
+    expect(typed([P("d"), U("B")]).reading).toEqual({ text: "decibyte", marked: true, parts: [{ text: "decibyte", marked: true }] });
+    expect(typed([P("n"), U("mi")]).reading).toEqual({ text: "nanomile", marked: true, parts: [{ text: "nanomile", marked: true }] });
+    expect(typed([P("m"), U("in")]).latex).toBe("\\class{pas-rare}{\\mathrm{m}\\mathrm{in}}");
+    expect(typed([P("n"), U("mi")]).latex).toBe("\\class{pas-rare}{\\mathrm{n}\\mathrm{mi}}");
+  });
+  it("still names a true pair by its own title, the factors compared exactly (k + m, M + Pa, k + cmil with pi)", () => {
+    expect(typed([P("k"), U("m")]).reading).toEqual({ text: "kilometer", marked: false, parts: [{ text: "kilometer", marked: false }] });
+    expect(typed([P("M"), U("Pa")]).reading.marked).toBe(false);
+    expect(typed([P("k"), U("cmil")]).reading).toMatchObject({ text: "thousand of circular mil", marked: false });
+    expect(typed([P("k"), U("m")]).latex).toBe("\\mathrm{k}\\mathrm{m}");
+  });
+  it("a catalogue without si or dim counts no pair (nothing to check it against)", () => {
+    const bare = slotCatalogue([pfx("k", "k", "Kilo (10^3)"), unit("m", "m", "Meter"), unit("km", "km", "Kilometer")]);
+    expect(typed([P("k"), U("m")], bare).reading).toMatchObject({ text: "kilometer", marked: true });
+  });
+  it("lower-cases a title-case title's later words, keeping acronyms and names (Nautical Mile, U.S., Celsius)", () => {
+    expect(typed([U("nmi")]).reading.text).toBe("nautical mile");
+    expect(typed([U("s_ton")]).reading.text).toBe("short ton");
+    const cat = slotCatalogue([unit("in_US", "in", "U.S. Survey Inch", "100/3937", "m1"), unit("tTNT", "t", "Ton of TNT", "4184000000", "kg1m2s-2")]);
+    expect(typed([U("in_US")], cat).reading.text).toBe("U.S. survey inch");
+    expect(typed([U("tTNT")], cat).reading.text).toBe("ton of TNT");
+    expect(typed([U("oC")]).reading.text).toBe("degree Celsius");
   });
   it("reads ÷, powers and √: per, squared, cubed, the fourth, a square root", () => {
     expect(typed([U("J"), PER, P("k"), U("g"), U("K")]).reading.text).toBe("joule per kilogram kelvin");
