@@ -15,10 +15,10 @@ A match with the G2 alone justifies nothing. Between two equal readings, the one
 Values not printed by a probe come from the oracle or are `derived`. MathLive's own behaviour is quoted from the regression findings (F10–F23, backlog archive). It was not re-run here, since that needs Playwright. Line numbers are on `8745db1`.
 
 **Result.** Most rows are kept:
-- 34 rows: by P3, by P2, or because they are the engine's own result;
+- 36 rows: by P3, by P2, or because they are the engine's own result;
 - 1 row widened (item 40);
 - 4 rows S14 decides;
-- 3 dropped, each with a package: R39's power form (R66), the half-even option (G45), and G42's G2-waiting parts (G42 rewritten).
+- 3 dropped, each with a package: R39's power form in Home (R66; Function and Solve keep it, rows 2b, 2c), the half-even option (G45), and G42's G2-waiting parts (G42 rewritten).
 
 R58b gets its build package (R67), and item 40 gets its own (R68).
 
@@ -48,7 +48,9 @@ Layers: **E** engine helper, **P** parser or emitter, **N** entry (template or c
 | # | Special case | Engine's own (probe) | Ours | Code (file:line, ≈ lines, layer) | Clause | Verdict |
 |---|---|---|---|---|---|---|
 | 1 | `mod`, Find's Remainder (item 43) | §1 | Euclidean | `homeEval.ts:133`, 3, E; `emit.ts:72,151`, 2, P | P3 (§1) | keep; record in G45 |
-| 2 | Real odd root of a power, R39 (P5 (b), items 4, 11) | `(-8)^(1/3)` = `(1/2+i*sqrt(3)/2)*8^(1/3)` = 1+1.73205080757·i (oracle, `cx-cbrt-neg8`) | −2 in Home, Solve and Function | `emit.ts:13–19, 22–58, 249–255`, ≈ 45, P; `emit-js.ts:41`, ≈ 6, P; options at `function/compile.ts:31`, `solve/app.svelte.ts:48`, `session.svelte.ts:484` | none. Not P3: the principal root is right and visibly complex. Not P2: ⁿ√ 3 ▶ (−) 8 is 5 presses, `( )` (−) 8 ▶ xʸ 1 ÷ 3 is 8, so the template is shorter | **drop → R66** |
+| 2a | Real odd root of a power in **Home**, R39 (P5 (b), items 4, 11) | `(-8)^(1/3)` = `(1/2+i*sqrt(3)/2)*8^(1/3)` = 1+1.73205080757·i (oracle, `cx-cbrt-neg8`) | −2 | the option at `session.svelte.ts:484`, 1, P | none. Not P3: the principal root is right and visibly complex. Not P2: ⁿ√ 3 ▶ (−) 8 is 5 presses, `( )` (−) 8 ▶ xʸ 1 ÷ 3 is 8, so the template is shorter | **drop → R66** (Home only) |
+| 2b | The same in **Function** (frozen app) | the plot compiles through `emit-js.ts:40–47`; without the branch `x^{\frac{1}{3}}` is `Math.pow(x,1/3)`, NaN for every x < 0 (`derived`: IEEE `pow` of a negative base and a non-integer exponent) | the real root, both halves drawn | `emit-js.ts:40–47`, ≈ 8, P; option at `function/compile.ts:31` | P3: without it the left half of the curve disappears with no message, and Root, Intersection and Area see no curve there | keep |
+| 2c | The same in **Solve** (frozen app) | `x^(1/3)=-2` has no root under the principal branch | x = −8 | option at `solve/app.svelte.ts:48`, 1, P | P3 by consistency: Solve and Function read one expression; a plot crossing −2 at x = −8 beside "no root found" for the same expression is a contradiction the user cannot resolve. Kept with 2b; both apps are frozen (decisions "Function and Solve frozen") | keep |
 | 3 | ∛ and ⁿ√ templates with an odd index → `surd` (L6) | no engine reading for a radical sign | ∛(−27) = −3 (`derived`) | `emit.ts:258–262`, 3, P | the template must read as something; `surd` and `^(1/n)` cost the same, and the odd radical of a negative real is its real root (`derived`) | keep |
 | 4 | Ties at the digits setting (item 8) | Giac's own printing is binary MPFR, not a decimal tie rule | half away from zero; a `half-even` option kept "for G2 item 8" that no caller sets | `format.ts:20, 37, 116–123, 146–227, 361`, ≈ 15 lines of threading, D; tests `format.test.ts:63–71, 162, 171`, T | half away stays (one rule is needed and either costs the same); the option has no clause and is a dead setting (docs/03 rule 11) | **drop the option → G45** |
 | 5 | `round(-2.5)`, G42's round part (item 66) | `round(-2.5)` = −2, `round(2.5)` = 3, `round(-2.25,1)` = −2.2: half up | not built: G42 would follow the G2 | `packages/G42.md` | none: half up is a stated convention, and the display's own rule is row 4 | **drop from G42** (rewritten) |
@@ -75,18 +77,18 @@ Layers: **E** engine helper, **P** parser or emitter, **N** entry (template or c
 | 26 | The cursor never stops inside a name or before its bracket (item 50) | MathLive stops there | no stop | `stops.ts:49–58`, ≈ 10, N; parser refusal of `sin 7(2)` | P2: no dead stop per crossing; P3: a 7 typed there joins the name. The G2 stops there and gives a syntax error | keep |
 | 27 | ▶ goes to the next empty box (R10, R43; item 57) | MathLive's ▶ stops on every mark (∂, d, the evaluate-at bar) | next empty box; R43 stops at the end of a box that holds a template | `stops.ts:83–104`, ≈ 20, N; `controller.ts:336` | P2: one ▶ per box. Item 57's answer matches R43 as built: ÷ ÷ 1 ▶ 2 ▶ ends at the end of the outer numerator | keep; R43 point 2 can close |
 | 28 | CAS: Alpha types lower case (R58, item 45) | layer data | lower case in CAS | `Keypad.svelte:31, 124`, N | P2: a CAS `t` is 1 press, not 3 | keep |
-| 29 | Store ▶ on an empty line starts `Ans ▶` (item 58) | — | `Ans ▶` | `entry/ans.ts`, N | P2: one key fewer | keep |
-| 30 | + − × ÷ on an empty line start with Ans | — | `Ans+` | `entry/ans.ts:2–15`, N | P2: the Ans key saved | keep |
+| 29 | Store ▶ on an empty line starts `Ans ▶` (item 58) | — | not built yet: `ANS_FIRST` (`ans.ts:6–13`) has no Store key, so Shift + ᴇ types `▶` alone; R15c2 adds it (decisions "R15c Store") | `ans.ts:6–13`, +1 line, N | P2: one key fewer | keep (R15c2 builds it) |
+| 30 | + − × ÷ on an empty line start with Ans | — | `Ans+` | `ans.ts:6–13` (the keys), `App.svelte:560–561` (the empty-line test), ≈ 10, N | P2: the Ans key saved | keep |
 | 31 | A space between two numbers is an error (R29, R51; item 59) | our parser read a product: `2 3` = 6, `1\,000` = 0 | "put × between two numbers" | `parse.ts:677`, 1, P | P3: `1 000` = 0 with nothing on the line; the G2 gives 6, and the owner kept the error | keep |
 | 32 | A second decimal point is an error (item 55) | `2.5.3` was 2.5·0.3 = 0.75 | error | `parse.ts:162`, 1, P | P3; the G2 agrees | keep |
 | 33 | A digit next to a result chip is an error (F25; item 56) | 0.5 chip, then 3, gave 1.5 with no × on the line | error | `parse.ts:551–553`, 3, P | P3 | keep; item 56 changes no code |
 | 34 | One-line ÷ binds like × (R30; items 6, 53) | Giac's text precedence: `6/2*(1+2)` = 9 | 9, and `1/2x` is (1/2)·x | `parse.ts:446–450`, P | the engine's own precedence | keep |
 | 35 | FIX falls back to SCI (G31; item 60) | — | 4.7ᴇ-6 in Fixed 4 is 4.7000ᴇ-6 | `format.ts:175–178`, 3, D | P3: `0.0000` would hide a nonzero value | keep |
-| 36 | Home and CAS share one Giac context (item 52) | one context | one context, and CAS names the stored values it used (G20) | decisions.md "Home and CAS share one Giac context"; `host.ts` | the engine's own, and less code; G20 is the P3 part | keep; item 52 changes no code |
+| 36 | Home and CAS share one Giac context (item 52) | one context | one context, and CAS names the stored values it used (G20) | `host.ts:2` (one Giac instance), `host.ts:430` `home()` and `host.ts:496` `cas()` on it; G20's list `host.ts:480–497`, ≈ 20, E | the engine's own, and less code; G20 is the P3 part | keep; item 52 changes no code |
 | 37 | Function app: NaN at a pole (items 19, 22) | `subst(1/x,x=0)` and `subst(1/x^2,x=0)` both give the unsigned `infinity` | `NaN` | `function/app.svelte.ts:94`, 1, D | P3: an unsigned ∞ in a real table reads as +∞, and Giac never hands us a signed one here | keep (frozen app) |
 | 38 | Function app: trace step 0.1 (item 24) | — | `niceStep(span/200)` = 0.1 for [−10, 10] | `function/app.svelte.ts:369–373` | no special case: the general rule gives 0.1 | keep |
 | 39 | Our functions `sigfig`, `par`, `eseries` | Giac has none of them | defined on first use | `homeEval.ts:136–155`, E | not a departure: features (EN3, EN7) | keep |
-| 40 | Units helpers `pasu*`, `pasdim`, `pasupm` | Giac's own units are not used (P3 decision 1) | our unit view on Giac (P15) | `units/*.ts`, E | not a G2 copy: P15, P3 (dimension checks) | keep |
+| 40 | Units helpers `pasu*`, `pasdim`, `pasupm` | Giac's own units are not used (P3 decision 1) | our unit view on Giac (P15) | `dims.ts:18–27` (`pasdim*`), `evaluate.ts:30–43` (`pasuq`, `pasua`, `pasup`, `pasul`, `pasun`), `build.ts:138–140` (`pasupm`), ≈ 40, E | not a G2 copy: P15, P3 (dimension checks) | keep |
 | 41 | Solve's messages (items 13, 14, 20) | — | "no root found" | `solve/app.svelte.ts:5` | P3: the G2's "Zero" with 1.46ᴇ499 for `1/x=0` is a silent wrong root | keep |
 | 42 | Complex `sqrt(-4)`, `asin(2)` (items 9, 10) | 2·i, 1.5708−1.3170·i | the same | none | the engine's own (the G2 errs) | keep |
 
@@ -127,13 +129,13 @@ S14's own line in decisions.md has "would change if … G2 items 63–65 need Gi
 | Id | What | Agent | Rests on |
 |---|---|---|---|
 | [G45](../shifts/packages/G45.md) | One tie rule; the G2's differing Home answers (items 8, 43) as `derived` cases | gorge, Opus | rows 1, 4 |
-| [R66](../shifts/packages/R66.md) | The power form keeps Giac's principal root (R39 goes) | ron, Opus | row 2 |
+| [R66](../shifts/packages/R66.md) | The power form keeps Giac's principal root in Home (Function and Solve keep R39) | ron, Opus | rows 2a–2c |
 | [R67](../shifts/packages/R67.md) | Letters e and i are names: stand-ins `e_`, `i_` (R58b) | ron, Opus | row 8 |
 | [R68](../shifts/packages/R68.md) | ᴇ gets its leading 1 after an operator too (item 40) | ron, Opus | row 20 |
 | [G42](../shifts/packages/G42.md) | rewritten: median (and percentile) only; Giac's round and quartiles stay | gorge | rows 5–7 |
 
 ## 6. Top risks
 
-1. **R66 changes a result the owner chose on 2026-10-14:** `(−8)^(1/3)` in Home becomes 1+1.73205080757·i. The ⁿ√ template keeps −2. If the owner misses the power form, the rule's "would change if" (muscle memory, docs/03 rule 8) is the way back.
+1. **R66 changes a result the owner chose on 2026-10-14:** `(−8)^(1/3)` in Home becomes 1+1.73205080757·i. The ⁿ√ template keeps −2. Function and Solve keep the real root (rows 2b, 2c), so the same power reads differently in Home and in the frozen apps; that is named in R66's docs step. If the owner misses the power form, the rule's "would change if" (muscle memory, docs/03 rule 8) is the way back.
 2. **R67 can reach old data.** It needs the result-LaTeX test (§3). Old CAS history lines whose letter e meant Euler's number read as the variable after the change.
 3. **MathLive behaviour is quoted, not re-run** (rows 24–27). The verify note in row 25 is the one open check.

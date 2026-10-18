@@ -52,7 +52,7 @@
 | [S11](packages/S11.md) | The unit result view as packages (R60–R63) | sandra, Opus | night | A14 | ~0.5 d |
 | [S12](packages/S12.md) | Engine defaults, not G2 copies: the audit, then its removal packages | sandra, Opus | night, first | nothing | ~0.5 d |
 | [G45](packages/G45.md) | One tie rule; the G2's Home answers on record | gorge, **Opus** | night | S12 | ~0.25 d |
-| [R66](packages/R66.md) | The power form keeps Giac's principal root (R39 goes) | ron, **Opus** | night | S12 | ~0.25 d |
+| [R66](packages/R66.md) | The power form keeps Giac's principal root in Home | ron, **Opus** | night | S12 | ~0.25 d |
 | [R67](packages/R67.md) | Letters e and i are names (R58b) | ron, **Opus** | night | S12, R66 | ~0.5 d |
 | [R68](packages/R68.md) | ᴇ's leading 1 after an operator | ron, **Opus** | night | S12 | ~0.25 d |
 | [R15c1](packages/R15c1.md) | The status line takes Apps, Menu and the views | ron, Sonnet | day | R50b | ~0.75 d |
