@@ -298,18 +298,20 @@ export const keyboard: Keyboard = loadKeyboard(raw);
 
 /** The action a key triggers in the given modifier state (alpha falls back to primary; shift never does).
  *  Alpha types the capital letter, shift + alpha its lower case (as on the reference, P4). */
-export function actionFor(key: Key, shift: boolean, alpha: boolean, oneLine = false): ActionBody | undefined {
-  const a = layerAction(key, shift, alpha);
+export function actionFor(key: Key, shift: boolean, alpha: boolean, oneLine = false, cas = false): ActionBody | undefined {
+  const a = layerAction(key, shift, alpha, cas);
   return oneLine && a?.line ? a.line : a;
 }
 
-/** Shift + Alpha on a key whose Alpha action is its own letter: lower case. Shared by the action and the legend. */
-const lowerCase = (key: Key, shift: boolean, alpha: boolean): boolean => shift && alpha && key.actions.alpha?.kind === "type";
+/** Shift + Alpha on a key whose Alpha action is its own letter: lower case; in the CAS view (`cas`, R58) the case is
+ *  swapped: Alpha alone is lower case, Shift + Alpha the capital. Shared by the action and the legend. */
+const lowerCase = (key: Key, shift: boolean, alpha: boolean, cas: boolean): boolean =>
+  alpha && shift !== cas && key.actions.alpha?.kind === "type";
 
-function layerAction(key: Key, shift: boolean, alpha: boolean): Action | undefined {
+function layerAction(key: Key, shift: boolean, alpha: boolean, cas: boolean): Action | undefined {
   if (alpha) {
     const a = key.actions.alpha ?? key.actions.primary;
-    if (lowerCase(key, shift, alpha) && a?.kind === "type") return { kind: "type", text: a.text.toLowerCase() };
+    if (lowerCase(key, shift, alpha, cas) && a?.kind === "type") return { kind: "type", text: a.text.toLowerCase() };
     return a;
   }
   if (shift) return key.actions.shift;
@@ -317,11 +319,11 @@ function layerAction(key: Key, shift: boolean, alpha: boolean): Action | undefin
 }
 
 /** The legend shown on the key face for a modifier state. */
-export function labelFor(key: Key, shift: boolean, alpha: boolean): string {
+export function labelFor(key: Key, shift: boolean, alpha: boolean, cas = false): string {
   if (alpha) {
     const l = key.label.alpha;
     if (l === undefined) return key.label.primary ?? "";
-    return lowerCase(key, shift, alpha) ? l.toLowerCase() : l;
+    return lowerCase(key, shift, alpha, cas) ? l.toLowerCase() : l;
   }
   if (shift) return key.label.shift ?? "";
   return key.label.primary ?? "";

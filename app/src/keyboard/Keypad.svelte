@@ -15,6 +15,7 @@
     alphaLock = false,
     capsLock = false,
     shiftLock = false,
+    cas = false,
     sheet,
     onpress,
     ontouch = () => {},
@@ -27,6 +28,8 @@
     /** The alpha lock is the lower-case one. */
     capsLock?: boolean;
     shiftLock?: boolean;
+    /** The CAS view is under the keys: the letter layer's case is swapped (R58). */
+    cas?: boolean;
     /** A sheet is open (docs/05 3.1): keys are read by sheetKeys.ts, and the ones that do nothing there look dead.
      *  `filter`: the open list takes letters. */
     sheet?: { filter: boolean } | undefined;
@@ -43,7 +46,7 @@
   /** The keys as drawn and fired: the free keys with the user's slots. */
   const keys = $derived(keyboard.keys.map((k) => userKeys.resolve(k)));
   const face = (k: Key): string =>
-    legend(labelFor(k, shift, alpha) || k.label.primary || "");
+    legend(labelFor(k, shift, alpha, cas) || k.label.primary || "");
   const hint = (k: Key): string => (shift && !alpha) || !k.label.shift ? "" : legend(k.label.shift);
   const alphaHint = (k: Key): string => (alpha || !k.label.alpha ? "" : k.label.alpha);
   /** Rows with a letter on some key reserve the letter line on every key, so the faces of a row stay level. The upper
@@ -59,7 +62,7 @@
     if (sheet) return sheetKey(k, sheet.filter).kind === "none";
     const p = k.actions.primary;
     if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return false; // the modifiers work in every layer
-    const a = actionFor(k, shift, alpha);
+    const a = actionFor(k, shift, alpha, false, cas);
     return !a || (a.kind === "special" && a.name === "none");
   };
 
@@ -69,6 +72,7 @@
     // re-fit when the layer changes (the faces change with it) and when the pad's width does
     void shift;
     void alpha;
+    void cas;
     if (!padEl) return;
     const pad = padEl;
     fitLegends(pad);
@@ -117,13 +121,15 @@
     }
     if (p?.kind === "special" && p.name === "alpha") {
       const lower = dir === "up";
-      return alphaLock && capsLock === lower ? t("flick.unlock") : t(lower ? "flick.lowerLock" : "flick.capsLock");
+      // the lock state is the same in both views (down: no shift); the CAS view types lower case there (R58)
+      const named = lower !== cas;
+      return alphaLock && capsLock === lower ? t("flick.unlock") : t(named ? "flick.lowerLock" : "flick.capsLock");
     }
     if (sheet) return dir === "down" && sheet.filter ? (letterOf(k) ?? "") : "";
     const [sh, al] = dir === "up" ? [true, false] : [false, true];
-    const a = actionFor(k, sh, al);
+    const a = actionFor(k, sh, al, false, cas);
     if (!a || (a.kind === "special" && a.name === "none")) return "";
-    return legend(labelFor(k, sh, al));
+    return legend(labelFor(k, sh, al, cas));
   }
 
   function showBubble(id: number, g: Extract<Gesture, { kind: "key" }>): void {
