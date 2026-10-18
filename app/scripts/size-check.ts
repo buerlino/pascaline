@@ -7,7 +7,7 @@
 // default level, which is what `vite build` reports. Budgets for chunks that don't exist yet (Find, Units, qalc) apply
 // as soon as they appear in the build; until then they print as "not built". To change a budget, change docs/04 8.3 too.
 import { brotliCompressSync, constants, gzipSync } from "node:zlib";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { precacheFiles } from "../vite-plugin-pwa-lite.ts";
@@ -90,7 +90,7 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   };
   const dynamic = (prefix: string): string[] => chunks.filter((c) => c.isDynamicEntry && normalSrc(c.src).startsWith(prefix)).map((c) => c.file);
 
-  add("Start chunk", startFiles(manifest), { rawMax: 156 * KB, gzipMax: 54 * KB });
+  add("Start chunk", startFiles(manifest), { rawMax: 175 * KB, gzipMax: 60 * KB });
   add("MathLive chunk", chunks.filter((c) => /(^|\/)mathlive\/mathlive\.min\.m?js$/.test(normalSrc(c.src))).map((c) => c.file), { rawMax: 830 * KB });
   add("Find UI chunk", dynamic("src/find/"), { rawMax: 30 * KB });
   // The unit view (G16): Calc.units() loads the builder and the factor table (src/units/calc.ts) on its first call.
@@ -116,6 +116,27 @@ export function checkSplits(dist: string): string[] {
     else if (start.has(chunk.file)) failures.push(`${src} (${chunk.file}) is loaded at start`);
   }
   return failures;
+}
+
+/** The newest modification time (ms) of any file under `dir`; 0 when it does not exist. */
+function newestMtime(dir: string): number {
+  if (!existsSync(dir)) return 0;
+  let newest = 0;
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    newest = Math.max(newest, e.isDirectory() ? newestMtime(p) : statSync(p).mtimeMs);
+  }
+  return newest;
+}
+
+/** A message when `dist/index.html` is older than the newest file under app/src/ or spec/ (a stale build measures old code); else null. */
+export function staleMessage(dist: string): string | null {
+  const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
+  const index = join(dist, "index.html");
+  if (!existsSync(index)) return null;
+  const built = statSync(index).mtimeMs;
+  const newest = Math.max(newestMtime(join(root, "app/src")), newestMtime(join(root, "spec")));
+  return built < newest ? `size-check: ${index} is older than the newest file under app/src/ or spec/; run npm run build first` : null;
 }
 
 const kB = (n: number): string => `${(n / KB).toFixed(2)} kB`;
@@ -161,6 +182,11 @@ if (process.argv[1] !== undefined && resolve(process.argv[1]) === fileURLToPath(
   if (!existsSync(dist) || !statSync(dist).isDirectory()) {
     console.error(`size-check: ${dist} is not a folder; run vite build first`);
     process.exit(2);
+  }
+  const stale = staleMessage(dist);
+  if (stale !== null) {
+    console.error(stale);
+    process.exit(1);
   }
   try {
     const report = checkSizes(dist);

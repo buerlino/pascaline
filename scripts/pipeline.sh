@@ -8,11 +8,12 @@
 #       --id ID             the package ID when the task is free text (a FIX package: G17f1)
 #       --model M           worker model: sonnet (default) or opus;  --effort E (default medium)
 #       --audit-model M     sofia's model for the diff audit: auto (default: opus when --model opus or the diff
-#                           touches app/src/input/, app/src/engine/, engine/ or spec/keyboard.yaml, else sonnet),
-#                           sonnet or opus
+#                           touches app/src/input/, app/src/engine/, app/src/units/, engine/ or spec/keyboard.yaml, else
+#                           sonnet), sonnet or opus. auto is a floor: a gorge package, or such a diff, gets opus even
+#                           when sonnet is named (logged: "audit model raised to opus: <why>")
 #       --no-worker         review-only: the branch must exist; phase-1 is merged into it first (a conflict is a
 #                           fix round for <agent>), then the checks, the audit and the merge as usual
-#       --checks LIST       auto (default), none, or a comma list of typecheck,vitest,e2e,golden
+#       --checks LIST       auto (default), none, or a comma list of typecheck,vitest,e2e,golden,size,docs
 #       --no-merge          stop after the audit; print the merge command instead
 #       --dry-run           print the bundle and the commands; start no agent, make no worktree
 #   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" ["<open questions>"] [--dry-run]
@@ -187,7 +188,10 @@ if [[ $dry -eq 1 ]]; then
   echo "DRY RUN: pipeline run $n, package $id, agent $agent ($model, $effort), branch $branch"
   echo "PASCALINE_QALC_DL_DIR=$PASCALINE_QALC_DL_DIR PASCALINE_DL_DIR=$PASCALINE_DL_DIR PW_PORT=$PW_PORT"
   echo "integration worktree: $integ"; echo "worker worktree: $wt"; echo "checks: $checks; merge: $merge; audit model: $audit_model; no-worker: $nowork"
-  echo "audit model: $audit_model$([[ "$audit_model" == auto ]] && { [[ "$model" == opus ]] && echo " (opus: --model opus; else opus when the diff touches app/src/input/, app/src/engine/, engine/ or spec/keyboard.yaml, else sonnet)" || echo " (opus when the diff touches app/src/input/, app/src/engine/, engine/ or spec/keyboard.yaml, else sonnet)"; })"
+  echo "checks run: typecheck, vitest, docs always; size when app/ changed; e2e when app/ changed; golden when engine or parser changed"
+  echo "checks: typecheck,vitest,docs (+ size, e2e when app/ changed; + golden when engine or parser changed)"
+  [[ "$audit_model" == auto || "$audit_model" == opus ]] || { [[ "$agent" == gorge ]] && echo "audit model raised to opus: gorge package (--audit-model $audit_model is a floor)"; }
+  echo "audit model: $audit_model$([[ "$audit_model" == auto ]] && { [[ "$model" == opus ]] && echo " (opus: --model opus; else opus when the diff touches app/src/input/, app/src/engine/, app/src/units/, engine/ or spec/keyboard.yaml, else sonnet)" || echo " (opus when the diff touches app/src/input/, app/src/engine/, app/src/units/, engine/ or spec/keyboard.yaml, else sonnet)"; })"
   echo "--- bundle ($bundle, $(wc -l < "$bundle") lines) ---"; cat "$bundle"
   echo "--- commands ---"
   echo "git worktree add $wt -b $branch phase-1   (or: git worktree add $wt $branch, when the branch exists)"
@@ -239,9 +243,9 @@ want_checks() {
     none) echo "";;
     auto)
       local list="typecheck,vitest"
-      changed | grep -q '^app/' && list="$list,e2e"
+      changed | grep -q '^app/' && list="$list,e2e,size"
       changed | grep -qE '^(engine/|app/src/engine/|app/src/input/|app/src/units/|app/scripts/unit-case\.ts|tests/golden/|find/|tools/find-index/)' && list="$list,golden"
-      echo "$list";;
+      echo "$list,docs";;
     *) echo "$checks";;
   esac
 }
@@ -277,9 +281,14 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
       vitest)    (cd "$wt/app" && timeout 1800 npm run -s index && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test) > "$out" 2>&1 || rc=1;;
       e2e)       (cd "$wt/app" && FORCE_COLOR=0 timeout 2700 npm run -s test:e2e) > "$out" 2>&1 || rc=1;;
       golden)    (cd "$wt/app" && timeout 2700 npm run -s golden) > "$out" 2>&1 || rc=1;;
+      size)      (cd "$wt/app" && timeout 1800 npm run -s build && timeout 300 npm run -s size) > "$out" 2>&1 || rc=1;;
+      docs)      (cd "$wt" && timeout 300 node tools/docs-check.mjs) > "$out" 2>&1 || rc=1;;
       *) die "unknown check $name";;
     esac
-    if [[ $rc -eq 1 ]] && timing_only "$name" "$out"; then
+    if [[ $rc -eq 1 && ( "$name" == e2e || "$name" == vitest ) ]] && mm="$(node "$wt/app/scripts/pipeline-logs.ts" mismatch "$name" "$out")"; then
+      # the parsed failures differ from the runner's own count: no timing re-run can be trusted; a failure for the fix round
+      runlog "check $name: count mismatch: $mm"; echo "count mismatch: $mm" >> "$out"
+    elif [[ $rc -eq 1 ]] && timing_only "$name" "$out"; then
       # every failing item is a wall-clock test: run the check once more (not a fix round)
       runlog "check $name: re-run (timing): $(node "$wt/app/scripts/pipeline-logs.ts" files "$name" "$out" | tr '\n' ' ')"
       rc=0; rerun_timing "$name" "$out" || rc=1
@@ -295,10 +304,18 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
   return 0
 }
 
-# sofia's model: auto = opus for --model opus or a diff in the input, engine client, engine or key layout.
+# sofia's model: auto = opus for --model opus or a diff in the input, engine client, units, engine or key layout.
+# auto is a floor (A15): a gorge package or such a diff is audited by opus even when sonnet is named; the raise is logged.
 resolve_audit_model() {
-  if [[ "$audit_model" != "auto" ]]; then echo "$audit_model"
-  elif [[ "$model" == "opus" ]] || changed | grep -qE '^(app/src/input/|app/src/engine/|engine/|spec/keyboard\.yaml)'; then echo opus
+  local why=""
+  if [[ "$model" == "opus" ]]; then why="worker model is opus"
+  elif [[ "$agent" == "gorge" ]]; then why="gorge package"
+  elif changed | grep -qE '^(app/src/input/|app/src/engine/|app/src/units/|engine/|spec/keyboard\.yaml)'; then why="diff touches input, engine, units or the key layout"
+  fi
+  if [[ "$audit_model" == "opus" ]]; then echo opus
+  elif [[ -n "$why" ]]; then
+    [[ "$audit_model" == "auto" ]] || { log "pipeline #$n $id: audit model raised to opus: $why (line said $audit_model)"; runlog "audit model raised to opus: $why"; }
+    echo opus
   else echo sonnet; fi
 }
 

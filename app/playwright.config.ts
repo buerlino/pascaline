@@ -11,7 +11,7 @@ export default defineConfig({
     // GIAC_OUT=<dir with giac.mjs/giac.wasm> when the engine is not built in this checkout
     command: `npm run engine:copy && npx vite --port ${port} --strictPort`,
     url: `http://localhost:${port}`,
-    reuseExistingServer: true,
+    reuseExistingServer: false, // a server on this port is another checkout's code: fail at once ("port in use")
     timeout: 120_000,
   },
   use: { baseURL: `http://localhost:${port}` },

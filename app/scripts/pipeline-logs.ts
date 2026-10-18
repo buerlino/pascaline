@@ -4,6 +4,7 @@
 //   node app/scripts/pipeline-logs.ts items <vitest|e2e|golden> <log>   # one "file<TAB>title" per failing item
 //   node app/scripts/pipeline-logs.ts files <vitest|e2e|golden> <log>   # the failing files, sorted, unique
 //   node app/scripts/pipeline-logs.ts timing <vitest|e2e|golden> <log>  # exit 0 when every failing item is a timing test
+//   node app/scripts/pipeline-logs.ts mismatch <vitest|e2e> <log>      # prints the message, exit 0, when the parsed count differs from the runner's own
 // Only erasable TypeScript syntax (Node runs this file).
 import { readFileSync } from "node:fs";
 
@@ -64,25 +65,39 @@ export function isTiming(check: Check, item: Item): boolean {
   return item.file === "units" && !!m && m[1] === m[2] && /p95 [\d.]+ ms \(≤/.test(item.title);
 }
 
+/** The runner's own failure count against the items we parsed (vitest: failed files; e2e: failed tests); null when they agree or there is no summary. */
+export function countMismatch(check: Check, log: string): string | null {
+  const items = failedItems(check, log);
+  const text = stripAnsi(log);
+  if (check === "vitest") {
+    const m = /Test Files\s+(\d+) failed/.exec(text);
+    const parsed = new Set(items.map((i) => i.file)).size;
+    return m && Number(m[1]) !== parsed ? `parsed ${parsed} failing files, vitest says ${m[1]} failed` : null;
+  }
+  if (check === "e2e") {
+    const m = /^\s*(\d+) failed\s*$/m.exec(text);
+    return m && Number(m[1]) !== items.length ? `parsed ${items.length} failing tests, Playwright says ${m[1]} failed` : null;
+  }
+  return null;
+}
+
 /** True when something failed and every failing item is a timing test. */
 export function onlyTiming(check: Check, log: string): boolean {
   const items = failedItems(check, log);
-  if (check === "vitest") {
-    // the summary counts failed files: if we found fewer, something failed that we did not see
-    const m = /Test Files\s+(\d+) failed/.exec(stripAnsi(log));
-    if (m && Number(m[1]) !== new Set(items.map((i) => i.file)).size) return false;
-  }
+  // the summary counts what failed: if we found fewer, something failed that we did not see
+  if (countMismatch(check, log) !== null) return false;
   return items.length > 0 && items.every((i) => isTiming(check, i));
 }
 
 if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
   const [cmd, check, path] = process.argv.slice(2);
   if (!cmd || !path || !["vitest", "e2e", "golden"].includes(check ?? "")) {
-    console.error("usage: pipeline-logs.ts items|files|timing <vitest|e2e|golden> <log>");
+    console.error("usage: pipeline-logs.ts items|files|timing|mismatch <vitest|e2e|golden> <log>");
     process.exit(2);
   }
   const log = readFileSync(path, "utf8");
   const c = check as Check;
+  if (cmd === "mismatch") { const m = countMismatch(c, log); if (m !== null) console.log(m); process.exit(m !== null ? 0 : 1); }
   if (cmd === "timing") process.exit(onlyTiming(c, log) ? 0 : 1);
   const items = failedItems(c, log);
   if (cmd === "files") console.log([...new Set(items.map((i) => i.file))].sort().join("\n"));

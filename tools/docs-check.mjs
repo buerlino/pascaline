@@ -26,14 +26,20 @@ const PACKAGES = "docs/shifts/packages";
 
 const failures = [];
 const read = (f) => readFileSync(join(repo, f), "utf8");
-const mdFiles = execFileSync("git", ["ls-files", "-co", "--exclude-standard", "*.md"], { cwd: repo, encoding: "utf8" })
-  .split("\n")
-  .filter((f) => f && !f.includes("node_modules/") && existsSync(join(repo, f)));
+const lsMd = (args) =>
+  execFileSync("git", ["ls-files", ...args, "*.md"], { cwd: repo, encoding: "utf8" })
+    .split("\n")
+    .filter((f) => f && !f.includes("node_modules/") && existsSync(join(repo, f)));
+// Only tracked Markdown counts; untracked files (a stray local note) are checked for links but only warn.
+const mdFiles = lsMd([]);
+const untracked = lsMd(["-o", "--exclude-standard"]);
+const warnings = [];
 
 // 1. Links. Code spans and fenced blocks are skipped, so a link written as an example is not read.
 const stripCode = (text) => text.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
 let links = 0;
-for (const f of mdFiles) {
+for (const f of [...mdFiles, ...untracked]) {
+  const bad = untracked.includes(f) ? warnings : failures;
   const text = stripCode(read(f));
   for (const m of text.matchAll(/\[[^\]\n]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
     const target = m[1];
@@ -42,7 +48,7 @@ for (const f of mdFiles) {
     if (!path) continue;
     links++;
     const abs = resolve(join(repo, dirname(f)), path);
-    if (!existsSync(abs)) failures.push(`link: ${f} → ${target} (no ${relative(repo, abs)})`);
+    if (!existsSync(abs)) bad.push(`link: ${f} → ${target} (no ${relative(repo, abs)})`);
   }
 }
 // Bare docs paths (`docs/shifts/rules.md`) in the live docs and the agents' files. Not checked: the archive (its
@@ -74,6 +80,7 @@ for (const n of pkgFiles) {
 }
 sizes.push(`${pkgFiles.length} package files ≤ ${(largest / kB).toFixed(1)}/${PACKAGE_LIMIT / kB} kB`);
 
+for (const w of warnings) console.log(`warning (untracked, not counted): ${w}`);
 for (const f of failures) console.log(f);
 console.log(`docs ${failures.length === 0 ? "ok" : `FAILED (${failures.length})`}: ${links} links and paths; ${sizes.join(", ")}`);
 process.exit(failures.length === 0 ? 0 : 1);

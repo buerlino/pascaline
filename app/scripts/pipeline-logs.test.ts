@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { failedItems, isTiming, onlyTiming } from "./pipeline-logs.ts";
+import { countMismatch, failedItems, isTiming, onlyTiming } from "./pipeline-logs.ts";
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), "../../tests/fixtures/pipeline");
 const colour = readFileSync(join(dir, "vitest-find-timing.log"), "utf8");
@@ -49,5 +49,12 @@ describe("golden and e2e logs", () => {
     expect(onlyTiming("e2e", l("copy.spec.ts", "copy → paste gives the value back (P5)"))).toBe(true);
     expect(onlyTiming("e2e", l("solve.spec.ts", "equations and values are stored"))).toBe(true);
     expect(onlyTiming("e2e", l("working.spec.ts", "the Cancel key stops a job"))).toBe(false);
+  });
+  it("e2e: a count that differs from Playwright's own summary is a mismatch, never timing", () => {
+    const one = "  1) [chromium-phone] › test/copy.spec.ts:89:1 › copy → paste gives the value back (P5) ────────────\n";
+    expect(countMismatch("e2e", `${one}\n  1 failed\n  300 passed\n`)).toBeNull();
+    expect(onlyTiming("e2e", `${one}\n  1 failed\n`)).toBe(true);
+    expect(countMismatch("e2e", `${one}\n  3 failed\n`)).toMatch(/parsed 1.*3 failed/);
+    expect(onlyTiming("e2e", `${one}\n  3 failed\n`)).toBe(false);
   });
 });
