@@ -38,6 +38,7 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Shift + 9: & and Å are refused with a message | what & does on the G2 is not known (G2 item 41); Å is the ångström, a unit, and Home is unit-free (P8); the unit view reads Å from Find (milestone 5) |
 | Shift + 9: → makes a function (Giac's ->) | assumed; the G2's use of → is to check (G2 item 42) |
 | Shift + 6: XOR is (a or b) and not(a and b) | Giac's xor gives 0 when a side is symbolic, a silent wrong answer |
+| In the CAS view Alpha types lower case and Shift + Alpha the capital (Home: the reverse) | the G2's CAS types lower case on Alpha (G2 item 45, owner, 2026-10-18); a lower-case CAS name costs 1 press, not 3. Shift + Alpha not checked on the G2 (R58) |
 | Greek letters β, γ, Γ, ε are stored under stand-in names (beta_, gamma_, Gamma_, epsilon_) | Giac keeps the plain names (epsilon is a setting, Gamma the function); results show the letter |
 
 ## 3. Decided by the owner on 2026-10-13 (P12)

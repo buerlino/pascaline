@@ -400,6 +400,11 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-18 Opus pass 18 defaults (G21f1, R48, R58)
+1. **R58: in the CAS view Shift + Alpha types the capital** (R58's open question): G2 item 45 checked only Alpha alone (lower case); the swap keeps both cases reachable in two presses, and the lock flicks swap with it. *Would change if* the rest of item 45 (Shift, Alpha, then a key, in the CAS view) shows something else on the G2.
+2. **R58: only the CAS view under the keys swaps the case** (no app on top): Home, the apps, Find (its filter ignores case) and the unit slots keep Alpha = capital. A unit typed by letters in the CAS view comes out in the case the face shows.
+3. **G21f1: a name the user calls pasexp is shown as exp too.** The rewrite is text-level; nobody needs that name, and the shown text still means the same where the host made it.
+
 ### 2026-10-18 Opus pass 17 defaults (G31f1, G21, R12a)
 1. **G21: in DEG the host rewrites a typed exp to the helper pasexp** (outside strings, in Home and CAS; definitions keep pasexp, which checks the angle mode when it runs, so a function defined in DEG is right in RAD too). The exact result of `exp(i*90)` in DEG is `cos(16200/π)+i·sin(16200/π)`: correct in degrees, and it evaluates to −0.448073616129+0.893996663601·i. *Would change if* a Giac patch (G21b, "Needs the user") makes the rewrite unneeded.
 2. **G21f1: the helper's name is never shown.** On `cfa8b74`, `g(x):=exp(i*x)` in DEG shows `(x)->pasexp(i*x)` in Home and the CAS view, and the LaTeX draws pasexp; every shown text and LaTeX turns pasexp back into exp, which means the same thing there.
