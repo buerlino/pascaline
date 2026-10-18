@@ -7,8 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
-- **2026-10-18 G7: the names `cyc` and `cycle` moved from `tr` (turn) to `rev` (cycle count); StdT and StdP are exact by definition. OPEN (small).** G7 took `rev`, `revolution`, `cyc` and `cycle` off `tr`, since a cycle is a count, not an angle (G15); `tr` keeps `turn`, `pla`. StdT = 273.15 K (0 °C) and StdP = 101325 Pa (1 atm) are `derived`; IUPAC's current STP (since 1982) uses 100 kPa; StdP here is the older 1 atm, which V_m101 goes with. **Recommendation:** keep as built; say if `cycle` should stay a name of `tr`.
-
 - **2026-10-18 G33: the library replay misses G29's budget about tenfold; what gates R59. OPEN (Opus pass 10).** 200 library programs replay in about 21 ms (median) on the desktop; at G29's desktop-to-Tab One ratio (291/10.8) that is about 570 ms on the Tab One against the 50 ms budget (G33's report and its printed test). G33 merges after its fix package G33f1 with this recorded as not met, because nothing reaches the import before R59 (defaults, Opus pass 10).
   - **Recommendation:** R59 starts only after A12 has measured a 200-program library on the Tab One; if that is over 50 ms, a gorge package for lazy definition of functions (r10 section 3.2: a function is defined on its first use, not at start) comes before R59.
   - **Why:** the replay runs on every start, so an imported library would cost every user half a second of start-up on the slowest device; the estimate is a ratio, not a measurement, so A12 decides whether the lever is needed. **Would change if** A12 measures the replay inside 50 ms.
@@ -397,6 +395,10 @@ Newest first. Where an entry changed an earlier document, that document now carr
 ## Defaults (Phase 1)
 
 Each entry: the choice, why, the alternatives, and what would change it.
+
+### 2026-10-18 Opus pass 14 defaults (G7, R24a, G32)
+1. **G7: a cycle is a count, so `rev`, `revolution` and `cycle` are names of `rev`, not of `tr`** (G15); `tr` keeps `turn` and `pla`. qalc's `cyc` is dropped from `tr` and is on no item (Find finds `rev` from "cycle"). StdT = 273.15 K (0 °C) and StdP = 101325 Pa (1 atm) are `derived`, exact by definition; IUPAC's current STP (since 1982) uses 100 kPa, StdP is the older 1 atm, which V_m101 goes with. *Would change if* the owner wants `cycle` back on `tr`, or the 100 kPa STP as a second constant.
+2. **R24a: a prefixed pair is in Find's list only when it is that prefix times that unit** (same dimension, factor = prefix × unit), not when the ids only spell it: m + in is a milli-inch, not `min` (minute); d + B, n + mi, P + a, T + R likewise. Fix package R24af1.
 
 ### 2026-10-18 R24a defaults (the slot model)
 1. **⁻¹ turns the sign of the unit's power, ², ³ and ⁴ set its size and keep the sign** (m ² ⁻¹ = m⁻², m ⁻¹ ³ = m⁻³), and ⌫ removes the whole power. r9 2.5 says only that powers act on the unit before; this makes every power reachable in two presses without a refusal. *Would change if* R24b's use shows a hand expects ² after ³ to give m⁵.

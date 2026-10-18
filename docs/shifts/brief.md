@@ -4,7 +4,7 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Section 7 holds one block per package in the shape the pipeline bundles (section 2).
 
 ## 0. State at start
-`phase-1` on 2026-10-18 (architecture pass, decisions.md P17). Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1–R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46 (with R46f1), R21b, R11, R32, A4a (2026-10-16), R15b, R47, B13; milestone 5's check G15 (P15 holds); the deep-dive packages G20, G27, R44, G24, G19, R29, R30. **Merged by the pipeline** (night of 2026-10-18, audited by Opus pass 1): A6 (`130c12f`), G16 (`1bfd594`), G17 (`a4496d5`); audited by Opus pass 2: G17f1 (`17fdfad`), G18 (`5b7e0d8`), G25 (`d9b177a`); audited by Opus pass 3: G18f1 (`76e3eb6`), G25f1 (`211f0db`), G13 (`d08e955`); audited by Opus pass 6: G22f1 (`7556623`), R52 (`7c8c2c7`), G14 (`7635cfc`); audited by Opus pass 7: G14f1 (`9930ad6`), G26 (`eb5eef2`), S4 (`40c4bea`, the scope waits for the owner); audited by Opus pass 11: G33 with G33f1 (`d4ff602`, the replay budget not met: decisions.md G33); audited by Opus pass 12: G33f2 (`e0e8cc4`); audited by Opus pass 13: G33f3 (`c613cea`, upper-case loop keywords refused). **Finished on its branch, not merged** (review-only mode of A10): R12a (`p1/ron-m4a-look`, the visual-pass mockups, waiting for the owner's look). The pipeline has not merged a package yet: A10 fixes what stops it (decisions.md P17) and runs first, by day, with `PASCALINE_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads` set in the shell. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history. Left for the owner: `git branch -D p1/ron-eve-gestures` (the old flick classifier, K2 removed by P11; agents never use `-D`).
+`phase-1` on 2026-10-18 (architecture pass, decisions.md P17). Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1–R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46 (with R46f1), R21b, R11, R32, A4a (2026-10-16), R15b, R47, B13; milestone 5's check G15 (P15 holds); the deep-dive packages G20, G27, R44, G24, G19, R29, R30. **Merged by the pipeline** (night of 2026-10-18, audited by Opus pass 1): A6 (`130c12f`), G16 (`1bfd594`), G17 (`a4496d5`); audited by Opus pass 2: G17f1 (`17fdfad`), G18 (`5b7e0d8`), G25 (`d9b177a`); audited by Opus pass 3: G18f1 (`76e3eb6`), G25f1 (`211f0db`), G13 (`d08e955`); audited by Opus pass 6: G22f1 (`7556623`), R52 (`7c8c2c7`), G14 (`7635cfc`); audited by Opus pass 7: G14f1 (`9930ad6`), G26 (`eb5eef2`), S4 (`40c4bea`, the scope waits for the owner); audited by Opus pass 11: G33 with G33f1 (`d4ff602`, the replay budget not met: decisions.md G33); audited by Opus pass 12: G33f2 (`e0e8cc4`); audited by Opus pass 13: G33f3 (`c613cea`, upper-case loop keywords refused); audited by Opus pass 14: G7 (`de9b388`), R24a (`d904baa`, fix R24af1 for the reading in words), G32 (`36b9936`). **Finished on its branch, not merged** (review-only mode of A10): R12a (`p1/ron-m4a-look`, the visual-pass mockups, waiting for the owner's look). The pipeline has not merged a package yet: A10 fixes what stops it (decisions.md P17) and runs first, by day, with `PASCALINE_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads` set in the shell. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history. Left for the owner: `git branch -D p1/ron-eve-gestures` (the old flick classifier, K2 removed by P11; agents never use `-D`).
 
 ### The path (owner, 2026-10-14; rewritten 2026-10-18 after the owner's answers in the architecture pass)
 **By day, one pipeline at a time** (owner, 2026-10-18), in this order; each starts when the one before is merged:
@@ -45,11 +45,6 @@ Estimates are wall-clock guesses. A package already merged by day is skipped (lo
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 3 | G7 Find data for the unit pad | gorge, Sonnet | `p1/gorge-m5-finddata` | S5 merged by the owner | 45 min |
-| 4 | **Opus pass 1** on steps 1–3 | Opus | — | — | 20 min + fixes |
-| 5 | R24a the slot model | ron, **Opus** | `p1/ron-m5-unitslot` | G7 | 1 h |
-| 6 | G32 rpm counts turns: the refusal's message, `source: reference` | gorge, Sonnet | `p1/gorge-m5-rpmmsg` | G7 | 30 min |
-| 8 | **Opus pass 2** on steps 5–7 | Opus | — | — | 20 min + fixes |
 | 9 | R28 units mode in the parser | ron, **Opus** | `p1/ron-m5-unitparse` | R24a, G16 | 1 h |
 | 12 | **Opus pass 3** on steps 9–11 | Opus | — | — | 20 min + fixes |
 | 13 | G31 FIX never hides a nonzero value (section 0h) | gorge, Sonnet | `p1/gorge-m4-fixzero` | G2 item 60 answered | 45 min |
@@ -143,7 +138,6 @@ Where 0d says "milestone 5 items 1–2 (U1, U2) merged", read G16, G17, G25 and 
 | # | Package | Backlog | Agent, model | Branch | Start when merged | Lane | Size |
 |---|---|---|---|---|---|---|---|
 | R28 | Units mode in the parser | m5 item 2 (ron half) | ron, **Opus** | `p1/ron-m5-unitparse` | R24a and G16; before R24c | night | ~1 d |
-| G32 | rpm counts turns: the refusal's message, and `source: reference` for the CODATA cases | m5 item 2 (G15, decided 2026-10-18) | gorge, Sonnet | `p1/gorge-m5-rpmmsg` | G7 | night | ~0.25 d |
 
 **Why these models:** G16 is the arithmetic every unit result rests on (Opus). G17, G18, G25, G13 and G14 follow G16's pattern or the golden gate, and their cases pin them (Sonnet, Opus pass at night). R28 adds parser rules with round trips (Opus, as R14 and R18).
 
@@ -155,8 +149,6 @@ Each waits for what its row says; none changes the 0b packages or their order. B
 | # | Package | Agent, model | Branch | Start when | Lane | Size |
 |---|---|---|---|---|---|---|
 | S5 | The unit pad's arrangement and its user cells (research) | sandra, Opus | `p1/sandra-padlayout` | merged by the owner (2026-10-18; P14 arrangement accepted) | owner | ~1 d |
-| G7 | Find data for the unit pad and the units menu | gorge, Sonnet | `p1/gorge-m5-finddata` | S5 merged (its test reads the final arrangement) | night | ~0.5 d |
-| R24a | The slot model (no UI) | ron, **Opus** | `p1/ron-m5-unitslot` | G7 merged | night | ~0.5 d |
 | R24b | The pad drawn over the keys | ron, Sonnet | `p1/ron-m5-unitpad` | the owner accepted S5's arrangement; R21a merged | day | ~1 d |
 | R24c | The unit view entry: slots, Enter, evaluation | ron, **Opus** | `p1/ron-m5-unitview` | R24a, R24b, R28, G16, G17 and G25 merged | day | ~1 d |
 | R24d | Find in a slot and the user cells | ron, Sonnet | `p1/ron-m5-usercells` | R24c and R4b merged | day | ~0.5 d |
@@ -478,15 +470,6 @@ Commits in this order:
 - e2e: Home, G (as `\const{G}{G}`) × 5.972ᴇ24, Enter: the digits past G26's `uncDigits` are drawn with the muted token, and the mark stays `≈`; copy gives every digit; a result with only exact constants (c) has no muted digit; the same cut at 30 digits.
 - The contrast test passes (the muted digits keep the floor for text); the start chunk within 0.3 kB gzip.
 
-### ron, R24a: the slot model, branch `p1/ron-m5-unitslot`
-**Lane:** night-safe (no UI: a plain TS model and its tests). **Opus** (the parser and the evaluator read it). **Starts when:** G7 is merged (the ids). The first of four unit-pad packages.
-**Read:** `docs/research/r9-unit-pad.md` section 2 (the rules); docs/04 4.3 ("Grammar per slot", the MathLive check of 2026-10-15: the token list is the only source, the LaTeX is output only, the field is written only through `setPromptValue`); `docs/research/r7-unit-slots.md` section 5.4 (the guards); `tools/probes/unit-presses.mjs` (`typePad`, the `UNITS` list); `tools/probes/unit-weights.yaml` (S5's weights, once merged); `app/src/units/types.ts` (G16's `UnitSlot` and `UnitToken`: the model's output type); `app/src/find/rank.ts` (the item shape, for the reading in words); `app/src/i18n/enUnits.ts`.
-- **Tests first** (`app/src/units/slot.test.ts`), one per rule of r9 sections 2.2–2.6: a prefix arms; another replaces it; the same one again disarms it. Units in a row multiply; one ÷ per slot. ², ³, ⁴ and ⁻¹ act on the unit before, √ on the unit after. ⌫ removes the last token. A prefix alone and a second ÷ are refused, with a message from the i18n table. For every unit of the probe's 50 and of S5's weights list, the model's tokens give the same prefixes, units and powers as `typePad`'s parts.
-- **The model** (`app/src/units/slot.ts`, plain TS): a token list per slot that is exactly G16's `UnitSlot` (`tokens: UnitToken[]`, `per`), the LaTeX shown, and the reading in words from Find's titles (a prefixed pair outside Find's list is marked, S1 guard 3). Its input is pad actions (`prefix`, `unit`, `per`, `power`, `sqrt`, `delete`), never keys, so R24b and R24c plug into it.
-**Done when:**
-- `slot.test.ts` passes and covers every rule above; the model's output type is `UnitSlot` from `app/src/units/types.ts` (no second slot type).
-- Typecheck passes; the start chunk is unchanged (nothing imports the model yet); the report names the action names for R24b.
-
 ### ron, R28: units mode in the parser, branch `p1/ron-m5-unitparse`
 **Lane:** night-safe (parser and round trips). **Opus.** **Starts when:** R24a and G16 are merged; it must be merged before R24c. Backlog milestone 5 item 2, the ron half.
 **Read:** G16's report (the `UnitRequest` input: `formula` as Giac text with `pasu1`, `pasu2`, … per slot and `pask1`, … per constant; `slots: UnitSlot[]`; `consts`; `end`); `app/src/units/types.ts`; `app/src/units/build.ts` and `app/src/units/build.test.ts` (what G16 builds from a request); R24a's report; docs/04 4.3; `app/src/input/parse.ts` (`tokenize`, the number branch, `besideResult`); `app/src/input/emit.ts` (`SerializeError`, the serialize options); `app/src/input/latex-to-giac.ts` (`latexToGiacInfo`, the chip table); `app/src/input/chips.ts`; `tests/golden/parser.yaml` (groups and the `chips:` field); `app/src/input/roundtrip.test.ts`.
@@ -581,30 +564,12 @@ Commits in this order:
 - `home.yaml` and a CAS case, `derived`, failing on today's code: in DEG, the four inputs give their RAD values; `cos(90)+i*sin(90)` stays `i` in DEG, and polar entry with `∡` keeps degrees.
 - The golden gate passes with the trig cases in DEG unchanged.
 
-### gorge, G7: Find data for the unit pad and the units menu, branch `p1/gorge-m5-finddata`
-**Lane:** night-safe. **Starts when:** S5 is merged by the owner (the test reads the final arrangement). Backlog milestone 5 item 4 (its `add_to_find` part) and `docs/research/r9-unit-pad.md` section 7.
-**Read:** `spec/unit-pad.yaml` (the user cells' defaults included); `spec/units-menu.yaml` (the `first` lists, `constants.lists`); `find/units.yaml`; `find/aliases.yaml`; `tools/find-index/generate.mjs`; `tests/tasks/find-queries.yaml`; `app/src/find/queries.test.ts`; S5's report (the ids it lists as missing); `docs/research/r7-unit-slots.md` section 3 (its list).
-- Add `add_to_find` (kip, fbm, Ah, mAh) and the constants StdT and StdP to the curated data (`find/units.yaml`), each with a `checks` entry whose size is exact from its definition (`derived` or `oracle`), and query phrases for them in `tests/tasks/find-queries.yaml` ("ampere hour", "kip", "board foot", "standard temperature"). `mmH2O` and `percent`: find out why they are not in the index (qalc data, a generator skip; `percent` and `ppm` are qalc constants, not units), then add the unit with a check or write the reason into `find/units.yaml`'s comments; `%` gets no unit cell.
-- The cycle unit (G25, decisions.md "Opus pass 2 defaults" point 3): `rev` as its own unit in `find/units.yaml` (a count of cycles: dimension 1, factor 1) and `rpm` as 1/60 Hz, so the index agrees with `app/src/units/factors.ts`'s `CYCLES` (then drop that override); `rev` is no longer a name of `tr`. Query phrases "revolution" and "rpm".
-**Done when:**
-- `app/src/find/specids.test.ts` (failing on today's index): every unit and prefix id in `spec/unit-pad.yaml` and every grid entry of `spec/units-menu.yaml` (products such as `ft*lbf`, `Btu/h`, `m^3/h` split into their factors, and the prefixes) resolves to a Find item (`unit:<id>`, `pfx:<id>`); the constants in `constants.lists` resolve to `const:<id>` (e, π and i excepted).
-- The query test passes (every phrase in the top 3, at least 90 % first); `npm run index` is clean; the index within budget (≤ 400 kB raw, ≤ 100 kB gzip; the size in the report).
-
 ### gorge, G31: FIX never hides a nonzero value, branch `p1/gorge-m4-fixzero`
 **Lane:** night-safe. **Starts when:** G2 item 60 is answered (the owner, on the Virtual Calculator: Fixed(4) of 4.7ᴇ-6 and 0.000123). Feature analysis 2026-10-18; principle 3.
 **Read:** `app/src/engine/format.ts` lines 208–232 (`formatReal`, the `FIX` case, `toText`) and `markOf`/`confirmedOptions` (lines 354–400); `app/src/engine/format.test.ts`; `tests/golden/g2.yaml` items 15 and 60; docs/04 2.4.
 **Behaviour today** (formatter probe, 2026-10-18): `formatReal(4.7e-6, { format: "FIX", digits: 12, fixed: 4 })` → `0.0000`; `1e-7` → `0.0000`: a result the user reads as zero, with no sign that it is not. FIX is off the default Format-key cycle (Settings ticks it).
 - **The rule, by the G2's answer:** if the G2 also shows `0.0000`, follow it, and such a result is marked `≈` never `=` (0.0000 is not the value) and keeps its sign; if the G2 switches to another notation, FIX falls back to SCI at the digits setting whenever every shown decimal would be 0 for a nonzero value. Either way a nonzero value never draws as a plain `0.0000` with `=`.
 **Done when:** `format.test.ts` cases for 4.7E-6, 1E-7, −4.7E-6 and 0 (which stays `0.0000 =`) fail today and pass; the mark cases; the golden gate unchanged; the rule as a decisions.md defaults entry (text in the report).
-
-### gorge, G32: rpm counts turns: the refusal's message, and `source: reference`, branch `p1/gorge-m5-rpmmsg`
-**Lane:** night-safe. **Starts when:** G7 is merged (the index and the evaluator then agree on `rev` and `rpm`, and `factors.ts`'s `CYCLES` override is gone). decisions.md "G15" (decided 2026-10-18); the night check's finding 1.
-**Read:** `app/src/units/evaluate.ts` (the dimension check and its `UnitError`); `app/src/units/messages.ts`; `app/src/i18n/enUnits.ts`; `app/src/units/types.ts` (`UnitError`); `tests/golden/units.yaml` (d27–d29, n05, n06, q03–q15); `tests/golden/README.md` (the `source:` rule); `tests/golden/oracle.py` (the sources it accepts).
-- When a dimension mismatch has `rpm` or `rev` on one side and the angle on the other, the error is `{ error: "cycle", unit }` with the message `units.cycle`: "{unit} counts turns: write tr/min for an angular speed" for rpm and "{unit} counts turns: write tr for an angle" for rev. Every other mismatch keeps "Units don't match".
-- `tests/golden/README.md` gets a sixth source, `reference`: a published value with its citation in `note`, neither derivable nor an oracle's. The 13 CODATA cases of G13 (q03–q15) take it, with "NIST CODATA 2022, allascii.txt" in the note; `oracle.py` accepts it (the value is checked as today).
-**Done when:**
-- `units.yaml` cases, `derived`, failing on today's code: `60*{rpm}` → `rad / s` refused with the rpm message; `1*{rev}` → `rad` refused with the rev message; `60*{tr / min}` → `rad / s` = 2π (`≈`, exact `2*pi`); `1*{rad / s}` → `Hz` keeps "Units don't match: T⁻¹·angle vs T⁻¹" (d27).
-- The golden gate (units), vitest, typecheck and `oracle.py` pass (0 problems).
 
 ### annabell, A9: key vibration on the owner's phone (F41), branch `p1/annabell-haptics`
 **Lane:** day (a phone with a motor; take the device lock; not the Tab One). **Starts when:** the owner's phone is connected.
