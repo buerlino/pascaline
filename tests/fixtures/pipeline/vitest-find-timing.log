@@ -1,0 +1,125 @@
+find-index: 1850 items (fn 1311 [tier 0: 38], tmpl 1, const 69, unit 435, pfx 34) -> /home/nordmu/Documents/source99/pascaline/.claude/worktrees/pl-015-g22f1/app/src/find/_gen/find-index.json
+find-index: 324984 bytes raw, 67407 bytes gzip, 3193 ms (aide_cas: 1780 entries, 465 left out: 211 underscore, 104 notFunction, 106 excluded, 44 noName)
+find-index: qalc: 435 units (143 composites), 34 prefixes, 69 constants; 33 units and 2 constants skipped, 34 units without si, 53 values checked against definitions, 16 overridden
+find-index: 16 note(s) (--verbose lists them)
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.3 [39m[90m/home/nordmu/Documents/source99/pascaline/.claude/worktrees/pl-015-g22f1/app[39m
+
+ [32m✓[39m src/input/golden-ids.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 242[2mms[22m[39m
+ [32m✓[39m src/input/selection.test.ts [2m([22m[2m13 tests[22m[2m)[22m[33m 319[2mms[22m[39m
+ [32m✓[39m src/calc/units.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 200[2mms[22m[39m
+[90mstdout[2m | src/find/queries.test.ts[2m > [22m[2mFind index and query test[2m > [22m[2mranks every phrase in the top 3, at least 90 % first
+[22m[39mfind queries: 100/100 first, 100/100 in the top 3
+
+ [32m✓[39m src/input/roundtrip.test.ts [2m([22m[2m84 tests[22m[2m)[22m[33m 548[2mms[22m[39m
+ [32m✓[39m src/keyboard/keyboard.test.ts [2m([22m[2m21 tests[22m[2m)[22m[33m 586[2mms[22m[39m
+[90mstdout[2m | src/engine/precision.test.ts[2m > [22m[2mhonest precision (real Giac)[2m > [22m[2mG23: sin(10^100) is confirmed at P+80, sin(10^2000) shows no digit and costs little (oracle: mpmath at 150 digits)
+[22m[39msin(10^2000): 40.3 ms
+
+ [32m✓[39m src/input/fuzz.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1035[2mms[22m[39m
+   [32m✓[39m parser fuzz [2m(1)[22m
+     [33m[2m✓[22m[39m 20000 random token strings parse or fail with SerializeError, quickly[33m 1031[2mms[22m[39m
+ [32m✓[39m src/input/haptics.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 106[2mms[22m[39m
+ [32m✓[39m scripts/size-check.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 1542[2mms[22m[39m
+   [32m✓[39m size-check [2m(11)[22m
+     [33m[2m✓[22m[39m applies the Find, Units, index and qalc budgets as soon as the chunks exist[33m 1253[2mms[22m[39m
+ [32m✓[39m src/engine/casProducts.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 557[2mms[22m[39m
+ [32m✓[39m src/entry/macros.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 213[2mms[22m[39m
+ [32m✓[39m src/engine/precision.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 1387[2mms[22m[39m
+ [32m✓[39m src/units/build.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32m✓[39m src/engine/solve.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 1902[2mms[22m[39m
+   [32m✓[39m Solve and analysis plumbing (real Giac) [2m(12)[22m
+     [33m[2m✓[22m[39m a root that cancellation leaves right to fewer digits than asked is ⚠ n, with only those shown (M4-8)[33m 383[2mms[22m[39m
+ [32m✓[39m src/engine/host.test.ts [2m([22m[2m32 tests[22m[2m)[22m[33m 1555[2mms[22m[39m
+   [32m✓[39m EngineHost (real Giac) [2m(32)[22m
+     [33m[2m✓[22m[39m switching CAS -> Home restores Home's 300 ms budget[33m 553[2mms[22m[39m
+ [32m✓[39m src/find/insert.test.ts [2m([22m[2m48 tests[22m[2m)[22m[32m 62[2mms[22m[39m
+ [32m✓[39m src/engine/format.test.ts [2m([22m[2m76 tests[22m[2m)[22m[32m 85[2mms[22m[39m
+ [32m✓[39m src/engine/defs.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 56[2mms[22m[39m
+ [32m✓[39m src/input/numbers.test.ts [2m([22m[2m64 tests[22m[2m)[22m[32m 83[2mms[22m[39m
+ [32m✓[39m scripts/gate-summary.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+ [32m✓[39m src/input/emit-js.test.ts [2m([22m[2m27 tests[22m[2m)[22m[32m 84[2mms[22m[39m
+ [32m✓[39m src/input/chips.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 80[2mms[22m[39m
+ [32m✓[39m src/views/sheet.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m src/state/session.chips.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 169[2mms[22m[39m
+ [32m✓[39m src/state/session.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 203[2mms[22m[39m
+ [32m✓[39m src/views/modeSheet.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 89[2mms[22m[39m
+ [32m✓[39m src/input/entry-forms.test.ts [2m([22m[2m61 tests[22m[2m)[22m[32m 115[2mms[22m[39m
+ [32m✓[39m src/i18n/i18n.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m src/state/session.settings.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m src/clipboard/paste.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32m✓[39m src/state/session.marks.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 551[2mms[22m[39m
+ [32m✓[39m src/keyboard/gestures.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/render/render.test.ts [2m([22m[2m52 tests[22m[2m)[22m[32m 146[2mms[22m[39m
+ [32m✓[39m src/clipboard/text.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 169[2mms[22m[39m
+ [32m✓[39m src/entry/keep.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 96[2mms[22m[39m
+ [32m✓[39m src/style.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 45[2mms[22m[39m
+ [32m✓[39m src/render/insertable.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m✓[39m src/state/displayMode.test.ts [2m([22m[2m25 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+ [32m✓[39m src/apps/apps.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32m✓[39m src/engine/homeEval.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m src/views/sheetFit.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 37[2mms[22m[39m
+ [32m✓[39m src/clipboard/port.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32m✓[39m src/find/rank.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+ [32m✓[39m src/state/session.fmt.test.ts [2m([22m[2m10 tests[22m[2m)[22m[33m 1568[2mms[22m[39m
+   [32m✓[39m Format key (real Giac) [2m(7)[22m
+     [33m[2m✓[22m[39m 1/3 goes Standard, Scientific, Engineering and back; earlier results stay as they were[33m 365[2mms[22m[39m
+ [32m✓[39m src/state/storage.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/pwaLite.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m✓[39m src/state/pickRows.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/input/haptics-android.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/keyboard/userKeys.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m src/pwa.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/polyfills.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/units/uncertainty.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/state/taps.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+[90mstdout[2m | src/find/queries.test.ts[2m > [22m[2mFind index and query test[2m > [22m[2mtakes well under 16 ms per key on the desktop (the device gate is ?bench=find)
+[22m[39mfind queries: 667 keys, p50 1.02 ms, p95 1.70 ms
+
+ [31m❯[39m src/find/queries.test.ts [2m([22m[2m8 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 6131[2mms[22m[39m
+   [32m✓[39m find-queries.yaml [2m(1)[22m
+     [32m✓[39m has 100 active phrases and 10 pending ones, no duplicates[32m 7[2mms[22m[39m
+   [31m❯[39m Find index and query test [2m(6)[22m
+     [32m✓[39m stays within its budgets: ≤ 400 kB raw, ≤ 100 kB gzip[32m 19[2mms[22m[39m
+     [32m✓[39m holds every kind, unique ids, no currencies, the fields of the schema[32m 228[2mms[22m[39m
+     [32m✓[39m every prepared item has its insert; a tier-1 function's is the \operatorname template of its name[32m 17[2mms[22m[39m
+     [32m✓[39m names every expected id of an active phrase[32m 1[2mms[22m[39m
+     [33m[2m✓[22m[39m ranks every phrase in the top 3, at least 90 % first[33m 460[2mms[22m[39m
+[31m     [31m×[31m takes well under 16 ms per key on the desktop (the device gate is ?bench=find)[39m[33m 5393[2mms[22m[39m
+   [32m✓[39m finds the full generated index (otherwise the query test was skipped)[32m 0[2mms[22m[39m
+ [32m✓[39m src/engine/workerEngine.test.ts [2m([22m[2m26 tests[22m[2m)[22m[33m 7433[2mms[22m[39m
+   [32m✓[39m WorkerEngine (real Giac in process) [2m(1)[22m
+     [33m[2m✓[22m[39m Home and CAS answers, and definitions survive a Cancel[33m 671[2mms[22m[39m
+   [32m✓[39m WorkerEngine unit view (real Giac in process, G16) [2m(1)[22m
+     [33m[2m✓[22m[39m a job reads a stored Home variable, and works again in the worker a Cancel starts[33m 528[2mms[22m[39m
+   [32m✓[39m WorkerEngine Solve and Cancel (real Giac in process) [2m(1)[22m
+     [33m[2m✓[22m[39m a user's X survives a solve, and a Cancel in the middle of one[33m 344[2mms[22m[39m
+   [32m✓[39m WorkerEngine definitions across a relaunch (real Giac in process, docs/04 6.2) [2m(7)[22m
+     [33m[2m✓[22m[39m reports the replay of 200 stored definitions in ready().replayMs[33m 1478[2mms[22m[39m
+     [33m[2m✓[22m[39m a store that never answers: the engine starts without it and does not overwrite it[33m 3005[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/find/queries.test.ts[2m > [22mFind index and query test[2m > [22mtakes well under 16 ms per key on the desktop (the device gate is ?bench=find)
+[31m[1mError[22m: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".[39m
+[36m [2m❯[22m src/find/queries.test.ts:[2m88:3[22m[39m
+    [90m 86|[39m   });
+    [90m 87|[39m
+    [90m 88|[39m   it("takes well under 16 ms per key on the desktop (the device gate i…
+    [90m   |[39m   [31m^[39m
+    [90m 89|[39m     const keys = active.flatMap((q) => [...q.query].map((_, i) => q.qu…
+    [90m 90|[39m     for (const k of keys.slice(0, 50)) search(index, k); // warm up
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m53 passed[39m[22m[90m (54)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m903 passed[39m[22m[90m (904)[39m
+[2m   Start at [22m 11:25:49
+[2m   Duration [22m 9.48s[2m (tests 48%, transform 38%, import 12%, worker 2%)[22m
+
+[2m  Transform [22m [33mtransforming modules took 22.83s[39m[2m · 38% of tracked time, re-done on every run[22m
+[2m            [22m [2mpersist transforms across runs with [22m[33mfsModuleCache: true[39m
+[2m            [22m [2mlearn more: https://vitest.dev/guide/improving-performance#caching-between-reruns[22m
+

@@ -3,7 +3,7 @@
 // Vitest's and Playwright's JSON reporters.
 import { describe, expect, it } from "vitest";
 import {
-  formatLine, isSolveReloadFailure, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
+  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
 } from "./gate-summary.ts";
 
 const vitestOk = {
@@ -97,5 +97,20 @@ describe("line format", () => {
   it("is one line: verdict, name, detail, time", () => {
     expect(formatLine("typecheck", { ok: true, detail: "0 errors" }, 12_300)).toBe("PASS typecheck 0 errors (12 s)");
     expect(formatLine("e2e", { ok: false, detail: "2 of 214 failed: a.spec.ts:40" }, 400_000)).toBe("FAIL e2e 2 of 214 failed: a.spec.ts:40 (7 min)");
+  });
+});
+
+describe("what the gate selects by changed paths", () => {
+  it("golden runs for units, unit-case, find and its generator", () => {
+    expect(selectsGolden(["app/src/units/evaluate.ts"])).toBe(true);
+    expect(selectsGolden(["app/scripts/unit-case.ts"])).toBe(true);
+    expect(selectsGolden(["find/aliases.yaml"])).toBe(true);
+    expect(selectsGolden(["tools/find-index/generate.mjs"])).toBe(true);
+    expect(selectsGolden(["app/src/ui/Key.svelte", "docs/backlog.md"])).toBe(false);
+  });
+  it("the Find index is regenerated for find/ and its generator only", () => {
+    expect(regeneratesIndex(["find/aliases.yaml"])).toBe(true);
+    expect(regeneratesIndex(["tools/find-index/generate.mjs"])).toBe(true);
+    expect(regeneratesIndex(["app/src/units/evaluate.ts"])).toBe(false);
   });
 });
