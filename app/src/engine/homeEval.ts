@@ -170,9 +170,18 @@ export function decideFloatTest(giac: Giac, input: string, digits: number): { wa
 }
 
 /** The two sides of the test form in `input` (`(a_-b_))(A,B)`), the test helpers left out. */
-function testSides(input: string): string {
+export function testSides(input: string): string {
   const k = input.indexOf("(a_-b_))(");
   return k < 0 ? input : input.slice(k + 9);
+}
+
+/** The `why` of a symbolic result's `warn`: the unaudited functions of the test sides (R18f2), or that nothing was
+ *  compared ("unchecked"); undefined when there is nothing to say. */
+export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): PrecisionWhy | undefined {
+  if (warn === "unchecked") return { once: true };
+  if (warn !== "unaudited") return undefined;
+  const unaudited = functionsIn(sides).filter((n) => !AUDITED_FUNCTIONS.has(n));
+  return unaudited.length ? { unaudited } : undefined;
 }
 
 /** The names of our definitions that `input` mentions. */
@@ -469,7 +478,8 @@ export function homeEval(
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
     const unchecked = hasFloat(text);
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
-    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(decided?.warn ? { why: { unaudited: functionsIn(testSides(exactBody)).filter((n) => !AUDITED_FUNCTIONS.has(n)) } } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
+    const why = symbolicWhy(warn, testSides(exactBody));
+    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(why ? { why } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();

@@ -2,7 +2,7 @@
 // The only way UI code talks to maths (CLAUDE.md). Implementations run Giac off the main thread.
 import type { HomeResult, HomeSettings } from "./homeEval.ts";
 import type { DefEntry } from "./defs.ts";
-import type { PrecisionWarn } from "./format.ts";
+import type { PrecisionWarn, PrecisionWhy } from "./format.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
 export type { HomeResult, HomeSettings };
@@ -55,6 +55,8 @@ export interface CasResult {
   approximate?: boolean;
   /** ⚠: that float comes from an unaudited function (R18f2), or sits in a non-number nobody checked (G27). */
   warn?: PrecisionWarn;
+  /** The reasons behind `warn` for a non-number (G22): the same facts as HomeResult.why; a number has them on `numeric`. */
+  why?: PrecisionWhy;
 }
 
 export interface EvalResult {

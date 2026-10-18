@@ -313,9 +313,9 @@ export type Mark = "=" | "≈" | "⚠";
 export type PrecisionWarn = "unaudited" | "unchecked";
 
 /** The reasons behind a ⚠, as facts for the chip that explains the mark (docs/04 section 8.2; the app words them):
- *  `unaudited`: the called functions the audit does not cover; `inherited`: the stored names whose facts the result
- *  took over; `once`: the value could be evaluated only once, so nothing was compared. A constant's uncertainty is
- *  not sent: the app reads it from the chip table. */
+ *  `unaudited`: the called functions the audit does not cover; `inherited`: the stored names whose facts (a warning, or
+ *  fewer confirmed digits) changed the result's mark; `once`: the value could be evaluated only once, so nothing was compared. A constant's uncertainty is
+ *  not sent: the app reads it from the chip table. It sits on the top-level result only, never on `items`. */
 export interface PrecisionWhy {
   unaudited?: string[];
   inherited?: string[];

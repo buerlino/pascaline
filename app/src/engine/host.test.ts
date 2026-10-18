@@ -201,13 +201,49 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect(home("normald_icdf(10^-10)").why).toEqual({ unaudited: ["normald_icdf"] });
       expect(host.cas("normald_icdf(10^-10)", defaultCasSettings).result.numeric?.why).toEqual({ unaudited: ["normald_icdf"] });
     });
-    it("a result from a stored float names the stored name", () => {
-      host.home("B:=evalf(sqrt(2))", defaultHomeSettings);
+    it("a result from a stored float names the stored name when it limits the digits", () => {
+      host.home("B:=BesselJ(1,2)", defaultHomeSettings);
       expect(home("B*2").why).toEqual({ inherited: ["B"] });
       expect(host.cas("B*2", defaultCasSettings).result.numeric?.why).toEqual({ inherited: ["B"] });
     });
     it("a value evaluated only once says so", () => {
       expect(home("BesselJ(1,2)", 30).why).toEqual({ once: true });
+    });
+    it("a float test with only audited functions has no empty why (home and CAS)", () => {
+      const t = latexToGiac("\\operatorname{evalf}(\\sin(0.5))==0.479425538604203");
+      const h = home(t);
+      expect(h.approximate).toBe(true);
+      expect(h.why).toBeUndefined();
+      expect("why" in h).toBe(false);
+      expect(host.cas(t, defaultCasSettings).result.why).toBeUndefined();
+    });
+    it("a float test with an unaudited function names it, in CAS too", () => {
+      const t = latexToGiac("\\operatorname{normald\\_icdf}(0.3)==-0.5244005127080407");
+      const h = home(t);
+      expect(h.warn).toBe("unaudited");
+      expect(h.why).toEqual({ unaudited: ["normald_icdf"] });
+      expect(host.cas(t, defaultCasSettings).result.why).toEqual({ unaudited: ["normald_icdf"] });
+    });
+    it("CAS: a float in a non-number says it was not compared", () => {
+      const r = host.cas("evalf(x-0.54764225985)", defaultCasSettings).result;
+      expect(r).toMatchObject({ warn: "unchecked", why: { once: true } });
+      expect(home("evalf(x-0.54764225985)").why).toEqual({ once: true });
+    });
+    it("a stored float without a warning that costs no digits is not a reason", () => {
+      host.home("Bn:=evalf(sqrt(2))", defaultHomeSettings); // 39 confirmed digits, no warn: the mark is ≈
+      const r = home("Bn*2");
+      expect(r.approximate).toBe(true);
+      expect(r.why).toBeUndefined();
+    });
+    it("a list result carries why on the top level only", () => {
+      host.home("B:=BesselJ(1,2)", defaultHomeSettings);
+      const r = home("[B,1]");
+      const m = home("[[B]]");
+      for (const x of [r, m]) {
+        expect(x.items).toBeDefined();
+        expect(x.why).toEqual({ inherited: ["B"] });
+        for (const it of x.items!) expect(it.why).toBeUndefined();
+      }
     });
     it("an exact rational has no why", () => {
       expect(home("1/3").why).toBeUndefined();
