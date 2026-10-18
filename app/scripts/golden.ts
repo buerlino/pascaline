@@ -36,7 +36,7 @@ import { hasFloat } from "../src/engine/numeric.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
 import type { ChipTable } from "../src/input/chips.ts";
-import { latexToGiac, resetUserFunctions } from "../src/input/latex-to-giac.ts";
+import { DEFAULT_USER_FUNCTIONS, latexToGiac, latexToGiacInfo } from "../src/input/latex-to-giac.ts";
 import { SerializeError } from "../src/input/errors.ts";
 import { buildJob } from "../src/units/build.ts";
 import { factorTable } from "../src/units/factors.ts";
@@ -498,9 +498,13 @@ async function stageParser(): Promise<void> {
     let produced: string;
     let r: { ok: boolean; how: string };
     try {
-      resetUserFunctions();
-      const o = { ...(c.options ?? {}), ...(c.chips ? { chips: c.chips } : {}) };
-      for (const b of c.before ?? []) latexToGiac(b, o);
+      // A function a `before` entry defines is a call in what follows, as the session counts it (R56)
+      const userFunctions = new Set(DEFAULT_USER_FUNCTIONS);
+      const o = { ...(c.options ?? {}), ...(c.chips ? { chips: c.chips } : {}), userFunctions };
+      for (const b of c.before ?? []) {
+        const d = latexToGiacInfo(b, o).defines;
+        if (d) userFunctions.add(d);
+      }
       produced = latexToGiac(c.latex!, o);
       r = c.error ? { ok: false, how: "accepted, but must be an error" } : equalByGiac(g, produced, c.expect as string);
     } catch (e) {

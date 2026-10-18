@@ -185,7 +185,7 @@ The owner's deep dive (feedback #47): 24 findings, all accepted (decisions.md "T
 
 ### Feature analysis (owner, 2026-10-18)
 A read-and-probe pass over the app (sandra; brief section 0h; decisions.md "Feature analysis 2026-10-18"): nine features approved batch by batch, six dropped with their evidence. Packages, lanes and order: brief sections 0, 0c and 0h.
-1. **R56. A user's single-letter function is forgotten by the parser after a relaunch** (bug): `p(x):=x²`, relaunch, `p(2)` is read as `p·(2)`. Regression test first. *Night; ron, Opus.*
+1. [x] **R56. A user's single-letter function is forgotten by the parser after a relaunch** (bug): `p(x):=x²`, relaunch, `p(2)` is read as `p·(2)`. **Done** (`25c6a73`, R56): every parse takes its single-letter functions from the session's user names (kind fn) plus f, g, h; the parser keeps no state of its own. Tests in `app/src/input/user-functions.test.ts`, `app/src/state/session.test.ts` (R56) and `app/test/persist.spec.ts` ("a single-letter function survives a reload").
 2. **G29 + A12. The defs replay** (A4a point 2: 291 ms against 50 ms on the Tab One): measure the calls per entry, batch them, re-measure on the device. *Night, then day; gorge, annabell.*
 3. **A11. Paste and Share on Android** (A4a point 5): the Capacitor clipboard and share plugins (MIT, offline). *Day; annabell.*
 4. **R54. The list key:** Shift + 8 inserts `{ }`; `[ ]` and the growing matrix stay EN5. Today no key types a list and Tmpl's row vector gives `mean` per column. *Night; ron, Opus.*
