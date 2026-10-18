@@ -23,6 +23,14 @@ describe("vitest log", () => {
     expect(files(log)).toEqual(["src/find/queries.test.ts", "src/other.test.ts"]);
     expect(onlyTiming("vitest", log)).toBe(false);
   });
+  it("a suite that fails on import is found, and the count guard refuses a miss", () => {
+    const find = " FAIL  src/find/queries.test.ts > Find index > takes well under 16 ms per key\n";
+    const suite = " FAIL  src/x.test.ts [ src/x.test.ts ]\nError: Cannot find module './y'\n Test Files  2 failed | 52 passed (54)\n";
+    expect(files(find + suite)).toEqual(["src/find/queries.test.ts", "src/x.test.ts"]);
+    expect(onlyTiming("vitest", find + suite)).toBe(false);
+    // an unseen failure: the summary says 2 files, only 1 was found
+    expect(onlyTiming("vitest", `${find} Test Files  2 failed | 52 passed (54)\n`)).toBe(false);
+  });
   it("is not timing for another failure in the Find file", () => {
     expect(isTiming("vitest", { file: "src/find/queries.test.ts", title: "Find index > finds pi" })).toBe(false);
   });

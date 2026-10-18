@@ -28,6 +28,11 @@ export function failedItems(check: Check, log: string): Item[] {
       const m = /^\s*FAIL\s+(\S+\.test\.ts)\s*(?:>\s*(.*))?$/.exec(l);
       if (m) items.push({ file: m[1]!, title: (m[2] ?? "").trim() });
     }
+    // a suite that fails to load: "FAIL  src/x.test.ts [ src/x.test.ts ]" (no "> title")
+    for (const l of lines) {
+      const m = /^\s*FAIL\s+(\S+\.test\.ts)\s*\[/.exec(l);
+      if (m && !items.some((i) => i.file === m[1])) items.push({ file: m[1]!, title: "" });
+    }
     // a file listed as failed without a FAIL line of its own
     for (const l of lines) {
       const m = /^\s*❯\s+(\S+\.test\.ts)\b.*\bfailed\b/.exec(l);
@@ -62,6 +67,11 @@ export function isTiming(check: Check, item: Item): boolean {
 /** True when something failed and every failing item is a timing test. */
 export function onlyTiming(check: Check, log: string): boolean {
   const items = failedItems(check, log);
+  if (check === "vitest") {
+    // the summary counts failed files: if we found fewer, something failed that we did not see
+    const m = /Test Files\s+(\d+) failed/.exec(stripAnsi(log));
+    if (m && Number(m[1]) !== new Set(items.map((i) => i.file)).size) return false;
+  }
   return items.length > 0 && items.every((i) => isTiming(check, i));
 }
 

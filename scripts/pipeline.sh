@@ -86,11 +86,12 @@ if [[ "${1:-}" == "pass" ]]; then
   [[ $# -ge 3 ]] || die "usage: pipeline.sh pass <n> \"<IDs>\" [\"<open questions>\"]"
   n="$2"; ids="$3"; open="${4:-none}"
   export PW_PORT=$((5290 + n))  # a pass's e2e never meets a dev server of another checkout
-  ensure_integ; run="$tasks/pass-$n"; mkdir -p "$run"
   if [[ "${5:-}" == "--dry-run" || "${4:-}" == "--dry-run" ]]; then
     [[ "$open" == "--dry-run" ]] && open=none
+    integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"  # shown, never created
     echo "DRY RUN: Opus pass $n on: $ids; open questions: $open; PW_PORT=$PW_PORT; worktree $integ; starts nothing"; echo "RESULT pass $n: DRY RUN"; exit 0
   fi
+  ensure_integ; run="$tasks/pass-$n"; mkdir -p "$run"
   log "Opus pass $n: spawned sofia (opus) on: $ids; waiting."
   prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Run any e2e with PW_PORT=$PW_PORT (exported; do not change it). Take the integration lock around the doc commit: tools/devlock.sh acquire integ pass-$n 600 before it, tools/devlock.sh release integ pass-$n right after. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
   set +e
