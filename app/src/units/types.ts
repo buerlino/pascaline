@@ -45,11 +45,26 @@ export interface UnitJob {
   endLog?: string;
   /** The source is an absolute temperature (°C, °F), already in K: a value below 0 K is refused. */
   absTemp?: true;
+  /** The end slot as text ("m/s", "cm²"), the unit of the result then. */
+  endUnit?: string;
+  /** Without an end slot: the typed units the result may be shown in, best first (G25). The first whose `dim` is the
+   *  result's dimension is used; none: SI with an SI prefix. */
+  shows?: ShownUnit[];
   /** A constant with an uncertainty went in: never "=" (decisions M4-4), as in Home. */
   inexact: boolean;
   /** Uncertain inputs (G18): `expr` is the formula with a free symbol per uncertain value, which the worker
    *  differentiates; `expr` above has them replaced by their values. */
   unc?: { expr: string; vars: UncVar[] };
+}
+
+/** A unit typed in the formula's slots, as a unit to show the result in. */
+export interface ShownUnit {
+  /** "N·m", "km/h". */
+  text: string;
+  /** Its dimension key, as the index writes it. */
+  dim: string;
+  /** Its exact factor to SI base units as Giac text ("1", "1000", "pi/180"). */
+  factor: string;
 }
 
 /** An uncertain input: the symbol `pasv<n>` stands for a value with a standard uncertainty (Giac text of both). */
@@ -60,14 +75,19 @@ export interface UncVar {
 }
 
 export interface Quantity {
-  /** The number in the end slot's unit, or in SI base units without one. Home's facts (display at the digits
+  /** The number in `unit`. Home's facts (display at the digits
    *  setting, value, exactRational, reliableDigits, full, warn, exact), so markOf() marks it as Home. */
   value: HomeResult;
   /** The dimension key, as the index writes it ("kg1m1s-2"; "" for a pure number). null for an exact 0, whose
    *  dimension is lost. */
   dimension: string | null;
-  /** With an end slot: Giac's exact text of the number in SI base units (G25 picks a unit to show from it).
-   *  Absent without an end slot (value is in SI then), for an exact 0, or when the text is too long to keep. */
+  /** The unit `value` is in (G25): the end slot as typed; without one the units typed in the slots when they fit the
+   *  result's dimension (`5 N × 2 m`: "N·m"), else the SI unit with an SI prefix ("µs", "kJ", "m/s"). "" for a pure
+   *  number and an exact 0. */
+  unit: string;
+  /** The dimension as text ("L·T⁻¹", "M·L²·T⁻²", "1" for a pure number); null for an exact 0. */
+  dimensionText: string | null;
+  /** Giac's exact text of the number in SI base units. Absent for an exact 0, or when the text is too long to keep. */
   si?: string;
   /** G18: the first-order uncertainty of a result with uncertain inputs (the value is then never "="). */
   unc?: Uncertainty;

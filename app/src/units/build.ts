@@ -2,9 +2,9 @@
 // The builder of the unit view (P15, docs/04 4.2): a UnitRequest (the formula with a placeholder per slot and per
 // constant, the slots as tokens) becomes a UnitJob, Giac text in which every unit is its exact SI factor from the
 // Find index times the dimension symbols of dims.ts. Main thread, plain TS, no engine.
-import { dimSymbols, isExponent } from "./dims.ts";
+import { BASES, dimKeyOf, dimSymbols, isExponent, parseDimKey, unitProduct } from "./dims.ts";
 import type { FactorTable, UnitFactor } from "./factors.ts";
-import type { UncVar, UnitError, UnitJob, UnitRequest, UnitSlot, UnitToken } from "./types.ts";
+import type { ShownUnit, UncVar, UnitError, UnitJob, UnitRequest, UnitSlot, UnitToken } from "./types.ts";
 
 /** The logarithmic units: any unit with the Np dimension, and these. Each is a level of a ratio to a reference:
  *  `k`·log10 of the field ratio (dB 20, bel 2) or the power ratio (dBm, dBW 10), Np the ln of the field ratio; `ref`
@@ -164,13 +164,94 @@ function uncertainValues(formula: string, vars: UncVar[]): string {
   }
 }
 
+/** A slot as text, in the order typed: positive powers, then the ones below the ÷ ("km/h", "cm²"). */
+export function slotText(slot: UnitSlot, table: FactorTable): string {
+  const per = slot.per ?? slot.tokens.length;
+  return unitProduct(slot.tokens.map((t, i) => [tokenSymbol(t, table), signed(t.power ?? "1", i >= per)] as const));
+}
+
+function tokenSymbol(t: UnitToken, table: FactorTable): string {
+  return (t.prefix !== undefined ? table.prefixes.get(t.prefix)?.symbol ?? "" : "") + (table.units.get(t.unit)?.symbol ?? t.unit);
+}
+
+const signed = (power: string, below: boolean): string => (below ? negate(power) : power);
+
 /** The end slot's part of a job. */
-function endJob(req: UnitRequest, table: FactorTable): Pick<UnitJob, "end" | "endOffset" | "endLog"> {
+function endJob(req: UnitRequest, table: FactorTable): Pick<UnitJob, "end" | "endOffset" | "endLog" | "endUnit"> {
   if (!req.end) return {};
   const x = specialIn(req.end, table);
-  if (!x) return { end: slotGiac(req.end, table) };
+  const endUnit = slotText(req.end, table);
+  if (!x) return { end: slotGiac(req.end, table), endUnit };
   if (!x.bare) throw refuseSpecial(x.id, x.u);
-  return specialEnd(x.id, x.u);
+  return { ...specialEnd(x.id, x.u), endUnit };
+}
+
+/** One unit of a product of typed tokens: the same prefix and unit from different slots add their powers. */
+interface Factor {
+  token: UnitToken;
+  power: bigint;
+}
+
+const RATIONAL = /^(\d+)(?:\/(\d+))?$/;
+
+/** The units of some slots as one ShownUnit, or null: a fractional power, a unit with no exact factor or dimension, or
+ *  nothing left. `accept` decides from the merged factors and whether the factor to SI is exactly 1. */
+function shownOf(slots: readonly UnitSlot[], table: FactorTable, accept: (n: number, one: boolean) => boolean): ShownUnit | null {
+  const merged = new Map<string, Factor>();
+  for (const slot of slots) {
+    const per = slot.per ?? slot.tokens.length;
+    for (const [i, t] of slot.tokens.entries()) {
+      const p = signed(t.power ?? "1", i >= per);
+      if (!/^-?\d+$/.test(p)) return null;
+      const key = `${t.prefix ?? ""}:${t.unit}`;
+      const f = merged.get(key) ?? { token: { ...(t.prefix !== undefined ? { prefix: t.prefix } : {}), unit: t.unit }, power: 0n };
+      f.power += BigInt(p);
+      merged.set(key, f);
+    }
+  }
+  const factors = [...merged.values()].filter((f) => f.power !== 0n);
+  if (!factors.length) return null;
+  const exps = new Map<string, bigint>();
+  let rat: { p: bigint; q: bigint } | null = { p: 1n, q: 1n };
+  const giac: string[] = [];
+  for (const f of factors) {
+    const u = table.units.get(f.token.unit);
+    const pfx = f.token.prefix !== undefined ? table.prefixes.get(f.token.prefix) : undefined;
+    if (!u?.si || u.dim === undefined || u.si.includes("+") || (f.token.prefix !== undefined && !pfx)) return null;
+    for (const [b, e] of parseDimKey(u.dim)) {
+      if (!/^-?\d+$/.test(e)) return null;
+      exps.set(b, (exps.get(b) ?? 0n) + BigInt(e) * f.power);
+    }
+    const sis = pfx ? [pfx.si, u.si] : [u.si];
+    giac.push(`(${sis.map((x) => `(${x})`).join("*")})^(${f.power})`);
+    const rs = sis.map((x) => RATIONAL.exec(x));
+    if (rat && rs.every((m) => m)) {
+      for (const m of rs) {
+        const [a, b] = [BigInt(m![1]!), BigInt(m![2] ?? "1")];
+        const [n, d] = f.power > 0n ? [a ** f.power, b ** f.power] : [b ** -f.power, a ** -f.power];
+        rat = { p: rat.p * n, q: rat.q * d };
+      }
+    } else rat = null;
+  }
+  const one = rat !== null && rat.p === rat.q;
+  if (!accept(factors.length, one)) return null;
+  const dim = dimKeyOf(BASES.map((b) => `${exps.get(b.key) ?? 0n}`));
+  const factor = rat ? (rat.q === 1n ? `${rat.p}` : `${rat.p}/${rat.q}`) : giac.join("*");
+  const text = unitProduct(factors.map((f) => [tokenSymbol(f.token, table), `${f.power}`] as const));
+  return { text, dim, factor };
+}
+
+/** The typed units a result without an end slot may be shown in, best first (G25): all slots together when they come
+ *  to one unit, to a product with factor 1 (N·m) or are the only slot; then each slot alone (a sum of km and km). */
+function shownUnits(req: UnitRequest, table: FactorTable): ShownUnit[] {
+  const out: ShownUnit[] = [];
+  const all = shownOf(req.slots, table, (n, one) => n === 1 || one || req.slots.length === 1);
+  if (all) out.push(all);
+  if (req.slots.length > 1) for (const s of req.slots) {
+    const one = shownOf([s], table, () => true);
+    if (one && !out.some((o) => o.text === one.text)) out.push(one);
+  }
+  return out;
 }
 
 const PLACEHOLDER = /\bpas([uk])(\d+)\b/g;
@@ -206,9 +287,11 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
     if (/\bpas/.test(sym.replace(/\bpas(?:dim[A-Za-z]+|v\d+)\b/g, ""))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
     // The value of every uncertain input goes in; the worker differentiates the symbolic text for σ.
     const expr = vars.length ? sym.replace(/\bpasv(\d+)\b/g, (_, n: string) => `(${vars[Number(n) - 1]!.value})`) : sym;
+    const shows = req.end ? [] : shownUnits(req, table);
     return {
       expr,
       ...endJob(req, table),
+      ...(shows.length ? { shows } : {}),
       inexact: vars.length > 0 || consts.some((c) => c.inexact),
       ...(vars.length ? { unc: { expr: sym, vars } } : {}),
     };

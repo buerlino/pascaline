@@ -14,6 +14,9 @@
 # one independent); σ = sqrt(Σ (∂f/∂xᵢ·σᵢ)²), first order, exact in Giac. `unc` is σ at 2 significant digits (docs/04 2.6;
 # "none": the result carries no σ), `unc_oracle` σ by the oracle, `shown` the value rounded to σ's last digit with it. A
 # result with a σ is always ≈.
+# G25: `unit` is the unit the value is shown in ("" for a pure number), `dimtext` the dimension as text. Without an end slot the
+# units typed are kept when they fit the result's dimension (one unit, a product with factor 1 like N·m, or the only slot),
+# else SI with an SI prefix (µs, kJ, m/s); an end slot always wins. `rev` is a count of cycles (a pure number): rpm = 1/60 Hz.
 cases:
   # --- the 26 spike cases (engine/qalc/cases.yaml): the conversions and prefixes; u05 and u06 are t01 and t02 below ---
   - { id: "u01", input: "5*{k:m / h}", to: "m / s", oracle: "F(5000,3600)", expect: "1.38888888889", mark: "≈", exact: "25/18", source: "derived" }
@@ -44,11 +47,11 @@ cases:
   - { id: "d23", input: "1*{m}", to: "s", message: "Units don't match: L vs T", source: "derived", note: "an end slot that does not fit names both dimensions" }
   - { id: "d33", input: "1*{m}+1*{s}+1*{kg}", message: "Units don't match: M vs L vs T", source: "derived", note: "every dimension, in the order they are written" }
   - { id: "d34", input: "1*{m^2}", to: "c:m^2", oracle: "F(10000)", expect: "10000", mark: "=", exact: "10000", source: "derived", note: "the prefix is inside the power: cm² = (cm)²" }
-  - { id: "d35", input: "2*{k:N}*3*{m}", oracle: "F(6000)", expect: "6000", mark: "=", exact: "6000", dim: "kg1m2s-2", source: "derived", note: "a prefixed unit as a user cell holds it" }
+  - { id: "d35", input: "2*{k:N}*3*{m}", oracle: "F(6)", expect: "6", mark: "=", exact: "6", dim: "kg1m2s-2", unit: "kJ", source: "derived", note: "a prefixed unit as a user cell holds it; kN·m has a factor 1000, so SI with a prefix" }
   # --- G15's defaults (decisions.md "G15: rpm → Hz, and the units with no exact factor") ---
   - { id: "d27", input: "1*{rad / s}", to: "Hz", message: "Units don't match: T⁻¹·angle vs T⁻¹", source: "derived", note: "rad stays in the dimension key" }
-  - { id: "d28", input: "1*{rpm}", to: "Hz", message: "Units don't match: T⁻¹·angle vs T⁻¹", source: "derived", note: "rad = 1 would give π/30 for 1 rpm, the 2π trap" }
-  - { id: "d29", input: "60*{rpm}", to: "rad / s", oracle: "2*pi", expect: "6.28318530718", mark: "≈", exact: "2*pi", source: "oracle" }
+  - { id: "d28", input: "1*{rpm}", to: "Hz", oracle: "F(1,60)", expect: "0.0166666666667", mark: "≈", exact: "1/60", source: "derived", note: "G25: rpm is 1 rev/min, a frequency (rev is a pure count of cycles): no 2π trap" }
+  - { id: "d29", input: "60*{rpm}", to: "rad / s", message: "Units don't match: T⁻¹ vs T⁻¹·angle", source: "derived", note: "a revolution is a count, not an angle: 2π rad needs the angle written (use tr, the turn)" }
   - { id: "d26", input: "sin(30*{deg})", oracle: "F(1,2)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "an angle unit inside sin" }
   - { id: "d36", input: "sin(30*{deg})", settings: { angle: "deg" }, oracle: "F(1,2)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "an angle unit is the same in either mode" }
   - { id: "d37", input: "sin(30)", settings: { angle: "deg" }, oracle: "sind(30)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "a bare number follows the Home angle mode (G15 default)" }
@@ -58,15 +61,15 @@ cases:
   - { id: "d31", input: "sin(2*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived" }
   # --- docs/04 4.1's table and the evaluator's own rules ---
   - { id: "d10", input: "sqrt(2)*{m}", oracle: "sqrt(2)", expect: "1.41421356237", mark: "≈", exact: "sqrt(2)", dim: "m1", source: "oracle" }
-  - { id: "d11", input: "4.7*{k:ohm}", oracle: "F(4700)", expect: "4700", mark: "=", exact: "4700", dim: "A-2kg1m2s-3", source: "derived" }
-  - { id: "d12", input: "1*{u:F}*4.7*{k:ohm}", oracle: "F('4.7e-3')", expect: "0.0047", mark: "=", exact: "47/10000", dim: "s1", source: "derived" }
-  - { id: "d13", input: "4.7*{k:ohm}*2.2*{n:F}", oracle: "F('1.034e-5')", expect: "1.034E-5", mark: "=", exact: "517/50000000", dim: "s1", source: "derived" }
+  - { id: "d11", input: "4.7*{k:ohm}", oracle: "F(4700)/1000", expect: "4.7", mark: "=", exact: "47/10", dim: "A-2kg1m2s-3", unit: "kΩ", source: "derived", note: "G25: a single slot is shown as typed" }
+  - { id: "d12", input: "1*{u:F}*4.7*{k:ohm}", oracle: "F(47,10)", expect: "4.7", mark: "=", exact: "47/10", dim: "s1", unit: "ms", source: "derived", note: "G25: µF·kΩ is not a unit anyone writes: SI with a prefix" }
+  - { id: "d13", input: "4.7*{k:ohm}*2.2*{n:F}", oracle: "F(517,50)", expect: "10.34", mark: "=", exact: "517/50", dim: "s1", unit: "µs", dimtext: "T", source: "derived", note: "docs/04 4.1: 4.7 kΩ × 2.2 nF = 10.34 µs (G25)" }
   - { id: "d25", input: "1*{Btu}", to: "J", oracle: "F('1055.05585262')", expect: "1055.05585262", mark: "=", exact: "52752792631/50000000", source: "derived", note: "International Table Btu" }
   - { id: "d32", input: "1*{n:V Hz^-1/2}", oracle: "F(1,10**9)", expect: "1E-9", mark: "=", exact: "1/1000000000", dim: "A-1kg1m2s-5/2", source: "derived", note: "a half power: V·Hz^(-1/2)" }
-  - { id: "t04", input: "2*pi*25*{m:m}", oracle: "2*pi*25/1000", expect: "0.157079632679", mark: "≈", exact: "1/20*pi", dim: "m1", source: "oracle", note: "task t04" }
+  - { id: "t04", input: "2*pi*25*{m:m}", oracle: "2*pi*25", expect: "157.079632679", mark: "≈", exact: "50*pi", dim: "m1", unit: "mm", source: "oracle", note: "task t04: a single slot is shown as typed (G25)" }
   - { id: "d40", input: "sqrt(2*9.81*{m / s^2}*2*{m})", oracle: "sqrt(2*F('9.81')*2)", expect: "6.26418390535", mark: "≈", exact: "3*sqrt(109)/5", dim: "m1s-1", source: "oracle", note: "√ of a quantity with units: the dimensions are positive, so √(m²) is m, not |m|" }
   - { id: "d41", input: "5*{m}-5*{m}", oracle: "F(0)", expect: "0", mark: "=", exact: "0", dim: null, source: "derived", note: "an exact 0 has lost its dimension" }
-  - { id: "d42", input: "{=G}", oracle: "F('6.6743e-11')", expect: "6.6743E-11", mark: "≈", exact: "66743/1000000000000000", dim: "kg-1m3s-2", unc: "1.5E-15", unc_oracle: "F('1.5e-15')", shown: "6.67430E-11 ± 1.5E-15", source: "derived", note: "G has a CODATA uncertainty: never = (decisions M4-4), as in Home, and it carries its ±" }
+  - { id: "d42", input: "{=G}", oracle: "F('6.6743e-11')", expect: "6.6743E-11", mark: "≈", exact: "66743/1000000000000000", dim: "kg-1m3s-2", unit: "m³/(kg·s²)", unc: "1.5E-15", unc_oracle: "F('1.5e-15')", shown: "6.67430E-11 ± 1.5E-15", source: "derived", note: "G has a CODATA uncertainty: never = (decisions M4-4), as in Home, and it carries its ±" }
   - { id: "d43", input: "20*{oC}*2", message: "Use K or Δ°C for a temperature difference", source: "derived" }
   - { id: "d44", input: "2*{dB}*3*{m}", message: "dB converts only", source: "derived", note: "a logarithmic unit is allowed only alone" }
   - { id: "d45", input: "y*{m}", message: "Not a number: y", source: "derived", note: "a free name in the formula" }
@@ -112,3 +115,17 @@ cases:
   - { id: "g07", input: "pasupm(12.34,0.05)*{m}*pasupm(3.2,0.1)*{m}", to: "c:m^2", oracle: "F('12.34')*F('3.2')*10000", expect: "394880", mark: "≈", exact: "394880", unc: "12000", unc_oracle: "sqrt((F('3.2')*F('0.05'))**2+(F('12.34')*F('0.1'))**2)*10000", shown: "395000 ± 12000", source: "derived", note: "an end slot scales σ like the value" }
   - { id: "g08", input: "pasupm(1,0.1)*{W}", to: "dBm", oracle: "10*log10(1000)", expect: "30", mark: "≈", exact: "30", unc: "0.43", unc_oracle: "10/ln(10)*F('0.1')", shown: "30.00 ± 0.43", source: "derived", note: "a level end slot: σ through d(10·log10 x)/dx" }
   - { id: "g09", input: "pasupm(5,0.2)*{m}-pasupm(5,0.2)*{m}", oracle: "F(0)", expect: "0", mark: "≈", exact: "0", unc: "0.28", unc_oracle: "sqrt(2)*F('0.2')", shown: "0.00 ± 0.28", source: "derived", note: "two inputs are independent, so σ does not cancel" }
+  # --- G25: the unit a result is shown in (docs/04 4.3 "Result"), the dimension text, the cycle unit rev ---
+  - { id: "n01", input: "5*{N}*2*{m}", oracle: "F(10)", expect: "10", mark: "=", exact: "10", dim: "kg1m2s-2", unit: "N·m", dimtext: "M·L²·T⁻²", source: "derived", note: "typed N and m fit: N·m, not J" }
+  - { id: "n02", input: "5*{N}*2*{m}", to: "J", oracle: "F(10)", expect: "10", mark: "=", exact: "10", unit: "J", source: "derived", note: "an end slot always wins" }
+  - { id: "n03", input: "100*{k:m}/(2*{h})", oracle: "F(100000,7200)", expect: "13.8888888889", mark: "≈", exact: "125/9", dim: "m1s-1", unit: "m/s", dimtext: "L·T⁻¹", source: "derived", note: "km/h is not typed as one slot: SI, no prefix on a compound unit" }
+  - { id: "n04", input: "2*{k:W}*3*{h}", oracle: "F(108,5)", expect: "21.6", mark: "=", exact: "108/5", dim: "kg1m2s-2", unit: "MJ", source: "derived", note: "21 600 000 J: the SI prefix puts the number from 1 to 999" }
+  - { id: "n05", input: "60*{rpm}", to: "rev / s", oracle: "F(1)", expect: "1", mark: "=", exact: "1", source: "derived", note: "rpm → rev/s" }
+  - { id: "n06", input: "2*{rev / s}", to: "Hz", oracle: "F(2)", expect: "2", mark: "=", exact: "2", unit: "Hz", source: "derived", note: "rev/s → Hz" }
+  - { id: "n07", input: "1*{m}/(1*{k:m})", oracle: "F(1,1000)", expect: "0.001", mark: "=", exact: "1/1000", dim: "", unit: "", dimtext: "1", source: "derived", note: "a pure number has no unit" }
+  - { id: "n08", input: "1.5*{N}*{s^2}/{k:m}", oracle: "F('1.5')", expect: "1.5", mark: "=", exact: "3/2", dim: "kg1", unit: "g", dimtext: "M", source: "derived", note: "1.5 g: the gram takes the prefix, not the kilogram" }
+  - { id: "n09", input: "2*{k:N}*{s^2}/{m}", oracle: "F(2000)", expect: "2000", mark: "=", exact: "2000", dim: "kg1", unit: "kg", source: "derived", note: "mass stops at kg" }
+  - { id: "n10", input: "5*{k:m}+3*{k:m}", oracle: "F(8)", expect: "8", mark: "=", exact: "8", dim: "m1", unit: "km", source: "derived", note: "a sum is shown in the unit of a term" }
+  - { id: "n11", input: "pasupm(4.7,0.1)*{k:ohm}*2.2*{n:F}", oracle: "F('1.034e-5')*10**6", expect: "10.34", mark: "≈", exact: "517/50", dim: "s1", unit: "µs", unc: "0.22", unc_oracle: "F('0.1')*1000*F('2.2e-9')*10**6", shown: "10.34 ± 0.22", source: "derived", note: "σ is scaled to the shown unit µs like the value" }
+  - { id: "n12", input: "pasupm(2,0.1)*{k:W}*3*{h}", oracle: "F(108,5)", expect: "21.6", mark: "≈", exact: "108/5", dim: "kg1m2s-2", unit: "MJ", unc: "1.1", unc_oracle: "F('0.1')*1000*3*3600/10**6", shown: "21.6 ± 1.1", source: "derived", note: "σ is scaled to the shown unit MJ like the value" }
+  - { id: "n13", input: "3*{m / s K}", oracle: "F(3)", expect: "3", mark: "=", exact: "3", dim: "K-1m1s-1", unit: "m/(s·K)", source: "derived", note: "several factors below the /: bracketed" }

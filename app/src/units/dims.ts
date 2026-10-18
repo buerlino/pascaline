@@ -64,6 +64,13 @@ export function dimKeyOf(exponents: readonly string[]): string {
 
 const SUPER: Readonly<Record<string, string>> = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
 
+/** An exponent as text after a unit symbol: "²", "⁻¹"; a fraction as "^(−5/2)" in plain characters. */
+export function powerText(e: string): string {
+  if (e === "1") return "";
+  if (e.includes("/")) return `^(${e})`;
+  return [...e].map((c) => SUPER[c] ?? c).join("");
+}
+
 /** A dimension as text for a message: "M·L²·T⁻²", "L·T⁻¹", "1" for a pure number; a fractional power as "T^(-5/2)". */
 export function dimensionText(key: string): string {
   const exps = parseDimKey(key);
@@ -82,4 +89,40 @@ export function dimSymbols(key: string): string {
   return BASES.filter((b) => exps.has(b.key))
     .map((b) => `${b.symbol}^(${exps.get(b.key)!})`)
     .join("*");
+}
+
+/** The named coherent SI units, by dimension key (the Find index's keys; N, J, W… have factor 1). */
+const NAMED: Readonly<Record<string, string>> = {
+  "s-1": "Hz", "kg1m1s-2": "N", "kg1m-1s-2": "Pa", "kg1m2s-2": "J", "kg1m2s-3": "W", "A1s1": "C", "A-1kg1m2s-3": "V",
+  "A2kg-1m-2s4": "F", "A-2kg1m2s-3": "Ω", "A2kg-1m-2s3": "S", "A-1kg1m2s-2": "Wb", "A-1kg1s-2": "T", "A-2kg1m2s-2": "H",
+};
+
+/** Base units that take an SI prefix on their own (kg through its gram: `exp10` is the gram's power of ten in kg). */
+const PREFIXABLE: Readonly<Record<string, { symbol: string; exp10: number }>> = {
+  kg: { symbol: "g", exp10: -3 }, m: { symbol: "m", exp10: 0 }, s: { symbol: "s", exp10: 0 }, A: { symbol: "A", exp10: 0 },
+  K: { symbol: "K", exp10: 0 }, mol: { symbol: "mol", exp10: 0 }, cd: { symbol: "cd", exp10: 0 },
+};
+
+/** The coherent SI unit of a dimension as text ("N", "m/s", "kg·m²/s³"). `prefixable` is the symbol an SI prefix goes
+ *  before and that symbol's factor to the unit as a power of ten ("g", −3 for kg); absent for a unit that takes none
+ *  (a product of bases, a pure number). */
+export function siUnit(key: string): { text: string; prefixable?: { symbol: string; exp10: number } } {
+  const named = NAMED[key];
+  if (named) return { text: named, prefixable: { symbol: named, exp10: 0 } };
+  const exps = parseDimKey(key);
+  const only = exps.size === 1 ? [...exps][0]! : null;
+  if (only && only[1] === "1" && PREFIXABLE[only[0]]) return { text: only[0], prefixable: PREFIXABLE[only[0]]! };
+  return { text: unitProduct(BASES.filter((b) => exps.has(b.key)).map((b) => [b.key, exps.get(b.key)!] as const)) };
+}
+
+/** Unit symbols with exponents as text: the positive ones joined by "·", the negative ones after a "/", in brackets when
+ *  there are several ("kg·m²/s³", "1/s", "m³/(kg·s²)"). */
+export function unitProduct(factors: readonly (readonly [string, string])[]): string {
+  const part = (list: (readonly [string, string])[], flip: boolean): string =>
+    list.map(([sym, e]) => sym + powerText(flip ? (e.startsWith("-") ? e.slice(1) : e) : e)).join("·");
+  const pos = factors.filter(([, e]) => !e.startsWith("-"));
+  const neg = factors.filter(([, e]) => e.startsWith("-"));
+  if (!neg.length) return part(pos, false);
+  const down = part(neg, true);
+  return `${pos.length ? part(pos, false) : "1"}/${neg.length > 1 ? `(${down})` : down}`;
 }
