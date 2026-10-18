@@ -193,7 +193,6 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
 | A10 | The pipeline fixes and the review-only mode (P17) | architecture pass | first, by day | annabell, Sonnet | `p1/annabell-pipeline` | now | ~0.5 d |
-| R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R51 (same file) | ~0.25 d |
 | R52 | The parser's messages in i18n | R29 decision 1 | night | ron, Sonnet | `p1/ron-m4-parsemsg` | R39 (it touches every parser message) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23 and G18 | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
@@ -538,15 +537,6 @@ Write `docs/research/r13-results-mode.md`:
 **Done when:**
 - e2e: Math in a slot opens Find on units and prefixes, and an empty query shows the units menu by category; a pick lands in the slot as tokens (a prefixed unit becomes a prefix plus a unit); the six of the probe's 50 units that are not on the pad, each within the probe's Find count; a user cell is set from a Find hit ("Put on the unit pad", choosing the cell and its tap, up or down) and from Settings › Unit pad, survives a restart and resets to its default; an empty user cell opens Find.
 - The Find query test unchanged; the size test passes; the gallery has Find in a slot, the units menu and a user cell being set.
-
-### ron, R39: the real odd root in Home (P5 b), branch `p1/ron-m4-oddroot`
-**Lane:** night-safe (parser only). **Opus.** **Starts when:** R51 is merged (same file). decisions.md P5 (b), as revised on 2026-10-14.
-**Read:** `app/src/input/emit.ts` (`realOddRoots` line 13, the root template lines 205–215, the serialize options); `app/src/input/latex-to-giac.ts` (where Home, Solve, Function and CAS set their options); `app/src/input/emit-js.ts` (the plot evaluator); `tests/golden/g2.yaml` items 4 and 11; `tests/golden/parser.yaml` (roots and powers); `tests/golden/home.yaml`.
-**Behaviour today:** `\sqrt[3]{-8}` → `surd(-8,3)` = −2 (L6); in Home `\left(-8\right)^{\frac{1}{3}}` gives the principal root, 1+1.73205080757·i; the G2 gives −2 for `(-8)^(1/3)` in Home (items 4 and 11, Virtual Calculator).
-- **Fix:** with `realOddRoots`, now set for Home, Solve and Function but not CAS, a power whose exponent is a literal fraction p/q in lowest terms, with q odd, becomes `surd(base,q)^p`. The plot evaluator does the same.
-**Done when:**
-- `parser.yaml` and `home.yaml` cases (`virtual-calc` for −2, `derived` otherwise) that fail on today's code: in Home `\left(-8\right)^{\frac{1}{3}}` = −2; `\left(-8\right)^{\frac{2}{3}}` = 4; `\left(-32\right)^{\frac{1}{5}}` = −2; with −8 stored in X, `X^{\frac{1}{3}}` = −2; an even denominator keeps the principal root: `\left(-8\right)^{\frac{1}{2}}` = 2.82842712475·i (P5 a); an exponent that is not a literal fraction keeps Giac's power; in CAS `(-8)^(1/3)` is unchanged; in the plot evaluator `x^{1/3}` at x = −8 is −2.
-- The parser and home golden cases pass, the golden gate, vitest and typecheck pass.
 
 ### ron, R52: the parser's messages in i18n, branch `p1/ron-m4-parsemsg`
 **Lane:** night-safe (no new behaviour). **Starts when:** R39 is merged (it touches every parser message). decisions.md "R29: the parser's messages, and a space between two numbers" point 1 (owner, 2026-10-17).

@@ -343,6 +343,10 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-18 Opus pass 5 defaults (G22f1, G23f1, R39)
+1. **G22f1 is merged review-only, not redone.** Its last check round failed e2e at load 12 on 16 cores; on the branch merged with phase-1 `0f5ca8e` the pass found e2e 1018 passed (1 skipped), vitest 914/914, typecheck 0 errors and GOLDEN GATE PASSED, and its new host.test.ts case fails on phase-1's `host.ts` (`why` undefined). The one conflict, `app/src/find/queries.test.ts`, keeps phase-1's 60 s timeout (R39 fix round 2) and drops the branch's 30 s. *Would change if* the review-only run fails e2e again (then it is a real failure for gorge).
+2. **G22f1, when the perturbation check costs digits, every stored name with a known digit count is named**, not only the one that moved the result: the check perturbs them together, so it cannot tell which. *Would change if* R36's owner review finds the list too long in practice.
+
 ### 2026-10-18 R39 defaults (the real odd root of a power, P5 b)
 1. **A literal fraction is reduced first:** `(-8)^(2/6)` is `(-8)^(1/3)` = −2, so one exponent value never gives two answers. A literal is whole numbers over whole numbers, in brackets or not, with a minus before it or in its numerator (`-2/3`, `\frac{-1}{3}`); `0.2`, `x/3` and `1/(1+2)` keep Giac's principal power. *Would change if* the G2 gives the principal root for `(-8)^(2/6)`.
 2. **The root template stays the real root in CAS** (`realOddRoots` unset leaves ∛ as surd, L6); only the power form follows the view. *Would change if* the owner wants CAS's ∛(-8) principal too.
@@ -680,7 +684,7 @@ Each entry: the choice, why, the alternatives, and what would change it.
 Synchronous `calc.cas` through Asyncify (amended D6), the runtime limits, the views and storage, the graphics modules and our MicroPython variant went with the app. Text in git history (`b2f1e7e:docs/decisions.md`).
 
 ### 2026-10-11 Parser: odd roots, lists, decimal comma, one-letter functions (L6)
-- **Choice:** a root with an odd whole-number index is the real root (∛(-8) = -2 in Home and in plots; the CAS view leaves `-8^(1/3)` unsimplified, as Giac does with `8^(1/3)`). The reference gives -2 for `(-8)^(1/3)` typed as a power (G2 items 4 and 11, Virtual Calculator; its root key wasn't tried); our power form stays complex (P5(b)), so only the root template matches it, and the option `realOddRoots: false` restores the principal complex root. `{…}` is a list. A `decimalComma` input option reads `3,5` as 3.5 and then separates arguments with `;`. After `p(x):=…`, `p` is a function for the rest of the session (f, g and h always are).
+- **Choice:** a root with an odd whole-number index is the real root (∛(-8) = -2 in Home and in plots; the CAS view leaves `-8^(1/3)` unsimplified, as Giac does with `8^(1/3)`). The reference gives -2 for `(-8)^(1/3)` typed as a power (G2 items 4 and 11, Virtual Calculator); since R39 (P5 (b) revised) a power with a literal exponent p/q, q odd, is the real root in Home, Solve and Function, CAS keeps the principal root, and the option `realOddRoots: false` gives the principal root for the template too. `{…}` is a list. A `decimalComma` input option reads `3,5` as 3.5 and then separates arguments with `;`. After `p(x):=…`, `p` is a function for the rest of the session (f, g and h always are).
 - **Why:** engineers expect ∛(-8) = -2. Lists and user functions are things our keyboard can produce, and the decimal comma is common in Europe.
 - **Left open:** `x^y^z` (our keyboard can't produce it) and units (a separate feature); the reasons are in `parser.yaml`.
 - **Would change if:** the G2 shows how the decimal-comma setting separates arguments.
