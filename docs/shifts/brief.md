@@ -4,7 +4,7 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Section 7 holds one block per package in the shape the pipeline bundles (section 2).
 
 ## 0. State at start
-`phase-1` on 2026-10-18 (architecture pass, decisions.md P17). Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1–R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46 (with R46f1), R21b, R11, R32, A4a (2026-10-16), R15b, R47, B13; milestone 5's check G15 (P15 holds); the deep-dive packages G20, G27, R44, G24, G19, R29, R30. **Finished on their branches, not merged** (they go through the review-only mode of A10): A6 (`p1/annabell-gate`, one gate command), G16 (`p1/gorge-m5-unitcore`, the unit evaluator; its `tests/golden/README.md` counts table conflicts with phase-1), R12a (`p1/ron-m4a-look`, the visual-pass mockups, waiting for the owner's look). **In progress by the owner:** S5 (`p1/sandra-padlayout`, uncommitted in the main checkout). The pipeline has not merged a package yet: A10 fixes what stops it (decisions.md P17) and runs first, by day, with `PASCALINE_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads` set in the shell. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history. Left for the owner: `git branch -D p1/ron-eve-gestures` (the old flick classifier, K2 removed by P11; agents never use `-D`).
+`phase-1` on 2026-10-18 (architecture pass, decisions.md P17). Merged: milestone 4 packages G0–G6 (with G5f1), R1–R3, R19, R20, A1–A3; milestone 4a packages R5, A5, R6, S1, S2, R7–R10, R13, R14, R15a, R16, R17, R18 (with R18f1–R18f3), F8, R22, R25a, R23, R25b, R25c, R42, R43, R45, R34, R35, R21a, R46 (with R46f1), R21b, R11, R32, A4a (2026-10-16), R15b, R47, B13; milestone 5's check G15 (P15 holds); the deep-dive packages G20, G27, R44, G24, G19, R29, R30. **Merged by the pipeline** (night of 2026-10-18, audited by Opus pass 1): A6 (`130c12f`), G16 (`1bfd594`), G17 (`a4496d5`). **Finished on its branch, not merged** (review-only mode of A10): R12a (`p1/ron-m4a-look`, the visual-pass mockups, waiting for the owner's look). **In progress by the owner:** S5 (`p1/sandra-padlayout`, uncommitted in the main checkout). The pipeline has not merged a package yet: A10 fixes what stops it (decisions.md P17) and runs first, by day, with `PASCALINE_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads` set in the shell. The Opus pass of 2026-10-17 (sofia) audited the 17 merges from R27c to G28. S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history. Left for the owner: `git branch -D p1/ron-eve-gestures` (the old flick classifier, K2 removed by P11; agents never use `-D`).
 
 ### The path (owner, 2026-10-14; rewritten 2026-10-18 after the owner's answers in the architecture pass)
 **By day, one pipeline at a time** (owner, 2026-10-18), in this order; each starts when the one before is merged:
@@ -155,8 +155,6 @@ Where 0d says "milestone 5 items 1–2 (U1, U2) merged", read G16, G17, G25 and 
 
 | # | Package | Backlog | Agent, model | Branch | Start when merged | Lane | Size |
 |---|---|---|---|---|---|---|---|
-| G16 | The unit evaluator: finished on its branch, review-only merge | m5 item 1 | gorge, **Opus** | `p1/gorge-m5-unitcore` | A10 | night | 30 min |
-| G17 | Temperatures and logarithmic units | m5 item 2 | gorge, Sonnet | `p1/gorge-m5-unittemp` | G16 | night | ~0.5 d |
 | G18 | Uncertainty, first order | m5 item 2 | gorge, Sonnet | `p1/gorge-m5-unitunc` | G16 | night | ~0.5 d |
 | G25 | The unit a result is shown in | m5 item 2 | gorge, Sonnet | `p1/gorge-m5-unitshow` | G16 | night | ~0.5 d |
 | G13 | The hp and mmHg factors and the data audit | m5 item 3 | gorge, Sonnet | `p1/gorge-m5-qalcdata` | G16 | night | ~1 d |
@@ -212,7 +210,7 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | R40 | Muted digits past a constant's uncertainty | review item 17 | day | ron, Sonnet | `p1/ron-m4a-constdigits` | R41 and G26 | ~0.5 d |
 | R38a | The backup: export everything | review item 18 | day | ron, Sonnet | `p1/ron-m4-backup` | S6, and the owner's yes to its proposal | ~0.5 d |
 | R38b | The backup: restore from a file | review item 18 | day | ron, **Opus** | `p1/ron-m4-restore` | R38a | ~0.75 d |
-| A6 | One gate command: finished on its branch, review-only merge | review item 21 | night | annabell, Sonnet | `p1/annabell-gate` | A10 | 15 min |
+| A6f1 | The gate's golden trigger covers the unit view (Opus pass 1) | review item 21 | day | annabell, Sonnet | `p1/annabell-gatefix` | — | 30 min |
 | S7 | The docs diet | review item 20 | night, alone | sandra, Opus | `p1/sandra-docsdiet` | S5 merged; the last package of its night | ~0.5 d |
 | S6 | Files in and out without INTERNET: the backup | review item 18 | night | sandra, Opus | `p1/sandra-files` | S7 | ~0.5 d |
 | S8 | The outside-test protocol | review item 24 | night | sandra, Opus | `p1/sandra-outside` | S6 | ~0.25 d |
@@ -586,21 +584,6 @@ Write `docs/research/r13-results-mode.md`:
 - Read the file back, check it, show what it holds, then replace or merge as the user picks, through the stamped migrations. A file from a newer version is refused.
 **Done when:** an e2e round trip export → clear → restore gives the same state; a newer-version file is refused with a message; typecheck, vitest and e2e pass.
 
-### gorge, G16: the unit evaluator: factors, dimensions, one term, the end slot: review-only merge, branch `p1/gorge-m5-unitcore`
-**Lane:** night-safe. **Opus** (the fix round resolves a conflict in a counts table; the audit is Sonnet at night). **Starts when:** A10 is merged; run as `scripts/pipeline.sh gorge G16 --no-worker`. Backlog milestone 5 item 1 (P15). The branch holds 8 commits with the report (`git log -1 p1/gorge-m5-unitcore`): `tests/golden/units.yaml` (51 cases, `derived` or `oracle`), a `units` stage of the golden gate, `app/src/units/` (build, evaluate, factors, dims, calc, messages, types), a `units` request in the worker, `Calc.units()` lazy, `oracle.py` checking `exact` and `si`. `git merge-tree` (2026-10-18): phase-1 conflicts only in `tests/golden/README.md` (the counts table).
-**Read (the fix round, if any):** `tests/golden/README.md` on both sides (keep every row: phase-1's counts and the branch's `units.yaml` row); the branch's report.
-**Done when:**
-- The branch merges with phase-1's README rows and the branch's `units.yaml` row both present; `npm run golden` ends in GOLDEN GATE PASSED with the `units` stage; vitest and typecheck pass; the start chunk unchanged (`Calc.units()` is lazy).
-- The report's "For shared files" text (docs/04 8.2 `Quantity`, `UnitRequest`, `UnitError`; backlog milestone 5 item 1) is applied by the Opus pass.
-
-### gorge, G17: temperatures and logarithmic units, branch `p1/gorge-m5-unittemp`
-**Lane:** night-safe. **Starts when:** G16 is merged. Backlog milestone 5 item 2 (P15).
-**Read:** docs/04 4.3 ("Temperature", "Logarithmic units"); G16's report (`git log -1 <merge>^2`: the input type, "temperatures are refused in build.ts"); `app/src/units/build.ts`; `app/src/units/evaluate.ts`; `app/src/units/types.ts`; `app/src/units/messages.ts`; `app/src/i18n/enUnits.ts`; `tests/golden/units.yaml`; `app/scripts/unit-case.ts`; `find/units.yaml` (the Δ°C and Δ°F items, if present).
-- An absolute temperature (°C, °F) is allowed only alone, as the whole quantity, and converts with its offset. A logarithmic unit (dB, dBm, dBW, Np, B) is allowed only alone, and converts by its log rule. Messages go through the i18n table.
-**Done when:**
-- `units.yaml` cases, `derived`, that fail on today's code: `20 °C → °F` = 68 `=`; `100 °F → °C` = 340/9; `300 K → °C` = 537/20; `20 °C → K` = 5863/20; `20 °C × 2` and `20 °C + 5 K` are refused ("Use K or Δ°C for a temperature difference"); Δ°C and Δ°F, K and °R work as differences; `1 W → dBm` = 30; `1 Np → dB` = 20/ln(10) ≈ 8.68588963807; a dB value inside a product is refused ("dB converts only").
-- The golden gate (units), vitest and typecheck pass; `oracle.py` reports 0 problems.
-
 ### gorge, G18: uncertainty, first order, branch `p1/gorge-m5-unitunc`
 **Lane:** night-safe. **Starts when:** G16 is merged. Backlog milestone 5 item 2 (P15); it settles decisions.md M4-2 point 2.
 **Read:** docs/04 2.6 (copy) and 4.3; G15's report (its uncertainty sketch; `git log` of `7f32949`); G16's report; `app/src/units/build.ts`; `app/src/units/evaluate.ts`; `app/src/units/types.ts`; `tests/golden/units.yaml`; `tests/tasks/tasks.yaml` (t10); `tests/golden/oracle.py`.
@@ -679,11 +662,11 @@ Write `docs/research/r13-results-mode.md`:
 - `app/src/find/specids.test.ts` (failing on today's index): every unit and prefix id in `spec/unit-pad.yaml` and every grid entry of `spec/units-menu.yaml` (products such as `ft*lbf`, `Btu/h`, `m^3/h` split into their factors, and the prefixes) resolves to a Find item (`unit:<id>`, `pfx:<id>`); the constants in `constants.lists` resolve to `const:<id>` (e, π and i excepted).
 - The query test passes (every phrase in the top 3, at least 90 % first); `npm run index` is clean; the index within budget (≤ 400 kB raw, ≤ 100 kB gzip; the size in the report).
 
-### annabell, A6: one gate command: review-only merge, branch `p1/annabell-gate`
-**Lane:** night-safe (no device). **Starts when:** A10 is merged; run as `scripts/pipeline.sh annabell A6 --no-worker`. Deep-dive item 21; the local half of backlog C3. The branch holds 6 commits with the report (`git log -1 p1/annabell-gate`): `app/scripts/gate.ts` (`npm run gate`: typecheck, the index when missing, Vitest with `FIND_INDEX=required`, e2e, the golden gate when engine or parser code changed against phase-1, the size test, a docs-size report; one line per check, logs in `app/_out/gate/`; `--quick`; the solve reload tests and the Find timing test re-run once), `app/scripts/gate-summary.ts` with 15 tests. `git merge-tree` (2026-10-18): merges clean.
-**Done when:**
-- The branch merges; `npm run gate --quick` passes on phase-1 (the pipeline's audit sees the diff; the full gate's run is in the branch's report).
-- The report's "For shared files" text (section 8 "each branch: `npm run gate` passes", the agent files' test lines, backlog C3) is applied by the Opus pass.
+### annabell, A6f1: the gate's golden trigger covers the unit view, branch `p1/annabell-gatefix`
+**Lane:** day (no device). From Opus pass 1 (2026-10-18): A6 merged before G16, so the golden trigger does not know the unit view.
+**Read:** `app/scripts/gate.ts` (`goldenPaths`, the `index` check's skip); `scripts/pipeline.sh` (the `golden` line of the auto checks); `docs/shifts/rules.md` section 4 step 3.
+- The golden gate also runs when `app/src/units/`, `app/scripts/unit-case.ts`, `find/` or `tools/find-index/` change (the units stage reads them), in `gate.ts` and in `pipeline.sh`'s auto checks; the gate regenerates the Find index when `find/` or `tools/find-index/` changed against the base, not only when it is missing. Rules section 4 step 3 names the paths (the report gives the text).
+**Done when:** `gate-summary.test.ts` or a new test shows a change in `app/src/units/evaluate.ts` alone selects golden, and a change in `find/aliases.yaml` regenerates the index; typecheck and vitest pass.
 
 ### annabell, A9: key vibration on the owner's phone (F41), branch `p1/annabell-haptics`
 **Lane:** day (a phone with a motor; take the device lock; not the Tab One). **Starts when:** the owner's phone is connected.
@@ -764,7 +747,7 @@ Write `docs/research/r12-outside-test.md` for two 30-minute rounds that the owne
 **Done when:** the note and the sheet exist; the owner can run round 1 with the sheet and an APK and nothing else (the report says what the owner prints and installs); nothing under `app/` changed.
 
 ## 8. Definition of done
-- **Each branch:** typecheck 0; `npm run index` (with `PASCALINE_DL_DIR`, `PASCALINE_QALC_DL_DIR` and `QALC_OUT` pointing at the main checkout's caches and build, as the pipeline sets them), then `FIND_INDEX=required npm test`, all pass (the Find query test fails rather than skips without the full index); e2e all pass (the known-flaky `solve.spec.ts` persistence test and the Find 16 ms timing test may be re-run once); the golden gate when engine or parser code changed; SPDX headers; `git commit -s` with the trailer of the model that ran; the report commit; the start chunk size reported for UI packages; every "Done when" line of the block met or listed under "Not done".
+- **Each branch:** typecheck 0; `npm run index` (with `PASCALINE_DL_DIR`, `PASCALINE_QALC_DL_DIR` and `QALC_OUT` pointing at the main checkout's caches and build, as the pipeline sets them), then `FIND_INDEX=required npm test`, all pass (the Find query test fails rather than skips without the full index); e2e all pass (the known-flaky `solve.spec.ts` persistence test and the Find 16 ms timing test may be re-run once); the golden gate when engine or parser code changed; by hand, `npm run gate` (from `app/`; `-- --quick` while working) runs all of these, the size test and a docs-size report in one command; SPDX headers; `git commit -s` with the trailer of the model that ran; the report commit; the start chunk size reported for UI packages; every "Done when" line of the block met or listed under "Not done".
 - **Milestone 4 is done when:**
   - task 5 is within budget
   - the query test passes

@@ -328,6 +328,7 @@ The evaluator (`app/src/units/`, G16):
 - checks for one term: each exponent d·∂f/∂d / f must be a number;
 - converts to the end slot, where the quotient must be a pure number;
 - returns a `Quantity` whose mark comes from Home's facts and `markOf()`. An irrational value goes through the agreement check.
+- The input is R24a's tokens per slot and the formula with `pasu<n>` per slot and `pask<n>` per constant; the request is built into Giac text on the main thread, so only text reaches the worker. The dimension symbols are positive (√(m²) = m), and an exact 0 has no dimension.
 
 sin, cos and tan take an angle or a pure number; the angle dimension is dropped inside them. Any other function of a quantity with units is refused. On top of this come G17's rules for temperatures and logarithmic units, and G18's first-order uncertainty (σ² = Σ(∂f/∂xᵢ·σᵢ)², with Giac's `diff`).
 
@@ -368,9 +369,10 @@ libqalculate stays in the build only, as the source of the index's factors, cons
   stays `N·m`, SI would say `J`), else SI with an SI prefix (2.7); one tap gives the SI base form and the last
   unit used for that dimension (IndexedDB `units.targets`, `{dimKey: unitId}`).
 - **Temperature:** `°C` and `°F` are absolute and allowed only alone (`20 °C → °F` = 68, `derived`); differences
-  are `K`, `°R`, or the Find items `Δ°C`, `Δ°F`. Golden cases for each, and the rejected `20 °C × 2`.
+  are `K`, `°R`, or the Find aliases `Δ°C` (of K) and `Δ°F` (of °R). Golden cases for each, and the rejected `20 °C × 2`.
 - **Logarithmic units, angles, currency:** as before (conversions only for dB, dBm, Np; `rad` stays in the
-  dimension key; currencies off, with the index test).
+  dimension key; currencies off, with the index test). dB, bel and Np convert by the field-ratio rule (1 Np = 20/ln 10 dB,
+  1 bel = 10 dB); dBm and dBW by the power ratio to 1 mW / 1 W; the message is `dB converts only`.
 - **The way back:** the result inserted into Home is a `\res` chip with the number in the unit shown; the chip's
   label says the unit was dropped. The line itself keeps its slots, so the units key shows them again.
 
@@ -566,7 +568,7 @@ interface MathEngine {
   table(req: TableRequest, s: HomeSettings): Promise<HomeResult[][]>;
   eval(input: string): Promise<EvalResult>;            // tools and benchmarks only
   definitions(): Promise<readonly DefEntry[]>;          // the defs log (6.2), the stored one included once read (G3)
-  units(req: UnitRequest, s: HomeSettings): Promise<Quantity | UnitError>;  // new (m5, G16): a request in worker 1
+  units(job: UnitJob, s: HomeSettings): Promise<Quantity | UnitError>;  // m5, G16: a job built on the main thread (units/build.ts)
   cancel(): Promise<EngineTimings>;
   dispose(): void;
 }
@@ -595,28 +597,31 @@ interface Calc {                                         // views; mirrors MathE
   table(req: TableRequest, s: CalcSettings): Promise<HomeResult[][]>;
   names(): Promise<UserName[]>;                         // the user's names from the defs log (3.4, G3)
   cancel(): Promise<void>;
-  units(req: UnitRequest, s: CalcSettings): Promise<Quantity | UnitError>;  // new (m5): the factor table loads on the first call
+  units(req: UnitRequest, s: CalcSettings): Promise<Quantity | UnitError>;  // m5, G16: lazy chunk; the factor table loads on the first call
 }
 
 
 // Worker protocol (G3): home/cas/eval responses carry `defs: DefChange[]`; request {type:"define", defs} → {type:"defined", replayMs}.
 
-interface UnitRequest {                                  // new (m5); G16 fixes the exact type
-  formula: string;                                       // Giac text from our parser, a placeholder per slot (pasu1, pasu2, …)
-  slots: UnitToken[][];                                  // R24a's tokens per slot
-  end?: UnitToken[];                                     // the optional end slot
+interface UnitToken { prefix?: string; unit: string; power?: string }  // ids without "pfx:"/"unit:"; power an integer or p/q, default "1"; the prefix is inside the power (cm² = (cm)²)
+interface UnitSlot { tokens: UnitToken[]; per?: number }                // tokens[per..] are below the ÷
+interface UnitRequest {                                  // m5, G16
+  formula: string;                                       // Giac text from our parser: pasu1, pasu2, … for slots, pask1, … for constants; a slot multiplies the number before it ("72*pasu1")
+  slots: UnitSlot[];                                     // slots[i] is pasu<i+1>
+  consts?: string[];                                     // Find constant ids without "const:"; consts[i] is pask<i+1>
+  end?: UnitSlot;                                        // "→ should be"
 }
+interface UnitJob { expr: string; end?: string; endOffset?: string; endLog?: string; inexact: boolean }  // Giac text, every unit as factor × dimension symbols; endOffset/endLog for °C, °F and the levels (G17)
 interface Quantity {
-  value: { p: string; q: string } | { decimal: string };  // exact fraction, or P digits
-  exactRational: boolean;                                  // the facts for markOf(), as in HomeResult
-  reliableDigits: number | null;
-  uncertainty?: string;                                    // G18
-  dimension: string;                                       // the index's key, "kg1m1s-2"
-  si?: { p: string; q: string } | { decimal: string };     // the value in SI base units
+  value: HomeResult;                                     // display at the digits setting, exact, full, exactRational, reliableDigits
+  dimension: string | null;                              // index key ("m1s-1"; "" pure; null = an exact 0, whose dimension is lost)
+  si?: string;                                           // with an end slot: Giac's exact text of the number in SI base units
   ms: number;
 }
-type UnitError = { error: "dimension"; dims: [string, string] }
-  | { error: "temperature" | "logarithmic" | "nofactor" | "function" | "engine"; detail: string };
+type UnitError = { error: "dimension"; dims: string[]; end?: true }      // 2+ keys; the end slot's last
+  | { error: "temperature" | "logarithmic" | "nofactor"; unit: string }  // the unit's symbol
+  | { error: "function" } | { error: "symbolic"; detail: string } | { error: "engine"; detail: string };
+// Types in app/src/units/types.ts; the message is unitErrorMessage() (src/units/messages.ts, i18n src/i18n/enUnits.ts).
 
 interface FindIndex {                                    // new (m4), main thread
   load(lang?: string): Promise<void>;                    // fetch + parse the asset (and a language overlay)
@@ -634,11 +639,11 @@ interface ClipboardPort {                                // new (m4): navigator.
 
 | Item | Budget | Today | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 144.73 / 50.78 kB (2026-10-16, `phase-1` after A4a: 3.22 kB gzip left; the sheet's view is its own chunk since R46, 8.65 kB raw JS and 4.96 kB CSS; `tools/probes/start-chunk.mjs` lists the bytes per source) | size test |
+| Start chunk | ≤ 156 kB raw, ≤ 54 kB gzip | 151.08 / 52.81 kB (2026-10-18, `phase-1` after G16: 1.19 kB gzip left; the sheet's view is its own chunk since R46, 8.65 kB raw JS and 4.96 kB CSS; `tools/probes/start-chunk.mjs` lists the bytes per source) | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.73 kB | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (generated, 2026-10-15) | size test (once Find loads it) |
-| Unit view chunk | ≤ 30 kB raw | — | size test; **its rule looks for `src/apps/units/`** (`app/scripts/size-check.ts:96`), while G16 and R24a put the code in `app/src/units/`, so the budget would never fire: the first of them to add a lazy chunk there points the rule at it |
+| Unit view chunk | ≤ 30 kB raw | 3.83 kB (G16, 2026-10-18) | size test (rule on `src/units/`) |
 | Precache total | ≤ 18 MB | 12.3 MB (2026-10-15) | size test |
 
 "Start chunk" is the entry's JavaScript plus every chunk it imports statically (Vite manifest `imports`, transitively), as `app/scripts/size-check.ts` measures it. The entry's CSS is not counted (25.8 kB raw, 9.0 kB gzip on 2026-10-12): the budget was set on the JavaScript figure. CSS gets its own line if it grows past 40 kB raw.
@@ -647,7 +652,7 @@ interface ClipboardPort {                                // new (m4): navigator.
 | Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` |
 | Find open | ≤ 100 ms warm, ≤ 300 ms cold | — | device runs |
 | Units first result (Tab One) | < 1 s | — (no engine to load; S8+ 626 ms was the qalc spike page) | device runs |
-| Unit evaluation (desktop) | p95 ≤ 5 ms | 1.5–3.2 ms (G15 probe) | `tools/probes/units-giac.mjs`, then the golden units section |
+| Unit evaluation (desktop) | p95 ≤ 5 ms | median 0.91 ms, p95 ≈ 2 ms (G16, golden units section, best of 5 per case) | the golden units section |
 | `defs` replay | ≤ 50 ms at 200 definitions | 291 ms (A4a): a miss | device runs |
 | Key presses | each task within its budget; a unit ≤ 4 at the median | — | task benchmark |
 | Find quality | 100 % top 3, ≥ 90 % first | — | query test |

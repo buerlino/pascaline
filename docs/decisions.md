@@ -342,6 +342,16 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-18 Opus pass 1 defaults (A6, G16, G17)
+1. **G16, inverse functions:** asin, acos and atan give a pure number in the Home angle mode, as Home does (golden d39: asin(1/2) in DEG = 30), not an angle. *Would change if* "→ deg" on an inverse function is wanted (then they return rad).
+2. **G16, an exact 0 loses its dimension** (d41): 5 m − 5 m = 0 with no unit, so it converts to any end slot. *Would change if* a real input hits it (then the evaluator keeps the dimension of the terms).
+3. **G16, terms that cancel exactly are not caught:** 5 m + 3 s − 3 s gives 5 m, since `normal()` runs first; (1 m + 1 s)² names the expanded terms' dimensions. Accepted as a known gap. *Would change if* a user meets it (then a per-term check before `normal()`).
+4. **G16, start chunk +0.08 kB gzip** (the two `units()` stubs): accepted, as in the 2026-10-17 defaults point 1 (a package gate guards the budget; 52.81 of 54 kB).
+5. **G16, docs/04 8.2's shapes:** accepted as built (`Quantity` carries a `HomeResult`; the engine takes a `UnitJob`, `Calc` a `UnitRequest`; constants as `pask` placeholders) and written into docs/04 8.2.
+6. **G17, dB is a field-ratio level:** 1 Np = 20/ln 10 dB, 1 bel = 10 dB; dBm and dBW are power levels to 1 mW and 1 W. "B" is the byte in the index, so the bel is `bel`.
+7. **G17, a level or an absolute temperature with no end slot** (the night's open question): °C and °F alone give kelvin and dBm, dBW alone give watts, each labelled with its SI unit, which is honest. A lone dB, bel or Np with no end slot is refused ("dB converts only"): its ratio has no unit, and today `20 dB` gives "10" with the dimension Np (20 dB is 2.303 Np), a wrong number with a unit (principle 3). Fix package G17f1.
+8. **G17, impossible inputs are refused, never computed:** the level of a ratio ≤ 0 (today `-1 W → dBm` gives the complex 30 + 13.64·i, `0 W → dBm` an engine error) and an absolute temperature below 0 K (today `-300 °C → K` = −26.85 K). Each gets its own message in the i18n table. Fix package G17f1.
+
 ### 2026-10-17 Opus pass defaults (audit of the 17 merges since 2026-10-15)
 1. **R34's start-chunk allowance:** accepted. R34 went 0.07 kB gzip over its +0.3 kB package gate for a correctness fix (a second kill lost the kept line); the 54 kB budget held throughout and the start chunk is 51.73 kB gzip after R15b. A package gate is a guard on the budget, not a second budget. *Would change if* the budget itself were missed.
 2. **Timing and persistence tests on a busy host:** `src/find/queries.test.ts` "takes well under 16 ms per key" logs its numbers but skips the assertion when `os.loadavg()[0]` exceeds the number of cores (the device gate `?bench=find` stays the real bar), and `test/solve.spec.ts:116` waits until the IndexedDB record holds the value before it reloads (backlog B13). One small ron package, Sonnet. *Alternatives:* retries (hide a real slowdown) or serial runs (slower gate). *Would change if* a timing assertion that is skipped hides a real regression; then a dedicated quiet-host run.
