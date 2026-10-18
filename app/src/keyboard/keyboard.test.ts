@@ -105,6 +105,25 @@ describe("keyboard spec", () => {
     expect(labelFor(sin, true, false)).toBe("sin⁻¹");
   });
 
+  it("labelFor follows layerAction: the face is lower case exactly when a tap types lower case (F40)", () => {
+    const a = keyboard.byId.get("vars") as Key;
+    const d3 = keyboard.byId.get("d3") as Key;
+    const enter = keyboard.byId.get("enter") as Key;
+    // none, Alpha, Shift + Alpha (one-shot and both locks set shift and alpha the same way)
+    expect(labelFor(a, false, false)).toBe(a.label.primary);
+    expect(labelFor(a, false, true)).toBe("A");
+    expect(labelFor(a, true, true)).toBe("a");
+    expect(labelFor(a, true, false)).toBe(a.label.shift ?? "");
+    // a symbol has no case; a key whose Alpha falls back to the primary keeps its face
+    expect(labelFor(d3, true, true)).toBe(d3.label.alpha);
+    expect(labelFor(enter, true, true)).toBe(enter.label.primary);
+    for (const k of keyboard.keys)
+      for (const [s, al] of [[false, true], [true, true]] as const) {
+        const act = actionFor(k, s, al);
+        if (k.actions.alpha?.kind === "type" && act?.kind === "type") expect(labelFor(k, s, al), `${k.id} ${s}`).toBe(act.text);
+      }
+  });
+
   it("every insert template has a sample, and our parser accepts the sample (rule: one parser case per template)", () => {
     expect(all.length).toBeGreaterThanOrEqual(24);
     for (const t of all) {

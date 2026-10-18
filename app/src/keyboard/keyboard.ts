@@ -303,10 +303,13 @@ export function actionFor(key: Key, shift: boolean, alpha: boolean, oneLine = fa
   return oneLine && a?.line ? a.line : a;
 }
 
+/** Shift + Alpha on a key whose Alpha action is its own letter: lower case. Shared by the action and the legend. */
+const lowerCase = (key: Key, shift: boolean, alpha: boolean): boolean => shift && alpha && key.actions.alpha?.kind === "type";
+
 function layerAction(key: Key, shift: boolean, alpha: boolean): Action | undefined {
   if (alpha) {
     const a = key.actions.alpha ?? key.actions.primary;
-    if (shift && a?.kind === "type" && a === key.actions.alpha) return { kind: "type", text: a.text.toLowerCase() };
+    if (lowerCase(key, shift, alpha) && a?.kind === "type") return { kind: "type", text: a.text.toLowerCase() };
     return a;
   }
   if (shift) return key.actions.shift;
@@ -315,7 +318,11 @@ function layerAction(key: Key, shift: boolean, alpha: boolean): Action | undefin
 
 /** The legend shown on the key face for a modifier state. */
 export function labelFor(key: Key, shift: boolean, alpha: boolean): string {
-  if (alpha) return key.label.alpha ?? key.label.primary ?? "";
+  if (alpha) {
+    const l = key.label.alpha;
+    if (l === undefined) return key.label.primary ?? "";
+    return lowerCase(key, shift, alpha) ? l.toLowerCase() : l;
+  }
   if (shift) return key.label.shift ?? "";
   return key.label.primary ?? "";
 }
