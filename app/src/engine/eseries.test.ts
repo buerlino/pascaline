@@ -17,10 +17,10 @@ describe("IEC 60063 tables", () => {
     expect(ESERIES[12]!.every((v) => ESERIES[24]!.includes(v))).toBe(true);
     expect(ESERIES[6]!.every((v) => ESERIES[12]!.includes(v))).toBe(true);
   });
-  it("E48, E96, E192 are round(10^(2+k/n)); the two published E192 exceptions are 5.55 and 9.20", () => {
+  it("E48, E96, E192 are round(10^(2+k/n)); the one published E192 exception is 9.20", () => {
     for (const n of [48, 96, 192]) {
       const off = ESERIES[n]!.map((v, k) => [k, v, Math.round(10 ** (2 + k / n))] as const).filter(([, v, f]) => v !== f);
-      expect(off.map(([, v]) => v), `E${n}`).toEqual(n === 192 ? [555, 920] : []);
+      expect(off.map(([, v]) => v), `E${n}`).toEqual(n === 192 ? [920] : []);
     }
   });
   it("E6–E24 keep the published values a formula misses", () => {
