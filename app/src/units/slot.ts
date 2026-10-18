@@ -20,14 +20,18 @@ export type PadAction =
 
 export type SlotResult = { ok: true } | { ok: false; key: UnitMessageKey; message: string };
 
-/** What the model needs of one Find unit or prefix: its symbol as LaTeX and its name in words. */
+/** What the model needs of one Find unit or prefix: its symbol as LaTeX, its name in words, and from the Find index
+ *  its exact factor to SI base units (`si`, "1/1000", "16129*pi/10^14") and a unit's dimension key (`dim`). */
 export interface SlotName {
   latex: string;
   words: string;
+  si?: string;
+  dim?: string;
 }
 
 /** The Find items the slot may hold: units and prefixes by id (without "unit:", "pfx:"). A prefixed pair is in
- *  Find's list when `units` has the prefix id followed by the unit id ("k" + "m" = "km"). */
+ *  Find's list when `units` has the prefix id followed by the unit id ("k" + "m" = "km") and that unit is the pair:
+ *  the same dimension, and its factor the prefix's times the unit's, exactly (m + in is not min, d + B is not dB). */
 export interface SlotCatalogue {
   units: ReadonlyMap<string, SlotName>;
   prefixes: ReadonlyMap<string, SlotName>;
@@ -53,10 +57,67 @@ function symbolLatex(it: IndexItem): string {
   return s.replace(/^1(?=\D)/, "").replace(/(?<!\\)_/g, "\\_");
 }
 
-/** A Find title in words: "Kilo (10^3)" → "kilo", "Degree Celsius" → "degree Celsius", "Ohm" → "ohm". */
+/** Words of a unit's name that keep their capital: names of people and calendars. */
+const PROPER = new Set(["Celsius", "Fahrenheit", "Rankine", "Réaumur", "Planck", "Gregorian", "Julian"]);
+
+/** A Find title in words: "Kilo (10^3)" → "kilo", "Degree Celsius" → "degree Celsius", "Nautical Mile" → "nautical
+ *  mile", "U.S. Survey Inch" → "U.S. survey inch". A word keeps its capital when it has a second one (an acronym:
+ *  "TNT", "U.S.") or is a name (PROPER); "Watt hour" and "Ohm" lose only the first. */
 function titleWords(title: string): string {
   const t = title.replace(/\s*\([^)]*\)\s*$/, "").trim();
-  return /^\p{Lu}\p{Lu}/u.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
+  return t.replace(/\p{L}[\p{L}.]*/gu, (w) =>
+    /^\p{Lu}/u.test(w) && !/^.[\p{L}.]*\p{Lu}/u.test(w) && !PROPER.has(w) ? w.charAt(0).toLowerCase() + w.slice(1) : w);
+}
+
+/** An exact factor n/d·π^pi (not reduced: compared by cross-multiplying). */
+interface Exact { n: bigint; d: bigint; pi: number }
+
+/** The Find index's `si` text as an exact factor: integers, `pi`, `*`, `/`, `^` with an integer, parentheses
+ *  ("201168/125", "16129*pi/10^14", "44173801/(21362355120000000000000*pi)"). Anything else ("1+5463/20", the
+ *  offset of °C) is undefined: such a unit is never part of a pair. */
+function exactFactor(text: string): Exact | undefined {
+  const toks = text.replace(/\s+/g, "").match(/\d+|pi|[-*/^()]|./g) ?? [];
+  let i = 0;
+  const mul = (a: Exact, b: Exact, inv: boolean): Exact =>
+    inv ? { n: a.n * b.d, d: a.d * b.n, pi: a.pi - b.pi } : { n: a.n * b.n, d: a.d * b.d, pi: a.pi + b.pi };
+  const atom = (): Exact | undefined => {
+    const t = toks[i++];
+    if (t === "pi") return { n: 1n, d: 1n, pi: 1 };
+    if (t !== undefined && /^\d+$/.test(t)) return { n: BigInt(t), d: 1n, pi: 0 };
+    if (t !== "(") return undefined;
+    const e = expr();
+    return toks[i++] === ")" ? e : undefined;
+  };
+  const power = (): Exact | undefined => {
+    const a = atom();
+    if (!a || toks[i] !== "^") return a;
+    i++;
+    const neg = toks[i] === "-" ? (i++, true) : false;
+    const k = toks[i++];
+    if (k === undefined || !/^\d+$/.test(k) || Number(k) > 64) return undefined;
+    let r: Exact = { n: 1n, d: 1n, pi: 0 };
+    for (let j = 0; j < Number(k); j++) r = mul(r, a, false);
+    return neg ? mul({ n: 1n, d: 1n, pi: 0 }, r, true) : r;
+  };
+  const expr = (): Exact | undefined => {
+    let a = power();
+    while (a && (toks[i] === "*" || toks[i] === "/")) {
+      const inv = toks[i++] === "/";
+      const b = power();
+      a = b && b.n !== 0n ? mul(a, b, inv) : undefined;
+    }
+    return a;
+  };
+  const e = expr();
+  return e && i === toks.length && e.d !== 0n ? e : undefined;
+}
+
+/** Whether `pair` is `prefix` times `unit`: the same dimension, and the factors equal as exact fractions. */
+function isPair(pair: SlotName, prefix: SlotName | undefined, unit: SlotName | undefined): boolean {
+  if (!prefix || !unit || pair.dim === undefined || pair.dim !== unit.dim) return false;
+  const [p, a, b] = [pair.si, prefix.si, unit.si].map((x) => (x === undefined ? undefined : exactFactor(x)));
+  if (!p || !a || !b) return false;
+  return p.pi === a.pi + b.pi && p.n * a.d * b.d === a.n * b.n * p.d;
 }
 
 /** The catalogue from the Find index's units and prefixes. */
@@ -65,7 +126,10 @@ export function slotCatalogue(items: readonly IndexItem[]): SlotCatalogue {
   const prefixes = new Map<string, SlotName>();
   for (const it of items) {
     if (it.kind !== "unit" && it.kind !== "pfx") continue;
-    (it.kind === "unit" ? units : prefixes).set(it.id.slice(it.id.indexOf(":") + 1), { latex: symbolLatex(it), words: titleWords(it.title) });
+    (it.kind === "unit" ? units : prefixes).set(it.id.slice(it.id.indexOf(":") + 1), {
+      latex: symbolLatex(it), words: titleWords(it.title),
+      ...(it.si !== undefined ? { si: it.si } : {}), ...(it.dim !== undefined ? { dim: it.dim } : {}),
+    });
   }
   return { units, prefixes };
 }
@@ -246,13 +310,16 @@ export class SlotModel {
     return undefined;
   }
 
-  /** A factor's words, and whether it is a prefixed pair outside Find's list. */
+  /** A factor's words, and whether it is a prefixed pair outside Find's list. A Find unit whose id is the prefix id
+   *  and the unit id counts only when it is the pair (isPair): "min" is no milli-inch. */
   #names(f: Factor): { words: string; marked: boolean } {
-    const u = this.#cat.units.get(f.unit)?.words ?? f.unit;
+    const unit = this.#cat.units.get(f.unit);
+    const u = unit?.words ?? f.unit;
     if (f.prefix === undefined) return { words: u, marked: false };
+    const prefix = this.#cat.prefixes.get(f.prefix);
     const pair = this.#cat.units.get(f.prefix + f.unit);
-    if (pair) return { words: pair.words, marked: false };
-    return { words: (this.#cat.prefixes.get(f.prefix)?.words ?? f.prefix) + u, marked: true };
+    if (pair && isPair(pair, prefix, unit)) return { words: pair.words, marked: false };
+    return { words: (prefix?.words ?? f.prefix) + u, marked: true };
   }
 
   #factorLatex(f: Factor): string {
