@@ -34,10 +34,10 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Tmpl's DMS cell takes the number before the cursor as its degrees | as the mixed number takes its whole part: `5`, then the cell, is 5°□′□″, where the typed 5 would otherwise join the degrees with no edge between them (owner, 2026-10-15, R27a) |
 | Shift + LOG (10ˣ) after a digit inserts ×10ˣ | `5`, 10ˣ, `2` is 5×10² = 500; the plain template would read 510² (F22; owner, 2026-10-15, R27a). The G2 types `ALOG(2)` and gives 500 too (item 48, 2026-10-19) |
 | A space between two numbers is an error, where the G2 multiplies (`2 3` = 6, item 59) | `1 000` read as a product was a silent wrong number (R29, R51); the owner kept the error on 2026-10-19 |
-| Tmpl's mixed-number cell takes the number before the cursor as its whole part | on the G2 the typed number stays outside the cell's brackets, so `2`, then the cell, reads as 2 × (□/□) (G2 item 36); ours gives 2 □/□ = 2 + □/□ |
+| Tmpl's mixed-number cell takes the number before the cursor as its whole part | on the G2 the typed number stays outside the cell's brackets, so `2`, then the cell, reads as 2 × (□/□) (G2 item 36); ours gives 2 □/□ = 2 + □/□; the G2 reads 2·(□/□) where a mixed number is meant (principle 3, S12) |
 | Lower-case and `sin⁻¹`-style legends, ⌫ glyph, text labels for icons | our own look (clean-room rule); the logical position is the G2's |
-| Shift + 9: & and Å are refused with a message | what & does on the G2 is not known (G2 item 41); Å is the ångström, a unit, and Home is unit-free (P8); the unit view reads Å from Find (milestone 5) |
-| Shift + 9: → makes a function (Giac's ->) | assumed; the G2's use of → is to check (G2 item 42) |
+| Shift + 9: & and Å are refused with a message | Giac reads & as a sum (`1&2` = 3, `3&5` = 8), a silent wrong number for anyone who reads it as AND, so the refusal stays whatever the G2 does (S12; G2 item 41 changes no code); Å is the ångström, a unit, and Home is unit-free (P8); the unit view reads Å from Find (milestone 5) |
+| Shift + 9: → makes a function (Giac's ->) | the engine's own reading; Store has its own key, Shift + ᴇ (S12; G2 item 42 changes no code) |
 | Shift + 6: XOR is (a or b) and not(a and b) | Giac's xor gives 0 when a side is symbolic, a silent wrong answer |
 | In the CAS view Alpha types lower case and Shift + Alpha the capital (Home: the reverse) | the G2's CAS types lower case on Alpha (G2 item 45, owner, 2026-10-18); a lower-case CAS name costs 1 press, not 3. Shift + Alpha not checked on the G2 (R58) |
 | Greek letters β, γ, Γ, ε are stored under stand-in names (beta_, gamma_, Gamma_, epsilon_) | Giac keeps the plain names (epsilon is a setting, Gamma the function); results show the letter |
