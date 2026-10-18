@@ -271,12 +271,38 @@ export class EngineHost {
    *  Symbolic values first, while every name in them is still free (defs.ts). Returns the time it took. */
   restore(entries: readonly DefEntry[]): number {
     const t0 = performance.now();
+    // G29: values and functions go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost.
+    // Assumptions and inputs kept as typed go alone. A batch that printed an error or warning (not the `// Success` notes of functions) or returned an error is run again one command at a
+    // time (values and functions can be set twice), so one bad entry never takes the entries after it down (G19).
+    let batch: string[] = [];
+    let names: string[] = [];
+    const flush = (): void => {
+      if (!batch.length) return;
+      this.giac.clearMessages();
+      const out = this.giac.eval(batch.join(";") + ";");
+      // Any message or error result: a syntax error, or a reserved name that aborts the rest of the batch (`pi:=3`).
+      if (batch.length > 1 && (/error|reserved word|not allowed/i.test(this.giac.messages()) || /^GIAC_ERROR/.test(out))) {
+        // Errors only: a warning (`declared as global`) is no reason to run twice. The names are purged first, so a
+        // rerun sees them as free again, as in the first run (G3: S:=(K*x+1) must not meet a K set by the aborted run).
+        for (const n of names) this.giac.eval(`purge(${n})`);
+        for (const c of batch) this.giac.eval(c);
+      }
+      batch = [];
+      names = [];
+    };
     for (const e of replayOrder(entries)) {
-      for (const c of e.cmds) {
-        this.need(c); // a replayed definition may use one of ours
-        this.giac.eval(c);
+      const plain = (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!);
+      for (const c of e.cmds) this.need(c); // a replayed definition may use one of ours
+      if (plain) {
+        batch.push(e.cmds[0]!);
+        names.push(e.name);
+        if (batch.length >= REPLAY_BATCH) flush();
+      } else {
+        flush();
+        for (const c of e.cmds) this.giac.eval(c);
       }
     }
+    flush();
     this.record(entries.map((e) => ({ set: e })));
     return performance.now() - t0;
   }
@@ -596,6 +622,22 @@ export class EngineHost {
     apply();
     this.modeKey = key;
   }
+}
+
+/** Commands per Giac call in a replay (G29; tools/probes/replay-cost.mjs: 10–50 are as fast, 200 in one call is not). */
+export const REPLAY_BATCH = 25;
+
+/** Brackets and quotes pair up: a command with a stray one would swallow what follows it in a batch. */
+function balanced(cmd: string): boolean {
+  let depth = 0;
+  let quote = false;
+  for (const ch of cmd) {
+    if (ch === '"') quote = !quote;
+    else if (quote) continue;
+    else if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") if (--depth < 0) return false;
+  }
+  return depth === 0 && !quote;
 }
 
 /** G24: a failed allocation reaches us as a C++ exception (`WebAssembly.Exception`, from `new`) or as an abort
