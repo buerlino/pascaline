@@ -69,7 +69,7 @@ cases:
   - { id: "t04", input: "2*pi*25*{m:m}", oracle: "2*pi*25", expect: "157.079632679", mark: "≈", exact: "50*pi", dim: "m1", unit: "mm", source: "oracle", note: "task t04: a single slot is shown as typed (G25)" }
   - { id: "d40", input: "sqrt(2*9.81*{m / s^2}*2*{m})", oracle: "sqrt(2*F('9.81')*2)", expect: "6.26418390535", mark: "≈", exact: "3*sqrt(109)/5", dim: "m1s-1", source: "oracle", note: "√ of a quantity with units: the dimensions are positive, so √(m²) is m, not |m|" }
   - { id: "d41", input: "5*{m}-5*{m}", oracle: "F(0)", expect: "0", mark: "=", exact: "0", dim: null, source: "derived", note: "an exact 0 has lost its dimension" }
-  - { id: "d42", input: "{=G}", oracle: "F('6.6743e-11')", expect: "6.6743E-11", mark: "≈", exact: "66743/1000000000000000", dim: "kg-1m3s-2", unc: "1.5E-15", unc_oracle: "F('1.5e-15')", shown: "6.67430E-11 ± 1.5E-15", source: "derived", note: "G has a CODATA uncertainty: never = (decisions M4-4), as in Home, and it carries its ±" }
+  - { id: "d42", input: "{=G}", oracle: "F('6.6743e-11')", expect: "6.6743E-11", mark: "≈", exact: "66743/1000000000000000", dim: "kg-1m3s-2", unit: "m³/(kg·s²)", unc: "1.5E-15", unc_oracle: "F('1.5e-15')", shown: "6.67430E-11 ± 1.5E-15", source: "derived", note: "G has a CODATA uncertainty: never = (decisions M4-4), as in Home, and it carries its ±" }
   - { id: "d43", input: "20*{oC}*2", message: "Use K or Δ°C for a temperature difference", source: "derived" }
   - { id: "d44", input: "2*{dB}*3*{m}", message: "dB converts only", source: "derived", note: "a logarithmic unit is allowed only alone" }
   - { id: "d45", input: "y*{m}", message: "Not a number: y", source: "derived", note: "a free name in the formula" }
@@ -126,4 +126,6 @@ cases:
   - { id: "n08", input: "1.5*{N}*{s^2}/{k:m}", oracle: "F('1.5')", expect: "1.5", mark: "=", exact: "3/2", dim: "kg1", unit: "g", dimtext: "M", source: "derived", note: "1.5 g: the gram takes the prefix, not the kilogram" }
   - { id: "n09", input: "2*{k:N}*{s^2}/{m}", oracle: "F(2000)", expect: "2000", mark: "=", exact: "2000", dim: "kg1", unit: "kg", source: "derived", note: "mass stops at kg" }
   - { id: "n10", input: "5*{k:m}+3*{k:m}", oracle: "F(8)", expect: "8", mark: "=", exact: "8", dim: "m1", unit: "km", source: "derived", note: "a sum is shown in the unit of a term" }
-
+  - { id: "n11", input: "pasupm(4.7,0.1)*{k:ohm}*2.2*{n:F}", oracle: "F('1.034e-5')*10**6", expect: "10.34", mark: "≈", exact: "517/50", dim: "s1", unit: "µs", unc: "0.22", unc_oracle: "F('0.1')*1000*F('2.2e-9')*10**6", shown: "10.34 ± 0.22", source: "derived", note: "σ is scaled to the shown unit µs like the value" }
+  - { id: "n12", input: "pasupm(2,0.1)*{k:W}*3*{h}", oracle: "F(108,5)", expect: "21.6", mark: "≈", exact: "108/5", dim: "kg1m2s-2", unit: "MJ", unc: "1.1", unc_oracle: "F('0.1')*1000*3*3600/10**6", shown: "21.6 ± 1.1", source: "derived", note: "σ is scaled to the shown unit MJ like the value" }
+  - { id: "n13", input: "3*{m / s K}", oracle: "F(3)", expect: "3", mark: "=", exact: "3", dim: "K-1m1s-1", unit: "m/(s·K)", source: "derived", note: "several factors below the /: bracketed" }

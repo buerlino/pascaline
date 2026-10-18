@@ -115,8 +115,8 @@ export function siUnit(key: string): { text: string; prefixable?: { symbol: stri
   return { text: unitProduct(BASES.filter((b) => exps.has(b.key)).map((b) => [b.key, exps.get(b.key)!] as const)) };
 }
 
-/** Unit symbols with exponents as text: the positive ones joined by "·", the negative ones after a "/" ("kg·m²/s³",
- *  "1/s"). */
+/** Unit symbols with exponents as text: the positive ones joined by "·", the negative ones after a "/", in brackets when
+ *  there are several ("kg·m²/s³", "1/s", "m³/(kg·s²)"). */
 export function unitProduct(factors: readonly (readonly [string, string])[]): string {
   const part = (list: (readonly [string, string])[], flip: boolean): string =>
     list.map(([sym, e]) => sym + powerText(flip ? (e.startsWith("-") ? e.slice(1) : e) : e)).join("·");
@@ -124,5 +124,5 @@ export function unitProduct(factors: readonly (readonly [string, string])[]): st
   const neg = factors.filter(([, e]) => e.startsWith("-"));
   if (!neg.length) return part(pos, false);
   const down = part(neg, true);
-  return `${pos.length ? part(pos, false) : "1"}/${down}`;
+  return `${pos.length ? part(pos, false) : "1"}/${neg.length > 1 ? `(${down})` : down}`;
 }

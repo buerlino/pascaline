@@ -230,9 +230,10 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
       dst = d2;
     }
   } else if (!job.end && dimension !== null) unit = siUnit(dimension).text;
-  const dst0 = dst;
+  // The end slot as shown: the one given, or the unit chosen for the result (σ is scaled by this one, like the value).
+  const shownDst = dst;
   const done = (value: HomeResult, valueExpr: string): Quantity | UnitError => {
-    const unc = job.unc ? uncertainty(giac, job, src, dst0, valueExpr, dimension, s) : null;
+    const unc = job.unc ? uncertainty(giac, job, src, shownDst, valueExpr, dimension, s) : null;
     if (unc && isUnitError(unc)) return unc;
     return { value, dimension, dimensionText: dimension === null ? null : dimensionText(dimension), unit, ...si, ...(unc ? { unc } : {}), ms: performance.now() - t0 };
   };
