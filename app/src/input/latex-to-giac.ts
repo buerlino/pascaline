@@ -3,7 +3,7 @@
 import { parseError } from "../i18n/enParser.ts";
 import { mathJsonToGiac, type Json, type SerializeOptions } from "./emit.ts";
 import type { ChipTable } from "./chips.ts";
-import { parseLatexInfo } from "./parse.ts";
+import { parseLatexInfo, type UnitsInfo } from "./parse.ts";
 import type { UserName } from "../engine/defs.ts";
 
 export interface LatexToGiacOptions extends SerializeOptions {
@@ -11,7 +11,12 @@ export interface LatexToGiacOptions extends SerializeOptions {
   decimalComma?: boolean;
   /** The entry's chip table (\res, \ans, \const); without it a chip is an error. */
   chips?: ChipTable;
+  /** R28: units mode (docs/04 4.3). The Giac text is then G16's `UnitRequest.formula`: `72*pasu1` per unit slot,
+   *  `pask1` per constant, `pasupm(value,sigma)` per ± (G18); `units` names the slots, the constants and the end slot. */
+  units?: boolean;
 }
+
+export type { UnitsInfo };
 
 /** f, g and h are always functions; other single letters once the user defines them (L6). */
 export const DEFAULT_USER_FUNCTIONS: ReadonlySet<string> = new Set(["f", "g", "h"]);
@@ -38,15 +43,19 @@ export function latexToGiac(latex: string, o: LatexToGiacOptions = {}): string {
 
 /** The Giac text; whether an inexact chip went into it (then the result is never marked "=", docs/04 2.4); and the
  *  single letter it defines as a function, so the caller can count it before its names are read again. */
-export function latexToGiacInfo(latex: string, o: LatexToGiacOptions = {}): { giac: string; inexact: boolean; defines?: string } {
+export function latexToGiacInfo(
+  latex: string,
+  o: LatexToGiacOptions = {},
+): { giac: string; inexact: boolean; defines?: string; units?: UnitsInfo } {
   if (latex.trim() === "") throw parseError("parse.emptyInput");
   const user = o.userFunctions ?? DEFAULT_USER_FUNCTIONS;
-  const { json, inexact } = parseLatexInfo(latex, {
+  const { json, inexact, units } = parseLatexInfo(latex, {
     userFunctions: user,
     ...(o.decimalComma ? { decimalComma: true } : {}),
     ...(o.chips ? { chips: o.chips } : {}),
+    ...(o.units ? { units: true } : {}),
   });
   const giac = mathJsonToGiac(json, { ...o, userFunctions: user });
   const defines = definedFunction(json);
-  return { giac, inexact, ...(defines ? { defines } : {}) };
+  return { giac, inexact, ...(defines ? { defines } : {}), ...(units ? { units } : {}) };
 }

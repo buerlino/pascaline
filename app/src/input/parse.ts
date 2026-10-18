@@ -11,7 +11,8 @@ type Tok =
   /** gap (F43, R51): spacing (a space or a spacing command) separates this number from a number just before it. */
   | { t: "num"; v: string; gap?: true }
   | { t: "ch"; v: string }
-  | { t: "cmd"; v: string }
+  /** id: a MathLive prompt `\placeholder[id]{…}` (R28), whose v is "placeholder". */
+  | { t: "cmd"; v: string; id?: string }
   | { t: "open"; v: string }
   | { t: "close"; v: string };
 
@@ -28,6 +29,22 @@ const EMARK = "emark";
 const LOGIC = "logic:";
 /** The Å of the Shift + 9 palette (R18), refused with a message. */
 const ARING = "aring";
+/** The id of a MathLive prompt token `\placeholder[id]{…}` (R28, the unit view's slots), else undefined. Its body is
+ *  skipped: a slot's units live in R24a's model and are never read back from the LaTeX (docs/04 4.3). */
+const promptId = (t: Tok | undefined): string | undefined => (t?.t === "cmd" ? t.id : undefined);
+
+/** The end of a `{…}` group starting at `j` (braces balanced, `\{` and `\}` skipped), or -1. */
+function groupEnd(src: string, j: number): number {
+  if (src[j] !== "{") return -1;
+  let depth = 0;
+  for (let k = j; k < src.length; k++) {
+    const c = src[k];
+    if (c === "\\") k++;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return k + 1;
+  }
+  return -1;
+}
 
 /** The length of a decimal comma at `j` ("," or MathLive's "{,}"), 0 if there is none or the setting is off. */
 function commaAt(src: string, j: number, decimalComma: boolean): number {
@@ -63,6 +80,16 @@ function tokenize(src: string, decimalComma = false): Tok[] {
         if (m) {
           i += m[0].length;
           out.push({ t: "cmd", v: "measuredangle" });
+          continue;
+        }
+      }
+      if (name === "placeholder") {
+        // R28: a named prompt, one token; the id is letters and digits (u1, end)
+        const m = /^\[([A-Za-z0-9]+)\]\s*/.exec(src.slice(i));
+        const end = m ? groupEnd(src, i + m[0].length) : -1;
+        if (m && end > 0) {
+          i = end;
+          out.push({ t: "cmd", v: "placeholder", id: m[1] as string });
           continue;
         }
       }
@@ -213,6 +240,19 @@ export interface ParseOptions {
   decimalComma?: boolean;
   /** The entry's chip table: the values of its \res, \ans and \const chips (input/chips.ts). */
   chips?: ChipTable;
+  /** R28, the unit view (docs/04 4.3): a prompt after a number is its unit slot, `\pm` after a number its standard
+   *  uncertainty, a constant chip stays a constant and `\to` before the last prompt marks the end slot. */
+  units?: boolean;
+}
+
+/** R28: what units mode found besides the formula, for G16's UnitRequest. */
+export interface UnitsInfo {
+  /** The prompt ids of the unit slots in the order written: `pasu<i>` is slots[i-1]. */
+  slots: string[];
+  /** Find constant ids without "const:": `pask<j>` is consts[j-1]; a constant used twice is one entry. */
+  consts: string[];
+  /** The prompt id of the end slot after `\to`, if there is one. */
+  end?: string;
 }
 
 /** What the parser found besides the expression. */
@@ -220,6 +260,8 @@ export interface ParseInfo {
   json: Json;
   /** A chip whose value is not exact was used, so the result cannot be marked "=" (docs/04 2.4). */
   inexact: boolean;
+  /** Units mode only. */
+  units?: UnitsInfo;
 }
 
 /** Letters that start a base prefix after a lone 0 (0x, 0b, 0o), and what may follow them. */
@@ -231,6 +273,8 @@ class Parser {
   private user: ReadonlySet<string>;
   private toks: Tok[];
   private readonly chips: ChipTable;
+  /** R28: units mode and what it found (null outside units mode). */
+  readonly units: UnitsInfo | null;
   /** Set when a chip with an inexact value is used. */
   inexact = false;
   /** F25 (R29): the token index right after the last number literal, and right after the last result chip. */
@@ -240,6 +284,7 @@ class Parser {
     this.toks = toks;
     this.user = o.userFunctions ?? new Set(["f", "g", "h"]);
     this.chips = o.chips ?? {};
+    this.units = o.units ? { slots: [], consts: [] } : null;
   }
 
   private peek(k = 0): Tok | undefined {
@@ -270,6 +315,14 @@ class Parser {
   parseAll(): Json {
     if (this.toks.length === 0) throw parseError("parse.emptyInput");
     const e = this.relation();
+    if (this.units && this.isCmd("to")) {
+      // R28: → and the end slot close the line
+      this.pos++;
+      const end = promptId(this.peek());
+      if (end === undefined) throw parseError("parse.toNeedsEndSlot");
+      this.units.end = end;
+      this.pos++;
+    }
     if (this.pos < this.toks.length) this.fail("parse.unexpectedToken");
     return e;
   }
@@ -299,7 +352,7 @@ class Parser {
     if (def) this.user = new Set([...this.user, def]);
     const left = this.logicOr();
     // R18: x → body (Shift + 9) is a function of x, Giac's ->; (x, y) → body takes two
-    if (this.isCmd("rightarrow") || this.isCmd("to")) {
+    if (this.isCmd("rightarrow") || (!this.units && this.isCmd("to"))) {
       this.pos++;
       const vars = Array.isArray(left) && left[0] === "Tuple" ? left.slice(1) : [left];
       if (!vars.every((v) => typeof v === "string")) throw parseError("parse.needsAVariable");
@@ -446,6 +499,8 @@ class Parser {
         return !(this.noDiff > 0 && this.diffLen() > 0);
       case "cmd":
         if (t.v === "mathrm" && this.noDiff > 0 && this.diffLen() > 0) return false;
+        // R28: in units mode a prompt or ± with no number before it reaches atom(), which says why it is refused
+        if (this.units && (t.id !== undefined || t.v === "pm")) return true;
         // the exponent mark after something that is not a number: atom() refuses it with a message
         // Å and & (R18) too, so that 5Å reaches the message that says why it is refused
         return FACTOR_CMDS.has(t.v) || t.v in FUNCS || t.v in CONSTS || t.v in GREEK || t.v === EMARK || t.v === ARING || t.v === "&";
@@ -601,7 +656,7 @@ class Parser {
         this.basePrefix(tok);
         this.pos++;
         if (this.isCmd(EMARK)) {
-          const e = this.eNumber(tok.v);
+          const e = this.unitsAfter(this.eNumber(tok.v));
           this.numEnd = this.pos;
           return e;
         }
@@ -611,10 +666,11 @@ class Parser {
           this.pos++;
           const a = this.arg();
           const b = this.arg();
-          return ["Delimiter", ["Add", num, ["Divide", a, b]]];
+          return this.unitsAfter(["Delimiter", ["Add", num, ["Divide", a, b]]]);
         }
+        const e = this.unitsAfter(num);
         this.numEnd = this.pos;
-        return num;
+        return e;
       }
       case "open": {
         this.pos++;
@@ -678,6 +734,30 @@ class Parser {
   }
 
   /**
+   * R28, units mode: after a number, `\pm σ` makes it an uncertain value, `pasupm(value,σ)` (G18; σ a plain number,
+   * the standard uncertainty in the slot's unit), and a prompt is its unit slot, `pasu<i>` multiplying it.
+   */
+  private unitsAfter(n: Json): Json {
+    if (!this.units) return n;
+    let v = n;
+    if (this.isCmd("pm")) {
+      this.pos++;
+      const t = this.peek();
+      if (t?.t !== "num" || t.gap) throw parseError("parse.pmNeedsSigma");
+      this.pos++;
+      v = ["Call", "pasupm", n, this.isCmd(EMARK) ? this.eNumber(t.v) : { num: t.v.replace(/^0+(?=\d)/, "") }];
+    }
+    const id = promptId(this.peek());
+    if (id !== undefined) {
+      this.pos++;
+      if (this.units.slots.includes(id)) throw parseError("parse.slotTwice", { id });
+      this.units.slots.push(id);
+      v = ["Multiply", v, `pasu${this.units.slots.length}`];
+    }
+    return v;
+  }
+
+  /**
    * docs/04 2.3 #1: a lone 0 followed by x, b or o and a digit (0xFF, 0b101, 0o17) is a number in another base,
    * which the keys type as 0·x·F·F = 0 today. Refuse it with a message until EN6 (milestone 6) reads it.
    */
@@ -736,6 +816,8 @@ class Parser {
 
   private command(name: string): Json {
     if (name === EMARK) throw parseError("parse.typeTheNumber");
+    if (this.units && promptId(this.peek()) !== undefined) throw parseError("parse.slotNeedsNumber");
+    if (this.units && name === "pm") throw parseError("parse.pmNeedsNumber");
     if (name in CONSTS) {
       this.pos++;
       return CONSTS[name] as string;
@@ -763,6 +845,12 @@ class Parser {
         this.pos++;
         const id = this.groupText();
         this.skipGroup();
+        if (this.units) {
+          // R28: the unit view takes the constant with its dimension from the Find index (G16), as `pask<j>`
+          if (!/^[A-Za-z0-9_]+$/.test(id)) throw parseError("parse.valueMissing", { what: `constant ${id}` });
+          if (!this.units.consts.includes(id)) this.units.consts.push(id);
+          return `pask${this.units.consts.indexOf(id) + 1}`;
+        }
         return this.chip(constKey(id), `constant ${id}`);
       }
       case "tfrac":
@@ -1083,5 +1171,5 @@ export function parseLatex(latex: string, o: ParseOptions = {}): Json {
 export function parseLatexInfo(latex: string, o: ParseOptions = {}): ParseInfo {
   const p = new Parser(tokenize(latex, o.decimalComma), o);
   const json = p.parseAll();
-  return { json, inexact: p.inexact };
+  return { json, inexact: p.inexact, ...(p.units ? { units: p.units } : {}) };
 }

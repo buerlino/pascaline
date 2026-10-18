@@ -81,6 +81,11 @@ export const enParser = {
   "parse.atEnd": "{msg} at end of input",
   "parse.ansNone": "Ans: no result to use in this view yet",
   "parse.valueMissing": "{what}: its value is missing",
+  "parse.slotNeedsNumber": "a unit slot goes right after a number",
+  "parse.slotTwice": "unit slot {id} appears twice",
+  "parse.toNeedsEndSlot": "→ needs the end slot after it, at the end of the line",
+  "parse.pmNeedsNumber": "± goes right after a number: 12.3 ± 0.1",
+  "parse.pmNeedsSigma": "± needs a plain number after it: 12.3 ± 0.1",
 } as const satisfies Record<string, string>;
 
 export type ParseKey = keyof typeof enParser;
