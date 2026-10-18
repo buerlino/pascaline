@@ -14,6 +14,10 @@ export function unitErrorMessage(e: UnitError): string {
       return unitText("units.logarithmic", { unit: e.unit });
     case "nofactor":
       return unitText("units.nofactor", { unit: e.unit });
+    case "level":
+      return unitText("units.level");
+    case "belowzero":
+      return unitText("units.belowzero");
     case "function":
       return unitText("units.function");
     case "symbolic":

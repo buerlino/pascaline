@@ -92,3 +92,10 @@ cases:
   - { id: "l09", input: "2*{dBm}*3", message: "dBm converts only", source: "derived" }
   - { id: "l10", input: "5*{dBm}", to: "dB", message: "Units don't match: M·L²·T⁻³ vs Np", source: "derived" }
   - { id: "l11", input: "1*{m}", to: "k:dB", message: "dB converts only", source: "derived", note: "a prefix on a logarithmic unit" }
+  # --- G17f1: Opus pass 1 findings ---
+  - { id: "l12", input: "20*{dB}", message: "dB converts only", source: "derived", note: "no end slot: a lone dB has no SI unit (was 10 with dim Np)" }
+  - { id: "l13", input: "2*{Np}", message: "Np converts only", source: "derived", note: "no end slot: refused (was exp(2) with dim Np)" }
+  - { id: "l14", input: "-1*{W}", to: "dBm", message: "A level needs a positive value", source: "derived", note: "was the complex 30+13.64i" }
+  - { id: "l15", input: "0*{W}", to: "dBm", message: "A level needs a positive value", source: "derived", note: "was the engine error" }
+  - { id: "t15", input: "-300*{oC}", to: "K", message: "Below absolute zero", source: "derived", note: "was -26.85" }
+  - { id: "t16", input: "1.5e3*{oC}", to: "K", oracle: "F(1500)+F('273.15')", expect: "1773.15", mark: "=", exact: "35463/20", source: "derived", note: "E notation as the parser writes it" }

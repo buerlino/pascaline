@@ -77,13 +77,15 @@ function aloneNumber(formula: string, n: number): string | null {
   const m = /^\s*(?:(.+?)\s*\*\s*)?pasu(\d+)\s*$/.exec(formula);
   if (!m || Number(m[2]) !== n) return null;
   const num = m[1]?.trim() ?? "1";
-  if (!/^[0-9.+\-*/^()\s]+$/.test(num.replace(/\bpi\b/g, "1"))) return null;
+  // E notation (1.5e-3, as the parser writes it): a digit, e or E, an optional sign, digits.
+  const E = /(\d)[eE][+-]?\d+/g;
+  if (!/^[0-9.+\-*/^()\s]+$/.test(num.replace(/\bpi\b/g, "1").replace(E, "$1"))) return null;
   let depth = 0;
   for (let i = 0; i < num.length; i++) {
     const c = num[i]!;
     if (c === "(") depth++;
     else if (c === ")" && --depth < 0) return null;
-    else if (depth === 0 && (c === "+" || c === "-") && num.slice(0, i).trim() !== "" && !/[*/^(]\s*$/.test(num.slice(0, i))) return null;
+    else if (depth === 0 && (c === "+" || c === "-") && num.slice(0, i).trim() !== "" && !/[*/^(]\s*$/.test(num.slice(0, i)) && !/\d[eE]$/.test(num.slice(0, i))) return null;
   }
   return depth === 0 ? num : null;
 }
@@ -143,7 +145,9 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
       const x = sp[alone]!;
       const num = x.bare && req.slots.length === 1 && !req.consts?.length ? aloneNumber(req.formula, alone + 1) : null;
       if (num === null) throw refuseSpecial(x.id, x.u);
-      return { expr: specialSource(x.id, x.u, num), ...endJob(req, table), inexact: false };
+      // No end slot: °C, °F give K, dBm, dBW give W; a dB, bel or Np ratio has no SI unit (20 dB is not 10).
+      if (isLog(x.id, x.u) && !req.end && x.id !== "dBm" && x.id !== "dBW") throw refuseSpecial(x.id, x.u);
+      return { expr: specialSource(x.id, x.u, num), ...endJob(req, table), ...(isAffine(x.u) ? { absTemp: true as const } : {}), inexact: false };
     }
     const slots = req.slots.map((s) => slotGiac(s, table));
     const consts = (req.consts ?? []).map((id) => constGiac(id, table));
