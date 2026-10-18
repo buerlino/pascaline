@@ -69,7 +69,7 @@ const FN: Record<string, string> = {
   Exp: "exp", Ln: "ln", Lg: "log10", Abs: "abs", Floor: "floor", Ceil: "ceil", Round: "round",
   Sqrt: "sqrt", Sign: "sign", Max: "max", Min: "min", Gcd: "gcd", Lcm: "lcm", GCD: "gcd", LCM: "lcm",
   Binomial: "comb", Factorial: "factorial", Re: "re", Im: "im", Conjugate: "conj", Arg: "arg",
-  Determinant: "det", Transpose: "tran", Inverse: "inv", Gamma: "Gamma", Mod: "irem", Rem: "irem",
+  Determinant: "det", Transpose: "tran", Inverse: "inv", Gamma: "Gamma", Mod: "pasmod", Rem: "pasmod",
 };
 const INVERSE: Record<string, string> = {
   Sin: "asin", Cos: "acos", Tan: "atan", Sinh: "asinh", Cosh: "acosh", Tanh: "atanh",
@@ -148,7 +148,7 @@ function symbolText(e: Json): string | undefined {
 /** Giac's own `mod` is the modular-number constructor (an error as a call); Find's `mod` is irem (Euclidean,
  *  never negative: irem(-7,3) = 2), so the written word is renamed to our pasmod (homeEval.ts ENGINE_DEFINITIONS:
  *  irem for integers, and the same remainder for a rational, where irem is an error). */
-const CALL_NAME: Readonly<Record<string, string>> = { mod: "pasmod" };
+const CALL_NAME: Readonly<Record<string, string>> = { mod: "pasmod", irem: "pasmod" };
 
 function call(name: string, args: Json[], o: SerializeOptions): Out {
   return { s: `${CALL_NAME[name] ?? name}(${args.map((a) => ser(a, o).s).join(",")})`, p: 5 };

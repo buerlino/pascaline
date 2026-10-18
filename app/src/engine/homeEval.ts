@@ -263,7 +263,15 @@ export function restoreLiterals(text: string, typed: string): string {
   rewriteDecimals(typed, (mant, exp10) => {
     const lit = exp10 ? `${mant}e${exp10}` : mant;
     const rat = exactRational(mant, exp10);
-    if (rat.startsWith("(")) out = out.split(rat).join(lit);
+    if (rat.startsWith("(")) {
+      out = out.split(rat).join(lit);
+      // the bare m/10^k a sum or product leaves without brackets; not inside 5/10^12 or 15/10^1
+      const bare = rat.slice(1, -1);
+      if (bare.includes("/10^")) {
+        const re = new RegExp(`(?<![\\w.^])${bare.replace(/[\\^*+?.()|[\]{}$]/g, "\\$&")}(?![\\w.])`, "g");
+        out = out.replace(re, lit);
+      }
+    }
     return rat;
   });
   return out;

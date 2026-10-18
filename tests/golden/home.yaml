@@ -176,3 +176,8 @@ cases:
   - { id: "r39-X^1/3", latex: "X^{\\frac{1}{3}}", before: ["X:=-8"], oracle: "F(-2)", expect: "-2", mark: "=", source: "derived", note: "with -8 stored in X; last, so X stays out of the cases above" }
   # --- G14: an exact result built from typed decimals is "=" -----------------------------------------------------
   - { id: "g14-mod-7.5-2", latex: "\\operatorname{mod}\\left(7.5,2\\right)", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "the typed 7.5 is exact (15/2) and so is the remainder 3/2" }
+  # --- G14f1: Find's irem and \bmod take a typed decimal (exact 15/2) and a free name ---------------------------------
+  - { id: "g14f1-irem-7.5-2", latex: "\\operatorname{irem}\\left(7.5,2\\right)", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "Find's Remainder (mod) inserts irem; Giac's irem is an error on 15/2, so irem becomes pasmod" }
+  - { id: "g14f1-bmod-7.5-2", latex: "7.5\\bmod 2", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "the \\bmod operator emits pasmod, not irem" }
+  - { id: "g14f1-bmod-x-3", latex: "x\\bmod 3", expect: "x-3*floor(x/3)", source: "derived", note: "irem(x,3) gave x, marked = (silent wrong answer); pasmod(x,3) = x-3*floor(x/3)" }
+  - { id: "g14f1-eq-bare-decimal", latex: "x==0.5+y", expect: "(x==(0.5+y))", source: "derived", note: "the kept test shows the typed 0.5, not 5/10^1 (bare form)" }
