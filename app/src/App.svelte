@@ -16,6 +16,7 @@
   import { actionFor, keyboard, MATHS_ROW, type ActionBody, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
+  import { noDigit } from "./state/displayMode.ts";
   import { canPick, pickAfter, pickAtOrBefore } from "./state/pickRows.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
@@ -133,7 +134,8 @@
 
   /** L5 and docs/04 2.8: a tapped or picked result goes on the line as a chip that carries its full value. */
   function insertResult(item: HistoryItem): void {
-    const shown = session.display(item).latex;
+    // a result with no confirmed digit goes on the line as the bare warning mark, never as its unconfirmed number
+    const shown = noDigit(session.mark(item)) ? "⚠" : session.display(item).latex;
     const chip = session.chipFor(item);
     if (chip) entry.insertResult(shown, chip);
     else entry.insert(resultToEntry(shown)); // too long for a chip: as drawn
