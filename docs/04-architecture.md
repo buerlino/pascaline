@@ -424,7 +424,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Shift + `+` [r10c5] | Ans (`\ans`, R2) | unchanged | reference |
 | Shift + `−` [r9c5] | nothing | Base: show the last result in HEX, BIN, OCT, DEC; word size (EN6) | reference: Base |
 | Shift + 5 [r8c3] | nothing | `[ ]` vector or matrix template (EN5) | reference |
-| Shift + 8 [r7c3] | nothing | `{ }` list template (R54, feature analysis 2026-10-18; EN5 keeps `[ ]` and the growing matrix) | reference |
+| Shift + 8 [r7c3] | `{ }` list template (R54) | unchanged | reference |
 | Shift + 4 [r8c2] | nothing | matrix editor (EN5) | reference: Matrix |
 | Shift + 7 [r7c2] | nothing | list editor, deferred with Statistics | reference: List |
 | Unit slots | — | the unit pad (`spec/unit-pad.yaml`, docs/research/r9-unit-pad.md): prefix and unit cells drawn over the maths rows, the arrangement measured by S5, a few user cells set from Find; Enter goes to the next slot, `→` is the end slot; `±` per r7 section 7, open point 3. Until R24c, `spec/keyboard.yaml` `unit_slot:` still holds S1's letters | P11, S1 (owner, 2026-10-13); P14 (owner, 2026-10-14) |
@@ -436,7 +436,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 Every key press counts 1, Shift and Alpha included; letters typed in Find count 1 each; Enter counts; a held ⌫ that auto-repeats counts 1; a trackpad drag counts 1; a flick (up or down on a key, lock flicks included) counts 1; a tap on the screen (history row, Find result, chip, menu item, prefix chip) counts 1. Nothing is free. A task stores its sequence as data (`keys:` key ids, `up:`/`down:` flicks and `tap:` targets), and the harness replays it and counts.
 
 ### 5.3 Decision: matrices and lists (EN5)
-- **Entry:** Shift + 5 inserts a 1×1 `pmatrix` with the cursor inside; ▶ at the end of a row adds a column, ▼ in the last row adds a row (MathLive's `addColumnAfter`, `addRowAfter`, `mathlive/types/commands.d.ts:137-157`), ⌫ in an empty last row or column removes it. A 3×3 needs only digits, ▶ and ▼. Shift + 8 inserts `\{ \}` (R54, pulled forward on 2026-10-18; the parser already reads `\{1,2,3\}` as a list: probe).
+- **Entry:** Shift + 5 inserts a 1×1 `pmatrix` with the cursor inside; ▶ at the end of a row adds a column, ▼ in the last row adds a row (MathLive's `addColumnAfter`, `addRowAfter`, `mathlive/types/commands.d.ts:137-157`), ⌫ in an empty last row or column removes it. A 3×3 needs only digits, ▶ and ▼. Shift + 8 inserts `\{□\}` (built in R54): its body is one box holding the elements, separated by commas, read as a Giac list; ⌫ at the start of the body removes the braces and keeps the elements; an empty list is refused with a message.
 - **Parser:** `pmatrix`, `bmatrix`, `matrix` are read (`parse.ts:718`); new round-trip cases for grown matrices and for chips inside cells.
 - **Stored matrices** are Giac variables (any name, ▶ to store); the matrix editor (Shift + 4) edits one in a grid (the Num view's table code) and writes it back with `name:=[[…]]`, which the definitions log persists (6.2).
 - **Display in Home:** every element through our formatter, one mark for the whole (2.4).

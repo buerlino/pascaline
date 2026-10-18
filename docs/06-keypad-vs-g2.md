@@ -15,7 +15,6 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Shift + Math | Memory (Find on variables and functions, with delete) | docs/04 5.1 |
 | Shift + Tmpl | the unit view (milestone 5) | P11, S1 |
 | Shift + 4, 5 | matrix editor, `[ ]` (EN5, milestone 6) | docs/04 5.1 |
-| Shift + 8 | `{ }`, the list template (R54, feature analysis 2026-10-18) | docs/04 5.1; brief section 0h |
 | Shift + 7 (List) | deferred with Statistics | docs/04 5.1 |
 | Shift + − (Base) | Base menu (EN6, milestone 6) | docs/04 5.4 |
 
@@ -71,5 +70,5 @@ The top cluster becomes R3 (decisions.md "R15c"), and this file is rewritten row
 
 ## 5. About the comparison file this was built from
 An outside review produced a YAML list of differences (`gemini-code-1791904688276.yaml`, not kept in the repo). Read it with two caveats:
-1. **It lists planned keys as removed or omitted.** Help, the Math and Tmpl keys and the shifted Memory, Units, Matrix, `[ ]`, `{ }` and Base layers are planned (section 1), not dropped. Two small errors: it says the clone's `(−)` replaced a `+/−` toggle (the G2 key does not toggle), and that Alpha + 0 inserts a single quote mark (it types one double-quote character; now removed).
+1. **It lists planned keys as removed or omitted.** Help, the Math and Tmpl keys and the shifted Memory, Units, Matrix, `[ ]` and Base layers are planned (section 1, `{ }` is built: R54), not dropped. Two small errors: it says the clone's `(−)` replaced a `+/−` toggle (the G2 key does not toggle), and that Alpha + 0 inserts a single quote mark (it types one double-quote character; now removed).
 2. **It misses differences that are already documented:** the Menu key's contents (Home/CAS actions: copy, paste, share, clear history, P8), Shift + Menu = Paste (a number from the clipboard, where the G2 lists past entries; docs/04 2.6), and the unit-slot overrides (µ on `(−)`, Ω on the comma, ° on a b/c, flick letters; `unit_slot:` in `spec/keyboard.yaml`).
