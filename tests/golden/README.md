@@ -4,7 +4,7 @@
 One format, one folder. Each file is YAML with one flow mapping per case line:
 `id`, the input (`input`, or `latex` / `eq` `var` `guess`), `settings`, `oracle` (an inline expression),
 `expect`, `mark`, `source`, `g2`, `status`, `note`. `source` is one of `device`, `virtual-calc`, `oracle`,
-`derived`, `assumed` (CLAUDE.md); `assumed` needs a `g2:` item. Solve and Function cases also use `kind`
+`derived`, `reference`, `assumed` (CLAUDE.md); `reference` is a published value with its citation in `note` (the CODATA cases), neither derivable nor an oracle's; `assumed` needs a `g2:` item. Solve and Function cases also use `kind`
 and `f` `g` `x0` `lo` `hi` `a` `b` `xs`; inputs and `expect` may be lists (one value per unknown, root,
 or table cell; an oracle returns a list). In those two files `status: "warn"` means the case must raise
 the ⚠, and every other case must not.

@@ -50,6 +50,8 @@ export interface UnitJob {
   /** Without an end slot: the typed units the result may be shown in, best first (G25). The first whose `dim` is the
    *  result's dimension is used; none: SI with an SI prefix. */
   shows?: ShownUnit[];
+  /** G32: the symbol of an rpm or rev typed in a slot (a count of cycles, not an angle), for the refusal that names it. */
+  cycle?: string;
   /** A constant with an uncertainty went in: never "=" (decisions M4-4), as in Home. */
   inexact: boolean;
   /** Uncertain inputs (G18): `expr` is the formula with a free symbol per uncertain value, which the worker
@@ -111,6 +113,8 @@ export type UnitError =
   /** An absolute temperature (°C, °F) or a logarithmic unit anywhere but alone (G17: alone it converts), a unit with
    *  no exact factor (G13); `unit` is its symbol. */
   | { error: "temperature" | "logarithmic" | "nofactor"; unit: string }
+  /** G32: rpm or rev against an angle (rad); `unit` is its symbol. */
+  | { error: "cycle"; unit: string }
   /** The level of a value at or below 0, or an absolute temperature below 0 K. */
   | { error: "level" | "belowzero" }
   /** A function of a quantity with units (sin, cos and tan take an angle or a pure number). */

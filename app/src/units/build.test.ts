@@ -129,6 +129,8 @@ describe("dimensions (G16)", () => {
     expect(dimensionText("A-1kg1m2s-5/2")).toBe("M·L²·T^(-5/2)·I⁻¹");
     expect(dimensionText("")).toBe("1");
     expect(unitErrorMessage({ error: "dimension", dims: ["m1", "s1"] })).toBe("Units don't match: L vs T");
+    expect(unitErrorMessage({ error: "cycle", unit: "rpm" })).toBe("rpm counts turns: write tr/min for an angular speed");
+    expect(unitErrorMessage({ error: "cycle", unit: "rev" })).toBe("rev counts turns: write tr for an angle");
   });
 });
 

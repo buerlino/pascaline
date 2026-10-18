@@ -21,6 +21,7 @@ the engine cannot confirm (the case then needs a `note`). A case with a mark but
 
 Sources: `oracle` (expect written here), `derived` (by hand; an oracle expression must agree),
 `device` / `virtual-calc` (seen on the reference calculator; an oracle expression must agree),
+`reference` (a published value, its citation in `note`; an oracle expression must agree),
 `assumed` (depends on an open G2 item, `g2:` required; a differing oracle is only noted).
 """
 import functools
@@ -41,7 +42,7 @@ CHECKLIST = HERE.parent.parent / "tests/golden/G2-CHECKLIST.md"
 DIGITS = 12  # default significant digits; --digits N changes it, settings.digits overrides it per case
 MARK_FILES = {"home.yaml", "precision.yaml", "units.yaml"}
 MARKS = {"=", "≈", "⚠"}
-SOURCES = {"oracle", "derived", "device", "virtual-calc", "assumed"}
+SOURCES = {"oracle", "derived", "device", "virtual-calc", "reference", "assumed"}
 KEYS = ["id", "kind", "input", "to", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
         "options", "before", "code", "file", "home", "expect", "mark", "exact", "dim", "si", "si_oracle", "unc", "unc_oracle", "shown", "message", "source", "g2", "status", "group", "cat", "note"]
 CASE_LINE = re.compile(r"^\s*- (\{.*\})\s*$")
