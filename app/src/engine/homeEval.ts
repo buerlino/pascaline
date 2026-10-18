@@ -13,7 +13,6 @@
 //
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
-import { eseriesDefinition } from "./eseries.ts";
 import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
@@ -147,9 +146,11 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "par(a):={ local l,s,k; l:=[a]; if (size(l)==0) throw(\"par: needs at least one value\"); " +
     "for (k:=0;k<size(l);k:=k+1) { if (l[k]==0) return 0; } " +
     "s:=0; for (k:=0;k<size(l);k:=k+1) s:=s+1/l[k]; return normal(1/s); }",
-  // G30 (EN7a): the IEC 60063 preferred value nearest to x in x's decade (eseries.ts).
-  eseries: eseriesDefinition(),
 };
+
+/** Definitions whose text is built engine-side (host.ts) so their tables stay out of the start chunk: G30 `eseries`
+ *  (IEC 60063 preferred value nearest to x in x's decade, eseries.ts). Only the names are known here. */
+export const WORKER_DEFINITION_NAMES: readonly string[] = ["eseries"];
 
 /** Set to 1 by an == or ≠ test that met a float (input/emit.ts equalityTest, which spells the same name). Purged, not
  *  set to 0, before an input runs: `sto` inside the test's function would read a value as the place to store to.
@@ -204,7 +205,7 @@ export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): Pre
 
 /** The names of our definitions that `input` mentions. */
 export function definitionsUsedBy(input: string): string[] {
-  return Object.keys(ENGINE_DEFINITIONS).filter((name) => new RegExp(`\\b${name}\\b`).test(input));
+  return [...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES].filter((name) => new RegExp(`\\b${name}\\b`).test(input));
 }
 
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */
