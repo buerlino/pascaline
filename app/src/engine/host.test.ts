@@ -206,6 +206,31 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect(home("B*2").why).toEqual({ inherited: ["B"] });
       expect(host.cas("B*2", defaultCasSettings).result.numeric?.why).toEqual({ inherited: ["B"] });
     });
+    it("a stored name whose move costs digits below the setting is named", () => {
+      host.home("G:=evalf(sqrt(2))", defaultHomeSettings);
+      const r = home("G-1.414213562373095048801688724");
+      expect(r.reliableDigits).toBeLessThan(12);
+      expect(r.why).toEqual({ inherited: ["G"] });
+    });
+    // The index is 1 for the stored value and 10 (an error) once G is moved in its last confirmed digit: the
+    // threshold lies between G and G·(1+10^-39), so only the perturbation check fails, not the first evaluation.
+    const FLIP = "[0,0][1+9*(sign(G-1.41421356237309504880168872420969807857037187537694807317668)+1)/2]";
+    it("a stored float whose perturbation check cannot run says once and unchecked", () => {
+      host.home("G:=evalf(sqrt(2))", defaultHomeSettings);
+      const r = home(`G+0*${FLIP}`);
+      expect(r.warn).toBe("unchecked");
+      expect(r.why).toEqual({ once: true });
+    });
+    it("once is absent when a warning is already there", () => {
+      host.home("G:=evalf(sqrt(2))", defaultHomeSettings);
+      host.home("U:=BesselJ(1,2)", defaultHomeSettings);
+      const fromName = home(`G+0*U+0*${FLIP}`); // a stored name's warning
+      expect(fromName.warn).toBe("unaudited");
+      expect(fromName.why?.once).toBeUndefined();
+      const fromResult = home(`G+0*BesselJ(1,2)+0*${FLIP}`); // the result's own warning
+      expect(fromResult.warn).toBe("unaudited");
+      expect(fromResult.why?.once).toBeUndefined();
+    });
     it("a value evaluated only once says so", () => {
       expect(home("BesselJ(1,2)", 30).why).toEqual({ once: true });
     });
