@@ -2,7 +2,7 @@
 # S2 report: menu audit (sandra, 2026-10-13)
 
 Package S2 of the brief, branch `p1/sandra-m4a-menus`, from `phase-1` at `04e0c0b`. Read and probe; no feature code.
-The note: [docs/research/r8-menus.md](../research/r8-menus.md).
+The note: [docs/research/r8-menus.md](../../research/r8-menus.md).
 
 ## Recommendation
 Keep R7's sheet as it is and adopt seven menu rules (r8 section 5). In practice: R11 builds the Home/CAS Menu as one
@@ -51,7 +51,7 @@ Applied on this branch, so the review only checks and merges: decisions.md (P12 
 - **docs/backlog.md "Needs the user"** (one line): "S2 menu rules (decisions.md, research/r8-menus.md): accept the
   nine-item Home/CAS Menu for R11 and the Mode key path and Home/CAS in Apps for R15."
 - **docs/backlog.md** milestone 4a item 13 (S2): "*Done* (`<commit>`): research/r8-menus.md; proposal in decisions.md."
-- **docs/06-keypad-vs-g2.md** section 4, point A: "**A. Menu audit: done** (S2, [research/r8-menus.md](research/r8-menus.md));
+- **docs/06-keypad-vs-g2.md** section 4, point A: "**A. Menu audit: done** (S2, [research/r8-menus.md](../../research/r8-menus.md));
   the proposal waits for the owner (decisions.md)."
 - **docs/shifts/brief.md:** remove the S2 row and section; add to R11, R15a and R18 "If the owner accepts S2, build
   r8 section 6's row for this package."

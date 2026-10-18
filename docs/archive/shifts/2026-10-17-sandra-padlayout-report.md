@@ -2,8 +2,8 @@
 # S5 report: the unit pad's arrangement and its user cells (sandra, Opus, 2026-10-17)
 
 Branch `p1/sandra-padlayout` (from `master` at `239463e`), nothing committed. Brief section 0d, package S5. The
-result is in [docs/research/r9-unit-pad.md](../research/r9-unit-pad.md) sections 1, 3 and 6, and in
-[spec/unit-pad.yaml](../../spec/unit-pad.yaml) (schema 2). The mockup is [docs/mockups/unit-pad.html](../mockups/unit-pad.html).
+result is in [docs/research/r9-unit-pad.md](../../research/r9-unit-pad.md) sections 1, 3 and 6, and in
+[spec/unit-pad.yaml](../../../spec/unit-pad.yaml) (schema 2). The mockup is [docs/mockups/unit-pad.html](../../mockups/unit-pad.html).
 
 ## Result
 **All four gates pass.** The measured pad keeps the draft's frame: the prefixes, the operators, the fixed keys, and
@@ -35,7 +35,7 @@ The grid (↑ flick up or Shift, ↓ flick down or Alpha; prefixes in italics):
 | user | U1 dB | U2 H | U3 ton ↑l ton | U4 cal ↑eV | U5 d | U6 P ↑St |
 
 ## Proposal for decisions.md "Needs the user": P14 arrangement
-Entered in [decisions.md](../decisions.md) "Needs the user", with one line in the backlog's "Needs the user" item 4.
+Entered in [decisions.md](../../decisions.md) "Needs the user", with one line in the backlog's "Needs the user" item 4.
 - **Recommendation: take the measured arrangement above.** Its 20 unit cells are the 20 quantities that save the most presses. The same 20 come out under every weighting tried.
 - **The user cells: U1–U6 as decided, 18 slots, with defaults.** The curve (all fields, flicks, slots filled by value) goes 0 slots 1.859, 1 slot 1.841, 6 slots 1.801, 12 slots 1.779, and 15 or more 1.773. So 18 slots hold everything the corpus can gain. The six default keys fill 9 slots and leave 9 for the owner's own units. For comparison, the last base cell is worth 0.022 presses per unit (19 cells: 1.881).
 - **K or °C on the tap: K, with °C one flick up.** °C is used 1.65 times as much as K, below the rule's "twice as much". K carries the compounds: 0.0147 of the weight against 0.0040 for °C. The choice costs nothing with flicks and 0.025 presses per unit with taps only.

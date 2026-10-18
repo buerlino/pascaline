@@ -2,7 +2,7 @@
 # S1 report: unit-slot paper test (sandra, Opus, 2026-10-13)
 
 Branch `p1/sandra-m4a-unitslots` (worktree `.claude/worktrees/m4a-s1`, from `phase-1` at `f5566a5`). Brief section
-0b, package S1. Full result: [docs/research/r7-unit-slots.md](../research/r7-unit-slots.md).
+0b, package S1. Full result: [docs/research/r7-unit-slots.md](../../research/r7-unit-slots.md).
 
 ## Result
 **Gate passes: a unit takes 2 presses at the median** over 50 common engineering units (36 single units: 2; 14

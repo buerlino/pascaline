@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Report: the architecture for the precision-engineering goal (sandra, 2026-10-12)
 
-Brief: [2026-10-12-sandra-architecture-brief.md](2026-10-12-sandra-architecture-brief.md). Result: [docs/04-architecture.md](../04-architecture.md). Nothing is committed; Henri reviews and commits with the owner's OK. No feature code, no devices. One heavy step: two links of a throwaway qalc probe under the host-cpu lock (about a minute each), because the "try exact" question could only be answered with qalc's own approximation flags.
+Brief: [2026-10-12-sandra-architecture-brief.md](2026-10-12-sandra-architecture-brief.md). Result: [docs/04-architecture.md](../../04-architecture.md). Nothing is committed; Henri reviews and commits with the owner's OK. No feature code, no devices. One heavy step: two links of a throwaway qalc probe under the host-cpu lock (about a minute each), because the "try exact" question could only be answered with qalc's own approximation flags.
 
 ## What I verified (code, engine, data; evidence in docs/04 with `file:line` or a probe)
 
