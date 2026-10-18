@@ -2,10 +2,11 @@
 // The only way UI code talks to maths (CLAUDE.md). Implementations run Giac off the main thread.
 import type { HomeResult, HomeSettings } from "./homeEval.ts";
 import type { DefEntry } from "./defs.ts";
+import type { ConstEntry, ConstTable } from "./constUnc.ts";
 import type { PrecisionWarn, PrecisionWhy } from "./format.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
-export type { HomeResult, HomeSettings };
+export type { ConstEntry, ConstTable, HomeResult, HomeSettings };
 
 export interface CasSettings {
   angle: "rad" | "deg";
@@ -171,8 +172,9 @@ export class EngineCancelled extends Error {
 export interface MathEngine {
   /** Resolves once the engine can take calls. */
   ready(): Promise<EngineTimings>;
-  /** Exact-first Home evaluation: a decimal result rounded to `settings.digits`. */
-  home(input: string, settings: HomeSettings): Promise<HomeResult>;
+  /** Exact-first Home evaluation: a decimal result rounded to `settings.digits`. `consts` (G26): the constants the
+   *  input holds by name (`pasc_<id>`), with value and uncertainty; a result from an inexact one carries `uncDigits`. */
+  home(input: string, settings: HomeSettings, consts?: ConstTable): Promise<HomeResult>;
   /** Exact CAS evaluation plus `latex()` of the result. */
   cas(input: string, settings: CasSettings): Promise<CasResult>;
   /** Solve app: equations from guesses, or all roots of a polynomial. Residual-checked. */

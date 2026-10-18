@@ -104,6 +104,10 @@ export interface HomeResult {
   digits?: number;
   /** Giac `latex()` of a result that is not a number (raw; the view tidies it up and draws it, as in CAS). R18f3. */
   latex?: string;
+  /** G26: significant digits of the shown value before the digit position of the first-order σ that the inexact
+   *  constants of the input leave (EngineHost.home's table); the digits from there on are uncertain. Absent when no
+   *  inexact constant went in by name, or the result is not one real number. */
+  uncDigits?: number;
 }
 
 /** Giac prints a string result in double quotes; latex() returns one. */

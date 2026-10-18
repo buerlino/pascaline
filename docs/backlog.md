@@ -168,7 +168,7 @@ The owner's deep dive (feedback #47): 24 findings, all accepted (decisions.md "T
 13. **Why the mark:** a picked row says why. **G22** (night, done), **R36** (after G22).
 14. **Names with a value, marked on the line.** **R33** (with Find; it starts with a MathLive check and may drop).
 15. **The angle check** (RAD `sin(30)`, DEG `sin(π/6)`), with a removal test. **R37** (with Find).
-16. **Muted digits past a constant's uncertainty.** **G26** (night), **R40** (last).
+16. **Muted digits past a constant's uncertainty.** **G26** (night, done: `home()` takes the constants table and reports `uncDigits`), **R40** (last).
 17. **One backup file.** **S6**, then **R38a** and **R38b**.
 18. **Key labels for TalkBack.** **R41**. The largest system font size (A4a, Tab One): 1.3 fits; at 1.5 the Home/CAS face is clipped and the legends touch the faces; at 2.0 the legends overlap (decisions.md "A4a" point 4).
 19. **The docs diet**, with size budgets. **S7** (backlog C10).
