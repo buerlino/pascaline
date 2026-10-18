@@ -196,7 +196,7 @@ const RATIONAL = /^(\d+)(?:\/(\d+))?$/;
 
 /** The units of some slots as one ShownUnit, or null: a fractional power, a unit with no exact factor or dimension, or
  *  nothing left. `accept` decides from the merged factors and whether the factor to SI is exactly 1. */
-function shownOf(slots: readonly UnitSlot[], table: FactorTable, accept: (n: number, one: boolean) => boolean): ShownUnit | null {
+function shownOf(slots: readonly UnitSlot[], table: FactorTable, accept: (n: number, one: boolean, prefixed: number) => boolean): ShownUnit | null {
   const merged = new Map<string, Factor>();
   for (const slot of slots) {
     const per = slot.per ?? slot.tokens.length;
@@ -234,7 +234,7 @@ function shownOf(slots: readonly UnitSlot[], table: FactorTable, accept: (n: num
     } else rat = null;
   }
   const one = rat !== null && rat.p === rat.q;
-  if (!accept(factors.length, one)) return null;
+  if (!accept(factors.length, one, factors.filter((f) => f.token.prefix !== undefined).length)) return null;
   const dim = dimKeyOf(BASES.map((b) => `${exps.get(b.key) ?? 0n}`));
   const factor = rat ? (rat.q === 1n ? `${rat.p}` : `${rat.p}/${rat.q}`) : giac.join("*");
   const text = unitProduct(factors.map((f) => [tokenSymbol(f.token, table), `${f.power}`] as const));
@@ -242,10 +242,10 @@ function shownOf(slots: readonly UnitSlot[], table: FactorTable, accept: (n: num
 }
 
 /** The typed units a result without an end slot may be shown in, best first (G25): all slots together when they come
- *  to one unit, to a product with factor 1 (N·m) or are the only slot; then each slot alone (a sum of km and km). */
+ *  to one unit, to a product with factor 1 (N·m), to a product with at most one prefixed token (kN·m, kW·h, lbf·ft; not kΩ·nF) or are the only slot; then each slot alone (a sum of km and km). */
 function shownUnits(req: UnitRequest, table: FactorTable): ShownUnit[] {
   const out: ShownUnit[] = [];
-  const all = shownOf(req.slots, table, (n, one) => n === 1 || one || req.slots.length === 1);
+  const all = shownOf(req.slots, table, (n, one, prefixed) => n === 1 || one || prefixed <= 1 || req.slots.length === 1);
   if (all) out.push(all);
   if (req.slots.length > 1) for (const s of req.slots) {
     const one = shownOf([s], table, () => true);
