@@ -64,19 +64,14 @@ function topLevelSemicolon(s: string): boolean {
   return false;
 }
 
-/** A top-level `:=` (outside brackets, braces and strings): the expression assigns a name. */
-function topLevelAssign(s: string): boolean {
-  let depth = 0;
-  let str = false;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i]!;
-    if (c === '"') str = !str;
-    else if (str) continue;
-    else if ("([{".includes(c)) depth++;
-    else if (")]}".includes(c)) depth--;
-    else if (c === ":" && s[i + 1] === "=" && depth === 0) return true;
-  }
-  return false;
+const NOSTR = (s: string): string => s.replace(/"[^"]*"/g, '""');
+/** Every way Giac stores into a name: `a:=`, `a[i]:=`, `a=<`, `a+=` (also -= *= /=), `a++`, `a--`, `++a`, `--a`.
+ *  Each match carries the base name in group 1 or 2. */
+const STORE = /(?<![A-Za-z0-9_.])([A-Za-z][A-Za-z0-9_]*)\s*(?:\[[^\]]*\]\s*)*(?::=|=<|[-+*/]=|\+\+|--)|(?:\+\+|--)\s*([A-Za-z][A-Za-z0-9_]*)/g;
+
+/** The expression stores into some name anywhere outside strings (a test line must not). */
+function assigns(s: string): boolean {
+  return /:=|=<|[-+*/]=|\+\+|--/.test(NOSTR(s));
 }
 
 function balanced(s: string): boolean {
@@ -85,14 +80,20 @@ function balanced(s: string): boolean {
   return d <= 0;
 }
 
-/** A name a function body assigns that is neither a parameter nor declared `local`: a global the call would change. */
+/** A name a function body stores into that is neither a parameter nor declared `local`: a global the call would change.
+ *  Covers `f(x):=…` and `f:=x->…`; a plain value has no body. */
 function globalAssigned(text: string): string | undefined {
   const head = /^\s*[A-Za-z][A-Za-z0-9_]*\s*\(([^()]*)\)\s*:=/.exec(text);
-  if (!head) return undefined;
-  const body = text.slice(head[0].length);
-  const own = new Set(head[1]!.split(",").map((p) => p.trim()).filter(Boolean));
+  const arrow = head ? null : /^\s*[A-Za-z][A-Za-z0-9_]*\s*:=\s*(?:\(([^()]*)\)|([A-Za-z][A-Za-z0-9_]*))\s*->/.exec(text);
+  const h = head ?? arrow;
+  if (!h) return undefined;
+  const body = NOSTR(text.slice(h[0].length));
+  const own = new Set((h[1] ?? h[2] ?? "").split(",").map((p) => p.trim()).filter(Boolean));
   for (const m of body.matchAll(/\blocal\s+([^;]+);/g)) for (const n of m[1]!.split(",")) own.add(n.trim().split(/\s|:=/)[0]!);
-  for (const m of body.matchAll(/\b([A-Za-z][A-Za-z0-9_]*)\s*:=/g)) if (!own.has(m[1]!)) return m[1]!;
+  for (const m of body.matchAll(STORE)) {
+    const n = m[1] ?? m[2]!;
+    if (!own.has(n)) return n;
+  }
   return undefined;
 }
 
@@ -133,7 +134,7 @@ export function parseLibrary(input: Uint8Array | string): LibFile {
         const expr = test[1]!.trim();
         const word = STATE_WORDS.exec(expr);
         if (word) throw new LibError(lineNo, `the test changes the engine's state (${word[0]})`);
-        if (topLevelAssign(expr)) throw new LibError(lineNo, "a test must not assign a name (`:=`)");
+        if (assigns(expr)) throw new LibError(lineNo, "a test must not assign a name (`:=`, `++`, `+=`, `=<`)");
         if (topLevelSemicolon(expr)) throw new LibError(lineNo, "one expression per test: a second statement follows `;`");
         d.tests.push({ expr, line: lineNo });
       } else lastComment = { text: t.replace(/^\/\/\s*/, ""), line: lineNo };
@@ -150,12 +151,12 @@ export function parseLibrary(input: Uint8Array | string): LibFile {
     const asg = simpleAssignment(block);
     if (!def) throw new LibError(at, "only definitions may stand in a library (`name(args):=…` or `name:=…`)");
     if (topLevelSemicolon(block)) throw new LibError(at, "one definition per block: a second statement follows `;`");
-    if (asg && isStateful(asg.rhs)) throw new LibError(at, "a value must not itself define or change anything");
     const bodyText = block.replace(/^[^:]*:=/, "");
     const word = STATE_WORDS.exec(bodyText);
     if (word) throw new LibError(at, `the body changes the engine's state (${word[0]})`);
-    const g = def.kind === "fn" ? globalAssigned(block) : undefined;
+    const g = globalAssigned(block);
     if (g) throw new LibError(at, `the body assigns ${g}, which is not local: declare it with \`local ${g};\``);
+    if (asg && isStateful(asg.rhs)) throw new LibError(at, "a value must not itself define or change anything");
     if (!NAME.test(def.name)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
     if (def.name in ENGINE_DEFINITIONS || def.name.startsWith("pasc_") || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
     if (defs.some((d) => d.name === def.name)) throw new LibError(at, `${def.name} is defined twice in this file`);

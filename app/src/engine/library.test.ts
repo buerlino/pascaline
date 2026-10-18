@@ -51,6 +51,24 @@ describe("parseLibrary (no engine)", () => {
     expect(() => parseLibrary(lib("f(1)==1 ; f(2)==2"))).toThrow(/line 4: one expression per test/);
     expect(parseLibrary(lib("f(1)==1")).defs[0]!.tests).toHaveLength(1);
   });
+  it("refuses every form of storing into a global in a body, for fn and arrow definitions (derived)", () => {
+    const forms = ["a++", "a--", "++a", "--a", "a+=1", "a-=1", "a*=2", "a/=2", "a=<5", "a[1]:=x", "a:=1"];
+    for (const f of forms) {
+      for (const d of [`f(x):={ ${f}; return x; }`, `f:=x->{ ${f}; return x; }`, `f:=(x,y)->{ ${f}; return x; }`]) {
+        expect(() => parseLibrary(`// pascaline library 1\n// d\n${d}\n`), d).toThrow(/the body assigns a, which is not local/);
+      }
+    }
+    expect(() => parseLibrary("// pascaline library 1\n// d\ng(x):={ b[1]:=x; return x; }\n")).toThrow(/assigns b,/);
+    expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ local a,k; a++; a+=1; for (k:=1;k<3;k++) { a[1]:=k; } return x; }\n").defs).toHaveLength(1);
+    expect(parseLibrary("// pascaline library 1\n// d\nf(x):={ x++; return \"a++\"; }\n").defs).toHaveLength(1);
+  });
+  it("refuses a test line that assigns anywhere, by := ++ -- op= or =< (derived)", () => {
+    const lib = (t: string): string => `// pascaline library 1\n// d\nf(x):=x\n// test: ${t}\n`;
+    for (const t of ["(a:=5)==5", "f(a++)==1", "f(--a)==1", "f(a+=1)==1", "f(a-=1)==1", "f(a*=2)==1", "f(a/=2)==1", "f(a=<5)==1", "f(a[1]:=2)==1"])
+      expect(() => parseLibrary(lib(t)), t).toThrow(/line 4: a test must not assign/);
+    expect(parseLibrary(lib('f(1)==1 && "a:=5"=="a:=5"')).defs[0]!.tests).toHaveLength(1);
+    expect(parseLibrary(lib("f(1)<=1 and f(2)>=1")).defs[0]!.tests).toHaveLength(1);
+  });
   it("takes CRLF and a BOM", () => {
     expect(parseLibrary("﻿// pascaline library 1\r\n// d\r\nf(x):=x\r\n").defs[0]!.name).toBe("f");
   });
@@ -147,7 +165,7 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
     expect(back.log.map((e) => e.name)).toEqual(["beam", "A", "B"]);
   });
 
-  it("200 library programs replay: the desktop median and device estimate are printed (budget not met, see report)", { retry: 2, timeout: 60000 }, async () => {
+  it("200 library programs replay: prints the desktop median and the device estimate (a measurement, no assert)", { timeout: 60000 }, async () => {
     const h = await fresh();
     let text = "// pascaline library 1\n";
     for (let i = 1; i <= 200; i++) text += `\n// program ${i}\nlib${i}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${i};\n}\n`;
@@ -161,8 +179,5 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
     // The device estimate uses the median (not the minimum).
     const deviceMs = median * (291 / 10.8);
     console.log(`G33: device estimate ${deviceMs.toFixed(0)} ms against the 50 ms budget`);
-    // NOT MET (see the G33 report, "Not done"): the estimate is ~10x over G29's budget, so no budget assert is made here;
-    // a loosened one would look like a pass. A12 measures the device.
-    expect(deviceMs).toBeGreaterThan(0);
   });
 });

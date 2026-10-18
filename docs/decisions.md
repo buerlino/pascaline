@@ -7,6 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-18 G33: the library replay is over budget. OPEN.** 200 library programs replay in a desktop median of 23.3 ms; scaled by the Tab One ratio of G29 (291/10.8) that is about 627 ms against the 50 ms bar. **Recommendation:** R59 (the rows) waits for A12's device measurement; if the miss holds, define library functions lazily (on first call) instead of replaying them at start.
 - **2026-10-18 R54: t09's baseline cannot type `mean` with the Alpha letters. OPEN.** The brief planned t09's baseline as `mean` typed with the Alpha letters and the list from Shift + 8. Letters typed one by one are a product: `mean\left(\left\{…\right\}\right)` is read as m·e·a·n·[…] (probe 2026-10-18), and a name only becomes a call through `\operatorname`, which Find (R4a) inserts. So t09's baseline is the mean alone, (9.81 + … + 9.82) ÷ 10 in 55 presses; the standard deviation has no baseline.
   - **Recommendation:** keep it so until R4a, then plan t09's `keys` and budget with Find (`mean`, `stdev`), as the brief says. Reading a run of letters before a bracket as a function name would change `ab(c)` from a·b·c, so it is not proposed.
 
