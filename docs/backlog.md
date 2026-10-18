@@ -56,7 +56,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** **A12** (G29 merged).
 - **The backup:** **S6** (files in and out without INTERNET), then **R38a, R38b**. **The outside-test protocol:** **S8**.
 - [x] **A14. The pipeline reads the package files** (S7's follow-up; the docs budgets are checked by `node tools/docs-check.mjs` in `npm run gate`), and **A15. The pipeline enforces its rules** (check 2026-10-19: the audit model, the size and docs checks, no reused dev server).
-- **S10. docs/04 diet** before R15c2.
+- [x] **S10. docs/04 diet** before R15c2: 69.5 → 59.7 kB; the evidence is in [research/r12-evidence.md](research/r12-evidence.md).
 - [x] **S12. Engine defaults, not G2 copies** ([research/g2-correspondence.md](research/g2-correspondence.md)): the audit (44 rows).
 - **S12's packages:** **G45** one tie rule and the G2's Home answers on record, **R66** the power form keeps Giac's principal root in Home (Function and Solve keep R39), **R67** e and i typed as letters are names (R58b), **R68** ᴇ's leading 1 after an operator; G42 rewritten without the G2 waits.
 - **The check of 2026-10-19's silent wrong numbers** ([research/check-2026-10-19.md](research/check-2026-10-19.md)): **G34** a carried value keeps what it showed when the angle mode changes, **G21b** exp ignores the angle mode inside Giac (only on S14's route P), **G36** FIX digits of a complex number; **G35** (the unit check sees zero terms) is under milestone 5.

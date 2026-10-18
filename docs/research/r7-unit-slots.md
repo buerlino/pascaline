@@ -62,7 +62,7 @@ costs 2,165 bytes; when R10 makes `keyboard.ts` read it, that is spent anyway.)
 Counting as docs/04 5.2: every press 1, a flick 1, Shift and Alpha 1. The cursor starts in the empty slot. The 50
 units and the source line for each are in the probe (`UNITS`): SI Brochure 9th edition (BIPM, V4.01, June 2026,
 downloaded 2026-10-13) Tables 2, 4, 5, 6 and 8; the benchmark tasks (t01, t02, t04, t10); the owner's feedback #8
-(nanometres); P11's examples; the docs/04 4.1 probe cases; the common prefixed units of Find's draft data (G4).
+(nanometres); P11's examples; the units-on-Giac probe cases ([r12](r12-evidence.md) section 2); the common prefixed units of Find's draft data (G4).
 "Most common" is a judgement from these sources, not a measured frequency **(to verify: the owner names his own top
 units; rerun the probe with them)**.
 
@@ -139,7 +139,7 @@ The end slot and the dimension check catch the 21; nothing but the reading catch
 ### 5.2 qalc's own parser misreads (reconfirms docs/04 4.3: never qalc's free parse)
 `node tools/probes/unit-presses.mjs --read …`: `BTU` = tera-rack-unit·byte (`Btu` is right), `lbm` = pound·metre,
 `var` (the SI's reactive-power unit, Table 8) = a function call, `Ra` = ronna-are, `G` = the gravitational constant,
-`Δ°C` = a symbol Δ times °C, `In` = I·n. With docs/04 4.1's `mu0`, `degC`, `BTU`, `NA` this is why the slot reads
+`Δ°C` = a symbol Δ times °C, `In` = I·n. With qalc's misreadings of `mu0`, `degC`, `BTU`, `NA` ([r6](r6-pipelines.md) section 6) this is why the slot reads
 from Find's unit list and sends qalc only whitelisted names.
 
 ### 5.3 Result-side pitfalls (for the empty end slot)
