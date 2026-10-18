@@ -209,3 +209,23 @@ test("Function: a warned root puts ⚠ on its readout lines, a clean one does no
   await tap(page, ["menu", "d1"]);
   await expect(page.getByTestId("readout").getByTestId("mark")).toHaveText(["⚠"]); // x only: y is the exact 0 at a checked root
 });
+
+test("Function in DEG: sin(x) is drawn in degrees; the curve is 0 at 180 and 1 at 90 (R64a)", async ({ page }) => {
+  await page.getByTestId("chip-angle").tap();
+  expect(await page.evaluate(() => window.pascaline.session.settings.angle)).toBe("deg");
+  await tap(page, ["symb"]);
+  await tap(page, ["sin", "x", "enter"]);
+  await tap(page, ["plot"]);
+  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  const y = (x: number): Promise<number> =>
+    page.evaluate((xv) => {
+      const b = window.pascaline.plot.board as unknown as { objectsList: { elType: string; Y(x: number): number }[] };
+      return (b.objectsList.find((o) => o.elType === "curve") as { Y(x: number): number }).Y(xv);
+    }, x);
+  expect(Math.abs(await y(180))).toBeLessThan(1e-12); // radians would give -0.801
+  expect(await y(90)).toBeCloseTo(1, 12);
+  // Root near 3 (the engine runs in DEG) reports 0, where the drawn curve now crosses
+  await tap(page, Array<string>(30).fill("right"));
+  await tap(page, ["menu", "d1"]);
+  await expect(page.getByTestId("readout-x")).toHaveText("0");
+});

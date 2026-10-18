@@ -76,9 +76,12 @@ export class FunctionApp implements AppInstance {
   constructor(host: AppHost) {
     this.host = host;
     this.fc = host.calc;
-    this.compiled = this.slots.names.map(() => ({ giac: "", error: "" }));
+    this.compiled = this.slots.names.map(() => ({ giac: "", error: "", angle: "rad" as const }));
   }
 
+  get angle(): "rad" | "deg" {
+    return this.host.settings.angle;
+  }
   get busy(): boolean {
     return this.jobs > 0;
   }
@@ -118,6 +121,7 @@ export class FunctionApp implements AppInstance {
     if (view === "symb") this.host.setEntry(this.slots.latex[this.slots.selected] ?? "");
     if (view === "num") void this.refreshNum();
     if (view === "plot") {
+      this.syncAngle();
       this.fixTraceSlot();
       void this.refreshTrace();
     }
@@ -242,7 +246,7 @@ export class FunctionApp implements AppInstance {
 
   // ---- Symb
   define(i: number, latex: string): void {
-    const c = compileDefinition(latex);
+    const c = compileDefinition(latex, this.host.settings.angle);
     this.slots.set(i, latex, c.error === "not a function of x" ? t("function.notFunction") : c.error);
     const next = [...this.compiled];
     next[i] = c;
@@ -250,6 +254,13 @@ export class FunctionApp implements AppInstance {
     this.marks = [];
     this.readout = undefined;
     this.save();
+  }
+  /** The drawing evaluators follow the angle mode (R64a): compile again when it has changed. True if they did. */
+  syncAngle(): boolean {
+    const angle = this.host.settings.angle;
+    if (this.compiled.every((c) => c.angle === angle)) return false;
+    this.compiled = this.slots.latex.map((l) => compileDefinition(l, angle));
+    return true;
   }
   select(i: number): void {
     this.slots.select(i);
@@ -524,7 +535,7 @@ export class FunctionApp implements AppInstance {
     const s = await this.host.kv.get<Partial<Stored>>("app.function");
     if (!s) return;
     this.slots.fromJSON(s.slots);
-    this.compiled = this.slots.latex.map((l) => compileDefinition(l));
+    this.compiled = this.slots.latex.map((l) => compileDefinition(l, this.host.settings.angle));
     if (s.win && [s.win.xmin, s.win.xmax, s.win.ymin, s.win.ymax].every(Number.isFinite) && s.win.xmax > s.win.xmin && s.win.ymax > s.win.ymin)
       this.win = s.win;
     if (s.num && parseDec(s.num.start ?? "") && parseDec(s.num.step ?? "")?.m) {

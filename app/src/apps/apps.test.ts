@@ -60,3 +60,25 @@ describe("Function definitions", () => {
     expect(c.fn).toBeUndefined();
   });
 });
+
+describe("Function drawing follows the angle mode (R64a)", () => {
+  const f = (latex: string, angle: "rad" | "deg"): ((x: number) => number) => compileDefinition(latex, angle).fn as (x: number) => number;
+  it("in DEG sin, cos, tan take degrees", () => {
+    expect(f("\\sin\\left(x\\right)", "deg")(180)).toBeCloseTo(0, 12);
+    expect(f("\\sin\\left(x\\right)", "deg")(90)).toBeCloseTo(1, 12);
+    expect(f("\\cos\\left(x\\right)", "deg")(90)).toBeCloseTo(0, 12);
+    expect(f("\\tan\\left(x\\right)", "deg")(45)).toBeCloseTo(1, 12);
+  });
+  it("in DEG the inverses return degrees", () => {
+    expect(f("\\arcsin\\left(x\\right)", "deg")(1)).toBeCloseTo(90, 12);
+    expect(f("\\arctan\\left(x\\right)", "deg")(1)).toBeCloseTo(45, 12);
+  });
+  it("sin(90°) is 1 in both modes", () => {
+    expect(f("\\sin\\left(90\\degree\\right)", "deg")(0)).toBeCloseTo(1, 12);
+    expect(f("\\sin\\left(90\\degree\\right)", "rad")(0)).toBeCloseTo(1, 12);
+  });
+  it("RAD is unchanged", () => {
+    expect(f("\\sin\\left(x\\right)", "rad")(Math.PI / 2)).toBeCloseTo(1, 12);
+    expect(f("\\arctan\\left(x\\right)", "rad")(1)).toBeCloseTo(Math.PI / 4, 12);
+  });
+});
