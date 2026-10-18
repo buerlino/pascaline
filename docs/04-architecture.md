@@ -174,7 +174,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 | List, matrix | `[a,b]`, `[[a,b],[c,d]]`, elements as above | yes | yes | yes |
 | Solve root, analysis value | full value | yes | — | — |
 | Num table | CSV (Menu, Export): header row with the function names, full values, `.` and `,` as separator (`;` with decimal comma) | — | — | — |
-| Units result (m5) | `20 m/s`, `39.5±1.3 m^2` (value full, uncertainty 2 significant digits) | yes | `(1397/3125) m/s` | yes |
+| Units result (m5) | `20 m/s`, `39.5±1.2 m^2` (value full, uncertainty 2 significant digits) | yes | `(1397/3125) m/s` | yes |
 | Session (Menu, Share) | text: one line per entry, `input = result` with the mark, full values | — | — | — |
 
 **Paste** (Shift + Menu, or Menu → Paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts); it enters as the keyboard's own LaTeX (`1.5\emark-3`, drawn `1.5ᴇ-3`), so the parser sees only what our keys produce. Anything else gives the message "Paste: not a number". Pasting a result copied from Pascaline gives the same value back (P5).
@@ -302,12 +302,12 @@ There is no separate Units app (P11): units are added *after* the formula, in un
 | `72 km/h → m/s`; `1 in → mm`; `1/3 m → cm` | 20; 127/5; 100/3 | the same |
 | `1 lbf → N`; `4.7 kΩ × 2.2 nF`; `√2 m` | 8896443230521/2000000000000; 517/50000000 s; √2 m | the same |
 | `20 °C → K`; `100 °F → °C`; `20 °C → °F` | 5863/20; 340/9; 68 | the same |
-| `90° → rad`; `60 rpm → rad/s`; `sin(30°)` | π/2; 2π; 1/2 | the same |
+| `90° → rad`; `60 rpm → rad/s`; `sin(30°)` | π/2; refused: T⁻¹ vs T⁻¹·angle (rpm counts revolutions, G25); 1/2 | π/2; 2π; 1/2 |
 | `(12.34 ± 0.05) m × (3.2 ± 0.1) m` | 4936/125 ± √387089/500 m² (first order) | the same σ; prints ±1.3 |
 | `1 m + 1 s`; `1 m → s` | "Units don't match: L vs T" | `1 m + 1 s`; `1 m` (no error) |
 | `20 °C + 5 °C`; `20 °C × 2` | refused (absolute temperature) | 25 °C; 40 °C |
 | `ln(2 m)`; `sin(2 m)` | refused | left unevaluated |
-| `1 rpm → Hz`; `1 rad/s → Hz` | refused: angle·T⁻¹ vs T⁻¹ | 0.1047 Hz·rad; 1 Hz·rad |
+| `1 rpm → Hz`; `1 rad/s → Hz` | 1/60 (rev is a count of cycles, G25); refused: T⁻¹·angle vs T⁻¹ | 0.1047 Hz·rad; 1 Hz·rad |
 | `1 hp → W`; `1 mmHg → Pa` | refused: no factor yet (G13) | 745.699987158 W; 133.322368421 Pa (both wrong) |
 | `1 Np → dB`; `1 W → dBm` | flagged: logarithmic (G17) | 8.68588963807 dB; 30 dBm |
 
@@ -330,7 +330,7 @@ The evaluator (`app/src/units/`, G16):
 - returns a `Quantity` whose mark comes from Home's facts and `markOf()`. An irrational value goes through the agreement check.
 - The input is R24a's tokens per slot and the formula with `pasu<n>` per slot and `pask<n>` per constant; the request is built into Giac text on the main thread, so only text reaches the worker. The dimension symbols are positive (√(m²) = m), and an exact 0 has no dimension.
 
-sin, cos and tan take an angle or a pure number; the angle dimension is dropped inside them. Any other function of a quantity with units is refused. On top of this come G17's rules for temperatures and logarithmic units, and G18's first-order uncertainty (σ² = Σ(∂f/∂xᵢ·σᵢ)², with Giac's `diff`).
+sin, cos and tan take an angle or a pure number; the angle dimension is dropped inside them. Any other function of a quantity with units is refused. On top of this come G17's rules for temperatures and logarithmic units, and G18's first-order uncertainty (σ² = Σ(∂f/∂xᵢ·σᵢ)², with Giac's `diff`): the formula writes an uncertain number as `pasupm(value,sigma)` (two plain numbers, σ a standard uncertainty in the unit of the slot after it, each one an independent input); the builder turns each into a symbol (`UnitJob.unc`), and a result with a σ is never `=`.
 
 libqalculate stays in the build only, as the source of the index's factors, constants and uncertainties (`build.sh` step 1c). The cost: a long CAS job in the same worker delays a conversion until Cancel.
 
@@ -606,20 +606,26 @@ interface Calc {                                         // views; mirrors MathE
 interface UnitToken { prefix?: string; unit: string; power?: string }  // ids without "pfx:"/"unit:"; power an integer or p/q, default "1"; the prefix is inside the power (cm² = (cm)²)
 interface UnitSlot { tokens: UnitToken[]; per?: number }                // tokens[per..] are below the ÷
 interface UnitRequest {                                  // m5, G16
-  formula: string;                                       // Giac text from our parser: pasu1, pasu2, … for slots, pask1, … for constants; a slot multiplies the number before it ("72*pasu1")
+  formula: string;                                       // Giac text from our parser: pasu1, pasu2, … for slots, pask1, … for constants; a slot multiplies the number before it ("72*pasu1"); ± is pasupm(value,sigma) (G18)
   slots: UnitSlot[];                                     // slots[i] is pasu<i+1>
   consts?: string[];                                     // Find constant ids without "const:"; consts[i] is pask<i+1>
   end?: UnitSlot;                                        // "→ should be"
 }
-interface UnitJob { expr: string; end?: string; endOffset?: string; endLog?: string; inexact: boolean }  // Giac text, every unit as factor × dimension symbols; endOffset/endLog for °C, °F and the levels (G17)
+interface UnitJob { expr: string; end?: string; endOffset?: string; endLog?: string; endUnit?: string; absTemp?: true;  // Giac text, every unit as factor × dimension symbols; endOffset/endLog for °C, °F and the levels (G17)
+  inexact: boolean; unc?: { expr: string; vars: { name: string; value: string; sigma: string }[] };  // G18: expr with a symbol pasv<n> per uncertain input
+  shows?: { text: string; dim: string; factor: string }[] }  // G25: the typed units a result without an end slot may be shown in, best first
 interface Quantity {
   value: HomeResult;                                     // display at the digits setting, exact, full, exactRational, reliableDigits
   dimension: string | null;                              // index key ("m1s-1"; "" pure; null = an exact 0, whose dimension is lost)
-  si?: string;                                           // with an end slot: Giac's exact text of the number in SI base units
+  dimensionText: string | null;                          // G25: "L·T⁻¹", "M·L²·T⁻²", "1" for a pure number; null for an exact 0
+  unit: string;                                          // G25: the unit value is in ("N·m", "µs", "m/s"; "" for a pure number)
+  si?: string;                                           // Giac's exact text of the number in SI base units (absent for an exact 0 or a text too long to keep)
+  unc?: { value: HomeResult; text: string; shown: string };  // G18: σ with Home's facts, σ to 2 significant digits ("1.2"), "39.5 ± 1.2"
   ms: number;
 }
 type UnitError = { error: "dimension"; dims: string[]; end?: true }      // 2+ keys; the end slot's last
   | { error: "temperature" | "logarithmic" | "nofactor"; unit: string }  // the unit's symbol
+  | { error: "level" | "belowzero" }                                     // G17f1: the level of a value ≤ 0; an absolute temperature below 0 K
   | { error: "function" } | { error: "symbolic"; detail: string } | { error: "engine"; detail: string };
 // Types in app/src/units/types.ts; the message is unitErrorMessage() (src/units/messages.ts, i18n src/i18n/enUnits.ts).
 
