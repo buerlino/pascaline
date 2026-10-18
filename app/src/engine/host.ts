@@ -6,6 +6,7 @@ import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import {
   definedBy,
+  expIgnoresAngle,
   definitionsUsedBy,
   ENGINE_DEFINITIONS,
   decideFloatTest,
@@ -434,7 +435,8 @@ export class EngineHost {
     return n === undefined ? out : { ...out, result: { ...out.result, uncDigits: n } };
   }
 
-  private homeRun(input: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
+  private homeRun(typed: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
+    const input = expIgnoresAngle(typed, s.angle);
     this.need(input);
     this.useHomeMode(s);
     const t0 = performance.now();
@@ -491,7 +493,8 @@ export class EngineHost {
     return out;
   }
 
-  private casRun(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
+  private casRun(typed: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
+    const input = expIgnoresAngle(typed, s.angle);
     this.need(input);
     this.useMode(`cas${JSON.stringify(s)}`, () => {
       for (const c of casSetupCommands(s)) this.giac.eval(c);

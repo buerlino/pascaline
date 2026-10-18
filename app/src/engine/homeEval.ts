@@ -140,6 +140,12 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     'if (type(x)!=integer and type(x)!=rational) { x:=evalf(x,n+30); if (type(x)!=real) throw("sigfig: x must be a real number"); } ' +
     "a:=abs(x); p:=floor(evalf(log10(a),30)); while (10^p>a) p:=p-1; while (10^(p+1)<=a) p:=p+1; " +
     "k:=n-1-p; m:=floor(a*10^k+1/2); return sign(x)*m/10^k; }",
+  // F29/G21: Giac in DEG reads the imaginary part of an exponential as degrees (exp(i*90) = i) but exp(i*pi) as
+  // radians; the G2 ignores the angle mode for e^x (item 54). In DEG, host.ts rewrites exp( to pasexp(: a complex
+  // argument z becomes exp(re z)*(cos b + i sin b) with b = im z in degrees, which DEG evaluates as radians.
+  pasexp:
+    "pasexp(z):={ local b; if (angle_radian==1 or type(evalf(z))!=DOM_COMPLEX) return exp(z); " +
+    "b:=normal(im(z)*180/pi); return exp(re(z))*(cos(b)+i*sin(b)); }",
   // G30 (EN7a): n resistors in parallel, 1/(1/a+1/b+…), exact; a zero argument gives exactly 0. Giac hands the
   // arguments of a call to a one-parameter function as one sequence, which [a] makes a list.
   par:
@@ -206,6 +212,12 @@ export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): Pre
 /** The names of our definitions that `input` mentions. */
 export function definitionsUsedBy(input: string): string[] {
   return [...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES].filter((name) => new RegExp(`\\b${name}\\b`).test(input));
+}
+
+/** F29/G21: in DEG, `exp(` becomes `pasexp(` (see ENGINE_DEFINITIONS) outside strings; in RAD the text is unchanged. */
+export function expIgnoresAngle(input: string, angle: "rad" | "deg"): string {
+  if (angle === "rad") return input;
+  return input.replace(/"[^"]*"|\bexp(\s*\()/g, (m, paren?: string) => (paren === undefined ? m : `pasexp${paren}`));
 }
 
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */

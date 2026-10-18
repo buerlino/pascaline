@@ -46,7 +46,7 @@ export function valuePrecision(digits: number): number {
  */
 export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
   "evalf", "approx",
-  "sqrt", "exp", "ln", "log", "log10", "sin", "cos", "tan", "asin", "acos", "atan",
+  "sqrt", "exp", "pasexp", "ln", "log", "log10", "sin", "cos", "tan", "asin", "acos", "atan",
   "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
   "abs", "re", "im", "conj", "arg", "sign", "floor", "ceil", "round", "frac", "max", "min",
   "sigfig", "par", "eseries",
