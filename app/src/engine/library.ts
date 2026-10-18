@@ -73,7 +73,7 @@ function storedNames(s: string): string[] {
     const name = m[0];
     let i = m.index + name.length;
     // A loop variable (`for k from`, `for k in`, `pour k de`) is stored at every iteration.
-    if (/(?:^|[^A-Za-z0-9_.])(?:for|pour)\s+$/.test(s.slice(0, m.index)) && /^\s+(?:from|in|de)\b/.test(s.slice(i))) {
+    if (/(?:^|[^A-Za-z0-9_.])(?:for|pour)\s+$/i.test(s.slice(0, m.index)) && /^\s+(?:from|in|de)\b/i.test(s.slice(i))) {
       out.push(name);
       continue;
     }
