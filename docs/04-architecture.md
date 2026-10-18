@@ -560,7 +560,7 @@ Build: build.sh → engines (container; libqalculate for the index only) → Fin
 // Views see Calc (calc/port.ts); Calc wraps MathEngine (engine/types.ts), which talks to worker 1.
 interface MathEngine {
   ready(): Promise<EngineTimings>;
-  home(input: string, s: HomeSettings): Promise<HomeResult>;
+  home(input: string, s: HomeSettings, consts?: ConstTable): Promise<HomeResult>;  // consts (G26): { [id]: { value, unc? } } for the constants sent as pasc_<id>
   cas(input: string, s: CasSettings): Promise<CasResult>;
   solve(req: SolveRequest, s: HomeSettings): Promise<SolveOutcome>;
   unknowns(equations: string[]): Promise<string[]>;
@@ -583,6 +583,7 @@ interface HomeResult {                                   // existing fields kept
   digits?: number;                                       // the digits evalf(e,n)/approx(e,n) asked for: shown with these (G3)
   warn?: "unaudited" | "unchecked";                      // ⚠ although the digits agree (M4-5); also a non-number with a float (G27)
   why?: { unaudited?: string[]; inherited?: string[]; once?: boolean };  // the reasons behind a ⚠ as facts (G22; R36 words them): unaudited functions, stored names that cost digits, evaluated once; top level only
+  uncDigits?: number;                                    // G26: with the constants table passed to home() (constants as pasc_<id>), the significant digits of the shown value before the first digit of the first-order σ of the CODATA uncertainties; R40 draws the digits after it muted. Absent when no inexact constant went in or the result is not one real number
 }
 interface CasResult { /* ok, text, latex, timedOut, error, engineMs */ numeric?: HomeResult;  // new: when the result is a number
   approximate?: boolean; warn?: "unaudited" | "unchecked"; why?: HomeResult["why"];  // ⚠ or ≈ for a non-number: an == test on a float (R18f1, R18f2), or a float in a non-number (G27); a number has why on numeric

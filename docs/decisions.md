@@ -351,6 +351,10 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-18 Opus pass 7 defaults (G14f1, G26, S4)
+1. **G26, `uncDigits` counts on the value as shown** (rounded at the result's digits: 9.9996 shown as 10.00 counts from the 10), so the muted cut R40 draws always falls on a digit the row shows. *Would change if* R40 finds a cut that moves with the display format confusing; then it counts on the full value.
+2. **G26, no `uncDigits` for lists, matrices or complex results**, and none for a name that holds a constant's value (`h:=G*2`, then `h*3`): the value went into the defs log as digits, so the row shows every digit as today. *Would change if* R40 or R33 need it; then σ travels with the defs entry.
+
 ### 2026-10-18 Opus pass 6 defaults (G22f1, R52, G14)
 1. **R52, `SerializeError` takes the finished English text plus the key and its values;** `parseError(key, vars)` in `app/src/i18n/enParser.ts` is what every error site calls. `errors.ts` is in the start chunk and must not import the table (M4-3). *Would change if* a second language comes: then the catch shows the text for `key` and `vars` instead of `message`.
 2. **R52's start-chunk growth is accepted:** +0.04 kB gzip (52.90 → 52.94 kB), where the package asked for none; it is the key and values on `SerializeError`. *Would change if* the budget runs out before milestone 4a ends.
