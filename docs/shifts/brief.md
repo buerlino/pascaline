@@ -116,13 +116,11 @@ Goal: the owner's feedback of 2026-10-13 ([feedback.md](../feedback.md)) and the
 | R15c3 | The user keys' Alpha layer | ron, Sonnet | `p1/ron-m4a-useralpha` | R15c2 | day | ~0.5 d |
 | R15c4 | First-start tips | ron, Sonnet | `p1/ron-m4a-tips` | R15c2 | day | ~0.5 d |
 | R49 | Settings as a list of rows, each with its own page | ron, Sonnet | `p1/ron-m4a-settings` | R15c4 (it adds a Settings row) | day | ~0.75 d |
-| R50a | Three colour palettes, light and dark: a mockup | ron, Sonnet | `p1/ron-m4a-palettes` | none (docs only) | night | ~0.5 d |
 | R50b | The picked palette in the app | ron, Sonnet | `p1/ron-m4a-palette` | R50a picked by the owner, and R49 | day | ~0.5 d |
 | R12a | Visual pass: mockups for the owner, finished on `p1/ron-m4a-look`: review-only merge | ron, Sonnet | `p1/ron-m4a-look` | the owner has looked at the mockups | day | 15 min |
 | R12b | Visual pass: tokens and history rows (U5, U7) | ron, Sonnet | `p1/ron-m4a-tokens` | R12a merged, R4b, R53 | day | ~1.5 d |
 | R12c | Visual pass: theme, press feedback, reduced motion | ron, Sonnet | `p1/ron-m4a-theme` | R12b | day | ~1 d |
-| S9 | Results mode: the design note (P16) | sandra, Opus | `p1/sandra-resultsmode` | none | night | ~0.5 d |
-| R53 | Results mode on the View key (P16) | ron, **Opus** | `p1/ron-m4a-results` | S9, R4b | day | ~1.5 d |
+| R53 | Results mode on the View key (P16) | ron, **Opus** | `p1/ron-m4a-results` | S9 (the owner's yes), R15c2, R4b | day | ~1.5 d |
 
 **Why these models:** Opus where a mistake breaks entry for every later package: R15c2 (moves keys that every test names), R53 (hides the keypad and adds the viewport's controls; a wrong state leaves no keys). Sonnet elsewhere, with the audit model of P17 (Opus when the diff touches the parser, the engine or `spec/keyboard.yaml`).
 
@@ -361,17 +359,6 @@ Commits in this order:
 - e2e by touch and by keys: the list; each row opens its page and back returns to the list on the same row; values change in place as before; Try it fires one pulse (`recordVibrations`); Android back walks page → list → closed. `settings.spec.ts` moved to the new paths.
 - Typecheck, unit and e2e tests pass; the gallery rebuilt (the list and each page, light and dark); the start chunk unchanged (Settings loads lazily).
 
-### ron, R50a: three colour palettes, light and dark: a mockup (feedback #53), branch `p1/ron-m4a-palettes`
-**Lane:** night-safe (docs only, no app code). **Starts when:** any time.
-**Read:** feedback.md #53; `app/src/style.css` (today's tokens, dark in `:root`, light in the `prefers-color-scheme: light` block); `app/src/style.test.ts` (the contrast test); `docs/05-ui-plan.md` 3.10; `docs/mockups/top-cluster-r15c.html` (the R3 keypad to draw on). Clean room (`docs/rules-core.md`): our own colours, nothing taken from any HP skin or screenshot.
-- One static page, `docs/mockups/palettes-r50.html`, that opens on the phone. Each palette has a short name and one idea, for example a calm graphite with one warm accent, a cool blue-grey, and a high-contrast one.
-- Each palette is drawn in light and dark at phone size on the same scene: the status line with its chips, Home history with an exact result, a ≈ result and a ⚠ row, the entry line with an Ans chip, the R3 keypad with Shift and Alpha legends, a key on, a dead key, and a pick sheet over the keypad.
-- Each palette lists its value for every role token of `style.css` (`--bg`, `--panel`, `--line`, the five key kinds, `--key-enter`, `--text`, `--text-dead`, `--muted`, `--shift`, `--alpha`, `--error`, `--chip-bg`), plus any new role it needs, such as the ≈ and ⚠ marks, the picked row and focus.
-- **Contrast, shown on the page:** text on its background at least 4.5:1, legends and dead keys at least 3:1 (as `style.test.ts`). Shift and Alpha legends stay distinguishable for the common colour-vision deficiencies, since they also differ by position.
-**Done when:**
-- `docs/mockups/palettes-r50.html` exists, three palettes, light and dark, with the token table and the contrast numbers on the page.
-- Nothing under `app/` changed. The report says the owner picks a palette, or a mix, on the phone (backlog "Needs the user" item 7).
-
 ### ron, R50b: the picked palette in the app, branch `p1/ron-m4a-palette`
 **Lane:** day. **Starts when:** the owner has picked a palette from R50a (decisions.md "R50a" or feedback.md), and R49 is merged.
 **Read:** the owner's pick; `docs/mockups/palettes-r50.html`; `app/src/style.css`; `app/src/style.test.ts`; `app/src/keyboard/Keypad.svelte` and `app/src/views/History.svelte` (colours written directly, if any).
@@ -401,26 +388,22 @@ Commits in this order:
 **Done when:**
 - e2e: the setting survives a reload; the contrast test passes in both themes; the gallery rebuilt; the start chunk within 0.5 kB of before (the number in the report); the sheet-rise numbers in the report.
 
-### sandra, S9: results mode, the design note (P16), branch `p1/sandra-resultsmode`
-**Lane:** night-safe (a note and probes, no app code). **Starts when:** any time; before R53.
-**Read:** decisions.md P16 and "R15c" point 4; feedback.md #19 (the owner's idea, in the owner's words); `docs/03-feature-analysis.md` section 0 rules 7, 9 and 11; `docs/05-ui-plan.md` 3.5 (history rows) and section 7; `app/src/views/History.svelte` and `app/src/App.svelte` (R11's row actions: the action line above the entry line, `historyKey`); `app/src/keyboard/Keypad.svelte` (the keypad's box and the viewport share); `app/src/state/taps.svelte.ts` (R9's counter, the pattern for the removal test).
-Write `docs/research/r13-results-mode.md`:
-1. **The shape:** View (tap) collapses the keypad to a slice at the bottom (height, what it shows, a tap on it brings the keypad back; the top cluster's Esc path while collapsed: a hardware Escape and Android back). In this mode the viewport shows the controls the owner named (delete, copy, move, merge, unit check, draw in Plot) on the picked row, as one action line, never a bar per row; which of them R11's row menu already gives and which are new; what "merge" and "unit check" mean on a Home row (the unit view's check with no end slot, G16's `UnitRequest`).
-2. **Rules 7 and 9:** how the mode keeps one interaction model (the same keys, the same row pick with ▲, digits picking an action as in every sheet) and gives back the viewport's pixels (the slice's height against the rows gained). State the cost in presses for the ten benchmark tasks with the keypad collapsed and back.
-3. **The removal test** (rule 11): a tap counter on View and on each viewport action (as R9's), read after two weeks of use; the threshold below which the mode goes and View keeps only Help.
-4. **R53's text:** the package block for section 7 (files by path, tests, "Done when"), ready for the Opus pass to paste.
-**Done when:**
-- `docs/research/r13-results-mode.md` exists with sections 1–4; every claim about today's code cites `file:line`; the press counts are from `tests/tasks/tasks.yaml`'s counting rule (docs/04 5.2).
-- The report holds the proposal for decisions.md "Needs the user" (the slice height and the first action set) in one recommendation.
-- Nothing under `app/` changed.
-
 ### ron, R53: results mode on the View key (P16), branch `p1/ron-m4a-results`
-**Lane:** day. **Opus** (it hides the keypad; a wrong state leaves the user without keys). **Starts when:** S9 is merged and the owner has said yes to its proposal, and R4b is merged (the Find chunk shares the viewport's layer code).
-**Read:** `docs/research/r13-results-mode.md` (S9's note: its section 4 is this block's detail); decisions.md P16; `spec/keyboard.yaml` (the `view` key, `special: none` since R15c2); `app/src/App.svelte` (`press()`, `historyKey`, the row actions); `app/src/views/History.svelte`; `app/src/keyboard/Keypad.svelte`; `app/src/input/backLayer.ts`; `app/src/state/taps.svelte.ts`; `app/test/rows.spec.ts`; `app/test/topcluster.spec.ts`.
-- Build S9's shape: `view` gets `special: results`; the keypad collapses to the slice and comes back on a tap on the slice, on View (hardware keyboard), on Esc and on Android back (`openLayer`); the viewport's action line as S9 section 1; the counters of S9 section 3 in Settings (R49's page pattern); nothing moves on the keypad.
+**Lane:** day. **Opus** (it hides the keypad; a wrong state leaves the user without keys). **Starts when:** S9 is merged and the owner has said yes to its proposal (decisions.md "S9"), R15c2 is merged (the `view` key and Esc) and R4b is merged.
+**Read:** `docs/research/r13-results-mode.md` sections 1–3; decisions.md P16, "S2: one menu system" and "S9"; `spec/keyboard.yaml` (the `view` key); `app/src/App.svelte` (`press()`, `run()`, `historyKey`, `cancel()`, the `.rowbar` line, the `sheetView` snippet and `.layer`, the `openLayer` effects); `app/src/views/History.svelte` (the row taps, `tapped`); `app/src/clipboard/actions.svelte.ts` (`menu()`, `rowButtons()`); `app/src/apps/shell.svelte.ts` (`open`); `app/src/apps/slots.svelte.ts` (`set`); `app/src/apps/function/compile.ts`; `app/src/keyboard/Keypad.svelte` (the `.pad` box); `app/src/input/backLayer.ts`; `app/src/state/taps.svelte.ts`; `app/src/views/modeSheet.ts` (the taps rows); `app/test/rows.spec.ts`; `app/test/status.spec.ts`; `app/test/topcluster.spec.ts`.
+- **The key:** `view` gets `special: results` on its tap (Shift stays as it is). In Home and CAS it collapses the keypad. In an app it is a dead key (r13 1.4). It is not in `AT_ONCE` and it waits in the queue like other keys. View with a sheet or Settings open does what the sheet does with a cluster key today.
+- **The slice:** the keypad slides down to a 44 px slice: the keypad's own top edge, a grip and the label "Keys" (i18n), `aria-label` "Show the keypad". Its height is a token. No key reflows, and the slide is ≤ 120 ms and off under `prefers-reduced-motion`. A tap anywhere on it brings the keypad back. The state is not stored (a reload has the keypad up).
+- **Ways back:** the slice; Android back (one `openLayer` while collapsed); a hardware Escape after Esc's own jobs (stop a job, a sheet level, a pick); Insert, Recall and Store ▶. Typing on a hardware keyboard does not bring it back.
+- **Rows:** while collapsed, a tap on a row's input or result picks it (`picked`), and the long press is unchanged. With the keypad up the taps keep their meaning. A pick made before View stays picked.
+- **The line:** R11's `.rowbar` shows `menu(row).slice(0, 6)` while collapsed (five with the keypad up, as now). It stays one line.
+- **Plot (Menu item 6):** S2's list becomes 1 Insert, 2 Recall, 3 Copy, 4 Store ▶, 5 Delete, 6 Plot, 7 Copy as, 8 Paste, 9 Share, 0 Clear, and Settings becomes the last row without a digit. Plot is enabled on a finished CAS row with no `numeric` whose input compiles to a drawable function of x (`compile.ts`). Otherwise it is disabled with "Nothing to plot in x". It puts the row's input into the Function app's first empty slot (else F1, replaced) and opens Plot. The Function app's code does not change.
+- **A sheet while collapsed** rises from the slice's top edge over the history (the `view` placement), not over the absent maths rows.
+- **Counters:** one named-count counter after `taps.svelte.ts` under the IndexedDB key `uses`: `view`, `pick`, and the six actions while collapsed, plus `plotUp`. Shown in Settings beside the taps rows ("Counters"; R49's page if it is merged), with Since and Reset.
+- **Docs** (exact text in the report): docs/05 3.3 and 3.5 (the line in results mode, the sixth item), decisions.md P7 point 5 (Home and CAS only, Plot later), and S2's numbers.
 **Done when:**
-- e2e by touch and by keys: View collapses, the slice brings the keypad back, Esc and Android back bring it back; every action of the first set works on a picked row; the counters count; a reload restores the full keypad.
-- The viewport share with the keypad up is unchanged (0.354 on the Pixel 7 profile); the gallery has the collapsed state, light and dark.
+- e2e by touch and by keys: View collapses; the slice, Android back and Escape (after a pick is dropped) bring the keypad back; a reload has it up; a tap picks a row while collapsed and recalls or inserts while up; each of the six actions works on a picked row while collapsed (Insert, Recall and Store ▶ bring the keypad back; Copy, Delete and Plot do not); Plot is disabled on a Home number row with its reason; ☰ while collapsed shows the list over the history; a hardware letter types while collapsed and the keypad stays down; every counter counts and Reset clears them.
+- `rows.spec.ts`'s Menu-number tests move to the new numbers (6 Plot, 7 Copy as); the "row buttons cost no viewport" test still holds with the keypad up.
+- The viewport share with the keypad up is unchanged (0.354 on the Pixel 7 profile, floor 0.35); a new e2e asserts the collapsed share ≥ 0.9; the gallery has the collapsed state with a picked row, light and dark.
 - Typecheck, unit and e2e tests pass; the start chunk within +0.5 kB gzip (the number in the report); `spec/keyboard.yaml` changes only the `view` key's primary action.
 
 ### ron, R4a: Find on Math, branch `p1/ron-m4-find`
