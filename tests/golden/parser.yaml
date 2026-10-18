@@ -289,7 +289,7 @@ cases:
   - { id: "misc-more-05", latex: "\\int_0^1 x^2\\,dx+1", expect: "4/3", source: "derived", group: "misc-more" }
   - { id: "misc-more-06", latex: "\\int\\frac{1}{x}\\,dx", expect: "ln(abs(x))", source: "derived", group: "misc-more" }
   - { id: "misc-more-07", latex: "\\overline{z}", expect: "conj(z)", source: "derived", group: "misc-more" }
-  - { id: "misc-more-08", latex: "x\\bmod 3", expect: "irem(x,3)", source: "derived", group: "misc-more" }
+  - { id: "misc-more-08", latex: "x\\bmod 3", expect: "pasmod(x,3)", source: "derived", group: "misc-more" }
   - { id: "misc-more-09", latex: "\\det\\left(\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}\\right)", expect: "-2", source: "derived", group: "misc-more" }
   - { id: "misc-more-10", latex: "\\lim_{x\\to0^+}\\frac{1}{x}", expect: "inf", source: "derived", group: "misc-more" }
   - { id: "misc-more-11", latex: "\\lim_{x\\to0^-}\\frac{1}{x}", expect: "-inf", source: "derived", group: "misc-more" }

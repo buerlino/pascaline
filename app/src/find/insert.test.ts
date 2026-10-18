@@ -12,6 +12,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 interface Curated { id: string; giac: string; insert?: string }
 const curated = (parse(readFileSync(join(here, "../../../find/functions.yaml"), "utf8")) as { functions: Curated[] }).functions;
 const opInsert = (n: string): string => `\\operatorname{${n.replace(/_/g, "\\_")}}\\left(#0\\right)`;
+// Giac names our parser renames on the way (input/emit.ts CALL_NAME): irem is pasmod, which is irem on integers.
+const CALL_NAME: Record<string, string> = { irem: "pasmod" };
 const fill = (insert: string): string => insert.replace("#0", "x");
 
 describe("Find insertion", () => {
@@ -21,10 +23,10 @@ describe("Find insertion", () => {
 
   it.each(curated.map((f) => [f.id, f] as const))("%s becomes its Giac command", (_, f) => {
     const giac = latexToGiac(fill(f.insert ?? opInsert(f.giac)));
-    expect(giac.startsWith(`${f.giac}(`), giac).toBe(true);
+    expect(giac.startsWith(`${CALL_NAME[f.giac] ?? f.giac}(`), giac).toBe(true);
   });
 
   it.each(["normald_cdf", "stddevp", "irem", "comb", "Gamma", "lcm", "plotfunc", "zeta"])("\\operatorname{%s} reaches Giac as written", (n) => {
-    expect(latexToGiac(fill(opInsert(n)))).toBe(`${n}(x)`);
+    expect(latexToGiac(fill(opInsert(n)))).toBe(`${CALL_NAME[n] ?? n}(x)`);
   });
 });
