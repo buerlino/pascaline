@@ -220,6 +220,20 @@ export function expIgnoresAngle(input: string, angle: "rad" | "deg"): string {
   return input.replace(/"[^"]*"|\bexp(\s*\()/g, (m, paren?: string) => (paren === undefined ? m : `pasexp${paren}`));
 }
 
+/** G21f1: the helper's name never reaches the screen: pasexp means exp, in text and in LaTeX (`\\mathrm{pasexp}`). */
+export function showExp(text: string): string {
+  return text.replace(/\\mathrm\{pasexp\}/g, "\\exp").replace(/\bpasexp\b/g, "exp");
+}
+
+/** `showExp` on every text of a Home result, its elements included. */
+export function showExpResult(r: HomeResult): HomeResult {
+  const out: HomeResult = { ...r, display: showExp(r.display), full: showExp(r.full) };
+  if (r.exact !== undefined) out.exact = showExp(r.exact);
+  if (r.latex !== undefined) out.latex = showExp(r.latex);
+  if (r.items) out.items = r.items.map(showExpResult);
+  return out;
+}
+
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */
 export function homeSetupCommands(s: HomeSettings): string[] {
   return [
