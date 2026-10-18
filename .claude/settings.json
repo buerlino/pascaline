@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./node_modules/**)",
+      "Read(./**/node_modules/**)",
+      "Read(./**/dist/**)",
+      "Read(./**/build/**)",
+      "Read(./android/.gradle/**)",
+      "Read(./android/gradle/**)",
+      "Read(./engine/*/_out/**)",
+      "Read(./engine/*/_build/**)",
+      "Read(./engine/*/_work/**)",
+      "Read(./**/_downloads/**)",
+      "Read(./spike/**/prebuilt/**)",
+      "Read(./spike/**/_build/**)",
+      "Read(./spike/**/_out/**)",
+      "Read(./.coord/*.png)",
+      "Read(./.coord/*.apk)",
+      "Read(./.coord/*.out)",
+      "Read(./.coord/home-runs/**)",
+      "Read(./.coord/device-runs.jsonl)",
+      "Read(./.coord/tmpbuild/**)",
+      "Read(./.tasks/archive/**)",
+      "Read(./.tasks/*/*.log)",
+      "Read(./**/coverage/**)",
+      "Read(./**/test-results/**)",
+      "Read(./**/playwright-report/**)",
+      "Read(./**/package-lock.json)",
+      "Read(./app/test/gallery/**)",
+      "Read(./app/public/engine/**)",
+      "Read(./app/src/find/_gen/**)",
+      "Read(./tools/probes/_out/**)",
+      "Read(./python/**)"
+    ]
+  }
+}
