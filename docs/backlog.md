@@ -192,7 +192,7 @@ A read-and-probe pass over the app (sandra; brief section 0h; decisions.md "Feat
 5. [x] **G30. `par` and `eseries`** as engine definitions with golden cases and tier-0 Find entries (EN7a); tasks t01 and t06 go active with Find. *Night; gorge.* **Done** (G30): definitions load on first use; t01 and t06 stay pending until R4a, the Opus pass flips them.
 6. **R55. Digit groups in drawn results:** thin space, groups of three on both sides of the point, copy text plain; removal test two weeks. *Day; ron.*
 7. **R57. The decimal comma as a setting:** key faces, drawn results, copy and paste (the parser takes the option already). After R49. *Day; ron.*
-8. **G31. FIX never hides a nonzero value** (4.7E-6 draws as `0.0000` today), after G2 item 60. *Night; gorge.*
+8. [x] **G31. FIX never hides a nonzero value** (4.7E-6 draws as `0.0000` today), after G2 item 60. *Night; gorge.*
 9. **R58. CAS letters lower case on Alpha**, only if G2 item 45 says the G2 does it. *Night; ron.*
 
 Also from the review: the unit view on Giac (P15, milestone 5 items 1–3 below) and MathLive on the upstream list ("Needs the user" item 6).
