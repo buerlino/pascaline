@@ -146,9 +146,9 @@ function numberOf(giac: Giac, name: string, rerun: string, s: HomeSettings, inex
  * G18: the first-order uncertainty of the stored result. σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over the uncertain inputs (taken as
  * independent), exactly, with Giac's diff, at the inputs' values; it is a quantity of the result's dimension, which is
  * then divided by the end slot's factor like the value (a level end slot: through the derivative of the level).
- * `valueExpr` is Giac text of the value as shown. Never "=": the facts of σ carry the approximation.
+ * `valueExpr` is Giac text of the value as shown, `shownValue` its display (kept for a σ of 0). Never "=": the facts of σ carry the approximation.
  */
-function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string }, valueExpr: string, dimension: string | null, s: HomeSettings): Uncertainty | UnitError {
+function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string }, valueExpr: string, shownValue: string, dimension: string | null, s: HomeSettings): Uncertainty | UnitError {
   const u = job.unc!;
   const lit = toExactLiterals;
   const F = withAngles(lit(u.expr));
@@ -171,7 +171,7 @@ function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string 
   const plain = giac.eval(`evalf(${valueExpr},30)`);
   const sig = giac.eval("evalf(pasus,30)");
   const text = isError(sig) ? null : uncertaintyText(sig);
-  const shown = isError(plain) || isError(sig) ? null : shownWithUncertainty(plain, sig, plain);
+  const shown = isError(plain) || isError(sig) ? null : shownWithUncertainty(plain, sig, shownValue);
   if (!value || text === null || shown === null) return { error: "engine", detail: `uncertainty not a number: ${sig}` };
   return { value, text, shown };
 }
@@ -233,11 +233,11 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   // The end slot as shown: the one given, or the unit chosen for the result (σ is scaled by this one, like the value).
   const shownDst = dst;
   const done = (value: HomeResult, valueExpr: string): Quantity | UnitError => {
-    const unc = job.unc ? uncertainty(giac, job, src, shownDst, valueExpr, dimension, s) : null;
+    const unc = job.unc ? uncertainty(giac, job, src, shownDst, valueExpr, value.display, dimension, s) : null;
     if (unc && isUnitError(unc)) return unc;
     return { value, dimension, dimensionText: dimension === null ? null : dimensionText(dimension), unit, ...si, ...(unc ? { unc } : {}), ms: performance.now() - t0 };
   };
-  if (job.absTemp && src.kind === "term" && giac.eval(`sign(${num})`).trim() === "-1") return { error: "belowzero" };
+  if ((job.absTemp || job.endOffset !== undefined) && src.kind === "term" && giac.eval(`sign(${num})`).trim() === "-1") return { error: "belowzero" };
   // An end slot in °C or °F: the SI number less the offset (K = a·x + b, the end slot holds a); in dB, dBm or Np: the
   // level of the ratio to its reference. Both give the number of Giac's text, not a rational quotient.
   const shifted = job.endOffset !== undefined ? giac.eval(`normal((${num})-(${job.endOffset}))`) : num;
