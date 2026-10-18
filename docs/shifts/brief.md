@@ -49,10 +49,8 @@ Estimates are wall-clock guesses. A package already merged by day is skipped (lo
 | 4 | **Opus pass 1** on steps 1–3 | Opus | — | — | 20 min + fixes |
 | 5 | R24a the slot model | ron, **Opus** | `p1/ron-m5-unitslot` | G7 | 1 h |
 | 6 | G32 rpm counts turns: the refusal's message, `source: reference` | gorge, Sonnet | `p1/gorge-m5-rpmmsg` | G7 | 30 min |
-| 7 | R54 the list key: Shift + 8 inserts `{ }` (section 0h) | ron, **Opus** | `p1/ron-m4-listkey` | — | 1 h |
 | 8 | **Opus pass 2** on steps 5–7 | Opus | — | — | 20 min + fixes |
 | 9 | R28 units mode in the parser | ron, **Opus** | `p1/ron-m5-unitparse` | R24a, G16 | 1 h |
-| 10 | G30 `par` and `eseries` as engine definitions (section 0h) | gorge, Sonnet | `p1/gorge-m6-par-eseries` | — | 1 h |
 | 11 | G33 the library file: check and import (S4 decided) | gorge, Sonnet | `p1/gorge-m5-library` | G29 | 1 h |
 | 12 | **Opus pass 3** on steps 9–11 | Opus | — | — | 20 min + fixes |
 | 13 | G31 FIX never hides a nonzero value (section 0h) | gorge, Sonnet | `p1/gorge-m4-fixzero` | G2 item 60 answered | 45 min |
@@ -241,8 +239,6 @@ The order is by importance, then by what each needs: the bug first, then the bud
 |---|---|---|---|---|---|---|---|
 | A12 | The defs replay re-measured on the Tab One | A4a point 2 | day (device) | annabell, Sonnet | `p1/annabell-replay` | G29; the Tab One connected | ~0.25 d |
 | A11 | Paste and Share on Android (the Capacitor clipboard and share plugins) | A4a point 5 | day (device) | annabell, Sonnet | `p1/annabell-clipboard` | A10; a device connected | ~0.5 d |
-| R54 | The list key: Shift + 8 inserts `{ }` | tasks t08, t09; Find's list functions | night | ron, **Opus** | `p1/ron-m4-listkey` | now | ~0.5 d |
-| G30 | `par` and `eseries` as engine definitions (EN7a) | tasks t01, t06 | night | gorge, Sonnet | `p1/gorge-m6-par-eseries` | now | ~0.5 d |
 | R55 | Digit groups in drawn results | G2 item 15; principle 3 | day | ron, Sonnet | `p1/ron-m4a-digitgroups` | R15c4 | ~0.5 d |
 | R57 | The decimal comma as a setting | the owner types with a comma daily | day | ron, Sonnet | `p1/ron-m4a-decimalcomma` | R49 and R50b | ~1 d |
 | G31 | FIX never hides a nonzero value | formatter probe | night | gorge, Sonnet | `p1/gorge-m4-fixzero` | G2 item 60 answered (the owner, Virtual Calculator) | ~0.25 d |
@@ -545,17 +541,6 @@ Commits in this order:
 - Read the file back, check it, show what it holds, then replace or merge as the user picks, through the stamped migrations. A file from a newer version is refused.
 **Done when:** an e2e round trip export → clear → restore gives the same state; a newer-version file is refused with a message; typecheck, vitest and e2e pass.
 
-### ron, R54: the list key, Shift + 8 inserts `{ }`, branch `p1/ron-m4-listkey`
-**Lane:** night-safe. **Opus** (a template with its parser round trips, as R18). **Starts when:** now. Feature analysis 2026-10-18; docs/04 5.1 and 5.3 (`[ ]` and the growing matrix stay EN5, milestone 6: the owner, 2026-10-18).
-**Read:** `spec/keyboard.yaml`, the `d8` key (line 242) and the `sq` key (lines 192–206) as the pattern for a Shift template with `sample` and `line`; `app/src/input/parse.ts` line 19 (`lbrace`) and lines 100 and 635 (`\left\{…\right\}` is a list, L6); `app/src/entry/boxes.ts` (a pair's body; a new template's recogniser lives here, docs/04 5.5); `app/test/cursor-grid.spec.ts` and `app/test/bksp-grid.spec.ts` (every template of keyboard.yaml); `app/src/keyboard/keyboard.test.ts` (samples, NO_ARGUMENT); `tests/golden/parser.yaml` group "lists-matrices"; `tests/tasks/tasks.yaml` t09; `docs/06-keypad-vs-g2.md` section 1.
-**Behaviour today** (probes 2026-10-18): no key types `{` or `[`, and a hardware `{` does nothing (R31); `\left[1,2,3\right]` is "unsupported delimiter ["; the only bracket template, Tmpl's row vector, is a 1×n matrix, so `mean((9.81 9.79 9.83))` returns `[9.81,9.79,9.83]` and `stddevp` of it gives `[undef,undef,undef]`. Find (R4a) will offer `mean` and `stdev` (`find/functions.yaml` lines 44–45) with no way to type their argument.
-Commits in this order:
-1. **Tests first:** parser cases (`derived`): `\left\{1,2,3\right\}` → `[1,2,3]`, one element, a chip inside, `\left\{\right\}` an i18n error (R52's table); `home.yaml` cases from t09's data (`oracle`): `mean({…})` = 9.81 `=`, `stddevp({…})` = 0.0182574185835 `≈`; e2e: Shift 8 inserts `{□}` with the cursor inside, `1 , 2 , 3 ▶` leaves it, Shift 8 with `1,2` selected wraps it (R17); the ⌫ and cursor grids take the new template (⌫ at the start of the body removes the pair whole, as `( )`).
-2. **Build:** the `d8` key's `shift` layer: `insert: "\\left\\{#0\\right\\}"`, `sample: ["\\left\\{1,2,3\\right\\}", "[1,2,3]"]`, the same `line` form, the label `{ }`, `source: virtual-calc` (the G2's Shift + 8, docs/04 5.1). No parser rule if the probe's reading holds; `boxes.ts` recognises the pair.
-3. **t09:** a `baseline` (mean typed with the Alpha letters, the list from Shift + 8) with its text; the task stays pending until Find (its budget comes with R4a).
-4. **Docs** (exact text in the report): docs/04 5.1 (the Shift + 8 row: built) and 5.3 (the `\{ \}` sentence); docs/06 section 1 (Shift + 8 leaves the planned row); backlog milestone 6 EN5 (drop `{ }`).
-**Done when:** the samples round-trip (`keyboard.test.ts`), both grids pass with the new template, the e2e and the golden cases pass; typecheck, vitest, e2e, golden; the start chunk within +0.1 kB gzip (the number in the report).
-
 ### ron, R55: digit groups in drawn results, branch `p1/ron-m4a-digitgroups`
 **Lane:** day (the owner looks at it on the phone). **Starts when:** R15c4 is merged. Feature analysis 2026-10-18; G2 item 15 (`tests/golden/g2.yaml`: the G2 draws `12,345.6789`).
 **Read:** `app/src/render/home.ts` lines 7–20 (`part`, `complexToLatex`) and `polarToLatex`; `app/src/state/displayMode.ts` lines 200–215 (where a row's latex is built); `app/src/render/insertable.ts` (the `\res{k}{shown}` chip: its text comes from the chip table, R2, never from the drawn latex); `app/src/clipboard/text.ts` line 49 (`realText`: the copy text stays plain); `app/src/input/parse.ts` (R51: a number, spacing, a number is an error, so a grouped text must never reach the entry line); `app/test/copy.spec.ts`; `app/test/gallery/`; docs/03 rule 11.
@@ -602,15 +587,6 @@ Commits in this order:
 **Done when:**
 - `app/src/find/specids.test.ts` (failing on today's index): every unit and prefix id in `spec/unit-pad.yaml` and every grid entry of `spec/units-menu.yaml` (products such as `ft*lbf`, `Btu/h`, `m^3/h` split into their factors, and the prefixes) resolves to a Find item (`unit:<id>`, `pfx:<id>`); the constants in `constants.lists` resolve to `const:<id>` (e, π and i excepted).
 - The query test passes (every phrase in the top 3, at least 90 % first); `npm run index` is clean; the index within budget (≤ 400 kB raw, ≤ 100 kB gzip; the size in the report).
-
-### gorge, G30: `par` and `eseries` as engine definitions (EN7a), branch `p1/gorge-m6-par-eseries`
-**Lane:** night-safe. **Starts when:** now. Feature analysis 2026-10-18: the two EN7 functions the benchmark tasks t01 and t06 need; the rest of EN7 stays in milestone 6.
-**Read:** `app/src/engine/homeEval.ts` lines 123–140 (`ENGINE_DEFINITIONS`: `pasmod`, `sigfig`; loaded on the first input that names them, never on the engine-ready path); `find/functions.yaml` (tier 0: `id`, `names`, `giac`, `syntax`, `golden`); `app/src/find/insert.test.ts`; `tests/golden/home.yaml` (a case line; `stat-stddevp-sample` as the pattern); `tests/tasks/tasks.yaml` t01 and t06 (the values, `derived`); `tests/tasks/find-queries.yaml` lines 117–118 (`parallel`, `e24`: pending); docs/03 section 5 EN7; docs/04 3.3.
-- **`par(a, b, …)`:** n-ary, 1/(1/a + 1/b + …), exact in Giac (4700 ‖ 10000 = 470000/147, so `3197.27891156 ≈`); a zero argument gives exactly 0; a non-number is Giac's error.
-- **`eseries(n, x)`:** the preferred value of the IEC 60063 series E6, E12, E24, E48, E96 or E192 nearest to x, in x's decade. E6–E24 come from the standard's table as a literal list (they are not round(10^(k/n)): 2.7, 3.3, 3.9, 4.7, 8.2); E48–E192 from the table as published, also as a list, never a formula. "Nearest" is the smaller ratio (log distance); where a case's absolute and ratio nearest differ, the case says so. `eseries(24, 3870)` = 3900 (t06, `derived`); an n not in the list is an error naming the six.
-- **Find:** `fn:par` (names: parallel, ‖, resistors in parallel) and `fn:eseries` (names: e24, e12, e96, preferred value, standard resistor), each with its golden id; the two queries lose `status: pending`.
-- **Tasks:** if R4a is merged, t01 and t06 go `active` with their budgets (14, 12) and the key sequences of tasks.yaml; else they stay pending with `needs: "Find (R4a)"` and the Opus pass after R4a flips them.
-**Done when:** `home.yaml` cases, `derived`: `par(4700,10000)`, `par(10,10,10)` = 3.33333333333 ≈, `par(0,5)` = 0 =, `eseries(24,3870)` = 3900, `eseries(12,4.6)`, `eseries(96,0.00123)`, one tie case, one error case; the golden gate; `npm run index` and the query test (100/100 first) pass; `insert.test.ts` passes for both; no change to engine ready (the definitions load on first use).
 
 ### gorge, G31: FIX never hides a nonzero value, branch `p1/gorge-m4-fixzero`
 **Lane:** night-safe. **Starts when:** G2 item 60 is answered (the owner, on the Virtual Calculator: Fixed(4) of 4.7ᴇ-6 and 0.000123). Feature analysis 2026-10-18; principle 3.
