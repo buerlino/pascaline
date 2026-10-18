@@ -15,7 +15,7 @@
 #       --checks LIST       auto (default), none, or a comma list of typecheck,vitest,e2e,golden
 #       --no-merge          stop after the audit; print the merge command instead
 #       --dry-run           print the bundle and the commands; start no agent, make no worktree
-#   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" ["<open questions>"]
+#   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" ["<open questions>"] [--dry-run]
 #                           an Opus pass by sofia on phase-1 (brief section 0c "Opus pass")
 #   scripts/pipeline.sh report
 #                           the night's shift report, written and committed on phase-1 by a fresh agent
@@ -28,7 +28,7 @@
 # "RESULT -: NOT STARTED (why)" before a run number exists). Exit 0 merged, 1 not merged, 2 not started
 # or failed early, 75 usage limit (henri stops, night.sh waits).
 # Environment: PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR (tarball caches, default: the main checkout's
-# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT, QALC_OUT; PW_PORT=$((5200 + n % 100)) is
+# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT, QALC_OUT; PW_PORT=$((5200 + n % 100)) (a pass: 5290 + n) is
 # exported to the worker, the fix rounds and the checks, so parallel runs never share a dev server.
 # Locks: host-cpu around the checks, integ (600 s) around the merge into phase-1.
 set -euo pipefail
@@ -85,9 +85,14 @@ link_shared() {
 if [[ "${1:-}" == "pass" ]]; then
   [[ $# -ge 3 ]] || die "usage: pipeline.sh pass <n> \"<IDs>\" [\"<open questions>\"]"
   n="$2"; ids="$3"; open="${4:-none}"
+  export PW_PORT=$((5290 + n))  # a pass's e2e never meets a dev server of another checkout
   ensure_integ; run="$tasks/pass-$n"; mkdir -p "$run"
+  if [[ "${5:-}" == "--dry-run" || "${4:-}" == "--dry-run" ]]; then
+    [[ "$open" == "--dry-run" ]] && open=none
+    echo "DRY RUN: Opus pass $n on: $ids; open questions: $open; PW_PORT=$PW_PORT; worktree $integ; starts nothing"; echo "RESULT pass $n: DRY RUN"; exit 0
+  fi
   log "Opus pass $n: spawned sofia (opus) on: $ids; waiting."
-  prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Take the integration lock around the doc commit: tools/devlock.sh acquire integ pass-$n 600 before it, tools/devlock.sh release integ pass-$n right after. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
+  prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Run any e2e with PW_PORT=$PW_PORT (exported; do not change it). Take the integration lock around the doc commit: tools/devlock.sh acquire integ pass-$n 600 before it, tools/devlock.sh release integ pass-$n right after. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
   set +e
   (cd "$integ" && timeout 7200 claude -p --agent sofia --model opus --effort medium "${claude_common[@]}" -n "pass-$n" "$prompt") > "$run/reply.md" 2> "$run/stderr.log"
   rc=$?; set -e
@@ -182,6 +187,7 @@ if [[ $dry -eq 1 ]]; then
   echo "DRY RUN: pipeline run $n, package $id, agent $agent ($model, $effort), branch $branch"
   echo "PASCALINE_QALC_DL_DIR=$PASCALINE_QALC_DL_DIR PASCALINE_DL_DIR=$PASCALINE_DL_DIR PW_PORT=$PW_PORT"
   echo "integration worktree: $integ"; echo "worker worktree: $wt"; echo "checks: $checks; merge: $merge; audit model: $audit_model; no-worker: $nowork"
+  echo "audit model: $audit_model$([[ "$audit_model" == auto ]] && { [[ "$model" == opus ]] && echo " (opus: --model opus; else opus when the diff touches app/src/input/, app/src/engine/, engine/ or spec/keyboard.yaml, else sonnet)" || echo " (opus when the diff touches app/src/input/, app/src/engine/, engine/ or spec/keyboard.yaml, else sonnet)"; })"
   echo "--- bundle ($bundle, $(wc -l < "$bundle") lines) ---"; cat "$bundle"
   echo "--- commands ---"
   echo "git worktree add $wt -b $branch phase-1   (or: git worktree add $wt $branch, when the branch exists)"
@@ -234,7 +240,7 @@ want_checks() {
     auto)
       local list="typecheck,vitest"
       changed | grep -q '^app/' && list="$list,e2e"
-      changed | grep -qE '^(engine/|app/src/engine/|app/src/input/|tests/golden/)' && list="$list,golden"
+      changed | grep -qE '^(engine/|app/src/engine/|app/src/input/|app/src/units/|app/scripts/unit-case\.ts|tests/golden/|find/|tools/find-index/)' && list="$list,golden"
       echo "$list";;
     *) echo "$checks";;
   esac
@@ -242,6 +248,22 @@ want_checks() {
 excerpt() {  # the failing lines of a check log, capped
   grep -nE 'FAIL|Error|error TS|✘|×|✗|AssertionError|Expected|Received|expected|Timed out|not ok|GOLDEN GATE FAILED' -A4 "$1" | head -n 150
   [[ -s "$1" ]] && { echo "--- tail ---"; tail -n 30 "$1"; }
+}
+# Wall-clock tests: the Find 16 ms/key test, the golden units p95 bar, the solve.spec.ts persistence test, the clipboard
+# poll of copy.spec.ts (the patterns are in app/scripts/pipeline-logs.ts). When every failing item of a check is one of
+# them the check runs once more; a second failure is a fix round.
+TIMING_CHECKS=(vitest e2e golden)
+timing_only() {  # <check> <log>
+  local c; for c in "${TIMING_CHECKS[@]}"; do [[ "$c" == "$1" ]] && node "$wt/app/scripts/pipeline-logs.ts" timing "$1" "$2" && return 0; done
+  return 1
+}
+rerun_timing() {  # <check> <log>: only the failing files, output appended to the log
+  local files; mapfile -t files < <(node "$wt/app/scripts/pipeline-logs.ts" files "$1" "$2")
+  case "$1" in
+    vitest) (cd "$wt/app" && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 900 npx vitest run "${files[@]}") >> "$2" 2>&1;;
+    e2e)    (cd "$wt/app" && FORCE_COLOR=0 timeout 1800 npx playwright test "${files[@]}") >> "$2" 2>&1;;
+    golden) (cd "$wt/app" && timeout 2700 npm run -s golden) >> "$2" 2>&1;;
+  esac
 }
 run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
   local round="$1" list name rc=0
@@ -252,20 +274,17 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
     local out="$run/check-$round-$name.log"
     case "$name" in
       typecheck) (cd "$wt/app" && timeout 900 npm run -s typecheck) > "$out" 2>&1 || rc=1;;
-      vitest)    (cd "$wt/app" && timeout 1800 npm run -s index && FIND_INDEX=required timeout 1800 npm run -s test) > "$out" 2>&1 || {
-                   # the Find timing test is load-sensitive: when it is the only failing file, re-run it alone once
-                   failed="$(grep -oE '^ *(FAIL|❯) +[^ ]+\.test\.ts' "$out" | awk '{print $2}' | sort -u)"
-                   if [[ "$failed" == "src/find/queries.test.ts" ]]; then
-                     runlog "check vitest: only src/find/queries.test.ts failed; re-running it alone"
-                     if (cd "$wt/app" && FIND_INDEX=required timeout 900 npx vitest run src/find/queries.test.ts) >> "$out" 2>&1; then
-                       runlog "check vitest: re-run of src/find/queries.test.ts passed"
-                     else rc=1; runlog "check vitest: re-run of src/find/queries.test.ts failed"; fi
-                   else rc=1; fi
-                 };;
-      e2e)       (cd "$wt/app" && timeout 2700 npm run -s test:e2e) > "$out" 2>&1 || rc=1;;
+      vitest)    (cd "$wt/app" && timeout 1800 npm run -s index && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test) > "$out" 2>&1 || rc=1;;
+      e2e)       (cd "$wt/app" && FORCE_COLOR=0 timeout 2700 npm run -s test:e2e) > "$out" 2>&1 || rc=1;;
       golden)    (cd "$wt/app" && timeout 2700 npm run -s golden) > "$out" 2>&1 || rc=1;;
       *) die "unknown check $name";;
     esac
+    if [[ $rc -eq 1 ]] && timing_only "$name" "$out"; then
+      # every failing item is a wall-clock test: run the check once more (not a fix round)
+      runlog "check $name: re-run (timing): $(node "$wt/app/scripts/pipeline-logs.ts" files "$name" "$out" | tr '\n' ' ')"
+      rc=0; rerun_timing "$name" "$out" || rc=1
+      [[ $rc -eq 0 ]] && runlog "check $name: re-run (timing) passed" || runlog "check $name: re-run (timing) failed"
+    fi
     if [[ $rc -eq 1 ]]; then
       { echo "## $name failed (full log: $out)"; excerpt "$out"; echo; } >> "$run/fail-$round.txt"
       runlog "check $name: FAILED"; tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null; return 1

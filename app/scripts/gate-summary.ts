@@ -168,3 +168,11 @@ export function summarizeDocs(sizes: DocSize[]): Summary {
   if (over.length > 0) return { ok: false, detail: `over budget: ${over.map((d) => d.file).join(", ")} (${list})` };
   return { ok: true, detail: `${list}${sizes.every((d) => d.limit === null) ? " (reported only until S7 sets budgets)" : ""}` };
 }
+
+/** Engine-side, parser, unit or Find code: what the golden gate checks (CLAUDE.md: every engine build; brief section 8a step 3). */
+export const goldenPaths: readonly RegExp[] = [/^engine\/giac\//, /^app\/src\/engine\//, /^app\/src\/input\//, /^app\/src\/units\//, /^app\/scripts\/unit-case\.ts$/, /^tests\/golden\//, /^app\/scripts\/golden\.ts$/, /^find\//, /^tools\/find-index\//];
+/** Find data or its generator: the Find index must be generated again. */
+export const indexPaths: readonly RegExp[] = [/^find\//, /^tools\/find-index\//];
+
+export const selectsGolden = (files: readonly string[]): boolean => files.some((f) => goldenPaths.some((p) => p.test(f)));
+export const regeneratesIndex = (files: readonly string[]): boolean => files.some((f) => indexPaths.some((p) => p.test(f)));

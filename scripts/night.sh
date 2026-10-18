@@ -33,7 +33,7 @@ henri_prompt='You are henri, the night coordinator. Read docs/shifts/brief.md se
   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"   (after every 3 finished packages since the last pass, and at the end)
   scripts/pipeline.sh report                                                     (after the last pass and its FIX packages)
   SHIFT DONE                                                                     (after the report)
-A RESULT line in the log means that step is finished (MERGED, NOT MERGED or SKIPPED); never repeat a finished step. Follow the last Opus pass QUEUE line. Decide nothing else.'
+A RESULT line in the log means that step is finished (MERGED, NOT MERGED or SKIPPED); never repeat a finished step. Follow the last Opus pass QUEUE line. Decide nothing else. In a FIX prompt use no backtick and no dollar sign (the command is refused with them).'
 while (( steps < max_steps )); do
   n=$((steps + 1))
   # shellcheck disable=SC2016
@@ -43,7 +43,7 @@ while (( steps < max_steps )); do
     "SHIFT DONE") log "SHIFT DONE (night.sh)"; say "done"; exit 0;;
     scripts/pipeline.sh\ *)
       bare="$(sed -E 's/"[^"$`]*"//g' <<<"$cmd")"   # text inside plain double quotes may hold ; & | < > (no expansion there)
-      if [[ "$bare" =~ [\;\&\|\`\$\<\>] || "$cmd" == *[\`\$]* ]]; then bad=$((bad + 1)); log "night.sh: refused command with shell metacharacters"; (( bad >= 2 )) && exit 1; steps=$((steps + 1)); continue; fi
+      if [[ "$bare" =~ [\;\&\|\`\$\<\>] || "$cmd" == *[\`\$]* ]]; then bad=$((bad + 1)); log "night.sh: refused command with shell metacharacters"; (( bad >= 2 )) && { log "STOPPED night.sh: henri's reply refused twice"; say "STOPPED night.sh: henri's reply refused twice"; exit 1; }; steps=$((steps + 1)); continue; fi
       bad=0; set +e
       # henri's package commands always audit with sonnet (brief 0c); pass and report take no such option
       [[ "$cmd" == scripts/pipeline.sh\ pass\ * || "$cmd" == "scripts/pipeline.sh report" || "$cmd" == *--audit-model* ]] || cmd="$cmd --audit-model sonnet"
@@ -60,12 +60,12 @@ while (( steps < max_steps )); do
       fi
       rm -f "$cmdout"
       if [[ $rc -eq 75 ]]; then
-        limits=$((limits + 1)); (( limits > 6 )) && { log "STOPPED night.sh: usage limit 6 times"; exit 1; }
+        limits=$((limits + 1)); (( limits > 6 )) && { log "STOPPED night.sh: usage limit 6 times"; say "STOPPED night.sh: usage limit 6 times"; exit 1; }
         log "night.sh: usage limit, waiting $limit_wait s"; sleep "$limit_wait"
       fi;;
     *)
-      bad=$((bad + 1)); (( bad >= 2 )) && { log "STOPPED night.sh: henri gave no pipeline command twice"; exit 1; };;
+      bad=$((bad + 1)); (( bad >= 2 )) && { log "STOPPED night.sh: henri gave no pipeline command twice"; say "STOPPED night.sh: henri gave no pipeline command twice"; exit 1; };;
   esac
   steps=$((steps + 1))
 done
-log "STOPPED night.sh: $max_steps steps"; exit 1
+log "STOPPED night.sh: $max_steps steps"; say "STOPPED night.sh: $max_steps steps"; exit 1

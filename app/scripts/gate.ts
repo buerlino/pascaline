@@ -11,7 +11,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } 
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
+  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
   type DocSize, type Summary,
 } from "./gate-summary.ts";
 
@@ -61,9 +61,6 @@ const changed = ((): string[] | null => {
   const r = spawnSync("git", ["diff", "--name-only", `${base}...`], { cwd: repo, encoding: "utf8" });
   return r.status === 0 ? r.stdout.split("\n").filter(Boolean) : null;
 })();
-/** Engine-side or parser code: what the golden gate checks (CLAUDE.md: every engine build; brief section 8a step 3). */
-const goldenPaths = [/^engine\/giac\//, /^app\/src\/engine\//, /^app\/src\/input\//, /^tests\/golden\//, /^app\/scripts\/golden\.ts$/];
-
 interface Check {
   name: string;
   skip?: () => string | null;
@@ -80,7 +77,7 @@ const checks: Check[] = [
   },
   {
     name: "index",
-    skip: () => (existsSync(join(app, "src/find/_gen/find-index.json")) ? "present" : null),
+    skip: () => (existsSync(join(app, "src/find/_gen/find-index.json")) && !(changed !== null && regeneratesIndex(changed)) ? "present" : null),
     run: () => {
       // in a worktree: the main checkout's tarball cache and libqalculate build (rules section 5)
       const r = run("index", "npm", ["run", "index"], {
@@ -141,8 +138,7 @@ const checks: Check[] = [
     skip: () => {
       if (quick) return "--quick";
       if (changed === null) return null; // cannot diff: run it (the line says so)
-      const hit = changed.filter((f) => goldenPaths.some((p) => p.test(f)));
-      return hit.length === 0 ? `no engine or parser change against ${base}` : null;
+      return !selectsGolden(changed) ? `no engine, parser, unit or Find change against ${base}` : null;
     },
     run: () => {
       const engine = giacOut();
