@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // A chip's value as Giac text (docs/04 section 2.8). Part of the parser chunk: only the parser needs it.
-import { SerializeError } from "./errors.ts";
+import { parseError } from "../i18n/enParser.ts";
 import { equalityTest } from "./emit.ts";
 
 const DECIMAL = /^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/;
@@ -14,7 +14,7 @@ const DECIMAL = /^([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/;
  */
 export function chipToGiac(value: string): string {
   const v = value.trim();
-  if (v === "" || /;|:=/.test(v)) throw new SerializeError("chip value is not a number or expression");
+  if (v === "" || /;|:=/.test(v)) throw parseError("parse.chipValueIs");
   const m = DECIMAL.exec(v);
   if (m && ((m[2] ?? "") !== "" || (m[3] ?? "") !== "")) {
     const sign = m[1] === "-" ? "-" : "";
@@ -46,7 +46,7 @@ interface Part {
  * (a test beside another relation, a string) cannot be carried as typed and is refused.
  */
 function valueTests(v: string): string {
-  if (v.includes('"')) throw new SerializeError("chip value holds a test and a string");
+  if (v.includes('"')) throw parseError("parse.chipValueHolds");
   let i = 0;
   const group = (close: string): string => {
     const pieces: string[] = [];
@@ -71,11 +71,11 @@ function valueTests(v: string): string {
       } else if (c === close) {
         endPiece();
         return pieces.join(",");
-      } else if (CLOSE.includes(c)) throw new SerializeError("chip value has unbalanced brackets");
+      } else if (CLOSE.includes(c)) throw parseError("parse.chipValueHas");
       else if (c === ",") endPiece();
       else run += c;
     }
-    if (close !== "") throw new SerializeError("chip value has unbalanced brackets");
+    if (close !== "") throw parseError("parse.chipValueHas");
     endPiece();
     return pieces.join(",");
   };
@@ -86,15 +86,15 @@ function valueTests(v: string): string {
 function piece(parts: Part[]): string {
   const at = parts.flatMap((p, k) => (p.top ? [...p.text.matchAll(/==|<>|!=/g)].map((m) => ({ k, i: m.index, rel: m[0] })) : []));
   if (at.length === 0) return parts.map((p) => p.text).join("");
-  if (at.length > 1) throw new SerializeError("chip value holds two tests side by side");
+  if (at.length > 1) throw parseError("parse.chipValueHolds2");
   const { k, i, rel } = at[0]!;
   const split = parts[k]!.text;
   const before = [...parts.slice(0, k).map((p) => p.text), split.slice(0, i)];
   const after = [split.slice(i + 2), ...parts.slice(k + 1).map((p) => p.text)];
   const rest = [...parts.filter((p, n) => p.top && n !== k).map((p) => p.text), split.slice(0, i), split.slice(i + 2)].join(" ");
-  if (/[=<>!]|\b(and|or|xor|not)\b/.test(rest)) throw new SerializeError("chip value holds a test beside another relation");
+  if (/[=<>!]|\b(and|or|xor|not)\b/.test(rest)) throw parseError("parse.chipValueHolds3");
   const a = before.join("").trim();
   const b = after.join("").trim();
-  if (!a || !b) throw new SerializeError("chip value holds a test with a missing side");
+  if (!a || !b) throw parseError("parse.chipValueHolds4");
   return equalityTest({ s: `(${a})`, p: 5 }, { s: `(${b})`, p: 5 }, rel !== "==").s;
 }

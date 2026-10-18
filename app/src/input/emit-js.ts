@@ -2,7 +2,8 @@
 // MathJSON -> JavaScript expression source for plotting: real numbers only, one or more named variables,
 // fully parenthesised, so the result can be compiled once with new Function and called allocation-free.
 // 1/0 gives Infinity and invalid points (sqrt(-1), ln(-1)) give NaN, which curve renderers treat as a break.
-import { SerializeError, oddIndex, oddRootExponent, type Json } from "./emit.ts";
+import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
+import { oddIndex, oddRootExponent, type Json } from "./emit.ts";
 import { parseLatex } from "./parse.ts";
 
 const FN1: Record<string, string> = {
@@ -20,13 +21,13 @@ function num(e: Json): string | undefined {
 
 function js(e: Json, vars: ReadonlySet<string>): string {
   const n = num(e);
-  if (n !== undefined) return /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(n) ? n : fail(`bad number ${n}`);
+  if (n !== undefined) return /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(n) ? n : fail("parse.badNumber", { n });
   if (typeof e === "string") {
     if (vars.has(e)) return e;
     if (e in CONST) return CONST[e] as string;
-    return fail(`unknown name ${e}`);
+    return fail("parse.unknownName", { e });
   }
-  if (!Array.isArray(e)) return fail("unsupported node");
+  if (!Array.isArray(e)) return fail("parse.unsupportedNode2");
   const h = e[0] as string;
   const a = e.slice(1) as Json[];
   const r = (i: number): string => js(a[i] as Json, vars);
@@ -55,11 +56,11 @@ function js(e: Json, vars: ReadonlySet<string>): string {
     case "Min": return `Math.min(${a.map((_, i) => r(i)).join(",")})`;
     default:
       if (h in FN1 && a.length === 1) return `${FN1[h]}(${r(0)})`;
-      return fail(`unsupported ${h}`);
+      return fail("parse.unsupported", { h });
   }
 }
-function fail(msg: string): never {
-  throw new SerializeError(`cannot plot: ${msg}`);
+function fail(key: ParseKey, vars?: ParseVars): never {
+  throw parseError("parse.cannotPlot", { msg: parseText(key, vars) });
 }
 
 /** JS source of the expression, e.g. `(Math.sin(x)*Math.pow(x,3))`. */

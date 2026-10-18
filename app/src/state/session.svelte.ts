@@ -3,7 +3,7 @@
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
 import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat, type UserName } from "../calc/port.ts";
 import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
-import { SerializeError } from "../input/errors.ts";
+import { parseFailText } from "../input/errors.ts";
 import { loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
 import { EngineMemoryError } from "../engine/types.ts";
@@ -472,7 +472,7 @@ export class Session {
       }
     } catch (e) {
       live.status = "error";
-      live.text = e instanceof SerializeError ? e.message : String(e);
+      live.text = parseFailText(e);
       return;
     }
     const s: CalcSettings = { digits: this.settings.digits, angle: this.settings.angle, format: this.settings.format };
