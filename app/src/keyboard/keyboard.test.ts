@@ -105,6 +105,23 @@ describe("keyboard spec", () => {
     expect(labelFor(sin, true, false)).toBe("sin⁻¹");
   });
 
+  it("in the CAS view Alpha types lower case and Shift + Alpha the capital; the faces follow (R58)", () => {
+    const a = keyboard.byId.get("vars") as Key;
+    const d3 = keyboard.byId.get("d3") as Key;
+    expect(actionFor(a, false, true, false, true)).toEqual({ kind: "type", text: "a" });
+    expect(actionFor(a, true, true, false, true)).toEqual({ kind: "type", text: "A" });
+    expect(actionFor(a, false, true, false, false)).toEqual({ kind: "type", text: "A" }); // Home unchanged
+    expect(labelFor(a, false, true, true)).toBe("a");
+    expect(labelFor(a, true, true, true)).toBe("A");
+    expect(labelFor(d3, true, true, true)).toBe(d3.label.alpha);
+    expect(actionFor(a, true, false, false, true)).toEqual(actionFor(a, true, false)); // the Shift layer is unchanged
+    for (const k of keyboard.keys)
+      for (const [s, al] of [[false, true], [true, true]] as const) {
+        const act = actionFor(k, s, al, false, true);
+        if (k.actions.alpha?.kind === "type" && act?.kind === "type") expect(labelFor(k, s, al, true), `${k.id} ${s}`).toBe(act.text);
+      }
+  });
+
   it("labelFor follows layerAction: the face is lower case exactly when a tap types lower case (F40)", () => {
     const a = keyboard.byId.get("vars") as Key;
     const d3 = keyboard.byId.get("d3") as Key;

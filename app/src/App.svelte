@@ -475,6 +475,8 @@
       else if (!((settings && settingsPress(w.key, w.layer)) || (shell.sheet && sheetPress(w.key, w.layer)))) run(w.key, w.mods); // a page or sheet opened meanwhile takes its keys
   }
 
+  /** The CAS view is under the keys (no app on top): Alpha types lower case there (R58). */
+  const casKeys = $derived(session.view === "cas" && shell.app === null);
   const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols"];
   /** Does this key open a sheet? (Mode and Settings load the view with their lists.) */
   function opensSheet(key: Key, mods: Mods): boolean {
@@ -541,7 +543,7 @@
 
   /** The key's action in the layer it was pressed in. */
   function run(key: Key, mods: Mods): void {
-    const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line");
+    const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line", casKeys);
     if (!action) return dead();
     if (shell.app === null && historyKey(action)) return;
     if (action.kind === "special") return special(action.name);
@@ -667,6 +669,7 @@
       alphaLock={session.alphaLock}
       capsLock={session.capsLock}
       shiftLock={session.shiftLock}
+      cas={casKeys}
       sheet={shell.sheet ? { filter: shell.sheet.level.filterable } : undefined}
       onpress={press}
       ontouch={touched}
