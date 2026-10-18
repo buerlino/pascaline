@@ -1,0 +1,6 @@
+// pascaline library 1
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// wrong test
+sqq(x):=x^2
+// test: sqq(3) == 10

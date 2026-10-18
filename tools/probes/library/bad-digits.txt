@@ -1,0 +1,5 @@
+// pascaline library 1
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// sets the digits
+h(x):={Digits:=5; x}
