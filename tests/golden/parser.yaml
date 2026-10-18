@@ -487,7 +487,7 @@ cases:
   - { id: "chip-res-e10", latex: "\\cos\\res{1}{0.5}\\res{2}{0.25}", error: true, chips: { "res:1": { value: "1/2", exact: true }, "res:2": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-e11", latex: "\\ln2\\res{1}{0.5}", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-e12", latex: "\\res{1}{0.5}\\ 3", error: true, chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "a space between a result and a number: still F25 (R51)" }
-  - { id: "chip-res-09", latex: "\\res{1}{1\\,000}\\times2", expect: "2000", chips: { "res:1": { value: "1000", exact: true } }, source: "derived", group: "chips", note: "spacing in what a chip draws is not read (R51)" }
+  - { id: "chip-res-13", latex: "\\res{1}{1\\,000}\\times2", expect: "2000", chips: { "res:1": { value: "1000", exact: true } }, source: "derived", group: "chips", note: "spacing in what a chip draws is not read (R51)" }
   - { id: "chip-res-09", latex: "\\res{1}{0.5}\\times3", expect: "3/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips", note: "with × it is the product" }
   - { id: "chip-res-10", latex: "3\\times\\res{1}{0.5}", expect: "3/2", chips: { "res:1": { value: "1/2", exact: true } }, source: "derived", group: "chips" }
   - { id: "chip-res-11", latex: "\\res{1}{0.5}\\times\\res{2}{0.25}", expect: "1/8", chips: { "res:1": { value: "1/2", exact: true }, "res:2": { value: "1/4", exact: true } }, source: "derived", group: "chips" }
