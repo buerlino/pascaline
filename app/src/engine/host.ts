@@ -275,19 +275,27 @@ export class EngineHost {
     // Assumptions and inputs kept as typed go alone. A batch that printed an error or warning (not the `// Success` notes of functions) or returned an error is run again one command at a
     // time (values and functions can be set twice), so one bad entry never takes the entries after it down (G19).
     let batch: string[] = [];
+    let names: string[] = [];
     const flush = (): void => {
       if (!batch.length) return;
       this.giac.clearMessages();
       const out = this.giac.eval(batch.join(";") + ";");
       // Any message or error result: a syntax error, or a reserved name that aborts the rest of the batch (`pi:=3`).
-      if (batch.length > 1 && (/error|reserved word|not allowed|warning/i.test(this.giac.messages()) || /^GIAC_ERROR/.test(out))) for (const c of batch) this.giac.eval(c);
+      if (batch.length > 1 && (/error|reserved word|not allowed/i.test(this.giac.messages()) || /^GIAC_ERROR/.test(out))) {
+        // Errors only: a warning (`declared as global`) is no reason to run twice. The names are purged first, so a
+        // rerun sees them as free again, as in the first run (G3: S:=(K*x+1) must not meet a K set by the aborted run).
+        for (const n of names) this.giac.eval(`purge(${n})`);
+        for (const c of batch) this.giac.eval(c);
+      }
       batch = [];
+      names = [];
     };
     for (const e of replayOrder(entries)) {
       const plain = (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!);
       for (const c of e.cmds) this.need(c); // a replayed definition may use one of ours
       if (plain) {
         batch.push(e.cmds[0]!);
+        names.push(e.name);
         if (batch.length >= REPLAY_BATCH) flush();
       } else {
         flush();

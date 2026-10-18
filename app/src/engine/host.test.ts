@@ -369,7 +369,7 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
   it("G19: a bad entry with matched brackets inside a batch is rerun one at a time; its neighbours are set", async () => {
     const { giac, calls, raw } = await counting();
     new EngineHost(giac).restore([mk("b1", "var", "b1:=(1)"), mk("bad", "var", "bad:=(2+)"), mk("b3", "var", "b3:=(3)")]);
-    expect(calls.length).toBe(4); // one batch, then the three one at a time
+    expect(calls.length).toBe(7); // one batch, three purges, then the three one at a time
     expect(raw.eval("b1+b3")).toBe("4");
   });
 
@@ -377,5 +377,20 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
     const { giac, raw } = await counting();
     new EngineHost(giac).restore([mk("c1", "var", "c1:=(1)"), mk("pi", "var", "pi:=(3)"), mk("c3", "var", "c3:=(3)"), mk("c4", "fn", "c4(x):=x+1")]);
     expect(raw.eval("c1+c3+c4(0)")).toBe("5"); // derived: 1+3+1
+  });
+
+  it("a rerun keeps G3's order: an early entry, the name it uses and a refused entry in one batch (S is K*x+1)", async () => {
+    const { giac, raw } = await counting();
+    new EngineHost(giac).restore([mk("S", "var", "S:=(K*x+1)", { early: true }), mk("K", "var", "K:=(5)"), mk("pi", "var", "pi:=(3)")]);
+    expect(raw.eval("S")).toBe("K*x+1");
+    expect(raw.eval("K")).toBe("5");
+  });
+
+  it("functions that use a global (a warning, no error) do not make the batch run twice", async () => {
+    const { giac, calls, raw } = await counting();
+    const log = Array.from({ length: 50 }, (_, i) => mk(`g${i}`, "fn", `g${i}(x):=ga*x+${i}`));
+    new EngineHost(giac).restore(log);
+    expect(calls.length).toBe(Math.ceil(50 / REPLAY_BATCH));
+    expect(raw.eval("g3(2)")).toBe("ga*2+3");
   });
 });
