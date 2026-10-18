@@ -27,7 +27,7 @@ tasks:
     title: Parallel combination 4.7k ‖ 10k (resistors)
     milestone: 6
     status: pending
-    needs: "par() from EN7 (milestone 6) through Find, prefix chips (milestone 5, gated by t03)"
+    needs: "Find (R4a), prefix chips (milestone 5, gated by t03)"
     budget: 14
     # Math, p a r, Enter (par(), cursor inside); 4 . 7 chip-k , 1 0 chip-k, Enter. With 4700 typed the count is the same
     keys: [math, emark, vars, d8, enter, d4, dot, d7, {tap: "prefix:k"}, comma, d1, d0, {tap: "prefix:k"}, enter]
@@ -106,7 +106,7 @@ tasks:
     title: Nearest E24 value to 3.87k
     milestone: 6
     status: pending
-    needs: "eseries() from EN7 (milestone 6) through Find"
+    needs: "Find (R4a)"
     budget: 12
     # Math, e s Enter (eseries(), cursor inside), 2 4 , 3 8 7 0, Enter
     keys: [math, frac, d9, enter, d2, d4, comma, d3, d8, d7, d0, enter]

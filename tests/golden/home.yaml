@@ -183,3 +183,13 @@ cases:
   - { id: "g14f1-bmod-7.5-2", latex: "7.5\\bmod 2", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "the \\bmod operator emits pasmod, not irem" }
   - { id: "g14f1-bmod-x-3", latex: "x\\bmod 3", expect: "x-3*floor(x/3)", source: "derived", note: "irem(x,3) gave x, marked = (silent wrong answer); pasmod(x,3) = x-3*floor(x/3)" }
   - { id: "g14f1-eq-bare-decimal", latex: "x==0.5+y", expect: "(x==(0.5+y))", source: "derived", note: "the kept test shows the typed 0.5, not 5/10^1 (bare form)" }
+  # --- G30 (EN7a): par and eseries, our Giac definitions (homeEval.ts ENGINE_DEFINITIONS, eseries.ts tables) --------------
+  - { id: "fn-par", input: "par(4700,10000)", oracle: "F(4700*10000,4700+10000)", expect: "3197.27891156", mark: "≈", source: "derived", note: "470000/147, exact in Giac; task t01" }
+  - { id: "fn-par-3", input: "par(10,10,10)", oracle: "F(10,3)", expect: "3.33333333333", mark: "≈", source: "derived", note: "n-ary" }
+  - { id: "fn-par-zero", input: "par(0,5)", oracle: "F(0)", expect: "0", mark: "=", source: "derived", note: "a short circuit in parallel: exactly 0" }
+  - { id: "fn-eseries", input: "eseries(24,3870)", oracle: "F(3900)", expect: "3900", mark: "=", source: "derived", note: "IEC 60063 E24: 3.6, 3.9, 4.3; task t06" }
+  - { id: "fn-eseries-e12", input: "eseries(12,4.6)", oracle: "F('4.7')", expect: "4.7", mark: "=", source: "derived", note: "E12: 3.9, 4.7, 5.6; the typed decimal is exact" }
+  - { id: "fn-eseries-e96", input: "eseries(96,0.00123)", oracle: "F('0.00124')", expect: "0.00124", mark: "=", source: "derived", note: "E96 in x's decade: 1.21, 1.24" }
+  - { id: "fn-eseries-tie", input: "eseries(24,3.45)", oracle: "F('3.6')", expect: "3.6", mark: "=", source: "derived", note: "3.45 is the absolute midpoint of 3.3 and 3.6; nearest is the smaller ratio (3.45^2 = 11.9025 > 3.3·3.6 = 11.88), so 3.6" }
+  - { id: "fn-eseries-ratio", input: "eseries(6,1.24)", oracle: "F('1.5')", expect: "1.5", mark: "=", source: "derived", note: "absolute nearest is 1.0 (0.24 < 0.26), ratio nearest is 1.5 (1.24^2 = 1.5376 > 1.0·1.5): the ratio decides" }
+  - { id: "fn-eseries-n-error", input: "eseries(7,5)", expect: "GIAC_ERROR: \"eseries: n must be 6, 12, 24, 48, 96 or 192\" Error: Bad Argument Value", source: "derived", note: "an n outside E6, E12, E24, E48, E96, E192 is an error naming them" }

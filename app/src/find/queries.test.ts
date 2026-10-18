@@ -23,10 +23,10 @@ const doc = parse(readFileSync(join(here, "../../../tests/tasks/find-queries.yam
 const active = doc.queries.filter((q) => q.status !== "pending");
 
 describe("find-queries.yaml", () => {
-  it("has 100 active phrases and 10 pending ones, no duplicates", () => {
+  it("has 102 active phrases and 8 pending ones, no duplicates", () => {
     expect(doc.schema).toBe(1);
-    expect(active.length).toBe(100);
-    expect(doc.queries.length - active.length).toBe(10);
+    expect(active.length).toBe(102);
+    expect(doc.queries.length - active.length).toBe(8);
     expect(new Set(doc.queries.map((q) => q.query)).size).toBe(doc.queries.length);
     for (const q of doc.queries) expect(q.query, q.query).toBe(q.query.toLowerCase()); // Find types lower case only
   });

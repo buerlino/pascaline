@@ -189,7 +189,7 @@ A read-and-probe pass over the app (sandra; brief section 0h; decisions.md "Feat
 2. **G29 + A12. The defs replay** (A4a point 2: 291 ms against 50 ms on the Tab One): measure the calls per entry, batch them, re-measure on the device. *Night, then day; gorge, annabell.* **G29 done** (branch `p1/gorge-m4-replay`: 200 Giac calls became 8, probe `replay-cost.mjs`); A12 re-measures on the device.
 3. **A11. Paste and Share on Android** (A4a point 5): the Capacitor clipboard and share plugins (MIT, offline). *Day; annabell.*
 4. [x] **R54. The list key:** Shift + 8 inserts `{ }`; `[ ]` and the growing matrix stay EN5. **Done** (`248a4eb`, R54): the key's Shift layer inserts `\left\{#0\right\}`, the parser refuses an empty list, and `mean`/`stddevp` of t09's readings give 9.81 `=` and 0.0182574185835 `≈`. t09's baseline is (sum) ÷ 10, 55 presses, until Find (decisions.md "R54"). *Night; ron, Opus.*
-5. **G30. `par` and `eseries`** as engine definitions with golden cases and tier-0 Find entries (EN7a); tasks t01 and t06 go active with Find. *Night; gorge.*
+5. [x] **G30. `par` and `eseries`** as engine definitions with golden cases and tier-0 Find entries (EN7a); tasks t01 and t06 go active with Find. *Night; gorge.* **Done** (G30): definitions load on first use; t01 and t06 stay pending until R4a, the Opus pass flips them.
 6. **R55. Digit groups in drawn results:** thin space, groups of three on both sides of the point, copy text plain; removal test two weeks. *Day; ron.*
 7. **R57. The decimal comma as a setting:** key faces, drawn results, copy and paste (the parser takes the option already). After R49. *Day; ron.*
 8. **G31. FIX never hides a nonzero value** (4.7E-6 draws as `0.0000` today), after G2 item 60. *Night; gorge.*
