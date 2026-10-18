@@ -72,6 +72,24 @@ function storedNames(s: string): string[] {
   for (const m of s.matchAll(/(?<![A-Za-z0-9_.])[A-Za-z][A-Za-z0-9_]*/g)) {
     const name = m[0];
     let i = m.index + name.length;
+    // A loop variable (`for k from`, `for k in`, `pour k de`) is stored at every iteration.
+    if (/(?:^|[^A-Za-z0-9_.])(?:for|pour)\s+$/.test(s.slice(0, m.index)) && /^\s+(?:from|in|de)\b/.test(s.slice(i))) {
+      out.push(name);
+      continue;
+    }
+    // `g(y):=…` inside a body defines the global function g.
+    if (s[i] === "(") {
+      let d = 0;
+      let j = i;
+      for (; j < s.length; j++) {
+        if (s[j] === "(") d++;
+        else if (s[j] === ")" && --d === 0) break;
+      }
+      if (d === 0 && /^\s*:=/.test(s.slice(j + 1))) {
+        out.push(name);
+        continue;
+      }
+    }
     for (;;) {
       while (/\s/.test(s[i] ?? "")) i++;
       if (s[i] !== "[") break;
@@ -173,6 +191,8 @@ export function parseLibrary(input: Uint8Array | string): LibFile {
     if (word) throw new LibError(at, `the body changes the engine's state (${word[0]})`);
     const g = globalAssigned(block);
     if (g) throw new LibError(at, `the body assigns ${g}, which is not local: declare it with \`local ${g};\``);
+    const stored = asg ? storedNames(NOSTR(asg.rhs))[0] : undefined;
+    if (stored) throw new LibError(at, `the value assigns ${stored}, which is not local: a value must not itself define or change anything`);
     if (asg && isStateful(asg.rhs)) throw new LibError(at, "a value must not itself define or change anything");
     if (!NAME.test(def.name)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
     if (def.name in ENGINE_DEFINITIONS || def.name.startsWith("pasc_") || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
