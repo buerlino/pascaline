@@ -629,11 +629,9 @@ class Parser {
           return ["Abs", e];
         }
         if (tok.v === "{") {
-          // L6: braces make a list, as the reference keyboard's { } key does (Giac input has no other use for them here)
-          if (this.peek()?.t === "close" && (this.peek() as Tok).v === "}") {
-            this.pos++;
-            return ["List"];
-          }
+          // L6: braces make a list, as the list key (Shift + 8, R54) does (Giac input has no other use for them here); an
+          // empty one is refused, as empty parentheses are: Giac's [] is no answer to a list the user did not fill
+          if (this.peek()?.t === "close" && (this.peek() as Tok).v === "}") throw parseError("parse.emptyList");
           return ["List", ...this.list("}")];
         }
         if (tok.v === "floor" || tok.v === "ceil") {

@@ -570,4 +570,5 @@ export function atomStart(mf: Field, o: number): number {
   return s;
 }
 
+/** A bracket pair: ( ), | |, the evaluate-at bar, and the list braces { } of Shift + 8 (R54), whose body is one box. */
 export const isPair = (mf: Field, o: number): boolean => latexAt(mf, o).startsWith("\\left");
