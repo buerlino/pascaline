@@ -239,3 +239,6 @@ export function markFor(r: NumericResult, mode: FmtMode | undefined, ctx: Displa
 export function markText(m: MarkInfo): string {
   return m.mark === "⚠" && m.n !== undefined && !m.warn ? `⚠ ${m.n}` : m.mark;
 }
+
+/** A result with no confirmed digit (a bare ⚠ with n = 0): it is drawn without its number, in the history and as a chip. */
+export const noDigit = (m: MarkInfo | null): boolean => m?.mark === "⚠" && m.n === 0 && !m.warn;

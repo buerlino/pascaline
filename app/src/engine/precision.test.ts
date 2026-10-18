@@ -7,6 +7,7 @@ import { EngineHost } from "./host.ts";
 import { defaultHomeSettings, type HomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { markOf, type MarkInfo } from "./format.ts";
+import { MAX_EVAL_DIGITS } from "./numeric.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 
 describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
@@ -17,19 +18,31 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
   const home = (input: string, digits = 12) => host.home(input, { ...defaultHomeSettings, digits } satisfies HomeSettings).result;
   const mark = (input: string, digits = 12): MarkInfo | null => markOf(home(input, digits), { format: "STD", digits });
 
-  it("G23: sin(10^100) is confirmed at P+80, sin(10^2000) shows no digit and costs little (oracle: mpmath at 150 digits)", () => {
+  it("G23: sin(10^100) is confirmed at P+80, sin(10^2000) shows no digit and its escalation is bounded (oracle: mpmath at 150 digits)", async () => {
     // oracle: sin(10^100) = -0.37237612366127668826… (mpmath, 150 digits); Giac's 40- and 60-digit values are wrong.
     const r = home("sin(10^100)");
     expect(r.display).toBe("-0.372376123661");
     expect(r.reliableDigits).toBeGreaterThanOrEqual(12);
-    const t0 = performance.now();
-    const hard = home("sin(10^2000)");
-    const ms = performance.now() - t0;
+    // Deterministic cost bound: no evalf asks for more than MAX_EVAL_DIGITS digits (the 50 ms figure is the serial
+    // probe tools/probes/digits-cost.ts; a wall-clock assertion fails under the parallel test run).
+    const { giac } = await loadNodeGiac();
+    const precs: number[] = [];
+    const counted = new Proxy(giac, {
+      get(target, key) {
+        const v = Reflect.get(target, key) as unknown;
+        if (key !== "eval" || typeof v !== "function") return v;
+        return (code: string): string => {
+          const m = /^evalf\(.*,(\d+)\)$/s.exec(code);
+          if (m) precs.push(Number(m[1]));
+          return (v as (c: string) => string).call(target, code);
+        };
+      },
+    });
+    const hard = new EngineHost(counted).home("sin(10^2000)", defaultHomeSettings).result;
     expect(hard.reliableDigits).toBe(0);
     expect(markOf(hard, { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
-    // The criterion is 50 ms per result on the desktop.
-    console.log(`sin(10^2000): ${ms.toFixed(1)} ms`);
-    expect(ms).toBeLessThan(50);
+    expect(precs.length).toBeGreaterThan(2);
+    expect(Math.max(...precs)).toBeLessThanOrEqual(MAX_EVAL_DIGITS);
   });
 
   it("1/4 is = and 1/3 is ≈ (derived; docs/04 2.3 #9)", () => {
