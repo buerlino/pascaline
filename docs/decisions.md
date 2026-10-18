@@ -7,6 +7,9 @@ Phase 0 decisions (D1–D9, P1, P2 and the user's answers of 2026-10-11) are in 
 
 The owner's open items are in [backlog.md](backlog.md), "Needs the user". Proposals still waiting for a yes or no are below; once decided, an entry moves to "Decided proposals".
 
+- **2026-10-18 R24af1: units without an exact factor never make a pair. OPEN.** The slot counts a Find id such as kDa as k + Da only when the index gives both an exact `si` and the same `dim`. Da, kDa and u have no `si` (a measured value), so k + Da reads "kilodalton" in the warning colour.
+  - **Recommendation:** gorge gives such units their CODATA factor as a decimal fraction in the index, or marks a known pair in the generator; until then the mark stays.
+  - **Why:** a mark on a true pair costs one colour; a missing mark on a false pair (m + in as "minute") gives a wrong reading.
 - **2026-10-18 G33: the library replay misses G29's budget about tenfold; what gates R59. OPEN (Opus pass 10).** 200 library programs replay in about 21 ms (median) on the desktop; at G29's desktop-to-Tab One ratio (291/10.8) that is about 570 ms on the Tab One against the 50 ms budget (G33's report and its printed test). G33 merges after its fix package G33f1 with this recorded as not met, because nothing reaches the import before R59 (defaults, Opus pass 10).
   - **Recommendation:** R59 starts only after A12 has measured a 200-program library on the Tab One; if that is over 50 ms, a gorge package for lazy definition of functions (r10 section 3.2: a function is defined on its first use, not at start) comes before R59.
   - **Why:** the replay runs on every start, so an imported library would cost every user half a second of start-up on the slowest device; the estimate is a ratio, not a measurement, so A12 decides whether the lever is needed. **Would change if** A12 measures the replay inside 50 ms.
