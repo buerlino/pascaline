@@ -65,6 +65,32 @@ units:
   - { id: ms, parts: "m:s" }
   - { id: mmol, parts: "m:mol" }
   - { id: kmol, parts: "k:mol" }
+  # structural, lumber, charge (spec/units-menu.yaml add_to_find; sizes in checks)
+  #   symbol the printed symbol where qalc's own is a product (kip, fbm)
+  #   text   the qalc text to evaluate where the id itself does not parse (qalc reads "kip" as k·i·p, "fbm" as femto-bar·m)
+  - { id: kip, text: "klbf", symbol: kip, parts: "k:lbf", names: [klbf], title: "Kip (1000 lbf)" }
+  - { id: fbm, text: "ft^2*in", symbol: fbm, parts: "ft^2 in", names: ["board foot", "board feet"], title: "Board foot" }
+  - { id: Ah, parts: "A h", names: ["ampere hour"], title: "Ampere hour" }
+  - { id: mAh, parts: "m:A h", names: ["milliampere hour"], title: "Milliampere hour" }
+
+# defined: units qalc lacks or has with another meaning, with an exact `si` (a product or quotient of decimals) and
+#   `dim` (the dimension key; "" = a pure count), `source` (derived or oracle) and `title`; optional `names`, `symbol`.
+#   `replace: true` takes the place of qalc's unit of that id. No checks entry: the definition is the size.
+# dropNames: names taken off another item (the unit that now owns them).
+#
+# Why some ids the specs mention are not units of their own (G7): `mmH2O` is qalc's mmWC (name "mmH₂O", the unit
+#   pad and menu use `mmWC`); `percent` and `ppm` are qalc constants (variables.xml), not units, so Find does not list
+#   them and a unit slot cannot hold them (`%` gets no unit cell).
+defined:
+  # the cycle unit (G25, decisions.md G15): a revolution counts cycles, a pure number, so rev/s is a frequency like Hz
+  # and rpm = 1 rev/min = 1/60 Hz with no 2π. qalc's rpm is π/30 rad/s (the 2π trap); `tr` (turn) stays 2π rad.
+  - { id: rev, title: "Revolution (cycle count)", names: [revolution, cycle], si: "1", dim: "", source: derived }
+  - { id: rpm, title: "Revolutions per Minute (RPM)", si: "1/60", dim: "s-1", source: derived, replace: true }
+  # ton of refrigeration: 12 000 Btu_IT/h (derived: 12000 * 1055.05585262 / 3600 = 3516.852842066666... W)
+  - { id: TR, title: "Ton of refrigeration", names: ["ton of refrigeration", "refrigeration ton"], si: "12000*1055.05585262/3600", dim: "kg1m2s-3", source: derived }
+
+dropNames:
+  "unit:tr": [rev, revolution, cyc, cycle]
 
 checks:
   # length, mass, force, pressure (international yard and pound, 1959; standard gravity 9.80665)
@@ -102,6 +128,11 @@ checks:
   "unit:eV": { si: "1.602176634E-19" }
   "unit:kWh": { si: "3600000" }
   "unit:hp": { si: "550*0.3048*0.45359237*9.80665", override: "qalc 5.13.1 units.xml: hp is 745.6999871… W, the definition gives 745.6998715… W; to report upstream" }
+  # kip = 1000 lbf; board foot = 1 ft x 1 ft x 1 in (derived); ampere hour = 3600 C (derived)
+  "unit:kip": { si: "1000*0.45359237*9.80665" }
+  "unit:fbm": { si: "0.3048*0.3048*0.0254" }
+  "unit:Ah": { si: "3600" }
+  "unit:mAh": { si: "3.6" }
   # time
   "unit:h": { si: "3600" }
   "unit:d": { si: "86400" }
@@ -112,6 +143,8 @@ checks:
   "const:k_B": { value: "1.380649E-23" }
   "const:N_A": { value: "6.02214076E23" }
   "const:g_0": { value: "9.80665" }
+  "const:StdT": { value: "273.15" }
+  "const:StdP": { value: "101325" }
   "const:gas_constant": { value: "6.02214076E23*1.380649E-23" }
   "const:faraday": { value: "6.02214076E23*1.602176634E-19" }
   # CODATA 2022 (NIST allascii.txt) against qalc's own constants: the value and the 2-digit uncertainty, last digits only (G13)
@@ -130,4 +163,9 @@ checks:
   "const:d_220": { value: "1.920155716E-10", unc: "3.2E-18", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; to report upstream" }
 
 constants:
+  # Ours, not in qalc: the standard temperature and pressure that V_m101 goes with (spec/units-menu.yaml constants.define).
+  # Exact: 0 °C = 273.15 K by the definition of the Celsius scale, 1 atm = 101325 Pa by definition.
+  define:
+    StdT: { value: "273.15", unit: K, title: "Standard temperature", names: ["standard temperature", "stp temperature"], source: derived }
+    StdP: { value: "101325", unit: Pa, title: "Standard pressure", names: ["standard pressure", "stp pressure"], source: derived }
   skipCategories: ["Conversion factors for energy equivalents", "Particle Mass in u", "Particle Mass in MeV*c^(-2)"]

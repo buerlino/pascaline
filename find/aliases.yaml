@@ -46,6 +46,8 @@ aliases:
   "fn:atan": ["arctan"]
 
 symbols:
+  "const:StdT": "T_std"
+  "const:StdP": "p_std"
   "const:planck": "h"
   "const:planck2pi": "ℏ"
   "const:q_e": "e"
