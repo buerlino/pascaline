@@ -22,6 +22,8 @@ import {
   safePrecision,
   symbolicWhy,
   testSides,
+  showExp,
+  showExpResult,
   simpleAssignment,
   toExactLiterals,
   unquote,
@@ -329,7 +331,7 @@ export class EngineHost {
    * `ran`: the commands that redo it (kind "other" and functions); `facts`: the mark facts of the value it stored.
    */
   private defsAfter(input: string, ran: string[], preview: string, facts: NameFacts | null, view: "home" | "cas", digits: number): DefChange[] {
-    const base = { preview: preview.trim().slice(0, PREVIEW_MAX), view, time: Date.now() };
+    const base = { preview: showExp(preview.trim()).slice(0, PREVIEW_MAX), view, time: Date.now() };
     const purge = /^\s*purge\s*\(([^()]*)\)\s*$/.exec(input);
     let changes: DefChange[];
     const names = purge ? purge[1]!.split(",").map((x) => x.trim()) : [];
@@ -436,6 +438,11 @@ export class EngineHost {
   }
 
   private homeRun(typed: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
+    const out = this.homeRunRaw(typed, s);
+    return { ...out, result: showExpResult(out.result) };
+  }
+
+  private homeRunRaw(typed: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
     const input = expIgnoresAngle(typed, s.angle);
     this.need(input);
     this.useHomeMode(s);
@@ -494,6 +501,14 @@ export class EngineHost {
   }
 
   private casRun(typed: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
+    const out = this.casRunRaw(typed, s);
+    const r = out.result;
+    const result: CasResult = { ...r, text: showExp(r.text), latex: showExp(r.latex) };
+    if (r.numeric) result.numeric = showExpResult(r.numeric);
+    return { ...out, result };
+  }
+
+  private casRunRaw(typed: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     const input = expIgnoresAngle(typed, s.angle);
     this.need(input);
     this.useMode(`cas${JSON.stringify(s)}`, () => {

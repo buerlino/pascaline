@@ -277,6 +277,30 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   });
   // G26 (deep-dive item 17): the digits a constant's uncertainty leaves. All values derived by hand from the table:
   // G = 6.67430E-11 with σ = 0.00015E-11 (CODATA 2018, as the chip table holds it, input/chips.test.ts).
+  describe("pasexp stays off the screen in DEG (G21f1)", () => {
+    const deg = { ...defaultHomeSettings, angle: "deg" as const };
+    const casDeg = { ...defaultCasSettings, angle: "deg" as const };
+    it("Home g(x):=exp(i*x) shows exp in display, exact, full and latex; the log keeps pasexp (derived)", () => {
+      const r = host.home("g21(x):=exp(i*x)", deg);
+      for (const f of [r.result.display, r.result.exact, r.result.full, r.result.latex]) expect(f ?? "").not.toMatch(/pasexp/);
+      expect(r.result.display).toContain("exp(");
+      expect(r.defs).toMatchObject([{ set: { name: "g21", kind: "fn" } }]);
+      expect(JSON.stringify(r.defs)).toContain("pasexp");
+      expect(JSON.stringify(r.defs.map((d) => ("set" in d ? d.set.preview : ""))).includes("pasexp")).toBe(false);
+    });
+    it("g(90) is still -0.448073616129+0.893996663601*i in DEG (source: oracle, exp(i*90) as radians)", () => {
+      expect(host.home("g21(90)", deg).result.display).toBe("-0.448073616129+0.893996663601*i");
+    });
+    it("CAS g(x):=exp(i*x) shows exp in text and latex", () => {
+      const r = host.cas("g21c(x):=exp(i*x)", casDeg);
+      expect(r.result.text).not.toMatch(/pasexp/);
+      expect(r.result.latex).not.toMatch(/pasexp/);
+      expect(r.result.latex).toMatch(/exp/);
+      expect(r.defs.map((d) => ("set" in d ? d.set.preview : "")).join()).not.toMatch(/pasexp/);
+      host.home("purge(g21,g21c)", defaultHomeSettings);
+    });
+  });
+
   describe("uncDigits from a constant's uncertainty (G26)", () => {
     const G = { value: "6.67430E-11", unc: "0.00015E-11" };
     const C = { value: "299792458" };
