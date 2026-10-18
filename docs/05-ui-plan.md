@@ -96,7 +96,7 @@ One row of up to 6 touch buttons directly above the entry line. Its content foll
 Split by how often a thing changes:
 
 - **Mode sheet** (a tap on a status chip, or Shift + Apps): angle, format, digits, entry (textbook/one-line); the decimals of Fixed are in Settings › Format key cycle (R13). Each row is a sheet item over the keypad (3.1); ◀ ▶ change the value in place, a digit (or a tap) picks a row and steps its value forward with the sheet open, Enter closes; each value also has ◀ ▶ buttons for the thumb. Digits open a list of presets on a digit or Enter (4 6 8 10 12 15 20 25 30), with the current value marked; ◀ ▶ still step them by one. The sheet always opens on Angle (a chip opens it on its own row). DEG → RAD from anywhere: one tap on the chip (by keys Shift, Apps, ▶, Enter: 4 presses, 3 with a flick up on Apps); 20 digits: digits chip, Enter, 7 (by keys Shift, Apps, 3, 7).
-- **Settings** (the last item of the Mode sheet: Shift, Apps, 5): a page over everything (status line, viewport and keypad), because it is set once and the user wants to see all of it (R21). One scrolling page with sections instead of submenus: Format key cycle (its switches and Decimals), haptics (on/off, strength on Android only, length), Shift / Alpha taps, then decimal comma, theme (R12b), user keys (R4b), about and licences. Every value has ◀ ▶ buttons of at least 44 px; a switch toggles on a tap. Closed by ×, Android back or Esc; a hardware keyboard drives it with the sheet keys. No native `<select>` (they open the system picker, which the keypad cannot drive).
+- **Settings** (the last item of the Mode sheet: Shift, Apps, 5): a page over everything (status line, viewport and keypad), because it is set once and the user wants to see all of it (R21). One scrolling page with sections instead of submenus: Format key cycle (its switches and Decimals), haptics (on/off, strength on Android only, length), Shift / Alpha taps, then decimal comma, appearance (R50e), user keys (R4b), about and licences. Every value has ◀ ▶ buttons of at least 44 px; a switch toggles on a tap. Closed by ×, Android back or Esc; a hardware keyboard drives it with the sheet keys. No native `<select>` (they open the system picker, which the keypad cannot drive).
 - Mode sits on Shift + Apps (the G2's Info there is omitted; S2 point 4), and the Home and CAS cells hold the free keys U2 and U3 (R15b), so the duplicate Settings cell of finding 2 is gone.
 
 ### 3.5 History rows
@@ -121,7 +121,7 @@ docs/04 §3 sets the behaviour; this adds the layout so the work in milestone 4,
 The layout stays. Only the drawing changes:
 
 - **Legends get their own space** (fixes finding 1): every key reserves a legend line above the face; Shift legend top-right, Alpha top-left (as now), the face lower. In the top cluster the faces become shorter where they would not fit: `Home/CAS` → `Home` with the CAS key beside it, or the face shrinks to fit (one rule: never cut, never overlap).
-- **Contrast at least 4.5:1** for every face and legend in every layer and both themes (fixes finding 3). A test computes it from the CSS tokens.
+- **Contrast at least 4.5:1** for every face and legend in every layer and every theme (fixes finding 3). A test computes it from the CSS tokens.
 - **Dead keys** (today `special: none`) dim only in the layers where they do nothing. A press on one gives a short double haptic and no other effect.
 - **Press feedback** within one frame: the key darkens while the finger is down (keys fire on lift because of flicks, P11, so the feedback must start on touch).
 
@@ -139,7 +139,7 @@ The app is `max-width: 720px` and centred (`App.svelte` `.app`), so a Tab One in
 ### 3.10 Look and feel
 
 - **Design tokens** (one file, already partly in `style.css`): colours per role, the type scale (entry 28, result 26, input 22, UI 15, legend 11), spacing on a 4 px grid, radii, motion durations. No colour or size written directly in a component.
-- **Theme setting: System / Light / Dark** (owner, 2026-10-13). Default **Dark on Android**, **System in the PWA**.
+- **Appearance** (owner, 2026-10-13 and 2026-10-18, decisions.md "R50"): a family (Pascaline, Graphite, Solarized, Gruvbox, Nord), a brightness System / Light / Dark (default **Dark on Android**, **System in the PWA**), and the switches High contrast and Plain keys.
 - **Numbers:** one maths font for entry and results (MathLive's). UI text in the system font. Monospaced digits in tables (Num, Solve, the Find value column) so columns line up.
 - **App icons:** our own simple line icons in the Apps sheet beside the number and name.
 

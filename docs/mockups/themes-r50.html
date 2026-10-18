@@ -1,0 +1,492 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pascaline themes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=STIX+Two+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap">
+<style>
+/* Layout: a workbench. A sticky control strip on top, the live phone left with its audit right (stacked on a phone),
+   then every family side by side, then the full pass matrix. The page chrome stays quiet; the phone carries the colour. */
+:root {
+  --page: #f3f4f7; --ink: #131826; --sub: #555e74; --rule: #d3d8e2; --card: #ffffff; --accent: #0025b5; --on-accent: #ffffff;
+  --ok: #17663f; --bad: #a3231b;
+  --f-ui: "IBM Plex Sans", system-ui, sans-serif; --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --f-math: "STIX Two Text", "Cambria Math", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #0d111b; --ink: #e7eaf2; --sub: #9aa3b9; --rule: #273047; --card: #151b2a; --accent: #ffc233; --on-accent: #131826; --ok: #6fd39d; --bad: #ff8e86; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --page: #0d111b; --ink: #e7eaf2; --sub: #9aa3b9; --rule: #273047; --card: #151b2a; --accent: #ffc233; --on-accent: #131826; --ok: #6fd39d; --bad: #ff8e86; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 var(--f-ui); }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; }
+h1 { font-size: 1.75rem; line-height: 1.15; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-size: 1.2rem; margin: 0; text-wrap: balance; }
+h3 { font-size: 0.95rem; margin: 0; }
+p { margin: 0; max-width: 68ch; }
+.sub { color: var(--sub); }
+.eyebrow { font: 500 11px/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sub); }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+section { display: grid; gap: 12px; padding-top: 28px; margin-top: 28px; border-top: 1px solid var(--rule); }
+.intro { display: grid; gap: 10px; }
+.verdict { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.verdict div { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 10px 12px; display: grid; gap: 4px; align-content: start; }
+.verdict b { font-weight: 600; }
+
+/* control strip */
+.strip { position: relative; z-index: 10; background: var(--page); border-bottom: 1px solid var(--rule); margin-inline: -16px; padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.grp { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.grp > span { font: 500 11px var(--f-mono); color: var(--sub); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 2px; }
+.strip button { font: 500 13px var(--f-ui); padding: 5px 10px; min-height: 32px; border-radius: 6px; border: 1px solid var(--rule); background: var(--card); color: var(--ink); cursor: pointer; }
+.strip button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+@media (min-width: 761px) { .strip { position: sticky; top: env(safe-area-inset-top, 0px); } }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* stage */
+.stage { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 24px; align-items: start; margin-top: 16px; }
+@media (max-width: 760px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+.side { display: grid; gap: 14px; min-width: 0; }
+.about { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 12px; display: grid; gap: 6px; }
+.badge { display: inline-block; font: 600 12px var(--f-mono); padding: 1px 8px; border-radius: 10px; border: 1px solid currentColor; }
+.badge.ok { color: var(--ok); } .badge.bad { color: var(--bad); }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { border-bottom: 1px solid var(--rule); padding: 4px 8px; text-align: left; vertical-align: middle; }
+th { font-weight: 600; color: var(--sub); font-size: 12px; }
+td.num { text-align: right; font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--rule); vertical-align: -2px; margin-right: 4px; }
+.ok { color: var(--ok); font-weight: 600; } .bad { color: var(--bad); font-weight: 600; }
+details { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 12px; }
+details summary { cursor: pointer; font-weight: 600; }
+details[open] summary { margin-bottom: 8px; }
+.css { font: 12px/1.45 var(--f-mono); white-space: pre; overflow-x: auto; background: var(--page); border: 1px solid var(--rule); border-radius: 6px; padding: 8px; margin: 0; }
+
+/* the gallery of families */
+.gallery { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 8px; }
+.mini { flex: none; display: grid; gap: 6px; justify-items: start; background: none; border: 0; padding: 0; color: var(--ink); font: inherit; cursor: pointer; text-align: left; }
+.mini .zoom { zoom: 0.5; }
+.mini[aria-pressed="true"] .name { color: var(--accent); }
+.mini .name { font-weight: 600; font-size: 13px; }
+.matrix td, .matrix th { text-align: center; } .matrix td:first-child, .matrix th:first-child { text-align: left; }
+
+/* ---- the phone: every colour comes from the theme tokens set inline on .phone ---- */
+.phone { width: 392px; max-width: 100%; border-radius: 14px; overflow: hidden; background: var(--bg); color: var(--text); font: 14px/1.3 system-ui, sans-serif; border: 1px solid var(--line); position: relative; display: flex; flex-direction: column; }
+.phone .status { height: 28px; display: flex; align-items: center; gap: 5px; padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 13px; }
+.phone .place { font-weight: 700; padding: 0 4px; }
+.phone .grow { flex: 1; }
+.phone .chip { background: var(--chip-bg); color: var(--text); border-radius: 4px; padding: 0 6px; font-size: 12px; line-height: 18px; }
+.phone.plain .chip { box-shadow: inset 0 0 0 1px var(--line); }
+.phone .menu { font-size: 17px; padding: 0 4px; }
+.phone .view { position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-height: 236px; }
+.phone .hist { padding: 4px 10px 0; }
+.phone .row { padding: 5px 8px; border-bottom: 1px solid var(--line); border-left: 3px solid transparent; }
+.phone .row.picked { background: var(--pick); border-left-color: var(--focus); border-radius: 4px; }
+.phone .row .in { color: var(--muted); font: 16px/1.35 var(--f-math); }
+.phone .row .out { text-align: right; font: 20px/1.35 var(--f-math); font-variant-numeric: tabular-nums; }
+.phone .mk { font-family: system-ui, sans-serif; font-weight: 700; margin-right: 6px; font-size: 16px; }
+.phone .mk.approx { color: var(--approx); }
+.phone .row.err .out { font: 14px/1.4 system-ui, sans-serif; color: var(--error); }
+.phone .row.err .mk { color: var(--warn); }
+.phone .entry { margin: 6px 10px 8px; min-height: 52px; padding: 0 10px; border: 2px solid var(--line); border-radius: 10px; font: 24px var(--f-math); display: flex; align-items: center; gap: 4px; }
+.phone .entry .chip { font: 17px/26px system-ui, sans-serif; padding: 0 8px; }
+.phone .cur { width: 2px; height: 28px; background: var(--focus); }
+.phone .kp { padding: 4px 4px 6px; display: grid; gap: 4px; position: relative; }
+.phone .grid6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.phone .grid5 { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.phone .k { position: relative; display: grid; grid-template-rows: 12px 1fr 11px; min-width: 0; border-radius: 8px; background: var(--key-num); color: var(--text); line-height: 1; text-align: center; padding: 1px 4px 1px; }
+.phone.hc .k { box-shadow: inset 0 0 0 1.5px var(--line); }
+.phone .k .s, .phone .k .a { font-size: 10px; line-height: 11px; text-align: left; white-space: nowrap; overflow: hidden; }
+.phone .k .s { color: var(--shift); font-weight: 600; }
+.phone .k .a { color: var(--alpha); }
+.phone .k .p { align-self: center; font-size: 17px; white-space: nowrap; }
+.phone .k.c { min-height: 36px; grid-template-rows: 11px 1fr 2px; } .phone .k.c .p { font-size: 14px; }
+.phone .k.m { min-height: 46px; }
+.phone .k.num .p { font-size: 20px; }
+.phone .k.op { background: var(--key-op); } .phone .k.fn { background: var(--key-fn); } .phone .k.fn .p { font-size: 16px; }
+.phone .k.ctl { background: var(--key-ctl); } .phone .k.ctl .p { font-size: 15px; } .phone .k.nav { background: var(--key-nav); }
+.phone .k.enter { background: var(--key-enter); color: var(--on-enter); } .phone .k.enter .s, .phone .k.enter .p { color: var(--on-enter); font-weight: 600; }
+.phone .k.user { background: transparent; box-shadow: inset 0 0 0 1px var(--line); color: var(--text-dead); }
+.phone .k.user.set { background: var(--key-nav); box-shadow: inset 0 0 0 1px var(--muted); color: var(--text); }
+.phone .k.dead .p { color: var(--text-dead); }
+.phone .k.on { background: var(--key-on); color: var(--on-key-on); } .phone .k.on .p { font-weight: 700; color: var(--on-key-on); }
+.phone .shifted .k:not(.enter):not(.on):not(.dead) .p.sh { color: var(--shift); }
+/* Plain keys: no colour coding. Bold marks Shift, italic marks Alpha, everywhere. */
+.phone.plain .k .s { font-weight: 700; }
+.phone.plain .k .a { font: italic 600 11px/11px var(--f-math); }
+.phone.plain .shifted .k:not(.enter):not(.on):not(.dead) .p.sh { font-weight: 700; }
+.phone.plain .k.enter .p { font-weight: 700; }
+.phone .pad { grid-column: 3 / span 2; grid-row: 1 / span 3; display: grid; place-items: center; }
+.phone .ring { position: relative; height: 112px; aspect-ratio: 1; max-width: 100%; border-radius: 50%; background: var(--key-ctl); }
+.phone.hc .ring { box-shadow: inset 0 0 0 1.5px var(--line); }
+.phone .ring i { position: absolute; font-style: normal; font-size: 15px; }
+.phone .ring .n { top: 7%; left: 50%; transform: translateX(-50%); } .phone .ring .so { bottom: 7%; left: 50%; transform: translateX(-50%); }
+.phone .ring .w { left: 9%; top: 50%; transform: translateY(-50%); } .phone .ring .e { right: 9%; top: 50%; transform: translateY(-50%); }
+.phone .ring b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 32%; aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed var(--line); }
+/* sheet over the maths rows */
+.phone .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--panel); border-top: 2px solid var(--focus); border-radius: 12px 12px 0 0; display: flex; flex-direction: column; padding: 0 4px 4px; }
+.phone .sheet .ttl { display: flex; justify-content: space-between; padding: 6px 10px; font-size: 12px; color: var(--muted); }
+.phone .sheet .it { display: flex; align-items: center; gap: 12px; padding: 0 10px; min-height: 34px; border-radius: 6px; }
+.phone .sheet .it.hl { background: var(--key-num); box-shadow: inset 3px 0 var(--focus); }
+.phone .sheet .it .n { color: var(--shift); font-weight: 700; width: 12px; }
+.phone.plain .sheet .it .n { font-weight: 800; }
+.phone .sheet .it .v { margin-left: auto; color: var(--muted); }
+.phone .sheet .it.off { color: var(--text-dead); flex-wrap: wrap; row-gap: 0; padding-block: 3px; }
+.phone .sheet .it.off .n { color: var(--text-dead); }
+.phone .sheet .it.off small { flex-basis: 100%; padding-left: 24px; color: var(--muted); font-size: 11px; }
+/* Settings › Appearance */
+.phone .spage { padding: 0 12px 10px; display: grid; gap: 2px; }
+.phone .spage .hd { display: flex; align-items: center; gap: 8px; height: 44px; font-weight: 600; font-size: 16px; }
+.phone .spage .hd span:first-child { color: var(--muted); font-weight: 400; }
+.phone .spage h4 { margin: 10px 0 2px; font: 600 11px system-ui; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.phone .opt { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 8px; border-radius: 8px; cursor: pointer; color: var(--text); }
+.phone .opt:focus-visible { outline: 2px solid var(--focus); }
+.phone .opt[aria-checked="true"] { background: var(--pick); box-shadow: inset 3px 0 var(--focus); }
+.phone .opt .n { color: var(--shift); font-weight: 700; width: 12px; }
+.phone .opt .dots { margin-left: auto; display: flex; gap: 3px; }
+.phone .opt .dots i { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--line); }
+.phone .opt .radio { width: 18px; height: 18px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--muted); flex: none; }
+.phone .opt[aria-checked="true"] .radio { box-shadow: inset 0 0 0 2px var(--focus), inset 0 0 0 5px var(--pick), inset 0 0 0 9px var(--focus); }
+.phone .seg { display: flex; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); margin: 2px 0 4px; }
+.phone .seg button { all: unset; flex: 1; text-align: center; padding: 10px 0; cursor: pointer; color: var(--text); }
+.phone .seg button[aria-pressed="true"] { background: var(--key-enter); color: var(--on-enter); font-weight: 600; }
+.phone .seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.phone .tog { all: unset; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; padding: 8px; min-height: 52px; cursor: pointer; border-radius: 8px; color: var(--text); }
+.phone .tog:focus-visible { outline: 2px solid var(--focus); }
+.phone .tog small { grid-column: 1; color: var(--muted); font-size: 12px; line-height: 1.35; }
+.phone .tog .sw2 { grid-row: 1 / span 2; grid-column: 2; width: 44px; height: 26px; border-radius: 13px; background: var(--key-op); box-shadow: inset 0 0 0 1px var(--line); position: relative; }
+.phone .tog .sw2 i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); }
+.phone .tog[aria-checked="true"] .sw2 { background: var(--key-enter); }
+.phone .tog[aria-checked="true"] .sw2 i { left: 21px; background: var(--on-enter); }
+@media (prefers-reduced-motion: no-preference) { .phone, .phone .k, .phone .row { transition: background-color 160ms, color 160ms; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="intro">
+    <span class="eyebrow">R50b · Appearance · 2026-10-18</span>
+    <h1>Pascaline themes</h1>
+    <p class="sub">Five theme families, each in light and dark, and two switches that work on every one of them: <b>High contrast</b> and <b>Plain keys</b>. The phone below is live: change the strip above it, or tap the rows on its own Settings page (scene “Settings”). Every colour is checked on this page against the same rules as <code>app/src/style.test.ts</code>. Our own colours plus three MIT-licensed palettes; nothing from any HP skin.</p>
+    <div class="verdict">
+      <div><b>Theme = family + brightness.</b><span class="sub">Pick a family (Pascaline is the default), then System / Light / Dark as R12c planned. Every family has both, so the System setting works with all of them.</span></div>
+      <div><b>High contrast: a switch, not a theme.</b><span class="sub">It deepens the grounds, puts every text at 7:1 and outlines each key, in whichever family you use. On at first start when the phone asks for more contrast.</span></div>
+      <div><b>Plain keys (your “no syntax” mode).</b><span class="sub">One neutral tone for all keys, digits a step brighter. Bold always means Shift, italic always means Alpha. ⚠ and errors keep their colour, so a warning never blends in.</span></div>
+    </div>
+  </div>
+
+  <div class="strip" id="ctl" role="toolbar" aria-label="Preview settings">
+    <div class="grp" id="g-fam"><span>Theme</span></div>
+    <div class="grp" id="g-br"><span>Brightness</span><button type="button" id="b-dark" data-br="dark">Dark</button><button type="button" id="b-light" data-br="light">Light</button></div>
+    <div class="grp"><span>Switches</span><button type="button" id="b-hc" data-tg="hc">High contrast</button><button type="button" id="b-pl" data-tg="pl">Plain keys</button></div>
+    <div class="grp" id="g-sc"><span>Scene</span><button type="button" id="s-home" data-sc="home">Home</button><button type="button" id="s-shift" data-sc="shift">Shift on</button><button type="button" id="s-alpha" data-sc="alpha">Alpha on</button><button type="button" id="s-sheet" data-sc="sheet">Menu sheet</button><button type="button" id="s-set" data-sc="settings">Settings</button></div>
+  </div>
+
+  <div class="stage">
+    <div id="phone"></div>
+    <div class="side">
+      <div class="about" id="about"></div>
+      <details id="d-audit"><summary id="audit-sum">Contrast</summary><div class="tablewrap" id="audit"></div></details>
+      <details><summary>Tokens for this combination</summary><div class="tablewrap" id="tokens"></div></details>
+      <details><summary>As CSS (for R50b)</summary><pre class="css" id="css"></pre></details>
+    </div>
+  </div>
+
+  <section>
+    <h2>Every family at a glance</h2>
+    <p class="sub">The same scene in each family with the current brightness and switches. Tap one to load it above.</p>
+    <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section>
+    <h2>All 40 combinations</h2>
+    <p class="sub">5 families × light and dark × High contrast × Plain keys. A cell counts the pairs checked; every one must pass. Normal: text 4.5:1, dead faces 3:1. High contrast: text 7:1, dead faces 4.5:1, key outlines 3:1. A dead face also stays at least 1 below a live one.</p>
+    <div class="tablewrap" id="matrix"></div>
+  </section>
+
+  <section>
+    <h2>What changed from R50a, and why</h2>
+    <ul class="sub" style="margin:0;padding-left:20px;display:grid;gap:4px;max-width:72ch">
+      <li><b>Pascaline</b> is new and takes its colours from the logo: Shift is the amber of the P, Enter the logo blue. Graphite is R50a’s calm grey, refined. Slate and R50a’s High contrast palette are gone: Nord covers the cool blue-grey, and High contrast is now a switch on every family.</li>
+      <li><b>The real keypad</b> is drawn: the R3 cluster (U1–U6, the round pad, View · Esc · Undo · Copy · ⇤ · ⇥) and rows 3–9 as in <code>spec/keyboard.yaml</code>, with Shift legends top left and Alpha letters bottom left (P7).</li>
+      <li><b>A taller entry line</b> (52 px) for feedback #54.</li>
+      <li><b>Borrowed palettes are adjusted only where they fail</b>, and only in lightness (hue kept): Solarized moves 7 colours (its accents are low-contrast by design), Nord 5, Gruvbox 3. The list is in each family’s card.</li>
+      <li><b>Plot curves keep their colours in Plain keys</b>; they need them to be told apart.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+// (High contrast, Plain keys) that derive the rest. Pure functions; run under Node for the audit.
+const KEYS = ['key-num', 'key-op', 'key-fn', 'key-ctl', 'key-nav'];
+
+// --- colour maths (sRGB, WCAG 2 contrast) -------------------------------------------------------
+const hex2rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+const rgb2hex = (c) => '#' + c.map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0')).join('');
+function lum(h) { const c = hex2rgb(h).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; }
+function cr(a, b) { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); }
+function mix(a, b, t) { const p = hex2rgb(a), q = hex2rgb(b); return rgb2hex(p.map((v, i) => v + (q[i] - v) * t)); }
+function rgb2hsl(h) { let [r, g, b] = hex2rgb(h).map((v) => v / 255); const mx = Math.max(r, g, b), mn = Math.min(r, g, b); let hh = 0, s = 0; const l = (mx + mn) / 2; if (mx !== mn) { const d = mx - mn; s = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn); hh = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; hh /= 6; } return [hh, s, l]; }
+function hsl2hex([h, s, l]) { const f = (p, q, t) => { if (t < 0) t += 1; if (t > 1) t -= 1; return t < 1 / 6 ? p + (q - p) * 6 * t : t < 1 / 2 ? q : t < 2 / 3 ? p + (q - p) * (2 / 3 - t) * 6 : p; }; if (s === 0) return rgb2hex([l, l, l].map((v) => v * 255)); const q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q; return rgb2hex([f(p, q, h + 1 / 3), f(p, q, h), f(p, q, h - 1 / 3)].map((v) => v * 255)); }
+function desat(h, k) { const [hh, s, l] = rgb2hsl(h); return hsl2hex([hh, s * k, l]); }
+// Move fg's lightness away from the backgrounds (hue and saturation kept) until it reaches min on all of them.
+function ensure(fg, bgs, min, dark) {
+  if (bgs.every((b) => cr(fg, b) >= min)) return fg;
+  const [h, s, l0] = rgb2hsl(fg);
+  for (let i = 1; i <= 200; i++) { const l = dark ? Math.min(1, l0 + i * 0.005) : Math.max(0, l0 - i * 0.005); const c = hsl2hex([h, s, l]); if (bgs.every((b) => cr(c, b) >= min)) return c; }
+  return dark ? '#ffffff' : '#000000';
+}
+
+// --- the families --------------------------------------------------------------------------------
+// Each family gives its own values for every role; credit and licence in `src`.
+const FAMILIES = [
+  { id: 'pascaline', name: 'Pascaline', src: 'Ours, from the logo: ink blue and the amber of the P.',
+    idea: 'Ink blue with one amber accent, the colours of the logo. Shift is the amber of the P; Enter is the logo blue.',
+    dark: { bg: '#0b1020', panel: '#121a2e', line: '#2d3a5a', 'key-num': '#1f2a45', 'key-op': '#18233d', 'key-fn': '#172443', 'key-ctl': '#2a2433', 'key-nav': '#141d33', 'key-enter': '#2346d8', 'on-enter': '#ffffff',
+      text: '#eef1f8', 'text-dead': '#76819c', muted: '#a3adc6', shift: '#ffc233', alpha: '#86c5ff', error: '#ff8e86', 'chip-bg': '#1d3070', approx: '#86c5ff', warn: '#ffc233', pick: '#1a2442', focus: '#ffc233', 'key-on': '#ffc233', 'on-key-on': '#0b1020' },
+    light: { bg: '#f5f6fa', panel: '#e7eaf3', line: '#b7bfd4', 'key-num': '#ffffff', 'key-op': '#e6eaf5', 'key-fn': '#e1e8fb', 'key-ctl': '#f8ecd2', 'key-nav': '#eceef3', 'key-enter': '#0025b5', 'on-enter': '#ffffff',
+      text: '#0f172a', 'text-dead': '#6b7489', muted: '#4a556e', shift: '#8a5300', alpha: '#0b4fc4', error: '#b3261e', 'chip-bg': '#d8e1fb', approx: '#0b4fc4', warn: '#8a4b00', pick: '#dde4f8', focus: '#0025b5', 'key-on': '#0025b5', 'on-key-on': '#ffffff' } },
+  { id: 'graphite', name: 'Graphite', src: 'Ours (R50a), refined.',
+    idea: 'A calm neutral grey; key kinds differ by a hint of tint, and amber does all the pointing.',
+    dark: { bg: '#17181b', panel: '#212326', line: '#46494f', 'key-num': '#323438', 'key-op': '#2a2c30', 'key-fn': '#2b3037', 'key-ctl': '#37322c', 'key-nav': '#26282b', 'key-enter': '#a8620f', 'on-enter': '#ffffff',
+      text: '#ececea', 'text-dead': '#8a8d93', muted: '#a6a9af', shift: '#f2b45a', alpha: '#8fbdf0', error: '#ff8f80', 'chip-bg': '#3a3a42', approx: '#8fbdf0', warn: '#ffb86b', pick: '#2b2d31', focus: '#f2b45a', 'key-on': '#e9b25d', 'on-key-on': '#17181b' },
+    light: { bg: '#f3f2ef', panel: '#e5e3df', line: '#a9a6a0', 'key-num': '#ffffff', 'key-op': '#e4e2dd', 'key-fn': '#e2e6ea', 'key-ctl': '#eee2d0', 'key-nav': '#ebe9e4', 'key-enter': '#8a4a00', 'on-enter': '#ffffff',
+      text: '#1c1b19', 'text-dead': '#6a6862', muted: '#55534d', shift: '#8a4a00', alpha: '#1a5c94', error: '#a92a1b', 'chip-bg': '#dcd7ce', approx: '#1a5c94', warn: '#8a4000', pick: '#dcd8d0', focus: '#8a4a00', 'key-on': '#8a4a00', 'on-key-on': '#ffffff' } },
+  { id: 'solarized', name: 'Solarized', src: 'Solarized by Ethan Schoonover (MIT). Accents lifted or deepened where needed to reach 4.5:1 on the keys.',
+    idea: 'The well-known 16 colours: the same accents on a dark teal or a warm paper ground. Low glare, a little lower contrast by design.',
+    dark: { bg: '#002b36', panel: '#073642', line: '#2c5560', 'key-num': '#0a3f4c', 'key-op': '#073642', 'key-fn': '#08394f', 'key-ctl': '#1e3b3a', 'key-nav': '#04313c', 'key-enter': '#1f6fae', 'on-enter': '#fdf6e3',
+      text: '#c8cfc8', 'text-dead': '#6b8288', muted: '#93a1a1', shift: '#b58900', alpha: '#268bd2', error: '#dc322f', 'chip-bg': '#0d4a5a', approx: '#2aa198', warn: '#cb4b16', pick: '#0a4250', focus: '#b58900', 'key-on': '#b58900', 'on-key-on': '#002b36' },
+    light: { bg: '#fdf6e3', panel: '#eee8d5', line: '#c9c0a6', 'key-num': '#fffbf0', 'key-op': '#eee8d5', 'key-fn': '#e6e8dc', 'key-ctl': '#f3e6c6', 'key-nav': '#f5efdc', 'key-enter': '#1a6aa6', 'on-enter': '#fdf6e3',
+      text: '#073642', 'text-dead': '#7f8c8d', muted: '#586e75', shift: '#b58900', alpha: '#268bd2', error: '#dc322f', 'chip-bg': '#e3dcc6', approx: '#2aa198', warn: '#cb4b16', pick: '#e8e1cb', focus: '#268bd2', 'key-on': '#073642', 'on-key-on': '#fdf6e3' } },
+  { id: 'gruvbox', name: 'Gruvbox', src: 'Gruvbox by Pavel Pertsev (MIT). Faded accents in light, bright in dark.',
+    idea: 'Warm retro browns with soft yellow, aqua and orange; easy on the eyes in a long session.',
+    dark: { bg: '#1d2021', panel: '#282828', line: '#504945', 'key-num': '#3c3836', 'key-op': '#32302f', 'key-fn': '#2f3433', 'key-ctl': '#3a322a', 'key-nav': '#2a2827', 'key-enter': '#427b58', 'on-enter': '#fbf1c7',
+      text: '#ebdbb2', 'text-dead': '#928374', muted: '#bdae93', shift: '#fabd2f', alpha: '#83a598', error: '#fb4934', 'chip-bg': '#45403d', approx: '#8ec07c', warn: '#fe8019', pick: '#32302f', focus: '#fabd2f', 'key-on': '#fabd2f', 'on-key-on': '#1d2021' },
+    light: { bg: '#fbf1c7', panel: '#f2e5bc', line: '#bdae93', 'key-num': '#fffaeb', 'key-op': '#ebdbb2', 'key-fn': '#e8e3c4', 'key-ctl': '#f3dfae', 'key-nav': '#f5ebc4', 'key-enter': '#427b58', 'on-enter': '#fbf1c7',
+      text: '#282828', 'text-dead': '#7c6f64', muted: '#504945', shift: '#b57614', alpha: '#076678', error: '#9d0006', 'chip-bg': '#ebdbb2', approx: '#427b58', warn: '#af3a03', pick: '#ebdbb2', focus: '#076678', 'key-on': '#3c3836', 'on-key-on': '#fbf1c7' } },
+  { id: 'nord', name: 'Nord', src: 'Nord by Arctic Ice Studio (MIT); the light variant is built from its Snow Storm colours.',
+    idea: 'Arctic blue-greys with frost-blue accents; cool and quiet, close to an instrument panel.',
+    dark: { bg: '#2e3440', panel: '#3b4252', line: '#4c566a', 'key-num': '#434c5e', 'key-op': '#3b4252', 'key-fn': '#3a465a', 'key-ctl': '#46434f', 'key-nav': '#363c4a', 'key-enter': '#5e81ac', 'on-enter': '#ffffff',
+      text: '#eceff4', 'text-dead': '#8a93a5', muted: '#d8dee9', shift: '#ebcb8b', alpha: '#88c0d0', error: '#bf616a', 'chip-bg': '#4c566a', approx: '#8fbcbb', warn: '#d08770', pick: '#3b4252', focus: '#88c0d0', 'key-on': '#88c0d0', 'on-key-on': '#2e3440' },
+    light: { bg: '#eceff4', panel: '#e5e9f0', line: '#b3bccb', 'key-num': '#ffffff', 'key-op': '#e5e9f0', 'key-fn': '#dfe6ef', 'key-ctl': '#ece6e2', 'key-nav': '#e8ecf2', 'key-enter': '#5e81ac', 'on-enter': '#ffffff',
+      text: '#2e3440', 'text-dead': '#6c7689', muted: '#4c566a', shift: '#9a6b00', alpha: '#3b6a9a', error: '#a0434d', 'chip-bg': '#d8dee9', approx: '#3b6a9a', warn: '#a3542e', pick: '#d8dee9', focus: '#5e81ac', 'key-on': '#2e3440', 'on-key-on': '#eceff4' } },
+];
+
+// --- the base palette after the contrast floor ------------------------------------------------
+// A family's own value is kept when it passes; otherwise only its lightness moves until it does.
+// `fixes` lists every role that moved, so the page can show which canonical colours were adjusted.
+function base(fam, dark) {
+  const t = { ...fam[dark ? 'dark' : 'light'] }, fixes = [];
+  const fix = (role, bgs, min) => { const v = ensure(t[role], bgs.map((b) => t[b]), min, dark); if (v !== t[role]) { fixes.push([role, t[role], v]); t[role] = v; } };
+  fix('text', [...KEYS, 'bg', 'panel', 'pick', 'chip-bg'], 4.5);
+  fix('muted', ['bg', 'panel', 'key-num', 'pick'], 4.5);
+  for (const r of ['shift', 'alpha']) fix(r, [...KEYS, 'panel'], 4.5);
+  for (const r of ['approx', 'warn', 'error']) fix(r, ['bg', 'pick'], 4.5);
+  fix('focus', ['bg', 'panel'], 3);
+  fix('text-dead', KEYS.concat('panel'), 3);
+  // on-enter: the key moves rather than the label, so the label keeps the family's colour
+  if (cr(t['on-enter'], t['key-enter']) < 4.5) { const v = ensure(t['key-enter'], [t['on-enter']], 4.5, lum(t['on-enter']) < 0.5); fixes.push(['key-enter', t['key-enter'], v]); t['key-enter'] = v; }
+  if (cr(t['on-key-on'], t['key-on']) < 4.5) { const v = ensure(t['on-key-on'], [t['key-on']], 4.5, lum(t['key-on']) < 0.2); fixes.push(['on-key-on', t['on-key-on'], v]); t['on-key-on'] = v; }
+  return { t, fixes };
+}
+
+// --- High contrast: darker (or lighter) grounds, text at 7:1, legends at 7:1, a strong key outline ---
+function highContrast(t, dark) {
+  const o = { ...t }, ext = dark ? '#000000' : '#ffffff', ink = dark ? '#ffffff' : '#000000';
+  o.bg = mix(t.bg, ext, 0.65); o.panel = mix(t.panel, ext, 0.5); o.pick = mix(t.pick, ext, 0.3);
+  for (const k of KEYS) o[k] = mix(t[k], ext, dark ? 0.45 : 0.6);
+  o['chip-bg'] = mix(t['chip-bg'], ext, 0.35);
+  o.text = mix(t.text, ink, 0.8);
+  const all = [...KEYS, 'bg', 'panel', 'pick', 'chip-bg'].map((r) => o[r]);
+  o.text = ensure(o.text, all, 7, dark);
+  o.muted = ensure(t.muted, [o.bg, o.panel, o['key-num'], o.pick], 7, dark);
+  for (const r of ['shift', 'alpha']) o[r] = ensure(t[r], [...KEYS.map((k) => o[k]), o.panel], 7, dark);
+  for (const r of ['approx', 'warn', 'error']) o[r] = ensure(t[r], [o.bg, o.pick], 7, dark);
+  o['text-dead'] = ensure(t['text-dead'], [...KEYS.map((k) => o[k]), o.panel], 4.5, dark);
+  o.line = ensure(mix(t.line, ink, 0.25), [o.bg, ...KEYS.map((k) => o[k])], 3, dark);
+  o.focus = ensure(t.focus, [o.bg, o.panel], 4.5, dark);
+  o['key-enter'] = ensure(t['key-enter'], [t['on-enter']], 7, lum(t['on-enter']) < 0.5);
+  o['key-on'] = ensure(t['key-on'], [t['on-key-on']], 7, lum(t['on-key-on']) < 0.5);
+  return o;
+}
+
+// --- Plain keys: no colour coding. One neutral tone for every key, the digit block one step brighter,
+// legends in the text colour (Shift bold, Alpha italic), Enter inverted. ⚠ and errors keep their colour.
+function plain(t, dark) {
+  const o = { ...t };
+  const k1 = desat(t['key-num'], 0.35), k2 = desat(mix(t['key-num'], t.bg, 0.5), 0.35);
+  o['key-num'] = k1; for (const k of ['key-op', 'key-fn', 'key-ctl', 'key-nav']) o[k] = k2;
+  o.shift = t.text; o.alpha = t.text; o.approx = t.text;
+  o['key-enter'] = t.text; o['on-enter'] = t.bg;
+  o['key-on'] = t.text; o['on-key-on'] = t.bg; o.focus = t.text;
+  o['chip-bg'] = k2; o.pick = mix(t.bg, t.text, 0.1);
+  // text-dead must stay dimmer than live text but readable on both tones
+  o['text-dead'] = ensure(t['text-dead'], [k1, k2, o.panel], 3, dark);
+  return o;
+}
+
+function theme(famId, dark, hc, pl) {
+  const fam = FAMILIES.find((f) => f.id === famId);
+  const { t, fixes } = base(fam, dark);
+  let o = t;
+  if (pl) o = plain(o, dark);
+  if (hc) o = highContrast(o, dark);
+  return { t: o, fixes };
+}
+
+// --- the audit: every pair the app draws ---------------------------------------------------------
+function checks(t, hc) {
+  const out = [], T = hc ? 7 : 4.5, D = hc ? 4.5 : 3;
+  const add = (g, l, f, b, min) => out.push({ g, l, f, b, min, v: cr(t[f], t[b]) });
+  add('Screen', 'text on screen', 'text', 'bg', T); add('Screen', 'input line (muted) on screen', 'muted', 'bg', T);
+  add('Screen', 'error text on screen', 'error', 'bg', T); add('Screen', '≈ mark on screen', 'approx', 'bg', T); add('Screen', '⚠ mark on screen', 'warn', 'bg', T);
+  add('Screen', 'text on the picked row', 'text', 'pick', T); add('Screen', 'muted on the picked row', 'muted', 'pick', T);
+  add('Screen', 'text on the status line', 'text', 'panel', T); add('Screen', 'text on a chip', 'text', 'chip-bg', T);
+  add('Screen', 'focus and cursor on screen (non-text)', 'focus', 'bg', 3);
+  for (const k of KEYS) { for (const f of ['text', 'shift', 'alpha']) add('Keys', `${f} on ${k}`, f, k, T); add('Keys', `dead face on ${k}`, 'text-dead', k, D); }
+  add('Keys', 'Enter label', 'on-enter', 'key-enter', T); add('Keys', 'label of a key that is on', 'on-key-on', 'key-on', T);
+  for (const b of ['panel', 'key-num']) { for (const f of ['text', 'shift', 'muted']) add('Sheet', `${f} on ${b}`, f, b, T); add('Sheet', `disabled row on ${b}`, 'text-dead', b, D); }
+  if (hc) for (const k of KEYS) add('Keys', `key outline on screen around ${k} (non-text)`, 'line', 'bg', 3);
+  return out;
+}
+function dimmedOk(t) { return KEYS.every((k) => cr(t['text-dead'], t[k]) <= cr(t.text, t[k]) - 1); }
+
+if (typeof module !== 'undefined') module.exports = { FAMILIES, KEYS, theme, checks, dimmedOk, cr, base };
+
+const $ = (id) => document.getElementById(id);
+const S = { fam: 'pascaline', dark: true, hc: false, pl: false, sc: 'home' };
+try { Object.assign(S, JSON.parse(localStorage.getItem('pascaline-themes') || '{}')); } catch { /* no storage */ }
+if (!FAMILIES.some((f) => f.id === S.fam)) S.fam = 'pascaline';
+const save = () => { try { localStorage.setItem('pascaline-themes', JSON.stringify(S)); } catch { /* no storage */ } };
+
+// The keypad: R3 cluster (rows 0-2) and rows 3-9 from spec/keyboard.yaml. [cls, primary, shift, alpha, extra]
+const MATH6 = [
+  [['fn','Vars','','A'],['fn','Math','','B'],['fn','Tmpl','','C'],['fn','x','y','D'],['fn','a b/c','','E'],['ctl','⌫','Del','']],
+  [['fn','xʸ','ⁿ√','F'],['fn','sin','sin⁻¹','G'],['fn','cos','cos⁻¹','H'],['fn','tan','tan⁻¹','I'],['fn','ln','eˣ','J'],['fn','log','10ˣ','K']],
+  [['fn','x²','√','L'],['fn','(−)','|x|','M'],['op','( )','','N'],['op',',','','O'],['enter','Enter','≈','',2]],
+];
+const MATH5 = [
+  [['fn','ᴇ','Store','P'],['num','7','','Q'],['num','8','{ }','R'],['num','9','α∞','S'],['op','÷','x⁻¹','T']],
+  [['ctl','alpha','',''],['num','4','','U'],['num','5','','V'],['num','6','≤≠','W'],['op','×','∡','X']],
+  [['ctl','shift','',''],['num','1','','Y'],['num','2','i','Z'],['num','3','π','#'],['op','−','',':']],
+  [['ctl','Fmt','',''],['num','0','',''],['num','.','=',''],['num','␣','_',''],['op','+','Ans',';']],
+];
+function key(k, sc, cluster) {
+  const [cls, p, s, a, span] = k;
+  const shiftOn = sc === 'shift', alphaOn = sc === 'alpha';
+  let face = p, sh = false, dead = false, on = false, extra = '';
+  if ((p === 'shift' && shiftOn) || (p === 'alpha' && alphaOn)) on = true;
+  else if (shiftOn && cls !== 'enter' && p !== 'shift' && p !== 'alpha') { if (s) { face = s; sh = true; } else dead = true; }
+  else if (alphaOn && cls !== 'enter' && p !== 'shift' && p !== 'alpha' && a) { face = a; }
+  const alphaFace = alphaOn && a && !on && cls !== 'enter';
+  const style = span ? ` style="grid-column:span ${span}"` : '';
+  const cl = `k ${cluster ? 'c' : 'm'} ${cls}${dead ? ' dead' : ''}${on ? ' on' : ''}${k[5] || ''}`;
+  const pf = alphaFace ? `<span class="p" style="font:italic 19px var(--f-math);color:var(--alpha)">${face}</span>` : `<span class="p${sh ? ' sh' : ''}">${face}</span>`;
+  return `<div class="${cl}"${style}><span class="s">${shiftOn ? '' : s}</span>${pf}<span class="a">${alphaOn ? '' : a}</span></div>`;
+}
+function keypad(sc) {
+  const c = (cls, p, s, extra) => key([cls, p, s, '', 0, extra || ''], sc, true);
+  const cluster = [
+    c('nav', 'Home', '', ' user set'), c('nav', 'CAS', '', ' user set'), `<div class="pad"><div class="ring" aria-hidden="true"><i class="n">▲</i><i class="w">◀</i><i class="e">▶</i><i class="so">▼</i><b></b></div></div>`, key(['nav', 'View', 'Help', '', 0, ' dead'], sc, true), c('nav', 'Esc', 'Clear'),
+    c('nav', 'U3', '', ' user'), c('nav', 'U4', '', ' user'), c('nav', 'Undo', 'Redo'), c('nav', 'Copy', 'Paste'),
+    c('nav', 'U5', '', ' user'), c('nav', 'U6', '', ' user'), c('nav', '⇤', '⇤□'), c('nav', '⇥', '□⇥'),
+  ].join('');
+  return `<div class="kp${sc === 'shift' ? ' shifted' : ''}"><div class="grid6" style="grid-auto-rows:36px">${cluster}</div>`
+    + `<div class="grid6">${MATH6.flat().map((k) => key(k, sc)).join('')}</div>`
+    + `<div class="grid5">${MATH5.flat().map((k) => key(k, sc)).join('')}</div>`
+    + (sc === 'sheet' ? sheet() : '') + `</div>`;
+}
+function sheet() {
+  const it = (n, l, cls = '', why = '') => `<div class="it ${cls}"><span class="n">${n}</span><span>${l}</span>${why ? `<small>${why}</small>` : ''}</div>`;
+  return `<div class="sheet" style="height:330px"><div class="ttl"><span>Menu · on the last result</span><span>1–9, 0 · ×</span></div>`
+    + it(1, 'Insert', 'hl') + it(2, 'Recall') + it(3, 'Copy') + it(4, 'Store ▶') + it(5, 'Delete', 'off', 'Still working on this row') + it(6, 'Copy as ›') + it(7, 'Paste') + it(8, 'Share session') + it(9, 'Clear history') + it(0, 'Settings') + `</div>`;
+}
+function history() {
+  const r = (inp, mk, out, cls = '') => `<div class="row ${cls}"><div class="in">${inp}</div><div class="out">${mk}${out}</div></div>`;
+  return `<div class="hist">`
+    + r('(3.2 × 10<sup>−3</sup>)<sup>2</sup> × π ÷ 4', '<span class="mk approx">≈</span>', '8.04247719319ᴇ−6')
+    + r('1 ÷ 3 + 1 ÷ 6', '<span class="mk">=</span>', '0.5')
+    + r('√2', '<span class="mk approx">≈</span>', '1.41421356237', 'picked')
+    + r('1 ÷ (2 − 2)', '<span class="mk">⚠</span>', 'Division by zero', 'err') + `</div>`
+    + `<div class="entry"><span class="chip">Ans</span><span>× 2.54</span><span class="cur"></span></div>`;
+}
+function settingsPage() {
+  const fams = FAMILIES.map((f, i) => {
+    const t = theme(f.id, S.dark, S.hc, S.pl).t;
+    const dots = ['bg', 'key-num', 'key-enter', 'shift', 'alpha'].map((r) => `<i style="background:${t[r]}"></i>`).join('');
+    return `<button type="button" role="radio" class="opt" data-fam="${f.id}" aria-checked="${f.id === S.fam}"><span class="radio"></span><span class="n">${i + 1}</span><span>${f.name}</span><span class="dots">${dots}</span></button>`;
+  }).join('');
+  const br = ['System', 'Light', 'Dark'].map((b) => `<button type="button" data-br="${b.toLowerCase()}" aria-pressed="${b === 'System' ? 'false' : String((b === 'Dark') === S.dark)}">${b}</button>`).join('');
+  const tog = (id, l, why) => `<button type="button" role="switch" class="tog" data-tg="${id}" aria-checked="${S[id]}"><span>${l}</span><small>${why}</small><span class="sw2"><i></i></span></button>`;
+  return `<div class="spage"><div class="hd"><span>Settings ›</span><span>Appearance</span></div>`
+    + `<h4>Theme</h4><div role="radiogroup" aria-label="Theme">${fams}</div>`
+    + `<h4>Brightness</h4><div class="seg">${br}</div>`
+    + `<h4>Readability</h4>${tog('hc', 'High contrast', 'Text at 7:1, deeper grounds, outlined keys.')}`
+    + tog('pl', 'Plain keys', 'No colour coding. Shift legends bold, Alpha letters italic.')
+    + `</div>`;
+}
+function phone(famId, sc, mini) {
+  const { t } = theme(famId, S.dark, S.hc, S.pl);
+  const vars = Object.entries(t).map(([k, v]) => `--${k}:${v}`).join(';');
+  const f = FAMILIES.find((x) => x.id === famId);
+  const label = `${f.name}, ${S.dark ? 'dark' : 'light'}${S.hc ? ', high contrast' : ''}${S.pl ? ', plain keys' : ''}`;
+  const status = `<div class="status"><span class="place">${sc === 'settings' ? 'Settings' : 'Home ▾'}</span><span class="grow"></span>${sc === 'settings' ? '<span style="font-size:18px">×</span>' : `<span class="chip">DEG</span><span class="chip">STD</span><span class="chip">12</span>${sc === 'shift' ? '<span class="chip" style="font-weight:700">⇧</span>' : sc === 'alpha' ? '<span class="chip" style="font-style:italic">a</span>' : ''}<span class="menu">☰</span>`}</div>`;
+  const body = sc === 'settings' ? settingsPage() : `<div class="view">${history()}</div>${keypad(sc)}`;
+  return `<div class="phone${S.hc ? ' hc' : ''}${S.pl ? ' plain' : ''}" style="${vars}" ${mini ? 'aria-hidden="true"' : `role="${sc === 'settings' ? 'group' : 'img'}"`} aria-label="${label}">${status}${body}</div>`;
+}
+const sw = (c) => `<span class="sw" style="background:${c}"></span>`;
+function render() {
+  const fam = FAMILIES.find((f) => f.id === S.fam);
+  const { t, fixes } = theme(S.fam, S.dark, S.hc, S.pl);
+  $('phone').innerHTML = phone(S.fam, S.sc);
+  // strip state
+  $('g-fam').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.fam === S.fam)));
+  $('b-dark').setAttribute('aria-pressed', String(S.dark)); $('b-light').setAttribute('aria-pressed', String(!S.dark));
+  $('b-hc').setAttribute('aria-pressed', String(S.hc)); $('b-pl').setAttribute('aria-pressed', String(S.pl));
+  $('g-sc').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.sc === S.sc)));
+  // about card
+  const cs = checks(t, S.hc), bad = cs.filter((c) => c.v < c.min).length, dim = dimmedOk(t);
+  const fx = fixes.length ? `<p class="sub" style="font-size:13px">Adjusted from the original palette (${S.dark ? 'dark' : 'light'}), lightness only: ${fixes.map(([r, a, b]) => `<code>--${r}</code> ${sw(a)}${a} → ${sw(b)}${b}`).join('; ')}.</p>` : `<p class="sub" style="font-size:13px">No colour adjusted: the palette passes as designed.</p>`;
+  $('about').innerHTML = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h2>${fam.name}</h2><span class="sub">${S.dark ? 'dark' : 'light'}${S.hc ? ' · high contrast' : ''}${S.pl ? ' · plain keys' : ''}</span><span class="badge ${bad || !dim ? 'bad' : 'ok'}">${bad || !dim ? bad + ' fail' : 'all ' + cs.length + ' pass'}</span></div><p>${fam.idea}</p><p class="sub" style="font-size:13px">${fam.src}</p>${fx}`;
+  $('audit-sum').textContent = `Contrast: ${cs.length - bad} of ${cs.length} pairs pass`;
+  $('audit').innerHTML = `<table><tr><th>Pair</th><th>Ratio</th><th>Needs</th><th></th></tr>` + cs.map((c) => `<tr><td>${sw(t[c.b])}${sw(t[c.f])}${c.g}: ${c.l}</td><td class="num">${c.v.toFixed(2)}</td><td class="num">${c.min}</td><td class="${c.v >= c.min ? 'ok' : 'bad'}">${c.v >= c.min ? '✓' : '✗'}</td></tr>`).join('') + `</table>`;
+  const NEW = ['approx', 'warn', 'pick', 'focus', 'key-on', 'on-key-on'];
+  $('tokens').innerHTML = `<table><tr><th>Token</th><th>Value</th></tr>` + Object.entries(t).map(([k, v]) => `<tr><td><code>--${k}</code>${NEW.includes(k) ? ' <span class="sub">(new)</span>' : ''}</td><td>${sw(v)}<code>${v}</code></td></tr>`).join('') + `</table>`;
+  const sel = `[data-family="${S.fam}"]${S.dark ? '' : '[data-light]'}${S.hc ? '[data-contrast="high"]' : ''}${S.pl ? '[data-keys="plain"]' : ''}`;
+  $('css').textContent = `:root${sel} {\n` + Object.entries(t).map(([k, v]) => `  --${k}: ${v};`).join('\n') + `\n}`;
+  // gallery
+  $('gallery').innerHTML = FAMILIES.map((f) => `<button type="button" class="mini" data-fam="${f.id}" aria-pressed="${f.id === S.fam}" aria-label="Load ${f.name}"><span class="name">${f.name}</span><div class="zoom">${phone(f.id, S.sc === 'settings' ? 'home' : S.sc, true)}</div></button>`).join('');
+  save();
+}
+function matrix() {
+  const cols = [[false, false, 'Normal'], [true, false, 'High contrast'], [false, true, 'Plain'], [true, true, 'Both']];
+  let h = `<table class="matrix"><tr><th>Family</th>${['Dark', 'Light'].map((b) => cols.map(([, , n]) => `<th>${b} · ${n}</th>`).join('')).join('')}</tr>`;
+  for (const f of FAMILIES) {
+    h += `<tr><td><b>${f.name}</b></td>`;
+    for (const dark of [true, false]) for (const [hc, pl] of cols) {
+      const t = theme(f.id, dark, hc, pl).t, cs = checks(t, hc), bad = cs.filter((c) => c.v < c.min).length, ok = !bad && dimmedOk(t);
+      h += `<td class="${ok ? 'ok' : 'bad'}">${ok ? '✓ ' + cs.length : '✗ ' + bad}</td>`;
+    }
+    h += `</tr>`;
+  }
+  $('matrix').innerHTML = h + `</table>`;
+}
+$('g-fam').insertAdjacentHTML('beforeend', FAMILIES.map((f) => `<button type="button" id="f-${f.id}" data-fam="${f.id}">${f.name}</button>`).join(''));
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.fam) S.fam = b.dataset.fam;
+  else if (b.dataset.br) { if (b.dataset.br === 'system') S.dark = matchMedia('(prefers-color-scheme: dark)').matches; else S.dark = b.dataset.br === 'dark'; }
+  else if (b.dataset.tg) S[b.dataset.tg] = !S[b.dataset.tg];
+  else if (b.dataset.sc) S.sc = b.dataset.sc;
+  else return;
+  const focusId = document.activeElement && document.activeElement.closest('.phone') ? (b.dataset.fam ? `[data-fam="${b.dataset.fam}"]` : b.dataset.tg ? `[data-tg="${b.dataset.tg}"]` : null) : null;
+  render();
+  if (focusId) { const el = $('phone').querySelector(focusId); if (el) el.focus(); }
+});
+render(); matrix();
+</script>
+</body>
+</html>

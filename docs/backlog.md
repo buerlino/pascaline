@@ -20,9 +20,9 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **At milestone 5:** time ten tasks by hand, E-notation against units (the rule 2 speed gate).
-1. **Open proposals:** decisions.md "Needs the user" (G21, G33, R56, Settings rows, R15c Store, A4a points 1, 3 and 4, R34, R43, M4-2, R7, P7 point 4).
-2. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (40–44, 46, 48–53, 55–59, 61 on 2026-10-18; each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
-3. **From daily use:** pick a palette from `docs/mockups/palettes-r50.html` (R50b waits); the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md); whether the Math menu's slots should be yours to arrange (feedback, decide around 2026-10-20). The checks on the phone are listed below.
+1. **Open proposals:** decisions.md "Needs the user" (G33, R56, A4a points 1, 3 and 4, R34, R43, M4-2, R7, P7 point 4).
+2. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–68 on 2026-10-19; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 before S14, 66–68 before G42 and G40; each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
+3. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md); whether the Math menu's slots should be yours to arrange (feedback, decide around 2026-10-20). The checks on the phone are listed below.
 4. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`.
 5. **Outside testers** (deep-dive review): two 30-minute rounds with three engineers, after R4b and after R24c; S8 writes the protocol and the task sheet, you run the rounds.
 6. **Delete the stale branch** (C7, decided 2026-10-18): `git branch -D p1/ron-eve-gestures` (agents never use `-D`).
@@ -41,7 +41,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ### Upstream reports (owner; each with a minimal case)
 - **libqalculate** (GitHub issues): `hp` is 745.6999871 W, the definition gives 745.69987158227… W (`derived`); `mmHg` is defined as 1 Torr, it is 133.322387415 Pa; `inHg` follows it (conventional 3386.388640341 Pa); thirteen CODATA 2022 values or uncertainties differ in the last digit (the list: `find/units.yaml`, entries with `override`).
-- **Giac** (with the Parisse email): the build fixes we patch (`engine/giac/patches/README.md`: the `add_evalf` log and `UI.addevalf`, the `caseval` timeout in whole seconds, `markup.cc` with `EMCC2`, re-published tarballs); wrong digits (docs/04 2.3 #2–#5: `normald_icdf(10^-10)`, `UTPN(10)` and `romberg` at 30 digits, no MPFR path for `BesselJ`, `Airy_Ai`); `median` of an even list gives the lower middle, `round(-2.5)` gives −2; the US quart and the f0 constant (2.4179883e14 Hz, exact 2.4179892420849182e14), Xcas's menu entries `torr`, `Ci`, `cd`, `rem`, `grad` that Giac does not read as units (`tools/probes/g2-units.mjs`); the exp-in-DEG patch if G21b is built; the licence question (P10).
+- **Giac** (with the Parisse email): the build fixes we patch (`engine/giac/patches/README.md`: the `add_evalf` log and `UI.addevalf`, the `caseval` timeout in whole seconds, `markup.cc` with `EMCC2`, re-published tarballs); wrong digits (docs/04 2.3 #2–#5: `normald_icdf(10^-10)`, `UTPN(10)` and `romberg` at 30 digits, no MPFR path for `BesselJ`, `Airy_Ai`); `median` of an even list gives the lower middle, `round(-2.5)` gives −2 (G42); signs and `floor` decided at `Digits` (G38: `sign(sin(10^50))` = 1 at 12 and 30, right at 60); principal values and Abel sums returned as values (G39: `int(1/x,x,-1,1)` = 0, `sum(cos(k),k,1,inf)` = −1/2); the US quart and the f0 constant (2.4179883e14 Hz, exact 2.4179892420849182e14), Xcas's menu entries `torr`, `Ci`, `cd`, `rem`, `grad` that Giac does not read as units (`tools/probes/g2-units.mjs`); the exp-in-DEG patch (G21b, route P only); complex `tanh` (`evalf(tanh(i))` = −0.642092615934·i, right 1.55740772465·i; G50); the licence question (P10).
 - **MathLive** (GitHub issues): F10, ⌫ at the start of a `\left…\right` body turns the opening bracket into `\left.` and every later ⌫ does nothing (value `\left(2\right)`, position 1, `deleteBackward` ×3); `restoreFocusWhenDocumentFocused` on by default refocuses a field the page blurred (F9); F33, a touch lift places the caret again from a stale `atomBoundsCache` (R42's report has the minimal case).
 
 ## Tasks
@@ -49,13 +49,16 @@ The one place for "where are we and what's left", one or two lines per open item
 ### Milestone 4a: feel (P11; packages and order: brief section 0)
 - **R15c1–R15c4. The R3 top cluster** (decisions.md "R15c"): the status line takes Apps, Menu and the views; the round pad, six user keys and the editing wing; the user keys' Alpha layer; first-start tips.
 - **R49. Settings as a list of rows** (feedback #50; decisions.md "Settings: a list of rows").
-- **R50b. The picked palette** (feedback #53; the mockup of R50a), then **R12b, R12c. The visual pass** (F6 = U5 + U7; the mockups R12a merged, the owner's notes feedback #54, #55; A4a's sheet rise in R12c).
+- **R50b–R50e. Themes** (feedback #53, #55; decisions.md "R50"): Pascaline in the app, the generator and four more families, Plain keys and High contrast, Settings › Appearance; then **R12b, R12c. The visual pass** (F6 = U5 + U7; the mockups R12a merged, the owner's notes feedback #54, #55; A4a's sheet rise in R12c).
 - **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).
 - **R53. Results mode on the View key** (P16, S9; K4).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
 - **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** **A12** (G29 merged).
 - **The backup:** **S6** (files in and out without INTERNET), then **R38a, R38b**. **The outside-test protocol:** **S8**.
-- **A14. The pipeline reads the package files** (S7's follow-up; the docs budgets are checked by `node tools/docs-check.mjs` in `npm run gate`).
+- **A14. The pipeline reads the package files** (S7's follow-up; the docs budgets are checked by `node tools/docs-check.mjs` in `npm run gate`), then **A15. The pipeline enforces its rules** (check 2026-10-19: the audit model, the size and docs checks, no reused dev server). **S10. docs/04 diet** before R15c2.
+- **The check of 2026-10-19's silent wrong numbers** ([research/check-2026-10-19.md](research/check-2026-10-19.md)): **G34** a carried value keeps what it showed when the angle mode changes, **G21b** exp ignores the angle mode inside Giac (only on S14's route P), **G36** FIX digits of a complex number; **G35** (the unit check sees zero terms) is under milestone 5.
+- **The deep check of 2026-10-19** ([research/deep-check-2026-10-19-angle-marks.md](research/deep-check-2026-10-19-angle-marks.md)): **G49 → R65** a value's marks travel through Ans, chips and Store (two Enters turn ⚠ into =); **S14** the spike on Giac always in radians, then **R64 → G46** (route R) or G21b (route P); **R64a** the plot follows the angle mode (both routes); **G50** complex arguments of the audited functions.
+- **The deep check of 2026-10-19, exact answers and units** ([research/deep-check-2026-10-19-exact-units.md](research/deep-check-2026-10-19-exact-units.md)): **G38** the exact path decides at the value precision (`sign(sin(10^50))` = 1), **G39** a divergent sum or integral is refused (`∫₋₁¹ 1/x` = 0), **G42** median, round, quartiles, **G43** invariants across settings in the golden gate, **G44** the inverse distribution functions polished (§2.3 #2); the unit packages are under milestone 5.
 
 ### Engineer core (P8; architecture docs/04, plan and gates docs/03 section 8)
 A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass within budget and its gates hold.
@@ -64,21 +67,21 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - **8. EN1, Find's UI:** **R4a** (Find on Math) and **R4b** (Vars, Memory, the user keys from Find). Gate: task 5 within budget, the query test, the size test, no index request before idle.
 - **12. Device:** **A4b**, Find per key on the Tab One (§8.3). A4a's misses are in decisions.md "A4a".
 - **EN4, open:** copying one element of a list or matrix.
-- **Gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left (all fixed except #2's value polish, EN7); the size test; the Tab One bars of §8.3.
+- **Gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left (all fixed except #2's value polish, G44); the size test; the Tab One bars of §8.3.
 
 **Milestone 5: Units** (P15; docs/04 section 4). Items 1–3 are done: the evaluator (G16), temperatures and levels (G17), uncertainty (G18), the result's unit (G25), the data audit (G13), Find's pad data (G7), rpm's message (G32), the parser's units mode (R28).
-- **4. The unit view:** the pad (**R24b**), the entry (**R24c**), Find in a slot and the user cells (**R24d**); the result view (value, mark, unit, dimension, one-tap alternatives, `units.targets`, the `\res` chip back to Home) gets its packages next. Open points with defaults: r7 section 7.
+- **4. The unit view:** before R24c the zero-term check (**G35**), °C inside a compound unit (**G37**), σ beyond first order (**G41**) and the angles (**G40**, decided 2026-10-19); the pad (**R24b**), the entry (**R24c**), Find in a slot and the user cells (**R24d**); the result view (value, mark, unit, dimension, one-tap alternatives, `units.targets`, the `\res` chip back to Home): **S11** writes its packages. Open points with defaults: r7 section 7.
 - **5. Build, size, devices** (annabell, after R24c): the first unit result on the Tab One and the Fairphone 6 (< 1 s).
 - **Gate:** tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
 
 **Milestone 6: Structure** (not packaged).
 - **EN5. Matrices, vectors, lists:** Shift + 5 `[ ]` that grows with ▶ and ▼, the matrix editor on Shift + 4 (§5.3). Gate: task 8.
 - **EN6. Number bases:** a display mode of an integer result, Shift + `−` = Base, word size, `0x`/`0b`/`0o` literals (§5.4). Gate: task 7.
-- **EN7. Everyday functions:** dB functions, interpolation, RMS, coordinate conversions, DMS, shifts and rotations, each tier 0 with a golden case; `normald_icdf` and the other inverse functions polished against their forward function (§2.3 #2). Gate: tasks 6 and 9.
+- **EN7. Everyday functions:** dB functions, interpolation, RMS, coordinate conversions, DMS, shifts and rotations, each tier 0 with a golden case; the inverse functions polished against their forward function is **G44** (§2.3 #2). Gate: tasks 6 and 9.
 - **Help = context help:** the Find preview of the function before the cursor (§5.1).
 
 ### Without a package yet
-- **R56 for Solve and the Function app** (decisions.md "Needs the user"); **G21b** (the same); lazy definition of library functions if A12 says so (G33).
+- **R56 for Solve and the Function app** (decisions.md "Needs the user"); **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
 - **G9. Number formats against the G2** (item 15: six formats, digits as decimal places, a thousands separator): decide in the settings and help pass.
 - **K1:** a pending one-shot Shift is used up by the first drag step; a tap keeps it. **K5:** the gestures in the help texts (release R4).
 - **C3. CI:** a GitHub Actions workflow calling `npm run gate` (needs your OK). **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; the version is A7.
