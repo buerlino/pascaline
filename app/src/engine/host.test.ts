@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // EngineHost against the real Giac build (skipped when no build is found; see nodeGiac.ts).
 import { beforeAll, describe, expect, it } from "vitest";
-import { EngineHost } from "./host.ts";
+import { EngineHost, REPLAY_BATCH } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { formatComplex, markOf, type FormatOptions } from "./format.ts";
@@ -341,14 +341,14 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
     return { giac: { ...giac, eval: (s: string) => (calls.push(s), giac.eval(s)) }, calls, raw: giac };
   };
 
-  it("200 definitions take at most 10 engine calls (was 200), and every name is set", async () => {
+  it("200 definitions take 8 engine calls (was 200), and every name is set", async () => {
     const { giac, calls, raw } = await counting();
     const log = [
       ...Array.from({ length: 150 }, (_, i) => mk(`dv${i + 1}`, "var", `dv${i + 1}:=(${i + 1}/7+${i + 1})`)),
       ...Array.from({ length: 50 }, (_, i) => mk(`df${i + 1}`, "fn", `df${i + 1}(x):=x^2+${i + 1}*x+sin(${i + 1})`)),
     ];
     new EngineHost(giac).restore(log);
-    expect(calls.length).toBeLessThanOrEqual(10);
+    expect(calls.length).toBe(Math.ceil(200 / REPLAY_BATCH));
     expect(raw.eval("dv7*7")).toBe("56"); // derived: 7*(1+7)
     expect(raw.eval("df3(0)")).toBe("sin(3)");
   });
@@ -364,5 +364,18 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
     const { giac, raw } = await counting();
     new EngineHost(giac).restore([mk("a1", "var", "a1:=(1)"), mk("bad", "var", "bad:=(2"), mk("a3", "var", "a3:=(3)"), mk("o", "other", "o1,o2:=4,5"), mk("a5", "var", "a5:=(5)")]);
     expect(raw.eval("a1+a3+a5+o1+o2")).toBe("18"); // derived: 1+3+5+4+5
+  });
+
+  it("G19: a bad entry with matched brackets inside a batch is rerun one at a time; its neighbours are set", async () => {
+    const { giac, calls, raw } = await counting();
+    new EngineHost(giac).restore([mk("b1", "var", "b1:=(1)"), mk("bad", "var", "bad:=(2+)"), mk("b3", "var", "b3:=(3)")]);
+    expect(calls.length).toBe(4); // one batch, then the three one at a time
+    expect(raw.eval("b1+b3")).toBe("4");
+  });
+
+  it("G19: an entry Giac refuses outright (a reserved name) does not abort the rest of its batch", async () => {
+    const { giac, raw } = await counting();
+    new EngineHost(giac).restore([mk("c1", "var", "c1:=(1)"), mk("pi", "var", "pi:=(3)"), mk("c3", "var", "c3:=(3)"), mk("c4", "fn", "c4(x):=x+1")]);
+    expect(raw.eval("c1+c3+c4(0)")).toBe("5"); // derived: 1+3+1
   });
 });

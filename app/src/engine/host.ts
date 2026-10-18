@@ -272,14 +272,15 @@ export class EngineHost {
   restore(entries: readonly DefEntry[]): number {
     const t0 = performance.now();
     // G29: values and functions go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost.
-    // Assumptions and inputs kept as typed go alone. A batch that left a syntax error is run again one command at a
+    // Assumptions and inputs kept as typed go alone. A batch that printed an error or warning (not the `// Success` notes of functions) or returned an error is run again one command at a
     // time (values and functions can be set twice), so one bad entry never takes the entries after it down (G19).
     let batch: string[] = [];
     const flush = (): void => {
       if (!batch.length) return;
       this.giac.clearMessages();
-      this.giac.eval(batch.join(";") + ";");
-      if (batch.length > 1 && /syntax error/.test(this.giac.messages())) for (const c of batch) this.giac.eval(c);
+      const out = this.giac.eval(batch.join(";") + ";");
+      // Any message or error result: a syntax error, or a reserved name that aborts the rest of the batch (`pi:=3`).
+      if (batch.length > 1 && (/error|reserved word|not allowed|warning/i.test(this.giac.messages()) || /^GIAC_ERROR/.test(out))) for (const c of batch) this.giac.eval(c);
       batch = [];
     };
     for (const e of replayOrder(entries)) {
