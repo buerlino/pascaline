@@ -608,3 +608,33 @@ cases:
   - { id: "pal-greek-09", latex: "\\Sigma+\\sigma+\\delta+\\theta+\\lambda+\\rho+\\tau+\\chi", expect: "Sigma+sigma+delta+theta+lambda+rho+tau+chi", source: "derived", group: "palettes" }
   - { id: "pal-greek-10", latex: "\\Psi+1", expect: "Psi_+1", source: "derived", group: "palettes", note: "R18f1: Giac keeps Psi and Phi (Psi:=3 is refused); precision.yaml prec-greek-Psi stores 3 and gets 4" }
   - { id: "pal-greek-11", latex: "\\Phi^2", expect: "Phi_^2", source: "derived", group: "palettes" }
+  # --- R28 (2026-10-18): units mode, the unit view's formula (docs/04 4.3). `options: { units: true }`; a prompt
+  # \placeholder[id]{…} after a number is its unit slot, pasu<i> in the order written (its body is never read: the slot's
+  # units come from R24a's model); \const{ID}{…} is pask<j>; \pm after a number is pasupm(value,sigma) (G18); \to before
+  # the last prompt is the end slot. `formula` is the exact text; `slots` and `to` (app/scripts/unit-case.ts syntax) go
+  # with it through G16's builder (app/src/units/build.ts) to the Giac text `expect`, values derived by hand.
+  - { id: "units-01", latex: "72\\placeholder[u1]{}", options: { units: true }, formula: "72*pasu1", slots: ["k:m / h"], expect: "20*pasdimL/pasdimT", source: "derived", group: "units", note: "72·1000/3600 = 20 m/s" }
+  - { id: "units-02", latex: "\\frac{100\\placeholder[u1]{}}{4\\placeholder[u2]{}}", options: { units: true }, formula: "100*pasu1/(4*pasu2)", slots: ["k:m", "h"], expect: "125/18*pasdimL/pasdimT", source: "derived", group: "units", note: "100000/14400 m/s" }
+  - { id: "units-03", latex: "72\\placeholder[u1]{}\\div2\\placeholder[u2]{}", options: { units: true }, formula: "72*pasu1/(2*pasu2)", slots: ["m", "s"], expect: "36*pasdimL/pasdimT", source: "derived", group: "units", note: "a flat ÷ takes the number with its slot" }
+  - { id: "units-04", latex: "12.34\\pm0.05\\placeholder[u1]{}", options: { units: true }, formula: "pasupm(12.34,0.05)*pasu1", slots: ["m"], expect: "1234/100*pasdimL", source: "derived", group: "units", note: "G18: the ± goes before the slot; the builder puts the value in" }
+  - { id: "units-05", latex: "1.5\\emark-3\\placeholder[u1]{}", options: { units: true }, formula: "1.5e-3*pasu1", slots: ["k:m"], expect: "3/2*pasdimL", source: "derived", group: "units", note: "an ᴇ number is one number before its slot" }
+  - { id: "units-06", latex: "2\\placeholder[u1]{}\\times\\const{c}{c}", options: { units: true }, formula: "(2*pasu1)*pask1", slots: ["s"], expect: "599584916*pasdimL", source: "derived", group: "units", note: "a constant needs no chip value: the builder takes it from the index with its dimension" }
+  - { id: "units-07", latex: "\\const{c}{c}\\times\\const{c}{c}\\times3\\placeholder[u1]{}", options: { units: true }, formula: "(pask1*pask1)*(3*pasu1)", slots: ["k:g"], expect: "269626553621045292*pasdimM*pasdimL^2/pasdimT^2", source: "derived", group: "units", note: "the same constant twice is one pask; 3·299792458² kg·m²/s²" }
+  - { id: "units-08", latex: "5\\placeholder[u1]{}\\to\\placeholder[end]{\\mathrm{m}}", options: { units: true }, formula: "5*pasu1", slots: ["k:m"], to: "m", expect: "5000*pasdimL", source: "derived", group: "units", note: "\\to and the end slot close the line; the end slot's body is not read" }
+  - { id: "units-09", latex: "3\\placeholder[u1]{}+20\\placeholder[u2]{}", options: { units: true }, formula: "3*pasu1+20*pasu2", slots: ["m", "c:m"], expect: "16/5*pasdimL", source: "derived", group: "units" }
+  - { id: "units-10", latex: "-20\\placeholder[u1]{}", options: { units: true }, formula: "-20*pasu1", slots: ["oC"], expect: "5063/20*pasdimK", source: "derived", group: "units", note: "°C alone: -20 + 273.15 K" }
+  - { id: "units-11", latex: "\\left(2.5\\pm0.1\\placeholder[u1]{}\\right)^{2}", options: { units: true }, formula: "(pasupm(2.5,0.1)*pasu1)^2", slots: ["m"], expect: "25/4*pasdimL^2", source: "derived", group: "units" }
+  - { id: "units-12", latex: "9.81\\pm2\\emark-3\\placeholder[u1]{}", options: { units: true }, formula: "pasupm(9.81,2e-3)*pasu1", slots: ["m / s^2"], expect: "981/100*pasdimL/pasdimT^2", source: "derived", group: "units", note: "σ may be an ᴇ number" }
+  - { id: "units-13", latex: "2{,}5\\placeholder[u1]{}", options: { units: true, decimalComma: true }, formula: "2.5*pasu1", slots: ["h"], expect: "9000*pasdimT", source: "derived", group: "units" }
+  - { id: "units-e01", latex: "5\\pm1", error: true, source: "derived", group: "units", note: "± outside units mode" }
+  - { id: "units-e02", latex: "12.34\\pm0.05", error: true, source: "derived", group: "units", note: "± outside units mode" }
+  - { id: "units-e03", latex: "5\\to", error: true, source: "derived", group: "units", note: "→ outside units mode is the function arrow, which needs a name" }
+  - { id: "units-e04", latex: "72\\placeholder[u1]{}", error: true, source: "derived", group: "units", note: "a prompt outside units mode" }
+  - { id: "units-e05", latex: "x\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "a slot with no number before it" }
+  - { id: "units-e06", latex: "\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "a slot with no number before it" }
+  - { id: "units-e07", latex: "\\left(2\\right)\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "a bracket is not a number" }
+  - { id: "units-e08", latex: "\\pm0.1\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "± with no number before it" }
+  - { id: "units-e09", latex: "5\\pm x\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "σ is a plain number" }
+  - { id: "units-e10", latex: "5\\placeholder[u1]{}\\to", options: { units: true }, error: true, source: "derived", group: "units", note: "→ with no end slot" }
+  - { id: "units-e11", latex: "5\\placeholder[u1]{}\\to\\placeholder[end]{}+1", options: { units: true }, error: true, source: "derived", group: "units", note: "the end slot ends the line" }
+  - { id: "units-e12", latex: "5\\placeholder[u1]{}+6\\placeholder[u1]{}", options: { units: true }, error: true, source: "derived", group: "units", note: "one prompt id per slot" }
