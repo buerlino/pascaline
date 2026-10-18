@@ -1,0 +1,5 @@
+// pascaline library 9
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// newer
+sqq(x):=x^2

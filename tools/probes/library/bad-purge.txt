@@ -1,0 +1,5 @@
+// pascaline library 1
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+// purges a name
+k(x):={purge(beam); x}
