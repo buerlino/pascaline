@@ -280,4 +280,11 @@ describe("P5 (b), R39: the real odd root of a power", () => {
     await s.submit("\\left(-8\\right)^{\\frac{1}{3}}");
     expect(s.cas[0]?.text).toBe("(-8)^(1/3)");
   });
+
+  it("CAS keeps the root template's real cube root (L6)", async () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    s.setView("cas");
+    await s.submit("\\sqrt[3]{-8}");
+    expect(s.cas[0]?.text).toBe("surd(-8,3)");
+  });
 });
