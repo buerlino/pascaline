@@ -1,6 +1,10 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # S4 report: the laptop connection (sandra, 2026-10-18, branch `p1/sandra-connector`)
 
+## Recommendation (for the owner)
+**A library file carries definitions only: functions and exact values, imported and exported. Settings and the user-key slots stay in the backup file** (S6, R38a/R38b).
+Why: a library is written, tested and shared, while settings and key slots belong to one device; a shared file that changed someone's digits or rebound their keys on import would be a surprise (principle 3), and the backup already carries them. Cost, removal test and what would change it: decisions.md "Needs the user", "2026-10-18 S4: what a library file carries"; evidence in `docs/research/r10-connector.md` section 5.
+
 ## Done (against "Done when")
 - `docs/research/r10-connector.md` has sections 1–5. Every claim about today's code cites `file:line` or a probe run. Nothing under `app/` or `android/` changed.
 - New probe `tools/probes/library.ts` and its files in `tools/probes/library/` (`beams.txt` is accepted with 4 definitions and 5 tests passing; thirteen bad files are each refused for their one reason). Commands: `check <file>`, `replay`, `export`. There is a row in `tools/probes/README.md`.
