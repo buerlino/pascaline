@@ -7,7 +7,8 @@
 import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type HomeSettings } from "../engine/homeEval.ts";
 import { exactFacts, floatFacts, hasFloat, rationalValue, splitList, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
 import { BASES, dimKeyOf, isExponent, parseDimKey } from "./dims.ts";
-import type { Quantity, UnitError, UnitJob } from "./types.ts";
+import { isUnitError, type Quantity, type Uncertainty, type UnitError, type UnitJob } from "./types.ts";
+import { shownWithUncertainty, uncertaintyText } from "./uncertainty.ts";
 
 const S = `[${BASES.map((b) => b.symbol).join(",")}]`;
 const ANY_DIM = BASES.map((b) => `has(y,${b.symbol})`).join(" or ");
@@ -141,6 +142,40 @@ function numberOf(giac: Giac, name: string, rerun: string, s: HomeSettings, inex
   return facts && result(facts, float ? undefined : text, s, inexact, float);
 }
 
+/**
+ * G18: the first-order uncertainty of the stored result. σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over the uncertain inputs (taken as
+ * independent), exactly, with Giac's diff, at the inputs' values; it is a quantity of the result's dimension, which is
+ * then divided by the end slot's factor like the value (a level end slot: through the derivative of the level).
+ * `valueExpr` is Giac text of the value as shown. Never "=": the facts of σ carry the approximation.
+ */
+function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string }, valueExpr: string, dimension: string | null, s: HomeSettings): Uncertainty | UnitError {
+  const u = job.unc!;
+  const lit = toExactLiterals;
+  const F = withAngles(lit(u.expr));
+  const at = `[${u.vars.map((v) => `${v.name}=(${lit(v.value)})`).join(",")}]`;
+  const terms = u.vars.map((v) => `(subst(diff(${F},${v.name}),${at})*(${lit(v.sigma)}))^2`).join("+");
+  const out = giac.eval(`pasuS:=pasuq(normal(sqrt(${terms})))`);
+  if (isError(out)) return { error: "engine", detail: out };
+  const q = checked(out);
+  if (!q || (q.kind !== "term" && q.kind !== "zero")) return { error: "engine", detail: `no uncertainty: ${out}` };
+  if (q.kind === "term" && dimension !== null && dimKeyOf(q.exps) !== dimension) return { error: "engine", detail: `uncertainty of ${dimKeyOf(q.exps)} on ${dimension}` };
+  const c = q.kind === "term" ? q.num : "0";
+  let sigma = `(${c})/(${dst.num})`;
+  if (job.endLog !== undefined && src.kind === "term") {
+    const level = job.endLog.replace(/pasux/g, "pasuxx");
+    sigma = `abs(subst(diff(${level},pasuxx),pasuxx=(pasuR[0][2])/(pasuR[1][2])))*${sigma}`;
+  }
+  const set = giac.eval(`pasus:=normal(${sigma})`);
+  if (isError(set)) return { error: "engine", detail: set };
+  const value = numberOf(giac, "pasus", "pasus", s, true);
+  const plain = giac.eval(`evalf(${valueExpr},30)`);
+  const sig = giac.eval("evalf(pasus,30)");
+  const text = isError(sig) ? null : uncertaintyText(sig);
+  const shown = isError(plain) || isError(sig) ? null : shownWithUncertainty(plain, sig, plain);
+  if (!value || text === null || shown === null) return { error: "engine", detail: `uncertainty not a number: ${sig}` };
+  return { value, text, shown };
+}
+
 /** Evaluates a job in the engine's current (Home) mode. One Giac call when the value is rational; the agreement
  *  check's calls otherwise. */
 export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | UnitError {
@@ -160,7 +195,11 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   if (dimension !== null && job.end && dimension !== dimKeyOf(dst.exps)) return { error: "dimension", dims: [dimension, dimKeyOf(dst.exps)], end: true };
   const num = src.kind === "term" ? src.num : "0";
   const si = job.end && src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};
-  const done = (value: HomeResult): Quantity => ({ value, dimension, ...si, ms: performance.now() - t0 });
+  const done = (value: HomeResult, valueExpr: string): Quantity | UnitError => {
+    const unc = job.unc ? uncertainty(giac, job, src, dst, valueExpr, dimension, s) : null;
+    if (unc && isUnitError(unc)) return unc;
+    return { value, dimension, ...si, ...(unc ? { unc } : {}), ms: performance.now() - t0 };
+  };
   if (job.absTemp && src.kind === "term" && giac.eval(`sign(${num})`).trim() === "-1") return { error: "belowzero" };
   // An end slot in °C or °F: the SI number less the offset (K = a·x + b, the end slot holds a); in dB, dBm or Np: the
   // level of the ratio to its reference. Both give the number of Giac's text, not a rational quotient.
@@ -170,7 +209,7 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   if (exact !== null) {
     const r = rationalValue(exact, valuePrecision(Math.trunc(s.digits)))!;
     const big = [r.p, r.q].some((x) => (x < 0n ? -x : x).toString().length > s.maxExactDigits);
-    return done(result([{ value: { re: r.v, im: rationalValue("0")!.v }, exactRational: true, reliableDigits: null, big }], exact, s, job.inexact, false));
+    return done(result([{ value: { re: r.v, im: rationalValue("0")!.v }, exactRational: true, reliableDigits: null, big }], exact, s, job.inexact, false), exact);
   }
   if (job.endLog !== undefined) {
     // The level of a ratio at or below 0 is not a real number: refuse it before taking the log.
@@ -182,7 +221,7 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const level = (r: string): string => job.endLog!.replace(/pasux/g, `(${r})`);
   giac.eval(job.endLog !== undefined ? `pasuv:=pasul(${level(ratio)})` : `pasuv:=normal(${ratio})`);
   const value = numberOf(giac, "pasuv", job.endLog !== undefined ? `pasul(${level(rerun)})` : rerun, s, job.inexact);
-  if (value) return done(value);
+  if (value) return done(value, "pasuv");
   // Not a number: a free name in it is the user's to fix; anything else (a timeout in the check) is the engine's.
   const names = giac.eval("lname(pasuv)");
   return /^\[\s*\]$/.test(names) || isError(names) ? { error: "engine", detail: `no number: ${num}` } : { error: "symbolic", detail: num };

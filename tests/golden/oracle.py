@@ -43,7 +43,7 @@ MARK_FILES = {"home.yaml", "precision.yaml", "units.yaml"}
 MARKS = {"=", "≈", "⚠"}
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "assumed"}
 KEYS = ["id", "kind", "input", "to", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
-        "options", "before", "code", "file", "home", "expect", "mark", "exact", "dim", "si", "si_oracle", "message", "source", "g2", "status", "group", "cat", "note"]
+        "options", "before", "code", "file", "home", "expect", "mark", "exact", "dim", "si", "si_oracle", "unc", "unc_oracle", "shown", "message", "source", "g2", "status", "group", "cat", "note"]
 CASE_LINE = re.compile(r"^\s*- (\{.*\})\s*$")
 
 
@@ -264,6 +264,37 @@ def check_exact(case: dict, key: str = "exact", oracle_key: str = "oracle") -> l
     return [] if abs(w - g) <= mp.mpf(10) ** -50 * max(1, abs(w)) else [f"{key} {text!r} is {mp.nstr(g, 20)}, the oracle {mp.nstr(w, 20)}"]
 
 
+def two_digits(x, place=None):
+    """G18 (docs/04 2.6): x to 2 significant digits as text, a trailing zero kept ("1.2", "0.10"); or x rounded to the
+    decimal place `place` (an exponent of ten). Returns (text, place)."""
+    d = to_decimal(mp.mpmathify(M(x)))
+    if place is None:
+        place = d.adjusted() - 1
+        if round_decimal(d, 2).adjusted() > d.adjusted():
+            place += 1
+    q = d.quantize(Decimal(1).scaleb(place), rounding=ROUND_HALF_UP)
+    if not -4 <= q.adjusted() < 12:
+        return f"{q:E}".replace("E+", "E"), place
+    return f"{q:f}", place
+
+
+def check_unc(case: dict) -> list:
+    """units.yaml, G18: `unc` (σ at 2 digits) against `unc_oracle`, the first-order σ computed here at 70 digits; `shown`
+    ("39.5 ± 1.2") is the oracle value rounded to σ's last digit, then σ. A case without a σ says `unc: "none"`."""
+    if "unc_oracle" not in case:
+        return [] if case.get("unc", "none") == "none" and "shown" not in case else ["unc without unc_oracle"]
+    mp.dps = 70
+    sigma = eval(case["unc_oracle"], namespace())  # expressions come from our own case files
+    text, place = two_digits(sigma)
+    out = [] if case.get("unc") == text else [f"unc {case.get('unc')!r} but the oracle gives {text!r}"]
+    if "shown" in case:
+        value, _ = two_digits(eval(case["oracle"], namespace()), place)
+        want = f"{value} ± {text}"
+        if case["shown"] != want:
+            out.append(f"shown {case['shown']!r} but the oracle gives {want!r}")
+    return out
+
+
 def derived_mark(case: dict):
     """"=" when the oracle value is exactly the shown text, else "≈" (docs/04 section 2.4); None for non-numbers."""
     shown = parse_shown(case.get("expect"))
@@ -304,6 +335,8 @@ def check_mark(case: dict, write: bool) -> list:
     mark = case.get("mark")
     if mark is not None and mark not in MARKS:
         return [f"mark {mark!r} not one of {sorted(MARKS)}"]
+    if case.get("unc", "none") != "none":
+        return [] if mark == "≈" else [f"a result with a σ is always ≈, not {mark!r}"]
     if mark == "⚠":
         return [] if case.get("note") else ["mark ⚠ needs a note (why the result cannot be confirmed)"]
     if "expect" not in case:
@@ -368,7 +401,7 @@ def check_file(path: Path, write: bool, g2_items: set) -> int:
                     problems.append(f"cross-check ({src}): expect {case.get('expect')!r} but oracle {v30!r}")
         if path.name in MARK_FILES:
             problems += check_mark(case, write)
-        problems += check_exact(case) + check_exact(case, "si", "si_oracle")
+        problems += check_exact(case) + check_exact(case, "si", "si_oracle") + check_unc(case)
         for p in problems:
             print(f"PROBLEM {path.name} {cid}: {p}")
         bad += len(problems)

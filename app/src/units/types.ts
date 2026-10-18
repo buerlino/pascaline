@@ -22,7 +22,8 @@ export interface UnitSlot {
 
 export interface UnitRequest {
   /** Giac text from our parser in units mode: `pasu1`, `pasu2`, … for the slots, `pask1`, … for the constants. A
-   *  slot multiplies the number before it (`72*pasu1`). */
+   *  slot multiplies the number before it (`72*pasu1`). An uncertain value is `pasupm(value,sigma)` (G18): sigma is
+   *  the standard uncertainty in the same unit, and each one is an independent input. */
   formula: string;
   /** slots[i] is `pasu<i+1>`. */
   slots: UnitSlot[];
@@ -46,6 +47,16 @@ export interface UnitJob {
   absTemp?: true;
   /** A constant with an uncertainty went in: never "=" (decisions M4-4), as in Home. */
   inexact: boolean;
+  /** Uncertain inputs (G18): `expr` is the formula with a free symbol per uncertain value, which the worker
+   *  differentiates; `expr` above has them replaced by their values. */
+  unc?: { expr: string; vars: UncVar[] };
+}
+
+/** An uncertain input: the symbol `pasv<n>` stands for a value with a standard uncertainty (Giac text of both). */
+export interface UncVar {
+  name: string;
+  value: string;
+  sigma: string;
 }
 
 export interface Quantity {
@@ -58,7 +69,19 @@ export interface Quantity {
   /** With an end slot: Giac's exact text of the number in SI base units (G25 picks a unit to show from it).
    *  Absent without an end slot (value is in SI then), for an exact 0, or when the text is too long to keep. */
   si?: string;
+  /** G18: the first-order uncertainty of a result with uncertain inputs (the value is then never "="). */
+  unc?: Uncertainty;
   ms: number;
+}
+
+/** σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over independent inputs, in the same unit as the value. */
+export interface Uncertainty {
+  /** σ with Home's facts (display at the digits setting). */
+  value: HomeResult;
+  /** σ to 2 significant digits (docs/04 2.6), trailing zero kept: "1.2", "0.10". */
+  text: string;
+  /** The value rounded to σ's last digit, then " ± " and σ: "39.5 ± 1.2". */
+  shown: string;
 }
 
 /** A refusal. The message is built by messages.ts from the i18n table. */

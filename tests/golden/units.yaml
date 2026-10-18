@@ -10,7 +10,10 @@
 # refused case has `message` (the text the user reads) instead.
 # `settings: { angle: deg }`: a bare number in sin, cos and tan follows the Home angle mode (G15 default, decisions.md).
 # G17: °C, °F and the logarithmic units (dB, bel, Np, dBm, dBW) are allowed only alone and convert by their offset or level
-# rule; ± (G18) comes later.
+# rule. G18: an uncertain value is `pasupm(value,sigma)` in the input (R28's parser writes it; sigma in the same unit, every
+# one independent); σ = sqrt(Σ (∂f/∂xᵢ·σᵢ)²), first order, exact in Giac. `unc` is σ at 2 significant digits (docs/04 2.6;
+# "none": the result carries no σ), `unc_oracle` σ by the oracle, `shown` the value rounded to σ's last digit with it. A
+# result with a σ is always ≈.
 cases:
   # --- the 26 spike cases (engine/qalc/cases.yaml): the conversions and prefixes; u05 and u06 are t01 and t02 below ---
   - { id: "u01", input: "5*{k:m / h}", to: "m / s", oracle: "F(5000,3600)", expect: "1.38888888889", mark: "≈", exact: "25/18", source: "derived" }
@@ -63,7 +66,7 @@ cases:
   - { id: "t04", input: "2*pi*25*{m:m}", oracle: "2*pi*25/1000", expect: "0.157079632679", mark: "≈", exact: "1/20*pi", dim: "m1", source: "oracle", note: "task t04" }
   - { id: "d40", input: "sqrt(2*9.81*{m / s^2}*2*{m})", oracle: "sqrt(2*F('9.81')*2)", expect: "6.26418390535", mark: "≈", exact: "3*sqrt(109)/5", dim: "m1s-1", source: "oracle", note: "√ of a quantity with units: the dimensions are positive, so √(m²) is m, not |m|" }
   - { id: "d41", input: "5*{m}-5*{m}", oracle: "F(0)", expect: "0", mark: "=", exact: "0", dim: null, source: "derived", note: "an exact 0 has lost its dimension" }
-  - { id: "d42", input: "{=G}", expect: "6.6743E-11", mark: "≈", exact: "66743/1000000000000000", dim: "kg-1m3s-2", source: "derived", note: "G has a CODATA uncertainty: never = (decisions M4-4), as in Home; G18 adds its ±" }
+  - { id: "d42", input: "{=G}", oracle: "F('6.6743e-11')", expect: "6.6743E-11", mark: "≈", exact: "66743/1000000000000000", dim: "kg-1m3s-2", unc: "1.5E-15", unc_oracle: "F('1.5e-15')", shown: "6.67430E-11 ± 1.5E-15", source: "derived", note: "G has a CODATA uncertainty: never = (decisions M4-4), as in Home, and it carries its ±" }
   - { id: "d43", input: "20*{oC}*2", message: "Use K or Δ°C for a temperature difference", source: "derived" }
   - { id: "d44", input: "2*{dB}*3*{m}", message: "dB converts only", source: "derived", note: "a logarithmic unit is allowed only alone" }
   - { id: "d45", input: "y*{m}", message: "Not a number: y", source: "derived", note: "a free name in the formula" }
@@ -99,3 +102,13 @@ cases:
   - { id: "l15", input: "0*{W}", to: "dBm", message: "A level needs a positive value", source: "derived", note: "was the engine error" }
   - { id: "t15", input: "-300*{oC}", to: "K", message: "Below absolute zero", source: "derived", note: "was -26.85" }
   - { id: "t16", input: "1.5e3*{oC}", to: "K", oracle: "F(1500)+F('273.15')", expect: "1773.15", mark: "=", exact: "35463/20", source: "derived", note: "E notation as the parser writes it" }
+  # --- G18: uncertainty, first order (docs/04 2.6; decisions M4-2 point 2) ---
+  - { id: "g01", input: "pasupm(12.34,0.05)*{m}*pasupm(3.2,0.1)*{m}", oracle: "F('12.34')*F('3.2')", expect: "39.488", mark: "≈", exact: "4936/125", dim: "m2", unc: "1.2", unc_oracle: "sqrt((F('3.2')*F('0.05'))**2+(F('12.34')*F('0.1'))**2)", shown: "39.5 ± 1.2", source: "derived", note: "task t10: σ = 1.2443295383… m², first order, never =" }
+  - { id: "g02", input: "pasupm(10.0,0.3)*{m}+pasupm(2.5,0.4)*{m}", oracle: "F('12.5')", expect: "12.5", mark: "≈", exact: "25/2", dim: "m1", unc: "0.50", unc_oracle: "sqrt(F('0.3')**2+F('0.4')**2)", shown: "12.50 ± 0.50", source: "derived", note: "a sum: σ² adds" }
+  - { id: "g03", input: "pasupm(10,0.2)*{m}/(pasupm(4,0.1)*{s})", oracle: "F('2.5')", expect: "2.5", mark: "≈", exact: "5/2", dim: "m1s-1", unc: "0.080", unc_oracle: "F('2.5')*sqrt((F('0.2')/10)**2+(F('0.1')/4)**2)", shown: "2.500 ± 0.080", source: "derived", note: "a quotient: relative σ² add" }
+  - { id: "g04", input: "(pasupm(2.0,0.1)*{m})^3", oracle: "F(8)", expect: "8", mark: "≈", exact: "8", dim: "m3", unc: "1.2", unc_oracle: "3*F(2)**2*F('0.1')", shown: "8.0 ± 1.2", source: "derived", note: "a power: n·x^(n-1)·σ" }
+  - { id: "g05", input: "sqrt(pasupm(9,0.6)*{m^2})", oracle: "F(3)", expect: "3", mark: "≈", exact: "3", dim: "m1", unc: "0.10", unc_oracle: "F('0.6')/(2*3)", shown: "3.00 ± 0.10", source: "derived", note: "a square root: σ/(2√x)" }
+  - { id: "g06", input: "12.34*{m}*3.2*{m}", oracle: "F('12.34')*F('3.2')", expect: "39.488", mark: "=", exact: "4936/125", dim: "m2", unc: "none", source: "derived", note: "a value without ± carries no uncertainty and stays =" }
+  - { id: "g07", input: "pasupm(12.34,0.05)*{m}*pasupm(3.2,0.1)*{m}", to: "c:m^2", oracle: "F('12.34')*F('3.2')*10000", expect: "394880", mark: "≈", exact: "394880", unc: "12000", unc_oracle: "sqrt((F('3.2')*F('0.05'))**2+(F('12.34')*F('0.1'))**2)*10000", shown: "395000 ± 12000", source: "derived", note: "an end slot scales σ like the value" }
+  - { id: "g08", input: "pasupm(1,0.1)*{W}", to: "dBm", oracle: "10*log10(1000)", expect: "30", mark: "≈", exact: "30", unc: "0.43", unc_oracle: "10/ln(10)*F('0.1')", shown: "30.00 ± 0.43", source: "derived", note: "a level end slot: σ through d(10·log10 x)/dx" }
+  - { id: "g09", input: "pasupm(5,0.2)*{m}-pasupm(5,0.2)*{m}", oracle: "F(0)", expect: "0", mark: "≈", exact: "0", unc: "0.28", unc_oracle: "sqrt(2)*F('0.2')", shown: "0.00 ± 0.28", source: "derived", note: "two inputs are independent, so σ does not cancel" }

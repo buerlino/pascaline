@@ -49,7 +49,7 @@ describe("unit view builder (G16)", () => {
   });
   it("the end slot and the constants (an uncertain one makes the job inexact)", () => {
     const job = buildJob({ formula: "pask1*pask2*pasu1", slots: [{ tokens: [{ unit: "s" }] }], consts: ["c", "G"], end: { tokens: [{ unit: "m" }] } }, table);
-    expect(job).toEqual({
+    expect(job).toMatchObject({
       expr: "((299792458)*pasdimL^(1)*pasdimT^(-1))*((6.67430E-11)*pasdimM^(-1)*pasdimL^(3)*pasdimT^(-2))*(((1)*pasdimT^(1)))",
       end: "(((1)*pasdimL^(1)))",
       inexact: true,
@@ -108,5 +108,34 @@ describe("dimensions (G16)", () => {
     expect(dimensionText("A-1kg1m2s-5/2")).toBe("M·L²·T^(-5/2)·I⁻¹");
     expect(dimensionText("")).toBe("1");
     expect(unitErrorMessage({ error: "dimension", dims: ["m1", "s1"] })).toBe("Units don't match: L vs T");
+  });
+});
+
+describe("uncertain inputs (G18)", () => {
+  it("pasupm(value,sigma) is a symbol for the worker and its value for the nominal text", () => {
+    const job = buildJob({ formula: "pasupm(12.34,0.05)*pasu1*pasupm(3.2,0.1)*pasu2", slots: [{ tokens: [{ unit: "m" }] }, { tokens: [{ unit: "m" }] }] }, table);
+    if ("error" in job) throw new Error(job.error);
+    expect(job.inexact).toBe(true);
+    expect(job.unc?.vars).toEqual([{ name: "pasv1", value: "12.34", sigma: "0.05" }, { name: "pasv2", value: "3.2", sigma: "0.1" }]);
+    expect(job.unc?.expr).toBe("pasv1*(((1)*pasdimL^(1)))*pasv2*(((1)*pasdimL^(1)))");
+    expect(job.expr).toBe("(12.34)*(((1)*pasdimL^(1)))*(3.2)*(((1)*pasdimL^(1)))");
+  });
+  it("commas inside the value and a nested call are kept apart", () => {
+    const job = buildJob({ formula: "pasupm(max(1,2),0.1)*pasu1", slots: [{ tokens: [{ unit: "m" }] }] }, table);
+    if ("error" in job) throw new Error(job.error);
+    expect(job.unc?.vars[0]).toEqual({ name: "pasv1", value: "max(1,2)", sigma: "0.1" });
+  });
+  it("a constant with a CODATA uncertainty is an input once, however often it is used; c has none", () => {
+    const job = buildJob({ formula: "pask1*pask1*pask2", slots: [], consts: ["G", "c"] }, table);
+    if ("error" in job) throw new Error(job.error);
+    expect(job.unc?.vars).toEqual([{ name: "pasv1", value: "6.67430E-11", sigma: "1.5E-15" }]);
+    expect(job.unc?.expr).toBe("(pasv1*pasdimM^(-1)*pasdimL^(3)*pasdimT^(-2))*(pasv1*pasdimM^(-1)*pasdimL^(3)*pasdimT^(-2))*((299792458)*pasdimL^(1)*pasdimT^(-1))");
+  });
+  it("a value without ± has no uncertainty; a malformed ± is refused", () => {
+    const job = buildJob({ formula: "12.34*pasu1", slots: [{ tokens: [{ unit: "m" }] }] }, table);
+    if ("error" in job) throw new Error(job.error);
+    expect(job.unc).toBeUndefined();
+    expect(job.inexact).toBe(false);
+    expect("error" in buildJob({ formula: "pasupm(1)*pasu1", slots: [{ tokens: [{ unit: "m" }] }] }, table)).toBe(true);
   });
 });

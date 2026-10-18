@@ -4,7 +4,7 @@
 // Find index times the dimension symbols of dims.ts. Main thread, plain TS, no engine.
 import { dimSymbols, isExponent } from "./dims.ts";
 import type { FactorTable, UnitFactor } from "./factors.ts";
-import type { UnitError, UnitJob, UnitRequest, UnitSlot, UnitToken } from "./types.ts";
+import type { UncVar, UnitError, UnitJob, UnitRequest, UnitSlot, UnitToken } from "./types.ts";
 
 /** The logarithmic units: any unit with the Np dimension, and these. Each is a level of a ratio to a reference:
  *  `k`·log10 of the field ratio (dB 20, bel 2) or the power ratio (dBm, dBW 10), Np the ln of the field ratio; `ref`
@@ -115,13 +115,53 @@ function specialEnd(id: string, u: UnitFactor): { end: string; endOffset?: strin
   return { end: `((${a})${dims ? `*${dims}` : ""})`, endOffset: b! };
 }
 
-/** A constant as Giac text: its value times its dimension symbols (the worker makes the decimal exact). */
-function constGiac(id: string, table: FactorTable): { giac: string; inexact: boolean } {
+/** A constant as Giac text: its value times its dimension symbols (the worker makes the decimal exact). A constant
+ *  with a CODATA uncertainty is an uncertain input: its number is the symbol `uncVar` names, once per constant. */
+function constGiac(id: string, table: FactorTable, vars: UncVar[], seen: Map<string, string>): { giac: string; inexact: boolean } {
   const c = table.consts.get(id);
   if (!c) throw new Refused({ error: "engine", detail: `no constant ${id} in the index` });
   if (c.dim === undefined) throw new Refused({ error: "nofactor", unit: c.symbol });
   const dims = dimSymbols(c.dim);
-  return { giac: `((${c.value})${dims ? `*${dims}` : ""})`, inexact: c.unc !== undefined };
+  let number = `(${c.value})`;
+  if (c.unc !== undefined) {
+    let name = seen.get(id);
+    if (name === undefined) {
+      name = `pasv${vars.length + 1}`;
+      vars.push({ name, value: c.value, sigma: c.unc });
+      seen.set(id, name);
+    }
+    number = name;
+  }
+  return { giac: `(${number}${dims ? `*${dims}` : ""})`, inexact: c.unc !== undefined };
+}
+
+/** `pasupm(value,sigma)` calls of a formula (G18) become the symbols pasv<n>, appended to `vars`. */
+function uncertainValues(formula: string, vars: UncVar[]): string {
+  const CALL = "pasupm(";
+  let out = "";
+  let i = 0;
+  for (;;) {
+    const at = formula.indexOf(CALL, i);
+    if (at < 0) return out + formula.slice(i);
+    out += formula.slice(i, at);
+    let depth = 1;
+    let comma = -1;
+    let j = at + CALL.length;
+    for (; j < formula.length && depth > 0; j++) {
+      const c = formula[j];
+      if (c === "(") depth++;
+      else if (c === ")") depth--;
+      else if (c === "," && depth === 1 && comma < 0) comma = j;
+    }
+    if (depth > 0 || comma < 0) throw new Refused({ error: "engine", detail: "a bad ± in the formula" });
+    const value = formula.slice(at + CALL.length, comma).trim();
+    const sigma = formula.slice(comma + 1, j - 1).trim();
+    if (!value || !sigma || /pas/.test(value + sigma) || /,/.test(sigma)) throw new Refused({ error: "engine", detail: "a bad ± in the formula" });
+    const name = `pasv${vars.length + 1}`;
+    vars.push({ name, value, sigma });
+    out += name;
+    i = j;
+  }
 }
 
 /** The end slot's part of a job. */
@@ -150,9 +190,12 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
       return { expr: specialSource(x.id, x.u, num), ...endJob(req, table), ...(isAffine(x.u) ? { absTemp: true as const } : {}), inexact: false };
     }
     const slots = req.slots.map((s) => slotGiac(s, table));
-    const consts = (req.consts ?? []).map((id) => constGiac(id, table));
+    const vars: UncVar[] = [];
+    const formula = uncertainValues(req.formula, vars);
+    const seen = new Map<string, string>();
+    const consts = (req.consts ?? []).map((id) => constGiac(id, table, vars, seen));
     const used = new Set<string>();
-    const expr = req.formula.replace(PLACEHOLDER, (all, kind: string, n: string) => {
+    const sym = formula.replace(PLACEHOLDER, (all, kind: string, n: string) => {
       const k = Number(n) - 1;
       const out = kind === "u" ? slots[k] : consts[k]?.giac;
       if (out === undefined) throw new Refused({ error: "engine", detail: `${all} has no slot or constant` });
@@ -160,11 +203,14 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
       return out;
     });
     if (used.size !== slots.length + consts.length) throw new Refused({ error: "engine", detail: "a slot or constant is not in the formula" });
-    if (/\bpas/.test(expr.replace(/\bpasdim[A-Za-z]+\b/g, ""))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
+    if (/\bpas/.test(sym.replace(/\bpas(?:dim[A-Za-z]+|v\d+)\b/g, ""))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
+    // The value of every uncertain input goes in; the worker differentiates the symbolic text for σ.
+    const expr = vars.length ? sym.replace(/\bpasv(\d+)\b/g, (_, n: string) => `(${vars[Number(n) - 1]!.value})`) : sym;
     return {
       expr,
       ...endJob(req, table),
-      inexact: consts.some((c) => c.inexact),
+      inexact: vars.length > 0 || consts.some((c) => c.inexact),
+      ...(vars.length ? { unc: { expr: sym, vars } } : {}),
     };
   } catch (e) {
     if (e instanceof Refused) return e.why;
