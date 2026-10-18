@@ -152,6 +152,8 @@ cases:
   - { id: "fn-comb", input: "comb(52,5)", oracle: "F(factorial(52)//(factorial(5)*factorial(47)))", expect: "2598960", mark: "=", source: "derived" }
   - { id: "stat-mean", input: "mean([1,2,3,4])", oracle: "F(10,4)", expect: "2.5", mark: "=", source: "derived" }
   - { id: "stat-stddevp-sample", input: "stddevp([2,4,4,4,5,5,7,9])", oracle: "sqrt(F(32,7))", expect: "2.1380899353", mark: "≈", source: "oracle", note: "Giac's stddevp is the sample deviation (n-1), stddev the population one" }
+  - { id: "t09-mean", latex: "\\operatorname{mean}\\left(\\left\\{9.81,9.79,9.83,9.80,9.82,9.78,9.84,9.81,9.80,9.82\\right\\}\\right)", oracle: "F(981,100)", expect: "9.81", mark: "=", source: "oracle", note: "task t09's readings, the list from Shift + 8 (R54)" }
+  - { id: "t09-stddevp", latex: "\\operatorname{stddevp}\\left(\\left\\{9.81,9.79,9.83,9.80,9.82,9.78,9.84,9.81,9.80,9.82\\right\\}\\right)", oracle: "sqrt(F(3,1000)/9)", expect: "0.0182574185835", mark: "≈", source: "oracle", note: "sample deviation (n-1) of t09's readings; the sum of squares about 9.81 is 3/1000 exactly" }
   - { id: "stat-stddev-population", input: "stddev([2,4,4,4,5,5,7,9])", oracle: "F(2)", expect: "2", mark: "=", source: "derived" }
   - { id: "stat-variance", input: "variance([2,4,4,4,5,5,7,9])", oracle: "F(4)", expect: "4", mark: "=", source: "derived", note: "population variance" }
   - { id: "stat-normald_cdf1.96", input: "normald_cdf(1.96)", oracle: "erfc(-M(F('1.96'))/sqrt(2))/2", expect: "0.975002104852", mark: "≈", source: "oracle" }
