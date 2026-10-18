@@ -1,0 +1,227 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three palettes, light and dark</title>
+<style>
+:root { --page: #f4f5f7; --ink: #1a1d22; --muted: #5b6575; --rule: #b9c0cc; --card: #ffffff; --ok: #1f6f54; --bad: #a92a1b; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --page: #14161a; --ink: #e8ebef; --muted: #98a2b3; --rule: #3a4250; --card: #1d2026; --ok: #5fc9a0; --bad: #ff8f80; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 16px; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; max-width: 1000px; margin-inline: auto; }
+h1 { font-size: 1.5rem; margin: 0 0 4px; }
+h2 { font-size: 1.25rem; margin: 36px 0 6px; padding-top: 10px; border-top: 2px solid var(--rule); }
+h3 { font-size: 1.02rem; margin: 18px 0 4px; }
+p, li { max-width: 80ch; }
+.muted { color: var(--muted); }
+.bar { position: sticky; top: 0; z-index: 3; background: var(--page); padding: 8px 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; border-bottom: 1px solid var(--rule); }
+.bar button { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 6px; border: 1px solid var(--rule); background: var(--card); color: var(--ink); cursor: pointer; }
+.bar button[aria-pressed="true"] { background: var(--ok); color: #fff; border-color: var(--ok); }
+.bar a { font-size: 13px; color: var(--ink); text-decoration: none; padding: 3px 8px; border-radius: 4px; background: var(--card); border: 1px solid var(--rule); }
+.pair { display: flex; flex-wrap: wrap; gap: 14px; }
+body[data-show="dark"] .phone.light, body[data-show="light"] .phone.dark { display: none; }
+body[data-show="dark"] .th-light, body[data-show="light"] .th-dark { display: none; }
+.tablewrap { overflow-x: auto; margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { border: 1px solid var(--rule); padding: 3px 8px; text-align: left; vertical-align: middle; }
+th { background: var(--card); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.sw { display: inline-block; width: 16px; height: 16px; border-radius: 3px; border: 1px solid var(--rule); vertical-align: -3px; margin-right: 6px; }
+.pass { color: var(--ok); font-weight: 700; }
+.fail { color: var(--bad); font-weight: 700; }
+code { font-size: 12.5px; }
+.new { font-size: 11px; padding: 0 5px; border-radius: 3px; border: 1px solid var(--rule); margin-left: 4px; }
+.pick { border-left: 4px solid var(--ok); padding: 6px 12px; background: var(--card); }
+.cvd .sw { width: 28px; }
+
+/* The scene: a 412 px wide phone. Every colour is a token set inline on .phone. */
+.phone { width: 412px; max-width: 100%; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font-size: 14px; position: relative; background: var(--bg); color: var(--text); }
+.status { height: 28px; display: flex; align-items: center; gap: 5px; padding: 0 8px; background: var(--panel); border-bottom: 1px solid var(--line); white-space: nowrap; font-size: 13px; }
+.status .place { font-weight: 700; }
+.status .grow { flex: 1; }
+.chip { background: var(--chip-bg); color: var(--text); border-radius: 4px; padding: 0 6px; font-size: 12px; line-height: 18px; }
+.status .menu { font-size: 16px; padding: 0 6px; }
+.hist { padding: 6px 10px 2px; min-height: 178px; }
+.row { padding: 5px 6px; border-bottom: 1px solid var(--line); border-left: 3px solid transparent; }
+.row.picked { background: var(--pick); border-left-color: var(--focus); }
+.row .in { color: var(--muted); font-size: 14px; }
+.row .out { text-align: right; font-size: 20px; }
+.row .out .mk { margin-right: 6px; font-weight: 700; }
+.row .out .mk.approx { color: var(--approx); }
+.row.err .out { font-size: 15px; color: var(--error); }
+.row.err .mk { color: var(--warn); }
+.entry { margin: 4px 10px 8px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; font-size: 24px; display: flex; align-items: center; gap: 4px; }
+.entry .chip { font-size: 18px; line-height: 28px; padding: 0 8px; }
+.entry .cur { width: 2px; height: 28px; background: var(--focus); }
+.kp { padding: 6px; position: relative; }
+.grid { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: 38px; gap: 6px; }
+.k { position: relative; display: grid; place-items: center; border-radius: 7px; border: 1px solid var(--line); line-height: 1; font-size: 15px; min-width: 0; color: var(--text); }
+.k.num { background: var(--key-num); } .k.op { background: var(--key-op); } .k.fn { background: var(--key-fn); }
+.k.ctl { background: var(--key-ctl); } .k.nav { background: var(--key-nav); }
+.k.enter { background: var(--key-enter); color: var(--on-enter); font-weight: 600; }
+.k.on { background: var(--key-on); color: var(--on-key-on); font-weight: 700; }
+.k.dead { color: var(--text-dead); }
+.k .s, .k .a { position: absolute; top: 2px; font-size: 9px; font-weight: 600; max-width: 48%; overflow: hidden; white-space: nowrap; }
+.k .s { right: 4px; color: var(--shift); } .k .a { left: 4px; color: var(--alpha); }
+.k.has .p { margin-top: 10px; }
+.k.disc { border: none; background: transparent; }
+.ring { position: relative; height: 100%; aspect-ratio: 1; border-radius: 50%; background: var(--key-ctl); border: 1px solid var(--line); }
+.ring i { position: absolute; font-style: normal; font-size: 14px; }
+.ring .n { top: 6%; left: 50%; transform: translateX(-50%); } .ring .s2 { bottom: 6%; left: 50%; transform: translateX(-50%); }
+.ring .w { left: 10%; top: 50%; transform: translateY(-50%); } .ring .e { right: 10%; top: 50%; transform: translateY(-50%); }
+.ring b { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 30%; aspect-ratio: 1; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 128px; background: var(--panel); border-top: 2px solid var(--focus); display: flex; flex-direction: column; }
+.sheet .ttl { display: flex; justify-content: space-between; padding: 3px 12px; font-size: 12px; color: var(--muted); }
+.sheet .it { display: flex; align-items: center; gap: 10px; padding: 0 12px; border-top: 1px solid var(--line); background: var(--panel); min-height: 32px; }
+.sheet .it.off { min-height: 42px; }
+.sheet .it.hl { background: var(--key-num); }
+.sheet .it .n { color: var(--shift); font-weight: 700; width: 14px; }
+.sheet .it .v { margin-left: auto; color: var(--muted); }
+.sheet .it.off { color: var(--text-dead); }
+.sheet .it.off .n { color: var(--text-dead); }
+.sheet .why { font-size: 11px; color: var(--muted); padding-left: 24px; }
+.sheet .it.off { flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; }
+.sheet .it.off .l { display: flex; gap: 10px; width: 100%; align-items: center; }
+</style>
+</head>
+<body data-show="dark">
+<h1>Three palettes, light and dark</h1>
+<p class="muted">2026-10-18, R50a (feedback #53). Our own colours; nothing here comes from any HP skin or screenshot. Each palette is drawn on one scene at phone size (412 px wide) in light and dark: the status line with chips, three history rows (an exact result, a &asymp; result and a &#9888; row; the first row is the picked one), the entry line with an Ans chip, the R3 keypad (cluster and three maths rows, Shift legends top right, Alpha legends top left), a key that is on (Shift), a dead key (sin) and a pick sheet over the maths rows. The contrast numbers and the token tables are computed on this page from the same values that drew the scene. Nothing is built; nothing under <code>app/</code> changed.</p>
+<p class="pick"><strong>Your pick (backlog &ldquo;Needs the user&rdquo; item 7):</strong> look at the three on the phone and say which one, or which mix (for example Graphite&rsquo;s keys with Slate&rsquo;s accent). R50b then writes the picked values into <code>app/src/style.css</code>.</p>
+
+<div class="bar" id="bar">
+  <button type="button" data-show="dark" aria-pressed="true">Dark</button>
+  <button type="button" data-show="light" aria-pressed="false">Light</button>
+  <button type="button" data-show="both" aria-pressed="false">Both</button>
+  <span class="muted" style="font-size:13px">Jump:</span>
+  <span id="jump" style="display:contents"></span>
+</div>
+<div id="out"></div>
+<h2 id="how">How the numbers are made</h2>
+<ul>
+  <li><strong>Contrast</strong> is the WCAG ratio on sRGB, the same formula as <code>app/src/style.test.ts</code>: text, Shift and Alpha legends at least 4.5:1 on every key kind; a dead key&rsquo;s face at least 3:1 and at least 1 less than a live face; the sheet&rsquo;s labels, numbers and reasons at least 4.5:1 on <code>--panel</code> and <code>--key-num</code>. The new roles are held to the same bar: the &asymp; and &#9888; marks, the error row and the picked row&rsquo;s text at 4.5:1, the focus ring and the high-contrast key outline at 3:1 (non-text). The high-contrast palette uses 7:1 for text.</li>
+  <li><strong>Colour vision:</strong> the Shift and Alpha legend colours are run through the Machado et al. (2009) simulation for protanopia, deuteranopia and tritanopia (full severity), then compared by CIE76 distance &Delta;E. The bar here is &Delta;E &ge; 25 (clearly different at legend size); Shift and Alpha also sit on opposite top corners of every key, so colour is never the only difference. Shift is always a warm amber/orange, Alpha a cool blue, the pair that survives red-green deficiency best.</li>
+  <li>The six roles marked <span class="new">new</span> are not in <code>style.css</code> today: <code>--approx</code>, <code>--warn</code>, <code>--pick</code>, <code>--focus</code>, <code>--key-on</code>, <code>--on-key-on</code>. Today&rsquo;s app draws these with <code>--shift</code>, <code>--error</code> or opacity; R50b adds the ones the owner wants.</li>
+</ul>
+<script>
+/*LOGIC*/
+const KEYS = ['key-num', 'key-op', 'key-fn', 'key-ctl', 'key-nav'];
+const P = [
+{ id: 'graphite', name: 'Graphite', idea: 'A calm neutral graphite; the keys differ by a hint of tint, and one warm amber accent does all the pointing: Shift, Enter, the picked row and the focus.',
+  dark: { bg:'#17181b', panel:'#212326', line:'#46494f', 'key-num':'#2f3135', 'key-op':'#3c3f44', 'key-fn':'#2e343b', 'key-ctl':'#3b352e', 'key-nav':'#2f3631', 'key-enter':'#a8620f', 'on-enter':'#ffffff', 'key-on':'#e9b25d', 'on-key-on':'#17181b',
+    text:'#ececea', 'text-dead':'#8f9298', muted:'#a6a9af', shift:'#f2b45a', alpha:'#8fbdf0', error:'#ff8f80', 'chip-bg':'#3a3a42', approx:'#f2b45a', warn:'#ffb86b', pick:'#2b2d31', focus:'#f2b45a', scrim:'#000000' },
+  light: { bg:'#f3f2ef', panel:'#e5e3df', line:'#a9a6a0', 'key-num':'#ffffff', 'key-op':'#d9d6d0', 'key-fn':'#dde3ea', 'key-ctl':'#eadcc8', 'key-nav':'#d9e4da', 'key-enter':'#8a4a00', 'on-enter':'#ffffff', 'key-on':'#8a4a00', 'on-key-on':'#ffffff',
+    text:'#1c1b19', 'text-dead':'#6a6862', muted:'#5a5852', shift:'#8a4a00', alpha:'#1a5c94', error:'#a92a1b', 'chip-bg':'#dcd7ce', approx:'#8a4a00', warn:'#8a4000', pick:'#d6d2ca', focus:'#8a4a00', scrim:'#000000' } },
+{ id: 'slate', name: 'Slate', idea: 'A cool blue-grey, like an instrument panel: every key kind is a different blue-grey or sea green, Enter is a deep teal, and the accent is a cold cyan.',
+  dark: { bg:'#10161d', panel:'#18212b', line:'#3a4a5c', 'key-num':'#243140', 'key-op':'#33465b', 'key-fn':'#1f3a52', 'key-ctl':'#3a3f55', 'key-nav':'#1f4040', 'key-enter':'#0f6b78', 'on-enter':'#ffffff', 'key-on':'#7fd6e6', 'on-key-on':'#10161d',
+    text:'#e6edf4', 'text-dead':'#8795a7', muted:'#9fb0c3', shift:'#f5c46b', alpha:'#9fc3ff', error:'#ff8f85', 'chip-bg':'#1c4a66', approx:'#7fd6e6', warn:'#ffc16b', pick:'#22364a', focus:'#7fd6e6', scrim:'#000000' },
+  light: { bg:'#eef2f6', panel:'#dde4ec', line:'#9fb0c2', 'key-num':'#ffffff', 'key-op':'#cfd9e5', 'key-fn':'#d3e4f3', 'key-ctl':'#dcdcec', 'key-nav':'#d0e8e6', 'key-enter':'#0b5f6b', 'on-enter':'#ffffff', 'key-on':'#0b5f6b', 'on-key-on':'#ffffff',
+    text:'#142030', 'text-dead':'#5d6c7e', muted:'#475669', shift:'#8a4f00', alpha:'#1b4fa0', error:'#a82a1c', 'chip-bg':'#c4dcef', approx:'#0b5f6b', warn:'#8a4000', pick:'#c9d8e8', focus:'#0b5f6b', scrim:'#000000' } },
+{ id: 'contrast', name: 'High contrast', idea: 'Black and white with strong key outlines; every text is at least 7:1 (AAA), the key kinds differ by outline and a light tint, and the accents are pure yellow and cyan.',
+  dark: { bg:'#000000', panel:'#0d0d0d', line:'#9a9a9a', 'key-num':'#1a1a1a', 'key-op':'#2a2a2a', 'key-fn':'#10223a', 'key-ctl':'#3a2410', 'key-nav':'#0f2e1c', 'key-enter':'#00602f', 'on-enter':'#ffffff', 'key-on':'#ffd23f', 'on-key-on':'#000000',
+    text:'#ffffff', 'text-dead':'#9a9a9a', muted:'#c8c8c8', shift:'#ffd23f', alpha:'#5fd8ff', error:'#ff9a8f', 'chip-bg':'#0b3a7a', approx:'#ffd23f', warn:'#ffd23f', pick:'#262626', focus:'#ffd23f', scrim:'#000000' },
+  light: { bg:'#ffffff', panel:'#f0f0f0', line:'#4a4a4a', 'key-num':'#ffffff', 'key-op':'#e2e2e2', 'key-fn':'#dce9fa', 'key-ctl':'#f6e4cc', 'key-nav':'#d8f0e0', 'key-enter':'#00552f', 'on-enter':'#ffffff', 'key-on':'#000000', 'on-key-on':'#ffffff',
+    text:'#000000', 'text-dead':'#585858', muted:'#303030', shift:'#6b3a00', alpha:'#003f80', error:'#9a1c10', 'chip-bg':'#cfe0f7', approx:'#6b3a00', warn:'#6b3000', pick:'#d8d8d8', focus:'#000000', scrim:'#000000' } }
+];
+const ROLES = [
+ ['bg','Screen and page','existing'],['panel','Status line, sheet rows','existing'],['line','Borders, dividers','existing'],
+ ['key-num','Digit keys; the highlighted sheet row','existing'],['key-op','Operator keys','existing'],['key-fn','Function keys','existing'],['key-ctl','Control and pad keys','existing'],['key-nav','Navigation and cluster keys','existing'],
+ ['key-enter','Enter','existing'],['on-enter','Enter label','existing'],['text','Text and key faces','existing'],['text-dead','A key that does nothing here','existing'],['muted','Input lines, reasons, hints','existing'],
+ ['shift','Shift legends, sheet numbers','existing'],['alpha','Alpha legends','existing'],['error','Error row text','existing'],['chip-bg','Chips (Ans, mode)','existing'],
+ ['approx','The ≈ mark','new'],['warn','The ⚠ mark','new'],['pick','Picked history row','new'],['focus','Focus ring, cursor','new'],['key-on','A key that is on (Shift active)','new'],['on-key-on','Label of a key that is on','new']
+];
+function lum(hex){const c=[1,3,5].map(i=>{const v=parseInt(hex.slice(i,i+2),16)/255;return v<=0.03928?v/12.92:((v+0.055)/1.055)**2.4});return .2126*c[0]+.7152*c[1]+.0722*c[2]}
+function cr(a,b){const [x,y]=[lum(a),lum(b)].sort((p,q)=>q-p);return (x+.05)/(y+.05)}
+// Colour-vision simulation (Machado et al. 2009, severity 1.0, linear RGB), then CIE76 distance.
+const SIM={prot:[[.152286,1.052583,-.204868],[.114503,.786281,.099216],[-.003882,-.048116,1.051998]],deut:[[.367322,.860646,-.227968],[.280085,.672501,.047413],[-.011820,.042940,.968881]],trit:[[1.255528,-.076749,-.178779],[-.078411,.930809,.147602],[.004733,.691367,.303900]]};
+function lin(h){return [1,3,5].map(i=>{const v=parseInt(h.slice(i,i+2),16)/255;return v<=0.04045?v/12.92:((v+.055)/1.055)**2.4})}
+function enc(v){v=Math.min(1,Math.max(0,v));const s=v<=.0031308?12.92*v:1.055*v**(1/2.4)-.055;return Math.round(s*255)}
+function hexOf(r){return '#'+r.map(v=>enc(v).toString(16).padStart(2,'0')).join('')}
+function sim(h,k){const m=SIM[k],c=lin(h);return hexOf(m.map(row=>row[0]*c[0]+row[1]*c[1]+row[2]*c[2]))}
+function lab(h){const [r,g,b]=lin(h);const X=(.4124*r+.3576*g+.1805*b)/.95047,Y=.2126*r+.7152*g+.0722*b,Z=(.0193*r+.1192*g+.9505*b)/1.08883;const f=t=>t>.008856?Math.cbrt(t):7.787*t+16/116;return [116*f(Y)-16,500*(f(X)-f(Y)),200*(f(Y)-f(Z))]}
+function dE(a,b){const p=lab(a),q=lab(b);return Math.hypot(p[0]-q[0],p[1]-q[1],p[2]-q[2])}
+const CVD=[['none','normal vision'],['prot','protanopia (no red)'],['deut','deuteranopia (no green)'],['trit','tritanopia (no blue)']];
+// All checks of one theme: [group, label, fg, bg, minimum, value]
+function checks(t, hc){
+  const out=[], T=hc?7:4.5, D=3;
+  const add=(g,l,f,b,min)=>out.push({g,l,f,b,min,v:cr(t[f],t[b])});
+  add('Screen','text on --bg','text','bg',T); add('Screen','muted on --bg','muted','bg',T);
+  add('Screen','error row text on --bg','error','bg',T); add('Screen','≈ mark on --bg','approx','bg',T); add('Screen','⚠ mark on --bg','warn','bg',T);
+  add('Screen','text on picked row','text','pick',T); add('Screen','muted on picked row','muted','pick',T);
+  add('Screen','text on --panel (status line)','text','panel',T); add('Screen','text on a chip','text','chip-bg',T);
+  add('Screen','focus ring on --bg (non-text, 3:1)','focus','bg',D); add('Screen','key outline on --bg (non-text, 3:1)','line','bg',hc?D:1);
+  for(const k of KEYS){ for(const f of ['text','shift','alpha']) add('Keys',`${f} on ${k}`,f,k,T); add('Keys',`text-dead on ${k} (dimmed)`,'text-dead',k,D); }
+  add('Keys','on-enter on key-enter','on-enter','key-enter',T); add('Keys','on-key-on on key-on','on-key-on','key-on',T);
+  for(const b of ['panel','key-num']){ for(const f of ['text','shift','muted']) add('Sheet',`${f} on ${b}`,f,b,T); add('Sheet',`text-dead on ${b} (disabled)`,'text-dead',b,D); }
+  return out;
+}
+function cvdRows(t){return CVD.map(([k,n])=>{const s=k==='none'?t.shift:sim(t.shift,k),a=k==='none'?t.alpha:sim(t.alpha,k);return {k,n,s,a,de:dE(s,a),c:cr(s,a)}})}
+const CVD_MIN=25; // CIE76 distance between the Shift and Alpha legend colours, after simulation
+/*END-LOGIC*/
+const $ = (s) => document.getElementById(s);
+const kk = (cls, p, s = '', a = '', style = '') => `<div class="k ${cls}${s || a ? ' has' : ''}" style="${style}">${a ? `<span class="a">${a}</span>` : ''}${s ? `<span class="s">${s}</span>` : ''}<span class="p">${p}</span></div>`;
+const span = (r, c, rs, cs) => `grid-row:${r} / span ${rs};grid-column:${c} / span ${cs}`;
+function phone(p, th) {
+  const t = p[th];
+  const vars = Object.entries(t).map(([k, v]) => `--${k}:${v}`).join(';');
+  const cl = [
+    ...[1, 2, 3].flatMap((r) => [kk('nav', 'U' + (2 * r - 1), '', '', span(r, 1, 1, 1)), kk('nav', 'U' + 2 * r, '', '', span(r, 2, 1, 1))]),
+    `<div class="k disc" style="${span(1, 3, 3, 2)}"><div class="ring"><i class="n">▲</i><i class="w">◀</i><i class="e">▶</i><i class="s2">▼</i><b></b></div></div>`,
+    kk('nav', 'View', 'Help', '', span(1, 5, 1, 1)), kk('nav', 'Esc', 'Clear', '', span(1, 6, 1, 1)),
+    kk('nav', 'Undo', 'Redo', '', span(2, 5, 1, 1)), kk('nav', 'Copy', 'Paste', '', span(2, 6, 1, 1)),
+    kk('nav', '⇤', '⇤□', '', span(3, 5, 1, 1)), kk('nav', '⇥', '□⇥', '', span(3, 6, 1, 1))].join('');
+  const mk = [
+    kk('ctl on', 'Shift'), kk('ctl', 'Alpha'), kk('fn', 'Vars', '', 'A'), kk('fn', 'Math', '', 'B'), kk('fn', 'Tmpl', '', 'C'), kk('ctl', '⌫', 'Clear'),
+    kk('fn', 'sin', 'asin', 'D'), kk('num', '7', '', 'G'), kk('num', '8', '', 'H'), kk('num', '9', '', 'I'), kk('op', '÷', '', 'J'), kk('fn dead', 'Fmt', 'Mode'),
+    kk('fn', 'x', '', 'X'), kk('num', '4'), kk('num', '5'), kk('num', '6'), kk('op', '×'), kk('ctl', 'Del'),
+    kk('fn', 'Ans'), kk('num', '1'), kk('num', '2'), kk('num', '3'), kk('op', '+'), kk('op', '−'),
+    kk('fn', 'EE'), kk('num', '0'), kk('num', '.'), kk('num', '(−)'), kk('enter', 'Enter', '', '', 'grid-column:5 / span 2')].join('');
+  const sheet = `<div class="sheet"><div class="ttl"><span>Mode</span><span>1–3 · ×</span></div>`
+    + `<div class="it hl"><span class="n">1</span>Angle<span class="v">◀ DEG ▶</span></div>`
+    + `<div class="it"><span class="n">2</span>Digits<span class="v">12</span></div>`
+    + `<div class="it off"><div class="l"><span class="n">3</span>Entry<span class="v">textbook</span></div><div class="why">Not in this app</div></div></div>`;
+  return `<div class="phone ${th}" style="${vars}" role="img" aria-label="${p.name}, ${th}">`
+    + `<div class="status"><span class="place">Home</span><span class="grow"></span><span class="chip">DEG</span><span class="chip">STD</span><span class="chip">12</span><span class="chip">⇧</span><span class="menu">☰</span></div>`
+    + `<div class="hist"><div class="row picked"><div class="in">√(16) + 3</div><div class="out"><span class="mk">=</span>7</div></div>`
+    + `<div class="row"><div class="in">π · 2</div><div class="out"><span class="mk approx">≈</span>6.28318530718</div></div>`
+    + `<div class="row err"><div class="in">1 ÷ 0</div><div class="out"><span class="mk">⚠</span>Division by zero</div></div></div>`
+    + `<div class="entry"><span class="chip">Ans</span>×<span>2</span><span class="cur"></span></div>`
+    + `<div class="kp"><div class="grid">${cl}${mk}</div>${sheet}</div></div>`;
+}
+const sw = (c) => `<span class="sw" style="background:${c}"></span>`;
+function tokenTable(p) {
+  return `<div class="tablewrap"><table><tr><th>Role</th><th>Used for</th><th class="th-dark">Dark</th><th class="th-light">Light</th></tr>`
+    + ROLES.map(([r, use, st]) => `<tr><td><code>--${r}</code>${st === 'new' ? '<span class="new">new</span>' : ''}</td><td>${use}</td><td class="th-dark">${sw(p.dark[r])}<code>${p.dark[r]}</code></td><td class="th-light">${sw(p.light[r])}<code>${p.light[r]}</code></td></tr>`).join('')
+    + `</table></div>`;
+}
+function contrastTable(p, th) {
+  const hc = p.id === 'contrast', cs = checks(p[th], hc);
+  const bad = cs.filter((c) => c.v < c.min).length;
+  const dimmed = KEYS.every((k) => cr(p[th]['text-dead'], p[th][k]) <= cr(p[th].text, p[th][k]) - 1);
+  return `<div class="th-${th}"><h4 style="margin:10px 0 2px">Contrast, ${th} — ${bad === 0 && dimmed ? '<span class="pass">all ' + cs.length + ' pass</span>' : '<span class="fail">' + bad + ' fail</span>'}</h4><div class="tablewrap"><table><tr><th>Pair</th><th>Ratio</th><th>Needs</th><th></th></tr>`
+    + cs.map((c) => `<tr><td>${sw(p[th][c.b])}${sw(p[th][c.f])}${c.g}: ${c.l}</td><td class="num">${c.v.toFixed(2)}:1</td><td class="num">${c.min}:1</td><td class="${c.v >= c.min ? 'pass' : 'fail'}">${c.v >= c.min ? '✓' : '✗'}</td></tr>`).join('')
+    + `</table></div></div>`;
+}
+function cvdTable(p, th) {
+  return `<div class="th-${th} cvd"><h4 style="margin:10px 0 2px">Shift and Alpha legends, ${th}</h4><div class="tablewrap"><table><tr><th>Vision</th><th>Shift</th><th>Alpha</th><th>ΔE</th><th></th></tr>`
+    + cvdRows(p[th]).map((r) => `<tr><td>${r.n}</td><td>${sw(r.s)}<code>${r.s}</code></td><td>${sw(r.a)}<code>${r.a}</code></td><td class="num">${r.de.toFixed(0)}</td><td class="${r.de >= CVD_MIN ? 'pass' : 'fail'}">${r.de >= CVD_MIN ? '✓' : '✗'}</td></tr>`).join('')
+    + `</table></div></div>`;
+}
+$('out').innerHTML = P.map((p) => `<h2 id="${p.id}">${p.name}</h2><p>${p.idea}</p><div class="pair">${phone(p, 'dark')}${phone(p, 'light')}</div>`
+  + `<h3>Tokens</h3>${tokenTable(p)}<h3>Contrast on the page</h3>${contrastTable(p, 'dark')}${contrastTable(p, 'light')}`
+  + `<h3>Colour vision</h3>${cvdTable(p, 'dark')}${cvdTable(p, 'light')}`).join('');
+$('jump').innerHTML = P.map((p) => `<a href="#${p.id}">${p.name}</a>`).join('') + '<a href="#how">Method</a>';
+const bar = $('bar');
+function show(mode) {
+  document.body.dataset.show = mode;
+  bar.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.show === mode)));
+  try { localStorage.setItem('palette-theme', mode); } catch { /* private window */ }
+}
+bar.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) show(b.dataset.show); });
+try { const m = localStorage.getItem('palette-theme'); if (m) show(m); } catch { /* no storage */ }
+</script>
+</body>
+</html>
