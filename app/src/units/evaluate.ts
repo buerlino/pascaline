@@ -92,6 +92,14 @@ function refusal(c: Checked): UnitError | null {
   return null;
 }
 
+/** G32: rpm or rev on one side and the angle on the other (the dimensions differ by rad alone). */
+function cycleRefusal(job: UnitJob, a: string, b: string): UnitError | null {
+  if (!job.cycle) return null;
+  const strip = (k: string): string => [...parseDimKey(k)].filter(([n]) => n !== "rad").map(([n, e]) => n + e).sort().join("");
+  const angle = (k: string): boolean => parseDimKey(k).has("rad");
+  return angle(a) !== angle(b) && strip(a) === strip(b) ? { error: "cycle", unit: job.cycle } : null;
+}
+
 /** Dimension keys by the first base each is written with (M, L, T, …), then by text: a stable order for messages
  *  ("L vs T"; Giac's expand() does not keep the order the terms were typed in). */
 function byDimension(a: string, b: string): number {
@@ -213,7 +221,7 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   if (bad) return bad;
   if (dst.kind !== "term") return { error: "engine", detail: "an end slot of 0" };
   const dimension = src.kind === "term" ? dimKeyOf(src.exps) : null;
-  if (dimension !== null && job.end && dimension !== dimKeyOf(dst.exps)) return { error: "dimension", dims: [dimension, dimKeyOf(dst.exps)], end: true };
+  if (dimension !== null && job.end && dimension !== dimKeyOf(dst.exps)) return cycleRefusal(job, dimension, dimKeyOf(dst.exps)) ?? { error: "dimension", dims: [dimension, dimKeyOf(dst.exps)], end: true };
   const num = src.kind === "term" ? src.num : "0";
   const si = src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};
   let unit = job.endUnit ?? "";

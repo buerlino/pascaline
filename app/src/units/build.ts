@@ -176,6 +176,12 @@ function tokenSymbol(t: UnitToken, table: FactorTable): string {
 
 const signed = (power: string, below: boolean): string => (below ? negate(power) : power);
 
+/** G32: the id of the first rpm or rev among the slots' tokens, else null. */
+function cycleUnit(slots: readonly UnitSlot[]): string | null {
+  for (const s of slots) for (const t of s.tokens) if (t.unit === "rpm" || t.unit === "rev") return t.unit;
+  return null;
+}
+
 /** The end slot's part of a job. */
 function endJob(req: UnitRequest, table: FactorTable): Pick<UnitJob, "end" | "endOffset" | "endLog" | "endUnit"> {
   if (!req.end) return {};
@@ -299,10 +305,12 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
     // The value of every uncertain input goes in; the worker differentiates the symbolic text for σ.
     const expr = vars.length ? sym.replace(/\bpasv(\d+)\b/g, (_, n: string) => `(${vars[Number(n) - 1]!.value})`) : sym;
     const shows = req.end ? [] : shownUnits(req, table);
+    const cycle = cycleUnit([...req.slots, ...(req.end ? [req.end] : [])]);
     return {
       expr,
       ...endJob(req, table),
       ...(shows.length ? { shows } : {}),
+      ...(cycle ? { cycle } : {}),
       inexact: vars.length > 0 || consts.some((c) => c.inexact),
       ...(vars.length ? { unc: { expr: sym, vars } } : {}),
     };

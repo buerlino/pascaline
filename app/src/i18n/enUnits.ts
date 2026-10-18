@@ -5,6 +5,8 @@
 export const enUnits = {
   "units.mismatch": "Units don't match: {dims}",
   "units.mismatchSep": " vs ",
+  "units.cycle.rpm": "{unit} counts turns: write tr/min for an angular speed",
+  "units.cycle.rev": "{unit} counts turns: write tr for an angle",
   "units.temperature": "Use K or Δ°C for a temperature difference",
   "units.logarithmic": "{unit} converts only",
   "units.level": "A level needs a positive value",
