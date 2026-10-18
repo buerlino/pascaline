@@ -396,6 +396,11 @@ Newest first. Where an entry changed an earlier document, that document now carr
 
 Each entry: the choice, why, the alternatives, and what would change it.
 
+### 2026-10-18 Opus pass 16 defaults (R28f1, G30f1, G31)
+1. **G31: Fixed switches to scientific with the same number of decimals when every shown decimal would be 0 for a nonzero value** (G2 item 60, virtual-calc): in Fixed 4, 4.7ᴇ-6 is 4.7000ᴇ-6 and 0.000123 is 0.0001; the sign is kept, 0 stays 0.0000, and the mark follows the text shown. *Would change if* a device check differs.
+2. **G31: the fallback shows only confirmed digits, as every other format does** (principle 3). A float with 3 reliable digits, such as 4.7123456ᴇ-6, draws as 4.7123ᴇ-6 with ⚠ 3 on `383fabe`, because `confirmedOptions` cuts the decimals by the plain FIX count and not by the fallback's fixed + 1 significant digits; fix package G31f1, so it draws as 4.71ᴇ-6.
+3. **R28f1: a minus before a bracketed ± value keeps its Negate** (R28f1's open question): −(−20 ± 0.5 °C) stays `-(pasupm(-20,0.5)*pasu1)`, which the builder refuses as a temperature difference: a refusal with its message, not a wrong number. Nobody writes it in a task. *Would change if* a task or a user needs it (then the sign goes in through brackets too, a ron package).
+
 ### 2026-10-18 Opus pass 15 defaults (R24af1, R28)
 1. **R24af1: a unit without an exact factor never makes a pair, and k + Da stays marked** (R24af1's open question). Da, kDa and u have no exact `si` in the index (a measured value), so k + Da reads "kilodalton" in the warning colour; kDa itself is a Find unit and is picked unmarked. A mark on a true pair costs one colour, a missing mark on a false pair (m + in as "minute") gives a wrong reading. *Would change if* the index gives measured units a factor the pair test can compare (a gorge package then).
 2. **R28: the sign of a number with ± goes inside `pasupm`** (pass 2 point 1, pass 3's note): −20 ± 0.5 in °C must be `pasupm(-20,0.5)*pasu1`. R28 writes `-pasupm(20,0.5)*pasu1`, which G16's builder refuses as a temperature difference; fix package R28f1.
