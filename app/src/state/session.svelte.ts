@@ -245,6 +245,9 @@ export class Session {
 
   private nextId = 1;
   private readonly calc: Calc;
+  /** Settles once the stored names were first read (or the engine failed): a parse waits for it, so a function from
+   *  before a relaunch is a call from the first Enter on (R56). */
+  private readonly namesRead: Promise<void>;
 
   private readonly kv: Kv;
   /** 0 = write the history at once (tests); the app sets a delay so Enter does not wait for the store. */
@@ -257,13 +260,15 @@ export class Session {
     this.kv = kv;
     this.calc = calc;
     this.taps = new TapCounter(kv);
-    calc.ready().then(
+    this.namesRead = calc.ready().then(
       (info) => {
         if (info?.safeStart) this.note(t("engine.safeStart"));
         this.engineState = "ready";
-        void this.refreshNames();
+        return this.refreshNames();
       },
-      () => (this.engineState = "failed"),
+      () => {
+        this.engineState = "failed";
+      },
     );
   }
 
@@ -291,6 +296,13 @@ export class Session {
     } catch {
       /* the engine restarts on its own; the next job refreshes the list */
     }
+  }
+
+  /** A function the engine just took (`p(x):=…`) counts for the next parse at once; the names read after the job
+   *  (refreshNames) then replace this entry with the log's own (R56). */
+  private noteFunction(name: string, view: View, preview: string): void {
+    const rest = this.userNames.filter((u) => u.name !== name);
+    this.userNames = [...rest, { name, kind: "fn", preview, view, time: Date.now() }];
   }
 
   get items(): HistoryItem[] {
@@ -461,13 +473,17 @@ export class Session {
 
   private async finish(live: HistoryItem, view: View, latex: string, chips: ChipTable, giacOverride?: string): Promise<void> {
     let giac: string;
+    let defines: string | undefined;
     try {
       if (giacOverride !== undefined) giac = giacOverride;
       else {
-        const parser = await loadParser();
-        if (live.status !== "pending") return; // Cancel came while the parser chunk was loading
-        const p = parser.latexToGiacInfo(latex, { chips, ...(view === "home" ? { realOddRoots: true } : {}) }); // P5 (b), R39: CAS leaves it unset, so ∛ stays surd
+        const [parser] = await Promise.all([loadParser(), this.namesRead]);
+        if (live.status !== "pending") return; // Cancel came while the parser chunk or the names were loading
+        // R56: single letters are calls when the user's names (Home and CAS share them) hold them as functions
+        const userFunctions = parser.userFunctionsOf(this.userNames);
+        const p = parser.latexToGiacInfo(latex, { chips, userFunctions, ...(view === "home" ? { realOddRoots: true } : {}) }); // P5 (b), R39: CAS leaves it unset, so ∛ stays surd
         giac = p.giac;
+        defines = p.defines;
         if (p.inexact) live.inexactInput = true;
       }
     } catch (e) {
@@ -540,6 +556,7 @@ export class Session {
           }
         }
       }
+      if (defines && live.status === "done") this.noteFunction(defines, view, live.text);
     } catch (e) {
       if (live.status !== "pending") return;
       if (e instanceof CalcCancelled) {

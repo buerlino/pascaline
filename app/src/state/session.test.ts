@@ -236,6 +236,43 @@ describe("Session user names (docs/04 3.4)", () => {
   });
 });
 
+describe("Session user functions for the parser (R56)", () => {
+  const fn = (name: string, kind: UserName["kind"] = "fn"): UserName => ({ name, kind, preview: "", view: "home", time: 1 });
+  /** The fake engine echoes the Giac text it gets; names() answers from the list, or never once `hang` is set. */
+  class NamesEcho extends FakeCalc {
+    constructor(public list: UserName[], public hang = false) {
+      super();
+    }
+    override names(): Promise<UserName[]> {
+      return this.hang ? new Promise<UserName[]>(() => {}) : Promise.resolve(this.list);
+    }
+  }
+  const sent = (s: Session): string => s.home[s.home.length - 1]?.text ?? "";
+
+  it("a single-letter function from the stored names is a call from the first Enter on", async () => {
+    const s = new Session(new NamesEcho([fn("p")]), memoryKv());
+    await s.submit("p\\left(2\\right)"); // straight after the start: the parse waits for the names
+    expect(sent(s)).toBe("p(2)");
+  });
+  it("a stored value or no entry at all leaves it a product; Home and CAS read the same names", async () => {
+    const s = new Session(new NamesEcho([fn("p", "var")]), memoryKv());
+    await s.submit("p\\left(2\\right)");
+    expect(sent(s)).toBe("p*(2)");
+    s.setView("cas");
+    await s.submit("q\\left(2\\right)");
+    expect(s.cas[s.cas.length - 1]?.text).toBe("q*(2)");
+  });
+  it("a function defined in this session is a call before its names are read back", async () => {
+    const calc = new NamesEcho([]);
+    const s = new Session(calc, memoryKv());
+    await new Promise((r) => setTimeout(r, 0)); // the names read at the start has answered
+    calc.hang = true; // the read after the definition does not answer before the next Enter
+    await s.submit("p\\left(x\\right):=x^{2}");
+    await s.submit("p\\left(2\\right)");
+    expect(sent(s)).toBe("p(2)");
+  });
+});
+
 describe("Session safe start (G19, F31)", () => {
   class SafeCalc extends ValueCalc {
     override ready = (): Promise<{ safeStart?: { skipped: number } } | void> => Promise.resolve({ safeStart: { skipped: 2 } });

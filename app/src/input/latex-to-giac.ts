@@ -4,6 +4,7 @@ import { parseError } from "../i18n/enParser.ts";
 import { mathJsonToGiac, type Json, type SerializeOptions } from "./emit.ts";
 import type { ChipTable } from "./chips.ts";
 import { parseLatexInfo } from "./parse.ts";
+import type { UserName } from "../engine/defs.ts";
 
 export interface LatexToGiacOptions extends SerializeOptions {
   /** L6 setting: decimal comma input ("3,5" = 3.5; ";" separates arguments). */
@@ -14,38 +15,38 @@ export interface LatexToGiacOptions extends SerializeOptions {
 
 /** f, g and h are always functions; other single letters once the user defines them (L6). */
 export const DEFAULT_USER_FUNCTIONS: ReadonlySet<string> = new Set(["f", "g", "h"]);
-const defined = new Set<string>();
 
-/** Single letters defined as functions in this session (`p(x):=...`), plus f, g, h. */
-export function userFunctions(): ReadonlySet<string> {
-  return new Set([...DEFAULT_USER_FUNCTIONS, ...defined]);
+/** The single letters that are calls before "(" (R56): f, g, h and the user's functions, as the definitions log has
+ *  them. The parser keeps no state of its own, so a relaunch, a redefinition as a value or a delete in Memory counts
+ *  at once. Longer names are always calls and need no listing (parse.ts). */
+export function userFunctionsOf(names: readonly Pick<UserName, "name" | "kind">[]): ReadonlySet<string> {
+  const out = new Set(DEFAULT_USER_FUNCTIONS);
+  for (const u of names) if (u.kind === "fn" && /^[A-Za-z]$/.test(u.name)) out.add(u.name);
+  return out;
 }
 
-/** Forget the session's function definitions (tests; a future "clear all"). */
-export function resetUserFunctions(): void {
-  defined.clear();
-}
-
-function noteDefinition(e: Json): void {
-  if (!Array.isArray(e) || e[0] !== "Assign") return;
+/** The single letter an input defines as a function (`p(x):=...`), if any. */
+function definedFunction(e: Json): string | undefined {
+  if (!Array.isArray(e) || e[0] !== "Assign") return undefined;
   const lhs = e[1];
-  if (Array.isArray(lhs) && lhs[0] === "Call" && typeof lhs[1] === "string" && /^[A-Za-z]$/.test(lhs[1])) defined.add(lhs[1]);
+  return Array.isArray(lhs) && lhs[0] === "Call" && typeof lhs[1] === "string" && /^[A-Za-z]$/.test(lhs[1]) ? lhs[1] : undefined;
 }
 
 export function latexToGiac(latex: string, o: LatexToGiacOptions = {}): string {
   return latexToGiacInfo(latex, o).giac;
 }
 
-/** The Giac text, and whether an inexact chip went into it (then the result is never marked "=", docs/04 2.4). */
-export function latexToGiacInfo(latex: string, o: LatexToGiacOptions = {}): { giac: string; inexact: boolean } {
+/** The Giac text; whether an inexact chip went into it (then the result is never marked "=", docs/04 2.4); and the
+ *  single letter it defines as a function, so the caller can count it before its names are read again. */
+export function latexToGiacInfo(latex: string, o: LatexToGiacOptions = {}): { giac: string; inexact: boolean; defines?: string } {
   if (latex.trim() === "") throw parseError("parse.emptyInput");
-  const user = o.userFunctions ?? userFunctions();
+  const user = o.userFunctions ?? DEFAULT_USER_FUNCTIONS;
   const { json, inexact } = parseLatexInfo(latex, {
     userFunctions: user,
     ...(o.decimalComma ? { decimalComma: true } : {}),
     ...(o.chips ? { chips: o.chips } : {}),
   });
   const giac = mathJsonToGiac(json, { ...o, userFunctions: user });
-  noteDefinition(json);
-  return { giac, inexact };
+  const defines = definedFunction(json);
+  return { giac, inexact, ...(defines ? { defines } : {}) };
 }
