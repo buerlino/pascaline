@@ -124,6 +124,11 @@ export function safePrecision(display: string): Pick<HomeResult, "exactRational"
  * the wrong side at 999.95); an irrational x is first evaluated with n+30 digits.
  */
 export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
+  // Find's `mod` (input/emit.ts): Euclidean, never negative. Giac's irem is an error on a rational (irem(15/2,2)), and
+  // typed decimals are exact rationals, so mod(7.5,2) fell to the float path and was marked ≈ (G14).
+  pasmod:
+    "pasmod(a,b):={ if (type(a)==integer and type(b)==integer) return irem(a,b); " +
+    "if (b==0) return a; return a-abs(b)*floor(a/abs(b)); }",
   sigfig:
     "sigfig(x,n):={ local a,p,k,m; " +
     'if (type(n)!=integer or n<1) throw("sigfig: n must be a positive integer"); ' +
@@ -248,6 +253,20 @@ function rewriteDecimals(input: string, f: (mant: string, exp10: number) => stri
  *  identifiers (`x1`, `0x1F`) and strings alone. */
 export function toExactLiterals(input: string): string {
   return rewriteDecimals(input, exactRational);
+}
+
+/** Puts the typed decimals back into a text Giac printed with the exact rationals of toExactLiterals(`typed`):
+ *  a test that stays as typed shows `0.746824132812`, not `(746824132812/10^12)` (G14). Only the spelled forms are
+ *  replaced, and only for literals that `typed` holds. */
+export function restoreLiterals(text: string, typed: string): string {
+  let out = text;
+  rewriteDecimals(typed, (mant, exp10) => {
+    const lit = exp10 ? `${mant}e${exp10}` : mant;
+    const rat = exactRational(mant, exp10);
+    if (rat.startsWith("(")) out = out.split(rat).join(lit);
+    return rat;
+  });
+  return out;
 }
 
 /**
@@ -470,7 +489,9 @@ export function homeEval(
   const symbolic = (): HomeResult => {
     // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
-    const text = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
+    const shown = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
+    // An open test shows its decimals as typed, not as the exact rationals the engine read (G14).
+    const text = /==|<>/.test(shown) ? restoreLiterals(shown, body) : shown;
     store();
     // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
     const tex = giac.eval(`latex(${ans})`);

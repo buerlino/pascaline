@@ -29,7 +29,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, type GiacApi } from "../src/engine/host.ts";
-import { defaultHomeSettings, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
+import { defaultHomeSettings, ENGINE_DEFINITIONS, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
 import { decimalFromString, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { hasFloat } from "../src/engine/numeric.ts";
@@ -488,6 +488,8 @@ function equalByGiac(g: GiacApi, a: string, b: string): { ok: boolean; how: stri
 async function stageParser(): Promise<void> {
   const cs = cases("parser.yaml");
   const g = await freshGiac();
+  // The parser emits our own names (pasmod); the host loads them on first use, here they are all loaded.
+  for (const def of Object.values(ENGINE_DEFINITIONS)) g.eval(def);
   let pass = 0;
   let run = 0;
   let gaps = 0;
