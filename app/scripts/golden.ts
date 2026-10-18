@@ -235,7 +235,7 @@ async function stagePrecision(): Promise<void> {
     const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
     const input = c.latex !== undefined ? latexToGiac(c.latex) : c.input!;
     if (c.kind === "cas") {
-      const cs = { ...defaultCasSettings, digits: setting };
+      const cs = { ...defaultCasSettings, angle: c.settings?.angle ?? "rad", digits: setting };
       for (const b of c.beforeHome ?? []) host.home(giacOf(b), { ...defaultHomeSettings, digits: setting });
       for (const b of c.before ?? []) host.cas(giacOf(b), cs);
       const r = host.cas(input, cs).result;

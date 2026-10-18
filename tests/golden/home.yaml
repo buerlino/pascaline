@@ -128,6 +128,14 @@ cases:
   - { id: "cx-(1+i)^10", input: "(1+i)^10", oracle: "32*I", expect: "32*i", mark: "=", source: "derived" }
   - { id: "cx-1/(1+i)", input: "1/(1+i)", oracle: "1/(1+I)", expect: "0.5-0.5*i", mark: "=", source: "derived" }
   - { id: "cx-e^ipi", input: "exp(i*pi)", oracle: "F(-1)", expect: "-1", mark: "=", source: "derived" }
+  # --- G21 (F29, G2 item 54): exp ignores the angle mode, as the G2 does; trig and polar entry keep degrees ---------------
+  - { id: "g21-deg-exp-i90", input: "exp(i*90)", settings: { angle: "deg" }, oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "derived", g2: 54, note: "DEG gave i, marked =; the RAD value (cos 90 + i sin 90, 90 radians)" }
+  - { id: "g21-deg-exp-i1", input: "exp(i*1)", settings: { angle: "deg" }, oracle: "exp(I)", expect: "0.540302305868+0.841470984808*i", mark: "≈", source: "derived", g2: 54, note: "DEG gave cos 1° + i sin 1°" }
+  - { id: "g21-deg-exp-1+i90", input: "exp(1+i*90)", settings: { angle: "deg" }, oracle: "exp(1+90*I)", expect: "-1.21799036854+2.43013488537*i", mark: "≈", source: "derived", g2: 54, note: "DEG gave 2.71828182846*i" }
+  - { id: "g21-deg-exp-ipi", input: "exp(i*pi)", settings: { angle: "deg" }, oracle: "F(-1)", expect: "-1", mark: "=", source: "derived", g2: 54, note: "unchanged: -1 in DEG too" }
+  - { id: "g21-rad-exp-i90", input: "exp(i*90)", oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "derived", g2: 54 }
+  - { id: "g21-deg-cos+isin90", input: "cos(90)+i*sin(90)", settings: { angle: "deg" }, oracle: "I", expect: "i", mark: "=", source: "derived", note: "trig keeps degrees" }
+  - { id: "g21-deg-polar-2-90", input: "2*(cos(90)+i*sin(90))", settings: { angle: "deg" }, oracle: "2*I", expect: "2*i", mark: "=", source: "derived", note: "what polar entry 2∡90 emits (emit.ts PolarComplex): degrees stay" }
   - { id: "cx-ln-1", input: "ln(-1)", oracle: "pi*I", expect: "3.14159265359*i", mark: "≈", source: "oracle" }
   - { id: "cx-i^i", input: "i^i", oracle: "exp(-pi/2)", expect: "0.207879576351", mark: "≈", source: "oracle" }
   - { id: "cx-abs", input: "abs(3+4*i)", oracle: "F(5)", expect: "5", mark: "=", source: "derived" }
