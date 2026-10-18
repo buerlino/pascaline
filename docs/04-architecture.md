@@ -582,9 +582,10 @@ interface HomeResult {                                   // existing fields kept
   shape?: [number, number];
   digits?: number;                                       // the digits evalf(e,n)/approx(e,n) asked for: shown with these (G3)
   warn?: "unaudited" | "unchecked";                      // ⚠ although the digits agree (M4-5); also a non-number with a float (G27)
+  why?: { unaudited?: string[]; inherited?: string[]; once?: boolean };  // the reasons behind a ⚠ as facts (G22; R36 words them): unaudited functions, stored names that cost digits, evaluated once; top level only
 }
 interface CasResult { /* ok, text, latex, timedOut, error, engineMs */ numeric?: HomeResult;  // new: when the result is a number
-  approximate?: boolean; warn?: "unaudited" | "unchecked";  // ⚠ or ≈ for a non-number: an == test on a float (R18f1, R18f2), or a float in a non-number (G27)
+  approximate?: boolean; warn?: "unaudited" | "unchecked"; why?: HomeResult["why"];  // ⚠ or ≈ for a non-number: an == test on a float (R18f1, R18f2), or a float in a non-number (G27); a number has why on numeric
   uses?: { name: string; preview: string; view: "home" | "cas" }[]; }  // new (G20): the stored variables (defs log, kind var) the input reads, not the names it binds (G28); absent when none
 
 interface Calc {                                         // views; mirrors MathEngine with CalcSettings

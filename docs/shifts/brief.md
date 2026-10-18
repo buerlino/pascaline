@@ -193,11 +193,8 @@ The milestone 5 packages that P15 brings (G16–G18, G25) are in 0e. Every "beha
 | # | Package | Finding | Lane | Agent, model | Branch | Start when merged | Size |
 |---|---|---|---|---|---|---|---|
 | A10 | The pipeline fixes and the review-only mode (P17) | architecture pass | first, by day | annabell, Sonnet | `p1/annabell-pipeline` | now | ~0.5 d |
-| R51 | A space between two numbers | F43 | night | ron, **Opus** | `p1/ron-m4-numspace` | now (R30, same file, is merged) | ~0.25 d |
-| G22 | Why the mark: the reasons as facts | review item 14 | night | gorge, Sonnet | `p1/gorge-m4-why` | now | ~0.5 d |
 | R39 | The real odd root in Home | P5 (b) | night | ron, **Opus** | `p1/ron-m4-oddroot` | R51 (same file) | ~0.25 d |
 | R52 | The parser's messages in i18n | R29 decision 1 | night | ron, Sonnet | `p1/ron-m4-parsemsg` | R39 (it touches every parser message) | ~0.5 d |
-| G23 | More precision before ⚠, and no unconfirmed digit | review item 13 | night | gorge, Sonnet | `p1/gorge-m4-escalate` | G22 (same file) | ~0.5 d |
 | G26 | The digits a constant's uncertainty leaves | review item 17 | night | gorge, **Opus** | `p1/gorge-m4-constunc` | G23 and G18 | ~0.75 d |
 | G21 | `exp` ignores the angle mode | F29 | night | gorge, Sonnet | `p1/gorge-m4-expdeg` | G2 item 54 answered and the owner's decision on F29 (decisions.md) | ~0.25 d |
 | R36 | A picked row says why it has its mark | review item 14 | day | ron, Sonnet | `p1/ron-m4a-why` | G22 (R32, same file, is merged) | ~0.5 d |
@@ -542,15 +539,6 @@ Write `docs/research/r13-results-mode.md`:
 - e2e: Math in a slot opens Find on units and prefixes, and an empty query shows the units menu by category; a pick lands in the slot as tokens (a prefixed unit becomes a prefix plus a unit); the six of the probe's 50 units that are not on the pad, each within the probe's Find count; a user cell is set from a Find hit ("Put on the unit pad", choosing the cell and its tap, up or down) and from Settings › Unit pad, survives a restart and resets to its default; an empty user cell opens Find.
 - The Find query test unchanged; the size test passes; the gallery has Find in a slot, the units menu and a user cell being set.
 
-### ron, R51: a space between two numbers (F43), branch `p1/ron-m4-numspace`
-**Lane:** night-safe (parser only). **Opus.** **Starts when:** any time (R30, same file, is merged). Backlog F43; decisions.md "R29: the parser's messages, and a space between two numbers" point 2 (owner, 2026-10-17). A worktree `m4-r51` exists at phase-1's tip with no commits; the pipeline resumes the branch.
-**Read:** `app/src/input/parse.ts` (`SPACING` line 16, the whitespace skip in `tokenize` line 44, the number branch, `besideResult()`); `spec/keyboard.yaml` (the space key r10c4, `type: " "`); `app/src/input/numbers.test.ts`; `tests/golden/parser.yaml` (groups "decimals" and "chips"); `tools/probes/parse.ts`.
-**Behaviour today** (`tools/probes/parse.ts`): `2 3`, `2\ 3`, `2\,3`, `2\;3` and `2\quad3` → `2*3`; `1\,000` → `1*0` = 0; `2.5\ .3` → `2.5*.3`. The line shows two numbers with a gap, no ×.
-- **Fix:** a number, then spacing (a space or a spacing command), then a number is an error that names the fix ("put × between two numbers"); so is a number with its ᴇ exponent before a space and a number (`1\emark3\ 2`). Spacing anywhere else stays nothing, as today. G2 item 59: if the owner has answered it, the report says so; an answer of 6 goes under "Needs a decision"; any other answer keeps the error.
-**Done when:**
-- `parser.yaml` error cases and `numbers.test.ts` messages, `derived`, that fail on today's code: every input above is an error; kept as today: `2\ x`, `x\ 2`, `2\ \pi`, `\sin\ 2`, `2\times\ 3`, `\left(2\right)\ 3`, a space after a command (`2\times 3`), every keyboard template's round trip; a result chip, a space and a number is already R29's error (one case pins it).
-- The golden gate (parser), vitest and typecheck pass; no file outside `app/src/input/`, its tests and `tests/golden/parser.yaml` changed (the backlog line aside).
-
 ### ron, R39: the real odd root in Home (P5 b), branch `p1/ron-m4-oddroot`
 **Lane:** night-safe (parser only). **Opus.** **Starts when:** R51 is merged (same file). decisions.md P5 (b), as revised on 2026-10-14.
 **Read:** `app/src/input/emit.ts` (`realOddRoots` line 13, the root template lines 205–215, the serialize options); `app/src/input/latex-to-giac.ts` (where Home, Solve, Function and CAS set their options); `app/src/input/emit-js.ts` (the plot evaluator); `tests/golden/g2.yaml` items 4 and 11; `tests/golden/parser.yaml` (roots and powers); `tests/golden/home.yaml`.
@@ -588,23 +576,6 @@ Write `docs/research/r13-results-mode.md`:
 **Done when:**
 - Golden cases, `derived`, failing on today's code: `mod(7.5,2)` = 1.5 with the `=` mark (the typed 7.5 is exact, 15/2, and so is the remainder 3/2); a test that stays as typed shows its decimal as typed: `romberg(exp(-x^2),x,0,1)==0.746824132812` is drawn with `0.746824132812`, not `746824132812/10^12`.
 - The golden gate (home, precision), vitest and typecheck pass.
-
-### gorge, G22: why the mark, the reasons as facts, branch `p1/gorge-m4-why`
-**Lane:** night-safe. **Starts when:** G16 is merged (both change `app/src/engine/host.ts`). Deep-dive item 14; R36 shows these reasons.
-**Read:** docs/04 2.4; `app/src/engine/numeric.ts` (the agreement check, `fnWarn`, `AUDITED_FUNCTIONS`); `app/src/engine/homeEval.ts` (`HomeResult.warn`); `app/src/engine/host.ts` (`inherited`); `app/src/engine/format.ts` (`PrecisionWarn`); `app/src/engine/types.ts`; `app/src/engine/host.test.ts`.
-- Build `HomeResult.why?: { unaudited?: string[]; inherited?: string[]; once?: boolean }`, filled where the warning is decided today: the function names the audit does not cover, and the stored names whose facts were inherited. A constant's uncertainty is not sent to the engine: R36 reads it from the chip table in the app.
-**Done when:**
-- Vitest on `host.home()` and `host.cas()`, failing on today's code: `normald_icdf(10^-10)` → `why: { unaudited: ["normald_icdf"] }`; a result from a stored float → `why: { inherited: ["B"] }`; a value evaluated only once (`BesselJ(1,2)` at 30 digits, the double fallback) → `why: { once: true }`; an exact rational → no `why`.
-- Vitest, the golden gate (home, precision) and typecheck pass; the report names the field for R36 and docs/04 8.2.
-
-### gorge, G23: more precision before ⚠, and no unconfirmed digit, branch `p1/gorge-m4-escalate`
-**Lane:** night-safe. **Starts when:** G22 is merged (same file). Deep-dive item 13.
-**Read:** docs/04 2.4 rule 2; `app/src/engine/numeric.ts` (`exactFacts` lines 335–378, the float path's steps lines 445–475); `app/src/engine/format.ts` (`formatConfirmed`); `tests/golden/precision.yaml`; `tools/probes/digits-cost.ts`; `app/src/i18n/en.ts`.
-**Behaviour today:** `sin(10^100)` shows `⚠ -0.4`, with `reliableDigits` 0: Giac's 40- and 60-digit values are wrong (reducing 10^100 modulo 2π needs about 100 digits), its 80-digit value is right: −0.37237612366127668826… (`oracle`, mpmath at 150 digits); the check stops at P+40, so a digit is shown that nothing confirmed.
-- On the exact path, while fewer than `digits` agree, keep doubling the extra precision (P+80, P+160, …, at most 1000 digits) within 50 ms per result on the desktop, and stop at the first agreement. `reliableDigits` 0 shows no digit; the app's text for it, "⚠ no digit confirmed", goes through the i18n table (a one-line change in `format.ts` or the render).
-**Done when:**
-- `precision.yaml`, `oracle`, failing on today's code: `sin(10^100)` = ≈ −0.372376123661; `sin(10^2000)`, which no evaluation within the budget confirms, shows `⚠` and no digit.
-- The golden gate (precision, home) passes; the 123 Home inputs keep their desktop timings (`DIGITS_LIST=12,30 node tools/probes/digits-cost.ts`, p95 within 10 %, both numbers in the report).
 
 ### gorge, G26: the digits a constant's uncertainty leaves, branch `p1/gorge-m4-constunc`
 **Lane:** night-safe. **Opus** (precision maths every inexact constant passes through). **Starts when:** G23 and G18 are merged (G18's first-order rule). Deep-dive item 17; R40 shows it.
