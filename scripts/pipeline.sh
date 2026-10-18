@@ -129,19 +129,18 @@ done
 ensure_integ
 brief="$integ/docs/shifts/brief.md"
 
-# The spec: a package block of brief section 7, or the task text itself.
+# The spec: the package file docs/shifts/packages/<ID>.md (its first line is the heading with the branch), or the task text itself.
 spec_file="$(mktemp)"; trap 'rm -f "$spec_file"' EXIT
 if [[ "$task" =~ ^[A-Z][0-9]+[a-z0-9]*$ ]]; then
   id="${id:-$task}"
-  start="$(grep -nE "^### [a-z]+, $task:" "$brief" | head -n1 | cut -d: -f1 || true)"
-  [[ -n "$start" ]] || die "package $task has no '### <agent>, $task:' heading in $brief"
-  end="$(awk -v s="$start" 'NR>s && /^##/ {print NR-1; exit}' "$brief")"; : "${end:=$(wc -l < "$brief")}"
-  sed -n "${start},${end}p" "$brief" > "$spec_file"
-  heading="$(sed -n "${start}p" "$brief")"
+  pkg="$integ/docs/shifts/packages/$task.md"
+  [[ -f "$pkg" ]] || die "package $task has no package file $pkg"
+  cp "$pkg" "$spec_file"
+  heading="$(head -n1 "$pkg")"
   # shellcheck disable=SC2016
   if [[ -z "$branch" ]]; then
     branch="$(grep -oE 'branch `[^`]+`' <<<"$heading" | head -n1 | sed 's/branch `//; s/`$//' || true)"
-    [[ -n "$branch" ]] || die "package $task: the heading in $brief has no branch \`...\`: $heading"
+    [[ -n "$branch" ]] || die "package $task: the first line of $pkg has no branch \`...\`: $heading"
   fi
 else
   printf '%s\n' "$task" > "$spec_file"
@@ -174,7 +173,7 @@ bundle="$run/spec.md"
     total=$((total + (lines < 400 ? lines : 400)))
   done
   echo; echo "## Your report (brief section 2)"
-  awk '/^### Your report/{p=1} /^## 7\./{p=0} p' "$brief"
+  awk '/^### Your report/{p=1} /^## 8\./{p=0} p' "$brief"
   echo; echo "## Definition of done (brief section 8, each branch)"
   awk '/^## 8\. Definition of done/{p=1;next} /^## 8a/{p=0} p' "$brief" | head -n 3
 } > "$bundle"

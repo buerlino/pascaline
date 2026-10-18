@@ -6,10 +6,7 @@
 //
 // 1. Links: every relative Markdown link in every Markdown file of the repo resolves to a file or directory
 //    (anchors are not checked), and every `docs/….md` path a live doc names exists.
-// 2. Budgets: the brief (without section 7, the pipeline's copy of the package files, until it is removed),
-//    backlog.md, decisions.md, docs/04 and every package file in docs/shifts/packages/ stay within their size.
-// 3. While the brief still has section 7: each of its package blocks is the same text as its package file, and
-//    every package file has its block (the pipeline reads section 7 until it reads the files).
+// 2. Budgets: the whole brief (28 kB; owner, 2026-10-19), backlog.md, decisions.md, docs/04 and every package file in docs/shifts/packages/ stay within their size.
 // One line per failure, then one summary line; exit 1 on any failure. `npm run gate` runs it (step "docs").
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
@@ -19,14 +16,13 @@ const repo = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "
 const kB = 1000;
 /** The budgets of the docs diet (brief package S7): bytes. */
 const BUDGETS = [
-  { file: "docs/shifts/brief.md", limit: 25 * kB, beforeSection7: true },
+  { file: "docs/shifts/brief.md", limit: 28 * kB },
   { file: "docs/backlog.md", limit: 20 * kB },
   { file: "docs/decisions.md", limit: 40 * kB },
   { file: "docs/04-architecture.md", limit: 70 * kB },
 ];
 const PACKAGE_LIMIT = 6 * kB;
 const PACKAGES = "docs/shifts/packages";
-const SECTION7 = "\n## 7. Packages";
 
 const failures = [];
 const read = (f) => readFileSync(join(repo, f), "utf8");
@@ -50,11 +46,10 @@ for (const f of mdFiles) {
   }
 }
 // Bare docs paths (`docs/shifts/rules.md`) in the live docs and the agents' files. Not checked: the archive (its
-// history) and the package texts (brief section 7 and docs/shifts/packages/), which name the files they create.
+// history) and the package texts (docs/shifts/packages/), which name the files they create.
 const live = mdFiles.filter((f) => !/^(docs\/archive|spike|docs\/shifts\/packages)\//.test(f));
-const withoutSection7 = (f, text) => (f === "docs/shifts/brief.md" ? text.replace(/\n## 7\. Packages[\s\S]*?(?=\n## |$)/, "\n") : text);
 for (const f of live) {
-  for (const m of withoutSection7(f, read(f)).matchAll(/(?<![\w./-])docs\/[\w./-]+\.md\b/g)) {
+  for (const m of read(f).matchAll(/(?<![\w./-])docs\/[\w./-]+\.md\b/g)) {
     links++;
     if (!existsSync(join(repo, m[0]))) failures.push(`path: ${f} names ${m[0]}, which does not exist`);
   }
@@ -63,10 +58,8 @@ for (const f of live) {
 // 2. Budgets.
 const sizes = [];
 for (const b of BUDGETS) {
-  let text = read(b.file);
-  let note = "";
-  const at = text.indexOf(SECTION7);
-  if (b.beforeSection7 && at >= 0) { text = text.slice(0, at + 1); note = " without section 7"; }
+  const text = read(b.file);
+  const note = "";
   const bytes = Buffer.byteLength(text, "utf8");
   sizes.push(`${b.file.replace(/^docs\//, "")} ${(bytes / kB).toFixed(1)}/${b.limit / kB} kB${note}`);
   if (bytes > b.limit) failures.push(`budget: ${b.file}${note} is ${(bytes / kB).toFixed(1)} kB, over ${b.limit / kB} kB`);
@@ -81,30 +74,6 @@ for (const n of pkgFiles) {
 }
 sizes.push(`${pkgFiles.length} package files ≤ ${(largest / kB).toFixed(1)}/${PACKAGE_LIMIT / kB} kB`);
 
-// 3. Section 7 against the package files (only while section 7 exists).
-const brief = read("docs/shifts/brief.md");
-const s7 = brief.indexOf(SECTION7);
-let compared = 0;
-if (s7 >= 0) {
-  const end = brief.indexOf("\n## ", s7 + 1);
-  const body = brief.slice(s7, end < 0 ? undefined : end);
-  const blocks = body.split(/\n(?=### [a-z]+, [A-Z][0-9]+[a-z0-9]*:)/).slice(1);
-  const ids = new Set();
-  for (const block of blocks) {
-    const id = /^### [a-z]+, ([A-Z][0-9]+[a-z0-9]*):/.exec(block)[1];
-    ids.add(id);
-    const file = join(pkgDir, `${id}.md`);
-    if (!existsSync(file)) { failures.push(`package: ${id} is in brief section 7 but has no ${PACKAGES}/${id}.md`); continue; }
-    compared++;
-    if (readFileSync(file, "utf8").trim() !== block.trim()) failures.push(`package: ${PACKAGES}/${id}.md differs from its block in brief section 7`);
-  }
-  for (const n of pkgFiles) {
-    const id = n.replace(/\.md$/, "");
-    if (!ids.has(id)) failures.push(`package: ${PACKAGES}/${n} has no block in brief section 7`);
-  }
-}
-
 for (const f of failures) console.log(f);
-const s7note = s7 >= 0 ? `; section 7 = package files: ${compared} compared` : "";
-console.log(`docs ${failures.length === 0 ? "ok" : `FAILED (${failures.length})`}: ${links} links and paths; ${sizes.join(", ")}${s7note}`);
+console.log(`docs ${failures.length === 0 ? "ok" : `FAILED (${failures.length})`}: ${links} links and paths; ${sizes.join(", ")}`);
 process.exit(failures.length === 0 ? 0 : 1);
