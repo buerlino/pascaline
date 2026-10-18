@@ -42,7 +42,8 @@ while (( steps < max_steps )); do
   case "$cmd" in
     "SHIFT DONE") log "SHIFT DONE (night.sh)"; say "done"; exit 0;;
     scripts/pipeline.sh\ *)
-      if [[ "$cmd" =~ [\;\&\|\`\$\<\>] ]]; then bad=$((bad + 1)); log "night.sh: refused command with shell metacharacters"; (( bad >= 2 )) && exit 1; steps=$((steps + 1)); continue; fi
+      bare="$(sed -E 's/"[^"$`]*"//g' <<<"$cmd")"   # text inside plain double quotes may hold ; & | < > (no expansion there)
+      if [[ "$bare" =~ [\;\&\|\`\$\<\>] || "$cmd" == *[\`\$]* ]]; then bad=$((bad + 1)); log "night.sh: refused command with shell metacharacters"; (( bad >= 2 )) && exit 1; steps=$((steps + 1)); continue; fi
       bad=0; set +e
       # henri's package commands always audit with sonnet (brief 0c); pass and report take no such option
       [[ "$cmd" == scripts/pipeline.sh\ pass\ * || "$cmd" == "scripts/pipeline.sh report" || "$cmd" == *--audit-model* ]] || cmd="$cmd --audit-model sonnet"

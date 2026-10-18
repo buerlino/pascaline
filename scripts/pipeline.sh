@@ -360,5 +360,5 @@ else
 fi
 tools/devlock.sh release integ "pipeline-$n" >/dev/null || true
 # Garbage collection every 3rd finished task.
-if (( n % 3 == 0 )); then "$main/scripts/gc.sh" --apply >> "$run/run.log" 2>&1 || log "pipeline #$n: gc failed (see $run/run.log)"; fi
+if (( n % 3 == 0 )); then "$integ/scripts/gc.sh" --apply >> "$run/run.log" 2>&1 || log "pipeline #$n: gc failed (see $run/run.log)"; fi
 echo "$result"; exit $rc
