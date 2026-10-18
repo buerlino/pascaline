@@ -165,7 +165,7 @@ The owner's deep dive (feedback #47): 24 findings, all accepted (decisions.md "T
 10. **The start chunk is lighter. Done** (`445fdbf`, R35): `@capacitor/core` and the Mode/Settings lists load when idle after the keypad is drawn (keys typed while the Mode sheet's code loads wait in the R8 queue), so 2.64 kB gzip are left before R21a (51.36 of 54 kB, 2026-10-16). `tools/probes/start-chunk.mjs` prints what fills the chunk, per source.
 11. **P5 (b) revised:** Home's `(-8)^(1/3)` = −2, as on the G2. **R39** (night).
 12. **⚠ with no confirmed digit shows a digit** (`sin(10^100)` → `⚠ -0.4`), and the check stops at P+40. **G23** (night).
-13. **Why the mark:** a picked row says why. **G22** (night), **R36** (after G22).
+13. **Why the mark:** a picked row says why. **G22** (night, done), **R36** (after G22).
 14. **Names with a value, marked on the line.** **R33** (with Find; it starts with a MathLive check and may drop).
 15. **The angle check** (RAD `sin(30)`, DEG `sin(π/6)`), with a removal test. **R37** (with Find).
 16. **Muted digits past a constant's uncertainty.** **G26** (night), **R40** (last).

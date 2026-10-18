@@ -23,6 +23,7 @@ import {
   type ComplexValue,
   type DecimalValue,
   type PrecisionWarn,
+  type PrecisionWhy,
 } from "./format.ts";
 
 export interface Giac {
@@ -162,6 +163,15 @@ export function namesIn(input: string): string[] {
   const re = /"[^"]*"|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?|([A-Za-z_][A-Za-z0-9_]*)(\s*\()?/g;
   for (let m = re.exec(input); m; m = re.exec(input)) if (m[1] && !m[2] && !out.includes(m[1])) out.push(m[1]);
   return out;
+}
+
+/** Why the facts of a float result carry a warning (`why` of HomeResult); undefined when nothing is to be said.
+ *  `expr`: the input as it was run again, null when it could not be (a value evaluated once). */
+export function whyOf(facts: readonly ElementFacts[], expr: string | null): PrecisionWhy | undefined {
+  const unaudited = expr !== null && facts.some((f) => f.warn === "unaudited") ? functionsIn(expr).filter((f) => !AUDITED_FUNCTIONS.has(f)) : [];
+  const once = facts.some((f) => f.warn === "unchecked" && !(isZero(f.value.re) && isZero(f.value.im))) || (expr === null && facts.some((f) => f.warn));
+  if (!unaudited.length && !once) return undefined;
+  return { ...(unaudited.length ? { unaudited } : {}), ...(once ? { once: true } : {}) };
 }
 
 /** Every function in the input is on the audited list. */

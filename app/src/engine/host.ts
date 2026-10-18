@@ -23,7 +23,7 @@ import {
   toExactLiterals,
   unquote,
 } from "./homeEval.ts";
-import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -364,8 +364,10 @@ export class EngineHost {
       return { value: e.value!, exactRational: false, reliableDigits: n, ...(w ? { warn: w } : {}), big: false };
     });
     const b = resultFromFacts(facts, shape, digits, r.path, true, r.totalMs);
+    const why = { ...(r.why ?? {}), inherited: used.map((u) => u.name) };
     return {
       ...b,
+      why,
       ...(r.exact !== undefined ? { exact: r.exact } : {}),
       ...(r.defined ? { defined: r.defined } : {}),
       ...(r.digits !== undefined ? { digits: r.digits } : {}),
@@ -481,6 +483,8 @@ export class EngineHost {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
         if (asked !== null) numeric.digits = asked;
         const body = asg ? asg.rhs : input;
+        const why = whyOf(facts, stateful ? null : exactInput);
+        if (why) numeric.why = why;
         numeric = this.inherited(numeric, body, stateful ? null : exactInput, digits, Math.trunc(s.digits));
         return {
           result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },

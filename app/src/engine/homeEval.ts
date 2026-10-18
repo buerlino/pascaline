@@ -13,9 +13,11 @@
 //
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
-import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn } from "./format.ts";
+import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
+  AUDITED_FUNCTIONS,
+  functionsIn,
   DOUBLE_DIGITS,
   doubleFallback,
   exactFacts,
@@ -26,6 +28,7 @@ import {
   rationalValue,
   shapeOf,
   valuePrecision,
+  whyOf,
   withDigits,
   type ElementFacts,
   type Giac,
@@ -95,6 +98,8 @@ export interface HomeResult {
   shape?: [number, number];
   /** ⚠ although the digits agree: an un-audited function's float, or a value that could be evaluated only once. */
   warn?: PrecisionWarn;
+  /** The reasons behind the ⚠ as facts, for the chip that explains it (R36, docs/04 8.2). Absent for an exact result. */
+  why?: PrecisionWhy;
   /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): the result is shown with them, not the setting. */
   digits?: number;
   /** Giac `latex()` of a result that is not a number (raw; the view tidies it up and draws it, as in CAS). R18f3. */
@@ -434,9 +439,9 @@ export function homeEval(
     exactMs,
     totalMs: now() - t0,
   });
-  const fromBuilt = (b: Built, path: HomePath, approximate: boolean, exact: string | undefined, full: string): HomeResult => {
+  const fromBuilt = (b: Built, path: HomePath, approximate: boolean, exact: string | undefined, full: string, why?: PrecisionWhy): HomeResult => {
     const { decimal: _d, ...rest } = b;
-    return done({ ok: true, ...rest, ...(exact !== undefined ? { exact } : {}), path, approximate, full });
+    return done({ ok: true, ...rest, ...(why ? { why } : {}), ...(exact !== undefined ? { exact } : {}), path, approximate, full });
   };
   const failed = (display: string, path: HomePath, exact?: string): HomeResult =>
     done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, tieRisk: false, exactRational: false, reliableDigits: null });
@@ -446,7 +451,7 @@ export function homeEval(
     if ("error" in f) return failed(f.error, path, exact);
     store();
     const b = build(f.facts, f.shape, s.digits, path, true);
-    return fromBuilt(b, path, true, exact, b.decimal);
+    return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
   };
 
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
@@ -464,7 +469,7 @@ export function homeEval(
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
     const unchecked = hasFloat(text);
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
-    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
+    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(decided?.warn ? { why: { unaudited: functionsIn(testSides(exactBody)).filter((n) => !AUDITED_FUNCTIONS.has(n)) } } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();
@@ -478,7 +483,7 @@ export function homeEval(
     if (!facts) return symbolic();
     store();
     const b = build(facts, shape, digits, "exact", true);
-    const r = fromBuilt(b, "exact", true, exactOut, b.decimal);
+    const r = fromBuilt(b, "exact", true, exactOut, b.decimal, whyOf(facts, once ? null : exactBody));
     return asked !== null ? { ...r, digits: asked } : r;
   }
 
@@ -488,7 +493,7 @@ export function homeEval(
     if (!d) return symbolic();
     store();
     const b = build([d], shape, s.digits, "exact", true);
-    return fromBuilt(b, "exact", true, exactOut, b.decimal);
+    return fromBuilt(b, "exact", true, exactOut, b.decimal, { once: true });
   }
   let exactText = exactOut;
   if (shape.kind === "scalar" && !facts[0]!.exactRational) {

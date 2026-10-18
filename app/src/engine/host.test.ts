@@ -193,4 +193,25 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect(markOf(home("BesselJ(1,2)"), o)).toMatchObject({ mark: "⚠", warn: "unaudited" });
     });
   });
+
+  // G22: the reasons behind a mark, as facts (R36 words them).
+  describe("why the mark (G22)", () => {
+    const home = (i: string, digits = 12) => host.home(i, { ...defaultHomeSettings, digits }).result;
+    it("an unaudited function is named", () => {
+      expect(home("normald_icdf(10^-10)").why).toEqual({ unaudited: ["normald_icdf"] });
+      expect(host.cas("normald_icdf(10^-10)", defaultCasSettings).result.numeric?.why).toEqual({ unaudited: ["normald_icdf"] });
+    });
+    it("a result from a stored float names the stored name", () => {
+      host.home("B:=evalf(sqrt(2))", defaultHomeSettings);
+      expect(home("B*2").why).toEqual({ inherited: ["B"] });
+      expect(host.cas("B*2", defaultCasSettings).result.numeric?.why).toEqual({ inherited: ["B"] });
+    });
+    it("a value evaluated only once says so", () => {
+      expect(home("BesselJ(1,2)", 30).why).toEqual({ once: true });
+    });
+    it("an exact rational has no why", () => {
+      expect(home("1/3").why).toBeUndefined();
+      expect("why" in home("1/3")).toBe(false);
+    });
+  });
 });
