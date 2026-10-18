@@ -37,4 +37,4 @@ Devices, locks and timings: `tools/README.md` (`tools/devlock.sh acquire host-cp
 - Every bug fixed gets a regression test first. Golden cases carry `source:` (`device`, `virtual-calc`, `oracle`, `derived`, `assumed`); never values from memory.
 - New dependency: GPL-3.0-compatible, pinned, recorded in `THIRD_PARTY.md`. Prefer upstream fixes over forks.
 - Commits: Conventional Commits with `git commit -s`; workers on `p1/<name>-<slug>` from `phase-1`; merges `--no-ff`; never `master`, never force, never push.
-- Docs: one place per fact, rewrite in place (no "amended" notes); shared docs (`docs/*`, `CLAUDE.md`, `THIRD_PARTY.md`, `.claude/agents/*`) change only as a package's report says or by the owner.
+- Docs: one place per fact, rewrite in place (no "amended" notes); shared docs (`docs/*`, `CLAUDE.md`, `THIRD_PARTY.md`, `.claude/agents/*`) change only as a package's report says or by the owner. Size budgets and links: `node tools/docs-check.mjs` (in `npm run gate`); open packages are one file each in `docs/shifts/packages/`; history in `docs/archive/`.

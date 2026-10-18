@@ -4,7 +4,7 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). **Until A14 is merged, section 7 is the pipeline's copy of those files:** edit a package in both places; `node tools/docs-check.mjs` fails when they differ.
 
 ## 0. State and the path
-`phase-1` on 2026-10-18, after Opus pass 18 (R58, `df3cad8`). Every merge and its commit: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history.
+`phase-1` on 2026-10-18, after Opus pass 19 (S7, `b6370a5`). Every merge and its commit: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)). S2's menu rules (decisions.md "S2: one menu system") are written into the package texts. No package waits for an APK to be tried (owner, 2026-10-13). The text of finished packages is in git history.
 
 ### The path (owner, 2026-10-14; rewritten 2026-10-18 after the architecture pass and S7)
 **By day, one pipeline at a time** (owner, 2026-10-18), in this order; each starts when the one before is merged:
@@ -58,8 +58,7 @@
 | [A4b](packages/A4b.md) | Find timing on the Tab One (backlog m4 step 12) | annabell, Sonnet | day (device) | R4b; the Tab One connected | ~0.25 d |
 | [A7](packages/A7.md) | Release signing and the version number | annabell, Sonnet | any time | the owner's go | ~0.5 d |
 | [A8](packages/A8.md) | The release workflow | annabell, **Opus** | day | A7 | ~0.5 d |
-| [S7](packages/S7.md) | The docs diet | sandra, Opus | night, alone | S5 | ~0.5 d |
-| [S6](packages/S6.md) | Files in and out without INTERNET: the backup | sandra, Opus | night | S7 | ~0.5 d |
+| [S6](packages/S6.md) | Files in and out without INTERNET: the backup | sandra, Opus | night | S7 and A14 (A14 runs first, by day) | ~0.5 d |
 | [S8](packages/S8.md) | The outside-test protocol | sandra, Opus | night | S6 | ~0.25 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package: R15c2 (it moves keys every test names), R53 (it hides the keypad; a wrong state leaves no keys), R24c (pad, slots and evaluation together), R38b (it overwrites stored data), A8 (the signing key on a machine we do not own); sandra runs Opus. Sonnet elsewhere: each follows an existing pattern and its tests pin it. The audit model follows P17.
@@ -92,11 +91,9 @@ Estimates are wall-clock guesses. A package already merged by day is skipped (lo
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 15 | S7 the docs diet (alone: the last package of its night; the owner starts nothing until it is merged) | sandra, Opus | `p1/sandra-docsdiet` | S5 merged | 1.5 h |
-| 16 | **Opus pass 4** on step 15 | Opus | — | — | 20 min + fixes |
-| 17 | S6 files in and out without INTERNET | sandra, Opus | `p1/sandra-files` | S7 | 1 h |
+| 17 | S6 files in and out without INTERNET | sandra, Opus | `p1/sandra-files` | S7 and A14 | 1 h |
 | 18 | S8 the outside-test protocol | sandra, Opus | `p1/sandra-outside` | S6 | 30 min |
-| 19 | **Opus pass 5** (the last) on what came after pass 4, then its FIX packages | Opus | — | — | 20 min + fixes |
+| 19 | **The last Opus pass** on what came after pass 19, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 20 | Shift report, then stop | — | — | — | 10 min |
 
 Not at night: the ron lane (by day; section 0); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); R59, R38a and R38b (their texts are completed by S6's report).
@@ -157,6 +154,7 @@ The pipeline's copy of [packages/](packages/) until A14 is merged: edit a packag
 1. **Test first:** `scripts/pipeline.test.sh` runs the dry run for every file of `docs/shifts/packages/` in the phase-1 worktree (agent, ID and branch from the file's first line) instead of every heading of section 7; a made-up ID still exits 2 with a message naming it. It fails on today's script once section 7 is gone.
 2. **The lookup:** an ID's spec is `docs/shifts/packages/<ID>.md` in the phase-1 worktree, whose first line is the heading the branch is read from; a missing file ends in `die` naming the ID and the path. The bundle's report part ends at `## 8.` instead of `## 7.`. The header comment says so.
 3. **The texts:** delete brief section 7 and the sentences that call it the pipeline's copy (the header, 0c's Opus pass point 4, 8a); rules.md section 4 point 1 and the agents' files say "the package file" (exact text in S7's report; the agents' files as text in the report).
+4. **gc.sh's dry run** (S7's report, risk 4): `scripts/gc.sh` without `--apply` writes `.tasks/gc-<date>-dry.md`, so it no longer overwrites the day's applied report.
 **Done when:**
 - `scripts/pipeline.test.sh` passes on the branch; `scripts/pipeline.sh ron R15c1 --dry-run` prints a bundle whose task is `docs/shifts/packages/R15c1.md`.
 - The brief has no section 7 and `node tools/docs-check.mjs` passes (the whole brief ≤ 25 kB).
@@ -462,19 +460,6 @@ Also write `docs/release.md`, the owner's one-page checklist: bump versionCode a
 **Read:** G29's report; decisions.md "A4a" point 2; `tools/README.md` (measure builds, `device_run.py`); `app/src/bench.ts` (`?bench=defs`); `.coord/device-runs.jsonl` (the A4a row to compare with).
 - A measure build from `phase-1`; seed the log with `?bench=defs`; cold start seven times; record the replay p50 and p95 and engine ready with 200 definitions, with device, Android, WebView and build type (rules section 3).
 **Done when:** the row is in `.coord/device-runs.jsonl` and the report; replay ≤ 50 ms and engine ready < 1.5 s, or the miss with the number and the next lever (values replayed lazily) under "Needs the user"; decisions.md "A4a" point 2 and docs/04 8.3's "Today" column get the number (text in the report).
-
-### sandra, S7: the docs diet, branch `p1/sandra-docsdiet`
-**Lane:** night-safe, **alone**: the last package of its night, and the owner starts nothing until it is merged, because it moves the texts every package edits. **Starts when:** S5 is merged. Deep-dive items 20 and 22.
-**Read:** this brief's sections 0, 2, 7 and 8; rules.md section 9; docs/README.md; `scripts/gc.sh` (the path audit); the sizes: decisions.md 143 kB, docs/04 91 kB, backlog.md 68 kB, this brief about 70 kB, the cleanup audit 93 kB (2026-10-18).
-1. **One file per package:** section 7 moves to `docs/shifts/packages/<ID>.md`, one file each, in the same bundle shape (the pipeline's lookup then reads the file whose name is the ID: the exact change to `scripts/pipeline.sh` goes into the report for an A-package, and until it is merged section 7 stays as the source). Finished packages are deleted (git keeps them). The brief keeps sections 0 (the path and the tables, each row linking its file), 0c, 2 and 8.
-2. **Decisions:** "Decided proposals" keeps what still binds, as Choice, Why (one line) and Would change if. The rest moves to `docs/archive/decisions-2026-10.md`, read only when a decision is questioned.
-3. **Backlog:** one or two lines per open item, linking its package and decision. No causes and no steps to reproduce: they live in the package file.
-4. **docs/04:** "today" statements that are now history (section 1.2's table, 2.1's "Marked today" column) are made current or cut.
-5. **Archive:** the cleanup audit and the finished shift reports go to `docs/archive/`; docs/README.md indexes what stays (docs/03, 05, 06, feedback, the research notes, the shift docs).
-6. **Budgets**, which A6's gate checks: the brief ≤ 25 kB, backlog ≤ 20 kB, decisions ≤ 40 kB, docs/04 ≤ 70 kB, a package file ≤ 6 kB.
-**Done when:**
-- Every link resolves (a small check in `tools/`, run in the report); the budgets hold (the sizes in the report); `scripts/gc.sh` reports no stale path.
-- The report lists every moved section and where it went; nothing current is lost (the audit checks three facts at random from each file).
 
 ### sandra, S6: files in and out without INTERNET, the backup, branch `p1/sandra-files`
 **Lane:** night-safe (Chromium probes; the device checks are annabell's, later). **Starts when:** S7 is merged. Deep-dive item 18; it also answers S4's point 2.
