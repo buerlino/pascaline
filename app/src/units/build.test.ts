@@ -71,10 +71,13 @@ describe("unit view builder (G16)", () => {
   });
   it("an absolute temperature or a logarithmic unit alone is its kelvin or ratio value; at the end, offset or level", () => {
     const one = (u: string, formula = "20*pasu1") => buildJob({ formula, slots: [{ tokens: [{ unit: u }] }] }, table);
-    expect(one("oC")).toEqual({ expr: "(((1)*(20)+(5463/20))*pasdimK^(1))", inexact: false });
+    expect(one("oC")).toEqual({ expr: "(((1)*(20)+(5463/20))*pasdimK^(1))", inexact: false, absTemp: true });
     expect(one("oC", "-(1+2)*3*pasu1")).toMatchObject({ expr: "(((1)*(-(1+2)*3)+(5463/20))*pasdimK^(1))" });
-    expect(one("dB", "pasu1")).toEqual({ expr: "((pasup((1)/20))*(1)*pasdimNp^(1))", inexact: false });
-    expect(one("Np", "3*pasu1")).toMatchObject({ expr: "((exp(3))*(1)*pasdimNp^(1))" });
+    expect(one("dB", "pasu1")).toEqual({ error: "logarithmic", unit: "dB" });
+    expect(one("Np", "3*pasu1")).toEqual({ error: "logarithmic", unit: "Np" });
+    expect(one("dBm", "3*pasu1")).toMatchObject({ expr: expect.stringContaining("pasup((3)/10)") });
+    expect(one("oC", "1.5e-3*pasu1")).toMatchObject({ expr: expect.stringContaining("(1.5e-3)") });
+    expect(one("oC", "2e3-1*pasu1")).toMatchObject({ error: "temperature" });
     const to = (u: string) => buildJob({ formula: "2*pasu1", slots: [{ tokens: [{ unit: "m" }] }], end: { tokens: [{ unit: u }] } }, table);
     expect(to("oC")).toMatchObject({ end: "((1)*pasdimK^(1))", endOffset: "5463/20" });
     expect(to("dBm")).toMatchObject({ end: "((1/1000)*pasdimM^(1)*pasdimL^(2)*pasdimT^(-3))", endLog: "10*log10(pasux)" });

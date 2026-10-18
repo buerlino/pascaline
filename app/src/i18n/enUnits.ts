@@ -6,6 +6,8 @@ export const enUnits = {
   "units.mismatchSep": " vs ",
   "units.temperature": "Use K or Δ°C for a temperature difference",
   "units.logarithmic": "{unit} converts only",
+  "units.level": "A level needs a positive value",
+  "units.belowzero": "Below absolute zero",
   "units.nofactor": "No exact factor for {unit} yet",
   "units.function": "A function takes a pure number (sin, cos and tan also an angle)",
   "units.symbolic": "Not a number: {detail}",

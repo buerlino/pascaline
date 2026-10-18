@@ -42,6 +42,8 @@ export interface UnitJob {
   /** The end slot is a logarithmic unit: the level as Giac text of `pasux`, the ratio to the end slot's reference
    *  (end holds the reference, 1 mW for dBm): `20*log10(pasux)` for dB. */
   endLog?: string;
+  /** The source is an absolute temperature (°C, °F), already in K: a value below 0 K is refused. */
+  absTemp?: true;
   /** A constant with an uncertainty went in: never "=" (decisions M4-4), as in Home. */
   inexact: boolean;
 }
@@ -66,6 +68,8 @@ export type UnitError =
   /** An absolute temperature (°C, °F) or a logarithmic unit anywhere but alone (G17: alone it converts), a unit with
    *  no exact factor (G13); `unit` is its symbol. */
   | { error: "temperature" | "logarithmic" | "nofactor"; unit: string }
+  /** The level of a value at or below 0, or an absolute temperature below 0 K. */
+  | { error: "level" | "belowzero" }
   /** A function of a quantity with units (sin, cos and tan take an angle or a pure number). */
   | { error: "function" }
   /** The number part is not a number (a free name): Giac's text of it. */

@@ -161,6 +161,7 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const num = src.kind === "term" ? src.num : "0";
   const si = job.end && src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};
   const done = (value: HomeResult): Quantity => ({ value, dimension, ...si, ms: performance.now() - t0 });
+  if (job.absTemp && src.kind === "term" && giac.eval(`sign(${num})`).trim() === "-1") return { error: "belowzero" };
   // An end slot in °C or °F: the SI number less the offset (K = a·x + b, the end slot holds a); in dB, dBm or Np: the
   // level of the ratio to its reference. Both give the number of Giac's text, not a rational quotient.
   const shifted = job.endOffset !== undefined ? giac.eval(`normal((${num})-(${job.endOffset}))`) : num;
@@ -171,7 +172,11 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
     const big = [r.p, r.q].some((x) => (x < 0n ? -x : x).toString().length > s.maxExactDigits);
     return done(result([{ value: { re: r.v, im: rationalValue("0")!.v }, exactRational: true, reliableDigits: null, big }], exact, s, job.inexact, false));
   }
-  if (src.kind === "zero" && job.endLog !== undefined) return { error: "engine", detail: "the level of 0" };
+  if (job.endLog !== undefined) {
+    // The level of a ratio at or below 0 is not a real number: refuse it before taking the log.
+    if (src.kind === "zero") return { error: "level" };
+    if (src.kind === "term" && ["-1", "0"].includes(giac.eval(`sign(normal(pasuR[0][2]/pasuR[1][2]))`).trim())) return { error: "level" };
+  }
   const ratio = job.endOffset !== undefined ? `(${shifted})/pasuR[1][2]` : `${src.kind === "term" ? "pasuR[0][2]" : "0"}/pasuR[1][2]`;
   const rerun = job.endOffset !== undefined ? `((pasuq(normal(${f}))[2]-(${job.endOffset}))/pasuq(normal(${g}))[2])` : `pasun(${f},${g})`;
   const level = (r: string): string => job.endLog!.replace(/pasux/g, `(${r})`);
