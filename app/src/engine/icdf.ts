@@ -17,6 +17,9 @@ export const ICDF_REPLACED: Readonly<Record<string, string>> = {
   student_icdf: "passtudent_icdf",
   chisquare_icdf: "paschisquare_icdf",
   fisher_icdf: "pasfisher_icdf",
+  // G44f1: erf and erfc by our MPFR definitions (below), checked like the inverse functions.
+  erf: "paserfv",
+  erfc: "paserfcv",
 };
 
 /** Set to 1 by a polish that fell back to Giac's value. */
@@ -53,6 +56,15 @@ export const ICDF_DEFINITIONS: Readonly<Record<string, string>> = {
     "for (j:=1;j<=20000;j:=j+1) { if (j==1) aj:=1; else aj:=(j-1)/2; " +
     "dv:=y+aj*dv; if (dv==0) dv:=tn; cv:=y+aj/cv; if (cv==0) cv:=tn; dv:=1/dv; dl:=cv*dv; fv:=fv*dl; if (abs(dl-1)<tol) break; } " +
     "return exp(-y^2)/sqrt(pi)*fv; }",
+  // G44f1: erf and erfc of any argument at Digits: erf(-y) = -erf(y), erfc(-y) = 2 - erfc(y), erf(y) = 1 - erfc(y) from
+  // 2 on (the continued fraction keeps the tail's digits). A list is mapped; an argument that is not a real number is
+  // left to Giac's own function, with the flag set.
+  paserfv:
+    "paserfv(z):={ local y; if (type(z)==DOM_LIST) return map(z,paserfv); if (z==0) return 0; y:=evalf(z); " +
+    `if (type(y)!=DOM_FLOAT) { ${ICDF_FAILED}:=1; return erf(z); } if (y<0) return -paserfv(-y); if (y<2) return paserf(y); return 1-paserfc(y); }`,
+  paserfcv:
+    "paserfcv(z):={ local y; if (type(z)==DOM_LIST) return map(z,paserfcv); if (z==0) return 1; y:=evalf(z); " +
+    `if (type(y)!=DOM_FLOAT) { ${ICDF_FAILED}:=1; return erfc(z); } if (y<0) return 2-paserfc(-y); return paserfc(y); }`,
   // [I_x(a,b), I_y(b,a)] = [lower, upper], the smaller one computed directly.
   pasibeta:
     "pasibeta(a,b,x,y):={ local s; if (x<=0) return [0,1]; if (y<=0) return [1,0]; " +
@@ -83,7 +95,9 @@ export const ICDF_DEFINITIONS: Readonly<Record<string, string>> = {
   pasicdf:
     "pasicdf(k,a,b,p,x0):={ local x,q,lo,md,t,r,w,dx,n,ok,tol,d; " +
     `if (not(${REAL("p")}) or not(${REAL("a")}) or not(${REAL("b")})) { ${ICDF_FAILED}:=1; return x0; } ` +
-    `if (p<=0 or p>=1 or (k>0 and a<=0) or ((k==0 or k==3) and b<=0)) { ${ICDF_FAILED}:=1; return x0; } ` +
+    `if ((k>0 and a<=0) or ((k==0 or k==3) and b<=0)) { ${ICDF_FAILED}:=1; return x0; } ` +
+    // G44f1: at p = 0 and p = 1 Giac's value is the end of the support (±infinity, 0), which is exact.
+    `if (p==0 or p==1) return x0; if (p<0 or p>1) { ${ICDF_FAILED}:=1; return x0; } ` +
     // The median of the symmetric ones is exact (Giac's normald_icdf(0.5) is -1.9E-19).
     "if (p==1/2 and k==0) return a; if (p==1/2 and k==1) return 0; " +
     // md: p next to the median of a symmetric one, solved for F(x) − 1/2 = p − 1/2; else on the smaller tail.
@@ -133,4 +147,58 @@ export function icdfPolished(giac: Giac, text: string): string {
     if (giac.eval(name).trim() === name) giac.eval(def);
   }
   return text.replace(ICDF_CALL, (m, name?: string, paren?: string) => (name === undefined ? m : `${ICDF_REPLACED[name]}${paren}`));
+}
+
+/** The definitions erf and erfc are read through, loaded together: the last one stands for all. */
+const ERF_DEFINITIONS = ["paserf", "paserfc", "paserfv", "paserfcv"] as const;
+const ERF_CALL = /"[^"]*"|\b(erfc?)(\s*\()/g;
+
+/** The index just past the parenthesis that closes the one at `open`; -1 when none does. */
+function closingAt(s: string, open: number): number {
+  let depth = 0;
+  for (let k = open; k < s.length; k++) {
+    if (s[k] === "(") depth++;
+    else if (s[k] === ")" && --depth === 0) return k + 1;
+  }
+  return -1;
+}
+
+/**
+ * G44f1: `text` (an exact result as Giac prints it) for its value, with erf and erfc read through our MPFR definitions
+ * and the definitions loaded on first use; the text itself when it calls neither. Giac prints erfc(u) as 1-erf(u),
+ * which cancels the tail's digits (erfc(10) loses 45): a term 1-erf(u) is read as erfc(u) when nothing binds tighter
+ * on either side.
+ */
+export function erfValueText(giac: Giac, text: string): string {
+  if (!/\berfc?\s*\(/.test(text)) return text;
+  let s = text;
+  for (let k = s.indexOf("1-erf("); k >= 0; k = s.indexOf("1-erf(", k + 1)) {
+    const end = closingAt(s, k + 5);
+    if (end < 0) break;
+    const before = k === 0 ? "" : s[k - 1]!;
+    const after = end === s.length ? "" : s[end]!;
+    if (!/^[(,[+]?$/.test(before) || !/^[),\]+-]?$/.test(after)) continue;
+    s = `${s.slice(0, k)}erfc(${s.slice(k + 6)}`;
+  }
+  s = s.replace(ERF_CALL, (m, name?: string, paren?: string) => (name === undefined ? m : `${ICDF_REPLACED[name]}${paren}`));
+  const last = ERF_DEFINITIONS[ERF_DEFINITIONS.length - 1]!;
+  if (giac.eval(last).trim() === last) for (const name of ERF_DEFINITIONS) giac.eval(ICDF_DEFINITIONS[name]!);
+  return s;
+}
+
+/** G44f1: whether the polish of `text` at P = max(40, digits + 10) gives ±infinity with no call falling back to Giac's
+ *  value: p = 0 or 1, where Giac's infinity is the exact end of the support. False for a refused polish (an argument
+ *  out of range, Newton not converging) and for one that converged to a finite number. */
+export function icdfAtEnd(giac: Giac, text: string, digits: number): boolean {
+  const polished = icdfPolished(giac, text);
+  giac.eval(`${ICDF_FAILED}:=0`);
+  giac.eval(`${ICDF_DIGITS}:=${digits}`);
+  giac.eval(`Digits:=${Math.max(40, digits + 10)}`);
+  try {
+    const value = giac.eval(`pasicdfr:=(${polished})`).trim();
+    return giac.eval(ICDF_FAILED).trim() === "0" && /^[+-]?infinity$/.test(value);
+  } finally {
+    giac.eval(`Digits:=${digits}`);
+    giac.eval(`purge(pasicdfr,${ICDF_FAILED},${ICDF_DIGITS})`);
+  }
 }
