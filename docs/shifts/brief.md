@@ -8,7 +8,7 @@
 
 ### The path (owner, 2026-10-14; rewritten 2026-10-18 after the architecture pass and S7)
 **By day, one pipeline at a time** (owner, 2026-10-18), in this order; each starts when the one before is merged:
-1. **R50b** (Pascaline in the app, half a day on the phone), **R43b** (DMS on a □), **R15c1 → R15c2 → R15c3 → R15c4** (the R3 top cluster), **R55** (digit groups), **R49** (Settings rows), **R57** (the decimal comma, on R49's page pattern), **R50e** (Appearance; R50c, R50d at night).
+1. **R15c1 → R15c2 → R15c3 → R15c4** (the R3 top cluster), **R55** (digit groups), **R49** (Settings rows), **R57** (the decimal comma, on R49's page pattern), **R50e** (Appearance; R50c, R50d at night).
 2. **R4a** (Find on Math), **R4b** (Vars, Memory, the user keys), **R53** (results mode on the View key), **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40**.
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b).
 4. annabell by day: **A16** again after G53, **A9** and **A11** as soon as a device is connected; **A18** after G55; **A12** (G29 is merged); **A4b** after R4b; **A7 → A8** on the owner's go.
@@ -18,7 +18,7 @@
 
 **Why this order:**
 - R15c goes first among the feel packages: it changes keys the hand is learning (docs/03 rule 8). R4b sets the user keys, R53 uses the View key, R41 labels the keys, so all wait for it.
-- R50b before R15c1 (owner, 2026-10-19): the R3 packages are written on its colour roles. R55 before R49: half a day of render code the owner then reads every day; R57 after R49 (its page pattern).
+- R55 before R49: half a day of render code the owner then reads every day; R57 after R49 (its page pattern).
 - The night check of 2026-10-19 ([research/night-shift-check-2026-10-19.md](../research/night-shift-check-2026-10-19.md)) goes first at night: silent marks (G48, G51) before Find makes `unapply` typable; S15 gives the passes room; G52 first, so no engine package raises the calls per Enter unseen (night check 2.3).
 - Trust features after the code they build on: R33 and R37 after Find; R40 after G26 and R12b's tokens.
 - The start chunk is 53.28 of 60 kB gzip (owner, 2026-10-19, set by A15; docs/04 8.3): every UI package reports its delta.
@@ -58,8 +58,6 @@
 | [R15c4](packages/R15c4.md) | First-start tips | ron, Sonnet | day | R15c2 | ~0.5 d |
 | [R55](packages/R55.md) | Digit groups in drawn results | ron, Sonnet | day | R15c4 | ~0.5 d |
 | [R49](packages/R49.md) | Settings as a list of rows, each with its own page | ron, Sonnet | day | R15c4 | ~0.75 d |
-| [R50b](packages/R50b.md) | Pascaline in the app | ron, Sonnet | day, before R15c1 | A14 | ~0.5 d |
-| [R43b](packages/R43b.md) | DMS takes a selected □ bare | ron, Sonnet | day | now | ~0.25 d |
 | [R50c](packages/R50c.md) | Theme generator, four more families | ron, Sonnet | night | R50b | ~0.75 d |
 | [R50d](packages/R50d.md) | Plain keys and High contrast | ron, Sonnet | night | R50c | ~0.5 d |
 | [R50e](packages/R50e.md) | Settings › Appearance | ron, Sonnet | day | R50d | ~1 d |
