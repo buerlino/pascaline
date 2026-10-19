@@ -16,7 +16,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 `phase-1` and `master` are on GitHub; `master` was last fast-forwarded to `phase-1` on 2026-10-11 (b4431ae). Work continues on `phase-1`.
 
-**On track:** yes on scope and speed (the MVP, sized at 6–9 person-months, took two days of shifts). Every bar held on the low-end Tab One at milestone 3 (keyboard usable 662 ms, engine ready 995 ms, Plot 56 fps, solve p95 80 ms, Enter p95 92 ms); since then A4a (2026-10-16) measured Enter p95 138–160 ms at 12 digits after the agreement check, and the `defs` replay over its bar (decisions.md "A4a"); the night of 2026-10-19 nearly doubled the desktop cost per Enter (G38f1), not yet measured on a device. Two debts: everything is checked against the Virtual Calculator (rev 15751), not the owner's G2 (rev 15515); only the Tab One is measured regularly (Fairphone 6 once: keyboard usable 329 ms, engine ready 609 ms, Plot 89 fps).
+**On track:** yes on scope and speed (the MVP, sized at 6–9 person-months, took two days of shifts). Every bar held on the low-end Tab One at milestone 3 (keyboard usable 662 ms, engine ready 995 ms, Plot 56 fps, solve p95 80 ms, Enter p95 92 ms); since then A4a (2026-10-16) measured Enter p95 138–160 ms at 12 digits after the agreement check, and the `defs` replay over its bar (decisions.md "A4a"); the night of 2026-10-19 nearly doubled the desktop cost per Enter (G38f1); on the Tab One Enter p95 stayed 135–138 ms in RAD and is 150–160 ms in DEG (A16, before G53). Two debts: everything is checked against the Virtual Calculator (rev 15751), not the owner's G2 (rev 15515); only the Tab One is measured regularly (Fairphone 6 once: keyboard usable 329 ms, engine ready 609 ms, Plot 89 fps).
 
 ## Needs the user
 0. **At milestone 5:** time ten tasks by hand, E-notation against units (the rule 2 speed gate).
@@ -25,7 +25,7 @@ The one place for "where are we and what's left", one or two lines per open item
 3. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md). The checks on the phone are listed below.
 4. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`.
 5. **Outside testers** (deep-dive review): two 30-minute rounds with three engineers, after R4b and after R24c; S8 writes the protocol and the task sheet, you run the rounds.
-6. **Rebuild the default engine** before the next night (`engine/giac/build-wasm.sh`, then the golden gate): `engine/giac/_out/gsl` is the 2026-10-12 build with a 2 GB ceiling, and G24's 1 GB cap (2026-10-17) is only in `_out/gsl-memcap`. Every gate, the night and the measure APKs use `_out/gsl` (verified 2026-10-19). The K2 flick classifier of the deleted `p1/ron-eve-gestures` is commit `96fcf50`; `git tag keep/eve-gestures 96fcf50` keeps it past git's pruning.
+6. **Keep the K2 flick classifier** of the deleted `p1/ron-eve-gestures` (commit `96fcf50`): `git tag keep/eve-gestures 96fcf50` keeps it past git's pruning.
 7. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 8. **Later, not now:** the email to Bernard Parisse (draft in `../outreach/`, with P10's question: may the English entries of `aide_cas` ship in a GPL-3.0-or-later app? Needed before any public release), the name and trademark checks, CI (C3) and the F-Droid recipe (C4); the upstream reports below.
 
@@ -52,6 +52,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **R50b–R50e. Themes** (feedback #53, #55; decisions.md "R50"): Pascaline in the app, the generator and four more families, Plain keys and High contrast, Settings › Appearance; then **R12b, R12c. The visual pass** (F6 = U5 + U7; the mockups R12a merged, the owner's notes feedback #54, #55; A4a's sheet rise in R12c).
 - **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).
 - **R53. Results mode on the View key** (P16, S9; K4).
+- **The owner's answers of 2026-10-19:** **R43b** DMS takes a selected □ bare (by day), **R56b** Solve knows the user's functions (night step 57).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
 - **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** **A12** (G29 merged).
 - **The backup:** **S6** (files in and out without INTERNET), then **R38a, R38b**. **The outside-test protocol:** **S8**.
@@ -86,7 +87,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - **Help = context help:** the Find preview of the function before the cursor (§5.1).
 
 ### Without a package yet
-- **R56 for Solve** (decided 2026-10-19; the Function app waits for your word on plots of user functions) and **R43** (DMS takes a lone □ bare, decided 2026-10-19), both small ron packages not yet written; **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
+- The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
 - **G9. Number formats against the G2** (item 15: six formats, digits as decimal places, a thousands separator): decide in the settings and help pass.
 - **K1:** a pending one-shot Shift is used up by the first drag step; a tap keeps it. **K5:** the gestures in the help texts (release R4).
 - **A15's tests** (Opus pass 20, annabell): `scripts/pipeline.test.sh` checks the planned size and docs checks and the gorge raise against fixed dry-run echo lines, not `want_checks` and `resolve_audit_model`, so a regression there passes; the dry run prints no raise for `--model opus`.

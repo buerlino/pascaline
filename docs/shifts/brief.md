@@ -4,15 +4,14 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; day = the owner tries it); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` on 2026-10-19 after the night (runs 53–74, Opus passes 20–27, `feef6e5`; what it left: [research/night-shift-check-2026-10-19.md](../research/night-shift-check-2026-10-19.md)). Before it, after Opus pass 19 (S7, `b6370a5`), checked as a whole ([research/check-2026-10-19.md](../research/check-2026-10-19.md): five silent wrong numbers, packages A15, G34, G21b, G35, G36, S10), then deeper ([research/deep-check-2026-10-19-angle-marks.md](../research/deep-check-2026-10-19-angle-marks.md)). Every merge and its commit: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` on 2026-10-19 after the night (runs 53–74, Opus passes 20–27, `feef6e5`; what it left: [research/night-shift-check-2026-10-19.md](../research/night-shift-check-2026-10-19.md)). Before it, after Opus pass 19 (S7, `b6370a5`), checked as a whole ([research/check-2026-10-19.md](../research/check-2026-10-19.md)), then deeper ([research/deep-check-2026-10-19-angle-marks.md](../research/deep-check-2026-10-19-angle-marks.md)). Every merge and its commit: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path (owner, 2026-10-14; rewritten 2026-10-18 after the architecture pass and S7)
 **By day, one pipeline at a time** (owner, 2026-10-18), in this order; each starts when the one before is merged:
-0. **A17** before the next night if it fits; until then 0c's interim checks hold.
-1. **R50b** (Pascaline in the app, half a day on the phone), **R15c1 → R15c2 → R15c3 → R15c4** (the R3 top cluster), **R55** (digit groups), **R49** (Settings rows), **R57** (the decimal comma, on R49's page pattern), **R50e** (Appearance; R50c, R50d at night).
+1. **R50b** (Pascaline in the app, half a day on the phone), **R43b** (DMS on a □), **R15c1 → R15c2 → R15c3 → R15c4** (the R3 top cluster), **R55** (digit groups), **R49** (Settings rows), **R57** (the decimal comma, on R49's page pattern), **R50e** (Appearance; R50c, R50d at night).
 2. **R4a** (Find on Math), **R4b** (Vars, Memory, the user keys), **R53** (results mode on the View key), **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40**.
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b).
-4. annabell by day: **A16** (Enter p95, again after G53), **A9** and **A11** as soon as a device is connected; **A18** after G55 and A17; **A12** (G29 is merged); **A4b** after R4b; **A7 → A8** on the owner's go.
+4. annabell by day: **A16** again after G53, **A9** and **A11** as soon as a device is connected; **A18** after G55; **A12** (G29 is merged); **A4b** after R4b; **A7 → A8** on the owner's go.
 5. After S6: **R59** (also after R4b, G54 and A12), **R38a → R38b** (the owner's yes to S6's proposal first).
 
 **At night** (section 0c), in the queue's order: S15 and the night check's packages, route R (R64 → G46), the checks' unit and gate packages, the sandra docs packages, then S12's removal packages (G45, R66–R68).
@@ -38,9 +37,8 @@
 | [G54](packages/G54.md) | Our function names in Giac text too | gorge, Sonnet | night | now; before R59 | ~0.5 d |
 | [G55](packages/G55.md) | A behaviour diff between two trees | gorge, Sonnet | night | now | ~0.75 d |
 | [S13](packages/S13.md) | Stored names from Giac's state (spike) | sandra, Opus | night | G48 | ~0.5 d |
-| [A17](packages/A17.md) | The pipeline merges what it audited; `night.sh --until` | annabell, **Opus** | day | now | ~0.5 d |
-| [A16](packages/A16.md) | Enter p95 on the Tab One after 2026-10-19 | annabell, Sonnet | day (device) | the Tab One connected | ~0.25 d |
-| [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | G55 and A17 | ~0.25 d |
+| [A16](packages/A16.md) | Enter p95 on the Tab One after G53 | annabell, Sonnet | day (device) | G53 | ~0.25 d |
+| [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | G55 | ~0.25 d |
 | [R64](packages/R64.md) | The angle mode lives in our parser (route R) | ron, **Opus** | night | now (route R decided) | ~0.5 d |
 | [G46](packages/G46.md) | Giac always in radians; pasexp goes | gorge, **Opus** | night | R64 | ~1 d |
 | [G41](packages/G41.md) | σ beyond first order at a stationary point | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
@@ -53,6 +51,7 @@
 | [R66](packages/R66.md) | The power form keeps Giac's principal root in Home | ron, **Opus** | night | S12 | ~0.25 d |
 | [R67](packages/R67.md) | Letters e and i are names (R58b) | ron, **Opus** | night | S12, R66 | ~0.5 d |
 | [R68](packages/R68.md) | ᴇ's leading 1 after an operator | ron, **Opus** | night | S12 | ~0.25 d |
+| [R56b](packages/R56b.md) | Solve knows the user's functions | ron, Sonnet | night | now | ~0.25 d |
 | [R15c1](packages/R15c1.md) | The status line takes Apps, Menu and the views | ron, Sonnet | day | R50b | ~0.75 d |
 | [R15c2](packages/R15c2.md) | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | day | R15c1 | ~1.5 d |
 | [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | R15c2 | ~0.5 d |
@@ -60,6 +59,7 @@
 | [R55](packages/R55.md) | Digit groups in drawn results | ron, Sonnet | day | R15c4 | ~0.5 d |
 | [R49](packages/R49.md) | Settings as a list of rows, each with its own page | ron, Sonnet | day | R15c4 | ~0.75 d |
 | [R50b](packages/R50b.md) | Pascaline in the app | ron, Sonnet | day, before R15c1 | A14 | ~0.5 d |
+| [R43b](packages/R43b.md) | DMS takes a selected □ bare | ron, Sonnet | day | now | ~0.25 d |
 | [R50c](packages/R50c.md) | Theme generator, four more families | ron, Sonnet | night | R50b | ~0.75 d |
 | [R50d](packages/R50d.md) | Plain keys and High contrast | ron, Sonnet | night | R50c | ~0.5 d |
 | [R50e](packages/R50e.md) | Settings › Appearance | ron, Sonnet | day | R50d | ~1 d |
@@ -100,9 +100,9 @@ The queue below is the next nights'. `scripts/night.sh` runs it (rules section 4
 4. **Workers tick their own backlog line** and file their "Needs the user" items on their branch (rules section 5); the audit sees them in the diff.
 5. **Opus pass:** `scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"` after every three finished packages (merged or left unmerged; fix packages from a pass count), and the last pass at the end of the queue. Each FIX line of its reply runs as `scripts/pipeline.sh <agent> "<prompt>" --id <ID>f1 --branch <branch> --model <m> --audit-model auto`, then QUEUE is followed. A prompt never holds a backtick or a `$` (`night.sh` refuses them; two refusals in a row end the night). The last pass's FIX packages get only their audit, then the report.
 6. **Log:** the pipeline writes one line per step in `.coord/log.md` (time from `date`, step, agent and model, outcome, commit); `night.sh` logs each henri reply. The log is the queue state: henri continues from the first step without a RESULT line.
-7. **Usage limit:** the pipeline exits 75 and `night.sh` waits 30 minutes and retries, at most six times, then logs `STOPPED`. No retry loops in agents. The owner resumes with `scripts/night.sh` again.
+7. **Usage limit:** the pipeline exits 75 and `night.sh` waits 30 minutes and retries, at most six times, then logs `STOPPED`. No retry loops in agents. The owner resumes with `scripts/night.sh` again. A usage limit in the two closing steps (rule 9) waits and retries that step.
 8. **A step that ends without a RESULT line** (the pipeline died; A10 makes every exit print one): henri runs the same step once more; if the log then shows it twice without a RESULT, he skips it and goes on. **Worker gone without a report** (no commit): the pipeline logs `NOT MERGED (no commits)` and keeps the worktree; henri runs the same step once more (the pipeline resumes the branch). If that fails too, go on.
-9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **Until A17:** start `scripts/night.sh --max-steps 70`; a night running into the day ends after a RESULT line by stopping night.sh's loop process, never the pipeline.
+9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
 ### The queue (the next nights)
 Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "after" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The order: the silent wrong numbers by severity, then the gates and the docs, each after what it needs.
@@ -136,10 +136,11 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 54 | R66 the power form keeps Giac's principal root | ron, Opus | `p1/ron-m4-noR39` | S12 | 45 min |
 | 55 | R67 letters e and i are names | ron, Opus | `p1/ron-m4-eiNames` | S12, R66 | 1 h |
 | 56 | R68 ᴇ's leading 1 after an operator | ron, Opus | `p1/ron-m4-emark1` | S12 | 45 min |
-| 57 | **The last Opus pass** on what came after pass 27, then its FIX packages | Opus | — | — | 20 min + fixes |
-| 58 | Shift report, then stop | — | — | — | 10 min |
+| 57 | R56b Solve knows the user's functions | ron, Sonnet | `p1/ron-m4-solvefns` | — | 1 h |
+| 58 | **The last Opus pass** on what came after pass 27, then its FIX packages | Opus | — | — | 20 min + fixes |
+| 59 | Shift report, then stop | — | — | — | 10 min |
 
-Not in the queue: the ron lane's day packages (section 0; R50c and R50d are queue steps); devices (A9, A4b, A11, A12, A16); A7 and A8 (the owner's go); A17 and A18 (the pipeline, by day); R59, R38a and R38b (after S6's report).
+Not in the queue: the ron lane's day packages (section 0; R50c and R50d are queue steps); devices (A9, A4b, A11, A12, A16); A7 and A8 (the owner's go); A18 (the pipeline, by day); R59, R38a and R38b (after S6's report).
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (skip steps the table or the log marks merged or skipped, and steps whose "after" is not merged).
@@ -152,7 +153,7 @@ Not in the queue: the ron lane's day packages (section 0; R50c and R50d are queu
 You are the shift's quality gate and its decision-maker; henri executes your reply literally. Work in the worktree where `phase-1` is checked out (the pipeline tells you which); no code changes.
 1. For each package: its package file (`docs/shifts/packages/<ID>.md`), its report (`git log -1 <merge>^2`, or the branch tip if unmerged), its diff (`git diff <merge>^1 <merge>`), and the audit's verdict from `.coord/log.md`.
 2. Run once on `phase-1` (from `app/`, with absolute `GIAC_OUT`, `PASCALINE_DL_DIR` and `PASCALINE_QALC_DL_DIR`): typecheck, `npm run index` then `FIND_INDEX=required npm test`, e2e, and the golden gate when engine or parser code changed. Take `tools/devlock.sh acquire host-cpu opus 1800` around them.
-3. Check what an audit tends to miss: wrong or invented expected values (sources), a missing round trip, silent wrong numbers or marks (principle 3), scope, keys that moved, tests that pass for the wrong reason. Until A17: each merge's `^2` is the commit its last audit approved (`run.log`); an engine package gives its Giac calls per Enter before and after (`tools/probes/engine-calls.ts`).
+3. Check what an audit tends to miss: wrong or invented expected values (sources), a missing round trip, silent wrong numbers or marks (principle 3), scope, keys that moved, tests that pass for the wrong reason. An engine package gives its Giac calls per Enter before and after (`tools/probes/engine-calls.ts`).
 4. Decide each "Needs a decision" item of these packages and each open question from the log: a default within the plan goes into `docs/decisions.md` (rules section 9); a plan change goes under "Needs the user" with your recommendation in one sentence. Apply the "For shared files" text of the packages' reports, delete each merged package's file and its row from section 0's table, and run `node tools/docs-check.mjs`. Commit those doc changes on `phase-1` with `git commit -s` and the Opus trailer, under `tools/devlock.sh acquire integ opus 600` (A10).
 5. Reply in exactly this form, nothing before `OPUS PASS` and nothing after NOTES, and no backtick or `$` in a FIX prompt (`night.sh` refuses the line; name files and code in plain words). Never edit a DECIDED entry of decisions.md on a proposal that is still OPEN; put the change under the proposal. One FIX line per needed fix package; fix IDs are `<ID>f1`, `<ID>f2`:
 ```
