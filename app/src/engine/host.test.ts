@@ -616,3 +616,74 @@ describe.skipIf(!giacAvailable())("G34: a carried value keeps what it showed whe
     host.home("purge(A34,R35)", rad);
   });
 });
+
+// G48 (night check 2026-10-19 2.2): no `=` through an assignment that runs once, and a stored name takes the facts of
+// what its input read. F is the undecided floor: oracle -372376123662 (g38-floor-sin1e100), Giac 899450126402 at 40 digits.
+describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts a store lends", () => {
+  const F = "floor(sin(10^100)*10^12)";
+  const opts: FormatOptions = { format: "STD", digits: 12 };
+  let host: EngineHost;
+  const home = (i: string) => host.home(i, defaultHomeSettings);
+  const mark = (i: string) => markOf(home(i).result, opts)?.mark;
+  beforeAll(async () => {
+    host = new EngineHost((await loadNodeGiac()).giac);
+  });
+
+  it("[q1,q2]:=[F,1] is ⚠, and then q1 is ⚠", () => {
+    const r = home(`[hq1,hq2]:=[${F},1]`).result;
+    expect(markOf(r, opts)?.mark).toBe("⚠");
+    expect(r.why?.decided).toBe(true);
+    expect(mark("hq1")).toBe("⚠");
+    expect(mark("hq2")).toBe("⚠");
+  });
+
+  it("q5,q6:=F,1 is ⚠", () => {
+    expect(mark(`hq5,hq6:=${F},1`)).toBe("⚠");
+    expect(mark("hq5")).toBe("⚠");
+  });
+
+  it("F=>pE is ⚠, and then pE is ⚠", () => {
+    expect(mark(`${F}=>hpE`)).toBe("⚠");
+    expect(mark("hpE")).toBe("⚠");
+  });
+
+  it("CAS [r1,r2]:=[F,1] is ⚠", () => {
+    const r = host.cas(`[hr1,hr2]:=[${F},1]`, defaultCasSettings).result;
+    expect(r.warn).toBe("unchecked");
+    expect(r.why?.decided).toBe(true);
+  });
+
+  it("pA:=F, pu:=unapply(x+pA,x): pu(0) is ⚠ (the stored function lends what its input read)", () => {
+    home(`hpA:=${F}`);
+    home("hpu:=unapply(x+hpA,x)");
+    const call = home("hpu(0)").result;
+    expect(call.display).toBe("899450126402");
+    expect(markOf(call, opts)?.mark).toBe("⚠");
+  });
+
+  it("sto(F,pC) runs once: pC is ⚠ and in the definitions log, and a restore brings it back", async () => {
+    const r = home(`sto(${F},hpC)`);
+    expect(markOf(r.result, opts)?.mark).toBe("⚠");
+    expect(mark("hpC")).toBe("⚠");
+    const set = r.defs.flatMap((c) => ("set" in c ? [c.set] : []));
+    expect(set.map((e) => [e.name, e.kind])).toEqual([["hpC", "var"]]);
+    const fresh = new EngineHost((await loadNodeGiac()).giac);
+    fresh.restore(set);
+    const back = fresh.home("hpC", defaultHomeSettings).result;
+    expect(back.display).toBe(r.result.display);
+    expect(markOf(back, opts)?.mark).toBe("⚠");
+  });
+
+  it("guards stay =: [a1,b1]:=[1,2] then a1; sq:=unapply(x^2,x) then sq(3) = 9; sto(5,p5) then p5", () => {
+    expect(mark("[ha1,hb1]:=[1,2]")).toBe("=");
+    expect(mark("ha1")).toBe("=");
+    home("hsq:=unapply(x^2,x)");
+    const sq = home("hsq(3)").result;
+    expect(sq.display).toBe("9");
+    expect(markOf(sq, opts)?.mark).toBe("=");
+    const s = home("sto(5,hp5)");
+    expect(markOf(s.result, opts)?.mark).toBe("=");
+    expect(s.defs).toMatchObject([{ set: { name: "hp5", kind: "var" } }]);
+    expect(mark("hp5")).toBe("=");
+  });
+});
