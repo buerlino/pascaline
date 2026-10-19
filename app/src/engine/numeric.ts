@@ -43,6 +43,12 @@ export function valuePrecision(digits: number): number {
  * decimal conversion itself and the elementary functions, which Giac evaluates with MPFR at any precision and which
  * every `≈` result of home.yaml already goes through (checked against the oracle). Every other function that returns
  * a float on the exact path is "unaudited" and gets ⚠ until it is in Find's tier 0 with a golden case (G4, EN7).
+ * Audited for real arguments, and in RAD for complex ones (G50, `tools/probes/complex-audit.ts`: sqrt, exp, ln, log,
+ * log10, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, abs, arg and sign on 12 complex
+ * arguments at 12, 30 and 50 digits). Giac's complex tanh is coth and its complex asin, acos, atan and acosh are a
+ * double, so those are evaluated through COMPLEX_DEFINITIONS; any part Giac prints as a double where MPFR digits were
+ * asked confirms one digit fewer than it prints (shortDigits). In DEG nothing is replaced, so a non-real value of an
+ * input that calls tanh, asin, acos, atan or acosh is not audited and gets ⚠ (complexReads; the angle paths are S14's).
  */
 export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
   "evalf", "approx",
@@ -51,6 +57,51 @@ export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
   "abs", "re", "im", "conj", "arg", "sign", "floor", "ceil", "round", "frac", "max", "min",
   "sigfig", "par", "eseries", "pasmedian", "paspercentile",
 ]);
+
+/**
+ * G50 (deep check 2026-10-19 D9, D10): our definitions for the functions whose complex values Giac gets wrong. Giac's
+ * complex tanh returns (e^2z+1)/(e^2z-1), which is coth (usual.cc `tanh`, the `_CPLX` branch); its complex asin, acos,
+ * atan and acosh have no MPFR path (14 digits at any Digits; acosh near 0 is short even in the double). Each is used
+ * for a non-real argument in RAD only, and is the function itself otherwise: tanh(z) as -i*tan(i*z) (Giac's complex tan
+ * is right; sinh(z)/cosh(z) leaves im() a complex number for z = i), the inverse functions
+ * by their ln forms, which are the principal branches (mpmath's, also on the cuts of atan). The agreement check then
+ * confirms their digits like any other exact value. A list or matrix argument is mapped element by element first (its
+ * type is DOM_LIST, which would fall back to Giac's own function). In DEG the angle mode's own paths are S14's, and a
+ * non-real value of an input that calls one of these is not audited (complexReads; a stored name too).
+ */
+export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
+  pastanh: "pastanh(z):={ if (type(z)==DOM_LIST) return map(z,pastanh); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return -i*tan(i*z); return tanh(z); }",
+  pasasin: "pasasin(z):={ if (type(z)==DOM_LIST) return map(z,pasasin); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return -i*ln(i*z+sqrt(1-z^2)); return asin(z); }",
+  pasacos: "pasacos(z):={ if (type(z)==DOM_LIST) return map(z,pasacos); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return pi/2+i*ln(i*z+sqrt(1-z^2)); return acos(z); }",
+  pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
+  pasacosh: "pasacosh(z):={ if (type(z)==DOM_LIST) return map(z,pasacosh); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return ln(z+sqrt(z+1)*sqrt(z-1)); return acosh(z); }",
+};
+
+/** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */
+const COMPLEX_REPLACED: Readonly<Record<string, string>> = {
+  tanh: "pastanh", asin: "pasasin", arcsin: "pasasin", acos: "pasacos", arccos: "pasacos", atan: "pasatan", arctan: "pasatan",
+  acosh: "pasacosh", arccosh: "pasacosh",
+};
+const COMPLEX_CALL = new RegExp(`"[^"]*"|\\b(${Object.keys(COMPLEX_REPLACED).join("|")})(\\s*\\()`, "g");
+
+/** `text` with every call of a function Giac gets wrong on complex arguments replaced by ours (outside strings); the
+ *  same text when there is none. */
+export function complexSafe(text: string): string {
+  return text.replace(COMPLEX_CALL, (m, name?: string, paren?: string) => (name === undefined ? m : `${COMPLEX_REPLACED[name]}${paren}`));
+}
+
+/** Prepares `text` to be evaluated for its value: in RAD, with complexSafe's replacements and their definitions loaded;
+ *  otherwise (DEG, or nothing to replace) the text itself. */
+export function forValue(giac: Giac, text: string): string {
+  const safe = complexSafe(text);
+  if (safe === text || giac.eval("angle_radian").trim() !== "1") return text;
+  for (const [name, def] of Object.entries(COMPLEX_DEFINITIONS)) {
+    if (!safe.includes(name)) continue;
+    // A defined function prints as its program; an undefined name prints as itself.
+    if (giac.eval(name).trim() === name) giac.eval(def);
+  }
+  return safe;
+}
 
 const FLOAT_LITERAL = /(?<![A-Za-z_0-9.])(?:\d+\.\d*|\.\d+|\d+(?=e[+-]?\d))(?:e[+-]?\d+)?/;
 
@@ -208,10 +259,113 @@ export function namesIn(input: string): string[] {
 /** Why the facts of a float result carry a warning (`why` of HomeResult); undefined when nothing is to be said.
  *  `expr`: the input as it was run again, null when it could not be (a value evaluated once). */
 export function whyOf(facts: readonly ElementFacts[], expr: string | null): PrecisionWhy | undefined {
-  const unaudited = expr !== null && facts.some((f) => f.warn === "unaudited") ? functionsIn(expr).filter((f) => !AUDITED_FUNCTIONS.has(f)) : [];
+  const off = expr !== null && facts.some((f) => f.warn === "unaudited") ? functionsIn(expr).filter((f) => !AUDITED_FUNCTIONS.has(f)) : [];
+  // Every name audited but the facts unaudited: a non-real value of a function COMPLEX_DEFINITIONS replaces, not read
+  // through ours (DEG, or a stored name: complexReads).
+  const complex = [...new Set(facts.flatMap((f) => f.complexFns ?? []))];
+  const unaudited =
+    off.length || !facts.some((f) => f.warn === "unaudited") ? off : complex.length ? complex : expr === null ? [] : complexReplacedIn(expr);
   const once = facts.some((f) => f.warn === "unchecked" && !(isZero(f.value.re) && isZero(f.value.im))) || (expr === null && facts.some((f) => f.warn));
   if (!unaudited.length && !once) return undefined;
   return { ...(unaudited.length ? { unaudited } : {}), ...(once ? { once: true } : {}) };
+}
+
+/** The functions of `input` that COMPLEX_DEFINITIONS replace in RAD (tanh, asin, acos, atan, acosh and aliases). */
+export function complexReplacedIn(input: string): string[] {
+  return functionsIn(input).filter((f) => Object.hasOwn(COMPLEX_REPLACED, f));
+}
+
+/** The value of `name` has a non-zero imaginary part (or its im() cannot be had). */
+function nonReal(giac: Giac, name: string): boolean {
+  const im = giac.eval(`im(${name})`);
+  return isError(im) || /[1-9]/.test(im.replace(/e[+-]?\d+/g, ""));
+}
+
+/** Most stored names and functions complexReads looks into for one input (each is one Giac call). */
+const MAX_READS = 40;
+
+/**
+ * What `expr` reads through stored names (G50f1). A name or user function whose stored text calls a function
+ * COMPLEX_DEFINITIONS replaces (CAS `w:=tanh(i)` keeps Giac's exact tanh(i); `f(x):=tanh(x)`) is evaluated by Giac with
+ * its own complex tanh (coth) unless it is read through a copy: in RAD each such name is replaced in `text` by a slot
+ * (`pasxn<k>`) that holds its complexSafe text, as exactFacts reads Ans through pasxv. `hidden`: the replaced functions
+ * that could not be read that way (DEG, where nothing is replaced, the typed text's too; a copy Giac refused; a call
+ * found only inside another function's body; every one when `copy` is false, for an input that runs once and may
+ * assign); a non-real value then is not audited. Purge `copies` when done.
+ */
+export function complexReads(giac: Giac, expr: string, copy = true): { text: string; copies: string[]; hidden: string[] } {
+  const rad = giac.eval("angle_radian").trim() === "1";
+  const copies: string[] = [];
+  const hidden: string[] = rad ? [] : complexReplacedIn(expr);
+  const known = new Map<string, string | null>();
+  // The stored text of a user's name or function; null for a free name or a builtin (each name is asked once).
+  const stored = (n: string): string | null => {
+    if (known.has(n)) return known.get(n)!;
+    if (known.size >= MAX_READS || Object.hasOwn(COMPLEX_REPLACED, n) || AUDITED_FUNCTIONS.has(n)) return null;
+    const v = giac.eval(n).trim();
+    const out = isError(v) || v === n || v === "" ? null : v;
+    known.set(n, out);
+    return out;
+  };
+  // Replaced calls further down: in what the names and functions in `v` hold (their copies would still call Giac's).
+  const visited = new Set<string>();
+  const deeper = (v: string): string[] => {
+    const out: string[] = [];
+    const bound = boundIn(v);
+    for (const n of [...functionsIn(v), ...namesIn(v)]) {
+      if (visited.has(n) || bound.has(n)) continue;
+      visited.add(n);
+      const w = stored(n);
+      if (w !== null) out.push(...complexReplacedIn(w), ...deeper(w));
+    }
+    return out;
+  };
+  let text = expr;
+  const reads: [string, boolean][] = [...namesIn(expr).map((n): [string, boolean] => [n, false]), ...functionsIn(expr).map((n): [string, boolean] => [n, true])];
+  for (const [n, called] of reads) {
+    const v = stored(n);
+    if (v === null) continue;
+    hidden.push(...deeper(v));
+    const fns = complexReplacedIn(v);
+    if (!fns.length) continue;
+    const slot = `pasxn${copies.length}`;
+    if (!rad || !copy || isError(giac.eval(`${slot}:=(${forValue(giac, v)})`))) {
+      hidden.push(...fns);
+      continue;
+    }
+    copies.push(slot);
+    const at = new RegExp(`"[^"]*"|(?<![A-Za-z0-9_.])${n}(?![A-Za-z0-9_])(${called ? "(?=\\s*\\()" : "(?!\\s*\\()"})`, "g");
+    text = text.replace(at, (m, hit?: string) => (hit === undefined ? m : slot));
+  }
+  return { text, copies, hidden: [...new Set(hidden)] };
+}
+
+/** The names a stored program binds (`(x,y)->{local a,b:=1; …}` → x, y, a, b): its parameters and `local` names, which
+ *  its body reads in place of a stored name of the same name. Empty for a text that is not a program. */
+function boundIn(v: string): Set<string> {
+  const head = /^\s*(?:\(([^()]*)\)|([A-Za-z_][A-Za-z0-9_]*))\s*->/.exec(v);
+  if (!head) return new Set();
+  const out = new Set((head[1] ?? head[2]!).split(",").map((p) => p.trim()).filter((p) => p !== ""));
+  for (const m of v.matchAll(/\blocal\s+([^;]*);/g))
+    for (const part of topLevelArgs(m[1]!)) {
+      const n = /^\s*([A-Za-z_][A-Za-z0-9_]*)/.exec(part);
+      if (n) out.add(n[1]!);
+    }
+  return out;
+}
+
+/** Purges the slots complexReads made. */
+export function purgeReads(giac: Giac, copies: readonly string[]): void {
+  if (copies.length) giac.eval(`purge(${copies.join(",")})`);
+}
+
+/** complexReads' text has a replaced function (typed or read through a copy), so Giac's own printed float of `expr` is
+ *  not its value (Home keeps no exact text then). */
+export function readsReplaced(giac: Giac, expr: string): boolean {
+  if (complexSafe(expr) !== expr) return true;
+  const r = complexReads(giac, expr);
+  purgeReads(giac, r.copies);
+  return r.copies.length > 0;
 }
 
 /** Every function in the input is on the audited list. */
@@ -315,7 +469,23 @@ export function rationalValue(text: string, keep?: number): { v: DecimalValue; p
 /** A printed number (rational or float) as a DecimalValue; null if it is not one. */
 function anyValue(text: string, keep: number): DecimalValue | null {
   const t = text.trim();
-  return rationalValue(t, keep)?.v ?? decimalFromString(t.replace(/^-0\.0*$/, "0"), keep);
+  // `0.-000…`: Giac's print of a negative zero part (asin(2*i) at 40 digits).
+  return rationalValue(t, keep)?.v ?? decimalFromString(t.replace(/^-?0\.-?0*$/, "0"), keep);
+}
+
+/**
+ * G50: the digits a part printed as a double confirms when MPFR digits were asked (`asked` > DOUBLE_DIGITS + 1): one
+ * fewer than it prints, since Giac rounds the double to 14 digits for print (asin(i) printed …955, the value is
+ * …9543). Undefined for a rational, a zero, or a part printed with MPFR's digits. Giac's complex acos at 40 digits
+ * printed its real part as 0.90455689430238 and both precisions agreed on it.
+ */
+export function shortDigits(text: string, asked: number): number | undefined {
+  if (asked <= DOUBLE_DIGITS + 1) return undefined;
+  const m = /^\s*-?(\d*)\.(\d*)(?:e[+-]?\d+)?\s*$/.exec(text);
+  if (!m) return undefined;
+  const sig = (m[1]! + m[2]!).replace(/^0+/, "");
+  if (sig === "" || sig.length > DOUBLE_DIGITS + 1) return undefined;
+  return Math.max(0, sig.length - 1);
 }
 
 function isError(out: string): boolean {
@@ -339,19 +509,22 @@ export function readParts(
   shape: Shape,
   print: (part: string) => string,
   keep: number,
-): { re: DecimalValue; im: DecimalValue }[] | null {
+  asked = 0,
+): { re: DecimalValue; im: DecimalValue; short?: number }[] | null {
   const reT = print(`re(${expr})`);
   const imT = print(`im(${expr})`);
   if (isError(reT) || isError(imT)) return null;
   const re = flatten(reT, shape);
   const im = flatten(imT, shape);
   if (!re || !im || re.length !== im.length) return null;
-  const out: { re: DecimalValue; im: DecimalValue }[] = [];
+  const out: { re: DecimalValue; im: DecimalValue; short?: number }[] = [];
   for (let k = 0; k < re.length; k++) {
     const a = anyValue(re[k]!, keep);
     const b = anyValue(im[k]!, keep);
     if (!a || !b) return null;
-    out.push({ re: a, im: b });
+    // `asked`: the MPFR digits this print was asked for; a part printed as a double confirms fewer (shortDigits).
+    const short = [shortDigits(re[k]!, asked), shortDigits(im[k]!, asked)].filter((n): n is number => n !== undefined);
+    out.push(short.length ? { re: a, im: b, short: Math.min(...short) } : { re: a, im: b });
   }
   return out;
 }
@@ -364,6 +537,8 @@ export interface ElementFacts {
   warn?: PrecisionWarn;
   /** The exact numerator or denominator has more than maxExactDigits digits. */
   big: boolean;
+  /** G50f1: the functions Giac gets wrong on complex arguments that made this value unaudited (why.unaudited). */
+  complexFns?: readonly string[];
 }
 
 /** Confirmed digits of a complex value: the weaker of its two parts (an exactly zero part needs no check). */
@@ -397,9 +572,11 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
   const P = valuePrecision(digits);
   const reT = giac.eval(`re(${name})`);
   const imT = giac.eval(`im(${name})`);
-  if (isError(reT) || isError(imT)) return null;
-  const re = flatten(reT, shape);
-  const im = flatten(imT, shape);
+  // G50: Giac's symbolic re and im of a large exact value can run out of time (acosh(1/10+5*i) is an ln of nested
+  // roots, and re() of it takes over 0.3 s): then no element is rational, and the parts come from the value's evalf.
+  const split = !isError(reT) && !isError(imT);
+  const re = split ? flatten(reT, shape) : Array.from({ length: size(shape) }, () => "");
+  const im = split ? flatten(imT, shape) : re;
   if (!re || !im || re.length !== im.length) return null;
   const facts: (ElementFacts | null)[] = re.map((r, k) => {
     const a = rationalValue(r, P);
@@ -409,7 +586,51 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
     return { value: { re: a.v, im: b.v }, exactRational: true, reliableDigits: null, big };
   });
   if (facts.every((f) => f !== null)) return facts as ElementFacts[];
-  const evalfAt = (prec: number) => readParts(giac, name, shape, (part) => giac.eval(`evalf(${part},${prec})`), P);
+  // G50: the value is read from the exact text with the functions Giac gets wrong on complex arguments replaced
+  // (forValue); `name` (Ans) keeps Giac's own text.
+  const text = giac.eval(name);
+  const safe = isError(text) ? text : forValue(giac, text);
+  const src = safe !== text && !isError(giac.eval(`pasxv:=(${safe})`)) ? "pasxv" : name;
+  try {
+    // The value's evalf is trusted only with no function left that Giac gets wrong on it (in DEG nothing is replaced).
+    const whole = src !== name || complexSafe(text) === text;
+    if (!split && !whole) return null;
+    return exactFactsOf(giac, src, shape, digits, P, facts, split, whole);
+  } finally {
+    giac.eval(src !== name ? "purge(pasxv,pasxe)" : "purge(pasxe)");
+  }
+}
+
+function exactFactsOf(
+  giac: Giac,
+  name: string,
+  shape: Shape,
+  digits: number,
+  P: number,
+  facts: (ElementFacts | null)[],
+  split: boolean,
+  wholeOk: boolean,
+): ElementFacts[] | null {
+  // Two guard digits beyond P: a value read at P digits is truncated, so a P-th digit confirmed by the next level would be
+  // shown truncated, not rounded (G50 probe: asin(-1/1000+i/1000) at 50 digits).
+  let erred = false;
+  const viaParts = (prec: number) =>
+    readParts(giac, name, shape, (part) => {
+      const t = giac.eval(`evalf(${part},${prec})`);
+      if (isError(t)) erred = true;
+      return t;
+    }, P + 2, prec);
+  // The parts of the value's evalf, when the symbolic parts cannot be had (above) or not evaluated in time (an error).
+  const viaValue = (prec: number) =>
+    isError(giac.eval(`pasxe:=evalf(${name},${prec})`)) ? null : readParts(giac, "pasxe", shape, (part) => giac.eval(part), P + 2, prec);
+  let whole = !split;
+  const evalfAt = (prec: number) => {
+    if (whole) return viaValue(prec);
+    const v = viaParts(prec);
+    if (v || !erred || !wholeOk) return v;
+    whole = true;
+    return viaValue(prec);
+  };
   const A = evalfAt(P);
   const B = A && evalfAt(P + 20);
   if (!A || !B) return null;
@@ -438,7 +659,8 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
       reliable = Math.max(reliable, confirmedComplex(levels[i - 1]![k]!, next[k]!, precs[i - 1]!, P));
       value = next[k]!;
     }
-    return zeroUnconfirmed({ value, exactRational: false, reliableDigits: reliable, big: false });
+    reliable = Math.min(reliable, A[k]!.short ?? P, B[k]!.short ?? P);
+    return zeroUnconfirmed({ value: { re: value.re, im: value.im }, exactRational: false, reliableDigits: reliable, big: false });
   });
 }
 
@@ -454,11 +676,25 @@ export function floatFacts(
   shape: Shape,
   digits: number,
   restoreDigits: number,
+  typed?: string,
 ): ElementFacts[] | null {
   // SB4: an element that is an exact rational in the stored result keeps its own facts (= or ≈), not the mark of the
   // weakest element. Read before the checks below, which store their values in `name`.
   const exact = shape.kind === "scalar" ? null : exactElements(giac, name, shape, valuePrecision(digits));
-  const facts = floatFactsOf(giac, name, expr, shape, digits, restoreDigits);
+  // G50f1: the names the input reads that hold a call Giac gets wrong on complex arguments are read through copies.
+  const reads = expr === null ? null : complexReads(giac, expr);
+  let facts: ElementFacts[] | null;
+  try {
+    facts = floatFactsOf(giac, name, expr, reads, shape, digits, restoreDigits);
+  } finally {
+    if (reads) purgeReads(giac, reads.copies);
+  }
+  // G50f1: an input that runs once (`typed`, expr null) keeps Giac's value, computed without our definitions: a
+  // non-real one that rests on a replaced function (typed, or held by a name it reads) is not audited.
+  if (facts && expr === null && typed !== undefined) {
+    const complexFns = [...new Set([...complexReplacedIn(typed), ...complexReads(giac, typed, false).hidden])];
+    if (complexFns.length && nonReal(giac, name)) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const, complexFns }));
+  }
   return facts && exact && exact.length === facts.length ? facts.map((f, k) => exact[k] ?? f) : facts;
 }
 
@@ -481,23 +717,38 @@ function floatFactsOf(
   giac: Giac,
   name: string,
   expr: string | null,
+  reads: { text: string; hidden: string[] } | null,
   shape: Shape,
   digits: number,
   restoreDigits: number,
 ): ElementFacts[] | null {
   const P = valuePrecision(digits);
+  // G50: run with the functions Giac gets wrong on complex arguments replaced (forValue), and the names that hold them
+  // read through their copies (G50f1, complexReads).
+  const run = reads === null ? null : forValue(giac, reads.text);
   // `asked`: the precision an evalf(e,n) in the input runs at in this evaluation (M4-6).
-  const at = (d: number, slot: string, asked: (n: number) => number = (n) => Math.max(n, d)): { re: DecimalValue; im: DecimalValue }[] | null =>
+  const at = (d: number, slot: string, asked: (n: number) => number = (n) => Math.max(n, d)): { re: DecimalValue; im: DecimalValue; short?: number }[] | null =>
     withDigits(giac, d, restoreDigits, () => {
-      if (expr !== null) {
-        const out = giac.eval(`${slot}:=(${withAskedPrecision(expr, asked)})`);
+      if (run !== null) {
+        const out = giac.eval(`${slot}:=(${withAskedPrecision(run, asked)})`);
         if (isError(out)) return null;
       }
-      return readParts(giac, expr === null ? name : slot, shape, (part) => giac.eval(part), P);
+      return readParts(giac, run === null ? name : slot, shape, (part) => giac.eval(part), P, d);
     });
-  const unaudited = expr === null || !isAudited(expr);
-  const facts = (v: { re: DecimalValue; im: DecimalValue }[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
-    v.map((value, k) => zeroUnconfirmed({ value, exactRational: false, reliableDigits: Math.min(reliable(k), P), big: false, ...(warn ? { warn } : {}) }));
+  // A non-real value that rests on a replaced function not read through our definitions (DEG, complexReads' hidden).
+  const hidden = reads !== null && reads.hidden.length > 0 && nonReal(giac, name) ? reads.hidden : [];
+  const unaudited = expr === null || !isAudited(expr) || hidden.length > 0;
+  const facts = (v: { re: DecimalValue; im: DecimalValue; short?: number }[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
+    v.map((value, k) =>
+      zeroUnconfirmed({
+        value: { re: value.re, im: value.im },
+        exactRational: false,
+        reliableDigits: Math.min(reliable(k), P, value.short ?? P),
+        big: false,
+        ...(warn ? { warn } : {}),
+        ...(warn === "unaudited" && hidden.length ? { complexFns: hidden } : {}),
+      }),
+    );
   if (expr === null) {
     // A stateful input that cannot be run again: the value as printed, one-sided.
     const d = digits <= DOUBLE_DIGITS ? DOUBLE_DIGITS : digits;
@@ -525,7 +776,7 @@ function floatFactsOf(
   const A = at(P, "pasm", (n) => Math.max(n, P));
   const B = A && at(P + 20, "pasm2", (n) => Math.max(n, P) + 20);
   if (A && B) {
-    const reliable = B.map((b, k) => confirmedComplex(A[k]!, b, P, P));
+    const reliable = B.map((b, k) => Math.min(confirmedComplex(A[k]!, b, P, P), A[k]!.short ?? P));
     if (reliable.some((n) => n < digits)) {
       // Rule 2: once more, P+20 against P+40 (a cancellation only needs more working digits).
       const C = at(P + 40, "pasm3", (n) => Math.max(n, P) + 40);
@@ -578,24 +829,55 @@ export function floatPathFacts(
   W: number,
   digits: number,
 ): { facts: ElementFacts[]; shape: Shape } | { error: string } {
+  // G50f1: the names the input reads that hold a call Giac gets wrong on complex arguments are read through copies.
+  const reads = complexReads(giac, expr, !once);
+  try {
+    const out = floatPathFactsOf(giac, name, forValue(giac, reads.text), once, W, digits);
+    // A non-real value that rests on a replaced function not read through ours (DEG, a copy refused) is not audited.
+    if ("error" in out || !reads.hidden.length || !nonReal(giac, name)) return out;
+    const complexFns = reads.hidden;
+    return { ...out, facts: out.facts.map((f) => ({ ...f, warn: "unaudited" as const, complexFns })) };
+  } finally {
+    purgeReads(giac, reads.copies);
+  }
+}
+
+function floatPathFactsOf(
+  giac: Giac,
+  name: string,
+  safe: string,
+  once: boolean,
+  W: number,
+  digits: number,
+): { facts: ElementFacts[]; shape: Shape } | { error: string } {
   const run = (d: number, slot: string): string =>
-    withDigits(giac, d, digits, () => giac.eval(`${slot}:=(${withAskedPrecision(expr, (n) => Math.max(n, W) + (d - W))})`));
+    withDigits(giac, d, digits, () => giac.eval(`${slot}:=(${withAskedPrecision(safe, (n) => Math.max(n, W) + (d - W))})`));
   const read = (d: number, slot: string, shape: Shape) =>
-    withDigits(giac, d, digits, () => readParts(giac, slot, shape, (part) => giac.eval(part), valuePrecision(digits)));
+    withDigits(giac, d, digits, () => readParts(giac, slot, shape, (part) => giac.eval(part), valuePrecision(digits), d));
   const outA = run(W, once ? name : "pasf");
   if (isError(outA)) return { error: outA };
   const shape = shapeOf(outA);
   if (!shape) return { error: outA };
   const A = read(W, once ? name : "pasf", shape);
   if (!A) return { error: outA };
-  if (once) return { facts: A.map((value) => ({ value, exactRational: false, reliableDigits: Math.min(digits, W - 10), warn: "unchecked", big: false })), shape };
+  if (once) return { facts: A.map((value) => ({ value: { re: value.re, im: value.im }, exactRational: false, reliableDigits: Math.min(digits, W - 10, value.short ?? W), warn: "unchecked", big: false })), shape };
   const outB = run(W + 20, name);
   const B = isError(outB) ? null : read(W + 20, name, shape);
   if (!B) {
     giac.eval(`${name}:=pasf`);
-    return { facts: A.map((value) => ({ value, exactRational: false, reliableDigits: Math.min(digits, W - 10), warn: "unchecked", big: false })), shape };
+    return { facts: A.map((value) => ({ value: { re: value.re, im: value.im }, exactRational: false, reliableDigits: Math.min(digits, W - 10, value.short ?? W), warn: "unchecked", big: false })), shape };
   }
-  return { facts: B.map((value, k) => zeroUnconfirmed({ value, exactRational: false, reliableDigits: Math.min(confirmedComplex(A[k]!, value, W, W), valuePrecision(digits)), big: false })), shape };
+  return {
+    facts: B.map((value, k) =>
+      zeroUnconfirmed({
+        value: { re: value.re, im: value.im },
+        exactRational: false,
+        reliableDigits: Math.min(confirmedComplex(A[k]!, value, W, W), valuePrecision(digits), A[k]!.short ?? W, value.short ?? W),
+        big: false,
+      }),
+    ),
+    shape,
+  };
 }
 
 

@@ -172,3 +172,100 @@ cases:
   - { id: "g39-cas-pair", kind: "cas", input: "int(abs(x-sin(10^50)),x,-1,1)", mark: "⚠", source: "derived", note: "mark-only: Giac's [exact, numeric] pair is shown as Giac's text with ⚠ (the two disagree: 1.62358264688 against 1.35506364264)" }
   - { id: "g39-cas-keep-basel", kind: "cas", input: "sum(1/k^2,k,1,inf)", expect: "1/6*pi^2", source: "derived", note: "Giac's text for pi^2/6" }
   - { id: "g39-cas-keep-1/x^2", kind: "cas", input: "int(1/x^2,x,-1,1)", expect: "+infinity", source: "derived" }
+  # --- G50 (deep check 2026-10-19 D9–D11): complex arguments of the audited functions, RAD. Each function on two complex
+  # arguments at 12 and 30 digits (tools/probes/complex-audit.ts sweeps 12 arguments at 12, 30 and 50 digits). Giac's
+  # complex tanh is coth, and its complex asin, acos, atan and acosh are a double at any Digits.
+  - { id: "prec-g50-tanh(i)-12", input: "tanh(i)", oracle: "tanh(I)", expect: "1.55740772465*i", mark: "≈", source: "oracle", note: "showed ⚠ -2.78523697142E-31-0.642092615934*i, which is coth(i): no digit right (D9)" }
+  - { id: "prec-g50-tanh(i)-30", input: "tanh(i)", settings: { digits: 30 }, oracle: "tanh(I)", expect: "1.55740772465490223050697480746*i", mark: "≈", source: "oracle", note: "showed ⚠ 14 -2.7852369714161E-31-0.64209261593433*i (coth(i))" }
+  - { id: "prec-g50-tanh(i/2)-12", input: "tanh(i/2)", oracle: "tanh(I*F(1,2))", expect: "0.546302489844*i", mark: "≈", source: "oracle", note: "guard: right before G50 (Home's re/im path), while Giac's evalf(tanh(i/2)) is -1.83048772171*i" }
+  - { id: "prec-g50-tanh(i/2)-30", input: "tanh(i/2)", settings: { digits: 30 }, oracle: "tanh(I*F(1,2))", expect: "0.54630248984379051325517946578*i", mark: "≈", source: "oracle", note: "guard, as at 12 digits" }
+  - { id: "prec-g50-evalf-tanh(i)", input: "evalf(tanh(i))", oracle: "tanh(I)", expect: "1.55740772465*i", mark: "≈", source: "oracle", note: "a typed evalf runs Giac's own complex tanh: showed -0.642092615934*i" }
+  - { id: "prec-g50-cas-evalf-tanh(i)", kind: "cas", input: "evalf(tanh(i))", oracle: "tanh(I)", expect: "1.55740772465*i", mark: "≈", source: "oracle", note: "the same in CAS" }
+  - { id: "prec-g50-evalf-tanh-list", input: "evalf(tanh([i,i/2]))[1]", oracle: "tanh(I*F(1,2))", expect: "0.546302489844*i", mark: "≈", source: "oracle", note: "fix round 1: a list argument fell back to Giac's own tanh (type DOM_LIST, not DOM_COMPLEX), coth on each element: showed -1.83048772171*i" }
+  - { id: "prec-g50-evalf-acos-list-30", input: "evalf(acos([1+i,2*i]))[0]", settings: { digits: 30 }, oracle: "acos(1+I)", expect: "0.904556894302381364127316795662-1.06127506190503565203301891621*i", mark: "≈", source: "oracle", note: "fix round 1: the same for a list argument of acos, a double on each element" }
+  - { id: "prec-g50-deg-evalf-tanh(i)", input: "evalf(tanh(i))", settings: { angle: "deg" }, mark: "⚠", source: "derived", note: "fix round 1: in DEG nothing is replaced (the angle paths are S14's), so Giac's coth(i) = -0.642092615934*i ran at P and P+20 and showed ≈; a non-real value of tanh, asin, acos, atan or acosh in DEG is not audited. Mark-only: tanh(i) is 1.55740772465*i (mpmath), which DEG does not reach" }
+  - { id: "prec-g50f1-cas-stored-tanh(i)", kind: "cas", input: "evalf(wg50)", before: ["wg50:=tanh(i)"], oracle: "tanh(I)", expect: "1.55740772465*i", mark: "≈", source: "oracle", note: "G50f1: wg50 holds Giac's exact tanh(i), and evalf(wg50) ran Giac's own complex tanh: showed -0.642092615934*i (coth(i)) with 38 confirmed digits and no warning" }
+  - { id: "prec-g50f1-home-approx-cas-name", input: "approx(wh50)", beforeCas: ["wh50:=tanh(i)"], oracle: "tanh(I)", expect: "1.55740772465*i", mark: "≈", source: "oracle", note: "G50f1: the same through Home's approx of a name stored in CAS: showed -0.642092615934*i" }
+  - { id: "prec-g50-acos(1+i)-30", input: "acos(1+i)", settings: { digits: 30 }, oracle: "acos(1+I)", expect: "0.904556894302381364127316795662-1.06127506190503565203301891621*i", mark: "≈", source: "oracle", note: "showed 0.90455689430238-1.06127506190503565203301891621*i with ≈: the real part was Giac's double, 14 digits, at 40 and 60 digits alike (D10)" }
+  - { id: "prec-g50-asin(2i)-12", input: "asin(2*i)", oracle: "asin(2*I)", expect: "1.44363547518*i", mark: "≈", source: "oracle", note: "showed ⚠: Giac printed the real part as 0.-000…, which the reader could not take, so the double was used (D10)" }
+  - { id: "prec-g50-asin(2i)-30", input: "asin(2*i)", settings: { digits: 30 }, oracle: "asin(2*I)", expect: "1.44363547517881034249327674027*i", mark: "≈", source: "oracle", note: "showed ⚠ 14 1.4436354751788*i" }
+  - { id: "prec-g50-sqrt(1+i)-12", input: "sqrt(1+i)", oracle: "sqrt(1+I)", expect: "1.09868411347+0.455089860562*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sqrt(1+i)-30", input: "sqrt(1+i)", settings: { digits: 30 }, oracle: "sqrt(1+I)", expect: "1.09868411346780996603980119524+0.455089860562227341304357757822*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sqrt(-2-3i)-12", input: "sqrt(-2-3*i)", oracle: "sqrt(-2-3*I)", expect: "0.89597747613-1.67414922804*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sqrt(-2-3i)-30", input: "sqrt(-2-3*i)", settings: { digits: 30 }, oracle: "sqrt(-2-3*I)", expect: "0.89597747612983812471573375529-1.67414922803554004044803930085*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-exp(1+i)-12", input: "exp(1+i)", oracle: "exp(1+I)", expect: "1.46869393992+2.28735528718*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-exp(1+i)-30", input: "exp(1+i)", settings: { digits: 30 }, oracle: "exp(1+I)", expect: "1.46869393991588515713896759733+2.2873552871788423912081719067*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-exp(-2-3i)-12", input: "exp(-2-3*i)", oracle: "exp(-2-3*I)", expect: "-0.13398091493-0.0190985162611*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-exp(-2-3i)-30", input: "exp(-2-3*i)", settings: { digits: 30 }, oracle: "exp(-2-3*I)", expect: "-0.133980914929542613461405255461-0.0190985162611351964325762408588*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-ln(1+i)-12", input: "ln(1+i)", oracle: "ln(1+I)", expect: "0.34657359028+0.785398163397*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-ln(1+i)-30", input: "ln(1+i)", settings: { digits: 30 }, oracle: "ln(1+I)", expect: "0.346573590279972654708616060729+0.78539816339744830961566084582*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-ln(-2-3i)-12", input: "ln(-2-3*i)", oracle: "ln(-2-3*I)", expect: "1.28247467873-2.15879893034*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-ln(-2-3i)-30", input: "ln(-2-3*i)", settings: { digits: 30 }, oracle: "ln(-2-3*I)", expect: "1.28247467873076836802674372078-2.15879893034246417047693277226*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-log(1/2+i/3)-12", input: "log(1/2+i/3)", oracle: "ln(F(1,2)+I*F(1,3))", expect: "-0.509284790497+0.588002603548*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-log(1/2+i/3)-30", input: "log(1/2+i/3)", settings: { digits: 30 }, oracle: "ln(F(1,2)+I*F(1,3))", expect: "-0.509284790497286632785733637598+0.588002603547567551245611080625*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-log(5+10i)-12", input: "log(5+10*i)", oracle: "ln(5+10*I)", expect: "2.41415686865+1.10714871779*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-log(5+10i)-30", input: "log(5+10*i)", settings: { digits: 30 }, oracle: "ln(5+10*I)", expect: "2.41415686865115056190113899984+1.10714871779409050301706546018*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-log10(1+i)-12", input: "log10(1+i)", oracle: "log10(1+I)", expect: "0.150514997832+0.34109408846*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-log10(1+i)-30", input: "log10(1+i)", settings: { digits: 30 }, oracle: "log10(1+I)", expect: "0.150514997831990597606869447362+0.341094088460460336871445906358*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-log10(-2-3i)-12", input: "log10(-2-3*i)", oracle: "log10(-2-3*I)", expect: "0.556971676153-0.937554462986*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-log10(-2-3i)-30", input: "log10(-2-3*i)", settings: { digits: 30 }, oracle: "log10(-2-3*I)", expect: "0.556971676153418384603252578971-0.93755446298637470854150795214*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sin(1+i)-12", input: "sin(1+i)", oracle: "sin(1+I)", expect: "1.29845758142+0.634963914785*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sin(1+i)-30", input: "sin(1+i)", settings: { digits: 30 }, oracle: "sin(1+I)", expect: "1.29845758141597729482604236581+0.634963914784736108255082202992*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sin(-2-3i)-12", input: "sin(-2-3*i)", oracle: "sin(-2-3*I)", expect: "-9.15449914691+4.16890695997*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sin(-2-3i)-30", input: "sin(-2-3*i)", settings: { digits: 30 }, oracle: "sin(-2-3*I)", expect: "-9.15449914691142957346729954461+4.16890695996656435075481305885*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-cos(1+i)-12", input: "cos(1+i)", oracle: "cos(1+I)", expect: "0.833730025131-0.988897705763*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-cos(1+i)-30", input: "cos(1+i)", settings: { digits: 30 }, oracle: "cos(1+I)", expect: "0.833730025131149048883885394335-0.988897705762865096382129540893*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-cos(-2-3i)-12", input: "cos(-2-3*i)", oracle: "cos(-2-3*I)", expect: "-4.18962569097-9.10922789376*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-cos(-2-3i)-30", input: "cos(-2-3*i)", settings: { digits: 30 }, oracle: "cos(-2-3*I)", expect: "-4.18962569096880723013255501962-9.10922789375533659797919726278*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-tan(1+i)-12", input: "tan(1+i)", oracle: "tan(1+I)", expect: "0.27175258532+1.08392332734*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-tan(1+i)-30", input: "tan(1+i)", settings: { digits: 30 }, oracle: "tan(1+I)", expect: "0.271752585319511716528843722499+1.08392332733869454347575206121*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-tan(-2-3i)-12", input: "tan(-2-3*i)", oracle: "tan(-2-3*I)", expect: "0.0037640256415-1.00323862735*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-tan(-2-3i)-30", input: "tan(-2-3*i)", settings: { digits: 30 }, oracle: "tan(-2-3*I)", expect: "0.00376402564150424829275122113032-1.00323862735360980144635859782*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-asin(i)-12", input: "asin(i)", oracle: "asin(I)", expect: "0.88137358702*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-asin(i)-30", input: "asin(i)", settings: { digits: 30 }, oracle: "asin(I)", expect: "0.88137358701954302523260932498*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-asin(1/10+5i)-12", input: "asin(1/10+5*i)", oracle: "asin(F(1,10)+5*I)", expect: "0.019609244733+2.31262688171*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-asin(1/10+5i)-30", input: "asin(1/10+5*i)", settings: { digits: 30 }, oracle: "asin(F(1,10)+5*I)", expect: "0.0196092447330047067042172985217+2.31262688170937054957327206807*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-acos(3-i/2)-12", input: "acos(3-i/2)", oracle: "acos(3-I*F(1,2))", expect: "0.174646465085+1.77899049383*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-acos(3-i/2)-30", input: "acos(3-i/2)", settings: { digits: 30 }, oracle: "acos(3-I*F(1,2))", expect: "0.17464646508544926810043918312+1.77899049382676862959588288111*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-acos(-1+i)-12", input: "acos(-1+i)", oracle: "acos(-1+I)", expect: "2.23703575929-1.06127506191*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-acos(-1+i)-30", input: "acos(-1+i)", settings: { digits: 30 }, oracle: "acos(-1+I)", expect: "2.23703575928741187433532658762-1.06127506190503565203301891621*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-atan(2i)-12", input: "atan(2*i)", oracle: "atan(2*I)", expect: "1.57079632679+0.549306144334*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-atan(2i)-30", input: "atan(2*i)", settings: { digits: 30 }, oracle: "atan(2*I)", expect: "1.57079632679489661923132169164+0.549306144334054845697622618461*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-atan(-2-3i)-12", input: "atan(-2-3*i)", oracle: "atan(-2-3*I)", expect: "-1.4099210496-0.229072682969*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-atan(-2-3i)-30", input: "atan(-2-3*i)", settings: { digits: 30 }, oracle: "atan(-2-3*I)", expect: "-1.40992104959657552253061938446-0.229072682968538766295881802942*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sinh(1+i)-12", input: "sinh(1+i)", oracle: "sinh(1+I)", expect: "0.634963914785+1.29845758142*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sinh(1+i)-30", input: "sinh(1+i)", settings: { digits: 30 }, oracle: "sinh(1+I)", expect: "0.634963914784736108255082202992+1.29845758141597729482604236581*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sinh(-2-3i)-12", input: "sinh(-2-3*i)", oracle: "sinh(-2-3*I)", expect: "3.59056458999-0.530921086249*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sinh(-2-3i)-30", input: "sinh(-2-3*i)", settings: { digits: 30 }, oracle: "sinh(-2-3*I)", expect: "3.59056458998577995201256544779-0.530921086248519805267040090661*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-cosh(1+i)-12", input: "cosh(1+i)", oracle: "cosh(1+I)", expect: "0.833730025131+0.988897705763*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-cosh(1+i)-30", input: "cosh(1+i)", settings: { digits: 30 }, oracle: "cosh(1+I)", expect: "0.833730025131149048883885394335+0.988897705762865096382129540893*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-cosh(-2-3i)-12", input: "cosh(-2-3*i)", oracle: "cosh(-2-3*I)", expect: "-3.72454550492+0.511822569987*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-cosh(-2-3i)-30", input: "cosh(-2-3*i)", settings: { digits: 30 }, oracle: "cosh(-2-3*I)", expect: "-3.72454550491532256547397070326+0.511822569987384608834463849802*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-tanh(1/2+i/3)-12", input: "tanh(1/2+i/3)", oracle: "tanh(F(1,2)+I*F(1,3))", expect: "0.50460171472+0.265512377496*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-tanh(1/2+i/3)-30", input: "tanh(1/2+i/3)", settings: { digits: 30 }, oracle: "tanh(F(1,2)+I*F(1,3))", expect: "0.504601714720065073998738679029+0.26551237749565575721280902563*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-tanh(-2-3i)-12", input: "tanh(-2-3*i)", oracle: "tanh(-2-3*I)", expect: "-0.965385879022+0.00988437503832*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-tanh(-2-3i)-30", input: "tanh(-2-3*i)", settings: { digits: 30 }, oracle: "tanh(-2-3*I)", expect: "-0.965385879022133124278480269395+0.0098843750383224937203140343035*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-asinh(1+i)-12", input: "asinh(1+i)", oracle: "asinh(1+I)", expect: "1.06127506191+0.666239432493*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-asinh(1+i)-30", input: "asinh(1+i)", settings: { digits: 30 }, oracle: "asinh(1+I)", expect: "1.06127506190503565203301891621+0.666239432492515255104004895978*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-asinh(-2-3i)-12", input: "asinh(-2-3*i)", oracle: "asinh(-2-3*I)", expect: "-1.96863792579-0.964658504408*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-asinh(-2-3i)-30", input: "asinh(-2-3*i)", settings: { digits: 30 }, oracle: "asinh(-2-3*I)", expect: "-1.96863792579309629178866509525-0.9646585044076027920454110595*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-acosh(1/10+5i)-12", input: "acosh(1/10+5*i)", oracle: "acosh(F(1,10)+5*I)", expect: "2.31262688171+1.55118708206*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-acosh(1/10+5i)-30", input: "acosh(1/10+5*i)", settings: { digits: 30 }, oracle: "acosh(F(1,10)+5*I)", expect: "2.31262688170937054957327206807+1.55118708206189191252710439312*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-acosh(-1/1000+i/1000)-12", input: "acosh(-1/1000+i/1000)", oracle: "acosh(-F(1,1000)+I*F(1,1000))", expect: "0.00100000033333+1.57179632646*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-acosh(-1/1000+i/1000)-30", input: "acosh(-1/1000+i/1000)", settings: { digits: 30 }, oracle: "acosh(-F(1,1000)+I*F(1,1000))", expect: "0.0010000003333330333329761909623+1.57179632646156298589834550165*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-atanh(1+i)-12", input: "atanh(1+i)", oracle: "atanh(1+I)", expect: "0.402359478109+1.0172219679*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-atanh(1+i)-30", input: "atanh(1+i)", settings: { digits: 30 }, oracle: "atanh(1+I)", expect: "0.402359478108525093650189833307+1.01722196789785136772278896155*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-atanh(-2-3i)-12", input: "atanh(-2-3*i)", oracle: "atanh(-2-3*I)", expect: "-0.146946666226-1.33897252229*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-atanh(-2-3i)-30", input: "atanh(-2-3*i)", settings: { digits: 30 }, oracle: "atanh(-2-3*I)", expect: "-0.146946666225529752047432785155-1.33897252229449356112419357591*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-abs(1+i)-12", input: "abs(1+i)", oracle: "fabs(1+I)", expect: "1.41421356237", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-abs(1+i)-30", input: "abs(1+i)", settings: { digits: 30 }, oracle: "fabs(1+I)", expect: "1.41421356237309504880168872421", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-abs(-2-3i)-12", input: "abs(-2-3*i)", oracle: "fabs(-2-3*I)", expect: "3.60555127546", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-abs(-2-3i)-30", input: "abs(-2-3*i)", settings: { digits: 30 }, oracle: "fabs(-2-3*I)", expect: "3.60555127546398929311922126747", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-arg(1+i)-12", input: "arg(1+i)", oracle: "mp.arg(M(1+I))", expect: "0.785398163397", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-arg(1+i)-30", input: "arg(1+i)", settings: { digits: 30 }, oracle: "mp.arg(M(1+I))", expect: "0.78539816339744830961566084582", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-arg(-2-3i)-12", input: "arg(-2-3*i)", oracle: "mp.arg(M(-2-3*I))", expect: "-2.15879893034", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-arg(-2-3i)-30", input: "arg(-2-3*i)", settings: { digits: 30 }, oracle: "mp.arg(M(-2-3*I))", expect: "-2.15879893034246417047693277226", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sign(1+i)-12", input: "sign(1+i)", oracle: "(1+I)/fabs(1+I)", expect: "0.707106781187+0.707106781187*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sign(1+i)-30", input: "sign(1+i)", settings: { digits: 30 }, oracle: "(1+I)/fabs(1+I)", expect: "0.707106781186547524400844362105+0.707106781186547524400844362105*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sign(-2-3i)-12", input: "sign(-2-3*i)", oracle: "(-2-3*I)/fabs(-2-3*I)", expect: "-0.554700196225-0.832050294338*i", mark: "≈", source: "oracle" }
+  - { id: "prec-g50-sign(-2-3i)-30", input: "sign(-2-3*i)", settings: { digits: 30 }, oracle: "(-2-3*I)/fabs(-2-3*I)", expect: "-0.554700196225229122018341733457-0.832050294337843683027512600185*i", mark: "≈", source: "oracle" }

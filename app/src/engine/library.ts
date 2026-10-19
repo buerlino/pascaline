@@ -6,6 +6,7 @@
 // the small LibraryEngine interface, so this file runs in the Worker, in Node and in tests alike. Only erasable syntax.
 import { applyDefChanges, DESC_MAX, MAX_DEFS, replayOrder, type DefChange, type DefEntry } from "./defs.ts";
 import { definedBy, ENGINE_DEFINITIONS, isStateful, WORKER_DEFINITION_NAMES, simpleAssignment } from "./homeEval.ts";
+import { COMPLEX_DEFINITIONS } from "./numeric.ts";
 import { defaultCasSettings, type CasResult } from "./types.ts";
 import { DATA_VERSION, migratedText } from "../state/storage.ts";
 
@@ -195,7 +196,7 @@ export function parseLibrary(input: Uint8Array | string): LibFile {
     if (stored) throw new LibError(at, `the value assigns ${stored}, which is not local: a value must not itself define or change anything`);
     if (asg && isStateful(asg.rhs)) throw new LibError(at, "a value must not itself define or change anything");
     if (!NAME.test(def.name)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
-    if (def.name in ENGINE_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
+    if (def.name in ENGINE_DEFINITIONS || def.name in COMPLEX_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
     if (defs.some((d) => d.name === def.name)) throw new LibError(at, `${def.name} is defined twice in this file`);
     if (!lastComment || lastComment.line !== at - 1) throw new LibError(at, `${def.name} needs its one-line description on the line above`);
     if (lastComment.text.length > DESC_MAX) throw new LibError(lastComment.line, `the description is over ${DESC_MAX} characters`);

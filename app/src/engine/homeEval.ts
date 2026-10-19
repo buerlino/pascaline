@@ -32,6 +32,7 @@ import {
   restsOnDecision,
   notBuiltin,
   callsStateful,
+  readsReplaced,
   floatsShown,
   shapeOf,
   valuePrecision,
@@ -397,6 +398,31 @@ export function definedBy(input: string): { name: string; kind: "var" | "fn" } |
   return sto ? { name: sto[1]!, kind: "var" } : undefined;
 }
 
+/** G49f4: `name:=x->body` or `name:=(x,y)->body` (also as Giac prints it back, `name:=((x)->body)`): the name of a
+ *  function written with an arrow, for the mark facts; definedBy keeps reading it as a variable for the Find items. */
+export function arrowFunction(input: string): string | null {
+  const a = simpleAssignment(input);
+  if (!a) return null;
+  let rhs = a.rhs.trim();
+  while (rhs.startsWith("(") && closingParen(rhs, 0) === rhs.length - 1) rhs = rhs.slice(1, -1).trim();
+  return /^(?:\([^()]*\)|[A-Za-z_][A-Za-z0-9_]*)\s*->/.test(rhs) ? a.name : null;
+}
+
+/** Index of the ) that closes the ( at `open` in `s` (strings skipped), or -1. */
+function closingParen(s: string, open: number): number {
+  let depth = 0;
+  for (let k = open; k < s.length; k++) {
+    const ch = s.charAt(k);
+    if (ch === '"') {
+      const q = s.indexOf('"', k + 1);
+      if (q < 0) return -1;
+      k = q;
+    } else if (ch === "(") depth++;
+    else if (ch === ")" && --depth === 0) return k;
+  }
+  return -1;
+}
+
 /** Longest exact text kept as `full` (docs/04 section 2.8: ≤ 2 kB). */
 export const FULL_EXACT_MAX = 2048;
 
@@ -676,11 +702,14 @@ export function homeEval(
     // asks for, checked at that precision, as in CAS (decisions M4-6; owner, 2026-10-13).
     const asked = askedDigits(input);
     const digits = asked ?? s.digits;
-    const facts = floatFacts(giac, ans, once ? null : exactBody, shape, digits, s.digits);
+    const facts = floatFacts(giac, ans, once ? null : exactBody, shape, digits, s.digits, exactBody);
     if (!facts) return symbolic();
     store();
     const b = build(facts, shape, digits, "exact", true);
-    const r = fromBuilt(b, "exact", true, exactOut, b.decimal, whyOf(facts, once ? null : exactBody));
+    // G50: Giac's printed float is not kept when its value was computed again through our definitions (forValue):
+    // evalf(tanh(i)) printed coth(i); so did approx(w) with w holding Giac's exact tanh(i) (G50f1, readsReplaced).
+    const giacText = once || s.angle !== "rad" || !readsReplaced(giac, exactBody) ? exactOut : undefined;
+    const r = fromBuilt(b, "exact", true, giacText, b.decimal, whyOf(facts, once ? null : exactBody));
     return asked !== null ? { ...r, digits: asked } : r;
   }
 

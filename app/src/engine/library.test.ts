@@ -37,6 +37,11 @@ describe("parseLibrary (no engine)", () => {
       expect(() => parseLibrary(file(name))).toThrow(LibError);
     });
   }
+  it("refuses G50's complex helpers as Pascaline's own names (derived: the audit's pastanh(z):=0 case)", () => {
+    for (const name of ["pastanh", "pasasin", "pasacos", "pasatan", "pasacosh"]) {
+      expect(() => parseLibrary(`// pascaline library 1\n// d\n${name}(z):=0\n`), name).toThrow(/pas\w+ is one of Pascaline's own names/);
+    }
+  });
   it("refuses a file over 256 kB, a description over 120 characters and more than 200 definitions", () => {
     expect(() => parseLibrary(new Uint8Array(256 * 1024 + 1))).toThrow(/256 kB/);
     expect(() => parseLibrary(`// pascaline library 1\n// ${"x".repeat(121)}\nf(x):=x\n`)).toThrow(/over 120/);
