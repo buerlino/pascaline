@@ -410,6 +410,37 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.home("purge(hg3c,hg3e,hg3k)", defaultHomeSettings);
     });
 
+    // G49f4: name:=x->body is a function for the facts too (definedBy reads it as a variable). The undecided floor:
+    // oracle -372376123662 (g38-floor-sin1e100), Giac 899450126402 at 40 digits.
+    it("an arrow function whose body name got facts after the definition: the call is never =", () => {
+      host.home("hg4b:=5", defaultHomeSettings);
+      host.home("hg4g:=x->x+hg4b", defaultHomeSettings);
+      host.home("hg4b:=floor(sin(10^100)*10^12)", defaultHomeSettings);
+      const call = host.home("hg4g(0)", defaultHomeSettings).result;
+      expect(call.display).toBe("899450126402");
+      expect(markOf(call, opts)?.mark).toBe("⚠");
+      host.home("purge(hg4b,hg4g)", defaultHomeSettings);
+    });
+
+    it("an arrow function from a stored name with facts (Home or CAS, one or more parameters): the call is never =", () => {
+      host.home("hg4a:=floor(sin(10^100)*10^12)", defaultHomeSettings);
+      host.home("hg4h:=x->x+hg4a", defaultHomeSettings);
+      const call = host.home("hg4h(0)", defaultHomeSettings).result;
+      expect(call.display).toBe("899450126402");
+      expect(markOf(call, opts)?.mark).toBe("⚠");
+      host.cas("hg4k:=(x,y)->x*y+hg4a", defaultCasSettings);
+      expect(markOf(host.home("hg4k(0,1)", defaultHomeSettings).result, opts)?.mark).toBe("⚠");
+      host.home("purge(hg4a,hg4h,hg4k)", defaultHomeSettings);
+    });
+
+    it("guard: an exact arrow function stays =", () => {
+      host.home("hg4s:=x->x^2", defaultHomeSettings);
+      const call = host.home("hg4s(3)", defaultHomeSettings).result;
+      expect(call.display).toBe("9");
+      expect(markOf(call, opts)?.mark).toBe("=");
+      host.home("purge(hg4s)", defaultHomeSettings);
+    });
+
     it("a float stored from a chip keeps its facts without the flag (the float shows it)", () => {
       const r = home("hg49d:=pasr_1*2", { "1": romberg });
       expect(r.defs).toMatchObject([{ set: { name: "hg49d", facts: { reliableDigits: 11, warn: "unaudited" } } }]);

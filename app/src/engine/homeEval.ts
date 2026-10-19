@@ -382,6 +382,31 @@ export function definedBy(input: string): { name: string; kind: "var" | "fn" } |
   return sto ? { name: sto[1]!, kind: "var" } : undefined;
 }
 
+/** G49f4: `name:=x->body` or `name:=(x,y)->body` (also as Giac prints it back, `name:=((x)->body)`): the name of a
+ *  function written with an arrow, for the mark facts; definedBy keeps reading it as a variable for the Find items. */
+export function arrowFunction(input: string): string | null {
+  const a = simpleAssignment(input);
+  if (!a) return null;
+  let rhs = a.rhs.trim();
+  while (rhs.startsWith("(") && closingParen(rhs, 0) === rhs.length - 1) rhs = rhs.slice(1, -1).trim();
+  return /^(?:\([^()]*\)|[A-Za-z_][A-Za-z0-9_]*)\s*->/.test(rhs) ? a.name : null;
+}
+
+/** Index of the ) that closes the ( at `open` in `s` (strings skipped), or -1. */
+function closingParen(s: string, open: number): number {
+  let depth = 0;
+  for (let k = open; k < s.length; k++) {
+    const ch = s.charAt(k);
+    if (ch === '"') {
+      const q = s.indexOf('"', k + 1);
+      if (q < 0) return -1;
+      k = q;
+    } else if (ch === "(") depth++;
+    else if (ch === ")" && --depth === 0) return k;
+  }
+  return -1;
+}
+
 /** Longest exact text kept as `full` (docs/04 section 2.8: ≤ 2 kB). */
 export const FULL_EXACT_MAX = 2048;
 
