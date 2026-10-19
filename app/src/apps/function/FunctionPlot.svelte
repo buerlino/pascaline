@@ -89,9 +89,9 @@
       board = b;
       b.suspendUpdate();
       for (const i of app.active) {
-        const fn = app.compiled[i]?.fn;
-        if (!fn) continue;
-        const c = b.create("functiongraph", [fn], {
+        if (!app.compiled[i]?.fn) continue;
+        // read through the app, so a recompile for another angle mode is drawn at once (R64a)
+        const c = b.create("functiongraph", [(x: number): number => app.compiled[i]?.fn?.(x) ?? NaN], {
           strokeColor: CURVE_COLORS[i],
           strokeWidth: 2,
           highlight: false,
@@ -143,6 +143,12 @@
     const w = defaultWindow();
     board.setBoundingBox(bbox(w), false);
     app.setWindow(w);
+  });
+
+  // The angle mode changed while Plot is open: the evaluators are rebuilt, redraw.
+  $effect(() => {
+    void app.angle;
+    if (app.syncAngle() && ready) board?.update();
   });
 
   // Trace moved or switched: redraw the cursor.

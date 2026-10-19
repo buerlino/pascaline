@@ -209,3 +209,42 @@ test("Function: a warned root puts ⚠ on its readout lines, a clean one does no
   await tap(page, ["menu", "d1"]);
   await expect(page.getByTestId("readout").getByTestId("mark")).toHaveText(["⚠"]); // x only: y is the exact 0 at a checked root
 });
+
+test("Function in DEG: sin(x) is drawn in degrees; the curve is 0 at 180 and 1 at 90 (R64a)", async ({ page }) => {
+  await page.getByTestId("chip-angle").tap();
+  expect(await page.evaluate(() => window.pascaline.session.settings.angle)).toBe("deg");
+  await tap(page, ["symb"]);
+  await tap(page, ["sin", "x", "enter"]);
+  await tap(page, ["plot"]);
+  await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  const y = (x: number): Promise<number> =>
+    page.evaluate((xv) => {
+      const b = window.pascaline.plot.board as unknown as { objectsList: { elType: string; Y(x: number): number }[] };
+      return (b.objectsList.find((o) => o.elType === "curve") as { Y(x: number): number }).Y(xv);
+    }, x);
+  expect(Math.abs(await y(180))).toBeLessThan(1e-12); // radians would give -0.801
+  expect(await y(90)).toBeCloseTo(1, 12);
+  // a window around 180, the trace at 180 reads 0 (the engine's value, in DEG)
+  // move the board itself (it reports the window back to the app, as a pan would)
+  await page.evaluate(() => {
+    const b = window.pascaline.plot.board as unknown as { setBoundingBox(bb: number[], keep: boolean): void };
+    b.setBoundingBox([0, 2, 360, -2], false);
+  });
+  await page.waitForFunction(() => {
+    const f = window.pascaline.shell.loaded.function!.instance as unknown as { win: { xmax: number } | null };
+    return f.win !== null && f.win.xmax > 300;
+  });
+  await page.evaluate(() => {
+    const f = window.pascaline.shell.loaded.function!.instance as unknown as { traceTo(x: number): void };
+    f.traceTo(180);
+  });
+  await expect(page.getByTestId("trace-x")).toHaveText("180");
+  await expect(page.getByTestId("trace-y")).toHaveAttribute("data-text", "0");
+  // Root from the trace at about 175 gives 180 (the drawn curve crosses there too)
+  await page.evaluate(() => {
+    const f = window.pascaline.shell.loaded.function!.instance as unknown as { traceTo(x: number): void };
+    f.traceTo(175);
+  });
+  await tap(page, ["menu", "d1"]);
+  await expect(page.getByTestId("readout-x")).toHaveText("180");
+});

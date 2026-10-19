@@ -19,7 +19,12 @@ function num(e: Json): string | undefined {
   return undefined;
 }
 
-function js(e: Json, vars: ReadonlySet<string>): string {
+/** Functions whose argument is an angle, and those that return one (drawn in degrees when the mode is DEG, R64a). */
+const ANGLE_IN = new Set(["Sin", "Cos", "Tan", "Cot", "Sec", "Csc"]);
+const ANGLE_OUT = new Set(["Arcsin", "Arccos", "Arctan"]);
+const RAD_PER_DEG = "(Math.PI/180)";
+
+function js(e: Json, vars: ReadonlySet<string>, deg = false): string {
   const n = num(e);
   if (n !== undefined) return /^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(n) ? n : fail("parse.badNumber", { n });
   if (typeof e === "string") {
@@ -30,7 +35,7 @@ function js(e: Json, vars: ReadonlySet<string>): string {
   if (!Array.isArray(e)) return fail("parse.unsupportedNode2");
   const h = e[0] as string;
   const a = e.slice(1) as Json[];
-  const r = (i: number): string => js(a[i] as Json, vars);
+  const r = (i: number): string => js(a[i] as Json, vars, deg);
   switch (h) {
     case "Add": return `(${r(0)}+${r(1)})`;
     case "Subtract": return `(${r(0)}-${r(1)})`;
@@ -46,7 +51,7 @@ function js(e: Json, vars: ReadonlySet<string>): string {
       return odd.p === "1" ? root : `Math.pow(${root},${odd.p})`;
     }
     case "Delimiter": return r(0);
-    case "Degrees": return `(${r(0)}*Math.PI/180)`;
+    case "Degrees": return deg ? r(0) : `(${r(0)}*Math.PI/180)`; // the factor follows the mode, as emit.ts does
     case "Root":
       // Same default as emit.ts (L6): an odd whole index gives the real root.
       if (oddIndex(a[1])) return r(1) === "3" ? `Math.cbrt(${r(0)})` : `(Math.sign(${r(0)})*Math.pow(Math.abs(${r(0)}),1/${r(1)}))`;
@@ -54,7 +59,13 @@ function js(e: Json, vars: ReadonlySet<string>): string {
     case "Log": return a.length === 1 ? "Math.log10(" + r(0) + ")" : `(Math.log(${r(0)})/Math.log(${r(1)}))`;
     case "Max": return `Math.max(${a.map((_, i) => r(i)).join(",")})`;
     case "Min": return `Math.min(${a.map((_, i) => r(i)).join(",")})`;
+    case "Cot": case "Sec": case "Csc": {
+      const f = h === "Cot" ? "1/Math.tan" : h === "Sec" ? "1/Math.cos" : "1/Math.sin";
+      return `(${f}(${deg ? `${r(0)}*${RAD_PER_DEG}` : r(0)}))`;
+    }
     default:
+      if (deg && ANGLE_IN.has(h) && a.length === 1) return `${FN1[h]}(${r(0)}*${RAD_PER_DEG})`;
+      if (deg && ANGLE_OUT.has(h) && a.length === 1) return `(${FN1[h]}(${r(0)})/${RAD_PER_DEG})`;
       if (h in FN1 && a.length === 1) return `${FN1[h]}(${r(0)})`;
       return fail("parse.unsupported", { h });
   }
@@ -69,8 +80,8 @@ export function latexToJs(latex: string, vars: readonly string[] = ["x"]): strin
 }
 
 /** JS source of an already parsed expression (MathJSON from parseLatex). */
-export function jsonToJs(e: Json, vars: readonly string[] = ["x"]): string {
-  return js(e, new Set(vars));
+export function jsonToJs(e: Json, vars: readonly string[] = ["x"], deg = false): string {
+  return js(e, new Set(vars), deg);
 }
 
 /** Compile `latex` into a function of x. Throws SerializeError for anything not plottable. */

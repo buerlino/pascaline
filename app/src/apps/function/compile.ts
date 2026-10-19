@@ -14,6 +14,8 @@ export interface Compiled {
   fn?: (x: number) => number;
   /** Why it does not parse (empty when it does). Plot problems are not errors: the engine can still tabulate. */
   error: string;
+  /** The angle mode the drawing evaluator was built for. */
+  angle: "rad" | "deg";
 }
 
 function renameX(e: Json): Json {
@@ -22,22 +24,22 @@ function renameX(e: Json): Json {
   return e;
 }
 
-export function compileDefinition(latex: string): Compiled {
-  if (latex.trim() === "") return { giac: "", error: "" };
+export function compileDefinition(latex: string, angle: "rad" | "deg" = "rad"): Compiled {
+  if (latex.trim() === "") return { giac: "", error: "", angle };
   let json: Json;
   let giac: string;
   try {
     json = renameX(parseLatex(latex));
     giac = mathJsonToGiac(json, { realOddRoots: true }); // P5 (b), R39
   } catch (e) {
-    return { giac: "", error: parseFailText(e) };
+    return { giac: "", error: parseFailText(e), angle };
   }
   if (Array.isArray(json) && typeof json[0] === "string" && /^(Equal|Less|Greater|LessEqual|GreaterEqual|NotEqual)$/.test(json[0]))
-    return { giac: "", error: "not a function of x" };
+    return { giac: "", error: "not a function of x", angle };
   try {
-    const fn = new Function("x", `return ${jsonToJs(json, ["x"])};`) as (x: number) => number;
-    return { giac, fn, error: "" };
+    const fn = new Function("x", `return ${jsonToJs(json, ["x"], angle === "deg")};`) as (x: number) => number;
+    return { giac, fn, error: "", angle };
   } catch {
-    return { giac, error: "" };
+    return { giac, error: "", angle };
   }
 }
