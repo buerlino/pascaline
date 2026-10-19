@@ -26,8 +26,6 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [G21b](packages/G21b.md) | exp ignores the angle mode inside Giac; pasexp goes | gorge, **Opus** | night | G34; S14's route P | ~1 d |
-| [G49](packages/G49.md) | Marks travel through Ans, chips and Store: engine | gorge, **Opus** | night | G34 | ~1 d |
-| [R65](packages/R65.md) | Marks travel through Ans and chips: session | ron, **Opus** | night | G49 | ~0.5 d |
 | [G50](packages/G50.md) | Complex arguments of the audited functions | gorge, **Opus** | night | A15 | ~0.75 d |
 | [R64](packages/R64.md) | The angle mode lives in our parser (route R) | ron, **Opus** | night | the owner's yes to route R (decisions.md S14) | ~0.5 d |
 | [G46](packages/G46.md) | Giac always in radians; pasexp goes (replaces G21b) | gorge, **Opus** | night | R64 | ~1 d |
@@ -99,8 +97,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 25 | G49 marks through Ans, chips and Store: engine | gorge, Opus | `p1/gorge-m4-chipfacts` | G34 | 1.5 h |
-| 26 | R65 marks through Ans and chips: session | ron, Opus | `p1/ron-m4-chipfacts` | G49 | 1 h |
 | 27 | G36 FIX shows no unconfirmed digit in a complex number | gorge, Sonnet | `p1/gorge-m4-fixcomplex` | A15 | 30 min |
 | 28 | G50 complex arguments of the audited functions | gorge, Opus | `p1/gorge-m4-complexaudit` | A15 | 1.5 h |
 | 29 | G42 median of an even list, percentile | gorge, Sonnet | `p1/gorge-m4-stats` | A15 | 1 h |
@@ -121,7 +117,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 44 | **The last Opus pass** on what came after pass 19, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 45 | Shift report, then stop | — | — | — | 10 min |
 
-Not in the queue: the ron lane's day packages (section 0; R65, R50c and R50d are queue steps); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); R59, R38a and R38b (after S6's report).
+Not in the queue: the ron lane's day packages (section 0; R50c and R50d are queue steps); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); R59, R38a and R38b (after S6's report).
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (skip steps the table or the log marks merged or skipped, and steps whose "after" is not merged).
