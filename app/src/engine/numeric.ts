@@ -755,18 +755,21 @@ export function decisionCuts(expr: string): Cut[] {
 /**
  * The decisions of `expr` that sit on their cut: the quantity is not an exact rational, and its distance to the cut
  * does not agree with itself at P + 20 and P + 40 digits (it is 0, or below the noise of both). Giac then decides by
- * its rounding error: `floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)` (exactly 1) gives 0 at 40 and 60 digits, 1 at 100.
- * A quantity that is not a real number (a free name, a bound variable) is skipped. `tie`: `expr` with every such
- * floor, ceil, iPart, frac, fPart and sign call replaced by its value exactly on the cut (floor(1) = 1, sign(0) = 0),
- * null when one on its cut is a comparison or a round.
+ * its rounding error, and both precisions can agree on a wrong text. Only a distance Giac proves to be 0 (`simplify` or
+ * `normal` gives 0) is a tie: `tie` is `expr` with every such floor, ceil, iPart, frac, fPart and sign call replaced
+ * by its value exactly on the cut (floor(1) = 1, sign(0) = 0). Any other hit is `undecided`: the distance may be tiny
+ * and not 0 (`floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2-10^-100)` is 0, Giac gives 0 at 40 and 60 digits and 1 at
+ * 80), so neither text can be trusted. So is a proven tie on a comparison or a round (no value to put in its place).
+ * `floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)` (exactly 1) is undecided too: Giac does not prove the sum is 1/2.
+ * A quantity that is not a real number (a free name, a bound variable) is skipped.
  */
-export function onCut(giac: Giac, expr: string, digits: number, restore: number): { tie: string | null } | null {
+export function onCut(giac: Giac, expr: string, digits: number, restore: number): { tie: string } | { undecided: true } | null {
   if (/:=|=>|\bsto\s*\(/.test(expr)) return null;
   const P = valuePrecision(digits);
   const cuts = decisionCuts(expr);
   if (!cuts.length) return null;
   return withDigits(giac, P + 40, restore, () => {
-    const hits: { cut: Cut; n: string }[] = [];
+    const hits: { cut: Cut; n: string; proven: boolean }[] = [];
     try {
       for (const c of cuts) {
         const x = giac.eval(`pasbx:=(${c.q})`);
@@ -779,13 +782,16 @@ export function onCut(giac: Giac, expr: string, digits: number, restore: number)
         const a = giac.eval(`pasba:=evalf(pasbd,${P + 20})`);
         const b = giac.eval(`pasbb:=evalf(pasbd,${P + 40})`);
         if (isError(a) || isError(b) || giac.eval("type(pasbb)") !== "real" || giac.eval("type(pasba)") !== "real") continue;
-        if (giac.eval("when(abs(pasba-pasbb)<abs(pasbb)/2,0,1)") === "1") hits.push({ cut: c, n: n.trim() });
+        if (giac.eval("when(abs(pasba-pasbb)<abs(pasbb)/2,0,1)") !== "1") continue;
+        // The tie must be proven: a distance below the noise of both precisions need not be 0.
+        const proven = ["simplify", "normal"].some((f) => giac.eval(`${f}(pasbd)`).trim() === "0");
+        hits.push({ cut: c, n: n.trim(), proven });
       }
     } finally {
       giac.eval("purge(pasbx,pasbn,pasbd,pasba,pasbb)");
     }
     if (!hits.length) return null;
-    if (hits.some((h) => !h.cut.call || !RATIONAL.test(h.n))) return { tie: null };
+    if (hits.some((h) => !h.proven || !h.cut.call || !RATIONAL.test(h.n))) return { undecided: true };
     // Outermost calls first; one inside a replaced call goes with it.
     const calls = hits.map((h) => ({ ...h.cut.call!, n: h.n })).sort((u, v) => u.at[0] - v.at[0] || v.at[1] - u.at[1]);
     let tie = "";
@@ -808,9 +814,8 @@ export type Decision = { text: string; from?: string } | { undecided: true };
  * G38 (docs/04 2.4 rule 2): `expr`, whose exact evaluation at P printed `text`, is computed again at P + 20 and must
  * print the same; if not, once more at P + 40, and the P + 20 and P + 40 texts must agree (the P + 40 value is kept in
  * `pasdec2`). An agreed text keeps its mark (a rational one stays `=`). A floor, ceil, iPart, frac, fPart or sign that
- * sits on its cut (onCut) takes the value it has exactly there when that is a number: Giac decides such a tie by its
- * rounding error (`floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)`, exactly 1, gives 0 at 40 and 60 digits), so the
- * agreed texts would be wrong. The cut never turns an agreed text into ⚠.
+ * sits on its cut (onCut) takes the value it has exactly there when Giac proves the tie; an unproven one is undecided,
+ * because Giac decides it by its rounding error and both precisions can agree on a wrong text.
  */
 export function decideTwice(giac: Giac, expr: string, text: string, digits: number, restore: number): Decision {
   const P = valuePrecision(digits);
@@ -829,7 +834,8 @@ export function decideTwice(giac: Giac, expr: string, text: string, digits: numb
   giac.eval("purge(pasdec)");
   if ("undecided" in out) return out;
   const cut = onCut(giac, expr, digits, restore);
-  if (!cut || cut.tie === null) return out;
+  if (!cut) return out;
+  if ("undecided" in cut) return cut;
   const tie = run(P + 40, "pasdec2", cut.tie);
   return tie === null || hasFloat(tie) ? out : { text: tie, from: "pasdec2" };
 }

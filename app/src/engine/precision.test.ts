@@ -191,15 +191,25 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(host.home("pasans", defaultHomeSettings).result.display).toBe("830389765219"); // Ans holds the agreed value
   });
 
-  it("a floor on its cut keeps = with the value it has there (source: derived; Giac floors it to 0 at 40 and 60 digits)", () => {
-    const r = host.home("floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)", defaultHomeSettings).result;
-    expect(r).toMatchObject({ display: "1", exactRational: true, reliableDigits: null });
-    expect(r.why).toBeUndefined();
-    expect(markOf(r, { format: "STD", digits: 12 })?.mark).toBe("=");
-    const c = host.cas("floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)", defaultCasSettings).result;
-    expect(c.text).toBe("1");
-    expect(c.approximate).toBeFalsy();
-    expect(c.warn).toBeUndefined();
+  it("an unproven tie is undecided, never replaced: floor(…+1/2-10^-100) is 0, not = 1 (source: derived; Giac gives 0 at 40 and 60, 1 at 80)", () => {
+    for (const input of ["floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2-10^-100)", "floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)"]) {
+      const r = host.home(input, defaultHomeSettings).result;
+      expect(r.display).not.toBe("1");
+      expect(r).toMatchObject({ exactRational: false, reliableDigits: null, why: { decided: true } });
+      expect(markOf(r, { format: "STD", digits: 12 })?.mark).toBe("⚠");
+      const c = host.cas(input, defaultCasSettings).result;
+      expect(c.text).not.toBe("1");
+      expect(c.approximate).toBe(true);
+      expect(c.warn).toBe("unchecked");
+    }
+  });
+
+  it("P + 20 and P + 40 disagree: floor(sin(10^100)*10^12) is ⚠ without a count (source: oracle, mpmath at 300 digits: -372376123662)", () => {
+    const r = host.home("floor(sin(10^100)*10^12)", defaultHomeSettings).result;
+    expect(r).toMatchObject({ exactRational: false, reliableDigits: null, approximate: true, why: { decided: true } });
+    expect(markOf(r, { format: "STD", digits: 12 })).toEqual({ mark: "⚠", warn: "unchecked" }); // no count n
+    const c = host.cas("floor(sin(10^100)*10^12)", defaultCasSettings).result;
+    expect(c).toMatchObject({ approximate: true, warn: "unchecked", why: { decided: true } });
   });
 
   it("an exact == test is decided again too: floor(sin(10^60)*10^12)==830389765219 is true (source: oracle via g38-floor-sin1e60)", () => {
