@@ -264,6 +264,13 @@ describe.skipIf(!giacAvailable())("our function names in library files (G54, rea
     expect(h.home("m([1,2,3,4])", defaultHomeSettings).result.display).toBe("2.5");
   });
 
+  it("a name right after a digit is ours too (derived: 2 * 5/2 = 5)", async () => {
+    const h = await fresh();
+    const t = "// pascaline library 3\n// twice the median\nm(L):=2median(L)\n";
+    expect(importLibrary(h, parseLibrary(t), [])).toMatchObject({ ok: true });
+    expect(h.home("m([1,2,3,4])", defaultHomeSettings).result.display).toBe("5");
+  });
+
   it("irem in a body gives what a typed mod gives (derived: -7 mod 3 = 2, G45)", async () => {
     const h = await fresh();
     importLibrary(h, parseLibrary(text), []);
@@ -285,7 +292,8 @@ describe.skipIf(!giacAvailable())("our function names in library files (G54, rea
 describe("renameOurCalls (no engine)", () => {
   it("renames whole names, calls only, outside strings", () => {
     expect(renameOurCalls('median(L)+mod (a,b)+irem(1,2)+percentile(L,5)')).toBe("pasmedian(L)+pasmod (a,b)+pasmod(1,2)+paspercentile(L,5)");
-    expect(renameOurCalls('"median(x)"+median+x.mod(2)+mymedian(L)+pasmedian(L)+2median(L)')).toBe('"median(x)"+median+x.mod(2)+mymedian(L)+pasmedian(L)+2median(L)');
+    expect(renameOurCalls('"median(x)"+median+x.mod(2)+mymedian(L)+pasmedian(L)+1e3+1e3median(L)')).toBe('"median(x)"+median+x.mod(2)+mymedian(L)+pasmedian(L)+1e3+1e3*pasmedian(L)');
+    expect(renameOurCalls("2median(L)+2.5mod(a,b)")).toBe("2*pasmedian(L)+2.5*pasmod(a,b)");
   });
   it("writeUserNames is the inverse", () => {
     expect(writeUserNames("pasmedian(L)+pasmod(a,b)+paspercentile(L,5)")).toBe("median(L)+mod(a,b)+percentile(L,5)");

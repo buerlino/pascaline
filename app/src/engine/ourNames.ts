@@ -36,12 +36,18 @@ function renameCalls(text: string, map: Readonly<Record<string, string>>): strin
       continue;
     }
     if (/[0-9]/.test(c)) {
-      // a number such as 1e3 or 2x: keep its letters out of the name scan
-      const n = /[0-9][A-Za-z_0-9]*/y;
+      // a number is digits, an optional .digits and an optional exponent (1e3 stays whole); letters after it are a
+      // name (Giac reads 2median(L) as 2*median(L))
+      const n = /[0-9]+(?:\.[0-9]*)?(?:[eE][+-]?[0-9]+)?/y;
       n.lastIndex = i;
       const lit = n.exec(text)![0];
       out += lit;
       i += lit.length;
+      // Giac reads `2pasmedian(L)` as the call (2*pasmedian)(L), so the product sign goes in before a renamed call
+      const nx = /[A-Za-z_][A-Za-z_0-9]*/y;
+      nx.lastIndex = i;
+      const nw = nx.exec(text)?.[0];
+      if (nw !== undefined && Object.hasOwn(map, nw) && /^\s*\(/.test(text.slice(i + nw.length))) out += "*";
       continue;
     }
     out += c;
