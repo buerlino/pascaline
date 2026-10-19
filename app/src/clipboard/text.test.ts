@@ -146,3 +146,17 @@ describe("tableCsv", () => {
     expect(tableCsv(["x", "a;b"], [["0,5", 'say "hi"']], { decimalComma: true })).toBe('x;"a;b"\r\n0,5;"say ""hi"""\r\n');
   });
 });
+
+describe("G46f1: a DEG result copies the text drawn, not the radian full", () => {
+  const item = done({ text: "pi/180*cos(x)", full: "pi/180*cos(pi/180*x)", fullExact: true, drawn: "pi/180*cos(x)" });
+  it("copyFull and copyExact give the drawn text; sessionText too", () => {
+    expect(copyFull(item)).toBe("pi/180*cos(x)");
+    expect(copyExact(item)).toBe("pi/180*cos(x)");
+    expect(sessionText([item])).toContain("pi/180*cos(x)");
+    expect(sessionText([item])).not.toContain("pi/180*x");
+  });
+  it("without drawn nothing changes (RAD)", () => {
+    expect(copyFull({ ...item, drawn: undefined })).toBe("pi/180*cos(pi/180*x)");
+    expect(copyExact({ ...item, drawn: undefined })).toBe("pi/180*cos(pi/180*x)");
+  });
+});

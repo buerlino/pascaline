@@ -27,6 +27,8 @@ export interface CopySource {
   /** The exact text, or every confirmed digit (the `\res` chip value). */
   full?: string;
   fullExact?: boolean;
+  /** G46f1: the text drawn when it differs from `full` (DEG: `full` is the radian text); Copy gives it. */
+  drawn?: string;
   /** Digits confirmed by the agreement check; null (or absent) = nothing in doubt. */
   reliableDigits?: number | null;
   warn?: PrecisionWarn;
@@ -86,6 +88,7 @@ function copyDigits(i: CopySource): number {
  */
 export function copyFull(i: CopySource, o: TextOptions = {}): string | undefined {
   if (i.status !== "done") return undefined;
+  if (i.drawn !== undefined) return i.drawn;
   const f = i.full;
   if (f !== undefined && /^-?\d+$/.test(f)) return f; // an exact integer, however long
   // A real the engine wrote as digits (CAS floats too): its confirmed digits, in the notation of docs/04 2.6.
