@@ -350,6 +350,29 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.home("purge(hg49a,hg49b,hg49c)", defaultHomeSettings);
     });
 
+    // G49f1: the chip of the undecided floor (g38-floor-sin1e100, oracle -372376123662), as the session carries it.
+    it("a function built from an inexact chip, constant or stored name with facts keeps them: its call is never =", () => {
+      const floorChip = { value: "899450126402", reliableDigits: null, warn: "unchecked" as const, exact: false };
+      const q = home("hg49q(x):=x+pasr_1", { "1": floorChip });
+      expect(q.defs).toMatchObject([{ set: { name: "hg49q", kind: "fn", facts: { reliableDigits: null, warn: "unchecked", inexact: true } } }]);
+      const call = host.home("hg49q(0)", defaultHomeSettings).result;
+      expect(call.display).toBe("899450126402");
+      expect(markOf(call, opts)?.mark).toBe("⚠");
+      // a stored name with facts in the body
+      home("hg49s:=pasr_1*1", { "1": floorChip });
+      const s = host.home("hg49r(x):=x+hg49s", defaultHomeSettings);
+      expect(s.defs).toMatchObject([{ set: { name: "hg49r", kind: "fn", facts: { warn: "unchecked", inexact: true } } }]);
+      expect(markOf(host.home("hg49r(0)", defaultHomeSettings).result, opts)?.mark).toBe("⚠");
+      // an inexact constant (G, CODATA 2018 σ): ≈, not =
+      home("hg49g(x):=x*pasc_G", undefined, { G: { value: "6.67430E-11", unc: "0.00015E-11" } });
+      expect(markOf(host.home("hg49g(1)", defaultHomeSettings).result, opts)?.mark).toBe("≈");
+      // guard: a function of exact values stores no facts and its call stays =
+      const e = host.home("hg49e(x):=x+1", defaultHomeSettings);
+      expect(JSON.stringify(e.defs)).not.toContain("facts");
+      expect(markOf(host.home("hg49e(2)", defaultHomeSettings).result, opts)?.mark).toBe("=");
+      host.home("purge(hg49q,hg49r,hg49s,hg49g,hg49e)", defaultHomeSettings);
+    });
+
     it("a float stored from a chip keeps its facts without the flag (the float shows it)", () => {
       const r = home("hg49d:=pasr_1*2", { "1": romberg });
       expect(r.defs).toMatchObject([{ set: { name: "hg49d", facts: { reliableDigits: 11, warn: "unaudited" } } }]);
