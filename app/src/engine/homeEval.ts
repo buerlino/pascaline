@@ -633,8 +633,8 @@ export function homeEval(
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
     // G38: a float in a non-number prints with the precision it was computed at (P). Ans keeps the P result; the text
     // shown prints its floats at the display digits (floatsAtDigits), never by running the input again, which would
-    // redo its decisions at the display digits (an input that cannot run twice keeps the P digits).
-    const atN = hasFloat(exactOut) && !once && !test ? floatsShown(giac, exactOut, s.digits, "pasfl") : null;
+    // redo its decisions at the display digits; so it holds for an input that cannot run twice and for a test too.
+    const atN = hasFloat(exactOut) ? floatsShown(giac, exactOut, s.digits, "pasfl") : null;
     const slot = atN === null ? ans : "pasfl";
     const base = atN ?? exactOut;
     const shown = base.includes("*") ? regrouped(giac, slot, base) : base;

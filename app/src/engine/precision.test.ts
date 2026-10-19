@@ -234,6 +234,18 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(host.cas("piecewise(sin(10^50)>0,x,evalf(1/2)*x)", defaultCasSettings).result.text).toBe("0.5*x");
   });
 
+  it("a CAS assignment decides its value and stores the agreed one: a:=floor(sin(10^60)*10^12) (source: oracle, mpmath at 200 digits)", () => {
+    expect(host.cas("a:=floor(sin(10^60)*10^12)", defaultCasSettings).result.text).toBe("830389765219"); // was 933879932404
+    expect(host.cas("a", defaultCasSettings).result.text).toBe("830389765219");
+    host.home("purge(a)", defaultHomeSettings);
+  });
+
+  it("an assignment or a store prints its floats at the display digits (source: derived, 1/3 to 12 digits)", () => {
+    expect(host.cas("a:=evalf(1/3)*x", defaultCasSettings).result.text).toBe("0.333333333333*x");
+    expect(host.home("evalf(1/3)*x=>g", defaultHomeSettings).result.display).toBe("0.333333333333*x");
+    host.home("purge(a,g)", defaultHomeSettings);
+  });
+
   it("floatsAtDigits rounds each float of a P text to the display digits, as Giac prints them (source: derived)", async () => {
     const { floatsAtDigits, notBuiltin } = await import("./numeric.ts");
     const { giac } = await loadNodeGiac();

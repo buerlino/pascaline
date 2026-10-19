@@ -551,12 +551,18 @@ export class EngineHost {
     }
     // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), as in Home; an exact
     // == or ≠ test too, only one with a float side is decideFloatTest's.
+    // A plain name:=value decides its value (the right-hand side) and stores the agreed one, as Home does; other
+    // stateful inputs (f(x):=…, purge, assume, =>) must not run twice.
+    const asg = simpleAssignment(input);
+    const once = !asg && stateful;
     let undecided = false;
-    if (!stateful && !inexactTest && !hasFloat(text) && restsOnDecision(exactInput, text, notBuiltin(this.giac))) {
-      const d = decideTwice(this.giac, exactInput, text, digitsSet, digitsSet);
+    const decisionExpr = asg ? toExactLiterals(asg.rhs) : exactInput;
+    if (!once && !inexactTest && !hasFloat(text) && restsOnDecision(decisionExpr, text, notBuiltin(this.giac))) {
+      const d = decideTwice(this.giac, decisionExpr, text, digitsSet, digitsSet);
       if ("undecided" in d) undecided = true;
       if (!("undecided" in d) && d.from !== undefined) {
         this.giac.eval(`pcasans:=${d.from}`);
+        if (asg) this.giac.eval(`${asg.name}:=pcasans`);
         text = d.text;
       }
       this.giac.eval("purge(pasdec2)");
@@ -568,7 +574,6 @@ export class EngineHost {
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
     const pair = !stateful && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
-    const asg = simpleAssignment(input);
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
       stateful ? this.defsAfter(input, [exactInput], preview, facts, "cas", Math.trunc(s.digits), s.angle) : [];
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
@@ -594,7 +599,7 @@ export class EngineHost {
     }
     // G38: a float in a non-number prints with the precision it was computed at (P). pcasans keeps the P result; the
     // text prints its floats at the setting (floatsShown), never by running the input again (that redid decisions).
-    const atN = hasFloat(text) && !stateful && !test ? floatsShown(this.giac, text, digitsSet, "pasfl") : null;
+    const atN = hasFloat(text) ? floatsShown(this.giac, text, digitsSet, "pasfl") : null;
     const slot = atN === null ? "pcasans" : "pasfl";
     if (atN !== null) text = atN;
     // This build leaves x*x unevaluated (no top-level "regroup" autosimplify), and latex() then draws x·x as "xx".
