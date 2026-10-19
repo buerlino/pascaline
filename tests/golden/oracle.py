@@ -45,7 +45,7 @@ MARK_FILES = {"home.yaml", "precision.yaml", "units.yaml"}
 MARKS = {"=", "≈", "⚠"}
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "reference", "assumed"}
 KEYS = ["id", "kind", "input", "to", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
-        "options", "before", "beforeCas", "steps", "consts", "code", "file", "home", "expect", "deg", "mark", "exact", "dim", "si", "si_oracle", "unc", "unc_oracle", "shown", "notice", "message", "source", "g2", "status", "group", "cat", "note"]
+        "options", "before", "beforeCas", "steps", "consts", "code", "file", "home", "expect", "deg", "mark", "exact", "dim", "si", "si_oracle", "unc", "unc_oracle", "shown", "unc_why", "notice", "message", "source", "g2", "status", "group", "cat", "note"]
 CASE_LINE = re.compile(r"^\s*- (\{.*\})\s*$")
 
 
@@ -290,11 +290,17 @@ def two_digits(x, place=None):
     return f"{q:f}", place
 
 
+# G41: the why-lines of a σ shown with ⚠ (app/src/i18n/enUnits.ts units.why.*).
+UNC_WHY = ("first order does not hold here", "the interval reaches a singular point")
+
+
 def check_unc(case: dict) -> list:
     """units.yaml, G18: `unc` (σ at 2 digits) against `unc_oracle`, the first-order σ computed here at 70 digits; `shown`
     ("39.5 ± 1.2") is the oracle value rounded to σ's last digit, then σ. A case without a σ says `unc: "none"`."""
     if "unc_oracle" not in case:
-        return [] if case.get("unc", "none") == "none" and "shown" not in case else ["unc without unc_oracle"]
+        return [] if case.get("unc", "none") == "none" and "shown" not in case and "unc_why" not in case else ["unc without unc_oracle"]
+    if case.get("unc_why", UNC_WHY[0]) not in UNC_WHY:
+        return [f"unc_why {case['unc_why']!r} not one of {UNC_WHY}"]
     mp.dps = 70
     sigma = eval(case["unc_oracle"], namespace())  # expressions come from our own case files
     if M(sigma) == 0:  # a σ of 0 (G18f1): "0", and the value as Home shows it (`expect`) is left as it is

@@ -64,7 +64,7 @@ import { dropAngleFactor, hasAngleFactor, rewriteAngles } from "../src/input/ang
 const TRIG_TEXT = /(?<![A-Za-z0-9_])a?(sin|cos|tan|sec|csc|cot)\(/;
 import { buildJob } from "../src/units/build.ts";
 import { factorTable, type FactorTable } from "../src/units/factors.ts";
-import { unitErrorMessage, unitNoteText } from "../src/units/messages.ts";
+import { unitErrorMessage, unitNoteText, unitWhyText } from "../src/units/messages.ts";
 import { isUnitError, type Quantity, type UnitError } from "../src/units/types.ts";
 import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
@@ -140,6 +140,9 @@ interface Case {
   unc?: string;
   shown?: string;
   unc_oracle?: string;
+  /** units.yaml, G41: the why-line of a σ shown with ⚠ (the text the user reads); a σ with one and a case without it
+   *  fails, and the other way round. */
+  unc_why?: string;
   /** units.yaml, G40: the note the result carries (the text the user reads); a result with a note and a case without
    *  one fails, and the other way round. */
   notice?: string;
@@ -694,13 +697,13 @@ const UNIT_P95_MS = 5;
 function unitGot(r: Quantity | UnitError, c: Case): string {
   if (isUnitError(r)) return `refused: ${unitErrorMessage(r)}`;
   const m = markText(markOf(r.value, { format: "STD", digits: 12 }));
-  return `${m ?? "-"} ${r.value.display} exact ${r.value.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(r.dimension)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(r.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(r.dimensionText)}` : ""}${c.si !== undefined ? ` si ${r.si ?? "-"}` : ""}${c.unc !== undefined ? ` unc ${r.unc?.text ?? "none"}` : ""}${c.shown !== undefined ? ` shown ${r.unc?.shown ?? "-"}` : ""}${r.note ? ` note ${unitNoteText(r.note)}` : ""}`;
+  return `${m ?? "-"} ${r.value.display} exact ${r.value.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(r.dimension)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(r.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(r.dimensionText)}` : ""}${c.si !== undefined ? ` si ${r.si ?? "-"}` : ""}${c.unc !== undefined ? ` unc ${r.unc?.text ?? "none"}` : ""}${c.shown !== undefined ? ` shown ${r.unc?.shown ?? "-"}` : ""}${r.unc?.why ? ` ⚠ ${unitWhyText(r.unc.why)}` : ""}${r.note ? ` note ${unitNoteText(r.note)}` : ""}`;
 }
 
 /** The same text for what the case expects; `dim` and `si` are checked where the case gives them. */
 function unitWant(c: Case): string {
   if (c.message !== undefined) return `refused: ${c.message}`;
-  return `${c.mark ?? "-"} ${str(c.expect as string)} exact ${c.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(c.dim)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(c.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(c.dimtext)}` : ""}${c.si !== undefined ? ` si ${c.si}` : ""}${c.unc !== undefined ? ` unc ${c.unc}` : ""}${c.shown !== undefined ? ` shown ${c.shown}` : ""}${c.notice !== undefined ? ` note ${c.notice}` : ""}`;
+  return `${c.mark ?? "-"} ${str(c.expect as string)} exact ${c.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(c.dim)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(c.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(c.dimtext)}` : ""}${c.si !== undefined ? ` si ${c.si}` : ""}${c.unc !== undefined ? ` unc ${c.unc}` : ""}${c.shown !== undefined ? ` shown ${c.shown}` : ""}${c.unc_why !== undefined ? ` ⚠ ${c.unc_why}` : ""}${c.notice !== undefined ? ` note ${c.notice}` : ""}`;
 }
 
 async function stageUnits(): Promise<void> {
