@@ -687,3 +687,48 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
     expect(mark("hp5")).toBe("=");
   });
 });
+
+// G51 (night check 2026-10-19 2.7): a CAS result without a float that read a stored name, or called a function, with
+// facts takes their warn and why.inherited. F is the undecided floor: oracle -372376123662 (g38-floor-sin1e100), Giac
+// 899450126402 at 40 digits.
+describe.skipIf(!giacAvailable())("G51: a CAS result that reads stored facts gets their mark", () => {
+  const F = "floor(sin(10^100)*10^12)";
+  let host: EngineHost;
+  const cas = (i: string) => host.cas(i, defaultCasSettings).result;
+  beforeAll(async () => {
+    host = new EngineHost((await loadNodeGiac()).giac);
+    host.home(`gA:=${F}`, defaultHomeSettings);
+  });
+
+  it("CAS pA, pA+1 and pf(0) with pf(x):=x+pA are ⚠ and name pA", () => {
+    host.cas("gf(x):=x+gA", defaultCasSettings);
+    for (const [input, text] of [["gA", "899450126402"], ["gA+1", "899450126403"], ["gf(0)", "899450126402"]] as const) {
+      const r = cas(input);
+      expect(r.text, input).toBe(text);
+      expect(r.approximate, input).toBe(true);
+      expect(r.warn, input).toBe("unchecked");
+      expect(r.why?.inherited, input).toEqual([input === "gf(0)" ? "gf" : "gA"]);
+    }
+  });
+
+  it("a CAS assignment from pA is ⚠ too, and the name it stores keeps the facts", () => {
+    const r = cas("gB:=gA*2");
+    expect(r.warn).toBe("unchecked");
+    expect(r.why?.inherited).toEqual(["gA"]);
+    expect(cas("gB").warn).toBe("unchecked");
+  });
+
+  it("guards: CAS pB:=5 then pB+1 is 6, and factor(x^2-1), stay unmarked", () => {
+    expect(cas("gE:=5").warn).toBeUndefined();
+    const r = cas("gE+1");
+    expect(r.text).toBe("6");
+    expect(r.approximate).toBeUndefined();
+    expect(r.warn).toBeUndefined();
+    expect(r.why).toBeUndefined();
+    const f = cas("factor(x^2-1)");
+    expect(f.approximate).toBeUndefined();
+    expect(f.warn).toBeUndefined();
+    host.cas("gg(x):=x+gE", defaultCasSettings);
+    expect(cas("gg(1)").warn).toBeUndefined();
+  });
+});
