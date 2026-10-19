@@ -1139,7 +1139,7 @@ export function decisionCuts(expr: string): Cut[] {
  * `floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)` (exactly 1) is undecided too: Giac does not prove the sum is 1/2.
  * A quantity that is not a real number (a free name, a bound variable) is skipped.
  */
-export function onCut(giac: Giac, expr: string, digits: number, restore: number): { tie: string } | { undecided: true } | null {
+export function onCut(giac: Giac, expr: string, digits: number, restore: number): { tie: string } | Undecided | null {
   if (/:=|=>|\bsto\s*\(/.test(expr)) return null;
   const P = valuePrecision(digits);
   const cuts = decisionCuts(expr);
@@ -1167,7 +1167,9 @@ export function onCut(giac: Giac, expr: string, digits: number, restore: number)
       giac.eval("purge(pasbx,pasbn,pasbd,pasba,pasbb)");
     }
     if (!hits.length) return null;
-    if (hits.some((h) => !h.proven || !h.cut.call || !RATIONAL.test(h.n))) return { undecided: true };
+    // G57: a tie Giac cannot prove is refused; a proven one with no value to put in its place stays ⚠.
+    if (hits.some((h) => !h.proven)) return { undecided: true, refused: true };
+    if (hits.some((h) => !h.cut.call || !RATIONAL.test(h.n))) return { undecided: true };
     // Outermost calls first; one inside a replaced call goes with it.
     const calls = hits.map((h) => ({ ...h.cut.call!, n: h.n })).sort((u, v) => u.at[0] - v.at[0] || v.at[1] - u.at[1]);
     let tie = "";
@@ -1182,16 +1184,22 @@ export function onCut(giac: Giac, expr: string, digits: number, restore: number)
   });
 }
 
+/** A decision that did not hold. `refused` (G57): the two precisions printed different texts, or the decision sits on
+ *  a cut Giac cannot prove a tie on, so any value shown would be a guess and the result is refused (`error.undecided`);
+ *  without it (a higher precision failed to run, a proven tie with no value to put in its place) the result is ⚠. */
+export type Undecided = { undecided: true; refused?: true };
+
 /** What the second decision found: the text stands (`from` set when it is another evaluation's, stored in `pasdec2`),
  *  or the evaluations disagree (`undecided`). */
-export type Decision = { text: string; from?: string } | { undecided: true };
+export type Decision = { text: string; from?: string } | Undecided;
 
 /**
  * G38 (docs/04 2.4 rule 2): `expr`, whose exact evaluation at P printed `text`, is computed again at P + 20 and must
  * print the same; if not, once more at P + 40, and the P + 20 and P + 40 texts must agree (the P + 40 value is kept in
  * `pasdec2`). An agreed text keeps its mark (a rational one stays `=`). A floor, ceil, iPart, frac, fPart or sign that
  * sits on its cut (onCut) takes the value it has exactly there when Giac proves the tie; an unproven one is undecided,
- * because Giac decides it by its rounding error and both precisions can agree on a wrong text.
+ * because Giac decides it by its rounding error and both precisions can agree on a wrong text. G57: an undecided result
+ * whose texts differ or whose tie is unproven is `refused`.
  */
 export function decideTwice(giac: Giac, expr: string, text: string, digits: number, restore: number): Decision {
   const P = valuePrecision(digits);
@@ -1205,7 +1213,7 @@ export function decideTwice(giac: Giac, expr: string, text: string, digits: numb
   if (t2 === text) out = { text };
   else {
     const t3 = t2 === null ? null : run(P + 40, "pasdec2");
-    out = t3 !== null && t3 === t2 ? { text: t3, from: "pasdec2" } : { undecided: true };
+    out = t3 !== null && t3 === t2 ? { text: t3, from: "pasdec2" } : t3 !== null ? { undecided: true, refused: true } : { undecided: true };
   }
   giac.eval("purge(pasdec)");
   if ("undecided" in out) return out;

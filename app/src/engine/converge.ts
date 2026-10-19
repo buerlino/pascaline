@@ -12,7 +12,8 @@
 import { closing, functionsIn, hasFloat, splitList, topLevelArgs, type Giac } from "./numeric.ts";
 
 /** Why a result is refused; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
-export type Refusal = "integralDiverges" | "seriesDiverges" | "noLimit";
+/** `undecided` (G57) comes from numeric.ts decideTwice: a decision on a cut Giac cannot make. */
+export type Refusal = "integralDiverges" | "seriesDiverges" | "noLimit" | "undecided";
 
 /** A check's answer: the result stands, it is refused, or the check could not finish (an error or Giac's timeout), in
  *  which case the result stands with ⚠ (nothing confirmed that it exists). */

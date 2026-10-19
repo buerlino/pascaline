@@ -193,25 +193,34 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(host.home("pasans", defaultHomeSettings).result.display).toBe("830389765219"); // Ans holds the agreed value
   });
 
-  it("an unproven tie is undecided, never replaced: floor(…+1/2-10^-100) is 0, not = 1 (source: derived; Giac gives 0 at 40 and 60, 1 at 80)", () => {
+  // G57 (night check 2026-10-19 2.8): a decision the precisions do not agree on, or a tie Giac cannot prove, is refused:
+  // any number shown would be a guess. Both inputs sit closer to the cut than P + 40 digits can see.
+  const UNDECIDED = "undecided: the value sits on a cut Giac cannot decide";
+  it("an unproven tie is refused: floor(…+1/2) is exactly 1 and floor(…+1/2-10^-100) exactly 0 (source: derived, cos(pi/7)-cos(2*pi/7)+cos(3*pi/7) = 1/2; Giac gave 0 for both)", () => {
     for (const input of ["floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2-10^-100)", "floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)"]) {
       const r = host.home(input, defaultHomeSettings).result;
-      expect(r.display).not.toBe("1");
-      expect(r).toMatchObject({ exactRational: false, reliableDigits: null, why: { decided: true } });
-      expect(markOf(r, { format: "STD", digits: 12 })?.mark).toBe("⚠");
+      expect(r, input).toMatchObject({ ok: false, error: "undecided", display: UNDECIDED });
       const c = host.cas(input, defaultCasSettings).result;
-      expect(c.text).not.toBe("1");
-      expect(c.approximate).toBe(true);
-      expect(c.warn).toBe("unchecked");
+      expect(c, input).toMatchObject({ ok: false, error: "undecided", text: UNDECIDED });
     }
   });
 
-  it("P + 20 and P + 40 disagree: floor(sin(10^100)*10^12) is ⚠ without a count (source: oracle, mpmath at 300 digits: -372376123662)", () => {
-    const r = host.home("floor(sin(10^100)*10^12)", defaultHomeSettings).result;
-    expect(r).toMatchObject({ exactRational: false, reliableDigits: null, approximate: true, why: { decided: true } });
-    expect(markOf(r, { format: "STD", digits: 12 })).toEqual({ mark: "⚠", warn: "unchecked" }); // no count n
-    const c = host.cas("floor(sin(10^100)*10^12)", defaultCasSettings).result;
-    expect(c).toMatchObject({ approximate: true, warn: "unchecked", why: { decided: true } });
+  it("an assignment of an undecided value is refused and stores nothing, in Home and CAS (G57)", () => {
+    const input = "floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)";
+    expect(host.home(`hu57:=${input}`, defaultHomeSettings).result).toMatchObject({ ok: false, error: "undecided" });
+    expect(host.home("hu57", defaultHomeSettings).result.display).toBe("hu57");
+    expect(host.cas(`cu57:=${input}`, defaultCasSettings).result).toMatchObject({ ok: false, error: "undecided" });
+    expect(host.cas("cu57", defaultCasSettings).result.text).toBe("cu57");
+  });
+
+  it("P + 20 and P + 40 disagree: floor(sin(10^100)*10^12) is refused (source: oracle, mpmath at 300 digits: -372376123662)", () => {
+    expect(host.home("floor(sin(10^100)*10^12)", defaultHomeSettings).result).toMatchObject({ ok: false, error: "undecided" });
+    expect(host.cas("floor(sin(10^100)*10^12)", defaultCasSettings).result).toMatchObject({ ok: false, error: "undecided" });
+  });
+
+  it("a decision P + 20 makes stands: sign(sin(10^50)) is -1 (source: oracle, mpmath: sin(10^50) = -0.7896…)", () => {
+    expect(host.home("sign(sin(10^50))", defaultHomeSettings).result).toMatchObject({ ok: true, display: "-1" });
+    expect(host.cas("sign(sin(10^50))", defaultCasSettings).result).toMatchObject({ ok: true, text: "-1" });
   });
 
   it("an exact == test is decided again too: floor(sin(10^60)*10^12)==830389765219 is true (source: oracle via g38-floor-sin1e60)", () => {
