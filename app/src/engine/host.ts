@@ -31,7 +31,7 @@ import {
 import { eseriesDefinition } from "./eseries.ts";
 import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, notBuiltin, callsStateful, floatsShown, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, notBuiltin, callsStateful, floatsShown, floatFacts, functionsIn, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -350,7 +350,7 @@ export class EngineHost {
       const prev = this.byName.get(name);
       const cmds = assume[1] === "additionally" && prev?.kind === "assume" ? [...prev.cmds, ...ran] : ran;
       changes = [{ set: { name, kind: "assume", cmds, ...base } }];
-    } else if (target?.kind === "fn") changes = [{ set: { name: target.name, kind: "fn", cmds: ran, ...base } }];
+    } else if (target?.kind === "fn") changes = [{ set: { name: target.name, kind: "fn", cmds: ran, ...(facts ? { facts } : {}), ...base } }];
     else if (target?.kind === "var") {
       const snap = this.snapshot(target.name, digits);
       changes = snap
@@ -383,15 +383,21 @@ export class EngineHost {
    */
   private inherited(r: HomeResult, input: string, expr: string | null, digits: number, restoreDigits: number): HomeResult {
     if (!r.ok || (!r.value && !r.items)) return r;
+    // G49f1: a called function that was built from inexact values lends its facts too (it is never moved).
+    const called = functionsIn(input).flatMap((name) => {
+      const e = this.byName.get(name);
+      return e?.kind === "fn" && e.facts ? [{ name, facts: e.facts, fn: true }] : [];
+    });
     const used = namesIn(input)
-      .map((name) => ({ name, facts: this.byName.get(name)?.facts ?? this.chipFacts.get(name) }))
-      .filter((u): u is { name: string; facts: NameFacts } => u.facts !== undefined);
+      .map((name) => ({ name, facts: this.byName.get(name)?.facts ?? this.chipFacts.get(name), fn: false }))
+      .filter((u): u is { name: string; facts: NameFacts; fn: boolean } => u.facts !== undefined)
+      .concat(called);
     if (!used.length) return r;
     const P = valuePrecision(digits);
     const els = r.items ?? [r];
     const cap = used.reduce((n, u) => (u.facts.reliableDigits === null ? n : Math.min(n, u.facts.reliableDigits)), P);
     const warn = used.some((u) => u.facts.warn === "unaudited") ? "unaudited" : used.some((u) => u.facts.warn === "unchecked") ? "unchecked" : undefined;
-    const moved = used.filter((u) => u.facts.reliableDigits !== null).map((u) => ({ name: u.name, n: u.facts.reliableDigits! }));
+    const moved = used.filter((u) => !u.fn && u.facts.reliableDigits !== null).map((u) => ({ name: u.name, n: u.facts.reliableDigits! }));
     const shape = shapeOfResult(r);
     let pert: number[] | null | undefined;
     let once = false;
@@ -422,6 +428,27 @@ export class EngineHost {
     };
   }
 
+  /**
+   * G49f1: the facts a function keeps when its definition `input` held an inexact chip or constant (`lent`, put in as
+   * values), or its body names a stored variable or calls a function that has facts: not limited in digits unless
+   * those names cap it, their warn, and never exact. Null when nothing in it is inexact.
+   */
+  private fnFacts(input: string, lent: readonly NameFacts[]): NameFacts | null {
+    const def = definedBy(input)?.name;
+    const body = maskBound(input); // the body alone, its parameters masked
+    const named = [...namesIn(body), ...functionsIn(body)]
+      .filter((n) => n !== def)
+      .flatMap((n) => {
+        const f = this.byName.get(n)?.facts;
+        return f ? [f] : [];
+      });
+    const all = [...lent, ...named];
+    if (!all.length) return null;
+    const capped = all.filter((f) => f.reliableDigits !== null).map((f) => f.reliableDigits!);
+    const warn = all.some((f) => f.warn === "unaudited") ? "unaudited" : all.some((f) => f.warn === "unchecked") ? "unchecked" : undefined;
+    return { reliableDigits: capped.length ? Math.min(...capped) : null, ...(warn ? { warn } : {}), inexact: true };
+  }
+
   /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). A value carried as its decimal
    *  (G34) is known to every digit it carries: the result's confirmed digits, at most P = valuePrecision(digits). */
   private static factsOf(r: HomeResult | undefined, digits: number): NameFacts | null {
@@ -447,13 +474,18 @@ export class EngineHost {
     const held = chips ? chipsIn(input, chips) : [];
     const keep = new Set(stateful && definedBy(input)?.kind !== "var" ? [] : held.filter((k) => !chips![k]!.exact));
     const named = chips ? withChipValues(input, chips, keep) : input;
-    const inexactIn = held.some((k) => !chips![k]!.exact) || (consts !== undefined && inexactConstsIn(input, consts).length > 0);
+    // G49f1: the facts an inexact chip or constant lends to a function defined from it (its value is put in).
+    const lent: NameFacts[] = [
+      ...held.filter((k) => !chips![k]!.exact).map((k) => chipNameFacts(chips![k]!)),
+      ...(consts !== undefined && inexactConstsIn(input, consts).length > 0 ? [{ reliableDigits: null, inexact: true as const }] : []),
+    ];
+    const inexactIn = lent.length > 0;
     for (const k of keep) {
       this.giac.eval(chipCommand(k, chips![k]!));
       this.chipFacts.set(`${CHIP_PREFIX}${k}`, chipNameFacts(chips![k]!));
     }
     try {
-      const out = this.homeRun(consts ? withConstValues(named, consts) : named, s, inexactIn);
+      const out = this.homeRun(consts ? withConstValues(named, consts) : named, s, inexactIn, lent);
       if (!consts || (stateful && !asg)) return out;
       const body = asg ? simpleAssignment(named)!.rhs : named;
       const n = constUncDigits(this.giac, body, consts, out.result, Math.trunc(out.result.digits ?? s.digits));
@@ -464,13 +496,14 @@ export class EngineHost {
     }
   }
 
-  private homeRun(typed: string, s: HomeSettings, inexactIn: boolean): { result: HomeResult; defs: DefChange[] } {
-    const out = this.homeRunRaw(typed, s, inexactIn);
+  private homeRun(typed: string, s: HomeSettings, inexactIn: boolean, lent: readonly NameFacts[] = []): { result: HomeResult; defs: DefChange[] } {
+    const out = this.homeRunRaw(typed, s, inexactIn, lent);
     return { ...out, result: showExpResult(out.result) };
   }
 
-  /** `inexactIn` (G49): the input held a constant or chip that is not exact, so a value it stores is not exact. */
-  private homeRunRaw(typed: string, s: HomeSettings, inexactIn: boolean): { result: HomeResult; defs: DefChange[] } {
+  /** `inexactIn` (G49): the input held a constant or chip that is not exact, so a value it stores is not exact.
+   *  `lent` (G49f1): the facts of those chips and constants, for a function defined from them. */
+  private homeRunRaw(typed: string, s: HomeSettings, inexactIn: boolean, lent: readonly NameFacts[]): { result: HomeResult; defs: DefChange[] } {
     const input = expIgnoresAngle(typed, s.angle);
     this.need(input);
     this.useHomeMode(s);
@@ -502,8 +535,9 @@ export class EngineHost {
           : [`Digits:=${s.workDigits}`, input, `Digits:=${s.digits}`];
       // G49: an inexact input, or a result shown with ⚠ (G38's decision that did not hold), stores a value that is not
       // exact even when it prints as an exact rational.
-      const facts = EngineHost.factsOf(result, Math.trunc(s.digits));
-      const inexact = facts !== null && (inexactIn || result.warn !== undefined);
+      const fn = definedBy(input)?.kind === "fn";
+      const facts = fn ? this.fnFacts(input, lent) : EngineHost.factsOf(result, Math.trunc(s.digits));
+      const inexact = !fn && facts !== null && (inexactIn || result.warn !== undefined);
       defs = this.defsAfter(input, ran, result.display, inexact ? { ...facts, inexact: true } : facts, "home", Math.trunc(s.digits), s.angle);
     }
     return { result, defs };

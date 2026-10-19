@@ -54,6 +54,10 @@ describe("replayOrder, validDefs, userNamesOf", () => {
     const v = entry("A", "var", "A:=(66743/500000000000000)", { facts: { reliableDigits: null, inexact: true } });
     expect(validDefs([v, { ...v, name: "B", facts: { reliableDigits: null, inexact: false } }])).toEqual([v]);
   });
+  it("G49f1: a function keeps the facts it was built from", () => {
+    const f = entry("q", "fn", "q(x):=x+899450126402", { facts: { reliableDigits: null, warn: "unchecked", inexact: true } });
+    expect(validDefs(JSON.parse(JSON.stringify([f])))).toEqual([f]);
+  });
   it("G34: a variable keeps the angle mode it was stored in; a wrong or foreign one is dropped", () => {
     const v = entry("A", "var", "A:=(5)", { angle: "deg" });
     const f = entry("f", "fn", "f(x):=x");
