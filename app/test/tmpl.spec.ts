@@ -94,11 +94,17 @@ test("DMS: 30°15′36″ is 30.26 in DEG and sin(30°0′0″) = 0.5 in RAD and
     await page.evaluate((a) => window.pascaline.session.setAngle(a), angle);
     await tap(page, ["sin"]);
     await insert(page, "dms");
-    // the key takes sin's selected □ as its degrees, in brackets (R17): `(30)`. R43: ▶ out of the bracket stops at the
-    // end of the degrees box, the next ▶ goes to the minutes
-    await tap(page, ["d3", "d0", "right", "right", "d0", "right", "d0", "enter"]);
+    // the key takes sin's selected □ as its degrees, bare (R43b); one ▶ leaves the degrees for the minutes
+    await tap(page, ["d3", "d0", "right", "d0", "right", "d0"]);
+    expect(await entryValue(page)).toBe("\\sin\\left(30\\degree0\\prime0\\doubleprime\\right)");
+    await tap(page, ["enter"]);
     await expect(lastResult(page)).toHaveAttribute("data-text", "0.5");
   }
+});
+
+test("x² on sin's selected □ keeps the bracket (R43b)", async ({ page }) => {
+  await tap(page, ["sin", "sq"]);
+  expect(await entryValue(page)).toBe("\\sin\\left(\\left(\\placeholder{}\\right)^2\\right)");
 });
 
 test("a key's template from the palette: the root and the power, as their keys insert them", async ({ page }) => {
