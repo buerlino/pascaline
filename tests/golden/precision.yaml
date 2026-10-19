@@ -168,6 +168,7 @@ cases:
   - { id: "g39-cas-sum-exp-ik", kind: "cas", input: "sum(exp(i*k),k,0,inf)", expect: "error: seriesDiverges", source: "derived" }
   - { id: "g39-cas-sum-undef", kind: "cas", input: "sum((-1)^k,k,0,inf)", expect: "error: seriesDiverges", source: "derived", note: "Giac's own undef" }
   - { id: "g39-cas-limit-bounded", kind: "cas", input: "limit(sin(x),x,inf)", expect: "error: noLimit", source: "derived", note: "Giac printed bounded_function(2)" }
+  - { id: "g39-cas-assign-sum-cos", kind: "cas", input: "g39a:=sum(cos(k),k,1,inf)", expect: "error: seriesDiverges", source: "derived", note: "audit fix: an assignment is checked before it stores (the name stays unassigned: converge.test.ts)" }
   - { id: "g39-cas-pair", kind: "cas", input: "int(abs(x-sin(10^50)),x,-1,1)", mark: "⚠", source: "derived", note: "mark-only: Giac's [exact, numeric] pair is shown as Giac's text with ⚠ (the two disagree: 1.62358264688 against 1.35506364264)" }
   - { id: "g39-cas-keep-basel", kind: "cas", input: "sum(1/k^2,k,1,inf)", expect: "1/6*pi^2", source: "derived", note: "Giac's text for pi^2/6" }
   - { id: "g39-cas-keep-1/x^2", kind: "cas", input: "int(1/x^2,x,-1,1)", expect: "+infinity", source: "derived" }

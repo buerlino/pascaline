@@ -29,7 +29,7 @@ import {
   unquote,
 } from "./homeEval.ts";
 import { eseriesDefinition } from "./eseries.ts";
-import { giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
+import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, notBuiltin, callsStateful, floatsShown, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
@@ -529,10 +529,15 @@ export class EngineHost {
     const exactInput = toExactLiterals(input);
     const test = input.includes(EQ_INEXACT_FLAG);
     if (test) this.giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
+    // G39: `a:=sum(cos(k),k,1,inf)` must store nothing when its value is refused, so an assignment whose value holds a
+    // definite integral, a series or a limit runs its right-hand side first, is checked, and only then stored.
+    const asg0 = simpleAssignment(exactInput);
+    const guarded = asg0 && !isStateful(asg0.rhs) && callsIn(asg0.rhs).length ? asg0 : null;
     // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
     // mode's Digits stays the setting, which prints the floats of a non-number.
     const digitsSet = Math.trunc(s.digits);
-    const run = (): string => withDigits(this.giac, valuePrecision(digitsSet), digitsSet, () => this.strict.eval(`pcasans:=(${exactInput})`));
+    const body = guarded ? guarded.rhs : exactInput;
+    const run = (): string => withDigits(this.giac, valuePrecision(digitsSet), digitsSet, () => this.strict.eval(`pcasans:=(${body})`));
     let text: string;
     try {
       text = run();
@@ -565,15 +570,19 @@ export class EngineHost {
       if ("undecided" in d) undecided = true;
       if (!("undecided" in d) && d.from !== undefined) {
         this.giac.eval(`pcasans:=${d.from}`);
-        if (asg) this.giac.eval(`${asg.name}:=pcasans`);
+        if (asg && !guarded) this.giac.eval(`${asg.name}:=pcasans`);
         text = d.text;
       }
       this.giac.eval("purge(pasdec2)");
     }
     // G39: a divergent integral or series, or no limit, is refused as in Home; Giac's [exact, numeric] pair of a
     // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
-    const refused = single ? null : refusalOf(this.giac, exactInput, text, s.angle);
+    const refused = guarded ? refusalOf(this.giac, guarded.rhs, text, s.angle) : single ? null : refusalOf(this.giac, exactInput, text, s.angle);
     if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
+    if (guarded) {
+      const stored = this.giac.eval(`${guarded.name}:=pcasans`);
+      if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");
+    }
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
     const pair = !single && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
