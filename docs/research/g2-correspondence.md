@@ -56,7 +56,7 @@ Layers: **E** engine helper, **P** parser or emitter, **N** entry (template or c
 | 4 | Ties at the digits setting (item 8) | Giac's own printing is binary MPFR, not a decimal tie rule | half away from zero; a `half-even` option kept "for G2 item 8" that no caller sets | `format.ts:20, 37, 116–123, 146–227, 361`, ≈ 15 lines of threading, D; tests `format.test.ts:63–71, 162, 171`, T | half away stays (one rule is needed and either costs the same); the option has no clause and is a dead setting (docs/03 rule 11) | **drop the option → G45** |
 | 5 | `round(-2.5)`, G42's round part (item 66) | `round(-2.5)` = −2, `round(2.5)` = 3, `round(-2.25,1)` = −2.2: half up | not built: G42 would follow the G2 | `packages/G42.md` | none: half up is a stated convention, and the display's own rule is row 4 | **drop from G42** (rewritten) |
 | 6 | Quartiles, G42 (item 67) | `quartile1([1..6])` = 2.0 | not built | `packages/G42.md` | none: one of the standard conventions | **drop from G42** |
-| 7 | Median of an even list, G42 (item 67) | `median([1,2,3,4])` = 2.0 | not built | `packages/G42.md` | P3: the median of 1, 2, 3, 4 is 2.5 by definition (`derived`) | keep in G42 |
+| 7 | Median of an even list, G42 (item 67) | `median([1,2,3,4])` = 2.0 | 2.5 (G42, merged 2da6710) | `homeEval.ts` `pasmedian` | P3: the median of 1, 2, 3, 4 is 2.5 by definition (`derived`) | keep in G42 |
 | 8 | Alpha letter e and i as names, R58b (item 62) | Giac reads `e` as `exp(1)` and `i` as √−1: `e:=3` is refused, `solve(e^2=4,e)` gives `linsolve(exp(2)-4,exp(1))`, and `sum(i^2,i,1,3)` is an error ("i=sqrt(-1)") | letter e is `exp(1)`, letter i is √−1 | `emit.ts:78` (`e: "exp(1)"`), `emit.ts:247` (`a0 === "e"`), `emit-js.ts:15`, P | P3: CAS `2e` drew a variable and gave 5.43656365692, and `solve(e^2=4,e)` is a non-answer; P2: Σ with index i works | decided (R58b); build → **R67**, stand-ins `e_`, `i_` (§3) |
 | 9 | Degrees through `(pi/180)^angle_radian()` | Giac's DEG flag | the ° factor | `emit.ts:288–291`, 3, P | S14 decides | S14 |
 | 10 | `pasexp`, `expIgnoresAngle`, `showExp` (F29, item 54) | DEG `exp(i*90)` = i, `exp(i*pi)` = −1 | exp ignores the mode | `homeEval.ts:146–149, 218–235`, ≈ 20, E; `host.ts:446, 512` | S14 decides (P3: one mode cannot read both ways) | S14 |
@@ -133,7 +133,7 @@ S14's own line in decisions.md has "would change if … G2 items 63–65 need Gi
 | [R66](../shifts/packages/R66.md) | The power form keeps Giac's principal root in Home (Function and Solve keep R39) | ron, Opus | rows 2a–2c |
 | [R67](../shifts/packages/R67.md) | Letters e and i are names: stand-ins `e_`, `i_` (R58b) | ron, Opus | row 8 |
 | [R68](../shifts/packages/R68.md) | ᴇ gets its leading 1 after an operator too (item 40) | ron, Opus | row 20 |
-| [G42](../shifts/packages/G42.md) | rewritten: median (and percentile) only; Giac's round and quartiles stay | gorge | rows 5–7 |
+| G42 (merged 2da6710) | rewritten: median (and percentile) only; Giac's round and quartiles stay | gorge | rows 5–7 |
 
 ## 6. Top risks
 

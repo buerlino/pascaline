@@ -26,13 +26,11 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [G21b](packages/G21b.md) | exp ignores the angle mode inside Giac; pasexp goes | gorge, **Opus** | night | G34; S14's route P | ~1 d |
-| [G50](packages/G50.md) | Complex arguments of the audited functions | gorge, **Opus** | night | A15 | ~0.75 d |
 | [R64](packages/R64.md) | The angle mode lives in our parser (route R) | ron, **Opus** | night | the owner's yes to route R (decisions.md S14) | ~0.5 d |
 | [G46](packages/G46.md) | Giac always in radians; pasexp goes (replaces G21b) | gorge, **Opus** | night | R64 | ~1 d |
 | [G41](packages/G41.md) | σ beyond first order at a stationary point | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G37](packages/G37.md) | °C and °F inside a compound unit are an interval | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G40](packages/G40.md) | Angles in the unit view: inverses, ω·r, rpm | gorge, **Opus** | night | A15; before R24c | ~0.75 d |
-| [G42](packages/G42.md) | The median of an even list, and percentile | gorge, Sonnet | night | A15 | ~0.5 d |
 | [G43](packages/G43.md) | The golden gate checks invariants across settings | gorge, Sonnet | night | A15 (store part: G34) | ~0.5 d |
 | [G44](packages/G44.md) | Inverse distribution functions polished | gorge, **Opus** | night | A15 | ~0.5 d |
 | [S11](packages/S11.md) | The unit result view as packages (R60–R63) | sandra, Opus | night | A14 | ~0.5 d |
