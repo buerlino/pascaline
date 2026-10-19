@@ -25,6 +25,7 @@ import {
   type PrecisionWarn,
   type PrecisionWhy,
 } from "./format.ts";
+import { ICDF_DIGITS, ICDF_FAILED, icdfCalls, icdfPolished } from "./icdf.ts";
 
 export interface Giac {
   eval(input: string): string;
@@ -366,9 +367,10 @@ export function readsReplaced(giac: Giac, expr: string): boolean {
   return r.copies.length > 0;
 }
 
-/** Every function in the input is on the audited list. */
-export function isAudited(input: string): boolean {
-  return functionsIn(input).every((f) => AUDITED_FUNCTIONS.has(f));
+/** Every function in the input is on the audited list, or in `also` (G44: the inverse functions an input's polish
+ *  covers, a fact of that input only). */
+export function isAudited(input: string, also: readonly string[] = []): boolean {
+  return functionsIn(input).every((f) => AUDITED_FUNCTIONS.has(f) || also.includes(f));
 }
 
 // --- shapes: a scalar, a list, a matrix ------------------------------------------------------------------------------
@@ -726,13 +728,19 @@ function floatFactsOf(
   // read through their copies (G50f1, complexReads).
   const run = reads === null ? null : forValue(giac, reads.text);
   // `asked`: the precision an evalf(e,n) in the input runs at in this evaluation (M4-6).
-  const at = (d: number, slot: string, asked: (n: number) => number = (n) => Math.max(n, d)): { re: DecimalValue; im: DecimalValue; short?: number }[] | null =>
+  // `text`: what is run (`run`, or G44's polished text).
+  const at = (
+    d: number,
+    slot: string,
+    asked: (n: number) => number = (n) => Math.max(n, d),
+    text: string | null = run,
+  ): { re: DecimalValue; im: DecimalValue; short?: number }[] | null =>
     withDigits(giac, d, restoreDigits, () => {
-      if (run !== null) {
-        const out = giac.eval(`${slot}:=(${withAskedPrecision(run, asked)})`);
+      if (text !== null) {
+        const out = giac.eval(`${slot}:=(${withAskedPrecision(text, asked)})`);
         if (isError(out)) return null;
       }
-      return readParts(giac, run === null ? name : slot, shape, (part) => giac.eval(part), P, d);
+      return readParts(giac, text === null ? name : slot, shape, (part) => giac.eval(part), P, d);
     });
   // A non-real value that rests on a replaced function not read through our definitions (DEG, complexReads' hidden).
   const hidden = reads !== null && reads.hidden.length > 0 && nonReal(giac, name) ? reads.hidden : [];
@@ -754,6 +762,40 @@ function floatFactsOf(
     const v = at(d, name);
     return v && facts(v, () => Math.min(digits, d), "unchecked");
   }
+  // Rule 2: P against P+20, and P+20 against P+40 when fewer than the digits agree (a cancellation only needs more
+  // working digits). Null when P or P+20 could not be evaluated, with the facts of P alone in `once`.
+  const agreed = (text: string | null): { facts: ElementFacts[] } | { once: ElementFacts[] } | null => {
+    const A = at(P, "pasm", (n) => Math.max(n, P), text);
+    const B = A && at(P + 20, "pasm2", (n) => Math.max(n, P) + 20, text);
+    if (A && B) {
+      const reliable = B.map((b, k) => Math.min(confirmedComplex(A[k]!, b, P, P), A[k]!.short ?? P));
+      if (reliable.some((n) => n < digits)) {
+        const C = at(P + 40, "pasm3", (n) => Math.max(n, P) + 40, text);
+        if (C) {
+          giac.eval(`${name}:=pasm3`);
+          return { facts: facts(C, (k) => Math.max(reliable[k]!, confirmedComplex(B[k]!, C[k]!, P + 20, P))) };
+        }
+      }
+      giac.eval(`${name}:=pasm2`);
+      return { facts: facts(B, (k) => reliable[k]!) };
+    }
+    if (A) {
+      giac.eval(`${name}:=pasm`);
+      return { once: facts(A, () => Math.min(digits, DOUBLE_DIGITS), "unchecked") };
+    }
+    return null;
+  };
+  // G44 (docs/04 2.3 #2): an inverse distribution function is polished by substituting back (icdf.ts) and counts as
+  // audited for this input when every call of it converged at P and at P + 20; else today's unaudited check.
+  if (unaudited && run !== null && !hidden.length && icdfCalls(run).length && isAudited(expr, icdfCalls(run))) {
+    const polished = icdfPolished(giac, run);
+    giac.eval(`${ICDF_FAILED}:=0`);
+    giac.eval(`${ICDF_DIGITS}:=${digits}`);
+    const r = agreed(polished);
+    const failed = giac.eval(ICDF_FAILED).trim() !== "0";
+    giac.eval(`purge(${ICDF_FAILED},${ICDF_DIGITS})`);
+    if (r && "facts" in r && !failed) return r.facts;
+  }
   if (unaudited) {
     const D = at(DOUBLE_DIGITS, "pasd", () => DOUBLE_DIGITS);
     const M = at(P, "pasm");
@@ -772,26 +814,8 @@ function floatFactsOf(
     }
     return null;
   }
-  const A = at(P, "pasm", (n) => Math.max(n, P));
-  const B = A && at(P + 20, "pasm2", (n) => Math.max(n, P) + 20);
-  if (A && B) {
-    const reliable = B.map((b, k) => Math.min(confirmedComplex(A[k]!, b, P, P), A[k]!.short ?? P));
-    if (reliable.some((n) => n < digits)) {
-      // Rule 2: once more, P+20 against P+40 (a cancellation only needs more working digits).
-      const C = at(P + 40, "pasm3", (n) => Math.max(n, P) + 40);
-      if (C) {
-        giac.eval(`${name}:=pasm3`);
-        return facts(C, (k) => Math.max(reliable[k]!, confirmedComplex(B[k]!, C[k]!, P + 20, P)));
-      }
-    }
-    giac.eval(`${name}:=pasm2`);
-    return facts(B, (k) => reliable[k]!);
-  }
-  if (A) {
-    giac.eval(`${name}:=pasm`);
-    return facts(A, () => Math.min(digits, DOUBLE_DIGITS), "unchecked");
-  }
-  return null;
+  const r = agreed(run);
+  return r === null ? null : "facts" in r ? r.facts : r.once;
 }
 
 /**

@@ -15,6 +15,7 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
+import { icdfCalls } from "./icdf.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
@@ -717,7 +718,8 @@ export function homeEval(
     const b = build(facts, shape, digits, "exact", true);
     // G50: Giac's printed float is not kept when its value was computed again through our definitions (forValue):
     // evalf(tanh(i)) printed coth(i); so did approx(w) with w holding Giac's exact tanh(i) (G50f1, readsReplaced).
-    const giacText = once || !readsReplaced(giac, exactBody) ? exactOut : undefined;
+    // G44: nor when an inverse distribution function was polished (normald_icdf(10^-10) printed Giac's double).
+    const giacText = once || (!readsReplaced(giac, exactBody) && !icdfCalls(exactBody).length) ? exactOut : undefined;
     const r = fromBuilt(b, "exact", true, giacText, b.decimal, whyOf(facts, once ? null : exactBody));
     return asked !== null ? { ...r, digits: asked } : r;
   }
