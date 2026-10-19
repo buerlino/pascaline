@@ -601,9 +601,12 @@ export function homeEval(
   // float result, whose value check runs it at two precisions anyway. An exact == or ≠ test is a decision too.
   // G48: an input that runs once and rests on a decision is ⚠ (it cannot be decided again).
   let undecided = once && !inexactTest && onceUndecided(giac, input, exactBody, exactOut);
+  // G57: a decision the precisions do not agree on, or a tie Giac cannot prove, is refused (any value would be a guess).
+  let refusedCut = false;
   if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, exactOut, notBuiltin(giac))) {
     const d = decideTwice(giac, exactBody, exactOut, s.digits, s.digits);
     if ("undecided" in d) undecided = true;
+    if ("undecided" in d && d.refused) refusedCut = true;
     if (!("undecided" in d) && d.from !== undefined) {
       giac.eval(`${ans}:=${d.from}`);
       exactOut = d.text;
@@ -657,6 +660,8 @@ export function homeEval(
     if (refused === "unchecked") unverified = true;
     else if (refused) return { ...failed(enEngine[`error.${refused}`], "exact"), error: refused, approximate: false };
   }
+  // G57: after G39's refusals, whose message says more (Giac's bounded_function of limit(sin(x),x,inf) decides too).
+  if (refusedCut) return { ...failed(enEngine["error.undecided"], "exact"), error: "undecided", approximate: false };
   // G39: Giac's [exact, numeric] pair of a definite integral is never a list. The two answers differ, so neither is
   // confirmed: the float is the value, with no digit confirmed (⚠, docs/04 2.4), and the why-line says the pair differs.
   const pair = !once && hasDefiniteIntegral(exactBody) ? giacPair(exactOut) : null;

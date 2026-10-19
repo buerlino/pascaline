@@ -374,9 +374,10 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     });
 
     // G49f3: a call takes the facts of the names the function's body holds now, not only those stored at definition.
-    // The undecided floor: oracle -372376123662 (g38-floor-sin1e100), Giac 899450126402 at 40 digits.
+    // The undecided floor: oracle -372376123662 (g38-floor-sin1e100), Giac 899450126402 at 40 digits; stored with sto,
+    // which runs once and keeps it with ⚠ (name:= decides it again and refuses it, G57).
     it("a function defined in CAS from a stored name with facts: its Home call is never =", () => {
-      host.home("hg3a:=floor(sin(10^100)*10^12)", defaultHomeSettings);
+      host.home("sto(floor(sin(10^100)*10^12),hg3a)", defaultHomeSettings);
       host.cas("hg3f(x):=x+hg3a", defaultCasSettings);
       const call = host.home("hg3f(0)", defaultHomeSettings).result;
       expect(call.display).toBe("899450126402");
@@ -387,7 +388,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     it("a name the body holds that got facts after the definition: the call is never =", () => {
       host.home("hg3b:=5", defaultHomeSettings);
       host.home("hg3g(x):=x+hg3b", defaultHomeSettings);
-      host.home("hg3b:=floor(sin(10^100)*10^12)", defaultHomeSettings);
+      host.home("sto(floor(sin(10^100)*10^12),hg3b)", defaultHomeSettings);
       const call = host.home("hg3g(0)", defaultHomeSettings).result;
       expect(call.display).toBe("899450126402");
       expect(markOf(call, opts)?.mark).toBe("⚠");
@@ -415,7 +416,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     it("an arrow function whose body name got facts after the definition: the call is never =", () => {
       host.home("hg4b:=5", defaultHomeSettings);
       host.home("hg4g:=x->x+hg4b", defaultHomeSettings);
-      host.home("hg4b:=floor(sin(10^100)*10^12)", defaultHomeSettings);
+      host.home("sto(floor(sin(10^100)*10^12),hg4b)", defaultHomeSettings);
       const call = host.home("hg4g(0)", defaultHomeSettings).result;
       expect(call.display).toBe("899450126402");
       expect(markOf(call, opts)?.mark).toBe("⚠");
@@ -423,7 +424,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     });
 
     it("an arrow function from a stored name with facts (Home or CAS, one or more parameters): the call is never =", () => {
-      host.home("hg4a:=floor(sin(10^100)*10^12)", defaultHomeSettings);
+      host.home("sto(floor(sin(10^100)*10^12),hg4a)", defaultHomeSettings);
       host.home("hg4h:=x->x+hg4a", defaultHomeSettings);
       const call = host.home("hg4h(0)", defaultHomeSettings).result;
       expect(call.display).toBe("899450126402");
@@ -623,6 +624,7 @@ describe.skipIf(!giacAvailable())("G34, G46: a carried value keeps what it showe
 
 // G48 (night check 2026-10-19 2.2): no `=` through an assignment that runs once, and a stored name takes the facts of
 // what its input read. F is the undecided floor: oracle -372376123662 (g38-floor-sin1e100), Giac 899450126402 at 40 digits.
+// A plain name:=F is refused (G57); the forms that run once keep it with ⚠, so the fixtures store it with sto.
 describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts a store lends", () => {
   const F = "floor(sin(10^100)*10^12)";
   const opts: FormatOptions = { format: "STD", digits: 12 };
@@ -658,7 +660,7 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
   });
 
   it("pA:=F, pu:=unapply(x+pA,x): pu(0) is ⚠ (the stored function lends what its input read)", () => {
-    home(`hpA:=${F}`);
+    home(`sto(${F},hpA)`);
     home("hpu:=unapply(x+hpA,x)");
     const call = home("hpu(0)").result;
     expect(call.display).toBe("899450126402");
@@ -694,14 +696,14 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
 
 // G51 (night check 2026-10-19 2.7): a CAS result without a float that read a stored name, or called a function, with
 // facts takes their warn and why.inherited. F is the undecided floor: oracle -372376123662 (g38-floor-sin1e100), Giac
-// 899450126402 at 40 digits.
+// 899450126402 at 40 digits, stored with sto (runs once, ⚠; name:=F is refused, G57).
 describe.skipIf(!giacAvailable())("G51: a CAS result that reads stored facts gets their mark", () => {
   const F = "floor(sin(10^100)*10^12)";
   let host: EngineHost;
   const cas = (i: string) => host.cas(i, defaultCasSettings).result;
   beforeAll(async () => {
     host = new EngineHost((await loadNodeGiac()).giac);
-    host.home(`gA:=${F}`, defaultHomeSettings);
+    host.home(`sto(${F},gA)`, defaultHomeSettings);
   });
 
   it("CAS pA, pA+1 and pf(0) with pf(x):=x+pA are ⚠ and name pA", () => {

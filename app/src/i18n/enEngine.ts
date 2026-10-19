@@ -6,5 +6,6 @@ export const enEngine = {
   "error.integralDiverges": "The integral does not converge",
   "error.seriesDiverges": "The series does not converge",
   "error.noLimit": "No limit",
+  "error.undecided": "undecided: the value sits on a cut Giac cannot decide",
   "why.pairDiffers": "The exact and numeric answers differ",
 } as const;

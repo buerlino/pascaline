@@ -706,7 +706,8 @@ export class EngineHost {
     // G39: `a:=sum(cos(k),k,1,inf)` must store nothing when its value is refused, so an assignment whose value holds a
     // definite integral, a series or a limit runs its right-hand side first, is checked, and only then stored.
     const asg0 = simpleAssignment(exactInput);
-    const guarded = asg0 && !isStateful(asg0.rhs) && callsIn(asg0.rhs).length ? asg0 : null;
+    // G57: so does one whose value rests on a decision, which may be refused as undecided.
+    const guarded = asg0 && !isStateful(asg0.rhs) && (callsIn(asg0.rhs).length || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
     // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
     // mode's Digits stays the setting, which prints the floats of a non-number.
     const digitsSet = Math.trunc(s.digits);
@@ -740,9 +741,12 @@ export class EngineHost {
     // G48: an input that runs once and rests on a decision is ⚠, as in Home (it cannot be decided again).
     let undecided = once && !inexactTest && onceUndecided(this.giac, input, exactInput, text);
     const decisionExpr = asg ? toExactLiterals(asg.rhs) : exactInput;
+    // G57: a decision the precisions do not agree on, or a tie Giac cannot prove, is refused as in Home (nothing is stored).
+    let refusedCut = false;
     if (!once && !inexactTest && !hasFloat(text) && restsOnDecision(decisionExpr, text, notBuiltin(this.giac))) {
       const d = decideTwice(this.giac, decisionExpr, text, digitsSet, digitsSet);
       if ("undecided" in d) undecided = true;
+      if ("undecided" in d && d.refused) refusedCut = true;
       if (!("undecided" in d) && d.from !== undefined) {
         this.giac.eval(`pcasans:=${d.from}`);
         if (asg && !guarded) this.giac.eval(`${asg.name}:=pcasans`);
@@ -754,6 +758,7 @@ export class EngineHost {
     // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
     const refused = guarded ? refusalOf(this.giac, guarded.rhs, text) : single ? null : refusalOf(this.giac, exactInput, text);
     if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
+    if (refusedCut) return fail(enEngine["error.undecided"], "undecided");
     if (guarded) {
       const stored = this.giac.eval(`${guarded.name}:=pcasans`);
       if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");
