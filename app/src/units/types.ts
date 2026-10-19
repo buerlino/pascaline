@@ -58,6 +58,9 @@ export interface UnitJob {
   shows?: ShownUnit[];
   /** G32: the symbol of an rpm or rev typed in a slot (a count of cycles, not an angle), for the refusal that names it. */
   cycle?: string;
+  /** G40: a cycle unit (rpm, rev, Hz or a unit made of them) in a slot or the end slot: no rad is dropped at the end
+   *  slot (G32's refusal, or the mismatch, stays). */
+  cycles?: true;
   /** A constant with an uncertainty went in: never "=" (decisions M4-4), as in Home. */
   inexact: boolean;
   /** Uncertain inputs (G18): `expr` is the formula with a free symbol per uncertain value, which the worker

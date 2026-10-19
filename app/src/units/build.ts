@@ -178,7 +178,9 @@ export function slotText(slot: UnitSlot, table: FactorTable): string {
 }
 
 function tokenSymbol(t: UnitToken, table: FactorTable): string {
-  return (t.prefix !== undefined ? table.prefixes.get(t.prefix)?.symbol ?? "" : "") + (table.units.get(t.unit)?.symbol ?? t.unit);
+  // G40: the index's chip for the degree is "1°" (qalc's text); in a unit it is °.
+  const sym = (table.units.get(t.unit)?.symbol ?? t.unit).replace(/^1(?=°)/, "");
+  return (t.prefix !== undefined ? table.prefixes.get(t.prefix)?.symbol ?? "" : "") + sym;
 }
 
 const signed = (power: string, below: boolean): string => (below ? negate(power) : power);
@@ -188,6 +190,9 @@ function cycleUnit(slots: readonly UnitSlot[]): string | null {
   for (const s of slots) for (const t of s.tokens) if (t.unit === "rpm" || t.unit === "rev") return t.unit;
   return null;
 }
+
+/** G40: whether a slot holds a cycle unit: rpm, rev, Hz or a unit made of them (kHz). */
+const hasCycles = (slots: readonly UnitSlot[]): boolean => slots.some((s) => s.tokens.some((t) => /rpm|rev|Hz/.test(t.unit)));
 
 /** The end slot's part of a job. */
 function endJob(req: UnitRequest, table: FactorTable): Pick<UnitJob, "end" | "endOffset" | "endLog" | "endUnit"> {
@@ -403,6 +408,7 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
       ...endJob(req, table),
       ...(shows.length ? { shows } : {}),
       ...(cycle ? { cycle } : {}),
+      ...(hasCycles([...req.slots, ...(req.end ? [req.end] : [])]) ? { cycles: true as const } : {}),
       inexact: vars.length > 0 || consts.some((c) => c.inexact),
       ...(vars.length ? { unc: { expr: sym, vars } } : {}),
     };

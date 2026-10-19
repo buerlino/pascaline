@@ -30,6 +30,14 @@ describe("unit view builder (G16)", () => {
     // another of our names stays refused
     expect(buildJob({ formula: "pasexp(1)", slots: [] }, table)).toMatchObject({ error: "engine" });
   });
+  it("G40: a cycle unit on either side marks the job (no rad dropped); the degree's text is °, not the chip's 1°", () => {
+    const deg = { tokens: [{ unit: "deg" }] };
+    expect(buildJob({ formula: "30*pasu1", slots: [deg], end: { tokens: [{ unit: "rev" }] } }, table)).toMatchObject({ cycles: true });
+    expect(buildJob({ formula: "30*pasu1", slots: [{ tokens: [{ prefix: "k", unit: "Hz" }] }] }, table)).toMatchObject({ cycles: true });
+    const plain = buildJob({ formula: "30*pasu1*2*pasu2", slots: [deg, { tokens: [{ unit: "m" }] }], end: deg }, table);
+    expect(plain).not.toHaveProperty("cycles");
+    expect(plain).toMatchObject({ endUnit: "°" });
+  });
   it("a unit is its factor times its dimension symbols", () => {
     expect(slotGiac({ tokens: [{ unit: "h" }] }, table)).toBe("(((3600)*pasdimT^(1)))");
     expect(slotGiac({ tokens: [{ unit: "V" }] }, table)).toBe("(((1)*pasdimM^(1)*pasdimL^(2)*pasdimT^(-3)*pasdimI^(-1)))");
