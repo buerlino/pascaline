@@ -385,6 +385,33 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.numeric?.warn).toBe("unaudited");
     expect(r.numeric?.why).toEqual({ unaudited: ["tanh"] });
   });
+  it("G50f1: a CAS assignment runs once; a name it reads holding tanh(i) makes the value unaudited, naming tanh (source: derived)", async () => {
+    const own = new EngineHost((await loadNodeGiac()).giac);
+    own.cas("w:=tanh(i)", defaultCasSettings);
+    const r = own.cas("v:=evalf(w)", defaultCasSettings).result;
+    // Showed Giac's coth value -0.642092615934*i with why {once:true}, tanh not named.
+    expect(r.numeric?.warn).toBe("unaudited");
+    expect(r.numeric?.why?.unaudited).toEqual(["tanh"]);
+    const t = own.cas("u:=evalf(tanh(i))", defaultCasSettings).result;
+    expect(t.numeric?.warn).toBe("unaudited");
+    expect(t.numeric?.why?.unaudited).toEqual(["tanh"]);
+  });
+  it("G50f1: a function's parameter is not the stored name of the same name (source: derived)", async () => {
+    const { complexReads, purgeReads } = await import("./numeric.ts");
+    const { giac } = await loadNodeGiac();
+    const own = new EngineHost(giac);
+    own.cas("x:=tanh(i)", defaultCasSettings);
+    own.cas("f(x):=x*i", defaultCasSettings);
+    own.cas("g:=(y)->{local x; x:=y; x*i}", defaultCasSettings);
+    for (const input of ["evalf(f(1))", "evalf(g(1))"]) {
+      const r = complexReads(giac, input);
+      purgeReads(giac, r.copies);
+      // Read the global x (tanh(i)) for f's parameter and named tanh as hidden.
+      expect(r.hidden).toEqual([]);
+    }
+    const v = own.cas("evalf(f(1))", defaultCasSettings).result;
+    expect(v.numeric?.why?.unaudited ?? []).not.toContain("tanh");
+  });
   it("our definitions load on first use, not at engine start (start-up budget)", async () => {
     const { giac } = await loadNodeGiac();
     const fresh = new EngineHost(giac);

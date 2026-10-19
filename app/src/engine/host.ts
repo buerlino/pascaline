@@ -703,7 +703,7 @@ export class EngineHost {
     if (shape) {
       const asked = askedDigits(input);
       const digits = asked ?? Math.trunc(s.digits);
-      const facts = floatFacts(this.giac, "pcasans", single ? null : exactInput, shape, digits, Math.trunc(s.digits));
+      const facts = floatFacts(this.giac, "pcasans", single ? null : exactInput, shape, digits, Math.trunc(s.digits), exactInput);
       if (facts) {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
         if (unverified) numeric.warn = numeric.warn ?? "unchecked";

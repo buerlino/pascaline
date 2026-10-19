@@ -687,7 +687,7 @@ export function homeEval(
     // asks for, checked at that precision, as in CAS (decisions M4-6; owner, 2026-10-13).
     const asked = askedDigits(input);
     const digits = asked ?? s.digits;
-    const facts = floatFacts(giac, ans, once ? null : exactBody, shape, digits, s.digits);
+    const facts = floatFacts(giac, ans, once ? null : exactBody, shape, digits, s.digits, exactBody);
     if (!facts) return symbolic();
     store();
     const b = build(facts, shape, digits, "exact", true);

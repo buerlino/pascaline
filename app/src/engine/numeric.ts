@@ -263,7 +263,8 @@ export function whyOf(facts: readonly ElementFacts[], expr: string | null): Prec
   // Every name audited but the facts unaudited: a non-real value of a function COMPLEX_DEFINITIONS replaces, not read
   // through ours (DEG, or a stored name: complexReads).
   const complex = [...new Set(facts.flatMap((f) => f.complexFns ?? []))];
-  const unaudited = off.length || expr === null || !facts.some((f) => f.warn === "unaudited") ? off : complex.length ? complex : complexReplacedIn(expr);
+  const unaudited =
+    off.length || !facts.some((f) => f.warn === "unaudited") ? off : complex.length ? complex : expr === null ? [] : complexReplacedIn(expr);
   const once = facts.some((f) => f.warn === "unchecked" && !(isZero(f.value.re) && isZero(f.value.im))) || (expr === null && facts.some((f) => f.warn));
   if (!unaudited.length && !once) return undefined;
   return { ...(unaudited.length ? { unaudited } : {}), ...(once ? { once: true } : {}) };
@@ -310,8 +311,9 @@ export function complexReads(giac: Giac, expr: string, copy = true): { text: str
   const visited = new Set<string>();
   const deeper = (v: string): string[] => {
     const out: string[] = [];
+    const bound = boundIn(v);
     for (const n of [...functionsIn(v), ...namesIn(v)]) {
-      if (visited.has(n)) continue;
+      if (visited.has(n) || bound.has(n)) continue;
       visited.add(n);
       const w = stored(n);
       if (w !== null) out.push(...complexReplacedIn(w), ...deeper(w));
@@ -336,6 +338,20 @@ export function complexReads(giac: Giac, expr: string, copy = true): { text: str
     text = text.replace(at, (m, hit?: string) => (hit === undefined ? m : slot));
   }
   return { text, copies, hidden: [...new Set(hidden)] };
+}
+
+/** The names a stored program binds (`(x,y)->{local a,b:=1; …}` → x, y, a, b): its parameters and `local` names, which
+ *  its body reads in place of a stored name of the same name. Empty for a text that is not a program. */
+function boundIn(v: string): Set<string> {
+  const head = /^\s*(?:\(([^()]*)\)|([A-Za-z_][A-Za-z0-9_]*))\s*->/.exec(v);
+  if (!head) return new Set();
+  const out = new Set((head[1] ?? head[2]!).split(",").map((p) => p.trim()).filter((p) => p !== ""));
+  for (const m of v.matchAll(/\blocal\s+([^;]*);/g))
+    for (const part of topLevelArgs(m[1]!)) {
+      const n = /^\s*([A-Za-z_][A-Za-z0-9_]*)/.exec(part);
+      if (n) out.add(n[1]!);
+    }
+  return out;
 }
 
 /** Purges the slots complexReads made. */
@@ -660,6 +676,7 @@ export function floatFacts(
   shape: Shape,
   digits: number,
   restoreDigits: number,
+  typed?: string,
 ): ElementFacts[] | null {
   // SB4: an element that is an exact rational in the stored result keeps its own facts (= or ≈), not the mark of the
   // weakest element. Read before the checks below, which store their values in `name`.
@@ -671,6 +688,12 @@ export function floatFacts(
     facts = floatFactsOf(giac, name, expr, reads, shape, digits, restoreDigits);
   } finally {
     if (reads) purgeReads(giac, reads.copies);
+  }
+  // G50f1: an input that runs once (`typed`, expr null) keeps Giac's value, computed without our definitions: a
+  // non-real one that rests on a replaced function (typed, or held by a name it reads) is not audited.
+  if (facts && expr === null && typed !== undefined) {
+    const complexFns = [...new Set([...complexReplacedIn(typed), ...complexReads(giac, typed, false).hidden])];
+    if (complexFns.length && nonReal(giac, name)) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const, complexFns }));
   }
   return facts && exact && exact.length === facts.length ? facts.map((f, k) => exact[k] ?? f) : facts;
 }
