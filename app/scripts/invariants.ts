@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G43: the pure half of the golden gate's `invariants` stage (scripts/golden.ts). Kept apart so a test can feed it a
 // wrong DEG answer. No expected values: each check compares one answer with another from a different setting.
+import type { CopySource } from "../src/clipboard/text.ts";
+import { formatComplex, markOf, type MarkInfo } from "../src/engine/format.ts";
+import type { HomeResult } from "../src/engine/homeEval.ts";
 import { hasAngleFactor } from "../src/input/angles.ts";
+import type { Rational } from "../src/state/displayMode.ts";
 
 /** One failed invariant: the case, the check ("a" RAD/DEG, "b" 12/30 digits, "c" copy and paste, "d" store), what differed. */
 export interface InvariantFailure {
@@ -56,4 +60,78 @@ export function invariantsStage(failures: readonly InvariantFailure[], known: re
       lines.push(`NOW PASSING ${k.id} [${k.check}]: remove it from tests/golden/invariants-known.yaml (${k.package})`);
     }
   return { ok: fresh === 0 && fixed === 0, lines, summary: `${still} known failures, ${fresh} new, ${fixed} now passing` };
+}
+
+const markText = (m: MarkInfo | null): string | undefined => (m ? `${m.mark}${m.n ?? ""}` : undefined);
+const markAt = (r: HomeResult, digits: number): string | undefined => markText(markOf(r, { format: "STD", digits }));
+
+/** (a) An angle-free input shows the same text and mark in RAD and DEG. */
+export function checkAngle(id: string, rad: HomeResult, deg: HomeResult): InvariantFailure | null {
+  const mr = markAt(rad, 12);
+  const md = markAt(deg, 12);
+  return rad.display !== deg.display || mr !== md ? { id, check: "a", detail: `RAD ${mr ?? "-"} ${rad.display}, DEG ${md ?? "-"} ${deg.display}` } : null;
+}
+
+/** (b) A result confirmed at 12 and at 30 digits rounds to the same 12-digit text. Null when either is not confirmed to 12 digits (not comparable). */
+export function checkDigits(id: string, r12: HomeResult, r30: HomeResult): { checked: boolean; failure: InvariantFailure | null } {
+  if (!r12.ok || !r12.value || !r30.ok || !r30.value) return { checked: false, failure: null };
+  const m12 = markOf(r12, { format: "STD", digits: 12 });
+  const m30 = markOf(r30, { format: "STD", digits: 30 });
+  const n12 = m12?.mark === "⚠" ? (m12.n ?? 12) : 12;
+  const n30 = m30?.mark === "⚠" ? (m30.n ?? 30) : 30;
+  if (n12 < 12 || n30 < 12) return { checked: false, failure: null };
+  const text = formatComplex(r30.value, { format: "STD", digits: 12 }).text;
+  return { checked: true, failure: text !== r12.display ? { id, check: "b", detail: `12 digits ${r12.display}, 30 digits rounded to 12: ${text}` } : null };
+}
+
+const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
+function rationalOf(text: string | undefined): Rational | undefined {
+  const m = text === undefined ? null : RATIONAL.exec(text.trim());
+  if (!m || m[1] === undefined || (m[2] !== undefined && BigInt(m[2]) === 0n)) return undefined;
+  return { n: m[1], d: m[2] ?? "1" };
+}
+const isDigitsText = (t: string): boolean => /\.|\d[eE][+-]?\d/.test(t);
+const FULL_LIMIT = 2048;
+
+/**
+ * The CopySource the app copies from for a Home result (session.svelte.ts `finish`, home branch): `full` from the exact
+ * text first, `fullExact` by the session's rule, `rational` from the exact text, and the facts spread in as the history
+ * item carries them. session.copysource.test.ts pins it against a real Session item.
+ */
+export function copySourceOf(r: HomeResult, inexactInput = false): CopySource {
+  const src: CopySource = { latex: "", status: r.ok ? "done" : "error", text: r.display };
+  if (r.value) src.value = r.value;
+  const q = r.value ? rationalOf(r.exact) : undefined;
+  if (q) src.rational = q;
+  if (r.ok) {
+    src.exactRational = r.exactRational;
+    src.reliableDigits = r.reliableDigits;
+    if (r.warn) src.warn = r.warn;
+    const inexact = r.approximate || inexactInput;
+    const exactText = !inexact && r.exact !== undefined && r.exact.length <= FULL_LIMIT ? r.exact : undefined;
+    const full = exactText ?? (r.full || (inexact ? undefined : r.exact));
+    if (full && full.length <= FULL_LIMIT) {
+      src.full = full;
+      const cut = r.exact !== undefined || r.value?.re.sticky === true || r.value?.im.sticky === true;
+      src.fullExact = !inexact && (full === exactText || (!cut && (r.exactRational || !isDigitsText(full))));
+    }
+  }
+  return src;
+}
+
+/** (c) A number's copy text read back by the paste reader gives the same text; the mark may get stronger (a typed number is exact), never weaker. */
+export function checkCopy(id: string, shown: HomeResult, copy: string, back: HomeResult): InvariantFailure | null {
+  const m0 = markAt(shown, 12);
+  const m1 = markAt(back, 12);
+  const weaker = (m0?.startsWith("=") && !m1?.startsWith("=")) || (m0?.startsWith("≈") && m1?.startsWith("⚠"));
+  return back.display !== shown.display || weaker ? { id, check: "c", detail: `shown ${m0 ?? "-"} ${shown.display}, copy ${copy} read back ${m1 ?? "-"} ${back.display}` } : null;
+}
+
+/** (d) `X:=input` in one mode, then `X` in the other, shows what the store line showed. */
+export function checkStore(id: string, from: "rad" | "deg", to: "rad" | "deg", stored: HomeResult, read: HomeResult): InvariantFailure | null {
+  const ms = markAt(stored, 12);
+  const mr = markAt(read, 12);
+  return read.display !== stored.display || ms !== mr
+    ? { id, check: "d", detail: `stored in ${from.toUpperCase()} showed ${ms ?? "-"} ${stored.display}, read in ${to.toUpperCase()} ${mr ?? "-"} ${read.display}` }
+    : null;
 }

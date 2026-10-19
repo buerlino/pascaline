@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from "vitest";
-import { invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
+import { EngineHost } from "../src/engine/host.ts";
+import { defaultHomeSettings, pasdegCommand } from "../src/engine/homeEval.ts";
+import { giacAvailable, loadNodeGiac } from "../src/engine/nodeGiac.ts";
+import { checkAngle, invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
 
 const fail = (id: string, check = "a"): InvariantFailure => ({ id, check, detail: "RAD 1, DEG 2" });
 
@@ -37,5 +40,27 @@ describe("invariantsOf: angle-free inputs", () => {
   });
   it("counts a before entry", () => {
     expect(invariantsOf("X", ["X:=sin(1)"]).angleFree).toBe(false);
+  });
+});
+
+describe.skipIf(!giacAvailable())("check (a) compares RAD with DEG (real Giac)", () => {
+  const run = async (input: string, angle: "rad" | "deg") => {
+    const g = (await loadNodeGiac()).giac;
+    g.eval(pasdegCommand("rad"));
+    return new EngineHost(g).home(input, { ...defaultHomeSettings, angle }).result;
+  };
+  it("a wrong DEG answer for (-8)^0.2 is a NEW failure and fails the stage", async () => {
+    const rad = await run("(-8)^0.2", "rad");
+    const wrongDeg = await run("1.5156254288+0.0166213589593*i", "deg"); // what DEG gave before G46 (D12)
+    expect(rad.display).toBe("1.22624046096+0.89091584445*i");
+    const f = checkAngle("home:x", rad, wrongDeg);
+    expect(f).not.toBeNull();
+    expect(f!.detail).toContain("1.5156254288+0.0166213589593*i");
+    const r = invariantsStage(f ? [f] : [], []);
+    expect(r.ok).toBe(false);
+    expect(r.lines[0]).toContain("NEW home:x");
+  });
+  it("the same answer in both modes is no failure", async () => {
+    expect(checkAngle("home:x", await run("(-8)^0.2", "rad"), await run("(-8)^0.2", "deg"))).toBeNull();
   });
 });

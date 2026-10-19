@@ -69,8 +69,8 @@ import { isUnitError, type Quantity, type UnitError } from "../src/units/types.t
 import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
 import { callsStage, type CallsBaseline } from "./calls-budget.ts";
-import { invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
-import { copyFull, type CopySource } from "../src/clipboard/text.ts";
+import { checkAngle, checkCopy, checkDigits, checkStore, copySourceOf, invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
+import { copyFull } from "../src/clipboard/text.ts";
 import { parsePastedNumber } from "../src/clipboard/paste.ts";
 
 type Expect = string | Expect[];
@@ -607,7 +607,10 @@ async function stageInvariants(): Promise<void> {
   const inputs: { id: string; giac: string; before: string[]; cas: boolean }[] = [];
   for (const file of ["home.yaml", "precision.yaml"]) {
     for (const c of cases(file)) {
-      if (c.settings || c.steps || c.beforeHome?.length || c.beforeCas?.length || c.status === "pending" || c.kind === "cas") continue;
+      // A case whose only setting is `angle` joins when its input holds no angle function (G46: cosh(90*i), (-8)^0.2 exist
+      // only in DEG cases); it runs in both modes, the setting dropped.
+      const angleOnly = c.settings !== undefined && Object.keys(c.settings).every((k) => k === "angle");
+      if ((c.settings && !angleOnly) || c.steps || c.beforeHome?.length || c.beforeCas?.length || c.status === "pending" || c.kind === "cas") continue;
       const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
       let giac: string;
       try {
@@ -616,6 +619,7 @@ async function stageInvariants(): Promise<void> {
         continue;
       }
       const before = (c.before ?? []).map(giacOf);
+      if (angleOnly && !invariantsOf(giac, before).angleFree) continue;
       const key = `${before.join(";")}|${giac}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -641,50 +645,24 @@ async function stageInvariants(): Promise<void> {
     if (o.angleFree) {
       const deg = await at(await host(), i, "deg", 12);
       checked.a++;
-      const mr = markText(markOf(rad, { format: "STD", digits: 12 }));
-      const md = markText(markOf(deg, { format: "STD", digits: 12 }));
-      if (rad.display !== deg.display || mr !== md) failures.push({ id: i.id, check: "a", detail: `RAD ${mr ?? "-"} ${rad.display}, DEG ${md ?? "-"} ${deg.display}` });
+      const f = checkAngle(i.id, rad, deg);
+      if (f) failures.push(f);
     }
     if (rad.ok && rad.value) {
-      const r30 = await at(await host(), i, "rad", 30);
-      const m12 = markOf(rad, { format: "STD", digits: 12 });
-      const m30 = r30.ok && r30.value ? markOf(r30, { format: "STD", digits: 30 }) : null;
-      const n12 = m12?.mark === "⚠" ? (m12.n ?? 12) : 12;
-      const n30 = m30?.mark === "⚠" ? (m30.n ?? 30) : 30;
-      if (m30 && n12 >= 12 && n30 >= 12) {
-        checked.b++;
-        const text = formatComplex(r30.value!, { format: "STD", digits: 12 }).text;
-        if (text !== rad.display) failures.push({ id: i.id, check: "b", detail: `12 digits ${rad.display}, 30 digits rounded to 12: ${text}` });
-      }
-      // (c): the copy text, read back by the paste reader
-      const src: CopySource = {
-        latex: "",
-        status: "done",
-        text: rad.display,
-        value: rad.value,
-        ...(rad.full ? { full: rad.full } : {}),
-        fullExact: rad.exact !== undefined && rad.full === rad.exact,
-        reliableDigits: rad.reliableDigits,
-        ...(rad.warn ? { warn: rad.warn } : {}),
-        exactRational: rad.exactRational,
-      };
-      const copy = copyFull(src);
+      const b = checkDigits(i.id, rad, await at(await host(), i, "rad", 30));
+      if (b.checked) checked.b++;
+      if (b.failure) failures.push(b.failure);
+      // (c): the copy text the app makes (invariants.ts copySourceOf), read back by the paste reader
+      const copy = copyFull(copySourceOf(rad));
       const pasted = copy === undefined ? null : parsePastedNumber(copy);
       if (copy !== undefined && pasted) {
         checked.c++;
-        let back: HomeResult | undefined;
         try {
-          back = (await host()).home(latexToGiac(pasted.latex, { realOddRoots: true }), { ...defaultHomeSettings, digits: 12 }).result;
+          const back = (await host()).home(latexToGiac(pasted.latex, { realOddRoots: true }), { ...defaultHomeSettings, digits: 12 }).result;
+          const f = checkCopy(i.id, rad, copy, back);
+          if (f) failures.push(f);
         } catch (e) {
           failures.push({ id: i.id, check: "c", detail: `copy ${copy} pasted as ${pasted.latex}: ${e instanceof Error ? e.message : String(e)}` });
-        }
-        if (back) {
-          const m0 = markText(markOf(rad, { format: "STD", digits: 12 }));
-          const m1 = markText(markOf(back, { format: "STD", digits: 12 }));
-          // A pasted number is a typed one, so it is exact when its digits are: the value must come back, and a mark may
-          // only get stronger (⚠ or ≈ read back as =), never weaker (an exact value read back as ≈ or ⚠).
-          const weaker = (m0?.startsWith("=") && !m1?.startsWith("=")) || (m0?.startsWith("≈") && m1?.startsWith("⚠"));
-          if (back.display !== rad.display || weaker) failures.push({ id: i.id, check: "c", detail: `shown ${m0 ?? "-"} ${rad.display}, copy ${copy} read back ${m1 ?? "-"} ${back.display}` });
         }
       }
     }
@@ -696,9 +674,8 @@ async function stageInvariants(): Promise<void> {
         if (!st.ok || !st.value) continue;
         const rd = h.home(INV_NAME, { ...defaultHomeSettings, angle: to }).result;
         checked.d++;
-        const ms = markText(markOf(st, { format: "STD", digits: 12 }));
-        const mr = markText(markOf(rd, { format: "STD", digits: 12 }));
-        if (rd.display !== st.display || ms !== mr) failures.push({ id: i.id, check: "d", detail: `stored in ${from.toUpperCase()} showed ${ms ?? "-"} ${st.display}, read in ${to.toUpperCase()} ${mr ?? "-"} ${rd.display}` });
+        const f = checkStore(i.id, from, to, st, rd);
+        if (f) failures.push(f);
       }
     }
   }
