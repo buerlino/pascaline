@@ -312,6 +312,7 @@ describe("formatConfirmed: only confirmed digits are shown", () => {
     const o: FormatOptions = { format: "FIX", digits: 12, fixed: 4 };
     const c = (re: string, im: string, n: number) => formatConfirmed({ value: { re: v(re), im: v(im) }, exactRational: false, reliableDigits: n }, o);
     expect(c("0.0123", "0.000123", 1)).toBe("0.01+1E-4*i");
+    expect(c("1234.56789", "4.71234e-6", 7)).toBe("1234.568+4.7123E-6*i");
     expect(c("1.23456", "0.00123", 3)).toBe("1.23+1.23E-3*i");
     const m = (re: string, im: string, n: number) => markOf({ value: { re: v(re), im: v(im) }, exactRational: false, reliableDigits: n }, o);
     expect(m("0.0123", "0.000123", 1)).toEqual({ mark: "⚠", n: 1 });

@@ -360,7 +360,7 @@ export interface MarkInfo {
 /** Significant digits that `o` shows for v (FIX: the digits up to the last decimal place, at least 1). */
 function digitsShown(v: DecimalValue, o: FormatOptions): number {
   if (o.format !== "FIX") return o.digits;
-  if (fixFallsBack(v, o)) return (o.fixed ?? 4) + 1;
+  if (fixFallsBack(v, o)) return o.sciDigits ?? (o.fixed ?? 4) + 1;
   return Math.max(1, v.exp + 1 + (o.fixed ?? 4));
 }
 
@@ -373,7 +373,7 @@ function fixFallsBack(v: DecimalValue, o: FormatOptions): boolean {
 function shownExactly(v: DecimalValue, o: FormatOptions): boolean {
   if (isZero(v)) return true;
   if (v.sticky) return false;
-  if (fixFallsBack(v, o)) return v.digits.length <= (o.fixed ?? 4) + 1;
+  if (fixFallsBack(v, o)) return v.digits.length <= (o.sciDigits ?? (o.fixed ?? 4) + 1);
   if (o.format === "FIX") return v.digits.length - (v.exp + 1) <= (o.fixed ?? 4);
   return v.digits.length <= o.digits;
 }
@@ -401,7 +401,7 @@ export function confirmedOptions(value: ComplexValue, reliableDigits: number | n
     }
     fixed = next;
   }
-  return fixed >= 0 ? { ...o, fixed, sciDigits: n } : { ...o, format: "SCI", digits: n };
+  return fixed >= 0 ? { ...o, fixed, sciDigits: Math.min(n, (o.fixed ?? 4) + 1) } : { ...o, format: "SCI", digits: n };
 }
 
 const RANK: Record<Mark, number> = { "⚠": 0, "≈": 1, "=": 2 };
