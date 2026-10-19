@@ -32,6 +32,7 @@ describe("R64: every angle the user types carries pasdeg", () => {
     ["\\left(x+1\\right)^{\\circ}", "(x+1)*pi/180/pasdeg"],
     ["2\\measuredangle30", "2*(cos(pasdeg*30)+i*sin(pasdeg*30))"],
     ["\\operatorname{rotation}\\left(0,a,p\\right)", "rotation(0,pasdeg*a,p)"],
+    ["\\operatorname{polar\\_point}\\left(2,30\\right)", "polar_point(2,pasdeg*30)"],
     ["\\operatorname{rectangular\\_coordinates}\\left(r,t\\right)", "rectangular_coordinates(r,pasdeg*t)"],
     // R64f1: the one-list form takes its angle element times pasdeg; a list it cannot see into (a name, a matrix)
     // is converted where it is evaluated, one point or a list of points
@@ -79,6 +80,7 @@ describe("rewriteAngles: the same rule on Giac text (library import, G46's migra
     ["cos(acos(x))", "cos(pasdeg*((acos(x)/pasdeg)))"],
     ["atan2(y,x)+arg(z)", "(atan2(y,x)/pasdeg)+(arg(z)/pasdeg)"],
     ["rotation(c,a,p)", "rotation(c,pasdeg*(a),p)"],
+    ["polar_point(2,30)", "polar_point(2,pasdeg*(30))"],
     ["rectangular_coordinates([2,30])", "rectangular_coordinates([2,pasdeg*(30)])"],
     ["rectangular_coordinates([2.5,-1e2*pi/3])", "rectangular_coordinates([2.5,pasdeg*(-1e2*pi/3)])"],
     ["rectangular_coordinates([r,t])", "rectangular_coordinates(R([r,t]))"],

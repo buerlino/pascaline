@@ -111,6 +111,8 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
           expect(giac(`simplify(${rewriteAngles("rectangular_coordinates([A,B])")})`)).toBe("[[sqrt(3),1],[0,1]]");
           expect(giac(`simplify(${rewriteAngles(`rectangular_coordinates([[2,${deg ? "30" : "pi/6"}],[1,0]])`)})`)).toBe("[[sqrt(3),1],[1,0]]");
           expect(giac(`simplify(${rewriteAngles("polar_coordinates([1+i,i])")})`)).toBe(deg ? "[[sqrt(2),45],[1,90]]" : "[[sqrt(2),pi/4],[1,pi/2]]");
+          // R64f2: polar_point(r,t) reads t as an angle (derived: 2 at 30° = π/6 is √3 + i)
+          expect(v(`\\operatorname{affix}\\left(\\operatorname{polar\\_point}\\left(2,${deg ? "30" : "\\frac{\\pi}{6}"}\\right)\\right)`)).toBe("sqrt(3)+i");
           expect(v("\\operatorname{instfreq}\\left(\\left\\{1,i,-1,-i\\right\\}\\right)")).toBe(deg ? "[90,90,90]" : "[pi/2,pi/2,pi/2]");
         } finally {
           giac("purge(A,B)");
