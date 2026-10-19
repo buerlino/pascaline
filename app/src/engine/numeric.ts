@@ -59,6 +59,46 @@ export function hasFloat(text: string): boolean {
   return FLOAT_LITERAL.test(text);
 }
 
+/**
+ * G38: `text` (Giac's print of a value computed at P digits) with every float printed as Giac prints it at the display
+ * digits `n` (the host's Digits must be `n`): each literal is rounded to n significant digits here and read back by
+ * Giac, which prints it in its own style (`3.33333333333e+19`, `0.5`). The input is not run again, so no decision
+ * made at P is redone at n (`piecewise(sin(10^50)>0,x,evalf(1/2)*x)` stays 0.5*x).
+ */
+export function floatsAtDigits(giac: Giac, text: string, n: number): string {
+  return text.replace(new RegExp(FLOAT_LITERAL.source, "g"), (lit) => {
+    const m = /^(\d*)\.?(\d*)(?:e([+-]?\d+))?$/.exec(lit);
+    if (!m) return lit;
+    const all = m[1]! + m[2]!;
+    const lead = all.search(/[1-9]/);
+    if (lead < 0) return "0.0";
+    let digits = all.slice(lead);
+    let exp = m[1]!.length - lead + Number(m[3] ?? 0); // value = 0.<digits> × 10^exp
+    if (digits.length <= n) return lit;
+    let kept = BigInt(digits.slice(0, n)) + (digits.charAt(n) >= "5" ? 1n : 0n);
+    if (kept.toString().length > n) {
+      kept /= 10n;
+      exp += 1;
+    }
+    digits = kept.toString();
+    const out = giac.eval(`0.${digits}e${exp}`);
+    return isError(out) ? lit : out.trim();
+  });
+}
+
+/** G38: Giac's text `text` of a non-number computed at P, read back into `slot` with its floats at the display digits
+ *  `n` (floatsAtDigits; the host's Digits must be `n`), so Giac orders and prints it as at n (`x^2-2.0`, where the P
+ *  floats print `-2.000…+x^2`; regroup sorts the terms). Null when it does not read back. */
+export function floatsShown(giac: Giac, text: string, n: number, slot: string): string | null {
+  const t = giac.eval(`${slot}:=(${floatsAtDigits(giac, text, n)})`);
+  if (isError(t)) return null;
+  // Reading back keeps the P order of the terms; regroup sorts them as Giac does for doubles.
+  const r = giac.eval(`regroup(${slot})`);
+  if (isError(r) || r === "undef") return t;
+  giac.eval(`${slot}:=regroup(${slot})`);
+  return r;
+}
+
 // --- evalf(e,n), approx(e,n): the precision an input asks for (decisions M4-6) ---------------------------------------
 
 /** Index of the bracket that closes the one at `open` (`(`, `[` or `{`), skipping strings; -1 when there is none. */
@@ -677,12 +717,20 @@ export function rationalOnly(expr: string): boolean {
   return true;
 }
 
+/** A predicate for "`name` is not a Giac built-in" (a stored function, or a name Giac does not know): Giac prints a
+ *  built-in quoted (`sin` → `'sin'`) and a stored function as its definition (`f` → `(x)->floor(x*10^12)`). */
+export function notBuiltin(giac: Giac): (name: string) => boolean {
+  return (name) => giac.eval(name).trim() !== `'${name}'`;
+}
+
 /** The result of `input` (printed as `result`) may rest on a decision Giac made at `Digits`: the input calls a
- *  decision function or holds a comparison, or the result holds `abs(` (sqrt of an even power comes back as one).
- *  An input of rationals only (rationalOnly) decides exactly. */
-export function restsOnDecision(input: string, result: string): boolean {
+ *  decision function, or a name that is not a Giac built-in (`stored`: a stored function's body may decide,
+ *  `f(x):=floor(x*10^12)` then `f(sin(10^60))`), or holds a comparison, or the result holds `abs(` (sqrt of an even
+ *  power comes back as one). An input of rationals only (rationalOnly) decides exactly. */
+export function restsOnDecision(input: string, result: string, stored: (name: string) => boolean = () => false): boolean {
   if (rationalOnly(input)) return false;
-  return functionsIn(input).some((f) => DECISION_FUNCTIONS.has(f)) || hasComparison(input) || result.includes("abs(");
+  const calls = functionsIn(input);
+  return calls.some((f) => DECISION_FUNCTIONS.has(f)) || hasComparison(input) || result.includes("abs(") || calls.some(stored);
 }
 
 /** A quantity whose sign (`zero`), distance to the nearest integer (`int`) or to the nearest half-integer (`half`)

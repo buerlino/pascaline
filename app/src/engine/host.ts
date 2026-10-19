@@ -31,7 +31,7 @@ import {
 import { eseriesDefinition } from "./eseries.ts";
 import { giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, notBuiltin, floatsShown, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -552,7 +552,7 @@ export class EngineHost {
     // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), as in Home; an exact
     // == or ≠ test too, only one with a float side is decideFloatTest's.
     let undecided = false;
-    if (!stateful && !inexactTest && !hasFloat(text) && restsOnDecision(exactInput, text)) {
+    if (!stateful && !inexactTest && !hasFloat(text) && restsOnDecision(exactInput, text, notBuiltin(this.giac))) {
       const d = decideTwice(this.giac, exactInput, text, digitsSet, digitsSet);
       if ("undecided" in d) undecided = true;
       if (!("undecided" in d) && d.from !== undefined) {
@@ -592,10 +592,13 @@ export class EngineHost {
         };
       }
     }
-    // A float in a non-number prints with the precision it was computed at: computed again at the setting for the text.
-    if (hasFloat(text) && !stateful && !test) text = this.giac.eval(`pcasans:=(${exactInput})`);
+    // G38: a float in a non-number prints with the precision it was computed at (P). pcasans keeps the P result; the
+    // text prints its floats at the setting (floatsShown), never by running the input again (that redid decisions).
+    const atN = hasFloat(text) && !stateful && !test ? floatsShown(this.giac, text, digitsSet, "pasfl") : null;
+    const slot = atN === null ? "pcasans" : "pasfl";
+    if (atN !== null) text = atN;
     // This build leaves x*x unevaluated (no top-level "regroup" autosimplify), and latex() then draws x·x as "xx".
-    if (text.includes("*")) text = regrouped(this.giac, "pcasans", text);
+    if (text.includes("*")) text = regrouped(this.giac, slot, text);
     // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate.
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4),
     // as the definitions log records it.
@@ -605,7 +608,8 @@ export class EngineHost {
     const symWhy = symbolicWhy(warn, testSides(exactInput));
     // G38: "decided at limited precision"; the value was computed, not compared, so `once` is not said.
     const why = pair ? { differ: true } : undecided ? { ...(symWhy && !symWhy.once ? symWhy : {}), decided: true } : symWhy;
-    const tex = this.giac.eval("latex(pcasans)");
+    const tex = this.giac.eval(`latex(${slot})`);
+    if (atN !== null) this.giac.eval("purge(pasfl)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
       result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(warn ? { warn } : {}), ...(why ? { why } : {}) },

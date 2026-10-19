@@ -30,6 +30,8 @@ import {
   rationalValue,
   decideTwice,
   restsOnDecision,
+  notBuiltin,
+  floatsShown,
   shapeOf,
   valuePrecision,
   whyOf,
@@ -546,7 +548,7 @@ export function homeEval(
   // an input that cannot run twice, a test with a float side (decideFloatTest decided it, and its verdict is gone), or a
   // float result, whose value check runs it at two precisions anyway. An exact == or ≠ test is a decision too.
   let undecided = false;
-  if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, exactOut)) {
+  if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, exactOut, notBuiltin(giac))) {
     const d = decideTwice(giac, exactBody, exactOut, s.digits, s.digits);
     if ("undecided" in d) undecided = true;
     if (!("undecided" in d) && d.from !== undefined) {
@@ -629,15 +631,19 @@ export function homeEval(
   const symbolic = (): HomeResult => {
     // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
-    // G38: a float in a non-number prints with the precision it was computed at, so it is computed again at the
-    // display digits for the text shown (an input that cannot run twice keeps the P digits).
-    if (hasFloat(exactOut) && !once && !test) exactOut = giac.eval(`${ans}:=(${exactBody})`);
-    const shown = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
+    // G38: a float in a non-number prints with the precision it was computed at (P). Ans keeps the P result; the text
+    // shown prints its floats at the display digits (floatsAtDigits), never by running the input again, which would
+    // redo its decisions at the display digits (an input that cannot run twice keeps the P digits).
+    const atN = hasFloat(exactOut) && !once && !test ? floatsShown(giac, exactOut, s.digits, "pasfl") : null;
+    const slot = atN === null ? ans : "pasfl";
+    const base = atN ?? exactOut;
+    const shown = base.includes("*") ? regrouped(giac, slot, base) : base;
     // An open test shows its decimals as typed, not as the exact rationals the engine read (G14).
     const text = /==|<>/.test(shown) ? restoreLiterals(shown, body) : shown;
     store();
     // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
-    const tex = giac.eval(`latex(${ans})`);
+    const tex = giac.eval(`latex(${slot})`);
+    if (atN !== null) giac.eval("purge(pasfl)");
     const latex = isError(tex) ? {} : { latex: unquote(tex) };
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
     const unchecked = hasFloat(text);

@@ -164,6 +164,8 @@ describe("G38: which inputs get a second decision (pure)", () => {
     expect(restsOnDecision("sqrt(x^2)", "abs(x)")).toBe(true);
     expect(restsOnDecision("sin(1)", "sin(1)")).toBe(false);
     expect(restsOnDecision("f:=x->x+1", "")).toBe(false); // the arrow is no comparison
+    expect(restsOnDecision("f(sin(10^60))", "933879932404", (n) => n === "f")).toBe(true); // a stored function
+    expect(restsOnDecision("sin(1)", "sin(1)", (n) => n === "f")).toBe(false);
     expect(rationalOnly("sum(1/k,k,1,1000)")).toBe(true);
     expect(rationalOnly("sum(1/k^2,k,1,inf)")).toBe(false);
     expect(rationalOnly("floor(2^(1/2))")).toBe(false);
@@ -216,6 +218,30 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     const input = "((a_,b_)->((d_)->{if(string(exact(d_))!=string(d_)){sto(1,pasinexact);sto(d_,pasdiff)};when(string(exact(d_))!=string(d_),when(pasverdict==0,true,when(pasverdict==1,false,'a_==b_')),when(simplify(d_)==0*d_,true,when(lname(d_)==[] and (type(d_)==integer or type(d_)==rational or max(abs(evalf(d_,30)))>10^-20*max(max(abs(evalf(a_,30))),max(abs(evalf(b_,30))))),false,'a_==b_')))})(a_-b_))(floor(sin(10^60)*10^12),830389765219)";
     expect(host.home(input, defaultHomeSettings).result.display).toBe("true");
     expect(host.cas(input, defaultCasSettings).result.text).toBe("true");
+  });
+
+  it("a stored function's body decides too: f(x):=floor(x*10^12) then f(sin(10^60)) is 830389765219 (source: oracle, mpmath at 200 digits)", () => {
+    for (const run of [(i: string) => host.home(i, defaultHomeSettings).result.display, (i: string) => host.cas(i, defaultCasSettings).result.text]) {
+      run("f(x):=floor(x*10^12)");
+      expect(run("f(sin(10^60))")).toBe("830389765219"); // was 933879932404 at P = 40
+      host.home("purge(f)", defaultHomeSettings);
+    }
+  });
+
+  it("a float in a non-number keeps the P decision: piecewise(sin(10^50)>0,x,evalf(1/2)*x) is 0.5*x (source: oracle, sin(10^50) = -0.789672493429)", () => {
+    const r = host.home("piecewise(sin(10^50)>0,x,evalf(1/2)*x)", defaultHomeSettings).result;
+    expect(r.display).toBe("0.5*x");
+    expect(host.cas("piecewise(sin(10^50)>0,x,evalf(1/2)*x)", defaultCasSettings).result.text).toBe("0.5*x");
+  });
+
+  it("floatsAtDigits rounds each float of a P text to the display digits, as Giac prints them (source: derived)", async () => {
+    const { floatsAtDigits, notBuiltin } = await import("./numeric.ts");
+    const { giac } = await loadNodeGiac();
+    const third = "0.3333333333333333333333333333333333333333";
+    expect(floatsAtDigits(giac, `${third}*x+${third}e20*y-0.9999999999999999999999999999999999999999*z+2`, 12)).toBe(
+      "0.333333333333*x+3.33333333333e+19*y-1.0*z+2",
+    );
+    expect(notBuiltin(giac)("sin")).toBe(false);
   });
 
   it("the Digits setting is back at the display digits after an input: a float in a non-number prints with them", () => {
