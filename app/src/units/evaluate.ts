@@ -7,7 +7,7 @@
 import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type HomeSettings } from "../engine/homeEval.ts";
 import { exactFacts, floatFacts, hasFloat, rationalValue, splitList, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
 import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siUnit } from "./dims.ts";
-import { isUnitError, type Quantity, type Uncertainty, type UnitError, type UnitJob, type UnitNote } from "./types.ts";
+import { isUnitError, type Quantity, type Uncertainty, type UncVar, type UnitError, type UnitJob, type UnitNote } from "./types.ts";
 import { shownWithUncertainty, uncertaintyText } from "./uncertainty.ts";
 
 const S = `[${BASES.map((b) => b.symbol).join(",")}]`;
@@ -33,7 +33,15 @@ const INVERSES = ["atan2", "asin", "acos", "atan", "asec", "acsc", "acot"] as co
  *   algebraic number 10^(3/20)): the ratio of a level given in dB, bel or dBm;
  * - pasul(e): the exact value of a level (a logarithm), the shorter of normal() and simplify() ("-30", not
  *   "-10*ln(1000)/ln(10)"; "20*ln(2)/ln(10)", not simplify's longer form);
- * - pasun(f,g): the number of f in the unit g (the agreement check runs it again at higher precision).
+ * - pasun(f,g): the number of f in the unit g (the agreement check runs it again at higher precision);
+ * - pasuo(a,b) (G41): σ from its first-order part a and second-order part b (both in the result's dimension squared):
+ *   [pasuq's answer for σ, the share |b|/(a+b)]; σ² = a + b when that is above 0, else a with the share 2 (first order
+ *   fails). pasuq reads σ² and σ is its square root (pasuq on a square root of sums of sin and cos costs 10 ms);
+ * - pasusg(e,t,a,s) (G41): 1 when a real point where e (f's derivative in t) is not defined lies within a ± 2s, else 0;
+ * - pasuu(g,v,x,u,w) (G41): g's σ for the inputs v at the values x with the standard uncertainties u (lists; w the
+ *   equations v=x): pasuo's
+ *   [σ, share] and 1 when an input's x ± 2u reaches a singular point of ∂g/∂v (the other inputs at their values, the
+ *   dimension symbols 1), else 0. Each derivative is taken once.
  */
 export const UNIT_DEFINITIONS: readonly string[] = [
   ...BASES.map((b) => `assume(${b.symbol}>0)`),
@@ -55,7 +63,20 @@ export const UNIT_DEFINITIONS: readonly string[] = [
   `pasup(m):={if (denom(normal(m))==1) return 10^m; return exp(m*ln(10)); }`,
   `pasul(e):={local r,s; r:=normal(e); s:=simplify(r); if (length(string(s))<length(string(r))) return s; return r; }`,
   `pasun(f,g):={local a,b; a:=pasuq(normal(f)); b:=pasuq(normal(g)); return normal(a[2]/b[2]); }`,
+  `pasuo(a,b):={local x,y,t,r,q; if (a==0 and b==0) return [[4],0]; x:=evalf(subst(a,${S},${ONES})); y:=evalf(subst(b,${S},${ONES})); ` +
+    `if (x+y>0) { t:=a+b; r:=abs(y)/(x+y); } else { t:=a; r:=2; } q:=pasuq(normal(t)); ` +
+    `if (q[0]==0) return [[0,q[1]/2,sqrt(q[2])],r]; return [q,r]; }`,
+  `pasusg(e,t,a,s):={local L,j,p; L:=singular(e,t); if (type(L)!=DOM_LIST) return 0; ` +
+    `for (j:=0;j<size(L);j++) { p:=evalf(L[j]); if (im(p)==0 and abs(p-a)<=2*s) return 1; } return 0; }`,
+  `pasuu(g,v,x,u,w):={local n,k,m,h,f,d,s1,s2,z; n:=size(v); s1:=0; s2:=0; z:=0; ` +
+    `for (k:=0;k<n;k++) { h:=diff(g,v[k]); d:=subst(h,w); s1:=s1+d^2*u[k]^2; ` +
+    `for (m:=0;m<n;m++) { f:=diff(h,v[m]); s2:=s2+(1/2*subst(f,w)^2+d*subst(diff(f,v[m]),w))*u[k]^2*u[m]^2; } ` +
+    `if (z==0 and has(h,v[k]) and pasusg(subst(subst(h,suppress(w,k)),${S},${ONES}),v[k],x[k],u[k])==1) z:=1; } ` +
+    `return [op(pasuo(normal(s1),normal(s2))),z]; }`,
 ];
+
+/** G41: the second-order part above this share of σ² gives ⚠ "first order does not hold here". */
+const ORDER2_SHARE = 0.1;
 
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
@@ -212,31 +233,32 @@ function numberOf(giac: Giac, name: string, rerun: string, s: HomeSettings, inex
 }
 
 /**
- * G18: the first-order uncertainty of the stored result. σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over the uncertain inputs (taken as
- * independent), exactly, with Giac's diff, at the inputs' values; it is a quantity of the result's dimension, which is
- * then divided by the end slot's factor like the value (a level end slot: through the derivative of the level).
- * `valueExpr` is Giac text of the value as shown, `shownValue` its display (kept for a σ of 0). Never "=": the facts of σ carry the approximation.
+ * G18, G41: the uncertainty of the stored result, over the uncertain inputs (taken as independent), exactly with Giac's
+ * diff at the inputs' values (GUM 5.1.2 with its note): σ² = Σᵢ (∂f/∂xᵢ)² uᵢ² + Σᵢ Σⱼ [½ (∂²f/∂xᵢ∂xⱼ)² +
+ * ∂f/∂xᵢ · ∂³f/∂xᵢ∂xⱼ²] uᵢ² uⱼ². f is the result in the shown unit: the formula divided by the end slot's factor, or
+ * for a level end slot the level of the ratio itself, so its curvature counts too. σ carries ⚠ (`why`) when an input's
+ * x ± 2uᵢ reaches a real point where ∂f/∂xᵢ is not defined (Giac's singular(), the other inputs at their values), else
+ * when the second-order part is more than 10 % of σ². `valueExpr` is Giac text of the value as shown, `shownValue` its
+ * display (kept for a σ of 0). Never "=": the facts of σ carry the approximation.
  */
 function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string }, valueExpr: string, shownValue: string, dimension: string | null, s: HomeSettings): Uncertainty | UnitError {
   const u = job.unc!;
   const lit = toExactLiterals;
   const F = withAngles(lit(u.expr));
-  const at = `[${u.vars.map((v) => `${v.name}=(${lit(v.value)})`).join(",")}]`;
-  const terms = u.vars.map((v) => `(subst(diff(${F},${v.name}),${at})*(${lit(v.sigma)}))^2`).join("+");
-  const out = giac.eval(`pasuS:=pasuq(normal(sqrt(${terms})))`);
+  const ones = BASES.map((b) => `${b.symbol}=1`);
+  // A level is of a pure number: the ratio, the dimension symbols set to 1 (both sides have the same dimension).
+  const level = job.endLog !== undefined && src.kind === "term";
+  const G = level ? job.endLog!.replace(/pasux/g, `(subst(${F},[${ones.join(",")}])/(${dst.num}))`) : `(${F})/(${dst.num})`;
+  const list = (f: (v: UncVar) => string): string => `[${u.vars.map(f).join(",")}]`;
+  const out = giac.eval(`pasuW:=pasuu(${G},${list((v) => v.name)},${list((v) => `(${lit(v.value)})`)},${list((v) => `(${lit(v.sigma)})`)},${list((v) => `${v.name}=(${lit(v.value)})`)})`);
   if (isError(out)) return { error: "engine", detail: out };
-  const q = checked(out);
+  const parts = splitList(out);
+  const q = parts?.[0] !== undefined ? checked(parts[0]) : null;
   // σ through a power of a unit holds ln(m): a ± in the exponent of a quantity (m^(2 ± 0.1)).
   if (q?.kind === "function") return { error: "uncpower" };
   if (!q || (q.kind !== "term" && q.kind !== "zero")) return { error: "engine", detail: `no uncertainty: ${out}` };
-  if (q.kind === "term" && dimension !== null && dimKeyOf(q.exps) !== dimension) return { error: "engine", detail: `uncertainty of ${dimKeyOf(q.exps)} on ${dimension}` };
-  const c = q.kind === "term" ? q.num : "0";
-  let sigma = `(${c})/(${dst.num})`;
-  if (job.endLog !== undefined && src.kind === "term") {
-    const level = job.endLog.replace(/pasux/g, "pasuxx");
-    sigma = `abs(subst(diff(${level},pasuxx),pasuxx=(pasuR[0][2])/(pasuR[1][2])))*${sigma}`;
-  }
-  const set = giac.eval(`pasus:=normal(${sigma})`);
+  if (q.kind === "term" && !level && dimension !== null && dimKeyOf(q.exps) !== dimension) return { error: "engine", detail: `uncertainty of ${dimKeyOf(q.exps)} on ${dimension}` };
+  const set = giac.eval(`pasus:=normal(${q.kind === "term" ? q.num : "0"})`);
   if (isError(set)) return { error: "engine", detail: set };
   const value = numberOf(giac, "pasus", "pasus", s, true);
   const plain = giac.eval(`evalf(${valueExpr},30)`);
@@ -244,7 +266,10 @@ function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string 
   const text = isError(sig) ? null : uncertaintyText(sig);
   const shown = isError(plain) || isError(sig) ? null : shownWithUncertainty(plain, sig, shownValue);
   if (!value || text === null || shown === null) return { error: "engine", detail: `uncertainty not a number: ${sig}` };
-  return { value, text, shown };
+  const share = Number(parts?.[1]);
+  const big = (Number.isFinite(share) ? share : Number(giac.eval("evalf(pasuW[1])"))) > ORDER2_SHARE;
+  const why = parts?.[2]?.trim() === "1" ? "singular" : big ? "order2" : null;
+  return { value, text, shown, ...(why ? { why } : {}) };
 }
 
 const PREFIXES: Readonly<Record<number, string>> = { [-15]: "f", [-12]: "p", [-9]: "n", [-6]: "µ", [-3]: "m", 0: "", 3: "k", 6: "M", 9: "G", 12: "T", 15: "P" };
