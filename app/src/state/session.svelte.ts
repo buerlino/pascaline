@@ -539,6 +539,8 @@ export class Session {
           // A decimal cut from a longer exact text, or from a value with more digits, is not exact, though the value is.
           const cut = r.exact !== undefined || r.value?.re.sticky === true || r.value?.im.sticky === true;
           live.fullExact = !inexact && (full === exactText || (!cut && (r.exactRational || !isDigitsText(full))));
+          // G46f1: a symbolic result whose chip text (radian) differs from the text drawn (DEG) copies the drawn text.
+          if (!r.value && !r.items && full !== r.display && r.display.length <= FULL_LIMIT) live.drawn = r.display;
         }
       } else {
         const r = await this.calc.cas(giac, s);
