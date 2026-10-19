@@ -29,14 +29,11 @@
 | [G21b](packages/G21b.md) | exp ignores the angle mode inside Giac; pasexp goes | gorge, **Opus** | night | G34; S14's route P | ~1 d |
 | [G49](packages/G49.md) | Marks travel through Ans, chips and Store: engine | gorge, **Opus** | night | G34 | ~1 d |
 | [R65](packages/R65.md) | Marks travel through Ans and chips: session | ron, **Opus** | night | G49 | ~0.5 d |
-| [S14](packages/S14.md) | Spike: Giac always in radians, degrees in our parser | sandra, Opus | night | nothing; before G21b | ~1 d |
 | [G50](packages/G50.md) | Complex arguments of the audited functions | gorge, **Opus** | night | A15 | ~0.75 d |
-| [R64](packages/R64.md) | The angle mode lives in our parser (route R) | ron, **Opus** | night | S14 and the owner's yes to route R | ~0.5 d |
-| [R64a](packages/R64a.md) | The plot follows the angle mode (both routes) | ron, Sonnet | night | nothing | ~0.25 d |
+| [R64](packages/R64.md) | The angle mode lives in our parser (route R) | ron, **Opus** | night | the owner's yes to route R (decisions.md S14) | ~0.5 d |
 | [G46](packages/G46.md) | Giac always in radians; pasexp goes (replaces G21b) | gorge, **Opus** | night | R64 | ~1 d |
 | [G35](packages/G35.md) | The unit check sees every term, zero ones too | gorge, **Opus** | night | A15; before R24c | ~0.5 d |
 | [G36](packages/G36.md) | FIX shows no unconfirmed digit in a complex number | gorge, Sonnet | night | A15 | ~0.25 d |
-| [S10](packages/S10.md) | docs/04 diet, room for the next rewrites | sandra, Opus | night | nothing; before R15c2 | ~0.25 d |
 | [G38](packages/G38.md) | The exact path decides at the value precision | gorge, **Opus** | night | A15 | ~0.75 d |
 | [G39](packages/G39.md) | A divergent sum or integral is refused; Giac's pair is no list | gorge, **Opus** | night | A15 | ~0.75 d |
 | [G41](packages/G41.md) | σ beyond first order at a stationary point | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
@@ -106,9 +103,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 18 | S10 docs/04 diet | sandra, Opus | `p1/sandra-docs04diet` | — | 30 min |
-| 19 | S14 spike: Giac always in radians | sandra, Opus | `p1/sandra-radspike` | — | 1.5 h |
-| 20 | R64a the plot follows the angle mode | ron, Sonnet | `p1/ron-m4-plotdeg` | — | 45 min |
 | 21 | G34 a carried value keeps what it showed when the angle mode changes | gorge, Opus | `p1/gorge-m4-anglefree` | A15 | 1.5 h |
 | 22 | G38 the exact path decides at the value precision | gorge, Opus | `p1/gorge-m4-decideprec` | A15 | 1.5 h |
 | 23 | G39 a divergent sum or integral is refused | gorge, Opus | `p1/gorge-m4-divergent` | A15 | 1.5 h |
@@ -135,7 +129,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 44 | **The last Opus pass** on what came after pass 19, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 45 | Shift report, then stop | — | — | — | 10 min |
 
-Not in the queue: the ron lane's day packages (section 0; R64a, R65, R50c and R50d are queue steps); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); R59, R38a and R38b (after S6's report).
+Not in the queue: the ron lane's day packages (section 0; R65, R50c and R50d are queue steps); devices (A9, A4b, A11, A12); A7 and A8 (the owner's go); R59, R38a and R38b (after S6's report).
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (skip steps the table or the log marks merged or skipped, and steps whose "after" is not merged).
