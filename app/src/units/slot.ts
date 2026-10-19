@@ -286,7 +286,11 @@ export class SlotModel {
     const below: ReadingPart[] = [];
     this.#factors.forEach((f, i) => {
       const exp = i >= per ? -f.exp : f.exp;
-      const { words, marked } = this.#names(f);
+      const names = this.#names(f);
+      const { marked } = names;
+      // G37: °C, °F (an offset in its factor) with another unit or a power is an interval, as the evaluator reads it.
+      const affine = this.#cat.units.get(f.unit)?.si?.includes("+") === true;
+      const words = affine && (this.#factors.length > 1 || exp !== 1 || f.root) ? unitText("units.read.interval", { u: names.words }) : names.words;
       let text = Math.abs(exp) === 1 ? words
         : Math.abs(exp) === 2 ? unitText("units.read.square", { u: words })
         : Math.abs(exp) === 3 ? unitText("units.read.cube", { u: words })

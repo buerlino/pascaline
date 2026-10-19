@@ -10,7 +10,7 @@
 # refused case has `message` (the text the user reads) instead.
 # `settings: { angle: deg }`: a bare number in sin, cos and tan follows the Home angle mode (G15 default, decisions.md).
 # G17: °C, °F and the logarithmic units (dB, bel, Np, dBm, dBW) are allowed only alone and convert by their offset or level
-# rule. G18: an uncertain value is `pasupm(value,sigma)` in the input (R28's parser writes it; sigma in the same unit, every
+# rule. G37: °C and °F in a slot with another unit or a power (J/(kg·°C), °C⁻¹) are an interval, 1 °C = 1 K, 1 °F = 5/9 K. G18: an uncertain value is `pasupm(value,sigma)` in the input (R28's parser writes it; sigma in the same unit, every
 # one independent); σ = sqrt(Σ (∂f/∂xᵢ·σᵢ)²), first order, exact in Giac. `unc` is σ at 2 significant digits (docs/04 2.6;
 # "none": the result carries no σ), `unc_oracle` σ by the oracle, `shown` the value rounded to σ's last digit with it. A
 # result with a σ is always ≈.
@@ -165,3 +165,8 @@ cases:
   - { id: "z15", input: "max(1*{m},50*{c:m})", oracle: "F(1)", expect: "1", mark: "=", exact: "1", dim: "m1", unit: "m", source: "derived", note: "a function the check cannot read with symbols leaves the decision to the value" }
   - { id: "z16", input: "-5*{oC}", to: "K", oracle: "F(-5)+F('273.15')", expect: "268.15", mark: "=", exact: "5363/20", source: "derived", note: "the minus on the number converts" }
   - { id: "z17", input: "{m}-{m}+{s}", message: "Units don't match: L vs T", source: "derived", note: "slots with no number before them cancel too" }
+  # --- G37: °C and °F inside a compound unit are a temperature interval (decisions.md "G37"; check-2026-10-19 finding 12) ---
+  - { id: "i01", input: "1*{J / k:g oC}", to: "J / k:g K", oracle: "F(1)", expect: "1", mark: "=", exact: "1", source: "derived", note: "inside a compound unit 1 °C is 1 K, no offset (was the temperature-difference refusal)" }
+  - { id: "i02", input: "10*{W / m^2 oC}", to: "W / m^2 K", oracle: "F(10)", expect: "10", mark: "=", exact: "10", source: "derived", note: "a heat-transfer coefficient written with °C" }
+  - { id: "i03", input: "1*{Btu / lb oF}", to: "J / k:g K", oracle: "F('1055.05585262')/F('0.45359237')*9/5", expect: "4186.8", mark: "=", exact: "20934/5", source: "derived", note: "the IT Btu per pound is 2326 J/kg; 1 °F as an interval is 5/9 K" }
+  - { id: "i04", input: "2.3e-5*{oC^-1}", to: "K^-1", oracle: "F('2.3e-5')", expect: "2.3E-5", mark: "=", exact: "23/1000000", source: "derived", note: "a power other than 1 is an interval too (an expansion coefficient)" }

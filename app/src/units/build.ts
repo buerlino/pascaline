@@ -27,14 +27,20 @@ function negate(e: string): string {
   return e.startsWith("-") ? e.slice(1) : `-${e}`;
 }
 
-/** One token as Giac text: (prefix · factor · dimension symbols)^power. */
-function tokenGiac(t: UnitToken, below: boolean, table: FactorTable): string {
+/** G37: °C or °F in a slot with another token or with a power other than 1 (J/(kg·°C), °C⁻¹) is a temperature
+ *  interval, 1 °C = 1 K and 1 °F = 5/9 K; alone in its slot it is an absolute temperature with its offset (G17). */
+const isInterval = (slot: UnitSlot, t: UnitToken): boolean => slot.tokens.length > 1 || (t.power ?? "1") !== "1";
+
+/** One token as Giac text: (prefix · factor · dimension symbols)^power. With `interval`, an affine unit (K = a·x + b)
+ *  is its factor a without the offset b. */
+function tokenGiac(t: UnitToken, below: boolean, table: FactorTable, interval: boolean): string {
   const u = table.units.get(t.unit);
   if (!u) throw new Refused({ error: "engine", detail: `no unit ${t.unit} in the index` });
   if (LOGARITHMIC.has(t.unit) || /Np/.test(u.dim ?? "")) throw new Refused({ error: "logarithmic", unit: u.symbol });
   if (!u.si || u.dim === undefined) throw new Refused({ error: "nofactor", unit: u.symbol });
-  if (u.si.includes("+")) throw new Refused({ error: "temperature", unit: u.symbol });
-  let factor = `(${u.si})`;
+  const affine = u.si.split("+");
+  if (affine.length > 1 && (!interval || affine.length !== 2)) throw new Refused({ error: "temperature", unit: u.symbol });
+  let factor = `(${affine[0]!})`;
   if (t.prefix !== undefined) {
     const p = table.prefixes.get(t.prefix);
     if (!p) throw new Refused({ error: "engine", detail: `no prefix ${t.prefix} in the index` });
@@ -53,17 +59,18 @@ export function slotGiac(slot: UnitSlot, table: FactorTable): string {
   if (!slot.tokens.length) throw new Refused({ error: "engine", detail: "an empty slot" });
   const per = slot.per ?? slot.tokens.length;
   if (slot.per !== undefined && (per < 1 || per >= slot.tokens.length)) throw new Refused({ error: "engine", detail: `bad ÷ place ${per}` });
-  return `(${slot.tokens.map((t, i) => tokenGiac(t, i >= per, table)).join("*")})`;
+  return `(${slot.tokens.map((t, i) => tokenGiac(t, i >= per, table, isInterval(slot, t))).join("*")})`;
 }
 
 const isAffine = (u: UnitFactor): boolean => u.si?.includes("+") === true;
 const isLog = (id: string, u: UnitFactor): boolean => LOGARITHMIC.has(id) || /Np/.test(u.dim ?? "");
 
-/** The first token of a slot that is an absolute temperature or a logarithmic unit, or null. */
+/** The first token of a slot that is an absolute temperature or a logarithmic unit, or null. °C and °F as an interval
+ *  (G37, isInterval) are neither: the slot is an ordinary product. */
 function specialIn(slot: UnitSlot, table: FactorTable): { id: string; u: UnitFactor; bare: boolean } | null {
   for (const t of slot.tokens) {
     const u = table.units.get(t.unit);
-    if (u && (isAffine(u) || isLog(t.unit, u)))
+    if (u && ((isAffine(u) && !isInterval(slot, t)) || isLog(t.unit, u)))
       return { id: t.unit, u, bare: slot.tokens.length === 1 && slot.per === undefined && t.prefix === undefined && (t.power ?? "1") === "1" };
   }
   return null;

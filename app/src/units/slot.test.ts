@@ -278,6 +278,14 @@ describe("the reading in words (r7 5.4 guards 2 and 3)", () => {
     expect(typed([U("K"), POW(-1)]).reading.text).toBe("per kelvin");
     expect(typed([PER, U("s")]).reading.text).toBe("per second");
   });
+  it("G37: °C with another unit or a power is a difference; alone it is not", () => {
+    expect(typed([U("J"), PER, P("k"), U("g"), U("oC")]).reading).toEqual({
+      text: "joule per kilogram degree Celsius (difference)", marked: false,
+      parts: [{ text: "joule", marked: false }, { text: "per", marked: false }, { text: "kilogram", marked: false }, { text: "degree Celsius (difference)", marked: false }],
+    });
+    expect(typed([U("oC"), POW(-1)]).reading.text).toBe("per degree Celsius (difference)");
+    expect(typed([U("oC")]).reading.text).toBe("degree Celsius");
+  });
 });
 
 describe("the LaTeX shown", () => {
