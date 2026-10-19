@@ -4,6 +4,7 @@
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
 //   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, calls, units, parser
+// Typed Giac text in a case (`input`, `before`, step inputs, `eq`, `f`, `g`) gets the parser's angle rule first (G46).
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
@@ -51,6 +52,7 @@ import { chipsIn, type ChipFactsTable } from "../src/engine/chipFacts.ts";
 import { inexactConstsIn, type ConstTable } from "../src/engine/constUnc.ts";
 import { DEFAULT_USER_FUNCTIONS, latexToGiac, latexToGiacInfo, type UnitsInfo } from "../src/input/latex-to-giac.ts";
 import { SerializeError } from "../src/input/errors.ts";
+import { dropAngleFactor, rewriteAngles } from "../src/input/angles.ts";
 import { buildJob } from "../src/units/build.ts";
 import { factorTable, type FactorTable } from "../src/units/factors.ts";
 import { unitErrorMessage } from "../src/units/messages.ts";
@@ -141,9 +143,34 @@ const HOME_LIMIT_MS = 500;
 const only = process.env.ONLY?.split(",").map((s) => s.trim());
 const want = (stage: string) => !only || only.includes(stage);
 
+/** Files whose `input`-style fields are what the user types, in Giac's spelling (not the parser's LaTeX). */
+const TYPED_FILES = new Set(["home.yaml", "precision.yaml", "bench.yaml", "solve.yaml", "function.yaml"]);
+
+/**
+ * G46: Giac runs in radians and the angle mode lives in the parser's text (R64, `sin(pasdeg*x)`). A case's typed Giac
+ * text (`input`, `before`, `beforeHome`, `beforeCas`, step inputs, `eq`, `f`, `g`) is what the user types, so it gets
+ * the parser's angle rule (input/angles.ts `rewriteAngles`) as the keys' LaTeX would; `latex` goes through the parser.
+ */
+function typed(c: Case): Case {
+  const one = (t: string): string => rewriteAngles(t);
+  const many = <T extends string | string[] | undefined>(x: T): T => (x === undefined ? x : Array.isArray(x) ? (x.map(one) as T) : (one(x) as T));
+  const raw = c.latex === undefined;
+  return {
+    ...c,
+    ...(c.input !== undefined ? { input: one(c.input) } : {}),
+    ...(raw && c.before ? { before: c.before.map(one) } : {}),
+    ...(raw && c.beforeHome ? { beforeHome: c.beforeHome.map(one) } : {}),
+    ...(raw && c.beforeCas ? { beforeCas: c.beforeCas.map(one) } : {}),
+    ...(c.steps ? { steps: c.steps.map((st) => (st.input !== undefined ? { ...st, input: one(st.input) } : st)) } : {}),
+    ...(c.eq !== undefined ? { eq: many(c.eq) } : {}),
+    ...(c.f !== undefined ? { f: many(c.f) } : {}),
+    ...(c.g !== undefined ? { g: one(c.g) } : {}),
+  };
+}
+
 function cases(file: string): Case[] {
   const doc = parse(readFileSync(`${root}tests/golden/${file}`, "utf8")) as { cases: Case[] };
-  return doc.cases;
+  return TYPED_FILES.has(file) ? doc.cases.map(typed) : doc.cases;
 }
 
 const median = (xs: number[]): number => {
@@ -207,7 +234,7 @@ async function stageHome(): Promise<void> {
     // ⚠ n: only the n confirmed digits are shown, and they must be the oracle's (as in the precision stage).
     const wantOf = (m: MarkInfo | null): string | null =>
       m?.mark === "⚠" && m.n !== undefined && m.n < digits ? expectAt(String(c.expect), Math.max(1, m.n)) : String(c.expect);
-    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, c.input ?? "")) : rs.every((x, k) => x.display === wantOf(marksOf[k]!));
+    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, dropAngleFactor(c.input ?? ""))) : rs.every((x, k) => x.display === wantOf(marksOf[k]!));
     // `exact` (G38): the text the result copies (`full`), when the case pins it.
     const exactOk = c.exact === undefined || rs.every((x) => x.full === c.exact);
     const ok = answered && markOk && exactOk;
