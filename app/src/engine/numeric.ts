@@ -1060,10 +1060,12 @@ export function rationalOnly(expr: string): boolean {
   return true;
 }
 
-/** Giac's language keywords that functionsIn finds in a printed program (`if (`, `return (`): like a built-in, none
- *  can hold a value (`if:=3` and `if(x):=x` are refused, tools/probes, G53), so each prints the same all session. */
-const KEYWORDS: ReadonlySet<string> = new Set([
-  "if", "while", "return", "throw", "and", "or", "xor", "local", "else", "elif", "then", "try", "catch", "break", "continue",
+/** Giac's language keywords that functionsIn finds in a printed program (`if (`, `while (`): like a built-in, none
+ *  can hold a value, so each prints the same all session. Every entry is checked to refuse both `k:=3` and `k(x):=x`
+ *  in precision.test.ts ("G53: every KEYWORDS entry refuses a value"). `return` is left out: Giac reads
+ *  `return(x):=x` as `return(x:=x)` without an error, so it is asked like a user's name. */
+export const KEYWORDS: ReadonlySet<string> = new Set([
+  "if", "while", "throw", "and", "or", "xor", "local", "else", "elif", "then", "try", "catch", "break", "continue",
   "repeat", "until", "switch", "case", "default", "do", "from", "to", "step", "in",
 ]);
 

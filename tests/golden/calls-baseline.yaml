@@ -4,5 +4,5 @@
 commit: b5b4e7e  # G53 lowered it on p1/gorge-m4-decidecost (parent b5b4e7e: bench 519, home 4049 over 257 inputs)
 bench: 448
 benchInputs: 56
-home: 3017
+home: 3063
 homeInputs: 257
