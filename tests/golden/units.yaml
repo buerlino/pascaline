@@ -10,7 +10,7 @@
 # refused case has `message` (the text the user reads) instead.
 # `settings: { angle: deg }`: a bare number in sin, cos and tan follows the Home angle mode (G15 default, decisions.md).
 # G17: °C, °F and the logarithmic units (dB, bel, Np, dBm, dBW) are allowed only alone and convert by their offset or level
-# rule. G18: an uncertain value is `pasupm(value,sigma)` in the input (R28's parser writes it; sigma in the same unit, every
+# rule. G37: °C and °F in a slot with another unit or a power (J/(kg·°C), °C⁻¹) are an interval, 1 °C = 1 K, 1 °F = 5/9 K. G18: an uncertain value is `pasupm(value,sigma)` in the input (R28's parser writes it; sigma in the same unit, every
 # one independent); σ = sqrt(Σ (∂f/∂xᵢ·σᵢ)²), first order, exact in Giac. `unc` is σ at 2 significant digits (docs/04 2.6;
 # "none": the result carries no σ), `unc_oracle` σ by the oracle, `shown` the value rounded to σ's last digit with it. A
 # result with a σ is always ≈.

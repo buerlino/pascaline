@@ -32,6 +32,8 @@ export const enUnits = {
   "units.read.fourth": "{u} to the fourth",
   "units.read.power": "{u} to the power {p}",
   "units.read.root": "square root of {u}",
+  // G37: °C or °F inside a compound unit or with a power is a temperature interval ("per degree Celsius (difference)").
+  "units.read.interval": "{u} (difference)",
 } as const satisfies Record<string, string>;
 
 export type UnitMessageKey = keyof typeof enUnits;
