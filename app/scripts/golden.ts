@@ -69,7 +69,7 @@ import { isUnitError, type Quantity, type UnitError } from "../src/units/types.t
 import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
 import { callsStage, type CallsBaseline } from "./calls-budget.ts";
-import { checkAngle, checkCopy, checkDigits, checkStoreBoth, copySourceOf, invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
+import { checkAngle, checkCopy, checkDigits, checkStoreBoth, copySourceOf, invariantsOf, storesNames, invariantsStage, type InvariantFailure } from "./invariants.ts";
 import { copyFull } from "../src/clipboard/text.ts";
 import { parsePastedNumber } from "../src/clipboard/paste.ts";
 
@@ -639,9 +639,9 @@ async function stageInvariants(): Promise<void> {
   const t0 = performance.now();
   let checked = { a: 0, b: 0, c: 0, d: 0 };
   for (const i of inputs) {
-    // `before` inputs store names, so each of them gets its own engine; the others share one for the stage
-    // (check (d) purges its name after each direction).
-    const keep = i.before.length > 0;
+    // `before` inputs and inputs that store a name themselves (`:=`, `=>`, `sto(`) get their own engine; the others share
+    // one for the stage (check (d) purges its name after each direction).
+    const keep = i.before.length > 0 || storesNames(i.giac);
     // An inverse distribution function leaves the engine in a state where a later 30-digit call can answer undef (found by G43f1:
     // normald_icdf(10^-300) after normald_icdf(10^-30)), so those inputs get their own engine, and a new one for each direction of (d).
     const icdf = /_icdf\(/.test(i.giac);

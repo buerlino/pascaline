@@ -137,6 +137,9 @@ export function checkStore(id: string, from: "rad" | "deg", to: "rad" | "deg", s
     : null;
 }
 
+/** True when an input stores a name itself (`:=`, `=>`, `sto(`): it must not run on the stage's shared engine. */
+export const storesNames = (giac: string): boolean => /:=|=>|\bsto\(/.test(giac);
+
 /** The name check (d) stores under. */
 export const INV_NAME = "pasinv";
 
