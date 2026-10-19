@@ -426,7 +426,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |
 | Unit view chunk | ≤ 30 kB raw | 9.44 kB (2026-10-18) | size test (rule on `src/units/`) |
 | Precache total | ≤ 18 MB | 12.4 MB (2026-10-18) | size test |
-| Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with the `defs` replay | 688 / about 1060 ms; 1489 ms engine ready with 200 definitions (A4a, 2026-10-16) | device runs |
+| Keyboard usable / engine ready (Tab One) | < 1 s / < 1.5 s, with the `defs` replay | 722 / 1103 ms cold (2026-10-19, `874ab01`, 1 GB engine): +34 ms on A4a's 688, 20 of them before the JS starts; 1489 ms engine ready with 200 definitions (A4a, 2026-10-16) | device runs |
 | Enter → result p95 (Tab One) | < 150 ms at 12 digits; at 30 digits ≤ 1.3 × the 12-digit p95 | 138–160 ms at 12, 147–149 at 30 (A4a) | device runs |
 | Find key → list (Tab One) | p95 ≤ 16 ms | desktop prototype p95 1.04–1.23 ms | `?bench=find` (A4b) |
 | Find open | ≤ 100 ms warm, ≤ 300 ms cold | — | device runs |
