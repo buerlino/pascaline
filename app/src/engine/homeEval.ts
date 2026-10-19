@@ -535,8 +535,11 @@ export function homeEval(
     if (asg) giac.eval(`${asg.name}:=${ans}`);
   };
 
+  // G39: set when a convergence check could not finish: the result stands, with ⚠ (nothing confirmed it exists).
+  let unverified = false;
   const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "full"> & { full?: string }): HomeResult => ({
     ...r,
+    ...(unverified && r.ok ? { warn: r.warn ?? "unchecked", approximate: true } : {}),
     full: r.full ?? r.display,
     ...(r.ok && defined ? { defined } : {}),
     exactMs,
@@ -552,6 +555,10 @@ export function homeEval(
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
     const f = floatPathFacts(giac, ans, asg ? asg.rhs : input, once, W, s.digits);
     if ("error" in f) return failed(f.error, path, exact);
+    // G39: the float of a divergent integral or series (the principal value 0 of ∫₋₁¹ 1/x) is refused as on the exact path.
+    const refused = once ? null : refusalOf(giac, exactBody, giac.eval(ans), s.angle);
+    if (refused === "unchecked") unverified = true;
+    else if (refused) return { ...failed(enEngine[`error.${refused}`], path), error: refused, approximate: false };
     store();
     const b = build(f.facts, f.shape, s.digits, path, true);
     return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
@@ -571,7 +578,8 @@ export function homeEval(
   // G39: a number for something that does not exist (a principal value, an Abel sum, a bounded_function) is refused.
   if (!once) {
     const refused = refusalOf(giac, exactBody, exactOut, s.angle);
-    if (refused) return { ...failed(enEngine[`error.${refused}`], "exact"), error: refused, approximate: false };
+    if (refused === "unchecked") unverified = true;
+    else if (refused) return { ...failed(enEngine[`error.${refused}`], "exact"), error: refused, approximate: false };
   }
   // G39: Giac's [exact, numeric] pair of a definite integral is never a list. The two answers differ, so neither is
   // confirmed: the float is the value, with no digit confirmed (⚠, docs/04 2.4), and the why-line says the pair differs.

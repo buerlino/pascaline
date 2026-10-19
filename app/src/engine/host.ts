@@ -547,7 +547,9 @@ export class EngineHost {
     // G39: a divergent integral or series, or no limit, is refused as in Home; Giac's [exact, numeric] pair of a
     // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
     const refused = stateful ? null : refusalOf(this.giac, exactInput, text, s.angle);
-    if (refused) return fail(enEngine[`error.${refused}`], refused);
+    if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
+    // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
+    const unverified = refused === "unchecked";
     const pair = !stateful && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
     const asg = simpleAssignment(input);
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
@@ -561,6 +563,7 @@ export class EngineHost {
       const facts = floatFacts(this.giac, "pcasans", stateful ? null : exactInput, shape, digits, Math.trunc(s.digits));
       if (facts) {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
+        if (unverified) numeric.warn = numeric.warn ?? "unchecked";
         if (asked !== null) numeric.digits = asked;
         const body = asg ? asg.rhs : input;
         const why = whyOf(facts, stateful ? null : exactInput);
@@ -577,7 +580,7 @@ export class EngineHost {
     // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate.
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4),
     // as the definitions log records it.
-    const unchecked = hasFloat(text);
+    const unchecked = hasFloat(text) || unverified;
     const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked;
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
     const why = pair ? { differ: true } : symbolicWhy(warn, testSides(exactInput));

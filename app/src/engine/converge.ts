@@ -14,6 +14,10 @@ import { closing, functionsIn, hasFloat, splitList, topLevelArgs, type Giac } fr
 /** Why a result is refused; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
 export type Refusal = "integralDiverges" | "seriesDiverges" | "noLimit";
 
+/** A check's answer: the result stands, it is refused, or the check could not finish (an error or Giac's timeout), in
+ *  which case the result stands with ⚠ (nothing confirmed that it exists). */
+type Verdict = "ok" | "diverges" | "unchecked";
+
 type Kind = "int" | "sum" | "limit";
 
 const KIND: Readonly<Record<string, Kind>> = { int: "int", integrate: "int", sum: "sum", limit: "limit" };
@@ -69,20 +73,25 @@ function valueOf(giac: Giac, call: Call, input: string, output: string): string 
   return call.text === input.trim() ? output : giac.eval(call.text);
 }
 
-/** The series check: the term of `sum(t,k,a,b)` tends to 0 at each infinite end. False = refuse. Runs in radians. */
-function seriesOk(giac: Giac, c: Call): boolean {
+/** The series check: the term of `sum(t,k,a,b)` tends to 0 at each infinite end. Runs in radians. */
+function seriesCheck(giac: Giac, c: Call): Verdict {
   const [t, k, a, b] = c.args as [string, string, string, string];
   const ends = [realOf(giac, b) === Infinity ? "inf" : null, realOf(giac, a) === -Infinity ? "-inf" : null].filter((e): e is string => e !== null);
   for (const end of ends) {
     const l = giac.eval(`limit(${t},${k},${end})`).trim();
     if (l === "0") continue;
-    // bounded_function(…), undef, ±infinity or a non-zero number: the term does not tend to 0.
-    if (/bounded_function/.test(l) || l === "undef" || /^[+-]?infinity$/.test(l)) return false;
-    const v = giac.eval(`evalf(abs(${l}),30)`).trim();
-    if (/^[\d.]+(e[+-]?\d+)?$/.test(v) && Number(v) !== 0) return false;
+    if (isError(l)) return "unchecked";
+    if (limitNonZero(giac, l)) return "diverges";
     // Anything else (`1/((+infinity)!)` for 1/k!, an unevaluated limit) is not a proof of divergence: kept.
   }
-  return true;
+  return "ok";
+}
+
+/** Giac's limit text `l` is not 0: bounded_function(…) (no limit), undef, ±infinity, or a non-zero number. */
+function limitNonZero(giac: Giac, l: string): boolean {
+  if (/bounded_function/.test(l) || l === "undef" || /^[+-]?infinity$/.test(l)) return true;
+  const v = giac.eval(`evalf(abs(${l}),30)`).trim();
+  return /^[\d.]+(e[+-]?\d+)?$/.test(v) && Number(v) !== 0;
 }
 
 const TRIG = /"[^"]*"|\b(sin|cos|tan|sec|csc|cot|asin|acos|atan|asec|acsc|acot|arcsin|arccos|arctan)\s*\(/g;
@@ -138,16 +147,16 @@ function periodOf(giac: Giac, f: string, x: string, scale: string): string | nul
 /** Most points near which ∫|f| is checked (one per singular point of a periodic f, each of the others). */
 const MAX_POINTS = 8;
 
-/** The integral check: near every real singular point of f in [a, b], ∫|f| is finite. False = refuse. */
-function integralOk(giac: Giac, c: Call, angle: "rad" | "deg"): boolean {
+/** The integral check: near every real singular point of f in [a, b], ∫|f| is finite. */
+function integralCheck(giac: Giac, c: Call, angle: "rad" | "deg"): Verdict {
   // A DEG integrand rewritten for radians still takes x in degrees, so its period is 360/n: 2π/n times 180/π.
   const [f, x, a0, b0] = c.args as [string, string, string, string];
   const sing = giac.eval(`singular(${f},${x})`);
   const pts = isError(sing) ? null : splitList(sing);
-  if (!pts || pts.length === 0) return true;
+  if (!pts || pts.length === 0) return "ok";
   const A = realOf(giac, a0);
   const B = realOf(giac, b0);
-  if (A === null || B === null) return true;
+  if (A === null || B === null) return "ok";
   const [lo, hi, a, b] = A <= B ? [A, B, a0, b0] : [B, A, b0, a0];
   const T = periodOf(giac, f, x, angle === "deg" ? "(180/pi)" : "1");
   const Tv = T === null ? null : realOf(giac, T);
@@ -167,24 +176,47 @@ function integralOk(giac: Giac, c: Call, angle: "rad" | "deg"): boolean {
     const ns = Number.isFinite(n0) && Number.isFinite(n1) ? (n1 - n0 >= 2 ? [n0 + 1] : [n0, n1]) : [Number.isFinite(n0) ? n0 + 1 : Number.isFinite(n1) ? n1 - 1 : 0];
     for (const n of new Set(ns)) near.push(n === 0 ? p : `(${p})+(${n})*${T}`);
   }
+  let verdict: Verdict = "ok";
   for (const q of near.slice(0, MAX_POINTS)) {
     const qv = realOf(giac, q)!;
+    // Cheap and sufficient first: (x−q)·f(x) tending to a non-zero value or ∞ at q means |f| ≥ c/|x−q| near q, which is
+    // not integrable (1/x, tan at π/2, 1/x³). From the side that lies in [a, b] when q is an end point.
+    const dir = qv <= lo ? ",1" : qv >= hi ? ",-1" : "";
+    const l = giac.eval(`limit((${x}-(${q}))*(${f}),${x},${q}${dir})`).trim();
+    if (!isError(l) && l !== "0" && limitNonZero(giac, l)) return "diverges";
     const w1 = qv - 1 <= lo ? a : `(${q})-1`;
     const w2 = qv + 1 >= hi ? b : `(${q})+1`;
     const r = giac.eval(`int(abs(${f}),${x},${w1},${w2})`).trim();
-    if (!isError(r) && notFinite(r)) return false;
+    if (isError(r)) verdict = "unchecked";
+    else if (notFinite(r)) return "diverges";
   }
-  return true;
+  return verdict;
 }
 
 /**
- * The refusal for an input whose result `output` is a number for something that does not exist; null to keep it.
+ * The refusal for an input whose result `output` is a number for something that does not exist; null to keep it;
+ * "unchecked" when a check could not finish (the result is kept with ⚠).
  * `input` is what ran (decimals exact). Giac's `undef` for an input that holds a definite integral, a series or a limit
  * is refused with that call's message, and so is a `bounded_function(…)` left in the result of a limit.
  */
-export function refusalOf(giac: Giac, input: string, output: string, angle: "rad" | "deg"): Refusal | null {
+export function refusalOf(engine: Giac, input: string, output: string, angle: "rad" | "deg"): Refusal | "unchecked" | null {
   const calls = callsIn(input);
   if (!calls.length) return null;
+  // Giac's timeout can stop any step of a check (singular, a limit, the second integral); a step it stopped proves
+  // nothing, so the check then ends "unchecked" unless another step already proved the divergence.
+  let interrupted = false;
+  const giac: Giac = {
+    eval: (t) => {
+      const o = engine.eval(t);
+      if (/^GIAC_ERROR/.test(o) && /interrupt/i.test(o)) interrupted = true;
+      return o;
+    },
+  };
+  const verdict = check(giac, calls, input, output, angle);
+  return verdict === null && interrupted ? "unchecked" : verdict;
+}
+
+function check(giac: Giac, calls: Call[], input: string, output: string, angle: "rad" | "deg"): Refusal | "unchecked" | null {
   const out = output.trim();
   if (out === "undef") {
     const c = calls.find((k) => k.kind === "limit" || k.args.length >= 4);
@@ -209,11 +241,16 @@ export function refusalOf(giac: Giac, input: string, output: string, angle: "rad
   if (!todo.length) return null;
   if (angle === "deg") giac.eval("angle_radian:=1");
   try {
-    for (const c of todo) if (!(c.kind === "sum" ? seriesOk(giac, c) : integralOk(giac, c, angle))) return REFUSAL[c.kind];
+    let unchecked = false;
+    for (const c of todo) {
+      const v = c.kind === "sum" ? seriesCheck(giac, c) : integralCheck(giac, c, angle);
+      if (v === "diverges") return REFUSAL[c.kind];
+      if (v === "unchecked") unchecked = true;
+    }
+    return unchecked ? "unchecked" : null;
   } finally {
     if (angle === "deg") giac.eval("angle_radian:=0");
   }
-  return null;
 }
 
 /**

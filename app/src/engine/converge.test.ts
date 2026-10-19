@@ -3,7 +3,7 @@
 // Expected refusals are derived (a pole inside the interval, a term that does not tend to 0); values are oracle cases
 // of home.yaml (g39-keep-*).
 import { beforeAll, describe, expect, it } from "vitest";
-import { callsIn, giacPair, hasDefiniteIntegral, inRadians } from "./converge.ts";
+import { callsIn, giacPair, hasDefiniteIntegral, inRadians, refusalOf } from "./converge.ts";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
@@ -25,6 +25,19 @@ describe("converge helpers", () => {
     expect(hasDefiniteIntegral("int(1/(1+x^2),x)")).toBe(false);
     expect(hasDefiniteIntegral("[int(x,x,0,1),evalf(pi)]")).toBe(false);
   });
+  it("a check that cannot finish keeps the result, unchecked (Giac's timeout on the second integral)", () => {
+    const answers: [RegExp, string][] = [
+      [/^lname\(1\/x\)$/, "[x]"],
+      [/^lname\(/, "[]"],
+      [/^singular\(/, "[0]"],
+      [/^evalf\(-1,30\)$/, "-1.0"],
+      [/^evalf\(1,30\)$/, "1.0"],
+      [/^evalf\(0,30\)$/, "0.0"],
+      [/^(limit|int)\(/, "GIAC_ERROR: Stopped by user interruption."],
+    ];
+    const giac = { eval: (t: string) => answers.find(([re]) => re.test(t))?.[1] ?? "GIAC_ERROR: unexpected" };
+    expect(refusalOf(giac, "int(1/x,x,-1,1)", "0", "rad")).toBe("unchecked");
+  });
   it("rewrites a DEG text for radians", () => {
     expect(inRadians("tan(2*x)")).toBe("tan(pi/180*(2*x))");
     expect(inRadians("asin(sin(x))")).toBe("(180/pi*asin(sin(pi/180*(x))))");
@@ -38,7 +51,9 @@ describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
   beforeAll(async () => {
     host = new EngineHost((await loadNodeGiac()).giac);
   });
-  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(input, { ...defaultHomeSettings, angle }).result;
+  // A generous budget: these tests are about the checks, and a loaded test machine must not send ∫₋₁¹ 1/x to the float
+  // path (the golden gate runs the same cases at the default budget, one at a time).
+  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(input, { ...defaultHomeSettings, angle, budgetMs: 5000 }).result;
   const cas = (input: string, angle: "rad" | "deg" = "rad") => host.cas(input, { ...defaultCasSettings, angle }).result;
 
   it.each([
