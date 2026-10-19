@@ -704,12 +704,11 @@ export function homeEval(
     const why = symbolicWhy(warn, testSides(exactBody));
     return done({ ok: true, display: deg ?? dropAngleFactor(text), exact: text, ...(deg !== null ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(why ? { why } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
-  // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
-  if (!shape || /==|<>/.test(exactOut)) return symbolic();
-
   // G44f1: Giac's inverse distribution function gives ±infinity for some p inside (0, 1) (fisher_icdf(3,4,1-10^-20)):
   // the polish computes the value; when it cannot, Giac's infinity is shown with ⚠. At p = 0 or 1 it is exact.
-  if (/^[+-]?infinity$/.test(exactOut.trim()) && icdfCalls(exactBody).length) {
+  // G44f2: and undef (normald_icdf(10^-30) from about the third call on one engine): polished from the centre, and
+  // never an unmarked undef when the polish refuses.
+  if (/^([+-]?infinity|undef)$/.test(exactOut.trim()) && icdfCalls(exactBody).length) {
     const facts = once ? null : floatFacts(giac, ans, exactBody, { kind: "scalar" }, s.digits, s.digits, exactBody);
     if (facts) {
       store();
@@ -721,6 +720,9 @@ export function homeEval(
     // converged at P but not at P + 20, leaves Giac's infinity unaudited.
     return !once && icdfAtEnd(giac, exactBody, s.digits) ? symbolic() : symbolic("unaudited");
   }
+
+  // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
+  if (!shape || /==|<>/.test(exactOut)) return symbolic();
 
   if (hasFloat(exactOut)) {
     // Giac's numeric code returned a float on the exact path (rule 3). `evalf(e,n)` alone is shown with the n digits it
