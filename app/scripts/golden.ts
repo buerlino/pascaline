@@ -240,11 +240,15 @@ async function runSteps(steps: Step[], digits: number, consts: ConstTable | unde
       const cut = (r.exact !== undefined && full !== r.exact) || r.value?.re.sticky === true || r.value?.im.sticky === true;
       const exact = !r.approximate && !cut && (r.exact !== undefined || r.exactRational || !/\.|\d[eE][+-]?\d/.test(full));
       chips = { [ANS_KEY]: { value: full, exact } };
-      // A named chip is exact when its value is the exact text of a result that was not approximate, from an input with
-      // no inexact constant or chip in it (R65's rule; `exact` above also counts the rounded decimal of 1/3 as cut).
+      // A named chip follows the session's rule (session.svelte.ts finish): the exact text only when the result is not
+      // approximate and the input held no inexact constant or chip, else the confirmed decimal r.full (R65).
       const inexactIn = (consts !== undefined && inexactConstsIn(p.giac, consts).length > 0) || chipsIn(p.giac, named).some((j) => !named[j]!.exact);
-      const exactNamed = !r.approximate && r.exact !== undefined && full === r.exact && !inexactIn;
-      named[String(k + 1)] = { value: full, reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}), exact: exactNamed };
+      const inexact = r.approximate || inexactIn;
+      const exactText = !inexact && r.exact !== undefined && r.exact.length <= 2048 ? r.exact : undefined;
+      const value = exactText ?? (r.full || (inexact ? undefined : r.exact));
+      if (value && value.length <= 2048) {
+        named[String(k + 1)] = { value, reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}), exact: !inexact && (value === exactText || (r.exact === undefined && r.value?.re.sticky !== true && r.value?.im.sticky !== true && (r.exactRational || !/\.|\d[eE][+-]?\d/.test(value)))) };
+      }
     }
   }
   return last!;

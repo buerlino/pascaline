@@ -137,6 +137,7 @@ describe.skipIf(!giacAvailable())("marks travel through Ans and chips (R65, real
       expect(markOf(s, 0)).toBe("⚠");
       await s.submit("\\ans-0.7468241328124");
       expect(markOf(s, 1), `digits ${digits}`).toBe("⚠");
+      expect(s.home[1]?.text, `digits ${digits}`).toBe("-2E-12");
       // the chip carries its confirmed decimal, never Giac's float text with digits past the confirmed ones
       const chip = s.chipFor(s.home[0] as HistoryItem);
       expect(chip?.exact).toBe(false);
