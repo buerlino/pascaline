@@ -2,7 +2,7 @@
 // The message for a unit-view refusal (docs/04 4.3), from the i18n table. Plain TS.
 import { unitText } from "../i18n/enUnits.ts";
 import { dimensionText } from "./dims.ts";
-import type { UnitError, UnitNote } from "./types.ts";
+import type { UncWhy, UnitError, UnitNote } from "./types.ts";
 
 export function unitErrorMessage(e: UnitError): string {
   switch (e.error) {
@@ -38,4 +38,9 @@ export function unitErrorMessage(e: UnitError): string {
 /** G40: the note under a unit-view result. */
 export function unitNoteText(n: UnitNote): string {
   return n.note === "radDropped" ? unitText("units.note.radDropped") : unitText("units.note.cycle", { unit: n.unit });
+}
+
+/** G41: the why-line of a σ shown with ⚠. */
+export function unitWhyText(w: UncWhy): string {
+  return unitText(w === "order2" ? "units.why.order2" : "units.why.singular");
 }

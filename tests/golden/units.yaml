@@ -13,7 +13,10 @@
 # rule. G37: °C and °F in a slot with another unit or a power (J/(kg·°C), °C⁻¹) are an interval, 1 °C = 1 K, 1 °F = 5/9 K. G18: an uncertain value is `pasupm(value,sigma)` in the input (R28's parser writes it; sigma in the same unit, every
 # one independent); σ = sqrt(Σ (∂f/∂xᵢ·σᵢ)²), first order, exact in Giac. `unc` is σ at 2 significant digits (docs/04 2.6;
 # "none": the result carries no σ), `unc_oracle` σ by the oracle, `shown` the value rounded to σ's last digit with it. A
-# result with a σ is always ≈.
+# result with a σ is always ≈. G41: σ² also carries the GUM's second-order term (GUM 5.1.2, note; uncorrelated inputs),
+# Σᵢ Σⱼ [½ (∂²f/∂xᵢ∂xⱼ)² + ∂f/∂xᵢ · ∂³f/∂xᵢ∂xⱼ²] uᵢ² uⱼ²; `unc_why` is the why-line of a σ shown with ⚠ (none when absent):
+# "first order does not hold here" when that term is more than 10 % of σ², "the interval reaches a singular point" when
+# an input's x ± 2σ reaches a point where f or its derivative is not defined.
 # G40: `notice` is the note a result carries (the text the user reads; none when absent): "rad = 1 dropped" when the end slot
 # differs from the result by one rad, "rpm counts turns: …" on rpm or rev times another dimension.
 # G25: `unit` is the unit the value is shown in ("" for a pure number), `dimtext` the dimension as text. Without an end slot the
@@ -117,7 +120,7 @@ cases:
   - { id: "g05", input: "sqrt(pasupm(9,0.6)*{m^2})", oracle: "F(3)", expect: "3", mark: "≈", exact: "3", dim: "m1", unc: "0.10", unc_oracle: "F('0.6')/(2*3)", shown: "3.00 ± 0.10", source: "derived", note: "a square root: σ/(2√x)" }
   - { id: "g06", input: "12.34*{m}*3.2*{m}", oracle: "F('12.34')*F('3.2')", expect: "39.488", mark: "=", exact: "4936/125", dim: "m2", unc: "none", source: "derived", note: "a value without ± carries no uncertainty and stays =" }
   - { id: "g07", input: "pasupm(12.34,0.05)*{m}*pasupm(3.2,0.1)*{m}", to: "c:m^2", oracle: "F('12.34')*F('3.2')*10000", expect: "394880", mark: "≈", exact: "394880", unc: "12000", unc_oracle: "sqrt((F('3.2')*F('0.05'))**2+(F('12.34')*F('0.1'))**2)*10000", shown: "395000 ± 12000", source: "derived", note: "an end slot scales σ like the value" }
-  - { id: "g08", input: "pasupm(1,0.1)*{W}", to: "dBm", oracle: "10*log10(1000)", expect: "30", mark: "≈", exact: "30", unc: "0.43", unc_oracle: "10/ln(10)*F('0.1')", shown: "30.00 ± 0.43", source: "derived", note: "a level end slot: σ through d(10·log10 x)/dx" }
+  - { id: "g08", input: "pasupm(1,0.1)*{W}", to: "dBm", oracle: "10*log10(1000)", expect: "30", mark: "≈", exact: "30", unc: "0.44", unc_oracle: "10/ln(10)*sqrt(F('0.1')**2+F(5,2)*F('0.1')**4)", shown: "30.00 ± 0.44", source: "derived", note: "a level end slot: σ through d(10·log10 x)/dx; G41: σ² = 0.18861 + 0.0047153, the level's curvature (2.4 % of σ², no ⚠; was 0.43)" }
   - { id: "g09", input: "pasupm(5,0.2)*{m}-pasupm(5,0.2)*{m}", oracle: "F(0)", expect: "0", mark: "≈", exact: "0", unc: "0.28", unc_oracle: "sqrt(2)*F('0.2')", shown: "0.00 ± 0.28", source: "derived", note: "two inputs are independent, so σ does not cancel" }
   # --- G18f1: Opus pass 2 findings (decisions.md "2026-10-18 Opus pass 2 defaults") ---
   - { id: "t17", input: "-1*{K}", to: "oC", message: "Below absolute zero", source: "derived", note: "below 0 K is refused whatever the source unit (was -274.15)" }
@@ -195,3 +198,8 @@ cases:
   - { id: "a19", input: "asin(2*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived", note: "an inverse takes a pure number" }
   - { id: "a20", input: "acos(pasupm(0.5,0.01))", settings: { angle: "deg" }, oracle: "acosd(F(1,2))", expect: "60", mark: "≈", exact: "60", dim: "rad1", unit: "°", unc: "0.66", unc_oracle: "180/(pi*sqrt(F(3,4))*100)", shown: "60.00 ± 0.66", source: "derived", note: "σ through an inverse, in the mode's unit: 0.01/√0.75·180/π" }
   - { id: "a21", input: "sin(asin(1/2))", settings: { angle: "deg" }, oracle: "F(1,2)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "the angle asin gives goes back into sin unchanged in DEG" }
+  # --- G41: σ beyond first order at a stationary point (deep-check-2026-10-19-exact-units E5) ---
+  - { id: "s01", input: "cos(pasupm(0,0.1))", oracle: "F(1)", expect: "1", mark: "≈", exact: "1", dim: "", unc: "0.0071", unc_oracle: "sqrt(F(1,2)*F('0.1')**4)", shown: "1.0000 ± 0.0071", unc_why: "first order does not hold here", source: "derived", note: "E5: f′ = 0, f″ = -1, so σ² = ½·u⁴ (was 1 ± 0)" }
+  - { id: "s02", input: "sin(pasupm(90,1)*{deg})", oracle: "F(1)", expect: "1", mark: "≈", exact: "1", dim: "", unc: "0.00022", unc_oracle: "sqrt(F(1,2))*(pi/180)**2", shown: "1.00000 ± 0.00022", unc_why: "first order does not hold here", source: "derived", note: "E5: u = π/180 rad, σ = u²/√2 (was 1 ± 0)" }
+  - { id: "s03", input: "(pasupm(0,0.1)*{m})^2", oracle: "F(0)", expect: "0", mark: "≈", exact: "0", dim: "m2", unc: "0.014", unc_oracle: "sqrt(F(1,2)*2**2*F('0.1')**4)", shown: "0.000 ± 0.014", unc_why: "first order does not hold here", source: "derived", note: "E5: f″ = 2, σ² = ½·4·u⁴ in m⁴ (was 0 ± 0)" }
+  - { id: "s04", input: "sqrt(pasupm(0.01,0.1)*{m^2})", oracle: "F(100)", expect: "100", mark: "≈", exact: "100", dim: "m1", unit: "mm", unc: "4700", unc_oracle: "1000*sqrt((M(F('0.1'))/(2*sqrt(F('0.01'))))**2+(F(1,2)*(power(F('0.01'),F(-3,2))/4)**2+1/(2*sqrt(F('0.01')))*3*power(F('0.01'),F(-5,2))/8)*M(F('0.1'))**4)", shown: "100 ± 4700", unc_why: "the interval reaches a singular point", source: "derived", note: "E5: 0.01 ± 2·0.1 reaches 0, where √ has no derivative; f′ = 5, f″ = -250, f‴ = 37500, σ = 4.7 m, shown in mm (was 100 ± 500 mm)" }

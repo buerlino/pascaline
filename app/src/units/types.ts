@@ -100,7 +100,7 @@ export interface Quantity {
   dimensionText: string | null;
   /** Giac's exact text of the number in SI base units. Absent for an exact 0, or when the text is too long to keep. */
   si?: string;
-  /** G18: the first-order uncertainty of a result with uncertain inputs (the value is then never "="). */
+  /** G18, G41: the uncertainty (first and second order) of a result with uncertain inputs (the value is then never "="). */
   unc?: Uncertainty;
   /** G40: a note on how the result was read (i18n, messages.ts unitNoteText): one rad dropped at the end slot, or a
    *  cycle unit (rpm, rev) in a product, whose value counts turns and has no 2π. */
@@ -116,7 +116,15 @@ export type UnitNote =
    *  2π·r·n); `unit` is its symbol. */
   | { note: "cycle"; unit: string };
 
-/** σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over independent inputs, in the same unit as the value. */
+/** G41: why a σ is shown with ⚠ (i18n, messages.ts unitWhyText). */
+export type UncWhy =
+  /** The second-order part is more than 10 % of σ²: first order does not hold here. */
+  | "order2"
+  /** An input's x ± 2σ reaches a point where f or its derivative is not defined. */
+  | "singular";
+
+/** σ² = Σᵢ (∂f/∂xᵢ)² uᵢ² + Σᵢ Σⱼ [½ (∂²f/∂xᵢ∂xⱼ)² + ∂f/∂xᵢ · ∂³f/∂xᵢ∂xⱼ²] uᵢ² uⱼ² over independent inputs (G18, G41;
+ *  GUM 5.1.2, note), in the same unit as the value. */
 export interface Uncertainty {
   /** σ with Home's facts (display at the digits setting). */
   value: HomeResult;
@@ -124,6 +132,8 @@ export interface Uncertainty {
   text: string;
   /** The value rounded to σ's last digit, then " ± " and σ: "39.5 ± 1.2". */
   shown: string;
+  /** G41: present when σ carries ⚠, with the reason. */
+  why?: UncWhy;
 }
 
 /** A refusal. The message is built by messages.ts from the i18n table. */
