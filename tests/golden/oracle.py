@@ -18,7 +18,7 @@ significant digits, evaluated at N+20 and N+50 digits for the stability check. I
 every case whose `expect` is a number also carries `mark:` (docs/04 section 2.4): "=" when the shown text equals the
 oracle value exactly, "≈" when it is rounded; "⚠" is never derived, it is written by hand for functions whose result
 the engine cannot confirm (the case then needs a `note`); so is a "≈" where the oracle says "=" for an exact value Giac returns
-as a double (round, trunc; needs a `note`). A case with a mark but no `expect` is mark-only.
+as a double (needs a `note`, and an input that is a top-level call of round( or trunc(). A case with a mark but no `expect` is mark-only.
 
 Sources: `oracle` (expect written here), `derived` (by hand; an oracle expression must agree),
 `device` / `virtual-calc` (seen on the reference calculator; an oracle expression must agree),
@@ -367,8 +367,9 @@ def check_mark(case: dict, write: bool) -> list:
     if mark == want:
         return []
     # An exact value that Giac returns as a double (round, trunc) is shown ≈ although the oracle says = (docs/04 2.4
-    # rule 3: = needs the engine to report an exact rational): a hand-written ≈ with a note.
-    if mark == "≈" and want == "=" and case.get("note"):
+    # rule 3: = needs the engine to report an exact rational): a hand-written ≈ with a note, and only when the input is
+    # a top-level call of round or trunc.
+    if mark == "≈" and want == "=" and case.get("note") and re.match(r" *(round|trunc)\(", str(case.get("input", ""))):
         return []
     if write:
         case["mark"] = want
