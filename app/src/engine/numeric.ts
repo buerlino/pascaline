@@ -723,6 +723,37 @@ export function notBuiltin(giac: Giac): (name: string) => boolean {
   return (name) => giac.eval(name).trim() !== `'${name}'`;
 }
 
+/** A stored function's printed definition changes engine state: it stores into a name that is neither a parameter
+ *  nor a `local` (Giac prints `sto(y,q)` and `y=>q` as `q:=y`), or calls purge, assume or additionally. The engine's
+ *  own helpers (pasexp, par, sigfig) assign only their locals and parameters. */
+export function definitionStores(def: string): boolean {
+  if (/=>|\b(?:sto|purge|assume|additionally)\s*\(/.test(def)) return true;
+  const own = new Set<string>();
+  const params = /^\s*\(([^)]*)\)\s*->/.exec(def) ?? /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*->/.exec(def);
+  for (const n of params?.[1]?.split(",") ?? []) own.add(n.trim());
+  const local = /\blocal\s+([^;]*);/g;
+  for (let m = local.exec(def); m; m = local.exec(def)) for (const n of m[1]!.split(",")) own.add(n.trim().replace(/\s*:=[\s\S]*$/, ""));
+  const target = /([A-Za-z_][A-Za-z0-9_]*)\s*(?:\[[^\]]*\]\s*)?:=/g;
+  for (let m = target.exec(def); m; m = target.exec(def)) if (!own.has(m[1]!)) return true;
+  return false;
+}
+
+/** `input` calls a stored function whose printed definition stores (`inc(x):={c:=c+1;c}`, definitionStores), directly
+ *  or through another stored function: running it again (a second decision, a value check) would store again, so it
+ *  runs once. */
+export function callsStateful(giac: Giac, input: string): boolean {
+  const seen = new Set<string>();
+  const visit = (text: string): boolean =>
+    functionsIn(text).some((name) => {
+      if (seen.has(name)) return false;
+      seen.add(name);
+      const def = giac.eval(name).trim();
+      if (def === `'${name}'` || !/->/.test(def)) return false;
+      return definitionStores(def) || visit(def);
+    });
+  return visit(input);
+}
+
 /** The result of `input` (printed as `result`) may rest on a decision Giac made at `Digits`: the input calls a
  *  decision function, or a name that is not a Giac built-in (`stored`: a stored function's body may decide,
  *  `f(x):=floor(x*10^12)` then `f(sin(10^60))`), or holds a comparison, or the result holds `abs(` (sqrt of an even

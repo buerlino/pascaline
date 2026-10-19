@@ -228,6 +228,31 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     }
   });
 
+  it("a call to a stored function that stores runs once: c:=0, inc(x):={c:=c+1;c}, inc(1) is 1 and c is 1 (source: derived, one increment of 0)", () => {
+    const cases: [(i: string) => string, (i: string) => unknown][] = [
+      [(i) => host.home(i, defaultHomeSettings).result.display, (i) => host.home(i, defaultHomeSettings).result.warn],
+      [(i) => host.cas(i, defaultCasSettings).result.text, (i) => host.cas(i, defaultCasSettings).result.warn],
+    ];
+    for (const [run, warnOf] of cases) {
+      run("c:=0");
+      run("inc(x):={c:=c+1;c}");
+      expect(run("inc(1)")).toBe("1"); // was 3: decided again at P + 20 and P + 40, each run stored
+      expect(run("c")).toBe("1");
+      run("c:=0");
+      expect(warnOf("inc(1)")).toBeUndefined(); // was ⚠ "decided at limited precision"
+      host.home("purge(c,inc)", defaultHomeSettings);
+    }
+  });
+
+  it("definitionStores: a store into a global name, not into a local or a parameter (source: derived, Giac's printed definitions)", async () => {
+    const { definitionStores } = await import("./numeric.ts");
+    expect(definitionStores("(x)->{ \n  c:=c+1;  \n  c;  \n}")).toBe(true);
+    expect(definitionStores("(x)-> \n{ local y; \n  y:=x;  \n  q:=y;  \n  y;  \n}")).toBe(true);
+    expect(definitionStores("(z)-> \n{ local b; \n  b:=normal(im(z)*180/pi);  \n  return(exp(re(z))*(cos(b)+i*sin(b)));  \n}")).toBe(false);
+    expect(definitionStores("(x)->{ \n  x:=x+1;  \n  x;  \n}")).toBe(false);
+    expect(definitionStores("(x)->floor(x*10^12)")).toBe(false);
+  });
+
   it("a float in a non-number keeps the P decision: piecewise(sin(10^50)>0,x,evalf(1/2)*x) is 0.5*x (source: oracle, sin(10^50) = -0.789672493429)", () => {
     const r = host.home("piecewise(sin(10^50)>0,x,evalf(1/2)*x)", defaultHomeSettings).result;
     expect(r.display).toBe("0.5*x");

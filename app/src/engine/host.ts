@@ -31,7 +31,7 @@ import {
 import { eseriesDefinition } from "./eseries.ts";
 import { giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, notBuiltin, floatsShown, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, notBuiltin, callsStateful, floatsShown, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -468,7 +468,7 @@ export class EngineHost {
     // self-reference (B:=B*2) already overwrote B, and other stateful inputs cannot run again, so neither is moved.
     const asg = simpleAssignment(input);
     const body = asg ? asg.rhs : input;
-    const rerun = asg ? !namesIn(asg.rhs).includes(asg.name) : !isStateful(input);
+    const rerun = (asg ? !namesIn(asg.rhs).includes(asg.name) : !isStateful(input)) && !callsStateful(this.strict, body);
     result = this.inherited(result, body, rerun ? toExactLiterals(body) : null, Math.trunc(s.digits), Math.trunc(s.digits));
     let defs: DefChange[] = [];
     if (isStateful(input)) {
@@ -542,9 +542,12 @@ export class EngineHost {
     }
     if (isError(text)) return fail(text, isTimeout(text) ? "timeout" : "engine");
     const stateful = isStateful(input);
+    // A call to a stored function that stores (inc(x):={c:=c+1;c}) must not run again either, assigned or not.
+    const storing = callsStateful(this.giac, input);
+    const single = stateful || storing;
     // An == or ≠ test on a float side: decided by its own digits, as in Home (R18f2).
     const inexactTest = test && this.giac.eval(EQ_INEXACT_FLAG) === "1";
-    const decided = inexactTest && !stateful ? decideFloatTest(this.giac, exactInput, digitsSet) : null;
+    const decided = inexactTest && !single ? decideFloatTest(this.giac, exactInput, digitsSet) : null;
     if (decided) {
       text = run();
       this.giac.eval(`purge(${EQ_VERDICT})`);
@@ -554,7 +557,7 @@ export class EngineHost {
     // A plain name:=value decides its value (the right-hand side) and stores the agreed one, as Home does; other
     // stateful inputs (f(x):=…, purge, assume, =>) must not run twice.
     const asg = simpleAssignment(input);
-    const once = !asg && stateful;
+    const once = (!asg && stateful) || storing;
     let undecided = false;
     const decisionExpr = asg ? toExactLiterals(asg.rhs) : exactInput;
     if (!once && !inexactTest && !hasFloat(text) && restsOnDecision(decisionExpr, text, notBuiltin(this.giac))) {
@@ -569,11 +572,11 @@ export class EngineHost {
     }
     // G39: a divergent integral or series, or no limit, is refused as in Home; Giac's [exact, numeric] pair of a
     // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
-    const refused = stateful ? null : refusalOf(this.giac, exactInput, text, s.angle);
+    const refused = single ? null : refusalOf(this.giac, exactInput, text, s.angle);
     if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
-    const pair = !stateful && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
+    const pair = !single && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
       stateful ? this.defsAfter(input, [exactInput], preview, facts, "cas", Math.trunc(s.digits), s.angle) : [];
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
@@ -582,15 +585,15 @@ export class EngineHost {
     if (shape) {
       const asked = askedDigits(input);
       const digits = asked ?? Math.trunc(s.digits);
-      const facts = floatFacts(this.giac, "pcasans", stateful ? null : exactInput, shape, digits, Math.trunc(s.digits));
+      const facts = floatFacts(this.giac, "pcasans", single ? null : exactInput, shape, digits, Math.trunc(s.digits));
       if (facts) {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
         if (unverified) numeric.warn = numeric.warn ?? "unchecked";
         if (asked !== null) numeric.digits = asked;
         const body = asg ? asg.rhs : input;
-        const why = whyOf(facts, stateful ? null : exactInput);
+        const why = whyOf(facts, single ? null : exactInput);
         if (why) numeric.why = why;
-        numeric = this.inherited(numeric, body, stateful ? null : exactInput, digits, Math.trunc(s.digits));
+        numeric = this.inherited(numeric, body, single ? null : exactInput, digits, Math.trunc(s.digits));
         return {
           result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },
           defs: defsOf(numeric.display, EngineHost.factsOf(numeric, Math.trunc(s.digits))),

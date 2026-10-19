@@ -31,6 +31,7 @@ import {
   decideTwice,
   restsOnDecision,
   notBuiltin,
+  callsStateful,
   floatsShown,
   shapeOf,
   valuePrecision,
@@ -525,8 +526,9 @@ export function homeEval(
   const ans = "pasans";
   const asg = simpleAssignment(input);
   const body = asg ? asg.rhs : input;
-  // Other stateful inputs (f(x):=…, purge, assume, =>) must not run twice.
-  const once = !asg && isStateful(input);
+  // Other stateful inputs (f(x):=…, purge, assume, =>) must not run twice, nor a call to a stored function that
+  // stores (inc(x):={c:=c+1;c}), assigned or not.
+  const once = (!asg && isStateful(input)) || callsStateful(giac, body);
   const exactBody = toExactLiterals(body);
   const test = input.includes(EQ_INEXACT_FLAG);
   if (test) giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
