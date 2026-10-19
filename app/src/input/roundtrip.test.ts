@@ -56,6 +56,7 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
     const M = await mod.default({ print: () => {}, printErr: () => {} });
     (M.cwrap("giac_init", "number", []) as () => number)();
     giac = M.cwrap("giac_eval", "string", ["string"]) as GiacEval;
+    giac("pasdeg:=1"); // R64: our parser's text reads pasdeg, as the engine host sets it (homeEval.ts pasdegCommand)
     // The parser emits our own names (pasmod); the host loads them on first use.
     for (const def of [...Object.values(ENGINE_DEFINITIONS), eseriesDefinition()]) giac(def);
   }, 60_000);
@@ -88,6 +89,35 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
           expect(dms).toBe(mode === "deg" ? "1513/50" : "1513*pi/9000");
         } finally {
           giac("angle_radian:=1");
+        }
+      });
+    }
+  });
+
+  // R64 (route R): with Giac in radians and pasdeg = π/180 in DEG (G46's setting), the parser's text alone keeps the
+  // degree mode. Derived values: sin(30°) = 1/2, asin(1/2) = 30 (DEG) and π/6 (RAD), arg(i) = 90 and π/2, atan2(1,1) =
+  // 45 and π/4, 2∡30 = √3 + i in DEG, a 30° angle is 30 in DEG (the mode's unit) and π/6 in RAD.
+  describe("route R: Giac in radians, the degrees in the text", () => {
+    for (const [mode, pasdeg] of [["rad", "1"], ["deg", "pi/180"]] as const) {
+      it(`${mode}: every angle the user types follows pasdeg`, () => {
+        giac("angle_radian:=1");
+        giac(`pasdeg:=${pasdeg}`);
+        const deg = mode === "deg";
+        const v = (latex: string): string => giac(`simplify(${latexToGiac(latex)})`);
+        try {
+          expect(v("\\sin\\left(30^{\\circ}\\right)")).toBe("1/2");
+          expect(v("30^{\\circ}")).toBe(deg ? "30" : "pi/6");
+          expect(v("30\\degree15\\prime36\\doubleprime")).toBe(deg ? "1513/50" : "1513*pi/9000");
+          expect(v("\\arcsin\\left(\\frac{1}{2}\\right)")).toBe(deg ? "30" : "pi/6");
+          expect(v("\\sin^{-1}\\left(\\frac{1}{2}\\right)")).toBe(deg ? "30" : "pi/6");
+          expect(v("\\arg\\left(i\\right)")).toBe(deg ? "90" : "pi/2");
+          expect(v("\\operatorname{atan2}\\left(1,1\\right)")).toBe(deg ? "45" : "pi/4");
+          expect(v(deg ? "\\cos\\left(60\\right)" : "\\cos\\left(\\frac{\\pi}{3}\\right)")).toBe("1/2");
+          expect(v(deg ? "2\\measuredangle30" : "2\\measuredangle\\frac{\\pi}{6}")).toBe("sqrt(3)+i");
+          // a hyperbolic function has no angle in it (F29): the same in both modes
+          expect(v("\\cosh\\left(0\\right)")).toBe("1");
+        } finally {
+          giac("pasdeg:=1");
         }
       });
     }

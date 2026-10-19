@@ -17,6 +17,9 @@ import {
   floatsAsEvalf,
   homeEval,
   homeSetupCommands,
+  angleCommand,
+  latexShown,
+  pasdegCommand,
   isStateful,
   onceUndecided,
   regrouped,
@@ -34,6 +37,7 @@ import {
 import { eseriesDefinition } from "./eseries.ts";
 import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
+import { dropAngleFactor } from "../input/angles.ts";
 import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, notBuiltin, callsStateful, floatsShown, floatFacts, functionsIn, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
@@ -100,7 +104,7 @@ function isTimeout(out: string): boolean {
 /** Commands that put Giac into CAS mode (D3). Home's are homeSetupCommands() in homeEval.ts. */
 export function casSetupCommands(s: CasSettings): string[] {
   return [
-    `angle_radian:=${s.angle === "rad" ? 1 : 0}`,
+    angleCommand(s.angle),
     `Digits:=${Math.trunc(s.digits)}`,
     `timeout ${Math.min(Math.max(s.hardTimeoutS, 0.001), 1439).toFixed(3)}`,
     "ckevery 10",
@@ -286,6 +290,9 @@ export class EngineHost {
 
   constructor(giac: GiacApi) {
     this.giac = giac;
+    // R64: our parser's text reads pasdeg in every angle; set before any input (the units, raw eval and replay paths
+    // have no mode setup of their own)
+    giac.eval(pasdegCommand("rad"));
     this.strict = {
       eval: (input) => {
         giac.clearMessages();
@@ -360,7 +367,7 @@ export class EngineHost {
    * `angle`: the mode a variable was stored in (G34), recorded with it when known.
    */
   private defsAfter(input: string, ran: string[], preview: string, facts: NameFacts | null, view: "home" | "cas", digits: number, angle: "rad" | "deg" | undefined): DefChange[] {
-    const base = { preview: showExp(preview.trim()).slice(0, PREVIEW_MAX), view, time: Date.now() };
+    const base = { preview: dropAngleFactor(showExp(preview.trim())).slice(0, PREVIEW_MAX), view, time: Date.now() };
     const purge = /^\s*purge\s*\(([^()]*)\)\s*$/.exec(input);
     let changes: DefChange[];
     const names = purge ? purge[1]!.split(",").map((x) => x.trim()) : [];
@@ -790,7 +797,7 @@ export class EngineHost {
     // G38: "decided at limited precision"; the value was computed, not compared, so `once` is not said.
     const why0 = pair ? { differ: true } : undecided ? { ...(symWhy && !symWhy.once ? symWhy : {}), decided: true } : symWhy;
     const why = read?.causes.length ? { ...(why0 ?? {}), inherited: read.causes } : why0;
-    const tex = this.giac.eval(`latex(${slot})`);
+    const tex = latexShown(this.giac, slot, text);
     if (atN !== null) this.giac.eval("purge(pasfl)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
@@ -848,7 +855,7 @@ export class EngineHost {
 
   private useSolveMode(s: HomeSettings): void {
     this.useMode(`solve${JSON.stringify(s)}`, () => {
-      this.giac.eval(`angle_radian:=${s.angle === "rad" ? 1 : 0}`);
+      this.giac.eval(angleCommand(s.angle));
       this.giac.eval(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
       this.giac.eval("ckevery 10");
       this.giac.eval(`Digits:=${Math.trunc(s.digits)}`);

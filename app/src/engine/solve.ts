@@ -8,6 +8,7 @@ import { confirmedDigits, decimalFromString, formatComplex, formatConfirmed, isZ
 import { valuePrecision } from "./numeric.ts";
 import { defaultSolveSettings, negZero, num, solve1, type SolveSettings } from "./solve1.ts";
 import { IDENT, type KnownValue, type SolveOutcome, type SolveRequest } from "./types.ts";
+import { PASDEG } from "../input/angles.ts";
 
 /** Giac's own interrupt for one call inside Solve and Function analysis: a safety net only; the
  *  solvers keep their own budgets and the user has Cancel. */
@@ -51,7 +52,8 @@ export function unknownsOf(giac: Giac, equations: string[]): string[] {
     const out = giac.eval(`lname(quote(${eq}))`);
     if (out.startsWith("GIAC_ERROR")) continue;
     for (const n of out.replace(/[[\]\s]/g, "").split(",")) {
-      if (n && IDENT.test(n) && !seen.includes(n)) seen.push(n);
+      // R64: the degree factor in every angle is ours, never an unknown
+      if (n && IDENT.test(n) && n !== PASDEG && !seen.includes(n)) seen.push(n);
     }
   }
   return seen;
