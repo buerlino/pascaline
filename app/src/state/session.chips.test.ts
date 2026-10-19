@@ -147,12 +147,18 @@ describe.skipIf(!giacAvailable())("marks travel through Ans and chips (R65, real
   });
 
   it("D2: normald_icdf ×1000 ÷1000 and romberg ×1 ×1 never become = (⚠ through two chips)", async () => {
+    // G44: normald_icdf(0.025) is polished (≈); with σ < 0 the polish refuses and the value stays unaudited (⚠).
     const s = new Session(calc, memoryKv());
-    await s.submit("x", "normald_icdf(0.025)");
+    await s.submit("x", "normald_icdf(2,-1,0.3)");
     await s.submit("\\ans\\times1000");
     await s.submit("\\ans\\div1000");
     expect([markOf(s, 0), markOf(s, 1), markOf(s, 2)]).toEqual(["⚠", "⚠", "⚠"]);
     expect(s.home[2]?.fullExact).toBe(false);
+    const p = new Session(calc, memoryKv());
+    await p.submit("x", "normald_icdf(0.025)");
+    await p.submit("\\ans\\times1000");
+    await p.submit("\\ans\\div1000");
+    expect([markOf(p, 0), markOf(p, 1), markOf(p, 2)]).toEqual(["≈", "≈", "≈"]);
     const t = new Session(calc, memoryKv());
     await t.submit("x", "romberg(exp(-x^2),x,0,1)");
     await t.submit("\\ans\\times1");

@@ -199,8 +199,17 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   describe("why the mark (G22)", () => {
     const home = (i: string, digits = 12) => host.home(i, { ...defaultHomeSettings, digits }).result;
     it("an unaudited function is named", () => {
-      expect(home("normald_icdf(10^-10)").why).toEqual({ unaudited: ["normald_icdf"] });
-      expect(host.cas("normald_icdf(10^-10)", defaultCasSettings).result.numeric?.why).toEqual({ unaudited: ["normald_icdf"] });
+      // G44: σ < 0 is no distribution, so the polish refuses it and Giac's number stays unaudited.
+      expect(home("normald_icdf(2,-1,0.3)").why).toEqual({ unaudited: ["normald_icdf"] });
+      expect(host.cas("normald_icdf(2,-1,0.3)", defaultCasSettings).result.numeric?.why).toEqual({ unaudited: ["normald_icdf"] });
+    });
+    it("G44: a polished inverse distribution function is audited for that input, in Home and CAS", () => {
+      const r = home("normald_icdf(10^-10)");
+      expect([r.why, r.warn, r.display, r.exact]).toEqual([undefined, undefined, "-6.3613409024", undefined]);
+      const c = host.cas("normald_icdf(10^-10)", defaultCasSettings).result.numeric;
+      expect([c?.why, c?.warn, c?.display]).toEqual([undefined, undefined, "-6.3613409024"]);
+      // with an unaudited function next to it, the input stays unaudited (and names only that one)
+      expect(home("normald_icdf(0.3)+romberg(exp(-x^2),x,0,1)").why).toEqual({ unaudited: ["normald_icdf", "romberg"] });
     });
     it("a result from a stored float names the stored name when it limits the digits", () => {
       host.home("B:=BesselJ(1,2)", defaultHomeSettings);

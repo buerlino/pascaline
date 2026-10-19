@@ -81,17 +81,24 @@ export const ICDF_DEFINITIONS: Readonly<Record<string, string>> = {
     "return [s[0],s[1],exp(a/2*ln(a*x/w)+b/2*ln(b/w)-ln(x)-paslg(a/2)-paslg(b/2)+paslg(a/2+b/2)),s[0]-1/2]; }",
   // Newton from Giac's x0 on the smaller tail; Giac's x0 with the flag set when it cannot be polished.
   pasicdf:
-    "pasicdf(k,a,b,p,x0):={ local x,q,lo,md,t,r,dx,n,ok,tol,d; " +
-    `if (not(${REAL("x0")}) or not(${REAL("p")}) or not(${REAL("a")}) or not(${REAL("b")})) { ${ICDF_FAILED}:=1; return x0; } ` +
+    "pasicdf(k,a,b,p,x0):={ local x,q,lo,md,t,r,w,dx,n,ok,tol,d; " +
+    `if (not(${REAL("p")}) or not(${REAL("a")}) or not(${REAL("b")})) { ${ICDF_FAILED}:=1; return x0; } ` +
     `if (p<=0 or p>=1 or (k>0 and a<=0) or ((k==0 or k==3) and b<=0)) { ${ICDF_FAILED}:=1; return x0; } ` +
     // The median of the symmetric ones is exact (Giac's normald_icdf(0.5) is -1.9E-19).
     "if (p==1/2 and k==0) return a; if (p==1/2 and k==1) return 0; " +
     // md: p next to the median of a symmetric one, solved for F(x) − 1/2 = p − 1/2; else on the smaller tail.
-    "x:=evalf(exact(x0)); md:=(k<=1 and p>1/4 and p<3/4); lo:=(p<=1/2); " +
+    // Giac's value as the start; its centre when that is not a finite number in the support (fisher_icdf(3,4,1-10^-20)
+    // is +infinity, chisquare_icdf(3,10^-30) is negative).
+    `if (${REAL("x0")} and not((k==2 or k==3) and x0<=0)) x:=evalf(exact(x0)); else x:=evalf(when(k==0,a,when(k==1,0,when(k==2,a,1)))); ` +
+    "md:=(k<=1 and p>1/4 and p<3/4); lo:=(p<=1/2); " +
     "if (md) q:=abs(p-1/2); else { if (lo) q:=p; else q:=1-p; } tol:=evalf(10^(5-Digits)); ok:=0; " +
     "for (n:=1;n<=20;n:=n+1) { t:=pasicdft(k,a,b,x); if (not(t[2]>0)) break; " +
-    "if (md) r:=t[3]-(p-1/2); else { if (lo) r:=t[0]-p; else r:=q-t[1]; } dx:=r/t[2]; " +
-    "if ((k==2 or k==3) and x-dx<=0) x:=x/2; else x:=x-dx; if (abs(dx)<=tol*max(abs(x),when(k==0,b,1))) { ok:=1; break; } } " +
+    // In a tail, Newton on ln F: the same root and the derivative f/F, but it converges from Giac's far value
+    // (normald_icdf below 1E-16 is a different number on each call: -8.58, -8.65 for 10^-20, right -9.26).
+    "if (md) dx:=(t[3]-(p-1/2))/t[2]; else { if (lo) w:=t[0]; else w:=t[1]; if (not(w>0)) break; " +
+    "dx:=(ln(w)-ln(q))*w/t[2]; if (not(lo)) dx:=-dx; } " +
+    // χ² and Fisher live on x > 0 and have power-law tails at 0: the step is taken in ln x.
+    "if (k==2 or k==3) x:=x*exp(-dx/x); else x:=x-dx; if (abs(dx)<=tol*max(abs(x),when(k==0,b,when(k==1,1,0)))) { ok:=1; break; } } " +
     `if (ok==1) { t:=pasicdft(k,a,b,x); if (md) r:=t[3]-(p-1/2); else { if (lo) r:=t[0]-p; else r:=q-t[1]; } ` +
     `if (type(${ICDF_DIGITS})==integer) d:=${ICDF_DIGITS}; else d:=Digits-10; if (abs(r)>q*10^(-d)) ok:=0; } ` +
     `if (ok==0) { ${ICDF_FAILED}:=1; return x0; } return x; }`,
