@@ -150,7 +150,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 - **Result chip `\res{n}`:** tapping a history result, or Up then Enter, inserts a chip drawn as the number shown. Each history item stores `full`: Giac's exact text when the result is exact and ≤ 2 kB, else its confirmed decimal. The parser turns the chip into that text (an exact rational literal for decimals). In Home a result chip that is not exact goes to the engine by name (`pasr_<k>`, Ans as `pasr_ans`) with its confirmed decimal, confirmed digits and warn (`chipFacts.ts`), which the history stores with the entry, and counts as a stored float (M4-7); a value stored from an inexact input keeps `inexact` facts though it prints exactly, and a result from an inexact chip or constant is never an exact chip. Its facts travel (exact, confirmed digits, warn), through Ans, a chip and Store, for every later use: a result computed from a chip whose value is not exact (an irrational result carried as digits, a constant with an uncertainty) cannot be `=`; a chip that carries an exact value keeps the result exact, so `1/3` (shown `≈ 0.333333333333`) tapped `×3` is `= 1` (2.3 #8; user, 2026-10-12, M4-4).
 - **Ans:** `\ans` is the view's last result, inserted by Shift + `+` (the reference's position). Ans is resolved by the app at Enter from the view's last history result (its chip value), not from Giac's `pasans`/`pcasans`, so it survives a Cancel (worker restart) and a relaunch (R2).
 - **Operator on an empty line:** `+ − × ÷ xʸ x² x⁻¹` on an empty entry line insert `\ans` first, as the reference does. `(−)` stays negation. This saves a press in every chained calculation; benchmark tasks measure it.
-- A value that leaves its evaluation (stored, Ans, a chip, an export) is the value shown, independent of the angle mode (G34).
+- A value that leaves its evaluation (stored, Ans, a chip, an export) is the value shown, independent of the angle mode (G34). Since G46 its exact text is radian text, which means the same in every mode, so it stays exact.
 - A stored name takes the facts of what its input read, in every assignment form, and a run-once result that rests on a decision is ⚠ (G48).
 - A CAS result without a float that read a stored name, or called a function, with facts takes their mark (`warn`, `why.inherited`); one built from exact names stays unmarked (G51).
 
@@ -167,6 +167,15 @@ Removed with the app (P11, 2026-10-13).
 ### 2.11 Risks and what would change it
 - Marks add a little text to every line. If the owner finds them noisy on a device, `=` could become the absence of a mark, keeping `≈` and `⚠` (one setting, no architecture change).
 - Correlated errors in Giac's numeric routines: section 9 risk 1.
+
+### 2.12 Decision: the angle mode (S14, route R)
+Giac runs with `angle_radian:=1` in every view and mode, and the degree mode lives in the text our parser emits:
+- each angle function the user types takes its argument times `pasdeg` (`sin(pasdeg*(u))`);
+- each inverse, and `arg`, returns its result over it (`asin(u)/pasdeg`);
+- the polar entry's angle carries it, and the ° template is `u*(pi/180)^angle_radian()/pasdeg` (decisions "2026-10-19 R64");
+- the host sets `pasdeg` to π/180 in DEG and 1 in RAD when the mode changes, and `pasdeg` is a reserved name. The rule is one table, `app/src/input/angles.ts`, shared by the emitter and `rewriteAngles`.
+
+Every Giac path (exp, the hyperbolics, complex trig, inverse trig, integration, desolve, laplace, limit, series, complex powers) therefore sees radians. A stored value is angle-free text. A typed or library function keeps `pasdeg` in its body, so it follows the mode at call time. A chip carries Giac's radian text, which means the same thing in both modes. The plot multiplies by the same factor (R64a). In DEG the CAS view, and a Home result that is not a number, show the result as the mode reads it: Giac evaluates the text with each `trig(u)` taken as trig of u·180/π and each inverse as π/180 times the inverse, so `diff(sin(x),x)` shows `pi/180*cos(x)` (`engine/degrees.ts`). Ans and chips keep the radian text. Previews, Vars and the library export drop the factor, and a library import puts it in. Stored logs older than DATA_VERSION 3 are migrated (`engine/angleMigration.ts`). Evidence: [research/r14-angle-mode.md](research/r14-angle-mode.md).
 
 ---
 

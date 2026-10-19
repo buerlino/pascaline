@@ -26,7 +26,6 @@
 ### The open packages
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [G47](packages/G47.md) | Golden cases for the displays G50 cut | gorge, Sonnet | night | now | ~0.25 d |
 | [G56](packages/G56.md) | Complex functions inside a stored function, in CAS | gorge, **Opus** | night | G51 | ~0.5 d |
 | [G57](packages/G57.md) | A decision Giac cannot make is refused | gorge, **Opus** | night | G48 | ~0.5 d |
 | [G53](packages/G53.md) | The second decision costs at most 1.3× again | gorge, **Opus** | night | G52 | ~0.5 d |
@@ -35,8 +34,6 @@
 | [S13](packages/S13.md) | Stored names from Giac's state (spike) | sandra, Opus | night | G48 | ~0.5 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One after G53 | annabell, Sonnet | day (device) | G53 | ~0.25 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | G55 | ~0.25 d |
-| [R64](packages/R64.md) | The angle mode lives in our parser (route R) | ron, **Opus** | night | now (route R decided) | ~0.5 d |
-| [G46](packages/G46.md) | Giac always in radians; pasexp goes | gorge, **Opus** | night | R64 | ~1 d |
 | [G41](packages/G41.md) | σ beyond first order at a stationary point | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G37](packages/G37.md) | °C and °F inside a compound unit are an interval | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G40](packages/G40.md) | Angles in the unit view: inverses, ω·r, rpm | gorge, **Opus** | night | A15; before R24c | ~0.75 d |
