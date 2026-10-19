@@ -50,6 +50,11 @@ describe("replayOrder, validDefs, userNamesOf", () => {
     expect(validDefs([good, { name: "B" }, { ...good, kind: "nope" }, { ...good, name: "1x" }, { ...good, facts: { reliableDigits: "x" } }, null])).toEqual([good]);
     expect(validDefs("junk")).toEqual([]);
   });
+  it("G34: a variable keeps the angle mode it was stored in; a wrong or foreign one is dropped", () => {
+    const v = entry("A", "var", "A:=(5)", { angle: "deg" });
+    const f = entry("f", "fn", "f(x):=x");
+    expect(validDefs([v, { ...entry("B", "var", "B:=(1)"), angle: "grad" }, { ...f, angle: "deg" }])).toEqual([v, entry("B", "var", "B:=(1)"), f]);
+  });
   it("Vars lists variables and functions, not assumptions or other inputs", () => {
     const log = [entry("A", "var", "A:=(5)"), entry("x", "assume", "assume(x>0)"), entry("f", "fn", "f(x):=x"), entry("", "other", "a,b:=1,2")];
     expect(userNamesOf(log).map((u) => `${u.name}:${u.kind}`)).toEqual(["A:var", "f:fn"]);

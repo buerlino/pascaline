@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Pure parts of exact-first Home. Every expected value here is `derived` (exact arithmetic by hand).
 import { describe, expect, it } from "vitest";
-import { EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, toExactLiterals } from "./homeEval.ts";
+import { angleDependent, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, toExactLiterals } from "./homeEval.ts";
 import { EQ_DIFF as EMITTED_DIFF, EQ_INEXACT_FLAG as EMITTED_FLAG, EQ_VERDICT as EMITTED_VERDICT, mathJsonToGiac } from "../input/emit.ts";
 import { markOf } from "./format.ts";
 
@@ -46,5 +46,15 @@ describe("restoreLiterals (G14)", () => {
     expect(restoreLiterals("(x==(5/10^1+y))", "x==0.5+y")).toBe("(x==(0.5+y))");
     expect(restoreLiterals("(x==5/10^1*y)", "x==0.5*y")).toBe("(x==0.5*y)");
     expect(restoreLiterals("(x==5/10^12+y)", "x==0.5+y")).toBe("(x==5/10^12+y)");
+  });
+});
+
+describe("angleDependent (G34): exact texts Giac would read again in a later angle mode", () => {
+  it("trig, inverse and reciprocal functions, arg, and pasexp's cos and sin", () => {
+    for (const t of ["sin(1)", "atan(3/4)", "180*atan(3/4)/pi", "sec(2)", "acot(3)", "arg(1+2*i)", "cos(16200/pi)+i*sin(16200/pi)"]) expect(angleDependent(t), t).toBe(true);
+  });
+  it("exp, hyperbolic functions and powers only with the imaginary unit", () => {
+    for (const t of ["exp(90*i)", "cosh(1+i)", "exp(1/3*ln(1+i))", "(1+i)^(1/3)"]) expect(angleDependent(t), t).toBe(true);
+    for (const t of ["exp(1)", "cosh(2)", "2^(1/3)", "1/2", "sqrt(2)", "pi/4", "(sqrt(6)-sqrt(2))/4", "sqrt(2)/2*(1+i)", "11-2*i", "pi*i"]) expect(angleDependent(t), t).toBe(false);
   });
 });

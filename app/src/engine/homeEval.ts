@@ -104,6 +104,9 @@ export interface HomeResult {
   digits?: number;
   /** Giac `latex()` of a result that is not a number (raw; the view tidies it up and draws it, as in CAS). R18f3. */
   latex?: string;
+  /** G34: the exact text read the angle mode (`angleDependent`), so what leaves this evaluation (the stored value, Ans,
+   *  a chip, the export) is `full`, the confirmed decimal, and `exact` is absent (docs/04 2.8). */
+  carried?: "decimal";
   /** G26: significant digits of the shown value before the digit position of the first-order σ that the inexact
    *  constants of the input leave (EngineHost.home's table); the digits from there on are uncertain. Absent when no
    *  inexact constant went in by name, or the result is not one real number. */
@@ -374,6 +377,27 @@ export function definedBy(input: string): { name: string; kind: "var" | "fn" } |
 /** Longest exact text kept as `full` (docs/04 section 2.8: ≤ 2 kB). */
 export const FULL_EXACT_MAX = 2048;
 
+/** The functions whose value Giac reads in the angle mode: the trig functions, their inverses and reciprocals, arg. */
+const ANGLE_FUNCTIONS: ReadonlySet<string> = new Set([
+  "sin", "cos", "tan", "sec", "csc", "cot", "asin", "acos", "atan", "asec", "acsc", "acot", "arcsin", "arccos", "arctan", "atan2", "arg",
+]);
+/** Functions that are angle-free for a real argument, but whose complex values Giac builds from cos and sin and then reads
+ *  in the angle mode (F29: exp(i*90) is i in DEG; deep check D4, D12: cosh, sinh and complex powers). */
+const COMPLEX_ANGLE_FUNCTIONS: ReadonlySet<string> = new Set(["exp", "sinh", "cosh", "tanh", "sech", "csch", "coth", "pasexp"]);
+
+/**
+ * G34 (check 2026-10-19 findings 1 and 2): an exact numeric text that Giac would read again in the angle mode of each
+ * later use: it holds an angle function (pasexp's cos and sin included), or the imaginary unit together with exp, a
+ * hyperbolic function or a power. Such a text must not leave its evaluation; the confirmed decimal does instead.
+ * `sqrt(2)`, `1/2`, `pi/4` and `(sqrt(6)-sqrt(2))/4` (DEG sin(15)) are angle-free and stay exact.
+ */
+export function angleDependent(text: string): boolean {
+  const fns = functionsIn(text);
+  if (fns.some((f) => ANGLE_FUNCTIONS.has(f))) return true;
+  const imaginary = /(?<![A-Za-z0-9_.])i(?![A-Za-z0-9_(])/.test(text);
+  return imaginary && (fns.some((f) => COMPLEX_ANGLE_FUNCTIONS.has(f)) || text.includes("^"));
+}
+
 /**
  * `regroup` on the stored answer `name` (x*x -> x^2), kept only when it merges equal factors, i.e. has
  * fewer "*" than `text`. Otherwise regroup would just reorder (factor's (x-1)*(x+1) -> (x+1)*(x-1))
@@ -530,6 +554,14 @@ export function homeEval(
     return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
   };
 
+  // G34: the shown value leaves as its confirmed decimal (every digit of `full` is confirmed); Ans and the stored name
+  // hold that float, read back with its digits (floatsAsEvalf), so a later angle mode cannot read it again.
+  const carryDecimal = (r: HomeResult): HomeResult => {
+    giac.eval(`${ans}:=(${floatsAsEvalf(r.full)})`);
+    store();
+    return { ...r, carried: "decimal" };
+  };
+
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 
@@ -570,8 +602,9 @@ export function homeEval(
   if (!facts) {
     const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
     if (!d) return symbolic();
-    store();
     const b = build([d], shape, s.digits, "exact", true);
+    if (angleDependent(exactOut)) return carryDecimal(fromBuilt(b, "exact", true, undefined, b.decimal, { once: true }));
+    store();
     return fromBuilt(b, "exact", true, exactOut, b.decimal, { once: true });
   }
   let exactText = exactOut;
@@ -582,8 +615,9 @@ export function homeEval(
       exactText = giac.eval(ans);
     }
   }
-  store();
   const b = build(facts, shape, s.digits, "exact", false);
+  if (angleDependent(exactText)) return carryDecimal(fromBuilt(b, "exact", false, undefined, b.decimal));
+  store();
   const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
   const big = shape.kind === "scalar" && facts[0]!.big;
   if (!big) return fromBuilt(b, "exact", false, exactText, full);

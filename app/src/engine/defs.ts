@@ -35,6 +35,9 @@ export interface DefEntry {
   time: number;
   /** Replay before every other entry: a symbolic value (names in it must still be unassigned when it is set again). */
   early?: boolean;
+  /** A variable: the angle mode it was stored in (G34), so a later migration knows what an old text meant. Absent for
+   *  entries stored before G34 and for values set outside Home and CAS (the raw eval path). */
+  angle?: "rad" | "deg";
   /** One line saying what it is (a library's comment above the definition, G33), at most DESC_MAX characters. */
   desc?: string;
 }
@@ -109,6 +112,7 @@ export function validDefs(x: unknown): DefEntry[] {
       view: e["view"] === "cas" ? "cas" : "home",
       time: typeof e["time"] === "number" && Number.isFinite(e["time"]) ? e["time"] : 0,
       ...(e["early"] === true ? { early: true } : {}),
+      ...(kind === "var" && (e["angle"] === "rad" || e["angle"] === "deg") ? { angle: e["angle"] } : {}),
       ...(typeof e["desc"] === "string" && e["desc"] ? { desc: e["desc"].slice(0, DESC_MAX) } : {}),
     });
   }
