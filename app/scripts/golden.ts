@@ -100,6 +100,8 @@ interface Case {
   before?: string[];
   /** precision.yaml, kind cas: inputs run first in Home on the same engine (a value stored there, G20). */
   beforeHome?: string[];
+  /** precision.yaml, Home cases: inputs run first in CAS on the same engine (a value stored there, G50f1). */
+  beforeCas?: string[];
   /** home.yaml (G34): a sequence of lines, each in its own angle mode; the last one is checked against expect and mark. */
   steps?: Step[];
   /** home.yaml sequences (G49): the constants the steps hold by name (`pasc_<id>`), as G26's table. */
@@ -303,8 +305,9 @@ async function stagePrecision(): Promise<void> {
     const problems: string[] = [];
     let mark: MarkInfo | null;
     let shown: string;
-    // A case that stores names in Home (`beforeHome`) gets its own engine, so the stored x does not reach later cases.
-    const host = c.beforeHome?.length ? new EngineHost(await freshGiac()) : shared;
+    // A case that stores names in the other view (`beforeHome`, `beforeCas`) gets its own engine, so the stored x does
+    // not reach later cases.
+    const host = c.beforeHome?.length || c.beforeCas?.length ? new EngineHost(await freshGiac()) : shared;
     const setting = c.settings?.digits ?? 12;
     // The digits the result is shown with: the setting, or what the input asked for (CAS evalf(x,n), M4-6).
     const digits = c.settings?.shown ?? setting;
@@ -327,6 +330,7 @@ async function stagePrecision(): Promise<void> {
       mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && r.approximate ? (r.warn ? { mark: "⚠" } : { mark: "≈" }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
     } else {
       const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
+      for (const b of c.beforeCas ?? []) host.cas(giacOf(b), { ...defaultCasSettings, angle: s.angle, digits: setting });
       for (const b of c.before ?? []) host.home(giacOf(b), s);
       const r = host.home(input, s).result;
       shown = r.ok ? r.display : `error: ${r.display}`;

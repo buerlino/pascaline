@@ -32,6 +32,7 @@ import {
   restsOnDecision,
   notBuiltin,
   callsStateful,
+  readsReplaced,
   floatsShown,
   shapeOf,
   valuePrecision,
@@ -686,11 +687,14 @@ export function homeEval(
     // asks for, checked at that precision, as in CAS (decisions M4-6; owner, 2026-10-13).
     const asked = askedDigits(input);
     const digits = asked ?? s.digits;
-    const facts = floatFacts(giac, ans, once ? null : exactBody, shape, digits, s.digits);
+    const facts = floatFacts(giac, ans, once ? null : exactBody, shape, digits, s.digits, exactBody);
     if (!facts) return symbolic();
     store();
     const b = build(facts, shape, digits, "exact", true);
-    const r = fromBuilt(b, "exact", true, exactOut, b.decimal, whyOf(facts, once ? null : exactBody));
+    // G50: Giac's printed float is not kept when its value was computed again through our definitions (forValue):
+    // evalf(tanh(i)) printed coth(i); so did approx(w) with w holding Giac's exact tanh(i) (G50f1, readsReplaced).
+    const giacText = once || s.angle !== "rad" || !readsReplaced(giac, exactBody) ? exactOut : undefined;
+    const r = fromBuilt(b, "exact", true, giacText, b.decimal, whyOf(facts, once ? null : exactBody));
     return asked !== null ? { ...r, digits: asked } : r;
   }
 
