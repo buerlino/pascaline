@@ -541,17 +541,19 @@ export class EngineHost {
     if (isError(text)) return fail(text, isTimeout(text) ? "timeout" : "engine");
     const stateful = isStateful(input);
     // An == or ≠ test on a float side: decided by its own digits, as in Home (R18f2).
-    const decided = test && !stateful && this.giac.eval(EQ_INEXACT_FLAG) === "1" ? decideFloatTest(this.giac, exactInput, digitsSet) : null;
+    const inexactTest = test && this.giac.eval(EQ_INEXACT_FLAG) === "1";
+    const decided = inexactTest && !stateful ? decideFloatTest(this.giac, exactInput, digitsSet) : null;
     if (decided) {
       text = run();
       this.giac.eval(`purge(${EQ_VERDICT})`);
     }
-    // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), as in Home.
+    // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), as in Home; an exact
+    // == or ≠ test too, only one with a float side is decideFloatTest's.
     let undecided = false;
-    if (!stateful && !test && !hasFloat(text) && restsOnDecision(exactInput, text)) {
+    if (!stateful && !inexactTest && !hasFloat(text) && restsOnDecision(exactInput, text)) {
       const d = decideTwice(this.giac, exactInput, text, digitsSet, digitsSet);
       if ("undecided" in d) undecided = true;
-      if (d.from !== undefined && d.text !== undefined) {
+      if (!("undecided" in d) && d.from !== undefined) {
         this.giac.eval(`pcasans:=${d.from}`);
         text = d.text;
       }

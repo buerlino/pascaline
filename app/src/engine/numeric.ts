@@ -800,14 +800,17 @@ export function onCut(giac: Giac, expr: string, digits: number, restore: number)
   });
 }
 
-/** What the second decision found: the text stands (`from` set when it is the P + 40 evaluation's, stored there), or
- *  the evaluations disagree, or a decision sits on its cut (`undecided`; with `text` and `from`, the value on the cut). */
-export type Decision = { text: string; from?: string } | { undecided: true; text?: string; from?: string };
+/** What the second decision found: the text stands (`from` set when it is another evaluation's, stored in `pasdec2`),
+ *  or the evaluations disagree (`undecided`). */
+export type Decision = { text: string; from?: string } | { undecided: true };
 
 /**
  * G38 (docs/04 2.4 rule 2): `expr`, whose exact evaluation at P printed `text`, is computed again at P + 20 and must
  * print the same; if not, once more at P + 40, and the P + 20 and P + 40 texts must agree (the P + 40 value is kept in
- * `pasdec2`). A decision on its cut (onCut) is undecided whatever the texts.
+ * `pasdec2`). An agreed text keeps its mark (a rational one stays `=`). A floor, ceil, iPart, frac, fPart or sign that
+ * sits on its cut (onCut) takes the value it has exactly there when that is a number: Giac decides such a tie by its
+ * rounding error (`floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)`, exactly 1, gives 0 at 40 and 60 digits), so the
+ * agreed texts would be wrong. The cut never turns an agreed text into ⚠.
  */
 export function decideTwice(giac: Giac, expr: string, text: string, digits: number, restore: number): Decision {
   const P = valuePrecision(digits);
@@ -826,8 +829,7 @@ export function decideTwice(giac: Giac, expr: string, text: string, digits: numb
   giac.eval("purge(pasdec)");
   if ("undecided" in out) return out;
   const cut = onCut(giac, expr, digits, restore);
-  if (!cut) return out;
-  // On its cut: the value it has exactly there, which no precision can confirm, so still undecided.
-  const tie = cut.tie === null ? null : run(P + 40, "pasdec2", cut.tie);
-  return tie === null || hasFloat(tie) ? { undecided: true } : { undecided: true, text: tie, from: "pasdec2" };
+  if (!cut || cut.tie === null) return out;
+  const tie = run(P + 40, "pasdec2", cut.tie);
+  return tie === null || hasFloat(tie) ? out : { text: tie, from: "pasdec2" };
 }

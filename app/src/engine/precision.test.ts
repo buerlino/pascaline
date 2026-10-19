@@ -191,12 +191,21 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(host.home("pasans", defaultHomeSettings).result.display).toBe("830389765219"); // Ans holds the agreed value
   });
 
-  it("a floor on its cut is ⚠ without a count, decided at limited precision, with the value on the cut (source: derived)", () => {
+  it("a floor on its cut keeps = with the value it has there (source: derived; Giac floors it to 0 at 40 and 60 digits)", () => {
     const r = host.home("floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)", defaultHomeSettings).result;
-    expect(r).toMatchObject({ display: "1", warn: "unchecked", reliableDigits: null, exactRational: false, why: { decided: true } });
-    expect(markOf(r, { format: "STD", digits: 12 })).toEqual({ mark: "⚠", warn: "unchecked" });
+    expect(r).toMatchObject({ display: "1", exactRational: true, reliableDigits: null });
+    expect(r.why).toBeUndefined();
+    expect(markOf(r, { format: "STD", digits: 12 })?.mark).toBe("=");
     const c = host.cas("floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)", defaultCasSettings).result;
-    expect(c).toMatchObject({ text: "1", approximate: true, warn: "unchecked", why: { decided: true } });
+    expect(c.text).toBe("1");
+    expect(c.approximate).toBeFalsy();
+    expect(c.warn).toBeUndefined();
+  });
+
+  it("an exact == test is decided again too: floor(sin(10^60)*10^12)==830389765219 is true (source: oracle via g38-floor-sin1e60)", () => {
+    const input = "((a_,b_)->((d_)->{if(string(exact(d_))!=string(d_)){sto(1,pasinexact);sto(d_,pasdiff)};when(string(exact(d_))!=string(d_),when(pasverdict==0,true,when(pasverdict==1,false,'a_==b_')),when(simplify(d_)==0*d_,true,when(lname(d_)==[] and (type(d_)==integer or type(d_)==rational or max(abs(evalf(d_,30)))>10^-20*max(max(abs(evalf(a_,30))),max(abs(evalf(b_,30))))),false,'a_==b_')))})(a_-b_))(floor(sin(10^60)*10^12),830389765219)";
+    expect(host.home(input, defaultHomeSettings).result.display).toBe("true");
+    expect(host.cas(input, defaultCasSettings).result.text).toBe("true");
   });
 
   it("the Digits setting is back at the display digits after an input: a float in a non-number prints with them", () => {

@@ -540,13 +540,13 @@ export function homeEval(
   }
   const exactMs = now() - t0;
   // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), see decideTwice. Not for
-  // an input that cannot run twice, a test helper's form (its verdict is gone), or a float result, whose value check
-  // runs it at two precisions anyway.
+  // an input that cannot run twice, a test with a float side (decideFloatTest decided it, and its verdict is gone), or a
+  // float result, whose value check runs it at two precisions anyway. An exact == or ≠ test is a decision too.
   let undecided = false;
-  if (!once && !test && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, exactOut)) {
+  if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, exactOut)) {
     const d = decideTwice(giac, exactBody, exactOut, s.digits, s.digits);
     if ("undecided" in d) undecided = true;
-    if (d.from !== undefined && d.text !== undefined) {
+    if (!("undecided" in d) && d.from !== undefined) {
       giac.eval(`${ans}:=${d.from}`);
       exactOut = d.text;
     }
