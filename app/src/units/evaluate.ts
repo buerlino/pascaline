@@ -20,9 +20,9 @@ const ANY_DIM = BASES.map((b) => `has(y,${b.symbol})`).join(" or ");
  *   else (a function of a quantity with units: also a term whose number part still holds a dimension symbol, as
  *   floor(3/2·m) or Giac's irem of two lengths); [3] when sin, cos or tan met a unit; [4] for an exact 0; [5] for Giac's infinity or undef (a division by 0);
  * - pasuh(y): whether y holds a dimension symbol;
- * - pasua(x): the argument of sin, cos and tan: an angle (the rad dimension once, its value in rad) is given in the
- *   angle mode; a pure number is taken as it is, in the angle mode, as Home does (G15 default); anything else gives
- *   the free symbol pasubad, which pasuq finds;
+ * - pasua(x): the argument of sin, cos and tan, in radians (Giac runs in radians in every mode, G46): an angle (the
+ *   rad dimension once, its value in rad) as it is; a pure number in the angle mode, as Home does (G15 default), so
+ *   times pasdeg (π/180 in DEG); anything else gives the free symbol pasubad, which pasuq finds;
  * - pasup(m): 10^m, as a whole number for an integer m, else exp(m·ln 10), which pasuq reads (it cannot read the
  *   algebraic number 10^(3/20)): the ratio of a level given in dB, bel or dBm;
  * - pasul(e): the exact value of a level (a logarithm), the shorter of normal() and simplify() ("-30", not
@@ -40,7 +40,7 @@ export const UNIT_DEFINITIONS: readonly string[] = [
     `for (j:=0;j<size(t);j++) { if (lvar(b[j])==[] and pasuh(normal(t[j]/product(zip((x,y)->x^y,${S},b[j]))))) return [2]; } ` +
     `return [1,b]; }`,
   `pasua(x):={local w,y; if (x==0) return 0; w:=normal(pasdimA*diff(x,pasdimA)/x); y:=normal(subst(x,pasdimA,1)); ` +
-    `if ((w!=0 and w!=1) or ${ANY_DIM}) return pasubad; if (w==1 and angle_radian==0) return normal(y*180/pi); return y; }`,
+    `if ((w!=0 and w!=1) or ${ANY_DIM}) return pasubad; if (w==1) return y; return y*pasdeg; }`,
   ...["sin", "cos", "tan"].map((f) => `pasu${f}(x):=${f}(pasua(x))`),
   `pasup(m):={if (denom(normal(m))==1) return 10^m; return exp(m*ln(10)); }`,
   `pasul(e):={local r,s; r:=normal(e); s:=simplify(r); if (length(string(s))<length(string(r))) return s; return r; }`,

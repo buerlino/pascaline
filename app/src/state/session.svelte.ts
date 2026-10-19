@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The calculator session: current view, modifier keys, settings and the history of both views.
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
+import { PASDEG } from "../input/angles.ts";
 import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type ChipFactsTable, type NumberFormat, type UserName } from "../calc/port.ts";
 import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
 import { parseFailText } from "../input/errors.ts";
@@ -551,7 +552,7 @@ export class Session {
           if (q) live.rational = q;
           // A float result: every confirmed digit the engine gave (r.text is drawn at the shown digits only).
           const nf = r.numeric?.full;
-          const full = nf !== undefined && nf.length > 0 ? nf : r.text;
+          const full = nf !== undefined && nf.length > 0 ? nf : (r.full ?? r.text); // G46: the radian text, not the DEG drawing
           if (full.length <= FULL_LIMIT) {
             live.full = full;
             live.fullExact = live.inexactInput !== true && !isDigitsText(full); // R65 (D2): an inexact chip's result never is
@@ -671,7 +672,7 @@ export class Session {
     const z = `((${decimalToString(v.re)})+(${decimalToString(v.im)})*i)`;
     const s: CalcSettings = { digits: this.settings.digits, angle: this.settings.angle, format: this.settings.format };
     try {
-      const [r, th] = [await this.calc.home(`abs(${z})`, s), await this.calc.home(`arg(${z})`, s)];
+      const [r, th] = [await this.calc.home(`abs(${z})`, s), await this.calc.home(`(arg(${z})/${PASDEG})`, s)] // G46: Giac answers in radians; the factor gives the mode's unit;
       if (!r.ok || !th.ok || !r.value || !th.value) return false;
       item.polar = { r: r.value.re, theta: th.value.re, angle: this.settings.angle };
       return true;

@@ -119,7 +119,12 @@ export class WorkerEngine implements MathEngine {
       }
       this.beginAttempt(stored.length);
       this.log = applyDefChanges(this.log, stored.map((e) => ({ set: e })));
-      this.defined = this.post({ type: "define", defs: stored }).then((r) => (r.type === "defined" ? r.replayMs : 0));
+      this.defined = this.post({ type: "define", defs: stored }).then((r) => {
+        if (r.type !== "defined") return 0;
+        // G46: stored values the engine read again (angleMigration.ts) are kept and stored in their new form
+        this.keep(r.defs);
+        return r.replayMs;
+      });
       this.defined.then(() => this.reach(), () => {});
     });
     this.readyPromise = Promise.all([first, this.gate.then(() => this.defined)]).then(([t, ms]) => ({

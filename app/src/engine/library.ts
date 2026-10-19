@@ -9,7 +9,7 @@ import { definedBy, ENGINE_DEFINITIONS, isStateful, WORKER_DEFINITION_NAMES, sim
 import { COMPLEX_DEFINITIONS } from "./numeric.ts";
 import { defaultCasSettings, type CasResult } from "./types.ts";
 import { DATA_VERSION, migratedText } from "../state/storage.ts";
-import { PASDEG } from "../input/angles.ts";
+import { dropAngleFactor, PASDEG, rewriteAngles } from "../input/angles.ts";
 
 /** r10 section 1.2: the limits of one file. */
 export const LIB_MAX_BYTES = 256 * 1024;
@@ -292,7 +292,9 @@ export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly
       if (!old || old.desc === d.desc) continue;
       mine = [{ set: { ...old, desc: d.desc } }];
     } else {
-      const r = engine.cas(d.text, defaultCasSettings);
+      // G46: a library file is Giac text in radians, written without our degree factor; it goes in here, so a body's
+      // sin(x) follows the mode at call time as a typed one does (S14 R14 section 5)
+      const r = engine.cas(rewriteAngles(d.text), defaultCasSettings);
       if (!r.result.ok) return fail(`line ${d.line}: ${d.name}: ${r.result.error ?? "the engine refused it"}`, d.line, { plan, dirty: true });
       mine = r.defs.map((c) => ("set" in c && c.set.name === d.name ? { set: { ...c.set, desc: d.desc } } : c));
     }
@@ -301,14 +303,17 @@ export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly
   }
   const failures: TestFailure[] = [];
   let tests = 0;
-  for (const d of lib.defs) {
-    for (const t of d.tests) {
-      tests++;
-      const v = engine.eval(t.expr);
-      const got = v.output.trim();
-      if (!v.ok || (got !== "true" && got !== "1")) failures.push({ line: t.line, expr: t.expr, got });
+  // G46: a test runs in radians whatever the user's mode, with the factor put in as for a definition.
+  inRadians(engine, () => {
+    for (const d of lib.defs) {
+      for (const t of d.tests) {
+        tests++;
+        const v = engine.eval(rewriteAngles(t.expr));
+        const got = v.output.trim();
+        if (!v.ok || (got !== "true" && got !== "1")) failures.push({ line: t.line, expr: t.expr, got });
+      }
     }
-  }
+  });
   if (failures.length) {
     const f = failures[0]!;
     const more = failures.length > 1 ? ` (and ${failures.length - 1} more)` : "";
@@ -317,13 +322,26 @@ export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly
   return { ok: true, plan, changes, log: out, tests, ms: performance.now() - t0 };
 }
 
+/** `fn` with our degree factor at 1 (Giac always runs in radians, G46), and the mode's factor put back afterwards: the
+ *  engine's mode setup does not run again for the same settings. */
+function inRadians<T>(engine: LibraryEngine, fn: () => T): T {
+  const before = engine.eval(PASDEG).output.trim();
+  engine.eval(`${PASDEG}:=1`);
+  try {
+    return fn();
+  } finally {
+    engine.eval(`${PASDEG}:=${before === PASDEG || before === "" || /GIAC_ERROR/.test(before) ? "1" : before}`);
+  }
+}
+
 /** A library value or function that is the same as the log's entry: the same commands (a function), or a value that
  *  evaluates to what the log holds (the log keeps `B:=(10)`, not `B:=A*2`). */
 function sameDefinition(engine: LibraryEngine, d: LibDef, old: DefEntry): boolean {
-  if (old.cmds.join("\n") === d.text) return true;
+  if (old.cmds.join("\n") === d.text || old.cmds.join("\n") === rewriteAngles(d.text)) return true;
   const asg = d.kind === "var" && old.kind === "var" ? simpleAssignment(d.text) : null;
   if (!asg) return false;
-  const v = engine.eval(asg.rhs);
+  // a value in a file is in radians (G46): read with the factor 1, as the import's cas() in RAD reads it
+  const v = inRadians(engine, () => engine.eval(rewriteAngles(asg.rhs)));
   return v.ok && !/\bundef\b/.test(v.output) && old.cmds.length === 1 && old.cmds[0] === `${d.name}:=(${v.output.trim()})`;
 }
 
@@ -345,12 +363,11 @@ export function exportLibrary(log: readonly DefEntry[]): { text: string; skipped
       continue;
     }
     if (e.facts) {
-      // G34: an angle-dependent exact value is stored as its decimal with facts, so it is skipped here too: its old
-      // text would change value in an importer's other angle mode.
       skipped.push({ name: e.name, why: "a decimal value with its mark facts, in the backup only" });
       continue;
     }
-    out.push("", `// ${describe(e)}`, e.cmds.join("\n"));
+    // G46: the file is in radians, as typed: a body is written without our degree factor (the import puts it in)
+    out.push("", `// ${describe(e)}`, e.cmds.map(dropAngleFactor).join("\n"));
   }
   return { text: out.join("\n") + "\n", skipped };
 }

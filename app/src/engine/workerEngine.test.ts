@@ -322,7 +322,7 @@ class FatalOnReplayWorker implements WorkerLike {
     setTimeout(() => {
       if (bad) this.onmessage?.({ data: { id: msg.id, type: "fatal", message: "out of memory", memory: true } });
       else if (msg.type === "init") this.onmessage?.({ data: { id: msg.id, type: "ready", instantiateMs: 1, initMs: 1, replayMs: 0 } });
-      else if (msg.type === "define") this.onmessage?.({ data: { id: msg.id, type: "defined", replayMs: 1 } });
+      else if (msg.type === "define") this.onmessage?.({ data: { id: msg.id, type: "defined", replayMs: 1, defs: [] } });
     }, 0);
   }
   terminate(): void {}
@@ -332,7 +332,7 @@ class FatalOnReplayWorker implements WorkerLike {
 class OkWorker extends StuckWorker {
   override postMessage(msg: Request): void {
     super.postMessage(msg);
-    if (msg.type === "define") setTimeout(() => this.onmessage?.({ data: { id: msg.id, type: "defined", replayMs: 1 } }), 0);
+    if (msg.type === "define") setTimeout(() => this.onmessage?.({ data: { id: msg.id, type: "defined", replayMs: 1, defs: [] } }), 0);
   }
 }
 

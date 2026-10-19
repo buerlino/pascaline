@@ -2,6 +2,8 @@
 // Tiny key-value store on IndexedDB (settings, history, definitions, app states). Every value is stamped with
 // DATA_VERSION and migrated on read. Every call survives a missing or blocked IndexedDB: the app then simply starts
 // with defaults.
+import { migrateAngleDefs, migrateAngleText } from "../engine/angleMigration.ts";
+
 /** The store the session persists to; tests pass an in-memory one. */
 export interface Kv {
   get<T>(key: string): Promise<T | undefined>;
@@ -20,7 +22,7 @@ export const USER_KEYS = "userKeys";
  * of stored text changes: definitions are Giac text that holds our internal names (R18f1 renamed Φ and Ψ to Phi_ and
  * Psi_), so a rename or a parser fix must rewrite what older versions stored. 0 = stored before versions (2026-10-14).
  */
-export const DATA_VERSION = 2;
+export const DATA_VERSION = 3;
 /** The stamp's field; no value stored before versions has it. */
 const STAMP = "@pascaline";
 
@@ -31,6 +33,9 @@ const MIGRATIONS: Migrations = {
   0: {},
   // 1 → 2: a definitions entry may carry `desc` (G33); nothing to rewrite.
   1: {},
+  // 2 → 3 (G46): Giac runs in radians and the degree mode lives in the text (`pasdeg`); pasexp goes
+  // (engine/angleMigration.ts).
+  2: { defs: migrateAngleDefs, library: migrateAngleText },
 };
 
 /** A value as stored: stamped with the version it was written in. */

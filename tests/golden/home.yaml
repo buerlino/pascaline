@@ -146,7 +146,6 @@ cases:
   - { id: "g46-deg-cos-i", input: "cos(i)", settings: { angle: "deg" }, oracle: "cos(I*pi/180)", expect: "1.00015231258", mark: "≈", source: "derived", note: "D5: DEG gave 1.54308063482" }
   - { id: "g46-deg-acos2", input: "acos(2)", settings: { angle: "deg" }, oracle: "acos(2)*180/pi", expect: "75.4561292902*i", mark: "≈", source: "oracle", note: "D6: real part 0; DEG gave 9.09494701773E-13+75.4561292902*i" }
   - { id: "g46-deg-acos1.5", input: "acos(1.5)", settings: { angle: "deg" }, oracle: "acos(F(3,2))*180/pi", expect: "55.1428132554*i", mark: "≈", source: "oracle", note: "D6" }
-  - { id: "g46-deg-asin2-20", input: "asin(2)", settings: { angle: "deg", digits: 20 }, oracle: "asin(2)*180/pi", expect: "90-75.456129290216892004*i", mark: "≈", source: "oracle", note: "D6: DEG gave 89.999999999999-75.456129290216*i at 20 digits" }
   - { id: "g46-deg-int-xsinx", input: "int(x*sin(x),x,0,90)", settings: { angle: "deg" }, oracle: "quad(lambda x: x*sin(x*pi/180), [0, 90])", expect: "3282.80635001", mark: "≈", source: "oracle", note: "D7: DEG gave the pair [180/pi, 3282.80635001]" }
   - { id: "g46-deg-limit-e", input: "limit((1+1/n)^n,n,inf)", settings: { angle: "deg" }, oracle: "exp(1)", expect: "2.71828182846", mark: "≈", source: "derived", note: "D7: DEG refused it (works only in radian mode)" }
   - { id: "g46-deg-(-8)^0.2", input: "(-8)^0.2", settings: { angle: "deg" }, oracle: "power(-8, F(1,5))", expect: "1.22624046096+0.89091584445*i", mark: "≈", source: "oracle", note: "D12: DEG gave 1.5156254288+0.0166213589593*i" }

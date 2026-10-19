@@ -71,6 +71,8 @@ export interface CasOutcome {
   text: string;
   /** Giac `latex()` of the result (raw); empty when !ok. */
   latex: string;
+  /** G46: the radian text Ans and chips carry when `text` shows it in degrees (DEG); absent when they are the same. */
+  full?: string;
   error?: CalcError;
   /** The result as a number, when it is one. */
   numeric?: HomeResult;
