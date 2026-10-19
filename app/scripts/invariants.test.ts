@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { EngineHost } from "../src/engine/host.ts";
 import { defaultHomeSettings, pasdegCommand } from "../src/engine/homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "../src/engine/nodeGiac.ts";
-import { checkAngle, invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
+import { checkAngle, checkStoreBoth, INV_NAME, invariantsOf, invariantsStage, storesNames, type InvariantFailure } from "./invariants.ts";
 
 const fail = (id: string, check = "a"): InvariantFailure => ({ id, check, detail: "RAD 1, DEG 2" });
 
@@ -62,5 +62,33 @@ describe.skipIf(!giacAvailable())("check (a) compares RAD with DEG (real Giac)",
   });
   it("the same answer in both modes is no failure", async () => {
     expect(checkAngle("home:x", await run("(-8)^0.2", "rad"), await run("(-8)^0.2", "deg"))).toBeNull();
+  });
+});
+
+describe.skipIf(!giacAvailable())("check (d) on one shared engine (real Giac)", () => {
+  it("a name stored by one input does not reach the next one", async () => {
+    const g = (await loadNodeGiac()).giac;
+    g.eval(pasdegCommand("rad"));
+    const host = new EngineHost(g);
+    expect((await checkStoreBoth(async () => host, "t:1", "7+1")).checked).toBe(2);
+    const after = host.home(INV_NAME, defaultHomeSettings).result;
+    expect(after.display).not.toBe("8");
+    expect((await checkStoreBoth(async () => host, "t:2", "2*3")).failures).toEqual([]);
+  });
+  it("flags inputs that store a name, so they never run on the shared engine", () => {
+    for (const t of ["evalf(1/3)*x=>g", "g:=5", "sto(3,g)"]) expect(storesNames(t), t).toBe(true);
+    for (const t of ["7+1", "solve(x^2=4,x)", "a<=b"]) expect(storesNames(t), t).toBe(false);
+  });
+  it("a name stored on one engine does not reach an input on another", async () => {
+    const mk = async (): Promise<EngineHost> => {
+      const g = (await loadNodeGiac()).giac;
+      g.eval(pasdegCommand("rad"));
+      return new EngineHost(g);
+    };
+    const a = await mk();
+    a.home("evalf(1/3)*x=>pasleak", defaultHomeSettings);
+    expect(a.home("pasleak", defaultHomeSettings).result.display).not.toBe("pasleak");
+    const b = await mk();
+    expect(b.home("pasleak", defaultHomeSettings).result.display).toBe("pasleak");
   });
 });

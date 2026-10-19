@@ -3,7 +3,8 @@
 // wrong DEG answer. No expected values: each check compares one answer with another from a different setting.
 import type { CopySource } from "../src/clipboard/text.ts";
 import { formatComplex, markOf, type MarkInfo } from "../src/engine/format.ts";
-import type { HomeResult } from "../src/engine/homeEval.ts";
+import type { EngineHost } from "../src/engine/host.ts";
+import { defaultHomeSettings, type HomeResult } from "../src/engine/homeEval.ts";
 import { hasAngleFactor } from "../src/input/angles.ts";
 import type { Rational } from "../src/state/displayMode.ts";
 
@@ -134,4 +135,32 @@ export function checkStore(id: string, from: "rad" | "deg", to: "rad" | "deg", s
   return read.display !== stored.display || ms !== mr
     ? { id, check: "d", detail: `stored in ${from.toUpperCase()} showed ${ms ?? "-"} ${stored.display}, read in ${to.toUpperCase()} ${mr ?? "-"} ${read.display}` }
     : null;
+}
+
+/** True when an input stores a name itself (`:=`, `=>`, `sto(`): it must not run on the stage's shared engine. */
+export const storesNames = (giac: string): boolean => /:=|=>|\bsto\(/.test(giac);
+
+/** The name check (d) stores under. */
+export const INV_NAME = "pasinv";
+
+/**
+ * (d) in both directions on the engine `hostFor` gives (one engine for both, unless it hands out a new one each time): `X:=input` in one mode, `X` in the other. The name is purged after each
+ * direction, so it reaches neither the other direction nor the next input on a shared engine. Returns the failures
+ * and the number of directions checked (a store that gave no value is skipped).
+ */
+export async function checkStoreBoth(hostFor: () => Promise<EngineHost>, id: string, giac: string): Promise<{ checked: number; failures: InvariantFailure[] }> {
+  const failures: InvariantFailure[] = [];
+  let checked = 0;
+  for (const [from, to] of [["rad", "deg"], ["deg", "rad"]] as const) {
+    const host = await hostFor();
+    host.home(`purge(${INV_NAME})`, defaultHomeSettings);
+    const st = host.home(`${INV_NAME}:=(${giac})`, { ...defaultHomeSettings, angle: from }).result;
+    if (!st.ok || !st.value) continue;
+    const rd = host.home(INV_NAME, { ...defaultHomeSettings, angle: to }).result;
+    checked++;
+    const f = checkStore(id, from, to, st, rd);
+    if (f) failures.push(f);
+    host.home(`purge(${INV_NAME})`, defaultHomeSettings);
+  }
+  return { checked, failures };
 }

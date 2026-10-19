@@ -69,7 +69,7 @@ import { isUnitError, type Quantity, type UnitError } from "../src/units/types.t
 import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
 import { callsStage, type CallsBaseline } from "./calls-budget.ts";
-import { checkAngle, checkCopy, checkDigits, checkStore, copySourceOf, invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
+import { checkAngle, checkCopy, checkDigits, checkStoreBoth, copySourceOf, invariantsOf, storesNames, invariantsStage, type InvariantFailure } from "./invariants.ts";
 import { copyFull } from "../src/clipboard/text.ts";
 import { parsePastedNumber } from "../src/clipboard/paste.ts";
 
@@ -635,14 +635,19 @@ async function stageInvariants(): Promise<void> {
     return host.home(i.giac, s).result;
   };
   const failures: InvariantFailure[] = [];
+  let stageHost: EngineHost | undefined;
   const t0 = performance.now();
   let checked = { a: 0, b: 0, c: 0, d: 0 };
   for (const i of inputs) {
-    // `before` inputs store names, so each input gets its own engine; the stored names stay out of the others.
-    const fresh = async (): Promise<EngineHost> => new EngineHost(await freshGiac());
-    const keep = i.before.length > 0;
-    const shared = keep ? null : await fresh();
-    const host = async (): Promise<EngineHost> => shared ?? fresh();
+    // `before` inputs and inputs that store a name themselves (`:=`, `=>`, `sto(`) get their own engine; the others share
+    // one for the stage (check (d) purges its name after each direction).
+    const keep = i.before.length > 0 || storesNames(i.giac);
+    // Giac's own normald_icdf gives a different double on each call on one engine and undef by about the third call
+    // (normald_icdf(10^-30) three times in Home at 12 digits), so an inverse distribution function gets its own engine. Our
+    // polish leaves no state behind; G44f2 fixes the undef.
+    const icdf = /_icdf\(/.test(i.giac);
+    const own = keep || icdf ? new EngineHost(await freshGiac()) : null;
+    const host = async (): Promise<EngineHost> => own ?? (stageHost ??= new EngineHost(await freshGiac()));
     const rad = await at(await host(), i, "rad", 12);
     const o = invariantsOf(i.giac, i.before);
     if (o.angleFree) {
@@ -670,16 +675,11 @@ async function stageInvariants(): Promise<void> {
       }
     }
     // (d): X:=input in one mode, X in the other shows what the store line showed
-    if (rad.ok && rad.value && !keep) {
-      for (const [from, to] of [["rad", "deg"], ["deg", "rad"]] as const) {
-        const h = await fresh();
-        const st = h.home(`${INV_NAME}:=(${i.giac})`, { ...defaultHomeSettings, angle: from }).result;
-        if (!st.ok || !st.value) continue;
-        const rd = h.home(INV_NAME, { ...defaultHomeSettings, angle: to }).result;
-        checked.d++;
-        const f = checkStore(i.id, from, to, st, rd);
-        if (f) failures.push(f);
-      }
+    // (d) runs for the inputs it ran for before G43f1: no `before`. Only a storing or icdf input gets a new engine per direction.
+    if (rad.ok && rad.value && i.before.length === 0) {
+      const d = await checkStoreBoth(icdf || storesNames(i.giac) ? async () => new EngineHost(await freshGiac()) : host, i.id, i.giac);
+      checked.d += d.checked;
+      failures.push(...d.failures);
     }
   }
   const known = parse(readFileSync(`${root}tests/golden/invariants-known.yaml`, "utf8")) as { known?: { id: string; check: string; package: string; note?: string }[] };
@@ -688,8 +688,6 @@ async function stageInvariants(): Promise<void> {
   const secs = (performance.now() - t0) / 1000;
   report("invariants", r.ok && secs < 60, `${inputs.length} inputs, ${checked.a} (a) RAD/DEG, ${checked.b} (b) 12/30 digits, ${checked.c} (c) copy and paste, ${checked.d} (d) store; ${r.summary}; ${secs.toFixed(1)} s (< 60)`);
 }
-
-const INV_NAME = "pasinv";
 
 const UNIT_P95_MS = 5;
 
