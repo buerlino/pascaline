@@ -55,6 +55,7 @@ cases:
 # 30 digits (M4-8, G3): one equation through the Solve app's engine path (kind: one), systems and polynomials. Every
 # root is polished at W and again at W+20 (W = max(30, digits+10)); the digits on which the two agree are shown, ⚠ n
 # when fewer than asked (status "warn"; the gate then compares expect rounded to the n digits shown).
+  - { id: "g46-deg-cosh-ix", kind: "one", eq: "cosh(i*x)=1/2", var: "x", guess: "1", settings: { angle: "deg" }, oracle: "acosh(F(1,2))/I", expect: "1.0471975512", source: "oracle", note: "deep check D4: DEG gave x = 60 (exact root, checked by CAS); x = acosh(1/2)/i = pi/3 is not an angle" }
   - { id: "s30-sqrt2", kind: "one", eq: "x^2=2", var: "x", guess: "1", settings: { digits: 30 }, oracle: "sqrt(2)", expect: "1.41421356237309504880168872421", source: "oracle" }
   - { id: "s30-dottie", kind: "one", eq: "cos(x)=x", var: "x", guess: "0", settings: { digits: 30 }, oracle: "findroot(lambda t: mp.cos(t)-t, 0.7)", expect: "0.739085133215160641655312087674", source: "oracle" }
   - { id: "s30-lambert", kind: "one", eq: "x*exp(x)=5", var: "x", guess: "1", settings: { digits: 30 }, oracle: "lambertw(5)", expect: "1.32672466524220022363509929776", source: "oracle" }

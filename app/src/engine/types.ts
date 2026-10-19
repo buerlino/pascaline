@@ -38,6 +38,9 @@ export interface CasResult {
   /** Giac's printed result (for copy/paste and tests), or the error text when !ok. Never shown as the 2D result.
    *  When `numeric` is set: its display text (our formatter, confirmed digits only), not Giac's float text. */
   text: string;
+  /** G46: the radian text Ans and chips carry, when `text` (and `latex`) show it rewritten into degrees (DEG, S14
+   *  option 2). Absent when they are the same. */
+  full?: string;
   /** Giac `latex()` of the result (raw; the view tidies it up and renders it). Empty when !ok. With `numeric`, the
    *  LaTeX of its display text. */
   latex: string;

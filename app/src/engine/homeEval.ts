@@ -15,6 +15,7 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
+import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
@@ -115,9 +116,6 @@ export interface HomeResult {
   digits?: number;
   /** Giac `latex()` of a result that is not a number (raw; the view tidies it up and draws it, as in CAS). R18f3. */
   latex?: string;
-  /** G34: the exact text read the angle mode (`angleDependent`), so what leaves this evaluation (the stored value, Ans,
-   *  a chip, the export) is `full`, the confirmed decimal, and `exact` is absent (docs/04 2.8). */
-  carried?: "decimal";
   /** G26: significant digits of the shown value before the digit position of the first-order σ that the inexact
    *  constants of the input leave (EngineHost.home's table); the digits from there on are uncertain. Absent when no
    *  inexact constant went in by name, or the result is not one real number. */
@@ -170,12 +168,6 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "if (type(p)!=integer and type(p)!=rational and type(evalf(p))!=DOM_FLOAT) throw(\"percentile: needs a list of real numbers\"); " +
     "if (n==0 or p<0 or p>100) throw(\"percentile: needs a list and 0 <= p <= 100\"); " +
     "r:=p/100*(n-1); k:=floor(r); if (k>=n-1) return s[n-1]; return s[k]+(r-k)*(s[k+1]-s[k]); }",
-  // F29/G21: Giac in DEG reads the imaginary part of an exponential as degrees (exp(i*90) = i) but exp(i*pi) as
-  // radians; the G2 ignores the angle mode for e^x (item 54). In DEG, host.ts rewrites exp( to pasexp(: a complex
-  // argument z becomes exp(re z)*(cos b + i sin b) with b = im z in degrees, which DEG evaluates as radians.
-  pasexp:
-    "pasexp(z):={ local b; if (angle_radian==1 or type(evalf(z))!=DOM_COMPLEX) return exp(z); " +
-    "b:=normal(im(z)*180/pi); return exp(re(z))*(cos(b)+i*sin(b)); }",
   // G30 (EN7a): n resistors in parallel, 1/(1/a+1/b+…), exact; a zero argument gives exactly 0. Giac hands the
   // arguments of a call to a one-parameter function as one sequence, which [a] makes a list.
   par:
@@ -244,41 +236,22 @@ export function definitionsUsedBy(input: string): string[] {
   return [...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES].filter((name) => new RegExp(`\\b${name}\\b`).test(input));
 }
 
-/** F29/G21: in DEG, `exp(` becomes `pasexp(` (see ENGINE_DEFINITIONS) outside strings; in RAD the text is unchanged. */
-export function expIgnoresAngle(input: string, angle: "rad" | "deg"): string {
-  if (angle === "rad") return input;
-  return input.replace(/"[^"]*"|\bexp(\s*\()/g, (m, paren?: string) => (paren === undefined ? m : `pasexp${paren}`));
-}
-
-/** G21f1: the helper's name never reaches the screen: pasexp means exp, in text and in LaTeX (`\\mathrm{pasexp}`). */
-export function showExp(text: string): string {
-  return text.replace(/\\mathrm\{pasexp\}/g, "\\exp").replace(/\bpasexp\b/g, "exp");
-}
-
-/** `showExp` on every text of a Home result, its elements included. */
-export function showExpResult(r: HomeResult): HomeResult {
-  const out: HomeResult = { ...r, display: showExp(r.display), full: showExp(r.full) };
-  if (r.exact !== undefined) out.exact = showExp(r.exact);
-  if (r.latex !== undefined) out.latex = showExp(r.latex);
-  if (r.items) out.items = r.items.map(showExpResult);
-  return out;
-}
-
 /** Giac's latex() of the result in `slot`, whose text is `text`; R64: one that holds the degree factor (a function
  *  body, which Giac prints as given) is drawn from its text without it, as typed. */
 export function latexShown(giac: Giac, slot: string, text: string): string {
   return hasAngleFactor(text) ? giac.eval(`latex(quote(${dropAngleFactor(text)}))`) : giac.eval(`latex(${slot})`);
 }
 
-/** R64 (route R): the degree factor our parser puts in every angle (input/angles.ts). 1 in every mode while Giac itself
- *  runs in the mode; G46 runs Giac in radians and sets it to pi/180 in DEG. */
-export function pasdegCommand(_angle: "rad" | "deg"): string {
-  return "pasdeg:=1";
+/** R64, G46 (route R): the degree factor our parser puts in every angle (input/angles.ts): pi/180 in DEG, 1 in RAD.
+ *  Giac itself always runs in radians, so every path inside it (exp, the hyperbolics, inverse trig, integration,
+ *  desolve, limit, series) reads radians, the only mode each was written for (S14, docs/04 2.12). */
+export function pasdegCommand(angle: "rad" | "deg"): string {
+  return `pasdeg:=${angle === "deg" ? "pi/180" : "1"}`;
 }
 
-/** The angle mode and the degree factor in one engine call (a mode switch costs no extra call). */
+/** Giac in radians and the degree factor of the mode in one engine call (a mode switch costs no extra call). */
 export function angleCommand(angle: "rad" | "deg"): string {
-  return `angle_radian:=${angle === "rad" ? 1 : 0};${pasdegCommand(angle)}`;
+  return `angle_radian:=1;${pasdegCommand(angle)}`;
 }
 
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */
@@ -483,27 +456,6 @@ function closingParen(s: string, open: number): number {
 /** Longest exact text kept as `full` (docs/04 section 2.8: ≤ 2 kB). */
 export const FULL_EXACT_MAX = 2048;
 
-/** The functions whose value Giac reads in the angle mode: the trig functions, their inverses and reciprocals, arg. */
-const ANGLE_FUNCTIONS: ReadonlySet<string> = new Set([
-  "sin", "cos", "tan", "sec", "csc", "cot", "asin", "acos", "atan", "asec", "acsc", "acot", "arcsin", "arccos", "arctan", "atan2", "arg",
-]);
-/** Functions that are angle-free for a real argument, but whose complex values Giac builds from cos and sin and then reads
- *  in the angle mode (F29: exp(i*90) is i in DEG; deep check D4, D12: cosh, sinh and complex powers). */
-const COMPLEX_ANGLE_FUNCTIONS: ReadonlySet<string> = new Set(["exp", "sinh", "cosh", "tanh", "sech", "csch", "coth", "pasexp"]);
-
-/**
- * G34 (check 2026-10-19 findings 1 and 2): an exact numeric text that Giac would read again in the angle mode of each
- * later use: it holds an angle function (pasexp's cos and sin included), or the imaginary unit together with exp, a
- * hyperbolic function or a power. Such a text must not leave its evaluation; the confirmed decimal does instead.
- * `sqrt(2)`, `1/2`, `pi/4` and `(sqrt(6)-sqrt(2))/4` (DEG sin(15)) are angle-free and stay exact.
- */
-export function angleDependent(text: string): boolean {
-  const fns = functionsIn(text);
-  if (fns.some((f) => ANGLE_FUNCTIONS.has(f))) return true;
-  const imaginary = /(?<![A-Za-z0-9_.])i(?![A-Za-z0-9_(])/.test(text);
-  return imaginary && (fns.some((f) => COMPLEX_ANGLE_FUNCTIONS.has(f)) || text.includes("^"));
-}
-
 /**
  * `regroup` on the stored answer `name` (x*x -> x^2), kept only when it merges equal factors, i.e. has
  * fewer "*" than `text`. Otherwise regroup would just reorder (factor's (x-1)*(x+1) -> (x+1)*(x-1))
@@ -688,7 +640,7 @@ export function homeEval(
     const f = floatPathFacts(giac, ans, asg ? asg.rhs : input, once, W, s.digits);
     if ("error" in f) return failed(f.error, path, exact);
     // G39: the float of a divergent integral or series (the principal value 0 of ∫₋₁¹ 1/x) is refused as on the exact path.
-    const refused = once ? null : refusalOf(giac, exactBody, giac.eval(ans), s.angle);
+    const refused = once ? null : refusalOf(giac, exactBody, giac.eval(ans));
     if (refused === "unchecked") unverified = true;
     else if (refused) return { ...failed(enEngine[`error.${refused}`], path), error: refused, approximate: false };
     store();
@@ -696,20 +648,12 @@ export function homeEval(
     return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
   };
 
-  // G34: the shown value leaves as its confirmed decimal (every digit of `full` is confirmed); Ans and the stored name
-  // hold that float, read back with its digits (floatsAsEvalf), so a later angle mode cannot read it again.
-  const carryDecimal = (r: HomeResult): HomeResult => {
-    giac.eval(`${ans}:=(${floatsAsEvalf(r.full)})`);
-    store();
-    return { ...r, carried: "decimal" };
-  };
-
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 
   // G39: a number for something that does not exist (a principal value, an Abel sum, a bounded_function) is refused.
   if (!once) {
-    const refused = refusalOf(giac, exactBody, exactOut, s.angle);
+    const refused = refusalOf(giac, exactBody, exactOut);
     if (refused === "unchecked") unverified = true;
     else if (refused) return { ...failed(enEngine[`error.${refused}`], "exact"), error: refused, approximate: false };
   }
@@ -742,15 +686,17 @@ export function homeEval(
     // An open test shows its decimals as typed, not as the exact rationals the engine read (G14).
     const text = /==|<>/.test(shown) ? restoreLiterals(shown, body) : shown;
     store();
+    // G46: in DEG drawn as a DEG engine prints it (degrees.ts); exact and full keep the radian text for Ans and chips.
+    const deg = s.angle === "deg" && needsDegrees(text) ? backInDegrees(giac, text) : null;
     // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
-    const tex = latexShown(giac, slot, text);
+    const tex = deg !== null ? giac.eval(`latex(quote(${deg}))`) : latexShown(giac, slot, text);
     if (atN !== null) giac.eval("purge(pasfl)");
     const latex = isError(tex) ? {} : { latex: unquote(tex) };
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
     const unchecked = hasFloat(text);
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
     const why = symbolicWhy(warn, testSides(exactBody));
-    return done({ ok: true, display: dropAngleFactor(text), exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(why ? { why } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
+    return done({ ok: true, display: deg ?? dropAngleFactor(text), exact: text, ...(deg !== null ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(why ? { why } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();
@@ -766,7 +712,7 @@ export function homeEval(
     const b = build(facts, shape, digits, "exact", true);
     // G50: Giac's printed float is not kept when its value was computed again through our definitions (forValue):
     // evalf(tanh(i)) printed coth(i); so did approx(w) with w holding Giac's exact tanh(i) (G50f1, readsReplaced).
-    const giacText = once || s.angle !== "rad" || !readsReplaced(giac, exactBody) ? exactOut : undefined;
+    const giacText = once || !readsReplaced(giac, exactBody) ? exactOut : undefined;
     const r = fromBuilt(b, "exact", true, giacText, b.decimal, whyOf(facts, once ? null : exactBody));
     return asked !== null ? { ...r, digits: asked } : r;
   }
@@ -776,7 +722,6 @@ export function homeEval(
     const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
     if (!d) return symbolic();
     const b = build([d], shape, s.digits, "exact", true);
-    if (angleDependent(exactOut)) return carryDecimal(fromBuilt(b, "exact", true, undefined, b.decimal, { once: true }));
     store();
     return fromBuilt(b, "exact", true, exactOut, b.decimal, { once: true });
   }
@@ -789,7 +734,6 @@ export function homeEval(
     }
   }
   const b = build(facts, shape, s.digits, "exact", false);
-  if (angleDependent(exactText)) return carryDecimal(fromBuilt(b, "exact", false, undefined, b.decimal));
   store();
   const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
   const big = shape.kind === "scalar" && facts[0]!.big;

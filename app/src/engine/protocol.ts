@@ -24,7 +24,7 @@ export type Request =
  *  worker after a Cancel, a crash or a relaunch. */
 export type Response =
   | { id: number; type: "ready"; instantiateMs: number; initMs: number; replayMs: number }
-  | { id: number; type: "defined"; replayMs: number }
+  | { id: number; type: "defined"; replayMs: number; defs: DefChange[] }
   | { id: number; type: "result"; output: string; ok: boolean; engineMs: number; defs: DefChange[] }
   | { id: number; type: "home"; result: HomeResult; defs: DefChange[] }
   | { id: number; type: "cas"; result: CasResult; defs: DefChange[] }

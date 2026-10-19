@@ -94,35 +94,6 @@ function limitNonZero(giac: Giac, l: string): boolean {
   return /^[\d.]+(e[+-]?\d+)?$/.test(v) && Number(v) !== 0;
 }
 
-const TRIG = /"[^"]*"|\b(sin|cos|tan|sec|csc|cot|asin|acos|atan|asec|acsc|acot|arcsin|arccos|arctan)\s*\(/g;
-
-/**
- * `text` read in DEG, written for RAD: the argument of a trig function is multiplied by π/180, the result of an inverse
- * one by 180/π, and the ° template's `(pi/180)^angle_radian()` (input/emit.ts) is 1. Giac in DEG leaves ∫|f| unevaluated
- * and refuses the limit of a trig term ("works only in radian mode"), so the checks run in radians on this text.
- */
-export function inRadians(text: string): string {
-  let out = "";
-  let i = 0;
-  for (;;) {
-    TRIG.lastIndex = i;
-    const m = TRIG.exec(text);
-    if (!m) return (out + text.slice(i)).replace(/\(pi\/180\)\^angle_radian\(\)/g, "1");
-    const end = TRIG.lastIndex;
-    const close = m[1] ? closing(text, end - 1) : -1;
-    if (close < 0) {
-      out += text.slice(i, end);
-      i = end;
-      continue;
-    }
-    const arg = inRadians(text.slice(end, close));
-    const name = m[1]!;
-    out += text.slice(i, m.index);
-    out += /^(a|arc)/.test(name) ? `(180/pi*${name}(${arg}))` : `${name}(pi/180*(${arg}))`;
-    i = close + 1;
-  }
-}
-
 const PERIODIC = new Set(["sin", "cos", "tan", "sec", "csc", "cot"]);
 /** Periods tried for a trig integrand: 2π/n (in radians; a DEG integrand is rewritten first), largest n first, so the
  *  smallest period is found. */
@@ -168,8 +139,9 @@ function singularAt(giac: Giac, f: string, x: string, q: string): boolean {
 }
 
 /** The integral check: near every real singular point of f in [a, b], ∫|f| is finite. */
-function integralCheck(giac: Giac, c: Call, angle: "rad" | "deg"): Verdict {
-  // A DEG integrand rewritten for radians still takes x in degrees, so its period is 360/n: 2π/n times 180/π.
+function integralCheck(giac: Giac, c: Call): Verdict {
+  // A DEG integrand holds the degree factor (sin(pasdeg*x), R64), so its period is 2π/n over pasdeg (G46: Giac runs in
+  // radians and pasdeg is π/180 in DEG, 1 in RAD).
   const [f, x, a0, b0] = c.args as [string, string, string, string];
   const sing = giac.eval(`singular(${f},${x})`);
   const pts = isError(sing) ? null : splitList(sing);
@@ -178,7 +150,7 @@ function integralCheck(giac: Giac, c: Call, angle: "rad" | "deg"): Verdict {
   const B = realOf(giac, b0);
   if (A === null || B === null) return "ok";
   const [lo, hi, a, b] = A <= B ? [A, B, a0, b0] : [B, A, b0, a0];
-  const scale = angle === "deg" ? "(180/pi)" : "1";
+  const scale = "(1/pasdeg)";
   const T = periodOf(giac, f, x, scale);
   const Tv = T === null ? null : realOf(giac, T);
   // f holds a trig function but is not periodic itself (tan(x)+x, x*tan(x)): singular() lists the points of one period
@@ -254,7 +226,7 @@ function integralCheck(giac: Giac, c: Call, angle: "rad" | "deg"): Verdict {
  * `input` is what ran (decimals exact). Giac's `undef` for an input that holds a definite integral, a series or a limit
  * is refused with that call's message, and so is a `bounded_function(…)` left in the result of a limit.
  */
-export function refusalOf(engine: Giac, input: string, output: string, angle: "rad" | "deg"): Refusal | "unchecked" | null {
+export function refusalOf(engine: Giac, input: string, output: string): Refusal | "unchecked" | null {
   const calls = callsIn(input);
   if (!calls.length) return null;
   // Giac's timeout can stop any step of a check (singular, a limit, the second integral); a step it stopped proves
@@ -267,18 +239,18 @@ export function refusalOf(engine: Giac, input: string, output: string, angle: "r
       return o;
     },
   };
-  const verdict = check(giac, calls, input, output, angle);
+  const verdict = check(giac, calls, input, output);
   return verdict === null && interrupted ? "unchecked" : verdict;
 }
 
-function check(giac: Giac, calls: Call[], input: string, output: string, angle: "rad" | "deg"): Refusal | "unchecked" | null {
+function check(giac: Giac, calls: Call[], input: string, output: string): Refusal | "unchecked" | null {
   const out = output.trim();
   if (out === "undef") {
     const c = calls.find((k) => k.kind === "limit" || k.args.length >= 4);
     if (c) return REFUSAL[c.kind];
   }
   if (/bounded_function\s*\(/.test(out) && calls.some((c) => c.kind === "limit")) return "noLimit";
-  // The calls to check, with their values in the input's own mode; then the checks, in radians.
+  // The calls to check (Giac runs in radians in every mode, G46).
   const todo: Call[] = [];
   for (const c of calls) {
     if (c.kind === "limit" || c.args.length !== 4) continue;
@@ -291,21 +263,16 @@ function check(giac: Giac, calls: Call[], input: string, output: string, angle: 
     if (value === "undef") return REFUSAL[c.kind];
     const pair = c.kind === "int" ? giacPair(value) : null;
     if (!pair && !finiteValue(value)) continue;
-    todo.push(angle === "deg" ? { ...c, args: c.args.map(inRadians) } : c);
+    todo.push(c);
   }
   if (!todo.length) return null;
-  if (angle === "deg") giac.eval("angle_radian:=1");
-  try {
-    let unchecked = false;
-    for (const c of todo) {
-      const v = c.kind === "sum" ? seriesCheck(giac, c) : integralCheck(giac, c, angle);
-      if (v === "diverges") return REFUSAL[c.kind];
-      if (v === "unchecked") unchecked = true;
-    }
-    return unchecked ? "unchecked" : null;
-  } finally {
-    if (angle === "deg") giac.eval("angle_radian:=0");
+  let unchecked = false;
+  for (const c of todo) {
+    const v = c.kind === "sum" ? seriesCheck(giac, c) : integralCheck(giac, c);
+    if (v === "diverges") return REFUSAL[c.kind];
+    if (v === "unchecked") unchecked = true;
   }
+  return unchecked ? "unchecked" : null;
 }
 
 /**

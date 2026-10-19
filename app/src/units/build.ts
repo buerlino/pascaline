@@ -379,7 +379,8 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
       return out;
     });
     if (used.size !== slots.length + consts.length) throw new Refused({ error: "engine", detail: "a slot or constant is not in the formula" });
-    if (/\bpas/.test(sym.replace(/\bpas(?:dim[A-Za-z]+|v\d+)\b/g, ""))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
+    // R64, G46: the parser's degree factor `pasdeg` is ours to read, as are the dimension symbols
+    if (/\bpas/.test(sym.replace(/\bpas(?:dim[A-Za-z]+|v\d+|deg)\b/g, ""))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
     // The value of every uncertain input goes in; the worker differentiates the symbolic text for σ.
     const values = (t: string): string => (vars.length ? t.replace(/\bpasv(\d+)\b/g, (_, n: string) => `(${vars[Number(n) - 1]!.value})`) : t);
     const expr = values(sym);

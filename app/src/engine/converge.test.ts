@@ -3,12 +3,13 @@
 // Expected refusals are derived (a pole inside the interval, a term that does not tend to 0); values are oracle cases
 // of home.yaml (g39-keep-*).
 import { beforeAll, describe, expect, it } from "vitest";
-import { callsIn, giacPair, hasDefiniteIntegral, inRadians, refusalOf } from "./converge.ts";
+import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { EngineHost, type GiacApi } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { markOf } from "./format.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { rewriteAngles } from "../input/angles.ts";
 
 describe("converge helpers", () => {
   it("finds the calls, nested ones too, and not a name that ends in the word", () => {
@@ -36,7 +37,7 @@ describe("converge helpers", () => {
       [/^(limit|int)\(/, "GIAC_ERROR: Stopped by user interruption."],
     ];
     const giac = { eval: (t: string) => answers.find(([re]) => re.test(t))?.[1] ?? "GIAC_ERROR: unexpected" };
-    expect(refusalOf(giac, "int(1/x,x,-1,1)", "0", "rad")).toBe("unchecked");
+    expect(refusalOf(giac, "int(1/x,x,-1,1)", "0")).toBe("unchecked");
   });
   it("more singular points in [a, b] than are checked leave the result unchecked, never ok", () => {
     // Nine poles, each one integrable as far as the checks go: before the fix only eight were looked at and the verdict
@@ -56,13 +57,7 @@ describe("converge helpers", () => {
         return answers.find(([re]) => re.test(t))?.[1] ?? "GIAC_ERROR: unexpected";
       },
     };
-    expect(refusalOf(giac, "int(g(x),x,0,10)", "3", "rad")).toBe("unchecked");
-  });
-  it("rewrites a DEG text for radians", () => {
-    expect(inRadians("tan(2*x)")).toBe("tan(pi/180*(2*x))");
-    expect(inRadians("asin(sin(x))")).toBe("(180/pi*asin(sin(pi/180*(x))))");
-    expect(inRadians("x*(pi/180)^angle_radian()")).toBe("x*1");
-    expect(inRadians("1/x")).toBe("1/x");
+    expect(refusalOf(giac, "int(g(x),x,0,10)", "3")).toBe("unchecked");
   });
 });
 
@@ -75,8 +70,9 @@ describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
   });
   // A generous budget: these tests are about the checks, and a loaded test machine must not send ∫₋₁¹ 1/x to the float
   // path (the golden gate runs the same cases at the default budget, one at a time).
-  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(input, { ...defaultHomeSettings, angle, budgetMs: 5000 }).result;
-  const cas = (input: string, angle: "rad" | "deg" = "rad") => host.cas(input, { ...defaultCasSettings, angle }).result;
+  // G46: typed text gets the parser's angle rule (sin(pasdeg*x)), as the keys' LaTeX would.
+  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(rewriteAngles(input), { ...defaultHomeSettings, angle, budgetMs: 5000 }).result;
+  const cas = (input: string, angle: "rad" | "deg" = "rad") => host.cas(rewriteAngles(input), { ...defaultCasSettings, angle }).result;
 
   it.each([
     ["int(1/x,x,-1,1)", "integralDiverges"],
@@ -118,10 +114,10 @@ describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
     expect(cas("int(tan(x)+x,x,2,5)")).toMatchObject({ ok: false, error: "integralDiverges" });
     // Giac answers undef here itself; had it given a number (7, say), singular() lists only ±π/2, outside [2, 5], and
     // before the fix the pole at 3π/2 was never looked at.
-    expect(refusalOf(giac, "int(tan(x)+x,x,2,5)", "7", "rad")).toBe("integralDiverges");
-    expect(refusalOf(giac, "int(x*tan(x),x,2,5)", "7", "rad")).toBe("integralDiverges");
+    expect(refusalOf(giac, "int(tan(x)+x,x,2,5)", "7")).toBe("integralDiverges");
+    expect(refusalOf(giac, "int(x*tan(x),x,2,5)", "7")).toBe("integralDiverges");
     // A trig subterm without poles adds no shifts: sin(x)/x keeps its one point (and the sinc case its value).
-    expect(refusalOf(giac, "int(sin(x)/x,x,-1,20)", "7", "rad")).toBeNull();
+    expect(refusalOf(giac, "int(sin(x)/x,x,-1,20)", "7")).toBeNull();
   });
 
   it.each([
@@ -144,9 +140,11 @@ describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
     expect(r.items).toBeUndefined();
     expect(r.why).toEqual({ differ: true });
     expect(markOf(r, { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
+    // G46: Giac runs in radians in DEG too, so its exact and numeric answers agree: pi/4 (source: oracle)
     const d = home("int(1/(1+x^2),x,0,1)", "deg");
     expect(d.items).toBeUndefined();
-    expect(markOf(d, { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
+    expect(d.display).toBe("0.785398163397");
+    expect(markOf(d, { format: "STD", digits: 12 })).toMatchObject({ mark: "≈" });
   });
 
   it("CAS: Giac's pair is shown as Giac's text, both answers, with ⚠", () => {

@@ -7,7 +7,6 @@ import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResul
 import {
   arrowFunction,
   definedBy,
-  expIgnoresAngle,
   definitionsUsedBy,
   ENGINE_DEFINITIONS,
   decideFloatTest,
@@ -19,7 +18,6 @@ import {
   homeSetupCommands,
   angleCommand,
   latexShown,
-  pasdegCommand,
   isStateful,
   onceUndecided,
   regrouped,
@@ -27,14 +25,14 @@ import {
   safePrecision,
   symbolicWhy,
   testSides,
-  showExp,
-  showExpResult,
   simpleAssignment,
   storeTargets,
   toExactLiterals,
   unquote,
 } from "./homeEval.ts";
 import { eseriesDefinition } from "./eseries.ts";
+import { backInDegrees, needsDegrees } from "./degrees.ts";
+import { resolveAngle } from "./angleMigration.ts";
 import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
@@ -290,9 +288,9 @@ export class EngineHost {
 
   constructor(giac: GiacApi) {
     this.giac = giac;
-    // R64: our parser's text reads pasdeg in every angle; set before any input (the units, raw eval and replay paths
-    // have no mode setup of their own)
-    giac.eval(pasdegCommand("rad"));
+    // R64, G46: Giac in radians, and pasdeg (our parser's degree factor) set before any input: the units, raw eval and
+    // replay paths have no mode setup of their own
+    giac.eval(angleCommand("rad"));
     this.strict = {
       eval: (input) => {
         giac.clearMessages();
@@ -308,8 +306,9 @@ export class EngineHost {
 
   /** Replays definitions (a fresh engine: at init, or the stored log on first launch) and adds them to the log.
    *  Symbolic values first, while every name in them is still free (defs.ts). Returns the time it took. */
-  restore(entries: readonly DefEntry[]): number {
+  restore(stored: readonly DefEntry[]): number {
     const t0 = performance.now();
+    const entries = this.migrated(stored);
     // G29: values and functions go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost.
     // Assumptions and inputs kept as typed go alone. A batch that printed an error or warning (not the `// Success` notes of functions) or returned an error is run again one command at a
     // time (values and functions can be set twice), so one bad entry never takes the entries after it down (G19).
@@ -346,6 +345,35 @@ export class EngineHost {
     return performance.now() - t0;
   }
 
+  /** G46: what the last restore() changed in the entries it was given (flagged values resolved), for the client to
+   *  keep and store; taken once. */
+  private migratedChanges: DefChange[] = [];
+  /** G46: the flagged values whose preview matched neither reading; kept as they were (R14 section 7). */
+  unmatched: string[] = [];
+
+  takeMigrated(): DefChange[] {
+    const out = this.migratedChanges;
+    this.migratedChanges = [];
+    return out;
+  }
+
+  /** The entries with every flagged value (`migrate: "angle"`, angleMigration.ts) read both ways against its preview. */
+  private migrated(entries: readonly DefEntry[]): readonly DefEntry[] {
+    if (!entries.some((e) => e.migrate)) return entries;
+    const changes: DefChange[] = [];
+    const out = entries.map((e) => {
+      if (!e.migrate) return e;
+      const { migrate: _, ...rest } = e;
+      const r = e.cmds.length === 1 ? resolveAngle(this.giac, e.cmds[0]!, e.preview) : null;
+      if (!r) this.unmatched.push(e.name);
+      const next: DefEntry = r ? { ...rest, cmds: [r.cmd], ...(r.angle ? { angle: r.angle } : {}) } : rest;
+      changes.push({ set: next });
+      return next;
+    });
+    this.migratedChanges.push(...changes);
+    return out;
+  }
+
   private record(changes: readonly DefChange[]): void {
     if (!changes.length) return;
     this.log = applyDefChanges(this.log, changes);
@@ -367,7 +395,7 @@ export class EngineHost {
    * `angle`: the mode a variable was stored in (G34), recorded with it when known.
    */
   private defsAfter(input: string, ran: string[], preview: string, facts: NameFacts | null, view: "home" | "cas", digits: number, angle: "rad" | "deg" | undefined): DefChange[] {
-    const base = { preview: dropAngleFactor(showExp(preview.trim())).slice(0, PREVIEW_MAX), view, time: Date.now() };
+    const base = { preview: dropAngleFactor(preview.trim()).slice(0, PREVIEW_MAX), view, time: Date.now() };
     const purge = /^\s*purge\s*\(([^()]*)\)\s*$/.exec(input);
     let changes: DefChange[];
     const names = purge ? purge[1]!.split(",").map((x) => x.trim()) : [];
@@ -547,11 +575,9 @@ export class EngineHost {
     return mergedFacts([...(e.facts ? [e.facts] : []), ...(cmd !== undefined ? this.bodyFacts(cmd, name, seen) : [])]);
   }
 
-  /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). A value carried as its decimal
-   *  (G34) is known to every digit it carries: the result's confirmed digits, at most P = valuePrecision(digits). */
+  /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). */
   private static factsOf(r: HomeResult | undefined, digits: number): NameFacts | null {
     if (!r || !r.ok) return null;
-    if (r.carried === "decimal") return { reliableDigits: r.reliableDigits ?? valuePrecision(digits), ...(r.warn ? { warn: r.warn } : {}) };
     if (!r.value && !r.items) return { reliableDigits: null, warn: "unchecked" }; // a symbolic value with a float in it
     return { reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}) };
   }
@@ -594,15 +620,9 @@ export class EngineHost {
     }
   }
 
-  private homeRun(typed: string, s: HomeSettings, inexactIn: boolean, lent: readonly NameFacts[] = []): { result: HomeResult; defs: DefChange[] } {
-    const out = this.homeRunRaw(typed, s, inexactIn, lent);
-    return { ...out, result: showExpResult(out.result) };
-  }
-
   /** `inexactIn` (G49): the input held a constant or chip that is not exact, so a value it stores is not exact.
    *  `lent` (G49f1): the facts of those chips and constants, for a function defined from them. */
-  private homeRunRaw(typed: string, s: HomeSettings, inexactIn: boolean, lent: readonly NameFacts[]): { result: HomeResult; defs: DefChange[] } {
-    const input = expIgnoresAngle(typed, s.angle);
+  private homeRun(input: string, s: HomeSettings, inexactIn: boolean, lent: readonly NameFacts[] = []): { result: HomeResult; defs: DefChange[] } {
     this.need(input);
     this.useHomeMode(s);
     const t0 = performance.now();
@@ -668,16 +688,7 @@ export class EngineHost {
     return out;
   }
 
-  private casRun(typed: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
-    const out = this.casRunRaw(typed, s);
-    const r = out.result;
-    const result: CasResult = { ...r, text: showExp(r.text), latex: showExp(r.latex) };
-    if (r.numeric) result.numeric = showExpResult(r.numeric);
-    return { ...out, result };
-  }
-
-  private casRunRaw(typed: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
-    const input = expIgnoresAngle(typed, s.angle);
+  private casRun(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     this.need(input);
     this.useMode(`cas${JSON.stringify(s)}`, () => {
       for (const c of casSetupCommands(s)) this.giac.eval(c);
@@ -741,7 +752,7 @@ export class EngineHost {
     }
     // G39: a divergent integral or series, or no limit, is refused as in Home; Giac's [exact, numeric] pair of a
     // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
-    const refused = guarded ? refusalOf(this.giac, guarded.rhs, text, s.angle) : single ? null : refusalOf(this.giac, exactInput, text, s.angle);
+    const refused = guarded ? refusalOf(this.giac, guarded.rhs, text) : single ? null : refusalOf(this.giac, exactInput, text);
     if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
     if (guarded) {
       const stored = this.giac.eval(`${guarded.name}:=pcasans`);
@@ -797,12 +808,26 @@ export class EngineHost {
     // G38: "decided at limited precision"; the value was computed, not compared, so `once` is not said.
     const why0 = pair ? { differ: true } : undecided ? { ...(symWhy && !symWhy.once ? symWhy : {}), decided: true } : symWhy;
     const why = read?.causes.length ? { ...(why0 ?? {}), inherited: read.causes } : why0;
-    const tex = latexShown(this.giac, slot, text);
+    // G46 (S14 option 2): in DEG the radian text is drawn and copied as a DEG engine prints it; Ans, chips (`full`) and
+    // pcasans keep the radian text, which means the same in every mode.
+    const deg = s.angle === "deg" && needsDegrees(text) ? backInDegrees(this.giac, text) : null;
+    const shown = deg ?? text;
+    const tex = deg !== null ? this.giac.eval(`latex(quote(${deg}))`) : latexShown(this.giac, slot, text);
     if (atN !== null) this.giac.eval("purge(pasfl)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
-      result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(warn ? { warn } : {}), ...(why ? { why } : {}) },
-      defs: defsOf(text, unchecked ? { reliableDigits: null, warn: "unchecked", inexact: true } : null),
+      result: {
+        ok: true,
+        text: shown,
+        ...(shown !== text ? { full: text } : {}),
+        latex: unquote(tex),
+        timedOut: false,
+        engineMs: performance.now() - t0,
+        ...(approximate ? { approximate } : {}),
+        ...(warn ? { warn } : {}),
+        ...(why ? { why } : {}),
+      },
+      defs: defsOf(shown, unchecked ? { reliableDigits: null, warn: "unchecked", inexact: true } : null),
     };
   }
 
@@ -927,7 +952,7 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
       const host = await starting;
       switch (req.type) {
         case "define":
-          post({ id: req.id, type: "defined", replayMs: host.restore(req.defs) });
+          post({ id: req.id, type: "defined", replayMs: host.restore(req.defs), defs: host.takeMigrated() });
           break;
         case "eval":
           post({ id: req.id, type: "result", ...host.eval(req.input) });

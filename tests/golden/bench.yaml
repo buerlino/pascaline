@@ -44,7 +44,7 @@ cases:
   - { id: "int-num", input: "romberg(exp(-x^2),x,0,1)", cat: "calculus" }
   - { id: "diff-chain", input: "diff(sin(x^2),x)", cat: "calculus" }
   - { id: "diff-2nd", input: "diff(x^3*ln(x),x,2)", cat: "calculus" }
-  - { id: "limit-sinc", input: "limit(sin(x)/x,x,0)", expect: "1", source: "derived", cat: "calculus" }
+  - { id: "limit-sinc", input: "limit(sin(x)/x,x,0)", expect: "1", deg: "pi/180", source: "derived", cat: "calculus", note: "in DEG sin of x degrees over x tends to pi/180 (G46)" }
   - { id: "limit-inf", input: "limit((1+1/n)^n,n,inf)", cat: "calculus" }
   - { id: "series-exp", input: "series(exp(x),x,0,5)", cat: "calculus" }
   - { id: "sum-sym", input: "sum(k^2,k,1,n)", cat: "calculus" }

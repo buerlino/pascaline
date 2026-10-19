@@ -43,16 +43,16 @@ export function valuePrecision(digits: number): number {
  * decimal conversion itself and the elementary functions, which Giac evaluates with MPFR at any precision and which
  * every `≈` result of home.yaml already goes through (checked against the oracle). Every other function that returns
  * a float on the exact path is "unaudited" and gets ⚠ until it is in Find's tier 0 with a golden case (G4, EN7).
- * Audited for real arguments, and in RAD for complex ones (G50, `tools/probes/complex-audit.ts`: sqrt, exp, ln, log,
+ * Audited for real arguments and for complex ones (G50, `tools/probes/complex-audit.ts`: sqrt, exp, ln, log,
  * log10, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, abs, arg and sign on 12 complex
  * arguments at 12, 30 and 50 digits). Giac's complex tanh is coth and its complex asin, acos, atan and acosh are a
  * double, so those are evaluated through COMPLEX_DEFINITIONS; any part Giac prints as a double where MPFR digits were
- * asked confirms one digit fewer than it prints (shortDigits). In DEG nothing is replaced, so a non-real value of an
- * input that calls tanh, asin, acos, atan or acosh is not audited and gets ⚠ (complexReads; the angle paths are S14's).
+ * asked confirms one digit fewer than it prints (shortDigits). Giac runs in radians in every mode (G46), so DEG reads
+ * the same routines (the probe's DEG rows).
  */
 export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
   "evalf", "approx",
-  "sqrt", "exp", "pasexp", "ln", "log", "log10", "sin", "cos", "tan", "asin", "acos", "atan",
+  "sqrt", "exp", "ln", "log", "log10", "sin", "cos", "tan", "asin", "acos", "atan",
   "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
   "abs", "re", "im", "conj", "arg", "sign", "floor", "ceil", "round", "frac", "max", "min",
   "sigfig", "par", "eseries", "pasmedian", "paspercentile",
@@ -62,19 +62,18 @@ export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
  * G50 (deep check 2026-10-19 D9, D10): our definitions for the functions whose complex values Giac gets wrong. Giac's
  * complex tanh returns (e^2z+1)/(e^2z-1), which is coth (usual.cc `tanh`, the `_CPLX` branch); its complex asin, acos,
  * atan and acosh have no MPFR path (14 digits at any Digits; acosh near 0 is short even in the double). Each is used
- * for a non-real argument in RAD only, and is the function itself otherwise: tanh(z) as -i*tan(i*z) (Giac's complex tan
+ * for a non-real argument, and is the function itself otherwise (Giac runs in radians in every mode, G46): tanh(z) as -i*tan(i*z) (Giac's complex tan
  * is right; sinh(z)/cosh(z) leaves im() a complex number for z = i), the inverse functions
  * by their ln forms, which are the principal branches (mpmath's, also on the cuts of atan). The agreement check then
  * confirms their digits like any other exact value. A list or matrix argument is mapped element by element first (its
- * type is DOM_LIST, which would fall back to Giac's own function). In DEG the angle mode's own paths are S14's, and a
- * non-real value of an input that calls one of these is not audited (complexReads; a stored name too).
+ * type is DOM_LIST, which would fall back to Giac's own function).
  */
 export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
-  pastanh: "pastanh(z):={ if (type(z)==DOM_LIST) return map(z,pastanh); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return -i*tan(i*z); return tanh(z); }",
-  pasasin: "pasasin(z):={ if (type(z)==DOM_LIST) return map(z,pasasin); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return -i*ln(i*z+sqrt(1-z^2)); return asin(z); }",
-  pasacos: "pasacos(z):={ if (type(z)==DOM_LIST) return map(z,pasacos); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return pi/2+i*ln(i*z+sqrt(1-z^2)); return acos(z); }",
-  pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
-  pasacosh: "pasacosh(z):={ if (type(z)==DOM_LIST) return map(z,pasacosh); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return ln(z+sqrt(z+1)*sqrt(z-1)); return acosh(z); }",
+  pastanh: "pastanh(z):={ if (type(z)==DOM_LIST) return map(z,pastanh); if (type(evalf(z))==DOM_COMPLEX) return -i*tan(i*z); return tanh(z); }",
+  pasasin: "pasasin(z):={ if (type(z)==DOM_LIST) return map(z,pasasin); if (type(evalf(z))==DOM_COMPLEX) return -i*ln(i*z+sqrt(1-z^2)); return asin(z); }",
+  pasacos: "pasacos(z):={ if (type(z)==DOM_LIST) return map(z,pasacos); if (type(evalf(z))==DOM_COMPLEX) return pi/2+i*ln(i*z+sqrt(1-z^2)); return acos(z); }",
+  pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
+  pasacosh: "pasacosh(z):={ if (type(z)==DOM_LIST) return map(z,pasacosh); if (type(evalf(z))==DOM_COMPLEX) return ln(z+sqrt(z+1)*sqrt(z-1)); return acosh(z); }",
 };
 
 /** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */
@@ -90,11 +89,11 @@ export function complexSafe(text: string): string {
   return text.replace(COMPLEX_CALL, (m, name?: string, paren?: string) => (name === undefined ? m : `${COMPLEX_REPLACED[name]}${paren}`));
 }
 
-/** Prepares `text` to be evaluated for its value: in RAD, with complexSafe's replacements and their definitions loaded;
- *  otherwise (DEG, or nothing to replace) the text itself. */
+/** Prepares `text` to be evaluated for its value: with complexSafe's replacements and their definitions loaded; the
+ *  text itself when there is nothing to replace. */
 export function forValue(giac: Giac, text: string): string {
   const safe = complexSafe(text);
-  if (safe === text || giac.eval("angle_radian").trim() !== "1") return text;
+  if (safe === text) return text;
   for (const [name, def] of Object.entries(COMPLEX_DEFINITIONS)) {
     if (!safe.includes(name)) continue;
     // A defined function prints as its program; an undefined name prints as itself.
@@ -287,16 +286,15 @@ const MAX_READS = 40;
 /**
  * What `expr` reads through stored names (G50f1). A name or user function whose stored text calls a function
  * COMPLEX_DEFINITIONS replaces (CAS `w:=tanh(i)` keeps Giac's exact tanh(i); `f(x):=tanh(x)`) is evaluated by Giac with
- * its own complex tanh (coth) unless it is read through a copy: in RAD each such name is replaced in `text` by a slot
+ * its own complex tanh (coth) unless it is read through a copy: each such name is replaced in `text` by a slot
  * (`pasxn<k>`) that holds its complexSafe text, as exactFacts reads Ans through pasxv. `hidden`: the replaced functions
- * that could not be read that way (DEG, where nothing is replaced, the typed text's too; a copy Giac refused; a call
+ * that could not be read that way (a copy Giac refused; a call
  * found only inside another function's body; every one when `copy` is false, for an input that runs once and may
  * assign); a non-real value then is not audited. Purge `copies` when done.
  */
 export function complexReads(giac: Giac, expr: string, copy = true): { text: string; copies: string[]; hidden: string[] } {
-  const rad = giac.eval("angle_radian").trim() === "1";
   const copies: string[] = [];
-  const hidden: string[] = rad ? [] : complexReplacedIn(expr);
+  const hidden: string[] = [];
   const known = new Map<string, string | null>();
   // The stored text of a user's name or function; null for a free name or a builtin (each name is asked once).
   const stored = (n: string): string | null => {
@@ -329,7 +327,7 @@ export function complexReads(giac: Giac, expr: string, copy = true): { text: str
     const fns = complexReplacedIn(v);
     if (!fns.length) continue;
     const slot = `pasxn${copies.length}`;
-    if (!rad || !copy || isError(giac.eval(`${slot}:=(${forValue(giac, v)})`))) {
+    if (!copy || isError(giac.eval(`${slot}:=(${forValue(giac, v)})`))) {
       hidden.push(...fns);
       continue;
     }
@@ -1008,7 +1006,7 @@ export function notBuiltin(giac: Giac): (name: string) => boolean {
 
 /** A stored function's printed definition changes engine state: it stores into a name that is neither a parameter
  *  nor a `local` (Giac prints `sto(y,q)` and `y=>q` as `q:=y`), or calls purge, assume or additionally. The engine's
- *  own helpers (pasexp, par, sigfig) assign only their locals and parameters. */
+ *  own helpers (par, sigfig) assign only their locals and parameters. */
 export function definitionStores(def: string): boolean {
   if (/=>|\b(?:sto|purge|assume|additionally)\s*\(/.test(def)) return true;
   const own = new Set<string>();

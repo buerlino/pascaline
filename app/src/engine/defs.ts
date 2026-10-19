@@ -45,6 +45,9 @@ export interface DefEntry {
   angle?: "rad" | "deg";
   /** One line saying what it is (a library's comment above the definition, G33), at most DESC_MAX characters. */
   desc?: string;
+  /** G46: a variable stored before its angle mode was recorded, whose text holds an angle function; the engine reads
+   *  it both ways on its next replay and keeps the reading that matches the preview (engine/angleMigration.ts). */
+  migrate?: "angle";
 }
 
 export type DefChange = { set: DefEntry } | { purge: string[] };
@@ -121,6 +124,7 @@ export function validDefs(x: unknown): DefEntry[] {
       ...(e["early"] === true ? { early: true } : {}),
       ...(kind === "var" && (e["angle"] === "rad" || e["angle"] === "deg") ? { angle: e["angle"] } : {}),
       ...(typeof e["desc"] === "string" && e["desc"] ? { desc: e["desc"].slice(0, DESC_MAX) } : {}),
+      ...(kind === "var" && e["migrate"] === "angle" ? { migrate: "angle" as const } : {}),
     });
   }
   return out.slice(-MAX_DEFS);

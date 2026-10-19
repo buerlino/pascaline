@@ -4,6 +4,7 @@
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
 //   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, calls, units, parser
+// Typed Giac text in a case (`input`, `before`, step inputs, `eq`, `f`, `g`) gets the parser's angle rule first (G46).
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
@@ -23,7 +24,8 @@
 //              or fewer confirmed digits than asked) unless the case has status "warn"; a root shown with ⚠ n must
 //              equal `expect` rounded to those n digits
 //   function   Function analysis and Num table (analysis.ts), same rules
-//   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed
+//   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed. Then in DEG (G46):
+//              every input that answers in RAD answers, `deg` pins a DEG text, an angle-free one shows the RAD text
 //   calls      G52: Giac calls per input (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
 //              the five largest; fails when calls per input are over 10 % above tests/golden/calls-baseline.yaml
 //   units      tests/golden/units.yaml: the unit view (G16) on the Find index's factors (app/src/find/_gen, `npm run index`):
@@ -51,6 +53,10 @@ import { chipsIn, type ChipFactsTable } from "../src/engine/chipFacts.ts";
 import { inexactConstsIn, type ConstTable } from "../src/engine/constUnc.ts";
 import { DEFAULT_USER_FUNCTIONS, latexToGiac, latexToGiacInfo, type UnitsInfo } from "../src/input/latex-to-giac.ts";
 import { SerializeError } from "../src/input/errors.ts";
+import { dropAngleFactor, hasAngleFactor, rewriteAngles } from "../src/input/angles.ts";
+
+/** A result text with a trig function in it (the CAS view draws its angle in degrees in DEG). */
+const TRIG_TEXT = /(?<![A-Za-z0-9_])a?(sin|cos|tan|sec|csc|cot)\(/;
 import { buildJob } from "../src/units/build.ts";
 import { factorTable, type FactorTable } from "../src/units/factors.ts";
 import { unitErrorMessage } from "../src/units/messages.ts";
@@ -127,6 +133,8 @@ interface Case {
   shown?: string;
   unc_oracle?: string;
   message?: string;
+  /** bench.yaml (G46): the CAS text in DEG, where it differs from the RAD one. */
+  deg?: string;
   /** parser.yaml: the input must be rejected by the parser (docs/04 2.3 #1). */
   error?: boolean;
   /** parser.yaml: the entry's chip table (\res, \ans, \const), keyed as in app/src/input/chips.ts. */
@@ -141,9 +149,34 @@ const HOME_LIMIT_MS = 500;
 const only = process.env.ONLY?.split(",").map((s) => s.trim());
 const want = (stage: string) => !only || only.includes(stage);
 
+/** Files whose `input`-style fields are what the user types, in Giac's spelling (not the parser's LaTeX). */
+const TYPED_FILES = new Set(["home.yaml", "precision.yaml", "bench.yaml", "solve.yaml", "function.yaml", "units.yaml"]);
+
+/**
+ * G46: Giac runs in radians and the angle mode lives in the parser's text (R64, `sin(pasdeg*x)`). A case's typed Giac
+ * text (`input`, `before`, `beforeHome`, `beforeCas`, step inputs, `eq`, `f`, `g`) is what the user types, so it gets
+ * the parser's angle rule (input/angles.ts `rewriteAngles`) as the keys' LaTeX would; `latex` goes through the parser.
+ */
+function typed(c: Case): Case {
+  const one = (t: string): string => rewriteAngles(t);
+  const many = <T extends string | string[] | undefined>(x: T): T => (x === undefined ? x : Array.isArray(x) ? (x.map(one) as T) : (one(x) as T));
+  const raw = c.latex === undefined;
+  return {
+    ...c,
+    ...(c.input !== undefined ? { input: one(c.input) } : {}),
+    ...(raw && c.before ? { before: c.before.map(one) } : {}),
+    ...(raw && c.beforeHome ? { beforeHome: c.beforeHome.map(one) } : {}),
+    ...(raw && c.beforeCas ? { beforeCas: c.beforeCas.map(one) } : {}),
+    ...(c.steps ? { steps: c.steps.map((st) => (st.input !== undefined ? { ...st, input: one(st.input) } : st)) } : {}),
+    ...(c.eq !== undefined ? { eq: many(c.eq) } : {}),
+    ...(c.f !== undefined ? { f: many(c.f) } : {}),
+    ...(c.g !== undefined ? { g: one(c.g) } : {}),
+  };
+}
+
 function cases(file: string): Case[] {
   const doc = parse(readFileSync(`${root}tests/golden/${file}`, "utf8")) as { cases: Case[] };
-  return doc.cases;
+  return TYPED_FILES.has(file) ? doc.cases.map(typed) : doc.cases;
 }
 
 const median = (xs: number[]): number => {
@@ -207,7 +240,7 @@ async function stageHome(): Promise<void> {
     // ⚠ n: only the n confirmed digits are shown, and they must be the oracle's (as in the precision stage).
     const wantOf = (m: MarkInfo | null): string | null =>
       m?.mark === "⚠" && m.n !== undefined && m.n < digits ? expectAt(String(c.expect), Math.max(1, m.n)) : String(c.expect);
-    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, c.input ?? "")) : rs.every((x, k) => x.display === wantOf(marksOf[k]!));
+    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, dropAngleFactor(c.input ?? ""))) : rs.every((x, k) => x.display === wantOf(marksOf[k]!));
     // `exact` (G38): the text the result copies (`full`), when the case pins it.
     const exactOk = c.exact === undefined || rs.every((x) => x.full === c.exact);
     const ok = answered && markOk && exactOk;
@@ -405,7 +438,7 @@ const same = (a: Expect, b: Expect | undefined): boolean => JSON.stringify(a) ==
 const str = (x: string | string[] | undefined): string => (Array.isArray(x) ? x[0]! : x!);
 const list = (x: string | string[] | undefined): string[] => (Array.isArray(x) ? x : [x!]);
 
-const caseSettings = (c: Case): HomeSettings => ({ ...defaultHomeSettings, digits: c.settings?.digits ?? defaultHomeSettings.digits });
+const caseSettings = (c: Case): HomeSettings => ({ ...defaultHomeSettings, digits: c.settings?.digits ?? defaultHomeSettings.digits, angle: c.settings?.angle ?? "rad" });
 
 function solveCase(host: EngineHost, g: GiacApi, c: Case): Got {
   const s = caseSettings(c);
@@ -481,15 +514,37 @@ async function stageBench(): Promise<void> {
   let checked = 0;
   let pass = 0;
   const errors: string[] = [];
+  const radText = new Map<string, string>();
   for (const c of cs) {
     const r = host.cas(c.input!, defaultCasSettings).result;
     if (!r.ok) errors.push(`${c.id} (${r.error})`);
+    else radText.set(c.id, r.text);
     if (c.expect === undefined) continue;
     checked++;
     if (r.ok && r.text === c.expect) pass++;
     else console.log(`  bench ${c.id}: got ${r.text}, expect ${c.expect}`);
   }
-  report("bench", pass === checked, `${pass}/${checked} expect match, ${cs.length} run, errors: ${errors.length ? errors.join(", ") : "none"}`);
+  // G46: the same inputs in DEG. Every one that answers in RAD answers in DEG (A16 saw limit and series refused); `deg`
+  // pins the DEG text; an input without an angle function shows the RAD text, unless its result holds a trig function
+  // (the CAS view draws that in degrees, S14 option 2).
+  const deg = { ...defaultCasSettings, angle: "deg" as const };
+  let degChecked = 0;
+  let degPass = 0;
+  for (const c of cs) {
+    const rad = radText.get(c.id);
+    if (rad === undefined) continue;
+    const r = host.cas(c.input!, deg).result;
+    const want = c.deg ?? (hasAngleFactor(c.input!) || TRIG_TEXT.test(rad) ? undefined : rad);
+    if (r.ok && want === undefined) continue;
+    degChecked++;
+    if (r.ok && r.text === want) degPass++;
+    else console.log(`  bench ${c.id} in DEG: got ${r.ok ? r.text : `error ${r.error}: ${r.text}`}, expect ${want ?? "an answer"}`);
+  }
+  report(
+    "bench",
+    pass === checked && degPass === degChecked,
+    `${pass}/${checked} expect match, ${cs.length} run, errors: ${errors.length ? errors.join(", ") : "none"}; DEG ${degPass}/${degChecked} match`,
+  );
 }
 
 /** G52: Giac calls per input (one Enter at 12 digits) for the bench inputs (CAS) and home.yaml's single inputs (Home),

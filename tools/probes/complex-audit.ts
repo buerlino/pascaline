@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Probe (G50, deep check 2026-10-19 D9–D11): the audited functions on complex arguments, in RAD.
+// Probe (G50, deep check 2026-10-19 D9–D11): the audited functions on complex arguments, in RAD, and in DEG at 12 digits
+// (G46: the input with the parser's degree factor, `sin(pasdeg*(z))`, `asin(z)/pasdeg`; mpmath reads z° = z·π/180).
 //   node tools/probes/complex-audit.ts            # Home at 12, 30 and 50 digits: every shown digit right, or a gap
 //   node tools/probes/complex-audit.ts --raw      # also Giac's own evalf at Digits 12, 40 and 60 (the deep check's sweep)
 //   node tools/probes/complex-audit.ts --all      # print every row, not only the gaps
@@ -16,6 +17,7 @@ import { fileURLToPath } from "node:url";
 import { EngineHost } from "../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings } from "../../app/src/engine/homeEval.ts";
+import { ANGLE_IN, ANGLE_OUT, rewriteAngles } from "../../app/src/input/angles.ts";
 import { markOf } from "../../app/src/engine/format.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -71,7 +73,7 @@ interface Check {
 const PY = String.raw`
 import sys, json, re
 import mpmath as mp
-from mpmath import mpf, mpc, sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, fabs, arg
+from mpmath import pi, mpf, mpc, sqrt, exp, log, log10, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, fabs, arg
 mp.mp.dps = 100
 def F(p, q): return mpf(p) / q
 NUM = r'[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?'
@@ -144,6 +146,19 @@ for (const [f, fpy] of Object.entries(FUNCTIONS)) {
       if (keys[1]) checks.push({ key: keys[1], f, z, text: r.full, claim: true, fpy: fz, zpy });
       rows.push({ f, z, where: `home ${d}`, mark, display: r.display, keys });
     }
+    {
+      // G46: DEG, as typed (the parser's factor); an angle in is z·π/180, an angle out is over π/180 (S14's reading)
+      const d = 12;
+      const typed = rewriteAngles(input);
+      const r = host.home(typed, { ...defaultHomeSettings, digits: d, angle: "deg", workDigits: 30 }).result;
+      const m = r.ok ? markOf(r, { format: "STD", digits: d }) : null;
+      const mark = m ? `${m.mark}${m.n !== undefined ? ` ${m.n}` : ""}` : "-";
+      const fdeg = Object.hasOwn(ANGLE_IN, f) ? fpy.replaceAll("z", "((z)*pi/180)") : ANGLE_OUT.has(f) ? `(${fz})*180/pi` : fz;
+      const keys = [`${input}|deg|display`, ...(r.full === r.exact ? [] : [`${input}|deg|full`])];
+      checks.push({ key: keys[0]!, f, z, text: r.display, claim: true, fpy: fdeg, zpy });
+      if (keys[1]) checks.push({ key: keys[1], f, z, text: r.full, claim: true, fpy: fdeg, zpy });
+      rows.push({ f, z, where: `deg ${d}`, mark, display: r.display, keys });
+    }
     if (raw) {
       for (const D of RAW_DIGITS) {
         giac.eval(`Digits:=${D}`);
@@ -185,5 +200,5 @@ if (raw) {
   console.log(`\nGiac's evalf short of Digits (more than 2 digits): ${short.length}`);
   for (const s of short) console.log(`  ${s}`);
 }
-console.log(`\nHome: ${homeRows} rows (${Object.keys(FUNCTIONS).length} functions × ${Object.keys(ARGS).length} arguments × digits ${HOME_DIGITS.join(", ")}), ${gaps} gaps`);
+console.log(`\nHome: ${homeRows} rows (${Object.keys(FUNCTIONS).length} functions × ${Object.keys(ARGS).length} arguments × digits ${HOME_DIGITS.join(", ")} in RAD, and 12 in DEG), ${gaps} gaps`);
 process.exitCode = gaps ? 1 : 0;

@@ -6,6 +6,7 @@ import { EngineHost } from "./host.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { applyDefChanges, userNamesOf, validDefs, type DefEntry } from "./defs.ts";
 import { defaultCasSettings } from "./types.ts";
+import { defaultHomeSettings } from "./homeEval.ts";
 import { exportLibrary, importLibrary, LibError, parseLibrary, type ImportResult } from "./library.ts";
 
 const file = (n: string): Uint8Array => readFileSync(new URL(`../../../tools/probes/library/${n}`, import.meta.url));
@@ -201,5 +202,51 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
     // The device estimate uses the median (not the minimum).
     const deviceMs = median * (291 / 10.8);
     console.log(`G33: device estimate ${deviceMs.toFixed(0)} ms against the 50 ms budget`);
+  });
+});
+
+// G46 (route R, S14 R14 section 5): a library file is Giac text in radians, without our degree factor.
+describe.skipIf(!giacAvailable())("the degree factor in library files (G46, real Giac)", () => {
+  const fresh = async (): Promise<EngineHost> => new EngineHost((await loadNodeGiac()).giac);
+  const deg = { ...defaultHomeSettings, angle: "deg" as const };
+
+  it("the import puts the factor in: a body's sin follows the mode at call time (derived: sin 30° = 1/2, sin(pi/6) = 1/2)", async () => {
+    const h = await fresh();
+    const r = importLibrary(h, parseLibrary("// pascaline library 2\n// sine\nsn(x):=sin(x)\n"), []);
+    expect(r.ok).toBe(true);
+    expect(r.ok && r.log[0]!.cmds[0]).toContain("pasdeg");
+    expect(h.home("sn(30)", deg).result.display).toBe("0.5");
+    expect(h.home("sn(pi/6)", defaultHomeSettings).result.display).toBe("0.5");
+  });
+
+  it("the export writes the body without it, and a file round-trips (derived)", async () => {
+    const h = await fresh();
+    const log = applyDefChanges([], h.home("sqa(x):=sin(pasdeg*x)^2+asin(x)/pasdeg", deg).defs);
+    const { text } = exportLibrary(log);
+    expect(text).not.toContain("pasdeg");
+    expect(text).toContain("sin(x)");
+    const back = importLibrary(await fresh(), parseLibrary(text), []);
+    expect(back.ok && exportLibrary(back.log).text).toBe(text);
+    expect(back.ok && back.log[0]!.cmds[0]).toBe("sqa(x):=sin(pasdeg*(x))^2+(asin(x)/pasdeg)");
+  });
+
+  it("a test line runs in radians whatever the mode, and the mode's factor is put back (derived: sin(pi/2) = 1)", async () => {
+    const h = await fresh();
+    const lib = parseLibrary("// pascaline library 3\n// sine\nsn(x):=sin(x)\n// test: sn(pi/2) == 1\n");
+    const first = importLibrary(h, lib, []);
+    expect(first).toMatchObject({ ok: true, tests: 1 });
+    // The same file again defines nothing (no cas() resets the mode), so the tests meet DEG's pasdeg and put it back.
+    h.home("1", deg);
+    const again = importLibrary(h, lib, first.ok ? first.log : []);
+    expect(again).toMatchObject({ ok: true, tests: 1, plan: { same: ["sn"] } });
+    expect(h.eval("pasdeg").output).toBe("pi/180");
+    expect(h.home("sn(90)", deg).result.display).toBe("1");
+  });
+
+  it("a version-2 file's pasexp reads as exp (derived: exp(i*pi) = -1)", async () => {
+    const h = await fresh();
+    const r = importLibrary(h, parseLibrary("// pascaline library 2\n// phasor\nph(w):=pasexp(i*w)\n"), []);
+    expect(r.ok && r.log[0]!.cmds[0]).toBe("ph(w):=exp(i*w)");
+    expect(h.home("ph(pi)", deg).result.display).toBe("-1");
   });
 });

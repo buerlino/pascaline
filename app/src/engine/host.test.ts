@@ -278,15 +278,15 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   });
   // G26 (deep-dive item 17): the digits a constant's uncertainty leaves. All values derived by hand from the table:
   // G = 6.67430E-11 with σ = 0.00015E-11 (CODATA 2018, as the chip table holds it, input/chips.test.ts).
-  describe("pasexp stays off the screen in DEG (G21f1)", () => {
+  describe("exp in DEG is Giac's exp, in radians (G46; G21f1's pasexp is gone)", () => {
     const deg = { ...defaultHomeSettings, angle: "deg" as const };
     const casDeg = { ...defaultCasSettings, angle: "deg" as const };
-    it("Home g(x):=exp(i*x) shows exp in display, exact, full and latex; the log keeps pasexp (derived)", () => {
+    it("Home g(x):=exp(i*x) shows exp in display, exact, full and latex; the log holds exp, not pasexp (derived)", () => {
       const r = host.home("g21(x):=exp(i*x)", deg);
       for (const f of [r.result.display, r.result.exact, r.result.full, r.result.latex]) expect(f ?? "").not.toMatch(/pasexp/);
       expect(r.result.display).toContain("exp(");
       expect(r.defs).toMatchObject([{ set: { name: "g21", kind: "fn" } }]);
-      expect(JSON.stringify(r.defs)).toContain("pasexp");
+      expect(JSON.stringify(r.defs)).not.toContain("pasexp");
       expect(JSON.stringify(r.defs.map((d) => ("set" in d ? d.set.preview : ""))).includes("pasexp")).toBe(false);
     });
     it("g(90) is still -0.448073616129+0.893996663601*i in DEG (source: oracle, exp(i*90) as radians)", () => {
@@ -296,7 +296,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       const r = host.cas("g21c(x):=exp(i*x)", casDeg);
       expect(r.result.text).not.toMatch(/pasexp/);
       expect(r.result.latex).not.toMatch(/pasexp/);
-      expect(r.result.latex).toMatch(/exp/);
+      expect(r.result.latex).toMatch(/exp|e\^/);
       expect(r.defs.map((d) => ("set" in d ? d.set.preview : "")).join()).not.toMatch(/pasexp/);
       host.home("purge(g21,g21c)", defaultHomeSettings);
     });
@@ -482,8 +482,8 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     it("σ follows the angle mode: sin(a) with a = 30 ± 1 (derived)", () => {
       const a = { value: "30", unc: "1" };
       // degrees: 0.5 ± cos(30°)·π/180 = 0.0151, so 1 digit; radians: sin(30) = -0.988 ± |cos(30)| = 0.154, so 0
-      expect(host.home("sin(pasc_a)", { ...defaultHomeSettings, angle: "deg" }, { a }).result.uncDigits).toBe(1);
-      expect(host.home("sin(pasc_a)", defaultHomeSettings, { a }).result.uncDigits).toBe(0);
+      expect(host.home("sin(pasdeg*pasc_a)", { ...defaultHomeSettings, angle: "deg" }, { a }).result.uncDigits).toBe(1);
+      expect(host.home("sin(pasdeg*pasc_a)", defaultHomeSettings, { a }).result.uncDigits).toBe(0);
     });
 
     it("an exact constant (c) gives none; nor does a σ of 0", () => {
@@ -573,7 +573,7 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
   });
 });
 
-describe.skipIf(!giacAvailable())("G34: a carried value keeps what it showed when the angle mode changes", () => {
+describe.skipIf(!giacAvailable())("G34, G46: a carried value keeps what it showed when the angle mode changes", () => {
   let host: EngineHost;
   beforeAll(async () => {
     host = new EngineHost((await loadNodeGiac()).giac);
@@ -581,14 +581,12 @@ describe.skipIf(!giacAvailable())("G34: a carried value keeps what it showed whe
   const rad = defaultHomeSettings;
   const deg = { ...defaultHomeSettings, angle: "deg" as const };
 
-  it("DEG TH:=atan(3/4) is stored as its decimal, with facts and the mode; RAD reads 36.8698976458 (source: oracle)", () => {
-    const r = host.home("TH:=atan(3/4)", deg);
-    expect(r.result).toMatchObject({ display: "36.8698976458", carried: "decimal" });
-    expect(r.result.exact).toBeUndefined();
-    expect(r.result.full).toMatch(/^36\.86989764584402129685561255909341065/);
-    expect(r.defs).toMatchObject([{ set: { name: "TH", kind: "var", angle: "deg", facts: { reliableDigits: r.result.reliableDigits } } }]);
-    const set = (r.defs[0] as { set: { cmds: string[] } }).set;
-    expect(set.cmds[0]).toMatch(/^TH:=\(evalf\(/);
+  it("DEG TH:=atan(3/4) keeps its exact radian text with the mode; RAD reads 36.8698976458 (source: oracle)", () => {
+    // G46: Giac runs in radians, so the text means the same in every mode (G34's decimal is no longer needed)
+    const r = host.home("TH:=(atan(3/4)/pasdeg)", deg);
+    expect(r.result.display).toBe("36.8698976458");
+    expect(r.result.exact).toBe("atan(3/4)/(pi/180)");
+    expect(r.defs).toMatchObject([{ set: { name: "TH", kind: "var", angle: "deg", cmds: ["TH:=(atan(3/4)/(pi/180))"] } }]);
     const back = host.home("TH", rad).result;
     expect(back.display).toBe("36.8698976458");
     expect(markOf(back, { format: "STD", digits: 12 })?.mark).toBe("≈");
@@ -597,28 +595,28 @@ describe.skipIf(!giacAvailable())("G34: a carried value keeps what it showed whe
   it("an angle-free exact value keeps its text and is stored without facts (derived)", () => {
     const r = host.home("R34:=sqrt(2)", deg);
     expect(r.result.exact).toBe("sqrt(2)");
-    expect(r.result.carried).toBeUndefined();
     expect(r.defs).toMatchObject([{ set: { cmds: ["R34:=(sqrt(2))"], angle: "deg" } }]);
     expect((r.defs[0] as { set: { facts?: unknown } }).set.facts).toBeUndefined();
-    expect(host.home("sin(15)", deg).result.exact).toBe("(sqrt(6)-sqrt(2))/4");
+    expect(host.home("sin(pasdeg*15)", deg).result.exact).toBe("(sqrt(6)-sqrt(2))/4");
   });
 
-  it("a stored log replays the carried decimal in the other mode (source: oracle, sin(1°) = 0.0174524064373)", async () => {
-    const r = host.home("S34:=sin(1)", deg);
+  it("a stored log replays in the other mode (source: oracle, sin(1°) = 0.0174524064373)", async () => {
+    const r = host.home("S34:=sin(pasdeg*1)", deg);
     const fresh = new EngineHost((await loadNodeGiac()).giac);
     fresh.restore(r.defs.flatMap((d) => ("set" in d ? [d.set] : [])));
     expect(fresh.home("S34", rad).result.display).toBe("0.0174524064373");
     host.home("purge(TH,R34,S34)", rad);
   });
 
-  it("the library export never writes the angle-dependent text: A:=e^(i*90) in DEG is skipped, sqrt(2) is written", () => {
+  it("the library export writes exp(90*i) as Giac's radian text (source: oracle, exp(90i) = -0.448073616129+0.893996663601i)", () => {
     const a = host.home("A34:=exp(i*90)", deg);
     const r = host.home("R35:=sqrt(2)", deg);
     const log = [...a.defs, ...r.defs].flatMap((d) => ("set" in d ? [d.set] : []));
     const out = exportLibrary(log);
-    expect(out.text).not.toMatch(/cos|sin|A34/);
+    expect(out.text).toContain("A34:=(exp(90*i))");
     expect(out.text).toContain("R35:=(sqrt(2))");
-    expect(out.skipped.map((x) => x.name)).toEqual(["A34"]);
+    expect(out.skipped).toEqual([]);
+    expect(host.home("A34", rad).result.display).toBe("-0.448073616129+0.893996663601*i");
     host.home("purge(A34,R35)", rad);
   });
 });

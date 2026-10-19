@@ -347,11 +347,12 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.display).toBe("[0.904556894302381364127316795662-1.06127506190503565203301891621*i,1.57079632679489661923132169164-1.44363547517881034249327674027*i]");
     expect(r.items?.map((x) => markOf(x, { format: "STD", digits: 30 }))).toEqual([{ mark: "≈" }, { mark: "≈" }]);
   });
-  it("fix round 1: in DEG a complex value of tanh is not audited, it gets ⚠ and names tanh (source: derived)", () => {
+  it("G46: in DEG a complex value of tanh goes through our definition as in RAD (source: oracle, mpmath tanh(1j) = 1.55740772465j)", () => {
+    // Before G46 Giac ran in DEG, nothing was replaced, and the value was not audited (⚠, naming tanh).
     const r = host.home("evalf(tanh(i))", { ...defaultHomeSettings, angle: "deg" }).result;
-    expect(markOf(r, { format: "STD", digits: 12 })?.mark).toBe("⚠");
-    expect(r.warn).toBe("unaudited");
-    expect(r.why).toEqual({ unaudited: ["tanh"] });
+    expect(r.display).toBe("1.55740772465*i");
+    expect(markOf(r, { format: "STD", digits: 12 })?.mark).toBe("≈");
+    expect(r.warn).toBeUndefined();
     // A real value in DEG stays audited.
     expect(host.home("evalf(tanh(1))", { ...defaultHomeSettings, angle: "deg" }).result.warn).toBeUndefined();
   });
@@ -381,13 +382,13 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.text).toBe("1.55740772465*i");
     expect(r.numeric?.warn).toBe("unaudited");
   });
-  it("G50f1: in DEG a name holding tanh(i) is not audited and names tanh (source: derived)", async () => {
+  it("G46: in DEG a name holding tanh(i) is read through our definitions as in RAD (source: oracle, mpmath tanh(1j))", async () => {
     const own = new EngineHost((await loadNodeGiac()).giac);
     const deg = { ...defaultCasSettings, angle: "deg" as const };
     own.cas("w:=tanh(i)", deg);
     const r = own.cas("evalf(w)", deg).result;
-    expect(r.numeric?.warn).toBe("unaudited");
-    expect(r.numeric?.why).toEqual({ unaudited: ["tanh"] });
+    expect(r.text).toBe("1.55740772465*i");
+    expect(r.numeric?.warn).toBeUndefined();
   });
   it("G50f1: a CAS assignment runs once; a name it reads holding tanh(i) makes the value unaudited, naming tanh (source: derived)", async () => {
     const own = new EngineHost((await loadNodeGiac()).giac);

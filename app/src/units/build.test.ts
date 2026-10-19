@@ -22,6 +22,14 @@ const table = factorTable([
 ]);
 
 describe("unit view builder (G16)", () => {
+  it("takes the parser's degree factor (R64, G46): sin(pasdeg*30) and asin(1/2)/pasdeg are not a reserved name", () => {
+    const sin = buildJob({ formula: "sin(pasdeg*(30*pasu1))", slots: [{ tokens: [{ unit: "deg" }] }] }, table);
+    expect("error" in sin ? sin : sin.expr).toMatch(/^sin\(pasdeg\*\(30\*/);
+    const asin = buildJob({ formula: "asin(1/2)/pasdeg", slots: [] }, table);
+    expect("error" in asin ? asin : asin.expr).toBe("asin(1/2)/pasdeg");
+    // another of our names stays refused
+    expect(buildJob({ formula: "pasexp(1)", slots: [] }, table)).toMatchObject({ error: "engine" });
+  });
   it("a unit is its factor times its dimension symbols", () => {
     expect(slotGiac({ tokens: [{ unit: "h" }] }, table)).toBe("(((3600)*pasdimT^(1)))");
     expect(slotGiac({ tokens: [{ unit: "V" }] }, table)).toBe("(((1)*pasdimM^(1)*pasdimL^(2)*pasdimT^(-3)*pasdimI^(-1)))");
