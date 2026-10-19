@@ -9,7 +9,10 @@
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
 //              median ≤ 500 ms; a mark-only case (no `expect`) checks the mark and that an answer came back. A case with
 //              `steps` (G34) is a sequence on its own engine: each step's input (or latex, with \ans as the session
-//              builds it from the step before) runs in its own angle mode, and the last step is checked
+//              builds it from the step before) runs in its own angle mode, and the last step is checked. An `input` step
+//              may name the result of step k as the chip `pasr_<k>` (G49: sent with a chip table of values and facts);
+//              the case's `settings.digits` and `consts` (G26's constant table, `pasc_<id>`) hold for every step. A
+//              result shown with ⚠ n (n below the digits) must equal `expect` rounded to those n digits
 //   precision  tests/golden/precision.yaml (docs/04 2.3 regression list, 20/30-digit cases): Home and CAS at the case's
 //              digits, value and mark; `before:` inputs run first on the same engine. A case with `status: pending` is
 //              known to fail until its fix: it never fails the gate, and is listed as still pending or now passing. A
@@ -41,6 +44,8 @@ import { hasFloat } from "../src/engine/numeric.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
 import { ANS_KEY, type ChipTable } from "../src/input/chips.ts";
+import { chipsIn, type ChipFactsTable } from "../src/engine/chipFacts.ts";
+import { inexactConstsIn, type ConstTable } from "../src/engine/constUnc.ts";
 import { DEFAULT_USER_FUNCTIONS, latexToGiac, latexToGiacInfo, type UnitsInfo } from "../src/input/latex-to-giac.ts";
 import { SerializeError } from "../src/input/errors.ts";
 import { buildJob } from "../src/units/build.ts";
@@ -94,6 +99,8 @@ interface Case {
   beforeHome?: string[];
   /** home.yaml (G34): a sequence of lines, each in its own angle mode; the last one is checked against expect and mark. */
   steps?: Step[];
+  /** home.yaml sequences (G49): the constants the steps hold by name (`pasc_<id>`), as G26's table. */
+  consts?: ConstTable;
   /** precision.yaml, kind cas: the stored names the CAS result must list as used (G20); [] means none. */
   uses?: string[];
   /** units.yaml: the end slot; the exact text, the dimension key (a result 0 keeps its terms' one, G35), the SI value's exact text with
@@ -164,7 +171,7 @@ async function stageHome(): Promise<void> {
     const host = new EngineHost(await freshGiac());
     for (const c of cs) {
       if (c.steps) {
-        runs.get(c.id)!.push(await runSteps(c.steps));
+        runs.get(c.id)!.push(await runSteps(c.steps, c.settings?.digits ?? 12, c.consts));
         continue;
       }
       const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
@@ -182,10 +189,15 @@ async function stageHome(): Promise<void> {
   for (const c of cs) {
     const rs = runs.get(c.id)!;
     const shown = rs[0]!.display;
-    const got = rs.map((x) => markText(seqMark(x)));
+    const digits = c.settings?.digits ?? 12;
+    const marksOf = rs.map((x) => seqMark(x, digits));
+    const got = marksOf.map(markText);
     const markOk = !c.mark || got.every((m) => m?.startsWith(c.mark!));
     if (c.mark) marks++;
-    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, c.input ?? "")) : rs.every((x) => x.display === c.expect);
+    // ⚠ n: only the n confirmed digits are shown, and they must be the oracle's (as in the precision stage).
+    const wantOf = (m: MarkInfo | null): string | null =>
+      m?.mark === "⚠" && m.n !== undefined && m.n < digits ? expectAt(String(c.expect), Math.max(1, m.n)) : String(c.expect);
+    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, c.input ?? "")) : rs.every((x, k) => x.display === wantOf(marksOf[k]!));
     // `exact` (G38): the text the result copies (`full`), when the case pins it.
     const exactOk = c.exact === undefined || rs.every((x) => x.full === c.exact);
     const ok = answered && markOk && exactOk;
@@ -212,28 +224,35 @@ async function stageHome(): Promise<void> {
  * the exact text when there is one and it fits, else `full`; exact only when nothing was approximate or cut). An
  * inexact chip makes an "=" a "≈" (displayMode.ts markFor, decisions M4-4); `inexactInput` carries that to markOf.
  */
-async function runSteps(steps: Step[]): Promise<HomeResult & { inexactInput?: boolean }> {
+async function runSteps(steps: Step[], digits: number, consts: ConstTable | undefined): Promise<HomeResult & { inexactInput?: boolean }> {
   const host = new EngineHost(await freshGiac());
   let last: (HomeResult & { inexactInput?: boolean }) | undefined;
   let chips: ChipTable = {};
-  for (const st of steps) {
-    const s: HomeSettings = { ...defaultHomeSettings, angle: st.angle ?? "rad" };
+  // G49: every step's result as a chip by name (`pasr_<k>`, k from 1), with its facts, for the `input` steps.
+  const named: Record<string, ChipFactsTable[string]> = {};
+  for (const [k, st] of steps.entries()) {
+    const s: HomeSettings = { ...defaultHomeSettings, angle: st.angle ?? "rad", digits };
     const p = st.latex !== undefined ? latexToGiacInfo(st.latex, { realOddRoots: true, chips }) : { giac: st.input!, inexact: false };
-    const r = host.home(p.giac, s).result;
+    const r = (st.latex === undefined && (consts || k > 0) ? host.home(p.giac, s, consts, named) : host.home(p.giac, s)).result;
     last = p.inexact ? { ...r, inexactInput: true } : r;
     const full = r.exact !== undefined && r.exact.length <= 2048 ? r.exact : r.full || r.exact;
     if (r.ok && full && full.length <= 2048) {
       const cut = (r.exact !== undefined && full !== r.exact) || r.value?.re.sticky === true || r.value?.im.sticky === true;
       const exact = !r.approximate && !cut && (r.exact !== undefined || r.exactRational || !/\.|\d[eE][+-]?\d/.test(full));
       chips = { [ANS_KEY]: { value: full, exact } };
+      // A named chip is exact when its value is the exact text of a result that was not approximate, from an input with
+      // no inexact constant or chip in it (R65's rule; `exact` above also counts the rounded decimal of 1/3 as cut).
+      const inexactIn = (consts !== undefined && inexactConstsIn(p.giac, consts).length > 0) || chipsIn(p.giac, named).some((j) => !named[j]!.exact);
+      const exactNamed = !r.approximate && r.exact !== undefined && full === r.exact && !inexactIn;
+      named[String(k + 1)] = { value: full, reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}), exact: exactNamed };
     }
   }
   return last!;
 }
 
 /** The mark of a sequence's last step: markOf, and never "=" after an inexact chip (displayMode.ts markFor). */
-function seqMark(r: HomeResult & { inexactInput?: boolean }): MarkInfo | null {
-  const m = markOf(r, { format: "STD", digits: 12 });
+function seqMark(r: HomeResult & { inexactInput?: boolean }, digits: number): MarkInfo | null {
+  const m = markOf(r, { format: "STD", digits });
   return m?.mark === "=" && r.inexactInput ? { mark: "≈" } : m;
 }
 
