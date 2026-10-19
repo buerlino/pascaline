@@ -45,7 +45,7 @@ MARK_FILES = {"home.yaml", "precision.yaml", "units.yaml"}
 MARKS = {"=", "≈", "⚠"}
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "reference", "assumed"}
 KEYS = ["id", "kind", "input", "to", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
-        "options", "before", "beforeCas", "steps", "consts", "code", "file", "home", "expect", "deg", "mark", "exact", "dim", "si", "si_oracle", "unc", "unc_oracle", "shown", "message", "source", "g2", "status", "group", "cat", "note"]
+        "options", "before", "beforeCas", "steps", "consts", "code", "file", "home", "expect", "deg", "mark", "exact", "dim", "si", "si_oracle", "unc", "unc_oracle", "shown", "notice", "message", "source", "g2", "status", "group", "cat", "note"]
 CASE_LINE = re.compile(r"^\s*- (\{.*\})\s*$")
 
 

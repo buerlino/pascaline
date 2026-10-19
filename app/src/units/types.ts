@@ -99,8 +99,19 @@ export interface Quantity {
   si?: string;
   /** G18: the first-order uncertainty of a result with uncertain inputs (the value is then never "="). */
   unc?: Uncertainty;
+  /** G40: a note on how the result was read (i18n, messages.ts unitNoteText): one rad dropped at the end slot, or a
+   *  cycle unit (rpm, rev) in a product, whose value counts turns and has no 2π. */
+  note?: UnitNote;
   ms: number;
 }
+
+/** G40 (decisions.md "Angles in the unit view"). */
+export type UnitNote =
+  /** The end slot's dimension differs from the result's by one rad (ω·r → m/s, τ·θ → J): rad = 1 was dropped. */
+  | { note: "radDropped" }
+  /** rpm or rev times another dimension: the value counts turns (a feed per turn is right, a speed at a radius needs
+   *  2π·r·n); `unit` is its symbol. */
+  | { note: "cycle"; unit: string };
 
 /** σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over independent inputs, in the same unit as the value. */
 export interface Uncertainty {

@@ -14,6 +14,8 @@
 # one independent); σ = sqrt(Σ (∂f/∂xᵢ·σᵢ)²), first order, exact in Giac. `unc` is σ at 2 significant digits (docs/04 2.6;
 # "none": the result carries no σ), `unc_oracle` σ by the oracle, `shown` the value rounded to σ's last digit with it. A
 # result with a σ is always ≈.
+# G40: `notice` is the note a result carries (the text the user reads; none when absent): "rad = 1 dropped" when the end slot
+# differs from the result by one rad, "rpm counts turns: …" on rpm or rev times another dimension.
 # G25: `unit` is the unit the value is shown in ("" for a pure number), `dimtext` the dimension as text. Without an end slot the
 # units typed are kept when they fit the result's dimension (one unit, a product with factor 1 like N·m, or the only slot),
 # else SI with an SI prefix (µs, kJ, m/s); an end slot always wins. `rev` is a count of cycles (a pure number): rpm = 1/60 Hz.
@@ -58,7 +60,7 @@ cases:
   - { id: "d36", input: "sin(30*{deg})", settings: { angle: "deg" }, oracle: "F(1,2)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "an angle unit is the same in either mode" }
   - { id: "d37", input: "sin(30)", settings: { angle: "deg" }, oracle: "sind(30)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "a bare number follows the Home angle mode (G15 default)" }
   - { id: "d38", input: "sin(30)", oracle: "sin(30)", expect: "-0.988031624093", mark: "≈", exact: "sin(30)", dim: "", source: "oracle", note: "a bare number follows the Home angle mode: radians" }
-  - { id: "d39", input: "asin(1/2)", settings: { angle: "deg" }, oracle: "asind(F(1,2))", expect: "30", mark: "=", exact: "30", dim: "", source: "derived", note: "an inverse function gives a number in the Home angle mode, as Home does" }
+  - { id: "d39", input: "asin(1/2)", settings: { angle: "deg" }, oracle: "asind(F(1,2))", expect: "30", mark: "=", exact: "30", dim: "rad1", unit: "°", source: "derived", note: "G40: an inverse function gives an angle, shown without an end slot in the mode's unit (was a pure number 30)" }
   - { id: "d30", input: "ln(2*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived" }
   - { id: "d31", input: "sin(2*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived" }
   # --- docs/04 4.1's table and the evaluator's own rules ---
@@ -170,3 +172,25 @@ cases:
   - { id: "i02", input: "10*{W / m^2 oC}", to: "W / m^2 K", oracle: "F(10)", expect: "10", mark: "=", exact: "10", source: "derived", note: "a heat-transfer coefficient written with °C" }
   - { id: "i03", input: "1*{Btu / lb oF}", to: "J / k:g K", oracle: "F('1055.05585262')/F('0.45359237')*9/5", expect: "4186.8", mark: "=", exact: "20934/5", source: "derived", note: "the IT Btu per pound is 2326 J/kg; 1 °F as an interval is 5/9 K" }
   - { id: "i04", input: "2.3e-5*{oC^-1}", to: "K^-1", oracle: "F('2.3e-5')", expect: "2.3E-5", mark: "=", exact: "23/1000000", source: "derived", note: "a power other than 1 is an interval too (an expansion coefficient)" }
+  # --- G40: angles in the unit view (decisions.md "Angles in the unit view"; deep-check-2026-10-19-exact-units E3, E4, E8) ---
+  - { id: "a01", input: "asin(1/2)", to: "deg", oracle: "asind(F(1,2))", expect: "30", mark: "=", exact: "30", source: "derived", note: "E3: asin gives an angle (was refused, 1 vs angle)" }
+  - { id: "a02", input: "asin(1/2)", to: "deg", settings: { angle: "deg" }, oracle: "asind(F(1,2))", expect: "30", mark: "=", exact: "30", source: "derived", note: "the same in DEG" }
+  - { id: "a03", input: "asin(1/2)", to: "rad", oracle: "asin(F(1,2))", expect: "0.523598775598", mark: "≈", exact: "1/6*pi", source: "derived" }
+  - { id: "a04", input: "asin(1/2)", to: "rad", settings: { angle: "deg" }, oracle: "asin(F(1,2))", expect: "0.523598775598", mark: "≈", exact: "1/6*pi", source: "derived", note: "the angle is the same in either mode" }
+  - { id: "a05", input: "asin(1/2)*1*{rad}", settings: { angle: "deg" }, oracle: "asin(F(1,2))", expect: "0.523598775598", mark: "≈", exact: "1/6*pi", dim: "rad1", unit: "rad", source: "derived", note: "E3: π/6 rad, as the typed rad (was = 30 rad)" }
+  - { id: "a06", input: "asin(1/2)*2*{m}", to: "m", settings: { angle: "deg" }, oracle: "2*asin(F(1,2))", expect: "1.0471975512", mark: "≈", exact: "1/3*pi", notice: "rad = 1 dropped", source: "derived", note: "E3: the arc length r·θ (was = 60 m)" }
+  - { id: "a07", input: "asin(1/2)*2*{m}", to: "m", oracle: "2*asin(F(1,2))", expect: "1.0471975512", mark: "≈", exact: "1/3*pi", notice: "rad = 1 dropped", source: "derived", note: "the same in RAD, now with the note" }
+  - { id: "a08", input: "asin(1/2)", oracle: "asin(F(1,2))", expect: "0.523598775598", mark: "≈", exact: "1/6*pi", dim: "rad1", unit: "rad", source: "derived", note: "without an end slot an angle is shown in the mode's unit: rad in RAD (d39 is DEG)" }
+  - { id: "a09", input: "10*{rad / s}*0.5*{m}", to: "m / s", oracle: "F(5)", expect: "5", mark: "=", exact: "5", notice: "rad = 1 dropped", source: "derived", note: "E4: v = ω·r (was refused, L·T⁻¹·angle vs L·T⁻¹)" }
+  - { id: "a10", input: "90*{deg}*1*{N m}", to: "J", oracle: "pi/2", expect: "1.57079632679", mark: "≈", exact: "1/2*pi", notice: "rad = 1 dropped", source: "derived", note: "E4: work W = τ·θ (was refused)" }
+  - { id: "a11", input: "3000*{tr / min}*0.1*{m}", to: "m / s", oracle: "2*pi*F('0.1')*3000/60", expect: "31.4159265359", mark: "≈", exact: "10*pi", notice: "rad = 1 dropped", source: "derived", note: "E4: the peripheral speed 2π·r·n with the turn written" }
+  - { id: "a12", input: "3000*{rpm}*0.1*{m}", to: "m / s", oracle: "F(5)", expect: "5", mark: "=", exact: "5", notice: "rpm counts turns: the speed at radius r is 2π·r·n", source: "derived", note: "E4: rpm counts turns, the value is unchanged and the note names 2π·r·n (was = 5 m/s, no note)" }
+  - { id: "a13", input: "3000*{rpm}*0.1*{m:m}", to: "m:m / min", oracle: "F(300)", expect: "300", mark: "=", exact: "300", notice: "rpm counts turns: the speed at radius r is 2π·r·n", source: "derived", note: "a feed per turn stays right: 3000 rpm × 0.1 mm = 300 mm/min" }
+  - { id: "a14", input: "30*{deg}*2*{m}", oracle: "F(60)", expect: "60", mark: "=", exact: "60", dim: "m1rad1", unit: "°·m", source: "derived", note: "E8: the degree's symbol is ° (was 1°·m)" }
+  - { id: "a15", input: "1*{rad}*1*{m}", to: "s", message: "Units don't match: L·angle vs T", source: "derived", note: "only a difference of exactly one rad is dropped" }
+  - { id: "a16", input: "1*{sr}*1*{m}", to: "m", message: "Units don't match: L·angle² vs L", source: "derived", note: "two rad are not dropped" }
+  - { id: "a17", input: "atan2(1,1)", to: "deg", oracle: "F(45)", expect: "45", mark: "=", exact: "45", source: "derived", note: "atan2 gives an angle" }
+  - { id: "a18", input: "atan2(3*{m},4*{m})", to: "rad", oracle: "atan(F(3,4))", expect: "0.643501108793", mark: "≈", exact: "atan(3/4)", source: "derived", note: "atan2 of two lengths: their ratio" }
+  - { id: "a19", input: "asin(2*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived", note: "an inverse takes a pure number" }
+  - { id: "a20", input: "acos(pasupm(0.5,0.01))", settings: { angle: "deg" }, oracle: "acosd(F(1,2))", expect: "60", mark: "≈", exact: "60", dim: "rad1", unit: "°", unc: "0.66", unc_oracle: "180/(pi*sqrt(F(3,4))*100)", shown: "60.00 ± 0.66", source: "derived", note: "σ through an inverse, in the mode's unit: 0.01/√0.75·180/π" }
+  - { id: "a21", input: "sin(asin(1/2))", settings: { angle: "deg" }, oracle: "F(1,2)", expect: "0.5", mark: "=", exact: "1/2", dim: "", source: "derived", note: "the angle asin gives goes back into sin unchanged in DEG" }
