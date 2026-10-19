@@ -16,6 +16,7 @@ export const PASDEG = "pasdeg";
 export const ANGLE_IN: Readonly<Record<string, readonly [index: number, arity: number]>> = {
   sin: [0, 1], cos: [0, 1], tan: [0, 1], sec: [0, 1], csc: [0, 1], cot: [0, 1],
   rotation: [1, 0], // rotation(center, angle, object)
+  polar_point: [1, 0], // polar_point(r, θ) (R64f2)
   similarity: [2, 0], // similarity(center, ratio, angle, object)
   rectangular_coordinates: [1, 2], // rectangular_coordinates(r, θ); the one-list form: RECT, below (R64f1)
 };
