@@ -2,7 +2,7 @@
 <script lang="ts">
   import SlotList from "../SlotList.svelte";
   import type { ViewId } from "../types.ts";
-  import { CURVE_COLORS, type FunctionApp } from "./app.svelte.ts";
+  import { curveColors, type FunctionApp } from "./app.svelte.ts";
   import FunctionNum from "./FunctionNum.svelte";
   import FunctionPlot from "./FunctionPlot.svelte";
 
@@ -10,7 +10,7 @@
 </script>
 
 {#if view === "symb"}
-  <SlotList slots={app.slots} label={(i) => `${app.slots.names[i]}(x)=`} onselect={(i) => app.select(i)} colors={CURVE_COLORS} />
+  <SlotList slots={app.slots} label={(i) => `${app.slots.names[i]}(x)=`} onselect={(i) => app.select(i)} colors={curveColors()} />
 {:else if view === "plot"}
   <FunctionPlot {app} />
 {:else}

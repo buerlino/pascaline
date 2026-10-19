@@ -442,7 +442,7 @@
     color: var(--text-dead);
   }
   .key[aria-pressed="true"] {
-    outline: 2px solid var(--shift);
+    outline: 2px solid var(--key-on);
   }
   .alphaed .key[data-key="alpha"][aria-pressed="true"] {
     outline-color: var(--alpha);

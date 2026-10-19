@@ -66,7 +66,7 @@
     border: 1px solid transparent;
   }
   .slot[data-selected="true"] {
-    border-color: var(--shift);
+    border-color: var(--focus);
     background: var(--panel);
   }
   .toggle {

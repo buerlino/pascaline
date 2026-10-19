@@ -9,7 +9,7 @@
   import { mark } from "../../marks.ts";
   import { longpress } from "../longpress.ts";
   import { plotHook } from "./plotHook.ts";
-  import { CURVE_COLORS, DEFAULT_X, type FunctionApp, type PlotWindow } from "./app.svelte.ts";
+  import { curveColors, DEFAULT_X, type FunctionApp, type PlotWindow } from "./app.svelte.ts";
 
   let { app }: { app: FunctionApp } = $props();
 
@@ -92,7 +92,7 @@
         if (!app.compiled[i]?.fn) continue;
         // read through the app, so a recompile for another angle mode is drawn at once (R64a)
         const c = b.create("functiongraph", [(x: number): number => app.compiled[i]?.fn?.(x) ?? NaN], {
-          strokeColor: CURVE_COLORS[i],
+          strokeColor: (): string => curveColors()[i] ?? "",
           strokeWidth: 2,
           highlight: false,
           fixed: true,
@@ -113,7 +113,7 @@
             return Number.isFinite(y) ? y : NaN;
           },
         ],
-        { name: "", size: 4, fixed: true, highlight: false, strokeColor: "#fff", fillColor: "#fff", visible: () => app.trace.on && app.active.length > 0 },
+        { name: "", size: 4, fixed: true, highlight: false, strokeColor: "var(--text)", fillColor: "var(--text)", visible: () => app.trace.on && app.active.length > 0 },
       );
       b.unsuspendUpdate();
       b.on("boundingbox", windowChanged);
@@ -151,6 +151,12 @@
     if (app.syncAngle() && ready) board?.update();
   });
 
+  // The brightness changed: the curves take the other list.
+  $effect(() => {
+    void curveColors();
+    if (ready) board?.update();
+  });
+
   // Trace moved or switched: redraw the cursor.
   $effect(() => {
     void app.trace.x;
@@ -173,7 +179,7 @@
           face: "x",
           fixed: true,
           highlight: false,
-          strokeColor: CURVE_COLORS[m.slot],
+          strokeColor: curveColors()[m.slot],
         }) as unknown as { remove(): void },
       );
     board.unsuspendUpdate();
@@ -212,7 +218,7 @@
             >{#if app.readout.warn}⚠ {/if}{app.readout.info}</span>
         {/if}
       {:else}
-        <span class="pair" style:color={CURVE_COLORS[app.trace.slot]}>{traceName}</span>
+        <span class="pair" style:color={curveColors()[app.trace.slot]}>{traceName}</span>
         <span class="pair"><span class="k">x</span> <span class="v" data-testid="trace-x">{app.fmtX(app.trace.x)}</span></span>
         <span class="pair"><span class="k">y</span> <span class="v" data-testid="trace-y" data-text={app.traceY ? app.fmt(app.traceY) : ""}>{app.fmt(app.traceY)}</span>{#if app.warned(app.traceY)}<span class="warn" data-testid="mark" title={t("mark.warn")}> ⚠</span>{/if}</span>
       {/if}
@@ -222,7 +228,7 @@
 
 <style>
   .pair > .warn {
-    color: var(--error);
+    color: var(--warn);
   }
   .plot {
     position: relative;
@@ -275,6 +281,6 @@
     color: var(--muted);
   }
   .info.warn {
-    color: var(--shift);
+    color: var(--warn);
   }
 </style>

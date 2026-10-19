@@ -73,7 +73,7 @@
   }
   tr[data-selected="true"] {
     background: var(--panel);
-    outline: 1px solid var(--shift);
+    outline: 1px solid var(--focus);
   }
   th {
     width: 25%;
@@ -108,7 +108,7 @@
     color: var(--muted);
   }
   .warn {
-    color: var(--error);
+    color: var(--warn);
     font-size: 18px;
     margin-right: 4px;
   }

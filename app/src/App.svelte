@@ -883,8 +883,8 @@
     background: var(--panel);
     color: var(--text);
     border: 1px solid var(--line);
-    --caret-color: var(--shift);
-    --selection-background-color: #36506b;
+    --caret-color: var(--focus);
+    --selection-background-color: var(--pick);
   }
   .entry :global(math-field::part(virtual-keyboard-toggle)),
   .entry :global(math-field::part(menu-toggle)) {
