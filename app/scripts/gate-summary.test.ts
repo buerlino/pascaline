@@ -81,6 +81,7 @@ describe("tool output", () => {
     expect(summarizeGolden("GOLDEN GATE PASSED", 1).ok).toBe(false);
     expect(summarizeGolden("\nGOLDEN GATE FAILED: home, solve\n", 1)).toEqual({ ok: false, detail: "stages failed: home, solve" });
     expect(summarizeGolden("crashed", 0).ok).toBe(false);
+    expect(summarizeGolden("PASS invariants: 304 inputs, 244 (a) RAD/DEG; 2 known failures, 0 new, 0 now passing; 46.1 s (< 60)\nGOLDEN GATE PASSED\n", 0).detail).toBe("GOLDEN GATE PASSED (invariants: 304 inputs, 2 known failures)");
   });
   it("size: lists the failures", () => {
     const out = "table\n\nsize-check FAILED:\n  start chunk 300 kB > 250 kB\n  find 9 > 8\nA budget changes only";

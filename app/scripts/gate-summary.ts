@@ -138,7 +138,11 @@ export function summarizeTypecheck(out: string, exitCode: number): Summary {
 
 /** The golden gate ends with `GOLDEN GATE PASSED`, or `GOLDEN GATE FAILED: <stages>`. */
 export function summarizeGolden(out: string, exitCode: number): Summary {
-  if (exitCode === 0 && /GOLDEN GATE PASSED/.test(out)) return { ok: true, detail: "GOLDEN GATE PASSED" };
+  if (exitCode === 0 && /GOLDEN GATE PASSED/.test(out)) {
+    // G43: the invariants stage's count rides on the line
+    const inv = /PASS invariants: (\d+) inputs.*?; (\d+) known failures/.exec(out);
+    return { ok: true, detail: inv ? `GOLDEN GATE PASSED (invariants: ${inv[1]} inputs, ${inv[2]} known failures)` : "GOLDEN GATE PASSED" };
+  }
   const failed = /GOLDEN GATE FAILED: (.*)/.exec(out);
   if (failed) return { ok: false, detail: `stages failed: ${failed[1]}` };
   return { ok: false, detail: `exit ${exitCode}, no GOLDEN GATE PASSED: ${out.trim().split("\n").slice(-1)[0]?.slice(0, 120) ?? ""}` };

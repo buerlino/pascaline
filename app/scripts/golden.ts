@@ -3,7 +3,7 @@
 // build that ships (CLAUDE.md). Exit 0 only if every stage passes.
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
-//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, calls, units, parser
+//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, calls, invariants, units, parser
 // Typed Giac text in a case (`input`, `before`, step inputs, `eq`, `f`, `g`) gets the parser's angle rule first (G46).
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
@@ -28,6 +28,11 @@
 //              every input that answers in RAD answers, `deg` pins a DEG text, an angle-free one shows the RAD text
 //   calls      G52: Giac calls per input (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
 //              the five largest; fails when calls per input are over 10 % above tests/golden/calls-baseline.yaml
+//   invariants G43: every home.yaml and precision.yaml input without settings, across settings (no expected values):
+//              (a) no angle function: the same text in RAD and DEG; (b) 12 and 30 digits round to the same 12-digit text;
+//              (c) the copy text read back by the paste reader gives the same text and mark; (d) `X:=input` in one mode, then
+//              `X` in the other, shows what the store line showed. Passes when the failures are exactly those in
+//              tests/golden/invariants-known.yaml (a new failure, or a known one that now passes, fails)
 //   units      tests/golden/units.yaml: the unit view (G16) on the Find index's factors (app/src/find/_gen, `npm run index`):
 //              value, mark, exact text and dimension, or the refusal's message, the same in every round; desktop p95 of
 //              an evaluation ≤ 5 ms (docs/04 8.3), warm, each case at its fastest of five passes
@@ -43,7 +48,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, type GiacApi } from "../src/engine/host.ts";
 import { defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
-import { decimalFromString, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
+import { decimalFromString, formatComplex, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { hasFloat } from "../src/engine/numeric.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
@@ -64,6 +69,9 @@ import { isUnitError, type Quantity, type UnitError } from "../src/units/types.t
 import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
 import { callsStage, type CallsBaseline } from "./calls-budget.ts";
+import { invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
+import { copyFull, type CopySource } from "../src/clipboard/text.ts";
+import { parsePastedNumber } from "../src/clipboard/paste.ts";
 
 type Expect = string | Expect[];
 
@@ -593,6 +601,116 @@ async function stageCalls(): Promise<void> {
   }
 }
 
+/** G43: the invariants over every home.yaml and precision.yaml input without settings; see invariants.ts. */
+async function stageInvariants(): Promise<void> {
+  const seen = new Set<string>();
+  const inputs: { id: string; giac: string; before: string[]; cas: boolean }[] = [];
+  for (const file of ["home.yaml", "precision.yaml"]) {
+    for (const c of cases(file)) {
+      if (c.settings || c.steps || c.beforeHome?.length || c.beforeCas?.length || c.status === "pending" || c.kind === "cas") continue;
+      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
+      let giac: string;
+      try {
+        giac = giacOf(c.latex ?? c.input!);
+      } catch {
+        continue;
+      }
+      const before = (c.before ?? []).map(giacOf);
+      const key = `${before.join(";")}|${giac}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      inputs.push({ id: `${file === "home.yaml" ? "home" : "precision"}:${c.id}`, giac, before, cas: false });
+    }
+  }
+  const at = async (host: EngineHost, i: (typeof inputs)[number], angle: "rad" | "deg", digits: number): Promise<HomeResult> => {
+    const s: HomeSettings = { ...defaultHomeSettings, angle, digits };
+    for (const b of i.before) host.home(b, s);
+    return host.home(i.giac, s).result;
+  };
+  const failures: InvariantFailure[] = [];
+  const t0 = performance.now();
+  let checked = { a: 0, b: 0, c: 0, d: 0 };
+  for (const i of inputs) {
+    // `before` inputs store names, so each input gets its own engine; the stored names stay out of the others.
+    const fresh = async (): Promise<EngineHost> => new EngineHost(await freshGiac());
+    const keep = i.before.length > 0;
+    const shared = keep ? null : await fresh();
+    const host = async (): Promise<EngineHost> => shared ?? fresh();
+    const rad = await at(await host(), i, "rad", 12);
+    const o = invariantsOf(i.giac, i.before);
+    if (o.angleFree) {
+      const deg = await at(await host(), i, "deg", 12);
+      checked.a++;
+      const mr = markText(markOf(rad, { format: "STD", digits: 12 }));
+      const md = markText(markOf(deg, { format: "STD", digits: 12 }));
+      if (rad.display !== deg.display || mr !== md) failures.push({ id: i.id, check: "a", detail: `RAD ${mr ?? "-"} ${rad.display}, DEG ${md ?? "-"} ${deg.display}` });
+    }
+    if (rad.ok && rad.value) {
+      const r30 = await at(await host(), i, "rad", 30);
+      const m12 = markOf(rad, { format: "STD", digits: 12 });
+      const m30 = r30.ok && r30.value ? markOf(r30, { format: "STD", digits: 30 }) : null;
+      const n12 = m12?.mark === "⚠" ? (m12.n ?? 12) : 12;
+      const n30 = m30?.mark === "⚠" ? (m30.n ?? 30) : 30;
+      if (m30 && n12 >= 12 && n30 >= 12) {
+        checked.b++;
+        const text = formatComplex(r30.value!, { format: "STD", digits: 12 }).text;
+        if (text !== rad.display) failures.push({ id: i.id, check: "b", detail: `12 digits ${rad.display}, 30 digits rounded to 12: ${text}` });
+      }
+      // (c): the copy text, read back by the paste reader
+      const src: CopySource = {
+        latex: "",
+        status: "done",
+        text: rad.display,
+        value: rad.value,
+        ...(rad.full ? { full: rad.full } : {}),
+        fullExact: rad.exact !== undefined && rad.full === rad.exact,
+        reliableDigits: rad.reliableDigits,
+        ...(rad.warn ? { warn: rad.warn } : {}),
+        exactRational: rad.exactRational,
+      };
+      const copy = copyFull(src);
+      const pasted = copy === undefined ? null : parsePastedNumber(copy);
+      if (copy !== undefined && pasted) {
+        checked.c++;
+        let back: HomeResult | undefined;
+        try {
+          back = (await host()).home(latexToGiac(pasted.latex, { realOddRoots: true }), { ...defaultHomeSettings, digits: 12 }).result;
+        } catch (e) {
+          failures.push({ id: i.id, check: "c", detail: `copy ${copy} pasted as ${pasted.latex}: ${e instanceof Error ? e.message : String(e)}` });
+        }
+        if (back) {
+          const m0 = markText(markOf(rad, { format: "STD", digits: 12 }));
+          const m1 = markText(markOf(back, { format: "STD", digits: 12 }));
+          // A pasted number is a typed one, so it is exact when its digits are: the value must come back, and a mark may
+          // only get stronger (⚠ or ≈ read back as =), never weaker (an exact value read back as ≈ or ⚠).
+          const weaker = (m0?.startsWith("=") && !m1?.startsWith("=")) || (m0?.startsWith("≈") && m1?.startsWith("⚠"));
+          if (back.display !== rad.display || weaker) failures.push({ id: i.id, check: "c", detail: `shown ${m0 ?? "-"} ${rad.display}, copy ${copy} read back ${m1 ?? "-"} ${back.display}` });
+        }
+      }
+    }
+    // (d): X:=input in one mode, X in the other shows what the store line showed
+    if (rad.ok && rad.value && !keep) {
+      for (const [from, to] of [["rad", "deg"], ["deg", "rad"]] as const) {
+        const h = await fresh();
+        const st = h.home(`${INV_NAME}:=(${i.giac})`, { ...defaultHomeSettings, angle: from }).result;
+        if (!st.ok || !st.value) continue;
+        const rd = h.home(INV_NAME, { ...defaultHomeSettings, angle: to }).result;
+        checked.d++;
+        const ms = markText(markOf(st, { format: "STD", digits: 12 }));
+        const mr = markText(markOf(rd, { format: "STD", digits: 12 }));
+        if (rd.display !== st.display || ms !== mr) failures.push({ id: i.id, check: "d", detail: `stored in ${from.toUpperCase()} showed ${ms ?? "-"} ${st.display}, read in ${to.toUpperCase()} ${mr ?? "-"} ${rd.display}` });
+      }
+    }
+  }
+  const known = parse(readFileSync(`${root}tests/golden/invariants-known.yaml`, "utf8")) as { known?: { id: string; check: string; package: string; note?: string }[] };
+  const r = invariantsStage(failures, known.known ?? []);
+  for (const l of r.lines) console.log(`  invariants ${l}`);
+  const secs = (performance.now() - t0) / 1000;
+  report("invariants", r.ok && secs < 60, `${inputs.length} inputs, ${checked.a} (a) RAD/DEG, ${checked.b} (b) 12/30 digits, ${checked.c} (c) copy and paste, ${checked.d} (d) store; ${r.summary}; ${secs.toFixed(1)} s (< 60)`);
+}
+
+const INV_NAME = "pasinv";
+
 const UNIT_P95_MS = 5;
 
 /** What a units case got, as text to compare and print. */
@@ -760,6 +878,7 @@ if (want("solve")) await stageCases("solve", "solve.yaml", solveCase);
 if (want("function")) await stageCases("function", "function.yaml", (host, _g, c) => functionCase(host, c));
 if (want("bench")) await stageBench();
 if (want("calls")) await stageCalls();
+if (want("invariants")) await stageInvariants();
 if (want("units")) await stageUnits();
 if (want("parser")) await stageParser();
 const failed = summary.filter((s) => !s.ok);

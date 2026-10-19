@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# G43: the invariants the golden gate's `invariants` stage finds failing today, each with the package that fixes it.
+# The stage passes when its failures are exactly these; remove an entry when its fix lands.
+known: []
