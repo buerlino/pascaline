@@ -64,6 +64,16 @@ describe.skipIf(!giacAvailable())("icdf polish (real Giac)", () => {
     expect(at40("normald_icdf(2,-1,3/10)")).toMatchObject({ value: expect.stringMatching(/^2\.5244005127/), failed: true });
     expect(at40("student_icdf(-3,3/10)").failed).toBe(true);
   });
+  it("G44f2: a start that is not a real number is replaced by the centre (oracle: mpmath, g44f2 cases)", () => {
+    icdfPolished(giac, "");
+    // mpmath -11.46402468844361572698226422123603724396; Giac's own normald_icdf gives undef from about the third call
+    expect(at40("pasicdf(0,0,1,10^-30,undef)")).toMatchObject({ value: expect.stringMatching(/^-0\.114640246884436157269822642212360372\d*e2$/), failed: false });
+    expect(at40("pasicdf(0,0,1,10^-30,1+2*i)")).toMatchObject({ value: expect.stringMatching(/^-0\.114640246884436157269822642212360372\d*e2$/), failed: false });
+  });
+  it("G44f2: the χ² upper tail from a bracket in ln x (oracle: mpmath, prec-g44f2 cases)", () => {
+    // mpmath 142.6779862234609448675934327407017641553; Giac gives +infinity, Newton from the centre took over 20 steps
+    expect(at40("chisquare_icdf(3,1-10^-30)")).toMatchObject({ value: expect.stringMatching(/^0\.14267798622346094486759343274070176\d*e3$/), failed: false });
+  });
   it("G44f1: erf and erfc at Giac's Digits (oracle: mpmath, prec-g44f1 cases)", () => {
     // Giac's own erf(1e-12) at 40 digits is 1e-12; mpmath 1.12837916709551257389615852699515…E-12
     expect(at40(erfValueText(giac, "erf(1.0e-12)"))).toMatchObject({ value: expect.stringMatching(/^0\.1128379167095512573896158526995\d*e-11$/), failed: false });

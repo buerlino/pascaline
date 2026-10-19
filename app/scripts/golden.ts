@@ -642,11 +642,7 @@ async function stageInvariants(): Promise<void> {
     // `before` inputs and inputs that store a name themselves (`:=`, `=>`, `sto(`) get their own engine; the others share
     // one for the stage (check (d) purges its name after each direction).
     const keep = i.before.length > 0 || storesNames(i.giac);
-    // Giac's own normald_icdf gives a different double on each call on one engine and undef by about the third call
-    // (normald_icdf(10^-30) three times in Home at 12 digits), so an inverse distribution function gets its own engine. Our
-    // polish leaves no state behind; G44f2 fixes the undef.
-    const icdf = /_icdf\(/.test(i.giac);
-    const own = keep || icdf ? new EngineHost(await freshGiac()) : null;
+    const own = keep ? new EngineHost(await freshGiac()) : null;
     const host = async (): Promise<EngineHost> => own ?? (stageHost ??= new EngineHost(await freshGiac()));
     const rad = await at(await host(), i, "rad", 12);
     const o = invariantsOf(i.giac, i.before);
@@ -675,9 +671,9 @@ async function stageInvariants(): Promise<void> {
       }
     }
     // (d): X:=input in one mode, X in the other shows what the store line showed
-    // (d) runs for the inputs it ran for before G43f1: no `before`. Only a storing or icdf input gets a new engine per direction.
+    // (d) runs for the inputs it ran for before G43f1: no `before`. Only a storing input gets a new engine per direction.
     if (rad.ok && rad.value && i.before.length === 0) {
-      const d = await checkStoreBoth(icdf || storesNames(i.giac) ? async () => new EngineHost(await freshGiac()) : host, i.id, i.giac);
+      const d = await checkStoreBoth(storesNames(i.giac) ? async () => new EngineHost(await freshGiac()) : host, i.id, i.giac);
       checked.d += d.checked;
       failures.push(...d.failures);
     }

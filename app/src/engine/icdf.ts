@@ -93,7 +93,7 @@ export const ICDF_DEFINITIONS: Readonly<Record<string, string>> = {
     "return [s[0],s[1],exp(a/2*ln(a*x/w)+b/2*ln(b/w)-ln(x)-paslg(a/2)-paslg(b/2)+paslg(a/2+b/2)),s[0]-1/2]; }",
   // Newton from Giac's x0 on the smaller tail; Giac's x0 with the flag set when it cannot be polished.
   pasicdf:
-    "pasicdf(k,a,b,p,x0):={ local x,q,lo,md,t,r,w,dx,n,ok,tol,d; " +
+    "pasicdf(k,a,b,p,x0):={ local x,q,lo,md,t,r,w,dx,n,ok,tol,d,xl,xh,j; " +
     `if (not(${REAL("p")}) or not(${REAL("a")}) or not(${REAL("b")})) { ${ICDF_FAILED}:=1; return x0; } ` +
     `if ((k>0 and a<=0) or ((k==0 or k==3) and b<=0)) { ${ICDF_FAILED}:=1; return x0; } ` +
     // G44f1: at p = 0 and p = 1 Giac's value is the end of the support (±infinity, 0), which is exact.
@@ -101,11 +101,20 @@ export const ICDF_DEFINITIONS: Readonly<Record<string, string>> = {
     // The median of the symmetric ones is exact (Giac's normald_icdf(0.5) is -1.9E-19).
     "if (p==1/2 and k==0) return a; if (p==1/2 and k==1) return 0; " +
     // md: p next to the median of a symmetric one, solved for F(x) − 1/2 = p − 1/2; else on the smaller tail.
-    // Giac's value as the start; its centre when that is not a finite number in the support (fisher_icdf(3,4,1-10^-20)
-    // is +infinity, chisquare_icdf(3,10^-30) is negative).
-    `if (${REAL("x0")} and not((k==2 or k==3) and x0<=0)) x:=evalf(exact(x0)); else x:=evalf(when(k==0,a,when(k==1,0,when(k==2,a,1)))); ` +
+    // Giac's value as the start; its centre when that is not a real number in the support (fisher_icdf(3,4,1-10^-20)
+    // is +infinity, chisquare_icdf(3,10^-30) is negative, normald_icdf(10^-30) is undef from about the third call, G44f2).
+    "x:=evalf(when(k==0,a,when(k==1,0,when(k==2,a,1)))); " +
+    `if (${REAL("x0")}) { if (not((k==2 or k==3) and x0<=0)) x:=evalf(exact(x0)); } ` +
     "md:=(k<=1 and p>1/4 and p<3/4); lo:=(p<=1/2); " +
     "if (md) q:=abs(p-1/2); else { if (lo) q:=p; else q:=1-p; } tol:=evalf(10^(5-Digits)); ok:=0; " +
+    // G44f2: the upper tail of χ² and Fisher from a bracket in ln x: x doubled (or halved) until the upper tail crosses
+    // 1 − p, then bisected in ln x down to a ratio of 1.01, so that Newton starts next to the root (chisquare_icdf(3,1-10^-30)
+    // from the centre took more than 20 steps). Not bracketed in 60 doublings: refused.
+    "if ((k==2 or k==3) and not(lo)) { t:=pasicdft(k,a,b,x); j:=0; " +
+    "if (t[1]>q) { while (j<60 and t[1]>q) { x:=2*x; t:=pasicdft(k,a,b,x); j:=j+1; } xl:=x/2; xh:=x; } " +
+    "else { while (j<60 and not(t[1]>q)) { x:=x/2; t:=pasicdft(k,a,b,x); j:=j+1; } xl:=x; xh:=2*x; } " +
+    `if (j>=60) { ${ICDF_FAILED}:=1; return x0; } ` +
+    "for (j:=1;j<=30 and xh>xl*1.01;j:=j+1) { x:=sqrt(xl*xh); t:=pasicdft(k,a,b,x); if (t[1]>q) xl:=x; else xh:=x; } x:=sqrt(xl*xh); } " +
     "for (n:=1;n<=20;n:=n+1) { t:=pasicdft(k,a,b,x); if (not(t[2]>0)) break; " +
     // In a tail, Newton on ln F: the same root and the derivative f/F, but it converges from Giac's far value
     // (normald_icdf below 1E-16 is a different number on each call: -8.58, -8.65 for 10^-20, right -9.26).
