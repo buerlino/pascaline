@@ -56,6 +56,9 @@ export async function runBench(session: Session): Promise<void> {
   // build can time 20 and 30 digits before Settings allows them. Not persisted.
   const digits = Number(new URLSearchParams(location.search).get("digits"));
   if (Number.isInteger(digits) && digits >= 1 && digits <= 30) session.settings.digits = digits;
+  // ?bench=1&angle=deg: the angle mode for this run (A16 times DEG as well as RAD). Not persisted.
+  const angle = new URLSearchParams(location.search).get("angle");
+  if (angle === "deg" || angle === "rad") session.settings.angle = angle;
   session.setView("cas");
   const first: number[] = [];
   const errors: string[] = [];
