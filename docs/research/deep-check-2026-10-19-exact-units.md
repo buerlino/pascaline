@@ -64,7 +64,7 @@ Giac itself says `undef` for `int(1/(x-2)^3,x,0,3)` and `sum((-1)^k,k,0,inf)`, s
 
 ### Low
 
-**E11. normald_icdf(10^-10)** now shows `⚠ 7 −6.36134` (right: −6.3613409024040562047): honest, 7 digits. docs/04 2.3 #2's value polish (substitute back into normald_cdf at P digits) would give all 12. G44 builds it for the inverse distribution functions.
+**E11. normald_icdf(10^-10)** now shows `⚠ 7 −6.36134` (right: −6.3613409024040562047): honest, 7 digits. docs/04 2.3 #2's value polish (substitute back into normald_cdf at P digits) would give all 12. G44 builds it for the inverse distribution functions. Done by G44.
 
 **E12. Pipeline.** Night 3's report asks for the e2e timing rerun to compare its failures with Playwright's "N failed" summary; A15 had the size check but not this. Added to A15 as point 6.
 

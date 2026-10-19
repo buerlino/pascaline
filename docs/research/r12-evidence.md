@@ -5,12 +5,12 @@
 
 ## 1. Paths that showed a wrong or unmarked value (docs/04 2.3)
 
-Each became a regression case before its fix (CLAUDE.md); #7 was Python's `calc.eval`, removed with the app. Values marked `oracle` come from mpmath at 40 digits: `tests/golden/.venv/bin/python -I -c "import mpmath as m; m.mp.dps=40; …"` with `sqrt(2)*erfinv(2p-1)` for `normald_icdf`, `quad(exp(-x^2),[0,1])` for `romberg`, `erfc(10/sqrt(2))/2` for `UTPN(10)`, `besselj`, `airyai`. All are fixed except #2's value polish (EN7, milestone 6), which keeps its `⚠`. #11–#16 came from the deep-dive review (2026-10-14), #17–#18 from the architecture check and #19 from the Opus pass (2026-10-15).
+Each became a regression case before its fix (CLAUDE.md); #7 was Python's `calc.eval`, removed with the app. Values marked `oracle` come from mpmath at 40 digits: `tests/golden/.venv/bin/python -I -c "import mpmath as m; m.mp.dps=40; …"` with `sqrt(2)*erfinv(2p-1)` for `normald_icdf`, `quad(exp(-x^2),[0,1])` for `romberg`, `erfc(10/sqrt(2))/2` for `UTPN(10)`, `besselj`, `airyai`. All are fixed (#2's value polish by G44). #11–#16 came from the deep-dive review (2026-10-14), #17–#18 from the architecture check and #19 from the Opus pass (2026-10-15).
 
 | # | Input and path | Shown before the fix | Correct value | Fix |
 |---|---|---|---|---|
 | 1 | Home, keys `0` `x` Alpha-F Alpha-F: `0*x*F*F` | `0`, exact | 255 (`derived`) | R2: `0x`/`0b`/`0o` with letters is an error; a literal in EN6 |
-| 2 | Home `normald_icdf(10^-10)`, 12 digits | `-6.36134035799`, no mark | −6.36134090240… (`oracle`): wrong from the 8th digit; Giac's two evaluations agree on 9 digits | mark: `⚠`, unaudited (`715e1e8`). **Open:** the value polish by substituting back (a 40-digit `fsolve(normald_cdf(x)=10^-10, …)` agrees with the oracle to 32 digits), EN7; case `prec-2-normald_icdf-value` pending |
+| 2 | Home `normald_icdf(10^-10)`, 12 digits | `-6.36134035799`, no mark | −6.36134090240… (`oracle`): wrong from the 8th digit; Giac's two evaluations agree on 9 digits | mark: `⚠`, unaudited (`715e1e8`); then G44: Newton from Giac's value on our MPFR normal CDF (erf series, erfc continued fraction), checked at P and P + 20: `≈ -6.3613409024`, all 12 digits (and 30 at 30 digits); `prec-2-normald_icdf-value` on. Closed. |
 | 3 | Home `UTPN(10)` at 30 digits | wrong from the 17th digit | 7.619853024160526065973…E-24 (`oracle`) | agreement check at P, P+20, P+40 (`715e1e8`) |
 | 4 | Home `romberg(exp(-x^2),x,0,1)` at 30 digits | wrong from the 17th digit | 0.746824132812427025399467436132 (`oracle`) | `⚠` until romberg is audited (2.4 rule 3, M4-1) |
 | 5 | Home `BesselJ(1,2)` at 15–30 digits | the input as text (no MPFR path) | 0.576724807757 (`oracle`) | a ≤ 14-digit fallback with `⚠` |
@@ -73,7 +73,7 @@ The key path step by step is [r6](r6-pipelines.md) section 1; the MathLive promp
 | Entry, MathLive (`entry/`) | textbook entry; results as chips (R2); ⌫ keeps templates whole; the cursor stops only at boxes; one key path for every key (5.5) | errors name the fix (R29–R31, R51) | — | the MathLive chunk after the keypad; `entry/` modules lazy |
 | Parser (`input/parse.ts`, `emit.ts`) | one rule per key | rejects what our keys cannot produce | — | its own lazy chunk (M4-3) |
 | Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel and a crash restart the worker and replay the definitions; definitions survive a relaunch (G3); a safe start without them after two failed starts (G19); a 1 GB memory cap (G24) | the `defs` replay over its Tab One bar (G29 cut it, A12 re-measures) | Giac 9.75 MB wasm |
-| Home evaluation (`engine/homeEval.ts`) | p95 well under the bar on the desktop | exact-first; marks and the agreement check (2.4) | `normald_icdf`'s value is not polished (2.3 #2, EN7) | — |
+| Home evaluation (`engine/homeEval.ts`) | p95 well under the bar on the desktop | exact-first; marks and the agreement check (2.4) | — (G44 polished `normald_icdf`, 2.3 #2) | — |
 | Formatter (`engine/format.ts`) | re-formats without the engine | BigInt, one rounding | `tieRisk` has no reader (2.4 rule 4) | in the start chunk |
 | History and settings (`state/`) | history and the half-typed line survive a relaunch and a kill (R34) | digits ≤ 30, every stored value stamped (`DATA_VERSION`) | — | — |
 | Function and Solve apps | Plot 56 fps on the Tab One | every number from the engine; every root substituted back, ⚠ on failure | frozen for features (P11) | lazy chunks |
