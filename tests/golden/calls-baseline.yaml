@@ -1,6 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Giac calls per Enter (G52): the totals of the gate's `calls` stage. A run fails when a total is more than 10 % above
-# its value here. Raise a value only with the reason in the package's report (the audit reads it).
-commit: 83d2262  # the parent of the branch; taken on p1/gorge-m4-callcount
+# Giac calls per Enter (G52): the totals of the gate's `calls` stage. A set fails when its calls per input (total / inputs) are more than
+# 10 % above the baseline's (calls / inputs). Raise a value only with the reason in the package's report (the audit reads it).
+commit: 83d2262  # the parent of the branch; taken on p1/gorge-m4-callcount; inputs added by G52f1
 bench: 526
+benchInputs: 56
 home: 3696
+homeInputs: 233
