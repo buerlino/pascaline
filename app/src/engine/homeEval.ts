@@ -28,6 +28,11 @@ import {
   hasFloat,
   isAudited,
   rationalValue,
+  decideTwice,
+  restsOnDecision,
+  notBuiltin,
+  callsStateful,
+  floatsShown,
   shapeOf,
   valuePrecision,
   whyOf,
@@ -504,6 +509,13 @@ function provedRational(giac: Giac, name: string, f: ElementFacts, digits: numbe
   return { value: { re: a.v, im: b.v }, exactRational: true, reliableDigits: null, big: false };
 }
 
+/** G38: a result whose decision did not hold at a higher precision: ⚠ without a count, elements too, with the why
+ *  "decided at limited precision" (docs/04 2.4 rule 2). */
+export function undecidedResult(r: HomeResult): HomeResult {
+  const el = (e: HomeResult): HomeResult => ({ ...e, exactRational: false, reliableDigits: null, warn: "unchecked", approximate: true });
+  return { ...el(r), ...(r.items ? { items: r.items.map(el) } : {}), why: { ...(r.why ?? {}), decided: true } };
+}
+
 export function homeEval(
   giac: Giac,
   input: string,
@@ -514,21 +526,39 @@ export function homeEval(
   const ans = "pasans";
   const asg = simpleAssignment(input);
   const body = asg ? asg.rhs : input;
-  // Other stateful inputs (f(x):=…, purge, assume, =>) must not run twice.
-  const once = !asg && isStateful(input);
+  // Other stateful inputs (f(x):=…, purge, assume, =>) must not run twice, nor a call to a stored function that
+  // stores (inc(x):={c:=c+1;c}), assigned or not.
+  const once = (!asg && isStateful(input)) || callsStateful(giac, body);
   const exactBody = toExactLiterals(body);
   const test = input.includes(EQ_INEXACT_FLAG);
   if (test) giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
-  let exactOut = giac.eval(`${ans}:=(${exactBody})`);
+  // G38 (docs/04 2.4 rule 2): the exact evaluation runs at Digits = P, since Giac decides signs, comparisons and
+  // floor at Digits; the host's Digits stays the display digits, which print the floats of a non-number.
+  const P = valuePrecision(s.digits);
+  const exactRun = (): string => withDigits(giac, P, s.digits, () => giac.eval(`${ans}:=(${exactBody})`));
+  let exactOut = exactRun();
   // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate, and
   // decided by its own digits (R18f2): run once more with the verdict set.
   const inexactTest = test && giac.eval(EQ_INEXACT_FLAG) === "1";
   const decided = inexactTest && !once ? decideFloatTest(giac, exactBody, s.digits) : null;
   if (decided) {
-    exactOut = giac.eval(`${ans}:=(${exactBody})`);
+    exactOut = exactRun();
     giac.eval(`purge(${EQ_VERDICT})`);
   }
   const exactMs = now() - t0;
+  // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), see decideTwice. Not for
+  // an input that cannot run twice, a test with a float side (decideFloatTest decided it, and its verdict is gone), or a
+  // float result, whose value check runs it at two precisions anyway. An exact == or ≠ test is a decision too.
+  let undecided = false;
+  if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, exactOut, notBuiltin(giac))) {
+    const d = decideTwice(giac, exactBody, exactOut, s.digits, s.digits);
+    if ("undecided" in d) undecided = true;
+    if (!("undecided" in d) && d.from !== undefined) {
+      giac.eval(`${ans}:=${d.from}`);
+      exactOut = d.text;
+    }
+    giac.eval("purge(pasdec2)");
+  }
   const W = Math.max(s.workDigits, s.digits + 10);
   const defined = definedBy(input);
   const store = () => {
@@ -537,14 +567,17 @@ export function homeEval(
 
   // G39: set when a convergence check could not finish: the result stands, with ⚠ (nothing confirmed it exists).
   let unverified = false;
-  const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "full"> & { full?: string }): HomeResult => ({
-    ...r,
-    ...(unverified && r.ok ? { warn: r.warn ?? "unchecked", approximate: true } : {}),
-    full: r.full ?? r.display,
-    ...(r.ok && defined ? { defined } : {}),
-    exactMs,
-    totalMs: now() - t0,
-  });
+  const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "full"> & { full?: string }): HomeResult => {
+    const out: HomeResult = {
+      ...r,
+      ...(unverified && r.ok ? { warn: r.warn ?? "unchecked", approximate: true } : {}),
+      full: r.full ?? r.display,
+      ...(r.ok && defined ? { defined } : {}),
+      exactMs,
+      totalMs: now() - t0,
+    };
+    return undecided && out.ok ? undecidedResult(out) : out;
+  };
   const fromBuilt = (b: Built, path: HomePath, approximate: boolean, exact: string | undefined, full: string, why?: PrecisionWhy): HomeResult => {
     const { decimal: _d, ...rest } = b;
     return done({ ok: true, ...rest, ...(why ? { why } : {}), ...(exact !== undefined ? { exact } : {}), path, approximate, full });
@@ -600,12 +633,19 @@ export function homeEval(
   const symbolic = (): HomeResult => {
     // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
-    const shown = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
+    // G38: a float in a non-number prints with the precision it was computed at (P). Ans keeps the P result; the text
+    // shown prints its floats at the display digits (floatsAtDigits), never by running the input again, which would
+    // redo its decisions at the display digits; so it holds for an input that cannot run twice and for a test too.
+    const atN = hasFloat(exactOut) ? floatsShown(giac, exactOut, s.digits, "pasfl") : null;
+    const slot = atN === null ? ans : "pasfl";
+    const base = atN ?? exactOut;
+    const shown = base.includes("*") ? regrouped(giac, slot, base) : base;
     // An open test shows its decimals as typed, not as the exact rationals the engine read (G14).
     const text = /==|<>/.test(shown) ? restoreLiterals(shown, body) : shown;
     store();
     // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
-    const tex = giac.eval(`latex(${ans})`);
+    const tex = giac.eval(`latex(${slot})`);
+    if (atN !== null) giac.eval("purge(pasfl)");
     const latex = isError(tex) ? {} : { latex: unquote(tex) };
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
     const unchecked = hasFloat(text);

@@ -25,7 +25,6 @@
 ### The open packages
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [G34](packages/G34.md) | A carried value keeps what it showed when the angle mode changes | gorge, **Opus** | night | A15 | ~1 d |
 | [G21b](packages/G21b.md) | exp ignores the angle mode inside Giac; pasexp goes | gorge, **Opus** | night | G34; S14's route P | ~1 d |
 | [G49](packages/G49.md) | Marks travel through Ans, chips and Store: engine | gorge, **Opus** | night | G34 | ~1 d |
 | [R65](packages/R65.md) | Marks travel through Ans and chips: session | ron, **Opus** | night | G49 | ~0.5 d |
@@ -35,7 +34,6 @@
 | [G35](packages/G35.md) | The unit check sees every term, zero ones too | gorge, **Opus** | night | A15; before R24c | ~0.5 d |
 | [G36](packages/G36.md) | FIX shows no unconfirmed digit in a complex number | gorge, Sonnet | night | A15 | ~0.25 d |
 | [G38](packages/G38.md) | The exact path decides at the value precision | gorge, **Opus** | night | A15 | ~0.75 d |
-| [G39](packages/G39.md) | A divergent sum or integral is refused; Giac's pair is no list | gorge, **Opus** | night | A15 | ~0.75 d |
 | [G41](packages/G41.md) | σ beyond first order at a stationary point | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G37](packages/G37.md) | °C and °F inside a compound unit are an interval | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G40](packages/G40.md) | Angles in the unit view: inverses, ω·r, rpm | gorge, **Opus** | night | A15; before R24c | ~0.75 d |
@@ -103,9 +101,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 21 | G34 a carried value keeps what it showed when the angle mode changes | gorge, Opus | `p1/gorge-m4-anglefree` | A15 | 1.5 h |
-| 22 | G38 the exact path decides at the value precision | gorge, Opus | `p1/gorge-m4-decideprec` | A15 | 1.5 h |
-| 23 | G39 a divergent sum or integral is refused | gorge, Opus | `p1/gorge-m4-divergent` | A15 | 1.5 h |
 | 24 | G35 the unit check sees every term, zero ones too | gorge, Opus | `p1/gorge-m5-zerodim` | A15 | 1 h |
 | 25 | G49 marks through Ans, chips and Store: engine | gorge, Opus | `p1/gorge-m4-chipfacts` | G34 | 1.5 h |
 | 26 | R65 marks through Ans and chips: session | ron, Opus | `p1/ron-m4-chipfacts` | G49 | 1 h |
