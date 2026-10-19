@@ -211,6 +211,21 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       // with an unaudited function next to it, the input stays unaudited (and names only that one)
       expect(home("normald_icdf(0.3)+romberg(exp(-x^2),x,0,1)").why).toEqual({ unaudited: ["normald_icdf", "romberg"] });
     });
+    it("G44f1: erf and erfc are audited when read through ours (oracle: mpmath)", () => {
+      const r = home("evalf(erf(10^-12))");
+      expect([r.why, r.warn, r.display]).toEqual([undefined, undefined, "1.1283791671E-12"]);
+      expect(home("erf(i)").why).toEqual({ unaudited: ["erf"] });
+    });
+    it("G44f1: an inverse function Giac gives as infinity inside (0, 1) is polished, else ⚠; at p = 1 it is exact", () => {
+      // mpmath findroot on the upper tail: 18257418581.9499815596…
+      const r = home("fisher_icdf(3,4,1-10^-20)");
+      expect([r.why, r.warn, r.display]).toEqual([undefined, undefined, "18257418581.9"]);
+      // Newton does not converge from the centre here (today): Giac's +infinity with ⚠, not as an exact value
+      const f = home("fisher_icdf(3,4,1-10^-400)");
+      expect([f.display, f.warn, f.approximate, f.why]).toEqual(["+infinity", "unaudited", true, { unaudited: ["fisher_icdf"] }]);
+      const e = home("fisher_icdf(3,4,1)");
+      expect([e.display, e.warn, e.approximate]).toEqual(["+infinity", undefined, false]);
+    });
     it("a result from a stored float names the stored name when it limits the digits", () => {
       host.home("B:=BesselJ(1,2)", defaultHomeSettings);
       expect(home("B*2").why).toEqual({ inherited: ["B"] });

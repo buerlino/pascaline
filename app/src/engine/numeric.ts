@@ -25,7 +25,7 @@ import {
   type PrecisionWarn,
   type PrecisionWhy,
 } from "./format.ts";
-import { ICDF_DIGITS, ICDF_FAILED, icdfCalls, icdfPolished } from "./icdf.ts";
+import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 
 export interface Giac {
   eval(input: string): string;
@@ -591,6 +591,16 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
   // (forValue); `name` (Ans) keeps Giac's own text.
   const text = giac.eval(name);
   const safe = isError(text) ? text : forValue(giac, text);
+  // G44f1: erf and erfc are read through our MPFR definitions, which run at Digits: the value is evaluated from the
+  // text at each precision with Digits set to it.
+  const erfText = isError(safe) ? safe : erfValueText(giac, safe);
+  if (erfText !== safe) {
+    try {
+      return exactFactsOf(giac, name, shape, digits, P, facts, false, true, erfText);
+    } finally {
+      giac.eval(`purge(pasxe,${ICDF_FAILED})`);
+    }
+  }
   const src = safe !== text && !isError(giac.eval(`pasxv:=(${safe})`)) ? "pasxv" : name;
   try {
     // The value's evalf is trusted only with no function left that Giac gets wrong on it (in DEG nothing is replaced).
@@ -611,6 +621,7 @@ function exactFactsOf(
   facts: (ElementFacts | null)[],
   split: boolean,
   wholeOk: boolean,
+  valueText?: string,
 ): ElementFacts[] | null {
   // Two guard digits beyond P: a value read at P digits is truncated, so a P-th digit confirmed by the next level would be
   // shown truncated, not rounded (G50 probe: asin(-1/1000+i/1000) at 50 digits).
@@ -622,8 +633,13 @@ function exactFactsOf(
       return t;
     }, P + 2, prec);
   // The parts of the value's evalf, when the symbolic parts cannot be had (above) or not evaluated in time (an error).
+  // With `valueText` (G44f1) the value is that text evaluated at Digits = prec, and `name` keeps Giac's result.
+  const evalfValue = (prec: number) =>
+    valueText === undefined
+      ? giac.eval(`pasxe:=evalf(${name},${prec})`)
+      : withDigits(giac, prec, digits, () => giac.eval(`pasxe:=evalf(${valueText},${prec})`));
   const viaValue = (prec: number) =>
-    isError(giac.eval(`pasxe:=evalf(${name},${prec})`)) ? null : readParts(giac, "pasxe", shape, (part) => giac.eval(part), P + 2, prec);
+    isError(evalfValue(prec)) ? null : readParts(giac, "pasxe", shape, (part) => giac.eval(part), P + 2, prec);
   let whole = !split;
   const evalfAt = (prec: number) => {
     if (whole) return viaValue(prec);
@@ -855,7 +871,11 @@ export function floatPathFacts(
   // G50f1: the names the input reads that hold a call Giac gets wrong on complex arguments are read through copies.
   const reads = complexReads(giac, expr, !once);
   try {
-    const out = floatPathFactsOf(giac, name, forValue(giac, reads.text), once, W, digits);
+    // G44f1: erf and erfc through our MPFR definitions (Giac's erf of a float below about 1E-11 is the argument).
+    const safe = forValue(giac, reads.text);
+    const value = erfValueText(giac, safe);
+    const out = floatPathFactsOf(giac, name, value, once, W, digits);
+    if (value !== safe) giac.eval(`purge(${ICDF_FAILED})`);
     // A non-real value that rests on a replaced function not read through ours (DEG, a copy refused) is not audited.
     if ("error" in out || !reads.hidden.length || !nonReal(giac, name)) return out;
     const complexFns = reads.hidden;
