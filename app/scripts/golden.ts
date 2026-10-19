@@ -186,11 +186,13 @@ async function stageHome(): Promise<void> {
     const markOk = !c.mark || got.every((m) => m?.startsWith(c.mark!));
     if (c.mark) marks++;
     const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, c.input ?? "")) : rs.every((x) => x.display === c.expect);
-    const ok = answered && markOk;
+    // `exact` (G38): the text the result copies (`full`), when the case pins it.
+    const exactOk = c.exact === undefined || rs.every((x) => x.full === c.exact);
+    const ok = answered && markOk && exactOk;
     const med = median(rs.map((x) => x.totalMs));
     maxMed = Math.max(maxMed, med);
     if (ok) pass++;
-    else console.log(`  home ${c.id}: got ${rs.map((x, k) => `${got[k] ?? "-"} ${x.display}`).join(" / ")}, expect ${c.mark ?? ""} ${c.expect ?? "(mark only)"}`);
+    else console.log(`  home ${c.id}: got ${rs.map((x, k) => `${got[k] ?? "-"} ${x.display}`).join(" / ")}, expect ${c.mark ?? ""} ${c.expect ?? "(mark only)"}${exactOk ? "" : `, copies ${rs[0]!.full}, expect ${c.exact}`}`);
     if (!(med <= HOME_LIMIT_MS)) {
       slow++;
       console.log(`  home ${c.id}: median ${med.toFixed(1)} ms > ${HOME_LIMIT_MS} ms (${shown})`);
@@ -291,7 +293,8 @@ async function stagePrecision(): Promise<void> {
       shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
       // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it); a
       // true or false resting on a float is approximate (R18f1).
-      mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : r.ok && r.approximate ? (r.warn ? { mark: "⚠" } : { mark: "≈" }) : null;
+      // A rational text whose decision did not hold at P + 20 comes approximate (G38), so that is read first.
+      mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && r.approximate ? (r.warn ? { mark: "⚠" } : { mark: "≈" }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
     } else {
       const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
       for (const b of c.before ?? []) host.home(giacOf(b), s);

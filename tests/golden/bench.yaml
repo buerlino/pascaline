@@ -66,3 +66,4 @@ cases:
   - { id: "heavy-factor", input: "factor(x^20-1)", cat: "heavy" }
   - { id: "heavy-int", input: "int(1/(x^4+1),x)", cat: "heavy" }
   - { id: "heavy-ifactor", input: "ifactor(2^64+1)", cat: "heavy" }
+  - { id: "g38-abs-sin1e50", input: "abs(sin(10^50))", expect: "-sin(100000000000000000000000000000000000000000000000000)", source: "derived", cat: "trig", note: "G38: sin(10^50) < 0 (oracle, mpmath at 200 digits: -0.78967249342931008271), so |sin(10^50)| = -sin(10^50); at Digits 12 Giac gave sin(10^50)" }

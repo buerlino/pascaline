@@ -69,7 +69,8 @@ def namespace():
     ns = {"F": F, "M": M, "factorial": math.factorial, "mp": mp, "mpf": mp.mpf, "mpc": mp.mpc, "I": mp.mpc(0, 1)}
     for n in ["sin", "cos", "tan", "asin", "acos", "atan", "sinh", "cosh", "tanh", "asinh", "acosh",
               "atanh", "exp", "ln", "log10", "sqrt", "cbrt", "gamma", "erf", "power", "nsum", "quad",
-              "fabs", "fsum", "findroot", "lambertw", "polyroots", "erfc", "besselj", "airyai"]:
+              "fabs", "fsum", "findroot", "lambertw", "polyroots", "erfc", "besselj", "airyai",
+              "floor", "ceil", "sign", "nint"]:
         ns[n] = _wrap(n)
     deg = lambda x: M(x) * mp.pi / 180
     ns.update(sind=lambda x: mp.sin(deg(x)), cosd=lambda x: mp.cos(deg(x)), tand=lambda x: mp.tan(deg(x)),
@@ -78,8 +79,17 @@ def namespace():
     ns["pi"], ns["e"], ns["inf"] = +mp.pi, +mp.e, mp.inf
     ns["diff"] = mpmath.diff
     ns["sortroots"] = sortroots
+    ns["D200"] = at200
     ns["S"] = lambda label: Label(label)
     return ns
+
+
+def at200(f):
+    """f() evaluated at 200 digits (G38: sin(10**50) needs its argument exactly, and a floor of it the value to well
+    past the integer). Constants inside f must be mp.pi, mp.e: the namespace's pi is fixed at the outer precision."""
+    with mp.workdps(200):
+        v = f()
+        return v if isinstance(v, (int, Fraction)) else +v
 
 
 class Label(str):
