@@ -126,3 +126,27 @@ test("a short exact result still gives an exact chip (1/3 × 3 = 1)", async ({ p
   await tap(page, ["mul", "d3", "enter"]);
   await expect(lastResult(page)).toHaveAttribute("data-text", "1");
 });
+
+// R65 (deep check 2026-10-19 D1, D2): a ⚠ result keeps its ⚠ through Ans and through a tapped chip, line after line.
+// romberg(e^(-x²),x,0,1) is ⚠ 11 at 12 digits (unaudited); Ans·1 twice showed ≈ and then = 0.746824132812.
+test("a ⚠ result stays ⚠ through Ans and a tapped chip (romberg × 1 × 1)", async ({ page }) => {
+  await open(page, "");
+  await ready(page);
+  await page.evaluate(() => window.pascaline.session.submit("\\operatorname{romberg}\\left(e^{-x^2},x,0,1\\right)"));
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+  const mark = page.getByTestId("mark");
+  await expect(mark.last()).toHaveAttribute("data-mark", "⚠");
+  await tap(page, ["mul", "d1", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(2);
+  await expect(mark.last()).toHaveAttribute("data-mark", "⚠");
+  await tap(page, ["mul", "d1", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(3);
+  await expect(mark.last()).toHaveAttribute("data-mark", "⚠");
+  await page.locator('[data-testid="result"]').first().locator(".result").tap();
+  await tap(page, ["mul", "d1", "enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(4);
+  await expect(mark.last()).toHaveAttribute("data-mark", "⚠");
+  const chip = await page.evaluate(() => Object.values(window.pascaline.session.home.at(-1)?.chips ?? {})[0]);
+  expect(chip?.exact).toBe(false);
+  expect(chip?.warn).toBe("unaudited");
+});

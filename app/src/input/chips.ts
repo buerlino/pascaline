@@ -3,6 +3,7 @@
 // `\ans` and a constant `\const{ID}{symbol}`. Each chip is one MathLive macro the cursor cannot enter; the
 // second argument is only what the chip shows. The value lives in the entry's chip table, which each history
 // item stores beside its entry LaTeX, so the parser never waits for an engine or the Find index.
+import type { PrecisionWarn } from "../engine/format.ts";
 
 export interface Chip {
   /** Giac text the parser puts in place of the chip: an exact text (`1/3`, `sqrt(2)`) or a decimal with every confirmed digit. */
@@ -11,6 +12,10 @@ export interface Chip {
   exact: boolean;
   /** A constant's standard uncertainty (CODATA), absent when it is exact. */
   unc?: string;
+  /** A result chip that is not exact: the significant digits confirmed when it was shown (null: not limited), R65. */
+  reliableDigits?: number | null;
+  /** A result chip that is not exact: its ⚠ reason, which the next line keeps (R65, decisions M4-5). */
+  warn?: PrecisionWarn;
 }
 
 /** Keys: `res:<k>` for `\res{k}{…}`, `const:<ID>` for `\const{ID}{…}`, `ans` for `\ans` (filled at Enter). */
@@ -48,9 +53,12 @@ export function validChips(x: unknown): ChipTable | undefined {
   const out: ChipTable = {};
   for (const [k, c] of Object.entries(x as Record<string, unknown>)) {
     if (!/^(res:\d+|const:[A-Za-z0-9_]+)$/.test(k) || !c || typeof c !== "object") continue;
-    const { value, exact, unc } = c as Record<string, unknown>;
+    const { value, exact, unc, reliableDigits: rd, warn } = c as Record<string, unknown>;
     if (typeof value !== "string" || typeof exact !== "boolean") continue;
-    out[k] = typeof unc === "string" ? { value, exact, unc } : { value, exact };
+    const chip: Chip = typeof unc === "string" ? { value, exact, unc } : { value, exact };
+    if (rd === null || (typeof rd === "number" && Number.isInteger(rd) && rd >= 0 && rd <= 1000)) chip.reliableDigits = rd;
+    if (warn === "unaudited" || warn === "unchecked") chip.warn = warn;
+    out[k] = chip;
   }
   return Object.keys(out).length ? out : undefined;
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The calculator session: current view, modifier keys, settings and the history of both views.
 // Plain logic on Svelte 5 runes; the engine comes in through the Calc port.
-import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type NumberFormat, type UserName } from "../calc/port.ts";
+import { CalcCancelled, type AngleUnit, type CalcError, type Calc, type CalcSettings, type ChipFactsTable, type NumberFormat, type UserName } from "../calc/port.ts";
 import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../input/chips.ts";
 import { parseFailText } from "../input/errors.ts";
 import { loadParser } from "../input/parser.ts";
@@ -96,7 +96,7 @@ export interface HistoryItem {
   form?: FormStep;
   /** The values of the chips in `latex` (docs/04 3.6), so a recalled entry needs no engine or index. Ans is not kept. */
   chips?: ChipTable;
-  /** The value a \res chip of this result carries (docs/04 2.8): the exact text, or every digit the engine gave. */
+  /** The value a \res chip of this result carries (docs/04 2.8): the exact text, or its confirmed decimal (R65). */
   full?: string;
   /** `full` is the exact value (a fraction, an exact expression), not rounded digits. */
   fullExact?: boolean;
@@ -138,6 +138,14 @@ function rationalOf(text: string | undefined): Rational | undefined {
 const clampDigits = (n: number): number => Math.min(MAX_DIGITS, Math.max(1, Math.round(n)));
 /** A numeric list or matrix keeps its elements in the history (to re-format it); beyond this the item shows no mark. */
 const ITEMS_LIMIT = 400;
+
+/** The chips an input holds by name (`pasr_<k>`), as the engine takes them (G49): the value and the facts. */
+function chipFactsOf(named: ChipTable): ChipFactsTable {
+  const out: Record<string, ChipFactsTable[string]> = {};
+  for (const [k, c] of Object.entries(named))
+    out[k] = { value: c.value, reliableDigits: c.reliableDigits ?? null, exact: c.exact, ...(c.warn ? { warn: c.warn } : {}) };
+  return out;
+}
 
 /** The facts of an engine result, as kept in a history item. Undefined: too large to keep. */
 function factsFrom(r: {
@@ -454,7 +462,10 @@ export class Session {
   /** The chip a finished result gives when it is tapped or picked (docs/04 2.8); undefined: insert it as drawn. */
   chipFor(item: HistoryItem): Chip | undefined {
     if (item.status !== "done" || item.full === undefined) return undefined;
-    return { value: item.full, exact: item.fullExact === true };
+    if (item.fullExact === true) return { value: item.full, exact: true };
+    // R65 (deep check D1): a chip that is not exact carries the facts it was shown with, so the next line keeps them
+    const f = item.facts;
+    return { value: item.full, exact: false, ...(f ? { reliableDigits: f.reliableDigits } : {}), ...(f?.warn ? { warn: f.warn } : {}) };
   }
   /** Whether the view has a finished result (Ans-first inserts \\ans then, R44). */
   hasResult(view: View = this.view): boolean {
@@ -474,6 +485,7 @@ export class Session {
   private async finish(live: HistoryItem, view: View, latex: string, chips: ChipTable, giacOverride?: string): Promise<void> {
     let giac: string;
     let defines: string | undefined;
+    let named: ChipFactsTable | undefined;
     try {
       if (giacOverride !== undefined) giac = giacOverride;
       else {
@@ -481,10 +493,13 @@ export class Session {
         if (live.status !== "pending") return; // Cancel came while the parser chunk or the names were loading
         // R56: single letters are calls when the user's names (Home and CAS share them) hold them as functions
         const userFunctions = parser.userFunctionsOf(this.userNames);
-        const p = parser.latexToGiacInfo(latex, { chips, userFunctions, ...(view === "home" ? { realOddRoots: true } : {}) }); // P5 (b), R39: CAS leaves it unset, so ∛ stays surd
+        // P5 (b), R39: CAS leaves realOddRoots unset, so ∛ stays surd. R65: Home sends a chip that is not exact by name
+        const home = view === "home" ? { realOddRoots: true, chipNames: true } : {};
+        const p = parser.latexToGiacInfo(latex, { chips, userFunctions, ...home });
         giac = p.giac;
         defines = p.defines;
         if (p.inexact) live.inexactInput = true;
+        if (p.named) named = chipFactsOf(p.named);
       }
     } catch (e) {
       live.status = "error";
@@ -494,7 +509,7 @@ export class Session {
     const s: CalcSettings = { digits: this.settings.digits, angle: this.settings.angle, format: this.settings.format };
     try {
       if (view === "home") {
-        const r = await this.calc.home(giac, s);
+        const r = named ? await this.calc.home(giac, s, named) : await this.calc.home(giac, s);
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.display : errorText(r.error, r.display);
@@ -509,13 +524,17 @@ export class Session {
         if (q) live.rational = q;
         // A result that is not a number is drawn from Giac's latex(), as in CAS (R18f3); numbers from our formatter.
         if (r.ok) live.resultLatex = r.latex !== undefined ? tidyGiacLatex(r.latex) : homeResultToLatex(r.display);
-        // The chip value: the exact text when it fits in 2 kB, else the engine's `full` (the P-digit decimal), never
-        // nothing for a number (R44, F37). A decimal cut from a longer exact text is not exact, though the value is.
-        const full = r.exact !== undefined && r.exact.length <= FULL_LIMIT ? r.exact : r.full || r.exact;
+        // The chip value (docs/04 2.8): an exact result's exact text when it fits in 2 kB, else the engine's `full`
+        // (the confirmed decimal), never nothing for a number (R44, F37). A result that is not exact (a float, or from
+        // an inexact chip or constant) carries its confirmed decimal, never the rational of more digits (R65, D1, D2).
+        const inexact = r.approximate || live.inexactInput === true;
+        const exactText = !inexact && r.exact !== undefined && r.exact.length <= FULL_LIMIT ? r.exact : undefined;
+        const full = exactText ?? (r.full || (inexact ? undefined : r.exact));
         if (r.ok && full && full.length <= FULL_LIMIT) {
           live.full = full;
-          const cut = (r.exact !== undefined && full !== r.exact) || r.value?.re.sticky === true || r.value?.im.sticky === true;
-          live.fullExact = !r.approximate && !cut && (r.exact !== undefined || r.exactRational || !isDigitsText(full));
+          // A decimal cut from a longer exact text, or from a value with more digits, is not exact, though the value is.
+          const cut = r.exact !== undefined || r.value?.re.sticky === true || r.value?.im.sticky === true;
+          live.fullExact = !inexact && (full === exactText || (!cut && (r.exactRational || !isDigitsText(full))));
         }
       } else {
         const r = await this.calc.cas(giac, s);
@@ -535,7 +554,7 @@ export class Session {
           const full = nf !== undefined && nf.length > 0 ? nf : r.text;
           if (full.length <= FULL_LIMIT) {
             live.full = full;
-            live.fullExact = !isDigitsText(full);
+            live.fullExact = live.inexactInput !== true && !isDigitsText(full); // R65 (D2): an inexact chip's result never is
           }
           // A true or false that rests on a float, or on an inexact chip, is marked approximate (R18f1); a non-number
           // with a float in it comes approximate and unchecked, so ⚠ (G27)

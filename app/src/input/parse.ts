@@ -4,7 +4,7 @@
 // Unknown or ambiguous input throws SerializeError instead of guessing.
 import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
 import { ANS_KEY, constKey, resKey, type ChipTable } from "./chips.ts";
-import { chipToGiac } from "./chip-giac.ts";
+import { chipName, chipToGiac } from "./chip-giac.ts";
 import type { Json } from "./emit.ts";
 
 type Tok =
@@ -240,6 +240,9 @@ export interface ParseOptions {
   decimalComma?: boolean;
   /** The entry's chip table: the values of its \res, \ans and \const chips (input/chips.ts). */
   chips?: ChipTable;
+  /** R65 (Home): a result chip that is not exact goes in as its name `pasr_<k>` (chip-giac.ts chipName), listed in
+   *  ParseInfo.named for the engine (G49), not as its value. */
+  chipNames?: boolean;
   /** R28, the unit view (docs/04 4.3): a prompt after a number is its unit slot, `\pm` after a number its standard
    *  uncertainty, a constant chip stays a constant and `\to` before the last prompt marks the end slot. */
   units?: boolean;
@@ -260,6 +263,8 @@ export interface ParseInfo {
   json: Json;
   /** A chip whose value is not exact was used, so the result cannot be marked "=" (docs/04 2.4). */
   inexact: boolean;
+  /** With `chipNames`: the chips that went in by name, keyed by the k of `pasr_<k>`. */
+  named?: ChipTable;
   /** Units mode only. */
   units?: UnitsInfo;
 }
@@ -277,6 +282,8 @@ class Parser {
   readonly units: UnitsInfo | null;
   /** Set when a chip with an inexact value is used. */
   inexact = false;
+  /** R65: the chips put in by name (chipNames), keyed by the k of `pasr_<k>`; null when names are off. */
+  readonly named: ChipTable | null;
   /** F25 (R29): the token index right after the last number literal, and right after the last result chip. */
   private numEnd = -1;
   private resEnd = -1;
@@ -284,6 +291,7 @@ class Parser {
     this.toks = toks;
     this.user = o.userFunctions ?? new Set(["f", "g", "h"]);
     this.chips = o.chips ?? {};
+    this.named = o.chipNames ? {} : null;
     this.units = o.units ? { slots: [], consts: [] } : null;
   }
 
@@ -797,6 +805,13 @@ class Parser {
     const c = this.chips[key];
     if (!c) throw key === ANS_KEY ? parseError("parse.ansNone") : parseError("parse.valueMissing", { what });
     if (!c.exact) this.inexact = true;
+    // a value with an == or ≠ test in it stays a value: only chip-giac.ts rewrites the test (R18f3)
+    const name = !c.exact && this.named && !/==|<>|!=/.test(c.value) ? chipName(key) : undefined;
+    if (name && this.named) {
+      chipToGiac(c.value); // the same refusals as a value put in
+      this.named[name.slice(name.indexOf("_") + 1)] = c;
+      return ["Chip", { str: name }];
+    }
     return ["Chip", { str: chipToGiac(c.value) }];
   }
 
@@ -1193,5 +1208,5 @@ export function parseLatex(latex: string, o: ParseOptions = {}): Json {
 export function parseLatexInfo(latex: string, o: ParseOptions = {}): ParseInfo {
   const p = new Parser(tokenize(latex, o.decimalComma), o);
   const json = p.parseAll();
-  return { json, inexact: p.inexact, ...(p.units ? { units: p.units } : {}) };
+  return { json, inexact: p.inexact, ...(p.named && Object.keys(p.named).length ? { named: p.named } : {}), ...(p.units ? { units: p.units } : {}) };
 }

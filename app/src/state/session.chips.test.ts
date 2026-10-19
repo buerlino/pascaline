@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Chips and Ans in the session (docs/04 2.8): what a result carries, Ans read at Enter, chip tables stored with
 // the entry and read back with their shape checked. The engine is a stub that records the Giac text it gets.
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
+import { EngineCalc } from "../calc/engine.ts";
 import { FakeCalc } from "../calc/fake.ts";
 import type { Calc, CasOutcome, HomeOutcome } from "../calc/port.ts";
+import { EngineHost } from "../engine/host.ts";
 import { safePrecision } from "../engine/homeEval.ts";
+import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
+import type { MathEngine } from "../engine/types.ts";
 import { Session, type HistoryItem } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
 
@@ -18,6 +22,15 @@ function memoryKv(): Kv & { data: Map<string, unknown> } {
       return Promise.resolve();
     },
   };
+}
+
+/** Home and CAS answered in-process by an EngineHost (no worker); Home takes the chip table (G49). */
+function inProcess(host: EngineHost): MathEngine {
+  const engine: Pick<MathEngine, "home" | "cas"> = {
+    home: (input, s, consts, chips) => Promise.resolve(host.home(input, s, consts, chips).result),
+    cas: (input, s) => Promise.resolve(host.cas(input, s).result),
+  };
+  return engine as MathEngine;
 }
 
 /** Home answers from a table (giac text → outcome); CAS echoes. Every input is recorded. */
@@ -52,7 +65,7 @@ describe("result chips", () => {
     const s = new Session(calc, memoryKv());
     await s.submit("x", "sqrt(2)");
     await s.submit("x", "big");
-    expect(s.chipFor(s.home[0] as HistoryItem)).toEqual({ value: "1.41421356237", exact: false });
+    expect(s.chipFor(s.home[0] as HistoryItem)).toEqual({ value: "1.41421356237", exact: false, reliableDigits: null }); // R65: with its facts
     expect(s.chipFor(s.home[1] as HistoryItem)?.exact).toBe(false);
   });
 
@@ -100,5 +113,95 @@ describe("result chips", () => {
     expect(s.chipFor(s.home[0] as HistoryItem)).toEqual({ value: "2", exact: true });
     expect(s.home[1]?.chips).toBeUndefined();
     expect(s.chipFor(s.home[1] as HistoryItem)).toBeUndefined();
+  });
+});
+
+// R65 (deep check 2026-10-19 D1, D2): a result's facts travel through Ans and a tapped chip, for every later use. The
+// real engine through EngineCalc and the Session, as the app runs a line; the marks are G49's golden sequence cases.
+describe.skipIf(!giacAvailable())("marks travel through Ans and chips (R65, real engine)", () => {
+  let calc: EngineCalc;
+  beforeAll(async () => {
+    calc = new EngineCalc(inProcess(new EngineHost((await loadNodeGiac()).giac)));
+  });
+  const markOf = (s: Session, i: number): string | null => {
+    const item = s.home[i] as HistoryItem;
+    expect(item.status, item.latex).toBe("done");
+    return s.mark(item)?.mark ?? null;
+  };
+
+  it("D1: romberg's ⚠ survives Ans in a cancellation (12 and 30 digits)", async () => {
+    for (const digits of [12, 30]) {
+      const s = new Session(calc, memoryKv());
+      s.setDigits(digits);
+      await s.submit("x", "romberg(exp(-x^2),x,0,1)");
+      expect(markOf(s, 0)).toBe("⚠");
+      await s.submit("\\ans-0.7468241328124");
+      expect(markOf(s, 1), `digits ${digits}`).toBe("⚠");
+      // the chip carries its confirmed decimal, never Giac's float text with digits past the confirmed ones
+      const chip = s.chipFor(s.home[0] as HistoryItem);
+      expect(chip?.exact).toBe(false);
+      expect(chip?.value.replace(/^-|\.|0+$/g, "").replace(/^0+/, "").length).toBeLessThanOrEqual(12);
+      expect(chip?.warn).toBeDefined();
+    }
+  });
+
+  it("D2: normald_icdf ×1000 ÷1000 and romberg ×1 ×1 never become = (⚠ through two chips)", async () => {
+    const s = new Session(calc, memoryKv());
+    await s.submit("x", "normald_icdf(0.025)");
+    await s.submit("\\ans\\times1000");
+    await s.submit("\\ans\\div1000");
+    expect([markOf(s, 0), markOf(s, 1), markOf(s, 2)]).toEqual(["⚠", "⚠", "⚠"]);
+    expect(s.home[2]?.fullExact).toBe(false);
+    const t = new Session(calc, memoryKv());
+    await t.submit("x", "romberg(exp(-x^2),x,0,1)");
+    await t.submit("\\ans\\times1");
+    await t.submit("\\ans\\times1");
+    expect([markOf(t, 1), markOf(t, 2)]).toEqual(["⚠", "⚠"]);
+  });
+
+  it("a tapped \\res chip behaves as Ans; an exact chip is unchanged (1/3 ×3 stays = 1)", async () => {
+    const s = new Session(calc, memoryKv());
+    await s.submit("x", "romberg(exp(-x^2),x,0,1)");
+    await s.submit("1");
+    const k = (s.home[0] as HistoryItem).id;
+    const chip = s.chipFor(s.home[0] as HistoryItem)!;
+    await s.submit(`\\res{${k}}{0.74682413281}-0.7468241328124`, undefined, { [`res:${k}`]: chip });
+    expect(markOf(s, 2)).toBe("⚠");
+    expect(s.home[2]?.chips?.[`res:${k}`]?.reliableDigits).toBe(chip.reliableDigits);
+    const third = new Session(calc, memoryKv());
+    await third.submit("\\frac13");
+    expect(third.chipFor(third.home[0] as HistoryItem)).toEqual({ value: "1/3", exact: true });
+    await third.submit("\\ans\\times3");
+    expect(markOf(third, 1)).toBe("=");
+    expect(third.home[1]?.text).toBe("1");
+  });
+});
+
+describe("chip facts (R65)", () => {
+  it("an inexact input never gives an exact chip, and a non-exact result carries its confirmed decimal", async () => {
+    const calc = new TableCalc({
+      "pasr_1*1000": { display: "-1959.96398454", exact: "-97998199227/50", full: "-1959.96398454", exactRational: true, reliableDigits: null },
+    });
+    const s = new Session(calc, memoryKv());
+    await s.submit("\\res{1}{x}\\times1000", undefined, { "res:1": { value: "-1.95996398454", exact: false } });
+    expect(calc.seen.at(-1)).toBe("pasr_1*1000");
+    expect(s.home[0]?.inexactInput).toBe(true);
+    expect(s.chipFor(s.home[0] as HistoryItem)).toMatchObject({ value: "-1959.96398454", exact: false });
+  });
+
+  it("a chip table stored in the history and read back keeps its facts", async () => {
+    const kv = memoryKv();
+    const chip = { value: "0.74682413281", exact: false, reliableDigits: 11, warn: "unaudited" as const };
+    kv.data.set("history", {
+      home: [
+        { id: 1, view: "home", latex: "\\res{4}{0.7}", status: "done", resultLatex: "1", text: "1", approximate: false, startedAt: 0,
+          chips: { "res:4": chip, "res:5": { value: "1", exact: false, reliableDigits: "x", warn: "nope" } },
+          full: "0.74682413281", fullExact: false, facts: { exactRational: false, reliableDigits: 11, warn: "unaudited" } },
+      ],
+    });
+    const s = new Session(new TableCalc({}), kv);
+    await s.restore();
+    expect(s.home[0]?.chips).toEqual({ "res:4": chip, "res:5": { value: "1", exact: false } });
+    expect(s.chipFor(s.home[0] as HistoryItem)).toEqual(chip);
   });
 });
