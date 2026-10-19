@@ -12,7 +12,7 @@
 2. **R4a** (Find on Math), **R4b** (Vars, Memory, the user keys), **R53** (results mode on the View key), **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40**.
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b).
 4. annabell by day: **A16** again after G53, **A9** and **A11** as soon as a device is connected; **A18** after G55; **A12** (G29 is merged); **A4b** after R4b; **A7 → A8** on the owner's go.
-5. After S6: **R59** (also after R4b, G54 and A12), **R38a → R38b** (the owner's yes to S6's proposal first).
+5. After S6: **R59** (also after R4b and A12), **R38a → R38b** (the owner's yes to S6's proposal first).
 
 **At night** (section 0c), in the queue's order: S15 and the night check's packages, route R (R64 → G46), the checks' unit and gate packages, the sandra docs packages, then S12's removal packages (G45, R66–R68).
 
@@ -27,7 +27,6 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [G56](packages/G56.md) | Complex functions inside a stored function, in CAS | gorge, **Opus** | night | G51 | ~0.5 d |
-| [G54](packages/G54.md) | Our function names in Giac text too | gorge, Sonnet | night | now; before R59 | ~0.5 d |
 | [G55](packages/G55.md) | A behaviour diff between two trees | gorge, Sonnet | night | now | ~0.75 d |
 | [S13](packages/S13.md) | Stored names from Giac's state (spike) | sandra, Opus | night | G48 | ~0.5 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One after G53 | annabell, Sonnet | day (device) | G53 | ~0.25 d |
