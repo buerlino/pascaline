@@ -151,6 +151,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 - **Ans:** `\ans` is the view's last result, inserted by Shift + `+` (the reference's position). Ans is resolved by the app at Enter from the view's last history result (its chip value), not from Giac's `pasans`/`pcasans`, so it survives a Cancel (worker restart) and a relaunch (R2).
 - **Operator on an empty line:** `+ − × ÷ xʸ x² x⁻¹` on an empty entry line insert `\ans` first, as the reference does. `(−)` stays negation. This saves a press in every chained calculation; benchmark tasks measure it.
 - A value that leaves its evaluation (stored, Ans, a chip, an export) is the value shown, independent of the angle mode (G34).
+- A stored name takes the facts of what its input read, in every assignment form, and a run-once result that rests on a decision is ⚠ (G48).
 
 **Alternatives:** insert the full digits as text (40 digits clutter the line); keep inserting the rounded digits (2.3 #8).
 
