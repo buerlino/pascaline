@@ -3,6 +3,8 @@
 // and which cases change path or lose their number. Desktop numbers only; device numbers come from ?bench=1.
 //   node tools/probes/digits-cost.ts            # digits 12, 20, 30
 //   DIGITS_LIST=12,15 ROUNDS=5 node tools/probes/digits-cost.ts
+//   CASES=/abs/path/home.yaml node tools/probes/digits-cost.ts   # another case file (the same inputs before and after a change)
+// Cases typed as `latex` or as `steps` (no `input`) are skipped.
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { EngineHost } from "../../app/src/engine/host.ts";
@@ -11,8 +13,9 @@ import { defaultHomeSettings } from "../../app/src/engine/homeEval.ts";
 
 const require = createRequire(new URL("../../app/package.json", import.meta.url));
 const { parse } = require("yaml") as { parse: (s: string) => unknown };
-const file = new URL("../../tests/golden/home.yaml", import.meta.url);
-const cases = (parse(readFileSync(file, "utf8")) as { cases: { id: string; input: string; settings?: { angle?: "rad" | "deg" } }[] }).cases;
+const file = process.env.CASES ?? new URL("../../tests/golden/home.yaml", import.meta.url);
+const all = (parse(readFileSync(file, "utf8")) as { cases: { id: string; input?: string; settings?: { angle?: "rad" | "deg" } }[] }).cases;
+const cases = all.filter((c): c is { id: string; input: string; settings?: { angle?: "rad" | "deg" } } => c.input !== undefined);
 const list = (process.env.DIGITS_LIST ?? "12,20,30").split(",").map(Number);
 const rounds = Number(process.env.ROUNDS ?? 3);
 

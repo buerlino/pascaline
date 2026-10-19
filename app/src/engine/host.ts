@@ -31,7 +31,7 @@ import {
 import { eseriesDefinition } from "./eseries.ts";
 import { giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, notBuiltin, callsStateful, floatsShown, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -468,7 +468,7 @@ export class EngineHost {
     // self-reference (B:=B*2) already overwrote B, and other stateful inputs cannot run again, so neither is moved.
     const asg = simpleAssignment(input);
     const body = asg ? asg.rhs : input;
-    const rerun = asg ? !namesIn(asg.rhs).includes(asg.name) : !isStateful(input);
+    const rerun = (asg ? !namesIn(asg.rhs).includes(asg.name) : !isStateful(input)) && !callsStateful(this.strict, body);
     result = this.inherited(result, body, rerun ? toExactLiterals(body) : null, Math.trunc(s.digits), Math.trunc(s.digits));
     let defs: DefChange[] = [];
     if (isStateful(input)) {
@@ -529,29 +529,54 @@ export class EngineHost {
     const exactInput = toExactLiterals(input);
     const test = input.includes(EQ_INEXACT_FLAG);
     if (test) this.giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
+    // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
+    // mode's Digits stays the setting, which prints the floats of a non-number.
+    const digitsSet = Math.trunc(s.digits);
+    const run = (): string => withDigits(this.giac, valuePrecision(digitsSet), digitsSet, () => this.strict.eval(`pcasans:=(${exactInput})`));
     let text: string;
     try {
-      text = this.strict.eval(`pcasans:=(${exactInput})`);
+      text = run();
     } catch (e) {
       if (e instanceof GiacSyntaxError) return fail(e.message, "syntax");
       throw e;
     }
     if (isError(text)) return fail(text, isTimeout(text) ? "timeout" : "engine");
     const stateful = isStateful(input);
+    // A call to a stored function that stores (inc(x):={c:=c+1;c}) must not run again either, assigned or not.
+    const storing = callsStateful(this.giac, input);
+    const single = stateful || storing;
     // An == or ≠ test on a float side: decided by its own digits, as in Home (R18f2).
-    const decided = test && !stateful && this.giac.eval(EQ_INEXACT_FLAG) === "1" ? decideFloatTest(this.giac, exactInput, Math.trunc(s.digits)) : null;
+    const inexactTest = test && this.giac.eval(EQ_INEXACT_FLAG) === "1";
+    const decided = inexactTest && !single ? decideFloatTest(this.giac, exactInput, digitsSet) : null;
     if (decided) {
-      text = this.strict.eval(`pcasans:=(${exactInput})`);
+      text = run();
       this.giac.eval(`purge(${EQ_VERDICT})`);
+    }
+    // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), as in Home; an exact
+    // == or ≠ test too, only one with a float side is decideFloatTest's.
+    // A plain name:=value decides its value (the right-hand side) and stores the agreed one, as Home does; other
+    // stateful inputs (f(x):=…, purge, assume, =>) must not run twice.
+    const asg = simpleAssignment(input);
+    const once = (!asg && stateful) || storing;
+    let undecided = false;
+    const decisionExpr = asg ? toExactLiterals(asg.rhs) : exactInput;
+    if (!once && !inexactTest && !hasFloat(text) && restsOnDecision(decisionExpr, text, notBuiltin(this.giac))) {
+      const d = decideTwice(this.giac, decisionExpr, text, digitsSet, digitsSet);
+      if ("undecided" in d) undecided = true;
+      if (!("undecided" in d) && d.from !== undefined) {
+        this.giac.eval(`pcasans:=${d.from}`);
+        if (asg) this.giac.eval(`${asg.name}:=pcasans`);
+        text = d.text;
+      }
+      this.giac.eval("purge(pasdec2)");
     }
     // G39: a divergent integral or series, or no limit, is refused as in Home; Giac's [exact, numeric] pair of a
     // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
-    const refused = stateful ? null : refusalOf(this.giac, exactInput, text, s.angle);
+    const refused = single ? null : refusalOf(this.giac, exactInput, text, s.angle);
     if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
-    const pair = !stateful && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
-    const asg = simpleAssignment(input);
+    const pair = !single && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
       stateful ? this.defsAfter(input, [exactInput], preview, facts, "cas", Math.trunc(s.digits), s.angle) : [];
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
@@ -560,31 +585,39 @@ export class EngineHost {
     if (shape) {
       const asked = askedDigits(input);
       const digits = asked ?? Math.trunc(s.digits);
-      const facts = floatFacts(this.giac, "pcasans", stateful ? null : exactInput, shape, digits, Math.trunc(s.digits));
+      const facts = floatFacts(this.giac, "pcasans", single ? null : exactInput, shape, digits, Math.trunc(s.digits));
       if (facts) {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
         if (unverified) numeric.warn = numeric.warn ?? "unchecked";
         if (asked !== null) numeric.digits = asked;
         const body = asg ? asg.rhs : input;
-        const why = whyOf(facts, stateful ? null : exactInput);
+        const why = whyOf(facts, single ? null : exactInput);
         if (why) numeric.why = why;
-        numeric = this.inherited(numeric, body, stateful ? null : exactInput, digits, Math.trunc(s.digits));
+        numeric = this.inherited(numeric, body, single ? null : exactInput, digits, Math.trunc(s.digits));
         return {
           result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },
           defs: defsOf(numeric.display, EngineHost.factsOf(numeric, Math.trunc(s.digits))),
         };
       }
     }
+    // G38: a float in a non-number prints with the precision it was computed at (P). pcasans keeps the P result; the
+    // text prints its floats at the setting (floatsShown), never by running the input again (that redid decisions).
+    const atN = hasFloat(text) ? floatsShown(this.giac, text, digitsSet, "pasfl") : null;
+    const slot = atN === null ? "pcasans" : "pasfl";
+    if (atN !== null) text = atN;
     // This build leaves x*x unevaluated (no top-level "regroup" autosimplify), and latex() then draws x·x as "xx".
-    if (text.includes("*")) text = regrouped(this.giac, "pcasans", text);
+    if (text.includes("*")) text = regrouped(this.giac, slot, text);
     // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate.
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4),
     // as the definitions log records it.
-    const unchecked = hasFloat(text) || unverified;
+    const unchecked = hasFloat(text) || undecided || unverified;
     const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked;
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
-    const why = pair ? { differ: true } : symbolicWhy(warn, testSides(exactInput));
-    const tex = this.giac.eval("latex(pcasans)");
+    const symWhy = symbolicWhy(warn, testSides(exactInput));
+    // G38: "decided at limited precision"; the value was computed, not compared, so `once` is not said.
+    const why = pair ? { differ: true } : undecided ? { ...(symWhy && !symWhy.once ? symWhy : {}), decided: true } : symWhy;
+    const tex = this.giac.eval(`latex(${slot})`);
+    if (atN !== null) this.giac.eval("purge(pasfl)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
       result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(warn ? { warn } : {}), ...(why ? { why } : {}) },
