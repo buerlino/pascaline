@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R64 (route R, decisions "S14"): the angle mode lives in the text our parser emits. Every command the user types that
 // takes an angle gets its angle times `pasdeg`, and every one that returns an angle gets its result over `pasdeg`;
-// the engine host sets `pasdeg` (1 in every mode until G46 runs Giac in radians, then π/180 in DEG). The emitter
-// (emit.ts) and the rewrite of Giac text below (the library import, G46's migration) share these tables.
+// the engine host sets `pasdeg` (Giac always runs in radians, G46: π/180 in DEG, 1 in RAD). The emitter (emit.ts) and
+// the rewrite of Giac text below (the library import, G46's migration) share these tables.
 // No imports: the engine side may use this file too.
 
 /** The engine name that holds the degree factor. Reserved: the parser and the library refuse it as a user name. */
@@ -17,11 +17,38 @@ export const ANGLE_IN: Readonly<Record<string, readonly [index: number, arity: n
   sin: [0, 1], cos: [0, 1], tan: [0, 1], sec: [0, 1], csc: [0, 1], cot: [0, 1],
   rotation: [1, 0], // rotation(center, angle, object)
   similarity: [2, 0], // similarity(center, ratio, angle, object)
-  rectangular_coordinates: [1, 2], // rectangular_coordinates(r, θ); the one-list form is left alone (R64 report)
+  rectangular_coordinates: [1, 2], // rectangular_coordinates(r, θ); the one-list form: RECT, below (R64f1)
 };
 
-/** Commands whose result is an angle (or a list of angles). */
-export const ANGLE_OUT: ReadonlySet<string> = new Set(["asin", "acos", "atan", "asec", "acsc", "acot", "arg", "atan2", "angle", "instphase"]);
+/** Commands whose result is an angle (or a list of angles); instfreq is an angle per sample or per unit of time. */
+export const ANGLE_OUT: ReadonlySet<string> = new Set([
+  "asin", "acos", "atan", "asec", "acsc", "acot", "arg", "atan2", "angle", "instphase", "instfreq",
+]);
+
+/** A typed degree (° and DMS, R10): u° is u*DEGREE, u in the mode's unit (30 in DEG, π/6 in RAD; Giac in radians). */
+export const DEGREE = `pi/180/${PASDEG}`;
+
+/**
+ * R64f1: polar_coordinates answers [r, θ] for one point and a list of those for a list of points, θ in radians.
+ * `POLAR_OUT(polar_coordinates(…))` gives every θ over pasdeg; the shape is read when it is evaluated, since the
+ * argument's text (a complex number, a name) does not show it.
+ */
+export const POLAR = "polar_coordinates";
+export const POLAR_OUT = `((p_)->when(type(p_[0])==vector,map(p_,q_->[q_[0],q_[1]/${PASDEG}]),[p_[0],p_[1]/${PASDEG}]))`;
+
+/**
+ * R64f1: rectangular_coordinates of one list, [r, θ] or a list of those: every θ times pasdeg. A literal point
+ * `[r,t]` takes the factor in its text (`rectArg`); any other argument goes through `RECT_IN(…)`, which reads its
+ * shape when evaluated and passes a non-list (a point object) unchanged.
+ */
+export const RECT = "rectangular_coordinates";
+export const RECT_IN =
+  `((p_)->when(type(p_)!=vector,p_,when(type(p_[0])==vector,map(p_,q_->[q_[0],${PASDEG}*q_[1]]),[p_[0],${PASDEG}*p_[1]])))`;
+
+/** The one-list rectangular_coordinates argument with the factor; `point` holds the two elements of a literal [r,t]. */
+export function rectArg(arg: string, point?: readonly [r: string, t: string]): string {
+  return point ? `[${point[0]},${point[1]}]` : `${RECT_IN}(${arg})`;
+}
 
 /** The text of an angle argument with the factor: an atom as `pasdeg*x`, anything else in brackets. */
 export function withFactor(arg: string, atom: boolean): string {
@@ -80,17 +107,49 @@ function splitArgs(s: string): string[] {
 }
 
 const CALL = /([A-Za-z_][A-Za-z0-9_]*)\s*\(/y;
-/** The ° template as R10 emitted it: in degrees in DEG once Giac runs in radians, it must be over pasdeg (emit.ts). */
+/** The ° factor as R10 wrote it (R64 put `/pasdeg` after it); Giac now always runs in radians, so it is pi/180. */
 const OLD_DEGREES = "(pi/180)^angle_radian()";
+
+/** A literal point `[r,t]` (two elements, neither a list): its elements, else undefined. */
+function literalPoint(arg: string): [string, string] | undefined {
+  if (!arg.startsWith("[") || closing(arg, 0) !== arg.length - 1) return undefined;
+  const parts = splitArgs(arg.slice(1, -1));
+  if (parts.length !== 2 || parts.some((p) => p.trim().startsWith("["))) return undefined;
+  return [parts[0]!, parts[1]!];
+}
+
+/** R64's form `(pi/180)^angle_radian()/pasdeg` as `pi/180/pasdeg` after a `*`, else `(pi/180)/pasdeg`. */
+function newDegrees(text: string): string {
+  const old = `${OLD_DEGREES}/${PASDEG}`;
+  let out = "";
+  let i = 0;
+  while (i < text.length) {
+    const c = text[i]!;
+    if (c === '"') {
+      const q = text.indexOf('"', i + 1);
+      const j = q < 0 ? text.length : q + 1;
+      out += text.slice(i, j);
+      i = j;
+    } else if (text.startsWith(old, i) && !/[A-Za-z0-9_]/.test(text[i + old.length] ?? "")) {
+      out += out.endsWith("*") ? DEGREE : `(pi/180)/${PASDEG}`;
+      i += old.length;
+    } else {
+      out += c;
+      i++;
+    }
+  }
+  return out;
+}
 
 /**
  * The emitter's angle rule on Giac text that was written without it (a library file, a stored input from before R64):
- * every command in ANGLE_IN gets its angle times pasdeg, every one in ANGLE_OUT returns `(<call>/pasdeg)`, and R10's
- * ° factor `(pi/180)^angle_radian()` gets `/pasdeg` after it. Text that already holds `pasdeg` is returned unchanged,
- * so the rewrite never applies twice. Strings are left alone.
+ * every command in ANGLE_IN gets its angle times pasdeg, every one in ANGLE_OUT returns `(<call>/pasdeg)`,
+ * polar_coordinates and the one-list rectangular_coordinates get POLAR_OUT and RECT_IN, and R10's ° factor
+ * `(pi/180)^angle_radian()` becomes DEGREE (bracketed unless it follows a `*`). Text that already holds `pasdeg` gets
+ * only R64's ° form brought to DEGREE, so the rewrite never applies twice. Strings are left alone.
  */
 export function rewriteAngles(text: string): string {
-  if (new RegExp(`(?<![A-Za-z0-9_])${PASDEG}(?![A-Za-z0-9_])`).test(text)) return text;
+  if (new RegExp(`(?<![A-Za-z0-9_])${PASDEG}(?![A-Za-z0-9_])`).test(text)) return newDegrees(text);
   return rewrite(text);
 }
 
@@ -107,8 +166,8 @@ function rewrite(text: string): string {
       continue;
     }
     if (text.startsWith(OLD_DEGREES, i)) {
-      out += `${OLD_DEGREES}/${PASDEG}`;
       i += OLD_DEGREES.length;
+      out += out.endsWith("*") && text[i] !== "^" ? DEGREE : `(${DEGREE})`;
       continue;
     }
     if (/[A-Za-z_]/.test(c)) {
@@ -118,13 +177,17 @@ function rewrite(text: string): string {
       const open = m ? i + m[0].length - 1 : -1;
       const close = m ? closing(text, open) : -1;
       const inSpec = name !== undefined ? ANGLE_IN[name] : undefined;
-      if (name !== undefined && close > 0 && (inSpec || ANGLE_OUT.has(name))) {
+      if (name !== undefined && close > 0 && (inSpec || ANGLE_OUT.has(name) || name === POLAR)) {
         const args = splitArgs(text.slice(open + 1, close)).map(rewrite);
         if (inSpec && args.length > inSpec[0] && (inSpec[1] === 0 || args.length === inSpec[1])) {
           args[inSpec[0]] = withFactor(args[inSpec[0]]!.trim(), false);
+        } else if (name === RECT && args.length === 1) {
+          const a = args[0]!.trim();
+          const p = literalPoint(a);
+          args[0] = rectArg(a, p && [p[0], withFactor(p[1].trim(), false)]);
         }
         const call = `${text.slice(i, open + 1)}${args.join(",")})`;
-        out += ANGLE_OUT.has(name) ? `(${call}/${PASDEG})` : call;
+        out += ANGLE_OUT.has(name) ? `(${call}/${PASDEG})` : name === POLAR ? `${POLAR_OUT}(${call})` : call;
         i = close + 1;
         continue;
       }
@@ -150,7 +213,8 @@ export function hasAngleFactor(text: string): boolean {
 
 /**
  * What is drawn never shows the factor (R64; S14 R14 §5): Giac text as the user typed it, `sin(x)` for
- * `sin(pasdeg*x)`, `sin(x+1)` for `sin(pasdeg*(x+1))`, `asin(x)` for `asin(x)/pasdeg`. Only for display: a chip, Ans
+ * `sin(pasdeg*x)`, `sin(x+1)` for `sin(pasdeg*(x+1))`, `asin(x)` for `asin(x)/pasdeg`, `polar_coordinates(z)` for
+ * `POLAR_OUT(polar_coordinates(z))`, `L` for `RECT_IN(L)`. Only for display: a chip, Ans
  * and a stored function keep the factor, so they follow the mode when used again.
  */
 export function dropAngleFactor(text: string): string {
@@ -168,6 +232,13 @@ export function dropAngleFactor(text: string): string {
       const j = q < 0 ? text.length : q + 1;
       out += text.slice(i, j);
       i = j;
+      continue;
+    }
+    const wrapper = text.startsWith(`${POLAR_OUT}(`, i) ? POLAR_OUT : text.startsWith(`${RECT_IN}(`, i) ? RECT_IN : "";
+    const end = wrapper ? closing(text, i + wrapper.length) : -1;
+    if (end > 0) {
+      out += dropAngleFactor(text.slice(i + wrapper.length + 1, end));
+      i = end + 1;
       continue;
     }
     if (bound(i) && text.startsWith(mul, i)) {
