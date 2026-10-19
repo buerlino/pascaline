@@ -1,0 +1,230 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# G55: everyday engineering inputs with NO expected values. app/scripts/behaviour-diff.ts runs them through two trees and
+# prints what differs (a tool for audits, not a gate). One input per line; an `# area` comment says what the block covers.
+# Inputs are what the user types (Giac's spelling); the tool gives them the parser's angle rule, as golden.ts does.
+# Add inputs freely; none may need a device, a long run (> 2 s) or a particular order (order is for `sequences`).
+cases:
+  # --- rounding and formats
+  - { input: "round(12.345,2)" }
+  - { input: "round(pi,3)" }
+  - { input: "round(-0.125,2)" }
+  - { input: "round(2.5)" }
+  - { input: "round(-2.5)" }
+  - { input: "round(1234.5678,-2)" }
+  - { input: "trunc(2.567,2)" }
+  - { input: "trunc(-2.567,1)" }
+  - { input: "floor(2.7)" }
+  - { input: "floor(-2.7)" }
+  - { input: "ceil(2.1)" }
+  - { input: "ceil(-2.1)" }
+  - { input: "frac(3.75)" }
+  - { input: "fPart(-3.75)" }
+  - { input: "iPart(-3.75)" }
+  - { input: "sign(-4)" }
+  - { input: "abs(-7.25)" }
+  - { input: "0.1+0.2" }
+  - { input: "1/3" }
+  - { input: "2/3+1/6" }
+  - { input: "1e-5" }
+  - { input: "123456789012345" }
+  - { input: "1.5e20" }
+  - { input: "0.000123456789012345" }
+  - { input: "evalf(1/7,20)" }
+  - { input: "10^15+0.5" }
+  - { input: "sqrt(2)*sqrt(2)" }
+  - { input: "100*1.15" }
+  # --- statistics
+  - { input: "mean([1,2,3,4])" }
+  - { input: "mean([2.5,3.5,10])" }
+  - { input: "median([1,2,3,4])" }
+  - { input: "median([5,1,9])" }
+  - { input: "stddev([2,4,4,4,5,5,7,9])" }
+  - { input: "stddevp([2,4,4,4,5,5,7,9])" }
+  - { input: "variance([2,4,4,4,5,5,7,9])" }
+  - { input: "quartile1([1,2,3,4,5,6])" }
+  - { input: "quartile3([1,2,3,4,5,6])" }
+  - { input: "max([3,9,2])" }
+  - { input: "min([3,9,2])" }
+  - { input: "sum([1,2,3,4])" }
+  - { input: "sum([0.1,0.2,0.3])" }
+  - { input: "comb(10,3)" }
+  - { input: "perm(10,3)" }
+  - { input: "factorial(10)" }
+  - { input: "factorial(20)" }
+  - { input: "factorial(0.5)" }
+  - { input: "sort([3,1,2])" }
+  - { input: "cumSum([1,2,3,4])" }
+  # --- distributions
+  - { input: "normald_cdf(1.96)" }
+  - { input: "normald_cdf(-1)" }
+  - { input: "normald_cdf(0.5,1,2)" }
+  - { input: "normald_icdf(0.975)" }
+  - { input: "normald_icdf(0.025)" }
+  - { input: "normald_icdf(0.5)" }
+  - { input: "normald_icdf(0.9,10,2)" }
+  - { input: "binomial(10,0.5,3)" }
+  - { input: "binomial_cdf(10,0.5,3)" }
+  - { input: "binomial_icdf(10,0.5,0.9)" }
+  - { input: "poisson(3,2)" }
+  - { input: "poisson_cdf(3,2)" }
+  - { input: "exponential_cdf(2,1.5)" }
+  - { input: "UTPN(1.96)" }
+  - { input: "student_cdf(5,2.1)" }
+  - { input: "chisquare_cdf(3,4)" }
+  - { input: "fisher_cdf(4,6,2)" }
+  # --- trigonometry in both angle modes
+  - { input: "sin(30)" }
+  - { input: "cos(60)" }
+  - { input: "tan(45)" }
+  - { input: "sin(pi/6)" }
+  - { input: "cos(pi/3)" }
+  - { input: "tan(pi/4)" }
+  - { input: "asin(0.5)" }
+  - { input: "acos(0.5)" }
+  - { input: "atan(1)" }
+  - { input: "atan2(1,1)" }
+  - { input: "sinh(1)" }
+  - { input: "cosh(1)" }
+  - { input: "tanh(0.5)" }
+  - { input: "asinh(1)" }
+  - { input: "acosh(2)" }
+  - { input: "atanh(0.5)" }
+  - { input: "sin(90)^2+cos(90)^2" }
+  - { input: "sec(30)" }
+  - { input: "csc(30)" }
+  - { input: "cot(45)" }
+  - { input: "sin(1e10)" }
+  - { input: "sin(10^50)" }
+  - { input: "cos(0)" }
+  - { input: "asin(2)" }
+  - { input: "acos(-2)" }
+  # --- complex numbers
+  - { input: "(1+2*i)*(3-i)" }
+  - { input: "(1+i)^2" }
+  - { input: "(1+i)/(1-i)" }
+  - { input: "abs(3+4*i)" }
+  - { input: "arg(1+i)" }
+  - { input: "conj(2-3*i)" }
+  - { input: "re(2+3*i)" }
+  - { input: "im(2+3*i)" }
+  - { input: "sqrt(-4)" }
+  - { input: "exp(i*pi)" }
+  - { input: "ln(-1)" }
+  - { input: "sin(1+i)" }
+  - { input: "(2+i)^3" }
+  - { input: "1/i" }
+  - { input: "tanh(i)" }
+  - { input: "asin(2)" }
+  - { input: "atan(2*i)" }
+  - { input: "sqrt(3+4*i)" }
+  # --- powers, roots, logs
+  - { input: "2^10" }
+  - { input: "2^0.5" }
+  - { input: "2^-3" }
+  - { input: "(-8)^(1/3)" }
+  - { input: "8^(1/3)" }
+  - { input: "sqrt(2)" }
+  - { input: "sqrt(1/4)" }
+  - { input: "exp(1)" }
+  - { input: "exp(-0.5)" }
+  - { input: "ln(10)" }
+  - { input: "log10(1000)" }
+  - { input: "log(8)/log(2)" }
+  - { input: "10^-3" }
+  - { input: "3^100" }
+  - { input: "100!" }
+  - { input: "7 mod 3" }
+  - { input: "irem(17,5)" }
+  - { input: "gcd(12,18)" }
+  - { input: "lcm(4,6)" }
+  - { input: "isprime(97)" }
+  # --- physics formulas without units
+  - { input: "0.5*9.81*2^2" }
+  - { input: "sqrt(2*9.81*10)" }
+  - { input: "9.81*sin(30)" }
+  - { input: "m*a" }
+  - { input: "6.674e-11*5.97e24/(6.371e6)^2" }
+  - { input: "3e8^2*9.1e-31" }
+  - { input: "0.5*1e-3*(2*pi*50)^2" }
+  - { input: "1/(2*pi*sqrt(1e-3*1e-6))" }
+  - { input: "2*pi*sqrt(1/9.81)" }
+  - { input: "8.314*300/101325" }
+  - { input: "1.38e-23*300" }
+  - { input: "12*0.5" }
+  - { input: "230/sqrt(3)" }
+  - { input: "sqrt(3)*400" }
+  - { input: "1/(1/100+1/220)" }
+  - { input: "100*exp(-t/0.02)" }
+  - { input: "5*(1-exp(-1))" }
+  - { input: "0.2*sin(2*pi*50*0.005)" }
+  - { input: "9.81*sin(0.3)" }
+  - { input: "(5.5-4.2)/4.2*100" }
+  # --- calculus and algebra
+  - { input: "int(x^2,x,0,1)" }
+  - { input: "int(sin(x),x,0,pi)" }
+  - { input: "int(exp(-x^2),x,0,1)" }
+  - { input: "diff(x^3,x)" }
+  - { input: "diff(sin(x)*x,x)" }
+  - { input: "limit(sin(x)/x,x,0)" }
+  - { input: "sum(1/k^2,k,1,10)" }
+  - { input: "sum(k,k,1,100)" }
+  - { input: "factor(x^4-1)" }
+  - { input: "expand((x+1)^5)" }
+  - { input: "solve(x^2-2=0,x)" }
+  - { input: "simplify(sin(x)^2+cos(x)^2)" }
+  - { input: "taylor(exp(x),x,0,4)" }
+  - { input: "det([[1,2],[3,4]])" }
+  - { input: "inv([[1,2],[3,4]])" }
+  - { input: "[[1,2],[3,4]]*[[0,1],[1,0]]" }
+  - { input: "cross([1,2,3],[4,5,6])" }
+  - { input: "dot([1,2,3],[4,5,6])" }
+  # --- stored names and functions
+  - { input: "a:=2.5" }
+  - { input: "a*2" }
+  - { input: "f(x):=x^2+1" }
+  - { input: "f(3)" }
+  - { input: "f(a)" }
+  - { input: "g(x):=sin(x)" }
+  - { input: "g(30)" }
+  - { input: "g(pi/6)" }
+  - { input: "b:=sqrt(2)" }
+  - { input: "b^2" }
+  - { input: "a+b" }
+  - { input: "h(x,y):=x*y+a" }
+  - { input: "h(2,3)" }
+  - { input: "t:=floor(2.5)" }
+  - { input: "t+1" }
+  # --- lists and run-once assignments
+  - { input: "[1,2,3]" }
+  - { input: "[1,2,3]*2" }
+  - { input: "[1,2,3]+[4,5,6]" }
+  - { input: "[q1,q2]:=[1/3,0.5]" }
+  - { input: "q1+q2" }
+  - { input: "q5,q6:=7,8" }
+  - { input: "q5*q6" }
+  - { input: "3=>pE" }
+  - { input: "pE+1" }
+  - { input: "L:=[1,2,3]" }
+  - { input: "L[1]" }
+  - { input: "L[2]:=9" }
+  - { input: "seq(k^2,k,1,5)" }
+  - { input: "apply(x->x^2,[1,2,3])" }
+  - { input: "size([1,2,3])" }
+  - { input: "evalf([1/3,x])" }
+  - { input: "sto(5,pS)" }
+  - { input: "pS+1" }
+
+# Short runs in order on one engine: each step is shown in Home, in RAD and DEG, at 12 and 30 digits.
+sequences:
+  # store a number, use it, redefine it
+  - { id: "store-use", steps: ["a:=2.5", "a*2", "a:=a+1", "a", "sqrt(a)"] }
+  # a function that reads a stored value, then the value changes
+  - { id: "fn-reads-name", steps: ["k:=3", "f(x):=x^2+k", "f(2)", "k:=4", "f(2)", "f(0.5)"] }
+  # an angle function stored and used
+  - { id: "fn-angle", steps: ["g(x):=sin(x)+cos(x)", "g(30)", "g(pi/6)", "g(1.5)"] }
+  # list and run-once assignments
+  - { id: "list-once", steps: ["[u1,u2]:=[1/3,0.5]", "u1", "u2", "u1+u2", "L:=[1,2,3]", "L[2]:=9", "L", "sum(L)"] }
+  # a large value stored, then used
+  - { id: "big-value", steps: ["w:=floor(sin(10^100)*10^12)", "w", "w+1", "w:=2^100", "w/3"] }
+  # an exact value stored, then a rounding of it
+  - { id: "round-stored", steps: ["r:=12.345", "round(r,2)", "r:=pi", "round(r,3)", "trunc(r,2)"] }
