@@ -8,6 +8,7 @@ import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRe
 export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest } from "../engine/types.ts";
 export type { UserName } from "../engine/defs.ts";
 import type { UserName } from "../engine/defs.ts";
+import type { Refusal } from "../engine/converge.ts";
 import type { Quantity, UnitError, UnitRequest } from "../units/types.ts";
 export type { Quantity, UnitError, UnitRequest, UnitSlot, UnitToken } from "../units/types.ts";
 export { CAS_SOFT_BUDGET_MS, IDENT } from "../engine/types.ts";
@@ -29,7 +30,7 @@ export interface CalcSettings {
   format: NumberFormat;
 }
 
-export type CalcError = "syntax" | "timeout" | "engine";
+export type CalcError = "syntax" | "timeout" | "engine" | Refusal;
 
 export interface HomeOutcome {
   ok: boolean;

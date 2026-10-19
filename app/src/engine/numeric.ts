@@ -62,7 +62,7 @@ export function hasFloat(text: string): boolean {
 // --- evalf(e,n), approx(e,n): the precision an input asks for (decisions M4-6) ---------------------------------------
 
 /** Index of the bracket that closes the one at `open` (`(`, `[` or `{`), skipping strings; -1 when there is none. */
-function closing(s: string, open: number): number {
+export function closing(s: string, open: number): number {
   let depth = 0;
   for (let k = open; k < s.length; k++) {
     const ch = s.charAt(k);
@@ -80,7 +80,7 @@ function closing(s: string, open: number): number {
 }
 
 /** The top-level comma-separated parts of an argument list. */
-function topLevelArgs(s: string): string[] {
+export function topLevelArgs(s: string): string[] {
   const out: string[] = [];
   let depth = 0;
   let start = 0;

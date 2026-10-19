@@ -4,6 +4,7 @@ import type { HomeResult, HomeSettings } from "./homeEval.ts";
 import type { DefEntry } from "./defs.ts";
 import type { ConstEntry, ConstTable } from "./constUnc.ts";
 import type { PrecisionWarn, PrecisionWhy } from "./format.ts";
+import type { Refusal } from "./converge.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
 export type { ConstEntry, ConstTable, HomeResult, HomeSettings };
@@ -42,7 +43,7 @@ export interface CasResult {
   /** Giac stopped itself at hardTimeoutS. */
   timedOut: boolean;
   /** Why !ok, for the UI's own (translated) message: Giac's text stays in `text`. */
-  error?: "syntax" | "timeout" | "engine";
+  error?: "syntax" | "timeout" | "engine" | Refusal;
   engineMs: number;
   /** The stored variables (definitions log, kind var) whose names appear in the input, with the preview they hold and
    *  the view they were stored in (F28: a value stored in Home changes a CAS result). Absent when there is none; a

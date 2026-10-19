@@ -34,7 +34,7 @@ await engine.cancel();                       // pending calls reject with Engine
   (`warn: "unaudited"` unless every function is in `AUDITED_FUNCTIONS`), or at P and P+20 when all are audited. Float
   fallback: W = max(workDigits, digits+10) and W+20. CAS: typed decimals exact (P9); a float result gets `numeric`.
   `full` is the exact text (≤ 2 kB) or every confirmed digit up to P. `grep warn`/`markOf` for the details.
-- **Errors.** `error: "syntax" | "timeout" | "engine"` for the UI's own translated message; Giac's text is in `display`/`text`.
+- **Errors.** `error: "syntax" | "timeout" | "engine"` for the UI's own translated message; Giac's text is in `display`/`text`. G39 adds the refusals `"integralDiverges" | "seriesDiverges" | "noLimit"` (`converge.ts`: a number for a divergent integral or series, or a limit that does not exist); their text is `error.<code>` in `i18n/enEngine.ts`.
 - **Replay.** Definitions (`:=`, `=>`, `purge`, `assume`) are logged in the form that ran and replayed into a new worker.
   Not replayed: `Ans`, random values are re-drawn.
 

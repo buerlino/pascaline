@@ -153,3 +153,13 @@ cases:
   - { id: "prec-g38-cas-floor-cos-pi/7", kind: "cas", input: "floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)", mark: "⚠", source: "derived", note: "mark-only: the floor of exactly 1 (cos(pi/7)-cos(2*pi/7)+cos(3*pi/7) = 1/2); Giac floors it to 0 at 40 and 60 digits and does not prove the tie, so ⚠ (G38 fix round 2)" }
   - { id: "prec-g38-cas-floor-sin1e100", kind: "cas", input: "floor(sin(10^100)*10^12)", mark: "⚠", source: "derived", note: "mark-only: oracle (mpmath at 300 digits) -372376123662; Giac's P + 20 (981607708060) and P + 40 (-372376123662) disagree, so ⚠ without a count" }
   - { id: "prec-g38-30-floor-sin1e100", input: "floor(sin(10^100)*10^12)", settings: { digits: 30 }, mark: "⚠", source: "derived", note: "mark-only: at 30 digits P = 40 too; P + 20 and P + 40 disagree (oracle -372376123662)" }
+  # G39: the CAS view refuses the same divergent integrals, series and limits as Home, and shows Giac's pair with ⚠
+  - { id: "g39-cas-int-1/x", kind: "cas", input: "int(1/x,x,-1,1)", expect: "error: integralDiverges", source: "derived", note: "Giac gave 0, the principal value" }
+  - { id: "g39-cas-int-tan", kind: "cas", input: "int(tan(x),x,0,pi)", expect: "error: integralDiverges", source: "derived" }
+  - { id: "g39-cas-sum-cos", kind: "cas", input: "sum(cos(k),k,1,inf)", expect: "error: seriesDiverges", source: "derived", note: "Giac gave the Abel sum -1/2" }
+  - { id: "g39-cas-sum-exp-ik", kind: "cas", input: "sum(exp(i*k),k,0,inf)", expect: "error: seriesDiverges", source: "derived" }
+  - { id: "g39-cas-sum-undef", kind: "cas", input: "sum((-1)^k,k,0,inf)", expect: "error: seriesDiverges", source: "derived", note: "Giac's own undef" }
+  - { id: "g39-cas-limit-bounded", kind: "cas", input: "limit(sin(x),x,inf)", expect: "error: noLimit", source: "derived", note: "Giac printed bounded_function(2)" }
+  - { id: "g39-cas-pair", kind: "cas", input: "int(abs(x-sin(10^50)),x,-1,1)", mark: "⚠", source: "derived", note: "mark-only: Giac's [exact, numeric] pair is shown as Giac's text with ⚠ (the two disagree: 1.62358264688 against 1.35506364264)" }
+  - { id: "g39-cas-keep-basel", kind: "cas", input: "sum(1/k^2,k,1,inf)", expect: "1/6*pi^2", source: "derived", note: "Giac's text for pi^2/6" }
+  - { id: "g39-cas-keep-1/x^2", kind: "cas", input: "int(1/x^2,x,-1,1)", expect: "+infinity", source: "derived" }

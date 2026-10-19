@@ -331,6 +331,8 @@ export interface PrecisionWhy {
   /** G38: a sign, comparison, floor or branch inside the exact evaluation gave different results at two precisions,
    *  or sits on its cut (a tie Giac decides by rounding error): "decided at limited precision". */
   decided?: boolean;
+  /** G39: Giac returned its [exact, numeric] pair for a definite integral, and the two answers differ ("why.pairDiffers"). */
+  differ?: boolean;
 }
 
 /** The engine's facts about one result (a subset of HomeResult, so the formatter does not depend on the engine). */
