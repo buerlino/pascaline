@@ -278,7 +278,7 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Tmpl (row 3, col 2) [r4c3] | the 6 × 3 template palette, picked by arrows, Enter or a tap (built, R10; r8 rule M1) | P8, P11 |
 | Shift + Tmpl | the unit view (unit slots) | P11; reference: Units |
 | The letters A–Z, `#`, `:`, `;` (Alpha layer, flick down) | **stay**: Find's keyboard (3.7), names, CAS symbols, hex digits A–F (5.4); not the unit slots (P14) | decisions.md "The letters stay" |
-| Alpha key [r8c1] | one-shot Alpha with lock flicks; a merge with Shift is decided on the tap counter (P7 point 4); if merged, its cell becomes a user key | P7 |
+| Alpha key [r8c1] | one-shot Alpha with lock flicks; stays its own key (P7 point 4, owner 2026-10-19; reopens if Alpha taps fall near zero) | P7 |
 | a b/c (row 3, col 4) [r4c5] | toggles the last result's form: decimal ↔ fraction, polar ↔ rectangular (built, R10) | G2 item 29, P12 |
 | Exponent key (row 6, col 0) [r7c1] | types the mark `ᴇ` (`\emark`, one token); Shift = Sto ▶ (built, R14) | P12 |
 | Rows 0–2 (Home, CAS, Apps, Mode, Symb, Plot, Num, Menu, Help, the arrows) | layout D (built, R15b); **R15c replaces it** (decisions.md "R15c") | P12, S2, R15b, R15c |

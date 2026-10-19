@@ -20,12 +20,12 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **At milestone 5:** time ten tasks by hand, E-notation against units (the rule 2 speed gate).
-1. **Open proposals:** decisions.md "Needs the user" (G33, R56, A4a points 3 and 4, R34, R43, M4-2, R7, P7 point 4). Decided on 2026-10-19 as recommended: route R, S12, G57 and the pipeline's three changes. The night of 2026-10-19 and what it left: [research/night-shift-check-2026-10-19.md](research/night-shift-check-2026-10-19.md).
-2. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–68 on 2026-10-19; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 before S14, 66–68 before G42 and G40; each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
-3. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md); whether the Math menu's slots should be yours to arrange (feedback, decide around 2026-10-20). The checks on the phone are listed below.
+1. **Open proposals:** decisions.md "Needs the user" (M4-2, at milestone 5). Decided on 2026-10-19: route R, S12, G57 and the pipeline's three changes (as recommended); G33, R56, R43, R34, R7, A4a points 3 and 4, P7 point 4 and the fixed Math menu (decisions.md "Owner answers of 2026-10-19"). The night of 2026-10-19 and what it left: [research/night-shift-check-2026-10-19.md](research/night-shift-check-2026-10-19.md).
+2. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–69 on 2026-10-19; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 before S14, 66–68 before G42 and G40; each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
+3. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md). The checks on the phone are listed below.
 4. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`.
 5. **Outside testers** (deep-dive review): two 30-minute rounds with three engineers, after R4b and after R24c; S8 writes the protocol and the task sheet, you run the rounds.
-6. **Delete the stale branch** (C7, decided 2026-10-18; agents never use `-D`): `git branch -D p1/ron-eve-gestures`. The four merged worktrees and branches and the Vite server of 2026-10-17 went on 2026-10-19.
+6. **Rebuild the default engine** before the next night (`engine/giac/build-wasm.sh`, then the golden gate): `engine/giac/_out/gsl` is the 2026-10-12 build with a 2 GB ceiling, and G24's 1 GB cap (2026-10-17) is only in `_out/gsl-memcap`. Every gate, the night and the measure APKs use `_out/gsl` (verified 2026-10-19). The K2 flick classifier of the deleted `p1/ron-eve-gestures` is commit `96fcf50`; `git tag keep/eve-gestures 96fcf50` keeps it past git's pruning.
 7. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 8. **Later, not now:** the email to Bernard Parisse (draft in `../outreach/`, with P10's question: may the English entries of `aide_cas` ship in a GPL-3.0-or-later app? Needed before any public release), the name and trademark checks, CI (C3) and the F-Droid recipe (C4); the upstream reports below.
 
@@ -70,7 +70,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 
 **Milestone 4: Find and trust.** Steps 1–7 and 9–11 are done (EN0, the regression cases, EN3, chips and Ans, the qalc build, the Find index and query test, copy and share, definitions that survive a relaunch, the size test).
 - **8. EN1, Find's UI:** **R4a** (Find on Math) and **R4b** (Vars, Memory, the user keys from Find). Gate: task 5 within budget, the query test, the size test, no index request before idle.
-- **12. Device:** **A4b**, Find per key on the Tab One (§8.3). A4a's misses are in decisions.md "A4a".
+- **12. Device:** **A4b**, Find per key on the Tab One (§8.3). A4a's misses: decisions.md "A4a point 1" and "Owner answers of 2026-10-19 (feel)" (4).
 - **EN4, open:** copying one element of a list or matrix.
 - **Gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left (all fixed except #2's value polish, G44); the size test; the Tab One bars of §8.3.
 
@@ -86,7 +86,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - **Help = context help:** the Find preview of the function before the cursor (§5.1).
 
 ### Without a package yet
-- **R56 for Solve and the Function app** (decisions.md "Needs the user"); **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
+- **R56 for Solve** (decided 2026-10-19; the Function app waits for your word on plots of user functions) and **R43** (DMS takes a lone □ bare, decided 2026-10-19), both small ron packages not yet written; **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
 - **G9. Number formats against the G2** (item 15: six formats, digits as decimal places, a thousands separator): decide in the settings and help pass.
 - **K1:** a pending one-shot Shift is used up by the first drag step; a tap keeps it. **K5:** the gestures in the help texts (release R4).
 - **A15's tests** (Opus pass 20, annabell): `scripts/pipeline.test.sh` checks the planned size and docs checks and the gorge raise against fixed dry-run echo lines, not `want_checks` and `resolve_audit_model`, so a regression there passes; the dry run prints no raise for `--model opus`.

@@ -13,14 +13,14 @@
 2. **R4a** (Find on Math), **R4b** (Vars, Memory, the user keys), **R53** (results mode on the View key), **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40**.
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b).
 4. annabell by day: **A16** (Enter p95, again after G53), **A9** and **A11** as soon as a device is connected; **A18** after G55 and A17; **A12** (G29 is merged); **A4b** after R4b; **A7 → A8** on the owner's go.
-5. After S6: **R59** (also after R4b; G33 is merged), **R38a → R38b** (the owner's yes to S6's proposal first).
+5. After S6: **R59** (also after R4b, G54 and A12), **R38a → R38b** (the owner's yes to S6's proposal first).
 
 **At night** (section 0c), in the queue's order: S15 and the night check's packages, route R (R64 → G46), the checks' unit and gate packages, the sandra docs packages, then S12's removal packages (G45, R66–R68).
 
 **Why this order:**
 - R15c goes first among the feel packages: it changes keys the hand is learning (docs/03 rule 8). R4b sets the user keys, R53 uses the View key, R41 labels the keys, so all wait for it.
 - R50b before R15c1 (owner, 2026-10-19): the R3 packages are written on its colour roles. R55 before R49: half a day of render code the owner then reads every day; R57 after R49 (its page pattern).
-- The night check of 2026-10-19 ([research/night-shift-check-2026-10-19.md](../research/night-shift-check-2026-10-19.md)) goes first at night: silent marks (G48, G51) before Find makes `unapply` typable; S15 gives the passes room.
+- The night check of 2026-10-19 ([research/night-shift-check-2026-10-19.md](../research/night-shift-check-2026-10-19.md)) goes first at night: silent marks (G48, G51) before Find makes `unapply` typable; S15 gives the passes room; G52 first, so no engine package raises the calls per Enter unseen (night check 2.3).
 - Trust features after the code they build on: R33 and R37 after Find; R40 after G26 and R12b's tokens.
 - The start chunk is 53.28 of 60 kB gzip (owner, 2026-10-19, set by A15; docs/04 8.3): every UI package reports its delta.
 
@@ -77,7 +77,7 @@
 | [R24b](packages/R24b.md) | The unit pad drawn over the keys | ron, Sonnet | day | now | ~1 d |
 | [R24c](packages/R24c.md) | The unit view entry: slots, Enter, evaluation | ron, **Opus** | day | R24b, G35, G40, G41 | ~1 d |
 | [R24d](packages/R24d.md) | Find in a slot and the user cells | ron, Sonnet | day | R24c and R4b | ~0.5 d |
-| [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b and S6 | ~0.5 d |
+| [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, S6, G54, A12 | ~0.5 d |
 | [R38a](packages/R38a.md) | The backup: export everything | ron, Sonnet | day | S6 and the owner's yes | ~0.5 d |
 | [R38b](packages/R38b.md) | The backup: restore from a file | ron, **Opus** | day | R38a | ~0.75 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the owner's phone connected | ~0.5 d |
@@ -110,19 +110,19 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
 | 30 | S15 decisions.md gets room again | sandra, Opus | `p1/sandra-decisionsroom` | — | 30 min |
-| 31 | G48 no `=` through a run-once assignment | gorge, Opus | `p1/gorge-m4-runonce` | — | 1.5 h |
-| 32 | G47 golden cases for the displays G50 cut | gorge, Sonnet | `p1/gorge-m4-shortprint` | — | 30 min |
-| 33 | G51 a CAS result takes stored facts' mark | gorge, Opus | `p1/gorge-m4-casfacts` | G48 | 1 h |
-| 34 | R64 the angle mode lives in our parser (route R) | ron, Opus | `p1/ron-m4-pasdeg` | — | 1.5 h |
-| 35 | G46 Giac always in radians; pasexp goes | gorge, Opus | `p1/gorge-m4-radians` | R64 | 2.5 h |
-| 36 | G56 complex functions inside a stored function | gorge, Opus | `p1/gorge-m4-complexbody` | G51 | 1 h |
-| 37 | G57 a decision Giac cannot make is refused | gorge, Opus | `p1/gorge-m4-undecided` | G48 | 1 h |
-| 38 | G37 °C inside a compound unit is an interval | gorge, Opus | `p1/gorge-m5-degcompound` | G35 | 1 h |
-| 39 | G40 angles in the unit view | gorge, Opus | `p1/gorge-m5-angles` | A15 | 1.5 h |
-| 40 | G43 invariants across settings in the gate | gorge, Sonnet | `p1/gorge-m4-invariants` | G34 | 1 h |
-| 41 | G44 inverse distribution functions polished | gorge, Opus | `p1/gorge-m4-icdfpolish` | A15 | 1 h |
-| 42 | G41 σ beyond first order at a stationary point | gorge, Opus | `p1/gorge-m5-sigma2` | G35 | 1 h |
-| 43 | G52 Giac calls per Enter in the gate | gorge, Sonnet | `p1/gorge-m4-callcount` | — | 1 h |
+| 31 | G52 Giac calls per Enter in the gate | gorge, Sonnet | `p1/gorge-m4-callcount` | — | 1 h |
+| 32 | G48 no `=` through a run-once assignment | gorge, Opus | `p1/gorge-m4-runonce` | — | 1.5 h |
+| 33 | G47 golden cases for the displays G50 cut | gorge, Sonnet | `p1/gorge-m4-shortprint` | — | 30 min |
+| 34 | G51 a CAS result takes stored facts' mark | gorge, Opus | `p1/gorge-m4-casfacts` | G48 | 1 h |
+| 35 | R64 the angle mode lives in our parser (route R) | ron, Opus | `p1/ron-m4-pasdeg` | — | 1.5 h |
+| 36 | G46 Giac always in radians; pasexp goes | gorge, Opus | `p1/gorge-m4-radians` | R64 | 2.5 h |
+| 37 | G56 complex functions inside a stored function | gorge, Opus | `p1/gorge-m4-complexbody` | G51 | 1 h |
+| 38 | G57 a decision Giac cannot make is refused | gorge, Opus | `p1/gorge-m4-undecided` | G48 | 1 h |
+| 39 | G37 °C inside a compound unit is an interval | gorge, Opus | `p1/gorge-m5-degcompound` | G35 | 1 h |
+| 40 | G40 angles in the unit view | gorge, Opus | `p1/gorge-m5-angles` | A15 | 1.5 h |
+| 41 | G43 invariants across settings in the gate | gorge, Sonnet | `p1/gorge-m4-invariants` | G34 | 1 h |
+| 42 | G44 inverse distribution functions polished | gorge, Opus | `p1/gorge-m4-icdfpolish` | A15 | 1 h |
+| 43 | G41 σ beyond first order at a stationary point | gorge, Opus | `p1/gorge-m5-sigma2` | G35 | 1 h |
 | 44 | G53 the second decision at most 1.3× again | gorge, Opus | `p1/gorge-m4-decidecost` | G52 | 1.5 h |
 | 45 | G54 our function names in Giac text | gorge, Sonnet | `p1/gorge-m4-ournames` | — | 1 h |
 | 46 | G55 a behaviour diff between two trees | gorge, Sonnet | `p1/gorge-m4-behaviourdiff` | — | 1.5 h |
