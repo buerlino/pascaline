@@ -32,6 +32,7 @@ import {
   restsOnDecision,
   notBuiltin,
   callsStateful,
+  complexSafe,
   floatsShown,
   shapeOf,
   valuePrecision,
@@ -665,7 +666,10 @@ export function homeEval(
     if (!facts) return symbolic();
     store();
     const b = build(facts, shape, digits, "exact", true);
-    const r = fromBuilt(b, "exact", true, exactOut, b.decimal, whyOf(facts, once ? null : exactBody));
+    // G50: Giac's printed float is not kept when its value was computed again through our definitions (forValue):
+    // evalf(tanh(i)) printed coth(i).
+    const giacText = once || s.angle !== "rad" || complexSafe(exactBody) === exactBody ? exactOut : undefined;
+    const r = fromBuilt(b, "exact", true, giacText, b.decimal, whyOf(facts, once ? null : exactBody));
     return asked !== null ? { ...r, digits: asked } : r;
   }
 

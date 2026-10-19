@@ -287,3 +287,59 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(host.cas("evalf([1/3,x])", defaultCasSettings).result.text).toBe("[0.333333333333,x]");
   });
 });
+
+describe("G50: complex arguments of the audited functions (pure)", () => {
+  it("complexSafe replaces the calls Giac gets wrong on complex arguments, outside strings, and nothing else", async () => {
+    const { complexSafe } = await import("./numeric.ts");
+    expect(complexSafe("tanh(i)+asin(2*i)-acos (1+i)*atan(x)+acosh(z)")).toBe("pastanh(i)+pasasin(2*i)-pasacos (1+i)*pasatan(x)+pasacosh(z)");
+    expect(complexSafe("arcsin(i)+arccos(i)+arctan(i)")).toBe("pasasin(i)+pasacos(i)+pasatan(i)");
+    // atan2, asinh, atanh, a name ending in the function's name, a string, and our own names stay.
+    expect(complexSafe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)')).toBe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)');
+  });
+  it("shortDigits: a part printed as a double where MPFR digits were asked confirms one digit fewer (source: derived)", async () => {
+    const { shortDigits } = await import("./numeric.ts");
+    // Giac's complex acos(1+i) at 40 digits printed its real part as a 14-digit double.
+    expect(shortDigits("0.90455689430238", 40)).toBe(13);
+    expect(shortDigits("-0.27852369714161e-30", 60)).toBe(13);
+    // MPFR prints every digit asked for, trailing zeros included.
+    expect(shortDigits("0.5000000000000000000000000000000000000000", 40)).toBeUndefined();
+    // A rational, a zero and a double asked for as a double are not short.
+    expect(shortDigits("1/2", 40)).toBeUndefined();
+    expect(shortDigits("0.0", 40)).toBeUndefined();
+    expect(shortDigits("0.90455689430238", 14)).toBeUndefined();
+  });
+});
+
+describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functions (real Giac)", () => {
+  let host: EngineHost;
+  beforeAll(async () => {
+    host = new EngineHost((await loadNodeGiac()).giac);
+  });
+  const home = (input: string, digits = 12) => host.home(input, { ...defaultHomeSettings, digits } satisfies HomeSettings).result;
+
+  it("tanh(i) is i*tan(1) = 1.55740772465*i, not Giac's coth(i) (source: oracle, mpmath tanh(1j))", () => {
+    const r = home("tanh(i)");
+    expect(r.display).toBe("1.55740772465*i");
+    expect(markOf(r, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
+  });
+  it("a typed evalf(tanh(i)) keeps no exact text: Giac printed coth(i) (source: oracle, mpmath tanh(1j))", () => {
+    const r = home("evalf(tanh(i))");
+    expect(r.display).toBe("1.55740772465*i");
+    expect(r.exact).toBeUndefined();
+  });
+  it("inside a larger expression: 2*tanh(i)+atan(2*i) (source: oracle, mpmath 2*tanh(1j)+atan(2j))", () => {
+    expect(home("2*tanh(i)+atan(2*i)").display).toBe("1.57079632679+3.66412159364*i");
+  });
+  it("acosh(1/10+5*i) at 30 digits: Giac's symbolic re() of its ln form runs out of time, the value's evalf is read (source: oracle, mpmath acosh)", () => {
+    const r = home("acosh(1/10+5*i)", 30);
+    expect(r.display).toBe("2.31262688170937054957327206807+1.55118708206189191252710439312*i");
+    expect(r.warn).toBeUndefined();
+  });
+  it("our definitions load on first use, not at engine start (start-up budget)", async () => {
+    const { giac } = await loadNodeGiac();
+    const fresh = new EngineHost(giac);
+    expect(giac.eval("pastanh")).toBe("pastanh");
+    fresh.home("tanh(i)", defaultHomeSettings);
+    expect(giac.eval("pastanh")).not.toBe("pastanh");
+  });
+});
