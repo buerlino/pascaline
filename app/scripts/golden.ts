@@ -7,7 +7,9 @@
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
-//              median ≤ 500 ms; a mark-only case (no `expect`) checks the mark and that an answer came back
+//              median ≤ 500 ms; a mark-only case (no `expect`) checks the mark and that an answer came back. A case with
+//              `steps` (G34) is a sequence on its own engine: each step's input (or latex, with \ans as the session
+//              builds it from the step before) runs in its own angle mode, and the last step is checked
 //   precision  tests/golden/precision.yaml (docs/04 2.3 regression list, 20/30-digit cases): Home and CAS at the case's
 //              digits, value and mark; `before:` inputs run first on the same engine. A case with `status: pending` is
 //              known to fail until its fix: it never fails the gate, and is listed as still pending or now passing. A
@@ -38,7 +40,7 @@ import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { hasFloat } from "../src/engine/numeric.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
-import type { ChipTable } from "../src/input/chips.ts";
+import { ANS_KEY, type ChipTable } from "../src/input/chips.ts";
 import { DEFAULT_USER_FUNCTIONS, latexToGiac, latexToGiacInfo, type UnitsInfo } from "../src/input/latex-to-giac.ts";
 import { SerializeError } from "../src/input/errors.ts";
 import { buildJob } from "../src/units/build.ts";
@@ -49,6 +51,12 @@ import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
 
 type Expect = string | Expect[];
+
+interface Step {
+  input?: string;
+  latex?: string;
+  angle?: "rad" | "deg";
+}
 
 interface Case {
   id: string;
@@ -84,6 +92,8 @@ interface Case {
   before?: string[];
   /** precision.yaml, kind cas: inputs run first in Home on the same engine (a value stored there, G20). */
   beforeHome?: string[];
+  /** home.yaml (G34): a sequence of lines, each in its own angle mode; the last one is checked against expect and mark. */
+  steps?: Step[];
   /** precision.yaml, kind cas: the stored names the CAS result must list as used (G20); [] means none. */
   uses?: string[];
   /** units.yaml: the end slot; the exact text, the dimension key (null: an exact 0), the SI value's exact text with
@@ -153,6 +163,10 @@ async function stageHome(): Promise<void> {
   for (let r = 0; r < ROUNDS; r++) {
     const host = new EngineHost(await freshGiac());
     for (const c of cs) {
+      if (c.steps) {
+        runs.get(c.id)!.push(await runSteps(c.steps));
+        continue;
+      }
       const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
       // A case written as `latex` goes through our parser with Home's options (R39: realOddRoots), its `before` too
       const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
@@ -168,10 +182,10 @@ async function stageHome(): Promise<void> {
   for (const c of cs) {
     const rs = runs.get(c.id)!;
     const shown = rs[0]!.display;
-    const got = rs.map((x) => markText(markOf(x, { format: "STD", digits: 12 })));
+    const got = rs.map((x) => markText(seqMark(x)));
     const markOk = !c.mark || got.every((m) => m?.startsWith(c.mark!));
     if (c.mark) marks++;
-    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, c.input!)) : rs.every((x) => x.display === c.expect);
+    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, c.input ?? "")) : rs.every((x) => x.display === c.expect);
     const ok = answered && markOk;
     const med = median(rs.map((x) => x.totalMs));
     maxMed = Math.max(maxMed, med);
@@ -188,6 +202,37 @@ async function stageHome(): Promise<void> {
     pass === cs.length && slow === 0,
     `${pass}/${cs.length} match with their mark (${assumed} assumed, ${marks} marks checked), ${slow} over ${HOME_LIMIT_MS} ms, max median ${maxMed.toFixed(1)} ms, rounds ${ROUNDS}`,
   );
+}
+
+/**
+ * G34: a sequence of Home lines on a fresh engine, each in its own angle mode. A `latex` step goes through our parser
+ * with Home's options and an Ans chip built from the step before, by the session's rule (session.svelte.ts `finish`:
+ * the exact text when there is one and it fits, else `full`; exact only when nothing was approximate or cut). An
+ * inexact chip makes an "=" a "≈" (displayMode.ts markFor, decisions M4-4); `inexactInput` carries that to markOf.
+ */
+async function runSteps(steps: Step[]): Promise<HomeResult & { inexactInput?: boolean }> {
+  const host = new EngineHost(await freshGiac());
+  let last: (HomeResult & { inexactInput?: boolean }) | undefined;
+  let chips: ChipTable = {};
+  for (const st of steps) {
+    const s: HomeSettings = { ...defaultHomeSettings, angle: st.angle ?? "rad" };
+    const p = st.latex !== undefined ? latexToGiacInfo(st.latex, { realOddRoots: true, chips }) : { giac: st.input!, inexact: false };
+    const r = host.home(p.giac, s).result;
+    last = p.inexact ? { ...r, inexactInput: true } : r;
+    const full = r.exact !== undefined && r.exact.length <= 2048 ? r.exact : r.full || r.exact;
+    if (r.ok && full && full.length <= 2048) {
+      const cut = (r.exact !== undefined && full !== r.exact) || r.value?.re.sticky === true || r.value?.im.sticky === true;
+      const exact = !r.approximate && !cut && (r.exact !== undefined || r.exactRational || !/\.|\d[eE][+-]?\d/.test(full));
+      chips = { [ANS_KEY]: { value: full, exact } };
+    }
+  }
+  return last!;
+}
+
+/** The mark of a sequence's last step: markOf, and never "=" after an inexact chip (displayMode.ts markFor). */
+function seqMark(r: HomeResult & { inexactInput?: boolean }): MarkInfo | null {
+  const m = markOf(r, { format: "STD", digits: 12 });
+  return m?.mark === "=" && r.inexactInput ? { mark: "≈" } : m;
 }
 
 /** A mark as text: "=", "≈", "⚠", or "⚠11" (eleven confirmed digits). */
