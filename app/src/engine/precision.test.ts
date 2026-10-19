@@ -351,6 +351,40 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     // A real value in DEG stays audited.
     expect(host.home("evalf(tanh(1))", { ...defaultHomeSettings, angle: "deg" }).result.warn).toBeUndefined();
   });
+  it("G50f1: CAS w:=tanh(i) stores Giac's exact tanh(i); evalf(w) reads it through our definitions (source: oracle, mpmath tanh(1j))", async () => {
+    const own = new EngineHost((await loadNodeGiac()).giac);
+    own.cas("w:=tanh(i)", defaultCasSettings);
+    const r = own.cas("evalf(w)", defaultCasSettings).result;
+    // Showed -0.642092615934*i (Giac's coth(i)) with 38 confirmed digits and no warning.
+    expect(r.text).toBe("1.55740772465*i");
+    expect(markOf(r.numeric!, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
+  });
+  it("G50f1: Home approx of a CAS-stored name, alone and in a sum (source: oracle, mpmath tanh(1j))", async () => {
+    const own = new EngineHost((await loadNodeGiac()).giac);
+    own.cas("w:=tanh(i)", defaultCasSettings);
+    const r = own.home("approx(w)", defaultHomeSettings).result;
+    expect(r.display).toBe("1.55740772465*i");
+    expect(markOf(r, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
+    // Giac's own printed float (coth) is not kept as the copied text.
+    expect(r.exact).toBeUndefined();
+    expect(own.home("evalf(w)+1", defaultHomeSettings).result.display).toBe("1+1.55740772465*i");
+  });
+  it("G50f1: a stored function whose body calls tanh is read through our definitions too, still unaudited (source: oracle, mpmath tanh(1j))", async () => {
+    const own = new EngineHost((await loadNodeGiac()).giac);
+    own.cas("f(x):=tanh(x)", defaultCasSettings);
+    const r = own.cas("evalf(f(i))", defaultCasSettings).result;
+    // Showed ⚠ -0.6*i: the one digit shown was Giac's coth(i).
+    expect(r.text).toBe("1.55740772465*i");
+    expect(r.numeric?.warn).toBe("unaudited");
+  });
+  it("G50f1: in DEG a name holding tanh(i) is not audited and names tanh (source: derived)", async () => {
+    const own = new EngineHost((await loadNodeGiac()).giac);
+    const deg = { ...defaultCasSettings, angle: "deg" as const };
+    own.cas("w:=tanh(i)", deg);
+    const r = own.cas("evalf(w)", deg).result;
+    expect(r.numeric?.warn).toBe("unaudited");
+    expect(r.numeric?.why).toEqual({ unaudited: ["tanh"] });
+  });
   it("our definitions load on first use, not at engine start (start-up budget)", async () => {
     const { giac } = await loadNodeGiac();
     const fresh = new EngineHost(giac);
