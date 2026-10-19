@@ -23,7 +23,8 @@
 #
 # Lifecycle: bundle → worker (own worktree from phase-1) → deterministic checks, at most two fix
 # rounds fed only the failing output → sofia audits `git diff -U5 phase-1...<branch>` plus the
-# acceptance criteria → `git merge --no-ff --signoff` into phase-1 → worktree and branch removed.
+# acceptance criteria → `git merge --no-ff --signoff <the audited sha>` into phase-1 (NOT MERGED when the branch is
+# not at that sha) → worktree and branch removed.
 # Progress goes to .tasks/<n>-<id>/run.log and one line per step to .coord/log.md; stdout gets
 # only the final RESULT line, on every exit (die too: "RESULT #n ID: NOT MERGED (why)", or
 # "RESULT -: NOT STARTED (why)" before a run number exists). Exit 0 merged, 1 not merged, 2 not started
@@ -33,6 +34,8 @@
 # exported to the worker, the fix rounds and the checks, so parallel runs never share a dev server.
 # Locks: host-cpu around the checks, integ (600 s) around the merge into phase-1.
 set -euo pipefail
+# shellcheck source=scripts/pipeline-lib.sh
+source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/pipeline-lib.sh"
 
 main="$(cd "$(git rev-parse --git-common-dir)/.." && pwd)"
 cd "$main"
@@ -101,8 +104,9 @@ if [[ "${1:-}" == "pass" ]]; then
   if [[ $rc -ne 0 ]] && grep -qiE 'usage limit|rate limit|429|overloaded' "$run/stderr.log" "$run/reply.md"; then
     log "Opus pass $n: LIMIT (claude exit $rc)"; echo "RESULT pass $n: LIMIT"; exit 75
   fi
-  { echo "- $(date +%H:%M) Opus pass $n reply:"; sed 's/^/    /' "$run/reply.md"; } >> "$coord/log.md"
-  cat "$run/reply.md"; echo "RESULT pass $n: done (exit $rc)"; exit 0
+  # the reply from its OPUS PASS line on (A17); reply.md keeps it whole
+  { echo "- $(date +%H:%M) Opus pass $n reply:"; from_opus_pass "$run/reply.md" | sed 's/^/    /'; } >> "$coord/log.md"
+  from_opus_pass "$run/reply.md"; echo "RESULT pass $n: done (exit $rc)"; exit 0
 fi
 
 # ---------- subcommand: report ----------
@@ -181,7 +185,8 @@ bundle="$run/spec.md"
 # Acceptance criteria for the auditor: the task text and the per-branch definition of done.
 { echo "## Acceptance criteria"; cat "$spec_file"; echo; awk '/^## 8\. Definition of done/{p=1;next} /^## 8a/{p=0} p' "$brief" | head -n 3; } > "$run/criteria.md"
 
-worker_prompt="You are $agent in pipeline run $n for package $id. The task bundle is on stdin (also at $bundle). You run in your own worktree on branch $branch from phase-1; never switch branches or commit elsewhere. Read docs/shifts/rules.md sections 3 and 5 for the standing rules, then work only from the bundle: read further files when the task needs them, by section. Keep your context small. Run typecheck and the unit tests you touch while you work; the pipeline runs the full checks afterwards. Tick your backlog line in docs/backlog.md and put open decisions under \"Needs the user\" in docs/decisions.md on this branch; change no other shared file. Commit small with git commit -s and the Co-Authored-By trailer of your model; end with the report commit from the bundle. Reply in at most five lines: last commit, done or not done, open questions."
+no_wait="Never start a background loop that waits on a process: pgrep -f matches the loop's own command line, so it never ends (run 58 held its session open 39 minutes); run every check in the foreground with a timeout."
+worker_prompt="You are $agent in pipeline run $n for package $id. The task bundle is on stdin (also at $bundle). You run in your own worktree on branch $branch from phase-1; never switch branches or commit elsewhere. Read docs/shifts/rules.md sections 3 and 5 for the standing rules, then work only from the bundle: read further files when the task needs them, by section. Keep your context small. Run typecheck and the unit tests you touch while you work; the pipeline runs the full checks afterwards. Tick your backlog line in docs/backlog.md and put open decisions under \"Needs the user\" in docs/decisions.md on this branch; change no other shared file. Commit small with git commit -s and the Co-Authored-By trailer of your model; end with the report commit from the bundle. $no_wait Reply in at most five lines: last commit, done or not done, open questions."
 
 wt="$main/.claude/worktrees/pl-$(printf '%03d' "$n")-$slug"
 if [[ $dry -eq 1 ]]; then
@@ -201,8 +206,9 @@ if [[ $dry -eq 1 ]]; then
     echo "cat $bundle | claude -p --agent $agent --model $model --effort $effort ${claude_common[*]} ${worker_tools[*]} -n pl-$n-$agent \"<worker prompt>\""
   fi
   echo "checks in $wt/app: typecheck; npm run index && FIND_INDEX=required npm test; e2e when app/ changed; golden when engine or parser changed"
-  echo "git diff -U5 phase-1...$branch | claude -p --agent sofia --model ${audit_model/auto/<auto: opus for --model opus or app/src/input/, app/src/engine/, engine/, spec/keyboard.yaml; else sonnet>} ${audit_tools[*]} \"AUDIT ...\""
-  echo "git -C $integ merge --no-ff --signoff $branch; git worktree remove $wt; git branch -d $branch   (under: tools/devlock.sh acquire integ pipeline-$n 600)"
+  echo "git -C $wt diff -U5 phase-1...<audited sha> | claude -p --agent sofia --model ${audit_model/auto/<auto: opus for --model opus or app/src/input/, app/src/engine/, engine/, spec/keyboard.yaml; else sonnet>} ${audit_tools[*]} \"AUDIT ...\""
+  echo "audited=\$(git -C $wt rev-parse HEAD) at each audit; the merge takes that sha, or stops with NOT MERGED (the branch is not the audited HEAD) when $branch is not at it"
+  echo "git -C $integ merge --no-ff --signoff <audited sha>; git worktree remove $wt; git branch -d $branch   (under: tools/devlock.sh acquire integ pipeline-$n 600)"
   echo "environment for the worker, the fix rounds and the checks: PASCALINE_QALC_DL_DIR, PASCALINE_DL_DIR, PW_PORT=$PW_PORT"
   rm -rf "$run"; echo "RESULT #$n $id: DRY RUN (nothing started)"; exit 0
 fi
@@ -349,15 +355,17 @@ if [[ -z "$(git -C "$wt" log --oneline "phase-1..HEAD")" ]]; then
 fi
 
 # Fix rounds: the checks and the audit share at most two rounds.
-verdict=""
+verdict=""; audited=""
 while :; do
   if ! run_checks "$rounds"; then
     log "pipeline #$n $id: checks failed (round $rounds): $(head -n 1 "$run/fail-$rounds.txt")"
     reason="the checks failed"; feedback="$run/fail-$rounds.txt"
   else
     log "pipeline #$n $id: checks passed (round $rounds)"
-    git -C "$wt" diff -U5 "phase-1...HEAD" > "$run/audit-$rounds.diff"
-    { cat "$run/criteria.md"; echo; echo "## Diff (git diff -U5 phase-1...$branch, $(wc -l < "$run/audit-$rounds.diff") lines)"; cat "$run/audit-$rounds.diff"; } > "$run/audit-$rounds.in"
+    # the commit this audit reads; only that sha is merged (A17)
+    audited="$(git -C "$wt" rev-parse HEAD)"; runlog "audit $rounds reads $audited"
+    git -C "$wt" diff -U5 "phase-1...$audited" > "$run/audit-$rounds.diff"
+    { cat "$run/criteria.md"; echo; echo "## Diff (git diff -U5 phase-1...$audited, the HEAD of $branch, $(wc -l < "$run/audit-$rounds.diff") lines)"; cat "$run/audit-$rounds.diff"; } > "$run/audit-$rounds.in"
     audit_prompt="AUDIT pipeline run $n, package $id, branch $branch. On stdin: the acceptance criteria, then the diff against phase-1 (the deterministic checks passed). Judge the diff against the criteria and docs/rules-core.md only; read other files only to check a claim in the diff. Look for: a criterion not met; expected values without a trustworthy source; a new parser token without its round-trip case; a fixed bug without a regression test; files outside the task's scope; keys that move; missing SPDX lines; a dependency missing from THIRD_PARTY.md. Reply with the single word APPROVED on the first line, or FIX on the first line followed by at most five findings, each with file:line, the concrete failure and the fix. Nothing else."
     run_agent "audit-$n-$rounds" "$run/audit-$rounds.log" sofia "$(resolve_audit_model)" medium "$run/audit-$rounds.in" "$audit_prompt" "${audit_tools[@]}"
     verdict="$(grep -m1 -oE '^(APPROVED|FIX)' "$run/audit-$rounds.log" || true)"
@@ -371,21 +379,31 @@ while :; do
   fi
   rounds=$((rounds + 1))
   { echo "# Fix round $rounds for pipeline run $n ($id): $reason"; echo; cat "$feedback"; echo; echo "# The task bundle"; cat "$bundle"; } > "$run/fix-$rounds.in"
-  fix_prompt="You are $agent on branch $branch in your own worktree, fix round $rounds of 2 for package $id: $reason. On stdin: the failing output or the audit findings, then the task bundle. Fix the cause (not the test), add the regression test where one is missing, run the failing check yourself, commit with git commit -s and your model's trailer, and amend nothing. Reply in at most five lines: last commit, what you fixed, anything you could not fix."
+  fix_prompt="You are $agent on branch $branch in your own worktree, fix round $rounds of 2 for package $id: $reason. On stdin: the failing output or the audit findings, then the task bundle. Fix the cause (not the test), add the regression test where one is missing, run the failing check yourself, commit with git commit -s and your model's trailer, and amend nothing. $no_wait Reply in at most five lines: last commit, what you fixed, anything you could not fix."
   run_agent "fix-$n-$rounds" "$run/fix-$rounds.log" "$agent" "$model" "$effort" "$run/fix-$rounds.in" "$fix_prompt" "${worker_tools[@]}"
   log "pipeline #$n $id: fix round $rounds done, $(git -C "$wt" log -1 --format=%h)"
 done
 
 # Merge into phase-1 in its worktree; on a conflict keep the branch.
-if [[ $merge -eq 0 ]]; then
-  echo "RESULT #$n $id: APPROVED, not merged (--no-merge); merge: git -C $integ merge --no-ff --signoff $branch"; exit 0
+# Only the audited commit is merged, and only when the branch points at it (A17).
+if ! why="$(audited_head_check "$wt" "$branch" "$audited")"; then
+  log "pipeline #$n $id: NOT MERGED (the branch is not the audited HEAD): $why; branch $branch kept"
+  echo "RESULT #$n $id: NOT MERGED (the branch is not the audited HEAD; $why; worktree $wt kept)"; exit 1
 fi
-tools/devlock.sh acquire integ "pipeline-$n" 600 >/dev/null || die "integ lock busy; approved branch $branch kept at $(git -C "$wt" log -1 --format=%h)"
-if git -C "$integ" merge --no-ff --signoff -m "Merge $branch: $id (pipeline run $n)" "$branch" > "$run/merge.log" 2>&1; then
+if [[ $merge -eq 0 ]]; then
+  echo "RESULT #$n $id: APPROVED, not merged (--no-merge); merge: git -C $integ merge --no-ff --signoff $audited"; exit 0
+fi
+tools/devlock.sh acquire integ "pipeline-$n" 600 >/dev/null || die "integ lock busy; approved branch $branch kept at ${audited:0:9}"
+if ! why="$(audited_head_check "$wt" "$branch" "$audited")"; then  # again under the lock
+  tools/devlock.sh release integ "pipeline-$n" >/dev/null || true
+  log "pipeline #$n $id: NOT MERGED (the branch is not the audited HEAD): $why; branch $branch kept"
+  echo "RESULT #$n $id: NOT MERGED (the branch is not the audited HEAD; $why; worktree $wt kept)"; exit 1
+fi
+if git -C "$integ" merge --no-ff --signoff -m "Merge $branch: $id (pipeline run $n)" "$audited" > "$run/merge.log" 2>&1; then
   mc="$(git -C "$integ" rev-parse --short HEAD)"
   git worktree remove --force "$wt" >/dev/null 2>&1 || true
   git -C "$integ" branch -d "$branch" >/dev/null 2>&1 || true
-  log "pipeline #$n $id: MERGED $mc"
+  log "pipeline #$n $id: MERGED $mc (audited ${audited:0:9})"
   result="RESULT #$n $id: MERGED $mc"
   rc=0
 else

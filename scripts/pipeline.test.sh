@@ -56,5 +56,44 @@ out="$(cd "$r" && node tools/docs-check.mjs 2>&1)"; rc=$?
 git -C "$r" add note.md
 (cd "$r" && node tools/docs-check.mjs >/dev/null 2>&1) && fail "docs-check: a tracked broken link passes"
 
+# A17 point 1: only the audited commit is merged; a branch left behind a detached HEAD stops the merge
+# shellcheck source=scripts/pipeline-lib.sh
+source "$here/pipeline-lib.sh"
+g="$tmp/heads"; mkdir -p "$g"; git -C "$g" init -q -b main
+gc() { git -C "$1" -c user.name=t -c user.email=t@t commit -q --allow-empty -m "$2"; }
+gc "$g" base; git -C "$g" branch p1/x; git -C "$g" worktree add -q "$tmp/heads-wt" p1/x
+gc "$tmp/heads-wt" on-branch; tip="$(git -C "$tmp/heads-wt" rev-parse HEAD)"
+audited_head_check "$tmp/heads-wt" p1/x "$tip" >/dev/null || fail "audited_head_check: the branch at the audited sha is refused"
+git -C "$tmp/heads-wt" checkout -q --detach; gc "$tmp/heads-wt" detached
+det="$(git -C "$tmp/heads-wt" rev-parse HEAD)"
+out="$(audited_head_check "$tmp/heads-wt" p1/x "$det")" && fail "audited_head_check: a detached HEAD the branch is not at passes"
+grep -q "p1/x is at ${tip:0:9}, the audit read ${det:0:9}" <<<"$out" || fail "audited_head_check: no reason for the detached HEAD: $out"
+audited_head_check "$tmp/heads-wt" p1/x "" >/dev/null && fail "audited_head_check: an empty audited sha passes"
+grep -q 'merge --no-ff --signoff -m "[^"]*" "$audited"' "$here/pipeline.sh" || fail "pipeline.sh does not merge the audited sha"
+grep -q 'NOT MERGED (the branch is not the audited HEAD' "$here/pipeline.sh" || fail "pipeline.sh has no NOT MERGED (the branch is not the audited HEAD)"
+grep -q 'audited="$(git -C "$wt" rev-parse HEAD)"' "$here/pipeline.sh" || fail "pipeline.sh does not record the audited HEAD"
+# point 3: a pass reply is logged from its OPUS PASS line on
+printf 'Here is my reply.\n\nOPUS PASS 9\nVERDICT ok\n' > "$tmp/reply.md"
+[[ "$(from_opus_pass "$tmp/reply.md" | head -n1)" == "OPUS PASS 9" ]] || fail "from_opus_pass keeps the line before OPUS PASS"
+printf 'no form\nat all\n' > "$tmp/reply2.md"
+[[ "$(from_opus_pass "$tmp/reply2.md")" == $'no form\nat all' ]] || fail "from_opus_pass drops a reply without OPUS PASS"
+grep -q 'from_opus_pass "$run/reply.md" | sed' "$here/pipeline.sh" || fail "pipeline.sh logs the pass reply whole"
+# point 4: no stray waits in the worker prompt
+grep -q 'no_wait="Never start a background loop that waits on a process: pgrep -f' "$here/pipeline.sh" && grep -q '$no_wait Reply in at most five lines: last commit, done' "$here/pipeline.sh" || fail "the worker prompt does not forbid a background wait loop"
+# point 2: night.sh closes with the last pass and the report, at --until (across midnight) and at the cap - 2
+out="$(PASCALINE_NIGHT_NOW=23:00 "$here/night.sh" --dry-run --until 01:00 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] || fail "night.sh --dry-run --until: exit $rc: $out"
+grep -q '^01:00 closing (--until 01:00 reached)' <<<"$out" || fail "night.sh --until 01:00 from 23:00 does not close at 01:00: $out"
+grep -q '^01:00 henri #5 (closing 1 of 2): scripts/pipeline.sh pass ' <<<"$out" || fail "night.sh --until: no last Opus pass as closing step 1: $out"
+grep -q '^01:30 night.sh #6 (closing 2 of 2): scripts/pipeline.sh report$' <<<"$out" || fail "night.sh --until: no report as closing step 2: $out"
+[[ "$(grep -c 'henri #' <<<"$out")" -eq 5 ]] || fail "night.sh --until: henri asked a queue step after the deadline: $out"
+grep -q 'header: ## [0-9-]* night, 23:00$' <<<"$out" || fail "night.sh: the header has no start time: $out"
+out="$(PASCALINE_NIGHT_NOW=22:00 "$here/night.sh" --dry-run --max-steps 5 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] || fail "night.sh --dry-run --max-steps 5: exit $rc: $out"
+grep -q 'henri #3: ' <<<"$out" && grep -q 'henri #4 (closing 1 of 2): scripts/pipeline.sh pass ' <<<"$out" && grep -q 'night.sh #5 (closing 2 of 2): scripts/pipeline.sh report$' <<<"$out" || fail "night.sh --max-steps 5: no closing at step 4 and 5: $out"
+grep -q '#6' <<<"$out" && fail "night.sh --max-steps 5 runs a sixth step: $out"
+grep -q 'audit-model sonnet' "$here/night.sh" && fail "night.sh still names --audit-model sonnet (brief 0c says auto)"
+grep -q '"^## $(date +%F) night"' "$here/night.sh" && fail "night.sh writes the header only once per date"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"

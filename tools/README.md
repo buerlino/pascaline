@@ -22,7 +22,9 @@ All of them use `$ANDROID_SERIAL` (default: the Tab One). Smaller helpers (usage
 
 Night-shift coordinators (docs/shifts/rules.md section 4a):
 ```bash
-scripts/night.sh            # the night shift: a fresh Read-only henri per decision, scripts/pipeline.sh per package (docs/shifts/rules.md section 4)
+scripts/night.sh --until 07:30   # the night shift: a fresh Read-only henri per decision, scripts/pipeline.sh per package (docs/shifts/rules.md section 4)
+                                 # from --until (or at --max-steps minus 2) only the last Opus pass and the report run, then it stops
+scripts/night.sh --until 07:30 --dry-run   # prints each step's kind on a simulated clock and the two closing steps; starts nothing
 # check after editing .claude/agents/* or the script: the call must come back FOREGROUND
 CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 timeout 600 claude --model sonnet --effort low --permission-mode auto -p 'Test only. Call the Agent tool once with subagent_type "ron", model "haiku", run_in_background false, prompt "Test only: reply with the single word PONG." Then reply with one line: FOREGROUND or BACKGROUND (how the call came back), then what the agent returned.'
 ```
