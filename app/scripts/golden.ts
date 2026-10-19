@@ -3,7 +3,7 @@
 // build that ships (CLAUDE.md). Exit 0 only if every stage passes.
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
-//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, units, parser
+//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, calls, units, parser
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
@@ -24,6 +24,8 @@
 //              equal `expect` rounded to those n digits
 //   function   Function analysis and Num table (analysis.ts), same rules
 //   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed
+//   calls      G52: Giac calls per input (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
+//              the five largest; fails when a total is over 10 % above tests/golden/calls-baseline.yaml
 //   units      tests/golden/units.yaml: the unit view (G16) on the Find index's factors (app/src/find/_gen, `npm run index`):
 //              value, mark, exact text and dimension, or the refusal's message, the same in every round; desktop p95 of
 //              an evaluation ≤ 5 ms (docs/04 8.3), warm, each case at its fastest of five passes
@@ -55,6 +57,7 @@ import { unitErrorMessage } from "../src/units/messages.ts";
 import { isUnitError, type Quantity, type UnitError } from "../src/units/types.ts";
 import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
+import { callsStage, type CallsBaseline } from "./calls-budget.ts";
 
 type Expect = string | Expect[];
 
@@ -485,6 +488,49 @@ async function stageBench(): Promise<void> {
   report("bench", pass === checked, `${pass}/${checked} expect match, ${cs.length} run, errors: ${errors.length ? errors.join(", ") : "none"}`);
 }
 
+/** G52: Giac calls per input (one Enter at 12 digits) for the bench inputs (CAS) and home.yaml's single inputs (Home),
+ *  against tests/golden/calls-baseline.yaml. A total more than 10 % over its baseline fails. */
+async function stageCalls(): Promise<void> {
+  const base = parse(readFileSync(`${root}tests/golden/calls-baseline.yaml`, "utf8")) as CallsBaseline;
+  const counted = async (): Promise<{ host: EngineHost; calls: () => number }> => {
+    const giac = await freshGiac();
+    let n = 0;
+    const evalOnce = giac.eval.bind(giac);
+    giac.eval = (text: string) => {
+      n++;
+      return evalOnce(text);
+    };
+    return { host: new EngineHost(giac), calls: () => n };
+  };
+  const bench = new Map<string, number>();
+  {
+    const { host, calls } = await counted();
+    for (const c of cases("bench.yaml")) {
+      const n0 = calls();
+      host.cas(c.input!, defaultCasSettings);
+      bench.set(c.id, calls() - n0);
+    }
+  }
+  const home = new Map<string, number>();
+  {
+    const { host, calls } = await counted();
+    const s: HomeSettings = { ...defaultHomeSettings, digits: 12 };
+    for (const c of cases("home.yaml")) {
+      if (c.steps) continue;
+      const hs: HomeSettings = { ...s, angle: c.settings?.angle ?? "rad" };
+      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
+      for (const b of c.before ?? []) host.home(giacOf(b), hs);
+      const n0 = calls();
+      host.home(giacOf(c.latex ?? c.input!), hs);
+      home.set(c.id, calls() - n0);
+    }
+  }
+  for (const [set, counts, baseline] of [["bench", bench, base.bench], ["home", home, base.home]] as const) {
+    const r = callsStage(set, counts, baseline);
+    report(`calls-${set}`, r.ok, r.line);
+  }
+}
+
 const UNIT_P95_MS = 5;
 
 /** What a units case got, as text to compare and print. */
@@ -651,6 +697,7 @@ if (want("precision")) await stagePrecision();
 if (want("solve")) await stageCases("solve", "solve.yaml", solveCase);
 if (want("function")) await stageCases("function", "function.yaml", (host, _g, c) => functionCase(host, c));
 if (want("bench")) await stageBench();
+if (want("calls")) await stageCalls();
 if (want("units")) await stageUnits();
 if (want("parser")) await stageParser();
 const failed = summary.filter((s) => !s.ok);
