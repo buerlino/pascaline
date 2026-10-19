@@ -107,7 +107,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 34 | G51 a CAS result takes stored facts' mark | gorge, Opus | `p1/gorge-m4-casfacts` | G48 | 1 h |
 | 35 | R64 the angle mode lives in our parser (route R) | ron, Opus | `p1/ron-m4-pasdeg` | — | 1.5 h |
 | 36 | G46 Giac always in radians; pasexp goes | gorge, Opus | `p1/gorge-m4-radians` | R64 | 2.5 h |
-| 37 | G56 complex functions inside a stored function | gorge, Opus | `p1/gorge-m4-complexbody` | G51 | 1 h |
+| 37 | G56 complex functions inside a stored function | gorge, Opus | `p1/gorge-m4-complexbody` | G51, H3 (owner hold) | 1 h |
 | 38 | G57 a decision Giac cannot make is refused | gorge, Opus | `p1/gorge-m4-undecided` | G48 | 1 h |
 | 39 | G37 °C inside a compound unit is an interval | gorge, Opus | `p1/gorge-m5-degcompound` | G35 | 1 h |
 | 40 | G40 angles in the unit view | gorge, Opus | `p1/gorge-m5-angles` | A15 | 1.5 h |
