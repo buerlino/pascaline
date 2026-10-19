@@ -136,6 +136,28 @@ cases:
   - { id: "g21-rad-exp-i90", input: "exp(i*90)", oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "derived", g2: 54 }
   - { id: "g21-deg-cos+isin90", input: "cos(90)+i*sin(90)", settings: { angle: "deg" }, oracle: "I", expect: "i", mark: "=", source: "derived", note: "trig keeps degrees" }
   - { id: "g21-deg-polar-2-90", input: "2*(cos(90)+i*sin(90))", settings: { angle: "deg" }, oracle: "2*I", expect: "2*i", mark: "=", source: "derived", note: "what polar entry 2∡90 emits (emit.ts PolarComplex): degrees stay" }
+  # --- G46 (route R): Giac always in radians, the degree mode in the parser's text (S14 matrix) ----------------------
+  - { id: "g46-deg-cosh90i", input: "cosh(90*i)", settings: { angle: "deg" }, oracle: "cosh(90*I)", expect: "-0.448073616129", mark: "≈", source: "oracle", note: "deep check D4: DEG gave = 0" }
+  - { id: "g46-deg-sinh90i", input: "sinh(90*i)", settings: { angle: "deg" }, oracle: "sinh(90*I)", expect: "0.893996663601*i", mark: "≈", source: "oracle", note: "D4: DEG gave = i" }
+  - { id: "g46-deg-cosh1+i", input: "cosh(1+i)", settings: { angle: "deg" }, oracle: "cosh(1+I)", expect: "0.833730025131+0.988897705763*i", mark: "≈", source: "oracle", note: "D4: DEG gave 1.54284561616+0.0205100888771*i" }
+  - { id: "g46-deg-cos30+i", input: "cos(30+i)", settings: { angle: "deg" }, oracle: "cos((30+I)*pi/180)", expect: "0.866157310345-0.0087270893148*i", mark: "≈", source: "derived", note: "D5: z° = z*pi/180 (S14); DEG gave 1.33634702984-0.587600596822*i" }
+  - { id: "g46-deg-tan45+i", input: "tan(45+i)", settings: { angle: "deg" }, oracle: "tan((45+I)*pi/180)", expect: "0.999391074313+0.0348924144079*i", mark: "≈", source: "derived", note: "D5" }
+  - { id: "g46-deg-abs-sin1+i", input: "abs(sin(1+i))", settings: { angle: "deg" }, oracle: "fabs(sin((1+I)*pi/180))", expect: "0.0246826830407", mark: "≈", source: "derived", note: "D5: DEG gave 1.17533077558" }
+  - { id: "g46-deg-cos-i", input: "cos(i)", settings: { angle: "deg" }, oracle: "cos(I*pi/180)", expect: "1.00015231258", mark: "≈", source: "derived", note: "D5: DEG gave 1.54308063482" }
+  - { id: "g46-deg-acos2", input: "acos(2)", settings: { angle: "deg" }, oracle: "acos(2)*180/pi", expect: "75.4561292902*i", mark: "≈", source: "oracle", note: "D6: real part 0; DEG gave 9.09494701773E-13+75.4561292902*i" }
+  - { id: "g46-deg-acos1.5", input: "acos(1.5)", settings: { angle: "deg" }, oracle: "acos(F(3,2))*180/pi", expect: "55.1428132554*i", mark: "≈", source: "oracle", note: "D6" }
+  - { id: "g46-deg-asin2-20", input: "asin(2)", settings: { angle: "deg", digits: 20 }, oracle: "asin(2)*180/pi", expect: "90-75.456129290216892004*i", mark: "≈", source: "oracle", note: "D6: DEG gave 89.999999999999-75.456129290216*i at 20 digits" }
+  - { id: "g46-deg-int-xsinx", input: "int(x*sin(x),x,0,90)", settings: { angle: "deg" }, oracle: "quad(lambda x: x*sin(x*pi/180), [0, 90])", expect: "3282.80635001", mark: "≈", source: "oracle", note: "D7: DEG gave the pair [180/pi, 3282.80635001]" }
+  - { id: "g46-deg-limit-e", input: "limit((1+1/n)^n,n,inf)", settings: { angle: "deg" }, oracle: "exp(1)", expect: "2.71828182846", mark: "≈", source: "derived", note: "D7: DEG refused it (works only in radian mode)" }
+  - { id: "g46-deg-(-8)^0.2", input: "(-8)^0.2", settings: { angle: "deg" }, oracle: "power(-8, F(1,5))", expect: "1.22624046096+0.89091584445*i", mark: "≈", source: "oracle", note: "D12: DEG gave 1.5156254288+0.0166213589593*i" }
+  - { id: "g46-deg-(-1)^0.1", input: "(-1)^0.1", settings: { angle: "deg" }, oracle: "power(-1, F(1,10))", expect: "0.951056516295+0.309016994375*i", mark: "≈", source: "oracle", note: "D12" }
+  - { id: "g46-deg-int-exp", input: "int(exp(i*x),x,0,90)", settings: { angle: "deg" }, oracle: "quad(lambda x: exp(I*x), [0, 90])", expect: "0.893996663601+1.44807361613*i", mark: "≈", source: "oracle", note: "check finding 3: exp ignores the mode (F29); DEG gave = 1+i before G21" }
+  - { id: "g46-seq-cosh-deg-rad", steps: [{"input": "H:=cosh(90*i)", "angle": "deg"}, {"input": "H", "angle": "rad"}], oracle: "cosh(90*I)", expect: "-0.448073616129", mark: "≈", source: "oracle", note: "D4: stored in DEG, read in RAD" }
+  - { id: "g46-seq-fn-rad-deg", steps: [{"input": "gr(x):=exp(i*x)"}, {"input": "gr(90)", "angle": "deg"}], oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "oracle", note: "check finding 4: a function defined in RAD ignored F29 in DEG (gave = i)" }
+  - { id: "g46-seq-fn-cas-rad-deg", steps: [{"input": "q(w):=exp(i*w)", "view": "cas"}, {"input": "q(90)", "angle": "deg"}], oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "oracle", note: "check finding 4: a library import defines through CAS in RAD" }
+  - { id: "g46-seq-fn-deg-rad", steps: [{"input": "f6(x):=sin(x)", "angle": "deg"}, {"input": "f6(pi/6)", "angle": "rad"}], oracle: "F(1,2)", expect: "0.5", mark: "=", source: "derived", note: "a function follows the mode at call time, as on the G2 (S14 fn-deg-call-rad)" }
+  - { id: "g46-seq-fn-deg-deg", steps: [{"input": "f5(x):=sin(x)", "angle": "deg"}, {"input": "f5(30)", "angle": "deg"}], oracle: "F(1,2)", expect: "0.5", mark: "=", source: "derived", note: "control" }
+  - { id: "g46-seq-exp-deg-rad-2", steps: [{"input": "C:=exp(1+30*i)", "angle": "deg"}, {"input": "C", "angle": "rad"}], oracle: "exp(1+30*I)", expect: "0.419298913243-2.68574840971*i", mark: "≈", source: "oracle", note: "check finding 2" }
   - { id: "cx-ln-1", input: "ln(-1)", oracle: "pi*I", expect: "3.14159265359*i", mark: "≈", source: "oracle" }
   - { id: "cx-i^i", input: "i^i", oracle: "exp(-pi/2)", expect: "0.207879576351", mark: "≈", source: "oracle" }
   - { id: "cx-abs", input: "abs(3+4*i)", oracle: "F(5)", expect: "5", mark: "=", source: "derived" }
@@ -276,7 +298,7 @@ cases:
   - { id: "g39-sum-undef", input: "sum((-1)^k,k,0,inf)", expect: "The series does not converge", source: "derived", note: "Giac's own undef, same message" }
   - { id: "g39-limit-bounded", input: "limit(sin(x),x,inf)", expect: "No limit", source: "derived", note: "Giac printed bounded_function(2)" }
   - { id: "g39-pair-abs-sin1e50", input: "int(abs(x-sin(10^50)),x,-1,1)", mark: "⚠", source: "derived", note: "Giac's [exact, numeric] pair: never a list. The exact part is 1+sin(10^50)^2 = 1.62358264688 (oracle, sin(10^50) = -0.78967249343), Giac's float 1.35506364264, so no digit is confirmed" }
-  - { id: "g39-pair-deg-atan", input: "int(1/(1+x^2),x,0,1)", settings: { angle: "deg" }, mark: "⚠", source: "derived", note: "deep check D7: Giac's pair [8100/pi, 0.785398163397] in DEG; never a list" }
+  - { id: "g39-pair-deg-atan", input: "int(1/(1+x^2),x,0,1)", settings: { angle: "deg" }, oracle: "pi/4", expect: "0.785398163397", mark: "≈", source: "oracle", note: "deep check D7: Giac's pair [8100/pi, 0.785398163397] in DEG was shown as one value with ⚠ (G39); G46 runs Giac in radians, so exact and numeric agree" }
   - { id: "g39-keep-1/x^2", input: "int(1/x^2,x,-1,1)", expect: "+infinity", source: "derived", note: "diverges to +infinity, which Giac says itself: unchanged" }
   - { id: "g39-keep-sum-cos/k", input: "sum(cos(k)/k,k,1,inf)", oracle: "-ln(2*sin(M(F(1,2))))", expect: "0.0420195058254", mark: "≈", source: "oracle", note: "converges (Dirichlet); the term tends to 0" }
   - { id: "g39-keep-sum-alt-harmonic", input: "sum((-1)^k/k,k,1,inf)", oracle: "-ln(2)", expect: "-0.69314718056", mark: "≈", source: "oracle" }

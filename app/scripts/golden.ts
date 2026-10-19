@@ -24,7 +24,8 @@
 //              or fewer confirmed digits than asked) unless the case has status "warn"; a root shown with ⚠ n must
 //              equal `expect` rounded to those n digits
 //   function   Function analysis and Num table (analysis.ts), same rules
-//   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed
+//   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed. Then in DEG (G46):
+//              every input that answers in RAD answers, `deg` pins a DEG text, an angle-free one shows the RAD text
 //   calls      G52: Giac calls per input (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
 //              the five largest; fails when calls per input are over 10 % above tests/golden/calls-baseline.yaml
 //   units      tests/golden/units.yaml: the unit view (G16) on the Find index's factors (app/src/find/_gen, `npm run index`):
@@ -52,7 +53,10 @@ import { chipsIn, type ChipFactsTable } from "../src/engine/chipFacts.ts";
 import { inexactConstsIn, type ConstTable } from "../src/engine/constUnc.ts";
 import { DEFAULT_USER_FUNCTIONS, latexToGiac, latexToGiacInfo, type UnitsInfo } from "../src/input/latex-to-giac.ts";
 import { SerializeError } from "../src/input/errors.ts";
-import { dropAngleFactor, rewriteAngles } from "../src/input/angles.ts";
+import { dropAngleFactor, hasAngleFactor, rewriteAngles } from "../src/input/angles.ts";
+
+/** A result text with a trig function in it (the CAS view draws its angle in degrees in DEG). */
+const TRIG_TEXT = /(?<![A-Za-z0-9_])a?(sin|cos|tan|sec|csc|cot)\(/;
 import { buildJob } from "../src/units/build.ts";
 import { factorTable, type FactorTable } from "../src/units/factors.ts";
 import { unitErrorMessage } from "../src/units/messages.ts";
@@ -129,6 +133,8 @@ interface Case {
   shown?: string;
   unc_oracle?: string;
   message?: string;
+  /** bench.yaml (G46): the CAS text in DEG, where it differs from the RAD one. */
+  deg?: string;
   /** parser.yaml: the input must be rejected by the parser (docs/04 2.3 #1). */
   error?: boolean;
   /** parser.yaml: the entry's chip table (\res, \ans, \const), keyed as in app/src/input/chips.ts. */
@@ -432,7 +438,7 @@ const same = (a: Expect, b: Expect | undefined): boolean => JSON.stringify(a) ==
 const str = (x: string | string[] | undefined): string => (Array.isArray(x) ? x[0]! : x!);
 const list = (x: string | string[] | undefined): string[] => (Array.isArray(x) ? x : [x!]);
 
-const caseSettings = (c: Case): HomeSettings => ({ ...defaultHomeSettings, digits: c.settings?.digits ?? defaultHomeSettings.digits });
+const caseSettings = (c: Case): HomeSettings => ({ ...defaultHomeSettings, digits: c.settings?.digits ?? defaultHomeSettings.digits, angle: c.settings?.angle ?? "rad" });
 
 function solveCase(host: EngineHost, g: GiacApi, c: Case): Got {
   const s = caseSettings(c);
@@ -508,15 +514,37 @@ async function stageBench(): Promise<void> {
   let checked = 0;
   let pass = 0;
   const errors: string[] = [];
+  const radText = new Map<string, string>();
   for (const c of cs) {
     const r = host.cas(c.input!, defaultCasSettings).result;
     if (!r.ok) errors.push(`${c.id} (${r.error})`);
+    else radText.set(c.id, r.text);
     if (c.expect === undefined) continue;
     checked++;
     if (r.ok && r.text === c.expect) pass++;
     else console.log(`  bench ${c.id}: got ${r.text}, expect ${c.expect}`);
   }
-  report("bench", pass === checked, `${pass}/${checked} expect match, ${cs.length} run, errors: ${errors.length ? errors.join(", ") : "none"}`);
+  // G46: the same inputs in DEG. Every one that answers in RAD answers in DEG (A16 saw limit and series refused); `deg`
+  // pins the DEG text; an input without an angle function shows the RAD text, unless its result holds a trig function
+  // (the CAS view draws that in degrees, S14 option 2).
+  const deg = { ...defaultCasSettings, angle: "deg" as const };
+  let degChecked = 0;
+  let degPass = 0;
+  for (const c of cs) {
+    const rad = radText.get(c.id);
+    if (rad === undefined) continue;
+    const r = host.cas(c.input!, deg).result;
+    const want = c.deg ?? (hasAngleFactor(c.input!) || TRIG_TEXT.test(rad) ? undefined : rad);
+    if (r.ok && want === undefined) continue;
+    degChecked++;
+    if (r.ok && r.text === want) degPass++;
+    else console.log(`  bench ${c.id} in DEG: got ${r.ok ? r.text : `error ${r.error}: ${r.text}`}, expect ${want ?? "an answer"}`);
+  }
+  report(
+    "bench",
+    pass === checked && degPass === degChecked,
+    `${pass}/${checked} expect match, ${cs.length} run, errors: ${errors.length ? errors.join(", ") : "none"}; DEG ${degPass}/${degChecked} match`,
+  );
 }
 
 /** G52: Giac calls per input (one Enter at 12 digits) for the bench inputs (CAS) and home.yaml's single inputs (Home),
