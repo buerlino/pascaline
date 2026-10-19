@@ -55,7 +55,7 @@ export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
   "sqrt", "exp", "pasexp", "ln", "log", "log10", "sin", "cos", "tan", "asin", "acos", "atan",
   "sinh", "cosh", "tanh", "asinh", "acosh", "atanh",
   "abs", "re", "im", "conj", "arg", "sign", "floor", "ceil", "round", "frac", "max", "min",
-  "sigfig", "par", "eseries",
+  "sigfig", "par", "eseries", "pasmedian", "paspercentile",
 ]);
 
 /**
@@ -484,7 +484,8 @@ export function shortDigits(text: string, asked: number): number | undefined {
   const m = /^\s*-?(\d*)\.(\d*)(?:e[+-]?\d+)?\s*$/.exec(text);
   if (!m) return undefined;
   const sig = (m[1]! + m[2]!).replace(/^0+/, "");
-  if (sig === "" || sig.length > DOUBLE_DIGITS + 1) return undefined;
+  // Fewer than 14 digits: Giac drops trailing zeros, so a short print is a value that fits (round(-2.25,1) prints -2.2).
+  if (sig.length < DOUBLE_DIGITS || sig.length > DOUBLE_DIGITS + 1) return undefined;
   return Math.max(0, sig.length - 1);
 }
 

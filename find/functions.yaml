@@ -11,8 +11,7 @@
 #   giac    the Giac command that insert must become through our parser (checked by app/src/find/insert.test.ts)
 #   syntax  shown in the preview (default: from aide_cas)
 #   golden  the golden case id
-# Not tier 0 on purpose (Giac behaviour to settle first, see the G4 report): median (lower median of an even
-# list), round (halves go up, round(-2.5) = -2).
+# Not tier 0 on purpose (Giac behaviour to settle first, see the G4 report): round (halves go up, round(-2.5) = -2).
 functions:
   - { id: "fn:sqrt", title: "Square root", desc: "Square root; of a negative number gives an imaginary result.", names: ["square root", "√"], insert: "\\sqrt{#0}", giac: "sqrt", syntax: "sqrt(x)", golden: "fn-sqrt2" }
   - { id: "tmpl:cbrt", title: "Cube root", desc: "Real cube root: ∛(−8) = −2.", names: ["cbrt", "cube root", "∛"], insert: "\\sqrt[3]{#0}", giac: "surd", syntax: "∛x", golden: "fn-cbrt2" }
@@ -37,6 +36,8 @@ functions:
   - { id: "fn:gcd", title: "Greatest common divisor", desc: "Greatest common divisor of integers or polynomials.", names: ["greatest common divisor", "hcf"], giac: "gcd", syntax: "gcd(a, b)", golden: "fn-gcd" }
   - { id: "fn:lcm", title: "Least common multiple", desc: "Least common multiple of integers or polynomials.", names: ["least common multiple"], giac: "lcm", syntax: "lcm(a, b)", golden: "fn-lcm" }
   - { id: "fn:factorial", title: "Factorial (n!)", desc: "n!; for non-integers Γ(n+1).", names: ["n!"], giac: "factorial", syntax: "factorial(n)", golden: "fn-factorial0.5" }
+  - { id: "fn:median", title: "Median (mean of the two middle values for an even count)", desc: "Middle value of a sorted list; for an even count the mean of the two middle ones.", names: ["middle value"], giac: "pasmedian", syntax: "median(list)", golden: "g42-median-even" }
+  - { id: "fn:percentile", title: "Percentile (linear interpolation between the closest ranks, rank p/100·(n−1))", desc: "p-th percentile of a list, 0 ≤ p ≤ 100, linear interpolation between the closest ranks.", giac: "paspercentile", syntax: "percentile(list, p)", golden: "g42-percentile-50" }
   - { id: "fn:comb", title: "Combinations (nCr)", desc: "Number of ways to choose r of n: n! ÷ (r!(n−r)!).", names: ["ncr", "combinations", "binomial coefficient", "choose"], giac: "comb", syntax: "comb(n, r)", golden: "fn-comb" }
   - { id: "fn:Gamma", title: "Gamma function (Γ)", desc: "Euler's gamma function; Γ(n) = (n−1)!.", names: ["gamma", "Γ"], giac: "Gamma", syntax: "Gamma(x)", golden: "fn-gamma0.5" }
   - { id: "fn:erf", title: "Error function", desc: "Gauss error function erf(x).", names: ["error function"], giac: "erf", syntax: "erf(x)", golden: "fn-erf0.5" }

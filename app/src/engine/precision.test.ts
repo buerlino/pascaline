@@ -307,6 +307,8 @@ describe("G50: complex arguments of the audited functions (pure)", () => {
     expect(shortDigits("1/2", 40)).toBeUndefined();
     expect(shortDigits("0.0", 40)).toBeUndefined();
     expect(shortDigits("0.90455689430238", 14)).toBeUndefined();
+    // a short print has its trailing zeros dropped: no cap (round(-2.25,1) printed -2.2 and showed ⚠1 -2)
+    expect(shortDigits("-2.2", 40)).toBeUndefined();
   });
 });
 
