@@ -31,9 +31,7 @@
 | [G50](packages/G50.md) | Complex arguments of the audited functions | gorge, **Opus** | night | A15 | ~0.75 d |
 | [R64](packages/R64.md) | The angle mode lives in our parser (route R) | ron, **Opus** | night | the owner's yes to route R (decisions.md S14) | ~0.5 d |
 | [G46](packages/G46.md) | Giac always in radians; pasexp goes (replaces G21b) | gorge, **Opus** | night | R64 | ~1 d |
-| [G35](packages/G35.md) | The unit check sees every term, zero ones too | gorge, **Opus** | night | A15; before R24c | ~0.5 d |
 | [G36](packages/G36.md) | FIX shows no unconfirmed digit in a complex number | gorge, Sonnet | night | A15 | ~0.25 d |
-| [G38](packages/G38.md) | The exact path decides at the value precision | gorge, **Opus** | night | A15 | ~0.75 d |
 | [G41](packages/G41.md) | σ beyond first order at a stationary point | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G37](packages/G37.md) | °C and °F inside a compound unit are an interval | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G40](packages/G40.md) | Angles in the unit view: inverses, ω·r, rpm | gorge, **Opus** | night | A15; before R24c | ~0.75 d |
@@ -101,7 +99,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 24 | G35 the unit check sees every term, zero ones too | gorge, Opus | `p1/gorge-m5-zerodim` | A15 | 1 h |
 | 25 | G49 marks through Ans, chips and Store: engine | gorge, Opus | `p1/gorge-m4-chipfacts` | G34 | 1.5 h |
 | 26 | R65 marks through Ans and chips: session | ron, Opus | `p1/ron-m4-chipfacts` | G49 | 1 h |
 | 27 | G36 FIX shows no unconfirmed digit in a complex number | gorge, Sonnet | `p1/gorge-m4-fixcomplex` | A15 | 30 min |
