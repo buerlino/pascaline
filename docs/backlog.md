@@ -52,7 +52,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **R50b–R50e. Themes** (R50b done: Pascaline in the app) (feedback #53, #55; decisions.md "R50"): Pascaline in the app, the generator and four more families, Plain keys and High contrast, Settings › Appearance; then **R12b, R12c. The visual pass** (F6 = U5 + U7; the mockups R12a merged, the owner's notes feedback #54, #55; A4a's sheet rise in R12c).
 - **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).
 - **R53. Results mode on the View key** (P16, S9; K4).
-- **The owner's answers of 2026-10-19:** **R43b** DMS takes a selected □ bare (by day), **R56b** Solve knows the user's functions (night step 57).
+- **The owner's answers of 2026-10-19:** **R43b** DMS takes a selected □ bare (done, p1/ron-m4a-dmsbox), **R56b** Solve knows the user's functions (night step 57).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
 - **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** **A12** (G29 merged).
 - **The backup:** **S6** (files in and out without INTERNET), then **R38a, R38b**. **The outside-test protocol:** **S8**.

@@ -365,7 +365,11 @@ export class EntryController {
       // R17: a selection is the base of a power key, in brackets unless it is one plain term (#@^{2} alone would raise
       // only its last character: 1+2 selected, x² gave 1+2² = 5); the same for DMS's degrees (1+2° is 1 + 2°)
       const rest = a.latex.startsWith("#@") ? a.latex.slice(2) : a.latex;
-      const base = isPlainTerm(mf.getValue(mf.selection, "latex")) ? "#@" : "\\left(#@\\right)";
+      const sel = mf.getValue(mf.selection, "latex");
+      // R43b: DMS on one lone □ takes it bare (sin(□°□′□″)), so ▶ out of the degrees goes to the minutes; the power keys bracket it
+      // (not on the degrees □ of another DMS: there the bare form reads as a different number, so it keeps the bracket)
+      const bare = isPlainTerm(sel) || (isDms(a) && sel.trim() === "\\placeholder{}" && !this.beforeDegree(mf));
+      const base = bare ? "#@" : "\\left(#@\\right)";
       this.apply(mf, { ...a, latex: base + rest });
     } else if (a.kind === "insert" && a.latex.includes("#@") && this.selectChip(mf)) {
       // a chip is one term: ÷, a/b, x², xʸ, x⁻¹ take all of it, and it draws as one box, so no brackets
@@ -378,6 +382,12 @@ export class EntryController {
     } else this.apply(mf, a);
     if (a.kind === "cmd") this.settle?.(mf, a.name); // R27b (F23): ◀ ▶ ▲ ▼ and the trackpad stop only at a box
     mf.focus();
+  }
+
+  /** True if the selection is followed by a ° (it is the degrees box of a DMS). */
+  private beforeDegree(mf: MathfieldElement): boolean {
+    const [a, b] = mf.selection.ranges[0] ?? [mf.position, mf.position];
+    return mf.getValue(Math.max(a, b), mf.lastOffset, "latex").trimStart().startsWith("\\degree");
   }
 
   /** True if the atom before the cursor (or the selection) is a digit or a decimal point. */
