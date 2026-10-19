@@ -27,7 +27,6 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [G47](packages/G47.md) | Golden cases for the displays G50 cut | gorge, Sonnet | night | now | ~0.25 d |
-| [G51](packages/G51.md) | A CAS result that reads stored facts gets their mark | gorge, **Opus** | night | G48 | ~0.5 d |
 | [G56](packages/G56.md) | Complex functions inside a stored function, in CAS | gorge, **Opus** | night | G51 | ~0.5 d |
 | [G57](packages/G57.md) | A decision Giac cannot make is refused | gorge, **Opus** | night | G48 | ~0.5 d |
 | [G53](packages/G53.md) | The second decision costs at most 1.3× again | gorge, **Opus** | night | G52 | ~0.5 d |

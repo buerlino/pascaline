@@ -152,12 +152,13 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 - **Operator on an empty line:** `+ − × ÷ xʸ x² x⁻¹` on an empty entry line insert `\ans` first, as the reference does. `(−)` stays negation. This saves a press in every chained calculation; benchmark tasks measure it.
 - A value that leaves its evaluation (stored, Ans, a chip, an export) is the value shown, independent of the angle mode (G34).
 - A stored name takes the facts of what its input read, in every assignment form, and a run-once result that rests on a decision is ⚠ (G48).
+- A CAS result without a float that read a stored name, or called a function, with facts takes their mark (`warn`, `why.inherited`); one built from exact names stays unmarked (G51).
 
 **Alternatives:** insert the full digits as text (40 digits clutter the line); keep inserting the rounded digits (2.3 #8).
 
 ### 2.9 Decision: CAS
 
-- A CAS result that is a number with a float gets its mark from our formatter (`≈`, or `⚠` by 2.4), and a symbolic result with a float gets `⚠` (2.4; 2.3 #17); numbers are drawn by our formatter at the digits setting (`CasResult` gains the numeric value when the result is a number, 8.2); its text and LaTeX come from `numeric`, never Giac's float. Exact CAS results get no mark. An explicit precision (`evalf(x,50)`) is honoured: that many digits, only the confirmed ones (M4-6).
+- A CAS result that is a number with a float gets its mark from our formatter (`≈`, or `⚠` by 2.4), and a symbolic result with a float gets `⚠` (2.4; 2.3 #17); numbers are drawn by our formatter at the digits setting (`CasResult` gains the numeric value when the result is a number, 8.2); its text and LaTeX come from `numeric`, never Giac's float. Exact CAS results get no mark, unless they read stored facts (2.8). An explicit precision (`evalf(x,50)`) is honoured: that many digits, only the confirmed ones (M4-6).
 - **P9 (accepted by the user, 2026-10-12):** typed decimals in CAS become exact rationals before evaluation, as in Home (`toExactLiterals`); `approx()` (Shift + Enter) gives decimals. This removes 2.3 #6 at the source (the mark alone would show `≈ 1.7763568394E-15` for `1-0.9-0.1`: marked, but not right). The visible change: `1.5x` shows as `3/2·x`, where the reference CAS keeps `1.5·x`. The `bench` stage of the golden gate runs in CAS mode, so its decimal inputs are re-checked.
 
 ### 2.10 Python

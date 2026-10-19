@@ -507,6 +507,28 @@ export class EngineHost {
     return [...vars, ...fns];
   }
 
+  /**
+   * G51: the facts a CAS result without a float takes from what its input read: the stored variables with facts its
+   * (bound names masked) text holds and the functions with facts it calls or names (`callFacts`), merged. `causes`: the
+   * names behind a warn (for why.inherited). Null when nothing it read is inexact, and for inputs that store no value
+   * (a function definition, purge, assume): those read names without showing a value from them.
+   */
+  private readFacts(input: string): { facts: NameFacts; causes: string[] } | null {
+    if (definesFunction(input) || /^\s*(purge|assume|additionally)\s*\(/.test(input)) return null;
+    const body = maskBound(storeTargets(input)?.read ?? input);
+    const seen = new Set<string>();
+    const read = new Map<string, NameFacts>();
+    for (const n of [...namesIn(body), ...functionsIn(body)]) {
+      const e = this.byName.get(n);
+      if (!e || read.has(n)) continue;
+      const f = isFnEntry(e) ? this.callFacts(n, seen) : e.facts;
+      if (f) read.set(n, f);
+    }
+    const facts = mergedFacts([...read.values()]);
+    if (!facts) return null;
+    return { facts, causes: [...read].filter(([, f]) => f.warn !== undefined).map(([n]) => n) };
+  }
+
   /** G49f3: the facts a call to the stored function `name` lends: the facts its entry stored at definition (chips and
    *  constants lent then) merged with those of the names its body holds now. Null when it is no function (`f(x):=` or
    *  an arrow, G49f4), already visited (`seen`), or nothing in it is inexact. */
@@ -758,11 +780,16 @@ export class EngineHost {
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4),
     // as the definitions log records it.
     const unchecked = hasFloat(text) || undecided || unverified;
-    const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked;
-    const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
-    const symWhy = symbolicWhy(warn, testSides(exactInput));
+    // G51: a result without a float that read a stored name, or called a function, with facts takes their warn and
+    // why.inherited, as `inherited` does for a number; one built from exact names stays unmarked.
+    const read = this.readFacts(input);
+    const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked || read !== null;
+    const own = decided?.warn ?? (unchecked ? "unchecked" : undefined);
+    const warn = own === "unaudited" || read?.facts.warn === "unaudited" ? "unaudited" : (own ?? read?.facts.warn);
+    const symWhy = symbolicWhy(own, testSides(exactInput));
     // G38: "decided at limited precision"; the value was computed, not compared, so `once` is not said.
-    const why = pair ? { differ: true } : undecided ? { ...(symWhy && !symWhy.once ? symWhy : {}), decided: true } : symWhy;
+    const why0 = pair ? { differ: true } : undecided ? { ...(symWhy && !symWhy.once ? symWhy : {}), decided: true } : symWhy;
+    const why = read?.causes.length ? { ...(why0 ?? {}), inherited: read.causes } : why0;
     const tex = this.giac.eval(`latex(${slot})`);
     if (atN !== null) this.giac.eval("purge(pasfl)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
