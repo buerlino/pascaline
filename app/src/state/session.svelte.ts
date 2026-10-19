@@ -101,6 +101,8 @@ export interface HistoryItem {
   full?: string;
   /** `full` is the exact value (a fraction, an exact expression), not rounded digits. */
   fullExact?: boolean;
+  /** CAS in DEG: the text drawn, when `full` (the radian text of chips and Ans) differs from it; Copy gives this one. */
+  drawn?: string;
   /** An inexact chip went into the input, so the result is never marked "=" (docs/04 2.4, decisions M4-4). */
   inexactInput?: boolean;
   /** CAS: the stored values the input read, each with the view that stored it (F28); absent when there is none. */
@@ -216,7 +218,7 @@ export function migrateSettings(saved: unknown): { settings: Settings; migrated:
 
 /** A stored history item with a fresh id; chip fields that do not have their shape are dropped. */
 function restoredItem(i: HistoryItem, id: number): HistoryItem {
-  const { chips, full, fullExact, facts, uses, ...rest } = i as HistoryItem & { form?: unknown };
+  const { chips, full, fullExact, drawn, facts, uses, ...rest } = i as HistoryItem & { form?: unknown };
   const { form, ...base } = rest;
   const out: HistoryItem = { ...base, id };
   if (isFormStep(form)) out.form = form;
@@ -230,6 +232,7 @@ function restoredItem(i: HistoryItem, id: number): HistoryItem {
     out.full = full;
     out.fullExact = fullExact === true;
   }
+  if (typeof drawn === "string" && drawn.length <= FULL_LIMIT) out.drawn = drawn;
   return out;
 }
 
@@ -557,6 +560,7 @@ export class Session {
             live.full = full;
             live.fullExact = live.inexactInput !== true && !isDigitsText(full); // R65 (D2): an inexact chip's result never is
           }
+          if (r.full !== undefined && r.full !== r.text && !r.numeric?.value && r.text.length <= FULL_LIMIT) live.drawn = r.text; // G46f1
           // A true or false that rests on a float, or on an inexact chip, is marked approximate (R18f1); a non-number
           // with a float in it comes approximate and unchecked, so ⚠ (G27)
           if (r.approximate || (live.inexactInput === true && /^(true|false)$/.test(r.text))) {
