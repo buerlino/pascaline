@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Giac calls per Enter (G52): the totals of the gate's `calls` stage. A run fails when a total is more than 10 % above
+# its value here. Raise a value only with the reason in the package's report (the audit reads it).
+commit: 83d2262  # the parent of the branch; taken on p1/gorge-m4-callcount
+bench: 526
+home: 3696
