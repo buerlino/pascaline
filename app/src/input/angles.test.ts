@@ -115,12 +115,12 @@ describe("rewriteAngles: the same rule on Giac text (library import, G46's migra
   });
 });
 
-describe("the unit view takes the factor off sin, cos and tan (pasua reads the angle's unit itself)", () => {
+describe("the unit view takes the factor off sin, cos and tan (pasua reads the angle's unit itself) and the inverses (G40: they give rad)", () => {
   it.each([
     ["sin(pasdeg*x)", "pasusin(x)"],
     ["cos(pasdeg*(30*pasdimA))+tan(pasdeg*2)", "pasucos((30*pasdimA))+pasutan(2)"],
     ["sin(x)", "pasusin(x)"],
-    ["asin(x)/pasdeg", "asin(x)/pasdeg"],
+    ["asin(x)/pasdeg", "pasuasin(x)"],
   ])("%s -> %s", (text, out) => {
     expect(withAngles(text)).toBe(out);
   });
