@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Probe (S14): the angle mode on every Giac path, today (route "a": Giac's global angle_radian follows the mode, plus
-// pasexp) against the prototype of route R (route "b": Giac always in radians; the degree mode lives in the text the
-// parser emits, as `sin(pasdeg*(u))`, `(asin(u)/pasdeg)`, `(arg(z)/pasdeg)`, with pasdeg = pi/180 in DEG and 1 in RAD).
-// The prototype is a text rewrite of the parser's output (`rewriteAngles`), here only; nothing in app/ changes.
+// Probe (S14): the angle mode on every Giac path. Since G46 the app runs route R itself (Giac always in radians; the
+// degree mode lives in the text the parser emits, `sin(pasdeg*(u))`, `(asin(u)/pasdeg)`, with pasdeg = pi/180 in DEG
+// and 1 in RAD). Route "a" is the app's own rule (input/angles.ts), route "b" S14's prototype rewrite (`rewriteAngles`
+// below): both should be right on every row. Before G46, route "a" was Giac's global angle_radian plus pasexp.
 //   node tools/probes/angle-matrix.ts               # the matrix: every case of the deep check D4–D8, D12 and the check's 1–4
 //   node tools/probes/angle-matrix.ts --golden      # every golden input, today and rewritten: the cases whose result changes
 //   node tools/probes/angle-matrix.ts --display     # the CAS view in DEG: three display options for route R's radian text
@@ -26,9 +26,9 @@ import { jsonToJs } from "../../app/src/input/emit-js.ts";
 import { parseLatex } from "../../app/src/input/parse.ts";
 import { buildJob } from "../../app/src/units/build.ts";
 import { factorTable } from "../../app/src/units/factors.ts";
-import { UNIT_DEFINITIONS } from "../../app/src/units/evaluate.ts";
 import { isUnitError, type Quantity, type UnitError, type UnitJob } from "../../app/src/units/types.ts";
 import { requestOf } from "../../app/scripts/unit-case.ts";
+import { rewriteAngles as appAngles } from "../../app/src/input/angles.ts";
 import type { IndexItem } from "../../app/src/find/types.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -111,41 +111,21 @@ export function rewriteAngles(text: string, opts: { trig?: boolean } = {}): stri
   return out;
 }
 
-/** The unit view's pasua under route R: an angle (rad dimension) is taken in radians, a bare number times pasdeg. */
-const PASUA_R = (() => {
-  const today = UNIT_DEFINITIONS.find((d) => d.startsWith("pasua("))!;
-  const tail = "if (w==1 and angle_radian==0) return normal(y*180/pi); return y; }";
-  if (!today.endsWith(tail)) throw new Error("pasua changed: update the probe");
-  return today.slice(0, -tail.length) + "if (w==1) return y; return y*pasdeg; }";
-})();
-
-/** One engine per route. Route b runs Giac in radians and sets pasdeg for the mode. */
+/** One engine per route; both run the app's host (G46: Giac in radians, pasdeg with the mode). */
 class Runner {
   readonly host: EngineHost;
   readonly giac: GiacApi;
   readonly route: Route;
-  private unitsPatched = false;
-  /** The mode pasdeg was last set for: the host sets it on a mode change only, as G46 would. */
-  private pasdegMode: Mode | null = null;
-  setPasdeg(mode: Mode): void {
-    if (this.pasdegMode === mode) return;
-    this.giac.eval(`pasdeg:=${mode === "deg" ? "pi/180" : "1"}`);
-    this.pasdegMode = mode;
-  }
   constructor(route: Route, giac: GiacApi) {
     this.route = route;
     this.giac = giac;
-    // R64: the host sets pasdeg:=1 with every mode switch (homeEval.ts angleCommand); route b keeps the probe's value
-    // there, as G46's pasdegCommand will
-    const value = (): string => (this.pasdegMode === "deg" ? "pi/180" : "1");
-    const ev = (s: string): string => giac.eval(route === "b" ? s.replace(/\bpasdeg:=1\b/g, () => `pasdeg:=${value()}`) : s);
-    this.host = new EngineHost({ ...giac, eval: ev });
+    // G46: the host runs Giac in radians and sets pasdeg with the mode itself, so both routes run the app's host; route
+    // a is the parser's text as typed (R64 puts the factor in), route b the probe's own rewrite of it
+    this.host = new EngineHost(giac);
   }
   /** The settings angle and the text Giac gets, for a typed (parser-output) text in `mode`. */
   prep(text: string, mode: Mode, opts: { trig?: boolean } = {}): { angle: Mode; text: string } {
-    if (this.route === "a") return { angle: mode, text };
-    this.setPasdeg(mode);
-    return { angle: "rad", text: rewriteAngles(text, opts) };
+    return { angle: mode, text: this.route === "a" ? appAngles(text) : rewriteAngles(text, opts) };
   }
   /** `chip`: Giac text that reaches the engine as a chip does (input/emit.ts "Chip"), not through the parser. */
   home(text: string, mode: Mode, digits = 12, chip = false): HomeResult {
@@ -159,14 +139,8 @@ class Runner {
     return { ok: r.ok, text: r.text, ...(r.error ? { error: r.error } : {}) };
   }
   units(job: UnitJob, mode: Mode): Quantity | UnitError {
-    if (this.route === "a") return this.host.units(job, { ...defaultHomeSettings, angle: mode });
-    this.setPasdeg(mode);
-    const s = { ...defaultHomeSettings, angle: "rad" as const };
-    if (!this.unitsPatched) {
-      this.host.units(job, s); // loads UNIT_DEFINITIONS once, then pasua is replaced
-      this.giac.eval(PASUA_R);
-      this.unitsPatched = true;
-    }
+    const s = { ...defaultHomeSettings, angle: mode };
+    if (this.route === "a") return this.host.units(job, s);
     const rw = (t: string): string => rewriteAngles(t, { trig: false });
     const j: UnitJob = { ...job, expr: rw(job.expr), ...(job.end ? { end: rw(job.end) } : {}), ...(job.unc ? { unc: { ...job.unc, expr: rw(job.unc.expr) } } : {}) };
     return this.host.units(j, s);
@@ -356,9 +330,9 @@ function runCase(R: Runner, c: MCase): Got {
     }
     case "plot": {
       // the curve: emit-js's JS source; route b multiplies the argument of each angle function by the mode's factor
-      const src0 = jsonToJs(parseLatex(c.text), ["x"]);
+      // route a: the app's plot, which draws in degrees in DEG (R64a); route b: S14's factor on the radian source
       const deg = c.mode === "deg" ? Math.PI / 180 : 1;
-      const src = R.route === "a" ? src0 : src0.replace(/Math\.(sin|cos|tan)\(/g, "Math.$1(pasdeg*");
+      const src = R.route === "a" ? jsonToJs(parseLatex(c.text), ["x"], c.mode === "deg") : jsonToJs(parseLatex(c.text), ["x"]).replace(/Math\.(sin|cos|tan)\(/g, "Math.$1(pasdeg*");
       const f = new Function("x", "pasdeg", `return ${src};`) as (x: number, d: number) => number;
       const y = f(180, deg);
       const ok = Math.abs(y - (c.want as Z)[0]) < 1e-12;
@@ -367,7 +341,7 @@ function runCase(R: Runner, c: MCase): Got {
     case "units": {
       const t = units();
       if (!t) return { verdict: "error", shown: "no Find index", mark: "" };
-      const job = buildJob(requestOf(c.text, undefined, t), t);
+      const job = buildJob(requestOf(R.route === "a" ? appAngles(c.text) : c.text, undefined, t), t); // route a: the parser's text
       if (isUnitError(job)) return { verdict: "error", shown: JSON.stringify(job), mark: "" };
       const q = R.units(job, c.mode);
       if (isUnitError(q)) return { verdict: "error", shown: JSON.stringify(q), mark: "" };

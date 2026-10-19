@@ -150,7 +150,7 @@ const only = process.env.ONLY?.split(",").map((s) => s.trim());
 const want = (stage: string) => !only || only.includes(stage);
 
 /** Files whose `input`-style fields are what the user types, in Giac's spelling (not the parser's LaTeX). */
-const TYPED_FILES = new Set(["home.yaml", "precision.yaml", "bench.yaml", "solve.yaml", "function.yaml"]);
+const TYPED_FILES = new Set(["home.yaml", "precision.yaml", "bench.yaml", "solve.yaml", "function.yaml", "units.yaml"]);
 
 /**
  * G46: Giac runs in radians and the angle mode lives in the parser's text (R64, `sin(pasdeg*x)`). A case's typed Giac
