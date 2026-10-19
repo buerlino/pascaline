@@ -3,11 +3,12 @@
 import type { HomeResult, HomeSettings } from "./homeEval.ts";
 import type { DefEntry } from "./defs.ts";
 import type { ConstEntry, ConstTable } from "./constUnc.ts";
+import type { ChipEntry, ChipFactsTable } from "./chipFacts.ts";
 import type { PrecisionWarn, PrecisionWhy } from "./format.ts";
 import type { Refusal } from "./converge.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
-export type { ConstEntry, ConstTable, HomeResult, HomeSettings };
+export type { ChipEntry, ChipFactsTable, ConstEntry, ConstTable, HomeResult, HomeSettings };
 
 export interface CasSettings {
   angle: "rad" | "deg";
@@ -174,8 +175,10 @@ export interface MathEngine {
   /** Resolves once the engine can take calls. */
   ready(): Promise<EngineTimings>;
   /** Exact-first Home evaluation: a decimal result rounded to `settings.digits`. `consts` (G26): the constants the
-   *  input holds by name (`pasc_<id>`), with value and uncertainty; a result from an inexact one carries `uncDigits`. */
-  home(input: string, settings: HomeSettings, consts?: ConstTable): Promise<HomeResult>;
+   *  input holds by name (`pasc_<id>`), with value and uncertainty; a result from an inexact one carries `uncDigits`.
+   *  `chips` (G49): the chips it holds by name (`pasr_<k>`), with value and facts; a result from one that is not exact
+   *  inherits its facts (chipFacts.ts). */
+  home(input: string, settings: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): Promise<HomeResult>;
   /** Exact CAS evaluation plus `latex()` of the result. */
   cas(input: string, settings: CasSettings): Promise<CasResult>;
   /** Solve app: equations from guesses, or all roots of a polynomial. Residual-checked. */
