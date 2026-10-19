@@ -3,7 +3,7 @@
 // build that ships (CLAUDE.md). Exit 0 only if every stage passes.
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
-//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, calls, units, parser
+//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, calls, invariants, units, parser
 // Typed Giac text in a case (`input`, `before`, step inputs, `eq`, `f`, `g`) gets the parser's angle rule first (G46).
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
@@ -28,6 +28,11 @@
 //              every input that answers in RAD answers, `deg` pins a DEG text, an angle-free one shows the RAD text
 //   calls      G52: Giac calls per input (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
 //              the five largest; fails when calls per input are over 10 % above tests/golden/calls-baseline.yaml
+//   invariants G43: every home.yaml and precision.yaml input without settings, across settings (no expected values):
+//              (a) no angle function: the same text in RAD and DEG; (b) 12 and 30 digits round to the same 12-digit text;
+//              (c) the copy text read back by the paste reader gives the same text and mark; (d) `X:=input` in one mode, then
+//              `X` in the other, shows what the store line showed. Passes when the failures are exactly those in
+//              tests/golden/invariants-known.yaml (a new failure, or a known one that now passes, fails)
 //   units      tests/golden/units.yaml: the unit view (G16) on the Find index's factors (app/src/find/_gen, `npm run index`):
 //              value, mark, exact text and dimension, or the refusal's message, the same in every round; desktop p95 of
 //              an evaluation ≤ 5 ms (docs/04 8.3), warm, each case at its fastest of five passes
@@ -43,7 +48,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, type GiacApi } from "../src/engine/host.ts";
 import { defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
-import { decimalFromString, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
+import { decimalFromString, formatComplex, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { hasFloat } from "../src/engine/numeric.ts";
 import { defaultSolveSettings, solve1, type SolveResult } from "../src/engine/solve1.ts";
@@ -64,6 +69,9 @@ import { isUnitError, type Quantity, type UnitError } from "../src/units/types.t
 import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
 import { callsStage, type CallsBaseline } from "./calls-budget.ts";
+import { checkAngle, checkCopy, checkDigits, checkStore, copySourceOf, invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
+import { copyFull } from "../src/clipboard/text.ts";
+import { parsePastedNumber } from "../src/clipboard/paste.ts";
 
 type Expect = string | Expect[];
 
@@ -593,6 +601,93 @@ async function stageCalls(): Promise<void> {
   }
 }
 
+/** G43: the invariants over every home.yaml and precision.yaml input without settings; see invariants.ts. */
+async function stageInvariants(): Promise<void> {
+  const seen = new Set<string>();
+  const inputs: { id: string; giac: string; before: string[]; cas: boolean }[] = [];
+  for (const file of ["home.yaml", "precision.yaml"]) {
+    for (const c of cases(file)) {
+      // A case whose only setting is `angle` joins when its input holds no angle function (G46: cosh(90*i), (-8)^0.2 exist
+      // only in DEG cases); it runs in both modes, the setting dropped.
+      const angleOnly = c.settings !== undefined && Object.keys(c.settings).every((k) => k === "angle");
+      if ((c.settings && !angleOnly) || c.steps || c.beforeHome?.length || c.beforeCas?.length || c.status === "pending" || c.kind === "cas") continue;
+      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
+      let giac: string;
+      try {
+        giac = giacOf(c.latex ?? c.input!);
+      } catch {
+        continue;
+      }
+      const before = (c.before ?? []).map(giacOf);
+      if (angleOnly && !invariantsOf(giac, before).angleFree) continue;
+      const key = `${before.join(";")}|${giac}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      inputs.push({ id: `${file === "home.yaml" ? "home" : "precision"}:${c.id}`, giac, before, cas: false });
+    }
+  }
+  const at = async (host: EngineHost, i: (typeof inputs)[number], angle: "rad" | "deg", digits: number): Promise<HomeResult> => {
+    const s: HomeSettings = { ...defaultHomeSettings, angle, digits };
+    for (const b of i.before) host.home(b, s);
+    return host.home(i.giac, s).result;
+  };
+  const failures: InvariantFailure[] = [];
+  const t0 = performance.now();
+  let checked = { a: 0, b: 0, c: 0, d: 0 };
+  for (const i of inputs) {
+    // `before` inputs store names, so each input gets its own engine; the stored names stay out of the others.
+    const fresh = async (): Promise<EngineHost> => new EngineHost(await freshGiac());
+    const keep = i.before.length > 0;
+    const shared = keep ? null : await fresh();
+    const host = async (): Promise<EngineHost> => shared ?? fresh();
+    const rad = await at(await host(), i, "rad", 12);
+    const o = invariantsOf(i.giac, i.before);
+    if (o.angleFree) {
+      const deg = await at(await host(), i, "deg", 12);
+      checked.a++;
+      const f = checkAngle(i.id, rad, deg);
+      if (f) failures.push(f);
+    }
+    if (rad.ok && rad.value) {
+      const b = checkDigits(i.id, rad, await at(await host(), i, "rad", 30));
+      if (b.checked) checked.b++;
+      if (b.failure) failures.push(b.failure);
+      // (c): the copy text the app makes (invariants.ts copySourceOf), read back by the paste reader
+      const copy = copyFull(copySourceOf(rad));
+      const pasted = copy === undefined ? null : parsePastedNumber(copy);
+      if (copy !== undefined && pasted) {
+        checked.c++;
+        try {
+          const back = (await host()).home(latexToGiac(pasted.latex, { realOddRoots: true }), { ...defaultHomeSettings, digits: 12 }).result;
+          const f = checkCopy(i.id, rad, copy, back);
+          if (f) failures.push(f);
+        } catch (e) {
+          failures.push({ id: i.id, check: "c", detail: `copy ${copy} pasted as ${pasted.latex}: ${e instanceof Error ? e.message : String(e)}` });
+        }
+      }
+    }
+    // (d): X:=input in one mode, X in the other shows what the store line showed
+    if (rad.ok && rad.value && !keep) {
+      for (const [from, to] of [["rad", "deg"], ["deg", "rad"]] as const) {
+        const h = await fresh();
+        const st = h.home(`${INV_NAME}:=(${i.giac})`, { ...defaultHomeSettings, angle: from }).result;
+        if (!st.ok || !st.value) continue;
+        const rd = h.home(INV_NAME, { ...defaultHomeSettings, angle: to }).result;
+        checked.d++;
+        const f = checkStore(i.id, from, to, st, rd);
+        if (f) failures.push(f);
+      }
+    }
+  }
+  const known = parse(readFileSync(`${root}tests/golden/invariants-known.yaml`, "utf8")) as { known?: { id: string; check: string; package: string; note?: string }[] };
+  const r = invariantsStage(failures, known.known ?? []);
+  for (const l of r.lines) console.log(`  invariants ${l}`);
+  const secs = (performance.now() - t0) / 1000;
+  report("invariants", r.ok && secs < 60, `${inputs.length} inputs, ${checked.a} (a) RAD/DEG, ${checked.b} (b) 12/30 digits, ${checked.c} (c) copy and paste, ${checked.d} (d) store; ${r.summary}; ${secs.toFixed(1)} s (< 60)`);
+}
+
+const INV_NAME = "pasinv";
+
 const UNIT_P95_MS = 5;
 
 /** What a units case got, as text to compare and print. */
@@ -760,6 +855,7 @@ if (want("solve")) await stageCases("solve", "solve.yaml", solveCase);
 if (want("function")) await stageCases("function", "function.yaml", (host, _g, c) => functionCase(host, c));
 if (want("bench")) await stageBench();
 if (want("calls")) await stageCalls();
+if (want("invariants")) await stageInvariants();
 if (want("units")) await stageUnits();
 if (want("parser")) await stageParser();
 const failed = summary.filter((s) => !s.ok);
