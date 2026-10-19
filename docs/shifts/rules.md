@@ -27,7 +27,7 @@ The three principles in `docs/rules-core.md` decide every default:
 - **Nothing goes out:** no uploads, releases, emails, issues or posts. Network only for downloads: npm, pip into a venv, container images, git clones of open-source projects, docs.
 - **Never delete:** `engine/giac/_downloads/` tarballs, `../pascaline-deps/`, `../outreach/`, `../fdroiddata/`, `spike/prebuilt/`, `~/emsdk`. No `sudo`, no shell rc edits.
 - **Containers:** never mount the main checkout or `_downloads/` with `:Z`/`:z`. Mount scratch copies only. Clean up root-owned files with `podman unshare rm -rf`.
-- **No hanging commands:** every long or background command gets a timeout (`timeout 1800 …`) and never waits for interactive input.
+- **No hanging commands:** every long or background command gets a timeout (`timeout 1800 …`) and never waits for interactive input. Run a check in the foreground and read its exit code; never a background loop that waits on a process (`pgrep -f` matches the loop's own command line: run 58 hung 39 minutes on one).
 - **Devices:** only install our own app (`io.github.buerlino.pascaline`, never published without the owner). Never touch other apps or user data. The only settings changes allowed are the ones `stay-awake.sh` makes.
 - **Plan changes need the user.** Decide defaults that are consistent with `docs/rules-core.md`, docs/04 and docs/02 yourself, and record them. Anything that contradicts them, or misses a bar in the brief's definition of done, becomes a **proposal** in `docs/decisions.md`.
 - **Start-up numbers must hold:** on the Tab One, cold launch → keyboard usable < 1 s and → engine ready < 1.5 s. Anything not needed at start loads lazily.
