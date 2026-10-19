@@ -674,8 +674,9 @@ async function stageInvariants(): Promise<void> {
       }
     }
     // (d): X:=input in one mode, X in the other shows what the store line showed
-    if (rad.ok && rad.value && !keep) {
-      const d = await checkStoreBoth(icdf ? async () => new EngineHost(await freshGiac()) : host, i.id, i.giac);
+    if (rad.ok && rad.value) {
+      // an input with `before` or its own store runs (d) on a new engine per direction, without its `before`, as before G43f1
+      const d = await checkStoreBoth(icdf || keep ? async () => new EngineHost(await freshGiac()) : host, i.id, i.giac);
       checked.d += d.checked;
       failures.push(...d.failures);
     }
