@@ -22,6 +22,12 @@ export function unitErrorMessage(e: UnitError): string {
       return unitText("units.belowzero");
     case "function":
       return unitText("units.function");
+    case "divzero":
+      return unitText("units.divzero");
+    case "uncpower":
+      return unitText("units.uncpower");
+    case "minus":
+      return unitText("units.minus", { unit: e.unit });
     case "symbolic":
       return unitText("units.symbolic", { detail: e.detail });
     case "engine":

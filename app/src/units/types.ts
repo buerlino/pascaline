@@ -36,6 +36,12 @@ export interface UnitRequest {
 /** What the worker evaluates: Giac text with every unit and constant replaced by factor × dimension symbols. */
 export interface UnitJob {
   expr: string;
+  /** G35: `expr` with each number beside a slot or constant replaced by its own symbol pasz<n>, for the dimension check:
+   *  a term worth 0 (`0 m + 1 s`) or terms that cancel (`5 m − 5 m + 1 s`) keep their dimension there. */
+  check?: string;
+  /** G35: `check` has a sum, where a term can vanish: it is evaluated with the value. Without one it is needed only
+   *  when the value is 0 (its dimension). */
+  checkSum?: true;
   /** The end slot's factor × dimension symbols. */
   end?: string;
   /** The end slot is an absolute temperature (°C, °F): the offset b in K = a·x + b, as exact text (end holds a). */
@@ -80,14 +86,14 @@ export interface Quantity {
   /** The number in `unit`. Home's facts (display at the digits
    *  setting, value, exactRational, reliableDigits, full, warn, exact), so markOf() marks it as Home. */
   value: HomeResult;
-  /** The dimension key, as the index writes it ("kg1m1s-2"; "" for a pure number). null for an exact 0, whose
-   *  dimension is lost. */
+  /** The dimension key, as the index writes it ("kg1m1s-2"; "" for a pure number). A result 0 keeps the
+   *  dimension of its terms (G35); null only for a 0 with no slot or constant in it. */
   dimension: string | null;
   /** The unit `value` is in (G25): the end slot as typed; without one the units typed in the slots when they fit the
    *  result's dimension (`5 N × 2 m`: "N·m"), else the SI unit with an SI prefix ("µs", "kJ", "m/s"). "" for a pure
-   *  number and an exact 0. */
+   *  number and a 0 with no unit in it. */
   unit: string;
-  /** The dimension as text ("L·T⁻¹", "M·L²·T⁻²", "1" for a pure number); null for an exact 0. */
+  /** The dimension as text ("L·T⁻¹", "M·L²·T⁻²", "1" for a pure number); null when `dimension` is. */
   dimensionText: string | null;
   /** Giac's exact text of the number in SI base units. Absent for an exact 0, or when the text is too long to keep. */
   si?: string;
@@ -119,6 +125,12 @@ export type UnitError =
   | { error: "level" | "belowzero" }
   /** A function of a quantity with units (sin, cos and tan take an angle or a pure number). */
   | { error: "function" }
+  /** G35: a division by 0 (Giac's infinity or undef). */
+  | { error: "divzero" }
+  /** G35: a ± in the power of a unit (m^(2 ± 0.1)): σ would need ln of a unit. */
+  | { error: "uncpower" }
+  /** G35: a minus before a bracketed °C, °F or level quantity, −(5 °C): the minus belongs on the number. */
+  | { error: "minus"; unit: string }
   /** The number part is not a number (a free name): Giac's text of it. */
   | { error: "symbolic"; detail: string }
   /** Anything else (a syntax error, a timeout, a bad request): the detail is for the log, not for the user. */

@@ -261,6 +261,77 @@ function shownUnits(req: UnitRequest, table: FactorTable): ShownUnit[] {
 }
 
 const PLACEHOLDER = /\bpas([uk])(\d+)\b/g;
+const HAS_SLOT = /\bpas[uk]\d+\b/;
+
+/** The places in `text` where it splits at depth 0: `+`, `-` (binary, not E notation) and `,` for terms; `*` and `/`
+ *  for factors. Each piece keeps the operator before it. */
+function splitTop(text: string, ops: "terms" | "factors"): string[] {
+  const out: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i]!;
+    if (c === "(" || c === "[") depth++;
+    else if (c === ")" || c === "]") depth--;
+    else if (depth === 0) {
+      const before = text.slice(0, i);
+      const split =
+        ops === "factors"
+          ? c === "*" || c === "/"
+          : c === "," || ((c === "+" || c === "-") && before.trim() !== "" && !/[*/^(,[+-]\s*$/.test(before) && !/(^|[^A-Za-z_\d.])[\d.]+[eE]$/.test(before));
+      if (split) {
+        out.push(text.slice(start, i));
+        start = i;
+      }
+    }
+  }
+  out.push(text.slice(start));
+  return out;
+}
+
+/** G35: the formula for the dimension check. In every term with a slot or a constant, the factors beside it that hold
+ *  neither (numbers, ± values, brackets of numbers, above or below the ÷) are dropped and the term gets a symbol
+ *  pasz<n> of its own (a term of slots alone too, m/s − m/s), so no term is worth 0 and no two terms cancel: `0*pasu1+1*pasu2` is checked as `pasz1*pasu1+pasz2*pasu2`. Brackets with a
+ *  slot are checked inside the same way; a power or an argument without one is kept. `n.k` counts the symbols, `n.sum`
+ *  is set when some bracket holds a + or a −. */
+function dimensionForm(text: string, n: { k: number; sum: boolean }): string {
+  const terms = splitTop(text, "terms");
+  // A comma separates arguments (max(1 m, 50 cm)), not terms that could cancel.
+  if (terms.slice(1).some((t) => !t.startsWith(","))) n.sum = true;
+  return terms
+    .map((term) => {
+      const m = /^([+\-,]?)([\s\S]*)$/.exec(term)!;
+      const factors = splitTop(m[2]!, "factors");
+      if (!factors.some((f) => HAS_SLOT.test(f))) return term;
+      const kept = factors
+        .filter((f) => HAS_SLOT.test(f))
+        .map((f) => {
+          const op = /^[*/]/.test(f) ? f[0]! : "*";
+          return op + insideBrackets(f.replace(/^[*/]/, ""), n);
+        });
+      return `${m[1]!}pasz${++n.k}${kept.join("")}`;
+    })
+    .join("");
+}
+
+/** Each top-level bracket of a factor with a slot, checked as a formula of its own. */
+function insideBrackets(f: string, n: { k: number; sum: boolean }): string {
+  let out = "";
+  let depth = 0;
+  let open = -1;
+  for (let i = 0; i < f.length; i++) {
+    const c = f[i]!;
+    if (c === "(" || c === "[") {
+      if (depth++ === 0) {
+        open = i;
+        out += c;
+      }
+    } else if (c === ")" || c === "]") {
+      if (--depth === 0) out += dimensionForm(f.slice(open + 1, i), n) + c;
+    } else if (depth === 0) out += c;
+  }
+  return depth === 0 ? out : f;
+}
 
 /** The UnitJob for a request, or why it is refused before Giac sees it. */
 export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitError {
@@ -277,7 +348,14 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
       const symbolic = withPm ? uncertainValues(req.formula, uvars) : "";
       const pm = withPm && uvars.length === 1 && new RegExp(`^\\s*pasv1\\s*\\*\\s*pasu${alone + 1}\\s*$`).test(symbolic);
       const num = pm ? "pasv1" : lone && !withPm ? aloneNumber(req.formula, alone + 1) : null;
-      if (num === null) throw refuseSpecial(x.id, x.u);
+      if (num === null) {
+        // G35: −(5 °C) is a minus before the whole quantity; say where it goes rather than "use K".
+        const neg = lone ? /^\s*-\s*\(([\s\S]*)\)\s*$/.exec(req.formula) : null;
+        const slot = `pasu${alone + 1}`;
+        if (neg && (aloneNumber(neg[1]!, alone + 1) !== null || new RegExp(`^\\s*pasupm\\([^()]*\\)\\s*\\*\\s*${slot}\\s*$`).test(neg[1]!)))
+          throw new Refused({ error: "minus", unit: x.u.symbol });
+        throw refuseSpecial(x.id, x.u);
+      }
       // No end slot: °C, °F give K, dBm, dBW give W; a dB, bel or Np ratio has no SI unit (20 dB is not 10).
       if (isLog(x.id, x.u) && !req.end && x.id !== "dBm" && x.id !== "dBW") throw refuseSpecial(x.id, x.u);
       const abs = isAffine(x.u) ? { absTemp: true as const } : {};
@@ -303,11 +381,17 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
     if (used.size !== slots.length + consts.length) throw new Refused({ error: "engine", detail: "a slot or constant is not in the formula" });
     if (/\bpas/.test(sym.replace(/\bpas(?:dim[A-Za-z]+|v\d+)\b/g, ""))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
     // The value of every uncertain input goes in; the worker differentiates the symbolic text for σ.
-    const expr = vars.length ? sym.replace(/\bpasv(\d+)\b/g, (_, n: string) => `(${vars[Number(n) - 1]!.value})`) : sym;
+    const values = (t: string): string => (vars.length ? t.replace(/\bpasv(\d+)\b/g, (_, n: string) => `(${vars[Number(n) - 1]!.value})`) : t);
+    const expr = values(sym);
+    // G35: the dimension check's text, the slots and constants put in as in `sym`.
+    const count = { k: 0, sum: false };
+    const form = dimensionForm(formula, count);
+    const check = count.k ? values(form.replace(PLACEHOLDER, (_, kind: string, n: string) => (kind === "u" ? slots[Number(n) - 1]! : consts[Number(n) - 1]!.giac))) : null;
     const shows = req.end ? [] : shownUnits(req, table);
     const cycle = cycleUnit([...req.slots, ...(req.end ? [req.end] : [])]);
     return {
       expr,
+      ...(check !== null ? { check, ...(count.sum ? { checkSum: true as const } : {}) } : {}),
       ...endJob(req, table),
       ...(shows.length ? { shows } : {}),
       ...(cycle ? { cycle } : {}),

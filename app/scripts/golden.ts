@@ -96,7 +96,7 @@ interface Case {
   steps?: Step[];
   /** precision.yaml, kind cas: the stored names the CAS result must list as used (G20); [] means none. */
   uses?: string[];
-  /** units.yaml: the end slot; the exact text, the dimension key (null: an exact 0), the SI value's exact text with
+  /** units.yaml: the end slot; the exact text, the dimension key (a result 0 keeps its terms' one, G35), the SI value's exact text with
    *  an end slot (si_oracle checks it in oracle.py) and a refusal's message. */
   to?: string;
   exact?: string;
