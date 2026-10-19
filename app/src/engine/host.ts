@@ -226,6 +226,15 @@ function indexedTarget(input: string): string | null {
   return m ? m[1]! : null;
 }
 
+/** Facts that together cap a value: the fewest confirmed digits, the strongest warn, never exact (G49f1). Null when
+ *  `all` is empty. */
+function mergedFacts(all: readonly NameFacts[]): NameFacts | null {
+  if (!all.length) return null;
+  const capped = all.filter((f) => f.reliableDigits !== null).map((f) => f.reliableDigits!);
+  const warn = all.some((f) => f.warn === "unaudited") ? "unaudited" : all.some((f) => f.warn === "unchecked") ? "unchecked" : undefined;
+  return { reliableDigits: capped.length ? Math.min(...capped) : null, ...(warn ? { warn } : {}), inexact: true };
+}
+
 /** The shape of a numeric result (scalar, list, matrix), from its fields. */
 function shapeOfResult(r: HomeResult): Shape {
   if (!r.items) return { kind: "scalar" };
@@ -383,10 +392,12 @@ export class EngineHost {
    */
   private inherited(r: HomeResult, input: string, expr: string | null, digits: number, restoreDigits: number): HomeResult {
     if (!r.ok || (!r.value && !r.items)) return r;
-    // G49f1: a called function that was built from inexact values lends its facts too (it is never moved).
+    // G49f1, G49f3: a called function lends the facts it stored and those of the names its body holds now (it is never
+    // moved).
+    const seen = new Set<string>();
     const called = functionsIn(input).flatMap((name) => {
-      const e = this.byName.get(name);
-      return e?.kind === "fn" && e.facts ? [{ name, facts: e.facts, fn: true }] : [];
+      const facts = this.callFacts(name, seen);
+      return facts ? [{ name, facts, fn: true }] : [];
     });
     const used = namesIn(input)
       .map((name) => ({ name, facts: this.byName.get(name)?.facts ?? this.chipFacts.get(name), fn: false }))
@@ -435,18 +446,33 @@ export class EngineHost {
    */
   private fnFacts(input: string, lent: readonly NameFacts[]): NameFacts | null {
     const def = definedBy(input)?.name;
-    const body = maskBound(input); // the body alone, its parameters masked
-    const named = [...namesIn(body), ...functionsIn(body)]
-      .filter((n) => n !== def)
-      .flatMap((n) => {
-        const f = this.byName.get(n)?.facts;
-        return f ? [f] : [];
-      });
-    const all = [...lent, ...named];
-    if (!all.length) return null;
-    const capped = all.filter((f) => f.reliableDigits !== null).map((f) => f.reliableDigits!);
-    const warn = all.some((f) => f.warn === "unaudited") ? "unaudited" : all.some((f) => f.warn === "unchecked") ? "unchecked" : undefined;
-    return { reliableDigits: capped.length ? Math.min(...capped) : null, ...(warn ? { warn } : {}), inexact: true };
+    return mergedFacts([...lent, ...this.bodyFacts(input, def, new Set(def ? [def] : []))]);
+  }
+
+  /** G49f3: the facts of the names a definition's body (`input`, its parameters masked) holds now: stored variables
+   *  with facts, and called functions by `callFacts`. `def` (the function itself) is skipped; `seen` ends recursion. */
+  private bodyFacts(input: string, def: string | undefined, seen: Set<string>): NameFacts[] {
+    const body = maskBound(input);
+    const vars = namesIn(body).flatMap((n) => {
+      const e = this.byName.get(n);
+      return n !== def && e && e.kind !== "fn" && e.facts ? [e.facts] : [];
+    });
+    const fns = functionsIn(body).flatMap((n) => {
+      const f = n === def ? null : this.callFacts(n, seen);
+      return f ? [f] : [];
+    });
+    return [...vars, ...fns];
+  }
+
+  /** G49f3: the facts a call to the stored function `name` lends: the facts its entry stored at definition (chips and
+   *  constants lent then) merged with those of the names its body holds now. Null when it is no function, already
+   *  visited (`seen`), or nothing in it is inexact. */
+  private callFacts(name: string, seen: Set<string>): NameFacts | null {
+    const e = this.byName.get(name);
+    if (e?.kind !== "fn" || seen.has(name)) return null;
+    seen.add(name);
+    const cmd = e.cmds.find((c) => definedBy(c)?.name === name) ?? e.cmds[0];
+    return mergedFacts([...(e.facts ? [e.facts] : []), ...(cmd !== undefined ? this.bodyFacts(cmd, name, seen) : [])]);
   }
 
   /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). A value carried as its decimal
@@ -647,8 +673,11 @@ export class EngineHost {
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
     const pair = !single && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
+    // G49f3: a function defined here keeps the facts of the names its body holds, as in Home (fnFacts).
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
-      stateful ? this.defsAfter(input, [exactInput], preview, facts, "cas", Math.trunc(s.digits), s.angle) : [];
+      stateful
+        ? this.defsAfter(input, [exactInput], preview, definedBy(input)?.kind === "fn" ? this.fnFacts(input, facts ? [facts] : []) : facts, "cas", Math.trunc(s.digits), s.angle)
+        : [];
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
     // `evalf(e,n)` alone is shown with the n digits it asks for, checked at that precision (decisions M4-6).
     const shape = hasFloat(text) && !pair ? shapeOf(text) : null;
