@@ -3,7 +3,7 @@
   // Num view: x and the functions that are on. One engine call per screen (FunctionApp.refreshNum);
   // numbers through the Home formatter. ▲▼ (or a swipe, or the wheel) scroll by rows; the menu sets start and step.
   import { t } from "../../i18n/index.ts";
-  import { CURVE_COLORS, type FunctionApp } from "./app.svelte.ts";
+  import { curveColors, type FunctionApp } from "./app.svelte.ts";
 
   let { app }: { app: FunctionApp } = $props();
 
@@ -42,7 +42,7 @@
       <thead>
         <tr>
           <th>x</th>
-          {#each app.numSlots as s (s)}<th style:color={CURVE_COLORS[s]}>{app.slots.names[s]}</th>{/each}
+          {#each app.numSlots as s (s)}<th style:color={curveColors()[s]}>{app.slots.names[s]}</th>{/each}
         </tr>
       </thead>
       <tbody>
@@ -62,7 +62,7 @@
 
 <style>
   td > .warn {
-    color: var(--error);
+    color: var(--warn);
   }
   .num {
     flex: 1;

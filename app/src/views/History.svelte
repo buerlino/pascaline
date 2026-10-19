@@ -205,8 +205,8 @@
   }
   .item[data-selected="true"] {
     border-radius: 8px;
-    background: var(--panel);
-    outline: 2px solid var(--shift);
+    background: var(--pick);
+    outline: 2px solid var(--focus);
   }
   .in {
     all: unset;
@@ -245,8 +245,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .mark[data-mark="≈"] {
+    color: var(--approx);
+  }
   .mark[data-mark="⚠"] {
-    color: var(--error);
+    color: var(--warn);
   }
   .note,
   .working {
@@ -276,7 +279,7 @@
   }
   .cancel.prominent {
     background: var(--error);
-    color: #fff;
+    color: var(--on-error);
     border-color: var(--error);
     font-weight: 700;
   }

@@ -1,48 +1,67 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Colour roles per family and brightness (R50b). The values are tools/probes/themes-audit.mjs `--css`; the contrast
+   test (src/style.test.ts) reads every [data-family][data-brightness] block. index.html sets both attributes before
+   the first paint. --approx ≈, --warn ⚠, --pick the picked row, --focus focus ring and caret, --key-on and
+   --on-key-on a key that is on, --on-error the label on an --error ground. */
 :root {
-  --bg: #14161a;
-  --panel: #1d2026;
-  --line: #3a4250;
-  --key-num: #2b3038;
-  --key-op: #3a4250;
-  --key-fn: #26384a;
-  --key-ctl: #4a3a2a;
-  --key-nav: #2e3a33;
-  --key-enter: #1f6f54;
-  --text: #e8ebef;
-  /* a key that does nothing in the layer shown: dimmed, still at least 3:1 (src/style.test.ts) */
-  --text-dead: #8a93a3;
-  --on-enter: #ffffff;
-  --muted: #98a2b3;
+  /* a key that does nothing in the layer shown is dimmed (--text-dead), still at least 3:1 */
   /* keypad legend line above each key face, and the key side padding */
   --legend-h: 12px;
   --key-pad: 4px;
-  --shift: #f0b35a;
-  --alpha: #7fc8f8;
-  --error: #c0392b;
-  /* chips on the entry line and in the history (\res, \ans, \const): upright, on an accent background */
-  --chip-bg: #24486a;
+}
+:root[data-family="pascaline"][data-brightness="dark"] {
+  --bg: #0b1020;
+  --panel: #121a2e;
+  --line: #2d3a5a;
+  --key-num: #1f2a45;
+  --key-op: #18233d;
+  --key-fn: #172443;
+  --key-ctl: #2a2433;
+  --key-nav: #141d33;
+  --key-enter: #2346d8;
+  --on-enter: #ffffff;
+  --text: #eef1f8;
+  --text-dead: #76819c;
+  --muted: #a3adc6;
+  --shift: #ffc233;
+  --alpha: #86c5ff;
+  --error: #ff8e86;
+  --chip-bg: #1d3070;
+  --approx: #86c5ff;
+  --warn: #ffc233;
+  --pick: #1a2442;
+  --focus: #ffc233;
+  --key-on: #ffc233;
+  --on-key-on: #0b1020;
+  --on-error: #0b1020;
   color-scheme: dark;
 }
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f4f5f7;
-    --panel: #e4e7ec;
-    --line: #b9c0cc;
-    --key-num: #ffffff;
-    --key-op: #d5dae3;
-    --key-fn: #cfe0f2;
-    --key-ctl: #f2dcc2;
-    --key-nav: #d6e8dc;
-    --key-enter: #1f6f54;
-    --text: #1a1d22;
-    --text-dead: #6b7585;
-    --muted: #5b6575;
-    --shift: #855000;
-    --alpha: #0d5f93;
-    --chip-bg: #cfe3f7;
-    color-scheme: light;
-  }
+:root[data-family="pascaline"][data-brightness="light"] {
+  --bg: #f5f6fa;
+  --panel: #e7eaf3;
+  --line: #b7bfd4;
+  --key-num: #ffffff;
+  --key-op: #e6eaf5;
+  --key-fn: #e1e8fb;
+  --key-ctl: #f8ecd2;
+  --key-nav: #eceef3;
+  --key-enter: #0025b5;
+  --on-enter: #ffffff;
+  --text: #0f172a;
+  --text-dead: #6b7489;
+  --muted: #4a556e;
+  --shift: #8a5300;
+  --alpha: #0b4fc4;
+  --error: #b3261e;
+  --chip-bg: #d8e1fb;
+  --approx: #0b4fc4;
+  --warn: #8a4b00;
+  --pick: #dde4f8;
+  --focus: #0025b5;
+  --key-on: #0025b5;
+  --on-key-on: #ffffff;
+  --on-error: #ffffff;
+  color-scheme: light;
 }
 * {
   box-sizing: border-box;
