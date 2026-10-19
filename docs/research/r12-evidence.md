@@ -27,6 +27,8 @@ Each became a regression case before its fix (CLAUDE.md); #7 was Python's `calc.
 | 17 | `evalf(x+sin(10^22))` | `x-0.54764225985`, no mark | x − 0.852200849767… (`oracle`) | `⚠` on a non-number with a float (G27) |
 | 18 | Home `2^10000`, tap, `×1` | `= 1.99506311688E3010` | `≈` (the chip was cut) | R44 |
 | 19 | `cos(π/7)−cos(2π/7)+cos(3π/7) == 1/2` | `= 0` | true (`derived`) | stays as typed (R18f3) |
+| 20 | `int(1/x,x,-1,1)`, `int(tan(x),x,0,pi)`, `sum(cos(k),k,1,inf)`, `sum(exp(i*k),k,0,inf)`, `limit(sin(x),x,inf)` (deep check E2, E9) | `= 0`, `= 0`, `= −0.5`, `≈ 0.5+0.915243860856i`, `bounded_function(2)` | does not converge / no limit (`derived`) | refused with "The integral does not converge", "The series does not converge", "No limit"; Giac's own `undef` the same (G39) |
+| 21 | `int(abs(x-sin(10^50)),x,-1,1)`, DEG `int(1/(1+x^2),x,0,1)` (deep check E6, D7) | the list `[…, 1.35506364264]`, `[8100/pi, 0.785398163397]` | 1 + sin(10^50)² = 1.62358264688, π/4 (`oracle`) | one value, `⚠` with no digit confirmed, why "the exact and numeric answers differ"; CAS shows Giac's two answers with `⚠` (G39) |
 
 ## 2. Units on Giac (docs/04 4.1; G15's probe, 2026-10-15)
 

@@ -20,7 +20,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **At milestone 5:** time ten tasks by hand, E-notation against units (the rule 2 speed gate).
-1. **Open proposals:** decisions.md "Needs the user" (S14, S12, G33, R56, A4a points 1, 3 and 4, R34, R43, M4-2, R7, P7 point 4).
+1. **Open proposals:** decisions.md "Needs the user" (the pipeline merging the audited commit, Opus pass 22; S14, S12, G33, R56, A4a points 1, 3 and 4, R34, R43, M4-2, R7, P7 point 4).
 2. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–68 on 2026-10-19; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 before S14, 66–68 before G42 and G40; each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 3. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md); whether the Math menu's slots should be yours to arrange (feedback, decide around 2026-10-20). The checks on the phone are listed below.
 4. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`.

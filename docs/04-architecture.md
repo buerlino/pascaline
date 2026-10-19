@@ -80,7 +80,7 @@ Every Home and CAS number is marked by 2.4's rules; the agreement check runs on 
 Only the engine knows the path, whether a value is an exact rational, and how many digits are confirmed. Only the app knows the display format the user picked and whether an input was a measured constant. So the engine reports facts and the app's formatter (pure functions in `format.ts`, run on the main thread) turns them into the mark for whatever format is on screen. A settings or Format-key change re-marks the history without the engine, as it already re-formats it.
 
 ### 2.3 Paths that showed a wrong or unmarked value
-Nineteen paths (#1–#19) showed a wrong or unmarked number. Each became a regression case before its fix; all are fixed except #2's value polish (`normald_icdf`, EN7), which keeps its `⚠`. Their lesson is 2.4. The list (input, what was shown, the right value with its `source:`, the fix) is [research/r12-evidence.md](research/r12-evidence.md) section 1, rows numbered as before: "2.3 #n" in the code and the golden files is row n there.
+Twenty-one paths (#1–#21) showed a wrong or unmarked number. Each became a regression case before its fix; all are fixed except #2's value polish (`normald_icdf`, EN7), which keeps its `⚠`. Their lesson is 2.4. The list (input, what was shown, the right value with its `source:`, the fix) is [research/r12-evidence.md](research/r12-evidence.md) section 1, rows numbered as before: "2.3 #n" in the code and the golden files is row n there.
 
 ### 2.4 Decision: the mark and the agreement check
 
@@ -97,6 +97,8 @@ Num tables and the Solve and analysis results show only `⚠` (a mark on every c
 2. Any other value is evaluated at precision P = `max(40, digits+10)` and again at P + 20. The confirmed digits are the largest n at which both values, widened by their difference (plus one ulp), round alike (G2; stricter than "common digits less one" at ties). If fewer than `digits` agree, the check runs once more at P + 20 against P + 40. If they cover the shown digits, the mark is `≈`; otherwise `⚠ n`. A float from a function that is not audited shows `⚠` without a count (M4-5): two of Giac's routines can agree on wrong digits.
 3. A value that Giac's numeric code returned as a float on the "exact" path (the exact output is a float literal, as `normald_icdf` gives `-1.2815515655446`) is re-evaluated once with `Digits` on the other side of 14 (double ↔ MPFR) and compared the same way. If one side has no value (2.3 #5), the other side's digits are shown, at most 15 for a double. Such a value gets `⚠` unless every function in the input is on the audited list (tier 0, 3.3), because agreement between two of Giac's routines does not prove either right (2.3 #2).
 4. *(Not needed: rule 2's comparison of P with P + 20 already drops a digit at a tie. `tieRisk` (`format.ts:140`, set in `homeEval.ts:417`) has no reader; drop it when `homeEval.ts` is next touched. Checked 2026-10-19.)*
+
+A number for something that does not exist (a principal value, an Abel sum) is refused by the cheapest necessary check (the term's limit, ∫|f| near a singular point); a check Giac's timeout stops leaves `⚠` (G39).
 
 Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, probe timings) and one more evaluation only for the rare float-returning inputs.
 
@@ -148,6 +150,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 - **Result chip `\res{n}`:** tapping a history result, or Up then Enter, inserts a chip drawn as the number shown. Each history item stores `full`: Giac's exact text when the result is exact and ≤ 2 kB, else the P-digit decimal. The parser turns the chip into that text (an exact rational literal for decimals). Its exactness travels: a result computed from a chip whose value is not exact (an irrational result carried as digits, a constant with an uncertainty) cannot be `=`; a chip that carries an exact value keeps the result exact, so `1/3` (shown `≈ 0.333333333333`) tapped `×3` is `= 1` (2.3 #8; user, 2026-10-12, M4-4).
 - **Ans:** `\ans` is the view's last result, inserted by Shift + `+` (the reference's position). Ans is resolved by the app at Enter from the view's last history result (its chip value), not from Giac's `pasans`/`pcasans`, so it survives a Cancel (worker restart) and a relaunch (R2).
 - **Operator on an empty line:** `+ − × ÷ xʸ x² x⁻¹` on an empty entry line insert `\ans` first, as the reference does. `(−)` stays negation. This saves a press in every chained calculation; benchmark tasks measure it.
+- A value that leaves its evaluation (stored, Ans, a chip, an export) is the value shown, independent of the angle mode (G34).
 
 **Alternatives:** insert the full digits as text (40 digits clutter the line); keep inserting the rounded digits (2.3 #8).
 
