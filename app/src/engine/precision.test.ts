@@ -290,6 +290,32 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(notBuiltin(giac)("sin")).toBe(false);
   });
 
+  it("G53: a built-in's or keyword's print is asked once per Giac instance, a user's name on every call (source: derived, Giac refuses sin:=3)", async () => {
+    const { callsStateful, notBuiltin } = await import("./numeric.ts");
+    const { giac } = await loadNodeGiac();
+    const asked: string[] = [];
+    const counted = { eval: (t: string) => (asked.push(t), giac.eval(t)) };
+    expect(notBuiltin(counted)("sin")).toBe(false);
+    expect(notBuiltin(counted)("sin")).toBe(false);
+    expect(callsStateful(counted, "sin(1)+cos(2)")).toBe(false);
+    expect(asked.filter((t) => t === "sin")).toEqual(["sin"]);
+    // A keyword in a printed program: callsStateful visits it once, then never again.
+    giac.eval("g53k(x):={ if (x>0) return 1; return 0; }");
+    expect(callsStateful(counted, "g53k(1)")).toBe(false);
+    expect(callsStateful(counted, "g53k(1)")).toBe(false);
+    expect(asked.filter((t) => t === "if" || t === "return")).toEqual(["if", "return"]);
+    // A user's name may change between calls: it is asked each time, so a later definition is seen.
+    expect(notBuiltin(counted)("g53u")).toBe(true);
+    giac.eval("g53u(x):={ c53:=x; }");
+    expect(callsStateful(counted, "g53u(1)")).toBe(true);
+    expect(asked.filter((t) => t === "g53u")).toEqual(["g53u", "g53u"]);
+    // A fresh engine starts with nothing known.
+    const other = { eval: (t: string) => (asked.push(`other:${t}`), giac.eval(t)) };
+    expect(notBuiltin(other)("sin")).toBe(false);
+    expect(asked.filter((t) => t === "other:sin")).toEqual(["other:sin"]);
+    giac.eval("purge(g53k,g53u)");
+  });
+
   it("the Digits setting is back at the display digits after an input: a float in a non-number prints with them", () => {
     host.home("floor(sin(10^50))", defaultHomeSettings);
     expect(host.home("evalf([1/3,x])", defaultHomeSettings).result.display).toBe("[0.333333333333,x]");
