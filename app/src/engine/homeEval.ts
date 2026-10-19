@@ -13,7 +13,9 @@
 //
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
-import { formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
+import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
+import { enEngine } from "../i18n/enEngine.ts";
+import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
   AUDITED_FUNCTIONS,
@@ -82,8 +84,9 @@ export interface HomeResult {
   tieRisk: boolean;
   exactMs: number;
   totalMs: number;
-  /** Set by the engine host when !ok: "syntax" (Giac could not parse the input) or "engine". */
-  error?: "syntax" | "engine";
+  /** Set when !ok: "syntax" (Giac could not parse the input), "engine", or a refusal of a number for something that does
+   *  not exist (G39, converge.ts: a divergent integral or series, no limit); the UI shows `error.<code>`. */
+  error?: "syntax" | "engine" | Refusal;
   /** The value is exactly p/q or an integer; with the format this decides "=" (docs/04 section 2.4, 8.2). */
   exactRational: boolean;
   /** Digits confirmed by the agreement check; null = exact (no digit is in doubt). */
@@ -564,6 +567,26 @@ export function homeEval(
 
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
+
+  // G39: a number for something that does not exist (a principal value, an Abel sum, a bounded_function) is refused.
+  if (!once) {
+    const refused = refusalOf(giac, exactBody, exactOut, s.angle);
+    if (refused) return { ...failed(enEngine[`error.${refused}`], "exact"), error: refused, approximate: false };
+  }
+  // G39: Giac's [exact, numeric] pair of a definite integral is never a list. The two answers differ, so neither is
+  // confirmed: the float is the value, with no digit confirmed (⚠, docs/04 2.4), and the why-line says the pair differs.
+  const pair = !once && hasDefiniteIntegral(exactBody) ? giacPair(exactOut) : null;
+  if (pair) {
+    const P = valuePrecision(s.digits);
+    const re = decimalFromString(pair.numeric, P);
+    if (re) {
+      giac.eval(`${ans}:=${pair.numeric}`);
+      store();
+      const f: ElementFacts = { value: { re, im: decimalFromString("0", P)! }, exactRational: false, reliableDigits: 0, big: false };
+      const b = build([f], { kind: "scalar" }, s.digits, "exact", true);
+      return fromBuilt(b, "exact", true, undefined, b.decimal, { differ: true });
+    }
+  }
 
   const shape = shapeOf(exactOut);
   const symbolic = (): HomeResult => {

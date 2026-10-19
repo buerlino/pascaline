@@ -327,6 +327,8 @@ export interface PrecisionWhy {
   unaudited?: string[];
   inherited?: string[];
   once?: boolean;
+  /** G39: Giac returned its [exact, numeric] pair for a definite integral, and the two answers differ ("why.pairDiffers"). */
+  differ?: boolean;
 }
 
 /** The engine's facts about one result (a subset of HomeResult, so the formatter does not depend on the engine). */
