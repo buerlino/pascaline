@@ -199,7 +199,7 @@ describe("the dimension check's text (G35)", () => {
   it("−(5 °C) is told to put the minus on the number; −5 °C converts", () => {
     const oC = { tokens: [{ unit: "oC" }] };
     const r = buildJob({ formula: "-(5*pasu1)", slots: [oC] }, table);
-    expect("error" in r && unitErrorMessage(r)).toBe("Put the minus on the number: −5 °C, not −(5 °C)");
+    expect("error" in r && unitErrorMessage(r)).toBe("Put the minus on the number, not before the bracket around °C");
     const pm = buildJob({ formula: "-(pasupm(20,0.5)*pasu1)", slots: [oC] }, table);
     expect("error" in pm && pm.error).toBe("minus");
     expect("error" in buildJob({ formula: "-5*pasu1", slots: [oC] }, table)).toBe(false);

@@ -241,7 +241,7 @@ The evaluator (`app/src/units/`, G16):
 - checks for one term: each exponent d·∂f/∂d / f must be a number;
 - converts to the end slot, where the quotient must be a pure number;
 - returns a `Quantity` whose mark comes from Home's facts and `markOf()`. An irrational value goes through the agreement check.
-- The input is R24a's tokens per slot and the formula with `pasu<n>` per slot and `pask<n>` per constant; the request is built into Giac text on the main thread, so only text reaches the worker. The dimension symbols are positive (√(m²) = m), and an exact 0 has no dimension.
+- The input is R24a's tokens per slot and the formula with `pasu<n>` per slot and `pask<n>` per constant; the request is built into Giac text on the main thread, so only text reaches the worker. The dimension symbols are positive (√(m²) = m), and the dimension is checked per term before the numbers go in; a result 0 keeps the unit of its terms.
 
 sin, cos and tan take an angle or a pure number; the angle dimension is dropped inside them. Any other function of a quantity with units is refused. On top of this come G17's rules for temperatures and logarithmic units, and G18's first-order uncertainty (σ² = Σ(∂f/∂xᵢ·σᵢ)², with Giac's `diff`): the formula writes an uncertain number as `pasupm(value,sigma)` (two plain numbers, σ a standard uncertainty in the unit of the slot after it, each one an independent input); the builder turns each into a symbol (`UnitJob.unc`), and a result with a σ is never `=`.
 

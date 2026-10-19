@@ -15,7 +15,7 @@ export const enUnits = {
   "units.function": "A function takes a pure number (sin, cos and tan also an angle)",
   "units.divzero": "Not defined: a division by 0",
   "units.uncpower": "A power of a unit can't carry ±",
-  "units.minus": "Put the minus on the number: −5 {unit}, not −(5 {unit})",
+  "units.minus": "Put the minus on the number, not before the bracket around {unit}",
   "units.symbolic": "Not a number: {detail}",
   "units.engine": "The unit view could not evaluate this",
   // R24a: the slot model's refusals (a pad press that cannot go into the slot) and the reading in words. {u} is a

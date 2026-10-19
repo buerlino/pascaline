@@ -155,8 +155,8 @@ cases:
   - { id: "z05", input: "0*{m}", oracle: "F(0)", expect: "0", mark: "=", exact: "0", dim: "m1", unit: "m", dimtext: "L", source: "derived", note: "0 m alone shows 0 m" }
   - { id: "z06", input: "1*{m}+1*{s}-1*{s}", message: "Units don't match: L vs T", source: "derived", note: "terms that cancel beside a third (was = 1 m)" }
   - { id: "z07", input: "(5-5)*{m}+1*{s}", message: "Units don't match: L vs T", source: "derived", note: "a bracketed number worth 0 before a slot" }
-  - { id: "z08", input: "-(5*{oC})", to: "K", message: "Put the minus on the number: −5 °C, not −(5 °C)", source: "derived", note: "finding 13: a minus before the whole quantity (was the temperature-difference message)" }
-  - { id: "z09", input: "-(pasupm(20,0.5)*{oC})", to: "oF", message: "Put the minus on the number: −5 °C, not −(5 °C)", source: "derived", note: "finding 13, with ±" }
+  - { id: "z08", input: "-(5*{oC})", to: "K", message: "Put the minus on the number, not before the bracket around °C", source: "derived", note: "finding 13: a minus before the whole quantity (was the temperature-difference message)" }
+  - { id: "z09", input: "-(pasupm(20,0.5)*{oC})", to: "oF", message: "Put the minus on the number, not before the bracket around °C", source: "derived", note: "finding 13, with ±" }
   - { id: "z10", input: "floor(1.5*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived", note: "E8 (was Not a number: floor(3*pasdimL/2))" }
   - { id: "z11", input: "1*{m}/(0*{s})", message: "Not defined: a division by 0", source: "derived", note: "E8 (was Not a number: infinity)" }
   - { id: "z12", input: "irem(7*{m},2*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived", note: "E8 (was L vs L²)" }
