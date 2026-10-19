@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { EngineHost } from "../src/engine/host.ts";
 import { defaultHomeSettings, pasdegCommand } from "../src/engine/homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "../src/engine/nodeGiac.ts";
-import { checkAngle, invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
+import { checkAngle, checkStoreBoth, INV_NAME, invariantsOf, invariantsStage, type InvariantFailure } from "./invariants.ts";
 
 const fail = (id: string, check = "a"): InvariantFailure => ({ id, check, detail: "RAD 1, DEG 2" });
 
@@ -62,5 +62,17 @@ describe.skipIf(!giacAvailable())("check (a) compares RAD with DEG (real Giac)",
   });
   it("the same answer in both modes is no failure", async () => {
     expect(checkAngle("home:x", await run("(-8)^0.2", "rad"), await run("(-8)^0.2", "deg"))).toBeNull();
+  });
+});
+
+describe.skipIf(!giacAvailable())("check (d) on one shared engine (real Giac)", () => {
+  it("a name stored by one input does not reach the next one", async () => {
+    const g = (await loadNodeGiac()).giac;
+    g.eval(pasdegCommand("rad"));
+    const host = new EngineHost(g);
+    expect((await checkStoreBoth(async () => host, "t:1", "7+1")).checked).toBe(2);
+    const after = host.home(INV_NAME, defaultHomeSettings).result;
+    expect(after.display).not.toBe("8");
+    expect((await checkStoreBoth(async () => host, "t:2", "2*3")).failures).toEqual([]);
   });
 });
