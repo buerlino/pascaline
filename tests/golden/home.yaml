@@ -180,7 +180,7 @@ cases:
   - { id: "g42-round-half-up", input: "round(-2.5)", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived", g2: 66, note: "Giac's convention, kept (S12)" }
   - { id: "g42-round-digits-half-up", input: "round(-2.25,1)", expect: "-2.2", mark: "≈", source: "derived", g2: 66, note: "Giac's convention, kept (S12). No oracle expression: the value -2.2 is exact, but round returns a Giac double, so the engine marks it ≈ (a float whose digits are confirmed, docs/04 2.4), not =" }
   # --- G47 (night check 2026-10-19 2.1): the displays G50's shortDigits cut a digit from (round showed 12.4, 3.14, -0.1) ---
-  - { id: "g47-round-12.345-2", input: "round(12.345,2)", expect: "12.35", mark: "≈", source: "derived", note: "12.345 is exact (12345/1000), half away from zero gives 12.35; round returns a Giac double, hence ≈ not =. Showed ≈ 12.4 on 8872384: a 4-digit print was taken for a short double" }
+  - { id: "g47-round-12.345-2", input: "round(12.345,2)", expect: "12.35", mark: "≈", source: "derived", note: "12.345 is exact (12345/1000), half up (toward +∞), Giac's convention kept (S12), gives 12.35; round returns a Giac double, hence ≈ not =. Showed ≈ 12.4 on 8872384: a 4-digit print was taken for a short double" }
   - { id: "g47-round-12.345-2-30", input: "round(12.345,2)", settings: { digits: 30 }, expect: "12.35", mark: "≈", source: "derived", note: "same at 30 digits: the print is 12.35 (4 digits) and no digit is cut" }
   - { id: "g47-round-pi-3", input: "round(pi,3)", expect: "3.142", mark: "≈", source: "derived", note: "pi = 3.14159…, rounded to 3.142. Showed 3.14 on 8872384" }
   - { id: "g47-round-pi-3-30", input: "round(pi,3)", settings: { digits: 30 }, expect: "3.142", mark: "≈", source: "derived", note: "same at 30 digits" }
