@@ -8,11 +8,14 @@ import { formatComplex, markOf, type FormatOptions } from "./format.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { exportLibrary } from "./library.ts";
+import { ICDF_DEFINITIONS, icdfPolished } from "./icdf.ts";
 
 describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   let host: EngineHost;
+  let giac: Awaited<ReturnType<typeof loadNodeGiac>>["giac"];
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    giac = (await loadNodeGiac()).giac;
+    host = new EngineHost(giac);
   });
 
   it("Home: 1/3 -> 0.333333333333 (source: device, G2 item 16)", () => {
@@ -225,6 +228,35 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect([f.display, f.warn, f.approximate, f.why]).toEqual(["+infinity", "unaudited", true, { unaudited: ["fisher_icdf"] }]);
       const e = home("fisher_icdf(3,4,1)");
       expect([e.display, e.warn, e.approximate]).toEqual(["+infinity", undefined, false]);
+    });
+    it("G44f1 fix 1: a polish that converges at P but not at P + 20 leaves Giac's infinity with ⚠ (regression)", () => {
+      // pasicdf made to fall back from Digits 60 (P + 20 at 12 digits) on: before the fix, the one-precision check at
+      // P saw it converge and showed +infinity with no mark.
+      icdfPolished(giac, "");
+      giac.eval(ICDF_DEFINITIONS.pasicdf!.replace(/^pasicdf\(/, "pasicdf0("));
+      giac.eval("pasicdf(k,a,b,p,x0):={ if (Digits>=60) { pasicdff:=1; return x0; } return pasicdf0(k,a,b,p,x0); }");
+      try {
+        const f = home("fisher_icdf(3,4,1-10^-20)");
+        expect([f.display, f.warn, f.approximate, f.why]).toEqual(["+infinity", "unaudited", true, { unaudited: ["fisher_icdf"] }]);
+      } finally {
+        giac.eval(ICDF_DEFINITIONS.pasicdf!);
+        giac.eval("purge(pasicdf0)");
+      }
+      expect(home("fisher_icdf(3,4,1-10^-20)").display).toBe("18257418581.9");
+    });
+    it("G44f1 fix 2: erf of a non-real argument kept exact is Giac's own erf, so ⚠ unaudited (regression)", () => {
+      // Giac keeps erf(sqrt(2)*i) exact; its value went through Giac's erf (the flag), not ours: it showed ≈.
+      for (const [input, fn] of [["erf(sqrt(2)*i)", "erf"], ["sqrt(2)+erfc(sqrt(2)*i)", "erfc"]] as const) {
+        const r = home(input);
+        expect([r.path, r.warn, r.why]).toEqual(["exact", "unaudited", { unaudited: [fn] }]);
+      }
+      // a real argument on the exact path stays audited
+      expect([home("erf(1/2)").warn, home("erf(1/2)").why]).toEqual([undefined, undefined]);
+    });
+    it("G44f1 fix 3: in DEG erf next to a complex tanh keeps tanh read through ours (oracle: mpmath)", () => {
+      // mpmath erf(1/2)+tanh(1+1j) at 45 digits: 1.60442320515174108115849871510393625… + 0.27175258531951171652884372249858892…i (Giac's tanh is coth)
+      const r = host.home("erf(1/2)+tanh(1+i)", { ...defaultHomeSettings, angle: "deg", digits: 30 }).result;
+      expect([r.display, r.warn]).toEqual(["1.6044232051517410811584987151+0.271752585319511716528843722499*i", undefined]);
     });
     it("a result from a stored float names the stored name when it limits the digits", () => {
       host.home("B:=BesselJ(1,2)", defaultHomeSettings);

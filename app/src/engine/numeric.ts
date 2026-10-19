@@ -593,10 +593,16 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
   const safe = isError(text) ? text : forValue(giac, text);
   // G44f1: erf and erfc are read through our MPFR definitions, which run at Digits: the value is evaluated from the
   // text at each precision with Digits set to it.
-  const erfText = isError(safe) ? safe : erfValueText(giac, safe);
+  // The whole value is evaluated, so only with no function left that Giac gets wrong on it (DEG replaces nothing:
+  // erf(1/2)+tanh(1+i) keeps the symbolic parts below). The input is audited only when every call went through ours:
+  // a non-real argument (erf(1+i)) is Giac's own erf, with the flag set.
+  const erfText = isError(safe) || (safe === text && complexSafe(text) !== text) ? safe : erfValueText(giac, safe);
   if (erfText !== safe) {
     try {
-      return exactFactsOf(giac, name, shape, digits, P, facts, false, true, erfText);
+      giac.eval(`${ICDF_FAILED}:=0`);
+      const out = exactFactsOf(giac, name, shape, digits, P, facts, false, true, erfText);
+      const failed = giac.eval(ICDF_FAILED).trim() !== "0";
+      return out && failed ? out.map((f) => (f.exactRational ? f : { ...f, warn: "unaudited" as const })) : out;
     } finally {
       giac.eval(`purge(pasxe,${ICDF_FAILED})`);
     }
@@ -874,8 +880,14 @@ export function floatPathFacts(
     // G44f1: erf and erfc through our MPFR definitions (Giac's erf of a float below about 1E-11 is the argument).
     const safe = forValue(giac, reads.text);
     const value = erfValueText(giac, safe);
-    const out = floatPathFactsOf(giac, name, value, once, W, digits);
-    if (value !== safe) giac.eval(`purge(${ICDF_FAILED})`);
+    if (value !== safe) giac.eval(`${ICDF_FAILED}:=0`);
+    let out = floatPathFactsOf(giac, name, value, once, W, digits);
+    if (value !== safe) {
+      // A non-real argument is Giac's own erf (the flag): not audited.
+      const failed = giac.eval(ICDF_FAILED).trim() !== "0";
+      giac.eval(`purge(${ICDF_FAILED})`);
+      if (failed && !("error" in out)) out = { ...out, facts: out.facts.map((f) => ({ ...f, warn: "unaudited" as const })) };
+    }
     // A non-real value that rests on a replaced function not read through ours (DEG, a copy refused) is not audited.
     if ("error" in out || !reads.hidden.length || !nonReal(giac, name)) return out;
     const complexFns = reads.hidden;

@@ -186,16 +186,17 @@ export function erfValueText(giac: Giac, text: string): string {
   return s;
 }
 
-/** G44f1: whether the polish of `text` falls back to Giac's value at `digits` (P = max(40, digits + 10)): an argument
- *  out of range or Newton not converging. Not for p = 0 or 1, where Giac's ±infinity is the exact end of the support. */
-export function icdfRefused(giac: Giac, text: string, digits: number): boolean {
+/** G44f1: whether the polish of `text` at P = max(40, digits + 10) gives ±infinity with no call falling back to Giac's
+ *  value: p = 0 or 1, where Giac's infinity is the exact end of the support. False for a refused polish (an argument
+ *  out of range, Newton not converging) and for one that converged to a finite number. */
+export function icdfAtEnd(giac: Giac, text: string, digits: number): boolean {
   const polished = icdfPolished(giac, text);
   giac.eval(`${ICDF_FAILED}:=0`);
   giac.eval(`${ICDF_DIGITS}:=${digits}`);
   giac.eval(`Digits:=${Math.max(40, digits + 10)}`);
   try {
-    giac.eval(`pasicdfr:=(${polished})`);
-    return giac.eval(ICDF_FAILED).trim() !== "0";
+    const value = giac.eval(`pasicdfr:=(${polished})`).trim();
+    return giac.eval(ICDF_FAILED).trim() === "0" && /^[+-]?infinity$/.test(value);
   } finally {
     giac.eval(`Digits:=${digits}`);
     giac.eval(`purge(pasicdfr,${ICDF_FAILED},${ICDF_DIGITS})`);

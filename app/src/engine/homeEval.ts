@@ -15,7 +15,7 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { icdfCalls, icdfRefused } from "./icdf.ts";
+import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
@@ -717,8 +717,9 @@ export function homeEval(
       return fromBuilt(b, "exact", true, undefined, b.decimal, whyOf(facts, exactBody));
     }
     giac.eval(`${ans}:=${exactOut}`);
-    if (once || icdfRefused(giac, exactBody, s.digits)) return symbolic("unaudited");
-    return symbolic();
+    // Exact only when the polish itself gives the end of the support (p = 0 or 1); a polish refused, or one that
+    // converged at P but not at P + 20, leaves Giac's infinity unaudited.
+    return !once && icdfAtEnd(giac, exactBody, s.digits) ? symbolic() : symbolic("unaudited");
   }
 
   if (hasFloat(exactOut)) {
@@ -758,9 +759,11 @@ export function homeEval(
   store();
   const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
   const big = shape.kind === "scalar" && facts[0]!.big;
-  if (!big) return fromBuilt(b, "exact", false, exactText, full);
+  // G44f1: an erf Giac computed itself (a non-real argument) leaves the value unaudited.
+  const why = facts.some((f) => f.warn) ? whyOf(facts, exactBody) : undefined;
+  if (!big) return fromBuilt(b, "exact", false, exactText, full, why);
   if (s.guardMode === "reeval-float") return viaFloat("float-big", exactText);
   // Shown from the exact value (already computed); Ans continues as a float.
   giac.eval(`${ans}:=evalf(${ans},${W})`);
-  return fromBuilt(b, "exact-big", false, exactText, full);
+  return fromBuilt(b, "exact-big", false, exactText, full, why);
 }
