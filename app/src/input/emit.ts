@@ -2,7 +2,7 @@
 // MathJSON (Compute Engine's shape, also produced by our own parser) -> Giac input string.
 import { parseError } from "../i18n/enParser.ts";
 import { SerializeError } from "./errors.ts";
-import { ANGLE_IN, ANGLE_OUT, PASDEG, withFactor } from "./angles.ts";
+import { ANGLE_IN, ANGLE_OUT, DEGREE, PASDEG, POLAR, POLAR_OUT, RECT, numericLiteral, rectArg, withFactor } from "./angles.ts";
 
 export { SerializeError };
 
@@ -167,9 +167,17 @@ function call(name: string, args: Json[], o: SerializeOptions): Out {
   if (spec && outs.length > spec[0] && (spec[1] === 0 || outs.length === spec[1])) {
     const a = outs[spec[0]]!;
     texts[spec[0]] = withFactor(a.s, a.p === 5);
+  } else if (o.angleFactor !== false && head === RECT && outs.length === 1) {
+    // R64f1: the one-list form; a point [r,t] of two numeric literals takes the factor in its text, anything else
+    // (a name or call may hold a point: A:=[2,30]) goes through RECT_IN, which reads the shape when evaluated
+    const pt = args[0] as Json;
+    const els = isHead(pt, "List") && pt.length === 3 ? [ser(pt[1] as Json, o), ser(pt[2] as Json, o)] : undefined;
+    const point = els && els.every((e) => numericLiteral(e.s)) ? els : undefined;
+    texts[0] = rectArg(texts[0]!, point && [point[0]!.s, withFactor(point[1]!.s, point[1]!.p === 5)]);
   }
   const text = `${head}(${texts.join(",")})`;
   if (o.angleFactor !== false && ANGLE_OUT.has(head)) return { s: `${text}/${PASDEG}`, p: 2 };
+  if (o.angleFactor !== false && head === POLAR) return { s: `${POLAR_OUT}(${text})`, p: 5 };
   return { s: text, p: 5 };
 }
 
@@ -307,9 +315,8 @@ function ser(e: Json, o: SerializeOptions): Out {
     }
     case "Degrees":
       // degrees in every angle mode (R10): u° is u in the mode's own unit, read when evaluated, so a stored definition
-      // stays right after the mode changes. (pi/180)^angle_radian() is pi/180 in radians and 1 in degrees while Giac
-      // runs in the mode; R64: over pasdeg, so it stays u in DEG once Giac runs in radians with pasdeg = pi/180 (G46)
-      return { s: `${wrap(ser(a0, o), 3)}*(pi/180)^angle_radian()${o.angleFactor === false ? "" : `/${PASDEG}`}`, p: 2 };
+      // stays right after the mode changes. Giac always runs in radians (G46), so u*pi/180 over pasdeg (R64f1)
+      return { s: `${wrap(ser(a0, o), 3)}*${o.angleFactor === false ? "pi/180" : DEGREE}`, p: 2 };
     case "Subst": // the evaluate-at template (R10): e at x = a
       return { s: `subst(${ser(a0, o).s},${ser(a1, o).s}=${wrap(ser(args[2] as Json, o), 1)})`, p: 5 };
     case "Piecewise": {

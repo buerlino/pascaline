@@ -73,9 +73,9 @@ describe("Tmpl templates (R10)", () => {
     ["\\frac{\\partial x^2+3x}{\\partial x}", "diff(x^2+3*x,x)"],
     ["\\begin{cases}x & \\text{if }x=0\\\\ 1 & \\text{if }x=1\\end{cases}", "piecewise(x==0,x,x==1,1)"],
     ["\\begin{cases}x & x=0\\\\ 1 & x=1\\end{cases}", "piecewise(x==0,x,x==1,1)"],
-    ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*(pi/180)^angle_radian()/pasdeg"],
-    ["30\\degree36\\doubleprime", "(30+36/3600)*(pi/180)^angle_radian()/pasdeg"],
-    ["30^{\\circ}", "30*(pi/180)^angle_radian()/pasdeg"],
+    ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*pi/180/pasdeg"],
+    ["30\\degree36\\doubleprime", "(30+36/3600)*pi/180/pasdeg"],
+    ["30^{\\circ}", "30*pi/180/pasdeg"],
   ];
   for (const [latex, giac] of forms) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
   it("refuses half-built forms instead of guessing", () => {

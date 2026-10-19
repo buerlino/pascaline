@@ -12,6 +12,7 @@ import { ENGINE_DEFINITIONS } from "../engine/homeEval.ts";
 import { eseriesDefinition } from "../engine/eseries.ts";
 import { SAMPLE_CHIPS } from "./chips.ts";
 import { latexToGiac } from "./latex-to-giac.ts";
+import { rewriteAngles } from "./angles.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const candidates = [
@@ -76,24 +77,6 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
     }
   });
 
-  // The degree sign and the DMS template mean degrees in every angle mode (bug found in R10: 30° was always
-  // 30·π/180, so sin(30°) in DEG mode was the sine of 0.52°). Expected values derived: sin(30°) = 1/2.
-  describe("degrees follow the angle mode", () => {
-    for (const [mode, flag] of [["rad", 1], ["deg", 0]] as const) {
-      it(`${mode}: sin(30°) = 1/2, 30°15′36″ = 30.26° and sin(30°0′0″) = 1/2`, () => {
-        giac(`angle_radian:=${flag}`);
-        try {
-          expect(giac(`simplify(${latexToGiac("\\sin\\left(30^{\\circ}\\right)")})`)).toBe("1/2");
-          expect(giac(`simplify(${latexToGiac("\\sin\\left(30\\degree0\\prime0\\doubleprime\\right)")})`)).toBe("1/2");
-          const dms = giac(`simplify(${latexToGiac("30\\degree15\\prime36\\doubleprime")})`);
-          expect(dms).toBe(mode === "deg" ? "1513/50" : "1513*pi/9000");
-        } finally {
-          giac("angle_radian:=1");
-        }
-      });
-    }
-  });
-
   // R64 (route R): with Giac in radians and pasdeg = π/180 in DEG (G46's setting), the parser's text alone keeps the
   // degree mode. Derived values: sin(30°) = 1/2, asin(1/2) = 30 (DEG) and π/6 (RAD), arg(i) = 90 and π/2, atan2(1,1) =
   // 45 and π/4, 2∡30 = √3 + i in DEG, a 30° angle is 30 in DEG (the mode's unit) and π/6 in RAD.
@@ -116,7 +99,21 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
           expect(v(deg ? "2\\measuredangle30" : "2\\measuredangle\\frac{\\pi}{6}")).toBe("sqrt(3)+i");
           // a hyperbolic function has no angle in it (F29): the same in both modes
           expect(v("\\cosh\\left(0\\right)")).toBe("1");
+          // R64f1: the coordinate converters and instfreq answer in the mode (derived: 1+i is √2 at 45° = π/4, 2 at
+          // 30° = π/6 is (√3, 1), the phase of [1,i,-1,-i] turns 90° = π/2 a sample)
+          expect(v("\\operatorname{polar\\_coordinates}\\left(1+i\\right)")).toBe(deg ? "[sqrt(2),45]" : "[sqrt(2),pi/4]");
+          expect(v(`\\operatorname{rectangular\\_coordinates}\\left(\\left\\{2,${deg ? "30" : "\\frac{\\pi}{6}"}\\right\\}\\right)`)).toBe("[sqrt(3),1]");
+          expect(v(`\\operatorname{rectangular\\_coordinates}\\left(2,${deg ? "30" : "\\frac{\\pi}{6}"}\\right)`)).toBe("[sqrt(3),1]");
+          // a list of names that hold points (audit R64f1; derived: cos/sin of 30° and 90°)
+          giac(deg ? "A:=[2,30]" : "A:=[2,pi/6]");
+          giac(deg ? "B:=[1,90]" : "B:=[1,pi/2]");
+          expect(v("\\operatorname{rectangular\\_coordinates}\\left(\\left\\{A,B\\right\\}\\right)")).toBe("[[sqrt(3),1],[0,1]]");
+          expect(giac(`simplify(${rewriteAngles("rectangular_coordinates([A,B])")})`)).toBe("[[sqrt(3),1],[0,1]]");
+          expect(giac(`simplify(${rewriteAngles(`rectangular_coordinates([[2,${deg ? "30" : "pi/6"}],[1,0]])`)})`)).toBe("[[sqrt(3),1],[1,0]]");
+          expect(giac(`simplify(${rewriteAngles("polar_coordinates([1+i,i])")})`)).toBe(deg ? "[[sqrt(2),45],[1,90]]" : "[[sqrt(2),pi/4],[1,pi/2]]");
+          expect(v("\\operatorname{instfreq}\\left(\\left\\{1,i,-1,-i\\right\\}\\right)")).toBe(deg ? "[90,90,90]" : "[pi/2,pi/2,pi/2]");
         } finally {
+          giac("purge(A,B)");
           giac("pasdeg:=1");
         }
       });

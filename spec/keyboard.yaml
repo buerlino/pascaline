@@ -470,7 +470,7 @@ templates:
       col: 5
       desc: "degrees, minutes, seconds □°□′□″"
       insert: "#@\\degree#?\\prime#?\\doubleprime"
-      sample: ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*(pi/180)^angle_radian()"]
+      sample: ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*pi/180"]
       # R27a (F22): a number typed before the cell is its degrees (5 DMS → 5°□′□″, the cursor in the minutes), as the
       # mixed number takes its whole part; a typed digit would otherwise join the degrees with no edge between them
   source: device
@@ -517,9 +517,9 @@ symbols:
     - { id: fact,    row: 0, col: 0, desc: "factorial", insert: "!", sample: ["5!", "factorial(5)"] }
     - { id: arrow,   row: 0, col: 1, desc: "function arrow", insert: "\\rightarrow", sample: ["x\\rightarrow x^2", "(x)->x^2"] }
     - { id: inf,     row: 0, col: 2, desc: "infinity", insert: "\\infty", sample: ["\\infty", "inf"] }
-    - { id: deg,     row: 0, col: 3, desc: "degree", insert: "\\degree", sample: ["30\\degree", "30*(pi/180)^angle_radian()"] }
-    - { id: minute,  row: 0, col: 4, desc: "minute ′", insert: "\\prime", sample: ["30\\degree15\\prime", "(30+15/60)*(pi/180)^angle_radian()"] }
-    - { id: second,  row: 0, col: 5, desc: "second ″", insert: "\\doubleprime", sample: ["30\\degree36\\doubleprime", "(30+36/3600)*(pi/180)^angle_radian()"] }
+    - { id: deg,     row: 0, col: 3, desc: "degree", insert: "\\degree", sample: ["30\\degree", "30*pi/180"] }
+    - { id: minute,  row: 0, col: 4, desc: "minute ′", insert: "\\prime", sample: ["30\\degree15\\prime", "(30+15/60)*pi/180"] }
+    - { id: second,  row: 0, col: 5, desc: "second ″", insert: "\\doubleprime", sample: ["30\\degree36\\doubleprime", "(30+36/3600)*pi/180"] }
     - { id: amp,     row: 0, col: 6, desc: "ampersand", insert: "\\&", sample: ["1\\&2", ""], refused: true }
     - { id: aring,   row: 0, col: 7, desc: "ångström sign", insert: "\\AA", sample: ["5\\AA", ""], refused: true }
     # row 2
