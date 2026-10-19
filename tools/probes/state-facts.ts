@@ -359,19 +359,24 @@ async function cost(): Promise<void> {
   // The lean form a host would use: the state before is the state after the last Enter (kept), so an Enter costs two
   // calls: the input's own names by Giac's parse, and every stored name with its text and lname (the closure is then
   // walked in JS). Its cost grows with the stored names: measured with a, b, f and with the replay bench's 200 entries.
-  const lean = (input: string): number => {
+  const time = (t: string): number => {
     const t0 = performance.now();
-    g.eval(`pasprobeq:=quote(${input});[string(sommet(pasprobeq)),lname(pasprobeq),when(string(sommet(pasprobeq))=="'sto'",lname(op(pasprobeq)[0]),0)]`);
-    g.eval("map(VARS(),k->[k,string(eval(k)),lname(eval(k))])");
+    g.eval(t);
     return performance.now() - t0;
   };
+  const readCall = (input: string): string =>
+    `pasprobeq:=quote(${input});[string(sommet(pasprobeq)),lname(pasprobeq),when(string(sommet(pasprobeq))=="'sto'",lname(op(pasprobeq)[0]),0)]`;
+  const stateCall = "map(VARS(),k->[k,string(eval(k)),lname(eval(k))])";
   const leanRound = (label: string): void => {
-    let sum = 0;
+    let read = 0;
+    let state = 0;
+    const med = (f: () => number): number => [0, 1, 2, 3, 4].map(f).sort((x, y) => x - y)[2]!;
     for (const input of inputs.map(rewriteAngles)) {
-      const times = [0, 1, 2, 3, 4].map(() => lean(input)).sort((x, y) => x - y);
-      sum += times[2]!;
+      read += med(() => time(readCall(input)));
+      state += med(() => time(stateCall));
     }
-    console.log(`lean (2 calls per Enter), ${label}: median sum ${sum.toFixed(1)} ms over ${inputs.length} inputs, ${(sum / inputs.length).toFixed(2)} ms per Enter`);
+    const n = inputs.length;
+    console.log(`lean, ${label}: per Enter, the read call ${(read / n).toFixed(3)} ms, the state call ${(state / n).toFixed(3)} ms (medians of 5, ${n} inputs)`);
   };
   leanRound("a, b, f stored");
   // replay-cost.mjs's bench log: 150 values, 50 functions
