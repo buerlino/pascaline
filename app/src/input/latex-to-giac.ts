@@ -11,6 +11,8 @@ export interface LatexToGiacOptions extends SerializeOptions {
   decimalComma?: boolean;
   /** The entry's chip table (\res, \ans, \const); without it a chip is an error. */
   chips?: ChipTable;
+  /** R65 (Home): a result chip that is not exact goes in as `pasr_<k>`, listed in the answer's `named` (G49). */
+  chipNames?: boolean;
   /** R28: units mode (docs/04 4.3). The Giac text is then G16's `UnitRequest.formula`: `72*pasu1` per unit slot,
    *  `pask1` per constant, `pasupm(value,sigma)` per ± (G18); `units` names the slots, the constants and the end slot. */
   units?: boolean;
@@ -46,16 +48,17 @@ export function latexToGiac(latex: string, o: LatexToGiacOptions = {}): string {
 export function latexToGiacInfo(
   latex: string,
   o: LatexToGiacOptions = {},
-): { giac: string; inexact: boolean; defines?: string; units?: UnitsInfo } {
+): { giac: string; inexact: boolean; named?: ChipTable; defines?: string; units?: UnitsInfo } {
   if (latex.trim() === "") throw parseError("parse.emptyInput");
   const user = o.userFunctions ?? DEFAULT_USER_FUNCTIONS;
-  const { json, inexact, units } = parseLatexInfo(latex, {
+  const { json, inexact, named, units } = parseLatexInfo(latex, {
     userFunctions: user,
     ...(o.decimalComma ? { decimalComma: true } : {}),
     ...(o.chips ? { chips: o.chips } : {}),
+    ...(o.chipNames ? { chipNames: true } : {}),
     ...(o.units ? { units: true } : {}),
   });
   const giac = mathJsonToGiac(json, { ...o, userFunctions: user });
   const defines = definedFunction(json);
-  return { giac, inexact, ...(defines ? { defines } : {}), ...(units ? { units } : {}) };
+  return { giac, inexact, ...(named ? { named } : {}), ...(defines ? { defines } : {}), ...(units ? { units } : {}) };
 }

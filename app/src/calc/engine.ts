@@ -16,7 +16,7 @@ import {
 import { WorkerEngine } from "../engine/workerEngine.ts";
 import { userNamesOf } from "../engine/defs.ts";
 import { mark } from "../marks.ts";
-import { CalcCancelled, type Calc, type CalcSettings, type CasOutcome, type HomeOutcome, type Quantity, type UnitError, type UnitRequest, type UserName } from "./port.ts";
+import { CalcCancelled, type Calc, type CalcSettings, type ChipFactsTable, type CasOutcome, type HomeOutcome, type Quantity, type UnitError, type UnitRequest, type UserName } from "./port.ts";
 import type { IndexItem } from "../find/types.ts";
 
 export interface EngineCalcOptions {
@@ -39,9 +39,10 @@ export class EngineCalc implements Calc {
     return t.safeStart ? { safeStart: t.safeStart } : {};
   }
 
-  async home(giac: string, s: CalcSettings): Promise<HomeOutcome> {
+  async home(giac: string, s: CalcSettings, chips?: ChipFactsTable): Promise<HomeOutcome> {
     try {
-      const r = await this.engine.home(giac, { ...defaultHomeSettings, digits: s.digits, angle: s.angle });
+      const settings = { ...defaultHomeSettings, digits: s.digits, angle: s.angle };
+      const r = await (chips && Object.keys(chips).length ? this.engine.home(giac, settings, undefined, chips) : this.engine.home(giac, settings));
       return { ok: r.ok, display: r.display, approximate: r.approximate, exactRational: r.exactRational, reliableDigits: r.reliableDigits, full: r.full, ...(r.defined ? { defined: r.defined } : {}), ...(r.items ? { items: r.items } : {}), ...(r.shape ? { shape: r.shape } : {}), ...(r.warn ? { warn: r.warn } : {}), ...(r.digits !== undefined ? { digits: r.digits } : {}), ...(r.value ? { value: r.value } : {}), ...(r.exact && /^-?\d{1,200}(\/\d{1,200})?$/.test(r.exact) ? { exact: r.exact } : {}), ...(r.error ? { error: r.error } : {}), ...(r.latex !== undefined ? { latex: r.latex } : {}) };
     } catch (e) {
       throw e instanceof EngineCancelled ? new CalcCancelled() : e;

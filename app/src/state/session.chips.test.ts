@@ -65,7 +65,7 @@ describe("result chips", () => {
     const s = new Session(calc, memoryKv());
     await s.submit("x", "sqrt(2)");
     await s.submit("x", "big");
-    expect(s.chipFor(s.home[0] as HistoryItem)).toEqual({ value: "1.41421356237", exact: false });
+    expect(s.chipFor(s.home[0] as HistoryItem)).toEqual({ value: "1.41421356237", exact: false, reliableDigits: null }); // R65: with its facts
     expect(s.chipFor(s.home[1] as HistoryItem)?.exact).toBe(false);
   });
 
