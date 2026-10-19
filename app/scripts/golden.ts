@@ -25,7 +25,7 @@
 //   function   Function analysis and Num table (analysis.ts), same rules
 //   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed
 //   calls      G52: Giac calls per input (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
-//              the five largest; fails when a total is over 10 % above tests/golden/calls-baseline.yaml
+//              the five largest; fails when calls per input are over 10 % above tests/golden/calls-baseline.yaml
 //   units      tests/golden/units.yaml: the unit view (G16) on the Find index's factors (app/src/find/_gen, `npm run index`):
 //              value, mark, exact text and dimension, or the refusal's message, the same in every round; desktop p95 of
 //              an evaluation ≤ 5 ms (docs/04 8.3), warm, each case at its fastest of five passes
@@ -491,7 +491,7 @@ async function stageBench(): Promise<void> {
 }
 
 /** G52: Giac calls per input (one Enter at 12 digits) for the bench inputs (CAS) and home.yaml's single inputs (Home),
- *  against tests/golden/calls-baseline.yaml. A total more than 10 % over its baseline fails. */
+ *  against tests/golden/calls-baseline.yaml. A set whose calls per input are more than 10 % over its baseline fails. */
 async function stageCalls(): Promise<void> {
   const base = parse(readFileSync(`${root}tests/golden/calls-baseline.yaml`, "utf8")) as CallsBaseline;
   const counted = async (): Promise<{ host: EngineHost; calls: () => number }> => {
@@ -527,8 +527,8 @@ async function stageCalls(): Promise<void> {
       home.set(c.id, calls() - n0);
     }
   }
-  for (const [set, counts, baseline] of [["bench", bench, base.bench], ["home", home, base.home]] as const) {
-    const r = callsStage(set, counts, baseline);
+  for (const [set, counts, baseline, baselineInputs] of [["bench", bench, base.bench, base.benchInputs], ["home", home, base.home, base.homeInputs]] as const) {
+    const r = callsStage(set, counts, baseline, baselineInputs);
     report(`calls-${set}`, r.ok, r.line);
   }
 }
