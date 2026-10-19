@@ -9,6 +9,7 @@ import { definedBy, ENGINE_DEFINITIONS, isStateful, WORKER_DEFINITION_NAMES, sim
 import { COMPLEX_DEFINITIONS } from "./numeric.ts";
 import { defaultCasSettings, type CasResult } from "./types.ts";
 import { DATA_VERSION, migratedText } from "../state/storage.ts";
+import { renameOurCalls, writeUserNames } from "./ourNames.ts";
 import { dropAngleFactor, PASDEG, rewriteAngles } from "../input/angles.ts";
 
 /** r10 section 1.2: the limits of one file. */
@@ -260,6 +261,12 @@ function fail(error: string, line: number, extra: Partial<Extract<ImportResult, 
   return { ok: false, error, line, dirty: false, ...extra };
 }
 
+/** G54, G46: library text is the user's, in radians: our names for Giac's functions (ourNames.ts) and the degree factor
+ *  go in before Giac sees it, as the parser does for typed input. */
+function asGiac(text: string): string {
+  return rewriteAngles(renameOurCalls(text));
+}
+
 /** One `// pascaline library` import into an engine that holds `log`. Checks the rest against the engine (built-in
  *  names, own names, the log's size), defines every definition through cas(), runs the tests, and returns the changes. */
 export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly DefEntry[], opts: { replace?: boolean } = {}): ImportResult {
@@ -294,7 +301,7 @@ export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly
     } else {
       // G46: a library file is Giac text in radians, written without our degree factor; it goes in here, so a body's
       // sin(x) follows the mode at call time as a typed one does (S14 R14 section 5)
-      const r = engine.cas(rewriteAngles(d.text), defaultCasSettings);
+      const r = engine.cas(asGiac(d.text), defaultCasSettings);
       if (!r.result.ok) return fail(`line ${d.line}: ${d.name}: ${r.result.error ?? "the engine refused it"}`, d.line, { plan, dirty: true });
       mine = r.defs.map((c) => ("set" in c && c.set.name === d.name ? { set: { ...c.set, desc: d.desc } } : c));
     }
@@ -308,7 +315,7 @@ export function importLibrary(engine: LibraryEngine, lib: LibFile, log: readonly
     for (const d of lib.defs) {
       for (const t of d.tests) {
         tests++;
-        const v = engine.eval(rewriteAngles(t.expr));
+        const v = engine.eval(asGiac(t.expr));
         const got = v.output.trim();
         if (!v.ok || (got !== "true" && got !== "1")) failures.push({ line: t.line, expr: t.expr, got });
       }
@@ -337,11 +344,11 @@ function inRadians<T>(engine: LibraryEngine, fn: () => T): T {
 /** A library value or function that is the same as the log's entry: the same commands (a function), or a value that
  *  evaluates to what the log holds (the log keeps `B:=(10)`, not `B:=A*2`). */
 function sameDefinition(engine: LibraryEngine, d: LibDef, old: DefEntry): boolean {
-  if (old.cmds.join("\n") === d.text || old.cmds.join("\n") === rewriteAngles(d.text)) return true;
+  if (old.cmds.join("\n") === d.text || old.cmds.join("\n") === asGiac(d.text)) return true;
   const asg = d.kind === "var" && old.kind === "var" ? simpleAssignment(d.text) : null;
   if (!asg) return false;
   // a value in a file is in radians (G46): read with the factor 1, as the import's cas() in RAD reads it
-  const v = inRadians(engine, () => engine.eval(rewriteAngles(asg.rhs)));
+  const v = inRadians(engine, () => engine.eval(asGiac(asg.rhs)));
   return v.ok && !/\bundef\b/.test(v.output) && old.cmds.length === 1 && old.cmds[0] === `${d.name}:=(${v.output.trim()})`;
 }
 
@@ -367,7 +374,7 @@ export function exportLibrary(log: readonly DefEntry[]): { text: string; skipped
       continue;
     }
     // G46: the file is in radians, as typed: a body is written without our degree factor (the import puts it in)
-    out.push("", `// ${describe(e)}`, e.cmds.map(dropAngleFactor).join("\n"));
+    out.push("", `// ${describe(e)}`, e.cmds.map((c) => writeUserNames(dropAngleFactor(c))).join("\n"));
   }
   return { text: out.join("\n") + "\n", skipped };
 }
