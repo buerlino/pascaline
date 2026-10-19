@@ -341,7 +341,9 @@ export function exportLibrary(log: readonly DefEntry[]): { text: string; skipped
       continue;
     }
     if (e.facts) {
-      skipped.push({ name: e.name, why: "a measured value, in the backup only" });
+      // G34: an angle-dependent exact value is stored as its decimal with facts, so it is skipped here too: its old
+      // text would change value in an importer's other angle mode.
+      skipped.push({ name: e.name, why: "a decimal value with its mark facts, in the backup only" });
       continue;
     }
     out.push("", `// ${describe(e)}`, e.cmds.join("\n"));

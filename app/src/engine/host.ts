@@ -322,15 +322,16 @@ export class EngineHost {
     const t0 = performance.now();
     const output = this.giac.eval(input);
     const ok = !isError(output);
-    const defs = ok && isStateful(input) ? this.defsAfter(input, [input], output, null, "home", 12) : [];
+    const defs = ok && isStateful(input) ? this.defsAfter(input, [input], output, null, "home", 12, undefined) : [];
     return { output, ok, engineMs: performance.now() - t0, defs };
   }
 
   /**
    * What a stateful input changed, as entries for the definitions log (defs.ts), recorded in this engine's copy too.
-   * `ran`: the commands that redo it (kind "other" and functions); `facts`: the mark facts of the value it stored.
+   * `ran`: the commands that redo it (kind "other" and functions); `facts`: the mark facts of the value it stored;
+   * `angle`: the mode a variable was stored in (G34), recorded with it when known.
    */
-  private defsAfter(input: string, ran: string[], preview: string, facts: NameFacts | null, view: "home" | "cas", digits: number): DefChange[] {
+  private defsAfter(input: string, ran: string[], preview: string, facts: NameFacts | null, view: "home" | "cas", digits: number, angle: "rad" | "deg" | undefined): DefChange[] {
     const base = { preview: showExp(preview.trim()).slice(0, PREVIEW_MAX), view, time: Date.now() };
     const purge = /^\s*purge\s*\(([^()]*)\)\s*$/.exec(input);
     let changes: DefChange[];
@@ -348,7 +349,7 @@ export class EngineHost {
     else if (target?.kind === "var") {
       const snap = this.snapshot(target.name, digits);
       changes = snap
-        ? [{ set: { name: target.name, kind: "var", cmds: [snap.cmd], ...(snap.float && facts ? { facts } : {}), ...base, ...(snap.early ? { early: true } : {}) } }]
+        ? [{ set: { name: target.name, kind: "var", cmds: [snap.cmd], ...(snap.float && facts ? { facts } : {}), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }]
         : [{ purge: [target.name] }];
     } else changes = [{ set: { name: "", kind: "other", cmds: ran, ...base } }];
     this.record(changes);
@@ -415,9 +416,11 @@ export class EngineHost {
     };
   }
 
-  /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). */
-  private static factsOf(r: HomeResult | undefined): NameFacts | null {
+  /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). A value carried as its decimal
+   *  (G34) is known to every digit it carries: the result's confirmed digits, at most P = valuePrecision(digits). */
+  private static factsOf(r: HomeResult | undefined, digits: number): NameFacts | null {
     if (!r || !r.ok) return null;
+    if (r.carried === "decimal") return { reliableDigits: r.reliableDigits ?? valuePrecision(digits), ...(r.warn ? { warn: r.warn } : {}) };
     if (!r.value && !r.items) return { reliableDigits: null, warn: "unchecked" }; // a symbolic value with a float in it
     return { reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}) };
   }
@@ -472,7 +475,7 @@ export class EngineHost {
         result.path === "exact" || result.path === "exact-big"
           ? [toExactLiterals(input)]
           : [`Digits:=${s.workDigits}`, input, `Digits:=${s.digits}`];
-      defs = this.defsAfter(input, ran, result.display, EngineHost.factsOf(result), "home", Math.trunc(s.digits));
+      defs = this.defsAfter(input, ran, result.display, EngineHost.factsOf(result, Math.trunc(s.digits)), "home", Math.trunc(s.digits), s.angle);
     }
     return { result, defs };
   }
@@ -541,7 +544,7 @@ export class EngineHost {
     }
     const asg = simpleAssignment(input);
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
-      stateful ? this.defsAfter(input, [exactInput], preview, facts, "cas", Math.trunc(s.digits)) : [];
+      stateful ? this.defsAfter(input, [exactInput], preview, facts, "cas", Math.trunc(s.digits), s.angle) : [];
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
     // `evalf(e,n)` alone is shown with the n digits it asks for, checked at that precision (decisions M4-6).
     const shape = hasFloat(text) ? shapeOf(text) : null;
@@ -558,7 +561,7 @@ export class EngineHost {
         numeric = this.inherited(numeric, body, stateful ? null : exactInput, digits, Math.trunc(s.digits));
         return {
           result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },
-          defs: defsOf(numeric.display, EngineHost.factsOf(numeric)),
+          defs: defsOf(numeric.display, EngineHost.factsOf(numeric, Math.trunc(s.digits))),
         };
       }
     }
