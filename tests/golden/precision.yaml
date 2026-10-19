@@ -145,3 +145,13 @@ cases:
   - { id: "prec-17-cas-evalf-equation", kind: "cas", input: "evalf(x^2-2=0)", expect: "x^2-2.0=0.0", mark: "⚠", source: "derived", note: "a float in an equation, unchecked; no mark before G27" }
   - { id: "prec-17-cas-evalf-list", kind: "cas", input: "evalf([1/3,x])", expect: "[0.333333333333,x]", mark: "⚠", source: "derived", note: "1/3 to 12 digits next to a free name, unchecked; no mark before G27" }
   - { id: "g21-cas-deg-exp-i90", kind: "cas", input: "evalf(exp(i*90))", settings: { angle: "deg" }, oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "derived", note: "G21 (F29): the CAS view in DEG reads exp like RAD; DEG gave i" }
+  # G39: the CAS view refuses the same divergent integrals, series and limits as Home, and shows Giac's pair with ⚠
+  - { id: "g39-cas-int-1/x", kind: "cas", input: "int(1/x,x,-1,1)", expect: "error: integralDiverges", source: "derived", note: "Giac gave 0, the principal value" }
+  - { id: "g39-cas-int-tan", kind: "cas", input: "int(tan(x),x,0,pi)", expect: "error: integralDiverges", source: "derived" }
+  - { id: "g39-cas-sum-cos", kind: "cas", input: "sum(cos(k),k,1,inf)", expect: "error: seriesDiverges", source: "derived", note: "Giac gave the Abel sum -1/2" }
+  - { id: "g39-cas-sum-exp-ik", kind: "cas", input: "sum(exp(i*k),k,0,inf)", expect: "error: seriesDiverges", source: "derived" }
+  - { id: "g39-cas-sum-undef", kind: "cas", input: "sum((-1)^k,k,0,inf)", expect: "error: seriesDiverges", source: "derived", note: "Giac's own undef" }
+  - { id: "g39-cas-limit-bounded", kind: "cas", input: "limit(sin(x),x,inf)", expect: "error: noLimit", source: "derived", note: "Giac printed bounded_function(2)" }
+  - { id: "g39-cas-pair", kind: "cas", input: "int(abs(x-sin(10^50)),x,-1,1)", mark: "⚠", source: "derived", note: "mark-only: Giac's [exact, numeric] pair is shown as Giac's text with ⚠ (the two disagree: 1.62358264688 against 1.35506364264)" }
+  - { id: "g39-cas-keep-basel", kind: "cas", input: "sum(1/k^2,k,1,inf)", expect: "pi^2/6", source: "derived" }
+  - { id: "g39-cas-keep-1/x^2", kind: "cas", input: "int(1/x^2,x,-1,1)", expect: "+infinity", source: "derived" }

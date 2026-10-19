@@ -211,3 +211,25 @@ cases:
   - { id: "g34-seq-sqrt2-deg-rad", steps: [{"input": "R:=sqrt(2)", "angle": "deg"}, {"input": "R^2", "angle": "rad"}], oracle: "F(2)", expect: "2", mark: "=", source: "derived", note: "guard: sqrt(2) keeps its exact form" }
   - { id: "g34-seq-exp-rad-deg", steps: [{"input": "B:=exp(i*90)"}, {"input": "B", "angle": "deg"}], oracle: "exp(90*I)", expect: "-0.448073616129+0.893996663601*i", mark: "≈", source: "oracle", note: "stored B:=(exp(90*i)), which DEG read as i" }
   - { id: "g34-seq-cosh-rad-deg", steps: [{"input": "H:=cosh(1+i)"}, {"input": "H", "angle": "deg"}], oracle: "cosh(1+I)", expect: "0.833730025131+0.988897705763*i", mark: "≈", source: "oracle", note: "deep check D4: DEG read the stored cosh(1+i) with the imaginary part in degrees" }
+  # --- G39: a number for something that does not exist is refused (deep check 2026-10-19 E2, E6, E9) ----------------
+  - { id: "g39-int-1/x-pv", input: "int(1/x,x,-1,1)", expect: "The integral does not converge", source: "derived", note: "∫|1/x| near 0 is infinite; Giac gave 0, the principal value" }
+  - { id: "g39-int-1/(x-1)-pv", input: "int(1/(x-1),x,0,2)", expect: "The integral does not converge", source: "derived", note: "pole at 1 inside; Giac gave the principal value 0" }
+  - { id: "g39-int-tan-0-pi", input: "int(tan(x),x,0,pi)", expect: "The integral does not converge", source: "derived", note: "pole at pi/2; Giac gave 0" }
+  - { id: "g39-int-1/x^3-pv", input: "int(1/x^3,x,-1,1)", expect: "The integral does not converge", source: "derived", note: "found while probing G39: Giac gave 0, the principal value" }
+  - { id: "g39-int-tan-shift", input: "int(tan(2*x),x,0,pi)", expect: "The integral does not converge", source: "derived", note: "poles at pi/4 and 3pi/4: singular() lists one period, the shifts are ours; Giac gave 0" }
+  - { id: "g39-int-undef", input: "int(1/(x-2)^3,x,0,3)", expect: "The integral does not converge", source: "derived", note: "Giac's own undef, same message" }
+  - { id: "g39-sum-cos-abel", input: "sum(cos(k),k,1,inf)", expect: "The series does not converge", source: "derived", note: "cos(k) does not tend to 0; Giac gave the Abel sum -1/2" }
+  - { id: "g39-sum-sin-abel", input: "sum(sin(k),k,1,inf)", expect: "The series does not converge", source: "derived", note: "sin(k) does not tend to 0; Giac gave an Abel sum" }
+  - { id: "g39-sum-exp-ik-abel", input: "sum(exp(i*k),k,0,inf)", expect: "The series does not converge", source: "derived", note: "|exp(ik)| = 1; Giac gave the Abel sum 1/(1-e^i)" }
+  - { id: "g39-sum-undef", input: "sum((-1)^k,k,0,inf)", expect: "The series does not converge", source: "derived", note: "Giac's own undef, same message" }
+  - { id: "g39-limit-bounded", input: "limit(sin(x),x,inf)", expect: "No limit", source: "derived", note: "Giac printed bounded_function(2)" }
+  - { id: "g39-pair-abs-sin1e50", input: "int(abs(x-sin(10^50)),x,-1,1)", mark: "⚠", source: "derived", note: "Giac's [exact, numeric] pair: never a list. The exact part is 1+sin(10^50)^2 = 1.62358264688 (oracle, sin(10^50) = -0.78967249343), Giac's float 1.35506364264, so no digit is confirmed" }
+  - { id: "g39-pair-deg-atan", input: "int(1/(1+x^2),x,0,1)", settings: { angle: "deg" }, mark: "⚠", source: "derived", note: "deep check D7: Giac's pair [8100/pi, 0.785398163397] in DEG; never a list" }
+  - { id: "g39-keep-1/x^2", input: "int(1/x^2,x,-1,1)", expect: "+infinity", source: "derived", note: "diverges to +infinity, which Giac says itself: unchanged" }
+  - { id: "g39-keep-sum-cos/k", input: "sum(cos(k)/k,k,1,inf)", oracle: "-ln(2*sin(M(F(1,2))))", expect: "0.0420195058254", mark: "≈", source: "oracle", note: "converges (Dirichlet); the term tends to 0" }
+  - { id: "g39-keep-sum-alt-harmonic", input: "sum((-1)^k/k,k,1,inf)", oracle: "-ln(2)", expect: "-0.69314718056", mark: "≈", source: "oracle" }
+  - { id: "g39-keep-int-1/(2+cos)", input: "int(1/(2+cos(x)),x,0,2*pi)", oracle: "2*pi/sqrt(3)", expect: "3.62759872847", mark: "≈", source: "oracle", note: "singular points are complex: no second integral" }
+  - { id: "g39-keep-int-gauss", input: "int(exp(-x^2),x,-inf,inf)", oracle: "sqrt(pi)", expect: "1.77245385091", mark: "≈", source: "oracle" }
+  - { id: "g39-keep-int-1/sqrt", input: "int(1/sqrt(x),x,0,1)", oracle: "F(2)", expect: "2", mark: "=", source: "derived", note: "an integrable singular point at the end: ∫|f| is finite" }
+  - { id: "g39-keep-sum-1/k!", input: "sum(1/k!,k,0,inf)", oracle: "e", expect: "2.71828182846", mark: "≈", source: "oracle", note: "Giac's limit of the term prints 1/((+infinity)!), which is not a refusal" }
+  - { id: "g39-keep-int-sinc-inf", input: "int(sin(x)/x,x,0,inf)", oracle: "pi/2", expect: "1.57079632679", mark: "≈", source: "oracle", note: "conditionally convergent: ∫|f| over [0,inf) is infinite, so the check looks only near the singular point" }
