@@ -251,10 +251,15 @@ const PREFIXES: Readonly<Record<number, string>> = { [-15]: "f", [-12]: "p", [-9
 
 /** The unit a result without an end slot is shown in (G25): the first typed unit of the job that has the result's
  *  dimension; an angle in the mode's unit (G40: ° in DEG, rad in RAD); else the SI unit with the SI prefix that puts
- *  the number from 1 to 999. `factor` is its factor to SI. */
-function chosenUnit(giac: Giac, job: UnitJob, dimension: string, num: string, angle: HomeSettings["angle"]): { text: string; factor: string } {
+ *  the number from 1 to 999. `factor` is its factor to SI. G40: when no typed unit has the dimension, the first typed
+ *  unit with one rad less is taken with the rad dropped (`asin(1/2)·1 rad` is π/6 rad, not rad²), unless a cycle unit is in. */
+function chosenUnit(giac: Giac, job: UnitJob, dimension: string, num: string, angle: HomeSettings["angle"]): { text: string; factor: string; radDropped?: true } {
   const typed = job.shows?.find((u) => u.dim === dimension);
   if (typed) return { text: typed.text, factor: typed.factor };
+  // Only a result with one rad more than the unit: a pure number (sin 30°) never takes the typed °.
+  const rad = (k: string): string => parseDimKey(k).get("rad") ?? "0";
+  const near = job.cycles ? undefined : job.shows?.find((u) => oneRadApart(dimension, u.dim) && Number(rad(dimension)) === Number(rad(u.dim)) + 1);
+  if (near) return { text: near.text, factor: near.factor, radDropped: true };
   if (dimension === "rad1" && angle === "deg") return { text: "°", factor: "pi/180" };
   const si = siUnit(dimension);
   const base = { text: si.text, factor: "1" };
@@ -313,6 +318,7 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   if (!job.end && dimension !== null && !job.absTemp) {
     const c = chosenUnit(giac, job, dimension, num, s.angle);
     unit = c.text;
+    if (c.radDropped) note = { note: "radDropped" };
     if (c.factor !== "1") {
       g = c.factor;
       const out2 = giac.eval(`pasuR:=[pasuR[0],pasuq(normal(${g}))]`);
