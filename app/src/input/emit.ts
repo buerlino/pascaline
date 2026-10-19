@@ -2,7 +2,7 @@
 // MathJSON (Compute Engine's shape, also produced by our own parser) -> Giac input string.
 import { parseError } from "../i18n/enParser.ts";
 import { SerializeError } from "./errors.ts";
-import { ANGLE_IN, ANGLE_OUT, DEGREE, PASDEG, POLAR, POLAR_OUT, RECT, rectArg, withFactor } from "./angles.ts";
+import { ANGLE_IN, ANGLE_OUT, DEGREE, PASDEG, POLAR, POLAR_OUT, RECT, numericLiteral, rectArg, withFactor } from "./angles.ts";
 
 export { SerializeError };
 
@@ -168,11 +168,12 @@ function call(name: string, args: Json[], o: SerializeOptions): Out {
     const a = outs[spec[0]]!;
     texts[spec[0]] = withFactor(a.s, a.p === 5);
   } else if (o.angleFactor !== false && head === RECT && outs.length === 1) {
-    // R64f1: the one-list form; a literal point [r,t] takes the factor in its text
-    const pt = args[0];
-    const point = isHead(pt as Json, "List") && (pt as Json[]).length === 3 && !(pt as Json[]).slice(1).some((e) => isHead(e, "List"));
-    const t = point ? ser((pt as Json[])[2] as Json, o) : undefined;
-    texts[0] = rectArg(texts[0]!, t && [ser((pt as Json[])[1] as Json, o).s, withFactor(t.s, t.p === 5)]);
+    // R64f1: the one-list form; a point [r,t] of two numeric literals takes the factor in its text, anything else
+    // (a name or call may hold a point: A:=[2,30]) goes through RECT_IN, which reads the shape when evaluated
+    const pt = args[0] as Json;
+    const els = isHead(pt, "List") && pt.length === 3 ? [ser(pt[1] as Json, o), ser(pt[2] as Json, o)] : undefined;
+    const point = els && els.every((e) => numericLiteral(e.s)) ? els : undefined;
+    texts[0] = rectArg(texts[0]!, point && [point[0]!.s, withFactor(point[1]!.s, point[1]!.p === 5)]);
   }
   const text = `${head}(${texts.join(",")})`;
   if (o.angleFactor !== false && ANGLE_OUT.has(head)) return { s: `${text}/${PASDEG}`, p: 2 };

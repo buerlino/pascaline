@@ -38,12 +38,21 @@ export const POLAR_OUT = `((p_)->when(type(p_[0])==vector,map(p_,q_->[q_[0],q_[1
 
 /**
  * R64f1: rectangular_coordinates of one list, [r, θ] or a list of those: every θ times pasdeg. A literal point
- * `[r,t]` takes the factor in its text (`rectArg`); any other argument goes through `RECT_IN(…)`, which reads its
+ * `[r,t]` of two numeric literals (`numericLiteral`) takes the factor in its text (`rectArg`); any other argument goes through `RECT_IN(…)`, which reads its
  * shape when evaluated and passes a non-list (a point object) unchanged.
  */
 export const RECT = "rectangular_coordinates";
 export const RECT_IN =
   `((p_)->when(type(p_)!=vector,p_,when(type(p_[0])==vector,map(p_,q_->[q_[0],${PASDEG}*q_[1]]),[p_[0],${PASDEG}*p_[1]])))`;
+
+/**
+ * Giac text that is a number by itself: number literals and pi with + - * / ^ and brackets. Only then can the text
+ * say an element of [r,t] is a scalar; a name or a call may hold a point (A:=[2,30]), so it goes through RECT_IN.
+ */
+export function numericLiteral(text: string): boolean {
+  const rest = text.replace(/(?<![A-Za-z0-9_.])(\d+\.?\d*|\.\d+)(e[+-]?\d+)?(?![A-Za-z0-9_.])|(?<![A-Za-z0-9_])pi(?![A-Za-z0-9_])/gi, "0");
+  return /\d/.test(rest) && /^[0\s+\-*/^()]*$/.test(rest);
+}
 
 /** The one-list rectangular_coordinates argument with the factor; `point` holds the two elements of a literal [r,t]. */
 export function rectArg(arg: string, point?: readonly [r: string, t: string]): string {
@@ -110,11 +119,11 @@ const CALL = /([A-Za-z_][A-Za-z0-9_]*)\s*\(/y;
 /** The ° factor as R10 wrote it (R64 put `/pasdeg` after it); Giac now always runs in radians, so it is pi/180. */
 const OLD_DEGREES = "(pi/180)^angle_radian()";
 
-/** A literal point `[r,t]` (two elements, neither a list): its elements, else undefined. */
+/** A literal point `[r,t]` (two elements, each a numeric literal): its elements, else undefined. */
 function literalPoint(arg: string): [string, string] | undefined {
   if (!arg.startsWith("[") || closing(arg, 0) !== arg.length - 1) return undefined;
   const parts = splitArgs(arg.slice(1, -1));
-  if (parts.length !== 2 || parts.some((p) => p.trim().startsWith("["))) return undefined;
+  if (parts.length !== 2 || !parts.every(numericLiteral)) return undefined;
   return [parts[0]!, parts[1]!];
 }
 

@@ -104,10 +104,16 @@ describe.skipIf(!giacOut)("LaTeX -> Giac round trip", () => {
           expect(v("\\operatorname{polar\\_coordinates}\\left(1+i\\right)")).toBe(deg ? "[sqrt(2),45]" : "[sqrt(2),pi/4]");
           expect(v(`\\operatorname{rectangular\\_coordinates}\\left(\\left\\{2,${deg ? "30" : "\\frac{\\pi}{6}"}\\right\\}\\right)`)).toBe("[sqrt(3),1]");
           expect(v(`\\operatorname{rectangular\\_coordinates}\\left(2,${deg ? "30" : "\\frac{\\pi}{6}"}\\right)`)).toBe("[sqrt(3),1]");
+          // a list of names that hold points (audit R64f1; derived: cos/sin of 30° and 90°)
+          giac(deg ? "A:=[2,30]" : "A:=[2,pi/6]");
+          giac(deg ? "B:=[1,90]" : "B:=[1,pi/2]");
+          expect(v("\\operatorname{rectangular\\_coordinates}\\left(\\left\\{A,B\\right\\}\\right)")).toBe("[[sqrt(3),1],[0,1]]");
+          expect(giac(`simplify(${rewriteAngles("rectangular_coordinates([A,B])")})`)).toBe("[[sqrt(3),1],[0,1]]");
           expect(giac(`simplify(${rewriteAngles(`rectangular_coordinates([[2,${deg ? "30" : "pi/6"}],[1,0]])`)})`)).toBe("[[sqrt(3),1],[1,0]]");
           expect(giac(`simplify(${rewriteAngles("polar_coordinates([1+i,i])")})`)).toBe(deg ? "[[sqrt(2),45],[1,90]]" : "[[sqrt(2),pi/4],[1,pi/2]]");
           expect(v("\\operatorname{instfreq}\\left(\\left\\{1,i,-1,-i\\right\\}\\right)")).toBe(deg ? "[90,90,90]" : "[pi/2,pi/2,pi/2]");
         } finally {
+          giac("purge(A,B)");
           giac("pasdeg:=1");
         }
       });
