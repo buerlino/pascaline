@@ -73,6 +73,7 @@ export const enParser = {
   "parse.chipValueHolds4": "chip value holds a test with a missing side",
   "parse.badNumber": "bad number {n}",
   "parse.unknownName": "unknown name {e}",
+  "parse.reservedName": "{name} is one of Pascaline's own names",
   "parse.unsupportedNode2": "unsupported node",
   "parse.unsupported": "unsupported {h}",
   "parse.cannotPlot": "cannot plot: {msg}",

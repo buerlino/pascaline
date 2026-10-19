@@ -40,7 +40,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, type GiacApi } from "../src/engine/host.ts";
-import { defaultHomeSettings, ENGINE_DEFINITIONS, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
+import { defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
 import { decimalFromString, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { hasFloat } from "../src/engine/numeric.ts";
@@ -153,7 +153,9 @@ const median = (xs: number[]): number => {
 };
 
 async function freshGiac(): Promise<GiacApi> {
-  return (await loadNodeGiac(mjs)).giac;
+  const g = (await loadNodeGiac(mjs)).giac;
+  g.eval(pasdegCommand("rad")); // R64: our parser's text reads pasdeg, as the engine host sets it
+  return g;
 }
 
 const summary: { stage: string; ok: boolean; line: string }[] = [];

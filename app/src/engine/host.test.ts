@@ -519,7 +519,9 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
       ...Array.from({ length: 150 }, (_, i) => mk(`dv${i + 1}`, "var", `dv${i + 1}:=(${i + 1}/7+${i + 1})`)),
       ...Array.from({ length: 50 }, (_, i) => mk(`df${i + 1}`, "fn", `df${i + 1}(x):=x^2+${i + 1}*x+sin(${i + 1})`)),
     ];
-    new EngineHost(giac).restore(log);
+    const host = new EngineHost(giac);
+    calls.length = 0; // R64: the constructor sets pasdeg; only the replay is counted
+    host.restore(log);
     expect(calls.length).toBe(Math.ceil(200 / REPLAY_BATCH));
     expect(raw.eval("dv7*7")).toBe("56"); // derived: 7*(1+7)
     expect(raw.eval("df3(0)")).toBe("sin(3)");
@@ -540,7 +542,9 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
 
   it("G19: a bad entry with matched brackets inside a batch is rerun one at a time; its neighbours are set", async () => {
     const { giac, calls, raw } = await counting();
-    new EngineHost(giac).restore([mk("b1", "var", "b1:=(1)"), mk("bad", "var", "bad:=(2+)"), mk("b3", "var", "b3:=(3)")]);
+    const host = new EngineHost(giac);
+    calls.length = 0; // R64: the constructor sets pasdeg; only the replay is counted
+    host.restore([mk("b1", "var", "b1:=(1)"), mk("bad", "var", "bad:=(2+)"), mk("b3", "var", "b3:=(3)")]);
     expect(calls.length).toBe(7); // one batch, three purges, then the three one at a time
     expect(raw.eval("b1+b3")).toBe("4");
   });
@@ -561,7 +565,9 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
   it("functions that use a global (a warning, no error) do not make the batch run twice", async () => {
     const { giac, calls, raw } = await counting();
     const log = Array.from({ length: 50 }, (_, i) => mk(`g${i}`, "fn", `g${i}(x):=ga*x+${i}`));
-    new EngineHost(giac).restore(log);
+    const host = new EngineHost(giac);
+    calls.length = 0; // R64: the constructor sets pasdeg; only the replay is counted
+    host.restore(log);
     expect(calls.length).toBe(Math.ceil(50 / REPLAY_BATCH));
     expect(raw.eval("g3(2)")).toBe("ga*2+3");
   });

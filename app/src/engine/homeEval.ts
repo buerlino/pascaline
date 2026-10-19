@@ -15,6 +15,7 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
+import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
@@ -263,10 +264,23 @@ export function showExpResult(r: HomeResult): HomeResult {
   return out;
 }
 
+/** Giac's latex() of the result in `slot`, whose text is `text`; R64: one that holds the degree factor (a function
+ *  body, which Giac prints as given) is drawn from its text without it, as typed. */
+export function latexShown(giac: Giac, slot: string, text: string): string {
+  return hasAngleFactor(text) ? giac.eval(`latex(quote(${dropAngleFactor(text)}))`) : giac.eval(`latex(${slot})`);
+}
+
+/** R64 (route R): the degree factor our parser puts in every angle (input/angles.ts). 1 in every mode while Giac itself
+ *  runs in the mode; G46 runs Giac in radians and sets it to pi/180 in DEG. */
+export function pasdegCommand(_angle: "rad" | "deg"): string {
+  return "pasdeg:=1";
+}
+
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */
 export function homeSetupCommands(s: HomeSettings): string[] {
   return [
     `angle_radian:=${s.angle === "rad" ? 1 : 0}`,
+    pasdegCommand(s.angle),
     `timeout ${(s.budgetMs / 1000).toFixed(3)}`,
     // How often control_c() looks at the clock: every 10th check (engine/giac/patches/README.md, patch 0002).
     "ckevery 10",
@@ -725,14 +739,14 @@ export function homeEval(
     const text = /==|<>/.test(shown) ? restoreLiterals(shown, body) : shown;
     store();
     // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
-    const tex = giac.eval(`latex(${slot})`);
+    const tex = latexShown(giac, slot, text);
     if (atN !== null) giac.eval("purge(pasfl)");
     const latex = isError(tex) ? {} : { latex: unquote(tex) };
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
     const unchecked = hasFloat(text);
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
     const why = symbolicWhy(warn, testSides(exactBody));
-    return done({ ok: true, display: text, exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(why ? { why } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
+    return done({ ok: true, display: dropAngleFactor(text), exact: text, ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(why ? { why } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();

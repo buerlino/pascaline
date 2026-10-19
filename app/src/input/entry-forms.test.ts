@@ -73,9 +73,9 @@ describe("Tmpl templates (R10)", () => {
     ["\\frac{\\partial x^2+3x}{\\partial x}", "diff(x^2+3*x,x)"],
     ["\\begin{cases}x & \\text{if }x=0\\\\ 1 & \\text{if }x=1\\end{cases}", "piecewise(x==0,x,x==1,1)"],
     ["\\begin{cases}x & x=0\\\\ 1 & x=1\\end{cases}", "piecewise(x==0,x,x==1,1)"],
-    ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*(pi/180)^angle_radian()"],
-    ["30\\degree36\\doubleprime", "(30+36/3600)*(pi/180)^angle_radian()"],
-    ["30^{\\circ}", "30*(pi/180)^angle_radian()"],
+    ["30\\degree15\\prime36\\doubleprime", "(30+15/60+36/3600)*(pi/180)^angle_radian()/pasdeg"],
+    ["30\\degree36\\doubleprime", "(30+36/3600)*(pi/180)^angle_radian()/pasdeg"],
+    ["30^{\\circ}", "30*(pi/180)^angle_radian()/pasdeg"],
   ];
   for (const [latex, giac] of forms) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
   it("refuses half-built forms instead of guessing", () => {
@@ -99,11 +99,11 @@ describe("store and polar entry (P4)", () => {
   const forms: [string, string][] = [
     ["5\\blacktriangleright A", "A:=5"],
     ["1+2\\blacktriangleright x", "x:=1+2"],
-    ["2\\measuredangle30", "2*(cos(30)+i*sin(30))"],
-    ["2\\measuredangle\\frac{\\pi}{6}", "2*(cos(pi/6)+i*sin(pi/6))"],
-    ["1+1\\measuredangle-45", "(1+1)*(cos(-45)+i*sin(-45))"],
-    ["2\\mathbin{\\measuredangle}\\frac{\\pi}{6}", "2*(cos(pi/6)+i*sin(pi/6))"],
-    ["2\\mathbin{\\measuredangle}30", "2*(cos(30)+i*sin(30))"],
+    ["2\\measuredangle30", "2*(cos(pasdeg*30)+i*sin(pasdeg*30))"],
+    ["2\\measuredangle\\frac{\\pi}{6}", "2*(cos(pasdeg*(pi/6))+i*sin(pasdeg*(pi/6)))"],
+    ["1+1\\measuredangle-45", "(1+1)*(cos(pasdeg*(-45))+i*sin(pasdeg*(-45)))"],
+    ["2\\mathbin{\\measuredangle}\\frac{\\pi}{6}", "2*(cos(pasdeg*(pi/6))+i*sin(pasdeg*(pi/6)))"],
+    ["2\\mathbin{\\measuredangle}30", "2*(cos(pasdeg*30)+i*sin(pasdeg*30))"],
     ["\\operatorname{\\mathrm{approx}}\\left(\\frac13\\right)", "approx(1/3)"], // shift Enter, as MathLive serialises it
   ];
   for (const [latex, giac] of forms) it(latex, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
@@ -115,6 +115,6 @@ describe("a bare function name before a term and a bracket (G2 item 50)", () => 
   // R27c: also when the term ends in a constant (cos 2π(x): cos(2π)·x or cos(2πx)) or the bracket is |…| (sin 2|x|)
   for (const latex of ["\\sin7\\left(2\\right)", "\\sin x\\left(x+1\\right)", "\\ln7\\left(2\\right)", "\\log_27\\left(8\\right)", "\\cos2\\pi\\left(x\\right)", "\\sin2\\left|x\\right|", "\\sin x\\left|x\\right|"])
     it(`${latex} is refused`, () => expect(() => latexToGiac(latex)).toThrow(/brackets/));
-  for (const [latex, giac] of [["\\sin 2x", "sin(2*x)"], ["\\sin x\\cos x", "sin(x)*cos(x)"], ["\\sin\\left(2\\right)\\left(3\\right)", "sin(2)*(3)"], ["\\cos2\\pi x", "cos(2*pi*x)"], ["\\sin\\left|x\\right|", "sin(abs(x))"], ["\\cos2\\pi\\times\\left(x\\right)", "cos(2*pi)*(x)"]] as const)
+  for (const [latex, giac] of [["\\sin 2x", "sin(pasdeg*(2*x))"], ["\\sin x\\cos x", "sin(pasdeg*x)*cos(pasdeg*x)"], ["\\sin\\left(2\\right)\\left(3\\right)", "sin(pasdeg*2)*(3)"], ["\\cos2\\pi x", "cos(pasdeg*(2*pi*x))"], ["\\sin\\left|x\\right|", "sin(pasdeg*abs(x))"], ["\\cos2\\pi\\times\\left(x\\right)", "cos(pasdeg*(2*pi))*(x)"]] as const)
     it(`${latex} still reads`, () => expect(latexToGiac(latex).replace(/\s/g, "")).toBe(giac));
 });

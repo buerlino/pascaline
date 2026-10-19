@@ -23,7 +23,7 @@ const CASES: [string, string, string, string][] = [
   ["xʸ, then 2 in the exponent", "\\left(1+2\\right)^{2}", "(1+2)^2", "9"],
   ["x⁻¹", "\\left(1+2\\right)^{-1}", "(1+2)^(-1)", "1/3"],
   ["x² in one-line entry", '\\left(1+2\\right)\\char"5E 2', "(1+2)^2", "9"],
-  ["sin", "\\sin\\left(1+2\\right)", "sin(1+2)", "sin(3)"],
+  ["sin", "\\sin\\left(1+2\\right)", "sin(pasdeg*(1+2))", "sin(3)"],
   ["abs", "\\left|1+2\\right|", "abs(1+2)", "3"],
 ];
 
@@ -42,6 +42,7 @@ describe("a selection as the argument of a key (R17)", () => {
       const M = await mod.default({ print: () => {}, printErr: () => {} });
       (M.cwrap("giac_init", "number", []) as () => number)();
       giac = M.cwrap("giac_eval", "string", ["string"]) as (s: string) => string;
+      giac("pasdeg:=1"); // R64: our parser's text reads pasdeg, as the engine host sets it (homeEval.ts pasdegCommand)
     }, 60_000);
 
     it.each(CASES)("%s: %s has the value %s", (_, latex, __, value) => {

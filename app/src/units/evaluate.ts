@@ -51,9 +51,10 @@ function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
 }
 
-/** sin, cos and tan of the formula take an angle (P15): our versions. asin and the others are left alone. */
-function withAngles(expr: string): string {
-  return expr.replace(/(?<![A-Za-z0-9_])(sin|cos|tan)\s*\(/g, "pasu$1(");
+/** sin, cos and tan of the formula take an angle (P15): our versions. asin and the others are left alone. pasua reads
+ *  the angle in the mode's unit itself, so the parser's degree factor (R64, `sin(pasdeg*u)`) is taken off here. */
+export function withAngles(expr: string): string {
+  return expr.replace(/(?<![A-Za-z0-9_])(sin|cos|tan)\s*\(\s*(?:pasdeg\s*\*)?/g, "pasu$1(");
 }
 
 type Checked = { kind: "term"; exps: string[]; num: string } | { kind: "sum"; terms: string[][] } | { kind: "function" } | { kind: "trig" } | { kind: "zero" } | { kind: "undefined" };

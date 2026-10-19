@@ -49,7 +49,7 @@ describe("Function definitions", () => {
     expect(c.fn?.(2)).toBe(4);
   });
   it("treats X as x", () => {
-    expect(compileDefinition("\\sin\\left(X\\right)").giac).toBe("sin(x)");
+    expect(compileDefinition("\\sin\\left(X\\right)").giac).toBe("sin(pasdeg*x)");
   });
   it("refuses equations", () => {
     expect(compileDefinition("x=2").error).not.toBe("");

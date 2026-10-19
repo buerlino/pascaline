@@ -2,6 +2,7 @@
 // MathJSON (Compute Engine's shape, also produced by our own parser) -> Giac input string.
 import { parseError } from "../i18n/enParser.ts";
 import { SerializeError } from "./errors.ts";
+import { ANGLE_IN, ANGLE_OUT, PASDEG, withFactor } from "./angles.ts";
 
 export { SerializeError };
 
@@ -17,6 +18,11 @@ export interface SerializeOptions {
    * and 11). An even q, or any other exponent, keeps the principal root.
    */
   realOddRoots?: boolean;
+  /**
+   * R64 (route R): every command that takes an angle gets it times `pasdeg`, every one that returns an angle gets its
+   * result over `pasdeg` (angles.ts). On unless this is false (the kept text of an open `==` test, which is shown).
+   */
+  angleFactor?: boolean;
 }
 
 function wholeText(e: Json | undefined): string | undefined {
@@ -99,9 +105,10 @@ export const EQ_VERDICT = "pasverdict";
  * at two precisions and sets the verdict (engine/numeric.ts decideFloatTest). Without a verdict (a test inside a
  * stored function) a float side stays as typed.
  */
-export function equalityTest(a: Out, b: Out, negate: boolean): Out {
+export function equalityTest(a: Out, b: Out, negate: boolean, shown: { a: Out; b: Out } = { a, b }): Out {
   const [yes, no, rel] = negate ? ["false", "true", "!="] : ["true", "false", "=="];
-  const kept = `'${wrap(a, 1)}${rel}${wrap(b, 1)}'`;
+  // R64: the kept text is shown, so it is built from the sides without the angle factor (`shown`)
+  const kept = `'${wrap(shown.a, 1)}${rel}${wrap(shown.b, 1)}'`;
   const big = (v: string): string => `max(abs(evalf(${v},30)))`;
   const float = "string(exact(d_))!=string(d_)";
   const test =
@@ -152,7 +159,18 @@ function symbolText(e: Json): string | undefined {
 const CALL_NAME: Readonly<Record<string, string>> = { mod: "pasmod", irem: "pasmod", median: "pasmedian", percentile: "paspercentile" };
 
 function call(name: string, args: Json[], o: SerializeOptions): Out {
-  return { s: `${CALL_NAME[name] ?? name}(${args.map((a) => ser(a, o).s).join(",")})`, p: 5 };
+  if (name === PASDEG) throw parseError("parse.reservedName", { name });
+  const outs = args.map((a) => ser(a, o));
+  const head = CALL_NAME[name] ?? name;
+  const spec = o.angleFactor === false ? undefined : ANGLE_IN[head];
+  const texts = outs.map((a) => a.s);
+  if (spec && outs.length > spec[0] && (spec[1] === 0 || outs.length === spec[1])) {
+    const a = outs[spec[0]]!;
+    texts[spec[0]] = withFactor(a.s, a.p === 5);
+  }
+  const text = `${head}(${texts.join(",")})`;
+  if (o.angleFactor !== false && ANGLE_OUT.has(head)) return { s: `${text}/${PASDEG}`, p: 2 };
+  return { s: text, p: 5 };
 }
 
 function lambdaBody(f: Json, o: SerializeOptions): { body: Json; v?: string } {
@@ -184,7 +202,7 @@ function invisible(raw: Json[], o: SerializeOptions): Out {
       // f(x)^2 parses as f * (x)^2; a call to f raised to the power is what the user meant
       const inner = ((next[1] as Json[])[1] ?? []) as Json;
       const list = isHead(inner, "Sequence") ? (inner.slice(1) as Json[]) : [inner];
-      parts.push({ s: `${call(name, list, o).s}^${wrap(ser(next[2] as Json, o), 5)}`, p: 4 });
+      parts.push({ s: `${wrap(call(name, list, o), 5)}^${wrap(ser(next[2] as Json, o), 5)}`, p: 4 });
       i++;
     } else {
       parts.push(ser(a, o));
@@ -204,6 +222,7 @@ function ser(e: Json, o: SerializeOptions): Out {
   const sym = symbolText(e);
   if (sym !== undefined) {
     if (sym === "Nothing") throw parseError("parse.emptyInput");
+    if (sym === PASDEG) throw parseError("parse.reservedName", { name: sym });
     if (sym in CONST) return { s: CONST[sym] as string, p: 5 };
     return { s: sym, p: 5 };
   }
@@ -287,9 +306,10 @@ function ser(e: Json, o: SerializeOptions): Out {
       return { s: `(${re.s}+${wrap(im, 3)}*i)`, p: 5 };
     }
     case "Degrees":
-      // degrees in every angle mode (R10): (pi/180)^angle_radian() is pi/180 in radians and 1 in degrees, read when
-      // evaluated, so a stored definition stays right after the mode changes
-      return { s: `${wrap(ser(a0, o), 3)}*(pi/180)^angle_radian()`, p: 2 };
+      // degrees in every angle mode (R10): u° is u in the mode's own unit, read when evaluated, so a stored definition
+      // stays right after the mode changes. (pi/180)^angle_radian() is pi/180 in radians and 1 in degrees while Giac
+      // runs in the mode; R64: over pasdeg, so it stays u in DEG once Giac runs in radians with pasdeg = pi/180 (G46)
+      return { s: `${wrap(ser(a0, o), 3)}*(pi/180)^angle_radian()${o.angleFactor === false ? "" : `/${PASDEG}`}`, p: 2 };
     case "Subst": // the evaluate-at template (R10): e at x = a
       return { s: `subst(${ser(a0, o).s},${ser(a1, o).s}=${wrap(ser(args[2] as Json, o), 1)})`, p: 5 };
     case "Piecewise": {
@@ -334,16 +354,20 @@ function ser(e: Json, o: SerializeOptions): Out {
     }
     default:
   }
-  // P4: polar entry r∡θ. Giac's cos/sin follow the angle mode (angle_radian), so degrees work too.
+  // P4: polar entry r∡θ. The angle is in the mode's unit: cos and sin take it with the factor (R64)
   if (head === "PolarComplex") {
-    const t = ser(a1, o).s;
+    const th = ser(a1, o);
+    const t = o.angleFactor === false ? th.s : withFactor(th.s, th.p === 5);
     return { s: `${wrap(ser(a0, o), 2)}*(cos(${t})+i*sin(${t}))`, p: 2 };
   }
   if (head === "Assign") return { s: `${wrap(ser(a0, o), 1)}:=${wrap(ser(a1, o), 0)}`, p: 0 };
   // R18, the Shift + 6 palette: == tests equality (true/false), unlike = which makes an equation; ≠ is its negation
   // (R18f1: by value, never Giac's structural ==). The logic words bracket every operand that is not an atom, so
   // Giac's precedence never decides
-  if (head === "EqualTest" || head === "NotEqual") return equalityTest(ser(a0, o), ser(a1, o), head === "NotEqual");
+  if (head === "EqualTest" || head === "NotEqual") {
+    const plain = { ...o, angleFactor: false };
+    return equalityTest(ser(a0, o), ser(a1, o), head === "NotEqual", { a: ser(a0, plain), b: ser(a1, plain) });
+  }
   if (head in LOGIC) return { s: args.map((a) => wrap(ser(a, o), 5)).join(` ${LOGIC[head] as string} `), p: 0 };
   if (head === "Xor") {
     // not Giac's xor: it gives 0 when an operand is symbolic, so (x>0) xor (x<1) would be a silent wrong answer

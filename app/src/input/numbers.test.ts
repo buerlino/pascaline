@@ -95,7 +95,7 @@ describe("a number beside a result chip (F25)", () => {
     ["\\frac{\\res{1}{0.25}}{2}", "(1/2)/2"],
     ["\\ans3", "(7)*3"],
     ["2\\ans", "2*(7)"],
-    ["\\sin2\\ans", "sin(2*(7))"],
+    ["\\sin2\\ans", "sin(pasdeg*(2*(7)))"],
     ["2\\const{c}{c}", "2*(299792458)"],
   ])("%s is kept as %s", (latex, out) => {
     expect(giac(latex)).toBe(out);
@@ -119,7 +119,7 @@ describe("a space between two numbers (F43, R51)", () => {
     ["2\\ x", "2*x"],
     ["x\\ 2", "x*2"],
     ["2\\ \\pi", "2*pi"],
-    ["\\sin\\ 2", "sin(2)"],
+    ["\\sin\\ 2", "sin(pasdeg*2)"],
     ["2\\times\\ 3", "2*3"],
     ["\\left(2\\right)\\ 3", "(2)*3"],
     ["2\\times 3", "2*3"],
