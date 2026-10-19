@@ -2,6 +2,7 @@
 // MathJSON (Compute Engine's shape, also produced by our own parser) -> Giac input string.
 import { parseError } from "../i18n/enParser.ts";
 import { SerializeError } from "./errors.ts";
+import { CALL_NAME } from "../engine/ourNames.ts";
 import { ANGLE_IN, ANGLE_OUT, DEGREE, PASDEG, POLAR, POLAR_OUT, RECT, numericLiteral, rectArg, withFactor } from "./angles.ts";
 
 export { SerializeError };
@@ -151,12 +152,6 @@ function symbolText(e: Json): string | undefined {
   if (s.startsWith("'") && s.endsWith("'")) return undefined; // MathJSON string literal
   return s;
 }
-
-/** Giac's own `mod` is the modular-number constructor (an error as a call); Find's `mod` is irem (Euclidean,
- *  never negative: irem(-7,3) = 2), so the written word is renamed to our pasmod (homeEval.ts ENGINE_DEFINITIONS:
- *  irem for integers, and the same remainder for a rational, where irem is an error). G42: median and percentile are ours
- *  too (the median of an even list, percentile unevaluated in Giac; `median` is a reserved word there). */
-const CALL_NAME: Readonly<Record<string, string>> = { mod: "pasmod", irem: "pasmod", median: "pasmedian", percentile: "paspercentile" };
 
 function call(name: string, args: Json[], o: SerializeOptions): Out {
   if (name === PASDEG) throw parseError("parse.reservedName", { name });

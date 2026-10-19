@@ -7,6 +7,7 @@ import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { applyDefChanges, userNamesOf, validDefs, type DefEntry } from "./defs.ts";
 import { defaultCasSettings } from "./types.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
+import { renameOurCalls, writeUserNames } from "./ourNames.ts";
 import { exportLibrary, importLibrary, LibError, parseLibrary, type ImportResult } from "./library.ts";
 
 const file = (n: string): Uint8Array => readFileSync(new URL(`../../../tools/probes/library/${n}`, import.meta.url));
@@ -248,5 +249,53 @@ describe.skipIf(!giacAvailable())("the degree factor in library files (G46, real
     const r = importLibrary(h, parseLibrary("// pascaline library 2\n// phasor\nph(w):=pasexp(i*w)\n"), []);
     expect(r.ok && r.log[0]!.cmds[0]).toBe("ph(w):=exp(i*w)");
     expect(h.home("ph(pi)", deg).result.display).toBe("-1");
+  });
+});
+
+// G54: our names for Giac's functions in library text (ourNames.ts), as the parser renames them.
+describe.skipIf(!giacAvailable())("our function names in library files (G54, real Giac)", () => {
+  const fresh = async (): Promise<EngineHost> => new EngineHost((await loadNodeGiac()).giac);
+  const text = "// pascaline library 3\n// median of a list\nm(L):=median(L)\n// test: median([1,2,3,4]) == 5/2\n// remainder\nr(a,b):=irem(a,b)\n// test: r(-7,3) == 2\n";
+
+  it("a definition's median is ours, and the test line passes (derived: the median of 1,2,3,4 is 5/2)", async () => {
+    const h = await fresh();
+    const r = importLibrary(h, parseLibrary(text), []);
+    expect(r).toMatchObject({ ok: true, tests: 2 });
+    expect(h.home("m([1,2,3,4])", defaultHomeSettings).result.display).toBe("2.5");
+  });
+
+  it("a name right after a digit is ours too (derived: 2 * 5/2 = 5)", async () => {
+    const h = await fresh();
+    const t = "// pascaline library 3\n// twice the median\nm(L):=2median(L)\n";
+    expect(importLibrary(h, parseLibrary(t), [])).toMatchObject({ ok: true });
+    expect(h.home("m([1,2,3,4])", defaultHomeSettings).result.display).toBe("5");
+  });
+
+  it("irem in a body gives what a typed mod gives (derived: -7 mod 3 = 2, G45)", async () => {
+    const h = await fresh();
+    importLibrary(h, parseLibrary(text), []);
+    expect(h.home("r(-7,3)", defaultHomeSettings).result.display).toBe("2");
+    expect(h.home("r(15/2,2)", defaultHomeSettings).result.display).toBe("1.5"); // 7.5 = 3*2 + 1.5, where raw irem is an error
+  });
+
+  it("the export writes the user's names back, and a file round-trips", async () => {
+    const h = await fresh();
+    const r = importLibrary(h, parseLibrary(text), []);
+    const out = exportLibrary(r.ok ? r.log : []).text;
+    expect(out).toContain("m(L):=median(L)");
+    expect(out).not.toContain("pasmedian");
+    const back = importLibrary(await fresh(), parseLibrary(out), []);
+    expect(back.ok && exportLibrary(back.log).text).toBe(out);
+  });
+});
+
+describe("renameOurCalls (no engine)", () => {
+  it("renames whole names, calls only, outside strings", () => {
+    expect(renameOurCalls('median(L)+mod (a,b)+irem(1,2)+percentile(L,5)')).toBe("pasmedian(L)+pasmod (a,b)+pasmod(1,2)+paspercentile(L,5)");
+    expect(renameOurCalls('"median(x)"+median+x.mod(2)+mymedian(L)+pasmedian(L)+1e3+1e3median(L)')).toBe('"median(x)"+median+x.mod(2)+mymedian(L)+pasmedian(L)+1e3+1e3*pasmedian(L)');
+    expect(renameOurCalls("2median(L)+2.5mod(a,b)")).toBe("2*pasmedian(L)+2.5*pasmod(a,b)");
+  });
+  it("writeUserNames is the inverse", () => {
+    expect(writeUserNames("pasmedian(L)+pasmod(a,b)+paspercentile(L,5)")).toBe("median(L)+mod(a,b)+percentile(L,5)");
   });
 });
