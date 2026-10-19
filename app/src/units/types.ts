@@ -58,6 +58,9 @@ export interface UnitJob {
   shows?: ShownUnit[];
   /** G32: the symbol of an rpm or rev typed in a slot (a count of cycles, not an angle), for the refusal that names it. */
   cycle?: string;
+  /** G40: a cycle unit (rpm, rev, Hz or a unit made of them) in a slot or the end slot: no rad is dropped at the end
+   *  slot (G32's refusal, or the mismatch, stays). */
+  cycles?: true;
   /** A constant with an uncertainty went in: never "=" (decisions M4-4), as in Home. */
   inexact: boolean;
   /** Uncertain inputs (G18): `expr` is the formula with a free symbol per uncertain value, which the worker
@@ -99,8 +102,19 @@ export interface Quantity {
   si?: string;
   /** G18: the first-order uncertainty of a result with uncertain inputs (the value is then never "="). */
   unc?: Uncertainty;
+  /** G40: a note on how the result was read (i18n, messages.ts unitNoteText): one rad dropped at the end slot, or a
+   *  cycle unit (rpm, rev) in a product, whose value counts turns and has no 2π. */
+  note?: UnitNote;
   ms: number;
 }
+
+/** G40 (decisions.md "Angles in the unit view"). */
+export type UnitNote =
+  /** The end slot's dimension differs from the result's by one rad (ω·r → m/s, τ·θ → J): rad = 1 was dropped. */
+  | { note: "radDropped" }
+  /** rpm or rev times another dimension: the value counts turns (a feed per turn is right, a speed at a radius needs
+   *  2π·r·n); `unit` is its symbol. */
+  | { note: "cycle"; unit: string };
 
 /** σ = sqrt(Σ (∂f/∂xᵢ · σᵢ)²) over independent inputs, in the same unit as the value. */
 export interface Uncertainty {

@@ -7,11 +7,14 @@
 import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type HomeSettings } from "../engine/homeEval.ts";
 import { exactFacts, floatFacts, hasFloat, rationalValue, splitList, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
 import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siUnit } from "./dims.ts";
-import { isUnitError, type Quantity, type Uncertainty, type UnitError, type UnitJob } from "./types.ts";
+import { isUnitError, type Quantity, type Uncertainty, type UnitError, type UnitJob, type UnitNote } from "./types.ts";
 import { shownWithUncertainty, uncertaintyText } from "./uncertainty.ts";
 
 const S = `[${BASES.map((b) => b.symbol).join(",")}]`;
 const ANY_DIM = BASES.map((b) => `has(y,${b.symbol})`).join(" or ");
+const ONES = `[${BASES.map(() => "1").join(",")}]`;
+/** G40: the inverse functions that give an angle (the parser's ANGLE_OUT puts `/pasdeg` after each, R64). */
+const INVERSES = ["atan2", "asin", "acos", "atan", "asec", "acsc", "acot"] as const;
 
 /**
  * Our Giac definitions for the unit view, loaded once per engine on the first units request:
@@ -23,6 +26,9 @@ const ANY_DIM = BASES.map((b) => `has(y,${b.symbol})`).join(" or ");
  * - pasua(x): the argument of sin, cos and tan, in radians (Giac runs in radians in every mode, G46): an angle (the
  *   rad dimension once, its value in rad) as it is; a pure number in the angle mode, as Home does (G15 default), so
  *   times pasdeg (π/180 in DEG); anything else gives the free symbol pasubad, which pasuq finds;
+ * - pasuz(x): the argument of an inverse (G40), a pure number (an angle or a unit gives pasubad); pasuasin and the
+ *   others give an angle: the rad dimension once, the value in rad, in either mode (the parser's `/pasdeg` is taken off
+ *   by withAngles); pasuatan2(y,x) takes two quantities of one dimension;
  * - pasup(m): 10^m, as a whole number for an integer m, else exp(m·ln 10), which pasuq reads (it cannot read the
  *   algebraic number 10^(3/20)): the ratio of a level given in dB, bel or dBm;
  * - pasul(e): the exact value of a level (a logarithm), the shorter of normal() and simplify() ("-30", not
@@ -42,6 +48,10 @@ export const UNIT_DEFINITIONS: readonly string[] = [
   `pasua(x):={local w,y; if (x==0) return 0; w:=normal(pasdimA*diff(x,pasdimA)/x); y:=normal(subst(x,pasdimA,1)); ` +
     `if ((w!=0 and w!=1) or ${ANY_DIM}) return pasubad; if (w==1) return y; return y*pasdeg; }`,
   ...["sin", "cos", "tan"].map((f) => `pasu${f}(x):=${f}(pasua(x))`),
+  `pasuz(x):={local y; y:=normal(x); if (pasuh(y)) return pasubad; return y; }`,
+  ...INVERSES.filter((f) => f !== "atan2").map((f) => `pasu${f}(x):=${f}(pasuz(x))*pasdimA`),
+  `pasuatan2(y,x):={local a,b; a:=normal(y); b:=normal(x); if (a!=0 and b!=0 and pasuh(normal(a/b))) return pasubad; ` +
+    `return atan2(subst(a,${S},${ONES}),subst(b,${S},${ONES}))*pasdimA; }`,
   `pasup(m):={if (denom(normal(m))==1) return 10^m; return exp(m*ln(10)); }`,
   `pasul(e):={local r,s; r:=normal(e); s:=simplify(r); if (length(string(s))<length(string(r))) return s; return r; }`,
   `pasun(f,g):={local a,b; a:=pasuq(normal(f)); b:=pasuq(normal(g)); return normal(a[2]/b[2]); }`,
@@ -51,10 +61,33 @@ function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
 }
 
-/** sin, cos and tan of the formula take an angle (P15): our versions. asin and the others are left alone. pasua reads
- *  the angle in the mode's unit itself, so the parser's degree factor (R64, `sin(pasdeg*u)`) is taken off here. */
+/** sin, cos and tan of the formula take an angle (P15), asin, acos, atan, atan2 and the others give one (G40): our
+ *  versions. pasua reads the angle in the mode's unit itself and the inverses give rad, so the parser's degree factor
+ *  (R64, `sin(pasdeg*u)`, `(asin(u)/pasdeg)`) is taken off here. */
 export function withAngles(expr: string): string {
-  return expr.replace(/(?<![A-Za-z0-9_])(sin|cos|tan)\s*\(\s*(?:pasdeg\s*\*)?/g, "pasu$1(");
+  return inverses(expr.replace(/(?<![A-Za-z0-9_])(sin|cos|tan)\s*\(\s*(?:pasdeg\s*\*)?/g, "pasu$1("));
+}
+
+/** Each inverse call as pasu<name>(…), its arguments done the same way, without the `/pasdeg` right after it. */
+function inverses(t: string): string {
+  const re = new RegExp(`(?<![A-Za-z0-9_])(${INVERSES.join("|")})\\s*\\(`, "g");
+  let out = "";
+  let i = 0;
+  for (let m = re.exec(t); m; m = re.exec(t)) {
+    let depth = 1;
+    let j = re.lastIndex;
+    for (; j < t.length && depth > 0; j++) {
+      if (t[j] === "(") depth++;
+      else if (t[j] === ")") depth--;
+    }
+    // Unbalanced: the rest stays as it is, for Giac's syntax error.
+    if (depth > 0) break;
+    out += `${t.slice(i, m.index)}pasu${m[1]!}(${inverses(t.slice(re.lastIndex, j - 1))})`;
+    const deg = /^\s*\/\s*pasdeg(?![A-Za-z0-9_])(?!\s*\^)/.exec(t.slice(j));
+    i = j + (deg ? deg[0].length : 0);
+    re.lastIndex = i;
+  }
+  return out + t.slice(i);
 }
 
 type Checked = { kind: "term"; exps: string[]; num: string } | { kind: "sum"; terms: string[][] } | { kind: "function" } | { kind: "trig" } | { kind: "zero" } | { kind: "undefined" };
@@ -112,6 +145,20 @@ function cycleRefusal(job: UnitJob, a: string, b: string): UnitError | null {
   const strip = (k: string): string => [...parseDimKey(k)].filter(([n]) => n !== "rad").map(([n, e]) => n + e).sort().join("");
   const angle = (k: string): boolean => parseDimKey(k).has("rad");
   return angle(a) !== angle(b) && strip(a) === strip(b) ? { error: "cycle", unit: job.cycle } : null;
+}
+
+/** G40: dimension keys that differ by exactly one rad (either way), all other bases equal. */
+function oneRadApart(a: string, b: string): boolean {
+  const ea = parseDimKey(a);
+  const eb = parseDimKey(b);
+  const rad = (e: Map<string, string>): number | null => {
+    const r = e.get("rad") ?? "0";
+    return /^-?\d+$/.test(r) ? Number(r) : null;
+  };
+  const [ra, rb] = [rad(ea), rad(eb)];
+  if (ra === null || rb === null || Math.abs(ra - rb) !== 1) return false;
+  const rest = (e: Map<string, string>): string => [...e].filter(([n]) => n !== "rad").map(([n, x]) => n + x).sort().join("");
+  return rest(ea) === rest(eb);
 }
 
 /** Dimension keys by the first base each is written with (M, L, T, …), then by text: a stable order for messages
@@ -203,10 +250,17 @@ function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string 
 const PREFIXES: Readonly<Record<number, string>> = { [-15]: "f", [-12]: "p", [-9]: "n", [-6]: "µ", [-3]: "m", 0: "", 3: "k", 6: "M", 9: "G", 12: "T", 15: "P" };
 
 /** The unit a result without an end slot is shown in (G25): the first typed unit of the job that has the result's
- *  dimension, else the SI unit with the SI prefix that puts the number from 1 to 999. `factor` is its factor to SI. */
-function chosenUnit(giac: Giac, job: UnitJob, dimension: string, num: string): { text: string; factor: string } {
+ *  dimension; an angle in the mode's unit (G40: ° in DEG, rad in RAD); else the SI unit with the SI prefix that puts
+ *  the number from 1 to 999. `factor` is its factor to SI. G40: when no typed unit has the dimension, the first typed
+ *  unit with one rad less is taken with the rad dropped (`asin(1/2)·1 rad` is π/6 rad, not rad²), unless a cycle unit is in. */
+function chosenUnit(giac: Giac, job: UnitJob, dimension: string, num: string, angle: HomeSettings["angle"]): { text: string; factor: string; radDropped?: true } {
   const typed = job.shows?.find((u) => u.dim === dimension);
   if (typed) return { text: typed.text, factor: typed.factor };
+  // Only a result with one rad more than the unit: a pure number (sin 30°) never takes the typed °.
+  const rad = (k: string): string => parseDimKey(k).get("rad") ?? "0";
+  const near = job.cycles ? undefined : job.shows?.find((u) => oneRadApart(dimension, u.dim) && Number(rad(dimension)) === Number(rad(u.dim)) + 1);
+  if (near) return { text: near.text, factor: near.factor, radDropped: true };
+  if (dimension === "rad1" && angle === "deg") return { text: "°", factor: "pi/180" };
   const si = siUnit(dimension);
   const base = { text: si.text, factor: "1" };
   if (!si.prefixable) return base;
@@ -249,14 +303,22 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   if (dst.kind !== "term") return { error: "engine", detail: "an end slot of 0" };
   // A result 0 keeps the dimension of its terms (the check's), so `0 m → s` is refused and `0 m` shows m.
   const dimension = src.kind === "term" ? dimKeyOf(src.exps) : per?.kind === "term" ? dimKeyOf(per.exps) : null;
-  if (dimension !== null && job.end && dimension !== dimKeyOf(dst.exps)) return cycleRefusal(job, dimension, dimKeyOf(dst.exps)) ?? { error: "dimension", dims: [dimension, dimKeyOf(dst.exps)], end: true };
+  let note: UnitNote | undefined;
+  if (dimension !== null && job.end && dimension !== dimKeyOf(dst.exps)) {
+    // G40: one rad more or less than the end slot is dropped (rad = 1: ω·r → m/s, τ·θ → J), unless a cycle unit is in.
+    if (!job.cycles && oneRadApart(dimension, dimKeyOf(dst.exps))) note = { note: "radDropped" };
+    else return cycleRefusal(job, dimension, dimKeyOf(dst.exps)) ?? { error: "dimension", dims: [dimension, dimKeyOf(dst.exps)], end: true };
+  }
+  // G40: rpm or rev times a dimension other than time counts turns (a feed per turn); a speed at a radius needs 2π.
+  if (job.cycle && dimension !== null && [...parseDimKey(dimension).keys()].some((b) => b !== "s")) note = { note: "cycle", unit: job.cycle };
   const num = src.kind === "term" ? src.num : "0";
   const si = src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};
   let unit = job.endUnit ?? "";
   // No end slot: the typed unit that fits, else the SI unit with a prefix (an absolute temperature stays in K).
   if (!job.end && dimension !== null && !job.absTemp) {
-    const c = chosenUnit(giac, job, dimension, num);
+    const c = chosenUnit(giac, job, dimension, num, s.angle);
     unit = c.text;
+    if (c.radDropped) note = { note: "radDropped" };
     if (c.factor !== "1") {
       g = c.factor;
       const out2 = giac.eval(`pasuR:=[pasuR[0],pasuq(normal(${g}))]`);
@@ -271,7 +333,7 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const done = (value: HomeResult, valueExpr: string): Quantity | UnitError => {
     const unc = job.unc ? uncertainty(giac, job, src, shownDst, valueExpr, value.display, dimension, s) : null;
     if (unc && isUnitError(unc)) return unc;
-    return { value, dimension, dimensionText: dimension === null ? null : dimensionText(dimension), unit, ...si, ...(unc ? { unc } : {}), ms: performance.now() - t0 };
+    return { value, dimension, dimensionText: dimension === null ? null : dimensionText(dimension), unit, ...si, ...(unc ? { unc } : {}), ...(note ? { note } : {}), ms: performance.now() - t0 };
   };
   if ((job.absTemp || job.endOffset !== undefined) && src.kind === "term" && giac.eval(`sign(${num})`).trim() === "-1") return { error: "belowzero" };
   // An end slot in °C or °F: the SI number less the offset (K = a·x + b, the end slot holds a); in dB, dBm or Np: the

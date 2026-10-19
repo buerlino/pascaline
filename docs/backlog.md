@@ -76,7 +76,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - **Gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left (all fixed except #2's value polish, G44); the size test; the Tab One bars of §8.3.
 
 **Milestone 5: Units** (P15; docs/04 section 4). Items 1–3 are done: the evaluator (G16), temperatures and levels (G17), uncertainty (G18), the result's unit (G25), the data audit (G13), Find's pad data (G7), rpm's message (G32), the parser's units mode (R28).
-- **4. The unit view:** before R24c the zero-term check (**G35**, done), °C inside a compound unit (**G37**, done), σ beyond first order (**G41**) and the angles (**G40**, decided 2026-10-19); the pad (**R24b**), the entry (**R24c**), Find in a slot and the user cells (**R24d**); the result view (value, mark, unit, dimension, one-tap alternatives, `units.targets`, the `\res` chip back to Home): **S11** writes its packages. Open points with defaults: r7 section 7.
+- **4. The unit view:** before R24c the zero-term check (**G35**, done), °C inside a compound unit (**G37**, done), σ beyond first order (**G41**) and the angles (**G40**, done; the view shows `Quantity.note`); the pad (**R24b**), the entry (**R24c**), Find in a slot and the user cells (**R24d**); the result view (value, mark, unit, dimension, one-tap alternatives, `units.targets`, the `\res` chip back to Home): **S11** writes its packages. Open points with defaults: r7 section 7.
 - **5. Build, size, devices** (annabell, after R24c): the first unit result on the Tab One and the Fairphone 6 (< 1 s).
 - **Gate:** tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
 

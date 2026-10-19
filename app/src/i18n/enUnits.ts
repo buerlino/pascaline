@@ -18,6 +18,9 @@ export const enUnits = {
   "units.minus": "Put the minus on the number, not before the bracket around {unit}",
   "units.symbolic": "Not a number: {detail}",
   "units.engine": "The unit view could not evaluate this",
+  // G40: the notes under a result (decisions.md "Angles in the unit view").
+  "units.note.radDropped": "rad = 1 dropped",
+  "units.note.cycle": "{unit} counts turns: the speed at radius r is 2π·r·n",
   // R24a: the slot model's refusals (a pad press that cannot go into the slot) and the reading in words. {u} is a
   // unit's name in words ("kilometer"), {p} a power ("−1/2").
   "units.slot.prefixAlone": "A prefix needs a unit after it",
