@@ -155,3 +155,53 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     expect(cas("1/3").numeric).toBeUndefined();
   });
 });
+
+describe("G38: which inputs get a second decision (pure)", () => {
+  it("decision functions, comparisons and abs( in the result; rationals only decide exactly", async () => {
+    const { restsOnDecision, rationalOnly } = await import("./numeric.ts");
+    expect(restsOnDecision("floor(sin(10^50)*10^12)", "609741545567")).toBe(true);
+    expect(restsOnDecision("sin(10^50)>0", "true")).toBe(true);
+    expect(restsOnDecision("sqrt(x^2)", "abs(x)")).toBe(true);
+    expect(restsOnDecision("sin(1)", "sin(1)")).toBe(false);
+    expect(restsOnDecision("f:=x->x+1", "")).toBe(false); // the arrow is no comparison
+    expect(rationalOnly("sum(1/k,k,1,1000)")).toBe(true);
+    expect(rationalOnly("sum(1/k^2,k,1,inf)")).toBe(false);
+    expect(rationalOnly("floor(2^(1/2))")).toBe(false);
+    expect(rationalOnly("floor(x)")).toBe(false);
+  });
+
+  it("the cuts: floor and sign calls with their span, one comparison per segment", async () => {
+    const { decisionCuts } = await import("./numeric.ts");
+    expect(decisionCuts("floor(a+1)*2")).toEqual([{ q: "a+1", kind: "int", call: { name: "floor", at: [0, 10] } }]);
+    expect(decisionCuts("piecewise(s>0,1,2)")).toEqual([{ q: "(s)-(0)", kind: "zero" }]);
+    expect(decisionCuts("a<b and c<d")).toEqual([]); // two comparisons: left to the text check
+  });
+});
+
+describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 20 (real Giac)", () => {
+  let host: EngineHost;
+  beforeAll(async () => {
+    host = new EngineHost((await loadNodeGiac()).giac);
+  });
+
+  it("floor(sin(10^60)*10^12): wrong at 40 digits, P + 20 and P + 40 agree on 830389765219 (source: oracle, mpmath at 200 digits)", () => {
+    const r = host.home("floor(sin(10^60)*10^12)", defaultHomeSettings).result;
+    expect(r).toMatchObject({ display: "830389765219", exactRational: true });
+    expect(r.why).toBeUndefined();
+    expect(host.home("pasans", defaultHomeSettings).result.display).toBe("830389765219"); // Ans holds the agreed value
+  });
+
+  it("a floor on its cut is ⚠ without a count, decided at limited precision, with the value on the cut (source: derived)", () => {
+    const r = host.home("floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)", defaultHomeSettings).result;
+    expect(r).toMatchObject({ display: "1", warn: "unchecked", reliableDigits: null, exactRational: false, why: { decided: true } });
+    expect(markOf(r, { format: "STD", digits: 12 })).toEqual({ mark: "⚠", warn: "unchecked" });
+    const c = host.cas("floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)", defaultCasSettings).result;
+    expect(c).toMatchObject({ text: "1", approximate: true, warn: "unchecked", why: { decided: true } });
+  });
+
+  it("the Digits setting is back at the display digits after an input: a float in a non-number prints with them", () => {
+    host.home("floor(sin(10^50))", defaultHomeSettings);
+    expect(host.home("evalf([1/3,x])", defaultHomeSettings).result.display).toBe("[0.333333333333,x]");
+    expect(host.cas("evalf([1/3,x])", defaultCasSettings).result.text).toBe("[0.333333333333,x]");
+  });
+});
