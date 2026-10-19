@@ -43,6 +43,7 @@ describe("unit view builder (G16)", () => {
   it("a user cell's prefixed unit is one token with its prefix", () => {
     const job = buildJob({ formula: "2*pasu1*3*pasu2", slots: [{ tokens: [{ prefix: "k", unit: "N" }] }, { tokens: [{ unit: "m" }] }] }, table);
     expect(job).toEqual({ expr: "2*(((1000)*(1)*pasdimM^(1)*pasdimL^(1)*pasdimT^(-2)))*3*(((1)*pasdimL^(1)))", inexact: false,
+      check: "pasz1*(((1000)*(1)*pasdimM^(1)*pasdimL^(1)*pasdimT^(-2)))*(((1)*pasdimL^(1)))",
       shows: [{ text: "kN·m", dim: "kg1m2s-2", factor: "1000" }, { text: "kN", dim: "kg1m1s-2", factor: "1000" }, { text: "m", dim: "m1", factor: "1" }] });
   });
   it("G25: typed units that multiply to factor 1 are kept (N·m), the end slot is named", () => {
@@ -160,5 +161,49 @@ describe("uncertain inputs (G18)", () => {
     expect(job.unc).toBeUndefined();
     expect(job.inexact).toBe(false);
     expect("error" in buildJob({ formula: "pasupm(1)*pasu1", slots: [{ tokens: [{ unit: "m" }] }] }, table)).toBe(true);
+  });
+});
+
+describe("the dimension check's text (G35)", () => {
+  const m = { tokens: [{ unit: "m" }] };
+  const s = { tokens: [{ unit: "s" }] };
+  const M = "(((1)*pasdimL^(1)))";
+  const T = "(((1)*pasdimT^(1)))";
+  const job = (formula: string, slots = [m, s], end?: typeof m) => {
+    const j = buildJob({ formula, slots, ...(end ? { end } : {}) }, table);
+    if ("error" in j) throw new Error(unitErrorMessage(j));
+    return j;
+  };
+  it("each term with a slot gets its own symbol for its numbers, so 0 m + 1 s keeps both terms", () => {
+    const j = job("0*pasu1+1*pasu2");
+    expect(j.expr).toBe(`0*${M}+1*${T}`);
+    expect(j.check).toBe(`pasz1*${M}+pasz2*${T}`);
+    expect(j.checkSum).toBe(true);
+  });
+  it("terms that cancel, a slot alone, a bracketed 0 and a ± value each get one", () => {
+    expect(job("5*pasu1-5*pasu1+pasu2").check).toBe(`pasz1*${M}-pasz2*${M}+pasz3*${T}`);
+    expect(job("(5-5)*pasu1+pasu2").check).toBe(`pasz1*${M}+pasz2*${T}`);
+    expect(job("pasupm(0,0.1)*pasu1", [m]).check).toBe(`pasz1*${M}`);
+  });
+  it("a number below the ÷ goes too; a minus in front and E notation stay one term", () => {
+    expect(job("1*pasu1/(0*pasu2)").check).toBe(`pasz2*${M}/(pasz1*${T})`);
+    expect(job("-1.5e-3*pasu1", [m]).check).toBe(`-pasz1*${M}`);
+    expect(job("-1.5e-3*pasu1", [m]).checkSum).toBeUndefined();
+  });
+  it("inside a function each argument is checked; a power without a slot is kept", () => {
+    expect(job("max(1*pasu1,50*pasu2)", [m, m]).check).toBe(`pasz3*max(pasz1*${M},pasz2*${M})`);
+    expect(job("max(1*pasu1,50*pasu2)", [m, m]).checkSum).toBeUndefined();
+    expect(job("pasu1^(pasupm(2,0.1))", [m]).check).toBe(`pasz1*${M}^((2))`);
+    expect(job("(2*pasu1)^(1/2)+3*pasu2^(1/2)", [m, m]).check).toBe(`pasz2*(pasz1*${M})^(1/2)+pasz3*${M}^(1/2)`);
+  });
+  it("−(5 °C) is told to put the minus on the number; −5 °C converts", () => {
+    const oC = { tokens: [{ unit: "oC" }] };
+    const r = buildJob({ formula: "-(5*pasu1)", slots: [oC] }, table);
+    expect("error" in r && unitErrorMessage(r)).toBe("Put the minus on the number: −5 °C, not −(5 °C)");
+    const pm = buildJob({ formula: "-(pasupm(20,0.5)*pasu1)", slots: [oC] }, table);
+    expect("error" in pm && pm.error).toBe("minus");
+    expect("error" in buildJob({ formula: "-5*pasu1", slots: [oC] }, table)).toBe(false);
+    const sum = buildJob({ formula: "-(5*pasu1)+2", slots: [oC] }, table);
+    expect("error" in sum && sum.error).toBe("temperature");
   });
 });

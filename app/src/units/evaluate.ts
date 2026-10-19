@@ -17,7 +17,9 @@ const ANY_DIM = BASES.map((b) => `has(y,${b.symbol})`).join(" or ");
  * Our Giac definitions for the unit view, loaded once per engine on the first units request:
  * - every dimension symbol is positive, so √(4 m²) is 2 m and not 2·|m|;
  * - pasuq(f): [0, exponents, number] for one term; [1, the terms' exponents] for a sum of terms; [2] for anything
- *   else (a function of a quantity with units); [3] when sin, cos or tan met a unit; [4] for an exact 0;
+ *   else (a function of a quantity with units: also a term whose number part still holds a dimension symbol, as
+ *   floor(3/2·m) or Giac's irem of two lengths); [3] when sin, cos or tan met a unit; [4] for an exact 0; [5] for Giac's infinity or undef (a division by 0);
+ * - pasuh(y): whether y holds a dimension symbol;
  * - pasua(x): the argument of sin, cos and tan: an angle (the rad dimension once, its value in rad) is given in the
  *   angle mode; a pure number is taken as it is, in the angle mode, as Home does (G15 default); anything else gives
  *   the free symbol pasubad, which pasuq finds;
@@ -29,11 +31,14 @@ const ANY_DIM = BASES.map((b) => `has(y,${b.symbol})`).join(" or ");
  */
 export const UNIT_DEFINITIONS: readonly string[] = [
   ...BASES.map((b) => `assume(${b.symbol}>0)`),
-  `pasuq(f):={local a,c,t; if (has(f,pasubad)) return [3]; if (f==0) return [4]; ` +
+  `pasuh(y):=${ANY_DIM}`,
+  `pasuq(f):={local a,b,c,j,t; if (has(f,pasubad)) return [3]; if (has(f,undef) or has(f,infinity)) return [5]; if (f==0) return [4]; ` +
     `a:=map(${S},k->normal(k*diff(f,k)/f)); ` +
-    `if (lvar(a)==[]) { c:=normal(f/product(zip((x,y)->x^y,${S},a))); return [0,a,c]; } ` +
-    `t:=expand(f); if (sommet(t)!='+') return [2]; ` +
-    `return [1,map([op(t)],u->map(${S},k->normal(k*diff(u,k)/u)))]; }`,
+    `if (lvar(a)==[]) { c:=normal(f/product(zip((x,y)->x^y,${S},a))); if (pasuh(c)) return [2]; return [0,a,c]; } ` +
+    `t:=expand(f); if (sommet(t)!='+') return [2]; t:=[op(t)]; ` +
+    `b:=map(t,u->map(${S},k->normal(k*diff(u,k)/u))); ` +
+    `for (j:=0;j<size(t);j++) { if (lvar(b[j])==[] and pasuh(normal(t[j]/product(zip((x,y)->x^y,${S},b[j]))))) return [2]; } ` +
+    `return [1,b]; }`,
   `pasua(x):={local w,y; if (x==0) return 0; w:=normal(pasdimA*diff(x,pasdimA)/x); y:=normal(subst(x,pasdimA,1)); ` +
     `if ((w!=0 and w!=1) or ${ANY_DIM}) return pasubad; if (w==1 and angle_radian==0) return normal(y*180/pi); return y; }`,
   ...["sin", "cos", "tan"].map((f) => `pasu${f}(x):=${f}(pasua(x))`),
@@ -51,7 +56,7 @@ function withAngles(expr: string): string {
   return expr.replace(/(?<![A-Za-z0-9_])(sin|cos|tan)\s*\(/g, "pasu$1(");
 }
 
-type Checked = { kind: "term"; exps: string[]; num: string } | { kind: "sum"; terms: string[][] } | { kind: "function" } | { kind: "trig" } | { kind: "zero" };
+type Checked = { kind: "term"; exps: string[]; num: string } | { kind: "sum"; terms: string[][] } | { kind: "function" } | { kind: "trig" } | { kind: "zero" } | { kind: "undefined" };
 
 /** pasuq's printed answer. */
 function checked(text: string): Checked | null {
@@ -76,6 +81,8 @@ function checked(text: string): Checked | null {
       return { kind: "trig" };
     case "4":
       return { kind: "zero" };
+    case "5":
+      return { kind: "undefined" };
     default:
       return null;
   }
@@ -84,6 +91,8 @@ function checked(text: string): Checked | null {
 /** Why a checked answer is not one term, or null when it is. */
 function refusal(c: Checked, job: UnitJob): UnitError | null {
   if (c.kind === "function" || c.kind === "trig") return { error: "function" };
+  // Giac's 1/0 is infinity, 0/0 undef: not a number, and not the user's free name.
+  if (c.kind === "undefined") return { error: "divzero" };
   if (c.kind === "sum") {
     if (c.terms.some((t) => !t.every(isExponent))) return { error: "function" };
     const dims = [...new Set(c.terms.map(dimKeyOf))].sort(byDimension);
@@ -169,6 +178,8 @@ function uncertainty(giac: Giac, job: UnitJob, src: Checked, dst: { num: string 
   const out = giac.eval(`pasuS:=pasuq(normal(sqrt(${terms})))`);
   if (isError(out)) return { error: "engine", detail: out };
   const q = checked(out);
+  // σ through a power of a unit holds ln(m): a ± in the exponent of a quantity (m^(2 ± 0.1)).
+  if (q?.kind === "function") return { error: "uncpower" };
   if (!q || (q.kind !== "term" && q.kind !== "zero")) return { error: "engine", detail: `no uncertainty: ${out}` };
   if (q.kind === "term" && dimension !== null && dimKeyOf(q.exps) !== dimension) return { error: "engine", detail: `uncertainty of ${dimKeyOf(q.exps)} on ${dimension}` };
   const c = q.kind === "term" ? q.num : "0";
@@ -215,16 +226,28 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   const t0 = performance.now();
   const f = withAngles(toExactLiterals(job.expr));
   let g = job.end ? withAngles(toExactLiterals(job.end)) : "1";
-  const out = giac.eval(`pasuR:=[pasuq(normal(${f})),pasuq(normal(${g}))]`);
+  // G35: the dimension check (job.check, every number beside a slot a symbol of its own) goes in the same call.
+  const checkText = job.check !== undefined ? `pasuq(normal(${withAngles(toExactLiterals(job.check))}))` : null;
+  const chk = checkText !== null && job.checkSum ? `,${checkText}` : "";
+  const out = giac.eval(`pasuR:=[pasuq(normal(${f})),pasuq(normal(${g}))${chk}]`);
   if (isError(out)) return { error: "engine", detail: out };
   const both = splitList(out);
   const src = both?.[0] !== undefined ? checked(both[0]) : null;
   let dst = both?.[1] !== undefined ? checked(both[1]) : null;
   if (!src || !dst) return { error: "engine", detail: out };
+  // The check refuses terms of different dimensions, whatever their numbers; a function it cannot read (max, with
+  // symbols) leaves the decision to the value's own check.
+  // Without a sum only a value 0 needs the check, for its dimension: a call of its own then.
+  const later = checkText !== null && !job.checkSum && src.kind === "zero" ? giac.eval(checkText) : null;
+  const third = later !== null ? (isError(later) ? undefined : later) : both?.[2];
+  const per = third !== undefined ? checked(third) : null;
+  const mixed = per?.kind === "sum" ? refusal(per, job) : null;
+  if (mixed && mixed.error !== "function") return mixed;
   const bad = refusal(src, job) ?? refusal(dst, job);
   if (bad) return bad;
   if (dst.kind !== "term") return { error: "engine", detail: "an end slot of 0" };
-  const dimension = src.kind === "term" ? dimKeyOf(src.exps) : null;
+  // A result 0 keeps the dimension of its terms (the check's), so `0 m → s` is refused and `0 m` shows m.
+  const dimension = src.kind === "term" ? dimKeyOf(src.exps) : per?.kind === "term" ? dimKeyOf(per.exps) : null;
   if (dimension !== null && job.end && dimension !== dimKeyOf(dst.exps)) return cycleRefusal(job, dimension, dimKeyOf(dst.exps)) ?? { error: "dimension", dims: [dimension, dimKeyOf(dst.exps)], end: true };
   const num = src.kind === "term" ? src.num : "0";
   const si = src.kind === "term" && num.length <= FULL_EXACT_MAX ? { si: num } : {};

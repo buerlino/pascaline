@@ -5,8 +5,8 @@
 # `input`: Giac text with each unit slot in braces and each constant as {=id}; `to`: the end slot (app/scripts/
 # unit-case.ts has the syntax: "k:m" is km, " / " the ÷, "Hz^-1/2" a power). Without `to` the value is in SI base
 # units. `expect` is the value shown at 12 digits (STD), `mark` its mark, `exact` Giac's exact text of it, `dim` the
-# dimension key of the result as the index writes it ("" for a pure number; null for an exact 0, whose dimension is
-# lost); with an end slot, `si` is the exact text of the value in SI base units, checked against `si_oracle`. A
+# dimension key of the result as the index writes it ("" for a pure number; a result 0 keeps the dimension of its terms,
+# G35); with an end slot, `si` is the exact text of the value in SI base units, checked against `si_oracle`. A
 # refused case has `message` (the text the user reads) instead.
 # `settings: { angle: deg }`: a bare number in sin, cos and tan follows the Home angle mode (G15 default, decisions.md).
 # G17: °C, °F and the logarithmic units (dB, bel, Np, dBm, dBW) are allowed only alone and convert by their offset or level
@@ -70,7 +70,7 @@ cases:
   - { id: "d32", input: "1*{n:V Hz^-1/2}", oracle: "F(1,10**9)", expect: "1E-9", mark: "=", exact: "1/1000000000", dim: "A-1kg1m2s-5/2", source: "derived", note: "a half power: V·Hz^(-1/2)" }
   - { id: "t04", input: "2*pi*25*{m:m}", oracle: "2*pi*25", expect: "157.079632679", mark: "≈", exact: "50*pi", dim: "m1", unit: "mm", source: "oracle", note: "task t04: a single slot is shown as typed (G25)" }
   - { id: "d40", input: "sqrt(2*9.81*{m / s^2}*2*{m})", oracle: "sqrt(2*F('9.81')*2)", expect: "6.26418390535", mark: "≈", exact: "3*sqrt(109)/5", dim: "m1s-1", source: "oracle", note: "√ of a quantity with units: the dimensions are positive, so √(m²) is m, not |m|" }
-  - { id: "d41", input: "5*{m}-5*{m}", oracle: "F(0)", expect: "0", mark: "=", exact: "0", dim: null, source: "derived", note: "an exact 0 has lost its dimension" }
+  - { id: "d41", input: "5*{m}-5*{m}", oracle: "F(0)", expect: "0", mark: "=", exact: "0", dim: "m1", unit: "m", source: "derived", note: "G35: a result 0 keeps the unit of its terms (was dim null, no unit)" }
   - { id: "d42", input: "{=G}", oracle: "F('6.6743e-11')", expect: "6.6743E-11", mark: "≈", exact: "66743/1000000000000000", dim: "kg-1m3s-2", unit: "m³/(kg·s²)", unc: "1.5E-15", unc_oracle: "F('1.5e-15')", shown: "6.67430E-11 ± 1.5E-15", source: "derived", note: "G has a CODATA uncertainty: never = (decisions M4-4), as in Home, and it carries its ±" }
   - { id: "d43", input: "20*{oC}*2", message: "Use K or Δ°C for a temperature difference", source: "derived" }
   - { id: "d44", input: "2*{dB}*3*{m}", message: "dB converts only", source: "derived", note: "a logarithmic unit is allowed only alone" }
@@ -147,3 +147,21 @@ cases:
   - { id: "q02", input: "1*{inHg}", to: "Pa", oracle: "F('13.5951')*F('0.0254')*F('9.80665')*1000", expect: "3386.38864034", mark: "≈", exact: "3386388640341/1000000000", source: "derived", note: "the conventional inch of mercury is 25.4 mmHg; qalc's follows its Torr" }
   - { id: "q03", input: "{=Z_0}", oracle: "F('376.730313412')", expect: "376.730313412", mark: "≈", exact: "94182578353/250000000", dim: "A-2kg1m2s-3", unc: "5.9E-8", unc_oracle: "F('5.9e-8')", shown: "376.730313412 ± 5.9E-8", source: "reference", note: "NIST CODATA 2022, allascii.txt: 376.730 313 412(59) Ω; qalc has 5.8E-8" }
   - { id: "q04", input: "{=muon_compton_wavelength}", oracle: "F('1.173444110e-14')*10**15", expect: "11.7344411", mark: "≈", exact: "117344411/10000000", dim: "m1", unit: "fm", unc: "2.6E-7", unc_oracle: "F('2.6e-22')*10**15", shown: "11.73444110 ± 2.6E-7", source: "reference", note: "NIST CODATA 2022, allascii.txt: 1.173 444 110(26) e-14 m, shown in fm; qalc has ...111" }
+  # --- G35: the dimension check sees every term, zero ones too (docs/research/check-2026-10-19.md findings 5 and 13; E8) ---
+  - { id: "z01", input: "0*{m}+1*{s}", message: "Units don't match: L vs T", source: "derived", note: "a term worth 0 still has its dimension (was = 1 s)" }
+  - { id: "z02", input: "5*{m}-5*{m}+1*{s}", message: "Units don't match: L vs T", source: "derived", note: "terms that cancel (was = 1 s)" }
+  - { id: "z03", input: "0*{m}", to: "s", message: "Units don't match: L vs T", source: "derived", note: "an end slot against a 0 (was = 0 s)" }
+  - { id: "z04", input: "pasupm(0,0.1)*{m}", oracle: "F(0)", expect: "0", mark: "≈", exact: "0", dim: "m1", unit: "m", unc: "0.10", unc_oracle: "F('0.1')", shown: "0.00 ± 0.10", source: "derived", note: "0 ± 0.1 m keeps its m (was no unit)" }
+  - { id: "z05", input: "0*{m}", oracle: "F(0)", expect: "0", mark: "=", exact: "0", dim: "m1", unit: "m", dimtext: "L", source: "derived", note: "0 m alone shows 0 m" }
+  - { id: "z06", input: "1*{m}+1*{s}-1*{s}", message: "Units don't match: L vs T", source: "derived", note: "terms that cancel beside a third (was = 1 m)" }
+  - { id: "z07", input: "(5-5)*{m}+1*{s}", message: "Units don't match: L vs T", source: "derived", note: "a bracketed number worth 0 before a slot" }
+  - { id: "z08", input: "-(5*{oC})", to: "K", message: "Put the minus on the number: −5 °C, not −(5 °C)", source: "derived", note: "finding 13: a minus before the whole quantity (was the temperature-difference message)" }
+  - { id: "z09", input: "-(pasupm(20,0.5)*{oC})", to: "oF", message: "Put the minus on the number: −5 °C, not −(5 °C)", source: "derived", note: "finding 13, with ±" }
+  - { id: "z10", input: "floor(1.5*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived", note: "E8 (was Not a number: floor(3*pasdimL/2))" }
+  - { id: "z11", input: "1*{m}/(0*{s})", message: "Not defined: a division by 0", source: "derived", note: "E8 (was Not a number: infinity)" }
+  - { id: "z12", input: "irem(7*{m},2*{m})", message: "A function takes a pure number (sin, cos and tan also an angle)", source: "derived", note: "E8 (was L vs L²)" }
+  - { id: "z13", input: "{m}^(pasupm(2,0.1))", message: "A power of a unit can't carry ±", source: "derived", note: "E8 (was the engine message, no uncertainty: [2])" }
+  - { id: "z14", input: "0*{m}/(0*{s})", message: "Not defined: a division by 0", source: "derived", note: "0/0 (was the engine message)" }
+  - { id: "z15", input: "max(1*{m},50*{c:m})", oracle: "F(1)", expect: "1", mark: "=", exact: "1", dim: "m1", unit: "m", source: "derived", note: "a function the check cannot read with symbols leaves the decision to the value" }
+  - { id: "z16", input: "-5*{oC}", to: "K", oracle: "F(-5)+F('273.15')", expect: "268.15", mark: "=", exact: "5363/20", source: "derived", note: "the minus on the number converts" }
+  - { id: "z17", input: "{m}-{m}+{s}", message: "Units don't match: L vs T", source: "derived", note: "slots with no number before them cancel too" }
