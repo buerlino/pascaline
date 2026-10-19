@@ -373,6 +373,43 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.home("purge(hg49q,hg49r,hg49s,hg49g,hg49e)", defaultHomeSettings);
     });
 
+    // G49f3: a call takes the facts of the names the function's body holds now, not only those stored at definition.
+    // The undecided floor: oracle -372376123662 (g38-floor-sin1e100), Giac 899450126402 at 40 digits.
+    it("a function defined in CAS from a stored name with facts: its Home call is never =", () => {
+      host.home("hg3a:=floor(sin(10^100)*10^12)", defaultHomeSettings);
+      host.cas("hg3f(x):=x+hg3a", defaultCasSettings);
+      const call = host.home("hg3f(0)", defaultHomeSettings).result;
+      expect(call.display).toBe("899450126402");
+      expect(markOf(call, opts)?.mark).toBe("⚠");
+      host.home("purge(hg3a,hg3f)", defaultHomeSettings);
+    });
+
+    it("a name the body holds that got facts after the definition: the call is never =", () => {
+      host.home("hg3b:=5", defaultHomeSettings);
+      host.home("hg3g(x):=x+hg3b", defaultHomeSettings);
+      host.home("hg3b:=floor(sin(10^100)*10^12)", defaultHomeSettings);
+      const call = host.home("hg3g(0)", defaultHomeSettings).result;
+      expect(call.display).toBe("899450126402");
+      expect(markOf(call, opts)?.mark).toBe("⚠");
+      // through a second function, and a recursive one ends
+      host.home("hg3h(x):=hg3g(x)*1", defaultHomeSettings);
+      expect(markOf(host.home("hg3h(0)", defaultHomeSettings).result, opts)?.mark).toBe("⚠");
+      host.home("hg3r(n):=when(n<=0,hg3b,hg3r(n-1))", defaultHomeSettings);
+      expect(markOf(host.home("hg3r(2)", defaultHomeSettings).result, opts)?.mark).toBe("⚠");
+      host.home("purge(hg3b,hg3g,hg3h,hg3r)", defaultHomeSettings);
+    });
+
+    it("guard: a function of exact stored names (Home or CAS) stays =", () => {
+      host.home("hg3c:=7", defaultHomeSettings);
+      host.home("hg3e(x):=x+hg3c", defaultHomeSettings);
+      host.cas("hg3k(x):=hg3e(x)+hg3c", defaultCasSettings);
+      expect(markOf(host.home("hg3e(1)", defaultHomeSettings).result, opts)?.mark).toBe("=");
+      const k = host.home("hg3k(1)", defaultHomeSettings).result;
+      expect(k.display).toBe("15");
+      expect(markOf(k, opts)?.mark).toBe("=");
+      host.home("purge(hg3c,hg3e,hg3k)", defaultHomeSettings);
+    });
+
     it("a float stored from a chip keeps its facts without the flag (the float shows it)", () => {
       const r = home("hg49d:=pasr_1*2", { "1": romberg });
       expect(r.defs).toMatchObject([{ set: { name: "hg49d", facts: { reliableDigits: 11, warn: "unaudited" } } }]);

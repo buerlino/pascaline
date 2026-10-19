@@ -12,6 +12,7 @@
 //              builds it from the step before) runs in its own angle mode, and the last step is checked. An `input` step
 //              may name the result of step k as the chip `pasr_<k>` (G49: sent with a chip table of values and facts);
 //              the case's `settings.digits` and `consts` (G26's constant table, `pasc_<id>`) hold for every step. A
+//              step with `view: cas` runs in CAS (G49f3), never as the last step. A
 //              result shown with ⚠ n (n below the digits) must equal `expect` rounded to those n digits
 //   precision  tests/golden/precision.yaml (docs/04 2.3 regression list, 20/30-digit cases): Home and CAS at the case's
 //              digits, value and mark; `before:` inputs run first on the same engine. A case with `status: pending` is
@@ -61,6 +62,8 @@ interface Step {
   input?: string;
   latex?: string;
   angle?: "rad" | "deg";
+  /** G49f3: "cas" runs an `input` step in the CAS view (a definition made there); its result is not checked. */
+  view?: "home" | "cas";
 }
 
 interface Case {
@@ -232,6 +235,10 @@ async function runSteps(steps: Step[], digits: number, consts: ConstTable | unde
   const named: Record<string, ChipFactsTable[string]> = {};
   for (const [k, st] of steps.entries()) {
     const s: HomeSettings = { ...defaultHomeSettings, angle: st.angle ?? "rad", digits };
+    if (st.view === "cas") {
+      host.cas(st.input!, { ...defaultCasSettings, angle: st.angle ?? "rad", digits });
+      continue;
+    }
     const p = st.latex !== undefined ? latexToGiacInfo(st.latex, { realOddRoots: true, chips }) : { giac: st.input!, inexact: false };
     const r = (st.latex === undefined && (consts || k > 0) ? host.home(p.giac, s, consts, named) : host.home(p.giac, s)).result;
     last = p.inexact ? { ...r, inexactInput: true } : r;
