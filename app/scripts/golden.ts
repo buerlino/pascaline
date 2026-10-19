@@ -291,9 +291,11 @@ function expectAt(expect: string, n: number): string | null {
 const LOOKS_NUMERIC = /^-?(\d+(\.\d+)?|\.\d+)(E[+-]?\d+)?([+-](\d+(\.\d+)?(E[+-]?\d+)?\*)?i)?$/;
 
 /** A mark-only case still needs an answer: a number, or a non-number that holds a float (G27: its ⚠ is the mark the
- *  case checks). The input echoed back (BesselJ(1,2) at 30 digits) is a lost result. */
+ *  case checks), or a list of numbers. The input echoed back (BesselJ(1,2) at 30 digits) is a lost result. */
 function lostAnswer(shown: string, input: string): boolean {
-  return !LOOKS_NUMERIC.test(shown) && !(hasFloat(shown) && shown !== input);
+  // G48: a list, matrix or sequence of numbers (`[899450126402,1]`, `899450126402,1`) is an answer too.
+  const numbers = shown.replace(/[[\]]/g, "").split(",");
+  return !numbers.every((x) => LOOKS_NUMERIC.test(x)) && !(hasFloat(shown) && shown !== input);
 }
 
 async function stagePrecision(): Promise<void> {

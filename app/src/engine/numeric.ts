@@ -1037,6 +1037,22 @@ export function callsStateful(giac: Giac, input: string): boolean {
   return visit(input);
 }
 
+/** G48: a name the input calls is a stored function whose printed definition rests on a decision, directly or through
+ *  another stored function (recursion ends: a name being visited counts as not deciding). */
+export function decidingStored(giac: Giac): (name: string) => boolean {
+  const known = new Map<string, boolean>();
+  const decides = (name: string): boolean => {
+    const k = known.get(name);
+    if (k !== undefined) return k;
+    known.set(name, false);
+    const def = giac.eval(name).trim();
+    const r = def !== `'${name}'` && /->/.test(def) && restsOnDecision(def, "", decides);
+    known.set(name, r);
+    return r;
+  };
+  return decides;
+}
+
 /** The result of `input` (printed as `result`) may rest on a decision Giac made at `Digits`: the input calls a
  *  decision function, or a name that is not a Giac built-in (`stored`: a stored function's body may decide,
  *  `f(x):=floor(x*10^12)` then `f(sin(10^60))`), or holds a comparison, or the result holds `abs(` (sqrt of an even

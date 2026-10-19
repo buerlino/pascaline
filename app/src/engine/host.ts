@@ -18,6 +18,7 @@ import {
   homeEval,
   homeSetupCommands,
   isStateful,
+  onceUndecided,
   regrouped,
   resultFromFacts,
   safePrecision,
@@ -26,6 +27,7 @@ import {
   showExp,
   showExpResult,
   simpleAssignment,
+  storeTargets,
   toExactLiterals,
   unquote,
 } from "./homeEval.ts";
@@ -365,6 +367,9 @@ export class EngineHost {
     const assume = /^\s*(assume|additionally)\s*\(\s*([A-Za-z][A-Za-z0-9_]*)/.exec(input);
     const asg = simpleAssignment(input);
     const target = asg && isStateful(asg.rhs) ? undefined : (definedBy(input) ?? (indexedTarget(input) ? { name: indexedTarget(input)!, kind: "var" as const } : undefined));
+    // G48: `[a,b]:=…` and `a,b:=…` set each name as a variable, with the facts of the value stored.
+    const list = target ? null : storeTargets(input);
+    const many = list && (list.form === "[]:=" || list.form === ",:=") && !isStateful(list.read) ? list.names : null;
     if (purge && names.length && names.every((n) => IDENT_NAME.test(n))) changes = [{ purge: names }];
     else if (assume) {
       const name = assume[2]!;
@@ -377,6 +382,13 @@ export class EngineHost {
       changes = snap
         ? [{ set: { name: target.name, kind: "var", cmds: [snap.cmd], ...storedFacts(facts, snap.float), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }]
         : [{ purge: [target.name] }];
+    } else if (many) {
+      changes = many.map((name): DefChange => {
+        const snap = this.snapshot(name, digits);
+        return snap
+          ? { set: { name, kind: "var", cmds: [snap.cmd], ...storedFacts(facts, snap.float), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }
+          : { purge: [name] };
+      });
     } else changes = [{ set: { name: "", kind: "other", cmds: ran, ...base } }];
     this.record(changes);
     return changes;
@@ -464,6 +476,18 @@ export class EngineHost {
   private fnFacts(input: string, lent: readonly NameFacts[]): NameFacts | null {
     const def = definedBy(input)?.name;
     return mergedFacts([...lent, ...this.bodyFacts(input, def, new Set(def ? [def] : []))]);
+  }
+
+  /**
+   * G48 (rule 2): the facts a stored name takes. A store in any form (`:=`, `[a,b]:=`, `a,b:=`, `=>`, `sto`, `L[k]:=`)
+   * keeps at least the weakest facts of the names and chips (`lent`) its input read, whatever the value prints as, a
+   * function from `unapply` included (a call inherits them, as for a fn entry). `own`: the facts of the stored value.
+   */
+  private storeFacts(input: string, own: NameFacts | null, lent: readonly NameFacts[]): NameFacts | null {
+    const t = storeTargets(input);
+    if (!t) return own;
+    const read = [...lent, ...this.bodyFacts(t.read, undefined, new Set())];
+    return read.length ? mergedFacts([...(own ? [own] : []), ...read]) : own;
   }
 
   /** G49f3: the facts of the names a definition's body (`input`, its parameters masked) holds now: stored variables
@@ -583,7 +607,9 @@ export class EngineHost {
       const fn = definesFunction(input);
       const facts = fn ? this.fnFacts(input, lent) : EngineHost.factsOf(result, Math.trunc(s.digits));
       const inexact = !fn && facts !== null && (inexactIn || result.warn !== undefined);
-      defs = this.defsAfter(input, ran, result.display, inexact ? { ...facts, inexact: true } : facts, "home", Math.trunc(s.digits), s.angle);
+      // G48: a symbolic value's facts count only when they say it is not exact (a float in it, a ⚠).
+      const own = inexact ? { ...facts, inexact: true as const } : result.value || result.items ? facts : null;
+      defs = this.defsAfter(input, ran, result.display, fn ? facts : this.storeFacts(input, own, lent), "home", Math.trunc(s.digits), s.angle);
     }
     return { result, defs };
   }
@@ -595,9 +621,11 @@ export class EngineHost {
     const asg = simpleAssignment(input);
     const def = asg ? undefined : definedBy(input);
     const target = asg ? undefined : (def?.name ?? indexedTarget(input));
+    // G48: the names a list assignment sets are not read either.
+    const set = asg ? [] : (storeTargets(input)?.names ?? []);
     const text = asg ? asg.rhs : input;
     return namesIn(maskBound(text))
-      .filter((n) => n !== target)
+      .filter((n) => n !== target && !set.includes(n))
       .flatMap((n) => {
         const e = this.byName.get(n);
         return e?.kind === "var" ? [{ name: n, preview: e.preview, view: e.view }] : [];
@@ -669,7 +697,8 @@ export class EngineHost {
     // stateful inputs (f(x):=…, purge, assume, =>) must not run twice.
     const asg = simpleAssignment(input);
     const once = (!asg && stateful) || storing;
-    let undecided = false;
+    // G48: an input that runs once and rests on a decision is ⚠, as in Home (it cannot be decided again).
+    let undecided = once && !inexactTest && onceUndecided(this.giac, input, exactInput, text);
     const decisionExpr = asg ? toExactLiterals(asg.rhs) : exactInput;
     if (!once && !inexactTest && !hasFloat(text) && restsOnDecision(decisionExpr, text, notBuiltin(this.giac))) {
       const d = decideTwice(this.giac, decisionExpr, text, digitsSet, digitsSet);
@@ -695,7 +724,7 @@ export class EngineHost {
     // G49f3: a function defined here keeps the facts of the names its body holds, as in Home (fnFacts).
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
       stateful
-        ? this.defsAfter(input, [exactInput], preview, definesFunction(input) ? this.fnFacts(input, facts ? [facts] : []) : facts, "cas", Math.trunc(s.digits), s.angle)
+        ? this.defsAfter(input, [exactInput], preview, definesFunction(input) ? this.fnFacts(input, facts ? [facts] : []) : this.storeFacts(input, facts, []), "cas", Math.trunc(s.digits), s.angle)
         : [];
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
     // `evalf(e,n)` alone is shown with the n digits it asks for, checked at that precision (decisions M4-6).

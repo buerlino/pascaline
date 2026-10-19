@@ -29,6 +29,7 @@ import {
   isAudited,
   rationalValue,
   decideTwice,
+  decidingStored,
   restsOnDecision,
   notBuiltin,
   callsStateful,
@@ -377,10 +378,12 @@ function isTimeout(out: string): boolean {
 }
 
 // Inputs that change engine state and must be replayed after a restart.
-const STATEFUL = /:=|=>|\b(purge|assume|additionally)\s*\(/;
+const STATEFUL = /:=|=>|\b(purge|assume|additionally|sto)\s*\(/;
+/** The stores of our own test helper (input/emit.ts equalityTest): not the user's state. */
+const HELPER_STO = new RegExp(`\\bsto\\(\\s*[^,()]*,\\s*(?:${EQ_INEXACT_FLAG}|${EQ_DIFF})\\s*\\)`, "g");
 
 export function isStateful(input: string): boolean {
-  return STATEFUL.test(input);
+  return STATEFUL.test(input.replace(HELPER_STO, ""));
 }
 
 /** `name:=value` with a plain variable name: evaluated as the value, then stored (so a check may run it twice). */
@@ -395,8 +398,43 @@ export function definedBy(input: string): { name: string; kind: "var" | "fn" } |
   if (a) return { name: a.name, kind: "var" };
   const f = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\([^()]*\)\s*:=/.exec(input);
   if (f) return { name: f[1]!, kind: "fn" };
-  const sto = /=>\s*([A-Za-z][A-Za-z0-9_]*)\s*$/.exec(input);
-  return sto ? { name: sto[1]!, kind: "var" } : undefined;
+  const t = storeTargets(input);
+  return t?.form === "=>" || t?.form === "sto" ? { name: t.names[0]!, kind: "var" } : undefined;
+}
+
+const NAME_LIST = "[A-Za-z][A-Za-z0-9_]*(?:\\s*,\\s*[A-Za-z][A-Za-z0-9_]*)*";
+
+/**
+ * G48: the names a value assignment stores and the text it read, in each form: `a:=v`, `[a,b]:=v`, `a,b:=v`,
+ * `v=>a`, `sto(v,a)` and `L[k]:=v` (which reads L's other elements, so `read` is the whole input). Null for anything
+ * else (a function definition `f(x):=…`, purge, assume, an expression that only holds a store). Read from the text;
+ * S13 studies Giac's own state instead.
+ */
+export function storeTargets(input: string): { names: string[]; read: string; form: ":=" | "[]:=" | ",:=" | "=>" | "sto" | "[k]:=" } | null {
+  const a = simpleAssignment(input);
+  if (a) return { names: [a.name], read: a.rhs, form: ":=" };
+  const list = new RegExp(`^\\s*\\[\\s*(${NAME_LIST})\\s*\\]\\s*:=([\\s\\S]+)$`).exec(input);
+  if (list) return { names: list[1]!.split(",").map((n) => n.trim()), read: list[2]!, form: "[]:=" };
+  const seq = new RegExp(`^\\s*(${NAME_LIST})\\s*:=([\\s\\S]+)$`).exec(input);
+  if (seq) return { names: seq[1]!.split(",").map((n) => n.trim()), read: seq[2]!, form: ",:=" };
+  const arrow = /^([\s\S]+)=>\s*([A-Za-z][A-Za-z0-9_]*)\s*$/.exec(input);
+  if (arrow) return { names: [arrow[2]!], read: arrow[1]!, form: "=>" };
+  const sto = /^\s*sto\s*\(([\s\S]+),\s*([A-Za-z][A-Za-z0-9_]*)\s*\)\s*$/.exec(input);
+  if (sto && closingParen(input, input.indexOf("(")) === input.trimEnd().length - 1) return { names: [sto[2]!], read: sto[1]!, form: "sto" };
+  const indexed = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\[[^\]]*\]\s*:=/.exec(input);
+  if (indexed) return { names: [indexed[1]!], read: input, form: "[k]:=" };
+  return null;
+}
+
+/**
+ * G48 (docs/04 2.4 rule 2): an input that runs once (it stores, or calls a stored function that stores) cannot be
+ * decided again at P + 20. When its result rests on a decision it is ⚠ without a count, never exact. A function
+ * definition, purge and assume store no value, so they are left out. A stored function the input calls counts only
+ * when its own definition rests on a decision (`inc(x):={c:=c+1;c}` does not).
+ */
+export function onceUndecided(giac: Giac, input: string, body: string, out: string): boolean {
+  if (isError(out) || hasFloat(out) || definedBy(input)?.kind === "fn" || /^\s*(purge|assume|additionally)\s*\(/.test(input)) return false;
+  return restsOnDecision(body, out, decidingStored(giac));
 }
 
 /** G49f4: `name:=x->body` or `name:=(x,y)->body` (also as Giac prints it back, `name:=((x)->body)`): the name of a
@@ -591,7 +629,8 @@ export function homeEval(
   // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), see decideTwice. Not for
   // an input that cannot run twice, a test with a float side (decideFloatTest decided it, and its verdict is gone), or a
   // float result, whose value check runs it at two precisions anyway. An exact == or ≠ test is a decision too.
-  let undecided = false;
+  // G48: an input that runs once and rests on a decision is ⚠ (it cannot be decided again).
+  let undecided = once && !inexactTest && onceUndecided(giac, input, exactBody, exactOut);
   if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, exactOut, notBuiltin(giac))) {
     const d = decideTwice(giac, exactBody, exactOut, s.digits, s.digits);
     if ("undecided" in d) undecided = true;
