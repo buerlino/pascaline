@@ -151,6 +151,17 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     'if (type(x)!=integer and type(x)!=rational) { x:=evalf(x,n+30); if (type(x)!=real) throw("sigfig: x must be a real number"); } ' +
     "a:=abs(x); p:=floor(evalf(log10(a),30)); while (10^p>a) p:=p-1; while (10^(p+1)<=a) p:=p+1; " +
     "k:=n-1-p; m:=floor(a*10^k+1/2); return sign(x)*m/10^k; }",
+  // G42: Giac's median of an even list is the lower middle, as a float; `median` is also a reserved word, so the
+  // parser renames the written word (input/emit.ts CALL_NAME). Sorted, the middle value or the mean of the two middle ones.
+  pasmedian:
+    "pasmedian(l):={ local s,n; s:=sort(l); n:=size(s); if (n==0) throw(\"median: needs at least one value\"); " +
+    "if (irem(n,2)==1) return s[(n-1)/2]; return (s[n/2-1]+s[n/2])/2; }",
+  // G42: Giac leaves percentile unevaluated. Linear interpolation between the closest ranks: rank r = p/100·(n−1) on
+  // the sorted list (the inclusive method, Excel's PERCENTILE.INC), 0 ≤ p ≤ 100.
+  paspercentile:
+    "paspercentile(l,p):={ local s,n,r,k; s:=sort(l); n:=size(s); " +
+    "if (n==0 or p<0 or p>100) throw(\"percentile: needs a list and 0 <= p <= 100\"); " +
+    "r:=p/100*(n-1); k:=floor(r); if (k>=n-1) return s[n-1]; return s[k]+(r-k)*(s[k+1]-s[k]); }",
   // F29/G21: Giac in DEG reads the imaginary part of an exponential as degrees (exp(i*90) = i) but exp(i*pi) as
   // radians; the G2 ignores the angle mode for e^x (item 54). In DEG, host.ts rewrites exp( to pasexp(: a complex
   // argument z becomes exp(re z)*(cos b + i sin b) with b = im z in degrees, which DEG evaluates as radians.

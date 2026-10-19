@@ -13,7 +13,7 @@ interface Curated { id: string; giac: string; insert?: string }
 const curated = (parse(readFileSync(join(here, "../../../find/functions.yaml"), "utf8")) as { functions: Curated[] }).functions;
 const opInsert = (n: string): string => `\\operatorname{${n.replace(/_/g, "\\_")}}\\left(#0\\right)`;
 // Giac names our parser renames on the way (input/emit.ts CALL_NAME): irem is pasmod, which is irem on integers.
-const CALL_NAME: Record<string, string> = { irem: "pasmod" };
+const CALL_NAME: Record<string, string> = { irem: "pasmod", median: "pasmedian", percentile: "paspercentile" };
 const fill = (insert: string): string => insert.replace("#0", "x");
 
 describe("Find insertion", () => {
