@@ -29,7 +29,7 @@ import {
   unquote,
 } from "./homeEval.ts";
 import { eseriesDefinition } from "./eseries.ts";
-import { giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
+import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
@@ -529,9 +529,13 @@ export class EngineHost {
     const exactInput = toExactLiterals(input);
     const test = input.includes(EQ_INEXACT_FLAG);
     if (test) this.giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
+    // G39: `a:=sum(cos(k),k,1,inf)` must store nothing when its value is refused, so an assignment whose value holds a
+    // definite integral, a series or a limit runs its right-hand side first, is checked, and only then stored.
+    const asg0 = simpleAssignment(exactInput);
+    const guarded = asg0 && !isStateful(asg0.rhs) && callsIn(asg0.rhs).length ? asg0 : null;
     let text: string;
     try {
-      text = this.strict.eval(`pcasans:=(${exactInput})`);
+      text = this.strict.eval(`pcasans:=(${guarded ? guarded.rhs : exactInput})`);
     } catch (e) {
       if (e instanceof GiacSyntaxError) return fail(e.message, "syntax");
       throw e;
@@ -546,8 +550,12 @@ export class EngineHost {
     }
     // G39: a divergent integral or series, or no limit, is refused as in Home; Giac's [exact, numeric] pair of a
     // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
-    const refused = stateful ? null : refusalOf(this.giac, exactInput, text, s.angle);
+    const refused = guarded ? refusalOf(this.giac, guarded.rhs, text, s.angle) : stateful ? null : refusalOf(this.giac, exactInput, text, s.angle);
     if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
+    if (guarded) {
+      const stored = this.giac.eval(`${guarded.name}:=pcasans`);
+      if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");
+    }
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
     const pair = !stateful && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;

@@ -217,6 +217,7 @@ cases:
   - { id: "g39-int-tan-0-pi", input: "int(tan(x),x,0,pi)", expect: "The integral does not converge", source: "derived", note: "pole at pi/2; Giac gave 0" }
   - { id: "g39-int-1/x^3-pv", input: "int(1/x^3,x,-1,1)", expect: "The integral does not converge", source: "derived", note: "found while probing G39: Giac gave 0, the principal value" }
   - { id: "g39-int-tan-shift", input: "int(tan(2*x),x,0,pi)", expect: "The integral does not converge", source: "derived", note: "poles at pi/4 and 3pi/4: singular() lists one period, the shifts are ours; Giac gave 0" }
+  - { id: "g39-int-tan-plus-x", input: "int(tan(x)+x,x,2,5)", expect: "The integral does not converge", source: "derived", note: "audit fix: pole of tan at 3pi/2 = 4.71 inside [2, 5]; tan(x)+x is not periodic, singular() lists only pi/2" }
   - { id: "g39-int-undef", input: "int(1/(x-2)^3,x,0,3)", expect: "The integral does not converge", source: "derived", note: "Giac's own undef, same message" }
   - { id: "g39-sum-cos-abel", input: "sum(cos(k),k,1,inf)", expect: "The series does not converge", source: "derived", note: "cos(k) does not tend to 0; Giac gave the Abel sum -1/2" }
   - { id: "g39-sum-sin-abel", input: "sum(sin(k),k,1,inf)", expect: "The series does not converge", source: "derived", note: "sin(k) does not tend to 0; Giac gave an Abel sum" }

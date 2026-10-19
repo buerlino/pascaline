@@ -132,7 +132,9 @@ const PERIOD_DIVISORS = [12, 10, 8, 6, 5, 4, 3, 2, 1];
  *  30 digits (a wrong period only costs a second integral at a point that is not singular). */
 function periodOf(giac: Giac, f: string, x: string, scale: string): string | null {
   if (!functionsIn(f).some((n) => PERIODIC.has(n))) return null;
-  const points = ["0.3171", "1.1937"].map((p) => `${p}*${scale}`);
+  // Exact test points: a float literal would make Giac compute in doubles, whose 1e-14 error exceeds the 1e-20 margin,
+  // so no period (not even tan's π) was ever found.
+  const points = ["3171/10000", "11937/10000"].map((p) => `(${p})*${scale}`);
   for (const n of PERIOD_DIVISORS) {
     const T = `(2*pi*${scale}/${n})`;
     const same = points.every((p) => {
@@ -144,8 +146,26 @@ function periodOf(giac: Giac, f: string, x: string, scale: string): string | nul
   return null;
 }
 
-/** Most points near which ∫|f| is checked (one per singular point of a periodic f, each of the others). */
+/** Most points near which ∫|f| is checked; more singular points in [a, b] leave the result unchecked (⚠). */
 const MAX_POINTS = 8;
+
+/** The trig calls of `f` (`tan(2*x)` in `x*tan(2*x)`), outermost first; strings skipped. */
+function periodicCalls(f: string): string[] {
+  const out: string[] = [];
+  const re = /"[^"]*"|\b(sin|cos|tan|sec|csc|cot)\s*\(/g;
+  for (let m = re.exec(f); m; m = re.exec(f)) {
+    if (!m[1]) continue;
+    const close = closing(f, m.index + m[0].length - 1);
+    if (close >= 0) out.push(f.slice(m.index, close + 1));
+  }
+  return out;
+}
+
+/** f has no finite value at `q` (a pole, or a point Giac cannot evaluate): read as a singular point. */
+function singularAt(giac: Giac, f: string, x: string, q: string): boolean {
+  const t = giac.eval(`evalf(subst(${f},${x},${q}),30)`).trim();
+  return isError(t) || t === "undef" || /infinity/.test(t);
+}
 
 /** The integral check: near every real singular point of f in [a, b], ∫|f| is finite. */
 function integralCheck(giac: Giac, c: Call, angle: "rad" | "deg"): Verdict {
@@ -158,15 +178,49 @@ function integralCheck(giac: Giac, c: Call, angle: "rad" | "deg"): Verdict {
   const B = realOf(giac, b0);
   if (A === null || B === null) return "ok";
   const [lo, hi, a, b] = A <= B ? [A, B, a0, b0] : [B, A, b0, a0];
-  const T = periodOf(giac, f, x, angle === "deg" ? "(180/pi)" : "1");
+  const scale = angle === "deg" ? "(180/pi)" : "1";
+  const T = periodOf(giac, f, x, scale);
   const Tv = T === null ? null : realOf(giac, T);
+  // f holds a trig function but is not periodic itself (tan(x)+x, x*tan(x)): singular() lists the points of one period
+  // only, and the shifts are not alike (x·tan x and (x−3π/2)·tan x differ at 3π/2), so every shift inside [a, b] by the
+  // period of each trig subterm is checked; too many, or infinitely many, leave the result unchecked.
+  const subPeriods: { T: string; v: number }[] = [];
+  if (T === null) {
+    for (const g of periodicCalls(f)) {
+      const Tg = periodOf(giac, g, x, scale);
+      const v = Tg === null ? null : realOf(giac, Tg);
+      if (Tg !== null && v !== null && v > 0 && !subPeriods.some((s) => Math.abs(s.v - v) < 1e-12 * v)) subPeriods.push({ T: Tg, v });
+    }
+  }
+  let overflow = false;
   const near: string[] = [];
+  const nearV: number[] = [];
+  const add = (q: string, v: number): void => {
+    if (nearV.some((w) => Math.abs(w - v) <= 1e-12 * Math.max(1, Math.abs(v)))) return;
+    if (near.length >= MAX_POINTS) overflow = true;
+    else {
+      near.push(q);
+      nearV.push(v);
+    }
+  };
   for (const p of pts) {
     if (!onlyNames(giac, p, [])) continue;
     const pv = realOf(giac, p);
     if (pv === null) continue; // a complex singular point (1/(2+cos x)) is not on the path
     if (T === null || Tv === null || Tv <= 0) {
-      if (pv >= lo && pv <= hi) near.push(p);
+      if (pv >= lo && pv <= hi) add(p, pv);
+      for (const s of subPeriods) {
+        // A shift where f is finite (sin(x)/x at 2π) shows the subterm brings no pole there: no shifts for it.
+        if (!singularAt(giac, f, x, `(${p})+${s.T}`) && !singularAt(giac, f, x, `(${p})-${s.T}`)) continue;
+        const n0 = Math.ceil((lo - pv) / s.v);
+        const n1 = Math.floor((hi - pv) / s.v);
+        if (!(n0 <= n1)) continue;
+        if (!Number.isFinite(n0) || !Number.isFinite(n1) || n1 - n0 + 1 > MAX_POINTS) {
+          overflow = true;
+          continue;
+        }
+        for (let n = n0; n <= n1; n++) if (n !== 0) add(`(${p})+(${n})*${s.T}`, pv + n * s.v);
+      }
       continue;
     }
     // f(x+T) = f(x): every shift of p behaves like p, so one shift inside (a, b) is enough; an end point counts too.
@@ -174,10 +228,11 @@ function integralCheck(giac: Giac, c: Call, angle: "rad" | "deg"): Verdict {
     const n1 = Math.floor((hi - pv) / Tv);
     if (!(n0 <= n1)) continue;
     const ns = Number.isFinite(n0) && Number.isFinite(n1) ? (n1 - n0 >= 2 ? [n0 + 1] : [n0, n1]) : [Number.isFinite(n0) ? n0 + 1 : Number.isFinite(n1) ? n1 - 1 : 0];
-    for (const n of new Set(ns)) near.push(n === 0 ? p : `(${p})+(${n})*${T}`);
+    for (const n of new Set(ns)) add(n === 0 ? p : `(${p})+(${n})*${T}`, pv + n * Tv);
   }
-  let verdict: Verdict = "ok";
-  for (const q of near.slice(0, MAX_POINTS)) {
+  // Points past MAX_POINTS were not checked, so the result is never "ok" then (a dropped pole may be the divergent one).
+  let verdict: Verdict = overflow ? "unchecked" : "ok";
+  for (const q of near) {
     const qv = realOf(giac, q)!;
     // Cheap and sufficient first: (x−q)·f(x) tending to a non-zero value or ∞ at q means |f| ≥ c/|x−q| near q, which is
     // not integrable (1/x, tan at π/2, 1/x³). From the side that lies in [a, b] when q is an end point.
