@@ -29,7 +29,6 @@
 | [G50](packages/G50.md) | Complex arguments of the audited functions | gorge, **Opus** | night | A15 | ~0.75 d |
 | [R64](packages/R64.md) | The angle mode lives in our parser (route R) | ron, **Opus** | night | the owner's yes to route R (decisions.md S14) | ~0.5 d |
 | [G46](packages/G46.md) | Giac always in radians; pasexp goes (replaces G21b) | gorge, **Opus** | night | R64 | ~1 d |
-| [G36](packages/G36.md) | FIX shows no unconfirmed digit in a complex number | gorge, Sonnet | night | A15 | ~0.25 d |
 | [G41](packages/G41.md) | σ beyond first order at a stationary point | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G37](packages/G37.md) | °C and °F inside a compound unit are an interval | gorge, **Opus** | night | G35; before R24c | ~0.5 d |
 | [G40](packages/G40.md) | Angles in the unit view: inverses, ω·r, rpm | gorge, **Opus** | night | A15; before R24c | ~0.75 d |
@@ -97,7 +96,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 27 | G36 FIX shows no unconfirmed digit in a complex number | gorge, Sonnet | `p1/gorge-m4-fixcomplex` | A15 | 30 min |
 | 28 | G50 complex arguments of the audited functions | gorge, Opus | `p1/gorge-m4-complexaudit` | A15 | 1.5 h |
 | 29 | G42 median of an even list, percentile | gorge, Sonnet | `p1/gorge-m4-stats` | A15 | 1 h |
 | 30 | G37 °C inside a compound unit is an interval | gorge, Opus | `p1/gorge-m5-degcompound` | G35 | 1 h |
