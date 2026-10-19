@@ -36,7 +36,8 @@ import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntr
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
-import { constUncDigits, withConstValues, type ConstTable } from "./constUnc.ts";
+import { constUncDigits, inexactConstsIn, withConstValues, type ConstTable } from "./constUnc.ts";
+import { chipCommand, chipNameFacts, chipsIn, CHIP_PREFIX, withChipValues, type ChipFactsTable } from "./chipFacts.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
 
@@ -248,6 +249,8 @@ export class EngineHost {
    *  variables that hold floats (decisions M4-7). */
   private log: DefEntry[] = [];
   private byName = new Map<string, DefEntry>();
+  /** G49: the chips the current Home input holds by name (`pasr_<k>`), with the facts they lend (as a stored float's). */
+  private chipFacts = new Map<string, NameFacts>();
 
   /** Loads the definitions `text` mentions that are not loaded yet. Called before every input reaches Giac. */
   need(text: string): void {
@@ -351,7 +354,7 @@ export class EngineHost {
     else if (target?.kind === "var") {
       const snap = this.snapshot(target.name, digits);
       changes = snap
-        ? [{ set: { name: target.name, kind: "var", cmds: [snap.cmd], ...(snap.float && facts ? { facts } : {}), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }]
+        ? [{ set: { name: target.name, kind: "var", cmds: [snap.cmd], ...storedFacts(facts, snap.float), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }]
         : [{ purge: [target.name] }];
     } else changes = [{ set: { name: "", kind: "other", cmds: ran, ...base } }];
     this.record(changes);
@@ -372,7 +375,8 @@ export class EngineHost {
   }
 
   /**
-   * Decisions M4-7: a numeric result computed from stored variables that hold floats inherits their facts. Its
+   * Decisions M4-7: a numeric result computed from stored variables that hold floats (or inexact values, G49), or from
+   * chips named in the input (G49), inherits their facts. Its
    * confirmed digits are at most theirs, its warn is theirs, and it is never exact; when the input can be run again
    * (`expr`, decimals exact) and is more than the bare name, it is checked once more with each variable moved in its
    * last confirmed digit, which catches a cancellation (B-0.7468 with B known to 13 digits).
@@ -380,7 +384,7 @@ export class EngineHost {
   private inherited(r: HomeResult, input: string, expr: string | null, digits: number, restoreDigits: number): HomeResult {
     if (!r.ok || (!r.value && !r.items)) return r;
     const used = namesIn(input)
-      .map((name) => ({ name, facts: this.byName.get(name)?.facts }))
+      .map((name) => ({ name, facts: this.byName.get(name)?.facts ?? this.chipFacts.get(name) }))
       .filter((u): u is { name: string; facts: NameFacts } => u.facts !== undefined);
     if (!used.length) return r;
     const P = valuePrecision(digits);
@@ -430,24 +434,43 @@ export class EngineHost {
   /**
    * `consts` (G26): the constants the input holds by name (`pasc_<id>`) with their values and uncertainties. The
    * values are put in and the input evaluates as without the table; a numeric result from an inexact constant then
-   * carries `uncDigits` (constUnc.ts). Without the table, nothing changes.
+   * carries `uncDigits` (constUnc.ts). `chips` (G49): the chips it holds by name (`pasr_<k>`, chipFacts.ts). An exact
+   * chip is put in as its value; any other is a Giac variable for this run, and its facts pass on as a stored float's
+   * (M4-7). An input kept as typed in the log (`f(x):=…`, `a,b:=…`) gets every chip as its value, since the name
+   * would outlive the run. A value stored from an input with an inexact constant or chip keeps `inexact` facts.
+   * Without the tables, nothing changes.
    */
-  home(input: string, s: HomeSettings, consts?: ConstTable): { result: HomeResult; defs: DefChange[] } {
-    if (!consts) return this.homeRun(input, s);
-    const named = input;
-    const out = this.homeRun(withConstValues(input, consts), s);
-    const asg = simpleAssignment(named);
-    if (isStateful(named) && !asg) return out;
-    const n = constUncDigits(this.giac, asg ? asg.rhs : named, consts, out.result, Math.trunc(out.result.digits ?? s.digits));
-    return n === undefined ? out : { ...out, result: { ...out.result, uncDigits: n } };
+  home(input: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
+    if (!consts && !chips) return this.homeRun(input, s, false);
+    const asg = simpleAssignment(input);
+    const stateful = isStateful(input);
+    const held = chips ? chipsIn(input, chips) : [];
+    const keep = new Set(stateful && definedBy(input)?.kind !== "var" ? [] : held.filter((k) => !chips![k]!.exact));
+    const named = chips ? withChipValues(input, chips, keep) : input;
+    const inexactIn = held.some((k) => !chips![k]!.exact) || (consts !== undefined && inexactConstsIn(input, consts).length > 0);
+    for (const k of keep) {
+      this.giac.eval(chipCommand(k, chips![k]!));
+      this.chipFacts.set(`${CHIP_PREFIX}${k}`, chipNameFacts(chips![k]!));
+    }
+    try {
+      const out = this.homeRun(consts ? withConstValues(named, consts) : named, s, inexactIn);
+      if (!consts || (stateful && !asg)) return out;
+      const body = asg ? simpleAssignment(named)!.rhs : named;
+      const n = constUncDigits(this.giac, body, consts, out.result, Math.trunc(out.result.digits ?? s.digits));
+      return n === undefined ? out : { ...out, result: { ...out.result, uncDigits: n } };
+    } finally {
+      if (keep.size) this.giac.eval(`purge(${[...keep].map((k) => CHIP_PREFIX + k).join(",")})`);
+      this.chipFacts.clear();
+    }
   }
 
-  private homeRun(typed: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
-    const out = this.homeRunRaw(typed, s);
+  private homeRun(typed: string, s: HomeSettings, inexactIn: boolean): { result: HomeResult; defs: DefChange[] } {
+    const out = this.homeRunRaw(typed, s, inexactIn);
     return { ...out, result: showExpResult(out.result) };
   }
 
-  private homeRunRaw(typed: string, s: HomeSettings): { result: HomeResult; defs: DefChange[] } {
+  /** `inexactIn` (G49): the input held a constant or chip that is not exact, so a value it stores is not exact. */
+  private homeRunRaw(typed: string, s: HomeSettings, inexactIn: boolean): { result: HomeResult; defs: DefChange[] } {
     const input = expIgnoresAngle(typed, s.angle);
     this.need(input);
     this.useHomeMode(s);
@@ -477,7 +500,11 @@ export class EngineHost {
         result.path === "exact" || result.path === "exact-big"
           ? [toExactLiterals(input)]
           : [`Digits:=${s.workDigits}`, input, `Digits:=${s.digits}`];
-      defs = this.defsAfter(input, ran, result.display, EngineHost.factsOf(result, Math.trunc(s.digits)), "home", Math.trunc(s.digits), s.angle);
+      // G49: an inexact input, or a result shown with ⚠ (G38's decision that did not hold), stores a value that is not
+      // exact even when it prints as an exact rational.
+      const facts = EngineHost.factsOf(result, Math.trunc(s.digits));
+      const inexact = facts !== null && (inexactIn || result.warn !== undefined);
+      defs = this.defsAfter(input, ran, result.display, inexact ? { ...facts, inexact: true } : facts, "home", Math.trunc(s.digits), s.angle);
     }
     return { result, defs };
   }
@@ -630,7 +657,7 @@ export class EngineHost {
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
       result: { ok: true, text, latex: unquote(tex), timedOut: false, engineMs: performance.now() - t0, ...(approximate ? { approximate } : {}), ...(warn ? { warn } : {}), ...(why ? { why } : {}) },
-      defs: defsOf(text, unchecked ? { reliableDigits: null, warn: "unchecked" } : null),
+      defs: defsOf(text, unchecked ? { reliableDigits: null, warn: "unchecked", inexact: true } : null),
     };
   }
 
@@ -698,6 +725,15 @@ export class EngineHost {
   }
 }
 
+/** The facts a stored variable keeps (M4-7, G49): a float's as they are (its value shows it is not exact), a value that
+ *  prints exactly only when they say it is not exact. */
+function storedFacts(facts: NameFacts | null, float: boolean): { facts?: NameFacts } {
+  if (!facts) return {};
+  if (!float) return facts.inexact ? { facts } : {};
+  const { inexact: _, ...rest } = facts;
+  return { facts: rest };
+}
+
 /** Commands per Giac call in a replay (G29; tools/probes/replay-cost.mjs: 10–50 are as fast, 200 in one call is not). */
 export const REPLAY_BATCH = 25;
 
@@ -752,7 +788,7 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           post({ id: req.id, type: "result", ...host.eval(req.input) });
           break;
         case "home":
-          post({ id: req.id, type: "home", ...host.home(req.input, req.settings, req.consts) });
+          post({ id: req.id, type: "home", ...host.home(req.input, req.settings, req.consts, req.chips) });
           break;
         case "cas":
           post({ id: req.id, type: "cas", ...host.cas(req.input, req.settings) });

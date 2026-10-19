@@ -50,6 +50,10 @@ describe("replayOrder, validDefs, userNamesOf", () => {
     expect(validDefs([good, { name: "B" }, { ...good, kind: "nope" }, { ...good, name: "1x" }, { ...good, facts: { reliableDigits: "x" } }, null])).toEqual([good]);
     expect(validDefs("junk")).toEqual([]);
   });
+  it("G49: `inexact` facts are kept; any other value of it drops the entry", () => {
+    const v = entry("A", "var", "A:=(66743/500000000000000)", { facts: { reliableDigits: null, inexact: true } });
+    expect(validDefs([v, { ...v, name: "B", facts: { reliableDigits: null, inexact: false } }])).toEqual([v]);
+  });
   it("G34: a variable keeps the angle mode it was stored in; a wrong or foreign one is dropped", () => {
     const v = entry("A", "var", "A:=(5)", { angle: "deg" });
     const f = entry("f", "fn", "f(x):=x");

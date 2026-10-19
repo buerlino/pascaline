@@ -302,6 +302,62 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     });
   });
 
+  // G49 (deep check 2026-10-19 D1, D3): a chip named `pasr_<k>` lends its facts as a stored float does (M4-7), and Store
+  // keeps the facts of an inexact input. Values: romberg's as the session's chip carries it (Giac's P-digit float).
+  describe("chips by name and Store (G49)", () => {
+    const romberg = { value: "0.7468241328124270416001155918698308916810", reliableDigits: 11, warn: "unaudited" as const, exact: false };
+    const opts: FormatOptions = { format: "STD", digits: 12 };
+    const home = (i: string, chips?: Parameters<EngineHost["home"]>[3], consts?: Parameters<EngineHost["home"]>[2]) => host.home(i, defaultHomeSettings, consts, chips);
+
+    it("a named chip is moved in its last confirmed digit: the cancellation has no confirmed digit (oracle 2.70253994674E-14)", () => {
+      const r = home("pasr_1-0.7468241328124", { "1": romberg }).result;
+      expect(markOf(r, opts)).toMatchObject({ mark: "⚠", n: 0 });
+      expect(r.display).toBe("3E-14");
+      // The same value put in as a literal (today's chip) claims a digit it does not have.
+      expect(markOf(home(`(${romberg.value})-0.7468241328124`).result, opts)?.mark).not.toBe("⚠");
+    });
+
+    it("the chip's name lives for the run only", () => {
+      home("pasr_1*2", { "1": romberg });
+      expect(host.home("pasr_1", defaultHomeSettings).result.display).toBe("pasr_1");
+    });
+
+    it("an exact chip is a literal: (1/3)·3 = 1 (derived)", () => {
+      const r = home("pasr_1*3", { "1": { value: "1/3", reliableDigits: null, exact: true } }).result;
+      expect(r.display).toBe("1");
+      expect(markOf(r, opts)?.mark).toBe("=");
+    });
+
+    it("a function defined from a chip gets its value, and keeps working after the run", () => {
+      const r = home("hg49f(x):=x*pasr_1", { "1": { value: "2", reliableDigits: null, exact: false } });
+      expect(JSON.stringify(r.defs)).not.toContain("pasr_");
+      expect(host.home("hg49f(3)", defaultHomeSettings).result.display).toBe("6");
+      host.home("purge(hg49f)", defaultHomeSettings);
+    });
+
+    it("Store from a chip or an inexact constant keeps inexact facts though the value prints exactly", () => {
+      const G = { value: "6.67430E-11", unc: "0.00015E-11" };
+      const a = home("hg49a:=pasc_G*2", undefined, { G });
+      expect(a.defs).toMatchObject([{ set: { name: "hg49a", cmds: ["hg49a:=(66743/500000000000000)"], facts: { reliableDigits: null, inexact: true } } }]);
+      const half = host.home("hg49a/2", defaultHomeSettings).result;
+      expect(half.display).toBe("6.6743E-11");
+      expect(markOf(half, opts)?.mark).toBe("≈");
+      // an exact constant (c) stores an exact value, as before
+      expect(home("hg49c:=pasc_c*2", undefined, { c: { value: "299792458" } }).defs).toMatchObject([{ set: { name: "hg49c" } }]);
+      expect(JSON.stringify(home("hg49c:=pasc_c*2", undefined, { c: { value: "299792458" } }).defs)).not.toContain("facts");
+      const b = home("hg49b:=pasr_1*1", { "1": { value: "5", reliableDigits: null, exact: false } });
+      expect(b.defs).toMatchObject([{ set: { name: "hg49b", facts: { inexact: true } } }]);
+      host.home("purge(hg49a,hg49b,hg49c)", defaultHomeSettings);
+    });
+
+    it("a float stored from a chip keeps its facts without the flag (the float shows it)", () => {
+      const r = home("hg49d:=pasr_1*2", { "1": romberg });
+      expect(r.defs).toMatchObject([{ set: { name: "hg49d", facts: { reliableDigits: 11, warn: "unaudited" } } }]);
+      expect(JSON.stringify(r.defs)).not.toContain("inexact");
+      host.home("purge(hg49d)", defaultHomeSettings);
+    });
+  });
+
   describe("uncDigits from a constant's uncertainty (G26)", () => {
     const G = { value: "6.67430E-11", unc: "0.00015E-11" };
     const C = { value: "299792458" };

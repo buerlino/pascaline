@@ -4,13 +4,14 @@ import type { DefChange, DefEntry } from "./defs.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import type { ConstTable } from "./constUnc.ts";
+import type { ChipFactsTable } from "./chipFacts.ts";
 
 export type Request =
   | { id: number; type: "init"; baseUrl: string; replay: DefEntry[] }
   /** The stored definitions, read after the worker was started (first launch): replayed before any other request. */
   | { id: number; type: "define"; defs: DefEntry[] }
   | { id: number; type: "eval"; input: string }
-  | { id: number; type: "home"; input: string; settings: HomeSettings; consts?: ConstTable }
+  | { id: number; type: "home"; input: string; settings: HomeSettings; consts?: ConstTable; chips?: ChipFactsTable }
   | { id: number; type: "cas"; input: string; settings: CasSettings }
   | { id: number; type: "solve"; req: SolveRequest; settings: HomeSettings }
   | { id: number; type: "unknowns"; equations: string[] }

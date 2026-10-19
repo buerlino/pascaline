@@ -11,9 +11,13 @@ import type { PrecisionWarn } from "./format.ts";
 
 /** How far a variable that holds a float can be trusted (decisions M4-7): the facts of the result it was stored from. */
 export interface NameFacts {
-  /** Significant digits confirmed when it was stored; null: not limited (only `warn` applies). */
+  /** Significant digits confirmed when it was stored; null: not limited (only `warn` and `inexact` apply). */
   reliableDigits: number | null;
   warn?: PrecisionWarn;
+  /** G49: the value prints as an exact rational but is not exact (stored from an input that held a constant with an
+   *  uncertainty or a chip that is not exact, or from a result shown with ⚠): a result from it is never `=`. A float
+   *  needs no flag. */
+  inexact?: true;
 }
 
 /** var: a value (`A:=…`, `…▶A`, `L[2]:=…`); fn: `f(x):=…`; assume: `assume`/`additionally` on a name; other: a
@@ -26,7 +30,8 @@ export interface DefEntry {
   kind: DefKind;
   /** Giac commands that recreate it in a fresh engine. */
   cmds: string[];
-  /** A variable holding a float: its mark facts (M4-7). Absent for exact values. */
+  /** A variable holding a float, or an inexact value that prints exactly (G49): its mark facts (M4-7). Absent for
+   *  exact values. */
   facts?: NameFacts;
   /** The value as shown when it was defined (Vars and Find previews, docs/04 3.4). */
   preview: string;
@@ -87,7 +92,9 @@ function validFacts(x: unknown): NameFacts | undefined | null {
   if (!(d === null || (typeof d === "number" && Number.isFinite(d)))) return null;
   const w = f["warn"];
   if (w !== undefined && w !== "unaudited" && w !== "unchecked") return null;
-  return { reliableDigits: d, ...(w ? { warn: w } : {}) };
+  const inexact = f["inexact"];
+  if (inexact !== undefined && inexact !== true) return null;
+  return { reliableDigits: d, ...(w ? { warn: w } : {}), ...(inexact ? { inexact } : {}) };
 }
 
 /** Stored entries read back (IndexedDB): the ones with the right shape, at most MAX_DEFS. */
