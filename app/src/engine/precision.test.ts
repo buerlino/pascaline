@@ -290,6 +290,58 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(notBuiltin(giac)("sin")).toBe(false);
   });
 
+  it("G53: a built-in's or keyword's print is asked once per Giac instance, a user's name on every call (source: derived, Giac refuses sin:=3)", async () => {
+    const { callsStateful, notBuiltin } = await import("./numeric.ts");
+    const { giac } = await loadNodeGiac();
+    const asked: string[] = [];
+    const counted = { eval: (t: string) => (asked.push(t), giac.eval(t)) };
+    expect(notBuiltin(counted)("sin")).toBe(false);
+    expect(notBuiltin(counted)("sin")).toBe(false);
+    expect(callsStateful(counted, "sin(1)+cos(2)")).toBe(false);
+    expect(asked.filter((t) => t === "sin")).toEqual(["sin"]);
+    // A keyword in a printed program: callsStateful visits it once, then never again.
+    giac.eval("g53k(x):={ if (x>0) return 1; return 0; }");
+    expect(callsStateful(counted, "g53k(1)")).toBe(false);
+    expect(callsStateful(counted, "g53k(1)")).toBe(false);
+    // `if` is a keyword (asked once); `return` is not on the list (Giac takes return(x):=x without an error), so it is
+    // asked on each call.
+    expect(asked.filter((t) => t === "if" || t === "return")).toEqual(["if", "return", "return"]);
+    // A user's name may change between calls: it is asked each time, so a later definition is seen.
+    expect(notBuiltin(counted)("g53u")).toBe(true);
+    giac.eval("g53u(x):={ c53:=x; }");
+    expect(callsStateful(counted, "g53u(1)")).toBe(true);
+    expect(asked.filter((t) => t === "g53u")).toEqual(["g53u", "g53u"]);
+    // A fresh engine starts with nothing known.
+    const other = { eval: (t: string) => (asked.push(`other:${t}`), giac.eval(t)) };
+    expect(notBuiltin(other)("sin")).toBe(false);
+    expect(asked.filter((t) => t === "other:sin")).toEqual(["other:sin"]);
+    giac.eval("purge(g53k,g53u)");
+  });
+
+  it("G53: every KEYWORDS entry refuses a value: k:=3 and k(x):=x are errors and store nothing (source: derived, Giac)", async () => {
+    const { KEYWORDS } = await import("./numeric.ts");
+    const { giac } = await loadNodeGiac();
+    const varsBefore = giac.eval("VARS()");
+    const accepted: string[] = [];
+    for (const k of KEYWORDS) {
+      const print = giac.eval(k);
+      for (const cmd of [`${k}:=3`, `${k}(x):=x`]) {
+        giac.clearMessages();
+        const out = giac.eval(cmd);
+        // An error result, or a parse error / reserved-word refusal Giac prints instead of returning one.
+        if (!out.startsWith("GIAC_ERROR") && !/syntax error|reserved word|not allowed/.test(giac.messages())) accepted.push(cmd);
+      }
+      expect(giac.eval(k), k).toBe(print);
+    }
+    expect(accepted).toEqual([]);
+    expect(giac.eval("VARS()")).toBe(varsBefore);
+    // The word left out for this reason: Giac reads return(x):=x as return(x:=x), with no error.
+    giac.clearMessages();
+    const ret = giac.eval("return(x):=x");
+    expect(ret.startsWith("GIAC_ERROR") || /syntax error|reserved word|not allowed/.test(giac.messages())).toBe(false);
+    expect(KEYWORDS.has("return")).toBe(false);
+  });
+
   it("the Digits setting is back at the display digits after an input: a float in a non-number prints with them", () => {
     host.home("floor(sin(10^50))", defaultHomeSettings);
     expect(host.home("evalf([1/3,x])", defaultHomeSettings).result.display).toBe("[0.333333333333,x]");

@@ -15,7 +15,7 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { icdfCalls } from "./icdf.ts";
+import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
@@ -679,7 +679,7 @@ export function homeEval(
   }
 
   const shape = shapeOf(exactOut);
-  const symbolic = (): HomeResult => {
+  const symbolic = (forced?: "unaudited"): HomeResult => {
     // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
     // G38: a float in a non-number prints with the precision it was computed at (P). Ans keeps the P result; the text
@@ -699,13 +699,28 @@ export function homeEval(
     if (atN !== null) giac.eval("purge(pasfl)");
     const latex = isError(tex) ? {} : { latex: unquote(tex) };
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
-    const unchecked = hasFloat(text);
-    const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
+    const unchecked = hasFloat(text) || forced !== undefined;
+    const warn = decided?.warn ?? forced ?? (unchecked ? "unchecked" : undefined);
     const why = symbolicWhy(warn, testSides(exactBody));
     return done({ ok: true, display: deg ?? dropAngleFactor(text), exact: text, ...(deg !== null ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(why ? { why } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
   };
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();
+
+  // G44f1: Giac's inverse distribution function gives ±infinity for some p inside (0, 1) (fisher_icdf(3,4,1-10^-20)):
+  // the polish computes the value; when it cannot, Giac's infinity is shown with ⚠. At p = 0 or 1 it is exact.
+  if (/^[+-]?infinity$/.test(exactOut.trim()) && icdfCalls(exactBody).length) {
+    const facts = once ? null : floatFacts(giac, ans, exactBody, { kind: "scalar" }, s.digits, s.digits, exactBody);
+    if (facts) {
+      store();
+      const b = build(facts, { kind: "scalar" }, s.digits, "exact", true);
+      return fromBuilt(b, "exact", true, undefined, b.decimal, whyOf(facts, exactBody));
+    }
+    giac.eval(`${ans}:=${exactOut}`);
+    // Exact only when the polish itself gives the end of the support (p = 0 or 1); a polish refused, or one that
+    // converged at P but not at P + 20, leaves Giac's infinity unaudited.
+    return !once && icdfAtEnd(giac, exactBody, s.digits) ? symbolic() : symbolic("unaudited");
+  }
 
   if (hasFloat(exactOut)) {
     // Giac's numeric code returned a float on the exact path (rule 3). `evalf(e,n)` alone is shown with the n digits it
@@ -744,9 +759,11 @@ export function homeEval(
   store();
   const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
   const big = shape.kind === "scalar" && facts[0]!.big;
-  if (!big) return fromBuilt(b, "exact", false, exactText, full);
+  // G44f1: an erf Giac computed itself (a non-real argument) leaves the value unaudited.
+  const why = facts.some((f) => f.warn) ? whyOf(facts, exactBody) : undefined;
+  if (!big) return fromBuilt(b, "exact", false, exactText, full, why);
   if (s.guardMode === "reeval-float") return viaFloat("float-big", exactText);
   // Shown from the exact value (already computed); Ans continues as a float.
   giac.eval(`${ans}:=evalf(${ans},${W})`);
-  return fromBuilt(b, "exact-big", false, exactText, full);
+  return fromBuilt(b, "exact-big", false, exactText, full, why);
 }

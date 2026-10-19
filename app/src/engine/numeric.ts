@@ -25,7 +25,7 @@ import {
   type PrecisionWarn,
   type PrecisionWhy,
 } from "./format.ts";
-import { ICDF_DIGITS, ICDF_FAILED, icdfCalls, icdfPolished } from "./icdf.ts";
+import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 
 export interface Giac {
   eval(input: string): string;
@@ -301,7 +301,7 @@ export function complexReads(giac: Giac, expr: string, copy = true): { text: str
   const stored = (n: string): string | null => {
     if (known.has(n)) return known.get(n)!;
     if (known.size >= MAX_READS || Object.hasOwn(COMPLEX_REPLACED, n) || AUDITED_FUNCTIONS.has(n)) return null;
-    const v = giac.eval(n).trim();
+    const v = namePrint(giac, n);
     const out = isError(v) || v === n || v === "" ? null : v;
     known.set(n, out);
     return out;
@@ -591,14 +591,33 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
   // (forValue); `name` (Ans) keeps Giac's own text.
   const text = giac.eval(name);
   const safe = isError(text) ? text : forValue(giac, text);
+  // G44f1: erf and erfc are read through our MPFR definitions, which run at Digits: the value is evaluated from the
+  // text at each precision with Digits set to it.
+  // The whole value is evaluated, so only with no function left that Giac gets wrong on it (DEG replaces nothing:
+  // erf(1/2)+tanh(1+i) keeps the symbolic parts below). The input is audited only when every call went through ours:
+  // a non-real argument (erf(1+i)) is Giac's own erf, with the flag set.
+  const erfText = isError(safe) || (safe === text && complexSafe(text) !== text) ? safe : erfValueText(giac, safe);
+  if (erfText !== safe) {
+    try {
+      giac.eval(`${ICDF_FAILED}:=0`);
+      const out = exactFactsOf(giac, name, shape, digits, P, facts, false, true, { set: false }, erfText);
+      const failed = giac.eval(ICDF_FAILED).trim() !== "0";
+      return out && failed ? out.map((f) => (f.exactRational ? f : { ...f, warn: "unaudited" as const })) : out;
+    } finally {
+      giac.eval(`purge(pasxe,${ICDF_FAILED})`);
+    }
+  }
   const src = safe !== text && !isError(giac.eval(`pasxv:=(${safe})`)) ? "pasxv" : name;
+  // G53: pasxe is purged only when it was set (a value read through its evalf), not on every Enter.
+  const slot = { set: false };
   try {
     // The value's evalf is trusted only with no function left that Giac gets wrong on it (in DEG nothing is replaced).
     const whole = src !== name || complexSafe(text) === text;
     if (!split && !whole) return null;
-    return exactFactsOf(giac, src, shape, digits, P, facts, split, whole);
+    return exactFactsOf(giac, src, shape, digits, P, facts, split, whole, slot);
   } finally {
-    giac.eval(src !== name ? "purge(pasxv,pasxe)" : "purge(pasxe)");
+    const used = [...(src !== name ? ["pasxv"] : []), ...(slot.set ? ["pasxe"] : [])];
+    if (used.length) giac.eval(`purge(${used.join(",")})`);
   }
 }
 
@@ -611,6 +630,8 @@ function exactFactsOf(
   facts: (ElementFacts | null)[],
   split: boolean,
   wholeOk: boolean,
+  slot: { set: boolean },
+  valueText?: string,
 ): ElementFacts[] | null {
   // Two guard digits beyond P: a value read at P digits is truncated, so a P-th digit confirmed by the next level would be
   // shown truncated, not rounded (G50 probe: asin(-1/1000+i/1000) at 50 digits).
@@ -622,8 +643,15 @@ function exactFactsOf(
       return t;
     }, P + 2, prec);
   // The parts of the value's evalf, when the symbolic parts cannot be had (above) or not evaluated in time (an error).
+  // With `valueText` (G44f1) the value is that text evaluated at Digits = prec, and `name` keeps Giac's result.
+  const evalfValue = (prec: number) => {
+    slot.set = true;
+    return valueText === undefined
+      ? giac.eval(`pasxe:=evalf(${name},${prec})`)
+      : withDigits(giac, prec, digits, () => giac.eval(`pasxe:=evalf(${valueText},${prec})`));
+  };
   const viaValue = (prec: number) =>
-    isError(giac.eval(`pasxe:=evalf(${name},${prec})`)) ? null : readParts(giac, "pasxe", shape, (part) => giac.eval(part), P + 2, prec);
+    isError(evalfValue(prec)) ? null : readParts(giac, "pasxe", shape, (part) => giac.eval(part), P + 2, prec);
   let whole = !split;
   const evalfAt = (prec: number) => {
     if (whole) return viaValue(prec);
@@ -855,7 +883,17 @@ export function floatPathFacts(
   // G50f1: the names the input reads that hold a call Giac gets wrong on complex arguments are read through copies.
   const reads = complexReads(giac, expr, !once);
   try {
-    const out = floatPathFactsOf(giac, name, forValue(giac, reads.text), once, W, digits);
+    // G44f1: erf and erfc through our MPFR definitions (Giac's erf of a float below about 1E-11 is the argument).
+    const safe = forValue(giac, reads.text);
+    const value = erfValueText(giac, safe);
+    if (value !== safe) giac.eval(`${ICDF_FAILED}:=0`);
+    let out = floatPathFactsOf(giac, name, value, once, W, digits);
+    if (value !== safe) {
+      // A non-real argument is Giac's own erf (the flag): not audited.
+      const failed = giac.eval(ICDF_FAILED).trim() !== "0";
+      giac.eval(`purge(${ICDF_FAILED})`);
+      if (failed && !("error" in out)) out = { ...out, facts: out.facts.map((f) => ({ ...f, warn: "unaudited" as const })) };
+    }
     // A non-real value that rests on a replaced function not read through ours (DEG, a copy refused) is not audited.
     if ("error" in out || !reads.hidden.length || !nonReal(giac, name)) return out;
     const complexFns = reads.hidden;
@@ -1022,10 +1060,35 @@ export function rationalOnly(expr: string): boolean {
   return true;
 }
 
+/** Giac's language keywords that functionsIn finds in a printed program (`if (`, `while (`): like a built-in, none
+ *  can hold a value, so each prints the same all session. Every entry is checked to refuse both `k:=3` and `k(x):=x`
+ *  in precision.test.ts ("G53: every KEYWORDS entry refuses a value"). `return` is left out: Giac reads
+ *  `return(x):=x` as `return(x:=x)` without an error, so it is asked like a user's name. */
+export const KEYWORDS: ReadonlySet<string> = new Set([
+  "if", "while", "throw", "and", "or", "xor", "local", "else", "elif", "then", "try", "catch", "break", "continue",
+  "repeat", "until", "switch", "case", "default", "do", "from", "to", "step", "in",
+]);
+
+/** G53: the prints of names that never change, per Giac instance (a fresh engine starts empty). */
+const FIXED_PRINTS = new WeakMap<Giac, Map<string, string>>();
+
+/** Giac's print of `name`, trimmed (`'sin'`, a stored function's definition, the name itself when free). A built-in
+ *  (printed quoted) is reserved, Giac refuses to store into it, and a keyword cannot be stored into either: their
+ *  prints are asked once per Giac instance (G53: notBuiltin and callsStateful asked them on every Enter). */
+export function namePrint(giac: Giac, name: string): string {
+  let fixed = FIXED_PRINTS.get(giac);
+  if (!fixed) FIXED_PRINTS.set(giac, (fixed = new Map()));
+  const known = fixed.get(name);
+  if (known !== undefined) return known;
+  const out = giac.eval(name).trim();
+  if (out === `'${name}'` || KEYWORDS.has(name)) fixed.set(name, out);
+  return out;
+}
+
 /** A predicate for "`name` is not a Giac built-in" (a stored function, or a name Giac does not know): Giac prints a
  *  built-in quoted (`sin` → `'sin'`) and a stored function as its definition (`f` → `(x)->floor(x*10^12)`). */
 export function notBuiltin(giac: Giac): (name: string) => boolean {
-  return (name) => giac.eval(name).trim() !== `'${name}'`;
+  return (name) => namePrint(giac, name) !== `'${name}'`;
 }
 
 /** A stored function's printed definition changes engine state: it stores into a name that is neither a parameter
@@ -1052,7 +1115,7 @@ export function callsStateful(giac: Giac, input: string): boolean {
     functionsIn(text).some((name) => {
       if (seen.has(name)) return false;
       seen.add(name);
-      const def = giac.eval(name).trim();
+      const def = namePrint(giac, name);
       if (def === `'${name}'` || !/->/.test(def)) return false;
       return definitionStores(def) || visit(def);
     });
@@ -1067,7 +1130,7 @@ export function decidingStored(giac: Giac): (name: string) => boolean {
     const k = known.get(name);
     if (k !== undefined) return k;
     known.set(name, false);
-    const def = giac.eval(name).trim();
+    const def = namePrint(giac, name);
     const r = def !== `'${name}'` && /->/.test(def) && restsOnDecision(def, "", decides);
     known.set(name, r);
     return r;

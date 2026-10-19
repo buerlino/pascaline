@@ -27,7 +27,6 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [G56](packages/G56.md) | Complex functions inside a stored function, in CAS | gorge, **Opus** | night | G51 | ~0.5 d |
-| [G53](packages/G53.md) | The second decision costs at most 1.3× again | gorge, **Opus** | night | G52 | ~0.5 d |
 | [G54](packages/G54.md) | Our function names in Giac text too | gorge, Sonnet | night | now; before R59 | ~0.5 d |
 | [G55](packages/G55.md) | A behaviour diff between two trees | gorge, Sonnet | night | now | ~0.75 d |
 | [S13](packages/S13.md) | Stored names from Giac's state (spike) | sandra, Opus | night | G48 | ~0.5 d |
