@@ -5,6 +5,7 @@
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import {
+  arrowFunction,
   definedBy,
   expIgnoresAngle,
   definitionsUsedBy,
@@ -226,6 +227,17 @@ function indexedTarget(input: string): string | null {
   return m ? m[1]! : null;
 }
 
+/** G49f4: the input defines a function for the mark facts: `f(x):=…`, or `f:=x->…` (definedBy reads that as a variable,
+ *  which the Find items keep). */
+function definesFunction(input: string): boolean {
+  return definedBy(input)?.kind === "fn" || arrowFunction(input) !== null;
+}
+
+/** A log entry that holds a function: `f(x):=…`, or a variable set to an arrow (`f:=((x)->…)`, G49f4). */
+function isFnEntry(e: DefEntry): boolean {
+  return e.kind === "fn" || (e.kind === "var" && e.cmds.some((c) => arrowFunction(c) === e.name));
+}
+
 /** Facts that together cap a value: the fewest confirmed digits, the strongest warn, never exact (G49f1). Null when
  *  `all` is empty. */
 function mergedFacts(all: readonly NameFacts[]): NameFacts | null {
@@ -399,8 +411,13 @@ export class EngineHost {
       const facts = this.callFacts(name, seen);
       return facts ? [{ name, facts, fn: true }] : [];
     });
+    // G49f4: an arrow function named without a call (passed on) lends its facts too, and is never moved.
     const used = namesIn(input)
-      .map((name) => ({ name, facts: this.byName.get(name)?.facts ?? this.chipFacts.get(name), fn: false }))
+      .map((name) => {
+        const e = this.byName.get(name);
+        if (e && isFnEntry(e)) return { name, facts: this.callFacts(name, seen) ?? undefined, fn: true };
+        return { name, facts: e?.facts ?? this.chipFacts.get(name), fn: false };
+      })
       .filter((u): u is { name: string; facts: NameFacts; fn: boolean } => u.facts !== undefined)
       .concat(called);
     if (!used.length) return r;
@@ -455,7 +472,9 @@ export class EngineHost {
     const body = maskBound(input);
     const vars = namesIn(body).flatMap((n) => {
       const e = this.byName.get(n);
-      return n !== def && e && e.kind !== "fn" && e.facts ? [e.facts] : [];
+      if (n === def || !e) return [];
+      const f = isFnEntry(e) ? this.callFacts(n, seen) : e.facts;
+      return f ? [f] : [];
     });
     const fns = functionsIn(body).flatMap((n) => {
       const f = n === def ? null : this.callFacts(n, seen);
@@ -465,13 +484,13 @@ export class EngineHost {
   }
 
   /** G49f3: the facts a call to the stored function `name` lends: the facts its entry stored at definition (chips and
-   *  constants lent then) merged with those of the names its body holds now. Null when it is no function, already
-   *  visited (`seen`), or nothing in it is inexact. */
+   *  constants lent then) merged with those of the names its body holds now. Null when it is no function (`f(x):=` or
+   *  an arrow, G49f4), already visited (`seen`), or nothing in it is inexact. */
   private callFacts(name: string, seen: Set<string>): NameFacts | null {
     const e = this.byName.get(name);
-    if (e?.kind !== "fn" || seen.has(name)) return null;
+    if (!e || !isFnEntry(e) || seen.has(name)) return null;
     seen.add(name);
-    const cmd = e.cmds.find((c) => definedBy(c)?.name === name) ?? e.cmds[0];
+    const cmd = e.cmds.find((c) => definedBy(c)?.name === name || arrowFunction(c) === name) ?? e.cmds[0];
     return mergedFacts([...(e.facts ? [e.facts] : []), ...(cmd !== undefined ? this.bodyFacts(cmd, name, seen) : [])]);
   }
 
@@ -561,7 +580,7 @@ export class EngineHost {
           : [`Digits:=${s.workDigits}`, input, `Digits:=${s.digits}`];
       // G49: an inexact input, or a result shown with ⚠ (G38's decision that did not hold), stores a value that is not
       // exact even when it prints as an exact rational.
-      const fn = definedBy(input)?.kind === "fn";
+      const fn = definesFunction(input);
       const facts = fn ? this.fnFacts(input, lent) : EngineHost.factsOf(result, Math.trunc(s.digits));
       const inexact = !fn && facts !== null && (inexactIn || result.warn !== undefined);
       defs = this.defsAfter(input, ran, result.display, inexact ? { ...facts, inexact: true } : facts, "home", Math.trunc(s.digits), s.angle);
@@ -676,7 +695,7 @@ export class EngineHost {
     // G49f3: a function defined here keeps the facts of the names its body holds, as in Home (fnFacts).
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
       stateful
-        ? this.defsAfter(input, [exactInput], preview, definedBy(input)?.kind === "fn" ? this.fnFacts(input, facts ? [facts] : []) : facts, "cas", Math.trunc(s.digits), s.angle)
+        ? this.defsAfter(input, [exactInput], preview, definesFunction(input) ? this.fnFacts(input, facts ? [facts] : []) : facts, "cas", Math.trunc(s.digits), s.angle)
         : [];
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
     // `evalf(e,n)` alone is shown with the n digits it asks for, checked at that precision (decisions M4-6).
