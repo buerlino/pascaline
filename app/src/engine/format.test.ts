@@ -308,6 +308,12 @@ describe("formatConfirmed: only confirmed digits are shown", () => {
     expect(formatConfirmed({ value: { re: v("4.7e-6"), im: ZERO_VALUE }, exactRational: true, reliableDigits: null }, o)).toBe("4.7000E-6");
     expect(formatConfirmed(f("0.000123", 3), o)).toBe("0.0001");
   });
+  it("FIX: no part of a complex number shows more digits than are confirmed (G36)", () => {
+    const o: FormatOptions = { format: "FIX", digits: 12, fixed: 4 };
+    const c = (re: string, im: string, n: number) => formatConfirmed({ value: { re: v(re), im: v(im) }, exactRational: false, reliableDigits: n }, o);
+    expect(c("0.0123", "0.000123", 1)).toBe("0.01+1E-4*i");
+    expect(c("1.23456", "0.00123", 3)).toBe("1.23+1.23E-3*i");
+  });
   it("lists and matrices", () => {
     const it2 = [f("1.5", null), f("0.333333333333333", 3)];
     expect(formatConfirmed({ exactRational: false, reliableDigits: 3, items: it2 }, { format: "STD", digits: 12 })).toBe("[1.5,0.333]");

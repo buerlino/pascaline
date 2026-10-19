@@ -44,6 +44,8 @@ export interface FormatOptions {
   rounding?: Rounding;
   /** Decimals after the point; only used by FIX (default 4). */
   fixed?: number;
+  /** FIX only: significant digits of the scientific fallback (default fixed + 1); confirmedOptions sets it (G36). */
+  sciDigits?: number;
 }
 
 /** A formatted real number. The view draws it (e.g. the exponent as ×10^k); toText gives the canonical text. */
@@ -173,9 +175,9 @@ function eng(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
 }
 
 /** FIX: a non-zero value whose every shown decimal would be 0 falls back to SCI with f decimals (G2 item 60: 4.7ᴇ-6 → 4.7000ᴇ-6). */
-function fix(v: DecimalValue, f: number, rounding: Rounding): FormattedNumber {
+function fix(v: DecimalValue, f: number, rounding: Rounding, sciDigits: number = f + 1): FormattedNumber {
   const r = fixPlain(v, f, rounding);
-  if (!isZero(v) && /^0(\.0*)?$/.test(r.mantissa)) return sci(v, f + 1, rounding);
+  if (!isZero(v) && /^0(\.0*)?$/.test(r.mantissa)) return sci(v, sciDigits, rounding);
   return r;
 }
 
@@ -224,7 +226,7 @@ export function formatReal(v: DecimalValue, o: FormatOptions): FormattedNumber {
     case "ENG":
       return eng(v, o.digits, rounding);
     case "FIX":
-      return fix(v, o.fixed ?? 4, rounding);
+      return fix(v, o.fixed ?? 4, rounding, o.sciDigits);
   }
 }
 
@@ -387,10 +389,19 @@ export function confirmedOptions(value: ComplexValue, reliableDigits: number | n
   const parts = [value.re, value.im].filter((v) => !isZero(v));
   if (parts.every((v) => digitsShown(v, o) <= n)) return o;
   if (o.format !== "FIX") return { ...o, digits: Math.min(o.digits, n) };
+  // Parts in the SCI fallback show sciDigits = n digits; only the others bound `fixed`. Lowering it can push a part
+  // into the fallback, so repeat until nothing changes (G36).
   let fixed = o.fixed ?? 4;
-  // A part in the SCI fallback shows fixed + 1 significant digits, so fixed is n - 1 there.
-  for (const v of parts) fixed = Math.min(fixed, fixFallsBack(v, o) ? n - 1 : n - (v.exp + 1));
-  return fixed >= 0 ? { ...o, fixed } : { ...o, format: "SCI", digits: n };
+  for (;;) {
+    let next = fixed;
+    for (const v of parts) if (!fixFallsBack(v, { ...o, fixed })) next = Math.min(next, n - (v.exp + 1));
+    if (next === fixed || next < 0) {
+      fixed = next;
+      break;
+    }
+    fixed = next;
+  }
+  return fixed >= 0 ? { ...o, fixed, sciDigits: n } : { ...o, format: "SCI", digits: n };
 }
 
 const RANK: Record<Mark, number> = { "⚠": 0, "≈": 1, "=": 2 };
