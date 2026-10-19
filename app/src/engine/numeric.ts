@@ -47,7 +47,8 @@ export function valuePrecision(digits: number): number {
  * log10, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, abs, arg and sign on 12 complex
  * arguments at 12, 30 and 50 digits). Giac's complex tanh is coth and its complex asin, acos, atan and acosh are a
  * double, so those are evaluated through COMPLEX_DEFINITIONS; any part Giac prints as a double where MPFR digits were
- * asked confirms one digit fewer than it prints (shortDigits). Complex arguments in DEG are not audited (S14).
+ * asked confirms one digit fewer than it prints (shortDigits). In DEG nothing is replaced, so a non-real value of an
+ * input that calls tanh, asin, acos, atan or acosh is not audited and gets ⚠ (degComplex; the angle paths are S14's).
  */
 export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
   "evalf", "approx",
@@ -64,14 +65,16 @@ export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
  * for a non-real argument in RAD only, and is the function itself otherwise: tanh(z) as -i*tan(i*z) (Giac's complex tan
  * is right; sinh(z)/cosh(z) leaves im() a complex number for z = i), the inverse functions
  * by their ln forms, which are the principal branches (mpmath's, also on the cuts of atan). The agreement check then
- * confirms their digits like any other exact value. In DEG the angle mode's own paths are S14's.
+ * confirms their digits like any other exact value. A list or matrix argument is mapped element by element first (its
+ * type is DOM_LIST, which would fall back to Giac's own function). In DEG the angle mode's own paths are S14's, and a
+ * non-real value of an input that calls one of these is not audited (degComplex).
  */
 export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
-  pastanh: "pastanh(z):={ if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return -i*tan(i*z); return tanh(z); }",
-  pasasin: "pasasin(z):={ if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return -i*ln(i*z+sqrt(1-z^2)); return asin(z); }",
-  pasacos: "pasacos(z):={ if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return pi/2+i*ln(i*z+sqrt(1-z^2)); return acos(z); }",
-  pasatan: "pasatan(z):={ if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
-  pasacosh: "pasacosh(z):={ if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return ln(z+sqrt(z+1)*sqrt(z-1)); return acosh(z); }",
+  pastanh: "pastanh(z):={ if (type(z)==DOM_LIST) return map(z,pastanh); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return -i*tan(i*z); return tanh(z); }",
+  pasasin: "pasasin(z):={ if (type(z)==DOM_LIST) return map(z,pasasin); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return -i*ln(i*z+sqrt(1-z^2)); return asin(z); }",
+  pasacos: "pasacos(z):={ if (type(z)==DOM_LIST) return map(z,pasacos); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return pi/2+i*ln(i*z+sqrt(1-z^2)); return acos(z); }",
+  pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
+  pasacosh: "pasacosh(z):={ if (type(z)==DOM_LIST) return map(z,pasacosh); if (angle_radian==1 and type(evalf(z))==DOM_COMPLEX) return ln(z+sqrt(z+1)*sqrt(z-1)); return acosh(z); }",
 };
 
 /** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */
@@ -256,10 +259,28 @@ export function namesIn(input: string): string[] {
 /** Why the facts of a float result carry a warning (`why` of HomeResult); undefined when nothing is to be said.
  *  `expr`: the input as it was run again, null when it could not be (a value evaluated once). */
 export function whyOf(facts: readonly ElementFacts[], expr: string | null): PrecisionWhy | undefined {
-  const unaudited = expr !== null && facts.some((f) => f.warn === "unaudited") ? functionsIn(expr).filter((f) => !AUDITED_FUNCTIONS.has(f)) : [];
+  const off = expr !== null && facts.some((f) => f.warn === "unaudited") ? functionsIn(expr).filter((f) => !AUDITED_FUNCTIONS.has(f)) : [];
+  // Every name audited but the facts unaudited: a complex value in DEG of a function COMPLEX_DEFINITIONS replaces (degComplex).
+  const unaudited = off.length || expr === null || !facts.some((f) => f.warn === "unaudited") ? off : complexReplacedIn(expr);
   const once = facts.some((f) => f.warn === "unchecked" && !(isZero(f.value.re) && isZero(f.value.im))) || (expr === null && facts.some((f) => f.warn));
   if (!unaudited.length && !once) return undefined;
   return { ...(unaudited.length ? { unaudited } : {}), ...(once ? { once: true } : {}) };
+}
+
+/** The functions of `input` that COMPLEX_DEFINITIONS replace in RAD (tanh, asin, acos, atan, acosh and aliases). */
+export function complexReplacedIn(input: string): string[] {
+  return functionsIn(input).filter((f) => Object.hasOwn(COMPLEX_REPLACED, f));
+}
+
+/**
+ * G50 fix round 1: in DEG forValue replaces nothing, so Giac's own complex tanh (coth) and its double-only complex
+ * asin, acos, atan and acosh run at P and at P+20 and agree on wrong or short digits. A value of `name` that is not
+ * real, from an input that calls one of them, is therefore not audited in DEG (docs/04 2.4 rule 3).
+ */
+export function degComplex(giac: Giac, input: string, name: string): boolean {
+  if (complexReplacedIn(input).length === 0 || giac.eval("angle_radian").trim() === "1") return false;
+  const im = giac.eval(`im(${name})`);
+  return isError(im) || /[1-9]/.test(im.replace(/e[+-]?\d+/g, ""));
 }
 
 /** Every function in the input is on the audited list. */
@@ -611,7 +632,7 @@ function floatFactsOf(
       }
       return readParts(giac, run === null ? name : slot, shape, (part) => giac.eval(part), P, d);
     });
-  const unaudited = expr === null || !isAudited(expr);
+  const unaudited = expr === null || !isAudited(expr) || degComplex(giac, expr, name);
   const facts = (v: { re: DecimalValue; im: DecimalValue; short?: number }[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
     v.map((value, k) =>
       zeroUnconfirmed({

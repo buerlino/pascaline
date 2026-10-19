@@ -335,6 +335,22 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.display).toBe("2.31262688170937054957327206807+1.55118708206189191252710439312*i");
     expect(r.warn).toBeUndefined();
   });
+  it("fix round 1: a list argument is mapped, not handed to Giac's coth (source: oracle, mpmath tanh(1j), tanh(2j))", () => {
+    expect(home("evalf(tanh([i,2*i]))").display).toBe("[1.55740772465*i,-2.18503986326*i]");
+  });
+  it("fix round 1: a list argument of acos at 30 digits gets MPFR digits (source: oracle, mpmath acos(1+1j), acos(2j))", () => {
+    const r = home("evalf(acos([1+i,2*i]))", 30);
+    expect(r.display).toBe("[0.904556894302381364127316795662-1.06127506190503565203301891621*i,1.57079632679489661923132169164-1.44363547517881034249327674027*i]");
+    expect(r.items?.map((x) => markOf(x, { format: "STD", digits: 30 }))).toEqual([{ mark: "≈" }, { mark: "≈" }]);
+  });
+  it("fix round 1: in DEG a complex value of tanh is not audited, it gets ⚠ and names tanh (source: derived)", () => {
+    const r = host.home("evalf(tanh(i))", { ...defaultHomeSettings, angle: "deg" }).result;
+    expect(markOf(r, { format: "STD", digits: 12 })?.mark).toBe("⚠");
+    expect(r.warn).toBe("unaudited");
+    expect(r.why).toEqual({ unaudited: ["tanh"] });
+    // A real value in DEG stays audited.
+    expect(host.home("evalf(tanh(1))", { ...defaultHomeSettings, angle: "deg" }).result.warn).toBeUndefined();
+  });
   it("our definitions load on first use, not at engine start (start-up budget)", async () => {
     const { giac } = await loadNodeGiac();
     const fresh = new EngineHost(giac);
