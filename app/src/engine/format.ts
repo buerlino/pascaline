@@ -321,12 +321,16 @@ export type PrecisionWarn = "unaudited" | "unchecked";
 
 /** The reasons behind a ⚠, as facts for the chip that explains the mark (docs/04 section 8.2; the app words them):
  *  `unaudited`: the called functions the audit does not cover; `inherited`: the stored names whose facts (a warning, or
- *  fewer confirmed digits) changed the result's mark; `once`: the value could be evaluated only once, so nothing was compared. A constant's uncertainty is
+ *  fewer confirmed digits) changed the result's mark; `once`: the value could be evaluated only once, so nothing was compared;
+ *  `decided`: a decision inside the exact evaluation did not hold at a higher precision (G38). A constant's uncertainty is
  *  not sent: the app reads it from the chip table. It sits on the top-level result only, never on `items`. */
 export interface PrecisionWhy {
   unaudited?: string[];
   inherited?: string[];
   once?: boolean;
+  /** G38: a sign, comparison, floor or branch inside the exact evaluation gave different results at two precisions,
+   *  or sits on its cut (a tie Giac decides by rounding error): "decided at limited precision". */
+  decided?: boolean;
 }
 
 /** The engine's facts about one result (a subset of HomeResult, so the formatter does not depend on the engine). */

@@ -26,6 +26,8 @@ import {
   hasFloat,
   isAudited,
   rationalValue,
+  decideTwice,
+  restsOnDecision,
   shapeOf,
   valuePrecision,
   whyOf,
@@ -501,6 +503,13 @@ function provedRational(giac: Giac, name: string, f: ElementFacts, digits: numbe
   return { value: { re: a.v, im: b.v }, exactRational: true, reliableDigits: null, big: false };
 }
 
+/** G38: a result whose decision did not hold at a higher precision: ⚠ without a count, elements too, with the why
+ *  "decided at limited precision" (docs/04 2.4 rule 2). */
+export function undecidedResult(r: HomeResult): HomeResult {
+  const el = (e: HomeResult): HomeResult => ({ ...e, exactRational: false, reliableDigits: null, warn: "unchecked", approximate: true });
+  return { ...el(r), ...(r.items ? { items: r.items.map(el) } : {}), why: { ...(r.why ?? {}), decided: true } };
+}
+
 export function homeEval(
   giac: Giac,
   input: string,
@@ -516,29 +525,43 @@ export function homeEval(
   const exactBody = toExactLiterals(body);
   const test = input.includes(EQ_INEXACT_FLAG);
   if (test) giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
-  let exactOut = giac.eval(`${ans}:=(${exactBody})`);
+  // G38 (docs/04 2.4 rule 2): the exact evaluation runs at Digits = P, since Giac decides signs, comparisons and
+  // floor at Digits; the host's Digits stays the display digits, which print the floats of a non-number.
+  const P = valuePrecision(s.digits);
+  const exactRun = (): string => withDigits(giac, P, s.digits, () => giac.eval(`${ans}:=(${exactBody})`));
+  let exactOut = exactRun();
   // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate, and
   // decided by its own digits (R18f2): run once more with the verdict set.
   const inexactTest = test && giac.eval(EQ_INEXACT_FLAG) === "1";
   const decided = inexactTest && !once ? decideFloatTest(giac, exactBody, s.digits) : null;
   if (decided) {
-    exactOut = giac.eval(`${ans}:=(${exactBody})`);
+    exactOut = exactRun();
     giac.eval(`purge(${EQ_VERDICT})`);
   }
   const exactMs = now() - t0;
+  // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), see decideTwice. Not for
+  // an input that cannot run twice, a test helper's form (its verdict is gone), or a float result, whose value check
+  // runs it at two precisions anyway.
+  let undecided = false;
+  if (!once && !test && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, exactOut)) {
+    const d = decideTwice(giac, exactBody, exactOut, s.digits, s.digits);
+    if ("undecided" in d) undecided = true;
+    if (d.from !== undefined && d.text !== undefined) {
+      giac.eval(`${ans}:=${d.from}`);
+      exactOut = d.text;
+    }
+    giac.eval("purge(pasdec2)");
+  }
   const W = Math.max(s.workDigits, s.digits + 10);
   const defined = definedBy(input);
   const store = () => {
     if (asg) giac.eval(`${asg.name}:=${ans}`);
   };
 
-  const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "full"> & { full?: string }): HomeResult => ({
-    ...r,
-    full: r.full ?? r.display,
-    ...(r.ok && defined ? { defined } : {}),
-    exactMs,
-    totalMs: now() - t0,
-  });
+  const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "full"> & { full?: string }): HomeResult => {
+    const out: HomeResult = { ...r, full: r.full ?? r.display, ...(r.ok && defined ? { defined } : {}), exactMs, totalMs: now() - t0 };
+    return undecided && out.ok ? undecidedResult(out) : out;
+  };
   const fromBuilt = (b: Built, path: HomePath, approximate: boolean, exact: string | undefined, full: string, why?: PrecisionWhy): HomeResult => {
     const { decimal: _d, ...rest } = b;
     return done({ ok: true, ...rest, ...(why ? { why } : {}), ...(exact !== undefined ? { exact } : {}), path, approximate, full });
@@ -569,6 +592,9 @@ export function homeEval(
   const symbolic = (): HomeResult => {
     // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
+    // G38: a float in a non-number prints with the precision it was computed at, so it is computed again at the
+    // display digits for the text shown (an input that cannot run twice keeps the P digits).
+    if (hasFloat(exactOut) && !once && !test) exactOut = giac.eval(`${ans}:=(${exactBody})`);
     const shown = exactOut.includes("*") ? regrouped(giac, ans, exactOut) : exactOut;
     // An open test shows its decimals as typed, not as the exact rationals the engine read (G14).
     const text = /==|<>/.test(shown) ? restoreLiterals(shown, body) : shown;
