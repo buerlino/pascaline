@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G44: the polish of the inverse distribution functions (icdf.ts); G44f1: erf and erfc through our definitions.
 import { beforeAll, describe, expect, it } from "vitest";
-import { ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
+import { ICDF_DEFINITIONS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import type { Giac } from "./numeric.ts";
 
@@ -73,6 +73,41 @@ describe.skipIf(!giacAvailable())("icdf polish (real Giac)", () => {
   it("G44f2: the χ² upper tail from a bracket in ln x (oracle: mpmath, prec-g44f2 cases)", () => {
     // mpmath 142.6779862234609448675934327407017641553; Giac gives +infinity, Newton from the centre took over 20 steps
     expect(at40("chisquare_icdf(3,1-10^-30)")).toMatchObject({ value: expect.stringMatching(/^0\.14267798622346094486759343274070176\d*e3$/), failed: false });
+  });
+  it("G44f2f1: the χ² and Fisher upper tails run Newton from Giac's good start, the bracket only when it is unusable", () => {
+    icdfPolished(giac, "");
+    // pasicdft (the tails and the density) evaluated through a counting wrapper: the work of one polish, independent of
+    // the machine. Before G44f2f1 the bracket ran first every time: 15 evaluations for chisquare_icdf(3,9/10) at 40
+    // digits, 4 with it; 253 ms against 68 ms on the parent (desktop), and Home's 300 ms budget cut the agreement run (⚠ unaudited).
+    giac.eval(ICDF_DEFINITIONS.pasicdft!.replace(/^pasicdft\(/, "pasicdft0("));
+    giac.eval("pasicdft(k,a,b,x):={ pasicdftn:=pasicdftn+1; return pasicdft0(k,a,b,x); }");
+    const counted = (input: string): { value: string; failed: boolean; n: number } => {
+      giac.eval("pasicdftn:=0");
+      const r = at40(input);
+      return { ...r, n: Number(giac.eval("pasicdftn")) };
+    };
+    try {
+      // mpmath 6.25138863117032319640131636064312651769517…
+      const chi = counted("chisquare_icdf(3,9/10)");
+      expect(chi).toMatchObject({ value: expect.stringMatching(/^6\.2513886311703231964013163606431265176\d*$/), failed: false });
+      expect(chi.n).toBeLessThanOrEqual(10);
+      // mpmath 3.84145882069412595836137543736259684621…
+      const chi1 = counted("chisquare_icdf(1,95/100)");
+      expect(chi1).toMatchObject({ value: expect.stringMatching(/^3\.8414588206941259583613754373625968462\d*$/), failed: false });
+      expect(chi1.n).toBeLessThanOrEqual(10);
+      // mpmath 4.19086043887224444653292856672273218227…
+      const f = counted("fisher_icdf(3,4,9/10)");
+      expect(f).toMatchObject({ value: expect.stringMatching(/^4\.1908604388722444465329285667227321822\d*$/), failed: false });
+      expect(f.n).toBeLessThanOrEqual(10);
+      // Giac's +infinity is no start: the bracket, as in G44f2 (mpmath 142.67798622346094486759343274070176415…)
+      expect(counted("chisquare_icdf(3,1-10^-30)")).toMatchObject({ value: expect.stringMatching(/^0\.14267798622346094486759343274070176\d*e3$/), failed: false });
+      // A real start Newton cannot use falls back to the bracket from the centre: at 10^30 the density of χ²(3) is 0 at
+      // 40 digits (refused before G44f2f1, the bracket started there and 60 halvings did not reach the root).
+      expect(at40("pasicdf(2,3,1,9/10,10^30)")).toMatchObject({ value: expect.stringMatching(/^6\.2513886311703231964013163606431265176\d*$/), failed: false });
+    } finally {
+      giac.eval(ICDF_DEFINITIONS.pasicdft!);
+      giac.eval("purge(pasicdft0,pasicdftn)");
+    }
   });
   it("G44f1: erf and erfc at Giac's Digits (oracle: mpmath, prec-g44f1 cases)", () => {
     // Giac's own erf(1e-12) at 40 digits is 1e-12; mpmath 1.12837916709551257389615852699515…E-12
