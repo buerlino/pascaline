@@ -29,6 +29,8 @@ import {
   unquote,
 } from "./homeEval.ts";
 import { eseriesDefinition } from "./eseries.ts";
+import { giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
+import { enEngine } from "../i18n/enEngine.ts";
 import { askedDigits, DOUBLE_DIGITS, floatFacts, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
@@ -461,7 +463,7 @@ export class EngineHost {
         defs: [],
       };
     }
-    if (!result.ok) return { result: { ...result, error: "engine" }, defs: [] };
+    if (!result.ok) return { result: { ...result, error: result.error ?? "engine" }, defs: [] };
     // M4-7: a value computed from stored floats keeps their marks. An assignment's right side is what ran; a
     // self-reference (B:=B*2) already overwrote B, and other stateful inputs cannot run again, so neither is moved.
     const asg = simpleAssignment(input);
@@ -542,18 +544,26 @@ export class EngineHost {
       text = this.strict.eval(`pcasans:=(${exactInput})`);
       this.giac.eval(`purge(${EQ_VERDICT})`);
     }
+    // G39: a divergent integral or series, or no limit, is refused as in Home; Giac's [exact, numeric] pair of a
+    // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
+    const refused = stateful ? null : refusalOf(this.giac, exactInput, text, s.angle);
+    if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
+    // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
+    const unverified = refused === "unchecked";
+    const pair = !stateful && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
     const asg = simpleAssignment(input);
     const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
       stateful ? this.defsAfter(input, [exactInput], preview, facts, "cas", Math.trunc(s.digits), s.angle) : [];
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
     // `evalf(e,n)` alone is shown with the n digits it asks for, checked at that precision (decisions M4-6).
-    const shape = hasFloat(text) ? shapeOf(text) : null;
+    const shape = hasFloat(text) && !pair ? shapeOf(text) : null;
     if (shape) {
       const asked = askedDigits(input);
       const digits = asked ?? Math.trunc(s.digits);
       const facts = floatFacts(this.giac, "pcasans", stateful ? null : exactInput, shape, digits, Math.trunc(s.digits));
       if (facts) {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
+        if (unverified) numeric.warn = numeric.warn ?? "unchecked";
         if (asked !== null) numeric.digits = asked;
         const body = asg ? asg.rhs : input;
         const why = whyOf(facts, stateful ? null : exactInput);
@@ -570,10 +580,10 @@ export class EngineHost {
     // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate.
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4),
     // as the definitions log records it.
-    const unchecked = hasFloat(text);
+    const unchecked = hasFloat(text) || unverified;
     const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked;
     const warn = decided?.warn ?? (unchecked ? "unchecked" : undefined);
-    const why = symbolicWhy(warn, testSides(exactInput));
+    const why = pair ? { differ: true } : symbolicWhy(warn, testSides(exactInput));
     const tex = this.giac.eval("latex(pcasans)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");
     return {
