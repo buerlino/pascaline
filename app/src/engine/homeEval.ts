@@ -276,11 +276,15 @@ export function pasdegCommand(_angle: "rad" | "deg"): string {
   return "pasdeg:=1";
 }
 
+/** The angle mode and the degree factor in one engine call (a mode switch costs no extra call). */
+export function angleCommand(angle: "rad" | "deg"): string {
+  return `angle_radian:=${angle === "rad" ? 1 : 0};${pasdegCommand(angle)}`;
+}
+
 /** Engine-side setup for Home; the host runs these once (and again after a settings change). */
 export function homeSetupCommands(s: HomeSettings): string[] {
   return [
-    `angle_radian:=${s.angle === "rad" ? 1 : 0}`,
-    pasdegCommand(s.angle),
+    angleCommand(s.angle),
     `timeout ${(s.budgetMs / 1000).toFixed(3)}`,
     // How often control_c() looks at the clock: every 10th check (engine/giac/patches/README.md, patch 0002).
     "ckevery 10",

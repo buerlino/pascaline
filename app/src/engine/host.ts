@@ -17,6 +17,7 @@ import {
   floatsAsEvalf,
   homeEval,
   homeSetupCommands,
+  angleCommand,
   latexShown,
   pasdegCommand,
   isStateful,
@@ -103,8 +104,7 @@ function isTimeout(out: string): boolean {
 /** Commands that put Giac into CAS mode (D3). Home's are homeSetupCommands() in homeEval.ts. */
 export function casSetupCommands(s: CasSettings): string[] {
   return [
-    `angle_radian:=${s.angle === "rad" ? 1 : 0}`,
-    pasdegCommand(s.angle),
+    angleCommand(s.angle),
     `Digits:=${Math.trunc(s.digits)}`,
     `timeout ${Math.min(Math.max(s.hardTimeoutS, 0.001), 1439).toFixed(3)}`,
     "ckevery 10",
@@ -855,8 +855,7 @@ export class EngineHost {
 
   private useSolveMode(s: HomeSettings): void {
     this.useMode(`solve${JSON.stringify(s)}`, () => {
-      this.giac.eval(`angle_radian:=${s.angle === "rad" ? 1 : 0}`);
-      this.giac.eval(pasdegCommand(s.angle));
+      this.giac.eval(angleCommand(s.angle));
       this.giac.eval(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
       this.giac.eval("ckevery 10");
       this.giac.eval(`Digits:=${Math.trunc(s.digits)}`);

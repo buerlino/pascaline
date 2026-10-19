@@ -70,6 +70,8 @@ function closing(s: string, open: number): number {
  * change: Giac in radians reads it as pi/180 in every mode.
  */
 export function rewriteAngles(text: string, opts: { trig?: boolean } = {}): string {
+  // R64: the parser's text carries pasdeg already (app/src/input/angles.ts); never apply the factor twice
+  if (/(?<![A-Za-z0-9_])pasdeg(?![A-Za-z0-9_])/.test(text)) return text;
   const trig = opts.trig !== false;
   let out = "";
   let i = 0;
@@ -133,7 +135,11 @@ class Runner {
   constructor(route: Route, giac: GiacApi) {
     this.route = route;
     this.giac = giac;
-    this.host = new EngineHost(giac);
+    // R64: the host sets pasdeg:=1 with every mode switch (homeEval.ts angleCommand); route b keeps the probe's value
+    // there, as G46's pasdegCommand will
+    const value = (): string => (this.pasdegMode === "deg" ? "pi/180" : "1");
+    const ev = (s: string): string => giac.eval(route === "b" ? s.replace(/\bpasdeg:=1\b/g, () => `pasdeg:=${value()}`) : s);
+    this.host = new EngineHost({ ...giac, eval: ev });
   }
   /** The settings angle and the text Giac gets, for a typed (parser-output) text in `mode`. */
   prep(text: string, mode: Mode, opts: { trig?: boolean } = {}): { angle: Mode; text: string } {
