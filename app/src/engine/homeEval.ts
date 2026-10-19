@@ -156,15 +156,16 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
   // parser renames the written word (input/emit.ts CALL_NAME). Sorted, the middle value or the mean of the two middle ones.
   pasmedian:
     "pasmedian(l):={ local s,n,k; if (type(l)!=DOM_LIST) throw(\"median: needs a list of values\"); " +
-    "for (k:=0;k<size(l);k:=k+1) { if (type(l[k])==DOM_LIST) throw(\"median: needs a list of values\"); } " +
+    "for (k:=0;k<size(l);k:=k+1) { if (type(l[k])!=integer and type(l[k])!=rational and type(evalf(l[k]))!=DOM_FLOAT) throw(\"median: needs a list of real numbers\"); } " +
     "s:=sort(l); n:=size(s); if (n==0) throw(\"median: needs at least one value\"); " +
     "if (irem(n,2)==1) return s[(n-1)/2]; return (s[n/2-1]+s[n/2])/2; }",
   // G42: Giac leaves percentile unevaluated. Linear interpolation between the closest ranks: rank r = p/100·(n−1) on
   // the sorted list (the inclusive method, Excel's PERCENTILE.INC), 0 ≤ p ≤ 100.
   paspercentile:
     "paspercentile(l,p):={ local s,n,r,k; if (type(l)!=DOM_LIST) throw(\"percentile: needs a list of values\"); " +
-    "for (k:=0;k<size(l);k:=k+1) { if (type(l[k])==DOM_LIST) throw(\"percentile: needs a list of values\"); } " +
+    "for (k:=0;k<size(l);k:=k+1) { if (type(l[k])!=integer and type(l[k])!=rational and type(evalf(l[k]))!=DOM_FLOAT) throw(\"percentile: needs a list of real numbers\"); } " +
     "s:=sort(l); n:=size(s); " +
+    "if (type(p)!=integer and type(p)!=rational and type(evalf(p))!=DOM_FLOAT) throw(\"percentile: needs a list of real numbers\"); " +
     "if (n==0 or p<0 or p>100) throw(\"percentile: needs a list and 0 <= p <= 100\"); " +
     "r:=p/100*(n-1); k:=floor(r); if (k>=n-1) return s[n-1]; return s[k]+(r-k)*(s[k+1]-s[k]); }",
   // F29/G21: Giac in DEG reads the imaginary part of an exponential as degrees (exp(i*90) = i) but exp(i*pi) as
