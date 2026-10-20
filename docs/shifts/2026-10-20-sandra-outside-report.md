@@ -18,6 +18,8 @@
 - That the sheet's Find descriptions do not hand over the name: the first tester shows it.
 
 ## Shared-file text (for the next Opus pass)
+- **docs/decisions.md** "Needs the user", after the S13 entry: `- **2026-10-20 S8: before outside round 1 (OPEN).** [R18](research/r18-outside-test.md) §6: count every press (ron, ½ d; else you tally); \`allowBackup="false"\` (annabell; else flight mode). Recommendation: both.` Not added on this branch: decisions.md is 39 998 bytes on `phase-1` against its 40 kB budget (`tools/docs-check.mjs:21`), so the entry (≈ 190 bytes) needs room the pass makes, e.g. by moving a settled entry to `docs/archive/`. The S13, S6 and M4-2 entries stay as they are (fix round 1 put back a shortening of them this branch had made).
+- **docs/backlog.md** "Needs the user" item 5 points at R18 §6 for now; once the decisions.md entry is in, it may say "first decide S8 (decisions.md)".
 - **docs/README.md** research list, after the r15 entry: `[research/r18-outside-test.md](research/r18-outside-test.md) (the outside test: two rounds, the script, the sheet [mockups/outside-test.html](mockups/outside-test.html))`.
 - **docs/03-feature-analysis.md** section 3, "Mixed results with a kind badge": replace "Ranked by: recents and frequency first (the user's own habits), then exact name" with "Ranked with no usage boost (P11; docs/04 3.5): exact name".
 - **docs/shifts/brief.md / packages:** if the owner accepts decisions.md "S8": a ron package "the press counter" (count every press as docs/04 5.2 in `TapCounter`, a Settings row beside Shift and Alpha, same reset; unit test, e2e that a flick and a screen tap count 1; before round 1) and an annabell package "`allowBackup=false`" (manifest attribute, the merged-manifest check above in `build.sh`).
