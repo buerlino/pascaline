@@ -8,7 +8,7 @@ Pascaline is an open-source graphing CAS calculator for engineers (Android and P
 ```bash
 engine/giac/build-wasm.sh                 # Giac+GSL+GMP+MPFR → engine/giac/_out/gsl/giac.{mjs,wasm} (≈5 min; WITH_GSL=0 → _out/base)
 engine/giac/build-wasm-release.sh         # release engine in the debian:trixie container (P2) → _out/release + SHA256SUMS
-engine/qalc/build-wasm.sh [dev|release]   # libqalculate → engine/qalc/_out/<mode> (Find index data, build time only)
+engine/qalc/build-wasm.sh [dev|release]   # libqalculate → engine/qalc/_out/<mode>; developer only, for tools/find-index/refresh-factors.mjs (P22)
 node engine/giac/smoke.mjs 'factor(x^4-1)'                 # engine smoke test (VARIANT=gsl|base)
 cd app && npm ci && npm run dev                            # http://localhost:5173 (?engine=fake echoes input)
 npm run typecheck && npm run index && FIND_INDEX=required npm test   # svelte-check + Vitest (from app/; absolute GIAC_OUT for engine tests)
@@ -17,7 +17,7 @@ PW_PORT=<free port> GIAC_OUT=<abs dir> npm run test:e2e    # Playwright key-sequ
 GIAC_OUT=<abs dir> npm run golden                          # engine gate; must end in GOLDEN GATE PASSED
 GIAC_OUT=<abs dir> npm run gallery                         # every view and layer → app/test/gallery/index.html
 tests/golden/.venv/bin/python tests/golden/oracle.py [--write|--g2]   # mpmath oracle (venv: tests/golden/README.md)
-./build.sh [--dev] [--measure] [--unsigned] [--install [SERIAL]]      # clean source → dist/pascaline.apk (--no-units skips qalc)
+./build.sh [--dev] [--measure] [--unsigned] [--install [SERIAL]]      # clean source → dist/pascaline.apk (--no-units: Find holds functions only)
 PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads   # in a worktree: reuse the tarball cache; GIAC_OUT=<main>/engine/giac/_out/gsl
 ```
 Devices, locks and timings: `tools/README.md` (`tools/devlock.sh acquire host-cpu <name> 1800` around heavy work).
@@ -27,7 +27,7 @@ Every package runs through `scripts/pipeline.sh` (docs/shifts/rules.md section 4
 Context hygiene: `.claude/settings.json` denies reads of build output, caches, lock files, screenshots and run logs. Read sections (`grep -n '^#'`), not whole files; the owner's untracked files are not yours.
 
 ## Repo layout
-`app/` (web app: Svelte 5, keyboard, MathLive entry, parser, MathPrint, engine client), `engine/giac/` (engine build + patches), `engine/qalc/` (libqalculate build), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `find/` (Find data), `tests/golden/` (golden cases + oracle), `tests/engine/`, `tools/` (devices, probes, index generator), `scripts/` (pipeline), `docs/` (index: docs/README.md), `fastlane/`, `fdroid/`, `logo/`, `build.sh`, `spike/` (Phase 0 record), `.claude/agents/` (ron, gorge, annabell, sandra, sofia, henri).
+`app/` (web app: Svelte 5, keyboard, MathLive entry, parser, MathPrint, engine client), `engine/giac/` (engine build + patches), `engine/qalc/` (libqalculate build, developer only), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `find/` (Find data; `factors.yaml` holds libqalculate's numbers, P22), `tests/golden/` (golden cases + oracle), `tests/engine/`, `tools/` (devices, probes, index generator), `scripts/` (pipeline), `docs/` (index: docs/README.md), `fastlane/`, `fdroid/`, `logo/`, `build.sh`, `spike/` (Phase 0 record), `.claude/agents/` (ron, gorge, annabell, sandra, sofia, henri).
 
 ## Conventions
 - Small, focused modules; engine code knows nothing about the UI. TypeScript strict, no `any`; user-facing strings go through the i18n table. Every other code rule is in docs/rules-core.md.
