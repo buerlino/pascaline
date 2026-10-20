@@ -107,6 +107,8 @@ export interface HistoryItem {
   inexactInput?: boolean;
   /** CAS: the stored values the input read, each with the view that stored it (F28); absent when there is none. */
   uses?: UsedValue[];
+  /** G67: the input changed one of the engine's settings, which was put back (a line under the result says so). */
+  settingReset?: true;
   startedAt: number;
 }
 
@@ -218,7 +220,7 @@ export function migrateSettings(saved: unknown): { settings: Settings; migrated:
 
 /** A stored history item with a fresh id; chip fields that do not have their shape are dropped. */
 function restoredItem(i: HistoryItem, id: number): HistoryItem {
-  const { chips, full, fullExact, drawn, facts, uses, ...rest } = i as HistoryItem & { form?: unknown };
+  const { chips, full, fullExact, drawn, facts, uses, settingReset, ...rest } = i as HistoryItem & { form?: unknown };
   const { form, ...base } = rest;
   const out: HistoryItem = { ...base, id };
   if (isFormStep(form)) out.form = form;
@@ -228,6 +230,7 @@ function restoredItem(i: HistoryItem, id: number): HistoryItem {
   if (c) out.chips = c;
   const u = validUses(uses);
   if (u) out.uses = u;
+  if (settingReset === true) out.settingReset = true;
   if (typeof full === "string" && full.length <= FULL_LIMIT) {
     out.full = full;
     out.fullExact = fullExact === true;
@@ -517,6 +520,7 @@ export class Session {
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.display : errorText(r.error, r.display);
+        if (r.settingReset) live.settingReset = true;
         // A true or false from an inexact chip is as approximate as the chip (R18f1; decisions M4-4)
         live.approximate = r.approximate || (live.inexactInput === true && /^(true|false)$/.test(r.display));
         if (r.value) live.value = r.value;
@@ -547,6 +551,7 @@ export class Session {
         if (live.status !== "pending") return;
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.text : errorText(r.error, r.text);
+        if (r.settingReset) live.settingReset = true;
         if (r.ok) {
           live.resultLatex = tidyGiacLatex(r.latex);
           if (r.uses?.length) live.uses = r.uses;
