@@ -7,6 +7,7 @@ import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { applyDefChanges, type DefChange } from "./defs.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { parsePrinted, statePart, tableOf, type StoredName } from "./stateRead.ts";
 
 describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
   const fresh = async () => new EngineHost((await loadNodeGiac()).giac);
@@ -50,5 +51,30 @@ describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
     const next = await fresh();
     next.restore(applyDefChanges([], defs));
     expect(next.home("subst(S,y=0)", defaultHomeSettings).result.warn).toBe("unchecked");
+  });
+
+  it("Solve, an analysis and a unit job leave the table as Giac holds it, with no read of their own (audit, round 2)", async () => {
+    const { giac } = await loadNodeGiac();
+    let stateReads = 0;
+    const ev = giac.eval.bind(giac);
+    giac.eval = (t: string) => (t.includes("VARS()") && stateReads++, ev(t));
+    const host = new EngineHost(giac);
+    host.home("sto(floor(sin(10^100)*10^12),X)", defaultHomeSettings);
+    host.home("a:=2.5", defaultHomeSettings);
+    const inner = host as unknown as { stored: Map<string, StoredName>; byName: Map<string, unknown> };
+    const held = (): Map<string, StoredName> => tableOf(parsePrinted(ev(statePart(12)))!, (n) => inner.byName.has(n))!;
+    const jobs = [
+      () => host.solve({ kind: "equations", equations: ["X*exp(X)=5"], unknowns: ["X"], guesses: ["1"] }, defaultHomeSettings),
+      () => host.analyze({ kind: "area", f: "x^2+a", a: "0", b: "1" }, defaultHomeSettings),
+      () => host.units({ expr: "2*(((1)*pasdimL^(1)))", inexact: false }, defaultHomeSettings),
+    ];
+    for (const job of jobs) {
+      stateReads = 0;
+      job();
+      expect(stateReads, "no read of the stored names of its own").toBe(0);
+      expect([...inner.stored]).toEqual([...held()]);
+    }
+    host.home("Y:=1", defaultHomeSettings);
+    expect(host.home("X+1", defaultHomeSettings).result.warn).toBe("unchecked");
   });
 });

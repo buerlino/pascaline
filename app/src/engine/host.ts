@@ -394,15 +394,6 @@ export class EngineHost implements FactsHost {
     this.post = null;
   }
 
-  /** G65: after a request that may have changed stored names without an input of the user's (Solve puts the names it
-   *  freed back; unit definitions), the table is read again; nothing is credited to anyone. Only when names are stored. */
-  private resync(): void {
-    if (!this.stored.size) return;
-    const t = parsePrinted(this.giac.eval(statePart(this.modeDigits)));
-    const table = t ? tableOf(t, (n) => this.byName.has(n)) : null;
-    if (table) this.stored = table;
-  }
-
   /** G46: what the last restore() changed in the entries it was given (flagged values resolved), for the client to
    *  keep and store; taken once. */
   private migratedChanges: DefChange[] = [];
@@ -820,9 +811,8 @@ export class EngineHost implements FactsHost {
   solve(req: SolveRequest, s: HomeSettings): SolveOutcome {
     this.need(JSON.stringify(req));
     this.useSolveMode(s);
-    const out = solveRequest(this.giac, req, s);
-    this.resync();
-    return out;
+    // G65: no read of the stored names after it: Solve puts back the very values it freed (solve.ts withUnassigned)
+    return solveRequest(this.giac, req, s);
   }
 
   unknowns(equations: string[]): string[] {
@@ -832,9 +822,8 @@ export class EngineHost implements FactsHost {
   analyze(req: AnalysisRequest, s: HomeSettings): AnalysisResult {
     this.need(JSON.stringify(req));
     this.useSolveMode(s);
-    const out = analyze(this.giac, req, s);
-    this.resync();
-    return out;
+    // G65: it stores only our own pas* names, so the table of stored names stays as it is
+    return analyze(this.giac, req, s);
   }
 
   /** The unit view (G16, docs/04 4.2): in Home's mode (angle, budget, digits), with our unit definitions loaded on the
@@ -850,8 +839,6 @@ export class EngineHost implements FactsHost {
     } catch (e) {
       if (e instanceof GiacSyntaxError) return { error: "engine", detail: e.message };
       throw e;
-    } finally {
-      this.resync();
     }
   }
 
