@@ -1,0 +1,47 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+import { describe, expect, it } from "vitest";
+import { applyTheme, needsFile, type Family, type Theme } from "./apply.ts";
+
+/** Just enough of an element: attributes in a map. */
+function fakeRoot(): HTMLElement & { attrs: Map<string, string> } {
+  const attrs = new Map<string, string>();
+  return { attrs, setAttribute: (k: string, v: string) => void attrs.set(k, v), removeAttribute: (k: string) => void attrs.delete(k) } as unknown as HTMLElement & { attrs: Map<string, string> };
+}
+const nord: Theme = { family: "nord", brightness: "light", contrast: "high", keys: "plain" };
+
+describe("applyTheme", () => {
+  it("sets the attributes only after the family's file is in", async () => {
+    const root = fakeRoot();
+    let release: () => void = () => {};
+    const loaded: Family[] = [];
+    const p = applyTheme(nord, root, (f) => new Promise((res) => { loaded.push(f); release = () => res(undefined); }));
+    await Promise.resolve();
+    expect(loaded).toEqual(["nord"]);
+    expect(root.attrs.size).toBe(0);
+    release();
+    await p;
+    expect([...root.attrs]).toEqual([["data-family", "nord"], ["data-brightness", "light"], ["data-contrast", "high"], ["data-keys", "plain"]]);
+  });
+  it("a failed load leaves the root as it was", async () => {
+    const root = fakeRoot();
+    root.setAttribute("data-family", "pascaline");
+    await expect(applyTheme(nord, root, () => Promise.reject(new Error("offline")))).rejects.toThrow("offline");
+    expect([...root.attrs]).toEqual([["data-family", "pascaline"]]);
+  });
+  it("removes the contrast and keys attributes when they are off", async () => {
+    const root = fakeRoot();
+    root.setAttribute("data-contrast", "high");
+    root.setAttribute("data-keys", "plain");
+    await applyTheme({ family: "graphite", brightness: "dark", contrast: "normal", keys: "colour" }, root, async () => {});
+    expect([...root.attrs.keys()]).toEqual(["data-family", "data-brightness"]);
+  });
+  it("Pascaline without transforms loads nothing; with one, its file", async () => {
+    const loaded: Family[] = [];
+    const load = async (f: Family): Promise<void> => void loaded.push(f);
+    await applyTheme({ family: "pascaline", brightness: "dark", contrast: "normal", keys: "colour" }, fakeRoot(), load);
+    expect(loaded).toEqual([]);
+    await applyTheme({ family: "pascaline", brightness: "dark", contrast: "high", keys: "colour" }, fakeRoot(), load);
+    expect(loaded).toEqual(["pascaline"]);
+    expect(needsFile({ family: "gruvbox", brightness: "dark", contrast: "normal", keys: "colour" })).toBe(true);
+  });
+});

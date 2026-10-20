@@ -15,6 +15,7 @@
     "golden": "node scripts/golden.ts",
     "index": "node ../tools/find-index/generate.mjs",
     "gate": "node scripts/gate.ts",
+    "themes": "node scripts/theme-gen.ts",
     "test:e2e": "playwright test",
     "test:tasks": "playwright test test/tasks.spec.ts",
     "gallery": "playwright test -c playwright.gallery.config.ts",
