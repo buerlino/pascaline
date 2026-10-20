@@ -13,7 +13,7 @@
 1. **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**.
 2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 and R40 after G76).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
-4. annabell: **A16** again after G53, **A9** and **A11** with a device, **A18**, **A24**, **A25**, **A22**, **A19** (G64 waits for it), **A12**, **A4b** after R4b, **A20** with the Tab One, **A21** after F-Droid's answer, **A7 → A8** on the owner's go.
+4. annabell: **A16** again after G53 and after G65, **A9** and **A11** with a device, **A18**, **A24**, **A25**, **A22**, **A19** (G64 waits for it), **A12**, **A4b** after R4b, **A20** with the Tab One, **A21** after F-Droid's answer, **A7 → A8** on the owner's go.
 5. **R59** after G72 and G73/G74 (and R4b, A12); **R38a** (after A11) **→ R38b**; **R70** after R49 and **A23**, both before outside round 1; **R71** (±) after R24c.
 
 **At night, the hardening, in this order** (gorge unless named; tests first, failing on `da7a59c`):
@@ -37,7 +37,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A16](packages/A16.md) | Enter p95 on the Tab One after G53 | annabell, Sonnet | day (device) | G53 | ~0.25 d |
+| [A16](packages/A16.md) | Enter p95 on the Tab One after G53, again after G65 | annabell, Sonnet | day (device) | G53; G65 | ~0.25 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | now | ~0.25 d |
 | [A24](packages/A24.md) | A worktree never empties another's node_modules | annabell, Sonnet | day | now | ~0.25 d |
 | [A25](packages/A25.md) | The golden gate gates itself | annabell, Sonnet | day | now | ~0.1 d |
