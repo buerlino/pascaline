@@ -99,10 +99,8 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 62 | [G58](packages/G58.md) Home never hangs | gorge, Opus | `p1/gorge-m4-nohang` | — | 1.5 h |
-| 63 | [G59](packages/G59.md) the exact path checked against evalf | gorge, Opus | `p1/gorge-m4-exactcheck` | G58 | 1.5 h |
-| 64 | [G78](packages/G78.md) refused with a reason: ÷0, overflow, lost answers | gorge, Opus | `p1/gorge-m4-novalue` | G59 | 1 h |
 | 65 | [G68](packages/G68.md) Solve's knowns carry every digit | gorge, Sonnet | `p1/gorge-m4-solveknowns` | — | 1 h |
+| 65a | [G84](packages/G84.md) an underflow is refused with its reason | gorge, Opus | `p1/gorge-m4-underflow` | — | 1 h |
 | 67 | [G70](packages/G70.md) Area refuses only where Home does | gorge, Sonnet | `p1/gorge-m4-areaundef` | — | 1 h |
 | 69 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | A28 | 1.5 h |
 | 70 | [G60](packages/G60.md) no double inside an MPFR result | gorge, Opus | `p1/gorge-m4-mpfrdoubles` | G75 | 1.5 h |

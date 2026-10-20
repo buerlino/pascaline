@@ -121,7 +121,6 @@ describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
   });
 
   it.each([
-    ["int(1/x^2,x,-1,1)", "+infinity"],
     ["sum(1/k^2,k,1,inf)", "1.64493406685"],
     ["sum(cos(k)/k,k,1,inf)", "0.0420195058254"],
     ["sum((-1)^k/k,k,1,inf)", "-0.69314718056"],

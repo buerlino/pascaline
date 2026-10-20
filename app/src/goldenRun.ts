@@ -45,6 +45,8 @@ export interface Case {
   source?: string;
   g2?: number;
   status?: string;
+  /** precision.yaml (G58): the case answers or is refused within this many ms (desktop wall time of its Enter). */
+  budgetMs?: number;
   /** parser.yaml: input settings for this case (L6). */
   options?: { decimalComma?: boolean; realOddRoots?: boolean; units?: boolean };
   /** parser.yaml, units mode (R28): the exact UnitRequest.formula and the slots, in unit-case.ts syntax. */

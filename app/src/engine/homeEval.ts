@@ -15,8 +15,10 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
+import { lostFloat, lostNumber, throughInfinity } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
+import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
@@ -30,6 +32,7 @@ import {
   floatPathFacts,
   hasFloat,
   isAudited,
+  numericDisagrees,
   rationalValue,
   decideTwice,
   decidingStored,
@@ -38,10 +41,13 @@ import {
   callsStateful,
   readsReplaced,
   floatsShown,
+  heavySplit,
+  REGROUP_MAX,
   shapeOf,
   valuePrecision,
   whyOf,
   withDigits,
+  complexSafe,
   type ElementFacts,
   type Giac,
   type Shape,
@@ -65,6 +71,11 @@ export interface HomeSettings {
    *  1e5 ≈ results up to ~43,000 digits. */
   powLimit: number;
 }
+
+/** G58: the time Home's steps may take for one Enter. Giac interrupts itself after `budgetMs`, but some of its calls do
+ *  not look at the interrupt (GMP's factorial(10^6) takes 1 s); once the exact steps are past this, the checks that
+ *  would follow (each as long again) are not run and the input is refused with the time-out reason. */
+export const HOME_DEADLINE_MS = 2000;
 
 export const defaultHomeSettings: HomeSettings = {
   digits: 12,
@@ -95,8 +106,9 @@ export interface HomeResult {
   exactMs: number;
   totalMs: number;
   /** Set when !ok: "syntax" (Giac could not parse the input), "engine", or a refusal of a number for something that does
-   *  not exist (G39, converge.ts: a divergent integral or series, no limit); the UI shows `error.<code>`. */
-  error?: "syntax" | "engine" | Refusal;
+   *  not exist (G39, converge.ts: a divergent integral or series, no limit), or "timeout" when Home's own steps ran past
+   *  HOME_DEADLINE_MS (G58); the UI shows `error.<code>`. */
+  error?: "syntax" | "engine" | "timeout" | Refusal;
   /** The value is exactly p/q or an integer; with the format this decides "=" (docs/04 section 2.4, 8.2). */
   exactRational: boolean;
   /** Digits confirmed by the agreement check; null = exact (no digit is in doubt). */
@@ -350,6 +362,11 @@ export function floatsAsEvalf(text: string): string {
   });
 }
 
+/** G59: `input` with each decimal literal as a float of `at` digits (a short literal alone is read as a double). */
+export function floatLiterals(input: string, at: number): string {
+  return rewriteDecimals(input, (mant, exp10) => `evalf(${exactRational(mant, exp10)},${at})`);
+}
+
 function exactRational(mant: string, exp10: number): string {
   const [ip, fp = ""] = mant.split(".");
   const digits = (ip + fp).replace(/^0+(?=\d)/, "");
@@ -370,7 +387,7 @@ function isTimeout(out: string): boolean {
 }
 
 // Inputs that change engine state and must be replayed after a restart.
-const STATEFUL = /:=|=>|\b(purge|assume|additionally|sto)\s*\(/;
+const STATEFUL = /:=|=<|=>|\b(purge|assume|additionally|sto)\s*\(/;
 /** The stores of our own test helper (input/emit.ts equalityTest): not the user's state. */
 const HELPER_STO = new RegExp(`\\bsto\\(\\s*[^,()]*,\\s*(?:${EQ_INEXACT_FLAG}|${EQ_DIFF})\\s*\\)`, "g");
 
@@ -460,13 +477,13 @@ export const FULL_EXACT_MAX = 2048;
 /**
  * `regroup` on the stored answer `name` (x*x -> x^2), kept only when it merges equal factors, i.e. has
  * fewer "*" than `text`. Otherwise regroup would just reorder (factor's (x-1)*(x+1) -> (x+1)*(x-1))
- * and `text` and the stored answer stay as they were.
+ * and `text` and the stored answer stay as they were. Not on a text over REGROUP_MAX (G58: regroup can run for ever).
  * A text holding `==` is an equality test the rule left as typed (input/emit.ts equalityTest): regroup evaluates it as
  * Giac's structural `==`, so `cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)==1/2` (true) became 0 and `x*x==x^2` became 1 (F35,
  * R18f3). It is left alone. (`<>` comes back from regroup untouched, probe 2026-10-15.)
  */
 export function regrouped(giac: Giac, name: string, text: string): string {
-  if (text.includes("==")) return text;
+  if (text.includes("==") || text.length > REGROUP_MAX) return text;
   const out = giac.eval(`regroup(${name})`);
   if (isError(out) || out === "undef" || out.split("*").length >= text.split("*").length) return text;
   giac.eval(`${name}:=regroup(${name})`);
@@ -615,6 +632,10 @@ export function homeEval(
     giac.eval("purge(pasdec2)");
   }
   const W = Math.max(s.workDigits, s.digits + 10);
+  const late = (): boolean => now() - t0 > HOME_DEADLINE_MS;
+  // G78: a function of the user's (a program may change globals) stops the walk for an infinity; ours do not.
+  const builtin = notBuiltin(giac);
+  const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
   const defined = definedBy(input);
   const store = () => {
     if (asg) giac.eval(`${asg.name}:=${ans}`);
@@ -639,30 +660,35 @@ export function homeEval(
   };
   const failed = (display: string, path: HomePath, exact?: string): HomeResult =>
     done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, tieRisk: false, exactRational: false, reliableDigits: null });
+  const refuse = (code: Refusal, path: HomePath): HomeResult => ({ ...failed(enEngine[`error.${code}`], path), error: code, approximate: false });
 
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
     const f = floatPathFacts(giac, ans, asg ? asg.rhs : input, once, W, s.digits);
-    if ("error" in f) return failed(f.error, path, exact);
+    // G78 (F50): undef or an infinity where a number was asked for (no free name) is refused with its reason.
+    const lost = "error" in f && !once ? lostFloat(giac, exactBody, f.error) : null;
+    if ("error" in f) return lost ? refuse(lost, path) : failed(f.error, path, exact);
     // G39: the float of a divergent integral or series (the principal value 0 of ∫₋₁¹ 1/x) is refused as on the exact path.
     const refused = once ? null : refusalOf(giac, exactBody, giac.eval(ans));
     if (refused === "unchecked") unverified = true;
-    else if (refused) return { ...failed(enEngine[`error.${refused}`], path), error: refused, approximate: false };
+    else if (refused) return refuse(refused, path);
     store();
     const b = build(f.facts, f.shape, s.digits, path, true);
     return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
   };
 
+  // G58: past the deadline after the exact steps: refused, not checked for as long again.
+  if (late()) return { ...failed(enEngine["error.timeout"], "exact"), error: "timeout" };
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 
   // G39: a number for something that does not exist (a principal value, an Abel sum, a bounded_function) is refused.
   if (!once) {
-    const refused = refusalOf(giac, exactBody, exactOut);
+    const refused = refusalOf(giac, exactBody, exactOut, true);
     if (refused === "unchecked") unverified = true;
-    else if (refused) return { ...failed(enEngine[`error.${refused}`], "exact"), error: refused, approximate: false };
+    else if (refused) return refuse(refused, "exact");
   }
   // G57: after G39's refusals, whose message says more (Giac's bounded_function of limit(sin(x),x,inf) decides too).
-  if (refusedCut) return { ...failed(enEngine["error.undecided"], "exact"), error: "undecided", approximate: false };
+  if (refusedCut) return refuse("undecided", "exact");
   // G39: Giac's [exact, numeric] pair of a definite integral is never a list. The two answers differ, so neither is
   // confirmed: the float is the value, with no digit confirmed (⚠, docs/04 2.4), and the why-line says the pair differs.
   const pair = !once && hasDefiniteIntegral(exactBody) ? giacPair(exactOut) : null;
@@ -680,6 +706,9 @@ export function homeEval(
 
   const shape = shapeOf(exactOut);
   const symbolic = (forced?: "unaudited"): HomeResult => {
+    // G78: Giac's text with no free name where a number was asked for (asin(acos(π²)), sinh(6020³)), or undef through ∞.
+    const lost = once || forced || inexactTest ? null : lostNumber(giac, ans, exactBody, exactOut, late, exactMs, userFn);
+    if (lost) return refuse(lost, "exact");
     // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
     // G38: a float in a non-number prints with the precision it was computed at (P). Ans keeps the P result; the text
@@ -723,6 +752,8 @@ export function homeEval(
 
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();
+  // G78 (F51): a finite number through an infinity inside (1/(1/0), exp(ln 0)) is Giac's extended reals, not a value.
+  if (!once && throughInfinity(giac, exactBody, exactOut, late, exactMs, userFn)) return refuse("divisionByZero", "exact");
 
   if (hasFloat(exactOut)) {
     // Giac's numeric code returned a float on the exact path (rule 3). `evalf(e,n)` alone is shown with the n digits it
@@ -741,7 +772,7 @@ export function homeEval(
     return asked !== null ? { ...r, digits: asked } : r;
   }
 
-  let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits);
+  let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits, exactOut);
   if (!facts) {
     const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
     if (!d) return symbolic();
@@ -750,20 +781,32 @@ export function homeEval(
     return fromBuilt(b, "exact", true, exactOut, b.decimal, { once: true });
   }
   let exactText = exactOut;
-  if (shape.kind === "scalar" && !facts[0]!.exactRational) {
+  // G58: not for a text whose re and im already were unsafe (heavySplit): Giac's simplify of it loops as they do.
+  if (shape.kind === "scalar" && !facts[0]!.exactRational && !heavySplit(exactOut)) {
     const proved = provedRational(giac, ans, facts[0]!, valuePrecision(s.digits));
     if (proved) {
       facts = [proved];
       exactText = giac.eval(ans);
     }
   }
-  const b = build(facts, shape, s.digits, "exact", false);
+  // G59 (r16 F3): an input with a decimal is checked against Giac's numeric evaluation of it; a disagreement is ⚠ with no
+  // count, "exact and numeric differ". Only with audited functions in the input and the result, and none that Giac gets
+  // wrong on complex arguments reaching the result through a stored name (the numeric route would read Giac's own).
+  // G59f1: an input with no decimal is checked so when it holds a power that may have more than one value; the route
+  // writes it as exp(b*ln(a)), the principal value (powers.ts).
+  const powers = exactBody === body && shape.kind === "scalar" ? principalPowers(body) : null;
+  const route = exactBody !== body ? (at: number) => floatLiterals(body, at) : powers !== null ? () => powers : null;
+  const differ =
+    !once && route !== null && isAudited(body) && isAudited(exactOut) && (complexSafe(exactOut) === exactOut || complexSafe(body) !== body) &&
+    numericDisagrees(giac, route, facts, shape, s.digits);
+  if (differ) facts = facts.map((f) => (f.exactRational ? f : { ...f, reliableDigits: null, warn: "unchecked" as const }));
+  const b = build(facts, shape, s.digits, "exact", differ);
   store();
   const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
   const big = shape.kind === "scalar" && facts[0]!.big;
   // G44f1: an erf Giac computed itself (a non-real argument) leaves the value unaudited.
-  const why = facts.some((f) => f.warn) ? whyOf(facts, exactBody) : undefined;
-  if (!big) return fromBuilt(b, "exact", false, exactText, full, why);
+  const why = differ ? { differ: true } : facts.some((f) => f.warn) ? whyOf(facts, exactBody) : undefined;
+  if (!big) return fromBuilt(b, "exact", differ, exactText, full, why);
   if (s.guardMode === "reeval-float") return viaFloat("float-big", exactText);
   // Shown from the exact value (already computed); Ans continues as a float.
   giac.eval(`${ans}:=evalf(${ans},${W})`);

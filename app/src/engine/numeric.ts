@@ -137,13 +137,18 @@ export function floatsAtDigits(giac: Giac, text: string, n: number): string {
   });
 }
 
+/** G58: the longest text Home runs Giac's regroup on. regroup does not look at its interrupt, and on long texts it ran
+ *  past 20 s (DEG acos(10^400) before G46, r16 A.3); a longer text is shown as Giac printed it. */
+export const REGROUP_MAX = 2048;
+
 /** G38: Giac's text `text` of a non-number computed at P, read back into `slot` with its floats at the display digits
  *  `n` (floatsAtDigits; the host's Digits must be `n`), so Giac orders and prints it as at n (`x^2-2.0`, where the P
  *  floats print `-2.000…+x^2`; regroup sorts the terms). Null when it does not read back. */
 export function floatsShown(giac: Giac, text: string, n: number, slot: string): string | null {
   const t = giac.eval(`${slot}:=(${floatsAtDigits(giac, text, n)})`);
   if (isError(t)) return null;
-  // Reading back keeps the P order of the terms; regroup sorts them as Giac does for doubles.
+  // Reading back keeps the P order of the terms; regroup sorts them as Giac does for doubles (not on a long text, G58).
+  if (t.length > REGROUP_MAX) return t;
   const r = giac.eval(`regroup(${slot})`);
   if (isError(r) || r === "undef") return t;
   giac.eval(`${slot}:=regroup(${slot})`);
@@ -512,8 +517,37 @@ export function readParts(
   keep: number,
   asked = 0,
 ): { re: DecimalValue; im: DecimalValue; short?: number }[] | null {
-  const reT = print(`re(${expr})`);
-  const imT = print(`im(${expr})`);
+  return partsOf(print(`re(${expr})`), print(`im(${expr})`), shape, keep, asked);
+}
+
+/**
+ * G59 (r16 F2): the real and imaginary parts of every element of the value of `text` at `prec` digits, from its evalf
+ * split after (one Giac call), never from Giac's symbolic re() and im(), which can take the other branch of a nested
+ * root. Null when the value is not a number of `shape`. With `restore`, `text` is evaluated at Digits = prec and Digits is
+ * set back to `restore` in the same call (a float mixed with an exact part is evaluated at Digits, not at its own precision).
+ */
+export function valueParts(
+  giac: Giac,
+  text: string,
+  shape: Shape,
+  prec: number,
+  keep: number,
+  restore?: number,
+): { re: DecimalValue; im: DecimalValue; short?: number }[] | null {
+  const read = `(pasz->[re(pasz),im(pasz)])(evalf(${text},${prec}))`;
+  let out = restore === undefined ? giac.eval(read) : giac.eval(`Digits:=${prec};${read};Digits:=${restore}`);
+  if (restore !== undefined) {
+    // The three results print as `prec,[re,im],restore`; on an error Digits may not be set back.
+    const all = isError(out) ? [] : topLevelArgs(out);
+    if (all.length !== 3) giac.eval(`Digits:=${restore}`);
+    out = all.length === 3 ? all[1]! : "GIAC_ERROR";
+  }
+  const two = isError(out) ? null : splitList(out);
+  return two && two.length === 2 ? partsOf(two[0]!, two[1]!, shape, keep, prec) : null;
+}
+
+/** The parts printed as `reT` and `imT` (a value of `shape`) as decimals; `asked` as in readParts. */
+function partsOf(reT: string, imT: string, shape: Shape, keep: number, asked: number): { re: DecimalValue; im: DecimalValue; short?: number }[] | null {
   if (isError(reT) || isError(imT)) return null;
   const re = flatten(reT, shape);
   const im = flatten(imT, shape);
@@ -540,6 +574,8 @@ export interface ElementFacts {
   big: boolean;
   /** G50f1: the functions Giac gets wrong on complex arguments that made this value unaudited (why.unaudited). */
   complexFns?: readonly string[];
+  /** G59: the working digits the value of an exact non-rational element was read at (its last agreement level). */
+  at?: number;
 }
 
 /** Confirmed digits of a complex value: the weaker of its two parts (an exactly zero part needs no check). */
@@ -560,6 +596,16 @@ function zeroUnconfirmed(f: ElementFacts): ElementFacts {
   return !f.exactRational && !f.warn && isZero(f.value.re) && isZero(f.value.im) ? { ...f, warn: "unchecked" } : f;
 }
 
+/** Digits of an integer literal from which a root beside it makes Giac's symbolic re and im unsafe (G58: acos(120^7.5)
+ *  holds sqrt(30) times a 15-digit integer, and its im() did not return in 20 s; with a 4-digit one it takes 66 ms). */
+export const HEAVY_INT_DIGITS = 13;
+const HEAVY_INT = new RegExp(`(?<![\\w.])\\d{${HEAVY_INT_DIGITS},}(?![\\w.])`);
+
+/** G58: `text` (an exact result) holds a root and an integer of HEAVY_INT_DIGITS or more digits. */
+export function heavySplit(text: string): boolean {
+  return /\bsqrt\(|\^\(\d+\/\d+\)/.test(text) && HEAVY_INT.test(text);
+}
+
 /** Most working digits an agreement step uses, and the time the steps beyond P+40 may take per result (G23). */
 export const MAX_EVAL_DIGITS = 1000;
 const EXTRA_BUDGET_MS = 50;
@@ -569,10 +615,14 @@ const EXTRA_BUDGET_MS = 50;
  * BigInt, everything else by the symbolic agreement check (P against P+20, then P+20 against P+40). Null when some
  * element is not a number.
  */
-export function exactFacts(giac: Giac, name: string, shape: Shape, digits: number, maxExactDigits: number): ElementFacts[] | null {
+export function exactFacts(giac: Giac, name: string, shape: Shape, digits: number, maxExactDigits: number, exactText?: string): ElementFacts[] | null {
   const P = valuePrecision(digits);
-  const reT = giac.eval(`re(${name})`);
-  const imT = giac.eval(`im(${name})`);
+  // G58: Giac's symbolic re and im of a root next to a large integer can loop without looking at its interrupt
+  // (acos(120^(5/2+120)) holds sqrt(30) times a 250-digit integer under an ln: im() never returned). Such a text is no
+  // exact rational, so its parts are read from the value's evalf, as when the split errs (below).
+  const heavy = exactText !== undefined && heavySplit(exactText);
+  const reT = heavy ? "GIAC_ERROR: G58 heavy" : giac.eval(`re(${name})`);
+  const imT = heavy ? reT : giac.eval(`im(${name})`);
   // G50: Giac's symbolic re and im of a large exact value can run out of time (acosh(1/10+5*i) is an ln of nested
   // roots, and re() of it takes over 0.3 s): then no element is rational, and the parts come from the value's evalf.
   const split = !isError(reT) && !isError(imT);
@@ -600,24 +650,21 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
   if (erfText !== safe) {
     try {
       giac.eval(`${ICDF_FAILED}:=0`);
-      const out = exactFactsOf(giac, name, shape, digits, P, facts, false, true, { set: false }, erfText);
+      const out = exactFactsOf(giac, name, shape, digits, P, facts, null, true, erfText);
       const failed = giac.eval(ICDF_FAILED).trim() !== "0";
       return out && failed ? out.map((f) => (f.exactRational ? f : { ...f, warn: "unaudited" as const })) : out;
     } finally {
-      giac.eval(`purge(pasxe,${ICDF_FAILED})`);
+      giac.eval(`purge(${ICDF_FAILED})`);
     }
   }
   const src = safe !== text && !isError(giac.eval(`pasxv:=(${safe})`)) ? "pasxv" : name;
-  // G53: pasxe is purged only when it was set (a value read through its evalf), not on every Enter.
-  const slot = { set: false };
   try {
     // The value's evalf is trusted only with no function left that Giac gets wrong on it (in DEG nothing is replaced).
     const whole = src !== name || complexSafe(text) === text;
     if (!split && !whole) return null;
-    return exactFactsOf(giac, src, shape, digits, P, facts, split, whole, slot);
+    return exactFactsOf(giac, src, shape, digits, P, facts, split ? { re, im } : null, whole);
   } finally {
-    const used = [...(src !== name ? ["pasxv"] : []), ...(slot.set ? ["pasxe"] : [])];
-    if (used.length) giac.eval(`purge(${used.join(",")})`);
+    if (src !== name) giac.eval("purge(pasxv)");
   }
 }
 
@@ -628,38 +675,29 @@ function exactFactsOf(
   digits: number,
   P: number,
   facts: (ElementFacts | null)[],
-  split: boolean,
+  parts: { re: string[]; im: string[] } | null,
   wholeOk: boolean,
-  slot: { set: boolean },
   valueText?: string,
 ): ElementFacts[] | null {
   // Two guard digits beyond P: a value read at P digits is truncated, so a P-th digit confirmed by the next level would be
   // shown truncated, not rounded (G50 probe: asin(-1/1000+i/1000) at 50 digits).
-  let erred = false;
+  // G59 (r16 F2): the value is evaluated first and split after (valueParts). Giac's symbolic re() and im() of a nested
+  // root can take the other branch (re(sqrt(sqrt(asin(12)))) is -1.319…, the value's real part 1.319…), so they are read
+  // only when the value's evalf is not to be trusted (a function Giac gets wrong on complex arguments left in it, !wholeOk).
+  // A part the symbolic split gave as a rational (an exact 0) keeps it: the evalf's noise in it confirms nothing.
+  const exactPart = (k: number, part: "re" | "im"): DecimalValue | undefined =>
+    parts ? rationalValue(parts[part][k] ?? "", P + 2)?.v : undefined;
   const viaParts = (prec: number) =>
-    readParts(giac, name, shape, (part) => {
-      const t = giac.eval(`evalf(${part},${prec})`);
-      if (isError(t)) erred = true;
-      return t;
-    }, P + 2, prec);
-  // The parts of the value's evalf, when the symbolic parts cannot be had (above) or not evaluated in time (an error).
+    readParts(giac, name, shape, (part) => giac.eval(`evalf(${part},${prec})`), P + 2, prec);
   // With `valueText` (G44f1) the value is that text evaluated at Digits = prec, and `name` keeps Giac's result.
-  const evalfValue = (prec: number) => {
-    slot.set = true;
-    return valueText === undefined
-      ? giac.eval(`pasxe:=evalf(${name},${prec})`)
-      : withDigits(giac, prec, digits, () => giac.eval(`pasxe:=evalf(${valueText},${prec})`));
+  const viaValue = (prec: number) => {
+    const v =
+      valueText === undefined
+        ? valueParts(giac, name, shape, prec, P + 2)
+        : withDigits(giac, prec, digits, () => valueParts(giac, valueText, shape, prec, P + 2));
+    return v && v.map((x, k) => ({ ...x, re: exactPart(k, "re") ?? x.re, im: exactPart(k, "im") ?? x.im }));
   };
-  const viaValue = (prec: number) =>
-    isError(evalfValue(prec)) ? null : readParts(giac, "pasxe", shape, (part) => giac.eval(part), P + 2, prec);
-  let whole = !split;
-  const evalfAt = (prec: number) => {
-    if (whole) return viaValue(prec);
-    const v = viaParts(prec);
-    if (v || !erred || !wholeOk) return v;
-    whole = true;
-    return viaValue(prec);
-  };
+  const evalfAt = (prec: number) => (wholeOk ? viaValue(prec) : viaParts(prec));
   const A = evalfAt(P);
   const B = A && evalfAt(P + 20);
   if (!A || !B) return null;
@@ -682,14 +720,46 @@ function exactFactsOf(
     if (f) return f;
     let reliable = confirmedComplex(A[k]!, B[k]!, P, P);
     let value = B[k]!;
+    let at = P + 20;
     for (let i = 2; reliable < digits && more(i); i++) {
       const next = levels[i];
       if (!next) break;
       reliable = Math.max(reliable, confirmedComplex(levels[i - 1]![k]!, next[k]!, precs[i - 1]!, P));
       value = next[k]!;
+      at = precs[i]!;
     }
     reliable = Math.min(reliable, A[k]!.short ?? P, B[k]!.short ?? P);
-    return zeroUnconfirmed({ value: { re: value.re, im: value.im }, exactRational: false, reliableDigits: reliable, big: false });
+    return zeroUnconfirmed({ value: { re: value.re, im: value.im }, exactRational: false, reliableDigits: reliable, big: false, at });
+  });
+}
+
+/**
+ * G59 (r16 F3): whether Giac's numeric evaluation of the input disagrees with the exact path's value `facts` beyond the
+ * digits either confirms. `floatText(at)`: the input with its decimals as floats of `at` digits, evaluated by evalf at
+ * the digits the exact value was read at. Two runs of the exact path agree on whatever it computes, and it can rewrite
+ * an input into another branch ((sin(3.7)-e)^(0.001*asin(6.02e8)) became (…^(1000*…))^(1/1000)); the numeric route
+ * through Giac is a second one. One Giac call; false when that route gives no number of the shape (nothing compared).
+ */
+export function numericDisagrees(giac: Giac, floatText: (at: number) => string, facts: readonly ElementFacts[], shape: Shape, digits: number): boolean {
+  const checked = (f: ElementFacts): boolean => !f.exactRational && f.reliableDigits !== null && !f.warn && f.at !== undefined;
+  if (!facts.some(checked)) return false;
+  const at = Math.max(...facts.map((f) => f.at ?? 0));
+  const F = valueParts(giac, forValue(giac, floatText(at)), shape, at, at + 2, digits);
+  if (!F || F.length !== facts.length) return false;
+  return facts.some((f, k) => {
+    if (!checked(f)) return false;
+    const b = F[k]!;
+    // One digit of slack: the two routes round differently in their last place.
+    const want = Math.min(f.reliableDigits!, digits, b.short ?? at) - 1;
+    const top = Math.max(...[f.value.re, f.value.im].filter((x) => !isZero(x)).map((x) => x.exp));
+    return (["re", "im"] as const).some((part) => {
+      const x = f.value[part];
+      const y = b[part];
+      if (isZero(x) && isZero(y)) return false;
+      // A part one route gives as 0 and the other as noise far below the value is no disagreement.
+      if (isZero(x) || isZero(y)) return (isZero(x) ? y : x).exp > top - want;
+      return confirmedDigits(x, y, f.at!, at) < want;
+    });
   });
 }
 

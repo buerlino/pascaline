@@ -341,5 +341,18 @@ describe("confirmedDigits: the agreement check (docs/04 2.4 rule 2)", () => {
   it("two zeros confirm each other; a zero and a non-zero confirm nothing", () => {
     expect(confirmedDigits(ZERO_VALUE, ZERO_VALUE, 40)).toBe(40);
     expect(confirmedDigits(ZERO_VALUE, v("1e-50"), 40)).toBe(0);
+  });  // G58: exp(1.5e8) at 40 and 60 digits (Giac's output): the check built 10^65144133 as a BigInt and Home hung.
+  it("an exponent of 10^8 is worked on as mantissa and exponent, in under 10 ms", () => {
+    const a = v("0.1929691012567261201497704385128458480414e65144173");
+    const b = v("0.192969101256726120149770438512845848041423188382737235302491e65144173");
+    const t0 = performance.now();
+    expect(confirmedDigits(a, b, 40)).toBe(38);
+    expect(confirmedDigits(v("-0.25e-123456789"), v("-0.2500000001e-123456789"), 40)).toBe(9);
+    expect(performance.now() - t0).toBeLessThan(10);
+  });
+  it("values two or more decades apart confirm nothing, whatever their exponents", () => {
+    expect(confirmedDigits(v("1e100000000"), v("1e-100000000"), 40)).toBe(0);
+    expect(confirmedDigits(v("9.9"), v("100"), 40)).toBe(0);
+    expect(confirmedDigits(v("9.99999999999"), v("10.0000000000"), 12)).toBe(11); // [10 - 2E-11, 10 + 2E-11] rounds alike to 11 digits
   });
 });
