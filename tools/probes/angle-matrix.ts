@@ -555,7 +555,7 @@ async function display(): Promise<void> {
 
 async function bench(): Promise<void> {
   const cs = gcases("home.yaml");
-  const inputs = cs.map((c) => (c.latex !== undefined ? latexToGiac(c.latex, { realOddRoots: true }) : c.input!));
+  const inputs = cs.map((c) => (c.latex !== undefined ? latexToGiac(c.latex) : c.input!));
   const trig = inputs.filter((t) => rewriteAngles(t) !== t);
   const runs = Number(process.env.RUNS ?? 7);
   for (const mode of ["rad", "deg"] as const) {
