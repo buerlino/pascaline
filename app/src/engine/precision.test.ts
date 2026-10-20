@@ -179,6 +179,16 @@ describe("G38: which inputs get a second decision (pure)", () => {
     expect(decisionCuts("piecewise(s>0,1,2)")).toEqual([{ q: "(s)-(0)", kind: "zero" }]);
     expect(decisionCuts("a<b and c<d")).toEqual([]); // two comparisons: left to the text check
   });
+
+  it("G71: trunc is an integer cut (x·10^n with two arguments), Heaviside a zero cut", async () => {
+    const { decisionCuts, restsOnDecision, rationalOnly } = await import("./decisions.ts");
+    expect(decisionCuts("trunc(a)")).toEqual([{ q: "a", kind: "int", call: { name: "trunc", at: [0, 8] } }]);
+    expect(decisionCuts("trunc(a,2)")).toEqual([{ q: "(a)*10^(2)", kind: "int" }]);
+    expect(decisionCuts("Heaviside(a)")).toEqual([{ q: "a", kind: "zero" }]);
+    expect(restsOnDecision("trunc(sin(10^70)*10^12)", "387557674394")).toBe(true);
+    expect(restsOnDecision("Heaviside(sin(10^70))", "1")).toBe(true);
+    expect(rationalOnly("trunc(-7/2)")).toBe(true);
+  });
 });
 
 describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 20 (real Giac)", () => {

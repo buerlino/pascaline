@@ -17,8 +17,8 @@ function isError(out: string): boolean {
  * decide signs inside. An input that calls one of them is evaluated again at P + 20 (decideTwice).
  */
 export const DECISION_FUNCTIONS: ReadonlySet<string> = new Set([
-  "floor", "ceil", "round", "frac", "fPart", "iPart", "sign", "abs", "max", "min", "piecewise", "when", "ifte",
-  "int", "integrate", "sum", "limit", "solve",
+  "floor", "ceil", "round", "trunc", "frac", "fPart", "iPart", "sign", "Heaviside", "abs", "max", "min", "piecewise", "when",
+  "ifte", "int", "integrate", "sum", "limit", "solve",
 ]);
 
 /** A comparison operator (`<`, `>`, `<=`, `>=`, `==`, `!=`, `<>`) at `k` in `s`, with its length; 0 when there is none.
@@ -41,7 +41,7 @@ function hasComparison(input: string): boolean {
 
 /** Functions that map rationals to rationals and decide on rationals only (exactly, at any Digits). */
 const RATIONAL_FUNCTIONS: ReadonlySet<string> = new Set([
-  "sum", "product", "floor", "ceil", "round", "frac", "fPart", "iPart", "sign", "abs", "max", "min", "piecewise", "when",
+  "sum", "product", "floor", "ceil", "round", "trunc", "frac", "fPart", "iPart", "sign", "abs", "max", "min", "piecewise", "when",
   "ifte", "irem", "iquo", "gcd", "lcm", "comb", "factorial", "pasmod",
 ]);
 
@@ -138,7 +138,7 @@ export function restsOnDecision(input: string, result: string, stored: (name: st
 interface Cut {
   q: string;
   kind: "zero" | "int" | "half";
-  /** The call it decides (floor, ceil, iPart, frac, fPart, sign): its name and [start, end) in the input. */
+  /** The call it decides (floor, ceil, trunc, iPart, frac, fPart, sign): its name and [start, end) in the input. */
   call?: { name: string; at: [number, number] };
 }
 
@@ -171,9 +171,10 @@ function comparisonCut(seg: string): string | null {
   return lhs && rhs ? `(${lhs})-(${rhs})` : null;
 }
 
-/** The cuts of every discrete decision in `expr`: floor, ceil, iPart, frac, fPart (an integer), round (a
- *  half-integer), sign and every comparison (zero). abs, max and min are continuous: a wrong branch at a tie gives the
- *  same value, and away from one the second evaluation finds it. */
+/** The cuts of every discrete decision in `expr`: floor, ceil, trunc, iPart, frac, fPart (an integer), round (a
+ *  half-integer), sign, Heaviside and every comparison (zero); the two-argument trunc(x,n) cuts x·10^n at an integer.
+ *  abs, max and min are continuous: a wrong branch at a tie gives the same value, and away from one the second
+ *  evaluation finds it. */
 export function decisionCuts(expr: string): Cut[] {
   const cuts: Cut[] = [];
   const segments = [expr];
@@ -187,11 +188,15 @@ export function decisionCuts(expr: string): Cut[] {
     segments.push(...args);
     const name = m[1];
     const call = name ? { name, at: [m.index, close + 1] as [number, number] } : undefined;
-    if ((name === "floor" || name === "ceil" || name === "iPart" || name === "frac" || name === "fPart") && args.length === 1) {
+    if ((name === "floor" || name === "ceil" || name === "trunc" || name === "iPart" || name === "frac" || name === "fPart") && args.length === 1) {
       cuts.push({ q: args[0]!, kind: "int", call });
+    } else if (name === "trunc" && args.length === 2) {
+      cuts.push({ q: `(${args[0]!})*10^(${args[1]!})`, kind: "int" });
     } else if (name === "round" && (args.length === 1 || args.length === 2)) {
       cuts.push({ q: args.length === 1 ? args[0]! : `(${args[0]!})*10^(${args[1]!})`, kind: "half" });
     } else if (name === "sign" && args.length === 1) cuts.push({ q: args[0]!, kind: "zero", call });
+    // Heaviside(0) has no value to put in its place (conventions differ): a proven tie on it stays ⚠.
+    else if (name === "Heaviside" && args.length === 1) cuts.push({ q: args[0]!, kind: "zero" });
   }
   for (const seg of segments) {
     const q = comparisonCut(seg);
@@ -205,7 +210,7 @@ export function decisionCuts(expr: string): Cut[] {
  * does not agree with itself at P + 20 and P + 40 digits (it is 0, or below the noise of both). Giac then decides by
  * its rounding error, and both precisions can agree on a wrong text. Only a distance Giac proves to be 0 (`simplify` or
  * `normal` gives 0) is a tie: `tie` is `expr` with every such floor, ceil, iPart, frac, fPart and sign call replaced
- * by its value exactly on the cut (floor(1) = 1, sign(0) = 0). Any other hit is `undecided`: the distance may be tiny
+ * by its value exactly on the cut (floor(1) = trunc(1) = 1, sign(0) = 0). Any other hit is `undecided`: the distance may be tiny
  * and not 0 (`floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2-10^-100)` is 0, Giac gives 0 at 40 and 60 digits and 1 at
  * 80), so neither text can be trusted. So is a proven tie on a comparison or a round (no value to put in its place).
  * `floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)` (exactly 1) is undecided too: Giac does not prove the sum is 1/2.
