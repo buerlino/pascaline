@@ -8,6 +8,7 @@ export default defineConfig({
   base: "./",
   plugins: [yamlPlugin(), svelte(), pwaLite()],
   build: { target: "es2022", manifest: true },
+  worker: { plugins: () => [yamlPlugin()] }, // golden.worker.ts reads the golden YAML files (A20)
   // spec/keyboard.yaml lives one level above app/
   server: { host: true, fs: { allow: [".."] } },
   test: { include: ["src/**/*.test.ts", "scripts/**/*.test.ts"], environment: "node" },
