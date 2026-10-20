@@ -7,7 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **2026-10-20 R15c1: the Home menu (10 rows) and the Plot menu (9) scroll over the keypad (OPEN).** Settings as the last row makes them taller than the 337 px over the maths rows at 412 × 915 (36 px a row), so they scroll with a count in the title row (docs/05 3.1); fit.spec lists them as the cases that scroll. Accept, or shorten the Home menu (for example merge Share and Clear)? Default: accept.
 - **2026-10-19 A16: Enter p95 on the Tab One is over 150 ms in DEG (OPEN, after G53).** DEG p95 is 150.4 ms at 12 digits and 160.4 at 30 (RAD: 138.4 and 135.2); the slowest cases are arith-frac 210.9, solve-trig 186.9, heavy-int 160.4, g38-abs-sin1e50 130.3, stat-expreg 128.4 (DEG, 30 digits). DEG limit-inf, limit-sinc and series-exp, errors then, answer since G46. Repeat after G53 and decide whether DEG's tail needs its own package.
 
 ## Decided proposals
@@ -22,6 +21,7 @@ Newest first within each group.
 - **Small packages (2026-10-14, the owner's rule).** One concern each, about a day or less, with its own reading list; placed by importance, then dependencies.
 
 ### Feel, keys and screen (milestone 4a)
+- **R15c1 menus (decided 2026-10-20, the owner): the Home menu (10 rows) and the Plot menu (9) scroll** over the keypad with the count in the title row (docs/05 3.1), since Settings is every ☰ menu's last row; fit.spec lists them as the cases that scroll. Would change if: the owner finds the scroll slow on the APK (then Share and Clear merge).
 - **M4-2 (decided 2026-10-20, the owner):** the budgets t02 9 presses, t04 12, t10 25, t05 4; t09 is the sample deviation (n−1) with the population one beside it; ± goes on Shift + `,` (the G2's Eval, which we omit; Shift + `−` stays EN6's Base; R71); the unit result view as its [mockup](mockups/unit-result.html) (R62). Your hand timing stays the gate.
 - **S8 (decided 2026-10-20, the owner): before outside round 1,** every press is counted (R70) and Android's backup is off (A23; the phone-to-phone transfer no longer carries Pascaline's data).
 - **S6 (decided 2026-10-20, the owner): the backup** goes out by Android's "Save to" screen (a ~50-line `save` in our plugin, with A11) and comes in by `<input type="file">`; restore checks the whole file, replaces the ticked parts and keeps one Undo ([R11](research/r11-files.md); R38a, R38b). Would change if: the Save-to screen is missing on a supported WebView.

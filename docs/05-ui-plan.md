@@ -69,7 +69,7 @@ The header row (`App.svelte` `<header>`) becomes a slim status bar, one line, at
  Function › Plot                DEG · ENG 6             
 ```
 
-- **Left: where you are**, app and view. **Since P12 the place name is the switch:** one tap changes Home ↔ CAS, or goes back from an app; its target is 96 × 28 px (R15b). The Apps key opens the Apps sheet (1 Home, 2 CAS, then the apps).
+- **Left: where you are and the way out.** The place name (Home, CAS, or the app's name, drawn with ▾) opens the Apps sheet (1 Home, 2 CAS, then the apps); its target is 96 × 28 px (R15b). In an app, the tabs Symb, Plot and Num follow it, the current one marked. **At the right end ☰ opens the view's menu**, or the picked history row's menu; every ☰ menu ends with Settings (item 10 in Home and CAS, key 0).
 - **Right: the mode chips.** Angle (`RAD`/`DEG`, coloured when not the default), format and digits, the Shift/Alpha state (`⇧`, `α`, `α🔒`), a busy spinner. **A tap on a chip toggles or cycles it** (angle: 1 tap; format: opens the Mode sheet at that row). This fixes finding 6 and makes DEG/RAD one tap.
 - Height freed by the tabs goes to the history (about 30 px on a phone).
 
