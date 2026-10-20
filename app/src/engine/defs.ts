@@ -20,8 +20,9 @@ export interface NameFacts {
   inexact?: true;
 }
 
-/** var: a value (`A:=…`, `…▶A`, `L[2]:=…`); fn: `f(x):=…`; assume: `assume`/`additionally` on a name; other: a
- *  stateful input with no single name (`a,b:=1,2`, `(A:=5)+1`), replayed as typed. */
+/** var: a value (`A:=…`, `…▶A`, `L[2]:=…`, and since G65 every name any input set: `a,b:=1,2`, `(A:=5)+1`, a called
+ *  program's global); fn: `f(x):=…`; assume: `assume`/`additionally` on a name; other: a stateful input with no single
+ *  name, replayed as typed: only in a log stored before G65 (F58: `x:=y:=3` outlived purge(x), purge(y)). */
 export type DefKind = "var" | "fn" | "assume" | "other";
 
 export interface DefEntry {
