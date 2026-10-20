@@ -5,7 +5,7 @@
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { notes, fail } from "./state.mjs";
-import { basisOf } from "./basis.mjs";
+import { basisOf, evalBasis } from "./basis.mjs";
 /** A minimal XML reader for qalc's data files: elements, attributes, text, comments; no DTD, no CDATA. */
 function parseXml(text) {
   const root = { tag: "#root", attrs: {}, children: [], text: "" };
@@ -549,6 +549,8 @@ export async function unitItems({ q, factors, xml, ours, aliases }) {
     if (b.why) { stats.noBasis.push(`${item.id} (${b.why})`); continue; }
     item.basis = b.text;
     item.basisLeaves = Object.fromEntries(b.leaves.map((l) => [l, { value: basisVars.get(l).value, unc: basisVars.get(l).unc }]));
+    const got = evalBasis(item.basis, item.basisLeaves);
+    if (!(Math.abs(got - Number(item.value)) <= Number(item.unc))) fail(`${item.id}: basis ${item.basis} gives ${got}, value ${item.value} ± ${item.unc}`);
   }
   // --- constants of ours (find/units.yaml constants.define): exact value, unit text parsed by qalc for the dimension
   for (const [id, c] of Object.entries(ours.constants?.define ?? {})) {

@@ -4,6 +4,8 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+// @ts-expect-error plain .mjs generator module
+import { basisOf } from "../../../tools/find-index/basis.mjs";
 import type { IndexItem } from "./types.ts";
 
 const file = join(dirname(fileURLToPath(import.meta.url)), "_gen/find-index.json");
@@ -20,6 +22,13 @@ function evalBasis(basis: string, leaves: Record<string, { value: string }>): nu
   if (/[^0-9eE.+\-*/() ,A-Za-z_]/.test(js)) throw new Error(`unexpected character in ${js}`);
   return new Function(`return ${js}`)() as number;
 }
+
+it("finds the full generated index (otherwise the G80 tests were skipped)", () => {
+  if (hasUnits) return;
+  const msg = `app/src/find/_gen/find-index.json ${existsSync(file) ? "holds functions only (a --no-units build)" : "is missing"}; run npm run index`;
+  if (process.env["FIND_INDEX"] === "required") expect.fail(msg);
+  console.warn(`basis.test: ${msg}; the G80 tests were skipped`);
+});
 
 describe.skipIf(!hasUnits)("constants carry a basis (G80)", () => {
   const withUnc = items.filter((it) => it.kind === "const" && it.unc !== undefined);
@@ -41,7 +50,20 @@ describe.skipIf(!hasUnits)("constants carry a basis (G80)", () => {
   });
 
   it("leaves hold qalc's digits, not a rounded uncertainty", () => {
+    // source: libqalculate-5.13.1 data/variables.xml.in:569, fine_structure <value uncertainty="1.13E-12">7.29735256434E-3</value>
     const a = items.find((i) => i.id === "const:alpha")!;
     expect(a.basisLeaves?.fine_structure).toEqual({ value: "7.29735256434E-3", unc: "1.13E-12" });
+  });
+});
+
+describe("basisOf refuses a formula it cannot read in full (G80)", () => {
+  it("a character outside the grammar gives no basis, not a truncated one", () => {
+    const vars = new Map([
+      ["a", { value: "1", unit: undefined, unc: "0.1", formula: undefined }],
+      ["x", { value: "a*a·a", unit: undefined, unc: undefined, formula: "a*a·a" }],
+    ]);
+    const r = basisOf("x", vars) as { text?: string; why?: string };
+    expect(r.text).toBeUndefined();
+    expect(r.why).toMatch(/cannot read/);
   });
 });

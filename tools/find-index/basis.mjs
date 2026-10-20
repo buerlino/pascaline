@@ -11,8 +11,21 @@ const unitIsSi = (u) => !u || u.split("*").every((t) => SI_UNITS.has(t.replace(/
 function tokenize(s) {
   const t = s.replace(/×/g, "*").replace(/−/g, "-");
   const out = [];
-  for (const m of t.matchAll(/\s*(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+|[A-Za-z_][A-Za-z0-9_]*|[()+\-*/^,])/gy)) out.push(m[1]);
+  let read = 0;
+  for (const m of t.matchAll(/\s*(\d+\.?\d*(?:[eE][+-]?\d+)?|\.\d+|[A-Za-z_][A-Za-z0-9_]*|[()+\-*/^,])/gy)) { out.push(m[1]); read += m[0].length; }
+  if (t.slice(read).trim() !== "") throw Object.assign(new Error("unreadable"), { basisWhy: `cannot read ${t.slice(read).trim().slice(0, 12)}` });
   return out;
+}
+
+/** Giac text of a basis (+ - * / ^, sqrt, exp, pi, pasl_ names) in doubles; leaves: name -> { value }. */
+export function evalBasis(basis, leaves) {
+  const js = basis.replace(/pasl_[A-Za-z0-9_]+/g, (n) => {
+    const l = leaves[n.slice(5)];
+    if (!l) throw new Error(`leaf ${n} missing`);
+    return `(${Number(l.value)})`;
+  }).replace(/\bpi\b/g, "Math.PI").replace(/\bsqrt\b/g, "Math.sqrt").replace(/\bexp\b/g, "Math.exp").replace(/\^/g, "**");
+  if (/[^0-9eE.+\-*/() ,A-Za-z_]/.test(js)) throw new Error(`unexpected character in ${js}`);
+  return new Function(`return ${js}`)();
 }
 
 /** exact Giac text of a decimal: 6.62607015E-34 -> 662607015*10^(-42) */
