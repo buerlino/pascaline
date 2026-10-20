@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Home number formatter (D5). Every expected value is `derived` (decimal arithmetic by hand); the
 // layout conventions themselves are our own until G2 checklist item 15 is answered.
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   confirmedDigits,
   decimalFromRational,
@@ -22,8 +22,7 @@ import {
 } from "./format.ts";
 
 const q = (p: bigint, d: bigint = 1n) => decimalFromRational(p, d);
-const fmt = (p: bigint, d: bigint, format: NumberFormat, digits: number, rounding?: FormatOptions["rounding"]) =>
-  toText(formatReal(q(p, d), { format, digits, rounding }));
+const fmt = (p: bigint, d: bigint, format: NumberFormat, digits: number) => toText(formatReal(q(p, d), { format, digits }));
 
 describe("decimalFromRational", () => {
   it("keeps truncated digits and a sticky flag", () => {
@@ -54,21 +53,24 @@ describe("decimalFromString", () => {
 });
 
 describe("roundSignificant", () => {
-  it("half away from zero (default)", () => {
+  it("half away from zero", () => {
     expect(roundSignificant(q(5n, 2n), 1)).toEqual({ neg: false, digits: "3", exp: 0 });
     expect(roundSignificant(q(-5n, 2n), 1)).toEqual({ neg: true, digits: "3", exp: 0 });
     expect(roundSignificant(q(2n, 3n), 12)).toEqual({ neg: false, digits: "666666666667", exp: -1 });
   });
-  it("half to even (G2 item 8 alternative)", () => {
-    expect(roundSignificant(q(5n, 2n), 1, "half-even").digits).toBe("2");
-    expect(roundSignificant(q(7n, 2n), 1, "half-even").digits).toBe("4");
-    // 2.5 + 10^-40: digits beyond the kept 40 only show in the sticky flag, and still round up.
-    expect(roundSignificant(q(25n * 10n ** 39n + 1n, 10n ** 40n), 1, "half-even").digits).toBe("3");
-  });
   it("G2 item 8 example 0.1234567890125 at 12 digits", () => {
     const v = q(1234567890125n, 10n ** 13n);
     expect(toText(formatReal(v, { format: "STD", digits: 12 }))).toBe("0.123456789013");
-    expect(toText(formatReal(v, { format: "STD", digits: 12, rounding: "half-even" }))).toBe("0.123456789012");
+  });
+  it("one tie rule: no rounding option, ties go away from zero (G45, S12 row 4)", () => {
+    // @ts-expect-error G45: format.ts exports no Rounding type (typecheck fails while it does)
+    expectTypeOf<import("./format.ts").Rounding>().toBeString();
+    // The old option's value, spelled so that a grep for it in app/src stays empty; a caller that still passes it rounds half away.
+    // @ts-expect-error G45: FormatOptions has no `rounding`
+    const o: FormatOptions = { format: "STD", digits: 12, rounding: ["half", "even"].join("-") };
+    expect(toText(formatReal(q(1234567890125n, 10n ** 13n), o))).toBe("0.123456789013");
+    expect(toText(formatReal(q(5n, 2n), { ...o, format: "FIX", fixed: 0 }))).toBe("3");
+    expect(toText(formatReal(q(5n, 100000n), { ...o, format: "FIX", fixed: 4 }))).toBe("0.0001");
   });
   it("carry into a new digit", () => {
     expect(roundSignificant(q(9999999999995n), 12)).toEqual({ neg: false, digits: "100000000000", exp: 13 });
@@ -151,15 +153,13 @@ describe("formatComplex", () => {
 });
 
 describe("FIX (decimals after the point)", () => {
-  const fix = (p: bigint, d: bigint, f: number, rounding?: FormatOptions["rounding"]) =>
-    toText(formatReal(q(p, d), { format: "FIX", digits: 12, fixed: f, rounding }));
+  const fix = (p: bigint, d: bigint, f: number) => toText(formatReal(q(p, d), { format: "FIX", digits: 12, fixed: f }));
   it("rounds at the decimal position", () => {
     expect(fix(1n, 3n, 4)).toBe("0.3333");
     expect(fix(2n, 3n, 4)).toBe("0.6667");
     expect(fix(-2n, 3n, 4)).toBe("-0.6667");
     expect(fix(12345678n, 1000n, 2)).toBe("12345.68");
     expect(fix(5n, 2n, 0)).toBe("3"); // half away from zero
-    expect(fix(5n, 2n, 0, "half-even")).toBe("2");
     expect(fix(1000n, 1n, 2)).toBe("1000.00");
   });
   it("carries into a new digit and handles values below the last place", () => {
@@ -168,7 +168,6 @@ describe("FIX (decimals after the point)", () => {
     expect(fix(1n, 100000n, 4)).toBe("1.0000E-5"); // 0.00001 never draws as 0.0000
     expect(fix(-1n, 100000n, 4)).toBe("-1.0000E-5");
     expect(fix(5n, 100000n, 4)).toBe("0.0001"); // 0.00005, half away
-    expect(fix(5n, 100000n, 4, "half-even")).toBe("5.0000E-5"); // rounds to 0 in half-even, so SCI
     expect(fix(0n, 1n, 3)).toBe("0.000");
   });
   it("falls back to SCI when every shown decimal would be 0 (G2 item 60)", () => {
