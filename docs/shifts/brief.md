@@ -32,7 +32,6 @@
 | [A16](packages/A16.md) | Enter p95 on the Tab One after G53 | annabell, Sonnet | day (device) | G53 | ~0.25 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | now | ~0.25 d |
 | [R68](packages/R68.md) | ᴇ's leading 1 after an operator | ron, **Opus** | night | S12 | ~0.25 d |
-| [R56b](packages/R56b.md) | Solve knows the user's functions | ron, Sonnet | night | now | ~0.25 d |
 | [R15c1](packages/R15c1.md) | The status line takes Apps, Menu and the views | ron, Sonnet | day | R50b | ~0.75 d |
 | [R15c2](packages/R15c2.md) | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | day | R15c1 | ~1.5 d |
 | [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | R15c2 | ~0.5 d |
