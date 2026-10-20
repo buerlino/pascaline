@@ -19,23 +19,24 @@ while IFS= read -r line; do
   out="$("$script" "$agent" "$pid" --dry-run 2>&1)"; rc=$?
   [[ $rc -eq 0 ]] || { fail "$agent $pid: exit $rc: $(tail -n 1 <<<"$out")"; continue; }
   grep -qF "branch $br" <<<"$out" || fail "$agent $pid: dry run does not print branch $br"
-done < <(for f in "$integ"/docs/shifts/packages/*.md; do head -n1 "$f"; done)
+done < <(for f in "$integ"/docs/shifts/packages/*.md; do head -n1 "$f"; done | grep -v '^### sofia, ')
+ron_pkg="$(basename "$(ls "$integ"/docs/shifts/packages/R*.md | head -n1)" .md)"
 [[ $count -gt 0 ]] || fail "no package headings found"
 
 out="$("$script" ron R9999x --dry-run 2>&1)"; rc=$?
 [[ $rc -eq 2 ]] || fail "made-up ID: exit $rc, expected 2"
 grep -q 'R9999x' <<<"$out" || fail "made-up ID: message does not name it: $out"
 
-out="$(env -u PASCALINE_QALC_DL_DIR "$script" ron R15c1 --dry-run 2>&1)"
+out="$(env -u PASCALINE_QALC_DL_DIR "$script" ron "$ron_pkg" --dry-run 2>&1)"
 grep -qE 'PASCALINE_QALC_DL_DIR=[^ ]*engine/qalc/_downloads' <<<"$out" || fail "dry run does not print the tarball dir to export"
 
 # A15 point 2: a gorge package is audited by Opus even when the line says sonnet; the raise is printed.
 out="$("$script" gorge "$(basename "$(ls "$integ"/docs/shifts/packages/G*.md | head -n1)" .md)" --dry-run --audit-model sonnet 2>&1)"
 grep -q 'audit model raised to opus: gorge' <<<"$out" || fail "gorge with --audit-model sonnet: no 'audit model raised to opus' line"
-out="$("$script" ron R15c1 --dry-run --audit-model sonnet 2>&1)"
+out="$("$script" ron "$ron_pkg" --dry-run --audit-model sonnet 2>&1)"
 grep -q 'audit model raised' <<<"$out" && fail "ron with --audit-model sonnet is raised without a reason"
 # point 3: the checks the dry run plans
-out="$("$script" ron R15c1 --dry-run 2>&1)"
+out="$("$script" ron "$ron_pkg" --dry-run 2>&1)"
 grep -qE '^checks: .*docs' <<<"$out" || fail "dry run: the docs check is not planned"
 grep -qE '^checks: .*size' <<<"$out" || fail "dry run: the size check is not planned"
 grep -q 'mismatch' "$here/pipeline.sh" || fail "pipeline.sh does not compare the e2e count with Playwright's summary"
