@@ -36,8 +36,8 @@ import { resolveAngle } from "./angleMigration.ts";
 import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
-import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, floatFacts, functionsIn, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
-import { callsStateful, decideTwice, restsOnDecision } from "./decisions.ts";
+import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, functionsIn, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { callsStateful, decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -721,7 +721,17 @@ export class EngineHost {
       if (e instanceof GiacSyntaxError) return fail(e.message, "syntax");
       throw e;
     }
-    if (isError(text)) return fail(text, isTimeout(text) ? "timeout" : "engine");
+    if (isError(text)) {
+      // G71 (F59): no MPFR value at P (a decision over BesselJ): an expression that stores nothing is decided at the double,
+      // with ⚠, as in Home. An assignment keeps the error (its definitions-log entry would hold a double).
+      const dbl = isTimeout(text) || asg0 || isStateful(input) || callsStateful(this.giac, input) ? null : decidedAtDouble(this.giac, "pcasans", body, digitsSet);
+      if (dbl === null) return fail(text, isTimeout(text) ? "timeout" : "engine");
+      const why = { unaudited: unauditedIn(body) };
+      const engineMs = performance.now() - t0;
+      if ("text" in dbl) return { result: { ok: true, text: dbl.text, latex: dbl.text, timedOut: false, engineMs, approximate: true, warn: "unaudited", why }, defs: [] };
+      const numeric = { ...resultFromFacts(dbl.facts, dbl.shape, digitsSet, "numeric", true, engineMs), why };
+      return { result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs, numeric }, defs: [] };
+    }
     const stateful = isStateful(input);
     // A call to a stored function that stores (inc(x):={c:=c+1;c}) must not run again either, assigned or not.
     const storing = callsStateful(this.giac, input);

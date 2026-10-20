@@ -2,7 +2,22 @@
 // G38 (docs/04 2.4 rule 2): the decisions Giac makes inside an exact evaluation at `Digits` (a sign, a place between two
 // integers, a branch), and their second run at P + 20 and P + 40. Split out of numeric.ts (G71). Synchronous, UI-free;
 // only erasable TypeScript syntax.
-import { closing, functionsIn, hasFloat, namePrint, namesIn, topLevelArgs, valuePrecision, withDigits, type Giac } from "./numeric.ts";
+import {
+  closing,
+  DOUBLE_DIGITS,
+  functionsIn,
+  hasFloat,
+  namePrint,
+  namesIn,
+  readParts,
+  shapeOf,
+  topLevelArgs,
+  valuePrecision,
+  withDigits,
+  type ElementFacts,
+  type Giac,
+  type Shape,
+} from "./numeric.ts";
 
 const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
 const INTEGER = /^\s*\d+\s*$/;
@@ -299,4 +314,32 @@ export function decideTwice(giac: Giac, expr: string, text: string, digits: numb
   if ("undecided" in cut) return cut;
   const tie = run(P + 40, "pasdec2", cut.tie);
   return tie === null || hasFloat(tie) ? out : { text: tie, from: "pasdec2" };
+}
+
+/**
+ * G71 (F59): `expr` evaluated with a double (Digits ≤ 14) into `name`, for an input whose evaluations at P and at W are
+ * both errors. A function with no MPFR path (BesselJ, Airy_Ai) is an error at Digits > 14 ("Bad Argument Value") as
+ * soon as a decision or a comparison needs its value (`round(BesselJ(1,2))`, `BesselJ(1,2)>0.5`); alone it stays as
+ * text and doubleFallback reads it. Every decision is then made at the double and nothing confirms it: a number comes
+ * back as facts with warn "unaudited" (its digits are the double's, at most DOUBLE_DIGITS), any other result (true,
+ * false) as its text. Null when the double fails too, or when it gives no number and no plain text (a symbolic
+ * result keeps the error).
+ */
+export function decidedAtDouble(
+  giac: Giac,
+  name: string,
+  expr: string,
+  digits: number,
+): { facts: ElementFacts[]; shape: Shape } | { text: string } | null {
+  return withDigits(giac, DOUBLE_DIGITS, digits, () => {
+    const t = giac.eval(`${name}:=(${expr})`);
+    if (isError(t)) return null;
+    const shape = shapeOf(t);
+    const parts = shape ? readParts(giac, name, shape, (part) => giac.eval(part), DOUBLE_DIGITS) : null;
+    if (shape && parts) {
+      const facts = parts.map((v): ElementFacts => ({ value: { re: v.re, im: v.im }, exactRational: false, reliableDigits: Math.min(digits, DOUBLE_DIGITS), warn: "unaudited", big: false }));
+      return { facts, shape };
+    }
+    return t.trim() === "true" || t.trim() === "false" ? { text: t.trim() } : null;
+  });
 }
