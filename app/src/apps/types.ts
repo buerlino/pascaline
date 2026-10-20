@@ -3,7 +3,7 @@
 // An app is a lazily loaded module (registry.ts); it gets an AppHost and draws its views with one root
 // component. The shell owns the keyboard, the shared entry line and the view switching.
 import type { Component } from "svelte";
-import type { Calc, CalcSettings } from "../calc/port.ts";
+import type { Calc, CalcSettings, UserName } from "../calc/port.ts";
 import type { Kv } from "../state/storage.ts";
 
 export type AppId = "function" | "solve";
@@ -17,6 +17,8 @@ export interface AppHost {
   /** The calculator settings (digits, angle, format); reactive. */
   readonly settings: CalcSettings;
   readonly kv: Kv;
+  /** The user's variables and functions (the stored ones included); reactive. Apps pick the functions out for the parser (R56b). */
+  readonly userNames: readonly UserName[];
   /** Put LaTeX on the shared entry line (e.g. the selected slot, to edit it). Marks the line as unedited. */
   setEntry(latex: string): void;
   /** Put text on the clipboard and say so (Copy, docs/04 section 2.6). `notice` replaces the default "Copied". */

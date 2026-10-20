@@ -11,6 +11,7 @@ import { CalcCancelled, engineFormat, IDENT, type Calc, type KnownValue, type So
 import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { EMARK } from "../../entry/macros.ts";
 import { mathJsonToGiac } from "../../input/emit.ts";
+import { DEFAULT_USER_FUNCTIONS, userFunctionsOf } from "../../input/latex-to-giac.ts";
 import { parseFailText } from "../../input/errors.ts";
 import { parseLatex } from "../../input/parse.ts";
 import { tc } from "../../clipboard/strings.ts";
@@ -42,10 +43,10 @@ interface Stored {
 }
 
 /** An equation typed on the entry line as Giac text, or why it does not parse. */
-export function compileEquation(latex: string): { giac: string; error: string } {
+export function compileEquation(latex: string, userFunctions: ReadonlySet<string> = DEFAULT_USER_FUNCTIONS): { giac: string; error: string } {
   if (latex.trim() === "") return { giac: "", error: "" };
   try {
-    return { giac: mathJsonToGiac(parseLatex(latex), { realOddRoots: true }), error: "" };
+    return { giac: mathJsonToGiac(parseLatex(latex, { userFunctions }), { realOddRoots: true, userFunctions }), error: "" };
   } catch (e) {
     return { giac: "", error: parseFailText(e) };
   }
@@ -197,7 +198,7 @@ export class SolveApp implements AppInstance {
 
   // ---- Symb
   define(i: number, latex: string): void {
-    const c = compileEquation(latex);
+    const c = compileEquation(latex, this.userSet());
     this.slots.set(i, latex, c.error);
     const next = [...this.giac];
     next[i] = c.giac;
@@ -235,11 +236,23 @@ export class SolveApp implements AppInstance {
     }
   }
 
+  /** The single letters that are calls now: f, g, h and the user's functions (R56b). */
+  private userSet(): ReadonlySet<string> {
+    return userFunctionsOf(this.host.userNames);
+  }
+  /** Compile the equations again from their LaTeX, so a function defined (or read after a relaunch) since counts. */
+  private recompile(): void {
+    const user = this.userSet();
+    this.giac = this.slots.latex.map((l) => compileEquation(l, user).giac);
+  }
+
   async refreshUnknowns(): Promise<void> {
+    this.recompile();
     const eqs = this.active;
     const names = eqs.length ? await this.job(() => this.calc.unknowns(eqs)) : [];
     if (names === undefined) return;
-    this.unknowns = names.filter((n) => IDENT.test(n));
+    const fns = new Set(this.host.userNames.filter((u) => u.kind === "fn").map((u) => u.name));
+    this.unknowns = names.filter((n) => IDENT.test(n) && !fns.has(n));
     if (!this.unknowns.includes(this.selected)) this.selected = this.unknowns[0] ?? "";
     this.loadEntry();
   }
@@ -252,6 +265,7 @@ export class SolveApp implements AppInstance {
   }
 
   async solve(): Promise<void> {
+    this.recompile();
     const equations = this.active;
     const names = this.targets();
     if (!this.selected || equations.length === 0) return;
@@ -272,6 +286,7 @@ export class SolveApp implements AppInstance {
   }
 
   async polyRoots(): Promise<void> {
+    this.recompile();
     const [equation] = this.active;
     const name = this.selected;
     if (!equation || !name) return;
@@ -332,7 +347,7 @@ export class SolveApp implements AppInstance {
     const s = await this.host.kv.get<Partial<Stored>>("app.solve");
     if (!s) return;
     this.slots.fromJSON(s.slots);
-    this.giac = this.slots.latex.map((l) => compileEquation(l).giac);
+    this.recompile();
     if (s.values && typeof s.values === "object")
       this.values = Object.fromEntries(Object.entries(s.values).filter(([k, v]) => IDENT.test(k) && typeof v === "string" && parseDec(v)));
     if (typeof s.selected === "string" && IDENT.test(s.selected)) this.selected = s.selected;
