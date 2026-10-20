@@ -7,12 +7,15 @@
 // - A result with no free name that is still Giac's text (asin(acos(π²)), sinh(6020³)), or a float path that gave
 //   undef, is a number asked for and not found: refused "overflow" when its value is an infinity, else "no value found"
 //   (lostNumber).
+// - G84 (backlog F60): a value that reads as 0 while Giac's exact answer is not 0 (exp(-10^30), past MPFR's exponent
+//   range) is refused "underflow", as an overflow is (underflow).
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
-import { functionsIn, splitList, type Giac } from "./numeric.ts";
+import { functionsIn, splitList, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { isZero } from "./format.ts";
 
 /** The reasons of this module; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
-export type NoValue = Extract<Refusal, "divisionByZero" | "overflow" | "noValue">;
+export type NoValue = Extract<Refusal, "divisionByZero" | "overflow" | "underflow" | "noValue">;
 
 const isError = (t: string): boolean => t.startsWith("GIAC_ERROR");
 const infinite = (t: string): boolean => /infinity/.test(t);
@@ -125,3 +128,25 @@ export function lostFloat(giac: Giac, input: string, error: string): NoValue | n
 }
 
 const CONSTANTS = new Set(["pi", "e", "i", "infinity", "euler_gamma"]);
+
+/** G84: the Giac texts of the elements of the result in `slot` that read as 0 and are no exact rational. */
+export function zeroElements(slot: string, facts: readonly ElementFacts[], shape: Shape): string[] {
+  const at = (k: number): string =>
+    shape.kind === "scalar" ? slot : shape.kind === "list" ? `${slot}[${k}]` : `${slot}[${Math.floor(k / shape.cols)}][${k % shape.cols}]`;
+  return facts.flatMap((f, k) => (!f.exactRational && isZero(f.value.re) && isZero(f.value.im) ? [at(k)] : []));
+}
+
+/**
+ * F60: whether one of `elements` (Giac texts of values that read as 0) is an underflow: a number too small for MPFR's
+ * exponent range (exp(-10^30)), not a 0. Decided on Giac's exact answer, not on a float (bug-patterns family 3): its
+ * simplify is not 0. With `P`, the element's evalf at P must also be MPFR's 0, not noise below the digits read (an exact
+ * 0 that Giac cannot prove, cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2, evaluates to about 1E-41 at 40 digits and stays ⚠ 0);
+ * without it (null) the 0 is a double's, where MPFR found no value. One engine call per element, only for those that read
+ * as 0; a call Giac interrupts (an error) decides nothing.
+ */
+export function underflow(giac: Giac, elements: readonly string[], P: number | null): boolean {
+  return elements.some((e) => {
+    const nonzero = `when(simplify(${e})==0,0,1)`;
+    return giac.eval(P === null ? nonzero : `when(evalf(${e},${P})==0,${nonzero},0)`).trim() === "1";
+  });
+}
