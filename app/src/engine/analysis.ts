@@ -182,7 +182,7 @@ function run(giac: Giac, req: AnalysisRequest, v: string, h: HomeSettings, t0: n
         ev(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
         const exv = !exact.startsWith("GIAC_ERROR") && !/integrate|int\(|undef|infinity/.test(exact) ? num(ev(`evalf(pasex,${W})`)) : undefined;
         if (refusedBy(exact) !== null) {
-          return failed("no-root", enEngine[`error.${refusedBy(exact)}`], "int", t0);
+          return failed("no-root", enEngine["error.integralDiverges"], "int", t0);
         } else if (exv !== undefined) {
           ev(`pasar:=evalf(pasex,${W})`);
           method = "int";
