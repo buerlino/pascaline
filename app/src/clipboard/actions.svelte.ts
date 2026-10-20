@@ -227,14 +227,16 @@ export class ClipActions {
     return this.menu(row).slice(0, 5);
   }
 
-  /** Menu with a picked row (R13): the whole list, acting on that row. */
-  openMenu(item: HistoryItem): void {
-    this.shell.showMenu(tc("clip.title"), this.menu(item), { remember: false });
+  /** Menu with a picked row (R13): the whole list, acting on that row; ☰ and Menu end it with Settings (R15c1), a long
+   *  press (`settings` false) shows the nine only. */
+  openMenu(item: HistoryItem, settings = true): void {
+    const items = this.menu(item);
+    this.shell.showMenu(tc("clip.title"), settings ? this.shell.withSettings(items) : items, { remember: false });
   }
 
   /** A long press on a history row: the same list, on that row, over the history. */
   openRowMenu(item: HistoryItem): void {
     if (item.status !== "done") return;
-    this.openMenu(item);
+    this.openMenu(item, false);
   }
 }
