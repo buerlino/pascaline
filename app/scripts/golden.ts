@@ -3,10 +3,12 @@
 // build that ships (CLAUDE.md). Exit 0 only if every stage passes.
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
-//   ONLY=home,parser npm run golden                 # stages: interrupt, home, precision, solve, function, bench, calls, invariants, units, parser
+//   ONLY=home,parser npm run golden                 # stages: interrupt, flags, home, precision, solve, function, bench, calls, invariants, units, parser
 // Typed Giac text in a case (`input`, `before`, step inputs, `eq`, `f`, `g`) gets the parser's angle rule first (G46).
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
+//   flags      tests/engine/flags-canary.ts (G67): every field of Giac's context in the pinned source is read and restored
+//              by the host's settings check or listed with the reason (app/src/engine/flags.ts CONTEXT_FIELDS)
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
 //              median ≤ 500 ms; a mark-only case (no `expect`) checks the mark and that an answer came back. A case with
 //              `steps` (G34) is a sequence on its own engine: each step's input (or latex, with \ans as the session
@@ -119,6 +121,12 @@ function stageInterrupt(): void {
   });
   const out = `${r.stdout}${r.stderr}`.trim();
   report("interrupt", r.status === 0, out.split("\n").slice(-3).join(" | "));
+}
+
+function stageFlags(): void {
+  const r = spawnSync(process.execPath, [`${root}tests/engine/flags-canary.ts`], { encoding: "utf8", timeout: 120_000 });
+  const out = `${r.stdout}${r.stderr}`.trim();
+  report("flags", r.status === 0, out.split("\n").slice(-3).join(" | "));
 }
 
 async function stageHome(): Promise<void> {
@@ -660,6 +668,7 @@ async function stageParser(): Promise<void> {
 
 console.log(`golden: engine ${mjs}`);
 if (want("interrupt")) stageInterrupt();
+if (want("flags")) stageFlags();
 if (want("home")) await stageHome();
 if (want("precision")) await stagePrecision();
 if (want("solve")) await stageCases("solve", "solve.yaml", solveCase);
