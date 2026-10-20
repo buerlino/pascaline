@@ -23,7 +23,6 @@ import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
-  AUDITED_FUNCTIONS,
   functionsIn,
   DOUBLE_DIGITS,
   doubleFallback,
@@ -32,13 +31,11 @@ import {
   floatPathFacts,
   hasFloat,
   isAudited,
+  doubleFormsIn,
+  unauditedIn,
   numericDisagrees,
   rationalValue,
-  decideTwice,
-  decidingStored,
-  restsOnDecision,
   notBuiltin,
-  callsStateful,
   readsReplaced,
   floatsShown,
   heavySplit,
@@ -52,6 +49,7 @@ import {
   type Giac,
   type Shape,
 } from "./numeric.ts";
+import { callsStateful, decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 
 export type { Giac };
 
@@ -240,7 +238,7 @@ export function testSides(input: string): string {
 export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): PrecisionWhy | undefined {
   if (warn === "unchecked") return { once: true };
   if (warn !== "unaudited") return undefined;
-  const unaudited = functionsIn(sides).filter((n) => !AUDITED_FUNCTIONS.has(n));
+  const unaudited = unauditedIn(sides);
   return unaudited.length ? { unaudited } : undefined;
 }
 
@@ -666,7 +664,8 @@ export function homeEval(
     const f = floatPathFacts(giac, ans, asg ? asg.rhs : input, once, W, s.digits);
     // G78 (F50): undef or an infinity where a number was asked for (no free name) is refused with its reason.
     const lost = "error" in f && !once ? lostFloat(giac, exactBody, f.error) : null;
-    if ("error" in f) return lost ? refuse(lost, path) : failed(f.error, path, exact);
+    if ("error" in f && lost) return refuse(lost, path);
+    if ("error" in f) return once ? failed(f.error, path, exact) : atDouble(path, f.error, exact);
     // G39: the float of a divergent integral or series (the principal value 0 of ∫₋₁¹ 1/x) is refused as on the exact path.
     const refused = once ? null : refusalOf(giac, exactBody, giac.eval(ans));
     if (refused === "unchecked") unverified = true;
@@ -674,6 +673,17 @@ export function homeEval(
     store();
     const b = build(f.facts, f.shape, s.digits, path, true);
     return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
+  };
+
+  // G71 (F59): no MPFR value at P nor at W (a decision over BesselJ): the input decided at the double, with ⚠.
+  const atDouble = (path: HomePath, error: string, exact?: string): HomeResult => {
+    const d = decidedAtDouble(giac, ans, asg ? asg.rhs : input, s.digits);
+    if (d === null) return failed(error, path, exact);
+    store();
+    const why = { unaudited: unauditedIn(asg ? asg.rhs : input) };
+    if ("text" in d) return done({ ok: true, display: d.text, exact: d.text, path, approximate: true, warn: "unaudited", why, tieRisk: false, exactRational: false, reliableDigits: null });
+    const b = build(d.facts, d.shape, s.digits, path, true);
+    return fromBuilt(b, path, true, exact, b.decimal, why);
   };
 
   // G58: past the deadline after the exact steps: refused, not checked for as long again.
@@ -805,6 +815,8 @@ export function homeEval(
     !once && route !== null && isAudited(body) && isAudited(exactOut) && (complexSafe(exactOut) === exactOut || complexSafe(body) !== body) &&
     numericDisagrees(giac, route, facts, shape, s.digits);
   if (differ) facts = facts.map((f) => (f.exactRational ? f : { ...f, reliableDigits: null, warn: "unchecked" as const }));
+  // G71 (N7): Giac's two-argument round and trunc work in a double: an integer or decimal they print is not exact.
+  if (!differ && doubleFormsIn(exactBody).length) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const }));
   const b = build(facts, shape, s.digits, "exact", differ);
   store();
   const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
