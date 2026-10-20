@@ -160,5 +160,5 @@ test("CAS has the same buttons and its own rows", async ({ page }) => {
   await tap(page, ["u2"]);
   await done(page, 1); // Home still has its row
   await tap(page, ["menu"]);
-  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveCount(9);
+  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveCount(10);
 });

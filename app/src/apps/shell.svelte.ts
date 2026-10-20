@@ -176,7 +176,10 @@ export class AppShell {
   }
   /** The open view's own Menu items (Home/CAS: the copy actions), then Settings as the last row (R15c1). */
   get menuItems(): readonly MenuItem[] {
-    const own = (this.app === null ? this.homeMenu?.() : this.instance?.menu?.(this.view)) ?? [];
+    return this.withSettings((this.app === null ? this.homeMenu?.() : this.instance?.menu?.(this.view)) ?? []);
+  }
+  /** A Menu list with Settings as its last row. */
+  withSettings(own: readonly MenuItem[]): MenuItem[] {
     return [...own, { id: "settings", label: t("mode.settings"), run: () => this.openSettings?.() }];
   }
   /** What Copy (Shift + View) takes from the open app view; undefined when it has nothing to copy. */
