@@ -42,9 +42,12 @@
 
   let { session, entry, shell, userKeys }: { session: Session; entry: EntryController; shell: AppShell; userKeys: UserKeys } = $props();
 
-  /** The status line's place name as a key (R15b): its tap takes the same path as a key press (an open sheet or the
+  /** A status-line control as a key (R15b, R15c1): its tap takes the same path as a key press (an open sheet or the
    *  Settings page gives way, it runs at once while an app loads, and waits while a sheet's code loads). */
-  const PLACE_KEY: Key = { id: "place", row: 0, col: 0, span: 1, cls: "nav", label: { primary: "" }, actions: { primary: { kind: "special", name: "switch" } } };
+  const statusKey = (id: string, name: "apps" | "symb" | "plot" | "num" | "menu"): Key => ({ id, row: 0, col: 0, span: 1, cls: "nav", label: { primary: "" }, actions: { primary: { kind: "special", name } } });
+  const PLACE_KEY = statusKey("place", "apps");
+  const MENU_KEY = statusKey("menu-status", "menu");
+  const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, key: statusKey(`tab-${v}`, v) }));
 
   /** The open Settings page and its model (null: closed). */
   let settings = $state.raw<{ C: SettingsUi["C"]; page: InstanceType<SettingsUi["SettingsPage"]> } | null>(null);
@@ -68,6 +71,7 @@
     };
     entry.onLetter = typeLetter;
     shell.goTo = goTo; // the Apps sheet's Home and CAS rows
+    shell.openSettings = openSettings; // the last row of every Menu
     entry.onDead = dead;
   });
   let host: HTMLElement | undefined = $state();
@@ -566,7 +570,7 @@
   const busy = $derived(session.busy || shell.busy);
   const appName = $derived(shell.app ? t(APPS.find((a) => a.id === shell.app)?.name as MessageKey) : "");
   /** Where you are (docs/05 3.2): Home, CAS, or an app and its view. */
-  const place = $derived(shell.app === null ? t(`view.${session.view}`) : `${appName} › ${t(`view.${shell.view}`)}`);
+  const place = $derived(shell.app === null ? t(`view.${session.view}`) : appName);
   const angle = $derived(session.settings.angle);
   /** The status line is not a place for typing: a tap on it must not take the caret out of the entry line. */
   const noFocus = (e: Event): void => e.preventDefault();
@@ -583,9 +587,21 @@
       data-testid="place"
       data-app={shell.app ?? ""}
       data-view={shell.app === null ? session.view : shell.view}
-      data-switch={shell.app === null ? "true" : undefined}
-      aria-label={shell.app === null ? t("status.place", { place }) : t("status.placeApp", { place, view: t(`view.${session.view}`) })}
+      aria-label={t("status.place", { place })}
       onclick={() => press(PLACE_KEY, "primary")}>{place}</button>
+    {#if shell.app !== null}
+      <span class="tabs" role="tablist" aria-label={t("status.views")}>
+        {#each TABS as tab (tab.view)}
+          <button
+            type="button"
+            class="tab"
+            role="tab"
+            data-testid="tab-{tab.view}"
+            aria-selected={shell.view === tab.view}
+            onclick={() => press(tab.key, "primary")}>{t(`view.${tab.view}`)}</button>
+        {/each}
+      </span>
+    {/if}
     <span class="chips">
       {#if session.engineState === "starting"}<span class="note">{t("engine.starting")}</span>{/if}
       {#if session.engineState === "failed"}<span class="note">{t("engine.error")}</span>{/if}
@@ -605,6 +621,7 @@
       {#if session.alphaLock}<span class="mod" data-testid="mod-alpha">α🔒</span>{:else if session.alpha}<span class="mod" data-testid="mod-alpha">α</span>{/if}
       {#if busy}<span class="busy" role="status" aria-label={t("status.busy")} data-testid="busy">⟳</span>{/if}
     </span>
+    <button type="button" class="menubtn" data-testid="menu-button" aria-label={t("status.menu")} onclick={() => press(MENU_KEY, "primary")}>☰</button>
   </header>
 
   <div class="screen">
@@ -742,12 +759,46 @@
     font-weight: 700;
     color: var(--text);
   }
-  .place[data-switch="true"]::after {
-    content: " ⇄";
+  .place::after {
+    content: " ▾";
     font-weight: 400;
     color: var(--muted);
   }
   .place:active {
+    background: var(--key-nav);
+  }
+  .tabs {
+    display: flex;
+    gap: 2px;
+    min-width: 0;
+    flex: 0 1 auto;
+    overflow: hidden;
+  }
+  .tab {
+    min-width: 0;
+    padding: 5px 5px;
+    border-radius: 6px;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--muted);
+  }
+  .tab[aria-selected="true"] {
+    background: var(--key-nav);
+    color: var(--text);
+    font-weight: 700;
+  }
+  .menubtn {
+    flex: none;
+    width: 36px;
+    height: 28px;
+    margin-right: -8px;
+    text-align: center;
+    line-height: 28px;
+    font-size: 17px;
+    color: var(--text);
+  }
+  .menubtn:active {
     background: var(--key-nav);
   }
   .chips {

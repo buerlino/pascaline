@@ -40,6 +40,8 @@ export class AppShell {
   clip: { copyRaw(text: string | undefined, notice?: string): Promise<boolean> } | undefined;
   /** The Menu of Home and CAS (set by App.svelte); the apps bring their own. */
   homeMenu: (() => MenuItem[]) | undefined;
+  /** Opens the Settings page (set by App.svelte); the last row of every Menu (R15c1). */
+  openSettings: (() => void) | undefined;
 
   private readonly calc: Calc;
   private readonly kv: Kv;
@@ -172,9 +174,10 @@ export class AppShell {
     const a = this.instance;
     return a?.nav?.(this.view, dir, this.entryEdited) ?? false;
   }
-  /** The open view's own Menu items (Home/CAS: the copy actions). */
+  /** The open view's own Menu items (Home/CAS: the copy actions), then Settings as the last row (R15c1). */
   get menuItems(): readonly MenuItem[] {
-    return (this.app === null ? this.homeMenu?.() : this.instance?.menu?.(this.view)) ?? [];
+    const own = (this.app === null ? this.homeMenu?.() : this.instance?.menu?.(this.view)) ?? [];
+    return [...own, { id: "settings", label: t("mode.settings"), run: () => this.openSettings?.() }];
   }
   /** What Copy (Shift + View) takes from the open app view; undefined when it has nothing to copy. */
   copyText(): Promise<string | undefined> | string | undefined {

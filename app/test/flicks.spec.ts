@@ -64,7 +64,7 @@ test("the removed layers are dead: ◀ and ▶ have no shift layer, 0 has no quo
 test("a key that does nothing in the open view gives a double haptic: Menu in Symb, Tmpl in Plot, Fmt in an app (R13)", async ({ page }) => {
   await page.evaluate(() => window.pascaline.session.setHaptics({ on: true, ms: 10 }));
   await tap(page, ["symb"]); // the last app (Function) opens on its Symb view
-  await expect(page.getByTestId("place")).toContainText("Symb");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "symb");
   const before = (await vibrations(page)).length;
   await tap(page, ["menu"]);
   await expect.poll(async () => (await vibrations(page)).length - before).toBe(3); // key down + the double
@@ -292,7 +292,7 @@ test("keys typed while an app loads keep their layer: Plot, Shift, Apps opens th
   release();
   await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
-  await expect(page.getByTestId("place")).toHaveText("Function › Plot");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
 });
 
 test("a typed key waiting for the load keeps its layer, and a Shift pressed after it stays for the next key", async ({ page }) => {

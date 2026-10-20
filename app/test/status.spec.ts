@@ -37,19 +37,94 @@ test("the status line shows the place, the angle unit, the format and digits", a
   await tap(page, ["u3"]);
   await expect(page.getByTestId("place")).toHaveText("CAS");
   await tap(page, ["plot"]);
-  await expect(page.getByTestId("place")).toHaveText("Function › Plot");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
   await expect(page.getByTestId("place")).toHaveAttribute("data-app", "function");
-  await page.getByTestId("place").tap(); // in an app the place name goes back to Home/CAS (R15b)
+  await expect(page.getByTestId("place")).toHaveText("Function");
+  await page.getByTestId("place").tap(); // the place name opens Apps (R15c1); Home and CAS are its first rows
+  await page.getByTestId("apps").getByRole("menuitem").nth(1).tap();
   await expect(page.getByTestId("place")).toHaveText("CAS");
 });
 
-test("a tap on the place name switches Home ↔ CAS; it no longer opens the Apps sheet (R15b)", async ({ page }) => {
+test("a tap on the place name opens the Apps sheet; Home and CAS are its first rows (R15c1)", async ({ page }) => {
   await open(page);
   await page.getByTestId("place").tap();
+  await expect(page.getByTestId("apps")).toBeVisible();
+  await page.getByTestId("apps").getByRole("menuitem").nth(1).tap();
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
-  await expect(page.getByTestId("apps")).toHaveCount(0);
   await page.getByTestId("place").tap();
+  await tap(page, ["d1"]); // by keys: the first row, Home
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "home");
+  await expect(page.getByTestId("apps")).toHaveCount(0);
+  await page.getByTestId("place").tap(); // a second tap closes it
+  await page.getByTestId("place").tap();
+  await expect(page.getByTestId("apps")).toHaveCount(0);
+});
+
+test("the tabs switch the views of Function and Solve, the current one marked; Home has none (R15c1)", async ({ page }) => {
+  await open(page);
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  await tap(page, ["symb"]);
+  const tab = (v: string) => page.getByTestId(`tab-${v}`);
+  await expect(tab("symb")).toHaveAttribute("aria-selected", "true");
+  await tab("plot").tap();
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
+  await expect(tab("plot")).toHaveAttribute("aria-selected", "true");
+  await expect(tab("symb")).toHaveAttribute("aria-selected", "false");
+  await tab("num").tap();
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "num");
+  await page.getByTestId("place").tap();
+  await tap(page, ["d4"]);
+  await page.waitForFunction(() => window.pascaline.shell.app === "solve" && window.pascaline.shell.loading === null);
+  await tab("symb").tap();
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "symb");
+  await expect(page.getByTestId("place")).toHaveText("Solve");
+});
+
+test("☰ opens the view's menu and Settings is its last row, key 0 in Home (R15c1)", async ({ page }) => {
+  await open(page);
+  const rows = sheet(page).getByRole("menuitem");
+  await page.getByTestId("menu-button").tap();
+  await expect(rows).toHaveCount(10);
+  await expect(rows.last()).toContainText("Settings");
+  await page.getByTestId("menu-button").tap(); // closes again
+  await expect(sheet(page)).toBeHidden();
+  await tap(page, ["menu", "d0"]); // the Menu key still works; 0 picks item 10
+  await expect(page.getByTestId("settings")).toBeVisible();
+  await tap(page, ["esc"]);
+  await tap(page, ["plot"]);
+  await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+  await page.getByTestId("menu-button").tap();
+  await expect(rows.last()).toContainText("Settings");
+  await rows.last().tap();
+  await expect(page.getByTestId("settings")).toBeVisible();
+});
+
+test("☰ on a picked history row opens the row's menu (R15c1)", async ({ page }) => {
+  await open(page);
+  await tap(page, ["d1", "add", "d2", "enter"]);
+  await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
+  await tap(page, ["up"]);
+  await page.getByTestId("menu-button").tap();
+  await expect(sheet(page)).toBeVisible();
+  await expect(sheet(page).getByRole("menuitem").first()).toContainText("Insert");
+});
+
+test("the status line fits at 360 px in an app with the chips and ☰, and the targets keep their size (R15c1)", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  await open(page);
+  await tap(page, ["plot"]);
+  await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
+  const m = await page.evaluate(() => {
+    const h = document.querySelector("header") as HTMLElement;
+    const r = (id: string) => document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect();
+    return { over: h.scrollWidth - h.clientWidth, header: h.getBoundingClientRect().height, menu: r("menu-button"), place: r("place"), digits: r("chip-digits") };
+  });
+  expect(m.over).toBeLessThanOrEqual(0);
+  expect(m.header).toBeLessThanOrEqual(28);
+  expect(m.menu?.width ?? 0).toBeGreaterThanOrEqual(36);
+  expect(m.menu?.height ?? 0).toBeGreaterThanOrEqual(28);
+  expect(m.place?.width ?? 0).toBeGreaterThanOrEqual(96);
+  expect((m.digits?.right ?? 999) <= (m.menu?.left ?? 0)).toBe(true);
 });
 
 test("Shift and Alpha show in the status line: one tap each, twice for the lock", async ({ page }) => {
@@ -180,6 +255,6 @@ test("the sheets work inside an app, and the angle unit set there is the one the
   await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null); // keys pressed while an app loads wait; a place key does not
   await tap(page, ["shift", "apps", "right", "enter"]);
   expect(await angle(page)).toBe("deg");
-  await expect(page.getByTestId("place")).toHaveText("Function › Plot");
+  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
   await expect(page.getByTestId("chip-angle")).toHaveText("DEG");
 });

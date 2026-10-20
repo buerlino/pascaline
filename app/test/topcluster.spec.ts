@@ -43,11 +43,16 @@ test("the cluster is layout D: every key at its place, U1 empty, U2 Home, U3 CAS
   await expect(page.locator('[data-key="app"], [data-key="cas"]')).toHaveCount(0);
 });
 
-test("Home ↔ CAS: one tap on the place name; by keys Apps, 2 and Apps, 1; and U3, U2", async ({ page }) => {
+test("Home ↔ CAS: the place name and its sheet; by keys Apps, 2 and Apps, 1; and U3, U2", async ({ page }) => {
   await place(page).tap();
+  await appsSheet(page).getByRole("menuitem").nth(1).tap();
   expect(await view(page)).toBe("cas");
   await place(page).tap();
+  await appsSheet(page).getByRole("menuitem").first().tap();
   expect(await view(page)).toBe("home");
+  await place(page).tap(); // R15c1: the name opens the sheet, it no longer switches
+  await expect(appsSheet(page)).toBeVisible();
+  await tap(page, ["esc"]);
   // the Apps sheet lists Home and CAS first (S2 point 4)
   await tap(page, ["apps"]);
   await expect(appsSheet(page).getByRole("menuitem")).toHaveText(["1Home", "2CAS", "3Function", "4Solve"]);
@@ -61,11 +66,14 @@ test("Home ↔ CAS: one tap on the place name; by keys Apps, 2 and Apps, 1; and 
   await expect(place(page)).toHaveText("Home");
 });
 
-test("from an app: the place name goes back to Home/CAS, U2 and U3 to Home and CAS, the Apps sheet's rows 1 and 2 too", async ({ page }) => {
+test("from an app: the place name opens Apps, U2 and U3 go to Home and CAS, the Apps sheet's rows 1 and 2 too", async ({ page }) => {
   await tap(page, ["u3", "plot"]);
-  await expect(place(page)).toHaveText("Function › Plot");
+  await expect(place(page)).toHaveAttribute("data-view", "plot");
   await place(page).tap();
-  await expect(place(page)).toHaveText("CAS"); // where the app was opened from
+  await expect(appsSheet(page)).toBeVisible();
+  await appsSheet(page).getByRole("menuitem").nth(1).tap();
+  await expect(place(page)).toHaveText("CAS");
+  await tap(page, ["plot"]);
   await tap(page, ["num", "u2"]);
   await expect(place(page)).toHaveText("Home");
   expect(await app(page)).toBeNull();
@@ -80,11 +88,11 @@ test("from an app: the place name goes back to Home/CAS, U2 and U3 to Home and C
 
 test("Symb, Plot and Num: one key each, from Home and inside the app", async ({ page }) => {
   await tap(page, ["symb"]);
-  await expect(place(page)).toHaveText("Function › Symb");
+  await expect(place(page)).toHaveAttribute("data-view", "symb");
   await tap(page, ["plot"]);
-  await expect(place(page)).toHaveText("Function › Plot");
+  await expect(place(page)).toHaveAttribute("data-view", "plot");
   await tap(page, ["num"]);
-  await expect(place(page)).toHaveText("Function › Num");
+  await expect(place(page)).toHaveAttribute("data-view", "num");
 });
 
 test("the angle: one tap on its chip; by keys Shift, Apps, ▶, Enter; a flick up on Apps saves the Shift", async ({ page }) => {
@@ -171,9 +179,9 @@ test("the place name's target is the line's full height and at least 96 px from 
   expect(box?.width ?? 0).toBeGreaterThanOrEqual(96);
   expect(box?.height).toBe(28);
   await page.touchscreen.tap(93, 14);
-  expect(await view(page)).toBe("cas");
+  await expect(appsSheet(page)).toBeVisible();
   await page.touchscreen.tap(93, 14);
-  expect(await view(page)).toBe("home");
+  await expect(appsSheet(page)).toHaveCount(0);
   // a full history: the top row's formula lies right under the line, and a tap on it is the row's, not the switch's
   for (let i = 0; i < 12; i++) await tap(page, ["d1", "add", "d2", "enter"]);
   await page.waitForTimeout(300);
@@ -193,7 +201,8 @@ test("a status tap while an app's code loads runs at once, as the place keys do 
   });
   await tap(page, ["plot"]);
   expect(await page.evaluate(() => window.pascaline.shell.loading)).toBe("function");
-  await place(page).tap();
+  await place(page).tap(); // the Apps sheet opens at once, and Home is its first row
+  await appsSheet(page).getByRole("menuitem").first().tap();
   expect(await app(page)).toBeNull();
   await expect(place(page)).toHaveText("Home");
   await page.getByTestId("chip-format").tap(); // a chip opens Mode at once too
@@ -209,8 +218,8 @@ test("over an open sheet: the place name and U2/U3 close it and go there; a free
   await expect(sheet(page)).toBeVisible();
   await place(page).tap();
   await expect(sheet(page)).toBeHidden();
-  expect(await view(page)).toBe("cas");
-  await tap(page, ["tmpl", "u2"]);
+  await expect(appsSheet(page)).toBeVisible();
+  await tap(page, ["esc", "tmpl", "u3", "tmpl", "u2"]);
   await expect(sheet(page)).toBeHidden();
   expect(await view(page)).toBe("home");
   await page.evaluate((b) => window.pascaline.userKeys.set("u1", "primary", b), sinh);
