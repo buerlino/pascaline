@@ -70,6 +70,13 @@ describe("roundSignificant", () => {
     expect(toText(formatReal(v, { format: "STD", digits: 12 }))).toBe("0.123456789013");
     expect(toText(formatReal(v, { format: "STD", digits: 12, rounding: "half-even" }))).toBe("0.123456789012");
   });
+  it("one tie rule: no rounding option, ties go away from zero (G45, S12 row 4)", () => {
+    // @ts-expect-error G45: FormatOptions has no `rounding`; a caller that still passes one rounds half away anyway
+    const o: FormatOptions = { format: "STD", digits: 12, rounding: "half-even" };
+    expect(toText(formatReal(q(1234567890125n, 10n ** 13n), o))).toBe("0.123456789013");
+    expect(toText(formatReal(q(5n, 2n), { ...o, format: "FIX", fixed: 0 }))).toBe("3");
+    expect(toText(formatReal(q(5n, 100000n), { ...o, format: "FIX", fixed: 4 }))).toBe("0.0001");
+  });
   it("carry into a new digit", () => {
     expect(roundSignificant(q(9999999999995n), 12)).toEqual({ neg: false, digits: "100000000000", exp: 13 });
   });

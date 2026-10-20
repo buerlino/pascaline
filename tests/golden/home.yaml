@@ -33,9 +33,9 @@ cases:
   - { id: "rnd-1/7", input: "1/7", oracle: "F(1,7)", expect: "0.142857142857", mark: "≈", source: "oracle" }
   - { id: "rnd-13-digits-down", input: "1.000000000001", oracle: "F('1.000000000001')", expect: "1", mark: "≈", source: "derived", note: "13 significant digits: the 13th (1) rounds away" }
   - { id: "rnd-13-digits-up", input: "1.000000000006", oracle: "F('1.000000000006')", expect: "1.00000000001", mark: "≈", source: "derived" }
-  - { id: "rnd-tie-pos", input: "123456789012.5", oracle: "F('123456789012.5')", expect: "123456789013", mark: "≈", source: "assumed", g2: 8, note: "exact tie; our rule is half away from zero; G2 tie rule is a checklist item" }
-  - { id: "rnd-tie-neg", input: "-123456789012.5", oracle: "F('-123456789012.5')", expect: "-123456789013", mark: "≈", source: "assumed", g2: 8, note: "exact tie, see rnd-tie-pos" }
-  - { id: "rnd-tie-small", input: "0.1234567890125", oracle: "F('0.1234567890125')", expect: "0.123456789013", mark: "≈", source: "assumed", g2: 8, note: "exact tie, see rnd-tie-pos" }
+  - { id: "rnd-tie-pos", input: "123456789012.5", oracle: "F('123456789012.5')", expect: "123456789013", mark: "≈", source: "derived", g2: 8, note: "our rule is half away from zero; the G2 rounds ties half to even (item 8, virtual-calc, unsure)" }
+  - { id: "rnd-tie-neg", input: "-123456789012.5", oracle: "F('-123456789012.5')", expect: "-123456789013", mark: "≈", source: "derived", g2: 8, note: "our rule is half away from zero; the G2 rounds ties half to even (item 8, virtual-calc, unsure)" }
+  - { id: "rnd-tie-small", input: "0.1234567890125", oracle: "F('0.1234567890125')", expect: "0.123456789013", mark: "≈", source: "derived", g2: 8, note: "our rule is half away from zero; the G2 rounds ties half to even (item 8, virtual-calc, unsure)" }
   - { id: "rnd-carry", input: "999999999999.5", oracle: "F('999999999999.5')", expect: "1E12", mark: "≈", source: "derived", note: "rounding carries into a 13th digit" }
   - { id: "rnd-10^12-1", input: "10^12-1", oracle: "F(10**12-1)", expect: "999999999999", mark: "=", source: "derived" }
   - { id: "rnd-10^12", input: "10^12", oracle: "F(10**12)", expect: "1E12", mark: "=", source: "derived" }
@@ -241,6 +241,9 @@ cases:
   - { id: "g14f1-bmod-7.5-2", latex: "7.5\\bmod 2", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "the \\bmod operator emits pasmod, not irem" }
   - { id: "g14f1-bmod-x-3", latex: "x\\bmod 3", expect: "x-3*floor(x/3)", source: "derived", note: "irem(x,3) gave x, marked = (silent wrong answer); pasmod(x,3) = x-3*floor(x/3)" }
   - { id: "g14f1-eq-bare-decimal", latex: "x==0.5+y", expect: "(x==(0.5+y))", source: "derived", note: "the kept test shows the typed 0.5, not 5/10^1 (bare form)" }
+  # --- G45 (S12 row 1): mod keeps Giac's Euclidean irem; the G2's differing answer is on record (item 43) ---------------
+  - { id: "g2-43-mod", latex: "\\operatorname{mod}\\left(7,-3\\right)", oracle: "F(1)", expect: "1", mark: "=", source: "derived", g2: 43, note: "the G2 gives −2 (device, item 43: the sign follows the divisor); ours is Giac's irem, Euclidean, never negative" }
+  - { id: "g2-43-mod-neg", latex: "\\operatorname{mod}\\left(-7,3\\right)", oracle: "F(2)", expect: "2", mark: "=", source: "derived", g2: 43, note: "Euclidean: -7 = 3·(-3) + 2; the G2's sign rule also predicts 2 (item 43, not tried)" }
   # --- G30 (EN7a): par and eseries, our Giac definitions (homeEval.ts ENGINE_DEFINITIONS, eseries.ts tables) --------------
   - { id: "fn-par", input: "par(4700,10000)", oracle: "F(4700*10000,4700+10000)", expect: "3197.27891156", mark: "≈", source: "derived", note: "470000/147, exact in Giac; task t01" }
   - { id: "fn-par-3", input: "par(10,10,10)", oracle: "F(10,3)", expect: "3.33333333333", mark: "≈", source: "derived", note: "n-ary" }
