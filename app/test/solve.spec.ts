@@ -176,3 +176,35 @@ test("Solve: the ⚠ of an answer is kept across a reload (M4-10)", async ({ pag
   await expect(value(page, "x")).toContainText("1.41421356237");
   await expect(page.locator('[data-testid="solve-table"] [data-testid="mark"]')).toHaveText("⚠");
 });
+
+test("Solve: E1 p(x)=4 after p(x):=x² in Home gives x = 2, p stays the function, also after a reload (R56b)", async ({ page }) => {
+  await page.evaluate(() => window.pascaline.entry.set("p\\left(x\\right):=x^{2}"));
+  await tap(page, ["enter"]);
+  await expect(page.locator('[data-status="done"]')).toHaveCount(1);
+  await page.evaluate(() => window.pascaline.entry.set("")); // the next line starts empty
+  const solveIt = async (): Promise<void> => {
+    await page.evaluate(() => {
+      const app = window.pascaline.shell.loaded.solve!.instance as unknown as { define(i: number, l: string): void };
+      app.define(0, "p\\left(x\\right)=4");
+    });
+    await tap(page, ["num"]);
+    await expect(page.locator('[data-testid="solve-table"] tr[data-name]')).toHaveCount(1);
+    await expect(value(page, "x")).toBeVisible();
+    await setValue(page, "x", ["d1"]);
+    await tap(page, ["menu", "d1"]);
+    await expect(value(page, "x")).toHaveText("2");
+  };
+  await openSolve(page);
+  await solveIt();
+  await tap(page, ["apps", "d1"]);
+  await page.evaluate(() => window.pascaline.entry.set("p\\left(3\\right)"));
+  await tap(page, ["enter"]);
+  await expect(page.locator('[data-status="done"]').last().locator(".result")).toHaveAttribute("data-text", "9");
+  await page.waitForTimeout(800);
+  await page.evaluate(() => window.pascaline.shell.flush());
+  await page.reload();
+  await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await tap(page, ["apps", "d4"]);
+  await tap(page, ["symb"]);
+  await solveIt();
+});

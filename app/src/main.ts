@@ -34,7 +34,7 @@ if (import.meta.env.VITE_MEASURE === "1") {
   else if (new URLSearchParams(location.search).has("bench")) void import("./bench.ts").then((m) => m.runBench(session));
 }
 session.saveDelayMs = 400;
-const shell = new AppShell(calc, idbKv, entry, () => session.settings);
+const shell = new AppShell(calc, idbKv, entry, () => session.settings, () => session.userNames);
 const place = shell.restorePlace();
 const settingsRead = session.restoreSettings();
 // the free keys U1–U3 (R15b): their defaults are drawn first, the user's slots replace them when read
