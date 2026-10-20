@@ -45,6 +45,7 @@ import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
 import { constUncDigits, inexactConstsIn, withConstValues, type ConstTable } from "./constUnc.ts";
 import { chipCommand, chipNameFacts, chipsIn, CHIP_PREFIX, withChipValues, type ChipFactsTable } from "./chipFacts.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
+import { FLAGS_READ, flagsExpected, isFlagName, namesFlag, namesUnreadFlag, restoreCommands } from "./flags.ts";
 
 
 /** What the host needs from a loaded Giac module (engine/giac/wasm/api.cc). */
@@ -261,6 +262,8 @@ function shapeOfResult(r: HomeResult): Shape {
 /** Engine state and the synchronous operations on it. One per Giac instance. */
 export class EngineHost {
   private modeKey = "";
+  /** G67: the Digits the current mode set (Giac's own 12 before any mode), which the settings check expects. */
+  private modeDigits = 12;
   private readonly giac: GiacApi;
   /** `giac.eval` that throws GiacSyntaxError instead of quietly returning `undef` (which would
    *  otherwise leave the previous answer in place and show it again). */
@@ -309,7 +312,7 @@ export class EngineHost {
    *  Symbolic values first, while every name in them is still free (defs.ts). Returns the time it took. */
   restore(stored: readonly DefEntry[]): number {
     const t0 = performance.now();
-    const entries = this.migrated(stored);
+    const entries = this.withoutFlags(this.migrated(stored));
     // G29: values and functions go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost.
     // Assumptions and inputs kept as typed go alone. A batch that printed an error or warning (not the `// Success` notes of functions) or returned an error is run again one command at a
     // time (values and functions can be set twice), so one bad entry never takes the entries after it down (G19).
@@ -343,7 +346,38 @@ export class EngineHost {
     }
     flush();
     this.record(entries.map((e) => ({ set: e })));
+    // G67: a replayed body or command may have changed a Giac setting
+    this.putBackFlags("");
     return performance.now() - t0;
+  }
+
+  /** G67: the entries without a Giac setting (a log stored before G67 holds `approx_mode:=(1)`, `Digits:=(14)`): a named
+   *  one goes from the client's log too (a purge in takeMigrated), one kept as typed is only not replayed. */
+  private withoutFlags(entries: readonly DefEntry[]): readonly DefEntry[] {
+    const flagged = entries.filter((e) => (e.kind === "other" ? e.cmds.some(namesFlag) : isFlagName(e.name)));
+    if (!flagged.length) return entries;
+    const names = flagged.filter((e) => e.kind !== "other").map((e) => e.name);
+    if (names.length) this.migratedChanges.push({ purge: names });
+    return entries.filter((e) => !flagged.includes(e));
+  }
+
+  /**
+   * G67: after a call that ran user text, Giac's settings are read in one call (flags.ts FLAGS_READ); on any difference
+   * from the host's, one more call puts every one back and the mode setup runs again on the next call. An input that
+   * names a setting the read cannot see (timeout, ckevery) gets the mode setup again too. True when the user's text set
+   * one: the input names a setting, or calls a stored function whose definition does (the result says it was not kept).
+   * Giac leaks some by itself, put back without a word: a `throw` in a program leaves eval_level at 1 (our refusals in
+   * pasmedian, eseries), and `(-32)^(1/5)` leaves epsilon at 1e-60 (probe 2026-10-20).
+   */
+  private putBackFlags(input: string): boolean {
+    if (namesUnreadFlag(input)) this.modeKey = "";
+    const expected = flagsExpected(this.modeDigits);
+    if (this.giac.eval(FLAGS_READ) === expected) return false;
+    const cmds = restoreCommands(this.modeDigits);
+    // One call; when a command in it fails (Giac stops the line there), each one again on its own, in order.
+    if (isError(this.giac.eval(cmds.join(";"))) || this.giac.eval(FLAGS_READ) !== expected) for (const c of cmds) this.giac.eval(c);
+    this.modeKey = "";
+    return namesFlag(input) || [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => this.byName.get(m[0])?.cmds.some(namesFlag) === true);
   }
 
   /** G46: what the last restore() changed in the entries it was given (flagged values resolved), for the client to
@@ -426,6 +460,15 @@ export class EngineHost {
           : { purge: [name] };
       });
     } else changes = [{ set: { name: "", kind: "other", cmds: ran, ...base } }];
+    // G67: a Giac setting is never a user's name, in any form (`approx_mode:=(1)`, `Digits:=(14)`, `purge(epsilon)`), and
+    // an input kept as typed that sets one is not kept (the check after the call has put the setting back)
+    changes = changes.flatMap((c): DefChange[] => {
+      if ("purge" in c) {
+        const kept = c.purge.filter((n) => !isFlagName(n));
+        return kept.length ? [{ purge: kept }] : [];
+      }
+      return isFlagName(c.set.name) || (c.set.kind === "other" && namesFlag(input)) ? [] : [c];
+    });
     this.record(changes);
     return changes;
   }
@@ -593,6 +636,11 @@ export class EngineHost {
    * Without the tables, nothing changes.
    */
   home(input: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
+    const out = this.homeTabled(input, s, consts, chips);
+    return this.putBackFlags(input) ? { ...out, result: { ...out.result, settingReset: true } } : out;
+  }
+
+  private homeTabled(input: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
     if (!consts && !chips) return this.homeRun(input, s, false);
     const asg = simpleAssignment(input);
     const stateful = isStateful(input);
@@ -686,12 +734,13 @@ export class EngineHost {
     const used = this.usesOf(input);
     const out = this.casRun(input, s);
     if (used.length && out.result.ok) out.result.uses = used;
+    if (this.putBackFlags(input)) out.result.settingReset = true;
     return out;
   }
 
   private casRun(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     this.need(input);
-    this.useMode(`cas${JSON.stringify(s)}`, () => {
+    this.useMode(`cas${JSON.stringify(s)}`, s.digits, () => {
       for (const c of casSetupCommands(s)) this.giac.eval(c);
       this.giac.setPowLimit(s.powLimit);
     });
@@ -889,7 +938,7 @@ export class EngineHost {
   }
 
   private useHomeMode(s: HomeSettings): void {
-    this.useMode(`home${JSON.stringify(s)}`, () => {
+    this.useMode(`home${JSON.stringify(s)}`, s.digits, () => {
       for (const c of homeSetupCommands(s)) this.giac.eval(c);
       this.giac.eval(`Digits:=${Math.trunc(s.digits)}`);
       this.giac.setPowLimit(s.powLimit);
@@ -897,7 +946,7 @@ export class EngineHost {
   }
 
   private useSolveMode(s: HomeSettings): void {
-    this.useMode(`solve${JSON.stringify(s)}`, () => {
+    this.useMode(`solve${JSON.stringify(s)}`, s.digits, () => {
       this.giac.eval(angleCommand(s.angle));
       this.giac.eval(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
       this.giac.eval("ckevery 10");
@@ -906,10 +955,11 @@ export class EngineHost {
     });
   }
 
-  private useMode(key: string, apply: () => void): void {
+  private useMode(key: string, digits: number, apply: () => void): void {
     if (key === this.modeKey) return;
     apply();
     this.modeKey = key;
+    this.modeDigits = Math.trunc(digits);
   }
 }
 

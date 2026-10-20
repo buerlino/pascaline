@@ -167,6 +167,9 @@
       {#if item.status === "done" && item.uses?.length}
         <div class="uses" data-testid="uses">{usesLine(item.uses)}</div>
       {/if}
+      {#if item.settingReset}
+        <div class="uses" data-testid="setting-reset">{t("history.settingReset")}</div>
+      {/if}
     </article>
     {/if}
   {/each}

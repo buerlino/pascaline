@@ -11,6 +11,7 @@ import { defaultCasSettings, type CasResult } from "./types.ts";
 import { DATA_VERSION, migratedText } from "../state/storage.ts";
 import { renameOurCalls, writeUserNames } from "./ourNames.ts";
 import { dropAngleFactor, PASDEG, rewriteAngles } from "../input/angles.ts";
+import { FLAG_WORDS, isFlagName } from "./flags.ts";
 
 /** r10 section 1.2: the limits of one file. */
 export const LIB_MAX_BYTES = 256 * 1024;
@@ -19,8 +20,9 @@ const HEADER = /^\/\/ pascaline library (\d+)$/;
 const NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 /** Words that change the engine's state when a body runs (probe 2026-10-18: `Digits:=5` inside a body stays set after
  *  the call; `purge(beam)` inside a body removes beam from the engine while the log still lists it; `read("f")` aborts
- *  the module). A guard, not a proof. */
-const STATE_WORDS = /\b(Digits|angle_radian|purge|restart|reset|rm_all_vars|assume|additionally|read|write|sto|cas_setup|DIGITS|HAngle|complex_mode)\b|=>/;
+ *  the module), and every Giac setting (G67, flags.ts: `approx_mode:=1` at the top level or `approx_mode(1)` in a body
+ *  turned every later `=` into `≈`). A guard, not a proof. */
+const STATE_WORDS = new RegExp(`\\b(${["purge", "restart", "reset", "rm_all_vars", "assume", "additionally", "read", "write", "sto", ...FLAG_WORDS].join("|")})\\b|=>`);
 
 export interface LibTest {
   expr: string;
@@ -198,6 +200,7 @@ export function parseLibrary(input: Uint8Array | string): LibFile {
     if (stored) throw new LibError(at, `the value assigns ${stored}, which is not local: a value must not itself define or change anything`);
     if (asg && isStateful(asg.rhs)) throw new LibError(at, "a value must not itself define or change anything");
     if (!NAME.test(def.name)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
+    if (isFlagName(def.name)) throw new LibError(at, `${def.name} is one of the engine's settings, which a library may not change`);
     if (def.name in ENGINE_DEFINITIONS || def.name in COMPLEX_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name === PASDEG || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
     // R64: the degree factor is ours; a body that names it (a `local pasdeg`, say) would change every angle in it
     if (new RegExp(`(?<![A-Za-z0-9_])${PASDEG}(?![A-Za-z0-9_])`).test(NOSTR(block))) throw new LibError(at, `${PASDEG} is one of Pascaline's own names`);

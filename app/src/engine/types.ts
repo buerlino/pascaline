@@ -63,6 +63,8 @@ export interface CasResult {
   warn?: PrecisionWarn;
   /** The reasons behind `warn` for a non-number (G22): the same facts as HomeResult.why; a number has them on `numeric`. */
   why?: PrecisionWhy;
+  /** G67: the input changed one of Giac's settings, which the engine put back (as HomeResult.settingReset). */
+  settingReset?: true;
 }
 
 export interface EvalResult {

@@ -131,6 +131,9 @@ export interface HomeResult {
    *  constants of the input leave (EngineHost.home's table); the digits from there on are uncertain. Absent when no
    *  inexact constant went in by name, or the result is not one real number. */
   uncDigits?: number;
+  /** G67: the input changed one of Giac's settings (`approx_mode:=1`), which the engine put back: the result line says
+   *  it was not kept. */
+  settingReset?: true;
 }
 
 /** Giac prints a string result in double quotes; latex() returns one. */
