@@ -32,7 +32,7 @@ export async function choosePort(): Promise<ClipboardPort> {
           return true;
         } catch (e) {
           // closing the sheet is not a failure of the platform
-          return e instanceof Error && /cancel/i.test(e.message);
+          return e instanceof Error && e.message === "Share canceled";
         }
       },
     };

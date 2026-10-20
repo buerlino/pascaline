@@ -56,6 +56,8 @@ The About screen credits Giac and libqalculate.
 | @capacitor/core | 8.5.3 | MIT | https://github.com/ionic-team/capacitor | native shell bridge (shipped) |
 | @capacitor/android | 8.5.3 | MIT | https://github.com/ionic-team/capacitor | Android project (shipped) |
 | @capacitor/cli | 8.5.3 | MIT | https://github.com/ionic-team/capacitor | `cap sync` (build) |
+| @capacitor/clipboard | 8.0.1 | MIT | https://github.com/ionic-team/capacitor-plugins | Android paste and copy; offline; no permission (shipped, clipboard chunk) |
+| @capacitor/share | 8.0.3 | MIT | https://github.com/ionic-team/capacitor-plugins | Android share sheet; offline; no permission (shipped, clipboard chunk) |
 | JSXGraph | 1.14.0 | MIT OR LGPL-3.0-or-later | https://github.com/jsxgraph/jsxgraph | Function app Plot view (shipped, loaded lazily when Plot first opens; D7) |
 
 ## Theme colours (app/scripts/theme-families.ts, generated into app/src/theme/)

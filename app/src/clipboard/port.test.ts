@@ -69,6 +69,8 @@ describe("choosePort", () => {
     expect(await port.share("T", "b")).toBe(true);
     cap.share.share.mockRejectedValue(new Error("boom"));
     expect(await port.share("T", "b")).toBe(false);
+    cap.share.share.mockRejectedValue(new Error("Share failed: request cancelled by system"));
+    expect(await port.share("T", "b")).toBe(false);
     cap.clip.read.mockRejectedValue(new Error("no"));
     expect(await port.readText()).toBeNull();
   });
