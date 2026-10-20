@@ -15,6 +15,7 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
+import { lostFloat, lostNumber, throughInfinity } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
@@ -386,7 +387,7 @@ function isTimeout(out: string): boolean {
 }
 
 // Inputs that change engine state and must be replayed after a restart.
-const STATEFUL = /:=|=>|\b(purge|assume|additionally|sto)\s*\(/;
+const STATEFUL = /:=|=<|=>|\b(purge|assume|additionally|sto)\s*\(/;
 /** The stores of our own test helper (input/emit.ts equalityTest): not the user's state. */
 const HELPER_STO = new RegExp(`\\bsto\\(\\s*[^,()]*,\\s*(?:${EQ_INEXACT_FLAG}|${EQ_DIFF})\\s*\\)`, "g");
 
@@ -631,6 +632,10 @@ export function homeEval(
     giac.eval("purge(pasdec2)");
   }
   const W = Math.max(s.workDigits, s.digits + 10);
+  const late = (): boolean => now() - t0 > HOME_DEADLINE_MS;
+  // G78: a function of the user's (a program may change globals) stops the walk for an infinity; ours do not.
+  const builtin = notBuiltin(giac);
+  const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
   const defined = definedBy(input);
   const store = () => {
     if (asg) giac.eval(`${asg.name}:=${ans}`);
@@ -655,32 +660,35 @@ export function homeEval(
   };
   const failed = (display: string, path: HomePath, exact?: string): HomeResult =>
     done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, tieRisk: false, exactRational: false, reliableDigits: null });
+  const refuse = (code: Refusal, path: HomePath): HomeResult => ({ ...failed(enEngine[`error.${code}`], path), error: code, approximate: false });
 
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
     const f = floatPathFacts(giac, ans, asg ? asg.rhs : input, once, W, s.digits);
-    if ("error" in f) return failed(f.error, path, exact);
+    // G78 (F50): undef or an infinity where a number was asked for (no free name) is refused with its reason.
+    const lost = "error" in f && !once ? lostFloat(giac, exactBody, f.error) : null;
+    if ("error" in f) return lost ? refuse(lost, path) : failed(f.error, path, exact);
     // G39: the float of a divergent integral or series (the principal value 0 of ∫₋₁¹ 1/x) is refused as on the exact path.
     const refused = once ? null : refusalOf(giac, exactBody, giac.eval(ans));
     if (refused === "unchecked") unverified = true;
-    else if (refused) return { ...failed(enEngine[`error.${refused}`], path), error: refused, approximate: false };
+    else if (refused) return refuse(refused, path);
     store();
     const b = build(f.facts, f.shape, s.digits, path, true);
     return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
   };
 
   // G58: past the deadline after the exact steps: refused, not checked for as long again.
-  if (now() - t0 > HOME_DEADLINE_MS) return { ...failed(enEngine["error.timeout"], "exact"), error: "timeout" };
+  if (late()) return { ...failed(enEngine["error.timeout"], "exact"), error: "timeout" };
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 
   // G39: a number for something that does not exist (a principal value, an Abel sum, a bounded_function) is refused.
   if (!once) {
-    const refused = refusalOf(giac, exactBody, exactOut);
+    const refused = refusalOf(giac, exactBody, exactOut, true);
     if (refused === "unchecked") unverified = true;
-    else if (refused) return { ...failed(enEngine[`error.${refused}`], "exact"), error: refused, approximate: false };
+    else if (refused) return refuse(refused, "exact");
   }
   // G57: after G39's refusals, whose message says more (Giac's bounded_function of limit(sin(x),x,inf) decides too).
-  if (refusedCut) return { ...failed(enEngine["error.undecided"], "exact"), error: "undecided", approximate: false };
+  if (refusedCut) return refuse("undecided", "exact");
   // G39: Giac's [exact, numeric] pair of a definite integral is never a list. The two answers differ, so neither is
   // confirmed: the float is the value, with no digit confirmed (⚠, docs/04 2.4), and the why-line says the pair differs.
   const pair = !once && hasDefiniteIntegral(exactBody) ? giacPair(exactOut) : null;
@@ -698,6 +706,9 @@ export function homeEval(
 
   const shape = shapeOf(exactOut);
   const symbolic = (forced?: "unaudited"): HomeResult => {
+    // G78: Giac's text with no free name where a number was asked for (asin(acos(π²)), sinh(6020³)), or undef through ∞.
+    const lost = once || forced || inexactTest ? null : lostNumber(giac, ans, exactBody, exactOut, late, exactMs, userFn);
+    if (lost) return refuse(lost, "exact");
     // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
     // G38: a float in a non-number prints with the precision it was computed at (P). Ans keeps the P result; the text
@@ -741,6 +752,8 @@ export function homeEval(
 
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();
+  // G78 (F51): a finite number through an infinity inside (1/(1/0), exp(ln 0)) is Giac's extended reals, not a value.
+  if (!once && throughInfinity(giac, exactBody, exactOut, late, exactMs, userFn)) return refuse("divisionByZero", "exact");
 
   if (hasFloat(exactOut)) {
     // Giac's numeric code returned a float on the exact path (rule 3). `evalf(e,n)` alone is shown with the n digits it
