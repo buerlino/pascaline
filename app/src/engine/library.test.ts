@@ -206,6 +206,59 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
   });
 });
 
+// G83 (docs/04 6.2): the user's functions wait for their first use, so the 200 programs cost restore() nothing.
+describe.skipIf(!giacAvailable())("200 library programs, defined on first use (G83, real Giac)", () => {
+  let log: DefEntry[] = [];
+  let eagerHost: EngineHost;
+  const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
+  beforeAll(async () => {
+    eagerHost = new EngineHost((await loadNodeGiac()).giac);
+    let text = "// pascaline library 1\n";
+    for (let i = 1; i <= 200; i++) text += `\n// program ${i}\nlib${i}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${i};\n}\n`;
+    const r = importLibrary(eagerHost, parseLibrary(text), []);
+    if (!r.ok) throw new Error(r.error);
+    log = r.log;
+  }, 60000);
+  /** An eager replay as before G83: every command straight to Giac, 25 to a call (G29). */
+  const eagerReplay = async (): Promise<EngineHost> => {
+    const { giac } = await loadNodeGiac();
+    const h = new EngineHost(giac);
+    for (let k = 0; k < log.length; k += 25) giac.eval(log.slice(k, k + 25).map((e) => e.cmds[0]).join(";") + ";");
+    return h;
+  };
+
+  it("after restore() Giac holds none of them; lib7(2,3) gives what the eagerly defined one gives (derived: 2+4/2+8/3+7 = 41/3)", async () => {
+    const { giac } = await loadNodeGiac();
+    const h = new EngineHost(giac);
+    h.restore(log);
+    expect(giac.eval("VARS")).not.toMatch(/\blib\d+\b/);
+    expect(h.home("lib7(2,3)", defaultHomeSettings).result.exact).toBe("41/3");
+    expect(eagerHost.home("lib7(2,3)", defaultHomeSettings).result.exact).toBe("41/3");
+    expect(giac.eval("VARS")).not.toMatch(/\blib8\b/); // only what the input named
+    expect(h.cas("VARS", defaultCasSettings).result.text.match(/\blib\d+\b/g)).toHaveLength(200); // typed: all of them
+  });
+
+  it("restore() of the 200 takes under 50 ms in Node, and a first call at most 10 ms more than after an eager replay (median of 7)", { timeout: 120000 }, async () => {
+    const restoreMs: number[] = [];
+    const lazyFirst: number[] = [];
+    const eagerFirst: number[] = [];
+    for (let k = 0; k < 7; k++) {
+      const h = new EngineHost((await loadNodeGiac()).giac);
+      restoreMs.push(h.restore(log));
+      let t0 = performance.now();
+      h.home("lib7(2,3)", defaultHomeSettings);
+      lazyFirst.push(performance.now() - t0);
+      const e = await eagerReplay();
+      t0 = performance.now();
+      e.home("lib7(2,3)", defaultHomeSettings);
+      eagerFirst.push(performance.now() - t0);
+    }
+    console.log(`G83: restore of 200 library programs, Node median ${median(restoreMs).toFixed(2)} ms; first lib7 call lazy ${median(lazyFirst).toFixed(2)} ms, eager ${median(eagerFirst).toFixed(2)} ms`);
+    expect(median(restoreMs)).toBeLessThan(50);
+    expect(median(lazyFirst) - median(eagerFirst)).toBeLessThanOrEqual(10);
+  });
+});
+
 // G46 (route R, S14 R14 section 5): a library file is Giac text in radians, without our degree factor.
 describe.skipIf(!giacAvailable())("the degree factor in library files (G46, real Giac)", () => {
   const fresh = async (): Promise<EngineHost> => new EngineHost((await loadNodeGiac()).giac);
