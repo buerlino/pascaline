@@ -23,7 +23,7 @@ PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads   # in a worktree: reuse
 Devices, locks and timings: `tools/README.md` (`tools/devlock.sh acquire host-cpu <name> 1800` around heavy work).
 
 ## Pipeline
-Every package runs through `scripts/pipeline.sh` (docs/shifts/rules.md section 4; the night queue is brief.md section 0c); never merge or start a worker another way. `.tasks/` (gitignored) holds bundles, logs and the counter; `.coord/log.md` gets one line per step.
+Every package runs through `scripts/pipeline.sh` (docs/shifts/rules.md section 4; the night queue is brief.md section 0c); never merge or start a worker another way. An interactive session that edits the `phase-1` worktree holds `tools/devlock.sh acquire integ <name> 1800` until it is clean again. `.tasks/` (gitignored) holds bundles, logs and the counter; `.coord/log.md` gets one line per step.
 Context hygiene: `.claude/settings.json` denies reads of build output, caches, lock files, screenshots and run logs. Read sections (`grep -n '^#'`), not whole files; the owner's untracked files are not yours.
 
 ## Repo layout
