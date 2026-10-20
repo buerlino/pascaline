@@ -13,6 +13,7 @@ and `app/node_modules` (`cd app && npm ci`); Node 22 runs the `.ts` files direct
 | Probe | What it answers | Example |
 |---|---|---|
 | `engine.ts` | what Home shows for an input (path, display, value, flags), what CAS returns, or a raw Giac call | `node tools/probes/engine.ts 'normald_icdf(10^-10)'`; `MODE=cas …`; `MODE=raw …`; `DIGITS=30 …`; `FACTS=1 …` adds the mark facts (`exactRational`, `reliableDigits`, `warn`, `full`; in CAS `numeric`) |
+| `tier1-decide.ts` | G71: which Find tier-1 functions decide a sign or an integer inside the exact evaluation: each on `sin(10^70)` and `sin(10^70)*10^12` at Digits 40 and 80 (10^70 is not exact at 40), the ones whose exact texts differ, whether Home's G38 second decision runs for them, and what Home shows (needs the Find index, `npm run index`) | `node tools/probes/tier1-decide.ts [name …]` |
 | `bound.ts` | which CAS commands quote their variable: each input with x free and after Home `x:=3`, same result or not (G28: the names `uses` skips) | `node tools/probes/bound.ts ['limit(1/x,x,0)' …]` |
 | `parse.ts` | what our LaTeX parser sends to Giac for keyboard LaTeX, or why it refuses | `node tools/probes/parse.ts '0xFF' '4.7k'` |
 | `digits-cost.ts` | desktop time and path changes of the 123 `home.yaml` inputs at several digits settings | `DIGITS_LIST=12,20,30 node tools/probes/digits-cost.ts` |

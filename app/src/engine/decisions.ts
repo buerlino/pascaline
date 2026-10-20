@@ -34,6 +34,8 @@ function isError(out: string): boolean {
 export const DECISION_FUNCTIONS: ReadonlySet<string> = new Set([
   "floor", "ceil", "round", "trunc", "frac", "fPart", "iPart", "sign", "Heaviside", "abs", "max", "min", "piecewise", "when",
   "ifte", "int", "integrate", "sum", "limit", "solve",
+  // G71's census (tools/probes/tier1-decide.ts): tier-1 functions that decide a sign inside on sin(10^70) at P.
+  "arg", "angle", "instphase", "norm", "normalize", "polar", "polar_coordinates", "tri", "dfc", "classes", "Psi",
 ]);
 
 /** A comparison operator (`<`, `>`, `<=`, `>=`, `==`, `!=`, `<>`) at `k` in `s`, with its length; 0 when there is none.
