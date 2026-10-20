@@ -15,7 +15,7 @@ One entry per command: `# name`, then one numbered line per language (`1` French
 
 ## Consequences for a Help feature
 1. The **English (language `2`) lines, the argument types, related-command lists and examples** are covered by the README's GPL-3.0-or-later statement for `aide_cas`. Using them is compatible with our GPL-3.0-or-later licence, with attribution to the authors named above and a pointer to the Giac source.
-2. **Do not ship the French lines (language `1`)** in any build, since the README says they are non-commercial only. Spanish/Greek/German lines carry their own authors and should only be shipped if we also want those languages; the safest first step is English only.
+2. **The French lines (language `1`) are GPL too:** B. Parisse confirmed on 2026-10-19 that the non-GPL French documentation in the README means R. De Graeve's LaTeX/PDF manuals, not the French lines of `aide_cas`. We ship English only because the app is English-first; i18n can add French later. Spanish/Greek/German lines carry their own authors and should only be shipped if we also want those languages.
 3. Extract at build time from the pinned tarball with a script (no copy of `aide_cas` committed), keep only language `2`, and record the licence line in `THIRD_PARTY.md`.
-4. The README's wording ("the file is GPL" but "the French part is not") is internally inconsistent, so **ask B. Parisse to confirm** in the email that is already planned after the device measurements (not tonight): that the English entries of `aide_cas` may be redistributed in a GPL-3.0-or-later app.
+4. **Answered** (B. Parisse, email, 2026-10-19): "aide_cas est entièrement GPL". The README's "the French part is not" refers to R. De Graeve's manuals, so the English entries, and the whole file, may ship in a GPL-3.0-or-later app (decisions.md P10).
 5. The HP/Prime help text rule in CLAUDE.md is unaffected: Giac's help is Giac's own, and we never use HP manual text.

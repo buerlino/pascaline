@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # P3 integration plan: units, constants and uncertainty (libqalculate)
 
-Status: design only (gorge, 2026-10-11). Base: phase-1. Spike evidence: spike/RESULTS.md (P3 section), spike/qalc/. Decisions for the user are in section 7.
+Status: design only (gorge, 2026-10-11). **Superseded by P15 (2026-10-14, docs/decisions.md): no qalc worker; the unit view computes on Giac, and libqalculate runs only at build time, as the Find index's source.** Base: phase-1. Spike evidence: spike/RESULTS.md (P3 section), spike/qalc/. Decisions for the user are in section 7.
 
 **Amended 2026-10-12 (P8 in docs/decisions.md):** units live in their own Units app (Shift+Tmpl); Home, CAS, Solve and lists stay unit-free, so the `unitEval` split in section 1 and the Home entry in section 2 are replaced; units and constants are found through Find (docs/03-feature-analysis.md section 3) instead of Menu pickers. Engine, build, data checks, `hp` patch and tests stand. What changed is in docs/03-feature-analysis.md section 4; it is milestone 5.
 

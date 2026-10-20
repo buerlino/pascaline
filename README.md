@@ -24,8 +24,8 @@ A graphing CAS calculator for Android and the web. Giac, GSL and MPFR compiled t
 Capacitor shell (Android; plain web as an offline PWA)
 └─ UI: Svelte 5 + MathLive + JSXGraph
    └─ MathEngine (async, cancellable)
-      ├─ Worker: giac.wasm (Giac 2.1.0 + GSL 2.8 + GMP 6.3.0 + MPFR 4.2.2)
-      └─ Worker: libqalculate 5.13.1 wasm (lazy; built, used from milestone 4)
+      └─ Worker: giac.wasm (Giac 2.1.0 + GSL 2.8 + GMP 6.3.0 + MPFR 4.2.2); the unit view computes here too
+Find: a static index generated at build time (unit factors and constants from libqalculate 5.13.1, which never runs in the app)
 ```
 Details: [docs/04-architecture.md](docs/04-architecture.md).
 

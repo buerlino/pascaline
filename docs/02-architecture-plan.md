@@ -8,7 +8,7 @@
 
 **Goal update (user, 2026-10-12, replaced 2026-10-13):** the product goal is a precision engineering tool that makes everyday engineering calculation faster and more precise; the Prime-like layout is the way in, not the aim. Priorities: [03-feature-analysis.md](03-feature-analysis.md).
 
-**Superseded where they differ (2026-10-12): [04-architecture.md](04-architecture.md)** settles the architecture for that goal (precision chain, Find, the Units app, keys, state, build and gates). This document stays the record of the original plan, the solver choice (section 4), the licence and F-Droid reasoning (sections 10–11) and the milestone history (section 12).
+**Superseded where they differ (2026-10-12): [04-architecture.md](04-architecture.md)** settles the architecture for that goal (precision chain, Find, units, keys, state, build and gates); since P15 (2026-10-14) libqalculate never runs in the app, so this plan's qalc worker and Units app are history. This document stays the record of the original plan, the solver choice (section 4), the licence and F-Droid reasoning (sections 10–11) and the milestone history (section 12).
 
 **Original goal (2026-10-10):** an app that *feels* like an HP Prime G2, with the same key layout, the same apps and the same functions, but with our own look and name. It doesn't have to be bit-for-bit identical, it may improve on the original, and it should be built **mostly from existing open-source projects** to keep development time low.
 
@@ -137,7 +137,7 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 | **Units, constants** | libqalculate as a third worker, in its own Units app; units and constants are found through Find, constants enter Home as numbers (P3 as amended by P8; `docs/p3-units-plan.md`, docs/04 section 4; Giac units are not used) | Units app, Find index |
 | **Lists, matrices** | Giac | List/matrix editors (grid) |
 | **Python** | MicroPython (default, D6) + `calc` and `hpprime`-compatible modules + CodeMirror editor; Pyodide "Python+" (numpy) as an optional download | Section 3 |
-| **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); licence: the English lines are GPL-3.0-or-later by Giac's README (R5, `docs/research/giac-help-licence.md`; to confirm with Parisse) | Help texts for apps and keys |
+| **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); licence: the English lines are GPL-3.0-or-later by Giac's README (R5, `docs/research/giac-help-licence.md`; confirmed by Parisse on 2026-10-19, P10) | Help texts for apps and keys |
 | **Notes** | CodeMirror (Markdown) | Small |
 | **Keyboard** | — | **Ours.** Same logical layout as the Prime, our own visual design |
 | **RPN entry mode** | Giac operations on a stack | About 2–3 weeks (Phase 2) |

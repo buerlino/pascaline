@@ -25,7 +25,7 @@ The libxml2 and libqalculate tarballs are SHA-256-checked by the script.
 
 Generated at build time by `tools/find-index/generate.mjs`, not committed.
 
-1. Giac 2.1.0 `doc/aide_cas`, English entries only: GPL-3.0-or-later per Giac's README (R5; P10, accepted 2026-10-12: shipped now, confirmation from B. Parisse before any public release), authors as R5 lists.
+1. Giac 2.1.0 `doc/aide_cas`, English entries only: GPL-3.0-or-later per Giac's README (R5; P10; confirmed by B. Parisse by email on 2026-10-19: the whole file is GPL), authors as R5 lists.
 2. libqalculate 5.13.1 `data/units.xml.in`, `variables.xml.in`, `prefixes.xml.in`: GPL-2.0-or-later, the library's licence (the combined work is GPL-3.0); values and factors computed by our qalc build.
 3. `find/aliases.yaml`, `find/functions.yaml`, `find/units.yaml`: ours, GPL-3.0-or-later.
 

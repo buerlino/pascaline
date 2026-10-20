@@ -209,7 +209,7 @@ Live items (variables, user functions) have the same shape with `kind: "var" | "
 
 **When it loads:** fetched when the browser is idle after the engine is ready (the same hook as the service worker registration in `main.ts`), parsed on the first Find open; if Find opens first, it fetches then. Never in the start chunk (size test).
 
-**Licences:** 7.2 (Giac's English lines under P10, with B. Parisse's confirmation before any public release); the About screen credits Giac and libqalculate.
+**Licences:** 7.2 (Giac's English lines under P10, confirmed by B. Parisse on 2026-10-19); the About screen credits Giac and libqalculate.
 
 **Alternatives:** generating at run time from the engines (costs start-up and memory); committing the generated JSON (F-Droid: generated data in git is not our source); all 1,780 Giac commands at the same rank (buries what engineers use under graph theory and geometry).
 
@@ -344,6 +344,7 @@ Every key press counts 1, Shift and Alpha included; letters typed in Find count 
 ### 6.1 Topology and contracts
 - **State:** the main thread runs the UI, keyboard, parser and formatter; worker 1 is Giac (started at launch, D2), cancelled by terminate and respawn with the definitions replayed. The MicroPython worker went with the Python app (P11).
 - **Decision:** no further worker: the unit view computes on worker 1 (P15) and Find needs none (3.2). Interface changes are in 8.2.
+- **Proposed decision (2026-10-20; the owner's, not in decisions.md): Giac evaluates, our own layer decides** what is shown: the agreement check, decisions at a higher precision, refusals, marks and the facts of stored values (2.4, 2.8), working on Giac's printed text with our definitions loaded into Giac. Its core (`numeric.ts`, `host.ts`, `homeEval.ts`) is 3,074 lines on `da7a59c`, 4,555 with `converge.ts`, `solve*.ts` and `format.ts`; 56 of the 100 non-merge commits on `master..da7a59c` that touch `app/src/engine` are fixes, and text glue and global state (bug-patterns.md families 1, 2, 8, 9) hold 54 of its 224 rows. The proposed rule for it: one reader of Giac text, no hidden modes, a fix at the cause (a Giac patch where the cause is local there), a register of our workarounds with canaries. Evidence: [research/multi-engine-answer.md](research/multi-engine-answer.md) section 0; packages and decisions: the [consolidation report](shifts/2026-10-20-sandra-consolidation-report.md).
 
 ### 6.2 Decision: one storage plan
 One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
@@ -392,6 +393,8 @@ Every piece and its licence is in [THIRD_PARTY.md](../THIRD_PARTY.md): libqalcul
 | Reproducibility | two release builds give the same `giac.wasm` and `qalc.wasm` | each release |
 
 The gates per milestone are the backlog's milestone lines.
+
+**What the gates serve: the mark never lies** ([R16](research/r16-verification.md); *proposed* = a package, not built). No test proves Giac right, so we test principle 3 as one property that needs no hand-written expected value: every digit under `=` or `≈` is right, `⚠ n` has n right digits, a number appears only where a value exists, an answer or a refusal comes within the budget. Six checks give each result a second source: (1) an oracle sweep of generated keyboard LaTeX, judged by mpmath in every setting (*proposed* G61; its first runs found backlog F44–F47, F50, F51); (2) sequences: a line's value and mark depend only on the names it uses (G43 built, *proposed* G62); (3) one value in Home, CAS `evalf`, Num, Plot and Solve (*proposed* G63); (4) CAS answers checked back by derivative, substitution and random points (*proposed* G64); (5) Giac's `check/` suite on our builds (*proposed* A19); (6) the golden Home and precision stages on the phone (*proposed* A20). **When to harden:** a dedicated pass (*proposed* S16) once the code under test settles (route R and the marks family merged on 2026-10-20); then the generators stay in the gate (fixed seed) and run nightly (rotating seed), and the full pass repeats at each milestone close, before each outside round and before a release.
 
 ---
 
