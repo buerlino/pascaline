@@ -30,4 +30,26 @@ describe.skipIf(!giacAvailable())("Area refuses only where Home refuses (G70)", 
     expect(r.error).toBe("no-root");
     expect(r.info).toBe(enEngine["error.integralDiverges"]);
   });
+
+  it("Giac's timeout in the divergence check keeps the value with a warning (G70f1)", async () => {
+    const real = (await loadNodeGiac()).giac;
+    let checking = false;
+    const wrapped = {
+      ...real,
+      eval: (t: string) => {
+        if (/\blimit\(/.test(t)) {
+          checking = true;
+          return "GIAC_ERROR: interrupted";
+        }
+        return real.eval(t);
+      },
+    } as typeof real;
+    const h = new EngineHost(wrapped);
+    const r = h.analyze({ kind: "area", f: "ln(x)", a: "0", b: "1" }, defaultHomeSettings);
+    expect(checking).toBe(true);
+    expect(r.ok, r.info).toBe(true);
+    expect(r.warn).toBe(true);
+    expect(r.value!.display).toBe("-1");
+    expect(r.info).toContain("divergence check did not finish");
+  });
 });
