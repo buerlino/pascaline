@@ -10,6 +10,8 @@ import { chipsIn, type ChipFactsTable } from "./engine/chipFacts.ts";
 import { inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
 import { latexToGiac, latexToGiacInfo } from "./input/latex-to-giac.ts";
 import { rewriteAngles } from "./input/angles.ts";
+import { applyDefChanges, type DefChange } from "./engine/defs.ts";
+import { namesFlag } from "./engine/flags.ts";
 
 export type Expect = string | Expect[];
 
@@ -59,6 +61,9 @@ export interface Case {
   beforeHome?: string[];
   /** precision.yaml, Home cases: inputs run first in CAS on the same engine (a value stored there, G50f1). */
   beforeCas?: string[];
+  /** precision.yaml (G67): after the `before…` inputs, the definitions log they left is replayed into a fresh engine (a
+   *  relaunch), and the case's input runs there. */
+  relaunch?: boolean;
   /** home.yaml (G34): a sequence of lines, each in its own angle mode; the last one is checked against expect and mark. */
   steps?: Step[];
   /** home.yaml sequences (G49): the constants the steps hold by name (`pasc_<id>`), as G26's table. */
@@ -196,7 +201,16 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
   const problems: string[] = [];
   let mark: MarkInfo | null;
   let shown: string;
-  const host = c.beforeHome?.length || c.beforeCas?.length ? new EngineHost(await fresh()) : shared;
+  // G67: a case whose inputs before it set a Giac setting runs on its own engine too (were the setting kept, it would
+  // reach every later case)
+  const own = c.beforeHome?.length || c.beforeCas?.length || c.relaunch || (c.before ?? []).some(namesFlag);
+  let host = own ? new EngineHost(await fresh()) : shared;
+  const defs: DefChange[] = [];
+  const relaunched = async (): Promise<void> => {
+    if (!c.relaunch) return;
+    host = new EngineHost(await fresh());
+    host.restore(applyDefChanges([], defs));
+  };
   const setting = c.settings?.digits ?? 12;
   // The digits the result is shown with: the setting, or what the input asked for (CAS evalf(x,n), M4-6).
   const digits = c.settings?.shown ?? setting;
@@ -204,8 +218,9 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
   const input = c.latex !== undefined ? latexToGiac(c.latex) : c.input!;
   if (c.kind === "cas") {
     const cs = { ...defaultCasSettings, angle: c.settings?.angle ?? "rad", digits: setting };
-    for (const b of c.beforeHome ?? []) host.home(giacOf(b), { ...defaultHomeSettings, digits: setting });
-    for (const b of c.before ?? []) host.cas(giacOf(b), cs);
+    for (const b of c.beforeHome ?? []) defs.push(...host.home(giacOf(b), { ...defaultHomeSettings, digits: setting }).defs);
+    for (const b of c.before ?? []) defs.push(...host.cas(giacOf(b), cs).defs);
+    await relaunched();
     const r = host.cas(input, cs).result;
     if (c.uses) {
       const got = (r.uses ?? []).map((u) => u.name).join(",");
@@ -218,8 +233,9 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
     mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && r.approximate ? (r.warn ? { mark: "⚠" } : { mark: "≈" }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
   } else {
     const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
-    for (const b of c.beforeCas ?? []) host.cas(giacOf(b), { ...defaultCasSettings, angle: s.angle, digits: setting });
-    for (const b of c.before ?? []) host.home(giacOf(b), s);
+    for (const b of c.beforeCas ?? []) defs.push(...host.cas(giacOf(b), { ...defaultCasSettings, angle: s.angle, digits: setting }).defs);
+    for (const b of c.before ?? []) defs.push(...host.home(giacOf(b), s).defs);
+    await relaunched();
     const r = host.home(input, s).result;
     shown = r.ok ? r.display : `error: ${r.display}`;
     mark = markOf(r, { format: "STD", digits });
