@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Giac calls per Enter (G52): the totals of the gate's `calls` stage. A set fails when its calls per input (total / inputs) are more than
 # 10 % above the baseline's (calls / inputs). Raise a value only with the reason in the package's report (the audit reads it).
-commit: 3062c2a  # G59 lowered it on p1/gorge-m4-exactcheck (parent 3062c2a: home 3063 over 257 inputs; the value read by one evalf per level)
+commit: 3062c2a  # G59 lowered it on p1/gorge-m4-exactcheck (was home 3063 over 257 inputs, set by G53 at b5b4e7e): the exact value is read by one evalf per level
 bench: 448
 benchInputs: 56
 home: 2906
