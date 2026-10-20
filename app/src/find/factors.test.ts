@@ -16,7 +16,7 @@ const qalc = join(process.env.PASCALINE_QALC_DL_DIR ?? join(repo, "engine/qalc/_
 const have = existsSync(giac) && existsSync(qalc);
 const required = process.env.FIND_INDEX === "required";
 
-const INDEX_SHA256 = "9807d9e125304d6c504ff5c820f43a2718c2ea7f63767eb8a24dbaa2f2c754d0"; // G67: Find hides the settings commands, marks purge and assume
+const INDEX_SHA256 = "f9602d6beabe49fd9d086d0b26798dda62bb9011ffac7b821c245e99d06d8d89"; // G80: basis and basisLeaves on the inexact constants; without them the bytes are the G67 ones (9807d9e1…)
 
 describe("factors.yaml", () => {
   it("exists", () => {

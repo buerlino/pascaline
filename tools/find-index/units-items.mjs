@@ -5,6 +5,7 @@
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { notes, fail } from "./state.mjs";
+import { basisOf } from "./basis.mjs";
 /** A minimal XML reader for qalc's data files: elements, attributes, text, comments; no DTD, no CDATA. */
 function parseXml(text) {
   const root = { tag: "#root", attrs: {}, children: [], text: "" };
@@ -469,6 +470,17 @@ export async function unitItems({ q, factors, xml, ours, aliases }) {
   };
   const vars = walkVars(parseXml(xml.variables).children[0], [], []);
   const skipCats = new Set(ours.constants?.skipCategories ?? []);
+  // G80: every variable by reference name, for the basis of the inexact constants
+  const basisVars = new Map();
+  for (const v of vars) {
+    const nm = qalcNames(childText(v.el, "names") ?? "");
+    const val = child(v.el, "value");
+    if (!nm.length || !val) continue;
+    const text = val.text.trim();
+    basisVars.set(nm.find((n) => n.flags.has("r"))?.name ?? nm[0].name,
+      { value: text, unit: val.attrs.unit, unc: val.attrs.uncertainty, formula: /^[\d.]+(?:[eE][+-]?\d+)?$/.test(text) ? undefined : text });
+  }
+  const refOf = new Map();
   for (const v of vars) {
     if (v.path[0] !== "Physical Constants") continue;
     if (skipCats.has(v.path[1])) continue;
@@ -526,7 +538,17 @@ export async function unitItems({ q, factors, xml, ours, aliases }) {
     item.insert = `\\const{${id}}{${sym ? symbolLatex(sym) : `\\mathrm{${latexName(id)}}`}}`;
     if (sym && sym !== id) item.names.push(sym);
     items.push(item);
+    refOf.set(item, ref);
     stats.consts++;
+  }
+  // G80: each inexact constant carries its basis (Giac text over pasl_<leaf> names), and the leaves their qalc digits
+  stats.noBasis = [];
+  for (const [item, ref] of refOf) {
+    if (item.unc === undefined) continue;
+    const b = basisOf(ref, basisVars);
+    if (b.why) { stats.noBasis.push(`${item.id} (${b.why})`); continue; }
+    item.basis = b.text;
+    item.basisLeaves = Object.fromEntries(b.leaves.map((l) => [l, { value: basisVars.get(l).value, unc: basisVars.get(l).unc }]));
   }
   // --- constants of ours (find/units.yaml constants.define): exact value, unit text parsed by qalc for the dimension
   for (const [id, c] of Object.entries(ours.constants?.define ?? {})) {
