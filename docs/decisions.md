@@ -7,7 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- None open.
+- **A11, on the phone once:** open Menu › Share session (share sheet), Shift + Menu with `1.5e-3` copied, and the r11 section 5 points 1–4 (save picker, file chooser, `accept`, save time). The APK with both plugins and `PascalineFiles` is installed on the Tab One; only the permission check was run there (VIBRATE only).
 
 ## Decided proposals
 
