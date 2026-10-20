@@ -4,7 +4,7 @@
 // at work precision and substituted back; the relative residual decides ⚠ (SolveSettings.warnRel).
 // Synchronous, UI-free; runs in the Giac worker and in Node. Giac names here have no underscore.
 import { safePrecision, toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
-import { confirmedDigits, decimalFromString, formatComplex, formatConfirmed, isZero, type ComplexValue, type DecimalValue } from "./format.ts";
+import { confirmedDigits, decimalFromString, decimalToString, formatComplex, formatConfirmed, isZero, type ComplexValue, type DecimalValue } from "./format.ts";
 import { valuePrecision } from "./numeric.ts";
 import { defaultSolveSettings, negZero, num, solve1, type SolveSettings } from "./solve1.ts";
 import { IDENT, type KnownValue, type SolveOutcome, type SolveRequest } from "./types.ts";
@@ -106,16 +106,51 @@ function knownSubst(knowns: KnownValue[] | undefined): { names: string[]; wrap: 
   return { names, wrap: (e) => `subst(${e},[${names.join(",")}],[${vals.join(",")}])` };
 }
 
-/** G68: a result computed from knowns confirms no more digits than the least confirmed known (M4-7); a ⚠ known gives ⚠. */
-function capByKnowns(r: HomeResult, knowns: KnownValue[] | undefined, digits: number): HomeResult {
-  const cap = Math.min(Infinity, ...(knowns ?? []).flatMap((k) => (k.digits === undefined ? [] : [k.digits])));
-  if (!r.ok || !r.value || !(cap < (r.reliableDigits ?? digits))) return r;
-  const facts = { value: r.value, exactRational: false, reliableDigits: Math.max(1, cap) };
+/** A known moved by one unit in its last confirmed digit (G68f1): `digits` significant digits of `value`, plus one. */
+export function movedKnown(k: KnownValue): KnownValue {
+  const v = k.digits === undefined ? null : decimalFromString(k.value.replace("E", "e"));
+  if (!v || k.digits === undefined || isZero(v)) return k;
+  const n = Math.max(1, k.digits);
+  const m = (BigInt(v.digits.slice(0, n).padEnd(n, "0")) + 1n).toString();
+  const exp = m.length > n ? v.exp + 1 : v.exp;
+  return { ...k, value: decimalToString({ neg: v.neg, digits: m.replace(/0+$/, ""), exp, sticky: false }) };
+}
+
+/** Significant digits on which two values agree (docs/04 2.4's agreement check), each part. */
+function agreement(a: ComplexValue, b: ComplexValue, cap: number): number {
+  const part = (x: DecimalValue, y: DecimalValue): number => (isZero(x) && isZero(y) ? cap : confirmedDigits(x, y, cap + 2, cap));
+  return Math.min(part(a.re, b.re), part(a.im, b.im));
+}
+
+/** A result with no more than `n` confirmed digits; the text shown and copied follows. */
+function confirmAtMost(r: HomeResult, n: number, digits: number): HomeResult {
+  if (!r.ok || !r.value || !(n < (r.reliableDigits ?? Infinity))) return r;
+  const facts = { value: r.value, exactRational: false, reliableDigits: n };
   return { ...r, ...facts, display: formatConfirmed(facts, { format: "STD", digits })!, full: formatConfirmed(facts, { format: "STD", digits: valuePrecision(digits) })! };
 }
-function capOutcome(o: SolveOutcome, knowns: KnownValue[] | undefined, digits: number): SolveOutcome {
+
+/**
+ * G68f1 (decisions G78f1, G68): a result computed from answer-knowns (those with `digits`) confirms only the digits on
+ * which two solves agree, one with the knowns as kept and one with each moved by one unit in its last confirmed digit.
+ * A digit count alone misses cancellation: `(x-1.41421)*10^6` loses digits. Typed knowns are exact and not moved; a ⚠
+ * known passes its ⚠ on.
+ */
+function checkByKnowns(o: SolveOutcome, req: SolveRequest, digits: number, again: (r: SolveRequest) => SolveOutcome): SolveOutcome {
+  const ks = req.knowns ?? [];
   if (!o.ok) return o;
-  return { ...o, warn: o.warn || (knowns ?? []).some((k) => k.warn), roots: o.roots.map((x) => ({ ...x, result: capByKnowns(x.result, knowns, digits) })) };
+  const warn = o.warn || ks.some((k) => k.warn);
+  if (!ks.some((k) => k.digits !== undefined)) return { ...o, warn };
+  const knowns = ks.map(movedKnown);
+  // The same guesses: the same path to the same root, moved (a guess at the root costs solve1 more: 313 calls, not 218).
+  const moved: SolveRequest = { ...req, knowns };
+  const o2 = again(moved);
+  const P = valuePrecision(digits);
+  const roots = o.roots.map((x, i) => {
+    const a = x.result.value;
+    const b = o2.ok && o2.roots.length === o.roots.length ? o2.roots[i]?.result.value : undefined;
+    return { ...x, result: confirmAtMost(x.result, a && b ? agreement(a, b, P) : 0, digits) };
+  });
+  return { ...o, warn, roots };
 }
 
 const HAS_EQ = /(^|[^:<>=!])=([^=]|$)/;
@@ -138,14 +173,16 @@ export function solveRequest(giac: Giac, req: SolveRequest, h: HomeSettings, ext
   const vars = req.kind === "poly" ? [req.unknown] : req.unknowns;
   for (const v of [...vars, ...ks.names]) if (!IDENT.test(v)) return fail("bad-input", `bad variable name ${v}`, t0);
   if (ks.names.some((n) => vars.includes(n))) return fail("bad-input", "a variable is both known and unknown", t0);
+  const run = (r: SolveRequest): SolveOutcome => {
+    const k = knownSubst(r.knowns);
+    if (r.kind === "poly") return polyRoots(giac, r.equation, r.unknown, k.wrap, s, t0);
+    if (r.equations.length !== r.unknowns.length || r.guesses.length !== r.unknowns.length || !r.unknowns.length)
+      return fail("bad-input", "need as many equations and guesses as unknowns", t0);
+    if (r.unknowns.length === 1) return one(giac, r.equations[0]!, r.unknowns[0]!, r.guesses[0]!, k, s, t0);
+    return system(giac, r.equations, r.unknowns, r.guesses, k.wrap, s, t0);
+  };
   try {
-    return capOutcome(withUnassigned(giac, [...vars, ...ks.names], () => {
-      if (req.kind === "poly") return polyRoots(giac, req.equation, req.unknown, ks.wrap, s, t0);
-      if (req.equations.length !== req.unknowns.length || req.guesses.length !== req.unknowns.length || !req.unknowns.length)
-        return fail("bad-input", "need as many equations and guesses as unknowns", t0);
-      if (req.unknowns.length === 1) return one(giac, req.equations[0]!, req.unknowns[0]!, req.guesses[0]!, ks, s, t0);
-      return system(giac, req.equations, req.unknowns, req.guesses, ks.wrap, s, t0);
-    }), req.knowns, s.digits);
+    return withUnassigned(giac, [...vars, ...ks.names], () => checkByKnowns(run(req), req, s.digits, run));
   } finally {
     giac.eval(`Digits:=${h.digits}`);
   }

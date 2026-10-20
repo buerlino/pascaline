@@ -40,6 +40,8 @@ interface Stored {
   warned?: Record<string, boolean>;
   /** The full value (Copy, docs/04 2.6) of the unknowns a solve answered; an edit drops it. */
   copies?: Record<string, string>;
+  /** G68f1: the confirmed digits of each copy, from its result's facts (absent: exact); dropped with the copy. */
+  confirmed?: Record<string, number>;
 }
 
 /** An equation typed on the entry line as Giac text, or why it does not parse. */
@@ -71,6 +73,8 @@ export class SolveApp implements AppInstance {
   report = $state<SolveReport | undefined>(undefined);
   /** The full value of each answered unknown, as Copy gives it (every confirmed digit, up to 40); absent = the stored value. */
   copies = $state<Record<string, string>>({});
+  /** G68f1: confirmed digits of each copy, from the result's facts (never counted from the copy text); absent = exact. */
+  confirmed = $state<Record<string, number>>({});
 
   private jobs = $state(0);
   private readonly host: AppHost;
@@ -94,8 +98,8 @@ export class SolveApp implements AppInstance {
   known(name: string): KnownValue {
     const full = this.copies[name];
     if (full === undefined) return { name, value: this.value(name) };
-    const digits = full.replace(/E.*$/, "").replace(/\D/g, "").replace(/^0+/, "").length;
-    return { name, value: full.replace("E", "e"), digits: Math.max(1, digits), ...(this.warned[name] ? { warn: true } : {}) };
+    const digits = this.confirmed[name];
+    return { name, value: full.replace("E", "e"), ...(digits !== undefined ? { digits } : {}), ...(this.warned[name] ? { warn: true } : {}) };
   }
   value(name: string): string {
     return this.values[name] ?? "0";
@@ -163,7 +167,19 @@ export class SolveApp implements AppInstance {
     this.host.copy(shown ? this.fmtValue(name) : await this.fullOf(name));
   }
   private settling: Promise<void> = Promise.resolve();
+  /** Waits for keepFull; a failed copy load leaves the stored value as the known. */
+  private async settled(): Promise<void> {
+    try {
+      await this.settling;
+    } catch (e) {
+      console.warn("solve app:", e);
+    }
+  }
   private dropCopy(name: string): void {
+    if (name in this.confirmed) {
+      const { [name]: _n, ...kept } = this.confirmed;
+      this.confirmed = kept;
+    }
     if (!(name in this.copies)) return;
     const { [name]: _gone, ...rest } = this.copies;
     this.copies = rest;
@@ -181,6 +197,8 @@ export class SolveApp implements AppInstance {
     });
     if (text !== undefined && this.values[name] === display.replace("E", "e")) {
       this.copies = { ...this.copies, [name]: text };
+      // An exact rational root has no count (reliableDigits null): it stays an exact known.
+      if (typeof r.reliableDigits === "number") this.confirmed = { ...this.confirmed, [name]: r.reliableDigits };
       this.save();
     }
   }
@@ -280,6 +298,7 @@ export class SolveApp implements AppInstance {
       this.report = { names, info: t("solve.tooFewUnknowns"), warn: true, ok: false };
       return;
     }
+    await this.settled(); // the full values of the last answers (F53: never the 12-digit display)
     const knowns: KnownValue[] = this.unknowns.filter((u) => !names.includes(u)).map((u) => this.known(u));
     this.report = { names, info: t("history.working"), warn: false, ok: true };
     const r = await this.job(() =>
@@ -297,6 +316,7 @@ export class SolveApp implements AppInstance {
     const [equation] = this.active;
     const name = this.selected;
     if (!equation || !name) return;
+    await this.settled();
     const knowns: KnownValue[] = this.unknowns.filter((u) => u !== name).map((u) => this.known(u));
     this.report = { names: [name], info: t("history.working"), warn: false, ok: true };
     const r = await this.job(() => this.calc.solve({ kind: "poly", equation, unknown: name, knowns }, this.host.settings));
@@ -362,6 +382,8 @@ export class SolveApp implements AppInstance {
       this.warned = Object.fromEntries(Object.entries(s.warned).filter(([k, v]) => v === true && k in this.values));
     if (s.copies && typeof s.copies === "object")
       this.copies = Object.fromEntries(Object.entries(s.copies).filter(([k, v]) => k in this.values && typeof v === "string" && /^-?\d[\d.]*(E-?\d+)?$/.test(v)));
+    if (s.confirmed && typeof s.confirmed === "object")
+      this.confirmed = Object.fromEntries(Object.entries(s.confirmed).filter(([k, v]) => k in this.copies && Number.isInteger(v) && (v as number) >= 0));
   }
   save(): void {
     this.saveTimer ??= setTimeout(() => this.flush(), 300);
@@ -369,7 +391,7 @@ export class SolveApp implements AppInstance {
   flush(): void {
     if (this.saveTimer !== undefined) clearTimeout(this.saveTimer);
     this.saveTimer = undefined;
-    const s: Stored = { slots: this.slots.toJSON(), values: { ...this.values }, selected: this.selected, warned: { ...this.warned }, copies: { ...this.copies } };
+    const s: Stored = { slots: this.slots.toJSON(), values: { ...this.values }, selected: this.selected, warned: { ...this.warned }, copies: { ...this.copies }, confirmed: { ...this.confirmed } };
     void this.host.kv.set("app.solve", s);
   }
 }
