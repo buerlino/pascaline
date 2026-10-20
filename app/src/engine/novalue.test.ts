@@ -139,5 +139,5 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     expect(r.ok || r.error === "timeout", r.display).toBe(true);
     // Before the fix the walk evaluated factorial(10^6) twice more after Home's own run (about 2 s more).
     expect(performance.now() - t0 - r.exactMs).toBeLessThan(700);
-  });
+  }, 30_000); // factorial(10^6) is one GMP call of about 1 s that ignores the interrupt; with 87 test files in parallel it took 6 s (run 150), so the overhead check above decides, not vitest's 5 s
 });
