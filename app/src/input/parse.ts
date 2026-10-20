@@ -201,6 +201,13 @@ export const GREEK: Readonly<Record<string, string>> = {
   psi: "psi", omega: "omega", Gamma: "Gamma_", Delta: "Delta", Theta: "Theta", Lambda: "Lambda", Sigma: "Sigma",
   Phi: "Phi_", Psi: "Psi_", Omega: "Omega",
 };
+/**
+ * R67 (decisions R58b): a typed letter is always a name. Giac reads `e` as exp(1) and `i` as √−1 (`e:=3` is refused,
+ * `sum(i^2,i,1,3)` an error), so the letters e and i go in as the stand-ins `e_` and `i_`, drawn as the letters again
+ * (render/tidy.ts). The constants come from the eˣ key (\exponentialE) and Shift + 2 (\imaginaryI).
+ */
+export const LETTER_NAMES: Readonly<Record<string, string>> = { e: "e_", i: "i_" };
+const letterName = (v: string): string => LETTER_NAMES[v] ?? v;
 const CONSTS: Record<string, string> = {
   pi: "Pi", exponentialE: "ExponentialE", imaginaryI: "ImaginaryUnit", infty: "PositiveInfinity",
 };
@@ -839,7 +846,7 @@ class Parser {
       this.pos++;
       return ["Call", name, ...this.list(")")];
     }
-    return name;
+    return name === letter ? letterName(letter) : name;
   }
   private shortText(): string {
     const t = this.peek();
@@ -1087,7 +1094,7 @@ class Parser {
     if (!this.isCh("}") || !(n1 >= 1) || n1 !== n2) return restore();
     this.pos++;
     let body = this.implicit();
-    for (let i = 0; i < n1; i++) body = ["D", body, v.v];
+    for (let i = 0; i < n1; i++) body = ["D", body, letterName(v.v)];
     return body;
   }
 
@@ -1108,7 +1115,7 @@ class Parser {
     const len = this.diffLen();
     if (len === 0) this.fail("parse.integralNeedsDx");
     this.pos += len; // the d marker; the variable follows
-    const v = (this.peek() as Tok).v;
+    const v = letterName((this.peek() as Tok).v);
     this.pos++;
     if (lo === undefined && hi === undefined) return ["Integrate", body, v];
     if (lo === undefined || hi === undefined) throw parseError("parse.integralNeedsBoth");
@@ -1128,7 +1135,7 @@ class Parser {
     this.expectCh("^");
     const hi = this.script();
     const body = this.term();
-    return [head, body, ["Tuple", (v as Tok).v, lo, hi]];
+    return [head, body, ["Tuple", letterName((v as Tok).v), lo, hi]];
   }
 
   private limit(): Json {
@@ -1161,7 +1168,7 @@ class Parser {
     }
     const a = new Parser(target, { userFunctions: this.user }).parseAll();
     const body = this.term();
-    const out: Json[] = ["Limit", ["Function", body, v.v], a];
+    const out: Json[] = ["Limit", ["Function", body, letterName(v.v)], a];
     if (dir !== undefined) out.push(dir);
     return out;
   }

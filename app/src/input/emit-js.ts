@@ -12,7 +12,7 @@ const FN1: Record<string, string> = {
   Exp: "Math.exp", Ln: "Math.log", Lg: "Math.log10", Abs: "Math.abs", Sqrt: "Math.sqrt", Floor: "Math.floor",
   Ceil: "Math.ceil", Round: "Math.round", Sign: "Math.sign",
 };
-const CONST: Record<string, string> = { Pi: "Math.PI", ExponentialE: "Math.E", e: "Math.E", PositiveInfinity: "Infinity" };
+const CONST: Record<string, string> = { Pi: "Math.PI", ExponentialE: "Math.E", PositiveInfinity: "Infinity" };
 
 function num(e: Json): string | undefined {
   if (typeof e === "object" && !Array.isArray(e) && "num" in e) return e.num;

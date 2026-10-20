@@ -24,7 +24,7 @@ test("no confirmed digit: the mark says so and the row holds no number", async (
 });
 
 test("⚠ n with n > 0 still shows its digits", async ({ page }) => {
-  await submit(page, "\\operatorname{romberg}\\left(e^{-x^2},x,0,1\\right)");
+  await submit(page, "\\operatorname{romberg}\\left(\\exponentialE^{-x^2},x,0,1\\right)");
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await expect(page.getByTestId("mark")).toHaveAttribute("data-mark", "⚠");
   await expect(page.getByTestId("mark")).not.toHaveText("⚠ no digit confirmed");

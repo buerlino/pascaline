@@ -146,6 +146,20 @@ function greekNames(s: string): string {
 }
 
 /**
+ * R67: Giac's constants are drawn upright, `\mathrm{e}^{x}` and `\mathrm{i}`, as Home draws them; latex() writes them
+ * as a plain `e^` and `i` (latex(2+3*i) is `2+3*i`). The upright form keeps them apart from the letters e and i, which
+ * are the names e_ and i_ (input/parse.ts LETTER_NAMES): Giac draws those `\mathrm{e\_}` and `\mathrm{i\_}`, and
+ * they become the plain letters. So a result put back on the line (render/insertable.ts) reads each one as it was.
+ * Must run before every rule that writes \mathrm{…} or a plain letter; text inside \mathrm{…} is skipped.
+ */
+function constantsAndLetters(s: string): string {
+  return s
+    .replace(/\\mathrm\{[^{}]*\}|(?<![A-Za-z\\])e(?=\^)|(?<![A-Za-z\\])i(?![A-Za-z])/g, (m: string) =>
+      m === "e" || m === "i" ? `\\mathrm{${m}}` : m)
+    .replace(/\\mathrm\{([ei])\\_\}/g, "$1");
+}
+
+/**
  * R18f1: a ≠ test that stays as typed comes back from latex() as a call, `\mathrm{!=}\left(a,b\right)`; drawn a≠b.
  * The comma that splits it is the one outside every bracket.
  */
@@ -168,6 +182,7 @@ function notEqualCalls(s: string): string {
 
 export function tidyGiacLatex(raw: string): string {
   let s = raw.trim();
+  s = constantsAndLetters(s);
   s = notEqualCalls(s);
   s = greekNames(s);
   s = subscriptNames(s);
@@ -180,7 +195,6 @@ export function tidyGiacLatex(raw: string): string {
   s = equalitySides(s);
   s = stripFracParens(s);
   s = s.replace(/\*/g, "\\cdot ");
-  s = s.replace(/(?<![A-Za-z\\])e\^/g, "\\mathrm{e}^");
   s = implicitProducts(s);
   return s.replace(/\s+/g, " ").trim();
 }

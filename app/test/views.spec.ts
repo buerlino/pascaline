@@ -120,3 +120,17 @@ test("the system keyboard never appears", async ({ page }) => {
   }));
   expect(st).toEqual({ active: "math-field", vk: false, inputmode: ["none"] });
 });
+
+test("CAS (R67): Alpha e is a name and Shift + 2 the constant; a tapped result keeps each as it was", async ({ page }) => {
+  await tap(page, ["u3", "d2", "add", "d3", "shift", "d2", "enter"]);
+  const res = lastResult(page).locator(".math");
+  await expect(res).toHaveAttribute("data-latex", "2+3\\mathrm{i}");
+  await tap(page, ["alpha", "frac", "mul", "d2", "enter"]);
+  await expect(res).toHaveAttribute("data-latex", "e\\cdot 2"); // not 5.43656365692: e is the name e_, in Giac's order
+  await page.locator('[data-testid="result"] .result').first().tap();
+  await tap(page, ["mul", "d2", "enter"]);
+  await expect(res).toHaveAttribute("data-latex", "4+6\\mathrm{i}");
+  await page.locator('[data-testid="result"] .result').nth(1).tap();
+  await tap(page, ["mul", "d2", "enter"]);
+  await expect(res).toHaveAttribute("data-latex", "4e"); // (e_*2)*2 is 4*e_, still the name
+});

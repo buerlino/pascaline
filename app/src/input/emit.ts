@@ -82,7 +82,7 @@ const INVERSE: Record<string, string> = {
   Sin: "asin", Cos: "acos", Tan: "atan", Sinh: "asinh", Cosh: "acosh", Tanh: "atanh",
 };
 const CONST: Record<string, string> = {
-  Pi: "pi", ExponentialE: "exp(1)", ImaginaryUnit: "i", e: "exp(1)",
+  Pi: "pi", ExponentialE: "exp(1)", ImaginaryUnit: "i",
   PositiveInfinity: "inf", NegativeInfinity: "(-inf)", ComplexInfinity: "infinity",
 };
 const REL: Record<string, string> = {
@@ -267,7 +267,7 @@ function ser(e: Json, o: SerializeOptions): Out {
     case "Square":
       return { s: `${wrap(ser(a0, o), 5)}^2`, p: 4 };
     case "Power": {
-      if (a0 === "ExponentialE" || a0 === "e") return call("exp", [a1], o); // e^x -> exp(x), not exp(1)^x
+      if (a0 === "ExponentialE") return call("exp", [a1], o); // e^x -> exp(x), not exp(1)^x
       const base = ser(a0, o);
       // P5 (b), R39: (-8)^(1/3) = -2 in Solve and Function; surd(b,q)^p is the real q-th root to the power p
       const odd = o.realOddRoots === true ? oddRootExponent(a1) : undefined;
