@@ -104,7 +104,7 @@ describe.skipIf(!hasIndex)("Find index and query test", () => {
 it("finds the full generated index (otherwise the query test was skipped)", () => {
   if (hasIndex) return;
   const why = existsSync(indexFile) ? "holds functions only (a --no-units build)" : "is missing";
-  const msg = `app/src/find/_gen/find-index.json ${why}; run npm run index with a qalc build (QALC_OUT)`;
+  const msg = `app/src/find/_gen/find-index.json ${why}; run npm run index`;
   if (process.env["FIND_INDEX"] === "required") expect.fail(msg);
   console.warn(`queries.test: ${msg}; the query test was skipped`);
 });

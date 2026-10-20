@@ -1,0 +1,565 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Find: the numbers libqalculate 5.13.1 gave the Find index, checked in so the build needs no qalc build (A21, decisions.md P22).
+# Names, titles and symbols' structure still come from the libqalculate tarball's XML (generate.mjs); this file holds only
+# the numbers. Run by a developer only: node tools/find-index/refresh-factors.mjs recomputes them from the qalc build
+# (engine/qalc/build-wasm.sh) and prints the difference; a change needs a find/units.yaml checks case or the owner's OK.
+#
+# Rows (the id is the Find id without its kind prefix):
+#   prefixes  si    the factor as 1/10^n or 10^n or 2^n
+#   units     si    the factor to SI base units (kg, not g), exact "p/q" (or "p/q*pi"); a temperature unit "k+offset"; none = no exact factor
+#             dim   the dimension key (kg1m2s-2); "" = a pure number
+#             sym   the printed symbol qalc gives (where it is more than the id)
+#   constants value, unc (the 2-digit uncertainty, last digits), dim
+#   source    "exact definition" (2019 SI, the 1959 yard and pound, NIST SP 811: find/units.yaml checks audit every one),
+#             "CODATA 2022" (NIST allascii.txt), or "libqalculate 5.13.1" (qalc's own number)
+#   qalc, qalcUnc, note   a row whose value replaces qalc's known data error: what qalc gives, and why (libqalculate#1043-1045)
+
+prefixes:
+  "q": { si: "1/1000000000000000000000000000000", source: "exact definition" }
+  "r": { si: "1/1000000000000000000000000000", source: "exact definition" }
+  "y": { si: "1/1000000000000000000000000", source: "exact definition" }
+  "z": { si: "1/1000000000000000000000", source: "exact definition" }
+  "a": { si: "1/1000000000000000000", source: "exact definition" }
+  "f": { si: "1/1000000000000000", source: "exact definition" }
+  "p": { si: "1/1000000000000", source: "exact definition" }
+  "n": { si: "1/1000000000", source: "exact definition" }
+  "u": { si: "1/1000000", source: "exact definition" }
+  "m": { si: "1/1000", source: "exact definition" }
+  "c": { si: "1/100", source: "exact definition" }
+  "d": { si: "1/10", source: "exact definition" }
+  "da": { si: "10", source: "exact definition" }
+  "h": { si: "100", source: "exact definition" }
+  "k": { si: "1000", source: "exact definition" }
+  "M": { si: "1000000", source: "exact definition" }
+  "G": { si: "1000000000", source: "exact definition" }
+  "T": { si: "1000000000000", source: "exact definition" }
+  "P": { si: "1000000000000000", source: "exact definition" }
+  "E": { si: "1000000000000000000", source: "exact definition" }
+  "Z": { si: "1000000000000000000000", source: "exact definition" }
+  "Y": { si: "1000000000000000000000000", source: "exact definition" }
+  "R": { si: "1000000000000000000000000000", source: "exact definition" }
+  "Q": { si: "1000000000000000000000000000000", source: "exact definition" }
+  "Ki": { si: "1024", source: "exact definition" }
+  "Mi": { si: "1048576", source: "exact definition" }
+  "Gi": { si: "1073741824", source: "exact definition" }
+  "Ti": { si: "1099511627776", source: "exact definition" }
+  "Pi": { si: "1125899906842624", source: "exact definition" }
+  "Ei": { si: "1152921504606846976", source: "exact definition" }
+  "Zi": { si: "1180591620717411303424", source: "exact definition" }
+  "Yi": { si: "1208925819614629174706176", source: "exact definition" }
+  "Ri": { si: "1237940039285380274899124224", source: "exact definition" }
+  "Qi": { si: "1267650600228229401496703205376", source: "exact definition" }
+
+units:
+  "m": { si: "1", dim: "m1", sym: "1 m", source: "libqalculate 5.13.1" }
+  "km": { si: "1000", dim: "m1", sym: "1 km", source: "libqalculate 5.13.1" }
+  "dm": { si: "1/10", dim: "m1", sym: "1 dm", source: "libqalculate 5.13.1" }
+  "cm": { si: "1/100", dim: "m1", sym: "1 cm", source: "libqalculate 5.13.1" }
+  "mm": { si: "1/1000", dim: "m1", sym: "1 mm", source: "libqalculate 5.13.1" }
+  "um": { si: "1/1000000", dim: "m1", sym: "1 µm", source: "libqalculate 5.13.1" }
+  "nm": { si: "1/1000000000", dim: "m1", sym: "1 nm", source: "libqalculate 5.13.1" }
+  "micron": { si: "1/1000000", dim: "m1", sym: "1 micron", source: "libqalculate 5.13.1" }
+  "nmi": { si: "1852", dim: "m1", sym: "1 nmi", source: "exact definition" }
+  "angstrom": { si: "1/10000000000", dim: "m1", sym: "1 Å", source: "exact definition" }
+  "in_US": { si: "100/3937", dim: "m1", sym: "1 in_US", source: "libqalculate 5.13.1" }
+  "in": { si: "127/5000", dim: "m1", sym: "1 in", source: "exact definition" }
+  "hand": { si: "127/1250", dim: "m1", sym: "1 hand", source: "libqalculate 5.13.1" }
+  "ft": { si: "381/1250", dim: "m1", sym: "1 ft", source: "exact definition" }
+  "ft_US": { si: "1200/3937", dim: "m1", sym: "1 ft_US", source: "libqalculate 5.13.1" }
+  "li": { si: "12573/62500", dim: "m1", sym: "1 li", source: "libqalculate 5.13.1" }
+  "yd": { si: "1143/1250", dim: "m1", sym: "1 yd", source: "exact definition" }
+  "rd": { si: "12573/2500", dim: "m1", sym: "1 rd", source: "libqalculate 5.13.1" }
+  "rd_US": { si: "19800/3937", dim: "m1", sym: "1 rd_US", source: "libqalculate 5.13.1" }
+  "fathom": { si: "1143/625", dim: "m1", sym: "1 fathom", source: "libqalculate 5.13.1" }
+  "ch": { si: "12573/625", dim: "m1", sym: "1 ch", source: "libqalculate 5.13.1" }
+  "fur": { si: "25146/125", dim: "m1", sym: "1 fur", source: "libqalculate 5.13.1" }
+  "mi": { si: "201168/125", dim: "m1", sym: "1 mi", source: "exact definition" }
+  "mi_US": { si: "6336000/3937", dim: "m1", sym: "1 mi_US", source: "libqalculate 5.13.1" }
+  "thou": { si: "127/5000000", dim: "m1", sym: "1 thou", source: "exact definition" }
+  "au": { si: "149597870700", dim: "m1", sym: "1 au", source: "libqalculate 5.13.1" }
+  "ly": { si: "9460730472580800", dim: "m1", sym: "1 ly", source: "libqalculate 5.13.1" }
+  "light_second": { si: "299792458", dim: "m1", sym: "1 LightSecond", source: "libqalculate 5.13.1" }
+  "light_minute": { si: "17987547480", dim: "m1", sym: "1 LightMinute", source: "libqalculate 5.13.1" }
+  "light_hour": { si: "1079252848800", dim: "m1", sym: "1 LightHour", source: "libqalculate 5.13.1" }
+  "pc": { si: "96939420213600000/pi", dim: "m1", sym: "1 pc", source: "libqalculate 5.13.1" }
+  "solar_radius": { si: "695700000", dim: "m1", sym: "1 R_☉", source: "libqalculate 5.13.1" }
+  "pied_du_roi": { si: "4500/13853", dim: "m1", sym: "1 PiedDuRoi", source: "libqalculate 5.13.1" }
+  "pouce": { si: "375/13853", dim: "m1", sym: "1 pouce", source: "libqalculate 5.13.1" }
+  "ligne": { si: "125/55412", dim: "m1", sym: "1 ligne", source: "libqalculate 5.13.1" }
+  "toise": { si: "27000/13853", dim: "m1", sym: "1 toise", source: "libqalculate 5.13.1" }
+  "l_P": { dim: "m1", sym: "1 l_P", source: "libqalculate 5.13.1" }
+  "bohr_unit": { dim: "m1", sym: "1 BohrUnit", source: "libqalculate 5.13.1" }
+  "planck_unit*c_unit/eV": { si: "6621486190496429/(10681177560000000000000*pi)", dim: "m1", sym: "1 ℏ⋅c ∕ eV", source: "libqalculate 5.13.1" }
+  "l_N": { dim: "m1", sym: "1 ƛ_unit", source: "libqalculate 5.13.1" }
+  "U": { si: "889/20000", dim: "m1", sym: "1 U", source: "libqalculate 5.13.1" }
+  "rad": { si: "1", dim: "rad1", sym: "1 rad", source: "libqalculate 5.13.1" }
+  "deg": { si: "pi/180", dim: "rad1", sym: "1°", source: "libqalculate 5.13.1" }
+  "gra": { si: "pi/200", dim: "rad1", sym: "1 gra", source: "libqalculate 5.13.1" }
+  "arcmin": { si: "pi/10800", dim: "rad1", sym: "1 arcmin", source: "libqalculate 5.13.1" }
+  "arcsec": { si: "pi/648000", dim: "rad1", sym: "1 arcsec", source: "libqalculate 5.13.1" }
+  "tr": { si: "2*pi", dim: "rad1", sym: "1 tr", source: "libqalculate 5.13.1" }
+  "deg^2": { si: "pi^2/32400", dim: "rad2", sym: "1 deg²", source: "libqalculate 5.13.1" }
+  "sr": { si: "1", dim: "rad2", sym: "1 sr", source: "libqalculate 5.13.1" }
+  "rad/s^2": { si: "1", dim: "rad1s-2", sym: "1 rad ∕ s²", source: "libqalculate 5.13.1" }
+  "rad/s": { si: "1", dim: "rad1s-1", sym: "1 rad ∕ s", source: "libqalculate 5.13.1" }
+  "rpm": { si: "pi/30", dim: "rad1s-1", sym: "1 rpm", source: "libqalculate 5.13.1" }
+  "g": { si: "1/1000", dim: "kg1", sym: "1 g", source: "libqalculate 5.13.1" }
+  "kg": { si: "1", dim: "kg1", sym: "1 kg", source: "libqalculate 5.13.1" }
+  "hg": { si: "1/10", dim: "kg1", sym: "1 hg", source: "libqalculate 5.13.1" }
+  "t": { si: "1000", dim: "kg1", sym: "1 t", source: "exact definition" }
+  "gr": { si: "6479891/100000000000", dim: "kg1", sym: "1 gr", source: "libqalculate 5.13.1" }
+  "pwt": { si: "19439673/12500000000", dim: "kg1", sym: "1 pwt", source: "libqalculate 5.13.1" }
+  "oz_t": { si: "19439673/625000000", dim: "kg1", sym: "1 oz_t", source: "libqalculate 5.13.1" }
+  "lb_t": { si: "58319019/156250000", dim: "kg1", sym: "1 lb_t", source: "libqalculate 5.13.1" }
+  "dr": { si: "45359237/25600000000", dim: "kg1", sym: "1 dr", source: "libqalculate 5.13.1" }
+  "oz": { si: "45359237/1600000000", dim: "kg1", sym: "1 oz", source: "libqalculate 5.13.1" }
+  "lb": { si: "45359237/100000000", dim: "kg1", sym: "1 lb", source: "exact definition" }
+  "cwt": { si: "45359237/1000000", dim: "kg1", sym: "1 cwt", source: "libqalculate 5.13.1" }
+  "l_cwt": { si: "317514659/6250000", dim: "kg1", sym: "1 l_cwt", source: "libqalculate 5.13.1" }
+  "s_ton": { si: "45359237/50000", dim: "kg1", sym: "1 s_ton", source: "libqalculate 5.13.1" }
+  "l_ton": { si: "317514659/312500", dim: "kg1", sym: "1 l_ton", source: "libqalculate 5.13.1" }
+  "stone": { si: "317514659/50000000", dim: "kg1", sym: "1 stone", source: "libqalculate 5.13.1" }
+  "carat": { si: "1/5000", dim: "kg1", sym: "1 carat", source: "libqalculate 5.13.1" }
+  "pfund": { si: "1/2", dim: "kg1", sym: "1 pfund", source: "libqalculate 5.13.1" }
+  "zentner": { si: "50", dim: "kg1", sym: "1 zentner", source: "libqalculate 5.13.1" }
+  "m_P": { dim: "kg1", sym: "1 m_P", source: "libqalculate 5.13.1" }
+  "m_eunit": { dim: "kg1", sym: "1 m_e", source: "libqalculate 5.13.1" }
+  "eV/c_unit^2": { si: "801088317/449377589368408820000000000000000000000000000", dim: "kg1", sym: "1 eV ∕ c²", source: "libqalculate 5.13.1" }
+  "u": { dim: "kg1", sym: "1 u", source: "libqalculate 5.13.1" }
+  "Da": { dim: "kg1", sym: "1 Da", source: "libqalculate 5.13.1" }
+  "kDa": { dim: "kg1", sym: "1 kDa", source: "libqalculate 5.13.1" }
+  "solar_mass": { dim: "kg1", sym: "1 M_☉", source: "libqalculate 5.13.1" }
+  "slug": { si: "8896443230521/609600000000", dim: "kg1", sym: "1 slug", source: "libqalculate 5.13.1" }
+  "kg/m^3": { si: "1", dim: "kg1m-3", sym: "1 kg ∕ m³", source: "libqalculate 5.13.1" }
+  "g/dm^3": { si: "1", dim: "kg1m-3", sym: "0.001 kg ∕ dm³", source: "libqalculate 5.13.1" }
+  "g/cm^3": { si: "1000", dim: "kg1m-3", sym: "0.001 kg ∕ cm³", source: "libqalculate 5.13.1" }
+  "g/mol": { si: "1/1000", dim: "kg1mol-1", sym: "0.001 kg ∕ mol", source: "libqalculate 5.13.1" }
+  "kg/kg": { si: "1", dim: "", sym: "1 kg ∕ kg", source: "libqalculate 5.13.1" }
+  "s": { si: "1", dim: "s1", sym: "1 s", source: "libqalculate 5.13.1" }
+  "min": { si: "60", dim: "s1", sym: "1 min", source: "libqalculate 5.13.1" }
+  "h": { si: "3600", dim: "s1", sym: "1 h", source: "exact definition" }
+  "d": { si: "86400", dim: "s1", sym: "1 d", source: "exact definition" }
+  "week": { si: "604800", dim: "s1", sym: "1 week", source: "libqalculate 5.13.1" }
+  "fortnight": { si: "1209600", dim: "s1", sym: "1 fortnight", source: "libqalculate 5.13.1" }
+  "a_j": { si: "31557600", dim: "s1", sym: "1 a_j", source: "libqalculate 5.13.1" }
+  "a_g": { si: "31556952", dim: "s1", sym: "1 a_g", source: "libqalculate 5.13.1" }
+  "a_t": { si: "3944615652/125", dim: "s1", sym: "1 a_t", source: "libqalculate 5.13.1" }
+  "month": { si: "2629800", dim: "s1", sym: "1 month", source: "libqalculate 5.13.1" }
+  "t_P": { dim: "s1", sym: "1 t_P", source: "libqalculate 5.13.1" }
+  "planck_unit/Ha": { dim: "s1", sym: "1 ℏ ∕ Ha", source: "libqalculate 5.13.1" }
+  "planck_unit/(m_eunit*c_unit^2)": { dim: "s1", sym: "1 ℏ ∕ (m_e⋅c²)", source: "libqalculate 5.13.1" }
+  "planck_unit/eV": { si: "44173801/(21362355120000000000000*pi)", dim: "s1", sym: "1 ℏ ∕ eV", source: "libqalculate 5.13.1" }
+  "Hz": { si: "1", dim: "s-1", sym: "1 Hz", source: "libqalculate 5.13.1" }
+  "A": { si: "1", dim: "A1", sym: "1 A", source: "libqalculate 5.13.1" }
+  "abA": { si: "10", dim: "A1", sym: "1 abA", source: "libqalculate 5.13.1" }
+  "A/m^2": { si: "1", dim: "A1m-2", sym: "1 A ∕ m²", source: "libqalculate 5.13.1" }
+  "C": { si: "1", dim: "A1s1", sym: "1 C", source: "libqalculate 5.13.1" }
+  "abC": { si: "10", dim: "A1s1", sym: "1 abC", source: "libqalculate 5.13.1" }
+  "statC": { si: "1/2997924580", dim: "A1s1", sym: "1 statC", source: "libqalculate 5.13.1" }
+  "q_P": { dim: "A1s1", sym: "1 q_P", source: "libqalculate 5.13.1" }
+  "e_unit": { si: "801088317/5000000000000000000000000000", dim: "A1s1", sym: "1 e", source: "libqalculate 5.13.1" }
+  "C/m^3": { si: "1", dim: "A1m-3s1", sym: "1 C ∕ m³", source: "libqalculate 5.13.1" }
+  "C*m": { si: "1", dim: "A1m1s1", sym: "1 C⋅m", source: "libqalculate 5.13.1" }
+  "D": { si: "1/299792458000000000000000000000", dim: "A1m1s1", sym: "1 D", source: "libqalculate 5.13.1" }
+  "C/m^2": { si: "1", dim: "A1m-2s1", sym: "1 C ∕ m²", source: "libqalculate 5.13.1" }
+  "V": { si: "1", dim: "A-1kg1m2s-3", sym: "1 V", source: "libqalculate 5.13.1" }
+  "statV": { si: "149896229/500000", dim: "A-1kg1m2s-3", sym: "1 statV", source: "libqalculate 5.13.1" }
+  "abV": { si: "1/100000000", dim: "A-1kg1m2s-3", sym: "1 abV", source: "libqalculate 5.13.1" }
+  "Ha/e_unit": { dim: "A-1kg1m2s-3", sym: "1 Ha ∕ e", source: "libqalculate 5.13.1" }
+  "F": { si: "1", dim: "A2kg-1m-2s4", sym: "1 F", source: "libqalculate 5.13.1" }
+  "V/C": { si: "1", dim: "A-2kg1m2s-4", sym: "1 V ∕ C", source: "libqalculate 5.13.1" }
+  "daraf": { si: "1", dim: "A-2kg1m2s-4", sym: "1 daraf", source: "libqalculate 5.13.1" }
+  "ohm": { si: "1", dim: "A-2kg1m2s-3", sym: "1 Ω", source: "libqalculate 5.13.1" }
+  "abohm": { si: "1/1000000000", dim: "A-2kg1m2s-3", sym: "1 abΩ", source: "libqalculate 5.13.1" }
+  "statohm": { si: "22468879468420441/25000", dim: "A-2kg1m2s-3", sym: "1 statΩ", source: "libqalculate 5.13.1" }
+  "S": { si: "1", dim: "A2kg-1m-2s3", sym: "1 S", source: "libqalculate 5.13.1" }
+  "V/m": { si: "1", dim: "A-1kg1m1s-3", sym: "1 V ∕ m", source: "libqalculate 5.13.1" }
+  "N/C": { si: "1", dim: "A-1kg1m1s-3", sym: "1 N ∕ C", source: "libqalculate 5.13.1" }
+  "Ha/(e_unit*bohr_unit)": { dim: "A-1kg1m1s-3", sym: "1 Ha ∕ (BohrUnit⋅e)", source: "libqalculate 5.13.1" }
+  "F/m": { si: "1", dim: "A2kg-1m-3s4", sym: "1 F ∕ m", source: "libqalculate 5.13.1" }
+  "H": { si: "1", dim: "A-2kg1m2s-2", sym: "1 H", source: "libqalculate 5.13.1" }
+  "abH": { si: "1/1000000000", dim: "A-2kg1m2s-2", sym: "1 abH", source: "libqalculate 5.13.1" }
+  "H/m": { si: "1", dim: "A-2kg1m1s-2", sym: "1 H ∕ m", source: "libqalculate 5.13.1" }
+  "K": { si: "1", dim: "K1", sym: "1 K", source: "libqalculate 5.13.1" }
+  "oC": { si: "1+5463/20", dim: "K1", sym: "1 °C", source: "libqalculate 5.13.1" }
+  "oR": { si: "5/9", dim: "K1", sym: "1 °R", source: "libqalculate 5.13.1" }
+  "oF": { si: "5/9+45967/180", dim: "K1", sym: "1 °F", source: "libqalculate 5.13.1" }
+  "T_P": { dim: "K1", sym: "1 T_P", source: "libqalculate 5.13.1" }
+  "eV/k_Bunit": { si: "16021766340/1380649", dim: "K1", sym: "1 eV ∕ k_B", source: "libqalculate 5.13.1" }
+  "mol": { si: "1", dim: "mol1", sym: "1 mol", source: "libqalculate 5.13.1" }
+  "einstein": { si: "1", dim: "mol1", sym: "1 einstein", source: "libqalculate 5.13.1" }
+  "mol/(m^2*s)": { si: "1", dim: "m-2mol1s-1", sym: "1 mol ∕ (s⋅m²)", source: "libqalculate 5.13.1" }
+  "umol/(m^2*s)": { si: "1/1000000", dim: "m-2mol1s-1", sym: "1 µmol ∕ (s⋅m²)", source: "libqalculate 5.13.1" }
+  "einstein/(m^2*s)": { si: "1", dim: "m-2mol1s-1", sym: "1 einstein ∕ (s⋅m²)", source: "libqalculate 5.13.1" }
+  "ueinstein/(m^2*s)": { si: "1/1000000", dim: "m-2mol1s-1", sym: "1 microeinstein ∕ (s⋅m²)", source: "libqalculate 5.13.1" }
+  "mol/m^3": { si: "1", dim: "m-3mol1", sym: "1 mol ∕ m³", source: "libqalculate 5.13.1" }
+  "mol/L": { si: "1000", dim: "m-3mol1", sym: "1 mol ∕ L", source: "libqalculate 5.13.1" }
+  "mol/dm^3": { si: "1000", dim: "m-3mol1", sym: "1 mol ∕ dm³", source: "libqalculate 5.13.1" }
+  "molar": { si: "1000", dim: "m-3mol1", sym: "1 molar", source: "libqalculate 5.13.1" }
+  "kat": { si: "1", dim: "mol1s-1", sym: "1 kat", source: "libqalculate 5.13.1" }
+  "kat/m^3": { si: "1", dim: "m-3mol1s-1", sym: "1 kat ∕ m³", source: "libqalculate 5.13.1" }
+  "cd": { si: "1", dim: "cd1", sym: "1 cd", source: "libqalculate 5.13.1" }
+  "cd/m^2": { si: "1", dim: "cd1m-2", sym: "1 cd ∕ m²", source: "libqalculate 5.13.1" }
+  "sb": { si: "10000", dim: "cd1m-2", sym: "1 sb", source: "libqalculate 5.13.1" }
+  "lambert": { si: "10^4/pi", dim: "cd1m-2", sym: "1 lambert", source: "libqalculate 5.13.1" }
+  "foot_lambert": { si: "1562500/(145161*pi)", dim: "cd1m-2", sym: "1 FootLambert", source: "libqalculate 5.13.1" }
+  "lm": { si: "1", dim: "cd1rad2", sym: "1 lm", source: "libqalculate 5.13.1" }
+  "lx": { si: "1", dim: "cd1m-2rad2", sym: "1 lx", source: "libqalculate 5.13.1" }
+  "fc": { si: "1562500/145161", dim: "cd1m-2rad2", sym: "1 fc", source: "libqalculate 5.13.1" }
+  "ph": { si: "10000", dim: "cd1m-2rad2", sym: "1 ph", source: "libqalculate 5.13.1" }
+  "W/sr": { si: "1", dim: "kg1m2rad-2s-3", sym: "1 W ∕ sr", source: "libqalculate 5.13.1" }
+  "W/m^2": { si: "1", dim: "kg1s-3", sym: "1 W ∕ m²", source: "libqalculate 5.13.1" }
+  "erg/(cm^2*s)": { si: "1/1000", dim: "kg1s-3", sym: "1 erg ∕ (s⋅cm²)", source: "libqalculate 5.13.1" }
+  "W/(sr*m^2)": { si: "1", dim: "kg1rad-2s-3", sym: "1 W ∕ (sr⋅m²)", source: "libqalculate 5.13.1" }
+  "m^2": { si: "1", dim: "m2", sym: "1 m²", source: "libqalculate 5.13.1" }
+  "km^2": { si: "1000000", dim: "m2", sym: "1 km²", source: "libqalculate 5.13.1" }
+  "a": { si: "100", dim: "m2", sym: "1 a", source: "libqalculate 5.13.1" }
+  "cmil": { si: "16129*pi/10^14", dim: "m2", sym: "1 cmil", source: "libqalculate 5.13.1" }
+  "kcmil": { si: "16129*pi/10^11", dim: "m2", sym: "1 kcmil", source: "libqalculate 5.13.1" }
+  "ha": { si: "10000", dim: "m2", sym: "1 ha", source: "libqalculate 5.13.1" }
+  "da": { si: "1000", dim: "m2", sym: "1 da", source: "libqalculate 5.13.1" }
+  "b": { si: "1/10000000000000000000000000000", dim: "m2", sym: "1 b", source: "libqalculate 5.13.1" }
+  "rood": { si: "158080329/156250", dim: "m2", sym: "1 rood", source: "libqalculate 5.13.1" }
+  "acre": { si: "316160658/78125", dim: "m2", sym: "1 acre", source: "libqalculate 5.13.1" }
+  "section": { si: "40144896000000/15499969", dim: "m2", sym: "1 section", source: "libqalculate 5.13.1" }
+  "township": { si: "1445216256000000/15499969", dim: "m2", sym: "1 township", source: "libqalculate 5.13.1" }
+  "ft^2": { si: "145161/1562500", dim: "m2", sym: "1 ft²", source: "libqalculate 5.13.1" }
+  "in^2": { si: "16129/25000000", dim: "m2", sym: "1 in²", source: "libqalculate 5.13.1" }
+  "mi^2": { si: "40468564224/15625", dim: "m2", sym: "1 mi²", source: "libqalculate 5.13.1" }
+  "darcy": { si: "1/1013250000000", dim: "m2", sym: "1 darcy", source: "libqalculate 5.13.1" }
+  "mdarcy": { si: "1/1013250000000000", dim: "m2", sym: "1 millidarcy", source: "libqalculate 5.13.1" }
+  "m^3": { si: "1", dim: "m3", sym: "1 m³", source: "libqalculate 5.13.1" }
+  "L": { si: "1/1000", dim: "m3", sym: "1 L", source: "exact definition" }
+  "mL": { si: "1/1000000", dim: "m3", sym: "1 mL", source: "libqalculate 5.13.1" }
+  "cL": { si: "1/100000", dim: "m3", sym: "1 cL", source: "libqalculate 5.13.1" }
+  "dL": { si: "1/10000", dim: "m3", sym: "1 dL", source: "libqalculate 5.13.1" }
+  "in^3": { si: "2048383/125000000000", dim: "m3", sym: "1 in³", source: "libqalculate 5.13.1" }
+  "cm^3": { si: "1/1000000", dim: "m3", sym: "1 cm³", source: "libqalculate 5.13.1" }
+  "L/km": { si: "1/1000000", dim: "m2", sym: "1 L ∕ km", source: "libqalculate 5.13.1" }
+  "km/L": { si: "1000000", dim: "m-2", sym: "1 km ∕ L", source: "libqalculate 5.13.1" }
+  "mpg": { si: "48000000000/112903", dim: "m-2", sym: "1 mpg", source: "libqalculate 5.13.1" }
+  "tsp": { si: "1/200000", dim: "m3", sym: "1 tsp", source: "libqalculate 5.13.1" }
+  "dessertspoon": { si: "1/100000", dim: "m3", sym: "1 dessertspoon", source: "libqalculate 5.13.1" }
+  "tbsp": { si: "3/200000", dim: "m3", sym: "1 tbsp", source: "libqalculate 5.13.1" }
+  "tsp_US": { si: "157725491/32000000000000", dim: "m3", sym: "1 tsp_US", source: "libqalculate 5.13.1" }
+  "US_dessertspoon": { si: "157725491/16000000000000", dim: "m3", sym: "1 US_dessertspoon", source: "libqalculate 5.13.1" }
+  "tbsp_US": { si: "473176473/32000000000000", dim: "m3", sym: "1 tbsp_US", source: "libqalculate 5.13.1" }
+  "cup": { si: "3/12500", dim: "m3", sym: "1 cup", source: "libqalculate 5.13.1" }
+  "cup_US": { si: "473176473/2000000000000", dim: "m3", sym: "1 cup_US", source: "libqalculate 5.13.1" }
+  "fl_oz_UK": { si: "454609/16000000000", dim: "m3", sym: "1 fl_oz_UK", source: "libqalculate 5.13.1" }
+  "gi_UK": { si: "454609/3200000000", dim: "m3", sym: "1 gi_UK", source: "libqalculate 5.13.1" }
+  "pt_UK": { si: "454609/800000000", dim: "m3", sym: "1 pt_UK", source: "libqalculate 5.13.1" }
+  "qt_UK": { si: "454609/400000000", dim: "m3", sym: "1 qt_UK", source: "libqalculate 5.13.1" }
+  "gal_UK": { si: "454609/100000000", dim: "m3", sym: "1 gal_UK", source: "exact definition" }
+  "imperial_minim": { si: "454609/7680000000000", dim: "m3", sym: "1 ImperialMinim", source: "libqalculate 5.13.1" }
+  "imperial_fluid_scruple": { si: "454609/384000000000", dim: "m3", sym: "1 ImperialFluidScruple", source: "libqalculate 5.13.1" }
+  "fl_dr_UK": { si: "454609/128000000000", dim: "m3", sym: "1 fl_dr_UK", source: "libqalculate 5.13.1" }
+  "bu_UK": { si: "454609/12500000", dim: "m3", sym: "1 bu_UK", source: "libqalculate 5.13.1" }
+  "fl_oz": { si: "473176473/16000000000000", dim: "m3", sym: "1 fl_oz", source: "libqalculate 5.13.1" }
+  "gi": { si: "473176473/4000000000000", dim: "m3", sym: "1 gi", source: "libqalculate 5.13.1" }
+  "liq_pt": { si: "473176473/1000000000000", dim: "m3", sym: "1 liq_pt", source: "libqalculate 5.13.1" }
+  "liq_qt": { si: "473176473/500000000000", dim: "m3", sym: "1 liq_qt", source: "libqalculate 5.13.1" }
+  "minim": { si: "157725491/2560000000000000", dim: "m3", sym: "1 minim", source: "libqalculate 5.13.1" }
+  "fl_dr": { si: "473176473/128000000000000", dim: "m3", sym: "1 fl_dr", source: "libqalculate 5.13.1" }
+  "dry_pt": { si: "220244188543/400000000000000", dim: "m3", sym: "1 dry_pt", source: "libqalculate 5.13.1" }
+  "dry_qt": { si: "220244188543/200000000000000", dim: "m3", sym: "1 dry_qt", source: "libqalculate 5.13.1" }
+  "pk": { si: "220244188543/25000000000000", dim: "m3", sym: "1 pk", source: "libqalculate 5.13.1" }
+  "bu": { si: "220244188543/6250000000000", dim: "m3", sym: "1 bu", source: "libqalculate 5.13.1" }
+  "gal": { si: "473176473/125000000000", dim: "m3", sym: "1 gal", source: "exact definition" }
+  "bbl": { si: "9936705933/62500000000", dim: "m3", sym: "1 bbl", source: "libqalculate 5.13.1" }
+  "acre*ft": { si: "60228605349/48828125", dim: "m3", sym: "1 acre⋅ft", source: "libqalculate 5.13.1" }
+  "m^3/kg": { si: "1", dim: "kg-1m3", sym: "1 m³ ∕ kg", source: "libqalculate 5.13.1" }
+  "L/s": { si: "1/1000", dim: "m3s-1", sym: "1 L ∕ s", source: "libqalculate 5.13.1" }
+  "L/min": { si: "1/60000", dim: "m3s-1", sym: "1 L ∕ min", source: "libqalculate 5.13.1" }
+  "L/h": { si: "1/3600000", dim: "m3s-1", sym: "1 L ∕ h", source: "libqalculate 5.13.1" }
+  "m^3/s": { si: "1", dim: "m3s-1", sym: "1 m³ ∕ s", source: "libqalculate 5.13.1" }
+  "cm^3/min": { si: "1/60000000", dim: "m3s-1", sym: "1 cm³ ∕ min", source: "libqalculate 5.13.1" }
+  "sverdrup": { si: "1000000", dim: "m3s-1", sym: "1 sverdrup", source: "libqalculate 5.13.1" }
+  "ft^3/min": { si: "18435447/39062500000", dim: "m3s-1", sym: "1 ft³ ∕ min", source: "libqalculate 5.13.1" }
+  "cfm": { si: "18435447/39062500000", dim: "m3s-1", sym: "1 cfm", source: "libqalculate 5.13.1" }
+  "ft^3/s": { si: "55306341/1953125000", dim: "m3s-1", sym: "1 ft³ ∕ s", source: "libqalculate 5.13.1" }
+  "cfs": { si: "55306341/1953125000", dim: "m3s-1", sym: "1 cfs", source: "libqalculate 5.13.1" }
+  "gpm": { si: "157725491/2500000000000", dim: "m3s-1", sym: "1 gpm", source: "libqalculate 5.13.1" }
+  "gph": { si: "157725491/150000000000000", dim: "m3s-1", sym: "1 gph", source: "libqalculate 5.13.1" }
+  "gal/s": { si: "473176473/125000000000", dim: "m3s-1", sym: "1 gal ∕ s", source: "libqalculate 5.13.1" }
+  "acre*ft/d": { si: "2230689087/156250000000", dim: "m3s-1", sym: "1 acre⋅ft ∕ d", source: "libqalculate 5.13.1" }
+  "m/s": { si: "1", dim: "m1s-1", sym: "1 m ∕ s", source: "libqalculate 5.13.1" }
+  "km/h": { si: "5/18", dim: "m1s-1", sym: "1 km ∕ h", source: "exact definition" }
+  "nmi/h": { si: "463/900", dim: "m1s-1", sym: "1 nmi ∕ h", source: "libqalculate 5.13.1" }
+  "knot": { si: "463/900", dim: "m1s-1", sym: "1 knot", source: "exact definition" }
+  "mph": { si: "1397/3125", dim: "m1s-1", sym: "1 mph", source: "exact definition" }
+  "min/km": { si: "3/50", dim: "m-1s1", sym: "1 min ∕ km", source: "libqalculate 5.13.1" }
+  "min/mi": { si: "625/16764", dim: "m-1s1", sym: "1 min ∕ mi", source: "libqalculate 5.13.1" }
+  "c_unit": { si: "299792458", dim: "m1s-1", sym: "1 c", source: "libqalculate 5.13.1" }
+  "bohr_unit*Ha/planck_unit": { dim: "m1s-1", sym: "1 BohrUnit⋅Ha ∕ ℏ", source: "libqalculate 5.13.1" }
+  "m/s^2": { si: "1", dim: "m1s-2", sym: "1 m ∕ s²", source: "libqalculate 5.13.1" }
+  "Gal": { si: "1/100", dim: "m1s-2", sym: "1 Gal", source: "libqalculate 5.13.1" }
+  "gee": { si: "196133/20000", dim: "m1s-2", sym: "1 StandardGravity", source: "libqalculate 5.13.1" }
+  "m/s^3": { si: "1", dim: "m1s-3", sym: "1 m ∕ s³", source: "libqalculate 5.13.1" }
+  "gee/s": { si: "196133/20000", dim: "m1s-3", sym: "1 StandardGravity ∕ s", source: "libqalculate 5.13.1" }
+  "m/s^4": { si: "1", dim: "m1s-4", sym: "1 m ∕ s⁴", source: "libqalculate 5.13.1" }
+  "m/s^5": { si: "1", dim: "m1s-5", sym: "1 m ∕ s⁵", source: "libqalculate 5.13.1" }
+  "m/s^6": { si: "1", dim: "m1s-6", sym: "1 m ∕ s⁶", source: "libqalculate 5.13.1" }
+  "kayser": { si: "100", dim: "m-1", sym: "1 kayser", source: "libqalculate 5.13.1" }
+  "A/m": { si: "1", dim: "A1m-1", sym: "1 A ∕ m", source: "libqalculate 5.13.1" }
+  "Oe": { si: "250/pi", dim: "A1m-1", sym: "1 Oe", source: "libqalculate 5.13.1" }
+  "Wb": { si: "1", dim: "A-1kg1m2s-2", sym: "1 Wb", source: "libqalculate 5.13.1" }
+  "Mx": { si: "1/100000000", dim: "A-1kg1m2s-2", sym: "1 Mx", source: "libqalculate 5.13.1" }
+  "T": { si: "1", dim: "A-1kg1s-2", sym: "1 T", source: "libqalculate 5.13.1" }
+  "gauss": { si: "1/10000", dim: "A-1kg1s-2", sym: "1 gauss", source: "libqalculate 5.13.1" }
+  "planck_unit/(e_unit*bohr_unit^2)": { dim: "A-1kg1s-2", sym: "1 ℏ ∕ (e⋅BohrUnit²)", source: "libqalculate 5.13.1" }
+  "A*m^2": { si: "1", dim: "A1m2", sym: "1 A⋅m²", source: "libqalculate 5.13.1" }
+  "e_unit*planck_unit/m_eunit": { dim: "A1m2", sym: "1 e⋅ℏ ∕ m_e", source: "libqalculate 5.13.1" }
+  "N": { si: "1", dim: "kg1m1s-2", sym: "1 N", source: "libqalculate 5.13.1" }
+  "dyn": { si: "1/100000", dim: "kg1m1s-2", sym: "1 dyn", source: "libqalculate 5.13.1" }
+  "lbf": { si: "8896443230521/2000000000000", dim: "kg1m1s-2", sym: "1 lbf", source: "exact definition" }
+  "ozf": { si: "8896443230521/32000000000000", dim: "kg1m1s-2", sym: "1 ozf", source: "libqalculate 5.13.1" }
+  "pdl": { si: "17281869297/125000000000", dim: "kg1m1s-2", sym: "1 pdl", source: "libqalculate 5.13.1" }
+  "gf": { si: "196133/20000000", dim: "kg1m1s-2", sym: "1 gf", source: "libqalculate 5.13.1" }
+  "kgf": { si: "196133/20000", dim: "kg1m1s-2", sym: "1 kgf", source: "exact definition" }
+  "Ha/bohr_unit": { dim: "kg1m1s-2", sym: "1 Ha ∕ BohrUnit", source: "libqalculate 5.13.1" }
+  "N*m": { si: "1", dim: "kg1m2s-2", sym: "1 N⋅m", source: "libqalculate 5.13.1" }
+  "kg*m/s": { si: "1", dim: "kg1m1s-1", sym: "1 kg⋅m ∕ s", source: "libqalculate 5.13.1" }
+  "eV/c_unit": { si: "801088317/1498962290000000000000000000000000000", dim: "kg1m1s-1", sym: "1 eV ∕ c", source: "libqalculate 5.13.1" }
+  "m_eunit*c_unit": { dim: "kg1m1s-1", sym: "1 c⋅m_e", source: "libqalculate 5.13.1" }
+  "planck_unit/bohr_unit": { dim: "kg1m1s-1", sym: "1 ℏ ∕ BohrUnit", source: "libqalculate 5.13.1" }
+  "Pa": { si: "1", dim: "kg1m-1s-2", sym: "1 Pa", source: "libqalculate 5.13.1" }
+  "kgf/cm^2": { si: "196133/2", dim: "kg1m-1s-2", sym: "1 kgf ∕ cm²", source: "libqalculate 5.13.1" }
+  "psi": { si: "8896443230521/1290320000", dim: "kg1m-1s-2", sym: "1 psi", source: "exact definition" }
+  "ksi": { si: "8896443230521/1290320", dim: "kg1m-1s-2", sym: "1 ksi", source: "libqalculate 5.13.1" }
+  "bar": { si: "100000", dim: "kg1m-1s-2", sym: "1 bar", source: "exact definition" }
+  "atm": { si: "101325", dim: "kg1m-1s-2", sym: "1 atm", source: "exact definition" }
+  "Torr": { si: "20265/152", dim: "kg1m-1s-2", sym: "1 Torr", source: "exact definition" }
+  "mmHg": { si: "26664477483/200000000", dim: "kg1m-1s-2", sym: "1 mmHg", source: "exact definition", qalc: "20265/152", note: "qalc 5.13.1 units.xml: mmHg = Torr; reported: libqalculate#1044, fixed after 5.13.1" }
+  "inHg": { si: "3386388640341/1000000000", dim: "kg1m-1s-2", sym: "1 inHg", source: "exact definition", qalc: "514731/152", note: "qalc 5.13.1 units.xml: inHg = 25.4 Torr, the conventional inHg is 25.4 mmHg; reported: libqalculate#1044, fixed after 5.13.1" }
+  "mTorr": { si: "4053/30400", dim: "kg1m-1s-2", sym: "1 mTorr", source: "libqalculate 5.13.1" }
+  "Ba": { si: "1/10", dim: "kg1m-1s-2", sym: "1 Ba", source: "libqalculate 5.13.1" }
+  "mWC": { si: "196133/20", dim: "kg1m-1s-2", sym: "1 mH₂O", source: "libqalculate 5.13.1" }
+  "mmWC": { si: "196133/20000", dim: "kg1m-1s-2", sym: "1 mmH₂O", source: "libqalculate 5.13.1" }
+  "cmWC": { si: "196133/2000", dim: "kg1m-1s-2", sym: "1 cmH₂O", source: "libqalculate 5.13.1" }
+  "inWC": { si: "24908891/100000", dim: "kg1m-1s-2", sym: "1 inH₂O", source: "libqalculate 5.13.1" }
+  "Pa*s": { si: "1", dim: "kg1m-1s-1", sym: "1 Pa⋅s", source: "libqalculate 5.13.1" }
+  "P": { si: "1/10", dim: "kg1m-1s-1", sym: "1 P", source: "libqalculate 5.13.1" }
+  "cP": { si: "1/1000", dim: "kg1m-1s-1", sym: "1 cP", source: "libqalculate 5.13.1" }
+  "m^2/s": { si: "1", dim: "m2s-1", sym: "1 m² ∕ s", source: "libqalculate 5.13.1" }
+  "St": { si: "1/10000", dim: "m2s-1", sym: "1 St", source: "libqalculate 5.13.1" }
+  "cSt": { si: "1/1000000", dim: "m2s-1", sym: "1 cSt", source: "libqalculate 5.13.1" }
+  "N/m": { si: "1", dim: "kg1s-2", sym: "1 N ∕ m", source: "libqalculate 5.13.1" }
+  "J": { si: "1", dim: "kg1m2s-2", sym: "1 J", source: "libqalculate 5.13.1" }
+  "kJ": { si: "1000", dim: "kg1m2s-2", sym: "1 kJ", source: "libqalculate 5.13.1" }
+  "W*h": { si: "3600", dim: "kg1m2s-2", sym: "1 W⋅h", source: "libqalculate 5.13.1" }
+  "kW*h": { si: "3600000", dim: "kg1m2s-2", sym: "1 kW⋅h", source: "libqalculate 5.13.1" }
+  "cal_IT": { si: "10467/2500", dim: "kg1m2s-2", sym: "1 cal_IT", source: "exact definition" }
+  "cal": { si: "523/125", dim: "kg1m2s-2", sym: "1 cal_th", source: "exact definition" }
+  "kcal": { si: "4184", dim: "kg1m2s-2", sym: "1 kcal_th", source: "exact definition" }
+  "Calorie": { si: "4184", dim: "kg1m2s-2", sym: "1 Calorie", source: "libqalculate 5.13.1" }
+  "gTNT": { si: "4184", dim: "kg1m2s-2", sym: "1 gTNT", source: "libqalculate 5.13.1" }
+  "tTNT": { si: "4184000000", dim: "kg1m2s-2", sym: "1 tTNT", source: "libqalculate 5.13.1" }
+  "cal_fifteen": { dim: "kg1m2s-2", sym: "1 cal_fifteen", source: "libqalculate 5.13.1" }
+  "cal_mean": { dim: "kg1m2s-2", sym: "1 cal_mean", source: "libqalculate 5.13.1" }
+  "Btu": { si: "52752792631/50000000", dim: "kg1m2s-2", sym: "1 Btu", source: "exact definition" }
+  "thm": { si: "52752792631/500", dim: "kg1m2s-2", sym: "1 thm", source: "libqalculate 5.13.1" }
+  "thm_ISO": { si: "105506000", dim: "kg1m2s-2", sym: "1 thm_ISO", source: "libqalculate 5.13.1" }
+  "thm_US": { si: "105480400", dim: "kg1m2s-2", sym: "1 thm_US", source: "libqalculate 5.13.1" }
+  "th": { si: "4186800", dim: "kg1m2s-2", sym: "1 th", source: "libqalculate 5.13.1" }
+  "eV": { si: "801088317/5000000000000000000000000000", dim: "kg1m2s-2", sym: "1 eV", source: "exact definition" }
+  "erg": { si: "1/10000000", dim: "kg1m2s-2", sym: "1 erg", source: "libqalculate 5.13.1" }
+  "foe": { si: "100000000000000000000000000000000000000000000", dim: "kg1m2s-2", sym: "1 foe", source: "libqalculate 5.13.1" }
+  "ft*lbf": { si: "3389544870828501/2500000000000000", dim: "kg1m2s-2", sym: "1 ft⋅lbf", source: "libqalculate 5.13.1" }
+  "Ha": { dim: "kg1m2s-2", sym: "1 Ha", source: "libqalculate 5.13.1" }
+  "Ry": { dim: "kg1m2s-2", sym: "1 Ry", source: "libqalculate 5.13.1" }
+  "m_eunit*c_unit^2": { dim: "kg1m2s-2", sym: "1 m_e⋅c²", source: "libqalculate 5.13.1" }
+  "J/kg": { si: "1", dim: "m2s-2", sym: "1 J ∕ kg", source: "libqalculate 5.13.1" }
+  "kcal/g": { si: "4184000", dim: "m2s-2", sym: "1 kcal_th ∕ g", source: "libqalculate 5.13.1" }
+  "W": { si: "1", dim: "kg1m2s-3", sym: "1 W", source: "libqalculate 5.13.1" }
+  "hp": { si: "37284993579113511/50000000000000", dim: "kg1m2s-3", sym: "1 hp", source: "exact definition", qalc: "372849993579113511/500000000000000", note: "qalc 5.13.1 units.xml: hp is 745.6999871… W, the definition gives 745.6998715… W; reported: libqalculate#1043, fixed after 5.13.1" }
+  "PS": { si: "588399/800", dim: "kg1m2s-3", sym: "1 PS", source: "libqalculate 5.13.1" }
+  "dBm": { dim: "kg1m2s-3", sym: "1 dBm", source: "libqalculate 5.13.1" }
+  "dBW": { dim: "kg1m2s-3", sym: "1 dBW", source: "libqalculate 5.13.1" }
+  "erg/s": { si: "1/10000000", dim: "kg1m2s-3", sym: "1 erg ∕ s", source: "libqalculate 5.13.1" }
+  "solar_luminosity": { si: "382800000000000000000000000", dim: "kg1m2s-3", sym: "1 L_☉", source: "libqalculate 5.13.1" }
+  "TOR": { si: "52752792631/15000000", dim: "kg1m2s-3", sym: "1 TOR", source: "libqalculate 5.13.1" }
+  "J/K": { si: "1", dim: "K-1kg1m2s-2", sym: "1 J ∕ K", source: "libqalculate 5.13.1" }
+  "k_Bunit": { si: "1380649/100000000000000000000000000000", dim: "K-1kg1m2s-2", sym: "1 k_B", source: "libqalculate 5.13.1" }
+  "J/(kg*K)": { si: "1", dim: "K-1m2s-2", sym: "1 J ∕ (kg⋅K)", source: "libqalculate 5.13.1" }
+  "W/(m*K)": { si: "1", dim: "K-1kg1m1s-3", sym: "1 W ∕ (K⋅m)", source: "libqalculate 5.13.1" }
+  "J/m^3": { si: "1", dim: "kg1m-1s-2", sym: "1 J ∕ m³", source: "libqalculate 5.13.1" }
+  "J/mol": { si: "1", dim: "kg1m2mol-1s-2", sym: "1 J ∕ mol", source: "libqalculate 5.13.1" }
+  "J/(mol*K)": { si: "1", dim: "K-1kg1m2mol-1s-2", sym: "1 J ∕ (K⋅mol)", source: "libqalculate 5.13.1" }
+  "J*s": { si: "1", dim: "kg1m2s-1", sym: "1 J⋅s", source: "libqalculate 5.13.1" }
+  "planck_unit": { si: "132521403/(400000000000000000000000000000000000000000*pi)", dim: "kg1m2s-1", sym: "1 ℏ", source: "libqalculate 5.13.1" }
+  "Bq": { si: "1", dim: "s-1", sym: "1 Bq", source: "libqalculate 5.13.1" }
+  "Ci": { si: "37000000000", dim: "s-1", sym: "1 Ci", source: "libqalculate 5.13.1" }
+  "Rd": { si: "1000000", dim: "s-1", sym: "1 Rd", source: "libqalculate 5.13.1" }
+  "Gy": { si: "1", dim: "m2s-2", sym: "1 Gy", source: "libqalculate 5.13.1" }
+  "rad_radioactivity": { si: "1/100", dim: "m2s-2", sym: "1 RadRadioactivity", source: "libqalculate 5.13.1" }
+  "erg/g": { si: "1/10000", dim: "m2s-2", sym: "1000 ergs ∕ kg", source: "libqalculate 5.13.1" }
+  "Sv": { si: "1", dim: "m2s-2", sym: "1 Sv", source: "libqalculate 5.13.1" }
+  "rem": { si: "1/100", dim: "m2s-2", sym: "1 rem", source: "libqalculate 5.13.1" }
+  "mrem": { si: "1/100000", dim: "m2s-2", sym: "1 mrem", source: "libqalculate 5.13.1" }
+  "C/kg": { si: "1", dim: "A1kg-1s1", sym: "1 C ∕ kg", source: "libqalculate 5.13.1" }
+  "R": { si: "129/500000", dim: "A1kg-1s1", sym: "1 R", source: "libqalculate 5.13.1" }
+  "Gy/s": { si: "1", dim: "m2s-3", sym: "1 Gy ∕ s", source: "libqalculate 5.13.1" }
+  "mrem/h": { si: "1/360000000", dim: "m2s-3", sym: "1 mrem ∕ h", source: "libqalculate 5.13.1" }
+  "Np": { si: "1", dim: "Np1", sym: "1 Np", source: "libqalculate 5.13.1" }
+  "bel": { dim: "Np1", sym: "1 bel", source: "libqalculate 5.13.1" }
+  "dB": { dim: "Np1", sym: "1 dB", source: "libqalculate 5.13.1" }
+  "bit": { si: "1", dim: "bit1", sym: "1 bit", source: "libqalculate 5.13.1" }
+  "nat": { dim: "bit1", sym: "1 nat", source: "libqalculate 5.13.1" }
+  "trit": { dim: "bit1", sym: "1 trit", source: "libqalculate 5.13.1" }
+  "octal_digit": { si: "3", dim: "bit1", sym: "1 OctalDigit", source: "libqalculate 5.13.1" }
+  "Hart": { dim: "bit1", sym: "1 Hart", source: "libqalculate 5.13.1" }
+  "B": { si: "8", dim: "bit1", sym: "1 B", source: "libqalculate 5.13.1" }
+  "nibble": { si: "4", dim: "bit1", sym: "1 nibble", source: "libqalculate 5.13.1" }
+  "tribble": { si: "12", dim: "bit1", sym: "1 tribble", source: "libqalculate 5.13.1" }
+  "nonet": { si: "9", dim: "bit1", sym: "1 nonet", source: "libqalculate 5.13.1" }
+  "declet": { si: "10", dim: "bit1", sym: "1 declet", source: "libqalculate 5.13.1" }
+  "word": { si: "16", dim: "bit1", sym: "1 word", source: "libqalculate 5.13.1" }
+  "kB": { si: "8000", dim: "bit1", sym: "1 kB", source: "libqalculate 5.13.1" }
+  "MB": { si: "8000000", dim: "bit1", sym: "1 MB", source: "libqalculate 5.13.1" }
+  "GB": { si: "8000000000", dim: "bit1", sym: "1 GB", source: "libqalculate 5.13.1" }
+  "TB": { si: "8000000000000", dim: "bit1", sym: "1 TB", source: "libqalculate 5.13.1" }
+  "PB": { si: "8000000000000000", dim: "bit1", sym: "1 PB", source: "libqalculate 5.13.1" }
+  "EB": { si: "8000000000000000000", dim: "bit1", sym: "1 EB", source: "libqalculate 5.13.1" }
+  "KiB": { si: "8192", dim: "bit1", sym: "1 KiB", source: "libqalculate 5.13.1" }
+  "MiB": { si: "8388608", dim: "bit1", sym: "1 MiB", source: "libqalculate 5.13.1" }
+  "GiB": { si: "8589934592", dim: "bit1", sym: "1 GiB", source: "libqalculate 5.13.1" }
+  "TiB": { si: "8796093022208", dim: "bit1", sym: "1 TiB", source: "libqalculate 5.13.1" }
+  "kbit": { si: "1000", dim: "bit1", sym: "1 kilobit", source: "libqalculate 5.13.1" }
+  "Mbit": { si: "1000000", dim: "bit1", sym: "1 megabit", source: "libqalculate 5.13.1" }
+  "Gbit": { si: "1000000000", dim: "bit1", sym: "1 gigabit", source: "libqalculate 5.13.1" }
+  "Tbit": { si: "1000000000000", dim: "bit1", sym: "1 terabit", source: "libqalculate 5.13.1" }
+  "Pbit": { si: "1000000000000000", dim: "bit1", sym: "1 petabit", source: "libqalculate 5.13.1" }
+  "Kibit": { si: "1024", dim: "bit1", sym: "1 kibibit", source: "libqalculate 5.13.1" }
+  "Mibit": { si: "1048576", dim: "bit1", sym: "1 mebibit", source: "libqalculate 5.13.1" }
+  "Gibit": { si: "1073741824", dim: "bit1", sym: "1 gibibit", source: "libqalculate 5.13.1" }
+  "pt": { si: "127/360000", dim: "m1", sym: "1 pt", source: "libqalculate 5.13.1" }
+  "pt_TeX": { si: "127/361350", dim: "m1", sym: "1 pt_TeX", source: "libqalculate 5.13.1" }
+  "sp_TeX": { si: "127/23681433600", dim: "m1", sym: "1 sp_TeX", source: "libqalculate 5.13.1" }
+  "pica": { si: "127/30000", dim: "m1", sym: "1 pica", source: "libqalculate 5.13.1" }
+  "twip": { si: "127/7200000", dim: "m1", sym: "1 twip", source: "libqalculate 5.13.1" }
+  "agate": { si: "1397/720000", dim: "m1", sym: "1 agate", source: "libqalculate 5.13.1" }
+  "ata_pica": { si: "10541/2500000", dim: "m1", sym: "1 JohnsonPica", source: "libqalculate 5.13.1" }
+  "pt_US": { si: "10541/30000000", dim: "m1", sym: "1 pt_US", source: "libqalculate 5.13.1" }
+  "new_didot": { si: "3/8000", dim: "m1", sym: "1 NewDidot", source: "libqalculate 5.13.1" }
+  "dd": { si: "125/332472", dim: "m1", sym: "1 dd", source: "libqalculate 5.13.1" }
+  "cicero": { si: "125/27706", dim: "m1", sym: "1 cicero", source: "libqalculate 5.13.1" }
+  "kN": { si: "1000", dim: "kg1m1s-2", sym: "1 kN", source: "libqalculate 5.13.1" }
+  "MN": { si: "1000000", dim: "kg1m1s-2", sym: "1 MN", source: "libqalculate 5.13.1" }
+  "kPa": { si: "1000", dim: "kg1m-1s-2", sym: "1 kPa", source: "libqalculate 5.13.1" }
+  "MPa": { si: "1000000", dim: "kg1m-1s-2", sym: "1 MPa", source: "libqalculate 5.13.1" }
+  "GPa": { si: "1000000000", dim: "kg1m-1s-2", sym: "1 GPa", source: "libqalculate 5.13.1" }
+  "hPa": { si: "100", dim: "kg1m-1s-2", sym: "1 hPa", source: "libqalculate 5.13.1" }
+  "kN*m": { si: "1000", dim: "kg1m2s-2", sym: "1 kN⋅m", source: "libqalculate 5.13.1" }
+  "MJ": { si: "1000000", dim: "kg1m2s-2", sym: "1 MJ", source: "libqalculate 5.13.1" }
+  "Wh": { si: "3600", dim: "kg1m2s-2", sym: "1 W⋅h", source: "libqalculate 5.13.1" }
+  "kWh": { si: "3600000", dim: "kg1m2s-2", sym: "1 kW⋅h", source: "exact definition" }
+  "MWh": { si: "3600000000", dim: "kg1m2s-2", sym: "1 MW⋅h", source: "libqalculate 5.13.1" }
+  "mW": { si: "1/1000", dim: "kg1m2s-3", sym: "1 mW", source: "libqalculate 5.13.1" }
+  "kW": { si: "1000", dim: "kg1m2s-3", sym: "1 kW", source: "libqalculate 5.13.1" }
+  "MW": { si: "1000000", dim: "kg1m2s-3", sym: "1 MW", source: "libqalculate 5.13.1" }
+  "GW": { si: "1000000000", dim: "kg1m2s-3", sym: "1 GW", source: "libqalculate 5.13.1" }
+  "uA": { si: "1/1000000", dim: "A1", sym: "1 µA", source: "libqalculate 5.13.1" }
+  "mA": { si: "1/1000", dim: "A1", sym: "1 mA", source: "libqalculate 5.13.1" }
+  "kA": { si: "1000", dim: "A1", sym: "1 kA", source: "libqalculate 5.13.1" }
+  "mV": { si: "1/1000", dim: "A-1kg1m2s-3", sym: "1 mV", source: "libqalculate 5.13.1" }
+  "kV": { si: "1000", dim: "A-1kg1m2s-3", sym: "1 kV", source: "libqalculate 5.13.1" }
+  "mohm": { si: "1/1000", dim: "A-2kg1m2s-3", sym: "1 mΩ", source: "libqalculate 5.13.1" }
+  "kohm": { si: "1000", dim: "A-2kg1m2s-3", sym: "1 kΩ", source: "libqalculate 5.13.1" }
+  "Mohm": { si: "1000000", dim: "A-2kg1m2s-3", sym: "1 MΩ", source: "libqalculate 5.13.1" }
+  "pF": { si: "1/1000000000000", dim: "A2kg-1m-2s4", sym: "1 pF", source: "libqalculate 5.13.1" }
+  "nF": { si: "1/1000000000", dim: "A2kg-1m-2s4", sym: "1 nF", source: "libqalculate 5.13.1" }
+  "uF": { si: "1/1000000", dim: "A2kg-1m-2s4", sym: "1 µF", source: "libqalculate 5.13.1" }
+  "mF": { si: "1/1000", dim: "A2kg-1m-2s4", sym: "1 mF", source: "libqalculate 5.13.1" }
+  "nH": { si: "1/1000000000", dim: "A-2kg1m2s-2", sym: "1 nH", source: "libqalculate 5.13.1" }
+  "uH": { si: "1/1000000", dim: "A-2kg1m2s-2", sym: "1 µH", source: "libqalculate 5.13.1" }
+  "mH": { si: "1/1000", dim: "A-2kg1m2s-2", sym: "1 mH", source: "libqalculate 5.13.1" }
+  "uT": { si: "1/1000000", dim: "A-1kg1s-2", sym: "1 µT", source: "libqalculate 5.13.1" }
+  "mT": { si: "1/1000", dim: "A-1kg1s-2", sym: "1 mT", source: "libqalculate 5.13.1" }
+  "kHz": { si: "1000", dim: "s-1", sym: "1 kHz", source: "libqalculate 5.13.1" }
+  "MHz": { si: "1000000", dim: "s-1", sym: "1 MHz", source: "libqalculate 5.13.1" }
+  "GHz": { si: "1000000000", dim: "s-1", sym: "1 GHz", source: "libqalculate 5.13.1" }
+  "ug": { si: "1/1000000000", dim: "kg1", sym: "1 µg", source: "libqalculate 5.13.1" }
+  "mg": { si: "1/1000000", dim: "kg1", sym: "1 mg", source: "libqalculate 5.13.1" }
+  "ns": { si: "1/1000000000", dim: "s1", sym: "1 ns", source: "libqalculate 5.13.1" }
+  "us": { si: "1/1000000", dim: "s1", sym: "1 µs", source: "libqalculate 5.13.1" }
+  "ms": { si: "1/1000", dim: "s1", sym: "1 ms", source: "libqalculate 5.13.1" }
+  "mmol": { si: "1/1000", dim: "mol1", sym: "1 mmol", source: "libqalculate 5.13.1" }
+  "kmol": { si: "1000", dim: "mol1", sym: "1 kmol", source: "libqalculate 5.13.1" }
+  "kip": { si: "8896443230521/2000000000", dim: "kg1m1s-2", source: "exact definition" }
+  "fbm": { si: "18435447/7812500000", dim: "m3", source: "exact definition" }
+  "Ah": { si: "3600", dim: "A1s1", sym: "1 A⋅h", source: "exact definition" }
+  "mAh": { si: "18/5", dim: "A1s1", sym: "1 mA⋅h", source: "exact definition" }
+
+constants:
+  "Z_0": { value: "376.730313412", unc: "5.9E-8", dim: "A-2kg1m2s-3", source: "CODATA 2022", qalc: "376.730313412", qalcUnc: "5.8E-8", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "epsilon_0": { value: "8.8541878188E-12", unc: "1.4E-21", dim: "A2kg-1m-3s4", source: "libqalculate 5.13.1" }
+  "mu_0": { value: "1.25663706127E-6", unc: "2.0E-16", dim: "A-2kg1m1s-2", source: "CODATA 2022", qalc: "1.25663706127E-6", qalcUnc: "1.9E-16", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "planck": { value: "6.62607015E-34", dim: "kg1m2s-1", source: "exact definition" }
+  "planck2pi": { value: "132521403/(400000000000000000000000000000000000000000*pi)", dim: "kg1m2s-1", source: "libqalculate 5.13.1" }
+  "G": { value: "6.67430E-11", unc: "1.5E-15", dim: "kg-1m3s-2", source: "libqalculate 5.13.1" }
+  "c": { value: "299792458", dim: "m1s-1", source: "exact definition" }
+  "g_0": { value: "9.80665", dim: "m1s-2", source: "exact definition" }
+  "mu_B": { value: "9.2740100657E-24", unc: "2.9E-33", dim: "A1m2", source: "libqalculate 5.13.1" }
+  "G_0": { value: "213914163877964163/2760862562500000000000", dim: "A2kg-1m-2s3", source: "libqalculate 5.13.1" }
+  "k_e": { value: "8987551786.2", unc: "1.4", dim: "A-2kg1m3s-4", source: "libqalculate 5.13.1" }
+  "q_e": { value: "1.602176634E-19", dim: "A1s1", source: "exact definition" }
+  "inverse_conductance_quantum": { value: "2760862562500000000000/213914163877964163", dim: "A-2kg1m2s-3", source: "libqalculate 5.13.1" }
+  "K_J": { value: "21362355120000000000000/44173801", dim: "A1kg-1m-2s2", source: "libqalculate 5.13.1" }
+  "K_J90": { value: "4.835979E14", dim: "A1kg-1m-2s2", source: "libqalculate 5.13.1" }
+  "phi_0": { value: "44173801/21362355120000000000000", dim: "A-1kg1m2s-2", source: "libqalculate 5.13.1" }
+  "mu_N": { value: "5.0507837393E-27", unc: "1.6E-36", dim: "A1m2", source: "libqalculate 5.13.1" }
+  "R_K": { value: "5521725125000000000000/213914163877964163", dim: "A-2kg1m2s-3", source: "libqalculate 5.13.1" }
+  "R_K90": { value: "25812.807", dim: "A-2kg1m2s-3", source: "libqalculate 5.13.1" }
+  "deuteron_mass": { value: "3.3435837768E-27", unc: "1.0E-36", dim: "kg1", source: "libqalculate 5.13.1" }
+  "m_e": { value: "9.1093837139E-31", unc: "2.8E-40", dim: "kg1", source: "libqalculate 5.13.1" }
+  "m_h": { value: "5.0064127862E-27", unc: "1.6E-36", dim: "kg1", source: "libqalculate 5.13.1" }
+  "m_n": { value: "1.67492750056E-27", unc: "8.5E-37", dim: "kg1", source: "CODATA 2022", qalc: "1.67492750056E-27", qalcUnc: "8.4E-37", note: "qalc 5.13.1 computes it by formula and matches CODATA 2022 only to the published digits; ours keeps the published decimal (not a data error, withdrawn from libqalculate#1045)" }
+  "m_p": { value: "1.67262192595E-27", unc: "5.2E-37", dim: "kg1", source: "libqalculate 5.13.1" }
+  "m_tau": { value: "3.16754E-27", unc: "2.1E-31", dim: "kg1", source: "CODATA 2022", qalc: "3.16754E-27", qalcUnc: "2.2E-31", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "m_mu": { value: "1.883531627E-28", unc: "4.2E-36", dim: "kg1", source: "libqalculate 5.13.1" }
+  "triton_mass": { value: "5.0073567512E-27", unc: "1.6E-36", dim: "kg1", source: "libqalculate 5.13.1" }
+  "m_alpha": { value: "6.6446573450E-27", unc: "2.1E-36", dim: "kg1", source: "libqalculate 5.13.1" }
+  "lambda_C": { value: "2.42631023538E-12", unc: "7.6E-22", dim: "m1", source: "CODATA 2022", qalc: "2.42631023538E-12", qalcUnc: "7.5E-22", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "compton_wavelength_2pi": { value: "3.8615926744E-13", unc: "1.2E-22", dim: "m1", source: "libqalculate 5.13.1" }
+  "muon_compton_wavelength": { value: "1.173444110E-14", unc: "2.6E-22", dim: "m1", source: "CODATA 2022", qalc: "1.173444111E-14", qalcUnc: "2.6E-22", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "muon_compton_wavelength_2pi": { value: "1.867594306E-15", unc: "4.2E-23", dim: "m1", source: "CODATA 2022", qalc: "1.867594306E-15", qalcUnc: "4.1E-23", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "neutron_compton_wavelength": { value: "1.31959090382E-15", unc: "6.7E-25", dim: "m1", source: "CODATA 2022", qalc: "1.31959090382E-15", qalcUnc: "6.6E-25", note: "qalc 5.13.1 computes it by formula and matches CODATA 2022 only to the published digits; ours keeps the published decimal (not a data error, withdrawn from libqalculate#1045)" }
+  "neutron_compton_wavelength_2pi": { value: "2.1001941520E-16", unc: "1.1E-25", dim: "m1", source: "libqalculate 5.13.1" }
+  "proton_compton_wavelength": { value: "1.32140985360E-15", unc: "4.1E-25", dim: "m1", source: "libqalculate 5.13.1" }
+  "proton_compton_wavelength_2pi": { value: "2.10308910051E-16", unc: "6.6E-26", dim: "m1", source: "CODATA 2022", qalc: "2.10308910051E-16", qalcUnc: "6.5E-26", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "tau_compton_wavelength": { value: "6.97771E-16", unc: "4.7E-20", dim: "m1", source: "CODATA 2022", qalc: "6.97770E-16", qalcUnc: "4.8E-20", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "tau_compton_wavelength_2pi": { value: "1.110538E-16", unc: "7.5E-21", dim: "m1", source: "CODATA 2022", qalc: "1.110536E-16", qalcUnc: "7.6E-21", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "a_0": { value: "5.29177210544E-11", unc: "8.2E-21", dim: "m1", source: "libqalculate 5.13.1" }
+  "r_e": { value: "2.8179403205E-15", unc: "1.3E-24", dim: "m1", source: "libqalculate 5.13.1" }
+  "fermi_coupling": { value: "4.5437957E14", unc: "230000000", dim: "kg-2m-4s4", source: "libqalculate 5.13.1" }
+  "alpha": { value: "0.0072973525643", unc: "1.1E-12", dim: "", source: "libqalculate 5.13.1" }
+  "Ha_constant": { value: "4.3597447222060E-18", unc: "4.8E-30", dim: "kg1m2s-2", source: "CODATA 2022", qalc: "4.3597447222059E-18", qalcUnc: "4.8E-30", note: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
+  "quantum_circulation": { value: "0.00036369475467", unc: "1.1E-13", dim: "m2s-1", source: "libqalculate 5.13.1" }
+  "quantum_circulation_2": { value: "0.00072738950934", unc: "2.3E-13", dim: "m2s-1", source: "libqalculate 5.13.1" }
+  "rydberg": { value: "10973731.568157", unc: "1.2E-5", dim: "m-1", source: "libqalculate 5.13.1" }
+  "sigma_t": { value: "6.6524587051E-29", unc: "6.2E-38", dim: "m2", source: "libqalculate 5.13.1" }
+  "sin2_theta_W": { value: "0.22305", unc: "0.00023", dim: "", source: "libqalculate 5.13.1" }
+  "w_z_ratio": { value: "0.88145", unc: "0.00013", dim: "", source: "libqalculate 5.13.1" }
+  "d_220": { value: "1.920155716E-10", unc: "3.2E-18", dim: "m1", source: "CODATA 2022", qalc: "1.920155716E-10", qalcUnc: "3.1E-18", note: "qalc 5.13.1 computes it by formula and matches CODATA 2022 only to the published digits; ours keeps the published decimal (not a data error, withdrawn from libqalculate#1045)" }
+  "m_u": { value: "1.66053906892E-27", unc: "5.2E-37", dim: "kg1", source: "libqalculate 5.13.1" }
+  "N_A": { value: "6.02214076E23", dim: "mol-1", source: "exact definition" }
+  "k_B": { value: "1.380649E-23", dim: "K-1kg1m2s-2", source: "exact definition" }
+  "M_u": { value: "0.00100000000105", unc: "3.1E-13", dim: "kg1mol-1", source: "libqalculate 5.13.1" }
+  "eV_constant": { value: "1.602176634E-19", dim: "kg1m2s-2", source: "libqalculate 5.13.1" }
+  "faraday": { value: "96485.3321233100184", dim: "A1mol-1s1", source: "exact definition" }
+  "c_1": { value: "2977607430992971035198723*pi/25000000000000000000000000000000000000000", dim: "kg1m4s-3", source: "libqalculate 5.13.1" }
+  "c_1L": { value: "1.1910429723971884140794892E-16", dim: "kg1m4s-3", source: "libqalculate 5.13.1" }
+  "gas_constant": { value: "8.31446261815324", dim: "K-1kg1m2mol-1s-2", source: "exact definition" }
+  "lattice_parameter_Si": { value: "5.431020511E-10", unc: "8.9E-18", dim: "m1", source: "libqalculate 5.13.1" }
+  "n_0100": { value: "200000000000000000000000000000000000/7542485487", dim: "m-3", source: "libqalculate 5.13.1" }
+  "n_0": { value: "67550000000000000000000000000000000/2514161829", dim: "m-3", source: "libqalculate 5.13.1" }
+  "molar_planck": { value: "3.9903127128934314E-10", dim: "kg1m2mol-1s-1", source: "libqalculate 5.13.1" }
+  "V_m": { value: "0.02271095464148557506", dim: "m3mol-1", source: "libqalculate 5.13.1" }
+  "V_m101": { value: "378515910691426251/16887500000000000000", dim: "m3mol-1", source: "libqalculate 5.13.1" }
+  "sackur_tetrode_100": { value: "-1.15170753496", unc: "4.7E-10", dim: "", source: "libqalculate 5.13.1" }
+  "sackur_tetrode_atm": { value: "-1.16487052149", unc: "4.7E-10", dim: "", source: "libqalculate 5.13.1" }
+  "c_2": { value: "272115870842319/18913000000000000", dim: "K1m1", source: "libqalculate 5.13.1" }
+  "sigma": { value: "5454781984210512994952000000*pi^5/29438455734650141042413712126365436049", dim: "K-4kg1s-3", source: "libqalculate 5.13.1" }
+  "StdT": { value: "273.15", dim: "K1", source: "exact definition" }
+  "StdP": { value: "101325", dim: "kg1m-1s-2", source: "exact definition" }

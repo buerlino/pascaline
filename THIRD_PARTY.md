@@ -12,21 +12,21 @@ Everything here is built from source by scripts in this repository. Spike-only t
 | MPFR | 4.2.2 (tarball SHA-256 `b67ba038…ce01`) | LGPL-3.0-or-later | https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz | GPG signature checked (Vincent Lefèvre) |
 | GSL | 2.8 (tarball SHA-256 `6a99eeed…3190`) | GPL-3.0-or-later | https://ftp.gnu.org/gnu/gsl/gsl-2.8.tar.gz | GPG signature checked (Patrick Alken). Numeric solvers behind Giac `fsolve` (decided 2026-10-10) |
 
-## Units and constants data (engine/qalc/build-wasm.sh; built for the Find index at build time; not shipped in the app, P15)
+## Units and constants data (data only: not part of `./build.sh` since A21; engine/qalc/build-wasm.sh is a developer tool; not shipped in the app, P15)
 
-The libxml2 and libqalculate tarballs are SHA-256-checked by the script.
+The libxml2 and libqalculate tarballs are SHA-256-checked by the script. `find/factors.yaml` holds the numbers of the build below; `tools/find-index/refresh-factors.mjs` (developers) recomputes them and prints the difference.
 
 | Component | Version | Licence | Source | Notes |
 |---|---|---|---|---|
-| libqalculate | 5.13.1 (tarball SHA-256 `cf8d3eaf…d1b01d3cc3`; pinned at first download 2026-10-11, upstream publishes no hash) | GPL-2.0-or-later | https://github.com/Qalculate/libqalculate/releases/download/v5.13.1/libqalculate-5.13.1.tar.gz | Build time only (P15): the Find index's unit factors, constants and uncertainties. Its data ships in the Find index; its code is not in the APK. Compiled-in definitions, no curl/icu/readline/NLS. Release build in the pinned trixie container, reproducible |
-| libxml2 | 2.15.1 (SHA-256 `c008bac0…c39bc54c`, matches upstream `.sha256sum`) | MIT | https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.1.tar.xz | required by libqalculate to parse its definitions; built without iconv, zlib, ICU, HTTP, threads, validation |
+| libqalculate | 5.13.1 (tarball SHA-256 `cf8d3eaf…d1b01d3cc3`; pinned at first download 2026-10-11, upstream publishes no hash) | GPL-2.0-or-later | https://github.com/Qalculate/libqalculate/releases/download/v5.13.1/libqalculate-5.13.1.tar.gz | Data only (P15, A21): its XML supplies names and titles to the Find index, and `find/factors.yaml` holds the unit factors, constants and uncertainties its build gave (rows that replace a wrong qalc value say so). The data ships in the Find index; its code is not in the APK and not built by `./build.sh`. Compiled-in definitions, no curl/icu/readline/NLS. Release build in the pinned trixie container, reproducible |
+| libxml2 | 2.15.1 (SHA-256 `c008bac0…c39bc54c`, matches upstream `.sha256sum`) | MIT | https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.1.tar.xz | required by libqalculate's developer build (refresh-factors) to parse its definitions; built without iconv, zlib, ICU, HTTP, threads, validation |
 
 ## Find index data (tools/find-index/generate.mjs)
 
 Generated at build time by `tools/find-index/generate.mjs`, not committed.
 
 1. Giac 2.1.0 `doc/aide_cas`, English entries only: GPL-3.0-or-later per Giac's README (R5; P10; confirmed by B. Parisse by email on 2026-10-19: the whole file is GPL), authors as R5 lists.
-2. libqalculate 5.13.1 `data/units.xml.in`, `variables.xml.in`, `prefixes.xml.in`: GPL-2.0-or-later, the library's licence (the combined work is GPL-3.0); values and factors computed by our qalc build.
+2. libqalculate 5.13.1 `data/units.xml.in`, `variables.xml.in`, `prefixes.xml.in`: GPL-2.0-or-later, the library's licence (the combined work is GPL-3.0); names and titles read from the tarball. `find/factors.yaml`: the values and factors computed once by our qalc build (GPL-3.0-or-later as a file of ours; exact definitions and CODATA 2022 where they replace qalc's).
 3. `find/aliases.yaml`, `find/functions.yaml`, `find/units.yaml`: ours, GPL-3.0-or-later.
 
 The About screen credits Giac and libqalculate.

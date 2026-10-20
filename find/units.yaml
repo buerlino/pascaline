@@ -9,11 +9,11 @@
 #     title  default: the prefix and qalc's title (Kilonewton)
 #   Left out on purpose: mbar (qalc prints it "millibar", not a symbol; hPa is the same size).
 #
-# checks: our audit of qalc's factors against the exact definitions (the international yard and pound of 1959, the
-#   2019 SI, NIST SP 811). Units: `si`, a product or quotient of decimals in SI base units (kg, not g). Constants:
-#   `value` (with `unc` for a measured one; CODATA 2022, NIST allascii.txt). A mismatch fails the build. `override` marks a mismatch in qalc's data that we know of and report
-#   upstream (docs/backlog.md "Upstream reports"): the item then takes our exact factor instead of qalc's, and the
-#   build fails once qalc agrees, so the mark gets removed.
+# checks: our audit of the numbers in find/factors.yaml against the exact definitions (the international yard and pound of
+#   1959, the 2019 SI, NIST SP 811, CODATA 2022). Units: `si`, a product or quotient of decimals in SI base units (kg, not g).
+#   Constants: `value` (with `unc` for a measured one; NIST allascii.txt). A row that differs fails the build. Where
+#   libqalculate's own number is wrong (docs/backlog.md "Upstream reports"), the row in factors.yaml takes our value and
+#   keeps qalc's in `qalc` with the reason in `note`; tools/find-index/refresh-factors.mjs tells when qalc changes.
 #
 # constants.skipCategories: qalc categories under Physical Constants left out of Find (derived conversion tables).
 
@@ -111,8 +111,8 @@ checks:
   "unit:Torr": { si: "101325/760" }
   # conventional millimetre of mercury: 133.322387415 Pa (NIST SP 811); qalc defines it as 1 Torr (133.322368… Pa)
   # conventional inch of mercury: 25.4 mmHg; qalc's follows its Torr-based mmHg
-  "unit:inHg": { si: "0.0254*13595.1*9.80665", override: "qalc 5.13.1 units.xml: inHg = 25.4 Torr, the conventional inHg is 25.4 mmHg; reported: libqalculate#1044, fixed after 5.13.1" }
-  "unit:mmHg": { si: "133.322387415", override: "qalc 5.13.1 units.xml: mmHg = Torr; reported: libqalculate#1044, fixed after 5.13.1" }
+  "unit:inHg": { si: "0.0254*13595.1*9.80665" }
+  "unit:mmHg": { si: "133.322387415" }
   # speed, volume
   "unit:km/h": { si: "1000/3600" }
   "unit:mph": { si: "1609.344/3600" }
@@ -127,7 +127,7 @@ checks:
   "unit:Btu": { si: "1055.05585262" }
   "unit:eV": { si: "1.602176634E-19" }
   "unit:kWh": { si: "3600000" }
-  "unit:hp": { si: "550*0.3048*0.45359237*9.80665", override: "qalc 5.13.1 units.xml: hp is 745.6999871… W, the definition gives 745.6998715… W; reported: libqalculate#1043, fixed after 5.13.1" }
+  "unit:hp": { si: "550*0.3048*0.45359237*9.80665" }
   # kip = 1000 lbf; board foot = 1 ft x 1 ft x 1 in (derived); ampere hour = 3600 C (derived)
   "unit:kip": { si: "1000*0.45359237*9.80665" }
   "unit:fbm": { si: "0.3048*0.3048*0.0254" }
@@ -148,19 +148,19 @@ checks:
   "const:gas_constant": { value: "6.02214076E23*1.380649E-23" }
   "const:faraday": { value: "6.02214076E23*1.602176634E-19" }
   # CODATA 2022 (NIST allascii.txt) against qalc's own constants: the value and the 2-digit uncertainty, last digits only (G13)
-  "const:Z_0": { value: "376.730313412", unc: "5.9E-8", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:mu_0": { value: "1.25663706127E-6", unc: "2.0E-16", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:m_n": { value: "1.67492750056E-27", unc: "8.5E-37", override: "qalc 5.13.1 computes it by formula and matches CODATA 2022 only to the published digits; ours keeps the published decimal (not a data error, withdrawn from libqalculate#1045)" }
-  "const:m_tau": { value: "3.16754E-27", unc: "2.1E-31", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:lambda_C": { value: "2.42631023538E-12", unc: "7.6E-22", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:muon_compton_wavelength": { value: "1.173444110E-14", unc: "2.6E-22", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:muon_compton_wavelength_2pi": { value: "1.867594306E-15", unc: "4.2E-23", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:neutron_compton_wavelength": { value: "1.31959090382E-15", unc: "6.7E-25", override: "qalc 5.13.1 computes it by formula and matches CODATA 2022 only to the published digits; ours keeps the published decimal (not a data error, withdrawn from libqalculate#1045)" }
-  "const:proton_compton_wavelength_2pi": { value: "2.10308910051E-16", unc: "6.6E-26", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:tau_compton_wavelength": { value: "6.97771E-16", unc: "4.7E-20", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:tau_compton_wavelength_2pi": { value: "1.110538E-16", unc: "7.5E-21", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:Ha_constant": { value: "4.3597447222060E-18", unc: "4.8E-30", override: "qalc 5.13.1 variables.xml differs from CODATA 2022; reported: libqalculate#1045" }
-  "const:d_220": { value: "1.920155716E-10", unc: "3.2E-18", override: "qalc 5.13.1 computes it by formula and matches CODATA 2022 only to the published digits; ours keeps the published decimal (not a data error, withdrawn from libqalculate#1045)" }
+  "const:Z_0": { value: "376.730313412", unc: "5.9E-8" }
+  "const:mu_0": { value: "1.25663706127E-6", unc: "2.0E-16" }
+  "const:m_n": { value: "1.67492750056E-27", unc: "8.5E-37" }
+  "const:m_tau": { value: "3.16754E-27", unc: "2.1E-31" }
+  "const:lambda_C": { value: "2.42631023538E-12", unc: "7.6E-22" }
+  "const:muon_compton_wavelength": { value: "1.173444110E-14", unc: "2.6E-22" }
+  "const:muon_compton_wavelength_2pi": { value: "1.867594306E-15", unc: "4.2E-23" }
+  "const:neutron_compton_wavelength": { value: "1.31959090382E-15", unc: "6.7E-25" }
+  "const:proton_compton_wavelength_2pi": { value: "2.10308910051E-16", unc: "6.6E-26" }
+  "const:tau_compton_wavelength": { value: "6.97771E-16", unc: "4.7E-20" }
+  "const:tau_compton_wavelength_2pi": { value: "1.110538E-16", unc: "7.5E-21" }
+  "const:Ha_constant": { value: "4.3597447222060E-18", unc: "4.8E-30" }
+  "const:d_220": { value: "1.920155716E-10", unc: "3.2E-18" }
 
 constants:
   # Ours, not in qalc: the standard temperature and pressure that V_m101 goes with (spec/units-menu.yaml constants.define).

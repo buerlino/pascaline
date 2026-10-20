@@ -64,7 +64,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F58 → [G65](shifts/packages/G65.md).** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are 3 again (`defs.ts:73` keeps "other" entries). Family 1; low (no key types `:=`). hunt N10.
 - **F59 → [G71](shifts/packages/G71.md).** A decision over a value with no MPFR path is an engine error: `round(BesselJ(1,2)·10^12)`, `floor(…)`, `BesselJ(1,2) > 0.5` give Giac's "Bad Argument Value" (found 2026-10-20). Families 3, 5; after R4a (BesselJ, Airy_Ai tier 1).
 
-- **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, S18; the instruments G61–G64, A19 and S16; A20, A21, A22 by day.
+- **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, S18; the instruments G61–G64, A19 and S16; A20, A22 by day; A21 done (branch p1/annabell-noqalcbuild, `find/factors.yaml`; only the recipe's qalc build waits for F-Droid's answer).
 
 ### Milestone 4a: feel (P11; packages and order: brief section 0)
 - **R15c1–R15c4. The R3 top cluster** (R15c1 done: the status line takes Apps, Menu and the views; R15c2–R15c4 left) (decisions.md "R15c"): the status line takes Apps, Menu and the views; the round pad, six user keys and the editing wing; the user keys' Alpha layer; first-start tips.
