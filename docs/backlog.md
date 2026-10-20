@@ -24,7 +24,7 @@ The one place for "where are we and what's left", one or two lines per open item
 2. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–69 on 2026-10-19; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 before S14, 66 and 67 before G42, 68 changes no code (G40 built its default); each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 3. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md). The checks on the phone are listed below.
 4. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`. The backup (R38) protects later moves only.
-5. **Outside testers:** you run two 30-minute rounds, after R4b and after R24c, from [r18](research/r18-outside-test.md) and its sheet; first decide its §6.
+5. **Outside testers:** you run two 30-minute rounds, after R4b and after R24c, from [r18](research/r18-outside-test.md) and its sheet; first decide S8 (decisions.md).
 6. **Keep the K2 flick classifier** of the deleted `p1/ron-eve-gestures` (commit `96fcf50`): `git tag keep/eve-gestures 96fcf50` keeps it past git's pruning.
 7. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 8. **Later, not now:** the email to Bernard Parisse (draft in `../outreach/`, with P10's question: may the English entries of `aide_cas` ship in a GPL-3.0-or-later app? Needed before any public release), the name and trademark checks, CI (C3) and the F-Droid recipe (C4); the upstream reports below.
@@ -49,7 +49,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ### Milestone 4a: feel (P11; packages and order: brief section 0)
 - **R15c1–R15c4. The R3 top cluster** (decisions.md "R15c"): the status line takes Apps, Menu and the views; the round pad, six user keys and the editing wing; the user keys' Alpha layer; first-start tips.
 - **R49. Settings as a list of rows** (feedback #50; decisions.md "Settings: a list of rows").
-- **R50b–R50e. Themes** (R50b done: Pascaline in the app) (feedback #53, #55; decisions.md "R50"): Pascaline in the app, the generator and four more families, Plain keys and High contrast, Settings › Appearance; then **R12b, R12c. The visual pass** (F6 = U5 + U7; the mockups R12a merged, the owner's notes feedback #54, #55; A4a's sheet rise in R12c).
+- **R50b–R50e. Themes** (R50b–R50d done; R50e left) (feedback #53, #55; decisions.md "R50"): Pascaline in the app, the generator and four more families, Plain keys and High contrast, Settings › Appearance; then **R12b, R12c. The visual pass** (F6 = U5 + U7; the mockups R12a merged, the owner's notes feedback #54, #55; A4a's sheet rise in R12c).
 - **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).
 - **R53. Results mode on the View key** (P16, S9; K4).
 - **The owner's answers of 2026-10-19:** **R43b** DMS takes a selected □ bare (done, p1/ron-m4a-dmsbox), **R56b** Solve knows the user's functions (night step 57).

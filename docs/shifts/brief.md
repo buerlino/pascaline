@@ -42,8 +42,6 @@
 | [R15c4](packages/R15c4.md) | First-start tips | ron, Sonnet | day | R15c2 | ~0.5 d |
 | [R55](packages/R55.md) | Digit groups in drawn results | ron, Sonnet | day | R15c4 | ~0.5 d |
 | [R49](packages/R49.md) | Settings as a list of rows, each with its own page | ron, Sonnet | day | R15c4 | ~0.75 d |
-| [R50c](packages/R50c.md) | Theme generator, four more families | ron, Sonnet | night | R50b | ~0.75 d |
-| [R50d](packages/R50d.md) | Plain keys and High contrast | ron, Sonnet | night | R50c | ~0.5 d |
 | [R50e](packages/R50e.md) | Settings › Appearance | ron, Sonnet | day | R50d | ~1 d |
 | [R57](packages/R57.md) | The decimal comma as a setting | ron, Sonnet | day | R49 and R50b | ~1 d |
 | [R4a](packages/R4a.md) | Find on Math | ron, Sonnet | day | R15c chain (path step 2) | ~2 d |
@@ -72,7 +70,6 @@
 | [A4b](packages/A4b.md) | Find timing on the Tab One | annabell, Sonnet | day (device) | R4b; the Tab One connected | ~0.25 d |
 | [A7](packages/A7.md) | Release signing and the version number | annabell, Sonnet | any time | the owner's go | ~0.5 d |
 | [A8](packages/A8.md) | The release workflow | annabell, **Opus** | day | A7 | ~0.5 d |
-| [S8](packages/S8.md) | The outside-test protocol | sandra, Opus | night | now | ~0.25 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, and where a slip gives a wrong number (the night's engine packages; the Sonnet ones get the Opus audit of night rule 1): R15c2 (it moves keys every test names), R53 (it hides the keypad; a wrong state leaves no keys), R24c (pad, slots and evaluation together), R38b (it overwrites stored data), A8 (the signing key on a machine we do not own); sandra runs Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14; queue rewritten 2026-10-19)

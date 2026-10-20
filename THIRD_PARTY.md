@@ -57,3 +57,13 @@ The About screen credits Giac and libqalculate.
 | @capacitor/android | 8.5.3 | MIT | https://github.com/ionic-team/capacitor | Android project (shipped) |
 | @capacitor/cli | 8.5.3 | MIT | https://github.com/ionic-team/capacitor | `cap sync` (build) |
 | JSXGraph | 1.14.0 | MIT OR LGPL-3.0-or-later | https://github.com/jsxgraph/jsxgraph | Function app Plot view (shipped, loaded lazily when Plot first opens; D7) |
+
+## Theme colours (app/scripts/theme-families.ts, generated into app/src/theme/)
+
+Colour values only (no code); lightness adjusted where our contrast rules need it (`node tools/probes/themes-audit.mjs --fixes` lists the moves).
+
+| Palette | Author | Licence | Source |
+|---|---|---|---|
+| Solarized | Ethan Schoonover | MIT | https://github.com/altercation/solarized |
+| Gruvbox | Pavel Pertsev | MIT | https://github.com/morhetz/gruvbox |
+| Nord | Arctic Ice Studio | MIT | https://github.com/nordtheme/nord |
