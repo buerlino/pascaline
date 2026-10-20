@@ -32,6 +32,6 @@ Pascaline is an **open-source precision engineering tool** for Android (also PWA
 - **The UI never calls Giac directly.** All maths goes through the async `MathEngine` interface. Engines run in Web Workers, and every call must be cancellable (Cancel key = terminate the worker and restore state).
 - **Never invent expected values from memory of how a Prime behaves.** Each golden test case records `source:` with one of `device` (real G2, firmware 2.4 rev 15515), `virtual-calc` (official simulator), `oracle` (MPFR/mpmath/SymPy), `derived` (mathematically provable) or `assumed` (to verify; mark as such).
 - **Every bug fixed gets a regression test first.**
-- Fix Giac bugs **upstream** (Bernard Parisse) where possible, and keep local patches minimal and documented in `engine/giac/patches/README.md`.
+- **Fix Giac bugs at their cause:** a local cause gets a minimal patch with a canary, sent to Bernard Parisse as a commit link; a TypeScript workaround needs a written reason (P19). Both are listed in `engine/giac/patches/README.md`.
 - Home display: 12 significant digits by default (configurable). Use engine formatting, never JS `Number.toString()`, for anything shown to users.
 

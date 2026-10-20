@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Multi-engine calculators: the risk report, and what this repo shows
 
-**Status (2026-10-20): answered.** [multi-engine-answer.md](multi-engine-answer.md) section 2 corrects Part II; Part II's proposals went to H5 and the backlog's "Upstream reports" (1), H6 (2), G63 (3) and H1, backlog F52 (4), all in [the consolidation report](../shifts/2026-10-20-sandra-consolidation-report.md) (b, c).
+**Status (2026-10-20): decided.** Answered by [multi-engine-answer.md](multi-engine-answer.md); Part II's proposals: 1 → S17, 2 → A21 (P22), 3 → G63, 4 → G67.
 
 *2026-10-19, base `p1/sandra-padlayout` at b1de57e. Part I is an outside report on multi-engine calculators, kept as received (only its headings moved down one level, and section 5's three sub-headings became a numbered list). Part II tests its argument against this repo, cites `file:line`, probes and decisions, and extends it. Part I's subtitle says Pascaline runs Giac, Qalculate! and a numerical backend; Part II section 0 corrects that premise. Decisions are not made here; they are in [docs/04](../04-architecture.md) and [decisions.md](../decisions.md).*
 

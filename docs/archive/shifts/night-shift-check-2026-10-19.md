@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Check of the night shift of 2026-10-19
 
+**Status (2026-10-20): decided;** every finding is merged, in a package, or dropped (rules section 10: check reports go to the archive).
+
 Written 2026-10-19, 10:00–11:00, read-only, while the night ran and after the owner stopped it (night.sh ended after Opus pass 27's reply, 10:14). From `.coord/log.md` (section "2026-10-19 night"), `.tasks/053-*` to `.tasks/074-*` (run logs, check logs), the reports in the merge commits, and probes on scratch worktrees of each merge commit (removed afterwards). **Verified** = I ran or read it; **inferred** = taken from a log or a pass's reply.
 
 ## Verdict

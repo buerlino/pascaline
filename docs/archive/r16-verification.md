@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R16: how we know the maths is right, and when to harden
 
-**Status (2026-10-20): open (proposals).** The verification model is in docs/04 7.3, marked proposed; F1–F9 were rechecked on `da7a59c` and are backlog F44–F47, F50 and F51 (F1's DEG half and F9 were fixed by route R); G58–G64, A19, A20 and S16 are proposed packages in [the consolidation report](../shifts/2026-10-20-sandra-consolidation-report.md) (b), not in the brief.
+**Status (2026-10-20): decided.** The verification model is docs/04 7.3; F1–F9 are backlog F44–F47, F50, F51 (F1's DEG half and F9 were fixed by route R); the packages are G58–G64, A19, A20 and S16, with F7 and F8 split from G59 into G78 (brief section 0).
 
 *Written 2026-10-19, afternoon, by Claude (Opus, the owner's session; read and probe only) in `.claude/worktrees/phase-1`, with the engine `engine/giac/_out/gsl` (the 1 GB build of 11:43).*
 - *The sweeps ran on `phase-1` `bb7441c`–`83d2262`.*

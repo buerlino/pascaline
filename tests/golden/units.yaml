@@ -152,7 +152,7 @@ cases:
   - { id: "q02", input: "1*{inHg}", to: "Pa", oracle: "F('13.5951')*F('0.0254')*F('9.80665')*1000", expect: "3386.38864034", mark: "≈", exact: "3386388640341/1000000000", source: "derived", note: "the conventional inch of mercury is 25.4 mmHg; qalc's follows its Torr" }
   - { id: "q03", input: "{=Z_0}", oracle: "F('376.730313412')", expect: "376.730313412", mark: "≈", exact: "94182578353/250000000", dim: "A-2kg1m2s-3", unc: "5.9E-8", unc_oracle: "F('5.9e-8')", shown: "376.730313412 ± 5.9E-8", source: "reference", note: "NIST CODATA 2022, allascii.txt: 376.730 313 412(59) Ω; qalc has 5.8E-8" }
   - { id: "q04", input: "{=muon_compton_wavelength}", oracle: "F('1.173444110e-14')*10**15", expect: "11.7344411", mark: "≈", exact: "117344411/10000000", dim: "m1", unit: "fm", unc: "2.6E-7", unc_oracle: "F('2.6e-22')*10**15", shown: "11.73444110 ± 2.6E-7", source: "reference", note: "NIST CODATA 2022, allascii.txt: 1.173 444 110(26) e-14 m, shown in fm; qalc has ...111" }
-  # --- G35: the dimension check sees every term, zero ones too (docs/research/check-2026-10-19.md findings 5 and 13; E8) ---
+  # --- G35: the dimension check sees every term, zero ones too (docs/archive/shifts/check-2026-10-19.md findings 5 and 13; E8) ---
   - { id: "z01", input: "0*{m}+1*{s}", message: "Units don't match: L vs T", source: "derived", note: "a term worth 0 still has its dimension (was = 1 s)" }
   - { id: "z02", input: "5*{m}-5*{m}+1*{s}", message: "Units don't match: L vs T", source: "derived", note: "terms that cancel (was = 1 s)" }
   - { id: "z03", input: "0*{m}", to: "s", message: "Units don't match: L vs T", source: "derived", note: "an end slot against a 0 (was = 0 s)" }

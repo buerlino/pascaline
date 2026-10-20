@@ -1,9 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Answer to the multi-engine risk report: what holds, what we accept, how we harden
 
-**Status (2026-10-20): open, decisions for the owner.** Section 0's statement is a proposed decision in docs/04 6.1; H1–H7 are proposed packages with proposed ids, and section 6's items are numbered decisions, in [the consolidation report](../shifts/2026-10-20-sandra-consolidation-report.md) (b, c); section 7 was rechecked on `da7a59c` (report (a)).
+**Status (2026-10-20): decided.** Section 0 is P18 (docs/04 6.1). H1 → G67; H2 → G73, G74 (P20; before R59, not R4a); H3 → G75 (P19); H4 → G76; H5 → S17; H6 → A21 (P22); H7 → rules sections 9 and 10, A22 and S18, with a per-file line baseline instead of a hard 800-line cap (the owner's change).
 
-*2026-10-19, late evening, by Claude (Opus, the owner's session). Read and probe only: no code changed. Base `phase-1` `fab0ae7` (after G46 and Opus pass 31; the code is that of the G46 merge `2bee0fc`). This note answers [multi-engine-risk.md](multi-engine-risk.md): Part I, the outside report, and Part II, our first reply, which was written on `b1de57e`, 401 commits earlier. Every number below was measured or probed today on `fab0ae7` (section 7). H1–H7 are labels for this note only, not package ids; the ids and their place in the brief are the owner's. Sources besides the code: [bug-patterns.md](bug-patterns.md) and [r16-verification.md](r16-verification.md) (both untracked), [docs/04](../04-architecture.md), [decisions.md](../decisions.md).*
+*2026-10-19, late evening, by Claude (Opus, the owner's session). Read and probe only: no code changed. Base `phase-1` `fab0ae7` (after G46 and Opus pass 31; the code is that of the G46 merge `2bee0fc`). This note answers [multi-engine-risk.md](multi-engine-risk.md): Part I, the outside report, and Part II, our first reply, which was written on `b1de57e`, 401 commits earlier. Every number below was measured or probed today on `fab0ae7` (section 7). H1–H7 are labels for this note only, not package ids; the ids and their place in the brief are the owner's. Sources besides the code: [bug-patterns.md](../research/bug-patterns.md) and [r16-verification.md](r16-verification.md) (both untracked), [docs/04](../04-architecture.md), [decisions.md](../decisions.md).*
 
 ## 0. The answer on one page
 

@@ -1,9 +1,11 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Consolidation of the 2026-10-19 research into the docs (sandra, 2026-10-20)
 
+**Status (2026-10-20): decided.** The owner's answers: decisions.md P18–P22, "F50, F51" and "How research reaches the docs"; the packages are in brief section 0 (F50 and F51 in G78, split from G59; G56 narrowed to after G60; S18 for the notes).
+
 **Base: `da7a59c6531374d482b8fb142943c030b4944d68`** (the newest night report, `docs/shifts/2026-10-20-night-report.md`). The worktree's HEAD `36c94d3` adds only `docs/research/pending-updates-2026-10-19.md`, so the code is the base's. Every finding below was rerun on it with the engine `engine/giac/_out/gsl` (build of 2026-10-19 11:43), the build the reports used.
 
-**Inputs:** `docs/research/pending-updates-2026-10-19.md`, [r16-verification.md](../research/r16-verification.md), [bug-patterns.md](../research/bug-patterns.md), [bug-hunt-2026-10-19.md](../research/bug-hunt-2026-10-19.md), [multi-engine-risk.md](../research/multi-engine-risk.md), [multi-engine-answer.md](../research/multi-engine-answer.md), the night report and `git log fab0ae7..da7a59c`.
+**Inputs:** `docs/research/pending-updates-2026-10-19.md`, [r16-verification.md](../r16-verification.md), [bug-patterns.md](../../research/bug-patterns.md), [bug-hunt-2026-10-19.md](../bug-hunt-2026-10-19.md), [multi-engine-risk.md](../multi-engine-risk.md), [multi-engine-answer.md](../multi-engine-answer.md), the night report and `git log fab0ae7..da7a59c`.
 
 **How I reran:** the scratch directory `tools/probes/_out/2026-10-19/` does not exist (the reports' scripts lived in their sessions' scratchpads). I rebuilt them from the reports' rerun sections: bug-hunt section 7's `seq.ts` unchanged (one `EngineHost`, Home and CAS sharing Giac), a host-API script for N3, N5, N6, N9, N10 and N2 following the same section's recipes, `tools/probes/engine.ts` (`MODE=raw` for raw Giac), `tools/probes/parse.ts` for the Giac text the keys produce, and `tools/probes/unit-result.ts`. Hangs ran under `timeout 20`. Oracle values come from mpmath 1.3.0 in `tests/golden/.venv` at 40–300 digits. Since route R (G46), DEG rows must go through the parser's text (`acos(2)/pasdeg`): raw `acos(2)` in DEG is now the radian value by design. My scripts were not added to the repo; G61 and G62 rebuild them.
 

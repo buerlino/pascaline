@@ -49,7 +49,7 @@ Pascaline is *inspired by* the HP Prime but contains **nothing from it**.
 - **No prebuilt binaries in the repository** (`.wasm`, `.so`, `.jar`, `.a`…). Everything is built from source by scripts in the repo. F-Droid requires this.
 - **No trackers, analytics, ads, crash reporters, Google Play Services or Firebase.**
 - **The app must work fully offline.** Any network use must be optional and clearly explained to the user.
-- Prefer **fixing things upstream** (Giac, MathLive, JSXGraph…) over patching local copies. If a local patch is unavoidable, document why.
+- Prefer **fixing things upstream** (Giac, MathLive, JSXGraph…) over patching local copies. If a local patch is unavoidable, document why. For Giac: a bug whose cause is local in Giac's source gets a minimal patch in `engine/giac/patches/` with a canary test, offered upstream as a link to the commit; a workaround in our TypeScript needs a written reason (decision P19).
 
 ## 4. Maths correctness
 

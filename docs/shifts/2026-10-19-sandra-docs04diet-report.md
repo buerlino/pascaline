@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # S10: the docs/04 diet (sandra, 2026-10-19)
 
-Package S10 ([check-2026-10-19.md](../research/check-2026-10-19.md) finding 15), branch `p1/sandra-docs04diet`. docs/04 went from 69,455 to 59.7 kB (budget 70 kB), so R15c2's rewrite of 5.1 and G34's sentence in 2.8 fit.
+Package S10 ([check-2026-10-19.md](../archive/shifts/check-2026-10-19.md) finding 15), branch `p1/sandra-docs04diet`. docs/04 went from 69,455 to 59.7 kB (budget 70 kB), so R15c2's rewrite of 5.1 and G34's sentence in 2.8 fit.
 
 ## What moved where
 Everything that is evidence went to a new [research/r12-evidence.md](../research/r12-evidence.md). docs/04 keeps the heading and a short stub with a link at each place, so the section numbers other files cite still work ("docs/04 2.3 #17" is row 17 of r12 section 1).

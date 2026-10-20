@@ -50,7 +50,7 @@ Each became a regression case before its fix (CLAUDE.md); #7 was Python's `calc.
 
 The 26 spike cases, tasks t02, t04, t10 and these rows agree with qalc, except where qalc is wrong (oracle). Every unit in S1's 50 and on the draft pad has the same SI factor in both; qalc's SI form drops rad. On the desktop an evaluation takes median 0.5 ms and p95 1.5–3.2 ms, in one Giac call. A half power (nV/√Hz) takes 8 ms.
 
-G15 counted 36 index units without an exact factor (34 on 2026-10-18 after G7, generator log, [check-2026-10-19.md](check-2026-10-19.md) finding 17). G13 gave hp and mmHg ours, and G17 handles the 4 logarithmic units by rule; the rest (nat, trit and Hart; the 15 °C and the mean calorie; 24 Planck, atomic and natural units and the solar mass, which are values with an uncertainty) are refused with a message naming the unit (`nofactor`).
+G15 counted 36 index units without an exact factor (34 on 2026-10-18 after G7, generator log, [check-2026-10-19.md](../archive/shifts/check-2026-10-19.md) finding 17). G13 gave hp and mmHg ours, and G17 handles the 4 logarithmic units by rule; the rest (nat, trit and Hart; the 15 °C and the mean calorie; 24 Planck, atomic and natural units and the solar mass, which are values with an uncertainty) are refused with a message naming the unit (`nofactor`).
 
 ## 3. Digits up to 30: the cost (docs/04 2.5)
 
@@ -84,4 +84,4 @@ The key path step by step is [r6](r6-pipelines.md) section 1; the MathLive promp
 
 ## 6. The Find index when it was first built (docs/04 3.1; G4, 2026-10-15)
 
-1,850 items, 325.7 kB raw, 67.1 kB gzip, from Giac's `doc/aide_cas` (1,780 entries, English lines only), libqalculate 5.13.1's units, constants and prefixes, and our files `find/aliases.yaml`, `find/functions.yaml` and `find/units.yaml`. `app/src/find/rank.ts` passed the query test 100/100 first; the desktop prototype ranked at p95 1.04–1.23 ms per key. On 2026-10-18 (after G7): 327,092 B raw, 67,913 B gzip, 439 units, 34 without `si` ([check-2026-10-19.md](check-2026-10-19.md)).
+1,850 items, 325.7 kB raw, 67.1 kB gzip, from Giac's `doc/aide_cas` (1,780 entries, English lines only), libqalculate 5.13.1's units, constants and prefixes, and our files `find/aliases.yaml`, `find/functions.yaml` and `find/units.yaml`. `app/src/find/rank.ts` passed the query test 100/100 first; the desktop prototype ranked at p95 1.04–1.23 ms per key. On 2026-10-18 (after G7): 327,092 B raw, 67,913 B gzip, 439 units, 34 without `si` ([check-2026-10-19.md](../archive/shifts/check-2026-10-19.md)).

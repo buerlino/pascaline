@@ -1,5 +1,7 @@
 # Master check of the night shift of 2026-10-18
 
+**Status (2026-10-20): decided;** every finding is merged, in a package, or dropped (rules section 10: check reports go to the archive).
+
 Written 2026-10-18 at 14:40, read-only, from `.coord/log.md`, `.tasks/night-2026-10-18.log`, `.tasks/archive/2026-10-18/*/` (bundles, check logs, run logs), `.tasks/pass-*/reply.md`, and the git history of `phase-1` in `.claude/worktrees/phase-1`. The shift ended at 14:18 (`SHIFT DONE`); nothing was running when the check started. Every claim is marked **verified** (I ran or read it) or **inferred** (taken from a log or a pass's reply that I did not reproduce).
 
 ## Verdict

@@ -4,42 +4,47 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; day = the owner tries it); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` on 2026-10-19 after the night (runs 53–74, Opus passes 20–27, `feef6e5`; what it left: [research/night-shift-check-2026-10-19.md](../research/night-shift-check-2026-10-19.md)). Before it, after Opus pass 19 (S7, `b6370a5`), checked as a whole ([research/check-2026-10-19.md](../research/check-2026-10-19.md)), then deeper ([research/deep-check-2026-10-19-angle-marks.md](../research/deep-check-2026-10-19-angle-marks.md)). Every merge and its commit: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` on 2026-10-20 after the fifth night (runs 89–118, Opus passes 32–42, `da7a59c`; [2026-10-20-night-report.md](2026-10-20-night-report.md)); the research of 2026-10-19 is decided ([consolidation report](../archive/shifts/2026-10-20-sandra-consolidation-report.md); decisions.md P18–P22). Every merge and its commit: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path (owner, 2026-10-14; rewritten 2026-10-20 after the research of 2026-10-19)
-**Why.** The G2's flow is the backbone; principle 3 is what we add to it, and today it is broken in our own layer between Giac and the screen, not in the keys or the parser. Of the 16 open bugs (backlog F44–F59, rechecked on `da7a59c`), 10 are wrong code of ours; in the other 6 the wrong value comes from Giac and our layer passes it on under `=`, `≈` or as Giac's text. Ten reach users today. So: harden that layer before anything widens what reaches it, and fix each bug where its cause is (a Giac patch when the cause is local in Giac's source; a TypeScript workaround only with a written reason). Giac evaluates, our layer decides, other engines feed at build time or check at test time, the parser is the one door for typed input. The ron lane by day touches no engine code and goes on unchanged. Evidence, proposed ids and the decisions: [the consolidation report](2026-10-20-sandra-consolidation-report.md); the package files are written after the owner's answers.
+**Why.** The G2's flow is the backbone; principle 3 is what we add to it, and today it is broken in our own layer between Giac and the screen, not in the keys or the parser. Of the 16 open bugs (backlog F44–F59, rechecked on `da7a59c`), 10 are wrong code of ours; in the other 6 the wrong value comes from Giac and our layer passes it on under `=`, `≈` or as Giac's text. Ten reach users today. So: harden that layer before anything widens what reaches it, and fix each bug where its cause is (a Giac patch when the cause is local in Giac's source; a TypeScript workaround only with a written reason). Giac evaluates, our layer decides, other engines feed at build time or check at test time, the parser is the one door for typed input. The ron lane by day touches no engine code and goes on unchanged. The decisions: decisions.md P18–P22 and "F50, F51"; the evidence: the consolidation report above.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
 1. **R15c1 → R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**.
 2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 and R40 after G76).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
-4. annabell: **A16** again after G53, **A9** and **A11** with a device, **A18**, **A12**, **A4b** after R4b, **A20** with the Tab One, **A7 → A8** on the owner's go.
+4. annabell: **A16** again after G53, **A9** and **A11** with a device, **A18**, **A22**, **A19** (G64 waits for it), **A12**, **A4b** after R4b, **A20** with the Tab One, **A21** after F-Droid's answer, **A7 → A8** on the owner's go.
 5. **R59** after G72 and G73/G74 (and R4b, S6, A12); **R38a → R38b** after the owner's yes to S6.
 
 **At night, the hardening, in this order** (gorge unless named; tests first, failing on `da7a59c`):
-1. **Reachable today:** G58 (F44, Home hangs) → G59 (F45, F46; F51 and F50 after the owner's word); G68 (F53), G69 (F54), G70 (F56), R69 (F55).
-2. **The cause in Giac:** G75 (patch 0003, complex `tanh`; measures whether the inverse functions patch as simply) → G60 (F47, only what the patch cannot fix). G56 is dropped or narrowed by G75's result.
-3. **Before R4a** (Find puts `cas_setup`, `purge`, `sto`, `trunc`, `Heaviside`, `BesselJ` one tap away): G67 (F52, Giac's flags), G71 (F48, F49, F59). G65 (S13) takes F58.
+1. **Reachable today:** G58 (F44, Home hangs) → G59 (F45, F46) → G78 (F50, F51, refused with a reason); G68 (F53), G69 (F54), G70 (F56), R69 (F55).
+2. **The cause in Giac:** G75 (patch 0003, complex `tanh`; measures whether the inverse functions patch as simply) → G60 (F47, only what the patch cannot fix) → G56 (narrowed to our CAS gap; dropped if nothing is left).
+3. **Before R4a** (Find puts `cas_setup`, `purge`, `sto`, `trunc`, `Heaviside`, `BesselJ` one tap away): G67 (F52, Giac's flags), G71 (F48, F49, F59). G65 takes F58 once S13 is accepted.
 4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text). **Before R36 and R40:** G76.
-5. **The instruments:** G61 → G62, G63; G64, A19 (annabell); then S16 (sofia, Opus) triages what they find into fix packages.
-6. **Engine and build:** S17 (the workaround register with canaries) → G77 (the numbered Giac pin); A21 (libqalculate out of the build) before C4, after the owner's yes.
+5. **Engine and docs:** S17 (the workaround register with canaries) → G77 (the numbered Giac pin); S18 (status lines, decided notes to the archive).
+6. **The instruments:** G61 → G62, G63; G64 after A19 (annabell, by day); then S16, an Opus pass, triages what they find into fix packages.
 
 **Why this order:**
 - Silent wrong numbers and freezes first, by reach: today's before R4a's, R4a's before R59's. G58 goes first: a hang hides every other answer.
-- R4a's Find inserts LaTeX, so its input still passes our parser: it needs the flag and decision fixes (step 3), not the text reader. A library file skips the parser, so R59 needs the reader (step 4).
-- G75 before G60 and G56: a one-line patch at the cause ends at the next pin, once Parisse has it; a workaround in TypeScript never ends.
-- The instruments after the fixes, so the sweep tests code that stays; then they stay in the gate.
+- Find inserts LaTeX, which still passes our parser, so R4a needs step 3, not the reader; a library file skips the parser, so R59 needs the reader (step 4).
+- G75 before G60 and G56: a patch at the cause ends at the pin that has Parisse's fix; a TypeScript workaround never ends (P19).
+- The instruments after the fixes and the re-pin, so they test code that stays; then they stay in the gate.
 - R15c goes first by day: it changes keys the hand is learning (docs/03 rule 8). R4b, R53 and R41 wait for it. R55 before R49; R57 after R49 (its page pattern).
 - The start chunk is 53.28 of 60 kB gzip (docs/04 8.3): every UI package reports its delta.
 
 ### The open packages
+The night's hardening packages are listed once, in the queue (section 0c), each linked to its file.
+
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [G56](packages/G56.md) | Complex functions inside a stored function, in CAS | gorge, **Opus** | night | G51 | ~0.5 d |
 | [G65](packages/G65.md) | Stored and read names from Giac's state | gorge, **Opus** | night | the owner accepts S13 | ~0.75 d |
-| [G66](packages/G66.md) | A store counter in Giac (patch 0003) | gorge, **Opus** | night | G65 | ~0.5 d |
+| [G66](packages/G66.md) | A store counter in Giac (the next patch number) | gorge, **Opus** | night | G65, G75 | ~0.5 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One after G53 | annabell, Sonnet | day (device) | G53 | ~0.25 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | now | ~0.25 d |
+| [A22](packages/A22.md) | The docs check knows ids, live notes and source sizes | annabell, Sonnet | day | now | ~0.25 d |
+| [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | day | now | ~0.25 d |
+| [A20](packages/A20.md) | The golden Home and precision stages in the WebView | annabell, Sonnet | day (device) | the Tab One connected | ~0.25 d |
+| [A21](packages/A21.md) | libqalculate out of the build (P22) | annabell, Sonnet | day | F-Droid's answer | ~0.5 d |
 | [R15c1](packages/R15c1.md) | The status line takes Apps, Menu and the views | ron, Sonnet | day | R50b | ~0.75 d |
 | [R15c2](packages/R15c2.md) | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | day | R15c1 | ~1.5 d |
 | [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | R15c2 | ~0.5 d |
@@ -48,16 +53,16 @@
 | [R49](packages/R49.md) | Settings as a list of rows, each with its own page | ron, Sonnet | day | R15c4 | ~0.75 d |
 | [R50e](packages/R50e.md) | Settings › Appearance | ron, Sonnet | day | R50d | ~1 d |
 | [R57](packages/R57.md) | The decimal comma as a setting | ron, Sonnet | day | R49 and R50b | ~1 d |
-| [R4a](packages/R4a.md) | Find on Math | ron, Sonnet | day | R15c chain (path step 2) | ~2 d |
+| [R4a](packages/R4a.md) | Find on Math | ron, Sonnet | day | R15c chain, G67, G71 | ~2 d |
 | [R4b](packages/R4b.md) | Vars, Memory and the user keys from Find | ron, Sonnet | day | R4a and R15c3 | ~1 d |
 | [R53](packages/R53.md) | Results mode on the View key (P16, S9) | ron, **Opus** | day | R15c2 and R4b | ~1.5 d |
-| [R36](packages/R36.md) | A picked row says why it has its mark | ron, Sonnet | day | G22 (merged) | ~0.5 d |
+| [R36](packages/R36.md) | A picked row says why it has its mark | ron, Sonnet | day | G76 | ~0.5 d |
 | [R33](packages/R33.md) | Names with a value, marked on the line | ron, Sonnet | day | R4b | ~0.5 d |
 | [R37](packages/R37.md) | The angle check | ron, Sonnet | day | R33 | ~0.75 d |
 | [R12b](packages/R12b.md) | Visual pass: tokens and history rows | ron, Sonnet | day | R4b, R53, R50e | ~1.5 d |
 | [R12c](packages/R12c.md) | Visual pass: press feedback, reduced motion | ron, Sonnet | day | R12b | ~1 d |
 | [R41](packages/R41.md) | Key labels for TalkBack | ron, Sonnet | day | R12c | ~0.5 d |
-| [R40](packages/R40.md) | Muted digits past a constant's uncertainty | ron, Sonnet | day | R41 | ~0.5 d |
+| [R40](packages/R40.md) | Muted digits past a constant's uncertainty | ron, Sonnet | day | R41, G76 | ~0.5 d |
 | [R24b](packages/R24b.md) | The unit pad drawn over the keys | ron, Sonnet | day | now | ~1 d |
 | [R24c](packages/R24c.md) | The unit view entry: slots, Enter, evaluation | ron, **Opus** | day | R24b, G35, G40, G41 | ~1 d |
 | [R24d](packages/R24d.md) | Find in a slot and the user cells | ron, Sonnet | day | R24c and R4b | ~0.5 d |
@@ -65,7 +70,7 @@
 | [R61](packages/R61.md) | The chip from a unit result, with its facts and σ (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
 | [R62](packages/R62.md) | The unit result view drawn | ron, Sonnet | day (gallery) | R60, and the owner has seen the mockup (M4-2 point 6) | ~1 d |
 | [R63](packages/R63.md) | The way back from the unit view; t02, t04 and t10 active | ron, **Opus** | day | R61 and R62 | ~1 d |
-| [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, S6, G54, A12 | ~0.5 d |
+| [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, A12, G72, G74 | ~0.5 d |
 | [R38a](packages/R38a.md) | The backup: export everything | ron, Sonnet | day | the owner's yes to S6, A11 | ~0.5 d |
 | [R38b](packages/R38b.md) | The backup: restore from a file | ron, **Opus** | day | R38a | ~0.75 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the owner's phone connected | ~0.5 d |
@@ -75,7 +80,7 @@
 | [A7](packages/A7.md) | Release signing and the version number | annabell, Sonnet | any time | the owner's go | ~0.5 d |
 | [A8](packages/A8.md) | The release workflow | annabell, **Opus** | day | A7 | ~0.5 d |
 
-**Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, and where a slip gives a wrong number (the night's engine packages; the Sonnet ones get the Opus audit of night rule 1): R15c2 (it moves keys every test names), R53 (it hides the keypad; a wrong state leaves no keys), R24c (pad, slots and evaluation together), R38b (it overwrites stored data), A8 (the signing key on a machine we do not own); sandra runs Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
+**Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (R15c2, R53, R24c, R38b, A8, the night's engine packages); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14; queue rewritten 2026-10-19)
 The queue below is the next nights'. `scripts/night.sh` runs it (rules section 4): for every decision it starts a fresh henri (Sonnet, Read-only) who sees this section and the log's tail and replies with one `scripts/pipeline.sh` line; the script runs that line and asks again. **henri executes and decides nothing.** **Use the window** (owner, 2026-10-19): the queue runs until the usage limit or its end; what is not done stays in the queue for the next night (resumed from the log). The night queue holds what needs no APK, no device and no eye on the UI (owner, 2026-10-18); the rest of the ron lane runs by day.
 
@@ -90,48 +95,44 @@ The queue below is the next nights'. `scripts/night.sh` runs it (rules section 4
 8. **A step that ends without a RESULT line** (the pipeline died; A10 makes every exit print one): henri runs the same step once more; if the log then shows it twice without a RESULT, he skips it and goes on. **Worker gone without a report** (no commit): the pipeline logs `NOT MERGED (no commits)` and keeps the worktree; henri runs the same step once more (the pipeline resumes the branch). If that fails too, go on.
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
-### The queue (the next nights)
-Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "after" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The order: the silent wrong numbers by severity, then the gates and the docs, each after what it needs.
+### The queue (the next nights; rewritten 2026-10-20; steps 30–61 are done, or moved here)
+Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "after" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The order is the path's (section 0).
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 30 | S15 decisions.md gets room again | sandra, Opus | `p1/sandra-decisionsroom` | — | 30 min |
-| 31 | G52 Giac calls per Enter in the gate | gorge, Sonnet | `p1/gorge-m4-callcount` | — | 1 h |
-| 32 | G48 no `=` through a run-once assignment | gorge, Opus | `p1/gorge-m4-runonce` | — | 1.5 h |
-| 33 | G47 golden cases for the displays G50 cut | gorge, Sonnet | `p1/gorge-m4-shortprint` | — | 30 min |
-| 34 | G51 a CAS result takes stored facts' mark | gorge, Opus | `p1/gorge-m4-casfacts` | G48 | 1 h |
-| 35 | R64 the angle mode lives in our parser (route R) | ron, Opus | `p1/ron-m4-pasdeg` | — | 1.5 h |
-| 36 | G46 Giac always in radians; pasexp goes | gorge, Opus | `p1/gorge-m4-radians` | R64 | 2.5 h |
-| 37 | G56 complex functions inside a stored function | gorge, Opus | `p1/gorge-m4-complexbody` | G51, H3 (owner hold) | 1 h |
-| 38 | G57 a decision Giac cannot make is refused | gorge, Opus | `p1/gorge-m4-undecided` | G48 | 1 h |
-| 39 | G37 °C inside a compound unit is an interval | gorge, Opus | `p1/gorge-m5-degcompound` | G35 | 1 h |
-| 40 | G40 angles in the unit view | gorge, Opus | `p1/gorge-m5-angles` | A15 | 1.5 h |
-| 41 | G43 invariants across settings in the gate | gorge, Sonnet | `p1/gorge-m4-invariants` | G34 | 1 h |
-| 42 | G44 inverse distribution functions polished | gorge, Opus | `p1/gorge-m4-icdfpolish` | A15 | 1 h |
-| 43 | G41 σ beyond first order at a stationary point | gorge, Opus | `p1/gorge-m5-sigma2` | G35 | 1 h |
-| 44 | G53 the second decision at most 1.3× again | gorge, Opus | `p1/gorge-m4-decidecost` | G52 | 1.5 h |
-| 45 | G54 our function names in Giac text | gorge, Sonnet | `p1/gorge-m4-ournames` | — | 1 h |
-| 46 | G55 a behaviour diff between two trees | gorge, Sonnet | `p1/gorge-m4-behaviourdiff` | — | 1.5 h |
-| 47 | S13 stored names from Giac's state (spike) | sandra, Opus | `p1/sandra-statefacts` | G48 | 1 h |
-| 48 | S11 the unit result view as packages | sandra, Opus | `p1/sandra-unitresult` | A14 | 1 h |
-| 49 | S6 files in and out without INTERNET | sandra, Opus | `p1/sandra-files` | S7 and A14 | 1 h |
-| 50 | S8 the outside-test protocol | sandra, Opus | `p1/sandra-outside` | S6 | 30 min |
-| 51 | R50c the theme generator and four more families | ron, Sonnet | `p1/ron-m4a-themegen` | R50b | 1.5 h |
-| 52 | R50d Plain keys and High contrast in the components | ron, Sonnet | `p1/ron-m4a-plainkeys` | R50c | 1 h |
-| 53 | G45 one tie rule, the G2's Home answers on record | gorge, Opus | `p1/gorge-m4-g2records` | S12 | 45 min |
-| 54 | R66 the power form keeps Giac's principal root | ron, Opus | `p1/ron-m4-noR39` | S12 | 45 min |
-| 55 | R67 letters e and i are names | ron, Opus | `p1/ron-m4-eiNames` | S12, R66 | 1 h |
-| 56 | R68 ᴇ's leading 1 after an operator | ron, Opus | `p1/ron-m4-emark1` | S12 | 45 min |
-| 57 | R56b Solve knows the user's functions | ron, Sonnet | `p1/ron-m4-solvefns` | — | 1 h |
-| 58 | R60 the unit result's alternatives as data | gorge, Opus | `p1/gorge-m5-unitalts` | R24c | 1.5 h |
-| 59 | R61 the chip from a unit result, facts and σ | gorge, Opus | `p1/gorge-m5-unitchip` | R24c | 1.5 h |
-| 60 | **The last Opus pass** on what came after pass 27, then its FIX packages | Opus | — | — | 20 min + fixes |
-| 61 | Shift report, then stop | — | — | — | 10 min |
+| 62 | [G58](packages/G58.md) Home never hangs | gorge, Opus | `p1/gorge-m4-nohang` | — | 1.5 h |
+| 63 | [G59](packages/G59.md) the exact path checked against evalf | gorge, Opus | `p1/gorge-m4-exactcheck` | G58 | 1.5 h |
+| 64 | [G78](packages/G78.md) refused with a reason: ÷0, overflow, lost answers | gorge, Opus | `p1/gorge-m4-novalue` | G59 | 1 h |
+| 65 | [G68](packages/G68.md) Solve's knowns carry every digit | gorge, Sonnet | `p1/gorge-m4-solveknowns` | — | 1 h |
+| 66 | [G69](packages/G69.md) a bound variable inherits no facts | gorge, Sonnet | `p1/gorge-m4-boundfacts` | — | 1 h |
+| 67 | [G70](packages/G70.md) Area refuses only where Home does | gorge, Sonnet | `p1/gorge-m4-areaundef` | — | 1 h |
+| 68 | [R69](packages/R69.md) Copy session writes the screen's mark | ron, Sonnet | `p1/ron-m4-copymark` | — | 45 min |
+| 69 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | — | 1.5 h |
+| 70 | [G60](packages/G60.md) no double inside an MPFR result | gorge, Opus | `p1/gorge-m4-mpfrdoubles` | G75 | 1.5 h |
+| 71 | [G56](packages/G56.md) the CAS check reads through a user function | gorge, Opus | `p1/gorge-m4-complexbody` | G60 | 1 h |
+| 72 | [G67](packages/G67.md) Giac's flags restored, never logged | gorge, Opus | `p1/gorge-m4-flags` | — | 1.5 h |
+| 73 | [G71](packages/G71.md) tier-1 functions that decide or drop to a double | gorge, Opus | `p1/gorge-m4-tier1decide` | — | 1.5 h |
+| 74 | [G72](packages/G72.md) every store form counts as a store | gorge, Sonnet | `p1/gorge-m4-statewords` | — | 45 min |
+| 75 | [G73](packages/G73.md) one reader of Giac text | gorge, Opus | `p1/gorge-m4-giactext` | G67 | 3 h |
+| 76 | [G74](packages/G74.md) the readers move to it | gorge, Opus | `p1/gorge-m4-giactextmove` | G73, G72 | 3 h |
+| 77 | [G76](packages/G76.md) the port carries every fact | gorge, Sonnet | `p1/gorge-m4-portfacts` | — | 1 h |
+| 78 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
+| 79 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |
+| 80 | [S18](packages/S18.md) status lines; decided notes to the archive | sandra, Opus | `p1/sandra-noteslife` | — | 45 min |
+| 81 | [G61](packages/G61.md) the oracle sweep as a gate stage | gorge, Sonnet | `p1/gorge-m4-oraclesweep` | G58 | 2 h |
+| 82 | [G62](packages/G62.md) sequences and state in the sweep | gorge, Sonnet | `p1/gorge-m4-seqsweep` | G61 | 1.5 h |
+| 83 | [G63](packages/G63.md) one value in every view | gorge, Sonnet | `p1/gorge-m4-viewsweep` | G61 | 1.5 h |
+| 84 | [G64](packages/G64.md) CAS answers checked back | gorge, Sonnet | `p1/gorge-m4-casback` | A19 | 1.5 h |
+| 85 | [S16](packages/S16.md) the hardening pass, run as `scripts/pipeline.sh pass <n> "G61 G62 G63 G64 A19" "S16: docs/shifts/packages/S16.md"` | sofia, Opus | — | G61–G64, A19 | 1 h + fixes |
+| 86 | [R60](packages/R60.md) the unit result's alternatives as data | gorge, Opus | `p1/gorge-m5-unitalts` | R24c | 1.5 h |
+| 87 | [R61](packages/R61.md) the chip from a unit result, facts and σ | gorge, Opus | `p1/gorge-m5-unitchip` | R24c | 1.5 h |
+| 88 | **The last Opus pass** on what came after pass 42, then its FIX packages | Opus | — | — | 20 min + fixes |
+| 89 | Shift report, then stop | — | — | — | 10 min |
 
-Not in the queue: the ron lane's day packages (section 0; R50c and R50d are queue steps); devices (A9, A4b, A11, A12, A16); A7 and A8 (the owner's go); A18 (the pipeline, by day); R59, R38a and R38b (after S6's report).
+Not in the queue: the day packages and annabell's (section 0); G65 and G66 (until S13 is accepted).
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
-- `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (skip steps the table or the log marks merged or skipped, and steps whose "after" is not merged).
+- `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above).
 - `scripts/pipeline.sh <agent> "<ID>" --no-worker --audit-model auto`: a review-only merge of a finished branch.
 - `scripts/pipeline.sh <agent> "<FIX prompt, verbatim>" --id <IDf1> --branch <branch> --model <m> --audit-model auto`: a FIX line of the last Opus pass, one per call, in order. No backtick and no `$` anywhere in the line.
 - `scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"`.
@@ -143,7 +144,7 @@ You are the shift's quality gate and its decision-maker; henri executes your rep
 2. Run once on `phase-1` (from `app/`, with absolute `GIAC_OUT`, `PASCALINE_DL_DIR` and `PASCALINE_QALC_DL_DIR`): typecheck, `npm run index` then `FIND_INDEX=required npm test`, e2e, and the golden gate when engine or parser code changed. Take `tools/devlock.sh acquire host-cpu opus 1800` around them.
 3. Check what an audit tends to miss: wrong or invented expected values (sources), a missing round trip, silent wrong numbers or marks (principle 3), scope, keys that moved, tests that pass for the wrong reason. An engine package gives its Giac calls per Enter before and after (`tools/probes/engine-calls.ts`).
 4. Decide each "Needs a decision" item of these packages and each open question from the log: a default within the plan goes into `docs/decisions.md` (rules section 9); a plan change goes under "Needs the user" with your recommendation in one sentence. Apply the "For shared files" text of the packages' reports, delete each merged package's file and its row from section 0's table, and run `node tools/docs-check.mjs`. Commit those doc changes on `phase-1` with `git commit -s` and the Opus trailer, under `tools/devlock.sh acquire integ opus 600` (A10).
-5. Reply in exactly this form, nothing before `OPUS PASS` and nothing after NOTES, and no backtick or `$` in a FIX prompt (`night.sh` refuses the line; name files and code in plain words). Never edit a DECIDED entry of decisions.md on a proposal that is still OPEN; put the change under the proposal. One FIX line per needed fix package; fix IDs are `<ID>f1`, `<ID>f2`:
+5. Reply in exactly this form, nothing before `OPUS PASS` and nothing after NOTES, and no backtick or `$` in a FIX prompt (`night.sh` refuses the line; name files and code in plain words). Never edit a DECIDED entry of decisions.md on a proposal that is still OPEN; put the change under the proposal. One FIX line per needed fix package; fix IDs are `<ID>f1`, `<ID>f2`, never `<ID>f3` or `<ID>f2f1`: at a chain's second follow-up the next FIX removes the shared cause, as a new id with the family's earlier cases as its tests; more than a day of work goes under "Needs the user" (owner, 2026-10-20):
 ```
 OPUS PASS <n>
 VERDICT: <ID> ok | <ID> fix — <one line each>
@@ -179,6 +180,7 @@ Then reply as the pipeline's prompt asks (at most five lines). Nobody is waiting
 
 ## 8. Definition of done
 - **Each branch:** typecheck 0; `npm run index` (with `PASCALINE_DL_DIR`, `PASCALINE_QALC_DL_DIR` and `QALC_OUT` pointing at the main checkout's caches and build, as the pipeline sets them), then `FIND_INDEX=required npm test`, all pass (the Find query test fails rather than skips without the full index); e2e all pass (the known-flaky `solve.spec.ts` persistence test and the Find 16 ms timing test may be re-run once); the golden gate when engine or parser code changed; by hand, `npm run gate` (from `app/`; `-- --quick` while working) runs all of these, the size test and a docs-size report in one command; SPDX headers; `git commit -s` with the trailer of the model that ran; the report commit; the start chunk size reported for UI packages; every "Done when" line of the block met or listed under "Not done".
+- **Source size** (owner, 2026-10-20; checked once A22 is merged): no file grows past its line in `tools/line-baseline.yaml` and no new source file passes 800 lines, unless the same diff raises the line with a reason (the `calls-baseline.yaml` rule); a split lowers the line.
 - **Milestone 4 is done when:**
   - task 5 is within budget
   - the query test passes

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R14: the angle mode: Giac always in radians, the degrees in our parser (S14 spike)
 
-sandra, 2026-10-19, package S14, branch `p1/sandra-radspike` from `phase-1` `83474da`, engine `engine/giac/_out/gsl` (dev build). From [deep-check-2026-10-19-angle-marks.md](deep-check-2026-10-19-angle-marks.md) (D4–D8, D12, Part 2 point 2) and [check-2026-10-19.md](check-2026-10-19.md) (findings 1–4). Everything here reruns with `tools/probes/angle-matrix.ts` (its README row); right values come from `tools/probes/angle-matrix-oracle.py` (mpmath, `oracle`) or from the definitions (`derived`).
+sandra, 2026-10-19, package S14, branch `p1/sandra-radspike` from `phase-1` `83474da`, engine `engine/giac/_out/gsl` (dev build). From [deep-check-2026-10-19-angle-marks.md](../archive/shifts/deep-check-2026-10-19-angle-marks.md) (D4–D8, D12, Part 2 point 2) and [check-2026-10-19.md](../archive/shifts/check-2026-10-19.md) (findings 1–4). Everything here reruns with `tools/probes/angle-matrix.ts` (its README row); right values come from `tools/probes/angle-matrix-oracle.py` (mpmath, `oracle`) or from the definitions (`derived`).
 
 ## 1. Answer
 
