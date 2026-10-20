@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- The outside test's task sheet (S8, docs/research/r18-outside-test.md). One A4 page: print it from the browser
+     (no margins added by the page; the browser's default margins are fine). The owner writes on one copy per tester;
+     the testers read numbers from a clean copy. Results to check come from tests/tasks/tasks.yaml (source tags there). -->
+<title>Pascaline outside test: task sheet</title>
+<style>
+@page { size: A4; margin: 9mm; }
+* { box-sizing: border-box; }
+body { margin: 0; color: #000; background: #fff; font: 8.4pt/1.25 system-ui, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 192mm; margin: 0 auto; }
+h1 { font-size: 12pt; margin: 0; }
+h2 { font-size: 9pt; margin: 2.2mm 0 0.8mm; text-transform: uppercase; letter-spacing: 0.04em; }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: 4mm; }
+.who { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1mm 4mm; margin-top: 1.5mm; }
+.who span { border-bottom: 0.6pt solid #000; padding-top: 2.6mm; white-space: nowrap; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+th, td { border: 0.5pt solid #555; padding: 0.6mm 1mm; vertical-align: top; text-align: left; }
+th { font-size: 7.2pt; font-weight: 600; background: #eee; }
+td.w { height: 6mm; }
+.n { width: 7mm; font-weight: 600; }
+.chk { color: #444; font-size: 7.2pt; }
+.small { font-size: 7.2pt; color: #333; }
+.off { color: #777; }
+.box { display: inline-block; width: 2.6mm; height: 2.6mm; border: 0.6pt solid #000; vertical-align: -0.4mm; margin-right: 0.8mm; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+.data { font-variant-numeric: tabular-nums; }
+footer { margin-top: 1.6mm; font-size: 7pt; color: #333; }
+@media screen { body { background: #f4f5f7; } main { background: #fff; padding: 9mm; margin: 8px auto; box-shadow: 0 1px 4px #0003; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1>Pascaline: outside test</h1>
+    <div><span class="box"></span>Round 1 &nbsp; <span class="box"></span>Round 2 &nbsp; Date ________ &nbsp; Build ________</div>
+  </div>
+  <div class="who">
+    <span>Tester code (T1–T3):</span>
+    <span>Field:</span>
+    <span>Student / engineer, years:</span>
+    <span>Calculator used most:</span>
+  </div>
+  <p class="small" style="margin:1.2mm 0 0">We test the app, not you. Please think aloud. No help with keys until the end. No names are kept; nothing you type leaves this phone, and it is cleared afterwards. Caps: 2 min per task, 45 s per search. <span class="box"></span>seen the keys before</p>
+
+  <h2>Tasks: any way you like</h2>
+  <table>
+    <colgroup><col class="n"><col style="width:58mm"><col style="width:27mm"><col style="width:11mm"><col style="width:26mm"><col style="width:12mm"><col style="width:8mm"><col></colgroup>
+    <thead><tr><th>#</th><th>Task (read out)</th><th>Check</th><th>Time</th><th>Presses (tally)</th><th>Misses</th><th>OK</th><th>Where they stopped, what they said</th></tr></thead>
+    <tbody>
+      <tr><td class="n">t01</td><td>Two resistors, 4.7 kΩ and 10 kΩ, in parallel: total resistance?</td><td class="chk">3197.27891156 Ω</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td class="n">t02</td><td>72 km/h in m/s</td><td class="chk">20 m/s</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td class="n">t03</td><td>RC time constant of 2.2 nF and 4.7 kΩ, in seconds</td><td class="chk">1.034E-5 s</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td class="n">t04</td><td>Circumference of a circle of radius 25 mm, in metres</td><td class="chk">0.157079632679 m</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td class="n">t05</td><td>The speed of light, put in by name without typing its digits</td><td class="chk">299792458</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td class="n">t06</td><td>The nearest E24 resistor value to 3.87 kΩ</td><td class="chk">3900 (3.9 kΩ)</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+      <tr class="off"><td class="n">t07</td><td>0xFF AND 0x3C, shown in binary <span class="small">(only if number bases are built)</span></td><td class="chk">111100</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td class="n">t08</td><td>Solve x+y+z=6, 2x−y+z=3, x+2y−z=2</td><td class="chk">x=1, y=2, z=3</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td class="n">t09</td><td>Mean and standard deviation of the ten readings below</td><td class="chk">9.81; 0.0182574185835 (n−1)</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td class="n">t10</td><td>(12.34 ± 0.05) m × (3.2 ± 0.1) m, with its uncertainty <span class="small">(round 2)</span></td><td class="chk">39.5 ± 1.2 m²</td><td class="w"></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+  <p class="small data" style="margin:0.8mm 0 0"><b>t09 readings:</b> 9.81 &nbsp; 9.79 &nbsp; 9.83 &nbsp; 9.80 &nbsp; 9.82 &nbsp; 9.78 &nbsp; 9.84 &nbsp; 9.81 &nbsp; 9.80 &nbsp; 9.82 &nbsp;&nbsp; <span class="chk">(population σ 0.0173205080757 counts as right, with a note)</span></p>
+
+  <h2>Find: type your own words (Math opens Find)</h2>
+  <table>
+    <colgroup><col class="n"><col style="width:62mm"><col style="width:25mm"><col><col style="width:16mm"><col style="width:11mm"></colgroup>
+    <thead><tr><th>#</th><th>What to find (read out)</th><th>Check</th><th>Words typed, in order</th><th>Place (1, 2, 3, –)</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td class="n">Q1</td><td>The constant in E = m·c²</td><td class="chk">const:c</td><td class="w"></td><td></td><td></td></tr>
+      <tr><td class="n">Q2</td><td>The number of particles in one mole</td><td class="chk">const:N_A</td><td class="w"></td><td></td><td></td></tr>
+      <tr><td class="n">Q3</td><td>The charge of one electron</td><td class="chk">const:q_e</td><td class="w"></td><td></td><td></td></tr>
+      <tr><td class="n">Q4</td><td>The constant R in pV = nRT</td><td class="chk">const:gas_constant</td><td class="w"></td><td></td><td></td></tr>
+      <tr><td class="n">Q5</td><td>The constant in F = G·m₁·m₂ / r²</td><td class="chk">const:G</td><td class="w"></td><td></td><td></td></tr>
+      <tr><td class="n">Q6</td><td>The constant ε in C = ε·A / d, for vacuum</td><td class="chk">const:epsilon_0</td><td class="w"></td><td></td><td></td></tr>
+      <tr><td class="n">Q7</td><td>The spread of a set of readings (the n − 1 kind)</td><td class="chk">fn:stddevp</td><td class="w"></td><td></td><td></td></tr>
+      <tr><td class="n">Q8</td><td>How many ways to choose 3 items out of 10</td><td class="chk">fn:comb</td><td class="w"></td><td></td><td></td></tr>
+      <tr><td class="n">Q9</td><td>The remainder of 17 divided by 5</td><td class="chk">fn:irem</td><td class="w"></td><td></td><td></td></tr>
+      <tr><td class="n">Q10</td><td>The total of two resistors side by side</td><td class="chk">fn:par</td><td class="w"></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+
+  <div class="cols">
+    <div>
+      <h2>Units on the pad (round 2)</h2>
+      <p class="small" style="margin:0 0 0.8mm">Empty line, units key (Shift Tmpl), type the unit, read the line under the slot, ⌫ to clear. Plan: flicks / taps only.</p>
+      <table>
+        <colgroup><col style="width:12mm"><col style="width:16mm"><col style="width:17mm"><col style="width:10mm"><col></colgroup>
+        <thead><tr><th>Unit</th><th>Plan</th><th>Presses</th><th>OK</th><th>First cell looked at</th></tr></thead>
+        <tbody>
+          <tr><td>mm</td><td class="chk">2 / 2</td><td class="w"></td><td></td><td></td></tr>
+          <tr><td>µF</td><td class="chk">2 / 2</td><td class="w"></td><td></td><td></td></tr>
+          <tr><td>psi</td><td class="chk">1 / 2</td><td class="w"></td><td></td><td></td></tr>
+          <tr><td>°C</td><td class="chk">1 / 2</td><td class="w"></td><td></td><td></td></tr>
+          <tr><td>km/h</td><td class="chk">4 / 5</td><td class="w"></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <h2>At the end (their words)</h2>
+      <table>
+        <tbody>
+          <tr><td style="height:8mm">1. Which task felt slowest, and why?</td></tr>
+          <tr><td style="height:8mm">2. What did you look for and not find?</td></tr>
+          <tr><td style="height:8mm">3. Would you use this for work, and for what?</td></tr>
+        </tbody>
+      </table>
+      <p class="small" style="margin:0.8mm 0 0">Settings › tap counter after the tester: Shift ____ &nbsp; Alpha ____</p>
+    </div>
+  </div>
+
+  <footer><b>Before each tester:</b> Android Settings › Apps › Pascaline › Storage › Clear storage; open the app, Home, empty line; flight mode on. <b>Count</b> every press 1 (key tap, flick, tap on the screen, Shift, Alpha); a <b>miss</b> is a wrong press undone (⌫, Esc, Cancel), a wrong result, or the cap. <b>After the round:</b> clear storage again; rows into docs/feedback.md marked "outside" with the tester code (r18 section 7).</footer>
+</main>
+</body>
+</html>
