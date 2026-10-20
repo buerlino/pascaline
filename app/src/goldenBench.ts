@@ -22,5 +22,5 @@ export function runGoldenBench(): void {
     console.log(`PASCALINE_BENCH golden-env ${JSON.stringify({ n: ev.data.length, ms: Math.round(performance.now() - t0), ua: navigator.userAgent })}`);
     mark("golden-done");
   };
-  w.postMessage(0);
+  w.postMessage(document.baseURI);
 }

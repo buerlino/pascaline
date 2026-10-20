@@ -11,10 +11,12 @@ interface GiacModule {
   cwrap(name: string, ret: "string" | "number", args: string[]): (...a: (string | number)[]) => string & number;
 }
 
+let pageBase = "";
+
 async function freshGiac(): Promise<GiacApi> {
   setGiacHostGlobals();
   // The same file the engine worker loads; absolute URL as there.
-  const url = new URL(`${import.meta.env.BASE_URL}engine/giac.mjs`, self.location.href).href;
+  const url = new URL(`${import.meta.env.BASE_URL}engine/giac.mjs`, pageBase).href;
   const mod = (await import(/* @vite-ignore */ url)) as { default: (o: object) => Promise<GiacModule> };
   const out = messageBuffer();
   const M = await mod.default({ print: out.print, printErr: () => {} });
@@ -26,7 +28,8 @@ async function freshGiac(): Promise<GiacApi> {
   return giac;
 }
 
-self.onmessage = () => {
+self.onmessage = (ev: MessageEvent<string>) => {
+  pageBase = ev.data; // the page's URL: BASE_URL is relative to it, not to this worker file
   void (async () => {
     const cases = (raw: unknown): Case[] => (raw as { cases: Case[] }).cases.map(typed);
     let n = 0;
@@ -36,5 +39,5 @@ self.onmessage = () => {
       if (n++ % 25 === 0) post({ progress: `${stage} ${id} #${n}` });
     });
     post(recs);
-  })();
+  })().catch((e: unknown) => (self as unknown as Worker).postMessage({ progress: `error ${String(e)}` }));
 };
