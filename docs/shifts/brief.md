@@ -98,8 +98,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 62 | [G58](packages/G58.md) Home never hangs | gorge, Opus | `p1/gorge-m4-nohang` | — | 1.5 h |
-| 63 | [G59](packages/G59.md) the exact path checked against evalf | gorge, Opus | `p1/gorge-m4-exactcheck` | G58 | 1.5 h |
 | 64 | [G78](packages/G78.md) refused with a reason: ÷0, overflow, lost answers | gorge, Opus | `p1/gorge-m4-novalue` | G59 | 1 h |
 | 65 | [G68](packages/G68.md) Solve's knowns carry every digit | gorge, Sonnet | `p1/gorge-m4-solveknowns` | — | 1 h |
 | 66 | [G69](packages/G69.md) a bound variable inherits no facts | gorge, Sonnet | `p1/gorge-m4-boundfacts` | — | 1 h |
