@@ -98,8 +98,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 65 | [G68](packages/G68.md) Solve's knowns carry every digit | gorge, Sonnet | `p1/gorge-m4-solveknowns` | — | 1 h |
-| 65a | [G84](packages/G84.md) an underflow is refused with its reason | gorge, Opus | `p1/gorge-m4-underflow` | — | 1 h |
 | 66 | [G69](packages/G69.md) a bound variable inherits no facts | gorge, Sonnet | `p1/gorge-m4-boundfacts` | held (owner) | 1 h |
 | 67 | [G70](packages/G70.md) Area refuses only where Home does | gorge, Sonnet | `p1/gorge-m4-areaundef` | — | 1 h |
 | 68 | [R69](packages/R69.md) Copy session writes the screen's mark | ron, Sonnet | `p1/ron-m4-copymark` | held (owner) | 45 min |
