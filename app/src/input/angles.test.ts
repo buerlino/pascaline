@@ -43,19 +43,19 @@ describe("R64: every angle the user types carries pasdeg", () => {
     ["\\operatorname{rectangular\\_coordinates}\\left(\\left\\{A,B\\right\\}\\right)", "rectangular_coordinates(R([A,B]))"],
     ["\\operatorname{rectangular\\_coordinates}\\left(L\\right)", "rectangular_coordinates(R(L))"],
     // polar_coordinates and instfreq answer in radians: the angle element of every point, and the result, over pasdeg
-    ["\\operatorname{polar\\_coordinates}\\left(1+i\\right)", "P(polar_coordinates(1+i))"],
+    ["\\operatorname{polar\\_coordinates}\\left(1+\\imaginaryI\\right)", "P(polar_coordinates(1+i))"],
     ["\\operatorname{polar\\_coordinates}\\left(x,y\\right)", "P(polar_coordinates(x,y))"],
     ["\\operatorname{instfreq}\\left(s\\right)", "instfreq(s)/pasdeg"],
     // no angle in these: unchanged (F29)
     ["\\sinh\\left(x\\right)+\\operatorname{asinh}\\left(x\\right)", "sinh(x)+asinh(x)"],
-    ["\\exp\\left(ix\\right)", "exp(i*x)"],
+    ["\\exp\\left(\\imaginaryI x\\right)", "exp(i*x)"],
   ])("%s -> %s", (latex, giac) => {
     expect(latexToGiac(latex)).toBe(giac.replace("P(", `${POLAR}(`).replace("R(", `${RECT}(`));
   });
 
   it("without the factor (the kept text of an open test) a degree is u*pi/180", () => {
     expect(latexToGiac("30^{\\circ}", { angleFactor: false })).toBe("30*pi/180");
-    expect(latexToGiac("\\operatorname{polar\\_coordinates}\\left(1+i\\right)", { angleFactor: false })).toBe("polar_coordinates(1+i)");
+    expect(latexToGiac("\\operatorname{polar\\_coordinates}\\left(1+\\imaginaryI\\right)", { angleFactor: false })).toBe("polar_coordinates(1+i)");
   });
 
   it("an open == test keeps its sides without the factor in the text it shows (the three prec-e*-closed-open cases)", () => {
@@ -147,7 +147,7 @@ describe("dropAngleFactor: what is drawn shows the text as typed", () => {
 
   it("undoes the emitter on every form it writes", () => {
     for (const latex of ["\\sin\\left(x+1\\right)", "\\arcsin\\left(x\\right)\\cos\\left(2x\\right)", "2\\measuredangle t", "\\arg\\left(z\\right)^2", "30^{\\circ}",
-      "\\operatorname{polar\\_coordinates}\\left(1+i\\right)", "\\operatorname{rectangular\\_coordinates}\\left(L\\right)",
+      "\\operatorname{polar\\_coordinates}\\left(1+\\imaginaryI\\right)", "\\operatorname{rectangular\\_coordinates}\\left(L\\right)",
       "\\operatorname{rectangular\\_coordinates}\\left(\\left\\{2,30\\right\\}\\right)", "\\operatorname{instfreq}\\left(s\\right)"])
       expect(dropAngleFactor(latexToGiac(latex))).toBe(latexToGiac(latex, { angleFactor: false }));
   });

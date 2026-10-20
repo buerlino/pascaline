@@ -24,7 +24,7 @@ const cases: [string, (x: number) => number][] = [
   ["\\ln\\left(x\\right)", (x) => Math.log(x)],
   ["\\log\\left(x\\right)", (x) => Math.log10(x)],
   ["\\exponentialE^{-x^2}", (x) => Math.exp(-(x * x))],
-  ["e^x", (x) => Math.exp(x)],
+  ["\\exponentialE^x", (x) => Math.exp(x)],
   ["\\left|x\\right|-1", (x) => Math.abs(x) - 1],
   ["\\pi x", (x) => Math.PI * x],
   ["-x^2+3", (x) => -(x * x) + 3],

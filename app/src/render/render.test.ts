@@ -13,7 +13,16 @@ const cases: [string, string][] = [
   ["\\frac{(a+b)(c+d)}{2}", "\\frac{\\left(a+b\\right)\\left(c+d\\right)}{2}"],
   ["\\frac{e^{x}}{x}", "\\frac{\\mathrm{e}^{x}}{x}"],
   ["\\pi \\cdot 2", "\\pi \\cdot 2"],
-  ["1+2*i", "1+2i"],
+  // R67: Giac's constant i is drawn upright (as Home draws it), the letter is the name i_ (latex(1+2*i))
+  ["1+2*i", "1+2\\mathrm{i}"],
+  ["\\sqrt{2}\\cdot i", "\\sqrt{2}\\mathrm{i}"],
+  // R67: the stand-ins e_ and i_ are the letters (Giac latex() of e_*2, i_^2+e_, pi*e_, e_*x, 2*e_+exp(1), min(e_,i))
+  ["\\mathrm{e\\_}\\cdot 2", "e\\cdot 2"],
+  ["\\mathrm{i\\_}^{2}+\\mathrm{e\\_}", "i^{2}+e"],
+  ["\\pi \\cdot \\mathrm{e\\_}", "\\pi e"],
+  ["\\mathrm{e\\_}^{2}", "e^{2}"],
+  ["2\\cdot \\mathrm{e\\_}+e^{1}", "2e+\\mathrm{e}^{1}"],
+  ["\\mathrm{min}\\left(\\mathrm{e\\_},i\\right)", "\\mathrm{min}\\left(e,\\mathrm{i}\\right)"],
   ["\\mathrm{atan}\\left(x\\right)", "\\arctan\\left(x\\right)"],
   ["\\mathrm{factorial}\\left(x\\right)", "\\left(x\\right)!"],
   ["\\sin\\left(x\\right)^{2}+\\cos\\left(x\\right)^{2}", "\\sin\\left(x\\right)^{2}+\\cos\\left(x\\right)^{2}"],
