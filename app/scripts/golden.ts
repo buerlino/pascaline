@@ -16,7 +16,9 @@
 //              step with `view: cas` runs in CAS (G49f3), never as the last step. A
 //              result shown with ⚠ n (n below the digits) must equal `expect` rounded to those n digits
 //   precision  tests/golden/precision.yaml (docs/04 2.3 regression list, 20/30-digit cases): Home and CAS at the case's
-//              digits, value and mark; `before:` inputs run first on the same engine. A case with `status: pending` is
+//              digits, value and mark; `before:` inputs run first on the same engine. `budgetMs` (G58): the case's
+//              wall time at most; with no expect and no mark it checks only that, and that it answered or was refused.
+//              A case with `status: pending` is
 //              known to fail until its fix: it never fails the gate, and is listed as still pending or now passing. A
 //              result shown with ⚠ n (fewer confirmed digits than asked) must equal `expect` rounded to those n digits.
 //   solve      Solve strategy: 1-D (solve1.ts), one equation through the engine (kind one), systems and polynomials
@@ -194,8 +196,12 @@ async function stagePrecision(): Promise<void> {
   const nowPassing: string[] = [];
   let marksChecked = 0;
   for (const c of cs) {
+    const t0 = performance.now();
     const run = await runPrecisionCase(c, shared, freshGiac);
+    const ms = performance.now() - t0;
     const { shown, mark, input, digits, problems } = run;
+    // G58: `budgetMs`, the wall time of the case (its Enter): it answers or is refused within it.
+    if (c.budgetMs !== undefined && ms > c.budgetMs) problems.push(`took ${ms.toFixed(0)} ms > budgetMs ${c.budgetMs}`);
     if (c.expect !== undefined) {
       // ⚠ n: the result shows only its n confirmed digits; those must be the oracle's.
       const want = mark?.mark === "⚠" && mark.n !== undefined && mark.n < digits ? expectAt(String(c.expect), Math.max(1, mark.n)) : String(c.expect);
@@ -203,7 +209,9 @@ async function stagePrecision(): Promise<void> {
       else if (shown !== want) problems.push(`got ${shown}, expect ${want}${want !== c.expect ? ` (${c.expect} at ${mark?.n} digits)` : ""}`);
     }
     // A mark-only case still needs an answer: the input echoed back (BesselJ(1,2) at 30 digits) is a lost result.
-    if (c.expect === undefined && lostAnswer(shown, input)) problems.push(`answer is not a number: ${shown}`);
+    // G58: a time-only case (budgetMs, no expect and no mark) may also be refused.
+    const timeOnly = c.budgetMs !== undefined && c.mark === undefined;
+    if (c.expect === undefined && !(timeOnly && shown.startsWith("error: ")) && lostAnswer(shown, input)) problems.push(`answer is not a number: ${shown}`);
     if (c.mark) {
       marksChecked++;
       if (!mark || mark.mark !== c.mark) problems.push(`mark ${markText(mark) ?? "none"}, expect ${c.mark}`);

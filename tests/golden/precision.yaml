@@ -15,6 +15,8 @@
 #   (no expect) a mark-only case: the case checks the mark, and that the answer is still a number (not the input
 #               echoed back). It exists where the true digits are out of reach for Giac's own routine, so the correct
 #               behaviour is the ⚠ and not a value.
+#   budgetMs    G58: the case answers or is refused within this many ms (desktop wall time of its Enter, checked by
+#               the gate). With no expect and no mark it is a time-only case: an answer or a refusal, in time
 #   status      "pending" = known to fail until its fix. The gate (stage precision) runs it anyway and lists it as
 #               still pending or now passing; it never fails the gate. Remove the status when the case passes.
 # `mark:` is checked by the gate (markOf() in app/src/engine/format.ts, STD at `digits`). A result shown with ⚠ n must equal
@@ -323,3 +325,18 @@ cases:
   # --- G47 (night check 2026-10-19 2.1): the same displays in CAS, where G50 cut a digit (round(12.345,2) showed 12.4) ---
   - { id: "g47-cas-round-12.345-2", kind: "cas", input: "round(12.345,2)", oracle: "floor(F('12.345')*100+F(1)/2)/100", expect: "12.35", mark: "≈", source: "derived", note: "12.345 is exact, half up (toward +∞), Giac's convention kept (S12), gives 12.35; round returns a Giac double, hence ≈. CAS showed 12.4 on 8872384" }
   - { id: "g47-cas-trunc-2.567-2", kind: "cas", input: "trunc(2.567,2)", oracle: "floor(F('2.567')*100)/100", expect: "2.56", mark: "⚠", source: "derived", note: "2.567 truncated to 2 decimals is 2.56; trunc is not audited, so ⚠. Showed 2.6 on 8872384" }
+  # --- G58 (r16 F1, Appendix A.3): Home never hangs. Each answers or is refused within `budgetMs` (desktop, wall time of
+  # the Enter); on da7a59c the first four were killed at 20 s and the last two took 2.3 s and 3.9 s ----------------------
+  - { id: "g58-exp-1.5e8-12", input: "exp(1.5e8)", budgetMs: 500, oracle: "exp(M(150000000))", expect: "1.92969101257E65144172", mark: "≈", source: "oracle", note: "hung: confirmedDigits built 10^65144133 as a BigInt" }
+  - { id: "g58-exp-1.5e8-30", input: "exp(1.5e8)", settings: { digits: 30 }, budgetMs: 500, oracle: "exp(M(150000000))", expect: "1.92969101256726120149770438513E65144172", mark: "≈", source: "oracle", note: "hung, as at 12 digits" }
+  - { id: "g58-sqrt-exp-2e8-12", input: "sqrt(exp(2e8))", budgetMs: 500, oracle: "sqrt(exp(M(200000000)))", expect: "1.54997674665E43429448", mark: "≈", source: "oracle", note: "hung (r16 run 2, seed 101)" }
+  - { id: "g58-sqrt-exp-2e8-30", input: "sqrt(exp(2e8))", settings: { digits: 30 }, budgetMs: 500, oracle: "sqrt(exp(M(200000000)))", expect: "1.54997674664842650441845854333E43429448", mark: "≈", source: "oracle", note: "hung (r16 run 2, seed 101)" }
+  - { id: "g58-3+exp/asin3-12", input: "3+exp(1.5e8)/asin(3)", budgetMs: 500, oracle: "3+exp(M(150000000))/asin(3)", expect: "5.43735651432E65144171+6.1017998746E65144171*i", mark: "≈", source: "oracle", note: "hung (r16 run 2, seed 107)" }
+  - { id: "g58-3+exp/asin3-30", input: "3+exp(1.5e8)/asin(3)", settings: { digits: 30 }, budgetMs: 500, oracle: "3+exp(M(150000000))/asin(3)", expect: "5.43735651431992494825756165321E65144171+6.10179987460077808585538151019E65144171*i", mark: "≈", source: "oracle", note: "hung (r16 run 2, seed 107)" }
+  - { id: "g58-acos-5!^(2.5+5!)-12", input: "acos(factorial(5)^(2.5+factorial(5)))", budgetMs: 500, oracle: "acos(mpf(120)**(mpf(5)/2+120))", expect: "587.160885671*i", mark: "≈", source: "oracle", note: "hung in Giac: its symbolic im() of the exact result (an ln of sqrt(30) times a 250-digit integer) loops past its interrupt; the parts now come from the value's evalf (heavySplit). Giac's evalf is a double here (G60), right to 12 digits" }
+  - { id: "g58-acos-5!^(2.5+5!)-30-time", input: "acos(factorial(5)^(2.5+factorial(5)))", settings: { digits: 30 }, budgetMs: 500, source: "derived", note: "time only: answers or is refused within the budget (hung). The value is the next case's" }
+  - { id: "g58-acos-5!^(2.5+5!)-30", input: "acos(factorial(5)^(2.5+factorial(5)))", settings: { digits: 30 }, budgetMs: 500, oracle: "acos(mpf(120)**(mpf(5)/2+120))", expect: "587.160885671360579604760596601*i", mark: "≈", source: "oracle", status: "pending", note: "G60: Giac's acos of a real argument above 1 is a double at any precision, so ≈ 587.160885671357391402125358582*i shows, wrong from the 14th digit (its two evaluations agree on the double)" }
+  - { id: "g58-exp-1e7-12", input: "exp(10^7)", budgetMs: 500, oracle: "exp(M(10**7))", expect: "6.59223253462E4342944", mark: "≈", source: "oracle", note: "took 2.3 s, in confirmedDigits" }
+  - { id: "g58-exp-1e7-30", input: "exp(10^7)", settings: { digits: 30 }, budgetMs: 500, oracle: "exp(M(10**7))", expect: "6.59223253461843948956088613107E4342944", mark: "≈", source: "oracle", note: "took 2.3 s, in confirmedDigits" }
+  - { id: "g58-factorial-1e6-12", input: "factorial(10^6)", budgetMs: 2000, oracle: "gamma(M(10**6+1))", expect: "8.26393168833E5565708", mark: "≈", source: "oracle", note: "took 3.9 s; now about 1 s, all of it Giac's exact factorial (GMP does not look at the interrupt), so the budget is Home's deadline (HOME_DEADLINE_MS)" }
+  - { id: "g58-factorial-1e6-30", input: "factorial(10^6)", settings: { digits: 30 }, budgetMs: 2000, oracle: "gamma(M(10**6+1))", expect: "8.26393168833124006237664610317E5565708", mark: "≈", source: "oracle", note: "as at 12 digits" }

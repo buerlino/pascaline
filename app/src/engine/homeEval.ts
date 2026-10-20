@@ -38,6 +38,8 @@ import {
   callsStateful,
   readsReplaced,
   floatsShown,
+  heavySplit,
+  REGROUP_MAX,
   shapeOf,
   valuePrecision,
   whyOf,
@@ -65,6 +67,11 @@ export interface HomeSettings {
    *  1e5 ≈ results up to ~43,000 digits. */
   powLimit: number;
 }
+
+/** G58: the time Home's steps may take for one Enter. Giac interrupts itself after `budgetMs`, but some of its calls do
+ *  not look at the interrupt (GMP's factorial(10^6) takes 1 s); once the exact steps are past this, the checks that
+ *  would follow (each as long again) are not run and the input is refused with the time-out reason. */
+export const HOME_DEADLINE_MS = 2000;
 
 export const defaultHomeSettings: HomeSettings = {
   digits: 12,
@@ -95,8 +102,9 @@ export interface HomeResult {
   exactMs: number;
   totalMs: number;
   /** Set when !ok: "syntax" (Giac could not parse the input), "engine", or a refusal of a number for something that does
-   *  not exist (G39, converge.ts: a divergent integral or series, no limit); the UI shows `error.<code>`. */
-  error?: "syntax" | "engine" | Refusal;
+   *  not exist (G39, converge.ts: a divergent integral or series, no limit), or "timeout" when Home's own steps ran past
+   *  HOME_DEADLINE_MS (G58); the UI shows `error.<code>`. */
+  error?: "syntax" | "engine" | "timeout" | Refusal;
   /** The value is exactly p/q or an integer; with the format this decides "=" (docs/04 section 2.4, 8.2). */
   exactRational: boolean;
   /** Digits confirmed by the agreement check; null = exact (no digit is in doubt). */
@@ -460,13 +468,13 @@ export const FULL_EXACT_MAX = 2048;
 /**
  * `regroup` on the stored answer `name` (x*x -> x^2), kept only when it merges equal factors, i.e. has
  * fewer "*" than `text`. Otherwise regroup would just reorder (factor's (x-1)*(x+1) -> (x+1)*(x-1))
- * and `text` and the stored answer stay as they were.
+ * and `text` and the stored answer stay as they were. Not on a text over REGROUP_MAX (G58: regroup can run for ever).
  * A text holding `==` is an equality test the rule left as typed (input/emit.ts equalityTest): regroup evaluates it as
  * Giac's structural `==`, so `cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)==1/2` (true) became 0 and `x*x==x^2` became 1 (F35,
  * R18f3). It is left alone. (`<>` comes back from regroup untouched, probe 2026-10-15.)
  */
 export function regrouped(giac: Giac, name: string, text: string): string {
-  if (text.includes("==")) return text;
+  if (text.includes("==") || text.length > REGROUP_MAX) return text;
   const out = giac.eval(`regroup(${name})`);
   if (isError(out) || out === "undef" || out.split("*").length >= text.split("*").length) return text;
   giac.eval(`${name}:=regroup(${name})`);
@@ -652,6 +660,8 @@ export function homeEval(
     return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
   };
 
+  // G58: past the deadline after the exact steps: refused, not checked for as long again.
+  if (now() - t0 > HOME_DEADLINE_MS) return { ...failed(enEngine["error.timeout"], "exact"), error: "timeout" };
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 
@@ -741,7 +751,7 @@ export function homeEval(
     return asked !== null ? { ...r, digits: asked } : r;
   }
 
-  let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits);
+  let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits, exactOut);
   if (!facts) {
     const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
     if (!d) return symbolic();
@@ -750,7 +760,8 @@ export function homeEval(
     return fromBuilt(b, "exact", true, exactOut, b.decimal, { once: true });
   }
   let exactText = exactOut;
-  if (shape.kind === "scalar" && !facts[0]!.exactRational) {
+  // G58: not for a text whose re and im already were unsafe (heavySplit): Giac's simplify of it loops as they do.
+  if (shape.kind === "scalar" && !facts[0]!.exactRational && !heavySplit(exactOut)) {
     const proved = provedRational(giac, ans, facts[0]!, valuePrecision(s.digits));
     if (proved) {
       facts = [proved];
