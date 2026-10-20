@@ -79,23 +79,23 @@ test("Delete removes the picked row and only that one", async ({ page }) => {
 test("Menu is one list of ten (nine, then Settings), the same with or without a picked row", async ({ page }) => {
   await three(page);
   const names = ["Insert", "Recall", "Copy", "Store ▶", "Delete", "Copy as›", "Paste", "Share session", "Clear history", "Settings"];
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(names.map((n, i) => `${(i + 1) % 10}${n}`));
-  await tap(page, ["cancel", "up", "menu"]);
+  await tap(page, ["esc", "up", "@menu"]);
   await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(names.map((n, i) => `${(i + 1) % 10}${n}`));
 });
 
 test("Menu 5 deletes the last row when none is picked, and 2 recalls its entry", async ({ page }) => {
   await three(page);
-  await tap(page, ["menu", "d2"]);
+  await tap(page, ["@menu", "d2"]);
   expect(await entryValue(page)).toBe("\\frac14");
-  await tap(page, ["esc", "menu", "d5"]);
+  await tap(page, ["esc", "@menu", "d5"]);
   await done(page, 2);
 });
 
 test("Menu 5 on a picked row deletes that row, not the last", async ({ page }) => {
   await three(page);
-  await tap(page, ["up", "up", "menu", "d5"]);
+  await tap(page, ["up", "up", "@menu", "d5"]);
   await done(page, 2);
   const texts = await page.locator('[data-testid="result"] .result').evaluateAll((els) => els.map((e) => e.getAttribute("data-text")));
   expect(texts).toEqual(["0.333333333333", "0.25"]);
@@ -104,7 +104,7 @@ test("Menu 5 on a picked row deletes that row, not the last", async ({ page }) =
 test("Menu 6 opens Copy as: as shown, exact, LaTeX", async ({ page }) => {
   await tap(page, ["d1", "div", "d3", "enter"]);
   await done(page, 1);
-  await tap(page, ["menu", "d6"]);
+  await tap(page, ["@menu", "d6"]);
   await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(["1As shown", "2Exact", "3LaTeX"]);
   await tap(page, ["d2"]);
   await expect.poll(() => clipboard(page)).toBe("1/3");
@@ -127,13 +127,13 @@ test("a long press opens the same nine on that row", async ({ page }) => {
 });
 
 test("with an empty history the actions are disabled; with only an error row they say why", async ({ page }) => {
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await expect(item(page, /^1 ?Insert/)).toBeDisabled();
   await expect(item(page, /^5 ?Delete/)).toBeDisabled();
   await expect(item(page, /^9 ?Clear history/)).toBeDisabled();
-  await tap(page, ["cancel", "d1", "emark", "d2", "dot", "d5", "enter"]); // 1ᴇ2.5: an error row: there are rows, but no result
+  await tap(page, ["esc", "d1", "emark", "d2", "dot", "d5", "enter"]); // 1ᴇ2.5: an error row: there are rows, but no result
   await expect(page.locator('[data-status="error"]')).toHaveCount(1);
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await expect(item(page, /^1 ?Insert/)).toBeDisabled();
   await expect(page.getByTestId("menu")).toContainText("No result yet");
   await expect(item(page, /^2 ?Recall/)).toBeDisabled();
@@ -151,14 +151,14 @@ test("the row buttons cost no viewport: the keypad does not move", async ({ page
 test("CAS has the same buttons and its own rows", async ({ page }) => {
   await tap(page, ["d1", "d2", "enter"]);
   await done(page, 1);
-  await tap(page, ["u3", "d3", "d4", "enter"]);
+  await tap(page, ["@cas", "d3", "d4", "enter"]);
   await done(page, 1); // the CAS history is separate
   await tap(page, ["up"]);
   await expect(bar(page).getByRole("button")).toHaveText(["Insert", "Recall", "Copy", "Store ▶", "Delete"]);
   await bar(page).getByRole("button", { name: "Delete" }).tap();
   await expect(page.locator('[data-status="done"]')).toHaveCount(0);
-  await tap(page, ["u2"]);
+  await tap(page, ["@home"]);
   await done(page, 1); // Home still has its row
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveCount(10);
 });

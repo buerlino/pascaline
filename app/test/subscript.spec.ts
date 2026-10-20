@@ -37,7 +37,7 @@ test("L1 Home: x_1 is a variable, not a unit", async ({ page }) => {
 });
 
 test("L1 CAS: x_1÷x_1+x_2·x_1 is drawn as 1+x₂x₁", async ({ page }) => {
-  await tap(page, ["u3"]);
+  await tap(page, ["@cas"]);
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
   await name(page, "x", "1");
   await tap(page, ["div"]);
@@ -54,9 +54,9 @@ test("L1 CAS: x_1÷x_1+x_2·x_1 is drawn as 1+x₂x₁", async ({ page }) => {
 });
 
 test("L1 Solve: unknowns x_1, x_2 solve the 2×2 system x_1+x_2=3, x_1-x_2=1", async ({ page }) => {
-  await tap(page, ["apps", "d4"]);
+  await tap(page, ["@place", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
-  await tap(page, ["symb"]);
+  await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E1:");
   await name(page, "x", "1");
   await tap(page, ["add"]);
@@ -67,12 +67,12 @@ test("L1 Solve: unknowns x_1, x_2 solve the 2×2 system x_1+x_2=3, x_1-x_2=1", a
   await tap(page, ["sub"]);
   await name(page, "x", "2");
   await tap(page, ["shift", "dot", "d1", "enter"]);
-  await tap(page, ["num"]);
+  await tap(page, ["@num"]);
   const row = (n: string) => page.locator(`[data-testid="solve-table"] tr[data-name="${n}"]`);
   await expect(row("x_1")).toBeVisible();
   await expect(row("x_2")).toBeVisible();
   await expect(row("x_1").locator("th sub")).toHaveText("1");
-  await tap(page, ["menu", "d1"]); // Solve
+  await tap(page, ["@menu", "d1"]); // Solve
   await expect(row("x_1").locator("td")).toHaveText("2");
   await expect(row("x_2").locator("td")).toHaveText("1");
   await expect(page.getByTestId("solve-report")).toHaveAttribute("data-warn", "false");
@@ -80,11 +80,11 @@ test("L1 Solve: unknowns x_1, x_2 solve the 2×2 system x_1+x_2=3, x_1-x_2=1", a
 
 test("L1 Function: F1(x)=x_1·x uses the Home variable x_1 (Num at x=1 is 5)", async ({ page }) => {
   await storeX1(page);
-  await tap(page, ["symb"]);
+  await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await name(page, "x", "1");
   await tap(page, ["mul", "x", "enter"]);
-  await tap(page, ["num", "d1", "enter"]); // Num start 1 (the step is 0.1)
+  await tap(page, ["@num", "d1", "enter"]); // Num start 1 (the step is 0.1)
   const row = page.locator('[data-testid="num-table"] tr:has(td[data-x="1"])');
   await expect(row.locator("td").nth(1)).toHaveAttribute("data-text", "5");
 });

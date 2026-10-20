@@ -30,15 +30,16 @@
 #                                  Any action may carry `line: <action>`, used instead of it when the
 #                                  one-line entry mode is on (a linear form of the same key).
 #   { cmd: "moveToNextChar" }      a MathLive editing command
-#   { special: shift|alpha|enter|clear|cancel|esc|home|cas|switch|settings|mode|apps|symb|plot|num|menu|tmpl|relations|symbols|none }
+#   { special: shift|alpha|enter|clear|esc|home|cas|switch|settings|mode|apps|symb|plot|num|menu|copy|paste|tmpl|relations|symbols|none }
 #                                  handled by the app (home, cas: go to that view, from an app too; switch: Home <-> CAS,
-#                                  or back to Home/CAS from an app, as the status line's place name does)
-# User keys (R15b, layout D): a key with `user: true` is a free key (U1-U3). Its layers here are only its defaults: the
+#                                  or back to Home/CAS from an app; apps, symb, plot, num, menu: the status line's
+#                                  controls, R15c1, and what a user key may hold)
+# User keys (R15b, R15c): a key with `user: true` is a free key (U1-U6). Its layers here are only its defaults: the
 # user's own action for a layer (Settings > User keys, from Find, R4b) replaces the default, stored with a stamp in
 # IndexedDB (app/src/keyboard/userKeys.svelte.ts). A user key has no alpha layer.
 # Missing layer: the key does nothing in that layer, except that alpha falls back to primary.
-# Empty line (docs/04 2.8, app/src/entry/ans.ts): in Home and CAS, + − × ÷ xʸ x² and x⁻¹ on an empty entry line
-# insert Ans (the \ans chip) first, as on the reference; (−) stays negation. Only when the view has a result.
+# Empty line (docs/04 2.8, app/src/entry/ans.ts): in Home and CAS, + − × ÷ xʸ x², x⁻¹ and Store ▶ (Shift + ᴇ) on an empty
+# entry line insert Ans (the \ans chip) first, as on the reference; (−) stays negation. Only when the view has a result.
 # Letters: Alpha types the capital in the alpha layer, Shift + Alpha its lower case (as on the reference).
 # `label` entries starting with "$" are i18n keys (app/src/i18n), anything else is shown as is.
 #
@@ -47,7 +48,8 @@
 #   Trackpad (K1): the arrow keys `up`, `down`, `left`, `right` are the tap zones of one trackpad surface. A drag
 #     steps in two dimensions, one step per 12 px with a haptic tick, through the same actions as the arrow keys
 #     (entry line, Plot, Num, Symb lists). A touch that makes no full step is a tap on its zone: one step, in the
-#     current Shift state. Steps fire while dragging, a tap when the finger lifts.
+#     current Shift state. Steps fire while dragging, a tap when the finger lifts. The surface is drawn round (R15c),
+#     with a dashed hub ring at its centre: a drag may start there; a tap on it does nothing.
 #   Flicks (R9, P7 points 2 and 3): every other key fires when the finger lifts. A slide of 20 px up or down from
 #     the touch point (mostly vertical) arms a flick: up = the key's `shift` layer, down = its `alpha` layer (the
 #     capital), whatever Shift and Alpha are set to. Distance alone decides: no hold time and no dwell, so one fast
@@ -68,39 +70,41 @@ columns: 6
 row_columns: { 6: 5, 7: 5, 8: 5, 9: 5 }
 
 keys:
-  # ---- rows 0-2: the upper cluster, layout D (R15a, approved by the owner 2026-10-14; built in R15b). Every key that stays
-  # is at its G2 place; the reference's Home and CAS cells and the gap under Plot hold the free keys U1-U3 (`user: true`).
-  # Symb / Plot / Num open the views of the current app (from Home or CAS: the last app used). Help (r1c4) is drawn
-  # dimmed and gives the dead-key haptic until context help exists (milestone 6). View (r2c4) has only its shift layer
-  # so far: shift View = Copy, shift Menu = Paste; its primary layer is the compact keypad (K4) (docs/04 section 5.1).
-  # There is no Home/CAS key (P12 point 2): the status line's place name switches Home <-> CAS, the Apps sheet lists
-  # Home and CAS first, and U2/U3 hold Home and CAS by default.
-  - { id: apps, row: 0, col: 0, cls: nav, label: { primary: "$key.apps", shift: "$key.mode" },
-      primary: { special: apps }, shift: { special: mode }, source: assumed }  # r1c1; shift Mode is ours (the G2's shift is Info, omitted; S2 point 4: the keys-only path to Mode)
-  - { id: symb, row: 0, col: 1, cls: nav, label: { primary: "$key.symb" }, primary: { special: symb }, source: virtual-calc }  # r1c2 (shift Setup: not ours)
+  # ---- rows 0-2: the upper cluster, R3 (decisions.md "R15c", chosen by the owner 2026-10-17; built in R15c2). Three bands
+  # of two columns: the free keys U1-U6 (`user: true`, all empty, set from Find, R4b), the round pad (one drag surface with
+  # a dashed hub, no OK; Keypad.svelte) and the editing wing, read in pairs level with the pad: View | Esc, Undo | Copy,
+  # ⇤ | ⇥. Apps, Menu and the views are on the status line (R15c1); Mode is on its chips. There is no Cancel key: Esc
+  # stops a running job, closes Settings, goes back one sheet level, drops a picked row, else clears the line. Only Esc
+  # (r1c5) and the pad keep their G2 cells; every other key here is ours (`assumed`). After R15c the cluster is fixed
+  # like the maths keys (docs/03 rule 8).
+  - { id: u1, row: 0, col: 0, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
+  - { id: u2, row: 0, col: 1, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
   - { id: up, row: 0, col: 2, span: 2, cls: ctl, label: { primary: "▲" }, primary: { cmd: moveUp }, source: virtual-calc }  # pad up; on an empty entry line it selects the last history row (App.svelte)
-  - { id: help, row: 0, col: 4, cls: nav, label: { primary: "$key.help" }, primary: { special: none }, source: virtual-calc }  # r1c4; context help comes with milestone 6
+  # View: results mode (P16, R53) on the tap, Help (milestone 6) on Shift; neither is built, so the key is drawn dimmed.
+  - { id: view, row: 0, col: 4, cls: nav, label: { primary: "$key.view", shift: "$key.help" },
+      primary: { special: none }, shift: { special: none }, source: assumed }
   - { id: esc, row: 0, col: 5, cls: nav, label: { primary: "$key.esc", shift: "$key.clear" },
-      primary: { special: esc }, shift: { special: clear }, source: virtual-calc }  # r1c5 (Esc clears the line / closes a list; shift Clear wipes the history)
-  # U1 (ours): in the gap under Apps; ships empty (a dead key drawn as an empty slot until the user sets it, R4b).
-  - { id: u1, row: 1, col: 0, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
-  - { id: plot, row: 1, col: 1, cls: nav, label: { primary: "$key.plot" }, primary: { special: plot }, source: virtual-calc }  # r2c2
+      primary: { special: esc }, shift: { special: clear }, source: virtual-calc }  # r1c5; Esc also takes the old Cancel key's jobs (R15c point 3); shift Clear wipes the history on an empty line
+  - { id: u3, row: 1, col: 0, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
+  - { id: u4, row: 1, col: 1, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
   - { id: left, row: 1, col: 2, cls: ctl, label: { primary: "◀" },
       primary: { cmd: moveToPreviousChar }, source: virtual-calc }  # pad left; no shift layer (P12 point 7)
   - { id: right, row: 1, col: 3, cls: ctl, label: { primary: "▶" },
       primary: { cmd: moveToNextChar }, source: virtual-calc }  # pad right; no shift layer (P12 point 7)
-  # View (r2c4): the compact keypad toggle comes with K4, so only the shift layer is built (shift View = Copy, docs/04 2.6, 5.1).
-  - { id: view, row: 1, col: 4, cls: nav, label: { primary: "$key.view", shift: "$key.copy" },
-      primary: { special: none }, shift: { special: copy }, source: virtual-calc }  # r2c4
-  - { id: cancel, row: 1, col: 5, cls: ctl, label: { primary: "$key.cancel", shift: "$key.undo" }, primary: { special: cancel }, shift: { cmd: undo }, source: assumed }  # ours (P4 item 6): stops a running job, closes a list, else clears the line; in a gap under Esc (r2c5). Shift = Undo (P13, R16)
-  # U2 (ours) at the reference's Home key (r3c1): Home by default (decisions.md "R15a: layout D"); the Shift layer ships empty.
-  - { id: u2, row: 2, col: 0, cls: nav, user: true, label: { primary: "$key.home" }, primary: { special: home }, source: assumed }
-  - { id: num, row: 2, col: 1, cls: nav, label: { primary: "$key.num" }, primary: { special: num }, source: virtual-calc }  # r3c2
+  # Undo | Redo: the entry line's own history (P13, R16; a chip comes back with its own value).
+  - { id: undo, row: 1, col: 4, cls: nav, label: { primary: "$key.undo", shift: "$key.redo" },
+      primary: { cmd: undo }, shift: { cmd: redo }, source: assumed }
+  # Copy | Paste (docs/04 2.6): the last result's full value, or the picked row's; Paste reads one number.
+  - { id: copy, row: 1, col: 5, cls: nav, label: { primary: "$key.copy", shift: "$key.paste" },
+      primary: { special: copy }, shift: { special: paste }, source: assumed }
+  - { id: u5, row: 2, col: 0, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
+  - { id: u6, row: 2, col: 1, cls: nav, user: true, label: { primary: "$key.user" }, primary: { special: none }, source: assumed }
   - { id: down, row: 2, col: 2, span: 2, cls: ctl, label: { primary: "▼" }, primary: { cmd: moveDown }, source: virtual-calc }  # pad down
-  - { id: menu, row: 2, col: 4, cls: nav, label: { primary: "$key.menu", shift: "$key.paste" },
-      primary: { special: menu }, shift: { special: paste }, source: assumed }  # at r3c4; our Menu opens the current view's menu (P4 item 6); shift Paste reads one number from the clipboard (docs/04 2.6)
-  # U3 (ours) at the reference's CAS key (r3c5): CAS by default; the Shift layer ships empty (the Mode sheet moved to Shift + Apps).
-  - { id: u3, row: 2, col: 5, cls: nav, user: true, label: { primary: "$key.cas" }, primary: { special: cas }, source: assumed }
+  # ⇤ | ⇥: the start and end of the line; Shift: the start and end of the box the cursor is in (a numerator, an exponent).
+  - { id: lstart, row: 2, col: 4, cls: nav, label: { primary: "⇤", shift: "⇤□" },
+      primary: { cmd: moveToMathfieldStart }, shift: { cmd: moveToGroupStart }, source: assumed }
+  - { id: lend, row: 2, col: 5, cls: nav, label: { primary: "⇥", shift: "□⇥" },
+      primary: { cmd: moveToMathfieldEnd }, shift: { cmd: moveToGroupEnd }, source: assumed }
 
   # ---- row 3 (r4). Planned (P8, docs/04 section 5.1): Vars = Find on variables, Math = Find, shift Math = Memory,
   # shift Tmpl = the unit view. Not built yet, so `special: none`; the Alpha letters stay. Tmpl opens the template

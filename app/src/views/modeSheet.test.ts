@@ -137,10 +137,9 @@ describe("Settings page", () => {
     p.activate(at(p, "reset"));
     expect(session.taps.counts.shift).toBe(0);
   });
-  it("keys: Esc and Cancel close, Menu-like keys pass, digits and letters do nothing", () => {
+  it("keys: Esc closes, Menu-like keys pass, digits and letters do nothing", () => {
     const p = settings();
     expect(p.key({ kind: "back" })).toBe("close");
-    expect(p.key({ kind: "close" })).toBe("close");
     expect(p.key({ kind: "pass" })).toBe("pass");
     expect(p.key({ kind: "pick", n: 3 })).toBe("stay");
     expect(p.key({ kind: "letter", ch: "a" })).toBe("stay");

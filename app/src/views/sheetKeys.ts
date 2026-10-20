@@ -10,18 +10,16 @@ export type SheetKey =
   | { kind: "enter" }
   /** ▶: open the highlighted submenu. */
   | { kind: "right" }
-  /** Esc: back one level (the root closes). */
+  /** Esc: back one level (the root closes). There is no close-all key since R15c (Cancel went). */
   | { kind: "back" }
   /** ◀: step a setting down, else back one level (the root closes). */
   | { kind: "left" }
-  /** Cancel: close every level. */
-  | { kind: "close" }
   /** A tap on a key that is not a digit types its letter into the filter (no Alpha press needed). */
   | { kind: "letter"; ch: string }
   | { kind: "backspace" }
-  /** The key keeps its own job: Shift and Alpha (their state is kept as it is), and the keys that change place
-   *  (Menu, Apps and Tmpl toggle their sheet; Symb, Plot, Num, a user key that holds Home or CAS, and the status
-   *  line's place name close it and go there). A user key that holds anything else does nothing in a sheet. */
+  /** The key keeps its own job: Shift and Alpha (their state is kept as it is), and the controls that change place
+   *  (the status line's ☰ and place name, and Tmpl, toggle their sheet; its view tabs and a user key that holds Home,
+   *  CAS, Apps, Menu or a view close it and go there). A user key that holds anything else does nothing in a sheet. */
   | { kind: "pass" }
   /** Does nothing in a sheet. */
   | { kind: "none" };
@@ -34,7 +32,6 @@ const BY_ID: Readonly<Record<string, SheetKey>> = {
   right: { kind: "right" },
   left: { kind: "left" },
   esc: { kind: "back" },
-  cancel: { kind: "close" },
   bksp: { kind: "backspace" },
 };
 const PASS: readonly string[] = ["shift", "alpha", "menu", "apps", "tmpl", "home", "cas", "switch", "symb", "plot", "num"];

@@ -20,7 +20,7 @@ const sheet = (page: Page) => page.getByTestId("menu");
 test("Apps, then 2, typed before the sheet's chunk is in, opens the second app once it is", async ({ page }) => {
   const release = await hold(page);
   await open(page);
-  await tap(page, ["d1", "apps", "d4"]);
+  await tap(page, ["d1", "@place", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toHaveCount(0);
   expect(await entryValue(page)).toBe("1"); // the 2 was not typed into the line
   release();
@@ -44,7 +44,7 @@ test("Menu, then 9, typed before the chunk is in, picks the ninth row (Clear his
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["d1", "enter"]);
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
-  await tap(page, ["menu", "d9"]);
+  await tap(page, ["@menu", "d9"]);
   expect(await entryValue(page)).toBe(""); // the 9 was not typed into the line
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
   release();
@@ -63,10 +63,10 @@ test("Shift + 6, then a cell's key, typed before the chunk is in, picks that cel
   await expect(sheet(page)).toBeHidden();
 });
 
-test("Cancel while the chunk waits closes nothing that is not open and leaves the line as it was", async ({ page }) => {
+test("Esc while the chunk waits closes nothing that is not open and leaves the line as it was", async ({ page }) => {
   const release = await hold(page);
   await open(page);
-  await tap(page, ["d1", "menu", "cancel"]);
+  await tap(page, ["d1", "@menu", "esc"]);
   expect(await entryValue(page)).toBe("1");
   release();
   await expect(sheet(page)).toBeHidden();

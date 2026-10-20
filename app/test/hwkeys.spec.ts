@@ -295,20 +295,20 @@ test.describe("R45: the path of a hardware key", () => {
 
   test("2x typed fast while Function first opens waits for the load, as keypad keys do", async ({ page }) => {
     await page.evaluate(() => window.pascaline.entry.focus());
-    await tap(page, ["symb"]); // the app's code loads on its first open
+    await tap(page, ["@symb"]); // the app's code loads on its first open
     await page.keyboard.type("2x");
     await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
     await expect.poll(() => entryValue(page)).toBe("2x");
   });
 
   test("2x typed at once while Function opens with its code cached (second visit) reaches the entry", async ({ page }) => {
-    await tap(page, ["symb"]); // first visit: the browser caches the app's code
+    await tap(page, ["@symb"]); // first visit: the browser caches the app's code
     await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
     await page.evaluate(() => window.pascaline.shell.close()); // the place is stored: a reload would reopen Function
     await page.waitForTimeout(200);
     await open(page); // a new page load: the code is cached and the shell is cold
     await page.evaluate(() => window.pascaline.entry.focus());
-    await tap(page, ["symb"]);
+    await tap(page, ["@symb"]);
     await page.keyboard.type("2x");
     await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
     await expect.poll(() => entryValue(page)).toBe("2x");
@@ -321,11 +321,11 @@ test.describe("R73: a warm app opens", () => {
   test("2x typed at once after Symb, with Function already loaded this session, reads 2x", async ({ page }) => {
     await open(page);
     await page.evaluate(() => window.pascaline.entry.focus());
-    await tap(page, ["symb"]);
+    await tap(page, ["@symb"]);
     await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
     await page.evaluate(() => window.pascaline.shell.close());
     await page.evaluate(() => window.pascaline.entry.focus());
-    await tap(page, ["symb"]);
+    await tap(page, ["@symb"]);
     await page.keyboard.type("2x");
     await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
     await expect.poll(() => entryValue(page)).toBe("2x");

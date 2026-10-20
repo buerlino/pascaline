@@ -172,10 +172,10 @@ test("Del right before a base of one digit leaves □ and keeps the exponent", a
   expect(await del(page)).toBe(`${PH}^{23}`);
 });
 
-test("Shift + Cancel (undo) brings the base back", async ({ page }) => {
+test("Undo brings the base back", async ({ page }) => {
   await tap(page, ["d5", "pow", "d2", "d3", "left", "left", "bksp", "bksp"]);
   expect(await entryValue(page)).toBe(`${PH}^{23}`);
-  await tap(page, ["shift", "cancel"]);
+  await tap(page, ["undo"]);
   expect(await entryValue(page)).toBe("5^{23}");
 });
 

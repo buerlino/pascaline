@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copy of the Solve roots and the Function Plot readout values (docs/04 section 2.6, backlog step 9; P5): the default
 // copy is the full value (every confirmed digit), the Menu has "as shown", and what was copied pastes back as the same
-// value. From keys (Shift + View) and from touch (a long press). Expected values: oracle = mpmath 1.3.0 at 40 digits.
+// value. From keys (Copy) and from touch (a long press). Expected values: oracle = mpmath 1.3.0 at 40 digits.
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { entryValue, open, tap } from "./helpers.ts";
 
@@ -36,24 +36,24 @@ async function longPress(page: Page, el: Locator): Promise<void> {
 
 /** Solve: x·e^x = 5 from guess 1, solved; the Num view is open. */
 async function solved(page: Page): Promise<void> {
-  await tap(page, ["apps", "d4", "symb"]);
+  await tap(page, ["@place", "d4", "@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E1:");
-  await tap(page, ["x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "num"]);
+  await tap(page, ["x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "@num"]);
   const row = page.locator('[data-testid="solve-table"] tr[data-name="x"]');
   await expect(row).toBeVisible();
   await row.locator("th button").tap();
-  await tap(page, ["esc", "d1", "enter", "menu", "d1"]); // guess 1, Menu → Solve
+  await tap(page, ["esc", "d1", "enter", "@menu", "d1"]); // guess 1, Menu → Solve
   await expect(row.locator("td")).toHaveText("1.32672466524");
 }
 
-test("Solve: Shift + View copies the full root, and it pastes back as the same value (P5)", async ({ page }) => {
+test("Solve: Copy copies the full root, and it pastes back as the same value (P5)", async ({ page }) => {
   await solved(page);
-  await tap(page, ["shift", "view"]);
+  await tap(page, ["copy"]);
   await expect(page.getByTestId("notice")).toHaveText("Copied");
   const text = await clipboard(page);
   expect(text.startsWith(LAMBERT5.slice(0, 26))).toBe(true);
   expect(digits(text)).toBeGreaterThan(25);
-  await tap(page, ["esc", "shift", "menu", "enter"]);
+  await tap(page, ["esc", "shift", "copy", "enter"]);
   await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"] td')).toHaveAttribute("data-value", text);
 });
 
@@ -64,7 +64,7 @@ test("Solve: a long press on the value copies the full root; Menu → Copy as sh
   await expect(page.getByTestId("notice")).toHaveText("Copied");
   expect((await clipboard(page)).startsWith(LAMBERT5.slice(0, 26))).toBe(true);
   expect(digits(await clipboard(page))).toBeGreaterThan(25);
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await page.getByRole("menuitem", { name: /^\d Copy as shown$/ }).click();
   await expect.poll(() => clipboard(page)).toBe("1.32672466524");
 });
@@ -74,34 +74,34 @@ test("Solve: the full root survives a reload; an edit drops it", async ({ page }
   await page.waitForTimeout(800); // the store write is debounced
   await page.reload();
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["apps", "d4", "num"]);
+  await tap(page, ["@place", "d4", "@num"]);
   await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"] td')).toHaveText("1.32672466524");
-  await tap(page, ["shift", "view"]);
+  await tap(page, ["copy"]);
   await expect.poll(async () => digits(await clipboard(page))).toBeGreaterThan(25);
-  await tap(page, ["esc", "d2", "enter", "shift", "view"]);
+  await tap(page, ["esc", "d2", "enter", "copy"]);
   await expect.poll(() => clipboard(page)).toBe("2");
 });
 
 /** Function: F1 = x^2 - 2, the trace at x = 1, Plot, Menu → Root. */
 async function root(page: Page): Promise<void> {
-  await tap(page, ["symb"]);
+  await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
-  await tap(page, ["x", "pow", "d2", "right", "sub", "d2", "enter", "plot"]);
+  await tap(page, ["x", "pow", "d2", "right", "sub", "d2", "enter", "@plot"]);
   await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
   await tap(page, Array<string>(10).fill("right")); // x = 1
   await expect(page.getByTestId("trace-x")).toHaveText("1");
-  await tap(page, ["menu", "d1"]); // Root
+  await tap(page, ["@menu", "d1"]); // Root
   await expect(page.getByTestId("readout-x")).toHaveText("1.41421356237");
 }
 
-test("Function: Shift + View copies the full root x from the readout", async ({ page }) => {
+test("Function: Copy copies the full root x from the readout", async ({ page }) => {
   await root(page);
-  await tap(page, ["shift", "view"]);
+  await tap(page, ["copy"]);
   await expect(page.getByTestId("notice")).toHaveText("Copied");
   const text = await clipboard(page);
   expect(text.startsWith(SQRT2.slice(0, 26))).toBe(true);
   expect(digits(text)).toBeGreaterThan(25);
-  await tap(page, ["num", "esc", "shift", "menu"]); // paste on the Num start line
+  await tap(page, ["@num", "esc", "shift", "copy"]); // paste on the Num start line
   await expect.poll(() => entryValue(page)).toBe(text);
 });
 
@@ -112,7 +112,7 @@ test("Function: a long press on a readout value copies it in full; Menu → Copy
   await expect(page.getByTestId("notice")).toHaveText("Copied");
   const text = await clipboard(page);
   expect(text.startsWith(SQRT2.slice(0, 26))).toBe(true);
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await page.getByRole("menuitem", { name: /^\d Copy as shown$/ }).click();
   await expect.poll(() => clipboard(page)).toBe("1.41421356237");
 });

@@ -133,7 +133,7 @@ The layout stays. Only the drawing changes:
 
 ### 3.9 Tablet and landscape
 
-The app is `max-width: 720px` and centred (`App.svelte` `.app`), so a Tab One in landscape shows a narrow column. Above 900 px width and in landscape: two panes, the screen on the left (history, plot, Find) and the keypad on the right at a fixed key size. The plot gets the full height. Phones in landscape: the same split with a smaller keypad, or the compact keypad of K4.
+The app is `max-width: 720px` and centred (`App.svelte` `.app`), so a Tab One in landscape shows a narrow column. Above 900 px width and in landscape: two panes, the screen on the left (history, plot, Find) and the keypad on the right at a fixed key size. The plot gets the full height. Phones in landscape: the same split with a smaller keypad, or results mode (R53).
 
 ### 3.10 Look and feel
 

@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 test("finding 4: with Alpha lock on, a digit picks from the open Apps list; it does not type a letter behind it", async ({ page }) => {
   await tap(page, ["alpha", "alpha"]);
   await expect(page.locator('[data-key="alpha"]')).toHaveAttribute("data-locked", "true");
-  await tap(page, ["apps"]);
+  await tap(page, ["@place"]);
   await expect(page.getByTestId("apps")).toBeVisible();
   await tap(page, ["d3"]);
   expect(await entryValue(page)).toBe(""); // not "#"
@@ -21,7 +21,7 @@ test("finding 4: with Alpha lock on, a digit picks from the open Apps list; it d
 });
 
 test("finding 4: Shift is ignored by an open list too (Shift 2 picks item 2)", async ({ page }) => {
-  await tap(page, ["apps"]);
+  await tap(page, ["@place"]);
   await expect(page.getByTestId("apps")).toBeVisible();
   await tap(page, ["shift", "d2"]);
   expect(await entryValue(page)).toBe("");
@@ -144,7 +144,7 @@ test("finding 3: the Enter face stays readable in the Alpha layer (white, not bl
 test("finding 8: with no function the Plot hint is a box above the x axis, on its own background", async ({ page }) => {
   await open(page, "");
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["symb", "plot"]);
+  await tap(page, ["@symb", "@plot"]);
   const note = page.locator(".plot .note");
   await expect(note).toBeVisible();
   await page.waitForFunction(() => window.pascaline.plot.board !== undefined);

@@ -3,7 +3,10 @@
 import raw from "../../../spec/keyboard.yaml";
 
 export type Special =
-  | "shift" | "alpha" | "enter" | "clear" | "cancel" | "esc" | "settings" | "mode" | "apps" | "symb" | "plot" | "num" | "menu" | "fmt" | "copy" | "paste" | "tmpl"
+  | "shift" | "alpha" | "enter" | "clear" | "esc" | "settings" | "mode" | "fmt" | "copy" | "paste" | "tmpl"
+  /** The status line's controls (R15c1; no key since R15c2), and what a user key may hold: the Apps sheet, the views
+   *  of the current app, the view's or the picked row's menu. */
+  | "apps" | "symb" | "plot" | "num" | "menu"
   /** Places (R15b): Home, CAS (from an app too), and the status line's switch: Home ↔ CAS, or back from an app. */
   | "home" | "cas" | "switch"
   /** The Shift palettes (R18): Shift + 6 relations and logic, Shift + 9 symbols and Greek. */
@@ -11,7 +14,7 @@ export type Special =
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
 export const SPECIALS: readonly Special[] = [
-  "shift", "alpha", "enter", "clear", "cancel", "esc", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
+  "shift", "alpha", "enter", "clear", "esc", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
   "home", "cas", "switch", "relations", "symbols", "none",
 ];
 
@@ -31,7 +34,7 @@ export type ActionBody =
   | { kind: "insert"; latex: string; sample?: readonly [string, string] }
   /** A MathLive editing command. */
   | { kind: "cmd"; name: string }
-  /** Handled by the app (shift, alpha, enter, clear, cancel, Home/CAS, settings, mode, apps and their views, menu). */
+  /** Handled by the app (shift, alpha, enter, clear, esc, Home/CAS, settings, mode, apps and their views, menu). */
   | { kind: "special"; name: Special };
 
 export type Layer = "primary" | "shift" | "alpha";
@@ -51,7 +54,7 @@ export interface Key {
   readonly actions: Readonly<Partial<Record<Layer, Action>>>;
   /** Absent in the built app (src/keyboard/shipped.ts). */
   readonly source?: Source;
-  /** A free key (U1–U3, R15b): its layers are defaults the user can replace (userKeys.svelte.ts). */
+  /** A free key (U1–U6, R15b, R15c): its layers are defaults the user can replace (userKeys.svelte.ts). */
   readonly user?: true;
 }
 

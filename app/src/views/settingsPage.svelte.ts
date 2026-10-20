@@ -71,7 +71,6 @@ export class SettingsPage {
         this.step(-1);
         return "stay";
       case "back":
-      case "close":
         return "close";
       case "pass":
         return "pass";

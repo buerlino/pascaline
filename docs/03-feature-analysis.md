@@ -51,7 +51,7 @@ Build an **engineer core** ahead of the Prime-parity apps, in three milestones (
 | **Python** | MicroPython, editor, shell, graphics, `calc` reaches Giac and variables (removed by P11, 2026-10-13) |
 | **Platform and quality** | Android APK without the INTERNET permission (C5), offline PWA, no trackers; about 600 golden cases tagged by source; bit-reproducible release engine; Enter → result p95 92 ms on the Tab One |
 
-**Designed, not built:** units/constants/uncertainty (P3, `docs/archive/p3-units-plan.md`, amended by section 4), compact keypad (K4), reference number-format parity (G9), and everything in docs/02 section 8 (v1, v2).
+**Designed, not built:** units/constants/uncertainty (P3, `docs/archive/p3-units-plan.md`, amended by section 4), results mode (R53), reference number-format parity (G9), and everything in docs/02 section 8 (v1, v2).
 
 **Empty today:** the Vars, Math and Tmpl keys do nothing (`special: none`, keyboard.yaml); the Home/CAS Menu key opens nothing (menus exist only inside Function, Solve, Python); there is no clipboard, share or CSV code anywhere in the app (grep, 2026-10-12).
 

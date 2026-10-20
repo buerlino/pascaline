@@ -87,14 +87,6 @@ test("▶ opens a submenu (path in the title), ◀ and Esc go back a level, Esc 
   expect(await entryValue(page)).toBe("");
 });
 
-test("Cancel closes every level at once", async ({ page }) => {
-  await list(page, "Test", [{ label: "more", sub: { title: "More", items: ["x"] } }]);
-  await tap(page, ["d1"]);
-  await expect(title(page)).toHaveText("Test › More");
-  await tap(page, ["cancel"]);
-  await expect(sheet(page)).toHaveCount(0);
-});
-
 const UNITS = ["hour", "hertz", "henry", "gauss", "coulomb", "candela", "kelvin", "kilogram", "joule", "lux", "lumen", "newton", "ohm", "pascal"];
 
 test("letters filter a long list: a tap on a non-digit key types its letter; ⌫ takes it back; digits pick among the matches", async ({ page }) => {
@@ -128,34 +120,36 @@ test("in a short list a letter key does nothing and looks dead; nothing reaches 
   await expect(sheet(page)).toBeVisible();
   expect(await entryValue(page)).toBe("");
   expect(await ran(page)).toEqual([]);
-  await tap(page, ["cancel"]);
+  await tap(page, ["esc"]);
   await expect(page.locator('[data-key="sin"]')).not.toHaveAttribute("data-dead", "true");
 });
 
 test("Menu opens and closes the view's menu; Apps switches to the Apps sheet and back", async ({ page }) => {
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await expect(sheet(page)).toBeVisible();
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await expect(sheet(page)).toHaveCount(0);
-  await tap(page, ["menu", "apps"]);
+  await tap(page, ["@menu", "@place"]);
   await expect(sheet(page)).toHaveCount(0);
   await expect(page.getByTestId("apps")).toBeVisible();
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await expect(sheet(page)).toBeVisible();
-  await tap(page, ["apps", "apps"]);
+  await tap(page, ["@place", "@place"]);
   await expect(page.getByTestId("apps")).toHaveCount(0);
 });
 
 test("a key that changes place closes the sheet and goes there (CAS)", async ({ page }) => {
-  await tap(page, ["menu", "u3"]);
+  await tap(page, ["@menu", "@cas"]);
   await expect(sheet(page)).toHaveCount(0);
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
 });
 
 test("the last pick is remembered per sheet: Apps + Enter opens the app picked last", async ({ page }) => {
-  await tap(page, ["apps", "d4"]);
+  await tap(page, ["@place", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
-  await tap(page, ["u2", "apps"]);
+  // back to Home without the Apps sheet (a user key that holds Home), so its last pick stays Solve
+  await page.evaluate(() => window.pascaline.userKeys.set("u2", "primary", { label: "Home", action: { special: "home" } }));
+  await tap(page, ["u2", "@place"]);
   await expect(page.getByTestId("apps").locator('[data-active="true"]')).toHaveAttribute("data-id", "solve");
   await tap(page, ["enter"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
@@ -180,9 +174,9 @@ test("a short list that fits shows no count", async ({ page }) => {
 });
 
 test("disabled rows stay in place with their number and say why; picking one does nothing", async ({ page }) => {
-  await tap(page, ["symb"]);
+  await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
-  await tap(page, ["plot", "menu"]); // no function defined
+  await tap(page, ["@plot", "@menu"]); // no function defined
   const rows = sheet(page).getByRole("menuitem");
   await expect(rows).toHaveCount(9); // Settings is the last row (R15c1)
   await expect(rows.first()).toBeDisabled();
@@ -224,7 +218,7 @@ test("a short list goes over the keypad; a list that takes letters stays above i
   await list(page, "Test", ["one", "two"]);
   let b = await bottoms();
   expect(b.sheet).toBeGreaterThan(b.keypadTop + 100); // over the keypad (R21a; fit.spec.ts has the details)
-  await tap(page, ["cancel"]);
+  await tap(page, ["esc"]);
   await list(page, "Units", UNITS);
   b = await bottoms();
   expect(b.sheet).toBeGreaterThan(b.entryTop + 10);

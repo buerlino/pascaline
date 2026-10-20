@@ -40,7 +40,7 @@ async function someHistory(page: Page): Promise<void> {
 }
 
 async function defineTwo(page: Page): Promise<void> {
-  await tap(page, ["symb"]);
+  await tap(page, ["@symb"]);
   await page.getByTestId("entry-label").waitFor();
   await tap(page, ["sin", "x", "enter", "down", "x", "pow", "d3", "right", "sub", "d2", "x", "enter"]);
   await settle(page);
@@ -62,7 +62,7 @@ const shots: Shot[] = [
   { id: "layer-alpha", group: "Keypad layers", title: "Alpha layer", setup: (p) => tap(p, ["alpha"]) },
   { id: "layer-alpha-lock", group: "Keypad layers", title: "Alpha lock (capitals)", setup: (p) => tap(p, ["alpha", "alpha"]) },
   { id: "layer-lower-lock", group: "Keypad layers", title: "Lower-case lock", setup: (p) => tap(p, ["shift", "alpha", "alpha"]) },
-  { id: "layer-alpha-cas", group: "Keypad layers", title: "Alpha layer in CAS (lower case)", setup: (p) => tap(p, ["u3", "alpha"]) },
+  { id: "layer-alpha-cas", group: "Keypad layers", title: "Alpha layer in CAS (lower case)", setup: (p) => tap(p, ["@cas", "alpha"]) },
   { id: "layer-shift-alpha", group: "Keypad layers", title: "Shift then Alpha (lower case)", setup: (p) => tap(p, ["shift", "alpha"]) },
   // ---- Home
   { id: "home-history", group: "Home", title: "Home with history", setup: someHistory },
@@ -91,7 +91,7 @@ const shots: Shot[] = [
     title: "Home, Menu open",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["menu"]);
+      await tap(p, ["@menu"]);
       await p.getByTestId("menu").waitFor();
     },
   },
@@ -101,7 +101,7 @@ const shots: Shot[] = [
     title: "Apps list",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["apps"]);
+      await tap(p, ["@place"]);
     },
   },
   {
@@ -129,7 +129,7 @@ const shots: Shot[] = [
     title: "Mode sheet (Shift + Apps) over the keypad: each value with ◀ ▶ for the thumb",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "apps"]);
+      await tap(p, ["@mode"]);
     },
   },
   {
@@ -138,7 +138,7 @@ const shots: Shot[] = [
     title: "Mode sheet, Significant digits (current value marked): nine rows fit over the keypad",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "apps"]);
+      await tap(p, ["@mode"]);
       await p.getByRole("menuitem", { name: "3 Significant digits" }).tap(); // the 3 key is under the sheet
     },
   },
@@ -149,7 +149,7 @@ const shots: Shot[] = [
     viewport: { width: 360, height: 740 },
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "apps"]);
+      await tap(p, ["@mode"]);
     },
   },
   {
@@ -168,7 +168,7 @@ const shots: Shot[] = [
     title: "Settings page (Mode's last row, R21b): over everything, a heading per section",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "apps", "d5", "down", "down", "right"]);
+      await tap(p, ["@mode", "d5", "down", "down", "right"]);
     },
   },
   {
@@ -177,7 +177,7 @@ const shots: Shot[] = [
     title: "Settings page, scrolled to Vibration (switched on, strength disabled with its reason)",
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "apps", "d5"]);
+      await tap(p, ["@mode", "d5"]);
       await p.locator('[data-testid="settings"] [data-id="haptics"]').tap();
       await p.locator('[data-testid="settings"] [data-id="strength"]').scrollIntoViewIfNeeded();
     },
@@ -189,7 +189,7 @@ const shots: Shot[] = [
     viewport: { width: 360, height: 740 },
     setup: async (p) => {
       await someHistory(p);
-      await tap(p, ["shift", "apps", "d5", "down", "down", "right"]);
+      await tap(p, ["@mode", "d5", "down", "down", "right"]);
     },
   },
   {
@@ -225,7 +225,7 @@ const shots: Shot[] = [
     group: "CAS",
     title: "CAS with exact results",
     setup: async (p) => {
-      await tap(p, ["u3", "d1", "frac", "d3", "right", "add", "d1", "frac", "d6", "enter"]);
+      await tap(p, ["@cas", "d1", "frac", "d3", "right", "add", "d1", "frac", "d6", "enter"]);
       await doneCount(p, 1);
       await tap(p, ["shift", "sq", "d8", "enter"]);
       await doneCount(p, 2);
@@ -240,7 +240,7 @@ const shots: Shot[] = [
     title: "Function, Plot",
     setup: async (p) => {
       await defineTwo(p);
-      await tap(p, ["plot"]);
+      await tap(p, ["@plot"]);
       await p.waitForFunction(() => window.pascaline.plot.board !== undefined);
       await settle(p);
     },
@@ -250,7 +250,7 @@ const shots: Shot[] = [
     group: "Function",
     title: "Function, Plot with no function",
     setup: async (p) => {
-      await tap(p, ["symb", "plot"]);
+      await tap(p, ["@symb", "@plot"]);
       await p.waitForFunction(() => window.pascaline.plot.board !== undefined);
       await settle(p);
     },
@@ -261,7 +261,7 @@ const shots: Shot[] = [
     title: "Function, Plot menu",
     setup: async (p) => {
       await defineTwo(p);
-      await tap(p, ["plot", "menu"]);
+      await tap(p, ["@plot", "@menu"]);
       await settle(p);
     },
   },
@@ -271,7 +271,7 @@ const shots: Shot[] = [
     title: "Function, Plot menu › Intersection (a submenu)",
     setup: async (p) => {
       await defineTwo(p);
-      await tap(p, ["plot", "menu", "d3"]);
+      await tap(p, ["@plot", "@menu", "d3"]);
       await settle(p);
     },
   },
@@ -280,9 +280,9 @@ const shots: Shot[] = [
     group: "Function",
     title: "Function, Plot menu with no function (disabled rows say why)",
     setup: async (p) => {
-      await tap(p, ["symb", "plot"]);
+      await tap(p, ["@symb", "@plot"]);
       await p.waitForFunction(() => window.pascaline.plot.board !== undefined);
-      await tap(p, ["menu"]);
+      await tap(p, ["@menu"]);
       await settle(p);
     },
   },
@@ -292,7 +292,7 @@ const shots: Shot[] = [
     title: "Function, Num table",
     setup: async (p) => {
       await defineTwo(p);
-      await tap(p, ["num"]);
+      await tap(p, ["@num"]);
       await settle(p);
     },
   },
@@ -302,7 +302,7 @@ const shots: Shot[] = [
     group: "Solve",
     title: "Solve, Symb",
     setup: async (p) => {
-      await tap(p, ["apps", "d4", "symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter"]);
+      await tap(p, ["@place", "d4", "@symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter"]);
       await settle(p);
     },
   },
@@ -311,7 +311,7 @@ const shots: Shot[] = [
     group: "Solve",
     title: "Solve, Num",
     setup: async (p) => {
-      await tap(p, ["apps", "d4", "symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "num"]);
+      await tap(p, ["@place", "d4", "@symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "@num"]);
       await settle(p);
     },
   },
@@ -320,7 +320,7 @@ const shots: Shot[] = [
     group: "Solve",
     title: "Solve, menu",
     setup: async (p) => {
-      await tap(p, ["apps", "d4", "symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "num", "menu"]);
+      await tap(p, ["@place", "d4", "@symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "@num", "@menu"]);
       await settle(p);
     },
   },

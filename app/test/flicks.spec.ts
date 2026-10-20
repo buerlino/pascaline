@@ -63,12 +63,12 @@ test("the removed layers are dead: ◀ and ▶ have no shift layer, 0 has no quo
 
 test("a key that does nothing in the open view gives a double haptic: Tmpl in Plot, Fmt in an app (R13; Menu is never dead since R15c1: Settings is its last row)", async ({ page }) => {
   await page.evaluate(() => window.pascaline.session.setHaptics({ on: true, ms: 10 }));
-  await tap(page, ["symb"]); // the last app (Function) opens on its Symb view
+  await tap(page, ["@symb"]); // the last app (Function) opens on its Symb view
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "symb");
   const before = (await vibrations(page)).length;
   await tap(page, ["fmt"]);
   await expect.poll(async () => (await vibrations(page)).length - before).toBe(3); // key down + the double
-  await tap(page, ["plot"]);
+  await tap(page, ["@plot"]);
   const b2 = (await vibrations(page)).length;
   await tap(page, ["tmpl"]);
   await expect.poll(async () => (await vibrations(page)).length - b2).toBe(3);
@@ -246,8 +246,9 @@ test("Shift and Alpha taps stay as on the G2 (one-shot, Alpha twice locks) and a
   await flick(page, "alpha", "down");
   await flick(page, "alpha", "down");
   expect(await taps(page)).toEqual({ shift: 2, alpha: 5 });
-  // the counter in Settings (Shift + Apps, 5), with its reset
-  await tap(page, ["shift", "apps", "d5"]);
+  // the counter in Settings (since R15c2: Shift + a user key whose Shift slot is Settings), with its reset
+  await page.evaluate(() => window.pascaline.userKeys.set("u1", "shift", { label: "Settings", action: { special: "settings" } }));
+  await tap(page, ["shift", "u1"]);
   const value = (id: string) => page.locator(`[data-testid="settings"] [data-id="${id}"]`).getByTestId("settings-value");
   await expect(value("shift")).toHaveText("3"); // the Shift that opened Settings counts too
   await expect(value("alpha")).toHaveText("5");
@@ -279,20 +280,22 @@ test("inside a sheet a flick down types the letter on any key, digits too; a tap
   expect(await entryValue(page)).toBe("");
 });
 
-test("keys typed while an app loads keep their layer: Plot, Shift, Apps opens the Mode sheet (decisions.md R8)", async ({ page }) => {
+test("keys typed while an app loads keep their layer: Function, Shift, a user key whose Shift slot is Mode opens the Mode sheet (decisions.md R8)", async ({ page }) => {
   let release = (): void => {};
   const gate = new Promise<void>((r) => (release = r));
   await page.route(/\/src\/apps\/function\/index\.ts/, async (route) => {
     await gate;
     await route.continue();
   });
-  await tap(page, ["plot", "shift", "apps"]);
+  await page.evaluate(() => window.pascaline.userKeys.set("u1", "shift", { label: "Mode", action: { special: "mode" } }));
+  await page.getByTestId("place").tap();
+  await page.getByTestId("apps").locator('[data-id="function"]').tap();
+  await tap(page, ["shift", "u1"]);
   expect(await page.evaluate(() => window.pascaline.shell.loading)).toBe("function");
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
   release();
   await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
-  await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
 });
 
 test("a typed key waiting for the load keeps its layer, and a Shift pressed after it stays for the next key", async ({ page }) => {
@@ -302,7 +305,7 @@ test("a typed key waiting for the load keeps its layer, and a Shift pressed afte
     await gate;
     await route.continue();
   });
-  await tap(page, ["symb", "alpha", "vars", "shift", "dot", "d2", "shift"]);
+  await tap(page, ["@symb", "alpha", "vars", "shift", "dot", "d2", "shift"]);
   await flick(page, "math", "down");
   expect(await page.evaluate(() => window.pascaline.shell.loading)).toBe("function");
   release();
