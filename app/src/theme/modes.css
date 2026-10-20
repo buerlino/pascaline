@@ -50,12 +50,11 @@
 :root[data-keys="plain"] .key[data-dead="true"] .main {
   color: var(--text-dead);
 }
-:root[data-contrast="high"] .key,
-:root[data-contrast="high"] .trackpad {
-  outline: 1.5px solid var(--line);
+:root[data-contrast="high"] .key:not([aria-pressed="true"]):not([data-locked="true"]):not(:focus-visible),
+:root[data-contrast="high"] .trackpad:not(:focus-visible) {
+  outline-width: 1.5px;
+  outline-style: solid;
+  outline-color: var(--line);
   outline-offset: -1.5px;
 }
-:root[data-contrast="high"] .key[aria-pressed="true"],
-:root[data-contrast="high"] .key[data-locked="true"] {
-  outline: 2px solid var(--key-on);
-}
+/* a pressed or locked Shift/Alpha keeps Keypad's own outline (2px press, 3px lock), so a lock still differs from a press */

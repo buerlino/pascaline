@@ -42,38 +42,55 @@ test("Plain keys: bold is Shift, italic is Alpha; neither switch changes nothing
   await tap(page, ["alpha"]);
 });
 
-test("Plain keys: error text keeps its colour, ⚠ too", async ({ page }) => {
-  await open(page);
-  await set(page, "plain", "normal");
-  const col = await page.evaluate(() => {
-    const mk = (cls: string, attr = ""): string => {
-      const host = document.createElement("div");
-      host.innerHTML = `<span class="${cls}" ${attr}></span>`;
-      document.body.append(host);
-      return getComputedStyle(host.firstElementChild as Element).color;
-    };
-    return { err: mk("error"), text: getComputedStyle(document.body).color };
-  });
-  // the selector is global in modes.css; the element exists only as a probe, so compare against the token
-  const token = await page.evaluate(() => {
+const token = (page: Page, name: string): Promise<string> =>
+  page.evaluate((n) => {
     const p = document.createElement("span");
-    p.style.color = getComputedStyle(document.documentElement).getPropertyValue("--error");
+    p.style.color = getComputedStyle(document.documentElement).getPropertyValue(n);
     document.body.append(p);
-    return getComputedStyle(p).color;
+    const c = getComputedStyle(p).color;
+    p.remove();
+    return c;
+  }, name);
+
+test("Plain keys: the ⚠ mark and error text keep their colour; a sheet number is bold in the text colour", async ({ page }) => {
+  await open(page, "");
+  await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
+  await set(page, "plain", "normal");
+  const text = await page.evaluate(() => getComputedStyle(document.body).color);
+  await page.evaluate(() => window.pascaline.session.submit("\\sin\\left(10^{2000}\\right)"));
+  const mark = page.getByTestId("mark");
+  await expect(mark).toHaveAttribute("data-mark", "⚠");
+  expect((await style(page, '[data-testid="mark"]')).c).toBe(await token(page, "--warn"));
+  expect((await style(page, '[data-testid="mark"]')).c).not.toBe(text);
+  await tap(page, ["cancel", "d1", "emark", "d2", "dot", "d5", "enter"]); // an error row
+  await expect(page.locator('[data-status="error"]')).toHaveCount(1);
+  expect((await style(page, '.out .error')).c).toBe(await token(page, "--error"));
+  expect((await style(page, '.out .error')).c).not.toBe(text);
+  await page.evaluate(() => {
+    const w = window as unknown as { pascaline: { shell: { showMenu: (t: string, i: { id: string; label: string; run: () => void }[]) => void } } };
+    w.pascaline.shell.showMenu("T", [{ id: "a", label: "one", run: () => {} }]);
   });
-  const probe = await page.evaluate(() => {
-    const host = document.createElement("div");
-    host.className = "sheet";
-    host.innerHTML = '<span class="n">1</span><span class="mark" data-mark="⚠">⚠</span>';
-    document.body.append(host);
-    const [n, w] = [host.children[0]!, host.children[1]!].map((e) => getComputedStyle(e));
-    return { nw: n!.fontWeight, nc: n!.color, wc: w!.color, warn: getComputedStyle(document.documentElement).getPropertyValue("--warn") };
-  });
-  expect(probe.nw).toBe("700");
-  expect(probe.nc).toBe(col.text);
-  expect(probe.wc).not.toBe(col.text);
-  expect(col.err).toBe(token);
-  expect(col.err).not.toBe(col.text);
+  await expect(page.getByTestId("menu")).toBeVisible();
+  const n = await style(page, '[data-testid="menu"] .n');
+  expect(n.w).toBe("700");
+  expect(n.c).toBe(text);
+});
+
+test("High contrast: a locked Shift keeps a wider outline than a one-shot press", async ({ page }) => {
+  await open(page);
+  await set(page, "colour", "high");
+  await tap(page, ["shift"]);
+  const press = await style(page, '[data-key="shift"]');
+  expect(parseFloat(press.o)).toBe(2);
+  await tap(page, ["shift"]); // off
+  const box = (await page.locator('[data-key="shift"]').boundingBox())!;
+  const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x, y - 60, { steps: 6 });
+  await page.mouse.up();
+  await expect(page.locator('[data-key="shift"]')).toHaveAttribute("data-locked", "true");
+  expect(parseFloat((await style(page, '[data-key="shift"]')).o)).toBeGreaterThan(parseFloat(press.o));
 });
 
 test("High contrast draws a 1.5 px outline round every key", async ({ page }) => {
@@ -81,5 +98,5 @@ test("High contrast draws a 1.5 px outline round every key", async ({ page }) =>
   expect((await style(page, '[data-key="x"]')).o).toBe("none");
   await set(page, "colour", "high");
   expect((await style(page, '[data-key="x"]')).o).toMatch(/^1(\.5)?px$/); // 1.5 px snaps to the device pixel
-  expect((await style(page, '[data-key="enter"]')).o).toMatch(/^1(\.5)?px$/); // 1.5 px snaps to the device pixel
+  expect((await style(page, '[data-key="enter"]')).o).toMatch(/^1(\.5)?px$/);
 });
