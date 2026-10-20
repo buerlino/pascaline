@@ -261,7 +261,7 @@ Audited on the working tree above (B edits in place; none touch `spike/`). Raw o
 
 | Folder | Files | Refs from outside spike | Status | Proposal |
 |---|---|---|---|---|
-| `qalc` | 9 | `docs/p3-units-plan.md:4,26` ("`engine/qalc/build-wasm.sh`, promoted from `spike/qalc/build-wasm.sh`"); `THIRD_PARTY.md:21` (spike-only section); `.gitignore:69-70` | Live: P3 input | **KEEP** until P3 starts. It then **MOVES** to `engine/qalc/`, as the plan says. |
+| `qalc` | 9 | `docs/archive/p3-units-plan.md:4,26` ("`engine/qalc/build-wasm.sh`, promoted from `spike/qalc/build-wasm.sh`"); `THIRD_PARTY.md:21` (spike-only section); `.gitignore:69-70` | Live: P3 input | **KEEP** until P3 starts. It then **MOVES** to `engine/qalc/`, as the plan says. |
 | `node` | 3 | `CLAUDE.md:102-105` (commands) | `source-smoke.mjs` works. `compare-variants.mjs` is replaced by `app/scripts/compare-engines.ts` (two `giac.mjs` paths instead of two variant names). `prebuilt-smoke.cjs` loads Parisse's build in `spike/prebuilt/` (Phase 0 comparison). | **MOVE** `source-smoke.mjs` → `engine/giac/smoke.mjs`, next to `python/smoke.mjs`. **ARCHIVE** the other two. `spike/prebuilt/` itself stays on disk (CLAUDE.md: never delete). Update CLAUDE.md:102-105. |
 | `research` | 7 | none by path. But **R5 `giac-help-licence.md` answers a question the docs still call open**: `backlog.md:123` (R4: "The Giac help-text licence is still to clarify with Parisse") and `docs/02-architecture-plan.md:134` ("check the licence"). | 5 notes still useful; 2 scripts replaced | **MOVE** the five notes (`engineer-needs`, `fdroid-feasibility`, `giac-help-licence`, `r2-wasm-start`, `r4-building-blocks`) → `docs/research/`, and point R4 / docs/02:134 at R5. **ARCHIVE** `trixie-build.sh` (replaced by `build-wasm-release.sh`) and `coverage-probe.mjs` (R3 probe). |
 | `python` | 6 | `NOTES.md` is cited by `backlog.md:84` (done task P2) and `docs/shifts/brief.md:39` (reading list) | Scripts replaced (`python/build-micropython.sh`, `python/smoke.mjs`); NOTES still read | **MOVE** `NOTES.md` → `docs/research/python-notes.md` and update the 2 citations. **ARCHIVE** the 5 scripts. |
@@ -367,7 +367,7 @@ Scope: the 31 tracked `.md` files outside `spec/mapping/` (raw data, kept as is)
   - section 12b "Decimal ⇄ scientific key" ("It changes the Home setting"): built differently as the Format key (`e9e9c89`; `spec/keyboard.yaml:246`, "cycles the display format of the last result"; `decisions.md` user requests 1).
   - section 8 "MVP … Python (numpy/sympy)": the MVP Python is MicroPython (D6); numpy/sympy is the optional Python+ pack.
   - section 12 item 3: "the old Android 8/9 tablet" is no longer needed (`backlog.md:35`, the S8+ covers that class).
-  *Fix:* section 12b gets a status line per feature (constants and units → P3, `docs/p3-units-plan.md`; key → done, `e9e9c89`) and the old text goes; sections 5 and 8 get the one-word corrections. The rest of the plan (sections 1–11) is the design rationale and stays.
+  *Fix:* section 12b gets a status line per feature (constants and units → P3, `docs/archive/p3-units-plan.md`; key → done, `e9e9c89`) and the old text goes; sections 5 and 8 get the one-word corrections. The rest of the plan (sections 1–11) is the design rationale and stays.
 - **D9. `docs/01-feasibility-report.md`** already has an "Update" banner (line 3) saying only the legal analysis applies. CLAUDE.md, README and `02` point at it for section 3. *Recommendation:* leave it; it's 287 lines nobody needs to read except section 3, and the banner says so. Moving section 3 into its own file would be tidier but changes a "binding" document's location for no correctness gain.
 - **Other stale status lines:**
   - `README.md:5` and `README.md:44`: "Python is next" (milestone 3 done 2026-10-11).
@@ -423,7 +423,7 @@ Scope: the 31 tracked `.md` files outside `spec/mapping/` (raw data, kept as is)
   - **Duplicates of G1–G9 / L8:**
     - Needs the user 1 (item 29 spot check) = G6 = `decisions.md` "Mixed numbers … Would change if": keep it in Needs the user, G6 links there.
     - G3, G4 and G8 say "no change needed" or are already decided (P5(d)): close them, one line each.
-    - G7 (units input) belongs in `docs/p3-units-plan.md`; leave a link.
+    - G7 (units input) belongs in `docs/archive/p3-units-plan.md`; leave a link.
     - "Unscheduled: A decimal ⇄ scientific (STD → SCI → ENG) key" is done as the Format key (`e9e9c89`); its remaining part (more formats) is G9. Drop it.
     - L9 overlaps L8 by design (same cause, reuse `selectCompound`); keep L9 open, it is not done (no Playwright case for it: `grep -nE 'L9|÷ ?3|div.*3' app/test/keys.spec.ts` finds nothing; could not tell without a run whether the bug still shows).
 

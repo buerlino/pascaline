@@ -8,7 +8,7 @@
 
 **Goal update (user, 2026-10-12, replaced 2026-10-13):** the product goal is a precision engineering tool that makes everyday engineering calculation faster and more precise; the Prime-like layout is the way in, not the aim. Priorities: [03-feature-analysis.md](03-feature-analysis.md).
 
-**Superseded where they differ (2026-10-12): [04-architecture.md](04-architecture.md)** settles the architecture for that goal (precision chain, Find, units, keys, state, build and gates); since P15 (2026-10-14) libqalculate never runs in the app, so this plan's qalc worker and Units app are history. This document stays the record of the original plan, the solver choice (section 4), the licence and F-Droid reasoning (sections 10–11) and the milestone history (section 12).
+**Superseded where they differ (2026-10-12): [04-architecture.md](04-architecture.md)** settles the architecture for that goal (precision chain, Find, units, keys, state, build and gates); since P15 (2026-10-14) libqalculate never runs in the app, so this plan's qalc worker and Units app are history, and P11 (2026-10-13) removed the Python app (section 3 and the Python rows). This document stays the record of the original plan, the solver choice (section 4), the licence and F-Droid reasoning (sections 10–11) and the milestone history (section 12).
 
 **Original goal (2026-10-10):** an app that *feels* like an HP Prime G2, with the same key layout, the same apps and the same functions, but with our own look and name. It doesn't have to be bit-for-bit identical, it may improve on the original, and it should be built **mostly from existing open-source projects** to keep development time low.
 
@@ -69,6 +69,8 @@ We also get **web, iOS and desktop versions for nearly free**, because it's the 
 ---
 
 ## 3. PPL or Python?
+
+**Superseded by P11 (2026-10-13): no Python and no PPL; programs are Giac function definitions.** The original recommendation follows.
 
 **Recommendation: Python only**, plus Giac's built-in function definitions. No PPL.
 
@@ -134,9 +136,9 @@ The **Python app** gets `scipy.optimize` (`brentq`, `root`, `least_squares`) and
 | **Finance** (time value of money, amortization) | Our own small TVM module (well-known formulas) + the section 4 solver; cross-checked against `numpy-financial` in tests | About 1 week |
 | **Spreadsheet** | Jspreadsheet CE grid + Giac evaluation (Prime-style formulas, even symbolic ones) | Cell dependency graph |
 | **Explorers** (Linear/Quadratic/Trig) | JSXGraph sliders | Small |
-| **Units, constants** | libqalculate as a third worker, in its own Units app; units and constants are found through Find, constants enter Home as numbers (P3 as amended by P8; `docs/p3-units-plan.md`, docs/04 section 4; Giac units are not used) | Units app, Find index |
+| **Units, constants** | The unit view on Giac (P15): units after the formula, no Units app; unit factors and constants come from libqalculate at build time, through the Find index (docs/04 section 4) | the unit view, Find index |
 | **Lists, matrices** | Giac | List/matrix editors (grid) |
-| **Python** | MicroPython (default, D6) + `calc` and `hpprime`-compatible modules + CodeMirror editor; Pyodide "Python+" (numpy) as an optional download | Section 3 |
+| **Python** | Removed by P11 (2026-10-13); programs are Giac function definitions | Section 3 |
 | **Help** | Giac ships short help with syntax and examples for every command (as in Xcas/KhiCAS); licence: the English lines are GPL-3.0-or-later by Giac's README (R5, `docs/research/giac-help-licence.md`; confirmed by Parisse on 2026-10-19, P10) | Help texts for apps and keys |
 | **Notes** | CodeMirror (Markdown) | Small |
 | **Keyboard** | — | **Ours.** Same logical layout as the Prime, our own visual design |
@@ -188,7 +190,7 @@ Giac in WebAssembly is about **2× slower than native, and sometimes 15× slower
 Pascaline keeps the G2's logical key layout and apps, so G2 users are fast from the first minute. Underneath, it is not limited to what the G2 can do. All maths goes through the async `MathEngine` interface, so a new ability is a new engine (or engine module) behind that interface, and the screens don't change. Each engine runs in its own worker, can be cancelled, and loads only when it is first needed, so start-up stays fast.
 - **Giac** (+ GSL, GMP, MPFR): exact and numeric maths, the core. Loaded at start.
 - **MicroPython**: scripts and `calc`. Loaded when the Python app opens.
-- **libqalculate** (P3, accepted 2026-10-11; amended by P8): units and conversions, physical constants, first-order uncertainty (interval arithmetic off, P3 decision 4). Worker 3, loaded when the Units app first opens (docs/04 section 4).
+- **libqalculate** (P3, accepted 2026-10-11; amended by P8): units and conversions, physical constants, first-order uncertainty (interval arithmetic off, P3 decision 4). Since P15 (2026-10-14) it runs at build time only, as the Find index's source of unit factors and constants; the unit view computes on Giac (docs/04 section 4).
 - Later candidates, each its own decision: ODE/optimisation solvers, more numerics. Every new engine must pass principle 1 (open source, GPL-compatible, built from source) and principle 2 (no cost at start-up).
 
 ## 7. Phase 0: spike (2–3 weeks) to de-risk before committing
@@ -233,7 +235,7 @@ PM = person-months, experienced TypeScript developers with some maths background
 - **v1 (≈ +10–15 PM):** Stats, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, Linear/Triangle solvers, RPN.
 - **v2 (≈ +10–17 PM):** Geometry, Advanced Graphing, 3D, Python apps, Explorers, polish.
 
-*Since 2026-10-12 (P8):* the engineer core (milestones 4–6: Find and honest precision, the Units app, matrices, bases and everyday functions) comes before v1; most of v1 is deferred and the MVP release is not scheduled. Order and tasks: docs/03 section 8, docs/backlog.md.
+*Since 2026-10-12 (P8):* the engineer core (milestones 4–6: Find and honest precision, the unit view, matrices, bases and everyday functions) comes before v1; most of v1 is deferred and the MVP release is not scheduled. Order and tasks: docs/03 section 8, docs/backlog.md.
 
 With 2 developers, MVP is about 4 months and the full app about 1.5 years. With 3–4 developers, the full app takes about 9–12 months.
 
@@ -340,7 +342,7 @@ The same web build (`dist/`) is shipped in different wrappers:
 All three are settled; the earlier design notes are in `git show 8f95cef:docs/02-architecture-plan.md`.
 - **Physical constants:** replaced by P3, libqalculate's CODATA constants (`docs/decisions.md`, P3 integration plan, point 7).
 - **Decimal ⇄ scientific key:** done as the Format key (`e9e9c89`). On an empty line it cycles the last result's display through the formats ticked in Settings; the Settings format stays the default (`docs/decisions.md`, user requests 1). More formats: backlog G9.
-- **Units:** libqalculate as worker 3 in its own Units app, opened with Shift + Tmpl, loaded on first use; Giac's units are not used (P3 as amended by P8, `docs/p3-units-plan.md`, docs/04 section 4). The reference's units menu is G2 item 30.
+- **Units:** the unit view on Giac, with unit factors and constants from libqalculate at build time (P15, docs/04 section 4). The reference's units menu is G2 item 30.
 
 ## Sources
 - Giac/Xcas in the browser (giac.js / giacwasm.js; wasm about 2× slower than native, up to 15× on Gröbner bases): <https://xcas.univ-grenoble-alpes.fr/backup/install_en>, <https://www-fourier.univ-grenoble-alpes.fr/~parisse/giacjs/simple.html>, <https://xcas.univ-grenoble-alpes.fr/nw/xcasen.html>

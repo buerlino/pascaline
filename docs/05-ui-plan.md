@@ -81,11 +81,10 @@ One row of up to 6 touch buttons directly above the entry line. Its content foll
 |---|---|
 | Home/CAS, entry line has text | none, the row is hidden (no clutter while typing) |
 | Home/CAS, a history row picked (▲ on an empty line) | Insert · Recall · Copy · Store ▶ · Delete |
-| After a number, Units app (and Home if task 3 wins) | p n µ m k M G (the prefix chips of P8, in the same row) |
+| After a number, the unit view (and Home if task 3 wins) | p n µ m k M G (the prefix chips of P8, in the same row) |
 | Function Plot | Zoom · Trace · Analyse › · Window · Fcn |
 | Function Num | Zoom · Go to · Start · Step · CSV |
 | Solve | Solve · Roots · Copy |
-| Python editor | Run · Scripts · Snippets › |
 
 - Each soft key is also reachable without touch: **Menu** opens the full list for the view (the soft keys are the first items, in the same order, so their numbers are 1–6). So "Plot → Trace" is either one tap or Menu + 2.
 - Tap targets at least 44 px high; a label of at most 8 characters; an item with a submenu shows `›`.
@@ -152,7 +151,7 @@ The order lets every package build on the previous one. Owner of the code: ron; 
 | **U0** | Quick fixes and the UI gallery | Findings 1, 3, 4, 8 fixed; a Playwright script that renders every view, sheet and layer in light and dark at phone and tablet size into `app/test/gallery/` (not committed, like other build output); a contrast test from the tokens; regression tests first for 4 (alpha leak) | 1.5 d | Contrast test; gallery reviewed by the owner |
 | **U1** | One sheet | `Sheet.svelte` and its model (3.1) replace `PickList`; Apps, view menus and the Home menu move to it; last pick, submenu stack with path, scroll cue, type-ahead | 2 d | e2e per key in 3.1; every existing menu test green |
 | **U2** | Status bar | 3.2: place, mode chips with tap actions, Shift/Alpha, busy | 1 d | e2e: tap RAD → DEG changes the next result |
-| **U3** | Context bar | 3.3 for Home rows, Plot, Num, Solve, Python; Menu = the same items first | 2–3 d | Benchmark: no task gets more key presses; Plot trace in 1 tap |
+| **U3** | Context bar | 3.3 for Home rows, Plot, Num, Solve; Menu = the same items first | 2–3 d | Benchmark: no task gets more key presses; Plot trace in 1 tap |
 | **U4** | Mode sheet and Settings | 3.4; settings rows as sheet items; native inputs gone | 1.5 d | e2e: DEG → RAD in one tap, or 4 presses by keys |
 | **U5** | History rows | 3.5 | 1 d | Screenshot review; history performance test unchanged |
 | **U6** | Tablet and landscape | 3.9 | 1.5 d | Gallery at 1280×800; Tab One check (annabell) |

@@ -169,7 +169,7 @@ The pipeline hands you a bundle: your package file (`docs/shifts/packages/<ID>.m
 - **From 2026-10-13:** `docs/decisions.md` P11, docs/03 section 0 rules 5–13 (they bind every package: one interaction model, keys never move, vertical space, removal tests), `docs/05-ui-plan.md` with its section 7, and `docs/feedback.md`.
 - `docs/decisions.md`: P8, P9, P10, P15, P16, P17 and the defaults entry "2026-10-12 Architecture for the engineer core" (archive; docs/04 holds it). These are decided; don't reopen them. If a docs/04 decision turns out wrong in the code, don't change it silently: finish what you can, and put the evidence under "Needs a decision" in your report.
 - Not in milestone 4: matrices (milestone 6; the list key alone is R54), bases and everyday functions (milestone 6; `par` and `eseries` alone are G30), Help = context help (milestone 6), prefix entry chips (gated by task 3).
-- **No coordinator to message.** Stay inside the files your package names. On your branch you change only your own step's line in `docs/backlog.md` and your items under "Needs the user" or the defaults log in `docs/decisions.md`; the audit sees them in the diff. Everything else that is shared (`CLAUDE.md`, `docs/rules-core.md`, docs/02, docs/04, `THIRD_PARTY.md`, `.claude/agents/*`, this brief) goes as exact text into your report, and the next Opus pass applies it. Devices are only for annabell's day packages.
+- **No coordinator to message.** Stay inside the files your package names. Shared files, this brief among them, follow rules section 5; devices are annabell's.
 
 ### Your report (every package)
 End with a commit whose message body is the report. The audit and the Opus pass read it with `git log -1`. It holds:

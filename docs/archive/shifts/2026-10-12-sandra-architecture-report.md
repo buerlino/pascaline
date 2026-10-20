@@ -29,7 +29,7 @@ Brief: [2026-10-12-sandra-architecture-brief.md](2026-10-12-sandra-architecture-
 | `docs/03-feature-analysis.md` | header points to docs/04. Corrected with "checked 2026-10-12": Ans is not reachable in Home; Help → context help (m6) and Shift + View/Menu = Copy/Paste; qalc "try exact" verified; EN3(a) needs the agreement check; EN6: our parser does not pass `0x` through; risk 4 updated |
 | `docs/decisions.md` | Needs the user: **P9** (exact decimals in CAS), **P10** (Giac help lines in Find; confirm with Parisse before a public release). Defaults: "2026-10-12 Architecture for the engineer core" (the settled defaults, with evidence), and the parser-ownership correction |
 | `docs/backlog.md` | header points to docs/04; engineer-core tasks rewritten: milestone 4 in 12 ordered steps, milestone 5 in 5, milestone 6 in 4, each with worker, files, tests and gate; Needs the user 6 (P9) and 7 (P10); L7 and the start-up line updated to 142.6 kB; the non-existent size test noted |
-| `docs/p3-units-plan.md` | header: architecture settled in docs/04 section 4 (interface, chips, adapter checks, probe results) |
+| `docs/archive/p3-units-plan.md` | header: architecture settled in docs/04 section 4 (interface, chips, adapter checks, probe results) |
 | `docs/shifts/rules.md` | three principles, not two; `app/src/input/` (the parser) is ron's, as in `ron.md`, 03 section 8 and git history (rules said gorge) |
 | `CLAUDE.md` | background reading lists docs/04; architecture summary adds worker 3 and the Find index |
 | `CONTRIBUTING.md` | engine interfaces link to docs/04 8.2; one line on `=`/`≈`/`⚠` |

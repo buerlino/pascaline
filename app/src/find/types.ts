@@ -49,7 +49,7 @@ export interface FindHit {
 export interface FindContext {
   /** Only these kinds (Vars: ["var", "userfn"]). */
   filter?: FindKind[];
-  /** Kinds this context prefers on a tie (units in the Units app). */
+  /** Kinds this context prefers on a tie (units in the unit view). */
   prefer?: FindKind[];
   /** Live items (variables, user functions), merged at query time. */
   live?: FindItem[];

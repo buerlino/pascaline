@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # S14: the angle-mode spike (sandra, 2026-10-19)
 
-Package S14, pipeline run 55, branch `p1/sandra-radspike` from `phase-1` `83474da`. The evidence is in [research/r14-angle-mode.md](../research/r14-angle-mode.md) (R14), and the probe is `tools/probes/angle-matrix.ts`.
+Package S14, pipeline run 55, branch `p1/sandra-radspike` from `phase-1` `83474da`. The evidence is in [research/r14-angle-mode.md](../../research/r14-angle-mode.md) (R14), and the probe is `tools/probes/angle-matrix.ts`.
 
 ## Recommendation: route R
 Run Giac in radians in every mode, and keep the degree mode in our text (`pasdeg`). R64 and then G46 build it, with the changes to their texts below, and G21b is dropped. In DEG the CAS view shows the result as the mode reads it (option 2): `diff(sin(x),x)` → `pi/180*cos(x)`, `∫1/(1+x²)` → `pi/180*atan(x)`, `desolve(y''+y=0)` → `c_0*cos(180*x/pi)+c_1*sin(180*x/pi)`. The owner's yes is the OPEN entry "S14" in decisions.md.

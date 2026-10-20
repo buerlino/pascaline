@@ -69,7 +69,7 @@ Queue steps 22, 23, 25, 26, 28, 29 (G7, R24a, R28, S7, S6, S8) were skipped beca
 - **R52**: `app/src/i18n/enParser.ts` (keys `parse.*`), `SerializeError(message, key, vars)` in `errors.ts`, `parseFailText()` folds the three catches; `messages.test.ts` checks no literal is left and every key is used; `cannot plot: ` prefix kept with a test after the audit. Start chunk +0.04 kB, accepted as pass 6 point 2.
 - **G14 + G14f1**: `pasmod` engine definition (irem on integers, `a-|b|·floor(a/|b|)` otherwise), `mod`, `Mod`, `Rem` and Find's `irem` all emit it; `restoreLiterals()` puts typed decimals back into a kept test (bracketed and bare `m/10^k`, with a boundary check). Golden g14-*, g14f1-* (`x\bmod 3` = `x-3*floor(x/3)`), parser misc-more-08 changed, `prec-eq-romberg` expectation changed to the typed decimal. The round-0 golden failure was real (the parser gate did not load our definitions); fixed in `roundtrip.test.ts`.
 - **G26**: `constUnc.ts` (`withConstValues`, `inexactConstsIn`, `sigmaExpr`, `uncDigitsOf`), `home(input, settings, consts?)` through the protocol and `WorkerEngine`; `uncDigits` on `HomeResult`. Tests: quadrature of two constants, an exact constant gives none, σ = 0 gives none, without the table nothing changes. Scope as the spec.
-- **S4, S9, R50a**: docs and probes only (`tools/probes/library.ts` + 14 library files, `results-geometry.mjs`, `docs/mockups/palettes-r50.html`); nothing under `app/` or `android/` (**verified** by the diff stats). Pass 8 says the mockup's contrast code gives 0 failures for all 6 themes (**inferred**).
+- **S4, S9, R50a**: docs and probes only (`tools/probes/library.ts` + 14 library files, `results-geometry.mjs`, `docs/archive/mockups/palettes-r50.html`); nothing under `app/` or `android/` (**verified** by the diff stats). Pass 8 says the mockup's contrast code gives 0 failures for all 6 themes (**inferred**).
 
 ### CLAUDE.md rules on the whole night diff (`origin/phase-1..HEAD`, **verified**)
 
@@ -190,7 +190,7 @@ Totals: 23 runs, 244 min wall; about 135 min (55 %) in the deterministic checks,
 1. **S9 (results mode):** yes or no to the 44 px slice, the six actions, Plot as Menu item 6, the removal test (decisions.md "2026-10-18 S9"). A no also means restoring P7 point 5 (`2c6017e`).
 2. **S4 (what a library file carries):** definitions only (recommended) or also settings and user-key slots.
 3. **G15 (`60 rpm → rad/s`):** keep the refusal and add the tr/min message (recommended by pass 2), and let G7 bring the Find index in line (needs S5 merged).
-4. **R50a:** pick a palette, or a mix, on the phone (`docs/mockups/palettes-r50.html`); R50b writes it.
+4. **R50a:** pick a palette, or a mix, on the phone (`docs/archive/mockups/palettes-r50.html`); R50b writes it.
 5. **S5:** commit or merge the unit-pad research in the main checkout; G7, R24a, R28, S7, S6, S8 wait for it.
 6. **Pipeline packages for annabell (day):** A6f1 (golden trigger), the vitest colour fix and the timing rerun (pipeline bugs 1–4 above), the `STOPPED` line in `night.sh`.
 7. **Audit model at night** (pipeline finding 5): keep Sonnet with the Opus pass every three packages, or Opus for the engine lane.

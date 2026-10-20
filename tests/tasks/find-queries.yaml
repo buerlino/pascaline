@@ -128,5 +128,5 @@ queries:
   - { query: "interpolate", expect: "fn:interp", note: "EN7", status: pending }
   - { query: "polar to rectangular", expect: "tmpl:rect", note: "rectangular form", status: pending }
   - { query: "dms", expect: "tmpl:dms", note: "degrees-minutes-seconds", status: pending }
-  - { query: "db", expect: "fn:db", note: "the dB function in Home, the dB unit in the Units app (context decides)", status: pending }
+  - { query: "db", expect: "fn:db", note: "the dB function in Home, the dB unit in the unit view (context decides)", status: pending }
   - { query: "bitand", expect: "fn:bitand", note: "EN6", status: pending }

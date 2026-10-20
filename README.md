@@ -37,10 +37,10 @@ Details: [docs/04-architecture.md](docs/04-architecture.md).
 | Home Enter → result, p95 | 92 ms | 23 ms |
 | Plot | 56 fps | 89 fps |
 
-The start chunk is capped at 150 kB (52 kB gzip), and the build fails above that.
+The start chunk is capped at 175 kB (60 kB gzip; `app/scripts/size-check.ts`), and the build fails above that.
 
 ## Testing
-- **Golden gate:** about 600 cases across Home, precision, Solve, Function and parser, checked against the real engine build. Every case records its source: `device`, `virtual-calc`, `oracle` (mpmath), `derived` or `assumed`. An engine build that fails the gate does not ship.
+- **Golden gate:** about 1,400 cases across Home, precision, Solve, Function, units and parser (counts: [tests/golden/README.md](tests/golden/README.md)), checked against the real engine build. Every case records its source: `device`, `virtual-calc`, `oracle` (mpmath), `derived` or `assumed`. An engine build that fails the gate does not ship.
 - **Also:** svelte-check, Vitest unit tests and Playwright key-sequence tests at phone size.
 
 ## Status
@@ -58,7 +58,7 @@ The start chunk is capped at 150 kB (52 kB gzip), and the build fails above that
 - **Find:** one search over every function, constant and unit, from a static index built at build time.
 - Copy, paste and share the full value.
 
-**Milestone 5, Units (libqalculate):**
+**Milestone 5, Units** (computed by Giac; unit factors and constants from libqalculate at build time):
 - Unit-checked arithmetic and conversion.
 - Physical constants.
 - Uncertainty that travels with the number.

@@ -19,7 +19,7 @@
 #
 # Find letters are written as the key that types them (docs/04 section 3.7): c = tmpl, e = frac, h = cos, k = log,
 # m = neg, p = emark, r = d8, s = d9, a = vars. All pending sequences are planned from docs/03 and docs/04; where a
-# detail is open (for example whether the Units app needs Alpha for letters) the plan assumes the shortest form.
+# detail is open (for example whether the unit view needs Alpha for letters) the plan assumes the shortest form.
 schema: 1
 
 tasks:
@@ -43,9 +43,9 @@ tasks:
     title: "72 km/h → m/s"
     milestone: 5
     status: pending
-    needs: "Units app (milestone 5)"
+    needs: "the unit view (milestone 5)"
     budget: 15
-    # Shift Tmpl (Units app), 7 2, k p h Enter (kph = km/h), Shift EEX (→), m p s Enter, Enter
+    # Shift Tmpl (the unit view), 7 2, k p h Enter (kph = km/h), Shift EEX (→), m p s Enter, Enter
     keys: [shift, tmpl, d7, d2, log, emark, cos, enter, shift, emark, neg, emark, d9, enter, enter]
     expect: { value: "20", text: "20" }
     source: derived   # 1 km/h = 5/18 m/s exactly, so 72 km/h = 20 m/s
@@ -74,7 +74,7 @@ tasks:
     title: Circumference 2π r with r = 25 mm typed in mm, result in m
     milestone: 5
     status: pending
-    needs: "Units app (milestone 5)"
+    needs: "the unit view (milestone 5)"
     budget: 14
     # Shift Tmpl, 2 × π × 2 5, m m Enter (mm), Enter, tap the SI alternative (m)
     keys: [shift, tmpl, d2, mul, shift, d3, mul, d2, d5, neg, neg, enter, enter, {tap: "alt:si"}]
@@ -164,7 +164,7 @@ tasks:
     title: (12.34 ± 0.05) m × (3.2 ± 0.1) m, with uncertainty
     milestone: 5
     status: pending
-    needs: "Units app with uncertainty (milestone 5)"
+    needs: "the unit view with uncertainty (milestone 5)"
     budget: 31
     # Shift Tmpl; ( 1 2 . 3 4 ± 0 . 0 5 ) m Enter; × ; ( 3 . 2 ± 0 . 1 ) m Enter; Enter. ± is Shift (−) in the Units layer
     keys: [shift, tmpl, paren, d1, d2, dot, d3, d4, shift, neg, d0, dot, d0, d5, right, neg, enter, mul, paren, d3, dot, d2, shift, neg, d0, dot, d1, right, neg, enter, enter]

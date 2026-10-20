@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # 2026-10-20 sandra: S11, the unit result view as packages (pipeline run 108)
 
-**Verified** on the real evaluator (`tools/probes/unit-result.ts`: `buildJob` and `EngineHost.units`, engine `_out/gsl`, `phase-1`'s Find index), with the press counts from `tools/probes/unit-presses.mjs --pad [--taps]`. The evidence and the decisions are in [R17](../research/r17-unit-result.md).
+**Verified** on the real evaluator (`tools/probes/unit-result.ts`: `buildJob` and `EngineHost.units`, engine `_out/gsl`, `phase-1`'s Find index), with the press counts from `tools/probes/unit-presses.mjs --pad [--taps]`. The evidence and the decisions are in [R17](../../research/r17-unit-result.md).
 
 **Changed:**
 - New: `docs/research/r17-unit-result.md`, the package files `docs/shifts/packages/R60.md` to `R63.md`, `docs/mockups/unit-result.html` and `tools/probes/unit-result.ts`.
@@ -14,10 +14,10 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [R60](packages/R60.md) | The unit result's alternatives as data (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
-| [R61](packages/R61.md) | The chip from a unit result, with its facts and σ (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
-| [R62](packages/R62.md) | The unit result view drawn | ron, Sonnet | day (gallery) | R60, and the owner has seen the mockup (M4-2 point 6) | ~1 d |
-| [R63](packages/R63.md) | The way back from the unit view; t02, t04 and t10 active | ron, **Opus** | day | R61 and R62 | ~1 d |
+| [R60](../../shifts/packages/R60.md) | The unit result's alternatives as data (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
+| [R61](../../shifts/packages/R61.md) | The chip from a unit result, with its facts and σ (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
+| [R62](../../shifts/packages/R62.md) | The unit result view drawn | ron, Sonnet | day (gallery) | R60, and the owner has seen the mockup (M4-2 point 6) | ~1 d |
+| [R63](../../shifts/packages/R63.md) | The way back from the unit view; t02, t04 and t10 active | ron, **Opus** | day | R61 and R62 | ~1 d |
 
 **For brief section 0c** (queue rows for the night packages, before the last Opus pass; renumber the pass and the report after them). R62 and R63 are day packages and stay out of the queue.
 

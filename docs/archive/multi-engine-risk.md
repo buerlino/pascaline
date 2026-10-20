@@ -210,7 +210,7 @@ The repo tried the multi-engine plan and removed engines twice. It did not rule 
 
 | Date | Decision | Engines at runtime |
 |---|---|---|
-| 2026-10-11 | P3: libqalculate is the only units database, behind a Units app and its own worker (docs/p3-units-plan.md) | Giac, MicroPython (Python app), qalc (planned) |
+| 2026-10-11 | P3: libqalculate is the only units database, behind a Units app and its own worker (docs/archive/p3-units-plan.md) | Giac, MicroPython (Python app), qalc (planned) |
 | 2026-10-13 | P11: no Units app (units go after the formula, in the unit view); the Python app and its MicroPython worker removed | Giac, qalc (planned) |
 | 2026-10-14 | P15: the unit view computes on Giac; libqalculate at build time only. G15's gate passed 2026-10-15 | **Giac** |
 

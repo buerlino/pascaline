@@ -48,10 +48,10 @@ Build an **engineer core** ahead of the Prime-parity apps, in three milestones (
 | **Formats** | STD, SCI, ENG, FIX; Format key cycles the last result (also fraction, mixed, polar ⇄ rectangular) |
 | **Function app** | Plot, trace, root/extremum/intersection/slope/area, Num table (56 fps on the Tab One, 89 on the Fairphone 6) |
 | **Solve app** | 1-D, systems, polynomials; every root substituted back with ⚠ on a large residual |
-| **Python** | MicroPython, editor, shell, graphics, `calc` reaches Giac and variables |
+| **Python** | MicroPython, editor, shell, graphics, `calc` reaches Giac and variables (removed by P11, 2026-10-13) |
 | **Platform and quality** | Android APK without the INTERNET permission (C5), offline PWA, no trackers; about 600 golden cases tagged by source; bit-reproducible release engine; Enter → result p95 92 ms on the Tab One |
 
-**Designed, not built:** units/constants/uncertainty (P3, `docs/p3-units-plan.md`, amended by section 4), compact keypad (K4), reference number-format parity (G9), and everything in docs/02 section 8 (v1, v2).
+**Designed, not built:** units/constants/uncertainty (P3, `docs/archive/p3-units-plan.md`, amended by section 4), compact keypad (K4), reference number-format parity (G9), and everything in docs/02 section 8 (v1, v2).
 
 **Empty today:** the Vars, Math and Tmpl keys do nothing (`special: none`, keyboard.yaml); the Home/CAS Menu key opens nothing (menus exist only inside Function, Solve, Python); there is no clipboard, share or CSV code anywhere in the app (grep, 2026-10-12).
 
@@ -74,7 +74,7 @@ Build an **engineer core** ahead of the Prime-parity apps, in three milestones (
 
 ## 4. EN2 Units: the unit view, plus prefixes
 
-**Amends P3 decisions 2 and 6** (`docs/p3-units-plan.md` section 7; both accepted 2026-10-11) on the owner's rules of 2026-10-12. **P15 (2026-10-14) replaced that plan's engine:** the unit view computes on Giac in the worker already loaded, and libqalculate runs only at build time, as the Find index's source (docs/04 section 4). The data checks and the `hp` fix stand.
+**Amends P3 decisions 2 and 6** (`docs/archive/p3-units-plan.md` section 7; both accepted 2026-10-11) on the owner's rules of 2026-10-12. **P15 (2026-10-14) replaced that plan's engine:** the unit view computes on Giac in the worker already loaded, and libqalculate runs only at build time, as the Find index's source (docs/04 section 4). The data checks and the `hp` fix stand.
 
 | P3 plan | Now |
 |---|---|

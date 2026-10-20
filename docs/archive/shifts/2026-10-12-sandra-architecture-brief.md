@@ -16,7 +16,7 @@ Read these first, in this order. They are binding; do not reopen them, but do fl
 1. `CLAUDE.md`: the goal, the **three principles** (open source and reuse first; speed and efficiency; precision you can trust), the non-negotiable legal, F-Droid and maths-correctness rules, the stack.
 2. `docs/03-feature-analysis.md`: the owner's **design rules** (section 0: no split by discipline; a unit must beat typing `E-10`; units stay separate from normal calculation; focus over G2 parity), Find, the Units app, the gaps EN0–EN7, the task benchmark, the plan (section 8).
 3. `docs/decisions.md`: **P8** (the roadmap, key assignments, units decision, what was set aside and why), P3 and its amendment, P5, P7 and the Phase 1 defaults. Phase 0 decisions D1–D9, P1, P2 in `spike/DECISIONS.md` and `spike/RESULTS.md`.
-4. `docs/02-architecture-plan.md` (the old plan; the structure you are revising), `docs/p3-units-plan.md` (amended by P8), `docs/backlog.md` (state and tasks), `docs/01-feasibility-report.md` section 3 (legal, binding).
+4. `docs/02-architecture-plan.md` (the old plan; the structure you are revising), `docs/archive/p3-units-plan.md` (amended by P8), `docs/backlog.md` (state and tasks), `docs/01-feasibility-report.md` section 3 (legal, binding).
 5. `docs/research/` (R1–R5 and the rest), `docs/cleanup-audit-2026-10-12.md`, the shift reports in `docs/shifts/` (latest: `2026-10-12-night-report.md`), `CONTRIBUTING.md`, `THIRD_PARTY.md`, `spec/keyboard.yaml`, `tests/golden/README.md`.
 
 Rules for your evidence:
