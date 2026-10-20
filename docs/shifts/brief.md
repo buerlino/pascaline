@@ -10,10 +10,10 @@
 **Why.** The G2's flow is the backbone; principle 3 is what we add to it, and today it is broken in our own layer between Giac and the screen, not in the keys or the parser. Of the 16 open bugs (backlog F44–F59, rechecked on `da7a59c`), 10 are wrong code of ours; in the other 6 the wrong value comes from Giac and our layer passes it on under `=`, `≈` or as Giac's text. Ten reach users today. So we harden that layer before anything widens what reaches it, and fix each bug at its cause (P18, P19). The ron lane by day touches no engine code and goes on unchanged.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **A24**, **A28**, **A25** first (the night's pipeline); **R73**; **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**; **R72** before R4a and R24c.
+1. **A12**, **A23**, **A20**, **A11** on the Tab One, then **A28**, **A25** (owner, 2026-10-20); then **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**; **R72** before R4a and R24c.
 2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 and R40 after G76).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
-4. annabell: **A16** again after G53 and after G65, **A9** and **A11** with a device, **A18**, **A22**, **A26**, **A27**, **A19** (G64 waits for it), **A12**, **A4b** after R4b, **A20** with the Tab One, **A21** after F-Droid's answer, **A7 → A8** on the owner's go.
+4. annabell: **A16** again after G65, **A9** and **A11** with a device, **A18**, **A22**, **A26**, **A27**, **A19** (G64 waits for it), **A12**, **A4b** after R4b, **A20** with the Tab One, **A21** after F-Droid's answer, **A7 → A8** on the owner's go.
 5. **R59** after G72 and G73/G74 (and R4b, A12); **R38a** (after A11) **→ R38b**; **R70** after R49 and **A23**, both before outside round 1; **R71** (±) after R24c; **G79**.
 
 **At night, the hardening, in this order** (gorge unless named; tests first, failing on `da7a59c`):
@@ -37,15 +37,14 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A16](packages/A16.md) | Enter p95 on the Tab One after G53, again after G65 | annabell, Sonnet | day (device) | G53; G65 | ~0.25 d |
+| [A16](packages/A16.md) | Enter p95 on the Tab One, the third row after G65 | annabell, Sonnet | day (device) | G65 | ~0.25 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | now | ~0.25 d |
-| [A24](packages/A24.md) | A worktree never empties another's node_modules | annabell, Sonnet | day | now | ~0.25 d |
 | [A25](packages/A25.md) | The golden gate gates itself | annabell, Sonnet | day | now | ~0.1 d |
 | [A23](packages/A23.md) | Android's backup off | annabell, Sonnet | day (device) | now | ~0.1 d |
 | [A22](packages/A22.md) | The docs check knows ids, live notes and source sizes | annabell, Sonnet | day | now | ~0.25 d |
 | [A26](packages/A26.md) | docs/README covers every live doc | annabell, Sonnet | day | A22 | ~0.25 d |
 | [A27](packages/A27.md) | gc.sh takes what it misses | annabell, Sonnet | day | now | ~0.5 d |
-| [A28](packages/A28.md) | The checks run on the branch's engine | annabell, Sonnet | day | A24 | ~0.5 d |
+| [A28](packages/A28.md) | The checks run on the branch's engine | annabell, Sonnet | day | now | ~0.5 d |
 | [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | day | now | ~0.25 d |
 | [A20](packages/A20.md) | The golden Home and precision stages in the WebView | annabell, Sonnet | day (device) | the Tab One connected | ~0.25 d |
 | [A21](packages/A21.md) | libqalculate out of the build (P22) | annabell, Sonnet | day | F-Droid's answer | ~0.5 d |
@@ -76,7 +75,6 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [R70](packages/R70.md) | The tap counter counts every press (S8) | ron, Sonnet | day | R49 | ~0.5 d |
 | [R71](packages/R71.md) | ± on Shift + `,` (M4-2) | ron, Sonnet | day | R24c | ~0.5 d |
 | [G79](packages/G79.md) | the G2 checklist check | gorge, Sonnet | day | now | ~0.25 d |
-| [R73](packages/R73.md) | no key lost on a fast app open (F60) | ron, Sonnet | day | now | ~0.25 d |
 | [R38a](packages/R38a.md) | The backup: export everything | ron, Sonnet | day | A11 | ~0.5 d |
 | [R38b](packages/R38b.md) | The backup: restore from a file | ron, **Opus** | day | R38a | ~0.75 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the owner's phone connected | ~0.5 d |
