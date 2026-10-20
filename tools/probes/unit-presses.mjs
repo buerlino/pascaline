@@ -349,9 +349,21 @@ const next = PAD ? ['enter'] : ['right'];
 const evalNow = PAD ? (FLICKS ? ['↑enter'] : ['shift', 'enter']) : ['enter'];
 console.log(`\ntasks (sequences built from the same rules; docs/research/${PAD ? 'r9-unit-pad.md section 3' : 'r7-unit-slots.md section 4'})`);
 t('t02 72, units key, km/h → m/s', 15, ['d7', 'd2', ...unitsKey, ...P('km/h'), ...next, ...P('m/s'), 'enter']);
-t('t02 72, units key, km/h, no end slot (result 20 m/s)', null, ['d7', 'd2', ...unitsKey, ...P('km/h'), ...evalNow]);
+// Without an end slot the typed unit is kept (G25): 72 km/h, 157.079632679 mm. The result view (S11, docs/research/
+// r17-unit-result.md) offers the coherent SI unit as a one-tap alternative, counted as one press (a touch tap).
+const tap = ['{tap alt}'];
+const PP = (parts) => (PAD ? typePad(parts) : { presses: [] }).presses;
+// ± in the formula: two presses (Shift and a key; which key is decisions.md M4-2 point 5).
+const pm = ['shift', 'sub'];
+t('t02 72, units key, km/h, no end slot (shows 72 km/h)', null, ['d7', 'd2', ...unitsKey, ...P('km/h'), ...evalNow]);
+t('t02 the same, then the m/s alternative', 15, ['d7', 'd2', ...unitsKey, ...P('km/h'), ...evalNow, ...tap]);
 t('t04 2×π×25 then units: mm on 25, → m', 14, ['d2', 'mul', ...pi, 'mul', 'd2', 'd5', ...unitsKey, ...next, ...P('mm'), ...next, ...P('m'), 'enter']);
-t('t04 the same, no end slot', null, ['d2', 'mul', ...pi, 'mul', 'd2', 'd5', ...unitsKey, ...next, ...P('mm'), ...evalNow]);
+t('t04 the same, no end slot (shows 157.079632679 mm)', null, ['d2', 'mul', ...pi, 'mul', 'd2', 'd5', ...unitsKey, ...next, ...P('mm'), ...evalNow]);
+t('t04 the same, then the m alternative', 14, ['d2', 'mul', ...pi, 'mul', 'd2', 'd5', ...unitsKey, ...next, ...P('mm'), ...evalNow, ...tap]);
+if (PAD) {
+  t('t03 2.2 nF × 4.7 kΩ with units (shows 10.34 µs)', 10, ['d2', 'dot', 'd2', 'mul', 'd4', 'dot', 'd7', ...unitsKey, ...PP('n:F'), ...next, ...P('kΩ'), ...evalNow]);
+  t('t10 12.34 ± 0.05 m × 3.2 ± 0.1 m (shows 39.5 ± 1.2 m²)', 31, ['d1', 'd2', 'dot', 'd3', 'd4', ...pm, 'd0', 'dot', 'd0', 'd5', 'mul', 'd3', 'dot', 'd2', ...pm, 'd0', 'dot', 'd1', ...unitsKey, ...P('m'), ...next, ...P('m'), ...evalNow]);
+}
 t('P11 kg·m²/s³ → W, empty line (unit check)', null, [...unitsKey, ...P('kg·m²/s³'), ...next, ...P('W'), 'enter']);
 t('baseline 72 ÷ 3.6 (no unit checked)', 7, ['d7', 'd2', 'div', 'd3', 'dot', 'd6', 'enter']);
 
