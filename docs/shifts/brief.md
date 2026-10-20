@@ -6,22 +6,31 @@
 ## 0. State and the path
 `phase-1` on 2026-10-19 after the night (runs 53–74, Opus passes 20–27, `feef6e5`; what it left: [research/night-shift-check-2026-10-19.md](../research/night-shift-check-2026-10-19.md)). Before it, after Opus pass 19 (S7, `b6370a5`), checked as a whole ([research/check-2026-10-19.md](../research/check-2026-10-19.md)), then deeper ([research/deep-check-2026-10-19-angle-marks.md](../research/deep-check-2026-10-19-angle-marks.md)). Every merge and its commit: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
-### The path (owner, 2026-10-14; rewritten 2026-10-18 after the architecture pass and S7)
-**By day, one pipeline at a time** (owner, 2026-10-18), in this order; each starts when the one before is merged:
-1. **R15c1 → R15c2 → R15c3 → R15c4** (the R3 top cluster), **R55** (digit groups), **R49** (Settings rows), **R57** (the decimal comma, on R49's page pattern), **R50e** (Appearance; R50c, R50d at night).
-2. **R4a** (Find on Math), **R4b** (Vars, Memory, the user keys), **R53** (results mode on the View key), **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40**.
-3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b).
-4. annabell by day: **A16** again after G53, **A9** and **A11** as soon as a device is connected; **A18** (G55 is merged); **A12** (G29 is merged); **A4b** after R4b; **A7 → A8** on the owner's go.
-5. After S6: **R59** (also after R4b and A12), **R38a → R38b** (the owner's yes to S6's proposal first).
+### The path (owner, 2026-10-14; rewritten 2026-10-20 after the research of 2026-10-19)
+**Why.** The G2's flow is the backbone; principle 3 is what we add to it, and today it is broken in our own layer between Giac and the screen, not in the keys or the parser. Of the 16 open bugs (backlog F44–F59, rechecked on `da7a59c`), 10 are wrong code of ours; in the other 6 the wrong value comes from Giac and our layer passes it on under `=`, `≈` or as Giac's text. Ten reach users today. So: harden that layer before anything widens what reaches it, and fix each bug where its cause is (a Giac patch when the cause is local in Giac's source; a TypeScript workaround only with a written reason). Giac evaluates, our layer decides, other engines feed at build time or check at test time, the parser is the one door for typed input. The ron lane by day touches no engine code and goes on unchanged. Evidence, proposed ids and the decisions: [the consolidation report](2026-10-20-sandra-consolidation-report.md); the package files are written after the owner's answers.
 
-**At night** (section 0c), in the queue's order: S15 and the night check's packages, route R (R64 → G46), the checks' unit and gate packages, the sandra docs packages, then S12's removal packages (G45, R66–R68).
+**By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
+1. **R15c1 → R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**.
+2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 and R40 after G76).
+3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
+4. annabell: **A16** again after G53, **A9** and **A11** with a device, **A18**, **A12**, **A4b** after R4b, **A20** with the Tab One, **A7 → A8** on the owner's go.
+5. **R59** after G72 and G73/G74 (and R4b, S6, A12); **R38a → R38b** after the owner's yes to S6.
+
+**At night, the hardening, in this order** (gorge unless named; tests first, failing on `da7a59c`):
+1. **Reachable today:** G58 (F44, Home hangs) → G59 (F45, F46; F51 and F50 after the owner's word); G68 (F53), G69 (F54), G70 (F56), R69 (F55).
+2. **The cause in Giac:** G75 (patch 0003, complex `tanh`; measures whether the inverse functions patch as simply) → G60 (F47, only what the patch cannot fix). G56 is dropped or narrowed by G75's result.
+3. **Before R4a** (Find puts `cas_setup`, `purge`, `sto`, `trunc`, `Heaviside`, `BesselJ` one tap away): G67 (F52, Giac's flags), G71 (F48, F49, F59). G65 (S13) takes F58.
+4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text). **Before R36 and R40:** G76.
+5. **The instruments:** G61 → G62, G63; G64, A19 (annabell); then S16 (sofia, Opus) triages what they find into fix packages.
+6. **Engine and build:** S17 (the workaround register with canaries) → G77 (the numbered Giac pin); A21 (libqalculate out of the build) before C4, after the owner's yes.
 
 **Why this order:**
-- R15c goes first among the feel packages: it changes keys the hand is learning (docs/03 rule 8). R4b sets the user keys, R53 uses the View key, R41 labels the keys, so all wait for it.
-- R55 before R49: half a day of render code the owner then reads every day; R57 after R49 (its page pattern).
-- The night check of 2026-10-19 ([research/night-shift-check-2026-10-19.md](../research/night-shift-check-2026-10-19.md)) goes first at night: silent marks (G48, G51) before Find makes `unapply` typable; S15 gives the passes room; G52 first, so no engine package raises the calls per Enter unseen (night check 2.3).
-- Trust features after the code they build on: R33 and R37 after Find; R40 after G26 and R12b's tokens.
-- The start chunk is 53.28 of 60 kB gzip (owner, 2026-10-19, set by A15; docs/04 8.3): every UI package reports its delta.
+- Silent wrong numbers and freezes first, by reach: today's before R4a's, R4a's before R59's. G58 goes first: a hang hides every other answer.
+- R4a's Find inserts LaTeX, so its input still passes our parser: it needs the flag and decision fixes (step 3), not the text reader. A library file skips the parser, so R59 needs the reader (step 4).
+- G75 before G60 and G56: a one-line patch at the cause ends at the next pin, once Parisse has it; a workaround in TypeScript never ends.
+- The instruments after the fixes, so the sweep tests code that stays; then they stay in the gate.
+- R15c goes first by day: it changes keys the hand is learning (docs/03 rule 8). R4b, R53 and R41 wait for it. R55 before R49; R57 after R49 (its page pattern).
+- The start chunk is 53.28 of 60 kB gzip (docs/04 8.3): every UI package reports its delta.
 
 ### The open packages
 | # | Package | Agent, model | Lane | Starts when merged | Size |
