@@ -365,7 +365,7 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 **The backup** (R11, `research/r11-files.md`): one JSON file, each key's record as stored with its stamp (`defsStarts` left out); a restore checks the whole file, refuses it on the first fault (newer format or part, broken stamp, unknown part, a validator fault), then replaces the ticked keys in one transaction, keeps the replaced records in `backup.undo`, and reloads.
 
 ### 6.3 Decision: start-up and bytes
-- The sizes and budgets are in 8.3. New code for Find, units, copy and the matrix editor lives in lazy chunks; the start chunk grows only by key handlers and marks (≤ 175 kB, ≤ 60 kB gzip; owner, 2026-10-19).
+- The sizes and budgets are in 8.3. New code for Find, units, copy and the matrix editor lives in lazy chunks, and so do every Settings page, sheet and the first-start tips (owner, 2026-10-20): the start chunk takes only what draws the first screen, key handlers and marks (≤ 175 kB, ≤ 60 kB gzip; owner, 2026-10-19).
 - **The size test** (A1): `app/scripts/size-check.ts` reads Vite's manifest and fails when a chunk passes its budget; `npm run build` and `build.sh` run it.
 
 
@@ -437,7 +437,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 60 kB gzip | 53.28 kB gzip on `cb1c74c` (2026-10-18, check-2026-10-19); `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test |
+| Start chunk | ≤ 175 kB raw, ≤ 60 kB gzip | 56.00 kB gzip on `05b250c` (2026-10-20; R15c1 +0.27, about +0.3 per UI package, so the cap is ~13 packages away); `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |

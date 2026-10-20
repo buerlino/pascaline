@@ -30,7 +30,7 @@
 - G75 before G60 and G56: a patch at the cause ends at the pin that has Parisse's fix; a TypeScript workaround never ends (P19).
 - The instruments after the fixes and the re-pin, so they test code that stays; then they stay in the gate.
 - R15c goes first by day: it changes keys the hand is learning (docs/03 rule 8). R4b, R53 and R41 wait for it. R55 before R49; R57 after R49 (its page pattern).
-- The start chunk is 53.28 of 60 kB gzip (docs/04 8.3): every UI package reports its delta.
+- The start chunk is 56.00 of 60 kB gzip (docs/04 8.3), ~+0.3 per UI package: every UI package reports its delta, and Settings pages and the tips load lazily (docs/04 6.3).
 
 ### The open packages
 The night's hardening packages are listed once, in the queue (section 0c), each linked to its file.
