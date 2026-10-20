@@ -53,7 +53,8 @@ export async function touch(
   end: () => Promise<void>;
   cancel: () => Promise<void>;
 }> {
-  const box = await page.locator(`[data-key="${id}"]`).boundingBox();
+  // a key id, or a CSS selector (starting with "[") for a surface that is not a key (the pad's hub, R15c2)
+  const box = await page.locator(id.startsWith("[") ? id : `[data-key="${id}"]`).boundingBox();
   if (!box) throw new Error(`key ${id} is not visible`);
   const x0 = box.x + box.width / 2;
   const y0 = box.y + box.height / 2;

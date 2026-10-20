@@ -7,7 +7,8 @@ import { SAMPLE_CHIPS } from "../input/chips.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { parse } from "yaml";
 import { shippedKeyboard, shippedPalettes } from "./shipped.ts";
-import { actionFor, cellsIn, gridPlace, type Key, KeyboardSpecError, keyboard, labelFor, loadKeyboard, loadPalette, templates } from "./keyboard.ts";
+import { en } from "../i18n/en.ts";
+import { actionFor, cellsIn, gridPlace, type Key, KeyboardSpecError, keyboard, labelFor, loadKeyboard, loadPalette, MATHS_ROW, templates } from "./keyboard.ts";
 
 const spec = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../spec/keyboard.yaml"), "utf8");
 
@@ -22,7 +23,7 @@ describe("keyboard spec", () => {
     expect([3, 4, 5, 6, 7, 8, 9].map((r) => cellsIn(keyboard, r))).toEqual([6, 6, 6, 5, 5, 5, 5]);
   });
 
-  it("every row is full: rows 3-9 (the reference's r4-r10), and the upper cluster of layout D (no gaps, R15b)", () => {
+  it("every row is full: rows 3-9 (the reference's r4-r10), and the upper cluster R3 (no gaps, R15c)", () => {
     for (let r = 0; r < keyboard.rows; r++) {
       const used = keyboard.keys.filter((k) => k.row === r).reduce((n, k) => n + k.span, 0);
       expect(used, `row ${r}`).toBe(cellsIn(keyboard, r));
@@ -31,26 +32,51 @@ describe("keyboard spec", () => {
     expect(gridPlace(keyboard, keyboard.byId.get("div") as Key)).toEqual({ start: 25, span: 6 });
   });
 
-  it("the upper cluster is layout D (R15a, R15b): every key at its G2 place, the free keys U1-U3 in the other cells", () => {
+  it("the upper cluster is R3 (decisions.md R15c): six user keys, the round pad, the editing wing; no letter line", () => {
     const at = (r: number) => keyboard.keys.filter((k) => k.row === r).sort((a, b) => a.col - b.col).map((k) => k.id);
-    expect(at(0)).toEqual(["apps", "symb", "up", "help", "esc"]);
-    expect(at(1)).toEqual(["u1", "plot", "left", "right", "view", "cancel"]);
-    expect(at(2)).toEqual(["u2", "num", "down", "menu", "u3"]);
-    expect(keyboard.keys.filter((k) => k.user).map((k) => k.id)).toEqual(["u1", "u2", "u3"]);
-    // no Home/CAS key (P12 point 2): the defaults of U2 and U3 are Home and CAS, with empty Shift layers; U1 ships empty
-    expect(keyboard.byId.has("app") || keyboard.byId.has("cas")).toBe(false);
+    expect(at(0)).toEqual(["u1", "u2", "up", "view", "esc"]);
+    expect(at(1)).toEqual(["u3", "u4", "left", "right", "undo", "copy"]);
+    expect(at(2)).toEqual(["u5", "u6", "down", "lstart", "lend"]);
     const k = (id: string) => keyboard.byId.get(id) as Key;
-    expect(k("u2").actions).toEqual({ primary: { kind: "special", name: "home" } });
-    expect(k("u3").actions).toEqual({ primary: { kind: "special", name: "cas" } });
-    expect(k("u1").actions).toEqual({ primary: { kind: "special", name: "none" } });
-    expect([k("u1").label.primary, k("u2").label.primary, k("u3").label.primary]).toEqual(["$key.user", "$key.home", "$key.cas"]);
-    // Mode on Shift + Apps (S2 point 4); Help drawn dimmed, a dead key until milestone 6; Cancel keeps Undo (R16)
-    expect(actionFor(k("apps"), true, false)).toEqual({ kind: "special", name: "mode" });
-    expect(actionFor(k("help"), false, false)).toEqual({ kind: "special", name: "none" });
-    expect(actionFor(k("cancel"), true, false)).toEqual({ kind: "cmd", name: "undo" });
-    // the cluster keeps no alpha letters (vertical space): a user key may not take one, nor sit in a maths row
-    const bad = (extra: string) => () => loadKeyboard(parse(spec.replace("{ id: u1, row: 1, col: 0, cls: nav, user: true,", `{ id: u1, row: 1, col: 0, cls: nav, user: true, ${extra}`)));
+    expect([k("up").col, k("up").span, k("down").col, k("down").span, k("left").col, k("right").col]).toEqual([2, 2, 2, 2, 2, 3]);
+    // six user keys in columns 0-1, all empty (D's Home and CAS defaults on U2 and U3 are gone)
+    const users = keyboard.keys.filter((k) => k.user);
+    expect(users.map((k) => k.id)).toEqual(["u1", "u2", "u3", "u4", "u5", "u6"]);
+    for (const u of users) {
+      expect(u.col, u.id).toBeLessThan(2);
+      expect(u.actions, u.id).toEqual({ primary: { kind: "special", name: "none" } });
+      expect(u.label.primary, u.id).toBe("$key.user");
+    }
+    // the keys that went to the status line (R15c1) and Cancel (now Esc) are no keys any more
+    for (const id of ["apps", "symb", "plot", "num", "help", "menu", "cancel"]) expect(keyboard.byId.has(id), id).toBe(false);
+    expect(keyboard.byId.has("app") || keyboard.byId.has("cas")).toBe(false);
+    // the wing's layers (point 2)
+    expect(actionFor(k("esc"), false, false)).toEqual({ kind: "special", name: "esc" });
+    expect(actionFor(k("esc"), true, false)).toEqual({ kind: "special", name: "clear" });
+    expect(actionFor(k("undo"), false, false)).toEqual({ kind: "cmd", name: "undo" });
+    expect(actionFor(k("undo"), true, false)).toEqual({ kind: "cmd", name: "redo" });
+    expect(actionFor(k("copy"), false, false)).toEqual({ kind: "special", name: "copy" });
+    expect(actionFor(k("copy"), true, false)).toEqual({ kind: "special", name: "paste" });
+    expect(actionFor(k("lstart"), false, false)).toEqual({ kind: "cmd", name: "moveToMathfieldStart" });
+    expect(actionFor(k("lstart"), true, false)).toEqual({ kind: "cmd", name: "moveToGroupStart" });
+    expect(actionFor(k("lend"), false, false)).toEqual({ kind: "cmd", name: "moveToMathfieldEnd" });
+    expect(actionFor(k("lend"), true, false)).toEqual({ kind: "cmd", name: "moveToGroupEnd" });
+    // View: results mode (R53) and Help (milestone 6) not built: dead in both layers, so it is drawn dimmed
+    expect(actionFor(k("view"), false, false)).toEqual({ kind: "special", name: "none" });
+    expect(actionFor(k("view"), true, false)).toEqual({ kind: "special", name: "none" });
+    expect(k("view").label).toEqual({ primary: "$key.view", shift: "$key.help" });
+    // the cluster keeps no alpha letters, so no key in it draws the letter line (vertical space, docs/03 rule 9)
+    for (const key of keyboard.keys.filter((x) => x.row < MATHS_ROW)) expect(key.label.alpha ?? key.actions.alpha, key.id).toBeUndefined();
+    // every new key is our choice
+    for (const id of ["u1", "u2", "u3", "u4", "u5", "u6", "view", "undo", "copy", "lstart", "lend"]) expect(k(id).source, id).toBe("assumed");
+    // a user key may not take a letter, nor sit in a maths row
+    const bad = (extra: string) => () => loadKeyboard(parse(spec.replace("{ id: u1, row: 0, col: 0, cls: nav, user: true,", `{ id: u1, row: 0, col: 0, cls: nav, user: true, ${extra}`)));
     expect(bad("alpha: { type: Q },")).toThrow(KeyboardSpecError);
+  });
+
+  it("every legend is in the i18n table (a $ label names a message)", () => {
+    for (const k of keyboard.keys)
+      for (const l of Object.values(k.label)) if (l.startsWith("$")) expect(l.slice(1) in en, `${k.id}: ${l}`).toBe(true);
   });
 
   it("every key says where it comes from", () => {
