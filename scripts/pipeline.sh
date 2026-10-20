@@ -79,10 +79,16 @@ ensure_integ() {
   [[ -z "$(git -C "$integ" status --porcelain --untracked-files=no)" ]] || die "phase-1 worktree $integ is not clean"
 }
 
-# Node modules, the engine copy and the Find index, shared from the main checkout into a worktree.
-link_shared() {
+# Node modules: every worktree gets its own hard-link copy of the main checkout's, so an npm ci in one
+# never empties another's (A24). A symlink left by an older run is replaced.
+setup_node_modules() {
   local wt="$1"
-  [[ -e "$wt/app/node_modules" ]] || ln -s "$main/app/node_modules" "$wt/app/node_modules"
+  [[ ! -L "$wt/app/node_modules" ]] || rm -f "$wt/app/node_modules"
+  [[ -e "$wt/app/node_modules" ]] && return 0
+  # copy aside, then rename: an interrupted copy never leaves a half-filled node_modules that the guard above would keep
+  rm -rf "$wt/app/node_modules.tmp.$$"
+  if cp -al "$main/app/node_modules" "$wt/app/node_modules.tmp.$$"; then mv "$wt/app/node_modules.tmp.$$" "$wt/app/node_modules"
+  else rm -rf "$wt/app/node_modules.tmp.$$"; die "could not copy node_modules into $wt"; fi
 }
 
 # ---------- subcommand: pass ----------
@@ -169,7 +175,7 @@ bundle="$run/spec.md"
   echo; echo "## Task"; cat "$spec_file"
   echo; echo "## Files the task names (first 400 lines each; read more yourself if you need it)"
   total=0
-  grep -oE '\b[A-Za-z0-9_][A-Za-z0-9_./-]*\.(ts|svelte|yaml|yml|md|mjs|js|sh|py|cc|json|css|html)\b' "$spec_file" | sort -u |
+  { grep -oE '\b[A-Za-z0-9_][A-Za-z0-9_./-]*\.(ts|svelte|yaml|yml|md|mjs|js|sh|py|cc|json|css|html)\b' "$spec_file" || true; } | sort -u |
   while read -r f; do
     [[ "$f" == docs/shifts/* || "$f" == *package-lock.json ]] && continue
     [[ -f "$integ/$f" ]] || continue
@@ -192,7 +198,10 @@ wt="$main/.claude/worktrees/pl-$(printf '%03d' "$n")-$slug"
 if [[ $dry -eq 1 ]]; then
   echo "DRY RUN: pipeline run $n, package $id, agent $agent ($model, $effort), branch $branch"
   echo "PASCALINE_QALC_DL_DIR=$PASCALINE_QALC_DL_DIR PASCALINE_DL_DIR=$PASCALINE_DL_DIR PW_PORT=$PW_PORT"
-  echo "integration worktree: $integ"; echo "worker worktree: $wt"; echo "checks: $checks; merge: $merge; audit model: $audit_model; no-worker: $nowork"
+  echo "integration worktree: $integ"; echo "worker worktree: $wt"
+  echo "setup: cp -al $main/app/node_modules $wt/app/node_modules   (own copy per worktree; a symlink is replaced)"
+  echo "machine failure: a check log with 'command not found' or a missing node_modules ends the run as NOT MERGED (machine: ...), no fix round"
+  echo "checks: $checks; merge: $merge; audit model: $audit_model; no-worker: $nowork"
   echo "checks run: typecheck, vitest, docs always; size when app/ changed; e2e when app/ changed; golden when engine or parser changed"
   echo "checks: typecheck,vitest,docs (+ size, e2e when app/ changed; + golden when engine or parser changed)"
   [[ "$audit_model" == auto || "$audit_model" == opus ]] || { [[ "$agent" == gorge ]] && echo "audit model raised to opus: gorge package (--audit-model $audit_model is a floor)"; }
@@ -226,7 +235,7 @@ if git show-ref --verify --quiet "refs/heads/$branch"; then
 else
   git worktree add "$wt" -b "$branch" phase-1 >/dev/null
 fi
-link_shared "$wt"
+setup_node_modules "$wt"
 
 # Run one headless agent; exit 75 on a usage limit.
 run_agent() {  # <name> <log> <agent> <model> <effort> <stdin file> <prompt> [tool options...]
@@ -301,6 +310,12 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
       [[ $rc -eq 0 ]] && runlog "check $name: re-run (timing) passed" || runlog "check $name: re-run (timing) failed"
     fi
     if [[ $rc -eq 1 ]]; then
+      if machine_failure "$out"; then
+        tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null
+        mline="$(grep -m1 -E 'command not found|node_modules (is )?missing' "$out" | cut -c1-160)"
+        log "pipeline #$n $id: NOT MERGED (machine: $name: $mline); branch $branch kept"
+        echo "RESULT #$n $id: NOT MERGED (machine: $name: $mline; worktree $wt kept; see $out)"; exit 1
+      fi
       { echo "## $name failed (full log: $out)"; excerpt "$out"; echo; } >> "$run/fail-$round.txt"
       runlog "check $name: FAILED"; tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null; return 1
     fi
@@ -399,6 +414,11 @@ if ! why="$(audited_head_check "$wt" "$branch" "$audited")"; then  # again under
   log "pipeline #$n $id: NOT MERGED (the branch is not the audited HEAD): $why; branch $branch kept"
   echo "RESULT #$n $id: NOT MERGED (the branch is not the audited HEAD; $why; worktree $wt kept)"; exit 1
 fi
+if ! integ_clean "$integ"; then  # ensure_integ checked only at the start (A24)
+  tools/devlock.sh release integ "pipeline-$n" >/dev/null || true
+  log "pipeline #$n $id: NOT MERGED (phase-1 worktree not clean); branch $branch kept"
+  echo "RESULT #$n $id: NOT MERGED (phase-1 worktree not clean; branch $branch, worktree $wt kept)"; exit 1
+fi
 if git -C "$integ" merge --no-ff --signoff -m "Merge $branch: $id (pipeline run $n)" "$audited" > "$run/merge.log" 2>&1; then
   mc="$(git -C "$integ" rev-parse --short HEAD)"
   git worktree remove --force "$wt" >/dev/null 2>&1 || true
@@ -407,9 +427,11 @@ if git -C "$integ" merge --no-ff --signoff -m "Merge $branch: $id (pipeline run 
   result="RESULT #$n $id: MERGED $mc"
   rc=0
 else
+  why="$(merge_failure_reason "$integ" "$run/merge.log")"
   git -C "$integ" merge --abort >/dev/null 2>&1 || true
-  log "pipeline #$n $id: NOT MERGED (merge conflict); branch $branch kept"
-  result="RESULT #$n $id: NOT MERGED (merge conflict; branch $branch, worktree $wt kept)"
+  [[ "$why" == conflict ]] && why="merge conflict"
+  log "pipeline #$n $id: NOT MERGED ($why); branch $branch kept"
+  result="RESULT #$n $id: NOT MERGED ($why; branch $branch, worktree $wt kept)"
   rc=1
 fi
 tools/devlock.sh release integ "pipeline-$n" >/dev/null || true

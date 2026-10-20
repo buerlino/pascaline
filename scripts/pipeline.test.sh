@@ -19,23 +19,24 @@ while IFS= read -r line; do
   out="$("$script" "$agent" "$pid" --dry-run 2>&1)"; rc=$?
   [[ $rc -eq 0 ]] || { fail "$agent $pid: exit $rc: $(tail -n 1 <<<"$out")"; continue; }
   grep -qF "branch $br" <<<"$out" || fail "$agent $pid: dry run does not print branch $br"
-done < <(for f in "$integ"/docs/shifts/packages/*.md; do head -n1 "$f"; done)
+done < <(for f in "$integ"/docs/shifts/packages/*.md; do head -n1 "$f"; done | grep -v '^### sofia, ')
+ron_pkg="$(basename "$(ls "$integ"/docs/shifts/packages/R*.md | head -n1)" .md)"
 [[ $count -gt 0 ]] || fail "no package headings found"
 
 out="$("$script" ron R9999x --dry-run 2>&1)"; rc=$?
 [[ $rc -eq 2 ]] || fail "made-up ID: exit $rc, expected 2"
 grep -q 'R9999x' <<<"$out" || fail "made-up ID: message does not name it: $out"
 
-out="$(env -u PASCALINE_QALC_DL_DIR "$script" ron R15c1 --dry-run 2>&1)"
+out="$(env -u PASCALINE_QALC_DL_DIR "$script" ron "$ron_pkg" --dry-run 2>&1)"
 grep -qE 'PASCALINE_QALC_DL_DIR=[^ ]*engine/qalc/_downloads' <<<"$out" || fail "dry run does not print the tarball dir to export"
 
 # A15 point 2: a gorge package is audited by Opus even when the line says sonnet; the raise is printed.
 out="$("$script" gorge "$(basename "$(ls "$integ"/docs/shifts/packages/G*.md | head -n1)" .md)" --dry-run --audit-model sonnet 2>&1)"
 grep -q 'audit model raised to opus: gorge' <<<"$out" || fail "gorge with --audit-model sonnet: no 'audit model raised to opus' line"
-out="$("$script" ron R15c1 --dry-run --audit-model sonnet 2>&1)"
+out="$("$script" ron "$ron_pkg" --dry-run --audit-model sonnet 2>&1)"
 grep -q 'audit model raised' <<<"$out" && fail "ron with --audit-model sonnet is raised without a reason"
 # point 3: the checks the dry run plans
-out="$("$script" ron R15c1 --dry-run 2>&1)"
+out="$("$script" ron "$ron_pkg" --dry-run 2>&1)"
 grep -qE '^checks: .*docs' <<<"$out" || fail "dry run: the docs check is not planned"
 grep -qE '^checks: .*size' <<<"$out" || fail "dry run: the size check is not planned"
 grep -q 'mismatch' "$here/pipeline.sh" || fail "pipeline.sh does not compare the e2e count with Playwright's summary"
@@ -94,6 +95,54 @@ grep -q 'henri #3: ' <<<"$out" && grep -q 'henri #4 (closing 1 of 2): scripts/pi
 grep -q '#6' <<<"$out" && fail "night.sh --max-steps 5 runs a sixth step: $out"
 grep -q 'audit-model sonnet' "$here/night.sh" && fail "night.sh still names --audit-model sonnet (brief 0c says auto)"
 grep -q '"^## $(date +%F) night"' "$here/night.sh" && fail "night.sh writes the header only once per date"
+
+# A24: each worktree gets its own node_modules (hard-link copy); a machine failure ends the run; a dirty phase-1 is not a conflict
+out="$("$script" ron "$ron_pkg" --dry-run 2>&1)"
+grep -q '^setup: .*cp -al' <<<"$out" || fail "A24: the dry run does not show the setup step (cp -al of node_modules)"
+grep -q 'ln -s "$main/app/node_modules"' "$here/pipeline.sh" && fail "A24: pipeline.sh still links the shared node_modules"
+printf 'sh: 1: svelte-check: command not found\n' > "$tmp/m1.log"; printf 'Error: Cannot find module vitest\nnode_modules missing\n' > "$tmp/m2.log"; printf 'error TS2322: x\n' > "$tmp/m3.log"
+machine_failure "$tmp/m1.log" >/dev/null || fail "A24: 'command not found' is not a machine failure"
+machine_failure "$tmp/m2.log" >/dev/null || fail "A24: 'node_modules missing' is not a machine failure"
+printf 'Error: Cannot find module ./foo\nERR_MODULE_NOT_FOUND\n' > "$tmp/m4.log"
+machine_failure "$tmp/m4.log" >/dev/null && fail "A24: the worker's own 'Cannot find module ./foo' is a machine failure"
+machine_failure "$tmp/m3.log" >/dev/null && fail "A24: a type error is a machine failure"
+grep -q 'NOT MERGED (machine: ' "$here/pipeline.sh" || fail "A24: pipeline.sh has no NOT MERGED (machine: ...)"
+grep -q 'NOT MERGED (phase-1 worktree not clean)' "$here/pipeline.sh" || fail "A24: pipeline.sh has no NOT MERGED (phase-1 worktree not clean)"
+cl="$tmp/clean"; git init -q -b main "$cl"; gc "$cl" base; echo a > "$cl/f"; git -C "$cl" add f
+integ_clean "$cl" && fail "A24: a staged file counts as clean"
+gc "$cl" two; integ_clean "$cl" || fail "A24: a clean worktree is refused"
+echo b >> "$cl/f"; git -C "$cl" add f; gc "$cl" three; echo c >> "$cl/f"; integ_clean "$cl" && fail "A24: an uncommitted change counts as clean"
+git -C "$cl" checkout -q f
+git -C "$cl" branch other; git -C "$cl" checkout -q other; echo x > "$cl/g"; git -C "$cl" add g; gc "$cl" og; git -C "$cl" checkout -q main
+echo y > "$cl/g"; git -C "$cl" add g; gc "$cl" mg
+git -C "$cl" merge other >/dev/null 2>&1; merge_failure_reason "$cl" "$tmp/m1.log" | grep -q '^conflict' || fail "A24: unmerged files are not a conflict"
+git -C "$cl" merge --abort >/dev/null 2>&1
+merge_failure_reason "$cl" "$tmp/m3.log" | grep -q '^conflict' && fail "A24: a failure without unmerged files is called a conflict"
+
+# A24, behaviour: a sandbox repo with stub claude/npm runs pipeline.sh itself (no real agent)
+sb="$tmp/sb"; mkdir -p "$sb/bin" "$sb/tools" "$sb/docs/shifts" "$sb/app/node_modules/x"; git init -q -b main "$sb"
+printf '#!/bin/sh\nexit 0\n' > "$sb/tools/devlock.sh"; chmod +x "$sb/tools/devlock.sh"
+: > "$sb/docs/shifts/brief.md"; echo t > "$sb/tracked"; echo t > "$sb/app/keep"; git -C "$sb" add -A; gc "$sb" init; git -C "$sb" branch phase-1
+cat > "$sb/bin/claude" <<'STUB'
+#!/bin/sh
+case "$*" in
+  *"--agent sofia"*) [ -z "$SB_DIRTY" ] || echo dirty >> "$SB_DIRTY/tracked"; echo APPROVED;;
+  *) echo w >> w.txt; git add w.txt; git -c user.name=t -c user.email=t@t commit -qm work; echo done;;
+esac
+STUB
+printf '#!/bin/sh\necho "sh: 1: svelte-check: command not found"; exit 1\n' > "$sb/bin/npm"; chmod +x "$sb/bin/claude" "$sb/bin/npm"
+sbrun() { (cd "$sb" && PATH="$sb/bin:$PATH" "$@"); }
+out="$(sbrun "$script" ron "sandbox task" --id T1 --branch p1/t1 --checks typecheck 2>&1)"
+grep -q '^RESULT #1 T1: NOT MERGED (machine: typecheck: ' <<<"$out" || fail "A24: a check printing 'command not found' does not end as NOT MERGED (machine: ...): $out"
+ls "$sb"/.tasks/*/fail-*.txt >/dev/null 2>&1 && [[ -n "$(cat "$sb"/.tasks/*/fail-*.txt)" ]] && fail "A24: a machine failure was handed to a fix round (fail file written)"
+[[ -e "$sb"/.tasks/*/fix-1.in ]] 2>/dev/null && fail "A24: a machine failure started a fix round"
+[[ -d "$sb/app/node_modules" && ! -L "$sb/app/node_modules" ]] || true
+git -C "$sb" worktree remove --force "$sb"/.claude/worktrees/pl-001-t1 2>/dev/null; git -C "$sb" branch -D p1/t1 >/dev/null 2>&1
+out="$(SB_DIRTY="$sb/.claude/worktrees/phase-1" sbrun "$script" ron "sandbox task" --id T2 --branch p1/t2 --checks none 2>/dev/null)"
+grep -q '^RESULT #2 T2: NOT MERGED (phase-1 worktree not clean' <<<"$out" || fail "A24: a dirty phase-1 does not end as NOT MERGED (phase-1 worktree not clean): $out"
+git -C "$sb" log phase-1 --format=%s | grep -q '^Merge' && fail "A24: a dirty phase-1 was merged into"
+# setup_node_modules: a failed copy leaves no half-filled directory
+grep -q 'node_modules.tmp' "$here/pipeline.sh" || fail "A24: setup_node_modules copies in place (not atomic)"
 
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
