@@ -7,7 +7,7 @@ import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { rewriteAngles } from "../input/angles.ts";
-import { throughInfinity } from "./novalue.ts";
+import { lostNumber, throughInfinity } from "./novalue.ts";
 
 describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
   let host: EngineHost;
@@ -30,6 +30,28 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     // At Home's own budget the exact path times out and the float path gives undef (with 5 s the exact path finds it).
     const r = host.home("sqrt(asinh(asin(3.7)))", defaultHomeSettings).result;
     expect(r).toMatchObject({ ok: false, error: "noValue", path: "float-timeout" });
+  });
+  it("refuses Giac's text with no free name even when its evalf is finite; a float result is never refused (F50, Opus pass 45)", () => {
+    const never = () => false;
+    try {
+      // Giac keeps asin(acos(pi*pi)) as text of type expression: refused "noValue" (decisions.md "F50, F51").
+      const text = giac.eval("pasT:=asin(acos(pi*pi))");
+      expect(text.replace(/\s/g, "")).toBe("asin(acos(pi*pi))");
+      expect(lostNumber(giac, "pasT", "asin(acos(pi*pi))", text, never, 1, never)).toBe("noValue");
+      // Its evalf is undef in this Giac; with a finite evalf (a patched acos, our own MPFR route) it is refused all the
+      // same: only an infinite evalf changes the reason, to "overflow".
+      const finite = { eval: (t: string): string => (t.startsWith("evalf(") ? "1.5-0.5*i" : giac.eval(t)) };
+      expect(lostNumber(finite, "pasT", "asin(acos(pi*pi))", text, never, 1, never)).toBe("noValue");
+      // Guard: a float result whose check failed (Giac's float, of type real or complex, not expression) is not refused.
+      for (const f of ["evalf(asin(3.7))", "evalf(sin(10^50))"]) {
+        const out = giac.eval(`pasF:=${f}`);
+        expect(giac.eval("type(pasF)").trim(), f).not.toBe("expression");
+        expect(lostNumber(finite, "pasF", f, out, never, 1, never), f).toBeNull();
+      }
+    } finally {
+      giac.eval("purge(pasT)");
+      giac.eval("purge(pasF)");
+    }
   });
   it("refuses an infinite definite integral in Home; the CAS view keeps Giac's +infinity", () => {
     expect(home("int(1/x^2,x,-1,1)")).toMatchObject({ ok: false, error: "integralDiverges" });
