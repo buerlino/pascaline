@@ -19,3 +19,19 @@ audited_head_check() {
 from_opus_pass() {
   if grep -q '^OPUS PASS' "$1"; then sed -n '/^OPUS PASS/,$p' "$1"; else cat "$1"; fi
 }
+
+# machine_failure <check log>: succeeds when the log shows the machine, not the code, failed (A24): a missing tool or node_modules.
+machine_failure() {
+  grep -qE 'command not found|node_modules (is )?missing|Cannot find module|ERR_MODULE_NOT_FOUND|ENOENT.*node_modules' "$1" 2>/dev/null
+}
+
+# integ_clean <phase-1 worktree>: succeeds when nothing is staged or changed in it (untracked files do not count) (A24).
+integ_clean() {
+  [[ -z "$(git -C "$1" status --porcelain --untracked-files=no)" ]]
+}
+
+# merge_failure_reason <phase-1 worktree> <merge log>: "conflict" only when git lists unmerged files, else the log's last line (A24).
+merge_failure_reason() {
+  if [[ -n "$(git -C "$1" diff --name-only --diff-filter=U)" ]]; then echo conflict
+  else echo "merge failed: $(tail -n 1 "$2" | cut -c1-200)"; fi
+}

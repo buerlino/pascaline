@@ -102,7 +102,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
 - **G9. Number formats against the G2** (item 15: six formats, digits as decimal places, a thousands separator): decide in the settings and help pass.
 - **K1:** a pending one-shot Shift is used up by the first drag step; a tap keeps it. **K5:** the gestures in the help texts (release R4).
-- **The pipeline:** a worktree's `node_modules` and a machine failure (**A24**); the golden gate gates its own scripts (**A25**); the checks run on a prebuilt engine, so a Giac patch (G75) cannot pass them (**A28**).
+- **The pipeline:** a worktree's `node_modules` and a machine failure (**A24** done); the golden gate gates its own scripts (**A25**); the checks run on a prebuilt engine, so a Giac patch (G75) cannot pass them (**A28**).
 - **A15's tests** (Opus pass 20, annabell): `scripts/pipeline.test.sh` checks the planned size and docs checks and the gorge raise against fixed dry-run echo lines, not `want_checks` and `resolve_audit_model`, so a regression there passes; the dry run prints no raise for `--model opus`.
 - **C3. CI:** a GitHub Actions workflow calling `npm run gate` (needs your OK). **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; the version is A7.
 - The size test does not cover CSS (25.8 kB raw at 2026-10-12): a line of its own if it passes 40 kB.
