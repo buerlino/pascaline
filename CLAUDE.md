@@ -22,19 +22,15 @@ PASCALINE_DL_DIR=<main checkout>/engine/giac/_downloads   # in a worktree: reuse
 ```
 Devices, locks and timings: `tools/README.md` (`tools/devlock.sh acquire host-cpu <name> 1800` around heavy work).
 
-## Pipeline (details: docs/shifts/rules.md section 4, brief.md section 0c)
-- A work package runs as `scripts/pipeline.sh <ron|gorge|annabell|sandra> "<ID or task>" [--model M] [--audit-model auto|sonnet|opus] [--branch B] [--no-worker] [--dry-run]` (until A10 is merged, export `PASCALINE_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads` first): a context bundle (the package text, the files it names, the definition of done), one fresh headless worker in its own worktree, the deterministic checks with at most two fix rounds on the failing output only, sofia's audit on `git diff -U5 phase-1...<branch>` plus the acceptance criteria, then `git merge --no-ff` into `phase-1`. Never merge or start a worker another way.
-- henri (night only) reads brief section 0c and the log's tail with Read and Grep, and replies with one `scripts/pipeline.sh` line that `scripts/night.sh` runs; no Agent spawns, no diffs or tests in his context. `night.sh` starts a fresh henri for every decision. By day the owner runs one package at a time (P17); a finished branch is merged with `--no-worker` (A10).
-- Every 3rd finished task `scripts/gc.sh` archives bundles and handoffs into `.tasks/archive/`, deletes scratch, and checks CLAUDE.md and docs/README.md for stale paths. `.tasks/` (gitignored) holds bundles, logs and the counter; `.coord/log.md` gets one line per step.
-- Context hygiene: `.claude/settings.json` denies reads of build output, caches, lock files, screenshots and run logs. Read sections (`grep -n '^#'`), not whole files; the owner's untracked files are not yours.
+## Pipeline
+Every package runs through `scripts/pipeline.sh` (docs/shifts/rules.md section 4; the night queue is brief.md section 0c); never merge or start a worker another way. `.tasks/` (gitignored) holds bundles, logs and the counter; `.coord/log.md` gets one line per step.
+Context hygiene: `.claude/settings.json` denies reads of build output, caches, lock files, screenshots and run logs. Read sections (`grep -n '^#'`), not whole files; the owner's untracked files are not yours.
 
 ## Repo layout
 `app/` (web app: Svelte 5, keyboard, MathLive entry, parser, MathPrint, engine client), `engine/giac/` (engine build + patches), `engine/qalc/` (libqalculate build), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `find/` (Find data), `tests/golden/` (golden cases + oracle), `tests/engine/`, `tools/` (devices, probes, index generator), `scripts/` (pipeline), `docs/` (index: docs/README.md), `fastlane/`, `fdroid/`, `logo/`, `build.sh`, `spike/` (Phase 0 record), `.claude/agents/` (ron, gorge, annabell, sandra, sofia, henri).
 
 ## Conventions
-- Small, focused modules; engine code knows nothing about the UI; the UI never calls Giac directly (async `MathEngine` in a Worker, every call cancellable).
-- TypeScript strict, no `any`. User-facing strings go through the i18n table. Every source file starts with `// SPDX-License-Identifier: GPL-3.0-or-later`.
-- Every bug fixed gets a regression test first. Golden cases carry `source:` (`device`, `virtual-calc`, `oracle`, `derived`, `assumed`); never values from memory.
+- Small, focused modules; engine code knows nothing about the UI. TypeScript strict, no `any`; user-facing strings go through the i18n table. Every other code rule is in docs/rules-core.md.
 - New dependency: GPL-3.0-compatible, pinned, recorded in `THIRD_PARTY.md`. Prefer upstream fixes over forks.
 - Commits: Conventional Commits with `git commit -s`; workers on `p1/<name>-<slug>` from `phase-1`; merges `--no-ff`; never `master`, never force, never push.
 - Docs: one place per fact, rewrite in place (no "amended" notes); shared docs (`docs/*`, `CLAUDE.md`, `THIRD_PARTY.md`, `.claude/agents/*`) change only as a package's report says or by the owner. Size budgets and links: `node tools/docs-check.mjs` (in `npm run gate`); open packages are one file each in `docs/shifts/packages/`; history in `docs/archive/`.

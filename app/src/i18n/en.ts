@@ -4,7 +4,6 @@ import { enEngine } from "./enEngine.ts";
 
 export const en = {
   ...enEngine,
-  "app.name": "Pascaline",
   "view.home": "Home",
   "view.cas": "CAS",
   "key.shift": "shift",
@@ -163,7 +162,6 @@ export const en = {
   "settings.haptics.webNote": "In the browser only the length can be set; strength needs the Android app.",
   "settings.haptics.off": "Switch key vibration on first",
   "settings.taps": "Shift / Alpha taps",
-  "settings.taps.value": "⇧ {shift} · α {alpha}",
   "settings.taps.shift": "Shift taps",
   "settings.taps.alpha": "Alpha taps",
   "settings.taps.since": "Counted on this device since",

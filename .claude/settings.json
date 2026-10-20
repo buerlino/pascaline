@@ -17,7 +17,6 @@
       "Read(./.coord/*.png)",
       "Read(./.coord/*.apk)",
       "Read(./.coord/*.out)",
-      "Read(./.coord/home-runs/**)",
       "Read(./.coord/device-runs.jsonl)",
       "Read(./.coord/tmpbuild/**)",
       "Read(./.tasks/archive/**)",
@@ -29,8 +28,7 @@
       "Read(./app/test/gallery/**)",
       "Read(./app/public/engine/**)",
       "Read(./app/src/find/_gen/**)",
-      "Read(./tools/probes/_out/**)",
-      "Read(./python/**)"
+      "Read(./tools/probes/_out/**)"
     ]
   }
 }

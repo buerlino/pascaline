@@ -10,7 +10,7 @@
 **Why.** The G2's flow is the backbone; principle 3 is what we add to it, and today it is broken in our own layer between Giac and the screen, not in the keys or the parser. Of the 16 open bugs (backlog F44–F59, rechecked on `da7a59c`), 10 are wrong code of ours; in the other 6 the wrong value comes from Giac and our layer passes it on under `=`, `≈` or as Giac's text. Ten reach users today. So we harden that layer before anything widens what reaches it, and fix each bug at its cause (P18, P19). The ron lane by day touches no engine code and goes on unchanged.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **R15c1 → R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**.
+1. **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**.
 2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 and R40 after G76).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
 4. annabell: **A16** again after G53, **A9** and **A11** with a device, **A18**, **A24**, **A25**, **A22**, **A19** (G64 waits for it), **A12**, **A4b** after R4b, **A20** with the Tab One, **A21** after F-Droid's answer, **A7 → A8** on the owner's go.
@@ -46,8 +46,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | day | now | ~0.25 d |
 | [A20](packages/A20.md) | The golden Home and precision stages in the WebView | annabell, Sonnet | day (device) | the Tab One connected | ~0.25 d |
 | [A21](packages/A21.md) | libqalculate out of the build (P22) | annabell, Sonnet | day | F-Droid's answer | ~0.5 d |
-| [R15c1](packages/R15c1.md) | The status line takes Apps, Menu and the views | ron, Sonnet | day | R50b | ~0.75 d |
-| [R15c2](packages/R15c2.md) | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | day | R15c1 | ~1.5 d |
+| [R15c2](packages/R15c2.md) | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | day | now | ~1.5 d |
 | [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | R15c2 | ~0.5 d |
 | [R15c4](packages/R15c4.md) | First-start tips | ron, Sonnet | day | R15c2 | ~0.5 d |
 | [R55](packages/R55.md) | Digit groups in drawn results | ron, Sonnet | day | R15c4 | ~0.5 d |
@@ -169,7 +168,7 @@ The pipeline hands you a bundle: your package file (`docs/shifts/packages/<ID>.m
 - **From 2026-10-13:** `docs/decisions.md` P11, docs/03 section 0 rules 5–13 (they bind every package: one interaction model, keys never move, vertical space, removal tests), `docs/05-ui-plan.md` with its section 7, and `docs/feedback.md`.
 - `docs/decisions.md`: P8, P9, P10, P15, P16, P17 and the defaults entry "2026-10-12 Architecture for the engineer core" (archive; docs/04 holds it). These are decided; don't reopen them. If a docs/04 decision turns out wrong in the code, don't change it silently: finish what you can, and put the evidence under "Needs a decision" in your report.
 - Not in milestone 4: matrices (milestone 6; the list key alone is R54), bases and everyday functions (milestone 6; `par` and `eseries` alone are G30), Help = context help (milestone 6), prefix entry chips (gated by task 3).
-- **No coordinator to message.** Stay inside the files your package names. Shared files, this brief among them, follow rules section 5; devices are annabell's.
+- **No coordinator to message.** Stay inside the files your package names. Shared files follow rules section 5; devices are annabell's.
 
 ### Your report (every package)
 End with a commit whose message body is the report. The audit and the Opus pass read it with `git log -1`. It holds:

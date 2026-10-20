@@ -65,10 +65,6 @@ android/gradle/
 android/gradlew
 android/gradlew.bat
 
-# Leftovers of the removed MicroPython build (P11, A5); kept on disk, never tracked
-python/_downloads/
-python/_out/
-
 # libqalculate build: build tree, downloaded tarballs and output (engine/qalc/build-wasm.sh)
 engine/qalc/_work/
 engine/qalc/_downloads/
