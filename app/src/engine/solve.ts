@@ -106,6 +106,18 @@ function knownSubst(knowns: KnownValue[] | undefined): { names: string[]; wrap: 
   return { names, wrap: (e) => `subst(${e},[${names.join(",")}],[${vals.join(",")}])` };
 }
 
+/** G68: a result computed from knowns confirms no more digits than the least confirmed known (M4-7); a ⚠ known gives ⚠. */
+function capByKnowns(r: HomeResult, knowns: KnownValue[] | undefined, digits: number): HomeResult {
+  const cap = Math.min(Infinity, ...(knowns ?? []).flatMap((k) => (k.digits === undefined ? [] : [k.digits])));
+  if (!r.ok || !r.value || !(cap < (r.reliableDigits ?? digits))) return r;
+  const facts = { value: r.value, exactRational: false, reliableDigits: Math.max(1, cap) };
+  return { ...r, ...facts, display: formatConfirmed(facts, { format: "STD", digits })!, full: formatConfirmed(facts, { format: "STD", digits: valuePrecision(digits) })! };
+}
+function capOutcome(o: SolveOutcome, knowns: KnownValue[] | undefined, digits: number): SolveOutcome {
+  if (!o.ok) return o;
+  return { ...o, warn: o.warn || (knowns ?? []).some((k) => k.warn), roots: o.roots.map((x) => ({ ...x, result: capByKnowns(x.result, knowns, digits) })) };
+}
+
 const HAS_EQ = /(^|[^:<>=!])=([^=]|$)/;
 
 /** Giac text of left − right (or the expression itself), decimals exact, knowns substituted. */
@@ -127,13 +139,13 @@ export function solveRequest(giac: Giac, req: SolveRequest, h: HomeSettings, ext
   for (const v of [...vars, ...ks.names]) if (!IDENT.test(v)) return fail("bad-input", `bad variable name ${v}`, t0);
   if (ks.names.some((n) => vars.includes(n))) return fail("bad-input", "a variable is both known and unknown", t0);
   try {
-    return withUnassigned(giac, [...vars, ...ks.names], () => {
+    return capOutcome(withUnassigned(giac, [...vars, ...ks.names], () => {
       if (req.kind === "poly") return polyRoots(giac, req.equation, req.unknown, ks.wrap, s, t0);
       if (req.equations.length !== req.unknowns.length || req.guesses.length !== req.unknowns.length || !req.unknowns.length)
         return fail("bad-input", "need as many equations and guesses as unknowns", t0);
       if (req.unknowns.length === 1) return one(giac, req.equations[0]!, req.unknowns[0]!, req.guesses[0]!, ks, s, t0);
       return system(giac, req.equations, req.unknowns, req.guesses, ks.wrap, s, t0);
-    });
+    }), req.knowns, s.digits);
   } finally {
     giac.eval(`Digits:=${h.digits}`);
   }

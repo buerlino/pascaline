@@ -93,7 +93,12 @@ export interface EngineTimings {
 /** A variable held at a fixed value while others are solved for (Solve app Num view). */
 export interface KnownValue {
   name: string;
+  /** Every confirmed digit of the value (an answer's full text), or what was typed. */
   value: string;
+  /** Confirmed digits of `value` (G68): a result computed from it cannot confirm more. Absent = typed, exact. */
+  digits?: number;
+  /** The value came from a ⚠ answer: the result passes the ⚠ on. */
+  warn?: boolean;
 }
 
 export type SolveRequest =

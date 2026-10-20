@@ -90,6 +90,13 @@ export class SolveApp implements AppInstance {
   get active(): string[] {
     return this.slots.active.map((i) => this.giac[i] ?? "").filter((g) => g !== "");
   }
+  /** G68: what an unknown carries into the engine: every confirmed digit of an answer (typed values stay exact), its facts. */
+  known(name: string): KnownValue {
+    const full = this.copies[name];
+    if (full === undefined) return { name, value: this.value(name) };
+    const digits = full.replace(/E.*$/, "").replace(/\D/g, "").replace(/^0+/, "").length;
+    return { name, value: full.replace("E", "e"), digits: Math.max(1, digits), ...(this.warned[name] ? { warn: true } : {}) };
+  }
   value(name: string): string {
     return this.values[name] ?? "0";
   }
@@ -273,7 +280,7 @@ export class SolveApp implements AppInstance {
       this.report = { names, info: t("solve.tooFewUnknowns"), warn: true, ok: false };
       return;
     }
-    const knowns: KnownValue[] = this.unknowns.filter((u) => !names.includes(u)).map((u) => ({ name: u, value: this.value(u) }));
+    const knowns: KnownValue[] = this.unknowns.filter((u) => !names.includes(u)).map((u) => this.known(u));
     this.report = { names, info: t("history.working"), warn: false, ok: true };
     const r = await this.job(() =>
       this.calc.solve({ kind: "equations", equations, unknowns: names, guesses: names.map((u) => this.value(u)), knowns }, this.host.settings),
@@ -290,7 +297,7 @@ export class SolveApp implements AppInstance {
     const [equation] = this.active;
     const name = this.selected;
     if (!equation || !name) return;
-    const knowns: KnownValue[] = this.unknowns.filter((u) => u !== name).map((u) => ({ name: u, value: this.value(u) }));
+    const knowns: KnownValue[] = this.unknowns.filter((u) => u !== name).map((u) => this.known(u));
     this.report = { names: [name], info: t("history.working"), warn: false, ok: true };
     const r = await this.job(() => this.calc.solve({ kind: "poly", equation, unknown: name, knowns }, this.host.settings));
     if (!r) {
