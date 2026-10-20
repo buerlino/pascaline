@@ -99,12 +99,10 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
 | 66 | [G69](packages/G69.md) a bound variable inherits no facts | gorge, Sonnet | `p1/gorge-m4-boundfacts` | held (owner) | 1 h |
-| 67 | [G70](packages/G70.md) Area refuses only where Home does | gorge, Sonnet | `p1/gorge-m4-areaundef` | — | 1 h |
 | 68 | [R69](packages/R69.md) Copy session writes the screen's mark | ron, Sonnet | `p1/ron-m4-copymark` | held (owner) | 45 min |
 | 69 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | A28 | 1.5 h |
 | 70 | [G60](packages/G60.md) no double inside an MPFR result | gorge, Opus | `p1/gorge-m4-mpfrdoubles` | G75 | 1.5 h |
 | 71 | [G56](packages/G56.md) the CAS check reads through a user function | gorge, Opus | `p1/gorge-m4-complexbody` | G60 | 1 h |
-| 72 | [G67](packages/G67.md) Giac's flags restored, never logged | gorge, Opus | `p1/gorge-m4-flags` | — | 1.5 h |
 | 74 | [G65](packages/G65.md) names from Giac's state (S13), with F58 | gorge, Opus | `p1/gorge-m4-statefacts` | G67 | 2 h |
 | 75 | [G66](packages/G66.md) a store counter in Giac (next patch number) | gorge, Opus | `p1/gorge-m4-storecounter` | held (owner) | 1.5 h |
 | 75a | [G82](packages/G82.md) Home's budget counts steps (the patch after G66's) | gorge, Opus | `p1/gorge-stepbudget` | G66 | 2 h |
