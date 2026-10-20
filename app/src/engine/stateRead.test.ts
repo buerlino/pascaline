@@ -2,6 +2,7 @@
 // G65: the call after an input, as Giac prints it (texts from the pinned build, probe 2026-10-21).
 import { describe, expect, it } from "vitest";
 import { afterCall, changesOf, isOurs, parsePrinted, readsOf, splitAfter, tableOf } from "./stateRead.ts";
+import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 
 describe("parsePrinted", () => {
   it("reads lists, atoms and strings whose quotes Giac doubles", () => {
@@ -60,5 +61,20 @@ describe("afterCall and splitAfter", () => {
     expect(s.flags).toBe("[[0,0],0]");
     expect(readsOf(s.read, "b").names).toEqual(["b"]);
     expect(s.state.raw).toBe("0");
+  });
+});
+
+describe.skipIf(!giacAvailable())("the state part on Giac (Opus pass 49's probe)", () => {
+  it("reads a stored value one level deep, calls nothing and evaluates no further", async () => {
+    const { giac } = await loadNodeGiac();
+    for (const t of ["n:=0", "c:=g(y)", "g(t):={n:=n+1;return t;}", "y:=2", "a:=b", "b:=3"]) giac.eval(t);
+    const s = splitAfter(giac.eval(afterCall("0", null, 12)))!;
+    const table = tableOf(s.state, () => false)!;
+    expect(table.get("c")?.text).toBe("g(y)");
+    expect([...table.get("c")!.names].sort()).toEqual(["g", "y"]);
+    expect(table.get("a")?.text).toBe("b");
+    expect(table.get("a")?.names).toEqual(["b"]);
+    expect(table.get("n")?.text).toBe("0");
+    expect(giac.eval("n")).toBe("0");
   });
 });

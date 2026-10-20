@@ -42,6 +42,10 @@ export function readPart(input: string): string {
   return `${READER}(quote(${input}))`;
 }
 
+// The read does not evaluate: `eval` of the map's parameter k gives the name's stored value one level deep, never
+// further, and calls nothing, so it has no side effect (Opus pass 49's probe, stateRead.test.ts): after n:=0, c:=g(y),
+// g(t):={n:=n+1;return t;} and y:=2 it reads c as g(y) with the names g and y, and n stays 0; after a:=b and b:=3 it
+// reads a as b with the name b.
 /** The state part: Digits pinned (a double prints with Digits, so an unchanged value must print alike in every mode),
  *  then put back to `digits` (the mode's, which the settings check expects). */
 export function statePart(digits: number): string {
