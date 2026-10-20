@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { addMul, decText, nearestK, niceStep, parseDec, plainNumber, showDecimal } from "./decimal.ts";
 import { compileDefinition } from "./function/compile.ts";
+import { compileEquation } from "./solve/app.svelte.ts";
 
 describe("exact decimal steps", () => {
   it("adds steps without binary rounding", () => {
@@ -58,6 +59,17 @@ describe("Function definitions", () => {
     const c = compileDefinition("ax");
     expect(c.giac).toBe("a*x");
     expect(c.fn).toBeUndefined();
+  });
+  it("keeps the real odd root of a power, so x^(1/3) draws its left half (P5 (b), R39; S12 row 2b)", () => {
+    const c = compileDefinition("x^{\\frac{1}{3}}");
+    expect(c.giac).toBe("surd(x,3)");
+    expect(c.fn?.(-8)).toBeCloseTo(-2, 12);
+  });
+});
+
+describe("Solve equations", () => {
+  it("keeps the real odd root of a power, as Function does (P5 (b), R39; S12 row 2c)", () => {
+    expect(compileEquation("x^{\\frac{1}{3}}=-2")).toEqual({ giac: "surd(x,3)=-2", error: "" });
   });
 });
 

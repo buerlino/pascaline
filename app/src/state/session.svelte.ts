@@ -497,8 +497,8 @@ export class Session {
         if (live.status !== "pending") return; // Cancel came while the parser chunk or the names were loading
         // R56: single letters are calls when the user's names (Home and CAS share them) hold them as functions
         const userFunctions = parser.userFunctionsOf(this.userNames);
-        // P5 (b), R39: CAS leaves realOddRoots unset, so ∛ stays surd. R65: Home sends a chip that is not exact by name
-        const home = view === "home" ? { realOddRoots: true, chipNames: true } : {};
+        // R65: Home sends a chip that is not exact by name. A power keeps Giac's principal root here, as in CAS (R66)
+        const home = view === "home" ? { chipNames: true } : {};
         const p = parser.latexToGiacInfo(latex, { chips, userFunctions, ...home });
         giac = p.giac;
         defines = p.defines;
