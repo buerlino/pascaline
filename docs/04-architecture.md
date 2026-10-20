@@ -11,13 +11,13 @@ How to read each area: **state** (verified), **decision** (one, with the reason)
 2. **No digit is shown that the engine has not confirmed:** non-rational values are evaluated at two precisions and only agreeing digits are shown; a float from an unaudited function is `⚠`; inverse functions are substituted back like Solve roots (G44 for the inverse distribution functions) (2.4, 2.5).
 3. **Digits up to 30**, working precision `max(30, digits+10)`, value precision `max(40, digits+10)` (2.5).
 4. **Results are reused as chips that carry the full value**; Ans on Shift + `+`; an operator typed on an empty line starts with Ans, as on the reference (2.8).
-5. **Copy gives the full value** (all confirmed digits, up to 40); "as shown", "exact" and LaTeX are in the Menu. Shift + View = Copy and Shift + Menu = Paste, the reference's positions (2.6, 5.1).
+5. **Copy gives the full value** (all confirmed digits, up to 40); "as shown", "exact" and LaTeX are in the Menu. Copy and Shift + Copy = Paste on one key (R15c; 2.6, 5.1).
 6. **CAS floats are marked `≈` and formatted by us.** Typed decimals in CAS become exact, like Home (**P9, accepted by the user 2026-10-12**) (2.9).
 7. *(Python: removed with the app, P11.)*
 8. **Find is one static index generated at build time** (Giac's English help lines, libqalculate's units, constants and prefixes, our alias file), searched by our own ranking code on the main thread, fetched when idle after the engine is ready and parsed on first open (section 3).
 9. **Constants, units, prefixes and results enter the entry line as atomic MathLive macros** (`\const{ID}`, `\unit{ID}`, `\pfx{p}`, `\res{n}`, `\ans`), never as free text (3.6, 4.3).
 10. **The unit view computes on Giac (P15)**, exactly, in the worker already loaded: each unit token (a Find id) becomes its exact SI factor from the Find index times base-dimension symbols. The evaluator refuses mismatched sums, absolute temperatures in arithmetic and functions of quantities with units (section 4).
-11. **Keys:** Math = Find, Shift + Tmpl = the unit view (P11), View = results mode (P16), Shift + View and Shift + Menu = Copy and Paste, Shift + `+` = Ans; every cell in 5.1, every difference from the G2 and its reason in [06-keypad-vs-g2.md](06-keypad-vs-g2.md).
+11. **Keys:** Math = Find, Shift + Tmpl = the unit view (P11), View = results mode (P16), Copy | Paste on one key, Shift + View = Help, Shift + `+` = Ans; every cell in 5.1, every difference from the G2 and its reason in [06-keypad-vs-g2.md](06-keypad-vs-g2.md).
 12. **State:** one IndexedDB store with a schema version; user definitions are persisted and replayed at start, so variables survive a relaunch (6.2).
 13. **The qalc build runs in `build.sh` at build time only** (A2): the Find index takes its constant values and unit factors from it (P15; 7.1). P22 (2026-10-20) replaces it with checked-in numbers (`find/factors.yaml`, A21), refreshed by a developer tool.
 14. **New gates:** an automated size test, the task benchmark, the Find query test, marks in the golden files, `units.yaml`, a per-key Find timing on the Tab One (7.3).
@@ -125,7 +125,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 ### 2.6 Decision: copy and paste
 
-| What | Copy (Shift + View; Menu 3) | Menu 6, Copy as › As shown | Copy as › Exact | Copy as › LaTeX |
+| What | Copy (the Copy key; Menu 3) | Menu 6, Copy as › As shown | Copy as › Exact | Copy as › LaTeX |
 |---|---|---|---|---|
 | Home or CAS number | full value: every confirmed digit up to P (40), trailing zeros dropped, `.` (`,` with the decimal-comma setting), plain for 1E-4 ≤ \|x\| < 1E21, else `d.ddd…E±k` | display text, without the mark | Giac's exact text when it exists (`1/3`, `sqrt(2)`) | the result LaTeX |
 | Complex | `a+b*i`, each part as above | yes | yes | yes |
@@ -226,7 +226,7 @@ No usage boost (P11), so the same query always gives the same order (docs/03 rul
 - Functions insert `\operatorname{name}\left(#0\right)` (`#0`: a selection becomes the argument, R17); templates insert their LaTeX, each with a parser rule and round-trip case.
 
 ### 3.7 Keys inside Find
-Every key types its Alpha letter in lower case (no Alpha press); Shift + key types the key's primary character (digits, `.`); the space key types a space; ⌫ deletes; ▲▼ and the trackpad move the selection; Enter inserts; Esc or Cancel closes. Vars opens Find filtered to variables; ⌫ on an empty query removes the filter. Digits do not pick, unlike the other sheets, because queries need them (`g0`, `log10`, `e24`).
+Every key types its Alpha letter in lower case (no Alpha press); Shift + key types the key's primary character (digits, `.`); the space key types a space; ⌫ deletes; ▲▼ and the trackpad move the selection; Enter inserts; Esc closes. Vars opens Find filtered to variables; ⌫ on an empty query removes the filter. Digits do not pick, unlike the other sheets, because queries need them (`g0`, `log10`, `e24`).
 **Keystroke budget:** an item used before: Math, first letter, Enter (3 presses); a new one: Math, the letters, Enter. Benchmark task 5 checks it.
 
 ### 3.8 The query test
@@ -279,7 +279,7 @@ Risks: a wrong factor that G13's audit against CODATA and the exact definitions 
 ## 5. Keyboard and entry
 
 ### 5.1 Decision: every cell P8 touches, and every free cell
-Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is in brackets (`spec/mapping/vc-2026-10-11/keys.yaml`). "Built" names the package; the rest is planned. R15c (decisions.md) replaces the top cluster's rows 0–2 and their rows below: R15c2 rewrites this table.
+Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is in brackets (`spec/mapping/vc-2026-10-11/keys.yaml`). "Built" names the package; the rest is planned. Rows 0–2 are R3 (decisions.md "R15c", built in R15c2).
 
 | Key | Decided | Source and why |
 |---|---|---|
@@ -292,20 +292,23 @@ Positions use our rows and columns (`spec/keyboard.yaml`); the reference's id is
 | Alpha key [r8c1] | one-shot Alpha with lock flicks; stays its own key (P7 point 4, owner 2026-10-19; reopens if Alpha taps fall near zero) | P7 |
 | a b/c (row 3, col 4) [r4c5] | toggles the last result's form: decimal ↔ fraction, polar ↔ rectangular (built, R10) | G2 item 29, P12 |
 | Exponent key (row 6, col 0) [r7c1] | types the mark `ᴇ` (`\emark`, one token); Shift = Sto ▶ (built, R14) | P12 |
-| Rows 0–2 (Home, CAS, Apps, Mode, Symb, Plot, Num, Menu, Help, the arrows) | layout D (built, R15b); **R15c replaces it** (decisions.md "R15c") | P12, S2, R15b, R15c |
-| Alpha + 0 (quote); Shift + ◀ ▶ (line jumps) | removed (R13); R15c brings the jumps back as ⇤ ⇥ | P12, R15c |
+| Rows 0–2 | R3 (built, R15c2): U1–U6 in columns 0–1; the round pad (one drag surface, a dashed hub, no OK) in columns 2–3; View \| Esc, Undo \| Copy, ⇤ \| ⇥ in columns 4–5. Apps, Mode, the views, Menu: the status line (R15c1) | P12, S2, R15c |
+| Alpha + 0 (quote); Shift + ◀ ▶ (line jumps) | removed (R13); the jumps came back as ⇤ ⇥ (R15c2) | P12, R15c |
 | Shift + 6, Shift + 9 | the G2's palettes: relations and logic; symbols and Greek with `!` and ∞ (built, R18) | P12 |
-| View (row 1, col 4) [r2c4] | results mode: the keypad collapses to a slice (P16, R53); Shift = Help | P7 point 5, P16 |
-| Shift + View, Shift + Menu | Copy and Paste (built, A3); R15c gives Copy its own key | reference |
-| Menu (row 2, col 4) [r3c4] | app menus; Home/CAS: one numbered list of nine on the picked row, else the last result (built, R11; decisions.md S2); R53 makes item 6 Plot | P8, S2, S9 |
-| Help | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; P8 left Help free |
-| User keys | U1–U3 with Shift layers (built, R15b); U1–U6 with tap, Shift and Alpha (R15c), set from Find (R4b) | R15b, R15c |
+| View (row 0, col 4) [r2c4] | results mode: the keypad collapses to a slice (P16, R53); Shift = Help (milestone 6); both dead and dimmed until built | P7 point 5, P16, R15c |
+| Esc (row 0, col 5) [r1c5] | stops a running job, closes Settings, goes back one sheet level, drops a picked row, else clears the line; also the hardware Escape; Shift = Clear (R15c2) | reference; R15c point 3 |
+| Undo (row 1, col 4) | undo; Shift = Redo; dead without an entry line (R15c2) | P13, R16, R15c |
+| ⇤ ⇥ (row 2, cols 4–5) | the start and end of the line; Shift: the start and end of the box the cursor is in; dead without an entry line (R15c2) | R15c |
+| Copy (row 1, col 5) | Copy, Shift = Paste (built, A3; on its own key since R15c2): the picked row's or the last result's full value | reference; R15c |
+| ☰ on the status line (the G2's Menu key [r3c4]) | app menus; Home/CAS: one numbered list of nine on the picked row, else the last result (built, R11; decisions.md S2); R53 makes item 6 Plot | P8, S2, S9 |
+| Shift + View (Help) | context help: the Find preview of the function before the cursor; with none there, Find (milestone 6) | ours; P8 left Help free |
+| User keys | U1–U6, all empty, with tap and Shift (built, R15c2; stored slots of U1–U3 stay valid); Alpha with R15c3; set from Find (R4b) | R15b, R15c |
 | Shift + `+` [r10c5] | Ans (`\ans`, built, R2) | reference |
 | Shift + `−` [r9c5] | Base: the last result in HEX, BIN, OCT, DEC; word size (EN6) | reference: Base |
 | Shift + 5 [r8c3]; Shift + 8 [r7c3] | `[ ]` vector or matrix template (EN5); `{ }` list (built, R54) | reference |
 | Shift + 4 [r8c2]; Shift + 7 [r7c2] | the matrix editor (EN5); the list editor, deferred with Statistics | reference: Matrix, List |
 | Unit slots | the unit pad (`spec/unit-pad.yaml`, docs/research/r9-unit-pad.md): prefix and unit cells over the maths rows, S5's arrangement, 18 user slots; Enter to the next slot, `→` the end slot. Until R24c, `spec/keyboard.yaml` `unit_slot:` holds S1's letters | P11, S1, P14 |
-| Unassigned Shift cells (14 on 2026-10-14: Shift + ▲ ▼ ◀ ▶, Vars, a b/c, `( )`, `,`, 1, 0, Fmt, and Symb, Plot, Num until R15c) | they get the functions the task benchmark shows are pressed most, not a list made in advance | decisions.md "The letters stay" |
+| Unassigned Shift cells (11 since R15c2: Shift + ▲ ▼ ◀ ▶, Vars, a b/c, `( )`, `,`, 1, 0, Fmt) | they get the functions the task benchmark shows are pressed most, not a list made in advance | decisions.md "The letters stay" |
 | Prefix chips | a strip above the keypad, only after a number, only if task 3 shows a gain | P8 |
 
 

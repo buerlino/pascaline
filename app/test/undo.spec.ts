@@ -60,7 +60,7 @@ test("a recalled entry whose chip key is taken keeps both values apart, also aft
   if (m) expect(chips[`res:${m[1]}`]?.value).toMatch(/^(1\/3|0\.3{12,})/);
 });
 
-// ---- the key (Undo, R15c2; it was Undo) ----
+// ---- the key (Undo, R15c2; it was Shift + Cancel) ----
 
 const undoKey = (page: Page) => tap(page, ["undo"]);
 

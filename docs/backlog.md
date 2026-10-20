@@ -27,7 +27,8 @@ The one place for "where are we and what's left", one or two lines per open item
 5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`. The backup (R38) protects later moves only. Android's own backup is off (A23): its phone-to-phone transfer no longer carries Pascaline's data, only our backup file does.
 6. **Outside testers:** you run two 30-minute rounds, after R4b and after R24c, from [r18](research/r18-outside-test.md) and its sheet; R70 (every press counted) comes first.
 7. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-8. **Later, not now:** the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
+8. **Redo after a deletion** (R15c2): say if Redo must also work after ⌫ before the MathLive report (decisions.md "Needs the user").
+9. **Later, not now:** the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
 
 ### Checks on the phone (one list; each by the owner, or annabell when a package names it)
 - Flick misfires in a minute of typing (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35).
@@ -71,7 +72,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **R49. Settings as a list of rows** (feedback #50; decisions.md "Settings: a list of rows").
 - **R50b–R50e. Themes** (R50b–R50d done; R50e left) (feedback #53, #55; decisions.md "R50"): Pascaline in the app, the generator and four more families, Plain keys and High contrast, Settings › Appearance; then **R12b, R12c. The visual pass** (F6 = U5 + U7; the mockups R12a merged, the owner's notes feedback #54, #55; A4a's sheet rise in R12c).
 - **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).
-- **R53. Results mode on the View key** (P16, S9; K4).
+- **R53. Results mode on the View key** (P16, S9; it replaces the compact keypad).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
 - **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** [x] **A11**. **The defs replay:** [x] **A12** (p50 158 ms, library 403 ms), then [G83](shifts/packages/G83.md) (functions defined on first use) and a Tab One run, before R59.
 - **The backup:** **R38a**, **R38b** (S6 decided 2026-10-20, R11).

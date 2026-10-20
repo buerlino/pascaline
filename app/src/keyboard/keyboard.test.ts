@@ -81,7 +81,8 @@ describe("keyboard spec", () => {
 
   it("every key says where it comes from", () => {
     for (const k of keyboard.keys) expect(["virtual-calc", "assumed", "device"], k.id).toContain(k.source);
-    // 37 since R15c2: Apps, Symb, Plot, Num, Help and View left the cluster (their G2 functions are on the status line)
+    // 37 since R15c2 (42 before): Apps, Symb, Plot, Num and Help left the cluster (their G2 functions are on the status
+    // line), and View, still at row 0 column 4, became `assumed` (results mode and Help are ours, not the G2's)
     expect(spec.match(/source: virtual-calc/g)?.length ?? 0).toBeGreaterThanOrEqual(37);
   });
 

@@ -78,7 +78,7 @@ test.describe("by hardware keys", () => {
     await expect(page_(page)).toBeHidden();
   });
 
-  test("the keypad's keys drive it too: ▼ ▶ switches vibration on, Cancel closes", async ({ page }) => {
+  test("the keypad's keys drive it too: ▼ ▶ switches vibration on, Esc closes", async ({ page }) => {
     await tap(page, ["@mode", "d5"]);
     await tap(page, ["down", "down", "down", "down", "down", "down", "right"]);
     expect(await page.evaluate(() => window.pascaline.session.settings.haptics.on)).toBe(true);
