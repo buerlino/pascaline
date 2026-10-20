@@ -17,6 +17,7 @@ import { parseLatex } from "../../input/parse.ts";
 import { tc } from "../../clipboard/strings.ts";
 import { t } from "../../i18n/index.ts";
 import { parseDec, plainNumber, showDecimal } from "../decimal.ts";
+import { decimalFromString } from "../../engine/format.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
 import type { AppHost, AppInstance, MenuItem, NavDir, ViewId } from "../types.ts";
 
@@ -40,7 +41,16 @@ interface Stored {
   warned?: Record<string, boolean>;
   /** The full value (Copy, docs/04 2.6) of the unknowns a solve answered; an edit drops it. */
   copies?: Record<string, string>;
+  /** G68f1: the confirmed digits of each copy, from its result's facts, or "exact"; dropped with the copy. A copy without
+   *  an entry (saved before G68f1) is replaced on restore by the shown value, with its shown digits. */
+  confirmed?: Record<string, Confirmed>;
 }
+
+/** Confirmed digits of a copy, or "exact" (an exact rational root: an exact known, never moved). */
+type Confirmed = number | "exact";
+
+/** Significant digits a plain decimal shows (trailing zeros dropped, so never more than are confirmed). */
+const shownDigits = (v: string): number => decimalFromString(v.replace("E", "e"))?.digits.length ?? 0;
 
 /** An equation typed on the entry line as Giac text, or why it does not parse. */
 export function compileEquation(latex: string, userFunctions: ReadonlySet<string> = DEFAULT_USER_FUNCTIONS): { giac: string; error: string } {
@@ -71,6 +81,8 @@ export class SolveApp implements AppInstance {
   report = $state<SolveReport | undefined>(undefined);
   /** The full value of each answered unknown, as Copy gives it (every confirmed digit, up to 40); absent = the stored value. */
   copies = $state<Record<string, string>>({});
+  /** G68f1: confirmed digits of each copy, from the result's facts (never counted from the copy text), or "exact". */
+  confirmed = $state<Record<string, Confirmed>>({});
 
   private jobs = $state(0);
   private readonly host: AppHost;
@@ -89,6 +101,15 @@ export class SolveApp implements AppInstance {
   /** Giac text of the equations that are on and parse. */
   get active(): string[] {
     return this.slots.active.map((i) => this.giac[i] ?? "").filter((g) => g !== "");
+  }
+  /** G68: what an unknown carries into the engine: every confirmed digit of an answer (typed values stay exact), its facts. */
+  known(name: string): KnownValue {
+    const full = this.copies[name];
+    if (full === undefined) return { name, value: this.value(name) };
+    const c = this.confirmed[name];
+    // A copy always has an entry (keepFull, restore); a missing one is not taken for exact.
+    const digits = c === "exact" ? undefined : (c ?? shownDigits(full));
+    return { name, value: full.replace("E", "e"), ...(digits !== undefined ? { digits } : {}), ...(this.warned[name] ? { warn: true } : {}) };
   }
   value(name: string): string {
     return this.values[name] ?? "0";
@@ -156,7 +177,19 @@ export class SolveApp implements AppInstance {
     this.host.copy(shown ? this.fmtValue(name) : await this.fullOf(name));
   }
   private settling: Promise<void> = Promise.resolve();
+  /** Waits for keepFull; a failed copy load leaves the stored value as the known. */
+  private async settled(): Promise<void> {
+    try {
+      await this.settling;
+    } catch (e) {
+      console.warn("solve app:", e);
+    }
+  }
   private dropCopy(name: string): void {
+    if (name in this.confirmed) {
+      const { [name]: _n, ...kept } = this.confirmed;
+      this.confirmed = kept;
+    }
     if (!(name in this.copies)) return;
     const { [name]: _gone, ...rest } = this.copies;
     this.copies = rest;
@@ -174,6 +207,9 @@ export class SolveApp implements AppInstance {
     });
     if (text !== undefined && this.values[name] === display.replace("E", "e")) {
       this.copies = { ...this.copies, [name]: text };
+      // An exact rational root (reliableDigits null) stays an exact known; no facts: the shown digits.
+      const c: Confirmed = typeof r.reliableDigits === "number" ? r.reliableDigits : r.reliableDigits === null ? "exact" : shownDigits(display);
+      this.confirmed = { ...this.confirmed, [name]: c };
       this.save();
     }
   }
@@ -273,7 +309,8 @@ export class SolveApp implements AppInstance {
       this.report = { names, info: t("solve.tooFewUnknowns"), warn: true, ok: false };
       return;
     }
-    const knowns: KnownValue[] = this.unknowns.filter((u) => !names.includes(u)).map((u) => ({ name: u, value: this.value(u) }));
+    await this.settled(); // the full values of the last answers (F53: never the 12-digit display)
+    const knowns: KnownValue[] = this.unknowns.filter((u) => !names.includes(u)).map((u) => this.known(u));
     this.report = { names, info: t("history.working"), warn: false, ok: true };
     const r = await this.job(() =>
       this.calc.solve({ kind: "equations", equations, unknowns: names, guesses: names.map((u) => this.value(u)), knowns }, this.host.settings),
@@ -290,7 +327,8 @@ export class SolveApp implements AppInstance {
     const [equation] = this.active;
     const name = this.selected;
     if (!equation || !name) return;
-    const knowns: KnownValue[] = this.unknowns.filter((u) => u !== name).map((u) => ({ name: u, value: this.value(u) }));
+    await this.settled();
+    const knowns: KnownValue[] = this.unknowns.filter((u) => u !== name).map((u) => this.known(u));
     this.report = { names: [name], info: t("history.working"), warn: false, ok: true };
     const r = await this.job(() => this.calc.solve({ kind: "poly", equation, unknown: name, knowns }, this.host.settings));
     if (!r) {
@@ -353,8 +391,20 @@ export class SolveApp implements AppInstance {
     if (typeof s.selected === "string" && IDENT.test(s.selected)) this.selected = s.selected;
     if (s.warned && typeof s.warned === "object")
       this.warned = Object.fromEntries(Object.entries(s.warned).filter(([k, v]) => v === true && k in this.values));
+    const conf: Record<string, unknown> = s.confirmed && typeof s.confirmed === "object" ? s.confirmed : {};
+    const ok = (v: unknown): v is Confirmed => v === "exact" || (Number.isInteger(v) && (v as number) >= 0);
+    const copies: Record<string, string> = {};
+    const confirmed: Record<string, Confirmed> = {};
     if (s.copies && typeof s.copies === "object")
-      this.copies = Object.fromEntries(Object.entries(s.copies).filter(([k, v]) => k in this.values && typeof v === "string" && /^-?\d[\d.]*(E-?\d+)?$/.test(v)));
+      for (const [k, v] of Object.entries(s.copies)) {
+        if (!(k in this.values) || typeof v !== "string" || !/^-?\d[\d.]*(E-?\d+)?$/.test(v)) continue;
+        const c = conf[k];
+        // A copy saved before G68f1 has no entry: its digits are unknown, so the shown value (every digit confirmed) stands in.
+        const value = this.values[k]!;
+        [copies[k], confirmed[k]] = ok(c) ? [v, c] : [value, shownDigits(value)];
+      }
+    this.copies = copies;
+    this.confirmed = confirmed;
   }
   save(): void {
     this.saveTimer ??= setTimeout(() => this.flush(), 300);
@@ -362,7 +412,7 @@ export class SolveApp implements AppInstance {
   flush(): void {
     if (this.saveTimer !== undefined) clearTimeout(this.saveTimer);
     this.saveTimer = undefined;
-    const s: Stored = { slots: this.slots.toJSON(), values: { ...this.values }, selected: this.selected, warned: { ...this.warned }, copies: { ...this.copies } };
+    const s: Stored = { slots: this.slots.toJSON(), values: { ...this.values }, selected: this.selected, warned: { ...this.warned }, copies: { ...this.copies }, confirmed: { ...this.confirmed } };
     void this.host.kv.set("app.solve", s);
   }
 }
