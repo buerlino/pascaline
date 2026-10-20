@@ -7,6 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
+- **G58, Giac calls that ignore their interrupt:** Giac's symbolic `im()`, `re()` and `simplify` of a root next to a large integer (`acos(120^7.5)`: an ln of `sqrt(30)` times a 15-digit integer) loop without looking at `timeout`, as `regroup` did on long texts and GMP's `factorial` does. G58 guards them by a rule on the text (`heavySplit`, `REGROUP_MAX`) and refuses past `HOME_DEADLINE_MS` (2 s, my default), but a call that loops still needs Cancel. A lasting fix is a `control_c()` check in those loops: our own engine patch, or a report to Parisse. Which route?
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff. Also for the owner: `scripts/pipeline.sh` and `app/scripts/gate.ts` still set `QALC_OUT` for `npm run index`; harmless now, drop it when convenient (shared files, not changed here).
 
 ## Decided proposals

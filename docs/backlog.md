@@ -48,7 +48,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs (rechecked 2026-10-20 on `da7a59c`; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- **F44 → [G58](shifts/packages/G58.md).** Home never answers `exp(1.5ᴇ8)`, `√(e^(2ᴇ8))`, `acos(5!^(2.5+5!))` (Cancel only); `exp(10^7)` takes 2.3 s, `factorial(10^6)` 3.9 s (budget 300 ms). Our JS builds 10^e as a BigInt (`format.ts:459`, `:470`). Family 6; today. r16 F1.
+- [x] **F44 → [G58](shifts/packages/G58.md).** Home answers `exp(1.5ᴇ8)`, `√(e^(2ᴇ8))`, `3+e^(1.5ᴇ8)/asin 3`, `acos(5!^(2.5+5!))` and `exp(10^7)` in under 0.1 s, `factorial(10^6)` in 1 s (Giac's own GMP call); a deadline refuses past 2 s. `acos(5!^(2.5+5!))` at 30 digits stays wrong from the 14th digit under `≈` (a double, F47 → G60). r16 F1.
 - **F45 → [G59](shifts/packages/G59.md).** `√(√(asin(12)))` = `≈ −1.31937971748−0.37637063348i` (right: +1.319…): Giac's `re()` of a nested root takes the other branch, and Home splits through `re()`/`im()`. Family 4; today. r16 F2.
 - **F46 → [G59](shifts/packages/G59.md).** `(sin 3.7 − e)^(0.001·asin(6.02ᴇ8))` wrong from the 4th digit under `≈`, at 30 digits too (was `⚠ 13`): Giac's exact path for a negative base to a complex power. Family 4; today. r16 F3.
 - **F47 → [G60](shifts/packages/G60.md).** A double inside an MPFR result, at 30 digits: `log10(asinh(asin e))` wrong from the 14th digit under `≈`; `asin`/`acos` of a real \|x\| > 1 inside other functions show `⚠ 14` with 12–13 right; `√(asinh(cos 10))` shows a real part 4.7E-15 that is noise. Family 4. r16 F4–F6.
