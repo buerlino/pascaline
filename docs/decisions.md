@@ -7,6 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
+- **2026-10-20 A12: the defs replay on the Tab One is still over 50 ms, and the library replay is far over (OPEN).** 200 definitions: replay p50 158 ms (145–174, p95 about 174), engine ready p50 1487 ms (1351–1563; the bar 1500 is met at the median, not at the slowest run); keyboard usable 713 ms against A4a's 688 (+25, within +50). 200 library programs: replay p50 403 ms (389–440, p95 about 440), engine ready 1817 ms, keyboard 707. G29 took the 200-definition replay from 291 to 158 ms, not to 50. Next lever: replay values lazily (decisions.md "G33 and R56"); since the library p95 is over 50 ms, the lazy-definition package comes before R59. Measure build with the dev engine (no release engine was built), Android 15, WebView 131.0.6778.260, n=7 cold.
 - **A11, on the phone once:** open Menu › Share session (share sheet), Shift + Menu with `1.5e-3` copied, and the r11 section 5 points 1–4 (save picker, file chooser, `accept`, save time). The APK with both plugins and `PascalineFiles` is installed on the Tab One; only the permission check was run there (VIBRATE only).
 
 ## Decided proposals
