@@ -7,7 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- None open.
+- **A20: the golden Home and precision stages differ in the WebView in 11–12 of 579 cases** (Tab One, Android 15, WebView 131.0.6778.260, measure build, same Giac build as the desktop gate; one round; display and mark, the copy text). All are time-budget effects (Home exact budget 300 ms, the `*_icdf` polish), none is WebAssembly, `BigInt` or `Intl`. Open: `fisher_icdf(3,4,1-10^-20)` and `chisquare_icdf(3,1-10^-30)` (12 and 30 digits) show `+infinity` with ⚠ instead of a value with ≈ on the device; `chisquare_icdf(3,0.9)`, `(1,0.95)` and sometimes `(3,0.95)` at 12 digits show ⚠ for ≈; `sum(1.1^k,k,1,500)` copies `5466826164043493585904.63748…` instead of the 1024-digit integer text (display and mark equal). Proposal: a device-speed-independent budget for the icdf polish (gorge, G44), or a `device:` expectation in the golden files. Hard rule 3 asks for a decision.
 
 ## Decided proposals
 
