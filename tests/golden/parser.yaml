@@ -118,8 +118,8 @@ cases:
   - { id: "roots-14", latex: "\\sqrt{\\sqrt{x}}", expect: "x^(1/4)", source: "derived", group: "roots" }
   - { id: "roots-15", latex: "\\frac{\\sqrt{3}}{2}", expect: "sqrt(3)/2", source: "derived", group: "roots" }
   - { id: "roots-16", latex: "\\frac{-b+\\sqrt{b^2-4ac}}{2a}", expect: "(-b+sqrt(b^2-4*a*c))/(2*a)", source: "derived", group: "roots" }
-  # P5 (b), R39: with realOddRoots (Home, Solve, Function; not CAS) a power with a literal exponent p/q, q odd, is the real root
-  - { id: "roots-17", latex: "\\left(-8\\right)^{\\frac{1}{3}}", options: { realOddRoots: true }, expect: "-2", source: "virtual-calc", g2: 11, group: "roots", note: "the G2 gives -2 in Home (items 4 and 11)" }
+  # P5 (b), R39: with realOddRoots (Solve and Function; not Home or CAS, R66) a power with a literal exponent p/q, q odd, is the real root
+  - { id: "roots-17", latex: "\\left(-8\\right)^{\\frac{1}{3}}", options: { realOddRoots: true }, expect: "-2", source: "virtual-calc", g2: 11, group: "roots", note: "the option as Solve and Function set it; the G2 gives -2 (items 4 and 11), Home keeps the principal root (R66)" }
   - { id: "roots-18", latex: "\\left(-8\\right)^{\\frac{2}{3}}", options: { realOddRoots: true }, expect: "4", source: "derived", group: "roots", note: "(real cube root)^2 = (-2)^2" }
   - { id: "roots-19", latex: "\\left(-32\\right)^{\\frac{1}{5}}", options: { realOddRoots: true }, expect: "-2", source: "derived", group: "roots" }
   - { id: "roots-20", latex: "\\left(-8\\right)^{1/3}", options: { realOddRoots: true }, expect: "-2", source: "derived", group: "roots", note: "a flat / in the exponent is the same literal fraction" }

@@ -232,8 +232,8 @@ async function stageHome(): Promise<void> {
         continue;
       }
       const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
-      // A case written as `latex` goes through our parser with Home's options (R39: realOddRoots), its `before` too
-      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
+      // A case written as `latex` goes through our parser with Home's options (no realOddRoots since R66), its `before` too
+      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
       for (const b of c.before ?? []) host.home(giacOf(b), s);
       runs.get(c.id)!.push(host.home(c.latex !== undefined ? giacOf(c.latex) : c.input!, s).result);
     }
@@ -293,7 +293,7 @@ async function runSteps(steps: Step[], digits: number, consts: ConstTable | unde
       host.cas(st.input!, { ...defaultCasSettings, angle: st.angle ?? "rad", digits });
       continue;
     }
-    const p = st.latex !== undefined ? latexToGiacInfo(st.latex, { realOddRoots: true, chips }) : { giac: st.input!, inexact: false };
+    const p = st.latex !== undefined ? latexToGiacInfo(st.latex, { chips }) : { giac: st.input!, inexact: false };
     const r = (st.latex === undefined && (consts || k > 0) ? host.home(p.giac, s, consts, named) : host.home(p.giac, s)).result;
     last = p.inexact ? { ...r, inexactInput: true } : r;
     const full = r.exact !== undefined && r.exact.length <= 2048 ? r.exact : r.full || r.exact;
@@ -591,7 +591,7 @@ async function stageCalls(): Promise<void> {
     for (const c of cases("home.yaml")) {
       if (c.steps) continue;
       const hs: HomeSettings = { ...s, angle: c.settings?.angle ?? "rad" };
-      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
+      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
       for (const b of c.before ?? []) host.home(giacOf(b), hs);
       const n0 = calls();
       host.home(giacOf(c.latex ?? c.input!), hs);
@@ -614,7 +614,7 @@ async function stageInvariants(): Promise<void> {
       // only in DEG cases); it runs in both modes, the setting dropped.
       const angleOnly = c.settings !== undefined && Object.keys(c.settings).every((k) => k === "angle");
       if ((c.settings && !angleOnly) || c.steps || c.beforeHome?.length || c.beforeCas?.length || c.status === "pending" || c.kind === "cas") continue;
-      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t, { realOddRoots: true }) : t);
+      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
       let giac: string;
       try {
         giac = giacOf(c.latex ?? c.input!);
@@ -662,7 +662,7 @@ async function stageInvariants(): Promise<void> {
       if (copy !== undefined && pasted) {
         checked.c++;
         try {
-          const back = (await host()).home(latexToGiac(pasted.latex, { realOddRoots: true }), { ...defaultHomeSettings, digits: 12 }).result;
+          const back = (await host()).home(latexToGiac(pasted.latex), { ...defaultHomeSettings, digits: 12 }).result;
           const f = checkCopy(i.id, rad, copy, back);
           if (f) failures.push(f);
         } catch (e) {

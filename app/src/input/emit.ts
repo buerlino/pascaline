@@ -14,9 +14,9 @@ export interface SerializeOptions {
   userFunctions?: ReadonlySet<string>;
   /**
    * L6 and P5 (b), R39. The root template: an n-th root with odd whole n is the real root (∛(-8) = -2) unless this is
-   * false. The power form only when this is true (Home, Solve and Function set it; CAS does not): a power whose
-   * exponent is a literal fraction p/q (reduced) with q odd is the real root, (-8)^(1/3) = -2 as on the G2 (items 4
-   * and 11). An even q, or any other exponent, keeps the principal root.
+   * false. The power form only when this is true (Solve and Function set it; Home and CAS do not, R66): a power whose
+   * exponent is a literal fraction p/q (reduced) with q odd is the real root, (-8)^(1/3) = -2, so a plot of x^(1/3)
+   * keeps its left half (S12 rows 2b, 2c). An even q, or any other exponent, keeps the principal root.
    */
   realOddRoots?: boolean;
   /**
@@ -269,7 +269,7 @@ function ser(e: Json, o: SerializeOptions): Out {
     case "Power": {
       if (a0 === "ExponentialE" || a0 === "e") return call("exp", [a1], o); // e^x -> exp(x), not exp(1)^x
       const base = ser(a0, o);
-      // P5 (b), R39: (-8)^(1/3) = -2 in Home, Solve and Function; surd(b,q)^p is the real q-th root to the power p
+      // P5 (b), R39: (-8)^(1/3) = -2 in Solve and Function; surd(b,q)^p is the real q-th root to the power p
       const odd = o.realOddRoots === true ? oddRootExponent(a1) : undefined;
       if (odd) {
         const root = `surd(${base.s},${odd.q})`;

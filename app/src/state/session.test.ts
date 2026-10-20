@@ -306,16 +306,22 @@ describe("Session safe start (G19, F31)", () => {
   });
 });
 
-describe("P5 (b), R39: the real odd root of a power", () => {
-  it("Home sends surd for a p/q exponent with q odd; CAS keeps Giac's power", async () => {
+describe("R66 (S12 row 2a): a power keeps Giac's principal root in Home and CAS", () => {
+  it("Home sends the power, not surd, for a p/q exponent with q odd; so does CAS", async () => {
     const s = new Session(new FakeCalc(), memoryKv());
     await s.submit("\\left(-8\\right)^{\\frac{1}{3}}");
     await s.submit("\\left(-8\\right)^{\\frac{2}{3}}");
     await s.submit("\\left(-8\\right)^{\\frac{1}{2}}");
-    expect(s.home.map((i) => i.text)).toEqual(["surd((-8),3)", "surd((-8),3)^2", "(-8)^(1/2)"]);
+    expect(s.home.map((i) => i.text)).toEqual(["(-8)^(1/3)", "(-8)^(2/3)", "(-8)^(1/2)"]);
     s.setView("cas");
     await s.submit("\\left(-8\\right)^{\\frac{1}{3}}");
     expect(s.cas[0]?.text).toBe("(-8)^(1/3)");
+  });
+
+  it("Home keeps the root template's real cube root (L6, S12 row 3)", async () => {
+    const s = new Session(new FakeCalc(), memoryKv());
+    await s.submit("\\sqrt[3]{-8}");
+    expect(s.home[0]?.text).toBe("surd(-8,3)");
   });
 
   it("CAS keeps the root template's real cube root (L6)", async () => {

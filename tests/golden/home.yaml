@@ -164,7 +164,7 @@ cases:
   - { id: "cx-quotient", input: "(2+3*i)/(4-5*i)", oracle: "(2+3*I)/(4-5*I)", expect: "-0.170731707317+0.536585365854*i", mark: "≈", source: "oracle" }
   - { id: "cx-decimal", input: "(0.1+0.2*i)*3", oracle: "F('0.3')+F('0.6')*I", expect: "0.3+0.6*i", mark: "=", source: "derived" }
   - { id: "cx-asin2", input: "asin(2)", oracle: "mp.asin(2)", expect: "1.57079632679-1.31695789692*i", mark: "≈", source: "oracle", g2: 10, note: "principal branch on the cut: conventions differ; G2 checklist item" }
-  - { id: "cx-cbrt-neg8", input: "(-8)^(1/3)", oracle: "power(-8, mpf(1)/3)", expect: "1+1.73205080757*i", mark: "≈", source: "oracle", g2: 11, note: "Giac text, not through our parser: Giac's principal root. Home's entry gives -2 (r39 cases below)" }
+  - { id: "cx-cbrt-neg8", input: "(-8)^(1/3)", oracle: "power(-8, mpf(1)/3)", expect: "1+1.73205080757*i", mark: "≈", source: "oracle", g2: 11, note: "Giac text, not through our parser: Giac's principal root. Home's entry gives the same (r39 cases below, R66); the ∛ template gives -2" }
   # --- rounding/integer functions -------------------------------------------------------------------
   - { id: "int-floor2.5", input: "floor(2.5)", oracle: "F(2)", expect: "2", mark: "=", source: "derived" }
   - { id: "int-ceil-2.5", input: "ceil(-2.5)", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived" }
@@ -227,13 +227,14 @@ cases:
   - { id: "symfloat-evalf-x+sin1e22", input: "evalf(x+sin(10^22))", mark: "⚠", source: "derived", note: "mark-only: Giac shows x-0.54764225985, but sin(10^22) = -0.8522008497671888… (oracle, mpmath at 40 and 80 digits), so every digit shown is wrong. Nobody checked the float in a non-number, so it is ⚠ (docs/04 2.4); it had no mark before G27" }
   - { id: "symfloat-evalf-equation", input: "evalf(x^2-2=0)", expect: "x^2-2.0=0.0", mark: "⚠", source: "derived", note: "a float in an equation: right here, but unchecked, so ⚠; no mark before G27" }
   - { id: "symfloat-evalf-list", input: "evalf([1/3,x])", expect: "[0.333333333333,x]", mark: "⚠", source: "derived", note: "1/3 to 12 digits next to a free name: the list is not a number, its float unchecked, so ⚠; no mark before G27" }
-  # --- P5 (b), R39: Home's entry (through our parser, realOddRoots on) takes the real odd root of a power --------------
-  - { id: "r39-neg8^1/3", latex: "\\left(-8\\right)^{\\frac{1}{3}}", oracle: "F(-2)", expect: "-2", mark: "=", source: "virtual-calc", g2: 11, note: "the G2 gives -2 in Home (items 4 and 11)" }
-  - { id: "r39-neg8^2/3", latex: "\\left(-8\\right)^{\\frac{2}{3}}", oracle: "F(4)", expect: "4", mark: "=", source: "derived" }
-  - { id: "r39-neg32^1/5", latex: "\\left(-32\\right)^{\\frac{1}{5}}", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived" }
+  # --- R66 (S12 row 2a): Home's entry keeps Giac's principal root for a power; the ∛ template gives the real root -----
+  - { id: "r39-neg8^1/3", latex: "\\left(-8\\right)^{\\frac{1}{3}}", oracle: "power(-8, mpf(1)/3)", expect: "1+1.73205080757*i", mark: "≈", source: "oracle", g2: 11, note: "the G2 gives −2 (items 4, 11); ours in Home is Giac's principal root; the ∛ template gives −2; Function and Solve keep the real root (S12 rows 2b, 2c)" }
+  - { id: "r39-neg8^2/3", latex: "\\left(-8\\right)^{\\frac{2}{3}}", oracle: "power(-8, mpf(2)/3)", expect: "-2+3.46410161514*i", mark: "≈", source: "oracle", note: "Giac's principal root (R66); was the real root 4" }
+  - { id: "r39-neg32^1/5", latex: "\\left(-32\\right)^{\\frac{1}{5}}", oracle: "power(-32, mpf(1)/5)", expect: "1.61803398875+1.17557050458*i", mark: "≈", source: "oracle", note: "Giac's principal root (R66); was the real root -2" }
   - { id: "r39-neg8^1/2", latex: "\\left(-8\\right)^{\\frac{1}{2}}", oracle: "2*sqrt(2)*I", expect: "2.82842712475*i", mark: "≈", source: "derived", note: "an even denominator keeps the principal root (P5 a)" }
   - { id: "r39-neg8^0.2", latex: "\\left(-8\\right)^{0.2}", oracle: "power(-8, mpf(1)/5)", expect: "1.22624046096+0.89091584445*i", mark: "≈", source: "oracle", note: "not a literal fraction: Giac's principal power" }
-  - { id: "r39-X^1/3", latex: "X^{\\frac{1}{3}}", before: ["X:=-8"], oracle: "F(-2)", expect: "-2", mark: "=", source: "derived", note: "with -8 stored in X; last, so X stays out of the cases above" }
+  - { id: "r66-cbrt-template-neg8", latex: "\\sqrt[3]{-8}", oracle: "F(-2)", expect: "-2", mark: "=", source: "derived", g2: 11, note: "the ∛ template keeps the real root in Home (L6, S12 row 3): 5 presses against 8 for the power" }
+  - { id: "r39-X^1/3", latex: "X^{\\frac{1}{3}}", before: ["X:=-8"], oracle: "power(-8, mpf(1)/3)", expect: "1+1.73205080757*i", mark: "≈", source: "oracle", note: "with -8 stored in X, Giac's principal root (R66); last, so X stays out of the cases above" }
   # --- G14: an exact result built from typed decimals is "=" -----------------------------------------------------
   - { id: "g14-mod-7.5-2", latex: "\\operatorname{mod}\\left(7.5,2\\right)", oracle: "F(3,2)", expect: "1.5", mark: "=", source: "derived", note: "the typed 7.5 is exact (15/2) and so is the remainder 3/2" }
   # --- G14f1: Find's irem and \bmod take a typed decimal (exact 15/2) and a free name ---------------------------------
