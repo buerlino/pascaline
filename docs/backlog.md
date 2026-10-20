@@ -21,11 +21,11 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Needs the user
 0. **At milestone 5:** time ten tasks by hand, E-notation against units (the rule 2 speed gate).
 1. **Your steps from the research of 2026-10-19** (decided 2026-10-20: decisions.md P18–P22): push G75's patch commit once merged, then send Parisse the reply with its link (`../outreach/email-parisse-2.md`, in English); ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before A21; after G77, annabell builds the release engine on the new pin and runs the golden gate on it.
-2. **Open proposals:** decisions.md "Needs the user" (G57's run-once forms `sto`, `=>`, `[a,b]:=`, after G65; G53's 1.35× instead of 1.3×, accept; S13's +1 call/Enter, G65; M4-2: budgets, ± key, mockup; S6: the backup). Decided on 2026-10-19: route R, S12, G57 and the pipeline's three changes (as recommended); G33, R56, R43, R34, R7, A4a points 3 and 4, P7 point 4 and the fixed Math menu (decisions.md "Owner answers of 2026-10-19").
+2. **Open proposals:** decisions.md "Needs the user" (A16 after G53, on the Tab One). Decided on 2026-10-20: S13, G53, G57, S6, S8, M4-2 (± on Shift + `,`, R71), the docs budgets stay, the pipeline gaps as A24 and A25. Decided on 2026-10-19: route R, S12, G57 and the pipeline's three changes (as recommended); G33, R56, R43, R34, R7, A4a points 3 and 4, P7 point 4 and the fixed Math menu (decisions.md "Owner answers of 2026-10-19").
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–69 on 2026-10-19; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 before S14, 66 and 67 before G42, 68 changes no code (G40 built its default); each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md). The checks on the phone are listed below.
 5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`. The backup (R38) protects later moves only.
-6. **Outside testers:** you run two 30-minute rounds, after R4b and after R24c, from [r18](research/r18-outside-test.md) and its sheet; first decide S8 (decisions.md).
+6. **Outside testers:** you run two 30-minute rounds, after R4b and after R24c, from [r18](research/r18-outside-test.md) and its sheet; R70 (every press counted) and A23 (Android's backup off) come first.
 7. **Keep the K2 flick classifier** of the deleted `p1/ron-eve-gestures` (commit `96fcf50`): `git tag keep/eve-gestures 96fcf50` keeps it past git's pruning.
 8. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 9. **Later, not now:** the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
@@ -75,8 +75,8 @@ The one place for "where are we and what's left", one or two lines per open item
 - **R53. Results mode on the View key** (P16, S9; K4).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
 - **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** **A12** (G29 merged).
-- **The backup:** **R38a, R38b** (S6 done, R11).
-- **Still open from the checks of 2026-10-19:** **G56** the CAS check through a user function (narrowed, after G60); **A16** the Tab One's Enter p95; **A18** the behaviour diff in the audit; **G65**, **G66** names from Giac's state (S13, after your OK; G65 takes F58); G42's rewrite waits for G2 items 66 and 67 (S12).
+- **The backup:** **R38a** (after A11), **R38b** (S6 decided 2026-10-20, R11).
+- **Still open from the checks of 2026-10-19:** **G56** the CAS check through a user function (narrowed, after G60); **A16** the Tab One's Enter p95; **A18** the behaviour diff in the audit; **G65**, **G66** names from Giac's state (S13 accepted; G65 takes F58); G42's rewrite waits for G2 items 66 and 67 (S12).
 
 ### Engineer core (P8; architecture docs/04, plan and gates docs/03 section 8)
 A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass within budget and its gates hold.
@@ -102,8 +102,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
 - **G9. Number formats against the G2** (item 15: six formats, digits as decimal places, a thousands separator): decide in the settings and help pass.
 - **K1:** a pending one-shot Shift is used up by the first drag step; a tap keeps it. **K5:** the gestures in the help texts (release R4).
-- **A checks failure from the machine costs fix rounds** (Opus pass 28, annabell, with A18): S15 (run 79) lost both rounds to `svelte-check: command not found` (the shared `app/node_modules` was emptied); a command-not-found failure should stop the run, not hand it to the worker.
-- **The golden gate does not gate itself** (Opus pass 35, annabell): `pipeline.sh` skips golden for `app/scripts/golden.ts`, `invariants.ts` and `calls-budget.ts` (G43f1 had no golden run); add them to its pattern.
+- **The pipeline:** a worktree's `node_modules` and a machine failure (**A24**); the golden gate gates its own scripts (**A25**).
 - **A15's tests** (Opus pass 20, annabell): `scripts/pipeline.test.sh` checks the planned size and docs checks and the gorge raise against fixed dry-run echo lines, not `want_checks` and `resolve_audit_model`, so a regression there passes; the dry run prints no raise for `--model opus`.
 - **C3. CI:** a GitHub Actions workflow calling `npm run gate` (needs your OK). **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; the version is A7.
 - The size test does not cover CSS (25.8 kB raw at 2026-10-12): a line of its own if it passes 40 kB.
