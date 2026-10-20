@@ -81,6 +81,22 @@ describe.skipIf(!giacAvailable())("Giac's settings (real Giac)", () => {
     }
   });
 
+  it("Giac's own leaks are put back without a word; a stored function that sets one is said", async () => {
+    const { giac } = await loadNodeGiac();
+    const host = new EngineHost(giac);
+    // a throw in a program left eval_level at 1 (phase-1 kept it for the rest of the session)
+    const refused = host.home("pasmedian([a,1,2])", defaultHomeSettings).result;
+    expect(refused.ok).toBe(false);
+    expect(refused.settingReset).toBeUndefined();
+    expect(giac.eval(FLAGS_READ)).toBe(flagsExpected(12));
+    // (-32)^(1/5) left epsilon at 1e-60
+    expect(host.home("(-32)^(1/5)", defaultHomeSettings).result.settingReset).toBeUndefined();
+    expect(giac.eval(FLAGS_READ)).toBe(flagsExpected(12));
+    expect(host.cas("f67(x):={ approx_mode:=1; return x; }", cas).result.ok).toBe(true);
+    expect(host.cas("f67(2)", cas).result.settingReset).toBe(true);
+    expect(host.cas("1/3", cas).result.text).toBe("1/3");
+  });
+
   it("a stored log with settings in it (before G67) does not set them again, and drops the named ones", async () => {
     const t = 0;
     const stored: DefEntry[] = [

@@ -363,8 +363,10 @@ export class EngineHost {
   /**
    * G67: after a call that ran user text, Giac's settings are read in one call (flags.ts FLAGS_READ); on any difference
    * from the host's, one more call puts every one back and the mode setup runs again on the next call. An input that
-   * names a setting the read cannot see (timeout, ckevery) gets the mode setup again too. True when a setting was put
-   * back (the result says it was not kept).
+   * names a setting the read cannot see (timeout, ckevery) gets the mode setup again too. True when the user's text set
+   * one: the input names a setting, or calls a stored function whose definition does (the result says it was not kept).
+   * Giac leaks some by itself, put back without a word: a `throw` in a program leaves eval_level at 1 (our refusals in
+   * pasmedian, eseries), and `(-32)^(1/5)` leaves epsilon at 1e-60 (probe 2026-10-20).
    */
   private putBackFlags(input: string): boolean {
     if (namesUnreadFlag(input)) this.modeKey = "";
@@ -374,7 +376,7 @@ export class EngineHost {
     // One call; when a command in it fails (Giac stops the line there), each one again on its own, in order.
     if (isError(this.giac.eval(cmds.join(";"))) || this.giac.eval(FLAGS_READ) !== expected) for (const c of cmds) this.giac.eval(c);
     this.modeKey = "";
-    return true;
+    return namesFlag(input) || [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => this.byName.get(m[0])?.cmds.some(namesFlag) === true);
   }
 
   /** G46: what the last restore() changed in the entries it was given (flagged values resolved), for the client to
