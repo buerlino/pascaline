@@ -40,7 +40,7 @@ The legend is missing on the keytop only because the feature is not built; the k
 | Shift + 9: → makes a function (Giac's ->) | the engine's own reading; Store has its own key, Shift + ᴇ (S12; G2 item 42 changes no code) |
 | Shift + 6: XOR is (a or b) and not(a and b) | Giac's xor gives 0 when a side is symbolic, a silent wrong answer |
 | In the CAS view Alpha types lower case and Shift + Alpha the capital (Home: the reverse) | the G2's CAS types lower case on Alpha (G2 item 45, owner, 2026-10-18); a lower-case CAS name costs 1 press, not 3. Shift + Alpha not checked on the G2 (R58) |
-| Greek letters β, γ, Γ, ε are stored under stand-in names (beta_, gamma_, Gamma_, epsilon_) | Giac keeps the plain names (epsilon is a setting, Gamma the function); results show the letter |
+| Greek letters β, γ, Γ, ε are stored under stand-in names (beta_, gamma_, Gamma_, epsilon_), the letters e and i too (e_, i_) | Giac keeps the plain names (epsilon is a setting, Gamma the function); Giac reads e and i as its constants; the eˣ key and Shift + 2 type those; results show the letter |
 
 ## 3. Decided by the owner on 2026-10-13 (P12)
 1. **a/b becomes a toggle for the form of the last result**: decimal ↔ fraction, polar ↔ rectangular (real + imaginary), and later forms of the same kind. The fraction template stays on ÷ and in Tmpl. The Fmt key keeps the number formats (Std, Sci, Eng, Fix, Pfx); its cycle has no fraction, mixed or polar entries. Built in R10 (`f296a92`).

@@ -132,7 +132,7 @@ test("a short exact result still gives an exact chip (1/3 × 3 = 1)", async ({ p
 test("a ⚠ result stays ⚠ through Ans and a tapped chip (romberg × 1 × 1)", async ({ page }) => {
   await open(page, "");
   await ready(page);
-  await page.evaluate(() => window.pascaline.session.submit("\\operatorname{romberg}\\left(e^{-x^2},x,0,1\\right)"));
+  await page.evaluate(() => window.pascaline.session.submit("\\operatorname{romberg}\\left(\\exponentialE^{-x^2},x,0,1\\right)"));
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   const mark = page.getByTestId("mark");
   await expect(mark.last()).toHaveAttribute("data-mark", "⚠");
