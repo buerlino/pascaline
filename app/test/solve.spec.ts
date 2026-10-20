@@ -11,9 +11,9 @@ test.beforeEach(async ({ page }) => {
 
 /** Apps → Solve → Symb. */
 async function openSolve(page: Page): Promise<void> {
-  await tap(page, ["apps", "d4"]);
+  await tap(page, ["@place", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
-  await tap(page, ["symb"]);
+  await tap(page, ["@symb"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E1:");
 }
 
@@ -57,11 +57,11 @@ test("Solve: x·e^x=5 with guess 1 gives the oracle root and the info line", asy
   // x e^x = 5
   await tap(page, ["x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter"]);
   await expect(page.locator('[data-name="E1"] .math')).toHaveAttribute("data-latex", /x.*e.*=5/);
-  await tap(page, ["num"]);
+  await tap(page, ["@num"]);
   await expect(value(page, "x")).toBeVisible();
   await setValue(page, "x", ["d1"]);
   await expect(value(page, "x")).toHaveAttribute("data-value", "1");
-  await tap(page, ["menu", "d1"]); // Solve
+  await tap(page, ["@menu", "d1"]); // Solve
   await expect(value(page, "x")).toHaveText("1.32672466524"); // oracle lambertw(5), solve.yaml lambert-xexp
   await expect(page.getByTestId("solve-info")).toHaveText("sign change in [1.32, 1.64]");
   await expect(page.getByTestId("solve-report")).toHaveAttribute("data-warn", "false");
@@ -74,12 +74,12 @@ test("Solve: the 2×2 system x²+y²=4, y=e^x from guesses (-1, 1) gives the ora
   await tap(page, ["down"]);
   await expect(page.getByTestId("entry-label")).toHaveText("E2:");
   await tap(page, ["shift", "x", "shift", "dot", "shift", "ln", "x", "right", "enter"]);
-  await tap(page, ["num"]);
+  await tap(page, ["@num"]);
   await expect(value(page, "y")).toBeVisible();
   await setValue(page, "x", ["sub", "d1"]);
   await setValue(page, "y", ["d1"]);
   await page.locator('[data-testid="solve-table"] tr[data-name="x"] th button').tap();
-  await tap(page, ["menu", "d1"]); // Solve: two equations on, so x and y
+  await tap(page, ["@menu", "d1"]); // Solve: two equations on, so x and y
   // oracle findroot from (-1, 1): solve.yaml sys-circle-exp-left
   await expect(value(page, "x")).toHaveText("-1.99537317006");
   await expect(value(page, "y")).toHaveText("0.135962907412");
@@ -90,9 +90,9 @@ test("Solve: the 2×2 system x²+y²=4, y=e^x from guesses (-1, 1) gives the ora
 test("Solve: polynomial roots of x⁴+x+1=0, complex included (oracle)", async ({ page }) => {
   await openSolve(page);
   await tap(page, ["x", "pow", "d4", "right", "add", "x", "add", "d1", "shift", "dot", "d0", "enter"]);
-  await tap(page, ["num"]);
+  await tap(page, ["@num"]);
   await expect(value(page, "x")).toBeVisible();
-  await tap(page, ["menu", "d2"]); // Polynomial roots
+  await tap(page, ["@menu", "d2"]); // Polynomial roots
   // oracle mpmath polyroots, our order: solve.yaml poly-quartic-complex
   await expect(page.locator('[data-testid="solve-roots"] li')).toHaveText([
     "x = -0.727136084491-0.43001428833*i",
@@ -106,9 +106,9 @@ test("Solve: polynomial roots of x⁴+x+1=0, complex included (oracle)", async (
 test("Solve: 1/x=0 — the sign change at the pole is not a root; ⚠ and the reason", async ({ page }) => {
   await openSolve(page);
   await tap(page, ["d1", "div", "x", "right", "shift", "dot", "d0", "enter"]);
-  await tap(page, ["num"]);
+  await tap(page, ["@num"]);
   await setValue(page, "x", ["d1"]);
-  await tap(page, ["menu", "d1"]);
+  await tap(page, ["@menu", "d1"]);
   await expect(page.getByTestId("solve-report")).toHaveAttribute("data-warn", "true");
   await expect(page.getByTestId("solve-report")).toHaveAttribute("data-ok", "false");
   await expect(page.getByTestId("solve-info")).toContainText("sign change");
@@ -123,43 +123,43 @@ test("Solve: Cancel stops a long solve; equations and values survive and the eng
     const app = window.pascaline.shell.loaded.solve!.instance as unknown as { define(i: number, l: string): void };
     app.define(0, "\\sum_{k=1}^{2000}\\frac{\\cos\\left(kx\\right)}{k}=100");
   });
-  await tap(page, ["num"]);
+  await tap(page, ["@num"]);
   await setValue(page, "x", ["d1"]);
-  await tap(page, ["menu", "d1"]);
+  await tap(page, ["@menu", "d1"]);
   await expect(page.getByTestId("solve-info")).toHaveText("Working…");
   await page.waitForTimeout(300);
-  await tap(page, ["cancel"]);
+  await tap(page, ["esc"]);
   await expect(page.getByTestId("solve-report")).toHaveCount(0);
   await expect(value(page, "x")).toHaveAttribute("data-value", "1");
   // The engine works again: replace E1 by x^2=2 and solve from 1 (oracle sqrt(2), solve.yaml sqrt2-pos).
-  await tap(page, ["symb"]);
+  await tap(page, ["@symb"]);
   await expect(page.locator('[data-name="E1"] .math')).toHaveAttribute("data-latex", /sum/);
   await tap(page, ["esc", "x", "pow", "d2", "right", "shift", "dot", "d2", "enter"]);
-  await tap(page, ["num", "menu", "d1"]);
+  await tap(page, ["@num", "@menu", "d1"]);
   await expect(value(page, "x")).toHaveText("1.41421356237");
 });
 
 test("Solve: equations and values are stored", async ({ page }) => {
   await openSolve(page);
   await tap(page, ["x", "pow", "d2", "right", "shift", "dot", "d2", "enter"]);
-  await tap(page, ["num"]);
+  await tap(page, ["@num"]);
   await setValue(page, "x", ["sub", "d3"]);
   await flushStored(page, (r) => r.values?.["x"] === "-3");
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined && window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["apps", "d4"]);
-  await tap(page, ["num"]);
+  await tap(page, ["@place", "d4"]);
+  await tap(page, ["@num"]);
   await expect(value(page, "x")).toHaveAttribute("data-value", "-3");
-  await tap(page, ["menu", "d1"]);
+  await tap(page, ["@menu", "d1"]);
   await expect(value(page, "x")).toHaveText("-1.41421356237"); // oracle -sqrt(2), solve.yaml sqrt2-neg
 });
 
 test("Solve: the ⚠ of an answer is kept across a reload (M4-10)", async ({ page }) => {
   await openSolve(page);
   await tap(page, ["x", "pow", "d2", "right", "shift", "dot", "d2", "enter"]);
-  await tap(page, ["num"]);
+  await tap(page, ["@num"]);
   await setValue(page, "x", ["d1"]);
-  await tap(page, ["menu", "d1"]);
+  await tap(page, ["@menu", "d1"]);
   await expect(value(page, "x")).toHaveText("1.41421356237");
   await expect(page.locator('[data-testid="solve-table"] [data-testid="mark"]')).toHaveCount(0);
   // an answer with fewer confirmed digits than shown carries the flag (set as solve() sets it from isWarned)
@@ -171,8 +171,8 @@ test("Solve: the ⚠ of an answer is kept across a reload (M4-10)", async ({ pag
   await flushStored(page, (r) => r.warned?.["x"] === true);
   await page.reload();
   await page.waitForFunction(() => window.pascaline !== undefined && window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["apps", "d4"]);
-  await tap(page, ["num"]);
+  await tap(page, ["@place", "d4"]);
+  await tap(page, ["@num"]);
   await expect(value(page, "x")).toContainText("1.41421356237");
   await expect(page.locator('[data-testid="solve-table"] [data-testid="mark"]')).toHaveText("⚠");
 });
@@ -187,16 +187,16 @@ test("Solve: E1 p(x)=4 after p(x):=x² in Home gives x = 2, p stays the function
       const app = window.pascaline.shell.loaded.solve!.instance as unknown as { define(i: number, l: string): void };
       app.define(0, "p\\left(x\\right)=4");
     });
-    await tap(page, ["num"]);
+    await tap(page, ["@num"]);
     await expect(page.locator('[data-testid="solve-table"] tr[data-name]')).toHaveCount(1);
     await expect(value(page, "x")).toBeVisible();
     await setValue(page, "x", ["d1"]);
-    await tap(page, ["menu", "d1"]);
+    await tap(page, ["@menu", "d1"]);
     await expect(value(page, "x")).toHaveText("2");
   };
   await openSolve(page);
   await solveIt();
-  await tap(page, ["apps", "d1"]);
+  await tap(page, ["@place", "d1"]);
   await page.evaluate(() => window.pascaline.entry.set("p\\left(3\\right)"));
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]').last().locator(".result")).toHaveAttribute("data-text", "9");
@@ -204,7 +204,7 @@ test("Solve: E1 p(x)=4 after p(x):=x² in Home gives x = 2, p stays the function
   await page.evaluate(() => window.pascaline.shell.flush());
   await page.reload();
   await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["apps", "d4"]);
-  await tap(page, ["symb"]);
+  await tap(page, ["@place", "d4"]);
+  await tap(page, ["@symb"]);
   await solveIt();
 });

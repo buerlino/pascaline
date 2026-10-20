@@ -413,7 +413,7 @@ test("shift + is Ans, the view's last result", async ({ page }) => {
   await tap(page, ["mul", "d3", "enter"]);
   await resultIs(page, "3", 2); // derived: 2 + (1/3)·3, Ans carries 1/3 exactly
   // CAS has its own Ans
-  await tap(page, ["u3", "x", "add", "d1", "enter"]);
+  await tap(page, ["@cas", "x", "add", "d1", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await tap(page, ["d2", "mul", "shift", "add", "enter"]);
   await expect(page.locator('[data-testid="result"]').last().locator(".math")).toHaveAttribute("data-latex", /2\\left\(x\+1\\right\)|2x\+2/);
@@ -457,7 +457,7 @@ test("CAS: Alpha T types t, Shift Alpha T types T; Home the reverse; the faces s
   expect(await entryValue(page)).toBe("A");
   await tap(page, ["esc", "shift", "alpha"]);
   await expect(face("vars")).toHaveText("a");
-  await tap(page, ["vars", "esc", "u3", "alpha"]);
+  await tap(page, ["vars", "esc", "@cas", "alpha"]);
   await expect(face("vars")).toHaveText("a");
   await tap(page, ["vars"]);
   expect(await entryValue(page)).toBe("a");

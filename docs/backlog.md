@@ -67,7 +67,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, S18; the instruments G61–G64, A19 and S16; A20, A22 by day; A21 done (branch p1/annabell-noqalcbuild, `find/factors.yaml`; only the recipe's qalc build waits for F-Droid's answer).
 
 ### Milestone 4a: feel (P11; packages and order: brief section 0)
-- **R15c1–R15c4. The R3 top cluster** (R15c1 done: the status line takes Apps, Menu and the views; R15c2–R15c4 left) (decisions.md "R15c"): the status line takes Apps, Menu and the views; the round pad, six user keys and the editing wing; the user keys' Alpha layer; first-start tips.
+- **R15c1–R15c4. The R3 top cluster** (R15c1 done: the status line takes Apps, Menu and the views; R15c2 done: the round pad, U1–U6 and the editing wing; R15c3–R15c4 left) (decisions.md "R15c"): the status line takes Apps, Menu and the views; the round pad, six user keys and the editing wing; the user keys' Alpha layer; first-start tips.
 - **R49. Settings as a list of rows** (feedback #50; decisions.md "Settings: a list of rows").
 - **R50b–R50e. Themes** (R50b–R50d done; R50e left) (feedback #53, #55; decisions.md "R50"): Pascaline in the app, the generator and four more families, Plain keys and High contrast, Settings › Appearance; then **R12b, R12c. The visual pass** (F6 = U5 + U7; the mockups R12a merged, the owner's notes feedback #54, #55; A4a's sheet rise in R12c).
 - **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).

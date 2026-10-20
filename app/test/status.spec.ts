@@ -34,9 +34,9 @@ test("the status line shows the place, the angle unit, the format and digits", a
   await expect(page.getByTestId("chip-angle")).toHaveText("RAD");
   await expect(page.getByTestId("chip-format")).toHaveText("STD");
   await expect(page.getByTestId("chip-digits")).toHaveText("12");
-  await tap(page, ["u3"]);
+  await tap(page, ["@cas"]);
   await expect(page.getByTestId("place")).toHaveText("CAS");
-  await tap(page, ["plot"]);
+  await tap(page, ["@plot"]);
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
   await expect(page.getByTestId("place")).toHaveAttribute("data-app", "function");
   await expect(page.getByTestId("place")).toHaveText("Function");
@@ -63,7 +63,7 @@ test("a tap on the place name opens the Apps sheet; Home and CAS are its first r
 test("the tabs switch the views of Function and Solve, the current one marked; Home has none (R15c1)", async ({ page }) => {
   await open(page);
   await expect(page.getByRole("tab")).toHaveCount(0);
-  await tap(page, ["symb"]);
+  await tap(page, ["@symb"]);
   const tab = (v: string) => page.getByTestId(`tab-${v}`);
   await expect(tab("symb")).toHaveAttribute("aria-selected", "true");
   await tab("plot").tap();
@@ -90,10 +90,10 @@ test("☰ opens the view's menu and Settings is its last row, key 0 in Home (R15
   await expect(rows.last()).toContainText("Settings");
   await page.getByTestId("menu-button").tap(); // closes again
   await expect(sheet(page)).toBeHidden();
-  await tap(page, ["menu", "d0"]); // the Menu key still works; 0 picks item 10
+  await tap(page, ["@menu", "d0"]); // the Menu key still works; 0 picks item 10
   await expect(page.getByTestId("settings")).toBeVisible();
   await tap(page, ["esc"]);
-  await tap(page, ["plot"]);
+  await tap(page, ["@plot"]);
   await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
   await page.getByTestId("menu-button").tap();
   await expect(rows.last()).toContainText("Settings");
@@ -114,7 +114,7 @@ test("☰ on a picked history row opens the row's menu (R15c1)", async ({ page }
 test("the status line fits at 360 px in an app with the chips and ☰, and the targets keep their size (R15c1)", async ({ page }) => {
   await page.setViewportSize({ width: 360, height: 740 });
   await open(page);
-  await tap(page, ["plot"]);
+  await tap(page, ["@plot"]);
   await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null);
   const m = await page.evaluate(() => {
     const h = document.querySelector("header") as HTMLElement;
@@ -157,10 +157,14 @@ test("tap RAD → DEG changes the next result; sin 90 is 1 in degrees", async ({
   await expect(page.getByTestId("chip-angle")).toHaveText("RAD");
 });
 
-test("DEG → RAD by keys: Shift + Apps, ▶, Enter (4 presses, 3 with a flick up on Apps); the sheet opens on Angle every time", async ({ page }) => {
+/** R15c: Mode has no key of its own; a user key may hold it (the keys-only path, decisions.md "R15c" costs). */
+const modeOnU1 = (page: Page) => page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Mode", action: { special: "mode" } }));
+
+test("DEG → RAD by keys: a user key that holds Mode, ▶, Enter; the sheet opens on Angle every time", async ({ page }) => {
   await open(page);
+  await modeOnU1(page);
   await page.getByTestId("chip-angle").tap(); // DEG
-  await tap(page, ["shift", "apps"]);
+  await tap(page, ["u1"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
   await expect(active(page)).toHaveAttribute("data-id", "angle");
   await expect(active(page).getByTestId("sheet-value")).toHaveText("Degrees");
@@ -170,7 +174,7 @@ test("DEG → RAD by keys: Shift + Apps, ▶, Enter (4 presses, 3 with a flick u
   await expect(sheet(page)).toBeHidden();
   expect(await angle(page)).toBe("rad");
   // the pick before this one (Digits) does not move the start
-  await tap(page, ["shift", "apps", "d3", "cancel", "shift", "apps"]);
+  await tap(page, ["u1", "d3", "esc", "esc", "u1"]);
   await expect(active(page)).toHaveAttribute("data-id", "angle");
 });
 
@@ -182,8 +186,9 @@ test("keys typed while the Mode sheet's code loads wait for it, and are not type
     await route.continue();
   });
   await open(page);
+  await modeOnU1(page);
   expect(await angle(page)).toBe("rad");
-  await tap(page, ["d1", "shift", "apps", "right", "enter"]);
+  await tap(page, ["d1", "u1", "right", "enter"]);
   expect(await entryValue(page)).toBe("1"); // nothing evaluated yet, nothing typed
   release();
   await expect.poll(() => angle(page)).toBe("deg"); // the sheet opened, ▶ stepped Angle, Enter closed it
@@ -192,9 +197,9 @@ test("keys typed while the Mode sheet's code loads wait for it, and are not type
   await expect(page.locator('[data-testid="result"]')).toHaveCount(0);
 });
 
-test("digits to 20 by keys: Shift + Apps, 3, 7", async ({ page }) => {
+test("digits to 20: Mode, 3, 7", async ({ page }) => {
   await open(page);
-  await tap(page, ["shift", "apps", "d3"]);
+  await tap(page, ["@mode", "d3"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Significant digits");
   await expect(active(page)).toHaveAttribute("data-id", "12"); // the current value is highlighted and marked
   await expect(sheet(page).locator('[data-id="12"]')).toHaveAttribute("data-selected", "true");
@@ -213,7 +218,7 @@ test("the format and digits chips open the Mode sheet on their row; ◀ ▶ chan
   await tap(page, ["left"]);
   await expect(page.getByTestId("chip-format")).toHaveText("STD");
   await expect(sheet(page)).toBeVisible(); // ◀ on a setting steps it, it does not go back
-  await tap(page, ["cancel"]);
+  await tap(page, ["esc"]);
   await page.getByTestId("chip-digits").tap();
   await expect(active(page)).toHaveAttribute("data-id", "digits");
   await tap(page, ["right", "right"]);
@@ -227,7 +232,7 @@ test("the format and digits chips open the Mode sheet on their row; ◀ ▶ chan
 
 test("Shift and Alpha do nothing while the Mode sheet is open, and Esc goes back one level, then closes", async ({ page }) => {
   await open(page);
-  await tap(page, ["shift", "apps", "shift"]);
+  await tap(page, ["@mode", "shift"]);
   await expect(active(page)).toHaveAttribute("data-id", "angle");
   await tap(page, ["d3", "esc"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
@@ -235,27 +240,29 @@ test("Shift and Alpha do nothing while the Mode sheet is open, and Esc goes back
   await expect(sheet(page)).toBeHidden();
 });
 
-test("the last row of the Mode sheet opens the Settings page, on its first row; the Menu key closes it", async ({ page }) => {
+test("the last row of the Mode sheet opens the Settings page, on its first row; Esc, or a user key that holds Menu, closes it", async ({ page }) => {
   await open(page);
   const settings = page.getByTestId("settings");
-  await tap(page, ["shift", "apps", "d5"]);
+  await tap(page, ["@mode", "d5"]);
   await expect(settings).toBeVisible();
   await expect(sheet(page)).toBeHidden(); // the Mode sheet gave way to the page
-  await tap(page, ["menu"]);
+  await tap(page, ["esc"]);
   await expect(settings).toBeHidden();
   await page.getByTestId("chip-format").tap(); // by touch: a chip, then the last row
   await sheet(page).locator('[data-id="settings"]').tap();
   await expect(page.getByTestId("settings-title")).toHaveText("Settings");
   await expect(settings.locator('[data-active="true"]')).toHaveAttribute("data-id", "std");
-  await tap(page, ["menu"]);
+  // the page covers the status line's ☰; a user key that holds Menu just closes it (R21b)
+  await page.evaluate(() => window.pascaline.userKeys.set("u1", "primary", { label: "Menu", action: { special: "menu" } }));
+  await tap(page, ["u1"]);
   await expect(settings).toBeHidden();
 });
 
 test("the sheets work inside an app, and the angle unit set there is the one the app uses", async ({ page }) => {
   await open(page);
-  await tap(page, ["plot"]);
+  await tap(page, ["@plot"]);
   await page.waitForFunction(() => window.pascaline.shell.app === "function" && window.pascaline.shell.loading === null); // keys pressed while an app loads wait; a place key does not
-  await tap(page, ["shift", "apps", "right", "enter"]);
+  await tap(page, ["@mode", "right", "enter"]);
   expect(await angle(page)).toBe("deg");
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
   await expect(page.getByTestId("chip-angle")).toHaveText("DEG");

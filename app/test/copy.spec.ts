@@ -30,14 +30,14 @@ async function thirds(page: Page): Promise<void> {
 }
 
 const pickMenu = async (page: Page, label: string): Promise<void> => {
-  await tap(page, ["menu"]);
+  await tap(page, ["@menu"]);
   await expect(page.getByTestId("menu")).toBeVisible();
   await page.getByRole("menuitem", { name: new RegExp(`^\\d ${label}$`) }).click();
 };
 
 /** Menu → 6 Copy as › → the item. */
 const pickCopyAs = async (page: Page, label: string): Promise<void> => {
-  await tap(page, ["menu", "d6"]);
+  await tap(page, ["@menu", "d6"]);
   await expect(page.getByTestId("menu")).toBeVisible();
   await page.getByRole("menuitem", { name: new RegExp(`^\\d ${label}$`) }).click();
 };
@@ -45,14 +45,14 @@ const pickCopyAs = async (page: Page, label: string): Promise<void> => {
 test("Shift + View copies the full value of the last result, not the 12 shown digits", async ({ page }) => {
   await thirds(page);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.666666666667");
-  await tap(page, ["shift", "view"]);
+  await tap(page, ["copy"]);
   await expect(page.getByTestId("notice")).toHaveText("Copied");
   await expect.poll(() => clipboard(page)).toBe(TWO_THIRDS);
 });
 
 test("Shift + View copies the picked row (Up on an empty line)", async ({ page }) => {
   await thirds(page);
-  await tap(page, ["up", "up", "shift", "view"]);
+  await tap(page, ["up", "up", "copy"]);
   await expect.poll(() => clipboard(page)).toBe(THIRD);
 });
 
@@ -71,32 +71,32 @@ test("Menu with a picked row copies that row, not the last result (R13, S2 I1)",
 
 test("Shift + Menu pastes a number as the keyboard's own LaTeX", async ({ page }) => {
   await setClipboard(page, "1.5E-3");
-  await tap(page, ["shift", "menu"]);
+  await tap(page, ["shift", "copy"]);
   await expect.poll(() => entryValue(page)).toBe("1.5\\emark-3"); // drawn 1.5ᴇ-3, as the exponent key types it (R14)
   await tap(page, ["esc"]);
   await setClipboard(page, "1.5-2*i");
-  await tap(page, ["shift", "menu"]);
+  await tap(page, ["shift", "copy"]);
   await expect.poll(() => entryValue(page)).toBe("1.5-2\\imaginaryI");
 });
 
 test("Paste refuses what is not a number, and says so", async ({ page }) => {
   await setClipboard(page, "hello");
-  await tap(page, ["shift", "menu"]);
+  await tap(page, ["shift", "copy"]);
   await expect(page.getByTestId("notice")).toHaveText("Paste: not a number");
   expect(await entryValue(page)).toBe("");
 });
 
 test("copy → paste gives the value back (P5)", async ({ page }) => {
   await thirds(page);
-  await tap(page, ["shift", "view"]); // 2/3, 40 digits
-  await tap(page, ["shift", "menu"]);
+  await tap(page, ["copy"]); // 2/3, 40 digits
+  await tap(page, ["shift", "copy"]);
   await expect.poll(() => entryValue(page)).toBe(TWO_THIRDS);
   await tap(page, ["enter"]);
   await done(page, 3);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.666666666667");
   // and a number with an exponent, through the E key of the clipboard text
   await setClipboard(page, "2.5E-4");
-  await tap(page, ["shift", "menu", "mul", "d4", "enter"]);
+  await tap(page, ["shift", "copy", "mul", "d4", "enter"]);
   await done(page, 4);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.001"); // 2.5E-4 × 4
 });
@@ -117,11 +117,11 @@ test("Menu: Copy as › As shown, Exact, LaTeX", async ({ page }) => {
 test("Menu: Copy exact is on for an exact result and off for one that is only digits", async ({ page }) => {
   await tap(page, ["d2", "sq", "enter"]);
   await done(page, 1);
-  await tap(page, ["menu", "d6"]);
+  await tap(page, ["@menu", "d6"]);
   await expect(page.getByRole("menuitem", { name: /Exact$/ })).toBeEnabled(); // 2² = 4
-  await tap(page, ["cancel", "shift", "enter", "d1", "div", "d3", "enter"]); // approx(1/3)
+  await tap(page, ["esc", "esc", "shift", "enter", "d1", "div", "d3", "enter"]); // back out of Copy as and the Menu; approx(1/3)
   await done(page, 2);
-  await tap(page, ["menu", "d6"]);
+  await tap(page, ["@menu", "d6"]);
   await expect(page.getByRole("menuitem", { name: /Exact$/ })).toBeDisabled(); // approx(1/3) is digits only
 });
 
@@ -180,10 +180,10 @@ test("a short tap on a history row still puts the result on the line", async ({ 
 });
 
 test("Num: the table as CSV with full values, from Shift + View and from the Menu", async ({ page }) => {
-  await tap(page, ["symb", "d1", "div", "x", "enter", "num"]);
+  await tap(page, ["@symb", "d1", "div", "x", "enter", "@num"]);
   const td = page.locator('[data-testid="num-table"] tr:has(td[data-x="0.1"]) td').nth(1);
   await expect(td).toHaveAttribute("data-text", "10");
-  await tap(page, ["shift", "view"]);
+  await tap(page, ["copy"]);
   await expect(page.getByTestId("notice")).toHaveText("Copied");
   const csv = (await clipboard(page)).split("\r\n");
   expect(csv.slice(0, 4)).toEqual(["x,F1", "0,NaN", "0.1,10", "0.2,5"]);

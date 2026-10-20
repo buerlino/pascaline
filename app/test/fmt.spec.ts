@@ -10,16 +10,16 @@ const sheet = (page: Page) => page.getByTestId("menu");
 const settingsPage = (page: Page) => page.getByTestId("settings");
 /** Shift + Apps, 5: the Settings page (the last row of Mode). */
 async function openSettings(page: Page): Promise<void> {
-  await tap(page, ["shift", "apps", "d5"]);
+  await tap(page, ["@mode", "d5"]);
   await expect(settingsPage(page)).toBeVisible();
   await expect(page.getByTestId("settings-title")).toHaveText("Settings");
 }
 /** Shift + Apps: the Mode sheet. */
 async function openMode(page: Page): Promise<void> {
-  await tap(page, ["shift", "apps"]);
+  await tap(page, ["@mode"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
 }
-const closeSheet = (page: Page) => tap(page, ["cancel"]);
+const closeSheet = (page: Page) => tap(page, ["esc"]);
 const row = (page: Page, id: string) => settingsPage(page).locator(`[data-id="${id}"]`);
 /** Tick (or untick) notations of the Format key cycle: Settings, a tap per notation, Cancel. */
 async function toggleCycle(page: Page, modes: string[]): Promise<void> {

@@ -61,7 +61,7 @@ test("a job shows Working… and Cancel only after 150 ms, and its row keeps the
 test("the Cancel key stops a job before Working… shows", async ({ page }) => {
   await open(page, "engine=fake&delay=2000");
   await sampleRows(page);
-  await tap(page, ["d2", "add", "d3", "enter", "cancel"]);
+  await tap(page, ["d2", "add", "d3", "enter", "esc"]);
   await expect(page.locator(".item").last()).toHaveAttribute("data-status", "cancelled");
   const s = (await samples(page)).filter((x) => x.t >= 0);
   const cancelledAt = s.find((x) => x.status === "cancelled")!.t;
@@ -74,9 +74,9 @@ test("the Cancel key stops a job before Working… shows", async ({ page }) => {
 
 test("Solve: its Working… line shows only after 150 ms", async ({ page }) => {
   await open(page, "engine=fake&delay=600");
-  await tap(page, ["apps", "d4"]);
+  await tap(page, ["@place", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
-  await tap(page, ["symb", "x", "shift", "dot", "d5", "enter", "num"]);
+  await tap(page, ["@symb", "x", "shift", "dot", "d5", "enter", "@num"]);
   await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"]')).toBeVisible();
   // every frame: since when the line has said Working…, and whether it can be seen
   await page.evaluate(() => {
@@ -93,7 +93,7 @@ test("Solve: its Working… line shows only after 150 ms", async ({ page }) => {
     };
     requestAnimationFrame(frame);
   });
-  await tap(page, ["menu", "d1"]);
+  await tap(page, ["@menu", "d1"]);
   await expect(page.getByTestId("solve-info")).toHaveText("fake engine"); // the fake engine's info line
   const log = await page.evaluate(() => (window as unknown as { __info: { t: number; seen: boolean }[] }).__info);
   expect(log.filter((x) => x.t > 200).length).toBeGreaterThan(5);

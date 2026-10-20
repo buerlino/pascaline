@@ -62,7 +62,7 @@ test("Plain keys: the ⚠ mark and error text keep their colour; a sheet number 
   await expect(mark).toHaveAttribute("data-mark", "⚠");
   expect((await style(page, '[data-testid="mark"]')).c).toBe(await token(page, "--warn"));
   expect((await style(page, '[data-testid="mark"]')).c).not.toBe(text);
-  await tap(page, ["cancel", "d1", "emark", "d2", "dot", "d5", "enter"]); // an error row
+  await tap(page, ["esc", "d1", "emark", "d2", "dot", "d5", "enter"]); // an error row
   await expect(page.locator('[data-status="error"]')).toHaveCount(1);
   expect((await style(page, '.out .error')).c).toBe(await token(page, "--error"));
   expect((await style(page, '.out .error')).c).not.toBe(text);

@@ -26,22 +26,22 @@ const keyBoxes = (page: Page): Promise<Record<string, [number, number, number, n
 
 /** Every pick sheet and the keys that open it from a fresh Home (each ends with the sheet open). */
 const OPENERS: Record<string, (page: Page) => Promise<void>> = {
-  apps: (page) => tap(page, ["apps"]),
-  "home menu": (page) => tap(page, ["menu"]),
+  apps: (page) => tap(page, ["@place"]),
+  "home menu": (page) => tap(page, ["@menu"]),
   "function plot menu": async (page) => {
-    await tap(page, ["symb"]);
+    await tap(page, ["@symb"]);
     await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
-    await tap(page, ["plot", "menu"]); // no function defined: every row but one disabled, with its reason
+    await tap(page, ["@plot", "@menu"]); // no function defined: every row but one disabled, with its reason
   },
   "solve menu": async (page) => {
-    await tap(page, ["apps"]);
+    await tap(page, ["@place"]);
     await sheet(page).getByRole("menuitem", { name: "4 Solve" }).click();
     await expect(page.locator('[data-app="solve"]')).toBeVisible();
-    await tap(page, ["num", "menu"]); // no equation: every row disabled
+    await tap(page, ["@num", "@menu"]); // no equation: every row disabled
   },
-  mode: (page) => tap(page, ["shift", "apps"]),
+  mode: (page) => tap(page, ["@mode"]),
   "mode digits": async (page) => {
-    await tap(page, ["shift", "apps"]);
+    await tap(page, ["@mode"]);
     await sheet(page).getByRole("menuitem", { name: "3 Significant digits" }).tap(); // the 3 key is under the sheet: its row is where it was
     await expect(page.getByTestId("sheet-title")).toHaveText("Mode › Significant digits");
   },
@@ -67,10 +67,10 @@ test.describe("at 412 × 915", () => {
 
   test("keys never move: Settings (a page over everything) open and closed again", async ({ page }) => {
     const before = await keyBoxes(page);
-    await tap(page, ["shift", "apps", "d5"]);
+    await tap(page, ["@mode", "d5"]);
     await expect(page.getByTestId("settings")).toBeVisible();
     expect(await keyBoxes(page)).toEqual(before);
-    await tap(page, ["cancel"]);
+    await tap(page, ["esc"]);
     await expect(page.getByTestId("settings")).toBeHidden();
     expect(await keyBoxes(page)).toEqual(before);
   });
@@ -80,7 +80,7 @@ test.describe("at 412 × 915", () => {
       const before = await keyBoxes(page);
       await openSheet(page, name);
       expect(await keyBoxes(page)).toEqual(before);
-      await tap(page, ["cancel"]);
+      await tap(page, ["esc"]);
       await expect(sheet(page)).toHaveCount(0);
       expect(await keyBoxes(page)).toEqual(before);
     });
@@ -98,8 +98,8 @@ test.describe("at 412 × 915", () => {
           const el = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
           return el?.closest<HTMLElement>("[data-key]")?.dataset["key"] ?? el?.className ?? "nothing";
         });
-      }, ["up", "down", "left", "right", "esc", "cancel", "menu"]);
-      expect(hits).toEqual(["up", "down", "left", "right", "esc", "cancel", "menu"]);
+      }, ["up", "down", "left", "right", "view", "esc", "undo", "copy", "lstart", "lend"]);
+      expect(hits).toEqual(["up", "down", "left", "right", "view", "esc", "undo", "copy", "lstart", "lend"]);
     });
 
   // R15c1: Settings as the last row makes the Home menu (10 rows) and the Plot menu (9, two lines of reasons) taller than

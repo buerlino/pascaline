@@ -32,13 +32,13 @@ async function expectNoSystemKeyboard(page: Page, where: string): Promise<void> 
 
 test("switching apps never focuses an element that opens the system keyboard", async ({ page }) => {
   await expectNoSystemKeyboard(page, "Home");
-  await tap(page, ["symb"]);
+  await tap(page, ["@symb"]);
   await expect(page.locator('[data-app="function"]')).toBeVisible();
   await expectNoSystemKeyboard(page, "Function Symb");
-  await tap(page, ["apps", "d4"]);
+  await tap(page, ["@place", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   await expectNoSystemKeyboard(page, "Solve");
-  await tap(page, ["apps", "d3", "symb"]);
+  await tap(page, ["@place", "d3", "@symb"]);
   await expectNoSystemKeyboard(page, "Function Symb again");
 });
 

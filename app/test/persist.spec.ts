@@ -10,7 +10,7 @@ test("history survives a reload and is drawn without calling the engine", async 
   await page.waitForFunction(() => window.pascaline.session.engineState === "ready", undefined, { timeout: 20_000 });
   await tap(page, ["d1", "div", "d3", "enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();
-  await tap(page, ["u3", "shift", "sq", "d8", "enter"]);
+  await tap(page, ["@cas", "shift", "sq", "d8", "enter"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await page.waitForTimeout(800); // the store write is debounced (400 ms) and asynchronous
   await page.reload();
@@ -18,7 +18,7 @@ test("history survives a reload and is drawn without calling the engine", async 
   // the view that was open (CAS) comes back with its entry and its 2D result
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   expect(await lastResult(page).locator(".math").getAttribute("data-latex")).toBe("2\\sqrt{2}");
-  await tap(page, ["u2"]);
+  await tap(page, ["@home"]);
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await expect(lastResult(page).locator(".result")).toHaveAttribute("data-text", "0.333333333333");
 });
@@ -126,7 +126,7 @@ test("Home and CAS share one line, kept with the view it was typed in; an empty 
   const empty = await relaunch(home, "engine=fake");
   expect(await entryValue(empty)).toBe("");
   // a CAS line comes back in CAS
-  await tap(empty, ["u3", "d7", "mul", "d8"]);
+  await tap(empty, ["@cas", "d7", "mul", "d8"]);
   expect(await empty.evaluate(() => window.pascaline.session.view)).toBe("cas");
   await hide(empty);
   const cas = await relaunch(empty, "engine=fake");

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Undo on Shift + Cancel (P13, R16): the entry line's own MathLive history, and the rule that undo never brings a
+// Undo on its own key (P13, R16; R15c2: it was Shift + Cancel): the entry line's own MathLive history, and the rule that undo never brings a
 // chip back with a value other than its own. Expected values are derived.
 import { expect, test, type Page } from "@playwright/test";
 import { entryValue, flick, open, tap, touch } from "./helpers.ts";
@@ -60,11 +60,11 @@ test("a recalled entry whose chip key is taken keeps both values apart, also aft
   if (m) expect(chips[`res:${m[1]}`]?.value).toMatch(/^(1\/3|0\.3{12,})/);
 });
 
-// ---- the key (Shift + Cancel) ----
+// ---- the key (Undo, R15c2; it was Undo) ----
 
-const shiftUndo = (page: Page) => tap(page, ["shift", "cancel"]);
+const undoKey = (page: Page) => tap(page, ["undo"]);
 
-test("select part of the line, delete it, Shift + Cancel brings it back", async ({ page }) => {
+test("select part of the line, delete it, Undo brings it back", async ({ page }) => {
   await open(page);
   await tap(page, ["d1", "add", "d2", "mul", "d3"]);
   await page.evaluate(() => {
@@ -73,7 +73,7 @@ test("select part of the line, delete it, Shift + Cancel brings it back", async 
   });
   await tap(page, ["bksp"]);
   expect(await entryValue(page)).toBe("1\\times3");
-  await shiftUndo(page);
+  await undoKey(page);
   expect(await entryValue(page)).toBe("1+2\\times3");
 });
 
@@ -83,7 +83,7 @@ test("select all, delete, undo", async ({ page }) => {
   await page.evaluate(() => window.pascaline.entry.field?.executeCommand("selectAll"));
   await tap(page, ["bksp"]);
   expect(await entryValue(page)).toBe("");
-  await shiftUndo(page);
+  await undoKey(page);
   expect(await entryValue(page)).toBe("456");
 });
 
@@ -91,7 +91,7 @@ test("Esc, then undo, puts the line back", async ({ page }) => {
   await open(page);
   await tap(page, ["d7", "add", "d8", "esc"]);
   expect(await entryValue(page)).toBe("");
-  await shiftUndo(page);
+  await undoKey(page);
   expect(await entryValue(page)).toBe("7+8");
 });
 
@@ -100,31 +100,35 @@ test("Enter, then undo: the line is back and the history keeps its row", async (
   await tap(page, ["d7", "add", "d8", "enter"]);
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
   expect(await entryValue(page)).toBe("");
-  await shiftUndo(page);
+  await undoKey(page);
   expect(await entryValue(page)).toBe("7+8");
   await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
 });
 
-test("a flick up on Cancel from a real touch undoes, and the bubble says Undo", async ({ page }) => {
+test("a real touch on Undo undoes; a flick up on it is Redo, and the bubble says so", async ({ page }) => {
   await open(page);
   await tap(page, ["d7", "esc"]);
-  const t = await touch(page, "cancel");
-  await t.move(0, -40);
-  await expect(page.getByTestId("flick-bubble")).toHaveText("Undo");
+  const t = await touch(page, "undo");
   await t.end();
   expect(await entryValue(page)).toBe("7");
+  const f = await touch(page, "undo");
+  await f.move(0, -40);
+  await expect(page.getByTestId("flick-bubble")).toHaveText("Redo");
+  await f.end();
+  expect(await entryValue(page)).toBe("");
   // the plain flick helper does the same
-  await tap(page, ["esc"]);
-  await flick(page, "cancel", "up");
+  await tap(page, ["undo"]);
   expect(await entryValue(page)).toBe("7");
+  await flick(page, "undo", "up");
+  expect(await entryValue(page)).toBe("");
 });
 
 test("undo with nothing to undo does nothing and raises no error", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   await open(page);
-  await shiftUndo(page);
-  await shiftUndo(page);
+  await undoKey(page);
+  await undoKey(page);
   expect(await entryValue(page)).toBe("");
   expect(errors).toEqual([]);
 });
@@ -135,7 +139,7 @@ test("a second a/b and then undo leaves a sound line", async ({ page }) => {
   await open(page);
   await tap(page, ["d2", "frac", "frac"]);
   const before = await entryValue(page);
-  await shiftUndo(page);
+  await undoKey(page);
   expect(await entryValue(page)).not.toBe(before);
   await tap(page, ["d3"]);
   expect(errors).toEqual([]);
@@ -145,6 +149,6 @@ test("one-line entry mode: undo works as well", async ({ page }) => {
   await open(page);
   await page.evaluate(() => window.pascaline.session.setEntry("line"));
   await tap(page, ["d1", "d2", "esc"]);
-  await shiftUndo(page);
+  await undoKey(page);
   expect(await entryValue(page)).toBe("12");
 });

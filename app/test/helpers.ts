@@ -1,11 +1,37 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import type { Page } from "@playwright/test";
 
+/** The status line's controls (R15c1, R15c2), for keys that left the cluster: `@place` (the place name, the Apps
+ *  sheet), `@menu` (☰), `@symb` / `@plot` / `@num` (the view tab; from Home or CAS the last app is opened first from the
+ *  Apps sheet, as the old view keys did), `@home` and `@cas` (the Apps sheet's first two rows), `@mode` (the Mode
+ *  sheet on its Angle row, as Shift + Apps opened it: the format chip, then ▲). */
+async function statusTap(page: Page, id: string): Promise<void> {
+  const apps = page.getByTestId("apps");
+  const fromApps = async (row: string): Promise<void> => {
+    if (!(await apps.isVisible())) await page.getByTestId("place").tap();
+    await apps.locator(`[role="menuitem"][data-id="${row}"]`).tap();
+  };
+  if (id === "@place") return page.getByTestId("place").tap();
+  if (id === "@menu") return page.getByTestId("menu-button").tap();
+  if (id === "@home" || id === "@cas") return fromApps(id.slice(1));
+  if (id === "@mode") {
+    await page.getByTestId("chip-format").tap();
+    await page.getByTestId("menu").getByRole("menuitem").first().waitFor();
+    return tap(page, ["up"]);
+  }
+  const view = id.slice(1);
+  if (!["symb", "plot", "num"].includes(view)) throw new Error(`no status-line control ${id}`);
+  const inApp = await page.evaluate(() => window.pascaline.shell.app !== null);
+  if (!inApp) await fromApps(await page.evaluate(() => window.pascaline.shell.lastApp ?? "function"));
+  await page.getByTestId(`tab-${view}`).tap();
+}
+
 /**
  * Tap keys by their id in spec/keyboard.yaml (d0..d9, div, frac, shift, enter, ...). A key under an open pick sheet
  * (R21a: the sheet is drawn over the maths rows; R21b: the Settings page over everything) cannot be touched: the sheet's row or cell is where it was, and
  * fit.spec.ts taps those. Its key path stays for a hardware keyboard (docs/05 2 rule 1), so such a key is pressed the
- * way a hardware key is (R31: the keypad key with that character), in the current Shift/Alpha state.
+ * way a hardware key is (R31: the keypad key with that character), in the current Shift/Alpha state. An id that
+ * starts with `@` is a status-line control (statusTap).
  */
 export async function tap(page: Page, ids: string[]): Promise<void> {
   const covered = (id: string): Promise<boolean> =>
@@ -18,6 +44,10 @@ export async function tap(page: Page, ids: string[]): Promise<void> {
     }, id);
   const press = (id: string): Promise<void> => page.evaluate((id) => window.pascaline.entry.onKey(id, undefined as never), id);
   for (const id of ids) {
+    if (id.startsWith("@")) {
+      await statusTap(page, id);
+      continue;
+    }
     if (await covered(id)) {
       await press(id);
       continue;

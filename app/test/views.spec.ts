@@ -29,7 +29,7 @@ test("Home: 1-0.9-0.1 gives 0", async ({ page }) => {
 });
 
 test("CAS: 1 a/b 3 + 1 a/b 6 Enter is drawn as a stacked one half (G2 item 17)", async ({ page }) => {
-  await tap(page, ["u3"]);
+  await tap(page, ["@cas"]);
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "cas");
   await tap(page, ["d1", "frac", "d3", "right", "add", "d1", "frac", "d6", "enter"]);
   const res = lastResult(page).locator(".math");
@@ -39,14 +39,14 @@ test("CAS: 1 a/b 3 + 1 a/b 6 Enter is drawn as a stacked one half (G2 item 17)",
 });
 
 test("CAS: √8 is drawn as 2√2 (G2 item 17)", async ({ page }) => {
-  await tap(page, ["u3", "shift", "sq", "d8", "enter"]);
+  await tap(page, ["@cas", "shift", "sq", "d8", "enter"]);
   const res = lastResult(page).locator(".math");
   await expect(res).toBeVisible();
   expect(await res.getAttribute("data-latex")).toBe("2\\sqrt{2}");
 });
 
 test("CAS: π × x is drawn as πx, never as an unknown command like \\pix", async ({ page }) => {
-  await tap(page, ["u3", "shift", "d3", "mul", "x", "enter"]);
+  await tap(page, ["@cas", "shift", "d3", "mul", "x", "enter"]);
   const res = lastResult(page).locator(".math");
   await expect(res).toBeVisible();
   const latex = await res.getAttribute("data-latex");
@@ -69,7 +69,7 @@ test("Cancel stops a long CAS job; history and variables survive", async ({ page
   await page.evaluate(() => window.pascaline.entry.set("a:=7"));
   await tap(page, ["enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();
-  await tap(page, ["u3"]);
+  await tap(page, ["@cas"]);
   await page.evaluate(() =>
     window.pascaline.entry.set(
       "\\operatorname{ifactor}\\left(\\operatorname{nextprime}\\left(10^{32}\\right)\\times\\operatorname{nextprime}\\left(10^{33}\\right)\\right)",
@@ -77,11 +77,11 @@ test("Cancel stops a long CAS job; history and variables survive", async ({ page
   );
   await tap(page, ["enter"]);
   await expect(page.locator(".working")).toBeVisible();
-  await tap(page, ["cancel"]);
+  await tap(page, ["esc"]);
   await expect(page.locator(".working")).toHaveCount(0);
   await expect(page.locator('[data-status="cancelled"]')).toHaveCount(1);
   // the engine is back and the variable is still there
-  await tap(page, ["u2"]);
+  await tap(page, ["@home"]);
   await page.evaluate(() => window.pascaline.entry.set("a+1"));
   await tap(page, ["enter"]);
   await expect(page.locator('[data-status="done"]').last()).toBeVisible({ timeout: 20_000 });
@@ -122,7 +122,7 @@ test("the system keyboard never appears", async ({ page }) => {
 });
 
 test("CAS (R67): Alpha e is a name and Shift + 2 the constant; a tapped result keeps each as it was", async ({ page }) => {
-  await tap(page, ["u3", "d2", "add", "d3", "shift", "d2", "enter"]);
+  await tap(page, ["@cas", "d2", "add", "d3", "shift", "d2", "enter"]);
   const res = lastResult(page).locator(".math");
   await expect(res).toHaveAttribute("data-latex", "2+3\\mathrm{i}");
   await tap(page, ["alpha", "frac", "mul", "d2", "enter"]);

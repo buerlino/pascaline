@@ -41,7 +41,7 @@ test("Shift + 6: the 4 × 3 grid shows 7 8 9 ÷ / 4 5 6 × / 1 2 3; that key pic
   await expect(active(page)).toHaveAttribute("data-id", "le");
   await tap(page, ["esc"]);
   await expect(sheet(page)).toBeHidden();
-  await tap(page, ["shift", "d6", "cancel"]);
+  await tap(page, ["shift", "d6", "esc"]);
   await expect(sheet(page)).toBeHidden();
   // Shift + 6 inside the palette is the key 6: it picks AND, it does not close
   await tap(page, ["shift", "d6", "shift", "d6"]);
@@ -137,7 +137,7 @@ test("Shift + 9: the 8 × 3 grid has no key labels; digits do nothing; arrows, E
   await expect(active(page)).toHaveAttribute("data-id", "beta");
   await tap(page, ["esc"]);
   await expect(sheet(page)).toBeHidden();
-  await tap(page, ["shift", "d9", "cancel"]);
+  await tap(page, ["shift", "d9", "esc"]);
   await expect(sheet(page)).toBeHidden();
   expect(await entryValue(page)).toBe("\\beta");
 });
@@ -209,7 +209,7 @@ test("Greek letters are variables, β too (Giac's Beta name is kept free): 3 ▶
 });
 
 test("CAS draws the stand-in names as their letters: 2γ² is 2\\gamma^{2}, not gamma_", async ({ page }) => {
-  await tap(page, ["u3"]); // Home → CAS
+  await tap(page, ["@cas"]); // Home → CAS
   await tap(page, ["d2"]);
   await tapCell(page, "d9", "gamma");
   await tap(page, ["sq", "enter"]);
