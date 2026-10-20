@@ -7,6 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
+- **2026-10-20 R15c1: the Home menu (10 rows) and the Plot menu (9) scroll over the keypad (OPEN).** Settings as the last row makes them taller than the 337 px over the maths rows at 412 × 915 (36 px a row), so they scroll with a count in the title row (docs/05 3.1); fit.spec lists them as the cases that scroll. Accept, or shorten the Home menu (for example merge Share and Clear)? Default: accept.
 - **2026-10-19 A16: Enter p95 on the Tab One is over 150 ms in DEG (OPEN, after G53).** DEG p95 is 150.4 ms at 12 digits and 160.4 at 30 (RAD: 138.4 and 135.2); the slowest cases are arith-frac 210.9, solve-trig 186.9, heavy-int 160.4, g38-abs-sin1e50 130.3, stat-expreg 128.4 (DEG, 30 digits). DEG limit-inf, limit-sinc and series-exp, errors then, answer since G46. Repeat after G53 and decide whether DEG's tail needs its own package.
 
 ## Decided proposals
