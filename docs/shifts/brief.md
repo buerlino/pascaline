@@ -31,7 +31,6 @@
 | [G66](packages/G66.md) | A store counter in Giac (patch 0003) | gorge, **Opus** | night | G65 | ~0.5 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One after G53 | annabell, Sonnet | day (device) | G53 | ~0.25 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | now | ~0.25 d |
-| [S11](packages/S11.md) | The unit result view as packages (R60–R63) | sandra, Opus | night | A14 | ~0.5 d |
 | [G45](packages/G45.md) | One tie rule; the G2's Home answers on record | gorge, **Opus** | night | S12 | ~0.25 d |
 | [R66](packages/R66.md) | The power form keeps Giac's principal root in Home | ron, **Opus** | night | S12 | ~0.25 d |
 | [R67](packages/R67.md) | Letters e and i are names (R58b) | ron, **Opus** | night | S12, R66 | ~0.5 d |
@@ -60,8 +59,12 @@
 | [R24b](packages/R24b.md) | The unit pad drawn over the keys | ron, Sonnet | day | now | ~1 d |
 | [R24c](packages/R24c.md) | The unit view entry: slots, Enter, evaluation | ron, **Opus** | day | R24b, G35, G40, G41 | ~1 d |
 | [R24d](packages/R24d.md) | Find in a slot and the user cells | ron, Sonnet | day | R24c and R4b | ~0.5 d |
+| [R60](packages/R60.md) | The unit result's alternatives as data (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
+| [R61](packages/R61.md) | The chip from a unit result, with its facts and σ (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
+| [R62](packages/R62.md) | The unit result view drawn | ron, Sonnet | day (gallery) | R60, and the owner has seen the mockup (M4-2 point 6) | ~1 d |
+| [R63](packages/R63.md) | The way back from the unit view; t02, t04 and t10 active | ron, **Opus** | day | R61 and R62 | ~1 d |
 | [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, S6, G54, A12 | ~0.5 d |
-| [R38a](packages/R38a.md) | The backup: export everything | ron, Sonnet | day | S6 and the owner's yes | ~0.5 d |
+| [R38a](packages/R38a.md) | The backup: export everything | ron, Sonnet | day | the owner's yes to S6, A11 | ~0.5 d |
 | [R38b](packages/R38b.md) | The backup: restore from a file | ron, **Opus** | day | R38a | ~0.75 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the owner's phone connected | ~0.5 d |
 | [A11](packages/A11.md) | Paste and Share on Android | annabell, Sonnet | day (device) | a device connected | ~0.5 d |
@@ -69,8 +72,7 @@
 | [A4b](packages/A4b.md) | Find timing on the Tab One | annabell, Sonnet | day (device) | R4b; the Tab One connected | ~0.25 d |
 | [A7](packages/A7.md) | Release signing and the version number | annabell, Sonnet | any time | the owner's go | ~0.5 d |
 | [A8](packages/A8.md) | The release workflow | annabell, **Opus** | day | A7 | ~0.5 d |
-| [S6](packages/S6.md) | Files in and out without INTERNET: the backup | sandra, Opus | night | A14 | ~0.5 d |
-| [S8](packages/S8.md) | The outside-test protocol | sandra, Opus | night | S6 | ~0.25 d |
+| [S8](packages/S8.md) | The outside-test protocol | sandra, Opus | night | now | ~0.25 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, and where a slip gives a wrong number (the night's engine packages; the Sonnet ones get the Opus audit of night rule 1): R15c2 (it moves keys every test names), R53 (it hides the keypad; a wrong state leaves no keys), R24c (pad, slots and evaluation together), R38b (it overwrites stored data), A8 (the signing key on a machine we do not own); sandra runs Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14; queue rewritten 2026-10-19)
@@ -120,8 +122,10 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 55 | R67 letters e and i are names | ron, Opus | `p1/ron-m4-eiNames` | S12, R66 | 1 h |
 | 56 | R68 ᴇ's leading 1 after an operator | ron, Opus | `p1/ron-m4-emark1` | S12 | 45 min |
 | 57 | R56b Solve knows the user's functions | ron, Sonnet | `p1/ron-m4-solvefns` | — | 1 h |
-| 58 | **The last Opus pass** on what came after pass 27, then its FIX packages | Opus | — | — | 20 min + fixes |
-| 59 | Shift report, then stop | — | — | — | 10 min |
+| 58 | R60 the unit result's alternatives as data | gorge, Opus | `p1/gorge-m5-unitalts` | R24c | 1.5 h |
+| 59 | R61 the chip from a unit result, facts and σ | gorge, Opus | `p1/gorge-m5-unitchip` | R24c | 1.5 h |
+| 60 | **The last Opus pass** on what came after pass 27, then its FIX packages | Opus | — | — | 20 min + fixes |
+| 61 | Shift report, then stop | — | — | — | 10 min |
 
 Not in the queue: the ron lane's day packages (section 0; R50c and R50d are queue steps); devices (A9, A4b, A11, A12, A16); A7 and A8 (the owner's go); A18 (the pipeline, by day); R59, R38a and R38b (after S6's report).
 

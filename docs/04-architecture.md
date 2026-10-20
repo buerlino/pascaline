@@ -136,7 +136,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 | Session (Menu, Share) | text: one line per entry, `input = result` with the mark, full values | — | — | — |
 
 **Paste** (Shift + Menu, or Menu → Paste): the clipboard is read as one number (`-1.5`, `1,5` with decimal comma, `1.5e-3`, `1.5E-3`, `i` parts); it enters as the keyboard's own LaTeX (`1.5\emark-3`, drawn `1.5ᴇ-3`), so the parser sees only what our keys produce. Anything else gives the message "Paste: not a number". Pasting a result copied from Pascaline gives the same value back (P5).
-**Mechanics:** `navigator.clipboard` in a secure context (Capacitor serves `https://localhost`): the Tab One's WebView 131 denies `readText` and has no `navigator.share` (A4a), so the APK gets `@capacitor/clipboard` and `@capacitor/share` (A11); the PWA keeps `navigator.clipboard` and `navigator.share` where it exists, else copy.
+**Mechanics:** `navigator.clipboard` in a secure context (Capacitor serves `https://localhost`): the Tab One's WebView 131 denies `readText` and has no `navigator.share` (A4a), so the APK gets `@capacitor/clipboard` and `@capacitor/share` (A11); the PWA keeps `navigator.clipboard` and `navigator.share` where it exists, else copy. Files go out through the native `save` (`ACTION_CREATE_DOCUMENT`) in the APK and `<a download>` in the PWA, and come in through `<input type="file">` (R11).
 
 **Alternatives:** copy the displayed text by default (hides digits, against principle 3); copy the exact form by default (`1/3` pastes badly into spreadsheets and code).
 
@@ -359,6 +359,8 @@ One IndexedDB database `pascaline`, store `kv` (`state/storage.ts`). Keys:
 | `units.targets`, `units.history` | the last target per dimension; the unit view's history (milestone 5) |
 
 **Every value is stamped** with `DATA_VERSION` (`storage.ts`): `{ "@pascaline": n, value }`; a value without the stamp is version 0. On read, the steps in `MIGRATIONS` for that key run from its version up, and the value is written back stamped. Raise the version with a step whenever a stored shape or the meaning of stored Giac text changes (a parser rename such as Φ → `Phi_` must rewrite the stored `defs`). **Replay budget:** ≤ 50 ms on the Tab One with 200 definitions, inside the engine-ready bar (`replayMs` in `EngineTimings`) (state in 8.3). **Why persist definitions:** a calculator keeps its memory.
+
+**The backup** (R11, `research/r11-files.md`): one JSON file, each key's record as stored with its stamp (`defsStarts` left out); a restore checks the whole file, refuses it on the first fault (newer format or part, broken stamp, unknown part, a validator fault), then replaces the ticked keys in one transaction, keeps the replaced records in `backup.undo`, and reloads.
 
 ### 6.3 Decision: start-up and bytes
 - The sizes and budgets are in 8.3. New code for Find, units, copy and the matrix editor lives in lazy chunks; the start chunk grows only by key handlers and marks (≤ 175 kB, ≤ 60 kB gzip; owner, 2026-10-19).

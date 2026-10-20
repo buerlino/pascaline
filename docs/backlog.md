@@ -23,7 +23,7 @@ The one place for "where are we and what's left", one or two lines per open item
 1. **Open proposals:** decisions.md "Needs the user" (G57's run-once forms `sto`, `=>`, `[a,b]:=`, after G65; G53's 1.35× instead of 1.3×, accept; S13's +1 call/Enter, G65; M4-2: budgets, ± key, mockup; S6: the backup). Decided on 2026-10-19: route R, S12, G57 and the pipeline's three changes (as recommended); G33, R56, R43, R34, R7, A4a points 3 and 4, P7 point 4 and the fixed Math menu (decisions.md "Owner answers of 2026-10-19"). The night of 2026-10-19 and what it left: [research/night-shift-check-2026-10-19.md](research/night-shift-check-2026-10-19.md).
 2. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–69 on 2026-10-19; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 before S14, 66 and 67 before G42, 68 changes no code (G40 built its default); each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 3. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md). The checks on the phone are listed below.
-4. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`.
+4. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`. The backup (R38) protects later moves only.
 5. **Outside testers** (deep-dive review): two 30-minute rounds with three engineers, after R4b and after R24c; S8 writes the protocol and the task sheet, you run the rounds.
 6. **Keep the K2 flick classifier** of the deleted `p1/ron-eve-gestures` (commit `96fcf50`): `git tag keep/eve-gestures 96fcf50` keeps it past git's pruning.
 7. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
@@ -55,7 +55,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **The owner's answers of 2026-10-19:** **R43b** DMS takes a selected □ bare (done, p1/ron-m4a-dmsbox), **R56b** Solve knows the user's functions (night step 57).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
 - **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** **A12** (G29 merged).
-- **The backup:** **S6** (done, R11), then **R38a, R38b**. **The outside-test protocol:** **S8**.
+- **The backup:** **R38a, R38b** (S6 done, R11). **Outside tests:** **S8**.
 - [x] **A14. The pipeline reads the package files** (S7's follow-up; the docs budgets are checked by `node tools/docs-check.mjs` in `npm run gate`), and **A15. The pipeline enforces its rules** (check 2026-10-19: the audit model, the size and docs checks, no reused dev server).
 - [x] **S10. docs/04 diet** before R15c2: 69.5 → 59.7 kB; the evidence is in [research/r12-evidence.md](research/r12-evidence.md).
 - [x] **S12. Engine defaults, not G2 copies** ([research/g2-correspondence.md](research/g2-correspondence.md)): the audit (44 rows).
@@ -76,7 +76,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - **Gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left; the size test; the Tab One bars of §8.3.
 
 **Milestone 5: Units** (P15; docs/04 section 4). Items 1–3 are done: the evaluator (G16), temperatures and levels (G17), uncertainty (G18), the result's unit (G25), the data audit (G13), Find's pad data (G7), rpm's message (G32), the parser's units mode (R28).
-- **4. The unit view:** before R24c the zero-term check (**G35**, done), °C inside a compound unit (**G37**, done), σ beyond first order (**G41**, done) and the angles (**G40**, done; the view shows `Quantity.note`); the pad (**R24b**), the entry (**R24c**), Find in a slot and the user cells (**R24d**); the result view: **S11** done ([R17](research/r17-unit-result.md)): **R60** alternatives, **R61** chip, **R62** view, **R63** way back. Open points with defaults: r7 section 7.
+- **4. The unit view:** before R24c, done: zero terms (**G35**), °C in a compound unit (**G37**), σ beyond first order (**G41**), angles (**G40**; the view shows `Quantity.note`); the pad (**R24b**), the entry (**R24c**), Find in a slot and the user cells (**R24d**); the result view: **S11** done ([R17](research/r17-unit-result.md)): **R60** alternatives, **R61** chip, **R62** view, **R63** way back. Open points with defaults: r7 section 7.
 - **5. Build, size, devices** (annabell, after R24c): the first unit result on the Tab One and the Fairphone 6 (< 1 s).
 - **Gate:** tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
 
