@@ -63,7 +63,7 @@ Newest first within each group.
 - **P9 (2026-10-12): typed decimals in the CAS view become exact, as in Home;** `approx()` gives marked decimals.
 - **The marks (M4-1, M4-4 to M4-8, G3; 2026-10-12 and -13):** the rules are docs/04 2.4 and 2.8.
 - **P10 (2026-10-12): Giac's English help lines in Find,** Parisse's confirmation before a public release.
-- **P5 (2026-10-11; (b) revised 2026-10-14): behaviour against the reference:** complex `sqrt(-4)` and `asin(2)`, real odd roots in Home (R39), our rounding and Solve wording (archive).
+- **P5 (2026-10-11; (b) revised 2026-10-14, in Home reverted by S12): behaviour against the reference:** complex `sqrt(-4)` and `asin(2)`, real odd roots (R39), our rounding and Solve wording (archive).
 - **P8 (2026-10-12): the engineer core:** milestones 4, 5, 6, each with benchmark tasks; fewer features done well beat G2 parity.
 - **P4 (2026-10-11): the reference's logical key layout, our own look;** ▲ on an empty line picks the last history row.
 - **User requests (2026-10-11):** the Format key, ∡ polar entry, key vibration, a tap places the cursor, E-notation formats.
@@ -108,7 +108,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **G22 (why):** `once` for a value evaluated once; every stored name with a known digit count is named when the perturbation costs digits. **G26:** `uncDigits` counts on the value as shown; none for lists, matrices, complex results or names holding a constant.
 - **Home and CAS share one Giac context, each with its own Ans** (`pasans`, `pcasans`). Would change if: G2 item 52 shows separate variables.
 - **The angle mode, route R (S14, R64, G46; Opus pass 31):** docs/04 2.12. A typed ° or DMS angle is u in the mode's unit (30° is 30 in DEG, π/6 in RAD): the template is `u*pi/180/pasdeg`. `sinc` takes no factor (a function of a number, F29): sin(x)/x in radians in both modes. `polar_coordinates`, the one-list `rectangular_coordinates([r,t])` and `instfreq` follow the mode like every typed angle command (R64f1, `input/angles.ts` POLAR_OUT and RECT_IN); `polar_point`'s angle takes the factor too (R64f2). Would change if: the G2 reads sinc in degrees.
-- **R39:** a literal fraction exponent is reduced first (`(-8)^(2/6)` = −2); the root template stays the real root in CAS; Giac text in Home golden cases keeps Giac's meaning.
+- **R39 (Function, Solve; S12):** a literal fraction exponent is reduced first (`(-8)^(2/6)` = −2); the root template stays the real root in every view.
 - **R18:** Greek names with Giac stand-ins (beta_, gamma_, Gamma_, epsilon_, Phi_, Psi_); XOR as `(a or b) and not(a and b)`; → is `->`; `&` refused until G2 item 41; `==` never answers on undecidable sides. **R18f3:** Home draws a non-number from Giac's `latex()`.
 - **R52:** `SerializeError` carries the English text plus key and values; `parseError(key, vars)` in `app/src/i18n/enParser.ts`.
 - **Home number formats:** `digits` are significant digits; STD plain for 1E-4 ≤ |x| < 10^digits; rounding half away from zero (the G2 rounds ties half to even, item 8; one rule, no option). **G31:** Fixed turns to scientific with the same decimals when a nonzero value would show only zeros, with confirmed digits only (in each complex part too, G36).
