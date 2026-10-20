@@ -30,7 +30,7 @@ import json
 import math
 import re
 import sys
-from decimal import ROUND_HALF_UP, Decimal, localcontext
+from decimal import MAX_EMAX, MIN_EMIN, ROUND_HALF_UP, Decimal, localcontext
 from fractions import Fraction
 from pathlib import Path
 
@@ -123,6 +123,7 @@ def round_decimal(d: Decimal, digits: int) -> Decimal:
         return Decimal(0)
     with localcontext() as c:
         c.prec = digits
+        c.Emax, c.Emin = MAX_EMAX, MIN_EMIN  # G58: exp(1.5e8) is about 1E65144172, past Decimal's default range
         c.rounding = ROUND_HALF_UP  # half away from zero for Decimal
         return +d
 
@@ -219,21 +220,24 @@ NUM = r"\d+(?:\.\d+)?(?:E[+-]?\d+)?"
 SHOWN = re.compile(rf"^(?:(?P<re>-?{NUM})(?:(?P<sign>[+-])(?P<imn>{NUM}\*)?i)?|(?P<ineg>-)?(?P<imo>{NUM}\*)?i)$")
 
 
-def parse_shown(text):
-    """The exact (re, im) a shown number stands for, or None when the text is not a number (lists, symbols, errors)."""
+def parse_shown(text, num=lambda t: Fraction(Decimal(t))):
+    """The exact (re, im) a shown number stands for, or None when the text is not a number (lists, symbols, errors).
+    `num` reads one number: an exact Fraction by default; mp.mpf for an inexact oracle value (G58: a Fraction of
+    1.9E65144172 has 65 million digits)."""
     if not isinstance(text, str) or text == "":
         return None
     m = SHOWN.match(text)
     if not m:
         return None
+    zero, one = num("0"), num("1")
     if m["re"] is not None:
-        re_ = Fraction(Decimal(m["re"]))
+        re_ = num(m["re"])
         if not m["sign"]:
-            return re_, Fraction(0)
-        mag = Fraction(Decimal(m["imn"][:-1])) if m["imn"] else Fraction(1)
+            return re_, zero
+        mag = num(m["imn"][:-1]) if m["imn"] else one
         return re_, -mag if m["sign"] == "-" else mag
-    mag = Fraction(Decimal(m["imo"][:-1])) if m["imo"] else Fraction(1)
-    return Fraction(0), -mag if m["ineg"] else mag
+    mag = num(m["imo"][:-1]) if m["imo"] else one
+    return zero, -mag if m["ineg"] else mag
 
 
 def equals_shown(value, shown) -> bool:
@@ -320,11 +324,13 @@ def check_unc(case: dict) -> list:
 
 def derived_mark(case: dict):
     """"=" when the oracle value is exactly the shown text, else "≈" (docs/04 section 2.4); None for non-numbers."""
-    shown = parse_shown(case.get("expect"))
-    if shown is None or "oracle" not in case:
+    if "oracle" not in case or parse_shown(case.get("expect"), lambda t: 0) is None:
         return None
     lo, hi = stability_dps(case_digits(case))
-    return "=" if equals_shown(raw(case["oracle"], hi), shown) else "≈"
+    value = raw(case["oracle"], hi)
+    # An inexact value is compared with the text read at hi digits, an exact one with its exact Fraction.
+    shown = parse_shown(case.get("expect"), mp.mpf if not isinstance(value, (int, Fraction)) else lambda t: Fraction(Decimal(t)))
+    return "=" if equals_shown(value, shown) else "≈"
 
 
 def emit_value(v) -> str:
