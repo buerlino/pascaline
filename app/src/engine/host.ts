@@ -36,7 +36,7 @@ import { resolveAngle } from "./angleMigration.ts";
 import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
-import { askedDigits, DOUBLE_DIGITS, notBuiltin, floatsShown, floatFacts, functionsIn, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
+import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, floatFacts, functionsIn, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
 import { callsStateful, decideTwice, restsOnDecision } from "./decisions.ts";
 import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
@@ -807,8 +807,10 @@ export class EngineHost {
     // G51: a result without a float that read a stored name, or called a function, with facts takes their warn and
     // why.inherited, as `inherited` does for a number; one built from exact names stays unmarked.
     const read = this.readFacts(input);
-    const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked || read !== null;
-    const own = decided?.warn ?? (unchecked ? "unchecked" : undefined);
+    // G71 (N7): Giac's two-argument round and trunc work in a double; the integer trunc(x,0) prints is not exact.
+    const doubled = doubleFormsIn(exactInput).length > 0;
+    const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked || doubled || read !== null;
+    const own = decided?.warn ?? (doubled ? "unaudited" : unchecked ? "unchecked" : undefined);
     const warn = own === "unaudited" || read?.facts.warn === "unaudited" ? "unaudited" : (own ?? read?.facts.warn);
     const symWhy = symbolicWhy(own, testSides(exactInput));
     // G38: "decided at limited precision"; the value was computed, not compared, so `once` is not said.

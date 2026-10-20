@@ -264,7 +264,7 @@ export function namesIn(input: string): string[] {
 /** Why the facts of a float result carry a warning (`why` of HomeResult); undefined when nothing is to be said.
  *  `expr`: the input as it was run again, null when it could not be (a value evaluated once). */
 export function whyOf(facts: readonly ElementFacts[], expr: string | null): PrecisionWhy | undefined {
-  const off = expr !== null && facts.some((f) => f.warn === "unaudited") ? functionsIn(expr).filter((f) => !AUDITED_FUNCTIONS.has(f)) : [];
+  const off = expr !== null && facts.some((f) => f.warn === "unaudited") ? unauditedIn(expr) : [];
   // Every name audited but the facts unaudited: a non-real value of a function COMPLEX_DEFINITIONS replaces, not read
   // through ours (DEG, or a stored name: complexReads).
   const complex = [...new Set(facts.flatMap((f) => f.complexFns ?? []))];
@@ -372,10 +372,37 @@ export function readsReplaced(giac: Giac, expr: string): boolean {
   return r.copies.length > 0;
 }
 
-/** Every function in the input is on the audited list, or in `also` (G44: the inverse functions an input's polish
+/**
+ * G71 (bug hunt N7): the calls Giac computes in a double whatever `Digits` is, by their name and argument count. Its
+ * two-argument round and trunc evaluate x as a double (sin(10^50) is the sine of the double 1e50) and round in about 19
+ * digits at most (`round(2/3,20)`, `round(10^17+1/3,2)` = 1e+17): Giac's `_round` and `_trunc` in usual.cc call
+ * `_evalf` on x and then work on a C double or giac's `fPart` of a float. One-argument round stays audited (exact).
+ */
+const DOUBLE_FORMS: Readonly<Record<string, number>> = { round: 2, trunc: 2 };
+const DOUBLE_FORM_CALL = new RegExp(`"[^"]*"|\\b(${Object.keys(DOUBLE_FORMS).join("|")})\\s*\\(`, "g");
+
+/** The names of the DOUBLE_FORMS calls in `input` (`round(x,5)` → round; `round(x)` → none). Strings are skipped. */
+export function doubleFormsIn(input: string): string[] {
+  const out: string[] = [];
+  for (const m of input.matchAll(DOUBLE_FORM_CALL)) {
+    const name = m[1];
+    if (name === undefined || out.includes(name)) continue;
+    const open = m.index + m[0].length - 1;
+    const close = closing(input, open);
+    if (close >= 0 && topLevelArgs(input.slice(open + 1, close)).length === DOUBLE_FORMS[name]) out.push(name);
+  }
+  return out;
+}
+
+/** The functions of `input` that are not audited: off AUDITED_FUNCTIONS, or called in a DOUBLE_FORMS form. */
+export function unauditedIn(input: string): string[] {
+  return [...new Set([...functionsIn(input).filter((f) => !AUDITED_FUNCTIONS.has(f)), ...doubleFormsIn(input)])];
+}
+
+/** Every function in the input is audited (unauditedIn), or in `also` (G44: the inverse functions an input's polish
  *  covers, a fact of that input only). */
 export function isAudited(input: string, also: readonly string[] = []): boolean {
-  return functionsIn(input).every((f) => AUDITED_FUNCTIONS.has(f) || also.includes(f));
+  return unauditedIn(input).every((f) => also.includes(f));
 }
 
 // --- shapes: a scalar, a list, a matrix ------------------------------------------------------------------------------

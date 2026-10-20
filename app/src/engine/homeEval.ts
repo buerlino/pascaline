@@ -23,7 +23,6 @@ import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
-  AUDITED_FUNCTIONS,
   functionsIn,
   DOUBLE_DIGITS,
   doubleFallback,
@@ -32,6 +31,8 @@ import {
   floatPathFacts,
   hasFloat,
   isAudited,
+  doubleFormsIn,
+  unauditedIn,
   numericDisagrees,
   rationalValue,
   notBuiltin,
@@ -237,7 +238,7 @@ export function testSides(input: string): string {
 export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): PrecisionWhy | undefined {
   if (warn === "unchecked") return { once: true };
   if (warn !== "unaudited") return undefined;
-  const unaudited = functionsIn(sides).filter((n) => !AUDITED_FUNCTIONS.has(n));
+  const unaudited = unauditedIn(sides);
   return unaudited.length ? { unaudited } : undefined;
 }
 
@@ -802,6 +803,8 @@ export function homeEval(
     !once && route !== null && isAudited(body) && isAudited(exactOut) && (complexSafe(exactOut) === exactOut || complexSafe(body) !== body) &&
     numericDisagrees(giac, route, facts, shape, s.digits);
   if (differ) facts = facts.map((f) => (f.exactRational ? f : { ...f, reliableDigits: null, warn: "unchecked" as const }));
+  // G71 (N7): Giac's two-argument round and trunc work in a double: an integer or decimal they print is not exact.
+  if (!differ && doubleFormsIn(exactBody).length) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const }));
   const b = build(facts, shape, s.digits, "exact", differ);
   store();
   const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;

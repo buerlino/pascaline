@@ -189,6 +189,15 @@ describe("G38: which inputs get a second decision (pure)", () => {
     expect(restsOnDecision("Heaviside(sin(10^70))", "1")).toBe(true);
     expect(rationalOnly("trunc(-7/2)")).toBe(true);
   });
+
+  it("G71: two-argument round and trunc are not audited (Giac works in a double); one-argument round is", async () => {
+    const { doubleFormsIn, isAudited, unauditedIn } = await import("./numeric.ts");
+    expect(doubleFormsIn("round(sin(x),5)+trunc(y,0)")).toEqual(["round", "trunc"]);
+    expect(doubleFormsIn("round(sin(x))+trunc(y)+\"round(a,b)\"")).toEqual([]);
+    expect(isAudited("round(sin(10^50))")).toBe(true);
+    expect(isAudited("round(sin(10^50),5)")).toBe(false);
+    expect(unauditedIn("round(BesselJ(1,2),3)")).toEqual(["BesselJ", "round"]);
+  });
 });
 
 describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 20 (real Giac)", () => {
