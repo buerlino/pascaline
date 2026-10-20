@@ -76,7 +76,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
 - **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** **A12** (G29 merged).
 - **The backup:** **R38a** (after A11), **R38b** (S6 decided 2026-10-20, R11).
-- **Still open from the checks of 2026-10-19:** **G56** the CAS check through a user function (narrowed, after G60); **A16** the Tab One's Enter p95; **A18** the behaviour diff in the audit; **G65**, **G66** names from Giac's state (S13 accepted; G65 takes F58); G42's rewrite waits for G2 items 66 and 67 (S12).
+- **Still open from the checks of 2026-10-19:** **G56** the CAS check through a user function (narrowed, after G60); **A16** the Tab One's Enter p95 (second row done 2026-10-20: 141–153 ms; the third waits for G65); **A18** the behaviour diff in the audit; **G65**, **G66** names from Giac's state (S13 accepted; G65 takes F58); G42's rewrite waits for G2 items 66 and 67 (S12).
 
 ### Engineer core (P8; architecture docs/04, plan and gates docs/03 section 8)
 A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass within budget and its gates hold.
