@@ -8,20 +8,20 @@ const ready = (page: Page) => page.waitForFunction(() => window.pascaline.sessio
 
 const sheet = (page: Page) => page.getByTestId("menu");
 const settingsPage = (page: Page) => page.getByTestId("settings");
-/** Shift + Apps, 5: the Settings page (the last row of Mode). */
+/** The Mode sheet (format chip, ▲), 5: the Settings page (the last row of Mode). */
 async function openSettings(page: Page): Promise<void> {
   await tap(page, ["@mode", "d5"]);
   await expect(settingsPage(page)).toBeVisible();
   await expect(page.getByTestId("settings-title")).toHaveText("Settings");
 }
-/** Shift + Apps: the Mode sheet. */
+/** The Mode sheet (format chip, ▲; Shift + Apps before R15c2). */
 async function openMode(page: Page): Promise<void> {
   await tap(page, ["@mode"]);
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
 }
 const closeSheet = (page: Page) => tap(page, ["esc"]);
 const row = (page: Page, id: string) => settingsPage(page).locator(`[data-id="${id}"]`);
-/** Tick (or untick) notations of the Format key cycle: Settings, a tap per notation, Cancel. */
+/** Tick (or untick) notations of the Format key cycle: Settings, a tap per notation, Esc. */
 async function toggleCycle(page: Page, modes: string[]): Promise<void> {
   await openSettings(page);
   for (const m of modes) await row(page, m).tap();
@@ -103,7 +103,7 @@ test("key vibration: off by default, and on it calls navigator.vibrate on key-do
   await row(page, "haptics").tap();
   expect(await vib()).toEqual([]); // switched on from the page, where no key goes down
   await closeSheet(page);
-  expect(await vib()).toEqual([]); // the Cancel key is under the page: a hardware-style press, no touch
+  expect(await vib()).toEqual([]); // Esc is under the page: a hardware-style press, no touch
   await tap(page, ["d3"]);
   expect(await vib()).toEqual([15]); // the default length, one call per key
   await page.locator('[data-key="d4"]').dispatchEvent("pointerdown");

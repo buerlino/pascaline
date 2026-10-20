@@ -63,7 +63,7 @@ test("Shift + 6, then a cell's key, typed before the chunk is in, picks that cel
   await expect(sheet(page)).toBeHidden();
 });
 
-test("Cancel while the chunk waits closes nothing that is not open and leaves the line as it was", async ({ page }) => {
+test("Esc while the chunk waits closes nothing that is not open and leaves the line as it was", async ({ page }) => {
   const release = await hold(page);
   await open(page);
   await tap(page, ["d1", "@menu", "esc"]);

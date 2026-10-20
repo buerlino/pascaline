@@ -173,7 +173,7 @@ test("⌫ still removes one character, one ᴇ and one chip", async ({ page }) =
   expect(await bksp(page)).toBe("2+");
 });
 
-test("Shift + Cancel (undo) brings the removed template back whole", async ({ page }) => {
+test("Undo brings the removed template back whole", async ({ page }) => {
   await tap(page, ["d5", "sin", "d2", "d3", "left", "left"]);
   expect(await bksp(page)).toBe("523");
   await tap(page, ["undo"]);
@@ -376,7 +376,7 @@ test("Del mirror: before an opening bracket, and from the start of 5 sin 2 to th
   ]);
 });
 
-test("Shift + Cancel (undo) after sin 2 ▶ ⌫ ⌫ brings the 2 back", async ({ page }) => {
+test("Undo after sin 2 ▶ ⌫ ⌫ brings the 2 back", async ({ page }) => {
   await tap(page, ["sin", "d2", "right"]);
   await bksp(page);
   expect(await bksp(page)).toBe("\\sin\\left(\\placeholder{}\\right)");

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copy of the Solve roots and the Function Plot readout values (docs/04 section 2.6, backlog step 9; P5): the default
 // copy is the full value (every confirmed digit), the Menu has "as shown", and what was copied pastes back as the same
-// value. From keys (Shift + View) and from touch (a long press). Expected values: oracle = mpmath 1.3.0 at 40 digits.
+// value. From keys (Copy) and from touch (a long press). Expected values: oracle = mpmath 1.3.0 at 40 digits.
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { entryValue, open, tap } from "./helpers.ts";
 
@@ -46,7 +46,7 @@ async function solved(page: Page): Promise<void> {
   await expect(row.locator("td")).toHaveText("1.32672466524");
 }
 
-test("Solve: Shift + View copies the full root, and it pastes back as the same value (P5)", async ({ page }) => {
+test("Solve: Copy copies the full root, and it pastes back as the same value (P5)", async ({ page }) => {
   await solved(page);
   await tap(page, ["copy"]);
   await expect(page.getByTestId("notice")).toHaveText("Copied");
@@ -94,7 +94,7 @@ async function root(page: Page): Promise<void> {
   await expect(page.getByTestId("readout-x")).toHaveText("1.41421356237");
 }
 
-test("Function: Shift + View copies the full root x from the readout", async ({ page }) => {
+test("Function: Copy copies the full root x from the readout", async ({ page }) => {
   await root(page);
   await tap(page, ["copy"]);
   await expect(page.getByTestId("notice")).toHaveText("Copied");

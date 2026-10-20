@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R18: the Shift palettes, on the real engine. Shift + 6 is the G2's relations and logic grid (4 × 3, each cell picked
 // by the key at its place, shown on the cell); Shift + 9 its symbols and Greek grid (8 × 3, no key labels, G2 item 37).
-// Both open on the last pick, Esc and Cancel close them, and the digits pick inside them, so Shift + 6 cannot toggle.
+// Both open on the last pick, Esc closes them, and the digits pick inside them, so Shift + 6 cannot toggle.
 // Every cell is picked here by key or by tap and evaluated; the entry strings are what MathLive writes (the parser
 // cases of tests/golden/parser.yaml group "palettes" use them). Expected values derived by hand.
 import { expect, test, type Page } from "@playwright/test";
@@ -24,7 +24,7 @@ async function tapCell(page: Page, opener: "d6" | "d9", id: string): Promise<voi
   await expect(sheet(page)).toBeHidden();
 }
 
-test("Shift + 6: the 4 × 3 grid shows 7 8 9 ÷ / 4 5 6 × / 1 2 3; that key picks its cell; Esc, Cancel close; 6 picks AND", async ({ page }) => {
+test("Shift + 6: the 4 × 3 grid shows 7 8 9 ÷ / 4 5 6 × / 1 2 3; that key picks its cell; Esc closes; 6 picks AND", async ({ page }) => {
   await tap(page, ["shift", "d6"]);
   await expect(sheet(page).locator('[role="menuitem"]')).toHaveCount(11);
   await expect(page.getByTestId("sheet-title")).toHaveText("Relations and logic");
@@ -118,7 +118,7 @@ test("Shift + 6 by tap: every cell, between 2 and 3", async ({ page }) => {
   }
 });
 
-test("Shift + 9: the 8 × 3 grid has no key labels; digits do nothing; arrows, Enter; the last pick; Esc and Cancel close", async ({ page }) => {
+test("Shift + 9: the 8 × 3 grid has no key labels; digits do nothing; arrows, Enter; the last pick; Esc closes", async ({ page }) => {
   await tap(page, ["shift", "d9"]);
   await expect(sheet(page).locator('[role="menuitem"]')).toHaveCount(24);
   await expect(page.getByTestId("sheet-title")).toHaveText("Symbols and Greek");

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R8: the status line (docs/05 3.2), the Mode sheet (Shift + Apps since R15b) and Settings (Mode's last row) (3.4). The
+// R8: the status line (docs/05 3.2), the Mode sheet (the chips since R15c2) and Settings (Mode's last row) (3.4). The
 // real engine for the angle test (GIAC_OUT); the fake one for the rest.
 import { expect, test, type Page } from "@playwright/test";
 import { entryValue, open, tap } from "./helpers.ts";

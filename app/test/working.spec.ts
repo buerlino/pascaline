@@ -58,7 +58,7 @@ test("a job shows Working… and Cancel only after 150 ms, and its row keeps the
   expect(new Set([...pending, ...done].map((x) => Math.round(x.h * 10)))).toEqual(new Set([Math.round(done[0]!.h * 10)]));
 });
 
-test("the Cancel key stops a job before Working… shows", async ({ page }) => {
+test("Esc stops a job before Working… shows", async ({ page }) => {
   await open(page, "engine=fake&delay=2000");
   await sampleRows(page);
   await tap(page, ["d2", "add", "d3", "enter", "esc"]);

@@ -42,7 +42,7 @@ const pickCopyAs = async (page: Page, label: string): Promise<void> => {
   await page.getByRole("menuitem", { name: new RegExp(`^\\d ${label}$`) }).click();
 };
 
-test("Shift + View copies the full value of the last result, not the 12 shown digits", async ({ page }) => {
+test("Copy: copies the full value of the last result, not the 12 shown digits", async ({ page }) => {
   await thirds(page);
   await expect(lastResult(page)).toHaveAttribute("data-text", "0.666666666667");
   await tap(page, ["copy"]);
@@ -50,7 +50,7 @@ test("Shift + View copies the full value of the last result, not the 12 shown di
   await expect.poll(() => clipboard(page)).toBe(TWO_THIRDS);
 });
 
-test("Shift + View copies the picked row (Up on an empty line)", async ({ page }) => {
+test("Copy: copies the picked row (Up on an empty line)", async ({ page }) => {
   await thirds(page);
   await tap(page, ["up", "up", "copy"]);
   await expect.poll(() => clipboard(page)).toBe(THIRD);
@@ -69,7 +69,7 @@ test("Menu with a picked row copies that row, not the last result (R13, S2 I1)",
   await expect.poll(() => clipboard(page)).toBe(TWO_THIRDS);
 });
 
-test("Shift + Menu pastes a number as the keyboard's own LaTeX", async ({ page }) => {
+test("Shift + Copy (Paste) pastes a number as the keyboard's own LaTeX", async ({ page }) => {
   await setClipboard(page, "1.5E-3");
   await tap(page, ["shift", "copy"]);
   await expect.poll(() => entryValue(page)).toBe("1.5\\emark-3"); // drawn 1.5ᴇ-3, as the exponent key types it (R14)
@@ -179,7 +179,7 @@ test("a short tap on a history row still puts the result on the line", async ({ 
   expect(await entryValue(page)).toContain("\\res");
 });
 
-test("Num: the table as CSV with full values, from Shift + View and from the Menu", async ({ page }) => {
+test("Num: the table as CSV with full values, from Copy and from the Menu", async ({ page }) => {
   await tap(page, ["@symb", "d1", "div", "x", "enter", "@num"]);
   const td = page.locator('[data-testid="num-table"] tr:has(td[data-x="0.1"]) td').nth(1);
   await expect(td).toHaveAttribute("data-text", "10");

@@ -64,8 +64,8 @@ test("one-line mode shows the entry on one line", async ({ page }) => {
   await page.evaluate(() => window.pascaline.session.setEntry("textbook"));
 });
 
-test("Cancel stops a long CAS job; history and variables survive", async ({ page }) => {
-  // a:=7 in Home (no store key on the keyboard yet), then a long CAS job (factoring a 65-digit semiprime takes ~16 s), then Cancel
+test("Esc stops a long CAS job; history and variables survive", async ({ page }) => {
+  // a:=7 in Home (no store key on the keyboard yet), then a long CAS job (factoring a 65-digit semiprime takes ~16 s), then Esc
   await page.evaluate(() => window.pascaline.entry.set("a:=7"));
   await tap(page, ["enter"]);
   await expect(lastResult(page).locator(".result")).toBeVisible();

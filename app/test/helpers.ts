@@ -4,7 +4,7 @@ import type { Page } from "@playwright/test";
 /** The status line's controls (R15c1, R15c2), for keys that left the cluster: `@place` (the place name, the Apps
  *  sheet), `@menu` (☰), `@symb` / `@plot` / `@num` (the view tab; from Home or CAS the last app is opened first from the
  *  Apps sheet, as the old view keys did), `@home` and `@cas` (the Apps sheet's first two rows), `@mode` (the Mode
- *  sheet on its Angle row, as Shift + Apps opened it: the format chip, then ▲). */
+ *  sheet on its Angle row, as Shift + Apps opened it before R15c2: the format chip, then ▲). */
 async function statusTap(page: Page, id: string): Promise<void> {
   const apps = page.getByTestId("apps");
   const fromApps = async (row: string): Promise<void> => {

@@ -116,7 +116,7 @@ test("Solve: 1/x=0 — the sign change at the pole is not a root; ⚠ and the re
   await expect(value(page, "x")).toHaveAttribute("data-value", "1"); // the guess stays
 });
 
-test("Solve: Cancel stops a long solve; equations and values survive and the engine answers again", async ({ page }) => {
+test("Solve: Esc stops a long solve; equations and values survive and the engine answers again", async ({ page }) => {
   await openSolve(page);
   // A slow equation with no root (|Σ cos(kx)/k| stays far below 100; about 2.5 s on desktop).
   await page.evaluate(() => {
