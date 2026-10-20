@@ -3,7 +3,7 @@
 //
 // The engine side turns a result into a DecimalValue: its leading significant digits, truncated
 // (not rounded) at DECIMAL_KEEP digits, plus a sticky flag for anything non-zero beyond them.
-// Rounding to n ≤ DECIMAL_KEEP digits from that is exact for both tie rules, so every display
+// Rounding to n ≤ DECIMAL_KEEP digits from that is exact, so every display
 // mode rounds once, from the same value, and the history can be re-formatted after a settings
 // change without asking the engine again. Only erasable TypeScript syntax (Node runs it directly).
 //
@@ -17,7 +17,7 @@
 //          outside 10^-15 … 10^15 it is ENG.
 // Marks (docs/04 section 2.4): the engine reports facts (exactRational, reliableDigits, warn); markOf() and
 // formatConfirmed() below decide, for the format on screen, which digits may be shown and which mark goes first.
-// Rounding is half away from zero; half to even is available for G2 item 8.
+// Rounding is half away from zero.
 
 /** Significant digits a DecimalValue keeps (evalf strings from the engine carry 40). */
 export const DECIMAL_KEEP = 40;
@@ -34,14 +34,12 @@ export interface DecimalValue {
 
 export const ZERO_VALUE: DecimalValue = { neg: false, digits: "", exp: 0, sticky: false };
 
-export type Rounding = "half-away" | "half-even";
 export type NumberFormat = "STD" | "SCI" | "ENG" | "FIX" | "PFX";
 
 export interface FormatOptions {
   format: NumberFormat;
   /** Significant digits (CLAUDE.md: 12 by default). */
   digits: number;
-  rounding?: Rounding;
   /** Decimals after the point; only used by FIX (default 4). */
   fixed?: number;
   /** FIX only: significant digits of the scientific fallback (default fixed + 1); confirmedOptions sets it (G36). */
@@ -112,23 +110,12 @@ export function isZero(v: DecimalValue): boolean {
 }
 
 /** v rounded to n significant digits: exactly n digits (zero: "0"), exp of the first digit. */
-export function roundSignificant(
-  v: DecimalValue,
-  n: number,
-  rounding: Rounding = "half-away",
-): { neg: boolean; digits: string; exp: number } {
+export function roundSignificant(v: DecimalValue, n: number): { neg: boolean; digits: string; exp: number } {
   if (!Number.isInteger(n) || n < 1) throw new RangeError(`digits must be a positive integer: ${n}`);
   if (isZero(v)) return { neg: false, digits: "0", exp: 0 };
   const head = v.digits.slice(0, n).padEnd(n, "0");
   const next = v.digits.charAt(n);
-  let up: boolean;
-  if (rounding === "half-away" || next !== "5") {
-    up = next >= "5";
-  } else {
-    const beyond = v.sticky || /[1-9]/.test(v.digits.slice(n + 1));
-    up = beyond || Number(head.charAt(n - 1)) % 2 === 1;
-  }
-  let d = BigInt(head) + (up ? 1n : 0n);
+  let d = BigInt(head) + (next >= "5" ? 1n : 0n);
   let e = v.exp;
   if (d === pow10(n)) {
     d = pow10(n - 1);
@@ -145,8 +132,8 @@ export function tieRisk(v: DecimalValue, n: number): boolean {
   return /^49+$/.test(rest) || /^50*$/.test(rest);
 }
 
-function std(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
-  const r = roundSignificant(v, n, rounding);
+function std(v: DecimalValue, n: number): FormattedNumber {
+  const r = roundSignificant(v, n);
   if (r.digits === "0") return { neg: false, mantissa: "0", exponent: null };
   const d = trimZeros(r.digits);
   if (r.exp >= -4 && r.exp < n) {
@@ -157,14 +144,14 @@ function std(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
   return { neg: r.neg, mantissa: d.length > 1 ? `${d[0]}.${d.slice(1)}` : d, exponent: r.exp };
 }
 
-function sci(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
-  const r = roundSignificant(v, n, rounding);
+function sci(v: DecimalValue, n: number): FormattedNumber {
+  const r = roundSignificant(v, n);
   const ds = r.digits.padEnd(n, "0"); // zero comes back as "0"
   return { neg: r.neg, mantissa: n > 1 ? `${ds[0]}.${ds.slice(1)}` : ds, exponent: r.exp };
 }
 
-function eng(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
-  const r = roundSignificant(v, n, rounding);
+function eng(v: DecimalValue, n: number): FormattedNumber {
+  const r = roundSignificant(v, n);
   if (r.digits === "0") return { neg: false, mantissa: n > 1 ? `0.${"0".repeat(n - 1)}` : "0", exponent: 0 };
   // Exponent from the rounded value, so 999.96 at 4 digits becomes 1.000E3, not 1000.E0.
   const e3 = Math.floor(r.exp / 3) * 3;
@@ -175,13 +162,13 @@ function eng(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
 }
 
 /** FIX: a non-zero value whose every shown decimal would be 0 falls back to SCI with f decimals (G2 item 60: 4.7ᴇ-6 → 4.7000ᴇ-6). */
-function fix(v: DecimalValue, f: number, rounding: Rounding, sciDigits: number = f + 1): FormattedNumber {
-  const r = fixPlain(v, f, rounding);
-  if (!isZero(v) && /^0(\.0*)?$/.test(r.mantissa)) return sci(v, sciDigits, rounding);
+function fix(v: DecimalValue, f: number, sciDigits: number = f + 1): FormattedNumber {
+  const r = fixPlain(v, f);
+  if (!isZero(v) && /^0(\.0*)?$/.test(r.mantissa)) return sci(v, sciDigits);
   return r;
 }
 
-function fixPlain(v: DecimalValue, f: number, rounding: Rounding): FormattedNumber {
+function fixPlain(v: DecimalValue, f: number): FormattedNumber {
   const zero: FormattedNumber = { neg: false, mantissa: f > 0 ? `0.${"0".repeat(f)}` : "0", exponent: null };
   if (isZero(v)) return zero;
   const keep = v.exp + 1 + f; // significant digits up to the last decimal place
@@ -190,13 +177,11 @@ function fixPlain(v: DecimalValue, f: number, rounding: Rounding): FormattedNumb
   let exp: number;
   if (keep === 0) {
     // Below the last place: rounds to one unit of it, or to zero.
-    const lead = v.digits.charAt(0);
-    const beyond = v.digits.length > 1 || v.sticky;
-    if (!(lead > "5" || (lead === "5" && (rounding === "half-away" || beyond)))) return zero;
+    if (v.digits.charAt(0) < "5") return zero;
     digits = "1";
     exp = -f;
   } else {
-    ({ digits, exp } = roundSignificant(v, keep, rounding));
+    ({ digits, exp } = roundSignificant(v, keep));
   }
   const ip = exp >= 0 ? digits.padEnd(exp + 1, "0").slice(0, exp + 1) : "0";
   const fp = (exp >= 0 ? digits.slice(exp + 1) : "0".repeat(-exp - 1) + digits).padEnd(f, "0");
@@ -206,8 +191,8 @@ function fixPlain(v: DecimalValue, f: number, rounding: Rounding): FormattedNumb
 /** SI prefixes by power of ten (µ is U+00B5, as docs/04 section 2.7 says). */
 const PREFIXES: Record<number, string> = { [-15]: "f", [-12]: "p", [-9]: "n", [-6]: "\u00b5", [-3]: "m", 0: "", 3: "k", 6: "M", 9: "G", 12: "T", 15: "P" };
 
-function pfx(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
-  const e = eng(v, n, rounding);
+function pfx(v: DecimalValue, n: number): FormattedNumber {
+  const e = eng(v, n);
   // Zero and values inside f … P take a prefix; the exponent comes from the rounded value (999.96 k → 1.000 M).
   const p = e.exponent === null ? undefined : PREFIXES[e.exponent];
   if (p === undefined) return e;
@@ -215,18 +200,17 @@ function pfx(v: DecimalValue, n: number, rounding: Rounding): FormattedNumber {
 }
 
 export function formatReal(v: DecimalValue, o: FormatOptions): FormattedNumber {
-  const rounding = o.rounding ?? "half-away";
   switch (o.format) {
     case "PFX":
-      return pfx(v, o.digits, rounding);
+      return pfx(v, o.digits);
     case "STD":
-      return std(v, o.digits, rounding);
+      return std(v, o.digits);
     case "SCI":
-      return sci(v, o.digits, rounding);
+      return sci(v, o.digits);
     case "ENG":
-      return eng(v, o.digits, rounding);
+      return eng(v, o.digits);
     case "FIX":
-      return fix(v, o.fixed ?? 4, rounding, o.sciDigits);
+      return fix(v, o.fixed ?? 4, o.sciDigits);
   }
 }
 
@@ -366,7 +350,7 @@ function digitsShown(v: DecimalValue, o: FormatOptions): number {
 
 /** FIX shows a non-zero v in scientific notation (every shown decimal would be 0). */
 function fixFallsBack(v: DecimalValue, o: FormatOptions): boolean {
-  return o.format === "FIX" && !isZero(v) && /^0(\.0*)?$/.test(fixPlain(v, o.fixed ?? 4, o.rounding ?? "half-away").mantissa);
+  return o.format === "FIX" && !isZero(v) && /^0(\.0*)?$/.test(fixPlain(v, o.fixed ?? 4).mantissa);
 }
 
 /** The text in format `o` is exactly v: nothing non-zero is cut off. */
