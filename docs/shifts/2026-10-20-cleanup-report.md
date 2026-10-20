@@ -62,7 +62,7 @@ The baseline gate's own docs step ran after the first moves (it printed 567 link
 - **Shift reports to `docs/archive/shifts/`** (`git mv`; links to and from them fixed; none is linked from a live doc): `2026-10-18-night3-report`, `2026-10-19-night-report` (both followed by the 2026-10-20 night report), `2026-10-18-sandra-docsdiet-report` (S7 merged; its shared-file text is in `sandra.md:12` and `CLAUDE.md:40`), `2026-10-19-sandra-docs04diet-report` (S10; the r12 line is in docs/README), `2026-10-19-sandra-radspike-report` (S14; docs/04 2.12 exists, `:171`), `2026-10-20-sandra-files-report`, `-outside-report` (S6 and S8, decided on 2026-10-20: backlog owner item 2) and `-unitresult-report` (S11, now packages R60–R63). The three check reports were already in the archive.
 - **Kept in `docs/shifts/`:** the 2026-10-20 night report (the brief links it as the latest state) and the themes report (its section 6 is open and R50e links it).
 - **Mockups:** `palettes-r50.html` → `docs/archive/mockups/` (R50a picked; only archive files name it). The other seven stay: each is linked by an open package, a research note or a test (`top-cluster.html` by `app/test/topcluster.spec.ts:2`, until R15c2 replaces layout D).
-- **`docs/p3-units-plan.md` → `docs/archive/`:** its own status line says P15 superseded it; links fixed in docs/README, docs/03 and the archive, the path in `tests/golden/g2.yaml:37` and `G2-CHECKLIST.md:37` (only that line; see c9 for the checklist's drift).
+- **`p3-units-plan.md` from `docs/` → [archive/p3-units-plan.md](../archive/p3-units-plan.md):** its own status line says P15 superseded it; links fixed in docs/README, docs/03 and the archive, the path in `tests/golden/g2.yaml:37` and `G2-CHECKLIST.md:37` (only that line; see c9 for the checklist's drift).
 - **One place per fact.** On `phase-1`, CLAUDE.md already moved its architecture block to docs/README.md (the prompt's example was the main checkout's older CLAUDE.md). What repeated:
   - docs/README.md's component diagram was an older copy of docs/04 8.1 (it still drew a spreadsheet): replaced by a pointer; the key decisions stay (they are listed nowhere else).
   - brief section 2's shared-files rule repeated rules section 5 word for word: replaced by a pointer (that line is outside the bundle, which starts at "### Your report", `pipeline.sh:181`; every worker's agent file makes rules sections 3 and 5 binding).
@@ -86,7 +86,7 @@ The baseline gate's own docs step ran after the first moves (it printed 567 link
 
 ## (c) What waits for the owner (one recommendation each)
 1. **Delete `python/` in the main checkout** (156 MB: `python/_downloads/micropython-1.29.0.tar.xz`, an empty `_out/`), then the two `.gitignore` lines (`:68-70`) and the `Read(./python/**)` deny in `.claude/settings.json:33`. **Recommend: yes.** The Python app is gone (P11), the tarball can be downloaded again, and nothing reads it.
-2. **The untracked `docs/research/multi-engine-risk.md` in the main checkout:** the tracked `docs/archive/multi-engine-risk.md` is the same text plus its status line (`diff`: one added line). **Recommend: delete it** (the consolidation report, item 16, said the same).
+2. **The untracked copy of `multi-engine-risk.md` in the main checkout's `docs/research/`:** the tracked `docs/archive/multi-engine-risk.md` is the same text plus its status line (`diff`: one added line). **Recommend: delete it** (the consolidation report, item 16, said the same).
 3. **`p1/sandra-padlayout`** is merged into phase-1 (`b1de57e`) and checked out in the main checkout. **Recommend:** switch the main checkout to `master` when convenient, then `git branch -d p1/sandra-padlayout` (and the remote branch only if you want it gone).
 4. **CLAUDE.md, the Pipeline section** repeats rules section 4 and is stale ("until A10 is merged": A10 merged as `a178fd7` on 2026-10-18; `pipeline.sh:46` defaults `PASCALINE_QALC_DL_DIR`). **Recommend replacing its four bullets with:**
    > ## Pipeline
@@ -130,6 +130,6 @@ The baseline gate's own docs step ran after the first moves (it printed 567 link
 
 ## Files
 - **Changed:** `README.md`, `docs/README.md`, `docs/02-architecture-plan.md`, `docs/03-feature-analysis.md`, `docs/05-ui-plan.md`, `docs/shifts/brief.md`, `app/src/find/types.ts`, `tests/golden/g2.yaml`, `tests/golden/G2-CHECKLIST.md`, `tests/tasks/tasks.yaml`, `tests/tasks/find-queries.yaml`; link fixes in `docs/archive/backlog-2026-10.md`, `cleanup-audit-2026-10-12.md`, `decisions-2026-10.md`, `multi-engine-risk.md`, `shifts/2026-10-12-sandra-architecture-brief.md`, `shifts/2026-10-12-sandra-architecture-report.md`, `shifts/night-shift-check-2026-10-18.md`.
-- **Moved (`git mv`):** 8 shift reports `docs/shifts/` → `docs/archive/shifts/` (listed in b2), `docs/mockups/palettes-r50.html` → `docs/archive/mockups/`, `docs/p3-units-plan.md` → `docs/archive/`.
+- **Moved (`git mv`):** 8 shift reports `docs/shifts/` → `docs/archive/shifts/` (listed in b2), `docs/mockups/palettes-r50.html` → `docs/archive/mockups/`, `p3-units-plan.md` from `docs/` → `docs/archive/`.
 - **New:** this report.
 - **Deleted (tracked):** none.
