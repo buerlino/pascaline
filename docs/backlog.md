@@ -60,7 +60,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - [x] **F53 → G68 (078642f).** Solve sends an answer's full value with its confirmed digits; a second solve with each known moved confirms the result. Family 1.
 - **F54 → [G69](shifts/packages/G69.md).** With a stored x, `sum(x^2,x,1,10)` = `⚠ 385` "inherited: x" (`≈ 385` for an `≈` x; right `= 385`): `inherited()` reads bound names (`host.ts:452`). Families 8, 1; today. hunt N4.
 - **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8; today. hunt N5.
-- **F56 → [G70](shifts/packages/G70.md).** Function app Area refuses ∫₀¹ ln x, ∫₀² x ln x and ∫₋₁¹ (1−cos x)/x² as "does not converge"; Home gives −1, 0.38629436112, 0.972770752471 (`analysis.ts:161`). Families 8, 5; today. hunt N6.
+- [x] **F56 → G70.** Function app Area gives ∫₀¹ ln x = −1, ∫₀² x ln x = 0.38629436112, ∫₋₁¹ (1−cos x)/x² = 0.972770752471 (Romberg's undef no longer refuses; only Home's refusals do). hunt N6.
 - **F57 → [G72](shifts/packages/G72.md).** A library body with `increment(cnt)` changes cnt by 2 per Enter and logs nothing (`definitionStores`, `isStateful` miss `++`, `DelVar`). Families 9, 3; after R59. hunt N9.
 - **F58 → [G65](shifts/packages/G65.md).** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are 3 again (`defs.ts:73` keeps "other" entries). Family 1; low (no key types `:=`). hunt N10.
 - [x] **F59 → G71 (f11b20e).** A decision over a value with no MPFR path (`BesselJ(1,2) > 0.5`) is decided at the double with ⚠.
