@@ -47,6 +47,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, type GiacApi } from "../src/engine/host.ts";
+import { runHomeCase, runPrecisionCase, typed, seqMark, markText, RATIONAL_TEXT, type Case, type Expect } from "../src/goldenRun.ts";
 import { defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
 import { decimalFromString, formatComplex, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
@@ -73,88 +74,6 @@ import { checkAngle, checkCopy, checkDigits, checkStoreBoth, copySourceOf, invar
 import { copyFull } from "../src/clipboard/text.ts";
 import { parsePastedNumber } from "../src/clipboard/paste.ts";
 
-type Expect = string | Expect[];
-
-interface Step {
-  input?: string;
-  latex?: string;
-  angle?: "rad" | "deg";
-  /** G49f3: "cas" runs an `input` step in the CAS view (a definition made there); its result is not checked. */
-  view?: "home" | "cas";
-}
-
-interface Case {
-  id: string;
-  kind?: string;
-  input?: string;
-  latex?: string;
-  eq?: string | string[];
-  var?: string | string[];
-  guess?: string | string[];
-  f?: string | string[];
-  g?: string;
-  x0?: string;
-  lo?: string;
-  hi?: string;
-  a?: string;
-  b?: string;
-  xs?: string[];
-  /** `shown`: the digits the result is shown with when the input asks for them (CAS evalf(x,n), decisions M4-6). */
-  settings?: { angle?: "rad" | "deg"; digits?: number; shown?: number };
-  expect?: Expect;
-  /** home.yaml, precision.yaml: the mark before the result (docs/04 2.4), checked by oracle.py; by this gate once the engine reports it. */
-  mark?: "=" | "≈" | "⚠";
-  source?: string;
-  g2?: number;
-  status?: string;
-  /** parser.yaml: input settings for this case (L6). */
-  options?: { decimalComma?: boolean; realOddRoots?: boolean; units?: boolean };
-  /** parser.yaml, units mode (R28): the exact UnitRequest.formula and the slots, in unit-case.ts syntax. */
-  formula?: string;
-  slots?: string[];
-  /** parser.yaml: entries typed before this one (e.g. a function definition, L6). precision.yaml: inputs evaluated
-   *  first in the same view and engine (a stored variable, decisions M4-7). */
-  before?: string[];
-  /** precision.yaml, kind cas: inputs run first in Home on the same engine (a value stored there, G20). */
-  beforeHome?: string[];
-  /** precision.yaml, Home cases: inputs run first in CAS on the same engine (a value stored there, G50f1). */
-  beforeCas?: string[];
-  /** home.yaml (G34): a sequence of lines, each in its own angle mode; the last one is checked against expect and mark. */
-  steps?: Step[];
-  /** home.yaml sequences (G49): the constants the steps hold by name (`pasc_<id>`), as G26's table. */
-  consts?: ConstTable;
-  /** precision.yaml, kind cas: the stored names the CAS result must list as used (G20); [] means none. */
-  uses?: string[];
-  /** units.yaml: the end slot; the exact text, the dimension key (a result 0 keeps its terms' one, G35), the SI value's exact text with
-   *  an end slot (si_oracle checks it in oracle.py) and a refusal's message. */
-  to?: string;
-  exact?: string;
-  dim?: string | null;
-  /** units.yaml, G25: the unit the value is shown in ("" for a pure number) and the dimension as text. */
-  unit?: string;
-  dimtext?: string;
-  si?: string;
-  si_oracle?: string;
-  /** units.yaml, G18: σ at 2 significant digits ("none" for a result with no uncertainty), the value with it
-   *  ("39.5 ± 1.2") and an oracle expression for σ (oracle.py checks σ against it). */
-  unc?: string;
-  shown?: string;
-  unc_oracle?: string;
-  /** units.yaml, G41: the why-line of a σ shown with ⚠ (the text the user reads); a σ with one and a case without it
-   *  fails, and the other way round. */
-  unc_why?: string;
-  /** units.yaml, G40: the note the result carries (the text the user reads); a result with a note and a case without
-   *  one fails, and the other way round. */
-  notice?: string;
-  message?: string;
-  /** bench.yaml (G46): the CAS text in DEG, where it differs from the RAD one. */
-  deg?: string;
-  /** parser.yaml: the input must be rejected by the parser (docs/04 2.3 #1). */
-  error?: boolean;
-  /** parser.yaml: the entry's chip table (\res, \ans, \const), keyed as in app/src/input/chips.ts. */
-  chips?: ChipTable;
-  note?: string;
-}
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const mjs = giacMjsPath();
@@ -166,27 +85,6 @@ const want = (stage: string) => !only || only.includes(stage);
 /** Files whose `input`-style fields are what the user types, in Giac's spelling (not the parser's LaTeX). */
 const TYPED_FILES = new Set(["home.yaml", "precision.yaml", "bench.yaml", "solve.yaml", "function.yaml", "units.yaml"]);
 
-/**
- * G46: Giac runs in radians and the angle mode lives in the parser's text (R64, `sin(pasdeg*x)`). A case's typed Giac
- * text (`input`, `before`, `beforeHome`, `beforeCas`, step inputs, `eq`, `f`, `g`) is what the user types, so it gets
- * the parser's angle rule (input/angles.ts `rewriteAngles`) as the keys' LaTeX would; `latex` goes through the parser.
- */
-function typed(c: Case): Case {
-  const one = (t: string): string => rewriteAngles(t);
-  const many = <T extends string | string[] | undefined>(x: T): T => (x === undefined ? x : Array.isArray(x) ? (x.map(one) as T) : (one(x) as T));
-  const raw = c.latex === undefined;
-  return {
-    ...c,
-    ...(c.input !== undefined ? { input: one(c.input) } : {}),
-    ...(raw && c.before ? { before: c.before.map(one) } : {}),
-    ...(raw && c.beforeHome ? { beforeHome: c.beforeHome.map(one) } : {}),
-    ...(raw && c.beforeCas ? { beforeCas: c.beforeCas.map(one) } : {}),
-    ...(c.steps ? { steps: c.steps.map((st) => (st.input !== undefined ? { ...st, input: one(st.input) } : st)) } : {}),
-    ...(c.eq !== undefined ? { eq: many(c.eq) } : {}),
-    ...(c.f !== undefined ? { f: many(c.f) } : {}),
-    ...(c.g !== undefined ? { g: one(c.g) } : {}),
-  };
-}
 
 function cases(file: string): Case[] {
   const doc = parse(readFileSync(`${root}tests/golden/${file}`, "utf8")) as { cases: Case[] };
@@ -227,15 +125,7 @@ async function stageHome(): Promise<void> {
   for (let r = 0; r < ROUNDS; r++) {
     const host = new EngineHost(await freshGiac());
     for (const c of cs) {
-      if (c.steps) {
-        runs.get(c.id)!.push(await runSteps(c.steps, c.settings?.digits ?? 12, c.consts));
-        continue;
-      }
-      const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
-      // A case written as `latex` goes through our parser with Home's options (no realOddRoots since R66), its `before` too
-      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
-      for (const b of c.before ?? []) host.home(giacOf(b), s);
-      runs.get(c.id)!.push(host.home(c.latex !== undefined ? giacOf(c.latex) : c.input!, s).result);
+      runs.get(c.id)!.push(await runHomeCase(c, host, freshGiac));
     }
   }
   let pass = 0;
@@ -275,58 +165,6 @@ async function stageHome(): Promise<void> {
   );
 }
 
-/**
- * G34: a sequence of Home lines on a fresh engine, each in its own angle mode. A `latex` step goes through our parser
- * with Home's options and an Ans chip built from the step before, by the session's rule (session.svelte.ts `finish`:
- * the exact text when there is one and it fits, else `full`; exact only when nothing was approximate or cut). An
- * inexact chip makes an "=" a "≈" (displayMode.ts markFor, decisions M4-4); `inexactInput` carries that to markOf.
- */
-async function runSteps(steps: Step[], digits: number, consts: ConstTable | undefined): Promise<HomeResult & { inexactInput?: boolean }> {
-  const host = new EngineHost(await freshGiac());
-  let last: (HomeResult & { inexactInput?: boolean }) | undefined;
-  let chips: ChipTable = {};
-  // G49: every step's result as a chip by name (`pasr_<k>`, k from 1), with its facts, for the `input` steps.
-  const named: Record<string, ChipFactsTable[string]> = {};
-  for (const [k, st] of steps.entries()) {
-    const s: HomeSettings = { ...defaultHomeSettings, angle: st.angle ?? "rad", digits };
-    if (st.view === "cas") {
-      host.cas(st.input!, { ...defaultCasSettings, angle: st.angle ?? "rad", digits });
-      continue;
-    }
-    const p = st.latex !== undefined ? latexToGiacInfo(st.latex, { chips }) : { giac: st.input!, inexact: false };
-    const r = (st.latex === undefined && (consts || k > 0) ? host.home(p.giac, s, consts, named) : host.home(p.giac, s)).result;
-    last = p.inexact ? { ...r, inexactInput: true } : r;
-    const full = r.exact !== undefined && r.exact.length <= 2048 ? r.exact : r.full || r.exact;
-    if (r.ok && full && full.length <= 2048) {
-      const cut = (r.exact !== undefined && full !== r.exact) || r.value?.re.sticky === true || r.value?.im.sticky === true;
-      const exact = !r.approximate && !cut && (r.exact !== undefined || r.exactRational || !/\.|\d[eE][+-]?\d/.test(full));
-      chips = { [ANS_KEY]: { value: full, exact } };
-      // A named chip follows the session's rule (session.svelte.ts finish): the exact text only when the result is not
-      // approximate and the input held no inexact constant or chip, else the confirmed decimal r.full (R65).
-      const inexactIn = (consts !== undefined && inexactConstsIn(p.giac, consts).length > 0) || chipsIn(p.giac, named).some((j) => !named[j]!.exact);
-      const inexact = r.approximate || inexactIn;
-      const exactText = !inexact && r.exact !== undefined && r.exact.length <= 2048 ? r.exact : undefined;
-      const value = exactText ?? (r.full || (inexact ? undefined : r.exact));
-      if (value && value.length <= 2048) {
-        named[String(k + 1)] = { value, reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}), exact: !inexact && (value === exactText || (r.exact === undefined && r.value?.re.sticky !== true && r.value?.im.sticky !== true && (r.exactRational || !/\.|\d[eE][+-]?\d/.test(value)))) };
-      }
-    }
-  }
-  return last!;
-}
-
-/** The mark of a sequence's last step: markOf, and never "=" after an inexact chip (displayMode.ts markFor). */
-function seqMark(r: HomeResult & { inexactInput?: boolean }, digits: number): MarkInfo | null {
-  const m = markOf(r, { format: "STD", digits });
-  return m?.mark === "=" && r.inexactInput ? { mark: "≈" } : m;
-}
-
-/** A mark as text: "=", "≈", "⚠", or "⚠11" (eleven confirmed digits). */
-function markText(m: MarkInfo | null): string | undefined {
-  return m ? `${m.mark}${m.n ?? ""}` : undefined;
-}
-
-const RATIONAL_TEXT = /^-?\d+(\/\d+)?$/;
 
 /** `expect` (STD at the case's digits) rounded again to n digits, or null when that could round the wrong way
  *  (the dropped part is exactly 5: the case then needs a longer expect). */
@@ -356,40 +194,8 @@ async function stagePrecision(): Promise<void> {
   const nowPassing: string[] = [];
   let marksChecked = 0;
   for (const c of cs) {
-    const problems: string[] = [];
-    let mark: MarkInfo | null;
-    let shown: string;
-    // A case that stores names in the other view (`beforeHome`, `beforeCas`) gets its own engine, so the stored x does
-    // not reach later cases.
-    const host = c.beforeHome?.length || c.beforeCas?.length ? new EngineHost(await freshGiac()) : shared;
-    const setting = c.settings?.digits ?? 12;
-    // The digits the result is shown with: the setting, or what the input asked for (CAS evalf(x,n), M4-6).
-    const digits = c.settings?.shown ?? setting;
-    // A case written as `latex` (what the keys type) goes through our parser first, its `before` entries too (R18f1).
-    const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
-    const input = c.latex !== undefined ? latexToGiac(c.latex) : c.input!;
-    if (c.kind === "cas") {
-      const cs = { ...defaultCasSettings, angle: c.settings?.angle ?? "rad", digits: setting };
-      for (const b of c.beforeHome ?? []) host.home(giacOf(b), { ...defaultHomeSettings, digits: setting });
-      for (const b of c.before ?? []) host.cas(giacOf(b), cs);
-      const r = host.cas(input, cs).result;
-      if (c.uses) {
-        const got = (r.uses ?? []).map((u) => u.name).join(",");
-        if (got !== c.uses.join(",")) problems.push(`uses [${got}], expect [${c.uses.join(",")}]`);
-      }
-      shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
-      // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it); a
-      // true or false resting on a float is approximate (R18f1).
-      // A rational text whose decision did not hold at P + 20 comes approximate (G38), so that is read first.
-      mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && r.approximate ? (r.warn ? { mark: "⚠" } : { mark: "≈" }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
-    } else {
-      const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
-      for (const b of c.beforeCas ?? []) host.cas(giacOf(b), { ...defaultCasSettings, angle: s.angle, digits: setting });
-      for (const b of c.before ?? []) host.home(giacOf(b), s);
-      const r = host.home(input, s).result;
-      shown = r.ok ? r.display : `error: ${r.display}`;
-      mark = markOf(r, { format: "STD", digits });
-    }
+    const run = await runPrecisionCase(c, shared, freshGiac);
+    const { shown, mark, input, digits, problems } = run;
     if (c.expect !== undefined) {
       // ⚠ n: the result shows only its n confirmed digits; those must be the oracle's.
       const want = mark?.mark === "⚠" && mark.n !== undefined && mark.n < digits ? expectAt(String(c.expect), Math.max(1, mark.n)) : String(c.expect);
