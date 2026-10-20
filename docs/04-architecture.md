@@ -449,7 +449,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 | Find open | ≤ 100 ms warm, ≤ 300 ms cold | — | device runs |
 | Units first result (Tab One) | < 1 s | — | device runs |
 | Unit evaluation (desktop) | p95 ≤ 5 ms | median 0.91 ms, p95 ≈ 2 ms (G16) | the golden units section |
-| `defs` replay | ≤ 50 ms at 200 definitions | 291 ms (A4a); G29 cut the Giac calls from 200 to 8; A12 re-measures | device runs |
+| `defs` replay | ≤ 50 ms at 200 definitions | 158 ms (A12, Tab One); a 200-program library 403 ms; G83 loads functions on first use | device runs |
 | Key presses | each task within its budget; a unit ≤ 4 at the median | — | task benchmark |
 | Find quality | 100 % top 3, ≥ 90 % first | 100/100 first (G4) | query test |
 
@@ -482,5 +482,5 @@ The phrases are `tests/tasks/find-queries.yaml` (3.8): 100 active ones (25 const
 | Find per-key time on the Tab One | annabell (A4b) | `?bench=find` | main thread or incremental/worker (3.2) |
 | The stacked unit's height in a prompt | ron (R24c) | gallery at 360 × 740 | the row height of the unit view |
 | Units first result on the Tab One | annabell (m5) | device run of the unit view | the lazy-load bar (4.4) |
-| The `defs` replay after G29 on the Tab One | annabell (A12) | `?bench=defs`, seven cold starts | 6.2's budget; R59's gate (decisions.md G33) |
+| The library replay after G83 on the Tab One | annabell | `?bench=library`, seven cold starts | 6.2's budget; R59's gate (decisions.md G33) |
 | A fresh-clone `build.sh` time with qalc | annabell | `./build.sh` from a clean clone | 7.1 |

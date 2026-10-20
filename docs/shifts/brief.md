@@ -10,17 +10,17 @@
 **Why.** The G2's flow is the backbone; principle 3 is what we add to it, and today it is broken in our own layer between Giac and the screen, not in the keys or the parser. Of the 16 open bugs (backlog F44–F59, rechecked on `da7a59c`), 10 are wrong code of ours; in the other 6 the wrong value comes from Giac and our layer passes it on under `=`, `≈` or as Giac's text. Ten reach users today. So we harden that layer before anything widens what reaches it, and fix each bug at its cause (P18, P19). The ron lane by day touches no engine code and goes on unchanged.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **A12**, **A23**, **A20**, **A11** on the Tab One, then **A21**, **A28**, **A25** (owner, 2026-10-20); then **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**; **R72** before R4a and R24c.
+1. **A23** on the Tab One, then **A21**, **A28**, **A25** (owner, 2026-10-20); then **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**; **R72** before R4a and R24c.
 2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 after G76, R40 after G81).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
-4. annabell: **A16** again after G65, **A9** and **A11** with a device, **A18**, **A22**, **A26**, **A27**, **A19** (G64 waits for it), **A12**, **A4b** after R4b, **A20** with the Tab One, **A21** (the recipe part after F-Droid's answer), **A7 → A8** on the owner's go.
-5. **R59** after G72 and G73/G74 (and R4b, A12); **R38a** (after A11) **→ R38b**; **R70** after R49 and **A23**, both before outside round 1; **R71** (±) after R24c; **G79**.
+4. annabell: **A16** again after G65, **A9** with a device, **A18**, **A22**, **A26**, **A27**, **A19** (G64 waits for it), **A4b** after R4b, the library replay after G83 and A20 again after G82 (Tab One), **A21** (the recipe part after F-Droid's answer), **A7 → A8** on the owner's go.
+5. **R59** after G72, G73/G74 and G83 (and R4b); **R38a** **→ R38b**; **R70** after R49 and **A23**, both before outside round 1; **R71** (±) after R24c; **G79**.
 
 **At night, the hardening, in this order** (gorge unless named; tests first, failing on `da7a59c`):
 1. **Reachable today:** G58 (F44, Home hangs) → G59 (F45, F46) → G78 (F50, F51, refused with a reason); G68 (F53), G69 (F54), G70 (F56), R69 (F55).
-2. **The cause in Giac:** G75 (patch 0003, complex `tanh`; measures whether the inverse functions patch as simply) → G60 (F47, only what the patch cannot fix) → G56 (narrowed to our CAS gap; dropped if nothing is left).
+2. **The cause in Giac:** G75 (patch 0003, complex `tanh`; measures whether the inverse functions patch as simply) → G60 (F47, only what the patch cannot fix) → G56 (narrowed to our CAS gap; dropped if nothing is left); G82 (Home's budget in steps; the patch after G66's).
 3. **Before R4a** (Find puts `cas_setup`, `purge`, `sto`, `trunc`, `Heaviside`, `BesselJ` one tap away): G67 (F52, Giac's flags), G71 (F48, F49, F59). G65 (S13; it takes F58) after G67, then G66 after G75.
-4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text). **Before R36 and R40:** G76, then G80 → G81 (#1045).
+4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text), G83 (functions on first use). **Before R36 and R40:** G76, then G80 → G81 (#1045).
 5. **Engine and docs:** S17 (the workaround register with canaries) → G77 (the numbered Giac pin); S18 (status lines, decided notes to the archive).
 6. **The instruments:** G61 → G62, G63; G64 after A19 (annabell, by day); then S16, an Opus pass, triages what they find into fix packages.
 
@@ -46,8 +46,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [A27](packages/A27.md) | gc.sh takes what it misses | annabell, Sonnet | day | now | ~0.5 d |
 | [A28](packages/A28.md) | The checks run on the branch's engine | annabell, Sonnet | day | now | ~0.5 d |
 | [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | day | now | ~0.25 d |
-| [A20](packages/A20.md) | The golden Home and precision stages in the WebView | annabell, Sonnet | day (device) | the Tab One connected | ~0.25 d |
-| [A21](packages/A21.md) | libqalculate out of the build (P22) | annabell, Sonnet | day | A12, A20 | ~0.5 d |
+| [A21](packages/A21.md) | libqalculate out of the build (P22) | annabell, Sonnet | day | now | ~0.5 d |
 | [R15c2](packages/R15c2.md) | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | day | now | ~1.5 d |
 | [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | R15c2 | ~0.5 d |
 | [R15c4](packages/R15c4.md) | First-start tips | ron, Sonnet | day | R15c2 | ~0.5 d |
@@ -71,15 +70,13 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [R24d](packages/R24d.md) | Find in a slot and the user cells | ron, Sonnet | day | R24c and R4b | ~0.5 d |
 | [R62](packages/R62.md) | The unit result view drawn | ron, Sonnet | day (gallery) | R60 | ~1 d |
 | [R63](packages/R63.md) | The way back from the unit view; t02, t04 and t10 active | ron, **Opus** | day | R61, R62, R71 | ~1 d |
-| [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, A12, G72, G74 | ~0.5 d |
+| [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, G72, G74, G83 | ~0.5 d |
 | [R70](packages/R70.md) | The tap counter counts every press (S8) | ron, Sonnet | day | R49 | ~0.5 d |
 | [R71](packages/R71.md) | ± on Shift + `,` (M4-2) | ron, Sonnet | day | R24c | ~0.5 d |
 | [G79](packages/G79.md) | the G2 checklist check | gorge, Sonnet | day | now | ~0.25 d |
-| [R38a](packages/R38a.md) | The backup: export everything | ron, Sonnet | day | A11 | ~0.5 d |
+| [R38a](packages/R38a.md) | The backup: export everything | ron, Sonnet | day | now | ~0.5 d |
 | [R38b](packages/R38b.md) | The backup: restore from a file | ron, **Opus** | day | R38a | ~0.75 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the owner's phone connected | ~0.5 d |
-| [A11](packages/A11.md) | Paste and Share on Android | annabell, Sonnet | day (device) | a device connected | ~0.5 d |
-| [A12](packages/A12.md) | The defs replay re-measured on the Tab One | annabell, Sonnet | day (device) | the Tab One connected | ~0.25 d |
 | [A4b](packages/A4b.md) | Find timing on the Tab One | annabell, Sonnet | day (device) | R4b; the Tab One connected | ~0.25 d |
 | [A7](packages/A7.md) | Release signing and the version number | annabell, Sonnet | any time | the owner's go | ~0.5 d |
 | [A8](packages/A8.md) | The release workflow | annabell, **Opus** | day | A7 | ~0.5 d |
@@ -118,11 +115,13 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 73 | [G71](packages/G71.md) tier-1 functions that decide or drop to a double | gorge, Opus | `p1/gorge-m4-tier1decide` | — | 1.5 h |
 | 74 | [G65](packages/G65.md) names from Giac's state (S13), with F58 | gorge, Opus | `p1/gorge-m4-statefacts` | G67 | 2 h |
 | 75 | [G66](packages/G66.md) a store counter in Giac (next patch number) | gorge, Opus | `p1/gorge-m4-storecounter` | G65, G75 | 1.5 h |
+| 75a | [G82](packages/G82.md) Home's budget counts steps (the patch after G66's) | gorge, Opus | `p1/gorge-stepbudget` | G66 | 2 h |
 | 76 | [G72](packages/G72.md) every store form counts as a store | gorge, Sonnet | `p1/gorge-m4-statewords` | — | 45 min |
 | 77 | [G73](packages/G73.md) one reader of Giac text | gorge, Opus | `p1/gorge-m4-giactext` | G67 | 3 h |
 | 78 | [G74](packages/G74.md) the readers move to it | gorge, Opus | `p1/gorge-m4-giactextmove` | G73, G72, G65 | 3 h |
+| 78a | [G83](packages/G83.md) the user's functions defined on first use | gorge, Opus | `p1/gorge-lazydefs` | — | 1.5 h |
 | 79 | [G76](packages/G76.md) the port carries every fact | gorge, Sonnet | `p1/gorge-m4-portfacts` | — | 1 h |
-| 79a | [G80](packages/G80.md) constants carry their basis | gorge, Sonnet | `p1/gorge-m4-constbasis` | owner's OK | 1 h |
+| 79a | [G80](packages/G80.md) constants carry their basis | gorge, Sonnet | `p1/gorge-m4-constbasis` | — | 1 h |
 | 79b | [G81](packages/G81.md) σ through the basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 | 1.5 h |
 | 80 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
 | 81 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |

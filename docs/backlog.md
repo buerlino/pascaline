@@ -73,8 +73,8 @@ The one place for "where are we and what's left", one or two lines per open item
 - **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).
 - **R53. Results mode on the View key** (P16, S9; K4).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
-- **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** [x] **A12** (replay p50 158 ms, library 403 ms: decisions.md "Needs the user").
-- **The backup:** **R38a** (after A11), **R38b** (S6 decided 2026-10-20, R11).
+- **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** [x] **A11**. **The defs replay:** [x] **A12** (p50 158 ms, library 403 ms), then [G83](shifts/packages/G83.md) (functions defined on first use) and a Tab One run, before R59.
+- **The backup:** **R38a**, **R38b** (S6 decided 2026-10-20, R11).
 - **Still open from the checks of 2026-10-19:** **G56** the CAS check through a user function (narrowed, after G60); **A16** the Tab One's Enter p95 (at the bar after G53, decided 2026-10-20; the third row waits for G65); **A18** the behaviour diff in the audit; **G65**, **G66** names from Giac's state (S13 accepted; G65 takes F58); G42's rewrite waits for G2 items 66 and 67 (S12).
 
 ### Engineer core (P8; architecture docs/04, plan and gates docs/03 section 8)
