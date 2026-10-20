@@ -37,6 +37,7 @@ export class ClipActions {
   private readonly entry: EntryController;
   private readonly ops: RowOps;
   private readonly givenPort: ClipboardPort | undefined;
+  private chosen: Promise<ClipboardPort> | undefined;
   private readonly decimalComma: () => boolean;
 
   /** `decimalComma`: the decimal comma setting (docs/04 section 6.2); not a setting yet. */
@@ -54,7 +55,7 @@ export class ClipActions {
   }
 
   private async port(): Promise<ClipboardPort> {
-    return this.givenPort ?? (await impl()).webClipboard;
+    return this.givenPort ?? (this.chosen ??= (await impl()).choosePort());
   }
 
   say(message: string): void {

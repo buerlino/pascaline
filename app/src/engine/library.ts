@@ -263,7 +263,7 @@ function fail(error: string, line: number, extra: Partial<Extract<ImportResult, 
 
 /** G54, G46: library text is the user's, in radians: our names for Giac's functions (ourNames.ts) and the degree factor
  *  go in before Giac sees it, as the parser does for typed input. */
-function asGiac(text: string): string {
+export function asGiac(text: string): string {
   return rewriteAngles(renameOurCalls(text));
 }
 

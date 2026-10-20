@@ -11,7 +11,7 @@
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
 1. **A12**, **A23**, **A20**, **A11** on the Tab One, then **A28**, **A25** (owner, 2026-10-20); then **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**; **R72** before R4a and R24c.
-2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 and R40 after G76).
+2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 after G76, R40 after G81).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
 4. annabell: **A16** again after G65, **A9** and **A11** with a device, **A18**, **A22**, **A26**, **A27**, **A19** (G64 waits for it), **A12**, **A4b** after R4b, **A20** with the Tab One, **A21** after F-Droid's answer, **A7 → A8** on the owner's go.
 5. **R59** after G72 and G73/G74 (and R4b, A12); **R38a** (after A11) **→ R38b**; **R70** after R49 and **A23**, both before outside round 1; **R71** (±) after R24c; **G79**.
@@ -20,7 +20,7 @@
 1. **Reachable today:** G58 (F44, Home hangs) → G59 (F45, F46) → G78 (F50, F51, refused with a reason); G68 (F53), G69 (F54), G70 (F56), R69 (F55).
 2. **The cause in Giac:** G75 (patch 0003, complex `tanh`; measures whether the inverse functions patch as simply) → G60 (F47, only what the patch cannot fix) → G56 (narrowed to our CAS gap; dropped if nothing is left).
 3. **Before R4a** (Find puts `cas_setup`, `purge`, `sto`, `trunc`, `Heaviside`, `BesselJ` one tap away): G67 (F52, Giac's flags), G71 (F48, F49, F59). G65 (S13; it takes F58) after G67, then G66 after G75.
-4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text). **Before R36 and R40:** G76.
+4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text). **Before R36 and R40:** G76, then G80 → G81 (#1045).
 5. **Engine and docs:** S17 (the workaround register with canaries) → G77 (the numbered Giac pin); S18 (status lines, decided notes to the archive).
 6. **The instruments:** G61 → G62, G63; G64 after A19 (annabell, by day); then S16, an Opus pass, triages what they find into fix packages.
 
@@ -65,7 +65,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [R12b](packages/R12b.md) | Visual pass: tokens and history rows | ron, Sonnet | day | R4b, R53, R50e | ~1.5 d |
 | [R12c](packages/R12c.md) | Visual pass: press feedback, reduced motion | ron, Sonnet | day | R12b | ~1 d |
 | [R41](packages/R41.md) | Key labels for TalkBack | ron, Sonnet | day | R12c | ~0.5 d |
-| [R40](packages/R40.md) | Muted digits past a constant's uncertainty | ron, Sonnet | day | R41, G76 | ~0.5 d |
+| [R40](packages/R40.md) | Muted digits past a constant's uncertainty | ron, Sonnet | day | R41, G81 | ~0.5 d |
 | [R24b](packages/R24b.md) | The unit pad drawn over the keys | ron, Sonnet | day | now | ~1 d |
 | [R24c](packages/R24c.md) | The unit view entry: slots, Enter, evaluation | ron, **Opus** | day | R24b, G35, G40, G41 | ~1 d |
 | [R24d](packages/R24d.md) | Find in a slot and the user cells | ron, Sonnet | day | R24c and R4b | ~0.5 d |
@@ -122,6 +122,8 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 77 | [G73](packages/G73.md) one reader of Giac text | gorge, Opus | `p1/gorge-m4-giactext` | G67 | 3 h |
 | 78 | [G74](packages/G74.md) the readers move to it | gorge, Opus | `p1/gorge-m4-giactextmove` | G73, G72, G65 | 3 h |
 | 79 | [G76](packages/G76.md) the port carries every fact | gorge, Sonnet | `p1/gorge-m4-portfacts` | — | 1 h |
+| 79a | [G80](packages/G80.md) constants carry their basis | gorge, Sonnet | `p1/gorge-m4-constbasis` | owner's OK | 1 h |
+| 79b | [G81](packages/G81.md) σ through the basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 | 1.5 h |
 | 80 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
 | 81 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |
 | 82 | [S18](packages/S18.md) status lines; decided notes to the archive | sandra, Opus | `p1/sandra-noteslife` | — | 45 min |

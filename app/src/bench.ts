@@ -7,6 +7,7 @@
 import raw from "../../tests/golden/bench.yaml";
 import type { Session, HistoryItem } from "./state/session.svelte.ts";
 import { mark } from "./marks.ts";
+import { asGiac, parseLibrary } from "./engine/library.ts";
 
 interface Case { id: string; input: string; expect?: string }
 const r1 = (x: number): number => Math.round(x * 10) / 10;
@@ -39,6 +40,25 @@ export async function runDefsBench(session: Session): Promise<void> {
   for (let i = 1; i <= 50; i++) await enter(session, `df${i}(x):=x^2+${i}*x+sin(${i})`);
   await sleep(2000); // the log is saved to IndexedDB a moment after the last change
   mark("defs-seeded");
+}
+
+/** The 200 programs of G33's replay measurement (library.test.ts "200 library programs replay"): a library file. */
+export function libraryBenchText(): string {
+  let text = "// pascaline library 1\n";
+  for (let i = 1; i <= 200; i++) text += `\n// program ${i}\nlib${i}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${i};\n}\n`;
+  return text;
+}
+
+/**
+ * ?bench=library (A12): seed the 200 library programs into the persisted log, once, the way importLibrary defines them
+ * (asGiac, then cas()). Then cold-start the app (tools/device_run.py start): replayMs is the library replay.
+ */
+export async function runLibraryBench(session: Session): Promise<void> {
+  while (session.engineState === "starting") await sleep(20);
+  session.setView("cas");
+  for (const d of parseLibrary(libraryBenchText()).defs) await enter(session, asGiac(d.text));
+  await sleep(2000);
+  mark("library-seeded");
 }
 
 export async function runBench(session: Session): Promise<void> {
