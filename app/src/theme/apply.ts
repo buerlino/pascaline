@@ -23,12 +23,16 @@ const FILES: Record<Family, () => Promise<unknown>> = {
 };
 const defaultLoader: Loader = (family) => FILES[family]();
 
+/** The rules of the two switches (R50d), in one file, loaded with either switch (the injected family loader is separate). */
+const loadModes = (): Promise<unknown> => import("./modes.css");
+
 /** Does the theme need its family's file? Pascaline's plain look is in style.css already. */
 export const needsFile = (t: Theme): boolean => t.family !== "pascaline" || t.contrast === "high" || t.keys === "plain";
 
 /** The attributes, set on `root` after the file is in. A failed load leaves the attributes as they were and rejects. */
-export async function applyTheme(t: Theme, root: HTMLElement = document.documentElement, load: Loader = defaultLoader): Promise<void> {
+export async function applyTheme(t: Theme, root: HTMLElement = document.documentElement, load: Loader = defaultLoader, modes: () => Promise<unknown> = loadModes): Promise<void> {
   if (needsFile(t)) await load(t.family);
+  if (t.contrast === "high" || t.keys === "plain") await modes();
   root.setAttribute("data-family", t.family);
   root.setAttribute("data-brightness", t.brightness);
   if (t.contrast === "high") root.setAttribute("data-contrast", "high");

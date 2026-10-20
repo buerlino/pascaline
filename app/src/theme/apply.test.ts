@@ -45,3 +45,17 @@ describe("applyTheme", () => {
     expect(needsFile({ family: "gruvbox", brightness: "dark", contrast: "normal", keys: "colour" })).toBe(true);
   });
 });
+
+describe("modes.css", () => {
+  it("is loaded only with Plain keys or High contrast", async () => {
+    let n = 0;
+    const modes = async (): Promise<void> => void n++;
+    const t = (o: Partial<Theme>): Theme => ({ family: "pascaline", brightness: "dark", contrast: "normal", keys: "colour", ...o });
+    await applyTheme(t({}), fakeRoot(), async () => {}, modes);
+    await applyTheme(t({ family: "nord" }), fakeRoot(), async () => {}, modes);
+    expect(n).toBe(0);
+    await applyTheme(t({ keys: "plain" }), fakeRoot(), async () => {}, modes);
+    await applyTheme(t({ contrast: "high" }), fakeRoot(), async () => {}, modes);
+    expect(n).toBe(2);
+  });
+});

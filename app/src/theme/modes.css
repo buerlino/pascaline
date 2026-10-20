@@ -1,0 +1,60 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Plain keys and High contrast (R50d). Lazy: applyTheme loads it with the switch, so the start chunk does not carry it.
+   Plain keys: bold always means Shift, italic always means Alpha; weight and style only, never a colour. The two
+   exceptions keep theirs: the ⚠ mark and error text (principle 3), and the plot curves (not touched here). */
+:root[data-keys="plain"] .shiftlegend,
+:root[data-keys="plain"] .alphalegend,
+:root[data-keys="plain"] .shifted .main,
+:root[data-keys="plain"] .alphaed .main {
+  color: var(--text);
+}
+:root[data-keys="plain"] .shiftlegend,
+:root[data-keys="plain"] .shifted .main,
+:root[data-keys="plain"] .sheet .n,
+:root[data-keys="plain"] .bubble {
+  font-weight: 700;
+}
+:root[data-keys="plain"] .alphalegend,
+:root[data-keys="plain"] .alphaed .main {
+  font-style: italic;
+  font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif;
+}
+/* the alpha flick bubble is italic, the shift one bold */
+:root[data-keys="plain"] .bubble {
+  color: var(--text);
+  border-color: var(--text);
+}
+:root[data-keys="plain"] .bubble[data-dir="down"] {
+  font-weight: 400;
+  font-style: italic;
+  font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif;
+}
+:root[data-keys="plain"] .bubble[data-none="true"] {
+  color: var(--text-dead);
+  border-color: var(--text-dead);
+}
+/* the colour exceptions, named so a later rule cannot take them */
+:root[data-keys="plain"] .mark[data-mark="⚠"] {
+  color: var(--warn);
+}
+:root[data-keys="plain"] .error {
+  color: var(--error);
+}
+/* Enter keeps the inverted pair of the tokens in every layer */
+:root[data-keys="plain"] .key.enter .main,
+:root[data-keys="plain"] .key.enter .shiftlegend,
+:root[data-keys="plain"] .key.enter .alphalegend {
+  color: var(--on-enter);
+}
+/* dead keys stay dimmed */
+:root[data-keys="plain"] .key[data-dead="true"] .main {
+  color: var(--text-dead);
+}
+:root[data-contrast="high"] .key:not([aria-pressed="true"]):not([data-locked="true"]):not(:focus-visible),
+:root[data-contrast="high"] .trackpad:not(:focus-visible) {
+  outline-width: 1.5px;
+  outline-style: solid;
+  outline-color: var(--line);
+  outline-offset: -1.5px;
+}
+/* a pressed or locked Shift/Alpha keeps Keypad's own outline (2px press, 3px lock), so a lock still differs from a press */
