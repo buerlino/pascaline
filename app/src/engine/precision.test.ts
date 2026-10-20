@@ -32,7 +32,8 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
         const v = Reflect.get(target, key) as unknown;
         if (key !== "eval" || typeof v !== "function") return v;
         return (code: string): string => {
-          const m = /^evalf\(.*,(\d+)\)$/s.exec(code);
+          // G59: the value's evalf is split in the same call, `(pasz->[re(pasz),im(pasz)])(evalf(v,n))`.
+          const m = /\bevalf\(.*,(\d+)\)\)?$/s.exec(code);
           if (m) precs.push(Number(m[1]));
           return (v as (c: string) => string).call(target, code);
         };

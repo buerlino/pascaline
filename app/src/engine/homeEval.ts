@@ -30,6 +30,7 @@ import {
   floatPathFacts,
   hasFloat,
   isAudited,
+  numericDisagrees,
   rationalValue,
   decideTwice,
   decidingStored,
@@ -44,6 +45,7 @@ import {
   valuePrecision,
   whyOf,
   withDigits,
+  complexSafe,
   type ElementFacts,
   type Giac,
   type Shape,
@@ -356,6 +358,11 @@ export function floatsAsEvalf(text: string): string {
     const sig = mant.replace(".", "").replace(/^0+/, "").length;
     return `evalf(${exactRational(mant, exp10)},${Math.max(15, sig)})`;
   });
+}
+
+/** G59: `input` with each decimal literal as a float of `at` digits (a short literal alone is read as a double). */
+export function floatLiterals(input: string, at: number): string {
+  return rewriteDecimals(input, (mant, exp10) => `evalf(${exactRational(mant, exp10)},${at})`);
 }
 
 function exactRational(mant: string, exp10: number): string {
@@ -768,13 +775,20 @@ export function homeEval(
       exactText = giac.eval(ans);
     }
   }
-  const b = build(facts, shape, s.digits, "exact", false);
+  // G59 (r16 F3): an input with a decimal is checked against Giac's numeric evaluation of it; a disagreement is ⚠ with no
+  // count, "exact and numeric differ". Only with audited functions in the input and the result, and none that Giac gets
+  // wrong on complex arguments reaching the result through a stored name (the numeric route would read Giac's own).
+  const differ =
+    !once && exactBody !== body && isAudited(body) && isAudited(exactOut) && (complexSafe(exactOut) === exactOut || complexSafe(body) !== body) &&
+    numericDisagrees(giac, (at) => floatLiterals(body, at), facts, shape, s.digits);
+  if (differ) facts = facts.map((f) => (f.exactRational ? f : { ...f, reliableDigits: null, warn: "unchecked" as const }));
+  const b = build(facts, shape, s.digits, "exact", differ);
   store();
   const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
   const big = shape.kind === "scalar" && facts[0]!.big;
   // G44f1: an erf Giac computed itself (a non-real argument) leaves the value unaudited.
-  const why = facts.some((f) => f.warn) ? whyOf(facts, exactBody) : undefined;
-  if (!big) return fromBuilt(b, "exact", false, exactText, full, why);
+  const why = differ ? { differ: true } : facts.some((f) => f.warn) ? whyOf(facts, exactBody) : undefined;
+  if (!big) return fromBuilt(b, "exact", differ, exactText, full, why);
   if (s.guardMode === "reeval-float") return viaFloat("float-big", exactText);
   // Shown from the exact value (already computed); Ans continues as a float.
   giac.eval(`${ans}:=evalf(${ans},${W})`);
