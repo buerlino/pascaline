@@ -61,12 +61,12 @@ test("the removed layers are dead: ◀ and ▶ have no shift layer, 0 has no quo
   await expect(page.locator('[data-key="right"]')).toHaveAttribute("data-dead", "true");
 });
 
-test("a key that does nothing in the open view gives a double haptic: Menu in Symb, Tmpl in Plot, Fmt in an app (R13)", async ({ page }) => {
+test("a key that does nothing in the open view gives a double haptic: Tmpl in Plot, Fmt in an app (R13; Menu is never dead since R15c1: Settings is its last row)", async ({ page }) => {
   await page.evaluate(() => window.pascaline.session.setHaptics({ on: true, ms: 10 }));
   await tap(page, ["symb"]); // the last app (Function) opens on its Symb view
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "symb");
   const before = (await vibrations(page)).length;
-  await tap(page, ["menu"]);
+  await tap(page, ["fmt"]);
   await expect.poll(async () => (await vibrations(page)).length - before).toBe(3); // key down + the double
   await tap(page, ["plot"]);
   const b2 = (await vibrations(page)).length;

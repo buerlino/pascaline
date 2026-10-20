@@ -102,7 +102,18 @@ test.describe("at 412 × 915", () => {
       expect(hits).toEqual(["up", "down", "left", "right", "esc", "cancel", "menu"]);
     });
 
-  for (const name of Object.keys(OPENERS))
+  // R15c1: Settings as the last row makes the Home menu (10 rows) and the Plot menu (9, two lines of reasons) taller than
+  // the 337 px over the maths rows at 36 px a row: they scroll, with the count in the title row (docs/05 3.1)
+  const SCROLLS = ["home menu", "function plot menu"];
+  for (const name of SCROLLS)
+    test(`fit: ${name} is the one case that scrolls, and says so with its count`, async ({ page }) => {
+      await openSheet(page, name);
+      const m = await sheet(page).locator(".list").evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight }));
+      expect(m.scroll).toBeGreaterThan(m.client);
+      await expect(page.getByTestId("sheet-count")).toHaveCount(1);
+    });
+
+  for (const name of Object.keys(OPENERS).filter((n) => !SCROLLS.includes(n)))
     test(`fit: ${name} shows all its items without a scroll`, async ({ page }) => {
       await openSheet(page, name);
       const box = sheet(page).locator(".list, .grid");

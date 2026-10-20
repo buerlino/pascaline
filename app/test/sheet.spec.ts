@@ -184,7 +184,7 @@ test("disabled rows stay in place with their number and say why; picking one doe
   await expect(page.getByTestId("entry-label")).toHaveText("F1(x)=");
   await tap(page, ["plot", "menu"]); // no function defined
   const rows = sheet(page).getByRole("menuitem");
-  await expect(rows).toHaveCount(8);
+  await expect(rows).toHaveCount(9); // Settings is the last row (R15c1)
   await expect(rows.first()).toBeDisabled();
   // five neighbouring rows share their reason: it is said once, under the last of them (R21a, R7 open point 5)
   await expect(sheet(page).locator(".reason")).toHaveText(["Define a function first", "No result yet"]);

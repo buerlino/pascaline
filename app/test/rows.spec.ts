@@ -76,13 +76,13 @@ test("Delete removes the picked row and only that one", async ({ page }) => {
   expect(texts).toEqual(["0.333333333333", "0.25"]);
 });
 
-test("Menu is one list of nine, the same with or without a picked row", async ({ page }) => {
+test("Menu is one list of ten (nine, then Settings), the same with or without a picked row", async ({ page }) => {
   await three(page);
-  const names = ["Insert", "Recall", "Copy", "Store ▶", "Delete", "Copy as›", "Paste", "Share session", "Clear history"];
+  const names = ["Insert", "Recall", "Copy", "Store ▶", "Delete", "Copy as›", "Paste", "Share session", "Clear history", "Settings"];
   await tap(page, ["menu"]);
-  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(names.map((n, i) => `${i + 1}${n}`));
+  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(names.map((n, i) => `${(i + 1) % 10}${n}`));
   await tap(page, ["cancel", "up", "menu"]);
-  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(names.map((n, i) => `${i + 1}${n}`));
+  await expect(page.getByTestId("menu").getByRole("menuitem")).toHaveText(names.map((n, i) => `${(i + 1) % 10}${n}`));
 });
 
 test("Menu 5 deletes the last row when none is picked, and 2 recalls its entry", async ({ page }) => {
