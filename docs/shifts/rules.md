@@ -54,7 +54,7 @@ Every package runs through `scripts/pipeline.sh <ron|gorge|annabell|sandra> "<ID
   export PASCALINE_DL_DIR=$MAIN/engine/giac/_downloads   # never re-download Giac
   export GIAC_OUT=$MAIN/engine/giac/_out/gsl             # current dev engine build
   export PASCALINE_QALC_DL_DIR=$MAIN/engine/qalc/_downloads   # the Find index generator's libqalculate tarball (npm run index)
-  export QALC_OUT=$MAIN/engine/qalc/_out/dev              # the qalc dev build the generator reads
+  export QALC_OUT=$MAIN/engine/qalc/_out/dev              # the qalc dev build: refresh-factors.mjs and the unit probes only (A21)
   export PASCALINE_COORD=$MAIN/.coord                    # locks, device info, log
   ```
   Build engines once in the main checkout under the host-cpu lock, then point at them, rather than building in every worktree.

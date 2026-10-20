@@ -10,11 +10,11 @@
 **Why.** The G2's flow is the backbone; principle 3 is what we add to it, and today it is broken in our own layer between Giac and the screen, not in the keys or the parser. Of the 16 open bugs (backlog F44–F59, rechecked on `da7a59c`), 10 are wrong code of ours; in the other 6 the wrong value comes from Giac and our layer passes it on under `=`, `≈` or as Giac's text. Ten reach users today. So we harden that layer before anything widens what reaches it, and fix each bug at its cause (P18, P19). The ron lane by day touches no engine code and goes on unchanged.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **A23** on the Tab One, then **A28**, **A25** (owner, 2026-10-20); then **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**; **R72** before R4a and R24c.
+1. **A28**, **A25** (owner, 2026-10-20); then **R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**; **R72** before R4a and R24c.
 2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 after G76, R40 after G81).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
 4. annabell: **A16** again after G65, **A9** with a device, **A18**, **A22**, **A26**, **A27**, **A19** (G64 waits for it), **A4b** after R4b, the library replay after G83 and A20 again after G82 (Tab One), **A7 → A8** on the owner's go.
-5. **R59** after G72, G73/G74 and G83 (and R4b); **R38a** **→ R38b**; **R70** after R49 and **A23**, both before outside round 1; **R71** (±) after R24c; **G79**.
+5. **R59** after G72, G73/G74 and G83 (and R4b); **R38a** **→ R38b**; **R70** after R49, both before outside round 1; **R71** (±) after R24c; **G79**.
 
 **At night, the hardening, in this order** (gorge unless named; tests first, failing on `da7a59c`):
 1. **Reachable today:** G58 (F44, Home hangs) → G59 (F45, F46) → G78 (F50, F51, refused with a reason); G68 (F53), G69 (F54), G70 (F56), R69 (F55).
@@ -40,15 +40,13 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row after G65 | annabell, Sonnet | day (device) | G65 | ~0.25 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | now | ~0.25 d |
 | [A25](packages/A25.md) | The golden gate gates itself | annabell, Sonnet | day | now | ~0.1 d |
-| [A23](packages/A23.md) | Android's backup off | annabell, Sonnet | day (device) | now | ~0.1 d |
 | [A22](packages/A22.md) | The docs check knows ids, live notes and source sizes | annabell, Sonnet | day | now | ~0.25 d |
 | [A26](packages/A26.md) | docs/README covers every live doc | annabell, Sonnet | day | A22 | ~0.25 d |
 | [A27](packages/A27.md) | gc.sh takes what it misses | annabell, Sonnet | day | now | ~0.5 d |
 | [A28](packages/A28.md) | The checks run on the branch's engine | annabell, Sonnet | day | now | ~0.5 d |
 | [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | day | now | ~0.25 d |
-| [R15c2](packages/R15c2.md) | The R3 keys: round pad, six user keys, the editing wing | ron, **Opus** | day | now | ~1.5 d |
-| [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | R15c2 | ~0.5 d |
-| [R15c4](packages/R15c4.md) | First-start tips | ron, Sonnet | day | R15c2 | ~0.5 d |
+| [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | now | ~0.5 d |
+| [R15c4](packages/R15c4.md) | First-start tips | ron, Sonnet | day | now | ~0.5 d |
 | [R55](packages/R55.md) | Digit groups in drawn results | ron, Sonnet | day | R15c4 | ~0.5 d |
 | [R49](packages/R49.md) | Settings as a list of rows, each with its own page | ron, Sonnet | day | R15c4 | ~0.75 d |
 | [R50e](packages/R50e.md) | Settings › Appearance | ron, Sonnet | day | R49, R50d | ~1 d |
@@ -56,7 +54,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [R57](packages/R57.md) | The decimal comma as a setting | ron, Sonnet | day | R49 and R50b | ~1 d |
 | [R4a](packages/R4a.md) | Find on Math | ron, Sonnet | day | R15c chain, G67, G71 | ~2 d |
 | [R4b](packages/R4b.md) | Vars, Memory and the user keys from Find | ron, Sonnet | day | R4a and R15c3 | ~1 d |
-| [R53](packages/R53.md) | Results mode on the View key (P16, S9) | ron, **Opus** | day | R15c2 and R4b | ~1.5 d |
+| [R53](packages/R53.md) | Results mode on the View key (P16, S9) | ron, **Opus** | day | R4b | ~1.5 d |
 | [R36](packages/R36.md) | A picked row says why it has its mark | ron, Sonnet | day | G76 | ~0.5 d |
 | [R33](packages/R33.md) | Names with a value, marked on the line | ron, Sonnet | day | R4b | ~0.5 d |
 | [R37](packages/R37.md) | The angle check | ron, Sonnet | day | R33 | ~0.75 d |
@@ -80,7 +78,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [A7](packages/A7.md) | Release signing and the version number | annabell, Sonnet | any time | the owner's go | ~0.5 d |
 | [A8](packages/A8.md) | The release workflow | annabell, **Opus** | day | A7 | ~0.5 d |
 
-**Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (R15c2, R53, R24c, R38b, A8, the night's engine packages); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
+**Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (R53, R24c, R38b, A8, the night's engine packages); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 ## 0c. Night shifts: henri's plan (owner, 2026-10-14; queue rewritten 2026-10-19)
 The queue below is the next nights'. `scripts/night.sh` runs it (rules section 4): for every decision it starts a fresh henri (Sonnet, Read-only) who sees this section and the log's tail and replies with one `scripts/pipeline.sh` line; the script runs that line and asks again. **henri executes and decides nothing.** **Use the window** (owner, 2026-10-19): the queue runs until the usage limit or its end; what is not done stays in the queue for the next night (resumed from the log). The night queue holds what needs no APK, no device and no eye on the UI (owner, 2026-10-18); the rest of the ron lane runs by day.
 

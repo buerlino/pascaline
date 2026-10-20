@@ -27,12 +27,12 @@ The one place for "where are we and what's left", one or two lines per open item
 5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`. The backup (R38) protects later moves only. Android's own backup is off (A23): its phone-to-phone transfer no longer carries Pascaline's data, only our backup file does.
 6. **Outside testers:** you run two 30-minute rounds, after R4b and after R24c, from [r18](research/r18-outside-test.md) and its sheet; R70 (every press counted) comes first.
 7. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-8. **Redo after a deletion** (R15c2): say if Redo must also work after ⌫ before the MathLive report (decisions.md "Needs the user").
-9. **Later, not now:** the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
+8. **Later, not now:** the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
 
 ### Checks on the phone (one list; each by the owner, or annabell when a package names it)
 - Flick misfires in a minute of typing (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35).
 - R7's sheet defaults (decisions.md "Needs the user"); the 36 px cluster rows and the 28 px status line (R15b).
+- A11: Share session, Paste (Shift + Copy) of `1.5e-3`, r11 section 5 points 1–4; a chip tapped right after a flick (R15c2).
 - The strip right of an inner fraction that ends a numerator, about 8 px (R42): widen only if a finger misses it.
 - "Working…" on the WebView, and a taller CAS result growing its row (F8).
 - The trackpad's `touch-action: none`: any side effect (K1).
