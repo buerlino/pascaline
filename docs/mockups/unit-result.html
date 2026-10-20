@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<title>Unit result view (S11)</title>
+<style>
+/* The unit view's result states (docs/research/r17-unit-result.md), for the owner's eye. Values are the evaluator's
+   (tools/probes/unit-result.ts). Tokens as unit-pad.html. Not the app's code. */
+:root { --page: #f4f5f7; --ink: #1a1d22; --muted: #5b6575; --rule: #b9c0cc; --card: #ffffff; --ok: #1f6f54; --warn: #b05a00; --chip: #e8ecf2; }
+@media (prefers-color-scheme: dark) {
+  :root { --page: #14161a; --ink: #e8ebef; --muted: #98a2b3; --rule: #3a4250; --card: #1d2026; --ok: #5fc9a0; --warn: #f0a050; --chip: #2a2f38; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.5 system-ui, sans-serif; }
+main { max-width: 1100px; margin-inline: auto; padding: 16px; }
+h1 { font-size: 1.4rem; margin: 0 0 4px; }
+p { max-width: 72ch; }
+.muted { color: var(--muted); }
+.grid { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+.phone { width: 360px; max-width: 100%; background: var(--card); border: 1px solid var(--rule); border-radius: 12px; padding: 10px 12px; }
+.phone h2 { font-size: 13px; margin: 0 0 8px; color: var(--muted); font-weight: 600; }
+.line { font: 15px ui-monospace, monospace; color: var(--muted); border-bottom: 1px dashed var(--rule); padding-bottom: 4px; }
+.slot { border: 1px solid var(--rule); border-radius: 4px; padding: 0 4px; color: var(--ink); }
+.val { display: flex; align-items: baseline; gap: 8px; margin-top: 6px; font-size: 22px; font-variant-numeric: tabular-nums; }
+.mark { width: 1.2em; color: var(--ok); text-align: center; }
+.u { font-style: normal; }
+.dim { margin-left: auto; font-size: 13px; color: var(--muted); }
+.sub { font-size: 13px; color: var(--muted); margin-left: 1.9em; }
+.warnline { font-size: 13px; color: var(--warn); margin-left: 1.9em; }
+.noteline { font-size: 13px; margin-left: 1.9em; border-left: 3px solid var(--rule); padding-left: 6px; }
+.w { color: var(--warn); }
+.err { color: var(--warn); margin-top: 6px; }
+.alts { display: flex; gap: 6px; margin-top: 8px; flex-wrap: nowrap; overflow: hidden; }
+.alts span { background: var(--chip); border-radius: 14px; padding: 2px 10px; font-size: 14px; white-space: nowrap; }
+.alts span.more { background: none; border: 1px solid var(--rule); }
+.alts span.hint { outline: 2px solid var(--ok); }
+.home { font: 15px ui-monospace, monospace; margin-top: 6px; }
+.resch { background: var(--chip); border-radius: 4px; padding: 0 4px; }
+.resch small { color: var(--muted); font-size: 11px; }
+</style>
+</head>
+<body>
+<main>
+<h1>The unit result view</h1>
+<p class="muted">S11, for decisions.md M4-2 point 6. One card per state, at 360 px. The value line is Home's: mark, value at the digits setting, then the unit upright; the dimension on the right. Under it the alternatives row: SI first, the pad's units for the quantity, "More…" opens Find. A green outline marks the tap a task uses. Values come from <code>tools/probes/unit-result.ts</code>.</p>
+<div class="grid">
+
+<section class="phone"><h2>t02 without an end slot: the typed unit is kept (G25)</h2>
+<div class="line">72 <span class="slot">km/h</span> → <span class="slot">&nbsp;</span></div>
+<div class="val"><span class="mark">=</span><span>72 <i class="u">km/h</i></span><span class="dim">L·T⁻¹</span></div>
+<div class="alts"><span class="hint">m/s</span><span>knot</span><span>mph</span><span class="more">More…</span></div>
+</section>
+
+<section class="phone"><h2>t04: mm kept; "m" is the coherent SI unit with no prefix</h2>
+<div class="line">2 <span class="slot">&nbsp;</span> × π × 25 <span class="slot">mm</span> → <span class="slot">&nbsp;</span></div>
+<div class="val"><span class="mark">≈</span><span>157.079632679 <i class="u">mm</i></span><span class="dim">L</span></div>
+<div class="alts"><span class="hint">m</span><span>ft</span><span>in</span><span>mi</span><span>yd</span><span class="more">More…</span></div>
+</section>
+
+<section class="phone"><h2>t10: σ belongs to the value line</h2>
+<div class="line">12.34±0.05 <span class="slot">m</span> × 3.2±0.1 <span class="slot">m</span> → <span class="slot">&nbsp;</span></div>
+<div class="val"><span class="mark">≈</span><span>39.5 ± 1.2 <i class="u">m²</i></span><span class="dim">L²</span></div>
+<div class="sub">39.488 · σ 1.24432953835</div>
+<div class="alts"><span>ft²</span><span>in²</span><span>mi²</span><span>yd²</span><span class="more">More…</span></div>
+</section>
+
+<section class="phone"><h2>σ with ⚠ (G41): the ⚠ is on σ, not on the value</h2>
+<div class="line">cos(0±0.1)</div>
+<div class="val"><span class="mark">≈</span><span>1.0000 ± <span class="w">⚠</span>0.0071</span><span class="dim">1</span></div>
+<div class="sub">1 · σ 0.00707106781187</div>
+<div class="warnline">⚠ first order does not hold here</div>
+</section>
+
+<section class="phone"><h2>A note (G40): one line under the value, which stays</h2>
+<div class="line">3000 <span class="slot">rpm</span> × 0.1 <span class="slot">m</span> → <span class="slot">m/s</span></div>
+<div class="val"><span class="mark">=</span><span>5 <i class="u">m/s</i></span><span class="dim">L·T⁻¹</span></div>
+<div class="noteline">rpm counts turns: the speed at radius r is 2π·r·n</div>
+<div class="alts"><span>km/h</span><span>knot</span><span>mph</span><span class="more">More…</span></div>
+</section>
+
+<section class="phone"><h2>A refusal: the message in the value's place, no row, no chip</h2>
+<div class="line">1 <span class="slot">m</span> + 1 <span class="slot">s</span></div>
+<div class="err">Units don't match: L vs T</div>
+</section>
+
+<section class="phone"><h2>Back in Home: the chip carries the number in the shown unit</h2>
+<div class="home"><span class="resch">0.157079632679 <small>m</small></span> × 2</div>
+<div class="val"><span class="mark">≈</span><span>0.314159265359</span></div>
+<div class="sub">the unit on the chip is a label: Home has no units (P8)</div>
+</section>
+
+</div>
+</main>
+</body>
+</html>
