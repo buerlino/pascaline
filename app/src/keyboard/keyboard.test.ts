@@ -81,7 +81,8 @@ describe("keyboard spec", () => {
 
   it("every key says where it comes from", () => {
     for (const k of keyboard.keys) expect(["virtual-calc", "assumed", "device"], k.id).toContain(k.source);
-    expect(spec.match(/source: virtual-calc/g)?.length ?? 0).toBeGreaterThanOrEqual(40);
+    // 37 since R15c2: Apps, Symb, Plot, Num, Help and View left the cluster (their G2 functions are on the status line)
+    expect(spec.match(/source: virtual-calc/g)?.length ?? 0).toBeGreaterThanOrEqual(37);
   });
 
   it("moved functions sit on the reference's keys (P4)", () => {

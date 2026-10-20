@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // R15c2: the R3 cluster's editing wing (⇤ ⇥, Undo | Redo, Copy | Paste, Esc's jobs), Store from the last result and the
 // round pad's hub (decisions.md "R15c" points 1–5, "R15c Store"). Expected values are derived (what the keys must type).
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { drag, entryValue, open, recordVibrations, tap, touch, vibrations } from "./helpers.ts";
-
-const select = (page: Page, from: number, to: number) =>
-  page.evaluate(([a, b]) => {
-    const mf = window.pascaline.entry.field;
-    if (mf) mf.selection = { ranges: [[a as number, b as number]] };
-  }, [from, to]);
 
 test("⇤ and ⇥ go to the line's ends", async ({ page }) => {
   await open(page);
@@ -40,13 +34,19 @@ test("Shift + ⇤ and Shift + ⇥ go to the ends of the box: a numerator, an exp
 test("Undo, then Redo (Shift + Undo)", async ({ page }) => {
   await open(page);
   await tap(page, ["d1", "add", "d2", "mul", "d3"]);
-  await select(page, 1, 3); // "+2"
-  await tap(page, ["bksp"]);
-  expect(await entryValue(page)).toBe("1\\times3");
   await tap(page, ["undo"]);
-  expect(await entryValue(page)).toBe("1+2\\times3");
+  expect(await entryValue(page)).toBe("1+2\\times");
+  await tap(page, ["undo"]);
+  expect(await entryValue(page)).toBe("1+2");
   await tap(page, ["shift", "undo"]);
-  expect(await entryValue(page)).toBe("1\\times3");
+  expect(await entryValue(page)).toBe("1+2\\times");
+  await tap(page, ["shift", "undo"]);
+  expect(await entryValue(page)).toBe("1+2\\times3");
+  // a template comes back whole
+  await tap(page, ["div", "d4", "undo"]);
+  expect(await entryValue(page)).toBe("1+2\\times\\frac{3}{\\placeholder{}}");
+  await tap(page, ["shift", "undo"]);
+  expect(await entryValue(page)).toBe("1+2\\times\\frac34"); // MathLive's short form of \\frac{3}{4}
   await expect(page.locator('[data-key="undo"] .shiftlegend')).toHaveText("Redo");
 });
 

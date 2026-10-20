@@ -20,7 +20,7 @@
     onpress,
     ontouch = () => {},
   }: {
-    /** The free keys' slots (U1–U3, R15b): drawn and fired with the user's actions over the defaults. */
+    /** The free keys' slots (U1–U6, R15b, R15c): drawn and fired with the user's actions over the defaults. */
     userKeys: UserKeys;
     shift: boolean;
     alpha: boolean;
@@ -89,7 +89,8 @@
   });
 
   // ---- gestures (docs/decisions.md P7). One pointer handler on the whole pad, one gesture per finger.
-  // The trackpad (K1): the four arrow keys are its tap zones; a drag steps in 2D (gestures.ts), a tap is one step.
+  // The trackpad (K1): the four arrow keys are its tap zones; a drag steps in 2D (gestures.ts), a tap is one step. The
+  // hub at its centre (R15c) is the surface too: a drag from it steps, a tap on it is no zone and does nothing.
   const isPadKey = (k: Key): boolean => (PAD_KEYS as readonly string[]).includes(k.id);
   const padArea = ((): { rows: string; cols: string } | undefined => {
     const keys = keyboard.keys.filter(isPadKey);
@@ -304,6 +305,7 @@
       {#if letterRows.has(key.row)}<span class="alphalegend" data-fit="legend">{alphaHint(key)}</span>{/if}
     </button>
   {/each}
+  {#if padArea}<div class="hub" data-trackpad data-testid="pad-hub" style:grid-row={padArea.rows} style:grid-column={padArea.cols}></div>{/if}
   {#if bubble}
     <div
       class="bubble"
@@ -384,7 +386,7 @@
     background: var(--key-nav);
     font-size: 15px;
   }
-  /* a free key (U1–U3, R15b): an empty one is an outlined slot, a set one has a thin edge (the user's own key) */
+  /* a free key (U1–U6, R15b, R15c): an empty one is an outlined slot, a set one has a thin edge (the user's own key) */
   .key[data-user="empty"] {
     background: transparent;
     box-shadow: inset 0 0 0 1px var(--line);
@@ -392,15 +394,25 @@
   .key[data-user="set"] {
     box-shadow: inset 0 0 0 1px var(--muted);
   }
-  /* the trackpad and Cancel in the upper cluster: as low as the app keys beside them */
-  .key[data-key="cancel"],
+  /* the trackpad in the upper cluster: as low as the keys beside it */
   .key[data-zone="true"] {
     min-height: 36px;
   }
-  /* the trackpad (K1): one surface under the four arrow keys, which stay as its tap zones */
+  /* the trackpad (K1): one surface under the four arrow keys, which stay as its tap zones; drawn round, the G2's shape
+     (R15c, R3), with a dashed hub ring at its centre where a drag may start (a tap there does nothing) */
   .trackpad {
-    border-radius: 12px;
+    border-radius: 50%;
     background: var(--key-ctl);
+  }
+  .hub {
+    position: relative;
+    z-index: 2;
+    place-self: center;
+    width: 28%;
+    height: 30%;
+    box-sizing: border-box;
+    border: 1.5px dashed var(--muted);
+    border-radius: 50%;
   }
   .key[data-zone="true"] {
     background: transparent;

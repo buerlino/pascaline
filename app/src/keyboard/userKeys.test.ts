@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The free keys U1–U3 (R15b): defaults from spec/keyboard.yaml, the user's slots over them, kept in the stamped store.
+// The free keys U1–U6 (R15b, R15c): defaults from spec/keyboard.yaml, the user's slots over them, kept in the stamped store.
 import { describe, expect, it } from "vitest";
 import { legend } from "../i18n/index.ts";
 import { stamp, unstamp, USER_KEYS, type Kv } from "../state/storage.ts";
@@ -21,14 +21,14 @@ const key = (id: string): Key => keyboard.byId.get(id) as Key;
 const sinh = { label: "sinh", action: { insert: "\\sinh\\left(#0\\right)" } };
 
 describe("user keys (R15b)", () => {
-  it("are U1, U2 and U3; before anything is set they are the defaults: U1 empty, U2 Home, U3 CAS", () => {
+  it("are U1 … U6; before anything is set they are the defaults, all empty (R15c: no Home or CAS on U2, U3)", () => {
     const u = new UserKeys(memKv());
-    expect(USER_KEY_IDS).toEqual(["u1", "u2", "u3"]);
+    expect(USER_KEY_IDS).toEqual(["u1", "u2", "u3", "u4", "u5", "u6"]);
     expect(u.resolve(key("u2"))).toBe(key("u2"));
-    expect(actionFor(u.resolve(key("u2")), false, false)).toEqual({ kind: "special", name: "home" });
-    expect(actionFor(u.resolve(key("u3")), false, false)).toEqual({ kind: "special", name: "cas" });
-    expect(u.isEmpty(key("u1"))).toBe(true);
-    expect(u.isEmpty(key("u2"))).toBe(false);
+    for (const id of USER_KEY_IDS) {
+      expect(actionFor(u.resolve(key(id)), false, false), id).toEqual({ kind: "special", name: "none" });
+      expect(u.isEmpty(key(id)), id).toBe(true);
+    }
     // any other key is passed through as it is
     expect(u.resolve(key("sin"))).toBe(key("sin"));
   });
@@ -43,7 +43,7 @@ describe("user keys (R15b)", () => {
     expect(legend(labelFor(u1, false, false))).toBe("sinh");
     expect(u.isEmpty(key("u1"))).toBe(false);
     const u2 = u.resolve(key("u2"));
-    expect(actionFor(u2, false, false)).toEqual({ kind: "special", name: "home" }); // its tap keeps the default
+    expect(actionFor(u2, false, false)).toEqual({ kind: "special", name: "none" }); // its tap keeps the default (empty)
     expect(actionFor(u2, true, false)).toEqual({ kind: "special", name: "settings" });
     expect(u2.label.shift).toBe("Settings");
     expect(kv.data.get(USER_KEYS)).toEqual({ u1: { primary: sinh }, u2: { shift: { label: "Settings", action: { special: "settings" } } } });
@@ -58,6 +58,7 @@ describe("user keys (R15b)", () => {
   it("the user's choice wins over the default: an emptied U2 stays empty, and reset gives the default back", async () => {
     const kv = memKv();
     const u = new UserKeys(kv);
+    u.set("u2", "primary", sinh);
     u.set("u2", "primary", null);
     const u2 = u.resolve(key("u2"));
     expect(actionFor(u2, false, false)).toEqual({ kind: "special", name: "none" });
@@ -107,6 +108,17 @@ describe("user keys (R15b)", () => {
       await v.restore();
       expect(v.resolve(key("u2"))).toBe(key("u2"));
     }
+  });
+
+  it("slots stored for U1–U3 before R15c stay valid: the ids kept their meaning, a held Home or CAS still works", async () => {
+    const kv = memKv();
+    kv.data.set(USER_KEYS, { u1: { primary: sinh }, u2: { primary: { label: "Home", action: { special: "home" } } }, u3: { shift: { label: "CAS", action: { special: "cas" } } } });
+    const u = new UserKeys(kv);
+    await u.restore();
+    expect(actionFor(u.resolve(key("u1")), false, false)).toEqual({ kind: "insert", latex: "\\sinh\\left(#0\\right)" });
+    expect(actionFor(u.resolve(key("u2")), false, false)).toEqual({ kind: "special", name: "home" });
+    expect(actionFor(u.resolve(key("u3")), true, false)).toEqual({ kind: "special", name: "cas" });
+    expect(u.isEmpty(key("u3"))).toBe(true); // its tap is still the empty default
   });
 
   it("a label that starts with $ is the user's text, never a message key", () => {

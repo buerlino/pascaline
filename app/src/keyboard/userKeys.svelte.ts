@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The free keys U1–U3 of layout D (R15b; decisions.md "R15a: layout D"). Each has two slots, its tap and its Shift layer
-// (a flick up), so six actions. spec/keyboard.yaml gives the defaults (U2 = Home, U3 = CAS, the rest empty); the user's
+// The free keys U1–U6 of the R3 cluster (R15b, R15c; decisions.md "R15c"). Each has two slots, its tap and its Shift
+// layer (a flick up), so twelve actions (R15c3 adds Alpha). spec/keyboard.yaml gives the defaults (all empty); the user's
 // choice for a slot replaces its default and is kept in the stamped store under USER_KEYS (state/storage.ts). Setting a
 // slot from Find, in Settings › User keys, is R4b; this module is the model it calls.
 import type { Kv } from "../state/storage.ts";
@@ -19,7 +19,7 @@ export interface UserBinding {
 /** Per key id and layer: the user's binding, or null for a slot the user emptied. A slot that is absent has its default. */
 export type StoredUserKeys = Record<string, Partial<Record<UserLayer, UserBinding | null>>>;
 
-/** The free keys, in layout order (U1, U2, U3). */
+/** The free keys, in layout order (U1 … U6). The ids of U1–U3 kept their meaning, so their stored slots stay valid. */
 export const USER_KEY_IDS: readonly string[] = keyboard.keys.filter((k) => k.user).map((k) => k.id);
 
 /** A stored binding that still means something (a valid action and a label), null for an emptied slot; else undefined:

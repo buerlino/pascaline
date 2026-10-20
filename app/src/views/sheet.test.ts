@@ -228,19 +228,24 @@ describe("sheet keys (docs/05 3.1)", () => {
     expect(sheetKey(key("d1"), false)).toEqual({ kind: "pick", n: 1 });
     expect(sheetKey(key("d0"), true)).toEqual({ kind: "pick", n: 10 });
   });
-  it("arrows move and go back/forward, Enter picks, Esc and ◀ go back, Cancel closes, ⌫ edits the filter", () => {
+  it("arrows move and go back/forward, Enter picks, Esc and ◀ go back, ⌫ edits the filter; no close-all key (R15c)", () => {
     expect(sheetKey(key("up"), false)).toEqual({ kind: "move", by: -1 });
     expect(sheetKey(key("down"), false)).toEqual({ kind: "move", by: 1 });
     expect(sheetKey(key("right"), false)).toEqual({ kind: "right" });
     expect(sheetKey(key("left"), false)).toEqual({ kind: "left" });
     expect(sheetKey(key("esc"), false)).toEqual({ kind: "back" });
     expect(sheetKey(key("enter"), false)).toEqual({ kind: "enter" });
-    expect(sheetKey(key("cancel"), false)).toEqual({ kind: "close" });
     expect(sheetKey(key("bksp"), false)).toEqual({ kind: "backspace" });
   });
-  it("Shift, Alpha, Menu, Apps and the keys that change place keep their own job", () => {
-    // u2, u3: the free keys with their defaults Home and CAS (R15b)
-    for (const id of ["shift", "alpha", "menu", "apps", "u2", "u3", "symb", "plot", "num"]) expect(sheetKey(key(id), false), id).toEqual({ kind: "pass" });
+  it("Shift, Alpha, Tmpl and the controls that change place keep their own job", () => {
+    for (const id of ["shift", "alpha", "tmpl"]) expect(sheetKey(key(id), false), id).toEqual({ kind: "pass" });
+    // the status line's controls (R15c1) and a free key that holds a place
+    for (const name of ["menu", "apps", "home", "cas", "switch", "symb", "plot", "num"] as const) {
+      const k: Key = { ...key("u2"), actions: { primary: { kind: "special", name } } };
+      expect(sheetKey(k, false), name).toEqual({ kind: "pass" });
+    }
+    // the editing wing does nothing in a sheet (R15c)
+    for (const id of ["undo", "copy", "lstart", "lend", "view"]) expect(sheetKey(key(id), true), id).toEqual({ kind: "none" });
   });
   it("a free key that holds no place does nothing in a sheet (R15b): it never types through", () => {
     expect(sheetKey(key("u1"), true)).toEqual({ kind: "none" }); // empty

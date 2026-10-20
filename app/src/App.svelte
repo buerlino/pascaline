@@ -3,21 +3,19 @@
   import { onMount } from "svelte";
   import { APPS } from "./apps/registry.ts";
   import type { AppShell, PaletteId } from "./apps/shell.svelte.ts";
-  import type { NavDir } from "./apps/types.ts";
   import type { ClipActions } from "./clipboard/actions.svelte.ts";
-  import { startsWithAns } from "./entry/ans.ts";
-  import { ANS_CHIP } from "./entry/macros.ts";
   import type { EntryController } from "./entry/controller.ts";
   import { t, type MessageKey } from "./i18n/index.ts";
   import { openLayer } from "./input/backLayer.ts";
   import { vibrate } from "./input/haptics.ts";
   import Keypad from "./keyboard/Keypad.svelte";
   import { loadShiftPalettes, shiftPalettes } from "./keyboard/palettes.ts";
-  import { actionFor, keyboard, MATHS_ROW, type ActionBody, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
+  import { keyboard, MATHS_ROW, type Key, type Layer, type Palette, type PaletteItem } from "./keyboard/keyboard.ts";
+  import * as route from "./keyboard/route.ts";
+  import type { RouteCtx } from "./keyboard/route.ts";
   import { resultToEntry } from "./render/insertable.ts";
   import type { UserKeys } from "./keyboard/userKeys.svelte.ts";
   import { noDigit } from "./state/displayMode.ts";
-  import { canPick, pickAfter, pickAtOrBefore } from "./state/pickRows.ts";
   import type { HistoryItem, Session, View } from "./state/session.svelte.ts";
   import History from "./views/History.svelte";
   // The Mode and Settings lists load when idle after the keypad is drawn, or on the first open (R35: not in the start chunk).
@@ -28,7 +26,6 @@
   // The sheet's view (Sheet.svelte with sheetFit.ts) is its own chunk, fetched when idle after the keypad is drawn (R46);
   // the model and the keys stay here. A key that opens a sheet before it is in waits in the queue.
   import { loadSheetView, sheetChunk } from "./views/sheetView.svelte.ts";
-  import { sheetFlick, sheetKey } from "./views/sheetKeys.ts";
   // The Settings page (R21b) is its own chunk: its code loads when idle, or on the first open.
   type SettingsUi = { C: (typeof import("./views/SettingsPage.svelte"))["default"]; SettingsPage: (typeof import("./views/settingsPage.svelte.ts"))["SettingsPage"] };
   let settingsUi: SettingsUi | null = null;
@@ -63,7 +60,11 @@
       if (key) press(key, "primary");
       else enter();
     };
-    entry.onEscape = () => void cancel();
+    // R15c2: a hardware Escape is the Esc key (an open page, sheet or pick takes it first)
+    entry.onEscape = () => {
+      const key = keyboard.byId.get("esc");
+      if (key) press(key, "primary");
+    };
     // R31 (F27): a hardware keyboard's printable keys are taps of the keypad key with that character
     entry.onKey = (id, layer) => {
       const key = keyboard.byId.get(id);
@@ -152,13 +153,6 @@
     session.setView(view);
   }
 
-  async function cancel(): Promise<void> {
-    if (settings) return closeSettings();
-    if (await shell.cancel()) return;
-    if (await session.cancel()) return;
-    entry.clear();
-  }
-
   function clearKey(): void {
     if (shell.app === null && entry.value === "") session.clearHistory();
     else entry.clear();
@@ -218,8 +212,8 @@
     if (!sheetOpen) return;
     return openLayer(() => shell.closeSheet());
   });
-  /** Shift + Apps, or a tap on a status chip (`at`: the row to start on): the Mode sheet. Without `at` it starts on
-   *  Angle, so Shift + Apps, ▶, Enter always switches the angle unit (3 keys, 2 with a flick up on Apps). */
+  /** A tap on a status chip (`at`: the row to start on), or a user key that holds Mode: the Mode sheet. Without `at`
+   *  it starts on Angle, so Mode, ▶, Enter always switches the angle unit. */
   function openMode(at?: string): void {
     onModeSheet((m) => {
       picked = null;
@@ -241,122 +235,6 @@
     );
   }
 
-  function special(name: Extract<ActionBody, { kind: "special" }>["name"]): void {
-    switch (name) {
-      case "enter":
-        enter();
-        break;
-      case "cancel":
-        void cancel();
-        break;
-      case "clear":
-        clearKey();
-        break;
-      case "esc":
-        // Esc clears the entry line (an open sheet takes Esc first; a running job is the Cancel key's business).
-        entry.clear();
-        break;
-      case "switch":
-        // the place name (R15b): from an app back to Home/CAS, else switch between the two
-        picked = null;
-        if (shell.app !== null) shell.close();
-        else session.toggleView();
-        break;
-      case "home":
-      case "cas":
-        goTo(name); // U2 and U3 by default (layout D), and the Apps sheet's first two rows
-        break;
-      case "settings":
-        openSettings();
-        break;
-      case "mode":
-        openMode();
-        break;
-      case "apps":
-        shell.toggleApps();
-        break;
-      case "symb":
-      case "plot":
-      case "num":
-        void shell.setView(name);
-        break;
-      case "menu":
-        withClip(() => {
-          if (!shell.toggleMenu()) dead(); // the view has no menu
-        }); // the Home/CAS menu comes with the clipboard code
-        break;
-      case "copy":
-        withClip((c) => void c.copyKey());
-        break;
-      case "paste":
-        withClip((c) => void c.paste());
-        break;
-      case "fmt":
-        // Format key: Home and CAS show the last result in the next mode; the apps have no such result.
-        if (shell.app === null) void session.cycleFormat();
-        else dead();
-        break;
-      case "tmpl":
-        openTemplates();
-        break;
-      case "relations":
-        openShiftPalette("rel");
-        break;
-      case "symbols":
-        openShiftPalette("sym");
-        break;
-      case "shift":
-      case "alpha":
-      case "none":
-        dead();
-        break;
-    }
-  }
-
-  // P4: Up on an empty entry line picks the last history row (Home/CAS); Up/Down walk the rows, Enter puts the
-  // picked result on the entry line (L5; an entry without a result puts its input back), Esc drops the pick.
-  // Any other key drops the pick and does its normal job.
-  let picked = $state<number | null>(null);
-  function historyKey(action: ActionBody): boolean {
-    const items = session.items;
-    const n = items.length;
-    const isCmd = (name: string) => action.kind === "cmd" && action.name === name;
-    // a "note" row (the safe-start line) is drawn without a pick, so it is never picked
-    if (picked === null || picked >= n || !canPick(items, picked)) {
-      picked = null;
-      if (!isCmd("moveUp") || n === 0 || entry.value !== "") return false;
-      picked = pickAtOrBefore(items, n - 1);
-      if (picked === null) return false; // only notes: Up does its normal job
-      void loadClip(); // the row buttons come from its list
-      return true;
-    }
-    if (isCmd("moveUp")) {
-      picked = pickAtOrBefore(items, picked - 1) ?? picked;
-      return true;
-    }
-    if (isCmd("moveDown")) {
-      picked = pickAfter(items, picked);
-      return true;
-    }
-    const item = items[picked];
-    picked = null;
-    if (action.kind === "special" && action.name === "esc") return true;
-    if (action.kind === "special" && action.name === "menu" && item) {
-      withClip((c) => c.openMenu(item)); // Menu acts on the picked row (R13)
-      return true;
-    }
-    if (action.kind === "special" && action.name === "copy" && item) {
-      withClip((c) => void c.copyKey(item)); // Shift + View copies the picked row
-      return true;
-    }
-    if (action.kind === "special" && action.name === "enter" && item) {
-      if (item.status === "done") insertResult(item);
-      else entry.set(item.latex, item.chips); // the line is empty while picking: the entry comes back with its chips
-      return true;
-    }
-    return false;
-  }
-
   /** A finger went down on the keypad, or a gesture made a step: vibrate when switched on in Settings. */
   function touched(): void {
     const h = session.settings.haptics;
@@ -371,201 +249,38 @@
     setTimeout(() => vibrate(h.strength / 100, h.ms), h.ms + 70);
   }
 
-  /** Shift and Alpha as one key would see them: the session's state, or the layer a gesture chose. */
-  type Mods = { shift: boolean; alpha: boolean };
-  const modsFor = (layer: Layer | undefined): Mods =>
-    layer === undefined ? { shift: session.shift, alpha: session.alpha } : { shift: layer === "shift", alpha: layer === "alpha" };
-
-  const layerOf = (m: Mods): Layer => (m.alpha ? "alpha" : m.shift ? "shift" : "primary");
-
-  const NAV: Record<string, NavDir> = {
-    moveUp: "up",
-    moveDown: "down",
-    moveToPreviousChar: "left",
-    moveToNextChar: "right",
-  };
-
-  /** A key while a sheet is open (docs/05 3.1). Shift and Alpha are ignored, and the sheet leaves them as they are; no
-   *  key goes through to the entry line. A flick down types the key's letter into the filter, on any key (digits
-   *  too; docs/05 section 7 point 6); a flick up does nothing there. False: no sheet is open. */
-  function sheetPress(key: Key, layer: Layer | undefined): boolean {
-    const sheet = shell.sheet;
-    if (!sheet) return false;
-    const level = sheet.level;
-    // a grid whose cells show keys (Shift + 6, R18): a tap on such a key picks its cell, before its usual sheet job
-    const byPlace = layer === "alpha" || layer === "shift" ? undefined : sheet.pickKey(key.id);
-    if (byPlace) {
-      shell.picked(byPlace);
-      return true;
-    }
-    const k = layer === "alpha" || layer === "shift" ? sheetFlick(key, layer === "alpha", level.filterable) : sheetKey(key, level.filterable);
-    switch (k.kind) {
-      case "move":
-        level.move(k.by);
-        return true;
-      case "pick":
-        shell.picked(sheet.pickNumber(k.n));
-        return true;
-      case "enter":
-        shell.picked(sheet.enter());
-        return true;
-      case "right":
-        shell.picked(sheet.right());
-        return true;
-      case "left":
-        if (!sheet.left() && !sheet.back()) shell.closeSheet();
-        return true;
-      case "back":
-        if (!sheet.back()) shell.closeSheet();
-        return true;
-      case "close":
-        shell.closeSheet();
-        return true;
-      case "letter":
-        level.type(k.ch);
-        return true;
-      case "backspace":
-        level.backspace();
-        return true;
-      case "none":
-        return true;
-      case "pass": {
-        // read by what the key is, not by the layer: Menu, Apps and Tmpl toggle their sheet, a key that changes place
-        // (the place name, a user key that holds Home or CAS, Symb, Plot, Num) closes it and goes there
-        const p = key.actions.primary;
-        if (p?.kind !== "special") return true;
-        if (p.name !== "menu" && p.name !== "apps" && p.name !== "tmpl") shell.closeSheet();
-        special(p.name);
-        return true;
-      }
-    }
-  }
-
-  /** A key while the Settings page is open (R21b): ▲ ▼ move, ◀ ▶ step, Enter toggles, Esc and Cancel close; a key that
-   *  changes place closes the page and goes there; no key goes through to the entry line. */
-  function settingsPress(key: Key, layer: Layer | undefined): boolean {
-    const page = settings?.page;
-    if (!page) return false;
-    const k = layer === "alpha" || layer === "shift" ? ({ kind: "none" } as const) : sheetKey(key, false);
-    const what = page.key(k);
-    if (what === "close") closeSettings();
-    else if (what === "pass") {
-      const p = key.actions.primary;
-      closeSettings();
-      if (p?.kind === "special" && p.name !== "menu") special(p.name); // Menu just closes the page
-    }
-    return true;
-  }
-
-  // Keys pressed while an app's code is loading wait for it, so nothing typed is lost (like MathLive's queue). Each
-  // waits with the layer it was pressed in (Shift and Alpha act at once), so "Plot, Shift, Apps" typed fast opens the
-  // Mode sheet as it would after the load (decisions.md R8). A key whose action changes place, opens a sheet or
-  // cancels runs at once: the status line's place name too (it goes through press(), R15b), and a user key while it
-  // holds Home or CAS; a user key that holds anything else waits like the key it stands for.
-  const AT_ONCE: readonly string[] = ["cancel", "esc", "home", "cas", "switch", "apps", "symb", "plot", "num", "settings", "mode"];
-  // A hardware letter (R45) waits in the same queue, as a `letter`.
-  type Waiting = { key: Key; mods: Mods; layer?: Layer } | { letter: string };
-  let waiting: Waiting[] = [];
-  function wait(w: Waiting): void {
-    waiting.push(w);
-    if (waiting.length === 1) void Promise.all([shell.opening, sheetLoad]).then(replay);
-  }
-  function replay(): void {
-    const keys = waiting;
-    waiting = [];
-    for (const w of keys)
-      if (shell.loading !== null || sheetLoad !== null) wait(w); // another app started loading meanwhile
-      else if ("letter" in w) typeLetter(w.letter);
-      else if (!((settings && settingsPress(w.key, w.layer)) || (shell.sheet && sheetPress(w.key, w.layer)))) run(w.key, w.mods); // a page or sheet opened meanwhile takes its keys
-  }
-
+  /** The picked history row (P4: Up on an empty line; route.ts walks it). */
+  let picked = $state<number | null>(null);
   /** The CAS view is under the keys (no app on top): Alpha types lower case there (R58). */
   const casKeys = $derived(session.view === "cas" && shell.app === null);
-  const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols"];
-  /** Does this key open a sheet? (Mode and Settings load the view with their lists.) */
-  function opensSheet(key: Key, mods: Mods): boolean {
-    const a = actionFor(key, mods.shift, mods.alpha);
-    return a?.kind === "special" && SHEET_KEYS.includes(a.name);
-  }
-
-  /** F42: a sheet is open but its chunk is not in (a long press on a history row opens one before the idle load), so
-   *  nothing is drawn and no key may reach it. Start the load; the caller queues its key (R8), which then runs on the
-   *  drawn sheet. If the chunk does not load, the sheet closes and the queued keys run without it. */
-  function sheetUndrawn(): boolean {
-    if (!shell.sheet || sheetChunk.C) return false;
-    sheetLoad ??= loadSheetView().catch(() => shell.closeSheet()).finally(() => (sheetLoad = null));
-    return true;
-  }
-
-  /** A key fires. `layer` overrides the Shift/Alpha state for this key only: a trackpad step ("primary"), a flick up
-   *  ("shift") or down ("alpha"). */
-  function press(key: Key, layer?: Layer): void {
-    const p = key.actions.primary;
-    if (p?.kind === "special" && (p.name === "shift" || p.name === "alpha")) return modifier(p.name, layer);
-    if (settings && settingsPress(key, layer)) return;
-    if (sheetUndrawn()) return wait({ key, mods: modsFor(layer), layer });
-    if (shell.sheet && sheetPress(key, layer)) return;
-    const mods = modsFor(layer);
-    session.clearModifiers(); // a one-shot Shift or Alpha is used up by this key, a tap or a flick
-    if (sheetLoad === null && sheetChunk.C === null && opensSheet(key, mods)) {
-      sheetLoad = loadSheetView().catch(() => {}).finally(() => (sheetLoad = null)); // if it fails, the queued keys run without a sheet
-    }
-    if (sheetLoad !== null) return wait({ key, mods, layer });
-    if (shell.loading !== null) {
-      const a = actionFor(key, mods.shift, mods.alpha);
-      if (!(a?.kind === "special" && AT_ONCE.includes(a.name))) return wait({ key, mods, layer });
-    }
-    run(key, mods);
-  }
-
-  /** A letter from a hardware keyboard (R45, F38): what the keypad's letter key does in this place. */
-  function typeLetter(ch: string): void {
-    if (settings) return; // the page takes no letters
-    if (sheetUndrawn()) return wait({ letter: ch });
-    const sheet = shell.sheet;
-    if (sheet) {
-      if (sheet.level.filterable) sheet.level.type(ch);
-      return;
-    }
-    if (shell.loading !== null || sheetLoad !== null) return wait({ letter: ch });
-    picked = null;
-    session.clearModifiers();
-    if (shell.app !== null && !shell.showsEntry) return dead();
-    entry.run({ kind: "type", text: ch });
-  }
-
-  /** Shift and Alpha: a tap is the G2's one-shot (L3's double taps lock), counted for P7 point 4; a flick locks
-   *  (P7 point 3): up on Shift = shift lock, down on Alpha = capitals, up on Alpha = lower case. */
-  function modifier(name: "shift" | "alpha", layer: Layer | undefined): void {
-    if (layer === undefined || layer === "primary") {
-      session.taps.tap(name);
-      if (name === "shift") session.toggleShift();
-      else session.toggleAlpha();
-    } else if (name === "alpha") session.flickAlphaLock(layer === "shift");
-    else if (layer === "shift") session.flickShiftLock();
-  }
-
-  /** The key's action in the layer it was pressed in. */
-  function run(key: Key, mods: Mods): void {
-    const action = actionFor(key, mods.shift, mods.alpha, session.settings.entry === "line", casKeys);
-    if (!action) return dead();
-    if (shell.app === null && historyKey(action)) return;
-    if (action.kind === "special") return special(action.name);
-    if (shell.app !== null) {
-      const dir = action.kind === "cmd" ? NAV[action.name] : undefined;
-      if (dir && shell.nav(dir)) return;
-      if (!shell.showsEntry) return dead(); // a view without an entry line (Plot) ignores typing
-      if (action.kind === "insert" && action.latex === ANS_CHIP) return dead(); // Ans belongs to Home and CAS
-    } else if (entry.value === "" && key.id === "frac" && layerOf(mods) === "primary") {
-      // a b/c on an empty line (R10): the last result in its next form (decimal ↔ fraction, a+bi ↔ polar), as on the
-      // G2; while typing it is the stacked fraction below
-      void session.cycleForm();
-      return;
-    } else if (entry.value === "" && startsWithAns(key.id, layerOf(mods)) && session.hasResult()) {
-      entry.insertAns(); // docs/04 2.8: an operator on an empty line starts with Ans
-    }
-    entry.run(action);
-  }
+  /** The key routing (keyboard/route.ts, R15c2) works on this: the models, this component's state and its actions. */
+  const ctx: RouteCtx = {
+    get session() { return session; },
+    get shell() { return shell; },
+    get entry() { return entry; },
+    get picked() { return picked; },
+    set picked(v) { picked = v; },
+    get settingsPage() { return settings?.page ?? null; },
+    get sheetLoad() { return sheetLoad; },
+    set sheetLoad(v) { sheetLoad = v; },
+    waiting: [],
+    get casKeys() { return casKeys; },
+    enter,
+    insertResult,
+    goTo,
+    clearKey,
+    openSettings,
+    closeSettings,
+    openMode,
+    openTemplates,
+    openShiftPalette,
+    withClip,
+    loadClip: () => void loadClip(),
+    dead,
+  };
+  const press = (key: Key, layer?: Layer): void => route.press(ctx, key, layer);
+  const typeLetter = (ch: string): void => route.typeLetter(ctx, ch);
+  const cancel = (): Promise<void> => route.escape(ctx);
 
   const busy = $derived(session.busy || shell.busy);
   const appName = $derived(shell.app ? t(APPS.find((a) => a.id === shell.app)?.name as MessageKey) : "");
