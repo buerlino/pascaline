@@ -168,8 +168,9 @@ The engine's 256 text matches would drop by roughly the SHAPE, NAMES, STATE and 
 
 ### hind-4: golden cases through the keys
 - **Why:** 1.4. 529 of 579 Home and precision cases skip the parser.
-- **Change:** the golden runner runs every case that carries `latex:` through `latexToGiac` and the host, and checks value and mark; new cases are written with `latex:` when the keys can type them. G61's generator already builds keyboard LaTeX (its package text), so the sweep covers the rest.
-- **Cost:** 2 h for the runner; the cases grow with new packages.
+- **Already there:** the runner already sends a case written as `latex:` through our parser and checks its value and mark (`app/src/goldenRun.ts:179–182`, `app/scripts/golden.ts:408`). So no runner change is needed.
+- **Change:** a rule, not a package: a new Home or precision case is written as `latex:` when the keys can type it (rules section 9). G61's generator builds keyboard LaTeX, so its sweep covers the old Giac-text cases.
+- **Cost:** one rule line.
 
 ### hind-5: a deletion budget in the process
 - **Why:** 1.5. 6 refactor commits in 1,044; fix packages repeat one pattern.

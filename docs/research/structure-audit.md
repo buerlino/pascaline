@@ -221,13 +221,13 @@ Rank 5 removes the fewest open bugs, but it changes the most queue: G68, G76, R6
 - **Evidence:** 2.3.
 - **Change:**
   - `emit-js.ts` writes an n-ary `Add`;
-  - `emit-js.ts` and `units/evaluate.ts` import the angle tables from `input/angles.ts`;
+  - `emit-js.ts` takes its angle sets from `input/angles.ts`;
   - `tools/probes/twin-emitters.ts` becomes G63's first stage.
-- **Closes:** `audit-dms-plot`; `units/evaluate.ts:89` `withAngles`, which rewrites only sin, cos and tan, so sec, csc and cot keep `pasdeg` (inventory C; the unit view's result for `sec(30°)` is to verify by gorge with `tools/probes/unit-result.ts`).
-- **Deletes:** two angle lists.
+- **Closes:** `audit-dms-plot`. `units/evaluate.ts:89` `withAngles` rewrites only sin, cos and tan (inventory C), but the unit view refuses `sec(30°)` with "A function takes a pure number (sin, cos and tan also an angle)" (checked on `cb445bf`, `tools/probes/unit-result.ts 'sec(30*{deg})'`): no wrong value, so it stays out.
+- **Deletes:** the drawing's own angle lists (`emit-js.ts:23–24`).
 - **Cost:** 2 h. **Risk:** none found.
 - **Lands:** a unit test for the three-term DMS node and the twin-emitters run (tmpl-dms-01 differs on phase-1, not on the branch); vitest and e2e unchanged otherwise.
-- **Queue:** a FIX line, or the first step of G63.
+- **Queue:** [G87](../shifts/packages/G87.md), before G63.
 
 #### audit-P4. One door for Giac text (cause 2, lexing and rewrites)
 - **Evidence:** 1.3 (7 bracket matchers, 5 decimal lexers, no `\"`), 2.5, text-1 to text-4 and text-9.
@@ -342,7 +342,6 @@ Rank 5 removes the fewest open bugs, but it changes the most queue: G68, G76, R6
 - **audit-P2 step 3's fallback** (`sommet(quote(…))` and `lvar` per Enter) is (to verify): gorge, cost with `engine-calls.ts` in G72.
 - **The walk's cost on a 200-function library** is (to verify): gorge with A12's bench.
 - **`global.cc`'s full list of context fields** is (to verify): gorge in G67.
-- **The unit view's `sec(30°)`** is (to verify): gorge, `tools/probes/unit-result.ts`.
 - **Inventory C's claims marked (inferred)** are in the appendix; one, `entry/kept.ts:26` (a damaged chip store falls back to its drawn LaTeX, and `2\frac{1}{3}` would read as 2/3), needs a damaged store and is (to verify): ron, with a unit test of `keptLine`.
 
 ## 7. Proposed packages (brief format, not in the brief; the owner decides)

@@ -31,7 +31,6 @@ Worktree `p1/sandra-structure` from `phase-1` `d6f6093`; read and probe only. No
 - **The cost of the per-Enter fallback** (`sommet(quote(…))`): gorge, in G72.
 - **The tree walk on a 200-function library:** gorge, with A12's bench.
 - **The context fields in `global.cc`:** gorge, in G67.
-- **The unit view's `sec(30°)`:** gorge, `tools/probes/unit-result.ts`.
 - **`entry/kept.ts:26` with a damaged chip store:** ron, a unit test.
 - **The rows-per-cause split** is my reading, row by row.
 
@@ -50,3 +49,10 @@ Worktree `p1/sandra-structure` from `phase-1` `d6f6093`; read and probe only. No
   - 529 of 579 Home and precision golden cases enter as Giac text;
   - commit types: 6 `refactor` in 1,044.
 - **(to verify), by the spike the note proposes (gorge, by day, one engine build):** the bridge's cost, its handling of interrupts, the release build, and how many readers it removes.
+
+## Third part: wave 1 as packages (the owner's go, 2026-10-20)
+- **New package files:** G85 (the bridge spike, day, after A28), G86 (the chip from one pure rule), G87 (the plot shares the parser's tables), G88 (the text-match ratchet).
+- **Rewritten:** G65 takes G69 (its file is gone; backlog F54 points to G65); G76 is one `ValueFacts` type carried whole (`Facts` is taken by `state/displayMode.ts:85`); R69 runs after G86; G62's reference follows.
+- **Brief:** the queue rows placed (G69's row gone, R69 after G86, G88 after G65, G87 before G61), G85 in the day list and the table; G66 and G72–G74 stay held for G85's report.
+- **Checked on `cb445bf`:** the unit view refuses `sec(30°)` with its message (`tools/probes/unit-result.ts`), so it is no wrong value and leaves audit-P3; the golden runner already sends `latex:` cases through the parser (`goldenRun.ts:179–182`), so hind-4 is a rule line, not a package (the hindsight note says so now).
+- **The merge:** this branch was cut from `d6f6093`; phase-1 since held seven steps (`16405c4`) and pass 46 changed the queue. Expect conflicts in `brief.md` (take this branch's rows and its short hold note) and in the `giac-globals.ts` README row (take phase-1's).
