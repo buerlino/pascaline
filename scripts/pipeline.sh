@@ -84,7 +84,11 @@ ensure_integ() {
 setup_node_modules() {
   local wt="$1"
   [[ ! -L "$wt/app/node_modules" ]] || rm -f "$wt/app/node_modules"
-  [[ -e "$wt/app/node_modules" ]] || cp -al "$main/app/node_modules" "$wt/app/node_modules"
+  [[ -e "$wt/app/node_modules" ]] && return 0
+  # copy aside, then rename: an interrupted copy never leaves a half-filled node_modules that the guard above would keep
+  rm -rf "$wt/app/node_modules.tmp.$$"
+  if cp -al "$main/app/node_modules" "$wt/app/node_modules.tmp.$$"; then mv "$wt/app/node_modules.tmp.$$" "$wt/app/node_modules"
+  else rm -rf "$wt/app/node_modules.tmp.$$"; die "could not copy node_modules into $wt"; fi
 }
 
 # ---------- subcommand: pass ----------
@@ -171,7 +175,7 @@ bundle="$run/spec.md"
   echo; echo "## Task"; cat "$spec_file"
   echo; echo "## Files the task names (first 400 lines each; read more yourself if you need it)"
   total=0
-  grep -oE '\b[A-Za-z0-9_][A-Za-z0-9_./-]*\.(ts|svelte|yaml|yml|md|mjs|js|sh|py|cc|json|css|html)\b' "$spec_file" | sort -u |
+  { grep -oE '\b[A-Za-z0-9_][A-Za-z0-9_./-]*\.(ts|svelte|yaml|yml|md|mjs|js|sh|py|cc|json|css|html)\b' "$spec_file" || true; } | sort -u |
   while read -r f; do
     [[ "$f" == docs/shifts/* || "$f" == *package-lock.json ]] && continue
     [[ -f "$integ/$f" ]] || continue
@@ -308,7 +312,7 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
     if [[ $rc -eq 1 ]]; then
       if machine_failure "$out"; then
         tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null
-        mline="$(grep -m1 -E 'command not found|node_modules|Cannot find module' "$out" | cut -c1-160)"
+        mline="$(grep -m1 -E 'command not found|node_modules (is )?missing' "$out" | cut -c1-160)"
         log "pipeline #$n $id: NOT MERGED (machine: $name: $mline); branch $branch kept"
         echo "RESULT #$n $id: NOT MERGED (machine: $name: $mline; worktree $wt kept; see $out)"; exit 1
       fi

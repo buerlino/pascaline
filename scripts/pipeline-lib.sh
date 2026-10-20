@@ -20,9 +20,9 @@ from_opus_pass() {
   if grep -q '^OPUS PASS' "$1"; then sed -n '/^OPUS PASS/,$p' "$1"; else cat "$1"; fi
 }
 
-# machine_failure <check log>: succeeds when the log shows the machine, not the code, failed (A24): a missing tool or node_modules.
+# machine_failure <check log>: succeeds when the log shows the machine, not the code, failed (A24): a missing tool or node_modules (a bare "Cannot find module" can be the worker's own wrong import path, so it is not matched).
 machine_failure() {
-  grep -qE 'command not found|node_modules (is )?missing|Cannot find module|ERR_MODULE_NOT_FOUND|ENOENT.*node_modules' "$1" 2>/dev/null
+  grep -qE 'command not found|node_modules (is )?missing' "$1" 2>/dev/null
 }
 
 # integ_clean <phase-1 worktree>: succeeds when nothing is staged or changed in it (untracked files do not count) (A24).
