@@ -44,8 +44,10 @@ DIGITS = 12  # default significant digits; --digits N changes it, settings.digit
 MARK_FILES = {"home.yaml", "precision.yaml", "units.yaml"}
 MARKS = {"=", "≈", "⚠"}
 SOURCES = {"oracle", "derived", "device", "virtual-calc", "reference", "assumed"}
-KEYS = ["id", "kind", "input", "to", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "oracle",
-        "options", "before", "beforeCas", "steps", "consts", "code", "file", "home", "expect", "deg", "mark", "exact", "dim", "si", "si_oracle", "unc", "unc_oracle", "shown", "unc_why", "notice", "message", "source", "g2", "status", "group", "cat", "note"]
+KEYS = ["id", "kind", "input", "to", "latex", "eq", "var", "guess", "f", "g", "x0", "lo", "hi", "a", "b", "xs", "settings", "budgetMs", "oracle",
+        "options", "formula", "slots", "before", "beforeCas", "beforeHome", "uses", "steps", "consts", "code", "file", "home", "expect", "error", "chips",
+        "deg", "mark", "exact", "dim", "unit", "dimtext", "si", "si_oracle", "unc", "unc_oracle", "shown", "unc_why", "notice", "message", "source", "g2",
+        "status", "group", "cat", "note"]
 CASE_LINE = re.compile(r"^\s*- (\{.*\})\s*$")
 
 
@@ -389,7 +391,8 @@ def check_mark(case: dict, write: bool) -> list:
     return [f"mark {mark!r} but the oracle says {want!r}" if mark else f"numeric case without mark (oracle says {want!r})"]
 
 
-def check_file(path: Path, write: bool, g2_items: set) -> int:
+def check_file(path: Path, write: bool, g2_items: set):
+    """The number of problems in `path`, and with `write` the file's new text (None when nothing changed)."""
     lines = path.read_text().splitlines()
     bad = 0
     seen = set()
@@ -400,6 +403,7 @@ def check_file(path: Path, write: bool, g2_items: set) -> int:
             out.append(line)
             continue
         case = yaml.safe_load(m.group(1))
+        before = json.dumps(case, sort_keys=True, ensure_ascii=False)
         cid = case.get("id")
         problems = []
         if cid in seen:
@@ -439,11 +443,11 @@ def check_file(path: Path, write: bool, g2_items: set) -> int:
         for p in problems:
             print(f"PROBLEM {path.name} {cid}: {p}")
         bad += len(problems)
-        # --write normalises every case line (fixed key order, quoted strings).
-        out.append(emit(case) if write else line)
-    if write:
-        path.write_text("\n".join(out) + "\n")
-    return bad
+        # --write rewrites a case line only when it filled in a value (then in the fixed key order, strings quoted).
+        changed = write and json.dumps(case, sort_keys=True, ensure_ascii=False) != before
+        out.append(emit(case) if changed else line)
+    text = "\n".join(out) + "\n"
+    return bad, (text if write and text != path.read_text() else None)
 
 
 def cell(s: str) -> str:
@@ -495,8 +499,16 @@ def main(argv) -> int:
             print(f"PROBLEM g2.yaml item {it['n']}: answered but source is {it.get('source')!r}")
             bad += 1
     files = case_files(argv)
+    texts = []
     for path in files:
-        bad += check_file(path, write, set(numbers))
+        n, text = check_file(path, write, set(numbers))
+        bad += n
+        if text is not None:
+            texts.append((path, text))
+    # Written only once every file has been checked, so a case emit() cannot write leaves every file as it was.
+    for path, text in texts:
+        path.write_text(text)
+        print(f"wrote {path.name}")
     if "--g2" in argv:
         write_checklist(items, sorted(p for p in HERE.glob("*.yaml") if p.name != "g2.yaml"))
     print(f"{'written' if write else 'checked'} {len(files)} file(s); problems: {bad}")
