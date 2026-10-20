@@ -69,7 +69,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [R60](packages/R60.md) | The unit result's alternatives as data (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
 | [R61](packages/R61.md) | The chip from a unit result, with its facts and σ (UI-free) | gorge, **Opus** | night | R24c | ~0.75 d |
 | [R62](packages/R62.md) | The unit result view drawn | ron, Sonnet | day (gallery) | R60 | ~1 d |
-| [R63](packages/R63.md) | The way back from the unit view; t02, t04 and t10 active | ron, **Opus** | day | R61 and R62 | ~1 d |
+| [R63](packages/R63.md) | The way back from the unit view; t02, t04 and t10 active | ron, **Opus** | day | R61, R62, R71 | ~1 d |
 | [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, A12, G72, G74 | ~0.5 d |
 | [R70](packages/R70.md) | The tap counter counts every press (S8) | ron, Sonnet | day | R49 | ~0.5 d |
 | [R71](packages/R71.md) | ± on Shift + `,` (M4-2) | ron, Sonnet | day | R24c | ~0.5 d |
@@ -118,7 +118,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 75 | [G66](packages/G66.md) a store counter in Giac (next patch number) | gorge, Opus | `p1/gorge-m4-storecounter` | G65, G75 | 1.5 h |
 | 76 | [G72](packages/G72.md) every store form counts as a store | gorge, Sonnet | `p1/gorge-m4-statewords` | — | 45 min |
 | 77 | [G73](packages/G73.md) one reader of Giac text | gorge, Opus | `p1/gorge-m4-giactext` | G67 | 3 h |
-| 78 | [G74](packages/G74.md) the readers move to it | gorge, Opus | `p1/gorge-m4-giactextmove` | G73, G72 | 3 h |
+| 78 | [G74](packages/G74.md) the readers move to it | gorge, Opus | `p1/gorge-m4-giactextmove` | G73, G72, G65 | 3 h |
 | 79 | [G76](packages/G76.md) the port carries every fact | gorge, Sonnet | `p1/gorge-m4-portfacts` | — | 1 h |
 | 80 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
 | 81 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |
