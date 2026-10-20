@@ -11,7 +11,7 @@
 //   range) is refused "underflow", as an overflow is (underflow).
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
-import { functionsIn, splitList, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { functionsIn, MAX_EVAL_DIGITS, splitList, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import { isZero } from "./format.ts";
 
 /** The reasons of this module; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
@@ -139,14 +139,18 @@ export function zeroElements(slot: string, facts: readonly ElementFacts[], shape
 /**
  * F60: whether one of `elements` (Giac texts of values that read as 0) is an underflow: a number too small for MPFR's
  * exponent range (exp(-10^30)), not a 0. Decided on Giac's exact answer, not on a float (bug-patterns family 3): its
- * simplify is not 0. With `P`, the element's evalf at P must also be MPFR's 0, not noise below the digits read (an exact
- * 0 that Giac cannot prove, cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2, evaluates to about 1E-41 at 40 digits and stays ⚠ 0);
- * without it (null) the 0 is a double's, where MPFR found no value. One engine call per element, only for those that read
- * as 0; a call Giac interrupts (an error) decides nothing.
+ * normal form is not 0 (simplify, which proves more, takes 0.13 s on the DEG text of exp(cosh(asin(π))) and Giac's
+ * interrupt then left the answer to chance). With `P`, the element's evalf must be MPFR's 0 at P, not noise below the
+ * digits read (an exact 0 that Giac cannot prove, cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2, is about 1E-41 at 40 digits
+ * and stays ⚠ 0), and again at MAX_EVAL_DIGITS: a cancellation (exp(10^-70)-1, 1E-70, 0 at P, P+20 and P+40) has
+ * digits there, an underflow has none at any precision; it stays ⚠ 0 (precision.yaml prec-zero-cancel). Without `P`
+ * (null) the 0 is a double's, where MPFR found no value. One engine call per element, only for those that read as 0; a
+ * call Giac interrupts (an error) decides nothing.
  */
 export function underflow(giac: Giac, elements: readonly string[], P: number | null): boolean {
   return elements.some((e) => {
-    const nonzero = `when(simplify(${e})==0,0,1)`;
-    return giac.eval(P === null ? nonzero : `when(evalf(${e},${P})==0,${nonzero},0)`).trim() === "1";
+    const nonzero = `when(normal(${e})==0,0,1)`;
+    const q = P === null ? nonzero : `when(evalf(${e},${P})==0,when(evalf(${e},${MAX_EVAL_DIGITS})==0,${nonzero},0),0)`;
+    return giac.eval(q).trim() === "1";
   });
 }

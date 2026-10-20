@@ -65,18 +65,23 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     expect(home("exp(-1000)")).toMatchObject({ ok: true, display: "5.07595889755E-435" });
     for (const input of ["sin(pi)", "0*exp(-10^30)"]) expect(home(input), input).toMatchObject({ ok: true, display: "0", exactRational: true });
     expect(home("exp(-10^30)*exp(10^30)")).toMatchObject({ ok: true, display: "1" });
-    expect(home("cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2")).toMatchObject({ ok: true, display: "0", warn: "unchecked" });
+    for (const input of ["cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2", "exp(10^-70)-1"])
+      expect(home(input), input).toMatchObject({ ok: true, display: "0", warn: "unchecked" });
   });
   it("decides an underflow on Giac's exact answer: an element Giac's simplify proves 0 is no underflow (G84)", () => {
     try {
-      // ln(2)+ln(3)-ln(6) evaluates to MPFR's exact 0 at 40 digits, and is 0: simplify proves it.
-      giac.eval("pasU:=[ln(2)+ln(3)-ln(6),exp(-10^30)]");
+      // ln(2)+ln(3)-ln(6) is 0 and evaluates to MPFR's exact 0 at 40 digits, but has noise at 1000; exp(10^-70)-1 is
+      // 1E-70 (a cancellation, 0 at 40 digits); exp(-10^30) is 0 at any precision.
+      giac.eval("pasU:=[ln(2)+ln(3)-ln(6),exp(-10^30),exp(10^-70)-1,0]");
       const zero = { re: { neg: false, digits: "", exp: 0, sticky: false }, im: { neg: false, digits: "", exp: 0, sticky: false } };
       const facts = [0, 1].map(() => ({ value: zero, exactRational: false, reliableDigits: 40, big: false }));
       expect(zeroElements("pasU", facts, { kind: "list", n: 2 })).toEqual(["pasU[0]", "pasU[1]"]);
       expect(underflow(giac, ["pasU[0]"], 40)).toBe(false);
       expect(underflow(giac, ["pasU[1]"], 40)).toBe(true);
-      expect(underflow(giac, ["pasU[0]"], null)).toBe(false);
+      expect(underflow(giac, ["pasU[2]"], 40)).toBe(false);
+      // A double's 0: Giac's exact 0 is no underflow, exp(-10^30) is.
+      expect(underflow(giac, ["pasU[3]"], null)).toBe(false);
+      expect(underflow(giac, ["pasU[1]"], null)).toBe(true);
       // An exact rational element is never looked at.
       expect(zeroElements("pasU", [{ ...facts[0]!, exactRational: true }], { kind: "scalar" })).toEqual([]);
     } finally {
