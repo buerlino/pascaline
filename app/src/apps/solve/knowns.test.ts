@@ -104,4 +104,34 @@ describe.skipIf(!giacAvailable())("G68: Solve's knowns carry every confirmed dig
     // every shown digit is a digit of the true value 3.5623730950488... (rounded there)
     expect(Number(shown)).toBe(Number((3.5623730950488).toPrecision(n)));
   });
+  it("two ⚠ 14 knowns that cancel: y=(x-z)*10^6 is checked with each moved alone, so at most 8 digits", async () => {
+    const app = make();
+    app.unknowns = ["y", "x", "z"];
+    app.values = { x: "1.41422356237", z: "1.41421356237", y: "0" };
+    app.copies = { x: "1.4142235623731", z: "1.414213562373" }; // 14 confirmed digits each (z's last is a 0)
+    app.confirmed = { x: 14, z: 14 };
+    app.warned = { x: true, z: true };
+    app.slots.fromJSON({ latex: ["y=(x-z)*10^6"], on: [true], selected: 0 } as never);
+    app.giac = ["y=(x-z)*10^6"];
+    app.selected = "y";
+    await app.solve();
+    await app.fullOf("y");
+    // by hand: (1.4142235623731 - 1.4142135623730) * 10^6 = 10.0000000001; one unit of x moves y by 10^-7
+    expect(app.warned["y"]).toBe(true);
+    expect(app.confirmed["y"]).toBeLessThanOrEqual(8);
+    expect(app.value("y")).toBe("10");
+  });
+  it("a copy saved before G68f1 (no confirmed entry) is not an exact known after a reload", async () => {
+    const app = make();
+    const stored = { slots: { latex: ["y=x"], on: [true], selected: 0 }, values: { x: "1.41421356237", y: "0" }, selected: "y", warned: {}, copies: { x: "1.4142135623730950488" } };
+    (app as unknown as { host: AppHost }).host.kv.get = (async () => stored) as never;
+    await app.restore();
+    expect(app.copies["x"]).toBe("1.41421356237"); // the old full copy is dropped; the shown value stands in
+    expect(app.known("x").digits).toBe(12); // the shown digits, each confirmed
+    stored.copies = { x: "2" };
+    (stored as Record<string, unknown>)["confirmed"] = { x: "exact" };
+    stored.values.x = "2";
+    await app.restore();
+    expect(app.known("x")).toEqual({ name: "x", value: "2" });
+  });
 });

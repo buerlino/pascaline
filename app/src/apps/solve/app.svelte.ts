@@ -17,6 +17,7 @@ import { parseLatex } from "../../input/parse.ts";
 import { tc } from "../../clipboard/strings.ts";
 import { t } from "../../i18n/index.ts";
 import { parseDec, plainNumber, showDecimal } from "../decimal.ts";
+import { decimalFromString } from "../../engine/format.ts";
 import { slotNames, SlotsState, type SlotsJson } from "../slots.svelte.ts";
 import type { AppHost, AppInstance, MenuItem, NavDir, ViewId } from "../types.ts";
 
@@ -40,9 +41,16 @@ interface Stored {
   warned?: Record<string, boolean>;
   /** The full value (Copy, docs/04 2.6) of the unknowns a solve answered; an edit drops it. */
   copies?: Record<string, string>;
-  /** G68f1: the confirmed digits of each copy, from its result's facts (absent: exact); dropped with the copy. */
-  confirmed?: Record<string, number>;
+  /** G68f1: the confirmed digits of each copy, from its result's facts, or "exact"; dropped with the copy. A copy without
+   *  an entry (saved before G68f1) is replaced on restore by the shown value, with its shown digits. */
+  confirmed?: Record<string, Confirmed>;
 }
+
+/** Confirmed digits of a copy, or "exact" (an exact rational root: an exact known, never moved). */
+type Confirmed = number | "exact";
+
+/** Significant digits a plain decimal shows (trailing zeros dropped, so never more than are confirmed). */
+const shownDigits = (v: string): number => decimalFromString(v.replace("E", "e"))?.digits.length ?? 0;
 
 /** An equation typed on the entry line as Giac text, or why it does not parse. */
 export function compileEquation(latex: string, userFunctions: ReadonlySet<string> = DEFAULT_USER_FUNCTIONS): { giac: string; error: string } {
@@ -73,8 +81,8 @@ export class SolveApp implements AppInstance {
   report = $state<SolveReport | undefined>(undefined);
   /** The full value of each answered unknown, as Copy gives it (every confirmed digit, up to 40); absent = the stored value. */
   copies = $state<Record<string, string>>({});
-  /** G68f1: confirmed digits of each copy, from the result's facts (never counted from the copy text); absent = exact. */
-  confirmed = $state<Record<string, number>>({});
+  /** G68f1: confirmed digits of each copy, from the result's facts (never counted from the copy text), or "exact". */
+  confirmed = $state<Record<string, Confirmed>>({});
 
   private jobs = $state(0);
   private readonly host: AppHost;
@@ -98,7 +106,9 @@ export class SolveApp implements AppInstance {
   known(name: string): KnownValue {
     const full = this.copies[name];
     if (full === undefined) return { name, value: this.value(name) };
-    const digits = this.confirmed[name];
+    const c = this.confirmed[name];
+    // A copy always has an entry (keepFull, restore); a missing one is not taken for exact.
+    const digits = c === "exact" ? undefined : (c ?? shownDigits(full));
     return { name, value: full.replace("E", "e"), ...(digits !== undefined ? { digits } : {}), ...(this.warned[name] ? { warn: true } : {}) };
   }
   value(name: string): string {
@@ -197,8 +207,9 @@ export class SolveApp implements AppInstance {
     });
     if (text !== undefined && this.values[name] === display.replace("E", "e")) {
       this.copies = { ...this.copies, [name]: text };
-      // An exact rational root has no count (reliableDigits null): it stays an exact known.
-      if (typeof r.reliableDigits === "number") this.confirmed = { ...this.confirmed, [name]: r.reliableDigits };
+      // An exact rational root (reliableDigits null) stays an exact known; no facts: the shown digits.
+      const c: Confirmed = typeof r.reliableDigits === "number" ? r.reliableDigits : r.reliableDigits === null ? "exact" : shownDigits(display);
+      this.confirmed = { ...this.confirmed, [name]: c };
       this.save();
     }
   }
@@ -380,10 +391,20 @@ export class SolveApp implements AppInstance {
     if (typeof s.selected === "string" && IDENT.test(s.selected)) this.selected = s.selected;
     if (s.warned && typeof s.warned === "object")
       this.warned = Object.fromEntries(Object.entries(s.warned).filter(([k, v]) => v === true && k in this.values));
+    const conf: Record<string, unknown> = s.confirmed && typeof s.confirmed === "object" ? s.confirmed : {};
+    const ok = (v: unknown): v is Confirmed => v === "exact" || (Number.isInteger(v) && (v as number) >= 0);
+    const copies: Record<string, string> = {};
+    const confirmed: Record<string, Confirmed> = {};
     if (s.copies && typeof s.copies === "object")
-      this.copies = Object.fromEntries(Object.entries(s.copies).filter(([k, v]) => k in this.values && typeof v === "string" && /^-?\d[\d.]*(E-?\d+)?$/.test(v)));
-    if (s.confirmed && typeof s.confirmed === "object")
-      this.confirmed = Object.fromEntries(Object.entries(s.confirmed).filter(([k, v]) => k in this.copies && Number.isInteger(v) && (v as number) >= 0));
+      for (const [k, v] of Object.entries(s.copies)) {
+        if (!(k in this.values) || typeof v !== "string" || !/^-?\d[\d.]*(E-?\d+)?$/.test(v)) continue;
+        const c = conf[k];
+        // A copy saved before G68f1 has no entry: its digits are unknown, so the shown value (every digit confirmed) stands in.
+        const value = this.values[k]!;
+        [copies[k], confirmed[k]] = ok(c) ? [v, c] : [value, shownDigits(value)];
+      }
+    this.copies = copies;
+    this.confirmed = confirmed;
   }
   save(): void {
     this.saveTimer ??= setTimeout(() => this.flush(), 300);

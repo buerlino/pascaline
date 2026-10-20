@@ -131,26 +131,35 @@ function confirmAtMost(r: HomeResult, n: number, digits: number): HomeResult {
 
 /**
  * G68f1 (decisions G78f1, G68): a result computed from answer-knowns (those with `digits`) confirms only the digits on
- * which two solves agree, one with the knowns as kept and one with each moved by one unit in its last confirmed digit.
- * A digit count alone misses cancellation: `(x-1.41421)*10^6` loses digits. Typed knowns are exact and not moved; a ⚠
- * known passes its ⚠ on.
+ * which every solve agrees: one with the knowns as kept and, per answer-known, one with that known alone moved by one
+ * unit in its last confirmed digit (moving all at once cancels in `x-z`). A digit count alone misses cancellation:
+ * `(x-1.41421)*10^6` loses digits. Typed knowns are exact and not moved; a ⚠ known passes its ⚠ on, and so does a
+ * moved solve that fails, finds other roots or agrees on no digit (nothing then confirms the digit shown).
  */
-function checkByKnowns(o: SolveOutcome, req: SolveRequest, digits: number, again: (r: SolveRequest) => SolveOutcome): SolveOutcome {
+export function checkByKnowns(o: SolveOutcome, req: SolveRequest, digits: number, again: (r: SolveRequest) => SolveOutcome): SolveOutcome {
   const ks = req.knowns ?? [];
   if (!o.ok) return o;
-  const warn = o.warn || ks.some((k) => k.warn);
-  if (!ks.some((k) => k.digits !== undefined)) return { ...o, warn };
-  const knowns = ks.map(movedKnown);
-  // The same guesses: the same path to the same root, moved (a guess at the root costs solve1 more: 313 calls, not 218).
-  const moved: SolveRequest = { ...req, knowns };
-  const o2 = again(moved);
+  let warn = o.warn || ks.some((k) => k.warn);
   const P = valuePrecision(digits);
-  const roots = o.roots.map((x, i) => {
-    const a = x.result.value;
-    const b = o2.ok && o2.roots.length === o.roots.length ? o2.roots[i]?.result.value : undefined;
-    return { ...x, result: confirmAtMost(x.result, a && b ? agreement(a, b, P) : 0, digits) };
+  const agreed = o.roots.map(() => P);
+  let checked = false;
+  // The same guesses: the same path to the same root, moved (a guess at the root costs solve1 more: 313 calls, not 218).
+  ks.forEach((k, j) => {
+    if (k.digits === undefined) return;
+    checked = true;
+    const o2 = again({ ...req, knowns: ks.map((x, i) => (i === j ? movedKnown(x) : x)) });
+    const same = o2.ok && o2.roots.length === o.roots.length;
+    if (!same) warn = true;
+    o.roots.forEach((x, i) => {
+      const a = x.result.value;
+      const b = same ? o2.roots[i]?.result.value : undefined;
+      const n = a && b ? agreement(a, b, P) : 0;
+      if (n === 0) warn = true;
+      agreed[i] = Math.min(agreed[i]!, n);
+    });
   });
-  return { ...o, warn, roots };
+  if (!checked) return { ...o, warn };
+  return { ...o, warn, roots: o.roots.map((x, i) => ({ ...x, result: confirmAtMost(x.result, agreed[i]!, digits) })) };
 }
 
 const HAS_EQ = /(^|[^:<>=!])=([^=]|$)/;
