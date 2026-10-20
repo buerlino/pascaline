@@ -26,9 +26,8 @@ The one place for "where are we and what's left", one or two lines per open item
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md). The checks on the phone are listed below.
 5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`. The backup (R38) protects later moves only.
 6. **Outside testers:** you run two 30-minute rounds, after R4b and after R24c, from [r18](research/r18-outside-test.md) and its sheet; R70 (every press counted) and A23 (Android's backup off) come first.
-7. **Keep the K2 flick classifier** of the deleted `p1/ron-eve-gestures` (commit `96fcf50`): `git tag keep/eve-gestures 96fcf50` keeps it past git's pruning.
-8. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-9. **Later, not now:** the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
+7. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
+8. **Later, not now:** the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
 
 ### Checks on the phone (one list; each by the owner, or annabell when a package names it)
 - Flick misfires in a minute of typing (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35).
