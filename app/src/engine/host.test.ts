@@ -200,14 +200,16 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
 
   // G22: the reasons behind a mark, as facts (R36 words them).
   describe("why the mark (G22)", () => {
-    const home = (i: string, digits = 12) => host.home(i, { ...defaultHomeSettings, digits }).result;
+    const home = (i: string, digits = 12, over: Partial<typeof defaultHomeSettings> = {}) => host.home(i, { ...defaultHomeSettings, digits, ...over }).result;
+    // A polish cut by Home's 300 ms budget shows the warning (decisions.md, G44f2f1): a test expecting the polished value sets its own.
+    const polishBudget = { budgetMs: 5000 };
     it("an unaudited function is named", () => {
       // G44: σ < 0 is no distribution, so the polish refuses it and Giac's number stays unaudited.
       expect(home("normald_icdf(2,-1,0.3)").why).toEqual({ unaudited: ["normald_icdf"] });
       expect(host.cas("normald_icdf(2,-1,0.3)", defaultCasSettings).result.numeric?.why).toEqual({ unaudited: ["normald_icdf"] });
     });
     it("G44: a polished inverse distribution function is audited for that input, in Home and CAS", () => {
-      const r = home("normald_icdf(10^-10)");
+      const r = home("normald_icdf(10^-10)", 12, polishBudget);
       expect([r.why, r.warn, r.display, r.exact]).toEqual([undefined, undefined, "-6.3613409024", undefined]);
       const c = host.cas("normald_icdf(10^-10)", defaultCasSettings).result.numeric;
       expect([c?.why, c?.warn, c?.display]).toEqual([undefined, undefined, "-6.3613409024"]);
@@ -221,7 +223,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     });
     it("G44f1: an inverse function Giac gives as infinity inside (0, 1) is polished, else ⚠; at p = 1 it is exact", () => {
       // mpmath findroot on the upper tail: 18257418581.9499815596…
-      const r = home("fisher_icdf(3,4,1-10^-20)");
+      const r = home("fisher_icdf(3,4,1-10^-20)", 12, polishBudget);
       expect([r.why, r.warn, r.display]).toEqual([undefined, undefined, "18257418581.9"]);
       // Newton does not converge from the centre here (today): Giac's +infinity with ⚠, not as an exact value
       const f = home("fisher_icdf(3,4,1-10^-400)");
@@ -242,7 +244,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
         giac.eval(ICDF_DEFINITIONS.pasicdf!);
         giac.eval("purge(pasicdf0)");
       }
-      expect(home("fisher_icdf(3,4,1-10^-20)").display).toBe("18257418581.9");
+      expect(home("fisher_icdf(3,4,1-10^-20)", 12, polishBudget).display).toBe("18257418581.9");
     });
     it("G44f1 fix 2: erf of a non-real argument kept exact is Giac's own erf, so ⚠ unaudited (regression)", () => {
       // Giac keeps erf(sqrt(2)*i) exact; its value went through Giac's erf (the flag), not ours: it showed ≈.
