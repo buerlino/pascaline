@@ -15,9 +15,9 @@ describe.skipIf(!giacAvailable())("Area refuses only where Home refuses (G70)", 
   const area = (f: string, a: string, b: string) => host.analyze({ kind: "area", f, a, b }, defaultHomeSettings);
 
   it.each([
-    ["ln(x)", "0", "1", "-1"], // oracle: mpmath quad
-    ["x*ln(x)", "0", "2", "0.38629436112"], // oracle: 2 ln 2 − 1
-    ["(1-cos(x))/x^2", "-1", "1", "0.972770752471"], // oracle: mpmath quad
+    ["ln(x)", "0", "1", "-1"], // source: oracle (mpmath quad)
+    ["x*ln(x)", "0", "2", "0.38629436112"], // source: derived (2 ln 2 − 1)
+    ["(1-cos(x))/x^2", "-1", "1", "0.972770752471"], // source: oracle (mpmath quad)
   ])("∫ %s on [%s, %s] = %s", (f, a, b, want) => {
     const r = area(f, a, b);
     expect(r.ok, r.info).toBe(true);
