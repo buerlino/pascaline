@@ -13,7 +13,11 @@ export function runGoldenBench(): void {
     console.log(`PASCALINE_BENCH golden-env ${JSON.stringify({ error: e.message })}`);
     mark("golden-done");
   };
-  w.onmessage = (ev: MessageEvent<GoldenRecord[]>) => {
+  w.onmessage = (ev: MessageEvent<GoldenRecord[] | { progress: string }>) => {
+    if (!Array.isArray(ev.data)) {
+      console.log(`PASCALINE_BENCH golden-progress ${JSON.stringify({ at: ev.data.progress, ms: Math.round(performance.now() - t0) })}`);
+      return;
+    }
     for (const r of ev.data) console.log(`PASCALINE_BENCH golden ${JSON.stringify(r)}`);
     console.log(`PASCALINE_BENCH golden-env ${JSON.stringify({ n: ev.data.length, ms: Math.round(performance.now() - t0), ua: navigator.userAgent })}`);
     mark("golden-done");

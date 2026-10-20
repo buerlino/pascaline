@@ -29,7 +29,12 @@ async function freshGiac(): Promise<GiacApi> {
 self.onmessage = () => {
   void (async () => {
     const cases = (raw: unknown): Case[] => (raw as { cases: Case[] }).cases.map(typed);
-    const recs = await goldenRecords(cases(homeRaw), cases(precisionRaw), freshGiac);
-    (self as unknown as Worker).postMessage(recs);
+    let n = 0;
+    const post = (m: unknown): void => (self as unknown as Worker).postMessage(m);
+    post({ progress: "start" });
+    const recs = await goldenRecords(cases(homeRaw), cases(precisionRaw), freshGiac, (stage, id) => {
+      if (n++ % 25 === 0) post({ progress: `${stage} ${id} #${n}` });
+    });
+    post(recs);
   })();
 };
