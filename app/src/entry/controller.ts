@@ -55,6 +55,12 @@ function isPlainTerm(latex: string): boolean {
   return /^[\d.]+$/.test(l) || /^\p{L}$/u.test(l) || isChipLatex(l);
 }
 
+/**
+ * R68: the atom before the cursor ends no number, so ᴇ starts one: a box's sentinel (""), + − × ÷ ·, a relation, an
+ * opening bracket or a comma. The comma is the argument comma: the decimal comma (R57, not built) is MathLive's `{,}`.
+ */
+const OPENS_TERM = /^(?:|[-+=<>,([]|\\(?:times|div|cdot|lt|gt|le|leq|ge|geq|ne|neq|lbrack|lbrace|\{)(?![A-Za-z]))$/;
+
 /** The exponent key (R14): the mark ᴇ, one token. */
 function isEMark(a: ActionBody): boolean {
   return a.kind === "insert" && a.latex === EMARK;
@@ -346,8 +352,9 @@ export class EntryController {
     }
     // R27b (F23): right after piecewise's `if ` MathLive would type text; our keys only ever type maths
     if (a.kind !== "cmd" && mf.mode === "text") mf.mode = "math";
-    if (isEMark(a) && mf.value === "") {
-      // the mark on an empty line gets a leading 1, as on the reference (1ᴇ; spec/mapping/vc-2026-10-11/keys.yaml r7c1)
+    if (isEMark(a) && this.noNumberBefore(mf)) {
+      // where no number can come before the mark it gets a leading 1, as on the reference: on an empty line (1ᴇ;
+      // spec/mapping/vc-2026-10-11/keys.yaml r7c1) and after an operator (2×1ᴇ; G2 item 40, R68)
       this.apply(mf, { kind: "insert", latex: `1${EMARK}` });
       mf.focus();
       return;
@@ -388,6 +395,19 @@ export class EntryController {
   private beforeDegree(mf: MathfieldElement): boolean {
     const [a, b] = mf.selection.ranges[0] ?? [mf.position, mf.position];
     return mf.getValue(Math.max(a, b), mf.lastOffset, "latex").trimStart().startsWith("\\degree");
+  }
+
+  /**
+   * R68 (G2 item 40): no number can stand before the cursor, so ᴇ types 1ᴇ. True at a box's start (the line's too: an
+   * empty line) and after an operator, a relation, an opening bracket or an argument comma; with a lone □ selected (a
+   * template's empty box), at its start. After a digit, a letter, a closing bracket or a chip it is false: the mark stays
+   * bare there and Enter refuses it, where 1ᴇ3 would be a silent factor of an implicit product.
+   */
+  private noNumberBefore(mf: MathfieldElement): boolean {
+    const [a, b] = mf.selection.ranges[0] ?? [mf.position, mf.position];
+    const o = Math.min(a, b);
+    if (a !== b && mf.getValue(o, Math.max(a, b), "latex") !== "\\placeholder{}") return false;
+    return o <= 0 || OPENS_TERM.test(mf.getElementInfo(o)?.latex ?? "");
   }
 
   /** True if the atom before the cursor (or the selection) is a digit or a decimal point. */

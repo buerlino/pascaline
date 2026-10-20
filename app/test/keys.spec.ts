@@ -109,6 +109,65 @@ test("ᴇ on an empty line starts with 1, as on the reference: ᴇ (−) 6 = 1�
   await resultIs(page, "1E-6", 1);
 });
 
+// R68 (G2 item 40, device 2026-10-19: the line shows 2×1ᴇ): where no number can be before the mark, it gets its 1 too.
+test("ᴇ after an operator starts with 1: 2 × ᴇ 3 = 2000, drawn 2×1ᴇ3", async ({ page }) => {
+  await tap(page, ["d2", "mul", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("2\\times1\\emark3");
+  await expect(page.locator("math-field")).toHaveText(/2×1ᴇ3/);
+  await tap(page, ["enter"]);
+  await resultIs(page, "2000", 1);
+});
+
+test("ᴇ after + − ÷ in the one-line mode starts with 1", async ({ page }) => {
+  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await tap(page, ["d2", "add", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("2+1\\emark3");
+  await tap(page, ["enter"]);
+  await resultIs(page, "1002", 1);
+  await tap(page, ["d2", "sub", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("2-1\\emark3");
+  await tap(page, ["enter"]);
+  await resultIs(page, "-998", 2);
+  await tap(page, ["d2", "div", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("2\\div1\\emark3");
+  await tap(page, ["enter"]);
+  await resultIs(page, "0.002", 3);
+});
+
+test("ᴇ after an opening bracket, after a comma and in an empty box starts with 1", async ({ page }) => {
+  await tap(page, ["paren", "emark", "d3", "right", "mul", "d2"]);
+  expect(await entryValue(page)).toBe("\\left(1\\emark3\\right)\\times2");
+  await tap(page, ["enter"]);
+  await resultIs(page, "2000", 1);
+  await tap(page, ["paren", "d2", "comma", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("\\left(2,1\\emark3\\right)");
+  await tap(page, ["esc", "d2", "div", "emark", "d3"]); // the fraction's empty denominator
+  expect(await entryValue(page)).toBe("\\frac{2}{1\\emark3}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "0.002", 2);
+  await tap(page, ["d1", "d0", "pow", "emark", "d0"]); // the empty exponent: 10^(1ᴇ0)
+  expect(await entryValue(page)).toBe("10^{1\\emark0}");
+  await tap(page, ["enter"]);
+  await resultIs(page, "10", 3);
+});
+
+test("ᴇ stays bare after a number, a letter, a closing bracket or a chip", async ({ page }) => {
+  await tap(page, ["d2", "dot", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("2.\\emark3");
+  await tap(page, ["esc", "x", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("x\\emark3");
+  await tap(page, ["enter"]); // an implicit product with 1ᴇ3 would be a silent factor: the refusal stays
+  await expect(page.locator('[data-status="error"]').last()).toContainText("type the number");
+  await tap(page, ["esc", "paren", "d2", "right", "emark", "d3"]);
+  expect(await entryValue(page)).toBe("\\left(2\\right)\\emark3");
+  await page.evaluate(() => {
+    window.pascaline.entry.clear();
+    window.pascaline.entry.insertAns();
+  });
+  await tap(page, ["emark", "d3"]);
+  expect(await entryValue(page)).toBe("\\ans\\emark3");
+});
+
 test("ᴇ is one step for ⌫: 1ᴇ-3 ⌫ ⌫ ⌫ leaves 1", async ({ page }) => {
   await tap(page, ["d1", "emark", "neg", "d3", "bksp", "bksp", "bksp"]);
   expect(await entryValue(page)).toBe("1");
