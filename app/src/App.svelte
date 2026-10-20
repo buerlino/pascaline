@@ -591,7 +591,7 @@
       onclick={() => press(PLACE_KEY, "primary")}>{place}</button>
     {#if shell.app !== null}
       <span class="tabs" role="tablist" aria-label={t("status.views")}>
-        {#each TABS as tab (tab.view)}
+        {#each TABS.filter((tb) => shell.views.includes(tb.view)) as tab (tab.view)}
           <button
             type="button"
             class="tab"

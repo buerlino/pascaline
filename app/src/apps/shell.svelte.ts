@@ -66,6 +66,10 @@ export class AppShell {
   get instance(): AppInstance | undefined {
     return this.current?.instance;
   }
+  /** The views the open app has (the status line's tabs); all three while its code is still loading. */
+  get views(): readonly ViewId[] {
+    return this.instance?.views ?? VIEW_IDS;
+  }
   /** The entry line belongs to the open view (undefined label = no entry line, e.g. Plot). */
   get entryLabel(): string | undefined {
     const a = this.instance;

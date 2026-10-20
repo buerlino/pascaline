@@ -75,6 +75,8 @@ test("the tabs switch the views of Function and Solve, the current one marked; H
   await page.getByTestId("place").tap();
   await tap(page, ["d4"]);
   await page.waitForFunction(() => window.pascaline.shell.app === "solve" && window.pascaline.shell.loading === null);
+  await expect(page.getByTestId("tab-plot")).toHaveCount(0); // Solve has Symb and Num only
+  await expect(page.getByRole("tab")).toHaveCount(2);
   await tab("symb").tap();
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "symb");
   await expect(page.getByTestId("place")).toHaveText("Solve");
