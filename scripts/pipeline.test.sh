@@ -96,5 +96,25 @@ grep -q '#6' <<<"$out" && fail "night.sh --max-steps 5 runs a sixth step: $out"
 grep -q 'audit-model sonnet' "$here/night.sh" && fail "night.sh still names --audit-model sonnet (brief 0c says auto)"
 grep -q '"^## $(date +%F) night"' "$here/night.sh" && fail "night.sh writes the header only once per date"
 
+# A24: each worktree gets its own node_modules (hard-link copy); a machine failure ends the run; a dirty phase-1 is not a conflict
+out="$("$script" ron "$ron_pkg" --dry-run 2>&1)"
+grep -q '^setup: .*cp -al' <<<"$out" || fail "A24: the dry run does not show the setup step (cp -al of node_modules)"
+grep -q 'ln -s "$main/app/node_modules"' "$here/pipeline.sh" && fail "A24: pipeline.sh still links the shared node_modules"
+printf 'sh: 1: svelte-check: command not found\n' > "$tmp/m1.log"; printf 'Error: Cannot find module vitest\nnode_modules missing\n' > "$tmp/m2.log"; printf 'error TS2322: x\n' > "$tmp/m3.log"
+machine_failure "$tmp/m1.log" >/dev/null || fail "A24: 'command not found' is not a machine failure"
+machine_failure "$tmp/m3.log" >/dev/null && fail "A24: a type error is a machine failure"
+grep -q 'NOT MERGED (machine: ' "$here/pipeline.sh" || fail "A24: pipeline.sh has no NOT MERGED (machine: ...)"
+grep -q 'NOT MERGED (phase-1 worktree not clean)' "$here/pipeline.sh" || fail "A24: pipeline.sh has no NOT MERGED (phase-1 worktree not clean)"
+cl="$tmp/clean"; git init -q -b main "$cl"; gc "$cl" base; echo a > "$cl/f"; git -C "$cl" add f
+integ_clean "$cl" && fail "A24: a staged file counts as clean"
+gc "$cl" two; integ_clean "$cl" || fail "A24: a clean worktree is refused"
+echo b >> "$cl/f"; git -C "$cl" add f; gc "$cl" three; echo c >> "$cl/f"; integ_clean "$cl" && fail "A24: an uncommitted change counts as clean"
+git -C "$cl" checkout -q f
+git -C "$cl" branch other; git -C "$cl" checkout -q other; echo x > "$cl/g"; git -C "$cl" add g; gc "$cl" og; git -C "$cl" checkout -q main
+echo y > "$cl/g"; git -C "$cl" add g; gc "$cl" mg
+git -C "$cl" merge other >/dev/null 2>&1; merge_failure_reason "$cl" "$tmp/m1.log" | grep -q '^conflict' || fail "A24: unmerged files are not a conflict"
+git -C "$cl" merge --abort >/dev/null 2>&1
+merge_failure_reason "$cl" "$tmp/m3.log" | grep -q '^conflict' && fail "A24: a failure without unmerged files is called a conflict"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
