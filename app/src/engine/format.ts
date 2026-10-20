@@ -456,8 +456,14 @@ function scaled(v: DecimalValue): { m: bigint; e: number } {
   return { m: v.neg ? -m : m, e: v.exp + 1 - v.digits.length };
 }
 
+/** m·10^e as a DecimalValue (G58): read off m's digits and shift the exponent, never building 10^e (an exponent of 10^8
+ *  made a BigInt of a hundred million digits and hung Home). */
 function fromScaled(m: bigint, e: number, keep: number): DecimalValue {
-  return e >= 0 ? decimalFromRational(m * pow10(e), 1n, keep) : decimalFromRational(m, pow10(-e), keep);
+  if (m === 0n) return ZERO_VALUE;
+  const neg = m < 0n;
+  const all = (neg ? -m : m).toString();
+  const sig = trimZeros(all);
+  return { neg, digits: sig.slice(0, keep), exp: all.length - 1 + e, sticky: /[1-9]/.test(sig.slice(keep)) };
 }
 
 /**
@@ -470,6 +476,9 @@ function fromScaled(m: bigint, e: number, keep: number): DecimalValue {
 export function confirmedDigits(a: DecimalValue, b: DecimalValue, aPrecision: number, cap: number = DECIMAL_KEEP): number {
   if (isZero(a) && isZero(b)) return cap;
   if (isZero(a) || isZero(b)) return 0;
+  // Leading digits two or more decades apart: a and b differ by a factor of 10 or more, so no digit is confirmed. It also
+  // keeps the common scale below within aPrecision + DECIMAL_KEEP digits of both values (G58).
+  if (Math.abs(a.exp - b.exp) > 1) return 0;
   const A = scaled(a);
   const B = scaled(b);
   // Common scale, one digit below a's last printed place.

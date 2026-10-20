@@ -117,7 +117,6 @@ export const en = {
   "history.usesCas": "stored in CAS",
   "history.insert": "Put this result on the entry line",
   "error.syntax": "Syntax error",
-  "error.timeout": "Stopped: it took too long",
   "error.engine": "The calculation failed",
   "error.memory": "Out of memory: the engine was restarted",
   "engine.starting": "Starting the engine…",

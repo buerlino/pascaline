@@ -137,13 +137,18 @@ export function floatsAtDigits(giac: Giac, text: string, n: number): string {
   });
 }
 
+/** G58: the longest text Home runs Giac's regroup on. regroup does not look at its interrupt, and on long texts it ran
+ *  past 20 s (DEG acos(10^400) before G46, r16 A.3); a longer text is shown as Giac printed it. */
+export const REGROUP_MAX = 2048;
+
 /** G38: Giac's text `text` of a non-number computed at P, read back into `slot` with its floats at the display digits
  *  `n` (floatsAtDigits; the host's Digits must be `n`), so Giac orders and prints it as at n (`x^2-2.0`, where the P
  *  floats print `-2.000…+x^2`; regroup sorts the terms). Null when it does not read back. */
 export function floatsShown(giac: Giac, text: string, n: number, slot: string): string | null {
   const t = giac.eval(`${slot}:=(${floatsAtDigits(giac, text, n)})`);
   if (isError(t)) return null;
-  // Reading back keeps the P order of the terms; regroup sorts them as Giac does for doubles.
+  // Reading back keeps the P order of the terms; regroup sorts them as Giac does for doubles (not on a long text, G58).
+  if (t.length > REGROUP_MAX) return t;
   const r = giac.eval(`regroup(${slot})`);
   if (isError(r) || r === "undef") return t;
   giac.eval(`${slot}:=regroup(${slot})`);
@@ -560,6 +565,16 @@ function zeroUnconfirmed(f: ElementFacts): ElementFacts {
   return !f.exactRational && !f.warn && isZero(f.value.re) && isZero(f.value.im) ? { ...f, warn: "unchecked" } : f;
 }
 
+/** Digits of an integer literal from which a root beside it makes Giac's symbolic re and im unsafe (G58: acos(120^7.5)
+ *  holds sqrt(30) times a 15-digit integer, and its im() did not return in 20 s; with a 4-digit one it takes 66 ms). */
+export const HEAVY_INT_DIGITS = 13;
+const HEAVY_INT = new RegExp(`(?<![\\w.])\\d{${HEAVY_INT_DIGITS},}(?![\\w.])`);
+
+/** G58: `text` (an exact result) holds a root and an integer of HEAVY_INT_DIGITS or more digits. */
+export function heavySplit(text: string): boolean {
+  return /\bsqrt\(|\^\(\d+\/\d+\)/.test(text) && HEAVY_INT.test(text);
+}
+
 /** Most working digits an agreement step uses, and the time the steps beyond P+40 may take per result (G23). */
 export const MAX_EVAL_DIGITS = 1000;
 const EXTRA_BUDGET_MS = 50;
@@ -569,10 +584,14 @@ const EXTRA_BUDGET_MS = 50;
  * BigInt, everything else by the symbolic agreement check (P against P+20, then P+20 against P+40). Null when some
  * element is not a number.
  */
-export function exactFacts(giac: Giac, name: string, shape: Shape, digits: number, maxExactDigits: number): ElementFacts[] | null {
+export function exactFacts(giac: Giac, name: string, shape: Shape, digits: number, maxExactDigits: number, exactText?: string): ElementFacts[] | null {
   const P = valuePrecision(digits);
-  const reT = giac.eval(`re(${name})`);
-  const imT = giac.eval(`im(${name})`);
+  // G58: Giac's symbolic re and im of a root next to a large integer can loop without looking at its interrupt
+  // (acos(120^(5/2+120)) holds sqrt(30) times a 250-digit integer under an ln: im() never returned). Such a text is no
+  // exact rational, so its parts are read from the value's evalf, as when the split errs (below).
+  const heavy = exactText !== undefined && heavySplit(exactText);
+  const reT = heavy ? "GIAC_ERROR: G58 heavy" : giac.eval(`re(${name})`);
+  const imT = heavy ? reT : giac.eval(`im(${name})`);
   // G50: Giac's symbolic re and im of a large exact value can run out of time (acosh(1/10+5*i) is an ln of nested
   // roots, and re() of it takes over 0.3 s): then no element is rational, and the parts come from the value's evalf.
   const split = !isError(reT) && !isError(imT);
