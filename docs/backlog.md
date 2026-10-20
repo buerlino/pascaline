@@ -20,7 +20,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **At milestone 5:** time ten tasks by hand, E-notation against units (the rule 2 speed gate).
-1. **Your steps from the research of 2026-10-19** (decided 2026-10-20: decisions.md P18–P22): push G75's patch commit once merged, then send Parisse the reply with its link (`../outreach/email-parisse-2.md`, in English); ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before A21; after G77, annabell builds the release engine on the new pin and runs the golden gate on it.
+1. **Your steps from the research of 2026-10-19** (decided 2026-10-20: decisions.md P18–P22): push G75's patch commit once merged, then send Parisse the reply with its link (`../outreach/email-parisse-2.md`, in English); ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before C4 (A21 runs without it; only the recipe waits); after G77, annabell builds the release engine on the new pin and runs the golden gate on it.
 2. **Open proposals:** none. Decided on 2026-10-20: A16 after G53 (at the bar; its third row after G65 decides), S13, G53, G57, S6, S8, M4-2 (± on Shift + `,`, R71), the docs budgets stay, the pipeline gaps as A24 and A25. Decided on 2026-10-19: route R, S12, G57 and the pipeline's three changes (as recommended); G33, R56, R43, R34, R7, A4a points 3 and 4, P7 point 4 and the fixed Math menu (decisions.md "Owner answers of 2026-10-19").
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–69 on 2026-10-19; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 can reverse S14's route R (built by R64 and G46), 66 and 67 before G42, 68 changes no code (G40 built its default); each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md). The checks on the phone are listed below.
@@ -73,8 +73,8 @@ The one place for "where are we and what's left", one or two lines per open item
 - **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).
 - **R53. Results mode on the View key** (P16, S9; K4).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
-- **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** [x] **A12** (replay p50 158 ms, library 403 ms: decisions.md "Needs the user").
-- **The backup:** **R38a** (after A11), **R38b** (S6 decided 2026-10-20, R11).
+- **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** [x] **A11**. **The defs replay:** [x] **A12** (p50 158 ms, library 403 ms), then [G83](shifts/packages/G83.md) (functions defined on first use) and a Tab One run, before R59.
+- **The backup:** **R38a**, **R38b** (S6 decided 2026-10-20, R11).
 - **Still open from the checks of 2026-10-19:** **G56** the CAS check through a user function (narrowed, after G60); **A16** the Tab One's Enter p95 (at the bar after G53, decided 2026-10-20; the third row waits for G65); **A18** the behaviour diff in the audit; **G65**, **G66** names from Giac's state (S13 accepted; G65 takes F58); G42's rewrite waits for G2 items 66 and 67 (S12).
 
 ### Engineer core (P8; architecture docs/04, plan and gates docs/03 section 8)
