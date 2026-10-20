@@ -159,7 +159,7 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
 
 describe("G38: which inputs get a second decision (pure)", () => {
   it("decision functions, comparisons and abs( in the result; rationals only decide exactly", async () => {
-    const { restsOnDecision, rationalOnly } = await import("./numeric.ts");
+    const { restsOnDecision, rationalOnly } = await import("./decisions.ts");
     expect(restsOnDecision("floor(sin(10^50)*10^12)", "609741545567")).toBe(true);
     expect(restsOnDecision("sin(10^50)>0", "true")).toBe(true);
     expect(restsOnDecision("sqrt(x^2)", "abs(x)")).toBe(true);
@@ -174,7 +174,7 @@ describe("G38: which inputs get a second decision (pure)", () => {
   });
 
   it("the cuts: floor and sign calls with their span, one comparison per segment", async () => {
-    const { decisionCuts } = await import("./numeric.ts");
+    const { decisionCuts } = await import("./decisions.ts");
     expect(decisionCuts("floor(a+1)*2")).toEqual([{ q: "a+1", kind: "int", call: { name: "floor", at: [0, 10] } }]);
     expect(decisionCuts("piecewise(s>0,1,2)")).toEqual([{ q: "(s)-(0)", kind: "zero" }]);
     expect(decisionCuts("a<b and c<d")).toEqual([]); // two comparisons: left to the text check
@@ -255,7 +255,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
   });
 
   it("definitionStores: a store into a global name, not into a local or a parameter (source: derived, Giac's printed definitions)", async () => {
-    const { definitionStores } = await import("./numeric.ts");
+    const { definitionStores } = await import("./decisions.ts");
     expect(definitionStores("(x)->{ \n  c:=c+1;  \n  c;  \n}")).toBe(true);
     expect(definitionStores("(x)-> \n{ local y; \n  y:=x;  \n  q:=y;  \n  y;  \n}")).toBe(true);
     expect(definitionStores("(z)-> \n{ local b; \n  b:=normal(im(z)*180/pi);  \n  return(exp(re(z))*(cos(b)+i*sin(b)));  \n}")).toBe(false);
@@ -292,7 +292,8 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
   });
 
   it("G53: a built-in's or keyword's print is asked once per Giac instance, a user's name on every call (source: derived, Giac refuses sin:=3)", async () => {
-    const { callsStateful, notBuiltin } = await import("./numeric.ts");
+    const { notBuiltin } = await import("./numeric.ts");
+    const { callsStateful } = await import("./decisions.ts");
     const { giac } = await loadNodeGiac();
     const asked: string[] = [];
     const counted = { eval: (t: string) => (asked.push(t), giac.eval(t)) };

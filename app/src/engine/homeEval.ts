@@ -34,11 +34,7 @@ import {
   isAudited,
   numericDisagrees,
   rationalValue,
-  decideTwice,
-  decidingStored,
-  restsOnDecision,
   notBuiltin,
-  callsStateful,
   readsReplaced,
   floatsShown,
   heavySplit,
@@ -52,6 +48,7 @@ import {
   type Giac,
   type Shape,
 } from "./numeric.ts";
+import { callsStateful, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 
 export type { Giac };
 
