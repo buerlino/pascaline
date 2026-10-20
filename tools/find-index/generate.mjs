@@ -177,7 +177,7 @@ for (const it of items) {
 if (new Set(items.map((i) => i.id)).size !== items.length) fail("duplicate ids");
 
 // field order of the schema (docs/04 3.3)
-const ORDER = ["id", "kind", "names", "title", "desc", "syntax", "example", "value", "unc", "unit", "dim", "si", "tier", "insert"];
+const ORDER = ["id", "kind", "names", "title", "desc", "syntax", "example", "value", "unc", "unit", "dim", "basis", "basisLeaves", "si", "tier", "insert"];
 items = items.map((it) => Object.fromEntries(ORDER.filter((k) => it[k] !== undefined).map((k) => [k, it[k]])));
 
 if (problems.length) {
@@ -196,6 +196,7 @@ console.log(`find-index: ${json.length} bytes raw, ${gz} bytes gzip, ${(performa
 if (qstats) {
   console.log(`find-index: qalc: ${qstats.units} units (${qstats.composites} composites), ${qstats.prefixes} prefixes, ${qstats.consts} constants; ` +
     `${qstats.unitsSkipped.length} units and ${qstats.constsSkipped.length} constants skipped, ${qstats.noSi.length} units without si, ${qstats.siChecked} values checked against definitions, ${qstats.overrides.length} overridden`);
+  console.log(`find-index: ${items.filter((i) => i.basis).length} constants carry a basis; ${qstats.noBasis.length} without: ${qstats.noBasis.join("; ")}`);
   if (VERBOSE) {
     console.log(`  units skipped: ${qstats.unitsSkipped.join(", ")}`);
     console.log(`  constants skipped: ${qstats.constsSkipped.join(", ")}`);
