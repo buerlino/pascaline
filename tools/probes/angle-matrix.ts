@@ -403,13 +403,12 @@ function homeShown(r: HomeResult, digits: number): string {
 function goldenOne(R: Runner, file: string, c: GCase): string {
   const mode: Mode = c.settings?.angle ?? "rad";
   const digits = c.settings?.digits ?? 12;
-  const giacOf = (t: string, ro = false): string => (c.latex !== undefined ? latexToGiac(t, ro ? { realOddRoots: true } : {}) : t);
+  const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
   const hs = (angle: Mode): HomeSettings => ({ ...defaultHomeSettings, angle, digits });
   try {
     if (file === "home.yaml" || (file === "precision.yaml" && c.kind !== "cas")) {
-      const ro = file === "home.yaml";
-      for (const b of c.before ?? []) R.home(giacOf(b, ro), mode, digits);
-      return homeShown(R.home(c.latex !== undefined ? giacOf(c.latex, ro) : c.input!, mode, digits), digits);
+      for (const b of c.before ?? []) R.home(giacOf(b), mode, digits);
+      return homeShown(R.home(c.latex !== undefined ? giacOf(c.latex) : c.input!, mode, digits), digits);
     }
     if (file === "precision.yaml" || file === "bench.yaml") {
       for (const b of c.beforeHome ?? []) R.home(giacOf(b), mode, digits);
