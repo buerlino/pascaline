@@ -52,8 +52,8 @@ The one place for "where are we and what's left", one or two lines per open item
 - [x] **F45 → G59 (96c69a0).** `√(√(asin(12)))` = `≈ 1.319…−0.376…i` (was −1.319…): the value is read by `evalf`, split after. r16 F2.
 - [x] **F46 → G59 (96c69a0), G59f1.** `(sin 3.7 − e)^(0.001·asin(6.02ᴇ8))` is `⚠` (was `≈`, wrong from the 4th digit); without a decimal, `(sin(37/10)−e)^(asin(602000000)/1000)` is `⚠` too: a power with several values is checked against exp(b·ln a). r16 F3.
 - **F47 → [G60](shifts/packages/G60.md).** A double inside an MPFR result, at 30 digits: `log10(asinh(asin e))` wrong from the 14th digit under `≈`; `asin`/`acos` of a real \|x\| > 1 inside other functions show `⚠ 14` with 12–13 right; `√(asinh(cos 10))` shows a real part 4.7E-15 that is noise. Family 4. r16 F4–F6.
-- [x] **F48 → G71 (p1/gorge-m4-tier1decide).** Two-argument `round(x,n)` and `trunc(x,n)` are no longer audited: ⚠ in Home and CAS, also on `trunc(x,0)`'s integer (Giac works in a double: usual.cc:7296–7316, maple.cc:1364–1369). The value stays Giac's until a patch or `pasround` (decisions, "Needs the user"). hunt N7.
-- [x] **F49 → G71 (p1/gorge-m4-tier1decide).** `trunc` and `Heaviside` are decision functions (`decisions.ts`); the tier-1 census (`tools/probes/tier1-decide.ts`) added arg, angle, instphase, norm, normalize, polar, polar_coordinates, tri, dfc, classes and Psi. hunt N8.
+- [x] **F48 → G71 (f11b20e).** Two-argument `round`/`trunc` are ⚠ (they compute in a double); their Giac patch: F61. hunt N7.
+- [x] **F49 → G71 (f11b20e).** `trunc`, `Heaviside` and 11 functions of the census decide twice. hunt N8.
 - [x] **F50 → G78 (cb445bf).** Home refuses Giac's text for a number: `asin(acos(π²))`, `exp(cosh(asin π))`, `√(asinh(asin 3.7))` "No value found", `sinh(6020³)` "Overflow", `∫₋₁¹ 1/x²` (+∞) as divergent. r16 F7.
 - [x] **F51 → G78 (cb445bf).** `1/(1/0)`, `exp(ln 0)`, `exp(ln(0·2))`, `√5/asinh 10/(sin(5!)·(3/0))` are refused "Division by zero" (was `= 0`). r16 F8.
 - **F52 → [G67](shifts/packages/G67.md).** CAS `approx_mode:=1` is logged as a variable and replayed at every start, typing `approx_mode:=0` stores `:=(1)` again, and Home's `=` turns `≈` (`1/4`); a library's top-level `approx_mode:=1` imports the same (`library.ts:23`). Families 2, 9; `cas_setup` is tier 1 (R4a), libraries (R59). hunt N1, N2.
@@ -63,8 +63,9 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F56 → [G70](shifts/packages/G70.md).** Function app Area refuses ∫₀¹ ln x, ∫₀² x ln x and ∫₋₁¹ (1−cos x)/x² as "does not converge"; Home gives −1, 0.38629436112, 0.972770752471 (`analysis.ts:161`). Families 8, 5; today. hunt N6.
 - **F57 → [G72](shifts/packages/G72.md).** A library body with `increment(cnt)` changes cnt by 2 per Enter and logs nothing (`definitionStores`, `isStateful` miss `++`, `DelVar`). Families 9, 3; after R59. hunt N9.
 - **F58 → [G65](shifts/packages/G65.md).** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are 3 again (`defs.ts:73` keeps "other" entries). Family 1; low (no key types `:=`). hunt N10.
-- [x] **F59 → G71 (p1/gorge-m4-tier1decide).** A decision over a value with no MPFR path (`round(BesselJ(1,2))`, `BesselJ(1,2) > 0.5`) is decided at the double with ⚠ in Home and CAS (a CAS assignment keeps the error).
+- [x] **F59 → G71 (f11b20e).** A decision over a value with no MPFR path (`BesselJ(1,2) > 0.5`) is decided at the double with ⚠.
 - [x] **F60 → G84 (043af31).** `exp(-10^30)`, DEG `exp(cosh(asin π))` are refused "Underflow" (were `⚠ 0`). Family 5.
+- **F61, no package yet.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
 
 - **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, S18; the instruments G61–G64, A19 and S16; A22 by day; [x] A20, [x] A21 (`find/factors.yaml`; only the recipe's qalc build waits for F-Droid's answer).
 
@@ -103,7 +104,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
 - **G9. Number formats against the G2** (item 15: six formats, digits as decimal places, a thousands separator): decide in the settings and help pass.
 - **K1:** a pending one-shot Shift is used up by the first drag step; a tap keeps it. **K5:** the gestures in the help texts (release R4).
-- **The pipeline:** the golden gate gates its own scripts (**A25**); the checks run on a prebuilt engine, so a Giac patch (G75) cannot pass them (**A28**).
+- **The pipeline:** the golden gate gates its own scripts (**A25**); the timing tests that kept G70f1 and G67 unmerged (`novalue` timing case, `homeDeadline` acos, golden `g58-factorial-1e6-30`) go into `pipeline-logs.ts` isTiming; the checks run on a prebuilt engine, so a Giac patch (G75) cannot pass them (**A28**).
 - **A15's tests** (Opus pass 20, annabell): `scripts/pipeline.test.sh` checks the planned size and docs checks and the gorge raise against fixed dry-run echo lines, not `want_checks` and `resolve_audit_model`, so a regression there passes; the dry run prints no raise for `--model opus`.
 - **C3. CI:** a GitHub Actions workflow calling `npm run gate` (needs your OK). **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; the version is A7.
 - The size test does not cover CSS (25.8 kB raw at 2026-10-12): a line of its own if it passes 40 kB.
