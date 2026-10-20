@@ -24,7 +24,7 @@ The one place for "where are we and what's left", one or two lines per open item
 2. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–69 on 2026-10-19; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 before S14, 66 and 67 before G42, 68 changes no code (G40 built its default); each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 3. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md). The checks on the phone are listed below.
 4. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`. The backup (R38) protects later moves only.
-5. **Outside testers** (deep-dive review): two 30-minute rounds with three engineers, after R4b and after R24c; S8 writes the protocol and the task sheet, you run the rounds.
+5. **Outside testers:** you run two 30-minute rounds, after R4b and after R24c, from [r18](research/r18-outside-test.md) and its sheet; first decide S8 (decisions.md).
 6. **Keep the K2 flick classifier** of the deleted `p1/ron-eve-gestures` (commit `96fcf50`): `git tag keep/eve-gestures 96fcf50` keeps it past git's pruning.
 7. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
 8. **Later, not now:** the email to Bernard Parisse (draft in `../outreach/`, with P10's question: may the English entries of `aide_cas` ship in a GPL-3.0-or-later app? Needed before any public release), the name and trademark checks, CI (C3) and the F-Droid recipe (C4); the upstream reports below.
@@ -55,7 +55,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **The owner's answers of 2026-10-19:** **R43b** DMS takes a selected □ bare (done, p1/ron-m4a-dmsbox), **R56b** Solve knows the user's functions (night step 57).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
 - **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** **A11** (A4a point 5). **The defs replay on the Tab One:** **A12** (G29 merged).
-- **The backup:** **R38a, R38b** (S6 done, R11). **Outside tests:** **S8**.
+- **The backup:** **R38a, R38b** (S6 done, R11). **Outside tests:** S8 done (R18).
 - [x] **A14. The pipeline reads the package files** (S7's follow-up; the docs budgets are checked by `node tools/docs-check.mjs` in `npm run gate`), and **A15. The pipeline enforces its rules** (check 2026-10-19: the audit model, the size and docs checks, no reused dev server).
 - [x] **S10. docs/04 diet** before R15c2: 69.5 → 59.7 kB; the evidence is in [research/r12-evidence.md](research/r12-evidence.md).
 - [x] **S12. Engine defaults, not G2 copies** ([research/g2-correspondence.md](research/g2-correspondence.md)): the audit (44 rows).
