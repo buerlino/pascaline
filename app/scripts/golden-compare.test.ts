@@ -19,6 +19,16 @@ describe("golden compare (A20)", () => {
     const other = [rec("a", "1", "≈"), rec("p", "3", "=", "precision"), rec("z", "9")];
     expect(compareGolden(base, other).map((f) => `${f.id}:${f.what}`)).toEqual(["a:mark", "b:missing", "z:missing"]);
   });
+  it("a differing copy text (full) is a finding", () => {
+    const a = [{ ...rec("a", "1"), full: "1.000" }];
+    const b = [{ ...rec("a", "1"), full: "1" }];
+    expect(compareGolden(a, b)).toEqual([{ stage: "home", id: "a", input: "in-a", what: "full", desktop: "1.000", device: "1" }]);
+  });
+  it("a differing used-names list (uses) is a finding", () => {
+    const a = [{ ...rec("p", "3", "=", "precision"), uses: "" }];
+    const b = [{ ...rec("p", "3", "=", "precision"), uses: "uses [x], expect []" }];
+    expect(compareGolden(a, b)).toEqual([{ stage: "precision", id: "p", input: "in-p", what: "uses", desktop: "", device: "uses [x], expect []" }]);
+  });
   it("reads logcat lines", () => {
     const line = `10-20 I chromium: [INFO:CONSOLE] "PASCALINE_BENCH golden ${JSON.stringify(base[0])}", source: x`;
     expect(readRecords(`noise\n${line}\n`)).toEqual([base[0]]);

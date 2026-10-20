@@ -236,6 +236,8 @@ export interface GoldenRecord {
   mark: string;
   /** The text the result copies (home only). */
   full?: string;
+  /** precision only: the case's own mismatches that are not about the value (the CAS `uses` list), joined; "" for none. */
+  uses?: string;
 }
 
 /** Home and precision cases in file order, one engine round (the stages' shared hosts). */
@@ -256,7 +258,7 @@ export async function goldenRecords(
   for (const c of precision) {
     await tick("precision", c.id);
     const r = await runPrecisionCase(c, ph, fresh);
-    out.push({ stage: "precision", id: c.id, input: r.input, display: r.shown, mark: markText(r.mark) ?? "" });
+    out.push({ stage: "precision", id: c.id, input: r.input, display: r.shown, mark: markText(r.mark) ?? "", uses: r.problems.join("; ") });
   }
   return out;
 }

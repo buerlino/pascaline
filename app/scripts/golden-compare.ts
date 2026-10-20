@@ -11,7 +11,7 @@ export interface Finding {
   stage: string;
   id: string;
   input: string;
-  what: "display" | "mark" | "full" | "missing";
+  what: "display" | "mark" | "full" | "uses" | "missing";
   desktop?: string;
   device?: string;
 }
@@ -29,7 +29,7 @@ export function compareGolden(desktop: GoldenRecord[], device: GoldenRecord[]): 
       out.push({ stage: a.stage, id: a.id, input: a.input, what: "missing", desktop: a.display });
       continue;
     }
-    for (const what of ["display", "mark", "full"] as const) {
+    for (const what of ["display", "mark", "full", "uses"] as const) {
       if ((a[what] ?? "") !== (b[what] ?? "")) out.push({ stage: a.stage, id: a.id, input: a.input, what, desktop: a[what] ?? "", device: b[what] ?? "" });
     }
   }
