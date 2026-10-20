@@ -76,6 +76,9 @@ export class AppShell {
     return a ? a.entryLabel(this.view) : undefined;
   }
   get showsEntry(): boolean {
+    // While an app's code loads its views are unknown: the line stays (hiding it would blur the field, and keys typed
+    // meanwhile would find no focus once the app is warm and shows at once); Plot, once known, hides it.
+    if (this.app !== null && !this.instance && this.loading !== null) return this.view !== "plot";
     return this.app === null || this.entryLabel !== undefined;
   }
   get entryEdited(): boolean {
