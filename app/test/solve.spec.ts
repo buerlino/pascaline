@@ -183,8 +183,6 @@ test("Solve: E1 p(x)=4 after p(x):=x² in Home gives x = 2, p stays the function
   await expect(page.locator('[data-status="done"]')).toHaveCount(1);
   await page.evaluate(() => window.pascaline.entry.set("")); // the next line starts empty
   const solveIt = async (): Promise<void> => {
-    // Solve is loaded on demand; after the reload its instance may not be there yet when the keys have been tapped.
-    await page.waitForFunction(() => window.pascaline.shell.loaded.solve?.instance !== undefined, undefined, { timeout: 20_000 });
     await page.evaluate(() => {
       const app = window.pascaline.shell.loaded.solve!.instance as unknown as { define(i: number, l: string): void };
       app.define(0, "p\\left(x\\right)=4");

@@ -386,7 +386,7 @@ function isTimeout(out: string): boolean {
 }
 
 // Inputs that change engine state and must be replayed after a restart.
-const STATEFUL = /:=|=>|\b(purge|assume|additionally|sto)\s*\(/;
+const STATEFUL = /:=|=<|=>|\b(purge|assume|additionally|sto)\s*\(/;
 /** The stores of our own test helper (input/emit.ts equalityTest): not the user's state. */
 const HELPER_STO = new RegExp(`\\bsto\\(\\s*[^,()]*,\\s*(?:${EQ_INEXACT_FLAG}|${EQ_DIFF})\\s*\\)`, "g");
 
@@ -632,6 +632,9 @@ export function homeEval(
   }
   const W = Math.max(s.workDigits, s.digits + 10);
   const late = (): boolean => now() - t0 > HOME_DEADLINE_MS;
+  // G78: a function of the user's (a program may change globals) stops the walk for an infinity; ours do not.
+  const builtin = notBuiltin(giac);
+  const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
   const defined = definedBy(input);
   const store = () => {
     if (asg) giac.eval(`${asg.name}:=${ans}`);
@@ -703,7 +706,7 @@ export function homeEval(
   const shape = shapeOf(exactOut);
   const symbolic = (forced?: "unaudited"): HomeResult => {
     // G78: Giac's text with no free name where a number was asked for (asin(acos(π²)), sinh(6020³)), or undef through ∞.
-    const lost = once || forced || inexactTest ? null : lostNumber(giac, ans, exactBody, exactOut, late);
+    const lost = once || forced || inexactTest ? null : lostNumber(giac, ans, exactBody, exactOut, late, exactMs, userFn);
     if (lost) return refuse(lost, "exact");
     // Not a number (symbolic, a set, a nested list…): show Giac's text. This build does not apply the
     // "regroup" autosimplify at the top level (x*x stays x*x), so collect equal factors here.
@@ -749,7 +752,7 @@ export function homeEval(
   // A list holding an open == or ≠ test (R18f3): its numeric value would be Giac's structural verdict, 0 or 1.
   if (!shape || /==|<>/.test(exactOut)) return symbolic();
   // G78 (F51): a finite number through an infinity inside (1/(1/0), exp(ln 0)) is Giac's extended reals, not a value.
-  if (!once && throughInfinity(giac, exactBody, exactOut, late)) return refuse("divisionByZero", "exact");
+  if (!once && throughInfinity(giac, exactBody, exactOut, late, exactMs, userFn)) return refuse("divisionByZero", "exact");
 
   if (hasFloat(exactOut)) {
     // Giac's numeric code returned a float on the exact path (rule 3). `evalf(e,n)` alone is shown with the n digits it

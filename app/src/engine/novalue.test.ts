@@ -7,6 +7,7 @@ import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { rewriteAngles } from "../input/angles.ts";
+import { throughInfinity } from "./novalue.ts";
 
 describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
   let host: EngineHost;
@@ -43,5 +44,43 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     expect(home("x+1/x")).toMatchObject({ ok: true });
     expect(home("0/0")).toMatchObject({ ok: true, display: "undef" });
     expect(home("sin(x)/x")).toMatchObject({ ok: true });
+  });
+  it("never runs a part again that changes state: an assignment, =<, a program, rand (audit, fix round 2)", () => {
+    const none = (): boolean => false;
+    giac.eval("purge(n);n:=1");
+    expect(throughInfinity(giac, "1/(n:=n+1)", "1/2", none, 0, none)).toBe(false);
+    expect(giac.eval("n")).toBe("1");
+    giac.eval("purge(cnt);cnt:=0;bump():={cnt:=cnt+1;return 1;}");
+    expect(throughInfinity(giac, "1/(bump()+1)", "1/2", none, 0, (f) => f === "bump")).toBe(false);
+    expect(giac.eval("cnt")).toBe("0");
+    giac.eval("srand(7)");
+    const first = giac.eval("rand()");
+    giac.eval("srand(7)");
+    throughInfinity(giac, "1/(rand()+2)", "0.4", none, 0, none);
+    expect(giac.eval("rand()")).toBe(first);
+    // Through Home: the input runs once, so the name holds what one run stored.
+    for (const [set, run, name] of [["n:=1", "1/(n:=n+1)", "n"], ["m:=1", "1/(m=<m+1)", "m"]] as const) {
+      home(set);
+      home(run);
+      expect(giac.eval(name), run).toBe("2");
+    }
+    giac.eval("purge(n,m,cnt,bump)");
+  });
+  it("evaluates only the parts that can make an infinity, and none when they would take too long (timing case)", () => {
+    const seen: string[] = [];
+    const counting = { eval: (t: string): string => (seen.push(t), giac.eval(t)) };
+    // At Home's exact time for factorial(10^6) (about 1 s, it ignores the interrupt) nothing is evaluated again.
+    expect(throughInfinity(counting, "ln(ln(factorial(10^6)))", "ln(ln(x))", () => false, 1000, () => false)).toBe(false);
+    expect(seen.filter((t) => t.includes("eval("))).toEqual([]);
+    // A cheap input: the source parts only (the inner ln, the factorial), each once; the whole input is not evaluated.
+    seen.length = 0;
+    expect(throughInfinity(counting, "exp(ln(ln(factorial(3))))+sin(2)", "1", () => false, 1, () => false)).toBe(false);
+    expect(seen.filter((t) => t.includes("eval(")).length).toBe(3);
+    const t0 = performance.now();
+    const r = host.home("ln(ln(factorial(10^6)))", defaultHomeSettings).result;
+    // Shown, or refused for time under a loaded machine (G58), never refused as a division by zero.
+    expect(r.ok || r.error === "timeout", r.display).toBe(true);
+    // Before the fix the walk evaluated factorial(10^6) twice more after Home's own run (about 2 s more).
+    expect(performance.now() - t0 - r.exactMs).toBeLessThan(700);
   });
 });
