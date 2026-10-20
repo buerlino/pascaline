@@ -17,6 +17,7 @@ import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./conver
 import { enEngine } from "../i18n/enEngine.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
+import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
@@ -778,9 +779,13 @@ export function homeEval(
   // G59 (r16 F3): an input with a decimal is checked against Giac's numeric evaluation of it; a disagreement is ⚠ with no
   // count, "exact and numeric differ". Only with audited functions in the input and the result, and none that Giac gets
   // wrong on complex arguments reaching the result through a stored name (the numeric route would read Giac's own).
+  // G59f1: an input with no decimal is checked so when it holds a power that may have more than one value; the route
+  // writes it as exp(b*ln(a)), the principal value (powers.ts).
+  const powers = exactBody === body && shape.kind === "scalar" ? principalPowers(body) : null;
+  const route = exactBody !== body ? (at: number) => floatLiterals(body, at) : powers !== null ? () => powers : null;
   const differ =
-    !once && exactBody !== body && isAudited(body) && isAudited(exactOut) && (complexSafe(exactOut) === exactOut || complexSafe(body) !== body) &&
-    numericDisagrees(giac, (at) => floatLiterals(body, at), facts, shape, s.digits);
+    !once && route !== null && isAudited(body) && isAudited(exactOut) && (complexSafe(exactOut) === exactOut || complexSafe(body) !== body) &&
+    numericDisagrees(giac, route, facts, shape, s.digits);
   if (differ) facts = facts.map((f) => (f.exactRational ? f : { ...f, reliableDigits: null, warn: "unchecked" as const }));
   const b = build(facts, shape, s.digits, "exact", differ);
   store();
