@@ -132,7 +132,7 @@ S14's own line in decisions.md has "would change if … G2 items 63–65 need Gi
 | G45 (merged cfa6127) | One tie rule; the G2's differing Home answers (items 8, 43) as `derived` cases | gorge, Opus | rows 1, 4 |
 | R66 (merged 44d30b6) | The power form keeps Giac's principal root in Home (Function and Solve keep R39) | ron, Opus | rows 2a–2c |
 | R67 (merged 2388fca) | Letters e and i are names: stand-ins `e_`, `i_` (R58b) | ron, Opus | row 8 |
-| [R68](../shifts/packages/R68.md) | ᴇ gets its leading 1 after an operator too (item 40) | ron, Opus | row 20 |
+| R68 (merged 52ee875) | ᴇ gets its leading 1 after an operator too (item 40) | ron, Opus | row 20 |
 | G42 (merged 2da6710) | rewritten: median (and percentile) only; Giac's round and quartiles stay | gorge | rows 5–7 |
 
 ## 6. Top risks
