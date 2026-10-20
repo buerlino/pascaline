@@ -65,3 +65,13 @@ exclude:
   screens: [DispG, DispHome, ClrIO, ClrGraph, erase, erase3d, gnuplot, ecris, NewPic, RclPic, RplcPic, CyclePic, StoPic, switch_axes, xyztrange, Ox_2d_unit_vector, Oy_2d_unit_vector, Ox_3d_unit_vector, Oy_3d_unit_vector, Oz_3d_unit_vector, frame_2d, frame_3d, set_screen, set_pixel, draw_line, draw_rectangle, draw_polygon, draw_circle, draw_arc, clear, show_pixels, pixon, pixoff, click, widget_size, graph2tex, graph3d2tex]
   files: [save_history, read, write, csv2gen, open, fopen, fclose, fprint, readwav, writewav, playsnd, readrgb, writergb, Archive, Unarchiv, archive, unarchive, NewFold, SetFold, DelFold, GetFold, VARS, export_graph, import_graph, maple2xcas, mupad2xcas, maple2mupad, mupad2maple, insmod, lsmod, rmmod, cd, pwd]
   session: [current_sheet, tablefunc, tableseq, ans, quest, xcas_mode, autosimplify, Pause, WAIT, dir, help]
+  # G67: they change Giac's settings, which the engine puts back after the input (the result says so), or wipe every
+  # name behind the definitions log's back
+  settings: [cas_setup, epsilon, python_compat, eval_level, restart, rm_all_vars]
+
+# G67: Giac commands that change the engine's state on purpose, kept in Find with our own line saying so (replaces
+# Giac's English line).
+notes:
+  purge: "Changes the engine's state: forgets a stored value or function, also after a relaunch."
+  assume: "Changes the engine's state: an assumption on a variable (x>0), kept until purge(x), also after a relaunch."
+  additionally: "Changes the engine's state: adds an assumption to a variable's, kept until purge(x)."

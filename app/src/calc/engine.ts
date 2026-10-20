@@ -43,7 +43,7 @@ export class EngineCalc implements Calc {
     try {
       const settings = { ...defaultHomeSettings, digits: s.digits, angle: s.angle };
       const r = await (chips && Object.keys(chips).length ? this.engine.home(giac, settings, undefined, chips) : this.engine.home(giac, settings));
-      return { ok: r.ok, display: r.display, approximate: r.approximate, exactRational: r.exactRational, reliableDigits: r.reliableDigits, full: r.full, ...(r.defined ? { defined: r.defined } : {}), ...(r.items ? { items: r.items } : {}), ...(r.shape ? { shape: r.shape } : {}), ...(r.warn ? { warn: r.warn } : {}), ...(r.digits !== undefined ? { digits: r.digits } : {}), ...(r.value ? { value: r.value } : {}), ...(r.exact && /^-?\d{1,200}(\/\d{1,200})?$/.test(r.exact) ? { exact: r.exact } : {}), ...(r.error ? { error: r.error } : {}), ...(r.latex !== undefined ? { latex: r.latex } : {}) };
+      return { ok: r.ok, display: r.display, approximate: r.approximate, exactRational: r.exactRational, reliableDigits: r.reliableDigits, full: r.full, ...(r.defined ? { defined: r.defined } : {}), ...(r.items ? { items: r.items } : {}), ...(r.shape ? { shape: r.shape } : {}), ...(r.warn ? { warn: r.warn } : {}), ...(r.digits !== undefined ? { digits: r.digits } : {}), ...(r.value ? { value: r.value } : {}), ...(r.exact && /^-?\d{1,200}(\/\d{1,200})?$/.test(r.exact) ? { exact: r.exact } : {}), ...(r.error ? { error: r.error } : {}), ...(r.latex !== undefined ? { latex: r.latex } : {}), ...(r.settingReset ? { settingReset: true } : {}) };
     } catch (e) {
       throw e instanceof EngineCancelled ? new CalcCancelled() : e;
     }
@@ -52,7 +52,7 @@ export class EngineCalc implements Calc {
   async cas(giac: string, s: CalcSettings): Promise<CasOutcome> {
     try {
       const r = await this.engine.cas(giac, { ...defaultCasSettings, digits: s.digits, angle: s.angle });
-      return { ok: r.ok, text: r.text, latex: r.latex, ...(r.full !== undefined ? { full: r.full } : {}), ...(r.numeric ? { numeric: r.numeric } : {}), ...(r.approximate ? { approximate: true } : {}), ...(r.warn ? { warn: r.warn } : {}), ...(r.uses ? { uses: r.uses } : {}), ...(r.error ? { error: r.error } : {}) };
+      return { ok: r.ok, text: r.text, latex: r.latex, ...(r.full !== undefined ? { full: r.full } : {}), ...(r.numeric ? { numeric: r.numeric } : {}), ...(r.approximate ? { approximate: true } : {}), ...(r.warn ? { warn: r.warn } : {}), ...(r.uses ? { uses: r.uses } : {}), ...(r.error ? { error: r.error } : {}), ...(r.settingReset ? { settingReset: true } : {}) };
     } catch (e) {
       throw e instanceof EngineCancelled ? new CalcCancelled() : e;
     }

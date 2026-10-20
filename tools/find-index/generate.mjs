@@ -66,7 +66,7 @@ const opInsert = (n) => `\\operatorname{${latexName(n)}}\\left(#?\\right)`;
  *  instruction or a reserved word (`lp_integer`, `Digits`, `for`, `then`). */
 const NOT_A_FUNCTION = /^(Options? (of|for|that|to)\b|Global option|Pseudo-variable|Reserved word|Instruction in a program|In a program,|Used in an? |Loop:|Test:)/;
 
-function giacFunctions(aide, curated, exclude) {
+function giacFunctions(aide, curated, exclude, notes) {
   const all = parseAide(aide);
   const excluded = new Set(Object.values(exclude ?? {}).flat());
   let dropped = 0;
@@ -114,6 +114,12 @@ function giacFunctions(aide, curated, exclude) {
     });
   }
   for (const n of excluded) if (!byName.has(n) && !all.some((e) => e.names.includes(n))) fail(`find/functions.yaml exclude: no Giac command ${n}`);
+  // G67: our line for the commands that change the engine's state on purpose
+  for (const [n, desc] of Object.entries(notes ?? {})) {
+    const it = items.get(`fn:${n}`);
+    if (!it) fail(`find/functions.yaml notes: no Find item fn:${n}`);
+    else it.desc = desc;
+  }
   return { items: [...items.values()], entries: all.length, dropped, skipped };
 }
 
@@ -138,7 +144,7 @@ for (const f of curated) {
 
 const t0 = performance.now();
 const giacTar = tarball(SOURCES.giac);
-const fns = giacFunctions(member(giacTar, "giac-2.1.0/doc/aide_cas"), curated, fnFile.exclude);
+const fns = giacFunctions(member(giacTar, "giac-2.1.0/doc/aide_cas"), curated, fnFile.exclude, fnFile.notes);
 let items = [...fns.items];
 let qstats = null;
 
