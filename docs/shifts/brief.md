@@ -10,7 +10,7 @@
 **Why.** The G2's flow is the backbone; principle 3 is what we add to it, and today it is broken in our own layer between Giac and the screen, not in the keys or the parser. Of the 16 open bugs (backlog F44–F59, rechecked on `da7a59c`), 10 are wrong code of ours; in the other 6 the wrong value comes from Giac and our layer passes it on under `=`, `≈` or as Giac's text. Ten reach users today. So we harden that layer before anything widens what reaches it, and fix each bug at its cause (P18, P19). The ron lane by day touches no engine code and goes on unchanged.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**.
+1. **R73**; **R15c2 → R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**.
 2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 and R40 after G76).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
 4. annabell: **A16** again after G53 and after G65, **A9** and **A11** with a device, **A18**, **A24**, **A25**, **A22**, **A19** (G64 waits for it), **A12**, **A4b** after R4b, **A20** with the Tab One, **A21** after F-Droid's answer, **A7 → A8** on the owner's go.
@@ -73,6 +73,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, A12, G72, G74 | ~0.5 d |
 | [R70](packages/R70.md) | The tap counter counts every press (S8) | ron, Sonnet | day | R49 | ~0.5 d |
 | [R71](packages/R71.md) | ± on Shift + `,` (M4-2) | ron, Sonnet | day | R24c | ~0.5 d |
+| [R73](packages/R73.md) | no key lost on a fast app open (F60) | ron, Sonnet | day | now | ~0.25 d |
 | [R38a](packages/R38a.md) | The backup: export everything | ron, Sonnet | day | A11 | ~0.5 d |
 | [R38b](packages/R38b.md) | The backup: restore from a file | ron, **Opus** | day | R38a | ~0.75 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the owner's phone connected | ~0.5 d |
