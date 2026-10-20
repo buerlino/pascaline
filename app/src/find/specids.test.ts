@@ -57,7 +57,7 @@ describe.skipIf(!hasIndex)("spec ids resolve to Find items", () => {
 
 it("finds the full generated index (otherwise the spec-id test was skipped)", () => {
   if (hasIndex) return;
-  const msg = "app/src/find/_gen/find-index.json is missing or holds functions only; run npm run index with a qalc build (QALC_OUT)";
+  const msg = "app/src/find/_gen/find-index.json is missing or holds functions only; run npm run index";
   if (process.env["FIND_INDEX"] === "required") expect.fail(msg);
   console.warn(`specids.test: ${msg}; the test was skipped`);
 });

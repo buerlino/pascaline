@@ -2,27 +2,25 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Clean source -> engines -> web app (dist/) -> Capacitor sync -> Gradle -> APK. The F-Droid recipe runs the same steps itself (fdroid/README.md).
 #
-#   ./build.sh [--dev] [--measure] [--unsigned] [--engine-dir DIR] [--qalc-dir DIR | --no-units] [--install [SERIAL]]
+#   ./build.sh [--dev] [--measure] [--unsigned] [--engine-dir DIR] [--no-units] [--install [SERIAL]]
 #
 #   (default)        engine built with the pinned Debian trixie Emscripten in a container (P2: what every release ships)
 #   --dev            engine built with the local emsdk instead (engine/giac/build-wasm.sh; fast iteration only)
 #   --engine-dir D   use an existing engine build (giac.mjs + giac.wasm in D) and skip the engine step
-#   --qalc-dir D     use an existing libqalculate build (qalc.mjs + qalc.wasm in D); default builds it like the engine (engine/qalc/build-wasm.sh: dev with --dev, else release container)
-#   --no-units       skip libqalculate (the Find index then holds functions only; the Units app is milestone 5)
+#   --no-units       leave units, prefixes and constants out of the Find index (functions only); the numbers come from find/factors.yaml, no libqalculate build (A21)
 #   --measure        measurement build: timing marks to logcat (PASCALINE_MEASURE=1); never for release
 #   --unsigned       leave the APK unsigned (what F-Droid wants); default signs with the throwaway key in ~/.cache/pascaline/keys/ (PASCALINE_KEYS)
 #   --install [S]    adb install -r on device S (default $ANDROID_SERIAL or the only device); installs io.github.buerlino.pascaline only
-# Output: dist/pascaline.apk (last line printed). Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libxml2/libqalculate cache), ANDROID_HOME (default ~/Android/Sdk),
+# Output: dist/pascaline.apk (last line printed). Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
 # PASCALINE_KEYS (the throwaway signing key's folder, default ~/.cache/pascaline/keys), NO_LOCK=1 (the caller holds the host-cpu lock).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
-DEV=0 MEASURE=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR="" QALC_DIR="" WITH_UNITS=1
+DEV=0 MEASURE=0 SIGN=1 INSTALL=0 SERIAL="${ANDROID_SERIAL:-}" ENGINE_DIR="" WITH_UNITS=1
 while (( $# )); do
   case "$1" in
     --dev) DEV=1; shift ;;
-    --qalc-dir) QALC_DIR="$(cd "$2" && pwd)"; shift 2 ;;
     --no-units) WITH_UNITS=0; shift ;;
     --measure) MEASURE=1; shift ;;
     --unsigned) SIGN=0; shift ;;
@@ -50,19 +48,8 @@ else
 fi
 export GIAC_OUT
 
-# 1c. libqalculate (milestone 4: the Find index takes constant values and unit factors from it, run in Node; docs/04 7.1).
-#     It is not copied into app/public/ or dist/: the Units worker that loads it in the browser is milestone 5.
-if (( WITH_UNITS )); then
-  if [[ -z "$QALC_DIR" ]]; then
-    if (( DEV )); then engine/qalc/build-wasm.sh dev >&2; QALC_DIR="$ROOT/engine/qalc/_out/dev"
-    else engine/qalc/build-wasm.sh release >&2; QALC_DIR="$ROOT/engine/qalc/_out/release"; fi
-  fi
-  [[ -f "$QALC_DIR/qalc.mjs" && -f "$QALC_DIR/qalc.wasm" ]] || { echo "no qalc.mjs/qalc.wasm in $QALC_DIR" >&2; exit 1; }
-  export QALC_OUT="$QALC_DIR"
-fi
-
 # 2. web app -> app/dist. First the Find index (docs/04 3.3): app/src/find/_gen/find-index.json from the pinned
-#    tarballs, with values and factors from the qalc build of step 1c (QALC_OUT); it needs the app's packages (yaml).
+#    tarballs and the numbers in find/factors.yaml (no libqalculate build, A21); it needs the app's packages (yaml).
 (( MEASURE )) && export PASCALINE_MEASURE=1 VITE_MEASURE=1
 INDEX_ARGS=(); (( WITH_UNITS )) || INDEX_ARGS=(--no-units)
 (cd app && npm ci --no-audit --no-fund >&2 && npm run index -- "${INDEX_ARGS[@]}" >&2 && npm run build >&2)
