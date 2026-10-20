@@ -15,7 +15,7 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { lostFloat, lostNumber, throughInfinity } from "./novalue.ts";
+import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
@@ -776,6 +776,8 @@ export function homeEval(
   if (!facts) {
     const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
     if (!d) return symbolic();
+    // G84 (F60): a double's 0 where MPFR found no value (exp(cosh(asin(π)/pasdeg))) whose exact answer is not 0.
+    if (!once && !late() && underflow(giac, zeroElements(`(${exactOut})`, [d], shape), null)) return refuse("underflow", "exact");
     const b = build([d], shape, s.digits, "exact", true);
     store();
     return fromBuilt(b, "exact", true, exactOut, b.decimal, { once: true });
@@ -789,6 +791,9 @@ export function homeEval(
       exactText = giac.eval(ans);
     }
   }
+  // G84 (F60): an element that reads as 0 while Giac's exact answer is not 0 (exp(-10^30)) is an underflow, refused as an
+  // overflow is; after provedRational, which turns an exact 0 Giac can prove into one.
+  if (!once && !late() && underflow(giac, zeroElements(ans, facts, shape), valuePrecision(s.digits))) return refuse("underflow", "exact");
   // G59 (r16 F3): an input with a decimal is checked against Giac's numeric evaluation of it; a disagreement is ⚠ with no
   // count, "exact and numeric differ". Only with audited functions in the input and the result, and none that Giac gets
   // wrong on complex arguments reaching the result through a stored name (the numeric route would read Giac's own).

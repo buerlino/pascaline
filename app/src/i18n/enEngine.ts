@@ -9,6 +9,7 @@ export const enEngine = {
   "error.timeout": "Stopped: it took too long",
   "error.divisionByZero": "Division by zero",
   "error.overflow": "Overflow: the number is too large",
+  "error.underflow": "Underflow: the number is too small",
   "error.noValue": "No value found",
   "error.undecided": "undecided: the value sits on a cut Giac cannot decide",
   "why.pairDiffers": "The exact and numeric answers differ",
