@@ -3,7 +3,7 @@
 // Vitest's and Playwright's JSON reporters.
 import { describe, expect, it } from "vitest";
 import {
-  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeTypecheck, summarizeVitest, vitestFailures,
+  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeSweep, summarizeTypecheck, summarizeVitest, vitestFailures,
 } from "./gate-summary.ts";
 
 const vitestOk = {
@@ -115,5 +115,20 @@ describe("what the gate selects by changed paths", () => {
     expect(regeneratesIndex(["find/aliases.yaml"])).toBe(true);
     expect(regeneratesIndex(["tools/find-index/generate.mjs"])).toBe(true);
     expect(regeneratesIndex(["app/src/units/evaluate.ts"])).toBe(false);
+  });
+});
+
+describe("summarizeSweep", () => {
+  const ok = "  sweep known (G60) x\nSWEEP PASSED: 1182 runs of 1000 trees (seed 1): 781 numbers judged, 0 refused; oracle 14.0 s, total 37.4 s; 17 known failures, 0 new, 0 now passing";
+  it("passes with the counts", () => {
+    expect(summarizeSweep(ok, 0)).toEqual({ ok: true, detail: "1182 runs, 781 numbers judged, 17 known failures, sweep 37.4 s" });
+  });
+  it("fails on a new failure and names it", () => {
+    const s = summarizeSweep("  sweep NEW rad 12 \\sin\\left(1\\right) [hang]: no answer\nSWEEP FAILED: 9 runs of 5 trees; total 9.0 s; 0 known failures, 1 new, 0 now passing", 1);
+    expect(s.ok).toBe(false);
+    expect(s.detail).toContain("1 to look at: NEW rad 12");
+  });
+  it("fails without the closing line", () => {
+    expect(summarizeSweep("boom", 1).ok).toBe(false);
   });
 });
