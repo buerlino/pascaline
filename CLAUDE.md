@@ -2,7 +2,7 @@
 
 Pascaline is an open-source graphing CAS calculator for engineers (Android and PWA, later iOS and desktop): the HP Prime G2's logical key layout and flow, our own look, plus units, uncertainty and honest precision. GPL-3.0. Repo: https://github.com/buerlino/pascaline (default `master`; work on `phase-1`; `gh` is not logged in). **Never push or commit without the owner's OK.**
 
-**[docs/rules-core.md](docs/rules-core.md) is binding:** the goal, the three principles, and the clean-room, F-Droid and maths-correctness rules. Read it first. Status and tasks: [docs/backlog.md](docs/backlog.md). Decisions: [docs/decisions.md](docs/decisions.md). What to read for a design question: [docs/README.md](docs/README.md).
+**[docs/rules-core.md](docs/rules-core.md) is binding:** the goal, the three principles, and the clean-room, F-Droid and maths-correctness rules. Read it first. **Now: the core freeze (P23, 2026-10-21):** no new features until the core list (`tests/core/`) holds on desktop and on the Tab One; the order of work is `docs/shifts/brief.md` section 0. Status and tasks: [docs/backlog.md](docs/backlog.md). Decisions: [docs/decisions.md](docs/decisions.md). What to read for a design question: [docs/README.md](docs/README.md).
 
 ## Commands (Emscripten 6.0.12 in `~/emsdk`; the build scripts source it themselves)
 ```bash

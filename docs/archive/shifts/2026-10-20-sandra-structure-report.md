@@ -6,7 +6,7 @@ Worktree `p1/sandra-structure` from `phase-1` `d6f6093`; read and probe only. No
 ## What I verified
 - **Churn and fix commits per file** (`tools/probes/churn.py`): the centre is `host.ts`, `homeEval.ts` and `numeric.ts`, each with four to six jobs. `parse.ts` is not a centre.
 - **Glue added per package** (`tools/probes/glue-growth.mjs`): in `app/src/engine`, merges added 238 pattern lines and removed 26; one package removed more than it added.
-- **413 text matches in `app/src`**, one per line ([appendix](../archive/structure-audit-inventory.md), by three helper agents). The confirmed misses rerun in `tools/probes/text-misses.ts`.
+- **413 text matches in `app/src`**, one per line ([appendix](../structure-audit-inventory.md), by three helper agents). The confirmed misses rerun in `tools/probes/text-misses.ts`.
 - **Giac flags typed by the user** (`tools/probes/giac-globals.ts`):
   - the mode cache lets `angle_radian:=0` change the next `sin(1)` in the same view: Home shows `≈ 0.0174524064373` with 38 digits confirmed;
   - `integer_format(16)` is outside `cas_setup()`;

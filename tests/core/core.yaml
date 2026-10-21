@@ -1,0 +1,456 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# The core list (decisions.md "P23"): the everyday tasks that must hold before anything new is built.
+# Format, rules and how it runs: README.md beside this file. Draft by sandra, 2026-10-21, for the owner to cut down.
+#
+# A case has:
+#   id, area, title   c<nn>; area = entry | home | trig | cas | matrix | solve | function | state
+#   keys              the presses, in order, as app/test/helpers.ts tap() takes them: a key id of spec/keyboard.yaml,
+#                     a status-line control (@home @cas @symb @plot @num @menu @mode @place), or
+#                     {tmpl: <cell id of keyboard.yaml templates>}, {up: <key>} / {down: <key>} (a flick),
+#                     {tap: "result:last"} (the last history result), {tap: "<css selector>"}, {relaunch: true}
+#   expect            one or more of: result (the last result's data-text), mark (= ≈ ⚠ of the last result),
+#                     entry (the entry's LaTeX after the keys), text: {<css selector>: <text>} (an app's readout)
+#   value             the true value, where the check is a number (oracle or derived)
+#   source            derived | oracle (mpmath 1.3.0, tests/golden/.venv), as a golden case; never from memory
+#   hand              true: also on the owner's morning list (MORNING.md, about 10 minutes on the phone)
+#   known             a bug id when the case fails today for that bug; the harness reports it as known, not as new
+#   needs             a package id when the case cannot be keyed today (R4a: a command by name); the harness skips it
+schema: 1
+
+cases:
+  # ---- entry: the keys hold (Enter, ⌫, cursor, fractions, Esc, Undo, the shared line) ----
+  - id: c01
+    area: entry
+    title: Enter evaluates and empties the line
+    keys: [d2, add, d3, enter]
+    expect: { result: "5", mark: "=", entry: "" }
+    value: "5"
+    source: derived
+    hand: true
+
+  - id: c02
+    area: entry
+    title: an operator on an empty line starts from Ans
+    keys: [d5, enter, mul, d2, enter]
+    expect: { result: "10", mark: "=" }
+    value: "10"
+    source: derived
+
+  - id: c03
+    area: entry
+    title: "÷ makes a stacked fraction; ▶ leaves the denominator: 1/2 + 1/3"
+    keys: [d1, div, d2, right, add, d1, div, d3, right, enter]
+    expect: { result: "0.833333333333", mark: "≈" }
+    value: "5/6"
+    source: derived
+    hand: true
+
+  - id: c04
+    area: entry
+    title: "a fraction inside a sum keeps its place: 1 + 2/3"
+    keys: [d1, add, d2, div, d3, right, enter]
+    expect: { result: "1.66666666667", mark: "≈" }
+    value: "5/3"
+    source: derived
+
+  - id: c05
+    area: entry
+    title: "nested fractions by a b/c: 1/(1/4700 + 1/10000)"
+    keys: [d1, frac, d1, frac, d4, d7, d0, d0, right, add, d1, frac, d1, d0, d0, d0, d0, enter]
+    expect: { result: "3197.27891156", mark: "≈" }
+    value: "470000/147"
+    source: derived
+
+  - id: c06
+    area: entry
+    title: "⌫ inside a denominator deletes one digit: 1/23 ⌫ → 1/2"
+    keys: [d1, div, d2, d3, bksp, right, enter]
+    expect: { result: "0.5", mark: "=" }
+    value: "1/2"
+    source: derived
+    hand: true
+
+  - id: c07
+    area: entry
+    title: "◀ moves the cursor in a flat line: 2×3, ◀ ◀, 1 gives 21×3"
+    keys: [d2, mul, d3, left, left, d1, enter]
+    expect: { result: "63", mark: "=" }
+    value: "63"
+    source: derived
+    hand: true
+
+  - id: c08
+    area: entry
+    title: "the bracket key and ▶ out of it: (2+3)×4"
+    keys: [paren, d2, add, d3, right, mul, d4, enter]
+    expect: { result: "20", mark: "=" }
+    value: "20"
+    source: derived
+
+  - id: c09
+    area: entry
+    title: Esc empties the line, Undo brings it back
+    keys: [d1, d2, d3, esc, undo]
+    expect: { entry: "123" }
+    source: derived
+    hand: true
+
+  - id: c10
+    area: entry
+    title: a tapped result goes into the line
+    keys: [d7, enter, {tap: "result:last"}, add, d1, enter]
+    expect: { result: "8", mark: "=" }
+    value: "8"
+    source: derived
+
+  - id: c11
+    area: entry
+    title: "the line follows you from Home to CAS before Enter (R34): 1+ in Home, 2 Enter in CAS"
+    keys: [d1, add, "@cas", d2, enter]
+    expect: { result: "3", mark: none }
+    value: "3"
+    source: derived
+
+  - id: c12
+    area: entry
+    title: "E notation: 6.02ᴇ23 × 2"
+    keys: [d6, dot, d0, d2, emark, d2, d3, mul, d2, enter]
+    expect: { result: "1.204E24" }
+    value: "1.204E24"
+    source: derived
+
+  # ---- home: arithmetic people do every day ----
+  - id: c13
+    area: home
+    title: "precedence: 2+3×4"
+    keys: [d2, add, d3, mul, d4, enter]
+    expect: { result: "14", mark: "=" }
+    value: "14"
+    source: derived
+
+  - id: c14
+    area: home
+    title: "1÷3 shows 12 digits"
+    keys: [d1, div, d3, right, enter]
+    expect: { result: "0.333333333333", mark: "≈" }
+    value: "1/3"
+    source: derived
+    hand: true
+
+  - id: c15
+    area: home
+    title: "decimals are exact: 0.1+0.2"
+    keys: [d0, dot, d1, add, d0, dot, d2, enter]
+    expect: { result: "0.3", mark: "=" }
+    value: "3/10"
+    source: derived
+
+  - id: c16
+    area: home
+    title: "decimals are exact: 1−0.9−0.1"
+    keys: [d1, sub, d0, dot, d9, sub, d0, dot, d1, enter]
+    expect: { result: "0", mark: "=" }
+    value: "0"
+    source: derived
+
+  - id: c17
+    area: home
+    title: "a power and a big integer: 2^64"
+    keys: [d2, pow, d6, d4, right, enter]
+    expect: { result: "1.84467440737E19", mark: "≈" }
+    value: "18446744073709551616"
+    source: derived
+
+  - id: c18
+    area: home
+    title: "√2"
+    keys: [shift, sq, d2, right, enter]
+    expect: { result: "1.41421356237", mark: "≈" }
+    value: "1.41421356237309504880168872421"
+    source: oracle
+
+  - id: c19
+    area: home
+    title: "a negative number: (−)5 × 3"
+    keys: [neg, d5, mul, d3, enter]
+    expect: { result: "-15", mark: "=" }
+    value: "-15"
+    source: derived
+
+  - id: c20
+    area: home
+    title: "ln 10 and log 1000"
+    keys: [ln, d1, d0, right, enter, log, d1, d0, d0, d0, right, enter]
+    expect: { result: "3", mark: "=" }
+    value: "3"
+    source: derived
+
+  - id: c21
+    area: home
+    title: "eˣ: e^2"
+    keys: [shift, ln, d2, right, enter]
+    expect: { result: "7.38905609893", mark: "≈" }
+    value: "7.38905609893065022723042746058"
+    source: oracle
+
+  - id: c22
+    area: home
+    title: "complex: (2+3i)(1−i)"
+    keys: [paren, d2, add, d3, shift, d2, right, mul, paren, d1, sub, shift, d2, right, enter]
+    expect: { result: "5+i", mark: "=" }
+    value: "5+i"
+    source: derived
+
+  # ---- trig in both angle modes (the mode set by keys, as a user does) ----
+  - id: c23
+    area: trig
+    title: "RAD: sin(π/6) is exactly 1/2"
+    keys: [sin, shift, d3, div, d6, right, right, enter]
+    expect: { result: "0.5", mark: "=" }
+    value: "1/2"
+    source: derived
+
+  - id: c24
+    area: trig
+    title: "RAD: sin 1"
+    keys: [sin, d1, right, enter]
+    expect: { result: "0.841470984808", mark: "≈" }
+    value: "0.84147098480789650665250232163"
+    source: oracle
+
+  - id: c25
+    area: trig
+    title: "DEG by the Mode sheet, then sin 30"
+    keys: ["@mode", right, enter, sin, d3, d0, right, enter]
+    expect: { result: "0.5", mark: "=" }
+    value: "1/2"
+    source: derived
+    hand: true
+
+  - id: c26
+    area: trig
+    title: "DEG: tan 45 and asin 0.5"
+    keys: ["@mode", right, enter, tan, d4, d5, right, enter, shift, sin, d0, dot, d5, right, enter]
+    expect: { result: "30", mark: "=" }
+    value: "30"
+    source: derived
+
+  - id: c27
+    area: trig
+    title: "DEG, then back to RAD: sin(π) is 0"
+    keys: ["@mode", right, enter, "@mode", right, enter, sin, shift, d3, right, enter]
+    expect: { result: "0", mark: "=" }
+    value: "0"
+    source: derived
+
+  # ---- state: stored values, functions, a relaunch ----
+  - id: c28
+    area: state
+    title: "Store: 7 ▶ A, then A+1"
+    keys: [d7, shift, emark, alpha, vars, enter, alpha, vars, add, d1, enter]
+    expect: { result: "8", mark: "=" }
+    value: "8"
+    source: derived
+    hand: true
+
+  - id: c29
+    area: state
+    title: "a stored value survives a relaunch: 5 ▶ A, relaunch, A×2"
+    keys: [d5, shift, emark, alpha, vars, enter, {relaunch: true}, alpha, vars, mul, d2, enter]
+    expect: { result: "10", mark: "=" }
+    value: "10"
+    source: derived
+    hand: true
+
+  - id: c30
+    area: state
+    title: "a function: p(x):=x², then p(3)"
+    keys: [shift, alpha, emark, paren, x, right, alpha, sub, shift, dot, x, sq, enter, shift, alpha, emark, paren, d3, right, enter]
+    expect: { result: "9", mark: "=" }
+    value: "9"
+    source: derived
+    hand: true
+
+  - id: c31
+    area: state
+    title: "the function survives a relaunch: p(x):=x², relaunch, p(2)"
+    keys: [shift, alpha, emark, paren, x, right, alpha, sub, shift, dot, x, sq, enter, {relaunch: true}, shift, alpha, emark, paren, d2, right, enter]
+    expect: { result: "4", mark: "=" }
+    value: "4"
+    source: derived
+
+  - id: c32
+    area: state
+    title: "history survives a relaunch"
+    keys: [d2, add, d2, enter, {relaunch: true}]
+    expect: { result: "4", mark: "=" }
+    value: "4"
+    source: derived
+
+  # ---- cas: exact answers ----
+  - id: c33
+    area: cas
+    title: "CAS: 1/3 + 1/6 is exactly 1/2"
+    keys: ["@cas", d1, div, d3, right, add, d1, div, d6, right, enter]
+    expect: { result: "1/2", mark: none }
+    value: "1/2"
+    source: derived
+
+  - id: c34
+    area: cas
+    title: "CAS: √8 is 2√2"
+    keys: ["@cas", shift, sq, d8, right, enter]
+    expect: { result: "2*sqrt(2)", mark: none }
+    value: "2*sqrt(2)"
+    source: derived
+
+  - id: c35
+    area: cas
+    title: "CAS: the integral template, ∫₀¹ x² dx = 1/3"
+    keys: ["@cas", {tmpl: integral}, d0, right, d1, right, x, sq, right, x, enter]
+    expect: { result: "1/3", mark: none }
+    value: "1/3"
+    source: derived
+    hand: true
+
+  - id: c36
+    area: cas
+    title: "CAS: the derivative template, d/dx x³ = 3x²"
+    keys: ["@cas", {tmpl: deriv}, x, pow, d3, right, right, x, enter]
+    expect: { result: "3*x^2", mark: none }
+    value: "3*x^2"
+    source: derived
+
+  - id: c37
+    area: cas
+    title: "CAS: Shift Enter opens approx(), √2 inside, Enter gives the decimal"
+    keys: ["@cas", shift, enter, shift, sq, d2, right, right, enter]
+    expect: { result: "1.41421356237", mark: "≈" }
+    value: "1.41421356237309504880168872421"
+    source: oracle
+
+  - id: c38
+    area: cas
+    title: "CAS: solve(x²=4,x) typed with lower-case letters gives both roots"
+    keys: ["@cas", shift, alpha, d9, shift, alpha, comma, shift, alpha, sq, shift, alpha, d5, shift, alpha, frac, paren, x, sq, shift, dot, d4, comma, x, right, enter]
+    expect: { result: "[-2,2]", mark: none }
+    value: "[-2,2]"
+    source: derived
+    needs: R4a
+
+  - id: c39
+    area: cas
+    title: "an integral in Home, then solve(x²=4,x) in CAS still gives both roots (state between inputs)"
+    keys: [{tmpl: integral}, d0, right, d1, right, x, sq, right, x, enter, "@cas", shift, alpha, d9, shift, alpha, comma, shift, alpha, sq, shift, alpha, d5, shift, alpha, frac, paren, x, sq, shift, dot, d4, comma, x, right, enter]
+    expect: { result: "[-2,2]", mark: none }
+    value: "[-2,2]"
+    source: derived
+    needs: R4a
+
+  # ---- matrix: entered from the Tmpl palette ----
+  - id: c40
+    area: matrix
+    title: "a 2×2 matrix from Tmpl, Enter shows it"
+    keys: [{tmpl: matrix22}, d1, right, d2, right, d3, right, d4, enter]
+    expect: { result: "[[1,2],[3,4]]", mark: "=" }
+    value: "[[1,2],[3,4]]"
+    source: derived
+
+  - id: c41
+    area: matrix
+    title: "its inverse by x⁻¹ (Shift ÷)"
+    keys: [{tmpl: matrix22}, d1, right, d2, right, d3, right, d4, right, shift, div, enter]
+    expect: { result: "[[-2,1],[1.5,-0.5]]", mark: "=" }
+    value: "[[-2,1],[3/2,-1/2]]"
+    source: derived
+    hand: true
+    known: F68
+
+  - id: c42
+    area: matrix
+    title: "a 2×2 linear system as A⁻¹·b: 2x+y=5, x−y=1"
+    keys: [{tmpl: matrix22}, d2, right, d1, right, d1, right, neg, d1, right, shift, div, mul, {tmpl: colvec}, d5, right, d1, right, enter]
+    expect: { result: "[[2],[1]]", mark: "=" }
+    value: "[[2],[1]]"
+    source: derived
+    known: F68
+
+  - id: c43
+    area: matrix
+    title: "det typed with lower-case letters: det of [[1,2],[3,4]]"
+    keys: [shift, alpha, x, shift, alpha, frac, shift, alpha, div, paren, {tmpl: matrix22}, d1, right, d2, right, d3, right, d4, right, right, enter]
+    expect: { result: "-2", mark: "=" }
+    value: "-2"
+    source: derived
+    needs: R4a
+
+  # ---- solve: the Solve app ----
+  - id: c44
+    area: solve
+    title: "Solve: x·eˣ = 5 from the guess 1"
+    keys: ["@place", d4, "@symb", x, shift, ln, x, right, shift, dot, d5, enter, "@num",
+           {tap: '[data-testid="solve-table"] tr[data-name="x"] th button'}, esc, d1, enter, "@menu", d1]
+    expect: { text: { '[data-testid="solve-table"] tr[data-name="x"] td': "1.32672466524" } }
+    value: "1.32672466524220022363509929776"
+    source: oracle
+    hand: true
+
+  - id: c45
+    area: solve
+    title: "Solve: polynomial roots of x²−5x+6 = 0"
+    keys: ["@place", d4, "@symb", x, sq, sub, d5, x, add, d6, shift, dot, d0, enter, "@num", "@menu", d2]
+    expect: { text: { '[data-testid="solve-roots"] li': "x = 2" } }
+    value: "[2,3]"
+    source: derived
+
+  # ---- function: the Function app ----
+  - id: c46
+    area: function
+    title: "Function: F1 = x²−2, Plot, Root from Menu"
+    keys: ["@symb", x, sq, sub, d2, enter, "@plot", right, right, right, right, right, right, right, right, right, right, "@menu", d1]
+    expect: { text: { '[data-testid="readout-x"]': "1.41421356237" } }
+    value: "1.41421356237309504880168872421"
+    source: oracle
+    hand: true
+
+  - id: c47
+    area: function
+    title: "Function: signed area of x² from 0 to 1"
+    keys: ["@symb", x, sq, enter, "@plot", "@menu", d5, right, right, right, right, right, right, right, right, right, right, enter]
+    expect: { text: { '[data-testid="readout-Signed area"]': "0.333333333333" } }
+    value: "1/3"
+    source: derived
+
+  # ---- more of the interface: back, copy and paste, a picked row, the mode across a relaunch ----
+  - id: c48
+    area: entry
+    title: "Android back closes the Tmpl sheet, and the next keys work"
+    keys: [tmpl, {back: true}, d2, add, d2, enter]
+    expect: { result: "4", mark: "=" }
+    value: "4"
+    source: derived
+    hand: true
+
+  - id: c49
+    area: entry
+    title: "Copy the last result, Paste it (Shift Copy) into the line"
+    keys: [d7, enter, copy, shift, copy, add, d1, enter]
+    expect: { result: "8", mark: "=" }
+    value: "8"
+    source: derived
+
+  - id: c50
+    area: entry
+    title: "▲ picks an earlier row; Copy and Paste take that row"
+    keys: [d2, enter, d3, enter, up, up, copy, shift, copy, add, d1, enter]
+    expect: { result: "3", mark: "=" }
+    value: "3"
+    source: derived
+
+  - id: c51
+    area: trig
+    title: "the angle mode survives a relaunch: DEG, relaunch, sin 30"
+    keys: ["@mode", right, enter, {relaunch: true}, sin, d3, d0, right, enter]
+    expect: { result: "0.5", mark: "=" }
+    value: "1/2"
+    source: derived
