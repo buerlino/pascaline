@@ -67,9 +67,9 @@ The one place for "where are we and what's left", one or two lines per open item
 - [x] **F60 → G84 (043af31).** `exp(-10^30)`, DEG `exp(cosh(asin π))` are refused "Underflow" (were `⚠ 0`). Family 5.
 - **F61, no package yet.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
 - **F62, no package yet.** `sin(cosh(10!))` takes 11 s in Home; the 2 s deadline misses.
-- **F63, no package yet.** A stored ⚠ float is read back with one confirmed digit fewer than the line showed (`BesselJ(1,2)` ⚠14 then ⚠13 at 30 digits or after a relaunch); `f(t):=t; f(x)` shows ⚠11 for ⚠12. Families 1, 6. Found by the G62 sequence sweep.
+- **F63, no package yet.** A stored ⚠ float reads one digit short (`BesselJ(1,2)` ⚠14, then ⚠13 at 30 digits or after relaunch; `f(t):=t` ⚠11 for ⚠12). Families 1, 6.
 
-- **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, [x] S18; instruments [x] G61, [x] G62, G63, G64, A19, S16; A22 by day; [x] A20, [x] A21 (`find/factors.yaml`; only the recipe's qalc build waits for F-Droid's answer).
+- **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, [x] S18; instruments [x] G61–G62, G63, G64, A19, S16; A22 by day; [x] A20, [x] A21.
 
 ### Milestone 4a: feel (P11; packages and order: brief section 0)
 - **R15c1–R15c4. The R3 top cluster** (R15c1 done: the status line takes Apps, Menu and the views; R15c2 done: the round pad, U1–U6 and the editing wing; R15c3–R15c4 left) (decisions.md "R15c"): the status line takes Apps, Menu and the views; the round pad, six user keys and the editing wing; the user keys' Alpha layer; first-start tips.
