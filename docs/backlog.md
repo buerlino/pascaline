@@ -76,6 +76,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (G2 item 62 can reverse it).
 - **G9. Number formats against the G2** (item 15): decide in the settings and help pass. **K1:** a pending one-shot Shift is used up by the first drag step. **K5:** the gestures in the help texts.
 - **`tieRisk`** (`format.ts:129`, set in `homeEval.ts:508`) has no reader (docs/04 2.4 rule 2 already drops a digit at a tie): drop it when `homeEval.ts` is next touched outside the freeze.
+- **[A34](shifts/packages/A34.md), night step 100:** worktrees copy `node_modules` from the main checkout, which sits on an old branch without `@capacitor/clipboard` and `@capacitor/share`, so run 169 (A28) failed its typecheck three times; sandra's stopgap of 2026-10-21 copied phase-1's `node_modules` into the main checkout.
 - **The pipeline:** A15's tests check fixed dry-run echo lines, not `want_checks` and `resolve_audit_model` (Opus pass 20); the size test does not cover CSS (25.8 kB raw at 2026-10-12).
 - **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework.
 

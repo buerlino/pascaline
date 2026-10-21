@@ -61,10 +61,11 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
 ### The queue (rewritten 2026-10-21 for P23; the steps before 101 are done or moved to the background)
-Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **The core lane (101–110) comes first; a background step (120–130) runs only when no core step can start.**
+Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **Step 100 (A34) runs first tonight (owner, 2026-10-21), then the core lane (101–110); a background step (120–130) runs only when no core step can start.**
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
+| 100 | [A34](packages/A34.md) worktrees take node_modules from phase-1; a missing package ends the run (first tonight, owner 2026-10-21) | annabell, Sonnet, audit Opus (`--audit-model opus`: the night runs on these scripts) | `p1/annabell-nodemods` | A28 | 45 min |
 | 101 | [R74](packages/R74.md) the core list runs in the e2e suite | ron, Sonnet | `p1/ron-corelist` | — | 1 h |
 | 102 | [R75](packages/R75.md) x², xʸ, x⁻¹ and ÷ after a matrix take the matrix (F68) | ron, Opus | `p1/ron-matrixbase` | R74 | 1 h |
 | 103 | [G90](packages/G90.md) Home's definite int marks what it checked (F65, F67) | gorge, Opus | `p1/gorge-m4-intmark` | — | 1.5 h |
