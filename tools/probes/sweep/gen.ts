@@ -112,3 +112,12 @@ export function generate(seed: number, count: number): Case[] {
   }
   return out;
 }
+
+/** Inputs that were found wrong or hanging and stay in every run at 12 digits in RAD (backlog F44, G58: they hung Home). */
+export const PINNED: Case[] = [
+  { latex: "e^{1.5ᴇ8}", mp: "exp(mpf('1.5e8'))", angle: false },
+  { latex: "\\sqrt{e^{2ᴇ8}}", mp: "sqrt(exp(mpf('2e8')))", angle: false },
+  { latex: "3+\\frac{e^{1.5ᴇ8}}{\\arcsin\\left(3\\right)}", mp: "(mpf('3'))+DIV(exp(mpf('1.5e8')),ASIN(mpf('3')))", angle: false },
+  { latex: "\\arccos\\left(\\left(5!\\right)^{2.5+5!}\\right)", mp: "ACOS(POW(FACT(5),(mpf('2.5'))+FACT(5)))", angle: false },
+  { latex: "e^{10^{7}}", mp: "exp(POW(mpf('10'),mpf('7')))", angle: false },
+];

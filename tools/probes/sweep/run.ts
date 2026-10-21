@@ -5,7 +5,7 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { Worker } from "node:worker_threads";
 import { latexToGiac } from "../../../app/src/input/latex-to-giac.ts";
-import { generate } from "./gen.ts";
+import { generate, PINNED } from "./gen.ts";
 import { judge, type Oracle, type Shown, type Verdict } from "./judge.ts";
 import type { Job } from "./worker.ts";
 
@@ -21,12 +21,12 @@ export interface Judged extends Run {
   ms: number;
 }
 
-/** The runs of a seed: every tree in RAD at 12 or 30 digits, trees with an angle function also in DEG. Duplicates dropped. */
+/** The runs of a seed: the pinned inputs, then every tree in RAD at 12 or 30 digits, trees with an angle function also in DEG. Duplicates dropped. */
 export function runsOf(seed: number, count: number): Run[] {
   const seen = new Set<string>();
   const out: Run[] = [];
-  generate(seed, count).forEach((c, i) => {
-    const digits = i % 2 === 0 ? 12 : 30;
+  const all = [...PINNED.map((c) => ({ c, digits: 12 as const })), ...generate(seed, count).map((c, i) => ({ c, digits: (i % 2 === 0 ? 12 : 30) as 12 | 30 }))];
+  all.forEach(({ c, digits }) => {
     for (const angle of c.angle ? (["rad", "deg"] as const) : (["rad"] as const)) {
       const key = `${angle} ${digits} ${c.latex}`;
       if (seen.has(key)) continue;
