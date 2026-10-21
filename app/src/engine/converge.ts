@@ -300,3 +300,40 @@ export function giacPair(output: string): { exact: string; numeric: string } | n
 export function hasDefiniteIntegral(input: string): boolean {
   return callsIn(input).some((c) => c.kind === "int" && c.args.length === 4) && !input.trim().startsWith("[");
 }
+
+/** An unevaluated integral call in Giac's text. */
+const INTEGRAL_CALL = /\b(?:int|integrate)\s*\(/;
+
+/**
+ * G90 (F65, F67): `input` with each definite integral's bounds made floats (`int(f,x,evalf(a),evalf(b))`, nested ones
+ * too). Giac then integrates the typed integrand numerically (intg.cc `tegral`, adaptive Gauss in a double at any
+ * Digits), not the rewrite its exact attempt left (`6*pi/ln(12)+integrate(…)`, singular where the typed one is not).
+ */
+export function floatBounds(input: string): string {
+  const re = /"[^"]*"|\b(int|integrate)\s*\(/g;
+  let out = "";
+  let i = 0;
+  for (let m = re.exec(input); m; m = re.exec(input)) {
+    if (!m[1]) continue;
+    const open = m.index + m[0].length - 1;
+    const close = closing(input, open);
+    if (close < 0) continue;
+    const args = topLevelArgs(input.slice(open + 1, close)).map(floatBounds);
+    const bounds = args.length === 4 ? [args[0]!, args[1]!, `evalf(${args[2]!.trim()})`, `evalf(${args[3]!.trim()})`] : args;
+    out += `${input.slice(i, m.index)}${m[1]}(${bounds.join(",")})`;
+    i = close + 1;
+    re.lastIndex = i;
+  }
+  return out + input.slice(i);
+}
+
+/**
+ * G90: the value of `input` is Giac's numeric integration (docs/04 2.4 rule 3): it holds a definite integral and Giac's
+ * exact answer of one keeps an unevaluated integral (no closed form). `output` is Giac's answer of the whole input: one
+ * without a float is that exact answer (no Giac call); a float (`evalf(int(…))`) costs one exact run of each integral.
+ */
+export function integratedNumerically(giac: Giac, input: string, output: string): boolean {
+  if (!hasDefiniteIntegral(input)) return false;
+  if (!hasFloat(output)) return INTEGRAL_CALL.test(output);
+  return callsIn(input).some((c) => c.kind === "int" && c.args.length === 4 && INTEGRAL_CALL.test(giac.eval(c.text)));
+}

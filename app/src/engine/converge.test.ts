@@ -3,7 +3,7 @@
 // Expected refusals are derived (a pole inside the interval, a term that does not tend to 0); values are oracle cases
 // of home.yaml (g39-keep-*).
 import { beforeAll, describe, expect, it } from "vitest";
-import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
+import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { EngineHost, type GiacApi } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
@@ -25,6 +25,21 @@ describe("converge helpers", () => {
     expect(hasDefiniteIntegral("int(1/(1+x^2),x,0,1)")).toBe(true);
     expect(hasDefiniteIntegral("int(1/(1+x^2),x)")).toBe(false);
     expect(hasDefiniteIntegral("[int(x,x,0,1),evalf(pi)]")).toBe(false);
+  });
+  it("G90: makes every definite integral's bounds floats, nested ones too, and leaves the rest alone", () => {
+    expect(floatBounds("int(asin(x)*12^x,x,0,1)")).toBe("int(asin(x)*12^x,x,evalf(0),evalf(1))");
+    expect(floatBounds("2*integrate(int(x*y,y,0,x),x,-1,(1/2))+int(x,x)")).toBe("2*integrate(int(x*y,y,evalf(0),evalf(x)),x,evalf(-1),evalf((1/2)))+int(x,x)");
+    expect(floatBounds('myint(x,x,0,1)+"int(x,x,0,1)"')).toBe('myint(x,x,0,1)+"int(x,x,0,1)"');
+  });
+  it("G90: Giac's exact answer with an integrate(…) left in it is its numeric integration; no Giac call for it", () => {
+    const none = { eval: (): string => { throw new Error("no call expected"); } };
+    expect(integratedNumerically(none, "int(x^x,x,0,1)", "integrate(exp(ln(x)*x+ln(x))/x,x,0,1)")).toBe(true);
+    expect(integratedNumerically(none, "int(exp(-x^2),x,0,1)", "1/2*sqrt(pi)*erf(1)")).toBe(false);
+    expect(integratedNumerically(none, "int(f(x),x)", "integrate(f(x),x)")).toBe(false);
+    // evalf(int(…)): each integral is run exactly once more.
+    const giac = { eval: (t: string): string => (t === "int(x^x,x,0,1)" ? "integrate(exp(ln(x)*x+ln(x))/x,x,0,1)" : "1/3") };
+    expect(integratedNumerically(giac, "evalf(int(x^x,x,0,1))", "0.783430510712")).toBe(true);
+    expect(integratedNumerically(giac, "evalf(int(x^2,x,0,1))", "0.333333333333")).toBe(false);
   });
   it("a check that cannot finish keeps the result, unchecked (Giac's timeout on the second integral)", () => {
     const answers: [RegExp, string][] = [
