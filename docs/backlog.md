@@ -76,7 +76,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).
 - **R53. Results mode on the View key** (P16, S9; it replaces the compact keypad).
 - **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
-- **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** [x] **A11**. **The defs replay:** [x] **A12** (p50 158 ms, library 403 ms), then [x] [G83](shifts/packages/G83.md) (functions defined on first use; 200-program restore 23 → 3 ms in Node) and a Tab One run, before R59.
+- **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** [x] **A11**. **The defs replay:** [x] **A12** (p50 158 ms, library 403 ms), then [x] G83 (functions defined on first use; 200-program restore 23 → 3 ms in Node) and a Tab One run, before R59.
 - **The backup:** **R38a**, **R38b** (S6 decided 2026-10-20, R11).
 - **Still open from the checks of 2026-10-19:** **G56** the CAS check through a user function (narrowed, after G60); **A16** the Tab One's Enter p95 (at the bar after G53, decided 2026-10-20; the third row waits for G65); **A18** the behaviour diff in the audit; **G65**, **G66** names from Giac's state (S13 accepted; G65 takes F58); G42's rewrite waits for G2 items 66 and 67 (S12).
 
@@ -104,7 +104,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
 - **G9. Number formats against the G2** (item 15: six formats, digits as decimal places, a thousands separator): decide in the settings and help pass.
 - **K1:** a pending one-shot Shift is used up by the first drag step; a tap keeps it. **K5:** the gestures in the help texts (release R4).
-- **The pipeline:** the golden gate gates its own scripts (**A25**); ~~the timing tests that kept G70f1 and G67 unmerged (`novalue` timing case, `homeDeadline` acos, e2e Esc-before-Working) go into `pipeline-logs.ts` isTiming~~ (A29); golden `g58-factorial-1e6-30` stays out (the golden log's FAIL line names only the stage); the checks run on a prebuilt engine, so a Giac patch (G75) cannot pass them (**A28**).
+- **The pipeline:** the golden gate gates its own scripts (**A25**); [x] A29 (isTiming; golden `g58-factorial-1e6-30` stays out: its FAIL line names only the stage); the checks run on a prebuilt engine, so a Giac patch (G75) cannot pass them (**A28**).
 - **A15's tests** (Opus pass 20, annabell): `scripts/pipeline.test.sh` checks the planned size and docs checks and the gorge raise against fixed dry-run echo lines, not `want_checks` and `resolve_audit_model`, so a regression there passes; the dry run prints no raise for `--model opus`.
 - **C3. CI:** a GitHub Actions workflow calling `npm run gate` (needs your OK). **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; the version is A7.
 - The size test does not cover CSS (25.8 kB raw at 2026-10-12): a line of its own if it passes 40 kB.
