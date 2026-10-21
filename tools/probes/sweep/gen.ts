@@ -48,7 +48,8 @@ const FNS: { latex: string; mp: string; angle: boolean }[] = [
 
 const pick = <T>(r: () => number, a: readonly T[]): T => a[Math.min(a.length - 1, Math.floor(r() * a.length))]!;
 
-function leaf(r: () => number): Node {
+function leaf(r: () => number, withX = false): Node {
+  if (withX && r() < 0.35) return { latex: "x", mp: "x", angle: false, atom: true, plain: true };
   const x = r();
   if (x < 0.45) {
     const n = pick(r, INTS);
@@ -71,10 +72,10 @@ function leaf(r: () => number): Node {
 
 const wrap = (n: Node, base = false): string => ((base ? n.plain : n.atom) ? n.latex : `\\left(${n.latex}\\right)`);
 
-function build(r: () => number, depth: number): Node {
-  if (depth <= 0 || r() < 0.25) return leaf(r);
+function build(r: () => number, depth: number, withX = false): Node {
+  if (depth <= 0 || r() < 0.25) return leaf(r, withX);
   const x = r();
-  const sub = (): Node => build(r, depth - 1);
+  const sub = (): Node => build(r, depth - 1, withX);
   if (x < 0.35) {
     const f = pick(r, FNS);
     const a = sub();
@@ -102,12 +103,12 @@ function build(r: () => number, depth: number): Node {
   return { latex: `${wrap(a, true)}^{${b.latex}}`, mp: `POW(${a.mp},${b.mp})`, angle, atom: false, plain: false };
 }
 
-/** `count` trees from `seed`, depth up to 3. */
-export function generate(seed: number, count: number): Case[] {
+/** `count` trees from `seed`, depth up to 3 (`opts.depth`). With `opts.x` the leaves may be the variable x (G63: the view sweep; `mp` is then not an oracle input). */
+export function generate(seed: number, count: number, opts: { x?: boolean; depth?: number } = {}): Case[] {
   const r = lcg(seed);
   const out: Case[] = [];
   for (let i = 0; i < count; i++) {
-    const t = build(r, 3);
+    const t = build(r, opts.depth ?? 3, opts.x === true);
     out.push({ latex: t.latex, mp: t.mp, angle: t.angle });
   }
   return out;

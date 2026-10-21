@@ -2,7 +2,7 @@
 // `npm run gate`: every check a branch must pass (docs/shifts/brief.md section 8), one line each, the full log in
 // app/_out/gate/<name>.log. Exit 1 on any FAIL.
 //   npm run gate            # typecheck, index (when missing), vitest (FIND_INDEX=required), e2e, golden (when engine or
-//                           # parser code changed against phase-1), sweep (G61, the oracle sweep), seqsweep (G62), size test, docs sizes
+//                           # parser code changed against phase-1), sweep (G61, the oracle sweep), seqsweep (G62), viewsweep (G63), size test, docs sizes
 //   npm run gate -- --quick # typecheck and vitest only
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
 // QALC_OUT, PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
@@ -11,7 +11,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
+  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
   type Summary,
 } from "./gate-summary.ts";
 
@@ -168,6 +168,17 @@ const checks: Check[] = [
       if (!engine) return { ok: false, detail: "no engine build: set GIAC_OUT (absolute)" };
       const r = run("seqsweep", "node", ["scripts/seqsweep.ts"], { GIAC_OUT: engine }, 3 * 60_000);
       return summarizeSeqSweep(r.out, r.code);
+    },
+  },
+  {
+    // G63: one value in every view (Home, CAS, Num, the plot evaluator, Solve, Slope, Area; scripts/viewsweep.ts; tests/golden/viewsweep-known.yaml)
+    name: "viewsweep",
+    skip: () => (quick ? "--quick" : null),
+    run: () => {
+      const engine = giacOut();
+      if (!engine) return { ok: false, detail: "no engine build: set GIAC_OUT (absolute)" };
+      const r = run("viewsweep", "node", ["scripts/viewsweep.ts"], { GIAC_OUT: engine }, 5 * 60_000);
+      return summarizeViewSweep(r.out, r.code);
     },
   },
   {

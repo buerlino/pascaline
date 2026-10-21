@@ -288,3 +288,10 @@ The record is in the commits, the shift reports and `docs/decisions.md`; the ids
 These are in docs/02 section 8. P8 defers most of v1 behind the engineer core (Statistics with data entry, Spreadsheet, extra plot types, Inference, Finance); RPN stays in v1.
 - **v1:** Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, Linear/Triangle solvers, RPN.
 - **v2:** Geometry, Advanced Graphing, 3D, Explorers.
+
+### Done bug lines moved from the backlog (Opus pass 53, 2026-10-21)
+- [x] **F45 → G59 (96c69a0).** `√(√(asin(12)))` = `≈ 1.319…−0.376…i` (was −1.319…): the value is read by `evalf`, split after. r16 F2.
+- [x] **F49 → G71 (f11b20e).** `trunc`, `Heaviside` and 11 functions of the census decide twice. hunt N8.
+- [x] **F51 → G78 (cb445bf).** `1/(1/0)`, `exp(ln 0)`, `exp(ln(0·2))`, `√5/asinh 10/(sin(5!)·(3/0))` are refused "Division by zero" (was `= 0`). r16 F8.
+- [x] **F58 → G65.** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are free (were 3 again: an "other" entry kept the line); every name a line sets is a value from Giac's state. hunt N10.
+- [x] **F59 → G71 (f11b20e).** A decision over a value with no MPFR path (`BesselJ(1,2) > 0.5`) is decided at the double with ⚠.
