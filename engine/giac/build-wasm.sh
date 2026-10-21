@@ -14,8 +14,8 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DL="${PASCALINE_DL_DIR:-$HERE/_downloads}"
-BUILD="$HERE/_build"
-OUT="$HERE/_out"
+BUILD="${GIAC_BUILD_DIR:-$HERE/_build}"  # GIAC_BUILD_DIR / GIAC_BUILD_OUT: scripts/pipeline.sh builds a branch's engine away from the shared one (A28)
+OUT="${GIAC_BUILD_OUT:-$HERE/_out}"
 PREFIX="$BUILD/prefix"
 JOBS="${JOBS:-$(nproc)}"
 WITH_GSL="${WITH_GSL:-1}"
