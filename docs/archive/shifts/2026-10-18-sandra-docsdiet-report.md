@@ -88,7 +88,7 @@ The brief, after the pipeline change: delete section 7; in the header delete "**
 ## For shared files (Opus pass or owner)
 - `.claude/agents/sandra.md`, "For older context": "the latest report in `docs/shifts/`" → "the latest report in `docs/shifts/` (finished ones in `docs/archive/shifts/`)".
 - CLAUDE.md, the Docs convention line: append "Size budgets and links: `node tools/docs-check.mjs` (in `npm run gate`); open packages are one file each in `docs/shifts/packages/`; history in `docs/archive/`."
-- Changed beyond the docs named by the task, because a moved file's path broke there: docs/02 section 12 (three report paths), `spike/RESULTS.md` (the Python notes' path), `spec/unit-pad.yaml` (a comment's report path), `docs/research/r10-connector.md` (a planned file named without a path).
+- Changed beyond the docs named by the task, because a moved file's path broke there: docs/02 section 12 (three report paths), `spike/RESULTS.md` (the Python notes' path), `spec/unit-pad.yaml` (a comment's report path), `docs/archive/r10-connector.md` (a planned file named without a path).
 
 ## Still to verify, and how
 - The "Not packaged yet" unit result view: a ron or sandra package text is due now that G16 and G25 are merged (the owner or the next Opus pass places it).

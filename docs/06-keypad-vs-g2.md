@@ -73,7 +73,7 @@ The top cluster becomes R3 (decisions.md "R15c"); R15c2 built the key rows, whos
 - **The user keys:** U1–U6, each with tap, Shift and Alpha.
 
 ## 4. Open points
-- **A. Menu audit. Done** (S2, [research/r8-menus.md](research/r8-menus.md)); its seven rules were accepted by the owner on 2026-10-13 (decisions.md "S2: one menu system"). Key-level results: Mode is on the status chips (R15c); R10's Tmpl palette stays as built.
+- **A. Menu audit. Done** (S2, [archive/r8-menus.md](archive/r8-menus.md)); its seven rules were accepted by the owner on 2026-10-13 (decisions.md "S2: one menu system"). Key-level results: Mode is on the status chips (R15c); R10's Tmpl palette stays as built.
 - **B. The status-line switch.** Built (R15b, R15c1): the place name is a 96 × 28 px target from the left edge; since R15c1 it opens Apps, so Home ↔ CAS is 2 taps (name, row), or 1 user key that holds one. Judge on the APK; if 2 taps prove slow, a flick on the name takes the switch (decisions.md R15c).
 - **C. `!` (factorial). Settled** (owner, 2026-10-13): it goes in the Shift + 9 palette, as on the G2 (R18).
 

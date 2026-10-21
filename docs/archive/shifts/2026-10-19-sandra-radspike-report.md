@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # S14: the angle-mode spike (sandra, 2026-10-19)
 
-Package S14, pipeline run 55, branch `p1/sandra-radspike` from `phase-1` `83474da`. The evidence is in [research/r14-angle-mode.md](../../research/r14-angle-mode.md) (R14), and the probe is `tools/probes/angle-matrix.ts`.
+Package S14, pipeline run 55, branch `p1/sandra-radspike` from `phase-1` `83474da`. The evidence is in [archive/r14-angle-mode.md](../../archive/r14-angle-mode.md) (R14), and the probe is `tools/probes/angle-matrix.ts`.
 
 ## Recommendation: route R
 Run Giac in radians in every mode, and keep the degree mode in our text (`pasdeg`). R64 and then G46 build it, with the changes to their texts below, and G21b is dropped. In DEG the CAS view shows the result as the mode reads it (option 2): `diff(sin(x),x)` → `pi/180*cos(x)`, `∫1/(1+x²)` → `pi/180*atan(x)`, `desolve(y''+y=0)` → `c_0*cos(180*x/pi)+c_1*sin(180*x/pi)`. The owner's yes is the OPEN entry "S14" in decisions.md.
@@ -15,7 +15,7 @@ Run Giac in radians in every mode, and keep the degree mode in our text (`pasdeg
 - **Docs fixed:** the deep check counts 5 unit cases in DEG, but there are 4. The fifth match is the comment on line 11 of `units.yaml`. The number is corrected in R14; the deep check itself was left as written, since it is a record.
 
 ## Changed files
-`tools/probes/angle-matrix.ts`, `tools/probes/angle-matrix-oracle.py`, `tools/probes/README.md` (a row), `docs/research/r14-angle-mode.md`, `docs/decisions.md` (the OPEN entry), `docs/backlog.md` (S14 ticked, line 1 and the deep-check line), and this report. Nothing under `app/`.
+`tools/probes/angle-matrix.ts`, `tools/probes/angle-matrix-oracle.py`, `tools/probes/README.md` (a row), `docs/archive/r14-angle-mode.md`, `docs/decisions.md` (the OPEN entry), `docs/backlog.md` (S14 ticked, line 1 and the deep-check line), and this report. Nothing under `app/`.
 
 ## Still to verify
 - **Angle commands beyond the trig set:** R64 lists every command in the Find index that takes or returns an angle (`atan2`, `polar`, `rotation`, …) and runs each through the rewrite.
@@ -38,9 +38,9 @@ Run Giac in radians in every mode, and keep the degree mode in our text (`pasdeg
 > - the polar entry's angle carries it, and the ° template is `u*pi/180`;
 > - the host sets `pasdeg` to π/180 in DEG and 1 in RAD when the mode changes, and `pasdeg` is a reserved name.
 >
-> Every Giac path (exp, the hyperbolics, complex trig, inverse trig, integration, desolve, laplace, limit, series, complex powers) therefore sees radians. A stored value is angle-free text. A typed or library function keeps `pasdeg` in its body, so it follows the mode at call time. A chip carries Giac's radian text, which means the same thing in both modes. The plot multiplies by the same factor (R64a). In DEG the CAS view shows its result as the mode reads it: Giac evaluates the text with each `trig(u)` taken as trig of u·180/π and each inverse as π/180 times the inverse, so `diff(sin(x),x)` shows `pi/180*cos(x)`. Ans and chips keep the radian text. Previews, Vars and the library export drop the factor, and a library import puts it in. Evidence: `research/r14-angle-mode.md` (as a link from docs/04).
+> Every Giac path (exp, the hyperbolics, complex trig, inverse trig, integration, desolve, laplace, limit, series, complex powers) therefore sees radians. A stored value is angle-free text. A typed or library function keeps `pasdeg` in its body, so it follows the mode at call time. A chip carries Giac's radian text, which means the same thing in both modes. The plot multiplies by the same factor (R64a). In DEG the CAS view shows its result as the mode reads it: Giac evaluates the text with each `trig(u)` taken as trig of u·180/π and each inverse as π/180 times the inverse, so `diff(sin(x),x)` shows `pi/180*cos(x)`. Ans and chips keep the radian text. Previews, Vars and the library export drop the factor, and a library import puts it in. Evidence: `archive/r14-angle-mode.md` (as a link from docs/04).
 
-**docs/README.md**, in the research-notes line, after r13: `[research/r14-angle-mode.md](research/r14-angle-mode.md) (the angle mode: Giac in radians)`.
+**docs/README.md**, in the research-notes line, after r13: `[archive/r14-angle-mode.md](archive/r14-angle-mode.md) (the angle mode: Giac in radians)`.
 
 **R64.md**, point 1, add after "…use the same emitter.":
 > The open `==` test keeps the sides without the factor (`emit.ts:104`; the three `prec-e*-closed-open` cases). The rewrite is also exported as a function on Giac text (S14's `rewriteAngles`), for the library import and G46's migration. `pasdeg` is a reserved name: the parser refuses it as a user name, and `library.ts:198` refuses it too. Audit: every command in the Find index that takes or returns an angle is either rewritten or listed with the reason it needs nothing.

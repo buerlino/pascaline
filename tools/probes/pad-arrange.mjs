@@ -2,7 +2,7 @@
 // Probe (S5): score a unit pad arrangement by the weighted mean presses of the units engineers use
 // (tools/probes/unit-weights.yaml, from unit-freq/count.mjs), with flicks and with taps only, and search for the best
 // one under S5's rules. Prints the draft's score, the best found, what moved, the curve of base cells, and the user
-// cells' defaults. Results and reasoning: docs/research/r9-unit-pad.md.
+// cells' defaults. Results and reasoning: docs/archive/r9-unit-pad.md.
 //   node tools/probes/pad-arrange.mjs                 the draft (spec/unit-pad.yaml) against the best found
 //   node tools/probes/pad-arrange.mjs --spec          also print the best as spec/unit-pad.yaml `units:` and `user:` blocks
 //   node tools/probes/pad-arrange.mjs --draft FILE    compare with another arrangement (default spec/unit-pad.yaml, which

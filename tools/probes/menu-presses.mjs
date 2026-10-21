@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Probe (S2, the menu audit): how many presses it takes to pick each cell of a grid palette, by keys and by touch.
 // Grids: the Tmpl palette as built (spec/keyboard.yaml `templates:`, R10) and the two Shift palettes R18 will build
-// (cells as listed in docs/shifts/brief.md, section 7 "R18"). Results and reasoning: docs/research/r8-menus.md.
+// (cells as listed in docs/shifts/brief.md, section 7 "R18"). Results and reasoning: docs/archive/r8-menus.md.
 //
 //   node tools/probes/menu-presses.mjs            summary per grid
 //   node tools/probes/menu-presses.mjs --cells    plus the cost of every cell

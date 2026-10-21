@@ -2,7 +2,7 @@
 # S5 report: the unit pad's arrangement and its user cells (sandra, Opus, 2026-10-17)
 
 Branch `p1/sandra-padlayout` (from `master` at `239463e`), nothing committed. Brief section 0d, package S5. The
-result is in [docs/research/r9-unit-pad.md](../../research/r9-unit-pad.md) sections 1, 3 and 6, and in
+result is in [docs/archive/r9-unit-pad.md](../../archive/r9-unit-pad.md) sections 1, 3 and 6, and in
 [spec/unit-pad.yaml](../../../spec/unit-pad.yaml) (schema 2). The mockup is [docs/mockups/unit-pad.html](../../mockups/unit-pad.html).
 
 ## Result
@@ -91,7 +91,7 @@ All from the repo root, on Node 22 with `app/node_modules`:
   - A `user:` list for u1–u6 with defaults.
   - `label:` where a cell shows another name than the Find id: `thou` shows as mil, `s_ton` as ton, `l_ton` as l ton.
   - `source: derived`.
-- **`docs/research/r9-unit-pad.md`:**
+- **`docs/archive/r9-unit-pad.md`:**
   - The intro and section 0 (speed, cost).
   - Section 1 rewritten: the grid; 1.1 the method; 1.2 K or °C; 1.3 what changed.
   - Section 3 rewritten: weighted means, each field, the owner's units, Find costs.

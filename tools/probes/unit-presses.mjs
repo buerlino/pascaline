@@ -3,7 +3,7 @@
 // `unit_slot:` section of spec/keyboard.yaml and the keys' alpha letters. Prints the median over 50 common
 // engineering units (the gate of P8 rule 2: median <= 4), the worst ten, every symbol the layout cannot type, a few
 // whole tasks, and, when a qalc build is found, whether qalc reads each typed unit as meant and what it makes of the
-// same letters in the wrong case. Results and reasoning: docs/research/r7-unit-slots.md.
+// same letters in the wrong case. Results and reasoning: docs/archive/r7-unit-slots.md.
 //
 //   node tools/probes/unit-presses.mjs                 flicks (P11: flick down = lower case, flick up = capital)
 //   node tools/probes/unit-presses.mjs --taps          the G2 way only: Alpha, key = capital; Shift, Alpha, key = lower
@@ -12,7 +12,7 @@
 //                                                      keys type digits only in an exponent, as in every mode): the
 //                                                      fallback if flicks go
 //   node tools/probes/unit-presses.mjs --no-auto-leave an exponent needs ▶ before the next unit
-//   node tools/probes/unit-presses.mjs --pad           the unit pad of P14 (spec/unit-pad.yaml, docs/research/r9-unit-pad.md):
+//   node tools/probes/unit-presses.mjs --pad           the unit pad of P14 (spec/unit-pad.yaml, docs/archive/r9-unit-pad.md):
 //                                                      prefix and unit cells instead of letters; add --taps for Shift or
 //                                                      Alpha + cell instead of flicks; the user cells U1-U6 count with
 //                                                      their defaults (`user:`), --no-user leaves them out

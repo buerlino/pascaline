@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R24a: the unit slot's model (docs/research/r9-unit-pad.md section 2, docs/04 4.3 "Grammar per slot"). Its input is
+// R24a: the unit slot's model (docs/archive/r9-unit-pad.md section 2, docs/04 4.3 "Grammar per slot"). Its input is
 // pad actions, never keys (R24b maps the pad's cells to them, R24c drives the entry); its state is G16's UnitSlot,
 // a token list of Find ids, never text. The LaTeX it gives is output only (the entry writes it with setPromptValue),
 // and the reading in words comes from Find's titles, with a prefixed pair outside Find's list marked (r7 5.4 guard 3).
