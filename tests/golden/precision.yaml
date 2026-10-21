@@ -404,6 +404,12 @@ cases:
   - { id: "prec-g97-colvec-pow-2-cas", kind: "cas", input: "[[5],[1]]^-2", expect: "error: notSquare", source: "derived", note: "F69: Giac gave 1/26, the inverse of v.v; refused as in Home" }
   - { id: "prec-g97-2x3-pow-2-cas", kind: "cas", input: "[[1,2,3],[4,5,6]]^2", expect: "error: notSquare", source: "derived", note: "F69: Giac gave 91, the sum of the squares (gen.cc:6884); refused as in Home" }
   - { id: "prec-g97-colvec-pow-half-cas", kind: "cas", input: "[[5],[1]]^(1/2)", expect: "error: notSquare", source: "derived", note: "F69: a non-integer power; Giac gave [[sqrt(5)],[1]], elementwise; refused as in Home" }
+  - { id: "prec-g97-colvec-pow-2pos-cas", kind: "cas", input: "[[5],[1]]^2", expect: "error: notSquare", source: "derived", note: "F69: Giac gave 26, v.v; refused as in Home" }
+  - { id: "prec-g97-2x3-pow-3-cas", kind: "cas", input: "[[1,2,3],[4,5,6]]^3", expect: "error: notSquare", source: "derived", note: "F69: Giac gave [[1,8,27],[64,125,216]], elementwise; refused as in Home" }
+  - { id: "prec-g97-colvec-pow-0-cas", kind: "cas", input: "[[5],[1]]^0", expect: "error: notSquare", source: "derived", note: "F69: Giac gave 1; refused as in Home" }
+  - { id: "prec-g97-rowvec-pow-2-cas", kind: "cas", input: "[[1,2]]^2", expect: "error: notSquare", source: "derived", note: "F69: a 1x2 matrix; Giac gave 5; refused as in Home" }
   - { id: "prec-g97-keep-2x2-inv-cas", kind: "cas", input: "[[1,2],[3,4]]^-1", expect: "[[-2,1],[3/2,-1/2]]", source: "derived", note: "guard: [[d,-b],[-c,a]]/(ad-bc), ad-bc = -2" }
+  - { id: "prec-g97-keep-2x2-singular-cas", kind: "cas", input: "[[1,2],[2,4]]^-1", expect: "error: engine", source: "derived", note: "guard: det = 1*4-2*2 = 0, Giac refuses it (Not invertible, as g97-keep-2x2-singular in Home), not a non-square refusal" }
+  - { id: "prec-g97-keep-2x2-pow-2-cas", kind: "cas", input: "[[1,2],[3,4]]^2", expect: "[[7,10],[15,22]]", source: "derived", note: "guard: [[1*1+2*3, 1*2+2*4],[3*1+4*3, 3*2+4*4]]" }
   - { id: "prec-g97-keep-flat-cas", kind: "cas", input: "[5,1]^-1", expect: "[1/5,1]", source: "derived", note: "guard: a flat vector keeps Giac's elementwise meaning" }
   - { id: "prec-g97-keep-colvec-pow-1-cas", kind: "cas", input: "[[5],[1]]^1", expect: "[[5],[1]]", source: "derived", note: "guard: the first power is the matrix" }
