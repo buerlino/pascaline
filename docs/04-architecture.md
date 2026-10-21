@@ -104,7 +104,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 **Golden cases:** every numeric case in `home.yaml` carries its mark, checked by the gate (`oracle.py` checks that `=` appears exactly when the oracle value equals the expected text); `precision.yaml` holds the cases at 20 and 30 digits (`oracle`) and 2.3's regression list.
 
-**Alternatives:** a mark computed in the app from `approximate` alone (cannot tell 1/3 from 1/4); a mark only on float paths (leaves rounded exact results unmarked, against principle 3); MPFI intervals (Giac has them for the elementary functions; not linked; S20).
+**Alternatives:** a mark computed in the app from `approximate` alone (cannot tell 1/3 from 1/4); a mark only on float paths (leaves rounded exact results unmarked, against principle 3); MPFI intervals (Giac has them for elementary functions; not linked; S20).
 
 **Risk:** both evaluations wrong in the same way is not caught (2.3 #2; section 9 risk 1): until a function has passed the tier-0 audit, a float Giac's numeric code returned for it is `⚠`, never a bare `≈`.
 **Would change if:** Tab One timing shows the extra `evalf` costing more than 20 % of Enter p95; then the check runs only above 15 digits and for float-returning inputs.
