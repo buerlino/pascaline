@@ -14,7 +14,7 @@
 2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 after G76, R40 after G81).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
 4. annabell: **A16** again after G65, **A9** with a device, **A18**, **A22**, **A26**, **A27**, **A19** (G64 waits for it), **A4b** after R4b, the library replay (G83 merged) and A20 again after G82 (Tab One), **A7 → A8** on the owner's go.
-5. **R59** after G72, G73/G74 (and R4b); **R38a** **→ R38b**; **R70** after R49, both before outside round 1; **R71** (±) after R24c; **G79**.
+5. **S20** (MPFI, Parisse's hint) after G85's report. **R59** after G72, G73/G74 (and R4b); **R38a** **→ R38b**; **R70** after R49, both before outside round 1; **R71** (±) after R24c; **G79**.
 
 **At night, the hardening, in this order** (gorge unless named; tests first, failing on `da7a59c`):
 1. **Reachable today:** G58 (F44, Home hangs) → G59 (F45, F46) → G78 (F50, F51, refused with a reason); G68 (F53), G69 (F54), G70 (F56), R69 (F55).
@@ -45,6 +45,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [A27](packages/A27.md) | gc.sh takes what it misses | annabell, Sonnet | day | now | ~0.5 d |
 | [A28](packages/A28.md) | The checks run on the branch's engine | annabell, Sonnet | day | now | ~0.5 d |
 | [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | day | now | ~0.25 d |
+| [S20](packages/S20.md) | MPFI intervals as a second check of the mark (spike) | sandra, Opus | day (engine build) | G85 | ~0.5 d |
 | [R15c3](packages/R15c3.md) | The user keys' Alpha layer | ron, Sonnet | day | now | ~0.5 d |
 | [R15c4](packages/R15c4.md) | First-start tips | ron, Sonnet | day | now | ~0.5 d |
 | [R55](packages/R55.md) | Digit groups in drawn results | ron, Sonnet | day | R15c4 | ~0.5 d |
@@ -112,6 +113,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 79b | [G81](packages/G81.md) σ through the basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 | 1.5 h |
 | 80 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
 | 81 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |
+| 81a | [G89](packages/G89.md) our golden cases as a Giac regression file (Parisse asked) | gorge, Sonnet | `p1/gorge-giacregress` | G77 | 1.5 h |
 | 84 | [G62](packages/G62.md) sequences and state in the sweep | gorge, Sonnet | `p1/gorge-m4-seqsweep` | G61 | 1.5 h |
 | 85 | [G63](packages/G63.md) one value in every view | gorge, Sonnet | `p1/gorge-m4-viewsweep` | G61 | 1.5 h |
 | 86 | [G64](packages/G64.md) CAS answers checked back | gorge, Sonnet | `p1/gorge-m4-casback` | A19 | 1.5 h |
