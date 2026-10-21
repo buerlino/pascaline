@@ -10,6 +10,9 @@
 //   kind     read from the printed value (isError, rationalValue, shapeOf, hasFloat) | giac_value kind
 //   text     the print of pasans:=(input) | giac_value text
 //   P, P+20  valueParts(pasans) at the case's digits P and P + 20 | giac_value at[P], at[P+20]
+//   ctx      after the case, on the bridge's engine: FLAGS_READ (flags.ts) decoded field by field | giac_ctx_get
+//   state    after the case: FLAGS_READ on today's engine | on the bridge's (the two paths leave the same settings)
+// Before each case both engines get the host's settings back (restoreCommands, as the host does after a change).
 //   GIAC_OUT=<dir> node tools/probes/bridge.ts            # every case; mismatches listed by field, totals at the end
 //   … bridge.ts --calls   # call-trace.ts's seven inputs: today's calls, each marked kept / bridge-n / dropped, and timings
 //   … bridge.ts --cost    # each bridge call against the call it replaces (medians of 7), and giac_parse over 200 programs
@@ -22,7 +25,7 @@ import { NO_BRIDGE, type GiacBridge, type GiacValue } from "../../app/src/engine
 import { angleCommand, defaultHomeSettings, ENGINE_DEFINITIONS, isStateful, pasdegCommand, storeTargets } from "../../app/src/engine/homeEval.ts";
 import { hasFloat, rationalValue, shapeOf, splitList, valueParts, type Shape } from "../../app/src/engine/numeric.ts";
 import { parsePrinted, readPart, readsOf } from "../../app/src/engine/stateRead.ts";
-import { FLAGS_READ } from "../../app/src/engine/flags.ts";
+import { FLAGS_READ, restoreCommands } from "../../app/src/engine/flags.ts";
 import { decimalFromString, decimalToString } from "../../app/src/engine/format.ts";
 import { latexToGiac } from "../../app/src/input/latex-to-giac.ts";
 
@@ -101,11 +104,13 @@ function cases(): Case[] {
 
 // --- today's readers ------------------------------------------------------------------------------------------------
 const isError = (s: string): boolean => s.startsWith("GIAC_ERROR");
-/** The kind today's readers give a printed value. */
+/** The kind today's readers give a printed value (isError, novalue.ts's words, rationalValue, shapeOf, hasFloat). */
 function todayKind(out: string): string {
   const t = out.trim();
   if (isError(t)) return "error";
-  if (t === "undef") return "undef";
+  if (/\bundef\b/.test(t)) return "undef";
+  if (/infinity/.test(t)) return "infinity";
+  if (t === "true" || t === "false") return "boolean";
   if (t.startsWith('"')) return "string";
   const r = rationalValue(t);
   if (r) return r.q === 1n ? "integer" : "rational";
@@ -113,7 +118,8 @@ function todayKind(out: string): string {
   if (sh?.kind === "list") return "list";
   if (sh?.kind === "matrix") return "matrix";
   if (sh?.kind === "scalar" && hasFloat(t) && decimalFromString(t)) return "float";
-  if (sh?.kind === "scalar" && hasFloat(t) && /\bi\b/.test(t) && !/[A-Za-z_]{2,}|\b(?!i\b)[A-Za-z_]\b/.test(t.replace(/e[+-]?\d/g, ""))) return "complex";
+  // a complex number: digits, signs, a point or exponent, and i as the only letter
+  if (sh?.kind === "scalar" && /\bi\b/.test(t) && /^[-+*/^()0-9.\s]*$/.test(t.replace(/e[+-]?\d+/g, "").replace(/\bi\b/g, ""))) return "complex";
   return "symbolic";
 }
 const bridgeKind = (v: GiacValue): string => (v.kind === "sequence" || v.kind === "set" ? "symbolic" : v.kind);
@@ -125,7 +131,45 @@ const num = (s: string): string => {
 const set = (xs: readonly string[]): string => [...new Set(xs)].sort().join(",");
 const userNames = (g: GiacApi): Set<string> => new Set(splitList(g.eval("VARS()")) ?? []);
 
-const fields = ["reads", "targets", "stateful", "float", "kind", "text", "P", "P+20"] as const;
+/** FLAGS_READ's print as bridge-1's fields (flags.ts: cas_setup() = [approx_mode, complex_variables, complex_mode,
+ *  angle_radian, scientific_format + 16·integer_format, [epsilon, proba_epsilon], Digits, [threads, recursion, debug,
+ *  a level that is not the context's eval_level], increasing_power, with_sqrt, all_trig_solutions, integer_mode], then
+ *  the getters in their order; eval_level() is the context's). */
+function ctxToday(g: GiacApi): Record<string, string> | null {
+  const top = splitList(g.eval(FLAGS_READ));
+  const cs = top && splitList(top[0]!);
+  const eps = cs && splitList(cs[5]!);
+  if (!top || top.length !== 14 || !cs || cs.length !== 12 || !eps) return null;
+  const n = (x: string): string => String(Number(Number(x).toPrecision(12)));
+  return {
+    approx_mode: cs[0]!, complex_variables: cs[1]!, complex_mode: cs[2]!, angle_radian: cs[3]!, "scientific_format+16*integer_format": cs[4]!,
+    epsilon: n(eps[0]!), proba_epsilon: n(eps[1]!), decimal_digits: cs[6]!, eval_level: top[9]!, increasing_power: cs[8]!, withsqrt: cs[9]!,
+    all_trig_sol: cs[10]!, integer_mode: cs[11]!, integer_format: top[1]!, xcas_mode: top[2]!, python_compat: top[3]!, calc_mode: top[4]!,
+    keep_algext: top[5]!, parse_e: top[6]!, convert_rootof: top[7]!, step_infolevel: top[8]!, prog_eval_level: top[10]!,
+    autosimplify: top[11]!.replace(/^'(.*)'$/, "$1"), auto_assume: top[12]!, ntl_on: top[13]!,
+  };
+}
+function ctxBridge(): Record<string, string> {
+  const c = bridge.ctxGet() as unknown as Record<string, number | boolean | string>;
+  const v = (k: string): string => (typeof c[k] === "boolean" ? (c[k] ? "1" : "0") : String(c[k]));
+  const n = (k: string): string => String(Number(Number(c[k]).toPrecision(12)));
+  const out: Record<string, string> = {};
+  for (const k of ["approx_mode", "complex_variables", "complex_mode", "angle_radian", "decimal_digits", "eval_level", "increasing_power", "withsqrt", "all_trig_sol", "integer_mode", "integer_format", "xcas_mode", "python_compat", "calc_mode", "keep_algext", "parse_e", "convert_rootof", "step_infolevel", "prog_eval_level", "autosimplify", "auto_assume", "ntl_on"]) out[k] = v(k);
+  out.epsilon = n("epsilon");
+  out.proba_epsilon = n("proba_epsilon");
+  // Giac keeps autosimplify as typed: a fresh engine holds regroup, restoreCommands' autosimplify('regroup') holds
+  // 'regroup'; FLAGS_READ prints both as 'regroup' (no effect seen on results, G85 report). Compared without the quotes.
+  out.autosimplify = out.autosimplify!.replace(/^'(.*)'$/, "$1");
+  out["scientific_format+16*integer_format"] = String(Number(c.scientific_format) + 16 * Number(c.integer_format));
+  return out;
+}
+const diffCtx = (a: Record<string, string> | null, b: Record<string, string>): [string, string] => {
+  if (!a) return ["unreadable", ""];
+  const ks = Object.keys(b).filter((k) => a[k] !== b[k]);
+  return [ks.map((k) => `${k}=${a[k]}`).join(" "), ks.map((k) => `${k}=${b[k]}`).join(" ")];
+};
+
+const fields = ["reads", "targets", "stateful", "float", "kind", "text", "P", "P+20", "ctx", "state"] as const;
 type Field = (typeof fields)[number];
 const mism: Record<Field, string[]> = Object.fromEntries(fields.map((f) => [f, []])) as unknown as Record<Field, string[]>;
 const compared: Record<Field, number> = Object.fromEntries(fields.map((f) => [f, 0])) as unknown as Record<Field, number>;
@@ -136,6 +180,7 @@ const note = (f: Field, c: Case, today: string, br: string): void => {
 
 function runCase(c: Case): void {
   for (const g of [A.giac, B.giac]) {
+    for (const r of restoreCommands(c.digits)) g.eval(r);
     g.eval(angleCommand(c.angle));
     g.eval(pasdegCommand(c.angle));
     g.eval(`Digits:=${c.digits}`);
@@ -152,14 +197,17 @@ function runCase(c: Case): void {
   note("float", c, String(hasFloat(c.text)), String(p.float));
   // one evaluation each
   const P = c.digits;
-  A.giac.eval(`pasans:=(${c.text})`);
-  const out = A.giac.eval("pasans");
+  const stored = A.giac.eval(`pasans:=(${c.text})`);
+  const out = isError(stored) ? stored : A.giac.eval("pasans"); // a failed store leaves the last value in pasans
   const v = bridge.value(c.text, [P, P + 20]);
   note("kind", c, todayKind(out), bridgeKind(v));
-  note("text", c, out, v.text);
+  note("text", c, v.cut ? out.slice(0, v.text.length) : out, v.text); // over 2 kB the bridge gives a cut text by design
+  const [ct, cb] = diffCtx(ctxToday(B.giac), ctxBridge());
+  note("ctx", c, ct, cb);
+  note("state", c, A.giac.eval(FLAGS_READ), B.giac.eval(FLAGS_READ));
   const shape: Shape | null = isError(out) ? null : shapeOf(out);
   for (const [f, n] of [["P", P], ["P+20", P + 20]] as const) {
-    const today = shape ? valueParts(A.giac, "pasans", shape, n, 60) : null;
+    const today = shape && !isError(stored) ? valueParts(A.giac, "pasans", shape, n, 60) : null;
     const br = v.at?.[String(n)] ?? null;
     if (today === null && br === null) continue;
     note(f, c, today ? today.map((x) => `${decimalToString(x.re)}|${decimalToString(x.im)}`).join(";") : "none", br ? br.map(([re, im]) => `${num(re)}|${num(im)}`).join(";") : "none");

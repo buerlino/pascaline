@@ -20,6 +20,20 @@ export interface GiacContext {
   all_trig_sol: boolean;
   xcas_mode: number;
   calc_mode: number;
+  // The other fields today's settings check reads (flags.ts CONTEXT_FIELDS "read").
+  python_compat: number;
+  integer_mode: boolean;
+  withsqrt: boolean;
+  keep_algext: boolean;
+  auto_assume: boolean;
+  parse_e: boolean;
+  convert_rootof: boolean;
+  ntl_on: boolean;
+  step_infolevel: number;
+  proba_epsilon: number;
+  eval_level: number;
+  prog_eval_level: number;
+  autosimplify: string;
 }
 
 /** bridge-2: Giac's tree of a text, not evaluated. */
