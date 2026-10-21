@@ -14,6 +14,8 @@ const FRAC = "\\frac{#@}{#?}";
 /** An atom a bare ^ would not read as raising whole (L8): a fraction or a root. */
 const COMPOUND = /^\\(?:[dt]?frac|sqrt)(?![A-Za-z])/;
 const MIXED_FRAC = /^\\tfrac(?![A-Za-z])/;
+/** A matrix or vector (an array environment): one atom MathLive's #@ does not take as the previous term (F68, R75). */
+const MATRIX = /^\\begin\{[a-z]*matrix\}/;
 
 /** The ÷ / a/b template (stacked fraction); the one-line mode inserts \\div instead. */
 function isDivide(a: ActionBody): boolean {
@@ -381,6 +383,9 @@ export class EntryController {
     } else if (a.kind === "insert" && a.latex.includes("#@") && this.selectChip(mf)) {
       // a chip is one term: ÷, a/b, x², xʸ, x⁻¹ take all of it, and it draws as one box, so no brackets
       this.apply(mf, a);
+    } else if (a.kind === "insert" && a.latex.includes("#@") && this.selectMatrix(mf)) {
+      // R75 (F68): a matrix is one term, as a bracket group is: x², xʸ, x⁻¹ raise all of it and ÷ divides it, no brackets
+      this.apply(mf, a);
     } else if (a.kind === "insert" && a.latex.startsWith("#@^") && this.selectCompound(mf)) {
       this.apply(mf, { ...a, latex: `\\left(#@\\right)${a.latex.slice(2)}` });
     } else if (isDivide(a) && this.selectCompound(mf)) {
@@ -448,6 +453,23 @@ export class EntryController {
     const end = mf.position;
     mf.executeCommand("moveToPreviousChar"); // a chip is one step (captureSelection)
     mf.selection = { ranges: [[mf.position, end]] };
+    return true;
+  }
+
+  /**
+   * R75 (F68): if a matrix or vector is right before the cursor, select it whole and return true. MathLive's #@ takes
+   * only the atom types of its isImplicitArg (mathlive.mjs, 0.111.1), and an array is not one of them, so the template
+   * would open on an empty base after it. Its cells are listed before it, one level deeper.
+   */
+  private selectMatrix(mf: MathfieldElement): boolean {
+    if (!mf.selectionIsCollapsed) return false;
+    const end = mf.position;
+    const info = mf.getElementInfo(end);
+    if (end <= 0 || !MATRIX.test(info?.latex ?? "")) return false;
+    const d = info?.depth ?? 0;
+    let start = end - 1;
+    while (start > 0 && (mf.getElementInfo(start)?.depth ?? 0) > d) start--;
+    mf.selection = { ranges: [[start, end]] };
     return true;
   }
 
