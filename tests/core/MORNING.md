@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Morning check (owner, about 10 minutes, on the phone)
 
-The `hand: true` cases of [core.yaml](core.yaml), in plain keys, plus what a script cannot judge. Install the night's APK first if one was built. Start from a fresh Home (Shift Esc clears the history). A step that fails: one line in `docs/feedback.md` (date, the case id, what you saw), or tell the day session. A morning with no line counts toward the end of the freeze (README.md).
+The `hand: true` cases of [core.yaml](core.yaml), in plain keys, plus what a script cannot judge. **On the Tab One** (owner, 2026-10-21): it carries the test APK of phase-1 that the night checked (A33's device step; until A33 is merged, annabell installs one by day, and a morning without a fresh APK does not count). Start from a fresh Home (Shift Esc clears the history). Tell the day session what failed (date, the case id, what you saw): it writes a backlog bug line on phase-1 and logs `morning <date>: clean` or `morning <date>: fails <ids>` in `.coord/log.md` (brief section 0, day step 5). A clean morning counts toward the end of the freeze (README.md). The feel part below may be done on your phone.
 
 | Case | Keys | Must show |
 |---|---|---|

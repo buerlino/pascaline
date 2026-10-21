@@ -7,14 +7,19 @@
 #   keys              the presses, in order, as app/test/helpers.ts tap() takes them: a key id of spec/keyboard.yaml,
 #                     a status-line control (@home @cas @symb @plot @num @menu @mode @place), or
 #                     {tmpl: <cell id of keyboard.yaml templates>}, {up: <key>} / {down: <key>} (a flick),
-#                     {tap: "result:last"} (the last history result), {tap: "<css selector>"}, {relaunch: true}
+#                     {tap: "result:last"} (the last history result), {tap: "<css selector>"}, {relaunch: true},
+#                     {wait: <ms>} (a pause, for a job to be running)
 #   expect            one or more of: result (the last result's data-text), mark (= ≈ ⚠ of the last result),
-#                     entry (the entry's LaTeX after the keys), text: {<css selector>: <text>} (an app's readout)
+#                     rows: [{result, mark, status}, …] (every history row of the view, oldest first; status as data-status),
+#                     clipboard (the clipboard's text contains it),
+#                     entry (the entry's LaTeX after the keys), text: {<css selector>: <text>} (some match has the text)
+#                     or {<css selector>: [<text>, …]} (the matches' texts, exactly and in order)
 #   value             the true value, where the check is a number (oracle or derived)
 #   source            derived | oracle (mpmath 1.3.0, tests/golden/.venv), as a golden case; never from memory
 #   hand              true: also on the owner's morning list (MORNING.md, about 10 minutes on the phone)
 #   known             a bug id when the case fails today for that bug; the harness reports it as known, not as new
-#   needs             a package id when the case cannot be keyed today (R4a: a command by name); the harness skips it
+#   needs             a package id when the case cannot be keyed today (R4a: a command by name); the harness skips it.
+#                     Its keys are a placeholder: that package rewrites them as its own route (R4a: Find)
 schema: 1
 
 cases:
@@ -115,7 +120,7 @@ cases:
     area: entry
     title: "E notation: 6.02ᴇ23 × 2"
     keys: [d6, dot, d0, d2, emark, d2, d3, mul, d2, enter]
-    expect: { result: "1.204E24" }
+    expect: { result: "1.204E24", mark: "=" }
     value: "1.204E24"
     source: derived
 
@@ -181,9 +186,9 @@ cases:
     area: home
     title: "ln 10 and log 1000"
     keys: [ln, d1, d0, right, enter, log, d1, d0, d0, d0, right, enter]
-    expect: { result: "3", mark: "=" }
-    value: "3"
-    source: derived
+    expect: { rows: [{ result: "2.30258509299", mark: "≈" }, { result: "3", mark: "=" }] }
+    value: "ln 10 = 2.30258509299404568401799145468; log 1000 = 3"
+    source: oracle
 
   - id: c21
     area: home
@@ -399,7 +404,7 @@ cases:
     area: solve
     title: "Solve: polynomial roots of x²−5x+6 = 0"
     keys: ["@place", d4, "@symb", x, sq, sub, d5, x, add, d6, shift, dot, d0, enter, "@num", "@menu", d2]
-    expect: { text: { '[data-testid="solve-roots"] li': "x = 2" } }
+    expect: { text: { '[data-testid="solve-roots"] li': ["x = 2", "x = 3"] } }
     value: "[2,3]"
     source: derived
 
@@ -454,3 +459,48 @@ cases:
     expect: { result: "0.5", mark: "=" }
     value: "1/2"
     source: derived
+
+  # ---- added with the owner, 2026-10-21 (freeze check): bugs in the core lane, a refusal, Cancel ----
+  - id: c52
+    area: home
+    title: "a definite integral Giac cannot close is ⚠, not ≈: ∫₀¹ asin(x)·12ˣ dx"
+    keys: [{tmpl: integral}, d0, right, d1, right, shift, sin, x, right, mul, d1, d2, pow, x, right, right, x, enter]
+    expect: { result: "3.65123638112", mark: "⚠" }
+    value: "3.65123638112457185941415183083"
+    source: oracle
+    known: F65
+
+  - id: c53
+    area: entry
+    title: "Share session (☰ 8; the clipboard where the system has no share sheet) writes the mark the screen shows: √2 ≈"
+    keys: [shift, sq, d2, right, enter, "@menu", d8]
+    expect: { clipboard: "≈ 1.41421356237" }
+    value: "1.41421356237309504880168872421"
+    source: oracle
+    known: F55
+
+  - id: c54
+    area: home
+    title: "1÷0 is Giac's unsigned infinity, never a number (owner, 2026-10-21: the engine's default stays)"
+    keys: [d1, div, d0, right, enter]
+    expect: { result: "infinity", mark: none }
+    value: "unsigned infinity (no real value)"
+    source: derived
+
+  - id: c55
+    area: cas
+    title: "Esc stops a long job and the engine answers at once: CAS Σ_{k=1}^{2000} cos(k)/k (about 3 s on the desktop), Esc, 2+2"
+    keys: ["@cas", {tmpl: sum}, alpha, log, right, d1, right, d2, d0, d0, d0, right, cos, alpha, log, right, div, alpha, log, enter, {wait: 300}, esc, d2, add, d2, enter]
+    expect: { rows: [{ status: cancelled }, { result: "4", mark: none }] }
+    value: "4"
+    source: derived
+
+  - id: c56
+    area: state
+    title: "a value typed in Solve's Num view does not follow you to Home: Solve x²=2, x set to 1, Home, 2+2"
+    keys: ["@place", d4, "@symb", x, sq, shift, dot, d2, enter, "@num",
+           {tap: '[data-testid="solve-table"] tr[data-name="x"] th button'}, esc, d1, enter, "@home", d2, add, d2, enter]
+    expect: { result: "4", mark: "=" }
+    value: "4"
+    source: derived
+    known: F72
