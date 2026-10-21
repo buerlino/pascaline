@@ -897,7 +897,8 @@ export class EngineHost implements FactsHost {
   }
 
   solve(req: SolveRequest, s: HomeSettings): SolveOutcome {
-    this.need(JSON.stringify(req));
+    // G83f1: the request's expressions only (its keys and JSON would name a pending function or match LOAD_ALL)
+    this.need(expressionsOf(req.kind === "poly" ? [req.equation] : req.equations, req.knowns?.map((k) => k.value)));
     this.useSolveMode(s);
     // G65: no read of the stored names after it: Solve puts back the very values it freed (solve.ts withUnassigned)
     return solveRequest(this.giac, req, s);
@@ -909,7 +910,8 @@ export class EngineHost implements FactsHost {
   }
 
   analyze(req: AnalysisRequest, s: HomeSettings): AnalysisResult {
-    this.need(JSON.stringify(req));
+    const r = req as Partial<Record<"f" | "g" | "x0" | "lo" | "hi" | "a" | "b", string>>;
+    this.need(expressionsOf([r.f, r.g, r.x0, r.lo, r.hi, r.a, r.b]));
     this.useSolveMode(s);
     // G65: it stores only our own pas* names, so the table of stored names stays as it is
     return analyze(this.giac, req, s);
@@ -918,7 +920,7 @@ export class EngineHost implements FactsHost {
   /** The unit view (G16, docs/04 4.2): in Home's mode (angle, budget, digits), with our unit definitions loaded on the
    *  first request. A syntax error or a timeout is an engine error, never a value. */
   units(job: UnitJob, s: HomeSettings): Quantity | UnitError {
-    this.need(JSON.stringify(job));
+    this.need(expressionsOf([job.expr, job.check, job.end]));
     if (!this.unitsLoaded) {
       for (const d of UNIT_DEFINITIONS) this.giac.eval(d);
       this.unitsLoaded = true;
@@ -934,7 +936,7 @@ export class EngineHost implements FactsHost {
 
   /** Num table cells are Home evaluations, in Home mode (same budget per cell). */
   table(req: TableRequest, s: HomeSettings): HomeResult[][] {
-    this.need(JSON.stringify(req));
+    this.need(expressionsOf(req.fns));
     this.useHomeMode(s);
     return table(this.giac, req, s);
   }
@@ -970,6 +972,11 @@ export const REPLAY_BATCH = 25;
 
 /** G83: inputs that list or clear the user's names: every pending function is loaded first. */
 const LOAD_ALL = /\b(VARS|expr|rm_all_vars|restart)\b/;
+
+/** G83f1: the expression strings of a request, for need(): one per line, the absent ones left out. */
+function expressionsOf(...lists: (readonly (string | undefined)[] | undefined)[]): string {
+  return lists.flatMap((l) => l ?? []).filter((t): t is string => t !== undefined).join("\n");
+}
 
 /** The distinct identifiers in `text`. */
 function wordsOf(text: string): string[] {

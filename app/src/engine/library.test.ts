@@ -238,6 +238,16 @@ describe.skipIf(!giacAvailable())("200 library programs, defined on first use (G
     expect(h.cas("VARS", defaultCasSettings).result.text.match(/\blib\d+\b/g)).toHaveLength(200); // typed: all of them
   });
 
+  it("a unit request for 2 m and a root analysis of x^2-2 leave every program pending (G83f1: their keys and JSON load nothing)", async () => {
+    const { giac } = await loadNodeGiac();
+    const h = new EngineHost(giac);
+    h.restore(log);
+    // the job calc/units.ts makes for `2 m` (calc/units.test.ts); its key `expr` matched LOAD_ALL before G83f1
+    expect(h.units({ expr: "2*(((1)*pasdimL^(1)))", check: "pasz1*(((1)*pasdimL^(1)))", inexact: false, shows: [{ text: "m", dim: "m1", factor: "1" }] }, defaultHomeSettings)).toMatchObject({ dimension: "m1" });
+    expect(h.analyze({ kind: "root", f: "x^2-2", x0: "1" }, defaultHomeSettings).ok).toBe(true);
+    expect(giac.eval("VARS")).not.toMatch(/\blib\d+\b/);
+  });
+
   it("restore() of the 200 takes under 50 ms in Node, and a first call at most 10 ms more than after an eager replay (median of 7)", { timeout: 120000 }, async () => {
     const restoreMs: number[] = [];
     const lazyFirst: number[] = [];
