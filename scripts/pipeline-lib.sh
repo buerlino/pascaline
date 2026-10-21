@@ -66,6 +66,9 @@ engine_build() {
 engine_promote() {
   local root="$1" key="$2"
   rm -rf "$root/gsl.new" && cp -a "$root/key-$key" "$root/gsl.new" || return 1
-  rm -rf "$root/gsl.prev"; [[ ! -e "$root/gsl" ]] || mv "$root/gsl" "$root/gsl.prev"
-  mv "$root/gsl.new" "$root/gsl"
+  rm -rf "$root/gsl.prev"
+  if [[ ! -e "$root/gsl" ]]; then mv -T "$root/gsl.new" "$root/gsl"; return; fi
+  # one atomic exchange (coreutils >= 9.5): $root/gsl never goes missing for a concurrent user of the shared engine
+  if mv --exchange "$root/gsl.new" "$root/gsl" 2>/dev/null; then mv -T "$root/gsl.new" "$root/gsl.prev"
+  else mv -T "$root/gsl" "$root/gsl.prev" && mv -T "$root/gsl.new" "$root/gsl"; fi
 }

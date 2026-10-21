@@ -131,7 +131,7 @@ case "$*" in
 esac
 STUB
 printf '#!/bin/sh\necho "sh: 1: svelte-check: command not found"; exit 1\n' > "$sb/bin/npm"; chmod +x "$sb/bin/claude" "$sb/bin/npm"
-sbrun() { (cd "$sb" && PATH="$sb/bin:$PATH" "$@"); }
+sbrun() { (cd "$sb" && PATH="$sb/bin:$PATH" GIAC_OUT="$sb/engine" "$@"); }  # unmanaged engine, whatever the caller exports
 out="$(sbrun "$script" ron "sandbox task" --id T1 --branch p1/t1 --checks typecheck 2>&1)"
 grep -q '^RESULT #1 T1: NOT MERGED (machine: typecheck: ' <<<"$out" || fail "A24: a check printing 'command not found' does not end as NOT MERGED (machine: ...): $out"
 ls "$sb"/.tasks/*/fail-*.txt >/dev/null 2>&1 && [[ -n "$(cat "$sb"/.tasks/*/fail-*.txt)" ]] && fail "A24: a machine failure was handed to a fix round (fail file written)"
@@ -141,6 +141,20 @@ git -C "$sb" worktree remove --force "$sb"/.claude/worktrees/pl-001-t1 2>/dev/nu
 out="$(SB_DIRTY="$sb/.claude/worktrees/phase-1" sbrun "$script" ron "sandbox task" --id T2 --branch p1/t2 --checks none 2>/dev/null)"
 grep -q '^RESULT #2 T2: NOT MERGED (phase-1 worktree not clean' <<<"$out" || fail "A24: a dirty phase-1 does not end as NOT MERGED (phase-1 worktree not clean): $out"
 git -C "$sb" log phase-1 --format=%s | grep -q '^Merge' && fail "A24: a dirty phase-1 was merged into"
+# A28, behaviour: with GIAC_OUT unset the engine is managed: a real build with a stub build-wasm.sh writes the stamp and promotes
+sb2="$tmp/sb2"; mkdir -p "$sb2/bin" "$sb2/tools" "$sb2/docs/shifts" "$sb2/app/node_modules/x" "$sb2/engine/giac/patches"; git init -q -b main "$sb2"
+cp "$sb/tools/devlock.sh" "$sb2/tools/"; cp "$sb/bin/claude" "$sb/bin/npm" "$sb2/bin/"; : > "$sb2/docs/shifts/brief.md"; echo t > "$sb2/tracked"; echo t > "$sb2/app/keep"
+printf '#!/bin/sh\nmkdir -p "$GIAC_BUILD_OUT/gsl" && echo wasm > "$GIAC_BUILD_OUT/gsl/giac.wasm"\n' > "$sb2/engine/giac/build-wasm.sh"; chmod +x "$sb2/engine/giac/build-wasm.sh"
+git -C "$sb2" add -A; gc "$sb2" init; git -C "$sb2" branch phase-1
+out="$(cd "$sb2" && env -u GIAC_OUT PATH="$sb2/bin:$PATH" "$script" ron "sandbox task" --id T3 --branch p1/t3 --checks none 2>&1)"
+grep -q '^RESULT #1 T3: ' <<<"$out" && ! grep -q 'engine build' <<<"$out" || fail "A28: managed sandbox run hit an engine build failure: $out"
+k2="$(engine_key "$sb2" phase-1)"
+[[ "$(engine_stamp "$sb2/engine/giac/_out/gsl")" == "$k2" ]] || fail "A28: the real build did not write the stamp into gsl"
+[[ -f "$sb2/engine/giac/_out/key-$k2/giac.wasm" ]] || fail "A28: no per-key build directory"
+# promotion keeps the old engine as gsl.prev and never leaves gsl missing
+echo old > "$sb2/engine/giac/_out/gsl/marker"; cp -a "$sb2/engine/giac/_out/key-$k2" "$sb2/engine/giac/_out/key-zz"; echo zz > "$sb2/engine/giac/_out/key-zz/.engine-key"
+engine_promote "$sb2/engine/giac/_out" zz
+[[ "$(engine_stamp "$sb2/engine/giac/_out/gsl")" == zz && -f "$sb2/engine/giac/_out/gsl.prev/marker" && ! -e "$sb2/engine/giac/_out/gsl.new" ]] || fail "A28: engine_promote did not swap gsl and keep gsl.prev"
 # setup_node_modules: a failed copy leaves no half-filled directory
 grep -q 'node_modules.tmp' "$here/pipeline.sh" || fail "A24: setup_node_modules copies in place (not atomic)"
 
