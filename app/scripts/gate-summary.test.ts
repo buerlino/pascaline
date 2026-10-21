@@ -3,7 +3,7 @@
 // Vitest's and Playwright's JSON reporters.
 import { describe, expect, it } from "vitest";
 import {
-  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeSweep, summarizeTypecheck, summarizeVitest, vitestFailures,
+  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeTypecheck, summarizeVitest, vitestFailures,
 } from "./gate-summary.ts";
 
 const vitestOk = {
@@ -130,5 +130,17 @@ describe("summarizeSweep", () => {
   });
   it("fails without the closing line", () => {
     expect(summarizeSweep("boom", 1).ok).toBe(false);
+  });
+});
+
+describe("summarizeViewSweep", () => {
+  it("passes with the counts", () => {
+    const ok = "VIEWSWEEP PASSED: 48 expressions (seed 1), 1434 comparisons, total 17.7 s; 6 known failures, 0 new, 0 now passing";
+    expect(summarizeViewSweep(ok, 0)).toEqual({ ok: true, detail: "48 expressions, 1434 comparisons, 6 known failures, 17.7 s" });
+  });
+  it("fails on a new failure and names it", () => {
+    const s = summarizeViewSweep("  viewsweep NEW rad 0..1 \\ln x [area]: -1 against refused\nVIEWSWEEP FAILED: 48 expressions, 9 comparisons, total 9.0 s; 0 known failures, 1 new, 0 now passing", 1);
+    expect(s.ok).toBe(false);
+    expect(s.detail).toContain("1 to look at: NEW rad 0..1");
   });
 });
