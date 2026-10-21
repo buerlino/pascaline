@@ -134,16 +134,22 @@ export async function viewSweep(seed: number, count: number, lim: Limits): Promi
       if (!e.k.fn) return;
       const r = host.analyze({ kind: "root", f: e.k.giac, x0: "1", lo: "-10", hi: "10" }, s);
       leak(angle, e.c.latex, "root");
-      if (!r.ok || r.warn || !r.x?.value || r.x.value.im.digits !== "") return;
-      const xr = numView(r.x.value, DIGITS);
-      if (xr.kind !== "num") return;
-      // the root is shown to 12 digits: f there is as small as f' times that rounding
-      const h = 1e-6 * Math.max(1, Math.abs(xr.v));
-      const slope = (e.k.fn(xr.v + h) - e.k.fn(xr.v - h)) / (2 * h);
-      const res = Math.abs(e.k.fn(xr.v));
-      const tol = 1e-9 * Math.max(1, Math.abs(xr.v) * Math.abs(Number.isFinite(slope) ? slope : 1));
-      compared++;
-      if (!(res <= tol)) failures.push({ id: `${angle} root ${e.c.latex}`, check: "root", detail: `f(${r.x.display}) = ${res.toExponential(2)}, tolerance ${tol.toExponential(2)}` });
+      // The residual of the root each app shows: the Function app's Root and the Solve app's answer for f(x)=0 (same settings, same guess).
+      const residual = (check: string, ok: boolean, warn: boolean, xv: ComplexValue | undefined, display: string): void => {
+        if (!ok || warn || !xv || xv.im.digits !== "") return;
+        const xr = numView(xv, DIGITS);
+        if (xr.kind !== "num") return;
+        // the root is shown to 12 digits: f there is as small as f' times that rounding
+        const h = 1e-6 * Math.max(1, Math.abs(xr.v));
+        const slope = (e.k.fn!(xr.v + h) - e.k.fn!(xr.v - h)) / (2 * h);
+        const res = Math.abs(e.k.fn!(xr.v));
+        const tol = 1e-9 * Math.max(1, Math.abs(xr.v) * Math.abs(Number.isFinite(slope) ? slope : 1));
+        compared++;
+        if (!(res <= tol)) failures.push({ id: `${angle} ${check} ${e.c.latex}`, check, detail: `f(${display}) = ${res.toExponential(2)}, tolerance ${tol.toExponential(2)}` });
+      };
+      residual("root", r.ok, r.warn, r.x?.value, r.x?.display ?? "");
+      const so = host.solve({ kind: "equations", equations: [`(${e.k.giac})=0`], unknowns: ["x"], guesses: ["1"] }, s);
+      residual("solve", so.ok, so.warn, so.roots[0]?.result.value, so.roots[0]?.result.display ?? "");
     });
   }
   return { failures, compared, cases: cases.length };
