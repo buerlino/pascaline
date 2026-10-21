@@ -3,7 +3,7 @@
 // Vitest's and Playwright's JSON reporters.
 import { describe, expect, it } from "vitest";
 import {
-  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSize, summarizeSweep, summarizeTypecheck, summarizeVitest, vitestFailures,
+  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeTypecheck, summarizeVitest, vitestFailures,
 } from "./gate-summary.ts";
 
 const vitestOk = {
@@ -130,5 +130,20 @@ describe("summarizeSweep", () => {
   });
   it("fails without the closing line", () => {
     expect(summarizeSweep("boom", 1).ok).toBe(false);
+  });
+});
+
+describe("summarizeSeqSweep", () => {
+  it("passes with the counts", () => {
+    const ok = "  seq known (G69) x\nSEQ PASSED: 300 sequences (seed 1): 608 reads checked, 68 relaunches, total 5.6 s; 7 known failures, 0 new, 0 now passing";
+    expect(summarizeSeqSweep(ok, 0)).toEqual({ ok: true, detail: "300 sequences, 608 reads checked, 7 known failures, 5.6 s" });
+  });
+  it("fails on a new failure and names it", () => {
+    const s = summarizeSeqSweep("  seq NEW 12 store: x [store]: a\nSEQ FAILED: 3 sequences (seed 1): 4 reads checked, 0 relaunches, total 1.0 s; 0 known failures, 1 new, 0 now passing", 1);
+    expect(s.ok).toBe(false);
+    expect(s.detail).toContain("1 to look at: NEW 12 store");
+  });
+  it("fails without the closing line", () => {
+    expect(summarizeSeqSweep("boom", 1).ok).toBe(false);
   });
 });

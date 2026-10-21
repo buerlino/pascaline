@@ -160,6 +160,18 @@ export function summarizeSweep(out: string, exitCode: number): Summary {
   return { ok: false, detail: news.length > 0 ? `${news.length} to look at: ${news.slice(0, 2).join(" | ")}; ${tail}` : tail };
 }
 
+/** G62: the sequence sweep (scripts/seqsweep.ts) ends in `SEQ PASSED|FAILED: <n> sequences …, total <s> s; <k> known failures, …`; the lines before it name each NEW or NOW PASSING one. */
+export function summarizeSeqSweep(out: string, exitCode: number): Summary {
+  const last = out.trim().split("\n").filter((l) => /^SEQ (PASSED|FAILED)/.test(l)).slice(-1)[0];
+  if (exitCode === 0 && last?.startsWith("SEQ PASSED")) {
+    const m = /(\d+) sequences.*?(\d+) reads checked.*?total ([\d.]+) s; (\d+) known failures/.exec(last);
+    return { ok: true, detail: m ? `${m[1]} sequences, ${m[2]} reads checked, ${m[4]} known failures, ${m[3]} s` : "SEQ PASSED" };
+  }
+  const news = out.split("\n").filter((l) => /^ {2}seq (NEW|NOW PASSING)/.test(l)).map((l) => l.trim().slice(4, 110));
+  const tail = last ? last.replace(/^SEQ FAILED: .*?; (\d+ known failures)/, "$1").slice(0, 100) : `exit ${exitCode}: ${out.trim().split("\n").slice(-1)[0]?.slice(0, 100) ?? ""}`;
+  return { ok: false, detail: news.length > 0 ? `${news.length} to look at: ${news.slice(0, 2).join(" | ")}; ${tail}` : tail };
+}
+
 /** The size test exits 1 over a budget and lists each failure indented after `size-check FAILED:`. */
 export function summarizeSize(out: string, exitCode: number): Summary {
   if (exitCode === 0) return { ok: true, detail: "inside the budgets" };
