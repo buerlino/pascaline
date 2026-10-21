@@ -37,7 +37,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A16](packages/A16.md) | Enter p95 on the Tab One, the third row after G65 | annabell, Sonnet | day (device) | G65 | ~0.25 d |
+| [A16](packages/A16.md) | Enter p95 on the Tab One, the third row after G65 | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | now | ~0.25 d |
 | [A25](packages/A25.md) | The golden gate gates itself | annabell, Sonnet | day | now | ~0.1 d |
 | [A22](packages/A22.md) | The docs check knows ids, live notes and source sizes | annabell, Sonnet | day | now | ~0.25 d |
@@ -54,7 +54,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [R50e](packages/R50e.md) | Settings › Appearance | ron, Sonnet | day | R49, R50d | ~1 d |
 | [R72](packages/R72.md) | parse.ts in three files | ron, Sonnet | day | now | ~0.5 d |
 | [R57](packages/R57.md) | The decimal comma as a setting | ron, Sonnet | day | R49 and R50b | ~1 d |
-| [R4a](packages/R4a.md) | Find on Math | ron, Sonnet | day | R15c chain, G67 | ~2 d |
+| [R4a](packages/R4a.md) | Find on Math | ron, Sonnet | day | R15c chain | ~2 d |
 | [R4b](packages/R4b.md) | Vars, Memory and the user keys from Find | ron, Sonnet | day | R4a and R15c3 | ~1 d |
 | [R53](packages/R53.md) | Results mode on the View key (P16, S9) | ron, **Opus** | day | R4b | ~1.5 d |
 | [R36](packages/R36.md) | A picked row says why it has its mark | ron, Sonnet | day | G76 | ~0.5 d |
@@ -113,13 +113,12 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 79 | [G76](packages/G76.md) one facts type, carried whole | gorge, Opus | `p1/gorge-m4-portfacts` | — | 2 h |
 | 79a | [G86](packages/G86.md) the chip from one rule | gorge, Opus | `p1/gorge-chiprule` | G76 | 2 h |
 | 79b | [R69](packages/R69.md) Copy session writes the screen's mark | ron, Sonnet | `p1/ron-m4-copymark` | G86 | 45 min |
-| 79d | [G81](packages/G81.md) σ through the basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G86 | 1.5 h |
+| 79d | [G81](packages/G81.md) σ through the basis | gorge, Opus | `p1/gorge-m4-constcorr` | G86 | 1.5 h |
 | 80 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
 | 81 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |
 | 81a | [G89](packages/G89.md) our golden cases as a Giac regression file (Parisse asked) | gorge, Sonnet | `p1/gorge-giacregress` | G77 | 1.5 h |
 | 82a | [G87](packages/G87.md) the plot shares the parser's tables | gorge, Sonnet | `p1/gorge-twinemit` | — | 1 h |
-| 84 | [G62](packages/G62.md) sequences and state in the sweep | gorge, Sonnet | `p1/gorge-m4-seqsweep` | G61 | 1.5 h |
-| 85 | [G63](packages/G63.md) one value in every view | gorge, Sonnet | `p1/gorge-m4-viewsweep` | G61 | 1.5 h |
+| 84 | [G62](packages/G62.md) sequences and state in the sweep | gorge, Sonnet | `p1/gorge-m4-seqsweep` | — | 1.5 h |
 | 86 | [G64](packages/G64.md) CAS answers checked back | gorge, Sonnet | `p1/gorge-m4-casback` | A19 | 1.5 h |
 | 87 | [S16](packages/S16.md) the hardening pass, run as `scripts/pipeline.sh pass <n> "G61 G62 G63 G64 A19" "S16: docs/shifts/packages/S16.md"` | sofia, Opus | — | G61–G64, A19 | 1 h + fixes |
 | 88 | [R60](packages/R60.md) the unit result's alternatives as data | gorge, Opus | `p1/gorge-m5-unitalts` | R24c | 1.5 h |
