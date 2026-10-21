@@ -20,6 +20,7 @@ import {
   decimalFromRational,
   decimalFromString,
   isZero,
+  roundSignificant,
   type ComplexValue,
   type DecimalValue,
   type PrecisionWarn,
@@ -822,6 +823,24 @@ export function floatFacts(
     if (complexFns.length && nonReal(giac, name)) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const, complexFns }));
   }
   return facts && exact && exact.length === facts.length ? facts.map((f, k) => exact[k] ?? f) : facts;
+}
+
+/** At most a double's digits of `v` (rounded; a shorter value is kept). */
+function doubleDigits(v: DecimalValue): DecimalValue {
+  if (v.digits.length <= DOUBLE_DIGITS) return v;
+  const r = roundSignificant(v, DOUBLE_DIGITS);
+  return { neg: r.neg, digits: r.digits.replace(/0+$/, ""), exp: r.exp, sticky: true };
+}
+
+/**
+ * G90 (F65, F67): the facts of a value from Giac's numeric integration (converge.ts integratedNumerically), which is a
+ * double at any Digits, so its reads at 14 digits, P and P+20 agree by construction and confirm nothing: ⚠ without a
+ * count ("not audited: int"), at most a double's digits. An element that is an exact rational keeps its own facts.
+ */
+export function integratedFacts(facts: readonly ElementFacts[]): ElementFacts[] {
+  return facts.map((f) =>
+    f.exactRational ? f : { ...f, value: { re: doubleDigits(f.value.re), im: doubleDigits(f.value.im) }, reliableDigits: null, warn: "unaudited" as const },
+  );
 }
 
 /** The facts of each element of the stored list or matrix `name` that is an exact rational; null for the others. */

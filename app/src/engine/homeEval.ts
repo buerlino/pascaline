@@ -13,7 +13,7 @@
 //
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
-import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
+import { floatBounds, refusalOf, giacPair, hasDefiniteIntegral, integratedNumerically, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
@@ -29,6 +29,7 @@ import {
   exactFacts,
   floatFacts,
   floatPathFacts,
+  integratedFacts,
   hasFloat,
   isAudited,
   doubleFormsIn,
@@ -758,6 +759,18 @@ export function homeEval(
   // G78 (F51): a finite number through an infinity inside (1/(1/0), exp(ln 0)) is Giac's extended reals, not a value.
   if (!once && throughInfinity(giac, exactBody, exactOut, late, exactMs, userFn)) return refuse("divisionByZero", "exact");
 
+  // G90 (F65, F67): Giac found no closed form and its exact answer keeps an unevaluated integral (evalf of one too), so
+  // the value is Giac's numeric code (rule 3): read from the typed input with float bounds (its integrand, not Giac's
+  // rewrite), evalf then split (an imaginary part stays), ⚠ without a count.
+  if (!once && integratedNumerically(giac, exactBody, exactOut)) {
+    const facts = floatFacts(giac, ans, floatBounds(exactBody), shape, s.digits, s.digits, exactBody);
+    if (facts) {
+      const f = integratedFacts(facts);
+      store();
+      const b = build(f, shape, s.digits, "exact", true);
+      return fromBuilt(b, "exact", true, undefined, b.decimal, whyOf(f, exactBody));
+    }
+  }
   if (hasFloat(exactOut)) {
     // Giac's numeric code returned a float on the exact path (rule 3). `evalf(e,n)` alone is shown with the n digits it
     // asks for, checked at that precision, as in CAS (decisions M4-6; owner, 2026-10-13).

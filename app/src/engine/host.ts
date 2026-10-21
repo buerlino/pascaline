@@ -32,10 +32,10 @@ import {
 import { eseriesDefinition } from "./eseries.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { resolveAngle } from "./angleMigration.ts";
-import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
+import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
-import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, namesIn, numberLatex, shapeOf, valuePrecision, whyOf, withDigits } from "./numeric.ts";
+import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOf, valuePrecision, whyOf, withDigits } from "./numeric.ts";
 import { callsStateful, decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { fnFacts, inherited, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
 import { afterCall, changesOf, parsePrinted, readPart, readsOf, splitAfter, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
@@ -833,7 +833,11 @@ export class EngineHost implements FactsHost {
     if (shape) {
       const asked = askedDigits(input);
       const digits = asked ?? Math.trunc(s.digits);
-      const facts = floatFacts(this.giac, "pcasans", single ? null : exactInput, shape, digits, Math.trunc(s.digits), exactInput);
+      // G90: evalf of an integral whose exact answer keeps Giac's integrate(…) is its numeric integration of the typed
+      // integrand (float bounds), ⚠ without a count, as in Home.
+      const integrated = !single && integratedNumerically(this.giac, exactInput, text);
+      const read = floatFacts(this.giac, "pcasans", single ? null : integrated ? floatBounds(exactInput) : exactInput, shape, digits, Math.trunc(s.digits), exactInput);
+      const facts = read && integrated ? integratedFacts(read) : read;
       if (facts) {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
         if (unverified) numeric.warn = numeric.warn ?? "unchecked";

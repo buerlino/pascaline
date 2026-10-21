@@ -466,7 +466,6 @@ cases:
     expect: { result: "3.65123638112", mark: "⚠" }
     value: "3.65123638112457185941415183083"
     source: oracle
-    known: F65
 
   - id: c53
     area: entry

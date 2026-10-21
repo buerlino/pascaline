@@ -27,17 +27,28 @@ test.describe("core list file", () => {
   });
 });
 
+/** A case that writes or reads the clipboard (Copy, Paste, Share session): the clipboard is one for every worker (run
+ *  173: c53's √2 landed in c49's Paste), so these run one after another, not in parallel with each other. */
+const usesClipboard = (c: CoreCase): boolean => c.expect.clipboard !== undefined || c.keys.some((k) => k === "copy");
+
+function caseTest(c: CoreCase): void {
+  const title = `${c.id} ${c.title}${c.known ? ` [known ${c.known}]` : ""}${c.needs ? ` [needs ${c.needs}]` : ""}`;
+  test(title, async ({ page }) => {
+    test.skip(c.needs !== undefined, `needs ${c.needs}`);
+    if (c.known !== undefined) test.fail(true, `known ${c.known}`);
+    await start(page);
+    await replay(page, c.keys);
+    await check(page, c.expect);
+  });
+}
+
 test.describe("core list", () => {
   test.describe.configure({ mode: "parallel" });
   test.use({ permissions: ["clipboard-read", "clipboard-write"] });
-  for (const c of cases) {
-    const title = `${c.id} ${c.title}${c.known ? ` [known ${c.known}]` : ""}${c.needs ? ` [needs ${c.needs}]` : ""}`;
-    test(title, async ({ page }) => {
-      test.skip(c.needs !== undefined, `needs ${c.needs}`);
-      if (c.known !== undefined) test.fail(true, `known ${c.known}`);
-      await start(page);
-      await replay(page, c.keys);
-      await check(page, c.expect);
-    });
-  }
+  for (const c of cases) if (!usesClipboard(c)) caseTest(c);
+  test.describe("the clipboard", () => {
+    // one worker, in order (a known case's expected failure counts as a pass, so it skips nothing after it)
+    test.describe.configure({ mode: "serial" });
+    for (const c of cases) if (usesClipboard(c)) caseTest(c);
+  });
 });
