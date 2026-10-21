@@ -141,7 +141,7 @@ Plus a **query test for Find** (`tests/tasks/find-queries.yaml`): 100 phrases a 
 
 ## 8. The plan
 
-Milestone 4a ("feel", P11) runs before the rest of milestone 4; status in the backlog.
+Milestone 4a ("feel", P11) runs before the rest of milestone 4; status in the backlog. **Paused since 2026-10-21 by the core freeze (P23):** no milestone below moves until the core list (`tests/core/`) holds; then Find (milestone 4) comes first, then units (5), then the rest of 4a; order in `docs/shifts/brief.md` section 0.
 
 The three workers own separate areas, so each milestone runs as three parallel tracks: **ron** (UI, keyboard, parser, e2e), **gorge** (engine, formatter, index data, golden), **annabell** (Capacitor, builds, devices). A milestone is done when its benchmark tasks pass within budget and its gates hold.
 

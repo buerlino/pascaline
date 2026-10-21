@@ -12,6 +12,8 @@ Pascaline is an **open-source precision engineering tool** for Android (also PWA
 2. **Speed and efficiency for engineers.** This is the calculator an engineer reaches for first: instant start, instant answers, keyboard-first, no clutter, and as few keystrokes per task as possible. Anyone finds any function, unit or constant in a few keys, with no split by discipline (user, 2026-10-12). When two options are otherwise equal, pick the faster and leaner one.
 3. **Precision you can trust.** No silent wrong answers: a result is exact, or approximate and marked, or flagged. Units are checked, uncertainty travels with the number, every solver root is substituted back, and the display never hides digits the user can copy. When speed and correctness conflict, correctness wins.
 
+**Reliable before wide (owner, 2026-10-21, P23).** The core comes before anything new: until every active case of the core list (`tests/core/core.yaml`, everyday tasks on Home, CAS, Solve and Function) passes on desktop and on the Tab One two nights in a row, and the owner's morning check finds nothing, no new feature is built. Everyday inputs come first; precision bugs found only with extreme inputs run as a background stream, and each one is still caught and marked (principle 3). Order of the work and what waits: `docs/shifts/brief.md` section 0.
+
 ## Non-negotiable rules
 
 ### Legal / clean room

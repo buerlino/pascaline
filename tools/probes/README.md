@@ -46,6 +46,7 @@ and `app/node_modules` (`cd app && npm ci`); Node 22 runs the `.ts` files direct
 | `glue-growth.mjs` | the structure audit 1.5: per merged package, the pattern lines over text it added and removed in `app/src` (and in `app/src/engine`), the entries it added to the engine's name lists, our new `pas…` names, net lines (git only) | `node tools/probes/glue-growth.mjs [--since 2026-10-06] [--rev HEAD] [--md]` |
 | `call-trace.ts` | the hindsight note ([structure-hindsight](../../docs/research/structure-hindsight.md) 1.1): every Giac call one Home Enter makes, classed as setup, compute, store or ask (a question about form), per input and in total | `node tools/probes/call-trace.ts ['input' …]`; `STORED=1` (a, b, f stored first), `SHOW=1` (each call) |
 | `churn.py` | the structure audit 1.2: per source file in `app/src`, churn, commits, `fix…` commits and the fix commits bug-patterns.md cites (git only) | `python3 -I tools/probes/churn.py [REV] [TOP]` |
+| `core-replay.spec.ts` | the core freeze (P23; [tests/core](../../tests/core/README.md)): replays the core list's key sequences in Playwright on the real engine and logs what each case showed against what it wants (the 2026-10-21 state: 46 of 48 active cases pass, c41 and c42 fail on F68) | copy into `app/test/`, then `npx playwright test test/core-replay.spec.ts` (the file's header) |
 
 **Oracle values** (never from memory): `tests/golden/.venv/bin/python -I -c "import mpmath as m; m.mp.dps=40; print(m.ncdf(-6))"`
 (set the venv up once as in CLAUDE.md).

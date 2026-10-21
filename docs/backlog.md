@@ -8,109 +8,75 @@ The one place for "where are we and what's left", one or two lines per open item
 | Stage | State |
 |---|---|
 | Phase 0 spike; MVP milestones 1 (Home, CAS), 2 (Function, Solve), 3 (Python, removed by P11) | **Done** 2026-10-11 (reports in [archive/shifts/](archive/shifts/)) |
-| Milestone 4a: feel (P11) | **In progress.** The entry work (⌫, cursor, focus, hardware keys), sheets, flicks, Settings page, history-row actions, the R15b cluster and the mockups (R12a) are merged. Left: the R3 cluster (R15c1–R15c4), Settings rows, the palette, the visual pass, results mode, the trust features (brief section 0) |
-| Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); left: Find's UI (R4a, R4b) and its device bar (A4b) |
-| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32; the parser's units mode R28; the slot model R24a); left: the pad and the entry (R24b–R24d), the result view (not packaged), the device bar |
+| **The core freeze (P23)** | **In progress since 2026-10-21.** No new feature until the core list holds ([tests/core/](../tests/core/README.md): 51 everyday tasks, 48 active). On `73ea5b5` 46 pass on desktop (c41, c42 fail on F68); the Tab One run waits for A32. The bridge spike G85 is in the night queue. |
+| Milestone 4a: feel (P11) | **Paused by P23.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, the Settings page, history-row actions, R15b, R15c1, R15c2, the mockups (R12a). Waiting: R15c3, R15c4, Settings rows, the palette, the visual pass, results mode, the trust features |
+| Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI (R4a, R4b, A4b) is first after the freeze |
+| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad, the entry and the result view wait for the freeze |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
 | MVP release | Not scheduled (owner, 2026-10-12); A7 and A8 on the owner's go |
 
 `phase-1` and `master` are on GitHub; `master` was last fast-forwarded to `phase-1` on 2026-10-11 (b4431ae). Work continues on `phase-1`.
 
-**On track:** yes on scope and speed (the MVP, sized at 6–9 person-months, took two days of shifts). Every bar held on the low-end Tab One at milestone 3 (keyboard usable 662 ms, engine ready 995 ms, Plot 56 fps, solve p95 80 ms, Enter p95 92 ms); since then A4a (2026-10-16) measured Enter p95 138–160 ms at 12 digits after the agreement check, and the `defs` replay over its bar (decisions.md "A4a"); the night of 2026-10-19 nearly doubled the desktop cost per Enter (G38f1); on the Tab One Enter p95 is 141–153 ms after G53, at the bar (A16, 2026-10-20; DEG was 150–160 before). Two debts: everything is checked against the Virtual Calculator (rev 15751), not the owner's G2 (rev 15515); only the Tab One is measured regularly (Fairphone 6 once: keyboard usable 329 ms, engine ready 609 ms, Plot 89 fps).
+**On track:** on scope yes, on stability no: from 2026-10-14 to 2026-10-21 phase-1 got 188 `fix` commits against 85 `feat` (each change broke something elsewhere), which is why P23 stops new work until the core list holds. Speed holds on the low-end Tab One: at milestone 3 keyboard usable 662 ms, engine ready 995 ms, Plot 56 fps; Enter p95 141–153 ms after G53, at the 150 ms bar (A16, 2026-10-20). Two debts: everything is checked against the Virtual Calculator (rev 15751), not the owner's G2 (rev 15515); only the Tab One is measured regularly (Fairphone 6 once: keyboard usable 329 ms, engine ready 609 ms).
 
 ## Needs the user
-0. **At milestone 5:** time ten tasks by hand, E-notation against units (the rule 2 speed gate).
-1. **Your steps from the research of 2026-10-19** (decided 2026-10-20: decisions.md P18–P22): send Parisse `../outreach/email-parisse-3.md` (his answer to email 2, by 2026-10-21: patches 0001 and 0002 integrated, regression tests welcome (G89), try MPFI (S20)); push G75's patch commit once merged and send its link; ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before C4 (A21 is merged; only the recipe waits); after G77, annabell builds the release engine on the new pin and runs the golden gate on it.
-2. **Open proposals:** the [structure audit](research/structure-audit.md) (decisions.md "Structure audit").
-3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56 and 63–69 on 2026-10-19, 70 and 71 on 2026-10-20; 40, 43, 44, 46, 48–51, 53, 55, 57–59, 61 and 62 were answered on the G2 that day, some only in part, see the file; 63–65 can reverse S14's route R (built by R64 and G46), 66 and 67 before G42, 68 changes no code (G40 built its default); each one minute on the Virtual Calculator or your G2; each package built a default, named in decisions.md); the optional real-G2 spot checks (item 8 and `spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
-4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39: R47 fixed the case found); connect your phone with a motor for A9 (F41); more UI points into [feedback.md](feedback.md). The checks on the phone are listed below.
-5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old app, then uninstall `org.pascaline.app`. The backup (R38) protects later moves only. Android's own backup is off (A23): its phone-to-phone transfer no longer carries Pascaline's data, only our backup file does.
-6. **Outside testers:** you run two 30-minute rounds, after R4b and after R24c, from [r18](research/r18-outside-test.md) and its sheet; R70 (every press counted) comes first.
-7. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-8. **Later, not now:** the name and trademark checks, CI (C3) and the F-Droid recipe (C4).
+0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (51 drafted by sandra from the golden cases and the e2e flows; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) (about 10 minutes, 15 cases); keep the Tab One plugged in, unlocked and on the charger at night (A32, later A33).
+1. **Decisions in [decisions.md](decisions.md) "Needs the user":** G93 (a typed `restart`); the structure audit's two rule lines (hind-4, hind-5); A21's F-Droid answer.
+2. **Your outreach steps** (decisions.md P18–P22): Parisse's reply (email 3, `../outreach/email-parisse-3.md`; he integrated patches 0001 and 0002, welcomes regression tests (G89), suggested MPFI (S20)); push G75's patch commit once merged and send its link; ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before C4; after G77, annabell builds the release engine on the new pin and runs the golden gate.
+3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56, 63–71; each package built a default, named in decisions.md; 63–65 can reverse S14's route R); the optional real-G2 spot checks (`spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
+4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
+5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old one, then uninstall `org.pascaline.app`. Android's own backup is off (A23).
+6. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
+7. **After the freeze:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70 first); at milestone 5, time ten tasks by hand (E-notation against units). **Later, not now:** the name and trademark checks, CI (C3), the F-Droid recipe (C4).
 
-### Checks on the phone (one list; each by the owner, or annabell when a package names it)
-- Flick misfires in a minute of typing (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35).
-- R7's sheet defaults (decisions.md "Needs the user"); the 36 px cluster rows and the 28 px status line (R15b).
-- A11: Share session, Paste (Shift + Copy) of `1.5e-3`, r11 section 5 points 1–4; a chip tapped right after a flick (R15c2).
-- The strip right of an inner fraction that ends a numerator, about 8 px (R42): widen only if a finger misses it.
-- "Working…" on the WebView, and a taller CAS result growing its row (F8).
-- The trackpad's `touch-action: none`: any side effect (K1).
+### One-time checks on the phone (the daily list is MORNING.md; each by the owner, or annabell when a package names it)
+- Flick misfires (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35); R7's sheet defaults; the 36 px cluster rows and the 28 px status line (R15b).
+- A11: Share session, Paste of `1.5e-3`; a chip tapped right after a flick (R15c2); the ~8 px strip right of an inner fraction (R42); "Working…" on the WebView and a taller CAS result growing its row (F8); the trackpad's `touch-action: none` (K1).
 - The memory cap on the Tab One: `makemat(1,30000,30000)` in CAS gives "Out of memory" and the app stays up (G24).
-- Desktop only: `npm run dev` in Firefox, type, Alt+Tab away and back, type on the hardware keyboard (decisions.md "Focus on return").
-- Removal tests to read: the "stored in Home" line under CAS results (R32, two weeks), digit groups (R55), the angle check (R37), results mode's counters (P16), library imports (S4), Undo (P13).
+- Removal tests to read: the "stored in Home" line under CAS results (R32), the angle check (R37), library imports (S4), Undo (P13).
 
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
-- **libqalculate**, filed 2026-10-19: `hp` [#1043](https://github.com/Qalculate/libqalculate/issues/1043) and `mmHg` = 1 Torr, with `inHg` [#1044](https://github.com/Qalculate/libqalculate/issues/1044), both fixed in master (`92ecde7`, after 5.13.1); derived constants off CODATA 2022 in the last digit [#1045](https://github.com/Qalculate/libqalculate/issues/1045), closed 2026-10-20: master's inputs fix most; qalc's ± display widens the uncertainty (our index rounds the propagated one, as CODATA does); formulas keep correlations, which our σ ignores (G80, G81). A fix fails the index build on its `override` in `find/units.yaml` once we pin a release that has it.
-- **MathLive**, filed 2026-10-19: F10 ⌫ stuck at a `\left…\right` [#3122](https://github.com/arnog/mathlive/issues/3122), F33 the touch caret [#3123](https://github.com/arnog/mathlive/issues/3123), F9 the focus restore [#3124](https://github.com/arnog/mathlive/issues/3124).
-- **Giac**, not filed yet. Parisse (2026-10-19) takes reports by email, on the forum or as links to fix commits here; the route (email 2 sent; the two build patches are integrated upstream, his answer by 2026-10-21): patch 0003 (complex `tanh`, G75; P19) as a commit link, the rest as four forum threads (the drafts' "Status"). Fill in the date once sent: the build fixes we patch (`engine/giac/patches/README.md`) and the re-published tarballs; complex `tanh` gives coth (G50); `erfc` as 1−erf (`evalf(erfc(5))` wrong from the 3rd digit, `UTPN(10)` = 0.0); the exact path of `(-3)^(1/1000-i/50)` (F46); `re()` of nested roots (F45); `normald_icdf(10^-10)` (docs/04 2.3 #2); `acos(pi)` = undef; `int(1/x,x,-1,1)` = 0 and `sum(cos(k),k,1,inf)` = −1/2 (G39); `round(x,n)` and `trunc(x,n)` in a double (F48); no MPFR path for complex `acos` (real part), complex `asinh` and `sqrt` (F47), `romberg`, `BesselJ`, `Airy_Ai`; degree mode (deep check D4–D7, D12); unit data (US quart, tsp, cup, UK gallon, inHg = 25.4 Torr, au, light-year, `u`, f0) and Xcas menu names Giac does not read (`tools/probes/g2-units.mjs`). Asked in the email instead: `median`, `round(-2.5)` (G42), `atan(2*i)`, `sign` decided at `Digits` (G38).
+- **libqalculate**, filed 2026-10-19: `hp` [#1043](https://github.com/Qalculate/libqalculate/issues/1043) and `mmHg`/`inHg` [#1044](https://github.com/Qalculate/libqalculate/issues/1044), fixed in master (`92ecde7`); [#1045](https://github.com/Qalculate/libqalculate/issues/1045) closed 2026-10-20 (follow-ups G80, merged, and G81). A fix fails the index build on its `override` in `find/units.yaml` once we pin a release that has it.
+- **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); M4 (Redo after ⌫) drafted, not filed.
+- **Giac**, not filed yet. Parisse takes reports by email, on the forum or as links to fix commits here: patch 0003 (complex `tanh`, G75) as a commit link; the rest as four forum threads (the drafts' "Status"); new since: `simplify`'s assume leak (G92), `im()` of a root of unknown sign (G96), the inverse of a non-square matrix (F69, G97), once their packages say where the cause is.
 
 ## Tasks
 
-### Open bugs (rechecked 2026-10-20 on `da7a59c`; older done lines: [archive](archive/backlog-2026-10.md); family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- [x] **F44 → G58 (3062c2a).** Home answers `exp(1.5ᴇ8)`, `√(e^(2ᴇ8))`, `3+e^(1.5ᴇ8)/asin 3`, `acos(5!^(2.5+5!))` and `exp(10^7)` in under 0.1 s, `factorial(10^6)` in 1 s (Giac's own GMP call); a deadline refuses past 2 s. `acos(5!^(2.5+5!))` at 30 digits stays wrong from the 14th digit under `≈` (a double, F47 → G60). r16 F1.
-- [x] **F46 → G59 (96c69a0), G59f1.** `(sin 3.7 − e)^(0.001·asin(6.02ᴇ8))` is `⚠` (was `≈`, wrong from the 4th digit); without a decimal, `(sin(37/10)−e)^(asin(602000000)/1000)` is `⚠` too: a power with several values is checked against exp(b·ln a). r16 F3.
-- **F47 → [G60](shifts/packages/G60.md).** A double inside an MPFR result, at 30 digits: `log10(asinh(asin e))` wrong from the 14th digit under `≈`; `asin`/`acos` of a real \|x\| > 1 inside other functions show `⚠ 14` with 12–13 right; `√(asinh(cos 10))` shows a real part 4.7E-15 that is noise. Family 4. r16 F4–F6.
-- [x] **F48 → G71 (f11b20e).** Two-argument `round`/`trunc` are ⚠ (they compute in a double); their Giac patch: F61. hunt N7.
-- [x] **F50 → G78 (cb445bf).** Home refuses Giac's text for a number: `asin(acos(π²))`, `exp(cosh(asin π))`, `√(asinh(asin 3.7))` "No value found", `sinh(6020³)` "Overflow", `∫₋₁¹ 1/x²` (+∞) as divergent. r16 F7.
-- [x] **F52 → G67.** A Giac setting typed in Home or CAS (`approx_mode:=1`, `angle_radian:=0`, `integer_format(16)`, `cas_setup(…)`, `xcas_mode(1)`) is put back after the input (one read per input, the result says it was not kept) and never logged; a library may not set one; Find hides the setting commands. It also puts back Giac's own leaks (`eval_level` after a `throw`, `epsilon` after `(-32)^(1/5)`). hunt N1, N2.
-- [x] **F53 → G68 (078642f).** Solve sends an answer's full value with its confirmed digits; a second solve with each known moved confirms the result. Family 1.
-- **F54 → [G69](shifts/packages/G69.md).** With a stored x, `product(x,x,1,4)` = `⚠ 24` "inherited: x" (right `= 24`; `seq` too; definite `sum`/`int` are right, Giac's `lname` drops their name): G65's reads (`readsOf`, `stateRead.ts:147`) keep a bound name. Families 8, 1; today. hunt N4.
-- **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8; today. hunt N5.
-- [x] **F56 → G70.** Function app Area gives ∫₀¹ ln x = −1, ∫₀² x ln x = 0.38629436112, ∫₋₁¹ (1−cos x)/x² = 0.972770752471 (Romberg's undef no longer refuses; only Home's refusals do). hunt N6.
-- **F64–F67 (G63): `tests/golden/viewsweep-known.yaml`.** F64 `int` leaves `assume(x>0)`; F65 DEG `int` over-claims; F66 plot NaN for x/x; F67 `int` drops an imaginary part.
-- **F57 → [G72](shifts/packages/G72.md).** A library body with `increment(cnt)` changes cnt by 2 per Enter and logs nothing (`definitionStores`, `isStateful` miss `++`, `DelVar`). Families 9, 3; after R59. hunt N9.
-- [x] **F60 → G84 (043af31).** `exp(-10^30)`, DEG `exp(cosh(asin π))` are refused "Underflow" (were `⚠ 0`). Family 5.
-- **audit-approx (G59 fits).** `approx(sin(10^30), 2×10)` = `≈ −0.685710242506`, 39 digits (right −0.0901169019121; `numeric.ts:198`). `cb445bf`; `tools/probes/text-misses.ts text-1`.
+### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
+- **F68 → [R75](shifts/packages/R75.md).** x⁻¹, xʸ (and x², ÷) after a matrix from Tmpl open an empty base: Enter says "unexpected token at 'placeholder'", or the next keys land in the base (core c41, c42). `73ea5b5`; `npm run test:core` once R74 is merged. Matrices by keys.
+- **F69 → [G97](shifts/packages/G97.md).** A negative power of a non-square matrix is shown under `=`: `[[5],[1]]^-1` = `[[0.2],[1]]` (elementwise), `[[5],[1]]^-2` = `1/26`; Giac answers, the inverse does not exist. `73ea5b5`; `node engine/giac/smoke.mjs 'inv([[5],[1]])'`. Keys reach it through F68 (c42).
+- **F64 → [G92](shifts/packages/G92.md).** After Home `int(tanh(sqrt(x)),x,0,1)`, Giac's `simplify` leaves `assume(x>0)`: for the rest of the session `solve(x^2=4,x)` = `[2]`, `sqrt(x^2)` = `x`. `tests/golden/viewsweep-known.yaml` (leak).
+- **F65, F67 → [G90](shifts/packages/G90.md).** A definite `int` whose closed form keeps an unevaluated `integrate` shows ≈ with 12 (or 30) digits, right to 7: `int(asin(x)*12^x,x,0,1)`; F67 drops an imaginary part. `viewsweep-known.yaml`.
+- **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8. After G76, G86.
+- **F54 (held for G85; else [G69](shifts/packages/G69.md)).** With a stored x, `product(x,x,1,4)` = `⚠ 24` "inherited: x" (right `= 24`; `seq` too). Families 8, 1.
+- **F57 (held for G85; else [G72](shifts/packages/G72.md)).** A function body with `increment(cnt)` changes cnt by 2 per Enter and logs nothing (`definitionStores`, `isStateful` miss `++`, `DelVar`). Families 9, 3.
+
+### Background stream (extreme inputs; P23: runs when no core step can start)
+- **F47 → [G60](shifts/packages/G60.md)** after G75. A double inside an MPFR result, at 30 digits: `log10(asinh(asin e))` wrong from the 14th digit under `≈`; `asin`/`acos` of a real \|x\| > 1 inside other functions show `⚠ 14` with 12–13 right. Family 4.
+- **F61, no package.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
+- **F62, no package.** `sin(cosh(10!))` takes 11 s in Home; the 2 s deadline misses (G82, Home's budget in steps, after S23).
+- **F63, no package.** A stored ⚠ value (`BesselJ(1,2)`) read through a function, after a relaunch or by its name shows one digit too many confirmed (`tests/golden/seqsweep-known.yaml`).
+- **F66, no package.** The plot evaluator has NaN at x = 0 for x·x/x where Giac simplifies to x (`viewsweep-known.yaml`); Home and the plot disagree at one point.
+- **audit-approx → [G91](shifts/packages/G91.md).** `approx(sin(10^30), 2×10)` = `≈ −0.685710242506` (right −0.0901169019121; `numeric.ts:198`).
 - **audit-dms-plot → [G87](shifts/packages/G87.md).** The plot of `x+30°15′36″` drops the 36″ (`emit-js.ts:40`); values right.
-- **F61, no package yet.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
-- **F62, no package yet.** `sin(cosh(10!))` takes 11 s in Home; the 2 s deadline misses.
+- **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds, Opus pass 53); raw output in the 2026-10-21 drafts (`../drafts/2026-10-21-packages/g94-raw`).
+- **The hardening without a bug line:** G75 → G56; S17 → G77 → G89; G96; G64 after A19, then S16; A31 (a gate stage for the three shell tests in `tools/` and `scripts/`, not drafted).
 
-- **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, [x] S18; instruments [x] G61, [x] G62, [x] G63, G64, A19, S16; A22 by day; [x] A20, [x] A21 (`find/factors.yaml`; only the recipe's qalc build waits for F-Droid's answer).
-
-### Milestone 4a: feel (P11; packages and order: brief section 0)
-- **R15c1–R15c4. The R3 top cluster** (R15c1 done: the status line takes Apps, Menu and the views; R15c2 done: the round pad, U1–U6 and the editing wing; R15c3–R15c4 left) (decisions.md "R15c"): the status line takes Apps, Menu and the views; the round pad, six user keys and the editing wing; the user keys' Alpha layer; first-start tips.
-- **R49. Settings as a list of rows** (feedback #50; decisions.md "Settings: a list of rows").
-- **R50b–R50e. Themes** (R50b–R50d done; R50e left) (feedback #53, #55; decisions.md "R50"): Pascaline in the app, the generator and four more families, Plain keys and High contrast, Settings › Appearance; then **R12b, R12c. The visual pass** (F6 = U5 + U7; the mockups R12a merged, the owner's notes feedback #54, #55; A4a's sheet rise in R12c).
-- **R55. Digit groups in drawn results** and **R57. The decimal comma as a setting** (feature analysis; R57 also makes `selectENumber` read the comma).
-- **R53. Results mode on the View key** (P16, S9; it replaces the compact keypad).
-- **The trust features** (the deep-dive review): **R36** why the mark, **R33** names with a value marked on the line, **R37** the angle check, **R40** muted digits past a constant's uncertainty, **R41** key labels for TalkBack and the largest font (A4a point 4).
-- **F41. Key vibration does nothing on the phone:** **A9**. **Paste and Share on Android:** [x] **A11**. **The defs replay:** [x] **A12** (p50 158 ms, library 403 ms), then [x] G83 (functions defined on first use; 200-program restore 23 → 3 ms in Node) and a Tab One run, before R59.
-- **The backup:** **R38a**, **R38b** (S6 decided 2026-10-20, R11).
-- **Still open from the checks of 2026-10-19:** **G56** the CAS check through a user function (narrowed, after G60); **A16** the Tab One's Enter p95 (at the bar after G53, decided 2026-10-20; the third row waits for G65); **A18** the behaviour diff in the audit; **G65**, **G66** names from Giac's state (S13 accepted; G65 takes F58); G42's rewrite waits for G2 items 66 and 67 (S12).
-
-### Engineer core (P8; architecture docs/04, plan and gates docs/03 section 8)
-A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass within budget and its gates hold.
-
-**Milestone 4: Find and trust.** Steps 1–7 and 9–11 are done (EN0, the regression cases, EN3, chips and Ans, the qalc build, the Find index and query test, copy and share, definitions that survive a relaunch, the size test).
-- **8. EN1, Find's UI:** **R4a** (Find on Math) and **R4b** (Vars, Memory, the user keys from Find). Gate: task 5 within budget, the query test, the size test, no index request before idle.
-- **12. Device:** **A4b**, Find per key on the Tab One (§8.3). A4a's misses: decisions.md "A4a point 1" and "Owner answers of 2026-10-19 (feel)" (4).
-- **EN4, open:** copying one element of a list or matrix.
-- **Gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left; the size test; the Tab One bars of §8.3.
-
-**Milestone 5: Units** (P15; docs/04 section 4). Items 1–3 are done: the evaluator (G16), temperatures and levels (G17), uncertainty (G18), the result's unit (G25), the data audit (G13), Find's pad data (G7), rpm's message (G32), the parser's units mode (R28).
-- **4. The unit view:** before R24c, done: zero terms (**G35**), °C in a compound unit (**G37**), σ beyond first order (**G41**), angles (**G40**; the view shows `Quantity.note`); the pad (**R24b**), the entry (**R24c**), Find in a slot and the user cells (**R24d**); the result view: **S11** done ([R17](archive/r17-unit-result.md)): **R60** alternatives, **R61** chip, **R62** view, **R63** way back. Open points with defaults: r7 section 7.
-- **5. Build, size, devices** (annabell, after R24c): the first unit result on the Tab One and the Fairphone 6 (< 1 s).
-- **Gate:** tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
-
-**Milestone 6: Structure** (not packaged).
-- **EN5. Matrices, vectors, lists:** Shift + 5 `[ ]` that grows with ▶ and ▼, the matrix editor on Shift + 4 (§5.3). Gate: task 8.
-- **EN6. Number bases:** a display mode of an integer result, Shift + `−` = Base, word size, `0x`/`0b`/`0o` literals (§5.4). Gate: task 7.
-- **EN7. Everyday functions:** dB functions, interpolation, RMS, coordinate conversions, DMS, shifts and rotations, each tier 0 with a golden case; the inverse functions polished against their forward function is **G44** (done). Gate: tasks 6 and 9.
-- **Help = context help:** the Find preview of the function before the cursor (§5.1).
+### After the freeze (P23 order; packages and order: brief section 0)
+- **Find (milestone 4, EN1):** R72, then **R4a** (Find on Math; G93 settled first), **R4b** (Vars, Memory, the user keys) with **R15c3** (their Alpha layer), **A4b** (Find per key on the Tab One). Gate: task 5, the query test, the size test, no index request before idle. Three core cases (c38, c39, c43: a command by name) wait for it.
+- **Units (milestone 5; docs/04 section 4):** **R24b** → **R24c** → **R24d**; the result view **R60**, **R61**, **R62**, **R63**; **R71** (±); G81 (σ through the basis); the first unit result on the Tab One and the Fairphone 6 (< 1 s). Gate: tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
+- **Settings and looks (milestone 4a):** **R49** → **R55**, **R57**, **R70**; **R50e**; **R53** (results mode); **R12b** → **R12c** → **R41**; **R15c4** (first-start tips).
+- **Trust features:** **R36** (why the mark, after G76), **R33**, **R37**, **R40** (after G81). **The backup:** **R38a** → **R38b**. **Libraries:** **R59** (after the bridge moves). **G79**, **S20** when a slot is free.
+- **Milestone 6, Structure** (not packaged): EN5 matrices with Shift + 5 and the editor on Shift + 4 (§5.3; the Tmpl matrices work today), EN6 number bases, EN7 everyday functions, Help as context help; EN4, copying one element of a list or matrix.
 
 ### Without a package yet
-- The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
-- **G9. Number formats against the G2** (item 15: six formats, digits as decimal places, a thousands separator): decide in the settings and help pass.
-- **K1:** a pending one-shot Shift is used up by the first drag step; a tap keeps it. **K5:** the gestures in the help texts (release R4).
-- **The pipeline:** the golden gate gates its own scripts (**A25**); [x] A29 (isTiming; golden `g58-factorial-1e6-30` stays out: its FAIL line names only the stage); the checks run on a prebuilt engine, so a Giac patch (G75) cannot pass them (**A28**).
-- **A15's tests** (Opus pass 20, annabell): `scripts/pipeline.test.sh` checks the planned size and docs checks and the gorge raise against fixed dry-run echo lines, not `want_checks` and `resolve_audit_model`, so a regression there passes; the dry run prints no raise for `--model opus`.
-- **C3. CI:** a GitHub Actions workflow calling `npm run gate` (needs your OK). **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; the version is A7.
-- The size test does not cover CSS (25.8 kB raw at 2026-10-12): a line of its own if it passes 40 kB.
+- The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (G2 item 62 can reverse it).
+- **G9. Number formats against the G2** (item 15): decide in the settings and help pass. **K1:** a pending one-shot Shift is used up by the first drag step. **K5:** the gestures in the help texts.
+- **The pipeline:** A15's tests check fixed dry-run echo lines, not `want_checks` and `resolve_audit_model` (Opus pass 20); the size test does not cover CSS (25.8 kB raw at 2026-10-12).
+- **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework.
 
 ### MVP release (docs/02 section 8; not scheduled)
-- **R1. GitHub releases:** a tag builds, gates, signs and publishes the APK (**A7**, **A8**; decisions.md "The release path").
-- **R2. Play testing track:** the store texts in `fastlane/metadata/`; never published without your OK. **R3. Screenshots and store graphics** (the icon is done). **R4. The settings and help pass:** the i18n table complete, the first help texts.
+- **R1. GitHub releases** (**A7**, **A8**; decisions.md "The release path"). **R2. Play testing track:** never published without your OK. **R3. Screenshots and store graphics.** **R4. The settings and help pass.**
 
 ### v1 and later
 In docs/02 section 8; P8 defers most of v1 behind the engineer core. v1: Statistics, Inference, Parametric/Polar/Sequence, Spreadsheet, Finance, Linear/Triangle solvers, RPN. v2: Geometry, Advanced Graphing, 3D, Explorers.

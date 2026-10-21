@@ -295,3 +295,13 @@ These are in docs/02 section 8. P8 defers most of v1 behind the engineer core (S
 - [x] **F51 → G78 (cb445bf).** `1/(1/0)`, `exp(ln 0)`, `exp(ln(0·2))`, `√5/asinh 10/(sin(5!)·(3/0))` are refused "Division by zero" (was `= 0`). r16 F8.
 - [x] **F58 → G65.** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are free (were 3 again: an "other" entry kept the line); every name a line sets is a value from Giac's state. hunt N10.
 - [x] **F59 → G71 (f11b20e).** A decision over a value with no MPFR path (`BesselJ(1,2) > 0.5`) is decided at the double with ⚠.
+
+## Done lines moved out on 2026-10-21 (P23), as they stood
+- [x] **F44 → G58 (3062c2a).** Home answers `exp(1.5ᴇ8)`, `√(e^(2ᴇ8))`, `3+e^(1.5ᴇ8)/asin 3`, `acos(5!^(2.5+5!))` and `exp(10^7)` in under 0.1 s, `factorial(10^6)` in 1 s (Giac's own GMP call); a deadline refuses past 2 s. `acos(5!^(2.5+5!))` at 30 digits stays wrong from the 14th digit under `≈` (a double, F47 → G60). r16 F1.
+- [x] **F46 → G59 (96c69a0), G59f1.** `(sin 3.7 − e)^(0.001·asin(6.02ᴇ8))` is `⚠` (was `≈`, wrong from the 4th digit); without a decimal, `(sin(37/10)−e)^(asin(602000000)/1000)` is `⚠` too: a power with several values is checked against exp(b·ln a). r16 F3.
+- [x] **F48 → G71 (f11b20e).** Two-argument `round`/`trunc` are ⚠ (they compute in a double); their Giac patch: F61. hunt N7.
+- [x] **F50 → G78 (cb445bf).** Home refuses Giac's text for a number: `asin(acos(π²))`, `exp(cosh(asin π))`, `√(asinh(asin 3.7))` "No value found", `sinh(6020³)` "Overflow", `∫₋₁¹ 1/x²` (+∞) as divergent. r16 F7.
+- [x] **F52 → G67.** A Giac setting typed in Home or CAS (`approx_mode:=1`, `angle_radian:=0`, `integer_format(16)`, `cas_setup(…)`, `xcas_mode(1)`) is put back after the input (one read per input, the result says it was not kept) and never logged; a library may not set one; Find hides the setting commands. It also puts back Giac's own leaks (`eval_level` after a `throw`, `epsilon` after `(-32)^(1/5)`). hunt N1, N2.
+- [x] **F53 → G68 (078642f).** Solve sends an answer's full value with its confirmed digits; a second solve with each known moved confirms the result. Family 1.
+- [x] **F56 → G70.** Function app Area gives ∫₀¹ ln x = −1, ∫₀² x ln x = 0.38629436112, ∫₋₁¹ (1−cos x)/x² = 0.972770752471 (Romberg's undef no longer refuses; only Home's refusals do). hunt N6.
+- [x] **F60 → G84 (043af31).** `exp(-10^30)`, DEG `exp(cosh(asin π))` are refused "Underflow" (were `⚠ 0`). Family 5.
