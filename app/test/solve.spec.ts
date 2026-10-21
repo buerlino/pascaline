@@ -204,7 +204,6 @@ test("Solve: E1 p(x)=4 after p(x):=x² in Home gives x = 2, p stays the function
   await page.evaluate(() => window.pascaline.shell.flush());
   await page.reload();
   await page.waitForFunction(() => window.pascaline?.session.engineState === "ready", undefined, { timeout: 20_000 });
-  await tap(page, ["@place", "d4"]);
-  await tap(page, ["@symb"]);
+  await openSolve(page);
   await solveIt();
 });
