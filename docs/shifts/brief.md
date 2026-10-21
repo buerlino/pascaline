@@ -4,7 +4,7 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; night (Tab One) = the plugged-in Tab One only, P23; day = the owner tries it or it changes the pipeline); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` at `73ea5b5` on 2026-10-21, after the sixth night ([2026-10-21-night-report.md](2026-10-21-night-report.md)) and the morning's merges S21, S19, G63, G62f1, S22. Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` at `51fd8a8` on 2026-10-21, after the sixth night ([2026-10-21-night-report.md](2026-10-21-night-report.md)), the morning's merges S21, S19, G63, G62f1, S22 and the evening's A28 (`60f858d`; Opus pass 54). Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path: the core freeze (owner, 2026-10-21; decisions.md "P23")
 **Why.** Since 2026-10-14 phase-1 has had about two fix commits for every feature commit (`git log --no-merges` by `feat`/`fix`: 84 against 188, [freeze report](2026-10-21-sandra-freeze-report.md) section 1). Many are fix rounds before a merge, but 45 of 208 merges were follow-up packages (`<ID>f1`, `f2`) for work already merged (`git log --merges --since=2026-10-14 --format=%s phase-1`): merged changes break things too often. The open bugs are of two kinds. Most come from our layer guessing at Giac's printed text (settings, names, stores, bound variables, the kind of a number): the structured bridge (G85) removes their cause. The rest are precision edge cases inside Giac on extreme inputs. So: no new features until the core holds; the bridge first; "holds" is a fixed list, not a feeling; extreme inputs run as a background stream.
@@ -14,13 +14,13 @@
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find first (three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **A28** (the checks run on the branch's engine; G97, G75 and with it most of the background stream wait for it: run it before a night when you can, or the night may end early), then **A34** (worktrees take `node_modules` from phase-1; until it is merged, no night package may add a dependency), then **A33** once A32 is merged (the night's device step).
+1. **A34** (worktrees take `node_modules` from phase-1; until it is merged, no night package may add a dependency), then **A33** once A32 is merged (the night's device step).
 2. **S23** as soon as G85 has a report: the bridge's moves as packages (GO) or the held packages released (NO-GO), at the head of the night's core lane.
 3. annabell on devices: **A32** if the night could not run it; **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
 4. When a slot is free (process, nothing users see): **A25**, **A19** (G64 and S16 wait for it), **A18**, **A22** → **A26**, **A27**, **A30**.
 5. Every morning: the owner's check (MORNING.md, on the Tab One, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
 
-**At night, the core lane** (the order is section 0c's queue, steps 101–110; tests first, failing on phase-1): the measure first (R74), so every later merge runs the core list; then the silent wrong numbers by reach: R75 (F68; c42 shows `= [[1.4],[-0.8]]` for an everyday 2×2 system, and c41 and c42 are the list's only failures), G90 (F65, F67: a definite integral's ≈ over-claims its digits), G97 after A28 (F69: any power but 1 of a non-square matrix under `=`; R75 makes it reachable by keys); then the bridge (G85, a spike; its bars decide, no owner decision, P23; S23 writes the moves by day); then structure that removes bug families (G88, the text-match ratchet; G76 → G86 → R69, a value's facts carried whole; F55, the copied mark); A32 (the core list on the Tab One) whenever the tablet is plugged in.
+**At night, the core lane** (the order is section 0c's queue, steps 101–110; tests first, failing on phase-1): the measure first (R74), so every later merge runs the core list; then the silent wrong numbers by reach: R75 (F68; c42 shows `= [[1.4],[-0.8]]` for an everyday 2×2 system, and c41 and c42 are the list's only failures), G90 (F65, F67: a definite integral's ≈ over-claims its digits), G97 (F69: any power but 1 of a non-square matrix under `=`; R75 makes it reachable by keys); then the bridge (G85, a spike; its bars decide, no owner decision, P23; S23 writes the moves by day); then structure that removes bug families (G88, the text-match ratchet; G76 → G86 → R69, a value's facts carried whole; F55, the copied mark); A32 (the core list on the Tab One) whenever the tablet is plugged in.
 
 **The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G75 → G60 → G56 (F47, complex tanh, doubles inside MPFR results); S17 → G77 → G89 (the workaround register, the Giac re-pin, our cases for Parisse); G91 (audit-approx), G87 (audit-dms-plot), G96 (Giac's im of a root), G93 (restart; the owner decides first), G64 after A19, then S16; F61, F62 and G94 (no package). **Held for G85's report:** G66, G69, G72, G73, G74, G82, G92, G95 (S23 releases or replaces them; G92 (F64) is not reachable by keys today, and its `afterCall` read is the code G95 changes). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
@@ -30,9 +30,8 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A28](packages/A28.md) | The checks run on the branch's engine | annabell, Sonnet | day | now | ~0.5 d |
-| [A34](packages/A34.md) | Worktrees take node_modules from phase-1 | annabell, Sonnet (audit Opus) | day | A28 | ~0.25 d |
-| [A33](packages/A33.md) | The night's device step | annabell, Sonnet | day | A32, A28 | ~0.5 d |
+| [A34](packages/A34.md) | Worktrees take node_modules from phase-1 | annabell, Sonnet (audit Opus) | day | now | ~0.25 d |
+| [A33](packages/A33.md) | The night's device step | annabell, Sonnet | day | A32 | ~0.5 d |
 | [S23](packages/S23.md) | G85's report into packages | sandra, Opus | day | G85's report | ~0.5 d |
 | [A32](packages/A32.md) | The core list on the Tab One | annabell, Sonnet | night (Tab One) or day | R74 | ~0.75 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
@@ -69,14 +68,14 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 101 | [R74](packages/R74.md) the core list runs in the e2e suite | ron, Sonnet | `p1/ron-corelist` | — | 1 h |
 | 102 | [R75](packages/R75.md) x², xʸ, x⁻¹ and ÷ after a matrix take the matrix (F68) | ron, Opus | `p1/ron-matrixbase` | R74 | 1 h |
 | 103 | [G90](packages/G90.md) Home's definite int marks what it checked (F65, F67) | gorge, Opus | `p1/gorge-m4-intmark` | — | 1.5 h |
-| 104 | [G97](packages/G97.md) no power of a non-square matrix under `=` (F69) | gorge, Opus | `p1/gorge-nonsquareinv` | A28 | 1.5 h |
+| 104 | [G97](packages/G97.md) no power of a non-square matrix under `=` (F69) | gorge, Opus | `p1/gorge-nonsquareinv` | — | 1.5 h |
 | 105 | [G85](packages/G85.md) the structured bridge, a spike | gorge, Opus | `p1/gorge-bridge-spike` | — | 3 h |
 | 106 | [G88](packages/G88.md) the text-match ratchet | gorge, Sonnet | `p1/gorge-textratchet` | — | 1 h |
 | 107 | [A32](packages/A32.md) the core list on the Tab One | annabell, Sonnet, audit Opus (`--audit-model opus`: the Capacitor config, WebView debugging must stay off in releases) | `p1/annabell-coredevice` | R74 | 1.5 h |
 | 108 | [G76](packages/G76.md) one facts type, carried whole | gorge, Opus | `p1/gorge-m4-portfacts` | — | 2 h |
 | 109 | [G86](packages/G86.md) the chip from one rule | gorge, Opus | `p1/gorge-chiprule` | G76 | 2 h |
 | 110 | [R69](packages/R69.md) Copy session writes the screen's mark (F55) | ron, Sonnet | `p1/ron-m4-copymark` | G86 | 45 min |
-| 120 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | A28 | 1.5 h |
+| 120 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | — | 1.5 h |
 | 121 | [G60](packages/G60.md) no double inside an MPFR result | gorge, Opus | `p1/gorge-m4-mpfrdoubles` | G75 | 1.5 h |
 | 122 | [G56](packages/G56.md) the CAS check reads through a user function | gorge, Opus | `p1/gorge-m4-complexbody` | G60 | 1 h |
 | 123 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
