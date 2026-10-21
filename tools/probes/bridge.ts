@@ -16,6 +16,8 @@
 //   GIAC_OUT=<dir> node tools/probes/bridge.ts            # every case; mismatches listed by field, totals at the end
 //   … bridge.ts --calls   # call-trace.ts's seven inputs: today's calls, each marked kept / bridge-n / dropped, and timings
 //   … bridge.ts --cost    # each bridge call against the call it replaces (medians of 7), and giac_parse over 200 programs
+//   … bridge.ts --readers # the host's readers each bridge call would delete: lines and regex lines (glue-growth.mjs's
+//                           pattern), from the TypeScript source (no engine needed)
 // Stops at "no bridge exports" on an engine built without them. Read-only; no network.
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
@@ -323,7 +325,66 @@ function cost(): void {
   console.log(`bridge-2 over 200 library programs: ${all((s) => bridge.parse(s)).toFixed(1)} ms (bar: under 50 ms); readPart over the same: ${all((s) => g.eval(readPart(s))).toFixed(1)} ms; lib1 → ${JSON.stringify(p0)}`);
 }
 
-if (process.argv.includes("--calls")) await calls();
+// --- --readers ------------------------------------------------------------------------------------------------------
+/** The readers a host on the bridge deletes, by the bridge call whose field answers them. Kept (not listed): the state
+ *  part (VARS, parsePrinted, tableOf), CONTEXT_FIELDS and its canary, decimalFromString, shortDigits, the LaTeX readers. */
+const READERS: Record<string, [string, string[]][]> = {
+  "bridge-1 ctx": [
+    ["flags.ts", ["GETTERS", "FLAGS_READ", "flagsExpected", "restoreCommands"]],
+    ["numeric.ts", ["withDigits"]],
+  ],
+  "bridge-2 parse": [
+    ["stateRead.ts", ["STO", "READER", "readPart", "IDENT", "idents", "readsOf"]],
+    ["homeEval.ts", ["STATEFUL", "HELPER_STO", "isStateful", "simpleAssignment", "definedBy", "NAME_LIST", "storeTargets"]],
+    ["numeric.ts", ["FLOAT_LITERAL", "hasFloat", "functionsIn", "namesIn"]],
+    ["host.ts", ["QUOTING", "arrowBodyEnd", "maskBound", "matching", "splitTop", "indexedTarget"]],
+  ],
+  "bridge-3 value": [
+    ["numeric.ts", ["splitList", "hasTopLevelComma", "shapeOf", "flatten", "RATIONAL", "rationalValue", "anyValue", "isError", "readParts", "valueParts", "partsOf"]],
+  ],
+};
+// glue-growth.mjs's REGEX_LINE
+const REGEX_LINE = /(\/(?![/*])(?:\\.|\[[^\]]*\]|[^/\n\\])+\/[dgimsuyv]*\s*[.,;)\]]|\.(?:match|matchAll|replace|replaceAll|test|exec|search)\(|\.split\(\s*\/|new RegExp\()/;
+function readers(): void {
+  const ts = require("typescript") as typeof import("typescript");
+  let all = 0;
+  let allRegex = 0;
+  for (const [bridgeCall, files] of Object.entries(READERS)) {
+    let lines = 0;
+    let regex = 0;
+    const rows: string[] = [];
+    for (const [file, names] of files) {
+      const text = readFileSync(new URL(`../../app/src/engine/${file}`, import.meta.url), "utf8");
+      const src = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+      const spans = new Map<string, [number, number]>();
+      const lineOf = (pos: number): number => src.getLineAndCharacterOfPosition(pos).line;
+      for (const st of src.statements) {
+        if (ts.isFunctionDeclaration(st) && st.name) spans.set(st.name.text, [lineOf(st.getStart()), lineOf(st.end)]);
+        if (ts.isVariableStatement(st)) for (const d of st.declarationList.declarations) if (ts.isIdentifier(d.name)) spans.set(d.name.text, [lineOf(st.getStart()), lineOf(st.end)]);
+      }
+      for (const n of names) {
+        const sp = spans.get(n);
+        if (!sp) {
+          rows.push(`${file} ${n}: not found`);
+          continue;
+        }
+        const body = text.split("\n").slice(sp[0], sp[1] + 1).filter((l) => l.trim() && !/^\s*(\/\/|\*|\/\*)/.test(l));
+        const re = body.filter((l) => REGEX_LINE.test(l)).length;
+        lines += body.length;
+        regex += re;
+        rows.push(`${file}:${sp[0] + 1}-${sp[1] + 1} ${n}: ${body.length} lines, ${re} regex`);
+      }
+    }
+    console.log(`${bridgeCall}: ${lines} code lines, ${regex} regex lines`);
+    for (const r of rows) console.log(`    ${r}`);
+    all += lines;
+    allRegex += regex;
+  }
+  console.log(`total: ${all} code lines, ${allRegex} regex lines (definitions only; their call sites change too)`);
+}
+
+if (process.argv.includes("--readers")) readers();
+else if (process.argv.includes("--calls")) await calls();
 else if (process.argv.includes("--cost")) cost();
 else {
   const all = cases();
