@@ -20,7 +20,7 @@
 1. **Reachable today:** G58 (F44, Home hangs) → G59 (F45, F46) → G78 (F50, F51, refused with a reason); G68 (F53), G69 (F54), G70 (F56), R69 (F55).
 2. **The cause in Giac:** G75 (patch 0003, complex `tanh`; measures whether the inverse functions patch as simply) → G60 (F47, only what the patch cannot fix) → G56 (narrowed to our CAS gap; dropped if nothing is left); G82 (Home's budget in steps; the patch after G66's).
 3. **Before R4a** (Find puts `cas_setup`, `purge`, `sto`, `trunc`, `Heaviside`, `BesselJ` one tap away): G67 (F52, Giac's flags; G71 is merged). G65 (S13; it takes F58) after G67, then G66 after G75.
-4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text), G83 (functions on first use). **Before R36 and R40:** G76, then G80 → G81 (#1045).
+4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text), G83 (functions on first use). **Before R36 and R40:** G76, then G81 (#1045; G80 merged).
 5. **Engine and docs:** S17 (the workaround register with canaries) → G77 (the numbered Giac pin); S18 (status lines, decided notes to the archive).
 6. **The instruments:** G61 → G62, G63; G64 after A19 (annabell, by day); then S16, an Opus pass, triages what they find into fix packages.
 
@@ -99,12 +99,10 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
 | 66 | [G69](packages/G69.md) a bound variable inherits no facts | gorge, Sonnet | `p1/gorge-m4-boundfacts` | held (owner) | 1 h |
-| 67 | [G70](packages/G70.md) Area refuses only where Home does | gorge, Sonnet | `p1/gorge-m4-areaundef` | — | 1 h |
 | 68 | [R69](packages/R69.md) Copy session writes the screen's mark | ron, Sonnet | `p1/ron-m4-copymark` | held (owner) | 45 min |
 | 69 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | A28 | 1.5 h |
 | 70 | [G60](packages/G60.md) no double inside an MPFR result | gorge, Opus | `p1/gorge-m4-mpfrdoubles` | G75 | 1.5 h |
 | 71 | [G56](packages/G56.md) the CAS check reads through a user function | gorge, Opus | `p1/gorge-m4-complexbody` | G60 | 1 h |
-| 72 | [G67](packages/G67.md) Giac's flags restored, never logged | gorge, Opus | `p1/gorge-m4-flags` | — | 1.5 h |
 | 74 | [G65](packages/G65.md) names from Giac's state (S13), with F58 | gorge, Opus | `p1/gorge-m4-statefacts` | G67 | 2 h |
 | 75 | [G66](packages/G66.md) a store counter in Giac (next patch number) | gorge, Opus | `p1/gorge-m4-storecounter` | held (owner) | 1.5 h |
 | 75a | [G82](packages/G82.md) Home's budget counts steps (the patch after G66's) | gorge, Opus | `p1/gorge-stepbudget` | G66 | 2 h |
@@ -113,7 +111,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 78 | [G74](packages/G74.md) the readers move to it | gorge, Opus | `p1/gorge-m4-giactextmove` | held (owner) | 3 h |
 | 78a | [G83](packages/G83.md) the user's functions defined on first use | gorge, Opus | `p1/gorge-lazydefs` | — | 1.5 h |
 | 79 | [G76](packages/G76.md) the port carries every fact | gorge, Sonnet | `p1/gorge-m4-portfacts` | held (owner) | 1 h |
-| 79a | [G80](packages/G80.md) constants carry their basis | gorge, Sonnet | `p1/gorge-m4-constbasis` | — | 1 h |
 | 79b | [G81](packages/G81.md) σ through the basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 | 1.5 h |
 | 80 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
 | 81 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |

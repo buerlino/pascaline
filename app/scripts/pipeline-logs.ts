@@ -53,11 +53,17 @@ export function failedItems(check: Check, log: string): Item[] {
   return items;
 }
 
-/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, solve.spec.ts persistence, the clipboard poll. */
+/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, solve.spec.ts persistence, the clipboard poll, the G78 timing case, Home's acos deadline, the Esc-before-Working test.
+ *  Not the golden g58-factorial cases: the golden log names only the stage ("FAIL precision: n/m active match"), the case id is on a plain line above it. */
 export function isTiming(check: Check, item: Item): boolean {
-  if (check === "vitest") return item.file.endsWith("find/queries.test.ts") && /takes well under/.test(item.title);
+  if (check === "vitest") {
+    return (item.file.endsWith("find/queries.test.ts") && /takes well under/.test(item.title)) ||
+      (item.file.endsWith("engine/novalue.test.ts") && /timing case/.test(item.title)) ||
+      (item.file.endsWith("engine/homeDeadline.test.ts") && /(?:^|> )acos\(120\^\(5\/2\+5\)\) answers/.test(item.title));
+  }
   if (check === "e2e") {
-    return (item.file === "solve.spec.ts" && /equations and values are stored|kept across a reload/.test(item.title)) ||
+    return (item.file === "working.spec.ts" && /Esc stops a job before Working… shows/.test(item.title)) ||
+      (item.file === "solve.spec.ts" && /equations and values are stored|kept across a reload/.test(item.title)) ||
       (item.file === "copy.spec.ts" && /copy → paste gives the value back/.test(item.title));
   }
   // units: every case matched (n/n) and only the p95 bar was missed
