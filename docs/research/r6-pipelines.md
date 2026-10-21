@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R6: the pipelines as they work today, and how to check them (sandra)
 
+**Status (2026-10-21): reference.** The advisor's map of how a key press, a number, a build and a check flow through the code; rerun the probes before relying on a line.
+
 *Written 2026-10-12 after the architecture pass (docs/04), base `phase-1` at f87874a; sections 1–4 rewritten and sections 7–8 extended on 2026-10-15 at 3aa1a66 (architecture check). This is the advisor's map: how a key press, a number, a build and a check flow through the code, the engine behaviour learned by probing, and the traps where the docs and the code disagreed. Code moves: before relying on a line here, rerun the probe or the grep it names ([tools/probes/](../../tools/probes/README.md)). Decisions are not made here; they are in [docs/04](../04-architecture.md) and [decisions.md](../decisions.md).*
 
 ## 1. A key press to a Home result

@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R2: fast wasm start on Android WebView
 
+**Status (2026-10-21): reference.** R2, the measured wasm start on the Tab One (2026-10); background for the start-up bar (rules section 3, docs/04 6.3).
+
 *Moved from `spike/research/` on 2026-10-12 (cleanup audit). The `spike/` paths below were archived; they are in `git show 8ff8576:<path>`.*
 
 Measured on the Lenovo Tab One (Android 15, WebView 131.0.6778.260, release build, plugged in, 29-30 C), cold start =

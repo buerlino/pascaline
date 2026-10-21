@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R13: results mode on the View key (P16)
 
+**Status (2026-10-21): decided.** decisions.md P16 and S9 (2026-10-18): results mode on the View key's tap; package R53.
+
 *sandra, 2026-10-18, package S9. Base: `phase-1` at 5a3f4b1 (layout D in `spec/keyboard.yaml`; R15c is decided and not built yet). The owner's idea (feedback.md #19): "a button makes the keypad collapse to the bottom with a small slice showing; tapping the slice brings it back. In this mode the viewport gains buttons to really work with the results, like a Jupyter notebook: delete, copy, move, merge, unit check, draw in Plot, and more later." P16 (decisions.md, 2026-10-18) put it on View's tap. This note gives the shape, checks it against docs/03 rules 7, 9 and 11, and holds R53's package text.*
 
 **Evidence:** the code at the lines cited, and `tools/probes/results-geometry.mjs` (new): Playwright at the Pixel 7 profile that `app/test/status.spec.ts` uses (412 × 839 CSS px), `?engine=fake`, plus the press counts of `tests/tasks/tasks.yaml` under docs/04 5.2. Rerun: `node tools/probes/results-geometry.mjs` (about 20 s; `--counts` for the counts alone).

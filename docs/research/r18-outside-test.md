@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R18: the outside test, two 30-minute rounds
 
+**Status (2026-10-21): reference.** The script and sheet of the owner's two outside rounds (backlog "Needs the user" 6); what they wait for is decided (decisions.md S8: R70 first, A23).
+
 *sandra, 2026-10-20, package S8 (deep-dive item 24). The package named this note `r12-outside-test.md`; r12 is already [r12-evidence.md](r12-evidence.md) (docs/README.md:21) and r16 is in use, so it is R18. The printable sheet is [../mockups/outside-test.html](../mockups/outside-test.html). Nothing here changes the app.*
 
 **Why.** Every press count so far is ours: the benchmark (`tests/tasks/tasks.yaml`) replays the shortest sequence *we* found, and the Find query test (`tests/tasks/find-queries.yaml`) holds phrases *we* guessed. Rules 1, 2 and 13 of docs/03 promise more: anyone finds units and constants, a unit beats E-notation, and each task wins against the alternatives. Only people who have never seen the keys can show where that fails: the words they type, the key they look for, the place they stop. Three people per round are enough to find the big problems; this is not a statistic and no gate hangs on its numbers.
@@ -104,12 +106,12 @@ The plan sums to 10 presses with flicks, 13 with taps. A unit the tester cannot 
 
 - **No names are kept.** The sheet holds a tester code, a field and a calculator; the notes hold what was pressed and said about the app. No photos, no video, no audio.
 - **No data leaves the phone through the app:** the APK asks for no INTERNET permission (`android/app/src/main/AndroidManifest.xml:41` declares only VIBRATE; the merged manifest of the built APK **(to verify)**: annabell, `aapt2 dump permissions dist/pascaline.apk` lists no INTERNET), and the tap counter stays on the device (`taps.svelte.ts:2-3`).
-- **Android's own backup is the one way out:** the manifest sets `android:allowBackup="true"` (`AndroidManifest.xml:5`), so Android may copy the app's data to the phone's Google backup when the phone is idle, charging and on Wi-Fi. Whether the WebView's IndexedDB, where history and counters live, is in that copy is **(to verify)**: annabell, `adb shell bmgr backupnow io.github.buerlino.pascaline` on a test device, then check the backup's file list in `adb shell dumpsys backup`. Until it is answered or switched off (section 6), the round runs in flight mode and the owner clears storage after the last tester, before the phone sees Wi-Fi.
+- **Android's own backup is off:** the manifest sets `android:allowBackup="false"` (`android/app/src/main/AndroidManifest.xml:5`, A23, decisions.md S8), so Android copies none of the app's data to the phone's Google backup; the app's own backup file (S6) is the one way out, and only when the owner saves one.
 - **The owner takes the notes** on paper; what goes into the repo is the summary in section 7, with tester codes only. The paper sheets stay with the owner.
 
-## 6. Two things to decide before round 1
+## 6. Two things decided before round 1
 
-Both are in decisions.md "Needs the user" (S8).
+Both are decided (decisions.md S8, the owner, 2026-10-20): the counter is R70, the manifest change A23 (merged).
 
 1. **A counter of every press (recommended).** Make the tap counter count every press as docs/04 5.2 defines it (key taps, flicks, screen taps), shown in Settings beside the Shift and Alpha rows, with the same reset; a ron package of about half a day, one concern, on the device only. Why: the press count is the measure the rules judge by (rule 13), and a tally of a 50-press task (t09) is unreliable. Cost: one more number in Settings and a counter call in `press()`. Else: the owner's tally alone (section 4). Would change if: round 1 runs before the package can be built.
 2. **`allowBackup="false"` (recommended).** One attribute in the manifest (annabell). Why: "no data leaves the phone" should hold without flight mode, for the testers and for every user; the app's own backup file (S6, R11) is the way to move data. Cost: Android's phone-to-phone transfer no longer carries Pascaline's history. Else: flight mode and clear storage, as section 5 says. Would change if: annabell shows the WebView data is not in Android's backup at all.

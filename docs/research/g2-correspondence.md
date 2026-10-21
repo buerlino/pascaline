@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Engine defaults, not G2 copies: the audit (S12)
 
+**Status (2026-10-21): decided.** decisions.md S12 (the owner, 2026-10-19), "Engine defaults, not G2 copies"; built by R66, R67, R68 and G45 (merged).
+
 sandra, 2026-10-19, on `phase-1` at `8745db1`. The rule (owner, 2026-10-19; decisions.md "Engine defaults, not G2 copies"): the default is what the engine does as built (Giac, GSL, MathLive). A special case stays only for one of two reasons:
 - **P3:** the engine's result is a silent wrong number (principle 3);
 - **P2:** the G2's flow saves keystrokes (principle 2).

@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R10: the laptop connection (S4, sandra, 2026-10-18)
 
+**Status (2026-10-21): decided.** decisions.md S4 (2026-10-18): a library file carries definitions only; packages R59 (send a library out) and R38a, R38b (the file path in and out).
+
 **Question** (feedback #5b, #17, #40; backlog "Parked ideas"): how does an engineer program Pascaline from a laptop, with no Python on the phone, no INTERNET permission, and no typing through the Alpha keys? The idea from 2026-10-14: a plain-text library of Giac definitions, written and tried on the laptop, imported on the phone into the `defs` log, found in Find and Vars, and put on a user key.
 
 **Answer in one line:** a UTF-8 text file of Giac definitions, each with a one-line description and optional test lines, checked as a whole and refused as a whole; it reaches the phone through the system file picker (no manifest change); the import goes into the `defs` log through the same host path as a typed CAS definition; the laptop side is the desktop web app plus a small Node command. **Blocker found:** the replay of 200 library programs would cost about 530 ms on the Tab One (estimate), so the import waits for the replay fix of A4a point 2, and the cheapest fix is to define functions lazily (section 3.2).
