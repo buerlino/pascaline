@@ -321,6 +321,11 @@ export class EngineHost implements FactsHost {
       const part = todo.slice(k, k + REPLAY_BATCH);
       this.runBatch(part.map((e) => e.cmds[0]!), part.map((e) => e.name));
     }
+    // The stored table learns the loaded names as Giac prints them, so the input's state part does not count them as
+    // its stores (G65's changesOf would log them as vars with the input's facts).
+    const node = parsePrinted(this.giac.eval(statePart(this.modeDigits)));
+    const table = node ? tableOf(node, (n) => this.byName.has(n)) : null;
+    if (table) for (const e of todo) { const t = table.get(e.name); if (t) this.stored.set(e.name, t); }
     // the `// Success` notes and any error of the load are not the input's
     this.giac.clearMessages();
   }

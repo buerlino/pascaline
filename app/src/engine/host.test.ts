@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, REPLAY_BATCH } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
+import { applyDefChanges } from "./defs.ts";
 import { formatComplex, markOf, type FormatOptions } from "./format.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
@@ -586,7 +587,7 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
     expect(host.eval("df3(0)").output).toBe("sin(3)"); // G83: loaded by its first use
     calls.length = 0;
     host.eval("VARS");
-    expect(calls.length).toBe(Math.ceil(49 / REPLAY_BATCH) + 1); // the other 49 functions in two batches, then VARS
+    expect(calls.length).toBe(Math.ceil(49 / REPLAY_BATCH) + 2); // the other 49 functions in two batches, the stored-table read, then VARS
   });
 
   it("G3's order: a symbolic value goes first, even inside a batch", async () => {
@@ -633,7 +634,7 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
     host.restore(log);
     calls.length = 0;
     host.eval("VARS"); // G83: the functions load on first use, here all at once
-    expect(calls.length).toBe(Math.ceil(50 / REPLAY_BATCH) + 1); // + VARS itself
+    expect(calls.length).toBe(Math.ceil(50 / REPLAY_BATCH) + 2); // + the stored-table read, VARS itself
     expect(raw.eval("g3(2)")).toBe("ga*2+3");
   });
 });
@@ -828,6 +829,19 @@ describe.skipIf(!giacAvailable())("G83: the user's functions are defined on firs
     expect(raw.eval("g(2)")).toBe("g(2)"); // not in Giac yet
     expect(host.home("f(2)", defaultHomeSettings).result.display).toBe("6");
     expect(host.cas("f(y)", defaultCasSettings).result.text).toBe("y+2*y"); // derived: y+g(y), g(y)=2*y
+  });
+
+  it("an input that loads f does not make f a var in the log: f(a), then b:=1 (derived: f stays fn with its command)", async () => {
+    const f = { ...mk("f", "fn", "f(x):=x^2"), preview: "pf", time: 7 };
+    const { host } = await fresh([f, mk("a", "var", "a:=(2)")]);
+    let log = applyDefChanges([f, mk("a", "var", "a:=(2)")], []);
+    const r = host.cas("f(a)", defaultCasSettings);
+    expect(r.result.text).toBe("4");
+    log = applyDefChanges(log, r.defs);
+    log = applyDefChanges(log, host.cas("b:=1", defaultCasSettings).defs);
+    expect(log.find((e) => e.name === "f")).toEqual(f);
+    const vars = host.eval("VARS").output;
+    expect(vars.match(/\bf\b/g)).toHaveLength(1);
   });
 
   it("VARS and VARS(1) typed after a restore list every restored name, as an eager replay does", async () => {
