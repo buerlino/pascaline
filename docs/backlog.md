@@ -47,23 +47,18 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Tasks
 
-### Open bugs (rechecked 2026-10-20 on `da7a59c`; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
+### Open bugs (rechecked 2026-10-20 on `da7a59c`; older done lines: [archive](archive/backlog-2026-10.md); family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
 - [x] **F44 → G58 (3062c2a).** Home answers `exp(1.5ᴇ8)`, `√(e^(2ᴇ8))`, `3+e^(1.5ᴇ8)/asin 3`, `acos(5!^(2.5+5!))` and `exp(10^7)` in under 0.1 s, `factorial(10^6)` in 1 s (Giac's own GMP call); a deadline refuses past 2 s. `acos(5!^(2.5+5!))` at 30 digits stays wrong from the 14th digit under `≈` (a double, F47 → G60). r16 F1.
-- [x] **F45 → G59 (96c69a0).** `√(√(asin(12)))` = `≈ 1.319…−0.376…i` (was −1.319…): the value is read by `evalf`, split after. r16 F2.
 - [x] **F46 → G59 (96c69a0), G59f1.** `(sin 3.7 − e)^(0.001·asin(6.02ᴇ8))` is `⚠` (was `≈`, wrong from the 4th digit); without a decimal, `(sin(37/10)−e)^(asin(602000000)/1000)` is `⚠` too: a power with several values is checked against exp(b·ln a). r16 F3.
 - **F47 → [G60](shifts/packages/G60.md).** A double inside an MPFR result, at 30 digits: `log10(asinh(asin e))` wrong from the 14th digit under `≈`; `asin`/`acos` of a real \|x\| > 1 inside other functions show `⚠ 14` with 12–13 right; `√(asinh(cos 10))` shows a real part 4.7E-15 that is noise. Family 4. r16 F4–F6.
 - [x] **F48 → G71 (f11b20e).** Two-argument `round`/`trunc` are ⚠ (they compute in a double); their Giac patch: F61. hunt N7.
-- [x] **F49 → G71 (f11b20e).** `trunc`, `Heaviside` and 11 functions of the census decide twice. hunt N8.
 - [x] **F50 → G78 (cb445bf).** Home refuses Giac's text for a number: `asin(acos(π²))`, `exp(cosh(asin π))`, `√(asinh(asin 3.7))` "No value found", `sinh(6020³)` "Overflow", `∫₋₁¹ 1/x²` (+∞) as divergent. r16 F7.
-- [x] **F51 → G78 (cb445bf).** `1/(1/0)`, `exp(ln 0)`, `exp(ln(0·2))`, `√5/asinh 10/(sin(5!)·(3/0))` are refused "Division by zero" (was `= 0`). r16 F8.
 - [x] **F52 → G67.** A Giac setting typed in Home or CAS (`approx_mode:=1`, `angle_radian:=0`, `integer_format(16)`, `cas_setup(…)`, `xcas_mode(1)`) is put back after the input (one read per input, the result says it was not kept) and never logged; a library may not set one; Find hides the setting commands. It also puts back Giac's own leaks (`eval_level` after a `throw`, `epsilon` after `(-32)^(1/5)`). hunt N1, N2.
 - [x] **F53 → G68 (078642f).** Solve sends an answer's full value with its confirmed digits; a second solve with each known moved confirms the result. Family 1.
 - **F54 → [G69](shifts/packages/G69.md).** With a stored x, `sum(x^2,x,1,10)` = `⚠ 385` "inherited: x" (`≈ 385` for an `≈` x; right `= 385`): `inherited()` reads bound names (`host.ts:452`). Families 8, 1; today. hunt N4.
 - **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8; today. hunt N5.
 - [x] **F56 → G70.** Function app Area gives ∫₀¹ ln x = −1, ∫₀² x ln x = 0.38629436112, ∫₋₁¹ (1−cos x)/x² = 0.972770752471 (Romberg's undef no longer refuses; only Home's refusals do). hunt N6.
 - **F57 → [G72](shifts/packages/G72.md).** A library body with `increment(cnt)` changes cnt by 2 per Enter and logs nothing (`definitionStores`, `isStateful` miss `++`, `DelVar`). Families 9, 3; after R59. hunt N9.
-- [x] **F58 → G65.** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are free (were 3 again: an "other" entry kept the line); every name a line sets is a value from Giac's state. hunt N10.
-- [x] **F59 → G71 (f11b20e).** A decision over a value with no MPFR path (`BesselJ(1,2) > 0.5`) is decided at the double with ⚠.
 - [x] **F60 → G84 (043af31).** `exp(-10^30)`, DEG `exp(cosh(asin π))` are refused "Underflow" (were `⚠ 0`). Family 5.
 - **F61, no package yet.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
 - **F62, no package yet.** `sin(cosh(10!))` takes 11 s in Home; the 2 s deadline misses.

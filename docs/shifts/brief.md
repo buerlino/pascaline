@@ -112,7 +112,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 79b | [G81](packages/G81.md) σ through the basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 | 1.5 h |
 | 80 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
 | 81 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |
-| 83 | [G61](packages/G61.md) the oracle sweep as a gate stage | gorge, Sonnet | `p1/gorge-m4-oraclesweep` | G58 | 2 h |
 | 84 | [G62](packages/G62.md) sequences and state in the sweep | gorge, Sonnet | `p1/gorge-m4-seqsweep` | G61 | 1.5 h |
 | 85 | [G63](packages/G63.md) one value in every view | gorge, Sonnet | `p1/gorge-m4-viewsweep` | G61 | 1.5 h |
 | 86 | [G64](packages/G64.md) CAS answers checked back | gorge, Sonnet | `p1/gorge-m4-casback` | A19 | 1.5 h |
