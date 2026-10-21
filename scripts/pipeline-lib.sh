@@ -35,3 +35,37 @@ merge_failure_reason() {
   if [[ -n "$(git -C "$1" diff --name-only --diff-filter=U)" ]]; then echo conflict
   else echo "merge failed: $(tail -n 1 "$2" | cut -c1-200)"; fi
 }
+
+# ---- engine builds (A28) ----
+# engine_key <git dir> <rev>: a hash of the engine's inputs at <rev> (build-wasm.sh, patches/ without its README, wasm/), from the
+# blob ids in the tree, so it needs no checkout and takes milliseconds.
+engine_key() {
+  git -C "$1" ls-tree -r "$2" -- engine/giac/build-wasm.sh engine/giac/patches engine/giac/wasm 2>/dev/null | grep -v 'patches/README.md' | sha256sum | cut -c1-16
+}
+# engine_stamp <engine dir>: the key an engine directory was built from (empty when unstamped).
+engine_stamp() { cat "$1/.engine-key" 2>/dev/null || true; }
+engine_sha() { sha256sum "$1/giac.wasm" 2>/dev/null | cut -c1-16; }
+# engine_build <worktree holding the sources> <key> <out root> <log>: builds once per key into <root>/key-<key> under the
+# host-cpu lock; a finished build with the right stamp is reused. Fails with the build log's tail on stdout.
+engine_build() {
+  local src="$1" key="$2" root="$3" log="$4" dest tmp rc=0
+  dest="$root/key-$key"
+  if [[ -f "$dest/giac.wasm" && "$(engine_stamp "$dest")" == "$key" ]]; then return 0; fi
+  tools/devlock.sh acquire host-cpu "engine-$key" 1800 >/dev/null || { echo "host-cpu lock busy"; return 1; }
+  tmp="$root/.tmp-$key.$$"; rm -rf "$tmp"; mkdir -p "$tmp"
+  GIAC_BUILD_OUT="$tmp" GIAC_BUILD_DIR="$root/.build-$key" timeout 3600 "$src/engine/giac/build-wasm.sh" > "$log" 2>&1 || rc=1
+  if [[ $rc -eq 0 && -f "$tmp/gsl/giac.wasm" ]]; then
+    echo "$key" > "$tmp/gsl/.engine-key"
+    rm -rf "$dest"; mv "$tmp/gsl" "$dest"
+  else rc=1; fi
+  rm -rf "$tmp" "$root/.build-$key"
+  tools/devlock.sh release host-cpu "engine-$key" >/dev/null || true
+  [[ $rc -eq 0 ]] || { echo "build-wasm.sh failed: $(tail -n 2 "$log" | tr '\n' ' ' | cut -c1-160)"; return 1; }
+}
+# engine_promote <out root> <key>: <root>/gsl becomes the build of <key>; the old one stays as gsl.prev.
+engine_promote() {
+  local root="$1" key="$2"
+  rm -rf "$root/gsl.new" && cp -a "$root/key-$key" "$root/gsl.new" || return 1
+  rm -rf "$root/gsl.prev"; [[ ! -e "$root/gsl" ]] || mv "$root/gsl" "$root/gsl.prev"
+  mv "$root/gsl.new" "$root/gsl"
+}

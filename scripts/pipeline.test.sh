@@ -144,5 +144,30 @@ git -C "$sb" log phase-1 --format=%s | grep -q '^Merge' && fail "A24: a dirty ph
 # setup_node_modules: a failed copy leaves no half-filled directory
 grep -q 'node_modules.tmp' "$here/pipeline.sh" || fail "A24: setup_node_modules copies in place (not atomic)"
 
+# A28: the engine is keyed by its inputs; a branch that changes them gets its own build, an unchanged key keeps the shared engine
+e="$tmp/eng"; mkdir -p "$e/engine/giac/patches" "$e/engine/giac/wasm" "$e/docs/shifts" "$e/tools"; git init -q -b main "$e"
+echo b > "$e/engine/giac/build-wasm.sh"; echo p > "$e/engine/giac/patches/0001.patch"; echo r > "$e/engine/giac/patches/README.md"; echo a > "$e/engine/giac/wasm/api.cc"
+: > "$e/docs/shifts/brief.md"; git -C "$e" add -A; gc "$e" init; git -C "$e" branch phase-1; git -C "$e" branch p1/same
+git -C "$e" checkout -q -b p1/eng; echo q > "$e/engine/giac/patches/0003.patch"; git -C "$e" add -A; gc "$e" patch; git -C "$e" checkout -q main
+k0="$(engine_key "$e" phase-1)"; k1="$(engine_key "$e" p1/eng)"
+[[ -n "$k0" && "$k0" != "$k1" ]] || fail "A28: a new patch does not change the engine key ($k0 $k1)"
+[[ "$k0" == "$(engine_key "$e" p1/same)" ]] || fail "A28: the same inputs give another key"
+echo "other readme" > "$e/engine/giac/patches/README.md"; git -C "$e" add -A; gc "$e" readme
+[[ "$k0" == "$(engine_key "$e" HEAD)" ]] || fail "A28: the patches README changes the engine key"
+git -C "$e" branch -f phase-1 HEAD
+mkdir -p "$e/engine/giac/_out/gsl"; echo "$k0" > "$e/engine/giac/_out/gsl/.engine-key"
+ed() { (cd "$e" && env -u GIAC_OUT "$script" ron "task" --id E1 --branch "$1" --dry-run 2>&1); }
+out="$(ed p1/eng)"
+grep -q "^engine build: key $k1 " <<<"$out" && grep -qE "^GIAC_OUT=.*/engine/giac/_out/key-$k1 \(worker, fix rounds and checks\)" <<<"$out" || fail "A28: a branch with a new patch prints no engine build with its key and GIAC_OUT: $out"
+out="$(ed p1/same)"
+grep -q '^engine build' <<<"$out" && fail "A28: an unchanged key prints an engine build: $out"
+grep -qE '^GIAC_OUT=.*/engine/giac/_out/gsl ' <<<"$out" || fail "A28: an unchanged key does not keep the shared engine: $out"
+grep -q '^engine rebuild' <<<"$out" && fail "A28: a matching stamp prints a rebuild"
+echo stale > "$e/engine/giac/_out/gsl/.engine-key"
+out="$(ed p1/same)"
+a="$(grep -n '^engine rebuild' <<<"$out" | head -n1 | cut -d: -f1)"; b="$(grep -n '^cat .*claude -p' <<<"$out" | head -n1 | cut -d: -f1)"
+[[ -n "$a" && -n "$b" && "$a" -lt "$b" ]] || fail "A28: a stale stamp does not print the rebuild before the worker: $out"
+grep -q 'engine_build' "$here/pipeline.sh" && grep -q 'gsl.prev' "$here/pipeline-lib.sh" || fail "A28: pipeline.sh/-lib.sh lack the engine build or the gsl.prev promotion"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"

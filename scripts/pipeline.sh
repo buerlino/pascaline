@@ -44,7 +44,10 @@ tasks="$main/.tasks"
 mkdir -p "$tasks/archive" "$coord"
 export PASCALINE_DL_DIR="${PASCALINE_DL_DIR:-$main/engine/giac/_downloads}"
 export PASCALINE_QALC_DL_DIR="${PASCALINE_QALC_DL_DIR:-$main/engine/qalc/_downloads}"
-export GIAC_OUT="${GIAC_OUT:-$main/engine/giac/_out/gsl}"
+# A28: unless the caller sets GIAC_OUT, the engine is managed: the shared build is $engine_root/gsl, a branch that changes the
+# engine's inputs is built once per key into $engine_root/key-<key>.
+engine_root="$main/engine/giac/_out"; engine_managed=1; [[ -z "${GIAC_OUT:-}" ]] || engine_managed=0
+export GIAC_OUT="${GIAC_OUT:-$engine_root/gsl}"
 [[ -n "${QALC_OUT:-}" ]] || { [[ -n "$(ls -A "$main/engine/qalc/_out/dev" 2>/dev/null)" ]] && export QALC_OUT="$main/engine/qalc/_out/dev"; } || true
 export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
 claude_common=(--permission-mode auto --output-format text --no-session-persistence)
@@ -201,6 +204,19 @@ if [[ $dry -eq 1 ]]; then
   echo "integration worktree: $integ"; echo "worker worktree: $wt"
   echo "setup: cp -al $main/app/node_modules $wt/app/node_modules   (own copy per worktree; a symlink is replaced)"
   echo "machine failure: a check log with 'command not found' or a missing node_modules ends the run as NOT MERGED (machine: ...), no fix round"
+  if [[ $engine_managed -eq 0 ]]; then echo "engine: GIAC_OUT=$GIAC_OUT set by the caller; no engine build"
+  else
+    p1key="$(engine_key "$main" phase-1)"; stamp="$(engine_stamp "$engine_root/gsl")"
+    echo "engine: phase-1 key $p1key, shared engine stamp ${stamp:-none}"
+    [[ "$stamp" == "$p1key" ]] || echo "engine rebuild (shared engine lacks phase-1; before the worker starts): engine/giac/build-wasm.sh under tools/devlock.sh acquire host-cpu -> $engine_root/key-$p1key, then $engine_root/gsl"
+    bkey="$p1key"; git show-ref --verify --quiet "refs/heads/$branch" && bkey="$(engine_key "$main" "$branch")"
+    if [[ "$bkey" != "$p1key" ]]; then
+      echo "engine build: key $bkey (branch $branch changes the engine inputs): engine/giac/build-wasm.sh under tools/devlock.sh acquire host-cpu -> $engine_root/key-$bkey"
+      echo "GIAC_OUT=$engine_root/key-$bkey (worker, fix rounds and checks)"
+    else
+      echo "GIAC_OUT=$engine_root/gsl (shared engine; the branch keeps the engine inputs; a build follows the worker when its key changes)"
+    fi
+  fi
   echo "checks: $checks; merge: $merge; audit model: $audit_model; no-worker: $nowork"
   echo "checks run: typecheck, vitest, docs always; size when app/ changed; e2e when app/ changed; golden when engine or parser changed"
   echo "checks: typecheck,vitest,docs (+ size, e2e when app/ changed; + golden when engine or parser changed)"
@@ -227,6 +243,18 @@ echo "$n" > "$counter"; runno="$n"
 log "pipeline #$n $id ($agent, $model) on $branch: started; bundle $bundle"
 runlog "start $id $agent $model $branch"
 
+# A28: no run checks against an engine that phase-1 lacks.
+engine_log="$run/engine-build.log"
+if [[ $engine_managed -eq 1 ]]; then
+  p1key="$(engine_key "$main" phase-1)"
+  if [[ "$(engine_stamp "$engine_root/gsl")" != "$p1key" ]]; then
+    log "pipeline #$n $id: shared engine is not phase-1's ($p1key); rebuilding first"
+    t0=$SECONDS
+    why="$(engine_build "$integ" "$p1key" "$engine_root" "$engine_log")" && engine_promote "$engine_root" "$p1key" || die "engine build: ${why:-promote failed}"
+    log "pipeline #$n $id: shared engine rebuilt: key $p1key, giac.wasm sha256 $(engine_sha "$engine_root/gsl") ($((SECONDS - t0)) s)"
+  fi
+fi
+
 # The worker's worktree, fresh from phase-1 or resumed from the branch's last commit.
 if git show-ref --verify --quiet "refs/heads/$branch"; then
   existing="$(git worktree list --porcelain | awk -v b="refs/heads/$branch" '/^worktree /{w=$2} $0=="branch "b{print w}')"
@@ -236,6 +264,18 @@ else
   git worktree add "$wt" -b "$branch" phase-1 >/dev/null
 fi
 setup_node_modules "$wt"
+
+# A28: GIAC_OUT for the worker, the fix rounds and the checks: the shared engine, or the build of the branch's own key.
+select_engine() {
+  [[ $engine_managed -eq 1 ]] || return 0
+  local k t0=$SECONDS why; k="$(engine_key "$wt" HEAD)"
+  if [[ "$k" == "$p1key" ]]; then export GIAC_OUT="$engine_root/gsl"; return 0; fi
+  if [[ "$(engine_stamp "$engine_root/key-$k")" != "$k" ]]; then log "pipeline #$n $id: building the branch's engine, key $k (phase-1: $p1key)"; fi
+  why="$(engine_build "$wt" "$k" "$engine_root" "$engine_log")" || die "engine build: $why"
+  export GIAC_OUT="$engine_root/key-$k"
+  runlog "engine: key $k, GIAC_OUT=$GIAC_OUT ($((SECONDS - t0)) s)"
+}
+select_engine
 
 # Run one headless agent; exit 75 on a usage limit.
 run_agent() {  # <name> <log> <agent> <model> <effort> <stdin file> <prompt> [tool options...]
@@ -372,6 +412,7 @@ fi
 # Fix rounds: the checks and the audit share at most two rounds.
 verdict=""; audited=""
 while :; do
+  select_engine
   if ! run_checks "$rounds"; then
     log "pipeline #$n $id: checks failed (round $rounds): $(head -n 1 "$run/fail-$rounds.txt")"
     reason="the checks failed"; feedback="$run/fail-$rounds.txt"
@@ -419,6 +460,7 @@ if ! integ_clean "$integ"; then  # ensure_integ checked only at the start (A24)
   log "pipeline #$n $id: NOT MERGED (phase-1 worktree not clean); branch $branch kept"
   echo "RESULT #$n $id: NOT MERGED (phase-1 worktree not clean; branch $branch, worktree $wt kept)"; exit 1
 fi
+merge_key_before="$(engine_key "$main" phase-1)"
 if git -C "$integ" merge --no-ff --signoff -m "Merge $branch: $id (pipeline run $n)" "$audited" > "$run/merge.log" 2>&1; then
   mc="$(git -C "$integ" rev-parse --short HEAD)"
   git worktree remove --force "$wt" >/dev/null 2>&1 || true
@@ -435,6 +477,17 @@ else
   rc=1
 fi
 tools/devlock.sh release integ "pipeline-$n" >/dev/null || true
+# A28: a merge that changed the engine's key moves the shared engine to that build (old one kept as gsl.prev).
+if [[ $rc -eq 0 && $engine_managed -eq 1 ]]; then
+  mkey="$(engine_key "$main" phase-1)"
+  if [[ "$mkey" != "$merge_key_before" ]]; then
+    if [[ "$(engine_key "$integ" HEAD)" == "$mkey" ]] && why="$(engine_build "$integ" "$mkey" "$engine_root" "$engine_log")" && engine_promote "$engine_root" "$mkey"; then
+      log "pipeline #$n $id: shared engine is now key $mkey, giac.wasm sha256 $(sha256sum "$engine_root/gsl/giac.wasm" | cut -d' ' -f1) (old kept as gsl.prev)"
+    else
+      log "pipeline #$n $id: engine promotion FAILED for key $mkey (${why:-promote failed}); the next start rebuilds it"
+    fi
+  fi
+fi
 # Garbage collection every 3rd finished task.
 if (( n % 3 == 0 )); then "$integ/scripts/gc.sh" --apply >> "$run/run.log" 2>&1 || log "pipeline #$n: gc failed (see $run/run.log)"; fi
 echo "$result"; exit $rc
