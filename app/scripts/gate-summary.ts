@@ -160,7 +160,6 @@ export function summarizeSweep(out: string, exitCode: number): Summary {
   return { ok: false, detail: news.length > 0 ? `${news.length} to look at: ${news.slice(0, 2).join(" | ")}; ${tail}` : tail };
 }
 
-<<<<<<< HEAD
 /** G62: the sequence sweep (scripts/seqsweep.ts) ends in `SEQ PASSED|FAILED: <n> sequences …, total <s> s; <k> known failures, …`; the lines before it name each NEW or NOW PASSING one. */
 export function summarizeSeqSweep(out: string, exitCode: number): Summary {
   const last = out.trim().split("\n").filter((l) => /^SEQ (PASSED|FAILED)/.test(l)).slice(-1)[0];
@@ -170,7 +169,9 @@ export function summarizeSeqSweep(out: string, exitCode: number): Summary {
   }
   const news = out.split("\n").filter((l) => /^ {2}seq (NEW|NOW PASSING)/.test(l)).map((l) => l.trim().slice(4, 110));
   const tail = last ? last.replace(/^SEQ FAILED: .*?; (\d+ known failures)/, "$1").slice(0, 100) : `exit ${exitCode}: ${out.trim().split("\n").slice(-1)[0]?.slice(0, 100) ?? ""}`;
-=======
+  return { ok: false, detail: news.length > 0 ? `${news.length} to look at: ${news.slice(0, 2).join(" | ")}; ${tail}` : tail };
+}
+
 /** The view sweep (G63, scripts/viewsweep.ts) ends with `VIEWSWEEP PASSED: <counts>; <known/new/now passing>`, or `VIEWSWEEP FAILED: …`. */
 export function summarizeViewSweep(out: string, exitCode: number): Summary {
   const last = out.trim().split("\n").filter((l) => /^VIEWSWEEP (PASSED|FAILED)/.test(l)).slice(-1)[0];
@@ -180,7 +181,6 @@ export function summarizeViewSweep(out: string, exitCode: number): Summary {
   }
   const news = out.split("\n").filter((l) => /^ {2}viewsweep (NEW|NOW PASSING)/.test(l)).map((l) => l.trim().slice(10, 110));
   const tail = last ? last.replace(/^VIEWSWEEP FAILED: .*?; (\d+ known failures)/, "$1").slice(0, 100) : `exit ${exitCode}: ${out.trim().split("\n").slice(-1)[0]?.slice(0, 100) ?? ""}`;
->>>>>>> phase-1
   return { ok: false, detail: news.length > 0 ? `${news.length} to look at: ${news.slice(0, 2).join(" | ")}; ${tail}` : tail };
 }
 
