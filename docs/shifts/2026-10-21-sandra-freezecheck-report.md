@@ -75,3 +75,10 @@ A review of the freeze commit (8f921c4, merged as e0d03ed) found 18 points. The 
 - **F72 has no package**, and while it doesn't, the freeze cannot end. Draft it tomorrow by day (ron, about 0.25 d).
 - **decisions.md has 1.0 kB left.** The next Opus pass that writes more than that must move built entries to the archive first; P16 is the next candidate.
 - **Most of the background stream waits for A28.** If A28 isn't merged before the night starts, the night may end early.
+
+## After the merge (same evening)
+- **A28, first run (#169): NOT MERGED.** The typecheck failed three times on `Cannot find module '@capacitor/clipboard'`. Cause: the pipeline copies `node_modules` from the main checkout (`pipeline.sh:84`), which sits on an old branch without A11's two packages.
+- **The stopgap.** sandra moved the main checkout's `app/node_modules` aside (into her scratchpad) and replaced it with a hard-link copy of the phase-1 worktree's, after checking that copy has every package of phase-1's lockfile. The typecheck on A28's branch then found 0 errors.
+- **A28, second run (#170): MERGED as 60f858d**, after two fix rounds. Round 1 fixed a real audit finding (the sandbox tests depended on `GIAC_OUT`). Round 2 was a timing flake in `g58-factorial-1e6-12` (2111 ms against 2000); it is now a backlog line.
+- **A34** (the lasting fix: worktrees take `node_modules` from phase-1, and a missing package ends the run) runs by day after A28, not tonight (owner). Until then no night package may add a dependency; none in tonight's queue does.
+- **Cleanup.** The worktrees `sandra-freezefix` and `sandra-a34` and their branches are gone. The untracked probe copy in `sandra-freezefix` was identical to `tools/probes/core-replay.spec.ts`.
