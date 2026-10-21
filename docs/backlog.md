@@ -67,7 +67,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - [x] **F60 → G84 (043af31).** `exp(-10^30)`, DEG `exp(cosh(asin π))` are refused "Underflow" (were `⚠ 0`). Family 5.
 - **F61, no package yet.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
 
-- **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, S18; the instruments G61–G64, A19 and S16; A22 by day; [x] A20, [x] A21 (`find/factors.yaml`; only the recipe's qalc build waits for F-Droid's answer).
+- **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, [x] S18; the instruments G61–G64, A19 and S16; A22 by day; [x] A20, [x] A21 (`find/factors.yaml`; only the recipe's qalc build waits for F-Droid's answer).
 
 ### Milestone 4a: feel (P11; packages and order: brief section 0)
 - **R15c1–R15c4. The R3 top cluster** (R15c1 done: the status line takes Apps, Menu and the views; R15c2 done: the round pad, U1–U6 and the editing wing; R15c3–R15c4 left) (decisions.md "R15c"): the status line takes Apps, Menu and the views; the round pad, six user keys and the editing wing; the user keys' Alpha layer; first-start tips.
@@ -90,7 +90,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - **Gate:** task 5 within budget; the query test; the golden gate with marks and `precision.yaml`; no §2.3 item #1–#9 left; the size test; the Tab One bars of §8.3.
 
 **Milestone 5: Units** (P15; docs/04 section 4). Items 1–3 are done: the evaluator (G16), temperatures and levels (G17), uncertainty (G18), the result's unit (G25), the data audit (G13), Find's pad data (G7), rpm's message (G32), the parser's units mode (R28).
-- **4. The unit view:** before R24c, done: zero terms (**G35**), °C in a compound unit (**G37**), σ beyond first order (**G41**), angles (**G40**; the view shows `Quantity.note`); the pad (**R24b**), the entry (**R24c**), Find in a slot and the user cells (**R24d**); the result view: **S11** done ([R17](research/r17-unit-result.md)): **R60** alternatives, **R61** chip, **R62** view, **R63** way back. Open points with defaults: r7 section 7.
+- **4. The unit view:** before R24c, done: zero terms (**G35**), °C in a compound unit (**G37**), σ beyond first order (**G41**), angles (**G40**; the view shows `Quantity.note`); the pad (**R24b**), the entry (**R24c**), Find in a slot and the user cells (**R24d**); the result view: **S11** done ([R17](archive/r17-unit-result.md)): **R60** alternatives, **R61** chip, **R62** view, **R63** way back. Open points with defaults: r7 section 7.
 - **5. Build, size, devices** (annabell, after R24c): the first unit result on the Tab One and the Fairphone 6 (< 1 s).
 - **Gate:** tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
 

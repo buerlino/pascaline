@@ -1,10 +1,10 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # 2026-10-20 sandra: S11, the unit result view as packages (pipeline run 108)
 
-**Verified** on the real evaluator (`tools/probes/unit-result.ts`: `buildJob` and `EngineHost.units`, engine `_out/gsl`, `phase-1`'s Find index), with the press counts from `tools/probes/unit-presses.mjs --pad [--taps]`. The evidence and the decisions are in [R17](../../research/r17-unit-result.md).
+**Verified** on the real evaluator (`tools/probes/unit-result.ts`: `buildJob` and `EngineHost.units`, engine `_out/gsl`, `phase-1`'s Find index), with the press counts from `tools/probes/unit-presses.mjs --pad [--taps]`. The evidence and the decisions are in [R17](../../archive/r17-unit-result.md).
 
 **Changed:**
-- New: `docs/research/r17-unit-result.md`, the package files `docs/shifts/packages/R60.md` to `R63.md`, `docs/mockups/unit-result.html` and `tools/probes/unit-result.ts`.
+- New: `docs/archive/r17-unit-result.md`, the package files `docs/shifts/packages/R60.md` to `R63.md`, `docs/mockups/unit-result.html` and `tools/probes/unit-result.ts`.
 - `tools/probes/unit-presses.mjs`: the stale label "no end slot (result 20 m/s)" is fixed (G25 shows 72 km/h). Added the alternative-tap lines for t02 and t04, and t03 and t10 with units.
 - `tools/probes/README.md`: one row.
 - `docs/decisions.md`: M4-2 points 1, 5 and 6.

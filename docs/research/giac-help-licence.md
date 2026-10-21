@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R5: licence of Giac's built-in help texts (sandra)
 
+**Status (2026-10-21): reference.** R5, what Giac's README says about its help texts' licence; nothing to decide.
+
 Source: the README of the pinned `giac-2.1.0.tar.gz` (section "LICENSES", "Documentation") and the files under `doc/`. This is a reading of the README, not legal advice.
 
 ## What the README says

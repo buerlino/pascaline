@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// G65 (S13, docs/research/r15-state-facts.md): which names an input stored and which stored names it read, from Giac's
+// G65 (S13, docs/archive/r15-state-facts.md): which names an input stored and which stored names it read, from Giac's
 // own state instead of our reading of the input's text. Both reads go into the one call the host makes after every
 // input (flags.ts FLAGS_READ, G67), as further elements of its list:
 // - the read part: Giac's parse of the input (`quote`, never evaluated). A store (`sommet` is sto) reads its stored side

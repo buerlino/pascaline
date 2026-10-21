@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Probe (S9, results mode, P16): the pixels the keypad takes and what a collapsed keypad would give back, at the
 // Pixel 7 profile the viewport-share test uses (app/test/status.spec.ts), and the ten benchmark tasks' presses with
-// the keypad up and collapsed. Results and reasoning: docs/research/r13-results-mode.md.
+// the keypad up and collapsed. Results and reasoning: docs/archive/r13-results-mode.md.
 //
 //   node tools/probes/results-geometry.mjs            geometry (starts Vite with ?engine=fake) and press counts
 //   node tools/probes/results-geometry.mjs --counts   press counts only (no browser)

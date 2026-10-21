@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The library file (S4, decisions.md "S4", docs/research/r10-connector.md): a UTF-8 text file of Giac definitions, each
+// The library file (S4, decisions.md "S4", docs/archive/r10-connector.md): a UTF-8 text file of Giac definitions, each
 // with a one-line description and optional `// test:` lines. Read and checked as a whole, refused as a whole, defined
 // through the engine's cas() as if typed (so the defs log gets its entries from the one existing path), then tested.
 // Loaded lazily by whoever imports (dynamic import); nothing in the start chunk imports it. The engine is reached through

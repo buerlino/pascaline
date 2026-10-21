@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R8: Menu audit (P12 open point A)
 
+**Status (2026-10-21): decided.** decisions.md S2 (2026-10-13), one menu system (rules M1–M7); built (R10 Tmpl, R11 the Menu list), in docs/04 section 5.
+
 sandra, 2026-10-13, package S2. Read and probe only; the code is `phase-1` at `04e0c0b` (R10 merged). Every claim is
 a `file:line` in that tree, an e2e test that presses the sequence, the G2 record in `spec/mapping/vc-2026-10-11/`, or
 the probe `tools/probes/menu-presses.mjs` (run `node tools/probes/menu-presses.mjs --cells`). Press counts use the

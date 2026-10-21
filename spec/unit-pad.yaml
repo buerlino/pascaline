@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# The unit pad (P14, DECIDED by the owner 2026-10-14; the owner's idea, worked out in docs/research/r9-unit-pad.md).
+# The unit pad (P14, DECIDED by the owner 2026-10-14; the owner's idea, worked out in docs/archive/r9-unit-pad.md).
 # Nothing in the app reads this file yet; tools/probes/unit-presses.mjs --pad counts presses from it and
 # tools/probes/pad-arrange.mjs scores it. The arrangement is the measured one of package S5 (r9 section 1): which units
 # get a cell comes from how often engineers use them (tools/probes/unit-weights.yaml, three fields weighted equally),

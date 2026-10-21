@@ -1,6 +1,6 @@
 // pascaline library 1
 // SPDX-License-Identifier: GPL-3.0-or-later
-// A sample library for tools/probes/library.ts (docs/research/r10-connector.md section 1).
+// A sample library for tools/probes/library.ts (docs/archive/r10-connector.md section 1).
 
 // Maximum bending moment of a simply supported beam under a uniform load q over span L: q·L²/8
 beam_M(q,L):=q*L^2/8

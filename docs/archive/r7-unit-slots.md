@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R7: Unit slots, the paper test (package S1, 2026-10-13)
 
+**Status (2026-10-21): decided.** decisions.md S1 (2026-10-13), the unit slots, and P14 (the pad replaces the letters, r9); docs/04 4.3–4.4; the slots are built, the pad's packages R24b, R24c, R24d.
+
 sandra, for the owner. **Accepted by the owner 2026-10-13** (decisions.md S1); section 7 is now docs/04 4.3–4.4. **P14 (decided 2026-10-14)** replaces the letters in a slot with the unit pad: [r9-unit-pad.md](r9-unit-pad.md); the slots, the reading and the guards of section 5.4 stay as r9 section 4 says. The question (P11, brief S1): can units added *after* the formula, typed letter by letter into
 unit slots, reach a unit in 4 presses or fewer at the median (P8 rule 2: a unit must beat typing `E-10`)? And which
 case pitfalls has the entry to guard against? Layout: `spec/keyboard.yaml` `unit_slot:` (line 310). Count:
@@ -62,7 +64,7 @@ costs 2,165 bytes; when R10 makes `keyboard.ts` read it, that is spent anyway.)
 Counting as docs/04 5.2: every press 1, a flick 1, Shift and Alpha 1. The cursor starts in the empty slot. The 50
 units and the source line for each are in the probe (`UNITS`): SI Brochure 9th edition (BIPM, V4.01, June 2026,
 downloaded 2026-10-13) Tables 2, 4, 5, 6 and 8; the benchmark tasks (t01, t02, t04, t10); the owner's feedback #8
-(nanometres); P11's examples; the units-on-Giac probe cases ([r12](r12-evidence.md) section 2); the common prefixed units of Find's draft data (G4).
+(nanometres); P11's examples; the units-on-Giac probe cases ([r12](../research/r12-evidence.md) section 2); the common prefixed units of Find's draft data (G4).
 "Most common" is a judgement from these sources, not a measured frequency **(to verify: the owner names his own top
 units; rerun the probe with them)**.
 
@@ -139,7 +141,7 @@ The end slot and the dimension check catch the 21; nothing but the reading catch
 ### 5.2 qalc's own parser misreads (reconfirms docs/04 4.3: never qalc's free parse)
 `node tools/probes/unit-presses.mjs --read …`: `BTU` = tera-rack-unit·byte (`Btu` is right), `lbm` = pound·metre,
 `var` (the SI's reactive-power unit, Table 8) = a function call, `Ra` = ronna-are, `G` = the gravitational constant,
-`Δ°C` = a symbol Δ times °C, `In` = I·n. With qalc's misreadings of `mu0`, `degC`, `BTU`, `NA` ([r6](r6-pipelines.md) section 6) this is why the slot reads
+`Δ°C` = a symbol Δ times °C, `In` = I·n. With qalc's misreadings of `mu0`, `degC`, `BTU`, `NA` ([r6](../research/r6-pipelines.md) section 6) this is why the slot reads
 from Find's unit list and sends qalc only whitelisted names.
 
 ### 5.3 Result-side pitfalls (for the empty end slot)
@@ -184,7 +186,7 @@ To replace sections 4.3 and 4.4 once the owner accepts this note (the review ses
 still hold, except that "the Units app" reads "the unit view".
 
 > ### 4.3 Decision: the unit view (entry, parsing, results)
-> - **Entry (P11, layout in `spec/keyboard.yaml` `unit_slot:`, press count in docs/research/r7-unit-slots.md):** the
+> - **Entry (P11, layout in `spec/keyboard.yaml` `unit_slot:`, press count in docs/archive/r7-unit-slots.md):** the
 >   units key (Shift + Tmpl, a flick up on Tmpl) on an entry line or a picked history row shows the same formula,
 >   read-only, with an empty unit slot after every number and an optional end slot "→ should be". On an empty line
 >   it opens one slot (quantity 1) and the end slot. ◀ ▶ jump between slots, never through the formula; a tap on

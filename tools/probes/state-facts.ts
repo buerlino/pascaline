@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Probe (S13, docs/research/r15-state-facts.md): can the host learn from Giac's state, instead of from our reading of the
+// Probe (S13, docs/archive/r15-state-facts.md): can the host learn from Giac's state, instead of from our reading of the
 // input's text, which names an input stored and which stored names it read?
 //   node tools/probes/state-facts.ts            # G48/G49/G51 sequence cases, prec-g48, night-check extras, G55 sequences
 //   node tools/probes/state-facts.ts --cost     # Giac calls and desktop time the state rule adds per Enter (engine-calls' 15

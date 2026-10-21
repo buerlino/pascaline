@@ -2,7 +2,7 @@
 # S1 report: unit-slot paper test (sandra, Opus, 2026-10-13)
 
 Branch `p1/sandra-m4a-unitslots` (worktree `.claude/worktrees/m4a-s1`, from `phase-1` at `f5566a5`). Brief section
-0b, package S1. Full result: [docs/research/r7-unit-slots.md](../../research/r7-unit-slots.md).
+0b, package S1. Full result: [docs/archive/r7-unit-slots.md](../../archive/r7-unit-slots.md).
 
 ## Result
 **Gate passes: a unit takes 2 presses at the median** over 50 common engineering units (36 single units: 2; 14
@@ -39,7 +39,7 @@ compound units: 4; worst `kg·m²/s³`, 9). Gate: median ≤ 4 (P8 rule 2).
 - `spec/keyboard.yaml`: new `unit_slot:` section (layout record only, before `templates:` so it does not touch R5's
   Python removal at the end of the file).
 - `tools/probes/unit-presses.mjs`: new probe. `tools/probes/README.md`: its row.
-- `docs/research/r7-unit-slots.md`: the result, the pitfalls, the recommendation, the docs/04 4.3–4.4 proposal.
+- `docs/archive/r7-unit-slots.md`: the result, the pitfalls, the recommendation, the docs/04 4.3–4.4 proposal.
 - This report.
 
 ## Still (to verify)
@@ -63,7 +63,7 @@ compound units: 4; worst `kg·m²/s³`, 9). Gate: median ≤ 4 (P8 rule 2).
   > **2026-10-13 S1: unit-slot layout (P11). PROPOSED by sandra, needs the user.** The paper test passes: a unit
   > takes 2 presses at the median over 50 common units (gate ≤ 4), with flicks; G2 taps alone give 5.5 (fail), a
   > lower-case lock in slots gives 3 (the fallback if flicks go). Layout in `spec/keyboard.yaml` `unit_slot:`,
-  > evidence in docs/research/r7-unit-slots.md. **Recommendation: accept** (a) µ on the (−) key, Ω on the comma
+  > evidence in docs/archive/r7-unit-slots.md. **Recommendation: accept** (a) µ on the (−) key, Ω on the comma
   > and ° on a b/c as one-tap cells inside a slot (Greek m and O on the keys carrying M and O; the G2's shift a b/c
   > is degrees-minutes-seconds), (b) the number is typed before the units key, digits in a slot are only exponents
   > (P11 let the empty-line slot start with a number; same press count, no key with two meanings), (c) the live

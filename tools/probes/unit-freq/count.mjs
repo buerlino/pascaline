@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // S5: how often engineers use each unit, counted offline from the articles that fetch.mjs cached (three fields,
 // weighted equally), plus the task benchmark and S1's 50 units. Writes tools/probes/unit-weights.yaml, which
-// pad-arrange.mjs and unit-presses.mjs --weights read. Results and reasoning: docs/research/r9-unit-pad.md.
+// pad-arrange.mjs and unit-presses.mjs --weights read. Results and reasoning: docs/archive/r9-unit-pad.md.
 //   node tools/probes/unit-freq/count.mjs            counts, the top of each field, and the weights file
 //   node tools/probes/unit-freq/count.mjs --misses   also the commonest unit-like words after a number that were not read
 //

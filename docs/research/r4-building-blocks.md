@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R4: open-source building blocks still to choose
 
+**Status (2026-10-21): reference.** R4, the open-source blocks checked on 2026-10-10; the chosen ones are pinned in `THIRD_PARTY.md`.
+
 Checked 2026-10-10 by ron. Versions and "last published" dates are from the npm registry. Sizes are what an
 esbuild `--bundle --minify` build of the package's main entry gives (tree-shaken, CSS and fonts excluded), then
 `gzip -9`. They are indicative: real numbers come with the real app. "GPL ok" means the licence can be combined with
