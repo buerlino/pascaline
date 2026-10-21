@@ -113,7 +113,7 @@ export interface SweepResult {
   restarts: number;
 }
 
-/** Runs and judges; `budgetMs` stops early (nightly runs are long, the gate's fixed seed fits). */
+/** Runs and judges every run, one worker with a deadline per case; it never stops early. */
 export async function sweep(runs: readonly Run[], oracles: readonly Oracle[], deadlineMs: number): Promise<SweepResult> {
   const runner = new Runner(deadlineMs);
   const judged: Judged[] = [];
