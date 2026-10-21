@@ -596,7 +596,15 @@ export function homeEval(
   // G38 (docs/04 2.4 rule 2): the exact evaluation runs at Digits = P, since Giac decides signs, comparisons and
   // floor at Digits; the host's Digits stays the display digits, which print the floats of a non-number.
   const P = valuePrecision(s.digits);
-  const exactRun = (): string => withDigits(giac, P, s.digits, () => giac.eval(`${ans}:=(${exactBody})`));
+  // G97: whether the run printed Giac's warning for a power of a list that is not a square matrix (read at once: the
+  // Digits reset after it is an eval of its own).
+  let ambiguous: boolean | undefined;
+  const exactRun = (): string =>
+    withDigits(giac, P, s.digits, () => {
+      const out = giac.eval(`${ans}:=(${exactBody})`);
+      ambiguous = giac.ambiguousPower?.();
+      return out;
+    });
   let exactOut = exactRun();
   // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate, and
   // decided by its own digits (R18f2): run once more with the verdict set.
@@ -684,7 +692,7 @@ export function homeEval(
   // G58: past the deadline after the exact steps: refused, not checked for as long again.
   if (late()) return { ...failed(enEngine["error.timeout"], "exact"), error: "timeout" };
   // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, no matrix power.
-  if (!once && !isTimeout(exactOut) && nonSquarePower(giac, exactBody, late, exactMs, userFn)) return refuse("notSquare", "exact");
+  if (!once && !isTimeout(exactOut) && nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn)) return refuse("notSquare", "exact");
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 

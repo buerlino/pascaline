@@ -25,13 +25,26 @@ export function mayPowerMatrix(input: string): boolean {
 }
 
 /**
- * F69: `input` (decimals exact) holds a part `M^n` with n ≠ 1, `inv(M)` or `a/M` whose M evaluates to a matrix that is
- * not square. One engine call per part for the shape (no evaluation), then one per candidate operand; a candidate whose
- * text changes state (CHANGES_STATE) or calls a function `userFn` names is not evaluated again, and the walk stops
- * (nothing found) before a part that could take it past WALK_BUDGET_MS, at `exactMs` per part, or once `late()`.
+ * F69: `input` (decimals exact), whose result is `output`, holds a part `M^n` with n ≠ 1, `inv(M)` or `a/M` whose M
+ * evaluates to a matrix that is not square. Looked for only where Giac says it may be there: a power when the run
+ * printed Giac's warning for a list base (`ambiguous`; undefined = not known, looked for), an inverse or a division
+ * when the result holds a list (each is elementwise; a·inv(M) of a non-square M is a list). Then one engine call per
+ * part for the shape (no evaluation), and two per candidate operand; a candidate whose text changes state
+ * (CHANGES_STATE) or calls a function `userFn` names is not evaluated again, and the walk stops (nothing found) before
+ * a part that could take it past WALK_BUDGET_MS, at `exactMs` per part, or once `late()`.
  */
-export function nonSquarePower(giac: Giac, input: string, late: () => boolean, exactMs: number, userFn: (name: string) => boolean): boolean {
-  if (!mayPowerMatrix(input)) return false;
+export function nonSquarePower(
+  giac: Giac,
+  input: string,
+  output: string,
+  ambiguous: boolean | undefined,
+  late: () => boolean,
+  exactMs: number,
+  userFn: (name: string) => boolean,
+): boolean {
+  const powers = ambiguous !== false && /\^/.test(input);
+  const inverses = output.includes("[") && /\/|\binv\s*\(/.test(input);
+  if (!(powers || inverses) || !mayPowerMatrix(input)) return false;
   if (giac.eval(`pasq:=quote(${input})`).startsWith("GIAC_ERROR")) return false;
   try {
     const candidates: { part: string; operand: string; power: boolean }[] = [];
@@ -44,10 +57,10 @@ export function nonSquarePower(giac: Giac, input: string, late: () => boolean, e
       if (!m) return true;
       const op = m[2]!;
       if (UNEVALUATED.has(op)) return true;
-      if (m[1] === "1" && op === "^") candidates.push({ part: p, operand: `[op(${p})][0]`, power: true });
-      else if (m[1] === "1" && op === "/") candidates.push({ part: p, operand: `[op(${p})][1]`, power: false });
+      if (m[1] === "1" && op === "^" && powers) candidates.push({ part: p, operand: `[op(${p})][0]`, power: true });
+      else if (m[1] === "1" && op === "/" && inverses) candidates.push({ part: p, operand: `[op(${p})][1]`, power: false });
       // inv's argument is its whole feuille: op() of inv(M) would be M's rows.
-      else if (m[1] === "1" && op === "inv") candidates.push({ part: p, operand: `feuille(${p})`, power: false });
+      else if (m[1] === "1" && op === "inv" && inverses) candidates.push({ part: p, operand: `feuille(${p})`, power: false });
       for (let k = 0; k < Number(m[3]); k++) if (!shape(`[op(${p})][${k}]`)) return false;
       return true;
     };

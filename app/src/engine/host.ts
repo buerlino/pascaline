@@ -62,6 +62,9 @@ interface AfterInput {
   reset: boolean;
 }
 
+/** G97: what Giac's pow prints for a base that is a list but not a square matrix (gen.cc:6881). */
+const AMBIGUOUS_POWER = /\^ is ambiguous on non square matrices/;
+
 const NO_READS: InputReads = { names: [], targets: [], fn: false };
 
 
@@ -259,7 +262,7 @@ export class EngineHost implements FactsHost {
   readonly giac: GiacApi;
   /** `giac.eval` that throws GiacSyntaxError instead of quietly returning `undef` (which would
    *  otherwise leave the previous answer in place and show it again). */
-  private readonly strict: { eval(input: string): string };
+  private readonly strict: { eval(input: string): string; ambiguousPower(): boolean };
 
   /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
   private readonly loaded = new Set<string>();
@@ -354,16 +357,17 @@ export class EngineHost implements FactsHost {
     // R64, G46: Giac in radians, and pasdeg (our parser's degree factor) set before any input: the units, raw eval and
     // replay paths have no mode setup of their own
     giac.eval(angleCommand("rad"));
+    let ambiguous = false;
     this.strict = {
       eval: (input) => {
         giac.clearMessages();
         const out = giac.eval(input);
-        if (out === "undef") {
-          const msg = giac.messages();
-          if (/syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
-        }
+        const msg = giac.messages();
+        ambiguous = AMBIGUOUS_POWER.test(msg);
+        if (out === "undef" && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
         return out;
       },
+      ambiguousPower: () => ambiguous,
     };
   }
 
@@ -760,8 +764,10 @@ export class EngineHost implements FactsHost {
     const body = guarded ? guarded.rhs : exactInput;
     const run = (): string => withDigits(this.giac, valuePrecision(digitsSet), digitsSet, () => this.strict.eval(`pcasans:=(${body})`));
     let text: string;
+    let ambiguous: boolean;
     try {
       text = run();
+      ambiguous = this.strict.ambiguousPower();
     } catch (e) {
       if (e instanceof GiacSyntaxError) return fail(e.message, "syntax");
       throw e;
@@ -786,6 +792,7 @@ export class EngineHost implements FactsHost {
     const decided = inexactTest && !single ? decideFloatTest(this.giac, exactInput, digitsSet) : null;
     if (decided) {
       text = run();
+      ambiguous = this.strict.ambiguousPower();
       this.giac.eval(`purge(${EQ_VERDICT})`);
     }
     // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), as in Home; an exact
@@ -818,7 +825,7 @@ export class EngineHost implements FactsHost {
     // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, refused as in Home.
     const builtin = notBuiltin(this.giac);
     const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
-    if ((guarded || !single) && nonSquarePower(this.giac, body, () => false, performance.now() - t0, userFn)) return fail(enEngine["error.notSquare"], "notSquare");
+    if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn)) return fail(enEngine["error.notSquare"], "notSquare");
     if (guarded) {
       const stored = this.giac.eval(`${guarded.name}:=pcasans`);
       if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");

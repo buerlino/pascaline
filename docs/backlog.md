@@ -43,7 +43,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- **F69 → [G97](shifts/packages/G97.md).** Every power but 1 of a non-square matrix is shown under `=`: `[[5],[1]]^-1` = `[[0.2],[1]]` (elementwise), `[[5],[1]]^-2` = `1/26`, `[[1,2,3],[4,5,6]]^2` = `91`, `[[5],[1]]^2` = `26`; none exists. `node engine/giac/smoke.mjs '[[5],[1]]^2'`. Keys reach it directly since R75 (column vector, x⁻¹).
+- **F69 → [G97](shifts/packages/G97.md), done (run 174).** A power but the first, an inverse or a division of a non-square matrix is refused, "The matrix is not square", in Home and CAS (`engine/nonsquare.ts`); a flat vector keeps Giac's meaning. Cause: Giac's pow is elementwise or v·v for a non-square base on purpose (`gen.cc:6880-6886`, with a warning), so no patch.
 - **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8. After G76, G86.
 - **F54 (held for G85; else [G69](shifts/packages/G69.md)).** With a stored x, `product(x,x,1,4)` = `⚠ 24` "inherited: x" (right `= 24`; `seq` too). Families 8, 1.
 - **F72, no package (ron checks first whether R34 meant it).** A value typed in Solve's Num view stays in the shared entry line after Enter and follows you to Home: Solve x²=2, x set to 1, Home, 2 + 2 Enter gives `12+2 = 14` (after a solve, the line holds `1.41421356237`). Core c56. Probe: sandra, 2026-10-21, on `e0d03ed`.
