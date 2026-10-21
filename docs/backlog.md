@@ -58,6 +58,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F54 → [G69](shifts/packages/G69.md).** With a stored x, `sum(x^2,x,1,10)` = `⚠ 385` "inherited: x" (`≈ 385` for an `≈` x; right `= 385`): G65's reads (`readsOf`, `stateRead.ts:147`) keep a bound name. Families 8, 1; today. hunt N4.
 - **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8; today. hunt N5.
 - [x] **F56 → G70.** Function app Area gives ∫₀¹ ln x = −1, ∫₀² x ln x = 0.38629436112, ∫₋₁¹ (1−cos x)/x² = 0.972770752471 (Romberg's undef no longer refuses; only Home's refusals do). hunt N6.
+- **F64–F67 (G63): `tests/golden/viewsweep-known.yaml`.** F64 `int` leaves `assume(x>0)`; F65 DEG `int` over-claims; F66 plot NaN for x/x; F67 `int` drops an imaginary part.
 - **F57 → [G72](shifts/packages/G72.md).** A library body with `increment(cnt)` changes cnt by 2 per Enter and logs nothing (`definitionStores`, `isStateful` miss `++`, `DelVar`). Families 9, 3; after R59. hunt N9.
 - [x] **F60 → G84 (043af31).** `exp(-10^30)`, DEG `exp(cosh(asin π))` are refused "Underflow" (were `⚠ 0`). Family 5.
 - **audit-approx (G59 fits).** `approx(sin(10^30), 2×10)` = `≈ −0.685710242506`, 39 digits (right −0.0901169019121; `numeric.ts:198`). `cb445bf`; `tools/probes/text-misses.ts text-1`.
@@ -65,7 +66,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F61, no package yet.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
 - **F62, no package yet.** `sin(cosh(10!))` takes 11 s in Home; the 2 s deadline misses.
 
-- **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, [x] S18; instruments [x] G61, G62–G64, A19, S16; A22 by day; [x] A20, [x] A21 (`find/factors.yaml`; only the recipe's qalc build waits for F-Droid's answer).
+- **The hardening without a bug line** (P18–P22; brief section 0, night steps 2–6): [G75](shifts/packages/G75.md) and G56; G73, G74, G76; S17, G77, [x] S18; instruments [x] G61, G62, [x] G63, G64, A19, S16; A22 by day; [x] A20, [x] A21 (`find/factors.yaml`; only the recipe's qalc build waits for F-Droid's answer).
 
 ### Milestone 4a: feel (P11; packages and order: brief section 0)
 - **R15c1–R15c4. The R3 top cluster** (R15c1 done: the status line takes Apps, Menu and the views; R15c2 done: the round pad, U1–U6 and the editing wing; R15c3–R15c4 left) (decisions.md "R15c"): the status line takes Apps, Menu and the views; the round pad, six user keys and the editing wing; the user keys' Alpha layer; first-start tips.

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# G63: the failures the view sweep (app/scripts/viewsweep.ts, seed 20261022, 100 trees) finds today. id = "<angle> <x or interval> <keyboard LaTeX>" (a leak: "<angle> <call> <LaTeX>"),
+# check = num|cas|plot|slope|area|root|leak, package = the open backlog id whose fix removes the entry. The stage passes when its failures are exactly these.
+# F64: Home's int of tanh(sqrt(x)) leaves assume(x>0) on x. F65: Home's definite integral of asin(x)*12^x in DEG is right to 7 digits and claims 12
+# (Area is right). F66: the plot evaluator has NaN at x = 0 where Giac simplifies x/x to 1. F67: on a fresh engine (x free, no F64 assumption) Home's
+# int(tanh(sqrt(x)),x,-1,0.5) shows 0.215044234948, the real part only; the value is 0.215044234948+0.856176602730i (mpmath), Area refuses.
+known:
+  - { id: "rad area 0..1 \\tanh\\left(\\sqrt{x}\\right)", check: leak, package: F64 }
+  - { id: "deg 0..1 \\arcsin\\left(x\\right)\\times \\left(12^{x}\\right)", check: area, package: F65 }
+  - { id: "deg -1..0.5 \\arcsin\\left(x\\right)\\times \\left(12^{x}\\right)", check: area, package: F65 }
+  - { id: "rad 0 x\\times \\frac{x}{x}", check: plot, package: F66 }
+  - { id: "rad 0 \\left(x-\\pi\\right)-\\frac{x}{x}", check: plot, package: F66 }
+  - { id: "rad -1..0.5 \\tanh\\left(\\sqrt{x}\\right)", check: area, package: F67 }
