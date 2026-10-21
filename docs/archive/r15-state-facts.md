@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R15: stored names from Giac's state (S13 spike)
 
+**Status (2026-10-21): decided.** decisions.md S13, G57 (the owner, 2026-10-20): names from Giac's state; G65 merged, G66 in its package.
+
 2026-10-20, sandra (run 106), `phase-1` at `fbad08c` (G48, G51, G55 merged). Probe: `tools/probes/state-facts.ts`. **Verified** = I ran it; **(to verify)** names who checks it and how.
 
 ## The question

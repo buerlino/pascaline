@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// R24a: the slot model, one test per rule of docs/research/r9-unit-pad.md sections 2.2–2.6, the refusals with their
+// R24a: the slot model, one test per rule of docs/archive/r9-unit-pad.md sections 2.2–2.6, the refusals with their
 // i18n messages, the LaTeX and the reading (S1 guard 3), and the 50 units of tools/probes/unit-presses.mjs and every
 // expression of tools/probes/unit-weights.yaml typed as the probe's typePad types them.
 import { readFileSync } from "node:fs";

@@ -115,6 +115,7 @@ export const en = {
   "history.recall": "Use this entry again",
   "history.usesHome": "stored in Home",
   "history.usesCas": "stored in CAS",
+  "history.settingReset": "An engine setting this changed was not kept",
   "history.insert": "Put this result on the entry line",
   "error.syntax": "Syntax error",
   "error.engine": "The calculation failed",

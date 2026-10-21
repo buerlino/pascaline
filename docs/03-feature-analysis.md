@@ -83,7 +83,7 @@ Build an **engineer core** ahead of the Prime-parity apps, in three milestones (
 | Units in scalar Home expressions | Home, CAS, Solve and lists stay unit-free |
 | ENG E-notation only | **SI prefixes** in display everywhere, in entry if the benchmark shows a gain (below) |
 
-**The unit view (P11; design in docs/04 section 4.3, layout and press count in `docs/research/r7-unit-slots.md`).**
+**The unit view (P11; design in docs/04 section 4.3, layout and press count in `docs/archive/r7-unit-slots.md`).**
 - The units key (Shift + Tmpl, the reference's position) on a line or a history row shows the same formula with an empty unit slot after every number and an optional end slot "→ should be"; on an empty line, one slot. Enter gives value, unit, dimension and mark.
 - **Exact where the maths is exact.** Unit factors are exact in SI (1 in = 25.4 mm, 1 km/h = 5/18 m/s), so `72 km/h → m/s` gives exactly 20 with the `=` mark. Giac with the Find index's exact factors does this (P15; docs/04 4.1), and Home's marks apply (EN3).
 - A dimension mismatch is a plain message that names both dimensions, never a number. Uncertainty (`±`) with first-order propagation (P3 decision 4). Temperature offsets (°C, °F) get explicit rules and golden cases.

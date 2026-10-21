@@ -12,9 +12,10 @@
 import { closing, functionsIn, hasFloat, splitList, topLevelArgs, type Giac } from "./numeric.ts";
 
 /** Why a result is refused; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
-/** `undecided` (G57) comes from numeric.ts decideTwice: a decision on a cut Giac cannot make. `divisionByZero`,
- *  `overflow` and `noValue` (G78) come from novalue.ts: a value through an infinity, or a number asked for and not found. */
-export type Refusal = "integralDiverges" | "seriesDiverges" | "noLimit" | "undecided" | "divisionByZero" | "overflow" | "noValue";
+/** `undecided` (G57) comes from decisions.ts decideTwice: a decision on a cut Giac cannot make. `divisionByZero`,
+ *  `overflow` and `noValue` (G78) come from novalue.ts: a value through an infinity, or a number asked for and not found;
+ *  `underflow` (G84) too: a value that reads as 0 while Giac's exact answer is not 0. */
+export type Refusal = "integralDiverges" | "seriesDiverges" | "noLimit" | "undecided" | "divisionByZero" | "overflow" | "underflow" | "noValue";
 
 /** A check's answer: the result stands, it is refused, or the check could not finish (an error or Giac's timeout), in
  *  which case the result stands with ⚠ (nothing confirmed that it exists). */

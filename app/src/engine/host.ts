@@ -5,7 +5,6 @@
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import {
-  arrowFunction,
   definedBy,
   definitionsUsedBy,
   ENGINE_DEFINITIONS,
@@ -36,14 +35,32 @@ import { resolveAngle } from "./angleMigration.ts";
 import { callsIn, giacPair, hasDefiniteIntegral, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
-import { askedDigits, decideTwice, DOUBLE_DIGITS, restsOnDecision, notBuiltin, callsStateful, floatsShown, floatFacts, functionsIn, hasFloat, namesIn, numberLatex, perturbedDigits, shapeOf, valuePrecision, whyOf, withDigits, type ElementFacts, type Shape } from "./numeric.ts";
-import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
+import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, namesIn, numberLatex, shapeOf, valuePrecision, whyOf, withDigits } from "./numeric.ts";
+import { callsStateful, decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
+import { fnFacts, inherited, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
+import { afterCall, changesOf, parsePrinted, readPart, readsOf, splitAfter, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
+import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
 import { constUncDigits, inexactConstsIn, withConstValues, type ConstTable } from "./constUnc.ts";
 import { chipCommand, chipNameFacts, chipsIn, CHIP_PREFIX, withChipValues, type ChipFactsTable } from "./chipFacts.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
+import { FLAGS_READ, flagsExpected, isFlagName, namesFlag, namesUnreadFlag, restoreCommands } from "./flags.ts";
+
+/** G65: what the call after an input found: the names it read and stored (stateRead.ts), and Giac's settings. */
+interface AfterInput {
+  reads: InputReads;
+  /** The table after the input (when the state was read) and the names that changed or went. */
+  table: Map<string, StoredName> | null;
+  changes: { changed: string[]; removed: string[] } | null;
+  /** A setting differed from the host's and was put back. */
+  flagsChanged: boolean;
+  /** …and the user's text set it (the result says it was not kept, G67). */
+  reset: boolean;
+}
+
+const NO_READS: InputReads = { names: [], targets: [], fn: false };
 
 
 /** What the host needs from a loaded Giac module (engine/giac/wasm/api.cc). */
@@ -231,36 +248,13 @@ function indexedTarget(input: string): string | null {
   return m ? m[1]! : null;
 }
 
-/** G49f4: the input defines a function for the mark facts: `f(x):=…`, or `f:=x->…` (definedBy reads that as a variable,
- *  which the Find items keep). */
-function definesFunction(input: string): boolean {
-  return definedBy(input)?.kind === "fn" || arrowFunction(input) !== null;
-}
-
-/** A log entry that holds a function: `f(x):=…`, or a variable set to an arrow (`f:=((x)->…)`, G49f4). */
-function isFnEntry(e: DefEntry): boolean {
-  return e.kind === "fn" || (e.kind === "var" && e.cmds.some((c) => arrowFunction(c) === e.name));
-}
-
-/** Facts that together cap a value: the fewest confirmed digits, the strongest warn, never exact (G49f1). Null when
- *  `all` is empty. */
-function mergedFacts(all: readonly NameFacts[]): NameFacts | null {
-  if (!all.length) return null;
-  const capped = all.filter((f) => f.reliableDigits !== null).map((f) => f.reliableDigits!);
-  const warn = all.some((f) => f.warn === "unaudited") ? "unaudited" : all.some((f) => f.warn === "unchecked") ? "unchecked" : undefined;
-  return { reliableDigits: capped.length ? Math.min(...capped) : null, ...(warn ? { warn } : {}), inexact: true };
-}
-
-/** The shape of a numeric result (scalar, list, matrix), from its fields. */
-function shapeOfResult(r: HomeResult): Shape {
-  if (!r.items) return { kind: "scalar" };
-  return r.shape ? { kind: "matrix", rows: r.shape[0], cols: r.shape[1] } : { kind: "list", n: r.items.length };
-}
-
 /** Engine state and the synchronous operations on it. One per Giac instance. */
-export class EngineHost {
+export class EngineHost implements FactsHost {
   private modeKey = "";
-  private readonly giac: GiacApi;
+  /** G67: the Digits the current mode set (Giac's own 12 before any mode), which the settings check expects. */
+  private modeDigits = 12;
+  /** Read by facts.ts (FactsHost), as are byName, chipFacts and stored. */
+  readonly giac: GiacApi;
   /** `giac.eval` that throws GiacSyntaxError instead of quietly returning `undef` (which would
    *  otherwise leave the previous answer in place and show it again). */
   private readonly strict: { eval(input: string): string };
@@ -273,16 +267,83 @@ export class EngineHost {
   /** This engine's copy of the definitions log (defs.ts): what the user's names hold, and the mark facts of the
    *  variables that hold floats (decisions M4-7). */
   private log: DefEntry[] = [];
-  private byName = new Map<string, DefEntry>();
+  byName = new Map<string, DefEntry>();
   /** G49: the chips the current Home input holds by name (`pasr_<k>`), with the facts they lend (as a stored float's). */
-  private chipFacts = new Map<string, NameFacts>();
+  readonly chipFacts = new Map<string, NameFacts>();
+  /** G65: Giac's stored user names, read after every input that may store and after restore() (stateRead.ts). */
+  stored = new Map<string, StoredName>();
+  /** G65: the call after the current input, once it ran (home() and cas() make it when the run did not). */
+  private post: AfterInput | null = null;
 
-  /** Loads the definitions `text` mentions that are not loaded yet. Called before every input reaches Giac. */
+  /** G83: the user's functions restore() has not given to Giac yet, by name; loaded on first use (need). */
+  private pending = new Map<string, DefEntry>();
+
+  /** Loads the definitions `text` mentions that are not loaded yet: the user's pending functions (G83) and ours.
+   *  Called before every input reaches Giac. */
   need(text: string): void {
+    if (this.pending.size) this.loadPending(text);
+    this.needOurs(text);
+  }
+
+  /** Our definitions (ENGINE_DEFINITIONS, eseries) that `text` mentions and that are not loaded yet. */
+  private needOurs(text: string): void {
     for (const name of definitionsUsedBy(text)) {
       if (this.loaded.has(name)) continue;
       this.giac.eval(ENGINE_DEFINITIONS[name] ?? eseriesDefinition());
       this.loaded.add(name);
+    }
+  }
+
+  /**
+   * G83 (docs/04 6.2): every pending function whose name is a word in `text`, and, transitively, every pending function
+   * named in such a body or in the stored value of a name the text reads (`S:=(g(x))` reads g), goes to Giac in one
+   * batch. A text that lists or clears the names (VARS, expr, rm_all_vars, restart) loads them all.
+   */
+  private loadPending(text: string): void {
+    const queue = LOAD_ALL.test(text) ? [...this.pending.keys()] : wordsOf(text);
+    const seen = new Set<string>();
+    const todo: DefEntry[] = [];
+    while (queue.length) {
+      const n = queue.pop()!;
+      if (seen.has(n)) continue;
+      seen.add(n);
+      const e = this.pending.get(n) ?? this.byName.get(n);
+      if (!e || e.kind === "assume") continue;
+      if (this.pending.has(n)) todo.push(e);
+      for (const c of e.cmds) for (const w of wordsOf(c)) if (!seen.has(w)) queue.push(w);
+    }
+    if (!todo.length) return;
+    for (const e of todo) {
+      this.pending.delete(e.name);
+      this.needOurs(e.cmds[0]!);
+    }
+    for (let k = 0; k < todo.length; k += REPLAY_BATCH) {
+      const part = todo.slice(k, k + REPLAY_BATCH);
+      this.runBatch(part.map((e) => e.cmds[0]!), part.map((e) => e.name));
+    }
+    // The stored table learns the loaded names as Giac prints them, so the input's state part does not count them as
+    // its stores (G65's changesOf would log them as vars with the input's facts).
+    const node = parsePrinted(this.giac.eval(statePart(this.modeDigits)));
+    const table = node ? tableOf(node, (n) => this.byName.has(n)) : null;
+    if (table) for (const e of todo) { const t = table.get(e.name); if (t) this.stored.set(e.name, t); }
+    // the `// Success` notes and any error of the load are not the input's
+    this.giac.clearMessages();
+  }
+
+  /**
+   * G29: plain commands (`a:=1;b:=2;`) in one Giac call. One that printed an error or returned one is run again one
+   * command at a time (values and functions can be set twice), so one bad entry never takes the others down (G19).
+   */
+  private runBatch(batch: readonly string[], names: readonly string[]): void {
+    if (!batch.length) return;
+    this.giac.clearMessages();
+    const out = this.giac.eval(batch.join(";") + ";");
+    // Any message or error result: a syntax error, or a reserved name that aborts the rest of the batch (`pi:=3`).
+    if (batch.length > 1 && (/error|reserved word|not allowed/i.test(this.giac.messages()) || /^GIAC_ERROR/.test(out))) {
+      // Errors only: a warning (`declared as global`) is no reason to run twice. The names are purged first, so a
+      // rerun sees them as free again, as in the first run (G3: S:=(K*x+1) must not meet a K set by the aborted run).
+      for (const n of names) this.giac.eval(`purge(${n})`);
+      for (const c of batch) this.giac.eval(c);
     }
   }
 
@@ -308,30 +369,32 @@ export class EngineHost {
    *  Symbolic values first, while every name in them is still free (defs.ts). Returns the time it took. */
   restore(stored: readonly DefEntry[]): number {
     const t0 = performance.now();
-    const entries = this.migrated(stored);
-    // G29: values and functions go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost.
-    // Assumptions and inputs kept as typed go alone. A batch that printed an error or warning (not the `// Success` notes of functions) or returned an error is run again one command at a
-    // time (values and functions can be set twice), so one bad entry never takes the entries after it down (G19).
+    const entries = this.withoutFlags(this.migrated(stored));
+    // G83: a function (one balanced command) waits in `pending` until an input names it (need). One whose name Giac
+    // already holds is replayed now: a loaded body that calls it would otherwise meet the old definition.
+    const plain = (e: DefEntry): boolean => (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!);
+    for (const e of entries) {
+      if (e.kind !== "other") this.pending.delete(e.name);
+      if (e.kind === "fn" && plain(e) && !this.byName.has(e.name)) this.pending.set(e.name, e);
+    }
+    // G29: values go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost. Assumptions and
+    // inputs kept as typed go alone.
     let batch: string[] = [];
     let names: string[] = [];
     const flush = (): void => {
-      if (!batch.length) return;
-      this.giac.clearMessages();
-      const out = this.giac.eval(batch.join(";") + ";");
-      // Any message or error result: a syntax error, or a reserved name that aborts the rest of the batch (`pi:=3`).
-      if (batch.length > 1 && (/error|reserved word|not allowed/i.test(this.giac.messages()) || /^GIAC_ERROR/.test(out))) {
-        // Errors only: a warning (`declared as global`) is no reason to run twice. The names are purged first, so a
-        // rerun sees them as free again, as in the first run (G3: S:=(K*x+1) must not meet a K set by the aborted run).
-        for (const n of names) this.giac.eval(`purge(${n})`);
-        for (const c of batch) this.giac.eval(c);
-      }
+      this.runBatch(batch, names);
       batch = [];
       names = [];
     };
     for (const e of replayOrder(entries)) {
-      const plain = (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!);
-      for (const c of e.cmds) this.need(c); // a replayed definition may use one of ours
-      if (plain) {
+      if (this.pending.get(e.name) === e) continue;
+      // A replayed command may use one of ours, or a pending function (G83). A symbolic value is set while every
+      // name in it is still free (G3), so it loads only ours.
+      for (const c of e.cmds) {
+        if (e.early) this.needOurs(c);
+        else this.need(c);
+      }
+      if (plain(e)) {
         batch.push(e.cmds[0]!);
         names.push(e.name);
         if (batch.length >= REPLAY_BATCH) flush();
@@ -342,7 +405,79 @@ export class EngineHost {
     }
     flush();
     this.record(entries.map((e) => ({ set: e })));
+    // G67: a replayed body or command may have changed a Giac setting; G65: the table of stored names, in the same call
+    const post = this.after("", false, true);
+    this.commit(post);
+    this.otherToNames(entries, post);
     return performance.now() - t0;
+  }
+
+  /** G67: the entries without a Giac setting (a log stored before G67 holds `approx_mode:=(1)`, `Digits:=(14)`): a named
+   *  one goes from the client's log too (a purge in takeMigrated), one kept as typed is only not replayed. */
+  private withoutFlags(entries: readonly DefEntry[]): readonly DefEntry[] {
+    const flagged = entries.filter((e) => (e.kind === "other" ? e.cmds.some(namesFlag) : isFlagName(e.name)));
+    if (!flagged.length) return entries;
+    const names = flagged.filter((e) => e.kind !== "other").map((e) => e.name);
+    if (names.length) this.migratedChanges.push({ purge: names });
+    return entries.filter((e) => !flagged.includes(e));
+  }
+
+  /**
+   * G67, G65: the one call after an input (stateRead.ts afterCall): Giac's settings (flags.ts FLAGS_READ), the names
+   * the input reads by Giac's parse (`read`: skipped after a syntax error), and, when `state`, every stored user name.
+   * On a setting that differs from the host's, one more call puts every one back and the mode setup runs again on the
+   * next call. An input that names a setting the read cannot see (timeout, ckevery) gets the mode setup again too.
+   * `reset`: the user's text set one (the input names a setting, or calls a stored function whose definition does; the
+   * result says it was not kept). Giac leaks some by itself, put back without a word: a `throw` in a program leaves
+   * eval_level at 1 (our refusals in pasmedian, eseries), and `(-32)^(1/5)` leaves epsilon at 1e-60 (probe 2026-10-20).
+   * When the one call fails (an input Giac's quote cannot take), each part goes alone.
+   */
+  private after(input: string, read: boolean, state: boolean): AfterInput {
+    if (namesUnreadFlag(input)) this.modeKey = "";
+    const expected = flagsExpected(this.modeDigits);
+    const out = this.giac.eval(afterCall(FLAGS_READ, read ? input : null, state ? this.modeDigits : null));
+    const parts = isError(out) ? null : splitAfter(out);
+    const flags = parts ? parts.flags : this.giac.eval(FLAGS_READ);
+    const readNode = parts ? parts.read : read ? parsePrinted(this.giac.eval(readPart(input))) : null;
+    const stateNode = parts ? parts.state : state ? parsePrinted(this.giac.eval(statePart(this.modeDigits))) : null;
+    const flagsChanged = flags !== expected;
+    if (flagsChanged) {
+      const cmds = restoreCommands(this.modeDigits);
+      // One call; when a command in it fails (Giac stops the line there), each one again on its own, in order.
+      if (isError(this.giac.eval(cmds.join(";"))) || this.giac.eval(FLAGS_READ) !== expected) for (const c of cmds) this.giac.eval(c);
+      this.modeKey = "";
+    }
+    const reset = flagsChanged && (namesFlag(input) || [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => this.byName.get(m[0])?.cmds.some(namesFlag) === true));
+    const reads = read && readNode ? readsOf(readNode, input) : NO_READS;
+    const typed = new Set(namesIn(input));
+    const table = state && stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n)) : null;
+    this.post = { reads, table, changes: table ? changesOf(this.stored, table) : null, flagsChanged, reset };
+    return this.post;
+  }
+
+  /** The table the last call read becomes the host's (after the input's facts were taken from the one before). */
+  private commit(post: AfterInput): void {
+    if (post.table) this.stored = post.table;
+    this.post = null;
+  }
+
+  /** F58, for a log stored before G65: an "other" entry (`x:=y:=3`) outlives purge(x), purge(y). After the replay it
+   *  becomes var entries for the names the replay set that no entry holds (their names come from the table), and goes
+   *  from the log (a purge of `#<cmds>`, defs.ts); passed on through migratedChanges. One that set no new name stays. */
+  private otherToNames(entries: readonly DefEntry[], post: AfterInput): void {
+    const others = entries.filter((e) => e.kind === "other" && e.cmds.some(isStateful));
+    if (!others.length || !post.table) return;
+    const base = { preview: "", view: "cas" as const, time: Date.now() };
+    const sets: DefChange[] = [];
+    for (const name of post.changes?.changed ?? []) {
+      if (this.byName.has(name) || isFlagName(name)) continue;
+      const snap = this.snapshot(name, 12);
+      if (snap) sets.push({ set: { name, kind: "var", cmds: [snap.cmd], ...base, ...(snap.early ? { early: true } : {}) } });
+    }
+    if (!sets.length) return;
+    const changes: DefChange[] = [{ purge: others.map((e) => keyOf(e)) }, ...sets];
+    this.record(changes);
+    this.migratedChanges.push(...changes);
   }
 
   /** G46: what the last restore() changed in the entries it was given (flagged values resolved), for the client to
@@ -385,46 +520,64 @@ export class EngineHost {
     const t0 = performance.now();
     const output = this.giac.eval(input);
     const ok = !isError(output);
-    const defs = ok && isStateful(input) ? this.defsAfter(input, [input], output, null, "home", 12, undefined) : [];
+    let defs: DefChange[] = [];
+    if (ok && isStateful(input)) {
+      const post = this.after(input, true, true);
+      defs = this.defsAfter(input, [input], output, null, null, "home", 12, undefined, post);
+      this.commit(post);
+    }
     return { output, ok, engineMs: performance.now() - t0, defs };
   }
 
   /**
-   * What a stateful input changed, as entries for the definitions log (defs.ts), recorded in this engine's copy too.
-   * `ran`: the commands that redo it (kind "other" and functions); `facts`: the mark facts of the value it stored;
-   * `angle`: the mode a variable was stored in (G34), recorded with it when known.
+   * What an input that may store changed, as entries for the definitions log (defs.ts), recorded in this engine's copy
+   * too. G65: the names come from Giac's state (`post`, the call after the input): every name whose stored text changed
+   * or appeared, and every name a top-level store sets (its value may print as before: sto(F,pB) over pB:=899450126402),
+   * is a variable set again from its value (`snapshot`), or the function `f(x):=…` defines (replayed as `ran`); a name
+   * that went, or that `purge(…)` names, is purged. `facts`: what a variable takes (storedFacts' rule), `fn`: what the
+   * function takes; `angle`: the mode a variable was stored in (G34), recorded with it when known.
    */
-  private defsAfter(input: string, ran: string[], preview: string, facts: NameFacts | null, view: "home" | "cas", digits: number, angle: "rad" | "deg" | undefined): DefChange[] {
+  private defsAfter(input: string, ran: string[], preview: string, facts: NameFacts | null, fn: NameFacts | null, view: "home" | "cas", digits: number, angle: "rad" | "deg" | undefined, post: AfterInput): DefChange[] {
     const base = { preview: dropAngleFactor(preview.trim()).slice(0, PREVIEW_MAX), view, time: Date.now() };
     const purge = /^\s*purge\s*\(([^()]*)\)\s*$/.exec(input);
-    let changes: DefChange[];
-    const names = purge ? purge[1]!.split(",").map((x) => x.trim()) : [];
+    const purged = purge ? purge[1]!.split(",").map((x) => x.trim()).filter((n) => IDENT_NAME.test(n)) : [];
+    const gone = [...new Set([...purged, ...(post.changes?.removed ?? [])])];
     const assume = /^\s*(assume|additionally)\s*\(\s*([A-Za-z][A-Za-z0-9_]*)/.exec(input);
-    const asg = simpleAssignment(input);
-    const target = asg && isStateful(asg.rhs) ? undefined : (definedBy(input) ?? (indexedTarget(input) ? { name: indexedTarget(input)!, kind: "var" as const } : undefined));
-    // G48: `[a,b]:=…` and `a,b:=…` set each name as a variable, with the facts of the value stored.
-    const list = target ? null : storeTargets(input);
-    const many = list && (list.form === "[]:=" || list.form === ",:=") && !isStateful(list.read) ? list.names : null;
-    if (purge && names.length && names.every((n) => IDENT_NAME.test(n))) changes = [{ purge: names }];
-    else if (assume) {
+    const def = definedBy(input);
+    // A state that could not be read: the names the parse or the text says it sets.
+    const changed = post.table
+      ? [...new Set([...(post.changes?.changed ?? []), ...post.reads.targets.filter((n) => post.table!.has(n))])]
+      : [...new Set([...post.reads.targets, ...(def ? [def.name] : [])])];
+    let changes: DefChange[] = gone.length ? [{ purge: gone }] : [];
+    if (assume) {
       const name = assume[2]!;
       const prev = this.byName.get(name);
       const cmds = assume[1] === "additionally" && prev?.kind === "assume" ? [...prev.cmds, ...ran] : ran;
-      changes = [{ set: { name, kind: "assume", cmds, ...base } }];
-    } else if (target?.kind === "fn") changes = [{ set: { name: target.name, kind: "fn", cmds: ran, ...(facts ? { facts } : {}), ...base } }];
-    else if (target?.kind === "var") {
-      const snap = this.snapshot(target.name, digits);
-      changes = snap
-        ? [{ set: { name: target.name, kind: "var", cmds: [snap.cmd], ...storedFacts(facts, snap.float), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }]
-        : [{ purge: [target.name] }];
-    } else if (many) {
-      changes = many.map((name): DefChange => {
-        const snap = this.snapshot(name, digits);
-        return snap
+      changes.push({ set: { name, kind: "assume", cmds, ...base } });
+    }
+    for (const name of changed) {
+      if (def?.kind === "fn" && def.name === name) {
+        changes.push({ set: { name, kind: "fn", cmds: ran, ...(fn ? { facts: fn } : {}), ...base } });
+        continue;
+      }
+      const snap = this.snapshot(name, digits);
+      changes.push(
+        snap
           ? { set: { name, kind: "var", cmds: [snap.cmd], ...storedFacts(facts, snap.float), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }
-          : { purge: [name] };
-      });
-    } else changes = [{ set: { name: "", kind: "other", cmds: ran, ...base } }];
+          : { purge: [name] },
+      );
+    }
+    // G67: a Giac setting is never a user's name, in any form (`approx_mode:=(1)`, `Digits:=(14)`, `purge(epsilon)`), and
+    // an input kept as typed that sets one is not kept (the check after the call has put the setting back)
+    changes = changes.flatMap((c): DefChange[] => {
+      if ("purge" in c) {
+        const kept = c.purge.filter((n) => !isFlagName(n));
+        return kept.length ? [{ purge: kept }] : [];
+      }
+      return isFlagName(c.set.name) || (c.set.kind === "other" && namesFlag(input)) ? [] : [c];
+    });
+    // G83: a new definition or a purge of a pending name: the old definition never comes back
+    for (const c of changes) for (const n of "purge" in c ? c.purge : [c.set.name]) this.pending.delete(n);
     this.record(changes);
     return changes;
   }
@@ -440,139 +593,6 @@ export class EngineHost {
     const float = hasFloat(t);
     const early = namesIn(t).some((n) => !CONSTANT_NAMES.has(n));
     return { cmd: `${name}:=(${float ? floatsAsEvalf(t) : t})`, float, early };
-  }
-
-  /**
-   * Decisions M4-7: a numeric result computed from stored variables that hold floats (or inexact values, G49), or from
-   * chips named in the input (G49), inherits their facts. Its
-   * confirmed digits are at most theirs, its warn is theirs, and it is never exact; when the input can be run again
-   * (`expr`, decimals exact) and is more than the bare name, it is checked once more with each variable moved in its
-   * last confirmed digit, which catches a cancellation (B-0.7468 with B known to 13 digits).
-   */
-  private inherited(r: HomeResult, input: string, expr: string | null, digits: number, restoreDigits: number): HomeResult {
-    if (!r.ok || (!r.value && !r.items)) return r;
-    // G49f1, G49f3: a called function lends the facts it stored and those of the names its body holds now (it is never
-    // moved).
-    const seen = new Set<string>();
-    const called = functionsIn(input).flatMap((name) => {
-      const facts = this.callFacts(name, seen);
-      return facts ? [{ name, facts, fn: true }] : [];
-    });
-    // G49f4: an arrow function named without a call (passed on) lends its facts too, and is never moved.
-    const used = namesIn(input)
-      .map((name) => {
-        const e = this.byName.get(name);
-        if (e && isFnEntry(e)) return { name, facts: this.callFacts(name, seen) ?? undefined, fn: true };
-        return { name, facts: e?.facts ?? this.chipFacts.get(name), fn: false };
-      })
-      .filter((u): u is { name: string; facts: NameFacts; fn: boolean } => u.facts !== undefined)
-      .concat(called);
-    if (!used.length) return r;
-    const P = valuePrecision(digits);
-    const els = r.items ?? [r];
-    const cap = used.reduce((n, u) => (u.facts.reliableDigits === null ? n : Math.min(n, u.facts.reliableDigits)), P);
-    const warn = used.some((u) => u.facts.warn === "unaudited") ? "unaudited" : used.some((u) => u.facts.warn === "unchecked") ? "unchecked" : undefined;
-    const moved = used.filter((u) => !u.fn && u.facts.reliableDigits !== null).map((u) => ({ name: u.name, n: u.facts.reliableDigits! }));
-    const shape = shapeOfResult(r);
-    let pert: number[] | null | undefined;
-    let once = false;
-    if (expr !== null && moved.length && !IDENT_NAME.test(expr.trim())) {
-      pert = perturbedDigits(this.giac, expr, shape, els.map((e) => e.value!), moved, digits, restoreDigits);
-    }
-    const facts: ElementFacts[] = els.map((e, k) => {
-      let n = Math.min(e.reliableDigits ?? P, cap);
-      if (pert) n = Math.min(n, pert[k]!);
-      const w = warn ?? e.warn ?? (pert === null ? "unchecked" : undefined);
-      if (pert === null && !warn && !e.warn) once = true;
-      return { value: e.value!, exactRational: false, reliableDigits: n, ...(w ? { warn: w } : {}), big: false };
-    });
-    const b = resultFromFacts(facts, shape, digits, r.path, true, r.totalMs);
-    // Only the names behind a ⚠: one with a warning, or one known to fewer digits than the setting shows.
-    const lost = pert ? pert.some((d) => d < digits) : false;
-    const causes = used
-      .filter((u) => u.facts.warn !== undefined || (u.facts.reliableDigits !== null && (u.facts.reliableDigits < digits || lost)))
-      .map((u) => u.name);
-    const why = { ...(r.why ?? {}), ...(causes.length ? { inherited: causes } : {}), ...(once ? { once: true as const } : {}) };
-    return {
-      ...b,
-      ...(Object.keys(why).length ? { why } : {}),
-      ...(r.exact !== undefined ? { exact: r.exact } : {}),
-      ...(r.defined ? { defined: r.defined } : {}),
-      ...(r.digits !== undefined ? { digits: r.digits } : {}),
-      exactMs: r.exactMs,
-    };
-  }
-
-  /**
-   * G49f1: the facts a function keeps when its definition `input` held an inexact chip or constant (`lent`, put in as
-   * values), or its body names a stored variable or calls a function that has facts: not limited in digits unless
-   * those names cap it, their warn, and never exact. Null when nothing in it is inexact.
-   */
-  private fnFacts(input: string, lent: readonly NameFacts[]): NameFacts | null {
-    const def = definedBy(input)?.name;
-    return mergedFacts([...lent, ...this.bodyFacts(input, def, new Set(def ? [def] : []))]);
-  }
-
-  /**
-   * G48 (rule 2): the facts a stored name takes. A store in any form (`:=`, `[a,b]:=`, `a,b:=`, `=>`, `sto`, `L[k]:=`)
-   * keeps at least the weakest facts of the names and chips (`lent`) its input read, whatever the value prints as, a
-   * function from `unapply` included (a call inherits them, as for a fn entry). `own`: the facts of the stored value.
-   */
-  private storeFacts(input: string, own: NameFacts | null, lent: readonly NameFacts[]): NameFacts | null {
-    const t = storeTargets(input);
-    if (!t) return own;
-    const read = [...lent, ...this.bodyFacts(t.read, undefined, new Set())];
-    return read.length ? mergedFacts([...(own ? [own] : []), ...read]) : own;
-  }
-
-  /** G49f3: the facts of the names a definition's body (`input`, its parameters masked) holds now: stored variables
-   *  with facts, and called functions by `callFacts`. `def` (the function itself) is skipped; `seen` ends recursion. */
-  private bodyFacts(input: string, def: string | undefined, seen: Set<string>): NameFacts[] {
-    const body = maskBound(input);
-    const vars = namesIn(body).flatMap((n) => {
-      const e = this.byName.get(n);
-      if (n === def || !e) return [];
-      const f = isFnEntry(e) ? this.callFacts(n, seen) : e.facts;
-      return f ? [f] : [];
-    });
-    const fns = functionsIn(body).flatMap((n) => {
-      const f = n === def ? null : this.callFacts(n, seen);
-      return f ? [f] : [];
-    });
-    return [...vars, ...fns];
-  }
-
-  /**
-   * G51: the facts a CAS result without a float takes from what its input read: the stored variables with facts its
-   * (bound names masked) text holds and the functions with facts it calls or names (`callFacts`), merged. `causes`: the
-   * names behind a warn (for why.inherited). Null when nothing it read is inexact, and for inputs that store no value
-   * (a function definition, purge, assume): those read names without showing a value from them.
-   */
-  private readFacts(input: string): { facts: NameFacts; causes: string[] } | null {
-    if (definesFunction(input) || /^\s*(purge|assume|additionally)\s*\(/.test(input)) return null;
-    const body = maskBound(storeTargets(input)?.read ?? input);
-    const seen = new Set<string>();
-    const read = new Map<string, NameFacts>();
-    for (const n of [...namesIn(body), ...functionsIn(body)]) {
-      const e = this.byName.get(n);
-      if (!e || read.has(n)) continue;
-      const f = isFnEntry(e) ? this.callFacts(n, seen) : e.facts;
-      if (f) read.set(n, f);
-    }
-    const facts = mergedFacts([...read.values()]);
-    if (!facts) return null;
-    return { facts, causes: [...read].filter(([, f]) => f.warn !== undefined).map(([n]) => n) };
-  }
-
-  /** G49f3: the facts a call to the stored function `name` lends: the facts its entry stored at definition (chips and
-   *  constants lent then) merged with those of the names its body holds now. Null when it is no function (`f(x):=` or
-   *  an arrow, G49f4), already visited (`seen`), or nothing in it is inexact. */
-  private callFacts(name: string, seen: Set<string>): NameFacts | null {
-    const e = this.byName.get(name);
-    if (!e || !isFnEntry(e) || seen.has(name)) return null;
-    seen.add(name);
-    const cmd = e.cmds.find((c) => definedBy(c)?.name === name || arrowFunction(c) === name) ?? e.cmds[0];
-    return mergedFacts([...(e.facts ? [e.facts] : []), ...(cmd !== undefined ? this.bodyFacts(cmd, name, seen) : [])]);
   }
 
   /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). */
@@ -592,6 +612,15 @@ export class EngineHost {
    * Without the tables, nothing changes.
    */
   home(input: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
+    this.post = null;
+    const out = this.homeTabled(input, s, consts, chips);
+    // G67, G65: the call after the input, if the run did not make it (an error: a syntax error ran nothing)
+    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && (isStateful(input) || callsStateful(this.giac, input)));
+    this.commit(post);
+    return post.reset ? { ...out, result: { ...out.result, settingReset: true } } : out;
+  }
+
+  private homeTabled(input: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
     if (!consts && !chips) return this.homeRun(input, s, false);
     const asg = simpleAssignment(input);
     const stateful = isStateful(input);
@@ -610,7 +639,8 @@ export class EngineHost {
     }
     try {
       const out = this.homeRun(consts ? withConstValues(named, consts) : named, s, inexactIn, lent);
-      if (!consts || (stateful && !asg)) return out;
+      // A setting the input changed was put back after its run: it is not run again (G67).
+      if (!consts || (stateful && !asg) || this.post?.flagsChanged) return out;
       const body = asg ? simpleAssignment(named)!.rhs : named;
       const n = constUncDigits(this.giac, body, consts, out.result, Math.trunc(out.result.digits ?? s.digits));
       return n === undefined ? out : { ...out, result: { ...out.result, uncDigits: n } };
@@ -642,23 +672,30 @@ export class EngineHost {
     // self-reference (B:=B*2) already overwrote B, and other stateful inputs cannot run again, so neither is moved.
     const asg = simpleAssignment(input);
     const body = asg ? asg.rhs : input;
-    const rerun = (asg ? !namesIn(asg.rhs).includes(asg.name) : !isStateful(input)) && !callsStateful(this.strict, body);
-    result = this.inherited(result, body, rerun ? toExactLiterals(body) : null, Math.trunc(s.digits), Math.trunc(s.digits));
+    const stateful = isStateful(input);
+    const once = asg ? namesIn(asg.rhs).includes(asg.name) : stateful;
+    const storing = !once && callsStateful(this.strict, body);
+    // G65: the call after the input: Giac's settings, the names it read, and the stored names when it may have stored
+    const post = this.after(input, true, stateful || storing);
+    const rerun = !once && !storing && !post.flagsChanged;
+    const digits = Math.trunc(s.digits);
+    result = inherited(this, result, post.reads, rerun ? toExactLiterals(body) : null, digits, digits);
     let defs: DefChange[] = [];
-    if (isStateful(input)) {
+    if (stateful || storing) {
       // Replay the form that actually ran: exact for the exact paths, floats for the fallbacks.
       const ran =
         result.path === "exact" || result.path === "exact-big"
           ? [toExactLiterals(input)]
           : [`Digits:=${s.workDigits}`, input, `Digits:=${s.digits}`];
       // G49: an inexact input, or a result shown with ⚠ (G38's decision that did not hold), stores a value that is not
-      // exact even when it prints as an exact rational.
-      const fn = definesFunction(input);
-      const facts = fn ? this.fnFacts(input, lent) : EngineHost.factsOf(result, Math.trunc(s.digits));
+      // exact even when it prints as an exact rational. G65: a stored name also takes the facts of what the input read.
+      const read = readsFacts(this, post.reads).facts;
+      const fn = post.reads.fn;
+      const facts = fn ? fnFacts(lent, read) : EngineHost.factsOf(result, digits);
       const inexact = !fn && facts !== null && (inexactIn || result.warn !== undefined);
       // G48: a symbolic value's facts count only when they say it is not exact (a float in it, a ⚠).
       const own = inexact ? { ...facts, inexact: true as const } : result.value || result.items ? facts : null;
-      defs = this.defsAfter(input, ran, result.display, fn ? facts : this.storeFacts(input, own, lent), "home", Math.trunc(s.digits), s.angle);
+      defs = this.defsAfter(input, ran, result.display, storeFacts(own, lent, read), fn ? facts : null, "home", digits, s.angle, post);
     }
     return { result, defs };
   }
@@ -683,14 +720,19 @@ export class EngineHost {
 
   cas(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     const used = this.usesOf(input);
+    this.post = null;
     const out = this.casRun(input, s);
     if (used.length && out.result.ok) out.result.uses = used;
+    // G67, G65: the call after the input, if the run did not make it (an error or a refusal)
+    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && (isStateful(input) || callsStateful(this.giac, input)));
+    this.commit(post);
+    if (post.reset) out.result.settingReset = true;
     return out;
   }
 
   private casRun(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     this.need(input);
-    this.useMode(`cas${JSON.stringify(s)}`, () => {
+    this.useMode(`cas${JSON.stringify(s)}`, s.digits, () => {
       for (const c of casSetupCommands(s)) this.giac.eval(c);
       this.giac.setPowLimit(s.powLimit);
     });
@@ -720,7 +762,17 @@ export class EngineHost {
       if (e instanceof GiacSyntaxError) return fail(e.message, "syntax");
       throw e;
     }
-    if (isError(text)) return fail(text, isTimeout(text) ? "timeout" : "engine");
+    if (isError(text)) {
+      // G71 (F59): no MPFR value at P (a decision over BesselJ): an expression that stores nothing is decided at the double,
+      // with ⚠, as in Home. An assignment keeps the error (its definitions-log entry would hold a double).
+      const dbl = isTimeout(text) || asg0 || isStateful(input) || callsStateful(this.giac, input) ? null : decidedAtDouble(this.giac, "pcasans", body, digitsSet);
+      if (dbl === null) return fail(text, isTimeout(text) ? "timeout" : "engine");
+      const why = { unaudited: unauditedIn(body) };
+      const engineMs = performance.now() - t0;
+      if ("text" in dbl) return { result: { ok: true, text: dbl.text, latex: dbl.text, timedOut: false, engineMs, approximate: true, warn: "unaudited", why }, defs: [] };
+      const numeric = { ...resultFromFacts(dbl.facts, dbl.shape, digitsSet, "numeric", true, engineMs), why };
+      return { result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs, numeric }, defs: [] };
+    }
     const stateful = isStateful(input);
     // A call to a stored function that stores (inc(x):={c:=c+1;c}) must not run again either, assigned or not.
     const storing = callsStateful(this.giac, input);
@@ -766,11 +818,15 @@ export class EngineHost {
     // A check that could not finish: the result stands with ⚠ (its numeric facts, or the text's mark).
     const unverified = refused === "unchecked";
     const pair = !single && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
+    // G65: the call after the input (its checks above ran it again; nothing after this does but print the result).
+    const after = (): AfterInput => this.after(input, true, single);
     // G49f3: a function defined here keeps the facts of the names its body holds, as in Home (fnFacts).
-    const defsOf = (preview: string, facts: NameFacts | null): DefChange[] =>
-      stateful
-        ? this.defsAfter(input, [exactInput], preview, definesFunction(input) ? this.fnFacts(input, facts ? [facts] : []) : this.storeFacts(input, facts, []), "cas", Math.trunc(s.digits), s.angle)
-        : [];
+    const defsOf = (post: AfterInput, preview: string, facts: NameFacts | null): DefChange[] => {
+      if (!single) return [];
+      const read = readsFacts(this, post.reads).facts;
+      const fn = post.reads.fn ? fnFacts(facts ? [facts] : [], read) : null;
+      return this.defsAfter(input, [exactInput], preview, storeFacts(facts, [], read), fn, "cas", Math.trunc(s.digits), s.angle, post);
+    };
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
     // `evalf(e,n)` alone is shown with the n digits it asks for, checked at that precision (decisions M4-6).
     const shape = hasFloat(text) && !pair ? shapeOf(text) : null;
@@ -785,10 +841,11 @@ export class EngineHost {
         const body = asg ? asg.rhs : input;
         const why = whyOf(facts, single ? null : exactInput);
         if (why) numeric.why = why;
-        numeric = this.inherited(numeric, body, single ? null : exactInput, digits, Math.trunc(s.digits));
+        const post = after();
+        numeric = inherited(this, numeric, post.reads, single || post.flagsChanged ? null : exactInput, digits, Math.trunc(s.digits));
         return {
           result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },
-          defs: defsOf(numeric.display, EngineHost.factsOf(numeric, Math.trunc(s.digits))),
+          defs: defsOf(post, numeric.display, EngineHost.factsOf(numeric, Math.trunc(s.digits))),
         };
       }
     }
@@ -805,9 +862,12 @@ export class EngineHost {
     const unchecked = hasFloat(text) || undecided || unverified;
     // G51: a result without a float that read a stored name, or called a function, with facts takes their warn and
     // why.inherited, as `inherited` does for a number; one built from exact names stays unmarked.
-    const read = this.readFacts(input);
-    const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked || read !== null;
-    const own = decided?.warn ?? (unchecked ? "unchecked" : undefined);
+    const post = after();
+    const read = readFacts(this, input, post.reads);
+    // G71 (N7): Giac's two-argument round and trunc work in a double; the integer trunc(x,0) prints is not exact.
+    const doubled = doubleFormsIn(exactInput).length > 0;
+    const approximate = (test && this.giac.eval(EQ_INEXACT_FLAG) === "1") || unchecked || doubled || read !== null;
+    const own = decided?.warn ?? (doubled ? "unaudited" : unchecked ? "unchecked" : undefined);
     const warn = own === "unaudited" || read?.facts.warn === "unaudited" ? "unaudited" : (own ?? read?.facts.warn);
     const symWhy = symbolicWhy(own, testSides(exactInput));
     // G38: "decided at limited precision"; the value was computed, not compared, so `once` is not said.
@@ -832,29 +892,35 @@ export class EngineHost {
         ...(warn ? { warn } : {}),
         ...(why ? { why } : {}),
       },
-      defs: defsOf(shown, unchecked ? { reliableDigits: null, warn: "unchecked", inexact: true } : null),
+      defs: defsOf(post, shown, unchecked ? { reliableDigits: null, warn: "unchecked", inexact: true } : null),
     };
   }
 
   solve(req: SolveRequest, s: HomeSettings): SolveOutcome {
-    this.need(JSON.stringify(req));
+    // G83f1: the request's expressions only (its keys and JSON would name a pending function or match LOAD_ALL)
+    this.need(expressionsOf(req.kind === "poly" ? [req.equation] : req.equations, req.knowns?.map((k) => k.value)));
     this.useSolveMode(s);
+    // G65: no read of the stored names after it: Solve puts back the very values it freed (solve.ts withUnassigned)
     return solveRequest(this.giac, req, s);
   }
 
   unknowns(equations: string[]): string[] {
+    this.need(equations.join(";"));
     return unknownsOf(this.giac, equations);
   }
 
   analyze(req: AnalysisRequest, s: HomeSettings): AnalysisResult {
-    this.need(JSON.stringify(req));
+    const r = req as Partial<Record<"f" | "g" | "x0" | "lo" | "hi" | "a" | "b", string>>;
+    this.need(expressionsOf([r.f, r.g, r.x0, r.lo, r.hi, r.a, r.b]));
     this.useSolveMode(s);
+    // G65: it stores only our own pas* names, so the table of stored names stays as it is
     return analyze(this.giac, req, s);
   }
 
   /** The unit view (G16, docs/04 4.2): in Home's mode (angle, budget, digits), with our unit definitions loaded on the
    *  first request. A syntax error or a timeout is an engine error, never a value. */
   units(job: UnitJob, s: HomeSettings): Quantity | UnitError {
+    this.need(expressionsOf([job.expr, job.check, job.end]));
     if (!this.unitsLoaded) {
       for (const d of UNIT_DEFINITIONS) this.giac.eval(d);
       this.unitsLoaded = true;
@@ -870,13 +936,13 @@ export class EngineHost {
 
   /** Num table cells are Home evaluations, in Home mode (same budget per cell). */
   table(req: TableRequest, s: HomeSettings): HomeResult[][] {
-    this.need(JSON.stringify(req));
+    this.need(expressionsOf(req.fns));
     this.useHomeMode(s);
     return table(this.giac, req, s);
   }
 
   private useHomeMode(s: HomeSettings): void {
-    this.useMode(`home${JSON.stringify(s)}`, () => {
+    this.useMode(`home${JSON.stringify(s)}`, s.digits, () => {
       for (const c of homeSetupCommands(s)) this.giac.eval(c);
       this.giac.eval(`Digits:=${Math.trunc(s.digits)}`);
       this.giac.setPowLimit(s.powLimit);
@@ -884,7 +950,7 @@ export class EngineHost {
   }
 
   private useSolveMode(s: HomeSettings): void {
-    this.useMode(`solve${JSON.stringify(s)}`, () => {
+    this.useMode(`solve${JSON.stringify(s)}`, s.digits, () => {
       this.giac.eval(angleCommand(s.angle));
       this.giac.eval(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
       this.giac.eval("ckevery 10");
@@ -893,24 +959,29 @@ export class EngineHost {
     });
   }
 
-  private useMode(key: string, apply: () => void): void {
+  private useMode(key: string, digits: number, apply: () => void): void {
     if (key === this.modeKey) return;
     apply();
     this.modeKey = key;
+    this.modeDigits = Math.trunc(digits);
   }
-}
-
-/** The facts a stored variable keeps (M4-7, G49): a float's as they are (its value shows it is not exact), a value that
- *  prints exactly only when they say it is not exact. */
-function storedFacts(facts: NameFacts | null, float: boolean): { facts?: NameFacts } {
-  if (!facts) return {};
-  if (!float) return facts.inexact ? { facts } : {};
-  const { inexact: _, ...rest } = facts;
-  return { facts: rest };
 }
 
 /** Commands per Giac call in a replay (G29; tools/probes/replay-cost.mjs: 10–50 are as fast, 200 in one call is not). */
 export const REPLAY_BATCH = 25;
+
+/** G83: inputs that list or clear the user's names: every pending function is loaded first. */
+const LOAD_ALL = /\b(VARS|expr|rm_all_vars|restart)\b/;
+
+/** G83f1: the expression strings of a request, for need(): one per line, the absent ones left out. */
+function expressionsOf(...lists: (readonly (string | undefined)[] | undefined)[]): string {
+  return lists.flatMap((l) => l ?? []).filter((t): t is string => t !== undefined).join("\n");
+}
+
+/** The distinct identifiers in `text`. */
+function wordsOf(text: string): string[] {
+  return [...new Set(text.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [])];
+}
 
 /** Brackets and quotes pair up: a command with a stray one would swallow what follows it in a batch. */
 function balanced(cmd: string): boolean {

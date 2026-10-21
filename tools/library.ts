@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// The laptop side of the library file (docs/research/r10-connector.md section 4): the same check and import as the app
+// The laptop side of the library file (docs/archive/r10-connector.md section 4): the same check and import as the app
 // (app/src/engine/library.ts) on the real engine in Node.
 //   node tools/library.ts check <file>              # refuse as the phone would; print each definition and its tests
 //   node tools/library.ts run <file> <expr>...      # import, then evaluate the expressions on the result

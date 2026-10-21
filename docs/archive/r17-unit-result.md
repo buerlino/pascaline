@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R17: The unit result view, decided from the evaluator (package S11, 2026-10-20)
 
+**Status (2026-10-21): decided.** decisions.md M4-2 (the owner, 2026-10-20): the unit result view as its mockup; packages R60, R61, R62, R63.
+
 sandra, for the owner and for packages R60–R63. The bundle named this note `r14-unit-result.md`; R14 is the angle-mode note ([r14-angle-mode.md](r14-angle-mode.md)) and R16 is taken in `phase-1`, so it is R17. What the unit view shows after Enter: value, mark, unit, dimension, one-tap alternatives, `units.targets`, σ with its ⚠, the notes, refusals, and the `\res` chip back to Home. docs/04 4.3 ("Result", "The way back") sets the frame. This note fills in what it leaves open and checks it against the real evaluator. The probe: `node tools/probes/unit-result.ts` (`buildJob` and `EngineHost.units` with the Find index's factors, as the golden gate's units stage does). Presses: `node tools/probes/unit-presses.mjs --pad [--taps]`. Engine `engine/giac/_out/gsl`; index from `phase-1`'s `app/src/find/_gen/find-index.json` (1861 items, 441 units).
 
 ## 0. Answer

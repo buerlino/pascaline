@@ -66,7 +66,7 @@ const opInsert = (n) => `\\operatorname{${latexName(n)}}\\left(#?\\right)`;
  *  instruction or a reserved word (`lp_integer`, `Digits`, `for`, `then`). */
 const NOT_A_FUNCTION = /^(Options? (of|for|that|to)\b|Global option|Pseudo-variable|Reserved word|Instruction in a program|In a program,|Used in an? |Loop:|Test:)/;
 
-function giacFunctions(aide, curated, exclude) {
+function giacFunctions(aide, curated, exclude, notes) {
   const all = parseAide(aide);
   const excluded = new Set(Object.values(exclude ?? {}).flat());
   let dropped = 0;
@@ -114,6 +114,12 @@ function giacFunctions(aide, curated, exclude) {
     });
   }
   for (const n of excluded) if (!byName.has(n) && !all.some((e) => e.names.includes(n))) fail(`find/functions.yaml exclude: no Giac command ${n}`);
+  // G67: our line for the commands that change the engine's state on purpose
+  for (const [n, desc] of Object.entries(notes ?? {})) {
+    const it = items.get(`fn:${n}`);
+    if (!it) fail(`find/functions.yaml notes: no Find item fn:${n}`);
+    else it.desc = desc;
+  }
   return { items: [...items.values()], entries: all.length, dropped, skipped };
 }
 
@@ -138,7 +144,7 @@ for (const f of curated) {
 
 const t0 = performance.now();
 const giacTar = tarball(SOURCES.giac);
-const fns = giacFunctions(member(giacTar, "giac-2.1.0/doc/aide_cas"), curated, fnFile.exclude);
+const fns = giacFunctions(member(giacTar, "giac-2.1.0/doc/aide_cas"), curated, fnFile.exclude, fnFile.notes);
 let items = [...fns.items];
 let qstats = null;
 
@@ -171,7 +177,7 @@ for (const it of items) {
 if (new Set(items.map((i) => i.id)).size !== items.length) fail("duplicate ids");
 
 // field order of the schema (docs/04 3.3)
-const ORDER = ["id", "kind", "names", "title", "desc", "syntax", "example", "value", "unc", "unit", "dim", "si", "tier", "insert"];
+const ORDER = ["id", "kind", "names", "title", "desc", "syntax", "example", "value", "unc", "unit", "dim", "basis", "basisLeaves", "si", "tier", "insert"];
 items = items.map((it) => Object.fromEntries(ORDER.filter((k) => it[k] !== undefined).map((k) => [k, it[k]])));
 
 if (problems.length) {
@@ -190,6 +196,7 @@ console.log(`find-index: ${json.length} bytes raw, ${gz} bytes gzip, ${(performa
 if (qstats) {
   console.log(`find-index: qalc: ${qstats.units} units (${qstats.composites} composites), ${qstats.prefixes} prefixes, ${qstats.consts} constants; ` +
     `${qstats.unitsSkipped.length} units and ${qstats.constsSkipped.length} constants skipped, ${qstats.noSi.length} units without si, ${qstats.siChecked} values checked against definitions, ${qstats.overrides.length} overridden`);
+  console.log(`find-index: ${items.filter((i) => i.basis).length} constants carry a basis; ${qstats.noBasis.length} without: ${qstats.noBasis.join("; ")}`);
   if (VERBOSE) {
     console.log(`  units skipped: ${qstats.unitsSkipped.join(", ")}`);
     console.log(`  constants skipped: ${qstats.constsSkipped.join(", ")}`);

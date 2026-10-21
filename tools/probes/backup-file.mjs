@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Probe (S6, docs/research/r11-files.md): the backup file and how a file goes in and out of the app.
+// Probe (S6, docs/archive/r11-files.md): the backup file and how a file goes in and out of the app.
 //   node tools/probes/backup-file.mjs            # sizes at the limits, the restore checks, then the Chromium checks
 //   node tools/probes/backup-file.mjs --size     # sizes and the restore checks only (no browser)
 // 1. Size: a backup in r11's format with every stored key at its limit (200 history rows per view, 500 definitions),

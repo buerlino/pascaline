@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Probe (S4, docs/research/r10-connector.md): the proposed function-library file, checked against the real engine host.
+// Probe (S4, docs/archive/r10-connector.md): the proposed function-library file, checked against the real engine host.
 //   node tools/probes/library.ts check <file>   # read, check, define (through cas(), as if typed in CAS), run the tests
 //   node tools/probes/library.ts replay          # replay time of 200 definitions: the ?bench=defs mix and 200 programs
 //   node tools/probes/library.ts export          # define a sample as typed, write the log back out as a library, re-check it

@@ -5,10 +5,12 @@
 import { homeEval, toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
 import { num, solve1, type SolveSettings } from "./solve1.ts";
 import { numericResult, SECOND_POLISH, SOLVE_HARD_TIMEOUT_S, solveSettingsFor, withUnassigned } from "./solve.ts";
+import { IDENT, type AnalysisRequest, type AnalysisResult, type TableRequest } from "./types.ts";
+import { refusalOf } from "./converge.ts";
+import { enEngine } from "../i18n/enEngine.ts";
 
 /** Time Giac may spend on an exact definite integral when Romberg did not converge (seconds). */
 const EXACT_INT_S = 0.5;
-import { IDENT, type AnalysisRequest, type AnalysisResult, type TableRequest } from "./types.ts";
 
 /** Home's answer variable: analysis must not change what Ans means in Home. */
 function keepingAns<T>(giac: Giac, fn: () => T): T {
@@ -158,29 +160,47 @@ function run(giac: Giac, req: AnalysisRequest, v: string, h: HomeSettings, t0: n
       const A = `exact(${ex(req.a)})`;
       const B = `exact(${ex(req.b)})`;
       const rom = ev(`pasar:=romberg(${integrand},${v},${A},${B})`);
-      if (!/^\[/.test(rom) && num(rom) === undefined) return failed("no-root", `the integral does not converge (${rom})`, "romberg", t0);
+      // undef: Romberg sampled a point where the integrand is undefined (ln x at 0); that says nothing about
+      // convergence, so it takes the same path as "not converged" and only Home's refusals (converge.ts) refuse (G70).
+      const noNumber = !/^\[/.test(rom) && num(rom) === undefined;
       ev(`Digits:=${s.digits}`);
       const gqText = ev(`pasgq:=evalf(gaussquad(${integrand},${v},${A},${B}))`);
       const gq = num(gqText);
       ev(`Digits:=${W}`);
+      /** Home's refusal for this integral given Giac's exact answer (converge.ts), or null. */
+      const refusedBy = (exact: string): "integralDiverges" | "unchecked" | null => {
+        const r = refusalOf(giac, `int(${integrand},${v},${A},${B})`, exact, true);
+        return r === "integralDiverges" || r === "unchecked" ? r : null;
+      };
       let method = "romberg";
       let info = "Romberg";
       let warn = false;
-      if (/^\[/.test(rom)) {
+      if (/^\[/.test(rom) || noNumber) {
+        const why = noNumber ? "Romberg found no value" : "Romberg did not converge";
         ev(`timeout ${EXACT_INT_S}`);
         const exact = ev(`pasex:=int(${integrand},${v},${A},${B})`);
         ev(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
         const exv = !exact.startsWith("GIAC_ERROR") && !/integrate|int\(|undef|infinity/.test(exact) ? num(ev(`evalf(pasex,${W})`)) : undefined;
-        if (exv !== undefined) {
+        const refused = refusedBy(exact);
+        // Giac's timeout stopped the divergence check: keep the value, as Home does, but say it is unverified.
+        const unchecked = refused === "unchecked";
+        if (refused === "integralDiverges") {
+          return failed("no-root", enEngine["error.integralDiverges"], "int", t0);
+        } else if (exv !== undefined) {
           ev(`pasar:=evalf(pasex,${W})`);
           method = "int";
-          info = "Romberg did not converge; exact integral";
+          info = `${why}; exact integral`;
+          if (unchecked) {
+            warn = true;
+            info += "; divergence check did not finish";
+          }
         } else if (gq !== undefined) {
           ev("pasar:=pasgq");
           method = "gaussquad";
-          info = "Romberg did not converge; Gauss quadrature (double precision)";
+          info = `${why}; Gauss quadrature (double precision)`;
           warn = true;
-        } else return failed("no-root", "the integral does not converge", "romberg", t0);
+          if (unchecked) info += "; divergence check did not finish";
+        } else return failed("no-root", noNumber ? enEngine["error.noValue"] : "the integral does not converge", "romberg", t0);
       }
       const rv = num(ev("pasar"))!;
       const agree = gq !== undefined && Math.abs(gq - rv) <= 1e-8 * Math.max(1, Math.abs(rv));

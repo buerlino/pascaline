@@ -16,7 +16,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 /**
- * A file leaves the app (docs/research/r11-files.md section 1): save({name, mime, text}) opens Android's own "Save to"
+ * A file leaves the app (docs/archive/r11-files.md section 1): save({name, mime, text}) opens Android's own "Save to"
  * screen (ACTION_CREATE_DOCUMENT) and writes the UTF-8 text where the user picked. Resolves {result: "saved" |
  * "cancelled"}, rejects on an I/O error. No permission and no manifest entry.
  */

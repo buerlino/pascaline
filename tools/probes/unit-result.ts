@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Probe (S11, docs/research/r17-unit-result.md): what the unit result view has to show, from the real evaluator.
+// Probe (S11, docs/archive/r17-unit-result.md): what the unit result view has to show, from the real evaluator.
 // Each case runs through buildJob and EngineHost.units as the golden gate's units stage does (app/scripts/unit-case.ts
 // syntax: {k:m / h} a slot, {=c} a constant, pasupm(v,σ) a ± value), and prints the Quantity: the display, the mark
 // (markOf at 12 digits), the unit, the dimension, the SI text, σ with its why, the note, or the refusal's message.

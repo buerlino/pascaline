@@ -63,6 +63,8 @@ export interface HomeOutcome {
   digits?: number;
   /** Giac latex() of a result that is not a number (raw; the view tidies it and draws it, as in CAS). */
   latex?: string;
+  /** G67: the input changed one of the engine's settings, which was put back: the result line says it was not kept. */
+  settingReset?: true;
 }
 
 export interface CasOutcome {
@@ -82,6 +84,8 @@ export interface CasOutcome {
   warn?: PrecisionWarn;
   /** The stored variables the input read, with the view that stored each (F28); absent when there is none. */
   uses?: { name: string; preview: string; view: "home" | "cas" }[];
+  /** G67: the input changed one of the engine's settings, which was put back: the result line says it was not kept. */
+  settingReset?: true;
 }
 
 /** Thrown by home()/cas() when Cancel stopped the job. */

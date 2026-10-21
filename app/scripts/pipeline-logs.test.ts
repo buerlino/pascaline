@@ -36,6 +36,37 @@ describe("vitest log", () => {
   });
 });
 
+describe("timing tests of runs 150 and 152", () => {
+  const fail = (f: string, t: string) => ` FAIL  src/engine/${f} > ${t}\n`;
+  const novalue = fail("novalue.test.ts", "G78 on the real engine > evaluates only the parts that can make an infinity, and none when they would take too long (timing case)");
+  const acos = fail("homeDeadline.test.ts", "Home's deadline (real Giac) > acos(120^(5/2+5)) answers: Giac's im() of its exact result looped past the interrupt");
+  it("the novalue timing case and the Home acos deadline are timing", () => {
+    expect(onlyTiming("vitest", novalue)).toBe(true);
+    expect(onlyTiming("vitest", acos)).toBe(true);
+    expect(onlyTiming("vitest", novalue + acos + " Test Files  2 failed | 52 passed (54)\n")).toBe(true);
+  });
+  it("the G83 library restore and first call is timing; another test in library.test.ts is not", () => {
+    const lib = (t: string) => ` FAIL  src/engine/library.test.ts > 200 library programs, defined on first use (G83, real Giac) > ${t}\n`;
+    expect(onlyTiming("vitest", lib("restore() of the 200 takes under 50 ms in Node, and a first call at most 10 ms more than after an eager replay (median of 7)"))).toBe(true);
+    expect(onlyTiming("vitest", lib("a unit request for 2 m and a root analysis of x^2-2 leave every program pending (G83f1: their keys and JSON load nothing)"))).toBe(false);
+  });
+
+  it("another failure in the same files is not timing", () => {
+    expect(isTiming("vitest", { file: "src/engine/novalue.test.ts", title: "G78 on the real engine > keeps 1/0 undefined" })).toBe(false);
+    expect(isTiming("vitest", { file: "src/engine/homeDeadline.test.ts", title: "Home's deadline (real Giac) > sin(1) answers" })).toBe(false);
+    expect(onlyTiming("vitest", novalue + fail("homeDeadline.test.ts", "Home's deadline (real Giac) > factor(x^4-1) answers"))).toBe(false);
+  });
+  it("e2e: Esc before Working… shows is timing, the Cancel test is not", () => {
+    const l = "  2) [chromium-phone] › test/working.spec.ts:61:1 › Esc stops a job before Working… shows ──────────\n";
+    expect(onlyTiming("e2e", l)).toBe(true);
+    expect(onlyTiming("e2e", l + "  3) [chromium-phone] › test/working.spec.ts:90:1 › the Cancel key stops a job ──────────\n")).toBe(false);
+  });
+  it("golden: the case id is not on the FAIL line, so a g58 failure stays a real failure", () => {
+    const log = "  precision g58-factorial-1e6-30: took 2100 ms > budgetMs 2000\nFAIL precision: 99/100 active match; 0 pending; 40 marks checked\n";
+    expect(onlyTiming("golden", log)).toBe(false);
+  });
+});
+
 describe("golden and e2e logs", () => {
   const units = (n: number, p95: string) => `PASS x: 3/3\nFAIL units: ${n}/116 match (value, mark), rounds 5; desktop warm median 2.02 ms, p95 ${p95} ms (≤ 5), max 11 ms\n`;
   it("a golden failure only on the units p95 bar is timing", () => {

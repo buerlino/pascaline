@@ -346,7 +346,7 @@ Rank 5 removes the fewest open bugs, but it changes the most queue: G68, G76, R6
 
 ## 7. Proposed packages (brief format, not in the brief; the owner decides)
 
-G67 as amended by audit-P1 is its package file now ([packages/G67.md](../shifts/packages/G67.md); owner, 2026-10-20, commit `16405c4`).
+G67 as amended by audit-P1 is its package file now (owner, 2026-10-20, commit `16405c4`; merged `b34b8eb`).
 
 ### gorge, G72 as amended by audit-P2 step 2: a definition's stores from Giac's tree, branch `p1/gorge-m4-statewords`
 **Lane:** night-safe (Opus worker, Opus audit). **Starts when:** G65 is merged (G69 folded into it); before R59. Replaces G72's package text; G66 waits for its report.

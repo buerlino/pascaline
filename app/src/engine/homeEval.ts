@@ -15,7 +15,7 @@
 // erasable TypeScript syntax, so Node runs this file directly.
 import { refusalOf, giacPair, hasDefiniteIntegral, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { lostFloat, lostNumber, throughInfinity } from "./novalue.ts";
+import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
@@ -23,7 +23,6 @@ import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
-  AUDITED_FUNCTIONS,
   functionsIn,
   DOUBLE_DIGITS,
   doubleFallback,
@@ -32,13 +31,11 @@ import {
   floatPathFacts,
   hasFloat,
   isAudited,
+  doubleFormsIn,
+  unauditedIn,
   numericDisagrees,
   rationalValue,
-  decideTwice,
-  decidingStored,
-  restsOnDecision,
   notBuiltin,
-  callsStateful,
   readsReplaced,
   floatsShown,
   heavySplit,
@@ -52,6 +49,7 @@ import {
   type Giac,
   type Shape,
 } from "./numeric.ts";
+import { callsStateful, decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 
 export type { Giac };
 
@@ -133,6 +131,9 @@ export interface HomeResult {
    *  constants of the input leave (EngineHost.home's table); the digits from there on are uncertain. Absent when no
    *  inexact constant went in by name, or the result is not one real number. */
   uncDigits?: number;
+  /** G67: the input changed one of Giac's settings (`approx_mode:=1`), which the engine put back: the result line says
+   *  it was not kept. */
+  settingReset?: true;
 }
 
 /** Giac prints a string result in double quotes; latex() returns one. */
@@ -240,7 +241,7 @@ export function testSides(input: string): string {
 export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): PrecisionWhy | undefined {
   if (warn === "unchecked") return { once: true };
   if (warn !== "unaudited") return undefined;
-  const unaudited = functionsIn(sides).filter((n) => !AUDITED_FUNCTIONS.has(n));
+  const unaudited = unauditedIn(sides);
   return unaudited.length ? { unaudited } : undefined;
 }
 
@@ -416,8 +417,8 @@ const NAME_LIST = "[A-Za-z][A-Za-z0-9_]*(?:\\s*,\\s*[A-Za-z][A-Za-z0-9_]*)*";
 /**
  * G48: the names a value assignment stores and the text it read, in each form: `a:=v`, `[a,b]:=v`, `a,b:=v`,
  * `v=>a`, `sto(v,a)` and `L[k]:=v` (which reads L's other elements, so `read` is the whole input). Null for anything
- * else (a function definition `f(x):=…`, purge, assume, an expression that only holds a store). Read from the text;
- * S13 studies Giac's own state instead.
+ * else (a function definition `f(x):=…`, purge, assume, an expression that only holds a store). Read from the text,
+ * for the Find items (definedBy) and CAS `uses` hints only: the mark facts take the names from Giac's state (G65).
  */
 export function storeTargets(input: string): { names: string[]; read: string; form: ":=" | "[]:=" | ",:=" | "=>" | "sto" | "[k]:=" } | null {
   const a = simpleAssignment(input);
@@ -444,16 +445,6 @@ export function storeTargets(input: string): { names: string[]; read: string; fo
 export function onceUndecided(giac: Giac, input: string, body: string, out: string): boolean {
   if (isError(out) || hasFloat(out) || definedBy(input)?.kind === "fn" || /^\s*(purge|assume|additionally)\s*\(/.test(input)) return false;
   return restsOnDecision(body, out, decidingStored(giac));
-}
-
-/** G49f4: `name:=x->body` or `name:=(x,y)->body` (also as Giac prints it back, `name:=((x)->body)`): the name of a
- *  function written with an arrow, for the mark facts; definedBy keeps reading it as a variable for the Find items. */
-export function arrowFunction(input: string): string | null {
-  const a = simpleAssignment(input);
-  if (!a) return null;
-  let rhs = a.rhs.trim();
-  while (rhs.startsWith("(") && closingParen(rhs, 0) === rhs.length - 1) rhs = rhs.slice(1, -1).trim();
-  return /^(?:\([^()]*\)|[A-Za-z_][A-Za-z0-9_]*)\s*->/.test(rhs) ? a.name : null;
 }
 
 /** Index of the ) that closes the ( at `open` in `s` (strings skipped), or -1. */
@@ -666,7 +657,8 @@ export function homeEval(
     const f = floatPathFacts(giac, ans, asg ? asg.rhs : input, once, W, s.digits);
     // G78 (F50): undef or an infinity where a number was asked for (no free name) is refused with its reason.
     const lost = "error" in f && !once ? lostFloat(giac, exactBody, f.error) : null;
-    if ("error" in f) return lost ? refuse(lost, path) : failed(f.error, path, exact);
+    if ("error" in f && lost) return refuse(lost, path);
+    if ("error" in f) return once ? failed(f.error, path, exact) : atDouble(path, f.error, exact);
     // G39: the float of a divergent integral or series (the principal value 0 of ∫₋₁¹ 1/x) is refused as on the exact path.
     const refused = once ? null : refusalOf(giac, exactBody, giac.eval(ans));
     if (refused === "unchecked") unverified = true;
@@ -674,6 +666,17 @@ export function homeEval(
     store();
     const b = build(f.facts, f.shape, s.digits, path, true);
     return fromBuilt(b, path, true, exact, b.decimal, whyOf(f.facts, once ? null : asg ? asg.rhs : input));
+  };
+
+  // G71 (F59): no MPFR value at P nor at W (a decision over BesselJ): the input decided at the double, with ⚠.
+  const atDouble = (path: HomePath, error: string, exact?: string): HomeResult => {
+    const d = decidedAtDouble(giac, ans, asg ? asg.rhs : input, s.digits);
+    if (d === null) return failed(error, path, exact);
+    store();
+    const why = { unaudited: unauditedIn(asg ? asg.rhs : input) };
+    if ("text" in d) return done({ ok: true, display: d.text, exact: d.text, path, approximate: true, warn: "unaudited", why, tieRisk: false, exactRational: false, reliableDigits: null });
+    const b = build(d.facts, d.shape, s.digits, path, true);
+    return fromBuilt(b, path, true, exact, b.decimal, why);
   };
 
   // G58: past the deadline after the exact steps: refused, not checked for as long again.
@@ -776,6 +779,8 @@ export function homeEval(
   if (!facts) {
     const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
     if (!d) return symbolic();
+    // G84 (F60): a double's 0 where MPFR found no value (exp(cosh(asin(π)/pasdeg))) whose exact answer is not 0.
+    if (!once && !late() && underflow(giac, zeroElements(`(${exactOut})`, [d], shape), null)) return refuse("underflow", "exact");
     const b = build([d], shape, s.digits, "exact", true);
     store();
     return fromBuilt(b, "exact", true, exactOut, b.decimal, { once: true });
@@ -789,6 +794,9 @@ export function homeEval(
       exactText = giac.eval(ans);
     }
   }
+  // G84 (F60): an element that reads as 0 while Giac's exact answer is not 0 (exp(-10^30)) is an underflow, refused as an
+  // overflow is; after provedRational, which turns an exact 0 Giac can prove into one.
+  if (!once && !late() && underflow(giac, zeroElements(ans, facts, shape), valuePrecision(s.digits))) return refuse("underflow", "exact");
   // G59 (r16 F3): an input with a decimal is checked against Giac's numeric evaluation of it; a disagreement is ⚠ with no
   // count, "exact and numeric differ". Only with audited functions in the input and the result, and none that Giac gets
   // wrong on complex arguments reaching the result through a stored name (the numeric route would read Giac's own).
@@ -800,6 +808,8 @@ export function homeEval(
     !once && route !== null && isAudited(body) && isAudited(exactOut) && (complexSafe(exactOut) === exactOut || complexSafe(body) !== body) &&
     numericDisagrees(giac, route, facts, shape, s.digits);
   if (differ) facts = facts.map((f) => (f.exactRational ? f : { ...f, reliableDigits: null, warn: "unchecked" as const }));
+  // G71 (N7): Giac's two-argument round and trunc work in a double: an integer or decimal they print is not exact.
+  if (!differ && doubleFormsIn(exactBody).length) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const }));
   const b = build(facts, shape, s.digits, "exact", differ);
   store();
   const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;

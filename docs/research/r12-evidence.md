@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R12: the evidence behind docs/04 (sandra)
 
+**Status (2026-10-21): reference.** The evidence behind docs/04 (the regression list, the module table, the latency numbers); docs/04 cites it by section, rerun the probe before relying on a row.
+
 *Moved out of [docs/04](../04-architecture.md) by the docs/04 diet (S10, 2026-10-19), so that docs/04 holds the rules, the decisions and the budgets, and this file the probe results and the regression record they rest on. The section numbers of docs/04 stay the address: "docs/04 2.3 #17" is row 17 of section 1 here, "docs/04 4.1" is section 2. Code moves: before relying on a row, rerun the probe it names ([tools/probes/](../../tools/probes/README.md)); how a key press and a number flow through the code is in [r6-pipelines.md](r6-pipelines.md).*
 
 ## 1. Paths that showed a wrong or unmarked value (docs/04 2.3)

@@ -2,7 +2,7 @@
 # S2 report: menu audit (sandra, 2026-10-13)
 
 Package S2 of the brief, branch `p1/sandra-m4a-menus`, from `phase-1` at `04e0c0b`. Read and probe; no feature code.
-The note: [docs/research/r8-menus.md](../../research/r8-menus.md).
+The note: [docs/archive/r8-menus.md](../../archive/r8-menus.md).
 
 ## Recommendation
 Keep R7's sheet as it is and adopt seven menu rules (r8 section 5). In practice: R11 builds the Home/CAS Menu as one
@@ -24,7 +24,7 @@ briefed, with Esc/Cancel and the remembered pick; R4 lets digits pick on Find's 
 - The "3-key" Mode paths are 4 presses under docs/04 5.2 (the tests press `shift`, `cas`, `right`, `enter`).
 
 ## Changed
-- `docs/research/r8-menus.md` (new): the audit, the rules, what each package changes, the decision proposal.
+- `docs/archive/r8-menus.md` (new): the audit, the rules, what each package changes, the decision proposal.
 - `tools/probes/menu-presses.mjs` (new) and its row in `tools/probes/README.md`.
 - `docs/05-ui-plan.md` 3.4 and table U4, `docs/decisions.md` defaults R8: "3 keys" corrected to 4 presses (docs
   disagreed with the tests and with docs/04 5.2).
@@ -37,7 +37,7 @@ Applied on this branch, so the review only checks and merges: decisions.md (P12 
 ## For shared files (as proposed; now applied)
 - **docs/decisions.md, "Needs the user"**, as the first item:
   > - **2026-10-13 S2: one menu system (P12 open point A). PROPOSED, needs the user.** Seven rules for every menu
-  >   (research/r8-menus.md section 5). **Recommendation:** (1) R11 builds the Home/CAS Menu as one fixed list (Insert,
+  >   (archive/r8-menus.md section 5). **Recommendation:** (1) R11 builds the Home/CAS Menu as one fixed list (Insert,
   >   Recall, Copy, Store ▶, Delete, Copy as ›, Paste, Share session, Clear history) that acts on the picked row, else
   >   the last result: today Menu copies the last result even with a row picked (I1); (2) R15 keeps a key path to
   >   Mode (Shift + Apps) and lists Home and CAS first in Apps, so no place or setting needs touch; (3) "Decimals in
@@ -46,12 +46,12 @@ Applied on this branch, so the review only checks and merges: decisions.md (P12 
   >   the Decimals move ~0.1 d; Copy as shown, exact and LaTeX take one press more. **Alternatives and would-change:**
   >   r8 section 8.
 
-  And in the P12 open-points item, point A becomes: "A. **Menu audit: done** (S2, research/r8-menus.md); its proposal
+  And in the P12 open-points item, point A becomes: "A. **Menu audit: done** (S2, archive/r8-menus.md); its proposal
   is the S2 item below."
-- **docs/backlog.md "Needs the user"** (one line): "S2 menu rules (decisions.md, research/r8-menus.md): accept the
+- **docs/backlog.md "Needs the user"** (one line): "S2 menu rules (decisions.md, archive/r8-menus.md): accept the
   nine-item Home/CAS Menu for R11 and the Mode key path and Home/CAS in Apps for R15."
-- **docs/backlog.md** milestone 4a item 13 (S2): "*Done* (`<commit>`): research/r8-menus.md; proposal in decisions.md."
-- **docs/06-keypad-vs-g2.md** section 4, point A: "**A. Menu audit: done** (S2, [research/r8-menus.md](../../research/r8-menus.md));
+- **docs/backlog.md** milestone 4a item 13 (S2): "*Done* (`<commit>`): archive/r8-menus.md; proposal in decisions.md."
+- **docs/06-keypad-vs-g2.md** section 4, point A: "**A. Menu audit: done** (S2, [archive/r8-menus.md](../../archive/r8-menus.md));
   the proposal waits for the owner (decisions.md)."
 - **docs/shifts/brief.md:** remove the S2 row and section; add to R11, R15a and R18 "If the owner accepts S2, build
   r8 section 6's row for this package."

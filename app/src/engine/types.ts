@@ -63,6 +63,8 @@ export interface CasResult {
   warn?: PrecisionWarn;
   /** The reasons behind `warn` for a non-number (G22): the same facts as HomeResult.why; a number has them on `numeric`. */
   why?: PrecisionWhy;
+  /** G67: the input changed one of Giac's settings, which the engine put back (as HomeResult.settingReset). */
+  settingReset?: true;
 }
 
 export interface EvalResult {
@@ -93,7 +95,13 @@ export interface EngineTimings {
 /** A variable held at a fixed value while others are solved for (Solve app Num view). */
 export interface KnownValue {
   name: string;
+  /** Every confirmed digit of the value (an answer's full text), or what was typed. */
   value: string;
+  /** Confirmed digits of `value`, from its result's facts (G68f1): the solve is checked by a second one with the value
+   *  moved by one unit in its last confirmed digit. Absent = typed or exact, never moved. */
+  digits?: number;
+  /** The value came from a ⚠ answer: the result passes the ⚠ on. */
+  warn?: boolean;
 }
 
 export type SolveRequest =

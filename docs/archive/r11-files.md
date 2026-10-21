@@ -1,6 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R11: files in and out without INTERNET, and the backup (package S6, 2026-10-20)
 
+**Status (2026-10-21): decided.** decisions.md S6 (the owner, 2026-10-20): the backup by "Save to" and `<input type="file">`, restore checked as a whole; packages R38a, R38b, with A11's Share and Paste.
+
 sandra, for the owner and for packages R38a, R38b (and R59, which sends a library out the same way). It also closes S4's open point (R10 section 2: does the file picker open in the WebView, and does the system keyboard stay closed). The frame: the app has no INTERNET permission and must stay 100 % offline (`docs/rules-core.md`, F-Droid); the manifest holds VIBRATE only (`android/app/src/main/AndroidManifest.xml:41`), and A11 keeps it that way.
 
 **Probe:** `node tools/probes/backup-file.mjs [--size]`: the file's size at the limits (caps read from the sources), the restore checks on a good file and one bad file per refusal, and Playwright's Chromium 156 (headless, desktop Linux, page served from `https://localhost` like Capacitor's) for `<a download>`, `<input type="file">`, Web Share and the File System Access pickers. **Source reading:** `@capacitor/android` 8.5.3, `@capacitor/share` 8.0.3 and `@capacitor/filesystem` 8.1.5, unpacked from `npm pack` into scratch; the filesystem plugin's native dependencies from Maven Central.

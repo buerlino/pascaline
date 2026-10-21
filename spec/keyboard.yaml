@@ -318,7 +318,7 @@ keys:
   - { id: add, row: 9, col: 4, cls: op, label: { primary: "+", shift: "Ans", alpha: ";" }, primary: { type: "+" },
       shift: { insert: "\\ans", sample: ["\\ans", "7"] }, alpha: { type: ";" }, source: virtual-calc }  # r10c5 (shift Ans, docs/04 2.8: the view's last result, read at Enter; alpha ;)
 
-# ---- Unit slot (P11 "units after the formula", milestone 5; docs/research/r7-unit-slots.md). Layout record only:
+# ---- Unit slot (P11 "units after the formula", milestone 5; docs/archive/r7-unit-slots.md). Layout record only:
 # keyboard.ts does not read this section yet; tools/probes/unit-presses.mjs reads it to count presses. The app bundles
 # this file whole, so the reasons live in these comments, not in strings.
 # The units key (Shift + Tmpl, or a flick up on Tmpl) on an entry line or a picked history row shows the same
@@ -352,7 +352,7 @@ keys:
 #             error that names the factor and offers the near symbols (kw: kW?). A prefix alone (k, M, G) is an
 #             error, never a constant (qalc reads G as the gravitational constant).
 # `source: assumed`: ours (P11, 2026-10-13); the units key position is the reference's (G2 item 30).
-# P14 (decided 2026-10-14, docs/research/r9-unit-pad.md) replaces letters, symbols and ops with the unit pad in
+# P14 (decided 2026-10-14, docs/archive/r9-unit-pad.md) replaces letters, symbols and ops with the unit pad in
 # spec/unit-pad.yaml; package R24c removes them here.
 unit_slot:
   letters: { flick_down: lower, flick_up: upper }
