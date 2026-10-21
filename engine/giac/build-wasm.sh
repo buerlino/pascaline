@@ -182,7 +182,8 @@ stage_giac() {
 }
 
 # Exported C API (wasm/api.cc) plus what the JS glue needs.
-GIAC_EXPORTS='["_giac_init","_giac_eval","_giac_latex","_giac_set_setting","_giac_set_pow_limit","_caseval","_malloc","_free"]'
+# G85: giac_ctx_get/giac_ctx_set, giac_parse and giac_value are the structured bridge (JSON answers).
+GIAC_EXPORTS='["_giac_init","_giac_eval","_giac_latex","_giac_set_setting","_giac_set_pow_limit","_giac_ctx_get","_giac_ctx_set","_giac_parse","_giac_value","_caseval","_malloc","_free"]'
 GIAC_LDFLAGS=(-Oz -fwasm-exceptions
   -sMODULARIZE=1 -sEXPORT_ES6=1 -sEXPORT_NAME=createGiacModule -sENVIRONMENT=web,worker,node
   -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=64MB -sMAXIMUM_MEMORY=1GB -sSTACK_SIZE=8MB
@@ -193,7 +194,8 @@ stage_link() {
   local obj="$BUILD/giac-obj-$(variant)" out="$OUT/$(variant)"
   mkdir -p "$out"
   local f
-  for f in api stubs; do em++ -std=c++17 "${GIAC_CXXFLAGS[@]}" -c "$HERE/wasm/$f.cc" -o "$obj/$f.o"; done
+  local src="$BUILD/giac-$GIAC_VERSION"  # api.cc reads Giac's headers (G85's bridge); config.h comes from the giac stage
+  for f in api stubs; do em++ -std=c++17 "${GIAC_CXXFLAGS[@]}" -I"$src" -I"$src/src" -I"$PREFIX/include" -c "$HERE/wasm/$f.cc" -o "$obj/$f.o"; done
   local libs=("$PREFIX/lib/libmpfr.a" "$PREFIX/lib/libgmp.a")  # mpfr before gmp
   [[ "$WITH_GSL" == 1 ]] && libs=("$PREFIX/lib/libgsl.a" "$PREFIX/lib/libgslcblas.a" "${libs[@]}")
   em++ "${GIAC_LDFLAGS[@]}" "$obj"/*.o "${libs[@]}" -o "$out/giac.mjs"

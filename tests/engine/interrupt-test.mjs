@@ -16,11 +16,13 @@ const heavy = [
 ];
 const SLACK_MS = 200; // allowed overshoot past the budget (desktop)
 
-let M, ev;
+let M, ev, value;
 async function fresh() {
   M = await create({ print: () => {}, printErr: () => {} });
   M.cwrap("giac_init", "number", [])();
   ev = M.cwrap("giac_eval", "string", ["string"]);
+  // G85: giac_value (the bridge) evaluates outside caseval and must interrupt as it does; skipped on an engine without it.
+  value = typeof M._giac_value === "function" ? M.cwrap("giac_value", "string", ["string", "string"]) : null;
 }
 await fresh();
 const failures = [];
@@ -28,17 +30,17 @@ for (const ck of [1, 10]) {
   for (const budget of [0.05, 0.2]) {
     ev(`timeout ${budget}`);
     ev(`ckevery ${ck}`);
-    for (const h of heavy) {
+    for (const [via, h] of heavy.flatMap((h) => [["giac_eval", h], ...(value ? [["giac_value", h]] : [])])) {
       const t = performance.now();
       try {
-        const r = ev(h);
+        const r = via === "giac_eval" ? ev(h) : JSON.parse(value(h, "12,32")).text;
         const ms = performance.now() - t;
-        if (!/interrupt/i.test(r)) failures.push(`${h} (ck ${ck}, ${budget}s) not interrupted: ${r.slice(0, 60)}`);
-        else if (ms > budget * 1000 + SLACK_MS) failures.push(`${h} (ck ${ck}, ${budget}s) took ${ms.toFixed(0)} ms`);
-        const after = ev("7*6");
-        if (after !== "42") failures.push(`engine unusable after ${h}: 7*6 → ${after}`);
+        if (!/interrupt/i.test(r)) failures.push(`${h} (${via}, ck ${ck}, ${budget}s) not interrupted: ${r.slice(0, 60)}`);
+        else if (ms > budget * 1000 + SLACK_MS) failures.push(`${h} (${via}, ck ${ck}, ${budget}s) took ${ms.toFixed(0)} ms`);
+        const after = via === "giac_eval" ? ev("7*6") : JSON.parse(value("7*6", "12")).text;
+        if (after !== "42") failures.push(`engine unusable after ${h} (${via}): 7*6 → ${after}`);
       } catch (e) {
-        failures.push(`${h} (ck ${ck}, ${budget}s) escaped caseval: ${e}`);
+        failures.push(`${h} (${via}, ck ${ck}, ${budget}s) escaped caseval: ${e}`);
         await fresh();
         ev(`timeout ${budget}`);
         ev(`ckevery ${ck}`);
@@ -51,4 +53,4 @@ if (failures.length) {
   console.log(`FAIL ${failures.length}\n  ` + failures.join("\n  "));
   process.exit(1);
 }
-console.log(`PASS interrupt-test: ${heavy.length * 4} interrupts, no escapes`);
+console.log(`PASS interrupt-test: ${heavy.length * 4 * (value ? 2 : 1)} interrupts${value ? " (giac_eval and giac_value)" : ""}, no escapes`);
