@@ -205,6 +205,9 @@ export async function runSequences(seqs: readonly Sequence[], fresh: () => Promi
               const b = seenOf(typed, q.digits);
               // the app's known carries facts the typed one does not: only the digits shown must agree (the mark may be weaker, never the text different)
               run.checked++;
+              // …and it carries the known's confirmed digits: a value of a known confirmed to n digits is not confirmed to more (G68)
+              const over = known.digits !== undefined && withFacts.reliableDigits !== null && withFacts.reliableDigits > known.digits;
+              if (over) run.failures.push({ id: `${q.digits} solve: u^2=${st.c}, digits`, check: "solve", detail: `[${seq}] u confirmed to ${known.digits} digits gave v confirmed to ${withFacts.reliableDigits}` });
               if (a.display !== b.display) run.failures.push({ id: `${q.digits} solve: u^2=${st.c}`, check: "solve", detail: `[${seq}] u=${known.value} as the app sends it gave v ${a.mark || "-"} ${a.display}, typed in full ${b.mark || "-"} ${b.display}` });
             }
             break;
