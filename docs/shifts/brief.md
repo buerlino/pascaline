@@ -13,15 +13,15 @@
 1. **A28**, **A25** (owner, 2026-10-20); then **R15c3 → R15c4**, **R55**, **R49**, **R57**, **R50e**; **R72** before R4a and R24c.
 2. **R4a** once G67 and G71 are merged (night step 3), then **R4b**, **R53**, **R36**, **R33**, **R37**, **R12b**, **R12c**, **R41**, **R40** (R36 after G76, R40 after G81).
 3. The unit pad: **R24b** → **R24c** → **R24d** (after R4b). Nothing of the hardening blocks R24c.
-4. annabell: **A16** again after G65, **A9** with a device, **A18**, **A22**, **A26**, **A27**, **A19** (G64 waits for it), **A4b** after R4b, the library replay after G83 and A20 again after G82 (Tab One), **A7 → A8** on the owner's go.
-5. **R59** after G72, G73/G74 and G83 (and R4b); **R38a** **→ R38b**; **R70** after R49, both before outside round 1; **R71** (±) after R24c; **G79**.
+4. annabell: **A16** again after G65, **A9** with a device, **A18**, **A22**, **A26**, **A27**, **A19** (G64 waits for it), **A4b** after R4b, the library replay (G83 merged) and A20 again after G82 (Tab One), **A7 → A8** on the owner's go.
+5. **R59** after G72, G73/G74 (and R4b); **R38a** **→ R38b**; **R70** after R49, both before outside round 1; **R71** (±) after R24c; **G79**.
 
 **At night, the hardening, in this order** (gorge unless named; tests first, failing on `da7a59c`):
 1. **Reachable today:** G58 (F44, Home hangs) → G59 (F45, F46) → G78 (F50, F51, refused with a reason); G68 (F53), G69 (F54), G70 (F56), R69 (F55).
 2. **The cause in Giac:** G75 (patch 0003, complex `tanh`; measures whether the inverse functions patch as simply) → G60 (F47, only what the patch cannot fix) → G56 (narrowed to our CAS gap; dropped if nothing is left); G82 (Home's budget in steps; the patch after G66's).
 3. **Before R4a** (Find puts `cas_setup`, `purge`, `sto`, `trunc`, `Heaviside`, `BesselJ` one tap away): G67 (F52, Giac's flags; G71 is merged). G65 (S13; it takes F58) after G67, then G66 after G75.
-4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text), G83 (functions on first use). **Before R36 and R40:** G76, then G81 (#1045; G80 merged).
-5. **Engine and docs:** S17 (the workaround register with canaries) → G77 (the numbered Giac pin); S18 (status lines, decided notes to the archive).
+4. **Before R59** (a library brings Giac text no parser has read): G72 (F57), G73 → G74 (one reader of Giac text). **Before R36 and R40:** G76, then G81 (#1045; G80 merged).
+5. **Engine and docs:** S17 (the workaround register with canaries) → G77 (the numbered Giac pin).
 6. **The instruments:** G61 → G62, G63; G64 after A19 (annabell, by day); then S16, an Opus pass, triages what they find into fix packages.
 
 **Why this order:**
@@ -67,7 +67,7 @@ The night's hardening packages are listed once, in the queue (section 0c), each 
 | [R24d](packages/R24d.md) | Find in a slot and the user cells | ron, Sonnet | day | R24c and R4b | ~0.5 d |
 | [R62](packages/R62.md) | The unit result view drawn | ron, Sonnet | day (gallery) | R60 | ~1 d |
 | [R63](packages/R63.md) | The way back from the unit view; t02, t04 and t10 active | ron, **Opus** | day | R61, R62, R71 | ~1 d |
-| [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, G72, G74, G83 | ~0.5 d |
+| [R59](packages/R59.md) | The library rows: import and export (S4) | ron, Sonnet | day | R4b, G72, G74 | ~0.5 d |
 | [R70](packages/R70.md) | The tap counter counts every press (S8) | ron, Sonnet | day | R49 | ~0.5 d |
 | [R71](packages/R71.md) | ± on Shift + `,` (M4-2) | ron, Sonnet | day | R24c | ~0.5 d |
 | [G79](packages/G79.md) | the G2 checklist check | gorge, Sonnet | day | now | ~0.25 d |
@@ -108,12 +108,10 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 76 | [G72](packages/G72.md) every store form counts as a store | gorge, Sonnet | `p1/gorge-m4-statewords` | held (owner) | 45 min |
 | 77 | [G73](packages/G73.md) one reader of Giac text | gorge, Opus | `p1/gorge-m4-giactext` | held (owner) | 3 h |
 | 78 | [G74](packages/G74.md) the readers move to it | gorge, Opus | `p1/gorge-m4-giactextmove` | held (owner) | 3 h |
-| 78a | [G83](packages/G83.md) the user's functions defined on first use | gorge, Opus | `p1/gorge-lazydefs` | — | 1.5 h |
 | 79 | [G76](packages/G76.md) the port carries every fact | gorge, Sonnet | `p1/gorge-m4-portfacts` | held (owner) | 1 h |
 | 79b | [G81](packages/G81.md) σ through the basis | gorge, Opus | `p1/gorge-m4-constcorr` | G80, G76 | 1.5 h |
 | 80 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
 | 81 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |
-| 82 | [S18](packages/S18.md) status lines; decided notes to the archive | sandra, Opus | `p1/sandra-noteslife` | — | 45 min |
 | 83 | [G61](packages/G61.md) the oracle sweep as a gate stage | gorge, Sonnet | `p1/gorge-m4-oraclesweep` | G58 | 2 h |
 | 84 | [G62](packages/G62.md) sequences and state in the sweep | gorge, Sonnet | `p1/gorge-m4-seqsweep` | G61 | 1.5 h |
 | 85 | [G63](packages/G63.md) one value in every view | gorge, Sonnet | `p1/gorge-m4-viewsweep` | G61 | 1.5 h |
