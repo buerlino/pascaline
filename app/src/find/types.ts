@@ -24,6 +24,11 @@ export interface FindItem {
   unc?: string;
   /** const: canonical unit expression ("m*s^-1"). */
   unit?: string;
+  /** const, inexact only (G80): the value as Giac text over `pasl_<leaf>` names and exact numbers, from libqalculate's
+   *  formula; evaluating it at the leaves' values gives `value` within `unc`. Absent when the formula has no Giac form. */
+  basis?: string;
+  /** const with a basis: the measured leaves the basis uses, qalc's digits unrounded (`unc` here is not the 2-digit one). */
+  basisLeaves?: Record<string, { value: string; unc: string }>;
   /** const, unit: dimension key ("kg1m1s-2"); absent when qalc gives no conversion to SI base units. */
   dim?: string;
   /** unit, pfx: exact factor to SI base units as p/q (with pi where needed); "k+offset" for °C and °F. */

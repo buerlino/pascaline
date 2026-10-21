@@ -417,8 +417,8 @@ const NAME_LIST = "[A-Za-z][A-Za-z0-9_]*(?:\\s*,\\s*[A-Za-z][A-Za-z0-9_]*)*";
 /**
  * G48: the names a value assignment stores and the text it read, in each form: `a:=v`, `[a,b]:=v`, `a,b:=v`,
  * `v=>a`, `sto(v,a)` and `L[k]:=v` (which reads L's other elements, so `read` is the whole input). Null for anything
- * else (a function definition `f(x):=…`, purge, assume, an expression that only holds a store). Read from the text;
- * S13 studies Giac's own state instead.
+ * else (a function definition `f(x):=…`, purge, assume, an expression that only holds a store). Read from the text,
+ * for the Find items (definedBy) and CAS `uses` hints only: the mark facts take the names from Giac's state (G65).
  */
 export function storeTargets(input: string): { names: string[]; read: string; form: ":=" | "[]:=" | ",:=" | "=>" | "sto" | "[k]:=" } | null {
   const a = simpleAssignment(input);
@@ -445,16 +445,6 @@ export function storeTargets(input: string): { names: string[]; read: string; fo
 export function onceUndecided(giac: Giac, input: string, body: string, out: string): boolean {
   if (isError(out) || hasFloat(out) || definedBy(input)?.kind === "fn" || /^\s*(purge|assume|additionally)\s*\(/.test(input)) return false;
   return restsOnDecision(body, out, decidingStored(giac));
-}
-
-/** G49f4: `name:=x->body` or `name:=(x,y)->body` (also as Giac prints it back, `name:=((x)->body)`): the name of a
- *  function written with an arrow, for the mark facts; definedBy keeps reading it as a variable for the Find items. */
-export function arrowFunction(input: string): string | null {
-  const a = simpleAssignment(input);
-  if (!a) return null;
-  let rhs = a.rhs.trim();
-  while (rhs.startsWith("(") && closingParen(rhs, 0) === rhs.length - 1) rhs = rhs.slice(1, -1).trim();
-  return /^(?:\([^()]*\)|[A-Za-z_][A-Za-z0-9_]*)\s*->/.test(rhs) ? a.name : null;
 }
 
 /** Index of the ) that closes the ( at `open` in `s` (strings skipped), or -1. */

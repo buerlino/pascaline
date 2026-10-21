@@ -62,7 +62,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8; today. hunt N5.
 - [x] **F56 → G70.** Function app Area gives ∫₀¹ ln x = −1, ∫₀² x ln x = 0.38629436112, ∫₋₁¹ (1−cos x)/x² = 0.972770752471 (Romberg's undef no longer refuses; only Home's refusals do). hunt N6.
 - **F57 → [G72](shifts/packages/G72.md).** A library body with `increment(cnt)` changes cnt by 2 per Enter and logs nothing (`definitionStores`, `isStateful` miss `++`, `DelVar`). Families 9, 3; after R59. hunt N9.
-- **F58 → [G65](shifts/packages/G65.md).** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are 3 again (`defs.ts:73` keeps "other" entries). Family 1; low (no key types `:=`). hunt N10.
+- [x] **F58 → G65.** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are free (were 3 again: an "other" entry kept the line); every name a line sets is a value from Giac's state. hunt N10.
 - [x] **F59 → G71 (f11b20e).** A decision over a value with no MPFR path (`BesselJ(1,2) > 0.5`) is decided at the double with ⚠.
 - [x] **F60 → G84 (043af31).** `exp(-10^30)`, DEG `exp(cosh(asin π))` are refused "Underflow" (were `⚠ 0`). Family 5.
 - **F61, no package yet.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
@@ -104,7 +104,7 @@ A milestone is done when its benchmark tasks (`tests/tasks/tasks.yaml`) pass wit
 - The Function app and plots of user functions wait for your word (R56b covers Solve); **R58b** Alpha letters are always names in CAS (decided 2026-10-19; G2 item 62 can reverse it); lazy definition of library functions if A12 says so (G33).
 - **G9. Number formats against the G2** (item 15: six formats, digits as decimal places, a thousands separator): decide in the settings and help pass.
 - **K1:** a pending one-shot Shift is used up by the first drag step; a tap keeps it. **K5:** the gestures in the help texts (release R4).
-- **The pipeline:** the golden gate gates its own scripts (**A25**); the timing tests that kept G70f1 and G67 unmerged (`novalue` timing case, `homeDeadline` acos, golden `g58-factorial-1e6-30`) go into `pipeline-logs.ts` isTiming; the checks run on a prebuilt engine, so a Giac patch (G75) cannot pass them (**A28**).
+- **The pipeline:** the golden gate gates its own scripts (**A25**); ~~the timing tests that kept G70f1 and G67 unmerged (`novalue` timing case, `homeDeadline` acos, e2e Esc-before-Working) go into `pipeline-logs.ts` isTiming~~ (A29); golden `g58-factorial-1e6-30` stays out (the golden log's FAIL line names only the stage); the checks run on a prebuilt engine, so a Giac patch (G75) cannot pass them (**A28**).
 - **A15's tests** (Opus pass 20, annabell): `scripts/pipeline.test.sh` checks the planned size and docs checks and the gorge raise against fixed dry-run echo lines, not `want_checks` and `resolve_audit_model`, so a regression there passes; the dry run prints no raise for `--model opus`.
 - **C3. CI:** a GitHub Actions workflow calling `npm run gate` (needs your OK). **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework; the version is A7.
 - The size test does not cover CSS (25.8 kB raw at 2026-10-12): a line of its own if it passes 40 kB.

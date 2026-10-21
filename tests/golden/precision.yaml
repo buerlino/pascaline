@@ -389,3 +389,5 @@ cases:
   - { id: "g67-cas-intformat-cas-255", kind: "cas", input: "255", before: ["integer_format(16)"], oracle: "F(255)", expect: "255", mark: "=", source: "derived", note: "showed 0xFF" }
   - { id: "g67-cas-complexmode-sqrt", kind: "cas", input: "sqrt(x^2)", before: ["complex_mode:=1"], expect: "abs(x)", source: "derived", note: "showed x; abs(x) is Giac's text with no setting changed (tools/probes/giac-globals.ts baseline)" }
   - { id: "g67-cas-complexmode-relaunch-sqrt", kind: "cas", input: "sqrt(x^2)", before: ["complex_mode:=1"], relaunch: true, expect: "abs(x)", source: "derived", note: "guard: the log held complex_mode:=('complex_mode'), which set nothing when replayed" }
+  # --- G65 (backlog F58, bug hunt N10): the names a line set come from Giac's state, so a relaunch replays no line as typed ---
+  - { id: "g65-f58-cas-chain-purge-relaunch", kind: "cas", input: "x+y", before: ["x:=y:=3", "purge(x)", "purge(y)"], relaunch: true, expect: "x+y", source: "derived", note: "x:=y:=3 was logged as the line itself (kind other), which purge(x) and purge(y) did not remove: the relaunch replayed it and x+y showed 6" }
