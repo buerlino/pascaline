@@ -41,3 +41,34 @@ describe.skipIf(!giacAvailable())("G97 on the real engine", () => {
     expect(home("[1,2]^2")).toMatchObject({ ok: true, display: "5" });
   });
 });
+
+describe.skipIf(!giacAvailable())("G97 in the Num table", () => {
+  let host: EngineHost;
+  const calls: string[] = [];
+  beforeAll(async () => {
+    const real: GiacApi = (await loadNodeGiac()).giac;
+    const spy: GiacApi = {
+      eval: (input) => {
+        calls.push(input);
+        return real.eval(input);
+      },
+      setPowLimit: (l) => real.setPowLimit(l),
+      messages: () => real.messages(),
+      clearMessages: () => real.clearMessages(),
+    };
+    host = new EngineHost(spy);
+  });
+
+  it("a table of x^2 has no shape walk: Giac printed no warning", () => {
+    calls.length = 0;
+    const t = host.table({ fns: ["x^2"], xs: ["1", "2", "3"] }, defaultHomeSettings);
+    expect(t.map((row) => row[0]!.display)).toEqual(["1", "4", "9"]); // derived: 1², 2², 3²
+    expect(calls.some((c) => c.includes("quote("))).toBe(false);
+  });
+
+  it("a table of a non-square matrix to the power x still refuses the cell", () => {
+    const t = host.table({ fns: ["[[5],[1]]^x"], xs: ["2"] }, defaultHomeSettings);
+    // a cell's error is the table's "engine"; its text keeps the reason
+    expect(t[0]![0]).toMatchObject({ ok: false, display: "The matrix is not square" });
+  });
+});

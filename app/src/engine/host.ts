@@ -263,6 +263,9 @@ export class EngineHost implements FactsHost {
   /** `giac.eval` that throws GiacSyntaxError instead of quietly returning `undef` (which would
    *  otherwise leave the previous answer in place and show it again). */
   private readonly strict: { eval(input: string): string; ambiguousPower(): boolean };
+  /** G97: `giac.eval` that reads Giac's messages after each eval for ambiguousPower(), and throws nothing (Num's
+   *  cells, where a syntax error is a cell's own error). Without it a power's shape walk would run on every cell. */
+  private readonly watched: { eval(input: string): string; ambiguousPower(): boolean };
 
   /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
   private readonly loaded = new Set<string>();
@@ -358,17 +361,23 @@ export class EngineHost implements FactsHost {
     // replay paths have no mode setup of their own
     giac.eval(angleCommand("rad"));
     let ambiguous = false;
+    let msg = "";
+    const read = (input: string): string => {
+      giac.clearMessages();
+      const out = giac.eval(input);
+      msg = giac.messages();
+      ambiguous = AMBIGUOUS_POWER.test(msg);
+      return out;
+    };
     this.strict = {
       eval: (input) => {
-        giac.clearMessages();
-        const out = giac.eval(input);
-        const msg = giac.messages();
-        ambiguous = AMBIGUOUS_POWER.test(msg);
+        const out = read(input);
         if (out === "undef" && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
         return out;
       },
       ambiguousPower: () => ambiguous,
     };
+    this.watched = { eval: read, ambiguousPower: () => ambiguous };
   }
 
   /** Replays definitions (a fresh engine: at init, or the stored log on first launch) and adds them to the log.
@@ -957,7 +966,7 @@ export class EngineHost implements FactsHost {
   table(req: TableRequest, s: HomeSettings): HomeResult[][] {
     this.need(expressionsOf(req.fns));
     this.useHomeMode(s);
-    return table(this.giac, req, s);
+    return table(this.watched, req, s);
   }
 
   private useHomeMode(s: HomeSettings): void {

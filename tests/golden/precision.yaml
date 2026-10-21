@@ -413,3 +413,5 @@ cases:
   - { id: "prec-g97-keep-2x2-pow-2-cas", kind: "cas", input: "[[1,2],[3,4]]^2", expect: "[[7,10],[15,22]]", source: "derived", note: "guard: [[1*1+2*3, 1*2+2*4],[3*1+4*3, 3*2+4*4]]" }
   - { id: "prec-g97-keep-flat-cas", kind: "cas", input: "[5,1]^-1", expect: "[1/5,1]", source: "derived", note: "guard: a flat vector keeps Giac's elementwise meaning" }
   - { id: "prec-g97-keep-colvec-pow-1-cas", kind: "cas", input: "[[5],[1]]^1", expect: "[[5],[1]]", source: "derived", note: "guard: the first power is the matrix" }
+  - { id: "prec-g97-keep-flat-pow-2-cas", kind: "cas", input: "[1,2]^2", expect: "5", source: "derived", note: "guard: a flat vector keeps Giac's v.v = 1*1+2*2 = 5" }
+  - { id: "prec-g97-colvec-div-cas", kind: "cas", input: "3/[[5],[1]]", expect: "error: notSquare", source: "derived", note: "F69: a/M is a*inv(M), elementwise for a 2x1 M; refused as in Home" }
