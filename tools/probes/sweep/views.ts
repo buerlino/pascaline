@@ -12,9 +12,10 @@ export function decimalToNumber(d: DecimalValue): number {
   return d.digits === "" ? 0 : Number(`${d.neg ? "-" : ""}0.${d.digits}e${d.exp + 1}`);
 }
 
-/** The view of a numeric Home-style result: real values only; a complex value is `other`. */
+/** The view of a numeric Home-style result: real finite values only; a complex or overflowing value is `other`. */
 export function numView(v: ComplexValue, claim: number | null): View {
-  return v.im.digits !== "" ? { kind: "other" } : { kind: "num", v: decimalToNumber(v.re), claim };
+  const x = decimalToNumber(v.re);
+  return v.im.digits !== "" || !Number.isFinite(x) ? { kind: "other" } : { kind: "num", v: x, claim };
 }
 
 /** A relative tolerance for a claim of n digits: one unit of the last digit, which covers two roundings of half a unit. */
