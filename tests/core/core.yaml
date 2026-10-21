@@ -369,7 +369,6 @@ cases:
     value: "[[-2,1],[3/2,-1/2]]"
     source: derived
     hand: true
-    known: F68
 
   - id: c42
     area: matrix
@@ -378,7 +377,6 @@ cases:
     expect: { result: "[[2],[1]]", mark: "=" }
     value: "[[2],[1]]"
     source: derived
-    known: F68
 
   - id: c43
     area: matrix

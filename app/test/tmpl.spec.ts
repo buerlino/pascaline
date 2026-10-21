@@ -142,3 +142,48 @@ test("a b/c in CAS: exact 5/2 ↔ 2.5", async ({ page }) => {
   await tap(page, ["frac"]);
   await expect(last).toHaveAttribute("data-latex", "\\frac{5}{2}");
 });
+
+// R75 (F68): after a matrix, a column vector, a { } list or a bracket group, x², xʸ, x⁻¹ and ÷ take the whole group as
+// their base or numerator (#@), as after a number. Values derived by hand: [[1,2],[3,4]]² = [[7,10],[15,22]], its
+// inverse (1/det = −1/2) [[-2,1],[1.5,-0.5]], halved [[0.5,1],[1.5,2]]; a list elementwise ({1,2}⁻¹ = {1,0.5}). The list
+// and the bracket group took the whole group before R75 too (regression cases); {1,2}² is left without a value: Giac
+// gives 5, the scalar square, not the elementwise {1,4} (a finding of R75's report).
+const M = "\\begin{pmatrix}1 & 2\\\\ 3 & 4\\end{pmatrix}";
+const V = "\\begin{pmatrix}1\\\\ 2\\end{pmatrix}";
+const L = "\\left\\{1,2\\right\\}";
+const P = "\\left(1+2\\right)";
+const GROUPS: [string, (page: Page) => Promise<void>, string, Record<string, string | undefined>][] = [
+  ["a 2×2 matrix", async (page) => { await insert(page, "matrix22"); await tap(page, ["d1", "right", "d2", "right", "d3", "right", "d4", "right"]); }, M,
+    { sq: "[[7,10],[15,22]]", pow: "[[7,10],[15,22]]", inv: "[[-2,1],[1.5,-0.5]]", div: "[[0.5,1],[1.5,2]]" }],
+  ["a column vector", async (page) => { await insert(page, "colvec"); await tap(page, ["d1", "right", "d2", "right"]); }, V,
+    { div: "[[0.5],[1]]" }],
+  ["a { } list", (page) => tap(page, ["shift", "d8", "d1", "comma", "d2", "right"]), L,
+    { inv: "[1,0.5]", div: "[0.5,1]" }],
+  ["a bracket group", (page) => tap(page, ["paren", "d1", "add", "d2", "right"]), P, { sq: "9", pow: "9", inv: "0.333333333333", div: "1.5" }],
+];
+const OPS: [string, string[], (g: string) => string][] = [
+  ["sq", ["sq"], (g) => `${g}^2`],
+  ["pow", ["pow", "d2", "right"], (g) => `${g}^2`],
+  ["inv", ["shift", "div"], (g) => `${g}^{-1}`],
+  ["div", ["div", "d2", "right"], (g) => `\\frac{${g}}{2}`],
+];
+for (const [name, enter, group, values] of GROUPS)
+  for (const [op, keys, form] of OPS)
+    test(`R75: ${op} after ${name} takes the whole group${values[op] ? ` = ${values[op]}` : ""}`, async ({ page }) => {
+      await enter(page);
+      expect(await entryValue(page)).toBe(group);
+      await tap(page, keys);
+      expect(await entryValue(page)).toBe(form(group));
+      if (values[op] === undefined) return;
+      await tap(page, ["enter"]);
+      await expect(lastResult(page)).toHaveAttribute("data-text", values[op] as string);
+    });
+
+test("R75: in the one-line mode x⁻¹ after a matrix brackets all of it: (M)^-1 = [[-2,1],[1.5,-0.5]]", async ({ page }) => {
+  await page.evaluate(() => window.pascaline.session.setEntry("line"));
+  await insert(page, "matrix22");
+  await tap(page, ["d1", "right", "d2", "right", "d3", "right", "d4", "right", "shift", "div"]);
+  expect(await entryValue(page)).toBe(`\\left(${M}\\right)^{-1}`);
+  await tap(page, ["enter"]);
+  await expect(lastResult(page)).toHaveAttribute("data-text", "[[-2,1],[1.5,-0.5]]");
+});
