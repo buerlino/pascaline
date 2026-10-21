@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Pure parts of exact-first Home. Every expected value here is `derived` (exact arithmetic by hand).
 import { describe, expect, it } from "vitest";
-import { arrowFunction, definedBy, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, toExactLiterals } from "./homeEval.ts";
+import { definedBy, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, toExactLiterals } from "./homeEval.ts";
 import { EQ_DIFF as EMITTED_DIFF, EQ_INEXACT_FLAG as EMITTED_FLAG, EQ_VERDICT as EMITTED_VERDICT, mathJsonToGiac } from "../input/emit.ts";
 import { markOf } from "./format.ts";
 
@@ -49,19 +49,8 @@ describe("restoreLiterals (G14)", () => {
   });
 });
 
-describe("arrowFunction (G49f4)", () => {
-  it("reads name:=x->body and name:=(x,y)->body as a function, also as Giac prints it back", () => {
-    expect(arrowFunction("pg:=x->x+pB")).toBe("pg");
-    expect(arrowFunction("k:=(x,y)->x*y")).toBe("k");
-    expect(arrowFunction("pg:=((x)->x+pB)")).toBe("pg");
-    // definedBy keeps the variable kind for the Find items
+describe("definedBy (G49f4)", () => {
+  it("keeps the variable kind of name:=x->body for the Find items", () => {
     expect(definedBy("pg:=x->x+pB")).toEqual({ name: "pg", kind: "var" });
-  });
-  it("leaves values and other forms alone", () => {
-    expect(arrowFunction("a:=5")).toBeNull();
-    expect(arrowFunction("a:=(x+1)*(y->y)")).toBeNull();
-    expect(arrowFunction("a:=map([1,2],x->x^2)")).toBeNull();
-    expect(arrowFunction("f(x):=x^2")).toBeNull();
-    expect(arrowFunction("x->x^2")).toBeNull();
   });
 });

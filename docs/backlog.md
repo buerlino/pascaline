@@ -62,7 +62,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8; today. hunt N5.
 - [x] **F56 → G70.** Function app Area gives ∫₀¹ ln x = −1, ∫₀² x ln x = 0.38629436112, ∫₋₁¹ (1−cos x)/x² = 0.972770752471 (Romberg's undef no longer refuses; only Home's refusals do). hunt N6.
 - **F57 → [G72](shifts/packages/G72.md).** A library body with `increment(cnt)` changes cnt by 2 per Enter and logs nothing (`definitionStores`, `isStateful` miss `++`, `DelVar`). Families 9, 3; after R59. hunt N9.
-- **F58 → [G65](shifts/packages/G65.md).** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are 3 again (`defs.ts:73` keeps "other" entries). Family 1; low (no key types `:=`). hunt N10.
+- [x] **F58 → G65.** `x:=y:=3`, `purge(x)`, `purge(y)`: after a relaunch x and y are free (were 3 again: an "other" entry kept the line); every name a line sets is a value from Giac's state. hunt N10.
 - [x] **F59 → G71 (f11b20e).** A decision over a value with no MPFR path (`BesselJ(1,2) > 0.5`) is decided at the double with ⚠.
 - [x] **F60 → G84 (043af31).** `exp(-10^30)`, DEG `exp(cosh(asin π))` are refused "Underflow" (were `⚠ 0`). Family 5.
 - **F61, no package yet.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
