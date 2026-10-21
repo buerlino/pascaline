@@ -14,7 +14,7 @@
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find first (three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **A28** (the checks run on the branch's engine; G97, G75 and with it most of the background stream wait for it: run it before a night when you can, or the night may end early), then **A33** once A32 is merged (the night's device step).
+1. **A28** (the checks run on the branch's engine; G97, G75 and with it most of the background stream wait for it: run it before a night when you can, or the night may end early), then **A34** (worktrees take `node_modules` from phase-1; until it is merged, no night package may add a dependency), then **A33** once A32 is merged (the night's device step).
 2. **S23** as soon as G85 has a report: the bridge's moves as packages (GO) or the held packages released (NO-GO), at the head of the night's core lane.
 3. annabell on devices: **A32** if the night could not run it; **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
 4. When a slot is free (process, nothing users see): **A25**, **A19** (G64 and S16 wait for it), **A18**, **A22** → **A26**, **A27**, **A30**.
@@ -31,6 +31,7 @@
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
 | [A28](packages/A28.md) | The checks run on the branch's engine | annabell, Sonnet | day | now | ~0.5 d |
+| [A34](packages/A34.md) | Worktrees take node_modules from phase-1 | annabell, Sonnet (audit Opus) | day | A28 | ~0.25 d |
 | [A33](packages/A33.md) | The night's device step | annabell, Sonnet | day | A32, A28 | ~0.5 d |
 | [S23](packages/S23.md) | G85's report into packages | sandra, Opus | day | G85's report | ~0.5 d |
 | [A32](packages/A32.md) | The core list on the Tab One | annabell, Sonnet | night (Tab One) or day | R74 | ~0.75 d |
@@ -61,11 +62,10 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
 ### The queue (rewritten 2026-10-21 for P23; the steps before 101 are done or moved to the background)
-Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **Step 100 (A34) runs first tonight (owner, 2026-10-21), then the core lane (101–110); a background step (120–130) runs only when no core step can start.**
+Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **The core lane (101–110) comes first; a background step (120–130) runs only when no core step can start.**
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 100 | [A34](packages/A34.md) worktrees take node_modules from phase-1; a missing package ends the run (first tonight, owner 2026-10-21) | annabell, Sonnet, audit Opus (`--audit-model opus`: the night runs on these scripts) | `p1/annabell-nodemods` | A28 | 45 min |
 | 101 | [R74](packages/R74.md) the core list runs in the e2e suite | ron, Sonnet | `p1/ron-corelist` | — | 1 h |
 | 102 | [R75](packages/R75.md) x², xʸ, x⁻¹ and ÷ after a matrix take the matrix (F68) | ron, Opus | `p1/ron-matrixbase` | R74 | 1 h |
 | 103 | [G90](packages/G90.md) Home's definite int marks what it checked (F65, F67) | gorge, Opus | `p1/gorge-m4-intmark` | — | 1.5 h |
