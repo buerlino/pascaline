@@ -18,6 +18,7 @@
     "themes": "node scripts/theme-gen.ts",
     "test:e2e": "playwright test",
     "test:tasks": "playwright test test/tasks.spec.ts",
+    "test:core": "playwright test test/core.spec.ts",
     "gallery": "playwright test -c playwright.gallery.config.ts",
     "test:pwa": "playwright test -c playwright.pwa.config.ts"
   },

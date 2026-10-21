@@ -14,6 +14,7 @@ export default defineConfig({
     reuseExistingServer: false, // a server on this port is another checkout's code: fail at once ("port in use")
     timeout: 120_000,
   },
+  reporter: [["list"], ["./test/core-reporter.ts"]],
   use: { baseURL: `http://localhost:${port}` },
   projects: [{ name: "chromium-phone", use: { ...devices["Pixel 7"] } }],
 });
