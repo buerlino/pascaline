@@ -48,7 +48,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs (rechecked 2026-10-20 on `da7a59c`; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- [x] **F44 → G58 (3062c2a).** Home answers `exp(1.5ᴇ8)`, `√(e^(2ᴇ8))`, `acos(5!^(2.5+5!))` and `exp(10^7)` in under 0.1 s, `factorial(10^6)` in 1 s; a deadline refuses past 2 s. At 30 digits it stays wrong from the 14th digit under `≈` (a double, F47). 
+- [x] **F44 → G58 (3062c2a).** Home answers `exp(1.5ᴇ8)`, `√(e^(2ᴇ8))`, `acos(5!^(2.5+5!))` and `exp(10^7)` in under 0.1 s, `factorial(10^6)` in 1 s; a deadline refuses past 2 s. At 30 digits it stays wrong from the 14th digit under `≈`. 
 - [x] **F45 → G59 (96c69a0).** `√(√(asin(12)))` = `≈ 1.319…−0.376…i` (was −1.319…): the value is read by `evalf`, split after. r16 F2.
 - [x] **F46 → G59 (96c69a0), G59f1.** `(sin 3.7 − e)^(0.001·asin(6.02ᴇ8))` is `⚠` (was `≈`, wrong from the 4th digit); without a decimal, `(sin(37/10)−e)^(asin(602000000)/1000)` is `⚠` too: a power with several values is checked against exp(b·ln a). r16 F3.
 - **F47 → [G60](shifts/packages/G60.md).** A double inside an MPFR result, at 30 digits: `log10(asinh(asin e))` wrong from the 14th digit under `≈`; `asin`/`acos` of a real \|x\| > 1 inside other functions show `⚠ 14` with 12–13 right; `√(asinh(cos 10))` shows a real part 4.7E-15 that is noise. Family 4. r16 F4–F6.
