@@ -45,6 +45,12 @@ describe("timing tests of runs 150 and 152", () => {
     expect(onlyTiming("vitest", acos)).toBe(true);
     expect(onlyTiming("vitest", novalue + acos + " Test Files  2 failed | 52 passed (54)\n")).toBe(true);
   });
+  it("the G83 library restore and first call is timing; another test in library.test.ts is not", () => {
+    const lib = (t: string) => ` FAIL  src/engine/library.test.ts > 200 library programs, defined on first use (G83, real Giac) > ${t}\n`;
+    expect(onlyTiming("vitest", lib("restore() of the 200 takes under 50 ms in Node, and a first call at most 10 ms more than after an eager replay (median of 7)"))).toBe(true);
+    expect(onlyTiming("vitest", lib("a unit request for 2 m and a root analysis of x^2-2 leave every program pending (G83f1: their keys and JSON load nothing)"))).toBe(false);
+  });
+
   it("another failure in the same files is not timing", () => {
     expect(isTiming("vitest", { file: "src/engine/novalue.test.ts", title: "G78 on the real engine > keeps 1/0 undefined" })).toBe(false);
     expect(isTiming("vitest", { file: "src/engine/homeDeadline.test.ts", title: "Home's deadline (real Giac) > sin(1) answers" })).toBe(false);

@@ -275,12 +275,75 @@ export class EngineHost implements FactsHost {
   /** G65: the call after the current input, once it ran (home() and cas() make it when the run did not). */
   private post: AfterInput | null = null;
 
-  /** Loads the definitions `text` mentions that are not loaded yet. Called before every input reaches Giac. */
+  /** G83: the user's functions restore() has not given to Giac yet, by name; loaded on first use (need). */
+  private pending = new Map<string, DefEntry>();
+
+  /** Loads the definitions `text` mentions that are not loaded yet: the user's pending functions (G83) and ours.
+   *  Called before every input reaches Giac. */
   need(text: string): void {
+    if (this.pending.size) this.loadPending(text);
+    this.needOurs(text);
+  }
+
+  /** Our definitions (ENGINE_DEFINITIONS, eseries) that `text` mentions and that are not loaded yet. */
+  private needOurs(text: string): void {
     for (const name of definitionsUsedBy(text)) {
       if (this.loaded.has(name)) continue;
       this.giac.eval(ENGINE_DEFINITIONS[name] ?? eseriesDefinition());
       this.loaded.add(name);
+    }
+  }
+
+  /**
+   * G83 (docs/04 6.2): every pending function whose name is a word in `text`, and, transitively, every pending function
+   * named in such a body or in the stored value of a name the text reads (`S:=(g(x))` reads g), goes to Giac in one
+   * batch. A text that lists or clears the names (VARS, expr, rm_all_vars, restart) loads them all.
+   */
+  private loadPending(text: string): void {
+    const queue = LOAD_ALL.test(text) ? [...this.pending.keys()] : wordsOf(text);
+    const seen = new Set<string>();
+    const todo: DefEntry[] = [];
+    while (queue.length) {
+      const n = queue.pop()!;
+      if (seen.has(n)) continue;
+      seen.add(n);
+      const e = this.pending.get(n) ?? this.byName.get(n);
+      if (!e || e.kind === "assume") continue;
+      if (this.pending.has(n)) todo.push(e);
+      for (const c of e.cmds) for (const w of wordsOf(c)) if (!seen.has(w)) queue.push(w);
+    }
+    if (!todo.length) return;
+    for (const e of todo) {
+      this.pending.delete(e.name);
+      this.needOurs(e.cmds[0]!);
+    }
+    for (let k = 0; k < todo.length; k += REPLAY_BATCH) {
+      const part = todo.slice(k, k + REPLAY_BATCH);
+      this.runBatch(part.map((e) => e.cmds[0]!), part.map((e) => e.name));
+    }
+    // The stored table learns the loaded names as Giac prints them, so the input's state part does not count them as
+    // its stores (G65's changesOf would log them as vars with the input's facts).
+    const node = parsePrinted(this.giac.eval(statePart(this.modeDigits)));
+    const table = node ? tableOf(node, (n) => this.byName.has(n)) : null;
+    if (table) for (const e of todo) { const t = table.get(e.name); if (t) this.stored.set(e.name, t); }
+    // the `// Success` notes and any error of the load are not the input's
+    this.giac.clearMessages();
+  }
+
+  /**
+   * G29: plain commands (`a:=1;b:=2;`) in one Giac call. One that printed an error or returned one is run again one
+   * command at a time (values and functions can be set twice), so one bad entry never takes the others down (G19).
+   */
+  private runBatch(batch: readonly string[], names: readonly string[]): void {
+    if (!batch.length) return;
+    this.giac.clearMessages();
+    const out = this.giac.eval(batch.join(";") + ";");
+    // Any message or error result: a syntax error, or a reserved name that aborts the rest of the batch (`pi:=3`).
+    if (batch.length > 1 && (/error|reserved word|not allowed/i.test(this.giac.messages()) || /^GIAC_ERROR/.test(out))) {
+      // Errors only: a warning (`declared as global`) is no reason to run twice. The names are purged first, so a
+      // rerun sees them as free again, as in the first run (G3: S:=(K*x+1) must not meet a K set by the aborted run).
+      for (const n of names) this.giac.eval(`purge(${n})`);
+      for (const c of batch) this.giac.eval(c);
     }
   }
 
@@ -307,29 +370,31 @@ export class EngineHost implements FactsHost {
   restore(stored: readonly DefEntry[]): number {
     const t0 = performance.now();
     const entries = this.withoutFlags(this.migrated(stored));
-    // G29: values and functions go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost.
-    // Assumptions and inputs kept as typed go alone. A batch that printed an error or warning (not the `// Success` notes of functions) or returned an error is run again one command at a
-    // time (values and functions can be set twice), so one bad entry never takes the entries after it down (G19).
+    // G83: a function (one balanced command) waits in `pending` until an input names it (need). One whose name Giac
+    // already holds is replayed now: a loaded body that calls it would otherwise meet the old definition.
+    const plain = (e: DefEntry): boolean => (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!);
+    for (const e of entries) {
+      if (e.kind !== "other") this.pending.delete(e.name);
+      if (e.kind === "fn" && plain(e) && !this.byName.has(e.name)) this.pending.set(e.name, e);
+    }
+    // G29: values go to Giac REPLAY_BATCH at a time (`a:=1;b:=2;`), which halves the per-call cost. Assumptions and
+    // inputs kept as typed go alone.
     let batch: string[] = [];
     let names: string[] = [];
     const flush = (): void => {
-      if (!batch.length) return;
-      this.giac.clearMessages();
-      const out = this.giac.eval(batch.join(";") + ";");
-      // Any message or error result: a syntax error, or a reserved name that aborts the rest of the batch (`pi:=3`).
-      if (batch.length > 1 && (/error|reserved word|not allowed/i.test(this.giac.messages()) || /^GIAC_ERROR/.test(out))) {
-        // Errors only: a warning (`declared as global`) is no reason to run twice. The names are purged first, so a
-        // rerun sees them as free again, as in the first run (G3: S:=(K*x+1) must not meet a K set by the aborted run).
-        for (const n of names) this.giac.eval(`purge(${n})`);
-        for (const c of batch) this.giac.eval(c);
-      }
+      this.runBatch(batch, names);
       batch = [];
       names = [];
     };
     for (const e of replayOrder(entries)) {
-      const plain = (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!);
-      for (const c of e.cmds) this.need(c); // a replayed definition may use one of ours
-      if (plain) {
+      if (this.pending.get(e.name) === e) continue;
+      // A replayed command may use one of ours, or a pending function (G83). A symbolic value is set while every
+      // name in it is still free (G3), so it loads only ours.
+      for (const c of e.cmds) {
+        if (e.early) this.needOurs(c);
+        else this.need(c);
+      }
+      if (plain(e)) {
         batch.push(e.cmds[0]!);
         names.push(e.name);
         if (batch.length >= REPLAY_BATCH) flush();
@@ -511,6 +576,8 @@ export class EngineHost implements FactsHost {
       }
       return isFlagName(c.set.name) || (c.set.kind === "other" && namesFlag(input)) ? [] : [c];
     });
+    // G83: a new definition or a purge of a pending name: the old definition never comes back
+    for (const c of changes) for (const n of "purge" in c ? c.purge : [c.set.name]) this.pending.delete(n);
     this.record(changes);
     return changes;
   }
@@ -830,18 +897,21 @@ export class EngineHost implements FactsHost {
   }
 
   solve(req: SolveRequest, s: HomeSettings): SolveOutcome {
-    this.need(JSON.stringify(req));
+    // G83f1: the request's expressions only (its keys and JSON would name a pending function or match LOAD_ALL)
+    this.need(expressionsOf(req.kind === "poly" ? [req.equation] : req.equations, req.knowns?.map((k) => k.value)));
     this.useSolveMode(s);
     // G65: no read of the stored names after it: Solve puts back the very values it freed (solve.ts withUnassigned)
     return solveRequest(this.giac, req, s);
   }
 
   unknowns(equations: string[]): string[] {
+    this.need(equations.join(";"));
     return unknownsOf(this.giac, equations);
   }
 
   analyze(req: AnalysisRequest, s: HomeSettings): AnalysisResult {
-    this.need(JSON.stringify(req));
+    const r = req as Partial<Record<"f" | "g" | "x0" | "lo" | "hi" | "a" | "b", string>>;
+    this.need(expressionsOf([r.f, r.g, r.x0, r.lo, r.hi, r.a, r.b]));
     this.useSolveMode(s);
     // G65: it stores only our own pas* names, so the table of stored names stays as it is
     return analyze(this.giac, req, s);
@@ -850,6 +920,7 @@ export class EngineHost implements FactsHost {
   /** The unit view (G16, docs/04 4.2): in Home's mode (angle, budget, digits), with our unit definitions loaded on the
    *  first request. A syntax error or a timeout is an engine error, never a value. */
   units(job: UnitJob, s: HomeSettings): Quantity | UnitError {
+    this.need(expressionsOf([job.expr, job.check, job.end]));
     if (!this.unitsLoaded) {
       for (const d of UNIT_DEFINITIONS) this.giac.eval(d);
       this.unitsLoaded = true;
@@ -865,7 +936,7 @@ export class EngineHost implements FactsHost {
 
   /** Num table cells are Home evaluations, in Home mode (same budget per cell). */
   table(req: TableRequest, s: HomeSettings): HomeResult[][] {
-    this.need(JSON.stringify(req));
+    this.need(expressionsOf(req.fns));
     this.useHomeMode(s);
     return table(this.giac, req, s);
   }
@@ -898,6 +969,19 @@ export class EngineHost implements FactsHost {
 
 /** Commands per Giac call in a replay (G29; tools/probes/replay-cost.mjs: 10–50 are as fast, 200 in one call is not). */
 export const REPLAY_BATCH = 25;
+
+/** G83: inputs that list or clear the user's names: every pending function is loaded first. */
+const LOAD_ALL = /\b(VARS|expr|rm_all_vars|restart)\b/;
+
+/** G83f1: the expression strings of a request, for need(): one per line, the absent ones left out. */
+function expressionsOf(...lists: (readonly (string | undefined)[] | undefined)[]): string {
+  return lists.flatMap((l) => l ?? []).filter((t): t is string => t !== undefined).join("\n");
+}
+
+/** The distinct identifiers in `text`. */
+function wordsOf(text: string): string[] {
+  return [...new Set(text.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [])];
+}
 
 /** Brackets and quotes pair up: a command with a stray one would swallow what follows it in a batch. */
 function balanced(cmd: string): boolean {

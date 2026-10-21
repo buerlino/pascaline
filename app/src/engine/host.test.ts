@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, REPLAY_BATCH } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
+import { applyDefChanges } from "./defs.ts";
 import { formatComplex, markOf, type FormatOptions } from "./format.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
@@ -572,7 +573,7 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
     return { giac: { ...giac, eval: (s: string) => (calls.push(s), giac.eval(s)) }, calls, raw: giac };
   };
 
-  it("200 definitions take 8 engine calls (was 200), and every name is set", async () => {
+  it("200 definitions take 7 engine calls (was 200; G83: the 50 functions wait for first use), and every name is set", async () => {
     const { giac, calls, raw } = await counting();
     const log = [
       ...Array.from({ length: 150 }, (_, i) => mk(`dv${i + 1}`, "var", `dv${i + 1}:=(${i + 1}/7+${i + 1})`)),
@@ -581,9 +582,12 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
     const host = new EngineHost(giac);
     calls.length = 0; // R64: the constructor sets pasdeg; only the replay is counted
     host.restore(log);
-    expect(calls.length).toBe(Math.ceil(200 / REPLAY_BATCH) + 1); // G67: + the settings read after the replay
+    expect(calls.length).toBe(Math.ceil(150 / REPLAY_BATCH) + 1); // G67: + the settings read after the replay
     expect(raw.eval("dv7*7")).toBe("56"); // derived: 7*(1+7)
-    expect(raw.eval("df3(0)")).toBe("sin(3)");
+    expect(host.eval("df3(0)").output).toBe("sin(3)"); // G83: loaded by its first use
+    calls.length = 0;
+    host.eval("VARS");
+    expect(calls.length).toBe(Math.ceil(49 / REPLAY_BATCH) + 2); // the other 49 functions in two batches, the stored-table read, then VARS
   });
 
   it("G3's order: a symbolic value goes first, even inside a batch", async () => {
@@ -610,8 +614,9 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
 
   it("G19: an entry Giac refuses outright (a reserved name) does not abort the rest of its batch", async () => {
     const { giac, raw } = await counting();
-    new EngineHost(giac).restore([mk("c1", "var", "c1:=(1)"), mk("pi", "var", "pi:=(3)"), mk("c3", "var", "c3:=(3)"), mk("c4", "fn", "c4(x):=x+1")]);
-    expect(raw.eval("c1+c3+c4(0)")).toBe("5"); // derived: 1+3+1
+    const host = new EngineHost(giac);
+    host.restore([mk("c1", "var", "c1:=(1)"), mk("pi", "var", "pi:=(3)"), mk("c3", "var", "c3:=(3)"), mk("c4", "fn", "c4(x):=x+1")]);
+    expect(host.eval("c1+c3+c4(0)").output).toBe("5"); // derived: 1+3+1 (G83: c4 loaded on first use)
   });
 
   it("a rerun keeps G3's order: an early entry, the name it uses and a refused entry in one batch (S is K*x+1)", async () => {
@@ -627,7 +632,9 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
     const host = new EngineHost(giac);
     calls.length = 0; // R64: the constructor sets pasdeg; only the replay is counted
     host.restore(log);
-    expect(calls.length).toBe(Math.ceil(50 / REPLAY_BATCH) + 1); // G67: + the settings read after the replay
+    calls.length = 0;
+    host.eval("VARS"); // G83: the functions load on first use, here all at once
+    expect(calls.length).toBe(Math.ceil(50 / REPLAY_BATCH) + 2); // + the stored-table read, VARS itself
     expect(raw.eval("g3(2)")).toBe("ga*2+3");
   });
 });
@@ -794,5 +801,102 @@ describe.skipIf(!giacAvailable())("G51: a CAS result that reads stored facts get
     expect(f.warn).toBeUndefined();
     host.cas("gg(x):=x+gE", defaultCasSettings);
     expect(cas("gg(1)").warn).toBeUndefined();
+  });
+});
+
+// G83 (docs/04 6.2): restore() keeps the user's functions back and need() gives them to Giac on first use. Each test
+// first reads Giac directly (not through the host) to see that the function is not there yet, which an eager replay fails.
+describe.skipIf(!giacAvailable())("G83: the user's functions are defined on first use", () => {
+  const mk = (name: string, kind: "var" | "fn", cmd: string) => ({ name, kind, cmds: [cmd], preview: "", view: "cas" as const, time: 0 });
+  const fresh = async (log: Parameters<EngineHost["restore"]>[0]) => {
+    const { giac } = await loadNodeGiac();
+    const calls: string[] = [];
+    const host = new EngineHost({ ...giac, eval: (s: string) => (calls.push(s), giac.eval(s)) });
+    host.restore(log);
+    return { host, raw: giac, calls };
+  };
+  /** What an eager replay leaves: every command given to Giac as it is, before any input. */
+  const eager = async (log: Parameters<EngineHost["restore"]>[0]) => {
+    const { giac } = await loadNodeGiac();
+    const host = new EngineHost(giac);
+    for (const e of log) for (const c of e.cmds) giac.eval(c);
+    return host;
+  };
+  const chain = [mk("f", "fn", "f(x):=x+g(x)"), mk("g", "fn", "g(x):=2*x"), mk("a", "var", "a:=(5)")];
+
+  it("a chain: f(2) loads g with f and gives 6, not 2+g(2) (derived: 2+2*2)", async () => {
+    const { host, raw } = await fresh(chain);
+    expect(raw.eval("g(2)")).toBe("g(2)"); // not in Giac yet
+    expect(host.home("f(2)", defaultHomeSettings).result.display).toBe("6");
+    expect(host.cas("f(y)", defaultCasSettings).result.text).toBe("y+2*y"); // derived: y+g(y), g(y)=2*y
+  });
+
+  it("an input that loads f does not make f a var in the log: f(a), then b:=1 (derived: f stays fn with its command)", async () => {
+    const f = { ...mk("f", "fn", "f(x):=x^2"), preview: "pf", time: 7 };
+    const { host } = await fresh([f, mk("a", "var", "a:=(2)")]);
+    let log = applyDefChanges([f, mk("a", "var", "a:=(2)")], []);
+    const r = host.cas("f(a)", defaultCasSettings);
+    expect(r.result.text).toBe("4");
+    log = applyDefChanges(log, r.defs);
+    log = applyDefChanges(log, host.cas("b:=1", defaultCasSettings).defs);
+    expect(log.find((e) => e.name === "f")).toEqual(f);
+    const vars = host.eval("VARS").output;
+    expect(vars.match(/\bf\b/g)).toHaveLength(1);
+  });
+
+  it("VARS and VARS(1) typed after a restore list every restored name, as an eager replay does", async () => {
+    const { host, raw } = await fresh(chain);
+    expect(raw.eval("VARS")).not.toMatch(/\bf\b/);
+    const vars = host.cas("VARS", defaultCasSettings).result.text;
+    for (const n of ["f", "g", "a"]) expect(vars).toMatch(new RegExp(`\\b${n}\\b`));
+    const ref = await eager(chain);
+    expect(vars).toBe(ref.cas("VARS", defaultCasSettings).result.text);
+    const lazy1 = (await fresh(chain)).host;
+    expect(lazy1.home("VARS(1)", defaultHomeSettings).result.display).toBe(ref.home("VARS(1)", defaultHomeSettings).result.display);
+    expect(lazy1.home("f(1)", defaultHomeSettings).result.display).toBe("3"); // derived: 1+2*1, all loaded by VARS(1)
+  });
+
+  it("a pending name redefined or purged before its first use: the old definition never comes back", async () => {
+    const { host, raw } = await fresh([mk("g", "fn", "g(x):=2*x"), mk("h", "fn", "h(x):=2*x")]);
+    expect(raw.eval("h(2)")).toBe("h(2)");
+    host.cas("g(x):=3*x", defaultCasSettings);
+    host.cas("purge(h)", defaultCasSettings);
+    host.cas("VARS", defaultCasSettings); // would load every pending function
+    expect(host.home("g(2)", defaultHomeSettings).result.display).toBe("6"); // derived: 3*2
+    expect(host.cas("h(2)", defaultCasSettings).result.text).toBe("h(2)");
+    expect(raw.eval("g(2)")).toBe("6");
+  });
+
+  it("a pending function whose definition fails when it loads: the same result as an eager replay, the next input clean", async () => {
+    const log = [mk("bad", "fn", "bad(x):=x+*2"), mk("ok1", "fn", "ok1(x):=x+1")];
+    const { host, calls } = await fresh(log);
+    expect(calls.some((c) => c.includes("bad("))).toBe(false); // restore left it for later
+    const ref = await eager(log);
+    expect(host.home("bad(2)", defaultHomeSettings).result).toMatchObject({ ok: true, display: ref.home("bad(2)", defaultHomeSettings).result.display });
+    expect(host.cas("bad(3)", defaultCasSettings).result.text).toBe(ref.cas("bad(3)", defaultCasSettings).result.text);
+    const next = host.home("1+1", defaultHomeSettings).result;
+    expect(next).toMatchObject({ ok: true, display: "2" });
+    expect(next.error).toBeUndefined();
+    expect(host.home("ok1(1)", defaultHomeSettings).result.display).toBe("2");
+  });
+
+  it("a stored value that names a pending function finds it (S:=(g(x)) reads g)", async () => {
+    const { host, raw } = await fresh([{ ...mk("S", "var", "S:=(g(x)+1)"), early: true }, mk("g", "fn", "g(x):=2*x")]);
+    expect(raw.eval("g(1)")).toBe("g(1)");
+    const ref = await eager([{ ...mk("S", "var", "S:=(g(x)+1)"), early: true }, mk("g", "fn", "g(x):=2*x")]);
+    expect(host.cas("S", defaultCasSettings).result.text).toBe(ref.cas("S", defaultCasSettings).result.text);
+    expect(raw.eval("g(1)")).toBe("2"); // derived: 2*1, loaded by the read of S
+  });
+
+  it("solve and a plot table that name a pending function work as before (R56b)", async () => {
+    const log = [mk("qq", "fn", "qq(x):=x^2")];
+    const { host, raw } = await fresh(log);
+    expect(raw.eval("qq(3)")).toBe("qq(3)");
+    const r = host.solve({ kind: "equations", equations: ["qq(x)=2"], unknowns: ["x"], guesses: ["1"] }, defaultHomeSettings);
+    expect(r.roots[0]!.result.display).toBe("1.41421356237"); // oracle sqrt(2): solve.yaml sqrt2-pos
+    const t = (await fresh(log)).host.table({ fns: ["qq(x)"], xs: ["3"] }, defaultHomeSettings);
+    expect(t[0]![0]!.display).toBe("9"); // derived: 3^2
+    const ref = await eager(log);
+    expect(ref.table({ fns: ["qq(x)"], xs: ["3"] }, defaultHomeSettings)[0]![0]!.display).toBe("9");
   });
 });
