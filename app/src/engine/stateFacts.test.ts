@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
-import { applyDefChanges, type DefChange } from "./defs.ts";
+import { applyDefChanges, type DefChange, type DefEntry } from "./defs.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { parsePrinted, statePart, tableOf, type StoredName } from "./stateRead.ts";
 
@@ -76,5 +76,26 @@ describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
     }
     host.home("Y:=1", defaultHomeSettings);
     expect(host.home("X+1", defaultHomeSettings).result.warn).toBe("unchecked");
+  });
+  it("a log stored before G65 holding the \"other\" entry x:=y:=3: a relaunch turns it into x and y, and purging both leaves them free (F58)", async () => {
+    const old: DefEntry[] = [{ name: "x", kind: "other", cmds: ["x:=y:=3"], preview: "3", view: "cas", time: 1 }];
+    const host = await fresh();
+    host.restore(old);
+    let log = applyDefChanges(old, host.takeMigrated());
+    expect(log.map((e) => [e.name, e.kind]).sort()).toEqual([["x", "var"], ["y", "var"]]);
+    log = applyDefChanges(log, [...host.cas("purge(x)", defaultCasSettings).defs, ...host.cas("purge(y)", defaultCasSettings).defs]);
+    expect(log).toEqual([]);
+    const next = await fresh();
+    next.restore(log);
+    expect(next.home("x+y", defaultHomeSettings).result.display).toBe("x+y");
+  });
+
+  it("a program that stores a global and then errors: the table follows, so the next input is not credited with it", async () => {
+    const host = await fresh();
+    host.home("sto(floor(sin(10^100)*10^12),pA)", defaultHomeSettings);
+    host.home("sg(v):={gl:=v; error(\"e\")}", defaultHomeSettings);
+    host.home("sg(pA)", defaultHomeSettings);
+    const defs = host.home("Y:=1", defaultHomeSettings).defs;
+    expect(defs.flatMap((d) => ("set" in d ? [d.set.name] : []))).toEqual(["Y"]);
   });
 });

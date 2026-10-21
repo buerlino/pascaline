@@ -39,7 +39,7 @@ import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, una
 import { callsStateful, decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { fnFacts, inherited, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
 import { afterCall, changesOf, parsePrinted, readPart, readsOf, splitAfter, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
-import { applyDefChanges, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
+import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
 import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
@@ -341,7 +341,9 @@ export class EngineHost implements FactsHost {
     flush();
     this.record(entries.map((e) => ({ set: e })));
     // G67: a replayed body or command may have changed a Giac setting; G65: the table of stored names, in the same call
-    this.commit(this.after("", false, true));
+    const post = this.after("", false, true);
+    this.commit(post);
+    this.otherToNames(entries, post);
     return performance.now() - t0;
   }
 
@@ -392,6 +394,25 @@ export class EngineHost implements FactsHost {
   private commit(post: AfterInput): void {
     if (post.table) this.stored = post.table;
     this.post = null;
+  }
+
+  /** F58, for a log stored before G65: an "other" entry (`x:=y:=3`) outlives purge(x), purge(y). After the replay it
+   *  becomes var entries for the names the replay set that no entry holds (their names come from the table), and goes
+   *  from the log (a purge of `#<cmds>`, defs.ts); passed on through migratedChanges. One that set no new name stays. */
+  private otherToNames(entries: readonly DefEntry[], post: AfterInput): void {
+    const others = entries.filter((e) => e.kind === "other" && e.cmds.some(isStateful));
+    if (!others.length || !post.table) return;
+    const base = { preview: "", view: "cas" as const, time: Date.now() };
+    const sets: DefChange[] = [];
+    for (const name of post.changes?.changed ?? []) {
+      if (this.byName.has(name) || isFlagName(name)) continue;
+      const snap = this.snapshot(name, 12);
+      if (snap) sets.push({ set: { name, kind: "var", cmds: [snap.cmd], ...base, ...(snap.early ? { early: true } : {}) } });
+    }
+    if (!sets.length) return;
+    const changes: DefChange[] = [{ purge: others.map((e) => keyOf(e)) }, ...sets];
+    this.record(changes);
+    this.migratedChanges.push(...changes);
   }
 
   /** G46: what the last restore() changed in the entries it was given (flagged values resolved), for the client to
@@ -527,7 +548,7 @@ export class EngineHost implements FactsHost {
     this.post = null;
     const out = this.homeTabled(input, s, consts, chips);
     // G67, G65: the call after the input, if the run did not make it (an error: a syntax error ran nothing)
-    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && isStateful(input));
+    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && (isStateful(input) || callsStateful(this.giac, input)));
     this.commit(post);
     return post.reset ? { ...out, result: { ...out.result, settingReset: true } } : out;
   }
@@ -636,7 +657,7 @@ export class EngineHost implements FactsHost {
     const out = this.casRun(input, s);
     if (used.length && out.result.ok) out.result.uses = used;
     // G67, G65: the call after the input, if the run did not make it (an error or a refusal)
-    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && isStateful(input));
+    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && (isStateful(input) || callsStateful(this.giac, input)));
     this.commit(post);
     if (post.reset) out.result.settingReset = true;
     return out;

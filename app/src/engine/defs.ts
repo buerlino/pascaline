@@ -71,7 +71,8 @@ export function applyDefChanges(log: readonly DefEntry[], changes: readonly DefC
   for (const c of changes) {
     if ("purge" in c) {
       const names = new Set(c.purge);
-      out = out.filter((e) => e.kind === "other" || !names.has(e.name));
+      // an "other" entry goes only by its key (`#<cmds>`, which no name can spell: otherToNames in host.ts)
+      out = out.filter((e) => (e.kind === "other" ? !names.has(keyOf(e)) : !names.has(e.name)));
     } else {
       const k = keyOf(c.set);
       out = out.filter((e) => keyOf(e) !== k);
