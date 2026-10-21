@@ -76,7 +76,7 @@ The key path step by step is [r6](r6-pipelines.md) section 1; the MathLive promp
 | Parser (`input/parse.ts`, `emit.ts`) | one rule per key | rejects what our keys cannot produce | — | its own lazy chunk (M4-3) |
 | Engine client and Giac worker (`engine/workerEngine.ts`, `host.ts`) | engine in a worker, warm | Cancel and a crash restart the worker and replay the definitions; definitions survive a relaunch (G3); a safe start without them after two failed starts (G19); a 1 GB memory cap (G24) | the `defs` replay over its Tab One bar (G29 cut it, A12 re-measures) | Giac 9.75 MB wasm |
 | Home evaluation (`engine/homeEval.ts`) | p95 well under the bar on the desktop | exact-first; marks and the agreement check (2.4) | — (G44 polished `normald_icdf`, 2.3 #2) | — |
-| Formatter (`engine/format.ts`) | re-formats without the engine | BigInt, one rounding | `tieRisk` has no reader (2.4 rule 4) | in the start chunk |
+| Formatter (`engine/format.ts`) | re-formats without the engine | BigInt, one rounding | `tieRisk` has no reader (backlog, "Without a package yet") | in the start chunk |
 | History and settings (`state/`) | history and the half-typed line survive a relaunch and a kill (R34) | digits ≤ 30, every stored value stamped (`DATA_VERSION`) | — | — |
 | Function and Solve apps | Plot 56 fps on the Tab One | every number from the engine; every root substituted back, ⚠ on failure | frozen for features (P11) | lazy chunks |
 | CAS view (`host.ts` `cas()`) | — | exact results; typed decimals exact (P9); floats marked; the stored values a result used are listed (G20, R32) | — | — |

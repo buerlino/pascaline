@@ -19,7 +19,7 @@ All of them use `$ANDROID_SERIAL` (default: the Tab One). Smaller helpers (usage
 - `page-series.py`: open a page N times and log the series.
 - `shots.py`: cold-start a page N times and keep a screenshot of each.
 - `tap-seq.py`: tap a sequence and report whether the system keyboard is shown after each tap.
-
+Night-shift coordinators (docs/shifts/rules.md section 4a). Run them from the phase-1 worktree (`cd .claude/worktrees/phase-1`): the main checkout may be on another branch, without `scripts/`.
 Night-shift coordinators (docs/shifts/rules.md section 4a):
 ```bash
 scripts/night.sh --until 07:30   # the night shift: a fresh Read-only henri per decision, scripts/pipeline.sh per package (docs/shifts/rules.md section 4)

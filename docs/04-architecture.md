@@ -13,13 +13,12 @@ How to read each area: **state** (verified), **decision** (one, with the reason)
 4. **Results are reused as chips that carry the full value**; Ans on Shift + `+`; an operator typed on an empty line starts with Ans, as on the reference (2.8).
 5. **Copy gives the full value** (all confirmed digits, up to 40); "as shown", "exact" and LaTeX are in the Menu. Copy and Shift + Copy = Paste on one key (R15c; 2.6, 5.1).
 6. **CAS floats are marked `≈` and formatted by us.** Typed decimals in CAS become exact, like Home (**P9, accepted by the user 2026-10-12**) (2.9).
-7. *(Python: removed with the app, P11.)*
 8. **Find is one static index generated at build time** (Giac's English help lines, libqalculate's units, constants and prefixes, our alias file), searched by our own ranking code on the main thread, fetched when idle after the engine is ready and parsed on first open (section 3).
 9. **Constants, units, prefixes and results enter the entry line as atomic MathLive macros** (`\const{ID}`, `\unit{ID}`, `\pfx{p}`, `\res{n}`, `\ans`), never as free text (3.6, 4.3).
 10. **The unit view computes on Giac (P15)**, exactly, in the worker already loaded: each unit token (a Find id) becomes its exact SI factor from the Find index times base-dimension symbols. The evaluator refuses mismatched sums, absolute temperatures in arithmetic and functions of quantities with units (section 4).
 11. **Keys:** Math = Find, Shift + Tmpl = the unit view (P11), View = results mode (P16), Copy | Paste on one key, Shift + View = Help, Shift + `+` = Ans; every cell in 5.1, every difference from the G2 and its reason in [06-keypad-vs-g2.md](06-keypad-vs-g2.md).
 12. **State:** one IndexedDB store with a schema version; user definitions are persisted, so variables survive a relaunch (6.2).
-13. **The qalc build runs in `build.sh` at build time only** (A2): the Find index takes its constant values and unit factors from it (P15; 7.1). P22 (2026-10-20) replaces it with checked-in numbers (`find/factors.yaml`, A21), refreshed by a developer tool.
+13. **The Find index's constant values and unit factors** come from libqalculate at build time (7.1); P22 replaces the build with checked-in numbers (`find/factors.yaml`, A21).
 14. **New gates:** an automated size test, the task benchmark, the Find query test, marks in the golden files, `units.yaml`, a per-key Find timing on the Tab One (7.3).
 
 The top risks are in section 9.
@@ -96,7 +95,6 @@ Num tables and the Solve and analysis results show only `⚠` (a mark on every c
 1. An exact rational needs no check: BigInt is exact.
 2. Any other value is evaluated at precision P = `max(40, digits+10)` and again at P + 20. The confirmed digits are the largest n at which both values, widened by their difference (plus one ulp), round alike (G2; stricter than "common digits less one" at ties). If fewer than `digits` agree, the check runs once more at P + 20 against P + 40. If they cover the shown digits, the mark is `≈`; otherwise `⚠ n`. A float from a function that is not audited shows `⚠` without a count (M4-5): two of Giac's routines can agree on wrong digits. The exact path runs at P too; a result that rests on a numeric decision (sign, comparison, floor, abs, max, piecewise; int, sum, limit, solve; a stored function) is decided again at P + 20, and if the texts differ, at P + 20 against P + 40; a decision P + 20 and P + 40 disagree on, or a tie at a cut Giac cannot prove, is refused (`error.undecided`), never shown (G57); one that cannot run again (`sto`, `=>`, `[a,b]:=`), or a proven tie with no value to put in its place, is `⚠` without a count (G38, G48).
 3. A value that Giac's numeric code returned as a float on the "exact" path (the exact output is a float literal, as `normald_icdf` gives `-1.2815515655446`) is re-evaluated once with `Digits` on the other side of 14 (double ↔ MPFR) and compared the same way. If one side has no value (2.3 #5), the other side's digits are shown, at most 15 for a double. Such a value gets `⚠` unless every function in the input is on the audited list (tier 0, 3.3), because agreement between two of Giac's routines does not prove either right (2.3 #2). normald_icdf, student_icdf, chisquare_icdf and fisher_icdf are polished (G44, icdf.ts) and audited for an input whose every call converged at P and P + 20; otherwise they stay unaudited. Two-argument `round` and `trunc` compute in a double: unaudited (G71).
-4. *(Not needed: rule 2's comparison of P with P + 20 already drops a digit at a tie. `tieRisk` (`format.ts:129`, set in `homeEval.ts:508`) has no reader; drop it when `homeEval.ts` is next touched. Checked 2026-10-19.)*
 
 A number for something that does not exist (a principal value, an Abel sum) is refused by the cheapest necessary check (the term's limit, ∫|f| near a singular point); a check Giac's timeout stops leaves `⚠` (G39).
 
@@ -104,7 +102,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 
 **Golden cases:** every numeric case in `home.yaml` carries its mark, checked by the gate (`oracle.py` checks that `=` appears exactly when the oracle value equals the expected text); `precision.yaml` holds the cases at 20 and 30 digits (`oracle`) and 2.3's regression list.
 
-**Alternatives:** a mark computed in the app from `approximate` alone (cannot tell 1/3 from 1/4); a mark only on float paths (leaves rounded exact results unmarked, against principle 3); MPFI intervals (Giac has them for elementary functions; not linked; S20).
+**Alternatives:** a mark from `approximate` alone (cannot tell 1/3 from 1/4); MPFI intervals (S20).
 
 **Risk:** both evaluations wrong in the same way is not caught (2.3 #2; section 9 risk 1): until a function has passed the tier-0 audit, a float Giac's numeric code returned for it is `⚠`, never a bare `≈`.
 **Would change if:** Tab One timing shows the extra `evalf` costing more than 20 % of Enter p95; then the check runs only above 15 digits and for float-returning inputs.
@@ -202,7 +200,7 @@ Live items (variables, user functions) have the same shape with `kind: "var" | "
 **Generation, from source at build time** (gorge; `tools/find-index/generate.mjs`, Node, no network; run by `build.sh` after the engines, and by `npm run index` in development; output gitignored under `app/src/find/_gen/`):
 1. Giac `doc/aide_cas` from the pinned tarball: names, the English line (`2 …`) only, never French (R5), syntax and examples; entries starting with `_` dropped.
 2. libqalculate 5.13.1 `units.xml.in`, `variables.xml.in`, `prefixes.xml.in` from the pinned tarball; `currencies.xml.in`, `elements`, `planets`, `datasets` skipped.
-3. **Values from the built qalc engine run in Node:** each constant's value, uncertainty and unit; each unit's SI factor; a round-trip check that every unit and constant ID parses back to itself. The check is needed: qalc misreads common names (`mu0`, `degC`, `BTU`, `h`: [r6](research/r6-pipelines.md) section 6). Formula-defined constants (μ₀, ε₀, the Bohr magneton) need qalc to evaluate them, which is why `build.sh` builds qalc (7.1).
+3. **Values from the built qalc engine run in Node:** each constant's value, uncertainty and unit; each unit's SI factor; a round-trip check that every unit and constant ID parses back to itself. The check is needed: qalc misreads common names (`mu0`, `degC`, `BTU`, `h`: [r6](research/r6-pipelines.md) section 6).
 4. Our own files: `find/aliases.yaml` (what users type and the data lacks, such as `kph`, `eps0`, `degC`; per item id), `find/functions.yaml` (tier 0: each function with our own one-line description and the id of its golden accuracy case) and `find/units.yaml` (our overrides and the common prefixed units as items: `km`, `MPa`, `kΩ`, …).
 
 **Tier 0** is the audited set: every tier-0 function has a golden case at 12 digits against the oracle, including the edges of its domain (where 2.3 #2 was found), and, for a function defined on complex numbers, complex arguments in RAD (G50: `tools/probes/complex-audit.ts`, 12 arguments at 12, 30 and 50 digits; Giac's complex tanh, asin, acos, atan and acosh are replaced by our definitions). Complex arguments in DEG are not audited (S14). Tier 1 is everything else Giac documents, ranked below tier 0 and labelled "not checked" in the preview.
@@ -211,14 +209,14 @@ Live items (variables, user functions) have the same shape with `kind: "var" | "
 
 **Licences:** 7.2 (Giac's English lines under P10, confirmed by B. Parisse on 2026-10-19); the About screen credits Giac and libqalculate.
 
-**Alternatives:** generating at run time from the engines (costs start-up and memory); committing the generated JSON (F-Droid: generated data in git is not our source; P22's `find/factors.yaml` is the audited source of the numbers, not generated output); all 1,780 Giac commands at the same rank (buries what engineers use under graph theory and geometry).
+**Alternatives:** generating at run time (start-up, memory); committing the generated JSON (not our source for F-Droid; P22's `find/factors.yaml` is the audited source, not output).
 
 ### 3.4 Live entries
 The engine host reports the name each stateful input defines (`defined: {name, kind}`, from `:=` and ▶). The session keeps `userNames` (name, kind, formatted value preview, view, time), read through `Calc.names()` from the persisted defs log (6.2), so Vars works after a relaunch. Find merges them at query time; a library function brings its one-line `desc` (G33).
 
 ### 3.5 Ranking
 No usage boost (P11), so the same query always gives the same order (docs/03 rule 8); with an empty query Find shows the G2-style Math menu (fixed categories, fixed order). Our own code (`app/src/find/rank.ts`, built in G4). Order (numbered as in `rank.ts`; (1) was the usage boost): (2) exact match of a name, symbol or alias; (3) prefix of one, shorter first; (4) word prefix inside one (`_`, space); (5) word prefix in the title or description; (6) one edit away (insertion, deletion, substitution, transposition) for queries of 4+ characters. Ties: tier 0 first, then the context's kind (variables in Vars, units in a unit slot), then the shorter name, then id. Nothing is stored.
-**Alternatives:** uFuzzy, fuzzysort or Fuse.js (they know none of our tiers or kinds, so the same code would wrap them; our own costs 1.2 ms per key).
+**Alternatives:** uFuzzy, fuzzysort, Fuse.js (they know none of our tiers or kinds).
 
 ### 3.6 Insertion and tokens
 - MathLive macros on the entry field, all `captureSelection: true, expand: false`, so the cursor cannot enter a chip and `getValue()` keeps the macro (R2: `entry/macros.test.ts`, `app/test/chips.spec.ts`): `\const{ID}`, `\unit{ID}` (unit view only), `\pfx{p}`, `\res{n}`, `\ans`. The chip macros take a second argument that is only what they show: `\res{k}{shown LaTeX}`, `\const{ID}{symbol LaTeX}`; a macro definition cannot look up a value, so the display travels in the LaTeX and the value in the chip table. A Find item's `insert` for a constant is `\const{ID}{symbol}`, ID being the item id without `const:`.
@@ -230,7 +228,7 @@ Every key types its Alpha letter in lower case (no Alpha press); Shift + key typ
 **Keystroke budget:** an item used before: Math, first letter, Enter (3 presses); a new one: Math, the letters, Enter. Benchmark task 5 checks it.
 
 ### 3.8 The query test
-`tests/tasks/find-queries.yaml` (`query`, `expect` id, `note`), run by Vitest against the generated index and the real ranking (`app/src/find/queries.test.ts`). **Gate:** every phrase in the top 3, at least 90 % first. The first 100 phrases are in Appendix B, plus 10 `pending` ones whose items arrive in milestone 6. The owner adds a phrase whenever Find misses one.
+`tests/tasks/find-queries.yaml` (`query`, `expect` id, `note`), run by Vitest against the generated index and the real ranking (`app/src/find/queries.test.ts`). **Gate:** every phrase in the top 3, at least 90 % first. It holds 100 active phrases (25 constants, 40 units, 5 prefixes, 30 functions; `newton`, `kb`, `db` are ambiguous on purpose) and 10 `pending` ones for milestone 6. The owner adds a phrase whenever Find misses one.
 
 ### 3.9 Budgets, risks, would change
 Budgets: 8.3. Risks: alias quality (only the query test and real use show it); the chip look (screenshot test). Would change if the Tab One misses 16 ms (incremental filtering, then a worker), or the index outgrows 100 kB gzip (split functions and units into two files).
@@ -475,9 +473,6 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 ## Appendix A: probes
 The probes behind this document are in `tools/probes/` (its README says how to run each): `engine.ts` (Home and CAS paths through `EngineHost`, `FACTS=1` for the facts), `parse.ts` (the parser), `digits-cost.ts`, `units-giac.mjs` (G15), `find/` (the index prototype), `start-chunk.mjs`, `bound.ts`, `replay-cost.mjs`, `unit-presses.mjs`, `results-geometry.mjs`. What they found is in [research/r12-evidence.md](research/r12-evidence.md); oracle values come from mpmath in `tests/golden/.venv` (the expressions: r12 section 1).
-
-## Appendix B: the Find queries
-The phrases are `tests/tasks/find-queries.yaml` (3.8): 100 active ones (25 constants, 40 units, 5 prefixes, 30 functions) and the pending ones for milestone 6. Some are ambiguous on purpose (`newton`, `kb`, `db`): the top-3 rule tolerates that.
 
 ## Appendix C: open items (to verify), who, how
 
