@@ -17,6 +17,7 @@ import { floatBounds, refusalOf, giacPair, hasDefiniteIntegral, integratedNumeri
 import { enEngine } from "../i18n/enEngine.ts";
 import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
+import { nonSquarePower } from "./nonsquare.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
@@ -682,6 +683,8 @@ export function homeEval(
 
   // G58: past the deadline after the exact steps: refused, not checked for as long again.
   if (late()) return { ...failed(enEngine["error.timeout"], "exact"), error: "timeout" };
+  // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, no matrix power.
+  if (!once && !isTimeout(exactOut) && nonSquarePower(giac, exactBody, late, exactMs, userFn)) return refuse("notSquare", "exact");
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
 

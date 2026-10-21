@@ -8,6 +8,7 @@ import {
   definedBy,
   definitionsUsedBy,
   ENGINE_DEFINITIONS,
+  WORKER_DEFINITION_NAMES,
   decideFloatTest,
   EQ_DIFF,
   EQ_INEXACT_FLAG,
@@ -32,6 +33,7 @@ import {
 import { eseriesDefinition } from "./eseries.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { resolveAngle } from "./angleMigration.ts";
+import { mayPowerMatrix, nonSquarePower } from "./nonsquare.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
@@ -749,7 +751,9 @@ export class EngineHost implements FactsHost {
     // definite integral, a series or a limit runs its right-hand side first, is checked, and only then stored.
     const asg0 = simpleAssignment(exactInput);
     // G57: so does one whose value rests on a decision, which may be refused as undecided.
-    const guarded = asg0 && !isStateful(asg0.rhs) && (callsIn(asg0.rhs).length || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
+    // G97: and one whose value may be a power of a non-square matrix, which is refused.
+    const guarded =
+      asg0 && !isStateful(asg0.rhs) && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
     // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
     // mode's Digits stays the setting, which prints the floats of a non-number.
     const digitsSet = Math.trunc(s.digits);
@@ -811,6 +815,10 @@ export class EngineHost implements FactsHost {
     const refused = guarded ? refusalOf(this.giac, guarded.rhs, text) : single ? null : refusalOf(this.giac, exactInput, text);
     if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
     if (refusedCut) return fail(enEngine["error.undecided"], "undecided");
+    // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, refused as in Home.
+    const builtin = notBuiltin(this.giac);
+    const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
+    if ((guarded || !single) && nonSquarePower(this.giac, body, () => false, performance.now() - t0, userFn)) return fail(enEngine["error.notSquare"], "notSquare");
     if (guarded) {
       const stored = this.giac.eval(`${guarded.name}:=pcasans`);
       if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");

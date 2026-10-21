@@ -11,6 +11,7 @@ export const enEngine = {
   "error.overflow": "Overflow: the number is too large",
   "error.underflow": "Underflow: the number is too small",
   "error.noValue": "No value found",
+  "error.notSquare": "The matrix is not square",
   "error.undecided": "undecided: the value sits on a cut Giac cannot decide",
   "why.pairDiffers": "The exact and numeric answers differ",
 } as const;
