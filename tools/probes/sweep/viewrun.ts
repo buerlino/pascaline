@@ -4,7 +4,7 @@
 // (against Home's int); views.ts compares them. In process, one engine; Home's own deadline bounds a case.
 import { compileDefinition } from "../../../app/src/apps/function/compile.ts";
 import { markOf, type ComplexValue } from "../../../app/src/engine/format.ts";
-import { defaultHomeSettings, pasdegCommand, type HomeResult, type HomeSettings } from "../../../app/src/engine/homeEval.ts";
+import { defaultHomeSettings, pasdegCommand, precisionFacts, type HomeResult, type HomeSettings } from "../../../app/src/engine/homeEval.ts";
 import { EngineHost } from "../../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../../app/src/engine/nodeGiac.ts";
 import { defaultCasSettings } from "../../../app/src/engine/types.ts";
@@ -39,7 +39,7 @@ export interface ViewSweepResult {
 export function viewOfResult(r: HomeResult): View {
   if (!r.ok) return r.error === "timeout" ? { kind: "other" } : { kind: "refused" };
   if (!r.value || r.items) return { kind: "other" };
-  const m = markOf(r, { format: "STD", digits: DIGITS });
+  const m = markOf(precisionFacts(r), { format: "STD", digits: DIGITS });
   const claim = m === null ? DIGITS : m.mark === "⚠" ? (m.n === undefined || m.n < 1 ? null : m.n) : DIGITS;
   return numView(r.value as ComplexValue, claim);
 }

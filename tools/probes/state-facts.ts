@@ -19,7 +19,7 @@
 import { readFileSync } from "node:fs";
 import { EngineHost, type GiacApi } from "../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
-import { definedBy, defaultHomeSettings, ENGINE_DEFINITIONS, isStateful, pasdegCommand, WORKER_DEFINITION_NAMES, type HomeResult, type HomeSettings } from "../../app/src/engine/homeEval.ts";
+import { definedBy, defaultHomeSettings, ENGINE_DEFINITIONS, isStateful, pasdegCommand, WORKER_DEFINITION_NAMES, precisionFacts, type HomeResult, type HomeSettings } from "../../app/src/engine/homeEval.ts";
 import { COMPLEX_DEFINITIONS, hasFloat, valuePrecision } from "../../app/src/engine/numeric.ts";
 import { markOf, type MarkInfo } from "../../app/src/engine/format.ts";
 import { defaultCasSettings, type CasResult } from "../../app/src/engine/types.ts";
@@ -104,7 +104,7 @@ function merged(all: readonly NameFacts[]): NameFacts | null {
   if (!all.length) return null;
   const capped = all.flatMap((f) => (f.reliableDigits === null ? [] : [f.reliableDigits]));
   const warn = all.some((f) => f.warn === "unaudited") ? "unaudited" : all.some((f) => f.warn === "unchecked") ? "unchecked" : undefined;
-  return { reliableDigits: capped.length ? Math.min(...capped) : null, ...(warn ? { warn } : {}), inexact: true };
+  return { exact: false, reliableDigits: capped.length ? Math.min(...capped) : null, ...(warn ? { warn } : {}), inexact: true };
 }
 
 class StateModel {
@@ -171,7 +171,7 @@ class StateModel {
 
   factsOfReads(names: readonly string[]): { facts: NameFacts | null; causes: string[] } {
     const fs = names.flatMap((n) => {
-      const f = n.startsWith("pasc_") ? { reliableDigits: null, inexact: true as const } : this.facts.get(n);
+      const f = n.startsWith("pasc_") ? { exact: false, reliableDigits: null, inexact: true as const } : this.facts.get(n);
       return f ? [[n, f] as const] : [];
     });
     return { facts: merged(fs.map(([, f]) => f)), causes: fs.map(([n]) => n) };
@@ -196,33 +196,33 @@ class StateModel {
 /** A result's own facts as a stored name keeps them (EngineHost.factsOf, the G49 inexact flag for a ⚠). */
 function ownFacts(r: HomeResult): NameFacts | null {
   if (!r.ok) return null;
-  if (!r.value && !r.items) return r.approximate ? { reliableDigits: null, ...(r.warn ? { warn: r.warn } : {}), inexact: true } : null;
-  const m = markOf(r, { format: "STD", digits: 12 });
+  const w = r.facts.warn;
+  if (!r.value && !r.items) return r.approximate ? { exact: false, reliableDigits: null, ...(w ? { warn: w } : {}), inexact: true } : null;
+  const m = markOf(precisionFacts(r), { format: "STD", digits: 12 });
   if (m?.mark === "=") return null;
-  return { reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}), ...(r.warn ? { inexact: true as const } : {}) };
+  return { exact: false, reliableDigits: r.facts.reliableDigits, ...(w ? { warn: w } : {}), ...(w ? { inexact: true as const } : {}) };
 }
 
 function casOwn(r: CasResult): NameFacts | null {
   if (r.numeric) return ownFacts(r.numeric);
-  return r.approximate || r.warn ? { reliableDigits: null, ...(r.warn ? { warn: r.warn } : {}), inexact: true } : null;
+  const w = r.facts.warn;
+  return r.approximate || w ? { exact: false, reliableDigits: null, ...(w ? { warn: w } : {}), inexact: true } : null;
 }
 
 /** The own result capped by the facts read (inherited() without the perturbation check). */
 function capped(r: HomeResult, f: NameFacts | null, digits: number): MarkInfo | null {
-  if (!f || !r.ok || (!r.value && !r.items)) return markOf(r, { format: "STD", digits });
+  if (!f || !r.ok || (!r.value && !r.items)) return markOf(precisionFacts(r), { format: "STD", digits });
   const P = valuePrecision(digits);
   const one = (e: HomeResult): HomeResult => ({
     ...e,
-    exactRational: false,
-    reliableDigits: Math.min(e.reliableDigits ?? P, f.reliableDigits ?? P),
-    ...((f.warn ?? e.warn) ? { warn: f.warn ?? e.warn } : {}),
+    facts: { ...e.facts, exact: false, reliableDigits: Math.min(e.facts.reliableDigits ?? P, f.reliableDigits ?? P), ...((f.warn ?? e.facts.warn) ? { warn: f.warn ?? e.facts.warn } : {}) },
   });
-  return markOf(r.items ? { ...r, items: r.items.map(one) } : one(r), { format: "STD", digits });
+  return markOf(precisionFacts(r.items ? { ...r, items: r.items.map(one) } : one(r)), { format: "STD", digits });
 }
 
 function casMark(r: CasResult, f: NameFacts | null): string {
   if (r.numeric) return text(capped(r.numeric, f, 12));
-  const warn = f?.warn ?? r.warn;
+  const warn = f?.warn ?? r.facts.warn;
   return warn ? "⚠" : r.approximate || f ? "≈" : "-";
 }
 
@@ -259,8 +259,8 @@ async function run(c: Case, show: boolean): Promise<Row> {
       textMark = casMark(r, null);
     } else {
       const r = (c.consts || k > 0 ? a.home(st.input, s, c.consts, named) : a.home(st.input, s)).result;
-      textMark = text(markOf(r, { format: "STD", digits: c.digits }));
-      if (r.ok && r.full) named[String(k + 1)] = { value: r.full, reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}), exact: !r.approximate && r.exactRational };
+      textMark = text(markOf(precisionFacts(r), { format: "STD", digits: c.digits }));
+      if (r.ok && r.full) named[String(k + 1)] = { value: r.full, reliableDigits: r.facts.reliableDigits, ...(r.facts.warn ? { warn: r.facts.warn } : {}), exact: !r.approximate && r.facts.exact };
     }
     // the state model: chips as stored names with their facts, for this step only; an input the log keeps as typed (a
     // function definition) gets their values, as the host does, and their facts are lent (G49f1)

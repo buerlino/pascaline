@@ -10,6 +10,77 @@ import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 
 export type { ChipEntry, ChipFactsTable, ConstEntry, ConstTable, HomeResult, HomeSettings };
 
+/**
+ * What the engine knows about how far one value can be trusted (docs/04 2.4, 8.2; G76): the one shape every carrier of
+ * a value's facts uses, whole (HomeResult and CasResult as `facts`; NameFacts, ChipEntry, Chip, ElementFacts,
+ * PrecisionFacts and ResultFacts are it plus their own fields). A carrier passes it on as it is, never field by field,
+ * so a new fact reaches every view without a change to the carriers.
+ */
+export interface ValueFacts {
+  /** No doubt at all: the value is exact (an integer or p/q in re and im, or a chip's exact text). False claims nothing:
+   *  a float, a value with ⚠, or a result that is not a number. */
+  exact: boolean;
+  /** Significant digits confirmed by the agreement check; null: not limited (an exact value, or one whose only doubt is
+   *  `warn` or `inexact`). */
+  reliableDigits: number | null;
+  /** ⚠ although the digits agree: an un-audited function's float, or a value that could be evaluated only once. */
+  warn?: PrecisionWarn;
+  /** The reasons behind the ⚠ (R36, docs/04 8.2). Only on a whole result, never on a list's elements. */
+  why?: PrecisionWhy;
+  /** G49: the value prints as an exact rational but is not exact (from an input that held a constant with an
+   *  uncertainty, a chip that is not exact, or a result shown with ⚠): never `=`. A float needs no flag. */
+  inexact?: true;
+  /** G26: significant digits of the shown value before the digit position of the first-order σ that the inexact
+   *  constants of the input leave (constUnc.ts); the digits from there on are uncertain. Absent when no inexact
+   *  constant went in by name, or the result is not one real number. */
+  uncDigits?: number;
+}
+
+/** Every key of ValueFacts (a new fact fails to compile here until it is listed, and then every copy below has it). */
+const VALUE_FACT_KEYS = { exact: true, reliableDigits: true, warn: true, why: true, inexact: true, uncDigits: true } as const satisfies Record<keyof ValueFacts, true>;
+
+/** The ValueFacts of `x`, which may carry more (a value, items): every fact, nothing else. */
+export function valueFactsOf(x: ValueFacts): ValueFacts {
+  const out: ValueFacts = { exact: x.exact, reliableDigits: x.reliableDigits };
+  for (const k of Object.keys(VALUE_FACT_KEYS) as (keyof ValueFacts)[]) if (x[k] !== undefined) Object.assign(out, { [k]: x[k] });
+  return out;
+}
+
+/** A stored PrecisionWhy: an object with only its keys, each of its type. */
+function isWhy(x: unknown): x is PrecisionWhy {
+  if (!x || typeof x !== "object" || Array.isArray(x)) return false;
+  const names = (v: unknown): boolean => Array.isArray(v) && v.every((n) => typeof n === "string");
+  const flag = (v: unknown): boolean => typeof v === "boolean";
+  const check: Record<keyof PrecisionWhy, (v: unknown) => boolean> = { unaudited: names, inherited: names, once: flag, decided: flag, differ: flag };
+  return Object.entries(x).every(([k, v]) => Object.hasOwn(check, k) && check[k as keyof PrecisionWhy](v));
+}
+
+/**
+ * Stored facts (history, chips, definitions) read back as ValueFacts: the one mapping for an item stored before G76,
+ * whose keys stay as they were written. `exactRational` is the old name of `exact`; a missing `exact` claims nothing
+ * (false), a missing `reliableDigits` is null (not limited). Null when a field that is there has the wrong type.
+ */
+export function readValueFacts(x: unknown): ValueFacts | null {
+  if (!x || typeof x !== "object") return null;
+  const f = x as Record<string, unknown>;
+  const exact = f["exact"] ?? f["exactRational"] ?? false;
+  const d = f["reliableDigits"] ?? null;
+  if (typeof exact !== "boolean" || !(d === null || (typeof d === "number" && Number.isFinite(d)))) return null;
+  const { warn, why, inexact, uncDigits } = f;
+  if (warn !== undefined && warn !== "unaudited" && warn !== "unchecked") return null;
+  if (inexact !== undefined && inexact !== true) return null;
+  if (uncDigits !== undefined && !(typeof uncDigits === "number" && Number.isInteger(uncDigits) && uncDigits >= 0)) return null;
+  if (why !== undefined && !isWhy(why)) return null;
+  return {
+    exact,
+    reliableDigits: d,
+    ...(warn ? { warn } : {}),
+    ...(why ? { why: why as PrecisionWhy } : {}),
+    ...(inexact ? { inexact } : {}),
+    ...(uncDigits !== undefined ? { uncDigits } : {}),
+  };
+}
+
 export interface CasSettings {
   angle: "rad" | "deg";
   /** Significant digits for approximate results inside CAS (Giac `Digits`). */
@@ -59,10 +130,10 @@ export interface CasResult {
   /** A true or false that rests on a float (an == or ≠ test, R18f1), or a non-number with a float in it (G27): drawn
    *  with the approximate mark. */
   approximate?: boolean;
-  /** ⚠: that float comes from an unaudited function (R18f2), or sits in a non-number nobody checked (G27). */
-  warn?: PrecisionWarn;
-  /** The reasons behind `warn` for a non-number (G22): the same facts as HomeResult.why; a number has them on `numeric`. */
-  why?: PrecisionWhy;
+  /** The facts of a non-number (G76): `warn` ⚠ when its float comes from an unaudited function (R18f2) or sits where
+   *  nobody checked it (G27), with `why` its reasons (G22); `exact` claims nothing. A number's are
+   *  `numeric.facts`, the same object. */
+  facts: ValueFacts;
   /** G67: the input changed one of Giac's settings, which the engine put back (as HomeResult.settingReset). */
   settingReset?: true;
 }

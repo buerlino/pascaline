@@ -69,7 +69,7 @@ describe.skipIf(!giacAvailable())("Giac's settings (real Giac)", () => {
     host.cas("Digits:=5", cas);
     expect(host.cas("evalf(pi)", cas).result.text).toBe("3.14159265359");
     expect(host.home("approx_mode:=1", defaultHomeSettings).result.settingReset).toBe(true);
-    expect(host.home("1/4", defaultHomeSettings).result.exactRational).toBe(true);
+    expect(host.home("1/4", defaultHomeSettings).result.facts.exact).toBe(true);
   });
 
   it("each parser mode and the hex format are put back (one restore call, or each command alone)", async () => {
@@ -108,7 +108,7 @@ describe.skipIf(!giacAvailable())("Giac's settings (real Giac)", () => {
     const host = await fresh();
     host.restore(stored);
     expect(host.takeMigrated()).toEqual([{ purge: ["approx_mode", "Digits"] }]);
-    expect(host.home("1/4", defaultHomeSettings).result.exactRational).toBe(true);
+    expect(host.home("1/4", defaultHomeSettings).result.facts.exact).toBe(true);
     expect(host.cas("b67+1/3", cas).result.text).toBe("10/3");
   });
 });

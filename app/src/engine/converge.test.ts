@@ -5,7 +5,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { EngineHost, type GiacApi } from "./host.ts";
-import { defaultHomeSettings } from "./homeEval.ts";
+import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { markOf } from "./format.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
@@ -152,18 +152,18 @@ describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
     const r = home("int(abs(x-sin(10^50)),x,-1,1)");
     expect(r.ok).toBe(true);
     expect(r.items).toBeUndefined();
-    expect(r.why).toEqual({ differ: true });
-    expect(markOf(r, { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
+    expect(r.facts.why).toEqual({ differ: true });
+    expect(markOf(precisionFacts(r), { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
     // G46: Giac runs in radians in DEG too, so its exact and numeric answers agree: pi/4 (source: oracle)
     const d = home("int(1/(1+x^2),x,0,1)", "deg");
     expect(d.items).toBeUndefined();
     expect(d.display).toBe("0.785398163397");
-    expect(markOf(d, { format: "STD", digits: 12 })).toMatchObject({ mark: "≈" });
+    expect(markOf(precisionFacts(d), { format: "STD", digits: 12 })).toMatchObject({ mark: "≈" });
   });
 
   it("CAS: Giac's pair is shown as Giac's text, both answers, with ⚠", () => {
     const r = cas("int(abs(x-sin(10^50)),x,-1,1)");
-    expect(r).toMatchObject({ ok: true, approximate: true, warn: "unchecked", why: { differ: true } });
+    expect(r).toMatchObject({ ok: true, approximate: true, facts: { warn: "unchecked", why: { differ: true } } });
     expect(r.numeric).toBeUndefined();
     expect(r.text).toMatch(/^\[.*,1\.35506364264\]$/);
   });

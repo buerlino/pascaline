@@ -2,7 +2,7 @@
 // EngineHost against the real Giac build (skipped when no build is found; see nodeGiac.ts).
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, REPLAY_BATCH } from "./host.ts";
-import { defaultHomeSettings } from "./homeEval.ts";
+import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { applyDefChanges } from "./defs.ts";
 import { formatComplex, markOf, type FormatOptions } from "./format.ts";
@@ -161,8 +161,8 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     it("Home: ⚠ (unchecked), with Giac's text kept", () => {
       for (const i of SYMFLOAT) {
         const r = home(i);
-        expect(r, i).toMatchObject({ ok: true, approximate: true, warn: "unchecked" });
-        expect(markOf(r, o), i).toEqual({ mark: "⚠", warn: "unchecked" });
+        expect(r, i).toMatchObject({ ok: true, approximate: true, facts: { warn: "unchecked" } });
+        expect(markOf(precisionFacts(r), o), i).toEqual({ mark: "⚠", warn: "unchecked" });
       }
       expect(home("evalf(x^2-2=0)").display).toBe("x^2-2.0=0.0");
     });
@@ -170,7 +170,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     it("CAS: approximate and unchecked, so the history row draws ⚠", () => {
       for (const i of SYMFLOAT) {
         const r = cas(i);
-        expect(r, i).toMatchObject({ ok: true, approximate: true, warn: "unchecked" });
+        expect(r, i).toMatchObject({ ok: true, approximate: true, facts: { warn: "unchecked" } });
         expect(r.numeric, i).toBeUndefined();
       }
       expect(cas("evalf([1/3,x])").text).toBe("[0.333333333333,x]");
@@ -180,22 +180,22 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       for (const i of ["x+1/3", "factor(x^2-1)", "x+0.5"]) {
         const h = home(i);
         expect(h.approximate, i).toBe(false);
-        expect(h.warn, i).toBeUndefined();
-        expect(markOf(h, o), i).toBeNull();
+        expect(h.facts.warn, i).toBeUndefined();
+        expect(markOf(precisionFacts(h), o), i).toBeNull();
         const c = cas(i);
         expect(c.approximate, i).toBeUndefined();
-        expect(c.warn, i).toBeUndefined();
+        expect(c.facts.warn, i).toBeUndefined();
         expect(c.numeric, i).toBeUndefined();
       }
     });
 
     it("guards: a float that is a number keeps its own mark (oracle: sqrt(2) = 1.41421356237…)", () => {
-      expect(markOf(home("evalf(sqrt(2))"), o)).toEqual({ mark: "≈" });
+      expect(markOf(precisionFacts(home("evalf(sqrt(2))")), o)).toEqual({ mark: "≈" });
       const c = cas("evalf(sqrt(2))");
-      expect(c.numeric && markOf(c.numeric, o)).toEqual({ mark: "≈" });
+      expect(c.numeric && markOf(precisionFacts(c.numeric), o)).toEqual({ mark: "≈" });
       expect(c.approximate).toBeUndefined();
       // an unaudited function's float stays ⚠ "unaudited", not "unchecked"
-      expect(markOf(home("BesselJ(1,2)"), o)).toMatchObject({ mark: "⚠", warn: "unaudited" });
+      expect(markOf(precisionFacts(home("BesselJ(1,2)")), o)).toMatchObject({ mark: "⚠", warn: "unaudited" });
     });
   });
 
@@ -206,31 +206,31 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     const polishBudget = { budgetMs: 5000 };
     it("an unaudited function is named", () => {
       // G44: σ < 0 is no distribution, so the polish refuses it and Giac's number stays unaudited.
-      expect(home("normald_icdf(2,-1,0.3)").why).toEqual({ unaudited: ["normald_icdf"] });
-      expect(host.cas("normald_icdf(2,-1,0.3)", defaultCasSettings).result.numeric?.why).toEqual({ unaudited: ["normald_icdf"] });
+      expect(home("normald_icdf(2,-1,0.3)").facts.why).toEqual({ unaudited: ["normald_icdf"] });
+      expect(host.cas("normald_icdf(2,-1,0.3)", defaultCasSettings).result.numeric?.facts.why).toEqual({ unaudited: ["normald_icdf"] });
     });
     it("G44: a polished inverse distribution function is audited for that input, in Home and CAS", () => {
       const r = home("normald_icdf(10^-10)", 12, polishBudget);
-      expect([r.why, r.warn, r.display, r.exact]).toEqual([undefined, undefined, "-6.3613409024", undefined]);
+      expect([r.facts.why, r.facts.warn, r.display, r.exact]).toEqual([undefined, undefined, "-6.3613409024", undefined]);
       const c = host.cas("normald_icdf(10^-10)", defaultCasSettings).result.numeric;
-      expect([c?.why, c?.warn, c?.display]).toEqual([undefined, undefined, "-6.3613409024"]);
+      expect([c?.facts.why, c?.facts.warn, c?.display]).toEqual([undefined, undefined, "-6.3613409024"]);
       // with an unaudited function next to it, the input stays unaudited (and names only that one)
-      expect(home("normald_icdf(0.3)+romberg(exp(-x^2),x,0,1)").why).toEqual({ unaudited: ["normald_icdf", "romberg"] });
+      expect(home("normald_icdf(0.3)+romberg(exp(-x^2),x,0,1)").facts.why).toEqual({ unaudited: ["normald_icdf", "romberg"] });
     });
     it("G44f1: erf and erfc are audited when read through ours (oracle: mpmath)", () => {
       const r = home("evalf(erf(10^-12))");
-      expect([r.why, r.warn, r.display]).toEqual([undefined, undefined, "1.1283791671E-12"]);
-      expect(home("erf(i)").why).toEqual({ unaudited: ["erf"] });
+      expect([r.facts.why, r.facts.warn, r.display]).toEqual([undefined, undefined, "1.1283791671E-12"]);
+      expect(home("erf(i)").facts.why).toEqual({ unaudited: ["erf"] });
     });
     it("G44f1: an inverse function Giac gives as infinity inside (0, 1) is polished, else ⚠; at p = 1 it is exact", () => {
       // mpmath findroot on the upper tail: 18257418581.9499815596…
       const r = home("fisher_icdf(3,4,1-10^-20)", 12, polishBudget);
-      expect([r.why, r.warn, r.display]).toEqual([undefined, undefined, "18257418581.9"]);
+      expect([r.facts.why, r.facts.warn, r.display]).toEqual([undefined, undefined, "18257418581.9"]);
       // Newton does not converge from the centre here (today): Giac's +infinity with ⚠, not as an exact value
       const f = home("fisher_icdf(3,4,1-10^-400)");
-      expect([f.display, f.warn, f.approximate, f.why]).toEqual(["+infinity", "unaudited", true, { unaudited: ["fisher_icdf"] }]);
+      expect([f.display, f.facts.warn, f.approximate, f.facts.why]).toEqual(["+infinity", "unaudited", true, { unaudited: ["fisher_icdf"] }]);
       const e = home("fisher_icdf(3,4,1)");
-      expect([e.display, e.warn, e.approximate]).toEqual(["+infinity", undefined, false]);
+      expect([e.display, e.facts.warn, e.approximate]).toEqual(["+infinity", undefined, false]);
     });
     it("G44f1 fix 1: a polish that converges at P but not at P + 20 leaves Giac's infinity with ⚠ (regression)", () => {
       // pasicdf made to fall back from Digits 60 (P + 20 at 12 digits) on: before the fix, the one-precision check at
@@ -240,7 +240,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       giac.eval("pasicdf(k,a,b,p,x0):={ if (Digits>=60) { pasicdff:=1; return x0; } return pasicdf0(k,a,b,p,x0); }");
       try {
         const f = home("fisher_icdf(3,4,1-10^-20)");
-        expect([f.display, f.warn, f.approximate, f.why]).toEqual(["+infinity", "unaudited", true, { unaudited: ["fisher_icdf"] }]);
+        expect([f.display, f.facts.warn, f.approximate, f.facts.why]).toEqual(["+infinity", "unaudited", true, { unaudited: ["fisher_icdf"] }]);
       } finally {
         giac.eval(ICDF_DEFINITIONS.pasicdf!);
         giac.eval("purge(pasicdf0)");
@@ -251,26 +251,26 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       // Giac keeps erf(sqrt(2)*i) exact; its value went through Giac's erf (the flag), not ours: it showed ≈.
       for (const [input, fn] of [["erf(sqrt(2)*i)", "erf"], ["sqrt(2)+erfc(sqrt(2)*i)", "erfc"]] as const) {
         const r = home(input);
-        expect([r.path, r.warn, r.why]).toEqual(["exact", "unaudited", { unaudited: [fn] }]);
+        expect([r.path, r.facts.warn, r.facts.why]).toEqual(["exact", "unaudited", { unaudited: [fn] }]);
       }
       // a real argument on the exact path stays audited
-      expect([home("erf(1/2)").warn, home("erf(1/2)").why]).toEqual([undefined, undefined]);
+      expect([home("erf(1/2)").facts.warn, home("erf(1/2)").facts.why]).toEqual([undefined, undefined]);
     });
     it("G44f1 fix 3: in DEG erf next to a complex tanh keeps tanh read through ours (oracle: mpmath)", () => {
       // mpmath erf(1/2)+tanh(1+1j) at 45 digits: 1.60442320515174108115849871510393625… + 0.27175258531951171652884372249858892…i (Giac's tanh is coth)
       const r = host.home("erf(1/2)+tanh(1+i)", { ...defaultHomeSettings, angle: "deg", digits: 30 }).result;
-      expect([r.display, r.warn]).toEqual(["1.6044232051517410811584987151+0.271752585319511716528843722499*i", undefined]);
+      expect([r.display, r.facts.warn]).toEqual(["1.6044232051517410811584987151+0.271752585319511716528843722499*i", undefined]);
     });
     it("a result from a stored float names the stored name when it limits the digits", () => {
       host.home("B:=BesselJ(1,2)", defaultHomeSettings);
-      expect(home("B*2").why).toEqual({ inherited: ["B"] });
-      expect(host.cas("B*2", defaultCasSettings).result.numeric?.why).toEqual({ inherited: ["B"] });
+      expect(home("B*2").facts.why).toEqual({ inherited: ["B"] });
+      expect(host.cas("B*2", defaultCasSettings).result.numeric?.facts.why).toEqual({ inherited: ["B"] });
     });
     it("a stored name whose move costs digits below the setting is named", () => {
       host.home("G:=evalf(sqrt(2))", defaultHomeSettings);
       const r = home("G-1.414213562373095048801688724");
-      expect(r.reliableDigits).toBeLessThan(12);
-      expect(r.why).toEqual({ inherited: ["G"] });
+      expect(r.facts.reliableDigits).toBeLessThan(12);
+      expect(r.facts.why).toEqual({ inherited: ["G"] });
     });
     // The index is 1 for the stored value and 10 (an error) once G is moved in its last confirmed digit: the
     // threshold lies between G and G·(1+10^-39), so only the perturbation check fails, not the first evaluation.
@@ -278,47 +278,47 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     it("a stored float whose perturbation check cannot run says once and unchecked", () => {
       host.home("G:=evalf(sqrt(2))", defaultHomeSettings);
       const r = home(`G+0*${FLIP}`);
-      expect(r.warn).toBe("unchecked");
-      expect(r.why).toEqual({ once: true });
+      expect(r.facts.warn).toBe("unchecked");
+      expect(r.facts.why).toEqual({ once: true });
     });
     it("once is absent when a warning is already there", () => {
       host.home("G:=evalf(sqrt(2))", defaultHomeSettings);
       host.home("U:=BesselJ(1,2)", defaultHomeSettings);
       const fromName = home(`G+0*U+0*${FLIP}`); // a stored name's warning
-      expect(fromName.warn).toBe("unaudited");
-      expect(fromName.why?.once).toBeUndefined();
+      expect(fromName.facts.warn).toBe("unaudited");
+      expect(fromName.facts.why?.once).toBeUndefined();
       const fromResult = home(`G+0*BesselJ(1,2)+0*${FLIP}`); // the result's own warning
-      expect(fromResult.warn).toBe("unaudited");
-      expect(fromResult.why?.once).toBeUndefined();
+      expect(fromResult.facts.warn).toBe("unaudited");
+      expect(fromResult.facts.why?.once).toBeUndefined();
     });
     it("a value evaluated only once says so", () => {
-      expect(home("BesselJ(1,2)", 30).why).toEqual({ once: true });
+      expect(home("BesselJ(1,2)", 30).facts.why).toEqual({ once: true });
     });
     it("a float test with only audited functions has no empty why (home and CAS)", () => {
       const t = latexToGiac("\\operatorname{evalf}(\\sin(0.5))==0.479425538604203");
       const h = home(t);
       expect(h.approximate).toBe(true);
-      expect(h.why).toBeUndefined();
+      expect(h.facts.why).toBeUndefined();
       expect("why" in h).toBe(false);
-      expect(host.cas(t, defaultCasSettings).result.why).toBeUndefined();
+      expect(host.cas(t, defaultCasSettings).result.facts.why).toBeUndefined();
     });
     it("a float test with an unaudited function names it, in CAS too", () => {
       const t = latexToGiac("\\operatorname{normald\\_icdf}(0.3)==-0.5244005127080407");
       const h = home(t);
-      expect(h.warn).toBe("unaudited");
-      expect(h.why).toEqual({ unaudited: ["normald_icdf"] });
-      expect(host.cas(t, defaultCasSettings).result.why).toEqual({ unaudited: ["normald_icdf"] });
+      expect(h.facts.warn).toBe("unaudited");
+      expect(h.facts.why).toEqual({ unaudited: ["normald_icdf"] });
+      expect(host.cas(t, defaultCasSettings).result.facts.why).toEqual({ unaudited: ["normald_icdf"] });
     });
     it("CAS: a float in a non-number says it was not compared", () => {
       const r = host.cas("evalf(x-0.54764225985)", defaultCasSettings).result;
-      expect(r).toMatchObject({ warn: "unchecked", why: { once: true } });
-      expect(home("evalf(x-0.54764225985)").why).toEqual({ once: true });
+      expect(r).toMatchObject({ facts: { warn: "unchecked", why: { once: true } } });
+      expect(home("evalf(x-0.54764225985)").facts.why).toEqual({ once: true });
     });
     it("a stored float without a warning that costs no digits is not a reason", () => {
       host.home("Bn:=evalf(sqrt(2))", defaultHomeSettings); // 39 confirmed digits, no warn: the mark is ≈
       const r = home("Bn*2");
       expect(r.approximate).toBe(true);
-      expect(r.why).toBeUndefined();
+      expect(r.facts.why).toBeUndefined();
     });
     it("a list result carries why on the top level only", () => {
       host.home("B:=BesselJ(1,2)", defaultHomeSettings);
@@ -326,12 +326,12 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       const m = home("[[B]]");
       for (const x of [r, m]) {
         expect(x.items).toBeDefined();
-        expect(x.why).toEqual({ inherited: ["B"] });
-        for (const it of x.items!) expect(it.why).toBeUndefined();
+        expect(x.facts.why).toEqual({ inherited: ["B"] });
+        for (const it of x.items!) expect(it.facts.why).toBeUndefined();
       }
     });
     it("an exact rational has no why", () => {
-      expect(home("1/3").why).toBeUndefined();
+      expect(home("1/3").facts.why).toBeUndefined();
       expect("why" in home("1/3")).toBe(false);
     });
   });
@@ -370,10 +370,10 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
 
     it("a named chip is moved in its last confirmed digit: the cancellation has no confirmed digit (oracle 2.70253994674E-14)", () => {
       const r = home("pasr_1-0.7468241328124", { "1": romberg }).result;
-      expect(markOf(r, opts)).toMatchObject({ mark: "⚠", n: 0 });
+      expect(markOf(precisionFacts(r), opts)).toMatchObject({ mark: "⚠", n: 0 });
       expect(r.display).toBe("3E-14");
       // The same value put in as a literal (today's chip) claims a digit it does not have.
-      expect(markOf(home(`(${romberg.value})-0.7468241328124`).result, opts)?.mark).not.toBe("⚠");
+      expect(markOf(precisionFacts(home(`(${romberg.value})-0.7468241328124`).result), opts)?.mark).not.toBe("⚠");
     });
 
     it("the chip's name lives for the run only", () => {
@@ -384,7 +384,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
     it("an exact chip is a literal: (1/3)·3 = 1 (derived)", () => {
       const r = home("pasr_1*3", { "1": { value: "1/3", reliableDigits: null, exact: true } }).result;
       expect(r.display).toBe("1");
-      expect(markOf(r, opts)?.mark).toBe("=");
+      expect(markOf(precisionFacts(r), opts)?.mark).toBe("=");
     });
 
     it("a function defined from a chip gets its value, and keeps working after the run", () => {
@@ -400,7 +400,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect(a.defs).toMatchObject([{ set: { name: "hg49a", cmds: ["hg49a:=(66743/500000000000000)"], facts: { reliableDigits: null, inexact: true } } }]);
       const half = host.home("hg49a/2", defaultHomeSettings).result;
       expect(half.display).toBe("6.6743E-11");
-      expect(markOf(half, opts)?.mark).toBe("≈");
+      expect(markOf(precisionFacts(half), opts)?.mark).toBe("≈");
       // an exact constant (c) stores an exact value, as before
       expect(home("hg49c:=pasc_c*2", undefined, { c: { value: "299792458" } }).defs).toMatchObject([{ set: { name: "hg49c" } }]);
       expect(JSON.stringify(home("hg49c:=pasc_c*2", undefined, { c: { value: "299792458" } }).defs)).not.toContain("facts");
@@ -416,19 +416,19 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect(q.defs).toMatchObject([{ set: { name: "hg49q", kind: "fn", facts: { reliableDigits: null, warn: "unchecked", inexact: true } } }]);
       const call = host.home("hg49q(0)", defaultHomeSettings).result;
       expect(call.display).toBe("899450126402");
-      expect(markOf(call, opts)?.mark).toBe("⚠");
+      expect(markOf(precisionFacts(call), opts)?.mark).toBe("⚠");
       // a stored name with facts in the body
       home("hg49s:=pasr_1*1", { "1": floorChip });
       const s = host.home("hg49r(x):=x+hg49s", defaultHomeSettings);
       expect(s.defs).toMatchObject([{ set: { name: "hg49r", kind: "fn", facts: { warn: "unchecked", inexact: true } } }]);
-      expect(markOf(host.home("hg49r(0)", defaultHomeSettings).result, opts)?.mark).toBe("⚠");
+      expect(markOf(precisionFacts(host.home("hg49r(0)", defaultHomeSettings).result), opts)?.mark).toBe("⚠");
       // an inexact constant (G, CODATA 2018 σ): ≈, not =
       home("hg49g(x):=x*pasc_G", undefined, { G: { value: "6.67430E-11", unc: "0.00015E-11" } });
-      expect(markOf(host.home("hg49g(1)", defaultHomeSettings).result, opts)?.mark).toBe("≈");
+      expect(markOf(precisionFacts(host.home("hg49g(1)", defaultHomeSettings).result), opts)?.mark).toBe("≈");
       // guard: a function of exact values stores no facts and its call stays =
       const e = host.home("hg49e(x):=x+1", defaultHomeSettings);
       expect(JSON.stringify(e.defs)).not.toContain("facts");
-      expect(markOf(host.home("hg49e(2)", defaultHomeSettings).result, opts)?.mark).toBe("=");
+      expect(markOf(precisionFacts(host.home("hg49e(2)", defaultHomeSettings).result), opts)?.mark).toBe("=");
       host.home("purge(hg49q,hg49r,hg49s,hg49g,hg49e)", defaultHomeSettings);
     });
 
@@ -440,7 +440,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.cas("hg3f(x):=x+hg3a", defaultCasSettings);
       const call = host.home("hg3f(0)", defaultHomeSettings).result;
       expect(call.display).toBe("899450126402");
-      expect(markOf(call, opts)?.mark).toBe("⚠");
+      expect(markOf(precisionFacts(call), opts)?.mark).toBe("⚠");
       host.home("purge(hg3a,hg3f)", defaultHomeSettings);
     });
 
@@ -450,12 +450,12 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.home("sto(floor(sin(10^100)*10^12),hg3b)", defaultHomeSettings);
       const call = host.home("hg3g(0)", defaultHomeSettings).result;
       expect(call.display).toBe("899450126402");
-      expect(markOf(call, opts)?.mark).toBe("⚠");
+      expect(markOf(precisionFacts(call), opts)?.mark).toBe("⚠");
       // through a second function, and a recursive one ends
       host.home("hg3h(x):=hg3g(x)*1", defaultHomeSettings);
-      expect(markOf(host.home("hg3h(0)", defaultHomeSettings).result, opts)?.mark).toBe("⚠");
+      expect(markOf(precisionFacts(host.home("hg3h(0)", defaultHomeSettings).result), opts)?.mark).toBe("⚠");
       host.home("hg3r(n):=when(n<=0,hg3b,hg3r(n-1))", defaultHomeSettings);
-      expect(markOf(host.home("hg3r(2)", defaultHomeSettings).result, opts)?.mark).toBe("⚠");
+      expect(markOf(precisionFacts(host.home("hg3r(2)", defaultHomeSettings).result), opts)?.mark).toBe("⚠");
       host.home("purge(hg3b,hg3g,hg3h,hg3r)", defaultHomeSettings);
     });
 
@@ -463,10 +463,10 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.home("hg3c:=7", defaultHomeSettings);
       host.home("hg3e(x):=x+hg3c", defaultHomeSettings);
       host.cas("hg3k(x):=hg3e(x)+hg3c", defaultCasSettings);
-      expect(markOf(host.home("hg3e(1)", defaultHomeSettings).result, opts)?.mark).toBe("=");
+      expect(markOf(precisionFacts(host.home("hg3e(1)", defaultHomeSettings).result), opts)?.mark).toBe("=");
       const k = host.home("hg3k(1)", defaultHomeSettings).result;
       expect(k.display).toBe("15");
-      expect(markOf(k, opts)?.mark).toBe("=");
+      expect(markOf(precisionFacts(k), opts)?.mark).toBe("=");
       host.home("purge(hg3c,hg3e,hg3k)", defaultHomeSettings);
     });
 
@@ -478,7 +478,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.home("sto(floor(sin(10^100)*10^12),hg4b)", defaultHomeSettings);
       const call = host.home("hg4g(0)", defaultHomeSettings).result;
       expect(call.display).toBe("899450126402");
-      expect(markOf(call, opts)?.mark).toBe("⚠");
+      expect(markOf(precisionFacts(call), opts)?.mark).toBe("⚠");
       host.home("purge(hg4b,hg4g)", defaultHomeSettings);
     });
 
@@ -487,9 +487,9 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.home("hg4h:=x->x+hg4a", defaultHomeSettings);
       const call = host.home("hg4h(0)", defaultHomeSettings).result;
       expect(call.display).toBe("899450126402");
-      expect(markOf(call, opts)?.mark).toBe("⚠");
+      expect(markOf(precisionFacts(call), opts)?.mark).toBe("⚠");
       host.cas("hg4k:=(x,y)->x*y+hg4a", defaultCasSettings);
-      expect(markOf(host.home("hg4k(0,1)", defaultHomeSettings).result, opts)?.mark).toBe("⚠");
+      expect(markOf(precisionFacts(host.home("hg4k(0,1)", defaultHomeSettings).result), opts)?.mark).toBe("⚠");
       host.home("purge(hg4a,hg4h,hg4k)", defaultHomeSettings);
     });
 
@@ -497,7 +497,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       host.home("hg4s:=x->x^2", defaultHomeSettings);
       const call = host.home("hg4s(3)", defaultHomeSettings).result;
       expect(call.display).toBe("9");
-      expect(markOf(call, opts)?.mark).toBe("=");
+      expect(markOf(precisionFacts(call), opts)?.mark).toBe("=");
       host.home("purge(hg4s)", defaultHomeSettings);
     });
 
@@ -517,16 +517,16 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
 
     it("G·5.972ᴇ24: σ = 1.5E-15·5.972E24 = 8.958E9 under a value of 3.98589196E14, so 5 digits hold (derived)", () => {
       const r = home("pasc_G*5.972E24", { G });
-      expect(r.uncDigits).toBe(5);
+      expect(r.facts.uncDigits).toBe(5);
       // the value is what the input with G's digits gives today
-      const { uncDigits, ...rest } = r;
-      expect(facts(rest as typeof r)).toEqual(facts(home("(6.67430E-11)*5.972E24")));
-      expect(home("pasc_G*5.972E24", { G }, 30).uncDigits).toBe(5);
+      const { uncDigits: _u, ...rf } = r.facts;
+      expect(facts({ ...r, facts: rf })).toEqual(facts(home("(6.67430E-11)*5.972E24")));
+      expect(home("pasc_G*5.972E24", { G }, 30).facts.uncDigits).toBe(5);
     });
 
     it("G alone: 6.6743E-11 ± 1.5E-15 keeps 4 digits; an assignment's right side counts (derived)", () => {
-      expect(home("pasc_G", { G }).uncDigits).toBe(4);
-      expect(home("hgu:=pasc_G*2", { G }).uncDigits).toBe(5); // 1.33486E-10 ± 3E-15
+      expect(home("pasc_G", { G }).facts.uncDigits).toBe(4);
+      expect(home("hgu:=pasc_G*2", { G }).facts.uncDigits).toBe(5); // 1.33486E-10 ± 3E-15
       host.home("purge(hgu)", defaultHomeSettings);
     });
 
@@ -534,16 +534,16 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       const a = { value: "3", unc: "0.6" };
       const b = { value: "4", unc: "0.6" };
       // 7 ± sqrt(0.36+0.36) = 0.849: 1 digit (a plain sum, 1.2, would leave 0)
-      expect(home("pasc_a+pasc_b", { a, b }).uncDigits).toBe(1);
+      expect(home("pasc_a+pasc_b", { a, b }).facts.uncDigits).toBe(1);
       // 20·4 = 80 ± sqrt((4·0.2)²+(20·0.035)²) = sqrt(0.64+0.49) = 1.063: 1 digit (the larger term, 0.8, would leave 2)
-      expect(home("pasc_a*pasc_b", { a: { value: "20", unc: "0.2" }, b: { value: "4", unc: "0.035" } }).uncDigits).toBe(1);
+      expect(home("pasc_a*pasc_b", { a: { value: "20", unc: "0.2" }, b: { value: "4", unc: "0.035" } }).facts.uncDigits).toBe(1);
     });
 
     it("σ follows the angle mode: sin(a) with a = 30 ± 1 (derived)", () => {
       const a = { value: "30", unc: "1" };
       // degrees: 0.5 ± cos(30°)·π/180 = 0.0151, so 1 digit; radians: sin(30) = -0.988 ± |cos(30)| = 0.154, so 0
-      expect(host.home("sin(pasdeg*pasc_a)", { ...defaultHomeSettings, angle: "deg" }, { a }).result.uncDigits).toBe(1);
-      expect(host.home("sin(pasdeg*pasc_a)", defaultHomeSettings, { a }).result.uncDigits).toBe(0);
+      expect(host.home("sin(pasdeg*pasc_a)", { ...defaultHomeSettings, angle: "deg" }, { a }).result.facts.uncDigits).toBe(1);
+      expect(host.home("sin(pasdeg*pasc_a)", defaultHomeSettings, { a }).result.facts.uncDigits).toBe(0);
     });
 
     it("an exact constant (c) gives none; nor does a σ of 0", () => {
@@ -552,7 +552,7 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       expect("uncDigits" in r).toBe(false);
       expect("uncDigits" in home("pasc_c*2", { c: { value: "299792458", unc: "0" } })).toBe(false);
       expect("uncDigits" in home("pasc_G-pasc_G", { G })).toBe(false);
-      expect(home("pasc_c*pasc_G", { c: C, G }).uncDigits).toBe(5); // 2.0009E-2 ± 4.497E-7: digits at 1E-2…1E-6 hold (derived)
+      expect(home("pasc_c*pasc_G", { c: C, G }).facts.uncDigits).toBe(5); // 2.0009E-2 ± 4.497E-7: digits at 1E-2…1E-6 hold (derived)
     });
 
     it("without the table everything is as today", () => {
@@ -655,7 +655,7 @@ describe.skipIf(!giacAvailable())("G34, G46: a carried value keeps what it showe
     expect(r.defs).toMatchObject([{ set: { name: "TH", kind: "var", angle: "deg", cmds: ["TH:=(atan(3/4)/(pi/180))"] } }]);
     const back = host.home("TH", rad).result;
     expect(back.display).toBe("36.8698976458");
-    expect(markOf(back, { format: "STD", digits: 12 })?.mark).toBe("≈");
+    expect(markOf(precisionFacts(back), { format: "STD", digits: 12 })?.mark).toBe("≈");
   });
 
   it("an angle-free exact value keeps its text and is stored without facts (derived)", () => {
@@ -695,15 +695,15 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
   const opts: FormatOptions = { format: "STD", digits: 12 };
   let host: EngineHost;
   const home = (i: string) => host.home(i, defaultHomeSettings);
-  const mark = (i: string) => markOf(home(i).result, opts)?.mark;
+  const mark = (i: string) => markOf(precisionFacts(home(i).result), opts)?.mark;
   beforeAll(async () => {
     host = new EngineHost((await loadNodeGiac()).giac);
   });
 
   it("[q1,q2]:=[F,1] is ⚠, and then q1 is ⚠", () => {
     const r = home(`[hq1,hq2]:=[${F},1]`).result;
-    expect(markOf(r, opts)?.mark).toBe("⚠");
-    expect(r.why?.decided).toBe(true);
+    expect(markOf(precisionFacts(r), opts)?.mark).toBe("⚠");
+    expect(r.facts.why?.decided).toBe(true);
     expect(mark("hq1")).toBe("⚠");
     expect(mark("hq2")).toBe("⚠");
   });
@@ -720,8 +720,8 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
 
   it("CAS [r1,r2]:=[F,1] is ⚠", () => {
     const r = host.cas(`[hr1,hr2]:=[${F},1]`, defaultCasSettings).result;
-    expect(r.warn).toBe("unchecked");
-    expect(r.why?.decided).toBe(true);
+    expect(r.facts.warn).toBe("unchecked");
+    expect(r.facts.why?.decided).toBe(true);
   });
 
   it("pA:=F, pu:=unapply(x+pA,x): pu(0) is ⚠ (the stored function lends what its input read)", () => {
@@ -729,12 +729,12 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
     home("hpu:=unapply(x+hpA,x)");
     const call = home("hpu(0)").result;
     expect(call.display).toBe("899450126402");
-    expect(markOf(call, opts)?.mark).toBe("⚠");
+    expect(markOf(precisionFacts(call), opts)?.mark).toBe("⚠");
   });
 
   it("sto(F,pC) runs once: pC is ⚠ and in the definitions log, and a restore brings it back", async () => {
     const r = home(`sto(${F},hpC)`);
-    expect(markOf(r.result, opts)?.mark).toBe("⚠");
+    expect(markOf(precisionFacts(r.result), opts)?.mark).toBe("⚠");
     expect(mark("hpC")).toBe("⚠");
     const set = r.defs.flatMap((c) => ("set" in c ? [c.set] : []));
     expect(set.map((e) => [e.name, e.kind])).toEqual([["hpC", "var"]]);
@@ -742,7 +742,7 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
     fresh.restore(set);
     const back = fresh.home("hpC", defaultHomeSettings).result;
     expect(back.display).toBe(r.result.display);
-    expect(markOf(back, opts)?.mark).toBe("⚠");
+    expect(markOf(precisionFacts(back), opts)?.mark).toBe("⚠");
   });
 
   it("guards stay =: [a1,b1]:=[1,2] then a1; sq:=unapply(x^2,x) then sq(3) = 9; sto(5,p5) then p5", () => {
@@ -751,9 +751,9 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
     home("hsq:=unapply(x^2,x)");
     const sq = home("hsq(3)").result;
     expect(sq.display).toBe("9");
-    expect(markOf(sq, opts)?.mark).toBe("=");
+    expect(markOf(precisionFacts(sq), opts)?.mark).toBe("=");
     const s = home("sto(5,hp5)");
-    expect(markOf(s.result, opts)?.mark).toBe("=");
+    expect(markOf(precisionFacts(s.result), opts)?.mark).toBe("=");
     expect(s.defs).toMatchObject([{ set: { name: "hp5", kind: "var" } }]);
     expect(mark("hp5")).toBe("=");
   });
@@ -777,30 +777,30 @@ describe.skipIf(!giacAvailable())("G51: a CAS result that reads stored facts get
       const r = cas(input);
       expect(r.text, input).toBe(text);
       expect(r.approximate, input).toBe(true);
-      expect(r.warn, input).toBe("unchecked");
-      expect(r.why?.inherited, input).toEqual([input === "gf(0)" ? "gf" : "gA"]);
+      expect(r.facts.warn, input).toBe("unchecked");
+      expect(r.facts.why?.inherited, input).toEqual([input === "gf(0)" ? "gf" : "gA"]);
     }
   });
 
   it("a CAS assignment from pA is ⚠ too, and the name it stores keeps the facts", () => {
     const r = cas("gB:=gA*2");
-    expect(r.warn).toBe("unchecked");
-    expect(r.why?.inherited).toEqual(["gA"]);
-    expect(cas("gB").warn).toBe("unchecked");
+    expect(r.facts.warn).toBe("unchecked");
+    expect(r.facts.why?.inherited).toEqual(["gA"]);
+    expect(cas("gB").facts.warn).toBe("unchecked");
   });
 
   it("guards: CAS pB:=5 then pB+1 is 6, and factor(x^2-1), stay unmarked", () => {
-    expect(cas("gE:=5").warn).toBeUndefined();
+    expect(cas("gE:=5").facts.warn).toBeUndefined();
     const r = cas("gE+1");
     expect(r.text).toBe("6");
     expect(r.approximate).toBeUndefined();
-    expect(r.warn).toBeUndefined();
-    expect(r.why).toBeUndefined();
+    expect(r.facts.warn).toBeUndefined();
+    expect(r.facts.why).toBeUndefined();
     const f = cas("factor(x^2-1)");
     expect(f.approximate).toBeUndefined();
-    expect(f.warn).toBeUndefined();
+    expect(f.facts.warn).toBeUndefined();
     host.cas("gg(x):=x+gE", defaultCasSettings);
-    expect(cas("gg(1)").warn).toBeUndefined();
+    expect(cas("gg(1)").facts.warn).toBeUndefined();
   });
 });
 

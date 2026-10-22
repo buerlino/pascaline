@@ -89,12 +89,13 @@ export function numericResult(giac: Giac, expr: string, digits: number, work: nu
     const P = valuePrecision(digits);
     const part = (a: DecimalValue, b: DecimalValue): number => (isZero(a) && isZero(b) ? P : confirmedDigits(a, b, work, P));
     const value: ComplexValue = { re: re2, im: im2 };
-    const facts = { value, exactRational: false, reliableDigits: Math.min(part(re, re2), part(im, im2)) };
-    return { ok: true, display: formatConfirmed(facts, { format: "STD", digits })!, ...facts, full: formatConfirmed(facts, { format: "STD", digits: P })!, ...base };
+    const facts = { exact: false, reliableDigits: Math.min(part(re, re2), part(im, im2)) };
+    const p = { ...facts, value };
+    return { ok: true, display: formatConfirmed(p, { format: "STD", digits })!, value, facts, full: formatConfirmed(p, { format: "STD", digits: P })!, ...base };
   }
   const value: ComplexValue = { re, im };
   const display = formatComplex(value, { format: "STD", digits }).text;
-  return { ok: true, display, exactRational: false, reliableDigits: digits, full: display, value, ...base };
+  return { ok: true, display, facts: { exact: false, reliableDigits: digits }, full: display, value, ...base };
 }
 
 /** `name=value` substitutions for the known variables (exact literals). */
@@ -124,9 +125,10 @@ function agreement(a: ComplexValue, b: ComplexValue, cap: number): number {
 
 /** A result with no more than `n` confirmed digits; the text shown and copied follows. */
 function confirmAtMost(r: HomeResult, n: number, digits: number): HomeResult {
-  if (!r.ok || !r.value || !(n < (r.reliableDigits ?? Infinity))) return r;
-  const facts = { value: r.value, exactRational: false, reliableDigits: n };
-  return { ...r, ...facts, display: formatConfirmed(facts, { format: "STD", digits })!, full: formatConfirmed(facts, { format: "STD", digits: valuePrecision(digits) })! };
+  if (!r.ok || !r.value || !(n < (r.facts.reliableDigits ?? Infinity))) return r;
+  const facts = { ...r.facts, exact: false, reliableDigits: n };
+  const p = { ...facts, value: r.value };
+  return { ...r, facts, display: formatConfirmed(p, { format: "STD", digits })!, full: formatConfirmed(p, { format: "STD", digits: valuePrecision(digits) })! };
 }
 
 /**

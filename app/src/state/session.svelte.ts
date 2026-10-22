@@ -7,7 +7,7 @@ import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../i
 import { parseFailText } from "../input/errors.ts";
 import { loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
-import { EngineMemoryError } from "../engine/types.ts";
+import { EngineMemoryError, readValueFacts, type ValueFacts } from "../engine/types.ts";
 import {
   decimalFromRational,
   decimalFromString,
@@ -152,43 +152,44 @@ function chipFactsOf(named: ChipTable): ChipFactsTable {
   return out;
 }
 
-/** The facts of an engine result, as kept in a history item. Undefined: too large to keep. */
-function factsFrom(r: {
-  exactRational: boolean;
-  reliableDigits: number | null;
-  warn?: ResultFacts["warn"];
-  items?: { value?: ComplexValue; exactRational: boolean; reliableDigits: number | null; warn?: ResultFacts["warn"] }[];
-  shape?: [number, number];
-  digits?: number;
-}): ResultFacts | undefined {
-  const f: ResultFacts = { exactRational: r.exactRational, reliableDigits: r.reliableDigits };
-  if (r.warn) f.warn = r.warn;
+/** The facts of an engine result, as kept in a history item: its ValueFacts whole (G76), with its elements'. Undefined:
+ *  too large to keep. */
+function factsFrom(r: { facts: ValueFacts; items?: { value?: ComplexValue; facts: ValueFacts }[]; shape?: [number, number]; digits?: number }): ResultFacts | undefined {
+  const f: ResultFacts = { ...r.facts };
   if (r.digits !== undefined) f.digits = r.digits;
   if (r.items) {
     if (r.items.length > ITEMS_LIMIT) return undefined;
-    f.items = r.items.map((it) => ({
-      exactRational: it.exactRational,
-      reliableDigits: it.reliableDigits,
-      ...(it.warn ? { warn: it.warn } : {}),
-      ...(it.value ? { value: it.value } : {}),
-    }));
+    f.items = r.items.map((it) => ({ ...it.facts, ...(it.value ? { value: it.value } : {}) }));
     if (r.shape) f.shape = r.shape;
   }
   return f;
 }
 
-/** Stored facts read back from IndexedDB: kept when they have the shape, else dropped (the item then shows no mark). */
+/** Stored facts read back from IndexedDB, through the one mapping for stored facts (readValueFacts: an item stored
+ *  before G76 says `exactRational`): kept when they have the shape, else dropped (the item then shows no mark). */
 function validFacts(x: unknown): ResultFacts | undefined {
   if (!x || typeof x !== "object") return undefined;
   const f = x as Record<string, unknown>;
-  const digitsOk = (d: unknown): boolean => d === null || (typeof d === "number" && Number.isFinite(d));
-  if (typeof f["exactRational"] !== "boolean" || !digitsOk(f["reliableDigits"])) return undefined;
+  const exactKey = (o: Record<string, unknown>): boolean => typeof (o["exact"] ?? o["exactRational"]) === "boolean";
+  const facts = readValueFacts(f);
+  if (!facts || !exactKey(f) || f["reliableDigits"] === undefined) return undefined;
   const d = f["digits"];
   if (d !== undefined && !(typeof d === "number" && Number.isInteger(d) && d >= 1 && d <= 1000)) return undefined;
   const items = f["items"];
   if (items !== undefined && (!Array.isArray(items) || items.length > ITEMS_LIMIT)) return undefined;
-  if (Array.isArray(items) && !items.every((it) => it && typeof it === "object" && typeof (it as Record<string, unknown>)["exactRational"] === "boolean")) return undefined;
-  return f as unknown as ResultFacts;
+  const els: PrecisionFacts[] = [];
+  for (const it of Array.isArray(items) ? (items as unknown[]) : []) {
+    const e = it && typeof it === "object" ? (it as Record<string, unknown>) : null;
+    const ef = e && exactKey(e) ? readValueFacts(e) : null;
+    if (!e || !ef) return undefined;
+    els.push({ ...ef, ...(e["value"] ? { value: e["value"] as ComplexValue } : {}) });
+  }
+  return {
+    ...facts,
+    ...(d !== undefined ? { digits: d } : {}),
+    ...(Array.isArray(items) ? { items: els } : {}),
+    ...(f["shape"] !== undefined ? { shape: f["shape"] as [number, number] } : {}),
+  };
 }
 
 /**
@@ -542,7 +543,7 @@ export class Session {
           live.full = full;
           // A decimal cut from a longer exact text, or from a value with more digits, is not exact, though the value is.
           const cut = r.exact !== undefined || r.value?.re.sticky === true || r.value?.im.sticky === true;
-          live.fullExact = !inexact && (full === exactText || (!cut && (r.exactRational || !isDigitsText(full))));
+          live.fullExact = !inexact && (full === exactText || (!cut && (r.facts.exact || !isDigitsText(full))));
           // G46f1: a symbolic result whose chip text (radian) differs from the text drawn (DEG) copies the drawn text.
           if (!r.value && !r.items && full !== r.display && r.display.length <= FULL_LIMIT) live.drawn = r.display;
         }
@@ -572,7 +573,7 @@ export class Session {
           // with a float in it comes approximate and unchecked, so ⚠ (G27)
           if (r.approximate || (live.inexactInput === true && /^(true|false)$/.test(r.text))) {
             live.approximate = true;
-            live.facts = { exactRational: false, reliableDigits: null, ...(r.warn ? { warn: r.warn } : {}) };
+            live.facts = { ...(r.numeric ? {} : r.facts), exact: false, reliableDigits: null };
           }
           // A result with a float in it comes with its value and facts (docs/04 2.9): drawn by our formatter, marked.
           const n = r.numeric;

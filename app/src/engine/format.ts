@@ -15,9 +15,10 @@
 //   FIX f: f digits after the point, plain notation (the Format key's optional "Fixed" mode).
 //   PFX n: as ENG, with the exponent shown as an SI prefix (f p n µ m, none, k M G T P; docs/04 section 2.7);
 //          outside 10^-15 … 10^15 it is ENG.
-// Marks (docs/04 section 2.4): the engine reports facts (exactRational, reliableDigits, warn); markOf() and
+// Marks (docs/04 section 2.4): the engine reports facts (ValueFacts: exact, reliableDigits, warn); markOf() and
 // formatConfirmed() below decide, for the format on screen, which digits may be shown and which mark goes first.
 // Rounding is half away from zero.
+import type { ValueFacts } from "./types.ts";
 
 /** Significant digits a DecimalValue keeps (evalf strings from the engine carry 40). */
 export const DECIMAL_KEEP = 40;
@@ -321,13 +322,9 @@ export interface PrecisionWhy {
   differ?: boolean;
 }
 
-/** The engine's facts about one result (a subset of HomeResult, so the formatter does not depend on the engine). */
-export interface PrecisionFacts {
+/** The engine's facts about one result with its value (ValueFacts, so the formatter does not depend on HomeResult). */
+export interface PrecisionFacts extends ValueFacts {
   value?: ComplexValue;
-  exactRational: boolean;
-  /** Significant digits confirmed by the agreement check; null = exact, nothing in doubt. */
-  reliableDigits: number | null;
-  warn?: PrecisionWarn;
   /** A numeric list or matrix: its elements (the list's own value is absent). */
   items?: PrecisionFacts[];
   /** Only read when there is no value: a true or false that rests on a float (an == or ≠ test, R18f1) is ≈. */
@@ -422,7 +419,7 @@ export function markOf(f: PrecisionFacts, o: FormatOptions): MarkInfo | null {
     return { mark: "⚠", n: Math.max(0, f.reliableDigits), ...(f.warn ? { warn: f.warn } : {}) };
   }
   if (f.warn) return { mark: "⚠", warn: f.warn };
-  if (f.exactRational && parts.every((p) => shownExactly(p, o))) return { mark: "=" };
+  if (f.exact && parts.every((p) => shownExactly(p, o))) return { mark: "=" };
   return { mark: "≈" };
 }
 

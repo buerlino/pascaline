@@ -339,7 +339,7 @@ export function decidedAtDouble(
     const shape = shapeOf(t);
     const parts = shape ? readParts(giac, name, shape, (part) => giac.eval(part), DOUBLE_DIGITS) : null;
     if (shape && parts) {
-      const facts = parts.map((v): ElementFacts => ({ value: { re: v.re, im: v.im }, exactRational: false, reliableDigits: Math.min(digits, DOUBLE_DIGITS), warn: "unaudited", big: false }));
+      const facts = parts.map((v): ElementFacts => ({ value: { re: v.re, im: v.im }, exact: false, reliableDigits: Math.min(digits, DOUBLE_DIGITS), warn: "unaudited", big: false }));
       return { facts, shape };
     }
     return t.trim() === "true" || t.trim() === "false" ? { text: t.trim() } : null;

@@ -63,10 +63,10 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     }
     // Guards: MPFR holds exp(-1000); an exact 0; a 0 Giac cannot prove reads as noise, not as MPFR's 0, and stays ⚠ 0.
     expect(home("exp(-1000)")).toMatchObject({ ok: true, display: "5.07595889755E-435" });
-    for (const input of ["sin(pi)", "0*exp(-10^30)"]) expect(home(input), input).toMatchObject({ ok: true, display: "0", exactRational: true });
+    for (const input of ["sin(pi)", "0*exp(-10^30)"]) expect(home(input), input).toMatchObject({ ok: true, display: "0", facts: { exact: true } });
     expect(home("exp(-10^30)*exp(10^30)")).toMatchObject({ ok: true, display: "1" });
     for (const input of ["cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)-1/2", "exp(10^-70)-1"])
-      expect(home(input), input).toMatchObject({ ok: true, display: "0", warn: "unchecked" });
+      expect(home(input), input).toMatchObject({ ok: true, display: "0", facts: { warn: "unchecked" } });
   });
   it("decides an underflow on Giac's exact answer: an element Giac's simplify proves 0 is no underflow (G84)", () => {
     try {
@@ -74,7 +74,7 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
       // 1E-70 (a cancellation, 0 at 40 digits); exp(-10^30) is 0 at any precision.
       giac.eval("pasU:=[ln(2)+ln(3)-ln(6),exp(-10^30),exp(10^-70)-1,0]");
       const zero = { re: { neg: false, digits: "", exp: 0, sticky: false }, im: { neg: false, digits: "", exp: 0, sticky: false } };
-      const facts = [0, 1].map(() => ({ value: zero, exactRational: false, reliableDigits: 40, big: false }));
+      const facts = [0, 1].map(() => ({ value: zero, exact: false, reliableDigits: 40, big: false }));
       expect(zeroElements("pasU", facts, { kind: "list", n: 2 })).toEqual(["pasU[0]", "pasU[1]"]);
       expect(underflow(giac, ["pasU[0]"], 40)).toBe(false);
       expect(underflow(giac, ["pasU[1]"], 40)).toBe(true);
@@ -83,7 +83,7 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
       expect(underflow(giac, ["pasU[3]"], null)).toBe(false);
       expect(underflow(giac, ["pasU[1]"], null)).toBe(true);
       // An exact rational element is never looked at.
-      expect(zeroElements("pasU", [{ ...facts[0]!, exactRational: true }], { kind: "scalar" })).toEqual([]);
+      expect(zeroElements("pasU", [{ ...facts[0]!, exact: true }], { kind: "scalar" })).toEqual([]);
     } finally {
       giac.eval("purge(pasU)");
     }

@@ -180,7 +180,7 @@ describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
     const h = await fresh();
     let log: DefEntry[] = [];
     for (const s of ["beam(q,L):=q*L^2/8", "A:=5", "B:=A*2", "assume(x>0)"]) log = applyDefChanges(log, h.cas(s, defaultCasSettings).defs);
-    const withFloat: DefEntry = { name: "C", kind: "var", cmds: ["C:=(1.5)"], preview: "1.5", view: "cas", time: 0, facts: { reliableDigits: 5 } };
+    const withFloat: DefEntry = { name: "C", kind: "var", cmds: ["C:=(1.5)"], preview: "1.5", view: "cas", time: 0, facts: { exact: false, reliableDigits: 5 } };
     const { text, skipped } = exportLibrary([...log, withFloat]);
     expect(skipped.map((s) => s.name)).toEqual(["x", "C"]);
     expect(text).toContain("// beam(q,L)\nbeam(q,L):=q*L^2/8");

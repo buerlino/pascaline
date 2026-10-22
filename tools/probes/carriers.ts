@@ -25,10 +25,15 @@ const stand = {
 const calc = new EngineCalc(stand);
 const settings = { digits: 12, angle: "rad", format: "std" } as never;
 
-const lost = (a: object, b: object): string[] =>
-  Object.entries(a)
-    .filter(([k, v]) => v !== undefined && !(k in b) && !/Ms$/.test(k))
+// A result's keys, with the facts it carries as one object (G76: `facts`) read key by key, so a fact dropped inside it shows.
+const flat = (o: object): [string, unknown][] =>
+  Object.entries(o).flatMap(([k, v]): [string, unknown][] => (k === "facts" && v && typeof v === "object" ? Object.entries(v).map(([j, w]): [string, unknown] => [`facts.${j}`, w]) : [[k, v]]));
+const lost = (a: object, b: object): string[] => {
+  const kept = new Set(flat(b).map(([k]) => k));
+  return flat(a)
+    .filter(([k, v]) => v !== undefined && !kept.has(k) && !/Ms$/.test(k))
     .map(([k, v]) => `${k}=${JSON.stringify(v).slice(0, 60)}`);
+};
 
 for (const i of HOME) {
   const r = host.home(i, { ...(await import("../../app/src/engine/homeEval.ts")).defaultHomeSettings }).result;

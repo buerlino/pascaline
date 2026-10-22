@@ -28,7 +28,7 @@ export function mergedFacts(all: readonly NameFacts[]): NameFacts | null {
   if (!all.length) return null;
   const capped = all.filter((f) => f.reliableDigits !== null).map((f) => f.reliableDigits!);
   const warn = all.some((f) => f.warn === "unaudited") ? "unaudited" : all.some((f) => f.warn === "unchecked") ? "unchecked" : undefined;
-  return { reliableDigits: capped.length ? Math.min(...capped) : null, ...(warn ? { warn } : {}), inexact: true };
+  return { exact: false, reliableDigits: capped.length ? Math.min(...capped) : null, ...(warn ? { warn } : {}), inexact: true };
 }
 
 /** The facts a stored variable keeps (M4-7, G49): a float's as they are (its value shows it is not exact), a value that
@@ -139,11 +139,11 @@ export function inherited(host: FactsHost, r: HomeResult, reads: InputReads, exp
     pert = perturbedDigits(host.giac, expr, shape, els.map((e) => e.value!), moved, digits, restoreDigits);
   }
   const facts: ElementFacts[] = els.map((e, k) => {
-    let n = Math.min(e.reliableDigits ?? P, cap);
+    let n = Math.min(e.facts.reliableDigits ?? P, cap);
     if (pert) n = Math.min(n, pert[k]!);
-    const w = warn ?? e.warn ?? (pert === null ? "unchecked" : undefined);
-    if (pert === null && !warn && !e.warn) once = true;
-    return { value: e.value!, exactRational: false, reliableDigits: n, ...(w ? { warn: w } : {}), big: false };
+    const w = warn ?? e.facts.warn ?? (pert === null ? "unchecked" : undefined);
+    if (pert === null && !warn && !e.facts.warn) once = true;
+    return { value: e.value!, exact: false, reliableDigits: n, ...(w ? { warn: w } : {}), big: false };
   });
   const b = resultFromFacts(facts, shape, digits, r.path, true, r.totalMs);
   // Only the names behind a ⚠: one with a warning, or one known to fewer digits than the setting shows.
@@ -151,11 +151,12 @@ export function inherited(host: FactsHost, r: HomeResult, reads: InputReads, exp
   const causes = used
     .filter((u) => u.facts.warn !== undefined || (u.facts.reliableDigits !== null && (u.facts.reliableDigits < digits || lost)))
     .map((u) => u.name);
-  const why = { ...(r.why ?? {}), ...(causes.length ? { inherited: causes } : {}), ...(once ? { once: true as const } : {}) };
+  const why = { ...(r.facts.why ?? {}), ...(causes.length ? { inherited: causes } : {}), ...(once ? { once: true as const } : {}) };
   return {
     ...b,
-    ...(Object.keys(why).length ? { why } : {}),
+    ...(Object.keys(why).length ? { facts: { ...b.facts, why } } : {}),
     ...(r.exact !== undefined ? { exact: r.exact } : {}),
+    ...(r.rational ? { rational: r.rational } : {}),
     ...(r.defined ? { defined: r.defined } : {}),
     ...(r.digits !== undefined ? { digits: r.digits } : {}),
     exactMs: r.exactMs,

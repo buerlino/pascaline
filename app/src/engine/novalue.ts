@@ -133,7 +133,7 @@ const CONSTANTS = new Set(["pi", "e", "i", "infinity", "euler_gamma"]);
 export function zeroElements(slot: string, facts: readonly ElementFacts[], shape: Shape): string[] {
   const at = (k: number): string =>
     shape.kind === "scalar" ? slot : shape.kind === "list" ? `${slot}[${k}]` : `${slot}[${Math.floor(k / shape.cols)}][${k % shape.cols}]`;
-  return facts.flatMap((f, k) => (!f.exactRational && isZero(f.value.re) && isZero(f.value.im) ? [at(k)] : []));
+  return facts.flatMap((f, k) => (!f.exact && isZero(f.value.re) && isZero(f.value.im) ? [at(k)] : []));
 }
 
 /**

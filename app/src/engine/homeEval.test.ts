@@ -13,11 +13,11 @@ describe("the == test's float flag (R18f1)", () => {
     expect(mathJsonToGiac(["EqualTest", "x", 2])).toContain(`sto(1,${EQ_INEXACT_FLAG})`);
   });
   it("makes a true or false resting on a float approximate; other non-numbers stay unmarked", () => {
-    expect(markOf({ exactRational: false, reliableDigits: null, approximate: true }, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
-    expect(markOf({ exactRational: false, reliableDigits: null }, { format: "STD", digits: 12 })).toBeNull();
+    expect(markOf({ exact: false, reliableDigits: null, approximate: true }, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
+    expect(markOf({ exact: false, reliableDigits: null }, { format: "STD", digits: 12 })).toBeNull();
     // R18f2: a float from an unaudited function gives ⚠; a warned non-number that is not a test stays unmarked
-    expect(markOf({ exactRational: false, reliableDigits: null, approximate: true, warn: "unaudited" }, { format: "STD", digits: 12 })).toEqual({ mark: "⚠", warn: "unaudited" });
-    expect(markOf({ exactRational: false, reliableDigits: null, warn: "unchecked" }, { format: "STD", digits: 12 })).toBeNull();
+    expect(markOf({ exact: false, reliableDigits: null, approximate: true, warn: "unaudited" }, { format: "STD", digits: 12 })).toEqual({ mark: "⚠", warn: "unaudited" });
+    expect(markOf({ exact: false, reliableDigits: null, warn: "unchecked" }, { format: "STD", digits: 12 })).toBeNull();
   });
 });
 

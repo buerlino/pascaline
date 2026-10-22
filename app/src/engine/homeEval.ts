@@ -13,6 +13,7 @@
 //
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
+import { valueFactsOf, type ValueFacts } from "./types.ts";
 import { floatBounds, refusalOf, giacPair, hasDefiniteIntegral, integratedNumerically, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
@@ -21,7 +22,7 @@ import { nonSquarePower } from "./nonsquare.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
-import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
+import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
   functionsIn,
@@ -98,6 +99,9 @@ export interface HomeResult {
   value?: ComplexValue;
   /** Exact Giac result when the exact path finished (may be long). */
   exact?: string;
+  /** `exact` is a plain integer or p/q (`3`, `-7/3`, at most 200 digits each), the value of a real result with
+   *  `facts.exact`: the Format key's fraction modes read it (G76: the engine says so, the port no longer reads the text). */
+  rational?: true;
   path: HomePath;
   /** True when the shown value comes from floating point, not from the exact result. */
   approximate: boolean;
@@ -109,10 +113,8 @@ export interface HomeResult {
    *  not exist (G39, converge.ts: a divergent integral or series, no limit), or "timeout" when Home's own steps ran past
    *  HOME_DEADLINE_MS (G58); the UI shows `error.<code>`. */
   error?: "syntax" | "engine" | "timeout" | Refusal;
-  /** The value is exactly p/q or an integer; with the format this decides "=" (docs/04 section 2.4, 8.2). */
-  exactRational: boolean;
-  /** Digits confirmed by the agreement check; null = exact (no digit is in doubt). */
-  reliableDigits: number | null;
+  /** How far the value can be trusted (G76): `exact` with the format decides "=" (docs/04 section 2.4, 8.2). */
+  facts: ValueFacts;
   /** The text to copy and the `\res` chip value: the exact text or P digits (docs/04 section 2.6, 3.6). */
   full: string;
   /** What a stateful input defined, for the live Find items (docs/04 section 3.4). */
@@ -121,21 +123,31 @@ export interface HomeResult {
   items?: HomeResult[];
   /** [rows, columns] of `items` for a matrix; absent for a list. */
   shape?: [number, number];
-  /** ⚠ although the digits agree: an un-audited function's float, or a value that could be evaluated only once. */
-  warn?: PrecisionWarn;
-  /** The reasons behind the ⚠ as facts, for the chip that explains it (R36, docs/04 8.2). Absent for an exact result. */
-  why?: PrecisionWhy;
   /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): the result is shown with them, not the setting. */
   digits?: number;
   /** Giac `latex()` of a result that is not a number (raw; the view tidies it up and draws it, as in CAS). R18f3. */
   latex?: string;
-  /** G26: significant digits of the shown value before the digit position of the first-order σ that the inexact
-   *  constants of the input leave (EngineHost.home's table); the digits from there on are uncertain. Absent when no
-   *  inexact constant went in by name, or the result is not one real number. */
-  uncDigits?: number;
   /** G67: the input changed one of Giac's settings (`approx_mode:=1`), which the engine put back: the result line says
    *  it was not kept. */
   settingReset?: true;
+}
+
+/** A result as the formatter reads it (markOf, formatConfirmed): its facts with its value, elements and shape. */
+export function precisionFacts(r: HomeResult): PrecisionFacts & { shape?: [number, number] } {
+  return {
+    ...r.facts,
+    ...(r.value ? { value: r.value } : {}),
+    ...(r.items ? { items: r.items.map(precisionFacts) } : {}),
+    ...(r.shape ? { shape: r.shape } : {}),
+    approximate: r.approximate,
+  };
+}
+
+/** Giac's text of an exact real rational (`-7/3`, `3`) when each part has at most 200 digits (longer ones are not
+ *  offered to the Format key's fraction modes). */
+function plainRational(text: string): boolean {
+  const parts = (text.startsWith("-") ? text.slice(1) : text).split("/");
+  return parts.length <= 2 && parts.every((p) => p.length >= 1 && p.length <= 200 && [...p].every((c) => c >= "0" && c <= "9"));
 }
 
 /** Giac prints a string result in double quotes; latex() returns one. */
@@ -144,8 +156,8 @@ export function unquote(s: string): string {
 }
 
 /** Placeholder precision facts until the engine fills them (docs/04 section 8.2): no claim of exactness, `full` = the display. */
-export function safePrecision(display: string): Pick<HomeResult, "exactRational" | "reliableDigits" | "full"> {
-  return { exactRational: false, reliableDigits: null, full: display };
+export function safePrecision(display: string): Pick<HomeResult, "facts" | "full"> {
+  return { facts: { exact: false, reliableDigits: null }, full: display };
 }
 
 /**
@@ -489,25 +501,25 @@ interface Built {
   value?: ComplexValue;
   items?: HomeResult[];
   shape?: [number, number];
-  exactRational: boolean;
-  reliableDigits: number | null;
-  warn?: PrecisionWarn;
+  facts: ValueFacts;
   tieRisk: boolean;
   /** The value as a decimal with every confirmed digit up to P (copy, chips). */
   decimal: string;
 }
 
 function element(f: ElementFacts, digits: number, P: number, path: HomePath, approximate: boolean): HomeResult {
-  const facts = { value: f.value, exactRational: f.exactRational, reliableDigits: f.reliableDigits, ...(f.warn ? { warn: f.warn } : {}) };
-  const display = formatConfirmed(facts, { format: "STD", digits })!;
+  const facts = valueFactsOf(f);
+  const p = { ...facts, value: f.value };
+  const display = formatConfirmed(p, { format: "STD", digits })!;
   return {
     ok: true,
     display,
-    ...facts,
-    full: formatConfirmed(facts, { format: "STD", digits: P })!,
+    value: f.value,
+    facts,
+    full: formatConfirmed(p, { format: "STD", digits: P })!,
     path,
     approximate,
-    tieRisk: !f.exactRational && (tieRisk(f.value.re, digits) || (!isZero(f.value.im) && tieRisk(f.value.im, digits))),
+    tieRisk: !f.exact && (tieRisk(f.value.re, digits) || (!isZero(f.value.im) && tieRisk(f.value.im, digits))),
     exactMs: 0,
     totalMs: 0,
   };
@@ -527,25 +539,21 @@ function build(facts: ElementFacts[], shape: Shape, digits: number, path: HomePa
     return {
       display: e.display,
       value: e.value!,
-      exactRational: e.exactRational,
-      reliableDigits: e.reliableDigits,
-      ...(e.warn ? { warn: e.warn } : {}),
+      facts: e.facts,
       tieRisk: e.tieRisk,
       decimal: e.full,
     };
   }
   const shp: [number, number] | undefined = shape.kind === "matrix" ? [shape.rows, shape.cols] : undefined;
-  const reliable = els.reduce<number | null>((n, e) => (e.reliableDigits === null ? n : n === null ? e.reliableDigits : Math.min(n, e.reliableDigits)), null);
-  const warn = els.find((e) => e.warn)?.warn;
+  const reliable = els.reduce<number | null>((n, { facts: { reliableDigits: d } }) => (d === null ? n : n === null ? d : Math.min(n, d)), null);
+  const warn = els.find((e) => e.facts.warn)?.facts.warn;
   const fmt = (key: "display" | "full") =>
     shp ? `[${Array.from({ length: shp[0] }, (_, r) => `[${els.slice(r * shp[1], (r + 1) * shp[1]).map((e) => e[key]).join(",")}]`).join(",")}]` : `[${els.map((e) => e[key]).join(",")}]`;
   return {
     display: fmt("display"),
     items: els,
     ...(shp ? { shape: shp } : {}),
-    exactRational: els.every((e) => e.exactRational),
-    reliableDigits: reliable,
-    ...(warn ? { warn } : {}),
+    facts: { exact: els.every((e) => e.facts.exact), reliableDigits: reliable, ...(warn ? { warn } : {}) },
     tieRisk: els.some((e) => e.tieRisk),
     decimal: fmt("full"),
   };
@@ -557,7 +565,7 @@ function build(facts: ElementFacts[], shape: Shape, digits: number, path: HomePa
  * costs nothing for ordinary irrational results.
  */
 function provedRational(giac: Giac, name: string, f: ElementFacts, digits: number): ElementFacts | null {
-  if (f.exactRational || f.value.re.sticky || f.value.im.sticky) return null;
+  if (f.exact || f.value.re.sticky || f.value.im.sticky) return null;
   if (f.value.re.digits.length > digits || f.value.im.digits.length > digits) return null;
   const out = giac.eval(`simplify(${name})`);
   if (isError(out)) return null;
@@ -567,14 +575,15 @@ function provedRational(giac: Giac, name: string, f: ElementFacts, digits: numbe
   const b = rationalValue(im);
   if (!a || !b) return null;
   giac.eval(`${name}:=simplify(${name})`);
-  return { value: { re: a.v, im: b.v }, exactRational: true, reliableDigits: null, big: false };
+  return { value: { re: a.v, im: b.v }, exact: true, reliableDigits: null, big: false };
 }
 
 /** G38: a result whose decision did not hold at a higher precision: ⚠ without a count, elements too, with the why
  *  "decided at limited precision" (docs/04 2.4 rule 2). */
 export function undecidedResult(r: HomeResult): HomeResult {
-  const el = (e: HomeResult): HomeResult => ({ ...e, exactRational: false, reliableDigits: null, warn: "unchecked", approximate: true });
-  return { ...el(r), ...(r.items ? { items: r.items.map(el) } : {}), why: { ...(r.why ?? {}), decided: true } };
+  const el = (e: HomeResult): HomeResult => ({ ...e, facts: { ...e.facts, exact: false, reliableDigits: null, warn: "unchecked" }, approximate: true });
+  const top = el(r);
+  return { ...top, ...(r.items ? { items: r.items.map(el) } : {}), facts: { ...top.facts, why: { ...(r.facts.why ?? {}), decided: true } } };
 }
 
 export function homeEval(
@@ -647,7 +656,7 @@ export function homeEval(
   const done = (r: Omit<HomeResult, "exactMs" | "totalMs" | "full"> & { full?: string }): HomeResult => {
     const out: HomeResult = {
       ...r,
-      ...(unverified && r.ok ? { warn: r.warn ?? "unchecked", approximate: true } : {}),
+      ...(unverified && r.ok ? { facts: { ...r.facts, warn: r.facts.warn ?? "unchecked" }, approximate: true } : {}),
       full: r.full ?? r.display,
       ...(r.ok && defined ? { defined } : {}),
       exactMs,
@@ -656,11 +665,13 @@ export function homeEval(
     return undecided && out.ok ? undecidedResult(out) : out;
   };
   const fromBuilt = (b: Built, path: HomePath, approximate: boolean, exact: string | undefined, full: string, why?: PrecisionWhy): HomeResult => {
-    const { decimal: _d, ...rest } = b;
-    return done({ ok: true, ...rest, ...(why ? { why } : {}), ...(exact !== undefined ? { exact } : {}), path, approximate, full });
+    const { decimal: _d, facts, ...rest } = b;
+    // G76: the engine says when `exact` is a plain integer or p/q (the port passes it to the Format key's fraction modes).
+    const rational = exact !== undefined && facts.exact && b.value !== undefined && isZero(b.value.im) && plainRational(exact);
+    return done({ ok: true, ...rest, facts: why ? { ...facts, why } : facts, ...(exact !== undefined ? { exact } : {}), ...(rational ? { rational } : {}), path, approximate, full });
   };
   const failed = (display: string, path: HomePath, exact?: string): HomeResult =>
-    done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, tieRisk: false, exactRational: false, reliableDigits: null });
+    done({ ok: false, display, ...(exact !== undefined ? { exact } : {}), path, approximate: true, tieRisk: false, facts: { exact: false, reliableDigits: null } });
   const refuse = (code: Refusal, path: HomePath): HomeResult => ({ ...failed(enEngine[`error.${code}`], path), error: code, approximate: false });
 
   const viaFloat = (path: HomePath, exact?: string): HomeResult => {
@@ -684,7 +695,7 @@ export function homeEval(
     if (d === null) return failed(error, path, exact);
     store();
     const why = { unaudited: unauditedIn(asg ? asg.rhs : input) };
-    if ("text" in d) return done({ ok: true, display: d.text, exact: d.text, path, approximate: true, warn: "unaudited", why, tieRisk: false, exactRational: false, reliableDigits: null });
+    if ("text" in d) return done({ ok: true, display: d.text, exact: d.text, path, approximate: true, tieRisk: false, facts: { exact: false, reliableDigits: null, warn: "unaudited", why } });
     const b = build(d.facts, d.shape, s.digits, path, true);
     return fromBuilt(b, path, true, exact, b.decimal, why);
   };
@@ -713,7 +724,7 @@ export function homeEval(
     if (re) {
       giac.eval(`${ans}:=${pair.numeric}`);
       store();
-      const f: ElementFacts = { value: { re, im: decimalFromString("0", P)! }, exactRational: false, reliableDigits: 0, big: false };
+      const f: ElementFacts = { value: { re, im: decimalFromString("0", P)! }, exact: false, reliableDigits: 0, big: false };
       const b = build([f], { kind: "scalar" }, s.digits, "exact", true);
       return fromBuilt(b, "exact", true, undefined, b.decimal, { differ: true });
     }
@@ -746,7 +757,7 @@ export function homeEval(
     const unchecked = hasFloat(text) || forced !== undefined;
     const warn = decided?.warn ?? forced ?? (unchecked ? "unchecked" : undefined);
     const why = symbolicWhy(warn, testSides(exactBody));
-    return done({ ok: true, display: deg ?? dropAngleFactor(text), exact: text, ...(deg !== null ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, ...(warn ? { warn } : {}), ...(why ? { why } : {}), tieRisk: false, exactRational: false, reliableDigits: null });
+    return done({ ok: true, display: deg ?? dropAngleFactor(text), exact: text, ...(deg !== null ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, tieRisk: false, facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) } });
   };
   // G44f1: Giac's inverse distribution function gives ±infinity for some p inside (0, 1) (fisher_icdf(3,4,1-10^-20)):
   // the polish computes the value; when it cannot, Giac's infinity is shown with ⚠. At p = 0 or 1 it is exact.
@@ -811,7 +822,7 @@ export function homeEval(
   }
   let exactText = exactOut;
   // G58: not for a text whose re and im already were unsafe (heavySplit): Giac's simplify of it loops as they do.
-  if (shape.kind === "scalar" && !facts[0]!.exactRational && !heavySplit(exactOut)) {
+  if (shape.kind === "scalar" && !facts[0]!.exact && !heavySplit(exactOut)) {
     const proved = provedRational(giac, ans, facts[0]!, valuePrecision(s.digits));
     if (proved) {
       facts = [proved];
@@ -831,7 +842,7 @@ export function homeEval(
   const differ =
     !once && route !== null && isAudited(body) && isAudited(exactOut) && (complexSafe(exactOut) === exactOut || complexSafe(body) !== body) &&
     numericDisagrees(giac, route, facts, shape, s.digits);
-  if (differ) facts = facts.map((f) => (f.exactRational ? f : { ...f, reliableDigits: null, warn: "unchecked" as const }));
+  if (differ) facts = facts.map((f) => (f.exact ? f : { ...f, reliableDigits: null, warn: "unchecked" as const }));
   // G71 (N7): Giac's two-argument round and trunc work in a double: an integer or decimal they print is not exact.
   if (!differ && doubleFormsIn(exactBody).length) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const }));
   const b = build(facts, shape, s.digits, "exact", differ);

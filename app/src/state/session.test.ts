@@ -32,7 +32,7 @@ class ValueCalc extends FakeCalc implements Calc {
     return Promise.resolve({ ok: true, display: "0.333333333333", approximate: false, ...safePrecision("0.333333333333"), value: third });
   }
   override cas(giac: string): Promise<CasOutcome> {
-    return Promise.resolve({ ok: true, text: giac, latex: "\\frac{1}{2}" });
+    return Promise.resolve({ ok: true, text: giac, latex: "\\frac{1}{2}", facts: { exact: false, reliableDigits: null } });
   }
   override cancel(): Promise<void> {
     return Promise.resolve();

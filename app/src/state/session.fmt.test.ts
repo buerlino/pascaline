@@ -34,7 +34,7 @@ async function engineCalc(): Promise<Calc> {
         ...(r.exact ? { exact: r.exact } : {}),
       });
     },
-    cas: (giac: string): Promise<CasOutcome> => Promise.resolve({ ok: true, text: giac, latex: giac }),
+    cas: (giac: string): Promise<CasOutcome> => Promise.resolve({ ok: true, text: giac, latex: giac, facts: { exact: false, reliableDigits: null } }),
   });
 }
 

@@ -17,7 +17,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EngineHost } from "../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
-import { defaultHomeSettings } from "../../app/src/engine/homeEval.ts";
+import { defaultHomeSettings, precisionFacts } from "../../app/src/engine/homeEval.ts";
 import { markOf } from "../../app/src/engine/format.ts";
 import type { IndexItem } from "../../app/src/find/types.ts";
 import { buildJob } from "../../app/src/units/build.ts";
@@ -78,7 +78,7 @@ for (const [input, to, why] of cases) {
     console.log(`${head}\n  refused: ${unitErrorMessage(q)}  [${q.error}]`);
     continue;
   }
-  const mark = markOf(q.value, { format: "STD", digits: 12 })?.mark ?? "?";
+  const mark = markOf(precisionFacts(q.value), { format: "STD", digits: 12 })?.mark ?? "?";
   const unc = q.unc ? `  σ ${q.unc.text}, shown "${q.unc.shown}"${q.unc.why ? ` ⚠ ${unitWhyText(q.unc.why)}` : ""}` : "";
   const note = q.note ? `  note: ${unitNoteText(q.note)}` : "";
   console.log(`${head}\n  ${mark} ${q.value.display} ${q.unit}   dim ${q.dimensionText ?? "-"} (${q.dimension ?? "-"})   si ${q.si ?? "(absent)"}   exact ${q.value.exact ?? "-"}   ${q.ms.toFixed(1)} ms${unc}${note}`);

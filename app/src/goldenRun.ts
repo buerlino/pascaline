@@ -2,7 +2,7 @@
 // The golden Home and precision cases, run one at a time. Shared by the Node gate (scripts/golden.ts), the Node dump
 // (scripts/golden-dump.ts) and the WebView run (goldenBench.ts, ?bench=golden, A20), so both sides run the same code.
 import { EngineHost, type GiacApi } from "./engine/host.ts";
-import { defaultHomeSettings, type HomeResult, type HomeSettings } from "./engine/homeEval.ts";
+import { defaultHomeSettings, precisionFacts, type HomeResult, type HomeSettings } from "./engine/homeEval.ts";
 import { markOf, type MarkInfo } from "./engine/format.ts";
 import { defaultCasSettings } from "./engine/types.ts";
 import { ANS_KEY, type ChipTable } from "./input/chips.ts";
@@ -147,7 +147,7 @@ export async function runSteps(fresh: () => Promise<GiacApi>, steps: Step[], dig
     const full = r.exact !== undefined && r.exact.length <= 2048 ? r.exact : r.full || r.exact;
     if (r.ok && full && full.length <= 2048) {
       const cut = (r.exact !== undefined && full !== r.exact) || r.value?.re.sticky === true || r.value?.im.sticky === true;
-      const exact = !r.approximate && !cut && (r.exact !== undefined || r.exactRational || !/\.|\d[eE][+-]?\d/.test(full));
+      const exact = !r.approximate && !cut && (r.exact !== undefined || r.facts.exact || !/\.|\d[eE][+-]?\d/.test(full));
       chips = { [ANS_KEY]: { value: full, exact } };
       // A named chip follows the session's rule (session.svelte.ts finish): the exact text only when the result is not
       // approximate and the input held no inexact constant or chip, else the confirmed decimal r.full (R65).
@@ -156,7 +156,7 @@ export async function runSteps(fresh: () => Promise<GiacApi>, steps: Step[], dig
       const exactText = !inexact && r.exact !== undefined && r.exact.length <= 2048 ? r.exact : undefined;
       const value = exactText ?? (r.full || (inexact ? undefined : r.exact));
       if (value && value.length <= 2048) {
-        named[String(k + 1)] = { value, reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}), exact: !inexact && (value === exactText || (r.exact === undefined && r.value?.re.sticky !== true && r.value?.im.sticky !== true && (r.exactRational || !/\.|\d[eE][+-]?\d/.test(value)))) };
+        named[String(k + 1)] = { value, reliableDigits: r.facts.reliableDigits, ...(r.facts.warn ? { warn: r.facts.warn } : {}), exact: !inexact && (value === exactText || (r.exact === undefined && r.value?.re.sticky !== true && r.value?.im.sticky !== true && (r.facts.exact || !/\.|\d[eE][+-]?\d/.test(value)))) };
       }
     }
   }
@@ -165,7 +165,7 @@ export async function runSteps(fresh: () => Promise<GiacApi>, steps: Step[], dig
 
 /** The mark of a sequence's last step: markOf, and never "=" after an inexact chip (displayMode.ts markFor). */
 export function seqMark(r: HomeResult & { inexactInput?: boolean }, digits: number): MarkInfo | null {
-  const m = markOf(r, { format: "STD", digits });
+  const m = markOf(precisionFacts(r), { format: "STD", digits });
   return m?.mark === "=" && r.inexactInput ? { mark: "≈" } : m;
 }
 
@@ -230,7 +230,7 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
     // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it); a
     // true or false resting on a float is approximate (R18f1).
     // A rational text whose decision did not hold at P + 20 comes approximate (G38), so that is read first.
-    mark = r.numeric ? markOf(r.numeric, { format: "STD", digits }) : r.ok && r.approximate ? (r.warn ? { mark: "⚠" } : { mark: "≈" }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
+    mark = r.numeric ? markOf(precisionFacts(r.numeric), { format: "STD", digits }) : r.ok && r.approximate ? (r.facts.warn ? { mark: "⚠" } : { mark: "≈" }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
   } else {
     const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
     for (const b of c.beforeCas ?? []) defs.push(...host.cas(giacOf(b), { ...defaultCasSettings, angle: s.angle, digits: setting }).defs);
@@ -238,7 +238,7 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
     await relaunched();
     const r = host.home(input, s).result;
     shown = r.ok ? r.display : `error: ${r.display}`;
-    mark = markOf(r, { format: "STD", digits });
+    mark = markOf(precisionFacts(r), { format: "STD", digits });
   }
   return { shown, mark, input, digits, problems };
 }

@@ -48,7 +48,7 @@ class TableCalc extends FakeCalc implements Calc {
   }
   override cas(giac: string): Promise<CasOutcome> {
     this.seen.push(giac);
-    return Promise.resolve({ ok: true, text: giac, latex: giac });
+    return Promise.resolve({ ok: true, text: giac, latex: giac, facts: { exact: false, reliableDigits: null } });
   }
 }
 
@@ -187,7 +187,7 @@ describe.skipIf(!giacAvailable())("marks travel through Ans and chips (R65, real
 describe("chip facts (R65)", () => {
   it("an inexact input never gives an exact chip, and a non-exact result carries its confirmed decimal", async () => {
     const calc = new TableCalc({
-      "pasr_1*1000": { display: "-1959.96398454", exact: "-97998199227/50", full: "-1959.96398454", exactRational: true, reliableDigits: null },
+      "pasr_1*1000": { display: "-1959.96398454", exact: "-97998199227/50", full: "-1959.96398454", facts: { exact: true, reliableDigits: null } },
     });
     const s = new Session(calc, memoryKv());
     await s.submit("\\res{1}{x}\\times1000", undefined, { "res:1": { value: "-1.95996398454", exact: false } });

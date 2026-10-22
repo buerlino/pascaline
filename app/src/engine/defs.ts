@@ -7,18 +7,11 @@
 // that defined it: `B:=A*2` replayed after `A:=5` would give B a different value than it had (the log keeps one entry
 // per name, so the order of the commands is gone). Functions are kept as their definition (the body is not evaluated
 // when it is defined, so order does not matter). Inputs whose effect has no single name are kept as typed, in order.
-import type { PrecisionWarn } from "./format.ts";
+import { readValueFacts, type ValueFacts } from "./types.ts";
 
-/** How far a variable that holds a float can be trusted (decisions M4-7): the facts of the result it was stored from. */
-export interface NameFacts {
-  /** Significant digits confirmed when it was stored; null: not limited (only `warn` and `inexact` apply). */
-  reliableDigits: number | null;
-  warn?: PrecisionWarn;
-  /** G49: the value prints as an exact rational but is not exact (stored from an input that held a constant with an
-   *  uncertainty or a chip that is not exact, or from a result shown with ⚠): a result from it is never `=`. A float
-   *  needs no flag. */
-  inexact?: true;
-}
+/** How far a variable that holds a float can be trusted (decisions M4-7): the facts of the result it was stored from
+ *  (never `exact`: an exact value stores none). */
+export type NameFacts = ValueFacts;
 
 /** var: a value (`A:=…`, `…▶A`, `L[2]:=…`, and since G65 every name any input set: `a,b:=1,2`, `(A:=5)+1`, a called
  *  program's global); fn: `f(x):=…`; assume: `assume`/`additionally` on a name; other: a stateful input with no single
@@ -89,17 +82,10 @@ export function replayOrder(log: readonly DefEntry[]): DefEntry[] {
 
 const KINDS: readonly DefKind[] = ["var", "fn", "assume", "other"];
 
+/** A stored entry's facts through the one mapping for stored facts (readValueFacts): an entry stored before G76 has no
+ *  `exact` (a name's facts never claim it). Undefined: none stored; null: wrong shape. */
 function validFacts(x: unknown): NameFacts | undefined | null {
-  if (x === undefined) return undefined;
-  if (!x || typeof x !== "object") return null;
-  const f = x as Record<string, unknown>;
-  const d = f["reliableDigits"];
-  if (!(d === null || (typeof d === "number" && Number.isFinite(d)))) return null;
-  const w = f["warn"];
-  if (w !== undefined && w !== "unaudited" && w !== "unchecked") return null;
-  const inexact = f["inexact"];
-  if (inexact !== undefined && inexact !== true) return null;
-  return { reliableDigits: d, ...(w ? { warn: w } : {}), ...(inexact ? { inexact } : {}) };
+  return x === undefined ? undefined : readValueFacts(x);
 }
 
 /** Stored entries read back (IndexedDB): the ones with the right shape, at most MAX_DEFS. */
