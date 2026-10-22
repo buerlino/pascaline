@@ -15,6 +15,11 @@ OWNER="core-device-$$"
 cleanup() { "$REPO/tools/stay-awake.sh" "$SERIAL" --restore >&2 || true; "$REPO/tools/devlock.sh" release "$SERIAL" "$OWNER" >&2 || true; }
 trap cleanup EXIT
 "$REPO/tools/stay-awake.sh" "$SERIAL" >&2 || exit 4
+sleep 1
+win="$(adb -s "$SERIAL" shell dumpsys window 2>/dev/null | tr -d '\r' || true)"  # captured first: grep -q would SIGPIPE adb
+if grep -q 'isKeyguardShowing=true' <<<"$win"; then
+  echo "the device is locked: unlock it (or set its screen lock to None for a night)" >&2; exit 4
+fi
 python3 "$REPO/tools/device_run.py" status >&2 || true
 GREP=(); [[ -n "$ONLY" ]] && GREP=(--grep "\b(${ONLY//,/|}) ")
 cd "$REPO/app" && timeout 3000 npx playwright test -c playwright.device.config.ts "${GREP[@]}"

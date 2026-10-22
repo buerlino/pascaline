@@ -147,7 +147,7 @@ if [[ "${1:-}" == "device" ]]; then
     echo "2. tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $integ/dist/pascaline.apk (our app only); release"
     echo "3. ANDROID_SERIAL=${dev:-<serial>} tools/core-device.sh   (A32's runner; holds the device lock, stay-awake and restore)"
     echo "4. log: - HH:MM pipeline device $n: CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>"
-    echo "skipped, never failed (exit 0): no device or unauthorized, battery under 10 %, a build failure -> DEVICE SKIPPED (<why>)"
+    echo "skipped, never failed (exit 0): no device or unauthorized, battery under 10 %, screen locked (KEYCODE_WAKEUP, dumpsys window isKeyguardShowing=true; checked before the build and again before the runner), a build failure -> DEVICE SKIPPED (<why>)"
     echo "RESULT device $n: DRY RUN"; exit 0
   fi
   ensure_integ; mkdir -p "$run"
@@ -157,6 +157,12 @@ if [[ "${1:-}" == "device" ]]; then
   [[ "$st" == device ]] || skip "device $st"
   bat="$(timeout 20 adb -s "$dev" shell dumpsys battery 2>/dev/null | tr -d '\r' | awk '/^ *level:/{print $2}')"
   [[ -z "$bat" || "$bat" -ge 10 ]] || skip "battery $bat %"
+  locked() {  # wake does not unlock: a PIN or pattern keeps isKeyguardShowing=true
+    timeout 20 adb -s "$dev" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true; sleep 1
+    local w; w="$(timeout 20 adb -s "$dev" shell dumpsys window 2>/dev/null | tr -d '\r' || true)"  # captured first: grep -q would SIGPIPE adb
+    grep -q 'isKeyguardShowing=true' <<<"$w"
+  }
+  locked && skip "screen locked"
   sha="$(git -C "$integ" rev-parse --short HEAD)"
   t0=$SECONDS
   # build.sh takes the host-cpu lock itself (waiting for it): do not hold it here
@@ -168,6 +174,7 @@ if [[ "${1:-}" == "device" ]]; then
   [[ $rc -eq 0 ]] || skip "install failed, rc=$rc; see $run/install.log"
   before=0; [[ -f "$coord/device-runs.jsonl" ]] && before="$(wc -l < "$coord/device-runs.jsonl")"
   left=$((1800 - (SECONDS - t0))); (( left > 120 )) || skip "no time left after the build"
+  locked && skip "screen locked (after the build)"
   rc=0; ANDROID_SERIAL="$dev" PASCALINE_COORD="$coord" timeout "$left" "$integ/tools/core-device.sh" > "$run/core.log" 2>&1 || rc=$?
   line="$(grep -E '^CORE DEVICE ' "$run/core.log" | tail -n1 || true)"
   [[ -n "$line" ]] || skip "runner gave no CORE DEVICE line, rc=$rc; see $run/core.log"
