@@ -162,13 +162,13 @@ if [[ "${1:-}" == "device" ]]; then
   # build.sh takes the host-cpu lock itself (waiting for it): do not hold it here
   rc=0; (cd "$integ" && timeout 1500 tools/device-build.sh --test) > "$run/build.log" 2>&1 || rc=$?
   [[ $rc -eq 0 && -f "$integ/dist/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
-  tools/devlock.sh acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
+  "$integ/tools/devlock.sh" acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
   rc=0; timeout 300 adb -s "$dev" install -r "$integ/dist/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
-  tools/devlock.sh release "$dev" "device-$n-install" >/dev/null || true
+  "$integ/tools/devlock.sh" release "$dev" "device-$n-install" >/dev/null || true
   [[ $rc -eq 0 ]] || skip "install failed, rc=$rc; see $run/install.log"
   before=0; [[ -f "$coord/device-runs.jsonl" ]] && before="$(wc -l < "$coord/device-runs.jsonl")"
   left=$((1800 - (SECONDS - t0))); (( left > 120 )) || skip "no time left after the build"
-  rc=0; ANDROID_SERIAL="$dev" PASCALINE_COORD="$coord" timeout "$left" tools/core-device.sh > "$run/core.log" 2>&1 || rc=$?
+  rc=0; ANDROID_SERIAL="$dev" PASCALINE_COORD="$coord" timeout "$left" "$integ/tools/core-device.sh" > "$run/core.log" 2>&1 || rc=$?
   line="$(grep -E '^CORE DEVICE ' "$run/core.log" | tail -n1 || true)"
   [[ -n "$line" ]] || skip "runner gave no CORE DEVICE line, rc=$rc; see $run/core.log"
   new="$(tail -n +"$((before + 1))" "$coord/device-runs.jsonl" 2>/dev/null | grep '"kind":"core"' | grep '"ok":false' | grep -o '"case":"c[0-9]*"' | cut -d'"' -f4 | sort -u | paste -sd, - || true)"
