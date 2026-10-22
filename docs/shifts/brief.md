@@ -16,14 +16,14 @@
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
 0. **G86f1**, then **R69f1** (pass 58: bugs in merged work; owner, 2026-10-22).
 1. **A34** (worktrees take `node_modules` from phase-1; until it is merged, no night package may add a dependency), then **A33** (the night's device step; A32 is merged).
-2. **S23** now (G85 merged with GO, `8861b6d`): the bridge's moves as packages, at the head of the night's core lane after R76 and R77.
+2. **S23** is done: the bridge's moves are steps 113–119 and 131–134, after R76 and R77.
 3. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
 4. When a slot is free (process, nothing users see): **A25**, **A19** (G64 and S16 wait for it), **A18**, **A22** → **A26**, **A27**, **A30**.
 5. Every morning: the owner's check (MORNING.md, on the Tab One, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
 
-**At night, the core lane** (section 0c's queue: steps 101–110 are done; next R76 (F72, the last known core failure) and R77 (a { } list's x² elementwise, owner 2026-10-22), then S23's moves; tests first, failing on phase-1; R74, R75 and G90 are merged, so every merge runs the core list): the silent wrong numbers by reach: G97 (F69: any power but 1 of a non-square matrix under `=`; R75 makes it reachable by keys); the bridge spike G85 is merged with GO (`8861b6d`, Opus pass 56; S23 writes the moves by day), the text-match ratchet G88 too (`197e2d7`); then structure that removes bug families (G76 → G86 → R69, a value's facts carried whole; F55, the copied mark); A32 (the core list on the Tab One) whenever the tablet is plugged in.
+**At night, the core lane** (section 0c's queue: steps 101–110 are done; next R76 (F72, the last known core failure) and R77 (a { } list's x² elementwise, owner 2026-10-22), then S23's moves (113–119: G98, the bridge moves G99 → G100 → G101, G102 → G103, then G82); tests first, failing on phase-1; R74, R75 and G90 are merged, so every merge runs the core list): the silent wrong numbers by reach: G97 (F69: any power but 1 of a non-square matrix under `=`; R75 makes it reachable by keys); the bridge spike G85 is merged with GO (`8861b6d`, Opus pass 56; S23 writes the moves by day), the text-match ratchet G88 too (`197e2d7`); then structure that removes bug families (G76 → G86 → R69, a value's facts carried whole; F55, the copied mark); A32 (the core list on the Tab One) whenever the tablet is plugged in.
 
-**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G75 → G60 → G56 (F47, complex tanh, doubles inside MPFR results); S17 → G77 → G89 (the workaround register, the Giac re-pin, our cases for Parisse); G91 (audit-approx), G87 (audit-dms-plot), G96 (Giac's im of a root), G93 (restart: put our state back, owner 2026-10-22; after G92 or what S23 puts in its place), G64 after A19, then S16; F61, F62 and G94 (no package). **Held for G85's report:** G66, G69, G72, G73, G74, G82, G92, G95 (S23 releases or replaces them; G92 (F64) is not reachable by keys today, and its `afterCall` read is the code G95 changes). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
+**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G75 → G60 → G56 (F47, complex tanh, doubles inside MPFR results); S17 → G77 → G89 (the workaround register, the Giac re-pin, our cases for Parisse); G91 (audit-approx), G87 (audit-dms-plot), G96 (Giac's im of a root), G104 (the state read's cost), G105 (the readers left), G92 → G93 (F64, restart: put our state back), G64 after A19, then S16; F61, F62 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
 **Why this order:** the list first, so nothing merges blind; silent wrong numbers next, by reach; the bridge before the readers it would replace; the device run once its harness exists. R15c3 and R15c4 move behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -35,7 +35,6 @@
 | [R69f1](packages/R69f1.md) | Copy session's mark fits the decimal it writes | ron, Sonnet | day first | now | ~0.1 d |
 | [A34](packages/A34.md) | Worktrees take node_modules from phase-1 | annabell, Sonnet (audit Opus) | day | now | ~0.25 d |
 | [A33](packages/A33.md) | The night's device step | annabell, Sonnet | day | now | ~0.5 d |
-| [S23](packages/S23.md) | G85's report into packages | sandra, Opus | day | G85's report | ~0.5 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A25](packages/A25.md) | The golden gate gates itself | annabell, Sonnet | day | now | ~0.1 d |
@@ -63,12 +62,19 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
 ### The queue (rewritten 2026-10-21 for P23; the steps before 101 are done or moved to the background)
-Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **The core lane (101–119) comes first; a background step (120–130) runs only when no core step can start.**
+Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **The core lane (101–119) comes first; a background step (120–134) runs only when no core step can start.**
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
 | 111 | [R76](packages/R76.md) a value entered in Solve's Num view does not follow you to Home (F72, c56) | ron, Sonnet | `p1/ron-solvenum-line` | — | 1 h |
 | 112 | [R77](packages/R77.md) x² and xʸ on a { } list go elementwise (F76) | ron, Opus | `p1/ron-listpow` | — | 1 h |
+| 113 | [G98](packages/G98.md) the golden runner sends a Home `latex` case as Home does (F75) | gorge, Sonnet | `p1/gorge-golden-chipnames` | — | 1 h |
+| 114 | [G99](packages/G99.md) names read and bound names from bridge-2 (F54; replaces G69) | gorge, Opus | `p1/gorge-bridge-names` | G98 | 2 h + engine build |
+| 115 | [G100](packages/G100.md) every store from bridge-2's targets (F57; replaces G72, G66) | gorge, Opus | `p1/gorge-bridge-stores` | G99 | 2 h |
+| 116 | [G101](packages/G101.md) the non-square check reads a called function's body (F74) | gorge, Opus | `p1/gorge-nonsquare-body` | G100 | 1 h |
+| 117 | [G102](packages/G102.md) Giac's settings from bridge-1 (G67's text reads) | gorge, Opus | `p1/gorge-bridge-ctx` | G99 | 1.5 h |
+| 118 | [G103](packages/G103.md) Home's value from bridge-3 (F73) | gorge, Opus | `p1/gorge-bridge-value` | G102 | 3 h |
+| 119 | [G82](packages/G82.md) Home's budget counts steps, not milliseconds (A20) | gorge, Opus | `p1/gorge-stepbudget` | G103 | 2 h |
 | 120 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | — | 1.5 h |
 | 121 | [G60](packages/G60.md) no double inside an MPFR result | gorge, Opus | `p1/gorge-m4-mpfrdoubles` | G75 | 1.5 h |
 | 122 | [G56](packages/G56.md) the CAS check reads through a user function | gorge, Opus | `p1/gorge-m4-complexbody` | G60 | 1 h |
@@ -80,10 +86,14 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 128 | [G96](packages/G96.md) Giac's re and im of a root of unknown sign (patch) | gorge, Opus | `p1/gorge-m4-reimpatch` | G75, G90 | 1.5 h |
 | 129 | [G64](packages/G64.md) CAS answers checked back | gorge, Sonnet | `p1/gorge-m4-casback` | A19 | 1.5 h |
 | 130 | [S16](packages/S16.md) the hardening pass, run as `scripts/pipeline.sh pass <n> "G61 G62 G63 G64 A19" "S16: docs/shifts/packages/S16.md"` | sofia, Opus | — | G64, A19 | 1 h + fixes |
+| 131 | [G104](packages/G104.md) the state read costs what changed (replaces G95) | gorge, Opus | `p1/gorge-statecost` | G100 | 1.5 h |
+| 132 | [G105](packages/G105.md) the readers of Giac text that are left (replaces G73, G74) | gorge, Opus | `p1/gorge-readersleft` | G103, G104 | 2 h |
+| 133 | [G92](packages/G92.md) an assumption Giac leaves is put back (F64) | gorge, Opus | `p1/gorge-m4-assumeleak` | G102 | 1.5 h |
+| 134 | [G93](packages/G93.md) restart and rm_a_z keep our definitions (owner, 2026-10-22) | gorge, Opus | `p1/gorge-m4-restart` | G92 | 1.5 h |
 | 190 | **The last Opus pass** on what came after pass 53, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 191 | Shift report, then stop | — | — | — | 10 min |
 
-**Held for G85's report** (P23): G66, G69, G72, G73, G74, G82, G92, G95 are not in the queue; S23 puts their replacements, or them, here as steps 113 and on, with G93 (decided 2026-10-22).
+**G85's moves** (S23, 2026-10-22): G98 first, so the gate sees the app's input; then names, stores, settings, values (113–118). G66, G69, G72, G73, G74 and G95 are replaced (their tests moved); G82, G92, G93 run as written, after the move they read.
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
