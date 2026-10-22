@@ -75,7 +75,7 @@ function passed<T extends object, M extends PortKeys<T>>(r: T, keys: M): Pick<T,
 }
 
 /** True when A and B are the same set of keys (both ways, so neither a passed key nor an outcome key goes unmapped). */
-type SameKeys<A extends PropertyKey, B extends PropertyKey> = [Exclude<A, B>, Exclude<B, A>] extends [never, never] ? true : false;
+export type SameKeys<A extends PropertyKey, B extends PropertyKey> = [Exclude<A, B>, Exclude<B, A>] extends [never, never] ? true : false;
 type Check<T extends true> = T;
 /** Every passed key is an outcome key and every outcome key is passed (or, for `exact`, given by the port itself). */
 export type PortChecks = [
