@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Structure audit: which changes remove whole families of bugs
 
-**Status (2026-10-20): open.** Done by the owner the same day: G67 widened in its package; only G66 and G72–G74 held in the night queue, waiting for G85's report; G69 runs alone (step 66) because G65 merged without it. The owner decides the rest of the five proposals (section 2): the G65 → G72 → G73/G74 line, a facts type for G76, and the queue order of section 3; decisions.md "Needs the user", "Structure audit".
+**Status (2026-10-22): decided.** audit-P1 is G67, audit-P2 G99 and G100, audit-P3 G87, audit-P4 G105, audit-P5 G76 → G86 → R69 (decisions.md "Structure audit closed"). To the archive once a docs commit can fix its links in code comments (`api.cc`, `bridge.ts`) without an engine rebuild.
 
 *sandra, 2026-10-20, read and probe only, on `phase-1` `d6f6093` (worktree `p1/sandra-structure`; the night shift ran from run #135 meanwhile, untouched). Every number comes from a probe in `tools/probes/` or a `git` command named beside it. Labels used here (no ids): **audit-P1 … audit-P5** for the proposals, **text-1 … text-10** for the text readers' confirmed misses (`tools/probes/text-misses.ts`), **audit-…** for the other new findings. Bug rows are bug-patterns.md's ids. The appendix, [structure-audit-inventory.md](../archive/structure-audit-inventory.md), lists all 413 text matches one per line; it is a snapshot, so it lives in the archive.*
 
