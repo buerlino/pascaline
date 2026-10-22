@@ -15,6 +15,9 @@ import type { ValueFacts } from "./types.ts";
 export interface ConstEntry {
   value: string;
   unc?: string;
+  /** G86: the facts the constant carries (R69 reads them), set where the table is built (`constTable`, from
+   *  `constFacts`); a table built without them (an older caller) gets them from `unc`. */
+  facts?: ValueFacts;
 }
 export type ConstTable = Readonly<Record<string, ConstEntry>>;
 
@@ -29,13 +32,18 @@ function isZeroText(s: string): boolean {
 }
 
 function inexact(e: ConstEntry | undefined): e is ConstEntry & { unc: string } {
-  return e !== undefined && !constFacts(e).exact;
+  return e !== undefined && !(e.facts ?? constFacts(e)).exact;
 }
 
 /** The facts a constant carries (G86), from its uncertainty: exact when it has none (or zero); else not exact, its
  *  digits not limited by the agreement check, and `inexact` (never `=`, decisions M4-4). */
 export function constFacts(e: ConstEntry): ValueFacts {
   return e.unc === undefined || isZeroText(e.unc) ? { exact: true, reliableDigits: null } : { exact: false, reliableDigits: null, inexact: true };
+}
+
+/** A constant table with every entry carrying its facts (G86): where a table is built (the golden sequences, G49). */
+export function constTable(entries: Readonly<Record<string, ConstEntry>>): ConstTable {
+  return Object.fromEntries(Object.entries(entries).map(([id, e]) => [id, { ...e, facts: constFacts(e) }]));
 }
 
 /** `input` with every constant of `table` replaced by its value in brackets; when `keep` is given, the constants it

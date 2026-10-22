@@ -14,6 +14,7 @@ import { mathJsonToGiac } from "../../input/emit.ts";
 import { DEFAULT_USER_FUNCTIONS, userFunctionsOf } from "../../input/latex-to-giac.ts";
 import { parseFailText } from "../../input/errors.ts";
 import { parseLatex } from "../../input/parse.ts";
+import { numberSource } from "../../clipboard/source.ts";
 import { tc } from "../../clipboard/strings.ts";
 import { t } from "../../i18n/index.ts";
 import { parseDec, plainNumber, showDecimal } from "../decimal.ts";
@@ -202,14 +203,7 @@ export class SolveApp implements AppInstance {
   /** Keep the full value of an answer next to the stored one (lazy: the copy code is not in the start chunk). */
   private async keepFull(name: string, display: string, r: Parameters<typeof isWarned>[0] & { full?: string }): Promise<void> {
     const { copyFull } = await import("../../clipboard/impl.ts");
-    const text = copyFull({
-      latex: "",
-      status: "done",
-      text: display,
-      ...(r.value ? { value: r.value } : {}),
-      ...(r.full !== undefined ? { full: r.full } : {}),
-      facts: r.facts,
-    });
+    const text = copyFull(numberSource(display, r));
     if (text !== undefined && this.values[name] === display.replace("E", "e")) {
       this.copies = { ...this.copies, [name]: text };
       // An exact rational root (reliableDigits null) stays an exact known.

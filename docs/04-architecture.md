@@ -151,6 +151,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 - A value that leaves its evaluation (stored, Ans, a chip, an export) is the value shown, independent of the angle mode (G34). Since G46 its exact text is radian text, which means the same in every mode, so it stays exact.
 - A stored name takes the facts of what its input read, and a run-once result that rests on a decision is ⚠ (G48). Names stored and read come from Giac's state; the text decides only if an input runs once (G65).
 - A CAS result without a float that read a stored name, or called a function, with facts takes their mark (`warn`, `why.inherited`); one built from exact names stays unmarked (G51).
+- The rule that turns a result into an item's `full`, facts and chip is plain TypeScript (`state/results.ts`), so the session and the golden gate run the same code; a rune file holds state and calls, not rules (G86).
 
 **Alternatives:** insert the full digits as text (40 digits clutter the line); keep inserting the rounded digits (2.3 #8).
 

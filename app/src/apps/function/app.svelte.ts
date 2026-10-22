@@ -4,6 +4,7 @@
 import { CalcCancelled, engineFormat, type Calc } from "../../calc/port.ts";
 import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { formatComplex, type ComplexValue, type DecimalValue } from "../../engine/format.ts";
+import { numberSource } from "../../clipboard/source.ts";
 import type { CopySource } from "../../clipboard/text.ts";
 import { t } from "../../i18n/index.ts";
 import { tc } from "../../clipboard/strings.ts";
@@ -237,16 +238,7 @@ export class FunctionApp implements AppInstance {
   private csvCell(c: Cell | undefined, copyFull: (i: CopySource) => string | undefined): string {
     if (!c || !c.ok) return "";
     if (/^[-+]?(infinity|inf|undef)$/.test(c.display)) return "NaN";
-    return (
-      copyFull({
-        latex: "",
-        status: "done",
-        text: c.display,
-        ...(c.value ? { value: c.value } : {}),
-        ...(c.full !== undefined ? { full: c.full } : {}),
-        facts: c.facts,
-      }) ?? c.display
-    );
+    return copyFull(numberSource(c.display, c)) ?? c.display;
   }
 
   // ---- Symb

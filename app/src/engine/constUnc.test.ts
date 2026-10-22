@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G26: the pure parts of constUnc.ts (no engine).
 import { describe, expect, it } from "vitest";
-import { constFacts, inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
+import { constFacts, constTable, inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
 import { decimalFromString } from "./format.ts";
 
 const G = { value: "6.67430E-11", unc: "0.00015E-11" };
@@ -35,5 +35,16 @@ describe("constFacts (G86)", () => {
     expect(constFacts({ value: "6.67430E-11", unc: "0.00015E-11" })).toEqual({ exact: false, reliableDigits: null, inexact: true });
     expect(constFacts({ value: "299792458" })).toEqual({ exact: true, reliableDigits: null });
     expect(constFacts({ value: "299792458", unc: "0" })).toEqual({ exact: true, reliableDigits: null });
+  });
+});
+
+describe("ConstEntry carries its facts (G86)", () => {
+  it("constTable sets each entry's facts from constFacts, and the carried facts decide which constants are inexact", () => {
+    const t = constTable({ G: { value: "6.67430E-11", unc: "0.00015E-11" }, c: { value: "299792458" } });
+    expect(t["G"]!.facts).toEqual({ exact: false, reliableDigits: null, inexact: true });
+    expect(t["c"]!.facts).toEqual({ exact: true, reliableDigits: null });
+    expect(inexactConstsIn("pasc_G*pasc_c", t)).toEqual(["G"]);
+    // the carried facts win over the uncertainty text
+    expect(inexactConstsIn("pasc_c", { c: { value: "299792458", facts: { exact: false, reliableDigits: null, inexact: true } } })).toEqual(["c"]);
   });
 });

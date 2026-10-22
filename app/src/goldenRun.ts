@@ -7,7 +7,7 @@ import { markOf, type MarkInfo } from "./engine/format.ts";
 import { defaultCasSettings } from "./engine/types.ts";
 import { ANS_KEY, type ChipTable } from "./input/chips.ts";
 import { chipsIn, type ChipFactsTable } from "./engine/chipFacts.ts";
-import { inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
+import { constTable, inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
 import { latexToGiac, latexToGiacInfo } from "./input/latex-to-giac.ts";
 import { rewriteAngles } from "./input/angles.ts";
 import { applyDefChanges, type DefChange } from "./engine/defs.ts";
@@ -173,7 +173,7 @@ export const RATIONAL_TEXT = /^-?\d+(\/\d+)?$/;
 
 /** One home.yaml case on `host` (a sequence on its own engine from `fresh`). */
 export async function runHomeCase(c: Case, host: EngineHost, fresh: () => Promise<GiacApi>): Promise<HomeResult & { inexactInput?: boolean }> {
-  if (c.steps) return runSteps(fresh, c.steps, c.settings?.digits ?? 12, c.consts);
+  if (c.steps) return runSteps(fresh, c.steps, c.settings?.digits ?? 12, c.consts && constTable(c.consts));
   const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
   // A case written as `latex` goes through our parser with Home's options (no realOddRoots since R66), its `before` too
   const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
