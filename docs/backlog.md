@@ -44,7 +44,6 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
 - **F74, no package (G97's Not done, run 174).** CAS `f(x):=x^-1`, then `f([[5],[1]])` still shows Giac's elementwise result under `=`: `nonSquarePower` walks only the typed input's parts, not the function's body (`engine/nonsquare.ts`).
-- **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8. After G76, G86.
 - **F54 (G85 GO: bridge-2's reads, placed by S23; else [G69](shifts/packages/G69.md)).** With a stored x, `product(x,x,1,4)` = `⚠ 24` "inherited: x" (right `= 24`; `seq` too). Families 8, 1.
 - **F72, no package (ron checks first whether R34 meant it).** A value typed in Solve's Num view stays in the shared entry line after Enter and follows you to Home: Solve x²=2, x set to 1, Home, 2 + 2 Enter gives `12+2 = 14` (after a solve, the line holds `1.41421356237`). Core c56. Probe: sandra, 2026-10-21, on `e0d03ed`.
 - **F57 (G85 GO: bridge-2's targets, placed by S23; else [G72](shifts/packages/G72.md)).** A function body with `increment(cnt)` changes cnt by 2 per Enter and logs nothing (`definitionStores`, `isStateful` miss `++`, `DelVar`). Families 9, 3.

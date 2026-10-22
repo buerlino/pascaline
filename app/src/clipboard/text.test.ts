@@ -3,6 +3,9 @@
 import { describe, expect, it } from "vitest";
 import { decimalFromRational, decimalFromString, ZERO_VALUE, type ComplexValue } from "../engine/format.ts";
 import { complexText, copyExact, copyFull, copyMark, entryText, realText, sessionText, tableCsv, withoutMark, type CopySource } from "./text.ts";
+import { markFor, modeOf, type DisplayContext } from "../state/displayMode.ts";
+
+const CTX: DisplayContext = { format: "std", digits: 12, fixDecimals: 4, angle: "rad" };
 
 const re = (s: string): ComplexValue => ({ re: decimalFromString(s) ?? ZERO_VALUE, im: ZERO_VALUE });
 const ratio = (p: bigint, q: bigint): ComplexValue => ({ re: decimalFromRational(p, q), im: ZERO_VALUE });
@@ -96,14 +99,14 @@ describe("copyExact, withoutMark", () => {
 
 describe("copyMark", () => {
   it("= for an exact rational shown in full, ≈ for 1/3, ⚠ n for fewer confirmed digits", () => {
-    expect(copyMark(done({ value: re("0.5"), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "2" } }))).toEqual({ mark: "=" });
-    expect(copyMark(done({ value: ratio(1n, 3n), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "3" } }))).toEqual({ mark: "≈" });
-    expect(copyMark(done({ value: re("1.414213562373095049"), facts: { exact: false, reliableDigits: 19 } }))).toEqual({ mark: "≈" });
-    expect(copyMark(done({ value: re("1.4142135623730950488"), facts: { exact: false, reliableDigits: 5 } }))).toEqual({ mark: "⚠", n: 5 });
-    expect(copyMark(done({ value: re("1.5"), facts: { exact: false, reliableDigits: 40, warn: "unaudited" } }))).toEqual({ mark: "⚠", warn: "unaudited" });
+    expect(copyMark(done({ value: re("0.5"), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "2" } }), CTX)).toEqual({ mark: "=" });
+    expect(copyMark(done({ value: ratio(1n, 3n), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "3" } }), CTX)).toEqual({ mark: "≈" });
+    expect(copyMark(done({ value: re("1.414213562373095049"), facts: { exact: false, reliableDigits: 19 } }), CTX)).toEqual({ mark: "≈" });
+    expect(copyMark(done({ value: re("1.4142135623730950488"), facts: { exact: false, reliableDigits: 5 } }), CTX)).toEqual({ mark: "⚠", n: 5 });
+    expect(copyMark(done({ value: re("1.5"), facts: { exact: false, reliableDigits: 40, warn: "unaudited" } }), CTX)).toEqual({ mark: "⚠", warn: "unaudited" });
   });
   it("no mark for something that is not a number", () => {
-    expect(copyMark(done({ text: "sqrt(2)" }))).toBeUndefined();
+    expect(copyMark(done({ text: "sqrt(2)" }), CTX)).toBeUndefined();
   });
 });
 
@@ -116,15 +119,30 @@ describe("sessionText", () => {
       done({ latex: "1+", status: "error", text: "Syntax error" }),
       done({ latex: "2", status: "pending" }),
     ];
-    expect(sessionText(items).split("\n")).toEqual([
+    expect(sessionText(items, {}, CTX).split("\n")).toEqual([
       "1/2 = 0.5",
       "1/3 ≈ 0." + "3".repeat(40),
       "sqrt(2) ⚠ 5 1.4142",
       "1+ → Syntax error",
     ]);
   });
+  it("uses the item's own mode: its mark is markFor(item, modeOf(item), ctx) (R69 fix)", () => {
+    const base = done({ value: re("1.5"), facts: { exact: true, reliableDigits: null }, rational: { n: "3", d: "2" } });
+    for (const extra of [{ fmt: "fix" as const }, { fmt: "sci" as const }, { form: "frac" as const }, { fmt: "mixed" as const }, { form: "dec" as const, fmt: "sci" as const }]) {
+      const item = { ...base, ...extra };
+      const ctx: DisplayContext = { ...CTX, format: "eng", digits: 3 };
+      const want = markFor(item, modeOf(item, ctx), ctx);
+      expect(want).not.toBeNull();
+      expect(copyMark(item, ctx)).toEqual(want);
+      expect(sessionText([item], {}, ctx)).toContain(` ${want?.mark} `);
+    }
+    // a row drawn as a fraction is "=" on screen even where the plain notation would say "≈"
+    const third = done({ value: ratio(1n, 3n), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "3" } });
+    expect(copyMark({ ...third, form: "frac" }, CTX)).toEqual({ mark: "=" });
+    expect(copyMark(third, CTX)).toEqual({ mark: "≈" });
+  });
   it("is empty when nothing finished", () => {
-    expect(sessionText([done({ status: "pending" })])).toBe("");
+    expect(sessionText([done({ status: "pending" })], {}, CTX)).toBe("");
   });
 });
 
@@ -152,8 +170,8 @@ describe("G46f1: a DEG result copies the text drawn, not the radian full", () =>
   it("copyFull and copyExact give the drawn text; sessionText too", () => {
     expect(copyFull(item)).toBe("pi/180*cos(x)");
     expect(copyExact(item)).toBe("pi/180*cos(x)");
-    expect(sessionText([item])).toContain("pi/180*cos(x)");
-    expect(sessionText([item])).not.toContain("pi/180*x");
+    expect(sessionText([item], {}, CTX)).toContain("pi/180*cos(x)");
+    expect(sessionText([item], {}, CTX)).not.toContain("pi/180*x");
   });
   it("without drawn nothing changes (RAD)", () => {
     expect(copyFull({ ...item, drawn: undefined })).toBe("pi/180*cos(pi/180*x)");

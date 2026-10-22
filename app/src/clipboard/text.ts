@@ -15,7 +15,7 @@ import {
 } from "../engine/format.ts";
 import type { ValueFacts } from "../engine/types.ts";
 import type { ChipTable } from "../input/chips.ts";
-import type { Rational } from "../state/displayMode.ts";
+import { markFor, modeOf, type DisplayContext, type FmtMode, type FormStep, type Rational } from "../state/displayMode.ts";
 
 /** The part of a history item that Copy reads (HistoryItem in state/session.svelte.ts has all of it). */
 export interface CopySource {
@@ -35,6 +35,9 @@ export interface CopySource {
   facts?: ValueFacts;
   /** An inexact chip went into the input: never `=` (decisions M4-4). */
   inexactInput?: boolean;
+  /** The item's display settings (Format key): the mode and the a b/c form the screen draws it in. */
+  fmt?: FmtMode;
+  form?: FormStep;
   chips?: ChipTable;
 }
 
@@ -112,26 +115,16 @@ export function withoutMark(shown: string): string {
 }
 
 /**
- * The mark of a copied result, from what the history item knows: `=` for an exact rational whose copy shows it
- * in full, `⚠ n` when fewer digits are confirmed than the copy would show, else `≈`.
+ * The mark of a copied result: the one the screen shows (R69), `markFor` of the item's facts. `ctx` is the display
+ * settings (the session's), required: the item's own mode is read against its global format. undefined: not a number.
  */
-export function copyMark(i: CopySource): { mark: Mark; n?: number; warn?: PrecisionWarn } | undefined {
-  if (i.status !== "done") return undefined;
-  const v = i.value;
-  if (!v) return undefined; // not a number: no mark
-  const f = i.facts;
-  const rd = f?.reliableDigits;
-  if (rd !== null && rd !== undefined && rd < DECIMAL_KEEP) {
-    const parts = [v.re, v.im].filter((p) => !isZero(p));
-    if (parts.some((p) => p.digits.length > Math.max(1, rd))) return { mark: "⚠", n: Math.max(0, rd) };
-  }
-  if (f?.warn) return { mark: "⚠", warn: f.warn };
-  const exact = i.inexactInput !== true && (f?.exact === true || i.rational !== undefined || (i.full !== undefined && /^-?\d+$/.test(i.full)));
-  const shownFully = [v.re, v.im].every((p) => isZero(p) || (!p.sticky && p.digits.length <= DECIMAL_KEEP));
-  return exact && shownFully ? { mark: "=" } : { mark: "≈" };
+export function copyMark(i: CopySource, ctx: DisplayContext): { mark: Mark; n?: number; warn?: PrecisionWarn } | undefined {
+  if (i.status !== "done" || !i.value) return undefined;
+  const m = markFor(i, modeOf(i, ctx), ctx);
+  return m ?? undefined;
 }
 
-const markText = (m: ReturnType<typeof copyMark>): string => (m === undefined ? "=" : m.mark === "⚠" && m.n !== undefined ? `⚠ ${m.n}` : m.mark);
+const markText = (m: ReturnType<typeof copyMark>): string => (m === undefined ? "=" : m.mark === "⚠" && m.n !== undefined && !m.warn ? `⚠ ${m.n}` : m.mark);
 
 /** A fraction part or exponent: bare when it is one token, else in brackets. */
 const group = (s: string): string => (/^-?[\w.]+$/.test(s) ? s : `(${s})`);
@@ -163,12 +156,12 @@ export function entryText(latex: string): string {
 }
 
 /** The session as text: one line per finished entry, `input mark result` with the full value; an error line shows the message. */
-export function sessionText(items: readonly CopySource[], o: TextOptions = {}): string {
+export function sessionText(items: readonly CopySource[], o: TextOptions, ctx: DisplayContext): string {
   const lines: string[] = [];
   for (const i of items) {
     if (i.status === "done") {
       const result = copyFull(i, o) ?? i.text;
-      lines.push(`${entryText(i.latex)} ${markText(copyMark(i))} ${result}`);
+      lines.push(`${entryText(i.latex)} ${markText(copyMark(i, ctx))} ${result}`);
     } else if (i.status === "error") lines.push(`${entryText(i.latex)} → ${i.text}`);
   }
   return lines.join("\n");

@@ -132,7 +132,7 @@ export class ClipActions {
 
   /** Menu → Share session: the system share sheet, else the clipboard. */
   async shareSession(): Promise<boolean> {
-    const text = (await impl()).sessionText(this.session.items.map(source), this.opts);
+    const text = (await impl()).sessionText(this.session.items.map(source), this.opts, this.session.displayContext());
     if (text === "") {
       this.say(tc("clip.nothing"));
       return false;
