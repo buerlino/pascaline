@@ -13,6 +13,13 @@ Next (P19, 2026-10-20): `0003-complex-tanh-mpfr.patch` (G75, complex `tanh` comp
 
 Last checked 2026-10-19: every patch applies cleanly (`patch -p1 --dry-run`) to the pinned `giac-2.1.0.tar.gz` (SHA-256 `1d9536e0…`), to the same name re-published on 2026-10-15 (`46d57345…`) and to `giac_2.1.0-1.tar.gz` from Parisse's Debian folder (`cdec2989…`).
 
+## Workarounds in our code
+Giac behaviour we handle in our TypeScript instead of a patch, each with its reason and a canary that shows whether Giac still does it.
+
+| Package | Giac's behaviour | Our code | Canary | Why not a patch |
+|---|---|---|---|---|
+| G97 (F69) | `^` of a non-square matrix is v.v or elementwise; `inv` of one, and division by one, is elementwise (`gen.cc:6880-6886`, `usual.cc:357`, `gen.cc:7706-7708`) | `app/src/engine/nonsquare.ts` `nonSquarePower`, refusal `notSquare` | `node engine/giac/smoke.mjs '[[5],[1]]^2'` gives `26`; Giac prints "Warning, ^ is ambiguous on non square matrices" to its print, which `smoke.mjs` drops (pass a `print` to see it) | Giac's meaning on purpose (it warns), not a bug to file (decisions.md, Opus pass 56) |
+
 ## Not patches, but build choices that change Giac's source tree or behaviour
 All of these live in `build-wasm.sh`; compile defines and configure flags are listed in `../README.md` ("Build choices").
 - The prebuilt `doc/giacwasm.{js,wasm}` from the tarball are deleted right after unpacking (never used or shipped).
