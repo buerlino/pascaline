@@ -4,25 +4,26 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; night (Tab One) = the plugged-in Tab One only, P23; day = the owner tries it or it changes the pipeline); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` at `51fd8a8` on 2026-10-21, after the sixth night ([2026-10-21-night-report.md](2026-10-21-night-report.md)), the morning's merges S21, S19, G63, G62f1, S22 and the evening's A28 (`60f858d`; Opus pass 54). Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` at `94cb7aa` on 2026-10-22, after the seventh night ([2026-10-22-night-report.md](2026-10-22-night-report.md)): R74, R75, G90, G85, G88 with G88f1, G97 with G97f1, A32, G76, G86 and R69 merged (Opus passes 55–58); pass 58's two fixes, G86f1 and R69f1, run by day. Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path: the core freeze (owner, 2026-10-21; decisions.md "P23")
 **Why.** Since 2026-10-14 phase-1 has had about two fix commits for every feature commit (`git log --no-merges` by `feat`/`fix`: 84 against 188, [freeze report](2026-10-21-sandra-freeze-report.md) section 1). Many are fix rounds before a merge, but 45 of 208 merges were follow-up packages (`<ID>f1`, `f2`) for work already merged (`git log --merges --since=2026-10-14 --format=%s phase-1`): merged changes break things too often. The open bugs are of two kinds. Most come from our layer guessing at Giac's printed text (settings, names, stores, bound variables, the kind of a number): the structured bridge (G85) removes their cause. The rest are precision edge cases inside Giac on extreme inputs. So: no new features until the core holds; the bridge first; "holds" is a fixed list, not a feeling; extreme inputs run as a background stream.
 
-**What "holds" means:** every active case of [tests/core/core.yaml](../../tests/core/core.yaml) passes in the desktop e2e suite (R74) and on the Tab One (A32, A33) on two nights in a row, and the owner's [morning check](../../tests/core/MORNING.md) finds nothing on both mornings. On 2026-10-22 (`61607ec`, Opus pass 55) 51 of 51 active cases pass on desktop; c53 (F55) and c56 (F72) fail as known; 3 cases need Find (R4a). The morning check runs on the Tab One (owner, 2026-10-21).
+**What "holds" means:** every active case of [tests/core/core.yaml](../../tests/core/core.yaml) passes in the desktop e2e suite (R74) and on the night's device (A32, A33: the Tab One or the Fairphone 6, the same one both nights; owner, 2026-10-22) on two nights in a row, and the owner's [morning check](../../tests/core/MORNING.md) finds nothing on both mornings. On 2026-10-22 (`0eb486f`, Opus pass 58) 52 of 52 active cases pass on desktop and 51 of 51 on the Fairphone 6 (A32); c56 (F72, R76) fails as known; 3 cases need Find (R4a). The morning check runs on the Tab One (owner, 2026-10-21).
 
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find first (three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **A34** (worktrees take `node_modules` from phase-1; until it is merged, no night package may add a dependency), then **A33** once A32 is merged (the night's device step).
-2. **S23** as soon as G85 has a report: the bridge's moves as packages (GO) or the held packages released (NO-GO), at the head of the night's core lane.
-3. annabell on devices: **A32** if the night could not run it; **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
+0. **G86f1**, then **R69f1** (pass 58: bugs in merged work; owner, 2026-10-22).
+1. **A34** (worktrees take `node_modules` from phase-1; until it is merged, no night package may add a dependency), then **A33** (the night's device step; A32 is merged).
+2. **S23** now (G85 merged with GO, `8861b6d`): the bridge's moves as packages, at the head of the night's core lane after R76 and R77.
+3. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
 4. When a slot is free (process, nothing users see): **A25**, **A19** (G64 and S16 wait for it), **A18**, **A22** → **A26**, **A27**, **A30**.
 5. Every morning: the owner's check (MORNING.md, on the Tab One, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
 
-**At night, the core lane** (the order is section 0c's queue, steps 104–110; tests first, failing on phase-1; R74, R75 and G90 are merged, so every merge runs the core list): the silent wrong numbers by reach: G97 (F69: any power but 1 of a non-square matrix under `=`; R75 makes it reachable by keys); the bridge spike G85 is merged with GO (`8861b6d`, Opus pass 56; S23 writes the moves by day), the text-match ratchet G88 too (`197e2d7`); then structure that removes bug families (G76 → G86 → R69, a value's facts carried whole; F55, the copied mark); A32 (the core list on the Tab One) whenever the tablet is plugged in.
+**At night, the core lane** (section 0c's queue: steps 101–110 are done; next R76 (F72, the last known core failure) and R77 (a { } list's x² elementwise, owner 2026-10-22), then S23's moves; tests first, failing on phase-1; R74, R75 and G90 are merged, so every merge runs the core list): the silent wrong numbers by reach: G97 (F69: any power but 1 of a non-square matrix under `=`; R75 makes it reachable by keys); the bridge spike G85 is merged with GO (`8861b6d`, Opus pass 56; S23 writes the moves by day), the text-match ratchet G88 too (`197e2d7`); then structure that removes bug families (G76 → G86 → R69, a value's facts carried whole; F55, the copied mark); A32 (the core list on the Tab One) whenever the tablet is plugged in.
 
-**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G75 → G60 → G56 (F47, complex tanh, doubles inside MPFR results); S17 → G77 → G89 (the workaround register, the Giac re-pin, our cases for Parisse); G91 (audit-approx), G87 (audit-dms-plot), G96 (Giac's im of a root), G93 (restart; the owner decides first), G64 after A19, then S16; F61, F62 and G94 (no package). **Held for G85's report:** G66, G69, G72, G73, G74, G82, G92, G95 (S23 releases or replaces them; G92 (F64) is not reachable by keys today, and its `afterCall` read is the code G95 changes). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
+**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G75 → G60 → G56 (F47, complex tanh, doubles inside MPFR results); S17 → G77 → G89 (the workaround register, the Giac re-pin, our cases for Parisse); G91 (audit-approx), G87 (audit-dms-plot), G96 (Giac's im of a root), G93 (restart: put our state back, owner 2026-10-22; after G92 or what S23 puts in its place), G64 after A19, then S16; F61, F62 and G94 (no package). **Held for G85's report:** G66, G69, G72, G73, G74, G82, G92, G95 (S23 releases or replaces them; G92 (F64) is not reachable by keys today, and its `afterCall` read is the code G95 changes). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
 **Why this order:** the list first, so nothing merges blind; silent wrong numbers next, by reach; the bridge before the readers it would replace; the device run once its harness exists. R15c3 and R15c4 move behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -30,8 +31,10 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
+| [G86f1](packages/G86f1.md) | A CAS true or false on a float keeps its approximate chip | gorge, Sonnet | day first | now | ~0.1 d |
+| [R69f1](packages/R69f1.md) | Copy session's mark fits the decimal it writes | ron, Sonnet | day first | now | ~0.1 d |
 | [A34](packages/A34.md) | Worktrees take node_modules from phase-1 | annabell, Sonnet (audit Opus) | day | now | ~0.25 d |
-| [A33](packages/A33.md) | The night's device step | annabell, Sonnet | day | A32 | ~0.5 d |
+| [A33](packages/A33.md) | The night's device step | annabell, Sonnet | day | now | ~0.5 d |
 | [S23](packages/S23.md) | G85's report into packages | sandra, Opus | day | G85's report | ~0.5 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
@@ -60,10 +63,12 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
 ### The queue (rewritten 2026-10-21 for P23; the steps before 101 are done or moved to the background)
-Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **The core lane (101–110) comes first; a background step (120–130) runs only when no core step can start.**
+Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **The core lane (101–119) comes first; a background step (120–130) runs only when no core step can start.**
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
+| 111 | [R76](packages/R76.md) a value entered in Solve's Num view does not follow you to Home (F72, c56) | ron, Sonnet | `p1/ron-solvenum-line` | — | 1 h |
+| 112 | [R77](packages/R77.md) x² and xʸ on a { } list go elementwise (F76) | ron, Opus | `p1/ron-listpow` | — | 1 h |
 | 120 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | — | 1.5 h |
 | 121 | [G60](packages/G60.md) no double inside an MPFR result | gorge, Opus | `p1/gorge-m4-mpfrdoubles` | G75 | 1.5 h |
 | 122 | [G56](packages/G56.md) the CAS check reads through a user function | gorge, Opus | `p1/gorge-m4-complexbody` | G60 | 1 h |
@@ -78,7 +83,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 190 | **The last Opus pass** on what came after pass 53, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 191 | Shift report, then stop | — | — | — | 10 min |
 
-**Held for G85's report** (P23): G66, G69, G72, G73, G74, G82, G92, G95 are not in the queue; S23 puts their replacements, or them, here as steps 112 and on. G93 waits for the owner (decisions.md "Needs the user").
+**Held for G85's report** (P23): G66, G69, G72, G73, G74, G82, G92, G95 are not in the queue; S23 puts their replacements, or them, here as steps 113 and on, with G93 (decided 2026-10-22).
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
@@ -120,6 +125,7 @@ End with a commit whose message body is the report. The audit and the Opus pass 
 - **Done:** what was built, item by item against the block's "Done when" lines.
 - **Tests:** typecheck, vitest, e2e (with its `CORE` line) and golden counts as run.
   A test that passes on the old code is not a regression test: change it until it fails there, or list it under "Not done".
+  Never run `app/scripts/behaviour-diff.ts` yourself: the audit stage runs it (A18; owner, 2026-10-22, after G76 lost 2 h to it).
 - **Numbers:** for example the start chunk size before and after, or timings.
 - **For shared files:** exact text for the backlog, decisions, THIRD_PARTY.md, docs/04, this brief. Never cut text you did not write to fit a docs budget: if a file is full, say so here and the Opus pass makes room.
 - **Needs a decision:** anything left open.
