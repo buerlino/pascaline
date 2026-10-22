@@ -48,21 +48,26 @@ export interface GiacParse {
   nodes: number;
 }
 
-export type GiacKind =
-  | "integer"
-  | "rational"
-  | "float"
-  | "complex"
-  | "list"
-  | "matrix"
-  | "sequence"
-  | "set"
-  | "symbolic"
-  | "string"
-  | "function"
-  | "undef"
-  | "error"
-  | "other";
+/** Every kind `kindOf` in engine/giac/wasm/api.cc returns (bridge.test.ts checks the two lists agree). */
+export const GIAC_KINDS = [
+  "integer",
+  "rational",
+  "float",
+  "complex",
+  "boolean",
+  "infinity",
+  "list",
+  "matrix",
+  "sequence",
+  "set",
+  "symbolic",
+  "string",
+  "function",
+  "undef",
+  "error",
+  "other",
+] as const;
+export type GiacKind = (typeof GIAC_KINDS)[number];
 
 /** bridge-3: one evaluation. `at[P]`: [re, im] printed for every element of evalf(value, P), null when not a number. */
 export interface GiacValue {

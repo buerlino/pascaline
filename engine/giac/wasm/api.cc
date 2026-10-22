@@ -543,11 +543,17 @@ EMSCRIPTEN_KEEPALIVE const char *giac_value(const char *text, const char *precis
   try {
     bool perr = false;
     gen g = parseInput(text, c, perr);
-    giac::history_in(C).push_back(g);  // as caseval: ans() and the history see this input
-    r = giac::protecteval(g, 1, C);
-    giac::history_out(C).push_back(r);
-    err = giac::has_undef_stringerr(r, S);
-    S = err ? "GIAC_ERROR: " + S : r.print(c);
+    if (perr) {
+      // Never evaluate the partial tree the parser leaves after a syntax error (2*/3 would give a number).
+      err = true;
+      S = "GIAC_ERROR: syntax error";
+    } else {
+      giac::history_in(C).push_back(g);  // as caseval: ans() and the history see this input
+      r = giac::protecteval(g, 1, C);
+      giac::history_out(C).push_back(r);
+      err = giac::has_undef_stringerr(r, S);
+      S = err ? "GIAC_ERROR: " + S : r.print(c);
+    }
   } catch (std::runtime_error &e) {
     err = true;
     S = std::string("GIAC_ERROR: ") + e.what();

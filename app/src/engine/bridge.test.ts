@@ -2,12 +2,12 @@
 // G85: the bridge wrappers resolve their exports on first call, never at load: the worker and the Node loader still
 // start and evaluate on an engine built before the bridge (the shared one until A28). With GIAC_OUT on a bridge build,
 // the bridge's own answers are checked too.
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
-import { bridgeOf, NO_BRIDGE, type BridgeModule } from "./bridge.ts";
+import { bridgeOf, GIAC_KINDS, NO_BRIDGE, type BridgeModule } from "./bridge.ts";
 import { giacAvailable, giacMjsPath, loadNodeGiac } from "./nodeGiac.ts";
 import type { Request, Response } from "./protocol.ts";
 
@@ -40,6 +40,18 @@ describe("bridge wrappers", () => {
     expect(b.parse("a").reads).toEqual(["a"]);
     b.parse("a");
     expect(made).toEqual(["giac_parse"]);
+  });
+});
+
+describe("GiacKind", () => {
+  it("holds exactly the kinds kindOf in api.cc returns", () => {
+    const api = readFileSync(fileURLToPath(new URL("../../../engine/giac/wasm/api.cc", import.meta.url)), "utf8");
+    const start = api.indexOf("const char *kindOf(");
+    expect(start).toBeGreaterThan(0);
+    const body = api.slice(start, api.indexOf("\n}\n", start));
+    const returned = new Set<string>();
+    for (const line of body.split("\n")) if (/\breturn\b/.test(line)) for (const m of line.matchAll(/"([a-z]+)"/g)) returned.add(m[1] ?? "");
+    expect([...returned].sort()).toEqual([...GIAC_KINDS].sort());
   });
 });
 
@@ -93,6 +105,10 @@ describe.skipIf(!giacAvailable())("the engine loaders with the wrappers", () => 
     expect(bridge!.parse("a+=1").targets).toEqual(["a"]);
     expect(bridge!.parse("int(B^2,B,0,1)")).toMatchObject({ reads: [], bound: ["B"] });
     expect(bridge!.value("1/3", [12, 32])).toMatchObject({ kind: "rational", text: "1/3", num: "1", den: "3" });
+    // a syntax error is an error, never the value of the partial tree the parser left (sin( is no error: Giac closes it)
+    for (const bad of ["2*/3", "1+"]) expect(bridge!.value(bad, [12])).toMatchObject({ kind: "error" });
+    expect(bridge!.value("1<2", [12]).kind).toBe("boolean");
+    expect(bridge!.value("1/0", [12]).kind).toBe("infinity");
     const d = bridge!.ctxGet().decimal_digits;
     expect(bridge!.ctxSet({ decimal_digits: 20 })).toMatchObject({ decimal_digits: 20 });
     expect(giac.eval("Digits")).toBe("20");
