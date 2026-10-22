@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 import { describe, expect, it } from "vitest";
-import { evalLines, isTestFile, judge, textLines } from "./text-rules.ts";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { countAll, evalLines, evalOutside, isTestFile, judge, readBaseline, textLines } from "./text-rules.ts";
 
 describe("textLines (G88)", () => {
   it.each([
@@ -46,4 +48,22 @@ describe("evalLines and judge (G88)", () => {
     expect(v.detail).toContain("lower the baseline");
   });
   it("an eval outside fails", () => expect(judge({}, {}, {}, ["src/x.ts:1: g.eval(a)"]).ok).toBe(false));
+});
+
+describe("the baseline holds (G88f1)", () => {
+  const app = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  it("the real counts pass the real baseline", () => {
+    const { counts, hits } = countAll(app);
+    const v = judge(counts, readBaseline(app), hits, evalOutside(app));
+    expect(v.ok, v.failures.join("\n")).toBe(true);
+  });
+  it("one more match in a file fails", () => {
+    const { counts, hits } = countAll(app);
+    const baseline = readBaseline(app);
+    const file = Object.keys(baseline).sort()[0] as string;
+    const raised = { ...counts, [file]: (baseline[file] ?? 0) + 1 };
+    const v = judge(raised, baseline, hits, evalOutside(app));
+    expect(v.ok).toBe(false);
+    expect(v.failures.some((f) => f.startsWith(`${file}:`))).toBe(true);
+  });
 });
