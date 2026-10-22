@@ -166,6 +166,17 @@ describe.skipIf(!giacAvailable())("marks travel through Ans and chips (R65, real
     expect([markOf(t, 1), markOf(t, 2)]).toEqual(["⚠", "⚠"]);
   });
 
+  it("G86f1: a CAS true on a float (evalf(sin(0.5))==0.4794…) keeps its approximate mark through Ans", async () => {
+    const s = new Session(calc, memoryKv());
+    s.setView("cas");
+    await s.submit("\\operatorname{evalf}(\\sin(0.5))==0.479425538604203");
+    await s.submit("\\ans");
+    const [a, b] = [s.cas[0] as HistoryItem, s.cas[1] as HistoryItem];
+    expect([a.status, b.status]).toEqual(["done", "done"]);
+    expect(s.chipFor(a)).toMatchObject({ exact: false });
+    expect(b.approximate).toBe(true);
+  });
+
   it("a tapped \\res chip behaves as Ans; an exact chip is unchanged (1/3 ×3 stays = 1)", async () => {
     const s = new Session(calc, memoryKv());
     await s.submit("x", "romberg(exp(-x^2),x,0,1)");
