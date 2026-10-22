@@ -20,9 +20,22 @@ from_opus_pass() {
   if grep -q '^OPUS PASS' "$1"; then sed -n '/^OPUS PASS/,$p' "$1"; else cat "$1"; fi
 }
 
-# machine_failure <check log>: succeeds when the log shows the machine, not the code, failed (A24): a missing tool or node_modules (a bare "Cannot find module" can be the worker's own wrong import path, so it is not matched).
+# A bare missing module ('vitest', '@capacitor/clipboard') is the machine's; a relative one ('./x.ts') is the worker's own import (A34).
+MACHINE_RE="command not found|node_modules (is )?missing|Cannot find module '[^./']"
+# machine_failure <check log>: succeeds when the log shows the machine, not the code, failed (A24, A34).
 machine_failure() {
-  grep -qE 'command not found|node_modules (is )?missing' "$1" 2>/dev/null
+  grep -qE "$MACHINE_RE" "$1" 2>/dev/null
+}
+
+# node_modules_stale <app dir>: succeeds when node_modules lacks a non-optional package of package-lock.json (A34): the rule is
+# that every such package is in node_modules/.package-lock.json.
+node_modules_stale() {
+  node -e '
+    const fs = require("fs"), d = process.argv[1];
+    let want, have;
+    try { want = JSON.parse(fs.readFileSync(d + "/package-lock.json", "utf8")).packages; have = JSON.parse(fs.readFileSync(d + "/node_modules/.package-lock.json", "utf8")).packages; } catch { process.exit(0); }
+    for (const [k, v] of Object.entries(want)) if (k.startsWith("node_modules/") && !v.optional && !v.link && !(k in have)) process.exit(0);
+    process.exit(1);' "$1"
 }
 
 # integ_clean <phase-1 worktree>: succeeds when nothing is staged or changed in it (untracked files do not count) (A24).
