@@ -33,7 +33,6 @@
 | [A34](packages/A34.md) | Worktrees take node_modules from phase-1 | annabell, Sonnet (audit Opus) | day | now | ~0.25 d |
 | [A33](packages/A33.md) | The night's device step | annabell, Sonnet | day | A32 | ~0.5 d |
 | [S23](packages/S23.md) | G85's report into packages | sandra, Opus | day | G85's report | ~0.5 d |
-| [A32](packages/A32.md) | The core list on the Tab One | annabell, Sonnet | night (Tab One) or day | R74 | ~0.75 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A25](packages/A25.md) | The golden gate gates itself | annabell, Sonnet | day | now | ~0.1 d |
@@ -65,8 +64,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 104 | [G97](packages/G97.md) no power of a non-square matrix under `=` (F69) | gorge, Opus | `p1/gorge-nonsquareinv` | — | 1.5 h |
-| 107 | [A32](packages/A32.md) the core list on the Tab One | annabell, Sonnet, audit Opus (`--audit-model opus`: the Capacitor config, WebView debugging must stay off in releases) | `p1/annabell-coredevice` | R74 | 1.5 h |
 | 108 | [G76](packages/G76.md) one facts type, carried whole | gorge, Opus | `p1/gorge-m4-portfacts` | — | 2 h |
 | 109 | [G86](packages/G86.md) the chip from one rule | gorge, Opus | `p1/gorge-chiprule` | G76 | 2 h |
 | 110 | [R69](packages/R69.md) Copy session writes the screen's mark (F55) | ron, Sonnet | `p1/ron-m4-copymark` | G86 | 45 min |

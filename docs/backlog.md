@@ -8,7 +8,7 @@ The one place for "where are we and what's left", one or two lines per open item
 | Stage | State |
 |---|---|
 | Phase 0 spike; MVP milestones 1 (Home, CAS), 2 (Function, Solve), 3 (Python, removed by P11) | **Done** 2026-10-11 (reports in [archive/shifts/](archive/shifts/)) |
-| **The core freeze (P23)** | **In progress since 2026-10-21.** No new feature until the core list holds ([tests/core/](../tests/core/README.md): 56 everyday tasks, 53 active). On `61607ec` 51 of 51 active pass on desktop (R74, R75, G90; Opus pass 55); c53 (F55) and c56 (F72) fail as known; the device run is `tools/core-device.sh` (A32; 51/51 active on the Fairphone 6, 2026-10-22). The bridge spike G85 is in the night queue. |
+| **The core freeze (P23)** | **In progress since 2026-10-21.** No new feature until the core list holds ([tests/core/](../tests/core/README.md): 56 everyday tasks, 53 active). On `b1fefcd` 51 of 51 active pass on desktop (Opus pass 57); c53 (F55) and c56 (F72) fail as known; the device run is `tools/core-device.sh` (A32; 51/51 active on the Fairphone 6, 2026-10-22). The bridge spike G85 is in the night queue. |
 | Milestone 4a: feel (P11) | **Paused by P23.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, the Settings page, history-row actions, R15b, R15c1, R15c2, the mockups (R12a). Waiting: R15c3, R15c4, Settings rows, the palette, the visual pass, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI (R4a, R4b, A4b) is first after the freeze |
 | Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad, the entry and the result view wait for the freeze |
@@ -43,7 +43,6 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- **F69 → [G97](shifts/packages/G97.md), done (run 174).** A power but the first, an inverse or a division of a non-square matrix is refused, "The matrix is not square", in Home and CAS (`engine/nonsquare.ts`); a flat vector keeps Giac's meaning. Cause: Giac's pow is elementwise or v·v for a non-square base on purpose (`gen.cc:6880-6886`, with a warning), so no patch.
 - **F74, no package (G97's Not done, run 174).** CAS `f(x):=x^-1`, then `f([[5],[1]])` still shows Giac's elementwise result under `=`: `nonSquarePower` walks only the typed input's parts, not the function's body (`engine/nonsquare.ts`).
 - **F55 → [R69](shifts/packages/R69.md).** Copy session writes `⚠ 39` beside √2, π, ln 2, whose screen mark is `≈` (`clipboard/text.ts:122`). Families 6, 8. After G76, G86.
 - **F54 (G85 GO: bridge-2's reads, placed by S23; else [G69](shifts/packages/G69.md)).** With a stored x, `product(x,x,1,4)` = `⚠ 24` "inherited: x" (right `= 24`; `seq` too). Families 8, 1.
