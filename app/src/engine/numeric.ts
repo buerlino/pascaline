@@ -30,6 +30,9 @@ import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from 
 
 export interface Giac {
   eval(input: string): string;
+  /** G97: the last eval printed Giac's "^ is ambiguous on non square matrices" (a power met a list that is not a square
+   *  matrix); absent when the messages are not read (then unknown). */
+  ambiguousPower?(): boolean;
 }
 
 /** Digits a Giac double prints with (Digits ≤ 14 selects doubles; they never print more than 14). */

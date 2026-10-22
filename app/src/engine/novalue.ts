@@ -23,7 +23,7 @@ const infinite = (t: string): boolean => /infinity/.test(t);
 const TYPED_INF = /\b(inf|infinity)\b/;
 /** Calls whose arguments are not all evaluated as written: a branch not taken (`piecewise(0>0,1/0,5)`), a body in a
  *  bound variable, a quoted text. Their parts are not looked at. */
-const UNEVALUATED = new Set(["when", "piecewise", "ifte", "quote", "hold", "seq", "$", "makelist", "product", "diff", "solve", "fsolve", "romberg", "gaussquad"]);
+export const UNEVALUATED = new Set(["when", "piecewise", "ifte", "quote", "hold", "seq", "$", "makelist", "product", "diff", "solve", "fsolve", "romberg", "gaussquad"]);
 /** Most parts looked at; a larger input is not checked (its result stands). */
 const MAX_NODES = 200;
 
@@ -38,7 +38,7 @@ const SOURCE = /\/|\^\s*\(?\s*-|\b(ln|log|log10|logb|tan|cot|sec|csc|atanh|acoth
 const SOURCE_OPS = new Set(["/", "^", "inv", "ln", "log", "log10", "logb", "tan", "cot", "sec", "csc", "atanh", "acoth", "Gamma", "gamma", "factorial", "Psi", "psi", "Beta", "beta", "lnGamma"]);
 /** A part that changes engine state when it runs (an assignment, a store, a purge, an increment) or draws a random
  *  number: evaluating it again would change state the user did not ask to change (rules-core, principle 3). */
-const CHANGES_STATE = /:=|=<|=>|\+=|-=|\*=|\/=|\+\+|--|\b(?:sto|purge|assume|additionally|srand|randseed|RandSeed|alea|hasard|shuffle|sample)\s*\(|\b\w*ran[dmv]\w*\s*\(/i;
+export const CHANGES_STATE = /:=|=<|=>|\+=|-=|\*=|\/=|\+\+|--|\b(?:sto|purge|assume|additionally|srand|randseed|RandSeed|alea|hasard|shuffle|sample)\s*\(|\b\w*ran[dmv]\w*\s*\(/i;
 /** Time the walk may take. A part costs at most about what the whole input cost (Home's own exact time), and some Giac
  *  calls ignore the interrupt (GMP's factorial, decisions.md "G58"), so a part is evaluated only while the time spent
  *  plus that cost stays within this. */

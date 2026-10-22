@@ -9,6 +9,7 @@ import {
   definedBy,
   definitionsUsedBy,
   ENGINE_DEFINITIONS,
+  WORKER_DEFINITION_NAMES,
   decideFloatTest,
   EQ_DIFF,
   EQ_INEXACT_FLAG,
@@ -33,6 +34,7 @@ import {
 import { eseriesDefinition } from "./eseries.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { resolveAngle } from "./angleMigration.ts";
+import { mayPowerMatrix, nonSquarePower } from "./nonsquare.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
@@ -60,6 +62,9 @@ interface AfterInput {
   /** …and the user's text set it (the result says it was not kept, G67). */
   reset: boolean;
 }
+
+/** G97: what Giac's pow prints for a base that is a list but not a square matrix (gen.cc:6881). */
+const AMBIGUOUS_POWER = /\^ is ambiguous on non square matrices/;
 
 const NO_READS: InputReads = { names: [], targets: [], fn: false };
 
@@ -260,7 +265,10 @@ export class EngineHost implements FactsHost {
   readonly giac: GiacApi;
   /** `giac.eval` that throws GiacSyntaxError instead of quietly returning `undef` (which would
    *  otherwise leave the previous answer in place and show it again). */
-  private readonly strict: { eval(input: string): string };
+  private readonly strict: { eval(input: string): string; ambiguousPower(): boolean };
+  /** G97: `giac.eval` that reads Giac's messages after each eval for ambiguousPower(), and throws nothing (Num's
+   *  cells, where a syntax error is a cell's own error). Without it a power's shape walk would run on every cell. */
+  private readonly watched: { eval(input: string): string; ambiguousPower(): boolean };
 
   /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
   private readonly loaded = new Set<string>();
@@ -355,17 +363,24 @@ export class EngineHost implements FactsHost {
     // R64, G46: Giac in radians, and pasdeg (our parser's degree factor) set before any input: the units, raw eval and
     // replay paths have no mode setup of their own
     giac.eval(angleCommand("rad"));
+    let ambiguous = false;
+    let msg = "";
+    const read = (input: string): string => {
+      giac.clearMessages();
+      const out = giac.eval(input);
+      msg = giac.messages();
+      ambiguous = AMBIGUOUS_POWER.test(msg);
+      return out;
+    };
     this.strict = {
       eval: (input) => {
-        giac.clearMessages();
-        const out = giac.eval(input);
-        if (out === "undef") {
-          const msg = giac.messages();
-          if (/syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
-        }
+        const out = read(input);
+        if (out === "undef" && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
         return out;
       },
+      ambiguousPower: () => ambiguous,
     };
+    this.watched = { eval: read, ambiguousPower: () => ambiguous };
   }
 
   /** Replays definitions (a fresh engine: at init, or the stored log on first launch) and adds them to the log.
@@ -752,15 +767,19 @@ export class EngineHost implements FactsHost {
     // definite integral, a series or a limit runs its right-hand side first, is checked, and only then stored.
     const asg0 = simpleAssignment(exactInput);
     // G57: so does one whose value rests on a decision, which may be refused as undecided.
-    const guarded = asg0 && !isStateful(asg0.rhs) && (callsIn(asg0.rhs).length || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
+    // G97: and one whose value may be a power of a non-square matrix, which is refused.
+    const guarded =
+      asg0 && !isStateful(asg0.rhs) && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
     // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
     // mode's Digits stays the setting, which prints the floats of a non-number.
     const digitsSet = Math.trunc(s.digits);
     const body = guarded ? guarded.rhs : exactInput;
     const run = (): string => withDigits(this.giac, valuePrecision(digitsSet), digitsSet, () => this.strict.eval(`pcasans:=(${body})`));
     let text: string;
+    let ambiguous: boolean;
     try {
       text = run();
+      ambiguous = this.strict.ambiguousPower();
     } catch (e) {
       if (e instanceof GiacSyntaxError) return fail(e.message, "syntax");
       throw e;
@@ -785,6 +804,7 @@ export class EngineHost implements FactsHost {
     const decided = inexactTest && !single ? decideFloatTest(this.giac, exactInput, digitsSet) : null;
     if (decided) {
       text = run();
+      ambiguous = this.strict.ambiguousPower();
       this.giac.eval(`purge(${EQ_VERDICT})`);
     }
     // G38: a result that rests on a numeric decision is decided again at P + 20 (and P + 40), as in Home; an exact
@@ -814,6 +834,10 @@ export class EngineHost implements FactsHost {
     const refused = guarded ? refusalOf(this.giac, guarded.rhs, text) : single ? null : refusalOf(this.giac, exactInput, text);
     if (refused && refused !== "unchecked") return fail(enEngine[`error.${refused}`], refused);
     if (refusedCut) return fail(enEngine["error.undecided"], "undecided");
+    // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, refused as in Home.
+    const builtin = notBuiltin(this.giac);
+    const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
+    if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn)) return fail(enEngine["error.notSquare"], "notSquare");
     if (guarded) {
       const stored = this.giac.eval(`${guarded.name}:=pcasans`);
       if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");
@@ -945,7 +969,7 @@ export class EngineHost implements FactsHost {
   table(req: TableRequest, s: HomeSettings): HomeResult[][] {
     this.need(expressionsOf(req.fns));
     this.useHomeMode(s);
-    return table(this.giac, req, s);
+    return table(this.watched, req, s);
   }
 
   private useHomeMode(s: HomeSettings): void {
