@@ -147,7 +147,7 @@ describe.skipIf(!giacAvailable())("WorkerEngine unit view (real Giac in process,
     await engine.home("ua:=0.5", defaultHomeSettings);
     const job = { expr: "ua*(((1000)*(1)*pasdimL^(1)))", end: "(((1)*pasdimL^(1)))", inexact: false };
     const first = await engine.units(job, defaultHomeSettings);
-    expect(first).toMatchObject({ value: { display: "500", exactRational: true }, dimension: "m1" }); // derived: 0.5 km = 500 m
+    expect(first).toMatchObject({ value: { display: "500", facts: { exact: true } }, dimension: "m1" }); // derived: 0.5 km = 500 m
     await engine.cancel();
     expect(await engine.units(job, defaultHomeSettings)).toMatchObject({ value: { display: "500" }, dimension: "m1" });
     engine.dispose();
@@ -250,8 +250,8 @@ describe.skipIf(!giacAvailable())("WorkerEngine definitions across a relaunch (r
     const b = launch(store);
     const after = await b.home("B", s30);
     expect(after.display).toBe(before.display);
-    expect(after.reliableDigits).toBe(first.reliableDigits);
-    expect(after.warn).toBe("unaudited");
+    expect(after.facts.reliableDigits).toBe(first.facts.reliableDigits);
+    expect(after.facts.warn).toBe("unaudited");
     b.dispose();
   });
 

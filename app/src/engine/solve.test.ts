@@ -3,7 +3,7 @@
 // tests/golden/ (oracle/derived); the golden gate checks the maths, these tests check the plumbing.
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
-import { defaultHomeSettings } from "./homeEval.ts";
+import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { markOf } from "./format.ts";
 
@@ -24,7 +24,7 @@ describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () 
     const r = host.solve({ kind: "equations", equations: ["x^2=2"], unknowns: ["x"], guesses: ["1"] }, s);
     const root = r.roots[0]!.result;
     expect(root.display).toBe("1.41421356237"); // oracle sqrt(2): solve.yaml sqrt2-pos
-    expect(root.reliableDigits).toBeGreaterThanOrEqual(28); // W = 30 against W+20 = 50
+    expect(root.facts.reliableDigits).toBeGreaterThanOrEqual(28); // W = 30 against W+20 = 50
     expect(root.full.startsWith("1.4142135623730950488016887")).toBe(true); // oracle sqrt(2) to 26 digits
     expect(root.full.length).toBeGreaterThan(28);
   });
@@ -33,8 +33,8 @@ describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () 
     const s30 = { ...s, digits: 30 };
     const r = host.solve({ kind: "equations", equations: ["expand(product(x-k/7,k,1,25))=0"], unknowns: ["x"], guesses: ["3.4"] }, s30);
     const root = r.roots[0]!.result;
-    expect(root.reliableDigits).toBeLessThan(30);
-    expect(markOf(root, { format: "STD", digits: 30 })?.mark).toBe("⚠");
+    expect(root.facts.reliableDigits).toBeLessThan(30);
+    expect(markOf(precisionFacts(root), { format: "STD", digits: 30 })?.mark).toBe("⚠");
     // derived: the root is 24/7; every digit shown is right
     expect("3.42857142857142857142857142857".startsWith(root.display.slice(0, -1))).toBe(true);
   });
@@ -44,14 +44,14 @@ describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () 
     expect(r.error).toBeUndefined();
     const root = r.roots[0]!.result;
     expect(root.display).toBe("3.42857142857"); // derived: 24/7
-    expect(markOf(root, { format: "STD", digits: 12 })?.mark).not.toBe("⚠"); // right to 15 digits or more
+    expect(markOf(precisionFacts(root), { format: "STD", digits: 12 })?.mark).not.toBe("⚠"); // right to 15 digits or more
   });
 
   it("SB2: a quadruple root is found with fewer confirmed digits and ⚠, never = and never no root", () => {
     const r = host.solve({ kind: "equations", equations: ["expand((x-1/3)^4)=0"], unknowns: ["x"], guesses: ["0.5"] }, s);
     expect(r.error).toBeUndefined();
     const root = r.roots[0]!.result;
-    const m = markOf(root, { format: "STD", digits: 12 });
+    const m = markOf(precisionFacts(root), { format: "STD", digits: 12 });
     expect(m?.mark).toBe("⚠");
     expect(m?.n).toBeLessThan(12);
     expect(root.display).toBe("0.3333333"); // derived: 1/3; the plateau of f at W = 30 is 1e-8 wide, so 7 digits are confirmed

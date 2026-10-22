@@ -19,7 +19,7 @@ const host = new EngineHost(giac);
 const home = (t: string): string => {
   const r = host.home(t, defaultHomeSettings);
   const x = r.result;
-  return `${x.ok ? x.display : `error ${x.error}`} (exactRational ${x.exactRational}, digits ${x.reliableDigits}, warn ${x.warn ?? "-"}, logged ${r.defs.length})`;
+  return `${x.ok ? x.display : `error ${x.error}`} (exact ${x.facts.exact}, digits ${x.facts.reliableDigits}, warn ${x.facts.warn ?? "-"}, logged ${r.defs.length})`;
 };
 const cas = (t: string): string => {
   const r = host.cas(t, defaultCasSettings);

@@ -5,6 +5,7 @@
 //   result type, so the key needs no setting (P12).
 // Plain logic, no Svelte: which modes apply to a result, what comes next, and how a result is drawn in a mode.
 // All number formatting is engine/format.ts (our own formatter), never JS Number.toString.
+import type { ValueFacts } from "../engine/types.ts";
 import {
   confirmedOptions,
   formatComplex,
@@ -18,7 +19,6 @@ import {
   type FormatOptions,
   type MarkInfo,
   type PrecisionFacts,
-  type PrecisionWarn,
 } from "../engine/format.ts";
 import type { NumberFormat } from "../calc/port.ts";
 import { complexToLatex, fractionToLatex, homeResultToLatex, polarToLatex } from "../render/home.ts";
@@ -55,11 +55,7 @@ export interface Polar {
 }
 
 /** What the engine said about how far a result can be trusted (docs/04 2.4); `value` of a scalar is the item's own. */
-export interface ResultFacts {
-  exactRational: boolean;
-  /** Significant digits confirmed by the agreement check; null = exact. */
-  reliableDigits: number | null;
-  warn?: PrecisionWarn;
+export interface ResultFacts extends ValueFacts {
   /** A numeric list or matrix: its elements, each with its own value and facts. */
   items?: PrecisionFacts[];
   shape?: [number, number];
@@ -167,12 +163,9 @@ const BASE: Record<"std" | "sci" | "eng" | "pfx" | "fix", FormatOptions["format"
 function precisionOf(r: NumericResult): (PrecisionFacts & { shape?: [number, number] }) | undefined {
   const f = r.facts;
   if (!f) return undefined;
+  const { digits: _d, ...facts } = f;
   return {
-    exactRational: f.exactRational,
-    reliableDigits: f.reliableDigits,
-    ...(f.warn ? { warn: f.warn } : {}),
-    ...(f.items ? { items: f.items } : {}),
-    ...(f.shape ? { shape: f.shape } : {}),
+    ...facts,
     ...(r.value ? { value: r.value } : {}),
     ...(r.approximate ? { approximate: true } : {}),
   };
@@ -227,7 +220,7 @@ export function markFor(r: NumericResult, mode: FmtMode | undefined, ctx: Displa
   const base = baseMode(mode, ctx);
   const o: FormatOptions = { format: BASE[base], digits: r.facts?.digits ?? ctx.digits, fixed: ctx.fixDecimals };
   let info: MarkInfo | null;
-  if ((m === "frac" || m === "mixed") && r.rational && r.value) info = p.exactRational ? { mark: "=" } : markOf(p, o);
+  if ((m === "frac" || m === "mixed") && r.rational && r.value) info = p.exact ? { mark: "=" } : markOf(p, o);
   else {
     info = markOf(p, o);
     if (info?.mark === "=" && m === "polar" && r.polar?.angle === ctx.angle) info = { mark: "≈" };

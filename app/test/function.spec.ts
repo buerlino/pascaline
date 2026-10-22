@@ -204,7 +204,7 @@ test("Function: a warned root puts ⚠ on its readout lines, a clean one does no
     const orig = app.fc.analyze.bind(app.fc);
     app.fc.analyze = async (...a) => {
       const r = await orig(...a);
-      for (const c of [r.x, r.y]) if (c) Object.assign(c, { exactRational: false, reliableDigits: 4 });
+      for (const c of [r.x, r.y]) if (c) c["facts"] = { ...(c["facts"] as object), exact: false, reliableDigits: 4 };
       return r;
     };
   });

@@ -95,7 +95,7 @@ while (todo.length) {
 
 // Covered: the G38 second decision runs for this input in Home.
 const { EngineHost } = await import("../../app/src/engine/host.ts");
-const { defaultHomeSettings } = await import("../../app/src/engine/homeEval.ts");
+const { defaultHomeSettings, precisionFacts } = await import("../../app/src/engine/homeEval.ts");
 const { restsOnDecision } = await import("../../app/src/engine/decisions.ts");
 const { markOf } = await import("../../app/src/engine/format.ts");
 const { giac } = await loadNodeGiac();
@@ -109,7 +109,7 @@ for (const row of rows) {
   const input = `${row.name}(${row.arg})`;
   const covered = restsOnDecision(input, row.atP);
   const r = host.home(input, defaultHomeSettings).result;
-  const m = r.ok ? markOf(r, { format: "STD", digits: defaultHomeSettings.digits }) : null;
+  const m = r.ok ? markOf(precisionFacts(r), { format: "STD", digits: defaultHomeSettings.digits }) : null;
   const shown = r.ok ? `${m ? `${m.mark}${m.n !== undefined ? ` ${m.n}` : ""} ` : ""}${r.display}` : `error ${r.error ?? ""}`;
   console.log(`| ${row.name} | \`${input}\` | ${cut(row.atP)} | ${cut(row.atP40)} | ${covered ? "yes" : "**no**"} | ${cut(shown)} |`);
 }

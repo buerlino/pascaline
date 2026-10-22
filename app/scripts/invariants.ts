@@ -4,7 +4,7 @@
 import type { CopySource } from "../src/clipboard/text.ts";
 import { formatComplex, markOf, type MarkInfo } from "../src/engine/format.ts";
 import type { EngineHost } from "../src/engine/host.ts";
-import { defaultHomeSettings, type HomeResult } from "../src/engine/homeEval.ts";
+import { defaultHomeSettings, precisionFacts, type HomeResult } from "../src/engine/homeEval.ts";
 import { hasAngleFactor } from "../src/input/angles.ts";
 import type { Rational } from "../src/state/displayMode.ts";
 
@@ -64,7 +64,7 @@ export function invariantsStage(failures: readonly InvariantFailure[], known: re
 }
 
 const markText = (m: MarkInfo | null): string | undefined => (m ? `${m.mark}${m.n ?? ""}` : undefined);
-const markAt = (r: HomeResult, digits: number): string | undefined => markText(markOf(r, { format: "STD", digits }));
+const markAt = (r: HomeResult, digits: number): string | undefined => markText(markOf(precisionFacts(r), { format: "STD", digits }));
 
 /** (a) An angle-free input shows the same text and mark in RAD and DEG. */
 export function checkAngle(id: string, rad: HomeResult, deg: HomeResult): InvariantFailure | null {
@@ -76,8 +76,8 @@ export function checkAngle(id: string, rad: HomeResult, deg: HomeResult): Invari
 /** (b) A result confirmed at 12 and at 30 digits rounds to the same 12-digit text. Null when either is not confirmed to 12 digits (not comparable). */
 export function checkDigits(id: string, r12: HomeResult, r30: HomeResult): { checked: boolean; failure: InvariantFailure | null } {
   if (!r12.ok || !r12.value || !r30.ok || !r30.value) return { checked: false, failure: null };
-  const m12 = markOf(r12, { format: "STD", digits: 12 });
-  const m30 = markOf(r30, { format: "STD", digits: 30 });
+  const m12 = markOf(precisionFacts(r12), { format: "STD", digits: 12 });
+  const m30 = markOf(precisionFacts(r30), { format: "STD", digits: 30 });
   const n12 = m12?.mark === "⚠" ? (m12.n ?? 12) : 12;
   const n30 = m30?.mark === "⚠" ? (m30.n ?? 30) : 30;
   if (n12 < 12 || n30 < 12) return { checked: false, failure: null };
@@ -105,16 +105,14 @@ export function copySourceOf(r: HomeResult, inexactInput = false): CopySource {
   const q = r.value ? rationalOf(r.exact) : undefined;
   if (q) src.rational = q;
   if (r.ok) {
-    src.exactRational = r.exactRational;
-    src.reliableDigits = r.reliableDigits;
-    if (r.warn) src.warn = r.warn;
+    Object.assign(src, r.facts);
     const inexact = r.approximate || inexactInput;
     const exactText = !inexact && r.exact !== undefined && r.exact.length <= FULL_LIMIT ? r.exact : undefined;
     const full = exactText ?? (r.full || (inexact ? undefined : r.exact));
     if (full && full.length <= FULL_LIMIT) {
       src.full = full;
       const cut = r.exact !== undefined || r.value?.re.sticky === true || r.value?.im.sticky === true;
-      src.fullExact = !inexact && (full === exactText || (!cut && (r.exactRational || !isDigitsText(full))));
+      src.fullExact = !inexact && (full === exactText || (!cut && (r.facts.exact || !isDigitsText(full))));
     }
   }
   return src;

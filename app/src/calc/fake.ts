@@ -45,7 +45,7 @@ export class FakeCalc implements Calc {
     return this.run({ ok: true, display: giac, approximate: false, ...safePrecision(giac) });
   }
   cas(giac: string): Promise<CasOutcome> {
-    return this.run({ ok: true, text: giac, latex: giac });
+    return this.run({ ok: true, text: giac, latex: giac, facts: { exact: false, reliableDigits: null } });
   }
   /** Echoes each guess back as the "root", so UI tests see what was sent. */
   solve(req: SolveRequest): Promise<SolveOutcome> {

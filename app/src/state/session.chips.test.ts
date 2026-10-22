@@ -48,7 +48,7 @@ class TableCalc extends FakeCalc implements Calc {
   }
   override cas(giac: string): Promise<CasOutcome> {
     this.seen.push(giac);
-    return Promise.resolve({ ok: true, text: giac, latex: giac });
+    return Promise.resolve({ ok: true, text: giac, latex: giac, facts: { exact: false, reliableDigits: null } });
   }
 }
 
@@ -187,7 +187,7 @@ describe.skipIf(!giacAvailable())("marks travel through Ans and chips (R65, real
 describe("chip facts (R65)", () => {
   it("an inexact input never gives an exact chip, and a non-exact result carries its confirmed decimal", async () => {
     const calc = new TableCalc({
-      "pasr_1*1000": { display: "-1959.96398454", exact: "-97998199227/50", full: "-1959.96398454", exactRational: true, reliableDigits: null },
+      "pasr_1*1000": { display: "-1959.96398454", exact: "-97998199227/50", full: "-1959.96398454", facts: { exact: true, reliableDigits: null } },
     });
     const s = new Session(calc, memoryKv());
     await s.submit("\\res{1}{x}\\times1000", undefined, { "res:1": { value: "-1.95996398454", exact: false } });
@@ -210,5 +210,33 @@ describe("chip facts (R65)", () => {
     await s.restore();
     expect(s.home[0]?.chips).toEqual({ "res:4": chip, "res:5": { value: "1", exact: false } });
     expect(s.chipFor(s.home[0] as HistoryItem)).toEqual(chip);
+  });
+});
+
+describe("a result's facts in the history (G76)", () => {
+  it("why and uncDigits of a result reach its history item, as the engine sent them", async () => {
+    const facts = { exact: false, reliableDigits: 11, warn: "unaudited" as const, why: { unaudited: ["romberg"] }, uncDigits: 4 };
+    const calc = new TableCalc({ "1/3": { display: "0.333333333333", approximate: true, facts } });
+    const s = new Session(calc, memoryKv());
+    await s.submit("\\frac13");
+    expect(s.home[0]?.facts).toEqual(facts);
+  });
+
+  it("an item stored before G76 (exactRational) reads back with exact, its elements too", async () => {
+    const kv = memoryKv();
+    const v = (d: string) => ({ re: { neg: false, digits: d, exp: -1, sticky: false }, im: { neg: false, digits: "", exp: 0, sticky: false } });
+    kv.data.set("history", {
+      home: [
+        { id: 1, view: "home", latex: "\\frac14", status: "done", resultLatex: "0.25", text: "0.25", approximate: false, startedAt: 0, value: v("25"), facts: { exactRational: true, reliableDigits: null } },
+        { id: 2, view: "home", latex: "[\\frac14]", status: "done", resultLatex: "[0.25]", text: "[0.25]", approximate: false, startedAt: 0,
+          facts: { exactRational: true, reliableDigits: null, items: [{ exactRational: true, reliableDigits: null, value: v("25") }] } },
+        { id: 3, view: "home", latex: "x", status: "done", resultLatex: "1", text: "1", approximate: false, startedAt: 0, facts: { reliableDigits: null } },
+      ],
+    });
+    const s = new Session(new TableCalc({}), kv);
+    await s.restore();
+    expect(s.home[0]?.facts).toEqual({ exact: true, reliableDigits: null });
+    expect(s.home[1]?.facts).toEqual({ exact: true, reliableDigits: null, items: [{ exact: true, reliableDigits: null, value: v("25") }] });
+    expect(s.home[2]?.facts).toBeUndefined(); // neither exact nor exactRational: dropped, as before (no mark)
   });
 });

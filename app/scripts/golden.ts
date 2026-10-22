@@ -52,7 +52,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, type GiacApi } from "../src/engine/host.ts";
 import { runHomeCase, runPrecisionCase, typed, seqMark, markText, RATIONAL_TEXT, type Case, type Expect } from "../src/goldenRun.ts";
-import { defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
+import { defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand, precisionFacts, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
 import { decimalFromString, formatComplex, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
 import { giacMjsPath, loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { hasFloat } from "../src/engine/numeric.ts";
@@ -252,7 +252,7 @@ interface Got {
 
 /** ⚠ n of one result at `digits` (undefined when every digit shown is confirmed), and whether it carries ⚠ at all. */
 function confirmedN(r: HomeResult, digits: number): { n: number | undefined; warn: boolean } {
-  const m = markOf(r, { format: "STD", digits });
+  const m = markOf(precisionFacts(r), { format: "STD", digits });
   return { n: m?.mark === "⚠" && m.n !== undefined && m.n < digits ? Math.max(1, m.n) : undefined, warn: m?.mark === "⚠" };
 }
 
@@ -512,7 +512,7 @@ const UNIT_P95_MS = 5;
 /** What a units case got, as text to compare and print. */
 function unitGot(r: Quantity | UnitError, c: Case): string {
   if (isUnitError(r)) return `refused: ${unitErrorMessage(r)}`;
-  const m = markText(markOf(r.value, { format: "STD", digits: 12 }));
+  const m = markText(markOf(precisionFacts(r.value), { format: "STD", digits: 12 }));
   return `${m ?? "-"} ${r.value.display} exact ${r.value.exact ?? "-"}${c.dim !== undefined ? ` dim ${JSON.stringify(r.dimension)}` : ""}${c.unit !== undefined ? ` unit ${JSON.stringify(r.unit)}` : ""}${c.dimtext !== undefined ? ` dimtext ${JSON.stringify(r.dimensionText)}` : ""}${c.si !== undefined ? ` si ${r.si ?? "-"}` : ""}${c.unc !== undefined ? ` unc ${r.unc?.text ?? "none"}` : ""}${c.shown !== undefined ? ` shown ${r.unc?.shown ?? "-"}` : ""}${r.unc?.why ? ` ⚠ ${unitWhyText(r.unc.why)}` : ""}${r.note ? ` note ${unitNoteText(r.note)}` : ""}`;
 }
 

@@ -244,7 +244,7 @@ export class FunctionApp implements AppInstance {
         text: c.display,
         ...(c.value ? { value: c.value } : {}),
         ...(c.full !== undefined ? { full: c.full } : {}),
-        ...(c.reliableDigits !== undefined ? { reliableDigits: c.reliableDigits } : {}),
+        ...(c.facts ? { reliableDigits: c.facts.reliableDigits } : {}),
       }) ?? c.display
     );
   }

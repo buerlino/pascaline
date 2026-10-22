@@ -6,6 +6,7 @@ import {
   EngineCancelled,
   type AnalysisRequest,
   type AnalysisResult,
+  type CasResult,
   type HomeResult,
   type HomeSettings,
   type MathEngine,
@@ -18,6 +19,69 @@ import { userNamesOf } from "../engine/defs.ts";
 import { mark } from "../marks.ts";
 import { CalcCancelled, type Calc, type CalcSettings, type ChipFactsTable, type CasOutcome, type HomeOutcome, type Quantity, type UnitError, type UnitRequest, type UserName } from "./port.ts";
 import type { IndexItem } from "../find/types.ts";
+
+/**
+ * What the port does with each key of an engine result (G76): "pass" gives it to the view as it is (`facts` whole, so
+ * every fact the engine adds reaches the views); any other text is the reason it is not given. A key added to
+ * HomeResult or CasResult fails to compile here until it is listed.
+ */
+export type PortKeys<T> = { readonly [K in keyof Required<T>]: "pass" | (string & {}) };
+
+export const HOME_KEYS = {
+  ok: "pass",
+  display: "pass",
+  value: "pass",
+  facts: "pass",
+  approximate: "pass",
+  error: "pass",
+  full: "pass",
+  defined: "pass",
+  items: "pass",
+  shape: "pass",
+  digits: "pass",
+  latex: "pass",
+  settingReset: "pass",
+  exact: "given only when `rational` says it is a plain integer or p/q: the Format key's fraction modes read it",
+  rational: "read for `exact`",
+  path: "the engine's route, for its tests and probes; no view reads it",
+  tieRisk: "unused: no view reads it (docs/04 2.4 item 4)",
+  exactMs: "a timing (measurement builds read the engine's own)",
+  totalMs: "a timing (measurement builds read the engine's own)",
+} as const satisfies PortKeys<HomeResult>;
+
+export const CAS_KEYS = {
+  ok: "pass",
+  text: "pass",
+  full: "pass",
+  latex: "pass",
+  error: "pass",
+  uses: "pass",
+  numeric: "pass",
+  approximate: "pass",
+  facts: "pass",
+  settingReset: "pass",
+  timedOut: "`error` is \"timeout\" then",
+  engineMs: "a timing (measurement builds read the engine's own)",
+} as const satisfies PortKeys<CasResult>;
+
+/** The keys of T that `M` passes. */
+export type Passed<T, M extends PortKeys<T>> = { [K in keyof M]: M[K] extends "pass" ? K : never }[keyof M] & keyof T;
+
+/** The keys of `r` that `keys` passes, each as it is (absent ones stay absent). */
+function passed<T extends object, M extends PortKeys<T>>(r: T, keys: M): Pick<T, Passed<T, M>> {
+  const out: Partial<T> = {};
+  for (const k of Object.keys(keys) as (keyof T & keyof M)[]) if (keys[k] === "pass" && r[k] !== undefined) out[k] = r[k];
+  return out as Pick<T, Passed<T, M>>;
+}
+
+/** True when A and B are the same set of keys (both ways, so neither a passed key nor an outcome key goes unmapped). */
+export type SameKeys<A extends PropertyKey, B extends PropertyKey> = [Exclude<A, B>, Exclude<B, A>] extends [never, never] ? true : false;
+type Check<T extends true> = T;
+/** Every passed key is an outcome key and every outcome key is passed (or, for `exact`, given by the port itself). */
+export type PortChecks = [
+  Check<SameKeys<Passed<HomeResult, typeof HOME_KEYS> | "exact", keyof HomeOutcome>>,
+  Check<SameKeys<Passed<CasResult, typeof CAS_KEYS>, keyof CasOutcome>>,
+];
 
 export interface EngineCalcOptions {
   /** The Find index's items, for the unit view's factor table (docs/04 4.2); read on the first units() call. */
@@ -43,7 +107,7 @@ export class EngineCalc implements Calc {
     try {
       const settings = { ...defaultHomeSettings, digits: s.digits, angle: s.angle };
       const r = await (chips && Object.keys(chips).length ? this.engine.home(giac, settings, undefined, chips) : this.engine.home(giac, settings));
-      return { ok: r.ok, display: r.display, approximate: r.approximate, exactRational: r.exactRational, reliableDigits: r.reliableDigits, full: r.full, ...(r.defined ? { defined: r.defined } : {}), ...(r.items ? { items: r.items } : {}), ...(r.shape ? { shape: r.shape } : {}), ...(r.warn ? { warn: r.warn } : {}), ...(r.digits !== undefined ? { digits: r.digits } : {}), ...(r.value ? { value: r.value } : {}), ...(r.exact && /^-?\d{1,200}(\/\d{1,200})?$/.test(r.exact) ? { exact: r.exact } : {}), ...(r.error ? { error: r.error } : {}), ...(r.latex !== undefined ? { latex: r.latex } : {}), ...(r.settingReset ? { settingReset: true } : {}) };
+      return { ...passed(r, HOME_KEYS), ...(r.rational && r.exact !== undefined ? { exact: r.exact } : {}) };
     } catch (e) {
       throw e instanceof EngineCancelled ? new CalcCancelled() : e;
     }
@@ -52,7 +116,7 @@ export class EngineCalc implements Calc {
   async cas(giac: string, s: CalcSettings): Promise<CasOutcome> {
     try {
       const r = await this.engine.cas(giac, { ...defaultCasSettings, digits: s.digits, angle: s.angle });
-      return { ok: r.ok, text: r.text, latex: r.latex, ...(r.full !== undefined ? { full: r.full } : {}), ...(r.numeric ? { numeric: r.numeric } : {}), ...(r.approximate ? { approximate: true } : {}), ...(r.warn ? { warn: r.warn } : {}), ...(r.uses ? { uses: r.uses } : {}), ...(r.error ? { error: r.error } : {}), ...(r.settingReset ? { settingReset: true } : {}) };
+      return passed(r, CAS_KEYS);
     } catch (e) {
       throw e instanceof EngineCancelled ? new CalcCancelled() : e;
     }

@@ -46,16 +46,16 @@ describe("replayOrder, validDefs, userNamesOf", () => {
     expect(replayOrder(log).map((e) => e.name)).toEqual(["S", "A", "f"]);
   });
   it("stored data: entries with the right shape only", () => {
-    const good = entry("A", "var", "A:=(5)", { facts: { reliableDigits: 11, warn: "unaudited" } });
+    const good = entry("A", "var", "A:=(5)", { facts: { exact: false, reliableDigits: 11, warn: "unaudited" } });
     expect(validDefs([good, { name: "B" }, { ...good, kind: "nope" }, { ...good, name: "1x" }, { ...good, facts: { reliableDigits: "x" } }, null])).toEqual([good]);
     expect(validDefs("junk")).toEqual([]);
   });
   it("G49: `inexact` facts are kept; any other value of it drops the entry", () => {
-    const v = entry("A", "var", "A:=(66743/500000000000000)", { facts: { reliableDigits: null, inexact: true } });
+    const v = entry("A", "var", "A:=(66743/500000000000000)", { facts: { exact: false, reliableDigits: null, inexact: true } });
     expect(validDefs([v, { ...v, name: "B", facts: { reliableDigits: null, inexact: false } }])).toEqual([v]);
   });
   it("G49f1: a function keeps the facts it was built from", () => {
-    const f = entry("q", "fn", "q(x):=x+899450126402", { facts: { reliableDigits: null, warn: "unchecked", inexact: true } });
+    const f = entry("q", "fn", "q(x):=x+899450126402", { facts: { exact: false, reliableDigits: null, warn: "unchecked", inexact: true } });
     expect(validDefs(JSON.parse(JSON.stringify([f])))).toEqual([f]);
   });
   it("G34: a variable keeps the angle mode it was stored in; a wrong or foreign one is dropped", () => {

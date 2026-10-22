@@ -32,7 +32,8 @@ export interface CopySource {
   /** Digits confirmed by the agreement check; null (or absent) = nothing in doubt. */
   reliableDigits?: number | null;
   warn?: PrecisionWarn;
-  exactRational?: boolean;
+  /** The value is exact (ValueFacts.exact; a history item's facts spread in). */
+  exact?: boolean;
   /** An inexact chip went into the input: never `=` (decisions M4-4). */
   inexactInput?: boolean;
   chips?: ChipTable;
@@ -124,7 +125,7 @@ export function copyMark(i: CopySource): { mark: Mark; n?: number; warn?: Precis
     if (parts.some((p) => p.digits.length > Math.max(1, i.reliableDigits as number))) return { mark: "⚠", n: Math.max(0, i.reliableDigits) };
   }
   if (i.warn) return { mark: "⚠", warn: i.warn };
-  const exact = i.inexactInput !== true && (i.exactRational === true || i.rational !== undefined || (i.full !== undefined && /^-?\d+$/.test(i.full)));
+  const exact = i.inexactInput !== true && (i.exact === true || i.rational !== undefined || (i.full !== undefined && /^-?\d+$/.test(i.full)));
   const shownFully = [v.re, v.im].every((p) => isZero(p) || (!p.sticky && p.digits.length <= DECIMAL_KEEP));
   return exact && shownFully ? { mark: "=" } : { mark: "≈" };
 }

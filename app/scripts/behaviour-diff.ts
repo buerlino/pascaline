@@ -43,13 +43,17 @@ async function loadTree(dir: string): Promise<Tree> {
 type Angle = "rad" | "deg";
 const markText = (t: Tree, f: unknown, digits: number): string => {
   try {
-    const m = t.fmt.markOf(f, { format: "STD", digits }) as { mark: string; n?: number } | null;
+    // G76: a tree whose results carry `facts` gives markOf their precisionFacts; an older one, the result itself.
+    const p = typeof t.home.precisionFacts === "function" ? t.home.precisionFacts(f) : f;
+    const m = t.fmt.markOf(p, { format: "STD", digits }) as { mark: string; n?: number } | null;
     return m ? `${m.mark}${m.n ?? ""}` : "-";
   } catch {
     return "?";
   }
 };
 const json = (x: unknown): string => (x === undefined ? "" : JSON.stringify(x));
+/** A result's warn and why, wherever its tree keeps them (G76: in `facts`; before, on the result). */
+const factsOf = (r: Mod | undefined): Mod | undefined => (r === undefined ? undefined : (r["facts"] ?? r));
 
 interface Row {
   display: string;
@@ -71,11 +75,13 @@ function run(t: Tree, host: Mod, view: "home" | "cas", input: string, digits: nu
     if (view === "home") {
       const s = { ...t.home.defaultHomeSettings, angle, digits, workDigits: Math.max(30, digits + 10) };
       const r = host.home(typed, s).result;
-      return { display: r.ok ? r.display : `error: ${r.error ?? r.display}`, mark: markText(t, r, digits), warn: json(r.warn), why: json(r.why) };
+      return { display: r.ok ? r.display : `error: ${r.error ?? r.display}`, mark: markText(t, r, digits), warn: json(factsOf(r)?.["warn"]), why: json(factsOf(r)?.["why"]) };
     }
     const r = host.cas(typed, { ...t.types.defaultCasSettings, angle, digits }).result;
-    const mark = r.numeric ? markText(t, r.numeric, digits) : r.approximate ? (r.warn ? "⚠" : "≈") : "-";
-    return { display: r.ok ? `${r.text}${r.full ? ` | ${r.full}` : ""}` : `error: ${r.error ?? r.text}`, mark, warn: json(r.warn ?? r.numeric?.warn), why: json(r.why ?? r.numeric?.why) };
+    const f = factsOf(r);
+    const n = factsOf(r.numeric);
+    const mark = r.numeric ? markText(t, r.numeric, digits) : r.approximate ? (f?.["warn"] ? "⚠" : "≈") : "-";
+    return { display: r.ok ? `${r.text}${r.full ? ` | ${r.full}` : ""}` : `error: ${r.error ?? r.text}`, mark, warn: json(f?.["warn"] ?? n?.["warn"]), why: json(f?.["why"] ?? n?.["why"]) };
   } catch (e) {
     return { display: `throws: ${(e as Error).message.split("\n")[0]}`, mark: "!", warn: "", why: "" };
   }

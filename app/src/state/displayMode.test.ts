@@ -129,10 +129,10 @@ describe("renderNumeric", () => {
 });
 
 describe("marks and PFX (docs/04 2.4, 2.7)", () => {
-  const exact = (r: NumericResult): NumericResult => ({ ...r, facts: { exactRational: true, reliableDigits: null } });
+  const exact = (r: NumericResult): NumericResult => ({ ...r, facts: { exact: true, reliableDigits: null } });
   const approx = (r: NumericResult, reliableDigits: number | null, warn?: "unaudited"): NumericResult => ({
     ...r,
-    facts: { exactRational: false, reliableDigits, ...(warn ? { warn } : {}) },
+    facts: { exact: false, reliableDigits, ...(warn ? { warn } : {}) },
   });
   const two = real(2n);
 
@@ -186,13 +186,13 @@ describe("marks and PFX (docs/04 2.4, 2.7)", () => {
 describe("digits the input asked for (CAS evalf(e,n), decisions M4-6)", () => {
   // pi to 52 digits (oracle: tests/golden/precision.yaml prec-M4-6-cas-evalf-pi-50)
   const pi = decimalFromRational(31415926535897932384626433832795028841971693993751058n, 10n ** 52n, 60);
-  const r: NumericResult = { value: { re: pi, im: q(0n) }, facts: { exactRational: false, reliableDigits: 60, digits: 50 } };
+  const r: NumericResult = { value: { re: pi, im: q(0n) }, facts: { exact: false, reliableDigits: 60, digits: 50 } };
   it("draws the result with them, not with the digits setting", () => {
     expect(renderNumeric(r, undefined, ctx)?.text).toBe("3.1415926535897932384626433832795028841971693993751");
     expect(markText(markFor(r, undefined, ctx)!)).toBe("≈");
   });
   it("shows only the confirmed ones when fewer agree", () => {
-    const fewer: NumericResult = { ...r, facts: { exactRational: false, reliableDigits: 20, digits: 50 } };
+    const fewer: NumericResult = { ...r, facts: { exact: false, reliableDigits: 20, digits: 50 } };
     expect(renderNumeric(fewer, undefined, ctx)?.text).toBe("3.1415926535897932385");
     expect(markText(markFor(fewer, undefined, ctx)!)).toBe("⚠ 20");
   });

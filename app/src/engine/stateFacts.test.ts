@@ -39,7 +39,7 @@ describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
     host.home("pB:=899450126402", defaultHomeSettings);
     const defs = host.home("sto(floor(sin(10^100)*10^12),pB)", defaultHomeSettings).defs;
     expect(defs.flatMap((d) => ("set" in d ? [d.set.facts?.warn] : []))).toEqual(["unchecked"]);
-    expect(host.home("pB+1", defaultHomeSettings).result.warn).toBe("unchecked");
+    expect(host.home("pB+1", defaultHomeSettings).result.facts.warn).toBe("unchecked");
   });
 
   it("a restore fills the table: a name replayed lends its facts through a symbolic value", async () => {
@@ -50,7 +50,7 @@ describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
     ];
     const next = await fresh();
     next.restore(applyDefChanges([], defs));
-    expect(next.home("subst(S,y=0)", defaultHomeSettings).result.warn).toBe("unchecked");
+    expect(next.home("subst(S,y=0)", defaultHomeSettings).result.facts.warn).toBe("unchecked");
   });
 
   it("Solve, an analysis and a unit job leave the table as Giac holds it, with no read of their own (audit, round 2)", async () => {
@@ -75,7 +75,7 @@ describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
       expect([...inner.stored]).toEqual([...held()]);
     }
     host.home("Y:=1", defaultHomeSettings);
-    expect(host.home("X+1", defaultHomeSettings).result.warn).toBe("unchecked");
+    expect(host.home("X+1", defaultHomeSettings).result.facts.warn).toBe("unchecked");
   });
   it("a log stored before G65 holding the \"other\" entry x:=y:=3: a relaunch turns it into x and y, and purging both leaves them free (F58)", async () => {
     const old: DefEntry[] = [{ name: "x", kind: "other", cmds: ["x:=y:=3"], preview: "3", view: "cas", time: 1 }];

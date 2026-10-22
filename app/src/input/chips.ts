@@ -3,19 +3,17 @@
 // `\ans` and a constant `\const{ID}{symbol}`. Each chip is one MathLive macro the cursor cannot enter; the
 // second argument is only what the chip shows. The value lives in the entry's chip table, which each history
 // item stores beside its entry LaTeX, so the parser never waits for an engine or the Find index.
-import type { PrecisionWarn } from "../engine/format.ts";
+import type { ValueFacts } from "../engine/types.ts";
 
-export interface Chip {
+/** The chip's facts are ValueFacts (G76): `exact` false when `value` is not the exact value (a rounded decimal, a
+ *  constant with an uncertainty), so a result computed from it is never "="; a result chip that is not exact keeps the
+ *  significant digits confirmed when it was shown and its ⚠ reason, which the next line keeps (R65, decisions M4-5).
+ *  `reliableDigits` may be absent (stored chips and constants have none): the same as null. */
+export interface Chip extends Omit<ValueFacts, "reliableDigits">, Partial<Pick<ValueFacts, "reliableDigits">> {
   /** Giac text the parser puts in place of the chip: an exact text (`1/3`, `sqrt(2)`) or a decimal with every confirmed digit. */
   value: string;
-  /** False when `value` is not the exact value (a rounded decimal, a constant with an uncertainty): a result computed from it is never "=". */
-  exact: boolean;
   /** A constant's standard uncertainty (CODATA), absent when it is exact. */
   unc?: string;
-  /** A result chip that is not exact: the significant digits confirmed when it was shown (null: not limited), R65. */
-  reliableDigits?: number | null;
-  /** A result chip that is not exact: its ⚠ reason, which the next line keeps (R65, decisions M4-5). */
-  warn?: PrecisionWarn;
 }
 
 /** Keys: `res:<k>` for `\res{k}{…}`, `const:<ID>` for `\const{ID}{…}`, `ans` for `\ans` (filled at Enter). */

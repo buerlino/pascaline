@@ -15,6 +15,7 @@
 // give: each evaluation raises it with its own precision (decisions M4-6). A stored variable holding a float carries the
 // facts it was stored with (defs.ts); a result computed from it inherits them, and is checked again with the variable
 // moved in its last confirmed digit (decisions M4-7).
+import type { ValueFacts } from "./types.ts";
 import {
   confirmedDigits,
   decimalFromRational,
@@ -595,12 +596,9 @@ function partsOf(reT: string, imT: string, shape: Shape, keep: number, asked: nu
   return out;
 }
 
-/** One element's facts (the scalar form of HomeResult's precision fields). */
-export interface ElementFacts {
+/** One element's facts (ValueFacts with its value; `why` is the whole result's, never an element's). */
+export interface ElementFacts extends ValueFacts {
   value: ComplexValue;
-  exactRational: boolean;
-  reliableDigits: number | null;
-  warn?: PrecisionWarn;
   /** The exact numerator or denominator has more than maxExactDigits digits. */
   big: boolean;
   /** G50f1: the functions Giac gets wrong on complex arguments that made this value unaudited (why.unaudited). */
@@ -624,7 +622,7 @@ function confirmedComplex(a: ComplexValue, b: ComplexValue, aPrecision: number, 
  * `exp(10^-70)-1` is 0 at any working precision. It gets ⚠ without a count, never ≈ 0 (owner, 2026-10-13, G3).
  */
 function zeroUnconfirmed(f: ElementFacts): ElementFacts {
-  return !f.exactRational && !f.warn && isZero(f.value.re) && isZero(f.value.im) ? { ...f, warn: "unchecked" } : f;
+  return !f.exact && !f.warn && isZero(f.value.re) && isZero(f.value.im) ? { ...f, warn: "unchecked" } : f;
 }
 
 /** Digits of an integer literal from which a root beside it makes Giac's symbolic re and im unsafe (G58: acos(120^7.5)
@@ -665,7 +663,7 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
     const b = rationalValue(im[k]!, P);
     if (!a || !b) return null;
     const big = [a.p, a.q, b.p, b.q].some((x) => (x < 0n ? -x : x).toString().length > maxExactDigits);
-    return { value: { re: a.v, im: b.v }, exactRational: true, reliableDigits: null, big };
+    return { value: { re: a.v, im: b.v }, exact: true, reliableDigits: null, big };
   });
   if (facts.every((f) => f !== null)) return facts as ElementFacts[];
   // G50: the value is read from the exact text with the functions Giac gets wrong on complex arguments replaced
@@ -683,7 +681,7 @@ export function exactFacts(giac: Giac, name: string, shape: Shape, digits: numbe
       giac.eval(`${ICDF_FAILED}:=0`);
       const out = exactFactsOf(giac, name, shape, digits, P, facts, null, true, erfText);
       const failed = giac.eval(ICDF_FAILED).trim() !== "0";
-      return out && failed ? out.map((f) => (f.exactRational ? f : { ...f, warn: "unaudited" as const })) : out;
+      return out && failed ? out.map((f) => (f.exact ? f : { ...f, warn: "unaudited" as const })) : out;
     } finally {
       giac.eval(`purge(${ICDF_FAILED})`);
     }
@@ -760,7 +758,7 @@ function exactFactsOf(
       at = precs[i]!;
     }
     reliable = Math.min(reliable, A[k]!.short ?? P, B[k]!.short ?? P);
-    return zeroUnconfirmed({ value: { re: value.re, im: value.im }, exactRational: false, reliableDigits: reliable, big: false, at });
+    return zeroUnconfirmed({ value: { re: value.re, im: value.im }, exact: false, reliableDigits: reliable, big: false, at });
   });
 }
 
@@ -772,7 +770,7 @@ function exactFactsOf(
  * through Giac is a second one. One Giac call; false when that route gives no number of the shape (nothing compared).
  */
 export function numericDisagrees(giac: Giac, floatText: (at: number) => string, facts: readonly ElementFacts[], shape: Shape, digits: number): boolean {
-  const checked = (f: ElementFacts): boolean => !f.exactRational && f.reliableDigits !== null && !f.warn && f.at !== undefined;
+  const checked = (f: ElementFacts): boolean => !f.exact && f.reliableDigits !== null && !f.warn && f.at !== undefined;
   if (!facts.some(checked)) return false;
   const at = Math.max(...facts.map((f) => f.at ?? 0));
   const F = valueParts(giac, forValue(giac, floatText(at)), shape, at, at + 2, digits);
@@ -842,7 +840,7 @@ function doubleDigits(v: DecimalValue): DecimalValue {
  */
 export function integratedFacts(facts: readonly ElementFacts[]): ElementFacts[] {
   return facts.map((f) =>
-    f.exactRational ? f : { ...f, value: { re: doubleDigits(f.value.re), im: doubleDigits(f.value.im) }, reliableDigits: null, warn: "unaudited" as const },
+    f.exact ? f : { ...f, value: { re: doubleDigits(f.value.re), im: doubleDigits(f.value.im) }, reliableDigits: null, warn: "unaudited" as const },
   );
 }
 
@@ -857,7 +855,7 @@ function exactElements(giac: Giac, name: string, shape: Shape, P: number): (Elem
   return re.map((r, k) => {
     const a = rationalValue(r, P);
     const b = rationalValue(im[k]!, P);
-    return a && b ? { value: { re: a.v, im: b.v }, exactRational: true, reliableDigits: null, big: false } : null;
+    return a && b ? { value: { re: a.v, im: b.v }, exact: true, reliableDigits: null, big: false } : null;
   });
 }
 
@@ -896,7 +894,7 @@ function floatFactsOf(
     v.map((value, k) =>
       zeroUnconfirmed({
         value: { re: value.re, im: value.im },
-        exactRational: false,
+        exact: false,
         reliableDigits: Math.min(reliable(k), P, value.short ?? P),
         big: false,
         ...(warn ? { warn } : {}),
@@ -980,7 +978,7 @@ export function doubleFallback(giac: Giac, name: string, input: string, digits: 
   giac.eval(`${name}:=pasd`);
   return {
     value: out[0]!,
-    exactRational: false,
+    exact: false,
     reliableDigits: Math.min(digits, DOUBLE_DIGITS),
     warn: isAudited(input) ? "unchecked" : "unaudited",
     big: false,
@@ -1040,18 +1038,18 @@ function floatPathFactsOf(
   if (!shape) return { error: outA };
   const A = read(W, once ? name : "pasf", shape);
   if (!A) return { error: outA };
-  if (once) return { facts: A.map((value) => ({ value: { re: value.re, im: value.im }, exactRational: false, reliableDigits: Math.min(digits, W - 10, value.short ?? W), warn: "unchecked", big: false })), shape };
+  if (once) return { facts: A.map((value) => ({ value: { re: value.re, im: value.im }, exact: false, reliableDigits: Math.min(digits, W - 10, value.short ?? W), warn: "unchecked", big: false })), shape };
   const outB = run(W + 20, name);
   const B = isError(outB) ? null : read(W + 20, name, shape);
   if (!B) {
     giac.eval(`${name}:=pasf`);
-    return { facts: A.map((value) => ({ value: { re: value.re, im: value.im }, exactRational: false, reliableDigits: Math.min(digits, W - 10, value.short ?? W), warn: "unchecked", big: false })), shape };
+    return { facts: A.map((value) => ({ value: { re: value.re, im: value.im }, exact: false, reliableDigits: Math.min(digits, W - 10, value.short ?? W), warn: "unchecked", big: false })), shape };
   }
   return {
     facts: B.map((value, k) =>
       zeroUnconfirmed({
         value: { re: value.re, im: value.im },
-        exactRational: false,
+        exact: false,
         reliableDigits: Math.min(confirmedComplex(A[k]!, value, W, W), valuePrecision(digits), A[k]!.short ?? W, value.short ?? W),
         big: false,
       }),

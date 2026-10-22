@@ -31,7 +31,7 @@ describe.skipIf(!giacAvailable())("copySourceOf equals the Session item's copy s
         cancel: () => Promise.resolve(),
         home: (giac: string, s: { digits: number; angle: "rad" | "deg" }): Promise<HomeOutcome> => {
           const r = host.home(giac, { ...defaultHomeSettings, digits: s.digits, angle: s.angle }).result;
-          return Promise.resolve({ ok: r.ok, display: r.display, approximate: r.approximate, exactRational: r.exactRational, reliableDigits: r.reliableDigits, full: r.full, ...(r.exact !== undefined ? { exact: r.exact } : {}), ...(r.warn ? { warn: r.warn } : {}), ...(r.value ? { value: r.value } : {}) });
+          return Promise.resolve({ ok: r.ok, display: r.display, approximate: r.approximate, facts: r.facts, full: r.full, ...(r.exact !== undefined ? { exact: r.exact } : {}), ...(r.value ? { value: r.value } : {}) });
         },
       });
       const s = new Session(calc, memoryKv());

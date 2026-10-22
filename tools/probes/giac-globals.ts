@@ -32,7 +32,7 @@ function snap(host: EngineHost): Snap {
   const s: Snap = {};
   for (const i of HOME) {
     const r = host.home(i, home).result;
-    s[`home ${i}`] = `${r.display} exactRational=${r.exactRational} rd=${r.reliableDigits} warn=${r.warn ?? "-"}`;
+    s[`home ${i}`] = `${r.display} exact=${r.facts.exact} rd=${r.facts.reliableDigits} warn=${r.facts.warn ?? "-"}`;
   }
   for (const i of CAS) {
     const r = host.cas(i, cas).result;

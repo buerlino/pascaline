@@ -616,8 +616,8 @@ export class EngineHost implements FactsHost {
   /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). */
   private static factsOf(r: HomeResult | undefined, digits: number): NameFacts | null {
     if (!r || !r.ok) return null;
-    if (!r.value && !r.items) return { reliableDigits: null, warn: "unchecked" }; // a symbolic value with a float in it
-    return { reliableDigits: r.reliableDigits, ...(r.warn ? { warn: r.warn } : {}) };
+    if (!r.value && !r.items) return { exact: false, reliableDigits: null, warn: "unchecked" }; // a symbolic value with a float in it
+    return { exact: false, reliableDigits: r.facts.reliableDigits, ...(r.facts.warn ? { warn: r.facts.warn } : {}) };
   }
 
   /**
@@ -648,7 +648,7 @@ export class EngineHost implements FactsHost {
     // G49f1: the facts an inexact chip or constant lends to a function defined from it (its value is put in).
     const lent: NameFacts[] = [
       ...held.filter((k) => !chips![k]!.exact).map((k) => chipNameFacts(chips![k]!)),
-      ...(consts !== undefined && inexactConstsIn(input, consts).length > 0 ? [{ reliableDigits: null, inexact: true as const }] : []),
+      ...(consts !== undefined && inexactConstsIn(input, consts).length > 0 ? [{ exact: false, reliableDigits: null, inexact: true as const }] : []),
     ];
     const inexactIn = lent.length > 0;
     for (const k of keep) {
@@ -661,7 +661,7 @@ export class EngineHost implements FactsHost {
       if (!consts || (stateful && !asg) || this.post?.flagsChanged) return out;
       const body = asg ? simpleAssignment(named)!.rhs : named;
       const n = constUncDigits(this.giac, body, consts, out.result, Math.trunc(out.result.digits ?? s.digits));
-      return n === undefined ? out : { ...out, result: { ...out.result, uncDigits: n } };
+      return n === undefined ? out : { ...out, result: { ...out.result, facts: { ...out.result.facts, uncDigits: n } } };
     } finally {
       if (keep.size) this.giac.eval(`purge(${[...keep].map((k) => CHIP_PREFIX + k).join(",")})`);
       this.chipFacts.clear();
@@ -710,7 +710,7 @@ export class EngineHost implements FactsHost {
       const read = readsFacts(this, post.reads).facts;
       const fn = post.reads.fn;
       const facts = fn ? fnFacts(lent, read) : EngineHost.factsOf(result, digits);
-      const inexact = !fn && facts !== null && (inexactIn || result.warn !== undefined);
+      const inexact = !fn && facts !== null && (inexactIn || result.facts.warn !== undefined);
       // G48: a symbolic value's facts count only when they say it is not exact (a float in it, a ⚠).
       const own = inexact ? { ...facts, inexact: true as const } : result.value || result.items ? facts : null;
       defs = this.defsAfter(input, ran, result.display, storeFacts(own, lent, read), fn ? facts : null, "home", digits, s.angle, post);
@@ -756,7 +756,7 @@ export class EngineHost implements FactsHost {
     });
     const t0 = performance.now();
     const fail = (text: string, error: CasError): { result: CasResult; defs: DefChange[] } => ({
-      result: { ok: false, text, latex: "", timedOut: error === "timeout", error, engineMs: performance.now() - t0 },
+      result: { ok: false, text, latex: "", timedOut: error === "timeout", error, engineMs: performance.now() - t0, facts: { exact: false, reliableDigits: null } },
       defs: [],
     });
     // P9 (docs/04 section 2.9): typed decimals are exact rationals, as in Home; approx() gives decimals.
@@ -791,9 +791,10 @@ export class EngineHost implements FactsHost {
       if (dbl === null) return fail(text, isTimeout(text) ? "timeout" : "engine");
       const why = { unaudited: unauditedIn(body) };
       const engineMs = performance.now() - t0;
-      if ("text" in dbl) return { result: { ok: true, text: dbl.text, latex: dbl.text, timedOut: false, engineMs, approximate: true, warn: "unaudited", why }, defs: [] };
-      const numeric = { ...resultFromFacts(dbl.facts, dbl.shape, digitsSet, "numeric", true, engineMs), why };
-      return { result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs, numeric }, defs: [] };
+      if ("text" in dbl) return { result: { ok: true, text: dbl.text, latex: dbl.text, timedOut: false, engineMs, approximate: true, facts: { exact: false, reliableDigits: null, warn: "unaudited", why } }, defs: [] };
+      const r = resultFromFacts(dbl.facts, dbl.shape, digitsSet, "numeric", true, engineMs);
+      const numeric = { ...r, facts: { ...r.facts, why } };
+      return { result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs, numeric, facts: numeric.facts }, defs: [] };
     }
     const stateful = isStateful(input);
     // A call to a stored function that stores (inc(x):={c:=c+1;c}) must not run again either, assigned or not.
@@ -867,15 +868,15 @@ export class EngineHost implements FactsHost {
       const facts = read && integrated ? integratedFacts(read) : read;
       if (facts) {
         let numeric = resultFromFacts(facts, shape, digits, "numeric", true, performance.now() - t0);
-        if (unverified) numeric.warn = numeric.warn ?? "unchecked";
+        if (unverified) numeric.facts = { ...numeric.facts, warn: numeric.facts.warn ?? "unchecked" };
         if (asked !== null) numeric.digits = asked;
         const body = asg ? asg.rhs : input;
         const why = whyOf(facts, single ? null : exactInput);
-        if (why) numeric.why = why;
+        if (why) numeric.facts = { ...numeric.facts, why };
         const post = after();
         numeric = inherited(this, numeric, post.reads, single || post.flagsChanged ? null : exactInput, digits, Math.trunc(s.digits));
         return {
-          result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric },
+          result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs: performance.now() - t0, numeric, facts: numeric.facts },
           defs: defsOf(post, numeric.display, EngineHost.factsOf(numeric, Math.trunc(s.digits))),
         };
       }
@@ -920,10 +921,9 @@ export class EngineHost implements FactsHost {
         timedOut: false,
         engineMs: performance.now() - t0,
         ...(approximate ? { approximate } : {}),
-        ...(warn ? { warn } : {}),
-        ...(why ? { why } : {}),
+        facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) },
       },
-      defs: defsOf(post, shown, unchecked ? { reliableDigits: null, warn: "unchecked", inexact: true } : null),
+      defs: defsOf(post, shown, unchecked ? { exact: false, reliableDigits: null, warn: "unchecked", inexact: true } : null),
     };
   }
 

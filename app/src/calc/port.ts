@@ -2,12 +2,12 @@
 // What the views need from the maths engine. The real implementation (calc/engine.ts) wraps MathEngine;
 // the UI never talks to Giac directly (CLAUDE.md).
 
-import type { ComplexValue, NumberFormat as EngineFormat, PrecisionWarn } from "../engine/format.ts";
-import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRequest, TableRequest } from "../engine/types.ts";
+import type { ComplexValue, NumberFormat as EngineFormat } from "../engine/format.ts";
+import type { AnalysisRequest, AnalysisResult, HomeResult, SolveOutcome, SolveRequest, TableRequest, ValueFacts } from "../engine/types.ts";
 import type { ChipFactsTable } from "../engine/chipFacts.ts";
 export type { ChipEntry, ChipFactsTable } from "../engine/chipFacts.ts";
 
-export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest } from "../engine/types.ts";
+export type { AnalysisRequest, AnalysisResult, HomeResult, KnownValue, SolveOutcome, SolveRequest, SolveRoot, TableRequest, ValueFacts } from "../engine/types.ts";
 export type { UserName } from "../engine/defs.ts";
 import type { UserName } from "../engine/defs.ts";
 import type { Refusal } from "../engine/converge.ts";
@@ -46,10 +46,10 @@ export interface HomeOutcome {
   exact?: string;
   /** Why it failed, for the app's own translated message. */
   error?: CalcError;
-  /** The value is exactly p/q or an integer; with the format this decides "=". */
-  exactRational: boolean;
-  /** Digits confirmed by the agreement check; null = exact. */
-  reliableDigits: number | null;
+  /** How far the value can be trusted, as the engine sent it (G76): `exact` with the format decides "="; `warn` ⚠
+   *  although the digits agree (markOf, format.ts), with `why` its reasons; `uncDigits` the digits a constant's
+   *  uncertainty leaves. */
+  facts: ValueFacts;
   /** The text to copy and the `\res` chip value: the exact text or P digits. */
   full: string;
   /** What a stateful input defined (Find live items). */
@@ -57,8 +57,6 @@ export interface HomeOutcome {
   /** Elements of a numeric list or matrix (rows flattened, with `shape` for a matrix). */
   items?: HomeResult[];
   shape?: [number, number];
-  /** ⚠ although the digits agree: an un-audited function's float, or a value evaluated only once (markOf, format.ts). */
-  warn?: PrecisionWarn;
   /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): drawn with these, not the digits setting. */
   digits?: number;
   /** Giac latex() of a result that is not a number (raw; the view tidies it and draws it, as in CAS). */
@@ -80,8 +78,9 @@ export interface CasOutcome {
   numeric?: HomeResult;
   /** A true or false that rests on a float (an == or ≠ test, R18f1), or a non-number with a float in it (G27). */
   approximate?: boolean;
-  /** The mark is ⚠: that float comes from an unaudited function (R18f2), or sits in a non-number nobody checked (G27). */
-  warn?: PrecisionWarn;
+  /** The facts of a non-number (G76): `warn` ⚠ when its float comes from an unaudited function (R18f2) or sits in a
+   *  non-number nobody checked (G27), `why` its reasons. A number's are `numeric.facts`. */
+  facts: ValueFacts;
   /** The stored variables the input read, with the view that stored each (F28); absent when there is none. */
   uses?: { name: string; preview: string; view: "home" | "cas" }[];
   /** G67: the input changed one of the engine's settings, which was put back: the result line says it was not kept. */

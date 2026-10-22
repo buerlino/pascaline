@@ -26,11 +26,11 @@ async function engineCalc(): Promise<Calc> {
     cancel: () => Promise.resolve(),
     home: (giac: string, s: { digits: number; angle: "rad" | "deg" }): Promise<HomeOutcome> => {
       const r = host.home(giac, { ...defaultHomeSettings, digits: s.digits, angle: s.angle }).result;
-      return Promise.resolve({ ok: r.ok, display: r.display, approximate: r.approximate, exactRational: r.exactRational, reliableDigits: r.reliableDigits, full: r.full, ...(r.value ? { value: r.value } : {}) });
+      return Promise.resolve({ ok: r.ok, display: r.display, approximate: r.approximate, facts: r.facts, full: r.full, ...(r.value ? { value: r.value } : {}) });
     },
     cas: (giac: string, s: { digits: number; angle: "rad" | "deg" }): Promise<CasOutcome> => {
       const r = host.cas(giac, { ...defaultCasSettings, digits: s.digits, angle: s.angle }).result;
-      return Promise.resolve({ ok: r.ok, text: r.text, latex: r.latex, ...(r.full !== undefined ? { full: r.full } : {}) });
+      return Promise.resolve({ ok: r.ok, text: r.text, latex: r.latex, facts: r.facts, ...(r.full !== undefined ? { full: r.full } : {}) });
     },
   });
 }

@@ -17,7 +17,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EngineHost, type GiacApi } from "../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
-import { defaultHomeSettings, type HomeResult, type HomeSettings } from "../../app/src/engine/homeEval.ts";
+import { defaultHomeSettings, precisionFacts, type HomeResult, type HomeSettings } from "../../app/src/engine/homeEval.ts";
 import { defaultCasSettings } from "../../app/src/engine/types.ts";
 import { markOf, type DecimalValue } from "../../app/src/engine/format.ts";
 import { defaultSolveSettings, solve1 } from "../../app/src/engine/solve1.ts";
@@ -276,7 +276,7 @@ interface Got {
 }
 
 function homeGot(r: HomeResult, want: Z | string, digits = 12): Got {
-  const m = markOf(r, { format: "STD", digits });
+  const m = markOf(precisionFacts(r), { format: "STD", digits });
   const mark = m ? `${m.mark}${m.mark === "⚠" && m.n !== undefined ? m.n : ""}` : "";
   if (!r.ok) return { verdict: "error", shown: r.display.slice(0, 60), mark };
   if (typeof want === "string") return { verdict: r.display === want ? "right" : "WRONG", shown: r.display, mark };
@@ -396,7 +396,7 @@ const one = (x: string | string[] | undefined): string => (Array.isArray(x) ? x[
 const many = (x: string | string[] | undefined): string[] => (Array.isArray(x) ? x : [x!]);
 
 function homeShown(r: HomeResult, digits: number): string {
-  const m = markOf(r, { format: "STD", digits });
+  const m = markOf(precisionFacts(r), { format: "STD", digits });
   return `${m ? `${m.mark}${m.n ?? ""} ` : ""}${r.ok ? r.display : `error ${r.display.slice(0, 40)}`}`;
 }
 

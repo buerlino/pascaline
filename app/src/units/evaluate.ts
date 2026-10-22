@@ -215,7 +215,7 @@ function rationalQuotient(num: string, den: string): string | null {
 /** Home's facts for one number, as a HomeResult (display at the digits setting, the mark's facts, the exact text). */
 function result(facts: ElementFacts[], exact: string | undefined, s: HomeSettings, inexact: boolean, approximate: boolean): HomeResult {
   // A constant with an uncertainty went in: never "=" (decisions M4-4), as in Home.
-  const fs = inexact ? facts.map((f) => ({ ...f, exactRational: false })) : facts;
+  const fs = inexact ? facts.map((f) => ({ ...f, exact: false })) : facts;
   const r = resultFromFacts(fs, { kind: "scalar" }, Math.trunc(s.digits), "exact", approximate);
   return { ...r, ...(exact !== undefined && exact.length <= FULL_EXACT_MAX ? { exact, full: exact } : {}) };
 }
@@ -369,7 +369,7 @@ export function unitEval(giac: Giac, job: UnitJob, s: HomeSettings): Quantity | 
   if (exact !== null) {
     const r = rationalValue(exact, valuePrecision(Math.trunc(s.digits)))!;
     const big = [r.p, r.q].some((x) => (x < 0n ? -x : x).toString().length > s.maxExactDigits);
-    return done(result([{ value: { re: r.v, im: rationalValue("0")!.v }, exactRational: true, reliableDigits: null, big }], exact, s, job.inexact, false), exact);
+    return done(result([{ value: { re: r.v, im: rationalValue("0")!.v }, exact: true, reliableDigits: null, big }], exact, s, job.inexact, false), exact);
   }
   if (job.endLog !== undefined) {
     // The level of a ratio at or below 0 is not a real number: refuse it before taking the log.

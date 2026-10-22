@@ -6,19 +6,16 @@
 // confirmed digits cap the result, its warn passes on, and the perturbation check moves it in its last confirmed
 // digit. An exact chip (decisions M4-4) is put in as a literal, as before. Synchronous, UI-free. Only erasable
 // TypeScript syntax.
+import type { ValueFacts } from "./types.ts";
 import type { NameFacts } from "./defs.ts";
-import type { PrecisionWarn } from "./format.ts";
 import { floatsAsEvalf } from "./homeEval.ts";
 import { hasFloat } from "./numeric.ts";
 
 /** A result the input holds as a chip: its value as Giac text (`0.746824132812427…`, `1/3`), the significant digits
  *  confirmed when it was shown (null: not limited), its warn, and whether it is exact (M4-4: `=`, or an exact
  *  symbolic value). Keyed by the k after `pasr_`. */
-export interface ChipEntry {
+export interface ChipEntry extends ValueFacts {
   value: string;
-  reliableDigits: number | null;
-  warn?: PrecisionWarn;
-  exact: boolean;
 }
 export type ChipFactsTable = Readonly<Record<string, ChipEntry>>;
 
@@ -58,5 +55,5 @@ export function chipCommand(k: string, e: ChipEntry): string {
 
 /** The facts a named chip lends the result, as a stored variable's (M4-7); never exact. */
 export function chipNameFacts(e: ChipEntry): NameFacts {
-  return { reliableDigits: e.reliableDigits, ...(e.warn ? { warn: e.warn } : {}), inexact: true };
+  return { exact: false, reliableDigits: e.reliableDigits, ...(e.warn ? { warn: e.warn } : {}), inexact: true };
 }

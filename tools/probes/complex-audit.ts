@@ -16,7 +16,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EngineHost } from "../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
-import { defaultHomeSettings } from "../../app/src/engine/homeEval.ts";
+import { defaultHomeSettings, precisionFacts } from "../../app/src/engine/homeEval.ts";
 import { ANGLE_IN, ANGLE_OUT, rewriteAngles } from "../../app/src/input/angles.ts";
 import { markOf } from "../../app/src/engine/format.ts";
 
@@ -138,7 +138,7 @@ for (const [f, fpy] of Object.entries(FUNCTIONS)) {
     const fz = fpy.replaceAll("z", "(z)");
     for (const d of HOME_DIGITS) {
       const r = host.home(input, { ...defaultHomeSettings, digits: d, angle: "rad", workDigits: Math.max(30, d + 10) }).result;
-      const m = r.ok ? markOf(r, { format: "STD", digits: d }) : null;
+      const m = r.ok ? markOf(precisionFacts(r), { format: "STD", digits: d }) : null;
       const mark = m ? `${m.mark}${m.n !== undefined ? ` ${m.n}` : ""}` : "-";
       // `full` is the exact text when Giac's exact result is kept (sqrt(2)/2*(1+i)); only a decimal is compared.
       const keys = [`${input}|${d}|display`, ...(r.full === r.exact ? [] : [`${input}|${d}|full`])];
@@ -151,7 +151,7 @@ for (const [f, fpy] of Object.entries(FUNCTIONS)) {
       const d = 12;
       const typed = rewriteAngles(input);
       const r = host.home(typed, { ...defaultHomeSettings, digits: d, angle: "deg", workDigits: 30 }).result;
-      const m = r.ok ? markOf(r, { format: "STD", digits: d }) : null;
+      const m = r.ok ? markOf(precisionFacts(r), { format: "STD", digits: d }) : null;
       const mark = m ? `${m.mark}${m.n !== undefined ? ` ${m.n}` : ""}` : "-";
       const fdeg = Object.hasOwn(ANGLE_IN, f) ? fpy.replaceAll("z", "((z)*pi/180)") : ANGLE_OUT.has(f) ? `(${fz})*180/pi` : fz;
       const keys = [`${input}|deg|display`, ...(r.full === r.exact ? [] : [`${input}|deg|full`])];

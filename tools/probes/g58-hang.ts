@@ -25,5 +25,5 @@ for (const input of process.argv.slice(2)) {
   const t0 = performance.now();
   const { result: r } = host.home(input, settings);
   const ms = performance.now() - t0;
-  console.log(`${input.padEnd(40)} ${ms.toFixed(0).padStart(6)} ms  ${r.ok ? "" : `error ${r.error} `}${r.display.slice(0, 60)} r=${r.reliableDigits}`);
+  console.log(`${input.padEnd(40)} ${ms.toFixed(0).padStart(6)} ms  ${r.ok ? "" : `error ${r.error} `}${r.display.slice(0, 60)} r=${r.facts.reliableDigits}`);
 }

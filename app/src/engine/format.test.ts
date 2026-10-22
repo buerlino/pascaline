@@ -180,7 +180,7 @@ describe("FIX (decimals after the point)", () => {
   });
   it("marks: a value drawn in the SCI fallback is never = unless shown whole; zero stays =", () => {
     const o: FormatOptions = { format: "FIX", digits: 12, fixed: 4 };
-    const ex = (s: string) => ({ value: { re: decimalFromString(s)!, im: ZERO_VALUE }, exactRational: true, reliableDigits: null });
+    const ex = (s: string) => ({ value: { re: decimalFromString(s)!, im: ZERO_VALUE }, exact: true, reliableDigits: null });
     expect(markOf(ex("4.7e-6"), o)).toEqual({ mark: "=" }); // 4.7000E-6 is the value
     expect(markOf(ex("1.23456e-6"), o)).toEqual({ mark: "≈" });
     expect(markOf(ex("0"), o)).toEqual({ mark: "=" });
@@ -248,9 +248,9 @@ describe("PFX: SI prefix display (docs/04 2.7)", () => {
 describe("markOf: the mark per format (docs/04 2.4)", () => {
   const v = (s: string) => decimalFromString(s)!;
   const real = (s: string): ComplexValue => ({ re: v(s), im: ZERO_VALUE });
-  const exact = (s: string) => ({ value: real(s), exactRational: true, reliableDigits: null });
-  const quarter = { value: { re: decimalFromRational(1n, 4n), im: ZERO_VALUE }, exactRational: true, reliableDigits: null };
-  const third = { value: { re: decimalFromRational(1n, 3n), im: ZERO_VALUE }, exactRational: true, reliableDigits: null };
+  const exact = (s: string) => ({ value: real(s), exact: true, reliableDigits: null });
+  const quarter = { value: { re: decimalFromRational(1n, 4n), im: ZERO_VALUE }, exact: true, reliableDigits: null };
+  const third = { value: { re: decimalFromRational(1n, 3n), im: ZERO_VALUE }, exact: true, reliableDigits: null };
   const STD = { format: "STD", digits: 12 } as const;
   it("1/4 is = in STD, SCI, ENG and PFX, ≈ in FIX 1 (0.3)", () => {
     for (const format of ["STD", "SCI", "ENG", "PFX"] as const) expect(markOf(quarter, { format, digits: 12 })).toEqual({ mark: "=" });
@@ -266,31 +266,31 @@ describe("markOf: the mark per format (docs/04 2.4)", () => {
     expect(markOf(exact("1e600"), STD)).toEqual({ mark: "=" });
   });
   it("a non-rational value is ≈ when enough digits are confirmed, ⚠ n when not", () => {
-    const f = { value: real("1.41421356237309504880"), exactRational: false, reliableDigits: 20 };
+    const f = { value: real("1.41421356237309504880"), exact: false, reliableDigits: 20 };
     expect(markOf(f, STD)).toEqual({ mark: "≈" });
     expect(markOf(f, { format: "STD", digits: 30 })).toEqual({ mark: "⚠", n: 20 });
     expect(markOf(f, { format: "FIX", digits: 12, fixed: 25 })).toEqual({ mark: "⚠", n: 20 });
     expect(markOf(f, { format: "FIX", digits: 12, fixed: 4 })).toEqual({ mark: "≈" });
   });
   it("an un-audited float is ⚠ even when its digits agree", () => {
-    expect(markOf({ value: real("0.576724807757"), exactRational: false, reliableDigits: 12, warn: "unaudited" }, STD)).toEqual({ mark: "⚠", warn: "unaudited" });
+    expect(markOf({ value: real("0.576724807757"), exact: false, reliableDigits: 12, warn: "unaudited" }, STD)).toEqual({ mark: "⚠", warn: "unaudited" });
   });
   it("a complex number takes the weaker part; an exact complex shown whole is =", () => {
-    expect(markOf({ value: { re: v("11"), im: v("-2") }, exactRational: true, reliableDigits: null }, STD)).toEqual({ mark: "=" });
-    expect(markOf({ value: { re: v("0.5"), im: decimalFromRational(1n, 3n) }, exactRational: true, reliableDigits: null }, STD)).toEqual({ mark: "≈" });
+    expect(markOf({ value: { re: v("11"), im: v("-2") }, exact: true, reliableDigits: null }, STD)).toEqual({ mark: "=" });
+    expect(markOf({ value: { re: v("0.5"), im: decimalFromRational(1n, 3n) }, exact: true, reliableDigits: null }, STD)).toEqual({ mark: "≈" });
   });
   it("a list takes its weakest element's mark; an empty list or a non-number has none", () => {
-    expect(markOf({ exactRational: true, reliableDigits: null, items: [quarter, third] }, STD)).toEqual({ mark: "≈" });
-    expect(markOf({ exactRational: true, reliableDigits: null, items: [quarter, exact("2")] }, STD)).toEqual({ mark: "=" });
-    expect(markOf({ exactRational: false, reliableDigits: 5, items: [quarter, { value: real("0.746824132812"), exactRational: false, reliableDigits: 5 }] }, STD)).toEqual({ mark: "⚠", n: 5 });
-    expect(markOf({ exactRational: true, reliableDigits: null, items: [] }, STD)).toBeNull();
-    expect(markOf({ exactRational: false, reliableDigits: null }, STD)).toBeNull();
+    expect(markOf({ exact: true, reliableDigits: null, items: [quarter, third] }, STD)).toEqual({ mark: "≈" });
+    expect(markOf({ exact: true, reliableDigits: null, items: [quarter, exact("2")] }, STD)).toEqual({ mark: "=" });
+    expect(markOf({ exact: false, reliableDigits: 5, items: [quarter, { value: real("0.746824132812"), exact: false, reliableDigits: 5 }] }, STD)).toEqual({ mark: "⚠", n: 5 });
+    expect(markOf({ exact: true, reliableDigits: null, items: [] }, STD)).toBeNull();
+    expect(markOf({ exact: false, reliableDigits: null }, STD)).toBeNull();
   });
 });
 
 describe("formatConfirmed: only confirmed digits are shown", () => {
   const v = (s: string) => decimalFromString(s)!;
-  const f = (s: string, reliableDigits: number | null) => ({ value: { re: v(s), im: ZERO_VALUE }, exactRational: false, reliableDigits });
+  const f = (s: string, reliableDigits: number | null) => ({ value: { re: v(s), im: ZERO_VALUE }, exact: false, reliableDigits });
   it("STD, SCI and ENG cut to the confirmed digits", () => {
     expect(formatConfirmed(f("0.746824132812427041600", 11), { format: "STD", digits: 30 })).toBe("0.74682413281");
     expect(formatConfirmed(f("12345.678", 3), { format: "SCI", digits: 6 })).toBe("1.23E4");
@@ -304,23 +304,23 @@ describe("formatConfirmed: only confirmed digits are shown", () => {
     const o: FormatOptions = { format: "FIX", digits: 12, fixed: 4 };
     expect(formatConfirmed(f("4.7123456e-6", 3), o)).toBe("4.71E-6");
     expect(formatConfirmed(f("4.7123456e-6", 1), o)).toBe("5E-6");
-    expect(formatConfirmed({ value: { re: v("4.7e-6"), im: ZERO_VALUE }, exactRational: true, reliableDigits: null }, o)).toBe("4.7000E-6");
+    expect(formatConfirmed({ value: { re: v("4.7e-6"), im: ZERO_VALUE }, exact: true, reliableDigits: null }, o)).toBe("4.7000E-6");
     expect(formatConfirmed(f("0.000123", 3), o)).toBe("0.0001");
   });
   it("FIX: no part of a complex number shows more digits than are confirmed (G36)", () => {
     const o: FormatOptions = { format: "FIX", digits: 12, fixed: 4 };
-    const c = (re: string, im: string, n: number) => formatConfirmed({ value: { re: v(re), im: v(im) }, exactRational: false, reliableDigits: n }, o);
+    const c = (re: string, im: string, n: number) => formatConfirmed({ value: { re: v(re), im: v(im) }, exact: false, reliableDigits: n }, o);
     expect(c("0.0123", "0.000123", 1)).toBe("0.01+1E-4*i");
     expect(c("1234.56789", "4.71234e-6", 7)).toBe("1234.568+4.7123E-6*i");
     expect(c("1.23456", "0.00123", 3)).toBe("1.23+1.23E-3*i");
-    const m = (re: string, im: string, n: number) => markOf({ value: { re: v(re), im: v(im) }, exactRational: false, reliableDigits: n }, o);
+    const m = (re: string, im: string, n: number) => markOf({ value: { re: v(re), im: v(im) }, exact: false, reliableDigits: n }, o);
     expect(m("0.0123", "0.000123", 1)).toEqual({ mark: "⚠", n: 1 });
     expect(m("1.23456", "0.00123", 3)).toEqual({ mark: "⚠", n: 3 });
   });
   it("lists and matrices", () => {
     const it2 = [f("1.5", null), f("0.333333333333333", 3)];
-    expect(formatConfirmed({ exactRational: false, reliableDigits: 3, items: it2 }, { format: "STD", digits: 12 })).toBe("[1.5,0.333]");
-    expect(formatConfirmed({ exactRational: false, reliableDigits: 3, items: [...it2, ...it2], shape: [2, 2] }, { format: "STD", digits: 12 })).toBe("[[1.5,0.333],[1.5,0.333]]");
+    expect(formatConfirmed({ exact: false, reliableDigits: 3, items: it2 }, { format: "STD", digits: 12 })).toBe("[1.5,0.333]");
+    expect(formatConfirmed({ exact: false, reliableDigits: 3, items: [...it2, ...it2], shape: [2, 2] }, { format: "STD", digits: 12 })).toBe("[[1.5,0.333],[1.5,0.333]]");
   });
 });
 

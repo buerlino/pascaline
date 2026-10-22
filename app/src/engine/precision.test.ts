@@ -4,7 +4,7 @@
 // (tests/golden/.venv, mpmath at 60 digits), as each case says. Skipped when no engine build is found (nodeGiac.ts).
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
-import { defaultHomeSettings, type HomeSettings } from "./homeEval.ts";
+import { defaultHomeSettings, precisionFacts, type HomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { markOf, type MarkInfo } from "./format.ts";
 import { MAX_EVAL_DIGITS } from "./numeric.ts";
@@ -16,13 +16,13 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     host = new EngineHost((await loadNodeGiac()).giac);
   });
   const home = (input: string, digits = 12) => host.home(input, { ...defaultHomeSettings, digits } satisfies HomeSettings).result;
-  const mark = (input: string, digits = 12): MarkInfo | null => markOf(home(input, digits), { format: "STD", digits });
+  const mark = (input: string, digits = 12): MarkInfo | null => markOf(precisionFacts(home(input, digits)), { format: "STD", digits });
 
   it("G23: sin(10^100) is confirmed at P+80, sin(10^2000) shows no digit and its escalation is bounded (oracle: mpmath at 150 digits)", async () => {
     // oracle: sin(10^100) = -0.37237612366127668826… (mpmath, 150 digits); Giac's 40- and 60-digit values are wrong.
     const r = home("sin(10^100)");
     expect(r.display).toBe("-0.372376123661");
-    expect(r.reliableDigits).toBeGreaterThanOrEqual(12);
+    expect(r.facts.reliableDigits).toBeGreaterThanOrEqual(12);
     // Deterministic cost bound: no evalf asks for more than MAX_EVAL_DIGITS digits (the 50 ms figure is the serial
     // probe tools/probes/digits-cost.ts; a wall-clock assertion fails under the parallel test run).
     const { giac } = await loadNodeGiac();
@@ -40,23 +40,23 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
       },
     });
     const hard = new EngineHost(counted).home("sin(10^2000)", defaultHomeSettings).result;
-    expect(hard.reliableDigits).toBe(0);
-    expect(markOf(hard, { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
+    expect(hard.facts.reliableDigits).toBe(0);
+    expect(markOf(precisionFacts(hard), { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
     expect(precs.length).toBeGreaterThan(2);
     expect(Math.max(...precs)).toBeLessThanOrEqual(MAX_EVAL_DIGITS);
   });
 
   it("1/4 is = and 1/3 is ≈ (derived; docs/04 2.3 #9)", () => {
-    expect(home("1/4")).toMatchObject({ display: "0.25", exactRational: true, reliableDigits: null, full: "1/4" });
+    expect(home("1/4")).toMatchObject({ display: "0.25", facts: { exact: true, reliableDigits: null }, full: "1/4" });
     expect(mark("1/4")).toEqual({ mark: "=" });
-    expect(home("1/3")).toMatchObject({ display: "0.333333333333", exactRational: true, full: "1/3" });
+    expect(home("1/3")).toMatchObject({ display: "0.333333333333", facts: { exact: true }, full: "1/3" });
     expect(mark("1/3")).toEqual({ mark: "≈" });
   });
 
   it("an irrational value is confirmed by the agreement check to at least 30 digits (derived)", () => {
     const r = home("sqrt(2)", 30);
-    expect(r.exactRational).toBe(false);
-    expect(r.reliableDigits).toBeGreaterThanOrEqual(30);
+    expect(r.facts.exact).toBe(false);
+    expect(r.facts.reliableDigits).toBeGreaterThanOrEqual(30);
     expect(r.full).toBe("sqrt(2)");
     expect(mark("sqrt(2)", 30)).toEqual({ mark: "≈" });
   });
@@ -70,21 +70,21 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
   it("a float from an un-audited routine is ⚠ and shows only the digits double and MPFR agree on (oracle)", () => {
     // oracle: sqrt(pi)/2*erf(1) = 0.746824132812427025399467436131… ; Giac's double romberg is off at the 13th digit
     const r = home("romberg(exp(-x^2),x,0,1)", 30);
-    expect(r.warn).toBe("unaudited");
-    expect(r.reliableDigits).toBe(11);
+    expect(r.facts.warn).toBe("unaudited");
+    expect(r.facts.reliableDigits).toBe(11);
     expect(r.display).toBe("0.74682413281");
-    expect(markOf(r, { format: "STD", digits: 30 })).toEqual({ mark: "⚠", n: 11, warn: "unaudited" });
+    expect(markOf(precisionFacts(r), { format: "STD", digits: 30 })).toEqual({ mark: "⚠", n: 11, warn: "unaudited" });
   });
 
   it("SB4: in [romberg(…),1/3] each element carries its own mark; the list's is the weakest (derived; oracle)", () => {
     const r = home("[romberg(exp(-x^2),x,0,1),1/3]");
     const o = { format: "STD" as const, digits: 12 };
     expect(r.items).toHaveLength(2);
-    expect(markOf(r.items![0]!, o)).toEqual({ mark: "⚠", n: 11, warn: "unaudited" }); // oracle sqrt(pi)/2*erf(1), as above
-    expect(r.items![1]).toMatchObject({ exactRational: true, reliableDigits: null }); // derived: 1/3 is exact
-    expect(r.items![1]!.warn).toBeUndefined();
-    expect(markOf(r.items![1]!, o)).toEqual({ mark: "≈" }); // derived: 1/3 shown as 0.333333333333 is rounded
-    expect(markOf(r, o)).toEqual({ mark: "⚠", n: 11, warn: "unaudited" });
+    expect(markOf(precisionFacts(r.items![0]!), o)).toEqual({ mark: "⚠", n: 11, warn: "unaudited" }); // oracle sqrt(pi)/2*erf(1), as above
+    expect(r.items![1]).toMatchObject({ facts: { exact: true, reliableDigits: null } }); // derived: 1/3 is exact
+    expect(r.items![1]!.facts.warn).toBeUndefined();
+    expect(markOf(precisionFacts(r.items![1]!), o)).toEqual({ mark: "≈" }); // derived: 1/3 shown as 0.333333333333 is rounded
+    expect(markOf(precisionFacts(r), o)).toEqual({ mark: "⚠", n: 11, warn: "unaudited" });
     expect(r.display).toBe("[0.74682413281,0.333333333333]");
   });
 
@@ -92,11 +92,11 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     // oracle: besselj(1,2) = 0.576724807756873387202448242269…
     const r = home("BesselJ(1,2)", 30);
     expect(r.display).toBe("0.57672480775687");
-    expect(markOf(r, { format: "STD", digits: 30 })).toMatchObject({ mark: "⚠", n: 14 });
+    expect(markOf(precisionFacts(r), { format: "STD", digits: 30 })).toMatchObject({ mark: "⚠", n: 14 });
   });
 
   it("an exact value Giac keeps unsimplified is proved rational: 8^(1/3) is = 2 (derived)", () => {
-    expect(home("8^(1/3)")).toMatchObject({ display: "2", exactRational: true, full: "2" });
+    expect(home("8^(1/3)")).toMatchObject({ display: "2", facts: { exact: true }, full: "2" });
     expect(mark("8^(1/3)")).toEqual({ mark: "=" });
   });
 
@@ -109,10 +109,10 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     const m = home("[[1,2],[3,4]]^-1");
     expect(m.display).toBe("[[-2,1],[1.5,-0.5]]");
     expect(m.shape).toEqual([2, 2]);
-    expect(markOf(m, { format: "STD", digits: 12 })).toEqual({ mark: "=" });
+    expect(markOf(precisionFacts(m), { format: "STD", digits: 12 })).toEqual({ mark: "=" });
     const s = home("solve(x^2=2,x)");
     expect(s.display).toBe("[-1.41421356237,1.41421356237]");
-    expect(markOf(s, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
+    expect(markOf(precisionFacts(s), { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
   });
 
   it("defined names what a stateful input defined (docs/04 3.4)", () => {
@@ -128,7 +128,7 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
   });
 
   it("sigfig rounds the exact value, half away from zero, to an exact decimal (derived; docs/04 2.5)", () => {
-    expect(home("sigfig(1/3,3)")).toMatchObject({ display: "0.333", exactRational: true });
+    expect(home("sigfig(1/3,3)")).toMatchObject({ display: "0.333", facts: { exact: true } });
     expect(mark("sigfig(1/3,3)")).toEqual({ mark: "=" });
     expect(home("sigfig(999.95,4)").display).toBe("1000");
     expect(home("sigfig(999.94,4)").display).toBe("999.9");
@@ -152,7 +152,7 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     // oracle: sin(10^22) = -0.852200849767188801772705893753…
     const r = cas("evalf(sin(10^22))");
     expect(r.text).toBe("-0.852200849767");
-    expect(r.numeric && markOf(r.numeric, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
+    expect(r.numeric && markOf(precisionFacts(r.numeric), { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
     expect(cas("1/3").numeric).toBeUndefined();
   });
 });
@@ -208,8 +208,8 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
   it("floor(sin(10^60)*10^12): wrong at 40 digits, P + 20 and P + 40 agree on 830389765219 (source: oracle, mpmath at 200 digits)", () => {
     const r = host.home("floor(sin(10^60)*10^12)", defaultHomeSettings).result;
-    expect(r).toMatchObject({ display: "830389765219", exactRational: true });
-    expect(r.why).toBeUndefined();
+    expect(r).toMatchObject({ display: "830389765219", facts: { exact: true } });
+    expect(r.facts.why).toBeUndefined();
     expect(host.home("pasans", defaultHomeSettings).result.display).toBe("830389765219"); // Ans holds the agreed value
   });
 
@@ -259,8 +259,8 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
   it("a call to a stored function that stores runs once: c:=0, inc(x):={c:=c+1;c}, inc(1) is 1 and c is 1 (source: derived, one increment of 0)", () => {
     const cases: [(i: string) => string, (i: string) => unknown][] = [
-      [(i) => host.home(i, defaultHomeSettings).result.display, (i) => host.home(i, defaultHomeSettings).result.warn],
-      [(i) => host.cas(i, defaultCasSettings).result.text, (i) => host.cas(i, defaultCasSettings).result.warn],
+      [(i) => host.home(i, defaultHomeSettings).result.display, (i) => host.home(i, defaultHomeSettings).result.facts.warn],
+      [(i) => host.cas(i, defaultCasSettings).result.text, (i) => host.cas(i, defaultCasSettings).result.facts.warn],
     ];
     for (const [run, warnOf] of cases) {
       run("c:=0");
@@ -406,7 +406,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
   it("tanh(i) is i*tan(1) = 1.55740772465*i, not Giac's coth(i) (source: oracle, mpmath tanh(1j))", () => {
     const r = home("tanh(i)");
     expect(r.display).toBe("1.55740772465*i");
-    expect(markOf(r, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
+    expect(markOf(precisionFacts(r), { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
   });
   it("a typed evalf(tanh(i)) keeps no exact text: Giac printed coth(i) (source: oracle, mpmath tanh(1j))", () => {
     const r = home("evalf(tanh(i))");
@@ -419,7 +419,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
   it("acosh(1/10+5*i) at 30 digits: Giac's symbolic re() of its ln form runs out of time, the value's evalf is read (source: oracle, mpmath acosh)", () => {
     const r = home("acosh(1/10+5*i)", 30);
     expect(r.display).toBe("2.31262688170937054957327206807+1.55118708206189191252710439312*i");
-    expect(r.warn).toBeUndefined();
+    expect(r.facts.warn).toBeUndefined();
   });
   it("fix round 1: a list argument is mapped, not handed to Giac's coth (source: oracle, mpmath tanh(1j), tanh(2j))", () => {
     expect(home("evalf(tanh([i,2*i]))").display).toBe("[1.55740772465*i,-2.18503986326*i]");
@@ -427,16 +427,16 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
   it("fix round 1: a list argument of acos at 30 digits gets MPFR digits (source: oracle, mpmath acos(1+1j), acos(2j))", () => {
     const r = home("evalf(acos([1+i,2*i]))", 30);
     expect(r.display).toBe("[0.904556894302381364127316795662-1.06127506190503565203301891621*i,1.57079632679489661923132169164-1.44363547517881034249327674027*i]");
-    expect(r.items?.map((x) => markOf(x, { format: "STD", digits: 30 }))).toEqual([{ mark: "≈" }, { mark: "≈" }]);
+    expect(r.items?.map((x) => markOf(precisionFacts(x), { format: "STD", digits: 30 }))).toEqual([{ mark: "≈" }, { mark: "≈" }]);
   });
   it("G46: in DEG a complex value of tanh goes through our definition as in RAD (source: oracle, mpmath tanh(1j) = 1.55740772465j)", () => {
     // Before G46 Giac ran in DEG, nothing was replaced, and the value was not audited (⚠, naming tanh).
     const r = host.home("evalf(tanh(i))", { ...defaultHomeSettings, angle: "deg" }).result;
     expect(r.display).toBe("1.55740772465*i");
-    expect(markOf(r, { format: "STD", digits: 12 })?.mark).toBe("≈");
-    expect(r.warn).toBeUndefined();
+    expect(markOf(precisionFacts(r), { format: "STD", digits: 12 })?.mark).toBe("≈");
+    expect(r.facts.warn).toBeUndefined();
     // A real value in DEG stays audited.
-    expect(host.home("evalf(tanh(1))", { ...defaultHomeSettings, angle: "deg" }).result.warn).toBeUndefined();
+    expect(host.home("evalf(tanh(1))", { ...defaultHomeSettings, angle: "deg" }).result.facts.warn).toBeUndefined();
   });
   it("G50f1: CAS w:=tanh(i) stores Giac's exact tanh(i); evalf(w) reads it through our definitions (source: oracle, mpmath tanh(1j))", async () => {
     const own = new EngineHost((await loadNodeGiac()).giac);
@@ -444,14 +444,14 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     const r = own.cas("evalf(w)", defaultCasSettings).result;
     // Showed -0.642092615934*i (Giac's coth(i)) with 38 confirmed digits and no warning.
     expect(r.text).toBe("1.55740772465*i");
-    expect(markOf(r.numeric!, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
+    expect(markOf(precisionFacts(r.numeric!), { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
   });
   it("G50f1: Home approx of a CAS-stored name, alone and in a sum (source: oracle, mpmath tanh(1j))", async () => {
     const own = new EngineHost((await loadNodeGiac()).giac);
     own.cas("w:=tanh(i)", defaultCasSettings);
     const r = own.home("approx(w)", defaultHomeSettings).result;
     expect(r.display).toBe("1.55740772465*i");
-    expect(markOf(r, { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
+    expect(markOf(precisionFacts(r), { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
     // Giac's own printed float (coth) is not kept as the copied text.
     expect(r.exact).toBeUndefined();
     expect(own.home("evalf(w)+1", defaultHomeSettings).result.display).toBe("1+1.55740772465*i");
@@ -462,7 +462,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     const r = own.cas("evalf(f(i))", defaultCasSettings).result;
     // Showed ⚠ -0.6*i: the one digit shown was Giac's coth(i).
     expect(r.text).toBe("1.55740772465*i");
-    expect(r.numeric?.warn).toBe("unaudited");
+    expect(r.numeric?.facts.warn).toBe("unaudited");
   });
   it("G46: in DEG a name holding tanh(i) is read through our definitions as in RAD (source: oracle, mpmath tanh(1j))", async () => {
     const own = new EngineHost((await loadNodeGiac()).giac);
@@ -470,18 +470,18 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     own.cas("w:=tanh(i)", deg);
     const r = own.cas("evalf(w)", deg).result;
     expect(r.text).toBe("1.55740772465*i");
-    expect(r.numeric?.warn).toBeUndefined();
+    expect(r.numeric?.facts.warn).toBeUndefined();
   });
   it("G50f1: a CAS assignment runs once; a name it reads holding tanh(i) makes the value unaudited, naming tanh (source: derived)", async () => {
     const own = new EngineHost((await loadNodeGiac()).giac);
     own.cas("w:=tanh(i)", defaultCasSettings);
     const r = own.cas("v:=evalf(w)", defaultCasSettings).result;
     // Showed Giac's coth value -0.642092615934*i with why {once:true}, tanh not named.
-    expect(r.numeric?.warn).toBe("unaudited");
-    expect(r.numeric?.why?.unaudited).toEqual(["tanh"]);
+    expect(r.numeric?.facts.warn).toBe("unaudited");
+    expect(r.numeric?.facts.why?.unaudited).toEqual(["tanh"]);
     const t = own.cas("u:=evalf(tanh(i))", defaultCasSettings).result;
-    expect(t.numeric?.warn).toBe("unaudited");
-    expect(t.numeric?.why?.unaudited).toEqual(["tanh"]);
+    expect(t.numeric?.facts.warn).toBe("unaudited");
+    expect(t.numeric?.facts.why?.unaudited).toEqual(["tanh"]);
   });
   it("G50f1: a function's parameter is not the stored name of the same name (source: derived)", async () => {
     const { complexReads, purgeReads } = await import("./numeric.ts");
@@ -497,7 +497,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
       expect(r.hidden).toEqual([]);
     }
     const v = own.cas("evalf(f(1))", defaultCasSettings).result;
-    expect(v.numeric?.why?.unaudited ?? []).not.toContain("tanh");
+    expect(v.numeric?.facts.why?.unaudited ?? []).not.toContain("tanh");
   });
   it("our definitions load on first use, not at engine start (start-up budget)", async () => {
     const { giac } = await loadNodeGiac();
