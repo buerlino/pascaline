@@ -6,7 +6,7 @@ import { formatComplex, markOf, type MarkInfo } from "../src/engine/format.ts";
 import type { EngineHost } from "../src/engine/host.ts";
 import { defaultHomeSettings, precisionFacts, type HomeResult } from "../src/engine/homeEval.ts";
 import { hasAngleFactor } from "../src/input/angles.ts";
-import type { Rational } from "../src/state/displayMode.ts";
+import { homeItem } from "../src/state/results.ts";
 
 /** One failed invariant: the case, the check ("a" RAD/DEG, "b" 12/30 digits, "c" copy and paste, "d" store), what differed. */
 export interface InvariantFailure {
@@ -85,37 +85,13 @@ export function checkDigits(id: string, r12: HomeResult, r30: HomeResult): { che
   return { checked: true, failure: text !== r12.display ? { id, check: "b", detail: `12 digits ${r12.display}, 30 digits rounded to 12: ${text}` } : null };
 }
 
-const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
-function rationalOf(text: string | undefined): Rational | undefined {
-  const m = text === undefined ? null : RATIONAL.exec(text.trim());
-  if (!m || m[1] === undefined || (m[2] !== undefined && BigInt(m[2]) === 0n)) return undefined;
-  return { n: m[1], d: m[2] ?? "1" };
-}
-const isDigitsText = (t: string): boolean => /\.|\d[eE][+-]?\d/.test(t);
-const FULL_LIMIT = 2048;
-
 /**
- * The CopySource the app copies from for a Home result (session.svelte.ts `finish`, home branch): `full` from the exact
- * text first, `fullExact` by the session's rule, `rational` from the exact text, and the facts spread in as the history
- * item carries them. session.copysource.test.ts pins it against a real Session item.
+ * The CopySource the app copies from for a Home result: the history item the session makes of it, by the session's own
+ * rule (state/results.ts `homeItem`, G86). session.copysource.test.ts pins it against a real Session item.
  */
 export function copySourceOf(r: HomeResult, inexactInput = false): CopySource {
-  const src: CopySource = { latex: "", status: r.ok ? "done" : "error", text: r.display };
-  if (r.value) src.value = r.value;
-  const q = r.value ? rationalOf(r.exact) : undefined;
-  if (q) src.rational = q;
-  if (r.ok) {
-    Object.assign(src, r.facts);
-    const inexact = r.approximate || inexactInput;
-    const exactText = !inexact && r.exact !== undefined && r.exact.length <= FULL_LIMIT ? r.exact : undefined;
-    const full = exactText ?? (r.full || (inexact ? undefined : r.exact));
-    if (full && full.length <= FULL_LIMIT) {
-      src.full = full;
-      const cut = r.exact !== undefined || r.value?.re.sticky === true || r.value?.im.sticky === true;
-      src.fullExact = !inexact && (full === exactText || (!cut && (r.facts.exact || !isDigitsText(full))));
-    }
-  }
-  return src;
+  const { approximate: _approximate, ...item } = homeItem(r, inexactInput);
+  return { latex: "", status: r.ok ? "done" : "error", text: r.display, ...item, ...(inexactInput ? { inexactInput: true } : {}) };
 }
 
 /** (c) A number's copy text read back by the paste reader gives the same text; the mark may get stronger (a typed number is exact), never weaker. */

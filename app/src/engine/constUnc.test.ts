@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G26: the pure parts of constUnc.ts (no engine).
 import { describe, expect, it } from "vitest";
-import { inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
+import { constFacts, inexactConstsIn, sigmaExpr, uncDigitsOf, withConstValues } from "./constUnc.ts";
 import { decimalFromString } from "./format.ts";
 
 const G = { value: "6.67430E-11", unc: "0.00015E-11" };
@@ -27,5 +27,13 @@ describe("constUnc (G26)", () => {
     expect(uncDigitsOf(d("1"), d("20"), 12)).toBe(0);
     expect(uncDigitsOf(d("0"), d("0.1"), 12)).toBe(0);
     expect(uncDigitsOf(d("5"), d("0"), 12)).toBeNull();
+  });
+});
+
+describe("constFacts (G86)", () => {
+  it("a constant with an uncertainty is not exact and never `=`; one without (or with zero) is exact", () => {
+    expect(constFacts({ value: "6.67430E-11", unc: "0.00015E-11" })).toEqual({ exact: false, reliableDigits: null, inexact: true });
+    expect(constFacts({ value: "299792458" })).toEqual({ exact: true, reliableDigits: null });
+    expect(constFacts({ value: "299792458", unc: "0" })).toEqual({ exact: true, reliableDigits: null });
   });
 });

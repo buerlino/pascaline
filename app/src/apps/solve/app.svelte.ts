@@ -208,13 +208,13 @@ export class SolveApp implements AppInstance {
       text: display,
       ...(r.value ? { value: r.value } : {}),
       ...(r.full !== undefined ? { full: r.full } : {}),
-      ...(r.facts ? { reliableDigits: r.facts.reliableDigits } : {}),
+      facts: r.facts,
     });
     if (text !== undefined && this.values[name] === display.replace("E", "e")) {
       this.copies = { ...this.copies, [name]: text };
-      // An exact rational root (reliableDigits null) stays an exact known; no facts: the shown digits.
-      const d = r.facts?.reliableDigits;
-      const c: Confirmed = typeof d === "number" ? d : d === null ? "exact" : shownDigits(display);
+      // An exact rational root (reliableDigits null) stays an exact known.
+      const d = r.facts.reliableDigits;
+      const c: Confirmed = d === null ? "exact" : d;
       this.confirmed = { ...this.confirmed, [name]: c };
       this.save();
     }

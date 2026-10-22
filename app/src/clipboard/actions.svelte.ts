@@ -12,7 +12,7 @@ import type { ClipboardPort } from "./port.ts";
 import type { CopySource, TextOptions } from "./text.ts";
 
 /** A history item as the copy texts read it: the engine's facts (R3 keeps them in `facts`) on the item itself. */
-const source = (i: HistoryItem): CopySource => ({ ...i, ...i.facts });
+const source = (i: HistoryItem): CopySource => i;
 
 // The text, paste and port code loads on first use (it is not needed to start).
 const impl = () => import("./impl.ts");

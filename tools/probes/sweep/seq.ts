@@ -13,6 +13,7 @@ import { applyDefChanges, type DefEntry } from "../../../app/src/engine/defs.ts"
 import type { ChipEntry } from "../../../app/src/engine/chipFacts.ts";
 import type { KnownValue } from "../../../app/src/engine/types.ts";
 import { knownDigits } from "../../../app/src/engine/solve.ts";
+import { chipFactsOf, chipOf as itemChip, homeItem } from "../../../app/src/state/results.ts";
 import { checkCopy, copySourceOf, type InvariantFailure } from "../../../app/scripts/invariants.ts";
 import { lcg } from "./gen.ts";
 
@@ -102,12 +103,10 @@ export interface SeqRun {
   relaunches: number;
 }
 
-/** The chip the session makes of a result (session.svelte.ts chipFor): exact ones as a literal, the others with their facts. */
+/** The chip the session makes of a result, by its own rule (state/results.ts, G86), as the engine takes it by name. */
 export function chipOf(r: HomeResult): ChipEntry | null {
-  const s = copySourceOf(r);
-  if (s.full === undefined) return null;
-  if (s.fullExact === true) return { value: s.full, exact: true, reliableDigits: null };
-  return { value: s.full, exact: false, reliableDigits: r.facts.reliableDigits, ...(r.facts.warn ? { warn: r.facts.warn } : {}) };
+  const c = itemChip({ status: r.ok ? "done" : "error", ...homeItem(r, false) });
+  return c ? chipFactsOf({ c })["c"]! : null;
 }
 
 const give = (e: unknown): string => (e instanceof Error ? e.message : String(e)).slice(0, 80);

@@ -13,6 +13,7 @@ import {
   type Mark,
   type PrecisionWarn,
 } from "../engine/format.ts";
+import type { ValueFacts } from "../engine/types.ts";
 import type { ChipTable } from "../input/chips.ts";
 import type { Rational } from "../state/displayMode.ts";
 
@@ -29,11 +30,9 @@ export interface CopySource {
   fullExact?: boolean;
   /** G46f1: the text drawn when it differs from `full` (DEG: `full` is the radian text); Copy gives it. */
   drawn?: string;
-  /** Digits confirmed by the agreement check; null (or absent) = nothing in doubt. */
-  reliableDigits?: number | null;
-  warn?: PrecisionWarn;
-  /** The value is exact (ValueFacts.exact; a history item's facts spread in). */
-  exact?: boolean;
+  /** The value's facts, whole (G86; a history item's own): `reliableDigits` the digits confirmed by the agreement check
+   *  (null = nothing in doubt), `warn`, `exact`. Absent: nothing in doubt, not claimed exact. */
+  facts?: ValueFacts;
   /** An inexact chip went into the input: never `=` (decisions M4-4). */
   inexactInput?: boolean;
   chips?: ChipTable;
@@ -78,7 +77,7 @@ export function complexText(v: ComplexValue, n: number, o: TextOptions = {}): st
 
 /** How many significant digits of a result may be copied: all that were kept (40), or the confirmed ones. */
 function copyDigits(i: CopySource): number {
-  const r = i.reliableDigits;
+  const r = i.facts?.reliableDigits;
   return r === null || r === undefined ? DECIMAL_KEEP : Math.max(1, Math.min(r, DECIMAL_KEEP));
 }
 
@@ -120,12 +119,14 @@ export function copyMark(i: CopySource): { mark: Mark; n?: number; warn?: Precis
   if (i.status !== "done") return undefined;
   const v = i.value;
   if (!v) return undefined; // not a number: no mark
-  if (i.reliableDigits !== null && i.reliableDigits !== undefined && i.reliableDigits < DECIMAL_KEEP) {
+  const f = i.facts;
+  const rd = f?.reliableDigits;
+  if (rd !== null && rd !== undefined && rd < DECIMAL_KEEP) {
     const parts = [v.re, v.im].filter((p) => !isZero(p));
-    if (parts.some((p) => p.digits.length > Math.max(1, i.reliableDigits as number))) return { mark: "⚠", n: Math.max(0, i.reliableDigits) };
+    if (parts.some((p) => p.digits.length > Math.max(1, rd))) return { mark: "⚠", n: Math.max(0, rd) };
   }
-  if (i.warn) return { mark: "⚠", warn: i.warn };
-  const exact = i.inexactInput !== true && (i.exact === true || i.rational !== undefined || (i.full !== undefined && /^-?\d+$/.test(i.full)));
+  if (f?.warn) return { mark: "⚠", warn: f.warn };
+  const exact = i.inexactInput !== true && (f?.exact === true || i.rational !== undefined || (i.full !== undefined && /^-?\d+$/.test(i.full)));
   const shownFully = [v.re, v.im].every((p) => isZero(p) || (!p.sticky && p.digits.length <= DECIMAL_KEEP));
   return exact && shownFully ? { mark: "=" } : { mark: "≈" };
 }

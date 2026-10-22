@@ -40,7 +40,7 @@ describe.skipIf(!giacAvailable())("copySourceOf equals the Session item's copy s
       const item = s.home.at(-1)!;
       const r = new EngineHost((await loadNodeGiac()).giac).home(input, { ...defaultHomeSettings }).result;
       const mine = copySourceOf(r);
-      const theirs = { ...item, ...item.facts };
+      const theirs = item; // the clipboard reads the item itself (G86: it carries its ValueFacts)
       expect(mine.full).toBe(theirs.full);
       expect(mine.fullExact).toBe(theirs.fullExact);
       expect(mine.rational).toEqual(theirs.rational);
