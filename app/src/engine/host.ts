@@ -2,6 +2,7 @@
 // The engine side of the protocol: one Giac instance, synchronous calls. Runs inside the Web
 // Worker (giac.worker.ts) and, for tests and the golden runner, directly in Node. Knows nothing
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
+import type { GiacBridge } from "./bridge.ts";
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import {
@@ -80,6 +81,8 @@ export interface GiacApi {
 
 export interface LoadedGiac {
   giac: GiacApi;
+  /** G85's structured bridge (bridge.ts): unused by the host; each wrapper throws NO_BRIDGE on an engine without it. */
+  bridge?: GiacBridge;
   /** Fetch + compile + instantiate, measured by the loader. */
   instantiateMs: number;
 }

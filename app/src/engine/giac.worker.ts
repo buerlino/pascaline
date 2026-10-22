@@ -2,6 +2,7 @@
 // Web Worker hosting one Giac wasm instance. Synchronous inside; the main thread cancels by
 // terminating us (WorkerEngine.cancel), Giac's own interrupt handles the time budgets.
 import type { Request, Response } from "./protocol.ts";
+import { bridgeOf } from "./bridge.ts";
 import { createRequestHandler, messageBuffer, setGiacHostGlobals, type GiacLoader } from "./host.ts";
 
 interface GiacModule {
@@ -23,6 +24,8 @@ const load: GiacLoader = async (baseUrl) => {
   const setPowLimit = M.cwrap("giac_set_pow_limit", "number", ["number"]);
   return {
     giac: { eval: (s) => giacEval(s), setPowLimit: (n) => setPowLimit(n), messages: out.messages, clearMessages: out.clear },
+    // G85: unused by the host; each wrapper resolves its export on first call (an engine without them loads as before).
+    bridge: bridgeOf(M),
     instantiateMs: performance.now() - t0,
   };
 };

@@ -3,6 +3,7 @@
 // Finds giac.mjs from $GIAC_MJS, then $GIAC_OUT/giac.mjs, then <repo>/engine/giac/_out/gsl/giac.mjs.
 import { existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { bridgeOf } from "./bridge.ts";
 import { messageBuffer, setGiacHostGlobals, type GiacApi, type LoadedGiac } from "./host.ts";
 
 interface GiacModule {
@@ -29,5 +30,6 @@ export async function loadNodeGiac(mjs: string = giacMjsPath()): Promise<LoadedG
   const ev = M.cwrap("giac_eval", "string", ["string"]);
   const pow = M.cwrap("giac_set_pow_limit", "number", ["number"]);
   const giac: GiacApi = { eval: (s) => ev(s), setPowLimit: (n) => pow(n), messages: out.messages, clearMessages: out.clear };
-  return { giac, instantiateMs: performance.now() - t0 };
+  // G85: the bridge wrappers resolve their exports on first call, so an engine without them loads as before.
+  return { giac, bridge: bridgeOf(M), instantiateMs: performance.now() - t0 };
 }
