@@ -212,5 +212,25 @@ grep -q 'DEVICE SKIPPED' "$here/pipeline.sh" || fail "A33: pipeline.sh has no DE
 grep -q 'scripts/pipeline.sh device <n>' "$here/night.sh" || fail "A33: the henri prompt does not list scripts/pipeline.sh device <n>"
 grep -q 'pipeline.sh\\ device\\ \*' "$here/night.sh" || fail "A33: night.sh does not run a device line"
 
+# A33f1: a locked screen is skipped, not failed; the build is never run
+grep -qF 'screen locked' <<<"$(ANDROID_SERIAL=TESTSERIAL "$script" device 7 --dry-run 2>&1)" || fail "A33f1: the dry run does not list the lock check"
+sb3="$tmp/sb3"; mkdir -p "$sb3/bin" "$sb3/tools" "$sb3/docs/shifts"; git init -q -b main "$sb3"
+cp "$sb/tools/devlock.sh" "$sb3/tools/"; : > "$sb3/docs/shifts/brief.md"
+printf '#!/bin/sh\ntouch "%s/built"\nexit 1\n' "$sb3" > "$sb3/tools/device-build.sh"; chmod +x "$sb3/tools/device-build.sh"
+git -C "$sb3" add -A; gc "$sb3" init; git -C "$sb3" branch phase-1
+cat > "$sb3/bin/adb" <<'STUB'
+#!/bin/sh
+case "$*" in
+  *get-state*) echo device;;
+  *"dumpsys battery"*) echo "  level: 80";;
+  *"dumpsys window"*) echo "  isKeyguardShowing=true";;
+esac
+exit 0
+STUB
+chmod +x "$sb3/bin/adb"
+out="$(cd "$sb3" && ANDROID_SERIAL=TESTSERIAL PATH="$sb3/bin:$PATH" "$script" device 7 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] && grep -q 'DEVICE SKIPPED (screen locked)' <<<"$out" || fail "A33f1: a locked device is not skipped (rc $rc): $out"
+[[ ! -e "$sb3/built" ]] || fail "A33f1: the build ran on a locked device"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
