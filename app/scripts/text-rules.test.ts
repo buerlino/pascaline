@@ -55,14 +55,15 @@ describe("the baseline holds (G88f1)", () => {
   it("the real counts pass the real baseline", () => {
     const { counts, hits } = countAll(app);
     const v = judge(counts, readBaseline(app), hits, evalOutside(app));
-    expect(v.ok, v.detail).toBe(true);
+    expect(v.ok, v.failures.join("\n")).toBe(true);
   });
   it("one more match in a file fails", () => {
     const { counts, hits } = countAll(app);
-    const file = Object.keys(counts)[0] as string;
-    const raised = { ...counts, [file]: (counts[file] ?? 0) + 1 };
-    const v = judge(raised, readBaseline(app), hits, evalOutside(app));
+    const baseline = readBaseline(app);
+    const file = Object.keys(baseline).sort()[0] as string;
+    const raised = { ...counts, [file]: (baseline[file] ?? 0) + 1 };
+    const v = judge(raised, baseline, hits, evalOutside(app));
     expect(v.ok).toBe(false);
-    expect(v.detail).toContain(file);
+    expect(v.failures.some((f) => f.startsWith(`${file}:`))).toBe(true);
   });
 });
