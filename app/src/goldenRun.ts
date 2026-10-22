@@ -7,11 +7,12 @@ import { markOf, type MarkInfo } from "./engine/format.ts";
 import { defaultCasSettings } from "./engine/types.ts";
 import { ANS_KEY, type ChipTable } from "./input/chips.ts";
 import { chipsIn, type ChipFactsTable } from "./engine/chipFacts.ts";
-import { inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
+import { constTable, inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
 import { latexToGiac, latexToGiacInfo } from "./input/latex-to-giac.ts";
 import { rewriteAngles } from "./input/angles.ts";
 import { applyDefChanges, type DefChange } from "./engine/defs.ts";
 import { namesFlag } from "./engine/flags.ts";
+import { chipFactsOf, chipOf, homeItem } from "./state/results.ts";
 
 export type Expect = string | Expect[];
 
@@ -125,8 +126,7 @@ export function typed(c: Case): Case {
 
 /**
  * G34: a sequence of Home lines on a fresh engine, each in its own angle mode. A `latex` step goes through our parser
- * with Home's options and an Ans chip built from the step before, by the session's rule (session.svelte.ts `finish`:
- * the exact text when there is one and it fits, else `full`; exact only when nothing was approximate or cut). An
+ * with Home's options and an Ans chip built from the step before, by the session's rule (state/results.ts, G86). An
  * inexact chip makes an "=" a "≈" (displayMode.ts markFor, decisions M4-4); `inexactInput` carries that to markOf.
  */
 export async function runSteps(fresh: () => Promise<GiacApi>, steps: Step[], digits: number, consts: ConstTable | undefined): Promise<HomeResult & { inexactInput?: boolean }> {
@@ -144,20 +144,14 @@ export async function runSteps(fresh: () => Promise<GiacApi>, steps: Step[], dig
     const p = st.latex !== undefined ? latexToGiacInfo(st.latex, { chips }) : { giac: st.input!, inexact: false };
     const r = (st.latex === undefined && (consts || k > 0) ? host.home(p.giac, s, consts, named) : host.home(p.giac, s)).result;
     last = p.inexact ? { ...r, inexactInput: true } : r;
-    const full = r.exact !== undefined && r.exact.length <= 2048 ? r.exact : r.full || r.exact;
-    if (r.ok && full && full.length <= 2048) {
-      const cut = (r.exact !== undefined && full !== r.exact) || r.value?.re.sticky === true || r.value?.im.sticky === true;
-      const exact = !r.approximate && !cut && (r.exact !== undefined || r.facts.exact || !/\.|\d[eE][+-]?\d/.test(full));
-      chips = { [ANS_KEY]: { value: full, exact } };
-      // A named chip follows the session's rule (session.svelte.ts finish): the exact text only when the result is not
-      // approximate and the input held no inexact constant or chip, else the confirmed decimal r.full (R65).
-      const inexactIn = (consts !== undefined && inexactConstsIn(p.giac, consts).length > 0) || chipsIn(p.giac, named).some((j) => !named[j]!.exact);
-      const inexact = r.approximate || inexactIn;
-      const exactText = !inexact && r.exact !== undefined && r.exact.length <= 2048 ? r.exact : undefined;
-      const value = exactText ?? (r.full || (inexact ? undefined : r.exact));
-      if (value && value.length <= 2048) {
-        named[String(k + 1)] = { value, reliableDigits: r.facts.reliableDigits, ...(r.facts.warn ? { warn: r.facts.warn } : {}), exact: !inexact && (value === exactText || (r.exact === undefined && r.value?.re.sticky !== true && r.value?.im.sticky !== true && (r.facts.exact || !/\.|\d[eE][+-]?\d/.test(value)))) };
-      }
+    // The step's item and its chip by the session's own rule (state/results.ts, G86): Ans for the `latex` steps, a
+    // named chip (`pasr_<k>`) for the `input` steps. An `input` step is Giac text, so what the parser would say about
+    // it (an inexact constant or chip went in) is read here.
+    const inexactIn = p.inexact || (consts !== undefined && inexactConstsIn(p.giac, consts).length > 0) || chipsIn(p.giac, named).some((j) => !named[j]!.exact);
+    if (r.ok) {
+      const chip = chipOf({ status: "done", ...homeItem(r, inexactIn) });
+      chips = chip ? { [ANS_KEY]: chip } : {};
+      if (chip) named[String(k + 1)] = chipFactsOf({ c: chip })["c"]!;
     }
   }
   return last!;
@@ -179,7 +173,7 @@ export const RATIONAL_TEXT = /^-?\d+(\/\d+)?$/;
 
 /** One home.yaml case on `host` (a sequence on its own engine from `fresh`). */
 export async function runHomeCase(c: Case, host: EngineHost, fresh: () => Promise<GiacApi>): Promise<HomeResult & { inexactInput?: boolean }> {
-  if (c.steps) return runSteps(fresh, c.steps, c.settings?.digits ?? 12, c.consts);
+  if (c.steps) return runSteps(fresh, c.steps, c.settings?.digits ?? 12, c.consts && constTable(c.consts));
   const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
   // A case written as `latex` goes through our parser with Home's options (no realOddRoots since R66), its `before` too
   const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);

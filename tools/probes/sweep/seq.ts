@@ -12,6 +12,8 @@ import { markOf } from "../../../app/src/engine/format.ts";
 import { applyDefChanges, type DefEntry } from "../../../app/src/engine/defs.ts";
 import type { ChipEntry } from "../../../app/src/engine/chipFacts.ts";
 import type { KnownValue } from "../../../app/src/engine/types.ts";
+import { knownDigits } from "../../../app/src/engine/solve.ts";
+import { chipFactsOf, chipOf as itemChip, homeItem } from "../../../app/src/state/results.ts";
 import { checkCopy, copySourceOf, type InvariantFailure } from "../../../app/scripts/invariants.ts";
 import { lcg } from "./gen.ts";
 
@@ -101,12 +103,10 @@ export interface SeqRun {
   relaunches: number;
 }
 
-/** The chip the session makes of a result (session.svelte.ts chipFor): exact ones as a literal, the others with their facts. */
+/** The chip the session makes of a result, by its own rule (state/results.ts, G86), as the engine takes it by name. */
 export function chipOf(r: HomeResult): ChipEntry | null {
-  const s = copySourceOf(r);
-  if (s.full === undefined) return null;
-  if (s.fullExact === true) return { value: s.full, exact: true, reliableDigits: null };
-  return { value: s.full, exact: false, reliableDigits: r.facts.reliableDigits, ...(r.facts.warn ? { warn: r.facts.warn } : {}) };
+  const c = itemChip({ status: r.ok ? "done" : "error", ...homeItem(r, false) });
+  return c ? chipFactsOf({ c })["c"]! : null;
 }
 
 const give = (e: unknown): string => (e instanceof Error ? e.message : String(e)).slice(0, 80);
@@ -195,8 +195,8 @@ export async function runSequences(seqs: readonly Sequence[], fresh: () => Promi
             // A root used as a known, as the Solve app sends it (full value, confirmed digits, warn), against the same value typed in full.
             const root = live.solve({ kind: "equations", equations: [`u^2=${st.c}`], unknowns: ["u"], guesses: ["1"] }, s).roots[0]?.result;
             if (!root?.ok || !root.value) break;
-            const known: KnownValue = { name: "u", value: root.full.replace("E", "e"), ...(root.facts.exact ? {} : { digits: root.facts.reliableDigits ?? undefined }), ...(root.facts.warn ? { warn: true } : {}) };
-            if (known.digits === undefined) delete known.digits;
+            const known: KnownValue = { name: "u", value: root.full.replace("E", "e"), facts: root.facts };
+            const kd = knownDigits(known);
             const req = { kind: "equations" as const, equations: ["v=u^2"], unknowns: ["v"], guesses: ["0"] };
             const withFacts = live.solve({ ...req, knowns: [known] }, s).roots[0]?.result;
             const typed = clean.solve({ ...req, knowns: [{ name: "u", value: known.value }] }, s).roots[0]?.result;
@@ -206,8 +206,8 @@ export async function runSequences(seqs: readonly Sequence[], fresh: () => Promi
               // the app's known carries facts the typed one does not: only the digits shown must agree (the mark may be weaker, never the text different)
               run.checked++;
               // …and it carries the known's confirmed digits: a value of a known confirmed to n digits is not confirmed to more (G68)
-              const over = known.digits !== undefined && withFacts.facts.reliableDigits !== null && withFacts.facts.reliableDigits > known.digits;
-              if (over) run.failures.push({ id: `${q.digits} solve: u^2=${st.c}, digits`, check: "solve", detail: `[${seq}] u confirmed to ${known.digits} digits gave v confirmed to ${withFacts.facts.reliableDigits}` });
+              const over = kd !== undefined && withFacts.facts.reliableDigits !== null && withFacts.facts.reliableDigits > kd;
+              if (over) run.failures.push({ id: `${q.digits} solve: u^2=${st.c}, digits`, check: "solve", detail: `[${seq}] u confirmed to ${kd} digits gave v confirmed to ${withFacts.facts.reliableDigits}` });
               if (a.display !== b.display) run.failures.push({ id: `${q.digits} solve: u^2=${st.c}`, check: "solve", detail: `[${seq}] u=${known.value} as the app sends it gave v ${a.mark || "-"} ${a.display}, typed in full ${b.mark || "-"} ${b.display}` });
             }
             break;

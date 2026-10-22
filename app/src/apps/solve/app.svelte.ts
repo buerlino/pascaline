@@ -7,13 +7,14 @@
 //   - several equations on: Solve finds as many unknowns as there are equations, starting with the
 //     selected one and then in list order; the rest keep their values;
 //   - Polynomial roots lists every root (complex too) of the one equation in the selected unknown.
-import { CalcCancelled, engineFormat, IDENT, type Calc, type KnownValue, type SolveOutcome } from "../../calc/port.ts";
+import { CalcCancelled, engineFormat, IDENT, type Calc, type KnownValue, type SolveOutcome, type ValueFacts } from "../../calc/port.ts";
 import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { EMARK } from "../../entry/macros.ts";
 import { mathJsonToGiac } from "../../input/emit.ts";
 import { DEFAULT_USER_FUNCTIONS, userFunctionsOf } from "../../input/latex-to-giac.ts";
 import { parseFailText } from "../../input/errors.ts";
 import { parseLatex } from "../../input/parse.ts";
+import { numberSource } from "../../clipboard/source.ts";
 import { tc } from "../../clipboard/strings.ts";
 import { t } from "../../i18n/index.ts";
 import { parseDec, plainNumber, showDecimal } from "../decimal.ts";
@@ -107,9 +108,14 @@ export class SolveApp implements AppInstance {
     const full = this.copies[name];
     if (full === undefined) return { name, value: this.value(name) };
     const c = this.confirmed[name];
-    // A copy always has an entry (keepFull, restore); a missing one is not taken for exact.
-    const digits = c === "exact" ? undefined : (c ?? shownDigits(full));
-    return { name, value: full.replace("E", "e"), ...(digits !== undefined ? { digits } : {}), ...(this.warned[name] ? { warn: true } : {}) };
+    // A copy always has an entry (keepFull, restore); a missing one is not taken for exact. The ⚠ an answer was shown
+    // with passes on as `unchecked` (the table keeps the mark, not which warning made it).
+    // An exact root with no ⚠ goes in as a typed value does.
+    const warn = this.warned[name] === true;
+    const value = full.replace("E", "e");
+    if (c === "exact" && !warn) return { name, value };
+    const facts: ValueFacts = c === "exact" ? { exact: true, reliableDigits: null } : { exact: false, reliableDigits: c ?? shownDigits(full) };
+    return { name, value, facts: warn ? { ...facts, warn: "unchecked" } : facts };
   }
   value(name: string): string {
     return this.values[name] ?? "0";
@@ -197,19 +203,12 @@ export class SolveApp implements AppInstance {
   /** Keep the full value of an answer next to the stored one (lazy: the copy code is not in the start chunk). */
   private async keepFull(name: string, display: string, r: Parameters<typeof isWarned>[0] & { full?: string }): Promise<void> {
     const { copyFull } = await import("../../clipboard/impl.ts");
-    const text = copyFull({
-      latex: "",
-      status: "done",
-      text: display,
-      ...(r.value ? { value: r.value } : {}),
-      ...(r.full !== undefined ? { full: r.full } : {}),
-      ...(r.facts ? { reliableDigits: r.facts.reliableDigits } : {}),
-    });
+    const text = copyFull(numberSource(display, r));
     if (text !== undefined && this.values[name] === display.replace("E", "e")) {
       this.copies = { ...this.copies, [name]: text };
-      // An exact rational root (reliableDigits null) stays an exact known; no facts: the shown digits.
-      const d = r.facts?.reliableDigits;
-      const c: Confirmed = typeof d === "number" ? d : d === null ? "exact" : shownDigits(display);
+      // An exact rational root (reliableDigits null) stays an exact known.
+      const d = r.facts.reliableDigits;
+      const c: Confirmed = d === null ? "exact" : d;
       this.confirmed = { ...this.confirmed, [name]: c };
       this.save();
     }

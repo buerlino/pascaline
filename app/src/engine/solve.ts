@@ -107,11 +107,18 @@ function knownSubst(knowns: KnownValue[] | undefined): { names: string[]; wrap: 
   return { names, wrap: (e) => `subst(${e},[${names.join(",")}],[${vals.join(",")}])` };
 }
 
-/** A known moved by one unit in its last confirmed digit (G68f1): `digits` significant digits of `value`, plus one. */
+/** The confirmed digits of a known the check moves (G68f1); undefined: typed or exact, never moved. */
+export function knownDigits(k: KnownValue): number | undefined {
+  const d = k.facts?.reliableDigits;
+  return k.facts?.exact === false && typeof d === "number" ? d : undefined;
+}
+
+/** A known moved by one unit in its last confirmed digit (G68f1): its confirmed significant digits of `value`, plus one. */
 export function movedKnown(k: KnownValue): KnownValue {
-  const v = k.digits === undefined ? null : decimalFromString(k.value.replace("E", "e"));
-  if (!v || k.digits === undefined || isZero(v)) return k;
-  const n = Math.max(1, k.digits);
+  const d = knownDigits(k);
+  const v = d === undefined ? null : decimalFromString(k.value.replace("E", "e"));
+  if (!v || d === undefined || isZero(v)) return k;
+  const n = Math.max(1, d);
   const m = (BigInt(v.digits.slice(0, n).padEnd(n, "0")) + 1n).toString();
   const exp = m.length > n ? v.exp + 1 : v.exp;
   return { ...k, value: decimalToString({ neg: v.neg, digits: m.replace(/0+$/, ""), exp, sticky: false }) };
@@ -132,7 +139,7 @@ function confirmAtMost(r: HomeResult, n: number, digits: number): HomeResult {
 }
 
 /**
- * G68f1 (decisions G78f1, G68): a result computed from answer-knowns (those with `digits`) confirms only the digits on
+ * G68f1 (decisions G78f1, G68): a result computed from answer-knowns (those with confirmed digits) confirms only the digits on
  * which every solve agrees: one with the knowns as kept and, per answer-known, one with that known alone moved by one
  * unit in its last confirmed digit (moving all at once cancels in `x-z`). A digit count alone misses cancellation:
  * `(x-1.41421)*10^6` loses digits. Typed knowns are exact and not moved; a ⚠ known passes its ⚠ on, and so does a
@@ -141,13 +148,13 @@ function confirmAtMost(r: HomeResult, n: number, digits: number): HomeResult {
 export function checkByKnowns(o: SolveOutcome, req: SolveRequest, digits: number, again: (r: SolveRequest) => SolveOutcome): SolveOutcome {
   const ks = req.knowns ?? [];
   if (!o.ok) return o;
-  let warn = o.warn || ks.some((k) => k.warn);
+  let warn = o.warn || ks.some((k) => k.facts?.warn !== undefined);
   const P = valuePrecision(digits);
   const agreed = o.roots.map(() => P);
   let checked = false;
   // The same guesses: the same path to the same root, moved (a guess at the root costs solve1 more: 313 calls, not 218).
   ks.forEach((k, j) => {
-    if (k.digits === undefined) return;
+    if (knownDigits(k) === undefined) return;
     checked = true;
     const o2 = again({ ...req, knowns: ks.map((x, i) => (i === j ? movedKnown(x) : x)) });
     const same = o2.ok && o2.roots.length === o.roots.length;

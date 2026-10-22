@@ -10,8 +10,9 @@ export interface Cell {
   ok: boolean;
   display: string;
   value?: ComplexValue;
-  /** What the engine confirmed (a HomeResult has it); drawn digits are cut to it and a ⚠ marks fewer (docs/04 2.4). */
-  facts?: ValueFacts;
+  /** What the engine confirmed, whole (a HomeResult has it; G86); drawn digits are cut to it and a ⚠ marks fewer
+   *  (docs/04 2.4). */
+  facts: ValueFacts;
   /** The engine's full value, for Copy and the CSV table. */
   full?: string;
 }

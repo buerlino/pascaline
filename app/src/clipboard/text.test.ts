@@ -59,9 +59,9 @@ describe("copyFull", () => {
   });
   it("copies only the confirmed digits of an approximate result", () => {
     const v = re("1.41421356237309504880168872420969807856967");
-    expect(copyFull(done({ full: "1.414213562373095", fullExact: false, value: v, reliableDigits: 16 }))).toBe("1.414213562373095");
+    expect(copyFull(done({ full: "1.414213562373095", fullExact: false, value: v, facts: { exact: false, reliableDigits: 16 } }))).toBe("1.414213562373095");
     // ⚠ 5: the engine's full value is already cut, and the value path cuts too
-    expect(copyFull(done({ value: v, reliableDigits: 5 }))).toBe("1.4142");
+    expect(copyFull(done({ value: v, facts: { exact: false, reliableDigits: 5 } }))).toBe("1.4142");
   });
   it("uses a CAS float's own digits, with E written as the spec says", () => {
     expect(copyFull(done({ full: "2.5E-7", fullExact: false, text: "2.5E-7" }))).toBe("2.5E-7");
@@ -96,11 +96,11 @@ describe("copyExact, withoutMark", () => {
 
 describe("copyMark", () => {
   it("= for an exact rational shown in full, ≈ for 1/3, ⚠ n for fewer confirmed digits", () => {
-    expect(copyMark(done({ value: re("0.5"), exact: true, rational: { n: "1", d: "2" } }))).toEqual({ mark: "=" });
-    expect(copyMark(done({ value: ratio(1n, 3n), exact: true, rational: { n: "1", d: "3" } }))).toEqual({ mark: "≈" });
-    expect(copyMark(done({ value: re("1.414213562373095049"), exact: false, reliableDigits: 19 }))).toEqual({ mark: "≈" });
-    expect(copyMark(done({ value: re("1.4142135623730950488"), reliableDigits: 5 }))).toEqual({ mark: "⚠", n: 5 });
-    expect(copyMark(done({ value: re("1.5"), reliableDigits: 40, warn: "unaudited" }))).toEqual({ mark: "⚠", warn: "unaudited" });
+    expect(copyMark(done({ value: re("0.5"), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "2" } }))).toEqual({ mark: "=" });
+    expect(copyMark(done({ value: ratio(1n, 3n), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "3" } }))).toEqual({ mark: "≈" });
+    expect(copyMark(done({ value: re("1.414213562373095049"), facts: { exact: false, reliableDigits: 19 } }))).toEqual({ mark: "≈" });
+    expect(copyMark(done({ value: re("1.4142135623730950488"), facts: { exact: false, reliableDigits: 5 } }))).toEqual({ mark: "⚠", n: 5 });
+    expect(copyMark(done({ value: re("1.5"), facts: { exact: false, reliableDigits: 40, warn: "unaudited" } }))).toEqual({ mark: "⚠", warn: "unaudited" });
   });
   it("no mark for something that is not a number", () => {
     expect(copyMark(done({ text: "sqrt(2)" }))).toBeUndefined();
@@ -110,9 +110,9 @@ describe("copyMark", () => {
 describe("sessionText", () => {
   it("writes one line per finished entry: input, mark, full value", () => {
     const items: CopySource[] = [
-      done({ latex: "\\frac12", text: "0.5", full: "1/2", fullExact: true, value: re("0.5"), exact: true, rational: { n: "1", d: "2" } }),
-      done({ latex: "\\frac{1}{3}", text: "0.333", full: "1/3", fullExact: true, value: ratio(1n, 3n), exact: true, rational: { n: "1", d: "3" } }),
-      done({ latex: "\\sqrt{2}", text: "1.41421356237", full: "1.4142135623730950488", fullExact: false, value: re("1.4142135623730950488"), reliableDigits: 5 }),
+      done({ latex: "\\frac12", text: "0.5", full: "1/2", fullExact: true, value: re("0.5"), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "2" } }),
+      done({ latex: "\\frac{1}{3}", text: "0.333", full: "1/3", fullExact: true, value: ratio(1n, 3n), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "3" } }),
+      done({ latex: "\\sqrt{2}", text: "1.41421356237", full: "1.4142135623730950488", fullExact: false, value: re("1.4142135623730950488"), facts: { exact: false, reliableDigits: 5 } }),
       done({ latex: "1+", status: "error", text: "Syntax error" }),
       done({ latex: "2", status: "pending" }),
     ];
