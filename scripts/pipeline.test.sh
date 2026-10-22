@@ -223,7 +223,7 @@ cat > "$sb3/bin/adb" <<'STUB'
 case "$*" in
   *get-state*) echo device;;
   *"dumpsys battery"*) echo "  level: 80";;
-  *"dumpsys window"*) echo "  isKeyguardShowing=true";;
+  *"dumpsys window"*) seq 1 200000; echo "  isKeyguardShowing=true"; seq 1 1000;;
 esac
 exit 0
 STUB
@@ -231,6 +231,12 @@ chmod +x "$sb3/bin/adb"
 out="$(cd "$sb3" && ANDROID_SERIAL=TESTSERIAL PATH="$sb3/bin:$PATH" "$script" device 7 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] && grep -q 'DEVICE SKIPPED (screen locked)' <<<"$out" || fail "A33f1: a locked device is not skipped (rc $rc): $out"
 [[ ! -e "$sb3/built" ]] || fail "A33f1: the build ran on a locked device"
+# tools/core-device.sh alone: a locked device exits 4 with the message (a copy in a sandbox, stubbed lock and stay-awake)
+cd4="$tmp/cd4"; mkdir -p "$cd4/tools" "$cd4/app"
+cp "$here/../tools/core-device.sh" "$cd4/tools/"; printf '#!/bin/sh\nexit 0\n' > "$cd4/tools/devlock.sh"; cp "$cd4/tools/devlock.sh" "$cd4/tools/stay-awake.sh"
+chmod +x "$cd4/tools/"*
+out="$(ANDROID_SERIAL=TESTSERIAL PATH="$sb3/bin:$PATH" "$cd4/tools/core-device.sh" 2>&1)"; rc=$?
+[[ $rc -eq 4 ]] && grep -q 'the device is locked' <<<"$out" || fail "A33f1: core-device.sh on a locked device: rc $rc: $out"
 
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"

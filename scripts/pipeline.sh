@@ -159,7 +159,8 @@ if [[ "${1:-}" == "device" ]]; then
   [[ -z "$bat" || "$bat" -ge 10 ]] || skip "battery $bat %"
   locked() {  # wake does not unlock: a PIN or pattern keeps isKeyguardShowing=true
     timeout 20 adb -s "$dev" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true; sleep 1
-    timeout 20 adb -s "$dev" shell dumpsys window 2>/dev/null | tr -d '\r' | grep -q 'isKeyguardShowing=true'
+    local w; w="$(timeout 20 adb -s "$dev" shell dumpsys window 2>/dev/null | tr -d '\r' || true)"  # captured first: grep -q would SIGPIPE adb
+    grep -q 'isKeyguardShowing=true' <<<"$w"
   }
   locked && skip "screen locked"
   sha="$(git -C "$integ" rev-parse --short HEAD)"
