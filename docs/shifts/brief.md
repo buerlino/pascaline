@@ -20,7 +20,7 @@
 4. When a slot is free (process, nothing users see): **A25**, **A19** (G64 and S16 wait for it), **A18**, **A22** → **A26**, **A27**, **A30**.
 5. Every morning: the owner's check (MORNING.md, on the Tab One, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
 
-**At night, the core lane** (the order is section 0c's queue, steps 104–110; tests first, failing on phase-1; R74, R75 and G90 are merged, so every merge runs the core list): the silent wrong numbers by reach: G97 (F69: any power but 1 of a non-square matrix under `=`; R75 makes it reachable by keys); then the bridge (G85, a spike; its bars decide, no owner decision, P23; S23 writes the moves by day); then structure that removes bug families (G88, the text-match ratchet; G76 → G86 → R69, a value's facts carried whole; F55, the copied mark); A32 (the core list on the Tab One) whenever the tablet is plugged in.
+**At night, the core lane** (the order is section 0c's queue, steps 104–110; tests first, failing on phase-1; R74, R75 and G90 are merged, so every merge runs the core list): the silent wrong numbers by reach: G97 (F69: any power but 1 of a non-square matrix under `=`; R75 makes it reachable by keys); the bridge spike G85 is merged with GO (`8861b6d`, Opus pass 56; S23 writes the moves by day), the text-match ratchet G88 too (`197e2d7`); then structure that removes bug families (G76 → G86 → R69, a value's facts carried whole; F55, the copied mark); A32 (the core list on the Tab One) whenever the tablet is plugged in.
 
 **The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G75 → G60 → G56 (F47, complex tanh, doubles inside MPFR results); S17 → G77 → G89 (the workaround register, the Giac re-pin, our cases for Parisse); G91 (audit-approx), G87 (audit-dms-plot), G96 (Giac's im of a root), G93 (restart; the owner decides first), G64 after A19, then S16; F61, F62 and G94 (no package). **Held for G85's report:** G66, G69, G72, G73, G74, G82, G92, G95 (S23 releases or replaces them; G92 (F64) is not reachable by keys today, and its `afterCall` read is the code G95 changes). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
@@ -66,8 +66,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
 | 104 | [G97](packages/G97.md) no power of a non-square matrix under `=` (F69) | gorge, Opus | `p1/gorge-nonsquareinv` | — | 1.5 h |
-| 105 | [G85](packages/G85.md) the structured bridge, a spike | gorge, Opus | `p1/gorge-bridge-spike` | — | 3 h |
-| 106 | [G88](packages/G88.md) the text-match ratchet | gorge, Sonnet | `p1/gorge-textratchet` | — | 1 h |
 | 107 | [A32](packages/A32.md) the core list on the Tab One | annabell, Sonnet, audit Opus (`--audit-model opus`: the Capacitor config, WebView debugging must stay off in releases) | `p1/annabell-coredevice` | R74 | 1.5 h |
 | 108 | [G76](packages/G76.md) one facts type, carried whole | gorge, Opus | `p1/gorge-m4-portfacts` | — | 2 h |
 | 109 | [G86](packages/G86.md) the chip from one rule | gorge, Opus | `p1/gorge-chiprule` | G76 | 2 h |
