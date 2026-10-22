@@ -67,7 +67,8 @@ henri_prompt='You are henri, the night coordinator. Read docs/shifts/brief.md se
   scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto   (the next queue step not done; skip steps the table or the log marks merged or skipped)
   scripts/pipeline.sh <agent> "<FIX prompt, verbatim>" --id <IDf1> --branch <branch> --model <m> --audit-model auto   (a FIX line of the last Opus pass, one per call, in order)
   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"   (after every 3 finished packages since the last pass, and at the end)
-  scripts/pipeline.sh report                                                     (after the last pass and its FIX packages)
+  scripts/pipeline.sh device <n>                                                 (right after every Opus pass, with that pass'"'"'s number; a skipped device is fine)
+  scripts/pipeline.sh report                                                     (after the last pass, its device step and its FIX packages)
   SHIFT DONE                                                                     (after the report)
 A RESULT line in the log means that step is finished (MERGED, NOT MERGED or SKIPPED); never repeat a finished step. Follow the last Opus pass QUEUE line. Decide nothing else. In a FIX prompt use no backtick and no dollar sign (the command is refused with them).'
 closing_prompt='You are henri, the night coordinator. The night is closing (night.sh --until or its step cap): only the last Opus pass is left, and night.sh runs the report after it. Read docs/shifts/brief.md section 0c (the Opus pass) and the tail of .coord/log.md on stdin. Reply with exactly one line and nothing else, one of
@@ -126,6 +127,9 @@ while :; do
     elif [[ "$cmd" == scripts/pipeline.sh\ pass\ * ]] && ! unsafe "$cmd"; then
       rc=0; run_cmd "$cmd" || rc=$?
       (( rc == 75 )) && continue  # waited: ask again for the same closing step
+      # A33: the last device step leaves its APK installed for the owner's morning check
+      pn="$(sed -E 's/^scripts\/pipeline\.sh pass ([0-9]+) .*/\1/' <<<"$cmd")"
+      [[ "$pn" =~ ^[0-9]+$ ]] && { run_cmd "scripts/pipeline.sh device $pn" || true; }
     else log "night.sh: no Opus pass line in closing ($cmd); going to the report"; fi
     closing=2; tick; continue
   fi
@@ -147,7 +151,7 @@ while :; do
       if unsafe "$cmd"; then bad=$((bad + 1)); log "night.sh: refused command with shell metacharacters"; (( bad >= 2 )) && { log "STOPPED night.sh: henri's reply refused twice"; say "STOPPED night.sh: henri's reply refused twice"; exit 1; }; tick; continue; fi
       bad=0
       # henri's package commands audit with auto (brief 0c: the pipeline raises gorge packages and Opus workers); pass and report take no such option
-      [[ "$cmd" == scripts/pipeline.sh\ pass\ * || "$cmd" == "scripts/pipeline.sh report" || "$cmd" == *--audit-model* ]] || cmd="$cmd --audit-model auto"
+      [[ "$cmd" == scripts/pipeline.sh\ pass\ * || "$cmd" == scripts/pipeline.sh\ device\ * || "$cmd" == "scripts/pipeline.sh report" || "$cmd" == *--audit-model* ]] || cmd="$cmd --audit-model auto"
       run_cmd "$cmd" || true;;
     *)
       bad=$((bad + 1)); (( bad >= 2 )) && { log "STOPPED night.sh: henri gave no pipeline command twice"; say "STOPPED night.sh: henri gave no pipeline command twice"; exit 1; };;
