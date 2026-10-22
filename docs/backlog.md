@@ -8,7 +8,7 @@ The one place for "where are we and what's left", one or two lines per open item
 | Stage | State |
 |---|---|
 | Phase 0 spike; MVP milestones 1 (Home, CAS), 2 (Function, Solve), 3 (Python, removed by P11) | **Done** 2026-10-11 (reports in [archive/shifts/](archive/shifts/)) |
-| **The core freeze (P23)** | **In progress since 2026-10-21.** No new feature until the core list holds ([tests/core/](../tests/core/README.md): 56 everyday tasks, 53 active). On `61607ec` 51 of 51 active pass on desktop (R74, R75, G90; Opus pass 55); c53 (F55) and c56 (F72) fail as known; the Tab One run waits for A32. The bridge spike G85 is in the night queue. |
+| **The core freeze (P23)** | **In progress since 2026-10-21.** No new feature until the core list holds ([tests/core/](../tests/core/README.md): 56 everyday tasks, 53 active). On `61607ec` 51 of 51 active pass on desktop (R74, R75, G90; Opus pass 55); c53 (F55) and c56 (F72) fail as known; the device run is `tools/core-device.sh` (A32; 51/51 active on the Fairphone 6, 2026-10-22). The bridge spike G85 is in the night queue. |
 | Milestone 4a: feel (P11) | **Paused by P23.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, the Settings page, history-row actions, R15b, R15c1, R15c2, the mockups (R12a). Waiting: R15c3, R15c4, Settings rows, the palette, the visual pass, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI (R4a, R4b, A4b) is first after the freeze |
 | Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad, the entry and the result view wait for the freeze |

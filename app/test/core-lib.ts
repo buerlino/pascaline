@@ -129,8 +129,16 @@ export async function start(page: Page): Promise<void> {
   await engineReady(page);
 }
 
-/** Press the steps in order. After Enter, wait until the row it made has finished. */
-export async function replay(page: Page, steps: readonly CoreStep[]): Promise<void> {
+/** What differs when the page is a phone's WebView (A32): the real Back key and a real stop-and-start of the app. */
+export interface ReplayHooks {
+  back?: () => Promise<void>;
+  /** Stops and starts the app, returns the page of the new process. */
+  relaunch?: () => Promise<Page>;
+}
+
+/** Press the steps in order. After Enter, wait until the row it made has finished. Returns the page to check (a new
+ *  one when a hook relaunched the app). */
+export async function replay(page: Page, steps: readonly CoreStep[], hooks: ReplayHooks = {}): Promise<Page> {
   for (const [i, s] of steps.entries()) {
     if (typeof s === "string") {
       await tap(page, [s]);
@@ -151,15 +159,17 @@ export async function replay(page: Page, steps: readonly CoreStep[]): Promise<vo
     else if ("tap" in s) {
       if (s.tap === "result:last") await lastRow(page).locator(".result").tap();
       else await page.locator(s.tap).first().tap();
-    } else if ("back" in s) await page.evaluate(() => history.back());
+    } else if ("back" in s) await (hooks.back ? hooks.back() : page.evaluate(() => history.back()));
     else if ("wait" in s) await page.waitForTimeout(s.wait);
     else {
       await page.evaluate(() => window.pascaline.shell.flush());
       await page.waitForTimeout(800); // the stores' writes are debounced and asynchronous (persist.spec)
-      await page.reload();
+      if (hooks.relaunch) page = await hooks.relaunch();
+      else await page.reload();
       await engineReady(page);
     }
   }
+  return page;
 }
 
 async function rowState(row: import("@playwright/test").Locator): Promise<Required<RowCheck>> {

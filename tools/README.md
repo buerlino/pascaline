@@ -8,6 +8,8 @@ tools/stay-awake.sh <serial>            # keep a device awake, record SoC/RAM/We
 tools/devlock.sh acquire <serial|host-cpu> <owner> [wait_s]   # release / status / break
 
 tools/device-build.sh [--measure] [--install] [--engine-dir DIR] # build our APK (wraps ./build.sh), prints its path
+tools/device-build.sh --test --install                             # the test build: WebView debugging on (never release), installed on $ANDROID_SERIAL
+tools/core-device.sh [--only c05,c07]                             # the core list on the device's WebView over adb (A32): lock, stay-awake, pm clear per case; CORE DEVICE line, .coord/device-runs.jsonl
 tools/device_run.py status                                        # battery, temperature, WebView, app version
 tools/device_run.py start --mode first|cold|warm --runs 7         # launch timings from logcat marks (waits for engine-ready)
 tools/device_run.py bench --runs 5                                 # the 55 benchmark cases on the device
