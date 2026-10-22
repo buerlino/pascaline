@@ -7,15 +7,8 @@ import { ANS_KEY, pruneChips, validChips, type Chip, type ChipTable } from "../i
 import { parseFailText } from "../input/errors.ts";
 import { loadParser } from "../input/parser.ts";
 import { t, type MessageKey } from "../i18n/index.ts";
-import { EngineMemoryError, readValueFacts, type ValueFacts } from "../engine/types.ts";
-import {
-  decimalFromRational,
-  decimalFromString,
-  decimalToString,
-  type ComplexValue,
-  type MarkInfo,
-  type PrecisionFacts,
-} from "../engine/format.ts";
+import { EngineMemoryError, readValueFacts } from "../engine/types.ts";
+import { decimalToString, type ComplexValue, type MarkInfo, type PrecisionFacts } from "../engine/format.ts";
 import { homeResultToLatex } from "../render/home.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
 import {
@@ -36,6 +29,7 @@ import {
 } from "./displayMode.ts";
 import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
+import { casItem, chipFactsOf, chipOf, FULL_LIMIT, homeItem, ITEMS_LIMIT } from "./results.ts";
 
 export type View = "home" | "cas";
 export type EntryMode = "textbook" | "line";
@@ -127,43 +121,10 @@ function validUses(x: unknown): UsedValue[] | undefined {
 }
 
 const HISTORY_LIMIT = 200;
-/** A chip carries at most this much text (docs/04 2.8); a longer result is inserted as it is drawn. */
-export const FULL_LIMIT = 2048;
-/** Engine text with a decimal point or an E exponent is rounded digits, not an exact value. */
-const isDigitsText = (t: string): boolean => /\.|\d[eE][+-]?\d/.test(t);
 const errorText = (code: CalcError | undefined, fallback: string): string =>
   code ? t(`error.${code}` as MessageKey) : fallback;
 const clamp = (n: number, lo: number, hi: number): number => Math.min(hi, Math.max(lo, Math.round(n)));
-const RATIONAL = /^(-?\d+)(?:\/(\d+))?$/;
-function rationalOf(text: string | undefined): Rational | undefined {
-  const m = text === undefined ? null : RATIONAL.exec(text.trim());
-  if (!m || m[1] === undefined || (m[2] !== undefined && BigInt(m[2]) === 0n)) return undefined;
-  return { n: m[1], d: m[2] ?? "1" };
-}
 const clampDigits = (n: number): number => Math.min(MAX_DIGITS, Math.max(1, Math.round(n)));
-/** A numeric list or matrix keeps its elements in the history (to re-format it); beyond this the item shows no mark. */
-const ITEMS_LIMIT = 400;
-
-/** The chips an input holds by name (`pasr_<k>`), as the engine takes them (G49): the value and the facts. */
-function chipFactsOf(named: ChipTable): ChipFactsTable {
-  const out: Record<string, ChipFactsTable[string]> = {};
-  for (const [k, c] of Object.entries(named))
-    out[k] = { value: c.value, reliableDigits: c.reliableDigits ?? null, exact: c.exact, ...(c.warn ? { warn: c.warn } : {}) };
-  return out;
-}
-
-/** The facts of an engine result, as kept in a history item: its ValueFacts whole (G76), with its elements'. Undefined:
- *  too large to keep. */
-function factsFrom(r: { facts: ValueFacts; items?: { value?: ComplexValue; facts: ValueFacts }[]; shape?: [number, number]; digits?: number }): ResultFacts | undefined {
-  const f: ResultFacts = { ...r.facts };
-  if (r.digits !== undefined) f.digits = r.digits;
-  if (r.items) {
-    if (r.items.length > ITEMS_LIMIT) return undefined;
-    f.items = r.items.map((it) => ({ ...it.facts, ...(it.value ? { value: it.value } : {}) }));
-    if (r.shape) f.shape = r.shape;
-  }
-  return f;
-}
 
 /** Stored facts read back from IndexedDB, through the one mapping for stored facts (readValueFacts: an item stored
  *  before G76 says `exactRational`): kept when they have the shape, else dropped (the item then shows no mark). */
@@ -469,11 +430,7 @@ export class Session {
 
   /** The chip a finished result gives when it is tapped or picked (docs/04 2.8); undefined: insert it as drawn. */
   chipFor(item: HistoryItem): Chip | undefined {
-    if (item.status !== "done" || item.full === undefined) return undefined;
-    if (item.fullExact === true) return { value: item.full, exact: true };
-    // R65 (deep check D1): a chip that is not exact carries the facts it was shown with, so the next line keeps them
-    const f = item.facts;
-    return { value: item.full, exact: false, ...(f ? { reliableDigits: f.reliableDigits } : {}), ...(f?.warn ? { warn: f.warn } : {}) };
+    return chipOf(item);
   }
   /** Whether the view has a finished result (Ans-first inserts \\ans then, R44). */
   hasResult(view: View = this.view): boolean {
@@ -522,31 +479,10 @@ export class Session {
         live.status = r.ok ? "done" : "error";
         live.text = r.ok ? r.display : errorText(r.error, r.display);
         if (r.settingReset) live.settingReset = true;
-        // A true or false from an inexact chip is as approximate as the chip (R18f1; decisions M4-4)
-        live.approximate = r.approximate || (live.inexactInput === true && /^(true|false)$/.test(r.display));
-        if (r.value) live.value = r.value;
-        if (r.ok) {
-          const f = factsFrom(r);
-          if (f) live.facts = f;
-        }
-        const q = r.value ? rationalOf(r.exact) : undefined;
-        if (q) live.rational = q;
+        // The value, its facts and the chip text, by the one rule (results.ts, G86)
+        Object.assign(live, homeItem(r, live.inexactInput === true));
         // A result that is not a number is drawn from Giac's latex(), as in CAS (R18f3); numbers from our formatter.
         if (r.ok) live.resultLatex = r.latex !== undefined ? tidyGiacLatex(r.latex) : homeResultToLatex(r.display);
-        // The chip value (docs/04 2.8): an exact result's exact text when it fits in 2 kB, else the engine's `full`
-        // (the confirmed decimal), never nothing for a number (R44, F37). A result that is not exact (a float, or from
-        // an inexact chip or constant) carries its confirmed decimal, never the rational of more digits (R65, D1, D2).
-        const inexact = r.approximate || live.inexactInput === true;
-        const exactText = !inexact && r.exact !== undefined && r.exact.length <= FULL_LIMIT ? r.exact : undefined;
-        const full = exactText ?? (r.full || (inexact ? undefined : r.exact));
-        if (r.ok && full && full.length <= FULL_LIMIT) {
-          live.full = full;
-          // A decimal cut from a longer exact text, or from a value with more digits, is not exact, though the value is.
-          const cut = r.exact !== undefined || r.value?.re.sticky === true || r.value?.im.sticky === true;
-          live.fullExact = !inexact && (full === exactText || (!cut && (r.facts.exact || !isDigitsText(full))));
-          // G46f1: a symbolic result whose chip text (radian) differs from the text drawn (DEG) copies the drawn text.
-          if (!r.value && !r.items && full !== r.display && r.display.length <= FULL_LIMIT) live.drawn = r.display;
-        }
       } else {
         const r = await this.calc.cas(giac, s);
         if (live.status !== "pending") return;
@@ -556,36 +492,7 @@ export class Session {
         if (r.ok) {
           live.resultLatex = tidyGiacLatex(r.latex);
           if (r.uses?.length) live.uses = r.uses;
-          // A plain number (3/4, 2.5): the Format key can show it in the other forms.
-          const q = rationalOf(r.text);
-          const dec = q ? decimalFromRational(BigInt(q.n), BigInt(q.d)) : decimalFromString(r.text);
-          if (dec) live.value = { re: dec, im: decimalFromRational(0n, 1n) };
-          if (q) live.rational = q;
-          // A float result: every confirmed digit the engine gave (r.text is drawn at the shown digits only).
-          const nf = r.numeric?.full;
-          const full = nf !== undefined && nf.length > 0 ? nf : (r.full ?? r.text); // G46: the radian text, not the DEG drawing
-          if (full.length <= FULL_LIMIT) {
-            live.full = full;
-            live.fullExact = live.inexactInput !== true && !isDigitsText(full); // R65 (D2): an inexact chip's result never is
-          }
-          if (r.full !== undefined && r.full !== r.text && !r.numeric?.value && r.text.length <= FULL_LIMIT) live.drawn = r.text; // G46f1
-          // A true or false that rests on a float, or on an inexact chip, is marked approximate (R18f1); a non-number
-          // with a float in it comes approximate and unchecked, so ⚠ (G27)
-          if (r.approximate || (live.inexactInput === true && /^(true|false)$/.test(r.text))) {
-            live.approximate = true;
-            live.facts = { ...(r.numeric ? {} : r.facts), exact: false, reliableDigits: null };
-          }
-          // A result with a float in it comes with its value and facts (docs/04 2.9): drawn by our formatter, marked.
-          const n = r.numeric;
-          if (n?.value) {
-            live.value = n.value;
-            const f = factsFrom(n);
-            if (f) live.facts = f;
-            if (n.full.length <= FULL_LIMIT) {
-              live.full = n.full;
-              live.fullExact = false;
-            }
-          }
+          Object.assign(live, casItem(r, live.inexactInput === true));
         }
       }
       if (defines && live.status === "done") this.noteFunction(defines, view, live.text);

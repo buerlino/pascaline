@@ -3,20 +3,19 @@
 // every row the rules decide. The expected values are what the session gave on phase-1 before the rule moved out of
 // state/session.svelte.ts (run 181: each row went through Session.submit with a stub engine; source: derived).
 import { describe, expect, it } from "vitest";
-import type { CasOutcome, HomeOutcome } from "../calc/port.ts";
 import { decimalFromString, type ComplexValue } from "../engine/format.ts";
-import { casItem, chipFactsOf, chipOf, homeItem, type ItemResult } from "./results.ts";
+import { casItem, chipFactsOf, chipOf, homeItem, type CasIn, type HomeIn, type ItemResult } from "./results.ts";
 
 
 const re = (s: string, sticky = false): ComplexValue => ({ re: { ...decimalFromString(s)!, ...(sticky ? { sticky: true } : {}) }, im: { neg: false, digits: "", exp: 0, sticky: false } });
 const LONG = "1/" + "7".repeat(2100);
-const home = (o: Partial<HomeOutcome>): HomeOutcome => ({ ok: true, display: "?", approximate: false, facts: { exact: false, reliableDigits: null }, full: "?", ...o });
-const cas = (o: Partial<CasOutcome>): CasOutcome => ({ ok: true, text: "?", latex: "?", facts: { exact: false, reliableDigits: null }, ...o });
+const home = (o: Partial<HomeIn>): HomeIn => ({ ok: true, display: "?", approximate: false, facts: { exact: false, reliableDigits: null }, full: "?", ...o });
+const cas = (o: Partial<CasIn>): CasIn => ({ ok: true, text: "?", facts: { exact: false, reliableDigits: null }, ...o });
 
-const HOME_ROWS: [string, HomeOutcome, boolean][] = [
-  ["exact rational", home({ display: "0.333333333333", exact: "1/3", rational: true, value: re("0.333333333333", true), facts: { exact: true, reliableDigits: null }, full: "1/3" }), false],
+const HOME_ROWS: [string, HomeIn, boolean][] = [
+  ["exact rational", home({ display: "0.333333333333", exact: "1/3", value: re("0.333333333333", true), facts: { exact: true, reliableDigits: null }, full: "1/3" }), false],
   ["exact symbolic", home({ display: "1.41421356237", exact: "sqrt(2)", value: re("1.41421356237", true), full: "sqrt(2)" }), false],
-  ["inexact input", home({ display: "0.333333333333", exact: "1/3", rational: true, value: re("0.333333333333", true), facts: { exact: true, reliableDigits: null }, full: "0.333333333333333333333333333333333333333" }), true],
+  ["inexact input", home({ display: "0.333333333333", exact: "1/3", value: re("0.333333333333", true), facts: { exact: true, reliableDigits: null }, full: "0.333333333333333333333333333333333333333" }), true],
   ["inexact input, no full", home({ display: "0.333333333333", exact: "1/3", value: re("0.333333333333", true), full: "" }), true],
   ["float", home({ display: "1.41421356237", approximate: true, value: re("1.41421356237", true), facts: { exact: false, reliableDigits: 40 }, full: "1.414213562373095048801688724209698078570" }), false],
   ["warn", home({ display: "0.12345678", approximate: true, value: re("0.12345678"), facts: { exact: false, reliableDigits: 8, warn: "unaudited", why: { unaudited: ["foo"] } as never }, full: "0.12345678" }), false],
@@ -26,13 +25,13 @@ const HOME_ROWS: [string, HomeOutcome, boolean][] = [
   ["digits text, exact facts", home({ display: "2.5", value: re("2.5"), facts: { exact: true, reliableDigits: null }, full: "2.5" }), false],
   ["integer text", home({ display: "5", value: re("5"), full: "5" }), false],
   ["E text", home({ display: "1E30", value: re("1e30"), full: "1E30" }), false],
-  ["symbolic, drawn differs (DEG)", home({ display: "sin(x)", exact: "sin(pi*x/180)", full: "sin(pi*x/180)", latex: "\\sin x" }), false],
+  ["symbolic, drawn differs (DEG)", home({ display: "sin(x)", exact: "sin(pi*x/180)", full: "sin(pi*x/180)" }), false],
   ["true from an inexact chip", home({ display: "true", full: "true", exact: "true" }), true],
-  ["error", home({ ok: false, display: "bad", error: "syntax", full: "" }), false],
+  ["error", home({ ok: false, display: "bad", full: "" }), false],
   ["list", home({ display: "[1,2.5]", approximate: true, full: "[1,2.5]", items: [home({ display: "1", value: re("1"), facts: { exact: true, reliableDigits: null }, full: "1" }), home({ display: "2.5", value: re("2.5"), facts: { exact: false, reliableDigits: 12 }, full: "2.5" })], shape: [1, 2], digits: 5 }), false],
 ];
 
-const CAS_ROWS: [string, CasOutcome, boolean][] = [
+const CAS_ROWS: [string, CasIn, boolean][] = [
   ["exact rational", cas({ text: "3/4" }), false],
   ["decimal text", cas({ text: "2.5" }), false],
   ["symbolic", cas({ text: "x+1" }), false],
@@ -44,7 +43,7 @@ const CAS_ROWS: [string, CasOutcome, boolean][] = [
   ["true from an inexact chip", cas({ text: "true" }), true],
   ["non-number with a float (G27)", cas({ text: "x+0.5", approximate: true, facts: { exact: false, reliableDigits: null, warn: "unchecked" } }), false],
   ["too long", cas({ text: "x".repeat(2100) }), false],
-  ["error", cas({ ok: false, text: "bad", error: "syntax" }), false],
+  ["error", cas({ ok: false, text: "bad" }), false],
 ];
 
 const F40 = "1.414213562373095048801688724209698078570";
