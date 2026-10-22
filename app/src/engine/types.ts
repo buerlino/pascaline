@@ -17,8 +17,8 @@ export type { ChipEntry, ChipFactsTable, ConstEntry, ConstTable, HomeResult, Hom
  * so a new fact reaches every view without a change to the carriers.
  */
 export interface ValueFacts {
-  /** No doubt at all: the value is exact (an integer or p/q in re and im, or a chip's exact text). False claims nothing:
-   *  a float, a value with ⚠, or a result that is not a number. */
+  /** The value is exact: an integer or p/q in re and im (the old `exactRational`), or a chip's exact text. A `warn`
+   *  still stands over it (markOf reads `warn` first). False claims nothing: a float, or a result that is not a number. */
   exact: boolean;
   /** Significant digits confirmed by the agreement check; null: not limited (an exact value, or one whose only doubt is
    *  `warn` or `inexact`). */

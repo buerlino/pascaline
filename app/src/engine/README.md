@@ -28,7 +28,8 @@ await engine.cancel();                       // pending calls reject with Engine
   CAS: no fallback, `hardTimeoutS` (600 s) is only a safety net, the UI shows Cancel prominently after
   `CAS_SOFT_BUDGET_MS`; power limit 1e8. The host re-applies a mode only when mode or settings change.
 - **Ans.** Home keeps its answer in `pasans`, CAS in `pcasans`; user variables are shared (one Giac context).
-- **Precision (G2, docs/04 2.4–2.10).** Every number carries `exactRational`, `reliableDigits` (null = exact) and maybe `warn`;
+- **Precision (G2, docs/04 2.4–2.10).** Every result carries `facts: ValueFacts` (G76, `types.ts`): `exact`, `reliableDigits`
+  (null = not limited), maybe `warn` with `why`, `inexact` and `uncDigits`; carriers pass it whole;
   `display` shows confirmed digits only. Exact non-rationals: `evalf` at P = max(40, digits+10) and P+20 (one more step to
   P+40 if they disagree). A float Giac's numeric code returned on the exact path: run again with a double and with MPFR
   (`warn: "unaudited"` unless every function is in `AUDITED_FUNCTIONS`), or at P and P+20 when all are audited. Float
