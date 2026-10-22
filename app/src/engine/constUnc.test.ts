@@ -39,12 +39,22 @@ describe("constFacts (G86)", () => {
 });
 
 describe("ConstEntry carries its facts (G86)", () => {
-  it("constTable sets each entry's facts from constFacts, and the carried facts decide which constants are inexact", () => {
-    const t = constTable({ G: { value: "6.67430E-11", unc: "0.00015E-11" }, c: { value: "299792458" } });
-    expect(t["G"]!.facts).toEqual({ exact: false, reliableDigits: null, inexact: true });
-    expect(t["c"]!.facts).toEqual({ exact: true, reliableDigits: null });
-    expect(inexactConstsIn("pasc_G*pasc_c", t)).toEqual(["G"]);
-    // the carried facts win over the uncertainty text
-    expect(inexactConstsIn("pasc_c", { c: { value: "299792458", facts: { exact: false, reliableDigits: null, inexact: true } } })).toEqual(["c"]);
+  it("constTable sets each entry's facts to constFacts of that entry", () => {
+    const raw = {
+      G: { value: "6.67430E-11", unc: "0.00015E-11" },
+      c: { value: "299792458" },
+      z: { value: "1", unc: "0E-3" },
+      // facts carried in that disagree with unc are replaced
+      w: { value: "2", unc: "0.1", facts: { exact: true, reliableDigits: null } },
+    };
+    const t = constTable(raw);
+    for (const [id, e] of Object.entries(raw)) expect(t[id]!.facts).toEqual(constFacts(e));
+    expect(inexactConstsIn("pasc_G*pasc_c*pasc_z*pasc_w", t)).toEqual(["G", "w"]);
+  });
+  it("unc alone decides which constants are inexact: facts that disagree change nothing", () => {
+    const c = { c: { value: "299792458", facts: { exact: false, reliableDigits: null, inexact: true as const } } };
+    expect(inexactConstsIn("pasc_c", c)).toEqual([]);
+    const G = { G: { value: "6.67430E-11", unc: "0.00015E-11", facts: { exact: true, reliableDigits: null } } };
+    expect(inexactConstsIn("pasc_G", G)).toEqual(["G"]);
   });
 });
