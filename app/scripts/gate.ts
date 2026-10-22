@@ -4,12 +4,14 @@
 //   npm run gate            # typecheck, index (when missing), vitest (FIND_INDEX=required), e2e, golden (when engine or
 //                           # parser code changed against phase-1), sweep (G61, the oracle sweep), seqsweep (G62), viewsweep (G63), size test, docs sizes
 //   npm run gate -- --quick # typecheck and vitest only
+//   npm run gate -- --update-text-baseline # rules stage: write app/scripts/text-baseline.json (G88)
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
 // QALC_OUT, PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { countAll, evalOutside, judge, readBaseline, totals, writeBaseline } from "./text-rules.ts";
 import {
   duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
   type Summary,
@@ -19,6 +21,7 @@ const app = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repo = resolve(app, "..");
 const outDir = join(app, "_out/gate");
 const quick = process.argv.includes("--quick");
+const updateTextBaseline = process.argv.includes("--update-text-baseline");
 const base = process.env["GATE_BASE"] ?? "phase-1";
 
 interface Ran {
@@ -73,6 +76,18 @@ const checks: Check[] = [
     run: () => {
       const r = run("typecheck", "npm", ["run", "typecheck"]);
       return summarizeTypecheck(r.out, r.code);
+    },
+  },
+  {
+    // G88: text matches over Giac text only go down (scripts/text-baseline.json); no `.eval(` of the Giac API outside engine and units
+    name: "rules",
+    run: () => {
+      const { counts, hits } = countAll(app);
+      if (updateTextBaseline) {
+        writeBaseline(app, counts);
+        return { ok: true, detail: `baseline written: ${JSON.stringify(totals(counts))}` };
+      }
+      return judge(counts, readBaseline(app), hits, evalOutside(app));
     },
   },
   {
