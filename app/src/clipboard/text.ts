@@ -120,7 +120,9 @@ export function withoutMark(shown: string): string {
  */
 export function copyMark(i: CopySource, ctx: DisplayContext): { mark: Mark; n?: number; warn?: PrecisionWarn } | undefined {
   if (i.status !== "done" || !i.value) return undefined;
-  const m = markFor(i, modeOf(i, ctx), ctx);
+  // copyFull writes a decimal, so a fraction form is marked as the decimal it writes (R69f1)
+  const mode = modeOf(i, ctx);
+  const m = markFor(i, mode === "frac" || mode === "mixed" ? (i.fmt && i.fmt !== "frac" && i.fmt !== "mixed" ? i.fmt : ctx.format) : mode, ctx);
   return m ?? undefined;
 }
 

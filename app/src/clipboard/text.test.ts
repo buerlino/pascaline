@@ -138,8 +138,15 @@ describe("sessionText", () => {
     }
     // a row drawn as a fraction is "=" on screen even where the plain notation would say "≈"
     const third = done({ value: ratio(1n, 3n), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "3" } });
-    expect(copyMark({ ...third, form: "frac" }, CTX)).toEqual({ mark: "=" });
     expect(copyMark(third, CTX)).toEqual({ mark: "≈" });
+  });
+  it("a fraction item copies with the mark of the decimal it writes (R69f1)", () => {
+    const third = done({ value: ratio(1n, 3n), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "3" }, full: "1/3", fullExact: true });
+    const quarter = done({ value: re("0.25"), facts: { exact: true, reliableDigits: null }, rational: { n: "1", d: "4" }, full: "1/4", fullExact: true });
+    expect(sessionText([{ ...third, fmt: "frac" }], {}, CTX)).toContain(" ≈ 0.3333");
+    expect(sessionText([{ ...third, form: "frac" }], {}, CTX)).toContain(" ≈ ");
+    expect(sessionText([{ ...quarter, fmt: "frac" }], {}, CTX)).toContain(" = 0.25");
+    expect(sessionText([{ ...quarter, fmt: "mixed" }], {}, CTX)).toContain(" = 0.25");
   });
   it("is empty when nothing finished", () => {
     expect(sessionText([done({ status: "pending" })], {}, CTX)).toBe("");

@@ -227,7 +227,7 @@ export function markFor(r: NumericResult, mode: FmtMode | undefined, ctx: Displa
   const base = baseMode(mode, ctx);
   const o: FormatOptions = { format: BASE[base], digits: r.facts?.digits ?? ctx.digits, fixed: ctx.fixDecimals };
   let info: MarkInfo | null;
-  if ((m === "frac" || m === "mixed") && r.rational && r.value) info = p.exact ? { mark: "=" } : markOf(p, o);
+  if ((m === "frac" || m === "mixed") && r.rational && r.value) info = p.exact && !p.warn && !p.inexact ? { mark: "=" } : markOf(p, o);
   else {
     info = markOf(p, o);
     if (info?.mark === "=" && m === "polar" && r.polar?.angle === ctx.angle) info = { mark: "≈" };
