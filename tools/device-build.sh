@@ -2,11 +2,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Build our APK for a device with the existing dev engine (a thin wrapper over ./build.sh):
 #
-#   tools/device-build.sh [--measure] [--install] [--serial S] [--engine-dir DIR]
+#   tools/device-build.sh [--measure] [--test] [--install] [--serial S] [--engine-dir DIR]
 #
 # Engine: --engine-dir, else $GIAC_OUT, else the main checkout's engine/giac/_out/gsl (works from a worktree).
 # Signed with the one throwaway key in ~/.cache/pascaline/keys/ (build.sh). --install runs `adb install -r` for
 # io.github.buerlino.pascaline only (never other apps); annabell only. --measure adds the timing marks (never for release).
+# --test: WebView debugging on, for the core list on the device (app/playwright.device.config.ts); never for release.
 # Output: prints the APK path on the last line (dist/pascaline.apk). build.sh takes the host-cpu lock.
 set -euo pipefail
 
@@ -18,6 +19,7 @@ ARGS=() SERIAL="${ANDROID_SERIAL:-}" INSTALL=0
 while (( $# )); do
   case "$1" in
     --measure) ARGS+=(--measure); shift ;;
+    --test) ARGS+=(--test); shift ;;
     --install) INSTALL=1; shift ;;
     --serial) SERIAL="$2"; shift 2 ;;
     --engine-dir) ENGINE="$2"; shift 2 ;;
