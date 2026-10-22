@@ -540,7 +540,7 @@ export class Session {
     return markFor(item, this.modeOf(item), this.displayContext());
   }
 
-  private displayContext(): { format: NumberFormat; digits: number; fixDecimals: number; angle: AngleUnit } {
+  displayContext(): { format: NumberFormat; digits: number; fixDecimals: number; angle: AngleUnit } {
     const s = this.settings;
     return { format: s.format, digits: s.digits, fixDecimals: s.fixDecimals, angle: s.angle };
   }

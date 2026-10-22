@@ -474,7 +474,6 @@ cases:
     expect: { clipboard: "≈ 1.41421356237" }
     value: "1.41421356237309504880168872421"
     source: oracle
-    known: F55
 
   - id: c54
     area: home

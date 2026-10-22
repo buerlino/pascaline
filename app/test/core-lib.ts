@@ -201,7 +201,7 @@ export async function check(page: Page, e: CoreExpect): Promise<void> {
       if (w.status !== undefined) expect(got[i]?.status, `row ${i} status`).toBe(w.status);
     });
   }
-  if (e.clipboard !== undefined) expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(e.clipboard);
+  if (e.clipboard !== undefined) await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toContain(e.clipboard); // the copy code loads on first use
   if (e.entry !== undefined) expect(await page.evaluate(() => window.pascaline.entry.value), "entry").toBe(e.entry);
   for (const [sel, want] of Object.entries(e.text ?? {})) {
     const loc = page.locator(sel);
