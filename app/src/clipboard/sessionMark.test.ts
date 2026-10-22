@@ -6,6 +6,9 @@ import { EngineHost } from "../engine/host.ts";
 import { defaultHomeSettings } from "../engine/homeEval.ts";
 import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
 import { sessionText, type CopySource } from "./text.ts";
+import type { DisplayContext } from "../state/displayMode.ts";
+
+const CTX: DisplayContext = { format: "std", digits: 12, fixDecimals: 4, angle: "rad" };
 
 describe.skipIf(!giacAvailable())("Copy session on the real engine (R69)", () => {
   let host: EngineHost;
@@ -22,7 +25,7 @@ describe.skipIf(!giacAvailable())("Copy session on the real engine (R69)", () =>
     ["\\pi", "pi", "π ≈ 3.14159265358979323846"],
     ["\\ln 2", "ln(2)", "\\ln 2 ≈ 0.693147180559945309417"],
   ])("%s is ≈, not ⚠ n", (latex, input, start) => {
-    const line = sessionText([item(latex, input)]);
+    const line = sessionText([item(latex, input)], {}, CTX);
     expect(line.startsWith(start.split(" ≈ ")[0] + " ≈ ")).toBe(true);
     expect(line).not.toContain("⚠");
     expect(line.split(" ≈ ")[1]!.startsWith(start.split(" ≈ ")[1]!.slice(0, 15))).toBe(true);

@@ -151,6 +151,13 @@ export interface DisplayContext {
   angle: "rad" | "deg";
 }
 
+/** The mode an item is drawn in: the a b/c form when one is chosen, else the Format key's notation (`dec`: the notation,
+ *  or the global format). The one rule the screen and Copy session share. */
+export function modeOf(item: { fmt?: FmtMode; form?: FormStep }, settings: { format: NumberFormat }): FmtMode | undefined {
+  if (item.form === "dec") return item.fmt ?? settings.format;
+  return item.form ?? item.fmt;
+}
+
 const BASE: Record<"std" | "sci" | "eng" | "pfx" | "fix", FormatOptions["format"]> = {
   std: "STD",
   sci: "SCI",

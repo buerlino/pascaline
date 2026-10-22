@@ -26,6 +26,7 @@ import {
   type Polar,
   type Rational,
   type ResultFacts,
+  modeOf,
 } from "./displayMode.ts";
 import { idbKv, type Kv } from "./storage.ts";
 import { TapCounter } from "./taps.svelte.ts";
@@ -530,8 +531,7 @@ export class Session {
 
   /** The mode an item is drawn in: the a b/c form when one is chosen, else the Format key's notation. */
   private modeOf(item: HistoryItem): FmtMode | undefined {
-    if (item.form === "dec") return item.fmt ?? this.settings.format;
-    return item.form ?? item.fmt;
+    return modeOf(item, this.settings);
   }
 
   /** The mark before a finished result (docs/04 2.4), for the form it is drawn in; null: a non-number, or none known. */

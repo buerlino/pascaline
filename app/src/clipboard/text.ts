@@ -15,7 +15,7 @@ import {
 } from "../engine/format.ts";
 import type { ValueFacts } from "../engine/types.ts";
 import type { ChipTable } from "../input/chips.ts";
-import { markFor, type DisplayContext, type Rational } from "../state/displayMode.ts";
+import { markFor, modeOf, type DisplayContext, type FmtMode, type FormStep, type Rational } from "../state/displayMode.ts";
 
 /** The part of a history item that Copy reads (HistoryItem in state/session.svelte.ts has all of it). */
 export interface CopySource {
@@ -35,6 +35,9 @@ export interface CopySource {
   facts?: ValueFacts;
   /** An inexact chip went into the input: never `=` (decisions M4-4). */
   inexactInput?: boolean;
+  /** The item's display settings (Format key): the mode and the a b/c form the screen draws it in. */
+  fmt?: FmtMode;
+  form?: FormStep;
   chips?: ChipTable;
 }
 
@@ -113,15 +116,13 @@ export function withoutMark(shown: string): string {
 
 /**
  * The mark of a copied result: the one the screen shows (R69), `markFor` of the item's facts. `ctx` is the display
- * settings (the session's); the default is the factory ones. undefined: not a number.
+ * settings (the session's), required: the item's own mode is read against its global format. undefined: not a number.
  */
-export function copyMark(i: CopySource, ctx: DisplayContext = DEFAULT_CTX): { mark: Mark; n?: number; warn?: PrecisionWarn } | undefined {
+export function copyMark(i: CopySource, ctx: DisplayContext): { mark: Mark; n?: number; warn?: PrecisionWarn } | undefined {
   if (i.status !== "done" || !i.value) return undefined;
-  const m = markFor(i, undefined, ctx);
+  const m = markFor(i, modeOf(i, ctx), ctx);
   return m ?? undefined;
 }
-
-const DEFAULT_CTX: DisplayContext = { format: "std", digits: 12, fixDecimals: 4, angle: "rad" };
 
 const markText = (m: ReturnType<typeof copyMark>): string => (m === undefined ? "=" : m.mark === "⚠" && m.n !== undefined && !m.warn ? `⚠ ${m.n}` : m.mark);
 
@@ -155,7 +156,7 @@ export function entryText(latex: string): string {
 }
 
 /** The session as text: one line per finished entry, `input mark result` with the full value; an error line shows the message. */
-export function sessionText(items: readonly CopySource[], o: TextOptions = {}, ctx?: DisplayContext): string {
+export function sessionText(items: readonly CopySource[], o: TextOptions, ctx: DisplayContext): string {
   const lines: string[] = [];
   for (const i of items) {
     if (i.status === "done") {
