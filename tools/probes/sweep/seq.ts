@@ -12,6 +12,7 @@ import { markOf } from "../../../app/src/engine/format.ts";
 import { applyDefChanges, type DefEntry } from "../../../app/src/engine/defs.ts";
 import type { ChipEntry } from "../../../app/src/engine/chipFacts.ts";
 import type { KnownValue } from "../../../app/src/engine/types.ts";
+import { knownDigits } from "../../../app/src/engine/solve.ts";
 import { checkCopy, copySourceOf, type InvariantFailure } from "../../../app/scripts/invariants.ts";
 import { lcg } from "./gen.ts";
 
@@ -195,8 +196,8 @@ export async function runSequences(seqs: readonly Sequence[], fresh: () => Promi
             // A root used as a known, as the Solve app sends it (full value, confirmed digits, warn), against the same value typed in full.
             const root = live.solve({ kind: "equations", equations: [`u^2=${st.c}`], unknowns: ["u"], guesses: ["1"] }, s).roots[0]?.result;
             if (!root?.ok || !root.value) break;
-            const known: KnownValue = { name: "u", value: root.full.replace("E", "e"), ...(root.facts.exact ? {} : { digits: root.facts.reliableDigits ?? undefined }), ...(root.facts.warn ? { warn: true } : {}) };
-            if (known.digits === undefined) delete known.digits;
+            const known: KnownValue = { name: "u", value: root.full.replace("E", "e"), facts: root.facts };
+            const kd = knownDigits(known);
             const req = { kind: "equations" as const, equations: ["v=u^2"], unknowns: ["v"], guesses: ["0"] };
             const withFacts = live.solve({ ...req, knowns: [known] }, s).roots[0]?.result;
             const typed = clean.solve({ ...req, knowns: [{ name: "u", value: known.value }] }, s).roots[0]?.result;
@@ -206,8 +207,8 @@ export async function runSequences(seqs: readonly Sequence[], fresh: () => Promi
               // the app's known carries facts the typed one does not: only the digits shown must agree (the mark may be weaker, never the text different)
               run.checked++;
               // …and it carries the known's confirmed digits: a value of a known confirmed to n digits is not confirmed to more (G68)
-              const over = known.digits !== undefined && withFacts.facts.reliableDigits !== null && withFacts.facts.reliableDigits > known.digits;
-              if (over) run.failures.push({ id: `${q.digits} solve: u^2=${st.c}, digits`, check: "solve", detail: `[${seq}] u confirmed to ${known.digits} digits gave v confirmed to ${withFacts.facts.reliableDigits}` });
+              const over = kd !== undefined && withFacts.facts.reliableDigits !== null && withFacts.facts.reliableDigits > kd;
+              if (over) run.failures.push({ id: `${q.digits} solve: u^2=${st.c}, digits`, check: "solve", detail: `[${seq}] u confirmed to ${kd} digits gave v confirmed to ${withFacts.facts.reliableDigits}` });
               if (a.display !== b.display) run.failures.push({ id: `${q.digits} solve: u^2=${st.c}`, check: "solve", detail: `[${seq}] u=${known.value} as the app sends it gave v ${a.mark || "-"} ${a.display}, typed in full ${b.mark || "-"} ${b.display}` });
             }
             break;

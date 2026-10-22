@@ -51,7 +51,7 @@ describe.skipIf(!giacAvailable())("G68: Solve's knowns carry every confirmed dig
       expect(app.value("y"), eq).toMatch(new RegExp(`^${want.slice(0, 11).replace(".", "\\.")}`));
       expect(app.warned["y"], eq).toBe(false);
     }
-    expect(app.known("x").digits).toBeGreaterThan(20);
+    expect(app.known("x").facts?.reliableDigits).toBeGreaterThan(20);
   });
   it("a ⚠ root used as a known passes its ⚠ on", async () => {
     const app = make();
@@ -127,7 +127,7 @@ describe.skipIf(!giacAvailable())("G68: Solve's knowns carry every confirmed dig
     (app as unknown as { host: AppHost }).host.kv.get = (async () => stored) as never;
     await app.restore();
     expect(app.copies["x"]).toBe("1.41421356237"); // the old full copy is dropped; the shown value stands in
-    expect(app.known("x").digits).toBe(12); // the shown digits, each confirmed
+    expect(app.known("x").facts?.reliableDigits).toBe(12); // the shown digits, each confirmed
     stored.copies = { x: "2" };
     (stored as Record<string, unknown>)["confirmed"] = { x: "exact" };
     stored.values.x = "2";

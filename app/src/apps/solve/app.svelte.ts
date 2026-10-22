@@ -7,7 +7,7 @@
 //   - several equations on: Solve finds as many unknowns as there are equations, starting with the
 //     selected one and then in list order; the rest keep their values;
 //   - Polynomial roots lists every root (complex too) of the one equation in the selected unknown.
-import { CalcCancelled, engineFormat, IDENT, type Calc, type KnownValue, type SolveOutcome } from "../../calc/port.ts";
+import { CalcCancelled, engineFormat, IDENT, type Calc, type KnownValue, type SolveOutcome, type ValueFacts } from "../../calc/port.ts";
 import { confirmedText, isWarned } from "../../calc/shown.ts";
 import { EMARK } from "../../entry/macros.ts";
 import { mathJsonToGiac } from "../../input/emit.ts";
@@ -107,9 +107,14 @@ export class SolveApp implements AppInstance {
     const full = this.copies[name];
     if (full === undefined) return { name, value: this.value(name) };
     const c = this.confirmed[name];
-    // A copy always has an entry (keepFull, restore); a missing one is not taken for exact.
-    const digits = c === "exact" ? undefined : (c ?? shownDigits(full));
-    return { name, value: full.replace("E", "e"), ...(digits !== undefined ? { digits } : {}), ...(this.warned[name] ? { warn: true } : {}) };
+    // A copy always has an entry (keepFull, restore); a missing one is not taken for exact. The ⚠ an answer was shown
+    // with passes on as `unchecked` (the table keeps the mark, not which warning made it).
+    // An exact root with no ⚠ goes in as a typed value does.
+    const warn = this.warned[name] === true;
+    const value = full.replace("E", "e");
+    if (c === "exact" && !warn) return { name, value };
+    const facts: ValueFacts = c === "exact" ? { exact: true, reliableDigits: null } : { exact: false, reliableDigits: c ?? shownDigits(full) };
+    return { name, value, facts: warn ? { ...facts, warn: "unchecked" } : facts };
   }
   value(name: string): string {
     return this.values[name] ?? "0";
