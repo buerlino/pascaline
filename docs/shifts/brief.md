@@ -4,7 +4,7 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; night (Tab One) = the plugged-in Tab One only, P23; day = the owner tries it or it changes the pipeline); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` at `94cb7aa` on 2026-10-22, after the seventh night ([2026-10-22-night-report.md](2026-10-22-night-report.md)): R74, R75, G90, G85, G88 with G88f1, G97 with G97f1, A32, G76, G86 and R69 merged (Opus passes 55–58); pass 58's two fixes, G86f1 and R69f1, run by day. Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` at `bdc084f` on 2026-10-22, after the seventh night and the day's merges (item 0 below); before that, at `94cb7aa` ([2026-10-22-night-report.md](2026-10-22-night-report.md)): R74, R75, G90, G85, G88 with G88f1, G97 with G97f1, A32, G76, G86 and R69 merged (Opus passes 55–58); pass 58's two fixes, G86f1 and R69f1, run by day. Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path: the core freeze (owner, 2026-10-21; decisions.md "P23")
 **Why.** Since 2026-10-14 phase-1 has had about two fix commits for every feature commit (`git log --no-merges` by `feat`/`fix`: 84 against 188, [freeze report](2026-10-21-sandra-freeze-report.md) section 1). Many are fix rounds before a merge, but 45 of 208 merges were follow-up packages (`<ID>f1`, `f2`) for work already merged (`git log --merges --since=2026-10-14 --format=%s phase-1`): merged changes break things too often. The open bugs are of two kinds. Most come from our layer guessing at Giac's printed text (settings, names, stores, bound variables, the kind of a number): the structured bridge (G85) removes their cause. The rest are precision edge cases inside Giac on extreme inputs. So: no new features until the core holds; the bridge first; "holds" is a fixed list, not a feeling; extreme inputs run as a background stream.
@@ -14,8 +14,8 @@
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find first (three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-0. **G86f1**, then **R69f1** (pass 58: bugs in merged work; owner, 2026-10-22).
-1. **A34** (worktrees take `node_modules` from phase-1; until it is merged, no night package may add a dependency), then **A33** (the night's device step; A32 is merged).
+0. Done on 2026-10-22: G86f1 `b80bd7c`, R69f1 `f921d46`, S23 `f6d5092`, A34 `ce29744`, A33 `bdc084f` (device 903: c01, c02 were lock-screen timeouts, 2/2 on a rerun).
+1. **A33f1** (a locked device is skipped, not failed) before the night.
 2. **S23** is done: the bridge's moves are steps 113–119 and 131–134, after R76 and R77.
 3. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
 4. When a slot is free (process, nothing users see): **A25**, **A19** (G64 and S16 wait for it), **A18**, **A22** → **A26**, **A27**, **A30**.
@@ -31,10 +31,7 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [G86f1](packages/G86f1.md) | A CAS true or false on a float keeps its approximate chip | gorge, Sonnet | day first | now | ~0.1 d |
-| [R69f1](packages/R69f1.md) | Copy session's mark fits the decimal it writes | ron, Sonnet | day first | now | ~0.1 d |
-| [A34](packages/A34.md) | Worktrees take node_modules from phase-1 | annabell, Sonnet (audit Opus) | day | now | ~0.25 d |
-| [A33](packages/A33.md) | The night's device step | annabell, Sonnet | day | now | ~0.5 d |
+| [A33f1](packages/A33f1.md) | A locked device is skipped, not failed | annabell, Sonnet | day | now | ~0.1 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A25](packages/A25.md) | The golden gate gates itself | annabell, Sonnet | day | now | ~0.1 d |
@@ -52,7 +49,7 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 
 ### Rules for a night shift (they replace rules section 4's day use)
 1. **One pipeline run at a time**, and never a worker started any other way. A package is `scripts/pipeline.sh <agent> "<ID>" --model <model from the table> --audit-model auto` (`--audit-model opus` where the queue's model column says "audit Opus"): fresh worker, checks, at most two fix rounds, sofia's audit (P17: the pipeline raises gorge packages, Opus workers and engine, input or units diffs to Opus), merge. A review-only merge is `scripts/pipeline.sh <agent> "<ID>" --no-worker --audit-model auto` (A10): phase-1 merged into the branch, checks, audit, merge; a conflict or a FIX is a fix round for the package's agent. Its RESULT line in the log is the step's state.
-2. **Devices (P23):** only the night's device, plugged in by the owner, and only for a queue step whose lane says "night (Tab One)" (annabell). The night's device is `$ANDROID_SERIAL`, set when `night.sh` starts: the Tab One (`HA24BZ2Y`), or the Fairphone 6 (`4d42e62f`) while APODroid's night has the Tab One (owner, 2026-10-21). APODroid's locks are not ours, so a night on the Fairphone never touches `HA24BZ2Y`; A33 adds a device step after each Opus pass and its command to the list below. Nobody else runs `adb` or `build.sh`. A missing or `unauthorized` tablet is not a failure: the worker says so in its report, the step stays unmerged and runs by day.
+2. **Devices (P23):** only the night's device, plugged in by the owner, and only for a queue step whose lane says "night (Tab One)" (annabell). The night's device is `$ANDROID_SERIAL`, set when `night.sh` starts: the Tab One (`HA24BZ2Y`), or the Fairphone 6 (`4d42e62f`) while APODroid's night has the Tab One (owner, 2026-10-21). APODroid's locks are not ours, so a night on the Fairphone never touches `HA24BZ2Y`; After each Opus pass, `scripts/pipeline.sh device <n>` (henri's line; the next Opus pass reads its `CORE DEVICE` line, and a `new` case is a FIX). The night's device has no screen lock (owner, 2026-10-22: a locked phone times out every case). Nobody else runs `adb` or `build.sh`. A missing or `unauthorized` tablet is not a failure: the worker says so in its report, the step stays unmerged and runs by day.
 3. **henri decides nothing.** Anything this section does not settle: the pipeline logs it, and henri hands it to the next Opus pass (at once, if it blocks the queue). **Follow every Opus-pass recommendation as written.** Plan changes go to the owner through `docs/decisions.md` "Needs the user", written by the Opus pass.
 4. **Workers tick their own backlog line** and file their "Needs the user" items on their branch (rules section 5); the audit sees them in the diff.
 5. **Opus pass:** `scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"` after every three finished packages (merged or left unmerged; fix packages from a pass count), and the last pass at the end of the queue. Each FIX line of its reply runs as `scripts/pipeline.sh <agent> "<prompt>" --id <ID>f1 --branch <branch> --model <m> --audit-model auto`, then QUEUE is followed. A prompt never holds a backtick or a `$` (`night.sh` refuses them; two refusals in a row end the night). The last pass's FIX packages get only their audit, then the report.
@@ -100,6 +97,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 - `scripts/pipeline.sh <agent> "<ID>" --no-worker --audit-model auto`: a review-only merge of a finished branch.
 - `scripts/pipeline.sh <agent> "<FIX prompt, verbatim>" --id <IDf1> --branch <branch> --model <m> --audit-model auto`: a FIX line of the last Opus pass, one per call, in order. No backtick and no `$` anywhere in the line.
 - `scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"`.
+- `scripts/pipeline.sh device <n>` right after `pass <n>`.
 - `scripts/pipeline.sh report`, then `SHIFT DONE`.
 
 ### Opus pass (instructions for the Opus agent)
