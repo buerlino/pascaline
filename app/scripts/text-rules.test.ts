@@ -16,6 +16,9 @@ describe("textLines (G88)", () => {
     ["// s.match(/a/)", 0],
     [" * new RegExp(x)", 0],
     ["const x = 1;", 0],
+    ["if (/x/.test(s)) return;", 1],
+    ["const m = RE.exec(s);", 1],
+    ['if ("([{".includes(ch)) ++depth; else if (")]}".includes(ch)) --depth;', 1],
   ])("%s -> %i", (src, n) => {
     expect(textLines(src).length).toBe(n);
   });

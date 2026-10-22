@@ -7,10 +7,12 @@ import { join, relative } from "node:path";
 /** What counts: a pattern method over text, a RegExp, an indexOf over a string literal, a bracket compare or depth counter. */
 const TEXT_LINE = [
   /\.(?:match|matchAll)\(/,
-  /\.(?:replace|replaceAll|split|search|test|exec)\(\s*\//,
+  /\.(?:replace|replaceAll|split|search)\(\s*\//,
+  /\.(?:test|exec)\(/,
   /new RegExp\(/,
   /\.(?:indexOf|lastIndexOf)\(\s*["'`]/,
   /\b(?:depth|level|nest|parens?)\s*(?:\+\+|--|\+=\s*1|-=\s*1)/,
+  /(?:\+\+|--)\s*(?:depth|level|nest|parens?)\b/,
   /===?\s*["'][()[\]{}]["']/,
 ];
 /** Giac API evaluation outside the engine and units directories. */
