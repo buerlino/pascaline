@@ -120,7 +120,7 @@ export function casItem(r: CasIn, inexactInput: boolean): ItemResult {
   const full = nf !== undefined && nf.length > 0 ? nf : (r.full ?? r.text); // G46: the radian text, not the DEG drawing
   if (full.length <= FULL_LIMIT) {
     out.full = full;
-    out.fullExact = !inexactInput && !isDigitsText(full); // R65 (D2): an inexact chip's result never is
+    out.fullExact = !inexactInput && !r.approximate && !isDigitsText(full); // R65 (D2): an inexact chip's result never is; nor a float's (G86f1)
   }
   if (r.full !== undefined && r.full !== r.text && !r.numeric?.value && r.text.length <= FULL_LIMIT) out.drawn = r.text; // G46f1
   // A true or false that rests on a float, or on an inexact chip, is marked approximate (R18f1); a non-number with a
