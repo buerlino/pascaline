@@ -144,6 +144,10 @@ describe("marks and PFX (docs/04 2.4, 2.7)", () => {
     expect(markFor(r, undefined, ctx)).toEqual({ mark: "≈" });
     expect(markFor(r, "frac", ctx)).toEqual({ mark: "=" });
   });
+  it("a fraction whose exact path is unchecked is ⚠, not = (R69f1)", () => {
+    const r: NumericResult = { ...third, facts: { exact: true, reliableDigits: null, warn: "unchecked" } };
+    expect(markFor(r, "frac", ctx)?.mark).toBe("⚠");
+  });
   it("a float whose digits are confirmed is ≈; fewer confirmed digits give ⚠ n", () => {
     expect(markFor(approx({ value: real(1n, 3n) }, 30), undefined, ctx)).toEqual({ mark: "≈" });
     const m = markFor(approx({ value: real(1n, 3n) }, 7), undefined, ctx);
