@@ -43,6 +43,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
+- **F75, no package (G86's report).** The golden runner's `latex` steps parse without `chipNames`, so an inexact chip goes in as text there and by name in Home: the gate checks a different input than the app. Family 8.
 - **F74, no package (G97's Not done, run 174).** CAS `f(x):=x^-1`, then `f([[5],[1]])` still shows Giac's elementwise result under `=`: `nonSquarePower` walks only the typed input's parts, not the function's body (`engine/nonsquare.ts`).
 - **F54 (G85 GO: bridge-2's reads, placed by S23; else [G69](shifts/packages/G69.md)).** With a stored x, `product(x,x,1,4)` = `⚠ 24` "inherited: x" (right `= 24`; `seq` too). Families 8, 1.
 - **F72, no package (ron checks first whether R34 meant it).** A value typed in Solve's Num view stays in the shared entry line after Enter and follows you to Home: Solve x²=2, x set to 1, Home, 2 + 2 Enter gives `12+2 = 14` (after a solve, the line holds `1.41421356237`). Core c56. Probe: sandra, 2026-10-21, on `e0d03ed`.
@@ -67,7 +68,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **Find (milestone 4, EN1):** R72, then **R4a** (Find on Math; G93 settled first), **R4b** (Vars, Memory, the user keys) with **R15c3** (their Alpha layer), **A4b** (Find per key on the Tab One). Gate: task 5, the query test, the size test, no index request before idle. Three core cases (c38, c39, c43: a command by name) wait for it.
 - **Units (milestone 5; docs/04 section 4):** **R24b** → **R24c** → **R24d**; the result view **R60**, **R61**, **R62**, **R63**; **R71** (±); G81 (σ through the basis); the first unit result on the Tab One and the Fairphone 6 (< 1 s). Gate: tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
 - **Settings and looks (milestone 4a):** **R49** → **R55**, **R57**, **R70**; **R50e**; **R53** (results mode); **R12b** → **R12c** → **R41**; **R15c4** (first-start tips).
-- **Trust features:** **R36** (why the mark, after G76), **R33**, **R37**, **R40** (after G81). **The backup:** **R38a** → **R38b**. **Libraries:** **R59** (after the bridge moves). **G79**, **S20** when a slot is free.
+- **Trust features:** **R36** (why the mark), **R33**, **R37**, **R40** (after G81). **The backup:** **R38a** → **R38b**. **Libraries:** **R59** (after the bridge moves). **G79**, **S20** when a slot is free.
 - **Milestone 6, Structure** (not packaged): EN5 matrices with Shift + 5 and the editor on Shift + 4 (§5.3; the Tmpl matrices work today), EN6 number bases, EN7 everyday functions, Help as context help; EN4, copying one element of a list or matrix.
 
 ### Without a package yet
