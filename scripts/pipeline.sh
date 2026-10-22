@@ -143,7 +143,7 @@ if [[ "${1:-}" == "device" ]]; then
   if [[ "${3:-}" == "--dry-run" ]]; then
     integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
     echo "DRY RUN: device step $n on ${dev:-<ANDROID_SERIAL unset: DEVICE SKIPPED>}; output in $run; at most 30 minutes"
-    echo "1. tools/devlock.sh acquire host-cpu device-$n 1800; (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD; release host-cpu"
+    echo "1. (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD, built under the host-cpu lock (build.sh takes it)"
     echo "2. tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $integ/dist/pascaline.apk (our app only); release"
     echo "3. ANDROID_SERIAL=${dev:-<serial>} tools/core-device.sh   (A32's runner; holds the device lock, stay-awake and restore)"
     echo "4. log: - HH:MM pipeline device $n: CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>"
@@ -159,9 +159,8 @@ if [[ "${1:-}" == "device" ]]; then
   [[ -z "$bat" || "$bat" -ge 10 ]] || skip "battery $bat %"
   sha="$(git -C "$integ" rev-parse --short HEAD)"
   t0=$SECONDS
-  tools/devlock.sh acquire host-cpu "device-$n" 1800 >/dev/null || skip "host-cpu lock busy"
+  # build.sh takes the host-cpu lock itself (waiting for it): do not hold it here
   rc=0; (cd "$integ" && timeout 1500 tools/device-build.sh --test) > "$run/build.log" 2>&1 || rc=$?
-  tools/devlock.sh release host-cpu "device-$n" >/dev/null || true
   [[ $rc -eq 0 && -f "$integ/dist/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
   tools/devlock.sh acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
   rc=0; timeout 300 adb -s "$dev" install -r "$integ/dist/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
