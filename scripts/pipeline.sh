@@ -18,6 +18,9 @@
 #       --dry-run           print the bundle and the commands; start no agent, make no worktree
 #   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" ["<open questions>"] [--dry-run]
 #                           an Opus pass by sofia on phase-1 (brief section 0c "Opus pass")
+#   scripts/pipeline.sh device <n> [--dry-run]
+#                           A33: the core list on the night's device ($ANDROID_SERIAL): test APK of phase-1's HEAD, install, tools/core-device.sh;
+#                           logs `CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>`; skips (DEVICE SKIPPED), never fails
 #   scripts/pipeline.sh report
 #                           the night's shift report, written and committed on phase-1 by a fresh agent
 #
@@ -130,6 +133,50 @@ if [[ "${1:-}" == "pass" ]]; then
   # the reply from its OPUS PASS line on (A17); reply.md keeps it whole
   { echo "- $(date +%H:%M) Opus pass $n reply:"; from_opus_pass "$run/reply.md" | sed 's/^/    /'; } >> "$coord/log.md"
   from_opus_pass "$run/reply.md"; echo "RESULT pass $n: done (exit $rc)"; exit 0
+fi
+
+# ---------- subcommand: device ----------
+# A33: the core list on the night's device ($ANDROID_SERIAL) after an Opus pass; never stops the night (exit 0 always).
+if [[ "${1:-}" == "device" ]]; then
+  [[ $# -ge 2 && "$2" =~ ^[0-9]+$ ]] || die "usage: pipeline.sh device <n> [--dry-run]"
+  n="$2"; dev="${ANDROID_SERIAL:-}"; run="$tasks/device-$n"
+  if [[ "${3:-}" == "--dry-run" ]]; then
+    integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
+    echo "DRY RUN: device step $n on ${dev:-<ANDROID_SERIAL unset: DEVICE SKIPPED>}; output in $run; at most 30 minutes"
+    echo "1. tools/devlock.sh acquire host-cpu device-$n 1800; (cd $integ && tools/device-build.sh --test) = the test APK of phase-1's HEAD; release host-cpu"
+    echo "2. tools/devlock.sh acquire ${dev:-<serial>} device-$n-install 600; adb -s ${dev:-<serial>} install -r $integ/dist/pascaline.apk (our app only); release"
+    echo "3. ANDROID_SERIAL=${dev:-<serial>} tools/core-device.sh   (A32's runner; holds the device lock, stay-awake and restore)"
+    echo "4. log: - HH:MM pipeline device $n: CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>"
+    echo "skipped, never failed (exit 0): no device or unauthorized, battery under 10 %, a build failure -> DEVICE SKIPPED (<why>)"
+    echo "RESULT device $n: DRY RUN"; exit 0
+  fi
+  ensure_integ; mkdir -p "$run"
+  skip() { log "pipeline device $n: DEVICE SKIPPED ($*)"; echo "RESULT device $n: DEVICE SKIPPED ($*)"; exit 0; }
+  [[ -n "$dev" ]] || skip "ANDROID_SERIAL not set"
+  st="$(timeout 20 adb -s "$dev" get-state 2>&1 | tr -d '\r' | tail -n1 || true)"
+  [[ "$st" == device ]] || skip "device $st"
+  bat="$(timeout 20 adb -s "$dev" shell dumpsys battery 2>/dev/null | tr -d '\r' | awk '/^ *level:/{print $2}')"
+  [[ -z "$bat" || "$bat" -ge 10 ]] || skip "battery $bat %"
+  sha="$(git -C "$integ" rev-parse --short HEAD)"
+  t0=$SECONDS
+  tools/devlock.sh acquire host-cpu "device-$n" 1800 >/dev/null || skip "host-cpu lock busy"
+  rc=0; (cd "$integ" && timeout 1500 tools/device-build.sh --test) > "$run/build.log" 2>&1 || rc=$?
+  tools/devlock.sh release host-cpu "device-$n" >/dev/null || true
+  [[ $rc -eq 0 && -f "$integ/dist/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
+  tools/devlock.sh acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
+  rc=0; timeout 300 adb -s "$dev" install -r "$integ/dist/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
+  tools/devlock.sh release "$dev" "device-$n-install" >/dev/null || true
+  [[ $rc -eq 0 ]] || skip "install failed, rc=$rc; see $run/install.log"
+  before=0; [[ -f "$coord/device-runs.jsonl" ]] && before="$(wc -l < "$coord/device-runs.jsonl")"
+  left=$((1800 - (SECONDS - t0))); (( left > 120 )) || skip "no time left after the build"
+  rc=0; ANDROID_SERIAL="$dev" PASCALINE_COORD="$coord" timeout "$left" tools/core-device.sh > "$run/core.log" 2>&1 || rc=$?
+  line="$(grep -E '^CORE DEVICE ' "$run/core.log" | tail -n1 || true)"
+  [[ -n "$line" ]] || skip "runner gave no CORE DEVICE line, rc=$rc; see $run/core.log"
+  new="$(tail -n +"$((before + 1))" "$coord/device-runs.jsonl" 2>/dev/null | grep '"kind":"core"' | grep '"ok":false' | grep -o '"case":"c[0-9]*"' | cut -d'"' -f4 | sort -u | paste -sd, - || true)"
+  known="$(grep -oE 'known [0-9]+' <<<"$line" | cut -d' ' -f2)"; needs="$(grep -oE 'needs [0-9]+' <<<"$line" | cut -d' ' -f2)"
+  counts="$(grep -oE '[0-9]+/[0-9]+' <<<"$line" | head -n1)"
+  log "pipeline device $n: CORE DEVICE $counts (known $known, new ${new:-none}) on $sha"
+  echo "RESULT device $n: CORE DEVICE $counts (known $known, needs $needs, new ${new:-none}) on $sha ($((SECONDS - t0)) s)"; exit 0
 fi
 
 # ---------- subcommand: report ----------

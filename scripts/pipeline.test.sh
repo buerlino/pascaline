@@ -201,5 +201,16 @@ node_modules_stale "$nm/app" || fail "A34: a node_modules lacking a non-optional
 rm "$nm/app/node_modules/.package-lock.json"
 node_modules_stale "$nm/app" || fail "A34: a node_modules without a hidden lock is not stale"
 
+# A33: the night's device step
+out="$(ANDROID_SERIAL=TESTSERIAL "$script" device 7 --dry-run 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] || fail "A33: device --dry-run: exit $rc: $out"
+for want in 'host-cpu' 'tools/device-build.sh --test' 'devlock.sh acquire TESTSERIAL' 'adb -s TESTSERIAL install' 'tools/core-device.sh' 'CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>' '.tasks/device-7'; do
+  grep -qF -- "$want" <<<"$out" || fail "A33: device --dry-run does not print '$want': $out"
+done
+grep -qE 'HA24BZ2Y|4d42e62f' "$here/pipeline.sh" && fail "A33: pipeline.sh writes a device serial"
+grep -q 'DEVICE SKIPPED' "$here/pipeline.sh" || fail "A33: pipeline.sh has no DEVICE SKIPPED"
+grep -q 'scripts/pipeline.sh device <n>' "$here/night.sh" || fail "A33: the henri prompt does not list scripts/pipeline.sh device <n>"
+grep -q 'pipeline.sh\\ device\\ \*' "$here/night.sh" || fail "A33: night.sh does not run a device line"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"

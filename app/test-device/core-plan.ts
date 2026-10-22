@@ -11,7 +11,11 @@ export interface CorePlan {
   needs: CoreCase[];
 }
 
-export function planDevice(cases: readonly CoreCase[]): CorePlan {
+/** Cases the device cannot run, with the reason (counted under needs). */
+export const DESKTOP_ONLY: Readonly<Record<string, string>> = { c53: "desktop-only: the native share sheet" };
+
+export function planDevice(input: readonly CoreCase[]): CorePlan {
+  const cases = input.map((c) => (DESKTOP_ONLY[c.id] !== undefined && c.needs === undefined ? { ...c, needs: DESKTOP_ONLY[c.id] } : c));
   const needs = cases.filter((c) => c.needs !== undefined);
   const rest = cases.filter((c) => c.needs === undefined);
   return { active: rest.filter((c) => c.known === undefined), known: rest.filter((c) => c.known !== undefined), needs };

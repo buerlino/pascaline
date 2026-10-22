@@ -11,11 +11,20 @@ describe("device plan", () => {
   const cases = loadCore();
   const p = planDevice(cases);
   it("selects exactly the active cases, expects known ones to fail, skips needs", () => {
-    expect(p.active.map((c) => c.id)).toEqual(cases.filter((c) => !c.known && !c.needs).map((c) => c.id));
-    expect(p.known.map((c) => c.id)).toEqual(cases.filter((c) => c.known && !c.needs).map((c) => c.id));
-    expect(p.needs.map((c) => c.id)).toEqual(cases.filter((c) => c.needs).map((c) => c.id));
+    const rest = cases.filter((c) => c.id !== "c53");
+    expect(p.active.map((c) => c.id)).toEqual(rest.filter((c) => !c.known && !c.needs).map((c) => c.id));
+    expect(p.known.map((c) => c.id)).toEqual(rest.filter((c) => c.known && !c.needs).map((c) => c.id));
+    expect(p.needs.map((c) => c.id).sort()).toEqual(cases.filter((c) => c.needs || c.id === "c53").map((c) => c.id).sort());
     expect(p.active.length + p.known.length + p.needs.length).toBe(cases.length);
     expect(p.active.every((c) => c.known === undefined && c.needs === undefined)).toBe(true);
+  });
+  it("skips c53 on the device: the native share sheet, counted under needs", () => {
+    const c53 = cases.find((c) => c.id === "c53");
+    expect(c53).toBeDefined();
+    expect(p.needs.map((c) => c.id)).toContain("c53");
+    expect(p.active.map((c) => c.id)).not.toContain("c53");
+    expect(p.known.map((c) => c.id)).not.toContain("c53");
+    expect(p.needs.find((c) => c.id === "c53")?.needs).toBe("desktop-only: the native share sheet");
   });
   it("prints the CORE DEVICE line", () => {
     expect(deviceLine(3, { active: new Array(4).fill(cases[0]), known: [cases[0]!], needs: [] })).toBe("CORE DEVICE 3/4 (known 1, needs 0)");
