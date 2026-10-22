@@ -82,16 +82,30 @@ ensure_integ() {
   [[ -z "$(git -C "$integ" status --porcelain --untracked-files=no)" ]] || die "phase-1 worktree $integ is not clean"
 }
 
-# Node modules: every worktree gets its own hard-link copy of the main checkout's, so an npm ci in one
-# never empties another's (A24). A symlink left by an older run is replaced.
+# Node modules: every worktree gets its own hard-link copy of the phase-1 worktree's, so an npm ci in one never empties another's
+# (A24); the main checkout may sit on an old branch (A34). A phase-1 copy that lacks a package of its lock is rebuilt first, under
+# the host-cpu lock; a failing npm ci ends the run as a machine failure. A symlink left by an older run is replaced.
+refresh_integ_node_modules() {
+  [[ ! -e "$integ/app/node_modules" ]] || node_modules_stale "$integ/app" || return 0
+  runlog "node_modules of $integ/app are missing or stale: npm ci"
+  tools/devlock.sh acquire host-cpu "pipeline-$n" 1800 >/dev/null || die "host-cpu lock busy"
+  local rc=0; (cd "$integ/app" && timeout 1800 npm ci --prefer-offline) > "$run/npm-ci.log" 2>&1 || rc=1
+  tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null || true
+  if [[ $rc -ne 0 ]]; then
+    log "pipeline #$n $id: NOT MERGED (machine: npm ci in phase-1 failed); see $run/npm-ci.log"
+    echo "RESULT #$n $id: NOT MERGED (machine: npm ci in the phase-1 worktree failed; see $run/npm-ci.log)"; exit 1
+  fi
+}
 setup_node_modules() {
-  local wt="$1"
+  local wt="$1" t0=$SECONDS
   [[ ! -L "$wt/app/node_modules" ]] || rm -f "$wt/app/node_modules"
   [[ -e "$wt/app/node_modules" ]] && return 0
+  refresh_integ_node_modules
   # copy aside, then rename: an interrupted copy never leaves a half-filled node_modules that the guard above would keep
   rm -rf "$wt/app/node_modules.tmp.$$"
-  if cp -al "$main/app/node_modules" "$wt/app/node_modules.tmp.$$"; then mv "$wt/app/node_modules.tmp.$$" "$wt/app/node_modules"
+  if cp -al "$integ/app/node_modules" "$wt/app/node_modules.tmp.$$"; then mv "$wt/app/node_modules.tmp.$$" "$wt/app/node_modules"
   else rm -rf "$wt/app/node_modules.tmp.$$"; die "could not copy node_modules into $wt"; fi
+  runlog "node_modules copied from $integ/app ($((SECONDS - t0)) s)"
 }
 
 # ---------- subcommand: pass ----------
@@ -202,8 +216,8 @@ if [[ $dry -eq 1 ]]; then
   echo "DRY RUN: pipeline run $n, package $id, agent $agent ($model, $effort), branch $branch"
   echo "PASCALINE_QALC_DL_DIR=$PASCALINE_QALC_DL_DIR PASCALINE_DL_DIR=$PASCALINE_DL_DIR PW_PORT=$PW_PORT"
   echo "integration worktree: $integ"; echo "worker worktree: $wt"
-  echo "setup: cp -al $main/app/node_modules $wt/app/node_modules   (own copy per worktree; a symlink is replaced)"
-  echo "machine failure: a check log with 'command not found' or a missing node_modules ends the run as NOT MERGED (machine: ...), no fix round"
+  echo "setup: cp -al $integ/app/node_modules $wt/app/node_modules   (own copy per worktree, from the phase-1 worktree; npm ci there first when it lacks a package of its lock; a symlink is replaced)"
+  echo "machine failure: a check log with 'command not found', a missing node_modules or a missing bare module ends the run as NOT MERGED (machine: ...), no fix round"
   if [[ $engine_managed -eq 0 ]]; then echo "engine: GIAC_OUT=$GIAC_OUT set by the caller; no engine build"
   else
     p1key="$(engine_key "$main" phase-1)"; stamp="$(engine_stamp "$engine_root/gsl")"
@@ -352,7 +366,7 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
     if [[ $rc -eq 1 ]]; then
       if machine_failure "$out"; then
         tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null
-        mline="$(grep -m1 -E 'command not found|node_modules (is )?missing' "$out" | cut -c1-160)"
+        mline="$(grep -m1 -E "$MACHINE_RE" "$out" | cut -c1-160)"
         log "pipeline #$n $id: NOT MERGED (machine: $name: $mline); branch $branch kept"
         echo "RESULT #$n $id: NOT MERGED (machine: $name: $mline; worktree $wt kept; see $out)"; exit 1
       fi

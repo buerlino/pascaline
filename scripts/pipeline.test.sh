@@ -130,7 +130,7 @@ case "$*" in
   *) echo w >> w.txt; git add w.txt; git -c user.name=t -c user.email=t@t commit -qm work; echo done;;
 esac
 STUB
-printf '#!/bin/sh\necho "sh: 1: svelte-check: command not found"; exit 1\n' > "$sb/bin/npm"; chmod +x "$sb/bin/claude" "$sb/bin/npm"
+printf '#!/bin/sh\n[ "$1" = ci ] && { mkdir -p node_modules/x; exit 0; }\necho "sh: 1: svelte-check: command not found"; exit 1\n' > "$sb/bin/npm"; chmod +x "$sb/bin/claude" "$sb/bin/npm"
 sbrun() { (cd "$sb" && PATH="$sb/bin:$PATH" GIAC_OUT="$sb/engine" "$@"); }  # unmanaged engine, whatever the caller exports
 out="$(sbrun "$script" ron "sandbox task" --id T1 --branch p1/t1 --checks typecheck 2>&1)"
 grep -q '^RESULT #1 T1: NOT MERGED (machine: typecheck: ' <<<"$out" || fail "A24: a check printing 'command not found' does not end as NOT MERGED (machine: ...): $out"
@@ -182,6 +182,24 @@ out="$(ed p1/same)"
 a="$(grep -n '^engine rebuild' <<<"$out" | head -n1 | cut -d: -f1)"; b="$(grep -n '^cat .*claude -p' <<<"$out" | head -n1 | cut -d: -f1)"
 [[ -n "$a" && -n "$b" && "$a" -lt "$b" ]] || fail "A28: a stale stamp does not print the rebuild before the worker: $out"
 grep -q 'engine_build' "$here/pipeline.sh" && grep -q 'gsl.prev' "$here/pipeline-lib.sh" || fail "A28: pipeline.sh/-lib.sh lack the engine build or the gsl.prev promotion"
+
+# A34: node_modules come from the phase-1 worktree; a stale one is rebuilt; a missing bare module is a machine failure
+out="$("$script" ron "$ron_pkg" --dry-run 2>&1)"
+grep -q "^setup: .*cp -al $integ/app/node_modules " <<<"$out" || fail "A34: the dry run's setup line does not copy from the phase-1 worktree: $(grep '^setup' <<<"$out")"
+printf "error TS2307: Cannot find module '@capacitor/clipboard' or its corresponding type declarations.\n" > "$tmp/m5.log"
+printf "Error: Cannot find module 'vitest'\n" > "$tmp/m6.log"
+printf "error TS2307: Cannot find module './missing.ts' or its corresponding type declarations.\n" > "$tmp/m7.log"
+machine_failure "$tmp/m5.log" || fail "A34: a missing @capacitor/clipboard is not a machine failure"
+machine_failure "$tmp/m6.log" || fail "A34: a missing 'vitest' is not a machine failure"
+machine_failure "$tmp/m7.log" && fail "A34: a missing relative import is a machine failure"
+nm="$tmp/nm"; mkdir -p "$nm/app/node_modules"
+printf '{"packages":{"":{},"node_modules/a":{"version":"1"},"node_modules/b":{"version":"1","optional":true}}}' > "$nm/app/package-lock.json"
+printf '{"packages":{"node_modules/a":{"version":"1"}}}' > "$nm/app/node_modules/.package-lock.json"
+node_modules_stale "$nm/app" && fail "A34: a complete node_modules counts as stale"
+printf '{"packages":{"node_modules/b":{"version":"1"}}}' > "$nm/app/node_modules/.package-lock.json"
+node_modules_stale "$nm/app" || fail "A34: a node_modules lacking a non-optional package is not stale"
+rm "$nm/app/node_modules/.package-lock.json"
+node_modules_stale "$nm/app" || fail "A34: a node_modules without a hidden lock is not stale"
 
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
