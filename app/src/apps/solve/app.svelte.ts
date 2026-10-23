@@ -142,13 +142,19 @@ export class SolveApp implements AppInstance {
       this.define(this.slots.selected, latex);
       this.host.setEntry(this.slots.latex[this.slots.selected] ?? "");
     } else if (view === "num" && this.selected) {
+      // R76f1: Enter empties the line. A line left as the app loaded it (a root's 12-digit display) changes nothing.
+      const sel = this.selected;
+      if (latex === "" || latex === numberLatex(this.value(sel))) {
+        this.host.setEntry("");
+        return;
+      }
       const v = plainNumber(latex);
       if (v === undefined) return;
       this.values = { ...this.values, [this.selected]: v };
       this.dropCopy(this.selected);
       this.warned = { ...this.warned, [this.selected]: false };
       this.report = undefined;
-      this.loadEntry();
+      this.host.setEntry("");
       this.save();
     }
   }
