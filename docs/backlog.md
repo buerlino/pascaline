@@ -43,7 +43,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- **F76 → [R77](shifts/packages/R77.md) (owner, 2026-10-22).** A `{ }` list squared shows `= 5` (Giac's dot product of `[1,2]`) while its x⁻¹ and ÷ go elementwise; x² and xʸ on braces go elementwise (`.^`).
+- **F76 → [R77](shifts/packages/R77.md), done (run 190).** x² and xʸ on a `{ }` list (braces, typed or from the list key, bracketed or not) go elementwise, Giac's `.^` (`input/emit.ts` powerSign): `{1,2}²` = `{1,4}`, no longer `5`; a matrix, a `[ ]` vector and a name keep `^`. A stored list by name (`L²`) still gets Giac's `^`.
 - **F75 → [G98](shifts/packages/G98.md) (G86's report).** The golden runner's `latex` steps parse without `chipNames`, so an inexact chip goes in as text there and by name in Home: the gate checks a different input than the app. Family 8.
 - **F74 → [G101](shifts/packages/G101.md) (G97's Not done, run 174).** CAS `f(x):=x^-1`, then `f([[5],[1]])` still shows Giac's elementwise result under `=`: `nonSquarePower` walks only the typed input's parts, not the function's body (`engine/nonsquare.ts`).
 - **F54 → [G99](shifts/packages/G99.md) (bridge-2's reads).** With a stored x, `product(x,x,1,4)` = `⚠ 24` "inherited: x" (right `= 24`; `seq` and `sum(x^2,x=1..3)` too, S23 on `f921d46`). Families 8, 1.
