@@ -140,7 +140,7 @@ describe("a list expression as a part (R79)", () => {
     expect(latexToGiac("\\left(\\left\\{1,4\\right\\}+1\\right)\\times\\left\\{1,1\\right\\}")).toBe("([1,4] .+ 1) .* [1,1]");
     expect(latexToGiac("\\left(\\left\\{1,4\\right\\}+1\\right)\\left\\{1,1\\right\\}")).toBe("([1,4] .+ 1) .* [1,1]");
     expect(latexToGiac("\\left\\{1,2\\right\\}\\times\\left(-\\left\\{3,4\\right\\}\\right)")).toBe("[1,2] .* (-[3,4])");
-    expect(mathJsonToGiac(["Multiply", ["Divide", ["List", 1, 2], 2], ["List", 3, 4]])).toBe("[1,2]/2 .* [3,4]");
+    expect(mathJsonToGiac(["Multiply", ["Divide", ["List", 1, 2], 2], ["List", 3, 4]])).toBe("([1,2]/2) .* [3,4]");
   });
 
   it("a list-valued base goes elementwise", () => {
