@@ -6,7 +6,7 @@ import { EngineHost, type GiacApi } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { asksPoly, mayAddToList, printsPoly } from "./polyvec.ts";
+import { asksPoly, mayAddToList, printsPoly, unaskedPoly } from "./polyvec.ts";
 
 const MESSAGE = "A list plus a number: use .+ or add a list of the same length";
 
@@ -16,6 +16,7 @@ describe("text tests", () => {
     expect(printsPoly("[1,5]")).toBe(false);
     expect(asksPoly("symb2poly(x^2+1)*2")).toBe(true);
     expect(asksPoly("[1,4]+1")).toBe(false);
+    expect(asksPoly("[1,4]+1+diff(x,x)*0")).toBe(false);
     expect(mayAddToList("[1,4]+1", () => false)).toBe(true);
     expect(mayAddToList("L+1", (n) => n === "L")).toBe(true);
     expect(mayAddToList("a+1", () => false)).toBe(false);
@@ -74,12 +75,25 @@ describe.skipIf(!giacAvailable())("G106 on the real engine", () => {
     expect(home("[[1,4]+1,[1,2]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
   });
 
+  it("refuses a passing-through function's sum, which asks for no polynomial", () => {
+    expect(home("[1,4]+1+diff(x,x)*0")).toMatchObject({ ok: false, error: "listPlusNumber" });
+    expect(cas("[1,4]+1+diff(x,x)*0")).toMatchObject({ ok: false, error: "listPlusNumber" });
+  });
+
   it("costs one engine call, and none without poly1[", () => {
+    const giac = (host as unknown as { giac: GiacApi }).giac;
+    expect(giac.eval("pasans:=[1,4]+1")).toBe("poly1[1,5]");
     calls = 0;
-    home("[1,4]+[1,1]");
-    const plain = calls;
+    expect(unaskedPoly(giac, "pasans", "[1,4]+1", "poly1[1,5]", () => false)).toBe(true);
+    expect(calls).toBe(1);
+    calls = 0;
+    expect(unaskedPoly(giac, "pasans", "[1,4]+[1,1]", "[2,5]", () => false)).toBe(false);
+    expect(calls).toBe(0);
+    // tools/probes/engine-calls.ts on phase-1 (c8b4723): Home `[1,4]+1` made 5 calls per Enter; at most one more now
+    // (the first Enter after a CAS input also sets Home's mode up, so it is not counted)
+    home("[1,4]+1");
     calls = 0;
     home("[1,4]+1");
-    expect(calls).toBeLessThanOrEqual(plain + 1);
+    expect(calls).toBeLessThanOrEqual(5 + 1);
   });
 });

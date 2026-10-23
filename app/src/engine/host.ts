@@ -769,6 +769,9 @@ export class EngineHost implements FactsHost {
     const asg0 = simpleAssignment(exactInput);
     // G57: so does one whose value rests on a decision, which may be refused as undecided.
     // G97: and one whose value may be a power of a non-square matrix, which is refused; G106: or a list plus a number.
+    // G106: whether a name holds a list is read from Giac's print in the stored table (G65's state read, already made):
+    // the assignment must be routed before it runs, and asking the engine would cost a call on every assignment. This
+    // text gate moves to bridge-3 with the poly1 check when G103 reads a value's kind (docs/04 6.1).
     const isList = (n: string): boolean => this.stored.get(n)?.text.startsWith("[") === true;
     const guarded =
       asg0 && !isStateful(asg0.rhs) && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || mayAddToList(asg0.rhs, isList) || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;

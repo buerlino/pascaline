@@ -10,12 +10,12 @@
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { functionsIn, namesIn, type Giac } from "./numeric.ts";
 
-/** Giac functions whose result is (or holds) a coefficient vector of subtype 10, probed on the shared engine
- *  (2026-10-23). The ones that only pass a polynomial argument through (gcd, lcm, diff, sqrfree, factors, divis) are
- *  listed too: their argument came from one of the others. */
+/** Giac functions that create a coefficient vector of subtype 10, probed on the shared engine (2026-10-23). The ones
+ *  that only pass a polynomial argument through (gcd, lcm, diff, factors) are not listed: that argument is a call of
+ *  one of these, `poly1[…]`, or a name the input reads (`held` in unaskedPoly), so the check already lets it pass, and
+ *  listing them would let `[1,4]+1+diff(x,x)*0` through. */
 export const POLYNOMIAL_FUNCTIONS: readonly string[] = [
   "poly1", "symb2poly", "e2r", "pcoeff", "pcoef", "quo", "rem", "quorem", "egcd", "pcar", "charpoly", "pmin",
-  "gcd", "lcm", "diff", "sqrfree", "factors", "divis",
 ];
 
 /** Our result slots: they hold the result itself, not what the input read. */
