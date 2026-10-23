@@ -61,6 +61,7 @@ import { defaultCasSettings } from "../src/engine/types.ts";
 import { ANS_KEY, type ChipTable } from "../src/input/chips.ts";
 import { chipsIn, type ChipFactsTable } from "../src/engine/chipFacts.ts";
 import { inexactConstsIn, type ConstTable } from "../src/engine/constUnc.ts";
+import { giacOfEntry } from "../src/input/entry.ts";
 import { DEFAULT_USER_FUNCTIONS, latexToGiac, latexToGiacInfo, type UnitsInfo } from "../src/input/latex-to-giac.ts";
 import { SerializeError } from "../src/input/errors.ts";
 import { dropAngleFactor, hasAngleFactor, rewriteAngles } from "../src/input/angles.ts";
@@ -413,7 +414,7 @@ async function stageCalls(): Promise<void> {
     for (const c of cases("home.yaml")) {
       if (c.steps) continue;
       const hs: HomeSettings = { ...s, angle: c.settings?.angle ?? "rad" };
-      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
+      const giacOf = (t: string): string => (c.latex !== undefined ? giacOfEntry(t, "home").giac : t);
       for (const b of c.before ?? []) host.home(giacOf(b), hs);
       const n0 = calls();
       host.home(giacOf(c.latex ?? c.input!), hs);
@@ -436,7 +437,7 @@ async function stageInvariants(): Promise<void> {
       // only in DEG cases); it runs in both modes, the setting dropped.
       const angleOnly = c.settings !== undefined && Object.keys(c.settings).every((k) => k === "angle");
       if ((c.settings && !angleOnly) || c.steps || c.beforeHome?.length || c.beforeCas?.length || c.relaunch || c.status === "pending" || c.kind === "cas") continue;
-      const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
+      const giacOf = (t: string): string => (c.latex !== undefined ? giacOfEntry(t, "home").giac : t);
       let giac: string;
       try {
         giac = giacOf(c.latex ?? c.input!);
@@ -484,7 +485,7 @@ async function stageInvariants(): Promise<void> {
       if (copy !== undefined && pasted) {
         checked.c++;
         try {
-          const back = (await host()).home(latexToGiac(pasted.latex), { ...defaultHomeSettings, digits: 12 }).result;
+          const back = (await host()).home(giacOfEntry(pasted.latex, "home").giac, { ...defaultHomeSettings, digits: 12 }).result;
           const f = checkCopy(i.id, rad, copy, back);
           if (f) failures.push(f);
         } catch (e) {
