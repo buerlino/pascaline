@@ -11,9 +11,8 @@ import { asksPoly, mayAddToList, printsPoly } from "./polyvec.ts";
 const MESSAGE = "A list plus a number: use .+ or add a list of the same length";
 
 describe("text tests", () => {
-  it("reads poly1[ outside strings, and the functions that ask for one", () => {
+  it("reads poly1[, and the functions that ask for one", () => {
     expect(printsPoly("poly1[1,5]")).toBe(true);
-    expect(printsPoly('"poly1[1,5]"')).toBe(false);
     expect(printsPoly("[1,5]")).toBe(false);
     expect(asksPoly("symb2poly(x^2+1)*2")).toBe(true);
     expect(asksPoly("[1,4]+1")).toBe(false);
@@ -67,6 +66,12 @@ describe.skipIf(!giacAvailable())("G106 on the real engine", () => {
     expect(home("P:=symb2poly(x^2+1)")).toMatchObject({ ok: true });
     expect(home("P+1")).toMatchObject({ ok: true, display: "poly1[1,0,2]" });
     expect(home("[1,4]+[1,1]")).toMatchObject({ ok: true, display: "[2,5]" });
+    expect(home("g(x):=symb2poly(x)")).toMatchObject({ ok: true });
+    expect(home("g(x^2+1)")).toMatchObject({ ok: true, display: "poly1[1,0,1]" });
+  });
+
+  it("refuses a list of them", () => {
+    expect(home("[[1,4]+1,[1,2]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
   });
 
   it("costs one engine call, and none without poly1[", () => {

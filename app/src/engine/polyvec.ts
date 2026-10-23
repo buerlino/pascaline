@@ -21,16 +21,16 @@ export const POLYNOMIAL_FUNCTIONS: readonly string[] = [
 /** Our result slots: they hold the result itself, not what the input read. */
 const SLOTS = new Set(["pasans", "pcasans"]);
 
-const WORD = new RegExp(`\\b(?:${POLYNOMIAL_FUNCTIONS.join("|")})\\b`);
+const POLY = new Set(POLYNOMIAL_FUNCTIONS);
 
-/** Cheap text test: Giac printed a coefficient vector in `text` (strings left out). */
+/** Cheap text test: Giac printed a coefficient vector in `text` (one inside a string too; the engine call tells). */
 export function printsPoly(text: string): boolean {
-  return text.replace(/"[^"]*"/g, "").includes("poly1[");
+  return text.includes("poly1[");
 }
 
-/** The input names a function that returns a polynomial (strings left out). */
+/** The input names a function that returns a polynomial, or `poly1` itself (strings left out). */
 export function asksPoly(input: string): boolean {
-  return WORD.test(input.replace(/"[^"]*"/g, ""));
+  return [...functionsIn(input), ...namesIn(input)].some((n) => POLY.has(n));
 }
 
 /**
@@ -43,17 +43,15 @@ export function unaskedPoly(giac: Giac, slot: string, input: string, output: str
   if (!printsPoly(output) || asksPoly(input)) return false;
   const names = [...namesIn(input), ...functionsIn(input).filter(userFn)].filter((n) => !SLOTS.has(n));
   const kind = `when(subtype(${slot})==10,10,when(type(${slot})==DOM_LIST,max(map(${slot},subtype)),0))`;
-  const out = giac.eval(`string([${[kind, ...names].join(",")}])`);
-  const m = /^"\[(\d+)/.exec(out);
-  if (!m || m[1] !== "10") return false;
-  // what the names hold, after the subtype: a polynomial there was asked for when it was stored
-  const held = out.slice(m[0].length);
-  return !held.includes("poly1[") && !WORD.test(held);
+  const out = giac.eval(`string(${kind})+string([${names.join(",")}])`);
+  if (!out.startsWith('"10[')) return false;
+  // what the names hold: a polynomial there was asked for when it was stored, or a function's body asks for one
+  const held = out.slice(3);
+  return !printsPoly(held) && !asksPoly(held);
 }
 
 /** Cheap text test for a CAS assignment, which must not store a value this check refuses: its right-hand side adds or
  *  subtracts and holds a list, or a name `isList` says holds one. */
 export function mayAddToList(rhs: string, isList: (name: string) => boolean): boolean {
-  const t = rhs.replace(/"[^"]*"/g, "");
-  return /[+-]/.test(t) && !asksPoly(t) && (t.includes("[") || namesIn(t).some(isList));
+  return (rhs.includes("+") || rhs.includes("-")) && !asksPoly(rhs) && (rhs.includes("[") || namesIn(rhs).some(isList));
 }
