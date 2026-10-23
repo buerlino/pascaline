@@ -37,6 +37,7 @@
 # exported to the worker, the fix rounds and the checks, so parallel runs never share a dev server.
 # Locks: host-cpu around the checks, integ (600 s) around the merge into phase-1.
 set -euo pipefail
+export PASCALINE_LOCK_PID=$$   # A35: locks taken here (and by the agents it starts) record this pid
 # shellcheck source=scripts/pipeline-lib.sh
 source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/pipeline-lib.sh"
 

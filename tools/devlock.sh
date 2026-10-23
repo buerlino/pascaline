@@ -25,11 +25,18 @@ case "$cmd" in
   acquire)
     res="${2:?resource}" owner="${3:?owner}" wait="${4:-0}" start=$SECONDS
     while ! mkdir "$LOCKS/$res" 2>/dev/null; do
-      # A35: a lock whose recorded pid is gone on this host is broken; one without a pid (old format) only by hand
+      # A35: a lock whose recorded pid is gone on this host is broken; one without a pid (old format, or a caller that did not
+      # opt in with PASCALINE_LOCK_PID) only by hand. Breakers take a guard, re-read the pid inside it and move the lock aside,
+      # so two waiters that saw the same dead pid never delete a lock another waiter has just taken.
       lpid="$(cat "$LOCKS/$res/pid" 2>/dev/null || true)"; lhost="$(cat "$LOCKS/$res/host" 2>/dev/null || true)"
-      if [[ "$lpid" =~ ^[1-9][0-9]*$ && "$lhost" == "$(hostname)" ]] && ! kill -0 "$lpid" 2>/dev/null; then
-        echo "broke stale lock $res (pid $lpid gone)" >&2
-        rm -rf "${LOCKS:?}/$res"; continue
+      if [[ "$lpid" =~ ^[1-9][0-9]*$ && "$lhost" == "$(hostname)" ]] && ! kill -0 "$lpid" 2>/dev/null \
+         && mkdir "$LOCKS/.breaking-$res" 2>/dev/null; then
+        if [[ "$(cat "$LOCKS/$res/pid" 2>/dev/null || true)" == "$lpid" ]] && mv "$LOCKS/$res" "$LOCKS/.stale-$res.$$" 2>/dev/null; then
+          rm -rf "${LOCKS:?}/.stale-$res.$$"
+          echo "broke stale lock $res (pid $lpid gone)" >&2
+        fi
+        rmdir "$LOCKS/.breaking-$res" 2>/dev/null || true
+        continue
       fi
       if (( SECONDS - start >= wait )); then
         echo "busy: $res held by $(cat "$LOCKS/$res/owner" 2>/dev/null || echo '?')" >&2
@@ -39,9 +46,10 @@ case "$cmd" in
     done
     printf '%s\n' "$owner" > "$LOCKS/$res/owner"
     date -Iseconds > "$LOCKS/$res/since"
-    # the holder is the caller (the script that ran us), not this short-lived process; PASCALINE_LOCK_PID=0 records none (interactive use)
-    hpid="${PASCALINE_LOCK_PID:-$PPID}"
-    if [[ "$hpid" != 0 ]]; then hostname > "$LOCKS/$res/host"; echo "$hpid" > "$LOCKS/$res/pid"; fi
+    # a pid is recorded only when the caller opts in with PASCALINE_LOCK_PID=<its own long-lived pid> (build.sh, pipeline.sh, the
+    # build-wasm scripts export $$); agents and interactive shells call us from a short-lived shell, so they record none
+    hpid="${PASCALINE_LOCK_PID:-0}"
+    if [[ "$hpid" =~ ^[1-9][0-9]*$ ]]; then hostname > "$LOCKS/$res/host"; echo "$hpid" > "$LOCKS/$res/pid"; fi
     echo "acquired $res for $owner"
     ;;
   release)
