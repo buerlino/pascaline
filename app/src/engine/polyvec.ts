@@ -24,8 +24,10 @@ const SLOTS = new Set(["pasans", "pcasans"]);
 const POLY = new Set(POLYNOMIAL_FUNCTIONS);
 
 /** Our Giac helper: 1 when its argument is a coefficient vector (subtype 10) or a list holding one at any depth, else 0
- *  (xcas indexing from 0). Recursive, so a list two or more levels deep is read too (G106f1). */
-const POLY_AT = "paspoly1";
+ *  (xcas indexing from 0). Recursive, so a list two or more levels deep is read too (G106f1). One of ENGINE_DEFINITIONS
+ *  (homeEval.ts), so a library cannot define the name and the state read takes it for ours; unaskedPoly still defines
+ *  it again inside its one call, so a user's `paspoly1:=5` cannot turn the check off. */
+export const POLY_AT = "paspoly1";
 export const POLY_AT_ANY_DEPTH =
   `${POLY_AT}(v):={ local k; if (subtype(v)==10) return 1; if (type(v)!=DOM_LIST) return 0; ` +
   `for (k:=0;k<size(v);k:=k+1) { if (${POLY_AT}(v[k])==1) return 1; } return 0; }`;
@@ -44,19 +46,13 @@ export function asksPoly(input: string): boolean {
  * The result in `slot` (printed `output`) of `input` is a coefficient vector, or a list of them, the input did not ask
  * for. One engine call, made only when `output` prints `poly1[` and `input` names no polynomial function: whether the
  * result holds subtype 10 at any depth (POLY_AT_ANY_DEPTH; G106f1: `[[[1,4]+1]]` too) and the printed values of the
- * names the input reads and of the user's functions it calls (`userFn`). The helper is defined on first use (one more
- * call then, and again after a session reset).
+ * names the input reads and of the user's functions it calls (`userFn`). The same call defines the helper first (the
+ * list's element 0), so it holds our text whatever the user stored under the name.
  */
 export function unaskedPoly(giac: Giac, slot: string, input: string, output: string, userFn: (name: string) => boolean): boolean {
   if (!printsPoly(output) || asksPoly(input)) return false;
   const names = [...namesIn(input), ...functionsIn(input).filter(userFn)].filter((n) => !SLOTS.has(n));
-  const query = `string(${POLY_AT}(${slot}))+string([${names.join(",")}])`;
-  let out = giac.eval(query);
-  // an undefined helper prints as its own call
-  if (out.startsWith(`"${POLY_AT}(`)) {
-    giac.eval(POLY_AT_ANY_DEPTH);
-    out = giac.eval(query);
-  }
+  const out = giac.eval(`[${POLY_AT_ANY_DEPTH},string(${POLY_AT}(${slot}))+string([${names.join(",")}])][1]`);
   if (!out.startsWith('"1[')) return false;
   // what the names hold: a polynomial there was asked for when it was stored, or a function's body asks for one
   const held = out.slice(3);

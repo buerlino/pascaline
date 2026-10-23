@@ -83,6 +83,16 @@ describe.skipIf(!giacAvailable())("G106 on the real engine", () => {
     expect(home("L:=[1,4]")).toMatchObject({ ok: true, display: "[1,4]" });
     expect(home("[[L+1]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
     expect(cas("[[L+1]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
+  });
+
+  // G106f1 audit: the helper was defined lazily and only when undefined, so a user's paspoly1 turned the check off
+  it("keeps refusing after the user stores under the helper's name", () => {
+    expect(cas("paspoly1(v):=5")).toMatchObject({ ok: true });
+    expect(home("[1,4]+1")).toMatchObject({ ok: false, error: "listPlusNumber" });
+    expect(cas("[1,4]+1")).toMatchObject({ ok: false, error: "listPlusNumber" });
+    expect(home("paspoly1:=5")).toMatchObject({ ok: true });
+    expect(home("[[[1,4]+1]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
+    expect(cas("[[[1,4]+1]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
     expect(home("[[[1,4]]]")).toMatchObject({ ok: true, display: "[[[1,4]]]" });
   });
 
@@ -94,8 +104,6 @@ describe.skipIf(!giacAvailable())("G106 on the real engine", () => {
   it("costs one engine call, and none without poly1[", () => {
     const giac = (host as unknown as { giac: GiacApi }).giac;
     expect(giac.eval("pasans:=[1,4]+1")).toBe("poly1[1,5]");
-    // the first use defines the helper (two more calls), once per session
-    unaskedPoly(giac, "pasans", "[1,4]+1", "poly1[1,5]", () => false);
     calls = 0;
     expect(unaskedPoly(giac, "pasans", "[1,4]+1", "poly1[1,5]", () => false)).toBe(true);
     expect(calls).toBe(1);
