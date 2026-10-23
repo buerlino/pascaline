@@ -95,7 +95,7 @@ if [[ ! -x "$GRADLE_HOME_DIR/bin/gradle" ]]; then
 fi
 lock
 trap unlock EXIT
-(cd android && "$GRADLE_HOME_DIR/bin/gradle" --console=plain -q assembleRelease >&2)
+(cd android && "$GRADLE_HOME_DIR/bin/gradle" --console=plain -q assembleRelease >&2 < /dev/null)
 unlock; trap - EXIT
 
 # 5. dist/

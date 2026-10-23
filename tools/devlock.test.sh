@@ -35,4 +35,22 @@ PASCALINE_COORD="$T/private" "$T/wt/tools/devlock.sh" acquire x me >/dev/null
 [[ -d "$T/private/locks/x" ]] || fail "PASCALINE_COORD ignored"
 "$T/main/tools/devlock.sh" status | grep -q 'no locks held' || fail "override leaked into the shared locks"
 
+# 5. A35: a lock records pid and host; status shows the pid; a lock whose pid is gone is broken by the next acquire
+export PASCALINE_COORD="$T/c5"
+sleep 300 & live=$!
+"$T/main/tools/devlock.sh" acquire r1 me >/dev/null
+[[ -f "$T/c5/locks/r1/pid" ]] || fail "acquire writes no pid"
+"$T/main/tools/devlock.sh" status | grep -q "pid $(cat "$T/c5/locks/r1/pid")" || fail "status does not show the pid"
+"$T/main/tools/devlock.sh" release r1 me >/dev/null
+mkdir -p "$T/c5/locks/r2"; echo ghost > "$T/c5/locks/r2/owner"; echo "$live" > "$T/c5/locks/r2/pid"; hostname > "$T/c5/locks/r2/host"
+if "$T/main/tools/devlock.sh" acquire r2 new 0 2>/dev/null; then fail "a lock with a live pid was broken"; fi
+kill "$live"; wait "$live" 2>/dev/null || true
+out="$("$T/main/tools/devlock.sh" acquire r2 new 0 2>&1)" || fail "a lock with a dead pid was not broken: $out"
+grep -q "broke stale lock r2 (pid $live gone)" <<<"$out" || fail "no stale-lock line: $out"
+mkdir -p "$T/c5/locks/r3"; echo old > "$T/c5/locks/r3/owner"
+if "$T/main/tools/devlock.sh" acquire r3 new 0 2>/dev/null; then fail "a lock without a pid was broken"; fi
+mkdir -p "$T/c5/locks/r4"; echo far > "$T/c5/locks/r4/owner"; echo 999999 > "$T/c5/locks/r4/pid"; echo otherhost > "$T/c5/locks/r4/host"
+if "$T/main/tools/devlock.sh" acquire r4 new 0 2>/dev/null; then fail "a lock of another host was broken"; fi
+unset PASCALINE_COORD
+
 echo "devlock.test.sh: ok"

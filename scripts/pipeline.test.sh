@@ -238,5 +238,11 @@ chmod +x "$cd4/tools/"*
 out="$(ANDROID_SERIAL=TESTSERIAL PATH="$sb3/bin:$PATH" "$cd4/tools/core-device.sh" 2>&1)"; rc=$?
 [[ $rc -eq 4 ]] && grep -q 'the device is locked' <<<"$out" || fail "A33f1: core-device.sh on a locked device: rc $rc: $out"
 
+# A35: a step that ignores TERM is killed; Gradle never reads the terminal; core-device.sh says keep the screen on
+grep -q 'timeout -k 60 1200 tools/device-build.sh' "$here/pipeline.sh" || fail "A35: the device build has no timeout -k 60 1200"
+grep -qE 'timeout [0-9]' "$here/night.sh" && fail "A35: night.sh has a timeout without -k 60"
+grep -qE '"\$gradle" .*< */dev/null|GRADLE_HOME_DIR/bin/gradle" [^)]*< */dev/null' "$here/../build.sh" || fail "A35: build.sh's Gradle call does not read stdin from /dev/null"
+grep -q 'keep its screen on while charging (brief 0c rule 2); never remove its PIN' "$here/../tools/core-device.sh" || fail "A33f2: core-device.sh lock message"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
