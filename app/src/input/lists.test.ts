@@ -105,3 +105,26 @@ describe("a list plus or minus a number (R78)", () => {
     expect(key("[1,4]+1")).toBe("parse.atToken");
   });
 });
+
+// R78f1 (backlog F79): a { } list times a { } list goes elementwise, Giac's `.*`; Giac's `*` on two lists is the dot
+// product ([1,4]*[1,1] = 5, probed on c381b15). Derived: {1,4}×{1,1} = {1,4}, {1,2}×{3,4} = {3,8}; 2×{1,4} keeps `*`
+// (= {2,8}). The values run through Giac in group "lists-matrices" of tests/golden/parser.yaml (-26 to -31).
+describe("a list times a list (R78f1)", () => {
+  it("goes elementwise: ×, · and side by side emit `.*` with spaces", () => {
+    expect(latexToGiac("\\left\\{1,4\\right\\}\\times\\left\\{1,1\\right\\}")).toBe("[1,4] .* [1,1]");
+    expect(latexToGiac("\\left\\{1,4\\right\\}\\cdot\\left\\{1,1\\right\\}")).toBe("[1,4] .* [1,1]");
+    expect(latexToGiac("\\left\\{1,4\\right\\}\\left\\{1,1\\right\\}")).toBe("[1,4] .* [1,1]");
+    expect(latexToGiac("\\{1,2\\}\\times\\{3,4\\}")).toBe("[1,2] .* [3,4]");
+    expect(latexToGiac("\\left(\\left\\{1,4\\right\\}\\right)\\left\\{1,1\\right\\}")).toBe("([1,4]) .* [1,1]");
+    expect(latexToGiac("2\\left\\{1,4\\right\\}\\left\\{1,1\\right\\}")).toBe("2 .* [1,4] .* [1,1]");
+    expect(latexToGiac("-\\left\\{1,2\\right\\}\\times\\left\\{3,4\\right\\}")).toBe("-[1,2] .* [3,4]");
+    expect(mathJsonToGiac(["Multiply", ["List", 1, 2], ["List", 3, 4], ["List", 5, 6]])).toBe("[1,2] .* [3,4] .* [5,6]");
+  });
+
+  it("keeps `*` for a number times a list, a matrix and a name", () => {
+    expect(latexToGiac("2\\times\\left\\{1,4\\right\\}")).toBe("2*[1,4]");
+    expect(latexToGiac("2\\left\\{1,4\\right\\}")).toBe("2*[1,4]");
+    expect(latexToGiac("\\begin{pmatrix}1&2\\end{pmatrix}\\times\\begin{pmatrix}3\\\\4\\end{pmatrix}")).toBe("[[1,2]]*[[3],[4]]");
+    expect(mathJsonToGiac(["Multiply", "L", ["List", 1, 4]])).toBe("L*[1,4]");
+  });
+});
