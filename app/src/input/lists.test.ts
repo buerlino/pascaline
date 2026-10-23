@@ -128,3 +128,39 @@ describe("a list times a list (R78f1)", () => {
     expect(mathJsonToGiac(["Multiply", "L", ["List", 1, 4]])).toBe("L*[1,4]");
   });
 });
+
+// R79 (backlog F79): a part that is a list expression (a list to a power, a bracketed sum or negative of a list, a
+// product of lists) counts as a list for x², ×, + and −, so Giac's dot product and polynomial sum never see it.
+// Derived: {1,2}²×{3,4} = {1·3, 4·4} = {3,16}; ({1,4}+1)×{1,1} = {2,5}; {1,2}×(−{3,4}) = {−3,−8}; ({1,2}+1)² =
+// {4,9}; (−{1,2})² = {1,4}; ({1,2}×{3,4})+1 = {4,9}. The values run through Giac in group "lists-matrices" of
+// tests/golden/parser.yaml (-32 to -37).
+describe("a list expression as a part (R79)", () => {
+  it("a list-valued factor joins the elementwise product", () => {
+    expect(latexToGiac("\\left\\{1,2\\right\\}^{2}\\times\\left\\{3,4\\right\\}")).toBe("[1,2].^2 .* [3,4]");
+    expect(latexToGiac("\\left(\\left\\{1,4\\right\\}+1\\right)\\times\\left\\{1,1\\right\\}")).toBe("([1,4] .+ 1) .* [1,1]");
+    expect(latexToGiac("\\left(\\left\\{1,4\\right\\}+1\\right)\\left\\{1,1\\right\\}")).toBe("([1,4] .+ 1) .* [1,1]");
+    expect(latexToGiac("\\left\\{1,2\\right\\}\\times\\left(-\\left\\{3,4\\right\\}\\right)")).toBe("[1,2] .* (-[3,4])");
+    expect(mathJsonToGiac(["Multiply", ["Divide", ["List", 1, 2], 2], ["List", 3, 4]])).toBe("([1,2]/2) .* [3,4]");
+  });
+
+  it("a list-valued base goes elementwise", () => {
+    expect(latexToGiac("\\left(\\left\\{1,2\\right\\}+1\\right)^{2}")).toBe("([1,2] .+ 1).^2");
+    expect(latexToGiac("\\left(-\\left\\{1,2\\right\\}\\right)^{2}")).toBe("(-[1,2]).^2");
+    expect(mathJsonToGiac(["Square", ["Delimiter", ["Negate", ["List", 1, 2]]]])).toBe("(-[1,2]).^2");
+    expect(mathJsonToGiac(["Power", ["Multiply", 2, ["List", 1, 2]], 2])).toBe("(2*[1,2]).^2");
+  });
+
+  it("a list-valued term joins the elementwise sum", () => {
+    expect(latexToGiac("\\left(\\left\\{1,2\\right\\}\\times\\left\\{3,4\\right\\}\\right)+1")).toBe("([1,2] .* [3,4]) .+ 1");
+    expect(latexToGiac("\\left\\{1,2\\right\\}\\times\\left\\{3,4\\right\\}+1")).toBe("[1,2] .* [3,4] .+ 1");
+    expect(latexToGiac("\\left\\{1,2\\right\\}^{2}+1")).toBe("[1,2].^2 .+ 1");
+    expect(latexToGiac("\\left\\{1,2\\right\\}^{2}+\\left\\{3,4\\right\\}")).toBe("[1,2].^2+[3,4]");
+  });
+
+  it("keeps the plain operators for matrices, names and numbers", () => {
+    expect(latexToGiac("\\left(\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}+1\\right)^{2}")).toBe("([[1,2],[3,4]]+1)^2");
+    expect(mathJsonToGiac(["Power", ["Delimiter", ["Add", "L", 1]], 2])).toBe("(L+1)^2");
+    expect(mathJsonToGiac(["Multiply", ["Power", "L", 2], ["List", 1, 2]])).toBe("L^2*[1,2]");
+    expect(latexToGiac("\\left(1+2\\right)^{2}\\times3")).toBe("(1+2)^2*3");
+  });
+});

@@ -211,29 +211,43 @@ function invisible(raw: Json[], o: SerializeOptions): Out {
     } else {
       parts.push(ser(a, o));
     }
-    lists.push(isList(a)); // one part per step; a folded call f(…) starts at a name, never a list
+    lists.push(listValued(a)); // one part per step; a folded call f(…) starts at a name, never a list
   }
   return mulOuts(parts, lists);
 }
 
+/** The heads whose value is a list when one operand is (R79); a power by its base only, so it is not here. */
+const LIST_CARRIERS = new Set(["Delimiter", "Negate", "Multiply", "InvisibleOperator", "Divide", "Add", "Subtract"]);
+
 /**
- * R77 (backlog F76): a power of a `{ }` list (a List node, in brackets or not) is elementwise, Giac's `.^`: Giac's `^`
- * on a list is the dot product for an even whole exponent ([1,2]^2 = 5), while the same list's x⁻¹ and ÷ go
- * elementwise. A matrix, a name and anything else keep `^`, so G97 (engine/nonsquare.ts) still reads them in Giac.
+ * R79 (backlog F79): the value is a `{ }` list: a List node, or a bracket, sign, product, quotient or sum with a
+ * list-valued operand, or a power of a list-valued base ({1,2}², ({1,4}+1), -{3,4}, {1,2}×{3,4}). A matrix (its
+ * own head), a name and a call are not, so they keep Giac's operators (G97, G106).
  */
-function powerSign(base: Json): string {
-  let b = base;
-  while (isHead(b, "Delimiter") && b.length === 2) b = b[1] as Json;
-  return isHead(b, "List") ? ".^" : "^";
+function listValued(e: Json): boolean {
+  if (!Array.isArray(e)) return false;
+  const head = e[0];
+  if (head === "List") return true;
+  if (head === "Power" || head === "Square") return e.length >= 2 && listValued(e[1] as Json);
+  return typeof head === "string" && LIST_CARRIERS.has(head) && e.slice(1).some((a) => listValued(a as Json));
 }
 
 /**
- * R78 (backlog F78): a sum of a `{ }` list (a List node, in brackets or not) and anything that is not one goes
+ * R77 (backlog F76): a power of a list-valued base (R79) is elementwise, Giac's `.^`: Giac's `^` on a list is the
+ * dot product for an even whole exponent ([1,2]^2 = 5), while the same list's x⁻¹ and ÷ go elementwise. A matrix,
+ * a name and anything else keep `^`, so G97 (engine/nonsquare.ts) still reads them in Giac.
+ */
+function powerSign(base: Json): string {
+  return listValued(base) ? ".^" : "^";
+}
+
+/**
+ * R78 (backlog F78): a sum of a list-valued term (R79) and anything that is not one goes
  * elementwise, Giac's `.+` and `.-`: Giac's `+` on a list and a number is polynomial addition ([1,4]+1 = poly1[1,5]).
  * A sum of lists only keeps `+`. Probed 2026-10-23: the signs need spaces (Giac reads `1.+2` as the float 1. plus 2),
  * and a `+` sum anywhere in the chain breaks it ((1+2) .+ [1,4] = poly1[1,7], [1,4] .+ 1+2 = poly1[2,7]), so the
  * whole sum, its brackets and signs included, is flattened into one chain of terms that are not sums.
- * A name holding a list and a list inside a larger term (`{1,4}×2+1`) are G106's.
+ * A name holding a list is G106's; a list inside a larger term (`{1,4}×2+1`) is list-valued (R79).
  */
 function sumTerms(e: Json, neg: boolean, out: { neg: boolean; t: Json }[]): void {
   if (isHead(e, "Add")) e.slice(1).forEach((a) => sumTerms(a as Json, neg, out));
@@ -246,15 +260,10 @@ function sumTerms(e: Json, neg: boolean, out: { neg: boolean; t: Json }[]): void
   else out.push({ neg, t: e });
 }
 
-/** A `{ }` list: a List node, in brackets or not (R78). */
-function isList(t: Json): boolean {
-  return isHead(t, "List") || (isHead(t, "Delimiter") && t.length === 2 && isList(t[1] as Json));
-}
-
 function listSum(e: Json, o: SerializeOptions): Out | undefined {
   const terms: { neg: boolean; t: Json }[] = [];
   sumTerms(e, false, terms);
-  const lists = terms.filter(({ t }) => isList(t)).length;
+  const lists = terms.filter(({ t }) => listValued(t)).length;
   if (lists === 0 || lists === terms.length) return undefined;
   const s = terms
     .map(({ neg, t }, i) => `${i === 0 ? (neg ? "-" : "") : neg ? " .- " : " .+ "}${wrap(ser(t, o), 2)}`)
@@ -263,7 +272,7 @@ function listSum(e: Json, o: SerializeOptions): Out | undefined {
 }
 
 /**
- * R78f1 (backlog F79): a product with two or more `{ }` lists among its factors (`lists[i]`, as isList) is elementwise,
+ * R78f1 (backlog F79): a product with two or more `{ }` lists among its factors (`lists[i]`, as listValued) is elementwise,
  * Giac's `.*`: Giac's `*` on two lists is the dot product ([1,4]*[1,1] = 5, probed on c381b15). The sign carries spaces
  * as R78's `.+` does, and joins every factor (2 .* [1,4] .* [1,1] = [2,8]). A number times one list keeps `*`.
  */
@@ -313,7 +322,7 @@ function ser(e: Json, o: SerializeOptions): Out {
     case "Negate":
       return { s: `-${wrap(ser(a0, o), 2)}`, p: 1 };
     case "Multiply":
-      return mulOuts(args.map((a) => ser(a, o)), args.map(isList));
+      return mulOuts(args.map((a) => ser(a, o)), args.map(listValued));
     case "InvisibleOperator":
       return invisible(args, o);
     case "Divide":
