@@ -4,7 +4,7 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; night (Tab One) = the plugged-in Tab One only, P23; day = the owner tries it or it changes the pipeline); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` at `93ab512` on 2026-10-22, after the seventh night and the day's merges (item 0 below; Opus pass 59); before that, at `94cb7aa` ([2026-10-22-night-report.md](2026-10-22-night-report.md)): R74, R75, G90, G85, G88 with G88f1, G97 with G97f1, A32, G76, G86 and R69 merged (Opus passes 55–58); pass 58's two fixes, G86f1 and R69f1, run by day. Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` at `ea9f53d` on 2026-10-23, after the eighth night ([2026-10-23-night-report.md](2026-10-23-night-report.md)): nothing merged; R76, R77 and G98 are finished on their branches (Opus pass 60: all ok) and failed only on a host-cpu lock left by the hung device step 59 (A35). The day of 2026-10-22 merged G86f1, R69f1, S23, A34, A33 and A33f1 (pass 59: all ok). Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path: the core freeze (owner, 2026-10-21; decisions.md "P23")
 **Why.** Since 2026-10-14 phase-1 has had about two fix commits for every feature commit (`git log --no-merges` by `feat`/`fix`: 84 against 188, [freeze report](2026-10-21-sandra-freeze-report.md) section 1). Many are fix rounds before a merge, but 45 of 208 merges were follow-up packages (`<ID>f1`, `f2`) for work already merged (`git log --merges --since=2026-10-14 --format=%s phase-1`): merged changes break things too often. The open bugs are of two kinds. Most come from our layer guessing at Giac's printed text (settings, names, stores, bound variables, the kind of a number): the structured bridge (G85) removes their cause. The rest are precision edge cases inside Giac on extreme inputs. So: no new features until the core holds; the bridge first; "holds" is a fixed list, not a feeling; extreme inputs run as a background stream.
@@ -14,8 +14,8 @@
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find first (three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-0. Done on 2026-10-22: G86f1 `b80bd7c`, R69f1 `f921d46`, S23 `f6d5092`, A34 `ce29744`, A33 `bdc084f` (device 903: c01, c02 were lock-screen timeouts, 2/2 on a rerun), A33f1 `93ab512` (device 188: 51/51). S23's moves are steps 113–119 and 131–134, after R76 and R77.
-1. annabell, small (Opus pass 59): **A33f2** (core-device.sh's locked message asks to set the screen lock to None; say: keep it on while charging, never remove a PIN) and **A34f1** (node_modules_stale compares versions too, so a bumped dependency is installed); backlog lines.
+0. **Review-only merges** (the lock is broken): R76, R77, G98, each `scripts/pipeline.sh <agent> "<ID>" --no-worker --audit-model auto` (G98: the golden gate must pass).
+1. **A35** before the night (the device step cannot hang or leave a lock; with A33f2), then **A34f1**. G106 → R78 and R76f1 are night-safe: by day if time is left, else steps 112a–112c.
 2. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
 3. When a slot is free (process, nothing users see): **A25**, **A19** (G64 and S16 wait for it), **A18**, **A22** → **A26**, **A27**, **A30**.
 4. Every morning: the owner's check (MORNING.md, on the Tab One, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
@@ -30,6 +30,8 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
+| [A35](packages/A35.md) | The device step cannot hang the night or leave a lock (with A33f2) | annabell, Sonnet | day | now | ~0.25 d |
+| [A34f1](packages/A34f1.md) | A bumped dependency is installed before the checks | annabell, Sonnet | day | now | ~0.1 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A25](packages/A25.md) | The golden gate gates itself | annabell, Sonnet | day | now | ~0.1 d |
@@ -57,12 +59,15 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
 ### The queue (rewritten 2026-10-21 for P23; the steps before 101 are done or moved to the background)
-Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **The core lane (101–119) comes first; a background step (120–134) runs only when no core step can start.**
+Estimates are wall-clock guesses. A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. **The core lane (101–119, with 112a–112c) comes first; a background step (120–134) runs only when no core step can start.**
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
 | 111 | [R76](packages/R76.md) a value entered in Solve's Num view does not follow you to Home (F72, c56) | ron, Sonnet | `p1/ron-solvenum-line` | — | 1 h |
 | 112 | [R77](packages/R77.md) x² and xʸ on a { } list go elementwise (F76) | ron, Opus | `p1/ron-listpow` | — | 1 h |
+| 112a | [G106](packages/G106.md) a polynomial vector the input did not ask for is refused (F78) | gorge, Opus | `p1/gorge-poly1-guard` | — | 1 h |
+| 112b | [R78](packages/R78.md) a { } list ± a number goes elementwise (F78) | ron, Opus | `p1/ron-listplus` | R77 | 1 h |
+| 112c | [R76f1](packages/R76f1.md) Enter in Solve's Num view empties the line | ron, Sonnet | `p1/ron-solvenum-enter` | R76 | 45 min |
 | 113 | [G98](packages/G98.md) the golden runner sends a Home `latex` case as Home does (F75) | gorge, Sonnet | `p1/gorge-golden-chipnames` | — | 1 h |
 | 114 | [G99](packages/G99.md) names read and bound names from bridge-2 (F54; replaces G69) | gorge, Opus | `p1/gorge-bridge-names` | G98 | 2 h + engine build |
 | 115 | [G100](packages/G100.md) every store from bridge-2's targets (F57; replaces G72, G66) | gorge, Opus | `p1/gorge-bridge-stores` | G99 | 2 h |
