@@ -214,6 +214,17 @@ function invisible(raw: Json[], o: SerializeOptions): Out {
   return mulOuts(parts);
 }
 
+/**
+ * R77 (backlog F76): a power of a `{ }` list (a List node, in brackets or not) is elementwise, Giac's `.^`: Giac's `^`
+ * on a list is the dot product for an even whole exponent ([1,2]^2 = 5), while the same list's x⁻¹ and ÷ go
+ * elementwise. A matrix, a name and anything else keep `^`, so G97 (engine/nonsquare.ts) still reads them in Giac.
+ */
+function powerSign(base: Json): string {
+  let b = base;
+  while (isHead(b, "Delimiter") && b.length === 2) b = b[1] as Json;
+  return isHead(b, "List") ? ".^" : "^";
+}
+
 function mulOuts(parts: Out[]): Out {
   if (parts.length === 1) return parts[0] as Out;
   return { s: parts.map((p) => wrap(p, 3)).join("*"), p: 2 };
@@ -265,7 +276,7 @@ function ser(e: Json, o: SerializeOptions): Out {
     case "Rational":
       return { s: `(${ser(a0, o).s})/(${ser(a1, o).s})`, p: 2 };
     case "Square":
-      return { s: `${wrap(ser(a0, o), 5)}^2`, p: 4 };
+      return { s: `${wrap(ser(a0, o), 5)}${powerSign(a0)}2`, p: 4 };
     case "Power": {
       if (a0 === "ExponentialE") return call("exp", [a1], o); // e^x -> exp(x), not exp(1)^x
       const base = ser(a0, o);
@@ -276,7 +287,7 @@ function ser(e: Json, o: SerializeOptions): Out {
         return odd.p === "1" ? { s: root, p: 5 } : { s: `${root}^${odd.p.startsWith("-") ? `(${odd.p})` : odd.p}`, p: 4 };
       }
       const ex = ser(a1, o);
-      return { s: `${wrap(base, 5)}^${wrap(ex, 5)}`, p: 4 };
+      return { s: `${wrap(base, 5)}${powerSign(a0)}${wrap(ex, 5)}`, p: 4 };
     }
     case "Root": {
       // L6 default: an odd whole-number index gives the real root, so ∛(-8) = -2 (Giac surd); the power form follows

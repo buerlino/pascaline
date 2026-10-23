@@ -308,6 +308,14 @@ cases:
   - { id: "lists-matrices-07", latex: "\\left\\{5\\right\\}", expect: "[5]", source: "derived", group: "lists-matrices" }
   - { id: "lists-matrices-08", latex: "\\left\\{\\res{1}{0.25},2\\right\\}", expect: "[1/4,2]", chips: { "res:1": { value: "1/4", exact: true } }, source: "derived", group: "lists-matrices", note: "a chip is an element" }
   - { id: "lists-matrices-09", latex: "\\operatorname{mean}\\left(\\left\\{1,2,3,4\\right\\}\\right)", expect: "5/2", source: "derived", group: "lists-matrices" }
+  # R77 (backlog F76): x² and xʸ on braces go elementwise (`.^`), never Giac's dot product [1,2]^2 = 5 (derived by hand)
+  - { id: "lists-matrices-10", latex: "\\left\\{1,2\\right\\}^{2}", expect: "[1,4]", source: "derived", group: "lists-matrices", note: "x² on a list: 1², 2²" }
+  - { id: "lists-matrices-11", latex: "\\left\\{1,2\\right\\}^{3}", expect: "[1,8]", source: "derived", group: "lists-matrices", note: "xʸ 3 on a list: 1³, 2³" }
+  - { id: "lists-matrices-12", latex: "\\left\\{4,9\\right\\}^{0.5}", expect: "[2.0,3.0]", source: "derived", group: "lists-matrices", note: "xʸ 0.5 on a list: √4, √9" }
+  - { id: "lists-matrices-13", latex: "\\{1,2\\}^{2}", expect: "[1,4]", source: "derived", group: "lists-matrices", note: "typed braces, as the list key's" }
+  - { id: "lists-matrices-14", latex: "-\\left\\{1,2\\right\\}^{2}", expect: "[-1,-4]", source: "derived", group: "lists-matrices", note: "the power binds before the sign" }
+  - { id: "lists-matrices-15", latex: "3\\left\\{1,2\\right\\}^{2}", expect: "[3,12]", source: "derived", group: "lists-matrices", note: "the power binds before the product" }
+  - { id: "lists-matrices-16", latex: "\\left\\{1,2\\right\\}^{4}", expect: "[1,16]", source: "derived", group: "lists-matrices", note: "xʸ 4 on a list: 1⁴, 2⁴ (Giac's ^ gives (v·v)² = 25 for an even power; odd and non-whole powers, -11 and -12, were elementwise already)" }
   # --- complex
   - { id: "complex-01", latex: "\\imaginaryI", expect: "i", source: "derived", group: "complex" }
   - { id: "complex-02", latex: "2\\mathrm{i}", expect: "2*i", note: "a drawn result's upright i is the constant (R67)", source: "derived", group: "complex" }

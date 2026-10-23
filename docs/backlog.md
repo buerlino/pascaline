@@ -43,7 +43,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- **F76 → [R77](shifts/packages/R77.md) (owner, 2026-10-22).** A `{ }` list squared shows `= 5` (Giac's dot product of `[1,2]`) while its x⁻¹ and ÷ go elementwise; x² and xʸ on braces go elementwise (`.^`).
+- **F76 → [R77](shifts/packages/R77.md), done (run 190).** x² and xʸ on a `{ }` list (braces, typed or from the list key, bracketed or not) go elementwise, Giac's `.^` (`input/emit.ts` powerSign): `{1,2}²` = `{1,4}`, no longer `5`; a matrix, a `[ ]` vector and a name keep `^`. A stored list by name (`L²`) still gets Giac's `^`.
 - **F78 → [G106](shifts/packages/G106.md) + [R78](shifts/packages/R78.md) (owner, 2026-10-23; Home shows `poly1[1,5]` under `=`, probed).** A list plus a number adds it to the last element only: Giac gives `[1,4]+1` = `poly1[1,5]` (polynomial addition), not `{2,5}`; check what Home shows (a wrong number under `=` is a fix now). Families 1, 5.
 - **F77, no package (R77's Not done).** A list stored by name squared still gets Giac's `^`: `L:={1,2}`, then `L²` shows `= 5` (probed: `L:=[1,2];L^2` = `5`); the name does not say it came from braces. Fix in the engine (read the value's type, as `nonsquare.ts` does). Family 1.
 - ~~**F75 → [G98](shifts/packages/G98.md) (G86's report).** The golden runner's `latex` steps parse without `chipNames`, so an inexact chip goes in as text there and by name in Home: the gate checks a different input than the app. Family 8.~~ Done (G98, run 191).

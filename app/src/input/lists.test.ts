@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { SerializeError } from "./errors.ts";
 import { latexToGiac, latexToGiacInfo } from "./latex-to-giac.ts";
+import { mathJsonToGiac } from "./emit.ts";
 
 describe("the list braces (R54)", () => {
   it("read as a Giac list, one element or many, nested", () => {
@@ -30,5 +31,29 @@ describe("the list braces (R54)", () => {
     }
     expect(err).toBeInstanceOf(SerializeError);
     expect((err as SerializeError).key).toBe("parse.emptyList");
+  });
+});
+
+// R77 (backlog F76): x² and xʸ on a { } list go elementwise, Giac's `.^`; Giac's `^` on a list is the dot product
+// ([1,2]^2 = 5). Derived: {1,2}² = {1,4}, {1,2}³ = {1,8}, {4,9}^0.5 = {2,3}. The values run through Giac in group
+// "lists-matrices" of tests/golden/parser.yaml (lists-matrices-10 to -16).
+describe("a list to a power (R77)", () => {
+  it("goes elementwise: braces, the list key's form or typed, emit `.^`", () => {
+    expect(latexToGiac("\\left\\{1,2\\right\\}^{2}")).toBe("[1,2].^2");
+    expect(latexToGiac("\\left\\{1,2\\right\\}^{3}")).toBe("[1,2].^3");
+    expect(latexToGiac("\\left\\{1,2\\right\\}^{4}")).toBe("[1,2].^4");
+    expect(latexToGiac("\\left\\{4,9\\right\\}^{0.5}")).toBe("[4,9].^0.5");
+    expect(latexToGiac("\\{1,2\\}^{2}")).toBe("[1,2].^2");
+    expect(latexToGiac("\\left\\{1,2\\right\\}\\char\"5E 2")).toBe("[1,2].^2");
+    expect(latexToGiac("\\left(\\left\\{1,2\\right\\}\\right)^{2}")).toBe("([1,2]).^2");
+    expect(latexToGiac("-\\left\\{1,2\\right\\}^{2}")).toBe("-[1,2].^2");
+    expect(mathJsonToGiac(["Square", ["List", 1, 2]])).toBe("[1,2].^2");
+  });
+
+  it("keeps `^` for a matrix and a name: G97 (nonsquare.ts) reads those in Giac", () => {
+    expect(latexToGiac("\\begin{pmatrix}1&2\\end{pmatrix}^{2}")).toBe("[[1,2]]^2");
+    expect(latexToGiac("\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}^{2}")).toBe("[[1,2],[3,4]]^2");
+    expect(mathJsonToGiac(["Power", "L", 2])).toBe("L^2");
+    expect(mathJsonToGiac(["Power", ["Matrix", ["List", ["List", 1, 2]]], 2])).toBe("[[1,2]]^2");
   });
 });
