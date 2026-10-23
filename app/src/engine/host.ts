@@ -35,6 +35,7 @@ import { eseriesDefinition } from "./eseries.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { resolveAngle } from "./angleMigration.ts";
 import { mayPowerMatrix, nonSquarePower } from "./nonsquare.ts";
+import { mayAddToList, unaskedPoly } from "./polyvec.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
@@ -767,9 +768,13 @@ export class EngineHost implements FactsHost {
     // definite integral, a series or a limit runs its right-hand side first, is checked, and only then stored.
     const asg0 = simpleAssignment(exactInput);
     // G57: so does one whose value rests on a decision, which may be refused as undecided.
-    // G97: and one whose value may be a power of a non-square matrix, which is refused.
+    // G97: and one whose value may be a power of a non-square matrix, which is refused; G106: or a list plus a number.
+    // G106: whether a name holds a list is read from Giac's print in the stored table (G65's state read, already made):
+    // the assignment must be routed before it runs, and asking the engine would cost a call on every assignment. This
+    // text gate moves to bridge-3 with the poly1 check when G103 reads a value's kind (docs/04 6.1).
+    const isList = (n: string): boolean => this.stored.get(n)?.text.startsWith("[") === true;
     const guarded =
-      asg0 && !isStateful(asg0.rhs) && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
+      asg0 && !isStateful(asg0.rhs) && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || mayAddToList(asg0.rhs, isList) || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
     // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
     // mode's Digits stays the setting, which prints the floats of a non-number.
     const digitsSet = Math.trunc(s.digits);
@@ -839,6 +844,8 @@ export class EngineHost implements FactsHost {
     const builtin = notBuiltin(this.giac);
     const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
     if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn)) return fail(enEngine["error.notSquare"], "notSquare");
+    // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.
+    if (unaskedPoly(this.giac, "pcasans", asg0 ? asg0.rhs : exactInput, text, userFn)) return fail(enEngine["error.listPlusNumber"], "listPlusNumber");
     if (guarded) {
       const stored = this.giac.eval(`${guarded.name}:=pcasans`);
       if (isError(stored)) return fail(stored, isTimeout(stored) ? "timeout" : "engine");

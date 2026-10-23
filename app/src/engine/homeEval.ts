@@ -19,6 +19,7 @@ import { enEngine } from "../i18n/enEngine.ts";
 import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { nonSquarePower } from "./nonsquare.ts";
+import { POLY_AT, POLY_AT_ANY_DEPTH, unaskedPoly } from "./polyvec.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
@@ -202,6 +203,8 @@ export const ENGINE_DEFINITIONS: Readonly<Record<string, string>> = {
     "par(a):={ local l,s,k; l:=[a]; if (size(l)==0) throw(\"par: needs at least one value\"); " +
     "for (k:=0;k<size(l);k:=k+1) { if (l[k]==0) return 0; } " +
     "s:=0; for (k:=0;k<size(l);k:=k+1) s:=s+1/l[k]; return normal(1/s); }",
+  // G106f1: whether a value holds a coefficient vector at any depth (polyvec.ts; its check defines it in the same call).
+  [POLY_AT]: POLY_AT_ANY_DEPTH,
 };
 
 /** Definitions whose text is built engine-side (host.ts) so their tables stay out of the start chunk: G30 `eseries`
@@ -706,6 +709,8 @@ export function homeEval(
   if (!once && !isTimeout(exactOut) && nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn)) return refuse("notSquare", "exact");
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
+  // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.
+  if (unaskedPoly(giac, ans, exactBody, exactOut, userFn)) return refuse("listPlusNumber", "exact");
 
   // G39: a number for something that does not exist (a principal value, an Abel sum, a bounded_function) is refused.
   if (!once) {
