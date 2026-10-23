@@ -189,6 +189,7 @@ function invisible(raw: Json[], o: SerializeOptions): Out {
   const args = raw.filter((a) => !isHead(a, "HorizontalSpacing")); // \, \; \quad are layout only
   const user = o.userFunctions ?? new Set(["f", "g", "h"]);
   const parts: Out[] = [];
+  const lists: boolean[] = [];
   for (let i = 0; i < args.length; i++) {
     const a = args[i] as Json;
     const next = args[i + 1];
@@ -210,8 +211,9 @@ function invisible(raw: Json[], o: SerializeOptions): Out {
     } else {
       parts.push(ser(a, o));
     }
+    lists.push(isList(a)); // one part per step; a folded call f(…) starts at a name, never a list
   }
-  return mulOuts(parts);
+  return mulOuts(parts, lists);
 }
 
 /**
@@ -244,10 +246,14 @@ function sumTerms(e: Json, neg: boolean, out: { neg: boolean; t: Json }[]): void
   else out.push({ neg, t: e });
 }
 
+/** A `{ }` list: a List node, in brackets or not (R78). */
+function isList(t: Json): boolean {
+  return isHead(t, "List") || (isHead(t, "Delimiter") && t.length === 2 && isList(t[1] as Json));
+}
+
 function listSum(e: Json, o: SerializeOptions): Out | undefined {
   const terms: { neg: boolean; t: Json }[] = [];
   sumTerms(e, false, terms);
-  const isList = (t: Json): boolean => isHead(t, "List") || (isHead(t, "Delimiter") && t.length === 2 && isList(t[1] as Json));
   const lists = terms.filter(({ t }) => isList(t)).length;
   if (lists === 0 || lists === terms.length) return undefined;
   const s = terms
@@ -256,9 +262,15 @@ function listSum(e: Json, o: SerializeOptions): Out | undefined {
   return { s, p: 1 };
 }
 
-function mulOuts(parts: Out[]): Out {
+/**
+ * R78f1 (backlog F79): a product with two or more `{ }` lists among its factors (`lists[i]`, as isList) is elementwise,
+ * Giac's `.*`: Giac's `*` on two lists is the dot product ([1,4]*[1,1] = 5, probed on c381b15). The sign carries spaces
+ * as R78's `.+` does, and joins every factor (2 .* [1,4] .* [1,1] = [2,8]). A number times one list keeps `*`.
+ */
+function mulOuts(parts: Out[], lists: readonly boolean[] = []): Out {
   if (parts.length === 1) return parts[0] as Out;
-  return { s: parts.map((p) => wrap(p, 3)).join("*"), p: 2 };
+  const sign = lists.filter(Boolean).length >= 2 ? " .* " : "*";
+  return { s: parts.map((p) => wrap(p, 3)).join(sign), p: 2 };
 }
 
 function ser(e: Json, o: SerializeOptions): Out {
@@ -301,7 +313,7 @@ function ser(e: Json, o: SerializeOptions): Out {
     case "Negate":
       return { s: `-${wrap(ser(a0, o), 2)}`, p: 1 };
     case "Multiply":
-      return mulOuts(args.map((a) => ser(a, o)));
+      return mulOuts(args.map((a) => ser(a, o)), args.map(isList));
     case "InvisibleOperator":
       return invisible(args, o);
     case "Divide":
