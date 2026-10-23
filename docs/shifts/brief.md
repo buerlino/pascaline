@@ -14,8 +14,8 @@
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find first (three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-0. **Review-only merges** (the lock is broken): R76, R77, G98, each `scripts/pipeline.sh <agent> "<ID>" --no-worker --audit-model auto` (G98: the golden gate must pass).
-1. **A34f1** (A35 merged `c8b4723`). G106f1 (Opus pass 61) and R76f1 are night-safe: by day if time is left, else steps 112a and 112c.
+0. **Done** (night into 2026-10-24): R76 `5f18dbd`, G98 `9394724`, R77 `05abf62`, G106f1 `6ea4d02`, R78f1 `b367fd1`, R76f1 `6d93eab` (Opus pass 62).
+1. **A34f1** (A35 merged `c8b4723`).
 2. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
 3. When a slot is free (process, nothing users see): **A25**, **A19** (G64 and S16 wait for it), **A18**, **A22** → **A26**, **A27**, **A30**.
 4. Every morning: the owner's check (MORNING.md, on the Tab One, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
@@ -62,11 +62,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 111 | [R76](packages/R76.md) a value entered in Solve's Num view does not follow you to Home (F72, c56) | ron, Sonnet | `p1/ron-solvenum-line` | — | 1 h |
-| 112 | [R77](packages/R77.md) x² and xʸ on a { } list go elementwise (F76) | ron, Opus | `p1/ron-listpow` | — | 1 h |
-| 112a | [G106](packages/G106.md) a polynomial vector the input did not ask for is refused (F78) | gorge, Opus | `p1/gorge-poly1-guard` | — | 1 h |
-| 112c | [R76f1](packages/R76f1.md) Enter in Solve's Num view empties the line | ron, Sonnet | `p1/ron-solvenum-enter` | R76 | 45 min |
-| 113 | [G98](packages/G98.md) the golden runner sends a Home `latex` case as Home does (F75) | gorge, Sonnet | `p1/gorge-golden-chipnames` | — | 1 h |
 | 114 | [G99](packages/G99.md) names read and bound names from bridge-2 (F54; replaces G69) | gorge, Opus | `p1/gorge-bridge-names` | G98 | 2 h + engine build |
 | 115 | [G100](packages/G100.md) every store from bridge-2's targets (F57; replaces G72, G66) | gorge, Opus | `p1/gorge-bridge-stores` | G99 | 2 h |
 | 116 | [G101](packages/G101.md) the non-square check reads a called function's body (F74) | gorge, Opus | `p1/gorge-nonsquare-body` | G100 | 1 h |
