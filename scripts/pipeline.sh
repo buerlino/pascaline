@@ -37,6 +37,7 @@
 # exported to the worker, the fix rounds and the checks, so parallel runs never share a dev server.
 # Locks: host-cpu around the checks, integ (600 s) around the merge into phase-1.
 set -euo pipefail
+export PASCALINE_LOCK_PID=$$   # A35: locks taken here (and by the agents it starts) record this pid
 # shellcheck source=scripts/pipeline-lib.sh
 source "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/pipeline-lib.sh"
 
@@ -125,7 +126,7 @@ if [[ "${1:-}" == "pass" ]]; then
   log "Opus pass $n: spawned sofia (opus) on: $ids; waiting."
   prompt="Opus pass $n of the night shift: follow \"Opus pass (instructions for the Opus agent)\" in docs/shifts/brief.md section 0c for packages $ids. Open questions from the log: $open. You run in the phase-1 worktree $integ. Run any e2e with PW_PORT=$PW_PORT (exported; do not change it). Take the integration lock around the doc commit: tools/devlock.sh acquire integ pass-$n 600 before it, tools/devlock.sh release integ pass-$n right after. Reply in exactly the form the section gives (OPUS PASS, VERDICT, FIX lines, QUEUE, NOTES)."
   set +e
-  (cd "$integ" && timeout 7200 claude -p --agent sofia --model opus --effort medium "${claude_common[@]}" -n "pass-$n" "$prompt") > "$run/reply.md" 2> "$run/stderr.log"
+  (cd "$integ" && timeout -k 60 7200 claude -p --agent sofia --model opus --effort medium "${claude_common[@]}" -n "pass-$n" "$prompt") > "$run/reply.md" 2> "$run/stderr.log"
   rc=$?; set -e
   if [[ $rc -ne 0 ]] && grep -qiE 'usage limit|rate limit|429|overloaded' "$run/stderr.log" "$run/reply.md"; then
     log "Opus pass $n: LIMIT (claude exit $rc)"; echo "RESULT pass $n: LIMIT"; exit 75
@@ -153,29 +154,29 @@ if [[ "${1:-}" == "device" ]]; then
   ensure_integ; mkdir -p "$run"
   skip() { log "pipeline device $n: DEVICE SKIPPED ($*)"; echo "RESULT device $n: DEVICE SKIPPED ($*)"; exit 0; }
   [[ -n "$dev" ]] || skip "ANDROID_SERIAL not set"
-  st="$(timeout 20 adb -s "$dev" get-state 2>&1 | tr -d '\r' | tail -n1 || true)"
+  st="$(timeout -k 5 20 adb -s "$dev" get-state 2>&1 | tr -d '\r' | tail -n1 || true)"
   [[ "$st" == device ]] || skip "device $st"
-  bat="$(timeout 20 adb -s "$dev" shell dumpsys battery 2>/dev/null | tr -d '\r' | awk '/^ *level:/{print $2}')"
+  bat="$(timeout -k 5 20 adb -s "$dev" shell dumpsys battery 2>/dev/null | tr -d '\r' | awk '/^ *level:/{print $2}')"
   [[ -z "$bat" || "$bat" -ge 10 ]] || skip "battery $bat %"
   locked() {  # wake does not unlock: a PIN or pattern keeps isKeyguardShowing=true
-    timeout 20 adb -s "$dev" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true; sleep 1
-    local w; w="$(timeout 20 adb -s "$dev" shell dumpsys window 2>/dev/null | tr -d '\r' || true)"  # captured first: grep -q would SIGPIPE adb
+    timeout -k 5 20 adb -s "$dev" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true; sleep 1
+    local w; w="$(timeout -k 5 20 adb -s "$dev" shell dumpsys window 2>/dev/null | tr -d '\r' || true)"  # captured first: grep -q would SIGPIPE adb
     grep -q 'isKeyguardShowing=true' <<<"$w"
   }
   locked && skip "screen locked"
   sha="$(git -C "$integ" rev-parse --short HEAD)"
   t0=$SECONDS
   # build.sh takes the host-cpu lock itself (waiting for it): do not hold it here
-  rc=0; (cd "$integ" && timeout 1500 tools/device-build.sh --test) > "$run/build.log" 2>&1 || rc=$?
+  rc=0; (cd "$integ" && timeout -k 60 1200 tools/device-build.sh --test) > "$run/build.log" 2>&1 || rc=$?
   [[ $rc -eq 0 && -f "$integ/dist/pascaline.apk" ]] || skip "build failed, rc=$rc; see $run/build.log"
   "$integ/tools/devlock.sh" acquire "$dev" "device-$n-install" 600 >/dev/null || skip "device lock busy"
-  rc=0; timeout 300 adb -s "$dev" install -r "$integ/dist/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
+  rc=0; timeout -k 30 300 adb -s "$dev" install -r "$integ/dist/pascaline.apk" > "$run/install.log" 2>&1 || rc=$?
   "$integ/tools/devlock.sh" release "$dev" "device-$n-install" >/dev/null || true
   [[ $rc -eq 0 ]] || skip "install failed, rc=$rc; see $run/install.log"
   before=0; [[ -f "$coord/device-runs.jsonl" ]] && before="$(wc -l < "$coord/device-runs.jsonl")"
   left=$((1800 - (SECONDS - t0))); (( left > 120 )) || skip "no time left after the build"
   locked && skip "screen locked (after the build)"
-  rc=0; ANDROID_SERIAL="$dev" PASCALINE_COORD="$coord" timeout "$left" "$integ/tools/core-device.sh" > "$run/core.log" 2>&1 || rc=$?
+  rc=0; ANDROID_SERIAL="$dev" PASCALINE_COORD="$coord" timeout -k 60 "$left" "$integ/tools/core-device.sh" > "$run/core.log" 2>&1 || rc=$?
   line="$(grep -E '^CORE DEVICE ' "$run/core.log" | tail -n1 || true)"
   [[ -n "$line" ]] || skip "runner gave no CORE DEVICE line, rc=$rc; see $run/core.log"
   new="$(tail -n +"$((before + 1))" "$coord/device-runs.jsonl" 2>/dev/null | grep '"kind":"core"' | grep '"ok":false' | grep -o '"case":"c[0-9]*"' | cut -d'"' -f4 | sort -u | paste -sd, - || true)"
@@ -190,7 +191,7 @@ if [[ "${1:-}" == "report" ]]; then
   ensure_integ; run="$tasks/report-$(date +%F)"; mkdir -p "$run"
   log "Shift report: spawned sonnet writer; waiting."
   prompt="Write the shift report of docs/shifts/brief.md section 0c (\"Shift report\") for the night section of .coord/log.md (the log is on stdin). You run in the phase-1 worktree $integ: commit the report there with git commit -s and the Sonnet trailer, holding the integration lock around the commit (tools/devlock.sh acquire integ report 600 before, tools/devlock.sh release integ report after). Never push. Reply with the commit hash only."
-  tail -n 400 "$coord/log.md" | (cd "$integ" && timeout 1800 claude -p --model sonnet --effort medium "${claude_common[@]}" -n report "$prompt") > "$run/reply.md" 2> "$run/stderr.log" || true
+  tail -n 400 "$coord/log.md" | (cd "$integ" && timeout -k 60 1800 claude -p --model sonnet --effort medium "${claude_common[@]}" -n report "$prompt") > "$run/reply.md" 2> "$run/stderr.log" || true
   log "Shift report: $(tail -n1 "$run/reply.md")"; echo "RESULT report: $(tail -n1 "$run/reply.md")"; exit 0
 fi
 
@@ -349,7 +350,7 @@ run_agent() {  # <name> <log> <agent> <model> <effort> <stdin file> <prompt> [to
   local name="$1" out="$2" ag="$3" mdl="$4" eff="$5" input="$6" prompt="$7"; shift 7
   local rc
   set +e
-  (cd "$wt" && timeout 10800 claude -p --agent "$ag" --model "$mdl" --effort "$eff" "${claude_common[@]}" "$@" -n "$name" "$prompt") < "$input" > "$out" 2> "$out.err"
+  (cd "$wt" && timeout -k 60 10800 claude -p --agent "$ag" --model "$mdl" --effort "$eff" "${claude_common[@]}" "$@" -n "$name" "$prompt") < "$input" > "$out" 2> "$out.err"
   rc=$?; set -e
   if [[ $rc -ne 0 ]] && grep -qiE 'usage limit|rate limit|429|overloaded' "$out" "$out.err"; then
     log "pipeline #$n $id: LIMIT during $name (claude exit $rc)"; echo "RESULT #$n $id: LIMIT"; exit 75

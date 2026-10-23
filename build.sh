@@ -15,6 +15,7 @@
 # Output: dist/pascaline.apk (last line printed). Env: PASCALINE_DL_DIR (Giac/GMP/MPFR/GSL tarball cache), PASCALINE_QALC_DL_DIR (libqalculate tarball cache: names and titles for the Find index), ANDROID_HOME (default ~/Android/Sdk),
 # PASCALINE_KEYS (the throwaway signing key's folder, default ~/.cache/pascaline/keys), NO_LOCK=1 (the caller holds the host-cpu lock).
 set -euo pipefail
+export PASCALINE_LOCK_PID=$$   # A35: tools/devlock.sh records this pid; a lock whose pid is gone is broken by the next acquire
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
@@ -95,7 +96,7 @@ if [[ ! -x "$GRADLE_HOME_DIR/bin/gradle" ]]; then
 fi
 lock
 trap unlock EXIT
-(cd android && "$GRADLE_HOME_DIR/bin/gradle" --console=plain -q assembleRelease >&2)
+(cd android && "$GRADLE_HOME_DIR/bin/gradle" --no-daemon --console=plain -q assembleRelease >&2 < /dev/null)
 unlock; trap - EXIT
 
 # 5. dist/

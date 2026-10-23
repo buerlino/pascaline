@@ -238,5 +238,27 @@ chmod +x "$cd4/tools/"*
 out="$(ANDROID_SERIAL=TESTSERIAL PATH="$sb3/bin:$PATH" "$cd4/tools/core-device.sh" 2>&1)"; rc=$?
 [[ $rc -eq 4 ]] && grep -q 'the device is locked' <<<"$out" || fail "A33f1: core-device.sh on a locked device: rc $rc: $out"
 
+# A35: a step that ignores TERM is killed; Gradle never reads the terminal; core-device.sh says keep the screen on
+grep -q 'timeout -k 60 1200 tools/device-build.sh' "$here/pipeline.sh" || fail "A35: the device build has no timeout -k 60 1200"
+# every timeout of the three scripts (run_agent, pass, report, device, night) escalates to KILL; the adb probes use -k 5, the install -k 30
+grep -qE 'timeout [0-9]+ (claude|tools/|"\$integ|adb)' "$here/pipeline.sh" && fail "A35: pipeline.sh has an agent/device timeout without -k"
+grep -qE 'timeout [0-9]' "$here/night.sh" && fail "A35: night.sh has a timeout without -k"
+for pat in 'timeout -k 60 10800 claude' 'timeout -k 60 7200 claude' 'timeout -k 60 1800 claude' 'timeout -k 60 14400'; do
+  grep -qF "$pat" "$here/pipeline.sh" "$here/night.sh" || fail "A35: no '$pat'"
+done
+# build.sh, behaviour: a sandbox copy with stub npm/npx and a stub gradle that records its stdin and arguments
+bs="$tmp/bs"; mkdir -p "$bs/bin" "$bs/cache/gradle-8.14.3/bin" "$bs/app" "$bs/android" "$bs/eng"; cp "$here/../build.sh" "$bs/"
+printf '#!/bin/sh\nexit 0\n' > "$bs/bin/npm"; cp "$bs/bin/npm" "$bs/bin/npx"
+cat > "$bs/cache/gradle-8.14.3/bin/gradle" <<'STUB'
+#!/bin/sh
+readlink /proc/self/fd/0 > "$GRADLE_STDIN_OUT"; echo "$*" >> "$GRADLE_STDIN_OUT"
+mkdir -p app/build/outputs/apk/release; touch app/build/outputs/apk/release/app-release-unsigned.apk
+STUB
+chmod +x "$bs/bin/"* "$bs/cache/gradle-8.14.3/bin/gradle"
+echo y | (cd "$bs" && PATH="$bs/bin:$PATH" PASCALINE_CACHE="$bs/cache" NO_LOCK=1 GRADLE_STDIN_OUT="$bs/stdin.txt" ./build.sh --unsigned --engine-dir "$bs/eng" >/dev/null 2>&1) || fail "A35: the build.sh sandbox run failed"
+[[ "$(head -n1 "$bs/stdin.txt" 2>/dev/null)" == /dev/null ]] || fail "A35: build.sh's Gradle reads stdin from $(head -n1 "$bs/stdin.txt" 2>/dev/null), not /dev/null"
+grep -q -- '--no-daemon' "$bs/stdin.txt" || fail "A35: build.sh's Gradle runs without --no-daemon"
+grep -q 'keep its screen on while charging (brief 0c rule 2); never remove its PIN' "$here/../tools/core-device.sh" || fail "A33f2: core-device.sh lock message"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"

@@ -11,6 +11,7 @@
 # Safety: the container only ever sees scratch copies of engine/giac and of the tarballs. The :Z mount relabels
 # files for SELinux, so it must never touch the checkout or _downloads/.
 set -euo pipefail
+export PASCALINE_LOCK_PID=$$   # A35: tools/devlock.sh records this pid; a lock whose pid is gone is broken by the next acquire
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 CE="${CONTAINER_ENGINE:-podman}"

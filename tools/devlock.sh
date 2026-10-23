@@ -25,6 +25,19 @@ case "$cmd" in
   acquire)
     res="${2:?resource}" owner="${3:?owner}" wait="${4:-0}" start=$SECONDS
     while ! mkdir "$LOCKS/$res" 2>/dev/null; do
+      # A35: a lock whose recorded pid is gone on this host is broken; one without a pid (old format, or a caller that did not
+      # opt in with PASCALINE_LOCK_PID) only by hand. Breakers take a guard, re-read the pid inside it and move the lock aside,
+      # so two waiters that saw the same dead pid never delete a lock another waiter has just taken.
+      lpid="$(cat "$LOCKS/$res/pid" 2>/dev/null || true)"; lhost="$(cat "$LOCKS/$res/host" 2>/dev/null || true)"
+      if [[ "$lpid" =~ ^[1-9][0-9]*$ && "$lhost" == "$(hostname)" ]] && ! kill -0 "$lpid" 2>/dev/null \
+         && mkdir "$LOCKS/.breaking-$res" 2>/dev/null; then
+        if [[ "$(cat "$LOCKS/$res/pid" 2>/dev/null || true)" == "$lpid" ]] && mv "$LOCKS/$res" "$LOCKS/.stale-$res.$$" 2>/dev/null; then
+          rm -rf "${LOCKS:?}/.stale-$res.$$"
+          echo "broke stale lock $res (pid $lpid gone)" >&2
+        fi
+        rmdir "$LOCKS/.breaking-$res" 2>/dev/null || true
+        continue
+      fi
       if (( SECONDS - start >= wait )); then
         echo "busy: $res held by $(cat "$LOCKS/$res/owner" 2>/dev/null || echo '?')" >&2
         exit 1
@@ -33,6 +46,10 @@ case "$cmd" in
     done
     printf '%s\n' "$owner" > "$LOCKS/$res/owner"
     date -Iseconds > "$LOCKS/$res/since"
+    # a pid is recorded only when the caller opts in with PASCALINE_LOCK_PID=<its own long-lived pid> (build.sh, pipeline.sh, the
+    # build-wasm scripts export $$); agents and interactive shells call us from a short-lived shell, so they record none
+    hpid="${PASCALINE_LOCK_PID:-0}"
+    if [[ "$hpid" =~ ^[1-9][0-9]*$ ]]; then hostname > "$LOCKS/$res/host"; echo "$hpid" > "$LOCKS/$res/pid"; fi
     echo "acquired $res for $owner"
     ;;
   release)
@@ -48,7 +65,7 @@ case "$cmd" in
     for d in "$LOCKS"/*/; do
       any=1
       r="$(basename "$d")"
-      echo "$r: $(cat "$d/owner" 2>/dev/null) since $(cat "$d/since" 2>/dev/null)"
+      echo "$r: $(cat "$d/owner" 2>/dev/null) since $(cat "$d/since" 2>/dev/null)$([[ -f "$d/pid" ]] && echo ", pid $(cat "$d/pid") on $(cat "$d/host" 2>/dev/null)")"
     done
     (( any )) || echo "no locks held"
     ;;

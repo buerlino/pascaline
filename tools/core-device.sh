@@ -18,7 +18,7 @@ trap cleanup EXIT
 sleep 1
 win="$(adb -s "$SERIAL" shell dumpsys window 2>/dev/null | tr -d '\r' || true)"  # captured first: grep -q would SIGPIPE adb
 if grep -q 'isKeyguardShowing=true' <<<"$win"; then
-  echo "the device is locked: unlock it (or set its screen lock to None for a night)" >&2; exit 4
+  echo "the device is locked: unlock it, and for a night keep its screen on while charging (brief 0c rule 2); never remove its PIN" >&2; exit 4
 fi
 python3 "$REPO/tools/device_run.py" status >&2 || true
 GREP=(); [[ -n "$ONLY" ]] && GREP=(--grep "\b(${ONLY//,/|}) ")

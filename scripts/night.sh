@@ -80,7 +80,7 @@ ask_henri() {  # <n> <prompt>: henri's one-line reply
   if [[ $dry -eq 1 ]]; then echo "(dry run: henri not asked)"; return; fi
   # shellcheck disable=SC2016
   local r
-  r="$(tail -n 80 "$coord/log.md" | (cd "$integ" && timeout 600 claude -p --agent henri --model sonnet --effort medium --permission-mode auto --output-format text --no-session-persistence --allowedTools Read,Grep --disallowedTools Bash,Edit,Write,Agent,NotebookEdit -n "henri-$1" "$2") 2>>"$out" | grep -vE '^\s*$' | tail -n 1 | sed 's/^[` ]*//; s/[` ]*$//')" || r="(henri failed)"
+  r="$(tail -n 80 "$coord/log.md" | (cd "$integ" && timeout -k 60 600 claude -p --agent henri --model sonnet --effort medium --permission-mode auto --output-format text --no-session-persistence --allowedTools Read,Grep --disallowedTools Bash,Edit,Write,Agent,NotebookEdit -n "henri-$1" "$2") 2>>"$out" | grep -vE '^\s*$' | tail -n 1 | sed 's/^[` ]*//; s/[` ]*$//')" || r="(henri failed)"
   echo "$r"
 }
 unsafe() {  # <cmd>: shell metacharacters outside plain double quotes, or a backtick or $ anywhere
@@ -91,7 +91,7 @@ run_cmd() {  # <cmd>: run one pipeline line; returns its exit code (75: usage li
   local cmd="$1" cmdout rc
   if [[ $dry -eq 1 ]]; then return 0; fi
   set +e; cmdout="$(mktemp)"
-  (cd "$integ" && eval "timeout 14400 $cmd") > "$cmdout" 2>&1; rc=$?
+  (cd "$integ" && eval "timeout -k 60 14400 $cmd") > "$cmdout" 2>&1; rc=$?
   set -e
   cat "$cmdout" >> "$out"
   say "rc=$rc: $(tail -n 1 "$cmdout")"
