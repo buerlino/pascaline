@@ -324,6 +324,7 @@ cases:
   - { id: "lists-matrices-22", latex: "-\\left\\{1,4\\right\\}+1", expect: "[0,-3]", source: "derived", group: "lists-matrices", note: "a negated list plus a number: -1+1, -4+1" }
   - { id: "lists-matrices-23", latex: "\\left(1+2\\right)+\\left\\{1,4\\right\\}", expect: "[4,7]", source: "derived", group: "lists-matrices", note: "a bracketed sum plus a list: 3+1, 3+4 (Giac merges (1+2) .+ [1,4] into poly1[1,7], so the sum is flattened)" }
   - { id: "lists-matrices-24", latex: "\\left\\{1,4\\right\\}-\\left(1-5\\right)", expect: "[5,8]", source: "derived", group: "lists-matrices", note: "a list minus a bracketed sum: 1-1+5, 4-1+5" }
+  - { id: "lists-matrices-25", latex: "\\left[1,4\\right]+1", error: true, source: "derived", group: "lists-matrices", note: "a typed [1,4]+1 is not changed by R78: square brackets are refused (parse.unsupportedDelimiter), G106 refuses it" }
   # --- complex
   - { id: "complex-01", latex: "\\imaginaryI", expect: "i", source: "derived", group: "complex" }
   - { id: "complex-02", latex: "2\\mathrm{i}", expect: "2*i", note: "a drawn result's upright i is the constant (R67)", source: "derived", group: "complex" }

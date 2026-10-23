@@ -61,7 +61,8 @@ describe("a list to a power (R77)", () => {
 // R78 (backlog F78): a { } list plus or minus a number goes elementwise, Giac's `.+` and `.-`; Giac's `+` on a list and
 // a number is polynomial addition ([1,4]+1 = poly1[1,5]). Derived: {1,4}+1 = {2,5}, {1,4}-1 = {0,3}, 1-{1,4} = {0,-3};
 // {1,2}+{3,4} = {4,6} keeps `+`. The signs carry spaces: `1.+2` reads as the float 1. plus 2 in Giac (probed
-// 2026-10-23). The values run through Giac in group "lists-matrices" of tests/golden/parser.yaml (-17 to -22).
+// 2026-10-23). The values run through Giac in group "lists-matrices" of tests/golden/parser.yaml (-17 to -24); -25 is
+// the typed `[1,4]+1`, refused by the parser and not changed here (G106).
 describe("a list plus or minus a number (R78)", () => {
   it("goes elementwise: braces, the list key's form or typed, emit `.+` and `.-`", () => {
     expect(latexToGiac("\\left\\{1,4\\right\\}+1")).toBe("[1,4] .+ 1");
@@ -89,5 +90,18 @@ describe("a list plus or minus a number (R78)", () => {
     expect(latexToGiac("\\left\\{1,4\\right\\}-\\left\\{1,1\\right\\}")).toBe("[1,4]-[1,1]");
     expect(latexToGiac("\\begin{pmatrix}1&4\\end{pmatrix}+1")).toBe("[[1,4]]+1");
     expect(mathJsonToGiac(["Add", "L", 1])).toBe("L+1");
+  });
+
+  it("does not change a typed [1,4]+1: the parser refuses square brackets, so no `.+` is emitted (G106 refuses it)", () => {
+    const key = (latex: string): string | undefined => {
+      try {
+        latexToGiac(latex);
+      } catch (e) {
+        return e instanceof SerializeError ? e.key : String(e);
+      }
+      return undefined;
+    };
+    expect(key("\\left[1,4\\right]+1")).toBe("parse.unsupportedDelimiter");
+    expect(key("[1,4]+1")).toBe("parse.atToken");
   });
 });
