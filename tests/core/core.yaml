@@ -499,4 +499,3 @@ cases:
     expect: { result: "4", mark: "=" }
     value: "4"
     source: derived
-    known: F72

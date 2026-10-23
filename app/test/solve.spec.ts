@@ -207,3 +207,20 @@ test("Solve: E1 p(x)=4 after p(x):=x² in Home gives x = 2, p stays the function
   await openSolve(page);
   await solveIt();
 });
+
+// R76 (F72): R34 clears the shared line after Enter; a value the app put on the line is not the user's typing.
+test("a value set in Num does not follow you to Home; nor does a root (F72)", async ({ page }) => {
+  await openSolve(page);
+  await tap(page, ["x", "sq", "shift", "dot", "d2", "enter", "@num"]);
+  await page.locator('[data-testid="solve-table"] tr[data-name="x"] th button').tap();
+  await tap(page, ["esc", "d1", "enter", "@home"]);
+  expect(await entryValue(page)).toBe("");
+  await tap(page, ["@place", "d4", "@num"]);
+  await tap(page, ["@menu", "d1"]);
+  await expect(value(page, "x")).toHaveText("1.41421356237");
+  await tap(page, ["@home"]);
+  expect(await entryValue(page)).toBe("");
+  // half-typed, no Enter: still follows (R34)
+  await tap(page, ["@place", "d4", "@num", "esc", "d7", "@home"]);
+  expect(await entryValue(page)).toBe("7");
+});
