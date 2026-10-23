@@ -76,6 +76,14 @@ describe("a list plus or minus a number (R78)", () => {
     expect(mathJsonToGiac(["Subtract", 1, ["List", 1, 4]])).toBe("1 .- [1,4]");
   });
 
+  it("flattens the whole sum into one chain: Giac merges a `+` sum next to `.+` ((1+2) .+ [1,4] = poly1[1,7])", () => {
+    expect(latexToGiac("\\left(1+2\\right)+\\left\\{1,4\\right\\}")).toBe("1 .+ 2 .+ [1,4]");
+    expect(latexToGiac("\\left\\{1,4\\right\\}-\\left(1+2\\right)")).toBe("[1,4] .- 1 .- 2");
+    expect(latexToGiac("\\left\\{1,4\\right\\}-\\left(1-x\\right)")).toBe("[1,4] .- 1 .+ x");
+    expect(mathJsonToGiac(["Add", ["Add", ["List", 1, 4], 1], 2])).toBe("[1,4] .+ 1 .+ 2");
+    expect(mathJsonToGiac(["Multiply", 2, ["Add", ["List", 1, 4], 1]])).toBe("2*([1,4] .+ 1)");
+  });
+
   it("keeps `+` for a list plus a list, a matrix and a name", () => {
     expect(latexToGiac("\\left\\{1,2\\right\\}+\\left\\{3,4\\right\\}")).toBe("[1,2]+[3,4]");
     expect(latexToGiac("\\left\\{1,4\\right\\}-\\left\\{1,1\\right\\}")).toBe("[1,4]-[1,1]");
