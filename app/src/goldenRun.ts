@@ -8,7 +8,7 @@ import { defaultCasSettings } from "./engine/types.ts";
 import { ANS_KEY, type ChipTable } from "./input/chips.ts";
 import { chipsIn, type ChipFactsTable } from "./engine/chipFacts.ts";
 import { constTable, inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
-import { latexToGiac, latexToGiacInfo } from "./input/latex-to-giac.ts";
+import { giacOfEntry } from "./input/entry.ts";
 import { rewriteAngles } from "./input/angles.ts";
 import { applyDefChanges, type DefChange } from "./engine/defs.ts";
 import { namesFlag } from "./engine/flags.ts";
@@ -124,6 +124,9 @@ export function typed(c: Case): Case {
   };
 }
 
+/** The Giac text of a Home `latex` step or case: the one function the session calls (input/entry.ts, G98). */
+export const homeLatexStep = (latex: string, chips: ChipTable = {}): ReturnType<typeof giacOfEntry> => giacOfEntry(latex, "home", { chips });
+
 /**
  * G34: a sequence of Home lines on a fresh engine, each in its own angle mode. A `latex` step goes through our parser
  * with Home's options and an Ans chip built from the step before, by the session's rule (state/results.ts, G86). An
@@ -141,8 +144,9 @@ export async function runSteps(fresh: () => Promise<GiacApi>, steps: Step[], dig
       host.cas(st.input!, { ...defaultCasSettings, angle: st.angle ?? "rad", digits });
       continue;
     }
-    const p = st.latex !== undefined ? latexToGiacInfo(st.latex, { chips }) : { giac: st.input!, inexact: false };
-    const r = (st.latex === undefined && (consts || k > 0) ? host.home(p.giac, s, consts, named) : host.home(p.giac, s)).result;
+    const p = st.latex !== undefined ? homeLatexStep(st.latex, chips) : { giac: st.input!, inexact: false, named: undefined };
+    // As the session sends it: a `latex` step with a named chip carries that chip's facts (state/results.ts chipFactsOf)
+    const r = (st.latex === undefined && (consts || k > 0) ? host.home(p.giac, s, consts, named) : p.named ? host.home(p.giac, s, undefined, chipFactsOf(p.named)) : host.home(p.giac, s)).result;
     last = p.inexact ? { ...r, inexactInput: true } : r;
     // The step's item and its chip by the session's own rule (state/results.ts, G86): Ans for the `latex` steps, a
     // named chip (`pasr_<k>`) for the `input` steps. An `input` step is Giac text, so what the parser would say about
@@ -176,7 +180,7 @@ export async function runHomeCase(c: Case, host: EngineHost, fresh: () => Promis
   if (c.steps) return runSteps(fresh, c.steps, c.settings?.digits ?? 12, c.consts && constTable(c.consts));
   const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
   // A case written as `latex` goes through our parser with Home's options (no realOddRoots since R66), its `before` too
-  const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
+  const giacOf = (t: string): string => (c.latex !== undefined ? giacOfEntry(t, "home").giac : t);
   for (const b of c.before ?? []) host.home(giacOf(b), s);
   return host.home(c.latex !== undefined ? giacOf(c.latex) : c.input!, s).result;
 }
@@ -208,8 +212,8 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
   const setting = c.settings?.digits ?? 12;
   // The digits the result is shown with: the setting, or what the input asked for (CAS evalf(x,n), M4-6).
   const digits = c.settings?.shown ?? setting;
-  const giacOf = (t: string): string => (c.latex !== undefined ? latexToGiac(t) : t);
-  const input = c.latex !== undefined ? latexToGiac(c.latex) : c.input!;
+  const giacOf = (t: string): string => (c.latex !== undefined ? giacOfEntry(t, "home").giac : t);
+  const input = c.latex !== undefined ? giacOfEntry(c.latex, "home").giac : c.input!;
   if (c.kind === "cas") {
     const cs = { ...defaultCasSettings, angle: c.settings?.angle ?? "rad", digits: setting };
     for (const b of c.beforeHome ?? []) defs.push(...host.home(giacOf(b), { ...defaultHomeSettings, digits: setting }).defs);

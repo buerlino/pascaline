@@ -12,3 +12,12 @@ export function loadParser(): Promise<ParserModule> {
   loading ??= import("./latex-to-giac.ts");
   return loading;
 }
+
+type EntryModule = typeof import("./entry.ts");
+let loadingEntry: Promise<EntryModule> | undefined;
+
+/** The per-view entry step (entry.ts, G98), in the same chunk as the parser. */
+export function loadEntry(): Promise<EntryModule> {
+  loadingEntry ??= import("./entry.ts");
+  return loadingEntry;
+}
