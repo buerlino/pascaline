@@ -6,7 +6,7 @@ import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { applyDefChanges } from "./defs.ts";
 import { formatComplex, markOf, type FormatOptions } from "./format.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { exportLibrary } from "./library.ts";
 import { ICDF_DEFINITIONS, icdfPolished } from "./icdf.ts";
@@ -14,9 +14,10 @@ import { ICDF_DEFINITIONS, icdfPolished } from "./icdf.ts";
 describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   let host: EngineHost;
   let giac: Awaited<ReturnType<typeof loadNodeGiac>>["giac"];
+  let bridge: Awaited<ReturnType<typeof loadNodeGiac>>["bridge"];
   beforeAll(async () => {
-    giac = (await loadNodeGiac()).giac;
-    host = new EngineHost(giac);
+    ({ giac, bridge } = await loadNodeGiac());
+    host = new EngineHost(giac, bridge);
   });
 
   it("Home: 1/3 -> 0.333333333333 (source: device, G2 item 16)", () => {
@@ -568,18 +569,18 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
   const mk = (name: string, kind: "var" | "fn" | "other", cmd: string, extra: object = {}) =>
     ({ name, kind, cmds: [cmd], preview: "", view: "cas" as const, time: 0, ...extra });
   const counting = async () => {
-    const { giac } = await loadNodeGiac();
+    const { giac, bridge } = await loadNodeGiac();
     const calls: string[] = [];
-    return { giac: { ...giac, eval: (s: string) => (calls.push(s), giac.eval(s)) }, calls, raw: giac };
+    return { giac: { ...giac, eval: (s: string) => (calls.push(s), giac.eval(s)) }, bridge, calls, raw: giac };
   };
 
   it("200 definitions take 7 engine calls (was 200; G83: the 50 functions wait for first use), and every name is set", async () => {
-    const { giac, calls, raw } = await counting();
+    const { giac, bridge, calls, raw } = await counting();
     const log = [
       ...Array.from({ length: 150 }, (_, i) => mk(`dv${i + 1}`, "var", `dv${i + 1}:=(${i + 1}/7+${i + 1})`)),
       ...Array.from({ length: 50 }, (_, i) => mk(`df${i + 1}`, "fn", `df${i + 1}(x):=x^2+${i + 1}*x+sin(${i + 1})`)),
     ];
-    const host = new EngineHost(giac);
+    const host = new EngineHost(giac, bridge);
     calls.length = 0; // R64: the constructor sets pasdeg; only the replay is counted
     host.restore(log);
     expect(calls.length).toBe(Math.ceil(150 / REPLAY_BATCH) + 1); // G67: + the settings read after the replay
@@ -591,21 +592,21 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
   });
 
   it("G3's order: a symbolic value goes first, even inside a batch", async () => {
-    const { giac, raw } = await counting();
-    new EngineHost(giac).restore([mk("K", "var", "K:=(5)"), mk("S", "var", "S:=(K*x+1)", { early: true })]);
+    const { giac, bridge, raw } = await counting();
+    new EngineHost(giac, bridge).restore([mk("K", "var", "K:=(5)"), mk("S", "var", "S:=(K*x+1)", { early: true })]);
     expect(raw.eval("S")).toBe("K*x+1"); // S was set while K was free, so it still holds the name K
     expect(raw.eval("K")).toBe("5");
   });
 
   it("G19: a broken entry never stops the ones after it, in a batch or alone", async () => {
-    const { giac, raw } = await counting();
-    new EngineHost(giac).restore([mk("a1", "var", "a1:=(1)"), mk("bad", "var", "bad:=(2"), mk("a3", "var", "a3:=(3)"), mk("o", "other", "o1,o2:=4,5"), mk("a5", "var", "a5:=(5)")]);
+    const { giac, bridge, raw } = await counting();
+    new EngineHost(giac, bridge).restore([mk("a1", "var", "a1:=(1)"), mk("bad", "var", "bad:=(2"), mk("a3", "var", "a3:=(3)"), mk("o", "other", "o1,o2:=4,5"), mk("a5", "var", "a5:=(5)")]);
     expect(raw.eval("a1+a3+a5+o1+o2")).toBe("18"); // derived: 1+3+5+4+5
   });
 
   it("G19: a bad entry with matched brackets inside a batch is rerun one at a time; its neighbours are set", async () => {
-    const { giac, calls, raw } = await counting();
-    const host = new EngineHost(giac);
+    const { giac, bridge, calls, raw } = await counting();
+    const host = new EngineHost(giac, bridge);
     calls.length = 0; // R64: the constructor sets pasdeg; only the replay is counted
     host.restore([mk("b1", "var", "b1:=(1)"), mk("bad", "var", "bad:=(2+)"), mk("b3", "var", "b3:=(3)")]);
     expect(calls.length).toBe(8); // one batch, three purges, then the three one at a time, and the settings read (G67)
@@ -613,23 +614,23 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
   });
 
   it("G19: an entry Giac refuses outright (a reserved name) does not abort the rest of its batch", async () => {
-    const { giac, raw } = await counting();
-    const host = new EngineHost(giac);
+    const { giac, bridge, raw } = await counting();
+    const host = new EngineHost(giac, bridge);
     host.restore([mk("c1", "var", "c1:=(1)"), mk("pi", "var", "pi:=(3)"), mk("c3", "var", "c3:=(3)"), mk("c4", "fn", "c4(x):=x+1")]);
     expect(host.eval("c1+c3+c4(0)").output).toBe("5"); // derived: 1+3+1 (G83: c4 loaded on first use)
   });
 
   it("a rerun keeps G3's order: an early entry, the name it uses and a refused entry in one batch (S is K*x+1)", async () => {
-    const { giac, raw } = await counting();
-    new EngineHost(giac).restore([mk("S", "var", "S:=(K*x+1)", { early: true }), mk("K", "var", "K:=(5)"), mk("pi", "var", "pi:=(3)")]);
+    const { giac, bridge, raw } = await counting();
+    new EngineHost(giac, bridge).restore([mk("S", "var", "S:=(K*x+1)", { early: true }), mk("K", "var", "K:=(5)"), mk("pi", "var", "pi:=(3)")]);
     expect(raw.eval("S")).toBe("K*x+1");
     expect(raw.eval("K")).toBe("5");
   });
 
   it("functions that use a global (a warning, no error) do not make the batch run twice", async () => {
-    const { giac, calls, raw } = await counting();
+    const { giac, bridge, calls, raw } = await counting();
     const log = Array.from({ length: 50 }, (_, i) => mk(`g${i}`, "fn", `g${i}(x):=ga*x+${i}`));
-    const host = new EngineHost(giac);
+    const host = new EngineHost(giac, bridge);
     calls.length = 0; // R64: the constructor sets pasdeg; only the replay is counted
     host.restore(log);
     calls.length = 0;
@@ -642,7 +643,7 @@ describe.skipIf(!giacAvailable())("EngineHost.restore: the defs replay in few en
 describe.skipIf(!giacAvailable())("G34, G46: a carried value keeps what it showed when the angle mode changes", () => {
   let host: EngineHost;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
   const rad = defaultHomeSettings;
   const deg = { ...defaultHomeSettings, angle: "deg" as const };
@@ -668,7 +669,7 @@ describe.skipIf(!giacAvailable())("G34, G46: a carried value keeps what it showe
 
   it("a stored log replays in the other mode (source: oracle, sin(1°) = 0.0174524064373)", async () => {
     const r = host.home("S34:=sin(pasdeg*1)", deg);
-    const fresh = new EngineHost((await loadNodeGiac()).giac);
+    const fresh = (await nodeHost());
     fresh.restore(r.defs.flatMap((d) => ("set" in d ? [d.set] : [])));
     expect(fresh.home("S34", rad).result.display).toBe("0.0174524064373");
     host.home("purge(TH,R34,S34)", rad);
@@ -697,7 +698,7 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
   const home = (i: string) => host.home(i, defaultHomeSettings);
   const mark = (i: string) => markOf(precisionFacts(home(i).result), opts)?.mark;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
 
   it("[q1,q2]:=[F,1] is ⚠, and then q1 is ⚠", () => {
@@ -738,7 +739,7 @@ describe.skipIf(!giacAvailable())("G48: assignments that run once, and the facts
     expect(mark("hpC")).toBe("⚠");
     const set = r.defs.flatMap((c) => ("set" in c ? [c.set] : []));
     expect(set.map((e) => [e.name, e.kind])).toEqual([["hpC", "var"]]);
-    const fresh = new EngineHost((await loadNodeGiac()).giac);
+    const fresh = (await nodeHost());
     fresh.restore(set);
     const back = fresh.home("hpC", defaultHomeSettings).result;
     expect(back.display).toBe(r.result.display);
@@ -767,7 +768,7 @@ describe.skipIf(!giacAvailable())("G51: a CAS result that reads stored facts get
   let host: EngineHost;
   const cas = (i: string) => host.cas(i, defaultCasSettings).result;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
     host.home(`sto(${F},gA)`, defaultHomeSettings);
   });
 
@@ -809,16 +810,16 @@ describe.skipIf(!giacAvailable())("G51: a CAS result that reads stored facts get
 describe.skipIf(!giacAvailable())("G83: the user's functions are defined on first use", () => {
   const mk = (name: string, kind: "var" | "fn", cmd: string) => ({ name, kind, cmds: [cmd], preview: "", view: "cas" as const, time: 0 });
   const fresh = async (log: Parameters<EngineHost["restore"]>[0]) => {
-    const { giac } = await loadNodeGiac();
+    const { giac, bridge } = await loadNodeGiac();
     const calls: string[] = [];
-    const host = new EngineHost({ ...giac, eval: (s: string) => (calls.push(s), giac.eval(s)) });
+    const host = new EngineHost({ ...giac, eval: (s: string) => (calls.push(s), giac.eval(s)) }, bridge);
     host.restore(log);
     return { host, raw: giac, calls };
   };
   /** What an eager replay leaves: every command given to Giac as it is, before any input. */
   const eager = async (log: Parameters<EngineHost["restore"]>[0]) => {
-    const { giac } = await loadNodeGiac();
-    const host = new EngineHost(giac);
+    const { giac, bridge } = await loadNodeGiac();
+    const host = new EngineHost(giac, bridge);
     for (const e of log) for (const c of e.cmds) giac.eval(c);
     return host;
   };

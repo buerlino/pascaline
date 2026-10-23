@@ -10,7 +10,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, setGiacHostGlobals } from "../src/engine/host.ts";
-import { loadNodeGiac } from "../src/engine/nodeGiac.ts";
+import { nodeHost } from "../src/engine/nodeGiac.ts";
 import { invariantsStage, type KnownFailure } from "./invariants.ts";
 import { runSequences, sequencesOf } from "../../tools/probes/sweep/seq.ts";
 
@@ -27,7 +27,7 @@ const count = flag("--count") ?? (nightly ? 2000 : Number(process.env["SEQ_COUNT
 const BUDGET_S = 30;
 const t0 = performance.now();
 setGiacHostGlobals();
-const fresh = async (): Promise<EngineHost> => new EngineHost((await loadNodeGiac()).giac);
+const fresh = async (): Promise<EngineHost> => (await nodeHost());
 const seqs = sequencesOf(seed, count);
 const r = await runSequences(seqs, fresh);
 // one line per class: a failing read met in many sequences counts once

@@ -5,7 +5,7 @@ import { FakeCalc } from "../calc/fake.ts";
 import type { Calc, CasOutcome, HomeOutcome } from "../calc/port.ts";
 import { copyExact, copyFull } from "../clipboard/text.ts";
 import { EngineHost } from "../engine/host.ts";
-import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
+import { giacAvailable, nodeHost } from "../engine/nodeGiac.ts";
 import { defaultHomeSettings } from "../engine/homeEval.ts";
 import { defaultCasSettings } from "../engine/types.ts";
 import type { Kv } from "./storage.ts";
@@ -20,7 +20,7 @@ function memoryKv(): Kv {
 }
 
 async function engineCalc(): Promise<Calc> {
-  const host = new EngineHost((await loadNodeGiac()).giac);
+  const host = (await nodeHost());
   return Object.assign(new FakeCalc(), {
     ready: () => Promise.resolve(),
     cancel: () => Promise.resolve(),

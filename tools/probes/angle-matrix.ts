@@ -16,6 +16,7 @@ import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { EngineHost, type GiacApi } from "../../app/src/engine/host.ts";
+import type { GiacBridge } from "../../app/src/engine/bridge.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings, precisionFacts, type HomeResult, type HomeSettings } from "../../app/src/engine/homeEval.ts";
 import { defaultCasSettings } from "../../app/src/engine/types.ts";
@@ -116,12 +117,12 @@ class Runner {
   readonly host: EngineHost;
   readonly giac: GiacApi;
   readonly route: Route;
-  constructor(route: Route, giac: GiacApi) {
+  constructor(route: Route, { giac, bridge }: { giac: GiacApi; bridge: GiacBridge }) {
     this.route = route;
     this.giac = giac;
     // G46: the host runs Giac in radians and sets pasdeg with the mode itself, so both routes run the app's host; route
     // a is the parser's text as typed (R64 puts the factor in), route b the probe's own rewrite of it
-    this.host = new EngineHost(giac);
+    this.host = new EngineHost(giac, bridge);
   }
   /** The settings angle and the text Giac gets, for a typed (parser-output) text in `mode`. */
   prep(text: string, mode: Mode, opts: { trig?: boolean } = {}): { angle: Mode; text: string } {
@@ -148,8 +149,8 @@ class Runner {
 }
 
 async function runners(): Promise<Record<Route, Runner>> {
-  const a = new Runner("a", (await loadNodeGiac()).giac);
-  const b = new Runner("b", (await loadNodeGiac()).giac);
+  const a = new Runner("a", await loadNodeGiac());
+  const b = new Runner("b", await loadNodeGiac());
   for (const r of [a, b]) {
     r.giac.eval("timeout 2");
     r.giac.eval("ckevery 10");

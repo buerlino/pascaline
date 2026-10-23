@@ -6,7 +6,7 @@ import type { Calc, HomeOutcome } from "../src/calc/port.ts";
 import { copyFull } from "../src/clipboard/text.ts";
 import { defaultHomeSettings } from "../src/engine/homeEval.ts";
 import { EngineHost } from "../src/engine/host.ts";
-import { giacAvailable, loadNodeGiac } from "../src/engine/nodeGiac.ts";
+import { giacAvailable, loadNodeGiac, nodeHost } from "../src/engine/nodeGiac.ts";
 import { pasdegCommand } from "../src/engine/homeEval.ts";
 import type { Kv } from "../src/state/storage.ts";
 import { Session } from "../src/state/session.svelte.ts";
@@ -23,9 +23,9 @@ function memoryKv(): Kv {
 describe.skipIf(!giacAvailable())("copySourceOf equals the Session item's copy source (real Giac)", () => {
   for (const input of ["1/3", "2/3", "0.5", "sqrt(2)", "1.5e300*2e300", "evalf(1/3)"]) {
     it(input, async () => {
-      const g = (await loadNodeGiac()).giac;
+      const { giac: g, bridge } = await loadNodeGiac();
       g.eval(pasdegCommand("rad"));
-      const host = new EngineHost(g);
+      const host = new EngineHost(g, bridge);
       const calc: Calc = Object.assign(new FakeCalc(), {
         ready: () => Promise.resolve(),
         cancel: () => Promise.resolve(),
@@ -38,7 +38,7 @@ describe.skipIf(!giacAvailable())("copySourceOf equals the Session item's copy s
       s.setView("home");
       await s.submit(input, input);
       const item = s.home.at(-1)!;
-      const r = new EngineHost((await loadNodeGiac()).giac).home(input, { ...defaultHomeSettings }).result;
+      const r = (await nodeHost()).home(input, { ...defaultHomeSettings }).result;
       const mine = copySourceOf(r);
       const theirs = item; // the clipboard reads the item itself (G86: it carries its ValueFacts)
       expect(mine.full).toBe(theirs.full);
@@ -48,9 +48,9 @@ describe.skipIf(!giacAvailable())("copySourceOf equals the Session item's copy s
     });
   }
   it("1/3 and 0.5 take the session's rational and exact rule", async () => {
-    const g = (await loadNodeGiac()).giac;
+    const { giac: g, bridge } = await loadNodeGiac();
     g.eval(pasdegCommand("rad"));
-    const r = new EngineHost(g).home("1/3", { ...defaultHomeSettings }).result;
+    const r = new EngineHost(g, bridge).home("1/3", { ...defaultHomeSettings }).result;
     const src = copySourceOf(r);
     expect(src.rational).toEqual({ n: "1", d: "3" });
     expect(src.full).toBe("1/3");

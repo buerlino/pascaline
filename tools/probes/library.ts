@@ -166,8 +166,8 @@ export function exportLibrary(log: readonly DefEntry[], desc: (e: DefEntry) => s
 const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
 
 async function fresh(): Promise<{ host: EngineHost; giac: { eval(s: string): string } }> {
-  const { giac } = await loadNodeGiac();
-  return { host: new EngineHost(giac), giac };
+  const { giac, bridge } = await loadNodeGiac();
+  return { host: new EngineHost(giac, bridge), giac };
 }
 
 async function replayMs(make: (i: number) => string, n: number, runs = 5): Promise<{ ms: number[]; entries: number }> {

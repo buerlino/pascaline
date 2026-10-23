@@ -4,7 +4,7 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { bridgeOf } from "./bridge.ts";
-import { messageBuffer, setGiacHostGlobals, type GiacApi, type LoadedGiac } from "./host.ts";
+import { EngineHost, messageBuffer, setGiacHostGlobals, type GiacApi, type LoadedGiac } from "./host.ts";
 
 interface GiacModule {
   cwrap(name: string, ret: string | null, args: string[]): (...a: (string | number)[]) => string & number;
@@ -30,6 +30,12 @@ export async function loadNodeGiac(mjs: string = giacMjsPath()): Promise<LoadedG
   const ev = M.cwrap("giac_eval", "string", ["string"]);
   const pow = M.cwrap("giac_set_pow_limit", "number", ["number"]);
   const giac: GiacApi = { eval: (s) => ev(s), setPowLimit: (n) => pow(n), messages: out.messages, clearMessages: out.clear };
-  // G85: the bridge wrappers resolve their exports on first call, so an engine without them loads as before.
+  // G99: the host needs the bridge; bridgeOf throws NO_BRIDGE on an engine without its exports.
   return { giac, bridge: bridgeOf(M), instantiateMs: performance.now() - t0 };
+}
+
+/** An engine host on a freshly loaded Giac (tests, the golden runner, probes). */
+export async function nodeHost(mjs: string = giacMjsPath()): Promise<EngineHost> {
+  const L = await loadNodeGiac(mjs);
+  return new EngineHost(L.giac, L.bridge);
 }

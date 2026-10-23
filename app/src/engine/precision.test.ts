@@ -8,12 +8,12 @@ import { defaultHomeSettings, precisionFacts, type HomeSettings } from "./homeEv
 import { defaultCasSettings } from "./types.ts";
 import { markOf, type MarkInfo } from "./format.ts";
 import { MAX_EVAL_DIGITS } from "./numeric.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 
 describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
   let host: EngineHost;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
   const home = (input: string, digits = 12) => host.home(input, { ...defaultHomeSettings, digits } satisfies HomeSettings).result;
   const mark = (input: string, digits = 12): MarkInfo | null => markOf(precisionFacts(home(input, digits)), { format: "STD", digits });
@@ -25,7 +25,7 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     expect(r.facts.reliableDigits).toBeGreaterThanOrEqual(12);
     // Deterministic cost bound: no evalf asks for more than MAX_EVAL_DIGITS digits (the 50 ms figure is the serial
     // probe tools/probes/digits-cost.ts; a wall-clock assertion fails under the parallel test run).
-    const { giac } = await loadNodeGiac();
+    const { giac, bridge } = await loadNodeGiac();
     const precs: number[] = [];
     const counted = new Proxy(giac, {
       get(target, key) {
@@ -39,7 +39,7 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
         };
       },
     });
-    const hard = new EngineHost(counted).home("sin(10^2000)", defaultHomeSettings).result;
+    const hard = new EngineHost(counted, bridge).home("sin(10^2000)", defaultHomeSettings).result;
     expect(hard.facts.reliableDigits).toBe(0);
     expect(markOf(precisionFacts(hard), { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
     expect(precs.length).toBeGreaterThan(2);
@@ -139,8 +139,8 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
   });
 
   it("sigfig is defined on first use, not at engine start (start-up budget)", async () => {
-    const { giac } = await loadNodeGiac();
-    const fresh = new EngineHost(giac);
+    const { giac, bridge } = await loadNodeGiac();
+    const fresh = new EngineHost(giac, bridge);
     expect(giac.eval("sigfig(1/3,3)")).toBe("sigfig(1/3,3)");
     expect(fresh.home("sigfig(1/3,3)", defaultHomeSettings).result.display).toBe("0.333");
   });
@@ -203,7 +203,7 @@ describe("G38: which inputs get a second decision (pure)", () => {
 describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 20 (real Giac)", () => {
   let host: EngineHost;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
 
   it("floor(sin(10^60)*10^12): wrong at 40 digits, P + 20 and P + 40 agree on 830389765219 (source: oracle, mpmath at 200 digits)", () => {
@@ -302,7 +302,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
   it("floatsAtDigits rounds each float of a P text to the display digits, as Giac prints them (source: derived)", async () => {
     const { floatsAtDigits, notBuiltin } = await import("./numeric.ts");
-    const { giac } = await loadNodeGiac();
+    const { giac, bridge } = await loadNodeGiac();
     const third = "0.3333333333333333333333333333333333333333";
     expect(floatsAtDigits(giac, `${third}*x+${third}e20*y-0.9999999999999999999999999999999999999999*z+2`, 12)).toBe(
       "0.333333333333*x+3.33333333333e+19*y-1.0*z+2",
@@ -313,7 +313,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
   it("G53: a built-in's or keyword's print is asked once per Giac instance, a user's name on every call (source: derived, Giac refuses sin:=3)", async () => {
     const { notBuiltin } = await import("./numeric.ts");
     const { callsStateful } = await import("./decisions.ts");
-    const { giac } = await loadNodeGiac();
+    const { giac, bridge } = await loadNodeGiac();
     const asked: string[] = [];
     const counted = { eval: (t: string) => (asked.push(t), giac.eval(t)) };
     expect(notBuiltin(counted)("sin")).toBe(false);
@@ -341,7 +341,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
   it("G53: every KEYWORDS entry refuses a value: k:=3 and k(x):=x are errors and store nothing (source: derived, Giac)", async () => {
     const { KEYWORDS } = await import("./numeric.ts");
-    const { giac } = await loadNodeGiac();
+    const { giac, bridge } = await loadNodeGiac();
     const varsBefore = giac.eval("VARS()");
     const accepted: string[] = [];
     for (const k of KEYWORDS) {
@@ -399,7 +399,7 @@ describe("G50: complex arguments of the audited functions (pure)", () => {
 describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functions (real Giac)", () => {
   let host: EngineHost;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
   const home = (input: string, digits = 12) => host.home(input, { ...defaultHomeSettings, digits } satisfies HomeSettings).result;
 
@@ -439,7 +439,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(host.home("evalf(tanh(1))", { ...defaultHomeSettings, angle: "deg" }).result.facts.warn).toBeUndefined();
   });
   it("G50f1: CAS w:=tanh(i) stores Giac's exact tanh(i); evalf(w) reads it through our definitions (source: oracle, mpmath tanh(1j))", async () => {
-    const own = new EngineHost((await loadNodeGiac()).giac);
+    const own = (await nodeHost());
     own.cas("w:=tanh(i)", defaultCasSettings);
     const r = own.cas("evalf(w)", defaultCasSettings).result;
     // Showed -0.642092615934*i (Giac's coth(i)) with 38 confirmed digits and no warning.
@@ -447,7 +447,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(markOf(precisionFacts(r.numeric!), { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
   });
   it("G50f1: Home approx of a CAS-stored name, alone and in a sum (source: oracle, mpmath tanh(1j))", async () => {
-    const own = new EngineHost((await loadNodeGiac()).giac);
+    const own = (await nodeHost());
     own.cas("w:=tanh(i)", defaultCasSettings);
     const r = own.home("approx(w)", defaultHomeSettings).result;
     expect(r.display).toBe("1.55740772465*i");
@@ -457,7 +457,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(own.home("evalf(w)+1", defaultHomeSettings).result.display).toBe("1+1.55740772465*i");
   });
   it("G50f1: a stored function whose body calls tanh is read through our definitions too, still unaudited (source: oracle, mpmath tanh(1j))", async () => {
-    const own = new EngineHost((await loadNodeGiac()).giac);
+    const own = (await nodeHost());
     own.cas("f(x):=tanh(x)", defaultCasSettings);
     const r = own.cas("evalf(f(i))", defaultCasSettings).result;
     // Showed ⚠ -0.6*i: the one digit shown was Giac's coth(i).
@@ -465,7 +465,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.numeric?.facts.warn).toBe("unaudited");
   });
   it("G46: in DEG a name holding tanh(i) is read through our definitions as in RAD (source: oracle, mpmath tanh(1j))", async () => {
-    const own = new EngineHost((await loadNodeGiac()).giac);
+    const own = (await nodeHost());
     const deg = { ...defaultCasSettings, angle: "deg" as const };
     own.cas("w:=tanh(i)", deg);
     const r = own.cas("evalf(w)", deg).result;
@@ -473,7 +473,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.numeric?.facts.warn).toBeUndefined();
   });
   it("G50f1: a CAS assignment runs once; a name it reads holding tanh(i) makes the value unaudited, naming tanh (source: derived)", async () => {
-    const own = new EngineHost((await loadNodeGiac()).giac);
+    const own = (await nodeHost());
     own.cas("w:=tanh(i)", defaultCasSettings);
     const r = own.cas("v:=evalf(w)", defaultCasSettings).result;
     // Showed Giac's coth value -0.642092615934*i with why {once:true}, tanh not named.
@@ -485,8 +485,8 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
   });
   it("G50f1: a function's parameter is not the stored name of the same name (source: derived)", async () => {
     const { complexReads, purgeReads } = await import("./numeric.ts");
-    const { giac } = await loadNodeGiac();
-    const own = new EngineHost(giac);
+    const { giac, bridge } = await loadNodeGiac();
+    const own = new EngineHost(giac, bridge);
     own.cas("x:=tanh(i)", defaultCasSettings);
     own.cas("f(x):=x*i", defaultCasSettings);
     own.cas("g:=(y)->{local x; x:=y; x*i}", defaultCasSettings);
@@ -500,8 +500,8 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(v.numeric?.facts.why?.unaudited ?? []).not.toContain("tanh");
   });
   it("our definitions load on first use, not at engine start (start-up budget)", async () => {
-    const { giac } = await loadNodeGiac();
-    const fresh = new EngineHost(giac);
+    const { giac, bridge } = await loadNodeGiac();
+    const fresh = new EngineHost(giac, bridge);
     expect(giac.eval("pastanh")).toBe("pastanh");
     fresh.home("tanh(i)", defaultHomeSettings);
     expect(giac.eval("pastanh")).not.toBe("pastanh");

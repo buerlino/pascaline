@@ -6,7 +6,7 @@
 // Engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl (nodeGiac.ts). Exit 1: refused, 2: usage.
 import { readFileSync } from "node:fs";
 import { EngineHost } from "../app/src/engine/host.ts";
-import { loadNodeGiac } from "../app/src/engine/nodeGiac.ts";
+import { nodeHost } from "../app/src/engine/nodeGiac.ts";
 import { importLibrary, LibError, parseLibrary } from "../app/src/engine/library.ts";
 
 const [cmd, path, ...exprs] = process.argv.slice(2);
@@ -16,7 +16,7 @@ if ((cmd !== "check" && cmd !== "run") || !path) {
 }
 try {
   const lib = parseLibrary(readFileSync(path));
-  const host = new EngineHost((await loadNodeGiac()).giac);
+  const host = (await nodeHost());
   const r = importLibrary(host, lib, []);
   if (!r.ok) {
     console.error(`refused: ${r.error}`);

@@ -22,8 +22,8 @@ describe("mayPowerMatrix", () => {
 describe.skipIf(!giacAvailable())("G97 on the real engine", () => {
   let host: EngineHost;
   beforeAll(async () => {
-    const giac: GiacApi = (await loadNodeGiac()).giac;
-    host = new EngineHost(giac);
+    const { giac, bridge } = await loadNodeGiac();
+    host = new EngineHost(giac, bridge);
   });
   const home = (input: string) => host.home(input, defaultHomeSettings).result;
   const cas = (input: string) => host.cas(input, defaultCasSettings).result;
@@ -46,7 +46,7 @@ describe.skipIf(!giacAvailable())("G97 in the Num table", () => {
   let host: EngineHost;
   const calls: string[] = [];
   beforeAll(async () => {
-    const real: GiacApi = (await loadNodeGiac()).giac;
+    const { giac: real, bridge } = await loadNodeGiac();
     const spy: GiacApi = {
       eval: (input) => {
         calls.push(input);
@@ -56,7 +56,7 @@ describe.skipIf(!giacAvailable())("G97 in the Num table", () => {
       messages: () => real.messages(),
       clearMessages: () => real.clearMessages(),
     };
-    host = new EngineHost(spy);
+    host = new EngineHost(spy, bridge);
   });
 
   it("a table of x^2 has no shape walk: Giac printed no warning", () => {

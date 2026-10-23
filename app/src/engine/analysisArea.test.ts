@@ -4,13 +4,13 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 
 describe.skipIf(!giacAvailable())("Area refuses only where Home refuses (G70)", () => {
   let host: EngineHost;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
   const area = (f: string, a: string, b: string) => host.analyze({ kind: "area", f, a, b }, defaultHomeSettings);
 
@@ -32,7 +32,7 @@ describe.skipIf(!giacAvailable())("Area refuses only where Home refuses (G70)", 
   });
 
   it("Giac's timeout in the divergence check keeps the value with a warning (G70f1)", async () => {
-    const real = (await loadNodeGiac()).giac;
+    const { giac: real, bridge } = await loadNodeGiac();
     let checking = false;
     const wrapped = {
       ...real,
@@ -44,7 +44,7 @@ describe.skipIf(!giacAvailable())("Area refuses only where Home refuses (G70)", 
         return real.eval(t);
       },
     } as typeof real;
-    const h = new EngineHost(wrapped);
+    const h = new EngineHost(wrapped, bridge);
     const r = h.analyze({ kind: "area", f: "ln(x)", a: "0", b: "1" }, defaultHomeSettings);
     expect(checking).toBe(true);
     expect(r.ok, r.info).toBe(true);

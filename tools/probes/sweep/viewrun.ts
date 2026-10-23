@@ -61,9 +61,9 @@ export interface Limits {
 }
 
 export async function viewSweep(seed: number, count: number, lim: Limits): Promise<ViewSweepResult> {
-  const { giac } = await loadNodeGiac();
+  const { giac, bridge } = await loadNodeGiac();
   giac.eval(pasdegCommand("rad"));
-  const host = new EngineHost(giac);
+  const host = new EngineHost(giac, bridge);
   const cases = viewCases(seed, count);
   const failures: ViewFailure[] = [];
   let compared = 0;

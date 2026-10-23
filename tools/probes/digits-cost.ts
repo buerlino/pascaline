@@ -19,8 +19,8 @@ const cases = all.filter((c): c is { id: string; input: string; settings?: { ang
 const list = (process.env.DIGITS_LIST ?? "12,20,30").split(",").map(Number);
 const rounds = Number(process.env.ROUNDS ?? 3);
 
-const { giac } = await loadNodeGiac();
-const host = new EngineHost(giac);
+const { giac, bridge } = await loadNodeGiac();
+const host = new EngineHost(giac, bridge);
 const base = new Map<string, string>();
 for (const d of list) {
   const times: number[] = [];

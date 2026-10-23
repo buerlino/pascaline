@@ -6,11 +6,11 @@ import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { applyDefChanges, type DefChange, type DefEntry } from "./defs.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 import { parsePrinted, statePart, tableOf, type StoredName } from "./stateRead.ts";
 
 describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
-  const fresh = async () => new EngineHost((await loadNodeGiac()).giac);
+  const fresh = async () => (await nodeHost());
 
   it("x:=y:=3 logs x and y as values; purging both leaves nothing to replay (F58)", async () => {
     const host = await fresh();
@@ -54,11 +54,11 @@ describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
   });
 
   it("Solve, an analysis and a unit job leave the table as Giac holds it, with no read of their own (audit, round 2)", async () => {
-    const { giac } = await loadNodeGiac();
+    const { giac, bridge } = await loadNodeGiac();
     let stateReads = 0;
     const ev = giac.eval.bind(giac);
     giac.eval = (t: string) => (t.includes("VARS()") && stateReads++, ev(t));
-    const host = new EngineHost(giac);
+    const host = new EngineHost(giac, bridge);
     host.home("sto(floor(sin(10^100)*10^12),X)", defaultHomeSettings);
     host.home("a:=2.5", defaultHomeSettings);
     const inner = host as unknown as { stored: Map<string, StoredName>; byName: Map<string, unknown> };

@@ -3,7 +3,7 @@
 // (real Giac build; the engine parts are skipped when none is found, see nodeGiac.ts).
 import { describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 import { applyDefChanges, type DefChange, type DefEntry } from "./defs.ts";
 import { defaultCasSettings } from "./types.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
@@ -33,11 +33,11 @@ describe("flag words (no engine)", () => {
 });
 
 describe.skipIf(!giacAvailable())("Giac's settings (real Giac)", () => {
-  const fresh = async (): Promise<EngineHost> => new EngineHost((await loadNodeGiac()).giac);
+  const fresh = async (): Promise<EngineHost> => (await nodeHost());
   const cas = { ...defaultCasSettings };
 
   it("the expected read is what a fresh engine prints, at 12, 20 and 30 digits", async () => {
-    const { giac } = await loadNodeGiac();
+    const { giac, bridge } = await loadNodeGiac();
     expect(giac.eval(FLAGS_READ)).toBe(flagsExpected(12));
     for (const d of [20, 30, 12]) {
       giac.eval(`Digits:=${d}`);
@@ -82,8 +82,8 @@ describe.skipIf(!giacAvailable())("Giac's settings (real Giac)", () => {
   });
 
   it("Giac's own leaks are put back without a word; a stored function that sets one is said", async () => {
-    const { giac } = await loadNodeGiac();
-    const host = new EngineHost(giac);
+    const { giac, bridge } = await loadNodeGiac();
+    const host = new EngineHost(giac, bridge);
     // a throw in a program left eval_level at 1 (phase-1 kept it for the rest of the session)
     const refused = host.home("pasmedian([a,1,2])", defaultHomeSettings).result;
     expect(refused.ok).toBe(false);

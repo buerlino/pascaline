@@ -17,20 +17,20 @@ for (let i = 1; i <= 150; i++) log.push(mk(`dv${i}`, "var", `dv${i}:=(${i}/7+${i
 for (let i = 1; i <= 50; i++) log.push(mk(`df${i}`, "fn", `df${i}(x):=x^2+${i}*x+sin(${i})`));
 const cmds = replayOrder(log).flatMap((e) => e.cmds);
 const med = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
-const fresh = async () => { const { giac } = await loadNodeGiac(); giac.eval("0"); return giac; };
+const fresh = async () => { const L = await loadNodeGiac(); L.giac.eval("0"); return L; };
 
 const per = { var: [], fn: [] };
 const total = [], host = [], batchTotal = {}, noop = [];
 for (let r = 0; r < runs; r++) {
-  let g = await fresh();
+  let g = (await fresh()).giac;
   let t0 = performance.now();
   const kinds = replayOrder(log);
   for (const e of kinds) { const t = performance.now(); g.clearMessages(); for (const c of e.cmds) g.eval(c); per[e.kind].push(performance.now() - t); }
   total.push(performance.now() - t0);
-  g = await fresh();
+  g = (await fresh()).giac;
   t0 = performance.now(); for (let i = 0; i < 200; i++) g.eval("0"); noop.push(performance.now() - t0);
   for (const size of [10, 50, 200]) {
-    g = await fresh();
+    g = (await fresh()).giac;
     t0 = performance.now();
     for (let i = 0; i < cmds.length; i += size) g.eval(cmds.slice(i, i + size).join(";") + ";");
     (batchTotal[size] ??= []).push(performance.now() - t0);
@@ -40,8 +40,8 @@ let calls = 0;
 {
   const { EngineHost } = await import(pathToFileURL(`${root}/app/src/engine/host.ts`).href);
   for (let r = 0; r < runs; r++) {
-    const g = await fresh();
-    const h = new EngineHost({ ...g, eval: (s) => (calls++, g.eval(s)) });
+    const { giac: g, bridge } = await fresh();
+    const h = new EngineHost({ ...g, eval: (s) => (calls++, g.eval(s)) }, bridge);
     calls = 0;
     host.push(h.restore(log));
   }

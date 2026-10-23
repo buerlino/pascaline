@@ -2,7 +2,7 @@
 // The engine side of the protocol: one Giac instance, synchronous calls. Runs inside the Web
 // Worker (giac.worker.ts) and, for tests and the golden runner, directly in Node. Knows nothing
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
-import type { GiacBridge } from "./bridge.ts";
+import type { GiacBridge, GiacParse } from "./bridge.ts";
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import {
@@ -42,7 +42,7 @@ import { dropAngleFactor } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOf, valuePrecision, whyOf, withDigits } from "./numeric.ts";
 import { callsStateful, decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { fnFacts, inherited, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
-import { afterCall, changesOf, parsePrinted, readPart, readsOf, splitAfter, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
+import { afterCall, changesOf, parsePrinted, readsFrom, splitAfter, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
 import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -82,8 +82,8 @@ export interface GiacApi {
 
 export interface LoadedGiac {
   giac: GiacApi;
-  /** G85's structured bridge (bridge.ts): unused by the host; each wrapper throws NO_BRIDGE on an engine without it. */
-  bridge?: GiacBridge;
+  /** G85's structured bridge (bridge.ts); the loader fails with NO_BRIDGE on an engine without it (G99). */
+  bridge: GiacBridge;
   /** Fetch + compile + instantiate, measured by the loader. */
   instantiateMs: number;
 }
@@ -151,106 +151,6 @@ const CONSTANT_NAMES: ReadonlySet<string> = new Set(["i", "pi", "e", "infinity",
 
 const IDENT_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 
-/** Variable arguments the probe (tools/probes/bound.ts, G28) found quoted: the result does not change when the name
- *  holds a value. [command, index of the variable argument, indexes of the arguments it is bound in, min arguments].
- *  A command not listed keeps listing the name: a hint too many is noise, a hint missing hides a stored value. */
-const QUOTING: [string, number, number[], number][] = [
-  ["diff", 1, [0, 1], 2],
-  ["solve", 1, [0, 1], 2],
-  ["csolve", 1, [0, 1], 2],
-  ["fsolve", 1, [0, 1], 2],
-  ["linsolve", 1, [0, 1], 2],
-  ["limit", 1, [0, 1], 3],
-  ["sum", 1, [0, 1], 4],
-  ["product", 1, [0, 1], 4],
-  ["seq", 1, [0, 1], 4],
-  ["int", 1, [0, 1], 4], // only the definite form: int(x^2,x) reads the stored value (Giac evaluates the integrand)
-  ["integrate", 1, [0, 1], 4],
-];
-
-/** Index where the body of an arrow that starts at `from` ends: the first top-level comma, the unmatched ) ] or }, or
- *  the end of `text`. */
-function arrowBodyEnd(text: string, from: number): number {
-  let depth = 0;
-  for (let i = from; i < text.length; i++) {
-    const c = text[i]!;
-    if (c === '"') {
-      const q = text.indexOf('"', i + 1);
-      if (q < 0) return text.length;
-      i = q;
-    } else if (c === "(" || c === "[" || c === "{") depth++;
-    else if (c === ")" || c === "]" || c === "}") {
-      if (depth === 0) return i;
-      depth--;
-    } else if (c === "," && depth === 0) return i;
-  }
-  return text.length;
-}
-
-/** Replaces, in the places a name is bound, its occurrences by "_" so that `namesIn` skips them: a function's
- *  parameters in `f(x):=` and `x->` / `(x,y)->`, and the variable argument of the QUOTING commands. */
-function maskBound(input: string): string {
-  const mask = (text: string, vars: string[]): string =>
-    text.replace(/"[^"]*"|([A-Za-z_][A-Za-z0-9_]*)/g, (m, id?: string) => (id && vars.includes(id) ? "_" : m));
-  let out = input;
-  // f(x,y):=body and (x,y)->body / x->body: the parameters are bound in the body (the head is not scanned: f is called).
-  const fn = /^\s*[A-Za-z][A-Za-z0-9_]*\s*\(([^()]*)\)\s*:=([\s\S]*)$/.exec(out);
-  if (fn) out = mask(fn[2]!, fn[1]!.split(",").map((v) => v.trim()));
-  // Every arrow binds its parameters in its own body only: from the -> to the first top-level comma, the unmatched
-  // ) or ], or the end of the input.
-  const arrow = /(?:\(([^()]*)\)|([A-Za-z_][A-Za-z0-9_]*))\s*->/g;
-  for (let m = arrow.exec(out); m; m = arrow.exec(out)) {
-    const start = m.index + m[0].length;
-    const end = arrowBodyEnd(out, start);
-    // The parameter list itself is masked too; it is not a read of the stored value.
-    const masked = mask(out.slice(m.index, end), (m[1] ?? m[2]!).split(",").map((v) => v.trim()));
-    out = out.slice(0, m.index) + masked + out.slice(end);
-    arrow.lastIndex = m.index + masked.indexOf("->") + 2; // a nested arrow in the body is found next
-  }
-  // A quoting command: its variable is bound in the arguments listed, not in the others (limit's point, a sum's bounds).
-  for (const [cmd, vi, bindIn, min] of QUOTING) {
-    const re = new RegExp(`\\b${cmd}\\s*\\(`, "g");
-    for (let m = re.exec(out); m; m = re.exec(out)) {
-      const open = m.index + m[0].length - 1;
-      const close = matching(out, open);
-      if (close < 0) continue;
-      const args = splitTop(out.slice(open + 1, close));
-      if (args.length < min) continue;
-      const vars = namesIn(args[vi]!);
-      const masked = args.map((a, i) => (bindIn.includes(i) ? mask(a, vars) : a));
-      out = out.slice(0, open + 1) + masked.join(",") + out.slice(close);
-    }
-  }
-  return out;
-}
-
-function matching(s: string, open: number): number {
-  let depth = 0;
-  for (let k = open; k < s.length; k++) {
-    const ch = s.charAt(k);
-    if (ch === "(" || ch === "[") depth++;
-    else if ((ch === ")" || ch === "]") && --depth === 0) return k;
-  }
-  return -1;
-}
-
-function splitTop(s: string): string[] {
-  const parts: string[] = [];
-  let depth = 0;
-  let start = 0;
-  for (let k = 0; k < s.length; k++) {
-    const ch = s.charAt(k);
-    if (ch === "(" || ch === "[") depth++;
-    else if (ch === ")" || ch === "]") depth--;
-    else if (ch === "," && depth === 0) {
-      parts.push(s.slice(start, k));
-      start = k + 1;
-    }
-  }
-  parts.push(s.slice(start));
-  return parts;
-}
-
 /** `L[2]:=…`: an element of a stored list or matrix (the whole variable is what changes). */
 function indexedTarget(input: string): string | null {
   const m = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\[[^\]]*\]\s*:=/.exec(input);
@@ -264,6 +164,10 @@ export class EngineHost implements FactsHost {
   private modeDigits = 12;
   /** Read by facts.ts (FactsHost), as are byName, chipFacts and stored. */
   readonly giac: GiacApi;
+  /** G99: Giac's tree of an input (bridge-2) gives the names it reads and binds. */
+  private readonly bridge: GiacBridge;
+  /** The current input's tree, parsed once per Enter (usesOf and after share it). */
+  private parsed: { text: string; tree: GiacParse } | null = null;
   /** `giac.eval` that throws GiacSyntaxError instead of quietly returning `undef` (which would
    *  otherwise leave the previous answer in place and show it again). */
   private readonly strict: { eval(input: string): string; ambiguousPower(): boolean };
@@ -359,8 +263,9 @@ export class EngineHost implements FactsHost {
     }
   }
 
-  constructor(giac: GiacApi) {
+  constructor(giac: GiacApi, bridge: GiacBridge) {
     this.giac = giac;
+    this.bridge = bridge;
     // R64, G46: Giac in radians, and pasdeg (our parser's degree factor) set before any input: the units, raw eval and
     // replay paths have no mode setup of their own
     giac.eval(angleCommand("rad"));
@@ -442,22 +347,24 @@ export class EngineHost implements FactsHost {
   }
 
   /**
-   * G67, G65: the one call after an input (stateRead.ts afterCall): Giac's settings (flags.ts FLAGS_READ), the names
-   * the input reads by Giac's parse (`read`: skipped after a syntax error), and, when `state`, every stored user name.
+   * G67, G65: the one call after an input (stateRead.ts afterCall): Giac's settings (flags.ts FLAGS_READ) and, when
+   * `state`, every stored user name; before it, the names the input reads from its tree (G99, bridge-2; `read`: skipped
+   * after a syntax error; `shown`: its result's text, see readsOf).
    * On a setting that differs from the host's, one more call puts every one back and the mode setup runs again on the
    * next call. An input that names a setting the read cannot see (timeout, ckevery) gets the mode setup again too.
    * `reset`: the user's text set one (the input names a setting, or calls a stored function whose definition does; the
    * result says it was not kept). Giac leaks some by itself, put back without a word: a `throw` in a program leaves
    * eval_level at 1 (our refusals in pasmedian, eseries), and `(-32)^(1/5)` leaves epsilon at 1e-60 (probe 2026-10-20).
-   * When the one call fails (an input Giac's quote cannot take), each part goes alone.
+   * When the one call fails, each part goes alone.
    */
-  private after(input: string, read: boolean, state: boolean): AfterInput {
+  private after(input: string, read: boolean, state: boolean, shown?: string): AfterInput {
     if (namesUnreadFlag(input)) this.modeKey = "";
     const expected = flagsExpected(this.modeDigits);
-    const out = this.giac.eval(afterCall(FLAGS_READ, read ? input : null, state ? this.modeDigits : null));
+    // G99: the names come from Giac's tree; parsed only when they can matter (see mayRead)
+    const reads = read && (state || this.mayRead(input)) ? this.readsOf(input, shown) : NO_READS;
+    const out = this.giac.eval(afterCall(FLAGS_READ, state ? this.modeDigits : null));
     const parts = isError(out) ? null : splitAfter(out);
     const flags = parts ? parts.flags : this.giac.eval(FLAGS_READ);
-    const readNode = parts ? parts.read : read ? parsePrinted(this.giac.eval(readPart(input))) : null;
     const stateNode = parts ? parts.state : state ? parsePrinted(this.giac.eval(statePart(this.modeDigits))) : null;
     const flagsChanged = flags !== expected;
     if (flagsChanged) {
@@ -467,11 +374,37 @@ export class EngineHost implements FactsHost {
       this.modeKey = "";
     }
     const reset = flagsChanged && (namesFlag(input) || [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => this.byName.get(m[0])?.cmds.some(namesFlag) === true));
-    const reads = read && readNode ? readsOf(readNode, input) : NO_READS;
     const typed = new Set(namesIn(input));
     const table = state && stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n)) : null;
     this.post = { reads, table, changes: table ? changesOf(this.stored, table) : null, flagsChanged, reset };
     return this.post;
+  }
+
+  /** Giac's tree of `input` (bridge-2), parsed once per Enter. */
+  private treeOf(input: string): GiacParse {
+    if (this.parsed?.text !== input) this.parsed = { text: input, tree: this.bridge.parse(input) };
+    return this.parsed.tree;
+  }
+
+  /**
+   * G99: the names `input` reads, from its tree. A name it binds (diff's x) that its result `shown` still names is read
+   * too: the shown value is that result evaluated with the stored x (after x:=3, diff(x^3,x) is 3*x^2, Home shows 27).
+   * The result is parsed only when a bound name is one the host holds.
+   */
+  private readsOf(input: string, shown: string | undefined): InputReads {
+    const tree = this.treeOf(input);
+    const reads = readsFrom(tree);
+    const held = tree.bound.filter((b) => !reads.names.includes(b) && (this.stored.has(b) || this.chipFacts.has(b)));
+    if (!held.length || shown === undefined) return reads;
+    const named = this.bridge.parse(shown).reads;
+    const more = held.filter((b) => named.includes(b));
+    return more.length ? { ...reads, names: [...reads.names, ...more] } : reads;
+  }
+
+  /** Whether the names `input` reads can lend anything: a name its tree reads is a word of its text, so an input
+   *  without a word the host holds (a stored name, a chip, a logged one) reads none that lends facts or is listed. */
+  private mayRead(input: string): boolean {
+    return wordsOf(input).some((w) => this.stored.has(w) || this.chipFacts.has(w) || this.byName.has(w));
   }
 
   /** The table the last call read becomes the host's (after the input's facts were taken from the one before). */
@@ -535,6 +468,7 @@ export class EngineHost implements FactsHost {
   }
 
   eval(input: string): { output: string; ok: boolean; engineMs: number; defs: DefChange[] } {
+    this.parsed = null;
     this.need(input);
     const t0 = performance.now();
     const output = this.giac.eval(input);
@@ -632,6 +566,7 @@ export class EngineHost implements FactsHost {
    */
   home(input: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
     this.post = null;
+    this.parsed = null;
     const out = this.homeTabled(input, s, consts, chips);
     // G67, G65: the call after the input, if the run did not make it (an error: a syntax error ran nothing)
     const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && (isStateful(input) || callsStateful(this.giac, input)));
@@ -695,7 +630,7 @@ export class EngineHost implements FactsHost {
     const once = asg ? namesIn(asg.rhs).includes(asg.name) : stateful;
     const storing = !once && callsStateful(this.strict, body);
     // G65: the call after the input: Giac's settings, the names it read, and the stored names when it may have stored
-    const post = this.after(input, true, stateful || storing);
+    const post = this.after(input, true, stateful || storing, result.exact);
     const rerun = !once && !storing && !post.flagsChanged;
     const digits = Math.trunc(s.digits);
     result = inherited(this, result, post.reads, rerun ? toExactLiterals(body) : null, digits, digits);
@@ -719,8 +654,8 @@ export class EngineHost implements FactsHost {
     return { result, defs };
   }
 
-  /** The stored variables a CAS input reads (F28): names in it that the log holds as values, except the names the
-   *  input binds (see `maskBound`). An assignment lists its own target when its right side reads it (`x:=x+1`).
+  /** The stored variables a CAS input reads (F28): the names its tree reads (G99: a bound name is no read) that the log
+   *  holds as values. An assignment lists its own target when its right side reads it (`x:=x+1`).
    *  Taken before the input runs, since it may change the log. */
   private usesOf(input: string): NonNullable<CasResult["uses"]> {
     const asg = simpleAssignment(input);
@@ -728,8 +663,8 @@ export class EngineHost implements FactsHost {
     const target = asg ? undefined : (def?.name ?? indexedTarget(input));
     // G48: the names a list assignment sets are not read either.
     const set = asg ? [] : (storeTargets(input)?.names ?? []);
-    const text = asg ? asg.rhs : input;
-    return namesIn(maskBound(text))
+    // a store's tree reads its stored side only, as asg.rhs alone
+    return (this.mayRead(input) ? this.treeOf(input).reads : [])
       .filter((n) => n !== target && !set.includes(n))
       .flatMap((n) => {
         const e = this.byName.get(n);
@@ -738,6 +673,7 @@ export class EngineHost implements FactsHost {
   }
 
   cas(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
+    this.parsed = null;
     const used = this.usesOf(input);
     this.post = null;
     const out = this.casRun(input, s);
@@ -854,7 +790,7 @@ export class EngineHost implements FactsHost {
     const unverified = refused === "unchecked";
     const pair = !single && hasDefiniteIntegral(exactInput) && giacPair(text) !== null;
     // G65: the call after the input (its checks above ran it again; nothing after this does but print the result).
-    const after = (): AfterInput => this.after(input, true, single);
+    const after = (): AfterInput => this.after(input, true, single, text);
     // G49f3: a function defined here keeps the facts of the names its body holds, as in Home (fnFacts).
     const defsOf = (post: AfterInput, preview: string, facts: NameFacts | null): DefChange[] => {
       if (!single) return [];
@@ -1053,7 +989,7 @@ export function createRequestHandler(load: GiacLoader, post: (r: Response) => vo
           const loaded = await load(req.baseUrl);
           const t1 = performance.now();
           loaded.giac.eval("0");
-          const host = new EngineHost(loaded.giac);
+          const host = new EngineHost(loaded.giac, loaded.bridge);
           const t2 = performance.now();
           const replayMs = host.restore(req.replay);
           post({ id: req.id, type: "ready", instantiateMs: loaded.instantiateMs, initMs: t2 - t1, replayMs });

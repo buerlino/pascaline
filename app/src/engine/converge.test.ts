@@ -5,6 +5,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { EngineHost, type GiacApi } from "./host.ts";
+import type { GiacBridge } from "./bridge.ts";
 import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { markOf } from "./format.ts";
@@ -79,9 +80,10 @@ describe("converge helpers", () => {
 describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
   let host: EngineHost;
   let giac: GiacApi;
+  let bridge: GiacBridge;
   beforeAll(async () => {
-    giac = (await loadNodeGiac()).giac;
-    host = new EngineHost(giac);
+    ({ giac, bridge } = await loadNodeGiac());
+    host = new EngineHost(giac, bridge);
   });
   // A generous budget: these tests are about the checks, and a loaded test machine must not send ∫₋₁¹ 1/x to the float
   // path (the golden gate runs the same cases at the default budget, one at a time).

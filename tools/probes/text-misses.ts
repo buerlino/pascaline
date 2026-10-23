@@ -6,7 +6,7 @@
 //   GIAC_OUT=<dir> node tools/probes/text-misses.ts [label …]
 // Read-only; no network.
 import { EngineHost } from "../../app/src/engine/host.ts";
-import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
+import { loadNodeGiac, nodeHost } from "../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings } from "../../app/src/engine/homeEval.ts";
 import { defaultCasSettings } from "../../app/src/engine/types.ts";
 import { solveRequest } from "../../app/src/engine/solve.ts";
@@ -14,8 +14,8 @@ import { parseLibrary } from "../../app/src/engine/library.ts";
 import { DATA_VERSION } from "../../app/src/state/storage.ts";
 import { applyDefChanges, type DefEntry } from "../../app/src/engine/defs.ts";
 
-const { giac } = await loadNodeGiac();
-const host = new EngineHost(giac);
+const { giac, bridge } = await loadNodeGiac();
+const host = new EngineHost(giac, bridge);
 const home = (t: string): string => {
   const r = host.home(t, defaultHomeSettings);
   const x = r.result;
@@ -39,7 +39,7 @@ const solve = (eq: string): string => {
 
 /** The log keeps what was typed, not Giac's print (which drops a bracket): defined in one engine, replayed in a fresh one. */
 const replay = async (): Promise<string> => {
-  const a = new EngineHost((await loadNodeGiac()).giac);
+  const a = (await nodeHost());
   let log: DefEntry[] = [];
   const shown: string[] = [];
   for (const i of ["g(x):=(pZ:=x)+1", "g(2)", "pZ"]) {
@@ -47,7 +47,7 @@ const replay = async (): Promise<string> => {
     log = applyDefChanges(log, r.defs);
     shown.push(r.result.text.trim());
   }
-  const b = new EngineHost((await loadNodeGiac()).giac);
+  const b = (await nodeHost());
   b.restore(log);
   return `shown ${shown.join(" | ")}; log ${JSON.stringify(log.map((e) => e.cmds))}; after relaunch g(2) = ${b.cas("g(2)", defaultCasSettings).result.text}, pZ = ${b.cas("pZ", defaultCasSettings).result.text}`;
 };

@@ -3,8 +3,8 @@
 // bridge (engine/giac/wasm/api.cc: giac_ctx_get/set, giac_parse, giac_value), on two engines fed the same inputs.
 // Inputs: every home.yaml and precision.yaml case (its `input`, its `latex` through our parser, a sequence's last step;
 // its `before` first), and text-1 … text-10 (tools/probes/text-misses.ts). Fields, each today's way against the bridge:
-//   reads    names the input reads: Giac's read part (stateRead.ts readPart/readsOf) | giac_parse reads
-//   targets  names it stores: readsOf targets ∪ storeTargets() | giac_parse targets
+//   reads    names the input reads: the host's (stateRead.ts readsFrom of giac_parse since G99) | giac_parse reads
+//   targets  names it stores: the host's top-level targets ∪ storeTargets() | giac_parse targets
 //   stateful isStateful() | targets, or a purge/assume/additionally head
 //   float    hasFloat(input) | giac_parse float
 //   kind     read from the printed value (isError, rationalValue, shapeOf, hasFloat) | giac_value kind
@@ -26,7 +26,7 @@ import { EngineHost, type GiacApi } from "../../app/src/engine/host.ts";
 import { NO_BRIDGE, type GiacBridge, type GiacValue } from "../../app/src/engine/bridge.ts";
 import { angleCommand, defaultHomeSettings, ENGINE_DEFINITIONS, isStateful, pasdegCommand, storeTargets } from "../../app/src/engine/homeEval.ts";
 import { hasFloat, rationalValue, shapeOf, splitList, valueParts, type Shape } from "../../app/src/engine/numeric.ts";
-import { parsePrinted, readPart, readsOf } from "../../app/src/engine/stateRead.ts";
+import { readsFrom } from "../../app/src/engine/stateRead.ts";
 import { FLAGS_READ, restoreCommands } from "../../app/src/engine/flags.ts";
 import { decimalFromString, decimalToString } from "../../app/src/engine/format.ts";
 import { latexToGiac } from "../../app/src/input/latex-to-giac.ts";
@@ -37,7 +37,7 @@ const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floo
 
 const A = await loadNodeGiac(); // today's way
 const B = await loadNodeGiac(); // the bridge
-const bridge = B.bridge as GiacBridge;
+const bridge: GiacBridge = B.bridge;
 try {
   bridge.ctxGet();
 } catch (e) {
@@ -190,8 +190,7 @@ function runCase(c: Case): void {
   }
   const names0 = userNames(A.giac);
   // names and stores: nothing is evaluated
-  const rp = parsePrinted(A.giac.eval(readPart(c.text)));
-  const reads = rp ? readsOf(rp, c.text) : { names: [], targets: [], fn: false };
+  const reads = readsFrom(A.bridge.parse(c.text));
   const p = bridge.parse(c.text);
   note("reads", c, set(reads.names), set(p.reads));
   note("targets", c, set([...reads.targets, ...(storeTargets(c.text)?.names ?? [])]), set(p.targets));
@@ -243,7 +242,7 @@ function mark(call: string, input: string): string {
 async function calls(): Promise<void> {
   const log: string[] = [];
   const traced: GiacApi = { eval: (s) => (log.push(s), A.giac.eval(s)), setPowLimit: (n) => A.giac.setPowLimit(n), messages: () => A.giac.messages(), clearMessages: () => A.giac.clearMessages() };
-  const host = new EngineHost(traced);
+  const host = new EngineHost(traced, A.bridge);
   host.home("0", defaultHomeSettings);
   let today = 0;
   let after = 0;
@@ -306,7 +305,7 @@ function cost(): void {
   row("bridge-1 ctx_set {decimal_digits:40}", time(() => bridge.ctxSet({ decimal_digits: 40 })), "Digits:=40 (giac_eval)", time(() => g.eval("Digits:=40")));
   bridge.ctxSet({ decimal_digits: 12 });
   g.eval("Digits:=12");
-  for (const i of ["a*b+1", "f(x):=x^2+a", "seq(k^2,k=1..3)"]) row(`bridge-2 parse ${i}`, time(() => bridge.parse(i)), "readPart (quote + lname, giac_eval)", time(() => g.eval(readPart(i))));
+  for (const i of ["a*b+1", "f(x):=x^2+a", "seq(k^2,k=1..3)"]) row(`bridge-2 parse ${i}`, time(() => bridge.parse(i)), "lname(quote(…)) (the read before G99, giac_eval)", time(() => g.eval(`lname(quote(${i}))`)));
   for (const i of ["1/3", "sqrt(2)", "[1/3,sqrt(2)]"]) {
     const chain = (): void => {
       g.eval(`pasans:=(${i})`);
@@ -322,7 +321,7 @@ function cost(): void {
   const prog = Array.from({ length: 200 }, (_, k) => `lib${k + 1}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${k + 1};\n}`);
   const all = (f: (s: string) => unknown): number => time(() => prog.forEach(f), 7, 1);
   const p0 = bridge.parse(prog[0]!);
-  console.log(`bridge-2 over 200 library programs: ${all((s) => bridge.parse(s)).toFixed(1)} ms (bar: under 50 ms); readPart over the same: ${all((s) => g.eval(readPart(s))).toFixed(1)} ms; lib1 → ${JSON.stringify(p0)}`);
+  console.log(`bridge-2 over 200 library programs: ${all((s) => bridge.parse(s)).toFixed(1)} ms (bar: under 50 ms); lname(quote(…)) over the same: ${all((s) => g.eval(`lname(quote(${s}))`)).toFixed(1)} ms; lib1 → ${JSON.stringify(p0)}`);
 }
 
 // --- --readers ------------------------------------------------------------------------------------------------------
@@ -365,7 +364,7 @@ function readers(): void {
       for (const n of names) {
         const sp = spans.get(n);
         if (!sp) {
-          rows.push(`${file} ${n}: not found`);
+          rows.push(`${file} ${n}: gone`);
           continue;
         }
         const body = text.split("\n").slice(sp[0], sp[1] + 1).filter((l) => l.trim() && !/^\s*(\/\/|\*|\/\*)/.test(l));

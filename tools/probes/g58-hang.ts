@@ -8,7 +8,7 @@ import { defaultHomeSettings } from "../../app/src/engine/homeEval.ts";
 const digits = Number(process.env.DIGITS ?? 12);
 const angle = process.env.ANGLE === "deg" ? "deg" : "rad";
 const settings = { ...defaultHomeSettings, digits, angle, workDigits: Math.max(30, digits + 10) } as const;
-const { giac } = await loadNodeGiac();
+const { giac, bridge } = await loadNodeGiac();
 const trace = process.env.TRACE === "1";
 if (trace) {
   const evalOnce = giac.eval.bind(giac);
@@ -20,7 +20,7 @@ if (trace) {
     return out;
   };
 }
-const host = new EngineHost(giac);
+const host = new EngineHost(giac, bridge);
 for (const input of process.argv.slice(2)) {
   const t0 = performance.now();
   const { result: r } = host.home(input, settings);

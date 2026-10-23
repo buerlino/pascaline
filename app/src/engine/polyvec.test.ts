@@ -27,7 +27,7 @@ describe.skipIf(!giacAvailable())("G106 on the real engine", () => {
   let host: EngineHost;
   let calls = 0;
   beforeAll(async () => {
-    const real: GiacApi = (await loadNodeGiac()).giac;
+    const { giac: real, bridge } = await loadNodeGiac();
     const spy: GiacApi = {
       eval: (input) => {
         calls++;
@@ -37,7 +37,7 @@ describe.skipIf(!giacAvailable())("G106 on the real engine", () => {
       messages: () => real.messages(),
       clearMessages: () => real.clearMessages(),
     };
-    host = new EngineHost(spy);
+    host = new EngineHost(spy, bridge);
   });
   const home = (input: string) => host.home(input, defaultHomeSettings).result;
   const cas = (input: string) => host.cas(input, defaultCasSettings).result;

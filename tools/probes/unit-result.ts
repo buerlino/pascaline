@@ -65,8 +65,8 @@ const args = process.argv.slice(2);
 const cases = args.length ? [[args[0]!, args[1], "from the command line"] as [string, string | undefined, string]] : CASES;
 const nAlts = Number(process.env.ALTS ?? 8);
 
-const { giac } = await loadNodeGiac();
-const host = new EngineHost(giac);
+const { giac, bridge } = await loadNodeGiac();
+const host = new EngineHost(giac, bridge);
 const s = { ...defaultHomeSettings };
 const dims = new Map<string, string>(); // dimension → SI text of the last value met
 

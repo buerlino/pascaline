@@ -16,14 +16,14 @@ const DEFAULT_INPUTS = [
 ];
 const digits = Number(process.env.DIGITS ?? 12);
 const settings = { ...defaultHomeSettings, digits, workDigits: Math.max(30, digits + 10) };
-const { giac } = await loadNodeGiac();
+const { giac, bridge } = await loadNodeGiac();
 let calls = 0;
 const evalOnce = giac.eval.bind(giac);
 giac.eval = (text: string) => {
   calls++;
   return evalOnce(text);
 };
-const host = new EngineHost(giac);
+const host = new EngineHost(giac, bridge);
 for (const setup of ["a:=2.5", "b:=sqrt(2)", "f(x):=x^2+a"]) host.home(setup, settings);
 
 const inputs = process.argv.length > 2 ? process.argv.slice(2) : DEFAULT_INPUTS;

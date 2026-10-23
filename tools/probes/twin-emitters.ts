@@ -19,8 +19,8 @@ const { parse } = require("yaml") as { parse: (s: string) => unknown };
 const cases = (parse(readFileSync(new URL("../../tests/golden/parser.yaml", import.meta.url), "utf8")) as { cases: { id: string; latex: string }[] }).cases;
 const XS = [-2.7, -1, -0.5, 0.3, 1, 2, 4.5];
 const all = process.argv.includes("--all");
-const { giac } = await loadNodeGiac();
-const host = new EngineHost(giac);
+const { giac, bridge } = await loadNodeGiac();
+const host = new EngineHost(giac, bridge);
 
 let compared = 0;
 let skipped = 0;

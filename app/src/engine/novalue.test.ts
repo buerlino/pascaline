@@ -3,6 +3,7 @@
 // derived (r16 F7, F8; decisions.md "F50, F51"); the kept values are home.yaml cases (g78-keep-*).
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, type GiacApi } from "./host.ts";
+import type { GiacBridge } from "./bridge.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
@@ -12,9 +13,10 @@ import { lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.
 describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
   let host: EngineHost;
   let giac: GiacApi;
+  let bridge: GiacBridge;
   beforeAll(async () => {
-    giac = (await loadNodeGiac()).giac;
-    host = new EngineHost(giac);
+    ({ giac, bridge } = await loadNodeGiac());
+    host = new EngineHost(giac, bridge);
   });
   const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(rewriteAngles(input), { ...defaultHomeSettings, angle, budgetMs: 5000 }).result;
 
