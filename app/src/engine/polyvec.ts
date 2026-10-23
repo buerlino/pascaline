@@ -5,8 +5,8 @@
 // it for typed braces). Giac marks such a value with subtype 10 (`[1,4]` is 0, a matrix 11) and prints it `poly1[`.
 // A result Giac prints with `poly1[` is refused, unless the input asked for a polynomial: it calls a function that
 // returns one (POLYNOMIAL_FUNCTIONS), or a name it reads holds one (`P:=symb2poly(x^2+1)` then `P*2`), or a function of
-// the user's it calls has one in its body. One engine call reads the result's subtype and the names' values together,
-// and only when the text holds `poly1[`. If G103 reads a value's type from bridge-3, this check moves there.
+// the user's it calls has one in its body. One engine call reads the result's subtype at any depth and the names'
+// values together, and only when the text holds `poly1[`. If G103 reads a value's type from bridge-3, this check moves there.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { functionsIn, namesIn, type Giac } from "./numeric.ts";
 
@@ -23,6 +23,13 @@ const SLOTS = new Set(["pasans", "pcasans"]);
 
 const POLY = new Set(POLYNOMIAL_FUNCTIONS);
 
+/** Our Giac helper: 1 when its argument is a coefficient vector (subtype 10) or a list holding one at any depth, else 0
+ *  (xcas indexing from 0). Recursive, so a list two or more levels deep is read too (G106f1). */
+const POLY_AT = "paspoly1";
+export const POLY_AT_ANY_DEPTH =
+  `${POLY_AT}(v):={ local k; if (subtype(v)==10) return 1; if (type(v)!=DOM_LIST) return 0; ` +
+  `for (k:=0;k<size(v);k:=k+1) { if (${POLY_AT}(v[k])==1) return 1; } return 0; }`;
+
 /** Cheap text test: Giac printed a coefficient vector in `text` (one inside a string too; the engine call tells). */
 export function printsPoly(text: string): boolean {
   return text.includes("poly1[");
@@ -35,16 +42,22 @@ export function asksPoly(input: string): boolean {
 
 /**
  * The result in `slot` (printed `output`) of `input` is a coefficient vector, or a list of them, the input did not ask
- * for. One engine call, made only when `output` prints `poly1[` and `input` names no polynomial function: the
- * subtype of the result (or the largest of its elements') and the printed values of the names the input reads and of
- * the user's functions it calls (`userFn`).
+ * for. One engine call, made only when `output` prints `poly1[` and `input` names no polynomial function: whether the
+ * result holds subtype 10 at any depth (POLY_AT_ANY_DEPTH; G106f1: `[[[1,4]+1]]` too) and the printed values of the
+ * names the input reads and of the user's functions it calls (`userFn`). The helper is defined on first use (one more
+ * call then, and again after a session reset).
  */
 export function unaskedPoly(giac: Giac, slot: string, input: string, output: string, userFn: (name: string) => boolean): boolean {
   if (!printsPoly(output) || asksPoly(input)) return false;
   const names = [...namesIn(input), ...functionsIn(input).filter(userFn)].filter((n) => !SLOTS.has(n));
-  const kind = `when(subtype(${slot})==10,10,when(type(${slot})==DOM_LIST,max(map(${slot},subtype)),0))`;
-  const out = giac.eval(`string(${kind})+string([${names.join(",")}])`);
-  if (!out.startsWith('"10[')) return false;
+  const query = `string(${POLY_AT}(${slot}))+string([${names.join(",")}])`;
+  let out = giac.eval(query);
+  // an undefined helper prints as its own call
+  if (out.startsWith(`"${POLY_AT}(`)) {
+    giac.eval(POLY_AT_ANY_DEPTH);
+    out = giac.eval(query);
+  }
+  if (!out.startsWith('"1[')) return false;
   // what the names hold: a polynomial there was asked for when it was stored, or a function's body asks for one
   const held = out.slice(3);
   return !printsPoly(held) && !asksPoly(held);

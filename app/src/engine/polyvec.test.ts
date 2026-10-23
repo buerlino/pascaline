@@ -75,6 +75,17 @@ describe.skipIf(!giacAvailable())("G106 on the real engine", () => {
     expect(home("[[1,4]+1,[1,2]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
   });
 
+  // G106f1: the old test read the subtype one level deep (max of the elements'), so these showed poly1[1,5] under =
+  it("refuses one at any depth", () => {
+    expect(home("[[[1,4]+1]]")).toMatchObject({ ok: false, error: "listPlusNumber", display: MESSAGE });
+    expect(cas("[[[1,4]+1]]")).toMatchObject({ ok: false, error: "listPlusNumber", text: MESSAGE });
+    expect(home("[[1,2],[3,[4,[5]+1]]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
+    expect(home("L:=[1,4]")).toMatchObject({ ok: true, display: "[1,4]" });
+    expect(home("[[L+1]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
+    expect(cas("[[L+1]]")).toMatchObject({ ok: false, error: "listPlusNumber" });
+    expect(home("[[[1,4]]]")).toMatchObject({ ok: true, display: "[[[1,4]]]" });
+  });
+
   it("refuses a passing-through function's sum, which asks for no polynomial", () => {
     expect(home("[1,4]+1+diff(x,x)*0")).toMatchObject({ ok: false, error: "listPlusNumber" });
     expect(cas("[1,4]+1+diff(x,x)*0")).toMatchObject({ ok: false, error: "listPlusNumber" });
@@ -83,6 +94,8 @@ describe.skipIf(!giacAvailable())("G106 on the real engine", () => {
   it("costs one engine call, and none without poly1[", () => {
     const giac = (host as unknown as { giac: GiacApi }).giac;
     expect(giac.eval("pasans:=[1,4]+1")).toBe("poly1[1,5]");
+    // the first use defines the helper (two more calls), once per session
+    unaskedPoly(giac, "pasans", "[1,4]+1", "poly1[1,5]", () => false);
     calls = 0;
     expect(unaskedPoly(giac, "pasans", "[1,4]+1", "poly1[1,5]", () => false)).toBe(true);
     expect(calls).toBe(1);
