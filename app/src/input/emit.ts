@@ -225,6 +225,37 @@ function powerSign(base: Json): string {
   return isHead(b, "List") ? ".^" : "^";
 }
 
+/**
+ * R78 (backlog F78): a sum of a `{ }` list (a List node, in brackets or not) and anything that is not one goes
+ * elementwise, Giac's `.+` and `.-`: Giac's `+` on a list and a number is polynomial addition ([1,4]+1 = poly1[1,5]).
+ * A sum of lists only keeps `+`. Probed 2026-10-23: the signs need spaces (Giac reads `1.+2` as the float 1. plus 2),
+ * and a `+` sum anywhere in the chain breaks it ((1+2) .+ [1,4] = poly1[1,7], [1,4] .+ 1+2 = poly1[2,7]), so the
+ * whole sum, its brackets and signs included, is flattened into one chain of terms that are not sums.
+ * A name holding a list and a list inside a larger term (`{1,4}×2+1`) are G106's.
+ */
+function sumTerms(e: Json, neg: boolean, out: { neg: boolean; t: Json }[]): void {
+  if (isHead(e, "Add")) e.slice(1).forEach((a) => sumTerms(a as Json, neg, out));
+  else if (isHead(e, "Subtract") && e.length === 3) {
+    sumTerms(e[1] as Json, neg, out);
+    sumTerms(e[2] as Json, !neg, out);
+  } else if (isHead(e, "Negate") && e.length === 2) sumTerms(e[1] as Json, !neg, out);
+  else if (isHead(e, "Delimiter") && e.length === 2 && ["Add", "Subtract", "Negate", "Delimiter"].some((h) => isHead(e[1] as Json, h)))
+    sumTerms(e[1] as Json, neg, out);
+  else out.push({ neg, t: e });
+}
+
+function listSum(e: Json, o: SerializeOptions): Out | undefined {
+  const terms: { neg: boolean; t: Json }[] = [];
+  sumTerms(e, false, terms);
+  const isList = (t: Json): boolean => isHead(t, "List") || (isHead(t, "Delimiter") && t.length === 2 && isList(t[1] as Json));
+  const lists = terms.filter(({ t }) => isList(t)).length;
+  if (lists === 0 || lists === terms.length) return undefined;
+  const s = terms
+    .map(({ neg, t }, i) => `${i === 0 ? (neg ? "-" : "") : neg ? " .- " : " .+ "}${wrap(ser(t, o), 2)}`)
+    .join("");
+  return { s, p: 1 };
+}
+
 function mulOuts(parts: Out[]): Out {
   if (parts.length === 1) return parts[0] as Out;
   return { s: parts.map((p) => wrap(p, 3)).join("*"), p: 2 };
@@ -254,6 +285,8 @@ function ser(e: Json, o: SerializeOptions): Out {
     case "Error":
       throw parseError("parse.parseError", { json: JSON.stringify(e) });
     case "Add": {
+      const elementwise = listSum(e, o);
+      if (elementwise) return elementwise;
       let s = "";
       args.forEach((a, i) => {
         const o1 = ser(a, o);
@@ -264,7 +297,7 @@ function ser(e: Json, o: SerializeOptions): Out {
       return { s, p: 1 };
     }
     case "Subtract":
-      return { s: `${wrap(ser(a0, o), 1)}-${wrap(ser(a1, o), 2)}`, p: 1 };
+      return listSum(e, o) ?? { s: `${wrap(ser(a0, o), 1)}-${wrap(ser(a1, o), 2)}`, p: 1 };
     case "Negate":
       return { s: `-${wrap(ser(a0, o), 2)}`, p: 1 };
     case "Multiply":
