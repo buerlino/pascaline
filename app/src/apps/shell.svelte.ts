@@ -167,6 +167,8 @@ export class AppShell {
     if (this.app !== null) this.lastApp = this.app;
     this.app = null;
     this.sheet = null;
+    // What the app put on the line (a value, a root, an equation) stays with the app; only the user's typing follows (R34, R76).
+    if (!this.entryEdited) this.entry.clear();
     this.entryBase = "";
     this.save();
   }
