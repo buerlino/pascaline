@@ -120,6 +120,7 @@ The defaults that bind code and tests, one line each. A default changes when its
 - **User keys** (R15b): a slot is `{ label, action }` in keyboard.yaml's action form, null empties it, the user's choice wins over a default.
 - **Keypad legends** (R6): a key is dimmed when its layer gives nothing; faces and legends fitted in JS (9 px face, 8 px legend minimum); 4.5:1 contrast.
 - **The kept line** (R34): `{ view, latex, chips }` under `entry`, written on hide once settled, restored only into its view.
+- **An app's line stays with the app** (R76, Opus pass 60): what an app put on the shared line (a Num value after Enter, a root, an equation to edit) is cleared when you go back to Home or CAS; only your own typing follows (R34). Enter in Solve's Num view may keep the value on the line while you stay in the app. Would change if: the G2 clears Num's line on Enter and the owner wants that.
 - **Working… after 150 ms** (F8): the busy line and Cancel are drawn late; Cancel works from 0 ms.
 - **One-line mode:** `^` is literal and the exponent is the next signed factor. **Results are insertable**, bracketed when a sum. **Default angle mode: radians.**
 
