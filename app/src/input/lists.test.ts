@@ -57,3 +57,29 @@ describe("a list to a power (R77)", () => {
     expect(mathJsonToGiac(["Power", ["Matrix", ["List", ["List", 1, 2]]], 2])).toBe("[[1,2]]^2");
   });
 });
+
+// R78 (backlog F78): a { } list plus or minus a number goes elementwise, Giac's `.+` and `.-`; Giac's `+` on a list and
+// a number is polynomial addition ([1,4]+1 = poly1[1,5]). Derived: {1,4}+1 = {2,5}, {1,4}-1 = {0,3}, 1-{1,4} = {0,-3};
+// {1,2}+{3,4} = {4,6} keeps `+`. The signs carry spaces: `1.+2` reads as the float 1. plus 2 in Giac (probed
+// 2026-10-23). The values run through Giac in group "lists-matrices" of tests/golden/parser.yaml (-17 to -22).
+describe("a list plus or minus a number (R78)", () => {
+  it("goes elementwise: braces, the list key's form or typed, emit `.+` and `.-`", () => {
+    expect(latexToGiac("\\left\\{1,4\\right\\}+1")).toBe("[1,4] .+ 1");
+    expect(latexToGiac("\\left\\{1,4\\right\\}-1")).toBe("[1,4] .- 1");
+    expect(latexToGiac("1-\\left\\{1,4\\right\\}")).toBe("1 .- [1,4]");
+    expect(latexToGiac("1+\\left\\{1,4\\right\\}")).toBe("1 .+ [1,4]");
+    expect(latexToGiac("\\{1,4\\}+1")).toBe("[1,4] .+ 1");
+    expect(latexToGiac("\\left(\\left\\{1,4\\right\\}\\right)+1")).toBe("([1,4]) .+ 1");
+    expect(latexToGiac("-\\left\\{1,4\\right\\}+1")).toBe("-[1,4] .+ 1");
+    expect(latexToGiac("\\left\\{1,4\\right\\}+1+2")).toBe("[1,4] .+ 1 .+ 2");
+    expect(latexToGiac("\\left\\{1,2\\right\\}+\\left\\{3,4\\right\\}+1")).toBe("[1,2] .+ [3,4] .+ 1");
+    expect(mathJsonToGiac(["Subtract", 1, ["List", 1, 4]])).toBe("1 .- [1,4]");
+  });
+
+  it("keeps `+` for a list plus a list, a matrix and a name", () => {
+    expect(latexToGiac("\\left\\{1,2\\right\\}+\\left\\{3,4\\right\\}")).toBe("[1,2]+[3,4]");
+    expect(latexToGiac("\\left\\{1,4\\right\\}-\\left\\{1,1\\right\\}")).toBe("[1,4]-[1,1]");
+    expect(latexToGiac("\\begin{pmatrix}1&4\\end{pmatrix}+1")).toBe("[[1,4]]+1");
+    expect(mathJsonToGiac(["Add", "L", 1])).toBe("L+1");
+  });
+});

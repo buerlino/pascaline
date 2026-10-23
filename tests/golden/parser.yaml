@@ -316,6 +316,12 @@ cases:
   - { id: "lists-matrices-14", latex: "-\\left\\{1,2\\right\\}^{2}", expect: "[-1,-4]", source: "derived", group: "lists-matrices", note: "the power binds before the sign" }
   - { id: "lists-matrices-15", latex: "3\\left\\{1,2\\right\\}^{2}", expect: "[3,12]", source: "derived", group: "lists-matrices", note: "the power binds before the product" }
   - { id: "lists-matrices-16", latex: "\\left\\{1,2\\right\\}^{4}", expect: "[1,16]", source: "derived", group: "lists-matrices", note: "xʸ 4 on a list: 1⁴, 2⁴ (Giac's ^ gives (v·v)² = 25 for an even power; odd and non-whole powers, -11 and -12, were elementwise already)" }
+  - { id: "lists-matrices-17", latex: "\\left\\{1,4\\right\\}+1", expect: "[2,5]", source: "derived", group: "lists-matrices", note: "a list plus a number adds it to each element (Giac's + gives poly1[1,5])" }
+  - { id: "lists-matrices-18", latex: "\\left\\{1,4\\right\\}-1", expect: "[0,3]", source: "derived", group: "lists-matrices", note: "a list minus a number: 1-1, 4-1" }
+  - { id: "lists-matrices-19", latex: "1-\\left\\{1,4\\right\\}", expect: "[0,-3]", source: "derived", group: "lists-matrices", note: "a number minus a list: 1-1, 1-4" }
+  - { id: "lists-matrices-20", latex: "\\left\\{1,2\\right\\}+\\left\\{3,4\\right\\}", expect: "[4,6]", source: "derived", group: "lists-matrices", note: "a list plus a list keeps +: 1+3, 2+4" }
+  - { id: "lists-matrices-21", latex: "\\left\\{1,4\\right\\}+1+2", expect: "[4,7]", source: "derived", group: "lists-matrices", note: "a chain: 1+1+2, 4+1+2 (the spaced .+ keeps 1.+2 from reading as the float 1.)" }
+  - { id: "lists-matrices-22", latex: "-\\left\\{1,4\\right\\}+1", expect: "[0,-3]", source: "derived", group: "lists-matrices", note: "a negated list plus a number: -1+1, -4+1" }
   # --- complex
   - { id: "complex-01", latex: "\\imaginaryI", expect: "i", source: "derived", group: "complex" }
   - { id: "complex-02", latex: "2\\mathrm{i}", expect: "2*i", note: "a drawn result's upright i is the constant (R67)", source: "derived", group: "complex" }
