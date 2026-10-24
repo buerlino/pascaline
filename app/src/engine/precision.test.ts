@@ -545,6 +545,21 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.text).not.toContain("g(");
     expect(complexReads(giac, "evalf(g(2*i))", false)).toEqual({ text: "evalf(g(2*i))", copies: [], hidden: ["atan"] });
   });
+  it("G56f1: a refused copy keeps the input's own names and hides the replaced function (source: derived)", async () => {
+    const { complexReads, purgeReads } = await import("./complex.ts");
+    const L = await loadNodeGiac();
+    const real = engineGiac(L);
+    const giac = { ...real, eval: (c: string) => (/^pasxn0:=/.test(c) ? "GIAC_ERROR: refused" : real.eval(c)) } as typeof real;
+    const own = new EngineHost(L.giac, L.bridge);
+    own.cas("w:=atan(2*i)", defaultCasSettings);
+    own.cas("f(x):=atan(x)", defaultCasSettings);
+    own.cas("g(x):=f(x)+w", defaultCasSettings);
+    const r = complexReads(giac, "evalf(g(2*i))");
+    purgeReads(real, r.copies);
+    expect(r.text).toBe("evalf(g(2*i))");
+    expect(r.text).not.toMatch(/pasxn/);
+    expect(r.hidden).toContain("atan");
+  });
   it("our definitions load on first use, not at engine start (start-up budget)", async () => {
     const { giac, bridge } = await loadNodeGiac();
     const fresh = new EngineHost(giac, bridge);
