@@ -8,8 +8,9 @@ export type At = (expr: string, x: string) => number | null;
 
 export type Kind = "antiderivative" | "solution" | "factorisation" | "simplification";
 
-/** Three points in (0, 1): inside the domain of ln, sqrt and 1/(x+a) for the generated forms. */
-export const POINTS: readonly string[] = ["0.3", "0.55", "0.8"];
+/** Three points in (0, 1), inside the domain of ln, sqrt and 1/(x+a) for the generated forms, and one negative point,
+ *  where a lost sign shows (sqrt(x^2) -> x agrees at all three positive ones). */
+export const POINTS: readonly string[] = ["0.3", "0.55", "0.8", "-0.7"];
 const TOL = 1e-7;
 
 export interface Verdict {
@@ -23,12 +24,14 @@ const skip = (detail: string): Verdict => ({ status: "skip", detail });
 
 /** diff is 0 at every point: `diff` is an expression in x. */
 function zeroAt(diff: string, at: At, points: readonly string[] = POINTS): Verdict {
+  let seen = 0;
   for (const p of points) {
     const v = at(diff, p);
-    if (v === null) return skip(`no real number at x=${p}`);
+    if (v === null) continue; // no real value at this point (a log of a negative): only this point is not checked
+    seen++;
     if (!(Math.abs(v) <= TOL)) return { status: "wrong", detail: `${diff} = ${v} at x=${p}` };
   }
-  return ok;
+  return seen > 0 ? ok : skip("no real number at any point");
 }
 
 const unresolved = (answer: string): boolean => /(^|[^A-Za-z_])(int|integrate|solve|undef|infinity|inf|GIAC_ERROR)\b|\bi\b|@|\?/.test(answer) || answer.trim() === "";
@@ -51,28 +54,12 @@ export function checkSimplification(original: string, answer: string, at: At): V
   return zeroAt(`(${answer})-(${original})`, at);
 }
 
-/** The top-level entries of a printed list `[a,b,c]`; null when the text is not one. */
-export function listEntries(text: string): string[] | null {
-  const t = text.trim();
-  if (!t.startsWith("[") || !t.endsWith("]")) return null;
-  const out: string[] = [];
-  let depth = 0;
-  let cur = "";
-  for (const c of t.slice(1, -1)) {
-    if ("([{".includes(c)) depth++;
-    if (")]}".includes(c)) depth--;
-    if (c === "," && depth === 0) {
-      out.push(cur);
-      cur = "";
-    } else cur += c;
-  }
-  if (cur.trim() !== "") out.push(cur);
-  return out.map((s) => s.trim());
-}
+/** The entries of a printed list, read by Giac's bridge (P20: no bracket loop here); null when the text is not a list. */
+export type Entries = (text: string) => string[] | null;
 
 /** Every solution of `lhs=rhs` substitutes to 0 (one check per entry, so a missing solution is not noticed: only wrong ones). */
-export function checkSolutions(equation: string, answer: string, at: At): Verdict {
-  const sols = listEntries(answer);
+export function checkSolutions(equation: string, answer: string, at: At, entries: Entries): Verdict {
+  const sols = entries(answer);
   if (!sols || sols.length === 0) return skip("no list of solutions");
   const sides = equation.split("=");
   if (sides.length !== 2) return skip("not an equation");
@@ -96,10 +83,10 @@ export interface Question {
   subject: string;
 }
 
-export function checkBack(q: Question, answer: string, at: At): Verdict {
+export function checkBack(q: Question, answer: string, at: At, entries: Entries): Verdict {
   switch (q.kind) {
     case "antiderivative": return checkAntiderivative(q.subject, answer, at);
-    case "solution": return checkSolutions(q.subject, answer, at);
+    case "solution": return checkSolutions(q.subject, answer, at, entries);
     case "factorisation": return checkFactorisation(q.subject, answer, at);
     case "simplification": return checkSimplification(q.subject, answer, at);
   }

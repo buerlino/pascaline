@@ -10,10 +10,11 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { setGiacHostGlobals } from "../src/engine/host.ts";
-import { nodeHost } from "../src/engine/nodeGiac.ts";
+import { loadNodeGiac } from "../src/engine/nodeGiac.ts";
+import { EngineHost } from "../src/engine/host.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
 import { invariantsStage, type InvariantFailure, type KnownFailure } from "./invariants.ts";
-import { checkBack, fromCorpus, generated, type At } from "../../tools/probes/casback/check.ts";
+import { checkBack, fromCorpus, generated, type At, type Entries } from "../../tools/probes/casback/check.ts";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const args = process.argv.slice(2);
@@ -28,12 +29,22 @@ const count = flag("--count") ?? (nightly ? 1200 : Number(process.env["CASBACK_C
 const BUDGET_S = 30;
 const t0 = performance.now();
 setGiacHostGlobals();
-const host = await nodeHost();
+const loaded = await loadNodeGiac();
+const host = new EngineHost(loaded.giac, loaded.bridge);
 const cas = (input: string): string => host.cas(input, defaultCasSettings).result.text;
-const NUMBER = /^-?\d+(\.\d*)?(e[-+]?\d+)?$/i;
+// P20: kinds and list entries come from Giac's bridge (bridge-3), not from a regex or a bracket loop over its text.
+const REAL = new Set(["integer", "rational", "float", "symbolic"]);
 const at: At = (expr, x) => {
-  const t = cas(`evalf(subs(${expr},x=${x}))`).trim();
-  return NUMBER.test(t) ? Number(t) : null;
+  const v = loaded.bridge.value(`subs(${expr},x=${x})`, [12]);
+  const p = v.at?.["12"];
+  if (!REAL.has(v.kind) || !p || p.length !== 1) return null;
+  const [re, im] = p[0]!;
+  const r = Number(re);
+  return Number(im) === 0 && Number.isFinite(r) ? r : null;
+};
+const entries: Entries = (text) => {
+  const v = loaded.bridge.value(text, []);
+  return v.kind === "list" && v.elements ? v.elements : null;
 };
 
 const corpus = parse(readFileSync(resolve(repo, "tests/golden/corpus.yaml"), "utf8")) as { cases: { input: string }[] };
@@ -44,7 +55,7 @@ let skipped = fromFile.skipped;
 const failures: InvariantFailure[] = [];
 for (const q of questions) {
   const answer = cas(q.input);
-  const v = checkBack(q, answer, at);
+  const v = checkBack(q, answer, at, entries);
   if (v.status === "skip") skipped++;
   else {
     checked++;

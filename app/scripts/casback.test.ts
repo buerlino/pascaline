@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G64: the check-back kinds on fixed answers, with a small JS evaluator standing in for Giac (no engine: the stage itself is scripts/casback.ts).
 import { describe, expect, it } from "vitest";
-import { checkAntiderivative, checkFactorisation, checkSimplification, checkSolutions, fromCorpus, generated, listEntries, type At } from "../../tools/probes/casback/check.ts";
+import { checkAntiderivative, checkFactorisation, checkSimplification, checkSolutions, fromCorpus, generated, type At, type Entries } from "../../tools/probes/casback/check.ts";
 
 /** Rewrites diff(F,x) into D(x=>F) (balanced parentheses), the rest into JS. */
 function js(e: string): string {
@@ -26,6 +26,9 @@ const at: At = (expr, x) => {
   return Number.isFinite(v) ? v : null;
 };
 
+/** Stands in for the bridge's list reader: a flat list of simple entries. */
+const entries: Entries = (t) => (t.startsWith("[") && t.endsWith("]") ? (t.slice(1, -1).trim() === "" ? [] : t.slice(1, -1).split(",").map((e) => e.trim())) : null);
+
 describe("check back", () => {
   it("accepts a right antiderivative and rejects a wrong one", () => {
     expect(checkAntiderivative("x^2", "x^3/3", at).status).toBe("ok");
@@ -37,10 +40,10 @@ describe("check back", () => {
     expect(checkAntiderivative("exp(-x^2)", "int(exp(-x^2),x)", at).status).toBe("skip");
   });
   it("accepts solutions that substitute to 0 and rejects one that does not", () => {
-    expect(checkSolutions("x^2-1=0", "[-1,1]", at).status).toBe("ok");
-    expect(checkSolutions("x^2=2", "[-sqrt(2),sqrt(2)]", at).status).toBe("ok");
-    expect(checkSolutions("x^2-1=0", "[-1,2]", at).status).toBe("wrong");
-    expect(checkSolutions("x^2+1=0", "[]", at).status).toBe("skip");
+    expect(checkSolutions("x^2-1=0", "[-1,1]", at, entries).status).toBe("ok");
+    expect(checkSolutions("x^2=2", "[-sqrt(2),sqrt(2)]", at, entries).status).toBe("ok");
+    expect(checkSolutions("x^2-1=0", "[-1,2]", at, entries).status).toBe("wrong");
+    expect(checkSolutions("x^2+1=0", "[]", at, entries).status).toBe("skip");
   });
   it("accepts a factorisation that expands back and rejects one that does not", () => {
     expect(checkFactorisation("x^2-1", "(x-1)*(x+1)", at).status).toBe("ok");
@@ -50,13 +53,16 @@ describe("check back", () => {
     expect(checkSimplification("sin(x)^2+cos(x)^2", "1", at).status).toBe("ok");
     expect(checkSimplification("sin(x)^2+cos(x)^2", "x", at).status).toBe("wrong");
   });
+  it("rejects sqrt(x^2) -> x, which agrees at every positive point", () => {
+    expect(checkSimplification("sqrt(x^2)", "x", at).status).toBe("wrong");
+    expect(checkSimplification("sqrt(x^2)", "abs(x)", at).status).toBe("ok");
+  });
+  it("skips only the points without a real value", () => {
+    expect(checkSimplification("ln(x^2)", "2*ln(x)", at).status).toBe("ok");
+    expect(checkSimplification("ln(x)", "ln(x)+1", at).status).toBe("wrong");  });
 });
 
 describe("helpers", () => {
-  it("splits a printed list at the top level", () => {
-    expect(listEntries("[(1+x)/2,f(1,2),3]")).toEqual(["(1+x)/2", "f(1,2)", "3"]);
-    expect(listEntries("3")).toBeNull();
-  });
   it("generates the same questions for a seed, all four kinds", () => {
     const a = generated(5, 40);
     expect(generated(5, 40)).toEqual(a);
