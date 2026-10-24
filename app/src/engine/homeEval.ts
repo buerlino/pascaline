@@ -18,7 +18,7 @@ import { floatBounds, refusalOf, giacPair, hasDefiniteIntegral, integratedNumeri
 import { enEngine } from "../i18n/enEngine.ts";
 import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
-import { nonSquarePower } from "./nonsquare.ts";
+import { NO_BODIES, nonSquarePower, type Bodies } from "./nonsquare.ts";
 import { POLY_AT, POLY_AT_ANY_DEPTH, unaskedPoly } from "./polyvec.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
@@ -534,6 +534,7 @@ export function homeEval(
   s: HomeSettings = defaultHomeSettings,
   now: () => number = () => performance.now(),
   form: InputForm = PLAIN_FORM,
+  fnBody: Bodies = NO_BODIES,
 ): HomeResult {
   const t0 = now();
   const ans = "pasans";
@@ -646,7 +647,7 @@ export function homeEval(
   // G58: past the deadline after the exact steps: refused, not checked for as long again.
   if (late()) return { ...failed(enEngine["error.timeout"], "exact"), error: "timeout" };
   // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, no matrix power.
-  if (!once && !isTimeout(exactOut) && nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn)) return refuse("notSquare", "exact");
+  if (!once && !isTimeout(exactOut) && nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn, fnBody)) return refuse("notSquare", "exact");
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
   // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.

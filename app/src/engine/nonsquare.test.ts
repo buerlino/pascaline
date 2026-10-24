@@ -6,7 +6,7 @@ import { EngineHost, type GiacApi } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { mayPowerMatrix } from "./nonsquare.ts";
+import { mayPowerMatrix, nonSquarePower, type Bodies } from "./nonsquare.ts";
 
 describe("mayPowerMatrix", () => {
   it("needs an operator and a list or a name", () => {
@@ -39,6 +39,81 @@ describe.skipIf(!giacAvailable())("G97 on the real engine", () => {
   it("keeps a square matrix and a flat vector", () => {
     expect(cas("[[2,1],[1,-1]]^-1*[[5],[1]]")).toMatchObject({ ok: true, text: "[[2],[1]]" });
     expect(home("[1,2]^2")).toMatchObject({ ok: true, display: "5" });
+  });
+});
+
+// G101 (backlog F74): the power sits in a called function's body. Source: derived (as G97's: f([[5],[1]]) is
+// [[5],[1]]^-1, a power of a non-square matrix; f([[1,2],[3,4]]) is the inverse, Giac's own answer, as G97's square case).
+describe.skipIf(!giacAvailable())("G101 a stored function's body", () => {
+  let host: EngineHost;
+  beforeAll(async () => {
+    const { giac, bridge } = await loadNodeGiac();
+    host = new EngineHost(giac, bridge);
+  });
+  const home = (input: string) => host.home(input, defaultHomeSettings).result;
+  const cas = (input: string) => host.cas(input, defaultCasSettings).result;
+
+  it("refuses f([[5],[1]]) for f(x):=x^-1 in CAS and Home", () => {
+    expect(cas("f(x):=x^-1")).toMatchObject({ ok: true });
+    expect(cas("f([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("f([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+  });
+
+  it("refuses one level deeper, g(x):=f(x)", () => {
+    expect(cas("g(x):=f(x)")).toMatchObject({ ok: true });
+    expect(cas("g([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("g([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+  });
+
+  it("keeps the inverse of a square matrix", () => {
+    expect(cas("f([[1,2],[3,4]])")).toMatchObject({ ok: true, text: "[[-2,1],[3/2,-1/2]]" });
+  });
+
+  it("binds each parameter, and a stored x does not leak into the body", () => {
+    expect(cas("h(x,y):=x^y")).toMatchObject({ ok: true });
+    expect(cas("h([[5],[1]],2)")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("h([[5],[1]],1)")).toMatchObject({ ok: true, text: "[[5],[1]]" });
+    expect(cas("x:=3")).toMatchObject({ ok: true });
+    expect(home("f([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("purge(x)")).toMatchObject({ ok: true });
+  });
+
+  // G101 fix 1: a local or a loop variable is no parameter; the body is not walked, so the global of the same name is
+  // never read for it. Derived: inv([[1,2],[3,4]]) = [[-2,1],[3/2,-1/2]] (det -2); in the loop k is 1, so the matrix
+// inverted is x = [[1,2],[3,4]] (the global k, 2, would pick [[1],[2]]).
+  it("a local of the same name as a non-square global keeps the inverse", () => {
+    expect(cas("y:=[[1],[2]]")).toMatchObject({ ok: true });
+    expect(cas("p(x):={local y; y:=[[1,2],[3,4]]; return inv(y);}")).toMatchObject({ ok: true });
+    expect(cas("p(5)")).toMatchObject({ ok: true, text: "[[-2,1],[3/2,-1/2]]" });
+    expect(home("p(5)")).toMatchObject({ ok: true });
+    expect(cas("purge(y)")).toMatchObject({ ok: true });
+  });
+
+  it("a loop variable is not read from the global of the same name", () => {
+    expect(cas("k:=2")).toMatchObject({ ok: true });
+    expect(cas("r(x):={local s,k; s:=0; for k from 1 to 1 do s:=inv(when(k==1,x,[[1],[2]])); od; return s;}")).toMatchObject({ ok: true });
+    expect(cas("r([[1,2],[3,4]])")).toMatchObject({ ok: true, text: "[[-2,1],[3/2,-1/2]]" });
+    expect(home("r([[1,2],[3,4]])")).toMatchObject({ ok: true });
+    expect(cas("purge(k)")).toMatchObject({ ok: true });
+  });
+});
+
+// G101 fix 3: binding a call's arguments evaluates them again; not when that could take the walk past its budget.
+describe.skipIf(!giacAvailable())("G101 the walk's time budget", () => {
+  const known: Bodies = { reads: () => ["pasf"], of: (n) => (n === "pasf" ? { params: ["x"], reads: [], heads: ["program", "^"] } : undefined) };
+  it("evaluates no argument once an evaluation could pass WALK_BUDGET_MS", async () => {
+    const { giac: real } = await loadNodeGiac();
+    const calls: string[] = [];
+    const spy = { ...real, eval: (t: string) => (calls.push(t), real.eval(t)) };
+    real.eval("pasf(x):=x^-1");
+    try {
+      expect(nonSquarePower(spy, "pasf([[5],[1]])", "[[1/5],[1]]", true, () => false, 0, () => false, known)).toBe(true);
+      calls.length = 0;
+      expect(nonSquarePower(spy, "pasf([[5],[1]])", "[[1/5],[1]]", true, () => false, 501, () => false, known)).toBe(false);
+      expect(calls.some((c) => c.includes("eval("))).toBe(false);
+    } finally {
+      real.eval("purge(pasf)");
+    }
   });
 });
 
