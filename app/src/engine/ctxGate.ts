@@ -19,25 +19,13 @@ export function contextOf(r: GiacContext | { error: string }): GiacContext {
   return r;
 }
 
-/** giac_ctx_set, again once when it threw: after an interrupt (a timeout) Giac's `ctrl_c` is still set, and api.cc's
- *  ctx_set, unlike giac_value and giac_eval, does not clear it, so the first command function that looks at it throws
- *  (probe 2026-10-24: `timeout 0.001`, an interrupted factor, then ctx_set of decimal_digits). The throw clears it; the
- *  fields set before it are set again alike. */
-function setOnce(bridge: GiacBridge, fields: Partial<GiacContext>): GiacContext | { error: string } {
-  try {
-    return bridge.ctxSet(fields);
-  } catch {
-    return bridge.ctxSet(fields);
-  }
-}
-
 export function gated(raw: GiacApi, bridge: GiacBridge): GatedGiac {
   let waiting: number | null = null;
   const flush = (): GiacContext | null => {
     if (waiting === null) return null;
     const d = waiting;
     waiting = null;
-    return contextOf(setOnce(bridge, { decimal_digits: d }));
+    return contextOf(bridge.ctxSet({ decimal_digits: d }));
   };
   return {
     giac: {
@@ -54,7 +42,7 @@ export function gated(raw: GiacApi, bridge: GiacBridge): GatedGiac {
       ctxSet: (fields) => {
         const d = waiting;
         waiting = null;
-        return setOnce(bridge, d === null || "decimal_digits" in fields ? fields : { decimal_digits: d, ...fields });
+        return bridge.ctxSet(d === null || "decimal_digits" in fields ? fields : { decimal_digits: d, ...fields });
       },
       parse: (text) => (flush(), bridge.parse(text)),
       value: (text, precisions) => (flush(), bridge.value(text, precisions)),
