@@ -114,7 +114,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 - The setting allows 1–30; stored values from before stay valid (6.2 migration).
 - Home's working precision is `max(30, digits+10)` (as Solve's) and the value precision P = `max(40, digits+10)`; `DECIMAL_KEEP` (`format.ts`) follows it, so rounding at 30 digits keeps 10 guard digits.
 - `sigfig` and our other Giac definitions load on first use, not at engine start (G2).
-- **The exact pass's budget is a step count** (G82, A20): Giac stops it after `budgetSteps` checks (518,000 ≈ today's 300 ms on the desktop, `tools/probes/step-budget.ts`), so the result does not depend on the device's speed. Home keeps `HOME_CLOCK_S` = 1 s as a safety net; CAS and Solve keep their clocks.
+- Exact budget: `budgetSteps` checks, not ms (G82).
 - The agreement check (2.4) is what makes 20 and 30 digits honest: without it, 2.3 #3–#5 would go out unmarked.
 - **Latency gate (Tab One):** p95 at 30 digits < 150 ms and ≤ 1.3 × the 12-digit p95, else the setting stops at 20. It holds (A4a, 2026-10-16), so the setting keeps 30; the desktop and device numbers are in [research/r12-evidence.md](research/r12-evidence.md) section 3.
 
