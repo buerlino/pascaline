@@ -87,14 +87,14 @@ export function caseLine(c, file) {
   const P = Math.max(40, digits + 10);
   return {
     comment: `// ${c.id} (${file}, ${c.source})`,
-    line: `Digits:=${P}:; pc("${c.id}",(${toExactLiterals(c.input)}),${expectedExact(c.expect)},${halfUnit(c.expect, digits)});`,
+    line: `Digits:=${P}:; pc("${c.id}",\'(${toExactLiterals(c.input)})\',${expectedExact(c.expect)},${halfUnit(c.expect, digits)});`,
   };
 }
 
 // Giac's value must be within the tolerance of the expected one; a failing line is printed, the count comes last.
 const PREAMBLE = [
   'pasn:=0:; pasfail:=0:;',
-  'pc(id,v,e,tol):={ local d; pasn:=pasn+1; d:=abs(evalf(v-e)); if (d>tol) { pasfail:=pasfail+1; print("FAIL "+id+": got "+string(evalf(v))+" expected "+string(e)); return 0; } return 1; }:;',
+  'pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol) { ok:=1; } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;',
 ];
 
 // Cases Giac gets wrong today, found by running pascaline-check.cas on the pin (giac_2.1.0-1). The first rule that matches an

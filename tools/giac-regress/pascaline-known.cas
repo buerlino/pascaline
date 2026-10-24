@@ -4,99 +4,99 @@
 // Each line: Giac's value of the input (typed decimals as exact rationals, Digits 40 or more) against the expected value
 // within half a unit of its last digit. Expected values: mpmath (oracle) or by hand (derived); see the comment above a line.
 pasn:=0:; pasfail:=0:;
-pc(id,v,e,tol):={ local d; pasn:=pasn+1; d:=abs(evalf(v-e)); if (d>tol) { pasfail:=pasfail+1; print("FAIL "+id+": got "+string(evalf(v))+" expected "+string(e)); return 0; } return 1; }:;
+pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol) { ok:=1; } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;
 // g38-floor-sin1e60 (home.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
-Digits:=40:; pc("g38-floor-sin1e60",(floor(sin(10^60)*10^12)),830389765219,5/10^1);
+Digits:=40:; pc("g38-floor-sin1e60",'(floor(sin(10^60)*10^12))',830389765219,5/10^1);
 // g90-int-asin-12x (home.yaml, oracle): backlog F65, F67 (G90): the numeric integration of an integrand with a 1/sqrt(1-x^2) end point is right to 7 digits only
-Digits:=40:; pc("g90-int-asin-12x",(int(asin(x)*12^x,x,0,1)),(365123638112/10^11),5/10^12);
+Digits:=40:; pc("g90-int-asin-12x",'(int(asin(x)*12^x,x,0,1))',(365123638112/10^11),5/10^12);
 // g90-int-asin-12x-neg (home.yaml, oracle): backlog F65, F67 (G90): the numeric integration of an integrand with a 1/sqrt(1-x^2) end point is right to 7 digits only
-Digits:=40:; pc("g90-int-asin-12x-neg",(int(asin(x)*12^x,x,-1,(5/10^1))),(181303923051/10^12),5/10^13);
+Digits:=40:; pc("g90-int-asin-12x-neg",'(int(asin(x)*12^x,x,-1,(5/10^1)))',(181303923051/10^12),5/10^13);
 // prec-2-normald_icdf-value (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-2-normald_icdf-value",(normald_icdf(10^-10)),-(63613409024/10^10),5/10^12);
+Digits:=40:; pc("prec-2-normald_icdf-value",'(normald_icdf(10^-10))',-(63613409024/10^10),5/10^12);
 // prec-g44-normald_icdf-0.025-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-normald_icdf-0.025-30",(normald_icdf((25/10^3))),-(195996398454005423552459443052/10^29),5/10^30);
+Digits:=40:; pc("prec-g44-normald_icdf-0.025-30",'(normald_icdf((25/10^3)))',-(195996398454005423552459443052/10^29),5/10^30);
 // prec-g44-normald_icdf-1e-10-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-normald_icdf-1e-10-30",(normald_icdf(10^-10)),-(636134090240405620469537582827/10^29),5/10^30);
+Digits:=40:; pc("prec-g44-normald_icdf-1e-10-30",'(normald_icdf(10^-10))',-(636134090240405620469537582827/10^29),5/10^30);
 // prec-g44-normald_icdf-1-1e-12-12 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-normald_icdf-1-1e-12-12",(normald_icdf(1-10^-12)),(70344838253/10^10),5/10^12);
+Digits:=40:; pc("prec-g44-normald_icdf-1-1e-12-12",'(normald_icdf(1-10^-12))',(70344838253/10^10),5/10^12);
 // prec-g44-normald_icdf-1-1e-12-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-normald_icdf-1-1e-12-30",(normald_icdf(1-10^-12)),(703448382530113192980951506899/10^29),5/10^30);
+Digits:=40:; pc("prec-g44-normald_icdf-1-1e-12-30",'(normald_icdf(1-10^-12))',(703448382530113192980951506899/10^29),5/10^30);
 // prec-g44-student_icdf-5-0.975-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-student_icdf-5-0.975-30",(student_icdf(5,(975/10^3))),(257058183563631551469624621744/10^29),5/10^30);
+Digits:=40:; pc("prec-g44-student_icdf-5-0.975-30",'(student_icdf(5,(975/10^3)))',(257058183563631551469624621744/10^29),5/10^30);
 // prec-g44-chisquare_icdf-3-0.95-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-chisquare_icdf-3-0.95-30",(chisquare_icdf(3,(95/10^2))),(781472790325117995526899487352/10^29),5/10^30);
+Digits:=40:; pc("prec-g44-chisquare_icdf-3-0.95-30",'(chisquare_icdf(3,(95/10^2)))',(781472790325117995526899487352/10^29),5/10^30);
 // prec-g44-fisher_icdf-2-5-0.99-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-fisher_icdf-2-5-0.99-30",(fisher_icdf(2,5,(99/10^2))),(132739336120048312358590034156/10^28),5/10^29);
+Digits:=40:; pc("prec-g44-fisher_icdf-2-5-0.99-30",'(fisher_icdf(2,5,(99/10^2)))',(132739336120048312358590034156/10^28),5/10^29);
 // prec-g44-normald_icdf-median-1e-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-normald_icdf-median-1e-30",(normald_icdf(1/2+10^-30)),(250662827463/10^41),5/10^42);
+Digits:=40:; pc("prec-g44-normald_icdf-median-1e-30",'(normald_icdf(1/2+10^-30))',(250662827463/10^41),5/10^42);
 // prec-g44-student_icdf-median-1e-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-student_icdf-median-1e-30",(student_icdf(5,1/2-10^-30)),-(263430552414/10^41),5/10^42);
+Digits:=40:; pc("prec-g44-student_icdf-median-1e-30",'(student_icdf(5,1/2-10^-30))',-(263430552414/10^41),5/10^42);
 // prec-g44-normald_icdf-1e-300 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-normald_icdf-1e-300",(normald_icdf(10^-300)),-(370470962994/10^10),5/10^11);
+Digits:=40:; pc("prec-g44-normald_icdf-1e-300",'(normald_icdf(10^-300))',-(370470962994/10^10),5/10^11);
 // prec-g44-chisquare_icdf-3-1e-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-chisquare_icdf-3-1e-30",(chisquare_icdf(3,10^-30)),(241798793102/10^31),5/10^32);
+Digits:=40:; pc("prec-g44-chisquare_icdf-3-1e-30",'(chisquare_icdf(3,10^-30))',(241798793102/10^31),5/10^32);
 // prec-g44-fisher_icdf-3-4-1e-20 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44-fisher_icdf-3-4-1e-20",(fisher_icdf(3,4,10^-20)),(335978946639/10^25),5/10^26);
+Digits:=40:; pc("prec-g44-fisher_icdf-3-4-1e-20",'(fisher_icdf(3,4,10^-20))',(335978946639/10^25),5/10^26);
 // prec-g44f1-erf-1e-12-12 (precision.yaml, oracle): register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument
-Digits:=40:; pc("prec-g44f1-erf-1e-12-12",(erf(10^-12)),(11283791671/10^22),5/10^24);
+Digits:=40:; pc("prec-g44f1-erf-1e-12-12",'(erf(10^-12))',(11283791671/10^22),5/10^24);
 // prec-g44f1-erf-1e-12-30 (precision.yaml, oracle): register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument
-Digits:=40:; pc("prec-g44f1-erf-1e-12-30",(erf(10^-12)),(1128379167095512573896158527/10^39),5/10^42);
+Digits:=40:; pc("prec-g44f1-erf-1e-12-30",'(erf(10^-12))',(1128379167095512573896158527/10^39),5/10^42);
 // prec-g44f1-erfc10-12 (precision.yaml, oracle): register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument
-Digits:=40:; pc("prec-g44f1-erfc10-12",(erfc(10)),(208848758376/10^56),5/10^57);
+Digits:=40:; pc("prec-g44f1-erfc10-12",'(erfc(10))',(208848758376/10^56),5/10^57);
 // prec-g44f1-erfc10-30 (precision.yaml, oracle): register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument
-Digits:=40:; pc("prec-g44f1-erfc10-30",(erfc(10)),(208848758376254475700078629496/10^74),5/10^75);
+Digits:=40:; pc("prec-g44f1-erfc10-30",'(erfc(10))',(208848758376254475700078629496/10^74),5/10^75);
 // prec-g44f1-evalf-erf-1e-12-12 (precision.yaml, oracle): register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument
-Digits:=40:; pc("prec-g44f1-evalf-erf-1e-12-12",(evalf(erf(10^-12))),(11283791671/10^22),5/10^24);
+Digits:=40:; pc("prec-g44f1-evalf-erf-1e-12-12",'(evalf(erf(10^-12)))',(11283791671/10^22),5/10^24);
 // prec-g44f1-evalf-erf-1e-12-30 (precision.yaml, oracle): register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument
-Digits:=40:; pc("prec-g44f1-evalf-erf-1e-12-30",(evalf(erf(10^-12))),(1128379167095512573896158527/10^39),5/10^42);
+Digits:=40:; pc("prec-g44f1-evalf-erf-1e-12-30",'(evalf(erf(10^-12)))',(1128379167095512573896158527/10^39),5/10^42);
 // prec-g44f1-evalf-erfc10-12 (precision.yaml, oracle): register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument
-Digits:=40:; pc("prec-g44f1-evalf-erfc10-12",(evalf(erfc(10))),(208848758376/10^56),5/10^57);
+Digits:=40:; pc("prec-g44f1-evalf-erfc10-12",'(evalf(erfc(10)))',(208848758376/10^56),5/10^57);
 // prec-g44f1-evalf-erfc10-30 (precision.yaml, oracle): register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument
-Digits:=40:; pc("prec-g44f1-evalf-erfc10-30",(evalf(erfc(10))),(208848758376254475700078629496/10^74),5/10^75);
+Digits:=40:; pc("prec-g44f1-evalf-erfc10-30",'(evalf(erfc(10)))',(208848758376254475700078629496/10^74),5/10^75);
 // prec-g44f1-fisher_icdf-3-4-1-1e-20-12 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44f1-fisher_icdf-3-4-1-1e-20-12",(fisher_icdf(3,4,1-10^-20)),(182574185819/10^1),5/10^2);
+Digits:=40:; pc("prec-g44f1-fisher_icdf-3-4-1-1e-20-12",'(fisher_icdf(3,4,1-10^-20))',(182574185819/10^1),5/10^2);
 // prec-g44f1-fisher_icdf-3-4-1-1e-20-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44f1-fisher_icdf-3-4-1-1e-20-30",(fisher_icdf(3,4,1-10^-20)),(182574185819499815596696704306/10^19),5/10^20);
+Digits:=40:; pc("prec-g44f1-fisher_icdf-3-4-1-1e-20-30",'(fisher_icdf(3,4,1-10^-20))',(182574185819499815596696704306/10^19),5/10^20);
 // prec-g44f2-chisquare_icdf-3-1-1e-30-12 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44f2-chisquare_icdf-3-1-1e-30-12",(chisquare_icdf(3,1-10^-30)),(142677986223/10^9),5/10^10);
+Digits:=40:; pc("prec-g44f2-chisquare_icdf-3-1-1e-30-12",'(chisquare_icdf(3,1-10^-30))',(142677986223/10^9),5/10^10);
 // prec-g44f2-chisquare_icdf-3-1-1e-30-30 (precision.yaml, oracle): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("prec-g44f2-chisquare_icdf-3-1-1e-30-30",(chisquare_icdf(3,1-10^-30)),(142677986223460944867593432741/10^27),5/10^28);
+Digits:=40:; pc("prec-g44f2-chisquare_icdf-3-1-1e-30-30",'(chisquare_icdf(3,1-10^-30))',(142677986223460944867593432741/10^27),5/10^28);
 // prec-3-UTPN-30 (precision.yaml, oracle): register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument
-Digits:=40:; pc("prec-3-UTPN-30",(UTPN(10)),(76198530241605260659733432516/10^52),5/10^54);
+Digits:=40:; pc("prec-3-UTPN-30",'(UTPN(10))',(76198530241605260659733432516/10^52),5/10^54);
 // prec-4-romberg-30 (precision.yaml, oracle): register row no-mpfr-path (G4, G50): romberg works in a double, 30 digits asked
-Digits:=40:; pc("prec-4-romberg-30",(romberg(exp(-x^2),x,0,1)),(746824132812427025399467436132/10^30),5/10^31);
+Digits:=40:; pc("prec-4-romberg-30",'(romberg(exp(-x^2),x,0,1))',(746824132812427025399467436132/10^30),5/10^31);
 // prec-5-BesselJ(1,2)-12 (precision.yaml, oracle): register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14
-Digits:=40:; pc("prec-5-BesselJ(1,2)-12",(BesselJ(1,2)),(576724807757/10^12),5/10^13);
+Digits:=40:; pc("prec-5-BesselJ(1,2)-12",'(BesselJ(1,2))',(576724807757/10^12),5/10^13);
 // prec-5-Airy_Ai(1)-12 (precision.yaml, oracle): register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14
-Digits:=40:; pc("prec-5-Airy_Ai(1)-12",(Airy_Ai(1)),(135292416313/10^12),5/10^13);
+Digits:=40:; pc("prec-5-Airy_Ai(1)-12",'(Airy_Ai(1))',(135292416313/10^12),5/10^13);
 // prec-5-BesselJ(0,100)-12 (precision.yaml, oracle): register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14
-Digits:=40:; pc("prec-5-BesselJ(0,100)-12",(BesselJ(0,100)),(199858503042/10^13),5/10^14);
+Digits:=40:; pc("prec-5-BesselJ(0,100)-12",'(BesselJ(0,100))',(199858503042/10^13),5/10^14);
 // prec-G23-sin-1e100 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
-Digits:=40:; pc("prec-G23-sin-1e100",(sin(10^100)),-(372376123661/10^12),5/10^13);
+Digits:=40:; pc("prec-G23-sin-1e100",'(sin(10^100))',-(372376123661/10^12),5/10^13);
 // prec-g50-atan(2i)-12 (precision.yaml, oracle): register row atan-cut (G50, G60): complex atan beyond ±i takes the other side of its cut
-Digits:=40:; pc("prec-g50-atan(2i)-12",(atan(2*i)),(157079632679/10^11)+(549306144334/10^12)*i,5/10^12+5/10^13);
+Digits:=40:; pc("prec-g50-atan(2i)-12",'(atan(2*i))',(157079632679/10^11)+(549306144334/10^12)*i,5/10^12+5/10^13);
 // prec-g50-atan(2i)-30 (precision.yaml, oracle): register row atan-cut (G50, G60): complex atan beyond ±i takes the other side of its cut
-Digits:=40:; pc("prec-g50-atan(2i)-30",(atan(2*i)),(157079632679489661923132169164/10^29)+(549306144334054845697622618461/10^30)*i,5/10^30+5/10^31);
+Digits:=40:; pc("prec-g50-atan(2i)-30",'(atan(2*i))',(157079632679489661923132169164/10^29)+(549306144334054845697622618461/10^30)*i,5/10^30+5/10^31);
 // g71-trunc-sin1e70 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
-Digits:=40:; pc("g71-trunc-sin1e70",(trunc(sin(10^70)*10^12)),-148099131371,5/10^1);
+Digits:=40:; pc("g71-trunc-sin1e70",'(trunc(sin(10^70)*10^12))',-148099131371,5/10^1);
 // g71-heaviside-sin1e70 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
-Digits:=40:; pc("g71-heaviside-sin1e70",(Heaviside(sin(10^70))),0,1/10^30);
+Digits:=40:; pc("g71-heaviside-sin1e70",'(Heaviside(sin(10^70)))',0,1/10^30);
 // g71-round-besselj-1e12 (precision.yaml, oracle): register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14
-Digits:=40:; pc("g71-round-besselj-1e12",(round(BesselJ(1,2)*10^12)),576724807757,5/10^1);
+Digits:=40:; pc("g71-round-besselj-1e12",'(round(BesselJ(1,2)*10^12))',576724807757,5/10^1);
 // g71-floor-besselj-1e12 (precision.yaml, oracle): register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14
-Digits:=40:; pc("g71-floor-besselj-1e12",(floor(BesselJ(1,2)*10^12)),576724807756,5/10^1);
+Digits:=40:; pc("g71-floor-besselj-1e12",'(floor(BesselJ(1,2)*10^12))',576724807756,5/10^1);
 // g71-round-besselj (precision.yaml, oracle): register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14
-Digits:=40:; pc("g71-round-besselj",(round(BesselJ(1,2))),1,5/10^12);
+Digits:=40:; pc("g71-round-besselj",'(round(BesselJ(1,2)))',1,5/10^12);
 // g71-sign-besselj-half (precision.yaml, oracle): register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14
-Digits:=40:; pc("g71-sign-besselj-half",(sign(BesselJ(1,2)-(5/10^1))),1,5/10^12);
+Digits:=40:; pc("g71-sign-besselj-half",'(sign(BesselJ(1,2)-(5/10^1)))',1,5/10^12);
 // g71-max-besselj (precision.yaml, oracle): register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14
-Digits:=40:; pc("g71-max-besselj",(max(BesselJ(1,2),(1/10^1))),(576724807757/10^12),5/10^13);
+Digits:=40:; pc("g71-max-besselj",'(max(BesselJ(1,2),(1/10^1)))',(576724807757/10^12),5/10^13);
 // g71-census-arg-sin1e70 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
-Digits:=40:; pc("g71-census-arg-sin1e70",(arg(sin(10^70))),(314159265359/10^11),5/10^12);
+Digits:=40:; pc("g71-census-arg-sin1e70",'(arg(sin(10^70)))',(314159265359/10^11),5/10^12);
 // g71-census-norm-sin1e70 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
-Digits:=40:; pc("g71-census-norm-sin1e70",(norm(sin(10^70))),(148099131372/10^12),5/10^13);
+Digits:=40:; pc("g71-census-norm-sin1e70",'(norm(sin(10^70)))',(148099131372/10^12),5/10^13);
 // g71-census-normalize-sin1e70 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
-Digits:=40:; pc("g71-census-normalize-sin1e70",(normalize(sin(10^70))),-1,5/10^12);
+Digits:=40:; pc("g71-census-normalize-sin1e70",'(normalize(sin(10^70)))',-1,5/10^12);
 // g71-census-tri-sin1e70 (precision.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
-Digits:=40:; pc("g71-census-tri-sin1e70",(tri(sin(10^70))),(851900868628/10^12),5/10^13);
+Digits:=40:; pc("g71-census-tri-sin1e70",'(tri(sin(10^70)))',(851900868628/10^12),5/10^13);
 print("pascaline-known: "+pasfail+" of "+pasn+" failed (all must fail)");

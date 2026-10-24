@@ -44,11 +44,6 @@ for (const f of files) {
   const failed = Number(fresh.eval("pasfail").trim());
   const [pass, fail] = counts[f];
   const same = n === pass + fail && failed === fail;
-  // A known line may stop the text with a Giac error (one eval stops at the first), so the known file only reports.
-  if (f.includes("known")) {
-    console.log(`${f} as one text: pasn ${n}, pasfail ${failed} (stops at the first erroring line; line by line ${pass + fail}, ${fail}; not compared)`);
-    continue;
-  }
   console.log(`${f} as one text: pasn ${n}, pasfail ${failed}, ${((performance.now() - t0) / 1000).toFixed(1)} s${same ? "" : ` DIFFERS from line by line (${pass + fail}, ${fail})`}`);
   if (!same) bad++;
 }

@@ -11,7 +11,7 @@ describe("giac-regress exporter", () => {
     const c = { id: "trap-0.1+0.2", input: "0.1+0.2", expect: "0.3", mark: "=", source: "derived" };
     expect(caseLine(c, "home.yaml") as Out).toEqual({
       comment: "// trap-0.1+0.2 (home.yaml, derived)",
-      line: 'Digits:=40:; pc("trap-0.1+0.2",((1/10^1)+(2/10^1)),(3/10^1),5/10^13);',
+      line: `Digits:=40:; pc("trap-0.1+0.2",'((1/10^1)+(2/10^1))',(3/10^1),5/10^13);`,
     });
   });
 
@@ -19,7 +19,7 @@ describe("giac-regress exporter", () => {
     const c = { id: "trap-22/7-approx", input: "22/7-3.142857142857", expect: "1.42857142857E-13", mark: "≈", source: "oracle" };
     expect(caseLine(c, "home.yaml") as Out).toEqual({
       comment: "// trap-22/7-approx (home.yaml, oracle)",
-      line: 'Digits:=40:; pc("trap-22/7-approx",(22/7-(3142857142857/10^12)),(142857142857/10^24),5/10^25);',
+      line: `Digits:=40:; pc("trap-22/7-approx",'(22/7-(3142857142857/10^12))',(142857142857/10^24),5/10^25);`,
     });
   });
 
@@ -27,7 +27,7 @@ describe("giac-regress exporter", () => {
     const c = { id: "prec-30-sqrt2", input: "sqrt(2)", settings: { digits: 30 }, expect: "1.41421356237309504880168872421", mark: "≈", source: "oracle" };
     expect(caseLine(c, "precision.yaml") as Out).toEqual({
       comment: "// prec-30-sqrt2 (precision.yaml, oracle)",
-      line: 'Digits:=40:; pc("prec-30-sqrt2",(sqrt(2)),(141421356237309504880168872421/10^29),5/10^30);',
+      line: `Digits:=40:; pc("prec-30-sqrt2",'(sqrt(2))',(141421356237309504880168872421/10^29),5/10^30);`,
     });
   });
 
