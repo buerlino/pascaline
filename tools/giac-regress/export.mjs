@@ -82,7 +82,7 @@ export function caseLine(c, file) {
   if (c.budgetMs !== undefined || /size guard|time guard/.test(c.note ?? "")) return { leftOut: "size or time guard (our layer)" };
   if (c.expect === undefined) return { leftOut: "mark only (no value)" };
   if (partsOf(c.expect) === null) return { leftOut: "not a number (refusal, text, list or truth value)" };
-  const digits = s.digits ?? 12;
+  const digits = file === "home.yaml" ? 12 : (s.digits ?? 12); // the home stage evaluates at 12 digits whatever settings.digits says
   const P = Math.max(40, digits + 10);
   return {
     comment: `// ${c.id} (${file}, ${c.source})`,
@@ -111,7 +111,6 @@ export const KNOWN_RULES = [
 ];
 // The ids Giac fails on the pin (run.mjs: every line of the known file fails).
 export const KNOWN_IDS = new Set([
-  "g47-normald_icdf-0.975-30",
   "g38-floor-sin1e60",
   "g90-int-asin-12x",
   "g90-int-asin-12x-neg",

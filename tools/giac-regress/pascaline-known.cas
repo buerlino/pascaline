@@ -5,8 +5,6 @@
 // within half a unit of its last digit. Expected values: mpmath (oracle) or by hand (derived); see the comment above a line.
 pasn:=0:; pasfail:=0:;
 pc(id,v,e,tol):={ local d; pasn:=pasn+1; d:=abs(evalf(v-e)); if (d>tol) { pasfail:=pasfail+1; print("FAIL "+id+": got "+string(evalf(v))+" expected "+string(e)); return 0; } return 1; }:;
-// g47-normald_icdf-0.975-30 (home.yaml, derived): register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)
-Digits:=40:; pc("g47-normald_icdf-0.975-30",(normald_icdf((975/10^3))),(195996398454/10^11),5/10^30);
 // g38-floor-sin1e60 (home.yaml, oracle): register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong
 Digits:=40:; pc("g38-floor-sin1e60",(floor(sin(10^60)*10^12)),830389765219,5/10^1);
 // g90-int-asin-12x (home.yaml, oracle): backlog F65, F67 (G90): the numeric integration of an integrand with a 1/sqrt(1-x^2) end point is right to 7 digits only

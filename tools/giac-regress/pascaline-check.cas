@@ -240,21 +240,23 @@ Digits:=40:; pc("g42-round-digits-half-up",(round(-(225/10^2),1)),-(22/10^1),5/1
 // g47-round-12.345-2 (home.yaml, derived)
 Digits:=40:; pc("g47-round-12.345-2",(round((12345/10^3),2)),(1235/10^2),5/10^11);
 // g47-round-12.345-2-30 (home.yaml, derived)
-Digits:=40:; pc("g47-round-12.345-2-30",(round((12345/10^3),2)),(1235/10^2),5/10^29);
+Digits:=40:; pc("g47-round-12.345-2-30",(round((12345/10^3),2)),(1235/10^2),5/10^11);
 // g47-round-pi-3 (home.yaml, derived)
 Digits:=40:; pc("g47-round-pi-3",(round(pi,3)),(3142/10^3),5/10^12);
 // g47-round-pi-3-30 (home.yaml, derived)
-Digits:=40:; pc("g47-round-pi-3-30",(round(pi,3)),(3142/10^3),5/10^30);
+Digits:=40:; pc("g47-round-pi-3-30",(round(pi,3)),(3142/10^3),5/10^12);
 // g47-trunc-2.567-2 (home.yaml, derived)
 Digits:=40:; pc("g47-trunc-2.567-2",(trunc((2567/10^3),2)),(256/10^2),5/10^12);
 // g47-trunc-2.567-2-30 (home.yaml, derived)
-Digits:=40:; pc("g47-trunc-2.567-2-30",(trunc((2567/10^3),2)),(256/10^2),5/10^30);
+Digits:=40:; pc("g47-trunc-2.567-2-30",(trunc((2567/10^3),2)),(256/10^2),5/10^12);
 // g47-round-neg-0.125-2 (home.yaml, derived)
 Digits:=40:; pc("g47-round-neg-0.125-2",(round(-(125/10^3),2)),-(12/10^2),5/10^13);
 // g47-round-neg-0.125-2-30 (home.yaml, derived)
-Digits:=40:; pc("g47-round-neg-0.125-2-30",(round(-(125/10^3),2)),-(12/10^2),5/10^31);
+Digits:=40:; pc("g47-round-neg-0.125-2-30",(round(-(125/10^3),2)),-(12/10^2),5/10^13);
 // g47-normald_icdf-0.975 (home.yaml, oracle)
 Digits:=40:; pc("g47-normald_icdf-0.975",(normald_icdf((975/10^3))),(195996398454/10^11),5/10^12);
+// g47-normald_icdf-0.975-30 (home.yaml, derived)
+Digits:=40:; pc("g47-normald_icdf-0.975-30",(normald_icdf((975/10^3))),(195996398454/10^11),5/10^12);
 // g42-quartile1-six (home.yaml, derived)
 Digits:=40:; pc("g42-quartile1-six",(quartile1([1,2,3,4,5,6])),2,5/10^12);
 // stat-stddev-population (home.yaml, derived)

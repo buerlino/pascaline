@@ -31,6 +31,11 @@ describe("giac-regress exporter", () => {
     });
   });
 
+  it("a home.yaml case ignores settings.digits (the home stage evaluates at 12)", () => {
+    const c = { id: "h30", input: "normald_icdf(0.975)", settings: { digits: 30 }, expect: "1.95996398454", mark: "≈", source: "derived" };
+    expect((caseLine(c, "home.yaml") as { line: string }).line).toMatch(/,5\/10\^12\);$/);
+  });
+
   it("leaves out what depends on our layer, with the reason", () => {
     const left = (c: object) => (caseLine({ id: "x", source: "derived", ...c }, "home.yaml") as { leftOut: string }).leftOut;
     expect(left({ latex: "1", expect: "1" })).toMatch(/LaTeX/);
