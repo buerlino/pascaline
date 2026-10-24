@@ -40,7 +40,6 @@ import {
   unauditedIn,
   numericDisagrees,
   notBuiltin,
-  readsReplaced,
   floatsShown,
   heavySplit,
   REGROUP_MAX,
@@ -49,11 +48,11 @@ import {
   valuePrecision,
   whyOf,
   withDigits,
-  complexSafe,
   type ElementFacts,
   type Giac,
   type Shape,
 } from "./numeric.ts";
+import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
 

@@ -29,6 +29,7 @@ import {
 } from "./format.ts";
 import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import type { GiacValue } from "./bridge.ts";
+import { complexReads, complexReplacedIn, complexSafe, forValue, nonReal, purgeReads } from "./complex.ts";
 
 export interface Giac {
   eval(input: string): string;
@@ -58,9 +59,10 @@ export function valuePrecision(digits: number): number {
  * a float on the exact path is "unaudited" and gets ⚠ until it is in Find's tier 0 with a golden case (G4, EN7).
  * Audited for real arguments and for complex ones (G50, `tools/probes/complex-audit.ts`: sqrt, exp, ln, log,
  * log10, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, abs, arg and sign on 12 complex
- * arguments at 12, 30 and 50 digits). Giac's complex asin, acos, atan and acosh are a double, so those are evaluated
- * through COMPLEX_DEFINITIONS (complex tanh was coth until patch 0003, G75); any part Giac prints as a double where MPFR digits were
- * asked confirms one digit fewer than it prints (shortDigits). Giac runs in radians in every mode (G46), so DEG reads
+ * arguments at 12, 30 and 50 digits). Giac's complex atan takes the other side of its cut, so it is evaluated through
+ * COMPLEX_DEFINITIONS (complex.ts); complex tanh was coth until patch 0003 (G75), and ln of a negative MPFR real and
+ * acos met pi as a double until patch 0005 (G60). Any part Giac still prints as a double where MPFR digits were asked
+ * confirms one digit fewer than it prints (shortDigits). Giac runs in radians in every mode (G46), so DEG reads
  * the same routines (the probe's DEG rows).
  */
 export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
@@ -70,48 +72,6 @@ export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
   "abs", "re", "im", "conj", "arg", "sign", "floor", "ceil", "round", "frac", "max", "min",
   "sigfig", "par", "eseries", "pasmedian", "paspercentile",
 ]);
-
-/**
- * G50 (deep check 2026-10-19 D10): our definitions for the functions whose complex values Giac gets wrong. Giac's
- * complex asin, acos, atan and acosh have no MPFR path (14 digits at any Digits; acosh near 0 is short even in the
- * double). (Its complex tanh, coth at usual.cc:2673, is fixed in Giac's source by patch 0003, G75.) Each is used for a
- * non-real argument, and is the function itself otherwise (Giac runs in radians in every mode, G46): the inverse
- * functions by their ln forms, which are the principal branches (mpmath's, also on the cuts of atan). The agreement check then
- * confirms their digits like any other exact value. A list or matrix argument is mapped element by element first (its
- * type is DOM_LIST, which would fall back to Giac's own function).
- */
-export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
-  pasasin: "pasasin(z):={ if (type(z)==DOM_LIST) return map(z,pasasin); if (type(evalf(z))==DOM_COMPLEX) return -i*ln(i*z+sqrt(1-z^2)); return asin(z); }",
-  pasacos: "pasacos(z):={ if (type(z)==DOM_LIST) return map(z,pasacos); if (type(evalf(z))==DOM_COMPLEX) return pi/2+i*ln(i*z+sqrt(1-z^2)); return acos(z); }",
-  pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
-  pasacosh: "pasacosh(z):={ if (type(z)==DOM_LIST) return map(z,pasacosh); if (type(evalf(z))==DOM_COMPLEX) return ln(z+sqrt(z+1)*sqrt(z-1)); return acosh(z); }",
-};
-
-/** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */
-const COMPLEX_REPLACED: Readonly<Record<string, string>> = {
-  asin: "pasasin", arcsin: "pasasin", acos: "pasacos", arccos: "pasacos", atan: "pasatan", arctan: "pasatan",
-  acosh: "pasacosh", arccosh: "pasacosh",
-};
-const COMPLEX_CALL = new RegExp(`"[^"]*"|\\b(${Object.keys(COMPLEX_REPLACED).join("|")})(\\s*\\()`, "g");
-
-/** `text` with every call of a function Giac gets wrong on complex arguments replaced by ours (outside strings); the
- *  same text when there is none. */
-export function complexSafe(text: string): string {
-  return text.replace(COMPLEX_CALL, (m, name?: string, paren?: string) => (name === undefined ? m : `${COMPLEX_REPLACED[name]}${paren}`));
-}
-
-/** Prepares `text` to be evaluated for its value: with complexSafe's replacements and their definitions loaded; the
- *  text itself when there is nothing to replace. */
-export function forValue(giac: Giac, text: string): string {
-  const safe = complexSafe(text);
-  if (safe === text) return text;
-  for (const [name, def] of Object.entries(COMPLEX_DEFINITIONS)) {
-    if (!safe.includes(name)) continue;
-    // A defined function prints as its program; an undefined name prints as itself.
-    if (giac.eval(name).trim() === name) giac.eval(def);
-  }
-  return safe;
-}
 
 const FLOAT_LITERAL = /(?<![A-Za-z_0-9.])(?:\d+\.\d*|\.\d+|\d+(?=e[+-]?\d))(?:e[+-]?\d+)?/;
 
@@ -283,103 +243,6 @@ export function whyOf(facts: readonly ElementFacts[], expr: string | null): Prec
   const once = facts.some((f) => f.warn === "unchecked" && !(isZero(f.value.re) && isZero(f.value.im))) || (expr === null && facts.some((f) => f.warn));
   if (!unaudited.length && !once) return undefined;
   return { ...(unaudited.length ? { unaudited } : {}), ...(once ? { once: true } : {}) };
-}
-
-/** The functions of `input` that COMPLEX_DEFINITIONS replace in RAD (asin, acos, atan, acosh and aliases). */
-export function complexReplacedIn(input: string): string[] {
-  return functionsIn(input).filter((f) => Object.hasOwn(COMPLEX_REPLACED, f));
-}
-
-/** The value of `name` has a non-zero imaginary part (or its im() cannot be had). */
-function nonReal(giac: Giac, name: string): boolean {
-  const im = giac.eval(`im(${name})`);
-  return isError(im) || /[1-9]/.test(im.replace(/e[+-]?\d+/g, ""));
-}
-
-/** Most stored names and functions complexReads looks into for one input (each is one Giac call). */
-const MAX_READS = 40;
-
-/**
- * What `expr` reads through stored names (G50f1). A name or user function whose stored text calls a function
- * COMPLEX_DEFINITIONS replaces (CAS `w:=asin(2*i)` keeps Giac's exact asin(2*i); `f(x):=asin(x)`) is evaluated by Giac
- * with its own complex asin (a double) unless it is read through a copy: each such name is replaced in `text` by a slot
- * (`pasxn<k>`) that holds its complexSafe text, as exactFacts reads Ans through pasxv. `hidden`: the replaced functions
- * that could not be read that way (a copy Giac refused; a call
- * found only inside another function's body; every one when `copy` is false, for an input that runs once and may
- * assign); a non-real value then is not audited. Purge `copies` when done.
- */
-export function complexReads(giac: Giac, expr: string, copy = true): { text: string; copies: string[]; hidden: string[] } {
-  const copies: string[] = [];
-  const hidden: string[] = [];
-  const known = new Map<string, string | null>();
-  // The stored text of a user's name or function; null for a free name or a builtin (each name is asked once).
-  const stored = (n: string): string | null => {
-    if (known.has(n)) return known.get(n)!;
-    if (known.size >= MAX_READS || Object.hasOwn(COMPLEX_REPLACED, n) || AUDITED_FUNCTIONS.has(n)) return null;
-    const v = namePrint(giac, n);
-    const out = isError(v) || v === n || v === "" ? null : v;
-    known.set(n, out);
-    return out;
-  };
-  // Replaced calls further down: in what the names and functions in `v` hold (their copies would still call Giac's).
-  const visited = new Set<string>();
-  const deeper = (v: string): string[] => {
-    const out: string[] = [];
-    const bound = boundIn(v);
-    for (const n of [...functionsIn(v), ...namesIn(v)]) {
-      if (visited.has(n) || bound.has(n)) continue;
-      visited.add(n);
-      const w = stored(n);
-      if (w !== null) out.push(...complexReplacedIn(w), ...deeper(w));
-    }
-    return out;
-  };
-  let text = expr;
-  const reads: [string, boolean][] = [...namesIn(expr).map((n): [string, boolean] => [n, false]), ...functionsIn(expr).map((n): [string, boolean] => [n, true])];
-  for (const [n, called] of reads) {
-    const v = stored(n);
-    if (v === null) continue;
-    hidden.push(...deeper(v));
-    const fns = complexReplacedIn(v);
-    if (!fns.length) continue;
-    const slot = `pasxn${copies.length}`;
-    if (!copy || isError(giac.eval(`${slot}:=(${forValue(giac, v)})`))) {
-      hidden.push(...fns);
-      continue;
-    }
-    copies.push(slot);
-    const at = new RegExp(`"[^"]*"|(?<![A-Za-z0-9_.])${n}(?![A-Za-z0-9_])(${called ? "(?=\\s*\\()" : "(?!\\s*\\()"})`, "g");
-    text = text.replace(at, (m, hit?: string) => (hit === undefined ? m : slot));
-  }
-  return { text, copies, hidden: [...new Set(hidden)] };
-}
-
-/** The names a stored program binds (`(x,y)->{local a,b:=1; …}` → x, y, a, b): its parameters and `local` names, which
- *  its body reads in place of a stored name of the same name. Empty for a text that is not a program. */
-function boundIn(v: string): Set<string> {
-  const head = /^\s*(?:\(([^()]*)\)|([A-Za-z_][A-Za-z0-9_]*))\s*->/.exec(v);
-  if (!head) return new Set();
-  const out = new Set((head[1] ?? head[2]!).split(",").map((p) => p.trim()).filter((p) => p !== ""));
-  for (const m of v.matchAll(/\blocal\s+([^;]*);/g))
-    for (const part of topLevelArgs(m[1]!)) {
-      const n = /^\s*([A-Za-z_][A-Za-z0-9_]*)/.exec(part);
-      if (n) out.add(n[1]!);
-    }
-  return out;
-}
-
-/** Purges the slots complexReads made. */
-export function purgeReads(giac: Giac, copies: readonly string[]): void {
-  if (copies.length) giac.eval(`purge(${copies.join(",")})`);
-}
-
-/** complexReads' text has a replaced function (typed or read through a copy), so Giac's own printed float of `expr` is
- *  not its value (Home keeps no exact text then). */
-export function readsReplaced(giac: Giac, expr: string): boolean {
-  if (complexSafe(expr) !== expr) return true;
-  const r = complexReads(giac, expr);
-  purgeReads(giac, r.copies);
-  return r.copies.length > 0;
 }
 
 /**
@@ -597,11 +460,38 @@ export interface ElementFacts extends ValueFacts {
   at?: number;
 }
 
-/** Confirmed digits of a complex value: the weaker of its two parts (an exactly zero part needs no check). */
+/** G60: a part this many decades below the other one at aPrecision digits is within the rounding of the value. */
+const NOISE_MARGIN = 10;
+/** G60: decades a noise part falls by when the precision rises by 20 digits (the rounding falls by 20). */
+const NOISE_DROP = 10;
+
+/**
+ * G60 (r16 F6): part `k` of a non-real value is rounding noise: at aPrecision digits it is NOISE_MARGIN decades or
+ * fewer above the rounding of the other part, and in `b` (more digits) it fell by NOISE_DROP decades or more, or is 0.
+ * sqrt(asinh(cos(10))) is 7.4E-41+0.873…*i at 40 digits and 1E-61+0.873…*i at 60; mpmath's real part is 0. A true
+ * small part keeps its size when the precision rises (tanh(1E-40+i) = 3.4E-40+1.557…*i).
+ */
+function noisePart(a: ComplexValue, b: ComplexValue, k: "re" | "im", aPrecision: number): boolean {
+  const o = k === "re" ? "im" : "re";
+  if (isZero(a[k]) || isZero(a[o]) || isZero(b[o])) return false;
+  return a[k].exp <= a[o].exp - (aPrecision - NOISE_MARGIN) && (isZero(b[k]) || b[k].exp <= a[k].exp - NOISE_DROP);
+}
+
+const ZERO: DecimalValue = { neg: false, digits: "", exp: 0, sticky: false };
+
+/** `b` with its noise parts (noisePart against `a`) set to 0: a part below the rounding is not shown (G60). */
+function denoised<T extends ComplexValue>(a: ComplexValue, b: T, aPrecision: number): T {
+  const re = noisePart(a, b, "re", aPrecision);
+  const im = noisePart(a, b, "im", aPrecision);
+  return re || im ? { ...b, ...(re ? { re: ZERO } : {}), ...(im ? { im: ZERO } : {}) } : b;
+}
+
+/** Confirmed digits of a complex value: the weaker of its two parts (an exactly zero part and a noise part need no
+ *  check). */
 function confirmedComplex(a: ComplexValue, b: ComplexValue, aPrecision: number, cap: number): number {
   let n = cap;
   for (const k of ["re", "im"] as const) {
-    if (isZero(a[k]) && isZero(b[k])) continue;
+    if ((isZero(a[k]) && isZero(b[k])) || noisePart(a, b, k, aPrecision)) continue;
     n = Math.min(n, confirmedDigits(a[k], b[k], aPrecision, cap));
   }
   return n;
@@ -800,13 +690,13 @@ function agreedFacts(facts: readonly (ElementFacts | null)[], digits: number, P:
   return facts.map((f, k) => {
     if (f) return f;
     let reliable = confirmedComplex(A[k]!, B[k]!, P, P);
-    let value = B[k]!;
+    let value = denoised(A[k]!, B[k]!, P);
     let at = P + 20;
     for (let i = 2; reliable < digits && more(i); i++) {
       const next = levels[i];
       if (!next) break;
       reliable = Math.max(reliable, confirmedComplex(levels[i - 1]![k]!, next[k]!, precs[i - 1]!, P));
-      value = next[k]!;
+      value = denoised(levels[i - 1]![k]!, next[k]!, precs[i - 1]!);
       at = precs[i]!;
     }
     reliable = Math.min(reliable, A[k]!.short ?? P, B[k]!.short ?? P);
@@ -1087,14 +977,15 @@ function floatPathFactsOf(
     return { facts: A.map((value) => ({ value: { re: value.re, im: value.im }, exact: false, reliableDigits: Math.min(digits, W - 10, value.short ?? W), warn: "unchecked", big: false })), shape };
   }
   return {
-    facts: B.map((value, k) =>
-      zeroUnconfirmed({
+    facts: B.map((b, k) => {
+      const value = denoised(A[k]!, b, W);
+      return zeroUnconfirmed({
         value: { re: value.re, im: value.im },
         exact: false,
-        reliableDigits: Math.min(confirmedComplex(A[k]!, value, W, W), valuePrecision(digits), A[k]!.short ?? W, value.short ?? W),
+        reliableDigits: Math.min(confirmedComplex(A[k]!, b, W, W), valuePrecision(digits), A[k]!.short ?? W, b.short ?? W),
         big: false,
-      }),
-    ),
+      });
+    }),
     shape,
   };
 }

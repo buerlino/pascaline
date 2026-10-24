@@ -400,7 +400,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
 describe("G50: complex arguments of the audited functions (pure)", () => {
   it("complexSafe replaces the calls Giac gets wrong on complex arguments, outside strings, and nothing else", async () => {
-    const { complexSafe } = await import("./numeric.ts");
+    const { complexSafe } = await import("./complex.ts");
     expect(complexSafe("tanh(i)+asin(2*i)-acos (1+i)*atan(x)+acosh(z)")).toBe("tanh(i)+pasasin(2*i)-pasacos (1+i)*pasatan(x)+pasacosh(z)");
     expect(complexSafe("arcsin(i)+arccos(i)+arctan(i)")).toBe("pasasin(i)+pasacos(i)+pasatan(i)");
     // atan2, asinh, atanh, a name ending in the function's name, a string, and our own names stay.
@@ -512,7 +512,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(t.numeric?.facts.why?.unaudited ?? []).not.toContain("tanh");
   });
   it("G50f1: a function's parameter is not the stored name of the same name (source: derived)", async () => {
-    const { complexReads, purgeReads } = await import("./numeric.ts");
+    const { complexReads, purgeReads } = await import("./complex.ts");
     const L = await loadNodeGiac();
     const giac = engineGiac(L);
     const own = new EngineHost(L.giac, L.bridge);
