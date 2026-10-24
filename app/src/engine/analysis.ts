@@ -13,17 +13,14 @@ import { PLAIN_FORM, type InputForm } from "./stores.ts";
 /** Time Giac may spend on an exact definite integral when Romberg did not converge (seconds). */
 const EXACT_INT_S = 0.5;
 
-/** Home's answer variable: analysis must not change what Ans means in Home. */
+/** Home's answer variable: analysis must not change what Ans means in Home. G103: kept in one call (a free pasans
+ *  prints as itself, so the copy says whether there was one) and put back in one. */
 function keepingAns<T>(giac: Giac, fn: () => T): T {
-  const had = giac.eval("pasans") !== "pasans";
-  if (had) giac.eval("paskeep:=pasans");
+  const had = giac.eval("paskeep:=pasans") !== "pasans";
   try {
     return fn();
   } finally {
-    if (had) {
-      giac.eval("pasans:=paskeep");
-      giac.eval("purge(paskeep)");
-    } else giac.eval("purge(pasans)");
+    giac.eval(had ? "pasans:=paskeep;purge(paskeep)" : "purge(pasans,paskeep)");
   }
 }
 

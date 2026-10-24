@@ -853,7 +853,9 @@ describe.skipIf(!giacAvailable())("G83: the user's functions are defined on firs
     const ref = await eager(chain);
     expect(vars).toBe(ref.cas("VARS", defaultCasSettings).result.text);
     const lazy1 = (await fresh(chain)).host;
-    expect(lazy1.home("VARS(1)", defaultHomeSettings).result.display).toBe(ref.home("VARS(1)", defaultHomeSettings).result.display);
+    // G103: against an eager replay that ran nothing else (ref's CAS VARS above left pcasans; on phase-1 both were
+    // refused as undecided, since the second decision run listed its own slot pasdec)
+    expect(lazy1.home("VARS(1)", defaultHomeSettings).result.display).toBe((await eager(chain)).home("VARS(1)", defaultHomeSettings).result.display);
     expect(lazy1.home("f(1)", defaultHomeSettings).result.display).toBe("3"); // derived: 1+2*1, all loaded by VARS(1)
   });
 

@@ -640,14 +640,14 @@ function pairsOf(pairs: readonly (readonly [string, string])[], keep: number, as
   return out;
 }
 
-/** G103: the parts bridge-3 gave for every element of `v` at `prec` digits (`at[prec]`: evalf of each element, so a
- *  double in a list stays a double, F73), as decimals of `keep` digits; null when there are none of `n` elements. */
-export function atParts(v: GiacValue, prec: number, keep: number, n: number): Parts[] | null {
+/** G103: the parts bridge-3 gave for every element of `v` at `prec` digits (`at[prec]`: evalf of each element), as
+ *  decimals of `keep` digits; null when there are none of `n` elements. "double": a part is a double where MPFR
+ *  digits were asked (BesselJ, Airy_Ai: no MPFR path; a stored double), which the caller reads as Giac's evalf(…,P)
+ *  does (an error for BesselJ, a print at Digits for a stored double): bridge-3's evalf gives a double either way. */
+export function atParts(v: GiacValue, prec: number, keep: number, n: number): Parts[] | null | "double" {
   const at = v.at?.[String(prec)];
   if (!at || at.length !== n) return null;
-  // A double where MPFR digits were asked (BesselJ, Airy_Ai: no MPFR path) is no value at `prec`: a print at Digits
-  // < 14 shows fewer digits than it has, and the bridge's evalf gives it where Giac's evalf(…,P) is an error.
-  if (prec > DOUBLE_DIGITS + 1 && at.some((pair) => pair.some((t) => doublePrint(t)))) return null;
+  if (prec > DOUBLE_DIGITS + 1 && at.some((pair) => pair.some((t) => doublePrint(t)))) return "double";
   return pairsOf(at, keep, prec);
 }
 
@@ -839,10 +839,15 @@ function valueFacts(
   if (shape.kind === "scalar" && v.kind === "integer") {
     // No num/den: more than 2048 digits. The digits at P+20, cut to P as a rational's are.
     const big = atParts(w, P + 20, P, 1);
-    return big && [{ value: { re: big[0]!.re, im: big[0]!.im }, exact: true, reliableDigits: null, big: true }];
+    return big && big !== "double" ? [{ value: { re: big[0]!.re, im: big[0]!.im }, exact: true, reliableDigits: null, big: true }] : null;
   }
-  const A = atParts(w, P, P + 2, n);
-  const B = atParts(w, P + 20, P + 2, n);
+  // A double in the value is read by Giac's evalf of the whole value, as before bridge-3 (valueParts).
+  const levelAt = (u: GiacValue, prec: number): Parts[] | null => {
+    const at = atParts(u, prec, P + 2, n);
+    return at === "double" ? valueParts(giac, src, shape, prec, P + 2) : at;
+  };
+  const A = levelAt(w, P);
+  const B = levelAt(w, P + 20);
   if (!A || !B) return null;
   const real = known.every(
     (f, k) => f !== null || (isZero(A[k]!.im) && isZero(B[k]!.im) && B[k]!.re.sticky && !endsEarly(B[k]!.re, confirmedComplex(A[k]!, B[k]!, P, P))),
@@ -872,7 +877,7 @@ function valueFacts(
     [P + 20, kept(B)],
   ]);
   return agreedFacts(known, digits, P, (prec) => {
-    const at = levels.get(prec) ?? atParts(value(src, [prec]), prec, P + 2, n);
+    const at = levels.get(prec) ?? levelAt(value(src, [prec]), prec);
     return at && kept(at);
   });
 }

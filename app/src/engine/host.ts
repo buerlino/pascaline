@@ -831,7 +831,7 @@ export class EngineHost implements FactsHost {
       if ("undecided" in d) undecided = true;
       if ("undecided" in d && d.refused) refusedCut = true;
       if (!("undecided" in d) && d.from !== undefined) {
-        this.giac.eval(`pcasans:=${d.from};purge(${d.from})`);
+        if (this.giac.eval(`pcasans:=${d.from};purge(${d.from})`).startsWith("GIAC_ERROR")) this.giac.eval(`purge(${d.from})`);
         if (asg && !guarded) this.giac.eval(`${asg.name}:=pcasans`);
         text = d.text;
       }

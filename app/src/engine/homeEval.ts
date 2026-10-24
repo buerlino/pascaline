@@ -602,7 +602,8 @@ export function homeEval(
     if ("undecided" in d) undecided = true;
     if ("undecided" in d && d.refused) refusedCut = true;
     if (!("undecided" in d) && d.from !== undefined) {
-      giac.eval(`${ans}:=${d.from};purge(${d.from})`);
+      // one call; an error in the store (a recursive definition) stops the purge, which then goes alone
+      if (isError(giac.eval(`${ans}:=${d.from};purge(${d.from})`))) giac.eval(`purge(${d.from})`);
       exactOut = d.text;
       value = undefined;
     }
