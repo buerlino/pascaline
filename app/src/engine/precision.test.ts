@@ -401,8 +401,9 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 describe("G50: complex arguments of the audited functions (pure)", () => {
   it("complexSafe replaces the calls Giac gets wrong on complex arguments, outside strings, and nothing else", async () => {
     const { complexSafe } = await import("./complex.ts");
-    expect(complexSafe("tanh(i)+asin(2*i)-acos (1+i)*atan(x)+acosh(z)")).toBe("tanh(i)+pasasin(2*i)-pasacos (1+i)*pasatan(x)+pasacosh(z)");
-    expect(complexSafe("arcsin(i)+arccos(i)+arctan(i)")).toBe("pasasin(i)+pasacos(i)+pasatan(i)");
+    // asin, acos and acosh are Giac's own since patch 0005 (G60), tanh since patch 0003 (G75).
+    expect(complexSafe("tanh(i)+asin(2*i)-acos (1+i)*atan(x)+acosh(z)")).toBe("tanh(i)+asin(2*i)-acos (1+i)*pasatan(x)+acosh(z)");
+    expect(complexSafe("arcsin(i)+arccos(i)+arctan(i)+atan (i)")).toBe("arcsin(i)+arccos(i)+pasatan(i)+pasatan (i)");
     // atan2, asinh, atanh, a name ending in the function's name, a string, and our own names stay.
     expect(complexSafe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)')).toBe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)');
   });
@@ -531,8 +532,8 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
   it("our definitions load on first use, not at engine start (start-up budget)", async () => {
     const { giac, bridge } = await loadNodeGiac();
     const fresh = new EngineHost(giac, bridge);
-    expect(giac.eval("pasasin")).toBe("pasasin");
-    fresh.home("asin(2*i)", defaultHomeSettings);
-    expect(giac.eval("pasasin")).not.toBe("pasasin");
+    expect(giac.eval("pasatan")).toBe("pasatan");
+    fresh.home("atan(2*i)", defaultHomeSettings);
+    expect(giac.eval("pasatan")).not.toBe("pasatan");
   });
 });
