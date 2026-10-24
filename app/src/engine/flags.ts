@@ -55,7 +55,7 @@ export function contextDiff(got: GiacContext, want: GiacContext): (keyof GiacCon
 
 /**
  * Giac's words that set a global setting: the `name:=value` flags of its lexer (input_lexer.cc, T_DIGITS), the setters
- * of the context bridge-1 reads, and the ones it cannot read but the mode setup puts back (`timeout`, `ckevery`). A name here is
+ * of the context bridge-1 reads, and the ones it cannot read but the mode setup puts back (`timeout`, `ckevery`, `ckbudget`). A name here is
  * never a user's variable or function in the definitions log, and a library may not use it (library.ts STATE_WORDS).
  */
 export const FLAG_WORDS: readonly string[] = [
@@ -64,11 +64,12 @@ export const FLAG_WORDS: readonly string[] = [
   "integer_mode", "xcas_mode", "maple_mode", "python_compat", "calc_mode", "keep_algext", "parse_e", "convert_rootof",
   "step_infolevel", "eval_level", "prog_eval_level", "autosimplify", "auto_assume", "ntl_on", "threads",
   "HAngle", "HComplex", "HDigits", "HFormat", "HLanguage", "set_language", "cas_setup", "timeout", "ckevery",
+  "ckbudget", "ckcount",
 ];
 
 const FLAG_RE = new RegExp(`(?<![A-Za-z0-9_])(?:${FLAG_WORDS.join("|")})(?![A-Za-z0-9_])`);
-/** Settings the read cannot see: an input that names one gets the mode setup again after it (timeout, ckevery). */
-const UNREAD_RE = /(?<![A-Za-z0-9_])(?:timeout|ckevery)(?![A-Za-z0-9_])/;
+/** Settings the read cannot see: an input that names one gets the mode setup again after it (timeout, ckevery, ckbudget). */
+const UNREAD_RE = /(?<![A-Za-z0-9_])(?:timeout|ckevery|ckbudget)(?![A-Za-z0-9_])/;
 
 const noStrings = (s: string): string => s.replace(/"[^"]*"/g, '""');
 

@@ -206,8 +206,8 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   // G22: the reasons behind a mark, as facts (R36 words them).
   describe("why the mark (G22)", () => {
     const home = (i: string, digits = 12, over: Partial<typeof defaultHomeSettings> = {}) => host.home(i, { ...defaultHomeSettings, digits, ...over }).result;
-    // A polish cut by Home's 300 ms budget shows the warning (decisions.md, G44f2f1): a test expecting the polished value sets its own.
-    const polishBudget = { budgetMs: 5000 };
+    // A polish cut by Home's step budget (300 ms on the desktop) shows the warning (decisions.md, G44f2f1): a test expecting the polished value sets its own.
+    const polishBudget = { budgetSteps: 20 * defaultHomeSettings.budgetSteps };
     it("an unaudited function is named", () => {
       // G44: σ < 0 is no distribution, so the polish refuses it and Giac's number stays unaudited.
       expect(home("normald_icdf(2,-1,0.3)").facts.why).toEqual({ unaudited: ["normald_icdf"] });

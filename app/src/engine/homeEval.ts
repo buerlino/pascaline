@@ -2,7 +2,7 @@
 // Exact-first Home evaluation (spike step 5, Q3).
 //
 // 1. Decimal literals become exact rationals (`0.1` → `(1/10)`), so `1-0.9-0.1` is exactly 0.
-// 2. Giac evaluates exactly, under Giac's own interrupt (`timeout <s>`, sub-second with patch 0002).
+// 2. Giac evaluates exactly, under Giac's own interrupt after `budgetSteps` of its checks (`ckbudget`, patch 0004, G82).
 // 3. The value becomes a DecimalValue (format.ts) and is shown in STD at `digits`: exact rationals with BigInt
 //    arithmetic, everything else from `evalf` at P = max(40, digits+10) digits, confirmed by a second evaluation
 //    (numeric.ts, docs/04 section 2.4). Only confirmed digits are shown; the facts for the mark go with the result.
@@ -62,8 +62,10 @@ export interface HomeSettings {
   /** Significant digits shown (CLAUDE.md: 12). */
   digits: number;
   angle: "rad" | "deg";
-  /** Exact evaluation budget; Giac interrupts itself after this. */
-  budgetMs: number;
+  /** G82 (A20): the exact evaluation budget, in Giac's interrupt checks (`ckbudget`, patch 0004): Giac interrupts
+   *  itself after this many, so the path that computes a result does not depend on the speed of the device. The
+   *  default equals today's 300 ms on the desktop (tools/probes/step-budget.ts). Every Giac call in Home gets it. */
+  budgetSteps: number;
   /** Numerator/denominator size above which the result stops being carried exactly. */
   maxExactDigits: number;
   /** Working precision of the float fallback (at least digits+10 is used, docs/04 section 2.5). */
@@ -75,15 +77,27 @@ export interface HomeSettings {
   powLimit: number;
 }
 
-/** G58: the time Home's steps may take for one Enter. Giac interrupts itself after `budgetMs`, but some of its calls do
+/** G82: Giac's clock in Home, a safety net behind the step budget: a call whose checks are far apart (big-integer work
+ *  between them: sum(1.0001^k,k,1,2000) makes 45,000 in 300 ms, the icdf polish 3,400 per ms) is still stopped. It must
+ *  let the slowest call that finishes on the desktop finish on a device 8× slower (the Tab One is 5-8×). Slowest by time
+ *  (`BUDGET=home tools/probes/step-budget.ts`, 527 inputs of A20, home.yaml and precision.yaml): sqrt(sqrt(asin(12)))
+ *  at 30 digits, 164 ms (202,668 checks), × 8 = 1.31 s, so 1.5 s. factorial(10^6) (1.0 s, 10 checks: GMP does not look
+ *  at the interrupt) is slower but deaf to any clock; HOME_DEADLINE_MS bounds it. */
+export const HOME_CLOCK_S = 1.5;
+
+/** G58: the time Home's steps may take for one Enter. Giac interrupts itself after `budgetSteps`, but some of its calls do
  *  not look at the interrupt (GMP's factorial(10^6) takes 1 s); once the exact steps are past this, the checks that
  *  would follow (each as long again) are not run and the input is refused with the time-out reason. */
 export const HOME_DEADLINE_MS = 2000;
 
+/** G82: Home's step budget, the count of Giac's checks that equals today's 300 ms on the desktop (with a margin;
+ *  tools/probes/step-budget.ts prints how it was found). */
+export const HOME_BUDGET_STEPS = 518_000;
+
 export const defaultHomeSettings: HomeSettings = {
   digits: 12,
   angle: "rad",
-  budgetMs: 300,
+  budgetSteps: HOME_BUDGET_STEPS,
   maxExactDigits: 20,
   workDigits: 30,
   guardMode: "round-exact",
@@ -290,9 +304,11 @@ export function angleCommand(angle: "rad" | "deg"): string {
 export function homeSetupCommands(s: HomeSettings): string[] {
   return [
     angleCommand(s.angle),
-    `timeout ${(s.budgetMs / 1000).toFixed(3)}`,
+    `timeout ${HOME_CLOCK_S}`,
     // How often control_c() looks at the clock: every 10th check (engine/giac/patches/README.md, patch 0002).
     "ckevery 10",
+    // G82: the budget that decides, in checks (patch 0004).
+    `ckbudget ${Math.max(1, Math.trunc(s.budgetSteps))}`,
   ];
 }
 

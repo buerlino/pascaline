@@ -90,7 +90,7 @@ describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
   // A generous budget: these tests are about the checks, and a loaded test machine must not send ∫₋₁¹ 1/x to the float
   // path (the golden gate runs the same cases at the default budget, one at a time).
   // G46: typed text gets the parser's angle rule (sin(pasdeg*x)), as the keys' LaTeX would.
-  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(rewriteAngles(input), { ...defaultHomeSettings, angle, budgetMs: 5000 }).result;
+  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(rewriteAngles(input), { ...defaultHomeSettings, angle, budgetSteps: 20 * defaultHomeSettings.budgetSteps }).result;
   const cas = (input: string, angle: "rad" | "deg" = "rad") => host.cas(rewriteAngles(input), { ...defaultCasSettings, angle }).result;
 
   it.each([

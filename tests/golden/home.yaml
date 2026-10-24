@@ -8,6 +8,7 @@
 #   assumed : depends on an open G2 question (`g2:` = item number); the oracle shows our current rule
 # `settings` overrides the Home defaults (angle: rad). `g2:` on a non-assumed case links the item it
 # also touches. One case per line (oracle.py rewrites lines). Runner: npm run golden (app/).
+# `budgetMs` (G82): the median Enter limit of a case whose exact pass is stopped on any device (instead of 500 ms).
 cases:
   # --- binary-float traps: exact rationals give the true value -------------------------------
   - { id: "trap-1-0.9-0.1", input: "1-0.9-0.1", oracle: "F(1)-F('0.9')-F('0.1')", expect: "0", mark: "=", source: "derived" }
@@ -60,7 +61,7 @@ cases:
   - { id: "sum-1.1^k-500", input: "sum(1.1^k,k,1,500)", oracle: "sum(F('1.1')**k for k in range(1,501))", expect: "5.46682616404E21", mark: "≈", source: "oracle", note: "plain double gives a wrong 12th digit" }
   - { id: "sum-harmonic-1000", input: "sum(1/k,k,1,1000)", oracle: "sum(F(1,k) for k in range(1,1001))", expect: "7.48547086055", mark: "≈", source: "oracle", note: "868-character rational: size guard" }
   - { id: "sum-1/k^2-2000", input: "sum(1/k^2,k,1,2000)", oracle: "sum(F(1,k*k) for k in range(1,2001))", expect: "1.64443419183", mark: "≈", source: "oracle" }
-  - { id: "sum-1.0001^k-2000", input: "sum(1.0001^k,k,1,2000)", oracle: "fsum(power(mpf('1.0001'),k) for k in range(1,2001))", expect: "2214.12684062", mark: "≈", source: "oracle", note: "exact takes ~18 s: time guard" }
+  - { id: "sum-1.0001^k-2000", input: "sum(1.0001^k,k,1,2000)", budgetMs: 2000, oracle: "fsum(power(mpf('1.0001'),k) for k in range(1,2001))", expect: "2214.12684062", mark: "≈", source: "oracle", note: "exact takes ~18 s: time guard. G82: its checks are far apart (45,000 in 300 ms), so Home's 1.5 s clock (HOME_CLOCK_S) stops it, not the step budget: ~1.5 s, hence budgetMs" }
   - { id: "pow-1.000001^1e6", input: "1.000001^1000000", oracle: "power(F('1.000001'),10**6)", expect: "2.71828046932", mark: "≈", source: "oracle", note: "6-million-digit rational if done exactly: time guard" }
   - { id: "sum-geom-inf", input: "sum(0.5^k,k,0,inf)", oracle: "F(2)", expect: "2", mark: "=", source: "derived" }
   - { id: "sum-basel", input: "sum(1/k^2,k,1,inf)", oracle: "pi**2/6", expect: "1.64493406685", mark: "≈", source: "oracle" }
@@ -327,7 +328,7 @@ cases:
   - { id: "g78-novalue-asin-acos", input: "asin(acos(pi*pi))", oracle: "asin(acos(pi*pi))", expect: "1.81211256762*i", mark: "≈", source: "oracle", note: "F50: refused No value found until patch 0005 (G60; Giac's acos of an MPFR real above 1 was undef); before G78 it showed Giac's text asin(acos(pi^2))" }
   - { id: "g78-novalue-exp-cosh-asin", input: "exp(cosh(asin(pi)))", oracle: "exp(cosh(asin(pi)))", expect: "-0.338882521038-0.432930352189*i", mark: "≈", source: "oracle", note: "F50: refused No value found until patch 0005 (G60; Giac's asin of an MPFR real above 1 was undef); before G78 it showed Giac's text" }
   - { id: "g78-novalue-asin-pow", input: "(asin(pi)^exp(10))*2.5", oracle: "power(asin(pi), exp(10))*F(5,2)", expect: "-7.6475862524E8365-6.03625290189E8365*i", mark: "≈", source: "oracle", note: "F50: refused No value found until patch 0005 (G60); before G78 it showed Giac's text asin(pi)^(exp(10))*5/2" }
-  - { id: "g78-novalue-sqrt-asinh-asin", input: "sqrt(asinh(asin(3.7)))", oracle: "sqrt(asinh(asin(F(37,10))))", expect: "1.31234164995-0.328386275332*i", mark: "≈", source: "oracle", note: "F50: the exact path times out; the float path gave undef (No value found) until patch 0005 (G60), and before G78 an engine error showing undef" }
+  - { id: "g78-novalue-sqrt-asinh-asin", input: "sqrt(asinh(asin(3.7)))", budgetMs: 1500, oracle: "sqrt(asinh(asin(F(37,10))))", expect: "1.31234164995-0.328386275332*i", mark: "≈", source: "oracle", note: "F50: the exact path times out; the float path gave undef (No value found) until patch 0005 (G60), and before G78 an engine error showing undef. G82: the step budget (518,006 checks) stops its exact pass at ~0.69 s on the desktop, past 500 ms (BUDGET=home tools/probes/step-budget.ts; decisions.md \"Home's clocks after G82\"), hence budgetMs" }
   - { id: "g78-novalue-asin-acos-deg", latex: "\\sin^{-1}\\left(\\cos^{-1}\\left(\\pi\\cdot\\pi\\right)\\right)", settings: { angle: "deg" }, oracle: "asind(acosd(pi*pi))", expect: "334.224402424*i", mark: "≈", source: "oracle", note: "F50 in DEG: refused No value found until patch 0005 (G60); before G78 it showed Giac's text" }
   - { id: "g78-overflow-sinh-deg", latex: "\\sinh\\left(6020^{3}\\right)", settings: { angle: "deg" }, expect: "Overflow: the number is too large", source: "derived", note: "F50 in DEG: it showed Giac's text" }
   # --- G84 (backlog F60; decisions.md "G78f1, G68"): an underflow is refused with its reason, as an overflow is ----------

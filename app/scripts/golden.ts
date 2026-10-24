@@ -3,17 +3,20 @@
 // build that ships (CLAUDE.md). Exit 0 only if every stage passes.
 //   npm run golden                                  # engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl
 //   GIAC_MJS=/path/giac.mjs ROUNDS=5 npm run golden
-//   ONLY=home,parser npm run golden                 # stages: interrupt, flags, home, precision, solve, function, bench, calls, invariants, units, parser
+//   ONLY=home,parser npm run golden                 # stages: interrupt, steps, flags, home, precision, solve, function, bench, calls, invariants, units, parser
 // Typed Giac text in a case (`input`, `before`, step inputs, `eq`, `f`, `g`) gets the parser's angle rule first (G46).
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
+//   steps      G82 (patch 0004): tests/engine/step-budget-test.mjs (a step budget interrupts at the same count on a fast
+//              clock), and scripts/golden-speed.ts: every home and precision case gives the same display, mark and copy text on a clock
+//              8× fast (the Tab One is 5-8× slower); the cases that still differ are listed as known (SPEED_KNOWN), a new one fails
 //   flags      tests/engine/flags-canary.ts (G67): every field of Giac's context in the pinned source is read and restored
 //              by the host's settings check or listed with the reason (app/src/engine/flags.ts CONTEXT_FIELDS);
 //              tests/engine/ctx-canary.ts (G102): each of bridge-1's fields set and printed back by Giac's getter;
 //              tests/engine/tanh-test.ts and patch-canary.ts (G75): patch 0003's complex tanh against mpmath, and its
 //              cause still in the pinned tarball; tests/engine/mpfr-pi-test.ts (G60): patch 0005's ln, asin, acos, acosh
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
-//              median ≤ 500 ms; a mark-only case (no `expect`) checks the mark and that an answer came back. A case with
+//              median ≤ 500 ms (a case's `budgetMs` instead, G82); a mark-only case (no `expect`) checks the mark and that an answer came back. A case with
 //              `steps` (G34) is a sequence on its own engine: each step's input (or latex, with \ans as the session
 //              builds it from the step before) runs in its own angle mode, and the last step is checked. An `input` step
 //              may name the result of step k as the chip `pasr_<k>` (G49: sent with a chip table of values and facts);
@@ -79,6 +82,8 @@ import { isUnitError, type Quantity, type UnitError } from "../src/units/types.t
 import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
 import { callsStage, type CallsBaseline } from "./calls-budget.ts";
+import { SPEED_KNOWN, speedFindings } from "./golden-speed.ts";
+import { describe as describeFinding } from "./golden-compare.ts";
 import { checkAngle, checkCopy, checkDigits, checkStoreBoth, copySourceOf, invariantsOf, storesNames, invariantsStage, type InvariantFailure } from "./invariants.ts";
 import { copyFull } from "../src/clipboard/text.ts";
 import { parsePastedNumber } from "../src/clipboard/paste.ts";
@@ -132,6 +137,15 @@ function stageInterrupt(): void {
   report("interrupt", r.status === 0, out.split("\n").slice(-3).join(" | "));
 }
 
+async function stageSteps(): Promise<void> {
+  const r = spawnSync(process.execPath, [`${root}tests/engine/step-budget-test.mjs`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 300_000 });
+  const canary = `${r.stdout}${r.stderr}`.trim().split("\n").slice(-3).join(" | ");
+  const { findings, known, records } = await speedFindings(8, mjs);
+  for (const f of known) console.log(`  steps known (${SPEED_KNOWN[`${f.stage}/${f.id}`]}): ${describeFinding(f)}`);
+  for (const f of findings) console.log(`  steps ${describeFinding(f)}`);
+  report("steps", r.status === 0 && findings.length === 0, `${canary} | ${records} cases, clock ×1 and ×8: ${findings.length} new findings, ${known.length} known`);
+}
+
 function stageFlags(): void {
   // G102: ctx-canary.ts sets each of bridge-1's fields and reads it back with Giac's own getter (needs the engine);
   // G75: tanh-test.ts (needs the engine) and patch-canary.ts (the tarball) for patch 0003; G60: mpfr-pi-test.ts, 0005
@@ -175,9 +189,11 @@ async function stageHome(): Promise<void> {
     maxMed = Math.max(maxMed, med);
     if (ok) pass++;
     else console.log(`  home ${c.id}: got ${rs.map((x, k) => `${got[k] ?? "-"} ${x.display}`).join(" / ")}, expect ${c.mark ?? ""} ${c.expect ?? "(mark only)"}${exactOk ? "" : `, copies ${rs[0]!.full}, expect ${c.exact}`}`);
-    if (!(med <= HOME_LIMIT_MS)) {
+    // G82: a case whose exact pass Home's step budget or its clock stops, not finishing on any device, may name its own.
+    const limit = c.budgetMs ?? HOME_LIMIT_MS;
+    if (!(med <= limit)) {
       slow++;
-      console.log(`  home ${c.id}: median ${med.toFixed(1)} ms > ${HOME_LIMIT_MS} ms (${shown})`);
+      console.log(`  home ${c.id}: median ${med.toFixed(1)} ms > ${limit} ms (${shown})`);
     }
     if (c.source === "assumed") assumed++;
   }
@@ -688,6 +704,7 @@ async function stageParser(): Promise<void> {
 
 console.log(`golden: engine ${mjs}`);
 if (want("interrupt")) stageInterrupt();
+if (want("steps")) await stageSteps();
 if (want("flags")) stageFlags();
 if (want("home")) await stageHome();
 if (want("precision")) await stagePrecision();

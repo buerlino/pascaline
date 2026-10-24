@@ -128,6 +128,8 @@ export function casSetupCommands(s: CasSettings): string[] {
     `Digits:=${Math.trunc(s.digits)}`,
     `timeout ${Math.min(Math.max(s.hardTimeoutS, 0.001), 1439).toFixed(3)}`,
     "ckevery 10",
+    // G82: Home's step budget off; the CAS view waits on its clock (a person waits on it, it chooses no path).
+    "ckbudget 0",
   ];
 }
 
@@ -992,6 +994,7 @@ export class EngineHost implements FactsHost {
       this.giac.eval(angleCommand(s.angle));
       this.giac.eval(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
       this.giac.eval("ckevery 10");
+      this.giac.eval("ckbudget 0"); // G82: Solve keeps its clock
       this.giac.eval(`Digits:=${Math.trunc(s.digits)}`);
       this.giac.setPowLimit(s.powLimit);
     });
