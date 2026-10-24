@@ -78,9 +78,12 @@ export interface HomeSettings {
 }
 
 /** G82: Giac's clock in Home, a safety net behind the step budget: a call whose checks are far apart (big-integer work
- *  between them: sum(1.0001^k,k,1,2000) makes 45,000 in 300 ms, the icdf polish 3,400 per ms) is still stopped. 1 s lets
- *  the slowest call that finishes on the desktop (102 ms) finish on a device 8× slower (the Tab One is 5-8×). */
-export const HOME_CLOCK_S = 1;
+ *  between them: sum(1.0001^k,k,1,2000) makes 45,000 in 300 ms, the icdf polish 3,400 per ms) is still stopped. It must
+ *  let the slowest call that finishes on the desktop finish on a device 8× slower (the Tab One is 5-8×). Slowest by time
+ *  (`BUDGET=home tools/probes/step-budget.ts`, 527 inputs of A20, home.yaml and precision.yaml): sqrt(sqrt(asin(12)))
+ *  at 30 digits, 164 ms (202,668 checks), × 8 = 1.31 s, so 1.5 s. factorial(10^6) (1.0 s, 10 checks: GMP does not look
+ *  at the interrupt) is slower but deaf to any clock; HOME_DEADLINE_MS bounds it. */
+export const HOME_CLOCK_S = 1.5;
 
 /** G58: the time Home's steps may take for one Enter. Giac interrupts itself after `budgetSteps`, but some of its calls do
  *  not look at the interrupt (GMP's factorial(10^6) takes 1 s); once the exact steps are past this, the checks that
