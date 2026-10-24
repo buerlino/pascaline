@@ -62,9 +62,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 119 | [G82](packages/G82.md) Home's budget counts steps, not milliseconds (A20) | gorge, Opus | `p1/gorge-stepbudget` | G103 | 2 h |
-| 122 | [G56](packages/G56.md) the CAS check reads through a user function | gorge, Opus | `p1/gorge-m4-complexbody` | G60 | 1 h |
-| 123 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
 | 124 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |
 | 125 | [G89](packages/G89.md) our golden cases as a Giac regression file (Parisse asked) | gorge, Sonnet | `p1/gorge-giacregress` | G77 | 1.5 h |
 | 126 | [G91](packages/G91.md) approx(x, n) under ≈ is right (audit-approx) | gorge, Opus | `p1/gorge-m4-askedprec` | — | 1 h |
