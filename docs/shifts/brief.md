@@ -62,8 +62,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 116 | [G101](packages/G101.md) the non-square check reads a called function's body (F74) | gorge, Opus | `p1/gorge-nonsquare-body` | G100 | 1 h |
-| 117 | [G102](packages/G102.md) Giac's settings from bridge-1 (G67's text reads) | gorge, Opus | `p1/gorge-bridge-ctx` | G99 | 1.5 h |
 | 118 | [G103](packages/G103.md) Home's value from bridge-3 (F73) | gorge, Opus | `p1/gorge-bridge-value` | G102 | 3 h |
 | 119 | [G82](packages/G82.md) Home's budget counts steps, not milliseconds (A20) | gorge, Opus | `p1/gorge-stepbudget` | G103 | 2 h |
 | 120 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | — | 1.5 h |
