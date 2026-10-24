@@ -24,7 +24,7 @@ const c = await engine.cas("sqrt(8)", defaultCasSettings); // c.latex: Giac late
 await engine.cancel();                       // pending calls reject with EngineCancelled
 ```
 
-- **Modes (D3).** Home: exact with Giac's interrupt at `budgetMs` (300 ms), then floats; power limit 1e5.
+- **Modes (D3).** Home: exact with Giac's interrupt after `budgetSteps` checks (G82; 300 ms on the desktop), then floats; power limit 1e5.
   CAS: no fallback, `hardTimeoutS` (600 s) is only a safety net, the UI shows Cancel prominently after
   `CAS_SOFT_BUDGET_MS`; power limit 1e8. The host re-applies a mode only when mode or settings change.
 - **Ans.** Home keeps its answer in `pasans`, CAS in `pcasans`; user variables are shared (one Giac context).

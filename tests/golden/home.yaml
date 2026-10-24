@@ -8,6 +8,7 @@
 #   assumed : depends on an open G2 question (`g2:` = item number); the oracle shows our current rule
 # `settings` overrides the Home defaults (angle: rad). `g2:` on a non-assumed case links the item it
 # also touches. One case per line (oracle.py rewrites lines). Runner: npm run golden (app/).
+# `budgetMs` (G82): the median Enter limit of a case whose exact pass is stopped on any device (instead of 500 ms).
 cases:
   # --- binary-float traps: exact rationals give the true value -------------------------------
   - { id: "trap-1-0.9-0.1", input: "1-0.9-0.1", oracle: "F(1)-F('0.9')-F('0.1')", expect: "0", mark: "=", source: "derived" }
@@ -60,7 +61,7 @@ cases:
   - { id: "sum-1.1^k-500", input: "sum(1.1^k,k,1,500)", oracle: "sum(F('1.1')**k for k in range(1,501))", expect: "5.46682616404E21", mark: "≈", source: "oracle", note: "plain double gives a wrong 12th digit" }
   - { id: "sum-harmonic-1000", input: "sum(1/k,k,1,1000)", oracle: "sum(F(1,k) for k in range(1,1001))", expect: "7.48547086055", mark: "≈", source: "oracle", note: "868-character rational: size guard" }
   - { id: "sum-1/k^2-2000", input: "sum(1/k^2,k,1,2000)", oracle: "sum(F(1,k*k) for k in range(1,2001))", expect: "1.64443419183", mark: "≈", source: "oracle" }
-  - { id: "sum-1.0001^k-2000", input: "sum(1.0001^k,k,1,2000)", oracle: "fsum(power(mpf('1.0001'),k) for k in range(1,2001))", expect: "2214.12684062", mark: "≈", source: "oracle", note: "exact takes ~18 s: time guard" }
+  - { id: "sum-1.0001^k-2000", input: "sum(1.0001^k,k,1,2000)", budgetMs: 1500, oracle: "fsum(power(mpf('1.0001'),k) for k in range(1,2001))", expect: "2214.12684062", mark: "≈", source: "oracle", note: "exact takes ~18 s: time guard. G82: its checks are far apart (45,000 in 300 ms), so Home's 1 s clock stops it, not the step budget: ~1 s, hence budgetMs" }
   - { id: "pow-1.000001^1e6", input: "1.000001^1000000", oracle: "power(F('1.000001'),10**6)", expect: "2.71828046932", mark: "≈", source: "oracle", note: "6-million-digit rational if done exactly: time guard" }
   - { id: "sum-geom-inf", input: "sum(0.5^k,k,0,inf)", oracle: "F(2)", expect: "2", mark: "=", source: "derived" }
   - { id: "sum-basel", input: "sum(1/k^2,k,1,inf)", oracle: "pi**2/6", expect: "1.64493406685", mark: "≈", source: "oracle" }
@@ -327,7 +328,7 @@ cases:
   - { id: "g78-novalue-asin-acos", input: "asin(acos(pi*pi))", expect: "No value found", source: "derived", note: "F50: Giac's evalf gives undef; it showed Giac's text asin(acos(pi^2))" }
   - { id: "g78-novalue-exp-cosh-asin", input: "exp(cosh(asin(pi)))", expect: "No value found", source: "derived", note: "F50: Giac's evalf gives undef; it showed Giac's text" }
   - { id: "g78-novalue-asin-pow", input: "(asin(pi)^exp(10))*2.5", expect: "No value found", source: "derived", note: "F50: Giac's evalf gives undef; it showed Giac's text asin(pi)^(exp(10))*5/2" }
-  - { id: "g78-novalue-sqrt-asinh-asin", input: "sqrt(asinh(asin(3.7)))", expect: "No value found", source: "derived", note: "F50: the exact path times out and the float path gives undef; it was an engine error showing undef. The value exists (mpmath: 1.31234164995-0.328386275332*i, and the exact path finds it with a 5 s budget): see the report" }
+  - { id: "g78-novalue-sqrt-asinh-asin", input: "sqrt(asinh(asin(3.7)))", budgetMs: 1500, expect: "No value found", source: "derived", note: "F50: the exact path times out and the float path gives undef; it was an engine error showing undef. The value exists (mpmath: 1.31234164995-0.328386275332*i, and the exact path finds it with a 5 s budget): see the report. G82: the step budget stops its exact pass at ~420 ms (not 300), hence budgetMs" }
   - { id: "g78-novalue-asin-acos-deg", latex: "\\sin^{-1}\\left(\\cos^{-1}\\left(\\pi\\cdot\\pi\\right)\\right)", settings: { angle: "deg" }, expect: "No value found", source: "derived", note: "F50 in DEG: it showed Giac's text" }
   - { id: "g78-overflow-sinh-deg", latex: "\\sinh\\left(6020^{3}\\right)", settings: { angle: "deg" }, expect: "Overflow: the number is too large", source: "derived", note: "F50 in DEG: it showed Giac's text" }
   # --- G84 (backlog F60; decisions.md "G78f1, G68"): an underflow is refused with its reason, as an overflow is ----------

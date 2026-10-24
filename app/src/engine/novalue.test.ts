@@ -21,7 +21,7 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     giac = engineGiac(L);
     host = new EngineHost(giac, bridge);
   });
-  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(rewriteAngles(input), { ...defaultHomeSettings, angle, budgetMs: 5000 }).result;
+  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(rewriteAngles(input), { ...defaultHomeSettings, angle, budgetSteps: 20 * defaultHomeSettings.budgetSteps }).result;
 
   it("refuses a value through a division by zero, in RAD and DEG", () => {
     for (const angle of ["rad", "deg"] as const)

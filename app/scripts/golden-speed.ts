@@ -3,7 +3,7 @@
 // 16, and two more an earlier run showed) run on the desktop twice: on the real clock and on a clock that runs SLOW×
 // fast, which is how a device SLOW× slower looks to every budget (Giac's `timeout` reads performance.now through
 // emscripten_get_now; Home's own deadlines read performance.now and Date.now). Display, mark and copy text must agree.
-//   GIAC_OUT=<dir> node scripts/golden-speed.ts      # SLOW=4 (default); also the golden gate's stage `steps`
+//   GIAC_OUT=<dir> node scripts/golden-speed.ts      # SLOW=6 (default; the Tab One is 5-8× slower than the desktop); also the golden gate's stage `steps`
 import { readFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "yaml";
@@ -65,7 +65,7 @@ export async function speedFindings(slow: number, mjs: string = giacMjsPath()): 
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const slow = Number(process.env.SLOW ?? 4);
+  const slow = Number(process.env.SLOW ?? 6);
   const { findings, records } = await speedFindings(slow);
   for (const f of findings) console.log(describe(f).replace("desktop", "clock ×1").replace("device", `clock ×${slow}`));
   console.log(`${findings.length === 0 ? "SAME" : "DIFFERENT"}: ${records} A20 cases, clock ×1 and ×${slow}, ${findings.length} findings`);

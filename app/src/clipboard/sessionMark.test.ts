@@ -16,7 +16,7 @@ describe.skipIf(!giacAvailable())("Copy session on the real engine (R69)", () =>
     host = (await nodeHost());
   });
   const item = (latex: string, input: string): CopySource => {
-    const r = host.home(input, { ...defaultHomeSettings, budgetMs: 5000 }).result;
+    const r = host.home(input, { ...defaultHomeSettings, budgetSteps: 20 * defaultHomeSettings.budgetSteps }).result;
     if (!r.ok) throw new Error(`${input}: ${r.error}`);
     return { latex, status: "done", text: r.display, value: r.value, facts: r.facts, full: r.full };
   };
