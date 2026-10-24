@@ -20,6 +20,7 @@ Giac behaviour we handle in our TypeScript instead of a patch, each with its rea
 
 | Package | Giac's behaviour | Our code | Canary | Why not a patch |
 |---|---|---|---|---|
+| G50, G60 | complex `atan` on the imaginary axis beyond ±i takes the other side of its cut: `evalf(atan(2*i))` = `-1.57079632679+0.549306144334*i`, mpmath `1.5707963267949+0.549306144334055*i` (`usual.cc` `atanasln`, 597) | `app/src/engine/complex.ts` `pasatan` (`COMPLEX_DEFINITIONS`), read through copies for stored names (`complexReads`) | `tests/golden/precision.yaml` `prec-g50-atan(2i)-*` through Home; raw: the sign of the real part of Giac's `evalf(atan(2*i))` | a branch convention, not a precision fault (G75's measure): which side a cut belongs to is Giac's choice to make; ask B. Parisse with the G60 link |
 | G97 (F69) | `^` of a non-square matrix is v.v or elementwise; `inv` of one, and division by one, is elementwise (`gen.cc:6880-6886`, `usual.cc:357`, `gen.cc:7706-7708`) | `app/src/engine/nonsquare.ts` `nonSquarePower`, refusal `notSquare` | `node engine/giac/smoke.mjs '[[5],[1]]^2'` gives `26`; Giac prints "Warning, ^ is ambiguous on non square matrices" to its print, which `smoke.mjs` drops (pass a `print` to see it) | Giac's meaning on purpose (it warns), not a bug to file (decisions.md, Opus pass 56) |
 
 ## Not patches, but build choices that change Giac's source tree or behaviour

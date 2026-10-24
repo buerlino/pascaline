@@ -62,7 +62,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ### Background stream (extreme inputs; P23: runs when no core step can start)
 - **F64 → [G92](shifts/packages/G92.md), background, after G102.** After CAS `simplify(integrate(tanh(sqrt(x)),x))` (Home's `int(tanh(sqrt(x)),x,0,1)` until G90), Giac's `simplify` leaves `assume(x>0)`: for the rest of the session `solve(x^2=4,x)` = `[2]`, `sqrt(x^2)` = `x`. `tests/golden/precision.yaml` g92-cas-simplify-int-tanh-sqrt-assume (pending). Not reachable by keys until Find (`tanh`); then it joins the core lane (P23).
-- **F47 → [G60](shifts/packages/G60.md)** after G75. A double inside an MPFR result, at 30 digits: `log10(asinh(asin e))` wrong from the 14th digit under `≈`; `asin`/`acos` of a real \|x\| > 1 inside other functions show `⚠ 14` with 12–13 right. Family 4.
+- **F47 → G60, done (run 213).** Giac patch 0005 (MPFR pi in `ln` and `acos`; `asin`/`acos`/`acosh` outside the real domain): F4–F6 right under `≈`. Family 4.
 - **F70, no package (to verify: gorge).** Home Σ with a numeric bound fails after about 1 s with "The calculation failed", not a time-limit message: Σ_{x=1}^{100000} 1/x, Σ_{K=1}^{2000} cos(K)/K (desktop, `e0d03ed`); to 10^6 Giac closes it (⚠ 14.3927267229). Whether Home's deadline or an engine error.
 - **F71, no package (to verify: ron).** CAS Σ_{k=1}^{2000} cos(k)/k (3 s) shows its result as raw LaTeX text (`\frac{15111779…`), not drawn (docs/04: never raw engine text); a size cut or MathLive's limit.
 - **F61, no package.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
