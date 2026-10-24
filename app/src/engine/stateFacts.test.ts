@@ -7,7 +7,8 @@ import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { applyDefChanges, type DefChange, type DefEntry } from "./defs.ts";
 import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
-import { parsePrinted, statePart, tableOf, type StoredName } from "./stateRead.ts";
+import { statePart, tableOf, type StoredName } from "./stateRead.ts";
+import { parsePrinted } from "./giacPrint.ts";
 
 describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
   const fresh = async () => (await nodeHost());

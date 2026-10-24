@@ -11,6 +11,7 @@
 import type { GiacParse } from "./bridge.ts";
 import { ENGINE_DEFINITIONS, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, WORKER_DEFINITION_NAMES } from "./homeEval.ts";
 import { DOUBLE_DIGITS } from "./numeric.ts";
+import { definedName, isName, programParams, type PrintedNode } from "./giacPrint.ts";
 import { COMPLEX_DEFINITIONS } from "./complex.ts";
 import { CHIP_PREFIX } from "./chipFacts.ts";
 import { UNIT_DEFINITIONS } from "../units/evaluate.ts";
@@ -60,91 +61,8 @@ export function changedPart(digits: number, known: readonly string[]): string {
   return pinned(`map(VARS(),k->when(member(k,${quoted(known)}),k,[k,string(eval(k)),lname(eval(k))]))`, digits);
 }
 
-/** A node of Giac's printed list: its raw text, and its elements (a list) or its value (a string). */
-interface Node {
-  raw: string;
-  items?: Node[];
-  str?: string;
-}
-
-/** Parses Giac's printed value: lists `[…]`, strings `"…"` (a quote inside is doubled) and atoms. Null when it does not
- *  parse. */
-export function parsePrinted(text: string): Node | null {
-  let i = 0;
-  // the next quote from `from` (a string's end or a doubled quote; an atom skips a string inside it)
-  const nextQuote = (from: number): number => text.indexOf('"', from);
-  const node = (): Node | null => {
-    while (text[i] === " " || text[i] === "\n") i++;
-    const start = i;
-    if (text[i] === "[") {
-      i++;
-      const items: Node[] = [];
-      while (text[i] === " " || text[i] === "\n") i++;
-      if (text[i] === "]") {
-        i++;
-        return { raw: text.slice(start, i), items };
-      }
-      for (;;) {
-        const n = node();
-        if (!n) return null;
-        items.push(n);
-        while (text[i] === " " || text[i] === "\n") i++;
-        if (text[i] === ",") i++;
-        else if (text[i] === "]") {
-          i++;
-          return { raw: text.slice(start, i), items };
-        } else return null;
-      }
-    }
-    if (text[i] === '"') {
-      let s = "";
-      i++;
-      for (;;) {
-        if (i >= text.length) return null;
-        // G104: a slice up to the next quote (a 600 kB print char by char took longer than Giac printing it)
-        const q = nextQuote(i);
-        if (q < 0) return null;
-        s += text.slice(i, q);
-        i = q;
-        if (text[i + 1] === '"') {
-          s += '"';
-          i += 2;
-          continue;
-        }
-        i++;
-        return { raw: text.slice(start, i), str: s };
-      }
-    }
-    // An atom: up to the next , or ] outside brackets and quotes.
-    let depth = 0;
-    while (i < text.length) {
-      const c = text[i]!;
-      if (c === '"') {
-        const q = nextQuote(i + 1);
-        if (q < 0) return null;
-        i = q + 1;
-        continue;
-      }
-      if (c === "(" || c === "[") depth++;
-      else if (c === ")" || c === "]") {
-        if (depth === 0) break;
-        depth--;
-      } else if (c === "," && depth === 0) break;
-      i++;
-    }
-    const raw = text.slice(start, i).trim();
-    return raw ? { raw } : null;
-  };
-  const out = node();
-  return out && text.slice(i).trim() === "" ? out : null;
-}
-
-/** A name in the state part's print (a user name, an element of `lname`): read by tableOf until G104/G105. */
-const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const idents = (n: Node | undefined): string[] => (n?.items ?? []).map((x) => x.raw).filter((x) => IDENT.test(x));
-
-/** A program's printed head, `(x,y)->`: its parameters. */
-const HEAD = /^\s*\(([^()]*)\)\s*->/;
+/** The names in a list of the state part's print (an element of `lname`). */
+const idents = (n: PrintedNode | undefined): string[] => (n?.items ?? []).map((x) => x.raw).filter((x) => isName(x));
 
 /** Our own engine names (definitions, slots, chips, constants, the degree factor): not user state. A name that starts
  *  with `pas` is ours unless `user` holds it (the log, or the input's text names it). */
@@ -153,8 +71,8 @@ const OURS = new Set<string>([
   ...WORKER_DEFINITION_NAMES,
   ...Object.keys(COMPLEX_DEFINITIONS),
   ...UNIT_DEFINITIONS.flatMap((d) => {
-    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:\(|:=)/.exec(d);
-    return m ? [m[1]!] : [];
+    const name = definedName(d);
+    return name !== null ? [name] : [];
   }),
   "pcasans",
   "pasdeg",
@@ -170,7 +88,7 @@ export function isOurs(name: string, user: (name: string) => boolean): boolean {
 
 /** The table from a state part: user names with a stored value (an assumed name alone holds itself: left out). Null
  *  when it is not the list statePart builds. */
-export function tableOf(n: Node, user: (name: string) => boolean, kept?: ReadonlyMap<string, StoredName>): Map<string, StoredName> | null {
+export function tableOf(n: PrintedNode, user: (name: string) => boolean, kept?: ReadonlyMap<string, StoredName>): Map<string, StoredName> | null {
   const list = n.items?.[1]?.items;
   if (!n.items || n.items.length !== 3 || !list) return null;
   const out = new Map<string, StoredName>();
@@ -182,16 +100,16 @@ export function tableOf(n: Node, user: (name: string) => boolean, kept?: Readonl
       continue;
     }
     const [k, v, ns] = e.items;
-    if (!k || v?.str === undefined || !IDENT.test(k.raw) || isOurs(k.raw, user) || v.str === k.raw) continue;
-    const head = HEAD.exec(v.str);
-    const params = new Set(head ? head[1]!.split(",").map((p) => p.trim()) : []);
+    if (!k || v?.str === undefined || !isName(k.raw) || isOurs(k.raw, user) || v.str === k.raw) continue;
+    const head = programParams(v.str);
+    const params = new Set(head ?? []);
     out.set(k.raw, { text: v.str, names: idents(ns).filter((x) => !params.has(x) && x !== k.raw), fn: head !== null });
   }
   return out;
 }
 
 /** G104: every name a state part's print lists (bare or with its entry; VARS() lists names only). */
-export function namesOf(n: Node): string[] {
+export function namesOf(n: PrintedNode): string[] {
   return (n.items?.[1]?.items ?? []).flatMap((e) => {
     const k = e.items ? e.items[0]?.raw : e.raw;
     return k !== undefined ? [k] : [];

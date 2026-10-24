@@ -37,11 +37,11 @@ import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerica
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
-import { namesIn } from "./giacPrint.ts";
+import { balanced, callsOf, isName, leadingName, namesIn, wholeCall, wordsOf, parsePrinted } from "./giacPrint.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
-import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
+import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
-import { changedPart, changesOf, namesOf, namesPart, parsePrinted, readsFrom, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
+import { changedPart, changesOf, namesOf, namesPart, readsFrom, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
 import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -154,7 +154,6 @@ type CasError = NonNullable<CasResult["error"]>;
  *  replay). */
 const CONSTANT_NAMES: ReadonlySet<string> = new Set(["i", "pi", "e", "infinity", "inf", "undef", "euler_gamma", "true", "false"]);
 
-const IDENT_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 
 /** Engine state and the synchronous operations on it. One per Giac instance. */
 export class EngineHost implements FactsHost {
@@ -312,7 +311,7 @@ export class EngineHost implements FactsHost {
     const entries = this.withoutFlags(this.migrated(stored));
     // G83: a function (one balanced command) waits in `pending` until an input names it (need). One whose name Giac
     // already holds is replayed now: a loaded body that calls it would otherwise meet the old definition.
-    const plain = (e: DefEntry): boolean => (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!);
+    const plain = (e: DefEntry): boolean => (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!, "printed");
     for (const e of entries) {
       if (e.kind !== "other") this.pending.delete(e.name);
       if (e.kind === "fn" && plain(e) && !this.byName.has(e.name)) this.pending.set(e.name, e);
@@ -390,7 +389,7 @@ export class EngineHost implements FactsHost {
     const cands = state === true ? this.candidatesOf(input) : null;
     const known = cands ? [...this.stored.keys(), ...this.skipped].filter((n) => !cands.has(n) && !typed.has(n)) : [];
     const stateNode = state ? parsePrinted(this.giac.eval(cands ? changedPart(this.modeDigits, known) : statePart(this.modeDigits))) : null;
-    const reset = flagsChanged && (namesFlag(input) || [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => this.byName.get(m[0])?.cmds.some(namesFlag) === true));
+    const reset = flagsChanged && (namesFlag(input) || wordsOf(input).some((w) => this.byName.get(w)?.cmds.some(namesFlag) === true));
     const table = state && stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n), this.stored) : null;
     const skipped = table && stateNode ? new Set(namesOf(stateNode).filter((n) => !table.has(n))) : null;
     this.post = { reads, table, changes: table ? changesOf(this.stored, table) : null, skipped, flagsChanged, reset };
@@ -599,10 +598,10 @@ export class EngineHost implements FactsHost {
    */
   private defsAfter(input: string, ran: string[], preview: string, facts: NameFacts | null, fn: NameFacts | null, view: "home" | "cas", digits: number, angle: "rad" | "deg" | undefined, post: AfterInput): DefChange[] {
     const base = { preview: dropAngleFactor(preview.trim()).slice(0, PREVIEW_MAX), view, time: Date.now() };
-    const purge = /^\s*purge\s*\(([^()]*)\)\s*$/.exec(input);
-    const purged = purge ? purge[1]!.split(",").map((x) => x.trim()).filter((n) => IDENT_NAME.test(n)) : [];
+    const purged = (wholeCall(input, "purge") ?? []).filter((n) => isName(n, true));
     const gone = [...new Set([...purged, ...(post.changes?.removed ?? [])])];
-    const assume = /^\s*(assume|additionally)\s*\(\s*([A-Za-z][A-Za-z0-9_]*)/.exec(input);
+    const head = callsOf(input.trimStart(), ["assume", "additionally"])[0];
+    const subject = head?.at === 0 ? leadingName(input.trimStart().slice(head.open + 1)) : null;
     // G100: the input's tree (parsed for the state read): the function `f(x):=…` defines, and the stores a program keeps
     const tree = this.treeOf(input);
     const def = formOf(input, tree, () => false).defined;
@@ -612,10 +611,10 @@ export class EngineHost implements FactsHost {
       ? [...new Set([...(post.changes?.changed ?? []), ...post.reads.targets.filter((n) => post.table!.has(n))])]
       : [...new Set([...post.reads.targets, ...(def ? [def.name] : [])])];
     let changes: DefChange[] = gone.length ? [{ purge: gone }] : [];
-    if (assume) {
-      const name = assume[2]!;
+    if (head && subject) {
+      const name = subject;
       const prev = this.byName.get(name);
-      const cmds = assume[1] === "additionally" && prev?.kind === "assume" ? [...prev.cmds, ...ran] : ran;
+      const cmds = head.name === "additionally" && prev?.kind === "assume" ? [...prev.cmds, ...ran] : ran;
       changes.push({ set: { name, kind: "assume", cmds, ...base } });
     }
     for (const name of changed) {
@@ -1072,19 +1071,6 @@ const LOAD_ALL = /\b(VARS|expr|rm_all_vars|restart)\b/;
 /** G83f1: the expression strings of a request, for need(): one per line, the absent ones left out. */
 function expressionsOf(...lists: (readonly (string | undefined)[] | undefined)[]): string {
   return lists.flatMap((l) => l ?? []).filter((t): t is string => t !== undefined).join("\n");
-}
-
-/** Brackets and quotes pair up: a command with a stray one would swallow what follows it in a batch. */
-function balanced(cmd: string): boolean {
-  let depth = 0;
-  let quote = false;
-  for (const ch of cmd) {
-    if (ch === '"') quote = !quote;
-    else if (quote) continue;
-    else if (ch === "(" || ch === "[" || ch === "{") depth++;
-    else if (ch === ")" || ch === "]" || ch === "}") if (--depth < 0) return false;
-  }
-  return depth === 0 && !quote;
 }
 
 /** G24: a failed allocation reaches us as a C++ exception (`WebAssembly.Exception`, from `new`) or as an abort

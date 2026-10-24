@@ -2,41 +2,12 @@
 // G59f1 (r16 F3): powers that Giac's exact evaluation may move to another branch. Giac rewrites a power with a
 // non-positive or complex base as (z^a)^(1/n), which is another branch, and evalf of its exact text takes the same path;
 // exp(b*ln(a)) is the principal value. Text only, no engine; only erasable TypeScript syntax, so Node runs this file.
-
-/** The index of the bracket that opens the one closing at `close`, skipping nothing (the text has no strings here); -1. */
-function opening(s: string, close: number): number {
-  let depth = 0;
-  for (let k = close; k >= 0; k--) {
-    const ch = s.charAt(k);
-    if (ch === ")" || ch === "]" || ch === "}") depth++;
-    else if (ch === "(" || ch === "[" || ch === "{") {
-      depth--;
-      if (depth === 0) return k;
-    }
-  }
-  return -1;
-}
-
-/** The index of the bracket that closes the one at `open`; -1. */
-function closingAt(s: string, open: number): number {
-  let depth = 0;
-  for (let k = open; k < s.length; k++) {
-    const ch = s.charAt(k);
-    if (ch === "(" || ch === "[" || ch === "{") depth++;
-    else if (ch === ")" || ch === "]" || ch === "}") {
-      depth--;
-      if (depth === 0) return k;
-    }
-  }
-  return -1;
-}
-
-const NAME_CHAR = /[A-Za-z0-9_]/;
+import { closing, isNameChar, opening } from "./giacPrint.ts";
 
 /** `t` without the brackets that enclose all of it. */
 function unwrap(t: string): string {
   let s = t.trim();
-  while (s.startsWith("(") && closingAt(s, 0) === s.length - 1) s = s.slice(1, -1).trim();
+  while (s.startsWith("(") && closing(s, 0) === s.length - 1) s = s.slice(1, -1).trim();
   return s;
 }
 
@@ -60,7 +31,7 @@ function leftOperand(s: string, at: number): [number, number] | null {
     k = opening(s, k) - 1;
     if (k < -1) return null;
   } else if (s.charAt(k) === "]" || s.charAt(k) === "}") return null; // a list or matrix base is left alone
-  while (k >= 0 && NAME_CHAR.test(s.charAt(k))) k--;
+  while (k >= 0 && isNameChar(s.charAt(k))) k--;
   const start = k + 1;
   if (start === end) return null;
   // `.^` (element-wise) and a decimal point are not ours.
@@ -74,11 +45,9 @@ function rightOperand(s: string, at: number): [number, number] | null {
   const start = k;
   if (s.charAt(k) === "+" || s.charAt(k) === "-") k++;
   while (s.charAt(k) === " ") k++;
-  const word = /[A-Za-z0-9_.]*/y;
-  word.lastIndex = k;
-  k += word.exec(s)![0].length;
+  while (isNameChar(s.charAt(k)) || s.charAt(k) === ".") k++;
   if (s.charAt(k) === "(") {
-    const c = closingAt(s, k);
+    const c = closing(s, k);
     if (c < 0) return null;
     k = c + 1;
   }

@@ -10,6 +10,7 @@
 // |F(x) − p|/min(p, 1 − p) is above 10^−digits, the definition returns Giac's value and sets the flag ICDF_FAILED:
 // the caller keeps today's ⚠ (the unaudited check). Synchronous, UI-free; only erasable TypeScript syntax.
 import type { Giac } from "./numeric.ts";
+import { closing, functionsIn, renameCalls } from "./giacPrint.ts";
 
 /** The Giac names polished, and our definition each call is replaced by. */
 export const ICDF_REPLACED: Readonly<Record<string, string>> = {
@@ -145,13 +146,9 @@ export const ICDF_DEFINITIONS: Readonly<Record<string, string>> = {
     `${ICDF_FAILED}:=1; return fisher_icdf(l); }`,
 };
 
-const ICDF_CALL = new RegExp(`"[^"]*"|\\b(${Object.keys(ICDF_REPLACED).join("|")})(\\s*\\()`, "g");
-
 /** The polished names `text` calls (outside strings). */
 export function icdfCalls(text: string): string[] {
-  const out: string[] = [];
-  for (const m of text.matchAll(ICDF_CALL)) if (m[1] !== undefined && !out.includes(m[1])) out.push(m[1]);
-  return out;
+  return functionsIn(text).filter((f) => Object.hasOwn(ICDF_REPLACED, f));
 }
 
 /** `text` with every call of a polished name replaced by ours, and our definitions loaded on first use. */
@@ -160,22 +157,12 @@ export function icdfPolished(giac: Giac, text: string): string {
     // A defined function prints as its program; an undefined name prints as itself.
     if (giac.eval(name).trim() === name) giac.eval(def);
   }
-  return text.replace(ICDF_CALL, (m, name?: string, paren?: string) => (name === undefined ? m : `${ICDF_REPLACED[name]}${paren}`));
+  return renameCalls(text, ICDF_REPLACED);
 }
 
 /** The definitions erf and erfc are read through, loaded together: the last one stands for all. */
 const ERF_DEFINITIONS = ["paserf", "paserfc", "paserfv", "paserfcv"] as const;
-const ERF_CALL = /"[^"]*"|\b(erfc?)(\s*\()/g;
-
-/** The index just past the parenthesis that closes the one at `open`; -1 when none does. */
-function closingAt(s: string, open: number): number {
-  let depth = 0;
-  for (let k = open; k < s.length; k++) {
-    if (s[k] === "(") depth++;
-    else if (s[k] === ")" && --depth === 0) return k + 1;
-  }
-  return -1;
-}
+const ERF_REPLACED: Readonly<Record<string, string>> = { erf: ICDF_REPLACED.erf!, erfc: ICDF_REPLACED.erfc! };
 
 /**
  * G44f1: `text` (an exact result as Giac prints it) for its value, with erf and erfc read through our MPFR definitions
@@ -184,17 +171,18 @@ function closingAt(s: string, open: number): number {
  * on either side.
  */
 export function erfValueText(giac: Giac, text: string): string {
-  if (!/\berfc?\s*\(/.test(text)) return text;
+  if (!functionsIn(text).some((f) => Object.hasOwn(ERF_REPLACED, f))) return text;
   let s = text;
   for (let k = s.indexOf("1-erf("); k >= 0; k = s.indexOf("1-erf(", k + 1)) {
-    const end = closingAt(s, k + 5);
-    if (end < 0) break;
+    const close = closing(s, k + 5, "printed");
+    if (close < 0) break;
+    const end = close + 1;
     const before = k === 0 ? "" : s[k - 1]!;
     const after = end === s.length ? "" : s[end]!;
     if (!/^[(,[+]?$/.test(before) || !/^[),\]+-]?$/.test(after)) continue;
     s = `${s.slice(0, k)}erfc(${s.slice(k + 6)}`;
   }
-  s = s.replace(ERF_CALL, (m, name?: string, paren?: string) => (name === undefined ? m : `${ICDF_REPLACED[name]}${paren}`));
+  s = renameCalls(s, ERF_REPLACED, "printed");
   const last = ERF_DEFINITIONS[ERF_DEFINITIONS.length - 1]!;
   if (giac.eval(last).trim() === last) for (const name of ERF_DEFINITIONS) giac.eval(ICDF_DEFINITIONS[name]!);
   return s;

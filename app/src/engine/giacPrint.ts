@@ -133,16 +133,102 @@ export function splitList(text: string): string[] | null {
   return parts;
 }
 
+// --- a printed value as a tree -------------------------------------------------------------------------------------
+
+/** A node of Giac's printed list: its raw text, and its elements (a list) or its value (a string). */
+export interface PrintedNode {
+  raw: string;
+  items?: PrintedNode[];
+  str?: string;
+}
+
+/** Parses Giac's printed value: lists `[…]`, strings `"…"` (a quote inside is doubled) and atoms. Null when it does not
+ *  parse. */
+export function parsePrinted(text: string): PrintedNode | null {
+  let i = 0;
+  // the next quote from `from` (a string's end or a doubled quote; an atom skips a string inside it)
+  const nextQuote = (from: number): number => text.indexOf('"', from);
+  const node = (): PrintedNode | null => {
+    while (text[i] === " " || text[i] === "\n") i++;
+    const start = i;
+    if (text[i] === "[") {
+      i++;
+      const items: PrintedNode[] = [];
+      while (text[i] === " " || text[i] === "\n") i++;
+      if (text[i] === "]") {
+        i++;
+        return { raw: text.slice(start, i), items };
+      }
+      for (;;) {
+        const n = node();
+        if (!n) return null;
+        items.push(n);
+        while (text[i] === " " || text[i] === "\n") i++;
+        if (text[i] === ",") i++;
+        else if (text[i] === "]") {
+          i++;
+          return { raw: text.slice(start, i), items };
+        } else return null;
+      }
+    }
+    if (text[i] === '"') {
+      let s = "";
+      i++;
+      for (;;) {
+        if (i >= text.length) return null;
+        // G104: a slice up to the next quote (a 600 kB print char by char took longer than Giac printing it)
+        const q = nextQuote(i);
+        if (q < 0) return null;
+        s += text.slice(i, q);
+        i = q;
+        if (text[i + 1] === '"') {
+          s += '"';
+          i += 2;
+          continue;
+        }
+        i++;
+        return { raw: text.slice(start, i), str: s };
+      }
+    }
+    // An atom: up to the next , or ] outside brackets and quotes.
+    const end = walk(text, i, (_k, d, c) => d < 0 || (c === "," && d === 0), "printed");
+    if (end === UNCLOSED) return null;
+    i = end < 0 ? text.length : end;
+    const raw = text.slice(start, i).trim();
+    return raw ? { raw } : null;
+  };
+  const out = node();
+  return out && text.slice(i).trim() === "" ? out : null;
+}
+
 // --- names ----------------------------------------------------------------------------------------------------------
 
 /** A name as Giac's language writes one. */
 export const NAME = "[A-Za-z_][A-Za-z0-9_]*";
 const WHOLE_NAME = new RegExp(`^${NAME}$`);
 
+/** `c` (one character) can be part of a name. */
+export function isNameChar(c: string): boolean {
+  return (c >= "a" && c <= "z") || (c >= "A" && c <= "Z") || (c >= "0" && c <= "9") || c === "_";
+}
+
 /** `s` is one name (a user name starts with a letter: `letterFirst`). */
 export function isName(s: string, letterFirst = false): boolean {
   return WHOLE_NAME.test(s) && (!letterFirst || s.charAt(0) !== "_");
 }
+
+/** The name `s` starts with (after spaces) when it is a user's name (letter first); null otherwise. */
+export function leadingName(s: string): string | null {
+  const m = LEADING_NAME.exec(s);
+  return m && isName(m[1]!, true) ? m[1]! : null;
+}
+const LEADING_NAME = new RegExp(`^\\s*(${NAME})`);
+
+/** Every word of `text` that looks like a name, in strings and number literals too (`2e5` gives e5): reads over. */
+export function wordsOf(text: string): string[] {
+  return [...new Set(text.match(ANY_NAME) ?? [])];
+}
+const ANY_NAME = new RegExp(NAME, "g");
 
 /** Every name in `s` in order (strings and the exponents of number literals are skipped), with whether it is called
  *  (`(` follows it) and where it starts. */
@@ -168,6 +254,18 @@ export function callsOf(s: string, only?: ReadonlySet<string> | readonly string[
   return out;
 }
 
+/** `text` with the name of every call of a key of `to` replaced by its value (`erf(` → `paserf(`). */
+export function renameCalls(text: string, to: Readonly<Record<string, string>>, q: Quoting = "typed"): string {
+  let out = "";
+  let i = 0;
+  for (const n of names(text, q)) {
+    if (!n.call || !Object.hasOwn(to, n.name)) continue;
+    out += text.slice(i, n.at) + to[n.name]!;
+    i = n.at + n.name.length;
+  }
+  return out + text.slice(i);
+}
+
 /** Names called in a Giac text (`romberg(exp(-x^2),x,0,1)` → romberg, exp). Strings are skipped. */
 export function functionsIn(input: string): string[] {
   const out: string[] = [];
@@ -189,4 +287,29 @@ export function wholeCall(text: string, name: string): string[] | null {
   if (!c || c.at !== 0 || c.close !== t.length - 1) return null;
   const open = c.open;
   return topLevelArgs(t.slice(open + 1, -1)).map((a) => a.trim());
+}
+
+/** The text after `name:=` when `text` starts with it (spaces allowed around `name`), or null. */
+export function afterStore(text: string, name: string): string | null {
+  const t = text.trimStart();
+  if (!t.startsWith(name)) return null;
+  const rest = t.slice(name.length).trimStart();
+  return rest.startsWith(":=") && rest.length > 2 ? rest.slice(2) : null;
+}
+
+/** The name `text` defines (`f(x):=…`, `a:=…`, the name first; `_` may lead), or null. */
+export function definedName(text: string): string | null {
+  const m = LEADING_NAME.exec(text);
+  if (!m) return null;
+  const rest = text.slice(m[0].length).trimStart();
+  return rest.startsWith("(") || rest.startsWith(":=") ? m[1]! : null;
+}
+
+/** The parameters of a program as Giac prints it (`(x,y)->…` → x, y), when they hold no `(`; null for another text. */
+export function programParams(text: string): string[] | null {
+  const t = text.trimStart();
+  if (!t.startsWith("(")) return null;
+  const close = closing(t, 0, "printed");
+  if (close < 0 || t.slice(1, close).includes("(") || !t.slice(close + 1).trimStart().startsWith("->")) return null;
+  return t.slice(1, close).split(",").map((p) => p.trim());
 }
