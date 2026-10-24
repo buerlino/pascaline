@@ -1,0 +1,12 @@
+# Upstream: giac 2.1.0 usual.cc, tanh(). For a complex MPFR argument (the _CPLX branch with _REAL or _FLOAT_ parts) tanh returns (exp(2z)+1)/(exp(2z)-1), which is coth(z): evalf(tanh(1+i)) at Digits 30 gave 0.868014...-0.217621...*i instead of 1.083923...+0.271752...*i. tanh(z) = (exp(2z)-1)/(exp(2z)+1). The double branch (sinh/cosh) and real arguments are unchanged.
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -2670,7 +2670,7 @@
+       }
+       if (e._CPLXptr->type==_REAL || e._CPLXptr->type==_FLOAT_){
+ 	gen g=exp(2*e,contextptr);
+-	return (g+1)/(g-1);
++	return (g-1)/(g+1);
+       }
+     }
+     if (is_squarematrix(e))
