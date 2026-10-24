@@ -48,6 +48,8 @@ import {
   valuePrecision,
   whyOf,
   withDigits,
+  solveForm,
+  unbraced,
   type ElementFacts,
   type Giac,
   type Shape,
@@ -55,6 +57,7 @@ import {
 import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
+import { bracesOf, LIST_TYPE } from "./listType.ts";
 
 export type { Giac };
 
@@ -139,6 +142,9 @@ export interface HomeResult {
   items?: HomeResult[];
   /** [rows, columns] of `items` for a matrix; absent for a list. */
   shape?: [number, number];
+  /** G109: a value of Giac's list type, shown with braces (`{1,16}`); `exact` and `full` keep Giac's `list[…]`, which
+   *  Giac reads back (Ans, chips), and the copy writes it with braces (state/results.ts homeItem). */
+  braces?: true;
   /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): the result is shown with them, not the setting. */
   digits?: number;
   /** Giac `latex()` of a result that is not a number (raw; the view tidies it up and draws it, as in CAS). R18f3. */
@@ -155,6 +161,7 @@ export function precisionFacts(r: HomeResult): PrecisionFacts & { shape?: [numbe
     ...(r.value ? { value: r.value } : {}),
     ...(r.items ? { items: r.items.map(precisionFacts) } : {}),
     ...(r.shape ? { shape: r.shape } : {}),
+    ...(r.braces ? { braces: r.braces } : {}),
     approximate: r.approximate,
   };
 }
@@ -457,6 +464,7 @@ interface Built {
   value?: ComplexValue;
   items?: HomeResult[];
   shape?: [number, number];
+  braces?: true;
   facts: ValueFacts;
   tieRisk: boolean;
   /** The value as a decimal with every confirmed digit up to P (copy, chips). */
@@ -483,11 +491,11 @@ function element(f: ElementFacts, digits: number, P: number, path: HomePath, app
 
 /** A numeric HomeResult from element facts (CAS numeric results use it too). */
 export function resultFromFacts(facts: ElementFacts[], shape: Shape, digits: number, path: HomePath, approximate: boolean, ms = 0): HomeResult {
-  const { decimal, ...b } = build(facts, shape, digits, path, approximate);
+  const { decimal, ...b } = buildOf(facts, shape, digits, path, approximate);
   return { ok: true, ...b, full: decimal, path, approximate, exactMs: 0, totalMs: ms };
 }
 
-function build(facts: ElementFacts[], shape: Shape, digits: number, path: HomePath, approximate: boolean): Built {
+function buildOf(facts: ElementFacts[], shape: Shape, digits: number, path: HomePath, approximate: boolean): Built {
   const P = valuePrecision(digits);
   const els = facts.map((f) => element(f, digits, P, path, approximate));
   if (shape.kind === "scalar") {
@@ -503,12 +511,19 @@ function build(facts: ElementFacts[], shape: Shape, digits: number, path: HomePa
   const shp: [number, number] | undefined = shape.kind === "matrix" ? [shape.rows, shape.cols] : undefined;
   const reliable = els.reduce<number | null>((n, { facts: { reliableDigits: d } }) => (d === null ? n : n === null ? d : Math.min(n, d)), null);
   const warn = els.find((e) => e.facts.warn)?.facts.warn;
+  // G109: Giac's list type shows with braces; its full text keeps Giac's `list[…]`, which Giac reads back
+  const braces = shape.kind === "list" && shape.braces === true;
   const fmt = (key: "display" | "full") =>
-    shp ? `[${Array.from({ length: shp[0] }, (_, r) => `[${els.slice(r * shp[1], (r + 1) * shp[1]).map((e) => e[key]).join(",")}]`).join(",")}]` : `[${els.map((e) => e[key]).join(",")}]`;
+    shp
+      ? `[${Array.from({ length: shp[0] }, (_, r) => `[${els.slice(r * shp[1], (r + 1) * shp[1]).map((e) => e[key]).join(",")}]`).join(",")}]`
+      : braces && key === "display"
+        ? `{${els.map((e) => e[key]).join(",")}}`
+        : `${braces ? LIST_TYPE : "["}${els.map((e) => e[key]).join(",")}]`;
   return {
     display: fmt("display"),
     items: els,
     ...(shp ? { shape: shp } : {}),
+    ...(braces ? { braces } : {}),
     facts: { exact: els.every((e) => e.facts.exact), reliableDigits: reliable, ...(warn ? { warn } : {}) },
     tieRisk: els.some((e) => e.tieRisk),
     decimal: fmt("full"),
@@ -580,6 +595,10 @@ export function homeEval(
   // stores (inc(x):={c:=c+1;c}), assigned or not.
   const once = form.once || (!asg && form.stores);
   const exactBody = toExactLiterals(body);
+  // G109: the solve form is Giac's list type too, and shows as before (brackets)
+  const keepBrackets = solveForm(exactBody);
+  const build = (facts: ElementFacts[], shape: Shape, digits: number, path: HomePath, approximate: boolean): Built =>
+    buildOf(facts, keepBrackets ? unbraced(shape) : shape, digits, path, approximate);
   const test = input.includes(EQ_INEXACT_FLAG);
   if (test) giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
   // G38 (docs/04 2.4 rule 2): the exact evaluation runs at Digits = P, since Giac decides signs, comparisons and
@@ -742,12 +761,16 @@ export function homeEval(
     // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
     const tex = deg !== null ? giac.eval(`latex(quote(${deg}))`) : latexShown(giac, slot, text);
     if (atN !== null) giac.eval("purge(pasfl)");
-    const latex = isError(tex) ? {} : { latex: unquote(tex) };
+    // G109: Giac's list type shows with braces (not the solve form); Giac draws a list of rows as a matrix, so that one
+    // is drawn from the text shown
+    const listed = !keepBrackets && (value.kind === "list" || value.kind === "matrix") && text.trimStart().startsWith(LIST_TYPE);
+    const latex = isError(tex) || (listed && tex.includes("\\begin{array}")) ? {} : { latex: unquote(tex) };
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
     const unchecked = hasFloat(text) || forced !== undefined;
     const warn = decided?.warn ?? forced ?? (unchecked ? "unchecked" : undefined);
     const why = symbolicWhy(warn, testSides(exactBody));
-    return done({ ok: true, display: deg ?? dropAngleFactor(text), exact: text, ...(deg !== null ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, tieRisk: false, facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) } });
+    const shownText = deg ?? dropAngleFactor(text);
+    return done({ ok: true, display: listed ? bracesOf(shownText) : shownText, ...(listed ? { braces: true as const } : {}), exact: text, ...(deg !== null || listed ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, tieRisk: false, facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) } });
   };
   // G44f1: Giac's inverse distribution function gives ±infinity for some p inside (0, 1) (fisher_icdf(3,4,1-10^-20)):
   // the polish computes the value; when it cannot, Giac's infinity is shown with ⚠. At p = 0 or 1 it is exact.

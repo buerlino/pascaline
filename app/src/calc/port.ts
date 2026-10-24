@@ -57,6 +57,8 @@ export interface HomeOutcome {
   /** Elements of a numeric list or matrix (rows flattened, with `shape` for a matrix). */
   items?: HomeResult[];
   shape?: [number, number];
+  /** G109: a value of Giac's list type, shown with braces; `full` keeps Giac's `list[…]` (chips), the copy has braces. */
+  braces?: true;
   /** The digits the input asked for (`evalf(e,n)`, decisions M4-6): drawn with these, not the digits setting. */
   digits?: number;
   /** Giac latex() of a result that is not a number (raw; the view tidies it and draws it, as in CAS). */

@@ -36,7 +36,8 @@ import { mayAddToList, unaskedPoly } from "./polyvec.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
-import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
+import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOfValue, unbraced, valuePrecision, whyOf, withDigits } from "./numeric.ts";
+import { LIST_TYPE } from "./listType.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
@@ -778,7 +779,11 @@ export class EngineHost implements FactsHost {
     // G106: whether a name holds a list is read from Giac's print in the stored table (G65's state read, already made):
     // the assignment must be routed before it runs, and asking the engine would cost a call on every assignment. This
     // text gate moves to bridge-3 with the poly1 check when G103 reads a value's kind (docs/04 6.1).
-    const isList = (n: string): boolean => this.stored.get(n)?.text.startsWith("[") === true;
+    // G109: Giac's list type (`list[…]`) is a list too
+    const isList = (n: string): boolean => {
+      const t = this.stored.get(n)?.text;
+      return t !== undefined && (t.startsWith("[") || t.startsWith(LIST_TYPE));
+    };
     const guarded =
       asg0 && !form.once && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || mayAddToList(asg0.rhs, isList) || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
     // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
@@ -868,7 +873,8 @@ export class EngineHost implements FactsHost {
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
     // `evalf(e,n)` alone is shown with the n digits it asks for, checked at that precision (decisions M4-6).
     // G103: its shape from bridge-3's kind and elements (one call, only for a text with a float)
-    const shape = hasFloat(text) && !pair ? shapeOfValue(this.giac.value("pcasans", [])) : null;
+    // G109: CAS draws Giac's latex() of a list type (`\{…\}`); its numeric line keeps the brackets
+    const shape = hasFloat(text) && !pair ? unbraced(shapeOfValue(this.giac.value("pcasans", []))) : null;
     if (shape) {
       const asked = askedDigits(input);
       const digits = asked ?? Math.trunc(s.digits);

@@ -61,7 +61,8 @@ function relationText(s: string): string {
 
 /** `-1.5E-7` / `1.5×10^-7` style display strings -> LaTeX. Anything else is drawn as typed. */
 export function homeResultToLatex(display: string): string {
-  const s = relationText(display.trim());
+  // G109: a list of Giac's list type is shown with braces, which LaTeX would read as a group
+  const s = relationText(display.trim()).replace(/[{}]/g, "\\$&");
   const sci = /^([+-]?\d+(?:\.\d+)?)\s*(?:E|e|×10\^)\s*([+-]?\d+)$/.exec(s);
   if (sci) return `${sci[1]}\\times10^{${sci[2]}}`;
   return s

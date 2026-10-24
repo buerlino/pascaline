@@ -8,7 +8,7 @@ import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { formatConfirmed } from "./format.ts";
-import { bracesOf } from "./numeric.ts";
+import { bracesOf } from "./listType.ts";
 import { homeItem } from "../state/results.ts";
 import { copyFull } from "../clipboard/text.ts";
 import { giacOfEntry } from "../input/entry.ts";
@@ -38,8 +38,9 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
   });
   const home = (input: string) => host.home(input, defaultHomeSettings).result;
   const cas = (input: string) => host.cas(input, defaultCasSettings).result;
+  // as the app copies: the port passes `exact` only for a rational (calc/engine.ts HOME_KEYS)
   const copy = (input: string) => {
-    const r = home(input);
+    const { exact: _exact, ...r } = home(input);
     return copyFull({ latex: "", status: "done", text: r.display, ...homeItem(r, false) });
   };
 
@@ -56,15 +57,19 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
     expect(back.items?.map((it) => it.display)).toEqual(r.items?.map((it) => it.display));
   });
 
-  it("keeps Giac's text for Ans and chips, so the type goes on", () => {
-    expect(home("list[1,4]")).toMatchObject({ display: "{1,4}", full: "list[1,4]" });
-    expect(home("Ans^2")).toMatchObject({ ok: true, display: "{1,16}" });
+  it("keeps Giac's text for chips and stored names, so the type goes on", () => {
+    expect(home("list[1,4]")).toMatchObject({ display: "{1,4}", full: "list[1,4]", exact: "list[1,4]" });
+    const { exact: _exact, ...port } = home("list[1,4]");
+    expect(homeItem(port, false)).toMatchObject({ full: "list[1,4]", drawn: "{1,4}" });
+    expect(home("K:=list[1,4]")).toMatchObject({ ok: true, display: "{1,4}" });
+    expect(home("K^2")).toMatchObject({ ok: true, display: "{1,16}" });
   });
 
   it("shows a list-type value that is no number as Giac's text with braces", () => {
     const r = home("list[1/3,BesselJ(1,2)]");
     expect(r).toMatchObject({ ok: true, display: "{1/3,BesselJ(1,2)}" });
     expect(copy("list[1/3,BesselJ(1,2)]")).toBe("{1/3,BesselJ(1,2)}");
+    expect(r.full).toBe("list[1/3,BesselJ(1,2)]");
   });
 
   it("shows a list of two lists as its two rows, never a matrix", () => {

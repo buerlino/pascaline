@@ -15,6 +15,7 @@
   "src/engine/host.ts": 12,
   "src/engine/icdf.ts": 8,
   "src/engine/library.ts": 16,
+  "src/engine/listType.ts": 6,
   "src/engine/nonsquare.ts": 4,
   "src/engine/novalue.ts": 5,
   "src/engine/numeric.ts": 31,
