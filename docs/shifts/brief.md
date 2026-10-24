@@ -14,7 +14,7 @@
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find first (three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-0. **Done** (night into 2026-10-24): R76 `5f18dbd`, G98 `9394724`, R77 `05abf62`, G106f1 `6ea4d02`, R78f1 `b367fd1`, R76f1 `6d93eab` (Opus pass 62).
+0. **Done** (night into 2026-10-24): R76 `5f18dbd`, G98 `9394724`, R77 `05abf62`, G106f1 `6ea4d02`, R78f1 `b367fd1`, R76f1 `6d93eab` (Opus pass 62); R79 `acde365`, G99 `d3ac398`, G100 `f395433` (Opus pass 63: G100 fix, F81).
 1. **A34f1** (A35 merged `c8b4723`).
 2. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
 3. When a slot is free (process, nothing users see): **A25**, **A19** (G64 and S16 wait for it), **A18**, **A22** → **A26**, **A27**, **A30**.
@@ -62,8 +62,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 114 | [G99](packages/G99.md) names read and bound names from bridge-2 (F54; replaces G69) | gorge, Opus | `p1/gorge-bridge-names` | G98 | 2 h + engine build |
-| 115 | [G100](packages/G100.md) every store from bridge-2's targets (F57; replaces G72, G66) | gorge, Opus | `p1/gorge-bridge-stores` | G99 | 2 h |
 | 116 | [G101](packages/G101.md) the non-square check reads a called function's body (F74) | gorge, Opus | `p1/gorge-nonsquare-body` | G100 | 1 h |
 | 117 | [G102](packages/G102.md) Giac's settings from bridge-1 (G67's text reads) | gorge, Opus | `p1/gorge-bridge-ctx` | G99 | 1.5 h |
 | 118 | [G103](packages/G103.md) Home's value from bridge-3 (F73) | gorge, Opus | `p1/gorge-bridge-value` | G102 | 3 h |
