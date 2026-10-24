@@ -62,59 +62,84 @@ export function nonReal(giac: Giac, name: string): boolean {
 /** Most stored names and functions complexReads looks into for one input (each is one Giac call). */
 const MAX_READS = 40;
 
+/** Every whole-word `name` in `text` outside strings (not a part of a longer name, nor after a `.`). */
+function occurrences(name: string): RegExp {
+  return new RegExp(`"[^"]*"|(?<![A-Za-z0-9_.])(${name})(?![A-Za-z0-9_])`, "g");
+}
+
 /**
- * What `expr` reads through stored names (G50f1). A name or user function whose stored text calls a function
- * COMPLEX_DEFINITIONS replaces (CAS `w:=atan(2*i)` keeps Giac's exact atan(2*i); `f(x):=atan(x)`) is evaluated by Giac
- * with its own complex atan (the other side of the cut) unless it is read through a copy: each such name is replaced in `text` by a slot
- * (`pasxn<k>`) that holds its complexSafe text, as exactFacts reads Ans through pasxv. `hidden`: the replaced functions
- * that could not be read that way (a copy Giac refused; a call
- * found only inside another function's body; every one when `copy` is false, for an input that runs once and may
- * assign); a non-real value then is not audited. Purge `copies` when done.
+ * What `expr` reads through stored names (G50f1, G56). A name or user function whose stored text calls a function
+ * COMPLEX_DEFINITIONS replaces (CAS `w:=atan(2*i)` keeps Giac's exact atan(2*i); `f(x):=atan(x)`), or reads such a
+ * name further down (`g(x):=f(x)+w`, a body that reads w), is evaluated by Giac with its own complex atan (the other
+ * side of the cut) unless it is read through a copy: each such name is replaced by a slot (`pasxn<k>`) that holds its
+ * complexSafe text, with the names it reads that need a copy replaced by theirs (G56: so a function inside a stored
+ * body, or a value read by one, is ours too; a recursive body calls its own slot), as exactFacts reads Ans through
+ * pasxv. A name a program binds (its parameters, its `local` names) is not the stored one (boundIn). `hidden`: the
+ * replaced functions that could not be read that way (a copy Giac refused; every one when `copy` is false, for an
+ * input that runs once and may assign; every replaced one when more than MAX_READS names were to be looked into); a
+ * non-real value then is not audited. Purge `copies` when done.
  */
 export function complexReads(giac: Giac, expr: string, copy = true): { text: string; copies: string[]; hidden: string[] } {
-  const copies: string[] = [];
-  const hidden: string[] = [];
   const known = new Map<string, string | null>();
+  // Past MAX_READS a name is not looked into: what it reads is not known (hidden, below).
+  let capped = false;
   // The stored text of a user's name or function; null for a free name or a builtin (each name is asked once).
   const stored = (n: string): string | null => {
     if (known.has(n)) return known.get(n)!;
-    if (known.size >= MAX_READS || Object.hasOwn(COMPLEX_REPLACED, n) || AUDITED_FUNCTIONS.has(n)) return null;
+    if (Object.hasOwn(COMPLEX_REPLACED, n) || Object.hasOwn(COMPLEX_DEFINITIONS, n) || AUDITED_FUNCTIONS.has(n)) return null;
+    if (known.size >= MAX_READS) {
+      capped = true;
+      return null;
+    }
     const v = namePrint(giac, n);
-    const out = isError(v) || v === n || v === "" ? null : v;
+    const out = isError(v) || v === n || v === "" || v === `'${n}'` ? null : v;
     known.set(n, out);
     return out;
   };
-  // Replaced calls further down: in what the names and functions in `v` hold (their copies would still call Giac's).
-  const visited = new Set<string>();
-  const deeper = (v: string): string[] => {
-    const out: string[] = [];
-    const bound = boundIn(v);
-    for (const n of [...functionsIn(v), ...namesIn(v)]) {
-      if (visited.has(n) || bound.has(n)) continue;
-      visited.add(n);
-      const w = stored(n);
-      if (w !== null) out.push(...complexReplacedIn(w), ...deeper(w));
-    }
-    return out;
-  };
-  let text = expr;
-  const reads: [string, boolean][] = [...namesIn(expr).map((n): [string, boolean] => [n, false]), ...functionsIn(expr).map((n): [string, boolean] => [n, true])];
-  for (const [n, called] of reads) {
+  // The stored names each stored text reads (not the ones it binds), from the input's names down.
+  const refs = new Map<string, string[]>();
+  const queue = [...new Set([...namesIn(expr), ...functionsIn(expr)])];
+  const top = queue.filter((n) => stored(n) !== null);
+  for (let n = queue.shift(); n !== undefined; n = queue.shift()) {
     const v = stored(n);
-    if (v === null) continue;
-    hidden.push(...deeper(v));
-    const fns = complexReplacedIn(v);
-    if (!fns.length) continue;
-    const slot = `pasxn${copies.length}`;
-    if (!copy || isError(giac.eval(`${slot}:=(${forValue(giac, v)})`))) {
-      hidden.push(...fns);
-      continue;
-    }
-    copies.push(slot);
-    const at = new RegExp(`"[^"]*"|(?<![A-Za-z0-9_.])${n}(?![A-Za-z0-9_])(${called ? "(?=\\s*\\()" : "(?!\\s*\\()"})`, "g");
-    text = text.replace(at, (m, hit?: string) => (hit === undefined ? m : slot));
+    if (v === null || refs.has(n)) continue;
+    const bound = boundIn(v);
+    const out = [...new Set([...functionsIn(v), ...namesIn(v)])].filter((m) => !bound.has(m) && stored(m) !== null);
+    refs.set(n, out);
+    queue.push(...out);
   }
-  return { text, copies, hidden: [...new Set(hidden)] };
+  // A name needs a copy when its text calls a replaced function, or reads a name that needs one (to a fixed point, so a
+  // cycle of functions is read too).
+  const needs = new Set([...refs.keys()].filter((n) => complexReplacedIn(stored(n)!).length > 0));
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const [n, out] of refs)
+      if (!needs.has(n) && out.some((m) => needs.has(m))) {
+        needs.add(n);
+        grew = true;
+      }
+  }
+  const fns = [...new Set([...needs].flatMap((n) => complexReplacedIn(stored(n)!)))];
+  if (capped) fns.push(...Object.keys(COMPLEX_REPLACED).filter((f) => !fns.includes(f)));
+  if (!needs.size) return { text: expr, copies: [], hidden: fns };
+  if (!copy) return { text: expr, copies: [], hidden: fns };
+  const slots = new Map([...needs].map((n, k): [string, string] => [n, `pasxn${k}`]));
+  const throughSlots = (text: string, names: readonly string[]): string =>
+    names.filter((m) => slots.has(m)).reduce((t, m) => t.replace(occurrences(m), (all, hit?: string) => (hit === undefined ? all : slots.get(m)!)), text);
+  // The names a text reads come first, so a value's copy is evaluated with the copies it reads defined.
+  const order: string[] = [];
+  const visit = (n: string): void => {
+    if (order.includes(n) || !needs.has(n)) return;
+    order.push(n);
+    for (const m of refs.get(n) ?? []) visit(m);
+  };
+  for (const n of needs) visit(n);
+  let refused = false;
+  for (const n of order.reverse()) {
+    const text = throughSlots(forValue(giac, stored(n)!), refs.get(n) ?? []);
+    if (isError(giac.eval(`${slots.get(n)}:=(${text})`))) refused = true;
+  }
+  return { text: throughSlots(expr, top), copies: [...slots.values()], hidden: refused || capped ? fns : [] };
 }
 
 /** The names a stored program binds (`(x,y)->{local a,b:=1; …}` → x, y, a, b): its parameters and `local` names, which
