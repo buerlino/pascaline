@@ -8,7 +8,8 @@
 // the user's it calls has one in its body. One engine call reads the result's subtype at any depth and the names'
 // values together, and only when the text holds `poly1[`. If G103 reads a value's type from bridge-3, this check moves there.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
-import { functionsIn, namesIn, type Giac } from "./numeric.ts";
+import { type Giac } from "./numeric.ts";
+import { functionsIn, namesIn } from "./giacPrint.ts";
 
 /** Giac functions that create a coefficient vector of subtype 10, probed on the shared engine (2026-10-23). The ones
  *  that only pass a polynomial argument through (gcd, lcm, diff, factors) are not listed: that argument is a call of

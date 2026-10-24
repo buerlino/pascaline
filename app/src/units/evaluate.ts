@@ -5,7 +5,8 @@
 // named; with an end slot the quotient must be a pure number. The number gets Home's facts (numeric.ts: exact, or the
 // agreement check), so markOf() marks it as Home. Synchronous, UI-free. Only erasable TypeScript syntax.
 import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type HomeSettings } from "../engine/homeEval.ts";
-import { exactFacts, floatFacts, hasFloat, rationalValue, splitList, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
+import { exactFacts, floatFacts, hasFloat, rationalValue, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
+import { splitList } from "../engine/giacPrint.ts";
 import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siUnit } from "./dims.ts";
 import { isUnitError, type Quantity, type Uncertainty, type UncVar, type UnitError, type UnitJob, type UnitNote } from "./types.ts";
 import { shownWithUncertainty, uncertaintyText } from "./uncertainty.ts";

@@ -2,24 +2,8 @@
 // G38 (docs/04 2.4 rule 2): the decisions Giac makes inside an exact evaluation at `Digits` (a sign, a place between two
 // integers, a branch), and their second run at P + 20 and P + 40. Split out of numeric.ts (G71). Synchronous, UI-free;
 // only erasable TypeScript syntax.
-import {
-  closing,
-  DOUBLE_DIGITS,
-  functionsIn,
-  hasFloat,
-  namePrint,
-  namesIn,
-  numbersAt,
-  shapeOfValue,
-  size,
-  topLevelArgs,
-  valuePrecision,
-  withDigits,
-  type ElementFacts,
-  type Giac,
-  type Shape,
-} from "./numeric.ts";
-
+import { DOUBLE_DIGITS, hasFloat, namePrint, numbersAt, shapeOfValue, size, valuePrecision, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { callsOf, closing, functionsIn, isName, namesIn, topLevelArgs, UNCLOSED, walk, withoutStrings } from "./giacPrint.ts";
 import { decimalFromString, isZero, type DecimalValue } from "./format.ts";
 import type { GiacValue } from "./bridge.ts";
 
@@ -55,7 +39,7 @@ function comparisonAt(s: string, k: number): number {
 
 /** The input holds a comparison outside strings. */
 function hasComparison(input: string): boolean {
-  const s = input.replace(/"[^"]*"/g, '""');
+  const s = withoutStrings(input);
   for (let k = 0; k < s.length; k++) if (comparisonAt(s, k)) return true;
   return false;
 }
@@ -76,23 +60,20 @@ export function rationalOnly(expr: string): boolean {
   if (expr.includes('"') || /[.]/.test(expr)) return false;
   if (!functionsIn(expr).every((f) => RATIONAL_FUNCTIONS.has(f))) return false;
   const bound = new Set<string>();
-  const re = /\b(?:sum|product)\s*\(/g;
-  for (let m = re.exec(expr); m; m = re.exec(expr)) {
-    const close = closing(expr, re.lastIndex - 1);
+  for (const { open, close } of callsOf(expr, ["sum", "product"])) {
     if (close < 0) return false;
-    const args = topLevelArgs(expr.slice(re.lastIndex, close));
-    if (args.length !== 4 || !/^\s*[A-Za-z_][A-Za-z0-9_]*\s*$/.test(args[1]!)) return false;
+    const args = topLevelArgs(expr.slice(open + 1, close));
+    if (args.length !== 4 || !isName(args[1]!.trim())) return false;
     if (!INTEGER.test(args[2]!.replace(/^\s*-/, "")) || !INTEGER.test(args[3]!.replace(/^\s*-/, ""))) return false;
     bound.add(args[1]!.trim());
   }
   if (!namesIn(expr).every((n) => bound.has(n))) return false;
   // A power's exponent: a parenthesised one holding `/`, or a name that is not a bound variable, can be irrational.
-  const pow = /\^\s*(\(|-?\s*[A-Za-z_0-9]+)/g;
-  for (let m = pow.exec(expr); m; m = pow.exec(expr)) {
-    if (m[1] === "(") {
-      const close = closing(expr, pow.lastIndex - 1);
-      if (close < 0 || expr.slice(pow.lastIndex, close).includes("/")) return false;
-    }
+  for (let at = expr.indexOf("^"); at >= 0; at = expr.indexOf("^", at + 1)) {
+    const open = at + 1 + (expr.slice(at + 1).length - expr.slice(at + 1).trimStart().length);
+    if (expr.charAt(open) !== "(") continue;
+    const close = closing(expr, open);
+    if (close < 0 || expr.slice(open + 1, close).includes("/")) return false;
   }
   return true;
 }
@@ -134,27 +115,19 @@ interface Cut {
 
 /** The one top-level comparison of `seg` as `(lhs)-(rhs)`; null when it has none or more than one. */
 function comparisonCut(seg: string): string | null {
-  let depth = 0;
   let at = -1;
   let len = 0;
-  for (let k = 0; k < seg.length; k++) {
-    const ch = seg.charAt(k);
-    if (ch === '"') {
-      const end = seg.indexOf('"', k + 1);
-      if (end < 0) return null;
-      k = end;
-    } else if (ch === "(" || ch === "[" || ch === "{") depth++;
-    else if (ch === ")" || ch === "]" || ch === "}") depth--;
-    else if (depth === 0) {
-      const n = comparisonAt(seg, k);
-      if (n) {
-        if (at >= 0) return null;
-        at = k;
-        len = n;
-        k += n - 1;
-      }
-    }
-  }
+  let twice = false;
+  const end = walk(seg, 0, (k, depth, ch) => {
+    if (depth !== 0 || ch === "(" || k < at + len) return false;
+    const n = comparisonAt(seg, k);
+    if (!n) return false;
+    if (at >= 0) return (twice = true);
+    at = k;
+    len = n;
+    return false;
+  });
+  if (twice || end === UNCLOSED) return null;
   if (at < 0) return null;
   const lhs = seg.slice(0, at).trim();
   const rhs = seg.slice(at + len).trim();
@@ -168,16 +141,17 @@ function comparisonCut(seg: string): string | null {
 export function decisionCuts(expr: string): Cut[] {
   const cuts: Cut[] = [];
   const segments = [expr];
-  const opening = /"[^"]*"|(?:\b([A-Za-z_][A-Za-z0-9_]*)\s*)?\(/g;
-  for (let m = opening.exec(expr); m; m = opening.exec(expr)) {
-    if (m[0].startsWith('"')) continue;
-    const open = opening.lastIndex - 1;
+  const named = new Map(callsOf(expr).map((c) => [c.open, c]));
+  const opens: number[] = [];
+  walk(expr, 0, (k, _d, ch) => void (ch === "(" && opens.push(k)));
+  for (const open of opens) {
     const close = closing(expr, open);
     if (close < 0) continue;
     const args = topLevelArgs(expr.slice(open + 1, close));
     segments.push(...args);
-    const name = m[1];
-    const call = name ? { name, at: [m.index, close + 1] as [number, number] } : undefined;
+    const c = named.get(open);
+    const name = c?.name;
+    const call = c ? { name: c.name, at: [c.at, close + 1] as [number, number] } : undefined;
     if ((name === "floor" || name === "ceil" || name === "trunc" || name === "iPart" || name === "frac" || name === "fPart") && args.length === 1) {
       cuts.push({ q: args[0]!, kind: "int", call });
     } else if (name === "trunc" && args.length === 2) {
@@ -207,7 +181,7 @@ export function decisionCuts(expr: string): Cut[] {
  * A quantity that is not a real number (a free name, a bound variable) is skipped.
  */
 export function onCut(giac: Giac, expr: string, digits: number, restore: number): { tie: string } | Undecided | null {
-  if (/:=|=>|\bsto\s*\(/.test(expr)) return null;
+  if (/:=|=>/.test(expr) || callsOf(expr, ["sto"]).length) return null;
   const P = valuePrecision(digits);
   const cuts = decisionCuts(expr);
   if (!cuts.length) return null;

@@ -3,7 +3,8 @@
 // (atan(2*i): Giac's ln((i+z)/(i-z)) of -3, mpmath's principal value is the other side), so an input's atan is read
 // through our definition (pasatan); a stored name or user function that calls it is read through a copy
 // (complexReads). Split from numeric.ts (cleanup 2026-10-20, item 13). Synchronous, UI-free; only erasable TypeScript.
-import { AUDITED_FUNCTIONS, functionsIn, namePrint, namesIn, topLevelArgs, type Giac } from "./numeric.ts";
+import { AUDITED_FUNCTIONS, namePrint, type Giac } from "./numeric.ts";
+import { functionsIn, namesIn, topLevelArgs } from "./giacPrint.ts";
 
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");

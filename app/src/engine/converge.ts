@@ -9,7 +9,8 @@
 //   conditionally convergent integral (∫₀^∞ sin x / x) is not refused for its tail, which is not the singular point.
 // Only inputs that hold one of these calls pay, and an integral pays for the second integral only when f has a real
 // singular point in [a, b]. The checks run next to the engine, synchronously; only erasable TypeScript syntax.
-import { closing, functionsIn, hasFloat, splitList, topLevelArgs, type Giac } from "./numeric.ts";
+import { hasFloat, type Giac } from "./numeric.ts";
+import { closing, functionsIn, splitList, topLevelArgs } from "./giacPrint.ts";
 
 /** Why a result is refused; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
 /** `undecided` (G57) comes from decisions.ts decideTwice: a decision on a cut Giac cannot make. `divisionByZero`,

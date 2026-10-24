@@ -7,37 +7,23 @@
 // Synchronous, UI-free. Only erasable TypeScript syntax.
 import { hasAngleFactor } from "../input/angles.ts";
 import type { Giac } from "./numeric.ts";
+import { callsOf } from "./giacPrint.ts";
 
 const TRIG = ["sin", "cos", "tan", "sec", "csc", "cot"];
 const INVERSE = ["asin", "acos", "atan", "asec", "acsc", "acot"];
 /** Inert names Giac keeps as they are while it simplifies the arguments. */
 const INERT = "pasdg_";
-const CALL = new RegExp(`(?<![A-Za-z0-9_])(${[...INVERSE, ...TRIG].join("|")})\\s*\\(`, "y");
-const ANY = new RegExp(`(?<![A-Za-z0-9_])(${[...INVERSE, ...TRIG].join("|")})\\s*\\(`);
+const NAMES = [...INVERSE, ...TRIG];
+const INERT_NAMES = NAMES.map((n) => INERT + n);
 
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
 }
 
-/** Index of the ) that closes the ( at `open`, outside strings; -1 when there is none. */
-function closing(s: string, open: number): number {
-  let d = 0;
-  for (let k = open; k < s.length; k++) {
-    const c = s[k]!;
-    if (c === '"') {
-      const q = s.indexOf('"', k + 1);
-      if (q < 0) return -1;
-      k = q;
-    } else if (c === "(" || c === "[" || c === "{") d++;
-    else if ((c === ")" || c === "]" || c === "}") && --d === 0) return k;
-  }
-  return -1;
-}
-
 /** The text needs the DEG display rule: it calls a trig function or an inverse, and holds no degree factor (a function
  *  body keeps `pasdeg`, so it follows the mode at call time and is drawn without it, R64). */
 export function needsDegrees(text: string): boolean {
-  return ANY.test(text) && !hasAngleFactor(text) && !text.includes('"');
+  return callsOf(text, NAMES, "printed").length > 0 && !hasAngleFactor(text) && !text.includes('"');
 }
 
 /**
@@ -50,32 +36,28 @@ export function backInDegrees(giac: Giac, text: string): string | null {
   const walk = (t: string): string => {
     let out = "";
     let i = 0;
-    while (i < t.length) {
-      CALL.lastIndex = i;
-      const m = CALL.exec(t);
-      if (m) {
-        const open = i + m[0].length - 1;
-        const close = closing(t, open);
-        if (close > 0) {
-          const name = m[1]!;
-          const arg = walk(t.slice(open + 1, close));
-          if (TRIG.includes(name)) out += `${INERT}${name}(normal(180/pi*(${arg})))`;
-          else {
-            inverse = true;
-            out += `(pi/180*${INERT}${name}(${arg}))`;
-          }
-          i = close + 1;
-          continue;
-        }
+    for (const c of callsOf(t, NAMES, "printed")) {
+      if (c.at < i || c.close <= 0) continue;
+      const arg = walk(t.slice(c.open + 1, c.close));
+      out += t.slice(i, c.at);
+      if (TRIG.includes(c.name)) out += `${INERT}${c.name}(normal(180/pi*(${arg})))`;
+      else {
+        inverse = true;
+        out += `(pi/180*${INERT}${c.name}(${arg}))`;
       }
-      out += t[i];
-      i++;
+      i = c.close + 1;
     }
-    return out;
+    return out + t.slice(i);
   };
   const w = walk(text);
   const out = giac.eval(inverse ? `normal(${w})` : w);
   if (isError(out) || out === "undef") return null;
-  const back = out.replace(new RegExp(`${INERT}([a-z]+)\\(`, "g"), "$1(");
+  let back = "";
+  let i = 0;
+  for (const c of callsOf(out, INERT_NAMES, "printed")) {
+    back += out.slice(i, c.at) + c.name.slice(INERT.length);
+    i = c.at + c.name.length;
+  }
+  back += out.slice(i);
   return back.includes(INERT) ? null : back;
 }

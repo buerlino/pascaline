@@ -3,7 +3,8 @@
 import { describe, expect, it } from "vitest";
 import { applyDefChanges, MAX_DEFS, replayOrder, userNamesOf, validDefs, type DefEntry } from "./defs.ts";
 import { floatsAsEvalf } from "./homeEval.ts";
-import { askedDigits, namesIn, withAskedPrecision } from "./numeric.ts";
+import { askedDigits, withAskedPrecision } from "./numeric.ts";
+import { namesIn } from "./giacPrint.ts";
 
 const entry = (name: string, kind: DefEntry["kind"], cmd: string, extra: Partial<DefEntry> = {}): DefEntry => ({
   name,

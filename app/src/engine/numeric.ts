@@ -29,6 +29,7 @@ import {
 } from "./format.ts";
 import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import type { GiacValue } from "./bridge.ts";
+import { callsOf, functionsIn, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
 import { complexReads, complexReplacedIn, complexSafe, forValue, nonReal, purgeReads } from "./complex.ts";
 
 export interface Giac {
@@ -127,46 +128,7 @@ export function floatsShown(giac: Giac, text: string, n: number, slot: string): 
 
 // --- evalf(e,n), approx(e,n): the precision an input asks for (decisions M4-6) ---------------------------------------
 
-/** Index of the bracket that closes the one at `open` (`(`, `[` or `{`), skipping strings; -1 when there is none. */
-export function closing(s: string, open: number): number {
-  let depth = 0;
-  for (let k = open; k < s.length; k++) {
-    const ch = s.charAt(k);
-    if (ch === '"') {
-      const end = s.indexOf('"', k + 1);
-      if (end < 0) return -1;
-      k = end;
-    } else if (ch === "(" || ch === "[" || ch === "{") depth++;
-    else if (ch === ")" || ch === "]" || ch === "}") {
-      depth--;
-      if (depth === 0) return k;
-    }
-  }
-  return -1;
-}
-
-/** The top-level comma-separated parts of an argument list. */
-export function topLevelArgs(s: string): string[] {
-  const out: string[] = [];
-  let depth = 0;
-  let start = 0;
-  for (let k = 0; k < s.length; k++) {
-    const ch = s.charAt(k);
-    if (ch === '"') {
-      const end = s.indexOf('"', k + 1);
-      k = end < 0 ? s.length : end;
-    } else if (ch === "(" || ch === "[" || ch === "{") depth++;
-    else if (ch === ")" || ch === "]" || ch === "}") depth--;
-    else if (ch === "," && depth === 0) {
-      out.push(s.slice(start, k));
-      start = k + 1;
-    }
-  }
-  out.push(s.slice(start));
-  return out;
-}
-
-const PRECISION_CALL = /"[^"]*"|\b(?:evalf|approx)\s*\(/g;
+const PRECISION_FNS = ["evalf", "approx"];
 const INTEGER = /^\s*\d+\s*$/;
 
 /** A precision text that is an integer literal (`20`, ` 15 `): the one form the readers of n take as typed. */
@@ -179,26 +141,17 @@ export function isLiteral(n: string): boolean {
 export function mapPrecisions(input: string, f: (n: string) => string | null): string {
   let out = "";
   let i = 0;
-  for (;;) {
-    PRECISION_CALL.lastIndex = i;
-    const m = PRECISION_CALL.exec(input);
-    if (!m) return out + input.slice(i);
-    const end = PRECISION_CALL.lastIndex;
-    if (m[0].startsWith('"')) {
-      out += input.slice(i, end);
-      i = end;
-      continue;
-    }
-    const open = end - 1;
-    const close = closing(input, open);
-    if (close < 0) return out + input.slice(i);
-    const args = topLevelArgs(input.slice(open + 1, close));
+  for (const c of callsOf(input, PRECISION_FNS)) {
+    if (c.at < i) continue;
+    if (c.close < 0) return out + input.slice(i);
+    const args = topLevelArgs(input.slice(c.open + 1, c.close));
     const n = args.length === 2 ? f(args[1]!) : null;
-    out += input.slice(i, open + 1);
-    out += n !== null ? `${mapPrecisions(args[0]!, f)},${n}` : mapPrecisions(input.slice(open + 1, close), f);
+    out += input.slice(i, c.open + 1);
+    out += n !== null ? `${mapPrecisions(args[0]!, f)},${n}` : mapPrecisions(input.slice(c.open + 1, c.close), f);
     out += ")";
-    i = close + 1;
+    i = c.close + 1;
   }
+  return out + input.slice(i);
 }
 
 /** Every `evalf(e,n)` and `approx(e,n)` in `input` whose n is an integer literal, with n replaced by `at(n)`. */
@@ -229,32 +182,10 @@ export const MAX_ASKED_DIGITS = 1000;
 /** n when the whole input is `evalf(e,n)` or `approx(e,n)` with an integer literal 1 ≤ n ≤ MAX_ASKED_DIGITS: the
  *  digits CAS shows the result with (decisions M4-6); null otherwise. */
 export function askedDigits(input: string): number | null {
-  const t = input.trim();
-  const m = /^(?:evalf|approx)\s*\(/.exec(t);
-  if (!m) return null;
-  const open = m[0].length - 1;
-  if (closing(t, open) !== t.length - 1) return null;
-  const args = topLevelArgs(t.slice(open + 1, -1));
-  if (args.length !== 2 || !isLiteral(args[1]!)) return null;
+  const args = wholeCall(input, "evalf") ?? wholeCall(input, "approx");
+  if (!args || args.length !== 2 || !isLiteral(args[1]!)) return null;
   const n = parseInt(args[1]!, 10);
   return n >= 1 && n <= MAX_ASKED_DIGITS ? n : null;
-}
-
-/** Names called in a Giac input (`romberg(exp(-x^2),x,0,1)` → romberg, exp). Strings are skipped. */
-export function functionsIn(input: string): string[] {
-  const out: string[] = [];
-  const re = /"[^"]*"|([A-Za-z_][A-Za-z0-9_]*)\s*\(/g;
-  for (let m = re.exec(input); m; m = re.exec(input)) if (m[1] && !out.includes(m[1])) out.push(m[1]);
-  return out;
-}
-
-/** Names in an input that are not called (`B*2+f(x)` → B, x). Strings are skipped. */
-export function namesIn(input: string): string[] {
-  const out: string[] = [];
-  // Number literals first, so the exponent of 2e5 is not read as a name.
-  const re = /"[^"]*"|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?|([A-Za-z_][A-Za-z0-9_]*)(\s*\()?/g;
-  for (let m = re.exec(input); m; m = re.exec(input)) if (m[1] && !m[2] && !out.includes(m[1])) out.push(m[1]);
-  return out;
 }
 
 /** Why the facts of a float result carry a warning (`why` of HomeResult); undefined when nothing is to be said.
@@ -278,17 +209,12 @@ export function whyOf(facts: readonly ElementFacts[], expr: string | null): Prec
  * `_evalf` on x and then work on a C double or giac's `fPart` of a float. One-argument round stays audited (exact).
  */
 const DOUBLE_FORMS: Readonly<Record<string, number>> = { round: 2, trunc: 2 };
-const DOUBLE_FORM_CALL = new RegExp(`"[^"]*"|\\b(${Object.keys(DOUBLE_FORMS).join("|")})\\s*\\(`, "g");
 
 /** The names of the DOUBLE_FORMS calls in `input` (`round(x,5)` → round; `round(x)` → none). Strings are skipped. */
 export function doubleFormsIn(input: string): string[] {
   const out: string[] = [];
-  for (const m of input.matchAll(DOUBLE_FORM_CALL)) {
-    const name = m[1];
-    if (name === undefined || out.includes(name)) continue;
-    const open = m.index + m[0].length - 1;
-    const close = closing(input, open);
-    if (close >= 0 && topLevelArgs(input.slice(open + 1, close)).length === DOUBLE_FORMS[name]) out.push(name);
+  for (const { name, open, close } of callsOf(input, Object.keys(DOUBLE_FORMS))) {
+    if (!out.includes(name) && close >= 0 && topLevelArgs(input.slice(open + 1, close)).length === DOUBLE_FORMS[name]) out.push(name);
   }
   return out;
 }
@@ -307,31 +233,6 @@ export function isAudited(input: string, also: readonly string[] = []): boolean 
 // --- shapes: a scalar, a list, a matrix ------------------------------------------------------------------------------
 
 export type Shape = { kind: "scalar" } | { kind: "list"; n: number } | { kind: "matrix"; rows: number; cols: number };
-
-/** The elements of a bracketed Giac list (`[a,b]`, `list[a,b]`, the `solve` form), top level only; null otherwise. */
-export function splitList(text: string): string[] | null {
-  const t = text.trim();
-  const body = t.startsWith("list[") ? t.slice(4) : t;
-  if (!body.startsWith("[") || !body.endsWith("]")) return null;
-  const inner = body.slice(1, -1);
-  if (inner.trim() === "") return [];
-  const parts: string[] = [];
-  let depth = 0;
-  let start = 0;
-  for (let k = 0; k < inner.length; k++) {
-    const ch = inner.charAt(k);
-    if (ch === "[" || ch === "(") depth++;
-    else if (ch === "]" || ch === ")") depth--;
-    else if (ch === "," && depth === 0) {
-      parts.push(inner.slice(start, k).trim());
-      start = k + 1;
-    }
-    if (depth < 0) return null;
-  }
-  if (depth !== 0) return null;
-  parts.push(inner.slice(start).trim());
-  return parts;
-}
 
 /** Elements above which a list or matrix is shown as Giac's text, unchecked (keeps Enter fast). */
 export const MAX_ITEMS = 400;

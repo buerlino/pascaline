@@ -11,7 +11,8 @@
 //   range) is refused "underflow", as an overflow is (underflow).
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
-import { functionsIn, MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { functionsIn } from "./giacPrint.ts";
 import { isZero } from "./format.ts";
 
 /** The reasons of this module; the UI shows `error.<code>` from the i18n table (enEngine.ts). */

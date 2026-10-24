@@ -25,33 +25,8 @@ import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromRational, decimalFromString, formatConfirmed, isZero, tieRisk, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
-import {
-  askedDigits,
-  functionsIn,
-  DOUBLE_DIGITS,
-  doubleFallback,
-  exactFacts,
-  floatFacts,
-  floatPathFacts,
-  integratedFacts,
-  hasFloat,
-  isAudited,
-  doubleFormsIn,
-  unauditedIn,
-  numericDisagrees,
-  notBuiltin,
-  floatsShown,
-  heavySplit,
-  REGROUP_MAX,
-  shapeOfValue,
-  endsEarly,
-  valuePrecision,
-  whyOf,
-  withDigits,
-  type ElementFacts,
-  type Giac,
-  type Shape,
-} from "./numeric.ts";
+import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { functionsIn } from "./giacPrint.ts";
 import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";

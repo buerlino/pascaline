@@ -7,7 +7,8 @@
 // from the text: a part `M^n` (n ≠ 1), `inv(M)` or `a/M` whose M evaluates to a matrix with rows ≠ columns. A flat
 // vector ([1,2]^2 = v·v, [5,1]^-1 elementwise) keeps Giac's meaning: it is no matrix.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
-import { functionsIn, type Giac } from "./numeric.ts";
+import { type Giac } from "./numeric.ts";
+import { functionsIn } from "./giacPrint.ts";
 import { CHANGES_STATE } from "./novalue.ts";
 import { MAX_NODES, treeOf, UNEVALUATED, type TreeNode } from "./tree.ts";
 import type { ParseNode } from "./bridge.ts";
