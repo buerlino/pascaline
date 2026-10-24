@@ -529,6 +529,22 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     const v = own.cas("evalf(f(1))", defaultCasSettings).result;
     expect(v.numeric?.facts.why?.unaudited ?? []).not.toContain("tanh");
   });
+  it("G56: what a stored body reads is copied all the way down; a run-once input names atan (source: derived)", async () => {
+    const { complexReads, purgeReads } = await import("./complex.ts");
+    const L = await loadNodeGiac();
+    const giac = engineGiac(L);
+    const own = new EngineHost(L.giac, L.bridge);
+    own.cas("w:=atan(2*i)", defaultCasSettings);
+    own.cas("f(x):=atan(x)", defaultCasSettings);
+    own.cas("g(x):=f(x)+w", defaultCasSettings);
+    const r = complexReads(giac, "evalf(g(2*i))");
+    purgeReads(giac, r.copies);
+    // g, f and w each get a copy (g's own text calls no atan), and nothing is hidden.
+    expect(r.copies.length).toBe(3);
+    expect(r.hidden).toEqual([]);
+    expect(r.text).not.toContain("g(");
+    expect(complexReads(giac, "evalf(g(2*i))", false)).toEqual({ text: "evalf(g(2*i))", copies: [], hidden: ["atan"] });
+  });
   it("our definitions load on first use, not at engine start (start-up budget)", async () => {
     const { giac, bridge } = await loadNodeGiac();
     const fresh = new EngineHost(giac, bridge);
