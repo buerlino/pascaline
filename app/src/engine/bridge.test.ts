@@ -130,6 +130,13 @@ describe.skipIf(!giacAvailable())("the engine loaders with the wrappers", () => 
     const { bridge } = await loadNodeGiac();
     expect(bridge.parse("f(x):={n:=n+1;return x;}")).toMatchObject({ targets: ["n", "f"], top: ["f"], program: true, reads: ["n"] });
     expect(bridge.parse("f:=x->x")).toMatchObject({ top: ["f"], program: true });
+    // G100: the value's own targets (a body storing into its own name keeps it) and the target's written form
+    expect(bridge.parse("f(x):={f:=0;return x;}")).toMatchObject({ targets: ["f"], top: ["f"], value: ["f"], form: "name" });
+    expect(bridge.parse("f(x):={n:=n+1;return x;}").value).toEqual(["n"]);
+    expect(bridge.parse("L[2]:=5")).toMatchObject({ top: ["L"], value: [], form: "indexed" });
+    expect(bridge.parse("[a,b]:=[b,a]").form).toBe("list");
+    expect(bridge.parse("Beta(x):=x")).toMatchObject({ top: [], form: "call", callee: "Beta" });
+    expect(bridge.parse("x^2")).toMatchObject({ value: [], form: "", callee: "" });
     expect(bridge.parse("a:=map(L,x->x)")).toMatchObject({ top: ["a"], program: false, reads: ["L"] });
     expect(bridge.parse("L[k]:=y")).toMatchObject({ top: ["L"], reads: ["y", "L", "k"] });
     expect(bridge.parse("[a,b]:=[b,a]").top).toEqual(["a", "b"]);

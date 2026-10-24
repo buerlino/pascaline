@@ -7,7 +7,7 @@
 import raw from "../../tests/golden/bench.yaml";
 import type { Session, HistoryItem } from "./state/session.svelte.ts";
 import { mark } from "./marks.ts";
-import { asGiac, parseLibrary } from "./engine/library.ts";
+import { asGiac } from "./engine/library.ts";
 
 interface Case { id: string; input: string; expect?: string }
 const r1 = (x: number): number => Math.round(x * 10) / 10;
@@ -43,10 +43,15 @@ export async function runDefsBench(session: Session): Promise<void> {
 }
 
 /** The 200 programs of G33's replay measurement (library.test.ts "200 library programs replay"): a library file. */
+/** The 200 programs, as the file writes them. */
+export function libraryBenchPrograms(): string[] {
+  const out: string[] = [];
+  for (let i = 1; i <= 200; i++) out.push(`lib${i}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${i};\n}`);
+  return out;
+}
+
 export function libraryBenchText(): string {
-  let text = "// pascaline library 1\n";
-  for (let i = 1; i <= 200; i++) text += `\n// program ${i}\nlib${i}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${i};\n}\n`;
-  return text;
+  return `// pascaline library 1\n${libraryBenchPrograms().map((p, k) => `\n// program ${k + 1}\n${p}\n`).join("")}`;
 }
 
 /**
@@ -56,7 +61,8 @@ export function libraryBenchText(): string {
 export async function runLibraryBench(session: Session): Promise<void> {
   while (session.engineState === "starting") await sleep(20);
   session.setView("cas");
-  for (const d of parseLibrary(libraryBenchText()).defs) await enter(session, asGiac(d.text));
+  // the file's programs as parseLibrary reads them (benchLibrary.test.ts checks the import defines the same log)
+  for (const p of libraryBenchPrograms()) await enter(session, asGiac(p));
   await sleep(2000);
   mark("library-seeded");
 }

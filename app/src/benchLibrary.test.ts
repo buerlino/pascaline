@@ -27,7 +27,7 @@ describe("?bench=library", () => {
 
   it.skipIf(!giacAvailable())("defines the same log as importLibrary does (real Giac)", async () => {
     const fresh = async (): Promise<EngineHost> => (await nodeHost());
-    const lib = parseLibrary(libraryBenchText());
+    const lib = parseLibrary(libraryBenchText(), (await nodeHost()).parse);
     const imp = importLibrary(await fresh(), lib, []);
     expect(imp.ok && imp.log).toHaveLength(200);
     const h = await fresh();

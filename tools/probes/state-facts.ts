@@ -18,9 +18,10 @@
 // Engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl. Read-only; nothing is written.
 import { readFileSync } from "node:fs";
 import { EngineHost, type GiacApi } from "../../app/src/engine/host.ts";
+import { formOf, mayStore } from "../../app/src/engine/stores.ts";
 import type { GiacBridge } from "../../app/src/engine/bridge.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
-import { definedBy, defaultHomeSettings, ENGINE_DEFINITIONS, isStateful, pasdegCommand, WORKER_DEFINITION_NAMES, precisionFacts, type HomeResult, type HomeSettings } from "../../app/src/engine/homeEval.ts";
+import { defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand, WORKER_DEFINITION_NAMES, precisionFacts, type HomeResult, type HomeSettings } from "../../app/src/engine/homeEval.ts";
 import { COMPLEX_DEFINITIONS, hasFloat, valuePrecision } from "../../app/src/engine/numeric.ts";
 import { markOf, type MarkInfo } from "../../app/src/engine/format.ts";
 import { defaultCasSettings, type CasResult } from "../../app/src/engine/types.ts";
@@ -267,7 +268,9 @@ async function run(c: Case, show: boolean): Promise<Row> {
     // the state model: chips as stored names with their facts, for this step only; an input the log keeps as typed (a
     // function definition) gets their values, as the host does, and their facts are lent (G49f1)
     const held = st.view === "cas" ? [] : chipsIn(st.input, named);
-    const asValues = isStateful(st.input) && definedBy(st.input)?.kind !== "var";
+    // G100: the host's form of the input (stores.ts), from Giac's tree
+    const form = formOf(st.input, mayStore(st.input) ? bridge.parse(st.input) : null, () => false);
+    const asValues = form.stores && form.defined?.kind !== "var";
     const input = asValues && held.length ? withChipValues(st.input, named, new Set()) : st.input;
     const lent = held.filter((j) => !named[j]!.exact).map((j) => chipNameFacts(named[j]!));
     if (!asValues)

@@ -6,7 +6,6 @@ import type { GiacBridge, GiacParse } from "./bridge.ts";
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import {
-  definedBy,
   definitionsUsedBy,
   ENGINE_DEFINITIONS,
   WORKER_DEFINITION_NAMES,
@@ -19,15 +18,12 @@ import {
   homeSetupCommands,
   angleCommand,
   latexShown,
-  isStateful,
   onceUndecided,
   regrouped,
   resultFromFacts,
   safePrecision,
   symbolicWhy,
   testSides,
-  simpleAssignment,
-  storeTargets,
   toExactLiterals,
   unquote,
 } from "./homeEval.ts";
@@ -40,7 +36,8 @@ import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerica
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOf, valuePrecision, whyOf, withDigits } from "./numeric.ts";
-import { callsStateful, decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
+import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
+import { assignmentIn, formIn, formOf, mayStore, programStores, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
 import { afterCall, changesOf, parsePrinted, readsFrom, splitAfter, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
 import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
@@ -115,8 +112,6 @@ export function messageBuffer(): { print: (s: string) => void; messages: () => s
   };
 }
 
-export { isStateful };
-
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
 }
@@ -150,12 +145,6 @@ type CasError = NonNullable<CasResult["error"]>;
 const CONSTANT_NAMES: ReadonlySet<string> = new Set(["i", "pi", "e", "infinity", "inf", "undef", "euler_gamma", "true", "false"]);
 
 const IDENT_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
-
-/** `L[2]:=…`: an element of a stored list or matrix (the whole variable is what changes). */
-function indexedTarget(input: string): string | null {
-  const m = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\[[^\]]*\]\s*:=/.exec(input);
-  return m ? m[1]! : null;
-}
 
 /** Engine state and the synchronous operations on it. One per Giac instance. */
 export class EngineHost implements FactsHost {
@@ -380,6 +369,38 @@ export class EngineHost implements FactsHost {
     return this.post;
   }
 
+  /** G100 (stores.ts): how `input` stores. Its tree decides, parsed only when the text can hold a store (mayStore); a
+   *  stored program it names counts by its kept stores, walked through the programs it reads. */
+  private formFor(input: string): InputForm {
+    return formOf(input, mayStore(input) ? this.treeOf(input) : null, (names) => writesThrough(names, (n) => this.keptOf(n)));
+  }
+
+  /** G100: the kept stores of a parsed program text, by text (a restored entry: the stored log keeps none, validDefs). */
+  private readonly keptByText = new Map<string, ProgramStores>();
+
+  /**
+   * G100: what the program `name` stores when it runs: the stores its log entry keeps (read when it was defined), else
+   * read once from its definition (a restored entry) or from the program Giac holds under the name (one a body defined).
+   * A value that is no program goes on through the names in it (`h:=g`). Null for a name the host does not hold.
+   */
+  private keptOf(name: string): ProgramStores | null {
+    const e = this.byName.get(name);
+    if (e?.stores) return e.stores;
+    if (e?.kind === "fn") return this.keptFrom(e.cmds[0]!);
+    const t = this.stored.get(name);
+    if (t?.fn) return this.keptFrom(t.text);
+    return t ? { writes: [], calls: t.names } : null;
+  }
+
+  private keptFrom(text: string): ProgramStores {
+    let k = this.keptByText.get(text);
+    if (!k) this.keptByText.set(text, (k = programStores(this.bridge.parse(text))));
+    return k;
+  }
+
+  /** Giac's tree of a text (bridge-2), never evaluated: what a library file's bodies store (library.ts parseLibrary). */
+  readonly parse = (text: string): GiacParse => this.bridge.parse(text);
+
   /** Giac's tree of `input` (bridge-2), parsed once per Enter. */
   private treeOf(input: string): GiacParse {
     if (this.parsed?.text !== input) this.parsed = { text: input, tree: this.bridge.parse(input) };
@@ -417,7 +438,7 @@ export class EngineHost implements FactsHost {
    *  becomes var entries for the names the replay set that no entry holds (their names come from the table), and goes
    *  from the log (a purge of `#<cmds>`, defs.ts); passed on through migratedChanges. One that set no new name stays. */
   private otherToNames(entries: readonly DefEntry[], post: AfterInput): void {
-    const others = entries.filter((e) => e.kind === "other" && e.cmds.some(isStateful));
+    const others = entries.filter((e) => e.kind === "other" && e.cmds.some((c) => this.formFor(c).stores));
     if (!others.length || !post.table) return;
     const base = { preview: "", view: "cas" as const, time: Date.now() };
     const sets: DefChange[] = [];
@@ -474,7 +495,7 @@ export class EngineHost implements FactsHost {
     const output = this.giac.eval(input);
     const ok = !isError(output);
     let defs: DefChange[] = [];
-    if (ok && isStateful(input)) {
+    if (ok && this.formFor(input).stores) {
       const post = this.after(input, true, true);
       defs = this.defsAfter(input, [input], output, null, null, "home", 12, undefined, post);
       this.commit(post);
@@ -496,8 +517,11 @@ export class EngineHost implements FactsHost {
     const purged = purge ? purge[1]!.split(",").map((x) => x.trim()).filter((n) => IDENT_NAME.test(n)) : [];
     const gone = [...new Set([...purged, ...(post.changes?.removed ?? [])])];
     const assume = /^\s*(assume|additionally)\s*\(\s*([A-Za-z][A-Za-z0-9_]*)/.exec(input);
-    const def = definedBy(input);
-    // A state that could not be read: the names the parse or the text says it sets.
+    // G100: the input's tree (parsed for the state read): the function `f(x):=…` defines, and the stores a program keeps
+    const tree = this.treeOf(input);
+    const def = formOf(input, tree, () => false).defined;
+    const kept = tree.program && tree.top.length === 1 ? programStores(tree) : undefined;
+    // A state that could not be read: the names the parse says it sets.
     const changed = post.table
       ? [...new Set([...(post.changes?.changed ?? []), ...post.reads.targets.filter((n) => post.table!.has(n))])]
       : [...new Set([...post.reads.targets, ...(def ? [def.name] : [])])];
@@ -510,13 +534,13 @@ export class EngineHost implements FactsHost {
     }
     for (const name of changed) {
       if (def?.kind === "fn" && def.name === name) {
-        changes.push({ set: { name, kind: "fn", cmds: ran, ...(fn ? { facts: fn } : {}), ...base } });
+        changes.push({ set: { name, kind: "fn", cmds: ran, ...(fn ? { facts: fn } : {}), ...(kept ? { stores: kept } : {}), ...base } });
         continue;
       }
       const snap = this.snapshot(name, digits);
       changes.push(
         snap
-          ? { set: { name, kind: "var", cmds: [snap.cmd], ...storedFacts(facts, snap.float), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }
+          ? { set: { name, kind: "var", cmds: [snap.cmd], ...storedFacts(facts, snap.float), ...(kept && def?.name === name ? { stores: kept } : {}), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }
           : { purge: [name] },
       );
     }
@@ -569,17 +593,18 @@ export class EngineHost implements FactsHost {
     this.parsed = null;
     const out = this.homeTabled(input, s, consts, chips);
     // G67, G65: the call after the input, if the run did not make it (an error: a syntax error ran nothing)
-    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && (isStateful(input) || callsStateful(this.giac, input)));
+    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && this.formFor(input).stores);
     this.commit(post);
     return post.reset ? { ...out, result: { ...out.result, settingReset: true } } : out;
   }
 
   private homeTabled(input: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
     if (!consts && !chips) return this.homeRun(input, s, false);
-    const asg = simpleAssignment(input);
-    const stateful = isStateful(input);
+    const form = this.formFor(input);
+    const asg = form.assignment;
+    const stateful = form.stores;
     const held = chips ? chipsIn(input, chips) : [];
-    const keep = new Set(stateful && definedBy(input)?.kind !== "var" ? [] : held.filter((k) => !chips![k]!.exact));
+    const keep = new Set(stateful && form.defined?.kind !== "var" ? [] : held.filter((k) => !chips![k]!.exact));
     const named = chips ? withChipValues(input, chips, keep) : input;
     // G49f1: the facts an inexact chip or constant lends to a function defined from it (its value is put in).
     const lent: NameFacts[] = [
@@ -592,10 +617,11 @@ export class EngineHost implements FactsHost {
       this.chipFacts.set(`${CHIP_PREFIX}${k}`, chipNameFacts(chips![k]!));
     }
     try {
-      const out = this.homeRun(consts ? withConstValues(named, consts) : named, s, inexactIn, lent);
+      const ran = consts ? withConstValues(named, consts) : named;
+      const out = this.homeRun(ran, s, inexactIn, lent, formIn(form, ran));
       // A setting the input changed was put back after its run: it is not run again (G67).
       if (!consts || (stateful && !asg) || this.post?.flagsChanged) return out;
-      const body = asg ? simpleAssignment(named)!.rhs : named;
+      const body = asg ? (formIn(form, named).assignment?.rhs ?? named) : named;
       const n = constUncDigits(this.giac, body, consts, out.result, Math.trunc(out.result.digits ?? s.digits));
       return n === undefined ? out : { ...out, result: { ...out.result, facts: { ...out.result.facts, uncDigits: n } } };
     } finally {
@@ -606,13 +632,15 @@ export class EngineHost implements FactsHost {
 
   /** `inexactIn` (G49): the input held a constant or chip that is not exact, so a value it stores is not exact.
    *  `lent` (G49f1): the facts of those chips and constants, for a function defined from them. */
-  private homeRun(input: string, s: HomeSettings, inexactIn: boolean, lent: readonly NameFacts[] = []): { result: HomeResult; defs: DefChange[] } {
+  private homeRun(input: string, s: HomeSettings, inexactIn: boolean, lent: readonly NameFacts[] = [], given?: InputForm): { result: HomeResult; defs: DefChange[] } {
     this.need(input);
     this.useHomeMode(s);
     const t0 = performance.now();
     let result: HomeResult;
+    // G100: a chip's or constant's input brings the form of its typed text (homeTabled), the value cut from this one
+    const form = given ?? this.formFor(input);
     try {
-      result = homeEval(this.strict, input, s);
+      result = homeEval(this.strict, input, s, undefined, form);
     } catch (e) {
       if (!(e instanceof GiacSyntaxError)) throw e;
       const ms = performance.now() - t0;
@@ -624,11 +652,11 @@ export class EngineHost implements FactsHost {
     if (!result.ok) return { result: { ...result, error: result.error ?? "engine" }, defs: [] };
     // M4-7: a value computed from stored floats keeps their marks. An assignment's right side is what ran; a
     // self-reference (B:=B*2) already overwrote B, and other stateful inputs cannot run again, so neither is moved.
-    const asg = simpleAssignment(input);
+    const asg = form.assignment;
     const body = asg ? asg.rhs : input;
-    const stateful = isStateful(input);
+    const stateful = form.stores;
     const once = asg ? namesIn(asg.rhs).includes(asg.name) : stateful;
-    const storing = !once && callsStateful(this.strict, body);
+    const storing = !once && form.once;
     // G65: the call after the input: Giac's settings, the names it read, and the stored names when it may have stored
     const post = this.after(input, true, stateful || storing, result.exact);
     const rerun = !once && !storing && !post.flagsChanged;
@@ -658,14 +686,13 @@ export class EngineHost implements FactsHost {
    *  holds as values. An assignment lists its own target when its right side reads it (`x:=x+1`).
    *  Taken before the input runs, since it may change the log. */
   private usesOf(input: string): NonNullable<CasResult["uses"]> {
-    const asg = simpleAssignment(input);
-    const def = asg ? undefined : definedBy(input);
-    const target = asg ? undefined : (def?.name ?? indexedTarget(input));
-    // G48: the names a list assignment sets are not read either.
-    const set = asg ? [] : (storeTargets(input)?.names ?? []);
-    // a store's tree reads its stored side only, as asg.rhs alone
-    return (wordsOf(input).some((w) => this.byName.get(w)?.kind === "var") ? this.treeOf(input).reads : [])
-      .filter((n) => n !== target && !set.includes(n))
+    if (!wordsOf(input).some((w) => this.byName.get(w)?.kind === "var")) return [];
+    // a store's tree reads its stored side only, as asg.rhs alone; G48: the names any other top-level store sets (a
+    // list assignment, f(x):=…, L[k]:=…, v=>a) are not read either
+    const tree = this.treeOf(input);
+    const set = assignmentIn(input, tree) ? [] : tree.top;
+    return tree.reads
+      .filter((n) => !set.includes(n))
       .flatMap((n) => {
         const e = this.byName.get(n);
         return e?.kind === "var" ? [{ name: n, preview: e.preview, view: e.view }] : [];
@@ -679,7 +706,7 @@ export class EngineHost implements FactsHost {
     const out = this.casRun(input, s);
     if (used.length && out.result.ok) out.result.uses = used;
     // G67, G65: the call after the input, if the run did not make it (an error or a refusal)
-    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && (isStateful(input) || callsStateful(this.giac, input)));
+    const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && this.formFor(input).stores);
     this.commit(post);
     if (post.reset) out.result.settingReset = true;
     return out;
@@ -702,7 +729,9 @@ export class EngineHost implements FactsHost {
     if (test) this.giac.eval(`purge(${EQ_INEXACT_FLAG},${EQ_DIFF})`);
     // G39: `a:=sum(cos(k),k,1,inf)` must store nothing when its value is refused, so an assignment whose value holds a
     // definite integral, a series or a limit runs its right-hand side first, is checked, and only then stored.
-    const asg0 = simpleAssignment(exactInput);
+    // G100: how the input stores, from its tree (stores.ts); the value is cut from the exact text
+    const form = this.formFor(input);
+    const asg0 = formIn(form, exactInput).assignment;
     // G57: so does one whose value rests on a decision, which may be refused as undecided.
     // G97: and one whose value may be a power of a non-square matrix, which is refused; G106: or a list plus a number.
     // G106: whether a name holds a list is read from Giac's print in the stored table (G65's state read, already made):
@@ -710,7 +739,7 @@ export class EngineHost implements FactsHost {
     // text gate moves to bridge-3 with the poly1 check when G103 reads a value's kind (docs/04 6.1).
     const isList = (n: string): boolean => this.stored.get(n)?.text.startsWith("[") === true;
     const guarded =
-      asg0 && !isStateful(asg0.rhs) && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || mayAddToList(asg0.rhs, isList) || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
+      asg0 && !form.once && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || mayAddToList(asg0.rhs, isList) || restsOnDecision(asg0.rhs, "", notBuiltin(this.giac))) ? asg0 : null;
     // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
     // mode's Digits stays the setting, which prints the floats of a non-number.
     const digitsSet = Math.trunc(s.digits);
@@ -728,7 +757,7 @@ export class EngineHost implements FactsHost {
     if (isError(text)) {
       // G71 (F59): no MPFR value at P (a decision over BesselJ): an expression that stores nothing is decided at the double,
       // with ⚠, as in Home. An assignment keeps the error (its definitions-log entry would hold a double).
-      const dbl = isTimeout(text) || asg0 || isStateful(input) || callsStateful(this.giac, input) ? null : decidedAtDouble(this.giac, "pcasans", body, digitsSet);
+      const dbl = isTimeout(text) || asg0 || form.stores ? null : decidedAtDouble(this.giac, "pcasans", body, digitsSet);
       if (dbl === null) return fail(text, isTimeout(text) ? "timeout" : "engine");
       const why = { unaudited: unauditedIn(body) };
       const engineMs = performance.now() - t0;
@@ -737,10 +766,8 @@ export class EngineHost implements FactsHost {
       const numeric = { ...r, facts: { ...r.facts, why } };
       return { result: { ok: true, text: numeric.display, latex: numberLatex(numeric.display), timedOut: false, engineMs, numeric, facts: numeric.facts }, defs: [] };
     }
-    const stateful = isStateful(input);
-    // A call to a stored function that stores (inc(x):={c:=c+1;c}) must not run again either, assigned or not.
-    const storing = callsStateful(this.giac, input);
-    const single = stateful || storing;
+    // A call to a stored function that stores (inc(x):={c:=c+1;c}) must not run again either, assigned or not (form.once).
+    const single = form.stores;
     // An == or ≠ test on a float side: decided by its own digits, as in Home (R18f2).
     const inexactTest = test && this.giac.eval(EQ_INEXACT_FLAG) === "1";
     const decided = inexactTest && !single ? decideFloatTest(this.giac, exactInput, digitsSet) : null;
@@ -753,10 +780,10 @@ export class EngineHost implements FactsHost {
     // == or ≠ test too, only one with a float side is decideFloatTest's.
     // A plain name:=value decides its value (the right-hand side) and stores the agreed one, as Home does; other
     // stateful inputs (f(x):=…, purge, assume, =>) must not run twice.
-    const asg = simpleAssignment(input);
-    const once = (!asg && stateful) || storing;
+    const asg = form.assignment;
+    const once = asg ? form.once : form.stores;
     // G48: an input that runs once and rests on a decision is ⚠, as in Home (it cannot be decided again).
-    let undecided = once && !inexactTest && onceUndecided(this.giac, input, exactInput, text);
+    let undecided = once && !inexactTest && onceUndecided(this.giac, form, exactInput, text);
     const decisionExpr = asg ? toExactLiterals(asg.rhs) : exactInput;
     // G57: a decision the precisions do not agree on, or a tie Giac cannot prove, is refused as in Home (nothing is stored).
     let refusedCut = false;
@@ -912,7 +939,7 @@ export class EngineHost implements FactsHost {
   table(req: TableRequest, s: HomeSettings): HomeResult[][] {
     this.need(expressionsOf(req.fns));
     this.useHomeMode(s);
-    return table(this.watched, req, s);
+    return table(this.watched, req, s, (cell) => this.formFor(cell));
   }
 
   private useHomeMode(s: HomeSettings): void {
@@ -950,11 +977,6 @@ const LOAD_ALL = /\b(VARS|expr|rm_all_vars|restart)\b/;
 /** G83f1: the expression strings of a request, for need(): one per line, the absent ones left out. */
 function expressionsOf(...lists: (readonly (string | undefined)[] | undefined)[]): string {
   return lists.flatMap((l) => l ?? []).filter((t): t is string => t !== undefined).join("\n");
-}
-
-/** The distinct identifiers in `text`. */
-function wordsOf(text: string): string[] {
-  return [...new Set(text.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [])];
 }
 
 /** Brackets and quotes pair up: a command with a stray one would swallow what follows it in a batch. */

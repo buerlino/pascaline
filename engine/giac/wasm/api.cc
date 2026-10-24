@@ -199,6 +199,13 @@ void walk(const gen &g, Walk &w) {
   w.add(w.heads, w.seenH, h);
   const gen &f = g._SYMBptr->feuille;
   const giac::vecteur *v = f.type == giac::_VECT ? f._VECTptr : nullptr;
+  // G100: `for k in L` is for(1, for(k, L), 1, body) in Giac's tree; the loop stores k (Giac leaves L's last element in
+  // it, probed), L is read. A two-argument `for` with a name first is only that form.
+  if (h == "for" && v && v->size() == 2 && (*v)[0].type == giac::_IDNT) {
+    walkTarget((*v)[0], w);
+    walk((*v)[1], w);
+    return;
+  }
   if (among(h, STORE_HEADS, sizeof STORE_HEADS / sizeof *STORE_HEADS)) {
     if (h == "sto" || h == "array_sto") {
       if (v && v->size() == 2) {
@@ -512,17 +519,24 @@ EMSCRIPTEN_KEEPALIVE const char *giac_ctx_set(const char *json) {
 }
 
 // bridge-2: Giac's tree of `text`, not evaluated, as JSON: {"ok","heads","reads","targets","bound","top","program",
-// "float","string","nodes"}. heads: every function node (and a function passed as a value); reads: free names (pi and euler_gamma left
+// "value","form","callee","float","string","nodes"}. heads: every function node (and a function passed as a value); reads: free names (pi and euler_gamma left
 // out, as lname does; bound names and pure store targets left out); targets: names a store sets (sto, =>, :=, L[k]:=,
 // increment and the other +=, purge); bound: program parameters, locals and the variable of sum/int/seq …; top: the
 // targets of the top-level store alone (a name, L of L[k]:=, a list's names; [] when the text is not one store, G99);
 // program: that store's value is a program (f(x):=…, f:=x->…); float: a float literal occurs. Strings are leaves. ok false: Giac's parser reported an error.
+// G100: value: the targets of the top-level store's value alone (a body storing into its own name, f(x):={f:=0;…},
+// keeps f there, which targets lists once); form: how that store's target is written: "name" (f:=…, and f(x):=…,
+// which Giac's tree holds as f:=(x)->… and prints so for a block body), "indexed" (L[k]:=…), "list" ([a,b]:=…), "call"
+// (a call that names no new function, Beta(x):= on a built-in; callee: its head), "other", or "" when the text is not
+// one store.
 EMSCRIPTEN_KEEPALIVE const char *giac_parse(const char *text) {
   const giac::context *c = ctx();
   bool err = false;
   Walk w;
-  Walk top;  // the top-level store's targets alone
+  Walk top;    // the top-level store's targets alone
+  Walk value;  // the top-level store's value alone
   bool program = false;
+  std::string form, callee;
   try {
     gen g = parseInput(text, c, err);
     walk(g, w);
@@ -530,6 +544,19 @@ EMSCRIPTEN_KEEPALIVE const char *giac_parse(const char *text) {
       const giac::vecteur &v = *g._SYMBptr->feuille._VECTptr;
       program = v[0].is_symb_of_sommet(giac::at_program);
       walkTarget(v[1], top);
+      walk(v[0], value);
+      const gen &t = v[1];
+      if (t.type == giac::_IDNT)
+        form = "name";
+      else if (t.type == giac::_VECT)
+        form = "list";
+      else if (t.type == giac::_SYMB && headOf(t) == "at")
+        form = "indexed";
+      else if (t.type == giac::_SYMB) {
+        form = "call";
+        callee = headOf(t);
+      } else
+        form = "other";
     }
   } catch (std::runtime_error &e) {
     err = true;
@@ -542,6 +569,9 @@ EMSCRIPTEN_KEEPALIVE const char *giac_parse(const char *text) {
   jkey(o, "bound"), jlist(o, w.bound);
   jkey(o, "top"), jlist(o, top.targets);
   jkey(o, "program"), o += program ? "true" : "false";
+  jkey(o, "value"), jlist(o, value.targets);
+  jkey(o, "form"), jstr(o, form);
+  jkey(o, "callee"), jstr(o, callee);
   jkey(o, "float"), o += w.flt ? "true" : "false";
   jkey(o, "string"), o += w.str ? "true" : "false";
   jkey(o, "nodes"), o += std::to_string(w.nodes);

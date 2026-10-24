@@ -65,3 +65,12 @@ export function renameOurCalls(text: string): string {
 export function writeUserNames(text: string): string {
   return renameCalls(text, WRITTEN_NAME);
 }
+
+/** G100: the names our own test helper stores into (input/emit.ts equalityTest: the float flag and the difference,
+ *  homeEval.ts EQ_INEXACT_FLAG and EQ_DIFF spell the same): a store into one is not the user's. */
+export const OUR_STORES: readonly string[] = ["pasinexact", "pasdiff"];
+
+/** A store target that is one of our helpers' names, not the user's state. */
+export function isOurStore(name: string): boolean {
+  return OUR_STORES.includes(name);
+}
