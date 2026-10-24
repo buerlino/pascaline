@@ -22,7 +22,7 @@
   "src/engine/powers.ts": 14,
   "src/engine/solve.ts": 7,
   "src/engine/solve1.ts": 4,
-  "src/engine/stateRead.ts": 12,
+  "src/engine/stateRead.ts": 11,
   "src/engine/stores.ts": 2,
   "src/units/build.ts": 32,
   "src/units/dims.ts": 2,

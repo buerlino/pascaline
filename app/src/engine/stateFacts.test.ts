@@ -133,6 +133,16 @@ describe.skipIf(!giacAvailable())("G104: the state read costs what changed", () 
     expect([...inner.stored]).toEqual([...tableOf(parsePrinted(ev(statePart(12)))!, (n) => inner.byName.has(n))!]);
   });
 
+  // audit round 1: Giac's full read prints a's entry as "x+1" after x:=2 too (string(eval(k)) evaluates one level), so
+  // the read of the candidates logs x alone, as phase-1's full read does, and its table equals the full read
+  it("guard: a:=x+1, then x:=2 logs x, and the table equals the full read", async () => {
+    const { host, ev } = await counted();
+    host.home("a:=x+1", defaultHomeSettings);
+    expect(setNames(host.home("x:=2", defaultHomeSettings).defs)).toEqual(["x"]);
+    const inner = host as unknown as { stored: Map<string, StoredName>; byName: Map<string, unknown> };
+    expect([...inner.stored]).toEqual([...tableOf(parsePrinted(ev(statePart(12)))!, (n) => inner.byName.has(n))!]);
+  });
+
   it("guard: g2(1) logs the global n that g, which g2 calls, stores", async () => {
     const { host } = await counted();
     host.home("n:=0", defaultHomeSettings);

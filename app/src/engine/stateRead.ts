@@ -71,6 +71,8 @@ interface Node {
  *  parse. */
 export function parsePrinted(text: string): Node | null {
   let i = 0;
+  // the next quote from `from` (a string's end or a doubled quote; an atom skips a string inside it)
+  const nextQuote = (from: number): number => text.indexOf('"', from);
   const node = (): Node | null => {
     while (text[i] === " " || text[i] === "\n") i++;
     const start = i;
@@ -100,7 +102,7 @@ export function parsePrinted(text: string): Node | null {
       for (;;) {
         if (i >= text.length) return null;
         // G104: a slice up to the next quote (a 600 kB print char by char took longer than Giac printing it)
-        const q = text.indexOf('"', i);
+        const q = nextQuote(i);
         if (q < 0) return null;
         s += text.slice(i, q);
         i = q;
@@ -118,7 +120,7 @@ export function parsePrinted(text: string): Node | null {
     while (i < text.length) {
       const c = text[i]!;
       if (c === '"') {
-        const q = text.indexOf('"', i + 1);
+        const q = nextQuote(i + 1);
         if (q < 0) return null;
         i = q + 1;
         continue;

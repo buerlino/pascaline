@@ -6,6 +6,7 @@
 //                                               # inputs with a, b and f stored), and G104's Home c:=1, M1[1,1]:=0 with
 //                                               # two 300x300 matrices and a list of big integers stored; take the
 //                                               # host-cpu lock for the timing
+//   node tools/probes/state-facts.ts --stored   # G104's part of --cost alone
 //   SHOW=1 …                                    # every step: stored names, read names, both marks
 // Two engines run each sequence side by side:
 // - "text": EngineHost as the app runs it today (storeTargets, namesIn, functionsIn, maskBound, bodyFacts, callFacts …);
@@ -317,6 +318,7 @@ const rank = (m: string): number => (m.startsWith("⚠") ? 0 : m === "≈" ? 1 :
 
 async function main(): Promise<void> {
   const show = process.env.SHOW === "1";
+  if (process.argv.includes("--stored")) return storedCost();
   if (process.argv.includes("--cost")) return cost();
   const rows: Row[] = [];
   for (const c of cases()) rows.push(await run(c, show));
@@ -391,7 +393,7 @@ async function cost(): Promise<void> {
   for (let k = 0; k < 150; k++) g.eval(`v${k}:=${k % 3 === 0 ? `${k}.25` : k % 3 === 1 ? `sqrt(${k + 2})` : `${k}/7`}`);
   for (let k = 0; k < 50; k++) g.eval(`fn${k}(x):=x^2+v${k}*x+${k}`);
   leanRound("200 more stored (150 values, 50 functions)");
-  storedCost();
+  await storedCost();
 }
 
 /** G104: Home `c:=1` and `M1[1,1]:=0` with large values stored (M1, M2 = ranm(300,300), then L = seq(k!,k,1,1500)):
