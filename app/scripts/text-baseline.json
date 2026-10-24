@@ -17,7 +17,7 @@
   "src/engine/library.ts": 16,
   "src/engine/nonsquare.ts": 4,
   "src/engine/novalue.ts": 5,
-  "src/engine/numeric.ts": 32,
+  "src/engine/numeric.ts": 31,
   "src/engine/ourNames.ts": 8,
   "src/engine/powers.ts": 14,
   "src/engine/solve.ts": 7,

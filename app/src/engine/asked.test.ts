@@ -4,17 +4,21 @@ import { describe, expect, it } from "vitest";
 import { askedLiterals } from "./asked.ts";
 import { unreadFacts, unreadPrecision, type ElementFacts, type Giac } from "./numeric.ts";
 import { decimalFromString } from "./format.ts";
+import type { GiacValue } from "./bridge.ts";
 
-/** Giac's answers for the texts askedLiterals evaluates, and the texts it was asked. */
+/** Giac's answers (as it prints them) for the texts askedLiterals evaluates, and the texts it was asked. */
 function fakeGiac(answers: Record<string, string>): { giac: Giac; asked: string[] } {
   const asked: string[] = [];
   const giac: Giac = {
-    eval: (t) => {
-      asked.push(t);
-      return answers[t] ?? "GIAC_ERROR: unexpected";
-    },
-    value: () => {
+    eval: () => {
       throw new Error("not used");
+    },
+    value: (t): GiacValue => {
+      asked.push(t);
+      const out = answers[t] ?? "GIAC_ERROR: unexpected";
+      if (out.startsWith("GIAC_ERROR")) return { kind: "error", text: out };
+      const [num, den] = out.split("/");
+      return den === undefined ? { kind: "integer", text: out, num } : { kind: "rational", text: out, num, den };
     },
   };
   return { giac, asked };

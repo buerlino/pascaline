@@ -2,12 +2,11 @@
 // G91 (structure audit text-1): the precision an `evalf(e,n)` or `approx(e,n)` asks for, made a literal before any
 // reader of n sees the input (askedDigits, withAskedPrecision: decisions M4-6). Only erasable TypeScript syntax.
 import { toExactLiterals } from "./homeEval.ts";
-import { MAX_ASKED_DIGITS, mapPrecisions, type Giac } from "./numeric.ts";
+import { isLiteral, MAX_ASKED_DIGITS, mapPrecisions, type Giac } from "./numeric.ts";
 
-/** A precision text that is a whole literal already: the readers take it as it is. */
-const LITERAL = /^\s*\d+\s*$/;
-/** A precision text with no name in it, its decimals made exact (`20.0` is `(200/10^1)`, `2e1` is `(2*10^1)`). */
-const NAMELESS = /^[\d\s+\-*/^()]+$/;
+/** The characters of a precision text with no name in it, once its decimals are exact (`20.0` is `(200/10^1)`, `2e1`
+ *  is `(2*10^1)`). */
+const NAMELESS = new Set("0123456789+-*/^() ");
 /** Longest precision text evaluated (a typed n is short; a longer one stays unread). */
 const MAX_TEXT = 64;
 
@@ -20,20 +19,21 @@ const MAX_TEXT = 64;
  * (the view's mode setup, so the evaluation meets its budget and power limit).
  */
 export function askedLiterals(giac: Giac, input: string, ready: () => void): string {
-  if (!/\b(?:evalf|approx)\s*\(/.test(input)) return input;
   const seen = new Map<string, string | null>();
   let set = false;
   return mapPrecisions(input, (n) => {
-    if (LITERAL.test(n)) return null;
+    if (isLiteral(n)) return null;
     const known = seen.get(n);
     if (known !== undefined) return known;
     const exact = toExactLiterals(n);
     let lit: string | null = null;
-    if (n.length <= MAX_TEXT && NAMELESS.test(exact) && /\d/.test(exact)) {
+    if (n.length <= MAX_TEXT && [...exact].every((c) => NAMELESS.has(c)) && [...exact].some((c) => c >= "0" && c <= "9")) {
       if (!set) ready();
       set = true;
-      const v = giac.eval(`(${exact})`).trim();
-      if (/^\d+$/.test(v) && Number(v) >= 1 && Number(v) <= MAX_ASKED_DIGITS) lit = v;
+      // Giac's kind decides: an integer, with its digits in base 10 (bridge-3)
+      const v = giac.value(`(${exact})`, []);
+      const k = v.kind === "integer" && v.num !== undefined ? Number(v.num) : NaN;
+      if (Number.isInteger(k) && k >= 1 && k <= MAX_ASKED_DIGITS) lit = String(k);
     }
     seen.set(n, lit);
     return lit;

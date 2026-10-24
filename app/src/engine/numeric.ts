@@ -169,6 +169,11 @@ export function topLevelArgs(s: string): string[] {
 const PRECISION_CALL = /"[^"]*"|\b(?:evalf|approx)\s*\(/g;
 const INTEGER = /^\s*\d+\s*$/;
 
+/** A precision text that is an integer literal (`20`, ` 15 `): the one form the readers of n take as typed. */
+export function isLiteral(n: string): boolean {
+  return INTEGER.test(n);
+}
+
 /** Every `evalf(e,n)` and `approx(e,n)` in `input` with its precision text n replaced by `f(n)`; one for which `f`
  *  gives null is kept, and its arguments are walked as they are. */
 export function mapPrecisions(input: string, f: (n: string) => string | null): string {
@@ -198,7 +203,7 @@ export function mapPrecisions(input: string, f: (n: string) => string | null): s
 
 /** Every `evalf(e,n)` and `approx(e,n)` in `input` whose n is an integer literal, with n replaced by `at(n)`. */
 export function withAskedPrecision(input: string, at: (n: number) => number): string {
-  return mapPrecisions(input, (n) => (INTEGER.test(n) ? String(at(parseInt(n, 10))) : null));
+  return mapPrecisions(input, (n) => (isLiteral(n) ? String(at(parseInt(n, 10))) : null));
 }
 
 /** G91: `input` holds an `evalf(e,n)` or `approx(e,n)` whose n is no integer literal (a name, `2.5`; askedLiterals in
@@ -206,7 +211,7 @@ export function withAskedPrecision(input: string, at: (n: number) => number): st
 export function unreadPrecision(input: string): boolean {
   let unread = false;
   mapPrecisions(input, (n) => {
-    if (!INTEGER.test(n)) unread = true;
+    if (!isLiteral(n)) unread = true;
     return null;
   });
   return unread;
@@ -230,7 +235,7 @@ export function askedDigits(input: string): number | null {
   const open = m[0].length - 1;
   if (closing(t, open) !== t.length - 1) return null;
   const args = topLevelArgs(t.slice(open + 1, -1));
-  if (args.length !== 2 || !INTEGER.test(args[1]!)) return null;
+  if (args.length !== 2 || !isLiteral(args[1]!)) return null;
   const n = parseInt(args[1]!, 10);
   return n >= 1 && n <= MAX_ASKED_DIGITS ? n : null;
 }
