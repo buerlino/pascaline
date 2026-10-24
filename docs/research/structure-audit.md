@@ -227,7 +227,7 @@ Rank 5 removes the fewest open bugs, but it changes the most queue: G68, G76, R6
 - **Deletes:** the drawing's own angle lists (`emit-js.ts:23–24`).
 - **Cost:** 2 h. **Risk:** none found.
 - **Lands:** a unit test for the three-term DMS node and the twin-emitters run (tmpl-dms-01 differs on phase-1, not on the branch); vitest and e2e unchanged otherwise.
-- **Queue:** [G87](../shifts/packages/G87.md), before G63.
+- **Queue:** G87 done (run 222), before G63.
 
 #### audit-P4. One door for Giac text (cause 2, lexing and rewrites)
 - **Evidence:** 1.3 (7 bracket matchers, 5 decimal lexers, no `\"`), 2.5, text-1 to text-4 and text-9.

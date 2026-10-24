@@ -107,7 +107,7 @@ Cost: one more `evalf` for irrational results (each about 1 ms on the desktop, p
 **Risk:** both evaluations wrong in the same way is not caught (2.3 #2; section 9 risk 1): until a function has passed the tier-0 audit, a float Giac's numeric code returned for it is `⚠`, never a bare `≈`.
 **Would change if:** Tab One timing shows the extra `evalf` costing more than 20 % of Enter p95; then the check runs only above 15 digits and for float-returning inputs.
 
-**Built in G3:** stored floats keep their facts in the defs log; a result that uses them inherits the weakest, checked by perturbation (M4-7). `evalf(e,n)`/`approx(e,n)` are rewritten to the check's precision, and n becomes the display digits in Home and CAS (M4-6; Home by the owner, 2026-10-13). Solve and analysis roots are compared after a second polish at W+20 (M4-8). A value that is 0 in every evaluation but not an exact rational shows `⚠` without a count, never `≈ 0` (owner, 2026-10-13: `exp(10^-70)-1`).
+**Built in G3:** stored floats keep their facts in the defs log; a result using them inherits the weakest, checked by perturbation (M4-7). `evalf(e,n)`/`approx(e,n)` run at the check's precision and show n digits in Home and CAS (M4-6); a nameless n (`2*10`) is evaluated once into a literal, else `⚠` without a count (G91). Solve and analysis roots get a second polish at W+20 (M4-8). A value 0 in every evaluation, not exactly rational, shows `⚠` without a count, never `≈ 0` (`exp(10^-70)-1`, owner).
 
 ### 2.5 Decision: digits up to 30
 
