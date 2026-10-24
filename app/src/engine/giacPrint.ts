@@ -217,10 +217,11 @@ export function isName(s: string, letterFirst = false): boolean {
   return WHOLE_NAME.test(s) && (!letterFirst || s.charAt(0) !== "_");
 }
 
-/** The name `s` starts with (after spaces) when it is a user's name (letter first); null otherwise. */
-export function leadingName(s: string): string | null {
+/** The name `s` starts with (after spaces), a user's name (letter first) unless `letterFirst` is false; null when
+ *  there is none. */
+export function leadingName(s: string, letterFirst = true): string | null {
   const m = LEADING_NAME.exec(s);
-  return m && isName(m[1]!, true) ? m[1]! : null;
+  return m && isName(m[1]!, letterFirst) ? m[1]! : null;
 }
 const LEADING_NAME = new RegExp(`^\\s*(${NAME})`);
 
@@ -242,6 +243,12 @@ export function* names(s: string, q: Quoting = "typed"): Generator<{ name: strin
   }
 }
 
+/** The first name of `set` in `s` (called or not; strings skipped), or null. */
+export function firstNameIn(s: string, set: ReadonlySet<string>): string | null {
+  for (const n of names(s)) if (set.has(n.name)) return n.name;
+  return null;
+}
+
 /** The calls in `s` (of `only` when given), in order: name, where it starts, its `(` and its `)` (-1 when it does not
  *  close). */
 export function callsOf(s: string, only?: ReadonlySet<string> | readonly string[], q: Quoting = "typed"): { name: string; at: number; open: number; close: number }[] {
@@ -254,16 +261,27 @@ export function callsOf(s: string, only?: ReadonlySet<string> | readonly string[
   return out;
 }
 
-/** `text` with the name of every call of a key of `to` replaced by its value (`erf(` → `paserf(`). */
-export function renameCalls(text: string, to: Readonly<Record<string, string>>, q: Quoting = "typed"): string {
+/** `text` with every name replaced by `f` of it where `f` gives a text (strings skipped). */
+export function mapNames(text: string, f: (n: { name: string; at: number; call: boolean }) => string | null, q: Quoting = "typed"): string {
   let out = "";
   let i = 0;
   for (const n of names(text, q)) {
-    if (!n.call || !Object.hasOwn(to, n.name)) continue;
-    out += text.slice(i, n.at) + to[n.name]!;
+    const to = f(n);
+    if (to === null) continue;
+    out += text.slice(i, n.at) + to;
     i = n.at + n.name.length;
   }
   return out + text.slice(i);
+}
+
+/** `text` with the name of every call of a key of `to` replaced by its value (`erf(` → `paserf(`). */
+export function renameCalls(text: string, to: Readonly<Record<string, string>>, q: Quoting = "typed"): string {
+  return mapNames(text, (n) => (n.call && Object.hasOwn(to, n.name) ? to[n.name]! : null), q);
+}
+
+/** `text` with every name that is a key of `to` (called or not; not after a `.`) replaced by its value. */
+export function renameNames(text: string, to: ReadonlyMap<string, string>, q: Quoting = "typed"): string {
+  return mapNames(text, (n) => (text.charAt(n.at - 1) !== "." ? (to.get(n.name) ?? null) : null), q);
 }
 
 /** Names called in a Giac text (`romberg(exp(-x^2),x,0,1)` → romberg, exp). Strings are skipped. */
@@ -305,10 +323,14 @@ export function definedName(text: string): string | null {
   return rest.startsWith("(") || rest.startsWith(":=") ? m[1]! : null;
 }
 
-/** The parameters of a program as Giac prints it (`(x,y)->…` → x, y), when they hold no `(`; null for another text. */
-export function programParams(text: string): string[] | null {
+/** The parameters of a program as Giac prints it (`(x,y)->…` → x, y), when they hold no `(`; `bare`: `x->…` too;
+ *  null for another text. */
+export function programParams(text: string, bare = false): string[] | null {
   const t = text.trimStart();
-  if (!t.startsWith("(")) return null;
+  if (!t.startsWith("(")) {
+    const n = bare ? leadingName(t, false) : null;
+    return n !== null && t.slice(n.length).trimStart().startsWith("->") ? [n] : null;
+  }
   const close = closing(t, 0, "printed");
   if (close < 0 || t.slice(1, close).includes("(") || !t.slice(close + 1).trimStart().startsWith("->")) return null;
   return t.slice(1, close).split(",").map((p) => p.trim());
