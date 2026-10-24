@@ -7,6 +7,10 @@ import { SOURCES, member, tarball } from "../../tools/find-index/state.mjs";
 
 // [patch, file in the tarball, the wrong text it replaces, the text near it that locates it]
 const CANARIES: [string, string, RegExp, string][] = [
+  // S17: the EMCC add_evalf hook logs on every caseval (and reads the misspelt UI.addevalf)
+  ["0001-gen-remove-add_evalf-debug-log.patch", "giac-2.1.0/src/gen.cc", /console\.log\("gen\.cc add_evalf",UI\.addevalf\);/, "double add_evalf=EM_ASM_DOUBLE_V({"],
+  // S17: in EMCC builds control_c compares whole seconds from time(0)
+  ["0002-emcc-subsecond-caseval-timeout.patch", "giac-2.1.0/src/global.cc", /if \(difftime\(caseval_current,caseval_begin\)>caseval_maxtime\)/, "void control_c(){"],
   // complex MPFR tanh returns coth: `gen g=exp(2*e,contextptr); return (g+1)/(g-1);` in tanh's _CPLX branch
   ["0003-complex-tanh-mpfr.patch", "giac-2.1.0/src/usual.cc", /gen g=exp\(2\*e,contextptr\);\s*return \(g\+1\)\/\(g-1\);/, "gen tanh(const gen & e0,GIAC_CONTEXT){"],
   // G82: control_c checks only the clock; nothing counts its calls between the reset and the clock check
