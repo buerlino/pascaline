@@ -280,7 +280,8 @@ describe.skipIf(!giacAvailable())("WorkerEngine definitions across a relaunch (r
     expect(t.replayMs).toBeGreaterThan(0);
     expect((await b.home("v99*7+f3(1)", defaultHomeSettings)).display).toBe("103"); // derived: 99 + 1 + 3
     b.dispose();
-  });
+    // ≈1.7 s alone (G105 and phase-1 alike); 400 real-Giac calls passed 5 s under the full suite's load (run 233)
+  }, 20_000);
 
   it("a store that never answers: the engine starts without it and does not overwrite it", async () => {
     const store = { load: () => new Promise<unknown>(() => {}), save: () => expect.unreachable("saved over a store it never read") };
