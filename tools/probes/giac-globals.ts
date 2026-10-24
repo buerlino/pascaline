@@ -8,7 +8,7 @@
 //   GIAC_OUT=<dir> node tools/probes/giac-globals.ts 'xcas_mode:=1'   # one flag input
 // Read-only; no network. Each flag loads its own engine (about 1 s on the desktop).
 import { EngineHost } from "../../app/src/engine/host.ts";
-import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
+import { loadNodeGiac, nodeHost } from "../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings } from "../../app/src/engine/homeEval.ts";
 import { defaultCasSettings } from "../../app/src/engine/types.ts";
 import { applyDefChanges, type DefEntry } from "../../app/src/engine/defs.ts";
@@ -46,13 +46,13 @@ function diff(a: Snap, b: Snap): string[] {
 }
 
 for (const flag of FLAGS) {
-  const { giac } = await loadNodeGiac();
-  const host = new EngineHost(giac);
+  const { giac, bridge } = await loadNodeGiac();
+  const host = new EngineHost(giac, bridge);
   const before = snap(host);
   const r = host.cas(flag, cas);
   const log: DefEntry[] = applyDefChanges([], r.defs);
   const after = snap(host);
-  const fresh = new EngineHost((await loadNodeGiac()).giac);
+  const fresh = (await nodeHost());
   fresh.restore(log);
   const relaunch = snap(fresh);
   const d1 = diff(before, after);

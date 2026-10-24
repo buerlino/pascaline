@@ -2,7 +2,7 @@
 // ?bench=library (A12): the mode seeds the 200 programs of G33's replay test the way importLibrary defines them.
 import { describe, expect, it, vi } from "vitest";
 import { EngineHost } from "./engine/host.ts";
-import { giacAvailable, loadNodeGiac } from "./engine/nodeGiac.ts";
+import { giacAvailable, nodeHost } from "./engine/nodeGiac.ts";
 import { applyDefChanges } from "./engine/defs.ts";
 import { defaultCasSettings } from "./engine/types.ts";
 import { importLibrary, parseLibrary } from "./engine/library.ts";
@@ -26,7 +26,7 @@ describe("?bench=library", () => {
   }, 20000);
 
   it.skipIf(!giacAvailable())("defines the same log as importLibrary does (real Giac)", async () => {
-    const fresh = async (): Promise<EngineHost> => new EngineHost((await loadNodeGiac()).giac);
+    const fresh = async (): Promise<EngineHost> => (await nodeHost());
     const lib = parseLibrary(libraryBenchText());
     const imp = importLibrary(await fresh(), lib, []);
     expect(imp.ok && imp.log).toHaveLength(200);

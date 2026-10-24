@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// G65: the call after an input, as Giac prints it (texts from the pinned build, probe 2026-10-21).
+// G65: the call after an input, as Giac prints it (texts from the pinned build, probe 2026-10-21); G99: the reads from
+// Giac's tree.
 import { describe, expect, it } from "vitest";
-import { afterCall, changesOf, isOurs, parsePrinted, readsOf, splitAfter, tableOf } from "./stateRead.ts";
+import { afterCall, changesOf, isOurs, parsePrinted, readsFrom, splitAfter, tableOf } from "./stateRead.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 
 describe("parsePrinted", () => {
@@ -18,19 +19,20 @@ describe("parsePrinted", () => {
   });
 });
 
-describe("readsOf", () => {
-  const read = (printed: string, input: string) => readsOf(parsePrinted(printed)!, input);
-  it("a store reads its stored side, without a program's parameters", () => {
-    expect(read(`["'sto'",[x,y,a,f],[[x,y,a],1,[x,y],[f],[]]]`, "f(x,y):=x+y+a")).toEqual({ names: ["a"], targets: ["f"], fn: true });
-    expect(read(`["'sto'",[y,x],[[y],0,[],[x],[]]]`, "x:=y:=3")).toEqual({ names: ["y"], targets: ["x"], fn: false });
+describe.skipIf(!giacAvailable())("readsFrom: the reads from Giac's tree (G99)", () => {
+  const read = async (input: string) => readsFrom((await loadNodeGiac()).bridge.parse(input));
+  it("a store reads its stored side, without a program's parameters", async () => {
+    expect(await read("f(x,y):=x+y+a")).toEqual({ names: ["a"], targets: ["f"], fn: true });
+    // y is set, not read: x takes the 3, never y's old value
+    expect(await read("x:=y:=3")).toEqual({ names: [], targets: ["x"], fn: false });
   });
-  it("L[k]:= also reads the target's names; a list store sets each name", () => {
-    expect(read(`["'sto'",[b,L,k],[[b],0,[],[L],[L,k]]]`, "L[k]:=b+1")).toEqual({ names: ["b", "L", "k"], targets: ["L"], fn: false });
-    expect(read(`["'sto'",[c,a,b],[[c],0,[],[a,b],[]]]`, "[a,b]:=[1,c]")).toEqual({ names: ["c"], targets: ["a", "b"], fn: false });
+  it("L[k]:= also reads the target's names; a list store sets each name", async () => {
+    expect(await read("L[k]:=b+1")).toEqual({ names: ["b", "L", "k"], targets: ["L"], fn: false });
+    expect(await read("[a,b]:=[1,c]")).toEqual({ names: ["c"], targets: ["a", "b"], fn: false });
   });
-  it("anything else reads every name; an input Giac's quote cannot take falls back to its text", () => {
-    expect(read(`["'+'",[pA,pY],0]`, "[sto(pA,pY),1]")).toEqual({ names: ["pA", "pY"], targets: [], fn: false });
-    expect(read(`["'id'",[undef],0]`, "a;f(b)")).toEqual({ names: ["a", "b", "f"], targets: [], fn: false });
+  it("anything else reads every free name; a store inside is no top-level target", async () => {
+    expect(await read("[sto(pA,pY),1]")).toEqual({ names: ["pA"], targets: [], fn: false });
+    expect(await read("a;f(b)")).toEqual({ names: ["a", "f", "b"], targets: [], fn: false });
   });
 });
 
@@ -56,10 +58,9 @@ describe("tableOf and changesOf", () => {
 
 describe("afterCall and splitAfter", () => {
   it("puts the parts in one list and takes them apart", () => {
-    expect(afterCall("[cas_setup()]", null, null)).toBe("[[cas_setup()],0,0]");
-    const s = splitAfter(`[[[0,0],0],["'id'",[b],0],0]`)!;
+    expect(afterCall("[cas_setup()]", null)).toBe("[[cas_setup()],0]");
+    const s = splitAfter(`[[[0,0],0],0]`)!;
     expect(s.flags).toBe("[[0,0],0]");
-    expect(readsOf(s.read, "b").names).toEqual(["b"]);
     expect(s.state.raw).toBe("0");
   });
 });
@@ -68,7 +69,7 @@ describe.skipIf(!giacAvailable())("the state part on Giac (Opus pass 49's probe)
   it("reads a stored value one level deep, calls nothing and evaluates no further", async () => {
     const { giac } = await loadNodeGiac();
     for (const t of ["n:=0", "c:=g(y)", "g(t):={n:=n+1;return t;}", "y:=2", "a:=b", "b:=3"]) giac.eval(t);
-    const s = splitAfter(giac.eval(afterCall("0", null, 12)))!;
+    const s = splitAfter(giac.eval(afterCall("0", 12)))!;
     const table = tableOf(s.state, () => false)!;
     expect(table.get("c")?.text).toBe("g(y)");
     expect([...table.get("c")!.names].sort()).toEqual(["g", "y"]);

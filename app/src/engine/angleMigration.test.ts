@@ -6,7 +6,7 @@ import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { validDefs, type DefEntry } from "./defs.ts";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, nodeHost } from "./nodeGiac.ts";
 import { defaultCasSettings } from "./types.ts";
 import { DATA_VERSION, migratedText, unstamp } from "../state/storage.ts";
 
@@ -67,13 +67,13 @@ describe.skipIf(!giacAvailable())("G46 on the real engine", () => {
   const rad = defaultHomeSettings;
   const deg = { ...defaultHomeSettings, angle: "deg" as const };
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
 
   // The check's findings 1 and 2 as version-2 logs (source: oracle, mpmath: atan(3/4) = 36.8698976458°,
   // sin(1) = 0.841470984808, exp(90i) = -0.448073616129+0.893996663601i).
   it("a flagged value keeps the reading that matches its preview, read in either mode afterwards", async () => {
-    const h = new EngineHost((await loadNodeGiac()).giac);
+    const h = (await nodeHost());
     const log = migrate([
       entry({ name: "TH", kind: "var", cmds: ["TH:=(atan(3/4))"], preview: "36.8698976458" }),
       entry({ name: "V", kind: "var", cmds: ["V:=(sin(1))"], preview: "0.841470984808" }),
@@ -100,7 +100,7 @@ describe.skipIf(!giacAvailable())("G46 on the real engine", () => {
   });
 
   it("a migrated function follows the mode at call time; exp ignores it (F29; derived, oracle exp(90i))", async () => {
-    const h = new EngineHost((await loadNodeGiac()).giac);
+    const h = (await nodeHost());
     h.restore(migrate([entry({ name: "f", kind: "fn", cmds: ["f(x):=sin(x)"] }), entry({ name: "ph", kind: "fn", cmds: ["ph(w):=pasexp(i*w)"] })]));
     expect(h.home("f(30)", deg).result.display).toBe("0.5");
     expect(h.home("f(pi/6)", rad).result.display).toBe("0.5");

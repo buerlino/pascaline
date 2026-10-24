@@ -15,9 +15,9 @@ export interface Job {
   digits: number;
 }
 
-const { giac } = await loadNodeGiac();
+const { giac, bridge } = await loadNodeGiac();
 giac.eval(pasdegCommand("rad"));
-const host = new EngineHost(giac);
+const host = new EngineHost(giac, bridge);
 parentPort!.postMessage({ ready: true });
 parentPort!.on("message", (job: Job) => {
   const settings = { ...defaultHomeSettings, angle: job.angle, digits: job.digits, workDigits: Math.max(30, job.digits + 10) };

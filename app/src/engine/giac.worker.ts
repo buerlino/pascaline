@@ -24,7 +24,7 @@ const load: GiacLoader = async (baseUrl) => {
   const setPowLimit = M.cwrap("giac_set_pow_limit", "number", ["number"]);
   return {
     giac: { eval: (s) => giacEval(s), setPowLimit: (n) => setPowLimit(n), messages: out.messages, clearMessages: out.clear },
-    // G85: unused by the host; each wrapper resolves its export on first call (an engine without them loads as before).
+    // G99: the host reads names through it; bridgeOf throws NO_BRIDGE on an engine without the exports.
     bridge: bridgeOf(M),
     instantiateMs: performance.now() - t0,
   };

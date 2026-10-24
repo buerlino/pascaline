@@ -127,8 +127,8 @@ for c in json.loads(sys.stdin.read()):
 print(json.dumps(out))
 `;
 
-const { giac } = await loadNodeGiac();
-const host = new EngineHost(giac);
+const { giac, bridge } = await loadNodeGiac();
+const host = new EngineHost(giac, bridge);
 const checks: (Check & { fpy: string; zpy: string })[] = [];
 const rows: { f: string; z: string; where: string; mark: string; display: string; keys: string[] }[] = [];
 

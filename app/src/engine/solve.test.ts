@@ -4,14 +4,14 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, nodeHost } from "./nodeGiac.ts";
 import { markOf } from "./format.ts";
 
 describe.skipIf(!giacAvailable())("Solve and analysis plumbing (real Giac)", () => {
   let host: EngineHost;
   const s = defaultHomeSettings;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
 
   it("info line shows search points without binary noise (regression: 1.6400000000000001)", () => {

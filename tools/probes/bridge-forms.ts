@@ -13,6 +13,8 @@ const FORMS = [
   "purge(c)", "assume(x>0)", "restart(1)", "product(x,x,1,4)", "seq(x^2,x,1,3)", "sum(x^2,x=1..3)", "seq(x^2,x=1..3)",
   "limit(x^2,x,1)", "solve(x^2=4,x)", "diff(x^3,x)", "f(x):=x^-1",
   "!x:=3", "!diff(x^3,x)", "!product(x,x,1,4)", "!sum(x^2,x=1..3)", "!purge(x)",
+  // F80 (G99): at Home's Digits 40, => keeps BesselJ(1,2) unevaluated, and int with that y errors (Bad Argument Value)
+  "!Digits:=40", "!(BesselJ(1,2))=>y", "!int(y^2,y,0,1)", "!Digits:=12", "!purge(y)",
 ];
 const L = await loadNodeGiac();
 const b = L.bridge;

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Probe: Giac calls and desktop time per Home Enter, through the engine host as the app calls it. The call count does
+// Probe: Giac calls (giac_eval and the bridge calls) and desktop time per Home Enter, through the engine host as the app calls it. The call count does
 // not depend on the machine's load, so two trees compare fairly (night check 2026-10-19, section 2.3).
 //   node tools/probes/engine-calls.ts                  # the 15 default inputs, with a, b and f stored first
 //   node tools/probes/engine-calls.ts 'sin(1)' 'f(b)'  # other inputs (a, b and f are still stored)
@@ -16,14 +16,19 @@ const DEFAULT_INPUTS = [
 ];
 const digits = Number(process.env.DIGITS ?? 12);
 const settings = { ...defaultHomeSettings, digits, workDigits: Math.max(30, digits + 10) };
-const { giac } = await loadNodeGiac();
+const { giac, bridge } = await loadNodeGiac();
 let calls = 0;
 const evalOnce = giac.eval.bind(giac);
 giac.eval = (text: string) => {
   calls++;
   return evalOnce(text);
 };
-const host = new EngineHost(giac);
+// G99: a bridge call is a Giac call too
+for (const k of ["ctxGet", "ctxSet", "parse", "value"] as const) {
+  const f = bridge[k].bind(bridge) as (...a: never[]) => unknown;
+  (bridge as unknown as Record<string, unknown>)[k] = (...a: never[]) => (calls++, f(...a));
+}
+const host = new EngineHost(giac, bridge);
 for (const setup of ["a:=2.5", "b:=sqrt(2)", "f(x):=x^2+a"]) host.home(setup, settings);
 
 const inputs = process.argv.length > 2 ? process.argv.slice(2) : DEFAULT_INPUTS;

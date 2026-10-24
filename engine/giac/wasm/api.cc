@@ -109,9 +109,11 @@ bool among(const std::string &h, const char *const *list, size_t n) {
     if (h == list[k]) return true;
   return false;
 }
-// The commands that quote their variable argument, as probed for the host (app/src/engine/host.ts QUOTING, G28,
-// tools/probes/bound.ts): {command, minimum arguments}. The variable is argument 1 and is bound in arguments 0 and 1;
-// with fewer arguments it is read (int(x^2,x) evaluates the integrand with a stored x).
+// The commands that quote their variable argument (G28, tools/probes/bound.ts; the one table since G99): {command,
+// minimum arguments}. The variable is argument 1 and is bound in arguments 0 and 1; with fewer arguments it is read
+// (int(x^2,x) evaluates the integrand with a stored x). The definite forms (minimum 4) also take it as `x=a..b`
+// (sum(x^2,x=1..3)): x is bound in argument 0 and the bounds are read (G99; after x:=3, sum(x^2,x=1..3) = 14,
+// product(x,x=1..4) = 24, int(x^2,x=0..1) = 1/3).
 struct Quoting {
   const char *cmd;
   size_t min;
@@ -232,7 +234,20 @@ void walk(const gen &g, Walk &w) {
     return;
   }
   for (const Quoting &q : QUOTING) {
-    if (h != q.cmd || !v || v->size() < q.min || (*v)[1].type != giac::_IDNT) continue;
+    if (h != q.cmd || !v || v->size() < 2) continue;
+    const gen &a = (*v)[1];
+    if (q.min == 4 && a.is_symb_of_sommet(giac::at_equal) && a._SYMBptr->feuille.type == giac::_VECT &&
+        a._SYMBptr->feuille._VECTptr->size() == 2 && a._SYMBptr->feuille._VECTptr->front().type == giac::_IDNT &&
+        a._SYMBptr->feuille._VECTptr->back().is_symb_of_sommet(giac::at_interval)) {
+      w.add(w.heads, w.seenH, headOf(a));
+      size_t n = bind(a._SYMBptr->feuille._VECTptr->front(), w);
+      walk((*v)[0], w);
+      unbind(n, w);
+      walk(a._SYMBptr->feuille._VECTptr->back(), w);  // the bounds: outside the binding
+      for (size_t k = 2; k < v->size(); ++k) walk((*v)[k], w);
+      return;
+    }
+    if (v->size() < q.min || a.type != giac::_IDNT) continue;
     size_t n = bind((*v)[1], w);
     walk((*v)[0], w);
     unbind(n, w);
@@ -496,18 +511,26 @@ EMSCRIPTEN_KEEPALIVE const char *giac_ctx_set(const char *json) {
   return giac_ctx_get();
 }
 
-// bridge-2: Giac's tree of `text`, not evaluated, as JSON: {"ok","heads","reads","targets","bound","float","string",
-// "nodes"}. heads: every function node (and a function passed as a value); reads: free names (pi and euler_gamma left
+// bridge-2: Giac's tree of `text`, not evaluated, as JSON: {"ok","heads","reads","targets","bound","top","program",
+// "float","string","nodes"}. heads: every function node (and a function passed as a value); reads: free names (pi and euler_gamma left
 // out, as lname does; bound names and pure store targets left out); targets: names a store sets (sto, =>, :=, L[k]:=,
-// increment and the other +=, purge); bound: program parameters, locals and the variable of sum/int/seq …; float: a
-// float literal occurs. Strings are leaves. ok false: Giac's parser reported an error.
+// increment and the other +=, purge); bound: program parameters, locals and the variable of sum/int/seq …; top: the
+// targets of the top-level store alone (a name, L of L[k]:=, a list's names; [] when the text is not one store, G99);
+// program: that store's value is a program (f(x):=…, f:=x->…); float: a float literal occurs. Strings are leaves. ok false: Giac's parser reported an error.
 EMSCRIPTEN_KEEPALIVE const char *giac_parse(const char *text) {
   const giac::context *c = ctx();
   bool err = false;
   Walk w;
+  Walk top;  // the top-level store's targets alone
+  bool program = false;
   try {
     gen g = parseInput(text, c, err);
     walk(g, w);
+    if (g.is_symb_of_sommet(giac::at_sto) && g._SYMBptr->feuille.type == giac::_VECT && g._SYMBptr->feuille._VECTptr->size() == 2) {
+      const giac::vecteur &v = *g._SYMBptr->feuille._VECTptr;
+      program = v[0].is_symb_of_sommet(giac::at_program);
+      walkTarget(v[1], top);
+    }
   } catch (std::runtime_error &e) {
     err = true;
   }
@@ -517,6 +540,8 @@ EMSCRIPTEN_KEEPALIVE const char *giac_parse(const char *text) {
   jkey(o, "reads"), jlist(o, w.reads);
   jkey(o, "targets"), jlist(o, w.targets);
   jkey(o, "bound"), jlist(o, w.bound);
+  jkey(o, "top"), jlist(o, top.targets);
+  jkey(o, "program"), o += program ? "true" : "false";
   jkey(o, "float"), o += w.flt ? "true" : "false";
   jkey(o, "string"), o += w.str ? "true" : "false";
   jkey(o, "nodes"), o += std::to_string(w.nodes);

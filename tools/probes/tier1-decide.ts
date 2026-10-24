@@ -39,7 +39,7 @@ interface Row {
 }
 
 if (process.argv[2] === "--child") {
-  const { giac } = await loadNodeGiac();
+  const { giac, bridge } = await loadNodeGiac();
   for (const name of process.argv.slice(3)) {
     console.log(`START ${name}`);
     for (const arg of ARGS) {
@@ -98,8 +98,8 @@ const { EngineHost } = await import("../../app/src/engine/host.ts");
 const { defaultHomeSettings, precisionFacts } = await import("../../app/src/engine/homeEval.ts");
 const { restsOnDecision } = await import("../../app/src/engine/decisions.ts");
 const { markOf } = await import("../../app/src/engine/format.ts");
-const { giac } = await loadNodeGiac();
-const host = new EngineHost(giac);
+const { giac, bridge } = await loadNodeGiac();
+const host = new EngineHost(giac, bridge);
 const cut = (t: string): string => (t.length > 60 ? `${t.slice(0, 57)}...` : t);
 console.log(`tier-1 functions: ${names.length}; skipped (change the session): ${skipped.length}; no answer within ${BATCH_MS / 1000} s: ${silent.length ? silent.join(", ") : "none"}`);
 console.log(`deciding on ${ARGS.join(" or ")} (Digits ${P} against ${P + 40}): ${rows.length}`);

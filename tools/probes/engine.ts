@@ -17,8 +17,8 @@ const mode = process.env.MODE ?? "home";
 const digits = Number(process.env.DIGITS ?? 12);
 const angle = process.env.ANGLE === "deg" ? "deg" : "rad";
 const facts = process.env.FACTS === "1";
-const { giac } = await loadNodeGiac();
-const host = new EngineHost(giac);
+const { giac, bridge } = await loadNodeGiac();
+const host = new EngineHost(giac, bridge);
 
 const dec = (v: DecimalValue): string => (v.digits === "" ? "0" : `${v.neg ? "-" : ""}0.${v.digits}e${v.exp + 1}${v.sticky ? " (more digits)" : ""}`);
 

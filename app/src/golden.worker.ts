@@ -4,7 +4,8 @@
 import homeRaw from "../../tests/golden/home.yaml";
 import precisionRaw from "../../tests/golden/precision.yaml";
 import { pasdegCommand } from "./engine/homeEval.ts";
-import { messageBuffer, setGiacHostGlobals, type GiacApi } from "./engine/host.ts";
+import { bridgeOf } from "./engine/bridge.ts";
+import { EngineHost, messageBuffer, setGiacHostGlobals, type GiacApi } from "./engine/host.ts";
 import { goldenRecords, typed, type Case } from "./goldenRun.ts";
 
 interface GiacModule {
@@ -13,7 +14,7 @@ interface GiacModule {
 
 let pageBase = "";
 
-async function freshGiac(): Promise<GiacApi> {
+async function freshHost(): Promise<EngineHost> {
   setGiacHostGlobals();
   // The same file the engine worker loads; absolute URL as there.
   const url = new URL(`${import.meta.env.BASE_URL}engine/giac.mjs`, pageBase).href;
@@ -25,7 +26,7 @@ async function freshGiac(): Promise<GiacApi> {
   const pow = M.cwrap("giac_set_pow_limit", "number", ["number"]);
   const giac: GiacApi = { eval: (s) => ev(s), setPowLimit: (n) => pow(n), messages: out.messages, clearMessages: out.clear };
   giac.eval(pasdegCommand("rad"));
-  return giac;
+  return new EngineHost(giac, bridgeOf(M));
 }
 
 self.onmessage = (ev: MessageEvent<string>) => {
@@ -35,7 +36,7 @@ self.onmessage = (ev: MessageEvent<string>) => {
     let n = 0;
     const post = (m: unknown): void => (self as unknown as Worker).postMessage(m);
     post({ progress: "start" });
-    const recs = await goldenRecords(cases(homeRaw), cases(precisionRaw), freshGiac, (stage, id) => {
+    const recs = await goldenRecords(cases(homeRaw), cases(precisionRaw), freshHost, (stage, id) => {
       if (n++ % 25 === 0) post({ progress: `${stage} ${id} #${n}` });
     });
     post(recs);

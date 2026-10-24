@@ -11,7 +11,7 @@
   "src/engine/flags.ts": 5,
   "src/engine/format.ts": 8,
   "src/engine/homeEval.ts": 28,
-  "src/engine/host.ts": 28,
+  "src/engine/host.ts": 14,
   "src/engine/icdf.ts": 8,
   "src/engine/library.ts": 36,
   "src/engine/nonsquare.ts": 7,

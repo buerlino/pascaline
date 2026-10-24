@@ -16,8 +16,8 @@ const inputs = [
   "laplace(x,x,s)", "ilaplace(1/s^2,s,x)", "ztrans(x,x,z)", "deriv(x^2,x)", "linsolve([x+y=1,x-y=0],[x,y])", "solve([x+y=1,x-y=0],[x,y])",
   "normal(x^2-x^2+x)", "texpand(sin(2x))", "evalf(x+1)", "approx(x+1)", "subst(x^2,x=2)", "x:=x+1", "x+1",
 ];
-const { giac } = await loadNodeGiac();
-const host = new EngineHost(giac);
+const { giac, bridge } = await loadNodeGiac();
+const host = new EngineHost(giac, bridge);
 const run = (s: string): string => {
   const r = host.cas(s, { ...defaultCasSettings }).result;
   return r.ok ? r.text : `ERR ${r.text}`;

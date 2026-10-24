@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { EngineCalc, CAS_KEYS, HOME_KEYS, type PortChecks, type PortKeys, type SameKeys, type Passed } from "./engine.ts";
 import type { CalcSettings, CasOutcome, HomeOutcome } from "./port.ts";
 import { EngineHost } from "../engine/host.ts";
-import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
+import { giacAvailable, nodeHost } from "../engine/nodeGiac.ts";
 import type { CasResult, ConstTable, HomeResult, MathEngine, ValueFacts } from "../engine/types.ts";
 
 // --- Type tests (run by typecheck) -------------------------------------------------------------------------------
@@ -37,7 +37,7 @@ const G: ConstTable = { G: { value: "6.67430E-11", unc: "0.00015E-11" } };
 describe.skipIf(!giacAvailable())("EngineCalc passes a result's facts whole (G76, real Giac)", () => {
   let calc: EngineCalc;
   beforeAll(async () => {
-    const host = new EngineHost((await loadNodeGiac()).giac);
+    const host = (await nodeHost());
     // The stand-in sends the constants table the port does not hold yet, so a result can carry uncDigits.
     const stand = {
       home: async (i: string, s: Parameters<EngineHost["home"]>[1], _c?: ConstTable, ch?: Parameters<EngineHost["home"]>[3]) => host.home(i, s, G, ch).result,

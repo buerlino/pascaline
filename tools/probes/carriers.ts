@@ -16,8 +16,8 @@ const HOME = process.argv.slice(2).length
   : ["1/3", "sqrt(2)", "BesselJ(1,2)", "romberg(exp(-x^2),x,0,1)", "normald_icdf(0.025)", "[1/3,BesselJ(1,2)]", "2^200", "sign(sin(10^50))", "evalf(pi,30)"];
 const CAS = ["evalf(BesselJ(1,2))", "x+sin(10^22)*1.0", "1/3"];
 
-const { giac } = await loadNodeGiac();
-const host = new EngineHost(giac);
+const { giac, bridge } = await loadNodeGiac();
+const host = new EngineHost(giac, bridge);
 const stand = {
   home: async (i: string, s: never, c?: never, ch?: never) => host.home(i, s, c, ch).result,
   cas: async (i: string, s: never) => host.cas(i, s).result,

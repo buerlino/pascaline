@@ -6,7 +6,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "../../engine/host.ts";
 import { defaultHomeSettings } from "../../engine/homeEval.ts";
-import { giacAvailable, loadNodeGiac } from "../../engine/nodeGiac.ts";
+import { giacAvailable, nodeHost } from "../../engine/nodeGiac.ts";
 import type { Calc } from "../../calc/port.ts";
 import type { AppHost } from "../types.ts";
 import { SolveApp } from "./app.svelte.ts";
@@ -14,7 +14,7 @@ import { SolveApp } from "./app.svelte.ts";
 describe.skipIf(!giacAvailable())("G68: Solve's knowns carry every confirmed digit", () => {
   let host: EngineHost;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
   const make = (): SolveApp => {
     const settings = { ...defaultHomeSettings, digits: 12 };

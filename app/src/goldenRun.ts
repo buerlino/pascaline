@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // The golden Home and precision cases, run one at a time. Shared by the Node gate (scripts/golden.ts), the Node dump
 // (scripts/golden-dump.ts) and the WebView run (goldenBench.ts, ?bench=golden, A20), so both sides run the same code.
-import { EngineHost, type GiacApi } from "./engine/host.ts";
+import { EngineHost } from "./engine/host.ts";
 import { defaultHomeSettings, precisionFacts, type HomeResult, type HomeSettings } from "./engine/homeEval.ts";
 import { markOf, type MarkInfo } from "./engine/format.ts";
 import { defaultCasSettings } from "./engine/types.ts";
@@ -132,8 +132,8 @@ export const homeLatexStep = (latex: string, chips: ChipTable = {}): ReturnType<
  * with Home's options and an Ans chip built from the step before, by the session's rule (state/results.ts, G86). An
  * inexact chip makes an "=" a "≈" (displayMode.ts markFor, decisions M4-4); `inexactInput` carries that to markOf.
  */
-export async function runSteps(fresh: () => Promise<GiacApi>, steps: Step[], digits: number, consts: ConstTable | undefined): Promise<HomeResult & { inexactInput?: boolean }> {
-  const host = new EngineHost(await fresh());
+export async function runSteps(fresh: () => Promise<EngineHost>, steps: Step[], digits: number, consts: ConstTable | undefined): Promise<HomeResult & { inexactInput?: boolean }> {
+  const host = await fresh();
   let last: (HomeResult & { inexactInput?: boolean }) | undefined;
   let chips: ChipTable = {};
   // G49: every step's result as a chip by name (`pasr_<k>`, k from 1), with its facts, for the `input` steps.
@@ -176,7 +176,7 @@ export function markText(m: MarkInfo | null): string | undefined {
 export const RATIONAL_TEXT = /^-?\d+(\/\d+)?$/;
 
 /** One home.yaml case on `host` (a sequence on its own engine from `fresh`). */
-export async function runHomeCase(c: Case, host: EngineHost, fresh: () => Promise<GiacApi>): Promise<HomeResult & { inexactInput?: boolean }> {
+export async function runHomeCase(c: Case, host: EngineHost, fresh: () => Promise<EngineHost>): Promise<HomeResult & { inexactInput?: boolean }> {
   if (c.steps) return runSteps(fresh, c.steps, c.settings?.digits ?? 12, c.consts && constTable(c.consts));
   const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" };
   // A case written as `latex` goes through our parser with Home's options (no realOddRoots since R66), its `before` too
@@ -195,18 +195,18 @@ export interface PrecisionRun {
 }
 
 /** One precision.yaml case: on `shared`, or on its own engine when it stores names in the other view. */
-export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () => Promise<GiacApi>): Promise<PrecisionRun> {
+export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () => Promise<EngineHost>): Promise<PrecisionRun> {
   const problems: string[] = [];
   let mark: MarkInfo | null;
   let shown: string;
   // G67: a case whose inputs before it set a Giac setting runs on its own engine too (were the setting kept, it would
   // reach every later case)
   const own = c.beforeHome?.length || c.beforeCas?.length || c.relaunch || (c.before ?? []).some(namesFlag);
-  let host = own ? new EngineHost(await fresh()) : shared;
+  let host = own ? await fresh() : shared;
   const defs: DefChange[] = [];
   const relaunched = async (): Promise<void> => {
     if (!c.relaunch) return;
-    host = new EngineHost(await fresh());
+    host = await fresh();
     host.restore(applyDefChanges([], defs));
   };
   const setting = c.settings?.digits ?? 12;
@@ -260,17 +260,17 @@ export interface GoldenRecord {
 export async function goldenRecords(
   home: Case[],
   precision: Case[],
-  fresh: () => Promise<GiacApi>,
+  fresh: () => Promise<EngineHost>,
   tick: (stage: string, id: string) => Promise<void> | void = () => {},
 ): Promise<GoldenRecord[]> {
   const out: GoldenRecord[] = [];
-  const hh = new EngineHost(await fresh());
+  const hh = await fresh();
   for (const c of home) {
     await tick("home", c.id);
     const r = await runHomeCase(c, hh, fresh);
     out.push({ stage: "home", id: c.id, input: c.input ?? c.latex ?? c.steps?.at(-1)?.input ?? c.steps?.at(-1)?.latex ?? "", display: r.display, mark: markText(seqMark(r, c.settings?.digits ?? 12)) ?? "", full: r.full });
   }
-  const ph = new EngineHost(await fresh());
+  const ph = await fresh();
   for (const c of precision) {
     await tick("precision", c.id);
     const r = await runPrecisionCase(c, ph, fresh);

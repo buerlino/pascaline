@@ -5,14 +5,14 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultCasSettings } from "./types.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, nodeHost } from "./nodeGiac.ts";
 import { latexToGiac } from "../input/latex-to-giac.ts";
 import { tidyGiacLatex } from "../render/tidy.ts";
 
 describe.skipIf(!giacAvailable())("CAS products of letters (real Giac)", () => {
   let host: EngineHost;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
   const show = (latex: string): { giac: string; text: string; tex: string } => {
     const giac = latexToGiac(latex);

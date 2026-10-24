@@ -3,7 +3,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineCalc } from "../calc/engine.ts";
 import { EngineHost } from "../engine/host.ts";
-import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
+import { giacAvailable, nodeHost } from "../engine/nodeGiac.ts";
 import type { MathEngine } from "../engine/types.ts";
 import { Session, type HistoryItem } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
@@ -22,7 +22,7 @@ function inProcess(host: EngineHost): MathEngine {
 describe.skipIf(!giacAvailable())("history marks from the real engine", () => {
   let calc: EngineCalc;
   beforeAll(async () => {
-    calc = new EngineCalc(inProcess(new EngineHost((await loadNodeGiac()).giac)));
+    calc = new EngineCalc(inProcess((await nodeHost())));
   });
 
   const markIn = async (view: "home" | "cas", giac: string): Promise<string | null> => {

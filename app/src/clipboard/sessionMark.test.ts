@@ -4,7 +4,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "../engine/host.ts";
 import { defaultHomeSettings } from "../engine/homeEval.ts";
-import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
+import { giacAvailable, nodeHost } from "../engine/nodeGiac.ts";
 import { sessionText, type CopySource } from "./text.ts";
 import type { DisplayContext } from "../state/displayMode.ts";
 
@@ -13,7 +13,7 @@ const CTX: DisplayContext = { format: "std", digits: 12, fixDecimals: 4, angle: 
 describe.skipIf(!giacAvailable())("Copy session on the real engine (R69)", () => {
   let host: EngineHost;
   beforeAll(async () => {
-    host = new EngineHost((await loadNodeGiac()).giac);
+    host = (await nodeHost());
   });
   const item = (latex: string, input: string): CopySource => {
     const r = host.home(input, { ...defaultHomeSettings, budgetMs: 5000 }).result;

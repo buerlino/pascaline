@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost } from "../src/engine/host.ts";
 import { defaultHomeSettings } from "../src/engine/homeEval.ts";
-import { loadNodeGiac } from "../src/engine/nodeGiac.ts";
+import { nodeHost } from "../src/engine/nodeGiac.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
 
 interface Case {
@@ -26,7 +26,7 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 const load = (f: string): Case[] => (parse(readFileSync(`${root}tests/golden/${f}`, "utf8")) as { cases: Case[] }).cases;
 
 async function outputs(mjs: string): Promise<Map<string, string>> {
-  const host = new EngineHost((await loadNodeGiac(mjs)).giac);
+  const host = (await nodeHost(mjs));
   const out = new Map<string, string>();
   for (const c of load("home.yaml")) {
     out.set(`home/${c.id}`, host.home(c.input!, { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad" }).result.display);

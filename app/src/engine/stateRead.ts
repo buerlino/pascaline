@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G65 (S13, docs/archive/r15-state-facts.md): which names an input stored and which stored names it read, from Giac's
-// own state instead of our reading of the input's text. Both reads go into the one call the host makes after every
-// input (flags.ts FLAGS_READ, G67), as further elements of its list:
-// - the read part: Giac's parse of the input (`quote`, never evaluated). A store (`sommet` is sto) reads its stored side
-//   only, a defined program's parameters left out; `L[k]:=` also reads the target's names (L's other elements stay);
-// - the state part, only after an input that may store: every user name, its stored text and the names in it (`lname`).
-//   The host keeps it as a table and walks the closure over it (facts.ts); the next state part is compared with it.
+// own state instead of our reading of the input's text.
+// - the names it reads (G99): Giac's tree of the input (bridge-2, `giac_parse`, never evaluated; `readsFrom`). A store
+//   reads its stored side only, a defined program's parameters and every quoting command's variable left out (api.cc's
+//   QUOTING); `L[k]:=` also reads L and k (L's other elements stay);
+// - the state part, only after an input that may store: every user name, its stored text and the names in it (`lname`),
+//   in the one call the host makes after every input (flags.ts FLAGS_READ, G67). The host keeps it as a table and walks
+//   the closure over it (facts.ts); the next state part is compared with it.
 // Plain text and pure functions; only erasable TypeScript syntax, so Node runs this file directly.
+import type { GiacParse } from "./bridge.ts";
 import { ENGINE_DEFINITIONS, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, WORKER_DEFINITION_NAMES } from "./homeEval.ts";
-import { COMPLEX_DEFINITIONS, DOUBLE_DIGITS, functionsIn, namesIn } from "./numeric.ts";
+import { COMPLEX_DEFINITIONS, DOUBLE_DIGITS } from "./numeric.ts";
 import { CHIP_PREFIX } from "./chipFacts.ts";
 import { UNIT_DEFINITIONS } from "../units/evaluate.ts";
 
@@ -20,41 +22,29 @@ export interface StoredName {
   fn: boolean;
 }
 
-/** What Giac's parse of an input says. `names`: the names it reads (for a store, of its stored side). `targets`: the
- *  names a top-level store sets. `fn`: a top-level store of a program (`f(x):=…`, `f:=x->…`). */
+/** What Giac's tree of an input says (G99). `names`: the names it reads (for a store, of its stored side). `targets`:
+ *  the names a top-level store sets. `fn`: a top-level store of a program (`f(x):=…`, `f:=x->…`). */
 export interface InputReads {
   names: string[];
   targets: string[];
   fn: boolean;
 }
 
-const STO = `"'sto'"`;
-/** Applied to quote(<input>): [sommet, lname, 0 | [stored side's lname, is a program, its parameters, targets, the
- *  target's own names for L[k]:=]]. Inline, so it costs no definition call. */
-const READER =
-  `(q->[string(sommet(q)),lname(q),when(string(sommet(q))==${STO},[lname(op(q)[0]),when(type(op(q)[0])==DOM_FUNC,1,0),` +
-  `when(type(op(q)[0])==DOM_FUNC,lname(op(op(q)[0])[0]),[]),when(type(op(q)[1])==DOM_IDENT,[op(q)[1]],` +
-  `when(string(sommet(op(q)[1]))=="'at'",[op(op(q)[1])[0]],lname(op(q)[1]))),` +
-  `when(type(op(q)[1])==DOM_IDENT or type(op(q)[1])==DOM_LIST,[],lname(op(q)[1]))],0)])`;
-
-/** The read part for `input`. */
-export function readPart(input: string): string {
-  return `${READER}(quote(${input}))`;
+/** The reads of an input from bridge-2's answer. A text Giac's parser refused (`ok` false) keeps what it built: the host
+ *  never reads names after a syntax error (Home stops before, CAS passes read=false). */
+export function readsFrom(p: GiacParse): InputReads {
+  return { names: p.reads, targets: p.top, fn: p.program };
 }
 
-// The read does not evaluate: `eval` of the map's parameter k gives the name's stored value one level deep, never
-// further, and calls nothing, so it has no side effect (Opus pass 49's probe, stateRead.test.ts): after n:=0, c:=g(y),
-// g(t):={n:=n+1;return t;} and y:=2 it reads c as g(y) with the names g and y, and n stays 0; after a:=b and b:=3 it
-// reads a as b with the name b.
 /** The state part: Digits pinned (a double prints with Digits, so an unchanged value must print alike in every mode),
  *  then put back to `digits` (the mode's, which the settings check expects). */
 export function statePart(digits: number): string {
   return `[(Digits:=${DOUBLE_DIGITS}),map(VARS(),k->[k,string(eval(k)),lname(eval(k))]),(Digits:=${Math.trunc(digits)})]`;
 }
 
-/** The call after an input: [settings, read part or 0, state part or 0]. */
-export function afterCall(flagsRead: string, input: string | null, state: number | null): string {
-  return `[${flagsRead},${input === null ? "0" : readPart(input)},${state === null ? "0" : statePart(state)}]`;
+/** The call after an input: [settings, state part or 0]. */
+export function afterCall(flagsRead: string, state: number | null): string {
+  return `[${flagsRead},${state === null ? "0" : statePart(state)}]`;
 }
 
 /** A node of Giac's printed list: its raw text, and its elements (a list) or its value (a string). */
@@ -132,30 +122,16 @@ export function parsePrinted(text: string): Node | null {
   return out && text.slice(i).trim() === "" ? out : null;
 }
 
-/** The three parts of the call's printed result; null when it is not the list afterCall builds. */
-export function splitAfter(out: string): { flags: string; read: Node; state: Node } | null {
+/** The two parts of the call's printed result; null when it is not the list afterCall builds. */
+export function splitAfter(out: string): { flags: string; state: Node } | null {
   const n = parsePrinted(out);
-  if (!n?.items || n.items.length !== 3) return null;
-  return { flags: n.items[0]!.raw, read: n.items[1]!, state: n.items[2]! };
+  if (!n?.items || n.items.length !== 2) return null;
+  return { flags: n.items[0]!.raw, state: n.items[1]! };
 }
 
+/** A name in the state part's print (a user name, an element of `lname`): read by tableOf until G104/G105. */
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const idents = (n: Node | undefined): string[] => (n?.items ?? []).map((x) => x.raw).filter((x) => IDENT.test(x));
-
-/** The reads of `input` from its read part; the names in its text when Giac could not parse it alone (`a;b` gives
- *  undef: a conservative over-read). */
-export function readsOf(n: Node, input: string): InputReads {
-  const it = n.items;
-  const all = idents(it?.[1]);
-  if (!it || it.length !== 3 || (all.includes("undef") && !namesIn(input).includes("undef"))) {
-    return { names: [...namesIn(input), ...functionsIn(input)], targets: [], fn: false };
-  }
-  const sto = it[2]!.items;
-  if (!sto || sto.length !== 5) return { names: all, targets: [], fn: false };
-  const params = new Set(idents(sto[2]));
-  const names = [...idents(sto[0]).filter((x) => !params.has(x)), ...idents(sto[4])];
-  return { names: [...new Set(names)], targets: idents(sto[3]), fn: sto[1]!.raw === "1" };
-}
 
 /** A program's printed head, `(x,y)->`: its parameters. */
 const HEAD = /^\s*\(([^()]*)\)\s*->/;

@@ -5,7 +5,7 @@ import { FakeCalc } from "../calc/fake.ts";
 import type { Calc, CasOutcome, HomeOutcome } from "../calc/port.ts";
 import { EngineHost } from "../engine/host.ts";
 import { defaultHomeSettings, safePrecision } from "../engine/homeEval.ts";
-import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
+import { giacAvailable, nodeHost } from "../engine/nodeGiac.ts";
 import type { Kv } from "./storage.ts";
 import { Session } from "./session.svelte.ts";
 
@@ -19,7 +19,7 @@ function memoryKv(): Kv {
 
 /** A Calc on the real Giac in this process: Home through EngineHost, CAS echoes its input. */
 async function engineCalc(): Promise<Calc> {
-  const host = new EngineHost((await loadNodeGiac()).giac);
+  const host = (await nodeHost());
   return Object.assign(new FakeCalc(), {
     ready: () => Promise.resolve(),
     cancel: () => Promise.resolve(),

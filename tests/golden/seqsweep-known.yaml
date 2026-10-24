@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # G62: the failures the sequence sweep (app/scripts/seqsweep.ts, seed 20261021, 300 sequences) finds today. id = "<digits> <carrier>: <class>" (the class, not the
 # sequence that met it), check = the carrier (store, chip, fn, relaunch, copy, solve, bound), package = the open backlog id whose fix removes the entry.
-# F54 (G69): a bound variable named as a stored ⚠ name inherits its facts (product, int). F63 (no package yet): a stored ⚠
+# F80 (no package yet): after (BesselJ(1,2))=>y Home stores y as BesselJ(1,2) unevaluated (Home's store runs at Digits 40),
+# and Giac's int(y^2,y,0,1) with that y errors at Digits 40 (Bad Argument Value; tools/probes/bridge-forms.ts), so Home
+# shows its float fallback ⚠. F63 (no package yet): a stored ⚠
 # float shows one confirmed digit fewer when read back at 30 digits or after a relaunch (⚠14 then ⚠13), and `f(t):=t; f(x)` shows ⚠11 for a bare ⚠ (12 digits) or ⚠13 for ⚠14.
 known:
-  - { id: "12 bound: int(x^2,x,0,1) with BesselJ(1,2) stored under that name", check: "bound", package: G69 }
-  - { id: "12 bound: product(x,x,1,4) with BesselJ(1,2) stored under that name", check: "bound", package: G69 }
+  - { id: "12 bound: int(x^2,x,0,1) with BesselJ(1,2) stored under that name", check: "bound", package: F80 }
   - { id: "12 fn: BesselJ(1,2) stored, read through f(t):=t", check: "fn", package: F63 }
-  - { id: "30 bound: product(x,x,1,4) with BesselJ(1,2) stored under that name", check: "bound", package: G69 }
   - { id: "30 fn: BesselJ(1,2) stored, read through f(t):=t", check: "fn", package: F63 }
   - { id: "30 relaunch: BesselJ(1,2) stored, read after a relaunch", check: "relaunch", package: F63 }
   - { id: "30 store: BesselJ(1,2) stored, read by its name", check: "store", package: F63 }

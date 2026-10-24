@@ -18,6 +18,7 @@
 // Engine: $GIAC_MJS, else $GIAC_OUT/giac.mjs, else engine/giac/_out/gsl. Read-only; nothing is written.
 import { readFileSync } from "node:fs";
 import { EngineHost, type GiacApi } from "../../app/src/engine/host.ts";
+import type { GiacBridge } from "../../app/src/engine/bridge.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import { definedBy, defaultHomeSettings, ENGINE_DEFINITIONS, isStateful, pasdegCommand, WORKER_DEFINITION_NAMES, precisionFacts, type HomeResult, type HomeSettings } from "../../app/src/engine/homeEval.ts";
 import { COMPLEX_DEFINITIONS, hasFloat, valuePrecision } from "../../app/src/engine/numeric.ts";
@@ -230,10 +231,10 @@ const text = (m: MarkInfo | null): string => (m ? `${m.mark}${m.n ?? ""}` : "-")
 
 // --- running a case ----------------------------------------------------------------------------------------------------
 
-async function fresh(): Promise<GiacApi> {
-  const g = (await loadNodeGiac()).giac;
-  g.eval(pasdegCommand("rad"));
-  return g;
+async function fresh(): Promise<{ giac: GiacApi; bridge: GiacBridge }> {
+  const L = await loadNodeGiac();
+  L.giac.eval(pasdegCommand("rad"));
+  return L;
 }
 
 type Wipe = { log: unknown[]; byName: Map<string, unknown> };
@@ -241,9 +242,10 @@ type Wipe = { log: unknown[]; byName: Map<string, unknown> };
 interface Row { id: string; group: string; expect?: string; textMark: string; stateMark: string; stored: string; read: string; calls: number }
 
 async function run(c: Case, show: boolean): Promise<Row> {
-  const a = new EngineHost(await fresh());
-  const bg = await fresh();
-  const b = new EngineHost(bg);
+  const fa = await fresh();
+  const a = new EngineHost(fa.giac, fa.bridge);
+  const { giac: bg, bridge } = await fresh();
+  const b = new EngineHost(bg, bridge);
   const model = new StateModel(bg);
   const named: ChipFactsTable = {};
   let textMark = "-";
@@ -331,8 +333,8 @@ async function main(): Promise<void> {
 /** Calls and time the state rule adds per Enter: one state read before, one after, and the reads' closure. */
 async function cost(): Promise<void> {
   const inputs = ["1/3", "2+3", "sqrt(2)", "sin(1)", "a*b+1", "f(3)", "f(b)", "exp(-0.5)", "atan(2)", "0.1+0.2", "int(x^2,x,0,1)", "normald_cdf(1.96)", "floor(2.7)", "round(2.25,1)", "a+b+f(a)"];
-  const g = await fresh();
-  const host = new EngineHost(g);
+  const { giac: g, bridge } = await fresh();
+  const host = new EngineHost(g, bridge);
   const model = new StateModel(g);
   const s = { ...defaultHomeSettings };
   for (const t of ["a:=2.5", "b:=sqrt(2)", "f(x):=x^2+a"]) host.home(t, s);

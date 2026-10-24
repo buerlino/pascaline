@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 import { applyDefChanges, userNamesOf, validDefs, type DefEntry } from "./defs.ts";
 import { defaultCasSettings } from "./types.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
@@ -104,7 +104,7 @@ describe("parseLibrary (no engine)", () => {
 
 describe.skipIf(!giacAvailable())("importLibrary (real Giac)", () => {
   let host: EngineHost;
-  const fresh = async (): Promise<EngineHost> => new EngineHost((await loadNodeGiac()).giac);
+  const fresh = async (): Promise<EngineHost> => (await nodeHost());
   beforeAll(async () => {
     host = await fresh();
   });
@@ -216,7 +216,7 @@ describe.skipIf(!giacAvailable())("200 library programs, defined on first use (G
   let eagerHost: EngineHost;
   const median = (xs: number[]): number => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
   beforeAll(async () => {
-    eagerHost = new EngineHost((await loadNodeGiac()).giac);
+    eagerHost = (await nodeHost());
     let text = "// pascaline library 1\n";
     for (let i = 1; i <= 200; i++) text += `\n// program ${i}\nlib${i}(a,b):={\n  local s,k;\n  s:=0;\n  for (k:=1;k<=b;k++) { s:=s+a^k/k; }\n  return s+${i};\n}\n`;
     const r = importLibrary(eagerHost, parseLibrary(text), []);
@@ -225,15 +225,15 @@ describe.skipIf(!giacAvailable())("200 library programs, defined on first use (G
   }, 60000);
   /** An eager replay as before G83: every command straight to Giac, 25 to a call (G29). */
   const eagerReplay = async (): Promise<EngineHost> => {
-    const { giac } = await loadNodeGiac();
-    const h = new EngineHost(giac);
+    const { giac, bridge } = await loadNodeGiac();
+    const h = new EngineHost(giac, bridge);
     for (let k = 0; k < log.length; k += 25) giac.eval(log.slice(k, k + 25).map((e) => e.cmds[0]).join(";") + ";");
     return h;
   };
 
   it("after restore() Giac holds none of them; lib7(2,3) gives what the eagerly defined one gives (derived: 2+4/2+8/3+7 = 41/3)", async () => {
-    const { giac } = await loadNodeGiac();
-    const h = new EngineHost(giac);
+    const { giac, bridge } = await loadNodeGiac();
+    const h = new EngineHost(giac, bridge);
     h.restore(log);
     expect(giac.eval("VARS")).not.toMatch(/\blib\d+\b/);
     expect(h.home("lib7(2,3)", defaultHomeSettings).result.exact).toBe("41/3");
@@ -243,8 +243,8 @@ describe.skipIf(!giacAvailable())("200 library programs, defined on first use (G
   });
 
   it("a unit request for 2 m and a root analysis of x^2-2 leave every program pending (G83f1: their keys and JSON load nothing)", async () => {
-    const { giac } = await loadNodeGiac();
-    const h = new EngineHost(giac);
+    const { giac, bridge } = await loadNodeGiac();
+    const h = new EngineHost(giac, bridge);
     h.restore(log);
     // the job calc/units.ts makes for `2 m` (calc/units.test.ts); its key `expr` matched LOAD_ALL before G83f1
     expect(h.units({ expr: "2*(((1)*pasdimL^(1)))", check: "pasz1*(((1)*pasdimL^(1)))", inexact: false, shows: [{ text: "m", dim: "m1", factor: "1" }] }, defaultHomeSettings)).toMatchObject({ dimension: "m1" });
@@ -257,7 +257,7 @@ describe.skipIf(!giacAvailable())("200 library programs, defined on first use (G
     const lazyFirst: number[] = [];
     const eagerFirst: number[] = [];
     for (let k = 0; k < 7; k++) {
-      const h = new EngineHost((await loadNodeGiac()).giac);
+      const h = (await nodeHost());
       restoreMs.push(h.restore(log));
       let t0 = performance.now();
       h.home("lib7(2,3)", defaultHomeSettings);
@@ -275,7 +275,7 @@ describe.skipIf(!giacAvailable())("200 library programs, defined on first use (G
 
 // G46 (route R, S14 R14 section 5): a library file is Giac text in radians, without our degree factor.
 describe.skipIf(!giacAvailable())("the degree factor in library files (G46, real Giac)", () => {
-  const fresh = async (): Promise<EngineHost> => new EngineHost((await loadNodeGiac()).giac);
+  const fresh = async (): Promise<EngineHost> => (await nodeHost());
   const deg = { ...defaultHomeSettings, angle: "deg" as const };
 
   it("the import puts the factor in: a body's sin follows the mode at call time (derived: sin 30° = 1/2, sin(pi/6) = 1/2)", async () => {
@@ -321,7 +321,7 @@ describe.skipIf(!giacAvailable())("the degree factor in library files (G46, real
 
 // G54: our names for Giac's functions in library text (ourNames.ts), as the parser renames them.
 describe.skipIf(!giacAvailable())("our function names in library files (G54, real Giac)", () => {
-  const fresh = async (): Promise<EngineHost> => new EngineHost((await loadNodeGiac()).giac);
+  const fresh = async (): Promise<EngineHost> => (await nodeHost());
   const text = "// pascaline library 3\n// median of a list\nm(L):=median(L)\n// test: median([1,2,3,4]) == 5/2\n// remainder\nr(a,b):=irem(a,b)\n// test: r(-7,3) == 2\n";
 
   it("a definition's median is ours, and the test line passes (derived: the median of 1,2,3,4 is 5/2)", async () => {

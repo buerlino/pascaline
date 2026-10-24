@@ -14,7 +14,7 @@ import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings } from "../../app/src/engine/homeEval.ts";
 
 const inputs = process.argv.slice(2).length ? process.argv.slice(2) : ["1/3", "sqrt(2)", "sin(1)+1/7", "[1/3,sqrt(2)]", "x^2+1", "floor(10*pi)", "a*b+1"];
-const { giac } = await loadNodeGiac();
+const { giac, bridge } = await loadNodeGiac();
 const calls: string[] = [];
 const traced: GiacApi = {
   eval: (s: string) => {
@@ -25,7 +25,7 @@ const traced: GiacApi = {
   messages: () => giac.messages(),
   clearMessages: () => giac.clearMessages(),
 };
-const host = new EngineHost(traced);
+const host = new EngineHost(traced, bridge);
 if (process.env.STORED === "1") for (const s of ["a:=1/3", "b:=sqrt(2)", "f(x):=x^2+a"]) host.home(s, defaultHomeSettings);
 host.home("0", defaultHomeSettings); // the mode is set once; not counted below
 

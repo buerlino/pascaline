@@ -30,7 +30,7 @@
 //   function   Function analysis and Num table (analysis.ts), same rules
 //   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed. Then in DEG (G46):
 //              every input that answers in RAD answers, `deg` pins a DEG text, an angle-free one shows the RAD text
-//   calls      G52: Giac calls per input (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
+//   calls      G52: Giac calls per input, bridge calls included (G99) (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
 //              the five largest; fails when calls per input are over 10 % above tests/golden/calls-baseline.yaml
 //   invariants G43: every home.yaml and precision.yaml input without settings, across settings (no expected values):
 //              (a) no angle function: the same text in RAD and DEG; (b) 12 and 30 digits round to the same 12-digit text;
@@ -50,7 +50,8 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
-import { EngineHost, type GiacApi } from "../src/engine/host.ts";
+import { EngineHost, type GiacApi, type LoadedGiac } from "../src/engine/host.ts";
+import type { GiacBridge } from "../src/engine/bridge.ts";
 import { runHomeCase, runPrecisionCase, typed, seqMark, markText, RATIONAL_TEXT, type Case, type Expect } from "../src/goldenRun.ts";
 import { defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand, precisionFacts, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
 import { decimalFromString, formatComplex, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
@@ -102,10 +103,14 @@ const median = (xs: number[]): number => {
   return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2;
 };
 
-async function freshGiac(): Promise<GiacApi> {
-  const g = (await loadNodeGiac(mjs)).giac;
-  g.eval(pasdegCommand("rad")); // R64: our parser's text reads pasdeg, as the engine host sets it
-  return g;
+async function freshEngine(): Promise<LoadedGiac> {
+  const L = await loadNodeGiac(mjs);
+  L.giac.eval(pasdegCommand("rad")); // R64: our parser's text reads pasdeg, as the engine host sets it
+  return L;
+}
+async function freshHost(): Promise<EngineHost> {
+  const L = await freshEngine();
+  return new EngineHost(L.giac, L.bridge);
 }
 
 const summary: { stage: string; ok: boolean; line: string }[] = [];
@@ -134,9 +139,9 @@ async function stageHome(): Promise<void> {
   const cs = cases("home.yaml");
   const runs = new Map<string, HomeResult[]>(cs.map((c) => [c.id, []]));
   for (let r = 0; r < ROUNDS; r++) {
-    const host = new EngineHost(await freshGiac());
+    const host = await freshHost();
     for (const c of cs) {
-      runs.get(c.id)!.push(await runHomeCase(c, host, freshGiac));
+      runs.get(c.id)!.push(await runHomeCase(c, host, freshHost));
     }
   }
   let pass = 0;
@@ -198,7 +203,7 @@ function lostAnswer(shown: string, input: string): boolean {
 
 async function stagePrecision(): Promise<void> {
   const cs = cases("precision.yaml");
-  const shared = new EngineHost(await freshGiac());
+  const shared = await freshHost();
   let active = 0;
   let activePass = 0;
   const pending: string[] = [];
@@ -206,7 +211,7 @@ async function stagePrecision(): Promise<void> {
   let marksChecked = 0;
   for (const c of cs) {
     const t0 = performance.now();
-    const run = await runPrecisionCase(c, shared, freshGiac);
+    const run = await runPrecisionCase(c, shared, freshHost);
     const ms = performance.now() - t0;
     const { shown, mark, input, digits, problems } = run;
     // G58: `budgetMs`, the wall time of the case (its Enter): it answers or is refused within it.
@@ -326,10 +331,10 @@ async function stageCases(stage: string, file: string, run: (host: EngineHost, g
   const cs = cases(file);
   const runs = new Map<string, Got[]>(cs.map((c) => [c.id, []]));
   for (let r = 0; r < ROUNDS; r++) {
-    const g = await freshGiac();
+    const { giac: g, bridge } = await freshEngine();
     g.eval("timeout 2");
     g.eval("ckevery 10");
-    const host = new EngineHost(g);
+    const host = new EngineHost(g, bridge);
     for (const c of cs) runs.get(c.id)!.push(run(host, g, c));
   }
   let pass = 0;
@@ -347,7 +352,7 @@ async function stageCases(stage: string, file: string, run: (host: EngineHost, g
 
 async function stageBench(): Promise<void> {
   const cs = cases("bench.yaml");
-  const host = new EngineHost(await freshGiac());
+  const host = await freshHost();
   let checked = 0;
   let pass = 0;
   const errors: string[] = [];
@@ -389,14 +394,21 @@ async function stageBench(): Promise<void> {
 async function stageCalls(): Promise<void> {
   const base = parse(readFileSync(`${root}tests/golden/calls-baseline.yaml`, "utf8")) as CallsBaseline;
   const counted = async (): Promise<{ host: EngineHost; calls: () => number }> => {
-    const giac = await freshGiac();
+    const { giac, bridge } = await freshEngine();
     let n = 0;
     const evalOnce = giac.eval.bind(giac);
     giac.eval = (text: string) => {
       n++;
       return evalOnce(text);
     };
-    return { host: new EngineHost(giac), calls: () => n };
+    // G99: a bridge call is a Giac call too
+    const counted: GiacBridge = {
+      ctxGet: () => (n++, bridge.ctxGet()),
+      ctxSet: (f) => (n++, bridge.ctxSet(f)),
+      parse: (t) => (n++, bridge.parse(t)),
+      value: (t, p) => (n++, bridge.value(t, p)),
+    };
+    return { host: new EngineHost(giac, counted), calls: () => n };
   };
   const bench = new Map<string, number>();
   {
@@ -465,8 +477,8 @@ async function stageInvariants(): Promise<void> {
     // `before` inputs and inputs that store a name themselves (`:=`, `=>`, `sto(`) get their own engine; the others share
     // one for the stage (check (d) purges its name after each direction).
     const keep = i.before.length > 0 || storesNames(i.giac);
-    const own = keep ? new EngineHost(await freshGiac()) : null;
-    const host = async (): Promise<EngineHost> => own ?? (stageHost ??= new EngineHost(await freshGiac()));
+    const own = keep ? await freshHost() : null;
+    const host = async (): Promise<EngineHost> => own ?? (stageHost ??= await freshHost());
     const rad = await at(await host(), i, "rad", 12);
     const o = invariantsOf(i.giac, i.before);
     if (o.angleFree) {
@@ -496,7 +508,7 @@ async function stageInvariants(): Promise<void> {
     // (d): X:=input in one mode, X in the other shows what the store line showed
     // (d) runs for the inputs it ran for before G43f1: no `before`. Only a storing input gets a new engine per direction.
     if (rad.ok && rad.value && i.before.length === 0) {
-      const d = await checkStoreBoth(storesNames(i.giac) ? async () => new EngineHost(await freshGiac()) : host, i.id, i.giac);
+      const d = await checkStoreBoth(storesNames(i.giac) ? async () => await freshHost() : host, i.id, i.giac);
       checked.d += d.checked;
       failures.push(...d.failures);
     }
@@ -536,7 +548,7 @@ async function stageUnits(): Promise<void> {
   const runs = new Map<string, string[]>(cs.map((c) => [c.id, []]));
   let host: EngineHost | null = null;
   for (let r = 0; r < ROUNDS; r++) {
-    host = new EngineHost(await freshGiac());
+    host = await freshHost();
     cs.forEach((c, k) => {
       const job = jobs[k]!;
       runs.get(c.id)!.push(unitGot(isUnitError(job) ? job : host!.units(job, settingsOf(c)), c));
@@ -620,7 +632,7 @@ function unitsCase(g: GiacApi, c: Case, formula: string, u: UnitsInfo | undefine
 
 async function stageParser(): Promise<void> {
   const cs = cases("parser.yaml");
-  const g = await freshGiac();
+  const g = (await freshEngine()).giac;
   // The parser emits our own names (pasmod); the host loads them on first use, here they are all loaded.
   for (const def of Object.values(ENGINE_DEFINITIONS)) g.eval(def);
   let pass = 0;

@@ -7,7 +7,7 @@ import { FakeCalc } from "../calc/fake.ts";
 import type { Calc, CasOutcome, HomeOutcome } from "../calc/port.ts";
 import { EngineHost } from "../engine/host.ts";
 import { safePrecision } from "../engine/homeEval.ts";
-import { giacAvailable, loadNodeGiac } from "../engine/nodeGiac.ts";
+import { giacAvailable, nodeHost } from "../engine/nodeGiac.ts";
 import type { MathEngine } from "../engine/types.ts";
 import { Session, type HistoryItem } from "./session.svelte.ts";
 import type { Kv } from "./storage.ts";
@@ -121,7 +121,7 @@ describe("result chips", () => {
 describe.skipIf(!giacAvailable())("marks travel through Ans and chips (R65, real engine)", () => {
   let calc: EngineCalc;
   beforeAll(async () => {
-    calc = new EngineCalc(inProcess(new EngineHost((await loadNodeGiac()).giac)));
+    calc = new EngineCalc(inProcess((await nodeHost())));
   });
   const markOf = (s: Session, i: number): string | null => {
     const item = s.home[i] as HistoryItem;

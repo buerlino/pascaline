@@ -45,9 +45,9 @@ describe("invariantsOf: angle-free inputs", () => {
 
 describe.skipIf(!giacAvailable())("check (a) compares RAD with DEG (real Giac)", () => {
   const run = async (input: string, angle: "rad" | "deg") => {
-    const g = (await loadNodeGiac()).giac;
+    const { giac: g, bridge } = await loadNodeGiac();
     g.eval(pasdegCommand("rad"));
-    return new EngineHost(g).home(input, { ...defaultHomeSettings, angle }).result;
+    return new EngineHost(g, bridge).home(input, { ...defaultHomeSettings, angle }).result;
   };
   it("a wrong DEG answer for (-8)^0.2 is a NEW failure and fails the stage", async () => {
     const rad = await run("(-8)^0.2", "rad");
@@ -67,9 +67,9 @@ describe.skipIf(!giacAvailable())("check (a) compares RAD with DEG (real Giac)",
 
 describe.skipIf(!giacAvailable())("check (d) on one shared engine (real Giac)", () => {
   it("a name stored by one input does not reach the next one", async () => {
-    const g = (await loadNodeGiac()).giac;
+    const { giac: g, bridge } = await loadNodeGiac();
     g.eval(pasdegCommand("rad"));
-    const host = new EngineHost(g);
+    const host = new EngineHost(g, bridge);
     expect((await checkStoreBoth(async () => host, "t:1", "7+1")).checked).toBe(2);
     const after = host.home(INV_NAME, defaultHomeSettings).result;
     expect(after.display).not.toBe("8");
@@ -81,9 +81,9 @@ describe.skipIf(!giacAvailable())("check (d) on one shared engine (real Giac)", 
   });
   it("a name stored on one engine does not reach an input on another", async () => {
     const mk = async (): Promise<EngineHost> => {
-      const g = (await loadNodeGiac()).giac;
+      const { giac: g, bridge } = await loadNodeGiac();
       g.eval(pasdegCommand("rad"));
-      return new EngineHost(g);
+      return new EngineHost(g, bridge);
     };
     const a = await mk();
     a.home("evalf(1/3)*x=>pasleak", defaultHomeSettings);
