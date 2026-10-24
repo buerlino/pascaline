@@ -319,10 +319,6 @@ Digits:=40:; pc("g84-keep-exp-cancel",'(exp(-10^30)*exp(10^30))',1,5/10^12);
 Digits:=40:; pc("g78-keep-int-exp-inf",'(int(exp(-x),x,0,inf))',1,5/10^12);
 // g78-keep-piecewise (home.yaml, derived)
 Digits:=40:; pc("g78-keep-piecewise",'(piecewise(0>0,1/0,5))',5,5/10^12);
-// g90-int-tanh-sqrt (home.yaml, oracle)
-Digits:=40:; pc("g90-int-tanh-sqrt",'(int(tanh(sqrt(x)),x,-1,(5/10^1)))',(215044234948/10^12)+(85617660273/10^11)*i,5/10^13+5/10^13);
-// g90-int-x^x (home.yaml, oracle)
-Digits:=40:; pc("g90-int-x^x",'(int(x^x,x,0,1))',(783430510712/10^12),5/10^13);
 // g90-keep-int-gauss01 (home.yaml, oracle)
 Digits:=40:; pc("g90-keep-int-gauss01",'(int(exp(-x^2),x,0,1))',(746824132812/10^12),5/10^13);
 // g97-keep-flat-pow-2 (home.yaml, derived)
@@ -403,8 +399,6 @@ Digits:=40:; pc("prec-4-romberg-12",'(romberg(exp(-x^2),x,0,1))',(746824132812/1
 Digits:=40:; pc("prec-9-third",'(1/3)',(333333333333/10^12),5/10^13);
 // prec-9-quarter (precision.yaml, derived)
 Digits:=40:; pc("prec-9-quarter",'(1/4)',(25/10^2),5/10^13);
-// g91-home-exp-approx-sin1e30-2*10 (precision.yaml, oracle)
-Digits:=40:; pc("g91-home-exp-approx-sin1e30-2*10",'(exp(approx(sin(10^30),2*10)))',(913824351213/10^12),5/10^13);
 // prec-g38-30-sign-sin1e50 (precision.yaml, oracle)
 Digits:=40:; pc("prec-g38-30-sign-sin1e50",'(sign(sin(10^50)))',-1,5/10^30);
 // prec-g38-30-floor-sin1e50 (precision.yaml, oracle)

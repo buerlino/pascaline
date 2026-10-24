@@ -71,6 +71,20 @@ export function halfUnit(text, digits) {
 
 const OUR_NAMES = new RegExp(`(?<![A-Za-z_0-9])(?:${[...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES, "pasmedian", "paspercentile", "pasmod", "pas[a-z_0-9]*"].join("|")})\\(`);
 
+/** True when the input gives approx or evalf a second argument (an explicit precision): Home raises that precision itself (G91), so the case tests our rewrite, not Giac. */
+export function explicitPrecision(input) {
+  for (const m of input.matchAll(/(?<![A-Za-z_0-9])(?:approx|evalf)\(/g)) {
+    let depth = 1;
+    for (let k = m.index + m[0].length; k < input.length && depth > 0; k++) {
+      const ch = input[k];
+      if (ch === "(" || ch === "[") depth++;
+      else if (ch === ")" || ch === "]") depth--;
+      else if (ch === "," && depth === 1) return true;
+    }
+  }
+  return false;
+}
+
 /** The check line of a golden case, `{ comment, line }`, or `{ leftOut: reason }` when the case depends on our layer. */
 export function caseLine(c, file) {
   if (c.source !== "oracle" && c.source !== "derived") return { leftOut: `source ${c.source} (only oracle and derived)` };
@@ -81,6 +95,8 @@ export function caseLine(c, file) {
   if (OUR_NAMES.test(c.input)) return { leftOut: "uses our definitions (ENGINE_DEFINITIONS, pas…)" };
   if (c.budgetMs !== undefined || /size guard|time guard/.test(c.note ?? "")) return { leftOut: "size or time guard (our layer)" };
   if (c.oracle === `F('${c.input}')`) return { leftOut: "rounding text (our layer)" }; // the oracle is the typed input: only our display rounding is tested
+  if (explicitPrecision(c.input)) return { leftOut: "approx or evalf with an explicit precision (Home's rewrite, G91)" };
+  if (c.mark === "⚠" && /(?<![A-Za-z_0-9])int\(/.test(c.input)) return { leftOut: "shown value from Home's numeric integration (G90), not Giac's answer" };
   if (c.expect === undefined) return { leftOut: "mark only (no value)" };
   if (partsOf(c.expect) === null) return { leftOut: "not a number (refusal, text, list or truth value)" };
   const digits = file === "home.yaml" ? 12 : (s.digits ?? 12); // the home stage evaluates at 12 digits whatever settings.digits says
@@ -105,7 +121,6 @@ export const KNOWN_RULES = [
   [/^(g47-)?(prec-g44f?\d?-)?(prec-2-)?(normald|student|chisquare|fisher)_icdf|^prec-g44f?\d?-(normald|student|chisquare|fisher)_icdf|^g47-normald_icdf/, "register row icdf-double (G44): the inverse distribution functions return a double at any Digits (or +infinity far in a tail)"],
   [/^prec-g44f1-(evalf-)?erf-|^prec-g44f1-(evalf-)?erfc|^prec-3-UTPN/, "register row erfc-as-1-erf (G44f1): erfc is 1-erf and cancels, a small erf argument returns the argument"],
   [/sin1e(50|60|70|100)|sin-1e100|^prec-G23/, "register row sign-at-digits (G38, G57): sin of 10^k at Digits 40 has too few digits of the argument reduction, so floor, trunc, sign and arg of it are wrong"],
-  [/^g90-int-asin/, "backlog F65, F67 (G90): the numeric integration of an integrand with a 1/sqrt(1-x^2) end point is right to 7 digits only"],
   [/atan\(2i\)/, "register row atan-cut (G50, G60): complex atan beyond ±i takes the other side of its cut"],
   [/Bessel|Airy|besselj/, "register row no-mpfr-path (G4, G50): no MPFR path, an error at Digits above 14"],
   [/^prec-4-romberg/, "register row no-mpfr-path (G4, G50): romberg works in a double, 30 digits asked"],
@@ -113,8 +128,6 @@ export const KNOWN_RULES = [
 // The ids Giac fails on the pin (run.mjs: every line of the known file fails).
 export const KNOWN_IDS = new Set([
   "g38-floor-sin1e60",
-  "g90-int-asin-12x",
-  "g90-int-asin-12x-neg",
   "prec-2-normald_icdf-value",
   "prec-g44-normald_icdf-0.025-30",
   "prec-g44-normald_icdf-1e-10-30",
@@ -188,8 +201,6 @@ export const PATCHED_IDS = new Map([
   ["prec-g50-acos(-1+i)-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-imag-power-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-asin-power-30", "0005-mpfr-pi-and-real-domains.patch"],
-  ["g96-im-int-tanh-sqrt", "0006-reim-root-of-unknown-sign.patch"],
-  ["g96-im-int-exp-sqrt", "0006-reim-root-of-unknown-sign.patch"],
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 
@@ -226,6 +237,9 @@ export function build(cases) {
       nCheck++;
     }
   }
+  // Patch 0006 (G96), tests/golden/bench.yaml g96-cas-im-2sqrt: im(2*sqrt(x)) with x free is 2*im(sqrt(x)); at x=-1 it is 2 (stock Giac: 0).
+  patched.push("// patch 0006-reim-root-of-unknown-sign.patch", "// g96-cas-im-2sqrt (bench.yaml, derived)", 'Digits:=40:; pc("g96-cas-im-2sqrt",\'subst(im(2*sqrt(x)),x,-1)\',2,1/10^30);');
+  nPatched++;
   check.push('print("pascaline-check: "+pasfail+" of "+pasn+" failed");');
   known.push('print("pascaline-known: "+pasfail+" of "+pasn+" failed (all must fail)");');
   patched.push('print("pascaline-patched: "+pasfail+" of "+pasn+" failed (none may fail on our patched build)");');
