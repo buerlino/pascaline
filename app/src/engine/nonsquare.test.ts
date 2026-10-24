@@ -68,6 +68,15 @@ describe.skipIf(!giacAvailable())("G101 a stored function's body", () => {
   it("keeps the inverse of a square matrix", () => {
     expect(cas("f([[1,2],[3,4]])")).toMatchObject({ ok: true, text: "[[-2,1],[3/2,-1/2]]" });
   });
+
+  it("binds each parameter, and a stored x does not leak into the body", () => {
+    expect(cas("h(x,y):=x^y")).toMatchObject({ ok: true });
+    expect(cas("h([[5],[1]],2)")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("h([[5],[1]],1)")).toMatchObject({ ok: true, text: "[[5],[1]]" });
+    expect(cas("x:=3")).toMatchObject({ ok: true });
+    expect(home("f([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("purge(x)")).toMatchObject({ ok: true });
+  });
 });
 
 describe.skipIf(!giacAvailable())("G97 in the Num table", () => {

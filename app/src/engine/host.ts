@@ -394,6 +394,13 @@ export class EngineHost implements FactsHost {
     return t.fn ? k : { writes: k.writes, calls: [...new Set([...k.calls, ...t.names])] };
   }
 
+  /** G101 (nonsquare.ts): the stored text of the function `name` when its body is known: a program that stores nothing
+   *  and evaluates no string, nor do the programs it reads (G100's kept stores). Null for any other name. */
+  private readonly bodyOf = (name: string): string | null => {
+    const t = this.stored.get(name);
+    return t?.fn && !writesThrough([name], (n) => this.keptOf(n)) ? t.text : null;
+  };
+
   private keptFrom(text: string): ProgramStores {
     let k = this.keptByText.get(text);
     if (!k) this.keptByText.set(text, (k = programStores(this.bridge.parse(text))));
@@ -642,7 +649,7 @@ export class EngineHost implements FactsHost {
     // G100: a chip's or constant's input brings the form of its typed text (homeTabled), the value cut from this one
     const form = given ?? this.formFor(input);
     try {
-      result = homeEval(this.strict, input, s, undefined, form);
+      result = homeEval(this.strict, input, s, undefined, form, this.bodyOf);
     } catch (e) {
       if (!(e instanceof GiacSyntaxError)) throw e;
       const ms = performance.now() - t0;
@@ -808,7 +815,7 @@ export class EngineHost implements FactsHost {
     // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, refused as in Home.
     const builtin = notBuiltin(this.giac);
     const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
-    if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn)) return fail(enEngine["error.notSquare"], "notSquare");
+    if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn, this.bodyOf)) return fail(enEngine["error.notSquare"], "notSquare");
     // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.
     if (unaskedPoly(this.giac, "pcasans", asg0 ? asg0.rhs : exactInput, text, userFn)) return fail(enEngine["error.listPlusNumber"], "listPlusNumber");
     if (guarded) {
