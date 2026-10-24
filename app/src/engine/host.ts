@@ -381,15 +381,17 @@ export class EngineHost implements FactsHost {
   /**
    * G100: what the program `name` stores when it runs: the stores its log entry keeps (read when it was defined), else
    * read once from its definition (a restored entry) or from the program Giac holds under the name (one a body defined).
-   * A value that is no program goes on through the names in it (`h:=g`). Null for a name the host does not hold.
+   * A value that is no program counts by the tree of its stored text, so a program inside it (`L:=[g]` holds g's
+   * program, F81) counts, and goes on through the names in it (`h:=g`). Null for a name the host does not hold.
    */
   private keptOf(name: string): ProgramStores | null {
     const e = this.byName.get(name);
     if (e?.stores) return e.stores;
     if (e?.kind === "fn") return this.keptFrom(e.cmds[0]!);
     const t = this.stored.get(name);
-    if (t?.fn) return this.keptFrom(t.text);
-    return t ? { writes: [], calls: t.names } : null;
+    if (!t) return null;
+    const k = this.keptFrom(t.text);
+    return t.fn ? k : { writes: k.writes, calls: [...new Set([...k.calls, ...t.names])] };
   }
 
   private keptFrom(text: string): ProgramStores {
