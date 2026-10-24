@@ -38,9 +38,9 @@ import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
-import { assignmentIn, formIn, formOf, mayStore, programStores, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
+import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
-import { changesOf, parsePrinted, readsFrom, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
+import { changedPart, changesOf, namesOf, namesPart, parsePrinted, readsFrom, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
 import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -57,6 +57,8 @@ interface AfterInput {
   /** The table after the input (when the state was read) and the names that changed or went. */
   table: Map<string, StoredName> | null;
   changes: { changed: string[]; removed: string[] } | null;
+  /** G104: the names VARS() listed that the table leaves out (ours, a name that holds itself), when the state was read. */
+  skipped: Set<string> | null;
   /** A setting differed from the host's and was put back. */
   flagsChanged: boolean;
   /** …and the user's text set it (the result says it was not kept, G67). */
@@ -67,6 +69,9 @@ interface AfterInput {
 const AMBIGUOUS_POWER = /\^ is ambiguous on non square matrices/;
 
 const NO_READS: InputReads = { names: [], targets: [], fn: false };
+
+/** G104: the state heads whose names are the tree's targets (a name they remove is gone from VARS() too). */
+const PURGE_HEADS: ReadonlySet<string> = new Set(["purge", "DelVar", "del", "unassign"]);
 
 
 /** What the host needs from a loaded Giac module (engine/giac/wasm/api.cc). */
@@ -181,6 +186,8 @@ export class EngineHost implements FactsHost {
   readonly chipFacts = new Map<string, NameFacts>();
   /** G65: Giac's stored user names, read after every input that may store and after restore() (stateRead.ts). */
   stored = new Map<string, StoredName>();
+  /** G104: the names Giac's VARS() listed at the last state read that `stored` leaves out (ours, an assumed name). */
+  private skipped = new Set<string>();
   /** G65: the call after the current input, once it ran (home() and cas() make it when the run did not). */
   private post: AfterInput | null = null;
 
@@ -232,7 +239,8 @@ export class EngineHost implements FactsHost {
     }
     // The stored table learns the loaded names as Giac prints them, so the input's state part does not count them as
     // its stores (G65's changesOf would log them as vars with the input's facts).
-    const node = parsePrinted(this.giac.eval(statePart(this.modeDigits)));
+    // G104: their entries only
+    const node = parsePrinted(this.giac.eval(namesPart(this.modeDigits, todo.map((e) => e.name))));
     const table = node ? tableOf(node, (n) => this.byName.has(n)) : null;
     if (table) for (const e of todo) { const t = table.get(e.name); if (t) this.stored.set(e.name, t); }
     // the `// Success` notes and any error of the load are not the input's
@@ -337,7 +345,7 @@ export class EngineHost implements FactsHost {
     flush();
     this.record(entries.map((e) => ({ set: e })));
     // G67: a replayed body or command may have changed a Giac setting; G65: the table of stored names, in the same call
-    const post = this.after("", false, true);
+    const post = this.after("", false, "full");
     this.commit(post);
     this.otherToNames(entries, post);
     return performance.now() - t0;
@@ -359,12 +367,14 @@ export class EngineHost implements FactsHost {
    * `giac_ctx_set` of the whole context, and the mode setup runs again on the next call. An input that names a setting
    * bridge-1 cannot see (timeout, ckevery) gets the mode setup again too. Then the names the input reads, from its tree
    * (G99, bridge-2; `read`: skipped after a syntax error; `shown`: its result's text, see readsOf), and, when `state`,
-   * every stored user name (stateRead.ts statePart), both with the settings back.
+   * the stored user names, both with the settings back. G104: the entries of the input's candidates (candidatesOf) and
+   * of the names new in VARS() are read, every other stays from `stored` (stateRead.ts changedPart); every entry when
+   * the candidates are unknown or `state` is "full" (restore; statePart).
    * `reset`: the user's text set one (the input names a setting, or calls a stored function whose definition does; the
    * result says it was not kept). Giac leaks some by itself, put back without a word: a `throw` in a program leaves
    * eval_level at 1 (our refusals in pasmedian, eseries), and `(-32)^(1/5)` leaves epsilon at 1e-60 (probe 2026-10-20).
    */
-  private after(input: string, read: boolean, state: boolean, shown?: string): AfterInput {
+  private after(input: string, read: boolean, state: boolean | "full", shown?: string): AfterInput {
     if (namesUnreadFlag(input)) this.modeKey = "";
     const want = hostContext(this.modeDigits);
     const flagsChanged = contextDiff(this.bridge.ctxGet(), want).length > 0;
@@ -374,12 +384,46 @@ export class EngineHost implements FactsHost {
     }
     // G99: the names come from Giac's tree; parsed only when they can matter (mayLend)
     const reads = read && (state || this.mayLend(input)) ? this.readsOf(input, shown) : NO_READS;
-    const stateNode = state ? parsePrinted(this.giac.eval(statePart(this.modeDigits))) : null;
-    const reset = flagsChanged && (namesFlag(input) || [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => this.byName.get(m[0])?.cmds.some(namesFlag) === true));
     const typed = new Set(namesIn(input));
-    const table = state && stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n)) : null;
-    this.post = { reads, table, changes: table ? changesOf(this.stored, table) : null, flagsChanged, reset };
+    // G104: a name the text names is read again too (the table holds a `pas` name the text names, isOurs)
+    const cands = state === true ? this.candidatesOf(input) : null;
+    const known = cands ? [...this.stored.keys(), ...this.skipped].filter((n) => !cands.has(n) && !typed.has(n)) : [];
+    const stateNode = state ? parsePrinted(this.giac.eval(cands ? changedPart(this.modeDigits, known) : statePart(this.modeDigits))) : null;
+    const reset = flagsChanged && (namesFlag(input) || [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => this.byName.get(m[0])?.cmds.some(namesFlag) === true));
+    const table = state && stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n), this.stored) : null;
+    const skipped = table && stateNode ? new Set(namesOf(stateNode).filter((n) => !table.has(n))) : null;
+    this.post = { reads, table, changes: table ? changesOf(this.stored, table) : null, skipped, flagsChanged, reset };
     return this.post;
+  }
+
+  /**
+   * G104: the names whose stored entry `input` may change: the targets of its tree and the kept stores (G100) of the
+   * programs its words name, walked through the programs they read. A name it removes is gone from VARS(), a name new
+   * there is read as well (after). Null, so every entry is read, when they are unknown: a word that lists or clears the
+   * names (LOAD_ALL), a text Giac's parser refused, a state head other than a purge or a head that evaluates a string,
+   * in the input or in a program it reaches.
+   */
+  private candidatesOf(input: string): Set<string> | null {
+    const tree = this.treeOf(input);
+    const unknown = (h: string): boolean => STRING_HEADS.has(h) || (STATE_HEADS.has(h) && !PURGE_HEADS.has(h));
+    // LOAD_ALL's words: VARS (its tree's head or read), expr, rm_all_vars and restart (string and state heads)
+    if (!tree.ok || tree.heads.some(unknown) || [...tree.heads, ...tree.reads].includes("VARS")) return null;
+    const out = new Set(tree.targets);
+    const seen = new Set<string>();
+    const queue = [...wordsOf(input), ...tree.reads];
+    while (queue.length) {
+      const n = queue.pop()!;
+      if (seen.has(n)) continue;
+      seen.add(n);
+      const k = this.keptOf(n);
+      if (!k) continue;
+      for (const w of k.writes) {
+        if (!w.endsWith("(")) out.add(w);
+        else if (unknown(w.slice(0, -1))) return null;
+      }
+      queue.push(...k.calls);
+    }
+    return out;
   }
 
   /** G100 (stores.ts): how `input` stores. Its tree decides, parsed only when the text can hold a store (mayStore); a
@@ -471,6 +515,7 @@ export class EngineHost implements FactsHost {
   /** The table the last call read becomes the host's (after the input's facts were taken from the one before). */
   private commit(post: AfterInput): void {
     if (post.table) this.stored = post.table;
+    if (post.skipped) this.skipped = post.skipped;
     this.post = null;
   }
 
