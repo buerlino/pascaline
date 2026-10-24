@@ -4,11 +4,12 @@
 // them are one call (withDigits' restore and the next withDigits' set, numeric.ts), and a waiting set and the settings
 // read after an input are one call too: giac_ctx_set returns the context after it (host.ts after).
 // Only erasable TypeScript syntax, so Node runs this file directly.
-import type { GiacBridge, GiacContext } from "./bridge.ts";
+import type { GiacBridge, GiacContext, GiacValue } from "./bridge.ts";
 import type { GiacApi } from "./host.ts";
 
 export interface GatedGiac {
-  giac: GiacApi & { digits(d: number): void };
+  /** G103: an engine of numeric.ts (Giac): its value is bridge-3's. */
+  giac: GiacApi & { digits(d: number): void; value(text: string, precisions: readonly number[], tree?: boolean): GiacValue };
   /** ctxGet answers with the waiting Digits set when there is one (giac_ctx_set returns the context after it). */
   bridge: GiacBridge;
 }
@@ -48,6 +49,7 @@ export function gated(raw: GiacApi, bridge: GiacBridge): GatedGiac {
       digits: (d) => {
         waiting = Math.trunc(d);
       },
+      value: (text, precisions, tree) => (flush(), bridge.value(text, precisions, tree)),
     },
     bridge: {
       ctxGet: () => flush() ?? bridge.ctxGet(),
@@ -57,7 +59,7 @@ export function gated(raw: GiacApi, bridge: GiacBridge): GatedGiac {
         return setOnce(bridge, d === null || "decimal_digits" in fields ? fields : { decimal_digits: d, ...fields });
       },
       parse: (text) => (flush(), bridge.parse(text)),
-      value: (text, precisions) => (flush(), bridge.value(text, precisions)),
+      value: (text, precisions, tree) => (flush(), bridge.value(text, precisions, tree)),
     },
   };
 }

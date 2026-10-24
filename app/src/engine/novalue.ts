@@ -11,7 +11,7 @@
 //   range) is refused "underflow", as an overflow is (underflow).
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
-import { functionsIn, MAX_EVAL_DIGITS, splitList, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { functionsIn, MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import { isZero } from "./format.ts";
 
 /** The reasons of this module; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
@@ -54,10 +54,10 @@ export function throughInfinity(giac: Giac, input: string, output: string, late:
   if (infinite(output) || TYPED_INF.test(input) || !SOURCE.test(input.replace(SAFE_DIVISION, "")) || callsIn(input).length) return false;
   if (CHANGES_STATE.test(input.replace(/"[^"]*"/g, "")) || functionsIn(input).some(userFn)) return false;
   try {
-    // First the shape, with no evaluation (G103: the whole tree in one call, tree.ts, which stores it in pasq); the
-    // sources in it, innermost first, so the infinity is found at the part that makes it; the whole input is not
-    // evaluated again.
-    const tree = late() ? null : treeOf(giac, "pasq", `pasq:=quote(${input})`);
+    // First the shape, with no evaluation (G103: the tree of the quoted input as Giac stores it in pasq, from bridge-3 in
+    // the same call, tree.ts); the sources in it, innermost first, so the infinity is found at the part that makes it;
+    // the whole input is not evaluated again.
+    const tree = late() ? null : treeOf(giac.value(`pasq:=quote(${input})`, [], true).tree, "pasq");
     if (!tree) return false;
     const sources: string[] = [];
     const visit = (t: TreeNode, root: boolean): void => {
@@ -100,7 +100,7 @@ export function lostNumber(
   if (out === "undef") return throughInfinity(giac, input, out, late, exactMs, userFn) ? "divisionByZero" : null;
   if (infinite(out) || /==|<>|->|"/.test(out) || FREE_NAME.test(out)) return null;
   if (giac.eval(`type(${slot})`).trim() !== "expression") return null;
-  if (giac.eval(`lname(${slot})`).replace(/\s/g, "") !== "[]") return null;
+  if (namesOf(giac, slot)?.length !== 0) return null;
   return infinite(giac.eval(`evalf(${slot})`)) ? "overflow" : "noValue";
 }
 
@@ -109,10 +109,16 @@ export function lostNumber(
 export function lostFloat(giac: Giac, input: string, error: string): NoValue | null {
   const e = error.trim();
   if (isError(e) || (e !== "undef" && !/^[+-]?infinity$/.test(e))) return null;
-  const names = splitList(giac.eval(`lname(quote(${input}))`));
+  const names = namesOf(giac, `quote(${input})`);
   // A name that holds a value (pasdeg, a stored variable) is not free; a free name's type is "identifier".
   if (!names || names.some((n) => !CONSTANTS.has(n) && giac.eval(`type(${n})`).trim() === "identifier")) return null;
   return infinite(e) ? "overflow" : "noValue";
+}
+
+/** Giac's lname of `expr` (the names in it), from bridge-3's elements; null when it is no list (an error). */
+function namesOf(giac: Giac, expr: string): string[] | null {
+  const v = giac.value(`lname(${expr})`, []);
+  return v.kind === "list" || v.kind === "matrix" ? (v.elements ?? null) : null;
 }
 
 const CONSTANTS = new Set(["pi", "e", "i", "infinity", "euler_gamma"]);

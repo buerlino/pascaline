@@ -10,6 +10,7 @@
 import { functionsIn, type Giac } from "./numeric.ts";
 import { CHANGES_STATE } from "./novalue.ts";
 import { MAX_NODES, treeOf, UNEVALUATED, type TreeNode } from "./tree.ts";
+import type { ParseNode } from "./bridge.ts";
 
 /** What can hold such a part: a power, a division or inv, and a list or a name (a stored matrix, a chip) to be M. */
 const OPERATOR = /\^|\/|\binv\s*\(/;
@@ -118,9 +119,9 @@ export function nonSquarePower(
     let nodes = 0;
     // G103: each tree (the input's, a body's) in one call (tree.ts), walked here: a power, a division or inv is a
     // candidate, a call of a known stored function is walked into
-    const shape = (root: string, bind: Bind, depth: number, arg?: string): boolean => {
+    const shape = (root: string, raw: ParseNode | null | undefined, bind: Bind, depth: number): boolean => {
       if (late()) return false;
-      const tree = treeOf(giac, root, arg);
+      const tree = treeOf(raw, root);
       if (!tree) return false;
       const visit = (t: TreeNode): boolean => {
         if (++nodes > MAX_NODES) return false;
@@ -167,10 +168,13 @@ export function nonSquarePower(
       const j = temps.length;
       temps.push(`pasnf${j}`, `pasne${j}`);
       const eqs = k.params.map((x, a) => `quote(${x})=eval(${bind(n === 1 ? `[op(${p})][1]` : `[op(${p})][1][${a}]`)})`);
-      giac.eval(`pasnf${j}:=[op(${name})][2];pasne${j}:=[${eqs.join(",")}]`);
-      return shape(`pasnf${j}`, (e) => `subst(${e},pasne${j})`, depth + 1);
+      // G103: the body as Giac stores it (inv(M) prints as 1/M), with its tree from bridge-3 in the same call
+      const body = giac.value(`pasnf${j}:=[op(${name})][2]`, [], true).tree;
+      giac.eval(`pasne${j}:=[${eqs.join(",")}]`);
+      return shape(`pasnf${j}`, body, (e) => `subst(${e},pasne${j})`, depth + 1);
     };
-    if (!shape("pasq", (e) => e, 0, `pasq:=quote(${input})`)) return false;
+    // G103: the quoted input stored in pasq, with its tree from bridge-3 in the same call
+    if (!shape("pasq", giac.value(`pasq:=quote(${input})`, [], true).tree, (e) => e, 0)) return false;
     for (const c of candidates) {
       if (overBudget()) return false;
       const text = giac.eval(`string(${c.part})`);

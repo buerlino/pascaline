@@ -2,6 +2,8 @@
 // Honest precision against the real Giac build (docs/04 sections 2.4–2.10, G2): the facts the engine reports, and the
 // mark the formatter derives from them. Expected values are derived (exact arithmetic) or come from the oracle
 // (tests/golden/.venv, mpmath at 60 digits), as each case says. Skipped when no engine build is found (nodeGiac.ts).
+import { fakeGiac } from "./fakeGiac.ts";
+import { engineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings, precisionFacts, type HomeSettings } from "./homeEval.ts";
@@ -303,7 +305,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
   it("floatsAtDigits rounds each float of a P text to the display digits, as Giac prints them (source: derived)", async () => {
     const { floatsAtDigits, notBuiltin } = await import("./numeric.ts");
-    const { giac, bridge } = await loadNodeGiac();
+    const giac = engineGiac(await loadNodeGiac());
     const third = "0.3333333333333333333333333333333333333333";
     expect(floatsAtDigits(giac, `${third}*x+${third}e20*y-0.9999999999999999999999999999999999999999*z+2`, 12)).toBe(
       "0.333333333333*x+3.33333333333e+19*y-1.0*z+2",
@@ -313,9 +315,9 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
   it("G53: a built-in's or keyword's print is asked once per Giac instance, a user's name on every call (source: derived, Giac refuses sin:=3)", async () => {
     const { notBuiltin, namePrint } = await import("./numeric.ts");
-    const { giac, bridge } = await loadNodeGiac();
+    const giac = engineGiac(await loadNodeGiac());
     const asked: string[] = [];
-    const counted = { eval: (t: string) => (asked.push(t), giac.eval(t)) };
+    const counted = fakeGiac((t: string) => (asked.push(t), giac.eval(t)));
     expect(notBuiltin(counted)("sin")).toBe(false);
     expect(notBuiltin(counted)("sin")).toBe(false);
     expect(asked.filter((t) => t === "sin")).toEqual(["sin"]);
@@ -329,7 +331,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(notBuiltin(counted)("g53u")).toBe(true);
     expect(asked.filter((t) => t === "g53u")).toEqual(["g53u", "g53u"]);
     // A fresh engine starts with nothing known.
-    const other = { eval: (t: string) => (asked.push(`other:${t}`), giac.eval(t)) };
+    const other = fakeGiac((t: string) => (asked.push(`other:${t}`), giac.eval(t)));
     expect(notBuiltin(other)("sin")).toBe(false);
     expect(asked.filter((t) => t === "other:sin")).toEqual(["other:sin"]);
     giac.eval("purge(g53k,g53u)");
@@ -481,8 +483,9 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
   });
   it("G50f1: a function's parameter is not the stored name of the same name (source: derived)", async () => {
     const { complexReads, purgeReads } = await import("./numeric.ts");
-    const { giac, bridge } = await loadNodeGiac();
-    const own = new EngineHost(giac, bridge);
+    const L = await loadNodeGiac();
+    const giac = engineGiac(L);
+    const own = new EngineHost(L.giac, L.bridge);
     own.cas("x:=tanh(i)", defaultCasSettings);
     own.cas("f(x):=x*i", defaultCasSettings);
     own.cas("g:=(y)->{local x; x:=y; x*i}", defaultCasSettings);

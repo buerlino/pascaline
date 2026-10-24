@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G106 (backlog F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]) is refused in Home and CAS when
 // the input asked for no polynomial; one that asked for one keeps it. Expected values are derived (golden g106-*).
+import type { EngineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, type GiacApi } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
@@ -102,7 +103,7 @@ describe.skipIf(!giacAvailable())("G106 on the real engine", () => {
   });
 
   it("costs one engine call, and none without poly1[", () => {
-    const giac = (host as unknown as { giac: GiacApi }).giac;
+    const giac = (host as unknown as { giac: EngineGiac }).giac;
     expect(giac.eval("pasans:=[1,4]+1")).toBe("poly1[1,5]");
     calls = 0;
     expect(unaskedPoly(giac, "pasans", "[1,4]+1", "poly1[1,5]", () => false)).toBe(true);

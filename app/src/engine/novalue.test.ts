@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G78 (backlog F50, F51): no number through a division by zero, no Giac text for a lost answer. Expected refusals are
 // derived (r16 F7, F8; decisions.md "F50, F51"); the kept values are home.yaml cases (g78-keep-*).
+import { engineGiac, type EngineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, type GiacApi } from "./host.ts";
 import type { GiacBridge } from "./bridge.ts";
@@ -12,10 +13,12 @@ import { lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.
 
 describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
   let host: EngineHost;
-  let giac: GiacApi;
+  let giac: EngineGiac;
   let bridge: GiacBridge;
   beforeAll(async () => {
-    ({ giac, bridge } = await loadNodeGiac());
+    const L = await loadNodeGiac();
+    ({ bridge } = L);
+    giac = engineGiac(L);
     host = new EngineHost(giac, bridge);
   });
   const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(rewriteAngles(input), { ...defaultHomeSettings, angle, budgetMs: 5000 }).result;
@@ -42,7 +45,7 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
       expect(lostNumber(giac, "pasT", "asin(acos(pi*pi))", text, never, 1, never)).toBe("noValue");
       // Its evalf is undef in this Giac; with a finite evalf (a patched acos, our own MPFR route) it is refused all the
       // same: only an infinite evalf changes the reason, to "overflow".
-      const finite = { eval: (t: string): string => (t.startsWith("evalf(") ? "1.5-0.5*i" : giac.eval(t)) };
+      const finite = { ...giac, eval: (t: string): string => (t.startsWith("evalf(") ? "1.5-0.5*i" : giac.eval(t)) };
       expect(lostNumber(finite, "pasT", "asin(acos(pi*pi))", text, never, 1, never)).toBe("noValue");
       // Guard: a float result whose check failed (Giac's float, of type real or complex, not expression) is not refused.
       for (const f of ["evalf(asin(3.7))", "evalf(sin(10^50))"]) {
@@ -127,7 +130,7 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
   });
   it("evaluates only the parts that can make an infinity, and none when they would take too long (timing case)", () => {
     const seen: string[] = [];
-    const counting = { eval: (t: string): string => (seen.push(t), giac.eval(t)) };
+    const counting = { ...giac, eval: (t: string): string => (seen.push(t), giac.eval(t)) };
     // At Home's exact time for factorial(10^6) (about 1 s, it ignores the interrupt) nothing is evaluated again.
     expect(throughInfinity(counting, "ln(ln(factorial(10^6)))", "ln(ln(x))", () => false, 1000, () => false)).toBe(false);
     expect(seen.filter((t) => t.includes("eval("))).toEqual([]);

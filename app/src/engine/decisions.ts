@@ -9,8 +9,9 @@ import {
   hasFloat,
   namePrint,
   namesIn,
-  readParts,
-  shapeOf,
+  numbersAt,
+  shapeOfValue,
+  size,
   topLevelArgs,
   valuePrecision,
   withDigits,
@@ -212,36 +213,13 @@ export function onCut(giac: Giac, expr: string, digits: number, restore: number)
   if (!cuts.length) return null;
   return withDigits(giac, P + 40, restore, () => {
     const hits: { cut: Cut; n: string; proven: boolean }[] = [];
-    if (giac.value) {
-      try {
-        for (const c of cuts) {
-          const h = cutHit(giac.value.bind(giac), (t) => giac.eval(t), c, P);
-          if (h) hits.push(h);
-        }
-      } finally {
-        giac.eval("purge(pasbx)");
-      }
-      return tieOf(expr, hits);
-    }
     try {
       for (const c of cuts) {
-        const x = giac.eval(`pasbx:=(${c.q})`);
-        if (isError(x) || RATIONAL.test(x.trim())) continue;
-        const near =
-          c.kind === "zero" ? "0" : c.kind === "int" ? `round(evalf(pasbx,${P + 20}))` : `floor(evalf(pasbx,${P + 20}))+1/2`;
-        const n = giac.eval(`pasbn:=${near}`);
-        const d = giac.eval("pasbd:=pasbx-pasbn");
-        if (isError(n) || isError(d) || RATIONAL.test(d.trim())) continue;
-        const a = giac.eval(`pasba:=evalf(pasbd,${P + 20})`);
-        const b = giac.eval(`pasbb:=evalf(pasbd,${P + 40})`);
-        if (isError(a) || isError(b) || giac.eval("type(pasbb)") !== "real" || giac.eval("type(pasba)") !== "real") continue;
-        if (giac.eval("when(abs(pasba-pasbb)<abs(pasbb)/2,0,1)") !== "1") continue;
-        // The tie must be proven: a distance below the noise of both precisions need not be 0.
-        const proven = ["simplify", "normal"].some((f) => giac.eval(`${f}(pasbd)`).trim() === "0");
-        hits.push({ cut: c, n: n.trim(), proven });
+        const h = cutHit(giac, c, P);
+        if (h) hits.push(h);
       }
     } finally {
-      giac.eval("purge(pasbx,pasbn,pasbd,pasba,pasbb)");
+      giac.eval("purge(pasbx)");
     }
     return tieOf(expr, hits);
   });
@@ -249,23 +227,21 @@ export function onCut(giac: Giac, expr: string, digits: number, restore: number)
 
 /** onCut's answer from the decisions that sat on their cut (`hits`). */
 function tieOf(expr: string, hits: readonly { cut: Cut; n: string; proven: boolean }[]): { tie: string } | Undecided | null {
-  {
-    if (!hits.length) return null;
-    // G57: a tie Giac cannot prove is refused; a proven one with no value to put in its place stays ⚠.
-    if (hits.some((h) => !h.proven)) return { undecided: true, refused: true };
-    if (hits.some((h) => !h.cut.call || !RATIONAL.test(h.n))) return { undecided: true };
-    // Outermost calls first; one inside a replaced call goes with it.
-    const calls = hits.map((h) => ({ ...h.cut.call!, n: h.n })).sort((u, v) => u.at[0] - v.at[0] || v.at[1] - u.at[1]);
-    let tie = "";
-    let k = 0;
-    for (const c of calls) {
-      if (c.at[0] < k) continue;
-      const value = c.name === "frac" || c.name === "fPart" || c.name === "sign" ? "0" : c.n;
-      tie += `${expr.slice(k, c.at[0])}(${value})`;
-      k = c.at[1];
-    }
-    return { tie: tie + expr.slice(k) };
+  if (!hits.length) return null;
+  // G57: a tie Giac cannot prove is refused; a proven one with no value to put in its place stays ⚠.
+  if (hits.some((h) => !h.proven)) return { undecided: true, refused: true };
+  if (hits.some((h) => !h.cut.call || !RATIONAL.test(h.n))) return { undecided: true };
+  // Outermost calls first; one inside a replaced call goes with it.
+  const calls = hits.map((h) => ({ ...h.cut.call!, n: h.n })).sort((u, v) => u.at[0] - v.at[0] || v.at[1] - u.at[1]);
+  let tie = "";
+  let k = 0;
+  for (const c of calls) {
+    if (c.at[0] < k) continue;
+    const value = c.name === "frac" || c.name === "fPart" || c.name === "sign" ? "0" : c.n;
+    tie += `${expr.slice(k, c.at[0])}(${value})`;
+    k = c.at[1];
   }
+  return { tie: tie + expr.slice(k) };
 }
 
 /** A decimal as n / 10^k. */
@@ -301,12 +277,8 @@ function agrees(a: DecimalValue, b: DecimalValue): boolean {
  * prove a tie; null when the decision is not on its cut, or cannot be on one (a rational quantity or distance, no real
  * number).
  */
-function cutHit(
-  value: (text: string, precisions: readonly number[]) => GiacValue,
-  ev: (text: string) => string,
-  c: Cut,
-  P: number,
-): { cut: Cut; n: string; proven: boolean } | null {
+function cutHit(giac: Giac, c: Cut, P: number): { cut: Cut; n: string; proven: boolean } | null {
+  const value = (text: string, precisions: readonly number[]): GiacValue => giac.value(text, precisions);
   const exactly = (v: GiacValue): boolean => isError(v.text) || v.kind === "integer" || v.kind === "rational";
   const real = (v: GiacValue, prec: number): DecimalValue | null => {
     const at = v.at?.[String(prec)];
@@ -328,7 +300,7 @@ function cutHit(
   const b = real(d, P + 40);
   if (!a || !b || agrees(a, b)) return null;
   // The tie must be proven: a distance below the noise of both precisions need not be 0.
-  const proven = ["simplify", "normal"].some((f) => ev(`${f}(pasbx-(${near}))`).trim() === "0");
+  const proven = ["simplify", "normal"].some((f) => giac.eval(`${f}(pasbx-(${near}))`).trim() === "0");
   return { cut: c, n: near, proven };
 }
 
@@ -338,8 +310,8 @@ function cutHit(
 export type Undecided = { undecided: true; refused?: true };
 
 /** What the second decision found: the text stands (`from` set when it is another evaluation's, stored in `pasdec2`,
- *  which the caller purges), or the evaluations disagree (`undecided`). */
-export type Decision = { text: string; from?: string } | Undecided;
+ *  which the caller purges, with its `value` from bridge-3), or the evaluations disagree (`undecided`). */
+export type Decision = { text: string; from?: string; value?: GiacValue } | Undecided;
 
 /**
  * G38 (docs/04 2.4 rule 2): `expr`, whose exact evaluation at P printed `text`, is computed again at P + 20 and must
@@ -351,28 +323,28 @@ export type Decision = { text: string; from?: string } | Undecided;
  */
 export function decideTwice(giac: Giac, expr: string, text: string, digits: number, restore: number): Decision {
   const P = valuePrecision(digits);
-  // G103: the P + 20 text is only compared, so it goes through bridge-3 when the Giac has it (nothing stored, nothing
-  // to purge; no `=` read as a store, as giac_eval's equaltosto would); the slot pasdec otherwise.
-  let pasdec = false;
+  // G103: the P + 20 text is only compared, so it goes through bridge-3 (nothing stored, nothing to purge; no `=` read
+  // as a store, as giac_eval's equaltosto would). A print bridge-3 cut at 2 kB is read whole.
   const compared = (d: number): string | null =>
     withDigits(giac, d, restore, () => {
-      const v = giac.value?.(`(${expr})`, []);
-      if (v && !v.cut) return isError(v.text) ? null : v.text;
-      pasdec = true;
-      const t = giac.eval(`pasdec:=(${expr})`);
-      return isError(t) ? null : t;
+      const v = giac.value(`(${expr})`, []);
+      if (isError(v.text)) return null;
+      return v.cut ? giac.eval(`(${expr})`) : v.text;
     });
   // The P + 40 text may be kept: in pasdec2, which the caller reads and purges when `from` names it.
   let pasdec2 = false;
+  // G103: with its value (bridge-3), which the caller reads instead of Ans's print (`value` of the decision)
+  let keptValue: GiacValue | undefined;
   const kept = (e: string): string | null =>
     withDigits(giac, P + 40, restore, () => {
       pasdec2 = true;
-      const t = giac.eval(`pasdec2:=(${e})`);
-      return isError(t) ? null : t;
+      const v = giac.value(`pasdec2:=(${e})`, []);
+      keptValue = v;
+      if (isError(v.text)) return null;
+      return v.cut ? giac.eval("pasdec2") : v.text;
     });
   const decided = (d: Decision): Decision => {
-    const purge = [...(pasdec ? ["pasdec"] : []), ...(pasdec2 && ("undecided" in d || d.from === undefined) ? ["pasdec2"] : [])];
-    if (purge.length) giac.eval(`purge(${purge.join(",")})`);
+    if (pasdec2 && ("undecided" in d || d.from === undefined)) giac.eval("purge(pasdec2)");
     return d;
   };
   const t2 = compared(P + 20);
@@ -380,14 +352,14 @@ export function decideTwice(giac: Giac, expr: string, text: string, digits: numb
   if (t2 === text) out = { text };
   else {
     const t3 = t2 === null ? null : kept(expr);
-    out = t3 !== null && t3 === t2 ? { text: t3, from: "pasdec2" } : t3 !== null ? { undecided: true, refused: true } : { undecided: true };
+    out = t3 !== null && t3 === t2 ? { text: t3, from: "pasdec2", value: keptValue! } : t3 !== null ? { undecided: true, refused: true } : { undecided: true };
   }
   if ("undecided" in out) return decided(out);
   const cut = onCut(giac, expr, digits, restore);
   if (!cut) return decided(out);
   if ("undecided" in cut) return decided(cut);
   const tie = kept(cut.tie);
-  return decided(tie === null || hasFloat(tie) ? out : { text: tie, from: "pasdec2" });
+  return decided(tie === null || hasFloat(tie) ? out : { text: tie, from: "pasdec2", value: keptValue! });
 }
 
 /**
@@ -406,10 +378,12 @@ export function decidedAtDouble(
   digits: number,
 ): { facts: ElementFacts[]; shape: Shape } | { text: string } | null {
   return withDigits(giac, DOUBLE_DIGITS, digits, () => {
-    const t = giac.eval(`${name}:=(${expr})`);
-    if (isError(t)) return null;
-    const shape = shapeOf(t);
-    const parts = shape ? readParts(giac, name, shape, (part) => giac.eval(part), DOUBLE_DIGITS) : null;
+    // G103: stored and read in one call (bridge-3)
+    const v = giac.value(`${name}:=(${expr})`, [DOUBLE_DIGITS]);
+    if (v.kind === "error") return null;
+    const t = v.text;
+    const shape = shapeOfValue(v);
+    const parts = shape ? numbersAt(v, DOUBLE_DIGITS, DOUBLE_DIGITS, size(shape)) : null;
     if (shape && parts) {
       const facts = parts.map((v): ElementFacts => ({ value: { re: v.re, im: v.im }, exact: false, reliableDigits: Math.min(digits, DOUBLE_DIGITS), warn: "unaudited", big: false }));
       return { facts, shape };

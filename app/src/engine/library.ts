@@ -14,7 +14,6 @@ import { DATA_VERSION, migratedText } from "../state/storage.ts";
 import { renameOurCalls, writeUserNames } from "./ourNames.ts";
 import { dropAngleFactor, PASDEG, rewriteAngles } from "../input/angles.ts";
 import { isFlagName } from "./flags.ts";
-import { TREE_NAME } from "./tree.ts";
 
 /** r10 section 1.2: the limits of one file. */
 export const LIB_MAX_BYTES = 256 * 1024;
@@ -175,7 +174,7 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
     const value = def.kind === "var" ? assignmentIn(block, tree)?.rhs : undefined;
     if (!NAME.test(def.name)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
     if (isFlagName(def.name)) throw new LibError(at, `${def.name} is one of the engine's settings, which a library may not change`);
-    if (def.name in ENGINE_DEFINITIONS || def.name in COMPLEX_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name === PASDEG || def.name === TREE_NAME || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
+    if (def.name in ENGINE_DEFINITIONS || def.name in COMPLEX_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name === PASDEG || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
     // R64: the degree factor is ours; a body that names it (a `local pasdeg`, say) would change every angle in it
     if (new RegExp(`(?<![A-Za-z0-9_])${PASDEG}(?![A-Za-z0-9_])`).test(NOSTR(block))) throw new LibError(at, `${PASDEG} is one of Pascaline's own names`);
     if (defs.some((d) => d.name === def.name)) throw new LibError(at, `${def.name} is defined twice in this file`);

@@ -4,6 +4,8 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { bridgeOf } from "./bridge.ts";
+import { gated } from "./ctxGate.ts";
+import type { Giac } from "./numeric.ts";
 import { EngineHost, messageBuffer, setGiacHostGlobals, type GiacApi, type LoadedGiac } from "./host.ts";
 
 interface GiacModule {
@@ -38,4 +40,12 @@ export async function loadNodeGiac(mjs: string = giacMjsPath()): Promise<LoadedG
 export async function nodeHost(mjs: string = giacMjsPath()): Promise<EngineHost> {
   const L = await loadNodeGiac(mjs);
   return new EngineHost(L.giac, L.bridge);
+}
+
+/** G103: the engine functions' Giac (numeric.ts) on a loaded one: eval, and bridge-3's value and bridge-2's parse, as
+ *  the host gives them (ctxGate.ts). */
+export type EngineGiac = Giac & LoadedGiac["giac"];
+
+export function engineGiac(L: LoadedGiac): EngineGiac {
+  return gated(L.giac, L.bridge).giac;
 }

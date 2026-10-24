@@ -238,6 +238,7 @@ export function refusalOf(engine: Giac, input: string, output: string, home = fa
   // nothing, so the check then ends "unchecked" unless another step already proved the divergence.
   let interrupted = false;
   const giac: Giac = {
+    value: (t, p, tree) => engine.value(t, p, tree),
     eval: (t) => {
       const o = engine.eval(t);
       if (/^GIAC_ERROR/.test(o) && /interrupt/i.test(o)) interrupted = true;

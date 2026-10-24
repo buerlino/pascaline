@@ -264,6 +264,51 @@ void walk(const gen &g, Walk &w) {
   walk(f, w);
 }
 
+bool isBooleanLeaf(const gen &g) { return g.type == giac::_INT_ && g.subtype == giac::_INT_BOOLEAN; }
+// ---- bridge-3: the tree of a value (G103) --------------------------------------------------------------------------
+// Most nodes `tree` lists; a larger tree is null (the walks of nonsquare.ts and novalue.ts look at 200 at most).
+const int TREE_MAX = 2000;
+// Giac's tree of g as the walks of nonsquare.ts and novalue.ts read it, with nothing evaluated, as Giac's op() splits
+// it (a part's children are the elements of a vector feuille, else the feuille): [1, head, source, [children]] for a
+// call or operator (source 0 for a power whose exponent is a positive integer literal, else 1), [2, [children]] for
+// a vector, [0, number] for anything else (number 1 for an integer or float literal). False past TREE_MAX nodes.
+bool treeOf(const gen &g, std::string &o, int &nodes) {
+  if (++nodes > TREE_MAX) return false;
+  auto children = [&](const giac::vecteur &v) {
+    o += '[';
+    for (size_t k = 0; k < v.size(); ++k) {
+      if (k) o += ',';
+      if (!treeOf(v[k], o, nodes)) return false;
+    }
+    o += ']';
+    return true;
+  };
+  if (g.type == giac::_SYMB) {
+    const std::string h = headOf(g);
+    const gen &f = g._SYMBptr->feuille;
+    bool source = true;
+    if (h == "^" && f.type == giac::_VECT && f._VECTptr->size() == 2) {
+      const gen &n = f._VECTptr->back();
+      source = !((n.type == giac::_INT_ && !isBooleanLeaf(n) && n.val > 0) || (n.type == giac::_ZINT && mpz_sgn(*n._ZINTptr) > 0));
+    }
+    o += "[1,";
+    jstr(o, h);
+    o += source ? ",1," : ",0,";
+    bool ok = f.type == giac::_VECT ? children(*f._VECTptr) : children(giac::vecteur(1, f));
+    o += ']';
+    return ok;
+  }
+  if (g.type == giac::_VECT) {
+    o += "[2,";
+    bool ok = children(*g._VECTptr);
+    o += ']';
+    return ok;
+  }
+  const bool number = g.type == giac::_INT_ || g.type == giac::_ZINT || g.type == giac::_DOUBLE_ || g.type == giac::_REAL || g.type == giac::_FLOAT_;
+  o += number ? "[0,1]" : "[0,0]";
+  return true;
+}
+
 // ---- bridge-3: kinds and parts -------------------------------------------------------------------------------------
 const size_t CUT = 2048;
 
@@ -343,11 +388,12 @@ std::string partText(const gen &x, const giac::context *c) {
 }
 
 // Real and imaginary part of an evaluated number, printed; false when it is not a finite number.
-bool partsOf(const gen &x, const giac::context *c, std::string &o) {
+bool partsOf(const gen &x, const giac::context *c, std::string &o, int &dbl) {
   // evalf at P <= 14 can give a symbolic form (-(1.5), 2.0*i) that re() and im() turn into numbers, as today's
   // `(pasz->[re(pasz),im(pasz)])(evalf(…,P))` does; a value that is not a number keeps symbolic parts and is refused.
   gen a = giac::re(x, c), b = giac::im(x, c);
   if (!isNumber(a, c) || !isNumber(b, c)) return false;
+  dbl = (a.type == giac::_DOUBLE_ ? 1 : 0) | (b.type == giac::_DOUBLE_ ? 2 : 0);
   std::string ta = partText(a, c), tb = partText(b, c);
   if (ta.empty() || tb.empty() || ta.find('/') == 0 || tb.find('/') == 0) return false;
   o += '[';
@@ -581,13 +627,19 @@ EMSCRIPTEN_KEEPALIVE const char *giac_parse(const char *text) {
 }
 
 // bridge-3: evaluates `text` once, as caseval does (parse, history, protecteval under the same timeout and interrupt
-// state; no equaltosto, see parseInput), and returns {"kind","text","cut","num","den","shape","elements","at"}.
+// state; no equaltosto, see parseInput), and returns {"kind","text","cut","num","den","shape","elements","kinds","exact","at","doubles"}.
 // kind: integer, rational, float, complex, boolean, infinity, undef, list, matrix, sequence, set, symbolic, string,
 // function, error, other. text: Giac's print (an error as caseval prints it, "GIAC_ERROR: …"), cut to 2 kB with
 // "cut":true. num/den: an integer's or rational's, in base 10 whatever integer_format says, left out past 2048 digits.
-// elements: a list's or matrix's printed elements (rows flattened; left out when the text is cut), with shape [n] or
-// [rows, cols]. at: for each precision P in `precisions` ("12,32"), [re, im] of every element of evalf(value, P), each
+// elements: a list's or matrix's printed elements (rows flattened, each cut to 2 kB; left out when the text is cut and
+// there are more than 400), with shape [n] or
+// [rows, cols]; G103: kinds, each element's kind, and exact, each element's [num, den] in base 10 (null for an
+// element that is no integer or rational, or past 2048 digits). at: for each precision P in `precisions` ("12,32"), [re, im] of every element of evalf(value, P), each
 // part in base 10, or null when an element is not a finite number; kept when the text is cut (2^10000 still has digits).
+// doubles: for each precision of at, per element 1 when its real part is a C double, 2 its imaginary part, 3 both
+// (BesselJ has no MPFR path: a double where MPFR digits were asked). tree (G103), when `precisions` holds the word
+// "tree": the value's tree as treeOf writes it, for the walks of nonsquare.ts and novalue.ts on a quoted input or a
+// stored body (`pasq:=quote(…)`: the tree Giac holds; null past TREE_MAX nodes).
 EMSCRIPTEN_KEEPALIVE const char *giac_value(const char *text, const char *precisions) {
   const giac::context *c = ctx();
   giac::context *C = const_cast<giac::context *>(c);
@@ -637,15 +689,40 @@ EMSCRIPTEN_KEEPALIVE const char *giac_value(const char *text, const char *precis
     jkey(o, "shape");
     if (giac::ckmatrix(r)) o += "[" + std::to_string(r._VECTptr->size()) + "," + std::to_string(r._VECTptr->front()._VECTptr->size()) + "]";
     else o += "[" + std::to_string(r._VECTptr->size()) + "]";
-    if (!cut) {
-      jkey(o, "elements"), o += '[';
+    if (!cut || els.size() <= 400) {  // MAX_ITEMS (numeric.ts): a long print keeps its elements, each cut to 2 kB
+      std::vector<std::string> prints;
+      for (const gen &x : els) {
+        std::string t = x.print(c);
+        prints.push_back(t.size() > CUT ? t.substr(0, CUT) : t);
+      }
+      jkey(o, "elements"), jlist(o, prints);
+      // G103: each element's kind, and an integer's or rational's num/den in base 10 (null for the others)
+      jkey(o, "kinds"), o += '[';
       for (size_t k = 0; k < els.size(); ++k) {
         if (k) o += ',';
-        jstr(o, els[k].print(c));
+        jstr(o, kindOf(els[k], false, c, prints[k]));
+      }
+      o += ']';
+      jkey(o, "exact"), o += '[';
+      for (size_t k = 0; k < els.size(); ++k) {
+        const gen &x = els[k];
+        if (k) o += ',';
+        const bool q = (x.type == giac::_INT_ && !isBoolean(x)) || x.type == giac::_ZINT || (x.type == giac::_FRAC && isNumber(x, c));
+        std::string n = q ? decimal(x.type == giac::_FRAC ? x._FRACptr->num : x) : "", d = q ? (x.type == giac::_FRAC ? decimal(x._FRACptr->den) : "1") : "";
+        if (n.empty() || d.empty()) {
+          o += "null";
+          continue;
+        }
+        o += '[';
+        jstr(o, n);
+        o += ',';
+        jstr(o, d);
+        o += ']';
       }
       o += ']';
     }
   }
+  std::string doubles = "{";  // G103: per precision, per element: 1 the real part is a C double, 2 the imaginary, 3 both
   jkey(o, "at"), o += '{';
   bool first = true;
   for (const char *p = precisions; p && *p;) {
@@ -654,11 +731,13 @@ EMSCRIPTEN_KEEPALIVE const char *giac_value(const char *text, const char *precis
     if (e == p) break;
     p = *e == ',' ? e + 1 : e;
     if (n < 1 || n > 1000) continue;
-    if (!first) o += ',';
+    if (!first) o += ',', doubles += ',';
     first = false;
     jstr(o, std::to_string(n));
     o += ':';
-    std::string parts = "[";
+    jstr(doubles, std::to_string(n));
+    doubles += ':';
+    std::string parts = "[", dbls = "[";
     bool ok = !giac::ctrl_c && !giac::interrupted && els.size() <= 400;  // MAX_ITEMS (numeric.ts)
     for (size_t k = 0; ok && k < els.size(); ++k) {
       gen x;
@@ -667,15 +746,25 @@ EMSCRIPTEN_KEEPALIVE const char *giac_value(const char *text, const char *precis
         // Through protecteval, as caseval runs `evalf(…,P)`: an evalf that throws (BesselJ(1,2) at 50 digits) must not
         // leave Digits at P, which a bare _evalf does.
         x = giac::protecteval(gen(giac::symbolic(giac::at_evalf, giac::makesequence(els[k], gen((int)n)))), 1, C);
-        if (k) parts += ',';
-        ok = !giac::ctrl_c && !giac::interrupted && !giac::has_undef_stringerr(x, e) && partsOf(x, c, parts);
+        if (k) parts += ',', dbls += ',';
+        int dbl = 0;
+        ok = !giac::ctrl_c && !giac::interrupted && !giac::has_undef_stringerr(x, e) && partsOf(x, c, parts, dbl);
+        dbls += std::to_string(dbl);
       } catch (std::runtime_error &) {
         ok = false;
       }
     }
     o += ok ? parts + "]" : "null";
+    doubles += ok ? dbls + "]" : "null";
   }
-  o += "}}";
+  o += '}';
+  jkey(o, "doubles"), o += doubles + "}";
+  if (precisions && strstr(precisions, "tree")) {
+    std::string t;
+    int nodes = 0;
+    jkey(o, "tree"), o += treeOf(r, t, nodes) ? t : "null";
+  }
+  o += '}';
   g_last = o;
   return g_last.c_str();
 }

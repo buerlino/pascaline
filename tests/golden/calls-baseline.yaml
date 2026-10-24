@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Giac calls per Enter (G52): the totals of the gate's `calls` stage. A set fails when its calls per input (total / inputs) are more than
 # 10 % above the baseline's (calls / inputs). Raise a value only with the reason in the package's report (the audit reads it).
-commit: G103  # p1/gorge-bridge-value: Home's value through bridge-3 (giac_value: kind, num/den, elements, at[]), the tree walks of nonsquare.ts and novalue.ts in one call (pastree), decideTwice and onCut without their slots, re/im in one call; on phase-1 (9e07920) the same stage measured bench 491/56 (8.77) and home 4136/325 (12.73), so home falls 34.6 %. Was G67: bench 504/56, home 3808/291 (13.09)
-bench: 454
+commit: G103  # p1/gorge-bridge-value: Home's value through bridge-3 (giac_value: kind, num/den, elements, at[], doubles; the float paths store and read in one call), the walks of nonsquare.ts and novalue.ts on the tree giac_value gives with the store (one call), decideTwice and onCut without their slots, re/im in one call; on phase-1 (9e07920) the same stage measured bench 491/56 (8.77) and home 4136/325 (12.73), so home falls 36.2 %. Was G67: bench 504/56, home 3808/291 (13.09)
+bench: 426
 benchInputs: 56
-home: 2705
+home: 2640
 homeInputs: 325

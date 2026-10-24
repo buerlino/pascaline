@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G44: the polish of the inverse distribution functions (icdf.ts); G44f1: erf and erfc through our definitions.
+import { engineGiac } from "./nodeGiac.ts";
+import { fakeGiac } from "./fakeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { ICDF_DEFINITIONS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
@@ -9,14 +11,14 @@ describe("icdf text", () => {
   it("finds and replaces the four names outside strings only", () => {
     const text = 'normald_icdf(1/40)+student_icdf (5,1/2)+"fisher_icdf(1,2,3)"+mynormald_icdf(2)';
     expect(icdfCalls(text)).toEqual(["normald_icdf", "student_icdf"]);
-    const fake: Giac = { eval: () => "defined" };
+    const fake: Giac = fakeGiac(() => "defined");
     expect(icdfPolished(fake, text)).toBe('pasnormald_icdf(1/40)+passtudent_icdf (5,1/2)+"fisher_icdf(1,2,3)"+mynormald_icdf(2)');
   });
 });
 
 describe("erf value text (G44f1)", () => {
   const evals: string[] = [];
-  const fake: Giac = { eval: (t) => (evals.push(t), "defined") };
+  const fake: Giac = fakeGiac((t) => (evals.push(t), "defined"));
   it("reads erf and erfc through ours, and Giac's 1-erf(u) as erfc(u) only where nothing binds tighter", () => {
     expect(erfValueText(fake, "1-erf(9/2)")).toBe("paserfcv(9/2)");
     expect(erfValueText(fake, "1-erf(3)+erf(1/2)")).toBe("paserfcv(3)+paserfv(1/2)");
@@ -36,7 +38,7 @@ describe("erf value text (G44f1)", () => {
 describe.skipIf(!giacAvailable())("icdf polish (real Giac)", () => {
   let giac: Giac;
   beforeAll(async () => {
-    giac = (await loadNodeGiac()).giac;
+    giac = engineGiac(await loadNodeGiac());
   });
   const at40 = (input: string): { value: string; failed: boolean } => {
     const text = icdfPolished(giac, input);

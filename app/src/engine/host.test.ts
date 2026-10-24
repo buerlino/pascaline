@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // EngineHost against the real Giac build (skipped when no build is found; see nodeGiac.ts).
+import { engineGiac, type EngineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, REPLAY_BATCH } from "./host.ts";
 import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
@@ -13,10 +14,12 @@ import { ICDF_DEFINITIONS, icdfPolished } from "./icdf.ts";
 
 describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   let host: EngineHost;
-  let giac: Awaited<ReturnType<typeof loadNodeGiac>>["giac"];
+  let giac: EngineGiac;
   let bridge: Awaited<ReturnType<typeof loadNodeGiac>>["bridge"];
   beforeAll(async () => {
-    ({ giac, bridge } = await loadNodeGiac());
+    const L = await loadNodeGiac();
+    ({ bridge } = L);
+    giac = engineGiac(L);
     host = new EngineHost(giac, bridge);
   });
 

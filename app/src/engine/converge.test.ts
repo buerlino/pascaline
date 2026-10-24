@@ -2,6 +2,8 @@
 // G39: a number for something that does not exist is refused; Giac's [exact, numeric] pair is never a list.
 // Expected refusals are derived (a pole inside the interval, a term that does not tend to 0); values are oracle cases
 // of home.yaml (g39-keep-*).
+import { engineGiac, type EngineGiac } from "./nodeGiac.ts";
+import { fakeGiac } from "./fakeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { EngineHost, type GiacApi } from "./host.ts";
@@ -33,12 +35,12 @@ describe("converge helpers", () => {
     expect(floatBounds('myint(x,x,0,1)+"int(x,x,0,1)"')).toBe('myint(x,x,0,1)+"int(x,x,0,1)"');
   });
   it("G90: Giac's exact answer with an integrate(…) left in it is its numeric integration; no Giac call for it", () => {
-    const none = { eval: (): string => { throw new Error("no call expected"); } };
+    const none = fakeGiac((): string => { throw new Error("no call expected"); });
     expect(integratedNumerically(none, "int(x^x,x,0,1)", "integrate(exp(ln(x)*x+ln(x))/x,x,0,1)")).toBe(true);
     expect(integratedNumerically(none, "int(exp(-x^2),x,0,1)", "1/2*sqrt(pi)*erf(1)")).toBe(false);
     expect(integratedNumerically(none, "int(f(x),x)", "integrate(f(x),x)")).toBe(false);
     // evalf(int(…)): each integral is run exactly once more.
-    const giac = { eval: (t: string): string => (t === "int(x^x,x,0,1)" ? "integrate(exp(ln(x)*x+ln(x))/x,x,0,1)" : "1/3") };
+    const giac = fakeGiac((t: string): string => (t === "int(x^x,x,0,1)" ? "integrate(exp(ln(x)*x+ln(x))/x,x,0,1)" : "1/3"));
     expect(integratedNumerically(giac, "evalf(int(x^x,x,0,1))", "0.783430510712")).toBe(true);
     expect(integratedNumerically(giac, "evalf(int(x^2,x,0,1))", "0.333333333333")).toBe(false);
   });
@@ -52,7 +54,7 @@ describe("converge helpers", () => {
       [/^evalf\(0,30\)$/, "0.0"],
       [/^(limit|int)\(/, "GIAC_ERROR: Stopped by user interruption."],
     ];
-    const giac = { eval: (t: string) => answers.find(([re]) => re.test(t))?.[1] ?? "GIAC_ERROR: unexpected" };
+    const giac = fakeGiac((t: string) => answers.find(([re]) => re.test(t))?.[1] ?? "GIAC_ERROR: unexpected");
     expect(refusalOf(giac, "int(1/x,x,-1,1)", "0")).toBe("unchecked");
   });
   it("more singular points in [a, b] than are checked leave the result unchecked, never ok", () => {
@@ -66,23 +68,23 @@ describe("converge helpers", () => {
       [/^limit\(/, "0"],
       [/^int\(abs/, "1"],
     ];
-    const giac = {
-      eval: (t: string) => {
-        const n = /^evalf\((\d+),30\)$/.exec(t);
-        if (n) return `${n[1]}.0`;
-        return answers.find(([re]) => re.test(t))?.[1] ?? "GIAC_ERROR: unexpected";
-      },
-    };
+    const giac = fakeGiac((t: string) => {
+      const n = /^evalf\((\d+),30\)$/.exec(t);
+      if (n) return `${n[1]}.0`;
+      return answers.find(([re]) => re.test(t))?.[1] ?? "GIAC_ERROR: unexpected";
+    });
     expect(refusalOf(giac, "int(g(x),x,0,10)", "3")).toBe("unchecked");
   });
 });
 
 describe.skipIf(!giacAvailable())("G39 on the real engine", () => {
   let host: EngineHost;
-  let giac: GiacApi;
+  let giac: EngineGiac;
   let bridge: GiacBridge;
   beforeAll(async () => {
-    ({ giac, bridge } = await loadNodeGiac());
+    const L = await loadNodeGiac();
+    ({ bridge } = L);
+    giac = engineGiac(L);
     host = new EngineHost(giac, bridge);
   });
   // A generous budget: these tests are about the checks, and a loaded test machine must not send ∫₋₁¹ 1/x to the float

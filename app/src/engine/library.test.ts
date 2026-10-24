@@ -54,8 +54,6 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
   it("refuses paspoly1, G106f1's helper, as Pascaline's own name", () => {
     expect(() => parseLibrary("// pascaline library 1\n// d\npaspoly1(v):=5\n", parse)).toThrow(/paspoly1 is one of Pascaline's own names/);
     expect(() => parseLibrary("// pascaline library 1\n// d\npaspoly1:=5\n", parse)).toThrow(/paspoly1 is one of Pascaline's own names/);
-    // G103: the tree walker of nonsquare.ts and novalue.ts
-    expect(() => parseLibrary("// pascaline library 1\n// d\npastree(p):=[0]\n", parse)).toThrow(/pastree is one of Pascaline's own names/);
   });
   it("refuses pasdeg, the degree factor (R64), as a name and in a body", () => {
     expect(() => parseLibrary("// pascaline library 1\n// d\npasdeg:=5\n", parse)).toThrow(/pasdeg is one of Pascaline's own names/);

@@ -3,6 +3,7 @@
 // Each case is one the text readers missed (G85's probe, tools/probes/bridge.ts) and fails on phase-1; the kind each
 // test names is the one giac_value gives (checked first). Expected values are derived (exact arithmetic, Giac's types).
 // Skipped when no engine build is found (nodeGiac.ts).
+import { engineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { EngineHost } from "./host.ts";
 import { defaultHomeSettings, homeEval } from "./homeEval.ts";
@@ -19,7 +20,7 @@ describe.skipIf(!giacAvailable())("G103: a value's kind from bridge-3 (F73)", ()
     host = await nodeHost();
     const L = await loadNodeGiac();
     bridge = L.bridge;
-    raw = { eval: (t) => L.giac.eval(t), value: (t, p) => L.bridge.value(t, p) };
+    raw = engineGiac(L);
   });
   const home = (input: string) => host.home(input, defaultHomeSettings).result;
 
