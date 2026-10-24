@@ -257,8 +257,8 @@ describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
       // a real argument on the exact path stays audited
       expect([home("erf(1/2)").facts.warn, home("erf(1/2)").facts.why]).toEqual([undefined, undefined]);
     });
-    it("G44f1 fix 3: in DEG erf next to a complex tanh keeps tanh read through ours (oracle: mpmath)", () => {
-      // mpmath erf(1/2)+tanh(1+1j) at 45 digits: 1.60442320515174108115849871510393625… + 0.27175258531951171652884372249858892…i (Giac's tanh is coth)
+    it("G44f1 fix 3: in DEG erf next to a complex tanh (Giac's own since G75) (oracle: mpmath)", () => {
+      // mpmath erf(1/2)+tanh(1+1j) at 45 digits: 1.60442320515174108115849871510393625… + 0.27175258531951171652884372249858892…i (Giac's tanh was coth before patch 0003)
       const r = host.home("erf(1/2)+tanh(1+i)", { ...defaultHomeSettings, angle: "deg", digits: 30 }).result;
       expect([r.display, r.facts.warn]).toEqual(["1.6044232051517410811584987151+0.271752585319511716528843722499*i", undefined]);
     });
