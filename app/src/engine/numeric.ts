@@ -169,8 +169,9 @@ export function topLevelArgs(s: string): string[] {
 const PRECISION_CALL = /"[^"]*"|\b(?:evalf|approx)\s*\(/g;
 const INTEGER = /^\s*\d+\s*$/;
 
-/** Every `evalf(e,n)` and `approx(e,n)` in `input` whose n is an integer literal, with n replaced by `at(n)`. */
-export function withAskedPrecision(input: string, at: (n: number) => number): string {
+/** Every `evalf(e,n)` and `approx(e,n)` in `input` with its precision text n replaced by `f(n)`; one for which `f`
+ *  gives null is kept, and its arguments are walked as they are. */
+export function mapPrecisions(input: string, f: (n: string) => string | null): string {
   let out = "";
   let i = 0;
   for (;;) {
@@ -187,14 +188,34 @@ export function withAskedPrecision(input: string, at: (n: number) => number): st
     const close = closing(input, open);
     if (close < 0) return out + input.slice(i);
     const args = topLevelArgs(input.slice(open + 1, close));
+    const n = args.length === 2 ? f(args[1]!) : null;
     out += input.slice(i, open + 1);
-    out +=
-      args.length === 2 && INTEGER.test(args[1]!)
-        ? `${withAskedPrecision(args[0]!, at)},${at(parseInt(args[1]!, 10))}`
-        : withAskedPrecision(input.slice(open + 1, close), at);
+    out += n !== null ? `${mapPrecisions(args[0]!, f)},${n}` : mapPrecisions(input.slice(open + 1, close), f);
     out += ")";
     i = close + 1;
   }
+}
+
+/** Every `evalf(e,n)` and `approx(e,n)` in `input` whose n is an integer literal, with n replaced by `at(n)`. */
+export function withAskedPrecision(input: string, at: (n: number) => number): string {
+  return mapPrecisions(input, (n) => (INTEGER.test(n) ? String(at(parseInt(n, 10))) : null));
+}
+
+/** G91: `input` holds an `evalf(e,n)` or `approx(e,n)` whose n is no integer literal (a name, `2.5`; askedLiterals in
+ *  asked.ts has made every other one a literal): the check cannot raise that precision, so the value is unchecked. */
+export function unreadPrecision(input: string): boolean {
+  let unread = false;
+  mapPrecisions(input, (n) => {
+    if (!INTEGER.test(n)) unread = true;
+    return null;
+  });
+  return unread;
+}
+
+/** G91: the facts of a value whose input holds an unread precision (unreadPrecision): ⚠ without a count, why
+ *  "unchecked" (a warning it already has is kept). */
+export function unreadFacts(facts: readonly ElementFacts[]): ElementFacts[] {
+  return facts.map((f) => (f.exact ? f : { ...f, reliableDigits: null, warn: f.warn ?? ("unchecked" as const) }));
 }
 
 /** Most digits an `evalf(e,n)` may ask the display for (beyond it the digits setting applies). */
@@ -762,6 +783,7 @@ export function floatFacts(
   } finally {
     if (reads) purgeReads(giac, reads.copies);
   }
+  if (facts && expr !== null && unreadPrecision(expr)) facts = unreadFacts(facts);
   // G50f1: an input that runs once (`typed`, expr null) keeps Giac's value, computed without our definitions: a
   // non-real one that rests on a replaced function (typed, or held by a name it reads) is not audited.
   if (facts && expr === null && typed !== undefined) {
@@ -938,6 +960,7 @@ export function floatPathFacts(
     const value = erfValueText(giac, safe);
     if (value !== safe) giac.eval(`${ICDF_FAILED}:=0`);
     let out = floatPathFactsOf(giac, name, value, once, W, digits);
+    if (!("error" in out) && unreadPrecision(safe)) out = { ...out, facts: unreadFacts(out.facts) };
     if (value !== safe) {
       // A non-real argument is Giac's own erf (the flag): not audited.
       const failed = giac.eval(ICDF_FAILED).trim() !== "0";

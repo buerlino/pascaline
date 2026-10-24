@@ -28,6 +28,7 @@ import {
   unquote,
 } from "./homeEval.ts";
 import { eseriesDefinition } from "./eseries.ts";
+import { askedLiterals } from "./asked.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { resolveAngle } from "./angleMigration.ts";
 import { mayPowerMatrix, nonSquarePower, type Bodies, type KnownBody } from "./nonsquare.ts";
@@ -627,9 +628,11 @@ export class EngineHost implements FactsHost {
    * would outlive the run. A value stored from an input with an inexact constant or chip keeps `inexact` facts.
    * Without the tables, nothing changes.
    */
-  home(input: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
+  home(typed: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
     this.post = null;
     this.parsed = null;
+    // G91: a precision with no name in it (`approx(e,2*10)`) is read as the literal it gives
+    const input = askedLiterals(this.giac, typed, () => this.useHomeMode(s));
     const out = this.homeTabled(input, s, consts, chips);
     // G67, G65: the call after the input, if the run did not make it (an error: a syntax error ran nothing)
     const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && this.formFor(input).stores);
@@ -738,8 +741,10 @@ export class EngineHost implements FactsHost {
       });
   }
 
-  cas(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
+  cas(typed: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     this.parsed = null;
+    // G91: as in Home
+    const input = askedLiterals(this.giac, typed, () => this.useCasMode(s));
     const used = this.usesOf(input);
     this.post = null;
     const out = this.casRun(input, s);
@@ -753,10 +758,7 @@ export class EngineHost implements FactsHost {
 
   private casRun(input: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     this.need(input);
-    this.useMode(`cas${JSON.stringify(s)}`, s.digits, () => {
-      for (const c of casSetupCommands(s)) this.giac.eval(c);
-      this.giac.setPowLimit(s.powLimit);
-    });
+    this.useCasMode(s);
     const t0 = performance.now();
     const fail = (text: string, error: CasError): { result: CasResult; defs: DefChange[] } => ({
       result: { ok: false, text, latex: "", timedOut: error === "timeout", error, engineMs: performance.now() - t0, facts: { exact: false, reliableDigits: null } },
@@ -979,6 +981,13 @@ export class EngineHost implements FactsHost {
     this.need(expressionsOf(req.fns));
     this.useHomeMode(s);
     return table(this.watched, req, s, (cell) => this.formFor(cell));
+  }
+
+  private useCasMode(s: CasSettings): void {
+    this.useMode(`cas${JSON.stringify(s)}`, s.digits, () => {
+      for (const c of casSetupCommands(s)) this.giac.eval(c);
+      this.giac.setPowLimit(s.powLimit);
+    });
   }
 
   private useHomeMode(s: HomeSettings): void {
