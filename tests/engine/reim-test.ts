@@ -19,6 +19,9 @@ const KEPT: [string, string][] = [
 // [input, mpmath's value at Digits 12] (source: oracle; mpmath sin(1), mp.dps 30, rounded to 12 digits).
 const VALUES: [string, string][] = [["evalf(subst(im(exp(sqrt(x))),x=-1))", "0.841470984808"]];
 
+// A failure unless the answer is a finite number within 1e-11 (undef or text gives NaN and fails).
+const farFrom = (got: string, want: string): boolean => !(Number.isFinite(Number(got)) && Math.abs(Number(got) - Number(want)) <= 1e-11);
+
 const { giac } = await loadNodeGiac();
 giac.eval("Digits:=12");
 const failures: string[] = [];
@@ -30,9 +33,10 @@ for (const [input, want] of KEPT) {
   const got = giac.eval(input);
   if (got !== want) failures.push(`${input} = ${got}, expected ${want}`);
 }
+if (!farFrom("undef", "0.84") || !farFrom("", "0.84")) failures.push("the value check accepts undef");
 for (const [input, want] of VALUES) {
   const got = giac.eval(input);
-  if (Math.abs(Number(got) - Number(want)) > 1e-11) failures.push(`${input} = ${got}, mpmath ${want}`);
+  if (farFrom(got, want)) failures.push(`${input} = ${got}, mpmath ${want}`);
 }
 if (failures.length) {
   console.log(`FAIL reim-test ${failures.length}\n  ${failures.join("\n  ")}`);

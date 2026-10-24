@@ -5,6 +5,12 @@
 // within half a unit of its last digit. Expected values: mpmath (oracle) or by hand (derived); see the comment above a line.
 pasn:=0:; pasfail:=0:;
 pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol) { ok:=1; } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;
+// patch 0006-reim-root-of-unknown-sign.patch
+// g96-im-int-tanh-sqrt (home.yaml, oracle)
+Digits:=40:; pc("g96-im-int-tanh-sqrt",'(im(int(tanh(sqrt(x)),x,-1,1/2)))',(85617660273/10^11),5/10^13);
+// patch 0006-reim-root-of-unknown-sign.patch
+// g96-im-int-exp-sqrt (home.yaml, oracle)
+Digits:=40:; pc("g96-im-int-exp-sqrt",'(im(int(1/(exp(2*sqrt(x))+1),x,-1,1/2)))',-(428088301365/10^12),5/10^13);
 // patch 0003-complex-tanh-mpfr.patch
 // prec-g50-tanh(i)-12 (precision.yaml, oracle)
 Digits:=40:; pc("prec-g50-tanh(i)-12",'(tanh(i))',(155740772465/10^11)*i,5/10^12);
