@@ -78,8 +78,9 @@ export interface HomeSettings {
   powLimit: number;
 }
 
-/** G82: Giac's clock in Home, a safety net behind the step budget only: a call that checks its interrupt rarely (each
- *  check far apart) is still stopped. It never fires before the step budget on the desktop (golden gate, stage steps). */
+/** G82: Giac's clock in Home, a safety net behind the step budget: a call whose checks are far apart (big-integer work
+ *  between them: sum(1.0001^k,k,1,2000) makes 45,000 in 300 ms, the icdf polish 3,400 per ms) is still stopped. 1 s lets
+ *  the slowest call that finishes on the desktop (102 ms) finish on a device 8× slower (the Tab One is 5-8×). */
 export const HOME_CLOCK_S = 1;
 
 /** G58: the time Home's steps may take for one Enter. Giac interrupts itself after `budgetSteps`, but some of its calls do
