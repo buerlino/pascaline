@@ -86,6 +86,29 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
     home("purge(n,g,g2)");
   });
 
+  for (const [list, call] of [["L:=[g]", "L[0]"], ["M:=[g,g]", "M[1]"]] as const) {
+    it(`F81: ${call}(floor(sqrt(2))) after ${list} runs g once, logs n; credited to that input`, () => {
+      home("n:=0");
+      home("g(t):={n:=n+1;return t;}");
+      home(list);
+      // floor(sqrt(2)) rests on a decision: before G100f1 keptOf walked the list's names only, not the program in it,
+      // so the call ran again (n 2, nothing logged); one call adds 1
+      const r = home(`${call}(floor(sqrt(2)))`);
+      expect(r.result.display).toBe("1");
+      expect(value("n")).toBe("1");
+      expect(setsOf(r.defs)).toEqual(["n=n:=(1)"]);
+      home(`purge(n,g,${list.slice(0, 1)})`);
+    });
+  }
+
+  it("F81 guard (passes on phase-1 too): a list of plain numbers stores nothing; its call logs nothing", () => {
+    home("P:=[3,4]");
+    const r = home("P[1](floor(sqrt(2)))");
+    expect(r.defs).toEqual([]);
+    expect(value("P")).toBe("[3,4]");
+    home("purge(P)");
+  });
+
   it("text-5: a+=1 is a store (logged)", () => {
     home("a:=1");
     const r = home("a+=1");
