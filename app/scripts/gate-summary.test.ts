@@ -3,7 +3,7 @@
 // Vitest's and Playwright's JSON reporters.
 import { describe, expect, it } from "vitest";
 import {
-  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeTypecheck, summarizeVitest, vitestFailures,
+  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeTypecheck, summarizeVitest, vitestFailures,
 } from "./gate-summary.ts";
 
 const vitestOk = {
@@ -157,5 +157,17 @@ describe("summarizeViewSweep", () => {
     const s = summarizeViewSweep("  viewsweep NEW rad 0..1 \\ln x [area]: -1 against refused\nVIEWSWEEP FAILED: 48 expressions, 9 comparisons, total 9.0 s; 0 known failures, 1 new, 0 now passing", 1);
     expect(s.ok).toBe(false);
     expect(s.detail).toContain("1 to look at: NEW rad 0..1");
+  });
+});
+
+describe("summarizeCasBack", () => {
+  it("reads the counts of a passing stage", () => {
+    const ok = "CASBACK PASSED: 123 questions (seed 1): 92 checked, 227 skipped as not checkable, 0 failed, total 0.6 s; 0 known failures, 0 new, 0 now passing";
+    expect(summarizeCasBack(ok, 0)).toEqual({ ok: true, detail: "92 checked, 227 skipped, 0 failed (0 known), 0.6 s" });
+  });
+  it("names a new failure", () => {
+    const s = summarizeCasBack("  casback NEW antiderivative: x [antiderivative]: a\nCASBACK FAILED: 3 questions (seed 1): 2 checked, 0 skipped as not checkable, 1 failed, total 1.0 s; 0 known failures, 1 new, 0 now passing", 1);
+    expect(s.ok).toBe(false);
+    expect(s.detail).toContain("1 to look at");
   });
 });
