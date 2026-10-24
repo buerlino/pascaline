@@ -39,7 +39,9 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
         };
       },
     });
-    const hard = new EngineHost(counted, bridge).home("sin(10^2000)", defaultHomeSettings).result;
+    // G103: the agreement levels come through bridge-3 (`value(text, [P, …])`)
+    const valued = { ...bridge, value: (text: string, at: readonly number[]) => (precs.push(...at), bridge.value(text, at)) };
+    const hard = new EngineHost(counted, valued).home("sin(10^2000)", defaultHomeSettings).result;
     expect(hard.facts.reliableDigits).toBe(0);
     expect(markOf(precisionFacts(hard), { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
     expect(precs.length).toBeGreaterThan(2);

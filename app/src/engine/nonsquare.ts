@@ -8,13 +8,12 @@
 // vector ([1,2]^2 = v·v, [5,1]^-1 elementwise) keeps Giac's meaning: it is no matrix.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { functionsIn, type Giac } from "./numeric.ts";
-import { CHANGES_STATE, UNEVALUATED } from "./novalue.ts";
+import { CHANGES_STATE } from "./novalue.ts";
+import { MAX_NODES, treeOf, UNEVALUATED, type TreeNode } from "./tree.ts";
 
 /** What can hold such a part: a power, a division or inv, and a list or a name (a stored matrix, a chip) to be M. */
 const OPERATOR = /\^|\/|\binv\s*\(/;
 const OPERAND = /\[|\b(?!(?:pi|e|i|euler_gamma|pasdeg|inf|infinity)\b)[A-Za-z_]\w*\b(?!\s*\()/;
-/** Most parts looked at; a larger input is not checked (its result stands). */
-const MAX_NODES = 200;
 /** Time the operands may take, as throughInfinity's walk (novalue.ts): a part costs at most about the whole input. */
 const WALK_BUDGET_MS = 500;
 
@@ -106,7 +105,6 @@ export function nonSquarePower(
   const powers = mayPower && (powIn || inBodies("^"));
   const inverses = mayInverse && (invIn || inBodies("/", "inv"));
   if (!(powers || inverses) || !(typed || reached().known.size > 0)) return false;
-  if (giac.eval(`pasq:=quote(${input})`).startsWith("GIAC_ERROR")) return false;
   // G101: a call's arguments are evaluated once more to bind the body: not when the input stores, or reads a function
   // of the user's whose body is not known (the known bodies store nothing, nor do the functions they read)
   const stores = (t: string): boolean => CHANGES_STATE.test(t.replace(/"[^"]*"/g, ""));
@@ -118,21 +116,32 @@ export function nonSquarePower(
   try {
     const candidates: { part: string; operand: string; power: boolean; bind: Bind }[] = [];
     let nodes = 0;
-    const shape = (p: string, bind: Bind, depth: number): boolean => {
-      if (++nodes > MAX_NODES || late()) return false;
-      const m = /^\[([12]),"'?(.*?)'?",(\d+)\]$/.exec(
-        giac.eval(`when(type(${p})==DOM_SYMBOLIC,[1,string(sommet(${p})),size([op(${p})])],when(type(${p})==DOM_LIST,[2,"",size(${p})],[0]))`).replace(/\s/g, ""),
-      );
-      if (!m) return true;
-      const op = m[2]!;
-      if (UNEVALUATED.has(op)) return true;
-      if (m[1] === "1" && op === "^" && powers) candidates.push({ part: p, operand: `[op(${p})][0]`, power: true, bind });
-      else if (m[1] === "1" && op === "/" && inverses) candidates.push({ part: p, operand: `[op(${p})][1]`, power: false, bind });
-      // inv's argument is its whole feuille: op() of inv(M) would be M's rows.
-      else if (m[1] === "1" && op === "inv" && inverses) candidates.push({ part: p, operand: `feuille(${p})`, power: false, bind });
-      else if (m[1] === "1" && op === "of" && depth < MAX_DEPTH && !into(p, bind, depth)) return false;
-      for (let k = 0; k < Number(m[3]); k++) if (!shape(`[op(${p})][${k}]`, bind, depth)) return false;
-      return true;
+    // G103: each tree (the input's, a body's) in one call (tree.ts), walked here: a power, a division or inv is a
+    // candidate, a call of a known stored function is walked into
+    const shape = (root: string, bind: Bind, depth: number, arg?: string): boolean => {
+      if (late()) return false;
+      const tree = treeOf(giac, root, arg);
+      if (!tree) return false;
+      const visit = (t: TreeNode): boolean => {
+        if (++nodes > MAX_NODES) return false;
+        if (t.kind === 0 || UNEVALUATED.has(t.head)) return true;
+        const p = t.path;
+        const op = t.head;
+        // An operand that is a number literal is no matrix (the 3 of 1/3): not evaluated.
+        const literal = (k: number): boolean => t.children.length === (op === "inv" ? 1 : 2) && t.children[k]!.number;
+        if (t.kind === 1 && op === "^" && powers) {
+          if (!literal(0)) candidates.push({ part: p, operand: `[op(${p})][0]`, power: true, bind });
+        } else if (t.kind === 1 && op === "/" && inverses) {
+          if (!literal(1)) candidates.push({ part: p, operand: `[op(${p})][1]`, power: false, bind });
+        }
+        // inv's argument is its whole feuille: op() of inv(M) would be M's rows.
+        else if (t.kind === 1 && op === "inv" && inverses) {
+          if (!literal(0)) candidates.push({ part: p, operand: `feuille(${p})`, power: false, bind });
+        }
+        else if (t.kind === 1 && op === "of" && depth < MAX_DEPTH && !into(p, bind, depth)) return false;
+        return t.children.every(visit);
+      };
+      return visit(tree);
     };
     // G101: the call `p` of a known stored function: its body walked with its parameters (from the function's tree)
     // bound to the argument values (evaluated once, under the caller's binding). Walked only when the function's
@@ -161,7 +170,7 @@ export function nonSquarePower(
       giac.eval(`pasnf${j}:=[op(${name})][2];pasne${j}:=[${eqs.join(",")}]`);
       return shape(`pasnf${j}`, (e) => `subst(${e},pasne${j})`, depth + 1);
     };
-    if (!shape("pasq", (e) => e, 0)) return false;
+    if (!shape("pasq", (e) => e, 0, `pasq:=quote(${input})`)) return false;
     for (const c of candidates) {
       if (overBudget()) return false;
       const text = giac.eval(`string(${c.part})`);

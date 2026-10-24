@@ -21,11 +21,9 @@ const isError = (t: string): boolean => t.startsWith("GIAC_ERROR");
 const infinite = (t: string): boolean => /infinity/.test(t);
 /** An infinity the user typed: then an infinite part is meant, not a division by zero. */
 const TYPED_INF = /\b(inf|infinity)\b/;
-/** Calls whose arguments are not all evaluated as written: a branch not taken (`piecewise(0>0,1/0,5)`), a body in a
- *  bound variable, a quoted text. Their parts are not looked at. */
-export const UNEVALUATED = new Set(["when", "piecewise", "ifte", "quote", "hold", "seq", "$", "makelist", "product", "diff", "solve", "fsolve", "romberg", "gaussquad"]);
-/** Most parts looked at; a larger input is not checked (its result stands). */
-const MAX_NODES = 200;
+import { treeOf, UNEVALUATED, type TreeNode } from "./tree.ts";
+
+export { UNEVALUATED };
 
 /** Divisions by a positive integer literal or a power of ten (a typed decimal read exactly, `(981/100)`), and by the
  *  degree factor, which is never 0. */
@@ -55,29 +53,19 @@ const WALK_BUDGET_MS = 500;
 export function throughInfinity(giac: Giac, input: string, output: string, late: () => boolean, exactMs: number, userFn: (name: string) => boolean): boolean {
   if (infinite(output) || TYPED_INF.test(input) || !SOURCE.test(input.replace(SAFE_DIVISION, "")) || callsIn(input).length) return false;
   if (CHANGES_STATE.test(input.replace(/"[^"]*"/g, "")) || functionsIn(input).some(userFn)) return false;
-  if (isError(giac.eval(`pasq:=quote(${input})`))) return false;
   try {
-    // First the shape, with no evaluation: one call per part, [1, its operator, its number of parts, 1 when it is a
-    // source] for a call or operator, [2, "", n] for a list, [0] for anything else (a number, a name).
+    // First the shape, with no evaluation (G103: the whole tree in one call, tree.ts, which stores it in pasq); the
+    // sources in it, innermost first, so the infinity is found at the part that makes it; the whole input is not
+    // evaluated again.
+    const tree = late() ? null : treeOf(giac, "pasq", `pasq:=quote(${input})`);
+    if (!tree) return false;
     const sources: string[] = [];
-    let nodes = 0;
-    const shape = (p: string, root: boolean): boolean => {
-      if (++nodes > MAX_NODES || late()) return false;
-      const m = /^\[([12]),"'?(.*?)'?",(\d+)(?:,([01]))?\]$/.exec(
-        giac
-          .eval(
-            `when(type(${p})==DOM_SYMBOLIC,[1,string(sommet(${p})),size([op(${p})]),when(sommet(${p})=='^',when(type([op(${p})][1])==DOM_INT and [op(${p})][1]>0,0,1),1)],when(type(${p})==DOM_LIST,[2,"",size(${p})],[0]))`,
-          )
-          .replace(/\s/g, ""),
-      );
-      if (!m) return true;
-      if (UNEVALUATED.has(m[2]!)) return true;
-      for (let k = 0; k < Number(m[3]); k++) if (!shape(`[op(${p})][${k}]`, false)) return false;
-      // Innermost first, so the infinity is found at the part that makes it; the whole input is not evaluated again.
-      if (!root && m[1] === "1" && m[4] === "1" && SOURCE_OPS.has(m[2]!)) sources.push(p);
-      return true;
+    const visit = (t: TreeNode, root: boolean): void => {
+      if (t.kind === 1 && UNEVALUATED.has(t.head)) return;
+      for (const c of t.children) visit(c, false);
+      if (!root && t.kind === 1 && t.source && SOURCE_OPS.has(t.head)) sources.push(t.path);
     };
-    if (!shape("pasq", true)) return false;
+    visit(tree, true);
     const t0 = performance.now();
     for (const p of sources) {
       if (late() || performance.now() - t0 + exactMs > WALK_BUDGET_MS) return false;
