@@ -22,50 +22,70 @@ export interface Verdict {
 const ok: Verdict = { status: "ok", detail: "" };
 const skip = (detail: string): Verdict => ({ status: "skip", detail });
 
-/** diff is 0 at every point: `diff` is an expression in x. */
-function zeroAt(diff: string, at: At, points: readonly string[] = POINTS): Verdict {
+/** What the bridge says of a printed answer (P20: its kind and tree, not its spelling). */
+export interface Info {
+  /** Giac's kind of the value ("undef", "error", "symbolic", "list", …). */
+  kind: string;
+  /** The tree holds an unevaluated `int`, `integrate`, `solve`, `undef` or an equation. */
+  unresolved: boolean;
+}
+export type Probe = (text: string) => Info;
+
+/** Kinds that are no expression to check back. */
+const NO_EXPRESSION: ReadonlySet<string> = new Set(["undef", "error", "other", "string", "function", "boolean", "infinity", "list", "matrix", "sequence", "set"]);
+
+/** The claim `answer = original` at every point, each evaluated alone. A point where exactly one has a real value is wrong
+ *  (a lost sign: ln(x^2) -> 2*ln(x) is not real at x<0); only a point where neither has one is not checked. */
+function sameAt(answer: string, original: string, at: At, points: readonly string[] = POINTS): Verdict {
   let seen = 0;
   for (const p of points) {
-    const v = at(diff, p);
-    if (v === null) continue; // no real value at this point (a log of a negative): only this point is not checked
+    const a = at(answer, p);
+    const o = at(original, p);
+    if (a === null && o === null) continue;
     seen++;
-    if (!(Math.abs(v) <= TOL)) return { status: "wrong", detail: `${diff} = ${v} at x=${p}` };
+    if (a === null || o === null) return { status: "wrong", detail: `${a === null ? answer : original} is not real at x=${p}, ${a === null ? original : answer} = ${a ?? o}` };
+    if (!(Math.abs(a - o) <= TOL)) return { status: "wrong", detail: `${answer} = ${a}, ${original} = ${o} at x=${p}` };
   }
   return seen > 0 ? ok : skip("no real number at any point");
 }
 
-const unresolved = (answer: string): boolean => /(^|[^A-Za-z_])(int|integrate|solve|undef|infinity|inf|GIAC_ERROR)\b|\bi\b|@|\?/.test(answer) || answer.trim() === "";
+function notAnswer(answer: string, probe: Probe): string | null {
+  const i = probe(answer);
+  if (i.unresolved) return "unevaluated in the answer";
+  return NO_EXPRESSION.has(i.kind) ? `answer is ${i.kind}` : null;
+}
 
 /** An antiderivative differentiates to the integrand. */
-export function checkAntiderivative(integrand: string, answer: string, at: At): Verdict {
-  if (unresolved(answer)) return skip("no closed form");
-  return zeroAt(`diff(${answer},x)-(${integrand})`, at);
+export function checkAntiderivative(integrand: string, answer: string, at: At, probe: Probe): Verdict {
+  const why = notAnswer(answer, probe);
+  return why ? skip(why) : sameAt(`diff(${answer},x)`, integrand, at);
 }
 
 /** A factorisation expands back to the original. */
-export function checkFactorisation(original: string, answer: string, at: At): Verdict {
-  if (unresolved(answer)) return skip("no factorisation");
-  return zeroAt(`(${answer})-(${original})`, at);
+export function checkFactorisation(original: string, answer: string, at: At, probe: Probe): Verdict {
+  const why = notAnswer(answer, probe);
+  return why ? skip(why) : sameAt(answer, original, at);
 }
 
-/** A simplification agrees with the original at three points. */
-export function checkSimplification(original: string, answer: string, at: At): Verdict {
-  if (unresolved(answer)) return skip("no simplification");
-  return zeroAt(`(${answer})-(${original})`, at);
+/** A simplification agrees with the original at the points. */
+export function checkSimplification(original: string, answer: string, at: At, probe: Probe): Verdict {
+  const why = notAnswer(answer, probe);
+  return why ? skip(why) : sameAt(answer, original, at);
 }
 
 /** The entries of a printed list, read by Giac's bridge (P20: no bracket loop here); null when the text is not a list. */
 export type Entries = (text: string) => string[] | null;
 
 /** Every solution of `lhs=rhs` substitutes to 0 (one check per entry, so a missing solution is not noticed: only wrong ones). */
-export function checkSolutions(equation: string, answer: string, at: At, entries: Entries): Verdict {
+export function checkSolutions(equation: string, answer: string, at: At, entries: Entries, probe: Probe): Verdict {
   const sols = entries(answer);
   if (!sols || sols.length === 0) return skip("no list of solutions");
   const sides = equation.split("=");
   if (sides.length !== 2) return skip("not an equation");
   const diff = `(${sides[0]})-(${sides[1]})`;
   for (const s of sols) {
-    if (/=|\bi\b|[A-Za-z_]\w*\(\s*[^)]*\b[a-z]\b/.test(s) && !/^[\w+\-*/^().\s]+$/.test(s)) return skip(`solution ${s} is not a plain value`);
+    const why = notAnswer(s, probe);
+    if (why) return skip(`solution ${s}: ${why}`);
     const v = at(diff, s);
     if (v === null) return skip(`solution ${s} gives no real number`);
     if (!(Math.abs(v) <= TOL)) return { status: "wrong", detail: `${diff} = ${v} at x=${s}` };
@@ -83,12 +103,12 @@ export interface Question {
   subject: string;
 }
 
-export function checkBack(q: Question, answer: string, at: At, entries: Entries): Verdict {
+export function checkBack(q: Question, answer: string, at: At, entries: Entries, probe: Probe): Verdict {
   switch (q.kind) {
-    case "antiderivative": return checkAntiderivative(q.subject, answer, at);
-    case "solution": return checkSolutions(q.subject, answer, at, entries);
-    case "factorisation": return checkFactorisation(q.subject, answer, at);
-    case "simplification": return checkSimplification(q.subject, answer, at);
+    case "antiderivative": return checkAntiderivative(q.subject, answer, at, probe);
+    case "solution": return checkSolutions(q.subject, answer, at, entries, probe);
+    case "factorisation": return checkFactorisation(q.subject, answer, at, probe);
+    case "simplification": return checkSimplification(q.subject, answer, at, probe);
   }
 }
 
@@ -106,7 +126,7 @@ function rng(seed: number): () => number {
 
 const sgn = (n: number, first = false): string => (n < 0 ? `-${-n}` : first ? `${n}` : `+${n}`);
 
-/** Generated questions, deterministic for a seed: integrals, factorisations, equations and simplifications in x. */
+/** Generated questions, deterministic for a seed: integrals, factorisations and equations in x (simplifications come from G61's generator, in the stage). */
 export function generated(seed: number, count: number): Question[] {
   const r = rng(seed);
   const pick = <T>(xs: readonly T[]): T => xs[Math.floor(r() * xs.length)]!;
@@ -115,7 +135,7 @@ export function generated(seed: number, count: number): Question[] {
   for (let i = 0; i < count; i++) {
     const a = n(2, 5);
     const b = n(1, 4);
-    const k = i % 4;
+    const k = i % 3;
     if (k === 0) {
       const f = pick([`x^${a}`, `sin(${a}*x)`, `exp(${a}*x)`, `1/(x+${b})`, `x*exp(x)`, `x^${a}+${b}*x`, `cos(${a}*x)*${b}`, `x*sin(x)`, `sqrt(x+${b})`]);
       out.push({ id: `antiderivative: ${f}`, kind: "antiderivative", input: `int(${f},x)`, subject: f });
@@ -124,14 +144,11 @@ export function generated(seed: number, count: number): Question[] {
       const q = n(-4, 4) || 2;
       const f = pick([`x^2${sgn(p + q)}*x${sgn(p * q)}`, `x^3${sgn(-p)}*x^2${sgn(-q)}*x${sgn(p * q)}`, `${a * a}*x^2-${b * b}`, `x^4-${a * a}`]);
       out.push({ id: `factorisation: ${f}`, kind: "factorisation", input: `factor(${f})`, subject: f });
-    } else if (k === 2) {
+    } else {
       const p = n(-5, 5);
       const q = n(-5, 5);
       const eq = pick([`x^2${sgn(-(p + q))}*x${sgn(p * q)}=0`, `${a}*x${sgn(b)}=${n(-6, 6)}`, `x^2=${a}`, `x^3-${a}*x=0`, `x^2+${b}*x=${a}`]);
       out.push({ id: `solution: ${eq}`, kind: "solution", input: `solve(${eq},x)`, subject: eq });
-    } else {
-      const f = pick([`sin(x)^2+cos(x)^2+${b}*x`, `(x^2-${a * a})/(x-${a})`, `exp(x)*exp(${b}*x)`, `sin(2*x)/cos(x)`, `ln(x^${a})`, `(x+${b})^2-x^2`, `sqrt(x^2)`, `tan(x)*cos(x)`]);
-      out.push({ id: `simplification: ${f}`, kind: "simplification", input: `simplify(${f})`, subject: f });
     }
   }
   return out;

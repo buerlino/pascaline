@@ -14,7 +14,9 @@ import { loadNodeGiac } from "../src/engine/nodeGiac.ts";
 import { EngineHost } from "../src/engine/host.ts";
 import { defaultCasSettings } from "../src/engine/types.ts";
 import { invariantsStage, type InvariantFailure, type KnownFailure } from "./invariants.ts";
-import { checkBack, fromCorpus, generated, type At, type Entries } from "../../tools/probes/casback/check.ts";
+import { generate } from "../../tools/probes/sweep/gen.ts";
+import { compileDefinition } from "../src/apps/function/compile.ts";
+import { checkBack, fromCorpus, generated, type At, type Entries, type Probe, type Question } from "../../tools/probes/casback/check.ts";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const args = process.argv.slice(2);
@@ -33,6 +35,7 @@ const loaded = await loadNodeGiac();
 const host = new EngineHost(loaded.giac, loaded.bridge);
 const cas = (input: string): string => host.cas(input, defaultCasSettings).result.text;
 // P20: kinds and list entries come from Giac's bridge (bridge-3), not from a regex or a bracket loop over its text.
+const UNRESOLVED_HEADS: ReadonlySet<string> = new Set(["int", "integrate", "solve", "undef", "="]);
 const REAL = new Set(["integer", "rational", "float", "symbolic"]);
 const at: At = (expr, x) => {
   const v = loaded.bridge.value(`subs(${expr},x=${x})`, [12]);
@@ -47,15 +50,26 @@ const entries: Entries = (text) => {
   return v.kind === "list" && v.elements ? v.elements : null;
 };
 
+const probe: Probe = (text) => ({
+  kind: loaded.bridge.value(text, []).kind,
+  unresolved: loaded.bridge.parse(text).heads.some((h) => UNRESOLVED_HEADS.has(h)),
+});
+
 const corpus = parse(readFileSync(resolve(repo, "tests/golden/corpus.yaml"), "utf8")) as { cases: { input: string }[] };
 const fromFile = fromCorpus(corpus.cases.map((c) => c.input));
-const questions = [...fromFile.questions, ...generated(seed, count)];
+// G61's generator: expressions in x (depth 2) compiled to Giac by the function app's own compiler
+const fromG61: Question[] = [];
+for (const c of generate(seed, Math.ceil(count / 4), { x: true, depth: 2 })) {
+  const k = compileDefinition(c.latex, "rad");
+  if (k.giac !== "" && k.error === "" && !fromG61.some((q) => q.subject === k.giac)) fromG61.push({ id: `simplification: ${c.latex}`, kind: "simplification", input: `simplify(${k.giac})`, subject: k.giac });
+}
+const questions = [...fromFile.questions, ...generated(seed, count), ...fromG61];
 let checked = 0;
 let skipped = fromFile.skipped;
 const failures: InvariantFailure[] = [];
 for (const q of questions) {
   const answer = cas(q.input);
-  const v = checkBack(q, answer, at, entries);
+  const v = checkBack(q, answer, at, entries, probe);
   if (v.status === "skip") skipped++;
   else {
     checked++;
