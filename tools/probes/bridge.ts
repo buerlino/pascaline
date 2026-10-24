@@ -27,11 +27,98 @@ import { NO_BRIDGE, type GiacBridge, type GiacValue } from "../../app/src/engine
 import { angleCommand, defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand } from "../../app/src/engine/homeEval.ts";
 import { formOf, mayStore } from "../../app/src/engine/stores.ts";
 import { isOurStore } from "../../app/src/engine/ourNames.ts";
-import { hasFloat, rationalValue, shapeOf, splitList, valueParts, type Shape } from "../../app/src/engine/numeric.ts";
+import { hasFloat, MAX_ITEMS, rationalValue, shortDigits, splitList, topLevelArgs, type Giac, type Shape } from "../../app/src/engine/numeric.ts";
 import { readsFrom } from "../../app/src/engine/stateRead.ts";
 import { hostContext } from "../../app/src/engine/flags.ts";
-import { decimalFromString, decimalToString } from "../../app/src/engine/format.ts";
+import { decimalFromString, decimalToString, type DecimalValue } from "../../app/src/engine/format.ts";
 import { latexToGiac } from "../../app/src/input/latex-to-giac.ts";
+
+// G103 deleted the text readers from the app (Home reads bridge-3 alone); the probe keeps phase-1's (9e07920) shapeOf
+// and valueParts with their helpers, as "today's way" was, so its comparison still runs.
+function hasTopLevelComma(t: string): boolean {
+  let depth = 0;
+  for (const ch of t) {
+    if (ch === "[" || ch === "(") depth++;
+    else if (ch === "]" || ch === ")") depth--;
+    else if (ch === "," && depth === 0) return true;
+  }
+  return false;
+}
+
+function shapeOf(text: string): Shape | null {
+  const t = text.trim();
+  if (!t.startsWith("[") && !t.startsWith("list[")) {
+    // A sequence (`1,2`), a set or a vector with another prefix is not a number we format.
+    return /^\w+\[/.test(t) || hasTopLevelComma(t) ? null : { kind: "scalar" };
+  }
+  const els = splitList(t);
+  if (!els || els.length === 0 || els.length > MAX_ITEMS) return null;
+  const rows = els.map(splitList);
+  if (rows.every((r) => r === null)) return { kind: "list", n: els.length };
+  if (t.startsWith("list[")) return null;
+  const cols = rows[0]?.length ?? 0;
+  if (cols === 0 || rows.some((r) => r === null || r.length !== cols || r.some((x) => splitList(x) !== null))) return null;
+  if (els.length * cols > MAX_ITEMS) return null;
+  return { kind: "matrix", rows: els.length, cols };
+}
+
+function flatten(text: string, shape: Shape): string[] | null {
+  if (shape.kind === "scalar") return [text.trim()];
+  const els = splitList(text);
+  if (!els) return null;
+  if (shape.kind === "list") return els.length === shape.n ? els : null;
+  if (els.length !== shape.rows) return null;
+  const out: string[] = [];
+  for (const e of els) {
+    const r = splitList(e);
+    if (!r || r.length !== shape.cols) return null;
+    out.push(...r);
+  }
+  return out;
+}
+
+function anyValue(text: string, keep: number): DecimalValue | null {
+  const t = text.trim();
+  // `0.-000…`: Giac's print of a negative zero part (asin(2*i) at 40 digits).
+  return rationalValue(t, keep)?.v ?? decimalFromString(t.replace(/^-?0\.-?0*$/, "0"), keep);
+}
+
+function valueParts(
+  giac: Giac,
+  text: string,
+  shape: Shape,
+  prec: number,
+  keep: number,
+  restore?: number,
+): { re: DecimalValue; im: DecimalValue; short?: number }[] | null {
+  const read = `(pasz->[re(pasz),im(pasz)])(evalf(${text},${prec}))`;
+  let out = restore === undefined ? giac.eval(read) : giac.eval(`Digits:=${prec};${read};Digits:=${restore}`);
+  if (restore !== undefined) {
+    // The three results print as `prec,[re,im],restore`; on an error Digits may not be set back.
+    const all = isError(out) ? [] : topLevelArgs(out);
+    if (all.length !== 3) giac.eval(`Digits:=${restore}`);
+    out = all.length === 3 ? all[1]! : "GIAC_ERROR";
+  }
+  const two = isError(out) ? null : splitList(out);
+  return two && two.length === 2 ? partsOf(two[0]!, two[1]!, shape, keep, prec) : null;
+}
+
+function partsOf(reT: string, imT: string, shape: Shape, keep: number, asked: number): { re: DecimalValue; im: DecimalValue; short?: number }[] | null {
+  if (isError(reT) || isError(imT)) return null;
+  const re = flatten(reT, shape);
+  const im = flatten(imT, shape);
+  if (!re || !im || re.length !== im.length) return null;
+  const out: { re: DecimalValue; im: DecimalValue; short?: number }[] = [];
+  for (let k = 0; k < re.length; k++) {
+    const a = anyValue(re[k]!, keep);
+    const b = anyValue(im[k]!, keep);
+    if (!a || !b) return null;
+    // `asked`: the MPFR digits this print was asked for; a part printed as a double confirms fewer (shortDigits).
+    const short = [shortDigits(re[k]!, asked), shortDigits(im[k]!, asked)].filter((n): n is number => n !== undefined);
+    out.push(short.length ? { re: a, im: b, short: Math.min(...short) } : { re: a, im: b });
+  }
+  return out;
+}
 
 const require = createRequire(new URL("../../app/package.json", import.meta.url));
 const { parse: yaml } = require("yaml") as { parse: (s: string) => unknown };
