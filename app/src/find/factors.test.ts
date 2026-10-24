@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const repo = join(dirname(fileURLToPath(import.meta.url)), "../../..");
-const giac = join(process.env.PASCALINE_DL_DIR ?? join(repo, "engine/giac/_downloads"), "giac-2.1.0.tar.gz");
+const giac = join(process.env.PASCALINE_DL_DIR ?? join(repo, "engine/giac/_downloads"), "giac_2.1.0-1.tar.gz"); // G77: the pin (build-wasm.sh)
 const qalc = join(process.env.PASCALINE_QALC_DL_DIR ?? join(repo, "engine/qalc/_downloads"), "libqalculate-5.13.1.tar.gz");
 const have = existsSync(giac) && existsSync(qalc);
 const required = process.env.FIND_INDEX === "required";

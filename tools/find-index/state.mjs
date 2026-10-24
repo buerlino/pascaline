@@ -14,8 +14,8 @@ export const fail = (m) => problems.push(m);
 
 export const SOURCES = {
   giac: {
-    file: "giac-2.1.0.tar.gz",
-    sha256: "1d9536e02ce6a336793ebf11c02b93f084e28af2350871914acafa60282b5a67",
+    file: "giac_2.1.0-1.tar.gz", // G77: the pin of engine/giac/build-wasm.sh (GIAC_TARBALL, GIAC_SHA256)
+    sha256: "cdec29897d6a55f9e53f82285ffd85cd82bcaba0bd90a494f710be002bd73f57",
     dir: process.env.PASCALINE_DL_DIR ?? join(REPO, "engine/giac/_downloads"),
   },
   qalc: {
