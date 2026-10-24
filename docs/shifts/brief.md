@@ -22,7 +22,7 @@
 
 **At night, the core lane** (section 0c's queue: steps 101–110 are done; next R76 (F72, the last known core failure) and R77 (a { } list's x² elementwise, owner 2026-10-22), then S23's moves (113–119: G98, the bridge moves G99 → G100 → G101, G102 → G103, then G82); tests first, failing on phase-1; R74, R75 and G90 are merged, so every merge runs the core list): the silent wrong numbers by reach: G97 (F69: any power but 1 of a non-square matrix under `=`; R75 makes it reachable by keys); the bridge spike G85 is merged with GO (`8861b6d`, Opus pass 56; S23 writes the moves by day), the text-match ratchet G88 too (`197e2d7`); then structure that removes bug families (G76 → G86 → R69, a value's facts carried whole; F55, the copied mark); A32 (the core list on the Tab One) whenever the tablet is plugged in.
 
-**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G75 → G60 → G56 (F47, complex tanh, doubles inside MPFR results); S17 → G77 → G89 (the workaround register, the Giac re-pin, our cases for Parisse); G91 (audit-approx), G87 (audit-dms-plot), G96 (Giac's im of a root), G104 (the state read's cost), G105 (the readers left), G92 → G93 (F64, restart: put our state back), G64 after A19, then S16; F61, F62 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
+**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G75 → G60 → G56 (F47, complex tanh, doubles inside MPFR results); G89 (our cases for Parisse; S17 and G77 merged); G91 (audit-approx), G87 (audit-dms-plot), G96 (Giac's im of a root), G104 (the state read's cost), G105 (the readers left), G92 → G93 (F64, restart: put our state back), G64 after A19, then S16; F61, F62 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
 **Why this order:** the list first, so nothing merges blind; silent wrong numbers next, by reach; the bridge before the readers it would replace; the device run once its harness exists. R15c3 and R15c4 move behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -62,7 +62,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 124 | [G77](packages/G77.md) Giac on the numbered Debian archive | gorge, Opus | `p1/gorge-m4-giacpin` | G75, S17 | 2 h |
 | 125 | [G89](packages/G89.md) our golden cases as a Giac regression file (Parisse asked) | gorge, Sonnet | `p1/gorge-giacregress` | G77 | 1.5 h |
 | 126 | [G91](packages/G91.md) approx(x, n) under ≈ is right (audit-approx) | gorge, Opus | `p1/gorge-m4-askedprec` | — | 1 h |
 | 127 | [G87](packages/G87.md) the plot shares the parser's tables | gorge, Sonnet | `p1/gorge-twinemit` | — | 1 h |
