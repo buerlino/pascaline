@@ -95,13 +95,16 @@ export function nonSquarePower(
   const mayInverse = output.includes("[");
   const [powIn, invIn] = [/\^/.test(input), /\/|\binv\s*\(/.test(input)];
   const typed = mayPowerMatrix(input) && ((mayPower && powIn) || (mayInverse && invIn));
-  // G101: the input's reads (its tree) only when the typed text alone is not enough, or once a call is walked into
+  // G101: the input's reads (its tree) when the typed text alone is not enough, or it calls a known stored function
   let read: ReturnType<typeof bodiesRead> | null = null;
   const reached = (): ReturnType<typeof bodiesRead> => (read ??= bodiesRead(bodies));
-  const inBodies = (head: string): boolean => [...reached().known.values()].some((k) => k.heads.includes(head));
-  // Giac's tree writes a/b as a*inv(b)
-  const powers = mayPower && (powIn || (!typed && inBodies("^")));
-  const inverses = mayInverse && (invIn || (!typed && inBodies("inv")));
+  const callsKnown = !typed || functionsIn(input).some((n) => !!bodies.of(n));
+  const inBodies = (...heads: string[]): boolean =>
+    callsKnown && [...reached().known.values()].some((k) => heads.some((h) => k.heads.includes(h)));
+  // G101f1: a known body's heads count also when the typed text has an operator of its own (w(A)+inv(B), w(M):=M^2);
+  // bridge-2's tree writes both a/b and inv(M) as the head "/" (inv(M) is stored as 1/M), so either head is a division
+  const powers = mayPower && (powIn || inBodies("^"));
+  const inverses = mayInverse && (invIn || inBodies("/", "inv"));
   if (!(powers || inverses) || !(typed || reached().known.size > 0)) return false;
   if (giac.eval(`pasq:=quote(${input})`).startsWith("GIAC_ERROR")) return false;
   // G101: a call's arguments are evaluated once more to bind the body: not when the input stores, or reads a function

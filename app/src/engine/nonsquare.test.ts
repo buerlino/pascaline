@@ -98,6 +98,44 @@ describe.skipIf(!giacAvailable())("G101 a stored function's body", () => {
   });
 });
 
+// G101f1 (backlog F84): bridge-2's tree writes both a/b and inv(M) as the head "/", and a body's heads are read also
+// when the typed text has an operator of its own. Derived: A = [[5],[1]] is 2x1, so inv(A), 2/A (2·inv(A)) and A^2 are
+// powers of a non-square matrix (G97); B = [[1,2],[3,4]] (det -2) has inv(B) = [[-2,1],[3/2,-1/2]], 2·inv(B) =
+// [[-4,2],[3,-1]], and w(3) = 3^2 = 9.
+describe.skipIf(!giacAvailable())("G101f1 a body's division, and a body next to a typed operator", () => {
+  let host: EngineHost;
+  beforeAll(async () => {
+    const { giac, bridge } = await loadNodeGiac();
+    host = new EngineHost(giac, bridge);
+  });
+  const home = (input: string) => host.home(input, defaultHomeSettings).result;
+  const cas = (input: string) => host.cas(input, defaultCasSettings).result;
+
+  it("refuses v(A) for v(M):=inv(M) and u(A) for u(M):=2/M, in Home and CAS", () => {
+    expect(cas("A:=[[5],[1]]")).toMatchObject({ ok: true });
+    expect(cas("v(M):=inv(M)")).toMatchObject({ ok: true });
+    expect(cas("u(M):=2/M")).toMatchObject({ ok: true });
+    expect(cas("v(A)")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("v(A)")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(cas("u(A)")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("u(A)")).toMatchObject({ ok: false, error: "notSquare" });
+  });
+
+  it("refuses w(A)+inv(B) for w(M):=M^2, in Home and CAS", () => {
+    expect(cas("B:=[[1,2],[3,4]]")).toMatchObject({ ok: true });
+    expect(cas("w(M):=M^2")).toMatchObject({ ok: true });
+    expect(cas("w(A)+inv(B)")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("w(A)+inv(B)")).toMatchObject({ ok: false, error: "notSquare" });
+  });
+
+  it("keeps v(B), u(B) and w(3)", () => {
+    expect(cas("v(B)")).toMatchObject({ ok: true, text: "[[-2,1],[3/2,-1/2]]" });
+    expect(cas("u(B)")).toMatchObject({ ok: true, text: "[[-4,2],[3,-1]]" });
+    expect(cas("w(3)")).toMatchObject({ ok: true, text: "9" });
+    expect(home("w(3)")).toMatchObject({ ok: true, display: "9" });
+  });
+});
+
 // G101 fix 3: binding a call's arguments evaluates them again; not when that could take the walk past its budget.
 describe.skipIf(!giacAvailable())("G101 the walk's time budget", () => {
   const known: Bodies = { reads: () => ["pasf"], of: (n) => (n === "pasf" ? { params: ["x"], reads: [], heads: ["program", "^"] } : undefined) };
