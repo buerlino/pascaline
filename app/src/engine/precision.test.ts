@@ -6,7 +6,7 @@ import { fakeGiac } from "./fakeGiac.ts";
 import { engineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
-import { defaultHomeSettings, precisionFacts, type HomeSettings } from "./homeEval.ts";
+import { defaultHomeSettings, HOME_DEADLINE_MS, precisionFacts, type HomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { markOf, type MarkInfo } from "./format.ts";
 import { MAX_EVAL_DIGITS } from "./numeric.ts";
@@ -240,6 +240,26 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
   it("P + 20 and P + 40 disagree: floor(sin(10^100)*10^12) is refused (source: oracle, mpmath at 300 digits: -372376123662)", () => {
     expect(host.home("floor(sin(10^100)*10^12)", defaultHomeSettings).result).toMatchObject({ ok: false, error: "undecided" });
     expect(host.cas("floor(sin(10^100)*10^12)", defaultCasSettings).result).toMatchObject({ ok: false, error: "undecided" });
+  });
+
+  // G103f1 (third audit): cutHit built its powers of ten from the decimal exponent with no bound. floor(exp(10^8)) made
+  // a BigInt of about 43 million digits, seconds past the deadline (and past V8's limit a RangeError onCut does not catch).
+  it("floor(exp(10^8)) is refused within HOME_DEADLINE_MS: no fractional digit is known at P + 20 (source: derived, exp(10^8) has 43429449 integer digits)", () => {
+    const t0 = performance.now();
+    const r = host.home("floor(exp(10^8))", defaultHomeSettings).result;
+    expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
+    expect(r).toMatchObject({ ok: false, error: "undecided", display: UNDECIDED });
+  });
+
+  it("a floor whose distance to the cut has a tiny exponent is refused: floor(1+exp(-10^8)), distance about 10^-43429449 (source: derived, past 10^-(P+60) the distance is out of reach)", () => {
+    const t0 = performance.now();
+    const r = host.home("floor(1+exp(-10^8))", defaultHomeSettings).result;
+    expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
+    expect(r).toMatchObject({ ok: false, error: "undecided", display: UNDECIDED });
+  });
+
+  it("guard (passes on phase-1): a tiny quantity far from its half-integer cut still answers, round(pi*10^-200) is 0 (source: derived, |pi*10^-200| < 1/2)", () => {
+    expect(host.home("round(pi*10^-200)", defaultHomeSettings).result).toMatchObject({ ok: true, display: "0" });
   });
 
   it("a decision P + 20 makes stands: sign(sin(10^50)) is -1 (source: oracle, mpmath: sin(10^50) = -0.7896…)", () => {
