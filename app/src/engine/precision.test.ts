@@ -244,16 +244,26 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
   // G103f1 (third audit): cutHit built its powers of ten from the decimal exponent with no bound. floor(exp(10^8)) made
   // a BigInt of about 43 million digits, seconds past the deadline (and past V8's limit a RangeError onCut does not catch).
-  it("floor(exp(10^8)) is refused within HOME_DEADLINE_MS: no fractional digit is known at P + 20 (source: derived, exp(10^8) has 43429449 integer digits)", () => {
+  // Home's own floor(exp(10^8)) never gets there: Giac's exact floor takes 217 s and traps (unreachable) in this
+  // engine, before any decision is checked. onCut is run on it directly; Home on a sign, whose exact run is quick.
+  it("onCut refuses floor(exp(10^8)) within HOME_DEADLINE_MS: no fractional digit is known at P + 20 (source: derived, exp(10^8) has 43429449 integer digits)", async () => {
+    const { onCut } = await import("./decisions.ts");
+    const giac = engineGiac(await loadNodeGiac());
     const t0 = performance.now();
-    const r = host.home("floor(exp(10^8))", defaultHomeSettings).result;
+    expect(onCut(giac, "floor(exp(10^8))", defaultHomeSettings.digits, defaultHomeSettings.digits)).toEqual({ undecided: true, refused: true });
+    expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
+  });
+
+  it("Home refuses sign(exp(10^8)) within HOME_DEADLINE_MS: its distance to the cut 0 is past 10^(P+60) (source: derived, the G103f1 bound)", () => {
+    const t0 = performance.now();
+    const r = host.home("sign(exp(10^8))", defaultHomeSettings).result;
     expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
     expect(r).toMatchObject({ ok: false, error: "undecided", display: UNDECIDED });
   });
 
-  it("a floor whose distance to the cut has a tiny exponent is refused: floor(1+exp(-10^8)), distance about 10^-43429449 (source: derived, past 10^-(P+60) the distance is out of reach)", () => {
+  it("a floor whose distance to the cut has a tiny exponent is refused within HOME_DEADLINE_MS: floor(exp(-10^8)), distance about 10^-43429449 (source: derived, past 10^-(P+60) the distance is out of reach; before G103f1 it took 4.6 s and timed out)", () => {
     const t0 = performance.now();
-    const r = host.home("floor(1+exp(-10^8))", defaultHomeSettings).result;
+    const r = host.home("floor(exp(-10^8))", defaultHomeSettings).result;
     expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
     expect(r).toMatchObject({ ok: false, error: "undecided", display: UNDECIDED });
   });
