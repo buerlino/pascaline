@@ -2,7 +2,7 @@
 // The engine side of the protocol: one Giac instance, synchronous calls. Runs inside the Web
 // Worker (giac.worker.ts) and, for tests and the golden runner, directly in Node. Knows nothing
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
-import type { GiacBridge, GiacParse } from "./bridge.ts";
+import type { GiacBridge, GiacParse, GiacValue } from "./bridge.ts";
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import {
@@ -160,10 +160,10 @@ export class EngineHost implements FactsHost {
   private parsed: { text: string; tree: GiacParse } | null = null;
   /** `giac.eval` that throws GiacSyntaxError instead of quietly returning `undef` (which would
    *  otherwise leave the previous answer in place and show it again). */
-  private readonly strict: { eval(input: string): string; ambiguousPower(): boolean; digits(d: number): void };
+  private readonly strict: { eval(input: string): string; value(text: string, precisions: readonly number[]): GiacValue; ambiguousPower(): boolean; digits(d: number): void };
   /** G97: `giac.eval` that reads Giac's messages after each eval for ambiguousPower(), and throws nothing (Num's
    *  cells, where a syntax error is a cell's own error). Without it a power's shape walk would run on every cell. */
-  private readonly watched: { eval(input: string): string; ambiguousPower(): boolean; digits(d: number): void };
+  private readonly watched: { eval(input: string): string; value(text: string, precisions: readonly number[]): GiacValue; ambiguousPower(): boolean; digits(d: number): void };
 
   /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
   private readonly loaded = new Set<string>();
@@ -270,16 +270,29 @@ export class EngineHost implements FactsHost {
       ambiguous = AMBIGUOUS_POWER.test(msg);
       return out;
     };
+    // G103: bridge-3, with Giac's messages read as for an eval
+    const value = (text: string, precisions: readonly number[]): GiacValue => {
+      giac.clearMessages();
+      const v = bridge.value(text, precisions);
+      msg = giac.messages();
+      ambiguous = AMBIGUOUS_POWER.test(msg);
+      return v;
+    };
     this.strict = {
       eval: (input) => {
         const out = read(input);
         if (out === "undef" && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
         return out;
       },
+      value: (text, precisions) => {
+        const v = value(text, precisions);
+        if (v.kind === "error" && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
+        return v;
+      },
       ambiguousPower: () => ambiguous,
       digits: giac.digits,
     };
-    this.watched = { eval: read, ambiguousPower: () => ambiguous, digits: giac.digits };
+    this.watched = { eval: read, value, ambiguousPower: () => ambiguous, digits: giac.digits };
   }
 
   /** Replays definitions (a fresh engine: at init, or the stored log on first launch) and adds them to the log.

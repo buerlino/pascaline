@@ -14,6 +14,7 @@
 // Runs synchronously next to the engine (inside the Giac worker, or in Node for tests). Only
 // erasable TypeScript syntax, so Node runs this file directly.
 import { valueFactsOf, type ValueFacts } from "./types.ts";
+import type { GiacValue } from "./bridge.ts";
 import { floatBounds, refusalOf, giacPair, hasDefiniteIntegral, integratedNumerically, type Refusal } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
@@ -45,6 +46,8 @@ import {
   heavySplit,
   REGROUP_MAX,
   shapeOf,
+  shapeOfValue,
+  endsEarly,
   valuePrecision,
   whyOf,
   withDigits,
@@ -505,8 +508,11 @@ function build(facts: ElementFacts[], shape: Shape, digits: number, path: HomePa
  * costs nothing for ordinary irrational results.
  */
 function provedRational(giac: Giac, name: string, f: ElementFacts, digits: number): ElementFacts | null {
-  if (f.exact || f.value.re.sticky || f.value.im.sticky) return null;
-  if (f.value.re.digits.length > digits || f.value.im.digits.length > digits) return null;
+  if (f.exact) return null;
+  const printedShort = !f.value.re.sticky && !f.value.im.sticky && f.value.re.digits.length <= digits && f.value.im.digits.length <= digits;
+  // G103: or its confirmed digits end early (bridge-3 can print such a value one unit off in its last place)
+  const r = f.reliableDigits;
+  if (!printedShort && !(r !== null && endsEarly(f.value.re, r) && endsEarly(f.value.im, r))) return null;
   const out = giac.eval(`simplify(${name})`);
   if (isError(out)) return null;
   const re = giac.eval(`re(simplify(${name}))`);
@@ -552,11 +558,16 @@ export function homeEval(
   // G97: whether the run printed Giac's warning for a power of a list that is not a square matrix (read at once: the
   // Digits reset after it is an eval of its own).
   let ambiguous: boolean | undefined;
+  // G103: through bridge-3 when the Giac has it: the value's kind, num/den and elements come with the print (`value`,
+  // undefined when its print was cut at 2 kB: then Ans is read whole and the text read as before).
+  let value: GiacValue | undefined;
   const exactRun = (): string =>
     withDigits(giac, P, s.digits, () => {
-      const out = giac.eval(`${ans}:=(${exactBody})`);
+      const v = giac.value?.(`${ans}:=(${exactBody})`, []);
+      const out = v ? v.text : giac.eval(`${ans}:=(${exactBody})`);
       ambiguous = giac.ambiguousPower?.();
-      return out;
+      value = v && !v.cut ? v : undefined;
+      return v?.cut ? giac.eval(ans) : out;
     });
   let exactOut = exactRun();
   // An == or ≠ test on a side with a float in it (input/emit.ts equalityTest): its true or false is approximate, and
@@ -582,6 +593,7 @@ export function homeEval(
     if (!("undecided" in d) && d.from !== undefined) {
       giac.eval(`${ans}:=${d.from}`);
       exactOut = d.text;
+      value = undefined;
     }
     giac.eval("purge(pasdec2)");
   }
@@ -676,7 +688,7 @@ export function homeEval(
     }
   }
 
-  const shape = shapeOf(exactOut);
+  const shape = value ? shapeOfValue(value) : shapeOf(exactOut);
   const symbolic = (forced?: "unaudited"): HomeResult => {
     // G78: Giac's text with no free name where a number was asked for (asin(acos(π²)), sinh(6020³)), or undef through ∞.
     const lost = once || forced || inexactTest ? null : lostNumber(giac, ans, exactBody, exactOut, late, exactMs, userFn);
@@ -756,7 +768,7 @@ export function homeEval(
     return asked !== null ? { ...r, digits: asked } : r;
   }
 
-  let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits, exactOut);
+  let facts = exactFacts(giac, ans, shape, s.digits, s.maxExactDigits, exactOut, value);
   if (!facts) {
     const d = shape.kind === "scalar" ? doubleFallback(giac, ans, body, s.digits, s.digits) : null;
     if (!d) return symbolic();
@@ -793,13 +805,16 @@ export function homeEval(
   if (!differ && doubleFormsIn(exactBody).length) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const }));
   const b = build(facts, shape, s.digits, "exact", differ);
   store();
-  const full = exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
+  // G103: an integer past Giac's print limit prints as Integer_too_large_for_display: no exact text, its digits are full.
+  const printed = !(shape.kind === "scalar" && value?.kind === "integer" && value.num === undefined);
+  const full = printed && exactText.length <= FULL_EXACT_MAX ? exactText : b.decimal;
   const big = shape.kind === "scalar" && facts[0]!.big;
   // G44f1: an erf Giac computed itself (a non-real argument) leaves the value unaudited.
   const why = differ ? { differ: true } : facts.some((f) => f.warn) ? whyOf(facts, exactBody) : undefined;
-  if (!big) return fromBuilt(b, "exact", differ, exactText, full, why);
-  if (s.guardMode === "reeval-float") return viaFloat("float-big", exactText);
+  const shownExact = printed ? exactText : undefined;
+  if (!big) return fromBuilt(b, "exact", differ, shownExact, full, why);
+  if (s.guardMode === "reeval-float") return viaFloat("float-big", shownExact);
   // Shown from the exact value (already computed); Ans continues as a float.
   giac.eval(`${ans}:=evalf(${ans},${W})`);
-  return fromBuilt(b, "exact-big", false, exactText, full, why);
+  return fromBuilt(b, "exact-big", false, shownExact, full, why);
 }
