@@ -41,7 +41,7 @@ import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOf, valuePrecision, whyOf, withDigits } from "./numeric.ts";
 import { callsStateful, decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
-import { fnFacts, inherited, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
+import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
 import { afterCall, changesOf, parsePrinted, readsFrom, splitAfter, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
 import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
@@ -360,8 +360,8 @@ export class EngineHost implements FactsHost {
   private after(input: string, read: boolean, state: boolean, shown?: string): AfterInput {
     if (namesUnreadFlag(input)) this.modeKey = "";
     const expected = flagsExpected(this.modeDigits);
-    // G99: the names come from Giac's tree; parsed only when they can matter (see mayRead)
-    const reads = read && (state || this.mayRead(input)) ? this.readsOf(input, shown) : NO_READS;
+    // G99: the names come from Giac's tree; parsed only when they can matter (mayLend)
+    const reads = read && (state || this.mayLend(input)) ? this.readsOf(input, shown) : NO_READS;
     const out = this.giac.eval(afterCall(FLAGS_READ, state ? this.modeDigits : null));
     const parts = isError(out) ? null : splitAfter(out);
     const flags = parts ? parts.flags : this.giac.eval(FLAGS_READ);
@@ -401,10 +401,10 @@ export class EngineHost implements FactsHost {
     return more.length ? { ...reads, names: [...reads.names, ...more] } : reads;
   }
 
-  /** Whether the names `input` reads can lend anything: a name its tree reads is a word of its text, so an input
-   *  without a word the host holds (a stored name, a chip, a logged one) reads none that lends facts or is listed. */
-  private mayRead(input: string): boolean {
-    return wordsOf(input).some((w) => this.stored.has(w) || this.chipFacts.has(w) || this.byName.has(w));
+  /** Whether a name `input` reads can lend facts (facts.ts usedBy): a name its tree reads is a word of its text, so an
+   *  input without a word that is a chip or a stored name with facts reads none that lends any. */
+  private mayLend(input: string): boolean {
+    return wordsOf(input).some((w) => this.chipFacts.has(w) || (this.stored.has(w) && nameFacts(this, w, new Set()) !== null));
   }
 
   /** The table the last call read becomes the host's (after the input's facts were taken from the one before). */
@@ -664,7 +664,7 @@ export class EngineHost implements FactsHost {
     // G48: the names a list assignment sets are not read either.
     const set = asg ? [] : (storeTargets(input)?.names ?? []);
     // a store's tree reads its stored side only, as asg.rhs alone
-    return (this.mayRead(input) ? this.treeOf(input).reads : [])
+    return (wordsOf(input).some((w) => this.byName.get(w)?.kind === "var") ? this.treeOf(input).reads : [])
       .filter((n) => n !== target && !set.includes(n))
       .flatMap((n) => {
         const e = this.byName.get(n);

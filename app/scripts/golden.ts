@@ -30,7 +30,7 @@
 //   function   Function analysis and Num table (analysis.ts), same rules
 //   bench      the 55 benchmark inputs in CAS mode: `expect` (derived) cases match; errors are listed. Then in DEG (G46):
 //              every input that answers in RAD answers, `deg` pins a DEG text, an angle-free one shows the RAD text
-//   calls      G52: Giac calls per input (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
+//   calls      G52: Giac calls per input, bridge calls included (G99) (bench in CAS, home.yaml's single inputs in Home, 12 digits); prints the totals and
 //              the five largest; fails when calls per input are over 10 % above tests/golden/calls-baseline.yaml
 //   invariants G43: every home.yaml and precision.yaml input without settings, across settings (no expected values):
 //              (a) no angle function: the same text in RAD and DEG; (b) 12 and 30 digits round to the same 12-digit text;
@@ -51,6 +51,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { EngineHost, type GiacApi, type LoadedGiac } from "../src/engine/host.ts";
+import type { GiacBridge } from "../src/engine/bridge.ts";
 import { runHomeCase, runPrecisionCase, typed, seqMark, markText, RATIONAL_TEXT, type Case, type Expect } from "../src/goldenRun.ts";
 import { defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand, precisionFacts, type HomeResult, type HomeSettings } from "../src/engine/homeEval.ts";
 import { decimalFromString, formatComplex, formatReal, markOf, toText, type MarkInfo } from "../src/engine/format.ts";
@@ -400,7 +401,14 @@ async function stageCalls(): Promise<void> {
       n++;
       return evalOnce(text);
     };
-    return { host: new EngineHost(giac, bridge), calls: () => n };
+    // G99: a bridge call is a Giac call too
+    const counted: GiacBridge = {
+      ctxGet: () => (n++, bridge.ctxGet()),
+      ctxSet: (f) => (n++, bridge.ctxSet(f)),
+      parse: (t) => (n++, bridge.parse(t)),
+      value: (t, p) => (n++, bridge.value(t, p)),
+    };
+    return { host: new EngineHost(giac, counted), calls: () => n };
   };
   const bench = new Map<string, number>();
   {
