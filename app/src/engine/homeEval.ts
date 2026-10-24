@@ -18,7 +18,7 @@ import { floatBounds, refusalOf, giacPair, hasDefiniteIntegral, integratedNumeri
 import { enEngine } from "../i18n/enEngine.ts";
 import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
-import { nonSquarePower } from "./nonsquare.ts";
+import { NO_BODIES, nonSquarePower, type Bodies } from "./nonsquare.ts";
 import { POLY_AT, POLY_AT_ANY_DEPTH, unaskedPoly } from "./polyvec.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
@@ -534,7 +534,7 @@ export function homeEval(
   s: HomeSettings = defaultHomeSettings,
   now: () => number = () => performance.now(),
   form: InputForm = PLAIN_FORM,
-  fnBody: (name: string) => string | null = () => null,
+  fnBody: Bodies = NO_BODIES,
 ): HomeResult {
   const t0 = now();
   const ans = "pasans";

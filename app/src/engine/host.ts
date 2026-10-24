@@ -30,7 +30,7 @@ import {
 import { eseriesDefinition } from "./eseries.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { resolveAngle } from "./angleMigration.ts";
-import { mayPowerMatrix, nonSquarePower } from "./nonsquare.ts";
+import { mayPowerMatrix, nonSquarePower, type Bodies, type KnownBody } from "./nonsquare.ts";
 import { mayAddToList, unaskedPoly } from "./polyvec.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
@@ -394,16 +394,34 @@ export class EngineHost implements FactsHost {
     return t.fn ? k : { writes: k.writes, calls: [...new Set([...k.calls, ...t.names])] };
   }
 
-  /** G101 (nonsquare.ts): the stored text of the function `name` when its body is known: a program that stores nothing
-   *  and evaluates no string, nor do the programs it reads (G100's kept stores). Null for any other name. */
-  private readonly bodyOf = (name: string): string | null => {
+  /** G101 (nonsquare.ts): the function `name` when its body is known: a program that stores nothing and evaluates no
+   *  string, nor do the programs it reads (G100's kept stores), and declares no local (its parameters and the names it
+   *  binds come from its tree, bridge-2; nonsquare.ts walks it only when they are its parameters alone). Null: a
+   *  stored program whose body is not known; undefined: no stored program. */
+  private readonly bodyOf = (name: string): KnownBody | null | undefined => {
     const t = this.stored.get(name);
-    return t?.fn && !writesThrough([name], (n) => this.keptOf(n)) ? t.text : null;
+    if (!t?.fn) return undefined;
+    if (writesThrough([name], (n) => this.keptOf(n))) return null;
+    const tree = this.treeFrom(t.text);
+    return tree.ok && tree.heads[0] === "program" && !tree.heads.includes("local") ? { params: tree.bound, reads: tree.reads, heads: tree.heads } : null;
   };
+
+  /** G101: the stored functions `input` reads (its tree, G99) and their bodies, for nonsquare.ts. */
+  private bodiesFor(input: string): Bodies {
+    return { reads: () => this.treeOf(input).reads, of: this.bodyOf };
+  }
+
+  /** G100/G101: the tree of a stored text (bridge-2), parsed once per text. */
+  private readonly treeByText = new Map<string, GiacParse>();
+  private treeFrom(text: string): GiacParse {
+    let t = this.treeByText.get(text);
+    if (!t) this.treeByText.set(text, (t = this.bridge.parse(text)));
+    return t;
+  }
 
   private keptFrom(text: string): ProgramStores {
     let k = this.keptByText.get(text);
-    if (!k) this.keptByText.set(text, (k = programStores(this.bridge.parse(text))));
+    if (!k) this.keptByText.set(text, (k = programStores(this.treeFrom(text))));
     return k;
   }
 
@@ -649,7 +667,7 @@ export class EngineHost implements FactsHost {
     // G100: a chip's or constant's input brings the form of its typed text (homeTabled), the value cut from this one
     const form = given ?? this.formFor(input);
     try {
-      result = homeEval(this.strict, input, s, undefined, form, this.bodyOf);
+      result = homeEval(this.strict, input, s, undefined, form, this.bodiesFor(input));
     } catch (e) {
       if (!(e instanceof GiacSyntaxError)) throw e;
       const ms = performance.now() - t0;
@@ -815,7 +833,7 @@ export class EngineHost implements FactsHost {
     // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, refused as in Home.
     const builtin = notBuiltin(this.giac);
     const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
-    if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn, this.bodyOf)) return fail(enEngine["error.notSquare"], "notSquare");
+    if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn, this.bodiesFor(input))) return fail(enEngine["error.notSquare"], "notSquare");
     // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.
     if (unaskedPoly(this.giac, "pcasans", asg0 ? asg0.rhs : exactInput, text, userFn)) return fail(enEngine["error.listPlusNumber"], "listPlusNumber");
     if (guarded) {
