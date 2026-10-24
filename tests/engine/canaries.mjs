@@ -35,7 +35,7 @@ const ROWS = [
   ["sign-at-digits", "a sign is decided at Digits without a warning: sign(sin(10^50)) is 1 at Digits 12 (mpmath sin(10^50) = -0.78967…)", 12,
     ["sign(sin(10^50))"], ([a]) => a === "1"],
   ["tie-unproved", "simplify does not prove cos(pi/7)-cos(2*pi/7)+cos(3*pi/7) = 1/2", 12,
-    ["simplify(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7))"], ([a]) => a !== "1/2"],
+    ["simplify(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7))"], ([a]) => a === "4*cos(pi/7)^3-2*cos(pi/7)^2-2*cos(pi/7)+1"],
   ["divergent-number", "a number for what does not exist: int(1/x,x,-1,1) = 0 (principal value), sum(cos(k),k,1,inf) = -1/2 (Abel), limit(sin(x),x,inf) = bounded_function", 12,
     ["int(1/x,x,-1,1)", "evalf(sum(cos(k),k,1,inf))", "limit(sin(x),x,inf)"],
     ([a, b, c]) => a === "0" && b === "-0.5" && c.startsWith("bounded_function(")],
@@ -56,7 +56,7 @@ const ROWS = [
   ["negative-zero-print", "a negative zero MPFR float prints as 0.-000…", 40,
     ["evalf(-0.0)"], ([a]) => a.startsWith("0.-0")],
   ["decimal-is-double", "a typed decimal is a binary double: 1-0.9-0.1 is not 0", 12,
-    ["1-0.9-0.1"], ([a]) => a !== "0" && sig(a) > 0],
+    ["1-0.9-0.1"], ([a]) => a === "1.7763568394e-15"],
 ];
 
 const { giac } = await loadNodeGiac();
@@ -64,7 +64,9 @@ const flipped = [];
 for (const [id, says, digits, inputs, holds] of ROWS) {
   giac.eval(`Digits:=${digits}`);
   const outs = inputs.map((s) => giac.eval(s).trim());
-  if (!holds(outs)) {
+  // An error (or an interrupt) is no proof that Giac still does it: only irem-rational expects one.
+  const errs = id !== "irem-rational" && outs.some(isError);
+  if (errs || !holds(outs)) {
     const probe = `MODE=raw node tools/probes/engine.ts 'Digits:=${digits}' ${inputs.map((s) => `'${s}'`).join(" ")}`;
     flipped.push(`${id}: ${says}\n      now: ${outs.join(" | ")}\n      probe: ${probe}`);
   }
