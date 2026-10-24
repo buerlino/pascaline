@@ -2,7 +2,7 @@
 // `npm run gate`: every check a branch must pass (docs/shifts/brief.md section 8), one line each, the full log in
 // app/_out/gate/<name>.log. Exit 1 on any FAIL.
 //   npm run gate            # typecheck, index (when missing), vitest (FIND_INDEX=required), e2e, golden (when engine or
-//                           # parser code changed against phase-1), sweep (G61, the oracle sweep), seqsweep (G62), viewsweep (G63), size test, docs sizes
+//                           # parser code changed against phase-1), sweep (G61, the oracle sweep), seqsweep (G62), casback (G64), viewsweep (G63), size test, docs sizes
 //   npm run gate -- --quick # typecheck and vitest only
 //   npm run gate -- --update-text-baseline # rules stage: write app/scripts/text-baseline.json (G88)
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
@@ -13,7 +13,7 @@ import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { countAll, evalOutside, judge, readBaseline, totals, writeBaseline } from "./text-rules.ts";
 import {
-  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
+  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
   type Summary,
 } from "./gate-summary.ts";
 
@@ -183,6 +183,17 @@ const checks: Check[] = [
       if (!engine) return { ok: false, detail: "no engine build: set GIAC_OUT (absolute)" };
       const r = run("seqsweep", "node", ["scripts/seqsweep.ts"], { GIAC_OUT: engine }, 3 * 60_000);
       return summarizeSeqSweep(r.out, r.code);
+    },
+  },
+  {
+    // G64: CAS answers checked back (an antiderivative differentiates to the integrand, a solution substitutes to 0, …; scripts/casback.ts; tests/golden/casback-known.yaml)
+    name: "casback",
+    skip: () => (quick ? "--quick" : null),
+    run: () => {
+      const engine = giacOut();
+      if (!engine) return { ok: false, detail: "no engine build: set GIAC_OUT (absolute)" };
+      const r = run("casback", "node", ["scripts/casback.ts"], { GIAC_OUT: engine }, 3 * 60_000);
+      return summarizeCasBack(r.out, r.code);
     },
   },
   {
