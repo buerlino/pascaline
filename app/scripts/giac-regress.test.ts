@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G89: the exporter of our golden cases as a Giac regression file (tools/giac-regress/export.mjs), on three fixed cases.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 // @ts-expect-error a plain .mjs tool without types
-import { build, caseLine, expectedExact, halfUnit, PATCHED_IDS } from "../../tools/giac-regress/export.mjs";
+import { build, caseLine, explicitPrecision, expectedExact, halfUnit, PATCHED_IDS } from "../../tools/giac-regress/export.mjs";
 
 type Out = { comment: string; line: string } | { leftOut: string };
 
@@ -46,6 +48,8 @@ describe("giac-regress exporter", () => {
     expect(left({ input: "1", mark: "⚠" })).toMatch(/mark only/);
     expect(left({ input: "123456789012.5", oracle: "F('123456789012.5')", expect: "123456789013" })).toBe("rounding text (our layer)");
     expect(left({ input: "1.5", oracle: "F('1.5')", expect: "1.5" })).toBe("rounding text (our layer)");
+    expect(left({ input: "exp(approx(sin(10^30),2*10))", source: "oracle", expect: "0.913824351213" })).toMatch(/G91/);
+    expect(left({ input: "im(int(tanh(sqrt(x)),x,-1,1/2))", mark: "⚠", source: "oracle", expect: "0.85617660273" })).toMatch(/G90/);
   });
 
   it("the shown text as exact Giac text and its half unit", () => {
@@ -64,5 +68,18 @@ describe("giac-regress exporter", () => {
     expect([r.nCheck, r.nPatched]).toEqual([0, 2]); // the case, and patch 0006's fixed im(2*sqrt(x)) line
     expect(r.patched).toContain('// patch 0003-complex-tanh-mpfr.patch\n// g75-tanh(1+i)-30 (precision.yaml, oracle)');
     expect(r.check).not.toContain("g75-tanh(1+i)-30");
+  });
+
+  it("explicitPrecision: only a second argument of approx or evalf", () => {
+    expect(explicitPrecision("approx(x)")).toBe(false);
+    expect(explicitPrecision("evalf([1,2])")).toBe(false);
+    expect(explicitPrecision("evalf(f(a,b))")).toBe(false);
+    expect(explicitPrecision("evalf(pi,30)")).toBe(true);
+  });
+
+  it("patch 0006's line rests on the bench case g96-cas-im-2sqrt", () => {
+    const doc = parse(readFileSync(new URL("../../tests/golden/bench.yaml", import.meta.url), "utf8")) as { cases: { id: string; input: string }[] };
+    expect(doc.cases.find((c) => c.id === "g96-cas-im-2sqrt")?.input).toBe("im(2*sqrt(x))");
+    expect((build([]) as { patched: string }).patched).toContain("subst(im(2*sqrt(x)),x,-1)");
   });
 });
