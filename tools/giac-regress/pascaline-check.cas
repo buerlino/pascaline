@@ -419,6 +419,18 @@ Digits:=40:; pc("prec-g38-30-max-sin1e50",'(max(sin(10^50),0))',0,1/10^30);
 Digits:=40:; pc("prec-g38-30-piecewise-sin1e50",'(piecewise(sin(10^50)>0,1,2))',2,5/10^30);
 // prec-g38-30-floor-ramanujan (precision.yaml, oracle)
 Digits:=40:; pc("prec-g38-30-floor-ramanujan",'(floor(exp(pi*sqrt(163))*10^20))',(262537412640768743999999999999*10^8),5*10^7);
+// g60-f5-cosh-acos-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-cosh-acos-pi-30",'(cosh(acos(pi))*tan(tan(10)))',-(180625660199427098928523866446/10^30),5/10^31);
+// g60-f5-asin-sinh-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-asin-sinh-pi-30",'(asin(sinh(pi))*exp(12*(37/10^1)))',(301158325376997118077827337851/10^10)-(601597895673519412260047772706/10^10)*i,5/10^11+5/10^11);
+// g60-f5-asin-12-acos-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-asin-12-acos-pi-30",'(asin(12^acos(pi)))',-(14941871975491590895862354003/10^29)-(87347285783806326730012632973/10^29)*i,5/10^31+5/10^31);
+// g60-f5-acos-sin1-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-acos-sin1-30",'(acos(sin(1))*(((602*10^1))^asin(pi)))',-(492878642564893254975620626116/10^24)+(283543086879955971255678055775/10^25)*i,5/10^25+5/10^26);
+// g60-f5-sinh-asin-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-sinh-asin-pi-30",'(sinh(asin(pi))/asinh(1))',-(622501435827991780717103306515/10^30)-(276480298599259475297061253236/10^29)*i,5/10^31+5/10^30);
+// g60-ln(-pi)-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-ln(-pi)-30",'(ln(-pi))',(114472988584940017414342735135/10^29)+(314159265358979323846264338328/10^29)*i,5/10^30+5/10^30);
 // prec-g50-asin(2i)-12 (precision.yaml, oracle)
 Digits:=40:; pc("prec-g50-asin(2i)-12",'(asin(2*i))',(144363547518/10^11)*i,5/10^12);
 // prec-g50-asin(2i)-30 (precision.yaml, oracle)
