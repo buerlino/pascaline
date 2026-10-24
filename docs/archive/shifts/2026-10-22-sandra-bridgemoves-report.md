@@ -19,5 +19,5 @@ G66 replaced by G100 (not needed); G69 by G99; G72 by G100; G73 and G74 by G105;
 3. Heads that evaluate a string besides `expr` are (to verify, G100's worker, from the pinned tarball).
 
 ## Not done
-- `docs/research/structure-audit.md` is decided but stays in `docs/research/` until its path in `api.cc` and `bridge.ts` comments can change with an engine-touching package (G99).
+- `docs/archive/structure-audit.md` is decided but stays in `docs/research/` until its path in `api.cc` and `bridge.ts` comments can change with an engine-touching package (G99).
 - `.claude/agents/sofia.md` line 35 still names `giacText.ts` (exact text in the report commit).

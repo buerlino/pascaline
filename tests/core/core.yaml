@@ -499,3 +499,40 @@ cases:
     expect: { result: "4", mark: "=" }
     value: "4"
     source: derived
+
+  # ---- lists: a { } list (Shift 8) typed, stored and used (owner, 2026-10-24; core-stability report step 2) ----
+  # The expected text is the list's own display, with braces (G109); until G109 and R80 merge the cases are known.
+  - id: c57
+    area: home
+    title: "a { } list plus a number goes elementwise: {1,4}+1"
+    keys: [shift, d8, d1, comma, d4, right, add, d1, enter]
+    expect: { result: "{2,5}", mark: "=" }
+    value: "[2,5]"
+    source: derived
+    known: F79
+
+  - id: c58
+    area: state
+    title: "a stored { } list squared: {1,4} ▶ L, then L²"
+    keys: [shift, d8, d1, comma, d4, right, shift, emark, alpha, sq, enter, alpha, sq, sq, enter]
+    expect: { result: "{1,16}", mark: "=" }
+    value: "[1,16]"
+    source: derived
+    known: F77
+
+  - id: c59
+    area: state
+    title: "a number divided by a stored { } list: {1,4} ▶ L, then 2 ÷ L"
+    keys: [shift, d8, d1, comma, d4, right, shift, emark, alpha, sq, enter, d2, div, alpha, sq, right, enter]
+    expect: { result: "{2,0.5}", mark: "=" }
+    value: "[2,1/2]"
+    source: derived
+    known: F82
+
+  - id: c60
+    area: home
+    title: "the Σ template with a value: Σ K² for K = 1 to 10"
+    keys: [{tmpl: sum}, alpha, log, right, d1, right, d1, d0, right, alpha, log, sq, enter]
+    expect: { result: "385", mark: "=" }
+    value: "385"
+    source: derived
