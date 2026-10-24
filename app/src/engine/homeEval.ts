@@ -591,11 +591,10 @@ export function homeEval(
     if ("undecided" in d) undecided = true;
     if ("undecided" in d && d.refused) refusedCut = true;
     if (!("undecided" in d) && d.from !== undefined) {
-      giac.eval(`${ans}:=${d.from}`);
+      giac.eval(`${ans}:=${d.from};purge(${d.from})`);
       exactOut = d.text;
       value = undefined;
     }
-    giac.eval("purge(pasdec2)");
   }
   const W = Math.max(s.workDigits, s.digits + 10);
   const late = (): boolean => now() - t0 > HOME_DEADLINE_MS;

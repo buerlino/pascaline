@@ -831,11 +831,10 @@ export class EngineHost implements FactsHost {
       if ("undecided" in d) undecided = true;
       if ("undecided" in d && d.refused) refusedCut = true;
       if (!("undecided" in d) && d.from !== undefined) {
-        this.giac.eval(`pcasans:=${d.from}`);
+        this.giac.eval(`pcasans:=${d.from};purge(${d.from})`);
         if (asg && !guarded) this.giac.eval(`${asg.name}:=pcasans`);
         text = d.text;
       }
-      this.giac.eval("purge(pasdec2)");
     }
     // G39: a divergent integral or series, or no limit, is refused as in Home; Giac's [exact, numeric] pair of a
     // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
