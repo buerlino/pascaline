@@ -160,8 +160,9 @@ export const KNOWN_IDS = new Set([
   "g71-census-normalize-sin1e70",
   "g71-census-tri-sin1e70",
 ]);
-// The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by running pascaline-check.cas on a build without
-// patches 0003 and 0005): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; ln(-pi) and the g60-f5 acos/asin
+// out-of-domain cases are patch 0005's. g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -188,6 +189,12 @@ export const PATCHED_IDS = new Map([
   ["prec-g50-acos(-1+i)-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-imag-power-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-asin-power-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-ln(-pi)-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f5-cosh-acos-pi-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f5-asin-sinh-pi-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f5-asin-12-acos-pi-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f5-acos-sin1-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f5-sinh-asin-pi-30", "0005-mpfr-pi-and-real-domains.patch"],
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 

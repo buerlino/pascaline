@@ -10,9 +10,19 @@ giac.eval("timeout 120");
 const counts = {}; // file -> [pass, fail] of the line-by-line run
 const files = process.argv.slice(2).length ? process.argv.slice(2) : ["pascaline-check.cas", "pascaline-known.cas", "pascaline-patched.cas"];
 let bad = 0;
+let isPatched = true;
 for (const f of files) {
   const known = f.includes("known");
-  if (f.includes("patched")) console.log(`${f}: these lines fail on stock giac_2.1.0-1; this build is the patched one (our patches 0003, 0005), every line must pass`);
+  if (f.includes("patched")) {
+    // Canaries of patches 0005 (tests/engine/mpfr-pi-test.ts) and 0003 (tanh-test.ts): the imaginary part of ln(-pi) is pi to 30
+    // digits, and tanh(1+i) has the real part 1.0839…; stock Giac prints a double pi and coth.
+    giac.eval("Digits:=30");
+    const lnPi = giac.eval("im(evalf(ln(-pi)))").trim();
+    const tanh = giac.eval("re(evalf(tanh(1+i)))").trim();
+    giac.eval("Digits:=12");
+    isPatched = lnPi.startsWith("3.14159265358979323846264338328") && tanh.startsWith("1.0839233273386945434757520612");
+    console.log(isPatched ? `${f}: these lines fail on stock giac_2.1.0-1; this build is the patched one (our patches 0003, 0005), every line must pass` : `${f}: stock build: patched lines expected to fail (ln(-pi) im ${lnPi}, tanh(1+i) re ${tanh})`);
+  }
   const t0 = performance.now();
   let pass = 0;
   let fail = 0;
