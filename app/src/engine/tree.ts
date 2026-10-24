@@ -32,6 +32,9 @@ const MAX_ENTRIES = 4 * MAX_NODES;
 
 const SKIP = `[${[...UNEVALUATED].map((h) => `"'${h}'"`).join(",")}]`;
 
+/** Our walker's name in Giac (a library may not define it, library.ts). */
+export const TREE_NAME = "pastree";
+
 export const TREE_DEFINITION =
   "pastree(p):={ local k,n,r; " +
   "if (type(p)==DOM_SYMBOLIC) { n:=size([op(p)]); " +
