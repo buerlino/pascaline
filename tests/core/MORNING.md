@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Morning check (owner, about 10 minutes, on the phone)
 
-The `hand: true` cases of [core.yaml](core.yaml), in plain keys, plus what a script cannot judge. **On the Tab One** (owner, 2026-10-21): it carries the test APK of phase-1 that the night checked (A33's device step; until A33 is merged, annabell installs one by day, and a morning without a fresh APK does not count). Start from a fresh Home (Shift Esc clears the history). Tell the day session what failed (date, the case id, what you saw): it writes a backlog bug line on phase-1 and logs `morning <date>: clean` or `morning <date>: fails <ids>` in `.coord/log.md` (brief section 0, day step 5). A clean morning counts toward the end of the freeze (README.md). The feel part below may be done on your phone.
+The `hand: true` cases of [core.yaml](core.yaml), in plain keys, plus what a script cannot judge. **On the night's device** (the Tab One or the Fairphone 6; owner, 2026-10-24): it carries the test APK of phase-1 that the night checked (A33's device step); a morning without that APK does not count. Start from a fresh Home (Shift Esc clears the history). Tell the day session what failed (date, the case id, what you saw): it writes a backlog bug line on phase-1 and logs `morning <date>: clean` or `morning <date>: fails <ids>` in `.coord/log.md` (brief section 0, day step 5). A clean morning counts toward the end of the freeze (README.md). The feel part below may be done on your phone.
 
 | Case | Keys | Must show |
 |---|---|---|
@@ -16,7 +16,7 @@ The `hand: true` cases of [core.yaml](core.yaml), in plain keys, plus what a scr
 | c29 | 5 ▶ A as above; swipe the app away, open it; Alpha A × 2 Enter | `= 10` |
 | c30 | Shift Alpha ᴇ (p) ( x ▶ Alpha − (:) Shift . (=) x² Enter, that is p(x):=x²; then Shift Alpha ᴇ ( 3 ▶ Enter | `= 9` |
 | c35 | CAS; Tmpl, the integral; 0 ▶ 1 ▶ x² ▶ x Enter | `1/3` drawn stacked |
-| c41 | Tmpl, 2×2 matrix; 1 ▶ 2 ▶ 3 ▶ 4 ▶ Shift ÷ (x⁻¹) Enter | `= [[-2,1],[1.5,-0.5]]` (fails today: F68) |
+| c41 | Tmpl, 2×2 matrix; 1 ▶ 2 ▶ 3 ▶ 4 ▶ Shift ÷ (x⁻¹) Enter | `= [[-2,1],[1.5,-0.5]]` |
 | c44 | the place name, 4 (Solve), Symb; x Shift ln x ▶ Shift . 5 Enter; Num; tap x, Esc 1 Enter; ☰ 1 | x = 1.32672466524 |
 | c46 | the place name, Function, Symb; x² − 2 Enter; Plot; ▶ ten times; ☰ 1 (Root) | x = 1.41421356237 |
 | c48 | Tmpl, then Android back; 2 + 2 Enter | the sheet closes, `= 4` |
