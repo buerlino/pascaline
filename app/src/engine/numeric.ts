@@ -853,8 +853,9 @@ function valueFacts(
     (f, k) => f !== null || (isZero(A[k]!.im) && isZero(B[k]!.im) && B[k]!.re.sticky && !endsEarly(B[k]!.re, confirmedComplex(A[k]!, B[k]!, P, P))),
   );
   let parts: { re: string[]; im: string[] } | null = null;
-  // G58: not for a text whose symbolic re and im can loop (heavySplit); its parts are the evalf's, as before.
-  if (!real && !heavySplit(text)) {
+  // G58: not for a text whose symbolic re and im can loop (heavySplit); its parts are the evalf's, as before. F73: nor
+  // for a float, which is never exact (re() prints 595872309788.0 as 595872309788).
+  if (!real && !heavySplit(text) && v.kind !== "float") {
     const [reT, imT] = splitOf(giac, name);
     if (!isError(reT) && !isError(imT)) {
       const re = flatten(reT, shape);

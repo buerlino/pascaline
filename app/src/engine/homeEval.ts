@@ -47,7 +47,6 @@ import {
   REGROUP_MAX,
   shapeOf,
   shapeOfValue,
-  splitList,
   endsEarly,
   valuePrecision,
   whyOf,
@@ -514,16 +513,25 @@ function provedRational(giac: Giac, name: string, f: ElementFacts, digits: numbe
   // G103: or its confirmed digits end early (bridge-3 can print such a value one unit off in its last place)
   const r = f.reliableDigits;
   if (!printedShort && !(r !== null && endsEarly(f.value.re, r) && endsEarly(f.value.im, r))) return null;
-  // G103: simplify's value through bridge-3: an integer or a rational from its num/den, anything else by its parts
-  const v = giac.value?.(`simplify(${name})`, []);
   let parts: { re: DecimalValue; im: DecimalValue } | null = null;
-  if (v && (v.kind === "integer" || v.kind === "rational") && v.num !== undefined && v.den !== undefined) {
-    parts = { re: decimalFromRational(BigInt(v.num), BigInt(v.den)), im: ZERO_VALUE };
+  if (giac.value) {
+    // G103 (F73): simplify's value through bridge-3, by its kind: an integer or a rational from its num/den, a complex
+    // or symbolic value by the kinds of its re() and im(); a float is none (595872309788 printed without a point)
+    const value = giac.value.bind(giac);
+    const rational = (v: GiacValue): DecimalValue | null =>
+      (v.kind === "integer" || v.kind === "rational") && v.num !== undefined && v.den !== undefined ? decimalFromRational(BigInt(v.num), BigInt(v.den)) : null;
+    const v = value(`simplify(${name})`, []);
+    const whole = rational(v);
+    if (whole) parts = { re: whole, im: ZERO_VALUE };
+    else if (v.kind === "complex" || v.kind === "symbolic") {
+      const re = rational(value(`re(simplify(${name}))`, []));
+      const im = re && rational(value(`im(simplify(${name}))`, []));
+      if (re && im) parts = { re, im };
+    }
   } else {
-    if (isError(v ? v.text : giac.eval(`simplify(${name})`))) return null;
-    const two = splitList(giac.eval(`(pasz->[re(pasz),im(pasz)])(simplify(${name}))`));
-    const a = two && two.length === 2 ? rationalValue(two[0]!) : null;
-    const b = two && two.length === 2 ? rationalValue(two[1]!) : null;
+    if (isError(giac.eval(`simplify(${name})`))) return null;
+    const a = rationalValue(giac.eval(`re(simplify(${name}))`));
+    const b = rationalValue(giac.eval(`im(simplify(${name}))`));
     if (a && b) parts = { re: a.v, im: b.v };
   }
   if (!parts) return null;
