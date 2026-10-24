@@ -1,0 +1,66 @@
+# Upstream: giac 2.1.0 global.cc/gen.cc/global.h (G82). A step budget for caseval: control_c counts its own calls, and 'ckbudget N' (N>0) makes it interrupt after N calls since the evaluation started (or since the last interrupt), so a result does not depend on the speed of the device. 'ckbudget 0' (the default) turns it off: Giac behaves as before and 'timeout' stays a clock. 'ckcount' returns the number of calls the last evaluation made. Non-EMCC builds get it too (no clock involved).
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -17004,10 +17004,28 @@
+ 	  return S.c_str();
+ 	}
+       }
++      if (args.substr(0,9)=="ckbudget "){
++	string t=args.substr(9,args.size()-9);
++	double f=atof(t.c_str());
++	if (f>=0 && f<1e15){
++	  char b[32];
++	  caseval_maxsteps=double((long long)f);
++	  snprintf(b,sizeof b,"%.0f",caseval_maxsteps);
++	  S=string("Step budget ")+b;
++	  return S.c_str();
++	}
++      }
++    }
++    if (!strcmp(s,"ckcount")){
++      char b[32];
++      snprintf(b,sizeof b,"%.0f",caseval_steps);
++      S=b;
++      return S.c_str();
+     }
+     ctrl_c=false;
+     interrupted=false;
+     caseval_begin=time(0);    
++    caseval_steps=caseval_stepmark=0;
+ #if defined(EMCC) || defined(EMCC2)
+     caseval_begin_ms=emscripten_get_now();
+ #endif
+--- a/src/global.cc
++++ b/src/global.cc
+@@ -2200,6 +2200,7 @@
+ #endif
+   time_t caseval_begin,caseval_current;
+   double caseval_begin_ms=0;
++  double caseval_steps=0,caseval_stepmark=0,caseval_maxsteps=0;
+   double caseval_maxtime=15; // max 15 seconds
+   int caseval_n=0,caseval_mod=0,caseval_unitialized=-123454321;
+ #if !defined POCKETCAS
+@@ -2222,6 +2223,13 @@
+       caseval_n=0;
+       caseval_maxtime=15;
+     }
++    // Step budget (ckbudget N): every call counts, and after N of them since the start (or the last
++    // interrupt) Giac interrupts itself, whatever the clock says. Off (0) by default.
++    ++caseval_steps;
++    if (caseval_maxsteps>0 && caseval_steps-caseval_stepmark>caseval_maxsteps){
++      CERR << "Step budget" << '\n'; ctrl_c=true; interrupted=true;
++      caseval_stepmark=caseval_steps;
++    }
+     if (caseval_mod>0){ 
+       ++caseval_n; 
+       if (caseval_n >=caseval_mod){
+--- a/src/global.h
++++ b/src/global.h
+@@ -436,6 +436,7 @@
+ #endif
+   extern time_t caseval_begin,caseval_current;
+   extern double caseval_begin_ms; // EMCC: start of the current caseval in ms, for sub-second timeouts
++  extern double caseval_steps,caseval_stepmark,caseval_maxsteps; // control_c calls since the start; step budget (0: off)
+   extern double caseval_maxtime;
+   extern int caseval_n,caseval_mod,caseval_unitialized;
+ #endif

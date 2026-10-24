@@ -65,12 +65,13 @@ std::string jnum(double d) {
   return b;
 }
 
-// Interrupt state as caseval sets it before an evaluation (gen.cc near 17005, patch 0002): the sub-second timeout counts
-// from here and `ctrl_c` from a previous interrupt is cleared.
+// Interrupt state as caseval sets it before an evaluation (gen.cc near 17005, patches 0002 and 0004): the sub-second
+// timeout and the step budget count from here and `ctrl_c` from a previous interrupt is cleared.
 void startClock() {
   giac::ctrl_c = giac::interrupted = false;
 #ifdef TIMEOUT
   giac::caseval_begin = time(0);
+  giac::caseval_steps = giac::caseval_stepmark = 0;
   giac::caseval_begin_ms = emscripten_get_now();
 #endif
 }
