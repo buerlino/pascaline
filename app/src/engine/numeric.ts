@@ -816,8 +816,11 @@ function valueFacts(
   let known: (ElementFacts | null)[];
   if (shape.kind === "scalar") {
     if ((v.kind === "integer" || v.kind === "rational") && v.num !== undefined && v.den !== undefined) {
-      const p = BigInt(v.num);
-      const q = BigInt(v.den);
+      // Giac can keep a fraction's sign in its denominator (it printed 1/-2 for a table cell): -1/2.
+      const sign = BigInt(v.den) < 0n ? -1n : 1n;
+      const p = sign * BigInt(v.num);
+      const q = sign * BigInt(v.den);
+      if (q === 0n) return undefined;
       return [exactElement({ v: decimalFromRational(p, q, P), p, q }, zero, maxExactDigits)];
     }
     known = [null];

@@ -518,8 +518,12 @@ function provedRational(giac: Giac, name: string, f: ElementFacts, digits: numbe
     // G103 (F73): simplify's value through bridge-3, by its kind: an integer or a rational from its num/den, a complex
     // or symbolic value by the kinds of its re() and im(); a float is none (595872309788 printed without a point)
     const value = giac.value.bind(giac);
-    const rational = (v: GiacValue): DecimalValue | null =>
-      (v.kind === "integer" || v.kind === "rational") && v.num !== undefined && v.den !== undefined ? decimalFromRational(BigInt(v.num), BigInt(v.den)) : null;
+    const rational = (v: GiacValue): DecimalValue | null => {
+      if ((v.kind !== "integer" && v.kind !== "rational") || v.num === undefined || v.den === undefined || BigInt(v.den) === 0n) return null;
+      // a fraction's sign may sit in its denominator (1/-2)
+      const sign = BigInt(v.den) < 0n ? -1n : 1n;
+      return decimalFromRational(sign * BigInt(v.num), sign * BigInt(v.den));
+    };
     const v = value(`simplify(${name})`, []);
     const whole = rational(v);
     if (whole) parts = { re: whole, im: ZERO_VALUE };
