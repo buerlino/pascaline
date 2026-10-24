@@ -24,7 +24,7 @@ import { POLY_AT, POLY_AT_ANY_DEPTH, unaskedPoly } from "./polyvec.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
-import { decimalFromString, formatConfirmed, isZero, tieRisk, type ComplexValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
+import { decimalFromRational, decimalFromString, formatConfirmed, isZero, tieRisk, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import {
   askedDigits,
   functionsIn,
@@ -47,6 +47,7 @@ import {
   REGROUP_MAX,
   shapeOf,
   shapeOfValue,
+  splitList,
   endsEarly,
   valuePrecision,
   whyOf,
@@ -507,21 +508,28 @@ function build(facts: ElementFacts[], shape: Shape, digits: number, path: HomePa
  * with `simplify`. Then it is exact (and Ans becomes the rational). Only tried when the digits look like it, so it
  * costs nothing for ordinary irrational results.
  */
-function provedRational(giac: Giac, name: string, f: ElementFacts, digits: number): ElementFacts | null {
+function provedRational(giac: Giac, name: string, f: ElementFacts, digits: number): { facts: ElementFacts; text: string } | null {
   if (f.exact) return null;
   const printedShort = !f.value.re.sticky && !f.value.im.sticky && f.value.re.digits.length <= digits && f.value.im.digits.length <= digits;
   // G103: or its confirmed digits end early (bridge-3 can print such a value one unit off in its last place)
   const r = f.reliableDigits;
   if (!printedShort && !(r !== null && endsEarly(f.value.re, r) && endsEarly(f.value.im, r))) return null;
-  const out = giac.eval(`simplify(${name})`);
-  if (isError(out)) return null;
-  const re = giac.eval(`re(simplify(${name}))`);
-  const im = giac.eval(`im(simplify(${name}))`);
-  const a = rationalValue(re);
-  const b = rationalValue(im);
-  if (!a || !b) return null;
-  giac.eval(`${name}:=simplify(${name})`);
-  return { value: { re: a.v, im: b.v }, exact: true, reliableDigits: null, big: false };
+  // G103: simplify's value through bridge-3: an integer or a rational from its num/den, anything else by its parts
+  const v = giac.value?.(`simplify(${name})`, []);
+  let parts: { re: DecimalValue; im: DecimalValue } | null = null;
+  if (v && (v.kind === "integer" || v.kind === "rational") && v.num !== undefined && v.den !== undefined) {
+    parts = { re: decimalFromRational(BigInt(v.num), BigInt(v.den)), im: ZERO_VALUE };
+  } else {
+    if (isError(v ? v.text : giac.eval(`simplify(${name})`))) return null;
+    const two = splitList(giac.eval(`(pasz->[re(pasz),im(pasz)])(simplify(${name}))`));
+    const a = two && two.length === 2 ? rationalValue(two[0]!) : null;
+    const b = two && two.length === 2 ? rationalValue(two[1]!) : null;
+    if (a && b) parts = { re: a.v, im: b.v };
+  }
+  if (!parts) return null;
+  // the stored value's print is the exact text (Ans is now the rational)
+  const text = giac.eval(`${name}:=simplify(${name})`);
+  return { facts: { value: parts, exact: true, reliableDigits: null, big: false }, text };
 }
 
 /** G38: a result whose decision did not hold at a higher precision: ⚠ without a count, elements too, with the why
@@ -561,9 +569,12 @@ export function homeEval(
   // G103: through bridge-3 when the Giac has it: the value's kind, num/den and elements come with the print (`value`,
   // undefined when its print was cut at 2 kB: then Ans is read whole and the text read as before).
   let value: GiacValue | undefined;
+  // An input of audited functions alone (elementary ones, whose evalf is MPFR's and quick) asks for its value's digits
+  // at P and P + 20 in the same call (exactFacts reads them); any other input asks when they are needed.
+  const at = isAudited(exactBody) && complexSafe(exactBody) === exactBody ? [P, P + 20] : [];
   const exactRun = (): string =>
     withDigits(giac, P, s.digits, () => {
-      const v = giac.value?.(`${ans}:=(${exactBody})`, []);
+      const v = giac.value?.(`${ans}:=(${exactBody})`, at);
       const out = v ? v.text : giac.eval(`${ans}:=(${exactBody})`);
       ambiguous = giac.ambiguousPower?.();
       value = v && !v.cut ? v : undefined;
@@ -782,8 +793,8 @@ export function homeEval(
   if (shape.kind === "scalar" && !facts[0]!.exact && !heavySplit(exactOut)) {
     const proved = provedRational(giac, ans, facts[0]!, valuePrecision(s.digits));
     if (proved) {
-      facts = [proved];
-      exactText = giac.eval(ans);
+      facts = [proved.facts];
+      exactText = proved.text;
     }
   }
   // G84 (F60): an element that reads as 0 while Giac's exact answer is not 0 (exp(-10^30)) is an underflow, refused as an

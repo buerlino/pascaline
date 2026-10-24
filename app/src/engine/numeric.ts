@@ -567,7 +567,15 @@ export function withDigits<T>(giac: Giac, d: number, restore: number, fn: () => 
   }
 }
 
-/** The real and imaginary parts of every element of `expr` (a stored value), printed by `print(part)`. */
+/** G103: Giac's symbolic re() and im() of `expr`, printed, in one call; both an error when either is. */
+function splitOf(giac: Giac, expr: string): [string, string] {
+  const out = giac.eval(`(pasz->[re(pasz),im(pasz)])(${expr})`);
+  const two = isError(out) ? null : splitList(out);
+  return two && two.length === 2 ? [two[0]!, two[1]!] : [isError(out) ? out : `GIAC_ERROR: ${out}`, isError(out) ? out : `GIAC_ERROR: ${out}`];
+}
+
+/** The real and imaginary parts of every element of `expr` (a stored value), printed by `print(part)`: G103, both in
+ *  one call, `[re, im]` of the value (as valueParts reads its evalf). */
 export function readParts(
   giac: Giac,
   expr: string,
@@ -576,7 +584,9 @@ export function readParts(
   keep: number,
   asked = 0,
 ): { re: DecimalValue; im: DecimalValue; short?: number }[] | null {
-  return partsOf(print(`re(${expr})`), print(`im(${expr})`), shape, keep, asked);
+  const out = print(`(pasz->[re(pasz),im(pasz)])(${expr})`);
+  const two = isError(out) ? null : splitList(out);
+  return two && two.length === 2 ? partsOf(two[0]!, two[1]!, shape, keep, asked) : null;
 }
 
 /**
@@ -714,8 +724,7 @@ export function exactFacts(
   // (acos(120^(5/2+120)) holds sqrt(30) times a 250-digit integer under an ln: im() never returned). Such a text is no
   // exact rational, so its parts are read from the value's evalf, as when the split errs (below).
   const heavy = exactText !== undefined && heavySplit(exactText);
-  const reT = heavy ? "GIAC_ERROR: G58 heavy" : giac.eval(`re(${name})`);
-  const imT = heavy ? reT : giac.eval(`im(${name})`);
+  const [reT, imT] = heavy ? ["GIAC_ERROR: G58 heavy", "GIAC_ERROR: G58 heavy"] : splitOf(giac, name);
   // G50: Giac's symbolic re and im of a large exact value can run out of time (acosh(1/10+5*i) is an ln of nested
   // roots, and re() of it takes over 0.3 s): then no element is rational, and the parts come from the value's evalf.
   const split = !isError(reT) && !isError(imT);
@@ -788,9 +797,8 @@ function exactElement(re: { v: DecimalValue; p: bigint; q: bigint }, im: { v: De
  * rational is exact. The others are read in one more call, `value(name, [P, P+20])`, each element's evalf (a double
  * in a list stays a double, F73; a boolean has no value, so the list is no number): the agreement check of
  * exactFactsOf. Giac's symbolic re() and im() are asked only for a value that is not real, or whose digits end (it may
- * be a rational re() finds, as the text split did): a part they give as a rational keeps it. Undefined: a function
- * Giac gets wrong on complex arguments, or an erf, is in the value, whose digits come from our definitions (the reads
- * below).
+ * be a rational re() finds, as the text split did): a part they give as a rational keeps it. Undefined: an erf is in
+ * the value, whose digits come from our MPFR definitions at each Digits (the reads below).
  */
 function valueFacts(
   giac: Giac,
@@ -821,8 +829,13 @@ function valueFacts(
     });
     if (known.every((f) => f !== null)) return known as ElementFacts[];
   }
-  if (/\berfc?\s*\(/.test(text) || complexSafe(text) !== text) return undefined;
-  const w = value(name, [P, P + 20]);
+  if (/\berfc?\s*\(/.test(text)) return undefined;
+  // G50: a value holding a function Giac gets wrong on complex arguments is read through our definitions (forValue);
+  // `name` (Ans) keeps Giac's own text. The others: the exact run asked for its digits already (an input of audited
+  // functions), or one call does.
+  const src = complexSafe(text) === text ? name : `(${forValue(giac, text)})`;
+  const w = src === name && v.at?.[String(P)] !== undefined && v.at[String(P + 20)] !== undefined ? v : value(src, [P, P + 20]);
+  if (src !== name && isError(w.text)) return undefined;
   if (shape.kind === "scalar" && v.kind === "integer") {
     // No num/den: more than 2048 digits. The digits at P+20, cut to P as a rational's are.
     const big = atParts(w, P + 20, P, 1);
@@ -837,8 +850,7 @@ function valueFacts(
   let parts: { re: string[]; im: string[] } | null = null;
   // G58: not for a text whose symbolic re and im can loop (heavySplit); its parts are the evalf's, as before.
   if (!real && !heavySplit(text)) {
-    const reT = giac.eval(`re(${name})`);
-    const imT = giac.eval(`im(${name})`);
+    const [reT, imT] = splitOf(giac, name);
     if (!isError(reT) && !isError(imT)) {
       const re = flatten(reT, shape);
       const im = flatten(imT, shape);
@@ -860,7 +872,7 @@ function valueFacts(
     [P + 20, kept(B)],
   ]);
   return agreedFacts(known, digits, P, (prec) => {
-    const at = levels.get(prec) ?? atParts(value(name, [prec]), prec, P + 2, n);
+    const at = levels.get(prec) ?? atParts(value(src, [prec]), prec, P + 2, n);
     return at && kept(at);
   });
 }
@@ -1019,8 +1031,7 @@ export function integratedFacts(facts: readonly ElementFacts[]): ElementFacts[] 
 
 /** The facts of each element of the stored list or matrix `name` that is an exact rational; null for the others. */
 function exactElements(giac: Giac, name: string, shape: Shape, P: number): (ElementFacts | null)[] | null {
-  const reT = giac.eval(`re(${name})`);
-  const imT = giac.eval(`im(${name})`);
+  const [reT, imT] = splitOf(giac, name);
   if (isError(reT) || isError(imT)) return null;
   const re = flatten(reT, shape);
   const im = flatten(imT, shape);
