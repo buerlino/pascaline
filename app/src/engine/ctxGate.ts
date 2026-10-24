@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// G102: Giac's Digits set through bridge-1 (`giac_ctx_set` of decimal_digits) instead of `Digits:=` text. A set waits
+// until the next Giac call of either kind (an eval, a parse, a value, a context read), so two sets with no call between
+// them are one call (withDigits' restore and the next withDigits' set, numeric.ts), and a waiting set and the settings
+// read after an input are one call too: giac_ctx_set returns the context after it (host.ts after).
+// Only erasable TypeScript syntax, so Node runs this file directly.
+import type { GiacBridge, GiacContext } from "./bridge.ts";
+import type { GiacApi } from "./host.ts";
+
+export interface GatedGiac {
+  giac: GiacApi & { digits(d: number): void };
+  /** ctxGet answers with the waiting Digits set when there is one (giac_ctx_set returns the context after it). */
+  bridge: GiacBridge;
+}
+
+/** The context bridge-1 answered, or a thrown error: every key the host sends is one api.cc knows. */
+export function contextOf(r: GiacContext | { error: string }): GiacContext {
+  if ("error" in r) throw new Error(`giac_ctx_set: ${r.error}`);
+  return r;
+}
+
+export function gated(raw: GiacApi, bridge: GiacBridge): GatedGiac {
+  let waiting: number | null = null;
+  const flush = (): GiacContext | null => {
+    if (waiting === null) return null;
+    const d = waiting;
+    waiting = null;
+    return contextOf(bridge.ctxSet({ decimal_digits: d }));
+  };
+  return {
+    giac: {
+      eval: (input) => (flush(), raw.eval(input)),
+      setPowLimit: (limit) => raw.setPowLimit(limit),
+      messages: () => raw.messages(),
+      clearMessages: () => raw.clearMessages(),
+      digits: (d) => {
+        waiting = Math.trunc(d);
+      },
+    },
+    bridge: {
+      ctxGet: () => flush() ?? bridge.ctxGet(),
+      ctxSet: (fields) => {
+        const d = waiting;
+        waiting = null;
+        return bridge.ctxSet(d === null || "decimal_digits" in fields ? fields : { decimal_digits: d, ...fields });
+      },
+      parse: (text) => (flush(), bridge.parse(text)),
+      value: (text, precisions) => (flush(), bridge.value(text, precisions)),
+    },
+  };
+}

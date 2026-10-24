@@ -2,7 +2,7 @@
 // G65: the call after an input, as Giac prints it (texts from the pinned build, probe 2026-10-21); G99: the reads from
 // Giac's tree.
 import { describe, expect, it } from "vitest";
-import { afterCall, changesOf, isOurs, parsePrinted, readsFrom, splitAfter, tableOf } from "./stateRead.ts";
+import { changesOf, isOurs, parsePrinted, readsFrom, statePart, tableOf } from "./stateRead.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 
 describe("parsePrinted", () => {
@@ -56,21 +56,11 @@ describe("tableOf and changesOf", () => {
   });
 });
 
-describe("afterCall and splitAfter", () => {
-  it("puts the parts in one list and takes them apart", () => {
-    expect(afterCall("[cas_setup()]", null)).toBe("[[cas_setup()],0]");
-    const s = splitAfter(`[[[0,0],0],0]`)!;
-    expect(s.flags).toBe("[[0,0],0]");
-    expect(s.state.raw).toBe("0");
-  });
-});
-
 describe.skipIf(!giacAvailable())("the state part on Giac (Opus pass 49's probe)", () => {
   it("reads a stored value one level deep, calls nothing and evaluates no further", async () => {
     const { giac } = await loadNodeGiac();
     for (const t of ["n:=0", "c:=g(y)", "g(t):={n:=n+1;return t;}", "y:=2", "a:=b", "b:=3"]) giac.eval(t);
-    const s = splitAfter(giac.eval(afterCall("0", 12)))!;
-    const table = tableOf(s.state, () => false)!;
+    const table = tableOf(parsePrinted(giac.eval(statePart(12)))!, () => false)!;
     expect(table.get("c")?.text).toBe("g(y)");
     expect([...table.get("c")!.names].sort()).toEqual(["g", "y"]);
     expect(table.get("a")?.text).toBe("b");

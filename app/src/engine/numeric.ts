@@ -34,6 +34,9 @@ export interface Giac {
   /** G97: the last eval printed Giac's "^ is ambiguous on non square matrices" (a power met a list that is not a square
    *  matrix); absent when the messages are not read (then unknown). */
   ambiguousPower?(): boolean;
+  /** G102: sets Giac's Digits through bridge-1 (`giac_ctx_set` of decimal_digits) before the next Giac call, so two sets
+   *  with no call between them are one (host.ts gated); absent: `Digits:=` as text. */
+  digits?(d: number): void;
 }
 
 /** Digits a Giac double prints with (Digits ≤ 14 selects doubles; they never print more than 14). */
@@ -530,13 +533,14 @@ function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
 }
 
-/** Runs fn with Giac's Digits set to d, then sets it back to `restore`. */
+/** Runs fn with Giac's Digits set to d, then sets it back to `restore` (G102: through bridge-1 when the Giac has it). */
 export function withDigits<T>(giac: Giac, d: number, restore: number, fn: () => T): T {
-  giac.eval(`Digits:=${d}`);
+  const set = (n: number): void => (giac.digits ? giac.digits(n) : void giac.eval(`Digits:=${n}`));
+  set(d);
   try {
     return fn();
   } finally {
-    giac.eval(`Digits:=${restore}`);
+    set(restore);
   }
 }
 

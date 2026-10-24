@@ -5,7 +5,7 @@
 //   reads its stored side only, a defined program's parameters and every quoting command's variable left out (api.cc's
 //   QUOTING); `L[k]:=` also reads L and k (L's other elements stay);
 // - the state part, only after an input that may store: every user name, its stored text and the names in it (`lname`),
-//   in the one call the host makes after every input (flags.ts FLAGS_READ, G67). The host keeps it as a table and walks
+//   in one call after the input's settings check (host.ts after, G67, G102). The host keeps it as a table and walks
 //   the closure over it (facts.ts); the next state part is compared with it.
 // Plain text and pure functions; only erasable TypeScript syntax, so Node runs this file directly.
 import type { GiacParse } from "./bridge.ts";
@@ -37,14 +37,9 @@ export function readsFrom(p: GiacParse): InputReads {
 }
 
 /** The state part: Digits pinned (a double prints with Digits, so an unchanged value must print alike in every mode),
- *  then put back to `digits` (the mode's, which the settings check expects). */
+ *  then put back to `digits` (the mode's, which the settings check expects). Giac's printed list: parsePrinted. */
 export function statePart(digits: number): string {
   return `[(Digits:=${DOUBLE_DIGITS}),map(VARS(),k->[k,string(eval(k)),lname(eval(k))]),(Digits:=${Math.trunc(digits)})]`;
-}
-
-/** The call after an input: [settings, state part or 0]. */
-export function afterCall(flagsRead: string, state: number | null): string {
-  return `[${flagsRead},${state === null ? "0" : statePart(state)}]`;
 }
 
 /** A node of Giac's printed list: its raw text, and its elements (a list) or its value (a string). */
@@ -120,13 +115,6 @@ export function parsePrinted(text: string): Node | null {
   };
   const out = node();
   return out && text.slice(i).trim() === "" ? out : null;
-}
-
-/** The two parts of the call's printed result; null when it is not the list afterCall builds. */
-export function splitAfter(out: string): { flags: string; state: Node } | null {
-  const n = parsePrinted(out);
-  if (!n?.items || n.items.length !== 2) return null;
-  return { flags: n.items[0]!.raw, state: n.items[1]! };
 }
 
 /** A name in the state part's print (a user name, an element of `lname`): read by tableOf until G104/G105. */
