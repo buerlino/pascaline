@@ -1,0 +1,66 @@
+# Upstream: giac 2.1.0 usual.cc, ln(), asin(), acos(), acosh(). An MPFR real (Digits > 14) meets a double: ln of a negative _REAL returns log(-x)+cst_pi*cst_i, and the symbolic pi met the MPFR value as a double, so ln(-pi), sqrt(-pi) and every inverse function that goes through ln of a negative real (asin(e) at Digits 30: 1.5707963267949-1.6574544541531*i) printed 14 digits. Complex acos returns cst_pi/2-asinasln(z) with the same double pi/2 (evalf(acos(1+i),30): real part 0.904556894302377..., mpmath 0.904556894302381...). asin and acos of an MPFR real outside [-1,1], and acosh of one below 1, call MPFR (NaN, so undef), where the _FLOAT_ branch already takes the ln form. Uses m_pi at the argument's precision in ln and acos, and the ln forms (the principal branches) outside the real domains. Doubles and exact arguments are unchanged.
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -418,7 +418,7 @@
+       else {
+ 	if (!escape_real(contextptr) && !complex_mode(contextptr))
+ 	  *logptr(contextptr) << "Taking ln of negative real " << e << '\n';
+-	return (-e)._REALptr->log()+cst_pi*cst_i;
++	return (-e)._REALptr->log()+m_pi(mpfr_get_prec(e._REALptr->inf))*cst_i; // pi at e's precision, not a double
+       }
+     }
+     if (e.type==_CPLX){ 
+@@ -2187,6 +2187,13 @@
+       }
+     }
+     if (e.type==_REAL){
++      if (!is_positive(e+1,contextptr) || !is_positive(1-e,contextptr)){
++	// outside [-1,1] MPFR's asin is NaN: the ln form, as for _FLOAT_ above
++	gen res=asinasln(e,contextptr);
++	if (angle_radian(contextptr))
++	  return res;
++	return (angle_degree(contextptr)?180:200)*res/m_pi(mpfr_get_prec(e._REALptr->inf));
++      }
+       if (angle_radian(contextptr)) 
+ 	return e._REALptr->asin();
+       else if(angle_degree(contextptr))
+@@ -2414,6 +2421,14 @@
+ 	return series(*e._SPOL1ptr,*at_exp,0,contextptr);
+     }
+     if (e.type==_REAL){
++      if (!is_positive(e+1,contextptr) || !is_positive(1-e,contextptr)){
++	// outside [-1,1] MPFR's acos is NaN: pi/2-asin in ln form, pi at e's precision
++	gen pi_=m_pi(mpfr_get_prec(e._REALptr->inf));
++	gen res=pi_/2-asinasln(e,contextptr);
++	if (angle_radian(contextptr))
++	  return res;
++	return (angle_degree(contextptr)?180:200)*res/pi_;
++      }
+       if (angle_radian(contextptr)) 
+ 	return e._REALptr->acos();
+       else if(angle_degree(contextptr))
+@@ -2423,7 +2438,9 @@
+         return 200*e._REALptr->acos()/cst_pi;
+     }
+     if ( e.type==_DOUBLE_ || (e.type==_CPLX && (e.subtype || e._CPLXptr->type==_FLOAT_ || e._CPLXptr->type==_REAL)) ){
+-      gen res=cst_pi/2-asinasln(e,contextptr); // -cst_i*no_context_evalf(ln(sqrt(e*e-1,contextptr)+e,contextptr));
++      // pi at the parts' MPFR precision: cst_pi/2 met the MPFR value as a double (14 digits)
++      gen pi_=(e.type==_CPLX && e._CPLXptr->type==_REAL)?m_pi(mpfr_get_prec(e._CPLXptr->_REALptr->inf)):gen(cst_pi);
++      gen res=pi_/2-asinasln(e,contextptr); // -cst_i*no_context_evalf(ln(sqrt(e*e-1,contextptr)+e,contextptr));
+       if (angle_radian(contextptr)) 
+ 	return res;
+       else if(angle_degree(contextptr))
+@@ -2801,8 +2818,12 @@
+ #else
+     if (e.type==_DOUBLE_)
+       return acoshasln(e,contextptr);
+-    if (e.type==_REAL)
++    if (e.type==_REAL){
++      // below 1 MPFR's acosh is NaN: the principal ln form, which is acoshasln's for a non-real x
++      if (!is_positive(e-1,contextptr))
++	return ln(e+sqrt(e+1,contextptr)*sqrt(e-1,contextptr),contextptr);
+       return e._REALptr->acosh();
++    }
+ #endif
+     if (e.type==_SPOL1){
+       gen expo=e._SPOL1ptr->empty()?undef:e._SPOL1ptr->front().exponent;
