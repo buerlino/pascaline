@@ -17,7 +17,7 @@ Worktree `p1/sandra-structure` from `phase-1` `d6f6093`; read and probe only. No
 
 ## What I changed
 - New:
-  - `docs/research/structure-audit.md` (the note);
+  - `docs/archive/structure-audit.md` (the note);
   - `docs/archive/structure-audit-inventory.md` (the appendix; a snapshot, so in the archive);
   - six probes in `tools/probes/`, with README rows.
 - `docs/backlog.md`:
@@ -40,7 +40,7 @@ Worktree `p1/sandra-structure` from `phase-1` `d6f6093`; read and probe only. No
 3. **G76 runs as a field-by-field port fix.** G68, R69, G81 and R61 would then each add one more field to one more carrier.
 
 ## Second part: hindsight (the owner's follow-up question)
-- **New:** `docs/research/structure-hindsight.md` and `tools/probes/call-trace.ts`, with a README row. One sentence added to the decisions entry "Structure audit".
+- **New:** `docs/archive/structure-hindsight.md` and `tools/probes/call-trace.ts`, with a README row. One sentence added to the decisions entry "Structure audit".
 - **Verified:**
   - the whole Giac bridge is `caseval(text) → text` (`engine/giac/wasm/api.cc`);
   - Giac exposes typed values (`dispatch.h:38–53`), every setting (`global.h:873–1042`) and its evaluator's context (`caseval("caseval contextptr")`, `gen.cc:16851` onward) to C++ beside it;
