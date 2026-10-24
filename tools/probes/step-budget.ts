@@ -7,11 +7,13 @@
 // and whether both runs gave the same counts.
 //   GIAC_OUT=<dir> node tools/probes/step-budget.ts          # MARGIN=1.5 (default)
 //   GIAC_OUT=<dir> node tools/probes/step-budget.ts 'sum(1/k,k,1,30000)'   # other inputs
+//   BUDGET=home GIAC_OUT=<dir> node tools/probes/step-budget.ts '<input>'  # under Home's own limits (budgetSteps and
+//   HOME_CLOCK_S): which of the two stopped each interrupted call ("steps" at budgetSteps checks, else "clock")
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { EngineHost } from "../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
-import { defaultHomeSettings, pasdegCommand, type HomeSettings } from "../../app/src/engine/homeEval.ts";
+import { defaultHomeSettings, HOME_CLOCK_S, pasdegCommand, type HomeSettings } from "../../app/src/engine/homeEval.ts";
 import { rewriteAngles } from "../../app/src/input/angles.ts";
 
 interface Input {
@@ -33,6 +35,7 @@ const home = (parse(readFileSync(new URL("tests/golden/home.yaml", root), "utf8"
   .map((c) => ({ input: c.input!, digits: c.settings?.digits ?? 12 }));
 const inputs: Input[] = process.argv.length > 2 ? process.argv.slice(2).map((input) => ({ input, digits: 12 })) : [...A20, ...home];
 const margin = Number(process.env.MARGIN ?? 1.5);
+const homeLimits = process.env.BUDGET === "home";
 
 interface Call {
   count: number;
@@ -72,10 +75,11 @@ async function run(): Promise<Row[]> {
   const rows: Row[] = [];
   for (const { input, digits } of inputs) {
     // Today's budget: the step budget off (a count no input reaches), the clock at 300 ms, set after the mode setup.
-    const s: HomeSettings = { ...defaultHomeSettings, digits, workDigits: Math.max(30, digits + 10), budgetSteps: 1e14 };
+    // BUDGET=home: Home's own limits as they are.
+    const s: HomeSettings = { ...defaultHomeSettings, digits, workDigits: Math.max(30, digits + 10), ...(homeLimits ? {} : { budgetSteps: 1e14 }) };
     probing = true;
     host.home("0", s);
-    evalOnce("timeout 0.3");
+    if (!homeLimits) evalOnce("timeout 0.3");
     probing = false;
     calls = [];
     host.home(rewriteAngles(input), s);
@@ -101,7 +105,7 @@ for (let i = 0; i < first.length; i++) {
   for (const c of cut) stopped.push({ row: a, call: c });
   console.log(
     `${`${a.input} @${a.digits}`.slice(0, 44).padEnd(44)} calls ${String(a.calls.length).padStart(3)}  largest done ${String(top?.count ?? 0).padStart(9)} (${(top?.ms ?? 0).toFixed(1)} ms)` +
-      `${cut.length ? `  clock stopped ${cut.map((c) => `${c.count} @ ${c.ms.toFixed(0)} ms`).join(", ")}` : ""}${sameCounts ? "" : "  COUNTS DIFFER between runs"}`,
+      `${cut.length ? `  ${homeLimits ? "stopped" : "clock stopped"} ${cut.map((c) => `${c.count} @ ${c.ms.toFixed(0)} ms${homeLimits ? ` (${c.count >= defaultHomeSettings.budgetSteps ? "steps" : `clock ${HOME_CLOCK_S} s`})` : ""}`).join(", ")}` : ""}${sameCounts ? "" : "  COUNTS DIFFER between runs"}`,
   );
 }
 console.log(`\n${first.length} inputs, two runs: ${same ? "the same counts in both (calls the clock stopped excepted)" : "COUNTS DIFFER"}`);
