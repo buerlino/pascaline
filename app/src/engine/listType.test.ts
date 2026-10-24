@@ -12,6 +12,8 @@ import { bracesOf } from "./listType.ts";
 import { homeItem } from "../state/results.ts";
 import { copyFull } from "../clipboard/text.ts";
 import { giacOfEntry } from "../input/entry.ts";
+import { parsePastedNumber } from "../clipboard/paste.ts";
+import { validDefs } from "./defs.ts";
 import { homeResultToLatex } from "../render/home.ts";
 
 describe("text helpers", () => {
@@ -52,8 +54,13 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
     expect(formatConfirmed(precisionFacts(r), { format: "STD", digits: 12 })).toBe("{1,16}");
     const text = copy("list[1,4]^2");
     expect(text).toBe("{1,16}");
-    const back = home(giacOfEntry("\\left\\{1,16\\right\\}", "home").giac);
+    // the copied text itself through the paste reader (golden invariant (c)) and the entry: the same list. Typed braces
+    // are a `[ ]` vector until R80, so the elements are compared, not the brackets.
+    const pasted = parsePastedNumber(text ?? "");
+    expect(pasted?.latex).toBe("\\left\\{1,16\\right\\}");
+    const back = home(giacOfEntry(pasted!.latex, "home").giac);
     expect(back.ok).toBe(true);
+    expect(back.items?.map((it) => it.display)).toEqual(["1", "16"]);
     expect(back.items?.map((it) => it.display)).toEqual(r.items?.map((it) => it.display));
   });
 
@@ -97,6 +104,32 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
     expect(home("N")).toMatchObject({ ok: true, display: "N" });
     expect(cas("P:=head(L)+1")).toMatchObject({ ok: false, error: "listPlusNumber" });
     expect(home("P")).toMatchObject({ ok: true, display: "P" });
+  });
+
+  // G109 fix round 2: the solve form keeps its brackets when it comes back through a name or a function of the user's
+  it("keeps the solve form's brackets through a stored name and a user function", () => {
+    const solved = "[-1.41421356237,1.41421356237]";
+    expect(home("S:=solve(x^2=2,x)")).toMatchObject({ ok: true, display: solved });
+    expect(home("S")).toMatchObject({ ok: true, display: solved });
+    expect(home("T:=S")).toMatchObject({ ok: true, display: solved });
+    expect(home("T")).toMatchObject({ ok: true, display: solved });
+    expect(home("g(a):=solve(x^2=a,x)")).toMatchObject({ ok: true });
+    expect(home("g(4)")).toMatchObject({ ok: true, display: "[-2,2]" });
+    // a name stored again from a list type is no longer the solve form
+    expect(home("S:=list[1,4]")).toMatchObject({ ok: true, display: "{1,4}" });
+    expect(home("S")).toMatchObject({ ok: true, display: "{1,4}" });
+  });
+
+  it("keeps the solve form of a stored name after a restart (the log keeps the fact)", async () => {
+    const { giac, bridge } = await loadNodeGiac();
+    const first = new EngineHost(giac, bridge);
+    const { defs } = first.home("R:=solve(x^2=9,x)", defaultHomeSettings);
+    const log = validDefs(JSON.parse(JSON.stringify(defs.flatMap((d) => ("set" in d ? [d.set] : [])))));
+    expect(log).toMatchObject([{ name: "R", solve: true }]);
+    const again = await loadNodeGiac();
+    const second = new EngineHost(again.giac, again.bridge);
+    second.restore(log);
+    expect(second.home("R", defaultHomeSettings).result).toMatchObject({ ok: true, display: "[-3,3]" });
   });
 
   it("guards: the solve form, a vector and a matrix show as before", () => {

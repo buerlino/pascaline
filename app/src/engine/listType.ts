@@ -9,7 +9,10 @@
 export const LIST_TYPE = "list[";
 
 /** Giac's text with every value of its list type written with braces (`list[[1,2],3]` → `{[1,2],3}`), at any depth;
- *  strings and a name that ends in `list` are left alone. */
+ *  strings and a name that ends in `list` are left alone. A bracket loop over Giac's print (G88's text baseline +6): the
+ *  shown text is Giac's print for display, P20's one kind of text read left (G105 class (a)); bridge-3 gives the kind
+ *  and the flat elements but no print in braces, and a list inside a vector (`[list[1,2],3]`) needs the print's nesting.
+ *  Moves into G105's `giacPrint.ts` with its bracket matcher and string skip. */
 export function bracesOf(text: string): string {
   let out = "";
   const closers: string[] = [];

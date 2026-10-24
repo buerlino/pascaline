@@ -586,6 +586,7 @@ export function homeEval(
   now: () => number = () => performance.now(),
   form: InputForm = PLAIN_FORM,
   fnBody: Bodies = NO_BODIES,
+  solved = false,
 ): HomeResult {
   const t0 = now();
   const ans = "pasans";
@@ -595,8 +596,9 @@ export function homeEval(
   // stores (inc(x):={c:=c+1;c}), assigned or not.
   const once = form.once || (!asg && form.stores);
   const exactBody = toExactLiterals(body);
-  // G109: the solve form is Giac's list type too, and shows as before (brackets)
-  const keepBrackets = solveForm(exactBody);
+  // G109: the solve form is Giac's list type too, and shows as before (brackets); `solved`: the host's fact that the
+  // input reads one through a name, a function, Ans or a chip (host.ts solveFormIn)
+  const keepBrackets = solved || solveForm(exactBody);
   const build = (facts: ElementFacts[], shape: Shape, digits: number, path: HomePath, approximate: boolean): Built =>
     buildOf(facts, keepBrackets ? unbraced(shape) : shape, digits, path, approximate);
   const test = input.includes(EQ_INEXACT_FLAG);

@@ -46,6 +46,9 @@ export interface DefEntry {
   /** G100: a program's stores, read from its tree when it was defined (stores.ts). Not kept in storage (validDefs):
    *  a restored program's are read again from its commands, so a stored log cannot claim a body stores nothing. */
   stores?: ProgramStores;
+  /** G109: the value is the solve form (the input called solve, or read a value or function that is one): Giac's list
+   *  type, which Home shows with brackets wherever it comes back (a name, a function's result), not with braces. */
+  solve?: true;
 }
 
 export type DefChange = { set: DefEntry } | { purge: string[] };
@@ -117,6 +120,7 @@ export function validDefs(x: unknown): DefEntry[] {
       ...(kind === "var" && (e["angle"] === "rad" || e["angle"] === "deg") ? { angle: e["angle"] } : {}),
       ...(typeof e["desc"] === "string" && e["desc"] ? { desc: e["desc"].slice(0, DESC_MAX) } : {}),
       ...(kind === "var" && e["migrate"] === "angle" ? { migrate: "angle" as const } : {}),
+      ...((kind === "var" || kind === "fn") && e["solve"] === true ? { solve: true as const } : {}),
     });
   }
   return out.slice(-MAX_DEFS);

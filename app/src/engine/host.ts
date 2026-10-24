@@ -36,7 +36,7 @@ import { mayAddToList, unaskedPoly } from "./polyvec.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
-import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOfValue, unbraced, valuePrecision, whyOf, withDigits } from "./numeric.ts";
+import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOfValue, solveForm, unbraced, valuePrecision, whyOf, withDigits } from "./numeric.ts";
 import { LIST_TYPE } from "./listType.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
@@ -184,6 +184,24 @@ export class EngineHost implements FactsHost {
   stored = new Map<string, StoredName>();
   /** G65: the call after the current input, once it ran (home() and cas() make it when the run did not). */
   private post: AfterInput | null = null;
+
+  /** G109: the current input is the solve form or reads one (solveFormIn), set before it runs; a name it stores keeps it. */
+  private solvedNow = false;
+  /** G109: Giac's texts of the solve-form results Home gave this session, which Ans and the chips carry (an exact chip
+   *  comes inlined, `(list[-2,2])`; another by name with its value). Newest last, at most SOLVE_TEXTS_MAX. */
+  private readonly solveTexts: string[] = [];
+
+  /** G109: whether `input` is the solve form or reads one: it calls solve, reads a stored name or function whose entry
+   *  says so (DefEntry.solve, kept in the log), or holds a solve-form result through Ans or a chip (`chips`: the ones
+   *  sent by name). Read from these facts, not from Giac's print, which is `list[…]` for both. */
+  private solveFormIn(input: string, chips?: ChipFactsTable): boolean {
+    // what the input reads: a store's stored side; a function it defines is not read (its old entry goes)
+    const form = this.formFor(input);
+    const read = wordsOf(form.assignment?.rhs ?? input).filter((w) => form.assignment !== null || w !== form.defined?.name);
+    if (solveForm(input) || read.some((w) => this.byName.get(w)?.solve === true)) return true;
+    const held = chips ? chipsIn(input, chips).map((k) => chips[k]!.value) : [];
+    return this.solveTexts.some((t) => held.includes(t) || input.includes(`(${t})`));
+  }
 
   /** G83: the user's functions restore() has not given to Giac yet, by name; loaded on first use (need). */
   private pending = new Map<string, DefEntry>();
@@ -531,6 +549,7 @@ export class EngineHost implements FactsHost {
 
   eval(input: string): { output: string; ok: boolean; engineMs: number; defs: DefChange[] } {
     this.parsed = null;
+    this.solvedNow = this.solveFormIn(input);
     this.need(input);
     const t0 = performance.now();
     const output = this.giac.eval(input);
@@ -567,6 +586,8 @@ export class EngineHost implements FactsHost {
       ? [...new Set([...(post.changes?.changed ?? []), ...post.reads.targets.filter((n) => post.table!.has(n))])]
       : [...new Set([...post.reads.targets, ...(def ? [def.name] : [])])];
     let changes: DefChange[] = gone.length ? [{ purge: gone }] : [];
+    // G109: a name stored from the solve form stays the solve form
+    const solve = this.solvedNow ? { solve: true as const } : {};
     if (assume) {
       const name = assume[2]!;
       const prev = this.byName.get(name);
@@ -575,13 +596,13 @@ export class EngineHost implements FactsHost {
     }
     for (const name of changed) {
       if (def?.kind === "fn" && def.name === name) {
-        changes.push({ set: { name, kind: "fn", cmds: ran, ...(fn ? { facts: fn } : {}), ...(kept ? { stores: kept } : {}), ...base } });
+        changes.push({ set: { name, kind: "fn", cmds: ran, ...(fn ? { facts: fn } : {}), ...(kept ? { stores: kept } : {}), ...base, ...solve } });
         continue;
       }
       const snap = this.snapshot(name, digits);
       changes.push(
         snap
-          ? { set: { name, kind: "var", cmds: [snap.cmd], ...storedFacts(facts, snap.float), ...(kept && def?.name === name ? { stores: kept } : {}), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}) } }
+          ? { set: { name, kind: "var", cmds: [snap.cmd], ...storedFacts(facts, snap.float), ...(kept && def?.name === name ? { stores: kept } : {}), ...base, ...(snap.early ? { early: true } : {}), ...(angle ? { angle } : {}), ...solve } }
           : { purge: [name] },
       );
     }
@@ -634,7 +655,14 @@ export class EngineHost implements FactsHost {
     this.parsed = null;
     // G91: a precision with no name in it (`approx(e,2*10)`) is read as the literal it gives
     const input = askedLiterals(this.giac, typed, () => this.useHomeMode(s));
+    this.solvedNow = this.solveFormIn(input, chips);
     const out = this.homeTabled(input, s, consts, chips);
+    // G109: Ans and the chips of a solve-form result carry its text
+    const t = out.result;
+    if (this.solvedNow && t.ok && t.exact?.startsWith(LIST_TYPE)) {
+      for (const x of new Set([t.exact, t.full])) if (!this.solveTexts.includes(x)) this.solveTexts.push(x);
+      this.solveTexts.splice(0, Math.max(0, this.solveTexts.length - SOLVE_TEXTS_MAX));
+    }
     // G67, G65: the call after the input, if the run did not make it (an error: a syntax error ran nothing)
     const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && this.formFor(input).stores);
     this.commit(post);
@@ -683,7 +711,7 @@ export class EngineHost implements FactsHost {
     // G100: a chip's or constant's input brings the form of its typed text (homeTabled), the value cut from this one
     const form = given ?? this.formFor(input);
     try {
-      result = homeEval(this.strict, input, s, undefined, form, this.bodiesFor(input));
+      result = homeEval(this.strict, input, s, undefined, form, this.bodiesFor(input), this.solvedNow);
     } catch (e) {
       if (!(e instanceof GiacSyntaxError)) throw e;
       const ms = performance.now() - t0;
@@ -746,6 +774,7 @@ export class EngineHost implements FactsHost {
     this.parsed = null;
     // G91: as in Home
     const input = askedLiterals(this.giac, typed, () => this.useCasMode(s));
+    this.solvedNow = this.solveFormIn(input);
     const used = this.usesOf(input);
     this.post = null;
     const out = this.casRun(input, s);
@@ -1027,6 +1056,9 @@ export class EngineHost implements FactsHost {
 export const REPLAY_BATCH = 25;
 
 /** G83: inputs that list or clear the user's names: every pending function is loaded first. */
+/** G109: how many solve-form result texts the host keeps for Ans and the chips (the history a person reaches back to). */
+const SOLVE_TEXTS_MAX = 64;
+
 const LOAD_ALL = /\b(VARS|expr|rm_all_vars|restart)\b/;
 
 /** G83f1: the expression strings of a request, for need(): one per line, the absent ones left out. */

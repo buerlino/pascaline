@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Paste a number (docs/04 section 2.6): the clipboard is read as one number, and it enters as the LaTeX our own keys
-// would have typed, so the parser sees nothing it does not already know. Anything else is refused.
+// Paste a number (docs/04 section 2.6): the clipboard is read as one number, or a list of numbers in braces (G109), and it
+// enters as the LaTeX our own keys would have typed, so the parser sees nothing it does not already know. Anything else is refused.
 import { EMARK } from "../entry/macros.ts";
 import type { TextOptions } from "./text.ts";
 
@@ -60,14 +60,28 @@ function splitAt(s: string): number {
 }
 
 /**
+ * G109: a list of numbers as Copy writes one (`{1,16}`, `{}`), braces with commas between the elements and no brackets
+ * inside, onto the entry line as the list key types it. Refused with the decimal comma, where `{1,5}` could be 1.5.
+ */
+function pastedList(s: string, o: TextOptions): PastedNumber | null {
+  if (o.decimalComma === true || !s.startsWith("{") || !s.endsWith("}")) return null;
+  const inner = s.slice(1, -1).trim();
+  if (/[{}[\]()]/.test(inner)) return null;
+  const parts = inner === "" ? [] : inner.split(",").map((e) => parsePastedNumber(e, o));
+  return parts.every((e) => e !== null) ? { latex: `\\left\\{${parts.map((e) => e!.latex).join(",")}\\right\\}` } : null;
+}
+
+/**
  * The clipboard text as one number, or null when it is something else. Accepts `-1.5`, `1.5e-3`, `1.5E-3`,
- * `1.5×10^-3`, `1,5` with the decimal comma (and then no `.`), and complex `a+b*i`, `a-bi`, `2i`, `-i`.
+ * `1.5×10^-3`, `1,5` with the decimal comma (and then no `.`), and complex `a+b*i`, `a-bi`, `2i`, `-i`; a list of them
+ * in braces (pastedList).
  */
 export function parsePastedNumber(clip: string, o: TextOptions = {}): PastedNumber | null {
   const comma = o.decimalComma === true;
   const s = clip.replace(/[−‒–]/g, "-").replace(/[   ]/g, " ").trim();
   if (s === "" || s.length > MAX_LENGTH || /[\r\n]/.test(s)) return null;
   const re = realPattern(comma ? "," : String.raw`\.`);
+  if (s.startsWith("{")) return pastedList(s, o);
 
   const real = parseReal(s, re);
   if (real) return { latex: latexOf(real, comma) };
