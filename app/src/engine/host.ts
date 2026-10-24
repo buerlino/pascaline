@@ -263,30 +263,28 @@ export class EngineHost implements FactsHost {
     giac.eval(angleCommand("rad"));
     let ambiguous = false;
     let msg = "";
-    const read = (input: string): string => {
+    // Giac's messages of one call (an eval, or G103's bridge-3 value)
+    const heard = <T>(call: () => T): T => {
       giac.clearMessages();
-      const out = giac.eval(input);
+      const out = call();
       msg = giac.messages();
       ambiguous = AMBIGUOUS_POWER.test(msg);
       return out;
     };
-    // G103: bridge-3, with Giac's messages read as for an eval
-    const value = (text: string, precisions: readonly number[]): GiacValue => {
-      giac.clearMessages();
-      const v = bridge.value(text, precisions);
-      msg = giac.messages();
-      ambiguous = AMBIGUOUS_POWER.test(msg);
-      return v;
+    const read = (input: string): string => heard(() => giac.eval(input));
+    const value = (text: string, precisions: readonly number[]): GiacValue => heard(() => bridge.value(text, precisions));
+    const syntax = (failed: boolean): void => {
+      if (failed && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
     };
     this.strict = {
       eval: (input) => {
         const out = read(input);
-        if (out === "undef" && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
+        syntax(out === "undef");
         return out;
       },
       value: (text, precisions) => {
         const v = value(text, precisions);
-        if (v.kind === "error" && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
+        syntax(v.kind === "error");
         return v;
       },
       ambiguousPower: () => ambiguous,

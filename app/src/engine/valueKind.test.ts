@@ -56,7 +56,8 @@ describe.skipIf(!giacAvailable())("G103: a value's kind from bridge-3 (F73)", ()
     // 10^1000000 as 25 factors 10^40000 (each under the power limit), on the raw engine (no time budget): 1000001 digits,
     // past Giac's print limit
     const big = `${Array.from({ length: 25 }, () => "10^40000").join("*")}+7`;
-    const r = homeEval(raw, big, defaultHomeSettings);
+    // a clock that stands still: under a parallel test run the exact steps can pass HOME_DEADLINE_MS (G58), not tested here
+    const r = homeEval(raw, big, defaultHomeSettings, () => 0);
     // derived: 10^1000000+7 to 12 significant digits is 1.00000000000E1000000, shown without its trailing zeros
     expect([r.display, r.facts.exact, r.path, r.exact]).toEqual(["1E1000000", true, "exact-big", undefined]);
     expect(r.full).not.toContain("Integer_too_large");

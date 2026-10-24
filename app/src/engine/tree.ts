@@ -5,7 +5,7 @@
 // or operator (source: 0 for a power whose exponent is a positive integer literal, else 1), [2, "", n] for a list,
 // [0, number] for anything else (number: 1 for an integer or float literal, 0 for a name). The parts below a head in UNEVALUATED are not listed, as the walks did
 // not look at them. Runs synchronously next to the engine; only erasable TypeScript syntax.
-import type { Giac } from "./numeric.ts";
+import { splitList, type Giac } from "./numeric.ts";
 
 /** Calls whose arguments are not all evaluated as written: a branch not taken (`piecewise(0>0,1/0,5)`), a body in a
  *  bound variable, a quoted text. Their parts are not looked at (novalue.ts, nonsquare.ts). */
@@ -42,27 +42,25 @@ export const TREE_DEFINITION =
   `for (k:=0;k<n;k++) { r:=concat(r,pastree(p[k])); if (size(r)>${MAX_ENTRIES}) return [-1]; } return r; } ` +
   "return [0,when(type(p)==DOM_INT or type(p)==DOM_FLOAT,1,0)]; }";
 
-/** The entries of Giac's print of pastree's list: numbers and quoted heads. */
-function entries(text: string): string[] | null {
-  const t = text.trim();
-  if (!t.startsWith("[") || !t.endsWith("]")) return null;
-  const out: string[] = [];
-  const re = /"([^"]*)"|(-?\d+)/g;
-  for (const m of t.slice(1, -1).matchAll(re)) out.push(m[1] !== undefined ? `"${m[1]}` : m[2]!);
-  return out;
-}
-
 /** The tree below the stored or quoted part `root` (a slot holding `quote(…)`); null when it has more than MAX_NODES
  *  parts, or Giac could not list it (an error). `arg`: what pastree is called on, when not `root` itself
  *  (`pasq:=quote(…)` stores the slot in the same call). One call (two the first time on an engine, which defines
- *  pastree: Giac prints the call of an undefined name as typed). */
+ *  pastree: Giac prints the call of an undefined name as typed). The entries are the list's elements as bridge-3
+ *  gives them (Giac's own split), else splitList's (no bridge, or a print bridge-3 cut). */
 export function treeOf(giac: Giac, root: string, arg: string = root): TreeNode | null {
-  let text = giac.eval(`pastree(${arg})`);
-  if (text.trim().startsWith("pastree(")) {
+  const list = (): { text: string; elements: string[] | null } => {
+    const v = giac.value?.(`pastree(${arg})`, []);
+    // a print over 2 kB is cut, with no elements: read again whole (the walk's limit is the same)
+    if (v && !v.cut) return { text: v.text, elements: v.kind === "list" ? (v.elements ?? null) : null };
+    const text = giac.eval(`pastree(${arg})`);
+    return { text, elements: splitList(text) };
+  };
+  let out = list();
+  if (out.text.trim().startsWith("pastree(")) {
     giac.eval(TREE_DEFINITION);
-    text = giac.eval(`pastree(${arg})`);
+    out = list();
   }
-  const e = entries(text);
+  const e = out.elements;
   if (!e) return null;
   let i = 0;
   let nodes = 0;
@@ -76,7 +74,8 @@ export function treeOf(giac: Giac, root: string, arg: string = root): TreeNode |
     const n = Number(e[i++]);
     if (!Number.isInteger(n) || n < 0) return null;
     const source = kind === "1" ? e[i++] === "1" : false;
-    const name = head.slice(1).replace(/^'(.*)'$/, "$1");
+    // a head prints as a string of the quoted name: "'+'"
+    const name = head.length >= 4 && head.endsWith(`'"`) && head.charAt(1) === "'" ? head.slice(2, -2) : head.slice(1, -1);
     const out: TreeNode = { kind: kind === "1" ? 1 : 2, head: name, path, source, number: false, children: [] };
     if (kind === "1" && UNEVALUATED.has(name)) return out;
     for (let k = 0; k < n; k++) {

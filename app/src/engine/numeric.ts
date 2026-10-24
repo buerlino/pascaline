@@ -490,7 +490,7 @@ export function shapeOfValue(v: GiacValue): Shape | null {
   const els = v.elements;
   if (!els || n === 0 || n > MAX_ITEMS) return null;
   const listForm = v.text.startsWith("list[");
-  if (/^\w+\[/.test(v.text) && !listForm) return null;
+  if (!v.text.startsWith("[") && !listForm) return null;
   if (v.kind === "list") return els.length === n ? { kind: "list", n } : null;
   if (listForm || cols === 0 || n * cols > MAX_ITEMS || els.length !== n * cols) return null;
   return { kind: "matrix", rows: n, cols };
@@ -651,11 +651,10 @@ export function atParts(v: GiacValue, prec: number, keep: number, n: number): Pa
   return pairsOf(at, keep, prec);
 }
 
-/** A float printed with at most a double's digits (MPFR prints every digit it was asked for, trailing zeros too). */
+/** A float printed no longer than a double prints (`-0.12345678901234e-123`): MPFR prints every digit it was asked
+ *  for, trailing zeros too, so at P ≥ 40 digits its print is longer. A zero printed short is read as before too. */
 function doublePrint(text: string): boolean {
-  const m = /^\s*-?(\d*)\.(\d*)(?:e[+-]?\d+)?\s*$/.exec(text) ?? /^\s*-?(\d+)()e[+-]?\d+\s*$/.exec(text);
-  const sig = m === null ? "" : (m[1]! + m[2]!).replace(/^0+/, "");
-  return sig.length >= 1 && sig.length <= DOUBLE_DIGITS + 1;
+  return (text.includes(".") || text.includes("e")) && text.length <= DOUBLE_DIGITS + 10;
 }
 
 /** One element's facts (ValueFacts with its value; `why` is the whole result's, never an element's). */
@@ -781,7 +780,10 @@ const ENDS_MARGIN = 10;
 export function endsEarly(x: DecimalValue, reliable: number): boolean {
   if (isZero(x)) return true;
   if (reliable < 1) return false;
-  return roundSignificant(x, reliable).digits.replace(/0+$/, "").length <= reliable - ENDS_MARGIN;
+  const d = roundSignificant(x, reliable).digits;
+  let k = d.length;
+  while (k > 0 && d.charAt(k - 1) === "0") k--;
+  return k <= reliable - ENDS_MARGIN;
 }
 
 /** An exact element from its numerator and denominator (`big`: either has more than `maxExactDigits` digits). */
@@ -832,7 +834,7 @@ function valueFacts(
     });
     if (known.every((f) => f !== null)) return known as ElementFacts[];
   }
-  if (/\berfc?\s*\(/.test(text)) return undefined;
+  if (functionsIn(text).some((f) => f === "erf" || f === "erfc")) return undefined;
   // G50: a value holding a function Giac gets wrong on complex arguments is read through our definitions (forValue);
   // `name` (Ans) keeps Giac's own text. The others: the exact run asked for its digits already (an input of audited
   // functions), or one call does.
