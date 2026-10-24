@@ -38,7 +38,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
 - **libqalculate**, filed 2026-10-19: `hp` [#1043](https://github.com/Qalculate/libqalculate/issues/1043) and `mmHg`/`inHg` [#1044](https://github.com/Qalculate/libqalculate/issues/1044), fixed in master (`92ecde7`); [#1045](https://github.com/Qalculate/libqalculate/issues/1045) closed 2026-10-20 (follow-ups G80, merged, and G81). A fix fails the index build on its `override` in `find/units.yaml` once we pin a release that has it.
 - **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); M4 (Redo after ⌫) drafted, not filed; M5 (`isImplicitArg` takes no matrix, F68) drafted by R75.
-- **Giac**, not filed yet. Regression files: `tools/giac-regress/` (G89). Parisse takes email, forum or commit links: patch 0003 (complex `tanh`, G75) as a commit link; the rest as four forum threads; new since: `simplify`'s assume leak (G92), `im()` of a root of unknown sign (G96), once their packages say where the cause is.
+- **Giac**, not filed yet. Regression files: `tools/giac-regress/` (G89; check, known and patched: `pascaline-patched.cas` holds the lines that fail on stock giac_2.1.0-1 and pass with patches 0003 and 0005). Parisse takes email, forum or commit links: patch 0003 (complex `tanh`, G75) as a commit link; the rest as four forum threads; new since: `simplify`'s assume leak (G92), `im()` of a root of unknown sign (G96), once their packages say where the cause is.
 
 ## Tasks
 

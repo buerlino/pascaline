@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// G89: runs pascaline-check.cas and pascaline-known.cas line by line on a Giac build (nodeGiac) and counts.
+// G89: runs pascaline-check.cas, pascaline-known.cas and pascaline-patched.cas line by line on a Giac build (nodeGiac) and counts.
 //   GIAC_OUT=<dir> node tools/giac-regress/run.mjs [file.cas …]     exit 1 when a check line fails or a known line passes
 // A line passes when pc() returns 1; a line that errors (or is stopped by the timeout) counts as failed.
 import { readFileSync } from "node:fs";
@@ -8,10 +8,11 @@ import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 const { giac } = await loadNodeGiac();
 giac.eval("timeout 120");
 const counts = {}; // file -> [pass, fail] of the line-by-line run
-const files = process.argv.slice(2).length ? process.argv.slice(2) : ["pascaline-check.cas", "pascaline-known.cas"];
+const files = process.argv.slice(2).length ? process.argv.slice(2) : ["pascaline-check.cas", "pascaline-known.cas", "pascaline-patched.cas"];
 let bad = 0;
 for (const f of files) {
   const known = f.includes("known");
+  if (f.includes("patched")) console.log(`${f}: these lines fail on stock giac_2.1.0-1; this build is the patched one (our patches 0003, 0005), every line must pass`);
   const t0 = performance.now();
   let pass = 0;
   let fail = 0;
