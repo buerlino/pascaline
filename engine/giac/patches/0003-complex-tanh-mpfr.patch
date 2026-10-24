@@ -1,12 +1,18 @@
-# Upstream: giac 2.1.0 usual.cc, tanh(). For a complex MPFR argument (the _CPLX branch with _REAL or _FLOAT_ parts) tanh returns (exp(2z)+1)/(exp(2z)-1), which is coth(z): evalf(tanh(1+i)) at Digits 30 gave 0.868014...-0.217621...*i instead of 1.083923...+0.271752...*i. tanh(z) = (exp(2z)-1)/(exp(2z)+1). The double branch (sinh/cosh) and real arguments are unchanged.
+# Upstream: giac 2.1.0 usual.cc, tanh(). For a complex MPFR argument (the _CPLX branch with _REAL or _FLOAT_ parts) tanh returns (exp(2z)+1)/(exp(2z)-1), which is coth(z): evalf(tanh(1+i)) at Digits 30 gave 0.868014...-0.217621...*i instead of 1.083923...+0.271752...*i. Computes tanh(x+iy) = (sinh(2x)+i*sin(2y))/(cosh(2x)+cos(2y)) in radians, as exp() does for a complex argument: the plain swap (exp(2z)-1)/(exp(2z)+1) also gives tanh but leaves a rounding real part for x=0 (tanh(i) = 7e-81+1.557...*i at 60 digits) and loses relative digits of the real part for small x. The double branch and real arguments are unchanged.
 --- a/src/usual.cc
 +++ b/src/usual.cc
-@@ -2670,7 +2670,7 @@
+@@ -2669,8 +2669,12 @@
+ #endif
        }
        if (e._CPLXptr->type==_REAL || e._CPLXptr->type==_FLOAT_){
- 	gen g=exp(2*e,contextptr);
+-	gen g=exp(2*e,contextptr);
 -	return (g+1)/(g-1);
-+	return (g-1)/(g+1);
++	// tanh(x+i*y)=(sinh(2x)+i*sin(2y))/(cosh(2x)+cos(2y)): no cancellation for small x, real part 0 for x=0
++	int mode=get_mode_set_radian(contextptr);
++	gen x2=2*(*e._CPLXptr),y2=2*(*(e._CPLXptr+1));
++	gen res=(sinh(x2,contextptr)+cst_i*sin(y2,contextptr))/(cosh(x2,contextptr)+cos(y2,contextptr));
++	angle_mode(mode,contextptr);
++	return res;
        }
      }
      if (is_squarematrix(e))
