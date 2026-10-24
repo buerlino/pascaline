@@ -65,30 +65,36 @@ export interface ProgramStores {
   calls: string[];
 }
 
-/** The heads of a tree that store without a target, or evaluate a string. */
-function stateHeads(tree: GiacParse): string[] {
+/** The heads of a tree that store without a target, or evaluate a string (a library body or test with one is refused). */
+export function stateHeads(tree: GiacParse): string[] {
   return tree.heads.filter((h) => STATE_HEADS.has(h) || STRING_HEADS.has(h));
+}
+
+/** The targets of what runs when the stored value runs: for one top-level store (`f(x):=…`, `f:=x->…`, `a:=…`) its
+ *  value's own targets (the bridge walks the value alone, so a body that stores into its own name, `f(x):={f:=0;…}`,
+ *  keeps f: an under-read never), else every target of the tree (a printed value `(x)->…`). */
+export function valueTargets(tree: GiacParse): string[] {
+  return tree.form ? tree.value : tree.targets;
 }
 
 /** A program's kept stores from the tree of its definition (`f(x):=…`, `f:=x->…`, or its printed value `(x)->…`). */
 export function programStores(tree: GiacParse): ProgramStores {
-  const own = new Set(tree.top);
   return {
-    writes: [...tree.targets.filter((t) => !own.has(t) && !isOurStore(t)), ...stateHeads(tree).map((h) => `${h}(`)],
+    writes: [...valueTargets(tree).filter((t) => !isOurStore(t)), ...stateHeads(tree).map((h) => `${h}(`)],
     calls: tree.reads,
   };
 }
 
-/** The tree stores by itself (a target of the user's, a state or string head), the targets in `except` left out. */
-export function treeStores(tree: GiacParse, except: readonly string[] = []): boolean {
-  return tree.targets.some((t) => !isOurStore(t) && !except.includes(t)) || stateHeads(tree).length > 0;
+/** The targets stores (one of the user's), or the tree has a state or string head. */
+function storesIn(tree: GiacParse, targets: readonly string[]): boolean {
+  return targets.some((t) => !isOurStore(t)) || stateHeads(tree).length > 0;
 }
 
-/** The global targets and the state and string heads of a library body or test: what the import refuses. `own`: the
- *  defined name. */
-export function bodyStores(tree: GiacParse, own: readonly string[]): { targets: string[]; heads: string[] } {
-  return { targets: tree.targets.filter((t) => !own.includes(t)), heads: stateHeads(tree) };
+/** The tree stores by itself (a target of the user's, a state or string head). */
+export function treeStores(tree: GiacParse): boolean {
+  return storesIn(tree, tree.targets);
 }
+
 
 /** Walks `names` through the programs `kept` knows: true when one of them, or a program it reads, writes. A name being
  *  visited counts as not writing (recursion ends). */
@@ -125,13 +131,15 @@ export const PLAIN_FORM: InputForm = { stores: false, once: false, assignment: n
 /** `name:=value` in `text` when the tree says the text is one store into that name (top), not a function definition by
  *  `f(x):=`: the value is the text after the `:=`. The tree decides; the text gives only the place to cut. */
 export function assignmentIn(text: string, tree: GiacParse): { name: string; rhs: string } | null {
-  if (tree.top.length !== 1 || tree.heads[0] !== "sto") return null;
+  if (tree.top.length !== 1 || tree.form !== "name") return null;
   const name = tree.top[0]!;
   const rhs = valueAfter(text, name);
   return rhs === null ? null : { name, rhs };
 }
 
-/** The text after `name:=` at the start of `text`, or null. */
+/** The text after `name:=` at the start of `text`, or null. The tree says the text is one store into `name`; only the
+ *  place to cut its value is read from the text (the tree has no text positions), and it tells `name:=…` from
+ *  `name(args):=…`, which Giac's tree holds alike (`f:=(x)->…`). */
 function valueAfter(text: string, name: string): string | null {
   return new RegExp(`^\\s*${name}\\s*:=([\\s\\S]+)$`).exec(text)?.[1] ?? null;
 }
@@ -154,14 +162,13 @@ export function formOf(input: string, tree: GiacParse | null, writes: (names: re
   const assignment = assignmentIn(input, tree);
   if (assignment) {
     // a program's body stores when it runs, not when it is defined
-    const rhsStores = !tree.program && (treeStores(tree, [assignment.name]) || writes(wordsOf(assignment.rhs)));
+    const rhsStores = !tree.program && (storesIn(tree, tree.value) || writes(wordsOf(assignment.rhs)));
     return { stores: true, once: rhsStores, assignment, defined: { name: assignment.name, kind: "var" }, noValue: false };
   }
   const stores = treeStores(tree) || writes(wordsOf(input));
   const top = tree.top.length === 1 ? tree.top[0]! : undefined;
   // L[k]:=… changes an element of L: no definition for the Find items (as before G100)
-  const indexed = top !== undefined && new RegExp(`^\\s*${top}\\s*\\[`).test(input);
-  const defined = top === undefined || indexed ? undefined : { name: top, kind: tree.program ? ("fn" as const) : ("var" as const) };
+  const defined = top === undefined || tree.form === "indexed" ? undefined : { name: top, kind: tree.program ? ("fn" as const) : ("var" as const) };
   const noValue = defined?.kind === "fn" || NO_VALUE_HEADS.has(tree.heads[0] ?? "");
   return { stores, once: stores, assignment: null, ...(defined ? { defined } : {}), noValue };
 }

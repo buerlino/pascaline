@@ -37,7 +37,10 @@ export interface GiacContext {
 
 /** bridge-2: Giac's tree of a text, not evaluated. `reads`: the free names (a bound name read outside its binding
  *  counts); `bound`: every name bound somewhere (parameters, locals, a quoting command's variable, `x=a..b` too);
- *  `top`: the targets of the top-level store alone; `program`: that store's value is a program (G99). */
+ *  `top`: the targets of the top-level store alone; `program`: that store's value is a program (G99). G100: `value`:
+ *  the targets of that store's value alone (a body storing into its own name keeps it here); `form`: how its target is
+ *  written ("name", which `f(x):=…` is too, "indexed" `L[k]:=`, "list" `[a,b]:=`, "call" `Beta(x):=` on a built-in,
+ *  whose head is `callee`, "other"; "" when the text is not one store). */
 export interface GiacParse {
   ok: boolean;
   heads: string[];
@@ -46,6 +49,9 @@ export interface GiacParse {
   bound: string[];
   top: string[];
   program: boolean;
+  value: string[];
+  form: "" | "name" | "indexed" | "list" | "call" | "other";
+  callee: string;
   float: boolean;
   string: boolean;
   nodes: number;

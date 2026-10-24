@@ -7,7 +7,7 @@
 import { applyDefChanges, DESC_MAX, MAX_DEFS, replayOrder, type DefChange, type DefEntry } from "./defs.ts";
 import { ENGINE_DEFINITIONS, WORKER_DEFINITION_NAMES } from "./homeEval.ts";
 import type { GiacParse } from "./bridge.ts";
-import { assignmentIn, bodyStores } from "./stores.ts";
+import { assignmentIn, stateHeads, valueTargets } from "./stores.ts";
 import { COMPLEX_DEFINITIONS } from "./numeric.ts";
 import { defaultCasSettings, type CasResult } from "./types.ts";
 import { DATA_VERSION, migratedText } from "../state/storage.ts";
@@ -76,32 +76,30 @@ function balanced(s: string): boolean {
 }
 
 /** G100: what a definition or a test changes when it runs, from Giac's tree (bridge-2): the first head of the state
- *  family (purge, assume, a setting, a file reader, a string Giac evaluates; stores.ts) or a setting it reads, and the first global target (a
- *  name stored that is neither the defined name, a parameter nor a local). */
-function changes(tree: GiacParse, own: readonly string[]): { head?: string; target?: string } {
-  const b = bodyStores(tree, own);
+ *  family (purge, assume, a setting, a file reader, a string Giac evaluates; stores.ts) or a setting it reads, and the
+ *  first of `targets`: a definition's value alone (valueTargets; a name stored that is neither a parameter nor a local,
+ *  the defined name included: `f(x):={f:=0;…}` replaces f when it runs), a test's whole tree. */
+function changes(tree: GiacParse, targets: readonly string[]): { head?: string; target?: string } {
   // a setting read is refused too (G67: a library may not use one, flags.ts)
-  const head = b.heads[0] ?? tree.reads.find(isFlagName);
-  return { ...(head !== undefined ? { head } : {}), ...(b.targets[0] !== undefined ? { target: b.targets[0] } : {}) };
+  const head = stateHeads(tree)[0] ?? tree.reads.find(isFlagName);
+  return { ...(head !== undefined ? { head } : {}), ...(targets[0] !== undefined ? { target: targets[0] } : {}) };
 }
 
 /** A tree Giac's parser could not read cleanly holds `undef` where it gave up (`++a` is `undef++; a`): no name of the
  *  user's, so no target. */
 function readable(tree: GiacParse): GiacParse {
-  return tree.ok ? tree : { ...tree, targets: tree.targets.filter((t) => t !== "undef") };
+  const user = (l: string[]): string[] => l.filter((t) => t !== "undef");
+  return tree.ok ? tree : { ...tree, targets: user(tree.targets), value: user(tree.value) };
 }
 
 /** A block that defines one name: Giac's tree is one top-level store into it, written `name(args):=…` (a function) or
  *  `name:=…` (a value, a function written with an arrow too). */
 function definitionOf(block: string, tree: GiacParse): { name: string; kind: "fn" | "var" } | undefined {
-  if (tree.heads[0] !== "sto") return undefined;
-  // `Beta(x):=…` names a built-in: Giac's tree has no target (the call is no name), the import refuses the name
-  const call = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\(/.exec(block)?.[1];
-  if (tree.top.length === 0 && call !== undefined && tree.heads.includes(call)) return { name: call, kind: "fn" };
-  if (tree.top.length !== 1) return undefined;
-  const name = tree.top[0]!;
-  if (tree.program && call === name) return { name, kind: "fn" };
-  return assignmentIn(block, tree) ? { name, kind: "var" } : undefined;
+  // `Beta(x):=…` names a built-in: Giac's tree stores into the call (bridge-2 form "call"), the import refuses the name
+  if (tree.form === "call") return { name: tree.callee, kind: "fn" };
+  if (tree.form !== "name" || tree.top.length !== 1) return undefined;
+  if (assignmentIn(block, tree)) return { name: tree.top[0]!, kind: "var" };
+  return tree.program ? { name: tree.top[0]!, kind: "fn" } : undefined;
 }
 
 /** Reads a library file: encoding, size, stamp, blocks, every rule that needs no evaluation (r10 section 1.3). Throws a
@@ -141,7 +139,7 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
         if (!d) throw new LibError(lineNo, "a test line before any definition");
         const expr = test[1]!.trim();
         const tree = readable(parse(asGiac(expr)));
-        const c = changes(tree, []);
+        const c = changes(tree, tree.targets);
         if (c.head) throw new LibError(lineNo, `the test changes the engine's state (${c.head})`);
         if (c.target) throw new LibError(lineNo, `a test must not assign a name (it assigns ${c.target})`);
         if (!tree.ok) throw new LibError(lineNo, "Giac cannot read the test (a syntax error)");
@@ -162,13 +160,13 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
     const def = definitionOf(block, tree);
     // what a body Giac cannot read stores is still checked on the part it read (a global target is the plainer reason)
     if (!def && !tree.ok) {
-      const c = changes(tree, tree.top);
+      const c = changes(tree, valueTargets(tree));
       if (c.head) throw new LibError(at, `the body changes the engine's state (${c.head})`);
       if (c.target) throw new LibError(at, `the body assigns ${c.target}, which is not local: declare it with \`local ${c.target};\``);
       throw new LibError(at, "Giac cannot read this definition (a syntax error)");
     }
     if (!def) throw new LibError(at, "only definitions may stand in a library (`name(args):=…` or `name:=…`)");
-    const c = changes(tree, [def.name]);
+    const c = changes(tree, valueTargets(tree));
     if (c.head) throw new LibError(at, `the body changes the engine's state (${c.head})`);
     if (c.target && tree.program) throw new LibError(at, `the body assigns ${c.target}, which is not local: declare it with \`local ${c.target};\``);
     if (c.target) throw new LibError(at, `the value assigns ${c.target}, which is not local: a value must not itself define or change anything`);

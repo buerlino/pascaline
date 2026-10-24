@@ -49,6 +49,18 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
     });
   }
 
+  it("audit fix 1: a body that stores into its own name runs once per Enter and is logged; a library refuses it", () => {
+    home("fs(x):={ fs:=0; return x; }");
+    // the bridge lists a target once: before the fix fs's kept stores were empty (its own name left out), so the call
+    // ran again at P + 20 and the log kept the program while Giac held fs = 0
+    const r = home("fs(floor(sqrt(2)))");
+    expect(r.result.display).toBe("1");
+    expect(value("fs")).toBe("0");
+    expect(setsOf(r.defs)).toEqual(["fs=fs:=(0)"]);
+    home("purge(fs)");
+    expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):={ f:=0; return x; }\n", bridge.parse)).toThrow(/line 3: the body assigns f, which is not local/);
+  });
+
   it("G66: g3(1) logs n when g3 passes g, whose body stores n, as a value (map); runs once; credited to that input", () => {
     home("n:=0");
     home("g(t):={n:=n+1;return t;}");
@@ -119,6 +131,8 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
     expect(f("a:=1")).toMatchObject({ stores: true, once: false, assignment: { name: "a", rhs: "1" }, defined: { name: "a", kind: "var" } });
     expect(f("pg:=x->x+pB")).toMatchObject({ assignment: { name: "pg" }, defined: { name: "pg", kind: "var" }, once: false });
     expect(f("x:=y:=3")).toMatchObject({ assignment: { name: "x", rhs: "y:=3" }, once: true });
+    // audit fix 1: a value that stores into the assigned name itself runs once too
+    expect(f("a:=(a:=a+1)")).toMatchObject({ assignment: { name: "a", rhs: "(a:=a+1)" }, once: true });
     expect(f("f(x):=x^2")).toMatchObject({ stores: true, once: true, defined: { name: "f", kind: "fn" }, noValue: true });
     expect(f("v=>w")).toMatchObject({ stores: true, defined: { name: "w", kind: "var" }, assignment: null });
     expect(f("L[2]:=5")).toMatchObject({ stores: true, assignment: null });
@@ -131,11 +145,13 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
     expect([isOurStore(EQ_INEXACT_FLAG), isOurStore(EQ_DIFF)]).toEqual([true, true]);
   });
 
-  it("a program's kept stores leave out its own name, parameters and locals; the walk goes through the programs it reads", () => {
+  it("a program's kept stores leave out its parameters and locals (its own name only when the body does not store it); the walk goes through the programs it reads", () => {
     expect(programStores(bridge.parse("bump(x):={ increment(cnt); return x; }"))).toEqual({ writes: ["cnt"], calls: ["cnt"] });
     expect(programStores(bridge.parse("h(t):={local u; u:=t; DelVar(m); return u;}"))).toEqual({ writes: ["m", "DelVar("], calls: [] });
     expect(programStores(bridge.parse("f(x):={ assume(z>0); x }")).writes).toEqual(["assume("]);
     expect(programStores(bridge.parse("g2(t):=g(t)"))).toEqual({ writes: [], calls: ["g"] });
+    expect(programStores(bridge.parse("f(x):={ f:=0; return x; }")).writes).toEqual(["f"]);
+    expect(programStores(bridge.parse("f:=x->x+1")).writes).toEqual([]);
     const kept = (n: string) => (n === "g2" ? { writes: [], calls: ["g"] } : n === "g" ? { writes: ["n"], calls: ["n"] } : null);
     expect(writesThrough(["g2"], kept)).toBe(true);
     const loop = (n: string) => (n === "p" ? { writes: [], calls: ["q"] } : n === "q" ? { writes: [], calls: ["p"] } : null);
