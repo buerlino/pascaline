@@ -371,7 +371,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 describe("G50: complex arguments of the audited functions (pure)", () => {
   it("complexSafe replaces the calls Giac gets wrong on complex arguments, outside strings, and nothing else", async () => {
     const { complexSafe } = await import("./numeric.ts");
-    expect(complexSafe("tanh(i)+asin(2*i)-acos (1+i)*atan(x)+acosh(z)")).toBe("pastanh(i)+pasasin(2*i)-pasacos (1+i)*pasatan(x)+pasacosh(z)");
+    expect(complexSafe("tanh(i)+asin(2*i)-acos (1+i)*atan(x)+acosh(z)")).toBe("tanh(i)+pasasin(2*i)-pasacos (1+i)*pasatan(x)+pasacosh(z)");
     expect(complexSafe("arcsin(i)+arccos(i)+arctan(i)")).toBe("pasasin(i)+pasacos(i)+pasatan(i)");
     // atan2, asinh, atanh, a name ending in the function's name, a string, and our own names stay.
     expect(complexSafe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)')).toBe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)');
@@ -406,10 +406,10 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.display).toBe("1.55740772465*i");
     expect(markOf(precisionFacts(r), { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
   });
-  it("a typed evalf(tanh(i)) keeps no exact text: Giac printed coth(i) (source: oracle, mpmath tanh(1j))", () => {
+  it("G75: a typed evalf(tanh(i)) keeps Giac's text, right since patch 0003 (before: coth(i), no exact text) (source: oracle, mpmath tanh(1j))", () => {
     const r = home("evalf(tanh(i))");
     expect(r.display).toBe("1.55740772465*i");
-    expect(r.exact).toBeUndefined();
+    expect(r.exact).toMatch(/^1\.5574077246549022305069748/);
   });
   it("inside a larger expression: 2*tanh(i)+atan(2*i) (source: oracle, mpmath 2*tanh(1j)+atan(2j))", () => {
     expect(home("2*tanh(i)+atan(2*i)").display).toBe("1.57079632679+3.66412159364*i");
@@ -419,7 +419,7 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.display).toBe("2.31262688170937054957327206807+1.55118708206189191252710439312*i");
     expect(r.facts.warn).toBeUndefined();
   });
-  it("fix round 1: a list argument is mapped, not handed to Giac's coth (source: oracle, mpmath tanh(1j), tanh(2j))", () => {
+  it("a list argument of a complex tanh: no rounding real part (G75: patch 0003's sinh/sin form) (source: oracle, mpmath tanh(1j), tanh(2j))", () => {
     expect(home("evalf(tanh([i,2*i]))").display).toBe("[1.55740772465*i,-2.18503986326*i]");
   });
   it("fix round 1: a list argument of acos at 30 digits gets MPFR digits (source: oracle, mpmath acos(1+1j), acos(2j))", () => {
@@ -450,8 +450,8 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     const r = own.home("approx(w)", defaultHomeSettings).result;
     expect(r.display).toBe("1.55740772465*i");
     expect(markOf(precisionFacts(r), { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
-    // Giac's own printed float (coth) is not kept as the copied text.
-    expect(r.exact).toBeUndefined();
+    // G75: Giac's own printed float is right since patch 0003 and is the copied text (before: coth, not kept).
+    expect(r.exact).toMatch(/^1\.5574077246549022305069748/);
     expect(own.home("evalf(w)+1", defaultHomeSettings).result.display).toBe("1+1.55740772465*i");
   });
   it("G50f1: a stored function whose body calls tanh is read through our definitions too, still unaudited (source: oracle, mpmath tanh(1j))", async () => {
@@ -470,16 +470,16 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.text).toBe("1.55740772465*i");
     expect(r.numeric?.facts.warn).toBeUndefined();
   });
-  it("G50f1: a CAS assignment runs once; a name it reads holding tanh(i) makes the value unaudited, naming tanh (source: derived)", async () => {
+  it("G50f1, G75: a CAS assignment runs once; a name it reads holding tanh(i) is Giac's own tanh, right and not named (source: oracle, mpmath tanh(1j))", async () => {
     const own = (await nodeHost());
     own.cas("w:=tanh(i)", defaultCasSettings);
     const r = own.cas("v:=evalf(w)", defaultCasSettings).result;
-    // Showed Giac's coth value -0.642092615934*i with why {once:true}, tanh not named.
-    expect(r.numeric?.facts.warn).toBe("unaudited");
-    expect(r.numeric?.facts.why?.unaudited).toEqual(["tanh"]);
+    // Before patch 0003 Giac's tanh was coth here, so the value was unaudited, naming tanh (G50f1).
+    expect(r.text).toBe("1.55740772465*i");
+    expect(r.numeric?.facts.why?.unaudited ?? []).not.toContain("tanh");
     const t = own.cas("u:=evalf(tanh(i))", defaultCasSettings).result;
-    expect(t.numeric?.facts.warn).toBe("unaudited");
-    expect(t.numeric?.facts.why?.unaudited).toEqual(["tanh"]);
+    expect(t.text).toBe("1.55740772465*i");
+    expect(t.numeric?.facts.why?.unaudited ?? []).not.toContain("tanh");
   });
   it("G50f1: a function's parameter is not the stored name of the same name (source: derived)", async () => {
     const { complexReads, purgeReads } = await import("./numeric.ts");
@@ -501,8 +501,8 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
   it("our definitions load on first use, not at engine start (start-up budget)", async () => {
     const { giac, bridge } = await loadNodeGiac();
     const fresh = new EngineHost(giac, bridge);
-    expect(giac.eval("pastanh")).toBe("pastanh");
-    fresh.home("tanh(i)", defaultHomeSettings);
-    expect(giac.eval("pastanh")).not.toBe("pastanh");
+    expect(giac.eval("pasasin")).toBe("pasasin");
+    fresh.home("asin(2*i)", defaultHomeSettings);
+    expect(giac.eval("pasasin")).not.toBe("pasasin");
   });
 });

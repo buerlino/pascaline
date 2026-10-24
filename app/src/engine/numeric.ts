@@ -58,8 +58,8 @@ export function valuePrecision(digits: number): number {
  * a float on the exact path is "unaudited" and gets ⚠ until it is in Find's tier 0 with a golden case (G4, EN7).
  * Audited for real arguments and for complex ones (G50, `tools/probes/complex-audit.ts`: sqrt, exp, ln, log,
  * log10, sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, asinh, acosh, atanh, abs, arg and sign on 12 complex
- * arguments at 12, 30 and 50 digits). Giac's complex tanh is coth and its complex asin, acos, atan and acosh are a
- * double, so those are evaluated through COMPLEX_DEFINITIONS; any part Giac prints as a double where MPFR digits were
+ * arguments at 12, 30 and 50 digits). Giac's complex asin, acos, atan and acosh are a double, so those are evaluated
+ * through COMPLEX_DEFINITIONS (complex tanh was coth until patch 0003, G75); any part Giac prints as a double where MPFR digits were
  * asked confirms one digit fewer than it prints (shortDigits). Giac runs in radians in every mode (G46), so DEG reads
  * the same routines (the probe's DEG rows).
  */
@@ -72,17 +72,15 @@ export const AUDITED_FUNCTIONS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * G50 (deep check 2026-10-19 D9, D10): our definitions for the functions whose complex values Giac gets wrong. Giac's
- * complex tanh returns (e^2z+1)/(e^2z-1), which is coth (usual.cc `tanh`, the `_CPLX` branch); its complex asin, acos,
- * atan and acosh have no MPFR path (14 digits at any Digits; acosh near 0 is short even in the double). Each is used
- * for a non-real argument, and is the function itself otherwise (Giac runs in radians in every mode, G46): tanh(z) as -i*tan(i*z) (Giac's complex tan
- * is right; sinh(z)/cosh(z) leaves im() a complex number for z = i), the inverse functions
- * by their ln forms, which are the principal branches (mpmath's, also on the cuts of atan). The agreement check then
+ * G50 (deep check 2026-10-19 D10): our definitions for the functions whose complex values Giac gets wrong. Giac's
+ * complex asin, acos, atan and acosh have no MPFR path (14 digits at any Digits; acosh near 0 is short even in the
+ * double). (Its complex tanh, coth at usual.cc:2673, is fixed in Giac's source by patch 0003, G75.) Each is used for a
+ * non-real argument, and is the function itself otherwise (Giac runs in radians in every mode, G46): the inverse
+ * functions by their ln forms, which are the principal branches (mpmath's, also on the cuts of atan). The agreement check then
  * confirms their digits like any other exact value. A list or matrix argument is mapped element by element first (its
  * type is DOM_LIST, which would fall back to Giac's own function).
  */
 export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
-  pastanh: "pastanh(z):={ if (type(z)==DOM_LIST) return map(z,pastanh); if (type(evalf(z))==DOM_COMPLEX) return -i*tan(i*z); return tanh(z); }",
   pasasin: "pasasin(z):={ if (type(z)==DOM_LIST) return map(z,pasasin); if (type(evalf(z))==DOM_COMPLEX) return -i*ln(i*z+sqrt(1-z^2)); return asin(z); }",
   pasacos: "pasacos(z):={ if (type(z)==DOM_LIST) return map(z,pasacos); if (type(evalf(z))==DOM_COMPLEX) return pi/2+i*ln(i*z+sqrt(1-z^2)); return acos(z); }",
   pasatan: "pasatan(z):={ if (type(z)==DOM_LIST) return map(z,pasatan); if (type(evalf(z))==DOM_COMPLEX) return i/2*(ln(1-i*z)-ln(1+i*z)); return atan(z); }",
@@ -91,7 +89,7 @@ export const COMPLEX_DEFINITIONS: Readonly<Record<string, string>> = {
 
 /** The Giac names (and aliases) that COMPLEX_DEFINITIONS replace. */
 const COMPLEX_REPLACED: Readonly<Record<string, string>> = {
-  tanh: "pastanh", asin: "pasasin", arcsin: "pasasin", acos: "pasacos", arccos: "pasacos", atan: "pasatan", arctan: "pasatan",
+  asin: "pasasin", arcsin: "pasasin", acos: "pasacos", arccos: "pasacos", atan: "pasatan", arctan: "pasatan",
   acosh: "pasacosh", arccosh: "pasacosh",
 };
 const COMPLEX_CALL = new RegExp(`"[^"]*"|\\b(${Object.keys(COMPLEX_REPLACED).join("|")})(\\s*\\()`, "g");
@@ -287,7 +285,7 @@ export function whyOf(facts: readonly ElementFacts[], expr: string | null): Prec
   return { ...(unaudited.length ? { unaudited } : {}), ...(once ? { once: true } : {}) };
 }
 
-/** The functions of `input` that COMPLEX_DEFINITIONS replace in RAD (tanh, asin, acos, atan, acosh and aliases). */
+/** The functions of `input` that COMPLEX_DEFINITIONS replace in RAD (asin, acos, atan, acosh and aliases). */
 export function complexReplacedIn(input: string): string[] {
   return functionsIn(input).filter((f) => Object.hasOwn(COMPLEX_REPLACED, f));
 }
@@ -303,8 +301,8 @@ const MAX_READS = 40;
 
 /**
  * What `expr` reads through stored names (G50f1). A name or user function whose stored text calls a function
- * COMPLEX_DEFINITIONS replaces (CAS `w:=tanh(i)` keeps Giac's exact tanh(i); `f(x):=tanh(x)`) is evaluated by Giac with
- * its own complex tanh (coth) unless it is read through a copy: each such name is replaced in `text` by a slot
+ * COMPLEX_DEFINITIONS replaces (CAS `w:=asin(2*i)` keeps Giac's exact asin(2*i); `f(x):=asin(x)`) is evaluated by Giac
+ * with its own complex asin (a double) unless it is read through a copy: each such name is replaced in `text` by a slot
  * (`pasxn<k>`) that holds its complexSafe text, as exactFacts reads Ans through pasxv. `hidden`: the replaced functions
  * that could not be read that way (a copy Giac refused; a call
  * found only inside another function's body; every one when `copy` is false, for an input that runs once and may

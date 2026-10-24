@@ -776,7 +776,7 @@ export function homeEval(
     store();
     const b = build(facts, shape, digits, "exact", true);
     // G50: Giac's printed float is not kept when its value was computed again through our definitions (forValue):
-    // evalf(tanh(i)) printed coth(i); so did approx(w) with w holding Giac's exact tanh(i) (G50f1, readsReplaced).
+    // evalf(asin(2*i)) printed a double; so did approx(w) with w holding Giac's exact asin(2*i) (G50f1, readsReplaced).
     // G44: nor when an inverse distribution function was polished (normald_icdf(10^-10) printed Giac's double).
     const giacText = once || (!readsReplaced(giac, exactBody) && !icdfCalls(exactBody).length) ? exactOut : undefined;
     const r = fromBuilt(b, "exact", true, giacText, b.decimal, whyOf(facts, once ? null : exactBody));

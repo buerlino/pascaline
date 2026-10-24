@@ -148,7 +148,7 @@ describe.skipIf(!giacAvailable())("Giac's settings (real Giac)", () => {
     expect(host.cas("1/3", cas).result.text).toBe("1/3");
   });
 
-  it("G102: a Digits set right after an interrupted call is set (ctx_set throws once there), and adjacent sets are one", async () => {
+  it("G102: a Digits set right after an interrupted call is set (ctx_set clears ctrl_c, G75: one call, no retry), and adjacent sets are one", async () => {
     const L = await loadNodeGiac();
     let sets = 0;
     const { giac, bridge } = gated(L.giac, { ...L.bridge, ctxSet: (f) => (sets++, L.bridge.ctxSet(f)) });
@@ -157,6 +157,7 @@ describe.skipIf(!giacAvailable())("Giac's settings (real Giac)", () => {
     expect(giac.eval("factor(x^200-1)")).toMatch(/interruption/);
     giac.digits(13);
     expect(giac.eval("Digits")).toBe("13");
+    expect(sets).toBe(1);
     giac.eval("timeout 10");
     sets = 0;
     giac.digits(20);
