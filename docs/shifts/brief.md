@@ -64,7 +64,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 |---|---|---|---|---|---|
 | 118 | [G103](packages/G103.md) Home's value from bridge-3 (F73) | gorge, Opus | `p1/gorge-bridge-value` | G102 | 3 h |
 | 119 | [G82](packages/G82.md) Home's budget counts steps, not milliseconds (A20) | gorge, Opus | `p1/gorge-stepbudget` | G103 | 2 h |
-| 120 | [G75](packages/G75.md) patch 0003: complex tanh in Giac | gorge, Opus | `p1/gorge-m4-tanhpatch` | — | 1.5 h |
 | 121 | [G60](packages/G60.md) no double inside an MPFR result | gorge, Opus | `p1/gorge-m4-mpfrdoubles` | G75 | 1.5 h |
 | 122 | [G56](packages/G56.md) the CAS check reads through a user function | gorge, Opus | `p1/gorge-m4-complexbody` | G60 | 1 h |
 | 123 | [S17](packages/S17.md) the workaround register, with canaries | sandra, Opus | `p1/sandra-workarounds` | G75 | 1.5 h |
