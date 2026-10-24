@@ -26,7 +26,7 @@ import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
 import { decimalFromRational, decimalFromString, formatConfirmed, isZero, tieRisk, ZERO_VALUE, type ComplexValue, type DecimalValue, type PrecisionFacts, type PrecisionWarn, type PrecisionWhy } from "./format.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFallback, exactFacts, floatFacts, floatPathFacts, integratedFacts, hasFloat, isAudited, doubleFormsIn, unauditedIn, numericDisagrees, notBuiltin, floatsShown, heavySplit, REGROUP_MAX, shapeOfValue, endsEarly, valuePrecision, whyOf, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { functionsIn } from "./giacPrint.ts";
+import { functionsIn, mapNumbers, replaceLiteral, wordsOf, type Quoting } from "./giacPrint.ts";
 import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
@@ -254,7 +254,8 @@ export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): Pre
 
 /** The names of our definitions that `input` mentions. */
 export function definitionsUsedBy(input: string): string[] {
-  return [...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES].filter((name) => new RegExp(`\\b${name}\\b`).test(input));
+  const words = new Set(wordsOf(input));
+  return [...Object.keys(ENGINE_DEFINITIONS), ...WORKER_DEFINITION_NAMES].filter((name) => words.has(name));
 }
 
 /** Giac's latex() of the result in `slot`, whose text is `text`; R64: one that holds the degree factor (a function
@@ -289,47 +290,10 @@ export function homeSetupCommands(s: HomeSettings): string[] {
 
 // --- 1. decimal literals → exact rationals -------------------------------------------------
 
-const DECIMAL = /(\d+\.\d*|\.\d+|\d+)([eE][+-]?\d+)?/y;
-
 /** Rewrites the decimal literals of `input` that have a point or an exponent (`2.5`, `.5`, `1e-3`, `1.2E5`) with `f`.
  *  Leaves integers, identifiers (`x1`, `0x1F`) and strings alone. */
-function rewriteDecimals(input: string, f: (mant: string, exp10: number) => string): string {
-  let out = "";
-  let i = 0;
-  while (i < input.length) {
-    const c = input.charAt(i);
-    if (c === '"') {
-      const end = input.indexOf('"', i + 1);
-      const j = end < 0 ? input.length : end + 1;
-      out += input.slice(i, j);
-      i = j;
-      continue;
-    }
-    if (/[A-Za-z_]/.test(c)) {
-      const m = /[A-Za-z_0-9]+/y;
-      m.lastIndex = i;
-      const w = m.exec(input)![0];
-      out += w;
-      i += w.length;
-      continue;
-    }
-    if (/[0-9.]/.test(c)) {
-      DECIMAL.lastIndex = i;
-      const m = DECIMAL.exec(input);
-      if (m && m[0] !== ".") {
-        const lit = m[0];
-        const mant = m[1] ?? "";
-        const exp = m[2];
-        if (!mant.includes(".") && !exp) out += lit;
-        else out += f(mant, exp ? parseInt(exp.slice(1), 10) : 0);
-        i += lit.length;
-        continue;
-      }
-    }
-    out += c;
-    i++;
-  }
-  return out;
+function rewriteDecimals(input: string, f: (mant: string, exp10: number) => string, q: Quoting = "typed"): string {
+  return mapNumbers(input, (mant, exp) => (!mant.includes(".") && !exp ? null : f(mant, exp ? parseInt(exp.slice(1), 10) : 0)), q);
 }
 
 /** Rewrites decimal literals (`2.5`, `.5`, `1e-3`, `1.2E5`) as exact rationals. Leaves integers,
@@ -351,8 +315,7 @@ export function restoreLiterals(text: string, typed: string): string {
       // the bare m/10^k a sum or product leaves without brackets; not inside 5/10^12 or 15/10^1
       const bare = rat.slice(1, -1);
       if (bare.includes("/10^")) {
-        const re = new RegExp(`(?<![\\w.^])${bare.replace(/[\\^*+?.()|[\]{}$]/g, "\\$&")}(?![\\w.])`, "g");
-        out = out.replace(re, lit);
+        out = replaceLiteral(out, bare, lit);
       }
     }
     return rat;
@@ -369,7 +332,7 @@ export function floatsAsEvalf(text: string): string {
   return rewriteDecimals(text, (mant, exp10) => {
     const sig = mant.replace(".", "").replace(/^0+/, "").length;
     return `evalf(${exactRational(mant, exp10)},${Math.max(15, sig)})`;
-  });
+  }, "printed");
 }
 
 /** G59: `input` with each decimal literal as a float of `at` digits (a short literal alone is read as a double). */

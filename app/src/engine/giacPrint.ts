@@ -284,6 +284,37 @@ export function renameNames(text: string, to: ReadonlyMap<string, string>, q: Qu
   return mapNames(text, (n) => (text.charAt(n.at - 1) !== "." ? (to.get(n.name) ?? null) : null), q);
 }
 
+/** `text` with every number literal (`12`, `2.5`, `.5`, `1e-3`, `1.2E5`; not inside a name, `x1`, `0x1F`, nor a
+ *  string) replaced by `f` of its mantissa and exponent part (`e-3`, or undefined) where `f` gives a text. */
+export function mapNumbers(text: string, f: (mant: string, exp: string | undefined) => string | null, q: Quoting = "typed"): string {
+  const t = withoutStrings(text, (x) => " ".repeat(x.length), q);
+  const re = new RegExp(`${NAME}|(\\d+\\.\\d*|\\.\\d+|\\d+)([eE][+-]?\\d+)?`, "g");
+  let out = "";
+  let i = 0;
+  for (let m = re.exec(t); m; m = re.exec(t)) {
+    const to = m[1] === undefined ? null : f(m[1], m[2]);
+    if (to === null) continue;
+    out += text.slice(i, m.index) + to;
+    i = m.index + m[0].length;
+  }
+  return out + text.slice(i);
+}
+
+/** Every place `lit` stands in `text` as a whole literal (no name character, `.` or `^` before it, no name character
+ *  or `.` after it), replaced by `by`. */
+export function replaceLiteral(text: string, lit: string, by: string): string {
+  let out = "";
+  let i = 0;
+  for (let k = text.indexOf(lit); k >= 0; k = text.indexOf(lit, k + 1)) {
+    const b = text.charAt(k - 1);
+    const a = text.charAt(k + lit.length);
+    if (k < i || isNameChar(b) || b === "." || b === "^" || isNameChar(a) || a === ".") continue;
+    out += text.slice(i, k) + by;
+    i = k + lit.length;
+  }
+  return out + text.slice(i);
+}
+
 /** Names called in a Giac text (`romberg(exp(-x^2),x,0,1)` → romberg, exp). Strings are skipped. */
 export function functionsIn(input: string): string[] {
   const out: string[] = [];
