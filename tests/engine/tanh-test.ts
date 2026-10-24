@@ -14,10 +14,21 @@ const CASES: [number, string, string, string][] = [
   [50, "tanh(1+i)", "1.0839233273386945434757520612119717213449675274754", "0.27175258531951171652884372249858892070946411146178"],
 ];
 
-// The leading `digits - 2` significant digits of a printed real part (the last ones may differ in rounding).
-function lead(s: string, n: number): string {
-  const d = s.replace(/^-/, "").replace(/e[+-]?\d+$/, "").replace(".", "").replace(/^0+/, "");
-  return (s.startsWith("-") ? "-" : "") + d.slice(0, n);
+// A printed decimal (`-0.988e-2`, `1.08`) as [integer mantissa, power of ten].
+function dec(s: string): [bigint, number] {
+  const m = /^(-?)(\d*)\.?(\d*)(?:e([+-]?\d+))?$/.exec(s.trim());
+  if (!m) throw new Error(`not a number: ${s}`);
+  return [BigInt(`${m[1]}${m[2]}${m[3]}` || "0"), Number(m[4] ?? 0) - m[3]!.length];
+}
+
+// |got - want| ≤ 10^-(digits-3) · |ref|, ref the larger part of the value: right to digits-3 significant digits of the
+// complex number (a real part of 0 may print as -0.67e-30, as mpmath's would at its working precision).
+function close(got: string, want: string, ref: string, digits: number): boolean {
+  const parts = [dec(got), dec(want), dec(ref)];
+  const e = Math.min(...parts.map(([, x]) => x));
+  const [g, w, r] = parts.map(([m, x]) => (m < 0n ? -m : m) * 10n ** BigInt(x - e) * (m < 0n ? -1n : 1n));
+  const d = g! - w!;
+  return (d < 0n ? -d : d) * 10n ** BigInt(digits - 3) <= (r! < 0n ? -r! : r!);
 }
 
 const { giac } = await loadNodeGiac();
@@ -26,9 +37,8 @@ for (const [digits, input, re, im] of CASES) {
   giac.eval(`Digits:=${digits}`);
   const r = giac.eval(`re(evalf(${input}))`);
   const i = giac.eval(`im(evalf(${input}))`);
-  const n = digits - 2;
-  const reOk = re === "0" ? /^-?0(\.0*)?(e[+-]?\d+)?$|e-[3-9]\d/.test(r) : lead(r, n) === lead(re, n);
-  if (!reOk || lead(i, n) !== lead(im, n)) failures.push(`${input} at ${digits}: ${r} + ${i}*i, mpmath ${re} + ${im}*i`);
+  const ref = Math.abs(Number(re)) > Math.abs(Number(im)) ? re : im;
+  if (!close(r, re, ref, digits) || !close(i, im, ref, digits)) failures.push(`${input} at ${digits}: ${r} + ${i}*i, mpmath ${re} + ${im}*i`);
 }
 giac.eval("Digits:=12");
 if (failures.length) {
