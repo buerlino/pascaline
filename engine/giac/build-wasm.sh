@@ -36,15 +36,24 @@ GSL_VERSION="2.8"
 GSL_URLS=("https://ftp.gnu.org/gnu/gsl/gsl-$GSL_VERSION.tar.gz")
 GSL_SHA256="6a99eeed15632c6354895b1dd542ed5a855c0f15d9ad1326c6fe2b2c9e423190"
 
-# Upstream re-publishes giac-2.1.0.tar.gz in place, so the hash pins one snapshot. Our mirror
-# (a GitHub release asset holding that exact file) comes first; upstream is the fallback and
-# only works while upstream still serves the pinned snapshot. See engine/giac/README.md.
+# P21: Parisse's numbered Debian source archive, which never changes once published (Parisse, 2026-10-19; the
+# unnumbered giac-2.1.0.tar.gz is re-published in place). The pin is the tarball's line in the .dsc beside it:
+#   https://www-fourier.univ-grenoble-alpes.fr/~parisse/debian/dists/stable/main/source/giac_2.1.0-1.dsc
+#   Checksums-Sha256:
+#    cdec29897d6a55f9e53f82285ffd85cd82bcaba0bd90a494f710be002bd73f57 150842401 giac_2.1.0-1.tar.gz
+# fetch_giac checks the tarball against the pin and the pin against the .dsc. Parisse's folder comes first, our mirror
+# (a GitHub release asset holding both exact files) second. The old snapshot giac-2.1.0.tar.gz (1d9536e0…) stays in the
+# download cache. See engine/giac/README.md.
 GIAC_VERSION="2.1.0"
-GIAC_SHA256="1d9536e02ce6a336793ebf11c02b93f084e28af2350871914acafa60282b5a67"
-GIAC_URLS=(
-  "https://github.com/buerlino/pascaline/releases/download/deps-giac-$GIAC_VERSION-${GIAC_SHA256:0:8}/giac-$GIAC_VERSION.tar.gz"
-  "https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac/giac-$GIAC_VERSION.tar.gz"
+GIAC_DEBIAN_REVISION="1"
+GIAC_TARBALL="giac_$GIAC_VERSION-$GIAC_DEBIAN_REVISION.tar.gz"
+GIAC_SHA256="cdec29897d6a55f9e53f82285ffd85cd82bcaba0bd90a494f710be002bd73f57"
+GIAC_SITES=(
+  "https://www-fourier.univ-grenoble-alpes.fr/~parisse/debian/dists/stable/main/source"
+  "https://github.com/buerlino/pascaline/releases/download/deps-giac-$GIAC_VERSION-$GIAC_DEBIAN_REVISION-${GIAC_SHA256:0:8}"
 )
+GIAC_URLS=("${GIAC_SITES[@]/%//$GIAC_TARBALL}")
+GIAC_DSC_URLS=("${GIAC_SITES[@]/%//${GIAC_TARBALL%.tar.gz}.dsc}")
 
 log() { printf '\n==> %s\n' "$*"; }
 
@@ -89,11 +98,34 @@ fetch_one() { # sha256 url... ; tries each url until one gives a file with the r
   exit 1
 }
 
+# dsc_sha256 <dsc file> <tarball name>: the SHA-256 the .dsc's Checksums-Sha256 section gives for the tarball.
+dsc_sha256() {
+  awk -v name="$2" '/^[^ ]/ { sec = $1 } sec == "Checksums-Sha256:" && /^ / && $3 == name { print $1 }' "$1"
+}
+
+fetch_giac() { # the .dsc (no hash of its own: it must name the pin), then the tarball against the pin
+  local dsc="$DL/${GIAC_DSC_URLS[0]##*/}" url line
+  mkdir -p "$DL"
+  if [[ ! -f "$dsc" ]]; then
+    for url in "${GIAC_DSC_URLS[@]}"; do
+      if curl -fsSL --retry 3 -o "$dsc.part.$$" "$url" && [[ "$(dsc_sha256 "$dsc.part.$$" "$GIAC_TARBALL")" == "$GIAC_SHA256" ]]; then
+        mv "$dsc.part.$$" "$dsc"; echo "fetched ${dsc##*/} from $url"; break
+      fi
+      echo "no usable ${dsc##*/} at $url" >&2
+      rm -f "$dsc.part.$$"
+    done
+  fi
+  [[ -f "$dsc" ]] || { echo "could not fetch ${dsc##*/} naming $GIAC_TARBALL with SHA-256 $GIAC_SHA256" >&2; exit 1; }
+  line="$(dsc_sha256 "$dsc" "$GIAC_TARBALL")"
+  [[ "$line" == "$GIAC_SHA256" ]] || { echo "$dsc gives $GIAC_TARBALL SHA-256 '${line}', the pin is $GIAC_SHA256" >&2; exit 1; }
+  fetch_one "$GIAC_SHA256" "${GIAC_URLS[@]}"
+}
+
 stage_fetch() {
   log "fetch"
   fetch_one "$GMP_SHA256" "${GMP_URLS[@]}"
   fetch_one "$MPFR_SHA256" "${MPFR_URLS[@]}"
-  fetch_one "$GIAC_SHA256" "${GIAC_URLS[@]}"
+  fetch_giac
   [[ "$WITH_GSL" != 1 ]] || fetch_one "$GSL_SHA256" "${GSL_URLS[@]}"
 }
 
@@ -157,9 +189,11 @@ variant() { [[ "$WITH_GSL" == 1 ]] && echo gsl || echo base; }
 stage_giac() {
   log "giac $GIAC_VERSION ($(variant))"
   local src="$BUILD/giac-$GIAC_VERSION"
-  unpack "$DL/giac-$GIAC_VERSION.tar.gz" "$src"
+  unpack "$DL/$GIAC_TARBALL" "$src"
   # The tarball bundles prebuilt web binaries; never use or ship them.
   rm -f "$src"/doc/giacwasm.js "$src"/doc/giacwasm.wasm
+  # The numbered archive is a configured tree (G77: config.h, src/config.h, Makefiles of the Debian host); our configure
+  # below rewrites them (configure.ac:688 copies its config.h to src/).
   local p
   for p in "$HERE"/patches/*.patch; do
     [[ -e "$p" ]] || continue

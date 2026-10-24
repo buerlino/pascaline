@@ -154,7 +154,8 @@ describe.skipIf(!giacAvailable())("Giac's settings (real Giac)", () => {
     const { giac, bridge } = gated(L.giac, { ...L.bridge, ctxSet: (f) => (sets++, L.bridge.ctxSet(f)) });
     giac.eval("timeout 0.001");
     giac.eval("ckevery 10");
-    expect(giac.eval("factor(x^200-1)")).toMatch(/interruption/);
+    // The host's rule (host.ts isTimeout): giac_2.1.0-1 (G77) says "User interrupt or Out of memory", the snapshot before "Stopped by user interruption."
+    expect(giac.eval("factor(x^200-1)")).toMatch(/^GIAC_ERROR.*interrupt/i);
     giac.digits(13);
     expect(giac.eval("Digits")).toBe("13");
     expect(sets).toBe(1);

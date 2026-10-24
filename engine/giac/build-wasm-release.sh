@@ -24,6 +24,9 @@ IMAGE="docker.io/library/debian@sha256:913f6706df59a68922d1dd08f78c2476560a8d367
 EMSCRIPTEN_PKG_VERSION="3.1.69+dfsg-3"
 
 [[ -d "$DL" ]] || { echo "no download cache at $DL (set PASCALINE_DL_DIR)" >&2; exit 1; }
+# The sources (G77: Giac's numbered Debian archive, checked against its .dsc) are fetched here, on the host, with
+# build-wasm.sh's pins: the container sees the cache read-only and has no tarball to download.
+(export PASCALINE_DL_DIR="$DL"; source "$HERE/build-wasm.sh"; stage_fetch)
 SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pascaline-release.XXXXXX")"
 cleanup() {
   [[ "${NO_LOCK:-0}" == 1 ]] || "$ROOT/tools/devlock.sh" release host-cpu annabell >/dev/null 2>&1 || true
