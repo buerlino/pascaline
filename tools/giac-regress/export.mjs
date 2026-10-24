@@ -2,7 +2,7 @@
 // G89: our golden cases (tests/golden/home.yaml, precision.yaml) as a Giac regression file, in the shape of Giac's own
 // check/intexp.cas: one line per case compares Giac's value with the expected one within half a unit of its last digit;
 // failing lines are printed with a count at the end. Clean room: our cases only, source oracle or derived.
-//   node tools/giac-regress/export.mjs      writes pascaline-check.cas, pascaline-known.cas, and prints the counts
+//   node tools/giac-regress/export.mjs      writes pascaline-check.cas, pascaline-known.cas, pascaline-patched.cas, and prints the counts
 // The Giac text of a case is what Home evaluates for its input: the typed decimals as exact rationals
 // (toExactLiterals, app/src/engine/homeEval.ts), at Digits = valuePrecision(digits) = max(40, digits + 10), in radians.
 import { readFileSync, writeFileSync } from "node:fs";
@@ -160,6 +160,35 @@ export const KNOWN_IDS = new Set([
   "g71-census-normalize-sin1e70",
   "g71-census-tri-sin1e70",
 ]);
+// The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 and the g60-f5 lines pass on stock at these Digits, so they stay in the check file. g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+export const PATCHED_IDS = new Map([
+  ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-tanh(i/2)-12", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-tanh(i/2)-30", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-evalf-tanh(i)", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-evalf-tanh-list", "0003-complex-tanh-mpfr.patch"],
+  ["g75-tanh(i)-50", "0003-complex-tanh-mpfr.patch"],
+  ["g75-tanh(1+i)-12", "0003-complex-tanh-mpfr.patch"],
+  ["g75-tanh(1+i)-30", "0003-complex-tanh-mpfr.patch"],
+  ["g75-tanh(1+i)-50", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-tanh(1/2+i/3)-12", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-tanh(1/2+i/3)-30", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-tanh(-2-3i)-12", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-tanh(-2-3i)-30", "0003-complex-tanh-mpfr.patch"],
+  ["prec-g50-evalf-acos-list-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f4-log10-asinh-asin-e-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f6-sqrt-asinh-cos10-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f6-sqrt-asinh-log10-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-acosh(-pi)-12", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-acosh(-pi)-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["prec-g50-acos(1+i)-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["prec-g50-acos(3-i/2)-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["prec-g50-acos(-1+i)-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g59f1-neg-base-imag-power-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g59f1-neg-base-asin-power-30", "0005-mpfr-pi-and-real-domains.patch"],
+]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 
 function header(title) {
@@ -178,10 +207,15 @@ export function build(cases) {
   const leftOut = {};
   let nCheck = 0;
   let nKnown = 0;
+  let nPatched = 0;
+  const patched = [...header("Pascaline cases that fail on stock giac_2.1.0-1 and pass with our patches: every line must pass on our build."), ...PREAMBLE];
   for (const [file, c] of cases) {
     const r = caseLine(c, file);
     if ("leftOut" in r) {
       leftOut[r.leftOut] = (leftOut[r.leftOut] ?? 0) + 1;
+    } else if (PATCHED_IDS.has(c.id)) {
+      patched.push(`// patch ${PATCHED_IDS.get(c.id)}`, r.comment, r.line);
+      nPatched++;
     } else if (knownReason(c.id)) {
       known.push(`${r.comment}: ${knownReason(c.id)}`, r.line);
       nKnown++;
@@ -192,7 +226,8 @@ export function build(cases) {
   }
   check.push('print("pascaline-check: "+pasfail+" of "+pasn+" failed");');
   known.push('print("pascaline-known: "+pasfail+" of "+pasn+" failed (all must fail)");');
-  return { check: check.join("\n") + "\n", known: known.join("\n") + "\n", nCheck, nKnown, leftOut };
+  patched.push('print("pascaline-patched: "+pasfail+" of "+pasn+" failed (none may fail on our patched build)");');
+  return { check: check.join("\n") + "\n", known: known.join("\n") + "\n", patched: patched.join("\n") + "\n", nCheck, nKnown, nPatched, leftOut };
 }
 
 export function loadCases() {
@@ -210,7 +245,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const r = build(cases);
   writeFileSync(new URL("pascaline-check.cas", here), r.check);
   writeFileSync(new URL("pascaline-known.cas", here), r.known);
+  writeFileSync(new URL("pascaline-patched.cas", here), r.patched);
   const left = Object.entries(r.leftOut);
-  console.log(`cases ${cases.length}: exported ${r.nCheck + r.nKnown} (check ${r.nCheck}, known ${r.nKnown}), left out ${left.reduce((a, [, n]) => a + n, 0)}`);
+  console.log(`cases ${cases.length}: exported ${r.nCheck + r.nKnown} (check ${r.nCheck}, known ${r.nKnown}, patched ${r.nPatched}), left out ${left.reduce((a, [, n]) => a + n, 0)}`);
   for (const [why, n] of left) console.log(`  left out ${n}: ${why}`);
 }

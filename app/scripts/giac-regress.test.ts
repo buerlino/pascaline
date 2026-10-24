@@ -2,7 +2,7 @@
 // G89: the exporter of our golden cases as a Giac regression file (tools/giac-regress/export.mjs), on three fixed cases.
 import { describe, expect, it } from "vitest";
 // @ts-expect-error a plain .mjs tool without types
-import { caseLine, expectedExact, halfUnit } from "../../tools/giac-regress/export.mjs";
+import { build, caseLine, expectedExact, halfUnit, PATCHED_IDS } from "../../tools/giac-regress/export.mjs";
 
 type Out = { comment: string; line: string } | { leftOut: string };
 
@@ -55,5 +55,14 @@ describe("giac-regress exporter", () => {
     expect(expectedExact("1.5E300")).toBe("(15*10^299)");
     expect(halfUnit("9.81", 12)).toBe("5/10^12");
     expect(halfUnit("1E12", 12)).toBe("5*10^0");
+  });
+
+  it("g75-tanh(1+i)-30 goes to the patched file, with its patch", () => {
+    const c = { id: "g75-tanh(1+i)-30", input: "tanh(1+i)", settings: { digits: 30 }, expect: "1.08392332733869454347575206121+0.271752585319511716528843722499*i", mark: "≈", source: "oracle" };
+    expect(PATCHED_IDS.get(c.id)).toBe("0003-complex-tanh-mpfr.patch");
+    const r = build([["precision.yaml", c]]) as { check: string; patched: string; nCheck: number; nPatched: number };
+    expect([r.nCheck, r.nPatched]).toEqual([0, 1]);
+    expect(r.patched).toContain('// patch 0003-complex-tanh-mpfr.patch\n// g75-tanh(1+i)-30 (precision.yaml, oracle)');
+    expect(r.check).not.toContain("g75-tanh(1+i)-30");
   });
 });
