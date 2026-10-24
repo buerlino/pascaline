@@ -2,6 +2,7 @@
 // Plot-function compiler: LaTeX -> JS (emit-js.ts) against hand-written JS reference functions.
 import { describe, expect, it } from "vitest";
 import { latexToJs, toFn } from "./emit-js.ts";
+import { compileDefinition } from "../apps/function/compile.ts";
 
 const cases: [string, (x: number) => number][] = [
   ["\\sin\\left(x\\right)", (x) => Math.sin(x)],
@@ -64,5 +65,23 @@ describe("latex to JS (plot evaluator)", () => {
 describe("plot errors", () => {
   it("keep the 'cannot plot: ' prefix", () => {
     expect(() => latexToJs("q+1")).toThrow("cannot plot: unknown name q");
+  });
+});
+
+describe("G87: the drawing keeps every term of an n-ary Add", () => {
+  const dms = "x+30\\degree15\\prime36\\doubleprime";
+  it("draws x+30°15′36″ in RAD with the 36″", () => {
+    const f = compileDefinition(dms, "rad").fn!;
+    expect(f(1)).toBeCloseTo(1 + (30 + 15 / 60 + 36 / 3600) * Math.PI / 180, 12);
+  });
+  it("draws x+30°15′36″ in DEG with the 36″", () => {
+    const f = compileDefinition(dms, "deg").fn!;
+    expect(f(1)).toBeCloseTo(1 + 30 + 15 / 60 + 36 / 3600, 12);
+  });
+});
+
+describe("a name without a drawing function is refused, not drawn as undefined()", () => {
+  it.each(["rad", "deg"] as const)("\\arg(x) in %s has no fn", (angle) => {
+    expect(compileDefinition("\\arg\\left(x\\right)", angle).fn).toBeUndefined();
   });
 });
