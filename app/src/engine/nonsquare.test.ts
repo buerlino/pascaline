@@ -42,6 +42,34 @@ describe.skipIf(!giacAvailable())("G97 on the real engine", () => {
   });
 });
 
+// G101 (backlog F74): the power sits in a called function's body. Source: derived (as G97's: f([[5],[1]]) is
+// [[5],[1]]^-1, a power of a non-square matrix; f([[1,2],[3,4]]) is the inverse, Giac's own answer, as G97's square case).
+describe.skipIf(!giacAvailable())("G101 a stored function's body", () => {
+  let host: EngineHost;
+  beforeAll(async () => {
+    const { giac, bridge } = await loadNodeGiac();
+    host = new EngineHost(giac, bridge);
+  });
+  const home = (input: string) => host.home(input, defaultHomeSettings).result;
+  const cas = (input: string) => host.cas(input, defaultCasSettings).result;
+
+  it("refuses f([[5],[1]]) for f(x):=x^-1 in CAS and Home", () => {
+    expect(cas("f(x):=x^-1")).toMatchObject({ ok: true });
+    expect(cas("f([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("f([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+  });
+
+  it("refuses one level deeper, g(x):=f(x)", () => {
+    expect(cas("g(x):=f(x)")).toMatchObject({ ok: true });
+    expect(cas("g([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("g([[5],[1]])")).toMatchObject({ ok: false, error: "notSquare" });
+  });
+
+  it("keeps the inverse of a square matrix", () => {
+    expect(cas("f([[1,2],[3,4]])")).toMatchObject({ ok: true, text: "[[-2,1],[3/2,-1/2]]" });
+  });
+});
+
 describe.skipIf(!giacAvailable())("G97 in the Num table", () => {
   let host: EngineHost;
   const calls: string[] = [];
