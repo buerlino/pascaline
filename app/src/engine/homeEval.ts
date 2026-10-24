@@ -40,7 +40,6 @@ import {
   unauditedIn,
   numericDisagrees,
   notBuiltin,
-  readsReplaced,
   floatsShown,
   heavySplit,
   REGROUP_MAX,
@@ -49,11 +48,11 @@ import {
   valuePrecision,
   whyOf,
   withDigits,
-  complexSafe,
   type ElementFacts,
   type Giac,
   type Shape,
 } from "./numeric.ts";
+import { complexSafe, readsReplaced } from "./complex.ts";
 import { decidedAtDouble, decideTwice, decidingStored, restsOnDecision } from "./decisions.ts";
 import { PLAIN_FORM, type InputForm } from "./stores.ts";
 
@@ -538,7 +537,9 @@ function provedRational(giac: Giac, name: string, f: ElementFacts, digits: numbe
     const v = value(`simplify(${name})`, []);
     const whole = rational(v);
     if (whole) parts = { re: whole, im: ZERO_VALUE };
-    else if (v.kind === "complex" || v.kind === "symbolic") {
+    // G60: a value that reads as 0 is proved only by simplify's own 0 (its re() and im() of a symbolic took 0.3 s on
+    // DEG exp(cosh(asin(pi))), an underflow, once asin(pi) had a value)
+    else if ((v.kind === "complex" || v.kind === "symbolic") && !(isZero(f.value.re) && isZero(f.value.im))) {
       const re = rational(value(`re(simplify(${name}))`, []));
       const im = re && rational(value(`im(simplify(${name}))`, []));
       if (re && im) parts = { re, im };

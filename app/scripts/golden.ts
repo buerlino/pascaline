@@ -13,7 +13,7 @@
 //              by the host's settings check or listed with the reason (app/src/engine/flags.ts CONTEXT_FIELDS);
 //              tests/engine/ctx-canary.ts (G102): each of bridge-1's fields set and printed back by Giac's getter;
 //              tests/engine/tanh-test.ts and patch-canary.ts (G75): patch 0003's complex tanh against mpmath, and its
-//              cause still in the pinned tarball
+//              cause still in the pinned tarball; tests/engine/mpfr-pi-test.ts (G60): patch 0005's ln, asin, acos, acosh
 //   home       exact-first Home through EngineHost: every case matches with its mark, same in every round,
 //              median ≤ 500 ms (a case's `budgetMs` instead, G82); a mark-only case (no `expect`) checks the mark and that an answer came back. A case with
 //              `steps` (G34) is a sequence on its own engine: each step's input (or latex, with \ans as the session
@@ -146,8 +146,8 @@ async function stageSteps(): Promise<void> {
 
 function stageFlags(): void {
   // G102: ctx-canary.ts sets each of bridge-1's fields and reads it back with Giac's own getter (needs the engine);
-  // G75: tanh-test.ts (needs the engine) and patch-canary.ts (the tarball) for patch 0003
-  const runs = ["flags-canary.ts", "ctx-canary.ts", "tanh-test.ts", "patch-canary.ts"].map((f) =>
+  // G75: tanh-test.ts (needs the engine) and patch-canary.ts (the tarball) for patch 0003; G60: mpfr-pi-test.ts, 0005
+  const runs = ["flags-canary.ts", "ctx-canary.ts", "tanh-test.ts", "mpfr-pi-test.ts", "patch-canary.ts"].map((f) =>
     spawnSync(process.execPath, [`${root}tests/engine/${f}`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 120_000 }),
   );
   const out = runs.map((r) => `${r.stdout}${r.stderr}`.trim().split("\n").slice(-3).join(" | ")).join(" | ");

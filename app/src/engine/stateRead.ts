@@ -10,7 +10,8 @@
 // Plain text and pure functions; only erasable TypeScript syntax, so Node runs this file directly.
 import type { GiacParse } from "./bridge.ts";
 import { ENGINE_DEFINITIONS, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, WORKER_DEFINITION_NAMES } from "./homeEval.ts";
-import { COMPLEX_DEFINITIONS, DOUBLE_DIGITS } from "./numeric.ts";
+import { DOUBLE_DIGITS } from "./numeric.ts";
+import { COMPLEX_DEFINITIONS } from "./complex.ts";
 import { CHIP_PREFIX } from "./chipFacts.ts";
 import { UNIT_DEFINITIONS } from "../units/evaluate.ts";
 
