@@ -7,7 +7,7 @@ Everything here is built from source by scripts in this repository. Spike-only t
 
 | Component | Version | Licence | Source | Notes |
 |---|---|---|---|---|
-| Giac | 2.1.0 (tarball SHA-256 `1d9536e0…5a67`, fetched 2026-10-10) | GPL-3.0-or-later | https://www-fourier.univ-grenoble-alpes.fr/~parisse/giac/giac-2.1.0.tar.gz (mirror: release `deps-giac-2.1.0-1d9536e0` of this repo) | Upstream re-publishes this tarball in place, so we mirror the pinned file; see engine/giac/README.md. Local patches: engine/giac/patches/ |
+| Giac | 2.1.0, Debian revision 1 (`giac_2.1.0-1.tar.gz`, SHA-256 `cdec2989…3f57`, checked against its `.dsc` line; G77) | GPL-3.0-or-later | https://www-fourier.univ-grenoble-alpes.fr/~parisse/debian/dists/stable/main/source/giac_2.1.0-1.tar.gz (mirror: release `deps-giac-2.1.0-1-cdec2989` of this repo) | Parisse's numbered archive never changes (P21); see engine/giac/README.md. Local patches: engine/giac/patches/ |
 | GMP | 6.3.0 (tarball SHA-256 `a3c2b802…8898`) | LGPL-3.0-or-later OR GPL-2.0-or-later | https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.xz | GPG signature checked (Niels Möller) |
 | MPFR | 4.2.2 (tarball SHA-256 `b67ba038…ce01`) | LGPL-3.0-or-later | https://ftp.gnu.org/gnu/mpfr/mpfr-4.2.2.tar.xz | GPG signature checked (Vincent Lefèvre) |
 | GSL | 2.8 (tarball SHA-256 `6a99eeed…3190`) | GPL-3.0-or-later | https://ftp.gnu.org/gnu/gsl/gsl-2.8.tar.gz | GPG signature checked (Patrick Alken). Numeric solvers behind Giac `fsolve` (decided 2026-10-10) |
