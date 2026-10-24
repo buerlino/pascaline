@@ -40,7 +40,24 @@ export function readsFrom(p: GiacParse): InputReads {
 /** The state part: Digits pinned (a double prints with Digits, so an unchanged value must print alike in every mode),
  *  then put back to `digits` (the mode's, which the settings check expects). Giac's printed list: parsePrinted. */
 export function statePart(digits: number): string {
-  return `[(Digits:=${DOUBLE_DIGITS}),map(VARS(),k->[k,string(eval(k)),lname(eval(k))]),(Digits:=${Math.trunc(digits)})]`;
+  return pinned(entries("VARS()"), digits);
+}
+
+/** The entry of each name in `names` (quoted, so the list holds the names), as in statePart: Digits pinned, then put
+ *  back. Its print reads as statePart's for tableOf. */
+const entries = (list: string): string => `map(${list},k->[k,string(eval(k)),lname(eval(k))])`;
+const quoted = (names: readonly string[]): string => `[${names.map((n) => `'${n}'`).join(",")}]`;
+const pinned = (part: string, digits: number): string => `[(Digits:=${DOUBLE_DIGITS}),${part},(Digits:=${Math.trunc(digits)})]`;
+
+/** G104: the entries of `names` only (loadPending's loaded names). */
+export function namesPart(digits: number, names: readonly string[]): string {
+  return pinned(entries(quoted(names)), digits);
+}
+
+/** G104: the state part after an input whose candidates are known: every name of `VARS()`, a name of `known` bare (its
+ *  entry did not change), any other with its entry (a candidate, or a name new since the last read). One call. */
+export function changedPart(digits: number, known: readonly string[]): string {
+  return pinned(`map(VARS(),k->when(member(k,${quoted(known)}),k,[k,string(eval(k)),lname(eval(k))]))`, digits);
 }
 
 /** A node of Giac's printed list: its raw text, and its elements (a list) or its value (a string). */
@@ -82,16 +99,18 @@ export function parsePrinted(text: string): Node | null {
       i++;
       for (;;) {
         if (i >= text.length) return null;
-        if (text[i] === '"') {
-          if (text[i + 1] === '"') {
-            s += '"';
-            i += 2;
-            continue;
-          }
-          i++;
-          return { raw: text.slice(start, i), str: s };
+        // G104: a slice up to the next quote (a 600 kB print char by char took longer than Giac printing it)
+        const q = text.indexOf('"', i);
+        if (q < 0) return null;
+        s += text.slice(i, q);
+        i = q;
+        if (text[i + 1] === '"') {
+          s += '"';
+          i += 2;
+          continue;
         }
-        s += text[i++];
+        i++;
+        return { raw: text.slice(start, i), str: s };
       }
     }
     // An atom: up to the next , or ] outside brackets and quotes.
@@ -149,18 +168,32 @@ export function isOurs(name: string, user: (name: string) => boolean): boolean {
 
 /** The table from a state part: user names with a stored value (an assumed name alone holds itself: left out). Null
  *  when it is not the list statePart builds. */
-export function tableOf(n: Node, user: (name: string) => boolean): Map<string, StoredName> | null {
+export function tableOf(n: Node, user: (name: string) => boolean, kept?: ReadonlyMap<string, StoredName>): Map<string, StoredName> | null {
   const list = n.items?.[1]?.items;
   if (!n.items || n.items.length !== 3 || !list) return null;
   const out = new Map<string, StoredName>();
   for (const e of list) {
-    const [k, v, ns] = e.items ?? [];
+    // G104 (changedPart): a bare name keeps its entry from `kept`, in VARS()'s order
+    if (!e.items) {
+      const k = kept?.get(e.raw);
+      if (k) out.set(e.raw, k);
+      continue;
+    }
+    const [k, v, ns] = e.items;
     if (!k || v?.str === undefined || !IDENT.test(k.raw) || isOurs(k.raw, user) || v.str === k.raw) continue;
     const head = HEAD.exec(v.str);
     const params = new Set(head ? head[1]!.split(",").map((p) => p.trim()) : []);
     out.set(k.raw, { text: v.str, names: idents(ns).filter((x) => !params.has(x) && x !== k.raw), fn: head !== null });
   }
   return out;
+}
+
+/** G104: every name a state part's print lists (bare or with its entry). */
+export function namesOf(n: Node): string[] {
+  return (n.items?.[1]?.items ?? []).flatMap((e) => {
+    const k = e.items ? e.items[0]?.raw : e.raw;
+    return k !== undefined && IDENT.test(k) ? [k] : [];
+  });
 }
 
 /** The names `after` holds with another text than `before` (or new), and the names it no longer holds. */
