@@ -289,16 +289,28 @@ function cutHit(giac: Giac, c: Cut, P: number): { cut: Cut; n: string; proven: b
   if (exactly(x)) return null;
   const x20 = real(x, P + 20);
   if (!x20) return null;
-  const s = scaled(x20);
-  // the nearest integer, ⌊x + 1/2⌋ = ⌊⌊2x + 1⌋ / 2⌋, or the nearest half-integer ⌊x⌋ + 1/2
-  const twice = floorOf({ n: 2n * s.n + 10n ** BigInt(s.k), k: s.k });
-  const half = (m: bigint): bigint => (m >= 0n ? m / 2n : -((1n - m) / 2n));
-  const near = c.kind === "zero" ? "0" : c.kind === "int" ? half(twice).toString() : `${(2n * floorOf(s) + 1n).toString()}/2`;
+  // G103f1: the powers of ten below grow with the exponent (floor(exp(10^8)) made a BigInt of 43 million digits, past
+  // the deadline, and past V8's limit a RangeError). With no fractional digit known, or a distance out of reach, the
+  // place is not known: an unproven hit, refused as an unproven tie is.
+  const unknown = { cut: c, n: "", proven: false };
+  if (c.kind !== "zero" && !isZero(x20) && x20.exp >= P + 20) return unknown;
+  // the nearest integer, ⌊x + 1/2⌋ = ⌊⌊2x + 1⌋ / 2⌋, or the nearest half-integer ⌊x⌋ + 1/2; for a quantity below
+  // 10^-(P+60) they are 0 (the distance is then the quantity, out of reach below) and ±1/2, with no power of ten
+  const nearOf = (kind: "int" | "half"): string => {
+    if (!isZero(x20) && x20.exp < -(P + 60)) return kind === "int" ? "0" : x20.neg ? "-1/2" : "1/2";
+    const s = scaled(x20);
+    if (kind === "half") return `${(2n * floorOf(s) + 1n).toString()}/2`;
+    const twice = floorOf({ n: 2n * s.n + 10n ** BigInt(s.k), k: s.k });
+    return (twice >= 0n ? twice / 2n : -((1n - twice) / 2n)).toString();
+  };
+  const near = c.kind === "zero" ? "0" : nearOf(c.kind);
   const d = value(`pasbx-(${near})`, [P + 20, P + 40]);
   if (exactly(d)) return null;
   const a = real(d, P + 20);
   const b = real(d, P + 40);
-  if (!a || !b || agrees(a, b)) return null;
+  if (!a || !b) return null;
+  if ([a, b].some((v) => !isZero(v) && Math.abs(v.exp) > P + 60)) return unknown;
+  if (agrees(a, b)) return null;
   // The tie must be proven: a distance below the noise of both precisions need not be 0.
   const proven = ["simplify", "normal"].some((f) => giac.eval(`${f}(pasbx-(${near}))`).trim() === "0");
   return { cut: c, n: near, proven };
