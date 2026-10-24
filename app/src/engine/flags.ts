@@ -42,13 +42,12 @@ export function hostContext(digits: number): GiacContext {
 
 /** The fields where `got` is not `want`. Giac keeps epsilon as its own float (set to 1e-12 it reads
  *  9.999999999999965e-13), so a float field compares to 1e-9 relative; autosimplify holds the text it was given
- *  (`'regroup'` after a set, `regroup` fresh: the same setting, G85), so it compares without quotes. */
+ *  (`'regroup'` after a set, `regroup` fresh: the same setting, G85), so it is the same with or without quotes. */
 export function contextDiff(got: GiacContext, want: GiacContext): (keyof GiacContext)[] {
-  const unquote = (s: string): string => s.replace(/^'(.*)'$/, "$1");
   return (Object.keys(want) as (keyof GiacContext)[]).filter((k) => {
     const g = got[k];
     const w = want[k];
-    if (typeof w === "string") return typeof g !== "string" || unquote(g) !== unquote(w);
+    if (typeof w === "string") return g !== w && g !== `'${w}'`;
     if (typeof w === "number" && typeof g === "number" && !Number.isInteger(w)) return !(Math.abs(g - w) <= Math.abs(w) * 1e-9);
     return g !== w;
   });

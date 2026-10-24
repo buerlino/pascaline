@@ -11,6 +11,7 @@ import { contextDiff, flagIn, hostContext, isFlagName, namesUnreadFlag } from ".
 import type { GiacApi } from "./host.ts";
 import type { GiacBridge } from "./bridge.ts";
 import { LibError, parseLibrary } from "./library.ts";
+import { gated } from "./ctxGate.ts";
 
 const HEAD = "// pascaline library 1\n";
 
@@ -41,6 +42,7 @@ describe("the host's context (no engine)", () => {
     expect(contextDiff({ ...want, epsilon: 9.999999999999965e-13, proba_epsilon: 9.999999999999957e-16, autosimplify: "'regroup'" }, want)).toEqual([]);
     expect(contextDiff({ ...want, epsilon: 1e-60, eval_level: 1, decimal_digits: 40 }, want)).toEqual(["decimal_digits", "epsilon", "eval_level"]);
     expect(contextDiff({ ...want, autosimplify: "'simplify'", angle_radian: false }, want)).toEqual(["angle_radian", "autosimplify"]);
+    expect(contextDiff({ ...want, autosimplify: "''regroup''" }, want)).toEqual(["autosimplify"]);
   });
 });
 
@@ -144,6 +146,24 @@ describe.skipIf(!giacAvailable())("Giac's settings (real Giac)", () => {
     expect(host.cas("f67(x):={ approx_mode:=1; return x; }", cas).result.ok).toBe(true);
     expect(host.cas("f67(2)", cas).result.settingReset).toBe(true);
     expect(host.cas("1/3", cas).result.text).toBe("1/3");
+  });
+
+  it("G102: a Digits set right after an interrupted call is set (ctx_set throws once there), and adjacent sets are one", async () => {
+    const L = await loadNodeGiac();
+    let sets = 0;
+    const { giac, bridge } = gated(L.giac, { ...L.bridge, ctxSet: (f) => (sets++, L.bridge.ctxSet(f)) });
+    giac.eval("timeout 0.001");
+    giac.eval("ckevery 10");
+    expect(giac.eval("factor(x^200-1)")).toMatch(/interruption/);
+    giac.digits(13);
+    expect(giac.eval("Digits")).toBe("13");
+    giac.eval("timeout 10");
+    sets = 0;
+    giac.digits(20);
+    giac.digits(12);
+    giac.digits(30);
+    expect(bridge.ctxGet().decimal_digits).toBe(30);
+    expect(sets).toBe(1);
   });
 
   it("a stored log with settings in it (before G67) does not set them again, and drops the named ones", async () => {

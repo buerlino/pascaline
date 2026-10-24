@@ -10,9 +10,9 @@
 //   kind     read from the printed value (isError, rationalValue, shapeOf, hasFloat) | giac_value kind
 //   text     the print of pasans:=(input) | giac_value text
 //   P, P+20  valueParts(pasans) at the case's digits P and P + 20 | giac_value at[P], at[P+20]
-//   ctx      after the case, on the bridge's engine: FLAGS_READ (flags.ts) decoded field by field | giac_ctx_get
+//   ctx      after the case, on the bridge's engine: FLAGS_READ (G67's read, kept here) decoded field by field | giac_ctx_get
 //   state    after the case: FLAGS_READ on today's engine | on the bridge's (the two paths leave the same settings)
-// Before each case both engines get the host's settings back (restoreCommands, as the host does after a change).
+// Before each case both engines get the host's settings back (giac_ctx_set of hostContext, as the host does, G102).
 //   GIAC_OUT=<dir> node tools/probes/bridge.ts            # every case; mismatches listed by field, totals at the end
 //   … bridge.ts --calls   # call-trace.ts's seven inputs: today's calls, each marked kept / bridge-n / dropped, and timings
 //   … bridge.ts --cost    # each bridge call against the call it replaces (medians of 7), and giac_parse over 200 programs
@@ -29,7 +29,7 @@ import { formOf, mayStore } from "../../app/src/engine/stores.ts";
 import { isOurStore } from "../../app/src/engine/ourNames.ts";
 import { hasFloat, rationalValue, shapeOf, splitList, valueParts, type Shape } from "../../app/src/engine/numeric.ts";
 import { readsFrom } from "../../app/src/engine/stateRead.ts";
-import { FLAGS_READ, restoreCommands } from "../../app/src/engine/flags.ts";
+import { hostContext } from "../../app/src/engine/flags.ts";
 import { decimalFromString, decimalToString } from "../../app/src/engine/format.ts";
 import { latexToGiac } from "../../app/src/input/latex-to-giac.ts";
 
@@ -135,6 +135,9 @@ const num = (s: string): string => {
 const set = (xs: readonly string[]): string => [...new Set(xs)].sort().join(",");
 const userNames = (g: GiacApi): Set<string> => new Set(splitList(g.eval("VARS()")) ?? []);
 
+/** G67's settings read (flags.ts before G102, which moved the host to bridge-1): kept here for the ctx comparison. */
+const FLAGS_READ = "[cas_setup(),integer_format(),xcas_mode(),python_compat(),calc_mode(),keep_algext(),parse_e(),convert_rootof(),step_infolevel(),eval_level(),prog_eval_level(),autosimplify(),auto_assume(),ntl_on()]";
+
 /** FLAGS_READ's print as bridge-1's fields (flags.ts: cas_setup() = [approx_mode, complex_variables, complex_mode,
  *  angle_radian, scientific_format + 16·integer_format, [epsilon, proba_epsilon], Digits, [threads, recursion, debug,
  *  a level that is not the context's eval_level], increasing_power, with_sqrt, all_trig_solutions, integer_mode], then
@@ -161,7 +164,7 @@ function ctxBridge(): Record<string, string> {
   for (const k of ["approx_mode", "complex_variables", "complex_mode", "angle_radian", "decimal_digits", "eval_level", "increasing_power", "withsqrt", "all_trig_sol", "integer_mode", "integer_format", "xcas_mode", "python_compat", "calc_mode", "keep_algext", "parse_e", "convert_rootof", "step_infolevel", "prog_eval_level", "autosimplify", "auto_assume", "ntl_on"]) out[k] = v(k);
   out.epsilon = n("epsilon");
   out.proba_epsilon = n("proba_epsilon");
-  // Giac keeps autosimplify as typed: a fresh engine holds regroup, restoreCommands' autosimplify('regroup') holds
+  // Giac keeps autosimplify as typed: a fresh engine holds regroup, a set of 'regroup' (G67's restore, G102's) holds
   // 'regroup'; FLAGS_READ prints both as 'regroup' (no effect seen on results, G85 report). Compared without the quotes.
   out.autosimplify = out.autosimplify!.replace(/^'(.*)'$/, "$1");
   out["scientific_format+16*integer_format"] = String(Number(c.scientific_format) + 16 * Number(c.integer_format));
@@ -183,8 +186,9 @@ const note = (f: Field, c: Case, today: string, br: string): void => {
 };
 
 function runCase(c: Case): void {
-  for (const g of [A.giac, B.giac]) {
-    for (const r of restoreCommands(c.digits)) g.eval(r);
+  for (const L of [A, B]) {
+    const g = L.giac;
+    L.bridge.ctxSet(hostContext(c.digits));
     g.eval(angleCommand(c.angle));
     g.eval(pasdegCommand(c.angle));
     g.eval(`Digits:=${c.digits}`);
@@ -242,6 +246,7 @@ function mark(call: string, input: string): string {
   if (/^when\(abs\(pasba-pasbb\)/.test(call)) return "dropped (compared in TypeScript from at[60], at[80])";
   if (/^purge\(pas/.test(call)) return "dropped (nothing stored)";
   if (call.startsWith(FLAGS_READ) || call.startsWith(`[${FLAGS_READ}`)) return "bridge-2 parse (+ the flags check in the restoring ctx_set)";
+  if (call.startsWith("[(Digits:=")) return "kept (the state part, G102)";
   return "kept";
 }
 async function calls(): Promise<void> {
