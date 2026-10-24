@@ -637,8 +637,11 @@ function factsFrom(
   );
   let parts: ReturnType<typeof splitParts> = null;
   // G58: not for a text whose symbolic re and im can loop (heavySplit); its parts are the evalf's. F73: nor for a
-  // float, which is never exact (re() prints 595872309788.0 as 595872309788).
-  if (!real && !heavySplit(text) && v.kind !== "float") {
+  // float, which is never exact (re() prints 595872309788.0 as 595872309788). G60: nor for a value that is 0 at P and
+  // P+20 in every element: an exact 0 is provedRational's (simplify) to find, an underflow G84's (DEG
+  // exp(cosh(asin(pi))) spent 112 ms in re() and im() once asin(pi) had a value).
+  const zero = A.every((a, k) => isZero(a.re) && isZero(a.im) && isZero(B[k]!.re) && isZero(B[k]!.im));
+  if (!real && !zero && !heavySplit(text) && v.kind !== "float") {
     parts = splitParts(giac, name, n, P);
     if (parts) {
       const split = parts;
