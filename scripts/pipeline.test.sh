@@ -195,11 +195,20 @@ machine_failure "$tmp/m7.log" && fail "A34: a missing relative import is a machi
 nm="$tmp/nm"; mkdir -p "$nm/app/node_modules"
 printf '{"packages":{"":{},"node_modules/a":{"version":"1"},"node_modules/b":{"version":"1","optional":true}}}' > "$nm/app/package-lock.json"
 printf '{"packages":{"node_modules/a":{"version":"1"}}}' > "$nm/app/node_modules/.package-lock.json"
+mkdir -p "$nm/app/node_modules/a"; printf '{"version":"1"}' > "$nm/app/node_modules/a/package.json"
 node_modules_stale "$nm/app" && fail "A34: a complete node_modules counts as stale"
 printf '{"packages":{"node_modules/b":{"version":"1"}}}' > "$nm/app/node_modules/.package-lock.json"
 node_modules_stale "$nm/app" || fail "A34: a node_modules lacking a non-optional package is not stale"
 rm "$nm/app/node_modules/.package-lock.json"
 node_modules_stale "$nm/app" || fail "A34: a node_modules without a hidden lock is not stale"
+# A34f1: a bumped version in the lock is stale; the same version, or a missing optional package, is not
+nv="$tmp/nv"; mkdir -p "$nv/app/node_modules/foo"
+printf '{"packages":{"":{},"node_modules/foo":{"version":"1.0.1"},"node_modules/opt":{"version":"1","optional":true}}}' > "$nv/app/package-lock.json"
+printf '{"packages":{"node_modules/foo":{"version":"1.0.0"}}}' > "$nv/app/node_modules/.package-lock.json"
+printf '{"name":"foo","version":"1.0.0"}' > "$nv/app/node_modules/foo/package.json"
+node_modules_stale "$nv/app" || fail "A34f1: foo 1.0.0 installed, the lock wants 1.0.1: not stale"
+printf '{"name":"foo","version":"1.0.1"}' > "$nv/app/node_modules/foo/package.json"
+node_modules_stale "$nv/app" && fail "A34f1: same versions, optional package missing: counts as stale"
 
 # A33: the night's device step
 out="$(ANDROID_SERIAL=TESTSERIAL "$script" device 7 --dry-run 2>&1)"; rc=$?
