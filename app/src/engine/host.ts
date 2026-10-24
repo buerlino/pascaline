@@ -216,7 +216,7 @@ export class EngineHost implements FactsHost {
    * batch. A text that lists or clears the names (VARS, expr, rm_all_vars, restart) loads them all.
    */
   private loadPending(text: string): void {
-    const queue = LOAD_ALL.test(text) ? [...this.pending.keys()] : wordsOf(text);
+    const queue = wordsOf(text).some((w) => LOAD_ALL.has(w)) ? [...this.pending.keys()] : wordsOf(text);
     const seen = new Set<string>();
     const todo: DefEntry[] = [];
     while (queue.length) {
@@ -1066,7 +1066,7 @@ export class EngineHost implements FactsHost {
 export const REPLAY_BATCH = 25;
 
 /** G83: inputs that list or clear the user's names: every pending function is loaded first. */
-const LOAD_ALL = /\b(VARS|expr|rm_all_vars|restart)\b/;
+const LOAD_ALL: ReadonlySet<string> = new Set(["VARS", "expr", "rm_all_vars", "restart"]);
 
 /** G83f1: the expression strings of a request, for need(): one per line, the absent ones left out. */
 function expressionsOf(...lists: (readonly (string | undefined)[] | undefined)[]): string {

@@ -3,6 +3,7 @@
 // formatted string into LaTeX for the 2D renderer: an exponent part becomes a raised power of ten.
 
 import type { FormattedComplex, FormattedFraction, FormattedNumber, FormattedPolar } from "../engine/format.ts";
+import { balanced } from "../engine/giacPrint.ts";
 
 function part(f: FormattedNumber): string {
   // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
@@ -42,20 +43,10 @@ const greekLetter = (name: string): string => {
   return `\\${n === "epsilon" ? "varepsilon" : n === "phi" ? "varphi" : n} `;
 };
 
-/** Brackets that pair up and never close below depth 0. */
-function balanced(s: string): boolean {
-  let depth = 0;
-  for (const c of s) {
-    if (c === "(") depth++;
-    else if (c === ")" && --depth < 0) return false;
-  }
-  return depth === 0;
-}
-
 /** R18f1: an equality test that stays as typed is printed `(x==2)` or `x<>2`; drawn as x==2 and x≠2. */
 function relationText(s: string): string {
   const inner = /^\((.*)\)$/.exec(s)?.[1];
-  const t = inner !== undefined && /==|<>/.test(inner) && balanced(inner) ? inner : s;
+  const t = inner !== undefined && /==|<>/.test(inner) && balanced(inner, "printed") ? inner : s;
   return t.replace(/<>/g, "\\ne ");
 }
 

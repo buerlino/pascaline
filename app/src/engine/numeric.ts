@@ -435,11 +435,12 @@ function zeroUnconfirmed(f: ElementFacts): ElementFacts {
 /** Digits of an integer literal from which a root beside it makes Giac's symbolic re and im unsafe (G58: acos(120^7.5)
  *  holds sqrt(30) times a 15-digit integer, and its im() did not return in 20 s; with a 4-digit one it takes 66 ms). */
 export const HEAVY_INT_DIGITS = 13;
+const ROOT_POWER = /\^\(\d+\/\d+\)/;
 const HEAVY_INT = new RegExp(`(?<![\\w.])\\d{${HEAVY_INT_DIGITS},}(?![\\w.])`);
 
 /** G58: `text` (an exact result) holds a root and an integer of HEAVY_INT_DIGITS or more digits. */
 export function heavySplit(text: string): boolean {
-  return /\bsqrt\(|\^\(\d+\/\d+\)/.test(text) && HEAVY_INT.test(text);
+  return (callsOf(text, ["sqrt"], "printed").length > 0 || ROOT_POWER.test(text)) && HEAVY_INT.test(text);
 }
 
 /** Most working digits an agreement step uses, and the time the steps beyond P+40 may take per result (G23). */

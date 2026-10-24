@@ -48,7 +48,7 @@ export function callsIn(input: string): Call[] {
 
 const isError = (t: string): boolean => t.startsWith("GIAC_ERROR");
 /** Giac's text for "no finite number": undef, or an infinity anywhere in it. */
-const notFinite = (t: string): boolean => t === "undef" || /infinity|\binf\b/.test(t);
+const notFinite = (t: string): boolean => t === "undef" || t.includes("infinity") || wordsOf(t).includes("inf");
 /** A result that is a value we may test: no infinity, no undef, no unevaluated call of the same kind left in it. */
 const finiteValue = (t: string): boolean => !isError(t) && !notFinite(t) && !callsOf(t, KINDS, "printed").length;
 
@@ -91,7 +91,7 @@ function seriesCheck(giac: Giac, c: Call): Verdict {
 
 /** Giac's limit text `l` is not 0: bounded_function(…) (no limit), undef, ±infinity, or a non-zero number. */
 function limitNonZero(giac: Giac, l: string): boolean {
-  if (/bounded_function/.test(l) || l === "undef" || /^[+-]?infinity$/.test(l)) return true;
+  if (l.includes("bounded_function") || l === "undef" || /^[+-]?infinity$/.test(l)) return true;
   const v = giac.eval(`evalf(abs(${l}),30)`).trim();
   return /^[\d.]+(e[+-]?\d+)?$/.test(v) && Number(v) !== 0;
 }
@@ -247,7 +247,7 @@ function check(giac: Giac, calls: Call[], input: string, output: string, home: b
     const c = calls.find((k) => k.kind === "limit" || k.args.length >= 4);
     if (c) return REFUSAL[c.kind];
   }
-  if (/bounded_function\s*\(/.test(out) && calls.some((c) => c.kind === "limit")) return "noLimit";
+  if (callsOf(out, ["bounded_function"], "printed").length && calls.some((c) => c.kind === "limit")) return "noLimit";
   // G78 (Home only; the CAS view keeps Giac's ∞): a definite integral whose value is an infinity does not converge
   // (∫₋₁¹ 1/x² = +∞); a limit keeps its ∞.
   if (home && /^[+-]?infinity$/.test(out)) {
