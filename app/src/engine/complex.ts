@@ -139,7 +139,8 @@ export function complexReads(giac: Giac, expr: string, copy = true): { text: str
     const text = throughSlots(forValue(giac, stored(n)!), refs.get(n) ?? []);
     if (isError(giac.eval(`${slots.get(n)}:=(${text})`))) refused = true;
   }
-  return { text: throughSlots(expr, top), copies: [...slots.values()], hidden: refused || capped ? fns : [] };
+  // A refused copy leaves its slot empty: the input keeps the stored names (Giac's own value, unaudited).
+  return { text: refused ? expr : throughSlots(expr, top), copies: [...slots.values()], hidden: refused || capped ? fns : [] };
 }
 
 /** The names a stored program binds (`(x,y)->{local a,b:=1; …}` → x, y, a, b): its parameters and `local` names, which
