@@ -8,7 +8,8 @@
 // Stages:
 //   interrupt  tests/engine/interrupt-test.mjs (Giac patch 0002): 16 forced interrupts, no escapes
 //   steps      G82 (patch 0004): tests/engine/step-budget-test.mjs (a step budget interrupts at the same count on a fast
-//              clock), and scripts/golden-speed.ts: A20's cases give the same display, mark and copy text on a clock 6× fast (the Tab One is 5-8× slower)
+//              clock), and scripts/golden-speed.ts: every home and precision case gives the same display, mark and copy text on a clock
+//              8× fast (the Tab One is 5-8× slower); the cases that still differ are listed as known (SPEED_KNOWN), a new one fails
 //   flags      tests/engine/flags-canary.ts (G67): every field of Giac's context in the pinned source is read and restored
 //              by the host's settings check or listed with the reason (app/src/engine/flags.ts CONTEXT_FIELDS);
 //              tests/engine/ctx-canary.ts (G102): each of bridge-1's fields set and printed back by Giac's getter;
@@ -81,7 +82,7 @@ import { isUnitError, type Quantity, type UnitError } from "../src/units/types.t
 import type { IndexItem } from "../src/find/types.ts";
 import { requestOf, slotOf } from "./unit-case.ts";
 import { callsStage, type CallsBaseline } from "./calls-budget.ts";
-import { speedFindings } from "./golden-speed.ts";
+import { SPEED_KNOWN, speedFindings } from "./golden-speed.ts";
 import { describe as describeFinding } from "./golden-compare.ts";
 import { checkAngle, checkCopy, checkDigits, checkStoreBoth, copySourceOf, invariantsOf, storesNames, invariantsStage, type InvariantFailure } from "./invariants.ts";
 import { copyFull } from "../src/clipboard/text.ts";
@@ -139,9 +140,10 @@ function stageInterrupt(): void {
 async function stageSteps(): Promise<void> {
   const r = spawnSync(process.execPath, [`${root}tests/engine/step-budget-test.mjs`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 300_000 });
   const canary = `${r.stdout}${r.stderr}`.trim().split("\n").slice(-3).join(" | ");
-  const { findings, records } = await speedFindings(6, mjs);
+  const { findings, known, records } = await speedFindings(8, mjs);
+  for (const f of known) console.log(`  steps known (${SPEED_KNOWN[`${f.stage}/${f.id}`]}): ${describeFinding(f)}`);
   for (const f of findings) console.log(`  steps ${describeFinding(f)}`);
-  report("steps", r.status === 0 && findings.length === 0, `${canary} | ${records} A20 cases, clock ×1 and ×6: ${findings.length} findings`);
+  report("steps", r.status === 0 && findings.length === 0, `${canary} | ${records} cases, clock ×1 and ×8: ${findings.length} new findings, ${known.length} known`);
 }
 
 function stageFlags(): void {
