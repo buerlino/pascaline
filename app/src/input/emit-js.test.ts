@@ -79,3 +79,9 @@ describe("G87: the drawing keeps every term of an n-ary Add", () => {
     expect(f(1)).toBeCloseTo(1 + 30 + 15 / 60 + 36 / 3600, 12);
   });
 });
+
+describe("a name without a drawing function is refused, not drawn as undefined()", () => {
+  it.each(["rad", "deg"] as const)("\\arg(x) in %s has no fn", (angle) => {
+    expect(compileDefinition("\\arg\\left(x\\right)", angle).fn).toBeUndefined();
+  });
+});

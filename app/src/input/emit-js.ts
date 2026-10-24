@@ -21,8 +21,8 @@ function num(e: Json): string | undefined {
 }
 
 /** The angle sets are input/angles.ts's, through the Giac name emit.ts gives the head (one table for both emitters, G87). */
-const angleIn = (h: string, n: number): boolean => ANGLE_IN[FN[h] ?? ""]?.[0] === 0 && n === 1;
-const angleOut = (h: string, n: number): boolean => ANGLE_OUT.has(FN[h] ?? "") && n === 1;
+const angleIn = (h: string, n: number): boolean => h in FN1 && ANGLE_IN[FN[h] ?? ""]?.[0] === 0 && n === 1;
+const angleOut = (h: string, n: number): boolean => h in FN1 && ANGLE_OUT.has(FN[h] ?? "") && n === 1;
 const RAD_PER_DEG = "(Math.PI/180)";
 
 function js(e: Json, vars: ReadonlySet<string>, deg = false): string {
