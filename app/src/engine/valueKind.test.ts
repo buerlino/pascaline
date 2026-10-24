@@ -8,7 +8,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import type { EngineHost } from "./host.ts";
 import { defaultHomeSettings, homeEval } from "./homeEval.ts";
 import type { GiacBridge } from "./bridge.ts";
-import type { Giac } from "./numeric.ts";
+import { atParts, type Giac } from "./numeric.ts";
 import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 
 describe.skipIf(!giacAvailable())("G103: a value's kind from bridge-3 (F73)", () => {
@@ -62,6 +62,23 @@ describe.skipIf(!giacAvailable())("G103: a value's kind from bridge-3 (F73)", ()
     // derived: 10^1000000+7 to 12 significant digits is 1.00000000000E1000000, shown without its trailing zeros
     expect([r.display, r.facts.exact, r.path, r.exact]).toEqual(["1E1000000", true, "exact-big", undefined]);
     expect(r.full).not.toContain("Integer_too_large");
+  });
+
+  it("evalf of a list keeps each double a double: Giac's pair int(abs(x-sin(10^50)),x,-1,1) reads its numeric answer as the double Giac printed, not 40 digits of its binary expansion", () => {
+    const input = "int(abs(x-sin(10^50)),x,-1,1)";
+    const v = bridge.value(input, [40]);
+    // Giac's [exact, numeric] pair (deep check E6): the second element is a C double, printed 1.35506364264 (converge.test.ts)
+    expect([v.kind, v.kinds, v.doubles?.["40"]]).toEqual(["list", ["symbolic", "float"], [0, 1]]);
+    expect(v.at?.["40"]?.[1]).toEqual(["1.35506364264", "0"]);
+    // the text reader's read (phase-1's valueParts): evalf of the list at 40 digits prints the double's binary expansion
+    const printed = raw.eval(`evalf(${input},40)`);
+    expect(printed).toMatch(/^\[1\.62358264687886\d*,1\.3550636426\d{20,}\]$/);
+    expect(printed).not.toContain(",1.35506364264]");
+    const parts = atParts(v, 40, 40, 2);
+    expect(parts).not.toBe("double");
+    expect(parts === null || parts === "double" ? null : parts[1]!.re.digits).toBe("135506364264");
+    // the exact element (1+sin(10^50)^2, oracle 1.62358264688) keeps its 40 digits
+    expect(parts === null || parts === "double" ? null : parts[0]!.re.digits.length).toBeGreaterThanOrEqual(39);
   });
 
   it("guard (passes on phase-1): a symbolic quotient 1/(1+i) is kind symbolic, its value exact 1/2-1/2*i from its parts", () => {

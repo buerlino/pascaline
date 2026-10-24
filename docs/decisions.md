@@ -9,7 +9,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **hind-4, hind-5 ([hindsight](research/structure-hindsight.md) 3):** recommendation: the hind-4 rule now (a new Home or precision case is `latex:` when keys type it; G98 makes that the app's input); hind-5 after the freeze. Would change if: the freeze ends first.
 - **List operators (F77, F79; Opus pass 61):** recommendation: a gorge package (Opus) after G103 that sends +, -, ×, ^ to Giac's dot operators when a name or Ans holds a list (bridge-3 kind), with F76–F79's cases as tests; G106 stays the last net. Why: R77, R78, R78f1 fix only typed braces, so `L:={1,4}`, `sum(L+1)` = 6 stays wrong under `=`. Would change if: sandra finds a small Giac patch (P19).
-- **A double in a list (F73, G103):** read per element as a double, its digits a double's: `[BesselJ(1,2),1/3]` would show numbers with ⚠, not Giac's text. G103 keeps today's reads (no value changes). Recommendation: yes, a gorge package. Would change if: the owner wants the text.
+- **A double in a list (F73, G103):** recommendation: a gorge package that reads each double of a list as a double, its digits a double's, so `[BesselJ(1,2),1/3]` shows numbers with ⚠, not Giac's text. G103 reads the doubles (bridge-3's `doubles`) but keeps today's display (no value changes). Would change if: the owner wants the text.
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff. (The leftover `QALC_OUT` is A30.)
 
 ## Decided proposals
