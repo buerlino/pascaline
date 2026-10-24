@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G46: the stored log brought to route R (Giac in radians, the degrees in the text), and the DEG display rule.
+import { fakeGiac } from "./fakeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { migrateAngleDefs, withoutPasexp } from "./angleMigration.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
@@ -117,7 +118,7 @@ describe.skipIf(!giacAvailable())("G46 on the real engine", () => {
     // RAD and angle-free results are untouched
     expect(host.cas("integrate(1/(1+x^2),x)", defaultCasSettings).result).toMatchObject({ text: "atan(x)" });
     expect(host.cas("integrate(1/(1+x^2),x)", defaultCasSettings).result.full).toBeUndefined();
-    expect(backInDegrees({ eval: (t) => host.eval(t).output }, "atan(x)")).toBe("1/180*pi*atan(x)");
+    expect(backInDegrees(fakeGiac((t) => host.eval(t).output), "atan(x)")).toBe("1/180*pi*atan(x)");
   });
 
   it("Home in DEG draws a symbolic result in degrees, and Ans keeps the radian text (derived)", () => {

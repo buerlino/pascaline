@@ -223,12 +223,14 @@ function result(facts: ElementFacts[], exact: string | undefined, s: HomeSetting
 /** The number stored in Giac as `name`, with Home's facts (exact, or the agreement check); null when it is not a
  *  number. `rerun` computes it again, for a float's check. */
 function numberOf(giac: Giac, name: string, rerun: string, s: HomeSettings, inexact: boolean): HomeResult | null {
-  const text = giac.eval(name);
+  // G103: the value through bridge-3 (its kind and num/den for exactFacts); a print cut at 2 kB is read whole
+  const v = giac.value(name, []);
+  const text = v.cut ? giac.eval(name) : v.text;
   if (isError(text)) return null;
   const digits = Math.trunc(s.digits);
   const scalar = { kind: "scalar" } as const;
   const float = hasFloat(text);
-  const facts = float ? floatFacts(giac, name, rerun, scalar, digits, digits) : exactFacts(giac, name, scalar, digits, s.maxExactDigits);
+  const facts = float ? floatFacts(giac, name, rerun, scalar, digits, digits) : exactFacts(giac, name, scalar, digits, s.maxExactDigits, text, v);
   return facts && result(facts, float ? undefined : text, s, inexact, float);
 }
 

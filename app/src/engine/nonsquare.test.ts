@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G97 (backlog F69): a power, inverse or division of a non-square matrix is refused; a square matrix, a flat vector and
 // the first power keep Giac's answer. Expected values are derived (the golden cases g97-* in home.yaml and precision.yaml).
+import { engineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, type GiacApi } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
-import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
+import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
 import { mayPowerMatrix, nonSquarePower, type Bodies } from "./nonsquare.ts";
 
 describe("mayPowerMatrix", () => {
@@ -16,6 +17,21 @@ describe("mayPowerMatrix", () => {
     expect(mayPowerMatrix("1/3+2^64")).toBe(false);
     expect(mayPowerMatrix("sin(pi/6)")).toBe(false);
     expect(mayPowerMatrix("[1,2]+[3,4]")).toBe(false);
+  });
+});
+
+// G103 fix round 1 (audit 5): the walks read the tree through bridge-3 and define no name in Giac; on the branch before
+// the fix they called our program pastree, which a user's pastree:=5 replaced, so both walks found nothing. Expected
+// values: G97's refusal (g97-* golden cases) and F51's 1/(1/0) (novalue.ts).
+describe.skipIf(!giacAvailable())("G103 the walks after a user's pastree:=5", () => {
+  it("still refuses a non-square power and a division by zero", async () => {
+    const host = await nodeHost();
+    const home = (input: string) => host.home(input, defaultHomeSettings).result;
+    expect(home("pastree:=5")).toMatchObject({ ok: true, display: "5" });
+    expect(home("[[1,2,3]]^2")).toMatchObject({ ok: false, error: "notSquare" });
+    expect(home("1/(1/0)")).toMatchObject({ ok: false, error: "divisionByZero" });
+    expect(host.cas("pastree:=5", defaultCasSettings).result).toMatchObject({ ok: true });
+    expect(host.cas("[[1,2,3]]^2", defaultCasSettings).result).toMatchObject({ ok: false, error: "notSquare" });
   });
 });
 
@@ -140,7 +156,7 @@ describe.skipIf(!giacAvailable())("G101f1 a body's division, and a body next to 
 describe.skipIf(!giacAvailable())("G101 the walk's time budget", () => {
   const known: Bodies = { reads: () => ["pasf"], of: (n) => (n === "pasf" ? { params: ["x"], reads: [], heads: ["program", "^"] } : undefined) };
   it("evaluates no argument once an evaluation could pass WALK_BUDGET_MS", async () => {
-    const { giac: real } = await loadNodeGiac();
+    const real = engineGiac(await loadNodeGiac());
     const calls: string[] = [];
     const spy = { ...real, eval: (t: string) => (calls.push(t), real.eval(t)) };
     real.eval("pasf(x):=x^-1");

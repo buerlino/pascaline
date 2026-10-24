@@ -289,10 +289,10 @@ const list = (x: string | string[] | undefined): string[] => (Array.isArray(x) ?
 
 const caseSettings = (c: Case): HomeSettings => ({ ...defaultHomeSettings, digits: c.settings?.digits ?? defaultHomeSettings.digits, angle: c.settings?.angle ?? "rad" });
 
-function solveCase(host: EngineHost, g: GiacApi, c: Case): Got {
+function solveCase(host: EngineHost, _g: GiacApi, c: Case): Got {
   const s = caseSettings(c);
   if (!c.kind) {
-    const r: SolveResult = solve1(g, str(c.eq), str(c.var), str(c.guess), defaultSolveSettings);
+    const r: SolveResult = solve1(host.giac, str(c.eq), str(c.var), str(c.guess), defaultSolveSettings);
     return { shown: r.display, warn: r.warn };
   }
   const r =

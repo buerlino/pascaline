@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // EngineHost against the real Giac build (skipped when no build is found; see nodeGiac.ts).
+import { engineGiac, type EngineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost, REPLAY_BATCH } from "./host.ts";
 import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
@@ -13,10 +14,12 @@ import { ICDF_DEFINITIONS, icdfPolished } from "./icdf.ts";
 
 describe.skipIf(!giacAvailable())("EngineHost (real Giac)", () => {
   let host: EngineHost;
-  let giac: Awaited<ReturnType<typeof loadNodeGiac>>["giac"];
+  let giac: EngineGiac;
   let bridge: Awaited<ReturnType<typeof loadNodeGiac>>["bridge"];
   beforeAll(async () => {
-    ({ giac, bridge } = await loadNodeGiac());
+    const L = await loadNodeGiac();
+    ({ bridge } = L);
+    giac = engineGiac(L);
     host = new EngineHost(giac, bridge);
   });
 
@@ -853,7 +856,9 @@ describe.skipIf(!giacAvailable())("G83: the user's functions are defined on firs
     const ref = await eager(chain);
     expect(vars).toBe(ref.cas("VARS", defaultCasSettings).result.text);
     const lazy1 = (await fresh(chain)).host;
-    expect(lazy1.home("VARS(1)", defaultHomeSettings).result.display).toBe(ref.home("VARS(1)", defaultHomeSettings).result.display);
+    // G103: against an eager replay that ran nothing else (ref's CAS VARS above left pcasans; on phase-1 both were
+    // refused as undecided, since the second decision run listed its own slot pasdec)
+    expect(lazy1.home("VARS(1)", defaultHomeSettings).result.display).toBe((await eager(chain)).home("VARS(1)", defaultHomeSettings).result.display);
     expect(lazy1.home("f(1)", defaultHomeSettings).result.display).toBe("3"); // derived: 1+2*1, all loaded by VARS(1)
   });
 

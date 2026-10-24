@@ -57,6 +57,11 @@ export interface GiacParse {
   nodes: number;
 }
 
+/** G103: a node of a value's tree (bridge-3, api.cc treeOf): [1, head, source, children] a call or operator (source 0: a power whose exponent
+ *  is a positive integer literal), [2, children] a vector, [0, number] anything else (number 1: an integer or float
+ *  literal). Children as Giac's op() splits the part. */
+export type ParseNode = [1, string, 0 | 1, ParseNode[]] | [2, ParseNode[]] | [0, 0 | 1];
+
 /** Every kind `kindOf` in engine/giac/wasm/api.cc returns (bridge.test.ts checks the two lists agree). */
 export const GIAC_KINDS = [
   "integer",
@@ -87,7 +92,14 @@ export interface GiacValue {
   den?: string;
   shape?: number[];
   elements?: string[];
+  /** G103: each element's kind, and its [num, den] in base 10 when it is an integer or a rational (null otherwise). */
+  kinds?: GiacKind[];
+  exact?: ([string, string] | null)[];
   at?: Record<string, [string, string][] | null>;
+  /** G103: for each precision of `at`, per element: 1 its real part is a C double, 2 its imaginary part, 3 both. */
+  doubles?: Record<string, number[] | null>;
+  /** G103: the value's tree, when asked for (`tree`); null past 2000 nodes. */
+  tree?: ParseNode | null;
 }
 
 export interface GiacBridge {
@@ -95,7 +107,8 @@ export interface GiacBridge {
   /** Sets the given fields; the context after, or an error (nothing set after the bad key). */
   ctxSet(fields: Partial<GiacContext>): GiacContext | { error: string };
   parse(text: string): GiacParse;
-  value(text: string, precisions: readonly number[]): GiacValue;
+  /** `tree`: with the value's tree (G103). */
+  value(text: string, precisions: readonly number[], tree?: boolean): GiacValue;
 }
 
 export const NO_BRIDGE = "no bridge exports";
@@ -124,6 +137,6 @@ export function bridgeOf(M: BridgeModule): GiacBridge {
     ctxGet: () => JSON.parse(call("giac_ctx_get")) as GiacContext,
     ctxSet: (fields) => JSON.parse(call("giac_ctx_set", JSON.stringify(fields))) as GiacContext | { error: string },
     parse: (text) => JSON.parse(call("giac_parse", text)) as GiacParse,
-    value: (text, precisions) => JSON.parse(call("giac_value", text, precisions.join(","))) as GiacValue,
+    value: (text, precisions, tree) => JSON.parse(call("giac_value", text, [...precisions, ...(tree ? ["tree"] : [])].join(","))) as GiacValue,
   };
 }

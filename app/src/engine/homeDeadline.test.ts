@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G58: Home never hangs. The deadline for Home's own steps, and the guard on Giac's symbolic re and im (real Giac build;
 // skipped when none is found, see nodeGiac.ts).
+import { engineGiac, type EngineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { defaultHomeSettings, HOME_DEADLINE_MS, homeEval, homeSetupCommands } from "./homeEval.ts";
 import { heavySplit } from "./numeric.ts";
@@ -17,9 +18,9 @@ describe("heavySplit: a root next to an integer of 13 digits or more", () => {
 });
 
 describe.skipIf(!giacAvailable())("Home's deadline (real Giac)", () => {
-  let giac: Awaited<ReturnType<typeof loadNodeGiac>>["giac"];
+  let giac: EngineGiac;
   beforeAll(async () => {
-    giac = (await loadNodeGiac()).giac;
+    giac = engineGiac(await loadNodeGiac());
     for (const c of homeSetupCommands(defaultHomeSettings)) giac.eval(c);
   });
 
@@ -37,6 +38,13 @@ describe.skipIf(!giacAvailable())("Home's deadline (real Giac)", () => {
     const r = homeEval(giac, "sqrt(2)", defaultHomeSettings);
     expect(r.ok).toBe(true);
     expect(r.display).toBe("1.41421356237");
+  });
+
+  it("guard (passes on phase-1): through bridge-3 (G103) acos(120^(5/2+5)) does not hang either; its split is not asked", () => {
+    // Only the time: under a parallel test run Giac's own budget (0.3 s) can end the exact run, which then has no value.
+    const t0 = performance.now();
+    homeEval(giac, "acos(120^(5/2+5))", defaultHomeSettings);
+    expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
   });
 
   it("acos(120^(5/2+5)) answers: Giac's im() of its exact result looped past the interrupt", () => {

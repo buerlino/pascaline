@@ -2,9 +2,11 @@
 // Honest precision against the real Giac build (docs/04 sections 2.4–2.10, G2): the facts the engine reports, and the
 // mark the formatter derives from them. Expected values are derived (exact arithmetic) or come from the oracle
 // (tests/golden/.venv, mpmath at 60 digits), as each case says. Skipped when no engine build is found (nodeGiac.ts).
+import { fakeGiac } from "./fakeGiac.ts";
+import { engineGiac } from "./nodeGiac.ts";
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
-import { defaultHomeSettings, precisionFacts, type HomeSettings } from "./homeEval.ts";
+import { defaultHomeSettings, HOME_DEADLINE_MS, precisionFacts, type HomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { markOf, type MarkInfo } from "./format.ts";
 import { MAX_EVAL_DIGITS } from "./numeric.ts";
@@ -39,7 +41,9 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
         };
       },
     });
-    const hard = new EngineHost(counted, bridge).home("sin(10^2000)", defaultHomeSettings).result;
+    // G103: the agreement levels come through bridge-3 (`value(text, [P, …])`)
+    const valued = { ...bridge, value: (text: string, at: readonly number[]) => (precs.push(...at), bridge.value(text, at)) };
+    const hard = new EngineHost(counted, valued).home("sin(10^2000)", defaultHomeSettings).result;
     expect(hard.facts.reliableDigits).toBe(0);
     expect(markOf(precisionFacts(hard), { format: "STD", digits: 12 })).toMatchObject({ mark: "⚠", n: 0 });
     expect(precs.length).toBeGreaterThan(2);
@@ -238,6 +242,36 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(host.cas("floor(sin(10^100)*10^12)", defaultCasSettings).result).toMatchObject({ ok: false, error: "undecided" });
   });
 
+  // G103f1 (third audit): cutHit built its powers of ten from the decimal exponent with no bound. floor(exp(10^8)) made
+  // a BigInt of about 43 million digits, seconds past the deadline (and past V8's limit a RangeError onCut does not catch).
+  // Home's own floor(exp(10^8)) never gets there: Giac's exact floor takes 217 s and traps (unreachable) in this
+  // engine, before any decision is checked. onCut is run on it directly; Home on a sign, whose exact run is quick.
+  it("onCut refuses floor(exp(10^8)) within HOME_DEADLINE_MS: no fractional digit is known at P + 20 (source: derived, exp(10^8) has 43429449 integer digits)", async () => {
+    const { onCut } = await import("./decisions.ts");
+    const giac = engineGiac(await loadNodeGiac());
+    const t0 = performance.now();
+    expect(onCut(giac, "floor(exp(10^8))", defaultHomeSettings.digits, defaultHomeSettings.digits)).toEqual({ undecided: true, refused: true });
+    expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
+  });
+
+  it("Home refuses sign(exp(10^8)) within HOME_DEADLINE_MS: its distance to the cut 0 is past 10^(P+60) (source: derived, the G103f1 bound)", () => {
+    const t0 = performance.now();
+    const r = host.home("sign(exp(10^8))", defaultHomeSettings).result;
+    expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
+    expect(r).toMatchObject({ ok: false, error: "undecided", display: UNDECIDED });
+  });
+
+  it("a floor whose distance to the cut has a tiny exponent is refused within HOME_DEADLINE_MS: floor(exp(-10^8)), distance about 10^-43429449 (source: derived, past 10^-(P+60) the distance is out of reach; before G103f1 it took 4.6 s and timed out)", () => {
+    const t0 = performance.now();
+    const r = host.home("floor(exp(-10^8))", defaultHomeSettings).result;
+    expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
+    expect(r).toMatchObject({ ok: false, error: "undecided", display: UNDECIDED });
+  });
+
+  it("guard (passes on phase-1): a tiny quantity far from its half-integer cut still answers, round(pi*10^-200) is 0 (source: derived, |pi*10^-200| < 1/2)", () => {
+    expect(host.home("round(pi*10^-200)", defaultHomeSettings).result).toMatchObject({ ok: true, display: "0" });
+  });
+
   it("a decision P + 20 makes stands: sign(sin(10^50)) is -1 (source: oracle, mpmath: sin(10^50) = -0.7896…)", () => {
     expect(host.home("sign(sin(10^50))", defaultHomeSettings).result).toMatchObject({ ok: true, display: "-1" });
     expect(host.cas("sign(sin(10^50))", defaultCasSettings).result).toMatchObject({ ok: true, text: "-1" });
@@ -301,7 +335,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
   it("floatsAtDigits rounds each float of a P text to the display digits, as Giac prints them (source: derived)", async () => {
     const { floatsAtDigits, notBuiltin } = await import("./numeric.ts");
-    const { giac, bridge } = await loadNodeGiac();
+    const giac = engineGiac(await loadNodeGiac());
     const third = "0.3333333333333333333333333333333333333333";
     expect(floatsAtDigits(giac, `${third}*x+${third}e20*y-0.9999999999999999999999999999999999999999*z+2`, 12)).toBe(
       "0.333333333333*x+3.33333333333e+19*y-1.0*z+2",
@@ -311,9 +345,9 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
 
   it("G53: a built-in's or keyword's print is asked once per Giac instance, a user's name on every call (source: derived, Giac refuses sin:=3)", async () => {
     const { notBuiltin, namePrint } = await import("./numeric.ts");
-    const { giac, bridge } = await loadNodeGiac();
+    const giac = engineGiac(await loadNodeGiac());
     const asked: string[] = [];
-    const counted = { eval: (t: string) => (asked.push(t), giac.eval(t)) };
+    const counted = fakeGiac((t: string) => (asked.push(t), giac.eval(t)));
     expect(notBuiltin(counted)("sin")).toBe(false);
     expect(notBuiltin(counted)("sin")).toBe(false);
     expect(asked.filter((t) => t === "sin")).toEqual(["sin"]);
@@ -327,7 +361,7 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     expect(notBuiltin(counted)("g53u")).toBe(true);
     expect(asked.filter((t) => t === "g53u")).toEqual(["g53u", "g53u"]);
     // A fresh engine starts with nothing known.
-    const other = { eval: (t: string) => (asked.push(`other:${t}`), giac.eval(t)) };
+    const other = fakeGiac((t: string) => (asked.push(`other:${t}`), giac.eval(t)));
     expect(notBuiltin(other)("sin")).toBe(false);
     expect(asked.filter((t) => t === "other:sin")).toEqual(["other:sin"]);
     giac.eval("purge(g53k,g53u)");
@@ -479,8 +513,9 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
   });
   it("G50f1: a function's parameter is not the stored name of the same name (source: derived)", async () => {
     const { complexReads, purgeReads } = await import("./numeric.ts");
-    const { giac, bridge } = await loadNodeGiac();
-    const own = new EngineHost(giac, bridge);
+    const L = await loadNodeGiac();
+    const giac = engineGiac(L);
+    const own = new EngineHost(L.giac, L.bridge);
     own.cas("x:=tanh(i)", defaultCasSettings);
     own.cas("f(x):=x*i", defaultCasSettings);
     own.cas("g:=(y)->{local x; x:=y; x*i}", defaultCasSettings);

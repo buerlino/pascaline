@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Giac calls per Enter (G52): the totals of the gate's `calls` stage. A set fails when its calls per input (total / inputs) are more than
 # 10 % above the baseline's (calls / inputs). Raise a value only with the reason in the package's report (the audit reads it).
-commit: G67  # p1/gorge-m4-flags: one read of Giac's settings after every input (+1 per input); on phase-1 (9f21775) the same stage measured bench 448/56 and home 3469/291 (11.92), so +56 and +339: 291 reads and 48 from the 8 home.yaml inputs where Giac leaked a setting by itself (a throw leaves eval_level at 1, (-32)^(1/5) leaves epsilon at 1e-60): the restore call and the mode setup on the next input. Was bench 448/56, home 2906/260 (G59 at 3062c2a)
-bench: 504
+commit: G103  # p1/gorge-bridge-value: Home's value through bridge-3 (giac_value: kind, num/den, elements, at[], doubles; the float paths store and read in one call), the walks of nonsquare.ts and novalue.ts on the tree giac_value gives with the store (one call), decideTwice and onCut without their slots, re/im in one call; on phase-1 (9e07920) the same stage measured bench 491/56 (8.77) and home 4136/325 (12.73), so home falls 36.2 %. Was G67: bench 504/56, home 3808/291 (13.09)
+bench: 426
 benchInputs: 56
-home: 3808
-homeInputs: 291
+home: 2640
+homeInputs: 325

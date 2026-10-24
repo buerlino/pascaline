@@ -2,7 +2,7 @@
 // The engine side of the protocol: one Giac instance, synchronous calls. Runs inside the Web
 // Worker (giac.worker.ts) and, for tests and the golden runner, directly in Node. Knows nothing
 // about the UI. Only erasable TypeScript syntax, so Node runs this file directly.
-import type { GiacBridge, GiacParse } from "./bridge.ts";
+import type { GiacBridge, GiacParse, GiacValue } from "./bridge.ts";
 import type { Request, Response } from "./protocol.ts";
 import type { AnalysisRequest, AnalysisResult, CasResult, CasSettings, HomeResult, HomeSettings, SolveOutcome, SolveRequest, TableRequest } from "./types.ts";
 import {
@@ -35,7 +35,7 @@ import { mayAddToList, unaskedPoly } from "./polyvec.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor } from "../input/angles.ts";
-import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOf, valuePrecision, whyOf, withDigits } from "./numeric.ts";
+import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
@@ -160,10 +160,10 @@ export class EngineHost implements FactsHost {
   private parsed: { text: string; tree: GiacParse } | null = null;
   /** `giac.eval` that throws GiacSyntaxError instead of quietly returning `undef` (which would
    *  otherwise leave the previous answer in place and show it again). */
-  private readonly strict: { eval(input: string): string; ambiguousPower(): boolean; digits(d: number): void };
+  private readonly strict: { eval(input: string): string; value(text: string, precisions: readonly number[], tree?: boolean): GiacValue; ambiguousPower(): boolean; digits(d: number): void };
   /** G97: `giac.eval` that reads Giac's messages after each eval for ambiguousPower(), and throws nothing (Num's
    *  cells, where a syntax error is a cell's own error). Without it a power's shape walk would run on every cell. */
-  private readonly watched: { eval(input: string): string; ambiguousPower(): boolean; digits(d: number): void };
+  private readonly watched: { eval(input: string): string; value(text: string, precisions: readonly number[], tree?: boolean): GiacValue; ambiguousPower(): boolean; digits(d: number): void };
 
   /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
   private readonly loaded = new Set<string>();
@@ -263,23 +263,34 @@ export class EngineHost implements FactsHost {
     giac.eval(angleCommand("rad"));
     let ambiguous = false;
     let msg = "";
-    const read = (input: string): string => {
+    // Giac's messages of one call (an eval, or G103's bridge-3 value)
+    const heard = <T>(call: () => T): T => {
       giac.clearMessages();
-      const out = giac.eval(input);
+      const out = call();
       msg = giac.messages();
       ambiguous = AMBIGUOUS_POWER.test(msg);
       return out;
     };
+    const read = (input: string): string => heard(() => giac.eval(input));
+    const value = (text: string, precisions: readonly number[], tree?: boolean): GiacValue => heard(() => bridge.value(text, precisions, tree));
+    const syntax = (failed: boolean): void => {
+      if (failed && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
+    };
     this.strict = {
       eval: (input) => {
         const out = read(input);
-        if (out === "undef" && /syntax error/.test(msg)) throw new GiacSyntaxError(msg.trim());
+        syntax(out === "undef");
         return out;
+      },
+      value: (text, precisions, tree) => {
+        const v = value(text, precisions, tree);
+        syntax(v.kind === "error");
+        return v;
       },
       ambiguousPower: () => ambiguous,
       digits: giac.digits,
     };
-    this.watched = { eval: read, ambiguousPower: () => ambiguous, digits: giac.digits };
+    this.watched = { eval: read, value, ambiguousPower: () => ambiguous, digits: giac.digits };
   }
 
   /** Replays definitions (a fresh engine: at init, or the stored log on first launch) and adds them to the log.
@@ -818,11 +829,10 @@ export class EngineHost implements FactsHost {
       if ("undecided" in d) undecided = true;
       if ("undecided" in d && d.refused) refusedCut = true;
       if (!("undecided" in d) && d.from !== undefined) {
-        this.giac.eval(`pcasans:=${d.from}`);
+        if (this.giac.eval(`pcasans:=${d.from};purge(${d.from})`).startsWith("GIAC_ERROR")) this.giac.eval(`purge(${d.from})`);
         if (asg && !guarded) this.giac.eval(`${asg.name}:=pcasans`);
         text = d.text;
       }
-      this.giac.eval("purge(pasdec2)");
     }
     // G39: a divergent integral or series, or no limit, is refused as in Home; Giac's [exact, numeric] pair of a
     // definite integral is shown as Giac's text (both answers) with ⚠, never as a numeric list.
@@ -853,7 +863,8 @@ export class EngineHost implements FactsHost {
     };
     // A number with a float in it: checked like Home (the value as `numeric`, its text and LaTeX from our formatter).
     // `evalf(e,n)` alone is shown with the n digits it asks for, checked at that precision (decisions M4-6).
-    const shape = hasFloat(text) && !pair ? shapeOf(text) : null;
+    // G103: its shape from bridge-3's kind and elements (one call, only for a text with a float)
+    const shape = hasFloat(text) && !pair ? shapeOfValue(this.giac.value("pcasans", [])) : null;
     if (shape) {
       const asked = askedDigits(input);
       const digits = asked ?? Math.trunc(s.digits);
