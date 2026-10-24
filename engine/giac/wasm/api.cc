@@ -199,6 +199,13 @@ void walk(const gen &g, Walk &w) {
   w.add(w.heads, w.seenH, h);
   const gen &f = g._SYMBptr->feuille;
   const giac::vecteur *v = f.type == giac::_VECT ? f._VECTptr : nullptr;
+  // G100: `for k in L` is for(1, for(k, L), 1, body) in Giac's tree; the loop stores k (Giac leaves L's last element in
+  // it, probed), L is read. A two-argument `for` with a name first is only that form.
+  if (h == "for" && v && v->size() == 2 && (*v)[0].type == giac::_IDNT) {
+    walkTarget((*v)[0], w);
+    walk((*v)[1], w);
+    return;
+  }
   if (among(h, STORE_HEADS, sizeof STORE_HEADS / sizeof *STORE_HEADS)) {
     if (h == "sto" || h == "array_sto") {
       if (v && v->size() == 2) {
