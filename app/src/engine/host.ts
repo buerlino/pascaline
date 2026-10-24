@@ -404,10 +404,10 @@ export class EngineHost implements FactsHost {
    * in the input or in a program it reaches.
    */
   private candidatesOf(input: string): Set<string> | null {
-    if (LOAD_ALL.test(input)) return null;
     const tree = this.treeOf(input);
     const unknown = (h: string): boolean => STRING_HEADS.has(h) || (STATE_HEADS.has(h) && !PURGE_HEADS.has(h));
-    if (!tree.ok || tree.heads.some(unknown)) return null;
+    // LOAD_ALL's words: VARS (its tree's head or read), expr, rm_all_vars and restart (string and state heads)
+    if (!tree.ok || tree.heads.some(unknown) || [...tree.heads, ...tree.reads].includes("VARS")) return null;
     const out = new Set(tree.targets);
     const seen = new Set<string>();
     const queue = [...wordsOf(input), ...tree.reads];

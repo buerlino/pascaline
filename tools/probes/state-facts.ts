@@ -3,7 +3,9 @@
 // input's text, which names an input stored and which stored names it read?
 //   node tools/probes/state-facts.ts            # G48/G49/G51 sequence cases, prec-g48, night-check extras, G55 sequences
 //   node tools/probes/state-facts.ts --cost     # Giac calls and desktop time the state rule adds per Enter (engine-calls' 15
-//                                               # inputs with a, b and f stored); take the host-cpu lock for the timing
+//                                               # inputs with a, b and f stored), and G104's Home c:=1, M1[1,1]:=0 with
+//                                               # two 300x300 matrices and a list of big integers stored; take the
+//                                               # host-cpu lock for the timing
 //   SHOW=1 …                                    # every step: stored names, read names, both marks
 // Two engines run each sequence side by side:
 // - "text": EngineHost as the app runs it today (storeTargets, namesIn, functionsIn, maskBound, bodyFacts, callFacts …);
@@ -389,6 +391,49 @@ async function cost(): Promise<void> {
   for (let k = 0; k < 150; k++) g.eval(`v${k}:=${k % 3 === 0 ? `${k}.25` : k % 3 === 1 ? `sqrt(${k + 2})` : `${k}/7`}`);
   for (let k = 0; k < 50; k++) g.eval(`fn${k}(x):=x^2+v${k}*x+${k}`);
   leanRound("200 more stored (150 values, 50 functions)");
+  storedCost();
+}
+
+/** G104: Home `c:=1` and `M1[1,1]:=0` with large values stored (M1, M2 = ranm(300,300), then L = seq(k!,k,1,1500)):
+ *  the time of the Enter (medians of 5) and the Giac calls and printed bytes it takes. */
+async function storedCost(): Promise<void> {
+  const { giac: g, bridge } = await fresh();
+  let calls = 0;
+  let bytes = 0;
+  const ev = g.eval.bind(g);
+  g.eval = (t: string): string => {
+    calls++;
+    const out = ev(t);
+    bytes += out.length;
+    return out;
+  };
+  const host = new EngineHost(g, bridge);
+  const s = { ...defaultHomeSettings };
+  const enter = (label: string, input: string): void => {
+    host.home(input, s);
+    const times: number[] = [];
+    let n = 0;
+    let b = 0;
+    for (let k = 0; k < 5; k++) {
+      calls = 0;
+      bytes = 0;
+      const t0 = performance.now();
+      host.home(input, s);
+      times.push(performance.now() - t0);
+      n = calls;
+      b = bytes;
+    }
+    times.sort((x, y) => x - y);
+    console.log(`${label}: ${input.padEnd(12)} median ${times[2]!.toFixed(2)} ms, Giac calls ${n}, printed ${(b / 1000).toFixed(1)} kB`);
+  };
+  host.home("M1:=ranm(300,300)", s);
+  host.home("M2:=ranm(300,300)", s);
+  enter("M1, M2 stored", "c:=1");
+  enter("M1, M2 stored", "M1[1,1]:=0");
+  host.home("L:=seq(k!,k,1,1500)", s);
+  enter("M1, M2, L stored", "c:=1");
+  enter("M1, M2, L stored", "M1[1,1]:=0");
+  enter("M1, M2, L stored", "sin(1)");
 }
 
 await main();

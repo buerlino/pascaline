@@ -188,11 +188,11 @@ export function tableOf(n: Node, user: (name: string) => boolean, kept?: Readonl
   return out;
 }
 
-/** G104: every name a state part's print lists (bare or with its entry). */
+/** G104: every name a state part's print lists (bare or with its entry; VARS() lists names only). */
 export function namesOf(n: Node): string[] {
   return (n.items?.[1]?.items ?? []).flatMap((e) => {
     const k = e.items ? e.items[0]?.raw : e.raw;
-    return k !== undefined && IDENT.test(k) ? [k] : [];
+    return k !== undefined ? [k] : [];
   });
 }
 
