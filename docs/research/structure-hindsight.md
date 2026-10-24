@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Hindsight: what we would do differently, and what to do now
 
-**Status (2026-10-22): open.** Decided: hind-1, the bridge (G85 GO; its moves G98–G105, S23); hind-3 is G88. Open for the owner: the hind-4 and hind-5 rule lines (decisions.md "Needs the user"); hind-2 rides on audit-P5 (G76 → G86 → R69).
+**Status (2026-10-24): decided.** hind-1, the bridge (G85 GO; its moves G98–G105, S23); hind-3 is G88; hind-4 is a rule (rules section 9, owner 2026-10-24); hind-5 waits until the freeze ends (decisions.md "Owner answers of 2026-10-24"); hind-2 rides on audit-P5 (G76 → G86 → R69).
 
 *sandra, 2026-10-20, read and probe only, on `phase-1` `d6f6093`, after [the structure audit](structure-audit.md) the same day. The owner asked: with hindsight, what could we have done differently, and what would I suggest now? Evidence is file:line, a probe in `tools/probes/` or a count with its command. Labels, no ids: **hind-1** is the bridge (its three calls **bridge-1 … bridge-3**), **hind-2 … hind-5** the smaller suggestions.*
 

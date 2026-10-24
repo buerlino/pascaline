@@ -251,7 +251,7 @@ test.describe("R45: the path of a hardware key", () => {
   test("ArrowUp on an empty line with history picks the last row and Enter inserts it", async ({ page }) => {
     await page.keyboard.type("12");
     await page.keyboard.press("Enter");
-    await expect(page.locator('[data-testid="result"]')).toHaveCount(1);
+    await expect(page.locator('article.item[data-status="done"]')).toHaveCount(1); // a pending row picked by Enter gives its input back, not a chip
     await page.keyboard.press("ArrowUp");
     await page.keyboard.press("Enter");
     expect(await entryValue(page)).toBe("\\res{1}{12}"); // the row's result as a chip that carries its value (L5)

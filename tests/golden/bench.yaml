@@ -14,6 +14,7 @@ cases:
   - { id: "arith-ifactor", input: "ifactor(123456789)", cat: "arithmetic" }
   - { id: "arith-gcd", input: "gcd(1071,462)", expect: "21", source: "derived", cat: "arithmetic" }
   - { id: "arith-complex", input: "(3+4*i)*(1-2*i)", expect: "11-2*i", source: "derived", cat: "arithmetic" }
+  - { id: "g96-cas-im-2sqrt", input: "im(2*sqrt(x))", expect: "2*im(sqrt(x))", source: "derived", cat: "arithmetic", note: "G96 (patch 0006): x free, sqrt(x) may be imaginary (x = -1: im = 2); Giac gave 0 before the patch" }
   # trig / transcendental
   - { id: "trig-exact", input: "sin(pi/6)", expect: "1/2", source: "derived", cat: "trig" }
   - { id: "trig-num", input: "evalf(sin(1)+cos(2))", cat: "trig" }

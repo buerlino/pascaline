@@ -1,0 +1,23 @@
+# Upstream: giac 2.1.0 gen.cc, symb_reim(). For a non-integer real power of a base with no imaginary part, symb_reim returned r=s, i=0 unless -e was provably positive, so a base of unknown sign was taken as >= 0: with x free, im(sqrt(x)) stays im(sqrt(x)) (symb_im asks sign(e)), but im(2*sqrt(x)), im(exp(sqrt(x))) and im(tanh(sqrt(x))) were 0 (at x=-1, im(exp(sqrt(x))) = sin(1)), and im(integrate(tanh(sqrt(x)),x,-1,1/2)) dropped the integral. Does what symb_re and symb_im already do: a base whose sign is not 1 keeps re() and im() symbolic (with the same atan_tan_no_floor exception, the workaround for int(sqrt(x+sqrt(x)))); a negative base keeps the cos/sin formula, a positive one r=s, i=0.
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -3586,11 +3586,16 @@
+ 	if (!is_integer(expo) && is_positive(-e,contextptr)){
+ 	  r=pow(-e,expo,contextptr)*cos(cst_pi*expo,contextptr);
+ 	  i=pow(-e,expo,contextptr)*sin(cst_pi*expo,contextptr);
++	  return;
+ 	}
+-	else {
+-	  r=s;
+-	  i=0;
++	// a base of unknown sign keeps re() and im() symbolic, as symb_re and symb_im do
++	if (!is_integer(expo) && !atan_tan_no_floor(contextptr) && sign(e,contextptr)!=1){
++	  r=symbolic(at_re,s);
++	  i=symbolic(at_im,s);
++	  return;
+ 	}
++	r=s;
++	i=0;
+ 	return;
+       }
+       if (is_zero(im(expo,contextptr),contextptr)){

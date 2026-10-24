@@ -188,6 +188,8 @@ export const PATCHED_IDS = new Map([
   ["prec-g50-acos(-1+i)-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-imag-power-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-asin-power-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g96-im-int-tanh-sqrt", "0006-reim-root-of-unknown-sign.patch"],
+  ["g96-im-int-exp-sqrt", "0006-reim-root-of-unknown-sign.patch"],
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 
