@@ -1,71 +1,61 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G67 (H1, bug hunt N1/N2): Giac's global settings, which user text can change (`approx_mode:=1`, `angle_radian:=0`,
 // `integer_format(16)`, `cas_setup(…)`, `xcas_mode(1)`) and which then leak into every later result: Home's `=` marks,
-// the angle of sin(1), hex integers. The host reads them after every call that ran user text, in ONE Giac call that
-// returns a list (FLAGS_READ; G65 adds its reads to the same list), and on any difference puts every one back with one
-// more call (restoreCommands, in one call) and runs its mode setup again. The definitions log never stores one (host.ts defsAfter).
-// Plain data and pure functions; only erasable TypeScript syntax, so Node runs this file directly.
+// the angle of sin(1), hex integers. G102: the host reads them after every call that ran user text through bridge-1
+// (`giac_ctx_get`, bridge.ts GiacContext), compares them field by field with hostContext, and on any difference puts the
+// whole context back with one `giac_ctx_set` and runs its mode setup again. The definitions log never stores one
+// (host.ts defsAfter). Plain data and pure functions; only erasable TypeScript syntax, so Node runs this file directly.
+import type { GiacContext } from "./bridge.ts";
 
-/** The getters, in the order of the list FLAGS_READ returns. cas_setup() holds approx_mode, complex_variables,
- *  complex_mode, the angle, scientific_format + 16·integer_format, [epsilon, proba_epsilon], Digits, [threads,
- *  recursion, debug, eval level], increasing_power, with_sqrt, all_trig_solutions, integer_mode (prog.cc
- *  `cas_setup(GIAC_CONTEXT)`); integer_format() is read on its own as well (owner, 2026-10-20), and the rest are the
- *  context settings a Giac command can set that cas_setup() does not show (tests/engine/flags-canary.ts). */
-const GETTERS = [
-  "cas_setup()",
-  "integer_format()",
-  "xcas_mode()",
-  "python_compat()",
-  "calc_mode()",
-  "keep_algext()",
-  "parse_e()",
-  "convert_rootof()",
-  "step_infolevel()",
-  "eval_level()",
-  "prog_eval_level()",
-  "autosimplify()",
-  "auto_assume()",
-  "ntl_on()",
-] as const;
-
-/** One Giac call: every setting the check compares, as one list. */
-export const FLAGS_READ = `[${GETTERS.join(",")}]`;
-
-/** What FLAGS_READ prints when every setting is the host's, at `digits` (the mode's Digits). Probe 2026-10-20 on the
- *  pinned build (giac-2.1.0, a fresh engine): `[[0,0,0,1,0,[1e-12,1e-15],12,[1,100,0,25],0,1,0,1],0,0,0,0,0,0,1,0,25,1,'regroup',0,1]`;
- *  flags.test.ts checks it against a fresh engine at 12, 20 and 30 digits. */
-export function flagsExpected(digits: number): string {
-  return `[[0,0,0,1,0,[1e-12,1e-15],${Math.trunc(digits)},[1,100,0,25],0,1,0,1],0,0,0,0,0,0,1,0,25,1,'regroup',0,1]`;
+/** The host's context at `digits` (the mode's Digits): a fresh engine's (giac-2.1.0, probe 2026-10-24; flags.test.ts
+ *  checks it against a fresh engine), Giac in radians (the degree mode is our parser's pasdeg factor, G46). */
+export function hostContext(digits: number): GiacContext {
+  return {
+    angle_mode: 0,
+    angle_radian: true,
+    approx_mode: false,
+    complex_mode: false,
+    complex_variables: false,
+    integer_format: 0,
+    scientific_format: 0,
+    decimal_digits: Math.trunc(digits),
+    epsilon: 1e-12,
+    increasing_power: false,
+    all_trig_sol: false,
+    xcas_mode: 0,
+    calc_mode: 0,
+    python_compat: 0,
+    integer_mode: true,
+    withsqrt: true,
+    keep_algext: false,
+    auto_assume: false,
+    parse_e: false,
+    convert_rootof: true,
+    ntl_on: true,
+    step_infolevel: 0,
+    proba_epsilon: 1e-15,
+    eval_level: 25,
+    prog_eval_level: 1,
+    autosimplify: "regroup",
+  };
 }
 
-/** The commands that put every setting FLAGS_READ reads back to the host's, at `digits`, in order. cas_setup() goes
- *  first: it reads floats too (in approx mode every integer typed is one, and `python_compat(0.0)` is an error), and
- *  turns approx mode off for the rest. Every command parses alike in the modes a user can reach (probe: Maple, TI,
- *  Python and HP syntax, hex integers). `Digits:=` also sets the bigfloat precision (cas_setup does not). */
-export function restoreCommands(digits: number): string[] {
-  const d = Math.trunc(digits);
-  return [
-    `cas_setup(0,0,0,1,0,[1e-12,1e-15],${d},[1,100,0,25],0,1,0,1)`,
-    "xcas_mode(0)",
-    "python_compat(0)",
-    "calc_mode(0)",
-    "integer_format(0)",
-    "keep_algext(0)",
-    "parse_e(0)",
-    "convert_rootof(1)",
-    "step_infolevel(0)",
-    "eval_level(25)",
-    "prog_eval_level(1)",
-    "autosimplify('regroup')",
-    "auto_assume(0)",
-    "ntl_on(1)",
-    `Digits:=${d}`,
-  ];
+/** The fields where `got` is not `want`. Giac keeps epsilon as its own float (set to 1e-12 it reads
+ *  9.999999999999965e-13), so a float field compares to 1e-9 relative; autosimplify holds the text it was given
+ *  (`'regroup'` after a set, `regroup` fresh: the same setting, G85), so it is the same with or without quotes. */
+export function contextDiff(got: GiacContext, want: GiacContext): (keyof GiacContext)[] {
+  return (Object.keys(want) as (keyof GiacContext)[]).filter((k) => {
+    const g = got[k];
+    const w = want[k];
+    if (typeof w === "string") return g !== w && g !== `'${w}'`;
+    if (typeof w === "number" && typeof g === "number" && !Number.isInteger(w)) return !(Math.abs(g - w) <= Math.abs(w) * 1e-9);
+    return g !== w;
+  });
 }
 
 /**
  * Giac's words that set a global setting: the `name:=value` flags of its lexer (input_lexer.cc, T_DIGITS), the setters
- * read above, and the ones the check cannot read but the mode setup puts back (`timeout`, `ckevery`). A name here is
+ * of the context bridge-1 reads, and the ones it cannot read but the mode setup puts back (`timeout`, `ckevery`). A name here is
  * never a user's variable or function in the definitions log, and a library may not use it (library.ts STATE_WORDS).
  */
 export const FLAG_WORDS: readonly string[] = [
@@ -105,7 +95,7 @@ export function isFlagName(name: string): boolean {
 /**
  * The fields of Giac's context (`class global` in src/global.h of the pinned tarball) and the C globals cas_setup()
  * shows, each with how the host handles it. tests/engine/flags-canary.ts fails when the pinned source has a field not
- * listed here. "read": in FLAGS_READ, restored by restoreCommands; the others are left as they are, with the reason.
+ * listed here. "read": in bridge-1's context (bridge.ts GiacContext, hostContext), put back by giac_ctx_set; the others are left as they are, with the reason.
  */
 export const CONTEXT_FIELDS: Readonly<Record<string, string>> = {
   _xcas_mode_: "read",

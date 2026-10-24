@@ -9,6 +9,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 
 - **hind-4, hind-5 ([hindsight](research/structure-hindsight.md) 3):** recommendation: the hind-4 rule now (a new Home or precision case is `latex:` when keys type it; G98 makes that the app's input); hind-5 after the freeze. Would change if: the freeze ends first.
 - **List operators (F77, F79; Opus pass 61):** recommendation: a gorge package (Opus) after G103 that sends +, -, ×, ^ to Giac's dot operators when a name or Ans holds a list (bridge-3 kind), with F76–F79's cases as tests; G106 stays the last net. Why: R77, R78, R78f1 fix only typed braces, so `L:={1,4}`, `sum(L+1)` = 6 stays wrong under `=`. Would change if: sandra finds a small Giac patch (P19).
+- **G102's interrupt finding:** after a timeout interrupt `giac_ctx_set` throws once (api.cc does not clear `ctrl_c` as `giac_value` does in `startClock`); the host sets again once (ctxGate.ts). Recommendation: clear it at the top of `giac_ctx_set` with G103's engine rebuild. Would change if: G103 does not touch api.cc.
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff. (The leftover `QALC_OUT` is A30.)
 
 ## Decided proposals

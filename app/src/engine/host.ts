@@ -39,7 +39,7 @@ import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, una
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
-import { afterCall, changesOf, parsePrinted, readsFrom, splitAfter, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
+import { changesOf, parsePrinted, readsFrom, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
 import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -47,7 +47,8 @@ import { UNIT_DEFINITIONS, unitEval } from "../units/evaluate.ts";
 import { constUncDigits, inexactConstsIn, withConstValues, type ConstTable } from "./constUnc.ts";
 import { chipCommand, chipNameFacts, chipsIn, CHIP_PREFIX, withChipValues, type ChipFactsTable } from "./chipFacts.ts";
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
-import { FLAGS_READ, flagsExpected, isFlagName, namesFlag, namesUnreadFlag, restoreCommands } from "./flags.ts";
+import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from "./flags.ts";
+import { contextOf, gated, type GatedGiac } from "./ctxGate.ts";
 
 /** G65: what the call after an input found: the names it read and stored (stateRead.ts), and Giac's settings. */
 interface AfterInput {
@@ -152,17 +153,17 @@ export class EngineHost implements FactsHost {
   /** G67: the Digits the current mode set (Giac's own 12 before any mode), which the settings check expects. */
   private modeDigits = 12;
   /** Read by facts.ts (FactsHost), as are byName, chipFacts and stored. */
-  readonly giac: GiacApi;
+  readonly giac: GatedGiac["giac"];
   /** G99: Giac's tree of an input (bridge-2) gives the names it reads and binds. */
   private readonly bridge: GiacBridge;
   /** The current input's tree, parsed once per Enter (usesOf and after share it). */
   private parsed: { text: string; tree: GiacParse } | null = null;
   /** `giac.eval` that throws GiacSyntaxError instead of quietly returning `undef` (which would
    *  otherwise leave the previous answer in place and show it again). */
-  private readonly strict: { eval(input: string): string; ambiguousPower(): boolean };
+  private readonly strict: { eval(input: string): string; ambiguousPower(): boolean; digits(d: number): void };
   /** G97: `giac.eval` that reads Giac's messages after each eval for ambiguousPower(), and throws nothing (Num's
    *  cells, where a syntax error is a cell's own error). Without it a power's shape walk would run on every cell. */
-  private readonly watched: { eval(input: string): string; ambiguousPower(): boolean };
+  private readonly watched: { eval(input: string): string; ambiguousPower(): boolean; digits(d: number): void };
 
   /** Our definitions already loaded into this Giac instance (ENGINE_DEFINITIONS, loaded on first use). */
   private readonly loaded = new Set<string>();
@@ -252,7 +253,9 @@ export class EngineHost implements FactsHost {
     }
   }
 
-  constructor(giac: GiacApi, bridge: GiacBridge) {
+  constructor(raw: GiacApi, rawBridge: GiacBridge) {
+    // G102: Digits through bridge-1, a set waiting until the next Giac call (ctxGate.ts)
+    const { giac, bridge } = gated(raw, rawBridge);
     this.giac = giac;
     this.bridge = bridge;
     // R64, G46: Giac in radians, and pasdeg (our parser's degree factor) set before any input: the units, raw eval and
@@ -274,8 +277,9 @@ export class EngineHost implements FactsHost {
         return out;
       },
       ambiguousPower: () => ambiguous,
+      digits: giac.digits,
     };
-    this.watched = { eval: read, ambiguousPower: () => ambiguous };
+    this.watched = { eval: read, ambiguousPower: () => ambiguous, digits: giac.digits };
   }
 
   /** Replays definitions (a fresh engine: at init, or the stored log on first launch) and adds them to the log.
@@ -336,32 +340,27 @@ export class EngineHost implements FactsHost {
   }
 
   /**
-   * G67, G65: the one call after an input (stateRead.ts afterCall): Giac's settings (flags.ts FLAGS_READ) and, when
-   * `state`, every stored user name; before it, the names the input reads from its tree (G99, bridge-2; `read`: skipped
-   * after a syntax error; `shown`: its result's text, see readsOf).
-   * On a setting that differs from the host's, one more call puts every one back and the mode setup runs again on the
-   * next call. An input that names a setting the read cannot see (timeout, ckevery) gets the mode setup again too.
+   * G67, G65, G102: after an input, Giac's settings through bridge-1 (`giac_ctx_get`, or the answer of a Digits set
+   * still waiting, ctxGate.ts) compared field by field with the host's (flags.ts hostContext); on a difference one
+   * `giac_ctx_set` of the whole context, and the mode setup runs again on the next call. An input that names a setting
+   * bridge-1 cannot see (timeout, ckevery) gets the mode setup again too. Then the names the input reads, from its tree
+   * (G99, bridge-2; `read`: skipped after a syntax error; `shown`: its result's text, see readsOf), and, when `state`,
+   * every stored user name (stateRead.ts statePart), both with the settings back.
    * `reset`: the user's text set one (the input names a setting, or calls a stored function whose definition does; the
    * result says it was not kept). Giac leaks some by itself, put back without a word: a `throw` in a program leaves
    * eval_level at 1 (our refusals in pasmedian, eseries), and `(-32)^(1/5)` leaves epsilon at 1e-60 (probe 2026-10-20).
-   * When the one call fails, each part goes alone.
    */
   private after(input: string, read: boolean, state: boolean, shown?: string): AfterInput {
     if (namesUnreadFlag(input)) this.modeKey = "";
-    const expected = flagsExpected(this.modeDigits);
-    // G99: the names come from Giac's tree; parsed only when they can matter (mayLend)
-    const reads = read && (state || this.mayLend(input)) ? this.readsOf(input, shown) : NO_READS;
-    const out = this.giac.eval(afterCall(FLAGS_READ, state ? this.modeDigits : null));
-    const parts = isError(out) ? null : splitAfter(out);
-    const flags = parts ? parts.flags : this.giac.eval(FLAGS_READ);
-    const stateNode = parts ? parts.state : state ? parsePrinted(this.giac.eval(statePart(this.modeDigits))) : null;
-    const flagsChanged = flags !== expected;
+    const want = hostContext(this.modeDigits);
+    const flagsChanged = contextDiff(this.bridge.ctxGet(), want).length > 0;
     if (flagsChanged) {
-      const cmds = restoreCommands(this.modeDigits);
-      // One call; when a command in it fails (Giac stops the line there), each one again on its own, in order.
-      if (isError(this.giac.eval(cmds.join(";"))) || this.giac.eval(FLAGS_READ) !== expected) for (const c of cmds) this.giac.eval(c);
+      contextOf(this.bridge.ctxSet(want));
       this.modeKey = "";
     }
+    // G99: the names come from Giac's tree; parsed only when they can matter (mayLend)
+    const reads = read && (state || this.mayLend(input)) ? this.readsOf(input, shown) : NO_READS;
+    const stateNode = state ? parsePrinted(this.giac.eval(statePart(this.modeDigits))) : null;
     const reset = flagsChanged && (namesFlag(input) || [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => this.byName.get(m[0])?.cmds.some(namesFlag) === true));
     const typed = new Set(namesIn(input));
     const table = state && stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n)) : null;
