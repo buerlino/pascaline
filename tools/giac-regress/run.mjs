@@ -7,6 +7,7 @@ import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 
 const { giac } = await loadNodeGiac();
 giac.eval("timeout 120");
+const counts = {}; // file -> [pass, fail] of the line-by-line run
 const files = process.argv.slice(2).length ? process.argv.slice(2) : ["pascaline-check.cas", "pascaline-known.cas"];
 let bad = 0;
 for (const f of files) {
@@ -27,7 +28,28 @@ for (const f of files) {
   }
   const secs = ((performance.now() - t0) / 1000).toFixed(1);
   console.log(`${f}: ${pass} passed, ${fail} failed, ${secs} s${known ? " (every line must fail)" : ""}`);
+  counts[f] = [pass, fail];
   for (const w of wrong) console.log(`  ${known ? "PASSES" : "FAILS"} ${w}`);
   bad += wrong.length;
+}
+
+// Whole file: each file as one text in a fresh Giac, the way icas reads a file; pasn and pasfail must equal the line counts.
+for (const f of files) {
+  const t0 = performance.now();
+  const { giac: fresh } = await loadNodeGiac();
+  fresh.eval("timeout 120");
+  const text = readFileSync(new URL(f, import.meta.url), "utf8");
+  fresh.eval(text);
+  const n = Number(fresh.eval("pasn").trim());
+  const failed = Number(fresh.eval("pasfail").trim());
+  const [pass, fail] = counts[f];
+  const same = n === pass + fail && failed === fail;
+  // A known line may stop the text with a Giac error (one eval stops at the first), so the known file only reports.
+  if (f.includes("known")) {
+    console.log(`${f} as one text: pasn ${n}, pasfail ${failed} (stops at the first erroring line; line by line ${pass + fail}, ${fail}; not compared)`);
+    continue;
+  }
+  console.log(`${f} as one text: pasn ${n}, pasfail ${failed}, ${((performance.now() - t0) / 1000).toFixed(1)} s${same ? "" : ` DIFFERS from line by line (${pass + fail}, ${fail})`}`);
+  if (!same) bad++;
 }
 process.exit(bad ? 1 : 0);

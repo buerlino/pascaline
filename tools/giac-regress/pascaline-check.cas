@@ -43,26 +43,12 @@ Digits:=40:; pc("trap-sum-0.1-x10",((1/10^1)+(1/10^1)+(1/10^1)+(1/10^1)+(1/10^1)
 Digits:=40:; pc("rnd-2/3",(2/3),(666666666667/10^12),5/10^13);
 // rnd-1/7 (home.yaml, oracle)
 Digits:=40:; pc("rnd-1/7",(1/7),(142857142857/10^12),5/10^13);
-// rnd-13-digits-down (home.yaml, derived)
-Digits:=40:; pc("rnd-13-digits-down",((1000000000001/10^12)),1,5/10^12);
-// rnd-13-digits-up (home.yaml, derived)
-Digits:=40:; pc("rnd-13-digits-up",((1000000000006/10^12)),(100000000001/10^11),5/10^12);
-// rnd-tie-pos (home.yaml, derived)
-Digits:=40:; pc("rnd-tie-pos",((1234567890125/10^1)),123456789013,5/10^1);
-// rnd-tie-neg (home.yaml, derived)
-Digits:=40:; pc("rnd-tie-neg",(-(1234567890125/10^1)),-123456789013,5/10^1);
-// rnd-tie-small (home.yaml, derived)
-Digits:=40:; pc("rnd-tie-small",((1234567890125/10^13)),(123456789013/10^12),5/10^13);
-// rnd-carry (home.yaml, derived)
-Digits:=40:; pc("rnd-carry",((9999999999995/10^1)),(1*10^12),5*10^0);
 // rnd-10^12-1 (home.yaml, derived)
 Digits:=40:; pc("rnd-10^12-1",(10^12-1),999999999999,5/10^1);
 // rnd-10^12 (home.yaml, derived)
 Digits:=40:; pc("rnd-10^12",(10^12),(1*10^12),5*10^0);
 // rnd-small-plain (home.yaml, derived)
 Digits:=40:; pc("rnd-small-plain",(1/1024),(9765625/10^10),5/10^16);
-// rnd-small-sci (home.yaml, derived)
-Digits:=40:; pc("rnd-small-sci",((123/10^7)),(123/10^7),5/10^17);
 // rnd-product (home.yaml, oracle)
 Digits:=40:; pc("rnd-product",(123456789*987654321),(121932631113*10^6),5*10^5);
 // rnd-negative (home.yaml, oracle)

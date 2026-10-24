@@ -80,6 +80,7 @@ export function caseLine(c, file) {
   if (Object.keys(s).some((k) => k !== "digits")) return { leftOut: "angle mode or other setting (our layer)" };
   if (OUR_NAMES.test(c.input)) return { leftOut: "uses our definitions (ENGINE_DEFINITIONS, pas…)" };
   if (c.budgetMs !== undefined || /size guard|time guard/.test(c.note ?? "")) return { leftOut: "size or time guard (our layer)" };
+  if (c.oracle === `F('${c.input}')`) return { leftOut: "rounding text (our layer)" }; // the oracle is the typed input: only our display rounding is tested
   if (c.expect === undefined) return { leftOut: "mark only (no value)" };
   if (partsOf(c.expect) === null) return { leftOut: "not a number (refusal, text, list or truth value)" };
   const digits = file === "home.yaml" ? 12 : (s.digits ?? 12); // the home stage evaluates at 12 digits whatever settings.digits says

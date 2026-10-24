@@ -44,6 +44,8 @@ describe("giac-regress exporter", () => {
     expect(left({ input: "1", source: "device", expect: "1" })).toMatch(/source/);
     expect(left({ input: "par(1,2)", expect: "0.666666666667" })).toMatch(/definition/);
     expect(left({ input: "1", mark: "⚠" })).toMatch(/mark only/);
+    expect(left({ input: "123456789012.5", oracle: "F('123456789012.5')", expect: "123456789013" })).toBe("rounding text (our layer)");
+    expect(left({ input: "1.5", oracle: "F('1.5')", expect: "1.5" })).toBe("rounding text (our layer)");
   });
 
   it("the shown text as exact Giac text and its half unit", () => {
