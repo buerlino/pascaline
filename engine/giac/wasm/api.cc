@@ -449,11 +449,12 @@ EMSCRIPTEN_KEEPALIVE const char *giac_ctx_get() {
 
 // bridge-1: sets the fields of a flat JSON object ({"decimal_digits":20,"angle_radian":false}) through the same command
 // functions `name:=value` reaches (prog.cc: _Digits, _angle_radian …), then returns giac_ctx_get(). An unknown key or a
-// value that is not a number or a boolean returns {"error":…} and sets nothing after it. `ctrl_c` left by an interrupted
-// call is cleared first, as giac_value and caseval do: the command functions look at it and would throw (G75, Opus pass 64).
+// value that is not a number or a boolean returns {"error":…} and sets nothing after it. The interrupt state is reset
+// first, as giac_value and caseval do (startClock): the command functions look at `ctrl_c` and the timeout clock, and a
+// flag left by an interrupted call, or that call's clock with a short timeout, made them throw (G75, Opus pass 64).
 EMSCRIPTEN_KEEPALIVE const char *giac_ctx_set(const char *json) {
   const giac::context *c = ctx();
-  giac::ctrl_c = giac::interrupted = false;
+  startClock();
   const char *p = json;
   auto skip = [&]() { while (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r' || *p == ',' || *p == '{') ++p; };
   auto fail = [&](const std::string &why) {
