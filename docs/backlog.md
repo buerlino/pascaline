@@ -38,7 +38,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ### Upstream reports (owner; drafts in `../outreach/upstream-reports.md`)
 - **libqalculate**, filed 2026-10-19: `hp` [#1043](https://github.com/Qalculate/libqalculate/issues/1043) and `mmHg`/`inHg` [#1044](https://github.com/Qalculate/libqalculate/issues/1044), fixed in master (`92ecde7`); [#1045](https://github.com/Qalculate/libqalculate/issues/1045) closed 2026-10-20 (follow-ups G80, merged, and G81). A fix fails the index build on its `override` in `find/units.yaml` once we pin a release that has it.
 - **MathLive**, filed 2026-10-19: [#3122](https://github.com/arnog/mathlive/issues/3122) (⌫ at `\left…\right`), [#3123](https://github.com/arnog/mathlive/issues/3123) (touch caret), [#3124](https://github.com/arnog/mathlive/issues/3124) (focus restore); M4 (Redo after ⌫) drafted, not filed; M5 (`isImplicitArg` takes no matrix, F68) drafted by R75.
-- **Giac**, not filed yet. Parisse takes reports by email, on the forum or as links to fix commits here: patch 0003 (complex `tanh`, G75) as a commit link; the rest as four forum threads (the drafts' "Status"); new since: `simplify`'s assume leak (G92), `im()` of a root of unknown sign (G96), once their packages say where the cause is.
+- **Giac**, not filed yet. Regression files: `tools/giac-regress/` (G89). Parisse takes email, forum or commit links: patch 0003 (complex `tanh`, G75) as a commit link; the rest as four forum threads; new since: `simplify`'s assume leak (G92), `im()` of a root of unknown sign (G96), once their packages say where the cause is.
 
 ## Tasks
 
@@ -72,7 +72,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **audit-approx → [G91](shifts/packages/G91.md).** `approx(sin(10^30), 2×10)` = `≈ −0.685710242506` (right −0.0901169019121; `numeric.ts:198`).
 - **audit-dms-plot → [G87](shifts/packages/G87.md).** The plot of `x+30°15′36″` drops the 36″ (`emit-js.ts:40`); values right.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds, Opus pass 53); raw output in the 2026-10-21 drafts (`../drafts/2026-10-21-packages/g94-raw`).
-- **The hardening without a bug line:** ~~G75~~ → ~~G56~~ → ~~S17~~ → ~~G77~~ done → G89; `src/config.h` threads (G77, after the freeze); G96; G64 after A19, then S16; A31 (a gate stage for the three shell tests in `tools/` and `scripts/`, not drafted).
+- **The hardening without a bug line:** ~~G75~~ done (run 210; patch 0003, `pastanh` gone) → ~~G56~~ done (run 215; copies all the way down); ~~S17~~ → ~~G77~~ → ~~G89~~ done; G96; G64 after A19, then S16; A31 (a gate stage for the three shell tests in `tools/` and `scripts/`, not drafted).
 
 ### After the freeze (P23 order; packages and order: brief section 0)
 - **Find (milestone 4, EN1):** R72, then **R4a** (Find on Math; G93 settled first), **R4b** (Vars, Memory, the user keys) with **R15c3** (their Alpha layer), **A4b** (Find per key on the Tab One). Gate: task 5, the query test, the size test, no index request before idle. Three core cases (c38, c39, c43: a command by name) wait for it.
