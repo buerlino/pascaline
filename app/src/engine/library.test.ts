@@ -40,6 +40,11 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
     ["bad-newer.txt", /newer Pascaline/],
     ["bad-encoding.txt", /not UTF-8/],
   ];
+  it("G105: a quote written \\\" inside a string ends nothing (text-9: Giac reads it as one string)", () => {
+    // phase-1 (76f0e04) toggled at every quote and read `;1"` as a second statement
+    const lib = parseLibrary('// pascaline library 1\n// d\nk:="a\\";1"\n', parse);
+    expect(lib.defs.map((d) => d.text)).toEqual(['k:="a\\";1"']);
+  });
   for (const [name, why] of refused) {
     it(`refuses ${name} as a whole (derived)`, () => {
       expect(() => parseLibrary(file(name), parse)).toThrow(why);
