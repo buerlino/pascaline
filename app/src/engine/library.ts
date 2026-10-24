@@ -8,7 +8,7 @@ import { applyDefChanges, DESC_MAX, MAX_DEFS, replayOrder, type DefChange, type 
 import { ENGINE_DEFINITIONS, WORKER_DEFINITION_NAMES } from "./homeEval.ts";
 import type { GiacParse } from "./bridge.ts";
 import { assignmentIn, stateHeads, valueTargets } from "./stores.ts";
-import { COMPLEX_DEFINITIONS } from "./numeric.ts";
+import { COMPLEX_DEFINITIONS } from "./complex.ts";
 import { defaultCasSettings, type CasResult } from "./types.ts";
 import { DATA_VERSION, migratedText } from "../state/storage.ts";
 import { renameOurCalls, writeUserNames } from "./ourNames.ts";

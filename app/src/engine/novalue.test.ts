@@ -30,11 +30,14 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
   });
   it("refuses Giac's text, an overflow or undef where a number was asked for", () => {
     expect(home("sinh((6.02e3)^3)")).toMatchObject({ ok: false, error: "overflow" });
-    for (const input of ["asin(acos(pi*pi))", "exp(cosh(asin(pi)))", "(asin(pi)^exp(10))*2.5"])
+    // max and min of a non-real value: Giac keeps the text (asin(acos(pi*pi)) and the like were here until patch 0005,
+    // G60, gave asin and acos of an MPFR real outside [-1,1] their values).
+    for (const input of ["max(asin(pi),1)", "min(2*i,1)", "max(sqrt(-2),1)"])
       expect(home(input), input).toMatchObject({ ok: false, error: "noValue", display: "No value found" });
-    // At Home's own budget the exact path times out and the float path gives undef (with 5 s the exact path finds it).
+    // At Home's own budget the exact path times out; the float path has the value since patch 0005 (mpmath
+    // 1.312341649951242985…-0.328386275332011804…*i; it gave undef before).
     const r = host.home("sqrt(asinh(asin(3.7)))", defaultHomeSettings).result;
-    expect(r).toMatchObject({ ok: false, error: "noValue", path: "float-timeout" });
+    expect(r).toMatchObject({ ok: true, display: "1.31234164995-0.328386275332*i", path: "float-timeout" });
   });
   it("refuses Giac's text with no free name even when its evalf is finite; a float result is never refused (F50, Opus pass 45)", () => {
     const never = () => false;
@@ -43,8 +46,8 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
       const text = giac.eval("pasT:=asin(acos(pi*pi))");
       expect(text.replace(/\s/g, "")).toBe("asin(acos(pi*pi))");
       expect(lostNumber(giac, "pasT", "asin(acos(pi*pi))", text, never, 1, never)).toBe("noValue");
-      // Its evalf is undef in this Giac; with a finite evalf (a patched acos, our own MPFR route) it is refused all the
-      // same: only an infinite evalf changes the reason, to "overflow".
+      // Its evalf is finite since patch 0005 (G60), and the stand-in below keeps it so: as text it is refused all the
+      // same; only an infinite evalf changes the reason, to "overflow".
       const finite = { ...giac, eval: (t: string): string => (t.startsWith("evalf(") ? "1.5-0.5*i" : giac.eval(t)) };
       expect(lostNumber(finite, "pasT", "asin(acos(pi*pi))", text, never, 1, never)).toBe("noValue");
       // Guard: a float result whose check failed (Giac's float, of type real or complex, not expression) is not refused.

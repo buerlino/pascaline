@@ -46,8 +46,8 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
       expect(() => parseLibrary(file(name), parse)).toThrow(LibError);
     });
   }
-  it("refuses G50's complex helpers as Pascaline's own names (derived: the audit's pastanh(z):=0 case; pastanh went with G75)", () => {
-    for (const name of ["pasasin", "pasacos", "pasatan", "pasacosh"]) {
+  it("refuses G50's complex helper as Pascaline's own name (derived: the audit's pastanh(z):=0 case; pastanh went with G75, pasasin, pasacos and pasacosh with G60)", () => {
+    for (const name of ["pasatan"]) {
       expect(() => parseLibrary(`// pascaline library 1\n// d\n${name}(z):=0\n`, parse), name).toThrow(/pas\w+ is one of Pascaline's own names/);
     }
   });
