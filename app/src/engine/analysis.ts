@@ -8,6 +8,7 @@ import { numericResult, SECOND_POLISH, SOLVE_HARD_TIMEOUT_S, solveSettingsFor, w
 import { IDENT, type AnalysisRequest, type AnalysisResult, type TableRequest } from "./types.ts";
 import { refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
+import { PLAIN_FORM, type InputForm } from "./stores.ts";
 
 /** Time Giac may spend on an exact definite integral when Romberg did not converge (seconds). */
 const EXACT_INT_S = 0.5;
@@ -30,13 +31,15 @@ function keepingAns<T>(giac: Giac, fn: () => T): T {
  * Num table: rows by x, each cell what Home shows for fn at x (exact-first, homeEval). The caller's
  * Home mode (angle, Digits, budget) must already be applied by the host.
  */
-export function table(giac: Giac, req: TableRequest, s: HomeSettings): HomeResult[][] {
+export function table(giac: Giac, req: TableRequest, s: HomeSettings, form: (cell: string) => InputForm = () => PLAIN_FORM): HomeResult[][] {
   const v = req.variable ?? "x";
   return withUnassigned(giac, [v], () =>
     keepingAns(giac, () =>
       req.xs.map((x) =>
         req.fns.map((f) => {
-          const r = homeEval(giac, `subst((${f}),${v}=(${x}))`, s);
+          // G100: a cell that calls a stored program that stores runs once (stores.ts)
+          const cell = `subst((${f}),${v}=(${x}))`;
+          const r = homeEval(giac, cell, s, undefined, form(cell));
           return r.ok ? r : { ...r, error: "engine" as const };
         }),
       ),

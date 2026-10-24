@@ -8,6 +8,7 @@
 // per name, so the order of the commands is gone). Functions are kept as their definition (the body is not evaluated
 // when it is defined, so order does not matter). Inputs whose effect has no single name are kept as typed, in order.
 import { readValueFacts, type ValueFacts } from "./types.ts";
+import type { ProgramStores } from "./stores.ts";
 
 /** How far a variable that holds a float can be trusted (decisions M4-7): the facts of the result it was stored from
  *  (never `exact`: an exact value stores none). */
@@ -42,6 +43,9 @@ export interface DefEntry {
   /** G46: a variable stored before its angle mode was recorded, whose text holds an angle function; the engine reads
    *  it both ways on its next replay and keeps the reading that matches the preview (engine/angleMigration.ts). */
   migrate?: "angle";
+  /** G100: a program's stores, read from its tree when it was defined (stores.ts). Not kept in storage (validDefs):
+   *  a restored program's are read again from its commands, so a stored log cannot claim a body stores nothing. */
+  stores?: ProgramStores;
 }
 
 export type DefChange = { set: DefEntry } | { purge: string[] };

@@ -23,12 +23,13 @@ describe("flag words (no engine)", () => {
     expect(namesUnreadFlag("sin(1)")).toBe(false);
   });
 
-  it("a library's top-level setting, or a body that calls a setter, is refused", () => {
-    expect(() => parseLibrary(`${HEAD}// on\napprox_mode:=1\n`)).toThrow(LibError);
-    expect(() => parseLibrary(`${HEAD}// sets it\nf(x):={ approx_mode(1); return x; }\n`)).toThrow(/engine's state \(approx_mode\)/);
-    expect(() => parseLibrary(`${HEAD}// hex\ng(x):={ integer_format(16); return x; }\n`)).toThrow(/integer_format/);
-    expect(() => parseLibrary(`${HEAD}// eps\nh(x):=x+epsilon\n`)).toThrow(/epsilon/);
-    expect(parseLibrary(`${HEAD}// plain\nk(x):=x+1\n`).defs).toHaveLength(1);
+  it.skipIf(!giacAvailable())("a library's top-level setting, or a body that calls a setter, is refused", async () => {
+    const parse = (await loadNodeGiac()).bridge.parse;
+    expect(() => parseLibrary(`${HEAD}// on\napprox_mode:=1\n`, parse)).toThrow(LibError);
+    expect(() => parseLibrary(`${HEAD}// sets it\nf(x):={ approx_mode(1); return x; }\n`, parse)).toThrow(/engine's state \(approx_mode\)/);
+    expect(() => parseLibrary(`${HEAD}// hex\ng(x):={ integer_format(16); return x; }\n`, parse)).toThrow(/integer_format/);
+    expect(() => parseLibrary(`${HEAD}// eps\nh(x):=x+epsilon\n`, parse)).toThrow(/epsilon/);
+    expect(parseLibrary(`${HEAD}// plain\nk(x):=x+1\n`, parse).defs).toHaveLength(1);
   });
 });
 

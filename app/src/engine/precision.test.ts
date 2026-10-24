@@ -273,13 +273,12 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
     }
   });
 
-  it("definitionStores: a store into a global name, not into a local or a parameter (source: derived, Giac's printed definitions)", async () => {
-    const { definitionStores } = await import("./decisions.ts");
-    expect(definitionStores("(x)->{ \n  c:=c+1;  \n  c;  \n}")).toBe(true);
-    expect(definitionStores("(x)-> \n{ local y; \n  y:=x;  \n  q:=y;  \n  y;  \n}")).toBe(true);
-    expect(definitionStores("(z)-> \n{ local b; \n  b:=normal(im(z)*180/pi);  \n  return(exp(re(z))*(cos(b)+i*sin(b)));  \n}")).toBe(false);
-    expect(definitionStores("(x)->{ \n  x:=x+1;  \n  x;  \n}")).toBe(false);
-    expect(definitionStores("(x)->floor(x*10^12)")).toBe(false);
+  it("G100: a stored function's kept stores leave out its locals and parameters (source: derived, Giac's tree)", () => {
+    host.home("g100l(z):={ local b; b:=normal(im(z)*180/pi); return(exp(re(z))*(cos(b)+i*sin(b))); }", defaultHomeSettings);
+    host.home("g100p(x):={ x:=x+1; x; }", defaultHomeSettings);
+    host.home("g100f(x):=floor(x*10^12)", defaultHomeSettings);
+    for (const f of ["g100l(1)", "g100p(1)", "g100f(1/3)"]) expect(host.home(f, defaultHomeSettings).defs, f).toEqual([]);
+    host.home("purge(g100l,g100p,g100f)", defaultHomeSettings);
   });
 
   it("a float in a non-number keeps the P decision: piecewise(sin(10^50)>0,x,evalf(1/2)*x) is 0.5*x (source: oracle, sin(10^50) = -0.789672493429)", () => {
@@ -311,26 +310,21 @@ describe.skipIf(!giacAvailable())("G38: the exact path decides at P and at P + 2
   });
 
   it("G53: a built-in's or keyword's print is asked once per Giac instance, a user's name on every call (source: derived, Giac refuses sin:=3)", async () => {
-    const { notBuiltin } = await import("./numeric.ts");
-    const { callsStateful } = await import("./decisions.ts");
+    const { notBuiltin, namePrint } = await import("./numeric.ts");
     const { giac, bridge } = await loadNodeGiac();
     const asked: string[] = [];
     const counted = { eval: (t: string) => (asked.push(t), giac.eval(t)) };
     expect(notBuiltin(counted)("sin")).toBe(false);
     expect(notBuiltin(counted)("sin")).toBe(false);
-    expect(callsStateful(counted, "sin(1)+cos(2)")).toBe(false);
     expect(asked.filter((t) => t === "sin")).toEqual(["sin"]);
-    // A keyword in a printed program: callsStateful visits it once, then never again.
-    giac.eval("g53k(x):={ if (x>0) return 1; return 0; }");
-    expect(callsStateful(counted, "g53k(1)")).toBe(false);
-    expect(callsStateful(counted, "g53k(1)")).toBe(false);
     // `if` is a keyword (asked once); `return` is not on the list (Giac takes return(x):=x without an error), so it is
     // asked on each call.
+    for (const k of ["if", "if", "return", "return"]) namePrint(counted, k);
     expect(asked.filter((t) => t === "if" || t === "return")).toEqual(["if", "return", "return"]);
     // A user's name may change between calls: it is asked each time, so a later definition is seen.
     expect(notBuiltin(counted)("g53u")).toBe(true);
     giac.eval("g53u(x):={ c53:=x; }");
-    expect(callsStateful(counted, "g53u(1)")).toBe(true);
+    expect(notBuiltin(counted)("g53u")).toBe(true);
     expect(asked.filter((t) => t === "g53u")).toEqual(["g53u", "g53u"]);
     // A fresh engine starts with nothing known.
     const other = { eval: (t: string) => (asked.push(`other:${t}`), giac.eval(t)) };

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Pure parts of exact-first Home. Every expected value here is `derived` (exact arithmetic by hand).
 import { describe, expect, it } from "vitest";
-import { definedBy, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, toExactLiterals } from "./homeEval.ts";
+import { EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, toExactLiterals } from "./homeEval.ts";
 import { EQ_DIFF as EMITTED_DIFF, EQ_INEXACT_FLAG as EMITTED_FLAG, EQ_VERDICT as EMITTED_VERDICT, mathJsonToGiac } from "../input/emit.ts";
 import { markOf } from "./format.ts";
 
@@ -49,8 +49,3 @@ describe("restoreLiterals (G14)", () => {
   });
 });
 
-describe("definedBy (G49f4)", () => {
-  it("keeps the variable kind of name:=x->body for the Find items", () => {
-    expect(definedBy("pg:=x->x+pB")).toEqual({ name: "pg", kind: "var" });
-  });
-});

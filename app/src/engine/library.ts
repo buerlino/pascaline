@@ -5,25 +5,21 @@
 // Loaded lazily by whoever imports (dynamic import); nothing in the start chunk imports it. The engine is reached through
 // the small LibraryEngine interface, so this file runs in the Worker, in Node and in tests alike. Only erasable syntax.
 import { applyDefChanges, DESC_MAX, MAX_DEFS, replayOrder, type DefChange, type DefEntry } from "./defs.ts";
-import { definedBy, ENGINE_DEFINITIONS, isStateful, WORKER_DEFINITION_NAMES, simpleAssignment } from "./homeEval.ts";
+import { ENGINE_DEFINITIONS, WORKER_DEFINITION_NAMES } from "./homeEval.ts";
+import type { GiacParse } from "./bridge.ts";
+import { assignmentIn, bodyStores } from "./stores.ts";
 import { COMPLEX_DEFINITIONS } from "./numeric.ts";
 import { defaultCasSettings, type CasResult } from "./types.ts";
 import { DATA_VERSION, migratedText } from "../state/storage.ts";
 import { renameOurCalls, writeUserNames } from "./ourNames.ts";
 import { dropAngleFactor, PASDEG, rewriteAngles } from "../input/angles.ts";
-import { FLAG_WORDS, isFlagName } from "./flags.ts";
+import { isFlagName } from "./flags.ts";
 
 /** r10 section 1.2: the limits of one file. */
 export const LIB_MAX_BYTES = 256 * 1024;
 export const LIB_MAX_DEFS = 200;
 const HEADER = /^\/\/ pascaline library (\d+)$/;
 const NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
-/** Words that change the engine's state when a body runs (probe 2026-10-18: `Digits:=5` inside a body stays set after
- *  the call; `purge(beam)` inside a body removes beam from the engine while the log still lists it; `read("f")` aborts
- *  the module), and every Giac setting (G67, flags.ts: `approx_mode:=1` at the top level or `approx_mode(1)` in a body
- *  turned every later `=` into `≈`). A guard, not a proof. */
-const STATE_WORDS = new RegExp(`\\b(${["purge", "restart", "reset", "rm_all_vars", "assume", "additionally", "read", "write", "sto", ...FLAG_WORDS].join("|")})\\b|=>`);
-
 export interface LibTest {
   expr: string;
   /** 1-based line in the file. */
@@ -34,6 +30,8 @@ export interface LibDef {
   kind: "fn" | "var";
   /** The definition as written (several lines for a program). */
   text: string;
+  /** A value's right side as written (`name:=<value>`), for comparing it with the log's entry. */
+  value?: string;
   desc: string;
   tests: LibTest[];
   line: number;
@@ -70,53 +68,6 @@ function topLevelSemicolon(s: string): boolean {
 }
 
 const NOSTR = (s: string): string => s.replace(/"[^"]*"/g, '""');
-/** Every name the (string-free) text stores into: `a:=`, `a[i]:=` (any nesting in the index), `a=<`, `a+=` (also -= *= /=),
- *  `a++`, `a--`, `++a`, `--a`. Returns the base names. */
-function storedNames(s: string): string[] {
-  const out: string[] = [];
-  for (const m of s.matchAll(/(?<![A-Za-z0-9_.])[A-Za-z][A-Za-z0-9_]*/g)) {
-    const name = m[0];
-    let i = m.index + name.length;
-    // A loop variable (`for k from`, `for k in`, `pour k de`) is stored at every iteration.
-    if (/(?:^|[^A-Za-z0-9_.])(?:for|pour)\s+$/i.test(s.slice(0, m.index)) && /^\s+(?:from|in|de)\b/i.test(s.slice(i))) {
-      out.push(name);
-      continue;
-    }
-    // `g(y):=…` inside a body defines the global function g.
-    if (s[i] === "(") {
-      let d = 0;
-      let j = i;
-      for (; j < s.length; j++) {
-        if (s[j] === "(") d++;
-        else if (s[j] === ")" && --d === 0) break;
-      }
-      if (d === 0 && /^\s*:=/.test(s.slice(j + 1))) {
-        out.push(name);
-        continue;
-      }
-    }
-    for (;;) {
-      while (/\s/.test(s[i] ?? "")) i++;
-      if (s[i] !== "[") break;
-      let d = 0;
-      for (; i < s.length; i++) {
-        if (s[i] === "[") d++;
-        else if (s[i] === "]" && --d === 0) break;
-      }
-      if (d !== 0) break;
-      i++;
-    }
-    const after = s.slice(i, i + 2);
-    const before = s.slice(0, m.index).replace(/\s+$/, "").slice(-2);
-    if (after === ":=" || after === "=<" || /^[-+*/]=$/.test(after) || after === "++" || after === "--" || before === "++" || before === "--") out.push(name);
-  }
-  return out;
-}
-
-/** The expression stores into some name anywhere outside strings (a test line must not). */
-function assigns(s: string): boolean {
-  return /:=|=<|[-+*/]=|\+\+|--/.test(NOSTR(s));
-}
 
 function balanced(s: string): boolean {
   let d = 0;
@@ -124,22 +75,39 @@ function balanced(s: string): boolean {
   return d <= 0;
 }
 
-/** A name a function body stores into that is neither a parameter nor declared `local`: a global the call would change.
- *  Covers `f(x):=…` and `f:=x->…`; a plain value has no body. */
-function globalAssigned(text: string): string | undefined {
-  const head = /^\s*[A-Za-z][A-Za-z0-9_]*\s*\(([^()]*)\)\s*:=/.exec(text);
-  const arrow = head ? null : /^\s*[A-Za-z][A-Za-z0-9_]*\s*:=\s*(?:\(([^()]*)\)|([A-Za-z][A-Za-z0-9_]*))\s*->/.exec(text);
-  const h = head ?? arrow;
-  if (!h) return undefined;
-  const body = NOSTR(text.slice(h[0].length));
-  const own = new Set((h[1] ?? h[2] ?? "").split(",").map((p) => p.trim()).filter(Boolean));
-  for (const m of body.matchAll(/\blocal\s+([^;]+);/g)) for (const n of m[1]!.split(",")) own.add(n.trim().split(/\s|:=/)[0]!);
-  return storedNames(body).find((n) => !own.has(n));
+/** G100: what a definition or a test changes when it runs, from Giac's tree (bridge-2): the first head of the state
+ *  family (purge, assume, a setting, a file reader, a string Giac evaluates; stores.ts) or a setting it reads, and the first global target (a
+ *  name stored that is neither the defined name, a parameter nor a local). */
+function changes(tree: GiacParse, own: readonly string[]): { head?: string; target?: string } {
+  const b = bodyStores(tree, own);
+  // a setting read is refused too (G67: a library may not use one, flags.ts)
+  const head = b.heads[0] ?? tree.reads.find(isFlagName);
+  return { ...(head !== undefined ? { head } : {}), ...(b.targets[0] !== undefined ? { target: b.targets[0] } : {}) };
 }
 
-/** Reads a library file: encoding, size, stamp, blocks, every rule that needs no engine (r10 section 1.3). Throws a
- *  LibError for the first problem. A string is taken as the text of a file already decoded. */
-export function parseLibrary(input: Uint8Array | string): LibFile {
+/** A tree Giac's parser could not read cleanly holds `undef` where it gave up (`++a` is `undef++; a`): no name of the
+ *  user's, so no target. */
+function readable(tree: GiacParse): GiacParse {
+  return tree.ok ? tree : { ...tree, targets: tree.targets.filter((t) => t !== "undef") };
+}
+
+/** A block that defines one name: Giac's tree is one top-level store into it, written `name(args):=…` (a function) or
+ *  `name:=…` (a value, a function written with an arrow too). */
+function definitionOf(block: string, tree: GiacParse): { name: string; kind: "fn" | "var" } | undefined {
+  if (tree.heads[0] !== "sto") return undefined;
+  // `Beta(x):=…` names a built-in: Giac's tree has no target (the call is no name), the import refuses the name
+  const call = /^\s*([A-Za-z][A-Za-z0-9_]*)\s*\(/.exec(block)?.[1];
+  if (tree.top.length === 0 && call !== undefined && tree.heads.includes(call)) return { name: call, kind: "fn" };
+  if (tree.top.length !== 1) return undefined;
+  const name = tree.top[0]!;
+  if (tree.program && call === name) return { name, kind: "fn" };
+  return assignmentIn(block, tree) ? { name, kind: "var" } : undefined;
+}
+
+/** Reads a library file: encoding, size, stamp, blocks, every rule that needs no evaluation (r10 section 1.3). Throws a
+ *  LibError for the first problem. A string is taken as the text of a file already decoded. `parse`: Giac's tree of a
+ *  text (bridge-2, never evaluated), which says what a body or a test stores (G100). */
+export function parseLibrary(input: Uint8Array | string, parse: (text: string) => GiacParse): LibFile {
   const bytes = typeof input === "string" ? new TextEncoder().encode(input) : input;
   if (bytes.length > LIB_MAX_BYTES) throw new LibError(0, `the file is over ${LIB_MAX_BYTES / 1024} kB`);
   let text: string;
@@ -172,9 +140,11 @@ export function parseLibrary(input: Uint8Array | string): LibFile {
         const d = defs[defs.length - 1];
         if (!d) throw new LibError(lineNo, "a test line before any definition");
         const expr = test[1]!.trim();
-        const word = STATE_WORDS.exec(expr);
-        if (word) throw new LibError(lineNo, `the test changes the engine's state (${word[0]})`);
-        if (assigns(expr)) throw new LibError(lineNo, "a test must not assign a name (`:=`, `++`, `+=`, `=<`)");
+        const tree = readable(parse(asGiac(expr)));
+        const c = changes(tree, []);
+        if (c.head) throw new LibError(lineNo, `the test changes the engine's state (${c.head})`);
+        if (c.target) throw new LibError(lineNo, `a test must not assign a name (it assigns ${c.target})`);
+        if (!tree.ok) throw new LibError(lineNo, "Giac cannot read the test (a syntax error)");
         if (topLevelSemicolon(expr)) throw new LibError(lineNo, "one expression per test: a second statement follows `;`");
         d.tests.push({ expr, line: lineNo });
       } else lastComment = { text: t.replace(/^\/\/\s*/, ""), line: lineNo };
@@ -187,18 +157,23 @@ export function parseLibrary(input: Uint8Array | string): LibFile {
     while (i + 1 < rest.length && (!balanced(block) || /^(\s+\S|[}\]\)])/.test(rest[i + 1]!))) block += "\n" + rest[++i];
     const at = start + 2;
     if (!balanced(block)) throw new LibError(at, "a bracket is never closed");
-    const def = definedBy(block);
-    const asg = simpleAssignment(block);
-    if (!def) throw new LibError(at, "only definitions may stand in a library (`name(args):=…` or `name:=…`)");
     if (topLevelSemicolon(block)) throw new LibError(at, "one definition per block: a second statement follows `;`");
-    const bodyText = block.replace(/^[^:]*:=/, "");
-    const word = STATE_WORDS.exec(bodyText);
-    if (word) throw new LibError(at, `the body changes the engine's state (${word[0]})`);
-    const g = globalAssigned(block);
-    if (g) throw new LibError(at, `the body assigns ${g}, which is not local: declare it with \`local ${g};\``);
-    const stored = asg ? storedNames(NOSTR(asg.rhs))[0] : undefined;
-    if (stored) throw new LibError(at, `the value assigns ${stored}, which is not local: a value must not itself define or change anything`);
-    if (asg && isStateful(asg.rhs)) throw new LibError(at, "a value must not itself define or change anything");
+    const tree = readable(parse(asGiac(block)));
+    const def = definitionOf(block, tree);
+    // what a body Giac cannot read stores is still checked on the part it read (a global target is the plainer reason)
+    if (!def && !tree.ok) {
+      const c = changes(tree, tree.top);
+      if (c.head) throw new LibError(at, `the body changes the engine's state (${c.head})`);
+      if (c.target) throw new LibError(at, `the body assigns ${c.target}, which is not local: declare it with \`local ${c.target};\``);
+      throw new LibError(at, "Giac cannot read this definition (a syntax error)");
+    }
+    if (!def) throw new LibError(at, "only definitions may stand in a library (`name(args):=…` or `name:=…`)");
+    const c = changes(tree, [def.name]);
+    if (c.head) throw new LibError(at, `the body changes the engine's state (${c.head})`);
+    if (c.target && tree.program) throw new LibError(at, `the body assigns ${c.target}, which is not local: declare it with \`local ${c.target};\``);
+    if (c.target) throw new LibError(at, `the value assigns ${c.target}, which is not local: a value must not itself define or change anything`);
+    if (!tree.ok) throw new LibError(at, "Giac cannot read this definition (a syntax error)");
+    const value = def.kind === "var" ? assignmentIn(block, tree)?.rhs : undefined;
     if (!NAME.test(def.name)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
     if (isFlagName(def.name)) throw new LibError(at, `${def.name} is one of the engine's settings, which a library may not change`);
     if (def.name in ENGINE_DEFINITIONS || def.name in COMPLEX_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name === PASDEG || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
@@ -207,7 +182,7 @@ export function parseLibrary(input: Uint8Array | string): LibFile {
     if (defs.some((d) => d.name === def.name)) throw new LibError(at, `${def.name} is defined twice in this file`);
     if (!lastComment || lastComment.line !== at - 1) throw new LibError(at, `${def.name} needs its one-line description on the line above`);
     if (lastComment.text.length > DESC_MAX) throw new LibError(lastComment.line, `the description is over ${DESC_MAX} characters`);
-    defs.push({ name: def.name, kind: def.kind, text: block, desc: lastComment.text, tests: [], line: at });
+    defs.push({ name: def.name, kind: def.kind, text: block, ...(value !== undefined ? { value } : {}), desc: lastComment.text, tests: [], line: at });
     lastComment = null;
   }
   if (defs.length > LIB_MAX_DEFS) throw new LibError(0, `more than ${LIB_MAX_DEFS} definitions`);
@@ -348,10 +323,10 @@ function inRadians<T>(engine: LibraryEngine, fn: () => T): T {
  *  evaluates to what the log holds (the log keeps `B:=(10)`, not `B:=A*2`). */
 function sameDefinition(engine: LibraryEngine, d: LibDef, old: DefEntry): boolean {
   if (old.cmds.join("\n") === d.text || old.cmds.join("\n") === asGiac(d.text)) return true;
-  const asg = d.kind === "var" && old.kind === "var" ? simpleAssignment(d.text) : null;
-  if (!asg) return false;
+  if (d.kind !== "var" || old.kind !== "var" || d.value === undefined) return false;
+  const rhs = d.value;
   // a value in a file is in radians (G46): read with the factor 1, as the import's cas() in RAD reads it
-  const v = inRadians(engine, () => engine.eval(asGiac(asg.rhs)));
+  const v = inRadians(engine, () => engine.eval(asGiac(rhs)));
   return v.ok && !/\bundef\b/.test(v.output) && old.cmds.length === 1 && old.cmds[0] === `${d.name}:=(${v.output.trim()})`;
 }
 

@@ -24,7 +24,9 @@ import { readFileSync } from "node:fs";
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
 import { EngineHost, type GiacApi } from "../../app/src/engine/host.ts";
 import { NO_BRIDGE, type GiacBridge, type GiacValue } from "../../app/src/engine/bridge.ts";
-import { angleCommand, defaultHomeSettings, ENGINE_DEFINITIONS, isStateful, pasdegCommand, storeTargets } from "../../app/src/engine/homeEval.ts";
+import { angleCommand, defaultHomeSettings, ENGINE_DEFINITIONS, pasdegCommand } from "../../app/src/engine/homeEval.ts";
+import { formOf, mayStore } from "../../app/src/engine/stores.ts";
+import { isOurStore } from "../../app/src/engine/ourNames.ts";
 import { hasFloat, rationalValue, shapeOf, splitList, valueParts, type Shape } from "../../app/src/engine/numeric.ts";
 import { readsFrom } from "../../app/src/engine/stateRead.ts";
 import { FLAGS_READ, restoreCommands } from "../../app/src/engine/flags.ts";
@@ -190,11 +192,14 @@ function runCase(c: Case): void {
   }
   const names0 = userNames(A.giac);
   // names and stores: nothing is evaluated
-  const reads = readsFrom(A.bridge.parse(c.text));
+  const tree = A.bridge.parse(c.text);
+  const reads = readsFrom(tree);
   const p = bridge.parse(c.text);
   note("reads", c, set(reads.names), set(p.reads));
-  note("targets", c, set([...reads.targets, ...(storeTargets(c.text)?.names ?? [])]), set(p.targets));
-  note("stateful", c, String(isStateful(c.text)), String(p.targets.length > 0 || p.heads.some((h) => ["purge", "assume", "additionally", "DelVar"].includes(h))));
+  // G100: the host's targets are the tree's, our helpers' stores told apart by name (ourNames.ts); its stateful is
+  // stores.ts formOf (no stored programs here: the walk finds none). The bridge column is the raw tree.
+  note("targets", c, set(tree.targets.filter((t) => !isOurStore(t))), set(p.targets));
+  note("stateful", c, String(formOf(c.text, mayStore(c.text) ? tree : null, () => false).stores), String(p.targets.length > 0 || p.heads.some((h) => ["purge", "assume", "additionally", "DelVar"].includes(h))));
   note("float", c, String(hasFloat(c.text)), String(p.float));
   // one evaluation each
   const P = c.digits;
@@ -335,6 +340,8 @@ const READERS: Record<string, [string, string[]][]> = {
   "bridge-2 parse": [
     ["stateRead.ts", ["STO", "READER", "readPart", "IDENT", "idents", "readsOf"]],
     ["homeEval.ts", ["STATEFUL", "HELPER_STO", "isStateful", "simpleAssignment", "definedBy", "NAME_LIST", "storeTargets"]],
+    ["decisions.ts", ["definitionStores", "callsStateful"]],
+    ["library.ts", ["STATE_WORDS", "globalAssigned", "storedNames", "assigns"]],
     ["numeric.ts", ["FLOAT_LITERAL", "hasFloat", "functionsIn", "namesIn"]],
     ["host.ts", ["QUOTING", "arrowBodyEnd", "maskBound", "matching", "splitTop", "indexedTarget"]],
   ],

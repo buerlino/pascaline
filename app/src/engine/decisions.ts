@@ -93,37 +93,6 @@ export function rationalOnly(expr: string): boolean {
   return true;
 }
 
-/** A stored function's printed definition changes engine state: it stores into a name that is neither a parameter
- *  nor a `local` (Giac prints `sto(y,q)` and `y=>q` as `q:=y`), or calls purge, assume or additionally. The engine's
- *  own helpers (par, sigfig) assign only their locals and parameters. */
-export function definitionStores(def: string): boolean {
-  if (/=>|\b(?:sto|purge|assume|additionally)\s*\(/.test(def)) return true;
-  const own = new Set<string>();
-  const params = /^\s*\(([^)]*)\)\s*->/.exec(def) ?? /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*->/.exec(def);
-  for (const n of params?.[1]?.split(",") ?? []) own.add(n.trim());
-  const local = /\blocal\s+([^;]*);/g;
-  for (let m = local.exec(def); m; m = local.exec(def)) for (const n of m[1]!.split(",")) own.add(n.trim().replace(/\s*:=[\s\S]*$/, ""));
-  const target = /([A-Za-z_][A-Za-z0-9_]*)\s*(?:\[[^\]]*\]\s*)?:=/g;
-  for (let m = target.exec(def); m; m = target.exec(def)) if (!own.has(m[1]!)) return true;
-  return false;
-}
-
-/** `input` calls a stored function whose printed definition stores (`inc(x):={c:=c+1;c}`, definitionStores), directly
- *  or through another stored function: running it again (a second decision, a value check) would store again, so it
- *  runs once. */
-export function callsStateful(giac: Giac, input: string): boolean {
-  const seen = new Set<string>();
-  const visit = (text: string): boolean =>
-    functionsIn(text).some((name) => {
-      if (seen.has(name)) return false;
-      seen.add(name);
-      const def = namePrint(giac, name);
-      if (def === `'${name}'` || !/->/.test(def)) return false;
-      return definitionStores(def) || visit(def);
-    });
-  return visit(input);
-}
-
 /** G48: a name the input calls is a stored function whose printed definition rests on a decision, directly or through
  *  another stored function (recursion ends: a name being visited counts as not deciding). */
 export function decidingStored(giac: Giac): (name: string) => boolean {
