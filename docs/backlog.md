@@ -73,7 +73,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **G9. Number formats against the G2** (item 15): decide in the settings and help pass. **K1:** a pending one-shot Shift is used up by the first drag step. **K5:** the gestures in the help texts.
 - **`tieRisk`** (`format.ts:129`, set in `homeEval.ts:508`) has no reader (docs/04 2.4 rule 2 already drops a digit at a tie): drop it when `homeEval.ts` is next touched outside the freeze.
 - **The golden gate's tightest timing:** `g58-factorial-1e6-12` (`tests/golden/precision.yaml:341`, `budgetMs: 2000`) took 2111 ms in run 170 and cost A28 a fix round; a plain rerun passed. Decided 2026-10-22: the budget stays (about 1.0 s idle, 3 runs); a time-only miss reruns once, A25 step 4.
-- **[A34f1](shifts/packages/A34f1.md) (annabell, day; Opus pass 59):** `node_modules_stale` (`scripts/pipeline-lib.sh`) checks only that each package is present, so a bumped version in `package-lock.json` is never installed in the phase-1 worktree and the checks run the old one: compare `version` too, with a test.
+- **DONE [A34f1](shifts/packages/A34f1.md) (annabell, day; Opus pass 59):** `node_modules_stale` (`scripts/pipeline-lib.sh`) checks only that each package is present, so a bumped version in `package-lock.json` is never installed in the phase-1 worktree and the checks run the old one: compare `version` too, with a test.
 - **The pipeline:** A15's tests check fixed dry-run echo lines, not `want_checks` and `resolve_audit_model` (Opus pass 20); the size test does not cover CSS (25.8 kB raw at 2026-10-12).
 - **C3. CI** (needs your OK); **C4. F-Droid recipe:** untested end to end; `npm ci` after `prebuild` needs an offline rework.
 

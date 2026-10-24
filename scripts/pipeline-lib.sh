@@ -34,7 +34,12 @@ node_modules_stale() {
     const fs = require("fs"), d = process.argv[1];
     let want, have;
     try { want = JSON.parse(fs.readFileSync(d + "/package-lock.json", "utf8")).packages; have = JSON.parse(fs.readFileSync(d + "/node_modules/.package-lock.json", "utf8")).packages; } catch { process.exit(0); }
-    for (const [k, v] of Object.entries(want)) if (k.startsWith("node_modules/") && !v.optional && !v.link && !(k in have)) process.exit(0);
+    for (const [k, v] of Object.entries(want)) {
+      if (!k.startsWith("node_modules/") || v.optional || v.link) continue;
+      if (!(k in have)) process.exit(0);
+      let got; try { got = JSON.parse(fs.readFileSync(d + "/" + k + "/package.json", "utf8")).version; } catch { process.exit(0); }
+      if (v.version && got !== v.version) process.exit(0);
+    }
     process.exit(1);' "$1"
 }
 
