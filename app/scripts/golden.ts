@@ -10,7 +10,9 @@
 //   steps      G82 (patch 0004): tests/engine/step-budget-test.mjs (a step budget interrupts at the same count on a fast
 //              clock), and scripts/golden-speed.ts: every home and precision case gives the same display, mark and copy text on a clock
 //              8× fast (the Tab One is 5-8× slower); the cases that still differ are listed as known (SPEED_KNOWN), a new one fails
-//   flags      tests/engine/flags-canary.ts (G67): every field of Giac's context in the pinned source is read and restored
+//   flags      (and regress, G108: tools/giac-regress/run.mjs on the three committed files: check lines pass, known lines fail,
+//              patched lines pass; tests/engine/regress-fresh.mjs: export.mjs gives the committed files)
+//              tests/engine/flags-canary.ts (G67): every field of Giac's context in the pinned source is read and restored
 //              by the host's settings check or listed with the reason (app/src/engine/flags.ts CONTEXT_FIELDS);
 //              tests/engine/ctx-canary.ts (G102): each of bridge-1's fields set and printed back by Giac's getter;
 //              tests/engine/tanh-test.ts and patch-canary.ts (G75): patch 0003's complex tanh against mpmath, and its
@@ -159,6 +161,25 @@ function stageFlags(): void {
   );
   const out = runs.map((r) => `${r.stdout}${r.stderr}`.trim().split("\n").slice(-3).join(" | ")).join(" | ");
   report("flags", runs.every((r) => r.status === 0), out);
+  stageRegress();
+}
+
+/** G108: the Giac regression files (tools/giac-regress) are what export.mjs builds now, and on our build every check line
+ *  passes, every known line fails, every patched line passes (patches 0003, 0005, 0006). */
+function stageRegress(): void {
+  const fresh = spawnSync(process.execPath, [`${root}tests/engine/regress-fresh.mjs`], { encoding: "utf8", timeout: 120_000 });
+  const t0 = performance.now();
+  const r = spawnSync(process.execPath, [`${root}tools/giac-regress/run.mjs`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 600_000 });
+  const secs = ((performance.now() - t0) / 1000).toFixed(0);
+  const lines = `${r.stdout}${r.stderr}`.trim().split("\n");
+  const counts = lines.filter((l) => /^pascaline-(check|known|patched)\.cas: \d+ passed/.test(l)).map((l) => l.replace(/^pascaline-/, "").replace(/\.cas: /, " ").replace(/, [\d.]+ s.*/, ""));
+  const bad = lines.filter((l) => /^\s+(FAILS|PASSES) |DIFFERS/.test(l));
+  for (const l of bad) console.log(`  regress ${l.trim()}`);
+  report(
+    "regress",
+    r.status === 0 && fresh.status === 0,
+    `Giac regression files (patches 0003, 0005, 0006): ${counts.join("; ")}, ${secs} s${fresh.status === 0 ? "" : `; ${`${fresh.stdout}${fresh.stderr}`.trim().split("\n").pop()}`}`,
+  );
 }
 
 async function stageHome(): Promise<void> {
