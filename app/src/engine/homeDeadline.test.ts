@@ -18,8 +18,9 @@ describe("heavySplit: a root next to an integer of 13 digits or more", () => {
 
 describe.skipIf(!giacAvailable())("Home's deadline (real Giac)", () => {
   let giac: Awaited<ReturnType<typeof loadNodeGiac>>["giac"];
+  let bridge: Awaited<ReturnType<typeof loadNodeGiac>>["bridge"];
   beforeAll(async () => {
-    giac = (await loadNodeGiac()).giac;
+    ({ giac, bridge } = await loadNodeGiac());
     for (const c of homeSetupCommands(defaultHomeSettings)) giac.eval(c);
   });
 
@@ -37,6 +38,14 @@ describe.skipIf(!giacAvailable())("Home's deadline (real Giac)", () => {
     const r = homeEval(giac, "sqrt(2)", defaultHomeSettings);
     expect(r.ok).toBe(true);
     expect(r.display).toBe("1.41421356237");
+  });
+
+  it("guard (passes on phase-1): through bridge-3 (G103) acos(120^(5/2+5)) answers too; its split is not asked", () => {
+    const t0 = performance.now();
+    const r = homeEval({ eval: (t) => giac.eval(t), value: (t, p) => bridge.value(t, p) }, "acos(120^(5/2+5))", defaultHomeSettings);
+    expect(performance.now() - t0).toBeLessThan(HOME_DEADLINE_MS);
+    // derived: the same value as the text reads give (the next case)
+    expect([r.ok, r.display]).toEqual([true, homeEval(giac, "acos(120^(5/2+5))", defaultHomeSettings).display]);
   });
 
   it("acos(120^(5/2+5)) answers: Giac's im() of its exact result looped past the interrupt", () => {
