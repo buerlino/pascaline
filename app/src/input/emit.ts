@@ -68,7 +68,7 @@ export function oddIndex(n: Json | undefined): boolean {
 }
 
 /** Fixed names: MathJSON head -> Giac function name (plain 1:1 calls). */
-const FN: Record<string, string> = {
+export const FN: Record<string, string> = {
   Sin: "sin", Cos: "cos", Tan: "tan", Cot: "cot", Sec: "sec", Csc: "csc",
   Arcsin: "asin", Arccos: "acos", Arctan: "atan",
   Sinh: "sinh", Cosh: "cosh", Tanh: "tanh", Arsinh: "asinh", Arcosh: "acosh", Artanh: "atanh",

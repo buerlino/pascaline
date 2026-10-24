@@ -3,7 +3,8 @@
 // fully parenthesised, so the result can be compiled once with new Function and called allocation-free.
 // 1/0 gives Infinity and invalid points (sqrt(-1), ln(-1)) give NaN, which curve renderers treat as a break.
 import { parseError, parseText, type ParseKey, type ParseVars } from "../i18n/enParser.ts";
-import { oddIndex, oddRootExponent, type Json } from "./emit.ts";
+import { ANGLE_IN, ANGLE_OUT } from "./angles.ts";
+import { FN, oddIndex, oddRootExponent, type Json } from "./emit.ts";
 import { parseLatex } from "./parse.ts";
 
 const FN1: Record<string, string> = {
@@ -19,9 +20,9 @@ function num(e: Json): string | undefined {
   return undefined;
 }
 
-/** Functions whose argument is an angle, and those that return one (drawn in degrees when the mode is DEG, R64a). */
-const ANGLE_IN = new Set(["Sin", "Cos", "Tan", "Cot", "Sec", "Csc"]);
-const ANGLE_OUT = new Set(["Arcsin", "Arccos", "Arctan"]);
+/** The angle sets are input/angles.ts's, through the Giac name emit.ts gives the head (one table for both emitters, G87). */
+const angleIn = (h: string, n: number): boolean => ANGLE_IN[FN[h] ?? ""]?.[0] === 0 && n === 1;
+const angleOut = (h: string, n: number): boolean => ANGLE_OUT.has(FN[h] ?? "") && n === 1;
 const RAD_PER_DEG = "(Math.PI/180)";
 
 function js(e: Json, vars: ReadonlySet<string>, deg = false): string {
@@ -37,7 +38,7 @@ function js(e: Json, vars: ReadonlySet<string>, deg = false): string {
   const a = e.slice(1) as Json[];
   const r = (i: number): string => js(a[i] as Json, vars, deg);
   switch (h) {
-    case "Add": return `(${r(0)}+${r(1)})`;
+    case "Add": return `(${a.map((_, i) => r(i)).join("+")})`;
     case "Subtract": return `(${r(0)}-${r(1)})`;
     case "Negate": return `(-${r(0)})`;
     case "Multiply": return `(${a.map((_, i) => r(i)).join("*")})`;
@@ -64,8 +65,8 @@ function js(e: Json, vars: ReadonlySet<string>, deg = false): string {
       return `(${f}(${deg ? `${r(0)}*${RAD_PER_DEG}` : r(0)}))`;
     }
     default:
-      if (deg && ANGLE_IN.has(h) && a.length === 1) return `${FN1[h]}(${r(0)}*${RAD_PER_DEG})`;
-      if (deg && ANGLE_OUT.has(h) && a.length === 1) return `(${FN1[h]}(${r(0)})/${RAD_PER_DEG})`;
+      if (deg && angleIn(h, a.length)) return `${FN1[h]}(${r(0)}*${RAD_PER_DEG})`;
+      if (deg && angleOut(h, a.length)) return `(${FN1[h]}(${r(0)})/${RAD_PER_DEG})`;
       if (h in FN1 && a.length === 1) return `${FN1[h]}(${r(0)})`;
       return fail("parse.unsupported", { h });
   }
