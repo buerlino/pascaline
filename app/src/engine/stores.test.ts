@@ -115,13 +115,29 @@ describe.skipIf(!giacAvailable())("G100: the stores of an input, from Giac's tre
     home("purge(q)");
   });
 
-  it("an imported library's program keeps its stores: a call to it is logged", () => {
+  it("an imported library's program keeps its stores on its log entry; a call to it logs nothing", () => {
     const lib = "// pascaline library 1\n// adds\nlibadd(x):={ local s; s:=x+1; return s; }\n";
     const r = importLibrary(host, parseLibrary(lib, bridge.parse), []);
     expect(r.ok).toBe(true);
     const e = r.ok ? r.log.find((d) => d.name === "libadd") : undefined;
     expect(e?.stores).toEqual({ writes: [], calls: [] });
+    const c = home("libadd(1)");
+    expect(c.result.display).toBe("2");
+    expect(c.defs).toEqual([]);
     home("purge(libadd)");
+  });
+
+  it("a restored program's stores are read again from its commands: a call runs once per Enter and is logged", async () => {
+    // validDefs drops `stores`: after a relaunch keptOf reads them from cmds[0]; too little and F57 is back
+    const fresh = await nodeHost();
+    fresh.restore([
+      { name: "ci", kind: "var", cmds: ["ci:=(0)"], preview: "0", view: "home", time: 0 },
+      { name: "bumpi", kind: "fn", cmds: ["bumpi(x):={ increment(ci); return x; }"], preview: "", view: "home", time: 0 },
+    ]);
+    const r = fresh.home("bumpi(floor(sqrt(2)))", defaultHomeSettings);
+    expect(r.result.display).toBe("1");
+    expect(fresh.eval("ci").output).toBe("1");
+    expect(setsOf(r.defs)).toEqual(["ci=ci:=(1)"]);
   });
 
   it("forms from the tree (G49f4: name:=x->body is an assignment of a variable)", () => {
