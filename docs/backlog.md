@@ -65,14 +65,14 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F86, no package (G60's report).** Home `exp(cosh(floor(asin(pi))))` is "No value found" (Giac's evalf leaves `exp(cosh(1-2*i))` as text); right 0.25326511802−0.461196406269·i. Family 5.
 - **F70, no package (to verify: gorge).** Home Σ with a numeric bound fails after about 1 s with "The calculation failed", not a time-limit message: Σ_{x=1}^{100000} 1/x, Σ_{K=1}^{2000} cos(K)/K (desktop, `e0d03ed`); to 10^6 Giac closes it (⚠ 14.3927267229). Whether Home's deadline or an engine error.
 - **F71, no package (to verify: ron).** CAS Σ_{k=1}^{2000} cos(k)/k (3 s) shows its result as raw LaTeX text (`\frac{15111779…`), not drawn (docs/04: never raw engine text); a size cut or MathLive's limit.
-- **F61, no package.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc` need their Giac patch (decisions.md G71). Family 4.
+- **F61, no package.** Giac's exact `acosh` of a negative non-rational is ln(…) at Digits 40 and its conjugate at 80 (`acosh(-1/2)` ≈ -6.8E-15+2.094*i); two-argument `round`/`trunc`: patch pending (decisions.md G71). Family 4.
 - **F62, no package.** `sin(cosh(10!))` takes 11 s in Home; the 2 s deadline misses; G82 does not stop it (one call, 20 checks).
 - **F63, no package.** A stored ⚠ value (`BesselJ(1,2)`) read through a function, after a relaunch or by its name shows one digit too many confirmed (`tests/golden/seqsweep-known.yaml`).
 - **F66, no package.** The plot evaluator has NaN at x = 0 for x·x/x where Giac simplifies to x (`viewsweep-known.yaml`); Home and the plot disagree at one point.
 - **audit-approx → [G91](shifts/packages/G91.md).** `approx(sin(10^30), 2×10)` = `≈ −0.685710242506` (right −0.0901169019121; `numeric.ts:198`).
 - **audit-dms-plot → [G87](shifts/packages/G87.md).** The plot of `x+30°15′36″` drops the 36″ (`emit-js.ts:40`); values right.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds, Opus pass 53); raw output in the 2026-10-21 drafts (`../drafts/2026-10-21-packages/g94-raw`).
-- **The hardening without a bug line:** ~~G75~~ done (run 210; patch 0003, `pastanh` gone) → ~~G56~~ done (run 215; copies all the way down); S17 → G77 → G89; G96; G64 after A19, then S16; A31 (a gate stage for the three shell tests in `tools/` and `scripts/`, not drafted).
+- **The hardening without a bug line:** ~~G75~~ done (run 210; patch 0003, `pastanh` gone) → ~~G56~~ done (run 215; copies all the way down); ~~S17~~ → G77 → G89; G96; G64 after A19, then S16; A31 (a gate stage for the three shell tests in `tools/` and `scripts/`, not drafted).
 
 ### After the freeze (P23 order; packages and order: brief section 0)
 - **Find (milestone 4, EN1):** R72, then **R4a** (Find on Math; G93 settled first), **R4b** (Vars, Memory, the user keys) with **R15c3** (their Alpha layer), **A4b** (Find per key on the Tab One). Gate: task 5, the query test, the size test, no index request before idle. Three core cases (c38, c39, c43: a command by name) wait for it.
