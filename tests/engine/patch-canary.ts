@@ -9,6 +9,8 @@ import { SOURCES, member, tarball } from "../../tools/find-index/state.mjs";
 const CANARIES: [string, string, RegExp, string][] = [
   // complex MPFR tanh returns coth: `gen g=exp(2*e,contextptr); return (g+1)/(g-1);` in tanh's _CPLX branch
   ["0003-complex-tanh-mpfr.patch", "giac-2.1.0/src/usual.cc", /gen g=exp\(2\*e,contextptr\);\s*return \(g\+1\)\/\(g-1\);/, "gen tanh(const gen & e0,GIAC_CONTEXT){"],
+  // G82: control_c checks only the clock; nothing counts its calls between the reset and the clock check
+  ["0004-caseval-step-budget.patch", "giac-2.1.0/src/global.cc", /caseval_maxtime=15;\s*\}\s*if \(caseval_mod>0\)\{/, "void control_c(){"],
 ];
 
 const tar = tarball(SOURCES.giac);
