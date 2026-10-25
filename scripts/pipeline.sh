@@ -423,7 +423,7 @@ want_checks() {
     auto)
       local list="typecheck,vitest"
       changed | grep -q '^app/' && list="$list,e2e,size"
-      changed | grep -qE '^(engine/|app/src/engine/|app/src/input/|app/src/units/|app/scripts/unit-case\.ts|tests/golden/|find/|tools/find-index/)' && list="$list,golden"
+      changed | golden_selected && list="$list,golden"
       list="$list,docs"; red_first_wanted "$spec_file" && list="$list,redfirst"
       echo "$list";;
     *) echo "$checks";;
@@ -452,7 +452,8 @@ rerun_timing() {  # <check> <log>: only the failing files, output appended to th
 run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
   local round="$1" list name rc=0 why redwhy="" p1_engine="${PASCALINE_P1_ENGINE:-$GIAC_OUT}"
   [[ $engine_managed -eq 0 ]] || p1_engine="$engine_root/gsl"
-  list="$(want_checks)"; [[ -n "$list" ]] || { runlog "checks: none"; return 0; }
+  list="$(want_checks)"; [[ ",$list," == *,stages,* ]] || list="${list//golden/golden,stages}"  # A25: the engine stages follow golden
+  [[ -n "$list" ]] || { runlog "checks: none"; return 0; }
   tools/devlock.sh acquire host-cpu "pipeline-$n" 1800 >/dev/null || die "host-cpu lock busy"
   : > "$run/fail-$round.txt"
   for name in ${list//,/ }; do
@@ -462,6 +463,12 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
       vitest)    (cd "$wt/app" && timeout 1800 npm run -s index && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test) > "$out" 2>&1 || rc=1;;
       e2e)       (cd "$wt/app" && FORCE_COLOR=0 timeout 2700 npm run -s test:e2e) > "$out" 2>&1 || rc=1;;
       golden)    (cd "$wt/app" && timeout 2700 npm run -s golden) > "$out" 2>&1 || rc=1;;
+      stages)    : > "$out"; local st sc=0
+                 for st in "${ENGINE_STAGES[@]}"; do
+                   echo "== $st" >> "$out"; (cd "$wt/app" && timeout 600 node "scripts/$st.ts") >> "$out" 2>&1 || sc=1
+                 done
+                 # each is a FAIL on NEW or NOW PASSING (the script's exit code too)
+                 if [[ $sc -ne 0 ]] || stage_findings "$out" > /dev/null; then rc=1; fi;;
       size)      (cd "$wt/app" && timeout 1800 npm run -s build && timeout 300 npm run -s size) > "$out" 2>&1 || rc=1;;
       docs)      (cd "$wt" && timeout 300 node tools/docs-check.mjs) > "$out" 2>&1 || rc=1;;
       redfirst)  why="$(red_first "$wt" "$spec_file" "${p1_engine}" "$out")" || { rc=1; echo "red-first: $why" >> "$out"; redwhy="$why"; };;
