@@ -1,23 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # G61: the failures the oracle sweep (app/scripts/sweep.ts, seed 20261021, 1000 trees) finds today. id = "<angle> <digits> <keyboard LaTeX>", check = the
 # judge's check (=, ≈, ⚠n, part, novalue, hang), package = the package whose fix removes the entry. The stage passes when its failures are exactly
-# these; remove an entry when its fix lands. G60 (F47): a double inside an MPFR result at 30 digits (asin/acos of a real |x| > 1, ln or sqrt of a
-# negative real) and the noise it leaves in the other part. F62 (proposed in decisions.md): sin of a 1.5-million-digit float takes 11 s.
+# these; remove an entry when its fix lands. F62 (proposed in decisions.md): sin of a 1.5-million-digit float takes 11 s.
 known:
-  - { id: "rad 30 \\frac{\\arcsin\\left(\\arcsin\\left(\\pi\\right)\\right)}{\\sqrt{0.2-\\left(10!\\right)}}", check: "part", package: G60 }
-  - { id: "rad 30 \\log\\left(\\sinh\\left(1\\right)-\\left(0.3+3\\right)\\right)", check: "≈", package: G60 }
-  - { id: "rad 30 \\sqrt{\\sin\\left(\\sin\\left(3!\\right)\\right)}", check: "≈", package: G60 }
-  - { id: "rad 30 \\arcsin\\left(\\tanh\\left(5!\\right)+\\sqrt{0.001}\\right)", check: "≈", package: G60 }
-  - { id: "rad 30 \\left(\\arccos\\left(\\arctan\\left(\\pi\\right)\\right)\\right)^{\\operatorname{asinh}\\left(0.2\\right)-\\arctan\\left(1\\right)}", check: "⚠n", package: G60 }
-  - { id: "rad 30 \\cos\\left(\\sqrt{\\cos\\left(10!\\right)}\\right)", check: "≈", package: G60 }
-  - { id: "rad 30 \\ln\\left(\\operatorname{asinh}\\left(\\pi\\right)\\times \\left(2-\\pi\\right)\\right)", check: "≈", package: G60 }
-  - { id: "rad 30 \\arcsin\\left(\\sinh\\left(3.7\\right)\\right)", check: "≈", package: G60 }
-  - { id: "rad 30 \\arcsin\\left(\\cosh\\left(0.1\\right)+\\log\\left(1\\right)\\right)", check: "≈", package: G60 }
-  - { id: "rad 30 \\arcsin\\left(\\tan\\left(1\\right)-12\\right)", check: "≈", package: G60 }
   - { id: "rad 30 \\sin\\left(\\cosh\\left(10!\\right)\\right)+\\left(e^{\\cos\\left(7\\right)}\\right)", check: "hang", package: F62 }
   - { id: "deg 30 \\sin\\left(\\cosh\\left(10!\\right)\\right)+\\left(e^{\\cos\\left(7\\right)}\\right)", check: "hang", package: F62 }
-  - { id: "rad 30 \\arctan\\left(\\arcsin\\left(\\sqrt{5}\\right)\\right)", check: "≈", package: G60 }
-  - { id: "rad 30 \\arccos\\left(\\ln\\left(5!\\right)\\right)", check: "≈", package: G60 }
-  - { id: "rad 30 \\cos\\left(0.3-\\arcsin\\left(\\pi\\right)\\right)", check: "⚠n", package: G60 }
-  - { id: "rad 30 \\arccos\\left(\\arccos\\left(\\pi-\\left(3!\\right)\\right)\\right)", check: "⚠n", package: G60 }
-  - { id: "rad 30 \\arccos\\left(\\cosh\\left(0.1\\right)\\right)-0", check: "≈", package: G60 }

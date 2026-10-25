@@ -7,9 +7,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **G109's solve form (Opus pass 72):** recommended: braces, as for every value of Giac's list type; G109 drops its solve-form fact. `solve(x^2=4,x)` is `list[-2,2]` (subtype 23): `S^2` = `list[4,4]`, a typed `[-2,2]^2` = 8 (`76f0e04`). Brackets need the origin kept through names, Ans, chips and history; run 231's audits found it lost. No: G109f1 keeps it (½ d).
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff. (The leftover `QALC_OUT` is A30.)
-- **G110's census before R4a (Opus pass 75):** recommended: Find leaves out F90 (graphics and geometry throw out of the engine), F92 (graph objects) and F94 (strings) until a view draws them; the rest opens with its F lines, and the `findcensus` stage shows each change. No: every F line (F89–F98) gets its package before R4a. Would change if: the WebView catches F90's throw cleanly. On `6eee1cc` no list item is wrong in either view; wrong 3 in each view (F95).
 
 ## Decided proposals
 
@@ -18,6 +16,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 Newest first within each group.
 
 ### Pipeline and process
+- **Owner answers of 2026-10-25 (after the tenth night).** (1) G109: a solve result shows in braces, as every value of Giac's list type (`solve(x^2=4,x)` is `list[-2,2]`, so `S^2` = `{4,4}`); G109 drops its solve-form fact, and core cases c38, c39 expect `{-2,2}`. (2) Before R4a, G111: patch 0007 for F95's densities below their support, F98's list argument refused, F91's `fracmod` trap fixed; Find's index leaves out F90, F92, F94, `debug` and `interactive_plotode`. The rest (F89, F93, F96, F97) opens with its F lines, and `findcensus` shows each change. Would change if: the WebView catches F90's throw cleanly; a census rerun finds a new wrong value (it gets a package before Find opens it).
 - **Owner answers of 2026-10-24, evening ([core-stability report](archive/core-stability-2026-10-24.md)).** Core cases c57–c60 join the list (lists, the Σ template; known until G109, R80). The freeze ends on the P23 bar after one Tab One core run and one flake census (A37). A36: a fix package's new tests must fail on phase-1, checked by the pipeline. "Done when" names no shared doc (brief section 2). Before R4a: G104 → G105 → G110. Would change if: the census finds nothing in a week.
 - **Owner answers of 2026-10-24 (after the ninth night).** Lists by Giac's list type (`list[…]`, subtype 23; G109 → R80, G106 the last net), a `[ ]` vector keeps the dot product; hind-4 is a rule now, hind-5 after the freeze; F73, G103f1's refusals and G60's `shortDigits` stay until the freeze ends; the morning check runs on the night's device. Full text: archive.
 - **Owner answers of 2026-10-23.** (1) F78, a list plus a number (Giac's polynomial addition, `poly1[1,5]` under `=`): G106 refuses any polynomial vector the input did not ask for, and R78 makes a typed `{ }` list ± a number elementwise (`.+`, `.-`). (2) R76f1: Enter in Solve's Num view empties the line (the more precise choice). Would change if: you want `[1,4]+1` refused only, not answered.
