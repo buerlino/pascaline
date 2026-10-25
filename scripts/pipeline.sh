@@ -424,7 +424,8 @@ want_checks() {
       local list="typecheck,vitest"
       changed | grep -q '^app/' && list="$list,e2e,size"
       changed | golden_selected && list="$list,golden"
-      echo "$list,docs";;
+      list="$list,docs"; red_first_wanted "$spec_file" && list="$list,redfirst"
+      echo "$list";;
     *) echo "$checks";;
   esac
 }
@@ -449,7 +450,8 @@ rerun_timing() {  # <check> <log>: only the failing files, output appended to th
   esac
 }
 run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
-  local round="$1" list name rc=0
+  local round="$1" list name rc=0 why redwhy="" p1_engine="${PASCALINE_P1_ENGINE:-$GIAC_OUT}"
+  [[ $engine_managed -eq 0 ]] || p1_engine="$engine_root/gsl"
   list="$(want_checks)"; [[ ",$list," == *,stages,* ]] || list="${list//golden/golden,stages}"  # A25: the engine stages follow golden
   [[ -n "$list" ]] || { runlog "checks: none"; return 0; }
   tools/devlock.sh acquire host-cpu "pipeline-$n" 1800 >/dev/null || die "host-cpu lock busy"
@@ -469,6 +471,7 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
                  if [[ $sc -ne 0 ]] || stage_findings "$out" > /dev/null; then rc=1; fi;;
       size)      (cd "$wt/app" && timeout 1800 npm run -s build && timeout 300 npm run -s size) > "$out" 2>&1 || rc=1;;
       docs)      (cd "$wt" && timeout 300 node tools/docs-check.mjs) > "$out" 2>&1 || rc=1;;
+      redfirst)  why="$(red_first "$wt" "$spec_file" "${p1_engine}" "$out")" || { rc=1; echo "red-first: $why" >> "$out"; redwhy="$why"; };;
       *) die "unknown check $name";;
     esac
     if [[ $rc -eq 1 && ( "$name" == e2e || "$name" == vitest ) ]] && mm="$(node "$wt/app/scripts/pipeline-logs.ts" mismatch "$name" "$out")"; then
@@ -487,7 +490,7 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
         log "pipeline #$n $id: NOT MERGED (machine: $name: $mline); branch $branch kept"
         echo "RESULT #$n $id: NOT MERGED (machine: $name: $mline; worktree $wt kept; see $out)"; exit 1
       fi
-      { echo "## $name failed (full log: $out)"; excerpt "$out"; echo; } >> "$run/fail-$round.txt"
+      { [[ "$name" != redfirst ]] || echo "checks failed: red-first (${redwhy:-every new test passes on phase-1})"; echo "## $name failed (full log: $out)"; excerpt "$out"; echo; } >> "$run/fail-$round.txt"
       runlog "check $name: FAILED"; tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null; return 1
     fi
     runlog "check $name: ok"
