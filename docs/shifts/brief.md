@@ -22,7 +22,7 @@
 
 **At night, the core lane** (section 0c's queue): **G109 → R80**, the list operators (F77, F79: a `{ }` list goes to Giac as its own list type, so a list held by a name or Ans stays elementwise; owner, 2026-10-24; G106 stays the last net). Every merge runs the core list (R74), and the night's device runs it after each Opus pass (A33).
 
-**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G108 (the Giac regression files pass as labelled and run in the gate; Parisse's link after it); G105 (the readers left), G110 (the census of Find's commands); G92 → G93 (F64, restart: put our state back); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
+**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G108 (the Giac regression files pass as labelled and run in the gate; Parisse's link after it); G105 (the readers left), G110 (the census of Find's commands); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
 **Why this order:** the list first, so nothing merges blind; silent wrong numbers next, by reach; the bridge before the readers it would replace; the device run once its harness exists. R15c3 and R15c4 move behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -69,13 +69,11 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 | 130 | [S16](packages/S16.md) the hardening pass, run as `scripts/pipeline.sh pass <n> "G61 G62 G63 G64 A19" "S16: docs/shifts/packages/S16.md"` | sofia, Opus | — | A19 | 1 h + fixes |
 | 132 | [G105](packages/G105.md) the readers of Giac text that are left (replaces G73, G74) | gorge, Opus | `p1/gorge-readersleft` | G103, G104 | 2 h |
 | 132a | [G110](packages/G110.md) a census of the kinds of answer Giac gives for Find's main commands (R4a's gate) | gorge, Opus | `p1/gorge-findcensus` | G105 | 2 h |
-| 133 | [G92](packages/G92.md) an assumption Giac leaves is put back (F64) | gorge, Opus | `p1/gorge-m4-assumeleak` | G102 | 1.5 h |
-| 134 | [G93](packages/G93.md) restart and rm_a_z keep our definitions (owner, 2026-10-22) | gorge, Opus | `p1/gorge-m4-restart` | G92 | 1.5 h |
 | 135 | The flake census (A37): `scripts/pipeline.sh flakes <n>`, when no core step can start, before the last pass; once per night until the freeze ends | — | — | A37 | 1 h |
 | 190 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 191 | Shift report, then stop | — | — | — | 10 min |
 
-**G85's moves** (S23, 2026-10-22): G98 first, so the gate sees the app's input; then names, stores, settings, values (113–118). G66, G69, G72, G73, G74 and G95 are replaced (their tests moved); G82, G92, G93 run as written, after the move they read.
+**G85's moves** (S23, 2026-10-22): G98 first, so the gate sees the app's input; then names, stores, settings, values (113–118). G66, G69, G72, G73, G74 and G95 are replaced (their tests moved); G82 runs as written, after the move they read.
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".

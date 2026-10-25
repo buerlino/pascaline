@@ -15,6 +15,7 @@ import { definedName, isName, programParams, type PrintedNode } from "./giacPrin
 import { COMPLEX_DEFINITIONS } from "./complex.ts";
 import { CHIP_PREFIX } from "./chipFacts.ts";
 import { UNIT_DEFINITIONS } from "../units/evaluate.ts";
+import { aboutsPart } from "./assumed.ts";
 
 /** A stored user name as Giac holds it. `names`: the names in its value (`lname`), a program's parameters left out
  *  (its locals stay: an over-read gives a weaker mark, never a stronger one). `fn`: the value is a program. */
@@ -40,15 +41,17 @@ export function readsFrom(p: GiacParse): InputReads {
 
 /** The state part: Digits pinned (a double prints with Digits, so an unchanged value must print alike in every mode),
  *  then put back to `digits` (the mode's, which the settings check expects). Giac's printed list: parsePrinted. */
-export function statePart(digits: number): string {
-  return pinned(entries("VARS()"), digits);
+export function statePart(digits: number, assumed: readonly string[] = []): string {
+  return pinned(entries("VARS()"), digits, assumed);
 }
 
 /** The entry of each name in `names` (quoted, so the list holds the names), as in statePart: Digits pinned, then put
  *  back. Its print reads as statePart's for tableOf. */
 const entries = (list: string): string => `map(${list},k->[k,string(eval(k)),lname(eval(k))])`;
 const quoted = (names: readonly string[]): string => `[${names.map((n) => `'${n}'`).join(",")}]`;
-const pinned = (part: string, digits: number): string => `[(Digits:=${DOUBLE_DIGITS}),${part},(Digits:=${Math.trunc(digits)})]`;
+// G92: `assumed` (the log's assumed names) adds their about() as a 3rd element, printed with Digits pinned (assumed.ts)
+const pinned = (part: string, digits: number, assumed: readonly string[] = []): string =>
+  `[(Digits:=${DOUBLE_DIGITS}),${part},${assumed.length ? `${aboutsPart(assumed)},` : ""}(Digits:=${Math.trunc(digits)})]`;
 
 /** G104: the entries of `names` only (loadPending's loaded names). */
 export function namesPart(digits: number, names: readonly string[]): string {
@@ -57,8 +60,8 @@ export function namesPart(digits: number, names: readonly string[]): string {
 
 /** G104: the state part after an input whose candidates are known: every name of `VARS()`, a name of `known` bare (its
  *  entry did not change), any other with its entry (a candidate, or a name new since the last read). One call. */
-export function changedPart(digits: number, known: readonly string[]): string {
-  return pinned(`map(VARS(),k->when(member(k,${quoted(known)}),k,[k,string(eval(k)),lname(eval(k))]))`, digits);
+export function changedPart(digits: number, known: readonly string[], assumed: readonly string[] = []): string {
+  return pinned(`map(VARS(),k->when(member(k,${quoted(known)}),k,[k,string(eval(k)),lname(eval(k))]))`, digits, assumed);
 }
 
 /** The names in a list of the state part's print (an element of `lname`). */
@@ -90,7 +93,7 @@ export function isOurs(name: string, user: (name: string) => boolean): boolean {
  *  when it is not the list statePart builds. */
 export function tableOf(n: PrintedNode, user: (name: string) => boolean, kept?: ReadonlyMap<string, StoredName>): Map<string, StoredName> | null {
   const list = n.items?.[1]?.items;
-  if (!n.items || n.items.length !== 3 || !list) return null;
+  if (!n.items || (n.items.length !== 3 && n.items.length !== 4) || !list) return null;
   const out = new Map<string, StoredName>();
   for (const e of list) {
     // G104 (changedPart): a bare name keeps its entry from `kept`, in VARS()'s order

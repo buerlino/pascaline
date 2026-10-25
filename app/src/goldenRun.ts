@@ -12,6 +12,7 @@ import { giacOfEntry } from "./input/entry.ts";
 import { rewriteAngles } from "./input/angles.ts";
 import { applyDefChanges, type DefChange } from "./engine/defs.ts";
 import { namesFlag } from "./engine/flags.ts";
+import { namesAssuming, setsAssumption } from "./engine/assumed.ts";
 import { chipFactsOf, chipOf, homeItem } from "./state/results.ts";
 
 export type Expect = string | Expect[];
@@ -200,8 +201,8 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
   let mark: MarkInfo | null;
   let shown: string;
   // G67: a case whose inputs before it set a Giac setting runs on its own engine too (were the setting kept, it would
-  // reach every later case)
-  const own = c.beforeHome?.length || c.beforeCas?.length || c.relaunch || (c.before ?? []).some((t) => namesFlag(t, "typed"));
+  // reach every later case); G92: so does one that sets or may leave an assumption
+  const own = c.beforeHome?.length || c.beforeCas?.length || c.relaunch || (c.before ?? []).some((b) => namesFlag(b, "typed") || setsAssumption(b) || namesAssuming(b));
   let host = own ? await fresh() : shared;
   const defs: DefChange[] = [];
   const relaunched = async (): Promise<void> => {

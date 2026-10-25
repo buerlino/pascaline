@@ -14,12 +14,12 @@ import { afterStore, wordsOf } from "./giacPrint.ts";
 /**
  * Heads that change the engine's state with no target in the tree, or whose target the tree may miss (giac 2.1.0,
  * read in the pinned tarball): purge and its aliases (DelVar, del, unassign; their names are targets too), assume,
- * additionally, assign (`assign(q,5)` stores q), restart, rm_all_vars, restart_vars, restart_modes, the file readers
- * read, ramene and unarchive, the writers write and archive, and every Giac setting (flags.ts; the check after the call
- * puts them back, the input still runs once).
+ * additionally, assign (`assign(q,5)` stores q), restart, rm_all_vars, restart_vars, restart_modes, rm_a_z (G93: purges
+ * the one-letter names, usual.cc:231), the file readers read, ramene and unarchive, the writers write and archive, and
+ * every Giac setting (flags.ts; the check after the call puts them back, the input still runs once).
  */
 export const STATE_HEADS: ReadonlySet<string> = new Set([
-  "purge", "DelVar", "del", "assume", "additionally", "assign", "restart", "rm_all_vars", "restart_vars", "restart_modes",
+  "purge", "DelVar", "del", "assume", "additionally", "assign", "restart", "rm_all_vars", "restart_vars", "restart_modes", "rm_a_z",
   "reset", "read", "ramene", "unarchive", "write", "archive", ...FLAG_WORDS,
 ]);
 

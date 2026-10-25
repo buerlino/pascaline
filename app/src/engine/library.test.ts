@@ -65,6 +65,13 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
     expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):={local pasdeg; pasdeg:=2; return sin(x);}\n", parse)).toThrow(/pasdeg is one of Pascaline's own names/);
     expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):=x*pasdegree\n", parse)).not.toThrow();
   });
+  it("G93: refuses a body that clears names (rm_a_z, restart, restart_vars, restart_modes, rm_all_vars), as a value too (derived)", () => {
+    for (const c of ["rm_a_z(1)", "restart(0)", "restart_vars(0)", "restart_modes()", "rm_all_vars()"]) {
+      const head = c.slice(0, c.indexOf("("));
+      expect(() => parseLibrary(`// pascaline library 1\n// d\nf(x):={ ${c}; return x; }\n`, parse), c).toThrow(new RegExp(`line 3: the body changes the engine's state \\(${head}\\)`));
+      expect(() => parseLibrary(`// pascaline library 1\n// d\ng:=${c}\n`, parse), c).toThrow(new RegExp(`line 3: the body changes the engine's state \\(${head}\\)`));
+    }
+  });
   it("refuses a file over 256 kB, a description over 120 characters and more than 200 definitions", () => {
     expect(() => parseLibrary(new Uint8Array(256 * 1024 + 1), parse)).toThrow(/256 kB/);
     expect(() => parseLibrary(`// pascaline library 1\n// ${"x".repeat(121)}\nf(x):=x\n`, parse)).toThrow(/over 120/);
