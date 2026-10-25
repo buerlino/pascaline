@@ -2,11 +2,13 @@
 // Copy, paste, share and export (docs/04 section 2.6, backlog step 9, P5): one test per action and a copy → paste round
 // trip, by key sequences on the real engine. Expected values are derived: the decimal expansion of 1/3 and 2/3.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, open, tap, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 // The system clipboard is one for the whole browser: these tests run one after another.
 test.describe.configure({ mode: "serial" });
+
+useClipboardLock(); // R74f1: first hook, so the lock is held before the page opens
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");

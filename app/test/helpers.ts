@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import type { Page } from "@playwright/test";
+import { linkSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { test, type Page } from "@playwright/test";
 
 /** The status line's controls (R15c1, R15c2), for keys that left the cluster: `@place` (the place name, the Apps
  *  sheet), `@menu` (☰), `@symb` / `@plot` / `@num` (the view tab; from Home or CAS the last app is opened first from the
@@ -164,3 +166,84 @@ export async function recordVibrations(page: Page): Promise<void> {
   });
 }
 export const vibrations = (page: Page): Promise<unknown[]> => page.evaluate(() => (window as unknown as { __vib: unknown[] }).__vib);
+
+// R74f1: the system clipboard is one for every Playwright worker, so a test that writes or reads it holds this lock
+// (an exclusive lock file under test-results, holding its owner's pid and a nonce) for its whole run. A lock whose
+// owner process is dead (a killed worker) is taken over; a live owner is never overridden, however long it holds.
+const LOCK = resolve("test-results", "clipboard.lock");
+
+const alive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return (e as NodeJS.ErrnoException).code === "EPERM";
+  }
+};
+
+/** Wait for the clipboard lock and take it; returns the release function (safe to call twice; it removes only its own
+ *  file). Throws once `timeoutMs` has passed without the lock, so a late acquisition never happens after the caller gave up. */
+export async function acquireClipboardLock(timeoutMs = 120_000): Promise<() => void> {
+  mkdirSync(dirname(LOCK), { recursive: true });
+  const deadline = Date.now() + timeoutMs;
+  const token = `${process.pid} ${Math.random().toString(36).slice(2)}`;
+  for (;;) {
+    try {
+      writeFileSync(LOCK, token, { flag: "wx" });
+      return () => {
+        try {
+          if (readFileSync(LOCK, "utf8") === token) rmSync(LOCK, { force: true });
+        } catch {
+          /* already gone */
+        }
+      };
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+      try {
+        const pid = Number.parseInt(readFileSync(LOCK, "utf8"), 10);
+        if (Number.isInteger(pid) && !alive(pid)) takeOverDead(pid);
+      } catch {
+        /* released meanwhile */
+      }
+      if (Date.now() >= deadline) throw new Error(`clipboard lock not free after ${timeoutMs} ms`);
+      await new Promise((r) => setTimeout(r, 50 + Math.random() * 50));
+    }
+  }
+}
+
+/** Remove a lock whose owner `pid` is dead: rename it away (only one waiter gets the file) and, if it turns out to
+ *  belong to a live process after all, link it back. */
+function takeOverDead(pid: number): void {
+  const mine = `${LOCK}.dead-${process.pid}-${Math.random().toString(36).slice(2)}`;
+  renameSync(LOCK, mine);
+  try {
+    if (Number.parseInt(readFileSync(mine, "utf8"), 10) !== pid) linkSync(mine, LOCK);
+  } catch {
+    /* nothing to restore */
+  } finally {
+    rmSync(mine, { force: true });
+  }
+}
+
+/** Run `fn` holding the clipboard lock; the lock is released in a finally block. */
+export async function withClipboardLock<T>(fn: () => Promise<T>): Promise<T> {
+  const release = await acquireClipboardLock();
+  try {
+    return await fn();
+  } finally {
+    release();
+  }
+}
+
+/** Call at the top of a spec file or describe: every test in it holds the clipboard lock from its first hook to its last. */
+export function useClipboardLock(): void {
+  let release: (() => void) | undefined;
+  test.beforeEach(async () => {
+    test.setTimeout(test.info().project.timeout + 150_000); // the wait for the lock must not eat the test's own budget
+    release = await acquireClipboardLock(120_000);
+  });
+  test.afterEach(() => {
+    release?.();
+    release = undefined;
+  });
+}

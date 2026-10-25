@@ -3,11 +3,13 @@
 // copy is the full value (every confirmed digit), the Menu has "as shown", and what was copied pastes back as the same
 // value. From keys (Copy) and from touch (a long press). Expected values: oracle = mpmath 1.3.0 at 40 digits.
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, open, tap, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 // The system clipboard is one for the whole browser: these tests run one after another.
 test.describe.configure({ mode: "serial" });
+
+useClipboardLock(); // R74f1: first hook, so the lock is held before the page opens
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
