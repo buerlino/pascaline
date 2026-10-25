@@ -17,6 +17,7 @@ import {
   homeEval,
   homeSetupCommands,
   angleCommand,
+  pasdegCommand,
   latexShown,
   onceUndecided,
   regrouped,
@@ -35,7 +36,7 @@ import { mayPowerMatrix, nonSquarePower, type Bodies, type KnownBody } from "./n
 import { mayAddToList, unaskedPoly } from "./polyvec.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
-import { dropAngleFactor } from "../input/angles.ts";
+import { dropAngleFactor, PASDEG } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, namesIn, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
@@ -64,6 +65,8 @@ interface AfterInput {
   flagsChanged: boolean;
   /** …and the user's text set it (the result says it was not kept, G67). */
   reset: boolean;
+  /** G93: the log's names Giac no longer holds (a command cleared them: restart(0), rm_a_z, …), when VARS() was read. */
+  lost: string[];
 }
 
 /** G97: what Giac's pow prints for a base that is a list but not a square matrix (gen.cc:6881). */
@@ -159,6 +162,8 @@ const IDENT_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 /** Engine state and the synchronous operations on it. One per Giac instance. */
 export class EngineHost implements FactsHost {
   private modeKey = "";
+  /** G93: the angle of the current mode (pasdeg's value), radians before any mode (the constructor's). */
+  private modeAngle: "rad" | "deg" = "rad";
   /** G67: the Digits the current mode set (Giac's own 12 before any mode), which the settings check expects. */
   private modeDigits = 12;
   /** Read by facts.ts (FactsHost), as are byName, chipFacts and stored. */
@@ -218,7 +223,7 @@ export class EngineHost implements FactsHost {
   /**
    * G83 (docs/04 6.2): every pending function whose name is a word in `text`, and, transitively, every pending function
    * named in such a body or in the stored value of a name the text reads (`S:=(g(x))` reads g), goes to Giac in one
-   * batch. A text that lists or clears the names (VARS, expr, rm_all_vars, restart) loads them all.
+   * batch. A text that lists or clears the names (VARS, expr, rm_all_vars, restart, restart_vars, rm_a_z) loads them all.
    */
   private loadPending(text: string): void {
     const queue = LOAD_ALL.test(text) ? [...this.pending.keys()] : wordsOf(text);
@@ -404,14 +409,24 @@ export class EngineHost implements FactsHost {
     const logged = [...this.byName.values()].filter((e) => e.kind === "assume").map((e) => e.name);
     const assumed = keep ? [...new Set([...logged, ...this.assumedBy(input)])] : logged;
     const risky = this.assumeRisk || this.callsDefining(input, namesAssuming, true);
-    const stateNode = state ? parsePrinted(this.giac.eval(cands ? changedPart(this.modeDigits, known, assumed) : statePart(this.modeDigits, assumed))) : null;
+    let stateNode = state ? parsePrinted(this.giac.eval(cands ? changedPart(this.modeDigits, known, assumed) : statePart(this.modeDigits, assumed))) : null;
     const leakNode = stateNode ?? (risky ? parsePrinted(this.giac.eval(leakPart([...this.stored.keys(), ...this.skipped], assumed))) : null);
     const purged = leakNode ? this.assumptionsBack(input, leakNode, assumed, typed, keep) : [];
     this.assumeRisk = false;
+    // G93: VARS() (either read) lacks pasdeg: a command cleared every name, ours too; lacks a logged name: the state is
+    // read in full in this Enter (G92's read alone has no table), and the log follows Giac
+    let lost: string[] = [];
+    if (leakNode && input !== "") {
+      const held = new Set(namesOf(leakNode));
+      if (!held.has(PASDEG)) this.oursGone();
+      lost = [...this.byName.keys()].filter((n) => !held.has(n) && !this.pending.has(n));
+      if (!held.has(PASDEG)) lost.push(...this.pending.keys());
+      if (lost.length && !stateNode) stateNode = parsePrinted(this.giac.eval(statePart(this.modeDigits)));
+    }
     const reset = flagsChanged && (namesFlag(input) || this.callsDefining(input, namesFlag));
-    const table = state && stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n), this.stored) : null;
+    const table = stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n), this.stored) : null;
     const skipped = table && stateNode ? new Set(namesOf(stateNode).filter((n) => !table.has(n) && !purged.includes(n))) : null;
-    this.post = { reads, table, changes: table ? changesOf(this.stored, table) : null, skipped, flagsChanged, reset };
+    this.post = { reads, table, changes: table ? changesOf(this.stored, table) : null, skipped, flagsChanged, reset, lost };
     return this.post;
   }
 
@@ -584,6 +599,26 @@ export class EngineHost implements FactsHost {
     return wordsOf(input).some((w) => this.chipFacts.has(w) || (this.stored.has(w) && nameFacts(this, w, new Set()) !== null));
   }
 
+  /** G93: a command cleared our definitions (restart(0), restart_vars(0); usual.cc:251): they load again on next use
+   *  (needOurs, the units on the next units request), and pasdeg is set again now, for the current mode (a raw eval or
+   *  the replay has no mode setup; the settings check after the input already put Giac's context back). */
+  private oursGone(): void {
+    this.loaded.clear();
+    this.unitsLoaded = false;
+    this.giac.eval(pasdegCommand(this.modeAngle));
+  }
+
+  /** G93: the log purges the names the call after the input found gone (post.lost) that it still holds, assume entries
+   *  too: the command did what it says, and a relaunch does not bring them back. Added to the input's changes. */
+  private followLost(post: AfterInput, defs: DefChange[]): DefChange[] {
+    const gone = post.lost.filter((n) => this.byName.has(n) || this.pending.has(n));
+    if (!gone.length) return defs;
+    for (const n of gone) this.pending.delete(n);
+    const change: DefChange = { purge: gone };
+    this.record([change]);
+    return [...defs, change];
+  }
+
   /** The table the last call read becomes the host's (after the input's facts were taken from the one before). */
   private commit(post: AfterInput): void {
     if (post.table) this.stored = post.table;
@@ -655,9 +690,13 @@ export class EngineHost implements FactsHost {
     let defs: DefChange[] = [];
     if (ok && this.formFor(input).stores) {
       const post = this.after(input, true, true);
-      defs = this.defsAfter(input, [input], output, null, null, "home", 12, undefined, post);
+      defs = this.followLost(post, this.defsAfter(input, [input], output, null, null, "home", 12, undefined, post));
       this.commit(post);
-    } else if (this.assumeRisk || this.callsDefining(input, namesAssuming, true)) this.commit(this.after(input, false, false));
+    } else if (this.assumeRisk || this.callsDefining(input, namesAssuming, true)) {
+      const post = this.after(input, false, false);
+      defs = this.followLost(post, defs);
+      this.commit(post);
+    }
     return { output, ok, engineMs: performance.now() - t0, defs };
   }
 
@@ -755,6 +794,7 @@ export class EngineHost implements FactsHost {
     const out = this.homeTabled(input, s, consts, chips);
     // G67, G65: the call after the input, if the run did not make it (an error: a syntax error ran nothing)
     const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && this.formFor(input).stores);
+    out.defs = this.followLost(post, out.defs);
     this.commit(post);
     return post.reset ? { ...out, result: { ...out.result, settingReset: true } } : out;
   }
@@ -871,6 +911,7 @@ export class EngineHost implements FactsHost {
     if (used.length && out.result.ok) out.result.uses = used;
     // G67, G65: the call after the input, if the run did not make it (an error or a refusal)
     const post = this.post ?? this.after(input, false, out.result.error !== "syntax" && this.formFor(input).stores);
+    out.defs = this.followLost(post, out.defs);
     this.commit(post);
     if (post.reset) out.result.settingReset = true;
     return out;
@@ -1104,14 +1145,14 @@ export class EngineHost implements FactsHost {
   }
 
   private useCasMode(s: CasSettings): void {
-    this.useMode(`cas${JSON.stringify(s)}`, s.digits, () => {
+    this.useMode(`cas${JSON.stringify(s)}`, s.digits, s.angle, () => {
       for (const c of casSetupCommands(s)) this.giac.eval(c);
       this.giac.setPowLimit(s.powLimit);
     });
   }
 
   private useHomeMode(s: HomeSettings): void {
-    this.useMode(`home${JSON.stringify(s)}`, s.digits, () => {
+    this.useMode(`home${JSON.stringify(s)}`, s.digits, s.angle, () => {
       for (const c of homeSetupCommands(s)) this.giac.eval(c);
       this.giac.eval(`Digits:=${Math.trunc(s.digits)}`);
       this.giac.setPowLimit(s.powLimit);
@@ -1119,7 +1160,7 @@ export class EngineHost implements FactsHost {
   }
 
   private useSolveMode(s: HomeSettings): void {
-    this.useMode(`solve${JSON.stringify(s)}`, s.digits, () => {
+    this.useMode(`solve${JSON.stringify(s)}`, s.digits, s.angle, () => {
       this.giac.eval(angleCommand(s.angle));
       this.giac.eval(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
       this.giac.eval("ckevery 10");
@@ -1129,10 +1170,11 @@ export class EngineHost implements FactsHost {
     });
   }
 
-  private useMode(key: string, digits: number, apply: () => void): void {
+  private useMode(key: string, digits: number, angle: "rad" | "deg", apply: () => void): void {
     if (key === this.modeKey) return;
     apply();
     this.modeKey = key;
+    this.modeAngle = angle;
     this.modeDigits = Math.trunc(digits);
   }
 }
@@ -1141,7 +1183,7 @@ export class EngineHost implements FactsHost {
 export const REPLAY_BATCH = 25;
 
 /** G83: inputs that list or clear the user's names: every pending function is loaded first. */
-const LOAD_ALL = /\b(VARS|expr|rm_all_vars|restart)\b/;
+const LOAD_ALL = /\b(VARS|expr|rm_all_vars|restart|restart_vars|rm_a_z)\b/;
 
 /** G83f1: the expression strings of a request, for need(): one per line, the absent ones left out. */
 function expressionsOf(...lists: (readonly (string | undefined)[] | undefined)[]): string {

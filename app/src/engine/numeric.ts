@@ -1082,6 +1082,19 @@ export const KEYWORDS: ReadonlySet<string> = new Set([
   "repeat", "until", "switch", "case", "default", "do", "from", "to", "step", "in",
 ]);
 
+/** G93: Giac's words whose lexer token is T_RETURN (define_unary_function_ptr5(…, T_RETURN) in the pinned tarball): the
+ *  word alone parses as a call with no argument, so evaluating it to read its print runs it (`restart` alone is
+ *  restart(), which purges every name; Home's complex audit asked it of `restart(1)`). Each is a built-in: its print is
+ *  `'word'`, never asked. */
+export const RUNS_BARE: ReadonlySet<string> = new Set([
+  "Archive", "Circle", "CopyVar", "CyclePic", "del", "DelFold", "DelVar", "deSolve", "DrawFunc", "DrawInv", "DrawParm",
+  "DrawPol", "DrawSlp", "DrwCtour", "Exec", "EXPORT", "Fill", "Get", "GetCalc", "giac_assert", "goto", "Graph", "hasard",
+  "Input", "InputStr", "label", "Line", "LineHorz", "LineTan", "LineVert", "lis", "lis_phrase", "NewFold", "NewPic",
+  "Output", "Pause", "PopUp", "Prompt", "PtOff", "PtOn", "PtText", "PxlOff", "PxlOn", "RANDOM", "RandSeed", "RANDSEED",
+  "RclPic", "read", "repete", "restart", "restart_modes", "restart_vars", "resultat", "RplcPic", "SetFold", "SortA",
+  "SortD", "srand", "StoPic", "throw", "Unarchiv", "VIEWS", "ZoomRcl", "ZoomSto",
+]);
+
 /** G53: the prints of names that never change, per Giac instance (a fresh engine starts empty). */
 const FIXED_PRINTS = new WeakMap<Giac, Map<string, string>>();
 
@@ -1093,6 +1106,7 @@ export function namePrint(giac: Giac, name: string): string {
   if (!fixed) FIXED_PRINTS.set(giac, (fixed = new Map()));
   const known = fixed.get(name);
   if (known !== undefined) return known;
+  if (RUNS_BARE.has(name)) return `'${name}'`;
   const out = giac.eval(name).trim();
   if (out === `'${name}'` || KEYWORDS.has(name)) fixed.set(name, out);
   return out;
