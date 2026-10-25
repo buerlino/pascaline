@@ -34,7 +34,7 @@ const secs = (performance.now() - t0) / 1000;
 
 const known = (parse(readFileSync(KNOWN, "utf8")) ?? {}) as CensusKnown;
 const r = censusStage(rows, p.none.map((n) => n.name), known);
-const counts = ["checked", "unchecked", "symbolic", "refused", "raw", "wrong", "state", "hang", "crash"].map((c) => `${c} ${rows.filter((x) => x.cls === c).length}`).join(", ");
+const counts = ["checked", "unchecked", "symbolic", "refused", "raw", "wrong", "defined", "state", "hang", "crash"].map((c) => `${c} ${rows.filter((x) => x.cls === c).length}`).join(", ");
 const stats = `${rows.length} runs of ${p.samples.length} inputs (${new Set(p.samples.map((s) => s.name)).size} functions, ${p.none.length} without a sample): ${counts}; ${restarts} engine restarts; total ${secs.toFixed(1)} s`;
 
 if (update) {

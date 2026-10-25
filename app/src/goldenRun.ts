@@ -4,7 +4,7 @@
 import { EngineHost } from "./engine/host.ts";
 import { defaultHomeSettings, precisionFacts, type HomeResult, type HomeSettings } from "./engine/homeEval.ts";
 import { markOf, type MarkInfo } from "./engine/format.ts";
-import { defaultCasSettings } from "./engine/types.ts";
+import { defaultCasSettings, type CasResult } from "./engine/types.ts";
 import { ANS_KEY, type ChipTable } from "./input/chips.ts";
 import { chipsIn, type ChipFactsTable } from "./engine/chipFacts.ts";
 import { constTable, inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
@@ -176,6 +176,18 @@ export function markText(m: MarkInfo | null): string | undefined {
 
 export const RATIONAL_TEXT = /^-?\d+(\/\d+)?$/;
 
+/**
+ * The mark a CAS result is read with (the golden gate and the Find census, G110: one rule). A float result carries its numeric
+ * facts; a rational text whose decision did not hold at P + 20 comes approximate (G38), so that is read first, and a true or false
+ * resting on a float is approximate (R18f1); an exact rational is `=`; any other exact result has no mark. `digits`: the digits shown.
+ */
+export function casMark(r: CasResult, digits: number): MarkInfo | null {
+  if (r.numeric) return markOf(precisionFacts(r.numeric), { format: "STD", digits });
+  if (!r.ok) return null;
+  if (r.approximate) return r.facts.warn ? { mark: "⚠" } : { mark: "≈" };
+  return RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
+}
+
 /** One home.yaml case on `host` (a sequence on its own engine from `fresh`). */
 export async function runHomeCase(c: Case, host: EngineHost, fresh: () => Promise<EngineHost>): Promise<HomeResult & { inexactInput?: boolean }> {
   if (c.steps) return runSteps(fresh, c.steps, c.settings?.digits ?? 12, c.consts && constTable(c.consts));
@@ -226,10 +238,7 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
       if (got !== c.uses.join(",")) problems.push(`uses [${got}], expect [${c.uses.join(",")}]`);
     }
     shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
-    // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it); a
-    // true or false resting on a float is approximate (R18f1).
-    // A rational text whose decision did not hold at P + 20 comes approximate (G38), so that is read first.
-    mark = r.numeric ? markOf(precisionFacts(r.numeric), { format: "STD", digits }) : r.ok && r.approximate ? (r.facts.warn ? { mark: "⚠" } : { mark: "≈" }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
+    mark = casMark(r, digits);
   } else {
     const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
     for (const b of c.beforeCas ?? []) defs.push(...host.cas(giacOf(b), { ...defaultCasSettings, angle: s.angle, digits: setting }).defs);

@@ -5,10 +5,11 @@ import { describe, expect, it } from "vitest";
 import { latexToGiac } from "../src/input/latex-to-giac.ts";
 import { decimalFromString, ZERO_VALUE } from "../src/engine/format.ts";
 import { argsLatex, helpExamples, samplesOf } from "../../tools/probes/findcensus/samples.ts";
-import { classify, onNumbers, rawText } from "../../tools/probes/findcensus/classify.ts";
+import { classify, loggedOnly, onNumbers, rawText } from "../../tools/probes/findcensus/classify.ts";
 import { censusStage, classStrings, knownText } from "../../tools/probes/findcensus/stage.ts";
 import type { Row } from "../../tools/probes/findcensus/run.ts";
 import type { Answer } from "../../tools/probes/findcensus/worker.ts";
+import { casMark } from "../src/goldenRun.ts";
 
 const answer = (o: Partial<Answer>): Answer => ({ ok: true, text: "", left: [], ...o });
 const num = (s: string): Answer["value"] => ({ re: decimalFromString(s)!, im: ZERO_VALUE });
@@ -65,11 +66,42 @@ describe("findcensus classes", () => {
     expect(classify("perm", "home", "perm(4,2)", answer({ text: "0", value: num("0"), mark: "=" }), { kind: "novalue" }).cls).toBe("wrong");
   });
   it("puts a name left behind, a hang, a crash and a parser refusal before the answer", () => {
-    expect(classify("sto", "home", "sto(2,a)", answer({ text: "2", value: num("2"), mark: "=", left: ["name a", "logged a"] }), null)).toEqual({ cls: "state", detail: "name a; logged a" });
+    expect(classify("GF", "home", "GF(2,8)", answer({ text: "GF(2,8)", left: ["name K", "name g"] }), null)).toEqual({ cls: "state", detail: "name K; name g" });
     expect(classify("f", "cas", "f(1)", { hang: true }, null).cls).toBe("hang");
     expect(classify("plot", "home", "plot(x,x)", answer({ ok: false, crash: "window is not defined" }), null).cls).toBe("crash");
     expect(classify("sst", "home", "", { parserError: "unexpected closing delimiter" }, null)).toEqual({ cls: "refused", detail: "parser: unexpected closing delimiter" });
     expect(classify("znorder", "home", "znorder(17,0.5)", answer({ ok: false, error: "engine", text: "Bad Argument Type" }), null).cls).toBe("refused");
+  });
+  it("calls a store, assume or purge that left only what the definitions log holds defined, anything more state", () => {
+    expect(classify("sto", "home", "sto(2,a)", answer({ text: "2", value: num("2"), mark: "=", left: ["name a", "logged a"] }), null)).toEqual({ cls: "defined", detail: "name a; logged a" });
+    expect(classify("purge", "cas", "purge(t)", answer({ text: "t", left: ["logged purge t"] }), null).cls).toBe("defined");
+    expect(classify("purge", "cas", "purge(t)", answer({ text: "1", left: ["purged t", "logged purge t"] }), null).cls).toBe("defined");
+    // the log does not hold the name, a setting moved, or the command is not one that stores
+    expect(classify("sto", "home", "sto(2,a)", answer({ text: "2", left: ["name a"] }), null).cls).toBe("state");
+    expect(classify("assume", "cas", "assume(a>0)", answer({ text: "a", left: ["name a", "logged a", "setting 1: 0 -> 1"] }), null).cls).toBe("state");
+    expect(classify("QR", "cas", "QR(A,Q,R)", answer({ text: "", left: ["name Q", "logged Q"] }), null).cls).toBe("state");
+    expect(loggedOnly(["name a", "logged a", "name b"])).toBe(false);
+    expect(loggedOnly(["a program call throws prompt is not defined", "logged a"])).toBe(false);
+  });
+  it("judges a CAS exact form on numbers as its value against the oracle, and calls it symbolic without one", () => {
+    // CAS exponential(2.1,-2) = 21/10*exp(21/5), where the density is 0 (F95)
+    const zero = { kind: "value", re: "0", im: "0" } as const;
+    const exact = answer({ text: "21/10*exp(21/5)", value: num("140.0412951859"), mark: "=", exact: true });
+    expect(classify("exponential", "cas", "exponential(21/10,-2)", exact, zero).cls).toBe("wrong");
+    expect(classify("exponential", "cas", "exponential(21/10,-2)", exact, { kind: "skip", reason: "no oracle" })).toEqual({ cls: "symbolic", detail: "21/10*exp(21/5)" });
+    // Airy_Ai(0), mpmath at 100 digits (the census's oracle output)
+    const ai = { kind: "value", re: "0.3550280538878172392600631860041831763979791741991772405833265103008100424501267129571742460540402717", im: "0" } as const;
+    expect(classify("Airy_Ai", "cas", "Airy_Ai(0)", answer({ text: "Airy_Ai(0)", value: { re: decimalFromString(ai.re, 60)!, im: ZERO_VALUE }, mark: "=", exact: true }), ai).cls).toBe("checked");
+    // a form Giac reads to 12 digits only (Airy_Ai: a C double) claims 11
+    expect(classify("Airy_Ai", "cas", "Airy_Ai(0)", answer({ text: "Airy_Ai(0)", value: num("0.355028053888"), mark: "⚠", n: 11, exact: true }), ai).cls).toBe("checked");
+    expect(classify("Airy_Ai", "cas", "Airy_Ai(0)", answer({ text: "Airy_Ai(0)", value: num("0.355028053888"), mark: "=", exact: true }), ai).cls).toBe("wrong");
+  });
+  it("reads a CAS mark by the golden runner's rule (goldenRun.ts casMark)", () => {
+    const facts = { exact: true, reliableDigits: null };
+    expect(casMark({ ok: true, text: "-7/3", latex: "", facts } as never, 12)).toEqual({ mark: "=" });
+    expect(casMark({ ok: true, text: "21/10*exp(21/5)", latex: "", facts } as never, 12)).toBeNull();
+    expect(casMark({ ok: true, text: "true", latex: "", approximate: true, facts: { ...facts, warn: "unaudited" } } as never, 12)).toEqual({ mark: "⚠" });
+    expect(casMark({ ok: false, text: "1/2", latex: "", facts } as never, 12)).toBeNull();
   });
   it("calls Giac's words, objects and strings raw, and a plain expression symbolic", () => {
     expect(rawText("circle", "pnt(pnt[circle…])", "home", "circle(0,1)")).toBe("a graphic object");
