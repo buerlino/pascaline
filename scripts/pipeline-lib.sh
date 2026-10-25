@@ -107,20 +107,27 @@ head_is() {  # <dir> <sha>
 red_first_wanted() {
   grep -qiE '(fail|failing) on phase-1' "$1" 2>/dev/null
 }
+# red_first_stage <tests/golden/x.yaml>: the golden stage that reads the file (golden.ts); empty when none does.
+red_first_stage() {
+  case "$(basename "$1" .yaml)" in
+    home|precision|solve|function|bench|units|parser) basename "$1" .yaml;;
+  esac
+}
 # red_first <worktree> <spec file> <phase-1 engine dir> <log>: for a package that says its tests fail on phase-1, runs the vitest files and
 # golden cases the branch adds or changes on phase-1's code (a scratch worktree with those files laid over it). Succeeds when the
 # stage is skipped (also when the branch adds no vitest file or golden case) or at least one of them fails there; otherwise prints the reason on stdout and fails. PASCALINE_REDFIRST_VITEST
 # (default "npx vitest run") is called with the files, PASCALINE_REDFIRST_GOLDEN (default "node scripts/golden.ts") with ONLY set.
 red_first() {
-  local wt="$1" spec="$2" eng="$3" log="$4" f ids="" stages="" scratch rc red=0 ran=0
+  local wt="$1" spec="$2" eng="$3" log="$4" f ids="" stages="" scratch rc red=0 ran=0 err="" stage
   red_first_wanted "$spec" || { echo "red-first: skipped (the package does not say its tests fail on phase-1)" > "$log"; return 0; }
   local -a files=() gfiles=()
   mapfile -t files < <(git -C "$wt" diff --name-only --diff-filter=AMR phase-1...HEAD | grep -E '^app/.*\.test\.ts$' || true)
   mapfile -t gfiles < <(git -C "$wt" diff --name-only --diff-filter=AMR phase-1...HEAD -- 'tests/golden/*.yaml' || true)
   for f in "${gfiles[@]}"; do
     [[ -n "$f" ]] || continue
+    stage="$(red_first_stage "$f")"; [[ -n "$stage" ]] || continue  # corpus, g2, *-known and calls-baseline have no stage of their own
     ids+=" $(git -C "$wt" diff -U0 phase-1...HEAD -- "$f" | grep '^+' | grep -oE '\bid: *"?[A-Za-z0-9_.-]+' | sed -E 's/id: *"?//' | tr '\n' ' ')"
-    stages+="${stages:+,}$(basename "$f" .yaml)"  # the golden stage of home.yaml is "home", and so on
+    case ",$stages," in *",$stage,"*) ;; *) stages+="${stages:+,}$stage";; esac
   done
   if [[ ${#files[@]} -eq 0 && -z "${ids// /}" ]]; then echo "red-first: skipped (no new or changed vitest file or golden case; e2e is not run on phase-1)" > "$log"; return 0; fi
   scratch="$(mktemp -d)"; rmdir "$scratch"
@@ -135,13 +142,17 @@ red_first() {
   if [[ ${#files[@]} -gt 0 ]]; then
     ran=1; rc=0
     (cd "$scratch/app" && eval "${PASCALINE_REDFIRST_VITEST:-FORCE_COLOR=0 NO_COLOR=1 timeout 600 npx vitest run} $(printf '%q ' "${files[@]#app/}")") >> "$log" 2>&1 || rc=$?
-    [[ $rc -eq 0 ]] || red=1
+    if [[ $rc -eq 0 ]]; then :
+    elif [[ $rc -eq 124 ]]; then err="stage error: vitest timed out on phase-1"
+    elif grep -qE '(Test Files|Tests) +[0-9]+ failed' "$log"; then red=1
+    else err="stage error: vitest exit $rc on phase-1 without failed tests (no test files, import or environment error?)"; fi
   fi
-  if [[ -n "${ids// /}" && $red -eq 0 ]]; then
+  if [[ -n "${ids// /}" && $red -eq 0 && -z "$err" ]]; then
     ran=1; rc=0
     (cd "$scratch/app" && GIAC_OUT="$eng" ONLY="$stages" eval "${PASCALINE_REDFIRST_GOLDEN:-timeout 900 node scripts/golden.ts}") >> "$log" 2>&1 || rc=$?
     if [[ $rc -ne 0 ]]; then for f in $ids; do grep -qF -- "$f" "$log" && red=1; done; fi
   fi
   rm -f "$scratch/app/node_modules"; git -C "$wt" worktree remove --force "$scratch" >/dev/null 2>&1 || rm -rf "$scratch"
+  [[ -z "$err" ]] || { echo "$err"; return 1; }
   [[ $red -eq 1 ]] || { echo "every new test passes on phase-1"; return 1; }
 }
