@@ -429,3 +429,5 @@ cases:
   - { id: "g109-list-of-rows", input: "list[[1,2],[3,4]]", expect: "{[1,2],[3,4]}", source: "derived", note: "a list of two lists shows its two rows, never a matrix; showed the list[ prefix" }
   - { id: "g109-list-empty", input: "list[]", expect: "{}", source: "derived", note: "the empty list; showed list[]" }
   - { id: "g109-seq-stored-plus-1", steps: [{"input": "M:=list[1,4]"}, {"input": "M+1"}], expect: "{2,5}", mark: "=", source: "derived", note: "a stored list-type value plus a number is elementwise, 1+1, 4+1, never G106's refusal; showed [2,5]" }
+  - { id: "g109-solve-braces", input: "solve(x^2=4,x)", expect: "{-2,2}", mark: "=", source: "derived", note: "a solve result is Giac's list type: shown in braces (owner, 2026-10-25), x²=4 at x=±2; showed [-2,2]" }
+  - { id: "g109-seq-solve-stored-pow-2", steps: [{"input": "S:=solve(x^2=4,x)"}, {"input": "S^2"}], expect: "{4,4}", mark: "=", source: "derived", note: "a stored solve result squares elementwise, (-2)², 2²; showed [4,4]" }

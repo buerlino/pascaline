@@ -164,21 +164,22 @@ export const LIST_TYPE = "list[";
  *  `{[1,2],3}`, `[list[1,2],3]` → `[{1,2},3]`), at any depth; strings and a name that ends in `list` are left alone.
  *  Bridge-3 gives the kind and the flat elements but no print in braces, and a list inside a vector needs the nesting. */
 export function bracesOf(text: string): string {
-  const to = new Map<number, string>();
+  // where each list type opens (its `list[`) and where its `]` closes it
+  const opens = new Set<number>();
+  const cuts: number[] = [];
   walk(text, 0, (k) => {
     const b = text.charAt(k - 1);
     if (!text.startsWith(LIST_TYPE, k) || isNameChar(b) || b === ".") return;
     const close = closing(text, k + LIST_TYPE.length - 1, "printed");
     if (close < 0) return;
-    to.set(k, "{");
-    to.set(close, "}");
+    opens.add(k);
+    cuts.push(k, close);
   }, "printed");
   let out = "";
   let i = 0;
-  for (const k of [...to.keys()].sort((x, y) => x - y)) {
-    const open = to.get(k) === "{";
-    out += text.slice(i, k) + to.get(k)!;
-    i = k + (open ? LIST_TYPE.length : 1);
+  for (const k of cuts.sort((x, y) => x - y)) {
+    out += text.slice(i, k) + (opens.has(k) ? "{" : "}");
+    i = k + (opens.has(k) ? LIST_TYPE.length : 1);
   }
   return out + text.slice(i);
 }
