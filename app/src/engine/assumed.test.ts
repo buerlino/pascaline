@@ -51,7 +51,7 @@ describe.skipIf(!giacAvailable())("an assumption Giac leaves (real Giac)", () =>
     const r = h.cas(LEAK, defaultCasSettings);
     expect(r.defs).toEqual([]);
     expect(about(h, "x")).toBe("x");
-    expect(h.home("solve(x^2=4,x)", defaultHomeSettings).result.display).toBe("[-2,2]");
+    expect(h.home("solve(x^2=4,x)", defaultHomeSettings).result.display).toBe("{-2,2}");
   });
   it("a logged assumption the leak replaced is set again; the user's own purge stays", async () => {
     const h = await nodeHost();

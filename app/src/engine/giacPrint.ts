@@ -130,11 +130,11 @@ export function noneOpen(s: string, q: Quoting): boolean {
   return last <= 0;
 }
 
-/** The elements of a bracketed Giac list as printed (`[a,b]`, `list[a,b]`, the `solve` form), top level only; null
+/** The elements of a bracketed Giac list as printed (`[a,b]`, or `list[a,b]`, Giac's list type), top level only; null
  *  otherwise. */
 export function splitList(text: string): string[] | null {
   const t = text.trim();
-  const body = t.startsWith("list[") ? t.slice(4) : t;
+  const body = t.startsWith(LIST_TYPE) ? t.slice(4) : t;
   if (!body.startsWith("[") || !body.endsWith("]")) return null;
   const inner = body.slice(1, -1);
   if (inner.trim() === "") return [];
@@ -152,6 +152,36 @@ export function splitList(text: string): string[] | null {
   if (end !== -1 || last !== 0) return null;
   parts.push(inner.slice(start).trim());
   return parts;
+}
+
+// --- Giac's list type (G109) -----------------------------------------------------------------------------------------
+
+/** How Giac prints a value of its list type (`list[1,4]`, subtype 23; a `[ ]` vector is 0): the print says the
+ *  subtype, so bridge-3's text and the state read's give it with no extra call. A solve result is one too. */
+export const LIST_TYPE = "list[";
+
+/** Giac's print with every value of its list type written with braces, as the G2 shows a list (`list[[1,2],3]` →
+ *  `{[1,2],3}`, `[list[1,2],3]` → `[{1,2},3]`), at any depth; strings and a name that ends in `list` are left alone.
+ *  Bridge-3 gives the kind and the flat elements but no print in braces, and a list inside a vector needs the nesting. */
+export function bracesOf(text: string): string {
+  // where each list type opens (its `list[`) and where its `]` closes it
+  const opens = new Set<number>();
+  const cuts: number[] = [];
+  walk(text, 0, (k) => {
+    const b = text.charAt(k - 1);
+    if (!text.startsWith(LIST_TYPE, k) || isNameChar(b) || b === ".") return;
+    const close = closing(text, k + LIST_TYPE.length - 1, "printed");
+    if (close < 0) return;
+    opens.add(k);
+    cuts.push(k, close);
+  }, "printed");
+  let out = "";
+  let i = 0;
+  for (const k of cuts.sort((x, y) => x - y)) {
+    out += text.slice(i, k) + (opens.has(k) ? "{" : "}");
+    i = k + (opens.has(k) ? LIST_TYPE.length : 1);
+  }
+  return out + text.slice(i);
 }
 
 // --- a printed value as a tree -------------------------------------------------------------------------------------

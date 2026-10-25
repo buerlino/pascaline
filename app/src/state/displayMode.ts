@@ -59,6 +59,8 @@ export interface ResultFacts extends ValueFacts {
   /** A numeric list or matrix: its elements, each with its own value and facts. */
   items?: PrecisionFacts[];
   shape?: [number, number];
+  /** G109: a list of Giac's list type, drawn with braces. */
+  braces?: true;
   /** The digits the input asked for (CAS `evalf(e,n)`, decisions M4-6): drawn with these, not the digits setting. */
   digits?: number;
 }

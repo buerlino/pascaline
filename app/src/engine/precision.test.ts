@@ -115,7 +115,7 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
     expect(m.shape).toEqual([2, 2]);
     expect(markOf(precisionFacts(m), { format: "STD", digits: 12 })).toEqual({ mark: "=" });
     const s = home("solve(x^2=2,x)");
-    expect(s.display).toBe("[-1.41421356237,1.41421356237]");
+    expect(s.display).toBe("{-1.41421356237,1.41421356237}");
     expect(markOf(precisionFacts(s), { format: "STD", digits: 12 })).toEqual({ mark: "≈" });
   });
 

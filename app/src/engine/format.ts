@@ -327,6 +327,8 @@ export interface PrecisionFacts extends ValueFacts {
   value?: ComplexValue;
   /** A numeric list or matrix: its elements (the list's own value is absent). */
   items?: PrecisionFacts[];
+  /** G109: the list is Giac's list type, written with braces (`{a,b}`). */
+  braces?: true;
   /** Only read when there is no value: a true or false that rests on a float (an == or ≠ test, R18f1) is ≈. */
   approximate?: boolean;
 }
@@ -423,7 +425,8 @@ export function markOf(f: PrecisionFacts, o: FormatOptions): MarkInfo | null {
   return { mark: "≈" };
 }
 
-/** The value formatted in `o`, showing confirmed digits only (canonical text: lists `[a,b]`; with `shape`, a matrix `[[a,b],[c,d]]`). */
+/** The value formatted in `o`, showing confirmed digits only (canonical text: lists `[a,b]`, Giac's list type `{a,b}`
+ *  (G109); with `shape`, a matrix `[[a,b],[c,d]]`). */
 export function formatConfirmed(f: PrecisionFacts & { shape?: [number, number] }, o: FormatOptions): string | null {
   if (f.items) {
     const texts: string[] = [];
@@ -438,7 +441,7 @@ export function formatConfirmed(f: PrecisionFacts & { shape?: [number, number] }
       for (let r = 0; r < rows; r++) rs.push(`[${texts.slice(r * cols, (r + 1) * cols).join(",")}]`);
       return `[${rs.join(",")}]`;
     }
-    return `[${texts.join(",")}]`;
+    return f.braces ? `{${texts.join(",")}}` : `[${texts.join(",")}]`;
   }
   if (!f.value) return null;
   return formatComplex(f.value, confirmedOptions(f.value, f.reliableDigits, o)).text;

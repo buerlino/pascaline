@@ -338,8 +338,8 @@ cases:
     area: cas
     title: "CAS: solve(x²=4,x) typed with lower-case letters gives both roots"
     keys: ["@cas", shift, alpha, d9, shift, alpha, comma, shift, alpha, sq, shift, alpha, d5, shift, alpha, frac, paren, x, sq, shift, dot, d4, comma, x, right, enter]
-    expect: { result: "[-2,2]", mark: none }
-    value: "[-2,2]"
+    expect: { result: "{-2,2}", mark: none }
+    value: "{-2,2}"
     source: derived
     needs: R4a
 
@@ -347,8 +347,8 @@ cases:
     area: cas
     title: "an integral in Home, then solve(x²=4,x) in CAS still gives both roots (state between inputs)"
     keys: [{tmpl: integral}, d0, right, d1, right, x, sq, right, x, enter, "@cas", shift, alpha, d9, shift, alpha, comma, shift, alpha, sq, shift, alpha, d5, shift, alpha, frac, paren, x, sq, shift, dot, d4, comma, x, right, enter]
-    expect: { result: "[-2,2]", mark: none }
-    value: "[-2,2]"
+    expect: { result: "{-2,2}", mark: none }
+    value: "{-2,2}"
     source: derived
     needs: R4a
 

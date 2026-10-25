@@ -6,6 +6,7 @@
 import type { ChipFactsTable } from "../engine/chipFacts.ts";
 import { decimalFromRational, decimalFromString, type ComplexValue } from "../engine/format.ts";
 import type { ValueFacts } from "../engine/types.ts";
+import { bracesOf } from "../engine/giacPrint.ts";
 import type { Chip, ChipTable } from "../input/chips.ts";
 import type { Rational, ResultFacts } from "./displayMode.ts";
 
@@ -30,6 +31,8 @@ export interface FactsSource {
   items?: readonly { value?: ComplexValue; facts: ValueFacts }[];
   shape?: [number, number];
   digits?: number;
+  /** G109: a list of Giac's list type (drawn and copied with braces). */
+  braces?: true;
 }
 /** A Home result as the rule reads it (HomeOutcome of the port, HomeResult of the engine). */
 export interface HomeIn extends FactsSource {
@@ -73,6 +76,7 @@ export function factsFrom(r: FactsSource): ResultFacts | undefined {
     f.items = r.items.map((it) => ({ ...it.facts, ...(it.value ? { value: it.value } : {}) }));
     if (r.shape) f.shape = r.shape;
   }
+  if (r.braces) f.braces = r.braces;
   return f;
 }
 
@@ -102,6 +106,9 @@ export function homeItem(r: HomeIn, inexactInput: boolean): ItemResult {
     out.fullExact = !inexact && (full === exactText || (!cut && (r.facts.exact || !isDigitsText(full))));
     // G46f1: a symbolic result whose chip text (radian) differs from the text drawn (DEG) copies the drawn text.
     if (!r.value && !r.items && full !== r.display && r.display.length <= FULL_LIMIT) out.drawn = r.display;
+    // G109: a list of Giac's list type: the chip keeps Giac's `list[…]` (Giac reads it back), the copy has braces
+    // (the drawn text above when there is one: in DEG it is the degree text, `full` the radian one)
+    if (r.braces && out.drawn === undefined) out.drawn = bracesOf(full);
   }
   return out;
 }

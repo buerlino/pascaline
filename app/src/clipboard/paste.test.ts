@@ -67,3 +67,18 @@ describe("copy → paste gives the value back (P5)", () => {
     });
   }
 });
+
+// G109: Copy writes a list with braces (`{1,16}`); the paste reader takes it back as the list key types it
+describe("parsePastedNumber, a list in braces", () => {
+  it("reads a list of numbers", () => {
+    expect(latex("{1,16}")).toBe("\\left\\{1,16\\right\\}");
+    expect(latex("{-1.5, 2e-3}")).toBe("\\left\\{-1.5,2\\emark-3\\right\\}");
+    expect(latex("{}")).toBe("\\left\\{\\right\\}");
+  });
+  it("refuses anything else", () => {
+    expect(latex("{1/3,2}")).toBeUndefined();
+    expect(latex("{[1,2],3}")).toBeUndefined();
+    expect(latex("{1,}")).toBeUndefined();
+    expect(latex("{1,16}", { decimalComma: true })).toBeUndefined();
+  });
+});

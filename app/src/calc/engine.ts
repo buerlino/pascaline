@@ -38,6 +38,7 @@ export const HOME_KEYS = {
   defined: "pass",
   items: "pass",
   shape: "pass",
+  braces: "pass",
   digits: "pass",
   latex: "pass",
   settingReset: "pass",

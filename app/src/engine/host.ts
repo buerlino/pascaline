@@ -38,7 +38,7 @@ import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerica
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor, PASDEG } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
-import { balanced, callsOf, isName, leadingName, namesIn, wholeCall, wordsOf, parsePrinted, typedFromPrinted } from "./giacPrint.ts";
+import { balanced, bracesOf, callsOf, isName, leadingName, LIST_TYPE, namesIn, wholeCall, wordsOf, parsePrinted, typedFromPrinted } from "./giacPrint.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
@@ -940,7 +940,11 @@ export class EngineHost implements FactsHost {
     // G106: whether a name holds a list is read from Giac's print in the stored table (G65's state read, already made):
     // the assignment must be routed before it runs, and asking the engine would cost a call on every assignment. This
     // text gate moves to bridge-3 with the poly1 check when G103 reads a value's kind (docs/04 6.1).
-    const isList = (n: string): boolean => this.stored.get(n)?.text.startsWith("[") === true;
+    // G109: Giac's list type (`list[…]`) is a list too
+    const isList = (n: string): boolean => {
+      const t = this.stored.get(n)?.text;
+      return t !== undefined && (t.startsWith("[") || t.startsWith(LIST_TYPE));
+    };
     const guarded =
       asg0 && !form.once && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || mayAddToList(asg0.rhs, isList) || restsOnDecision(asg0.rhs, "typed", "", notBuiltin(this.giac))) ? asg0 : null;
     // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
@@ -1081,7 +1085,10 @@ export class EngineHost implements FactsHost {
     // G46 (S14 option 2): in DEG the radian text is drawn and copied as a DEG engine prints it; Ans, chips (`full`) and
     // pcasans keep the radian text, which means the same in every mode.
     const deg = s.angle === "deg" && needsDegrees(text) ? backInDegrees(this.giac, text) : null;
-    const shown = deg ?? text;
+    // G109: Giac's list type (a solve result too) is shown and copied with braces, as Home shows it; `full` keeps
+    // Giac's `list[…]` for Ans and the chips, and MathPrint draws Giac's latex() (`\{…\}`)
+    const drawn = deg ?? text;
+    const shown = drawn.includes(LIST_TYPE) ? bracesOf(drawn) : drawn;
     const tex = deg !== null ? this.giac.eval(`latex(quote(${deg}))`) : latexShown(this.giac, slot, text);
     if (atN !== null) this.giac.eval("purge(pasfl)");
     if (isError(tex)) return fail(tex, isTimeout(tex) ? "timeout" : "engine");

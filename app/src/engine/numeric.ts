@@ -29,7 +29,7 @@ import {
 } from "./format.ts";
 import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import type { GiacValue } from "./bridge.ts";
-import { callsOf, functionsIn, type Quoting, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
+import { callsOf, functionsIn, LIST_TYPE, type Quoting, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
 import { complexReads, complexReplacedIn, complexSafe, forValue, nonReal, purgeReads } from "./complex.ts";
 
 export interface Giac {
@@ -232,16 +232,18 @@ export function isAudited(input: string, q: Quoting, also: readonly string[] = [
 
 // --- shapes: a scalar, a list, a matrix ------------------------------------------------------------------------------
 
-export type Shape = { kind: "scalar" } | { kind: "list"; n: number } | { kind: "matrix"; rows: number; cols: number };
+/** `braces`: a value of Giac's list type (G109; a solve result too), shown and copied with braces as the G2 shows a
+ *  list. */
+export type Shape = { kind: "scalar" } | { kind: "list"; n: number; braces?: true } | { kind: "matrix"; rows: number; cols: number };
 
 /** Elements above which a list or matrix is shown as Giac's text, unchecked (keeps Enter fast). */
 export const MAX_ITEMS = 400;
 
 /**
  * G103: the shape of a value from its kind (bridge-3): a sequence or a set is no number we format, nor a vector with
- * another prefix (`poly1[…]`; `list[…]` is the solve form, a list only), nor a list whose elements are lists of
- * different lengths or hold lists themselves (api.cc flattens every element, so their count is not the shape's). Every
- * other kind is a scalar. Null too for a list bridge-3 gave no elements (a print past 2 kB with over 400 of them).
+ * another prefix (`poly1[…]`; `list[…]`, Giac's list type, is a list only, with braces, G109), nor a list whose
+ * elements are lists of different lengths or hold lists themselves (api.cc flattens every element, so their count is
+ * not the shape's). Every other kind is a scalar. Null too for a list bridge-3 gave no elements (a print past 2 kB with over 400 of them).
  */
 export function shapeOfValue(v: GiacValue): Shape | null {
   if (v.kind === "sequence" || v.kind === "set" || v.kind === "error") return null;
@@ -249,9 +251,9 @@ export function shapeOfValue(v: GiacValue): Shape | null {
   const [n = 0, cols = 0] = v.shape ?? [];
   const els = v.elements;
   if (!els || n === 0 || n > MAX_ITEMS) return null;
-  const listForm = v.text.startsWith("list[");
+  const listForm = v.text.startsWith(LIST_TYPE);
   if (!v.text.startsWith("[") && !listForm) return null;
-  if (v.kind === "list") return els.length === n ? { kind: "list", n } : null;
+  if (v.kind === "list") return els.length !== n ? null : listForm ? { kind: "list", n, braces: true } : { kind: "list", n };
   if (listForm || cols === 0 || n * cols > MAX_ITEMS || els.length !== n * cols) return null;
   return { kind: "matrix", rows: n, cols };
 }
