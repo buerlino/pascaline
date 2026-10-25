@@ -44,7 +44,7 @@ export function leakPart(known: readonly string[], logged: readonly string[]): s
   return `[0,map(VARS(),k->when(member(k,${quoted}),k,[k,string(eval(k))])),${aboutsPart(logged)},0]`;
 }
 
-/** A node of Giac's printed list (stateRead.ts parsePrinted). */
+/** A node of Giac's printed list (giacPrint.ts parsePrinted). */
 interface Node {
   raw: string;
   items?: Node[];

@@ -21,6 +21,27 @@ export function stringEnd(s: string, open: number, q: Quoting): number {
   return -1;
 }
 
+/**
+ * G105f2: a value as Giac printed it, as typed text (the log's commands are all typed). Only strings differ: a doubled
+ * quote reads the same in both quotings (`d:=("x""y")` has size 3), and a string with a `\` becomes a join with
+ * char(92), since Giac's lexer refuses a typed string ending in two backslashes before a bracket (`b:=("C:\\")` gives
+ * undef; `b:=(["C:"+char(92),1])` holds C:\, probe 2026-10-25).
+ */
+export function typedFromPrinted(text: string): string {
+  let out = "";
+  let i = 0;
+  for (let k = text.indexOf('"'); k >= 0; k = text.indexOf('"', i)) {
+    let end = stringEnd(text, k, "printed");
+    while (end >= 0 && text.charAt(end + 1) === '"') end = stringEnd(text, end + 1, "printed");
+    if (end < 0) break;
+    const str = text.slice(k, end + 1);
+    const [first, ...rest] = str.slice(1, -1).split("\\");
+    out += text.slice(i, k) + (rest.length ? `("${first}"${rest.map((p) => "+char(92)" + (p ? `+"${p}"` : "")).join("")})` : str);
+    i = end + 1;
+  }
+  return out + text.slice(i);
+}
+
 /** `s` with every string (its quotes included; an unclosed one runs to the end) replaced by `by`, or by `by` of it. */
 export function withoutStrings(s: string, by: string | ((str: string) => string), q: Quoting): string {
   let out = "";

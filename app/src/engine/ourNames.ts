@@ -33,9 +33,9 @@ export function renameOurCalls(text: string): string {
 }
 
 /** The inverse, for the export: `pasmedian(` is written `median(`, so a file reads the same on the way back in. It reads
- *  the log's commands, Giac's print ("printed": `\` is itself, G105f1). */
+ *  the log's commands, typed (G105f2: a variable's value too, giacPrint.ts typedFromPrinted). */
 export function writeUserNames(text: string): string {
-  return renameCalls(text, WRITTEN_NAME, "printed");
+  return renameCalls(text, WRITTEN_NAME, "typed");
 }
 
 /** G100: the names our own test helper stores into (input/emit.ts equalityTest: the float flag and the difference,

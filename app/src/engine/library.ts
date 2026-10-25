@@ -14,7 +14,7 @@ import { DATA_VERSION, migratedText } from "../state/storage.ts";
 import { renameOurCalls, writeUserNames } from "./ourNames.ts";
 import { dropAngleFactor, PASDEG, rewriteAngles } from "../input/angles.ts";
 import { isFlagName } from "./flags.ts";
-import { callsOf, isName, names, noneOpen, walk, wordsOf } from "./giacPrint.ts";
+import { callsOf, isName, names, noneOpen, typedFromPrinted, walk, wordsOf } from "./giacPrint.ts";
 
 /** r10 section 1.2: the limits of one file. */
 export const LIB_MAX_BYTES = 256 * 1024;
@@ -315,7 +315,7 @@ function sameDefinition(engine: LibraryEngine, d: LibDef, old: DefEntry): boolea
   const rhs = d.value;
   // a value in a file is in radians (G46): read with the factor 1, as the import's cas() in RAD reads it
   const v = inRadians(engine, () => engine.eval(asGiac(rhs)));
-  return v.ok && !wordsOf(v.output).includes("undef") && old.cmds.length === 1 && old.cmds[0] === `${d.name}:=(${v.output.trim()})`;
+  return v.ok && !wordsOf(v.output).includes("undef") && old.cmds.length === 1 && old.cmds[0] === `${d.name}:=(${typedFromPrinted(v.output.trim())})`;
 }
 
 /** A function typed on the phone has no description: its name and arguments stand for it. */
@@ -340,7 +340,7 @@ export function exportLibrary(log: readonly DefEntry[]): { text: string; skipped
       continue;
     }
     // G46: the file is in radians, as typed: a body is written without our degree factor (the import puts it in)
-    out.push("", `// ${describe(e)}`, e.cmds.map((c) => writeUserNames(dropAngleFactor(c, "printed"))).join("\n"));
+    out.push("", `// ${describe(e)}`, e.cmds.map((c) => writeUserNames(dropAngleFactor(c, "typed"))).join("\n"));
   }
   return { text: out.join("\n") + "\n", skipped };
 }

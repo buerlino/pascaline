@@ -38,7 +38,7 @@ import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerica
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor, PASDEG } from "../input/angles.ts";
 import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, unauditedIn, floatFacts, hasFloat, integratedFacts, numberLatex, shapeOfValue, valuePrecision, whyOf, withDigits } from "./numeric.ts";
-import { balanced, callsOf, isName, leadingName, namesIn, wholeCall, wordsOf, parsePrinted } from "./giacPrint.ts";
+import { balanced, callsOf, isName, leadingName, namesIn, wholeCall, wordsOf, parsePrinted, typedFromPrinted } from "./giacPrint.ts";
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
@@ -327,7 +327,7 @@ export class EngineHost implements FactsHost {
     const entries = this.withoutFlags(this.migrated(stored));
     // G83: a function (one balanced command) waits in `pending` until an input names it (need). One whose name Giac
     // already holds is replayed now: a loaded body that calls it would otherwise meet the old definition.
-    const plain = (e: DefEntry): boolean => (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!, "printed");
+    const plain = (e: DefEntry): boolean => (e.kind === "var" || e.kind === "fn") && e.cmds.length === 1 && balanced(e.cmds[0]!, "typed");
     for (const e of entries) {
       if (e.kind !== "other") this.pending.delete(e.name);
       if (e.kind === "fn" && plain(e) && !this.byName.has(e.name)) this.pending.set(e.name, e);
@@ -370,7 +370,7 @@ export class EngineHost implements FactsHost {
   /** G67: the entries without a Giac setting (a log stored before G67 holds `approx_mode:=(1)`, `Digits:=(14)`): a named
    *  one goes from the client's log too (a purge in takeMigrated), one kept as typed is only not replayed. */
   private withoutFlags(entries: readonly DefEntry[]): readonly DefEntry[] {
-    const flagged = entries.filter((e) => (e.kind === "other" ? e.cmds.some((c) => namesFlag(c, "printed")) : isFlagName(e.name)));
+    const flagged = entries.filter((e) => (e.kind === "other" ? e.cmds.some((c) => namesFlag(c, "typed")) : isFlagName(e.name)));
     if (!flagged.length) return entries;
     const names = flagged.filter((e) => e.kind !== "other").map((e) => e.name);
     if (names.length) this.migratedChanges.push({ purge: names });
@@ -424,7 +424,7 @@ export class EngineHost implements FactsHost {
       if (!held.has(PASDEG)) lost.push(...this.pending.keys());
       if (lost.length && !stateNode) stateNode = parsePrinted(this.giac.eval(statePart(this.modeDigits)));
     }
-    const reset = flagsChanged && (namesFlag(input, "typed") || this.callsDefining(input, (c) => namesFlag(c, "printed")));
+    const reset = flagsChanged && (namesFlag(input, "typed") || this.callsDefining(input, (c) => namesFlag(c, "typed")));
     const table = stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n), this.stored) : null;
     const skipped = table && stateNode ? new Set(namesOf(stateNode).filter((n) => !table.has(n) && !purged.includes(n))) : null;
     this.post = { reads, table, changes: table ? changesOf(this.stored, table) : null, skipped, flagsChanged, reset, lost };
@@ -760,14 +760,14 @@ export class EngineHost implements FactsHost {
   /**
    * A variable's value as a command that sets it again: `B:=(<value>)`, floats as `evalf(<exact>,k)` with the digits
    * they print with (doubles: 14). `early`: the value has names in it, so it must be set before any of them is.
-   * Null when the name holds nothing.
+   * Null when the name holds nothing. The command is typed, as every log command is (G105f2: giacPrint.ts typedFromPrinted).
    */
   private snapshot(name: string, digits: number): { cmd: string; float: boolean; early: boolean } | null {
     const t = withDigits(this.giac, DOUBLE_DIGITS, digits, () => this.giac.eval(name)).trim();
     if (t === "" || t === name || isError(t)) return null;
     const float = hasFloat(t);
     const early = namesIn(t, "printed").some((n) => !CONSTANT_NAMES.has(n));
-    return { cmd: `${name}:=(${float ? floatsAsEvalf(t) : t})`, float, early };
+    return { cmd: `${name}:=(${typedFromPrinted(float ? floatsAsEvalf(t) : t)})`, float, early };
   }
 
   /** The mark facts a variable keeps when it is set from result `r` (decisions M4-7). */

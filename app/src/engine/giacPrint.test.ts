@@ -18,6 +18,7 @@ import {
   renameCalls,
   replaceLiteral,
   splitList,
+  typedFromPrinted,
   stringEnd,
   topLevelArgs,
   UNCLOSED,
@@ -103,5 +104,11 @@ describe("numbers", () => {
   });
   it("replaceLiteral replaces whole literals only", () => {
     expect(replaceLiteral("5/10^12+15/10^12*x", "5/10^12", "5e-12")).toBe("5e-12+15/10^12*x");
+  });
+  it("G105f2: typedFromPrinted writes a printed backslash as a join with char(92); a doubled quote stays", () => {
+    expect(typedFromPrinted('["C:\\",1]')).toBe('[("C:"+char(92)),1]');
+    expect(typedFromPrinted('"a""b"+"x\\y\\"')).toBe('"a""b"+("x"+char(92)+"y"+char(92))');
+    expect(typedFromPrinted('"q""\\"')).toBe('("q"""+char(92))');
+    expect(typedFromPrinted("[1,2]")).toBe("[1,2]");
   });
 });
