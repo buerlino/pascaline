@@ -40,7 +40,7 @@ import { askedDigits, DOUBLE_DIGITS, doubleFormsIn, notBuiltin, floatsShown, una
 import { decidedAtDouble, decideTwice, restsOnDecision } from "./decisions.ts";
 import { assignmentIn, formIn, formOf, mayStore, programStores, STATE_HEADS, STRING_HEADS, wordsOf, writesThrough, type InputForm, type ProgramStores } from "./stores.ts";
 import { fnFacts, inherited, nameFacts, readFacts, readsFacts, storedFacts, storeFacts, type FactsHost } from "./facts.ts";
-import { changedPart, changesOf, namesOf, namesPart, parsePrinted, readsFrom, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
+import { changedPart, changesOf, isOurs, namesOf, namesPart, parsePrinted, readsFrom, statePart, tableOf, type InputReads, type StoredName } from "./stateRead.ts";
 import { applyDefChanges, keyOf, PREVIEW_MAX, replayOrder, type DefChange, type DefEntry, type NameFacts } from "./defs.ts";
 import { SOLVE_HARD_TIMEOUT_S, solveRequest, unknownsOf } from "./solve.ts";
 import { analyze, table } from "./analysis.ts";
@@ -50,6 +50,7 @@ import { chipCommand, chipNameFacts, chipsIn, CHIP_PREFIX, withChipValues, type 
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from "./flags.ts";
 import { contextOf, gated, type GatedGiac } from "./ctxGate.ts";
+import { aboutsOf, assumeTargets, leakPart, namesAssuming, putBack, selfHolding, setsAssumption } from "./assumed.ts";
 
 /** G65: what the call after an input found: the names it read and stored (stateRead.ts), and Giac's settings. */
 interface AfterInput {
@@ -190,6 +191,10 @@ export class EngineHost implements FactsHost {
   private skipped = new Set<string>();
   /** G65: the call after the current input, once it ran (home() and cas() make it when the run did not). */
   private post: AfterInput | null = null;
+  /** G92: a Giac text of this input named a command that may leave an assumption (assumed.ts namesAssuming). */
+  private assumeRisk = false;
+  /** G92: the about() each logged assumption had at the last read, by name. */
+  private abouts = new Map<string, string>();
 
   /** G83: the user's functions restore() has not given to Giac yet, by name; loaded on first use (need). */
   private pending = new Map<string, DefEntry>();
@@ -266,7 +271,12 @@ export class EngineHost implements FactsHost {
 
   constructor(raw: GiacApi, rawBridge: GiacBridge) {
     // G102: Digits through bridge-1, a set waiting until the next Giac call (ctxGate.ts)
-    const { giac, bridge } = gated(raw, rawBridge);
+    // G92: a text that names a command that may leave an assumption and a name that is not ours (the host's own
+    // simplify of a numeric slot, provedRational's `simplify(pasX)`, assumes no user name)
+    const { giac, bridge } = gated(raw, rawBridge, (text) => {
+      if (this.assumeRisk || !namesAssuming(text)) return;
+      this.assumeRisk = namesIn(text).some((n) => !CONSTANT_NAMES.has(n) && !isOurs(n, (m) => this.byName.has(m)));
+    });
     this.giac = giac;
     this.bridge = bridge;
     // R64, G46: Giac in radians, and pasdeg (our parser's degree factor) set before any input: the units, raw eval and
@@ -388,12 +398,72 @@ export class EngineHost implements FactsHost {
     // G104: a name the text names is read again too (the table holds a `pas` name the text names, isOurs)
     const cands = state === true ? this.candidatesOf(input) : null;
     const known = cands ? [...this.stored.keys(), ...this.skipped].filter((n) => !cands.has(n) && !typed.has(n)) : [];
-    const stateNode = state ? parsePrinted(this.giac.eval(cands ? changedPart(this.modeDigits, known) : statePart(this.modeDigits))) : null;
-    const reset = flagsChanged && (namesFlag(input) || [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => this.byName.get(m[0])?.cmds.some(namesFlag) === true));
+    // G92: the log's assumptions, read with the state (their about()), or alone after a text that may leave one
+    // (an input that sets one: the names it assumes too, which the log learns after this call)
+    const keep = setsAssumption(input) || this.callsDefining(input, setsAssumption, true);
+    const logged = [...this.byName.values()].filter((e) => e.kind === "assume").map((e) => e.name);
+    const assumed = keep ? [...new Set([...logged, ...this.assumedBy(input)])] : logged;
+    const risky = this.assumeRisk || this.callsDefining(input, namesAssuming, true);
+    const stateNode = state ? parsePrinted(this.giac.eval(cands ? changedPart(this.modeDigits, known, assumed) : statePart(this.modeDigits, assumed))) : null;
+    const leakNode = stateNode ?? (risky ? parsePrinted(this.giac.eval(leakPart([...this.stored.keys(), ...this.skipped], assumed))) : null);
+    const purged = leakNode ? this.assumptionsBack(input, leakNode, assumed, typed, keep) : [];
+    this.assumeRisk = false;
+    const reset = flagsChanged && (namesFlag(input) || this.callsDefining(input, namesFlag));
     const table = state && stateNode ? tableOf(stateNode, (n) => this.byName.has(n) || typed.has(n), this.stored) : null;
-    const skipped = table && stateNode ? new Set(namesOf(stateNode).filter((n) => !table.has(n))) : null;
+    const skipped = table && stateNode ? new Set(namesOf(stateNode).filter((n) => !table.has(n) && !purged.includes(n))) : null;
     this.post = { reads, table, changes: table ? changesOf(this.stored, table) : null, skipped, flagsChanged, reset };
     return this.post;
+  }
+
+  /** G92: the names `input` assumes, and those the stored functions it calls assume. */
+  private assumedBy(input: string): string[] {
+    const fns = [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].flatMap((m) => {
+      const e = this.byName.get(m[0]);
+      return e?.kind === "fn" ? e.cmds : [];
+    });
+    return [input, ...fns].flatMap(assumeTargets);
+  }
+
+  /** The text names a log entry whose commands `test` holds (G67's reset rule); `fns`: a stored function only (G92: a
+   *  logged assumption's own `assume(x<0)` is no function the text calls). */
+  private callsDefining(input: string, test: (cmd: string) => boolean, fns = false): boolean {
+    return [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => {
+      const e = this.byName.get(m[0]);
+      return e !== undefined && (!fns || e.kind === "fn") && e.cmds.some(test);
+    });
+  }
+
+  /**
+   * G92 (assumed.ts): what the input left of Giac's assumptions, put back in one call, silently. A name new since the
+   * last read (not ours, not in the log, not stored, not skipped before) that holds only itself is purged; a logged
+   * assumption whose about() changed is purged and set again from its entry, unless the input's own targets name it
+   * (`purge(x)`, `x:=3`; all of them when they are unknown, `restart`). An input that sets an assumption (its text names
+   * assume or additionally, or calls a stored function whose definition does) keeps what it did: its about()s become
+   * the ones expected, as does restore()'s replay. Returns the names purged.
+   */
+  private assumptionsBack(input: string, node: NonNullable<ReturnType<typeof parsePrinted>>, assumed: readonly string[], typed: ReadonlySet<string>, sets: boolean): string[] {
+    const abouts = assumed.length ? aboutsOf(node, assumed.length) : [];
+    for (const n of this.abouts.keys()) if (!assumed.includes(n)) this.abouts.delete(n);
+    // restore() reads with no input: what the log's replay set is the log's
+    const keep = input === "" || sets;
+    const user = (n: string): boolean => this.byName.has(n) || typed.has(n);
+    const fresh = keep ? [] : selfHolding(node).filter((n) => !isOurs(n, user) && !this.byName.has(n) && !this.stored.has(n) && !this.skipped.has(n));
+    const moved: string[] = [];
+    assumed.forEach((n, k) => {
+      const got = abouts?.[k];
+      if (got === undefined) return;
+      const want = this.abouts.get(n);
+      if (keep || want === undefined) this.abouts.set(n, got);
+      else if (got !== want) moved.push(n);
+    });
+    const mine = moved.length ? this.candidatesOf(input) : null;
+    const back = mine ? moved.filter((n) => !mine.has(n)) : [];
+    for (const n of moved) if (!back.includes(n)) this.abouts.delete(n);
+    if (!fresh.length && !back.length) return [];
+    const entries = back.map((n) => this.byName.get(n)!);
+    this.giac.eval(putBack(fresh, entries));
+    if (entries.some((e) => e.cmds.some(namesFlag))) this.modeKey = "";
+    return fresh;
   }
 
   /**
@@ -575,6 +645,7 @@ export class EngineHost implements FactsHost {
 
   eval(input: string): { output: string; ok: boolean; engineMs: number; defs: DefChange[] } {
     this.parsed = null;
+    this.assumeRisk = false;
     this.need(input);
     const t0 = performance.now();
     const output = this.giac.eval(input);
@@ -584,7 +655,7 @@ export class EngineHost implements FactsHost {
       const post = this.after(input, true, true);
       defs = this.defsAfter(input, [input], output, null, null, "home", 12, undefined, post);
       this.commit(post);
-    }
+    } else if (this.assumeRisk || this.callsDefining(input, namesAssuming, true)) this.commit(this.after(input, false, false));
     return { output, ok, engineMs: performance.now() - t0, defs };
   }
 
@@ -676,6 +747,7 @@ export class EngineHost implements FactsHost {
   home(typed: string, s: HomeSettings, consts?: ConstTable, chips?: ChipFactsTable): { result: HomeResult; defs: DefChange[] } {
     this.post = null;
     this.parsed = null;
+    this.assumeRisk = false;
     // G91: a precision with no name in it (`approx(e,2*10)`) is read as the literal it gives
     const input = askedLiterals(this.giac, typed, () => this.useHomeMode(s));
     const out = this.homeTabled(input, s, consts, chips);
@@ -788,6 +860,7 @@ export class EngineHost implements FactsHost {
 
   cas(typed: string, s: CasSettings): { result: CasResult; defs: DefChange[] } {
     this.parsed = null;
+    this.assumeRisk = false;
     // G91: as in Home
     const input = askedLiterals(this.giac, typed, () => this.useCasMode(s));
     const used = this.usesOf(input);
