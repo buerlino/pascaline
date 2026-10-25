@@ -6,7 +6,8 @@
 //   refused    a message instead of a result (the parser's or the engine's)
 //   raw        Giac's raw text: the call came back unevaluated, or Giac's internal words, objects or strings reached the screen
 //   wrong      the oracle disagrees with the shown number and its mark, or a number is shown where there is no value
-//   state      the input left a name or a setting behind in the engine, or a definitions-log entry the app replays at every start
+//   state      the input left a name or a setting behind in the engine, or a definitions-log entry the app replays at every start, or
+//              a program call no longer answers after it (Giac's debug mode)
 //   hang       no answer before the deadline
 //   crash      an exception came out of the engine (the worker is started again)
 // The findings are raw, wrong, state, hang and crash.

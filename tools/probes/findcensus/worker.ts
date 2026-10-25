@@ -61,6 +61,19 @@ function topLevel(text: string): string[] {
 const { giac, bridge } = await loadNodeGiac();
 giac.eval(pasdegCommand("rad"));
 const host = new EngineHost(giac, bridge);
+// A program of ours, called after every input: Giac's debug() leaves no name and no setting, but the next program call goes into the
+// step-by-step debugger, which asks the page for input (`prompt is not defined`): the host's own helpers are programs too.
+giac.eval("pascensus(x):={return x+1;}");
+
+/** Null when a program call still answers, else what it did. */
+function programCall(): string | null {
+  try {
+    const t = giac.eval("pascensus(1)").trim();
+    return t === "2" ? null : `a program call answers ${t.slice(0, 40)}`;
+  } catch (e) {
+    return `a program call throws ${String((e as Error).message ?? e).slice(0, 40)}`;
+  }
+}
 
 function snapshot(): { names: string[]; setup: string[] } {
   const v = giac.eval("VARS()").trim();
@@ -141,7 +154,8 @@ parentPort!.on("message", (job: Job) => {
     const v = view(job);
     mid = snapshot();
     const { defs, ...shown } = v;
-    a = { ...shown, left: leftBehind(before, mid, defs) };
+    const call = programCall();
+    a = { ...shown, left: [...leftBehind(before, mid, defs), ...(call ? [call] : [])] };
   } catch (e) {
     a = { ok: false, text: "", left: [], crash: String((e as Error).message ?? e).slice(0, 120) };
   }
