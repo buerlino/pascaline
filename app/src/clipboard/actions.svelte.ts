@@ -54,6 +54,15 @@ export class ClipActions {
     return this.decimalComma() ? { decimalComma: true } : {};
   }
 
+  /** The tail of the chain: every clipboard operation starts when the one before it has finished, ok or not, so a quick
+   *  Copy then Paste (both fire-and-forget on the keys) cannot read the clipboard before the Copy has written it (F100). */
+  private tail: Promise<unknown> = Promise.resolve();
+  private serial<T>(run: () => Promise<T>): Promise<T> {
+    const next = this.tail.then(run, run);
+    this.tail = next.catch(() => {});
+    return next;
+  }
+
   private async port(): Promise<ClipboardPort> {
     return this.givenPort ?? (this.chosen ??= (await impl()).choosePort());
   }
@@ -73,7 +82,10 @@ export class ClipActions {
   }
 
   /** Put text on the clipboard and say so. */
-  async copyRaw(text: string | undefined, done: string = tc("clip.copied")): Promise<boolean> {
+  copyRaw(text: string | undefined, done: string = tc("clip.copied")): Promise<boolean> {
+    return this.serial(() => this.put(text, done));
+  }
+  private async put(text: string | undefined, done: string = tc("clip.copied")): Promise<boolean> {
     if (text === undefined || text === "") {
       this.say(tc("clip.nothing"));
       return false;
@@ -84,34 +96,48 @@ export class ClipActions {
   }
 
   /** Shift + View: the full value of the picked or last result; in an app, what the open view offers (the Num table as CSV). */
-  async copyKey(item?: HistoryItem): Promise<boolean> {
-    if (this.shell.app !== null) return this.copyRaw(await this.shell.copyText());
-    return this.copy(item);
+  copyKey(item?: HistoryItem): Promise<boolean> {
+    return this.serial(async () => {
+      if (this.shell.app !== null) return this.put(await this.shell.copyText());
+      return this.copyNow(item);
+    });
   }
-  async copy(item?: HistoryItem): Promise<boolean> {
-    const i = this.target(item);
-    return this.copyRaw(i ? (await impl()).copyFull(source(i), this.opts) : undefined);
+  copy(item?: HistoryItem): Promise<boolean> {
+    return this.serial(() => this.copyNow(item));
   }
-  async copyShown(item?: HistoryItem): Promise<boolean> {
+  private async copyNow(item?: HistoryItem): Promise<boolean> {
     const i = this.target(item);
-    return this.copyRaw(i ? (await impl()).withoutMark(this.session.display(i).text) : undefined);
+    return this.put(i ? (await impl()).copyFull(source(i), this.opts) : undefined);
+  }
+  copyShown(item?: HistoryItem): Promise<boolean> {
+    return this.serial(async () => {
+      const i = this.target(item);
+      return this.put(i ? (await impl()).withoutMark(this.session.display(i).text) : undefined);
+    });
   }
   copyExact(item?: HistoryItem): Promise<boolean> {
-    const i = this.target(item);
-    const exact = i ? copyExact(i) : undefined;
-    if (i && exact === undefined) {
-      this.say(tc("clip.noExact"));
-      return Promise.resolve(false);
-    }
-    return this.copyRaw(exact);
+    return this.serial(async () => {
+      const i = this.target(item);
+      const exact = i ? copyExact(i) : undefined;
+      if (i && exact === undefined) {
+        this.say(tc("clip.noExact"));
+        return false;
+      }
+      return this.put(exact);
+    });
   }
   copyLatex(item?: HistoryItem): Promise<boolean> {
-    const i = this.target(item);
-    return this.copyRaw(i ? this.session.display(i).latex : undefined);
+    return this.serial(async () => {
+      const i = this.target(item);
+      return this.put(i ? this.session.display(i).latex : undefined);
+    });
   }
 
   /** Shift + Menu, Menu → Paste: the clipboard as one number, onto the entry line. */
-  async paste(): Promise<boolean> {
+  paste(): Promise<boolean> {
+    return this.serial(() => this.pasteNow());
+  }
+  private async pasteNow(): Promise<boolean> {
     const clip = await (await this.port()).readText();
     if (clip === null) {
       this.say(tc("clip.unavailable"));
@@ -131,7 +157,10 @@ export class ClipActions {
   }
 
   /** Menu → Share session: the system share sheet, else the clipboard. */
-  async shareSession(): Promise<boolean> {
+  shareSession(): Promise<boolean> {
+    return this.serial(() => this.shareNow());
+  }
+  private async shareNow(): Promise<boolean> {
     const text = (await impl()).sessionText(this.session.items.map(source), this.opts, this.session.displayContext());
     if (text === "") {
       this.say(tc("clip.nothing"));
@@ -141,7 +170,7 @@ export class ClipActions {
       this.say(tc("clip.shared"));
       return true;
     }
-    return this.copyRaw(text, tc("clip.sharedAsCopy"));
+    return this.put(text, tc("clip.sharedAsCopy"));
   }
 
   /** The row an action means: the picked one, else the newest finished result. Recall also takes an error or a
