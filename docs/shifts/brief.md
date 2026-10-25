@@ -11,18 +11,18 @@
 
 **What "holds" means:** every active case of [tests/core/core.yaml](../../tests/core/core.yaml) passes in the desktop e2e suite (R74) and on the night's device (A32, A33: the Tab One or the Fairphone 6, the same one both nights; owner, 2026-10-22) on two nights in a row, and the owner's [morning check](../../tests/core/MORNING.md) finds nothing on both mornings; before that, one core run on the Tab One passes and the flake census (A37) has run, its flakes moved to the retried timing stage (owner, 2026-10-24; [core-stability report](../archive/core-stability-2026-10-24.md)). The night into 2026-10-24 is the first green one: 53 of 53 active cases on desktop (`c44304a`, Opus pass 71) and 52 of 52 on the Fairphone 6 (device runs 61, 63, 71); the night before ran no core list (the stale lock, A35). 3 cases need Find (R4a). The morning check runs on the night's device, on the APK it checked (owner, 2026-10-24).
 
-**What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** G110 (the census of Find's commands, R4a's gate; owner, 2026-10-24), then Find (three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
+**What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find (R4a, gated by G110's census, merged `6eee1cc`; which F lines it waits for is in decisions.md "Needs the user"; three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
 0. **Done:** the night report of 2026-10-24.
-1. **G108** review-only (`--no-worker`; run 229's last check failed only on c50 under load); then **A36** (red before green) and **A37** (the flake census), annabell, Sonnet. **The Tab One core run** once before the freeze ends, when APODroid is off the tablet: `ANDROID_SERIAL=HA24BZ2Y scripts/pipeline.sh device <n>` (owner, 2026-10-24).
+1. **A36** (red before green) and **A37** (the flake census), annabell, Sonnet. **The Tab One core run** once before the freeze ends, when APODroid is off the tablet: `ANDROID_SERIAL=HA24BZ2Y scripts/pipeline.sh device <n>` (owner, 2026-10-24).
 2. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); the library replay and A20 again after G82.
 3. When a slot is free (process, nothing users see): **A25**, **A19** (S16 waits for it), **A18**, **A22** → **A26**, **A27**, **A30**.
 4. Every morning: the owner's check (MORNING.md, on the night's device, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
 
 **At night, the core lane** (section 0c's queue): **G109 → R80**, the list operators (F77, F79: a `{ }` list goes to Giac as its own list type, so a list held by a name or Ans stays elementwise; owner, 2026-10-24; G106 stays the last net). Every merge runs the core list (R74), and the night's device runs it after each Opus pass (A33).
 
-**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): G108 (the Giac regression files pass as labelled and run in the gate; Parisse's link after it); G110 (the census of Find's commands; G105 merged 694fb92); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
+**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
 **Why this order:** the list first, so nothing merges blind; silent wrong numbers next, by reach; the bridge before the readers it would replace; the device run once its harness exists. R15c3 and R15c4 move behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -65,9 +65,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 |---|---|---|---|---|---|
 | 119a | [G109](packages/G109.md) a value of Giac's list type is read and shown as a list | gorge, Opus | `p1/gorge-listtype` | — | 1 h |
 | 119b | [R80](packages/R80.md) a { } list goes to Giac as its list type (F77, F79) | ron, Opus | `p1/ron-giaclist` | G109 | 1.5 h |
-| 128b | [G108](packages/G108.md) the Giac regression files pass as labelled, and the gate runs them | gorge, Sonnet | `p1/gorge-giacregress-gate` | — | 1 h (review-only by day) |
 | 130 | [S16](packages/S16.md) the hardening pass, run as `scripts/pipeline.sh pass <n> "G61 G62 G63 G64 A19" "S16: docs/shifts/packages/S16.md"` | sofia, Opus | — | A19 | 1 h + fixes |
-| 132a | [G110](packages/G110.md) a census of the kinds of answer Giac gives for Find's main commands (R4a's gate) | gorge, Opus | `p1/gorge-findcensus` | — | 2 h |
 | 135 | The flake census (A37): `scripts/pipeline.sh flakes <n>`, when no core step can start, before the last pass; once per night until the freeze ends | — | — | A37 | 1 h |
 | 190 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 191 | Shift report, then stop | — | — | — | 10 min |
