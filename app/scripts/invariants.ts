@@ -29,7 +29,7 @@ const ANGLE_WORDS = /(?<![A-Za-z0-9_])(a?(sin|cos|tan|sec|csc|cot)|arg|atan2|ang
 /** What the input is, for the checks: `angleFree` when no angle function is in it (the typed text with the parser's degree factor). */
 export function invariantsOf(giac: string, before: readonly string[] = []): { angleFree: boolean } {
   const text = [...before, giac].join(";");
-  return { angleFree: !hasAngleFactor(text) && !ANGLE_WORDS.test(text) };
+  return { angleFree: !hasAngleFactor(text, "typed") && !ANGLE_WORDS.test(text) };
 }
 
 const keyOf = (f: { id: string; check: string }): string => `${f.id} ${f.check}`;
@@ -58,7 +58,7 @@ export function invariantsStage(failures: readonly InvariantFailure[], known: re
   for (const k of known)
     if (!got.has(keyOf(k))) {
       fixed++;
-      lines.push(`NOW PASSING ${k.id} [${k.check}]: remove it from tests/golden/invariants-known.yaml (${k.package})`);
+      lines.push(`NOW PASSING ${k.id} [${k.check}]: remove it from the stage's own known list in tests/golden/ (invariants-known.yaml, sweep-known.yaml, seqsweep, casback-known.yaml, viewsweep-known.yaml) (${k.package})`);
     }
   return { ok: fresh === 0 && fixed === 0, lines, summary: `${still} known failures, ${fresh} new, ${fixed} now passing` };
 }

@@ -196,6 +196,18 @@ export function summarizeViewSweep(out: string, exitCode: number): Summary {
   return { ok: false, detail: news.length > 0 ? `${news.length} to look at: ${news.slice(0, 2).join(" | ")}; ${tail}` : tail };
 }
 
+/** G110: the Find census (scripts/findcensus.ts) ends in `FINDCENSUS PASSED|FAILED: <n> runs of <m> inputs (…): <class counts>; …; total <s> s; <k> findings filed, …`; the lines before it name each CHANGED, NEW, GONE or NOW PASSING one. */
+export function summarizeFindCensus(out: string, exitCode: number): Summary {
+  const last = out.trim().split("\n").filter((l) => /^FINDCENSUS (PASSED|FAILED)/.test(l)).slice(-1)[0];
+  if (exitCode === 0 && last?.startsWith("FINDCENSUS PASSED")) {
+    const m = /(\d+) runs of (\d+) inputs.*?total ([\d.]+) s; (\d+) findings filed/.exec(last);
+    return { ok: true, detail: m ? `${m[1]} runs of ${m[2]} inputs, ${m[4]} findings filed, ${m[3]} s` : "FINDCENSUS PASSED" };
+  }
+  const news = out.split("\n").filter((l) => /^ {2}findcensus (CHANGED|NEW|GONE|NOW PASSING)/.test(l)).map((l) => l.trim().slice(11, 110));
+  const tail = last ? last.replace(/^FINDCENSUS FAILED: .*?; (\d+ findings filed)/, "$1").slice(0, 100) : `exit ${exitCode}: ${out.trim().split("\n").slice(-1)[0]?.slice(0, 100) ?? ""}`;
+  return { ok: false, detail: news.length > 0 ? `${news.length} to look at: ${news.slice(0, 2).join(" | ")}; ${tail}` : tail };
+}
+
 /** The size test exits 1 over a budget and lists each failure indented after `size-check FAILED:`. */
 export function summarizeSize(out: string, exitCode: number): Summary {
   if (exitCode === 0) return { ok: true, detail: "inside the budgets" };
@@ -216,7 +228,7 @@ export function summarizeDocs(out: string, exitCode: number): Summary {
 }
 
 /** Engine-side, parser, unit or Find code: what the golden gate checks (CLAUDE.md: every engine build; brief section 8a step 3). */
-export const goldenPaths: readonly RegExp[] = [/^engine\/giac\//, /^app\/src\/engine\//, /^app\/src\/input\//, /^app\/src\/units\//, /^app\/scripts\/unit-case\.ts$/, /^tests\/golden\//, /^app\/scripts\/golden\.ts$/, /^find\//, /^tools\/find-index\//];
+export const goldenPaths: readonly RegExp[] = [/^engine\/giac\//, /^app\/src\/engine\//, /^app\/src\/input\//, /^app\/src\/units\//, /^app\/scripts\/unit-case\.ts$/, /^tests\/golden\//, /^app\/scripts\/(golden\.ts|golden\/.*\.ts|golden-[a-z-]+\.ts|invariants\.ts|calls-budget\.ts|behaviour-diff\.ts|sweep\.ts|seqsweep\.ts|casback\.ts|viewsweep\.ts|findcensus\.ts)$/, /^find\//, /^tools\/find-index\//];
 /** Find data or its generator: the Find index must be generated again. */
 export const indexPaths: readonly RegExp[] = [/^find\//, /^tools\/find-index\//];
 

@@ -22,7 +22,12 @@ describe("the version-3 step of the stored log (pure)", () => {
   });
 
   it("pasexp( becomes exp( everywhere, never inside a string", () => {
-    expect(withoutPasexp('ph(w):=pasexp(i*w)+pasexp (1)+"pasexp(2)"')).toBe('ph(w):=exp(i*w)+exp (1)+"pasexp(2)"');
+    expect(withoutPasexp('ph(w):=pasexp(i*w)+pasexp (1)+"pasexp(2)"', "typed")).toBe('ph(w):=exp(i*w)+exp (1)+"pasexp(2)"');
+    // A version-2 variable's command is Giac's print: `\` is itself, so the string closes at its quote and the call
+    // after it is found (G105f2).
+    expect(withoutPasexp('V:=(["C:\\",pasexp(1)])', "printed")).toBe('V:=(["C:\\",exp(1)])');
+    // A function's command is typed: `\"` stays inside the string, and the call inside it is left alone.
+    expect(withoutPasexp('g(w):={local s; s:="a\\"pasexp(1)"; pasexp(w)}', "typed")).toBe('g(w):={local s; s:="a\\"pasexp(1)"; exp(w)}');
     expect(migrate([entry({ name: "ph", kind: "fn", cmds: ["ph(w):=pasexp(i*w)"] })])[0]!.cmds).toEqual(["ph(w):=exp(i*w)"]);
   });
 
@@ -54,6 +59,13 @@ describe("the version-3 step of the stored log (pure)", () => {
 
   it("a version-2 library text loses pasexp only (its bodies get the factor on import)", () => {
     expect(migratedText("library", "f(x):=pasexp(i*x)+sin(x)", 2)).toBe("f(x):=exp(i*x)+sin(x)");
+    // typed: the escaped quote keeps the string open, so the pasexp inside it is text (G105f2)
+    expect(migratedText("library", 'k:="a\\"pasexp(1)"', 2)).toBe('k:="a\\"pasexp(1)"');
+  });
+
+  it("a function command with a typed escaped quote still gets the factor after the string (G105f2)", () => {
+    const out = migrate([entry({ name: "f", kind: "fn", cmds: ['f(x):=when(x=="a\\"b",sin(x),0)'] })]);
+    expect(out[0]!.cmds).toEqual(['f(x):=when(x=="a\\"b",sin(pasdeg*(x)),0)']);
   });
 
   it("the DEG display rule applies to a text with a trig function and no factor", () => {

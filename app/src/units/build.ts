@@ -4,6 +4,14 @@
 // Find index times the dimension symbols of dims.ts. Main thread, plain TS, no engine.
 import { BASES, dimKeyOf, dimSymbols, isExponent, parseDimKey, unitProduct } from "./dims.ts";
 import type { FactorTable, UnitFactor } from "./factors.ts";
+import { balanced, closing, mapNames, names, walk } from "../engine/giacPrint.ts";
+
+const letters = (s: string): boolean => s !== "" && [...s].every((c) => (c >= "a" && c <= "z") || (c >= "A" && c <= "Z"));
+const digits = (s: string): boolean => s !== "" && [...s].every((c) => c >= "0" && c <= "9");
+/** pasv<n>: an uncertain input's symbol (uncertainValues). */
+const uncName = (name: string): boolean => name.startsWith("pasv") && digits(name.slice(4));
+/** Our names a formula may hold: the dimension symbols, the uncertain inputs, the degree factor. */
+const ourSymbol = (name: string): boolean => (name.startsWith("pasdim") && letters(name.slice(6))) || uncName(name) || name === "pasdeg";
 import type { ShownUnit, UncVar, UnitError, UnitJob, UnitRequest, UnitSlot, UnitToken } from "./types.ts";
 
 /** The logarithmic units: any unit with the Np dimension, and these. Each is a level of a ratio to a reference:
@@ -86,15 +94,11 @@ function aloneNumber(formula: string, n: number): string | null {
   const num = m[1]?.trim() ?? "1";
   // E notation (1.5e-3, as the parser writes it): a digit, e or E, an optional sign, digits.
   const E = /(\d)[eE][+-]?\d+/g;
-  if (!/^[0-9.+\-*/^()\s]+$/.test(num.replace(/\bpi\b/g, "1").replace(E, "$1"))) return null;
-  let depth = 0;
-  for (let i = 0; i < num.length; i++) {
-    const c = num[i]!;
-    if (c === "(") depth++;
-    else if (c === ")" && --depth < 0) return null;
-    else if (depth === 0 && (c === "+" || c === "-") && num.slice(0, i).trim() !== "" && !/[*/^(]\s*$/.test(num.slice(0, i)) && !/\d[eE]$/.test(num.slice(0, i))) return null;
-  }
-  return depth === 0 ? num : null;
+  if (!/^[0-9.+\-*/^()\s]+$/.test(mapNames(num, (w) => (w.name === "pi" ? "1" : null), "typed").replace(E, "$1"))) return null;
+  if (!balanced(num, "typed")) return null;
+  const sign = (i: number, d: number, c: string): boolean =>
+    d === 0 && (c === "+" || c === "-") && num.slice(0, i).trim() !== "" && !/[*/^(]\s*$/.test(num.slice(0, i)) && !/\d[eE]$/.test(num.slice(0, i));
+  return walk(num, 0, sign, "typed") < 0 ? num : null;
 }
 
 /** A source quantity that is alone and absolute: °C, °F by K = a·x + b, a logarithmic unit by its level's ratio. */
@@ -151,16 +155,10 @@ function uncertainValues(formula: string, vars: UncVar[]): string {
     const at = formula.indexOf(CALL, i);
     if (at < 0) return out + formula.slice(i);
     out += formula.slice(i, at);
-    let depth = 1;
-    let comma = -1;
-    let j = at + CALL.length;
-    for (; j < formula.length && depth > 0; j++) {
-      const c = formula[j];
-      if (c === "(") depth++;
-      else if (c === ")") depth--;
-      else if (c === "," && depth === 1 && comma < 0) comma = j;
-    }
-    if (depth > 0 || comma < 0) throw new Refused({ error: "engine", detail: "a bad ± in the formula" });
+    const close = closing(formula, at + CALL.length - 1, "typed");
+    const j = close + 1;
+    const comma = close < 0 ? -1 : walk(formula, at + CALL.length, (k, d, c) => k < close && c === "," && d === 0, "typed");
+    if (close < 0 || comma < 0 || comma >= close) throw new Refused({ error: "engine", detail: "a bad ± in the formula" });
     const value = formula.slice(at + CALL.length, comma).trim();
     const sigma = formula.slice(comma + 1, j - 1).trim();
     if (!value || !sigma || /pas/.test(value + sigma) || /,/.test(sigma)) throw new Refused({ error: "engine", detail: "a bad ± in the formula" });
@@ -279,13 +277,9 @@ const HAS_SLOT = /\bpas[uk]\d+\b/;
  *  for factors. Each piece keeps the operator before it. */
 function splitTop(text: string, ops: "terms" | "factors"): string[] {
   const out: string[] = [];
-  let depth = 0;
   let start = 0;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i]!;
-    if (c === "(" || c === "[") depth++;
-    else if (c === ")" || c === "]") depth--;
-    else if (depth === 0) {
+  walk(text, 0, (i, depth, c) => {
+    if (depth === 0 && !"()[]{}".includes(c)) {
       const before = text.slice(0, i);
       const split =
         ops === "factors"
@@ -296,7 +290,7 @@ function splitTop(text: string, ops: "terms" | "factors"): string[] {
         start = i;
       }
     }
-  }
+  }, "typed");
   out.push(text.slice(start));
   return out;
 }
@@ -329,20 +323,19 @@ function dimensionForm(text: string, n: { k: number; sum: boolean }): string {
 /** Each top-level bracket of a factor with a slot, checked as a formula of its own. */
 function insideBrackets(f: string, n: { k: number; sum: boolean }): string {
   let out = "";
-  let depth = 0;
-  let open = -1;
   for (let i = 0; i < f.length; i++) {
-    const c = f[i]!;
-    if (c === "(" || c === "[") {
-      if (depth++ === 0) {
-        open = i;
-        out += c;
-      }
-    } else if (c === ")" || c === "]") {
-      if (--depth === 0) out += dimensionForm(f.slice(open + 1, i), n) + c;
-    } else if (depth === 0) out += c;
+    const c = f.charAt(i);
+    if (")]".includes(c)) return f;
+    if (!"([".includes(c)) {
+      out += c;
+      continue;
+    }
+    const close = closing(f, i, "typed");
+    if (close < 0) return f;
+    out += c + dimensionForm(f.slice(i + 1, close), n) + f.charAt(close);
+    i = close;
   }
-  return depth === 0 ? out : f;
+  return out;
 }
 
 /** The UnitJob for a request, or why it is refused before Giac sees it. */
@@ -392,9 +385,9 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
     });
     if (used.size !== slots.length + consts.length) throw new Refused({ error: "engine", detail: "a slot or constant is not in the formula" });
     // R64, G46: the parser's degree factor `pasdeg` is ours to read, as are the dimension symbols
-    if (/\bpas/.test(sym.replace(/\bpas(?:dim[A-Za-z]+|v\d+|deg)\b/g, ""))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
+    if ([...names(sym, "typed")].some((w) => w.name.startsWith("pas") && !ourSymbol(w.name))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
     // The value of every uncertain input goes in; the worker differentiates the symbolic text for σ.
-    const values = (t: string): string => (vars.length ? t.replace(/\bpasv(\d+)\b/g, (_, n: string) => `(${vars[Number(n) - 1]!.value})`) : t);
+    const values = (t: string): string => (vars.length ? mapNames(t, (w) => (uncName(w.name) ? `(${vars[Number(w.name.slice(4)) - 1]!.value})` : null), "typed") : t);
     const expr = values(sym);
     // G35: the dimension check's text, the slots and constants put in as in `sym`.
     const count = { k: 0, sum: false };

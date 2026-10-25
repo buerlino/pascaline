@@ -9,16 +9,17 @@
 import type { GiacParse } from "./bridge.ts";
 import { FLAG_WORDS } from "./flags.ts";
 import { isOurStore } from "./ourNames.ts";
+import { afterStore, wordsOf } from "./giacPrint.ts";
 
 /**
  * Heads that change the engine's state with no target in the tree, or whose target the tree may miss (giac 2.1.0,
  * read in the pinned tarball): purge and its aliases (DelVar, del, unassign; their names are targets too), assume,
- * additionally, assign (`assign(q,5)` stores q), restart, rm_all_vars, restart_vars, restart_modes, the file readers
- * read, ramene and unarchive, the writers write and archive, and every Giac setting (flags.ts; the check after the call
- * puts them back, the input still runs once).
+ * additionally, assign (`assign(q,5)` stores q), restart, rm_all_vars, restart_vars, restart_modes, rm_a_z (G93: purges
+ * the one-letter names, usual.cc:231), the file readers read, ramene and unarchive, the writers write and archive, and
+ * every Giac setting (flags.ts; the check after the call puts them back, the input still runs once).
  */
 export const STATE_HEADS: ReadonlySet<string> = new Set([
-  "purge", "DelVar", "del", "assume", "additionally", "assign", "restart", "rm_all_vars", "restart_vars", "restart_modes",
+  "purge", "DelVar", "del", "assume", "additionally", "assign", "restart", "rm_all_vars", "restart_vars", "restart_modes", "rm_a_z",
   "reset", "read", "ramene", "unarchive", "write", "archive", ...FLAG_WORDS,
 ]);
 
@@ -46,10 +47,6 @@ const STORE_WORDS: ReadonlySet<string> = new Set([
   "unassign", "PURGE", "for", "FOR", "For", "pour", "repeat", "repeter", "REPEAT", "while", "WHILE", "While", "tantque", "Loop",
 ]);
 
-/** The words of a text (names, keywords), each once. */
-export function wordsOf(text: string): string[] {
-  return [...new Set(text.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [])];
-}
 
 /** Whether the tree of `text` can hold a store at all: a store node needs one of Giac's store tokens or words in the
  *  text, so a text with neither needs no parse (it costs a bridge call per Enter). Over-reads only. */
@@ -141,7 +138,7 @@ export function assignmentIn(text: string, tree: GiacParse): { name: string; rhs
  *  place to cut its value is read from the text (the tree has no text positions), and it tells `name:=…` from
  *  `name(args):=…`, which Giac's tree holds alike (`f:=(x)->…`). */
 function valueAfter(text: string, name: string): string | null {
-  return new RegExp(`^\\s*${name}\\s*:=([\\s\\S]+)$`).exec(text)?.[1] ?? null;
+  return afterStore(text, name);
 }
 
 /** `form` for `text`, the same input with values put in for names (a chip, a constant): its assignment's value is cut

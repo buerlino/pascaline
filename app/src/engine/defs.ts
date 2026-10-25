@@ -9,6 +9,7 @@
 // when it is defined, so order does not matter). Inputs whose effect has no single name are kept as typed, in order.
 import { readValueFacts, type ValueFacts } from "./types.ts";
 import type { ProgramStores } from "./stores.ts";
+import { isName } from "./giacPrint.ts";
 
 /** How far a variable that holds a float can be trusted (decisions M4-7): the facts of the result it was stored from
  *  (never `exact`: an exact value stores none). */
@@ -46,9 +47,6 @@ export interface DefEntry {
   /** G100: a program's stores, read from its tree when it was defined (stores.ts). Not kept in storage (validDefs):
    *  a restored program's are read again from its commands, so a stored log cannot claim a body stores nothing. */
   stores?: ProgramStores;
-  /** G109: the value is the solve form (the input called solve, or read a value or function that is one): Giac's list
-   *  type, which Home shows with brackets wherever it comes back (a name, a function's result), not with braces. */
-  solve?: true;
 }
 
 export type DefChange = { set: DefEntry } | { purge: string[] };
@@ -107,7 +105,7 @@ export function validDefs(x: unknown): DefEntry[] {
     const facts = validFacts(e["facts"]);
     if (typeof e["name"] !== "string" || !KINDS.includes(kind as DefKind) || facts === null) continue;
     if (!Array.isArray(cmds) || cmds.length === 0 || !cmds.every((c) => typeof c === "string")) continue;
-    if (kind !== "other" && !/^[A-Za-z][A-Za-z0-9_]*$/.test(e["name"])) continue;
+    if (kind !== "other" && !isName(e["name"], true)) continue;
     out.push({
       name: e["name"],
       kind: kind as DefKind,
@@ -120,7 +118,6 @@ export function validDefs(x: unknown): DefEntry[] {
       ...(kind === "var" && (e["angle"] === "rad" || e["angle"] === "deg") ? { angle: e["angle"] } : {}),
       ...(typeof e["desc"] === "string" && e["desc"] ? { desc: e["desc"].slice(0, DESC_MAX) } : {}),
       ...(kind === "var" && e["migrate"] === "angle" ? { migrate: "angle" as const } : {}),
-      ...((kind === "var" || kind === "fn") && e["solve"] === true ? { solve: true as const } : {}),
     });
   }
   return out.slice(-MAX_DEFS);

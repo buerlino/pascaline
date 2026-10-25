@@ -40,6 +40,11 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
     ["bad-newer.txt", /newer Pascaline/],
     ["bad-encoding.txt", /not UTF-8/],
   ];
+  it("G105: a quote written \\\" inside a string ends nothing (text-9: Giac reads it as one string)", () => {
+    // phase-1 (76f0e04) toggled at every quote and read `;1"` as a second statement
+    const lib = parseLibrary('// pascaline library 1\n// d\nk:="a\\";1"\n', parse);
+    expect(lib.defs.map((d) => d.text)).toEqual(['k:="a\\";1"']);
+  });
   for (const [name, why] of refused) {
     it(`refuses ${name} as a whole (derived)`, () => {
       expect(() => parseLibrary(file(name), parse)).toThrow(why);
@@ -59,6 +64,13 @@ describe.skipIf(!giacAvailable())("parseLibrary (Giac's tree, no evaluation)", (
     expect(() => parseLibrary("// pascaline library 1\n// d\npasdeg:=5\n", parse)).toThrow(/pasdeg is one of Pascaline's own names/);
     expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):={local pasdeg; pasdeg:=2; return sin(x);}\n", parse)).toThrow(/pasdeg is one of Pascaline's own names/);
     expect(() => parseLibrary("// pascaline library 1\n// d\nf(x):=x*pasdegree\n", parse)).not.toThrow();
+  });
+  it("G93: refuses a body that clears names (rm_a_z, restart, restart_vars, restart_modes, rm_all_vars), as a value too (derived)", () => {
+    for (const c of ["rm_a_z(1)", "restart(0)", "restart_vars(0)", "restart_modes()", "rm_all_vars()"]) {
+      const head = c.slice(0, c.indexOf("("));
+      expect(() => parseLibrary(`// pascaline library 1\n// d\nf(x):={ ${c}; return x; }\n`, parse), c).toThrow(new RegExp(`line 3: the body changes the engine's state \\(${head}\\)`));
+      expect(() => parseLibrary(`// pascaline library 1\n// d\ng:=${c}\n`, parse), c).toThrow(new RegExp(`line 3: the body changes the engine's state \\(${head}\\)`));
+    }
   });
   it("refuses a file over 256 kB, a description over 120 characters and more than 200 definitions", () => {
     expect(() => parseLibrary(new Uint8Array(256 * 1024 + 1), parse)).toThrow(/256 kB/);
@@ -367,6 +379,29 @@ describe.skipIf(!giacAvailable())("our function names in library files (G54, rea
     const back = importLibrary(await fresh(), parseLibrary(out, parse), []);
     expect(back.ok && exportLibrary(back.log).text).toBe(out);
   });
+
+  it("G105f2: a variable holding the string C:\\ in a list keeps it after a relaunch (derived: C, colon, backslash is size 3)", async () => {
+    const h = await fresh();
+    const log = applyDefChanges([], h.cas('L:=["C:"+char(92),1]', defaultCasSettings).defs);
+    const back = await fresh();
+    back.restore(log);
+    expect(back.cas("size(L[0])", defaultCasSettings).result.text).toBe("3");
+    expect(back.cas("size(L)", defaultCasSettings).result.text).toBe("2");
+    // Giac prints it "C:\" (one backslash); the log's command is typed, the backslash a join with char(92)
+    expect(log[0]!.cmds[0]).toBe('L:=([("C:"+char(92)),1])');
+  });
+
+  it("G105f2: a function whose body holds a typed escaped quote exports and imports with the same body (source: derived)", async () => {
+    const h = await fresh();
+    // typed, `\"` is a quote inside the one string a"pasmod(1,2); the export must not rename inside it
+    const cmd = 'g(x):="a\\"pasmod(1,2)"';
+    const log = applyDefChanges([], h.cas(cmd, defaultCasSettings).defs);
+    expect(log[0]!.cmds[0]).toBe(cmd);
+    const out = exportLibrary(log).text;
+    expect(out).toContain(cmd);
+    const back = importLibrary(await fresh(), parseLibrary(out, parse), []);
+    expect(back.ok && back.log[0]!.cmds[0]).toBe(cmd);
+  });
 });
 
 describe("renameOurCalls (no engine)", () => {
@@ -377,5 +412,14 @@ describe("renameOurCalls (no engine)", () => {
   });
   it("writeUserNames is the inverse", () => {
     expect(writeUserNames("pasmedian(L)+pasmod(a,b)+paspercentile(L,5)")).toBe("median(L)+mod(a,b)+percentile(L,5)");
+  });
+  it("G105f1, G105f2: the export reads a log command as typed: beside a backslash string, pasmod is written mod (source: derived)", () => {
+    // Giac prints the string C:\ (size 3) as "C:\" (probed on 76f0e04); the snapshot stores it typed (typedFromPrinted)
+    const cmd = 'L:=([("C:"+char(92)),pasmod(a,3)])';
+    expect(writeUserNames(cmd)).toBe('L:=([("C:"+char(92)),mod(a,3)])');
+    // a typed escaped quote before it: the string runs on, its pasmod is text, the one after it a call
+    expect(writeUserNames('s:=("a\\",pasmod(a,3)")+pasmod(b,3)')).toBe('s:=("a\\",pasmod(a,3)")+mod(b,3)');
+    const log = [{ name: "L", kind: "var" as const, cmds: [cmd], preview: "", view: "cas" as const, time: 0 }];
+    expect(exportLibrary(log).text).toContain('L:=([("C:"+char(92)),mod(a,3)])');
   });
 });

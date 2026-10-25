@@ -6,7 +6,7 @@
 import type { ChipFactsTable } from "../engine/chipFacts.ts";
 import { decimalFromRational, decimalFromString, type ComplexValue } from "../engine/format.ts";
 import type { ValueFacts } from "../engine/types.ts";
-import { bracesOf } from "../engine/listType.ts";
+import { bracesOf } from "../engine/giacPrint.ts";
 import type { Chip, ChipTable } from "../input/chips.ts";
 import type { Rational, ResultFacts } from "./displayMode.ts";
 

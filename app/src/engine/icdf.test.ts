@@ -20,17 +20,24 @@ describe("erf value text (G44f1)", () => {
   const evals: string[] = [];
   const fake: Giac = fakeGiac((t) => (evals.push(t), "defined"));
   it("reads erf and erfc through ours, and Giac's 1-erf(u) as erfc(u) only where nothing binds tighter", () => {
-    expect(erfValueText(fake, "1-erf(9/2)")).toBe("paserfcv(9/2)");
-    expect(erfValueText(fake, "1-erf(3)+erf(1/2)")).toBe("paserfcv(3)+paserfv(1/2)");
-    expect(erfValueText(fake, "[1-erf(3),2*(1-erf(10))]")).toBe("[paserfcv(3),2*(paserfcv(10))]");
-    expect(erfValueText(fake, "-1-erf(2)")).toBe("-1-paserfv(2)");
-    expect(erfValueText(fake, "1-erf(2)*3")).toBe("1-paserfv(2)*3");
-    expect(erfValueText(fake, "21-erf(2)+x^1-erf(1)")).toBe("21-paserfv(2)+x^1-paserfv(1)");
-    expect(erfValueText(fake, 'erfc (1)+"erf(1)"+myerf(2)')).toBe('paserfcv (1)+"erf(1)"+myerf(2)');
+    expect(erfValueText(fake, "1-erf(9/2)", "printed")).toBe("paserfcv(9/2)");
+    expect(erfValueText(fake, "1-erf(3)+erf(1/2)", "printed")).toBe("paserfcv(3)+paserfv(1/2)");
+    expect(erfValueText(fake, "[1-erf(3),2*(1-erf(10))]", "printed")).toBe("[paserfcv(3),2*(paserfcv(10))]");
+    expect(erfValueText(fake, "-1-erf(2)", "printed")).toBe("-1-paserfv(2)");
+    expect(erfValueText(fake, "1-erf(2)*3", "printed")).toBe("1-paserfv(2)*3");
+    expect(erfValueText(fake, "21-erf(2)+x^1-erf(1)", "printed")).toBe("21-paserfv(2)+x^1-paserfv(1)");
+    expect(erfValueText(fake, 'erfc (1)+"erf(1)"+myerf(2)', "printed")).toBe('paserfcv (1)+"erf(1)"+myerf(2)');
+  });
+  it("reads the text as the caller says: typed escapes a quote with a backslash, Giac's print doubles it", () => {
+    // G105f1: on the typed reading, \" does not close the string, so erf(1) is outside it and goes through ours
+    expect(erfValueText(fake, 'size("a\\"")*0+erf(1)', "typed")).toContain("paserfv(1)");
+    expect(erfValueText(fake, 'size("a\\"")*0+1-erf(1)', "typed")).toContain("paserfcv(1)");
+    // a 1-erf( inside a string stays as it is
+    expect(erfValueText(fake, '"1-erf(2)"+erf(1)', "printed")).toBe('"1-erf(2)"+paserfv(1)');
   });
   it("leaves a text without erf alone, with no engine call", () => {
     evals.length = 0;
-    expect(erfValueText(fake, "sqrt(2)+myerf(1)")).toBe("sqrt(2)+myerf(1)");
+    expect(erfValueText(fake, "sqrt(2)+myerf(1)", "printed")).toBe("sqrt(2)+myerf(1)");
     expect(evals).toEqual([]);
   });
 });
@@ -113,16 +120,16 @@ describe.skipIf(!giacAvailable())("icdf polish (real Giac)", () => {
   });
   it("G44f1: erf and erfc at Giac's Digits (oracle: mpmath, prec-g44f1 cases)", () => {
     // Giac's own erf(1e-12) at 40 digits is 1e-12; mpmath 1.12837916709551257389615852699515…E-12
-    expect(at40(erfValueText(giac, "erf(1.0e-12)"))).toMatchObject({ value: expect.stringMatching(/^0\.1128379167095512573896158526995\d*e-11$/), failed: false });
+    expect(at40(erfValueText(giac, "erf(1.0e-12)", "printed"))).toMatchObject({ value: expect.stringMatching(/^0\.1128379167095512573896158526995\d*e-11$/), failed: false });
     // Giac's own erfc(-1.0) at 40 digits is erfc(1) = 0.157…; mpmath 1.84270079294971486934122063508260…
-    expect(at40(erfValueText(giac, "erfc(-1.0)"))).toMatchObject({ value: expect.stringMatching(/^1\.8427007929497148693412206350826/), failed: false });
+    expect(at40(erfValueText(giac, "erfc(-1.0)", "printed"))).toMatchObject({ value: expect.stringMatching(/^1\.8427007929497148693412206350826/), failed: false });
     // mpmath -0.328626759459127427638914047866756…
-    expect(at40(erfValueText(giac, "erf(-0.3)"))).toMatchObject({ value: expect.stringMatching(/^-0\.32862675945912742763891404786675/), failed: false });
+    expect(at40(erfValueText(giac, "erf(-0.3)", "printed"))).toMatchObject({ value: expect.stringMatching(/^-0\.32862675945912742763891404786675/), failed: false });
     // Giac's 1-erf(10) as our continued fraction: mpmath 2.08848758376254475700078629495778…E-45
-    expect(at40(erfValueText(giac, "1-erf(10)"))).toMatchObject({ value: expect.stringMatching(/^0\.20884875837625447570007862949577\d*e-44$/), failed: false });
-    expect(at40(erfValueText(giac, "erf(0)"))).toEqual({ value: "0", failed: false });
+    expect(at40(erfValueText(giac, "1-erf(10)", "printed"))).toMatchObject({ value: expect.stringMatching(/^0\.20884875837625447570007862949577\d*e-44$/), failed: false });
+    expect(at40(erfValueText(giac, "erf(0)", "printed"))).toEqual({ value: "0", failed: false });
   });
   it("G44f1: erf of a non-real argument is Giac's own, with the flag", () => {
-    expect(at40(erfValueText(giac, "erf(i)")).failed).toBe(true);
+    expect(at40(erfValueText(giac, "erf(i)", "printed")).failed).toBe(true);
   });
 });

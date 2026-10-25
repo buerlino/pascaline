@@ -8,7 +8,8 @@
 // the user's it calls has one in its body. One engine call reads the result's subtype at any depth and the names'
 // values together, and only when the text holds `poly1[`. If G103 reads a value's type from bridge-3, this check moves there.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
-import { functionsIn, namesIn, type Giac } from "./numeric.ts";
+import { type Giac } from "./numeric.ts";
+import { functionsIn, namesIn, type Quoting } from "./giacPrint.ts";
 
 /** Giac functions that create a coefficient vector of subtype 10, probed on the shared engine (2026-10-23). The ones
  *  that only pass a polynomial argument through (gcd, lcm, diff, factors) are not listed: that argument is a call of
@@ -37,9 +38,9 @@ export function printsPoly(text: string): boolean {
   return text.includes("poly1[");
 }
 
-/** The input names a function that returns a polynomial, or `poly1` itself (strings left out). */
-export function asksPoly(input: string): boolean {
-  return [...functionsIn(input), ...namesIn(input)].some((n) => POLY.has(n));
+/** The input names a function that returns a polynomial, or `poly1` itself (strings left out, as `q` writes them). */
+export function asksPoly(input: string, q: Quoting): boolean {
+  return [...functionsIn(input, q), ...namesIn(input, q)].some((n) => POLY.has(n));
 }
 
 /**
@@ -50,17 +51,17 @@ export function asksPoly(input: string): boolean {
  * list's element 0), so it holds our text whatever the user stored under the name.
  */
 export function unaskedPoly(giac: Giac, slot: string, input: string, output: string, userFn: (name: string) => boolean): boolean {
-  if (!printsPoly(output) || asksPoly(input)) return false;
-  const names = [...namesIn(input), ...functionsIn(input).filter(userFn)].filter((n) => !SLOTS.has(n));
+  if (!printsPoly(output) || asksPoly(input, "typed")) return false;
+  const names = [...namesIn(input, "typed"), ...functionsIn(input, "typed").filter(userFn)].filter((n) => !SLOTS.has(n));
   const out = giac.eval(`[${POLY_AT_ANY_DEPTH},string(${POLY_AT}(${slot}))+string([${names.join(",")}])][1]`);
   if (!out.startsWith('"1[')) return false;
   // what the names hold: a polynomial there was asked for when it was stored, or a function's body asks for one
   const held = out.slice(3);
-  return !printsPoly(held) && !asksPoly(held);
+  return !printsPoly(held) && !asksPoly(held, "printed");
 }
 
 /** Cheap text test for a CAS assignment, which must not store a value this check refuses: its right-hand side adds or
  *  subtracts and holds a list, or a name `isList` says holds one. */
 export function mayAddToList(rhs: string, isList: (name: string) => boolean): boolean {
-  return (rhs.includes("+") || rhs.includes("-")) && !asksPoly(rhs) && (rhs.includes("[") || namesIn(rhs).some(isList));
+  return (rhs.includes("+") || rhs.includes("-")) && !asksPoly(rhs, "typed") && (rhs.includes("[") || namesIn(rhs, "typed").some(isList));
 }

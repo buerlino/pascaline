@@ -8,6 +8,7 @@
 import { decimalFromString, isZero, roundSignificant, type DecimalValue } from "./format.ts";
 import { toExactLiterals, type HomeResult } from "./homeEval.ts";
 import type { Giac } from "./numeric.ts";
+import { mapNames, names } from "./giacPrint.ts";
 import type { ValueFacts } from "./types.ts";
 
 /** A constant the input holds by name: its value as Giac text (`6.67430E-11`), and its standard uncertainty in the
@@ -24,7 +25,6 @@ export type ConstTable = Readonly<Record<string, ConstEntry>>;
 /** The prefix of a constant sent by name. */
 export const CONST_PREFIX = "pasc_";
 
-const CONST_NAME = /(?<![A-Za-z0-9_])pasc_([A-Za-z0-9_]+)/g;
 
 /** A decimal or integer text that is exactly zero ("0", "0.0", "0E-11"). */
 function isZeroText(s: string): boolean {
@@ -50,18 +50,19 @@ export function constTable(entries: Readonly<Record<string, ConstEntry>>): Const
 /** `input` with every constant of `table` replaced by its value in brackets; when `keep` is given, the constants it
  *  holds stay names. Names not in the table are left alone. */
 export function withConstValues(input: string, table: ConstTable, keep?: ReadonlySet<string>): string {
-  return input.replace(CONST_NAME, (m, id: string) => {
-    const e = Object.hasOwn(table, id) ? table[id] : undefined;
-    return e && !keep?.has(id) ? `(${e.value})` : m;
-  });
+  return mapNames(input, ({ name }) => {
+    const id = name.slice(CONST_PREFIX.length);
+    const e = name.startsWith(CONST_PREFIX) && id !== "" && Object.hasOwn(table, id) ? table[id] : undefined;
+    return e && !keep?.has(id) ? `(${e.value})` : null;
+  }, "typed");
 }
 
 /** The inexact constants of `table` that `input` holds, in order of first appearance. */
 export function inexactConstsIn(input: string, table: ConstTable): string[] {
   const ids: string[] = [];
-  for (const m of input.matchAll(CONST_NAME)) {
-    const id = m[1]!;
-    if (!ids.includes(id) && Object.hasOwn(table, id) && inexact(table[id])) ids.push(id);
+  for (const { name } of names(input, "typed")) {
+    const id = name.slice(CONST_PREFIX.length);
+    if (name.startsWith(CONST_PREFIX) && id !== "" && !ids.includes(id) && Object.hasOwn(table, id) && inexact(table[id])) ids.push(id);
   }
   return ids;
 }

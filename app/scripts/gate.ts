@@ -2,7 +2,7 @@
 // `npm run gate`: every check a branch must pass (docs/shifts/brief.md section 8), one line each, the full log in
 // app/_out/gate/<name>.log. Exit 1 on any FAIL.
 //   npm run gate            # typecheck, index (when missing), vitest (FIND_INDEX=required), e2e, golden (when engine or
-//                           # parser code changed against phase-1), sweep (G61, the oracle sweep), seqsweep (G62), casback (G64), viewsweep (G63), size test, docs sizes
+//                           # parser code changed against phase-1), sweep (G61, the oracle sweep), seqsweep (G62), casback (G64), viewsweep (G63), findcensus (G110), size test, docs sizes
 //   npm run gate -- --quick # typecheck and vitest only
 //   npm run gate -- --update-text-baseline # rules stage: write app/scripts/text-baseline.json (G88)
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
@@ -13,7 +13,7 @@ import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { countAll, evalOutside, judge, readBaseline, totals, writeBaseline } from "./text-rules.ts";
 import {
-  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
+  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeFindCensus, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
   type Summary,
 } from "./gate-summary.ts";
 
@@ -205,6 +205,17 @@ const checks: Check[] = [
       if (!engine) return { ok: false, detail: "no engine build: set GIAC_OUT (absolute)" };
       const r = run("viewsweep", "node", ["scripts/viewsweep.ts"], { GIAC_OUT: engine }, 5 * 60_000);
       return summarizeViewSweep(r.out, r.code);
+    },
+  },
+  {
+    // G110: every Find tier-1 function's sample in Home and in CAS, classed; a class change fails (scripts/findcensus.ts; tests/golden/findcensus-known.yaml)
+    name: "findcensus",
+    skip: () => (quick ? "--quick" : null),
+    run: () => {
+      const engine = giacOut();
+      if (!engine) return { ok: false, detail: "no engine build: set GIAC_OUT (absolute)" };
+      const r = run("findcensus", "node", ["scripts/findcensus.ts"], { GIAC_OUT: engine, PASCALINE_DL_DIR: process.env["PASCALINE_DL_DIR"] ?? join(mainCheckout, "engine/giac/_downloads") }, 6 * 60_000);
+      return summarizeFindCensus(r.out, r.code);
     },
   },
   {

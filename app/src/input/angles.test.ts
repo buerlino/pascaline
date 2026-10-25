@@ -99,19 +99,19 @@ describe("rewriteAngles: the same rule on Giac text (library import, G46's migra
     ["sinh(x)+pasin(x)+asinh(y)", "sinh(x)+pasin(x)+asinh(y)"],
     ['print("sin(x)")', 'print("sin(x)")'],
   ])("%s -> %s", (text, out) => {
-    expect(rewriteAngles(text)).toBe(out.replace("P(", `${POLAR}(`).replace("R(", `${RECT}(`));
+    expect(rewriteAngles(text, "typed")).toBe(out.replace("P(", `${POLAR}(`).replace("R(", `${RECT}(`));
   });
 
   it("R64's degree form, already over pasdeg, becomes the new one", () => {
-    expect(rewriteAngles("(x)->x*(pi/180)^angle_radian()/pasdeg")).toBe("(x)->x*pi/180/pasdeg");
-    expect(rewriteAngles("sin(pasdeg*x)+2*(pi/180)^angle_radian()/pasdeg")).toBe("sin(pasdeg*x)+2*pi/180/pasdeg");
-    expect(rewriteAngles('print("(pi/180)^angle_radian()/pasdeg")')).toBe('print("(pi/180)^angle_radian()/pasdeg")');
+    expect(rewriteAngles("(x)->x*(pi/180)^angle_radian()/pasdeg", "typed")).toBe("(x)->x*pi/180/pasdeg");
+    expect(rewriteAngles("sin(pasdeg*x)+2*(pi/180)^angle_radian()/pasdeg", "typed")).toBe("sin(pasdeg*x)+2*pi/180/pasdeg");
+    expect(rewriteAngles('print("(pi/180)^angle_radian()/pasdeg")', "typed")).toBe('print("(pi/180)^angle_radian()/pasdeg")');
   });
 
   it("never applies twice: text that holds pasdeg is unchanged", () => {
-    const once = rewriteAngles("sin(x)+asin(y)");
-    expect(rewriteAngles(once)).toBe(once);
-    expect(rewriteAngles(latexToGiac("\\sin\\left(x\\right)"))).toBe("sin(pasdeg*x)");
+    const once = rewriteAngles("sin(x)+asin(y)", "typed");
+    expect(rewriteAngles(once, "typed")).toBe(once);
+    expect(rewriteAngles(latexToGiac("\\sin\\left(x\\right)"), "typed")).toBe("sin(pasdeg*x)");
   });
 });
 
@@ -142,13 +142,24 @@ describe("dropAngleFactor: what is drawn shows the text as typed", () => {
     ["pasdegree*2+x/pasdegs", "pasdegree*2+x/pasdegs"],
     ["sin(x)", "sin(x)"],
   ])("%s -> %s", (text, out) => {
-    expect(dropAngleFactor(text)).toBe(out);
+    expect(dropAngleFactor(text, "typed")).toBe(out);
   });
 
   it("undoes the emitter on every form it writes", () => {
     for (const latex of ["\\sin\\left(x+1\\right)", "\\arcsin\\left(x\\right)\\cos\\left(2x\\right)", "2\\measuredangle t", "\\arg\\left(z\\right)^2", "30^{\\circ}",
       "\\operatorname{polar\\_coordinates}\\left(1+\\imaginaryI\\right)", "\\operatorname{rectangular\\_coordinates}\\left(L\\right)",
       "\\operatorname{rectangular\\_coordinates}\\left(\\left\\{2,30\\right\\}\\right)", "\\operatorname{instfreq}\\left(s\\right)"])
-      expect(dropAngleFactor(latexToGiac(latex))).toBe(latexToGiac(latex, { angleFactor: false }));
+      expect(dropAngleFactor(latexToGiac(latex), "typed")).toBe(latexToGiac(latex, { angleFactor: false }));
+  });
+});
+
+describe("G105f1: Giac text is read with the quoting of where it comes from (giacPrint.ts)", () => {
+  it("typed (a library file): \\\" inside a string ends nothing, so the call after the string gets its factor", () => {
+    expect(rewriteAngles('f(x):=when(x=="a\\"b",sin(x),0)', "typed")).toBe('f(x):=when(x=="a\\"b",sin(pasdeg*(x)),0)');
+    expect(dropAngleFactor('"a\\"b"+asin(x)/pasdeg', "typed")).toBe('"a\\"b"+asin(x)');
+  });
+  it("printed (Giac's print, the log): \\ is itself, so the string closes at its quote", () => {
+    expect(rewriteAngles('g(x):={local s; s:="C:\\"; sin(x)}', "printed")).toBe('g(x):={local s; s:="C:\\"; sin(pasdeg*(x))}');
+    expect(dropAngleFactor('["C:\\",(asin(x)/pasdeg)]', "printed")).toBe('["C:\\",asin(x)]');
   });
 });

@@ -7,7 +7,8 @@ import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { applyDefChanges, type DefChange, type DefEntry } from "./defs.ts";
 import { giacAvailable, loadNodeGiac, nodeHost } from "./nodeGiac.ts";
-import { parsePrinted, statePart, tableOf, type StoredName } from "./stateRead.ts";
+import { statePart, tableOf, type StoredName } from "./stateRead.ts";
+import { parsePrinted } from "./giacPrint.ts";
 
 describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
   const fresh = async () => (await nodeHost());
@@ -97,5 +98,72 @@ describe.skipIf(!giacAvailable())("G65: stored names from Giac's state", () => {
     host.home("sg(pA)", defaultHomeSettings);
     const defs = host.home("Y:=1", defaultHomeSettings).defs;
     expect(defs.flatMap((d) => ("set" in d ? [d.set.name] : []))).toEqual(["Y"]);
+  });
+});
+
+describe.skipIf(!giacAvailable())("G104: the state read costs what changed", () => {
+  /** A host whose Giac counts what it prints, from `mark()` on. */
+  const counted = async () => {
+    const { giac, bridge } = await loadNodeGiac();
+    let printed = 0;
+    const ev = giac.eval.bind(giac);
+    giac.eval = (t: string) => {
+      const out = ev(t);
+      printed += out.length;
+      return out;
+    };
+    const host = new EngineHost(giac, bridge);
+    return { host, ev, mark: () => (printed = 0), printed: () => printed };
+  };
+  const setNames = (defs: DefChange[]): string[] => defs.flatMap((d) => ("set" in d ? [d.set.name] : []));
+
+  it("after M:=ranm(300,300), Home c:=1 logs c and Giac prints under 10 kB after the input", async () => {
+    const { host, mark, printed } = await counted();
+    host.home("M:=ranm(300,300)", defaultHomeSettings);
+    mark();
+    expect(setNames(host.home("c:=1", defaultHomeSettings).defs)).toEqual(["c"]);
+    expect(printed()).toBeLessThan(10_000);
+  });
+
+  it("guard: M[1,1]:=0 logs M again, and the table holds its new text", async () => {
+    const { host, ev } = await counted();
+    host.home("M:=[[1,2],[3,4]]", defaultHomeSettings);
+    host.home("c:=1", defaultHomeSettings);
+    expect(setNames(host.home("M[1,1]:=0", defaultHomeSettings).defs)).toEqual(["M"]);
+    const inner = host as unknown as { stored: Map<string, StoredName>; byName: Map<string, unknown> };
+    expect([...inner.stored]).toEqual([...tableOf(parsePrinted(ev(statePart(12)))!, (n) => inner.byName.has(n))!]);
+  });
+
+  // audit round 1: Giac's full read prints a's entry as "x+1" after x:=2 too (string(eval(k)) evaluates one level), so
+  // the read of the candidates logs x alone, as phase-1's full read does, and its table equals the full read
+  it("guard: a:=x+1, then x:=2 logs x, and the table equals the full read", async () => {
+    const { host, ev } = await counted();
+    host.home("a:=x+1", defaultHomeSettings);
+    expect(setNames(host.home("x:=2", defaultHomeSettings).defs)).toEqual(["x"]);
+    const inner = host as unknown as { stored: Map<string, StoredName>; byName: Map<string, unknown> };
+    expect([...inner.stored]).toEqual([...tableOf(parsePrinted(ev(statePart(12)))!, (n) => inner.byName.has(n))!]);
+  });
+
+  it("guard: g2(1) logs the global n that g, which g2 calls, stores", async () => {
+    const { host } = await counted();
+    host.home("n:=0", defaultHomeSettings);
+    host.home("g(t):={n:=n+1;return t;}", defaultHomeSettings);
+    host.home("g2(t):=g(t)", defaultHomeSettings);
+    expect(setNames(host.home("g2(1)", defaultHomeSettings).defs)).toEqual(["n"]);
+  });
+
+  it("guard: expr(\"q:=5\") logs q", async () => {
+    const { host } = await counted();
+    host.home("q:=1", defaultHomeSettings);
+    expect(setNames(host.home('expr("q:=5")', defaultHomeSettings).defs)).toEqual(["q"]);
+  });
+
+  it("guard: purge(c) removes c from the log and the table", async () => {
+    const { host } = await counted();
+    host.home("c:=1", defaultHomeSettings);
+    const defs = host.home("purge(c)", defaultHomeSettings).defs;
+    expect(applyDefChanges([], defs)).toEqual([]);
+    expect(defs.some((d) => "purge" in d && d.purge.includes("c"))).toBe(true);
+    expect((host as unknown as { stored: Map<string, StoredName> }).stored.has("c")).toBe(false);
   });
 });

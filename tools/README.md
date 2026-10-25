@@ -21,14 +21,11 @@ All of them use `$ANDROID_SERIAL` (default: the Tab One). Smaller helpers (usage
 - `page-series.py`: open a page N times and log the series.
 - `shots.py`: cold-start a page N times and keep a screenshot of each.
 - `tap-seq.py`: tap a sequence and report whether the system keyboard is shown after each tap.
-Night-shift coordinators (docs/shifts/rules.md section 4a). Run them from the phase-1 worktree (`cd .claude/worktrees/phase-1`): the main checkout may be on another branch, without `scripts/`.
-Night-shift coordinators (docs/shifts/rules.md section 4a):
+Night-shift coordinators (docs/shifts/rules.md section 4). Run them from the phase-1 worktree (`cd .claude/worktrees/phase-1`): the main checkout may be on another branch, without `scripts/`.
 ```bash
 scripts/night.sh --until 07:30   # the night shift: a fresh Read-only henri per decision, scripts/pipeline.sh per package (docs/shifts/rules.md section 4)
                                  # from --until (or at --max-steps minus 2) only the last Opus pass and the report run, then it stops
 scripts/night.sh --until 07:30 --dry-run   # prints each step's kind on a simulated clock and the two closing steps; starts nothing
-# check after editing .claude/agents/* or the script: the call must come back FOREGROUND
-CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 timeout 600 claude --model sonnet --effort low --permission-mode auto -p 'Test only. Call the Agent tool once with subagent_type "ron", model "haiku", run_in_background false, prompt "Test only: reply with the single word PONG." Then reply with one line: FOREGROUND or BACKGROUND (how the call came back), then what the agent returned.'
 ```
 
 Desktop probes (no device): `tools/probes/` checks what the engine, the parser and the qalc and Find data do today; see its README.

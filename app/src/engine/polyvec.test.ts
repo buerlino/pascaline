@@ -15,9 +15,9 @@ describe("text tests", () => {
   it("reads poly1[, and the functions that ask for one", () => {
     expect(printsPoly("poly1[1,5]")).toBe(true);
     expect(printsPoly("[1,5]")).toBe(false);
-    expect(asksPoly("symb2poly(x^2+1)*2")).toBe(true);
-    expect(asksPoly("[1,4]+1")).toBe(false);
-    expect(asksPoly("[1,4]+1+diff(x,x)*0")).toBe(false);
+    expect(asksPoly("symb2poly(x^2+1)*2", "typed")).toBe(true);
+    expect(asksPoly("[1,4]+1", "typed")).toBe(false);
+    expect(asksPoly("[1,4]+1+diff(x,x)*0", "typed")).toBe(false);
     expect(mayAddToList("[1,4]+1", () => false)).toBe(true);
     expect(mayAddToList("L+1", (n) => n === "L")).toBe(true);
     expect(mayAddToList("a+1", () => false)).toBe(false);

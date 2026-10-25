@@ -21,6 +21,9 @@
 #   scripts/pipeline.sh device <n> [--dry-run]
 #                           A33: the core list on the night's device ($ANDROID_SERIAL): test APK of phase-1's HEAD, install, tools/core-device.sh;
 #                           logs `CORE DEVICE <p>/<a> (known <k>, new <ids or none>) on <sha>`; skips (DEVICE SKIPPED), never fails
+#   scripts/pipeline.sh flakes <n> [--dry-run]
+#                           A37: the flake census: vitest and e2e five times on phase-1's HEAD (host-cpu lock); .tasks/flakes-<date>.md and
+#                           the log line `FLAKES <n>: vitest <k> of 5 runs clean, e2e <k> of 5, flaky: <ids or none>`; stops if HEAD moves
 #   scripts/pipeline.sh report
 #                           the night's shift report, written and committed on phase-1 by a fresh agent
 #
@@ -184,6 +187,59 @@ if [[ "${1:-}" == "device" ]]; then
   counts="$(grep -oE '[0-9]+/[0-9]+' <<<"$line" | head -n1)"
   log "pipeline device $n: CORE DEVICE $counts (known $known, new ${new:-none}) on $sha"
   echo "RESULT device $n: CORE DEVICE $counts (known $known, needs $needs, new ${new:-none}) on $sha ($((SECONDS - t0)) s)"; exit 0
+fi
+
+# ---------- subcommand: flakes ----------
+# A37: the flake census: vitest and e2e five times each on phase-1's HEAD (host-cpu lock held throughout); a test that failed in some
+# runs and passed in others is a flake. Output: .tasks/flakes-<date>.md and one log line. Refuses to go on when HEAD moves.
+if [[ "${1:-}" == "flakes" ]]; then
+  [[ $# -ge 2 && "$2" =~ ^[0-9]+$ ]] || die "usage: pipeline.sh flakes <n> [--dry-run]"
+  n="$2"; runs="${PASCALINE_FLAKES_RUNS:-5}"; run="$tasks/flakes-$n"; out_md="$tasks/flakes-$(date +%F).md"
+  export PW_PORT=$((5300 + n % 100))
+  if [[ "${3:-}" == "--dry-run" ]]; then
+    integ="$(integ_dir)"; : "${integ:=$main/.claude/worktrees/phase-1}"
+    echo "DRY RUN: flake census $n on the HEAD of $integ; $runs runs each of vitest (npm test) and e2e (npm run test:e2e); PW_PORT=$PW_PORT"
+    echo "1. tools/devlock.sh acquire host-cpu flakes-$n 1800, held until the end; npm run index once"
+    echo "2. before every run: HEAD must still be the first run's sha, else FLAKES $n: ABORTED (HEAD moved); load average noted per run"
+    echo "3. logs in $run; a test failing in some runs and passing in others is flaky (always failing is not)"
+    echo "4. output $out_md; log: - HH:MM pipeline flakes $n: FLAKES $n: vitest <k> of $runs runs clean, e2e <k> of $runs, flaky: <ids or none>"
+    echo "RESULT flakes $n: DRY RUN"; exit 0
+  fi
+  ensure_integ; mkdir -p "$run"; t0=$SECONDS
+  sha="$(git -C "$integ" rev-parse HEAD)"
+  tools/devlock.sh acquire host-cpu "flakes-$n" 1800 >/dev/null || { log "pipeline flakes $n: FLAKES SKIPPED (host-cpu lock busy)"; echo "RESULT flakes $n: SKIPPED (host-cpu lock busy)"; exit 0; }
+  trap 'tools/devlock.sh release host-cpu "flakes-$n" >/dev/null 2>&1 || true' EXIT
+  logs_tool="$integ/app/scripts/pipeline-logs.ts"
+  vcmd="${PASCALINE_FLAKES_VITEST:-FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test}"
+  ecmd="${PASCALINE_FLAKES_E2E:-FORCE_COLOR=0 timeout 2700 npm run -s test:e2e}"
+  (cd "$integ/app" && timeout 1800 npm run -s index) > "$run/index.log" 2>&1 || true
+  clean_v=0; clean_e=0; ran=0; aborted=""; loads=""
+  for i in $(seq 1 "$runs"); do
+    head_is "$integ" "$sha" || { aborted="HEAD moved before run $i ($(git -C "$integ" rev-parse --short HEAD), not ${sha:0:9})"; break; }
+    la="$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo '?')"
+    rv=0; (cd "$integ/app" && eval "$vcmd") > "$run/vitest-$i.log" 2>&1 || rv=$?
+    re=0; (cd "$integ/app" && eval "$ecmd") > "$run/e2e-$i.log" 2>&1 || re=$?
+    la2="$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null || echo '?')"
+    loads+="| $i | $la | $la2 | $([[ $rv -eq 0 ]] && echo clean || echo "failed ($rv)") | $([[ $re -eq 0 ]] && echo clean || echo "failed ($re)") |"$'\n'
+    [[ $rv -ne 0 ]] || clean_v=$((clean_v + 1)); [[ $re -ne 0 ]] || clean_e=$((clean_e + 1))
+    for c in vitest e2e; do node "$logs_tool" items "$c" "$run/$c-$i.log" > "$run/$c-$i.items" 2>/dev/null || : > "$run/$c-$i.items"; done
+    ran=$i
+  done
+  flaky_v="$(flaky_items "$ran" "$run"/vitest-*.items | sed 's/^/vitest /')"; flaky_e="$(flaky_items "$ran" "$run"/e2e-*.items | sed 's/^/e2e /')"
+  [[ $ran -gt 0 ]] || { flaky_v=""; flaky_e=""; }
+  ids="$(printf '%s\n%s\n' "$flaky_v" "$flaky_e" | awk -F'\t' 'NF >= 3 { print ($3 == "" ? $2 : $2 ": " $3) " (" $1 ")" } NF == 2 { print $2 " (" $1 ")" }' | paste -sd, - | sed 's/,/, /g')"
+  {
+    echo "# Flake census $n, $(date +%F) $(date +%H:%M)"
+    echo; echo "Commit ${sha:0:9}; $ran of $runs runs; vitest $clean_v clean, e2e $clean_e clean.${aborted:+ ABORTED: $aborted.}"
+    echo; echo "## Flaky (failed in some runs, passed in others)"
+    if [[ -n "$flaky_v$flaky_e" ]]; then printf '%s\n%s\n' "$flaky_v" "$flaky_e" | awk 'NF' | tr '\t' ' ' | sed 's/^/- /; s/ *$//'; else echo "none"; fi
+    echo; echo "## Load average and result per run (1/5/15 min before and after)"
+    echo "| run | load before | load after | vitest | e2e |"; echo "|---|---|---|---|---|"; printf '%s' "$loads"
+  } > "$out_md"
+  if [[ -n "$aborted" ]]; then line="FLAKES $n: ABORTED ($aborted) after $ran runs: vitest $clean_v of $runs runs clean, e2e $clean_e of $runs, flaky: ${ids:-none}"
+  else line="FLAKES $n: vitest $clean_v of $runs runs clean, e2e $clean_e of $runs, flaky: ${ids:-none}"; fi
+  log "pipeline flakes $n: $line (file $out_md)"
+  echo "RESULT flakes $n: $line ($((SECONDS - t0)) s; $out_md)"; exit 0
 fi
 
 # ---------- subcommand: report ----------
@@ -367,8 +423,9 @@ want_checks() {
     auto)
       local list="typecheck,vitest"
       changed | grep -q '^app/' && list="$list,e2e,size"
-      changed | grep -qE '^(engine/|app/src/engine/|app/src/input/|app/src/units/|app/scripts/unit-case\.ts|tests/golden/|find/|tools/find-index/)' && list="$list,golden"
-      echo "$list,docs";;
+      changed | golden_selected && list="$list,golden"
+      list="$list,docs"; red_first_wanted "$spec_file" && list="$list,redfirst"
+      echo "$list";;
     *) echo "$checks";;
   esac
 }
@@ -393,8 +450,10 @@ rerun_timing() {  # <check> <log>: only the failing files, output appended to th
   esac
 }
 run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
-  local round="$1" list name rc=0
-  list="$(want_checks)"; [[ -n "$list" ]] || { runlog "checks: none"; return 0; }
+  local round="$1" list name rc=0 why redwhy="" p1_engine="${PASCALINE_P1_ENGINE:-$GIAC_OUT}"
+  [[ $engine_managed -eq 0 ]] || p1_engine="$engine_root/gsl"
+  list="$(want_checks)"; [[ ",$list," == *,stages,* ]] || list="${list//golden/golden,stages}"  # A25: the engine stages follow golden
+  [[ -n "$list" ]] || { runlog "checks: none"; return 0; }
   tools/devlock.sh acquire host-cpu "pipeline-$n" 1800 >/dev/null || die "host-cpu lock busy"
   : > "$run/fail-$round.txt"
   for name in ${list//,/ }; do
@@ -404,8 +463,15 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
       vitest)    (cd "$wt/app" && timeout 1800 npm run -s index && FORCE_COLOR=0 NO_COLOR=1 FIND_INDEX=required timeout 1800 npm run -s test) > "$out" 2>&1 || rc=1;;
       e2e)       (cd "$wt/app" && FORCE_COLOR=0 timeout 2700 npm run -s test:e2e) > "$out" 2>&1 || rc=1;;
       golden)    (cd "$wt/app" && timeout 2700 npm run -s golden) > "$out" 2>&1 || rc=1;;
+      stages)    : > "$out"; local st sc=0
+                 for st in "${ENGINE_STAGES[@]}"; do
+                   echo "== $st" >> "$out"; (cd "$wt/app" && timeout 600 node "scripts/$st.ts") >> "$out" 2>&1 || sc=1
+                 done
+                 # each is a FAIL on NEW or NOW PASSING (the script's exit code too)
+                 if [[ $sc -ne 0 ]] || stage_findings "$out" > /dev/null; then rc=1; fi;;
       size)      (cd "$wt/app" && timeout 1800 npm run -s build && timeout 300 npm run -s size) > "$out" 2>&1 || rc=1;;
       docs)      (cd "$wt" && timeout 300 node tools/docs-check.mjs) > "$out" 2>&1 || rc=1;;
+      redfirst)  why="$(red_first "$wt" "$spec_file" "${p1_engine}" "$out")" || { rc=1; echo "red-first: $why" >> "$out"; redwhy="$why"; };;
       *) die "unknown check $name";;
     esac
     if [[ $rc -eq 1 && ( "$name" == e2e || "$name" == vitest ) ]] && mm="$(node "$wt/app/scripts/pipeline-logs.ts" mismatch "$name" "$out")"; then
@@ -424,7 +490,7 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
         log "pipeline #$n $id: NOT MERGED (machine: $name: $mline); branch $branch kept"
         echo "RESULT #$n $id: NOT MERGED (machine: $name: $mline; worktree $wt kept; see $out)"; exit 1
       fi
-      { echo "## $name failed (full log: $out)"; excerpt "$out"; echo; } >> "$run/fail-$round.txt"
+      { [[ "$name" != redfirst ]] || echo "checks failed: red-first (${redwhy:-every new test passes on phase-1})"; echo "## $name failed (full log: $out)"; excerpt "$out"; echo; } >> "$run/fail-$round.txt"
       runlog "check $name: FAILED"; tools/devlock.sh release host-cpu "pipeline-$n" >/dev/null; return 1
     fi
     runlog "check $name: ok"

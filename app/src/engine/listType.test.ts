@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G109: a value of Giac's list type (`list[…]`, subtype 23) is read and shown as a list, with braces as the G2 shows one,
-// and copied with braces; Ans, chips and stored names keep Giac's text, so the type goes on. The solve form and a
-// `[ ]` vector or matrix show as before. Expected values are derived by hand (golden g109-*).
+// and copied with braces; Ans, chips and stored names keep Giac's text, so the type goes on. A solve result is Giac's
+// list type too and shows in braces (owner, 2026-10-25); a `[ ]` vector or matrix shows as before. Expected values are derived by hand (golden g109-*).
 import { beforeAll, describe, expect, it } from "vitest";
 import { EngineHost } from "./host.ts";
 import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 import { formatConfirmed } from "./format.ts";
-import { bracesOf } from "./listType.ts";
+import { bracesOf } from "./giacPrint.ts";
 import { homeItem } from "../state/results.ts";
 import { copyFull } from "../clipboard/text.ts";
 import { giacOfEntry } from "../input/entry.ts";
 import { parsePastedNumber } from "../clipboard/paste.ts";
-import { validDefs } from "./defs.ts";
 import { homeResultToLatex } from "../render/home.ts";
 
 describe("text helpers", () => {
@@ -106,34 +105,19 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
     expect(home("P")).toMatchObject({ ok: true, display: "P" });
   });
 
-  // G109 fix round 2: the solve form keeps its brackets when it comes back through a name or a function of the user's
-  it("keeps the solve form's brackets through a stored name and a user function", () => {
-    const solved = "[-1.41421356237,1.41421356237]";
-    expect(home("S:=solve(x^2=2,x)")).toMatchObject({ ok: true, display: solved });
-    expect(home("S")).toMatchObject({ ok: true, display: solved });
-    expect(home("T:=S")).toMatchObject({ ok: true, display: solved });
-    expect(home("T")).toMatchObject({ ok: true, display: solved });
-    expect(home("g(a):=solve(x^2=a,x)")).toMatchObject({ ok: true });
-    expect(home("g(4)")).toMatchObject({ ok: true, display: "[-2,2]" });
-    // a name stored again from a list type is no longer the solve form
-    expect(home("S:=list[1,4]")).toMatchObject({ ok: true, display: "{1,4}" });
-    expect(home("S")).toMatchObject({ ok: true, display: "{1,4}" });
+  // the owner, 2026-10-25: a solve result is Giac's list type and shows in braces, in Home and CAS, through a name too
+  it("shows a solve result in braces, and its stored value is a list", () => {
+    expect(home("solve(x^2=4,x)")).toMatchObject({ ok: true, display: "{-2,2}" });
+    expect(home("solve(x^2=2,x)")).toMatchObject({ ok: true, display: "{-1.41421356237,1.41421356237}" });
+    expect(cas("solve(x^2=4,x)")).toMatchObject({ ok: true, text: "{-2,2}", full: "list[-2,2]" });
+    // CAS draws Giac's latex(), a list in braces (the view tidies `\mathrm{-2}`)
+    expect(cas("solve(x^2=4,x)").latex).toBe("\\{\\mathrm{-2},2\\}");
+    expect(home("S:=solve(x^2=4,x)")).toMatchObject({ ok: true, display: "{-2,2}" });
+    expect(home("S^2")).toMatchObject({ ok: true, display: "{4,4}" });
+    expect(home("S+1")).toMatchObject({ ok: true, display: "{-1,3}" });
   });
 
-  it("keeps the solve form of a stored name after a restart (the log keeps the fact)", async () => {
-    const { giac, bridge } = await loadNodeGiac();
-    const first = new EngineHost(giac, bridge);
-    const { defs } = first.home("R:=solve(x^2=9,x)", defaultHomeSettings);
-    const log = validDefs(JSON.parse(JSON.stringify(defs.flatMap((d) => ("set" in d ? [d.set] : [])))));
-    expect(log).toMatchObject([{ name: "R", solve: true }]);
-    const again = await loadNodeGiac();
-    const second = new EngineHost(again.giac, again.bridge);
-    second.restore(log);
-    expect(second.home("R", defaultHomeSettings).result).toMatchObject({ ok: true, display: "[-3,3]" });
-  });
-
-  it("guards: the solve form, a vector and a matrix show as before", () => {
-    expect(home("solve(x^2=2,x)")).toMatchObject({ ok: true, display: "[-1.41421356237,1.41421356237]" });
+  it("guards: a vector and a matrix show as before", () => {
     expect(home("[1,4]")).toMatchObject({ ok: true, display: "[1,4]" });
     expect(home("[[1,2],[3,4]]")).toMatchObject({ ok: true, display: "[[1,2],[3,4]]", shape: [2, 2] });
     expect(home("[1,4]^2")).toMatchObject({ ok: true, display: "17" });

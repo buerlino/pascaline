@@ -269,5 +269,114 @@ echo y | (cd "$bs" && PATH="$bs/bin:$PATH" PASCALINE_CACHE="$bs/cache" NO_LOCK=1
 grep -q -- '--no-daemon' "$bs/stdin.txt" || fail "A35: build.sh's Gradle runs without --no-daemon"
 grep -q 'keep its screen on while charging (brief 0c rule 2); never remove its PIN' "$here/../tools/core-device.sh" || fail "A33f2: core-device.sh lock message"
 
+# A25 item 1+2: every script the golden gate runs selects the golden check; a diff of only such a file plans it
+for f in app/scripts/golden.ts app/scripts/golden/lib.ts app/scripts/golden/home.ts app/scripts/invariants.ts app/scripts/calls-budget.ts app/scripts/behaviour-diff.ts app/scripts/golden-speed.ts app/scripts/golden-compare.ts app/scripts/sweep.ts app/scripts/seqsweep.ts app/scripts/casback.ts app/scripts/viewsweep.ts app/scripts/findcensus.ts; do
+  printf '%s\n' "$f" | golden_selected || fail "A25: a diff touching only $f does not plan the golden check"
+done
+printf '%s\n' app/src/ui/foo.ts app/scripts/gate.ts docs/backlog.md | golden_selected && fail "A25: an unrelated diff plans the golden check"
+grep -q 'golden_selected' "$here/pipeline.sh" || fail "A25: pipeline.sh does not use golden_selected for the golden check"
+# A25 item 5: a stage line NEW / NOW PASSING / CHANGED / GONE fails the engine stages even at exit 0
+printf 'x\n  sweep NOW PASSING a1: remove it\nSWEEP PASSED: 1\n' > "$tmp/st1.log"; printf '  seq known y\nSEQ PASSED: 1\n' > "$tmp/st2.log"
+stage_findings "$tmp/st1.log" >/dev/null || fail "A25: a NOW PASSING stage line is not a finding"
+stage_findings "$tmp/st2.log" >/dev/null && fail "A25: a known stage line is a finding"
+# A25 item 5, behaviour: a sandbox whose sweep prints NOW PASSING (exit 0) fails the checks once golden runs
+s5="$tmp/s5"; mkdir -p "$s5/bin" "$s5/tools" "$s5/docs/shifts" "$s5/app/scripts"; git init -q -b main "$s5"
+cp "$sb/tools/devlock.sh" "$s5/tools/"; : > "$s5/docs/shifts/brief.md"; echo t > "$s5/app/keep"
+for st in sweep seqsweep casback viewsweep findcensus; do echo 'console.log("fine");' > "$s5/app/scripts/$st.ts"; done
+echo 'console.log("  sweep NOW PASSING g1: remove it from sweep-known.yaml"); console.log("SWEEP PASSED: 1 runs");' > "$s5/app/scripts/sweep.ts"
+cp "$sb/bin/claude" "$s5/bin/"; printf '#!/bin/sh\n[ "$1" = ci ] && { mkdir -p node_modules/x; exit 0; }\nexit 0\n' > "$s5/bin/npm"; chmod +x "$s5/bin/"*
+git -C "$s5" add -A; gc "$s5" init; git -C "$s5" branch phase-1
+out="$(cd "$s5" && PATH="$s5/bin:$PATH" GIAC_OUT="$s5/engine" "$script" ron "sandbox task" --id T5 --branch p1/t5 --checks golden 2>&1)"
+grep -q '^RESULT #1 T5: NOT MERGED' <<<"$out" || fail "A25: a NOW PASSING sweep line does not fail the pipeline's checks: $out"
+grep -qs 'sweep NOW PASSING' "$s5"/.tasks/*/fail-0.txt || fail "A25: the failing stage is not in the fix round's input"
+
+# A37: the flake census: a dry run plans it; flaky_items lists only tests that failed in some runs; head_is notices a moved HEAD
+out="$("$script" flakes 3 --dry-run 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] || fail "A37: flakes --dry-run: exit $rc: $out"
+for want in 'host-cpu' 'HEAD must still be' 'FLAKES 3: ABORTED (HEAD moved)' 'FLAKES 3: vitest <k> of 5 runs clean, e2e <k> of 5, flaky: <ids or none>' '.tasks/flakes-'; do
+  grep -qF -- "$want" <<<"$out" || fail "A37: flakes --dry-run does not print '$want': $out"
+done
+printf 'a.test.ts\tone\nb.test.ts\ttwo\n' > "$tmp/i1"; printf 'a.test.ts\tone\n' > "$tmp/i2"; : > "$tmp/i3"
+[[ "$(flaky_items 3 "$tmp/i1" "$tmp/i2" "$tmp/i3")" == $'2/3\ta.test.ts\tone\n1/3\tb.test.ts\ttwo' || "$(flaky_items 3 "$tmp/i1" "$tmp/i2" "$tmp/i3")" == $'1/3\tb.test.ts\ttwo\n2/3\ta.test.ts\tone' ]] || fail "A37: flaky_items: $(flaky_items 3 "$tmp/i1" "$tmp/i2" "$tmp/i3")"
+[[ -z "$(flaky_items 2 "$tmp/i1" "$tmp/i1")" ]] || fail "A37: a test failing in every run is called flaky"
+[[ -z "$(flaky_items 2 "$tmp/i3" "$tmp/i3")" ]] || fail "A37: no failures gives flaky items"
+head_is "$tmp/heads-wt" "$det" || fail "A37: head_is refuses the current HEAD"
+gc "$tmp/heads-wt" moved; head_is "$tmp/heads-wt" "$det" && fail "A37: head_is accepts a moved HEAD"
+grep -q 'head_is "$integ" "$sha"' "$here/pipeline.sh" || fail "A37: pipeline.sh does not check HEAD between runs"
+
+# A37, behaviour: a sandbox runs the real census with fake vitest/e2e commands (vitest fails in runs 2 and 4; e2e is clean)
+fk="$tmp/fk"; mkdir -p "$fk/bin" "$fk/tools" "$fk/docs/shifts" "$fk/app/scripts" "$fk/app/node_modules/x"; git init -q -b main "$fk"
+cp "$sb/tools/devlock.sh" "$fk/tools/"; cp "$sb/bin/npm" "$fk/bin/"; cp "$here/../app/scripts/pipeline-logs.ts" "$fk/app/scripts/"; : > "$fk/docs/shifts/brief.md"; echo t > "$fk/tracked"
+git -C "$fk" add -A; gc "$fk" init; git -C "$fk" branch phase-1
+cat > "$fk/fakev.sh" <<STUB
+#!/bin/sh
+k=\$(( \$(cat "$fk/cnt" 2>/dev/null || echo 0) + 1 )); echo \$k > "$fk/cnt"
+[ -z "\$FAKE_MOVE" ] || { [ \$k -ne 2 ] || git -c user.name=t -c user.email=t@t commit -q --allow-empty -m move; }
+if [ \$k -eq 2 ] || [ \$k -eq 4 ]; then echo " FAIL  src/a.test.ts > suite > case one"; echo " FAIL  src/a.test.ts > suite > case one"; echo " FAIL  src/b.test.ts [ src/b.test.ts ]"; exit 1; fi
+exit 0
+STUB
+printf '#!/bin/sh\nexit 0\n' > "$fk/faked.sh"; chmod +x "$fk/fakev.sh" "$fk/faked.sh"
+fkrun() { (cd "$fk" && PATH="$fk/bin:$PATH" GIAC_OUT="$fk/engine" PASCALINE_FLAKES_VITEST="$1" PASCALINE_FLAKES_E2E="$fk/faked.sh" "$script" flakes 7 2>&1); }
+out="$(fkrun "$fk/fakev.sh")"
+want='FLAKES 7: vitest 3 of 5 runs clean, e2e 5 of 5, flaky: src/a.test.ts: suite > case one (vitest 2/5), src/b.test.ts (vitest 2/5)'
+grep -qF -- "$want" <<<"$out" || fail "A37: the census line is not '$want': $out"
+grep -qF -- "$want" "$fk/.coord/log.md" || fail "A37: the log lacks the FLAKES line"
+f7="$(ls "$fk"/.tasks/flakes-*.md 2>/dev/null | head -n1)"
+[[ -n "$f7" ]] && grep -q "src/a.test.ts suite > case one" "$f7" && grep -q '^| 5 |' "$f7" || fail "A37: .tasks/flakes-<date>.md is missing or lacks the test and the per-run load rows"
+rm -rf "$fk/.tasks"/flakes-*; echo 0 > "$fk/cnt"
+out="$(FAKE_MOVE=1 fkrun "git -C $fk/.claude/worktrees/phase-1 -c user.name=t -c user.email=t@t commit -q --allow-empty -m move; true")"
+grep -q 'FLAKES 7: ABORTED (HEAD moved before run 2' <<<"$out" || fail "A37: a moved HEAD does not abort the census: $out"
+# one title twice in one run's file counts once; a failure in 1 of 2 runs is flaky, not always failing
+printf 'a\tt\na\tt\n' > "$tmp/d1"; : > "$tmp/d2"
+[[ "$(flaky_items 2 "$tmp/d1" "$tmp/d2")" == $'1/2\ta\tt' ]] || fail "A37: a duplicate line in one run counts twice"
+[[ -z "$(flaky_items 2 "$tmp/d1" "$tmp/d1")" ]] || fail "A37: a duplicate line in two runs is not always failing"
+
+# A36: red-first: a package that says its tests fail on phase-1 must have a new test that fails there
+rf="$tmp/rf"; mkdir -p "$rf/app" "$rf/tests/golden"; git init -q -b phase-1 "$rf"; echo 1 > "$rf/app/code.txt"; printf -- '- id: old\n' > "$rf/tests/golden/g2.yaml"; cp "$rf/tests/golden/g2.yaml" "$rf/tests/golden/home.yaml"
+git -C "$rf" add -A; gc "$rf" base
+git -C "$rf" checkout -q -b p1/pass; echo 'PASSES' > "$rf/app/a.test.ts"; git -C "$rf" add -A; gc "$rf" t
+git -C "$rf" checkout -q -b p1/fail phase-1; echo 'FAILS-ON-OLD' > "$rf/app/b.test.ts"; git -C "$rf" add -A; gc "$rf" t
+git -C "$rf" checkout -q -b p1/none phase-1; echo 2 > "$rf/app/code.txt"; git -C "$rf" add -A; gc "$rf" t
+git -C "$rf" checkout -q -b p1/crash phase-1; echo 'CRASHES' > "$rf/app/c.test.ts"; git -C "$rf" add -A; gc "$rf" t
+git -C "$rf" checkout -q -b p1/g2 phase-1; printf -- '- id: old\n- id: newcase\n' > "$rf/tests/golden/g2.yaml"; git -C "$rf" add -A; gc "$rf" t
+git -C "$rf" checkout -q -b p1/home phase-1; printf -- '- id: old\n- id: newcase\n' > "$rf/tests/golden/home.yaml"; git -C "$rf" add -A; gc "$rf" t; git -C "$rf" checkout -q phase-1
+printf '#!/bin/sh\ngrep -q FAILS-ON-OLD "$@" && { echo " Test Files  1 failed (1)"; echo "      Tests  1 failed (1)"; exit 1; }\ngrep -q CRASHES "$@" && { echo "Error: cannot import"; exit 1; }\nexit 0\n' > "$tmp/fakevitest.sh"
+printf '#!/bin/sh\n[ "$ONLY" = home ] && [ -z "$GOLDEN_PASSES" ] && { [ -n "$GOLDEN_OTHER" ] && { echo "FAIL home: 12/13 match"; echo "  home other: got 1, expect 2"; echo "GOLDEN GATE FAILED"; exit 1; }; echo "FAIL home: 12/13 match"; echo "  home other: got 1, expect 2"; echo "  home newcase: got 1, expect 2"; echo "GOLDEN GATE FAILED"; exit 1; }\necho "ran ONLY=$ONLY" > "%s/golden-ran"; exit 0\n' "$tmp" > "$tmp/fakegolden.sh"; chmod +x "$tmp/fakevitest.sh" "$tmp/fakegolden.sh"
+printf 'X, A1: tests failing on phase-1\n' > "$tmp/spec-red"; printf 'X, T1: a measurement\n' > "$tmp/spec-plain"
+rfwt() { git -C "$rf" worktree add -q "$tmp/rfwt-${1#p1/}" "$1" 2>/dev/null; echo "$tmp/rfwt-${1#p1/}"; }
+noscratch() { [[ "$(git -C "$rf" worktree list | wc -l)" -eq "$(( $(ls -d "$tmp"/rfwt-* 2>/dev/null | wc -l) + 1 ))" ]] || fail "A36: $1: a scratch worktree is left"; }
+export PASCALINE_REDFIRST_VITEST="$tmp/fakevitest.sh" PASCALINE_REDFIRST_GOLDEN="$tmp/fakegolden.sh"
+w="$(rfwt p1/pass)"; out="$(red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log")" && fail "A36: a test passing on phase-1 passes the stage"
+grep -q 'every new test passes on phase-1' <<<"$out" || fail "A36: no reason for a passing test: $out"; noscratch passing
+red_first "$w" "$tmp/spec-plain" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a package without the claim does not skip"; noscratch plain
+w="$(rfwt p1/fail)"; red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a test failing on phase-1 is refused"; noscratch failing
+w="$(rfwt p1/none)"; red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a branch with no test files does not skip"; noscratch none
+# a crash without failed tests is a stage error, not red
+w="$(rfwt p1/crash)"; out="$(red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log")" && fail "A36: a vitest crash counts as red"
+grep -q 'stage error' <<<"$out" || fail "A36: a vitest crash is not a stage error: $out"; noscratch crash
+# golden: a case id in a stage file runs that stage (ONLY=home) and a failing id is red; g2.yaml has no stage and is skipped
+w="$(rfwt p1/home)"; red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a golden case failing on phase-1 is refused"; noscratch golden-red
+out="$(GOLDEN_PASSES=1 red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log")" && fail "A36: a golden case passing on phase-1 passes the stage"
+out="$(GOLDEN_OTHER=1 red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log")" && fail "A36: another case failing while the new one passes counts as red"
+grep -q 'every new test passes on phase-1' <<<"$out" || fail "A36: no reason when only another golden case fails: $out"
+grep -q 'ONLY=home' "$tmp/golden-ran" || fail "A36: the golden stage run is not ONLY=home"; noscratch golden-green
+rm -f "$tmp/golden-ran"; w="$(rfwt p1/g2)"; red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a g2.yaml case does not skip"
+[[ ! -e "$tmp/golden-ran" ]] || fail "A36: g2.yaml ran a golden stage"; noscratch g2
+unset PASCALINE_REDFIRST_VITEST PASCALINE_REDFIRST_GOLDEN
+red_first_wanted "$tmp/spec-red" && ! red_first_wanted "$tmp/spec-plain" || fail "A36: red_first_wanted"
+# want_checks: redfirst only when the spec says so (the real function, extracted)
+eval "$(sed -n '/^want_checks() {/,/^}/p' "$here/pipeline.sh")"
+changed() { echo docs/x.md; }; checks=auto
+spec_file="$tmp/spec-red"; [[ ",$(want_checks)," == *,redfirst,* ]] || fail "A36: want_checks lacks redfirst for a package that says so"
+spec_file="$tmp/spec-plain"; [[ ",$(want_checks)," != *,redfirst,* ]] || fail "A36: want_checks has redfirst without the claim"
+# the whole run: a sandbox with a worker that adds a passing test; the failure line reaches fail-<round>.txt
+sb4="$tmp/sb4"; mkdir -p "$sb4/bin" "$sb4/tools" "$sb4/docs/shifts" "$sb4/app/node_modules/x"; git init -q -b main "$sb4"
+cp "$sb/tools/devlock.sh" "$sb4/tools/"; cp "$sb/bin/npm" "$sb4/bin/"; : > "$sb4/docs/shifts/brief.md"; echo t > "$sb4/app/keep"
+printf '#!/bin/sh\ncase "$*" in *"--agent sofia"*) echo APPROVED;; *) echo PASSES > app/n.test.ts; git add -A; git -c user.name=t -c user.email=t@t commit -qm work; echo done;; esac\n' > "$sb4/bin/claude"; chmod +x "$sb4/bin/claude"
+git -C "$sb4" add -A; gc "$sb4" init; git -C "$sb4" branch phase-1
+out="$(cd "$sb4" && PATH="$sb4/bin:$PATH" GIAC_OUT="$sb4/engine" PASCALINE_REDFIRST_VITEST="$tmp/fakevitest.sh" "$script" ron "package A9: tests fail on phase-1" --id T9 --branch p1/t9 --checks redfirst 2>&1)"
+grep -q 'NOT MERGED' <<<"$out" || fail "A36: a passing new test does not fail the run: $out"
+grep -qs 'checks failed: red-first (every new test passes on phase-1)' "$sb4"/.tasks/*/fail-1.txt || fail "A36: fail-1.txt lacks the red-first line"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"

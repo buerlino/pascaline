@@ -72,6 +72,10 @@ addEventListener("blur", () => matchMedia("(pointer: coarse)").matches && dropFo
 // it reaches document from inside MathLive's shadow root.
 const away = (): boolean => document.hidden || (matchMedia("(pointer: coarse)").matches && !document.hasFocus());
 document.addEventListener("focusin", () => away() && dropFocus(), true);
+// F99 (R81): a focus() called while the window is blurred fires no focusin then; the browser keeps the element as the
+// focused one and hands it the focus when the window comes back, after the window's focus event, when away() is false
+// again. So a touch screen's return itself drops the focus: nothing is focused after a return until a key is pressed.
+addEventListener("focus", () => matchMedia("(pointer: coarse)").matches && dropFocus());
 
 mount(App, { target: document.getElementById("app") as HTMLElement, props: { session, entry, shell, userKeys } });
 

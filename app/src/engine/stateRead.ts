@@ -11,9 +11,11 @@
 import type { GiacParse } from "./bridge.ts";
 import { ENGINE_DEFINITIONS, EQ_DIFF, EQ_INEXACT_FLAG, EQ_VERDICT, WORKER_DEFINITION_NAMES } from "./homeEval.ts";
 import { DOUBLE_DIGITS } from "./numeric.ts";
+import { definedName, isName, programParams, type PrintedNode } from "./giacPrint.ts";
 import { COMPLEX_DEFINITIONS } from "./complex.ts";
 import { CHIP_PREFIX } from "./chipFacts.ts";
 import { UNIT_DEFINITIONS } from "../units/evaluate.ts";
+import { aboutsPart } from "./assumed.ts";
 
 /** A stored user name as Giac holds it. `names`: the names in its value (`lname`), a program's parameters left out
  *  (its locals stay: an over-read gives a weaker mark, never a stronger one). `fn`: the value is a program. */
@@ -39,91 +41,31 @@ export function readsFrom(p: GiacParse): InputReads {
 
 /** The state part: Digits pinned (a double prints with Digits, so an unchanged value must print alike in every mode),
  *  then put back to `digits` (the mode's, which the settings check expects). Giac's printed list: parsePrinted. */
-export function statePart(digits: number): string {
-  return `[(Digits:=${DOUBLE_DIGITS}),map(VARS(),k->[k,string(eval(k)),lname(eval(k))]),(Digits:=${Math.trunc(digits)})]`;
+export function statePart(digits: number, assumed: readonly string[] = []): string {
+  return pinned(entries("VARS()"), digits, assumed);
 }
 
-/** A node of Giac's printed list: its raw text, and its elements (a list) or its value (a string). */
-interface Node {
-  raw: string;
-  items?: Node[];
-  str?: string;
+/** The entry of each name in `names` (quoted, so the list holds the names), as in statePart: Digits pinned, then put
+ *  back. Its print reads as statePart's for tableOf. */
+const entries = (list: string): string => `map(${list},k->[k,string(eval(k)),lname(eval(k))])`;
+const quoted = (names: readonly string[]): string => `[${names.map((n) => `'${n}'`).join(",")}]`;
+// G92: `assumed` (the log's assumed names) adds their about() as a 3rd element, printed with Digits pinned (assumed.ts)
+const pinned = (part: string, digits: number, assumed: readonly string[] = []): string =>
+  `[(Digits:=${DOUBLE_DIGITS}),${part},${assumed.length ? `${aboutsPart(assumed)},` : ""}(Digits:=${Math.trunc(digits)})]`;
+
+/** G104: the entries of `names` only (loadPending's loaded names). */
+export function namesPart(digits: number, names: readonly string[]): string {
+  return pinned(entries(quoted(names)), digits);
 }
 
-/** Parses Giac's printed value: lists `[…]`, strings `"…"` (a quote inside is doubled) and atoms. Null when it does not
- *  parse. */
-export function parsePrinted(text: string): Node | null {
-  let i = 0;
-  const node = (): Node | null => {
-    while (text[i] === " " || text[i] === "\n") i++;
-    const start = i;
-    if (text[i] === "[") {
-      i++;
-      const items: Node[] = [];
-      while (text[i] === " " || text[i] === "\n") i++;
-      if (text[i] === "]") {
-        i++;
-        return { raw: text.slice(start, i), items };
-      }
-      for (;;) {
-        const n = node();
-        if (!n) return null;
-        items.push(n);
-        while (text[i] === " " || text[i] === "\n") i++;
-        if (text[i] === ",") i++;
-        else if (text[i] === "]") {
-          i++;
-          return { raw: text.slice(start, i), items };
-        } else return null;
-      }
-    }
-    if (text[i] === '"') {
-      let s = "";
-      i++;
-      for (;;) {
-        if (i >= text.length) return null;
-        if (text[i] === '"') {
-          if (text[i + 1] === '"') {
-            s += '"';
-            i += 2;
-            continue;
-          }
-          i++;
-          return { raw: text.slice(start, i), str: s };
-        }
-        s += text[i++];
-      }
-    }
-    // An atom: up to the next , or ] outside brackets and quotes.
-    let depth = 0;
-    while (i < text.length) {
-      const c = text[i]!;
-      if (c === '"') {
-        const q = text.indexOf('"', i + 1);
-        if (q < 0) return null;
-        i = q + 1;
-        continue;
-      }
-      if (c === "(" || c === "[") depth++;
-      else if (c === ")" || c === "]") {
-        if (depth === 0) break;
-        depth--;
-      } else if (c === "," && depth === 0) break;
-      i++;
-    }
-    const raw = text.slice(start, i).trim();
-    return raw ? { raw } : null;
-  };
-  const out = node();
-  return out && text.slice(i).trim() === "" ? out : null;
+/** G104: the state part after an input whose candidates are known: every name of `VARS()`, a name of `known` bare (its
+ *  entry did not change), any other with its entry (a candidate, or a name new since the last read). One call. */
+export function changedPart(digits: number, known: readonly string[], assumed: readonly string[] = []): string {
+  return pinned(`map(VARS(),k->when(member(k,${quoted(known)}),k,[k,string(eval(k)),lname(eval(k))]))`, digits, assumed);
 }
 
-/** A name in the state part's print (a user name, an element of `lname`): read by tableOf until G104/G105. */
-const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
-const idents = (n: Node | undefined): string[] => (n?.items ?? []).map((x) => x.raw).filter((x) => IDENT.test(x));
-
-/** A program's printed head, `(x,y)->`: its parameters. */
-const HEAD = /^\s*\(([^()]*)\)\s*->/;
+/** The names in a list of the state part's print (an element of `lname`). */
+const idents = (n: PrintedNode | undefined): string[] => (n?.items ?? []).map((x) => x.raw).filter((x) => isName(x));
 
 /** Our own engine names (definitions, slots, chips, constants, the degree factor): not user state. A name that starts
  *  with `pas` is ours unless `user` holds it (the log, or the input's text names it). */
@@ -132,8 +74,8 @@ const OURS = new Set<string>([
   ...WORKER_DEFINITION_NAMES,
   ...Object.keys(COMPLEX_DEFINITIONS),
   ...UNIT_DEFINITIONS.flatMap((d) => {
-    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:\(|:=)/.exec(d);
-    return m ? [m[1]!] : [];
+    const name = definedName(d);
+    return name !== null ? [name] : [];
   }),
   "pcasans",
   "pasdeg",
@@ -149,18 +91,32 @@ export function isOurs(name: string, user: (name: string) => boolean): boolean {
 
 /** The table from a state part: user names with a stored value (an assumed name alone holds itself: left out). Null
  *  when it is not the list statePart builds. */
-export function tableOf(n: Node, user: (name: string) => boolean): Map<string, StoredName> | null {
+export function tableOf(n: PrintedNode, user: (name: string) => boolean, kept?: ReadonlyMap<string, StoredName>): Map<string, StoredName> | null {
   const list = n.items?.[1]?.items;
-  if (!n.items || n.items.length !== 3 || !list) return null;
+  if (!n.items || (n.items.length !== 3 && n.items.length !== 4) || !list) return null;
   const out = new Map<string, StoredName>();
   for (const e of list) {
-    const [k, v, ns] = e.items ?? [];
-    if (!k || v?.str === undefined || !IDENT.test(k.raw) || isOurs(k.raw, user) || v.str === k.raw) continue;
-    const head = HEAD.exec(v.str);
-    const params = new Set(head ? head[1]!.split(",").map((p) => p.trim()) : []);
+    // G104 (changedPart): a bare name keeps its entry from `kept`, in VARS()'s order
+    if (!e.items) {
+      const k = kept?.get(e.raw);
+      if (k) out.set(e.raw, k);
+      continue;
+    }
+    const [k, v, ns] = e.items;
+    if (!k || v?.str === undefined || !isName(k.raw) || isOurs(k.raw, user) || v.str === k.raw) continue;
+    const head = programParams(v.str);
+    const params = new Set(head ?? []);
     out.set(k.raw, { text: v.str, names: idents(ns).filter((x) => !params.has(x) && x !== k.raw), fn: head !== null });
   }
   return out;
+}
+
+/** G104: every name a state part's print lists (bare or with its entry; VARS() lists names only). */
+export function namesOf(n: PrintedNode): string[] {
+  return (n.items?.[1]?.items ?? []).flatMap((e) => {
+    const k = e.items ? e.items[0]?.raw : e.raw;
+    return k !== undefined ? [k] : [];
+  });
 }
 
 /** The names `after` holds with another text than `before` (or new), and the names it no longer holds. */

@@ -2,7 +2,8 @@
 // G65: the call after an input, as Giac prints it (texts from the pinned build, probe 2026-10-21); G99: the reads from
 // Giac's tree.
 import { describe, expect, it } from "vitest";
-import { changesOf, isOurs, parsePrinted, readsFrom, statePart, tableOf } from "./stateRead.ts";
+import { changesOf, isOurs, readsFrom, statePart, tableOf } from "./stateRead.ts";
+import { parsePrinted } from "./giacPrint.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
 
 describe("parsePrinted", () => {

@@ -4,7 +4,7 @@
 import { EngineHost } from "./engine/host.ts";
 import { defaultHomeSettings, precisionFacts, type HomeResult, type HomeSettings } from "./engine/homeEval.ts";
 import { markOf, type MarkInfo } from "./engine/format.ts";
-import { defaultCasSettings } from "./engine/types.ts";
+import { defaultCasSettings, type CasResult } from "./engine/types.ts";
 import { ANS_KEY, type ChipTable } from "./input/chips.ts";
 import { chipsIn, type ChipFactsTable } from "./engine/chipFacts.ts";
 import { constTable, inexactConstsIn, type ConstTable } from "./engine/constUnc.ts";
@@ -12,6 +12,7 @@ import { giacOfEntry } from "./input/entry.ts";
 import { rewriteAngles } from "./input/angles.ts";
 import { applyDefChanges, type DefChange } from "./engine/defs.ts";
 import { namesFlag } from "./engine/flags.ts";
+import { namesAssuming, setsAssumption } from "./engine/assumed.ts";
 import { chipFactsOf, chipOf, homeItem } from "./state/results.ts";
 
 export type Expect = string | Expect[];
@@ -108,7 +109,7 @@ export interface Case {
  * the parser's angle rule (input/angles.ts `rewriteAngles`) as the keys' LaTeX would; `latex` goes through the parser.
  */
 export function typed(c: Case): Case {
-  const one = (t: string): string => rewriteAngles(t);
+  const one = (t: string): string => rewriteAngles(t, "typed");
   const many = <T extends string | string[] | undefined>(x: T): T => (x === undefined ? x : Array.isArray(x) ? (x.map(one) as T) : (one(x) as T));
   const raw = c.latex === undefined;
   return {
@@ -175,6 +176,18 @@ export function markText(m: MarkInfo | null): string | undefined {
 
 export const RATIONAL_TEXT = /^-?\d+(\/\d+)?$/;
 
+/**
+ * The mark a CAS result is read with (the golden gate and the Find census, G110: one rule). A float result carries its numeric
+ * facts; a rational text whose decision did not hold at P + 20 comes approximate (G38), so that is read first, and a true or false
+ * resting on a float is approximate (R18f1); an exact rational is `=`; any other exact result has no mark. `digits`: the digits shown.
+ */
+export function casMark(r: CasResult, digits: number): MarkInfo | null {
+  if (r.numeric) return markOf(precisionFacts(r.numeric), { format: "STD", digits });
+  if (!r.ok) return null;
+  if (r.approximate) return r.facts.warn ? { mark: "⚠" } : { mark: "≈" };
+  return RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
+}
+
 /** One home.yaml case on `host` (a sequence on its own engine from `fresh`). */
 export async function runHomeCase(c: Case, host: EngineHost, fresh: () => Promise<EngineHost>): Promise<HomeResult & { inexactInput?: boolean }> {
   if (c.steps) return runSteps(fresh, c.steps, c.settings?.digits ?? 12, c.consts && constTable(c.consts));
@@ -200,8 +213,8 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
   let mark: MarkInfo | null;
   let shown: string;
   // G67: a case whose inputs before it set a Giac setting runs on its own engine too (were the setting kept, it would
-  // reach every later case)
-  const own = c.beforeHome?.length || c.beforeCas?.length || c.relaunch || (c.before ?? []).some(namesFlag);
+  // reach every later case); G92: so does one that sets or may leave an assumption
+  const own = c.beforeHome?.length || c.beforeCas?.length || c.relaunch || (c.before ?? []).some((b) => namesFlag(b, "typed") || setsAssumption(b) || namesAssuming(b));
   let host = own ? await fresh() : shared;
   const defs: DefChange[] = [];
   const relaunched = async (): Promise<void> => {
@@ -225,10 +238,7 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
       if (got !== c.uses.join(",")) problems.push(`uses [${got}], expect [${c.uses.join(",")}]`);
     }
     shown = r.ok ? r.text : `error: ${r.error ?? "engine"}`;
-    // A float result carries its numeric facts; an exact rational CAS result is exact (no mark is drawn for it); a
-    // true or false resting on a float is approximate (R18f1).
-    // A rational text whose decision did not hold at P + 20 comes approximate (G38), so that is read first.
-    mark = r.numeric ? markOf(precisionFacts(r.numeric), { format: "STD", digits }) : r.ok && r.approximate ? (r.facts.warn ? { mark: "⚠" } : { mark: "≈" }) : r.ok && RATIONAL_TEXT.test(r.text) ? { mark: "=" } : null;
+    mark = casMark(r, digits);
   } else {
     const s: HomeSettings = { ...defaultHomeSettings, angle: c.settings?.angle ?? "rad", digits: setting };
     for (const b of c.beforeCas ?? []) defs.push(...host.cas(giacOf(b), { ...defaultCasSettings, angle: s.angle, digits: setting }).defs);

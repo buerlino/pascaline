@@ -166,8 +166,8 @@ describe.skipIf(!giacAvailable())("marks travel through Ans and chips (R65, real
     expect([markOf(t, 1), markOf(t, 2)]).toEqual(["⚠", "⚠"]);
   });
 
-  // G109 fix round 2: the solve form keeps its brackets through Ans, sent by name (not exact) or inlined (exact)
-  it("G109: the solve form stays the solve form through Ans", async () => {
+  // G109: a solve result is Giac's list type, in braces through Ans, sent by name (not exact) or inlined (exact)
+  it("G109: a solve result stays a list in braces through Ans", async () => {
     const s = new Session(calc, memoryKv());
     await s.submit("x", "solve(x^2=2,x)");
     await s.submit("\\ans");
@@ -176,10 +176,10 @@ describe.skipIf(!giacAvailable())("marks travel through Ans and chips (R65, real
     await s.submit("x", "list[1,4]");
     await s.submit("\\ans");
     expect(s.home.map((h) => [h.status, h.text])).toEqual([
-      ["done", "[-1.41421356237,1.41421356237]"],
-      ["done", "[-1.41421356237,1.41421356237]"],
-      ["done", "[-2,2]"],
-      ["done", "[-2,2]"],
+      ["done", "{-1.41421356237,1.41421356237}"],
+      ["done", "{-1.41421356237,1.41421356237}"],
+      ["done", "{-2,2}"],
+      ["done", "{-2,2}"],
       ["done", "{1,4}"],
       ["done", "{1,4}"],
     ]);

@@ -14,12 +14,12 @@ import { DATA_VERSION, migratedText } from "../state/storage.ts";
 import { renameOurCalls, writeUserNames } from "./ourNames.ts";
 import { dropAngleFactor, PASDEG, rewriteAngles } from "../input/angles.ts";
 import { isFlagName } from "./flags.ts";
+import { callsOf, isName, names, noneOpen, typedFromPrinted, walk, wordsOf } from "./giacPrint.ts";
 
 /** r10 section 1.2: the limits of one file. */
 export const LIB_MAX_BYTES = 256 * 1024;
 export const LIB_MAX_DEFS = 200;
 const HEADER = /^\/\/ pascaline library (\d+)$/;
-const NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 export interface LibTest {
   expr: string;
   /** 1-based line in the file. */
@@ -54,25 +54,15 @@ export class LibError extends Error {
 
 /** Top-level ";" (outside brackets, braces and strings) with something after it: a second statement. */
 function topLevelSemicolon(s: string): boolean {
-  let depth = 0;
-  let str = false;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i]!;
-    if (c === '"') str = !str;
-    else if (str) continue;
-    else if ("([{".includes(c)) depth++;
-    else if (")]}".includes(c)) depth--;
-    else if (c === ";" && depth === 0 && s.slice(i + 1).trim() !== "") return true;
-  }
-  return false;
+  return walk(s, 0, (k, d, c) => c === ";" && d === 0 && s.slice(k + 1).trim() !== "", "typed") >= 0;
 }
 
-const NOSTR = (s: string): string => s.replace(/"[^"]*"/g, '""');
-
-function balanced(s: string): boolean {
-  let d = 0;
-  for (const c of s.replace(/"[^"]*"/g, "")) d += "([{".includes(c) ? 1 : ")]}".includes(c) ? -1 : 0;
-  return d <= 0;
+/** A function command's head as typed (`f(x,y)` of `f(x,y):=…`), when its parameters hold no `(`. */
+function fnHead(cmd: string): string | null {
+  const t = cmd.trimStart();
+  const c = callsOf(t, undefined, "typed")[0];
+  if (!c || c.at !== 0 || !isName(c.name, true) || c.close < 0 || t.slice(c.open + 1, c.close).includes("(")) return null;
+  return t.slice(0, c.close + 1);
 }
 
 /** G100: what a definition or a test changes when it runs, from Giac's tree (bridge-2): the first head of the state
@@ -152,9 +142,9 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
     // A definition: this line, plus the following ones while a bracket is open or the line is indented / a closing bracket.
     const start = i;
     let block = raw;
-    while (i + 1 < rest.length && (!balanced(block) || /^(\s+\S|[}\]\)])/.test(rest[i + 1]!))) block += "\n" + rest[++i];
+    while (i + 1 < rest.length && (!noneOpen(block, "typed") || /^(\s+\S|[}\]\)])/.test(rest[i + 1]!))) block += "\n" + rest[++i];
     const at = start + 2;
-    if (!balanced(block)) throw new LibError(at, "a bracket is never closed");
+    if (!noneOpen(block, "typed")) throw new LibError(at, "a bracket is never closed");
     if (topLevelSemicolon(block)) throw new LibError(at, "one definition per block: a second statement follows `;`");
     const tree = readable(parse(asGiac(block)));
     const def = definitionOf(block, tree);
@@ -172,11 +162,11 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
     if (c.target) throw new LibError(at, `the value assigns ${c.target}, which is not local: a value must not itself define or change anything`);
     if (!tree.ok) throw new LibError(at, "Giac cannot read this definition (a syntax error)");
     const value = def.kind === "var" ? assignmentIn(block, tree)?.rhs : undefined;
-    if (!NAME.test(def.name)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
+    if (!isName(def.name, true)) throw new LibError(at, "a name is letters, digits and _ (ASCII), starting with a letter");
     if (isFlagName(def.name)) throw new LibError(at, `${def.name} is one of the engine's settings, which a library may not change`);
     if (def.name in ENGINE_DEFINITIONS || def.name in COMPLEX_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name === PASDEG || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
     // R64: the degree factor is ours; a body that names it (a `local pasdeg`, say) would change every angle in it
-    if (new RegExp(`(?<![A-Za-z0-9_])${PASDEG}(?![A-Za-z0-9_])`).test(NOSTR(block))) throw new LibError(at, `${PASDEG} is one of Pascaline's own names`);
+    if ([...names(block, "typed")].some((n) => n.name === PASDEG)) throw new LibError(at, `${PASDEG} is one of Pascaline's own names`);
     if (defs.some((d) => d.name === def.name)) throw new LibError(at, `${def.name} is defined twice in this file`);
     if (!lastComment || lastComment.line !== at - 1) throw new LibError(at, `${def.name} needs its one-line description on the line above`);
     if (lastComment.text.length > DESC_MAX) throw new LibError(lastComment.line, `the description is over ${DESC_MAX} characters`);
@@ -240,7 +230,7 @@ function fail(error: string, line: number, extra: Partial<Extract<ImportResult, 
 /** G54, G46: library text is the user's, in radians: our names for Giac's functions (ourNames.ts) and the degree factor
  *  go in before Giac sees it, as the parser does for typed input. */
 export function asGiac(text: string): string {
-  return rewriteAngles(renameOurCalls(text));
+  return rewriteAngles(renameOurCalls(text), "typed");
 }
 
 /** One `// pascaline library` import into an engine that holds `log`. Checks the rest against the engine (built-in
@@ -325,12 +315,12 @@ function sameDefinition(engine: LibraryEngine, d: LibDef, old: DefEntry): boolea
   const rhs = d.value;
   // a value in a file is in radians (G46): read with the factor 1, as the import's cas() in RAD reads it
   const v = inRadians(engine, () => engine.eval(asGiac(rhs)));
-  return v.ok && !/\bundef\b/.test(v.output) && old.cmds.length === 1 && old.cmds[0] === `${d.name}:=(${v.output.trim()})`;
+  return v.ok && !wordsOf(v.output).includes("undef") && old.cmds.length === 1 && old.cmds[0] === `${d.name}:=(${typedFromPrinted(v.output.trim())})`;
 }
 
 /** A function typed on the phone has no description: its name and arguments stand for it. */
 function describe(e: DefEntry): string {
-  const text = e.desc ?? (e.kind === "fn" ? (/^\s*([A-Za-z][A-Za-z0-9_]*\s*\([^()]*\))/.exec(e.cmds[0]!)?.[1] ?? e.name) : e.preview ? `${e.name} = ${e.preview}` : e.name);
+  const text = e.desc ?? (e.kind === "fn" ? (fnHead(e.cmds[0]!) ?? e.name) : e.preview ? `${e.name} = ${e.preview}` : e.name);
   return text.replace(/\s+/g, " ").trim().slice(0, DESC_MAX) || e.name;
 }
 
@@ -350,7 +340,7 @@ export function exportLibrary(log: readonly DefEntry[]): { text: string; skipped
       continue;
     }
     // G46: the file is in radians, as typed: a body is written without our degree factor (the import puts it in)
-    out.push("", `// ${describe(e)}`, e.cmds.map((c) => writeUserNames(dropAngleFactor(c))).join("\n"));
+    out.push("", `// ${describe(e)}`, e.cmds.map((c) => writeUserNames(dropAngleFactor(c, "typed"))).join("\n"));
   }
   return { text: out.join("\n") + "\n", skipped };
 }

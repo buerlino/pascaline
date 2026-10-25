@@ -21,7 +21,7 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     giac = engineGiac(L);
     host = new EngineHost(giac, bridge);
   });
-  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(rewriteAngles(input), { ...defaultHomeSettings, angle, budgetSteps: 20 * defaultHomeSettings.budgetSteps }).result;
+  const home = (input: string, angle: "rad" | "deg" = "rad") => host.home(rewriteAngles(input, "typed"), { ...defaultHomeSettings, angle, budgetSteps: 20 * defaultHomeSettings.budgetSteps }).result;
 
   it("refuses a value through a division by zero, in RAD and DEG", () => {
     for (const angle of ["rad", "deg"] as const)
@@ -66,7 +66,7 @@ describe.skipIf(!giacAvailable())("G78 on the real engine", () => {
     for (const input of ["exp(-10^30)", "exp(-10^400)", "[exp(-10^30),1]", "[[1,exp(-10^30)],[2,3]]"])
       expect(home(input), input).toMatchObject({ ok: false, error: "underflow", display: "Underflow: the number is too small" });
     for (const digits of [12, 30]) {
-      const r = host.home(rewriteAngles("exp(cosh(asin(pi)))"), { ...defaultHomeSettings, angle: "deg", digits, workDigits: Math.max(30, digits + 10) }).result;
+      const r = host.home(rewriteAngles("exp(cosh(asin(pi)))", "typed"), { ...defaultHomeSettings, angle: "deg", digits, workDigits: Math.max(30, digits + 10) }).result;
       expect(r, `deg ${digits}`).toMatchObject({ ok: false, error: "underflow" });
     }
     // Guards: MPFR holds exp(-1000); an exact 0; a 0 Giac cannot prove reads as noise, not as MPFR's 0, and stays ⚠ 0.
