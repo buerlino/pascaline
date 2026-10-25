@@ -310,5 +310,24 @@ printf 'a\tt\na\tt\n' > "$tmp/d1"; : > "$tmp/d2"
 [[ "$(flaky_items 2 "$tmp/d1" "$tmp/d2")" == $'1/2\ta\tt' ]] || fail "A37: a duplicate line in one run counts twice"
 [[ -z "$(flaky_items 2 "$tmp/d1" "$tmp/d1")" ]] || fail "A37: a duplicate line in two runs is not always failing"
 
+# A36: red-first: a package that says its tests fail on phase-1 must have a new test that fails there
+rf="$tmp/rf"; mkdir -p "$rf/app"; git init -q -b phase-1 "$rf"; echo 1 > "$rf/app/code.txt"; git -C "$rf" add -A; gc "$rf" base
+git -C "$rf" checkout -q -b p1/pass; echo 'PASSES' > "$rf/app/a.test.ts"; git -C "$rf" add -A; gc "$rf" t
+git -C "$rf" checkout -q -b p1/fail phase-1; echo 'FAILS-ON-OLD' > "$rf/app/b.test.ts"; git -C "$rf" add -A; gc "$rf" t
+git -C "$rf" checkout -q -b p1/none phase-1; echo 2 > "$rf/app/code.txt"; git -C "$rf" add -A; gc "$rf" t
+printf '#!/bin/sh\ngrep -q FAILS-ON-OLD "$@" && exit 1; exit 0\n' > "$tmp/fakevitest.sh"; chmod +x "$tmp/fakevitest.sh"
+printf 'X, A1: tests failing on phase-1\n' > "$tmp/spec-red"; printf 'X, T1: a measurement\n' > "$tmp/spec-plain"
+rfwt() { git -C "$rf" worktree add -q "$tmp/rfwt-${1#p1/}" "$1" 2>/dev/null; echo "$tmp/rfwt-${1#p1/}"; }
+export PASCALINE_REDFIRST_VITEST="$tmp/fakevitest.sh"
+w="$(rfwt p1/pass)"; out="$(red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log")" && fail "A36: a test passing on phase-1 passes the stage"
+grep -q 'every new test passes on phase-1' <<<"$out" || fail "A36: no reason for a passing test: $out"
+red_first "$w" "$tmp/spec-plain" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a package without the claim does not skip"
+w="$(rfwt p1/fail)"; red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a test failing on phase-1 is refused"
+w="$(rfwt p1/none)"; red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a branch with no test files does not skip"
+[[ -z "$(git -C "$rf" worktree list | grep -c scratch | grep -v '^0$')" ]] || true
+unset PASCALINE_REDFIRST_VITEST
+red_first_wanted "$tmp/spec-red" && ! red_first_wanted "$tmp/spec-plain" || fail "A36: red_first_wanted"
+grep -q 'checks failed: red-first (every new test passes on phase-1)' "$here/pipeline.sh" || fail "A36: pipeline.sh lacks the red-first failure line"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
