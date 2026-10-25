@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { closeSync, linkSync, mkdirSync, openSync, renameSync, rmSync, statSync } from "node:fs";
+import { linkSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { test, type Page } from "@playwright/test";
 
@@ -168,23 +168,40 @@ export async function recordVibrations(page: Page): Promise<void> {
 export const vibrations = (page: Page): Promise<unknown[]> => page.evaluate(() => (window as unknown as { __vib: unknown[] }).__vib);
 
 // R74f1: the system clipboard is one for every Playwright worker, so a test that writes or reads it holds this lock
-// (an exclusive lock file under test-results) for its whole run. A lock left by a killed worker is taken over after 5 min.
+// (an exclusive lock file under test-results, holding its owner's pid and a nonce) for its whole run. A lock whose
+// owner process is dead (a killed worker) is taken over; a live owner is never overridden, however long it holds.
 const LOCK = resolve("test-results", "clipboard.lock");
-const LOCK_STALE_MS = 5 * 60_000;
 
-/** Wait for the clipboard lock and take it; returns the release function (safe to call twice). Throws once `timeoutMs`
- *  has passed without the lock, so a late acquisition can never happen after the caller gave up. */
+const alive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    return (e as NodeJS.ErrnoException).code === "EPERM";
+  }
+};
+
+/** Wait for the clipboard lock and take it; returns the release function (safe to call twice; it removes only its own
+ *  file). Throws once `timeoutMs` has passed without the lock, so a late acquisition never happens after the caller gave up. */
 export async function acquireClipboardLock(timeoutMs = 120_000): Promise<() => void> {
   mkdirSync(dirname(LOCK), { recursive: true });
   const deadline = Date.now() + timeoutMs;
+  const token = `${process.pid} ${Math.random().toString(36).slice(2)}`;
   for (;;) {
     try {
-      closeSync(openSync(LOCK, "wx"));
-      return () => rmSync(LOCK, { force: true });
+      writeFileSync(LOCK, token, { flag: "wx" });
+      return () => {
+        try {
+          if (readFileSync(LOCK, "utf8") === token) rmSync(LOCK, { force: true });
+        } catch {
+          /* already gone */
+        }
+      };
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
       try {
-        if (Date.now() - statSync(LOCK).mtimeMs > LOCK_STALE_MS) takeOverStale();
+        const pid = Number.parseInt(readFileSync(LOCK, "utf8"), 10);
+        if (Number.isInteger(pid) && !alive(pid)) takeOverDead(pid);
       } catch {
         /* released meanwhile */
       }
@@ -194,15 +211,15 @@ export async function acquireClipboardLock(timeoutMs = 120_000): Promise<() => v
   }
 }
 
-/** Remove a stale lock without racing another waiter: rename it away atomically (only one renamer gets a file), and if
- *  what was moved turns out fresh (another waiter had already replaced the stale one), link it back. */
-function takeOverStale(): void {
-  const mine = `${LOCK}.stale-${process.pid}-${Math.random().toString(36).slice(2)}`;
+/** Remove a lock whose owner `pid` is dead: rename it away (only one waiter gets the file) and, if it turns out to
+ *  belong to a live process after all, link it back. */
+function takeOverDead(pid: number): void {
+  const mine = `${LOCK}.dead-${process.pid}-${Math.random().toString(36).slice(2)}`;
   renameSync(LOCK, mine);
   try {
-    if (Date.now() - statSync(mine).mtimeMs <= LOCK_STALE_MS) linkSync(mine, LOCK);
+    if (Number.parseInt(readFileSync(mine, "utf8"), 10) !== pid) linkSync(mine, LOCK);
   } catch {
-    /* somebody took the lock meanwhile */
+    /* nothing to restore */
   } finally {
     rmSync(mine, { force: true });
   }

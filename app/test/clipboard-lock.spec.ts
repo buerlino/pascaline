@@ -19,7 +19,7 @@ test("a second acquire stays pending while the first holds the lock, and succeed
   } finally {
     release();
   }
-  (await acquireClipboardLock(5000))();
+  (await acquireClipboardLock())();
 });
 
 test.describe("workers", () => {
