@@ -150,7 +150,16 @@ red_first() {
   if [[ -n "${ids// /}" && $red -eq 0 && -z "$err" ]]; then
     ran=1; rc=0
     (cd "$scratch/app" && GIAC_OUT="$eng" ONLY="$stages" eval "${PASCALINE_REDFIRST_GOLDEN:-timeout 900 node scripts/golden.ts}") >> "$log" 2>&1 || rc=$?
-    if [[ $rc -ne 0 ]]; then for f in $ids; do grep -qF -- "$f" "$log" && red=1; done; fi
+    if [[ $rc -eq 0 ]]; then :
+    elif [[ $rc -eq 124 ]]; then err="stage error: golden timed out on phase-1"
+    elif ! grep -q 'GOLDEN GATE FAILED' "$log"; then err="stage error: golden exit $rc on phase-1 without GOLDEN GATE FAILED (engine or environment error?)"
+    else  # red only when a FAIL line of the stage names the id as a whole token (PASS lines of passing cases do not count)
+      local re
+      for f in $ids; do
+        re="$(sed 's/[][\.^$*+?(){}|\/-]/\\&/g' <<<"$f")"
+        grep -qE "^FAIL [A-Za-z0-9_-]+:(.*[^A-Za-z0-9_.-])?${re}([^A-Za-z0-9_.-]|$)" "$log" && red=1
+      done
+    fi
   fi
   rm -f "$scratch/app/node_modules"; git -C "$wt" worktree remove --force "$scratch" >/dev/null 2>&1 || rm -rf "$scratch"
   [[ -z "$err" ]] || { echo "$err"; return 1; }

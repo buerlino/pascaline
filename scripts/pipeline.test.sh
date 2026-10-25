@@ -320,7 +320,7 @@ git -C "$rf" checkout -q -b p1/crash phase-1; echo 'CRASHES' > "$rf/app/c.test.t
 git -C "$rf" checkout -q -b p1/g2 phase-1; printf -- '- id: old\n- id: newcase\n' > "$rf/tests/golden/g2.yaml"; git -C "$rf" add -A; gc "$rf" t
 git -C "$rf" checkout -q -b p1/home phase-1; printf -- '- id: old\n- id: newcase\n' > "$rf/tests/golden/home.yaml"; git -C "$rf" add -A; gc "$rf" t; git -C "$rf" checkout -q phase-1
 printf '#!/bin/sh\ngrep -q FAILS-ON-OLD "$@" && { echo " Test Files  1 failed (1)"; echo "      Tests  1 failed (1)"; exit 1; }\ngrep -q CRASHES "$@" && { echo "Error: cannot import"; exit 1; }\nexit 0\n' > "$tmp/fakevitest.sh"
-printf '#!/bin/sh\n[ "$ONLY" = home ] && [ -z "$GOLDEN_PASSES" ] && { echo "FAIL home:newcase"; exit 1; }\necho "ran ONLY=$ONLY" > "%s/golden-ran"; exit 0\n' "$tmp" > "$tmp/fakegolden.sh"; chmod +x "$tmp/fakevitest.sh" "$tmp/fakegolden.sh"
+printf '#!/bin/sh\n[ "$ONLY" = home ] && [ -z "$GOLDEN_PASSES" ] && { [ -n "$GOLDEN_OTHER" ] && { echo "FAIL home:other"; echo "PASS home:newcase"; echo "GOLDEN GATE FAILED"; exit 1; }; echo "FAIL home:newcase"; echo "GOLDEN GATE FAILED"; exit 1; }\necho "ran ONLY=$ONLY" > "%s/golden-ran"; exit 0\n' "$tmp" > "$tmp/fakegolden.sh"; chmod +x "$tmp/fakevitest.sh" "$tmp/fakegolden.sh"
 printf 'X, A1: tests failing on phase-1\n' > "$tmp/spec-red"; printf 'X, T1: a measurement\n' > "$tmp/spec-plain"
 rfwt() { git -C "$rf" worktree add -q "$tmp/rfwt-${1#p1/}" "$1" 2>/dev/null; echo "$tmp/rfwt-${1#p1/}"; }
 noscratch() { [[ "$(git -C "$rf" worktree list | wc -l)" -eq "$(( $(ls -d "$tmp"/rfwt-* 2>/dev/null | wc -l) + 1 ))" ]] || fail "A36: $1: a scratch worktree is left"; }
@@ -336,6 +336,8 @@ grep -q 'stage error' <<<"$out" || fail "A36: a vitest crash is not a stage erro
 # golden: a case id in a stage file runs that stage (ONLY=home) and a failing id is red; g2.yaml has no stage and is skipped
 w="$(rfwt p1/home)"; red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a golden case failing on phase-1 is refused"; noscratch golden-red
 out="$(GOLDEN_PASSES=1 red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log")" && fail "A36: a golden case passing on phase-1 passes the stage"
+out="$(GOLDEN_OTHER=1 red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log")" && fail "A36: another case failing while the new one passes counts as red"
+grep -q 'every new test passes on phase-1' <<<"$out" || fail "A36: no reason when only another golden case fails: $out"
 grep -q 'ONLY=home' "$tmp/golden-ran" || fail "A36: the golden stage run is not ONLY=home"; noscratch golden-green
 rm -f "$tmp/golden-ran"; w="$(rfwt p1/g2)"; red_first "$w" "$tmp/spec-red" "$tmp/eng" "$tmp/rf.log" >/dev/null || fail "A36: a g2.yaml case does not skip"
 [[ ! -e "$tmp/golden-ran" ]] || fail "A36: g2.yaml ran a golden stage"; noscratch g2
