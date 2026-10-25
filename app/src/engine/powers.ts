@@ -7,7 +7,7 @@ import { closing, isNameChar, opening } from "./giacPrint.ts";
 /** `t` without the brackets that enclose all of it. */
 function unwrap(t: string): string {
   let s = t.trim();
-  while (s.startsWith("(") && closing(s, 0) === s.length - 1) s = s.slice(1, -1).trim();
+  while (s.startsWith("(") && closing(s, 0, "typed") === s.length - 1) s = s.slice(1, -1).trim();
   return s;
 }
 
@@ -47,7 +47,7 @@ function rightOperand(s: string, at: number): [number, number] | null {
   while (s.charAt(k) === " ") k++;
   while (isNameChar(s.charAt(k)) || s.charAt(k) === ".") k++;
   if (s.charAt(k) === "(") {
-    const c = closing(s, k);
+    const c = closing(s, k, "typed");
     if (c < 0) return null;
     k = c + 1;
   }

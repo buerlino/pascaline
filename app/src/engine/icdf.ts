@@ -148,7 +148,7 @@ export const ICDF_DEFINITIONS: Readonly<Record<string, string>> = {
 
 /** The polished names `text` calls (outside strings). */
 export function icdfCalls(text: string): string[] {
-  return functionsIn(text).filter((f) => Object.hasOwn(ICDF_REPLACED, f));
+  return functionsIn(text, "typed").filter((f) => Object.hasOwn(ICDF_REPLACED, f));
 }
 
 /** `text` with every call of a polished name replaced by ours, and our definitions loaded on first use. */
@@ -157,7 +157,7 @@ export function icdfPolished(giac: Giac, text: string): string {
     // A defined function prints as its program; an undefined name prints as itself.
     if (giac.eval(name).trim() === name) giac.eval(def);
   }
-  return renameCalls(text, ICDF_REPLACED);
+  return renameCalls(text, ICDF_REPLACED, "typed");
 }
 
 /** The definitions erf and erfc are read through, loaded together: the last one stands for all. */

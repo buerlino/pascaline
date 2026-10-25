@@ -2,8 +2,10 @@
 // R64 (route R, decisions "S14"): the angle mode lives in the text our parser emits. Every command the user types that
 // takes an angle gets its angle times `pasdeg`, and every one that returns an angle gets its result over `pasdeg`;
 // the engine host sets `pasdeg` (Giac always runs in radians, G46: π/180 in DEG, 1 in RAD). The emitter (emit.ts) and
-// the rewrite of Giac text below (the library import, G46's migration) share these tables.
-// No imports: the engine side may use this file too.
+// the rewrite of Giac text below (the library import, G46's migration) share these tables. Giac text is read through
+// engine/giacPrint.ts (G105: one string skip, one bracket walk, one name pattern), which has no imports of its own, so
+// the engine side may use this file too.
+import { closing, firstNameIn, isNameChar, leadingName, mapNames, mapNumbers, names, opening, type Quoting, stringEnd, topLevelArgs, withoutStrings } from "../engine/giacPrint.ts";
 
 /** The engine name that holds the degree factor. Reserved: the parser and the library refuse it as a user name. */
 export const PASDEG = "pasdeg";
@@ -50,8 +52,8 @@ export const RECT_IN =
  * Giac text that is a number by itself: number literals and pi with + - * / ^ and brackets. Only then can the text
  * say an element of [r,t] is a scalar; a name or a call may hold a point (A:=[2,30]), so it goes through RECT_IN.
  */
-export function numericLiteral(text: string): boolean {
-  const rest = text.replace(/(?<![A-Za-z0-9_.])(\d+\.?\d*|\.\d+)(e[+-]?\d+)?(?![A-Za-z0-9_.])|(?<![A-Za-z0-9_])pi(?![A-Za-z0-9_])/gi, "0");
+export function numericLiteral(text: string, q: Quoting): boolean {
+  const rest = mapNames(mapNumbers(text, () => "0", q), (n) => (n.name.toLowerCase() === "pi" ? "0" : null), q);
   return /\d/.test(rest) && /^[0\s+\-*/^()]*$/.test(rest);
 }
 
@@ -65,90 +67,35 @@ export function withFactor(arg: string, atom: boolean): string {
   return atom ? `${PASDEG}*${arg}` : `${PASDEG}*(${arg})`;
 }
 
-/** Index of the bracket that closes the one at `open`, outside strings; -1 when there is none. */
-function closing(s: string, open: number): number {
-  let d = 0;
-  for (let k = open; k < s.length; k++) {
-    const c = s[k]!;
-    if (c === '"') {
-      const q = s.indexOf('"', k + 1);
-      if (q < 0) return -1;
-      k = q;
-    } else if (c === "(" || c === "[" || c === "{") d++;
-    else if ((c === ")" || c === "]" || c === "}") && --d === 0) return k;
-  }
-  return -1;
-}
-
-/** Index of the last ( in `s` that no later ) closes; -1 when there is none. Strings are not looked at. */
-function unmatchedOpen(s: string): number {
-  let d = 0;
-  for (let k = s.length - 1; k >= 0; k--) {
-    const c = s[k]!;
-    if (c === ")" || c === "]" || c === "}") d++;
-    else if (c === "(" || c === "[" || c === "{") {
-      if (d === 0) return c === "(" ? k : -1;
-      d--;
-    }
-  }
-  return -1;
-}
-
-/** The top-level arguments of a call's inner text. */
-function splitArgs(s: string): string[] {
-  const parts: string[] = [];
-  let d = 0;
-  let start = 0;
-  for (let k = 0; k < s.length; k++) {
-    const c = s[k]!;
-    if (c === '"') {
-      const q = s.indexOf('"', k + 1);
-      if (q < 0) break;
-      k = q;
-    } else if (c === "(" || c === "[" || c === "{") d++;
-    else if (c === ")" || c === "]" || c === "}") d--;
-    else if (c === "," && d === 0) {
-      parts.push(s.slice(start, k));
-      start = k + 1;
-    }
-  }
-  parts.push(s.slice(start));
-  return parts;
-}
-
-const CALL = /([A-Za-z_][A-Za-z0-9_]*)\s*\(/y;
 /** The ° factor as R10 wrote it (R64 put `/pasdeg` after it); Giac now always runs in radians, so it is pi/180. */
 const OLD_DEGREES = "(pi/180)^angle_radian()";
 
 /** A literal point `[r,t]` (two elements, each a numeric literal): its elements, else undefined. */
-function literalPoint(arg: string): [string, string] | undefined {
-  if (!arg.startsWith("[") || closing(arg, 0) !== arg.length - 1) return undefined;
-  const parts = splitArgs(arg.slice(1, -1));
-  if (parts.length !== 2 || !parts.every(numericLiteral)) return undefined;
+function literalPoint(arg: string, q: Quoting): [string, string] | undefined {
+  if (!arg.startsWith("[") || closing(arg, 0, q) !== arg.length - 1) return undefined;
+  const parts = topLevelArgs(arg.slice(1, -1), q);
+  if (parts.length !== 2 || !parts.every((p) => numericLiteral(p, q))) return undefined;
   return [parts[0]!, parts[1]!];
 }
 
+/** `text` with every string blanked (same length), so a search outside strings finds the same index. */
+function bare(text: string, q: Quoting): string {
+  return withoutStrings(text, (x) => " ".repeat(x.length), q);
+}
+
 /** R64's form `(pi/180)^angle_radian()/pasdeg` as `pi/180/pasdeg` after a `*`, else `(pi/180)/pasdeg`. */
-function newDegrees(text: string): string {
+function newDegrees(text: string, q: Quoting): string {
   const old = `${OLD_DEGREES}/${PASDEG}`;
+  const t = bare(text, q);
   let out = "";
   let i = 0;
-  while (i < text.length) {
-    const c = text[i]!;
-    if (c === '"') {
-      const q = text.indexOf('"', i + 1);
-      const j = q < 0 ? text.length : q + 1;
-      out += text.slice(i, j);
-      i = j;
-    } else if (text.startsWith(old, i) && !/[A-Za-z0-9_]/.test(text[i + old.length] ?? "")) {
-      out += out.endsWith("*") ? DEGREE : `(pi/180)/${PASDEG}`;
-      i += old.length;
-    } else {
-      out += c;
-      i++;
-    }
+  for (let k = t.indexOf(old); k >= 0; k = t.indexOf(old, k + 1)) {
+    if (k < i || isNameChar(text.charAt(k + old.length))) continue;
+    out += text.slice(i, k);
+    out += out.endsWith("*") ? DEGREE : `(pi/180)/${PASDEG}`;
+    i = k + old.length;
   }
-  return out;
+  return out + text.slice(i);
 }
 
 /**
@@ -158,67 +105,51 @@ function newDegrees(text: string): string {
  * `(pi/180)^angle_radian()` becomes DEGREE (bracketed unless it follows a `*`). Text that already holds `pasdeg` gets
  * only R64's ° form brought to DEGREE, so the rewrite never applies twice. Strings are left alone.
  */
-export function rewriteAngles(text: string): string {
-  if (new RegExp(`(?<![A-Za-z0-9_])${PASDEG}(?![A-Za-z0-9_])`).test(text)) return newDegrees(text);
-  return rewrite(text);
+export function rewriteAngles(text: string, q: Quoting): string {
+  return hasAngleFactor(text, q) ? newDegrees(text, q) : rewrite(text, q);
 }
 
-function rewrite(text: string): string {
+function rewrite(text: string, q: Quoting): string {
+  const t = bare(text, q);
   let out = "";
   let i = 0;
-  while (i < text.length) {
-    const c = text[i]!;
-    if (c === '"') {
-      const q = text.indexOf('"', i + 1);
-      const j = q < 0 ? text.length : q + 1;
-      out += text.slice(i, j);
-      i = j;
-      continue;
-    }
-    if (text.startsWith(OLD_DEGREES, i)) {
-      i += OLD_DEGREES.length;
+  // text up to `to` as it is, but R10's ° factor (outside strings) as DEGREE
+  const copy = (to: number): void => {
+    for (let k = t.indexOf(OLD_DEGREES, i); k >= 0 && k < to; k = t.indexOf(OLD_DEGREES, i)) {
+      out += text.slice(i, k);
+      i = k + OLD_DEGREES.length;
       out += out.endsWith("*") && text[i] !== "^" ? DEGREE : `(${DEGREE})`;
-      continue;
     }
-    if (/[A-Za-z_]/.test(c)) {
-      CALL.lastIndex = i;
-      const m = CALL.exec(text);
-      const name = m?.[1];
-      const open = m ? i + m[0].length - 1 : -1;
-      const close = m ? closing(text, open) : -1;
-      const inSpec = name !== undefined ? ANGLE_IN[name] : undefined;
-      if (name !== undefined && close > 0 && (inSpec || ANGLE_OUT.has(name) || name === POLAR)) {
-        const args = splitArgs(text.slice(open + 1, close)).map(rewrite);
-        if (inSpec && args.length > inSpec[0] && (inSpec[1] === 0 || args.length === inSpec[1])) {
-          args[inSpec[0]] = withFactor(args[inSpec[0]]!.trim(), false);
-        } else if (name === RECT && args.length === 1) {
-          const a = args[0]!.trim();
-          const p = literalPoint(a);
-          args[0] = rectArg(a, p && [p[0], withFactor(p[1].trim(), false)]);
-        }
-        const call = `${text.slice(i, open + 1)}${args.join(",")})`;
-        out += ANGLE_OUT.has(name) ? `(${call}/${PASDEG})` : name === POLAR ? `${POLAR_OUT}(${call})` : call;
-        i = close + 1;
-        continue;
-      }
-      const w = /[A-Za-z_0-9]+/y;
-      w.lastIndex = i;
-      const word = w.exec(text)![0];
-      out += word;
-      i += word.length;
-      continue;
+    if (to > i) out += text.slice(i, to);
+    i = Math.max(i, to);
+  };
+  for (const { name, at, call, open } of names(text, q)) {
+    const inSpec = Object.hasOwn(ANGLE_IN, name) ? ANGLE_IN[name] : undefined;
+    if (at < i || !call || !(inSpec || ANGLE_OUT.has(name) || name === POLAR)) continue;
+    const close = closing(text, open, q);
+    if (close < 0) continue;
+    copy(at);
+    const args = topLevelArgs(text.slice(open + 1, close), q).map((a) => rewrite(a, q));
+    if (inSpec && args.length > inSpec[0] && (inSpec[1] === 0 || args.length === inSpec[1])) {
+      args[inSpec[0]] = withFactor(args[inSpec[0]]!.trim(), false);
+    } else if (name === RECT && args.length === 1) {
+      const a = args[0]!.trim();
+      const p = literalPoint(a, q);
+      args[0] = rectArg(a, p && [p[0], withFactor(p[1].trim(), false)]);
     }
-    out += c;
-    i++;
+    const c = `${text.slice(at, open + 1)}${args.join(",")})`;
+    out += ANGLE_OUT.has(name) ? `(${c}/${PASDEG})` : name === POLAR ? `${POLAR_OUT}(${c})` : c;
+    i = close + 1;
   }
+  copy(text.length);
   return out;
 }
 
-const FACTOR = new RegExp(`(?<![A-Za-z0-9_])${PASDEG}(?![A-Za-z0-9_])`);
+const FACTOR: ReadonlySet<string> = new Set([PASDEG]);
 
-/** The text holds the degree factor. */
-export function hasAngleFactor(text: string): boolean {
-  return FACTOR.test(text);
+/** The text holds the degree factor (as a name, outside strings). */
+export function hasAngleFactor(text: string, q: Quoting): boolean {
+  return firstNameIn(text, FACTOR, q) !== null;
 }
 
 /**
@@ -227,36 +158,36 @@ export function hasAngleFactor(text: string): boolean {
  * `POLAR_OUT(polar_coordinates(z))`, `L` for `RECT_IN(L)`. Only for display: a chip, Ans
  * and a stored function keep the factor, so they follow the mode when used again.
  */
-export function dropAngleFactor(text: string): string {
-  if (!hasAngleFactor(text)) return text;
+export function dropAngleFactor(text: string, q: Quoting): string {
+  if (!hasAngleFactor(text, q)) return text;
   let out = "";
   let i = 0;
   const mul = `${PASDEG}*`;
   const div = `/${PASDEG}`;
-  const free = (k: number): boolean => k >= text.length || !/[A-Za-z0-9_]/.test(text[k]!);
-  const bound = (k: number): boolean => k <= 0 || !/[A-Za-z0-9_]/.test(text[k - 1]!);
+  const free = (k: number): boolean => !isNameChar(text.charAt(k));
+  const bound = (k: number): boolean => !isNameChar(text.charAt(k - 1));
   while (i < text.length) {
     const c = text[i]!;
     if (c === '"') {
-      const q = text.indexOf('"', i + 1);
-      const j = q < 0 ? text.length : q + 1;
+      const e = stringEnd(text, i, q);
+      const j = e < 0 ? text.length : e + 1;
       out += text.slice(i, j);
       i = j;
       continue;
     }
     const wrapper = text.startsWith(`${POLAR_OUT}(`, i) ? POLAR_OUT : text.startsWith(`${RECT_IN}(`, i) ? RECT_IN : "";
-    const end = wrapper ? closing(text, i + wrapper.length) : -1;
+    const end = wrapper ? closing(text, i + wrapper.length, q) : -1;
     if (end > 0) {
-      out += dropAngleFactor(text.slice(i + wrapper.length + 1, end));
+      out += dropAngleFactor(text.slice(i + wrapper.length + 1, end), q);
       i = end + 1;
       continue;
     }
     if (bound(i) && text.startsWith(mul, i)) {
       const at = i + mul.length;
-      const close = text[at] === "(" ? closing(text, at) : -1;
+      const close = text[at] === "(" ? closing(text, at, q) : -1;
       // the whole argument in brackets: the brackets go with the factor (sin(pasdeg*(x+1)) -> sin(x+1))
       if (close > 0 && /[(,]$/.test(out) && /^[),]/.test(text.slice(close + 1))) {
-        out += dropAngleFactor(text.slice(at + 1, close));
+        out += dropAngleFactor(text.slice(at + 1, close), q);
         i = close + 1;
       } else i = at;
       continue;
@@ -264,10 +195,12 @@ export function dropAngleFactor(text: string): string {
     if (text.startsWith(div, i) && free(i + div.length)) {
       i += div.length;
       // `(asin(x)/pasdeg)^2`: the grouping bracket was there for the factor only, so it goes too
-      const open = text[i] === ")" ? unmatchedOpen(out) : -1;
-      const inner = open >= 0 ? out.slice(open + 1) : "";
-      const call = /^[A-Za-z_][A-Za-z0-9_]*\(/.exec(inner);
-      if (call && !/[A-Za-z0-9_]/.test(out[open - 1] ?? "") && closing(inner, call[0].length - 1) === inner.length - 1) {
+      // the bracket the `)` closes (`out` is read back over, its strings not looked at, as Giac never prints one here)
+      const open = text[i] === ")" ? opening(`${out})`, out.length) : -1;
+      const inner = open >= 0 && out.charAt(open) === "(" ? out.slice(open + 1) : "";
+      const name = leadingName(inner, false);
+      const call = name !== null && inner.startsWith(`${name}(`);
+      if (call && !isNameChar(out.charAt(open - 1)) && closing(inner, name.length, q) === inner.length - 1) {
         out = out.slice(0, open) + inner;
         i++;
       }

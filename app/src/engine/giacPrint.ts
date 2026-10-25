@@ -12,7 +12,7 @@
 export type Quoting = "typed" | "printed";
 
 /** The index of the quote that closes the string whose opening quote is at `open`; -1 when none does. */
-export function stringEnd(s: string, open: number, q: Quoting = "typed"): number {
+export function stringEnd(s: string, open: number, q: Quoting): number {
   for (let k = open + 1; k < s.length; k++) {
     const c = s.charAt(k);
     if (c === '"') return k;
@@ -22,7 +22,7 @@ export function stringEnd(s: string, open: number, q: Quoting = "typed"): number
 }
 
 /** `s` with every string (its quotes included; an unclosed one runs to the end) replaced by `by`, or by `by` of it. */
-export function withoutStrings(s: string, by: string | ((str: string) => string) = '""', q: Quoting = "typed"): string {
+export function withoutStrings(s: string, by: string | ((str: string) => string), q: Quoting): string {
   let out = "";
   let i = 0;
   for (let k = s.indexOf('"'); k >= 0; k = s.indexOf('"', i)) {
@@ -45,7 +45,7 @@ export const UNCLOSED = -2;
  * brackets `(`, `[`, `{` open around it (an opener counts itself, a closer does not: `f(x)` walks f 0, ( 1, x 1, ) 0).
  * Stops where `visit` returns true and gives that index; -1 at the end; UNCLOSED at a string that does not close.
  */
-export function walk(s: string, from: number, visit: (k: number, depth: number, ch: string) => boolean | void, q: Quoting = "typed"): number {
+export function walk(s: string, from: number, visit: (k: number, depth: number, ch: string) => boolean | void, q: Quoting): number {
   let depth = 0;
   for (let k = from; k < s.length; k++) {
     const ch = s.charAt(k);
@@ -63,7 +63,7 @@ export function walk(s: string, from: number, visit: (k: number, depth: number, 
 }
 
 /** Index of the bracket that closes the one at `open` (`(`, `[` or `{`), skipping strings; -1 when there is none. */
-export function closing(s: string, open: number, q: Quoting = "typed"): number {
+export function closing(s: string, open: number, q: Quoting): number {
   return Math.max(-1, walk(s, open, (_k, d, ch) => d === 0 && CLOSERS.includes(ch), q));
 }
 
@@ -79,7 +79,7 @@ export function opening(s: string, close: number): number {
 }
 
 /** The top-level comma-separated parts of an argument list (an unclosed string runs to the end). */
-export function topLevelArgs(s: string, q: Quoting = "typed"): string[] {
+export function topLevelArgs(s: string, q: Quoting): string[] {
   const out: string[] = [];
   let start = 0;
   walk(s, 0, (k, d, ch) => {
@@ -93,7 +93,7 @@ export function topLevelArgs(s: string, q: Quoting = "typed"): string[] {
 }
 
 /** Every bracket closes, none below depth 0, and every string closes. */
-export function balanced(s: string, q: Quoting = "typed"): boolean {
+export function balanced(s: string, q: Quoting): boolean {
   let last = 0;
   const end = walk(s, 0, (_k, d) => {
     last = d;
@@ -103,7 +103,7 @@ export function balanced(s: string, q: Quoting = "typed"): boolean {
 }
 
 /** No bracket stays open (a closer too many is allowed): a block of lines read so far may end here. */
-export function noneOpen(s: string, q: Quoting = "typed"): boolean {
+export function noneOpen(s: string, q: Quoting): boolean {
   let last = 0;
   walk(s, 0, (_k, d) => void (last = d), q);
   return last <= 0;
@@ -233,7 +233,7 @@ const ANY_NAME = new RegExp(NAME, "g");
 
 /** Every name in `s` in order (strings and the exponents of number literals are skipped), with whether it is called
  *  (`(` follows it) and where it starts. */
-export function* names(s: string, q: Quoting = "typed"): Generator<{ name: string; at: number; call: boolean; open: number }> {
+export function* names(s: string, q: Quoting): Generator<{ name: string; at: number; call: boolean; open: number }> {
   const t = withoutStrings(s, (x) => " ".repeat(x.length), q);
   // Number literals first, so the exponent of 2e5 is not read as a name.
   const re = new RegExp(`(?:\\d+\\.?\\d*|\\.\\d+)(?:[eE][+-]?\\d+)?|(${NAME})(\\s*\\()?`, "g");
@@ -244,14 +244,14 @@ export function* names(s: string, q: Quoting = "typed"): Generator<{ name: strin
 }
 
 /** The first name of `set` in `s` (called or not; strings skipped), or null. */
-export function firstNameIn(s: string, set: ReadonlySet<string>): string | null {
-  for (const n of names(s)) if (set.has(n.name)) return n.name;
+export function firstNameIn(s: string, set: ReadonlySet<string>, q: Quoting): string | null {
+  for (const n of names(s, q)) if (set.has(n.name)) return n.name;
   return null;
 }
 
 /** The calls in `s` (of `only` when given), in order: name, where it starts, its `(` and its `)` (-1 when it does not
  *  close). */
-export function callsOf(s: string, only?: ReadonlySet<string> | readonly string[], q: Quoting = "typed"): { name: string; at: number; open: number; close: number }[] {
+export function callsOf(s: string, only: ReadonlySet<string> | readonly string[] | undefined, q: Quoting): { name: string; at: number; open: number; close: number }[] {
   const want = only === undefined ? null : new Set(only);
   const out: { name: string; at: number; open: number; close: number }[] = [];
   for (const n of names(s, q)) {
@@ -262,7 +262,7 @@ export function callsOf(s: string, only?: ReadonlySet<string> | readonly string[
 }
 
 /** `text` with every name replaced by `f` of it where `f` gives a text (strings skipped). */
-export function mapNames(text: string, f: (n: { name: string; at: number; call: boolean }) => string | null, q: Quoting = "typed"): string {
+export function mapNames(text: string, f: (n: { name: string; at: number; call: boolean }) => string | null, q: Quoting): string {
   let out = "";
   let i = 0;
   for (const n of names(text, q)) {
@@ -275,18 +275,18 @@ export function mapNames(text: string, f: (n: { name: string; at: number; call: 
 }
 
 /** `text` with the name of every call of a key of `to` replaced by its value (`erf(` → `paserf(`). */
-export function renameCalls(text: string, to: Readonly<Record<string, string>>, q: Quoting = "typed"): string {
+export function renameCalls(text: string, to: Readonly<Record<string, string>>, q: Quoting): string {
   return mapNames(text, (n) => (n.call && Object.hasOwn(to, n.name) ? to[n.name]! : null), q);
 }
 
 /** `text` with every name that is a key of `to` (called or not; not after a `.`) replaced by its value. */
-export function renameNames(text: string, to: ReadonlyMap<string, string>, q: Quoting = "typed"): string {
+export function renameNames(text: string, to: ReadonlyMap<string, string>, q: Quoting): string {
   return mapNames(text, (n) => (text.charAt(n.at - 1) !== "." ? (to.get(n.name) ?? null) : null), q);
 }
 
 /** `text` with every number literal (`12`, `2.5`, `.5`, `1e-3`, `1.2E5`; not inside a name, `x1`, `0x1F`, nor a
  *  string) replaced by `f` of its mantissa and exponent part (`e-3`, or undefined) where `f` gives a text. */
-export function mapNumbers(text: string, f: (mant: string, exp: string | undefined) => string | null, q: Quoting = "typed"): string {
+export function mapNumbers(text: string, f: (mant: string, exp: string | undefined) => string | null, q: Quoting): string {
   const t = withoutStrings(text, (x) => " ".repeat(x.length), q);
   const re = new RegExp(`${NAME}|(\\d+\\.\\d*|\\.\\d+|\\d+)([eE][+-]?\\d+)?`, "g");
   let out = "";
@@ -316,26 +316,26 @@ export function replaceLiteral(text: string, lit: string, by: string): string {
 }
 
 /** Names called in a Giac text (`romberg(exp(-x^2),x,0,1)` → romberg, exp). Strings are skipped (as `q` writes them). */
-export function functionsIn(input: string, q: Quoting = "typed"): string[] {
+export function functionsIn(input: string, q: Quoting): string[] {
   const out: string[] = [];
   for (const n of names(input, q)) if (n.call && !out.includes(n.name)) out.push(n.name);
   return out;
 }
 
 /** Names in a Giac text that are not called (`B*2+f(x)` → B, x). Strings are skipped (as `q` writes them). */
-export function namesIn(input: string, q: Quoting = "typed"): string[] {
+export function namesIn(input: string, q: Quoting): string[] {
   const out: string[] = [];
   for (const n of names(input, q)) if (!n.call && !out.includes(n.name)) out.push(n.name);
   return out;
 }
 
 /** The arguments of `text` when all of it is one call of `name` (`purge(a,b)` → ["a", "b"]); null otherwise. */
-export function wholeCall(text: string, name: string): string[] | null {
+export function wholeCall(text: string, name: string, q: Quoting): string[] | null {
   const t = text.trim();
-  const c = callsOf(t, [name])[0];
+  const c = callsOf(t, [name], q)[0];
   if (!c || c.at !== 0 || c.close !== t.length - 1) return null;
   const open = c.open;
-  return topLevelArgs(t.slice(open + 1, -1)).map((a) => a.trim());
+  return topLevelArgs(t.slice(open + 1, -1), q).map((a) => a.trim());
 }
 
 /** The text after `name:=` when `text` starts with it (spaces allowed around `name`), or null. */

@@ -3,7 +3,7 @@
 // formatted string into LaTeX for the 2D renderer: an exponent part becomes a raised power of ten.
 
 import type { FormattedComplex, FormattedFraction, FormattedNumber, FormattedPolar } from "../engine/format.ts";
-import { balanced } from "../engine/giacPrint.ts";
+import { balanced, mapNames } from "../engine/giacPrint.ts";
 
 function part(f: FormattedNumber): string {
   // PFX: a thin space, then the prefix in the accent colour (docs/04 2.7); .pfx is styled in Math.svelte
@@ -36,11 +36,21 @@ export function polarToLatex(p: FormattedPolar): string {
 /** The Greek variable names as Giac prints them (input/parse.ts GREEK, R18; beta_, gamma_, Gamma_, epsilon_, Phi_,
  *  Psi_ stand in for names Giac keeps), and the letter each one is drawn as. Kept here, not imported, so the parser
  *  stays lazy. */
-const GREEK_NAME =
-  /(?<![A-Za-z0-9_\\])(alpha|beta_|gamma_|delta|epsilon_|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|rho|sigma|tau|phi|chi|psi|omega|Gamma_|Delta|Theta|Lambda|Sigma|Phi_|Psi_|Omega)(?![A-Za-z0-9_])/g;
+const GREEK_NAMES: ReadonlySet<string> = new Set([
+  "alpha", "beta_", "gamma_", "delta", "epsilon_", "zeta", "eta", "theta", "iota", "kappa", "lambda", "mu", "nu", "xi", "rho", "sigma",
+  "tau", "phi", "chi", "psi", "omega", "Gamma_", "Delta", "Theta", "Lambda", "Sigma", "Phi_", "Psi_", "Omega",
+]);
 const greekLetter = (name: string): string => {
   const n = name.replace(/_$/, "");
   return `\\${n === "epsilon" ? "varepsilon" : n === "phi" ? "varphi" : n} `;
+};
+/** G105f1: the names of Giac's print drawn as LaTeX (giacPrint.ts names: whole names, strings skipped): a Greek name
+ *  as its letter, `x_1` with its subscript, `inf` and `infinity` (Giac prints ∞, R18: Shift + 9, as +infinity) as ∞. */
+const nameLatex = ({ name }: { name: string }): string | null => {
+  if (GREEK_NAMES.has(name)) return greekLetter(name);
+  if (name === "inf" || name === "infinity") return "\\infty";
+  const sub = name.charAt(0) !== "_" && name.charAt(1) === "_" && name.length > 2 && !name.slice(2).includes("_") ? name : "";
+  return sub ? `${sub.charAt(0)}_{${sub.slice(2)}}` : null;
 };
 
 /** R18f1: an equality test that stays as typed is printed `(x==2)` or `x<>2`; drawn as x==2 and x≠2. */
@@ -55,13 +65,9 @@ export function homeResultToLatex(display: string): string {
   const s = relationText(display.trim());
   const sci = /^([+-]?\d+(?:\.\d+)?)\s*(?:E|e|×10\^)\s*([+-]?\d+)$/.exec(s);
   if (sci) return `${sci[1]}\\times10^{${sci[2]}}`;
-  return s
-    .replace(GREEK_NAME, greekLetter)
+  return mapNames(s, nameLatex, "printed")
     .replace(/\*i\b/g, "\\mathrm{i}")
     .replace(/(\d)\s*i\b/g, "$1\\mathrm{i}")
     .replace(/(^|[+-])i\b/g, "$1\\mathrm{i}")
-    .replace(/\*/g, "\\cdot ")
-    .replace(/\binf\b/g, "\\infty")
-    .replace(/\binfinity\b/g, "\\infty") // Giac prints ∞ (R18: Shift + 9) as +infinity
-    .replace(/\b([A-Za-z])_([A-Za-z0-9]+)\b/g, "$1_{$2}");
+    .replace(/\*/g, "\\cdot ");
 }

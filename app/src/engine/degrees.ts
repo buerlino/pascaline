@@ -23,7 +23,7 @@ function isError(out: string): boolean {
 /** The text needs the DEG display rule: it calls a trig function or an inverse, and holds no degree factor (a function
  *  body keeps `pasdeg`, so it follows the mode at call time and is drawn without it, R64). */
 export function needsDegrees(text: string): boolean {
-  return callsOf(text, NAMES, "printed").length > 0 && !hasAngleFactor(text) && !text.includes('"');
+  return callsOf(text, NAMES, "printed").length > 0 && !hasAngleFactor(text, "printed") && !text.includes('"');
 }
 
 /**

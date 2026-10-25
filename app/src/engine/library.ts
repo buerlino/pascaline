@@ -54,13 +54,13 @@ export class LibError extends Error {
 
 /** Top-level ";" (outside brackets, braces and strings) with something after it: a second statement. */
 function topLevelSemicolon(s: string): boolean {
-  return walk(s, 0, (k, d, c) => c === ";" && d === 0 && s.slice(k + 1).trim() !== "") >= 0;
+  return walk(s, 0, (k, d, c) => c === ";" && d === 0 && s.slice(k + 1).trim() !== "", "typed") >= 0;
 }
 
 /** A function command's head as typed (`f(x,y)` of `f(x,y):=…`), when its parameters hold no `(`. */
 function fnHead(cmd: string): string | null {
   const t = cmd.trimStart();
-  const c = callsOf(t)[0];
+  const c = callsOf(t, undefined, "typed")[0];
   if (!c || c.at !== 0 || !isName(c.name, true) || c.close < 0 || t.slice(c.open + 1, c.close).includes("(")) return null;
   return t.slice(0, c.close + 1);
 }
@@ -142,9 +142,9 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
     // A definition: this line, plus the following ones while a bracket is open or the line is indented / a closing bracket.
     const start = i;
     let block = raw;
-    while (i + 1 < rest.length && (!noneOpen(block) || /^(\s+\S|[}\]\)])/.test(rest[i + 1]!))) block += "\n" + rest[++i];
+    while (i + 1 < rest.length && (!noneOpen(block, "typed") || /^(\s+\S|[}\]\)])/.test(rest[i + 1]!))) block += "\n" + rest[++i];
     const at = start + 2;
-    if (!noneOpen(block)) throw new LibError(at, "a bracket is never closed");
+    if (!noneOpen(block, "typed")) throw new LibError(at, "a bracket is never closed");
     if (topLevelSemicolon(block)) throw new LibError(at, "one definition per block: a second statement follows `;`");
     const tree = readable(parse(asGiac(block)));
     const def = definitionOf(block, tree);
@@ -166,7 +166,7 @@ export function parseLibrary(input: Uint8Array | string, parse: (text: string) =
     if (isFlagName(def.name)) throw new LibError(at, `${def.name} is one of the engine's settings, which a library may not change`);
     if (def.name in ENGINE_DEFINITIONS || def.name in COMPLEX_DEFINITIONS || WORKER_DEFINITION_NAMES.includes(def.name) || def.name.startsWith("pasc_") || def.name === PASDEG || def.name.endsWith("_")) throw new LibError(at, `${def.name} is one of Pascaline's own names`);
     // R64: the degree factor is ours; a body that names it (a `local pasdeg`, say) would change every angle in it
-    if ([...names(block)].some((n) => n.name === PASDEG)) throw new LibError(at, `${PASDEG} is one of Pascaline's own names`);
+    if ([...names(block, "typed")].some((n) => n.name === PASDEG)) throw new LibError(at, `${PASDEG} is one of Pascaline's own names`);
     if (defs.some((d) => d.name === def.name)) throw new LibError(at, `${def.name} is defined twice in this file`);
     if (!lastComment || lastComment.line !== at - 1) throw new LibError(at, `${def.name} needs its one-line description on the line above`);
     if (lastComment.text.length > DESC_MAX) throw new LibError(lastComment.line, `the description is over ${DESC_MAX} characters`);
@@ -230,7 +230,7 @@ function fail(error: string, line: number, extra: Partial<Extract<ImportResult, 
 /** G54, G46: library text is the user's, in radians: our names for Giac's functions (ourNames.ts) and the degree factor
  *  go in before Giac sees it, as the parser does for typed input. */
 export function asGiac(text: string): string {
-  return rewriteAngles(renameOurCalls(text));
+  return rewriteAngles(renameOurCalls(text), "typed");
 }
 
 /** One `// pascaline library` import into an engine that holds `log`. Checks the rest against the engine (built-in
@@ -340,7 +340,7 @@ export function exportLibrary(log: readonly DefEntry[]): { text: string; skipped
       continue;
     }
     // G46: the file is in radians, as typed: a body is written without our degree factor (the import puts it in)
-    out.push("", `// ${describe(e)}`, e.cmds.map((c) => writeUserNames(dropAngleFactor(c))).join("\n"));
+    out.push("", `// ${describe(e)}`, e.cmds.map((c) => writeUserNames(dropAngleFactor(c, "printed"))).join("\n"));
   }
   return { text: out.join("\n") + "\n", skipped };
 }

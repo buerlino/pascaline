@@ -90,7 +90,7 @@ export function readsFacts(host: FactsHost, reads: InputReads): { facts: NameFac
  * purge, assume): those read names without showing a value from them.
  */
 export function readFacts(host: FactsHost, input: string, reads: InputReads): { facts: NameFacts; causes: string[] } | null {
-  if (reads.fn || callsOf(input.trimStart(), ["purge", "assume", "additionally"])[0]?.at === 0) return null;
+  if (reads.fn || callsOf(input.trimStart(), ["purge", "assume", "additionally"], "typed")[0]?.at === 0) return null;
   const used = usedBy(host, reads);
   const facts = mergedFacts(used.map((u) => u.facts));
   if (!facts) return null;

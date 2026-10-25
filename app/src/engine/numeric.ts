@@ -29,7 +29,7 @@ import {
 } from "./format.ts";
 import { ICDF_DIGITS, ICDF_FAILED, erfValueText, icdfCalls, icdfPolished } from "./icdf.ts";
 import type { GiacValue } from "./bridge.ts";
-import { callsOf, functionsIn, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
+import { callsOf, functionsIn, type Quoting, splitList, topLevelArgs, wholeCall } from "./giacPrint.ts";
 import { complexReads, complexReplacedIn, complexSafe, forValue, nonReal, purgeReads } from "./complex.ts";
 
 export interface Giac {
@@ -141,10 +141,10 @@ export function isLiteral(n: string): boolean {
 export function mapPrecisions(input: string, f: (n: string) => string | null): string {
   let out = "";
   let i = 0;
-  for (const c of callsOf(input, PRECISION_FNS)) {
+  for (const c of callsOf(input, PRECISION_FNS, "typed")) {
     if (c.at < i) continue;
     if (c.close < 0) return out + input.slice(i);
-    const args = topLevelArgs(input.slice(c.open + 1, c.close));
+    const args = topLevelArgs(input.slice(c.open + 1, c.close), "typed");
     const n = args.length === 2 ? f(args[1]!) : null;
     out += input.slice(i, c.open + 1);
     out += n !== null ? `${mapPrecisions(args[0]!, f)},${n}` : mapPrecisions(input.slice(c.open + 1, c.close), f);
@@ -182,7 +182,7 @@ export const MAX_ASKED_DIGITS = 1000;
 /** n when the whole input is `evalf(e,n)` or `approx(e,n)` with an integer literal 1 ≤ n ≤ MAX_ASKED_DIGITS: the
  *  digits CAS shows the result with (decisions M4-6); null otherwise. */
 export function askedDigits(input: string): number | null {
-  const args = wholeCall(input, "evalf") ?? wholeCall(input, "approx");
+  const args = wholeCall(input, "evalf", "typed") ?? wholeCall(input, "approx", "typed");
   if (!args || args.length !== 2 || !isLiteral(args[1]!)) return null;
   const n = parseInt(args[1]!, 10);
   return n >= 1 && n <= MAX_ASKED_DIGITS ? n : null;
@@ -191,12 +191,12 @@ export function askedDigits(input: string): number | null {
 /** Why the facts of a float result carry a warning (`why` of HomeResult); undefined when nothing is to be said.
  *  `expr`: the input as it was run again, null when it could not be (a value evaluated once). */
 export function whyOf(facts: readonly ElementFacts[], expr: string | null): PrecisionWhy | undefined {
-  const off = expr !== null && facts.some((f) => f.warn === "unaudited") ? unauditedIn(expr) : [];
+  const off = expr !== null && facts.some((f) => f.warn === "unaudited") ? unauditedIn(expr, "typed") : [];
   // Every name audited but the facts unaudited: a non-real value of a function COMPLEX_DEFINITIONS replaces, not read
   // through ours (DEG, or a stored name: complexReads).
   const complex = [...new Set(facts.flatMap((f) => f.complexFns ?? []))];
   const unaudited =
-    off.length || !facts.some((f) => f.warn === "unaudited") ? off : complex.length ? complex : expr === null ? [] : complexReplacedIn(expr);
+    off.length || !facts.some((f) => f.warn === "unaudited") ? off : complex.length ? complex : expr === null ? [] : complexReplacedIn(expr, "typed");
   const once = facts.some((f) => f.warn === "unchecked" && !(isZero(f.value.re) && isZero(f.value.im))) || (expr === null && facts.some((f) => f.warn));
   if (!unaudited.length && !once) return undefined;
   return { ...(unaudited.length ? { unaudited } : {}), ...(once ? { once: true } : {}) };
@@ -211,23 +211,23 @@ export function whyOf(facts: readonly ElementFacts[], expr: string | null): Prec
 const DOUBLE_FORMS: Readonly<Record<string, number>> = { round: 2, trunc: 2 };
 
 /** The names of the DOUBLE_FORMS calls in `input` (`round(x,5)` → round; `round(x)` → none). Strings are skipped. */
-export function doubleFormsIn(input: string): string[] {
+export function doubleFormsIn(input: string, q: Quoting): string[] {
   const out: string[] = [];
-  for (const { name, open, close } of callsOf(input, Object.keys(DOUBLE_FORMS))) {
-    if (!out.includes(name) && close >= 0 && topLevelArgs(input.slice(open + 1, close)).length === DOUBLE_FORMS[name]) out.push(name);
+  for (const { name, open, close } of callsOf(input, Object.keys(DOUBLE_FORMS), q)) {
+    if (!out.includes(name) && close >= 0 && topLevelArgs(input.slice(open + 1, close), q).length === DOUBLE_FORMS[name]) out.push(name);
   }
   return out;
 }
 
 /** The functions of `input` that are not audited: off AUDITED_FUNCTIONS, or called in a DOUBLE_FORMS form. */
-export function unauditedIn(input: string): string[] {
-  return [...new Set([...functionsIn(input).filter((f) => !AUDITED_FUNCTIONS.has(f)), ...doubleFormsIn(input)])];
+export function unauditedIn(input: string, q: Quoting): string[] {
+  return [...new Set([...functionsIn(input, q).filter((f) => !AUDITED_FUNCTIONS.has(f)), ...doubleFormsIn(input, q)])];
 }
 
 /** Every function in the input is audited (unauditedIn), or in `also` (G44: the inverse functions an input's polish
  *  covers, a fact of that input only). */
-export function isAudited(input: string, also: readonly string[] = []): boolean {
-  return unauditedIn(input).every((f) => also.includes(f));
+export function isAudited(input: string, q: Quoting, also: readonly string[] = []): boolean {
+  return unauditedIn(input, q).every((f) => also.includes(f));
 }
 
 // --- shapes: a scalar, a list, a matrix ------------------------------------------------------------------------------
@@ -646,7 +646,7 @@ export function numericDisagrees(giac: Giac, floatText: (at: number) => string, 
   const checked = (f: ElementFacts): boolean => !f.exact && f.reliableDigits !== null && !f.warn && f.at !== undefined;
   if (!facts.some(checked)) return false;
   const at = Math.max(...facts.map((f) => f.at ?? 0));
-  const F = withDigits(giac, at, digits, () => valueAt(giac, `evalf(${forValue(giac, floatText(at))},${at})`, shape, at, at + 2).parts);
+  const F = withDigits(giac, at, digits, () => valueAt(giac, `evalf(${forValue(giac, floatText(at), "typed")},${at})`, shape, at, at + 2).parts);
   if (!F || F.length !== facts.length) return false;
   return facts.some((f, k) => {
     if (!checked(f)) return false;
@@ -694,7 +694,7 @@ export function floatFacts(
   // G50f1: an input that runs once (`typed`, expr null) keeps Giac's value, computed without our definitions: a
   // non-real one that rests on a replaced function (typed, or held by a name it reads) is not audited.
   if (facts && expr === null && typed !== undefined) {
-    const complexFns = [...new Set([...complexReplacedIn(typed), ...complexReads(giac, typed, false).hidden])];
+    const complexFns = [...new Set([...complexReplacedIn(typed, "typed"), ...complexReads(giac, typed, false).hidden])];
     if (complexFns.length && nonReal(giac, name)) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const, complexFns }));
   }
   return facts && exact && exact.length === facts.length ? facts.map((f, k) => exact[k] ?? f) : facts;
@@ -740,7 +740,7 @@ function floatFactsOf(
   const P = valuePrecision(digits);
   // G50: run with the functions Giac gets wrong on complex arguments replaced (forValue), and the names that hold them
   // read through their copies (G50f1, complexReads).
-  const run = reads === null ? null : forValue(giac, reads.text);
+  const run = reads === null ? null : forValue(giac, reads.text, "typed");
   // `asked`: the precision an evalf(e,n) in the input runs at in this evaluation (M4-6).
   // `text`: what is run (`run`, or G44's polished text).
   const at = (
@@ -752,7 +752,7 @@ function floatFactsOf(
     withDigits(giac, d, restoreDigits, () => valueAt(giac, text === null ? name : `${slot}:=(${withAskedPrecision(text, asked)})`, shape, d, P).parts);
   // A non-real value that rests on a replaced function not read through our definitions (DEG, complexReads' hidden).
   const hidden = reads !== null && reads.hidden.length > 0 && nonReal(giac, name) ? reads.hidden : [];
-  const unaudited = expr === null || !isAudited(expr) || hidden.length > 0;
+  const unaudited = expr === null || !isAudited(expr, "typed") || hidden.length > 0;
   const facts = (v: { re: DecimalValue; im: DecimalValue; short?: number }[], reliable: (k: number) => number, warn?: PrecisionWarn): ElementFacts[] =>
     v.map((value, k) =>
       zeroUnconfirmed({
@@ -795,7 +795,7 @@ function floatFactsOf(
   };
   // G44 (docs/04 2.3 #2): an inverse distribution function is polished by substituting back (icdf.ts) and counts as
   // audited for this input when every call of it converged at P and at P + 20; else today's unaudited check.
-  if (unaudited && run !== null && !hidden.length && icdfCalls(run).length && isAudited(expr, icdfCalls(run))) {
+  if (unaudited && run !== null && !hidden.length && icdfCalls(run).length && isAudited(expr, "typed", icdfCalls(run))) {
     const polished = icdfPolished(giac, run);
     giac.eval(`${ICDF_FAILED}:=0`);
     giac.eval(`${ICDF_DIGITS}:=${digits}`);
@@ -842,7 +842,7 @@ export function doubleFallback(giac: Giac, name: string, input: string, digits: 
     value: out[0]!,
     exact: false,
     reliableDigits: Math.min(digits, DOUBLE_DIGITS),
-    warn: isAudited(input) ? "unchecked" : "unaudited",
+    warn: isAudited(input, "typed") ? "unchecked" : "unaudited",
     big: false,
   };
 }
@@ -863,7 +863,7 @@ export function floatPathFacts(
   const reads = complexReads(giac, expr, !once);
   try {
     // G44f1: erf and erfc through our MPFR definitions (Giac's erf of a float below about 1E-11 is the argument).
-    const safe = forValue(giac, reads.text);
+    const safe = forValue(giac, reads.text, "typed");
     const value = erfValueText(giac, safe);
     if (value !== safe) giac.eval(`${ICDF_FAILED}:=0`);
     let out = floatPathFactsOf(giac, name, value, once, W, digits);

@@ -54,13 +54,13 @@ export function withConstValues(input: string, table: ConstTable, keep?: Readonl
     const id = name.slice(CONST_PREFIX.length);
     const e = name.startsWith(CONST_PREFIX) && id !== "" && Object.hasOwn(table, id) ? table[id] : undefined;
     return e && !keep?.has(id) ? `(${e.value})` : null;
-  });
+  }, "typed");
 }
 
 /** The inexact constants of `table` that `input` holds, in order of first appearance. */
 export function inexactConstsIn(input: string, table: ConstTable): string[] {
   const ids: string[] = [];
-  for (const { name } of names(input)) {
+  for (const { name } of names(input, "typed")) {
     const id = name.slice(CONST_PREFIX.length);
     if (name.startsWith(CONST_PREFIX) && id !== "" && !ids.includes(id) && Object.hasOwn(table, id) && inexact(table[id])) ids.push(id);
   }

@@ -12,7 +12,7 @@
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
 import { MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { callsOf, firstNameIn, functionsIn, names, withoutStrings } from "./giacPrint.ts";
+import { callsOf, firstNameIn, functionsIn, names, type Quoting, withoutStrings } from "./giacPrint.ts";
 import { isZero } from "./format.ts";
 
 /** The reasons of this module; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
@@ -33,16 +33,16 @@ const SAFE_DIVISION = /\/\s*(?:\(\s*)?(?:[1-9]\d*(?:\^\d+)?|pasdeg)(?:\s*\))?(?!
  *  these. */
 const NEGATIVE_POWER = /\^\s*\(?\s*-/;
 const SOURCE_CALLS = ["ln", "log", "log10", "logb", "tan", "cot", "sec", "csc", "atanh", "acoth", "Gamma", "gamma", "factorial", "Psi", "psi", "Beta", "beta", "inv", "lnGamma"];
-const hasSource = (t: string): boolean => t.includes("/") || NEGATIVE_POWER.test(t) || callsOf(t, SOURCE_CALLS).length > 0;
+const hasSource = (t: string): boolean => t.includes("/") || NEGATIVE_POWER.test(t) || callsOf(t, SOURCE_CALLS, "typed").length > 0;
 /** The operators (Giac's `sommet` of a quoted part) that can make an infinity from finite operands; a power only when
  *  its exponent is not a positive integer literal. Only these parts are evaluated again. */
 const SOURCE_OPS = new Set(["/", "^", "inv", "ln", "log", "log10", "logb", "tan", "cot", "sec", "csc", "atanh", "acoth", "Gamma", "gamma", "factorial", "Psi", "psi", "Beta", "beta", "lnGamma"]);
 /** A part that changes engine state when it runs (an assignment, a store, a purge, an increment) or draws a random
  *  number: evaluating it again would change state the user did not ask to change (rules-core, principle 3). */
-export function changesState(text: string): boolean {
-  const t = withoutStrings(text, "");
+export function changesState(text: string, q: Quoting): boolean {
+  const t = withoutStrings(text, "", q);
   if (STATE_OPS.some((o) => t.includes(o))) return true;
-  return callsOf(t).some(({ name }) => {
+  return callsOf(t, undefined, q).some(({ name }) => {
     const n = name.toLowerCase();
     return STATE_CALLS.has(n) || n.includes("rand") || n.includes("ranm") || n.includes("ranv");
   });
@@ -64,8 +64,8 @@ const WALK_BUDGET_MS = 500;
  * evaluation time) per part, or once `late()`.
  */
 export function throughInfinity(giac: Giac, input: string, output: string, late: () => boolean, exactMs: number, userFn: (name: string) => boolean): boolean {
-  if (infinite(output) || firstNameIn(input, TYPED_INF) !== null || !hasSource(input.replace(SAFE_DIVISION, "")) || callsIn(input).length) return false;
-  if (changesState(input) || functionsIn(input).some(userFn)) return false;
+  if (infinite(output) || firstNameIn(input, TYPED_INF, "typed") !== null || !hasSource(input.replace(SAFE_DIVISION, "")) || callsIn(input).length) return false;
+  if (changesState(input, "typed") || functionsIn(input, "typed").some(userFn)) return false;
   try {
     // First the shape, with no evaluation (G103: the tree of the quoted input as Giac stores it in pasq, from bridge-3 in
     // the same call, tree.ts); the sources in it, innermost first, so the infinity is found at the part that makes it;

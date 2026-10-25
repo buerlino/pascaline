@@ -230,7 +230,7 @@ export function decideFloatTest(giac: Giac, input: string, digits: number): { wa
   const v = ran
     ? withDigits(giac, P, digits, () => giac.eval("when(abs(pasdd-pasdm)<abs(pasdm)/2,1,when(abs(pasdm)<=abs(pasdd-pasdm),0,2))"))
     : "2";
-  const unaudited = !isAudited(testSides(input));
+  const unaudited = !isAudited(testSides(input), "typed");
   const verdict = v === "0" ? 0 : v === "1" && !unaudited ? 1 : 2;
   giac.eval(`purge(pasdd,pasdm,${EQ_DIFF})`);
   giac.eval(`${EQ_VERDICT}:=${verdict}`);
@@ -248,7 +248,7 @@ export function testSides(input: string): string {
 export function symbolicWhy(warn: PrecisionWarn | undefined, sides: string): PrecisionWhy | undefined {
   if (warn === "unchecked") return { once: true };
   if (warn !== "unaudited") return undefined;
-  const unaudited = unauditedIn(sides);
+  const unaudited = unauditedIn(sides, "typed");
   return unaudited.length ? { unaudited } : undefined;
 }
 
@@ -261,7 +261,7 @@ export function definitionsUsedBy(input: string): string[] {
 /** Giac's latex() of the result in `slot`, whose text is `text`; R64: one that holds the degree factor (a function
  *  body, which Giac prints as given) is drawn from its text without it, as typed. */
 export function latexShown(giac: Giac, slot: string, text: string): string {
-  return hasAngleFactor(text) ? giac.eval(`latex(quote(${dropAngleFactor(text)}))`) : giac.eval(`latex(${slot})`);
+  return hasAngleFactor(text, "printed") ? giac.eval(`latex(quote(${dropAngleFactor(text, "printed")}))`) : giac.eval(`latex(${slot})`);
 }
 
 /** R64, G46 (route R): the degree factor our parser puts in every angle (input/angles.ts): pi/180 in DEG, 1 in RAD.
@@ -292,14 +292,14 @@ export function homeSetupCommands(s: HomeSettings): string[] {
 
 /** Rewrites the decimal literals of `input` that have a point or an exponent (`2.5`, `.5`, `1e-3`, `1.2E5`) with `f`.
  *  Leaves integers, identifiers (`x1`, `0x1F`) and strings alone. */
-function rewriteDecimals(input: string, f: (mant: string, exp10: number) => string, q: Quoting = "typed"): string {
+function rewriteDecimals(input: string, f: (mant: string, exp10: number) => string, q: Quoting): string {
   return mapNumbers(input, (mant, exp) => (!mant.includes(".") && !exp ? null : f(mant, exp ? parseInt(exp.slice(1), 10) : 0)), q);
 }
 
 /** Rewrites decimal literals (`2.5`, `.5`, `1e-3`, `1.2E5`) as exact rationals. Leaves integers,
  *  identifiers (`x1`, `0x1F`) and strings alone. */
 export function toExactLiterals(input: string): string {
-  return rewriteDecimals(input, exactRational);
+  return rewriteDecimals(input, exactRational, "typed");
 }
 
 /** Puts the typed decimals back into a text Giac printed with the exact rationals of toExactLiterals(`typed`):
@@ -319,7 +319,7 @@ export function restoreLiterals(text: string, typed: string): string {
       }
     }
     return rat;
-  });
+  }, "typed");
   return out;
 }
 
@@ -337,7 +337,7 @@ export function floatsAsEvalf(text: string): string {
 
 /** G59: `input` with each decimal literal as a float of `at` digits (a short literal alone is read as a double). */
 export function floatLiterals(input: string, at: number): string {
-  return rewriteDecimals(input, (mant, exp10) => `evalf(${exactRational(mant, exp10)},${at})`);
+  return rewriteDecimals(input, (mant, exp10) => `evalf(${exactRational(mant, exp10)},${at})`, "typed");
 }
 
 function exactRational(mant: string, exp10: number): string {
@@ -367,7 +367,7 @@ function isTimeout(out: string): boolean {
  */
 export function onceUndecided(giac: Giac, form: InputForm, body: string, out: string): boolean {
   if (isError(out) || hasFloat(out) || form.noValue) return false;
-  return restsOnDecision(body, out, decidingStored(giac));
+  return restsOnDecision(body, "typed", out, decidingStored(giac));
 }
 
 /** Longest exact text kept as `full` (docs/04 section 2.8: ≤ 2 kB). */
@@ -531,7 +531,7 @@ export function homeEval(
   let value: GiacValue = { kind: "error", text: "GIAC_ERROR: not run" };
   // An input of audited functions alone (elementary ones, whose evalf is MPFR's and quick) asks for its value's digits
   // at P and P + 20 in the same call (exactFacts reads them); any other input asks when they are needed.
-  const at = isAudited(exactBody) && complexSafe(exactBody) === exactBody ? [P, P + 20] : [];
+  const at = isAudited(exactBody, "typed") && complexSafe(exactBody, "typed") === exactBody ? [P, P + 20] : [];
   const exactRun = (): string =>
     withDigits(giac, P, s.digits, () => {
       const v = giac.value(`${ans}:=(${exactBody})`, at);
@@ -556,7 +556,7 @@ export function homeEval(
   let undecided = once && !inexactTest && onceUndecided(giac, form, exactBody, exactOut);
   // G57: a decision the precisions do not agree on, or a tie Giac cannot prove, is refused (any value would be a guess).
   let refusedCut = false;
-  if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, exactOut, notBuiltin(giac))) {
+  if (!once && !inexactTest && !isError(exactOut) && !hasFloat(exactOut) && restsOnDecision(exactBody, "typed", exactOut, notBuiltin(giac))) {
     const d = decideTwice(giac, exactBody, exactOut, s.digits, s.digits);
     if ("undecided" in d) undecided = true;
     if ("undecided" in d && d.refused) refusedCut = true;
@@ -620,7 +620,7 @@ export function homeEval(
     const d = decidedAtDouble(giac, ans, asg ? asg.rhs : input, s.digits);
     if (d === null) return failed(error, path, exact);
     store();
-    const why = { unaudited: unauditedIn(asg ? asg.rhs : input) };
+    const why = { unaudited: unauditedIn(asg ? asg.rhs : input, "typed") };
     if ("text" in d) return done({ ok: true, display: d.text, exact: d.text, path, approximate: true, tieRisk: false, facts: { exact: false, reliableDigits: null, warn: "unaudited", why } });
     const b = build(d.facts, d.shape, s.digits, path, true);
     return fromBuilt(b, path, true, exact, b.decimal, why);
@@ -685,7 +685,7 @@ export function homeEval(
     const unchecked = hasFloat(text) || forced !== undefined;
     const warn = decided?.warn ?? forced ?? (unchecked ? "unchecked" : undefined);
     const why = symbolicWhy(warn, testSides(exactBody));
-    return done({ ok: true, display: deg ?? dropAngleFactor(text), exact: text, ...(deg !== null ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, tieRisk: false, facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) } });
+    return done({ ok: true, display: deg ?? dropAngleFactor(text, "printed"), exact: text, ...(deg !== null ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, tieRisk: false, facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) } });
   };
   // G44f1: Giac's inverse distribution function gives ±infinity for some p inside (0, 1) (fisher_icdf(3,4,1-10^-20)):
   // the polish computes the value; when it cannot, Giac's infinity is shown with ⚠. At p = 0 or 1 it is exact.
@@ -768,11 +768,11 @@ export function homeEval(
   const powers = exactBody === body && shape.kind === "scalar" ? principalPowers(body) : null;
   const route = exactBody !== body ? (at: number) => floatLiterals(body, at) : powers !== null ? () => powers : null;
   const differ =
-    !once && route !== null && isAudited(body) && isAudited(exactOut) && (complexSafe(exactOut) === exactOut || complexSafe(body) !== body) &&
+    !once && route !== null && isAudited(body, "typed") && isAudited(exactOut, "printed") && (complexSafe(exactOut, "printed") === exactOut || complexSafe(body, "typed") !== body) &&
     numericDisagrees(giac, route, facts, shape, s.digits);
   if (differ) facts = facts.map((f) => (f.exact ? f : { ...f, reliableDigits: null, warn: "unchecked" as const }));
   // G71 (N7): Giac's two-argument round and trunc work in a double: an integer or decimal they print is not exact.
-  if (!differ && doubleFormsIn(exactBody).length) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const }));
+  if (!differ && doubleFormsIn(exactBody, "typed").length) facts = facts.map((f) => ({ ...f, warn: "unaudited" as const }));
   const b = build(facts, shape, s.digits, "exact", differ);
   store();
   // G103: an integer past Giac's print limit prints as Integer_too_large_for_display: no exact text, its digits are full.

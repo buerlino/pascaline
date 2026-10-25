@@ -90,7 +90,7 @@ function isError(out: string): boolean {
 export function withAngles(expr: string): string {
   let out = "";
   let i = 0;
-  for (const c of callsOf(expr, ["sin", "cos", "tan"])) {
+  for (const c of callsOf(expr, ["sin", "cos", "tan"], "typed")) {
     out += `${expr.slice(i, c.at)}pasu${c.name}(`;
     i = c.open + 1;
     // the parser's `pasdeg*` right inside the bracket
@@ -106,7 +106,7 @@ export function withAngles(expr: string): string {
 function inverses(t: string): string {
   let out = "";
   let i = 0;
-  for (const c of callsOf(t, INVERSES)) {
+  for (const c of callsOf(t, INVERSES, "typed")) {
     if (c.at < i) continue;
     // Unbalanced: the rest stays as it is, for Giac's syntax error.
     if (c.close < 0) break;

@@ -167,7 +167,7 @@ function call(name: string, args: Json[], o: SerializeOptions): Out {
     // (a name or call may hold a point: A:=[2,30]) goes through RECT_IN, which reads the shape when evaluated
     const pt = args[0] as Json;
     const els = isHead(pt, "List") && pt.length === 3 ? [ser(pt[1] as Json, o), ser(pt[2] as Json, o)] : undefined;
-    const point = els && els.every((e) => numericLiteral(e.s)) ? els : undefined;
+    const point = els && els.every((e) => numericLiteral(e.s, "typed")) ? els : undefined;
     texts[0] = rectArg(texts[0]!, point && [point[0]!.s, withFactor(point[1]!.s, point[1]!.p === 5)]);
   }
   const text = `${head}(${texts.join(",")})`;

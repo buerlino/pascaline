@@ -2,7 +2,7 @@
 // G54: our replacements for Giac functions, by the name the user writes. One map for the parser (input/emit.ts) and for
 // every path that sends Giac text without the parser (the library import and its `// test:` lines, the export back).
 // No UI imports; only erasable TypeScript syntax.
-import { mapNames } from "./giacPrint.ts";
+import { mapNames, type Quoting } from "./giacPrint.ts";
 
 /** Giac's own `mod` is the modular-number constructor (an error as a call); Find's `mod` is irem (Euclidean,
  *  never negative: irem(-7,3) = 2), so the written word is renamed to our pasmod (homeEval.ts ENGINE_DEFINITIONS:
@@ -15,7 +15,7 @@ const WRITTEN_NAME: Readonly<Record<string, string>> = { pasmod: "mod", pasmedia
 
 /** Renames the calls `name(` in Giac text by `map`: whole names, calls only (a name not followed by an opening bracket,
  *  or part of a longer name or a `.name`, stays), outside strings. */
-function renameCalls(text: string, map: Readonly<Record<string, string>>): string {
+function renameCalls(text: string, map: Readonly<Record<string, string>>, q: Quoting): string {
   const digit = (c: string): boolean => c >= "0" && c <= "9";
   return mapNames(text, ({ name, at, call }) => {
     if (!call || !Object.hasOwn(map, name)) return null;
@@ -24,17 +24,17 @@ function renameCalls(text: string, map: Readonly<Record<string, string>>): strin
     const afterNumber = digit(before) || (before === "." && digit(text.charAt(at - 2)));
     if (before === "." && !afterNumber) return null;
     return (afterNumber ? "*" : "") + map[name]!;
-  });
+  }, q);
 }
 
 /** Giac text with the user's `mod`, `irem`, `median` and `percentile` calls read as our definitions, as the parser does. */
 export function renameOurCalls(text: string): string {
-  return renameCalls(text, CALL_NAME);
+  return renameCalls(text, CALL_NAME, "typed");
 }
 
 /** The inverse, for the export: `pasmedian(` is written `median(`, so a file reads the same on the way back in. */
 export function writeUserNames(text: string): string {
-  return renameCalls(text, WRITTEN_NAME);
+  return renameCalls(text, WRITTEN_NAME, "printed");
 }
 
 /** G100: the names our own test helper stores into (input/emit.ts equalityTest: the float flag and the difference,

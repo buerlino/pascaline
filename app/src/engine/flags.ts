@@ -6,7 +6,7 @@
 // whole context back with one `giac_ctx_set` and runs its mode setup again. The definitions log never stores one
 // (host.ts defsAfter). Plain data and pure functions; only erasable TypeScript syntax, so Node runs this file directly.
 import type { GiacContext } from "./bridge.ts";
-import { firstNameIn } from "./giacPrint.ts";
+import { firstNameIn, type Quoting } from "./giacPrint.ts";
 
 /** The host's context at `digits` (the mode's Digits): a fresh engine's (giac-2.1.0, probe 2026-10-24; flags.test.ts
  *  checks it against a fresh engine), Giac in radians (the degree mode is our parser's pasdeg factor, G46). */
@@ -73,18 +73,18 @@ const FLAG_SET: ReadonlySet<string> = new Set(FLAG_WORDS);
 const UNREAD: ReadonlySet<string> = new Set(["timeout", "ckevery", "ckbudget"]);
 
 /** The text names a Giac setting (outside strings). */
-export function namesFlag(text: string): boolean {
-  return firstNameIn(text, FLAG_SET) !== null;
+export function namesFlag(text: string, q: Quoting): boolean {
+  return firstNameIn(text, FLAG_SET, q) !== null;
 }
 
 /** The first Giac setting the text names (outside strings), or null. */
-export function flagIn(text: string): string | null {
-  return firstNameIn(text, FLAG_SET);
+export function flagIn(text: string, q: Quoting): string | null {
+  return firstNameIn(text, FLAG_SET, q);
 }
 
 /** The text names a setting the read cannot see, which only the mode setup puts back. */
-export function namesUnreadFlag(text: string): boolean {
-  return firstNameIn(text, UNREAD) !== null;
+export function namesUnreadFlag(text: string, q: Quoting): boolean {
+  return firstNameIn(text, UNREAD, q) !== null;
 }
 
 /** Whether a name is a Giac setting (a log entry by that name is never kept). */

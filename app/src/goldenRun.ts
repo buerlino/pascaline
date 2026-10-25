@@ -108,7 +108,7 @@ export interface Case {
  * the parser's angle rule (input/angles.ts `rewriteAngles`) as the keys' LaTeX would; `latex` goes through the parser.
  */
 export function typed(c: Case): Case {
-  const one = (t: string): string => rewriteAngles(t);
+  const one = (t: string): string => rewriteAngles(t, "typed");
   const many = <T extends string | string[] | undefined>(x: T): T => (x === undefined ? x : Array.isArray(x) ? (x.map(one) as T) : (one(x) as T));
   const raw = c.latex === undefined;
   return {
@@ -201,7 +201,7 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
   let shown: string;
   // G67: a case whose inputs before it set a Giac setting runs on its own engine too (were the setting kept, it would
   // reach every later case)
-  const own = c.beforeHome?.length || c.beforeCas?.length || c.relaunch || (c.before ?? []).some(namesFlag);
+  const own = c.beforeHome?.length || c.beforeCas?.length || c.relaunch || (c.before ?? []).some((t) => namesFlag(t, "typed"));
   let host = own ? await fresh() : shared;
   const defs: DefChange[] = [];
   const relaunched = async (): Promise<void> => {

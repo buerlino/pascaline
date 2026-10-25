@@ -383,4 +383,11 @@ describe("renameOurCalls (no engine)", () => {
   it("writeUserNames is the inverse", () => {
     expect(writeUserNames("pasmedian(L)+pasmod(a,b)+paspercentile(L,5)")).toBe("median(L)+mod(a,b)+percentile(L,5)");
   });
+  it("G105f1: the export reads a log command as Giac prints it: a string ending in \\ closes at its quote (source: derived)", () => {
+    // Giac prints the string C:\ (size 3) as "C:\" (probed on 76f0e04); the snapshot stores L:=(<print>)
+    const cmd = 'L:=(["C:\\",pasmod(a,3)])';
+    expect(writeUserNames(cmd)).toBe('L:=(["C:\\",mod(a,3)])');
+    const log = [{ name: "L", kind: "var" as const, cmds: [cmd], preview: "", view: "cas" as const, time: 0 }];
+    expect(exportLibrary(log).text).toContain('L:=(["C:\\",mod(a,3)])');
+  });
 });

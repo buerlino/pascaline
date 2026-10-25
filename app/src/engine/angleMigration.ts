@@ -31,12 +31,12 @@ function valueCmd(cmd: string): { name: string; rhs: string } | null {
 
 /** The value text read as degrees, with the factor frozen (the mode it was typed in no longer matters). */
 export function degreeReading(rhs: string): string {
-  return mapNames(rewriteAngles(rhs), (n) => (n.name === PASDEG ? "(pi/180)" : null));
+  return mapNames(rewriteAngles(rhs, "printed"), (n) => (n.name === PASDEG ? "(pi/180)" : null), "printed");
 }
 
 /** The text holds an angle function the factor rewrite would change. */
 function readsAngles(text: string): boolean {
-  return rewriteAngles(text) !== text;
+  return rewriteAngles(text, "printed") !== text;
 }
 
 /** One stored entry (unknown shape: validDefs checks it later) brought to route R. */
@@ -48,13 +48,13 @@ function migrateEntry(x: unknown): unknown {
   let next = (cmds as string[]).map(withoutPasexp);
   const kind = e["kind"];
   const out: Record<string, unknown> = { ...e };
-  if (kind === "fn" || kind === "other") next = next.map(rewriteAngles);
+  if (kind === "fn" || kind === "other") next = next.map((c) => rewriteAngles(c, "printed"));
   else if (kind === "var" && next.length === 1) {
     const m = valueCmd(next[0]!);
     const rhs = m?.rhs;
     if (m && rhs !== undefined && readsAngles(rhs)) {
       // A symbolic value (free names) followed the mode at use time, and still does with pasdeg.
-      if (e["early"] === true) next = [rewriteAngles(next[0]!)];
+      if (e["early"] === true) next = [rewriteAngles(next[0]!, "printed")];
       else if (e["angle"] === "deg") next = [`${m.name}:=(${degreeReading(rhs)})`];
       else if (e["angle"] !== "rad") out["migrate"] = "angle";
     }

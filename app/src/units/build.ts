@@ -94,11 +94,11 @@ function aloneNumber(formula: string, n: number): string | null {
   const num = m[1]?.trim() ?? "1";
   // E notation (1.5e-3, as the parser writes it): a digit, e or E, an optional sign, digits.
   const E = /(\d)[eE][+-]?\d+/g;
-  if (!/^[0-9.+\-*/^()\s]+$/.test(mapNames(num, (w) => (w.name === "pi" ? "1" : null)).replace(E, "$1"))) return null;
-  if (!balanced(num)) return null;
+  if (!/^[0-9.+\-*/^()\s]+$/.test(mapNames(num, (w) => (w.name === "pi" ? "1" : null), "typed").replace(E, "$1"))) return null;
+  if (!balanced(num, "typed")) return null;
   const sign = (i: number, d: number, c: string): boolean =>
     d === 0 && (c === "+" || c === "-") && num.slice(0, i).trim() !== "" && !/[*/^(]\s*$/.test(num.slice(0, i)) && !/\d[eE]$/.test(num.slice(0, i));
-  return walk(num, 0, sign) < 0 ? num : null;
+  return walk(num, 0, sign, "typed") < 0 ? num : null;
 }
 
 /** A source quantity that is alone and absolute: °C, °F by K = a·x + b, a logarithmic unit by its level's ratio. */
@@ -155,9 +155,9 @@ function uncertainValues(formula: string, vars: UncVar[]): string {
     const at = formula.indexOf(CALL, i);
     if (at < 0) return out + formula.slice(i);
     out += formula.slice(i, at);
-    const close = closing(formula, at + CALL.length - 1);
+    const close = closing(formula, at + CALL.length - 1, "typed");
     const j = close + 1;
-    const comma = close < 0 ? -1 : walk(formula, at + CALL.length, (k, d, c) => k < close && c === "," && d === 0);
+    const comma = close < 0 ? -1 : walk(formula, at + CALL.length, (k, d, c) => k < close && c === "," && d === 0, "typed");
     if (close < 0 || comma < 0 || comma >= close) throw new Refused({ error: "engine", detail: "a bad ± in the formula" });
     const value = formula.slice(at + CALL.length, comma).trim();
     const sigma = formula.slice(comma + 1, j - 1).trim();
@@ -290,7 +290,7 @@ function splitTop(text: string, ops: "terms" | "factors"): string[] {
         start = i;
       }
     }
-  });
+  }, "typed");
   out.push(text.slice(start));
   return out;
 }
@@ -330,7 +330,7 @@ function insideBrackets(f: string, n: { k: number; sum: boolean }): string {
       out += c;
       continue;
     }
-    const close = closing(f, i);
+    const close = closing(f, i, "typed");
     if (close < 0) return f;
     out += c + dimensionForm(f.slice(i + 1, close), n) + f.charAt(close);
     i = close;
@@ -385,9 +385,9 @@ export function buildJob(req: UnitRequest, table: FactorTable): UnitJob | UnitEr
     });
     if (used.size !== slots.length + consts.length) throw new Refused({ error: "engine", detail: "a slot or constant is not in the formula" });
     // R64, G46: the parser's degree factor `pasdeg` is ours to read, as are the dimension symbols
-    if ([...names(sym)].some((w) => w.name.startsWith("pas") && !ourSymbol(w.name))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
+    if ([...names(sym, "typed")].some((w) => w.name.startsWith("pas") && !ourSymbol(w.name))) throw new Refused({ error: "engine", detail: "a reserved name in the formula" });
     // The value of every uncertain input goes in; the worker differentiates the symbolic text for σ.
-    const values = (t: string): string => (vars.length ? mapNames(t, (w) => (uncName(w.name) ? `(${vars[Number(w.name.slice(4)) - 1]!.value})` : null)) : t);
+    const values = (t: string): string => (vars.length ? mapNames(t, (w) => (uncName(w.name) ? `(${vars[Number(w.name.slice(4)) - 1]!.value})` : null), "typed") : t);
     const expr = values(sym);
     // G35: the dimension check's text, the slots and constants put in as in `sym`.
     const count = { k: 0, sum: false };

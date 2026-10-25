@@ -3,7 +3,7 @@
 // integers, a branch), and their second run at P + 20 and P + 40. Split out of numeric.ts (G71). Synchronous, UI-free;
 // only erasable TypeScript syntax.
 import { DOUBLE_DIGITS, hasFloat, namePrint, numbersAt, shapeOfValue, size, valuePrecision, withDigits, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
-import { callsOf, closing, functionsIn, isName, namesIn, topLevelArgs, UNCLOSED, walk, withoutStrings } from "./giacPrint.ts";
+import { callsOf, closing, functionsIn, isName, namesIn, type Quoting, topLevelArgs, UNCLOSED, walk, withoutStrings } from "./giacPrint.ts";
 import { decimalFromString, isZero, type DecimalValue } from "./format.ts";
 import type { GiacValue } from "./bridge.ts";
 
@@ -38,8 +38,8 @@ function comparisonAt(s: string, k: number): number {
 }
 
 /** The input holds a comparison outside strings. */
-function hasComparison(input: string): boolean {
-  const s = withoutStrings(input);
+function hasComparison(input: string, q: Quoting): boolean {
+  const s = withoutStrings(input, '""', q);
   for (let k = 0; k < s.length; k++) if (comparisonAt(s, k)) return true;
   return false;
 }
@@ -56,23 +56,23 @@ const RATIONAL_FUNCTIONS: ReadonlySet<string> = new Set([
  * holds no `/` (`1.1^k`, `2^-3`; not `2^(1/2)`). `sum(1/k,k,1,1000)` needs no second run; `sum(1/k^2,k,1,inf)`
  * (a name, inf) and anything with pi, sqrt or a stored name does.
  */
-export function rationalOnly(expr: string): boolean {
+export function rationalOnly(expr: string, q: Quoting): boolean {
   if (expr.includes('"') || /[.]/.test(expr)) return false;
-  if (!functionsIn(expr).every((f) => RATIONAL_FUNCTIONS.has(f))) return false;
+  if (!functionsIn(expr, q).every((f) => RATIONAL_FUNCTIONS.has(f))) return false;
   const bound = new Set<string>();
-  for (const { open, close } of callsOf(expr, ["sum", "product"])) {
+  for (const { open, close } of callsOf(expr, ["sum", "product"], q)) {
     if (close < 0) return false;
-    const args = topLevelArgs(expr.slice(open + 1, close));
+    const args = topLevelArgs(expr.slice(open + 1, close), q);
     if (args.length !== 4 || !isName(args[1]!.trim())) return false;
     if (!INTEGER.test(args[2]!.replace(/^\s*-/, "")) || !INTEGER.test(args[3]!.replace(/^\s*-/, ""))) return false;
     bound.add(args[1]!.trim());
   }
-  if (!namesIn(expr).every((n) => bound.has(n))) return false;
+  if (!namesIn(expr, q).every((n) => bound.has(n))) return false;
   // A power's exponent: a parenthesised one holding `/`, or a name that is not a bound variable, can be irrational.
   for (let at = expr.indexOf("^"); at >= 0; at = expr.indexOf("^", at + 1)) {
     const open = at + 1 + (expr.slice(at + 1).length - expr.slice(at + 1).trimStart().length);
     if (expr.charAt(open) !== "(") continue;
-    const close = closing(expr, open);
+    const close = closing(expr, open, q);
     if (close < 0 || expr.slice(open + 1, close).includes("/")) return false;
   }
   return true;
@@ -87,7 +87,7 @@ export function decidingStored(giac: Giac): (name: string) => boolean {
     if (k !== undefined) return k;
     known.set(name, false);
     const def = namePrint(giac, name);
-    const r = def !== `'${name}'` && /->/.test(def) && restsOnDecision(def, "", decides);
+    const r = def !== `'${name}'` && /->/.test(def) && restsOnDecision(def, "printed", "", decides);
     known.set(name, r);
     return r;
   };
@@ -98,10 +98,10 @@ export function decidingStored(giac: Giac): (name: string) => boolean {
  *  decision function, or a name that is not a Giac built-in (`stored`: a stored function's body may decide,
  *  `f(x):=floor(x*10^12)` then `f(sin(10^60))`), or holds a comparison, or the result holds `abs(` (sqrt of an even
  *  power comes back as one). An input of rationals only (rationalOnly) decides exactly. */
-export function restsOnDecision(input: string, result: string, stored: (name: string) => boolean = () => false): boolean {
-  if (rationalOnly(input)) return false;
-  const calls = functionsIn(input);
-  return calls.some((f) => DECISION_FUNCTIONS.has(f)) || hasComparison(input) || result.includes("abs(") || calls.some(stored);
+export function restsOnDecision(input: string, q: Quoting, result: string, stored: (name: string) => boolean = () => false): boolean {
+  if (rationalOnly(input, q)) return false;
+  const calls = functionsIn(input, q);
+  return calls.some((f) => DECISION_FUNCTIONS.has(f)) || hasComparison(input, q) || result.includes("abs(") || calls.some(stored);
 }
 
 /** A quantity whose sign (`zero`), distance to the nearest integer (`int`) or to the nearest half-integer (`half`)
@@ -126,7 +126,7 @@ function comparisonCut(seg: string): string | null {
     at = k;
     len = n;
     return false;
-  });
+  }, "typed");
   if (twice || end === UNCLOSED) return null;
   if (at < 0) return null;
   const lhs = seg.slice(0, at).trim();
@@ -141,13 +141,13 @@ function comparisonCut(seg: string): string | null {
 export function decisionCuts(expr: string): Cut[] {
   const cuts: Cut[] = [];
   const segments = [expr];
-  const named = new Map(callsOf(expr).map((c) => [c.open, c]));
+  const named = new Map(callsOf(expr, undefined, "typed").map((c) => [c.open, c]));
   const opens: number[] = [];
-  walk(expr, 0, (k, _d, ch) => void (ch === "(" && opens.push(k)));
+  walk(expr, 0, (k, _d, ch) => void (ch === "(" && opens.push(k)), "typed");
   for (const open of opens) {
-    const close = closing(expr, open);
+    const close = closing(expr, open, "typed");
     if (close < 0) continue;
-    const args = topLevelArgs(expr.slice(open + 1, close));
+    const args = topLevelArgs(expr.slice(open + 1, close), "typed");
     segments.push(...args);
     const c = named.get(open);
     const name = c?.name;
@@ -181,7 +181,7 @@ export function decisionCuts(expr: string): Cut[] {
  * A quantity that is not a real number (a free name, a bound variable) is skipped.
  */
 export function onCut(giac: Giac, expr: string, digits: number, restore: number): { tie: string } | Undecided | null {
-  if (/:=|=>/.test(expr) || callsOf(expr, ["sto"]).length) return null;
+  if (/:=|=>/.test(expr) || callsOf(expr, ["sto"], "typed").length) return null;
   const P = valuePrecision(digits);
   const cuts = decisionCuts(expr);
   if (!cuts.length) return null;

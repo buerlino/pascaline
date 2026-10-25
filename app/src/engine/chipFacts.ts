@@ -31,7 +31,7 @@ function entry(table: ChipFactsTable, k: string): ChipEntry | undefined {
 /** The chips of `table` that `input` holds, in order of first appearance. */
 export function chipsIn(input: string, table: ChipFactsTable): string[] {
   const ks: string[] = [];
-  for (const { name } of names(input)) {
+  for (const { name } of names(input, "typed")) {
     const k = name.slice(CHIP_PREFIX.length);
     if (name.startsWith(CHIP_PREFIX) && k !== "" && !ks.includes(k) && entry(table, k)) ks.push(k);
   }
@@ -45,7 +45,7 @@ export function withChipValues(input: string, table: ChipFactsTable, keep: Reado
     const k = name.slice(CHIP_PREFIX.length);
     const e = name.startsWith(CHIP_PREFIX) && k !== "" ? entry(table, k) : undefined;
     return e && !keep.has(k) ? `(${e.value})` : null;
-  });
+  }, "typed");
 }
 
 /** The Giac command that gives the chip `k` its value for a run: a float as `evalf(<exact>,n)` with the digits it

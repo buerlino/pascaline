@@ -31,13 +31,13 @@ const COMPLEX_REPLACED: Readonly<Record<string, string>> = {
 
 /** `text` with every call of a function Giac gets wrong on complex arguments replaced by ours (outside strings); the
  *  same text when there is none. `q`: "printed" for a text Giac printed (a stored value, namePrint). */
-export function complexSafe(text: string, q: Quoting = "typed"): string {
+export function complexSafe(text: string, q: Quoting): string {
   return renameCalls(text, COMPLEX_REPLACED, q);
 }
 
 /** Prepares `text` to be evaluated for its value: with complexSafe's replacements and their definitions loaded; the
  *  text itself when there is nothing to replace. */
-export function forValue(giac: Giac, text: string, q: Quoting = "typed"): string {
+export function forValue(giac: Giac, text: string, q: Quoting): string {
   const safe = complexSafe(text, q);
   if (safe === text) return text;
   for (const [name, def] of Object.entries(COMPLEX_DEFINITIONS)) {
@@ -49,7 +49,7 @@ export function forValue(giac: Giac, text: string, q: Quoting = "typed"): string
 }
 
 /** The functions of `input` that COMPLEX_DEFINITIONS replace in RAD (atan and arctan). */
-export function complexReplacedIn(input: string, q: Quoting = "typed"): string[] {
+export function complexReplacedIn(input: string, q: Quoting): string[] {
   return functionsIn(input, q).filter((f) => Object.hasOwn(COMPLEX_REPLACED, f));
 }
 
@@ -93,7 +93,7 @@ export function complexReads(giac: Giac, expr: string, copy = true): { text: str
   };
   // The stored names each stored text reads (not the ones it binds), from the input's names down.
   const refs = new Map<string, string[]>();
-  const queue = [...new Set([...namesIn(expr), ...functionsIn(expr)])];
+  const queue = [...new Set([...namesIn(expr, "typed"), ...functionsIn(expr, "typed")])];
   const top = queue.filter((n) => stored(n) !== null);
   for (let n = queue.shift(); n !== undefined; n = queue.shift()) {
     const v = stored(n);
@@ -150,7 +150,7 @@ function boundIn(v: string): Set<string> {
     const from = w.at + w.name.length;
     const end = v.indexOf(";", from);
     if (w.name !== "local" || end < 0 || v.charAt(from).trim() !== "") continue;
-    for (const part of topLevelArgs(v.slice(from, end))) {
+    for (const part of topLevelArgs(v.slice(from, end), "printed")) {
       const n = leadingName(part, false);
       if (n !== null) out.add(n);
     }
@@ -166,7 +166,7 @@ export function purgeReads(giac: Giac, copies: readonly string[]): void {
 /** complexReads' text has a replaced function (typed or read through a copy), so Giac's own printed float of `expr` is
  *  not its value (Home keeps no exact text then). */
 export function readsReplaced(giac: Giac, expr: string): boolean {
-  if (complexSafe(expr) !== expr) return true;
+  if (complexSafe(expr, "typed") !== expr) return true;
   const r = complexReads(giac, expr);
   purgeReads(giac, r.copies);
   return r.copies.length > 0;

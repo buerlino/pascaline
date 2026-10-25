@@ -40,8 +40,8 @@ interface Call {
 export function callsIn(input: string): Call[] {
   const out: Call[] = [];
   // A name that merely ends in the word (`myint(`) is not a call of it.
-  for (const { name, at, open, close } of callsOf(input, KINDS)) {
-    if (close >= 0) out.push({ kind: KIND[name]!, text: input.slice(at, close + 1), args: topLevelArgs(input.slice(open + 1, close)).map((a) => a.trim()) });
+  for (const { name, at, open, close } of callsOf(input, KINDS, "typed")) {
+    if (close >= 0) out.push({ kind: KIND[name]!, text: input.slice(at, close + 1), args: topLevelArgs(input.slice(open + 1, close), "typed").map((a) => a.trim()) });
   }
   return out;
 }
@@ -104,7 +104,7 @@ const PERIOD_DIVISORS = [12, 10, 8, 6, 5, 4, 3, 2, 1];
 /** The smallest period 2π/n of `f` among PERIOD_DIVISORS, as Giac text; null when none fits. Tested at two points at
  *  30 digits (a wrong period only costs a second integral at a point that is not singular). */
 function periodOf(giac: Giac, f: string, x: string, scale: string): string | null {
-  if (!functionsIn(f).some((n) => PERIODIC.has(n))) return null;
+  if (!functionsIn(f, "typed").some((n) => PERIODIC.has(n))) return null;
   // Exact test points: a float literal would make Giac compute in doubles, whose 1e-14 error exceeds the 1e-20 margin,
   // so no period (not even tan's π) was ever found.
   const points = ["3171/10000", "11937/10000"].map((p) => `(${p})*${scale}`);
@@ -125,7 +125,7 @@ const MAX_POINTS = 8;
 /** The trig calls of `f` (`tan(2*x)` in `x*tan(2*x)`), outermost first; strings skipped. */
 function periodicCalls(f: string): string[] {
   const out: string[] = [];
-  for (const { at, close } of callsOf(f, PERIODIC)) if (close >= 0) out.push(f.slice(at, close + 1));
+  for (const { at, close } of callsOf(f, PERIODIC, "typed")) if (close >= 0) out.push(f.slice(at, close + 1));
   return out;
 }
 
@@ -307,9 +307,9 @@ const hasIntegral = (t: string): boolean => callsOf(t, ["int", "integrate"], "pr
 export function floatBounds(input: string): string {
   let out = "";
   let i = 0;
-  for (const { name, at, open, close } of callsOf(input, ["int", "integrate"])) {
+  for (const { name, at, open, close } of callsOf(input, ["int", "integrate"], "typed")) {
     if (at < i || close < 0) continue;
-    const args = topLevelArgs(input.slice(open + 1, close)).map(floatBounds);
+    const args = topLevelArgs(input.slice(open + 1, close), "typed").map(floatBounds);
     const bounds = args.length === 4 ? [args[0]!, args[1]!, `evalf(${args[2]!.trim()})`, `evalf(${args[3]!.trim()})`] : args;
     out += `${input.slice(i, at)}${name}(${bounds.join(",")})`;
     i = close + 1;
