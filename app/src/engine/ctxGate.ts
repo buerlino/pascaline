@@ -20,7 +20,8 @@ export function contextOf(r: GiacContext | { error: string }): GiacContext {
   return r;
 }
 
-export function gated(raw: GiacApi, bridge: GiacBridge): GatedGiac {
+/** `heard` (G92): sees the text of every eval and value (host.ts: whether a call may have left an assumption). */
+export function gated(raw: GiacApi, bridge: GiacBridge, heard: (text: string) => void = () => {}): GatedGiac {
   let waiting: number | null = null;
   const flush = (): GiacContext | null => {
     if (waiting === null) return null;
@@ -30,14 +31,14 @@ export function gated(raw: GiacApi, bridge: GiacBridge): GatedGiac {
   };
   return {
     giac: {
-      eval: (input) => (flush(), raw.eval(input)),
+      eval: (input) => (flush(), heard(input), raw.eval(input)),
       setPowLimit: (limit) => raw.setPowLimit(limit),
       messages: () => raw.messages(),
       clearMessages: () => raw.clearMessages(),
       digits: (d) => {
         waiting = Math.trunc(d);
       },
-      value: (text, precisions, tree) => (flush(), bridge.value(text, precisions, tree)),
+      value: (text, precisions, tree) => (flush(), heard(text), bridge.value(text, precisions, tree)),
     },
     bridge: {
       ctxGet: () => flush() ?? bridge.ctxGet(),
@@ -47,7 +48,7 @@ export function gated(raw: GiacApi, bridge: GiacBridge): GatedGiac {
         return bridge.ctxSet(d === null || "decimal_digits" in fields ? fields : { decimal_digits: d, ...fields });
       },
       parse: (text) => (flush(), bridge.parse(text)),
-      value: (text, precisions, tree) => (flush(), bridge.value(text, precisions, tree)),
+      value: (text, precisions, tree) => (flush(), heard(text), bridge.value(text, precisions, tree)),
     },
   };
 }
