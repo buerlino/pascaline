@@ -90,3 +90,14 @@ engine_promote() {
   if mv --exchange "$root/gsl.new" "$root/gsl" 2>/dev/null; then mv -T "$root/gsl.new" "$root/gsl.prev"
   else mv -T "$root/gsl" "$root/gsl.prev" && mv -T "$root/gsl.new" "$root/gsl"; fi
 }
+
+# A37: the tests that failed in some of <total> runs and passed in others. Reads item files (one "file<TAB>title" per failing item,
+# one file per run) and prints "<failed runs>/<total><TAB><item>" for every item that failed in fewer than all runs.
+flaky_items() {  # <total> <item file>...
+  local total="$1"; shift
+  local f; for f in "$@"; do sort -u "$f" 2>/dev/null; done | sort | uniq -c | awk -v t="$total" '$1 < t { c = $1; sub(/^ *[0-9]+ /, ""); print c "/" t "\t" $0 }'
+}
+# A37: succeeds while <dir>'s HEAD is still <sha> (the census runs on one unchanged commit).
+head_is() {  # <dir> <sha>
+  [[ "$(git -C "$1" rev-parse HEAD 2>/dev/null)" == "$2" ]]
+}
