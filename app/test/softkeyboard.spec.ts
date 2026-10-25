@@ -139,3 +139,100 @@ test("a key pressed just before leaving does not focus the entry while away", as
   await page.waitForTimeout(200);
   expect(await editableFocused(page), "nothing editable is focused 200 ms after the hide").toBe(false);
 });
+
+// F99 (R81, the owner's morning check 2026-10-25, Fairphone 6): the system keyboard opened again on some returns. The
+// matrix: what was on screen when leaving × the way back × one, two or five quick returns. After each return nothing
+// that can raise the system keyboard (an input, a textarea, a contenteditable, the field's own sink) has focus.
+type Way = "visibility" | "shade" | "pagehide" | "frozen";
+async function wayBack(page: Page, way: Way, awayMs = 0): Promise<void> {
+  const ev = (steps: string[]): Promise<void> =>
+    page.evaluate((steps) => {
+      for (const s of steps) {
+        if (s === "blur" || s === "focus") window.dispatchEvent(new Event(s));
+        else if (s === "pagehide" || s === "pageshow") window.dispatchEvent(new PageTransitionEvent(s, { persisted: true }));
+        else {
+          const hidden = s === "hidden";
+          Object.defineProperty(document, "hidden", { value: hidden, configurable: true });
+          Object.defineProperty(document, "visibilityState", { value: s, configurable: true });
+          document.dispatchEvent(new Event("visibilitychange"));
+        }
+      }
+    }, steps);
+  const away = (): Promise<void> => (awayMs > 0 ? page.waitForTimeout(awayMs) : Promise.resolve());
+  const pair: Record<Exclude<Way, "frozen">, [string, string]> = {
+    visibility: ["hidden", "visible"],
+    shade: ["blur", "focus"],
+    pagehide: ["pagehide", "pageshow"],
+  };
+  if (way !== "frozen") {
+    await ev([pair[way][0]]);
+    await away();
+    return ev([pair[way][1]]);
+  }
+  // a swipe away on Android: the window blurs, the page hides and is frozen (its timers wait), then all of it backwards
+  const cdp = await page.context().newCDPSession(page);
+  await ev(["blur", "hidden", "pagehide"]);
+  await cdp.send("Page.setWebLifecycleState", { state: "frozen" });
+  await away();
+  await cdp.send("Page.setWebLifecycleState", { state: "active" });
+  await ev(["pageshow", "visible", "focus"]);
+  await cdp.detach();
+}
+
+const screens: Record<string, (page: Page) => Promise<void>> = {
+  "Home, empty line": async (page) => {
+    await tap(page, ["d1", "esc"]);
+  },
+  "Home, typed line": (page) => tap(page, ["d1", "add", "d2"]),
+  "Home, result just entered": (page) => tap(page, ["d1", "add", "d2", "enter"]),
+  "Home, cursor moved by a drag": async (page) => {
+    await tap(page, ["d1", "add", "d2"]);
+    await drag(page, "left", -30, 0);
+  },
+  "Home, inside a template box": (page) => tap(page, ["d1", "frac"]),
+  "CAS, typed line": (page) => tap(page, ["@cas", "d1", "add", "d2"]),
+  "CAS, result just entered": (page) => tap(page, ["@cas", "d1", "add", "d2", "enter"]),
+  "CAS, inside a template box": (page) => tap(page, ["@cas", "d1", "frac"]),
+  "Tmpl sheet open": (page) => tap(page, ["d1", "tmpl"]),
+  "Menu sheet open": (page) => tap(page, ["d1", "add", "d2", "enter", "@menu"]),
+  "Mode sheet open": (page) => tap(page, ["d1", "@mode"]),
+  "Settings page": (page) => tap(page, ["d1", "@mode", "d5"]),
+  "Solve Num after an edit (c44)": async (page) => {
+    await tap(page, ["@place", "d4", "@symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "@num"]);
+    await page.locator('[data-testid="solve-table"] tr[data-name="x"] th button').tap();
+    await tap(page, ["esc", "d1", "enter"]);
+  },
+  "Function Plot": (page) => tap(page, ["@symb", "x", "sq", "enter", "@plot"]),
+};
+
+for (const [screen, go] of Object.entries(screens)) {
+  for (const way of ["visibility", "shade", "pagehide", "frozen"] as const) {
+    test(`F99: ${screen}, back by ${way}, 1/2/5 quick returns leave nothing editable focused`, async ({ page }) => {
+      await go(page);
+      await page.waitForTimeout(100);
+      const failed: string[] = [];
+      for (const n of [1, 2, 5]) {
+        for (let i = 0; i < n; i++) await wayBack(page, way);
+        await page.waitForTimeout(150); // MathLive's sink focus comes 60 ms late
+        const f = await focused(page);
+        if (f.editable) failed.push(`${n}×: ${f.tag} inputmode=${f.inputmode}`);
+      }
+      expect(failed, `${screen} by ${way}`).toEqual([]);
+    });
+  }
+}
+
+// F99 with R25c's timing: a key pressed just before leaving makes MathLive focus its sink 60 ms later, which may land
+// while away or, after a freeze, only once the page is back.
+for (const way of ["visibility", "shade", "pagehide", "frozen"] as const) {
+  test(`F99: a key pressed just before leaving by ${way} leaves nothing editable focused`, async ({ page }) => {
+    await tap(page, ["d1"]);
+    await wayBack(page, "visibility");
+    await page.waitForTimeout(150);
+    await page.evaluate(() => window.pascaline.entry.run({ kind: "type", text: "2" }));
+    await wayBack(page, way, 200); // away longer than MathLive's 60 ms (a frozen page runs its timer only on return)
+    await page.waitForTimeout(200);
+    const f = await focused(page);
+    expect(f.editable, `${f.tag} inputmode=${f.inputmode}`).toBe(false);
+  });
+}

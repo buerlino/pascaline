@@ -51,26 +51,41 @@ const flush = (): void => {
   // before the kept line is on the field (or the line was typed or cleared) the stored line stays as it is
   if (entry.settled) keeper.save(shell.app === null ? lineRecord(session.view, entry.value, entry.chips) : null);
 };
-// Leaving the app (a swipe, the app switcher): drop the focus. Android restores focus to the focused element when
-// the app comes back and opens the system keyboard on it, inputmode=none or not (K0, user 2026-10-13). The next key
-// press focuses the entry again. Window blur only on touch screens: a desktop keeps its focus across windows.
+// Leaving the app (a swipe, the app switcher, the notification shade): drop the focus. Android restores focus to the
+// focused element when the app comes back and opens the system keyboard on it, inputmode=none or not (K0, user
+// 2026-10-13). The next key press focuses the entry again. Every way of leaving takes this one path (F99, R81: a
+// pagehide alone kept the focus): the page hides, is hidden from history (pagehide) or frozen, or a touch screen's
+// window blurs (a desktop keeps its focus across windows). The app is away until the matching return event.
+const coarse = (): boolean => matchMedia("(pointer: coarse)").matches;
 const dropFocus = (): void => {
   let el = document.activeElement;
   while (el?.shadowRoot?.activeElement) el = el.shadowRoot.activeElement;
   if (el instanceof HTMLElement) el.blur();
 };
-addEventListener("pagehide", flush);
+const gone = { page: false, window: false };
+const leave = (why: keyof typeof gone): void => {
+  gone[why] = true;
+  dropFocus();
+};
+addEventListener("pagehide", () => {
+  flush();
+  leave("page");
+});
+addEventListener("freeze", () => leave("page"));
+addEventListener("pageshow", () => (gone.page = false));
+addEventListener("resume", () => (gone.page = false));
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) return;
   flush();
   dropFocus();
 });
-addEventListener("blur", () => matchMedia("(pointer: coarse)").matches && dropFocus());
+addEventListener("blur", () => coarse() && leave("window"));
+addEventListener("focus", () => (gone.window = false));
 // A focus can also arrive while the app is away: MathLive focuses its keyboard sink 60 ms after mf.focus(), in a
 // timer dropFocus cannot cancel, and a repeat timer or an insert after an await does the same (F11, F13). Drop any
-// focus that lands while the page is hidden, or while a touch screen's window is blurred. focusin is composed, so
-// it reaches document from inside MathLive's shadow root.
-const away = (): boolean => document.hidden || (matchMedia("(pointer: coarse)").matches && !document.hasFocus());
+// focus that lands while away. The window's blur is read from its own event, not from document.hasFocus() (F99: a
+// focus during a blur-only leave stayed). focusin is composed, so it reaches document from inside MathLive's shadow root.
+const away = (): boolean => document.hidden || gone.page || gone.window;
 document.addEventListener("focusin", () => away() && dropFocus(), true);
 
 mount(App, { target: document.getElementById("app") as HTMLElement, props: { session, entry, shell, userKeys } });
