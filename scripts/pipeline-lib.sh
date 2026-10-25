@@ -153,11 +153,11 @@ red_first() {
     if [[ $rc -eq 0 ]]; then :
     elif [[ $rc -eq 124 ]]; then err="stage error: golden timed out on phase-1"
     elif ! grep -q 'GOLDEN GATE FAILED' "$log"; then err="stage error: golden exit $rc on phase-1 without GOLDEN GATE FAILED (engine or environment error?)"
-    else  # red only when a FAIL line of the stage names the id as a whole token (PASS lines of passing cases do not count)
+    else  # red only when a detail line (two spaces, the stage, the id, a colon: golden.ts:218) names the id as a whole token; the FAIL summary line names no case
       local re
       for f in $ids; do
         re="$(sed 's/[][\.^$*+?(){}|\/-]/\\&/g' <<<"$f")"
-        grep -qE "^FAIL [A-Za-z0-9_-]+:(.*[^A-Za-z0-9_.-])?${re}([^A-Za-z0-9_.-]|$)" "$log" && red=1
+        grep -qE "^  [A-Za-z0-9_-]+ ${re}:" "$log" && grep -q 'GOLDEN GATE FAILED' "$log" && red=1
       done
     fi
   fi
