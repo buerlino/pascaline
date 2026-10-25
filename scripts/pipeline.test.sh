@@ -269,5 +269,19 @@ echo y | (cd "$bs" && PATH="$bs/bin:$PATH" PASCALINE_CACHE="$bs/cache" NO_LOCK=1
 grep -q -- '--no-daemon' "$bs/stdin.txt" || fail "A35: build.sh's Gradle runs without --no-daemon"
 grep -q 'keep its screen on while charging (brief 0c rule 2); never remove its PIN' "$here/../tools/core-device.sh" || fail "A33f2: core-device.sh lock message"
 
+# A37: the flake census: a dry run plans it; flaky_items lists only tests that failed in some runs; head_is notices a moved HEAD
+out="$("$script" flakes 3 --dry-run 2>&1)"; rc=$?
+[[ $rc -eq 0 ]] || fail "A37: flakes --dry-run: exit $rc: $out"
+for want in 'host-cpu' 'HEAD must still be' 'FLAKES 3: ABORTED (HEAD moved)' 'FLAKES 3: vitest <k> of 5 runs clean, e2e <k> of 5, flaky: <ids or none>' '.tasks/flakes-'; do
+  grep -qF -- "$want" <<<"$out" || fail "A37: flakes --dry-run does not print '$want': $out"
+done
+printf 'a.test.ts\tone\nb.test.ts\ttwo\n' > "$tmp/i1"; printf 'a.test.ts\tone\n' > "$tmp/i2"; : > "$tmp/i3"
+[[ "$(flaky_items 3 "$tmp/i1" "$tmp/i2" "$tmp/i3")" == $'2/3\ta.test.ts\tone\n1/3\tb.test.ts\ttwo' || "$(flaky_items 3 "$tmp/i1" "$tmp/i2" "$tmp/i3")" == $'1/3\tb.test.ts\ttwo\n2/3\ta.test.ts\tone' ]] || fail "A37: flaky_items: $(flaky_items 3 "$tmp/i1" "$tmp/i2" "$tmp/i3")"
+[[ -z "$(flaky_items 2 "$tmp/i1" "$tmp/i1")" ]] || fail "A37: a test failing in every run is called flaky"
+[[ -z "$(flaky_items 2 "$tmp/i3" "$tmp/i3")" ]] || fail "A37: no failures gives flaky items"
+head_is "$tmp/heads-wt" "$det" || fail "A37: head_is refuses the current HEAD"
+gc "$tmp/heads-wt" moved; head_is "$tmp/heads-wt" "$det" && fail "A37: head_is accepts a moved HEAD"
+grep -q 'head_is "$integ" "$sha"' "$here/pipeline.sh" || fail "A37: pipeline.sh does not check HEAD between runs"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
