@@ -1,0 +1,117 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// G110: the Find census's pure parts on fixed inputs (no engine): the help example as keyboard LaTeX, the number variants, the
+// classes, and the gate's comparison with its known file. The LaTeX strings are what the keys write (checked through our parser).
+import { describe, expect, it } from "vitest";
+import { latexToGiac } from "../src/input/latex-to-giac.ts";
+import { decimalFromString, ZERO_VALUE } from "../src/engine/format.ts";
+import { argsLatex, helpExamples, samplesOf } from "../../tools/probes/findcensus/samples.ts";
+import { classify, onNumbers, rawText } from "../../tools/probes/findcensus/classify.ts";
+import { censusStage, classStrings, knownText } from "../../tools/probes/findcensus/stage.ts";
+import type { Row } from "../../tools/probes/findcensus/run.ts";
+import type { Answer } from "../../tools/probes/findcensus/worker.ts";
+
+const answer = (o: Partial<Answer>): Answer => ({ ok: true, text: "", left: [], ...o });
+const num = (s: string): Answer["value"] => ({ re: decimalFromString(s)!, im: ZERO_VALUE });
+
+describe("findcensus samples", () => {
+  it("reads Giac's help blocks: every name of a block, its example lines, not its text lines", () => {
+    const ex = helpExamples("# erfc\n1 Renvoie …\n2 Returns …\n0 Real(x0)\n-1 erf\nerfc(1)\nerfc(1/(sqrt(2)))*1/2\n\n# gcd igcd\n2 GCD\ngcd(45,75)\n");
+    expect(ex.get("erfc")).toEqual(["erfc(1)", "erfc(1/(sqrt(2)))*1/2"]);
+    expect(ex.get("igcd")).toEqual(["gcd(45,75)"]);
+  });
+  it("writes the arguments as the keys do, and our parser reads them back as Giac's text", () => {
+    const cases: [string, string][] = [
+      ["x-1/6*x^3,x", "x-(1/6)*x^3,x"],
+      ["[[1,2],[3,4]]", "[[1,2],[3,4]]"],
+      ["[1,2,3],2", "[1,2,3],2"],
+      ["2,sqrt(2)", "2,sqrt(2)"],
+      ["-(x+1)^2", "-(x+1)^2"],
+      ["a-(b+c),a-(-b)", "a-(b+c),a-(-b)"],
+      ["x<=2,x>0", "x<=2,x>0"],
+      ["(1/2)^3", "(1/2)^3"],
+      ["log(x)", "ln(x)"],
+    ];
+    for (const [giac, back] of cases) {
+      const latex = `\\operatorname{gcd}\\left(${argsLatex(giac)}\\right)`;
+      expect(latexToGiac(latex).replace(/\s/g, "")).toBe(`gcd(${back})`);
+    }
+  });
+  it("takes the first whole-line call it can type, and adds the other number kinds of its last argument", () => {
+    const s = samplesOf("erfc", ["erfc"], ["erfc(1/(sqrt(2)))*1/2", "erfc(1)"]);
+    expect(Array.isArray(s) && s.map((x) => [x.k, x.kind ?? "", x.latex])).toEqual([
+      [0, "", "\\operatorname{erfc}\\left(1\\right)"],
+      [1, "decimal", "\\operatorname{erfc}\\left(0.5\\right)"],
+      [2, "negative", "\\operatorname{erfc}\\left(-2\\right)"],
+      [3, "list", "\\operatorname{erfc}\\left(\\left\\{1,2\\right\\}\\right)"],
+    ]);
+    expect(Array.isArray(s) && s[2]!.py).toEqual(["(-N('2'))"]);
+  });
+  it("has no variants when an argument is no number, and no sample for what the keys cannot type", () => {
+    const s = samplesOf("diff", ["diff"], ["diff(x^2,x)"]);
+    expect(Array.isArray(s) && s.length).toBe(1);
+    expect(Array.isArray(s) && s[0]!.py).toBeNull();
+    expect(samplesOf("cat", ["cat"], ['cat("a",1)'])).toEqual({ none: 'no example the keys can type (character "\\"")' });
+    expect(samplesOf("x", ["x"], ["y:=x(2)"])).toEqual({ none: "no example the keys can type" });
+    expect(samplesOf("x", ["x"], [])).toEqual({ none: "no example in Giac's help" });
+  });
+});
+
+describe("findcensus classes", () => {
+  const value = { kind: "value", re: "0.157299207050285130658779364917390740703933", im: "0" } as const;
+  it("judges a number against the oracle: checked, wrong, or unchecked without one", () => {
+    expect(classify("erfc", "home", "erfc(1)", answer({ text: "0.15729920705", value: num("0.15729920705"), mark: "≈" }), value).cls).toBe("checked");
+    expect(classify("erfc", "home", "erfc(1)", answer({ text: "0.15829920705", value: num("0.15829920705"), mark: "≈" }), value).cls).toBe("wrong");
+    expect(classify("erfc", "home", "erfc(1)", answer({ text: "0.15729920705", value: num("0.15729920705"), mark: "≈" }), { kind: "skip", reason: "no oracle" }).cls).toBe("unchecked");
+    expect(classify("perm", "home", "perm(4,2)", answer({ text: "0", value: num("0"), mark: "=" }), { kind: "novalue" }).cls).toBe("wrong");
+  });
+  it("puts a name left behind, a hang, a crash and a parser refusal before the answer", () => {
+    expect(classify("sto", "home", "sto(2,a)", answer({ text: "2", value: num("2"), mark: "=", left: ["name a", "logged a"] }), null)).toEqual({ cls: "state", detail: "name a; logged a" });
+    expect(classify("f", "cas", "f(1)", { hang: true }, null).cls).toBe("hang");
+    expect(classify("plot", "home", "plot(x,x)", answer({ ok: false, crash: "window is not defined" }), null).cls).toBe("crash");
+    expect(classify("sst", "home", "", { parserError: "unexpected closing delimiter" }, null)).toEqual({ cls: "refused", detail: "parser: unexpected closing delimiter" });
+    expect(classify("znorder", "home", "znorder(17,0.5)", answer({ ok: false, error: "engine", text: "Bad Argument Type" }), null).cls).toBe("refused");
+  });
+  it("calls Giac's words, objects and strings raw, and a plain expression symbolic", () => {
+    expect(rawText("circle", "pnt(pnt[circle…])", "home", "circle(0,1)")).toBe("a graphic object");
+    expect(rawText("graph", "an undirected unweighted graph with 5 vertices and 4 edges", "cas", "graph(5)")).toBe("a graph object");
+    expect(rawText("str", '"123/100"', "cas", "str(1.23)")).toBe("a string");
+    expect(rawText("znorder", "undef", "home", "znorder(17,0.5)")).toBe("undef");
+    expect(classify("diff", "cas", "diff(x^2,x)", answer({ text: "2*x" }), null)).toEqual({ cls: "symbolic", detail: "2*x" });
+  });
+  it("calls an unevaluated call on numbers raw in Home, and in CAS only with a float in it (an exact form otherwise)", () => {
+    expect(onNumbers("Ei(1)")).toBe(true);
+    expect(onNumbers("sin(pasdeg*x)")).toBe(false);
+    expect(onNumbers("Ei([1,2])+pi")).toBe(true);
+    expect(rawText("Ei", "Ei(1)", "cas", "Ei(1)")).toBeNull();
+    expect(rawText("Airy_Ai", "[Airy_Ai(1),Airy_Ai(2)]", "home", "Airy_Ai([1,2])")).toBe("Airy_Ai( came back unevaluated");
+    expect(rawText("binomial_icdf", "binomial_icdf(4,0.5,3.0)", "cas", "binomial_icdf(4,0.5,3)")).toBe("binomial_icdf( came back unevaluated");
+    expect(rawText("piecewise", "piecewise(x>0,1,2)", "home", "piecewise(x>0,1,2)")).toBeNull();
+  });
+});
+
+describe("findcensus stage", () => {
+  const row = (name: string, view: "home" | "cas", k: number, cls: Row["cls"]): Row => ({ id: `${view} ${name}/${k}`, name, view, latex: "L", cls, detail: "d", ms: 1 });
+  const rows = [row("erfc", "home", 0, "checked"), row("erfc", "home", 1, "wrong"), row("erfc", "cas", 0, "symbolic"), row("erfc", "cas", 1, "symbolic")];
+  it("writes one class string per function, `-` without a sample", () => {
+    expect(Object.fromEntries(classStrings(rows, ["cat"]))).toEqual({ erfc: "cw|ss", cat: "-" });
+  });
+  it("passes when every class and every finding is known", () => {
+    const r = censusStage(rows, ["cat"], { findings: { F95: ["home erfc/1"] }, classes: { erfc: "cw|ss", cat: "-" } });
+    expect(r).toMatchObject({ ok: true, summary: "1 findings filed, 0 class changes, 0 new findings, 0 now passing" });
+  });
+  it("fails on a class change, naming the input, on a new finding and on a finding that went away", () => {
+    const r = censusStage(rows, ["cat"], { findings: { F95: ["cas erfc/0"] }, classes: { erfc: "cc|ss", cat: "-" } });
+    expect(r.ok).toBe(false);
+    expect(r.lines).toContain("CHANGED home erfc/1: was checked, now wrong (L  =>  d)");
+    expect(r.lines).toContain("NEW finding home erfc/1 [wrong]: L  =>  d");
+    expect(r.lines).toContain("NOW PASSING cas erfc/0: listed under F95, now symbolic (remove it)");
+  });
+  it("fails on a lost function and on an unfiled finding", () => {
+    const r = censusStage(rows, [], { findings: { unfiled: ["home erfc/1"] }, classes: { erfc: "cw|ss", cat: "-" } });
+    expect(r.lines).toEqual(["GONE cat: in the known file, not in this run", "NEW finding home erfc/1 [wrong]: L  =>  d"]);
+  });
+  it("rewrites the known file: the header kept, findings kept or unfiled, classes sorted", () => {
+    const t = knownText("# head\n# more\nfindings:\n  F1: []\nclasses: {}\n", rows, ["cat"], { findings: { F1: ["cas erfc/0"] } });
+    expect(t).toBe('# head\n# more\nfindings:\n  unfiled: ["home erfc/1"]\nclasses:\n  "cat": "-"\n  "erfc": "cw|ss"\n');
+  });
+});

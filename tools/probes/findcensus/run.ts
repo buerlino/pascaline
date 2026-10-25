@@ -46,7 +46,8 @@ export function tier1(repo: string): Entry[] {
 /** Giac's help text from the pinned tarball (tools/find-index/state.mjs; PASCALINE_DL_DIR, default the main checkout's cache). */
 export async function aideCas(mainCheckout: string): Promise<string> {
   process.env["PASCALINE_DL_DIR"] ??= join(mainCheckout, "engine/giac/_downloads");
-  const st = (await import("../../find-index/state.mjs")) as unknown as {
+  // a URL, not a literal specifier: state.mjs is plain JavaScript without types
+  const st = (await import(new URL("../../find-index/state.mjs", import.meta.url).href)) as {
     SOURCES: { giac: unknown };
     tarball: (s: unknown) => string;
     member: (p: string, n: string) => string;

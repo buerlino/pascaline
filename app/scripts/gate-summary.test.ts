@@ -3,7 +3,7 @@
 // Vitest's and Playwright's JSON reporters.
 import { describe, expect, it } from "vitest";
 import {
-  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeTypecheck, summarizeVitest, vitestFailures,
+  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeFindCensus, summarizeTypecheck, summarizeVitest, vitestFailures,
 } from "./gate-summary.ts";
 
 const vitestOk = {
@@ -145,6 +145,21 @@ describe("summarizeSeqSweep", () => {
   });
   it("fails without the closing line", () => {
     expect(summarizeSeqSweep("boom", 1).ok).toBe(false);
+  });
+});
+
+describe("summarizeFindCensus", () => {
+  it("passes with the counts", () => {
+    const ok = "FINDCENSUS PASSED: 3314 runs of 1657 inputs (958 functions, 308 without a sample): checked 137, unchecked 793; 232 engine restarts; total 44.4 s; 474 findings filed, 0 class changes, 0 new findings, 0 now passing";
+    expect(summarizeFindCensus(ok, 0)).toEqual({ ok: true, detail: "3314 runs of 1657 inputs, 474 findings filed, 44.4 s" });
+  });
+  it("fails on a class change and names it", () => {
+    const s = summarizeFindCensus("  findcensus CHANGED home erfc/0: was checked, now wrong (x)\nFINDCENSUS FAILED: 2 runs of 1 inputs (1 functions, 0 without a sample): wrong 1; total 1.0 s; 0 findings filed, 1 class changes, 1 new findings, 0 now passing", 1);
+    expect(s.ok).toBe(false);
+    expect(s.detail).toContain("1 to look at: CHANGED home erfc/0");
+  });
+  it("fails without its last line", () => {
+    expect(summarizeFindCensus("Error: no Find index", 1)).toEqual({ ok: false, detail: "exit 1: Error: no Find index" });
   });
 });
 
