@@ -179,30 +179,82 @@ async function wayBack(page: Page, way: Way, awayMs = 0): Promise<void> {
   await cdp.detach();
 }
 
+/** The entry has the focus (the state a typed or template cell must leave from), in the view it names. */
+async function typing(page: Page, view: "home" | "cas"): Promise<void> {
+  await expect.poll(() => page.evaluate(() => window.pascaline.session.view)).toBe(view);
+  await expect.poll(() => editableFocused(page), `the ${view} entry is focused before leaving`).toBe(true);
+}
+const sheet = (page: Page, title: string | RegExp) => expect(page.getByTestId("sheet-title")).toHaveText(title);
+
+// Each cell ends on the state it names (a visible sheet, page or view, or the focused entry), so that a key sequence
+// that lands elsewhere fails here instead of passing with nothing focused to begin with.
 const screens: Record<string, (page: Page) => Promise<void>> = {
   "Home, empty line": async (page) => {
     await tap(page, ["d1", "esc"]);
+    await expect.poll(() => entryValue(page)).toBe("");
+    await typing(page, "home");
   },
-  "Home, typed line": (page) => tap(page, ["d1", "add", "d2"]),
-  "Home, result just entered": (page) => tap(page, ["d1", "add", "d2", "enter"]),
+  "Home, typed line": async (page) => {
+    await tap(page, ["d1", "add", "d2"]);
+    await typing(page, "home");
+  },
+  "Home, result just entered": async (page) => {
+    await tap(page, ["d1", "add", "d2", "enter"]);
+    await expect(page.locator('[data-status="done"]').last()).toBeVisible();
+    await typing(page, "home");
+  },
   "Home, cursor moved by a drag": async (page) => {
     await tap(page, ["d1", "add", "d2"]);
     await drag(page, "left", -30, 0);
+    await typing(page, "home");
   },
-  "Home, inside a template box": (page) => tap(page, ["d1", "frac"]),
-  "CAS, typed line": (page) => tap(page, ["@cas", "d1", "add", "d2"]),
-  "CAS, result just entered": (page) => tap(page, ["@cas", "d1", "add", "d2", "enter"]),
-  "CAS, inside a template box": (page) => tap(page, ["@cas", "d1", "frac"]),
-  "Tmpl sheet open": (page) => tap(page, ["d1", "tmpl"]),
-  "Menu sheet open": (page) => tap(page, ["d1", "add", "d2", "enter", "@menu"]),
-  "Mode sheet open": (page) => tap(page, ["d1", "@mode"]),
-  "Settings page": (page) => tap(page, ["d1", "@mode", "d5"]),
+  "Home, inside a template box": async (page) => {
+    await tap(page, ["d1", "frac"]);
+    await expect.poll(() => entryValue(page)).toContain("frac");
+    await typing(page, "home");
+  },
+  "CAS, typed line": async (page) => {
+    await tap(page, ["@cas", "d1", "add", "d2"]);
+    await typing(page, "cas");
+  },
+  "CAS, result just entered": async (page) => {
+    await tap(page, ["@cas", "d1", "add", "d2", "enter"]);
+    await expect(page.locator('[data-status="done"]').last()).toBeVisible();
+    await typing(page, "cas");
+  },
+  "CAS, inside a template box": async (page) => {
+    await tap(page, ["@cas", "d1", "frac"]);
+    await expect.poll(() => entryValue(page)).toContain("frac");
+    await typing(page, "cas");
+  },
+  "Tmpl sheet open": async (page) => {
+    await tap(page, ["d1", "tmpl"]);
+    await sheet(page, "Templates");
+  },
+  "Menu sheet open": async (page) => {
+    await tap(page, ["d1", "add", "d2", "enter", "@menu"]);
+    await sheet(page, "Menu");
+  },
+  "Mode sheet open": async (page) => {
+    await tap(page, ["d1", "@mode"]);
+    await sheet(page, "Mode");
+  },
+  "Settings page": async (page) => {
+    await tap(page, ["d1", "@mode", "d5"]);
+    await expect(page.getByTestId("settings")).toBeVisible();
+  },
   "Solve Num after an edit (c44)": async (page) => {
     await tap(page, ["@place", "d4", "@symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "@num"]);
     await page.locator('[data-testid="solve-table"] tr[data-name="x"] th button').tap();
     await tap(page, ["esc", "d1", "enter"]);
+    await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"]')).toBeVisible();
+    await expect(page.locator('[data-testid="solve-table"] tr[data-name="x"] td').first()).toContainText("1");
   },
-  "Function Plot": (page) => tap(page, ["@symb", "x", "sq", "enter", "@plot"]),
+  "Function Plot": async (page) => {
+    await tap(page, ["@symb", "x", "sq", "enter", "@plot"]);
+    await expect(page.locator(".board canvas")).toBeVisible();
+    await page.waitForFunction(() => window.pascaline.plot.board !== undefined);
+  },
 };
 
 for (const [screen, go] of Object.entries(screens)) {

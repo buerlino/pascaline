@@ -53,9 +53,10 @@ const flush = (): void => {
 };
 // Leaving the app (a swipe, the app switcher, the notification shade): drop the focus. Android restores focus to the
 // focused element when the app comes back and opens the system keyboard on it, inputmode=none or not (K0, user
-// 2026-10-13). The next key press focuses the entry again. Every way of leaving takes this one path (F99, R81: a
-// pagehide alone kept the focus): the page hides, is hidden from history (pagehide) or frozen, or a touch screen's
-// window blurs (a desktop keeps its focus across windows). The app is away until the matching return event.
+// 2026-10-13). The next key press focuses the entry again. Every way of leaving takes this one path (R81): the page
+// hides, is hidden from history (pagehide) or frozen, or a touch screen's window blurs (a desktop keeps its focus
+// across windows). The app is away until the matching return event. On Android the hide and the real blur already
+// covered each leave; this does not decide F99, whose device path is open (tools/probes/ime-return.py).
 const coarse = (): boolean => matchMedia("(pointer: coarse)").matches;
 const dropFocus = (): void => {
   let el = document.activeElement;
@@ -83,8 +84,8 @@ addEventListener("blur", () => coarse() && leave("window"));
 addEventListener("focus", () => (gone.window = false));
 // A focus can also arrive while the app is away: MathLive focuses its keyboard sink 60 ms after mf.focus(), in a
 // timer dropFocus cannot cancel, and a repeat timer or an insert after an await does the same (F11, F13). Drop any
-// focus that lands while away. The window's blur is read from its own event, not from document.hasFocus() (F99: a
-// focus during a blur-only leave stayed). focusin is composed, so it reaches document from inside MathLive's shadow root.
+// focus that lands while away. The window's blur is read from its own blur and focus events, one rule for every way
+// of leaving, not from document.hasFocus(). focusin is composed, so it reaches document from inside MathLive's shadow root.
 const away = (): boolean => document.hidden || gone.page || gone.window;
 document.addEventListener("focusin", () => away() && dropFocus(), true);
 
