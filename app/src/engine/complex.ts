@@ -4,7 +4,7 @@
 // through our definition (pasatan); a stored name or user function that calls it is read through a copy
 // (complexReads). Split from numeric.ts (cleanup 2026-10-20, item 13). Synchronous, UI-free; only erasable TypeScript.
 import { AUDITED_FUNCTIONS, namePrint, type Giac } from "./numeric.ts";
-import { functionsIn, leadingName, names, namesIn, programParams, renameCalls, renameNames, topLevelArgs } from "./giacPrint.ts";
+import { functionsIn, leadingName, names, namesIn, programParams, renameCalls, renameNames, topLevelArgs, type Quoting } from "./giacPrint.ts";
 
 function isError(out: string): boolean {
   return out.startsWith("GIAC_ERROR");
@@ -30,15 +30,15 @@ const COMPLEX_REPLACED: Readonly<Record<string, string>> = {
 };
 
 /** `text` with every call of a function Giac gets wrong on complex arguments replaced by ours (outside strings); the
- *  same text when there is none. */
-export function complexSafe(text: string): string {
-  return renameCalls(text, COMPLEX_REPLACED);
+ *  same text when there is none. `q`: "printed" for a text Giac printed (a stored value, namePrint). */
+export function complexSafe(text: string, q: Quoting = "typed"): string {
+  return renameCalls(text, COMPLEX_REPLACED, q);
 }
 
 /** Prepares `text` to be evaluated for its value: with complexSafe's replacements and their definitions loaded; the
  *  text itself when there is nothing to replace. */
-export function forValue(giac: Giac, text: string): string {
-  const safe = complexSafe(text);
+export function forValue(giac: Giac, text: string, q: Quoting = "typed"): string {
+  const safe = complexSafe(text, q);
   if (safe === text) return text;
   for (const [name, def] of Object.entries(COMPLEX_DEFINITIONS)) {
     if (!safe.includes(name)) continue;
@@ -49,8 +49,8 @@ export function forValue(giac: Giac, text: string): string {
 }
 
 /** The functions of `input` that COMPLEX_DEFINITIONS replace in RAD (atan and arctan). */
-export function complexReplacedIn(input: string): string[] {
-  return functionsIn(input).filter((f) => Object.hasOwn(COMPLEX_REPLACED, f));
+export function complexReplacedIn(input: string, q: Quoting = "typed"): string[] {
+  return functionsIn(input, q).filter((f) => Object.hasOwn(COMPLEX_REPLACED, f));
 }
 
 /** The value of `name` has a non-zero imaginary part (or its im() cannot be had). */
@@ -99,13 +99,13 @@ export function complexReads(giac: Giac, expr: string, copy = true): { text: str
     const v = stored(n);
     if (v === null || refs.has(n)) continue;
     const bound = boundIn(v);
-    const out = [...new Set([...functionsIn(v), ...namesIn(v)])].filter((m) => !bound.has(m) && stored(m) !== null);
+    const out = [...new Set([...functionsIn(v, "printed"), ...namesIn(v, "printed")])].filter((m) => !bound.has(m) && stored(m) !== null);
     refs.set(n, out);
     queue.push(...out);
   }
   // A name needs a copy when its text calls a replaced function, or reads a name that needs one (to a fixed point, so a
   // cycle of functions is read too).
-  const needs = new Set([...refs.keys()].filter((n) => complexReplacedIn(stored(n)!).length > 0));
+  const needs = new Set([...refs.keys()].filter((n) => complexReplacedIn(stored(n)!, "printed").length > 0));
   for (let grew = true; grew; ) {
     grew = false;
     for (const [n, out] of refs)
@@ -114,13 +114,13 @@ export function complexReads(giac: Giac, expr: string, copy = true): { text: str
         grew = true;
       }
   }
-  const fns = [...new Set([...needs].flatMap((n) => complexReplacedIn(stored(n)!)))];
+  const fns = [...new Set([...needs].flatMap((n) => complexReplacedIn(stored(n)!, "printed")))];
   if (capped) fns.push(...Object.keys(COMPLEX_REPLACED).filter((f) => !fns.includes(f)));
   if (!needs.size) return { text: expr, copies: [], hidden: fns };
   if (!copy) return { text: expr, copies: [], hidden: fns };
   const slots = new Map([...needs].map((n, k): [string, string] => [n, `pasxn${k}`]));
-  const throughSlots = (text: string, names: readonly string[]): string =>
-    renameNames(text, new Map(names.filter((m) => slots.has(m)).map((m) => [m, slots.get(m)!])));
+  const throughSlots = (text: string, names: readonly string[], q: Quoting): string =>
+    renameNames(text, new Map(names.filter((m) => slots.has(m)).map((m) => [m, slots.get(m)!])), q);
   // The names a text reads come first, so a value's copy is evaluated with the copies it reads defined.
   const order: string[] = [];
   const visit = (n: string): void => {
@@ -131,11 +131,13 @@ export function complexReads(giac: Giac, expr: string, copy = true): { text: str
   for (const n of needs) visit(n);
   let refused = false;
   for (const n of order.reverse()) {
-    const text = throughSlots(forValue(giac, stored(n)!), refs.get(n) ?? []);
-    if (isError(giac.eval(`${slots.get(n)}:=(${text})`))) refused = true;
+    // G105f2: Giac prints `\` as itself; read back as typed it escapes the next character (`"C:\"` runs on, and Giac
+    // gives a string, not an error), so a copy of such a text is not the stored one: refused.
+    const text = throughSlots(forValue(giac, stored(n)!, "printed"), refs.get(n) ?? [], "printed");
+    if (text.includes("\\") || isError(giac.eval(`${slots.get(n)}:=(${text})`))) refused = true;
   }
   // A refused copy leaves its slot empty: the input keeps the stored names (Giac's own value, unaudited).
-  return { text: refused ? expr : throughSlots(expr, top), copies: [...slots.values()], hidden: refused || capped ? fns : [] };
+  return { text: refused ? expr : throughSlots(expr, top, "typed"), copies: [...slots.values()], hidden: refused || capped ? fns : [] };
 }
 
 /** The names a stored program binds (`(x,y)->{local a,b:=1; …}` → x, y, a, b): its parameters and `local` names, which

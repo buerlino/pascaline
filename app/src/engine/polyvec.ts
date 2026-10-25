@@ -9,7 +9,7 @@
 // values together, and only when the text holds `poly1[`. If G103 reads a value's type from bridge-3, this check moves there.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { type Giac } from "./numeric.ts";
-import { functionsIn, namesIn } from "./giacPrint.ts";
+import { functionsIn, namesIn, type Quoting } from "./giacPrint.ts";
 
 /** Giac functions that create a coefficient vector of subtype 10, probed on the shared engine (2026-10-23). The ones
  *  that only pass a polynomial argument through (gcd, lcm, diff, factors) are not listed: that argument is a call of
@@ -38,9 +38,9 @@ export function printsPoly(text: string): boolean {
   return text.includes("poly1[");
 }
 
-/** The input names a function that returns a polynomial, or `poly1` itself (strings left out). */
-export function asksPoly(input: string): boolean {
-  return [...functionsIn(input), ...namesIn(input)].some((n) => POLY.has(n));
+/** The input names a function that returns a polynomial, or `poly1` itself (strings left out, as `q` writes them). */
+export function asksPoly(input: string, q: Quoting = "typed"): boolean {
+  return [...functionsIn(input, q), ...namesIn(input, q)].some((n) => POLY.has(n));
 }
 
 /**
@@ -57,7 +57,7 @@ export function unaskedPoly(giac: Giac, slot: string, input: string, output: str
   if (!out.startsWith('"1[')) return false;
   // what the names hold: a polynomial there was asked for when it was stored, or a function's body asks for one
   const held = out.slice(3);
-  return !printsPoly(held) && !asksPoly(held);
+  return !printsPoly(held) && !asksPoly(held, "printed");
 }
 
 /** Cheap text test for a CAS assignment, which must not store a value this check refuses: its right-hand side adds or

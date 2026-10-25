@@ -545,6 +545,26 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.text).not.toContain("g(");
     expect(complexReads(giac, "evalf(g(2*i))", false)).toEqual({ text: "evalf(g(2*i))", copies: [], hidden: ["atan"] });
   });
+  it("G105f2: a stored program whose string ends in \\ is read with Giac's print quoting: its atan is found, and its copy is refused, so the value is unaudited (source: derived)", async () => {
+    const { complexReads, purgeReads } = await import("./complex.ts");
+    const L = await loadNodeGiac();
+    const giac = engineGiac(L);
+    const own = new EngineHost(L.giac, L.bridge);
+    // Defined in Giac directly (as a log replay does): the CAS entry of this text ends in a syntax error (Not done).
+    L.giac.eval('f(x):={local s; s:="C:\\\\"; atan(2*i*x)}');
+    expect(L.giac.eval("f")).toContain('"C:\\"');
+    // The typed skip read \" as an escaped quote and hid atan: no copy, nothing hidden, Giac's atan shown as audited.
+    const r = complexReads(giac, "evalf(f(1))");
+    purgeReads(giac, r.copies);
+    expect(r.hidden).toEqual(["atan"]);
+    expect(r.text).toBe("evalf(f(1))");
+    const v = own.cas("evalf(f(1))", defaultCasSettings).result;
+    expect(v.numeric?.facts.warn).toBe("unaudited");
+    // a program without the \ gets its copy (G56), and is our principal atan(2*i), as typed directly
+    L.giac.eval('h(x):={local s; s:="C:"; atan(2*i*x)}');
+    const direct = own.cas("evalf(atan(2*i))", defaultCasSettings).result.text;
+    expect(own.cas("evalf(h(1))", defaultCasSettings).result.text).toBe(direct);
+  });
   it("G56f1: a refused copy keeps the input's own names and hides the replaced function (source: derived)", async () => {
     const { complexReads, purgeReads } = await import("./complex.ts");
     const L = await loadNodeGiac();

@@ -510,8 +510,8 @@ export function exactFacts(
   // `name` (Ans) keeps Giac's own text. G44f1: an erf through ours, at Digits (erfValueText); a non-real argument is
   // Giac's own erf, with the flag set. The others: the exact run asked for its digits already (an input of audited
   // functions), or one call does.
-  const safe = complexSafe(text) === text ? text : forValue(giac, text);
-  const erf = functionsIn(text).some((f) => f === "erf" || f === "erfc") ? erfValueText(giac, safe) : safe;
+  const safe = complexSafe(text, "printed") === text ? text : forValue(giac, text, "printed");
+  const erf = functionsIn(text, "printed").some((f) => f === "erf" || f === "erfc") ? erfValueText(giac, safe) : safe;
   const src = erf !== safe ? `(${erf})` : safe === text ? name : `(${safe})`;
   const at = (text: string, prec: number): GiacValue =>
     erf !== safe ? withDigits(giac, prec, digits, () => giac.value(text, [prec])) : giac.value(text, [prec]);

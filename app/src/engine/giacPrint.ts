@@ -315,17 +315,17 @@ export function replaceLiteral(text: string, lit: string, by: string): string {
   return out + text.slice(i);
 }
 
-/** Names called in a Giac text (`romberg(exp(-x^2),x,0,1)` → romberg, exp). Strings are skipped. */
-export function functionsIn(input: string): string[] {
+/** Names called in a Giac text (`romberg(exp(-x^2),x,0,1)` → romberg, exp). Strings are skipped (as `q` writes them). */
+export function functionsIn(input: string, q: Quoting = "typed"): string[] {
   const out: string[] = [];
-  for (const n of names(input)) if (n.call && !out.includes(n.name)) out.push(n.name);
+  for (const n of names(input, q)) if (n.call && !out.includes(n.name)) out.push(n.name);
   return out;
 }
 
-/** Names in a Giac text that are not called (`B*2+f(x)` → B, x). Strings are skipped. */
-export function namesIn(input: string): string[] {
+/** Names in a Giac text that are not called (`B*2+f(x)` → B, x). Strings are skipped (as `q` writes them). */
+export function namesIn(input: string, q: Quoting = "typed"): string[] {
   const out: string[] = [];
-  for (const n of names(input)) if (!n.call && !out.includes(n.name)) out.push(n.name);
+  for (const n of names(input, q)) if (!n.call && !out.includes(n.name)) out.push(n.name);
   return out;
 }
 

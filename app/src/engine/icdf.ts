@@ -171,7 +171,7 @@ const ERF_REPLACED: Readonly<Record<string, string>> = { erf: ICDF_REPLACED.erf!
  * on either side.
  */
 export function erfValueText(giac: Giac, text: string): string {
-  if (!functionsIn(text).some((f) => Object.hasOwn(ERF_REPLACED, f))) return text;
+  if (!functionsIn(text, "printed").some((f) => Object.hasOwn(ERF_REPLACED, f))) return text;
   let s = text;
   for (let k = s.indexOf("1-erf("); k >= 0; k = s.indexOf("1-erf(", k + 1)) {
     const close = closing(s, k + 5, "printed");

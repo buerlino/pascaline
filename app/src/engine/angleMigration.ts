@@ -9,18 +9,17 @@
 //   matches neither (or both) keeps its text.
 // Only erasable TypeScript syntax; no engine import, so the UI side (storage.ts) may use the pure half.
 import { PASDEG, rewriteAngles } from "../input/angles.ts";
-import { leadingName, mapNames } from "./giacPrint.ts";
+import { leadingName, mapNames, renameCalls } from "./giacPrint.ts";
 
 /** A Giac evaluator (EngineHost's GiacApi has this shape). */
 interface Evaluator {
   eval(input: string): string;
 }
 
-const PASEXP = /("[^"]*")|\bpasexp(\s*\()/g;
-
-/** G21's helper is gone: its calls are Giac's exp, which reads radians (F29). */
+/** G21's helper is gone: its calls are Giac's exp, which reads radians (F29). The log holds Giac's print ("printed"
+ *  strings, as EngineHost.restore reads them). */
 export function withoutPasexp(text: string): string {
-  return text.replace(PASEXP, (m, str?: string, paren?: string) => (str !== undefined ? m : `exp${paren}`));
+  return renameCalls(text, { pasexp: "exp" }, "printed");
 }
 
 /** `name:=(rhs)`, the form the log stores a value in (EngineHost.snapshot). */

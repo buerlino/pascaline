@@ -21,7 +21,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Needs the user
 0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (56: 51 drafted by sandra, c52–c56 added with you on 2026-10-21; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33).
-1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer.
+1. **Decisions in [decisions.md](decisions.md) "Needs the user":** A21's F-Droid answer; G105's angles.ts readers (a ron package?).
 2. **Your outreach steps** (decisions.md P18–P22): send Parisse patches 0003 (G75, `5fea5df`, the sinh/sin form) and 0006 (G96, `8c6cb63`) as commit links once phase-1 is pushed; the regression-file link only after G108; ask F-Droid whether checked-in derived data (`find/factors.yaml`, P22) is fine, before C4; mirror G77's pin (`gh` logged in; the command is in `engine/giac/README.md`), then annabell: release build and golden gate on the new pin.
 3. **G2 questions:** the unanswered items of `tests/golden/G2-CHECKLIST.md` (41, 42, 52, 56, 63–71; each package built a default, named in decisions.md; 63–65 can reverse S14's route R); the optional real-G2 spot checks (`spec/mapping/vc-2026-10-11/SPOT-CHECK.md`).
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).

@@ -23,6 +23,8 @@ describe("the version-3 step of the stored log (pure)", () => {
 
   it("pasexp( becomes exp( everywhere, never inside a string", () => {
     expect(withoutPasexp('ph(w):=pasexp(i*w)+pasexp (1)+"pasexp(2)"')).toBe('ph(w):=exp(i*w)+exp (1)+"pasexp(2)"');
+    // Giac's print: `\` is itself, so the string closes at its quote and the call after it is found (G105f2).
+    expect(withoutPasexp('g(w):={local s; s:="C:\\"; pasexp(w)}')).toBe('g(w):={local s; s:="C:\\"; exp(w)}');
     expect(migrate([entry({ name: "ph", kind: "fn", cmds: ["ph(w):=pasexp(i*w)"] })])[0]!.cmds).toEqual(["ph(w):=exp(i*w)"]);
   });
 
