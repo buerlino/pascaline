@@ -321,6 +321,8 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | F31 | a stored definition that crashed the worker looped the start forever | fixed G19; reviews `15f9db5` (a safe start never cleared the count), `86fbd32`, `4d75f4c`, `8cd4835`, `aca4408` |
 | F32 | no memory cap (up to 2 GB on a 3.9 GB tablet) | fixed G24; the Tab One check is still open |
 | F42 | a long press before the sheet's chunk opened an invisible sheet; the next digit deleted a row | fixed R46f1 `90f27cb` |
+| F99 | the system keyboard opened again on some returns (Fairphone 6) | fixed R81 `a956ede` (a focus() while the window is blurred fires no focusin and is handed back on the return; dropped on the window's focus); the device confirms |
+| F100 | Paste right after Copy pasted the clipboard before it (core c50 on desktop) | **open** R74f2 (Copy and Paste run unordered) |
 | `5ddd626` | Menu acted on the last result, not the picked row | fixed |
 | `aca4408`, `f6f9893` | ▲ ▼ could pick the safe-start note; a layer that gave way kept a back entry | fixed |
 | m1 | typing before MathLive loaded lost keys (2 of 5 runs) | fixed `d6c052f`; `cfe08b0` (keys while an app loads) |

@@ -95,7 +95,7 @@
 - **Probing the entry:** a scratch spec in `app/test/` that taps keys and logs `window.pascaline.entry.value` after each one (helpers `tap`, `drag`, `touch` in `app/test/helpers.ts`; `?engine=fake` is enough for the entry). Delete it afterwards.
   - To check every template, drive `window.pascaline.entry.run({kind, …})` (the key path).
   - To read each line state as the parser does, call `(await import("/src/input/parser.ts")).loadParser()` inside `page.evaluate`, then `latexToGiacInfo(value, { chips: {} })`.
-  - To simulate leaving the app, redefine `document.hidden` and dispatch `visibilitychange` and the window `blur` and `focus` events (`leaveAndReturn` in `app/test/softkeyboard.spec.ts`).
+  - To simulate leaving the app, redefine `document.hidden` and dispatch `visibilitychange` and the window `blur` and `focus` events (`leaveAndReturn` in `app/test/softkeyboard.spec.ts`). A real window blur needs the full Chromium headless with focus emulation off and a second page (`windowFocus` in softkeyboard.spec.ts): a dispatched blur leaves document.hasFocus() true and defers no focus.
   - Write the results with `writeFileSync` from the test, since `console.log` from the page is not shown.
   - For taps, set the line again and wait 550 ms before each one: MathLive counts a tap within 5 px and 500 ms of the last one as a double tap, which selects a group.
 
