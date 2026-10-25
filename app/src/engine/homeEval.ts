@@ -692,16 +692,18 @@ export function homeEval(
     // Drawn from Giac's latex() as in CAS (owner, 2026-10-15): cos(pi/7) and pi come out as textbook maths.
     const tex = deg !== null ? giac.eval(`latex(quote(${deg}))`) : latexShown(giac, slot, text);
     if (atN !== null) giac.eval("purge(pasfl)");
-    // G109: Giac's list type (a solve result too) shows with braces; Giac draws a list of rows as a matrix, so that one
-    // is drawn from the text shown
-    const listed = (value.kind === "list" || value.kind === "matrix") && text.trimStart().startsWith(LIST_TYPE);
-    const latex = isError(tex) || (listed && tex.includes("\\begin{array}")) ? {} : { latex: unquote(tex) };
+    // G109: Giac's list type at any depth (a solve result too, `[list[1,2],3]`) shows with braces, as CAS does
+    // (host.ts); Giac draws a list of rows as a matrix, so that one is drawn from the text shown
+    const shownText = deg ?? dropAngleFactor(text, "printed");
+    const display = shownText.includes(LIST_TYPE) ? bracesOf(shownText) : shownText;
+    const listed = display !== shownText;
+    const rows = listed && text.trimStart().startsWith(LIST_TYPE) && tex.includes("\\begin{array}");
+    const latex = isError(tex) || rows ? {} : { latex: unquote(tex) };
     // A float in a non-number (x-0.54764225985): nobody checked its digits, so ⚠ without a count (G27, docs/04 2.4).
     const unchecked = hasFloat(text) || forced !== undefined;
     const warn = decided?.warn ?? forced ?? (unchecked ? "unchecked" : undefined);
     const why = symbolicWhy(warn, testSides(exactBody));
-    const shownText = deg ?? dropAngleFactor(text, "printed");
-    return done({ ok: true, display: listed ? bracesOf(shownText) : shownText, ...(listed ? { braces: true as const } : {}), exact: text, ...(deg !== null || listed ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, tieRisk: false, facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) } });
+    return done({ ok: true, display, ...(listed ? { braces: true as const } : {}), exact: text, ...(deg !== null || listed ? { full: text } : {}), ...latex, path: "exact", approximate: inexactTest || unchecked, tieRisk: false, facts: { exact: false, reliableDigits: null, ...(warn ? { warn } : {}), ...(why ? { why } : {}) } });
   };
   // G44f1: Giac's inverse distribution function gives ±infinity for some p inside (0, 1) (fisher_icdf(3,4,1-10^-20)):
   // the polish computes the value; when it cannot, Giac's infinity is shown with ⚠. At p = 0 or 1 it is exact.

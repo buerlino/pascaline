@@ -107,7 +107,8 @@ export function homeItem(r: HomeIn, inexactInput: boolean): ItemResult {
     // G46f1: a symbolic result whose chip text (radian) differs from the text drawn (DEG) copies the drawn text.
     if (!r.value && !r.items && full !== r.display && r.display.length <= FULL_LIMIT) out.drawn = r.display;
     // G109: a list of Giac's list type: the chip keeps Giac's `list[…]` (Giac reads it back), the copy has braces
-    if (r.braces) out.drawn = bracesOf(full);
+    // (the drawn text above when there is one: in DEG it is the degree text, `full` the radian one)
+    if (r.braces && out.drawn === undefined) out.drawn = bracesOf(full);
   }
   return out;
 }

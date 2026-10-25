@@ -117,6 +117,25 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
     expect(home("S+1")).toMatchObject({ ok: true, display: "{-1,3}" });
   });
 
+  // fix round 1: a list type inside a vector is shown and copied with braces in Home, as CAS shows it (one rule)
+  it("shows a list type nested in a vector with braces, in Home and CAS alike", () => {
+    for (const [input, want] of [["[list[1,2],3]", "[{1,2},3]"], ["[solve(x^2=4,x),1]", "[{-2,2},1]"]] as const) {
+      expect(home(input)).toMatchObject({ ok: true, display: want });
+      expect(copy(input)).toBe(want);
+      expect(cas(input)).toMatchObject({ ok: true, text: want });
+    }
+  });
+
+  // fix round 1: in DEG a symbolic list-type result copies the degree text it shows, not the radian text of `full`
+  it("copies a DEG list-type result as shown", () => {
+    const deg = { ...defaultHomeSettings, angle: "deg" as const };
+    const { exact: _exact, ...r } = host.home("solve(sin(x)=y,x)", deg).result;
+    expect(r.full).toBe("list[asin(y),-asin(y)+pi]");
+    expect(r.display).not.toBe(bracesOf(r.full));
+    expect(r.display.startsWith("{")).toBe(true);
+    expect(copyFull({ latex: "", status: "done", text: r.display, ...homeItem(r, false) })).toBe(r.display);
+  });
+
   it("guards: a vector and a matrix show as before", () => {
     expect(home("[1,4]")).toMatchObject({ ok: true, display: "[1,4]" });
     expect(home("[[1,2],[3,4]]")).toMatchObject({ ok: true, display: "[[1,2],[3,4]]", shape: [2, 2] });
