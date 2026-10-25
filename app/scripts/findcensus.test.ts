@@ -10,6 +10,8 @@ import { censusStage, classStrings, hitDeadline, knownText, timingChanges, timin
 import type { Row } from "../../tools/probes/findcensus/run.ts";
 import type { Answer } from "../../tools/probes/findcensus/worker.ts";
 import { casMark } from "../src/goldenRun.ts";
+import { exactReading } from "../../tools/probes/findcensus/exact.ts";
+import type { GiacValue } from "../src/engine/bridge.ts";
 
 const answer = (o: Partial<Answer>): Answer => ({ ok: true, text: "", left: [], ...o });
 const num = (s: string): Answer["value"] => ({ re: decimalFromString(s)!, im: ZERO_VALUE });
@@ -117,6 +119,38 @@ describe("findcensus classes", () => {
     });
     it("classes a CAS numeric list whose items all match the oracle checked", () => {
       const a = answer({ text: "[0.15729920705,0.00467773498105]", items: [item("0.15729920705", "0.15729920705", "≈"), item("0.00467773498105", "0.00467773498105", "≈")] });
+      expect(classify("erfc", "cas", "erfc([1,2])", a, items).cls).toBe("checked");
+    });
+    // CAS erfc({1,2}) stays exact, [erfc(1),erfc(2)]: bridge-3's readings at 60 and 80 digits (the oracle's digits, cut), item by item
+    const sig = (t: string, n: number) => t.slice(0, (/^0\.0*/.exec(t)?.[0].length ?? 0) + n);
+    const listValue = (res: readonly string[]): GiacValue => ({
+      kind: "list",
+      text: "[erfc(1),erfc(2)]",
+      shape: [2],
+      elements: ["erfc(1)", "erfc(2)"],
+      kinds: ["other", "other"],
+      at: { "60": res.map((r) => [sig(r, 60), "0"] as [string, string]), "80": res.map((r) => [sig(r, 80), "0"] as [string, string]) },
+    });
+    const cas = (v: GiacValue) => {
+      const r = exactReading(v, 12);
+      if (!r || !("items" in r)) throw new Error("no items");
+      return answer({ text: v.text, items: r.items });
+    };
+    it("reads a CAS exact list item by item and classes it checked when every item matches the oracle", () => {
+      const a = cas(listValue(items.items.map((o) => o.re)));
+      expect(a.items?.map((it) => [it.mark, it.exact])).toEqual([["=", true], ["=", true]]);
+      expect(classify("erfc", "cas", "erfc([1,2])", a, items).cls).toBe("checked");
+    });
+    it("classes a CAS exact list wrong when one item disagrees with the oracle", () => {
+      const bad = items.items[1].re.replace("0.0046777349810472", "0.0046777349810473");
+      const a = cas(listValue([items.items[0].re, bad]));
+      expect(classify("erfc", "cas", "erfc([1,2])", a, items)).toMatchObject({ cls: "wrong", detail: expect.stringContaining("item 2") });
+    });
+    it("gives a CAS exact list item Giac computed in a C double the digits it prints, less one (15 printed: ≈ at 12)", () => {
+      const v = listValue(items.items.map((o) => o.re));
+      const d = (r: string) => [sig(r, 15), "0"] as [string, string];
+      const a = cas({ ...v, kinds: ["float", "other"], at: { "60": [d(items.items[0].re), v.at!["60"]![1]!], "80": [d(items.items[0].re), v.at!["80"]![1]!] }, doubles: { "60": [1, 0], "80": [1, 0] } });
+      expect(a.items?.map((it) => `${it.mark}${it.n ?? ""}`)).toEqual(["≈", "="]);
       expect(classify("erfc", "cas", "erfc([1,2])", a, items).cls).toBe("checked");
     });
   });

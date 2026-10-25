@@ -8,8 +8,9 @@ import { parentPort } from "node:worker_threads";
 import { EngineHost } from "../../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings, pasdegCommand, precisionFacts, type HomeResult } from "../../../app/src/engine/homeEval.ts";
-import { confirmedDigits, markOf, ZERO_VALUE, type ComplexValue } from "../../../app/src/engine/format.ts";
-import { numbersAt, rationalValue, shapeOfValue } from "../../../app/src/engine/numeric.ts";
+import { markOf, ZERO_VALUE, type ComplexValue } from "../../../app/src/engine/format.ts";
+import { rationalValue } from "../../../app/src/engine/numeric.ts";
+import { EXACT_DIGITS, EXACT_HI, exactReading } from "./exact.ts";
 import { casMark } from "../../../app/src/goldenRun.ts";
 import { onNumbers } from "./classify.ts";
 import { defaultCasSettings } from "../../../app/src/engine/types.ts";
@@ -33,7 +34,8 @@ export interface Answer {
   mark?: "=" | "≈" | "⚠";
   n?: number;
   /** A list or matrix of numbers (Home items, or a CAS numeric list), item by item: each item's text, value and the mark the view
-   *  draws for it from the item's own precision facts (markOf, STD, the setting's digits). Judged item by item (classify.ts). */
+   *  draws for it from the item's own precision facts (markOf, STD, the setting's digits), or, for a CAS exact list on numbers, each
+   *  element's own exact claim (exact.ts). Judged item by item (classify.ts). */
   items?: Item[];
   /** CAS: an exact form on numbers (`21/10*exp(21/5)`), no mark drawn. An exact form claims every digit: `value` is its value read
    *  at EXACT_DIGITS, and `mark` is `=` when the reading at EXACT_DIGITS + 20 agrees on 50 digits or more; when Giac's routine gives
@@ -51,6 +53,8 @@ export interface Item {
   value?: ComplexValue;
   mark?: "=" | "≈" | "⚠";
   n?: number;
+  /** CAS: the item is an element of an exact form, its claim read as for a scalar exact form (exact.ts). */
+  exact?: true;
 }
 
 /** A list answer's items, each with the mark markOf gives its own precision facts (STD, `digits`), as for a scalar answer. */
@@ -63,11 +67,6 @@ export function itemsOf(items: readonly HomeResult[], digits: number): Item[] {
 
 /** The host's own names, defined when first needed (pasans, pcasans, paserf…): not the input's. One the input purges still counts. */
 const OURS = /^p(as|cas)[A-Za-z0-9_]*$/;
-
-/** The digits an exact CAS form is read at: more than the 50 the judge's `=` checks. */
-const EXACT_DIGITS = 60;
-/** The digits the judge's `=` checks (judge.ts: equal to 1e-50). */
-const EQUAL_DIGITS = 50;
 
 const { giac, bridge } = await loadNodeGiac();
 giac.eval(pasdegCommand("rad"));
@@ -151,28 +150,17 @@ function view(job: Job): Omit<Answer, "left"> & { defs: DefChange[] } {
     return q ? { ...base, value: { re: q.v, im: ZERO_VALUE }, mark: "=" } : { ...base, mark: "=" };
   }
   if (m) return { ...base, mark: m.mark };
-  const v = onNumbers(job.giac) ? exactValue(r.text) : null;
+  const v = onNumbers(job.giac) ? exactOf(r.text) : null;
   if (!v) return base;
-  const claim = v.n >= EQUAL_DIGITS ? { mark: "=" as const } : v.n >= defaultCasSettings.digits ? { mark: "≈" as const } : { mark: "⚠" as const, n: v.n };
-  return { ...base, value: v.value, ...claim, exact: true };
+  if ("items" in v) return { ...base, items: v.items };
+  return { ...base, ...v.scalar };
 }
 
-/** The value of an exact CAS form on numbers, read through bridge-3 at EXACT_DIGITS and EXACT_DIGITS + 20, with the digits the two
- *  readings agree on (format.ts confirmedDigits; a double's no more than it prints), less one; null for one that is no scalar number or agrees on no digit. */
-function exactValue(text: string): { value: ComplexValue; n: number } | null {
+/** An exact CAS form on numbers read through bridge-3 (exact.ts): a scalar's claim, or a list's items each with its own; null when
+ *  it is neither or Giac throws. */
+function exactOf(text: string): ReturnType<typeof exactReading> {
   try {
-    const hi = EXACT_DIGITS + 20;
-    const v = bridge.value(text, [EXACT_DIGITS, hi]);
-    if (shapeOfValue(v)?.kind !== "scalar") return null;
-    const a = numbersAt(v, EXACT_DIGITS, EXACT_DIGITS, 1)?.[0];
-    const b = numbersAt(v, hi, hi, 1)?.[0];
-    if (!a || !b) return null;
-    let agree = Math.min(confirmedDigits(a.re, b.re, EXACT_DIGITS, EXACT_DIGITS), confirmedDigits(a.im, b.im, EXACT_DIGITS, EXACT_DIGITS), a.short ?? EXACT_DIGITS);
-    // A part Giac computed in a C double (Airy_Ai, BesselJ: no MPFR path) prints the same digits at every precision: it confirms
-    // no more than it prints.
-    if (v.doubles?.[String(EXACT_DIGITS)]?.[0]) agree = Math.min(agree, ...[a.re, a.im].filter((p) => p.digits !== "").map((p) => p.digits.length));
-    const n = agree - 1;
-    return n >= 1 ? { value: { re: a.re, im: a.im }, n } : null;
+    return exactReading(bridge.value(text, [EXACT_DIGITS, EXACT_HI]), defaultCasSettings.digits);
   } catch {
     return null;
   }
