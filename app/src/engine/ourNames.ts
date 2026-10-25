@@ -32,7 +32,8 @@ export function renameOurCalls(text: string): string {
   return renameCalls(text, CALL_NAME, "typed");
 }
 
-/** The inverse, for the export: `pasmedian(` is written `median(`, so a file reads the same on the way back in. */
+/** The inverse, for the export: `pasmedian(` is written `median(`, so a file reads the same on the way back in. It reads
+ *  the log's commands, Giac's print ("printed": `\` is itself, G105f1). */
 export function writeUserNames(text: string): string {
   return renameCalls(text, WRITTEN_NAME, "printed");
 }
