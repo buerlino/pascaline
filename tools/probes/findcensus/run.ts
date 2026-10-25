@@ -25,6 +25,8 @@ export interface Row {
   giac?: string;
   cls: CensusClass;
   detail: string;
+  /** Bridge-3's kind of Giac's answer (worker.ts), absent after a hang, a crash or a parser refusal. */
+  kind?: string;
   ms: number;
 }
 
@@ -85,6 +87,9 @@ export function oracleFor(samples: readonly Sample[], python: string, oraclePy: 
   return JSON.parse(r.stdout) as Oracle[];
 }
 
+/** How long bridge-3's second evaluation (the kind) may take. */
+const KIND_MS = 3000;
+
 /** One engine worker with a deadline per job; a hang or a crash ends it, and the next job starts a new one. */
 class Runner {
   private w: Worker | null = null;
@@ -114,23 +119,33 @@ class Runner {
     void w?.terminate();
   }
 
-  async run(view: View, giac: string): Promise<Answer | { hang: true }> {
+  /** The view's answer, and bridge-3's kind of the same text (a second message, KIND_MS later at most; "slow" past it). */
+  async run(view: View, giac: string): Promise<{ a: Answer | { hang: true }; kind?: string }> {
     const w = this.w ?? (await this.start());
     const job: Job = { id: ++this.id, view, giac };
     return new Promise((res) => {
-      const done = (a: Answer | { hang: true }): void => {
+      let answer: Answer | null = null;
+      let t = setTimeout(() => finish({ hang: true }, undefined, true), this.deadlineMs);
+      const finish = (a: Answer | { hang: true }, kind: string | undefined, drop: boolean): void => {
         clearTimeout(t);
         w.off("message", on);
         w.off("error", onErr);
-        // a state change, a hang or a crash: the next input gets a fresh engine
-        if ("hang" in a || a.crash !== undefined || a.left.length) this.drop();
-        res(a);
+        if (drop) this.drop();
+        res(kind === undefined ? { a } : { a, kind });
       };
-      const on = (m: { id: number; answer: Answer }): void => {
-        if (m.id === job.id) done(m.answer);
+      const on = (m: { id: number; answer?: Answer; kind?: string; dirty?: boolean }): void => {
+        if (m.id !== job.id) return;
+        if (m.answer) {
+          answer = m.answer;
+          // a state change or a crash: no kind follows, and the next input gets a fresh engine
+          if (m.answer.crash !== undefined || m.answer.left.length) return finish(m.answer, undefined, true);
+          clearTimeout(t);
+          t = setTimeout(() => finish(answer!, "slow", true), KIND_MS);
+          return;
+        }
+        if (answer) finish(answer, m.kind, m.dirty === true);
       };
-      const onErr = (e: Error): void => done({ ok: false, text: "", left: [], crash: `worker error: ${e.message}`.slice(0, 120) });
-      const t = setTimeout(() => done({ hang: true }), this.deadlineMs);
+      const onErr = (e: Error): void => finish(answer ?? { ok: false, text: "", left: [], crash: `worker error: ${e.message}`.slice(0, 120) }, answer ? "error" : undefined, true);
       w.on("message", on);
       w.on("error", onErr);
       w.postMessage(job);
@@ -165,14 +180,15 @@ export async function census(samples: readonly Sample[], oracles: readonly Oracl
           try {
             giac = giacOfEntry(s.latex, view).giac;
           } catch (e) {
-            const v = classify(s.name, { parserError: (e as Error).message }, oracle);
+            const v = classify(s.name, view, "", { parserError: (e as Error).message }, oracle);
             rows[j] = { id, name: s.name, view, latex: s.latex, cls: v.cls, detail: v.detail, ms: 0 };
             continue;
           }
           const t0 = performance.now();
-          const a = await runner.run(view, giac);
-          const v = classify(s.name, a, oracle);
-          rows[j] = { id, name: s.name, view, latex: s.latex, giac, cls: v.cls, detail: v.detail, ms: performance.now() - t0 };
+          const { a, kind } = await runner.run(view, giac);
+          const ms = performance.now() - t0;
+          const v = classify(s.name, view, giac, a, oracle);
+          rows[j] = { id, name: s.name, view, latex: s.latex, giac, cls: v.cls, detail: v.detail, ...(kind ? { kind } : {}), ms };
         }
       } finally {
         restarts += runner.restarts;

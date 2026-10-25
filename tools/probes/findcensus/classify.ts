@@ -36,6 +36,7 @@ export interface Verdict {
 const RAW_WORDS: readonly [RegExp, string][] = [
   [/\bpnt\(|\bgl_[a-z]|\blegende\b|\bgraphe\b/, "a graphic object"],
   [/\bbounded_function\b/, "bounded_function"],
+  [/\b(un)?directed (un)?weighted graph with\b/, "a graph object"],
   [/\brootof\(/, "rootof"],
   [/\bundef\b/, "undef"],
   [/"/, "a string"],
@@ -46,23 +47,35 @@ const RAW_WORDS: readonly [RegExp, string][] = [
   [/GIAC_ERROR|Error:|Bad Argument/i, "Giac's error text"],
 ];
 
-/** Giac's raw text in a shown result, or null: the called function still in it (unevaluated), or one of RAW_WORDS. */
-export function rawText(name: string, text: string): string | null {
+/** The input names no free symbol: only numbers, lists, called functions and constants (an unevaluated call on it is no answer). */
+export function onNumbers(giac: string): boolean {
+  for (const m of giac.matchAll(/[A-Za-z_][A-Za-z0-9_]*/g)) {
+    if (/^(pi|e_|i_|inf|pasdeg)$/.test(m[0])) continue;
+    if (!/^\s*\(/.test(giac.slice(m.index + m[0].length))) return false;
+  }
+  return true;
+}
+
+/**
+ * Giac's raw text in a shown result, or null: one of RAW_WORDS, or the called function still in it on numbers (unevaluated), where
+ * Home owes a number; in CAS an unevaluated call on exact numbers is an exact form (`Si(1)`, as `sqrt(2)`), raw only with a float in it.
+ */
+export function rawText(name: string, text: string, view: "home" | "cas", giac: string): string | null {
   const t = text.trim();
   const called = new RegExp(`(^|[^A-Za-z0-9_])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\(`);
-  if (called.test(t)) return `${name}( came back unevaluated`;
+  if (called.test(t) && onNumbers(giac) && (view === "home" || /\d\.\d*/.test(t))) return `${name}( came back unevaluated`;
   for (const [re, what] of RAW_WORDS) if (re.test(t)) return what;
   return null;
 }
 
 /** The class of one input. `parserError` is set when our parser refused the LaTeX (the input never reached the engine). */
-export function classify(name: string, a: Answer | { hang: true } | { parserError: string }, oracle: Oracle | null): Verdict {
+export function classify(name: string, view: "home" | "cas", giac: string, a: Answer | { hang: true } | { parserError: string }, oracle: Oracle | null): Verdict {
   if ("hang" in a) return { cls: "hang", detail: "no answer before the deadline" };
   if ("parserError" in a) return { cls: "refused", detail: `parser: ${a.parserError}`.slice(0, 100) };
   if (a.crash !== undefined) return { cls: "crash", detail: a.crash };
   if (a.left.length) return { cls: "state", detail: a.left.join("; ").slice(0, 160) };
   if (!a.ok) return { cls: "refused", detail: `${a.error ?? "error"}: ${a.text}`.slice(0, 120) };
-  const raw = rawText(name, a.text);
+  const raw = rawText(name, a.text, view, giac);
   if (raw) return { cls: "raw", detail: `${raw}: ${a.text}`.slice(0, 120) };
   if (a.value && a.mark) {
     if (!oracle || oracle.kind === "skip") return { cls: "unchecked", detail: `${a.mark}${a.n ?? ""} ${a.text}${oracle ? ` (oracle: ${oracle.reason})` : ""}`.slice(0, 120) };

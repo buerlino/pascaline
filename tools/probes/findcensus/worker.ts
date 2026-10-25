@@ -37,7 +37,7 @@ export interface Answer {
 
 const DIGITS_FIELD = 6; // cas_setup()[6] is Digits
 /** The host's own names, defined when first needed (pasans, pcasans, paserf…): not the input's. One the input purges still counts. */
-const OURS = /^p(as|cas)[A-Za-z0-9]*$/;
+const OURS = /^p(as|cas)[A-Za-z0-9_]*$/;
 
 const RATIONAL = /^-?\d+(\/\d+)?$/;
 
@@ -62,14 +62,23 @@ const { giac, bridge } = await loadNodeGiac();
 giac.eval(pasdegCommand("rad"));
 const host = new EngineHost(giac, bridge);
 
-function snapshot(): { names: Set<string>; setup: string[] } {
-  return { names: new Set(topLevel(giac.eval("VARS()")).filter((n) => n !== "")), setup: topLevel(giac.eval("cas_setup()")) };
+function snapshot(): { names: string[]; setup: string[] } {
+  const v = giac.eval("VARS()").trim();
+  return { names: v === "[]" ? [] : topLevel(v), setup: topLevel(giac.eval("cas_setup()")) };
 }
+
+/** A name as the census prints it: Giac's ilaplace leaves one with no text (or bytes that are no name) in VARS(). */
+const shownName = (n: string): string => (/^[A-Za-z_][A-Za-z0-9_]*$/.test(n) ? n : "(a name with no text)");
 
 function leftBehind(before: ReturnType<typeof snapshot>, after: ReturnType<typeof snapshot>, defs: readonly DefChange[]): string[] {
   const left: string[] = [];
-  for (const n of after.names) if (!before.names.has(n) && !OURS.test(n)) left.push(`name ${n}`);
-  for (const n of before.names) if (!after.names.has(n)) left.push(`purged ${n}`);
+  const rest = [...before.names];
+  for (const n of after.names) {
+    const k = rest.indexOf(n);
+    if (k >= 0) rest.splice(k, 1);
+    else if (!OURS.test(n)) left.push(`name ${shownName(n)}`);
+  }
+  for (const n of rest) if (!after.names.includes(n)) left.push(`purged ${shownName(n)}`);
   after.setup.forEach((v, k) => {
     if (k !== DIGITS_FIELD && v !== before.setup[k]) left.push(`setting ${k}: ${before.setup[k] ?? "?"} -> ${v}`);
   });
@@ -77,8 +86,17 @@ function leftBehind(before: ReturnType<typeof snapshot>, after: ReturnType<typeo
   return left;
 }
 
-function run(job: Job): Answer {
-  const before = snapshot();
+/** Bridge-3's kind (`giac_value`, G103) of Giac's answer to the input's Giac text; "error" when it threw. Not judged: the census
+ *  counts it per class. */
+function kindOf(giacText: string): string {
+  try {
+    return bridge.value(giacText, []).kind;
+  } catch {
+    return "error";
+  }
+}
+
+function view(job: Job): Omit<Answer, "left"> & { defs: DefChange[] } {
   if (job.view === "home") {
     const { result: r, defs } = host.home(job.giac, defaultHomeSettings);
     const m = r.ok && r.value && !r.items ? markOf(precisionFacts(r), { format: "STD", digits: defaultHomeSettings.digits }) : null;
@@ -89,12 +107,11 @@ function run(job: Job): Answer {
       ...(r.value && !r.items ? { value: r.value } : {}),
       ...(r.items ? { list: true as const } : {}),
       ...(m ? { mark: m.mark, ...(m.n !== undefined ? { n: m.n } : {}) } : {}),
-      left: leftBehind(before, snapshot(), defs),
+      defs,
     };
   }
   const { result: r, defs } = host.cas(job.giac, defaultCasSettings);
-  const left = leftBehind(before, snapshot(), defs);
-  const base = { ok: r.ok, text: r.text, ...(r.error ? { error: r.error } : {}), left };
+  const base = { ok: r.ok, text: r.text, ...(r.error ? { error: r.error } : {}), defs };
   if (!r.ok) return base;
   // As the golden runner reads a CAS mark (goldenRun.ts runPrecisionCase): a float result's facts, a true or false resting on a
   // float, an exact rational (=); any other exact result has no mark.
@@ -113,12 +130,31 @@ function run(job: Job): Answer {
 }
 
 parentPort!.postMessage({ ready: true });
+// Two messages per job: the view's answer (what it showed and left behind), then bridge-3's kind of the same text, evaluated a second
+// time after it. The main thread gives the second its own deadline, so reading the kind never changes a class; `dirty` says the
+// second evaluation changed the engine (the main thread then starts a new one).
 parentPort!.on("message", (job: Job) => {
   let a: Answer;
+  let mid: ReturnType<typeof snapshot> | null = null;
   try {
-    a = run(job);
+    const before = snapshot();
+    const v = view(job);
+    mid = snapshot();
+    const { defs, ...shown } = v;
+    a = { ...shown, left: leftBehind(before, mid, defs) };
   } catch (e) {
     a = { ok: false, text: "", left: [], crash: String((e as Error).message ?? e).slice(0, 120) };
   }
   parentPort!.postMessage({ id: job.id, answer: a });
+  if (a.crash !== undefined || a.left.length || !mid) return;
+  let kind: string;
+  let dirty: boolean;
+  try {
+    kind = kindOf(job.giac);
+    dirty = leftBehind(mid, snapshot(), []).length > 0;
+  } catch (e) {
+    kind = "error";
+    dirty = true;
+  }
+  parentPort!.postMessage({ id: job.id, kind, dirty });
 });

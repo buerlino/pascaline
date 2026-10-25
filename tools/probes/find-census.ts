@@ -27,7 +27,7 @@ const oracles = oracleFor(p.samples, pythonFor(repo, mainCheckout), resolve(repo
 const { rows, restarts } = await census(p.samples, oracles, 6000, Number(process.env["WORKERS"] ?? 4));
 const all = names.length > 0 || process.env["ALL"] === "1";
 for (const r of rows) {
-  if (all || FINDINGS.has(r.cls)) console.log(`${r.cls.padEnd(9)} ${r.id}  ${r.latex}  =>  ${r.detail}`);
+  if (all || FINDINGS.has(r.cls)) console.log(`${r.cls.padEnd(9)} ${r.id}  ${r.latex}  =>  [${r.kind ?? "-"}] ${r.detail}`);
 }
 for (const n of p.none) if (all) console.log(`no sample ${n.name}: ${n.why}`);
 const counts = new Map<string, number>();
@@ -36,3 +36,11 @@ const line = (v: string): string => [...counts].filter(([k]) => k.startsWith(v))
 console.log(`FIND CENSUS: ${p.samples.length} inputs of ${p.samples.length ? new Set(p.samples.map((s) => s.name)).size : 0} functions (${p.none.length} without a sample), ${rows.length} runs; ${restarts} engine restarts; ${((performance.now() - t0) / 1000).toFixed(1)} s`);
 console.log(`  home: ${line("home")}`);
 console.log(`  cas: ${line("cas")}`);
+// bridge-3's kind of Giac's answer, per class (both views)
+const kinds = new Map<string, Map<string, number>>();
+for (const r of rows) {
+  const m = kinds.get(r.cls) ?? new Map<string, number>();
+  m.set(r.kind ?? "-", (m.get(r.kind ?? "-") ?? 0) + 1);
+  kinds.set(r.cls, m);
+}
+for (const [c, m] of kinds) console.log(`  kinds ${c}: ${[...m].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} ${n}`).join(", ")}`);

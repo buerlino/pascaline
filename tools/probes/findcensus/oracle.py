@@ -104,14 +104,14 @@ def euler_phi(x):
 def perm(n, k):
     n, k = integer(n), integer(k)
     if k < 0 or n < k:
-        raise ValueError
+        raise Skip("outside the definition's domain (0 <= k <= n)")
     return factorial(n) / factorial(n - k)
 
 
 def comb(n, k):
     n, k = integer(n), integer(k)
     if k < 0 or n < k:
-        raise ValueError
+        raise Skip("outside the definition's domain (0 <= k <= n)")
     return M.binomial(n, k)
 
 
