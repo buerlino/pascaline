@@ -511,7 +511,7 @@ export function exactFacts(
   // Giac's own erf, with the flag set. The others: the exact run asked for its digits already (an input of audited
   // functions), or one call does.
   const safe = complexSafe(text, "printed") === text ? text : forValue(giac, text, "printed");
-  const erf = functionsIn(text, "printed").some((f) => f === "erf" || f === "erfc") ? erfValueText(giac, safe) : safe;
+  const erf = functionsIn(text, "printed").some((f) => f === "erf" || f === "erfc") ? erfValueText(giac, safe, "printed") : safe;
   const src = erf !== safe ? `(${erf})` : safe === text ? name : `(${safe})`;
   const at = (text: string, prec: number): GiacValue =>
     erf !== safe ? withDigits(giac, prec, digits, () => giac.value(text, [prec])) : giac.value(text, [prec]);
@@ -864,7 +864,7 @@ export function floatPathFacts(
   try {
     // G44f1: erf and erfc through our MPFR definitions (Giac's erf of a float below about 1E-11 is the argument).
     const safe = forValue(giac, reads.text, "typed");
-    const value = erfValueText(giac, safe);
+    const value = erfValueText(giac, safe, "typed");
     if (value !== safe) giac.eval(`${ICDF_FAILED}:=0`);
     let out = floatPathFactsOf(giac, name, value, once, W, digits);
     if (!("error" in out) && unreadPrecision(safe)) out = { ...out, facts: unreadFacts(out.facts) };
