@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import type { Page } from "@playwright/test";
+import { closeSync, mkdirSync, openSync, rmSync, statSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { test, type Page } from "@playwright/test";
 
 /** The status line's controls (R15c1, R15c2), for keys that left the cluster: `@place` (the place name, the Apps
  *  sheet), `@menu` (☰), `@symb` / `@plot` / `@num` (the view tab; from Home or CAS the last app is opened first from the
@@ -164,3 +166,49 @@ export async function recordVibrations(page: Page): Promise<void> {
   });
 }
 export const vibrations = (page: Page): Promise<unknown[]> => page.evaluate(() => (window as unknown as { __vib: unknown[] }).__vib);
+
+// R74f1: the system clipboard is one for every Playwright worker, so a test that writes or reads it holds this lock
+// (an exclusive lock file under test-results) for its whole run. A lock left by a killed worker is taken over after 5 min.
+const LOCK = resolve("test-results", "clipboard.lock");
+const LOCK_STALE_MS = 5 * 60_000;
+
+/** Wait for the clipboard lock and take it; returns the release function (safe to call twice). */
+export async function acquireClipboardLock(): Promise<() => void> {
+  mkdirSync(dirname(LOCK), { recursive: true });
+  for (;;) {
+    try {
+      closeSync(openSync(LOCK, "wx"));
+      return () => rmSync(LOCK, { force: true });
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
+      try {
+        if (Date.now() - statSync(LOCK).mtimeMs > LOCK_STALE_MS) rmSync(LOCK, { force: true });
+      } catch {
+        /* released meanwhile */
+      }
+      await new Promise((r) => setTimeout(r, 50 + Math.random() * 50));
+    }
+  }
+}
+
+/** Run `fn` holding the clipboard lock; the lock is released in a finally block. */
+export async function withClipboardLock<T>(fn: () => Promise<T>): Promise<T> {
+  const release = await acquireClipboardLock();
+  try {
+    return await fn();
+  } finally {
+    release();
+  }
+}
+
+/** Call at the top of a spec file or describe: every test in it holds the clipboard lock from its first hook to its last. */
+export function useClipboardLock(): void {
+  let release: (() => void) | undefined;
+  test.beforeEach(async () => {
+    release = await acquireClipboardLock();
+  });
+  test.afterEach(() => {
+    release?.();
+    release = undefined;
+  });
+}

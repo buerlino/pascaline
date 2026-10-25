@@ -3,10 +3,12 @@
 // row buttons are items 1-5, the Menu and the long press show all nine, and they act on the picked row, else the last
 // result (Delete: the last row). Expected values are derived: 1/3 and 2/3 as 12 shown digits.
 import { expect, test, type Page } from "@playwright/test";
-import { entryValue, open, tap } from "./helpers.ts";
+import { entryValue, open, tap, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 test.describe.configure({ mode: "serial" });
+
+useClipboardLock(); // R74f1: first hook, so the lock is held before the page opens
 
 test.beforeEach(async ({ page }) => {
   await open(page, "");
