@@ -283,5 +283,32 @@ head_is "$tmp/heads-wt" "$det" || fail "A37: head_is refuses the current HEAD"
 gc "$tmp/heads-wt" moved; head_is "$tmp/heads-wt" "$det" && fail "A37: head_is accepts a moved HEAD"
 grep -q 'head_is "$integ" "$sha"' "$here/pipeline.sh" || fail "A37: pipeline.sh does not check HEAD between runs"
 
+# A37, behaviour: a sandbox runs the real census with fake vitest/e2e commands (vitest fails in runs 2 and 4; e2e is clean)
+fk="$tmp/fk"; mkdir -p "$fk/bin" "$fk/tools" "$fk/docs/shifts" "$fk/app/scripts" "$fk/app/node_modules/x"; git init -q -b main "$fk"
+cp "$sb/tools/devlock.sh" "$fk/tools/"; cp "$sb/bin/npm" "$fk/bin/"; cp "$here/../app/scripts/pipeline-logs.ts" "$fk/app/scripts/"; : > "$fk/docs/shifts/brief.md"; echo t > "$fk/tracked"
+git -C "$fk" add -A; gc "$fk" init; git -C "$fk" branch phase-1
+cat > "$fk/fakev.sh" <<STUB
+#!/bin/sh
+k=\$(( \$(cat "$fk/cnt" 2>/dev/null || echo 0) + 1 )); echo \$k > "$fk/cnt"
+[ -z "\$FAKE_MOVE" ] || { [ \$k -ne 2 ] || git -c user.name=t -c user.email=t@t commit -q --allow-empty -m move; }
+if [ \$k -eq 2 ] || [ \$k -eq 4 ]; then echo " FAIL  src/a.test.ts > suite > case one"; echo " FAIL  src/a.test.ts > suite > case one"; echo " FAIL  src/b.test.ts [ src/b.test.ts ]"; exit 1; fi
+exit 0
+STUB
+printf '#!/bin/sh\nexit 0\n' > "$fk/faked.sh"; chmod +x "$fk/fakev.sh" "$fk/faked.sh"
+fkrun() { (cd "$fk" && PATH="$fk/bin:$PATH" GIAC_OUT="$fk/engine" PASCALINE_FLAKES_VITEST="$1" PASCALINE_FLAKES_E2E="$fk/faked.sh" "$script" flakes 7 2>&1); }
+out="$(fkrun "$fk/fakev.sh")"
+want='FLAKES 7: vitest 3 of 5 runs clean, e2e 5 of 5, flaky: src/a.test.ts: suite > case one (vitest 2/5), src/b.test.ts (vitest 2/5)'
+grep -qF -- "$want" <<<"$out" || fail "A37: the census line is not '$want': $out"
+grep -qF -- "$want" "$fk/.coord/log.md" || fail "A37: the log lacks the FLAKES line"
+f7="$(ls "$fk"/.tasks/flakes-*.md 2>/dev/null | head -n1)"
+[[ -n "$f7" ]] && grep -q "src/a.test.ts suite > case one" "$f7" && grep -q '^| 5 |' "$f7" || fail "A37: .tasks/flakes-<date>.md is missing or lacks the test and the per-run load rows"
+rm -rf "$fk/.tasks"/flakes-*; echo 0 > "$fk/cnt"
+out="$(FAKE_MOVE=1 fkrun "git -C $fk/.claude/worktrees/phase-1 -c user.name=t -c user.email=t@t commit -q --allow-empty -m move; true")"
+grep -q 'FLAKES 7: ABORTED (HEAD moved before run 2' <<<"$out" || fail "A37: a moved HEAD does not abort the census: $out"
+# one title twice in one run's file counts once; a failure in 1 of 2 runs is flaky, not always failing
+printf 'a\tt\na\tt\n' > "$tmp/d1"; : > "$tmp/d2"
+[[ "$(flaky_items 2 "$tmp/d1" "$tmp/d2")" == $'1/2\ta\tt' ]] || fail "A37: a duplicate line in one run counts twice"
+[[ -z "$(flaky_items 2 "$tmp/d1" "$tmp/d1")" ]] || fail "A37: a duplicate line in two runs is not always failing"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"

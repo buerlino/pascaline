@@ -95,7 +95,7 @@ engine_promote() {
 # one file per run) and prints "<failed runs>/<total><TAB><item>" for every item that failed in fewer than all runs.
 flaky_items() {  # <total> <item file>...
   local total="$1"; shift
-  cat "$@" 2>/dev/null | sort | uniq -c | awk -v t="$total" '$1 < t { c = $1; sub(/^ *[0-9]+ /, ""); print c "/" t "\t" $0 }'
+  local f; for f in "$@"; do sort -u "$f" 2>/dev/null; done | sort | uniq -c | awk -v t="$total" '$1 < t { c = $1; sub(/^ *[0-9]+ /, ""); print c "/" t "\t" $0 }'
 }
 # A37: succeeds while <dir>'s HEAD is still <sha> (the census runs on one unchanged commit).
 head_is() {  # <dir> <sha>

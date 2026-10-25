@@ -227,12 +227,12 @@ if [[ "${1:-}" == "flakes" ]]; then
   done
   flaky_v="$(flaky_items "$ran" "$run"/vitest-*.items | sed 's/^/vitest /')"; flaky_e="$(flaky_items "$ran" "$run"/e2e-*.items | sed 's/^/e2e /')"
   [[ $ran -gt 0 ]] || { flaky_v=""; flaky_e=""; }
-  ids="$(printf '%s\n%s\n' "$flaky_v" "$flaky_e" | awk -F'\t' 'NF >= 3 { print $3 " (" $1 ")" } NF == 2 { print $2 " (" $1 ")" }' | paste -sd, - | sed 's/,/, /g')"
+  ids="$(printf '%s\n%s\n' "$flaky_v" "$flaky_e" | awk -F'\t' 'NF >= 3 { print ($3 == "" ? $2 : $2 ": " $3) " (" $1 ")" } NF == 2 { print $2 " (" $1 ")" }' | paste -sd, - | sed 's/,/, /g')"
   {
     echo "# Flake census $n, $(date +%F) $(date +%H:%M)"
     echo; echo "Commit ${sha:0:9}; $ran of $runs runs; vitest $clean_v clean, e2e $clean_e clean.${aborted:+ ABORTED: $aborted.}"
     echo; echo "## Flaky (failed in some runs, passed in others)"
-    if [[ -n "$flaky_v$flaky_e" ]]; then printf '%s\n%s\n' "$flaky_v" "$flaky_e" | awk 'NF' | sed 's/^/- /'; else echo "none"; fi
+    if [[ -n "$flaky_v$flaky_e" ]]; then printf '%s\n%s\n' "$flaky_v" "$flaky_e" | awk 'NF' | tr '\t' ' ' | sed 's/^/- /; s/ *$//'; else echo "none"; fi
     echo; echo "## Load average and result per run (1/5/15 min before and after)"
     echo "| run | load before | load after | vitest | e2e |"; echo "|---|---|---|---|---|"; printf '%s' "$loads"
   } > "$out_md"
