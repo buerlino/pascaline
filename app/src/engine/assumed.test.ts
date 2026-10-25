@@ -2,7 +2,7 @@
 // G92: the words, the read's parts and the put-back (assumed.ts), and the host's read after an input on a real Giac build
 // (skipped when none is found, see nodeGiac.ts).
 import { describe, expect, it } from "vitest";
-import { aboutsOf, assumeTargets, leakPart, namesAssuming, putBack, selfHolding, setsAssumption } from "./assumed.ts";
+import { aboutsOf, leakPart, namesAssuming, putBack, selfHolding, setsAssumption } from "./assumed.ts";
 import { parsePrinted, statePart, tableOf } from "./stateRead.ts";
 import { giacAvailable, nodeHost } from "./nodeGiac.ts";
 import { defaultCasSettings } from "./types.ts";
@@ -16,15 +16,12 @@ describe("assumed.ts", () => {
     expect(namesAssuming(LEAK)).toBe(true);
     expect(namesAssuming("fourier_an(x^2,x,2*pi,n,0)")).toBe(true);
     expect(namesAssuming("fourier_cn(x^2,x,2*pi,n,0)")).toBe(false);
-    expect(namesAssuming('"simplify"+1')).toBe(false);
     expect(namesAssuming("mysimplify(x)")).toBe(false);
   });
-  it("sees an input that sets an assumption, and the names it assumes", () => {
+  it("sees an input that sets an assumption", () => {
     expect(setsAssumption("assume(x<0)")).toBe(true);
     expect(setsAssumption("additionally(x>0)")).toBe(true);
     expect(setsAssumption("about(x)")).toBe(false);
-    expect(assumeTargets("assume(x<0);additionally( y>1)")).toEqual(["x", "y"]);
-    expect(assumeTargets("assume([a,b],integer)")).toEqual(["a"]);
   });
   it("reads a leak part's print: the names that hold only themselves and the about()s asked", () => {
     expect(leakPart(["a"], ["y"])).toBe("[0,map(VARS(),k->when(member(k,['a']),k,[k,string(eval(k))])),[about(y)],0]");

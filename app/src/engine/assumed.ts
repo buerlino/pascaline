@@ -7,6 +7,7 @@
 // Giac texts named a word below), and puts back silently what the input left: a new name that holds only itself is
 // purged, a logged assumption whose about() changed is purged and set again from its entry. As flags.ts does for Giac's
 // settings; nothing is logged. Plain data and pure functions; only erasable TypeScript syntax, so Node runs this file.
+import { wordsOf } from "./stores.ts";
 
 /** Giac's commands that leave an assumption after they return (probe 2026-10-25: 60 commands, each in a fresh engine, on
  *  integrate(tanh(sqrt(x)),x), tanh(sqrt(x)) and sqrt(x)*exp(sqrt(x))+x^(1/3); VARS() after each). The simplify family,
@@ -17,23 +18,17 @@ export const ASSUMING_WORDS: readonly string[] = [
   "simplify", "simplifier", "trigsimplify", "solve", "csolve", "zeros", "cZeros", "laplace", "ilaplace", "fourier_an", "fourier_bn",
 ];
 
-const ASSUMING_RE = new RegExp(`(?<![A-Za-z0-9_])(?:${ASSUMING_WORDS.join("|")})(?![A-Za-z0-9_])`);
-const SETS_RE = /(?<![A-Za-z0-9_])(?:assume|additionally)(?![A-Za-z0-9_])/;
-const noStrings = (s: string): string => s.replace(/"[^"]*"/g, '""');
+const ASSUMING: ReadonlySet<string> = new Set(ASSUMING_WORDS);
+const SETTING: ReadonlySet<string> = new Set(["assume", "additionally"]);
 
-/** The text names a command that may leave an assumption (outside strings). */
+/** The text names a command that may leave an assumption (a word inside a string counts too: one more read only). */
 export function namesAssuming(text: string): boolean {
-  return ASSUMING_RE.test(noStrings(text));
+  return wordsOf(text).some((w) => ASSUMING.has(w));
 }
 
-/** The text sets an assumption itself (`assume`, `additionally`, outside strings): its change is kept (G67's reset rule). */
+/** The text sets an assumption itself (`assume`, `additionally`): its change is kept (G67's reset rule). */
 export function setsAssumption(text: string): boolean {
-  return SETS_RE.test(noStrings(text));
-}
-
-/** The names the text assumes (`assume(x>0)`, `additionally(x<3)`, `assume([a,b],integer)`'s first), outside strings. */
-export function assumeTargets(text: string): string[] {
-  return [...noStrings(text).matchAll(/(?<![A-Za-z0-9_])(?:assume|additionally)\s*\(\s*\[?\s*([A-Za-z][A-Za-z0-9_]*)/g)].map((m) => m[1]!);
+  return wordsOf(text).some((w) => SETTING.has(w));
 }
 
 /** The about() of each name, as the 3rd of a state part's 4 elements (stateRead.ts statePart, changedPart). */

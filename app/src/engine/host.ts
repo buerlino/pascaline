@@ -50,7 +50,7 @@ import { chipCommand, chipNameFacts, chipsIn, CHIP_PREFIX, withChipValues, type 
 import type { Quantity, UnitError, UnitJob } from "../units/types.ts";
 import { contextDiff, hostContext, isFlagName, namesFlag, namesUnreadFlag } from "./flags.ts";
 import { contextOf, gated, type GatedGiac } from "./ctxGate.ts";
-import { aboutsOf, assumeTargets, leakPart, namesAssuming, putBack, selfHolding, setsAssumption } from "./assumed.ts";
+import { aboutsOf, leakPart, namesAssuming, putBack, selfHolding, setsAssumption } from "./assumed.ts";
 
 /** G65: what the call after an input found: the names it read and stored (stateRead.ts), and Giac's settings. */
 interface AfterInput {
@@ -415,20 +415,22 @@ export class EngineHost implements FactsHost {
     return this.post;
   }
 
-  /** G92: the names `input` assumes, and those the stored functions it calls assume. */
+  /** G92: the names `input` and the stored functions it calls name (an input that sets an assumption: about() of each
+   *  is read, a name that is not assumed prints itself). */
   private assumedBy(input: string): string[] {
-    const fns = [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].flatMap((m) => {
-      const e = this.byName.get(m[0]);
+    const fns = wordsOf(input).flatMap((w) => {
+      const e = this.byName.get(w);
       return e?.kind === "fn" ? e.cmds : [];
     });
-    return [input, ...fns].flatMap(assumeTargets);
+    const user = (n: string): boolean => this.byName.has(n);
+    return [input, ...fns].flatMap(namesIn).filter((n) => !CONSTANT_NAMES.has(n) && !isOurs(n, user));
   }
 
   /** The text names a log entry whose commands `test` holds (G67's reset rule); `fns`: a stored function only (G92: a
    *  logged assumption's own `assume(x<0)` is no function the text calls). */
   private callsDefining(input: string, test: (cmd: string) => boolean, fns = false): boolean {
-    return [...input.matchAll(/[A-Za-z][A-Za-z0-9_]*/g)].some((m) => {
-      const e = this.byName.get(m[0]);
+    return wordsOf(input).some((w) => {
+      const e = this.byName.get(w);
       return e !== undefined && (!fns || e.kind === "fn") && e.cmds.some(test);
     });
   }
