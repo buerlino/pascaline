@@ -10,6 +10,7 @@ import type { ValueFacts } from "./types.ts";
 import type { NameFacts } from "./defs.ts";
 import { floatsAsEvalf } from "./homeEval.ts";
 import { hasFloat } from "./numeric.ts";
+import { mapNames, names } from "./giacPrint.ts";
 
 /** A result the input holds as a chip: its value as Giac text (`0.746824132812427…`, `1/3`), the significant digits
  *  confirmed when it was shown (null: not limited), its warn, and whether it is exact (M4-4: `=`, or an exact
@@ -22,7 +23,6 @@ export type ChipFactsTable = Readonly<Record<string, ChipEntry>>;
 /** The prefix of a chip sent by name. */
 export const CHIP_PREFIX = "pasr_";
 
-const CHIP_NAME = /(?<![A-Za-z0-9_])pasr_([A-Za-z0-9_]+)/g;
 
 function entry(table: ChipFactsTable, k: string): ChipEntry | undefined {
   return Object.hasOwn(table, k) ? table[k] : undefined;
@@ -31,9 +31,9 @@ function entry(table: ChipFactsTable, k: string): ChipEntry | undefined {
 /** The chips of `table` that `input` holds, in order of first appearance. */
 export function chipsIn(input: string, table: ChipFactsTable): string[] {
   const ks: string[] = [];
-  for (const m of input.matchAll(CHIP_NAME)) {
-    const k = m[1]!;
-    if (!ks.includes(k) && entry(table, k)) ks.push(k);
+  for (const { name } of names(input, "typed")) {
+    const k = name.slice(CHIP_PREFIX.length);
+    if (name.startsWith(CHIP_PREFIX) && k !== "" && !ks.includes(k) && entry(table, k)) ks.push(k);
   }
   return ks;
 }
@@ -41,10 +41,11 @@ export function chipsIn(input: string, table: ChipFactsTable): string[] {
 /** `input` with every chip of `table` replaced by its value in brackets, except the ones in `keep`, which stay names.
  *  Names not in the table are left alone. */
 export function withChipValues(input: string, table: ChipFactsTable, keep: ReadonlySet<string>): string {
-  return input.replace(CHIP_NAME, (m, k: string) => {
-    const e = entry(table, k);
-    return e && !keep.has(k) ? `(${e.value})` : m;
-  });
+  return mapNames(input, ({ name }) => {
+    const k = name.slice(CHIP_PREFIX.length);
+    const e = name.startsWith(CHIP_PREFIX) && k !== "" ? entry(table, k) : undefined;
+    return e && !keep.has(k) ? `(${e.value})` : null;
+  }, "typed");
 }
 
 /** The Giac command that gives the chip `k` its value for a run: a float as `evalf(<exact>,n)` with the digits it

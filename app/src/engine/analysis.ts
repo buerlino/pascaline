@@ -162,7 +162,7 @@ function run(giac: Giac, req: AnalysisRequest, v: string, h: HomeSettings, t0: n
       const rom = ev(`pasar:=romberg(${integrand},${v},${A},${B})`);
       // undef: Romberg sampled a point where the integrand is undefined (ln x at 0); that says nothing about
       // convergence, so it takes the same path as "not converged" and only Home's refusals (converge.ts) refuse (G70).
-      const noNumber = !/^\[/.test(rom) && num(rom) === undefined;
+      const noNumber = !rom.startsWith("[") && num(rom) === undefined;
       ev(`Digits:=${s.digits}`);
       const gqText = ev(`pasgq:=evalf(gaussquad(${integrand},${v},${A},${B}))`);
       const gq = num(gqText);
@@ -175,12 +175,12 @@ function run(giac: Giac, req: AnalysisRequest, v: string, h: HomeSettings, t0: n
       let method = "romberg";
       let info = "Romberg";
       let warn = false;
-      if (/^\[/.test(rom) || noNumber) {
+      if (rom.startsWith("[") || noNumber) {
         const why = noNumber ? "Romberg found no value" : "Romberg did not converge";
         ev(`timeout ${EXACT_INT_S}`);
         const exact = ev(`pasex:=int(${integrand},${v},${A},${B})`);
         ev(`timeout ${SOLVE_HARD_TIMEOUT_S}`);
-        const exv = !exact.startsWith("GIAC_ERROR") && !/integrate|int\(|undef|infinity/.test(exact) ? num(ev(`evalf(pasex,${W})`)) : undefined;
+        const exv = !exact.startsWith("GIAC_ERROR") && !["integrate", "int(", "undef", "infinity"].some((w) => exact.includes(w)) ? num(ev(`evalf(pasex,${W})`)) : undefined;
         const refused = refusedBy(exact);
         // Giac's timeout stopped the divergence check: keep the value, as Home does, but say it is unverified.
         const unchecked = refused === "unchecked";

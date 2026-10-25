@@ -208,7 +208,7 @@ async function stageHome(): Promise<void> {
     // ⚠ n: only the n confirmed digits are shown, and they must be the oracle's (as in the precision stage).
     const wantOf = (m: MarkInfo | null): string | null =>
       m?.mark === "⚠" && m.n !== undefined && m.n < digits ? expectAt(String(c.expect), Math.max(1, m.n)) : String(c.expect);
-    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, dropAngleFactor(c.input ?? ""))) : rs.every((x, k) => x.display === wantOf(marksOf[k]!));
+    const answered = c.expect === undefined ? rs.every((x) => x.ok && !lostAnswer(x.display, dropAngleFactor(c.input ?? "", "typed"))) : rs.every((x, k) => x.display === wantOf(marksOf[k]!));
     // `exact` (G38): the text the result copies (`full`), when the case pins it.
     const exactOk = c.exact === undefined || rs.every((x) => x.full === c.exact);
     const ok = answered && markOk && exactOk;
@@ -426,7 +426,7 @@ async function stageBench(): Promise<void> {
     const rad = radText.get(c.id);
     if (rad === undefined) continue;
     const r = host.cas(c.input!, deg).result;
-    const want = c.deg ?? (hasAngleFactor(c.input!) || TRIG_TEXT.test(rad) ? undefined : rad);
+    const want = c.deg ?? (hasAngleFactor(c.input!, "typed") || TRIG_TEXT.test(rad) ? undefined : rad);
     if (r.ok && want === undefined) continue;
     degChecked++;
     if (r.ok && r.text === want) degPass++;

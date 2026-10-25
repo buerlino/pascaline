@@ -8,31 +8,36 @@
 //   degrees) and keeps the reading whose value matches its preview, the value it showed when it was stored. One that
 //   matches neither (or both) keeps its text.
 // Only erasable TypeScript syntax; no engine import, so the UI side (storage.ts) may use the pure half.
-import { rewriteAngles } from "../input/angles.ts";
+import { PASDEG, rewriteAngles } from "../input/angles.ts";
+import { leadingName, mapNames, type Quoting, renameCalls } from "./giacPrint.ts";
 
 /** A Giac evaluator (EngineHost's GiacApi has this shape). */
 interface Evaluator {
   eval(input: string): string;
 }
 
-const PASEXP = /("[^"]*")|\bpasexp(\s*\()/g;
-
-/** G21's helper is gone: its calls are Giac's exp, which reads radians (F29). */
-export function withoutPasexp(text: string): string {
-  return text.replace(PASEXP, (m, str?: string, paren?: string) => (str !== undefined ? m : `exp${paren}`));
+/** G21's helper is gone: its calls are Giac's exp, which reads radians (F29). `q` is the text's quoting: a version-2
+ *  variable's command is Giac's print (its snapshot); a function's, an input's, an assumption's and a library text are
+ *  typed (G105f2). */
+export function withoutPasexp(text: string, q: Quoting): string {
+  return renameCalls(text, { pasexp: "exp" }, q);
 }
 
 /** `name:=(rhs)`, the form the log stores a value in (EngineHost.snapshot). */
-const VALUE = /^([A-Za-z][A-Za-z0-9_]*):=\(([\s\S]*)\)$/;
+function valueCmd(cmd: string): { name: string; rhs: string } | null {
+  const name = leadingName(cmd);
+  const rest = name !== null && cmd.startsWith(name) ? cmd.slice(name.length) : "";
+  return name !== null && rest.startsWith(":=(") && rest.endsWith(")") && rest.length >= 4 ? { name, rhs: rest.slice(3, -1) } : null;
+}
 
 /** The value text read as degrees, with the factor frozen (the mode it was typed in no longer matters). */
 export function degreeReading(rhs: string): string {
-  return rewriteAngles(rhs).replace(/(?<![A-Za-z0-9_])pasdeg(?![A-Za-z0-9_])/g, "(pi/180)");
+  return mapNames(rewriteAngles(rhs, "printed"), (n) => (n.name === PASDEG ? "(pi/180)" : null), "printed");
 }
 
 /** The text holds an angle function the factor rewrite would change. */
 function readsAngles(text: string): boolean {
-  return rewriteAngles(text) !== text;
+  return rewriteAngles(text, "printed") !== text;
 }
 
 /** One stored entry (unknown shape: validDefs checks it later) brought to route R. */
@@ -41,17 +46,19 @@ function migrateEntry(x: unknown): unknown {
   const e = x as Record<string, unknown>;
   const cmds = e["cmds"];
   if (!Array.isArray(cmds) || !cmds.every((c) => typeof c === "string")) return x;
-  let next = (cmds as string[]).map(withoutPasexp);
   const kind = e["kind"];
+  // Only a variable's command was Giac's print in version 2; every other kind was stored as typed.
+  const q: Quoting = kind === "var" ? "printed" : "typed";
+  let next = (cmds as string[]).map((c) => withoutPasexp(c, q));
   const out: Record<string, unknown> = { ...e };
-  if (kind === "fn" || kind === "other") next = next.map(rewriteAngles);
+  if (kind === "fn" || kind === "other") next = next.map((c) => rewriteAngles(c, "typed"));
   else if (kind === "var" && next.length === 1) {
-    const m = VALUE.exec(next[0]!);
-    const rhs = m?.[2];
+    const m = valueCmd(next[0]!);
+    const rhs = m?.rhs;
     if (m && rhs !== undefined && readsAngles(rhs)) {
       // A symbolic value (free names) followed the mode at use time, and still does with pasdeg.
-      if (e["early"] === true) next = [rewriteAngles(next[0]!)];
-      else if (e["angle"] === "deg") next = [`${m[1]}:=(${degreeReading(rhs)})`];
+      if (e["early"] === true) next = [rewriteAngles(next[0]!, "printed")];
+      else if (e["angle"] === "deg") next = [`${m.name}:=(${degreeReading(rhs)})`];
       else if (e["angle"] !== "rad") out["migrate"] = "angle";
     }
   }
@@ -67,7 +74,7 @@ export function migrateAngleDefs(value: unknown): unknown {
 /** The DATA_VERSION step for a library file's text: its bodies are written without the factor (the import puts it in),
  *  so only `pasexp` goes. */
 export function migrateAngleText(value: unknown): unknown {
-  return typeof value === "string" ? withoutPasexp(value) : value;
+  return typeof value === "string" ? withoutPasexp(value, "typed") : value;
 }
 
 /** `text` evaluates within a relative 1e-10 of the preview `shown` (12 significant digits, Giac syntax). */
@@ -83,13 +90,13 @@ function matches(giac: Evaluator, text: string, shown: string): boolean {
  * its text and is listed (R14 section 7: not guessed).
  */
 export function resolveAngle(giac: Evaluator, cmd: string, preview: string): { cmd: string; angle?: "rad" | "deg" } | null {
-  const m = VALUE.exec(cmd);
+  const m = valueCmd(cmd);
   if (!m || !preview) return null;
-  const rhs = m[2]!;
+  const rhs = m.rhs;
   const deg = degreeReading(rhs);
   const asRad = matches(giac, rhs, preview);
   const asDeg = matches(giac, deg, preview);
   if (asRad && asDeg) return { cmd };
-  if (asDeg) return { cmd: `${m[1]}:=(${deg})`, angle: "deg" };
+  if (asDeg) return { cmd: `${m.name}:=(${deg})`, angle: "deg" };
   return asRad ? { cmd, angle: "rad" } : null;
 }

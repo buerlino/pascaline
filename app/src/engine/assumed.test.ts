@@ -3,7 +3,8 @@
 // (skipped when none is found, see nodeGiac.ts).
 import { describe, expect, it } from "vitest";
 import { aboutsOf, leakPart, namesAssuming, putBack, selfHolding, setsAssumption } from "./assumed.ts";
-import { parsePrinted, statePart, tableOf } from "./stateRead.ts";
+import { statePart, tableOf } from "./stateRead.ts";
+import { parsePrinted } from "./giacPrint.ts";
 import { giacAvailable, nodeHost } from "./nodeGiac.ts";
 import { defaultCasSettings } from "./types.ts";
 import { defaultHomeSettings } from "./homeEval.ts";

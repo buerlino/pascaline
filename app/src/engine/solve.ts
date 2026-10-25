@@ -6,6 +6,7 @@
 import { safePrecision, toExactLiterals, type Giac, type HomeResult, type HomeSettings } from "./homeEval.ts";
 import { confirmedDigits, decimalFromString, decimalToString, formatComplex, formatConfirmed, isZero, type ComplexValue, type DecimalValue } from "./format.ts";
 import { valuePrecision } from "./numeric.ts";
+import { splitList } from "./giacPrint.ts";
 import { defaultSolveSettings, negZero, num, solve1, type SolveSettings } from "./solve1.ts";
 import { IDENT, type KnownValue, type SolveOutcome, type SolveRequest } from "./types.ts";
 import { PASDEG } from "../input/angles.ts";
@@ -51,7 +52,7 @@ export function unknownsOf(giac: Giac, equations: string[]): string[] {
   for (const eq of equations) {
     const out = giac.eval(`lname(quote(${eq}))`);
     if (out.startsWith("GIAC_ERROR")) continue;
-    for (const n of out.replace(/[[\]\s]/g, "").split(",")) {
+    for (const n of splitList(out) ?? []) {
       // R64: the degree factor in every angle is ours, never an unknown
       if (n && IDENT.test(n) && n !== PASDEG && !seen.includes(n)) seen.push(n);
     }
@@ -228,9 +229,8 @@ function one(giac: Giac, eq: string, v: string, guess: string, ks: ReturnType<ty
 
 /** Parses Giac's printed list of reals: `[0.63,1.89]`. */
 function realList(out: string, n: number): number[] | null {
-  const m = /^\[(.*)\]$/.exec(out.trim());
-  if (!m) return null;
-  const xs = (m[1] ?? "").split(",").map(num);
+  const xs = splitList(out)?.map(num);
+  if (!xs) return null;
   return xs.length === n && xs.every((x) => x !== undefined) ? (xs as number[]) : null;
 }
 

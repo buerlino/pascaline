@@ -17,13 +17,13 @@ const HEAD = "// pascaline library 1\n";
 
 describe("flag words (no engine)", () => {
   it("finds a setting outside strings and words, not inside a longer name", () => {
-    expect(flagIn("approx_mode:=1")).toBe("approx_mode");
-    expect(flagIn("f(x):=x+myepsilon")).toBeNull();
-    expect(flagIn('print("approx_mode")')).toBeNull();
+    expect(flagIn("approx_mode:=1", "typed")).toBe("approx_mode");
+    expect(flagIn("f(x):=x+myepsilon", "typed")).toBeNull();
+    expect(flagIn('print("approx_mode")', "typed")).toBeNull();
     expect(isFlagName("Digits")).toBe(true);
     expect(isFlagName("beam")).toBe(false);
-    expect(namesUnreadFlag("timeout 0.001")).toBe(true);
-    expect(namesUnreadFlag("sin(1)")).toBe(false);
+    expect(namesUnreadFlag("timeout 0.001", "typed")).toBe(true);
+    expect(namesUnreadFlag("sin(1)", "typed")).toBe(false);
   });
 
   it.skipIf(!giacAvailable())("a library's top-level setting, or a body that calls a setter, is refused", async () => {

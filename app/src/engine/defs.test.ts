@@ -3,7 +3,8 @@
 import { describe, expect, it } from "vitest";
 import { applyDefChanges, MAX_DEFS, replayOrder, userNamesOf, validDefs, type DefEntry } from "./defs.ts";
 import { floatsAsEvalf } from "./homeEval.ts";
-import { askedDigits, namesIn, withAskedPrecision } from "./numeric.ts";
+import { askedDigits, withAskedPrecision } from "./numeric.ts";
+import { namesIn } from "./giacPrint.ts";
 
 const entry = (name: string, kind: DefEntry["kind"], cmd: string, extra: Partial<DefEntry> = {}): DefEntry => ({
   name,
@@ -93,6 +94,6 @@ describe("evalf(e,n) in an input (decisions M4-6)", () => {
     expect(askedDigits("evalf(pi,0)")).toBeNull();
   });
   it("namesIn: names that are not called, not exponents or strings", () => {
-    expect(namesIn('B*2+f(x)-2e5+"C"+B_1')).toEqual(["B", "x", "B_1"]);
+    expect(namesIn('B*2+f(x)-2e5+"C"+B_1', "typed")).toEqual(["B", "x", "B_1"]);
   });
 });

@@ -7,7 +7,7 @@
 // Giac texts named a word below), and puts back silently what the input left: a new name that holds only itself is
 // purged, a logged assumption whose about() changed is purged and set again from its entry. As flags.ts does for Giac's
 // settings; nothing is logged. Plain data and pure functions; only erasable TypeScript syntax, so Node runs this file.
-import { wordsOf } from "./stores.ts";
+import { wordsOf } from "./giacPrint.ts";
 
 /** Giac's commands that leave an assumption after they return (probe 2026-10-25: 60 commands, each in a fresh engine, on
  *  integrate(tanh(sqrt(x)),x), tanh(sqrt(x)) and sqrt(x)*exp(sqrt(x))+x^(1/3); VARS() after each). The simplify family,
@@ -44,7 +44,7 @@ export function leakPart(known: readonly string[], logged: readonly string[]): s
   return `[0,map(VARS(),k->when(member(k,${quoted}),k,[k,string(eval(k))])),${aboutsPart(logged)},0]`;
 }
 
-/** A node of Giac's printed list (stateRead.ts parsePrinted). */
+/** A node of Giac's printed list (giacPrint.ts parsePrinted). */
 interface Node {
   raw: string;
   items?: Node[];

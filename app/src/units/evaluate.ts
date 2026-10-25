@@ -5,7 +5,9 @@
 // named; with an end slot the quotient must be a pure number. The number gets Home's facts (numeric.ts: exact, or the
 // agreement check), so markOf() marks it as Home. Synchronous, UI-free. Only erasable TypeScript syntax.
 import { FULL_EXACT_MAX, resultFromFacts, toExactLiterals, type HomeResult, type HomeSettings } from "../engine/homeEval.ts";
-import { exactFacts, floatFacts, hasFloat, rationalValue, splitList, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
+import { exactFacts, floatFacts, hasFloat, rationalValue, valuePrecision, type ElementFacts, type Giac } from "../engine/numeric.ts";
+import { callsOf, isNameChar, splitList } from "../engine/giacPrint.ts";
+import { PASDEG } from "../input/angles.ts";
 import { BASES, dimKeyOf, dimensionText, isExponent, parseDimKey, siUnit } from "./dims.ts";
 import { isUnitError, type Quantity, type Uncertainty, type UncVar, type UnitError, type UnitJob, type UnitNote } from "./types.ts";
 import { shownWithUncertainty, uncertaintyText } from "./uncertainty.ts";
@@ -86,29 +88,42 @@ function isError(out: string): boolean {
  *  versions. pasua reads the angle in the mode's unit itself and the inverses give rad, so the parser's degree factor
  *  (R64, `sin(pasdeg*u)`, `(asin(u)/pasdeg)`) is taken off here. */
 export function withAngles(expr: string): string {
-  return inverses(expr.replace(/(?<![A-Za-z0-9_])(sin|cos|tan)\s*\(\s*(?:pasdeg\s*\*)?/g, "pasu$1("));
+  let out = "";
+  let i = 0;
+  for (const c of callsOf(expr, ["sin", "cos", "tan"], "typed")) {
+    out += `${expr.slice(i, c.at)}pasu${c.name}(`;
+    i = c.open + 1;
+    // the parser's `pasdeg*` right inside the bracket
+    const rest = expr.slice(i).trimStart();
+    const after = rest.slice(PASDEG.length).trimStart();
+    i = expr.length - rest.length;
+    if (rest.startsWith(PASDEG) && !isNameChar(rest.charAt(PASDEG.length)) && after.startsWith("*")) i = expr.length - after.length + 1;
+  }
+  return inverses(out + expr.slice(i));
 }
 
 /** Each inverse call as pasu<name>(…), its arguments done the same way, without the `/pasdeg` right after it. */
 function inverses(t: string): string {
-  const re = new RegExp(`(?<![A-Za-z0-9_])(${INVERSES.join("|")})\\s*\\(`, "g");
   let out = "";
   let i = 0;
-  for (let m = re.exec(t); m; m = re.exec(t)) {
-    let depth = 1;
-    let j = re.lastIndex;
-    for (; j < t.length && depth > 0; j++) {
-      if (t[j] === "(") depth++;
-      else if (t[j] === ")") depth--;
-    }
+  for (const c of callsOf(t, INVERSES, "typed")) {
+    if (c.at < i) continue;
     // Unbalanced: the rest stays as it is, for Giac's syntax error.
-    if (depth > 0) break;
-    out += `${t.slice(i, m.index)}pasu${m[1]!}(${inverses(t.slice(re.lastIndex, j - 1))})`;
-    const deg = /^\s*\/\s*pasdeg(?![A-Za-z0-9_])(?!\s*\^)/.exec(t.slice(j));
-    i = j + (deg ? deg[0].length : 0);
-    re.lastIndex = i;
+    if (c.close < 0) break;
+    out += `${t.slice(i, c.at)}pasu${c.name}(${inverses(t.slice(c.open + 1, c.close))})`;
+    i = c.close + 1 + degreeAfter(t.slice(c.close + 1));
   }
   return out + t.slice(i);
+}
+
+/** The length of a `/pasdeg` (not raised to a power) that `t` starts with, spaces included; 0 when there is none. */
+function degreeAfter(t: string): number {
+  const slash = t.trimStart();
+  if (!slash.startsWith("/")) return 0;
+  const name = slash.slice(1).trimStart();
+  const after = name.slice(PASDEG.length);
+  if (!name.startsWith(PASDEG) || isNameChar(after.charAt(0)) || after.trimStart().startsWith("^")) return 0;
+  return t.length - after.length;
 }
 
 type Checked = { kind: "term"; exps: string[]; num: string } | { kind: "sum"; terms: string[][] } | { kind: "function" } | { kind: "trig" } | { kind: "zero" } | { kind: "undefined" };

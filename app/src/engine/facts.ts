@@ -8,6 +8,7 @@ import { resultFromFacts } from "./homeEval.ts";
 import { perturbedDigits, valuePrecision, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
 import type { DefEntry, NameFacts } from "./defs.ts";
 import type { InputReads, StoredName } from "./stateRead.ts";
+import { callsOf, isName } from "./giacPrint.ts";
 
 /** What the facts functions read from the engine host. */
 export interface FactsHost {
@@ -20,7 +21,6 @@ export interface FactsHost {
   readonly stored: ReadonlyMap<string, StoredName>;
 }
 
-const IDENT_NAME = /^[A-Za-z][A-Za-z0-9_]*$/;
 
 /** Facts that together cap a value: the fewest confirmed digits, the strongest warn, never exact (G49f1). Null when
  *  `all` is empty. */
@@ -90,7 +90,7 @@ export function readsFacts(host: FactsHost, reads: InputReads): { facts: NameFac
  * purge, assume): those read names without showing a value from them.
  */
 export function readFacts(host: FactsHost, input: string, reads: InputReads): { facts: NameFacts; causes: string[] } | null {
-  if (reads.fn || /^\s*(purge|assume|additionally)\s*\(/.test(input)) return null;
+  if (reads.fn || callsOf(input.trimStart(), ["purge", "assume", "additionally"], "typed")[0]?.at === 0) return null;
   const used = usedBy(host, reads);
   const facts = mergedFacts(used.map((u) => u.facts));
   if (!facts) return null;
@@ -135,7 +135,7 @@ export function inherited(host: FactsHost, r: HomeResult, reads: InputReads, exp
   const shape = shapeOfResult(r);
   let pert: number[] | null | undefined;
   let once = false;
-  if (expr !== null && moved.length && !IDENT_NAME.test(expr.trim())) {
+  if (expr !== null && moved.length && !isName(expr.trim(), true)) {
     pert = perturbedDigits(host.giac, expr, shape, els.map((e) => e.value!), moved, digits, restoreDigits);
   }
   const facts: ElementFacts[] = els.map((e, k) => {

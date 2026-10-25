@@ -11,7 +11,8 @@
 //   range) is refused "underflow", as an overflow is (underflow).
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { callsIn, type Refusal } from "./converge.ts";
-import { functionsIn, MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { MAX_EVAL_DIGITS, type ElementFacts, type Giac, type Shape } from "./numeric.ts";
+import { callsOf, firstNameIn, functionsIn, names, type Quoting, withoutStrings } from "./giacPrint.ts";
 import { isZero } from "./format.ts";
 
 /** The reasons of this module; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
@@ -20,7 +21,7 @@ export type NoValue = Extract<Refusal, "divisionByZero" | "overflow" | "underflo
 const isError = (t: string): boolean => t.startsWith("GIAC_ERROR");
 const infinite = (t: string): boolean => /infinity/.test(t);
 /** An infinity the user typed: then an infinite part is meant, not a division by zero. */
-const TYPED_INF = /\b(inf|infinity)\b/;
+const TYPED_INF: ReadonlySet<string> = new Set(["inf", "infinity"]);
 import { treeOf, UNEVALUATED, type TreeNode } from "./tree.ts";
 
 export { UNEVALUATED };
@@ -30,13 +31,25 @@ export { UNEVALUATED };
 const SAFE_DIVISION = /\/\s*(?:\(\s*)?(?:[1-9]\d*(?:\^\d+)?|pasdeg)(?:\s*\))?(?![\w.^(])/g;
 /** What can give an infinity from finite parts: a division left after SAFE_DIVISION, a negative power (0^-1), or one of
  *  these. */
-const SOURCE = /\/|\^\s*\(?\s*-|\b(ln|log|log10|logb|tan|cot|sec|csc|atanh|acoth|Gamma|gamma|factorial|Psi|psi|Beta|beta|inv|lnGamma)\s*\(/;
+const NEGATIVE_POWER = /\^\s*\(?\s*-/;
+const SOURCE_CALLS = ["ln", "log", "log10", "logb", "tan", "cot", "sec", "csc", "atanh", "acoth", "Gamma", "gamma", "factorial", "Psi", "psi", "Beta", "beta", "inv", "lnGamma"];
+const hasSource = (t: string): boolean => t.includes("/") || NEGATIVE_POWER.test(t) || callsOf(t, SOURCE_CALLS, "typed").length > 0;
 /** The operators (Giac's `sommet` of a quoted part) that can make an infinity from finite operands; a power only when
  *  its exponent is not a positive integer literal. Only these parts are evaluated again. */
 const SOURCE_OPS = new Set(["/", "^", "inv", "ln", "log", "log10", "logb", "tan", "cot", "sec", "csc", "atanh", "acoth", "Gamma", "gamma", "factorial", "Psi", "psi", "Beta", "beta", "lnGamma"]);
 /** A part that changes engine state when it runs (an assignment, a store, a purge, an increment) or draws a random
  *  number: evaluating it again would change state the user did not ask to change (rules-core, principle 3). */
-export const CHANGES_STATE = /:=|=<|=>|\+=|-=|\*=|\/=|\+\+|--|\b(?:sto|purge|assume|additionally|srand|randseed|RandSeed|alea|hasard|shuffle|sample)\s*\(|\b\w*ran[dmv]\w*\s*\(/i;
+export function changesState(text: string, q: Quoting): boolean {
+  const t = withoutStrings(text, "", q);
+  if (STATE_OPS.some((o) => t.includes(o))) return true;
+  return callsOf(t, undefined, q).some(({ name }) => {
+    const n = name.toLowerCase();
+    return STATE_CALLS.has(n) || n.includes("rand") || n.includes("ranm") || n.includes("ranv");
+  });
+}
+const STATE_OPS = [":=", "=<", "=>", "+=", "-=", "*=", "/=", "++", "--"];
+/** Lower case: the names are matched in any case. */
+const STATE_CALLS: ReadonlySet<string> = new Set(["sto", "purge", "assume", "additionally", "srand", "randseed", "alea", "hasard", "shuffle", "sample"]);
 /** Time the walk may take. A part costs at most about what the whole input cost (Home's own exact time), and some Giac
  *  calls ignore the interrupt (GMP's factorial, decisions.md "G58"), so a part is evaluated only while the time spent
  *  plus that cost stays within this. */
@@ -46,13 +59,13 @@ const WALK_BUDGET_MS = 500;
  * F51: a finite (or undef) `output` of `input` (decimals exact) that rests on an infinity inside: some part of the
  * input, below the whole, whose operator can make an infinity (SOURCE_OPS) evaluates to ±∞ or Giac's unsigned ∞. Only
  * those parts are evaluated again, one engine call each; the walk is not run (nothing found) for an input that changes
- * state when run (CHANGES_STATE) or calls a function `userFn` names (a stored program may change globals), and it stops
+ * state when run (changesState) or calls a function `userFn` names (a stored program may change globals), and it stops
  * (nothing found) before a part that could take the walk past WALK_BUDGET_MS, at `exactMs` (Home's own exact
  * evaluation time) per part, or once `late()`.
  */
 export function throughInfinity(giac: Giac, input: string, output: string, late: () => boolean, exactMs: number, userFn: (name: string) => boolean): boolean {
-  if (infinite(output) || TYPED_INF.test(input) || !SOURCE.test(input.replace(SAFE_DIVISION, "")) || callsIn(input).length) return false;
-  if (CHANGES_STATE.test(input.replace(/"[^"]*"/g, "")) || functionsIn(input).some(userFn)) return false;
+  if (infinite(output) || firstNameIn(input, TYPED_INF, "typed") !== null || !hasSource(input.replace(SAFE_DIVISION, "")) || callsIn(input).length) return false;
+  if (changesState(input, "typed") || functionsIn(input, "typed").some(userFn)) return false;
   try {
     // First the shape, with no evaluation (G103: the tree of the quoted input as Giac stores it in pasq, from bridge-3 in
     // the same call, tree.ts); the sources in it, innermost first, so the infinity is found at the part that makes it;
@@ -79,7 +92,8 @@ export function throughInfinity(giac: Giac, input: string, output: string, late:
 
 /** A name in Giac's text that is not a call nor a constant: the result has a free name (or a stored function's name),
  *  so it is not a lost number; read from the text, so such a result costs no engine call. */
-const FREE_NAME = /\b(?!(?:pi|e|i|euler_gamma)\b)[A-Za-z_]\w*\b(?!\s*\()/;
+const NOT_FREE: ReadonlySet<string> = new Set(["pi", "e", "i", "euler_gamma"]);
+const freeName = (t: string): boolean => [...names(t, "printed")].some((n) => !n.call && !NOT_FREE.has(n.name));
 
 /**
  * F50: the reason for a result held in `slot` that is Giac's text with no free name (a number was asked for, and Giac
@@ -98,7 +112,7 @@ export function lostNumber(
 ): NoValue | null {
   const out = output.trim();
   if (out === "undef") return throughInfinity(giac, input, out, late, exactMs, userFn) ? "divisionByZero" : null;
-  if (infinite(out) || /==|<>|->|"/.test(out) || FREE_NAME.test(out)) return null;
+  if (infinite(out) || /==|<>|->|"/.test(out) || freeName(out)) return null;
   if (giac.eval(`type(${slot})`).trim() !== "expression") return null;
   if (namesOf(giac, slot)?.length !== 0) return null;
   return infinite(giac.eval(`evalf(${slot})`)) ? "overflow" : "noValue";

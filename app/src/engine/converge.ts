@@ -9,7 +9,8 @@
 //   conditionally convergent integral (∫₀^∞ sin x / x) is not refused for its tail, which is not the singular point.
 // Only inputs that hold one of these calls pay, and an integral pays for the second integral only when f has a real
 // singular point in [a, b]. The checks run next to the engine, synchronously; only erasable TypeScript syntax.
-import { closing, functionsIn, hasFloat, splitList, topLevelArgs, type Giac } from "./numeric.ts";
+import { hasFloat, type Giac } from "./numeric.ts";
+import { callsOf, functionsIn, isName, splitList, topLevelArgs, wordsOf } from "./giacPrint.ts";
 
 /** Why a result is refused; the UI shows `error.<code>` from the i18n table (enEngine.ts). */
 /** `undecided` (G57) comes from decisions.ts decideTwice: a decision on a cut Giac cannot make. `divisionByZero`,
@@ -26,6 +27,7 @@ type Verdict = "ok" | "diverges" | "unchecked";
 type Kind = "int" | "sum" | "limit";
 
 const KIND: Readonly<Record<string, Kind>> = { int: "int", integrate: "int", sum: "sum", limit: "limit" };
+const KINDS = Object.keys(KIND);
 const REFUSAL: Readonly<Record<Kind, Refusal>> = { int: "integralDiverges", sum: "seriesDiverges", limit: "noLimit" };
 
 interface Call {
@@ -37,23 +39,18 @@ interface Call {
 /** Every int/integrate/sum/limit call in `input` (nested ones too), in text order; strings are skipped. */
 export function callsIn(input: string): Call[] {
   const out: Call[] = [];
-  const re = /"[^"]*"|\b(int|integrate|sum|limit)\s*\(/g;
-  for (let m = re.exec(input); m; m = re.exec(input)) {
-    if (!m[1]) continue;
-    const open = m.index + m[0].length - 1;
-    const close = closing(input, open);
-    if (close < 0) continue;
-    // A name that merely ends in the word (`myint(`) is not a call of it: \b sees `myint` as one word, so no match.
-    out.push({ kind: KIND[m[1]]!, text: input.slice(m.index, close + 1), args: topLevelArgs(input.slice(open + 1, close)).map((a) => a.trim()) });
+  // A name that merely ends in the word (`myint(`) is not a call of it.
+  for (const { name, at, open, close } of callsOf(input, KINDS, "typed")) {
+    if (close >= 0) out.push({ kind: KIND[name]!, text: input.slice(at, close + 1), args: topLevelArgs(input.slice(open + 1, close), "typed").map((a) => a.trim()) });
   }
   return out;
 }
 
 const isError = (t: string): boolean => t.startsWith("GIAC_ERROR");
 /** Giac's text for "no finite number": undef, or an infinity anywhere in it. */
-const notFinite = (t: string): boolean => t === "undef" || /infinity|\binf\b/.test(t);
+const notFinite = (t: string): boolean => t === "undef" || t.includes("infinity") || wordsOf(t).includes("inf");
 /** A result that is a value we may test: no infinity, no undef, no unevaluated call of the same kind left in it. */
-const finiteValue = (t: string): boolean => !isError(t) && !notFinite(t) && !/\b(int|integrate|sum|limit)\s*\(/.test(t);
+const finiteValue = (t: string): boolean => !isError(t) && !notFinite(t) && !callsOf(t, KINDS, "printed").length;
 
 /** Giac's free names of `e` are among `vars` (Giac lists ∞ as the name `infinity`, which is not free). */
 function onlyNames(giac: Giac, e: string, vars: string[]): boolean {
@@ -94,7 +91,7 @@ function seriesCheck(giac: Giac, c: Call): Verdict {
 
 /** Giac's limit text `l` is not 0: bounded_function(…) (no limit), undef, ±infinity, or a non-zero number. */
 function limitNonZero(giac: Giac, l: string): boolean {
-  if (/bounded_function/.test(l) || l === "undef" || /^[+-]?infinity$/.test(l)) return true;
+  if (l.includes("bounded_function") || l === "undef" || /^[+-]?infinity$/.test(l)) return true;
   const v = giac.eval(`evalf(abs(${l}),30)`).trim();
   return /^[\d.]+(e[+-]?\d+)?$/.test(v) && Number(v) !== 0;
 }
@@ -107,7 +104,7 @@ const PERIOD_DIVISORS = [12, 10, 8, 6, 5, 4, 3, 2, 1];
 /** The smallest period 2π/n of `f` among PERIOD_DIVISORS, as Giac text; null when none fits. Tested at two points at
  *  30 digits (a wrong period only costs a second integral at a point that is not singular). */
 function periodOf(giac: Giac, f: string, x: string, scale: string): string | null {
-  if (!functionsIn(f).some((n) => PERIODIC.has(n))) return null;
+  if (!functionsIn(f, "typed").some((n) => PERIODIC.has(n))) return null;
   // Exact test points: a float literal would make Giac compute in doubles, whose 1e-14 error exceeds the 1e-20 margin,
   // so no period (not even tan's π) was ever found.
   const points = ["3171/10000", "11937/10000"].map((p) => `(${p})*${scale}`);
@@ -128,12 +125,7 @@ const MAX_POINTS = 8;
 /** The trig calls of `f` (`tan(2*x)` in `x*tan(2*x)`), outermost first; strings skipped. */
 function periodicCalls(f: string): string[] {
   const out: string[] = [];
-  const re = /"[^"]*"|\b(sin|cos|tan|sec|csc|cot)\s*\(/g;
-  for (let m = re.exec(f); m; m = re.exec(f)) {
-    if (!m[1]) continue;
-    const close = closing(f, m.index + m[0].length - 1);
-    if (close >= 0) out.push(f.slice(m.index, close + 1));
-  }
+  for (const { at, close } of callsOf(f, PERIODIC, "typed")) if (close >= 0) out.push(f.slice(at, close + 1));
   return out;
 }
 
@@ -255,7 +247,7 @@ function check(giac: Giac, calls: Call[], input: string, output: string, home: b
     const c = calls.find((k) => k.kind === "limit" || k.args.length >= 4);
     if (c) return REFUSAL[c.kind];
   }
-  if (/bounded_function\s*\(/.test(out) && calls.some((c) => c.kind === "limit")) return "noLimit";
+  if (callsOf(out, ["bounded_function"], "printed").length && calls.some((c) => c.kind === "limit")) return "noLimit";
   // G78 (Home only; the CAS view keeps Giac's ∞): a definite integral whose value is an infinity does not converge
   // (∫₋₁¹ 1/x² = +∞); a limit keeps its ∞.
   if (home && /^[+-]?infinity$/.test(out)) {
@@ -267,10 +259,10 @@ function check(giac: Giac, calls: Call[], input: string, output: string, home: b
   for (const c of calls) {
     if (c.kind === "limit" || c.args.length !== 4) continue;
     const [body, v, a, b] = c.args as [string, string, string, string];
-    if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(v)) continue;
+    if (!isName(v, true)) continue;
     // Only a fully numeric call: a free name (Σ x^k = 1/(1−x)) leaves an answer with conditions, which stays.
     if (!onlyNames(giac, body, [v]) || !onlyNames(giac, a, []) || !onlyNames(giac, b, [])) continue;
-    if (c.kind === "sum" && !/\binf\b|infinity/.test(`${a},${b}`)) continue;
+    if (c.kind === "sum" && !wordsOf(`${a},${b}`).some((w) => w === "inf" || w === "infinity")) continue;
     const value = valueOf(giac, c, input, out).trim();
     if (value === "undef") return REFUSAL[c.kind];
     const pair = c.kind === "int" ? giacPair(value) : null;
@@ -305,7 +297,7 @@ export function hasDefiniteIntegral(input: string): boolean {
 }
 
 /** An unevaluated integral call in Giac's text. */
-const INTEGRAL_CALL = /\b(?:int|integrate)\s*\(/;
+const hasIntegral = (t: string): boolean => callsOf(t, ["int", "integrate"], "printed").length > 0;
 
 /**
  * G90 (F65, F67): `input` with each definite integral's bounds made floats (`int(f,x,evalf(a),evalf(b))`, nested ones
@@ -313,19 +305,14 @@ const INTEGRAL_CALL = /\b(?:int|integrate)\s*\(/;
  * Digits), not the rewrite its exact attempt left (`6*pi/ln(12)+integrate(…)`, singular where the typed one is not).
  */
 export function floatBounds(input: string): string {
-  const re = /"[^"]*"|\b(int|integrate)\s*\(/g;
   let out = "";
   let i = 0;
-  for (let m = re.exec(input); m; m = re.exec(input)) {
-    if (!m[1]) continue;
-    const open = m.index + m[0].length - 1;
-    const close = closing(input, open);
-    if (close < 0) continue;
-    const args = topLevelArgs(input.slice(open + 1, close)).map(floatBounds);
+  for (const { name, at, open, close } of callsOf(input, ["int", "integrate"], "typed")) {
+    if (at < i || close < 0) continue;
+    const args = topLevelArgs(input.slice(open + 1, close), "typed").map(floatBounds);
     const bounds = args.length === 4 ? [args[0]!, args[1]!, `evalf(${args[2]!.trim()})`, `evalf(${args[3]!.trim()})`] : args;
-    out += `${input.slice(i, m.index)}${m[1]}(${bounds.join(",")})`;
+    out += `${input.slice(i, at)}${name}(${bounds.join(",")})`;
     i = close + 1;
-    re.lastIndex = i;
   }
   return out + input.slice(i);
 }
@@ -337,6 +324,6 @@ export function floatBounds(input: string): string {
  */
 export function integratedNumerically(giac: Giac, input: string, output: string): boolean {
   if (!hasDefiniteIntegral(input)) return false;
-  if (!hasFloat(output)) return INTEGRAL_CALL.test(output);
-  return callsIn(input).some((c) => c.kind === "int" && c.args.length === 4 && INTEGRAL_CALL.test(giac.eval(c.text)));
+  if (!hasFloat(output)) return hasIntegral(output);
+  return callsIn(input).some((c) => c.kind === "int" && c.args.length === 4 && hasIntegral(giac.eval(c.text)));
 }

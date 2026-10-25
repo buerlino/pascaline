@@ -16,6 +16,7 @@
 // Giac variable names have no underscore: `name_d`, `name_f` … parse as a value with a unit.
 import { toExactLiterals, type Giac } from "./homeEval.ts";
 import { decimalFromString, formatReal, toText } from "./format.ts";
+import { splitList } from "./giacPrint.ts";
 
 export interface SolveSettings {
   digits: number;
@@ -310,10 +311,10 @@ export function solve1(
       } else {
         ev(`Digits:=${s.digits}`);
         const out = ev(`fsolve(pasf,${v}=${br.a}..${br.b},brent_solver)`);
-        const m = /^\[([^,\]]+)/.exec(out);
-        const xb = m ? num(m[1] ?? "") : undefined;
+        const first = splitList(out)?.[0];
+        const xb = first !== undefined ? num(first) : undefined;
         if (xb === undefined || xb < br.a || xb > br.b) setX(String(bisect(br.a, br.b)));
-        else setX(m![1] ?? "");
+        else setX(first!);
       }
       ev("pasy:=pasx");
       let a = accept();

@@ -7,14 +7,18 @@
 // from the text: a part `M^n` (n ≠ 1), `inv(M)` or `a/M` whose M evaluates to a matrix with rows ≠ columns. A flat
 // vector ([1,2]^2 = v·v, [5,1]^-1 elementwise) keeps Giac's meaning: it is no matrix.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
-import { functionsIn, type Giac } from "./numeric.ts";
-import { CHANGES_STATE } from "./novalue.ts";
+import { type Giac } from "./numeric.ts";
+import { callsOf, functionsIn, names, withoutStrings } from "./giacPrint.ts";
+import { changesState } from "./novalue.ts";
 import { MAX_NODES, treeOf, UNEVALUATED, type TreeNode } from "./tree.ts";
 import type { ParseNode } from "./bridge.ts";
 
 /** What can hold such a part: a power, a division or inv, and a list or a name (a stored matrix, a chip) to be M. */
-const OPERATOR = /\^|\/|\binv\s*\(/;
-const OPERAND = /\[|\b(?!(?:pi|e|i|euler_gamma|pasdeg|inf|infinity)\b)[A-Za-z_]\w*\b(?!\s*\()/;
+const powerIn = (t: string): boolean => t.includes("^");
+const inverseIn = (t: string): boolean => t.includes("/") || callsOf(t, ["inv"], "typed").length > 0;
+/** Names that hold no matrix. */
+const NO_MATRIX: ReadonlySet<string> = new Set(["pi", "e", "i", "euler_gamma", "pasdeg", "inf", "infinity"]);
+const operandIn = (t: string): boolean => t.includes("[") || [...names(t, "typed")].some((n) => !n.call && !NO_MATRIX.has(n.name));
 /** Time the operands may take, as throughInfinity's walk (novalue.ts): a part costs at most about the whole input. */
 const WALK_BUDGET_MS = 500;
 
@@ -64,8 +68,8 @@ function bodiesRead(bodies: Bodies): { known: Map<string, KnownBody>; unknown: b
 
 /** Cheap text test: could `input` hold a power, inverse or division of a matrix? */
 export function mayPowerMatrix(input: string): boolean {
-  const t = input.replace(/"[^"]*"/g, "");
-  return OPERATOR.test(t) && OPERAND.test(t);
+  const t = withoutStrings(input, "", "typed");
+  return (powerIn(t) || inverseIn(t)) && operandIn(t);
 }
 
 /**
@@ -74,7 +78,7 @@ export function mayPowerMatrix(input: string): boolean {
  * printed Giac's warning for a list base (`ambiguous`; undefined = not known, looked for), an inverse or a division
  * when the result holds a list (each is elementwise; a·inv(M) of a non-square M is a list). Then one engine call per
  * part for the shape (no evaluation), and two per candidate operand; a candidate whose text changes state
- * (CHANGES_STATE) or calls a function `userFn` names is not evaluated again, and the walk stops (nothing found) before
+ * (changesState) or calls a function `userFn` names is not evaluated again, and the walk stops (nothing found) before
  * a part that could take it past WALK_BUDGET_MS, at `exactMs` per part, or once `late()`.
  * G101 (F74): a call of a stored function the input reads (`bodies`, G99's reads) whose body is known (it stores
  * nothing, declares no local: the host's table and the function's tree) is walked into, its parameters bound to the
@@ -93,12 +97,12 @@ export function nonSquarePower(
 ): boolean {
   const mayPower = ambiguous !== false;
   const mayInverse = output.includes("[");
-  const [powIn, invIn] = [/\^/.test(input), /\/|\binv\s*\(/.test(input)];
+  const [powIn, invIn] = [powerIn(input), inverseIn(input)];
   const typed = mayPowerMatrix(input) && ((mayPower && powIn) || (mayInverse && invIn));
   // G101: the input's reads (its tree) when the typed text alone is not enough, or it calls a known stored function
   let read: ReturnType<typeof bodiesRead> | null = null;
   const reached = (): ReturnType<typeof bodiesRead> => (read ??= bodiesRead(bodies));
-  const callsKnown = !typed || functionsIn(input).some((n) => !!bodies.of(n));
+  const callsKnown = !typed || functionsIn(input, "typed").some((n) => !!bodies.of(n));
   const inBodies = (...heads: string[]): boolean =>
     callsKnown && [...reached().known.values()].some((k) => heads.some((h) => k.heads.includes(h)));
   // G101f1: a known body's heads count also when the typed text has an operator of its own (w(A)+inv(B), w(M):=M^2);
@@ -108,8 +112,7 @@ export function nonSquarePower(
   if (!(powers || inverses) || !(typed || reached().known.size > 0)) return false;
   // G101: a call's arguments are evaluated once more to bind the body: not when the input stores, or reads a function
   // of the user's whose body is not known (the known bodies store nothing, nor do the functions they read)
-  const stores = (t: string): boolean => CHANGES_STATE.test(t.replace(/"[^"]*"/g, ""));
-  const inline = (): boolean => !stores(input) && !reached().unknown;
+  const inline = (): boolean => !changesState(input, "typed") && !reached().unknown;
   const temps = ["pasq", "pasnb"];
   const t0 = performance.now();
   // the walk stops (nothing found) before an evaluation that could take it past WALK_BUDGET_MS, at `exactMs` each
@@ -178,7 +181,7 @@ export function nonSquarePower(
     for (const c of candidates) {
       if (overBudget()) return false;
       const text = giac.eval(`string(${c.part})`);
-      if (stores(text) || functionsIn(text).some(userFn)) continue;
+      if (changesState(text, "printed") || functionsIn(text, "printed").some(userFn)) continue;
       const first = c.power ? `when(eval(${c.bind(`[op(${c.part})][1]`)})==1,0,1)` : "1";
       const hit = giac.eval(`when(is_matrix(pasnb:=eval(${c.bind(c.operand)})) and rowdim(pasnb)!=coldim(pasnb),${first},0)`).trim();
       if (hit === "1") return true;

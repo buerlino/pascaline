@@ -164,17 +164,17 @@ describe.skipIf(!giacAvailable())("honest precision (real Giac)", () => {
 describe("G38: which inputs get a second decision (pure)", () => {
   it("decision functions, comparisons and abs( in the result; rationals only decide exactly", async () => {
     const { restsOnDecision, rationalOnly } = await import("./decisions.ts");
-    expect(restsOnDecision("floor(sin(10^50)*10^12)", "609741545567")).toBe(true);
-    expect(restsOnDecision("sin(10^50)>0", "true")).toBe(true);
-    expect(restsOnDecision("sqrt(x^2)", "abs(x)")).toBe(true);
-    expect(restsOnDecision("sin(1)", "sin(1)")).toBe(false);
-    expect(restsOnDecision("f:=x->x+1", "")).toBe(false); // the arrow is no comparison
-    expect(restsOnDecision("f(sin(10^60))", "933879932404", (n) => n === "f")).toBe(true); // a stored function
-    expect(restsOnDecision("sin(1)", "sin(1)", (n) => n === "f")).toBe(false);
-    expect(rationalOnly("sum(1/k,k,1,1000)")).toBe(true);
-    expect(rationalOnly("sum(1/k^2,k,1,inf)")).toBe(false);
-    expect(rationalOnly("floor(2^(1/2))")).toBe(false);
-    expect(rationalOnly("floor(x)")).toBe(false);
+    expect(restsOnDecision("floor(sin(10^50)*10^12)", "typed", "609741545567")).toBe(true);
+    expect(restsOnDecision("sin(10^50)>0", "typed", "true")).toBe(true);
+    expect(restsOnDecision("sqrt(x^2)", "typed", "abs(x)")).toBe(true);
+    expect(restsOnDecision("sin(1)", "typed", "sin(1)")).toBe(false);
+    expect(restsOnDecision("f:=x->x+1", "typed", "")).toBe(false); // the arrow is no comparison
+    expect(restsOnDecision("f(sin(10^60))", "typed", "933879932404", (n) => n === "f")).toBe(true); // a stored function
+    expect(restsOnDecision("sin(1)", "typed", "sin(1)", (n) => n === "f")).toBe(false);
+    expect(rationalOnly("sum(1/k,k,1,1000)", "typed")).toBe(true);
+    expect(rationalOnly("sum(1/k^2,k,1,inf)", "typed")).toBe(false);
+    expect(rationalOnly("floor(2^(1/2))", "typed")).toBe(false);
+    expect(rationalOnly("floor(x)", "typed")).toBe(false);
   });
 
   it("the cuts: floor and sign calls with their span, one comparison per segment", async () => {
@@ -189,18 +189,18 @@ describe("G38: which inputs get a second decision (pure)", () => {
     expect(decisionCuts("trunc(a)")).toEqual([{ q: "a", kind: "int", call: { name: "trunc", at: [0, 8] } }]);
     expect(decisionCuts("trunc(a,2)")).toEqual([{ q: "(a)*10^(2)", kind: "int" }]);
     expect(decisionCuts("Heaviside(a)")).toEqual([{ q: "a", kind: "zero" }]);
-    expect(restsOnDecision("trunc(sin(10^70)*10^12)", "387557674394")).toBe(true);
-    expect(restsOnDecision("Heaviside(sin(10^70))", "1")).toBe(true);
-    expect(rationalOnly("trunc(-7/2)")).toBe(true);
+    expect(restsOnDecision("trunc(sin(10^70)*10^12)", "typed", "387557674394")).toBe(true);
+    expect(restsOnDecision("Heaviside(sin(10^70))", "typed", "1")).toBe(true);
+    expect(rationalOnly("trunc(-7/2)", "typed")).toBe(true);
   });
 
   it("G71: two-argument round and trunc are not audited (Giac works in a double); one-argument round is", async () => {
     const { doubleFormsIn, isAudited, unauditedIn } = await import("./numeric.ts");
-    expect(doubleFormsIn("round(sin(x),5)+trunc(y,0)")).toEqual(["round", "trunc"]);
-    expect(doubleFormsIn("round(sin(x))+trunc(y)+\"round(a,b)\"")).toEqual([]);
-    expect(isAudited("round(sin(10^50))")).toBe(true);
-    expect(isAudited("round(sin(10^50),5)")).toBe(false);
-    expect(unauditedIn("round(BesselJ(1,2),3)")).toEqual(["BesselJ", "round"]);
+    expect(doubleFormsIn("round(sin(x),5)+trunc(y,0)", "typed")).toEqual(["round", "trunc"]);
+    expect(doubleFormsIn("round(sin(x))+trunc(y)+\"round(a,b)\"", "typed")).toEqual([]);
+    expect(isAudited("round(sin(10^50))", "typed")).toBe(true);
+    expect(isAudited("round(sin(10^50),5)", "typed")).toBe(false);
+    expect(unauditedIn("round(BesselJ(1,2),3)", "typed")).toEqual(["BesselJ", "round"]);
   });
 });
 
@@ -402,10 +402,10 @@ describe("G50: complex arguments of the audited functions (pure)", () => {
   it("complexSafe replaces the calls Giac gets wrong on complex arguments, outside strings, and nothing else", async () => {
     const { complexSafe } = await import("./complex.ts");
     // asin, acos and acosh are Giac's own since patch 0005 (G60), tanh since patch 0003 (G75).
-    expect(complexSafe("tanh(i)+asin(2*i)-acos (1+i)*atan(x)+acosh(z)")).toBe("tanh(i)+asin(2*i)-acos (1+i)*pasatan(x)+acosh(z)");
-    expect(complexSafe("arcsin(i)+arccos(i)+arctan(i)+atan (i)")).toBe("arcsin(i)+arccos(i)+pasatan(i)+pasatan (i)");
+    expect(complexSafe("tanh(i)+asin(2*i)-acos (1+i)*atan(x)+acosh(z)", "typed")).toBe("tanh(i)+asin(2*i)-acos (1+i)*pasatan(x)+acosh(z)");
+    expect(complexSafe("arcsin(i)+arccos(i)+arctan(i)+atan (i)", "typed")).toBe("arcsin(i)+arccos(i)+pasatan(i)+pasatan (i)");
     // atan2, asinh, atanh, a name ending in the function's name, a string, and our own names stay.
-    expect(complexSafe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)')).toBe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)');
+    expect(complexSafe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)', "typed")).toBe('atan2(1,2)+asinh(i)+atanh(i)+mytanh(i)+"tanh(i)"+pastanh(i)');
   });
   it("shortDigits: a part printed as a double where MPFR digits were asked confirms one digit fewer (source: derived)", async () => {
     const { shortDigits } = await import("./numeric.ts");
@@ -544,6 +544,35 @@ describe.skipIf(!giacAvailable())("G50: complex arguments of the audited functio
     expect(r.hidden).toEqual([]);
     expect(r.text).not.toContain("g(");
     expect(complexReads(giac, "evalf(g(2*i))", false)).toEqual({ text: "evalf(g(2*i))", copies: [], hidden: ["atan"] });
+  });
+  it("G105f2: a stored program whose string ends in \\ is read with Giac's print quoting: its atan is found, and its copy is refused, so the value is unaudited (source: derived)", async () => {
+    const { complexReads, purgeReads } = await import("./complex.ts");
+    const L = await loadNodeGiac();
+    const giac = engineGiac(L);
+    const own = new EngineHost(L.giac, L.bridge);
+    // Defined in Giac directly (as a log replay does): the CAS entry of this text ends in a syntax error (Not done).
+    L.giac.eval('f(x):={local s; s:="C:\\\\"; atan(2*i*x)}');
+    expect(L.giac.eval("f")).toContain('"C:\\"');
+    // The typed skip read \" as an escaped quote and hid atan: no copy, nothing hidden, Giac's atan shown as audited.
+    const r = complexReads(giac, "evalf(f(1))");
+    purgeReads(giac, r.copies);
+    expect(r.hidden).toEqual(["atan"]);
+    expect(r.text).toBe("evalf(f(1))");
+    const v = own.cas("evalf(f(1))", defaultCasSettings).result;
+    expect(v.numeric?.facts.warn).toBe("unaudited");
+    // a program without the \ gets its copy (G56), and is our principal atan(2*i), as typed directly
+    L.giac.eval('h(x):={local s; s:="C:"; atan(2*i*x)}');
+    const direct = own.cas("evalf(atan(2*i))", defaultCasSettings).result.text;
+    expect(own.cas("evalf(h(1))", defaultCasSettings).result.text).toBe(direct);
+  });
+  it("G105f1: a stored program is read as Giac prints it: a string ending in \\ before floor still rests on a decision (source: derived)", async () => {
+    const { decidingStored } = await import("./decisions.ts");
+    const L = await loadNodeGiac();
+    const giac = engineGiac(L);
+    L.giac.eval('fd(x):={local s; s:="C:\\\\"; floor(x*10^12)}');
+    expect(L.giac.eval("fd")).toContain('"C:\\"');
+    expect(decidingStored(giac)("fd")).toBe(true);
+    L.giac.eval("purge(fd)");
   });
   it("G56f1: a refused copy keeps the input's own names and hides the replaced function (source: derived)", async () => {
     const { complexReads, purgeReads } = await import("./complex.ts");

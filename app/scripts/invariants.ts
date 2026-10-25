@@ -29,7 +29,7 @@ const ANGLE_WORDS = /(?<![A-Za-z0-9_])(a?(sin|cos|tan|sec|csc|cot)|arg|atan2|ang
 /** What the input is, for the checks: `angleFree` when no angle function is in it (the typed text with the parser's degree factor). */
 export function invariantsOf(giac: string, before: readonly string[] = []): { angleFree: boolean } {
   const text = [...before, giac].join(";");
-  return { angleFree: !hasAngleFactor(text) && !ANGLE_WORDS.test(text) };
+  return { angleFree: !hasAngleFactor(text, "typed") && !ANGLE_WORDS.test(text) };
 }
 
 const keyOf = (f: { id: string; check: string }): string => `${f.id} ${f.check}`;
