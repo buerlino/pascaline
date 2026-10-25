@@ -23,7 +23,8 @@ const SETTING: ReadonlySet<string> = new Set(["assume", "additionally"]);
 
 /** The text names a command that may leave an assumption (a word inside a string counts too: one more read only). */
 export function namesAssuming(text: string): boolean {
-  return wordsOf(text).some((w) => ASSUMING.has(w));
+  // the words split only when one is in the text (the host passes every Giac text through here)
+  return ASSUMING_WORDS.some((w) => text.includes(w)) && wordsOf(text).some((w) => ASSUMING.has(w));
 }
 
 /** The text sets an assumption itself (`assume`, `additionally`): its change is kept (G67's reset rule). */
