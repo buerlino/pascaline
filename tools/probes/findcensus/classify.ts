@@ -3,11 +3,13 @@
 //   checked    a number with its mark, and the oracle (mpmath) agrees with the mark (the sweep's judge, tools/probes/sweep/judge.ts);
 //              in CAS an exact form on numbers is judged as `=` (its value read at 60 and 80 digits; fewer agreeing digits claim
 //              fewer, worker.ts)
-//   unchecked  a number (or a list of numbers) with its mark, and no oracle for this function or these arguments
-//   symbolic   a result that is no number: an expression, a list, a true or false, Giac's plain answer
+//   unchecked  a number with its mark, and no oracle for this function or these arguments; a list answer some item of which has no
+//              oracle (and none fails it)
+//   symbolic   a result that is no number: an expression, a true or false, Giac's plain answer (never a list answer with items)
 //   refused    a message instead of a result (the parser's or the engine's)
 //   raw        Giac's raw text: the call came back unevaluated, or Giac's internal words, objects or strings reached the screen
-//   wrong      the oracle disagrees with the shown number and its mark, or a number is shown where there is no value
+//   wrong      the oracle disagrees with the shown number and its mark, or a number is shown where there is no value; for a list
+//              answer, any item (each judged with its own mark against the oracle's element)
 //   defined    a command that stores, assumes or purges on purpose (INTENDED_STATE) left only what the definitions log holds: the
 //              app shows it in Vars and replays it at every start, as the command says (not a finding)
 //   state      the input left a name or a setting behind in the engine, or a definitions-log entry the app replays at every start, or
@@ -16,7 +18,10 @@
 //   crash      an exception came out of the engine (the worker is started again)
 // The findings are raw, wrong, state, hang and crash.
 import { judge, type Oracle, type Shown } from "../sweep/judge.ts";
-import type { Answer } from "./worker.ts";
+import type { Answer, Item } from "./worker.ts";
+
+/** oracle.py's answer for one input: the sweep's shape, or one per element for a list argument. */
+export type CensusOracle = Oracle | { kind: "items"; items: readonly Oracle[] };
 
 export type CensusClass = "checked" | "unchecked" | "symbolic" | "refused" | "raw" | "wrong" | "defined" | "state" | "hang" | "crash";
 
@@ -92,7 +97,7 @@ export function rawText(name: string, text: string, view: "home" | "cas", giac: 
 }
 
 /** The class of one input. `parserError` is set when our parser refused the LaTeX (the input never reached the engine). */
-export function classify(name: string, view: "home" | "cas", giac: string, a: Answer | { hang: true } | { parserError: string }, oracle: Oracle | null): Verdict {
+export function classify(name: string, view: "home" | "cas", giac: string, a: Answer | { hang: true } | { parserError: string }, oracle: CensusOracle | null): Verdict {
   if ("hang" in a) return { cls: "hang", detail: "no answer before the deadline" };
   if ("parserError" in a) return { cls: "refused", detail: `parser: ${a.parserError}`.slice(0, 100) };
   if (a.crash !== undefined) return { cls: "crash", detail: a.crash };
@@ -101,6 +106,9 @@ export function classify(name: string, view: "home" | "cas", giac: string, a: An
   if (!a.ok) return { cls: "refused", detail: `${a.error ?? "error"}: ${a.text}`.slice(0, 120) };
   const raw = rawText(name, a.text, view, giac);
   if (raw) return { cls: "raw", detail: `${raw}: ${a.text}`.slice(0, 120) };
+  if (a.items) return classifyItems(a.items, a.text, oracle);
+  // a scalar answer to a list argument: no element of the oracle is its value
+  if (oracle?.kind === "items") oracle = { kind: "skip", reason: "a list argument, a scalar answer" };
   if (a.value && a.mark) {
     if (a.exact && (!oracle || oracle.kind === "skip")) return { cls: "symbolic", detail: a.text.slice(0, 100) };
     if (!oracle || oracle.kind === "skip") return { cls: "unchecked", detail: `${a.mark}${a.n ?? ""} ${a.text}${oracle ? ` (oracle: ${oracle.reason})` : ""}`.slice(0, 120) };
@@ -109,7 +117,30 @@ export function classify(name: string, view: "home" | "cas", giac: string, a: An
     if (v.kind === "ok") return { cls: "checked", detail: `${a.mark}${a.n ?? ""} ${a.text}` };
     return { cls: "wrong", detail: `[${v.check ?? v.kind}] ${v.detail ?? ""}`.slice(0, 160) };
   }
-  if (a.list && a.mark) return { cls: "unchecked", detail: `list ${a.mark} ${a.text}`.slice(0, 120) };
   if (a.value || a.mark) return { cls: "unchecked", detail: `${a.mark ?? "no mark"} ${a.text}`.slice(0, 120) };
   return { cls: "symbolic", detail: a.text.slice(0, 100) };
+}
+
+/** A list answer, item by item: each item's value and own mark judged against the oracle's element (the sweep's judge). Wrong when
+ *  any item fails (or the counts differ), checked when every item passes, unchecked when some item has no oracle; never symbolic. */
+function classifyItems(items: readonly Item[], text: string, oracle: CensusOracle | null): Verdict {
+  const marks = items.map((it) => `${it.mark ?? "-"}${it.n ?? ""}`).join(",");
+  if (oracle?.kind !== "items") {
+    const why = !oracle ? "" : oracle.kind === "skip" ? ` (oracle: ${oracle.reason})` : " (oracle: one value for a list)";
+    return { cls: "unchecked", detail: `list [${marks}] ${text}${why}`.slice(0, 120) };
+  }
+  if (oracle.items.length !== items.length) return { cls: "wrong", detail: `[items] ${items.length} items shown, the oracle has ${oracle.items.length}: ${text}`.slice(0, 160) };
+  let all = true;
+  for (const [i, it] of items.entries()) {
+    const o = oracle.items[i]!;
+    if (o.kind === "skip") {
+      all = false;
+      continue;
+    }
+    const shown: Shown = { ok: true, display: it.text, ...(it.value ? { value: it.value } : {}), ...(it.mark ? { mark: it.mark } : {}), ...(it.n !== undefined ? { n: it.n } : {}) };
+    const v = judge(shown, o, 12);
+    if (v.kind === "skip") all = false;
+    else if (v.kind !== "ok") return { cls: "wrong", detail: `[item ${i + 1} ${v.check ?? v.kind}] ${v.detail ?? ""}`.slice(0, 160) };
+  }
+  return all ? { cls: "checked", detail: `list [${marks}] ${text}`.slice(0, 120) } : { cls: "unchecked", detail: `list [${marks}] ${text} (oracle: an item without one)`.slice(0, 120) };
 }

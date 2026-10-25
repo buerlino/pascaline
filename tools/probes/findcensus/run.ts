@@ -8,8 +8,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { Worker } from "node:worker_threads";
 import { giacOfEntry } from "../../../app/src/input/entry.ts";
-import type { Oracle } from "../sweep/judge.ts";
-import { classify, type CensusClass } from "./classify.ts";
+import { classify, type CensusClass, type CensusOracle } from "./classify.ts";
 import { helpExamples, samplesOf, type Sample } from "./samples.ts";
 import type { Answer, Job } from "./worker.ts";
 
@@ -82,10 +81,10 @@ export function pythonFor(repo: string, mainCheckout: string): string {
   return "python3";
 }
 
-export function oracleFor(samples: readonly Sample[], python: string, oraclePy: string): Oracle[] {
+export function oracleFor(samples: readonly Sample[], python: string, oraclePy: string): CensusOracle[] {
   const r = spawnSync(python, ["-I", oraclePy], { input: JSON.stringify(samples.map((s) => ({ name: s.name, args: s.py }))), encoding: "utf8", maxBuffer: 64 << 20, timeout: 5 * 60_000 });
   if (r.status !== 0) throw new Error(`findcensus oracle.py failed (${python}, mpmath needed): ${(r.stderr ?? "").trim().split("\n").slice(-3).join(" | ")}`);
-  return JSON.parse(r.stdout) as Oracle[];
+  return JSON.parse(r.stdout) as CensusOracle[];
 }
 
 /** How long bridge-3's second evaluation (the kind) may take. */
@@ -165,7 +164,7 @@ export interface CensusResult {
 }
 
 /** Every sample in Home and in CAS, on `workers` engines. Rows come back in input order. */
-export async function census(samples: readonly Sample[], oracles: readonly Oracle[], deadlineMs: number, workers: number): Promise<CensusResult> {
+export async function census(samples: readonly Sample[], oracles: readonly CensusOracle[], deadlineMs: number, workers: number): Promise<CensusResult> {
   const jobs = samples.flatMap((s, i) => (["home", "cas"] as const).map((view) => ({ s, oracle: oracles[i] ?? null, view })));
   const rows: Row[] = new Array<Row>(jobs.length);
   const per = Math.ceil(jobs.length / workers);

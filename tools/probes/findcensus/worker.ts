@@ -7,7 +7,7 @@
 import { parentPort } from "node:worker_threads";
 import { EngineHost } from "../../../app/src/engine/host.ts";
 import { loadNodeGiac } from "../../../app/src/engine/nodeGiac.ts";
-import { defaultHomeSettings, pasdegCommand, precisionFacts } from "../../../app/src/engine/homeEval.ts";
+import { defaultHomeSettings, pasdegCommand, precisionFacts, type HomeResult } from "../../../app/src/engine/homeEval.ts";
 import { confirmedDigits, markOf, ZERO_VALUE, type ComplexValue } from "../../../app/src/engine/format.ts";
 import { numbersAt, rationalValue, shapeOfValue } from "../../../app/src/engine/numeric.ts";
 import { casMark } from "../../../app/src/goldenRun.ts";
@@ -32,8 +32,9 @@ export interface Answer {
   value?: ComplexValue;
   mark?: "=" | "≈" | "⚠";
   n?: number;
-  /** A list or matrix of numbers (Home items, or a CAS numeric list): shown with marks, not judged here. */
-  list?: true;
+  /** A list or matrix of numbers (Home items, or a CAS numeric list), item by item: each item's text, value and the mark the view
+   *  draws for it from the item's own precision facts (markOf, STD, the setting's digits). Judged item by item (classify.ts). */
+  items?: Item[];
   /** CAS: an exact form on numbers (`21/10*exp(21/5)`), no mark drawn. An exact form claims every digit: `value` is its value read
    *  at EXACT_DIGITS, and `mark` is `=` when the reading at EXACT_DIGITS + 20 agrees on 50 digits or more; when Giac's routine gives
    *  fewer (Airy_Ai has no MPFR path), `≈` checks the setting's digits, or `⚠ n` the n it gives. Judged where there is an oracle,
@@ -42,6 +43,22 @@ export interface Answer {
   /** Names and settings left behind: `name x`, `setting 3: 0 -> 1`, `logged x` (a definitions-log entry). */
   left: string[];
   crash?: string;
+}
+
+/** One item of a list answer: its shown text, its number and its own mark (absent for an item that is no number). */
+export interface Item {
+  text: string;
+  value?: ComplexValue;
+  mark?: "=" | "≈" | "⚠";
+  n?: number;
+}
+
+/** A list answer's items, each with the mark markOf gives its own precision facts (STD, `digits`), as for a scalar answer. */
+export function itemsOf(items: readonly HomeResult[], digits: number): Item[] {
+  return items.map((it) => {
+    const m = it.value ? markOf(precisionFacts(it), { format: "STD", digits }) : null;
+    return { text: it.display, ...(it.value ? { value: it.value } : {}), ...(m ? { mark: m.mark, ...(m.n !== undefined ? { n: m.n } : {}) } : {}) };
+  });
 }
 
 /** The host's own names, defined when first needed (pasans, pcasans, paserf…): not the input's. One the input purges still counts. */
@@ -113,7 +130,7 @@ function view(job: Job): Omit<Answer, "left"> & { defs: DefChange[] } {
       text: r.display,
       ...(r.error ? { error: r.error } : {}),
       ...(r.value && !r.items ? { value: r.value } : {}),
-      ...(r.items ? { list: true as const } : {}),
+      ...(r.items ? { items: itemsOf(r.items, defaultHomeSettings.digits) } : {}),
       ...(m ? { mark: m.mark, ...(m.n !== undefined ? { n: m.n } : {}) } : {}),
       defs,
     };
@@ -126,7 +143,7 @@ function view(job: Job): Omit<Answer, "left"> & { defs: DefChange[] } {
   const m = casMark(r, defaultCasSettings.digits);
   if (r.numeric) {
     const n = r.numeric;
-    if (n.items) return { ...base, list: true, ...(m ? { mark: m.mark } : {}) };
+    if (n.items) return { ...base, items: itemsOf(n.items, defaultCasSettings.digits) };
     return { ...base, ...(n.value ? { value: n.value } : {}), ...(m ? { mark: m.mark, ...(m.n !== undefined ? { n: m.n } : {}) } : {}) };
   }
   if (m?.mark === "=") {

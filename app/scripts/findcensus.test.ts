@@ -96,6 +96,30 @@ describe("findcensus classes", () => {
     expect(classify("Airy_Ai", "cas", "Airy_Ai(0)", answer({ text: "Airy_Ai(0)", value: num("0.355028053888"), mark: "⚠", n: 11, exact: true }), ai).cls).toBe("checked");
     expect(classify("Airy_Ai", "cas", "Airy_Ai(0)", answer({ text: "Airy_Ai(0)", value: num("0.355028053888"), mark: "=", exact: true }), ai).cls).toBe("wrong");
   });
+  describe("a list answer, item by item (G110f1)", () => {
+    // erfc(1), erfc(2): mpmath at 100 digits (oracle.py's output for erfc({1,2}))
+    const items = {
+      kind: "items",
+      items: [
+        { kind: "value", re: "0.1572992070502851306587793649173907407039330020336970915400621021652827459039891587380166746518551115", im: "0" },
+        { kind: "value", re: "0.004677734981047265837930743632747071389108202959939923261647673799562719280004822632370991980319319512", im: "0" },
+      ],
+    } as const;
+    const item = (t: string, v: string, mark: "=" | "≈") => ({ text: t, value: num(v), mark });
+    it("classes a Home list wrong when one item's own mark is wrong (the second drawn = though not exact)", () => {
+      const a = answer({ text: "[0.15729920705,4.67773498105E-3]", items: [item("0.15729920705", "0.15729920705", "≈"), item("4.67773498105E-3", "0.00467773498105", "=")] });
+      expect(classify("erfc", "home", "erfc([1,2])", a, items).cls).toBe("wrong");
+    });
+    it("classes a Home list on numbers with no oracle unchecked, not symbolic", () => {
+      const a = answer({ text: "[1.89511781636,4.95423435217]", items: [item("1.89511781636", "1.89511781636", "≈"), item("4.95423435217", "4.95423435217", "≈")] });
+      expect(classify("Ei", "home", "Ei([1,2])", a, { kind: "skip", reason: "no oracle for this function" }).cls).toBe("unchecked");
+      expect(classify("Ei", "home", "Ei([1,2])", a, null).cls).toBe("unchecked");
+    });
+    it("classes a CAS numeric list whose items all match the oracle checked", () => {
+      const a = answer({ text: "[0.15729920705,0.00467773498105]", items: [item("0.15729920705", "0.15729920705", "≈"), item("0.00467773498105", "0.00467773498105", "≈")] });
+      expect(classify("erfc", "cas", "erfc([1,2])", a, items).cls).toBe("checked");
+    });
+  });
   it("reads a CAS mark by the golden runner's rule (goldenRun.ts casMark)", () => {
     const facts = { exact: true, reliableDigits: null };
     expect(casMark({ ok: true, text: "-7/3", latex: "", facts } as never, 12)).toEqual({ mark: "=" });

@@ -3,7 +3,9 @@
 # on stdin and prints a JSON list, one per request, in the sweep oracle's shape (tools/probes/sweep/oracle.py):
 #   {"kind": "value", "re": "...", "im": "..."}  at 100 digits, when 60 and 100 digits agree to 1e-45
 #   {"kind": "novalue"}                           a pole, a domain error, a non-finite result
-#   {"kind": "skip", "reason": "..."}             no oracle for this function, these argument kinds (a list), or unstable
+#   {"kind": "skip", "reason": "..."}             no oracle for this function, these argument kinds, or unstable
+#   {"kind": "items", "items": [...]}             a list argument: one of the above per element, the list's element i in place of
+#                                                 the list (every list argument the same length), as Giac maps a function over a list
 # Each function follows the definition in Giac's help line (doc/aide_cas, the English line), written here with mpmath (1.3.0):
 # no value is copied from Giac. Integer functions are computed with Python integers.
 # Run: tests/golden/.venv/bin/python -I tools/probes/findcensus/oracle.py < requests.json
@@ -250,10 +252,16 @@ FN = {
 NS = dict(N=N, mpf=mpf, mpc=mpc, sqrt=sqrt, exp=exp, log=log, sin=M.sin, cos=M.cos, tan=M.tan, factorial=factorial)
 
 
-def at(name, args, dps):
+def values(args, dps):
     mp.dps = dps
     ns = dict(NS, pi=+pi, e=+e)
-    vals = [eval(a, {"__builtins__": {}}, ns) for a in args]
+    return [eval(a, {"__builtins__": {}}, ns) for a in args]
+
+
+def at(name, args, dps, i=None):
+    vals = values(args, dps)
+    if i is not None:
+        vals = [v[i] if isinstance(v, list) else v for v in vals]
     v = FN[name](*vals)
     if isinstance(v, int):
         v = mpf(v)
@@ -274,18 +282,42 @@ def agree(a, b):
     return abs(a[0] - b[0]) <= tol and abs(a[1] - b[1]) <= tol
 
 
+def scalar(name, args, i=None):
+    a = at(name, args, 60, i)
+    b = at(name, args, 100, i)
+    if not agree(a, b):
+        return {"kind": "skip", "reason": "unstable at 60/100 digits"}
+    mp.dps = 100
+    return {"kind": "value", "re": mp.nstr(b[0], 100), "im": mp.nstr(b[1], 100)}
+
+
+def guarded(f):
+    """One answer in the oracle's shape: f's value, or the kind its exception stands for."""
+    try:
+        return f()
+    except Skip as s:
+        return {"kind": "skip", "reason": str(s)}
+    except TypeError:
+        return {"kind": "skip", "reason": "another argument count"}
+    except (ZeroDivisionError, ValueError):
+        return {"kind": "novalue"}
+    except (OverflowError, MemoryError):
+        return {"kind": "skip", "reason": "oracle overflow"}
+
+
 def one(q):
     name, args = q["name"], q["args"]
     if name not in FN:
         raise Skip("no oracle for this function")
     if args is None:
         raise Skip("an argument the oracle cannot read")
-    a = at(name, args, 60)
-    b = at(name, args, 100)
-    if not agree(a, b):
-        return {"kind": "skip", "reason": "unstable at 60/100 digits"}
-    mp.dps = 100
-    return {"kind": "value", "re": mp.nstr(b[0], 100), "im": mp.nstr(b[1], 100)}
+    lens = {len(v) for v in values(args, 100) if isinstance(v, list)}
+    if not lens:
+        return scalar(name, args)
+    if len(lens) > 1:
+        raise Skip("list arguments of different lengths")
+    # a list argument: element by element (an element that is itself a list skips in real())
+    return {"kind": "items", "items": [guarded(lambda i=i: scalar(name, args, i)) for i in range(lens.pop())]}
 
 
 def main():
@@ -294,17 +326,9 @@ def main():
     for q in json.load(sys.stdin):
         signal.setitimer(signal.ITIMER_REAL, 3.0)
         try:
-            out.append(one(q))
-        except Skip as s:
-            out.append({"kind": "skip", "reason": str(s)})
-        except TypeError:
-            out.append({"kind": "skip", "reason": "another argument count"})
-        except (ZeroDivisionError, ValueError):
-            out.append({"kind": "novalue"})
+            out.append(guarded(lambda: one(q)))
         except Slow:
             out.append({"kind": "skip", "reason": "oracle too slow (3 s)"})
-        except (OverflowError, MemoryError):
-            out.append({"kind": "skip", "reason": "oracle overflow"})
         finally:
             signal.setitimer(signal.ITIMER_REAL, 0)
     json.dump(out, sys.stdout)
