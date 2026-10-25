@@ -9,17 +9,18 @@
 //   matches neither (or both) keeps its text.
 // Only erasable TypeScript syntax; no engine import, so the UI side (storage.ts) may use the pure half.
 import { PASDEG, rewriteAngles } from "../input/angles.ts";
-import { leadingName, mapNames, renameCalls } from "./giacPrint.ts";
+import { leadingName, mapNames, type Quoting, renameCalls } from "./giacPrint.ts";
 
 /** A Giac evaluator (EngineHost's GiacApi has this shape). */
 interface Evaluator {
   eval(input: string): string;
 }
 
-/** G21's helper is gone: its calls are Giac's exp, which reads radians (F29). The log holds Giac's print ("printed"
- *  strings, as EngineHost.restore reads them). */
-export function withoutPasexp(text: string): string {
-  return renameCalls(text, { pasexp: "exp" }, "printed");
+/** G21's helper is gone: its calls are Giac's exp, which reads radians (F29). `q` is the text's quoting: a version-2
+ *  variable's command is Giac's print (its snapshot); a function's, an input's, an assumption's and a library text are
+ *  typed (G105f2). */
+export function withoutPasexp(text: string, q: Quoting): string {
+  return renameCalls(text, { pasexp: "exp" }, q);
 }
 
 /** `name:=(rhs)`, the form the log stores a value in (EngineHost.snapshot). */
@@ -45,10 +46,12 @@ function migrateEntry(x: unknown): unknown {
   const e = x as Record<string, unknown>;
   const cmds = e["cmds"];
   if (!Array.isArray(cmds) || !cmds.every((c) => typeof c === "string")) return x;
-  let next = (cmds as string[]).map(withoutPasexp);
   const kind = e["kind"];
+  // Only a variable's command was Giac's print in version 2; every other kind was stored as typed.
+  const q: Quoting = kind === "var" ? "printed" : "typed";
+  let next = (cmds as string[]).map((c) => withoutPasexp(c, q));
   const out: Record<string, unknown> = { ...e };
-  if (kind === "fn" || kind === "other") next = next.map((c) => rewriteAngles(c, "printed"));
+  if (kind === "fn" || kind === "other") next = next.map((c) => rewriteAngles(c, "typed"));
   else if (kind === "var" && next.length === 1) {
     const m = valueCmd(next[0]!);
     const rhs = m?.rhs;
@@ -71,7 +74,7 @@ export function migrateAngleDefs(value: unknown): unknown {
 /** The DATA_VERSION step for a library file's text: its bodies are written without the factor (the import puts it in),
  *  so only `pasexp` goes. */
 export function migrateAngleText(value: unknown): unknown {
-  return typeof value === "string" ? withoutPasexp(value) : value;
+  return typeof value === "string" ? withoutPasexp(value, "typed") : value;
 }
 
 /** `text` evaluates within a relative 1e-10 of the preview `shown` (12 significant digits, Giac syntax). */
