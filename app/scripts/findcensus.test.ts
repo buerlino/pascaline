@@ -6,7 +6,7 @@ import { latexToGiac } from "../src/input/latex-to-giac.ts";
 import { decimalFromString, ZERO_VALUE } from "../src/engine/format.ts";
 import { argsLatex, helpExamples, samplesOf } from "../../tools/probes/findcensus/samples.ts";
 import { classify, loggedOnly, onNumbers, rawText } from "../../tools/probes/findcensus/classify.ts";
-import { censusStage, classStrings, knownText } from "../../tools/probes/findcensus/stage.ts";
+import { censusStage, classStrings, hitDeadline, knownText, timingChanges, timingSuspects } from "../../tools/probes/findcensus/stage.ts";
 import type { Row } from "../../tools/probes/findcensus/run.ts";
 import type { Answer } from "../../tools/probes/findcensus/worker.ts";
 import { casMark } from "../src/goldenRun.ts";
@@ -145,5 +145,30 @@ describe("findcensus stage", () => {
   it("rewrites the known file: the header kept, findings kept or unfiled, classes sorted", () => {
     const t = knownText("# head\n# more\nfindings:\n  F1: []\nclasses: {}\n", rows, ["cat"], { findings: { F1: ["cas erfc/0"] } });
     expect(t).toBe('# head\n# more\nfindings:\n  unfiled: ["home erfc/1"]\nclasses:\n  "cat": "-"\n  "erfc": "cw|ss"\n');
+  });
+  it("runs an input whose class came from a clock again alone, and reports a change that holds as timing, not failed", () => {
+    const hang = { ...row("ecm_factor", "cas", 0, "hang"), detail: "no answer before the deadline" };
+    const late = { ...row("ellipse", "home", 0, "refused"), detail: "timeout: Took too long" };
+    const now = [{ ...hang, cls: "symbolic" as const }, late, row("erfc", "home", 0, "wrong")];
+    expect(hitDeadline(hang)).toBe(true);
+    expect(hitDeadline(late)).toBe(true);
+    expect(hitDeadline(row("erfc", "home", 0, "refused"))).toBe(false);
+    const known = { findings: { F97: ["cas ecm_factor/0"] }, classes: { ecm_factor: "|h", ellipse: "s|", erfc: "c|" }, deadline: ["cas ecm_factor/0"] };
+    // ecm_factor was a hang (on the deadline list), ellipse hit Home's time-out now; erfc's move is a class change
+    expect(timingSuspects(now, known).map((r) => r.id)).toEqual(["cas ecm_factor/0", "home ellipse/0"]);
+    const timing = timingChanges(now, new Set(["cas ecm_factor/0", "home ellipse/0"]), known);
+    expect([...timing]).toEqual(["cas ecm_factor/0", "home ellipse/0"]);
+    const r = censusStage(now, [], known, timing);
+    expect(r.lines.filter((l) => l.startsWith("TIMING")).length).toBe(2);
+    expect(r.lines).toContain("CHANGED home erfc/0: was checked, now wrong (L  =>  d)");
+    expect(r.summary).toBe("1 findings filed, 1 class changes, 1 new findings, 0 now passing");
+    // without the timing set the same run fails on all three moves, and the hang that answered is "now passing"
+    expect(censusStage(now, [], known).summary).toBe("1 findings filed, 3 class changes, 1 new findings, 1 now passing");
+    // a retry that matched the known class is no change at all
+    expect([...timingChanges([hang], new Set([hang.id]), known)]).toEqual([]);
+  });
+  it("writes the inputs that hit a deadline into the known file", () => {
+    const hang = row("ecm_factor", "cas", 0, "hang");
+    expect(knownText("# h\n", [hang], [], {})).toBe('# h\nfindings:\n  unfiled: ["cas ecm_factor/0"]\ndeadline: ["cas ecm_factor/0"]\nclasses:\n  "ecm_factor": "|h"\n');
   });
 });

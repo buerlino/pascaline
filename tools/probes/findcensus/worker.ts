@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G110: the census's host in a worker thread, as the app keeps one engine worker. A job is one input in Home or CAS; the answer is
 // what the view shows (its text, its number and mark) and what the input left behind: the names and settings Giac holds after it
-// (VARS() and cas_setup(), Digits left out: the host sets it before every call, G102) against before it, and the definitions the
+// (VARS() through bridge-3 and the context through bridge-1, Digits left out: the host sets it before every call, G102) against before it, and the definitions the
 // host logged (the app stores and replays them). An exception thrown out of the engine is answered as a crash; the main thread
 // then starts a new worker, as it does after a missed deadline.
 import { parentPort } from "node:worker_threads";
@@ -14,6 +14,8 @@ import { casMark } from "../../../app/src/goldenRun.ts";
 import { onNumbers } from "./classify.ts";
 import { defaultCasSettings } from "../../../app/src/engine/types.ts";
 import type { DefChange } from "../../../app/src/engine/defs.ts";
+import type { GiacContext } from "../../../app/src/engine/bridge.ts";
+import { contextDiff } from "../../../app/src/engine/flags.ts";
 
 export interface Job {
   id: number;
@@ -42,7 +44,6 @@ export interface Answer {
   crash?: string;
 }
 
-const DIGITS_FIELD = 6; // cas_setup()[6] is Digits
 /** The host's own names, defined when first needed (pasans, pcasans, paserf…): not the input's. One the input purges still counts. */
 const OURS = /^p(as|cas)[A-Za-z0-9_]*$/;
 
@@ -51,26 +52,11 @@ const EXACT_DIGITS = 60;
 /** The digits the judge's `=` checks (judge.ts: equal to 1e-50). */
 const EQUAL_DIGITS = 50;
 
-function topLevel(text: string): string[] {
-  const t = text.trim().replace(/^\[/, "").replace(/\]$/, "");
-  const out: string[] = [];
-  let depth = 0;
-  let cur = "";
-  for (const ch of t) {
-    if (ch === "[" || ch === "(") depth++;
-    if (ch === "]" || ch === ")") depth--;
-    if (ch === "," && depth === 0) {
-      out.push(cur);
-      cur = "";
-    } else cur += ch;
-  }
-  out.push(cur);
-  return out.map((s) => s.trim());
-}
-
 const { giac, bridge } = await loadNodeGiac();
 giac.eval(pasdegCommand("rad"));
 const host = new EngineHost(giac, bridge);
+// The host sets its own context on its first call (flags.ts hostContext): made here, so the first input's snapshot starts from it.
+host.home("1", defaultHomeSettings);
 // A program of ours, called after every input: Giac's debug() leaves no name and no setting, but the next program call goes into the
 // step-by-step debugger, which asks the page for input (`prompt is not defined`): the host's own helpers are programs too.
 giac.eval("pascensus(x):={return x+1;}");
@@ -85,13 +71,13 @@ function programCall(): string | null {
   }
 }
 
-function snapshot(): { names: string[]; setup: string[] } {
-  const v = giac.eval("VARS()").trim();
-  return { names: v === "[]" ? [] : topLevel(v), setup: topLevel(giac.eval("cas_setup()")) };
+/** What the engine holds: the stored names (VARS() through bridge-3, its elements) and the settings (bridge-1, giac_ctx_get). */
+function snapshot(): { names: string[]; ctx: GiacContext } {
+  return { names: [...(bridge.value("VARS()", []).elements ?? [])], ctx: bridge.ctxGet() };
 }
 
-/** A name as the census prints it: Giac's ilaplace leaves one with no text (or bytes that are no name) in VARS(). */
-const shownName = (n: string): string => (/^[A-Za-z_][A-Za-z0-9_]*$/.test(n) ? n : "(a name with no text)");
+/** A name as the census prints it: Giac's ilaplace leaves one with no text in VARS(). */
+const shownName = (n: string): string => (n.trim() === "" ? "(a name with no text)" : n);
 
 function leftBehind(before: ReturnType<typeof snapshot>, after: ReturnType<typeof snapshot>, defs: readonly DefChange[]): string[] {
   const left: string[] = [];
@@ -102,9 +88,8 @@ function leftBehind(before: ReturnType<typeof snapshot>, after: ReturnType<typeo
     else if (!OURS.test(n)) left.push(`name ${shownName(n)}`);
   }
   for (const n of rest) if (!after.names.includes(n)) left.push(`purged ${shownName(n)}`);
-  after.setup.forEach((v, k) => {
-    if (k !== DIGITS_FIELD && v !== before.setup[k]) left.push(`setting ${k}: ${before.setup[k] ?? "?"} -> ${v}`);
-  });
+  // Every field bridge-1 reads but Digits (the host sets it before every call, G102); floats compared as the host does (flags.ts)
+  for (const k of contextDiff(after.ctx, before.ctx)) if (k !== "decimal_digits") left.push(`setting ${k}: ${String(before.ctx[k])} -> ${String(after.ctx[k])}`);
   for (const d of defs) left.push("set" in d ? `logged ${d.set.name || d.set.cmds.join(";")}` : `logged purge ${d.purge.join(",")}`);
   return left;
 }
