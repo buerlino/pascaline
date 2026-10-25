@@ -5,14 +5,25 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
-import { open, useClipboardLock } from "./helpers.ts";
+import { acquireClipboardLock, open, useClipboardLock } from "./helpers.ts";
 
 test.use({ permissions: ["clipboard-read", "clipboard-write"] });
 test.describe.configure({ mode: "parallel" });
-useClipboardLock();
 
 const SHARED = resolve("test-results", "clipboard-lock-shared.txt");
 
+test("a second acquire stays pending while the first holds the lock, and succeeds after the release", async () => {
+  const release = await acquireClipboardLock();
+  try {
+    await expect(acquireClipboardLock(300)).rejects.toThrow("clipboard lock not free");
+  } finally {
+    release();
+  }
+  (await acquireClipboardLock(5000))();
+});
+
+test.describe("workers", () => {
+  useClipboardLock();
 for (const v of ["alpha-1", "beta-2", "gamma-3", "delta-4"]) {
   test(`the shared clipboard holds ${v} until this test reads it`, async ({ page }) => {
     await open(page);
@@ -24,3 +35,4 @@ for (const v of ["alpha-1", "beta-2", "gamma-3", "delta-4"]) {
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(v);
   });
 }
+});

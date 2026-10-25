@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-import { closeSync, mkdirSync, openSync, rmSync, statSync } from "node:fs";
+import { closeSync, linkSync, mkdirSync, openSync, renameSync, rmSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { test, type Page } from "@playwright/test";
 
@@ -172,9 +172,11 @@ export const vibrations = (page: Page): Promise<unknown[]> => page.evaluate(() =
 const LOCK = resolve("test-results", "clipboard.lock");
 const LOCK_STALE_MS = 5 * 60_000;
 
-/** Wait for the clipboard lock and take it; returns the release function (safe to call twice). */
-export async function acquireClipboardLock(): Promise<() => void> {
+/** Wait for the clipboard lock and take it; returns the release function (safe to call twice). Throws once `timeoutMs`
+ *  has passed without the lock, so a late acquisition can never happen after the caller gave up. */
+export async function acquireClipboardLock(timeoutMs = 120_000): Promise<() => void> {
   mkdirSync(dirname(LOCK), { recursive: true });
+  const deadline = Date.now() + timeoutMs;
   for (;;) {
     try {
       closeSync(openSync(LOCK, "wx"));
@@ -182,12 +184,27 @@ export async function acquireClipboardLock(): Promise<() => void> {
     } catch (e) {
       if ((e as NodeJS.ErrnoException).code !== "EEXIST") throw e;
       try {
-        if (Date.now() - statSync(LOCK).mtimeMs > LOCK_STALE_MS) rmSync(LOCK, { force: true });
+        if (Date.now() - statSync(LOCK).mtimeMs > LOCK_STALE_MS) takeOverStale();
       } catch {
         /* released meanwhile */
       }
+      if (Date.now() >= deadline) throw new Error(`clipboard lock not free after ${timeoutMs} ms`);
       await new Promise((r) => setTimeout(r, 50 + Math.random() * 50));
     }
+  }
+}
+
+/** Remove a stale lock without racing another waiter: rename it away atomically (only one renamer gets a file), and if
+ *  what was moved turns out fresh (another waiter had already replaced the stale one), link it back. */
+function takeOverStale(): void {
+  const mine = `${LOCK}.stale-${process.pid}-${Math.random().toString(36).slice(2)}`;
+  renameSync(LOCK, mine);
+  try {
+    if (Date.now() - statSync(mine).mtimeMs <= LOCK_STALE_MS) linkSync(mine, LOCK);
+  } catch {
+    /* somebody took the lock meanwhile */
+  } finally {
+    rmSync(mine, { force: true });
   }
 }
 
@@ -205,7 +222,8 @@ export async function withClipboardLock<T>(fn: () => Promise<T>): Promise<T> {
 export function useClipboardLock(): void {
   let release: (() => void) | undefined;
   test.beforeEach(async () => {
-    release = await acquireClipboardLock();
+    test.setTimeout(test.info().project.timeout + 150_000); // the wait for the lock must not eat the test's own budget
+    release = await acquireClipboardLock(120_000);
   });
   test.afterEach(() => {
     release?.();
