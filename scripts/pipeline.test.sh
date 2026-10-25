@@ -269,6 +269,27 @@ echo y | (cd "$bs" && PATH="$bs/bin:$PATH" PASCALINE_CACHE="$bs/cache" NO_LOCK=1
 grep -q -- '--no-daemon' "$bs/stdin.txt" || fail "A35: build.sh's Gradle runs without --no-daemon"
 grep -q 'keep its screen on while charging (brief 0c rule 2); never remove its PIN' "$here/../tools/core-device.sh" || fail "A33f2: core-device.sh lock message"
 
+# A25 item 1+2: every script the golden gate runs selects the golden check; a diff of only such a file plans it
+for f in app/scripts/golden.ts app/scripts/golden/lib.ts app/scripts/golden/home.ts app/scripts/invariants.ts app/scripts/calls-budget.ts app/scripts/behaviour-diff.ts app/scripts/golden-speed.ts app/scripts/golden-compare.ts app/scripts/sweep.ts app/scripts/seqsweep.ts app/scripts/casback.ts app/scripts/viewsweep.ts app/scripts/findcensus.ts; do
+  printf '%s\n' "$f" | golden_selected || fail "A25: a diff touching only $f does not plan the golden check"
+done
+printf '%s\n' app/src/ui/foo.ts app/scripts/gate.ts docs/backlog.md | golden_selected && fail "A25: an unrelated diff plans the golden check"
+grep -q 'golden_selected' "$here/pipeline.sh" || fail "A25: pipeline.sh does not use golden_selected for the golden check"
+# A25 item 5: a stage line NEW / NOW PASSING / CHANGED / GONE fails the engine stages even at exit 0
+printf 'x\n  sweep NOW PASSING a1: remove it\nSWEEP PASSED: 1\n' > "$tmp/st1.log"; printf '  seq known y\nSEQ PASSED: 1\n' > "$tmp/st2.log"
+stage_findings "$tmp/st1.log" >/dev/null || fail "A25: a NOW PASSING stage line is not a finding"
+stage_findings "$tmp/st2.log" >/dev/null && fail "A25: a known stage line is a finding"
+# A25 item 5, behaviour: a sandbox whose sweep prints NOW PASSING (exit 0) fails the checks once golden runs
+s5="$tmp/s5"; mkdir -p "$s5/bin" "$s5/tools" "$s5/docs/shifts" "$s5/app/scripts"; git init -q -b main "$s5"
+cp "$sb/tools/devlock.sh" "$s5/tools/"; : > "$s5/docs/shifts/brief.md"; echo t > "$s5/app/keep"
+for st in sweep seqsweep casback viewsweep findcensus; do echo 'console.log("fine");' > "$s5/app/scripts/$st.ts"; done
+echo 'console.log("  sweep NOW PASSING g1: remove it from sweep-known.yaml"); console.log("SWEEP PASSED: 1 runs");' > "$s5/app/scripts/sweep.ts"
+cp "$sb/bin/claude" "$s5/bin/"; printf '#!/bin/sh\n[ "$1" = ci ] && { mkdir -p node_modules/x; exit 0; }\nexit 0\n' > "$s5/bin/npm"; chmod +x "$s5/bin/"*
+git -C "$s5" add -A; gc "$s5" init; git -C "$s5" branch phase-1
+out="$(cd "$s5" && PATH="$s5/bin:$PATH" GIAC_OUT="$s5/engine" "$script" ron "sandbox task" --id T5 --branch p1/t5 --checks golden 2>&1)"
+grep -q '^RESULT #1 T5: NOT MERGED' <<<"$out" || fail "A25: a NOW PASSING sweep line does not fail the pipeline's checks: $out"
+grep -qs 'sweep NOW PASSING' "$s5"/.tasks/*/fail-0.txt || fail "A25: the failing stage is not in the fix round's input"
+
 # A37: the flake census: a dry run plans it; flaky_items lists only tests that failed in some runs; head_is notices a moved HEAD
 out="$("$script" flakes 3 --dry-run 2>&1)"; rc=$?
 [[ $rc -eq 0 ]] || fail "A37: flakes --dry-run: exit $rc: $out"
