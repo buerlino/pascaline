@@ -127,7 +127,7 @@ function classifyItems(items: readonly Item[], text: string, oracle: CensusOracl
   const marks = items.map((it) => `${it.mark ?? "-"}${it.n ?? ""}`).join(",");
   if (oracle?.kind !== "items") {
     const why = !oracle ? "" : oracle.kind === "skip" ? ` (oracle: ${oracle.reason})` : " (oracle: one value for a list)";
-    return { cls: "unchecked", detail: `list [${marks}] ${text}${why}`.slice(0, 120) };
+    return { cls: "unchecked", detail: `list [${marks}]${why} ${text}`.slice(0, 120) };
   }
   if (oracle.items.length !== items.length) return { cls: "wrong", detail: `[items] ${items.length} items shown, the oracle has ${oracle.items.length}: ${text}`.slice(0, 160) };
   let all = true;
@@ -142,5 +142,5 @@ function classifyItems(items: readonly Item[], text: string, oracle: CensusOracl
     if (v.kind === "skip") all = false;
     else if (v.kind !== "ok") return { cls: "wrong", detail: `[item ${i + 1} ${v.check ?? v.kind}] ${v.detail ?? ""}`.slice(0, 160) };
   }
-  return all ? { cls: "checked", detail: `list [${marks}] ${text}`.slice(0, 120) } : { cls: "unchecked", detail: `list [${marks}] ${text} (oracle: an item without one)`.slice(0, 120) };
+  return all ? { cls: "checked", detail: `list [${marks}] ${text}`.slice(0, 120) } : { cls: "unchecked", detail: `list [${marks}] (oracle: an item without one) ${text}`.slice(0, 120) };
 }

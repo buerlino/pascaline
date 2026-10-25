@@ -51,7 +51,7 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ### Background stream (extreme inputs; P23: runs when no core step can start)
 - ~~**F64 → G92**~~ done (run 235): an assumption Giac leaves (simplify, solve, zeros, laplace … on a fractional power; fourier_an, fourier_bn) is put back by the read after the input (host.ts after, assumed.ts); `tests/golden/precision.yaml` g92-*, `tests/engine/assume-canary.ts`.
-- ~~**G110**~~ done (run 238): the census of Find's tier-1 functions, gate stage `findcensus` (`tools/probes/find-census.ts`); findings F90–F97.
+- ~~**G110**~~ done (run 238): the census of Find's tier-1 functions, gate stage `findcensus` (`tools/probes/find-census.ts`); findings F90–F97. ~~G110f1~~ done (run 239): list answers judged item by item, no new finding.
 - **F86, no package (G60's report).** Home `exp(cosh(floor(asin(pi))))` is "No value found" (Giac's evalf leaves `exp(cosh(1-2*i))` as text); right 0.25326511802−0.461196406269·i. Family 5.
 - **F87, no package (G93's report).** CAS `restart(0)`, `restart_vars(0)`, `restart(1)` and Home `restart(1)` show "pcasans: recursive definition" (pasans in Home): the answer lists our Ans slot's own name. The command took effect. Our name on screen (family 9); not reachable by keys until Find.
 - **F88, no package (G105f1's report).** nonsquare.ts reads Giac's print of `string(part)` (a quoted string, quotes doubled), so changesState and functionsIn find nothing in it: a candidate that stores or calls a user function is evaluated again (G101 says not). Reading it with parsePrinted changes which F69 refusals happen: its own package and tests.
