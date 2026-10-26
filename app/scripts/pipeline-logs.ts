@@ -60,7 +60,9 @@ export function isTiming(check: Check, item: Item): boolean {
     return (item.file.endsWith("find/queries.test.ts") && /takes well under/.test(item.title)) ||
       (item.file.endsWith("engine/novalue.test.ts") && /timing case/.test(item.title)) ||
       (item.file.endsWith("engine/homeDeadline.test.ts") && /(?:^|> )acos\(120\^\(5\/2\+5\)\) answers/.test(item.title)) ||
-      (item.file.endsWith("engine/library.test.ts") && /restore\(\) of the 200 takes under 50 ms/.test(item.title));
+      (item.file.endsWith("engine/library.test.ts") && /restore\(\) of the 200 takes under 50 ms/.test(item.title)) ||
+      // F106 (FLAKES 78): its 1 ms Giac timeout races the interrupt under load
+      (item.file.endsWith("engine/flags.test.ts") && /G102: a Digits set right after an interrupted call/.test(item.title));
   }
   if (check === "e2e") {
     return (item.file === "working.spec.ts" && /Esc stops a job before Working… shows/.test(item.title)) ||

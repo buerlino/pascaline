@@ -50,6 +50,11 @@ describe("timing tests of runs 150 and 152", () => {
     expect(onlyTiming("vitest", lib("restore() of the 200 takes under 50 ms in Node, and a first call at most 10 ms more than after an eager replay (median of 7)"))).toBe(true);
     expect(onlyTiming("vitest", lib("a unit request for 2 m and a root analysis of x^2-2 leave every program pending (G83f1: their keys and JSON load nothing)"))).toBe(false);
   });
+  it("F106: the G102 interrupted-call test is timing; another flags.test.ts test is not", () => {
+    const fl = (t: string) => ` FAIL  src/engine/flags.test.ts > Giac's settings (real Giac) > ${t}\n`;
+    expect(onlyTiming("vitest", fl("G102: a Digits set right after an interrupted call is set (ctx_set clears ctrl_c, G75: one call, no retry), and adjacent sets are one"))).toBe(true);
+    expect(onlyTiming("vitest", fl("G102: after each of G67's leak inputs the settings are back through giac_ctx_set, and no getter list is sent as text"))).toBe(false);
+  });
 
   it("another failure in the same files is not timing", () => {
     expect(isTiming("vitest", { file: "src/engine/novalue.test.ts", title: "G78 on the real engine > keeps 1/0 undefined" })).toBe(false);

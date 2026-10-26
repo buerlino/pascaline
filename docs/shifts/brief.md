@@ -19,9 +19,9 @@
 3. When a slot is free (process, nothing users see): **A19** (S16 waits for it), **A18**, **A22** → **A26**, **A27**, **A30**.
 4. Every morning: the owner's check (MORNING.md, on the night's device, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
 
-**At night, the core lane** (section 0c's queue): **R80** (G109 merged `4353e15`; R81 merged `a956ede`, its device check is the morning check), the list operators (F77, F79: a `{ }` list goes to Giac as its own list type, so a list held by a name or Ans stays elementwise; owner, 2026-10-24; G106 stays the last net). Every merge runs the core list (R74), and the night's device runs it after each Opus pass (A33).
+**At night, the core lane** (section 0c's queue): **G112** (Opus pass 79's FIX: one list read as a function's arguments, at the cause, F103; R80 merged as R80f1 `bf57251`; R81's device check is the morning check). Every merge runs the core list (R74), and the night's device runs it after each Opus pass (A33).
 
-**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): F101 and F102 (before R4a, no package); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
+**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): F101 and F104 (before R4a, no package); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
 **Why this order:** the list first, so nothing merges blind; silent wrong numbers next, by reach; the bridge before the readers it would replace; the device run once its harness exists. R15c3 and R15c4 move behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -62,7 +62,6 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 119b | [R80](packages/R80.md) a { } list goes to Giac as its list type (F77, F79) | ron, Opus | `p1/ron-giaclist` | — | 1.5 h |
 | 130 | [S16](packages/S16.md) the hardening pass, run as `scripts/pipeline.sh pass <n> "G61 G62 G63 G64 A19" "S16: docs/shifts/packages/S16.md"` | sofia, Opus | — | A19 | 1 h + fixes |
 | 135 | The flake census (A37): `scripts/pipeline.sh flakes <n>`, when no core step can start, before the last pass; once per night until the freeze ends | — | — | A37 | 1 h |
 | 190 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
