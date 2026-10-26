@@ -34,6 +34,7 @@ import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { resolveAngle } from "./angleMigration.ts";
 import { mayPowerMatrix, nonSquarePower, type Bodies, type KnownBody } from "./nonsquare.ts";
 import { mayAddToList, unaskedPoly } from "./polyvec.ts";
+import { listAsArguments, mayListAsArguments } from "./listargs.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor, PASDEG } from "../input/angles.ts";
@@ -936,7 +937,8 @@ export class EngineHost implements FactsHost {
     const form = this.formFor(input);
     const asg0 = formIn(form, exactInput).assignment;
     // G57: so does one whose value rests on a decision, which may be refused as undecided.
-    // G97: and one whose value may be a power of a non-square matrix, which is refused; G106: or a list plus a number.
+    // G97: and one whose value may be a power of a non-square matrix, which is refused; G106: or a list plus a number;
+    // G111: or a call that may read one list as its argument list.
     // G106: whether a name holds a list is read from Giac's print in the stored table (G65's state read, already made):
     // the assignment must be routed before it runs, and asking the engine would cost a call on every assignment. This
     // text gate moves to bridge-3 with the poly1 check when G103 reads a value's kind (docs/04 6.1).
@@ -946,7 +948,7 @@ export class EngineHost implements FactsHost {
       return t !== undefined && (t.startsWith("[") || t.startsWith(LIST_TYPE));
     };
     const guarded =
-      asg0 && !form.once && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || mayAddToList(asg0.rhs, isList) || restsOnDecision(asg0.rhs, "typed", "", notBuiltin(this.giac))) ? asg0 : null;
+      asg0 && !form.once && (callsIn(asg0.rhs).length || mayPowerMatrix(asg0.rhs) || mayAddToList(asg0.rhs, isList) || mayListAsArguments(asg0.rhs) || restsOnDecision(asg0.rhs, "typed", "", notBuiltin(this.giac))) ? asg0 : null;
     // G38 (docs/04 2.4 rule 2): Giac decides signs, comparisons and floor at Digits, so the evaluation runs at P; the
     // mode's Digits stays the setting, which prints the floats of a non-number.
     const digitsSet = Math.trunc(s.digits);
@@ -1013,6 +1015,8 @@ export class EngineHost implements FactsHost {
     const builtin = notBuiltin(this.giac);
     const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
     if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn, this.bodiesFor(input))) return fail(enEngine["error.notSquare"], "notSquare");
+    // G111 (F98): one list argument of LambertW and others read as their argument list, refused as in Home.
+    if (listAsArguments(this.giac, asg0 ? asg0.rhs : exactInput, userFn)) return fail(enEngine["error.listAsArguments"], "listAsArguments");
     // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.
     if (unaskedPoly(this.giac, "pcasans", asg0 ? asg0.rhs : exactInput, text, userFn)) return fail(enEngine["error.listPlusNumber"], "listPlusNumber");
     if (guarded) {
