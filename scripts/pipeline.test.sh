@@ -418,5 +418,26 @@ grep -q 'merging phase-1 into p1/uptodate2' "$sb6/.coord/log.md" && fail "A38: a
 out="$(sb6run "$script" ron "x" --id P3 --branch p1/conflict --checks none --no-merge 2>&1)"
 grep -q 'conflicts with phase-1 resolved by ron' "$sb6/.coord/log.md" && [[ "$(git -C "$sb6" show p1/conflict:conf.txt)" == resolved ]] || fail "A38: a conflict on resume does not go to the resolve round: $out"
 
+# A18: the audit sees the behaviour diff
+out="$("$script" ron "$ron_pkg" --dry-run 2>&1)"
+grep -q '## Behaviour changes' <<<"$out" || fail "A18: the dry run does not show the Behaviour changes section"
+printf '%s\n' app/src/engine/x.ts | behaviour_selected || fail "A18: an engine diff does not select the behaviour diff"
+printf '%s\n' app/src/ui/x.ts docs/a.md | behaviour_selected && fail "A18: a UI diff selects the behaviour diff"
+bh="$tmp/bh"; mkdir -p "$bh/a/app" "$bh/b/app"; echo 'round=old' > "$bh/a/round"; echo 'round=new' > "$bh/b/round"
+cat > "$bh/tool.mjs" <<'STUB'
+import { readFileSync } from "node:fs";
+const [a, b] = process.argv.slice(2);
+if (process.env.STUB_SLOW) await new Promise((r) => setTimeout(r, 5000));
+const x = readFileSync(a + "/round", "utf8"), y = readFileSync(b + "/round", "utf8");
+console.log(x === y ? "none" : "| where | input | A | B |\n| Home | round(2.5) | 2 | 3 |\n1 difference(s)");
+STUB
+PASCALINE_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o1.md"
+grep -q '^## Behaviour changes' "$bh/o1.md" && grep -q 'round(2.5)' "$bh/o1.md" || fail "A18: a branch that changes round is not listed: $(cat "$bh/o1.md")"
+cp "$bh/a/round" "$bh/b/round"; PASCALINE_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o2.md"
+grep -qx 'none' "$bh/o2.md" || fail "A18: no change does not print none"
+STUB_SLOW=1 PASCALINE_BEHAVIOUR_SECONDS=1 PASCALINE_BEHAVIOUR_TOOL="$bh/tool.mjs" behaviour_section "$bh/a" "$bh/b" "$bh/o3.md"
+grep -q 'timed out after 20 min' "$bh/o3.md" || fail "A18: a timeout is not reported: $(cat "$bh/o3.md")"
+grep -q 'behaviour_section "$integ" "$wt"' "$here/pipeline.sh" || fail "A18: pipeline.sh does not run the stage"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
