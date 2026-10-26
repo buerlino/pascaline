@@ -47,6 +47,8 @@ const ROWS = [
     ["[[5],[1]]^2", "inv([[5],[1]])"], ([a, b]) => a === "26" && b === "[[1/5],[1]]"],
   ["list-plus-number", "a list plus a number is a polynomial: [1,4]+1 = poly1[1,5]", 12,
     ["[1,4]+1"], ([a]) => a === "poly1[1,5]"],
+  ["list-as-arguments", "one list argument is the argument list: evalf(LambertW([1,2])) is W(1) on branch 2, hermite([1,2]) = hermite(1,2) = 4", 12,
+    ["evalf(LambertW([1,2]))", "evalf(LambertW(1,2))", "hermite([1,2])"], ([a, b, c]) => a === b && a.includes("*i") && c === "4"],
   ["list-vector-ops", "a list squared or times a list is the dot product: [1,2]^2 = 5, [1,4]*[1,1] = 5", 12,
     ["[1,2]^2", "[1,4]*[1,1]"], ([a, b]) => a === "5" && b === "5"],
   ["extended-reals", "1/0 is infinity and a value through it is exact: 1/(1/0) = 0", 12,

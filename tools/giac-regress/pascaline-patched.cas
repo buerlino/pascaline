@@ -5,6 +5,87 @@
 // within half a unit of its last digit. Expected values: mpmath (oracle) or by hand (derived); see the comment above a line.
 pasn:=0:; pasfail:=0:;
 pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol) { ok:=1; } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;
+// patch 0007-densities-outside-support.patch
+// g111-exponential (home.yaml, oracle)
+Digits:=40:; pc("g111-exponential",'(exponential((21/10^1),-2))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-exponential-cdf (home.yaml, oracle)
+Digits:=40:; pc("g111-exponential-cdf",'(exponential_cdf((42/10^1),-2))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-chisquare (home.yaml, oracle)
+Digits:=40:; pc("g111-chisquare",'(chisquare(2,-2))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-exponential-cdf-2bounds-below (home.yaml, oracle)
+Digits:=40:; pc("g111-exponential-cdf-2bounds-below",'(exponential_cdf((42/10^1),-2,-1))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-chisquare-3 (home.yaml, oracle)
+Digits:=40:; pc("g111-chisquare-3",'(chisquare(3,-2))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-betad-below (home.yaml, oracle)
+Digits:=40:; pc("g111-betad-below",'(betad(2,3,-(5/10^1)))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-betad-above (home.yaml, oracle)
+Digits:=40:; pc("g111-betad-above",'(betad(2,3,(15/10^1)))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-gammad (home.yaml, oracle)
+Digits:=40:; pc("g111-gammad",'(gammad(2,3,-1))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-gammad-cdf (home.yaml, oracle)
+Digits:=40:; pc("g111-gammad-cdf",'(gammad_cdf(2,3,-1))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-weibull (home.yaml, oracle)
+Digits:=40:; pc("g111-weibull",'(weibull(2,3,-1))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-weibull-theta (home.yaml, oracle)
+Digits:=40:; pc("g111-weibull-theta",'(weibull(2,3,0,-1))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-weibull-cdf (home.yaml, oracle)
+Digits:=40:; pc("g111-weibull-cdf",'(weibull_cdf(2,3,-1))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-uniform-below (home.yaml, oracle)
+Digits:=40:; pc("g111-uniform-below",'(uniform(1,3,0))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-uniform-above (home.yaml, oracle)
+Digits:=40:; pc("g111-uniform-above",'(uniform(1,3,4))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-uniform-cdf-below (home.yaml, oracle)
+Digits:=40:; pc("g111-uniform-cdf-below",'(uniform_cdf(1,3,0))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-negbinomial (home.yaml, oracle)
+Digits:=40:; pc("g111-negbinomial",'(negbinomial(3,(5/10^1),-4))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-negbinomial-cdf (home.yaml, oracle)
+Digits:=40:; pc("g111-negbinomial-cdf",'(negbinomial_cdf(3,(5/10^1),-(5/10^1)))',0,1/10^30);
+// patch 0007-densities-outside-support.patch
+// g111-exponential-cdf-2bounds (home.yaml, oracle)
+Digits:=40:; pc("g111-exponential-cdf-2bounds",'(exponential_cdf((42/10^1),-3,1))',(98500442318/10^11),5/10^13);
+// patch 0007-densities-outside-support.patch
+// g111-weibull-cdf-2bounds (home.yaml, oracle)
+Digits:=40:; pc("g111-weibull-cdf-2bounds",'(weibull_cdf(2,3,0,-2,1))',(105160683186/10^12),5/10^13);
+// patch 0007-densities-outside-support.patch
+// g111-uniform-cdf-above (home.yaml, oracle)
+Digits:=40:; pc("g111-uniform-cdf-above",'(uniform_cdf(1,3,4))',1,5/10^12);
+// patch 0007-densities-outside-support.patch
+// g111-uniform-cdf-2bounds (home.yaml, oracle)
+Digits:=40:; pc("g111-uniform-cdf-2bounds",'(uniform_cdf(1,3,0,2))',(5/10^1),5/10^13);
+// patch 0007-densities-outside-support.patch
+// g111-negbinomial-cdf-2bounds (home.yaml, oracle)
+Digits:=40:; pc("g111-negbinomial-cdf-2bounds",'(negbinomial_cdf(3,1/3,-(5/10^1),1))',(111111111111/10^12),5/10^13);
+// patch 0007-densities-outside-support.patch
+// g111-weibull-list (home.yaml, oracle)
+Digits:=40:; pc("g111-weibull-list",'(weibull(2,3,[1,2])[1])',(284969061524/10^12),5/10^13);
+// patch 0007-densities-outside-support.patch
+// g111-gammad-list (home.yaml, oracle)
+Digits:=40:; pc("g111-gammad-list",'(gammad(2,3,[1,2])[1])',(4461753918/10^11),5/10^14);
+// patch 0007-densities-outside-support.patch
+// g111-betad-list (home.yaml, oracle)
+Digits:=40:; pc("g111-betad-list",'(betad(2,3,[(2/10^1),(5/10^1)])[1])',(15/10^1),5/10^12);
+// patch 0007-densities-outside-support.patch
+// g111-uniform-cdf-list (home.yaml, oracle)
+Digits:=40:; pc("g111-uniform-cdf-list",'(uniform_cdf(1,3,[2,4])[1])',1,5/10^12);
+// patch 0007-densities-outside-support.patch
+// g111-exponential-cdf-list (home.yaml, oracle)
+Digits:=40:; pc("g111-exponential-cdf-list",'(exponential_cdf(2,[1,2])[1])',(981684361111/10^12),5/10^13);
 // patch 0003-complex-tanh-mpfr.patch
 // prec-g50-tanh(i)-12 (precision.yaml, oracle)
 Digits:=40:; pc("prec-g50-tanh(i)-12",'(tanh(i))',(155740772465/10^11)*i,5/10^12);

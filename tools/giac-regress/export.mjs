@@ -97,6 +97,8 @@ export function caseLine(c, file) {
   if (c.oracle === `F('${c.input}')`) return { leftOut: "rounding text (our layer)" }; // the oracle is the typed input: only our display rounding is tested
   if (explicitPrecision(c.input)) return { leftOut: "approx or evalf with an explicit precision (Home's rewrite, G91)" };
   if (c.mark === "⚠" && /(?<![A-Za-z_0-9])int\(/.test(c.input)) return { leftOut: "shown value from Home's numeric integration (G90), not Giac's answer" };
+  // G111: Home shows the double of a function with no MPFR path (igamma), which Giac keeps unevaluated at Digits 40
+  if (c.id.startsWith("g111-") && c.mark === "⚠" && /no MPFR path/.test(c.note ?? "")) return { leftOut: "a double of a function with no MPFR path (Home's value, G111)" };
   if (c.expect === undefined) return { leftOut: "mark only (no value)" };
   if (partsOf(c.expect) === null) return { leftOut: "not a number (refusal, text, list or truth value)" };
   const digits = file === "home.yaml" ? 12 : (s.digits ?? 12); // the home stage evaluates at 12 digits whatever settings.digits says
@@ -174,7 +176,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 and the g60-f5 lines pass on stock at these Digits, so they stay in the check file. g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 and the g60-f5 lines pass on stock at these Digits, so they stay in the check file. g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -201,6 +203,34 @@ export const PATCHED_IDS = new Map([
   ["prec-g50-acos(-1+i)-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-imag-power-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-asin-power-30", "0005-mpfr-pi-and-real-domains.patch"],
+  // G111: home.yaml's densities and cdfs outside their support (stock giac_2.1.0-1 gives the formula's value)
+  ["g111-exponential", "0007-densities-outside-support.patch"],
+  ["g111-exponential-cdf", "0007-densities-outside-support.patch"],
+  ["g111-chisquare", "0007-densities-outside-support.patch"],
+  ["g111-exponential-cdf-2bounds-below", "0007-densities-outside-support.patch"],
+  ["g111-chisquare-3", "0007-densities-outside-support.patch"],
+  ["g111-betad-below", "0007-densities-outside-support.patch"],
+  ["g111-betad-above", "0007-densities-outside-support.patch"],
+  ["g111-gammad", "0007-densities-outside-support.patch"],
+  ["g111-gammad-cdf", "0007-densities-outside-support.patch"],
+  ["g111-weibull", "0007-densities-outside-support.patch"],
+  ["g111-weibull-theta", "0007-densities-outside-support.patch"],
+  ["g111-weibull-cdf", "0007-densities-outside-support.patch"],
+  ["g111-uniform-below", "0007-densities-outside-support.patch"],
+  ["g111-uniform-above", "0007-densities-outside-support.patch"],
+  ["g111-uniform-cdf-below", "0007-densities-outside-support.patch"],
+  ["g111-negbinomial", "0007-densities-outside-support.patch"],
+  ["g111-negbinomial-cdf", "0007-densities-outside-support.patch"],
+  ["g111-exponential-cdf-2bounds", "0007-densities-outside-support.patch"],
+  ["g111-weibull-cdf-2bounds", "0007-densities-outside-support.patch"],
+  ["g111-uniform-cdf-above", "0007-densities-outside-support.patch"],
+  ["g111-uniform-cdf-2bounds", "0007-densities-outside-support.patch"],
+  ["g111-negbinomial-cdf-2bounds", "0007-densities-outside-support.patch"],
+  ["g111-weibull-list", "0007-densities-outside-support.patch"],
+  ["g111-gammad-list", "0007-densities-outside-support.patch"],
+  ["g111-betad-list", "0007-densities-outside-support.patch"],
+  ["g111-uniform-cdf-list", "0007-densities-outside-support.patch"],
+  ["g111-exponential-cdf-list", "0007-densities-outside-support.patch"],
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 

@@ -1,0 +1,263 @@
+# Upstream: giac 2.1.0 moyal.cc. The densities and cdfs check no support: exponential(21/10,-2) is 21/10*exp(21/5) where the density is 0 (x < 0), exponential_cdf(21/5,-2) = 1-exp(42/5) < 0, chisquare(2,-2) = exp(1)/2, chisquare(3,-2) a complex number; the same in gammad, gammad_cdf, weibull, weibull_cdf, betad and uniform (below and above [0,1], [a,b]), uniform_cdf (and its two-bound form, the bounds' distance over b-a), negbinomial and negbinomial_cdf, and the two-bound cdf forms take F at a bound below the support from the formula. A value provably outside the support (is_strictly_greater: a number, or a sign Giac decides) is an exact 0, a cdf above it 1; an argument of unknown sign keeps the formula. A list as x is mapped over its elements, as chisquare does with apply2nd: the formulas took Giac's power of a list (its dot product), so weibull(2,3,[1,2]) was [2/9*exp(-5/9),4/9*exp(-5/9)] and betad(2,3,[0.2,0.5]) a poly1[…].
+--- a/src/moyal.cc
++++ b/src/moyal.cc
+@@ -743,6 +743,29 @@
+   static define_unary_function_eval (__randmultinomial,&_randmultinomial,_randmultinomial_s);
+   define_unary_function_ptr5( at_randmultinomial ,alias_at_randmultinomial,&__randmultinomial,0,true);
+ 
++  // Pascaline patch 0007 (G111): a density or a cdf outside its support. pas_below(x,lo): x is provably below lo (the
++  // density there is 0); an argument of unknown sign is not, so its formula stays. pas_last_list, pas_map_last: a list as
++  // the last argument (x) gives one value per element, as chisquare's apply2nd does (Giac's power of a list is its dot
++  // product, so the formulas gave one wrong number).
++  static bool pas_below(const gen & x,const gen & lo,GIAC_CONTEXT){
++    if (x.type==_VECT || lo.type==_VECT || x.type==_STRNG || lo.type==_STRNG)
++      return false;
++    return is_strictly_greater(lo,x,contextptr);
++  }
++  static bool pas_last_list(const vecteur & v){
++    return !v.empty() && v.back().type==_VECT && v.back().subtype!=_SEQ__VECT;
++  }
++  static gen pas_map_last(const vecteur & v,gen (*f)(const gen &,GIAC_CONTEXT),GIAC_CONTEXT){
++    const vecteur xs=*v.back()._VECTptr;
++    vecteur args(v),res;
++    res.reserve(xs.size());
++    for (size_t i=0;i<xs.size();++i){
++      args.back()=xs[i];
++      res.push_back(f(gen(args,_SEQ__VECT),contextptr));
++    }
++    return gen(res,v.back().subtype);
++  }
++
+   gen _negbinomial(const gen & g,GIAC_CONTEXT){
+     if ( g.type==_STRNG && g.subtype==-1) return  g;
+     if (g.type!=_VECT)
+@@ -750,6 +773,8 @@
+     vecteur & v=*g._VECTptr;
+     int s=int(v.size());
+     if (s==2) return symbolic(at_negbinomial,g); // for random
++    if (s==3 && pas_last_list(v))
++      return pas_map_last(v,_negbinomial,contextptr);
+     if (s==3){
+       gen r=v[0],p=v[1],k=v[2];
+       gen tmp=evalf_double(k,1,contextptr);
+@@ -757,6 +782,8 @@
+ 	swapgen(k,p);
+       if (is_integral(p))
+ 	swapgen(k,p);
++      if (pas_below(k,0,contextptr))
++	return 0;
+       if (is_zero(k))
+ 	return pow(p,r,contextptr);
+       return binomial(r+k-1,r,p,contextptr)*(1-p)*r/k;
+@@ -773,12 +800,20 @@
+       return gensizeerr(contextptr);
+     vecteur & v=*g._VECTptr;
+     int s=int(v.size());
++    if (s==3 && pas_last_list(v))
++      return pas_map_last(v,_negbinomial_cdf,contextptr);
+     if (s==3){
+       gen n=v[0],p=v[1],k=v[2];
++      if (pas_below(k,0,contextptr))
++	return 0;
+       return _Beta(makesequence(n,k+1,p,1),contextptr);
+     }
+     if (s==4){
+       gen n=v[0],p=v[1],k1=v[2],k2=v[3];
++      if (pas_below(k2,0,contextptr))
++	return 0;
++      if (pas_below(k1,0,contextptr))
++	return _Beta(makesequence(n,k2+1,p,1),contextptr);
+       return _Beta(makesequence(n,k2+1,p,1),contextptr)-_Beta(makesequence(n,k1+1,p,1),contextptr);
+     }
+     return gensizeerr(contextptr);
+@@ -1530,6 +1565,8 @@
+   gen chisquare(const gen & n,const gen & x,GIAC_CONTEXT){
+     if (x.type==_VECT)
+       return apply2nd(n,x,contextptr,chisquare);
++    if (pas_below(x,0,contextptr))
++      return 0;
+     gen n2=n/2;
+     return rdiv(pow(x,n2-1,contextptr)*exp(-x/2,contextptr),Gamma(n2,contextptr)*pow(2,n2,contextptr),contextptr);
+   }
+@@ -2000,6 +2037,8 @@
+   define_unary_function_ptr5( at_cauchyd_icdf ,alias_at_cauchyd_icdf,&__cauchyd_icdf,0,true);
+ 
+   gen weibull(const gen & k,const gen & lambda,const gen & theta,const gen & x,GIAC_CONTEXT){
++    if (pas_below(x,theta,contextptr))
++      return 0;
+     gen tmp=(x-theta)/lambda;
+     return k/lambda*pow(tmp,k-1,contextptr)*exp(-pow(tmp,k,contextptr),contextptr);
+   }
+@@ -2011,6 +2050,8 @@
+     int s=int(v.size());
+     if (s==2)
+       return symbolic(at_weibulld,g);
++    if ((s==3 || s==4) && pas_last_list(v))
++      return pas_map_last(v,_weibull,contextptr);
+     if (s==3)
+       return weibull(v[0],v[1],0,v[2],contextptr);
+     if (s==4)
+@@ -2026,6 +2067,8 @@
+   define_unary_function_ptr5( at_weibulld ,alias_at_weibulld,&__weibulld,0,true);
+ 
+   gen weibull_cdf(const gen & k,const gen & lambda,const gen & theta,const gen & x,GIAC_CONTEXT){
++    if (pas_below(x,theta,contextptr))
++      return 0;
+     gen tmp=(x-theta)/lambda;
+     return 1-exp(-pow(tmp,k,contextptr),contextptr);
+   }
+@@ -2035,6 +2078,8 @@
+       return gensizeerr(contextptr);
+     vecteur & v=*g._VECTptr;
+     int s=int(v.size());
++    if ((s==3 || s==4) && pas_last_list(v))
++      return pas_map_last(v,_weibull_cdf,contextptr);
+     if (s==3)
+       return weibull_cdf(v[0],v[1],0,v[2],contextptr);
+     if (s==4)
+@@ -2099,6 +2144,8 @@
+   define_unary_function_ptr5( at_weibullvariate ,alias_at_weibullvariate,&__weibullvariate,0,true);
+ 
+   gen betad(const gen &alpha,const gen & beta,const gen & x,GIAC_CONTEXT){
++    if (pas_below(x,0,contextptr) || pas_below(1,x,contextptr))
++      return 0;
+     if ( (x==0 && alpha==1) || (x==1 && beta==1))
+       return plus_one/Beta(alpha,beta,contextptr);
+     return pow(x,alpha-1,contextptr)*pow(1-x,beta-1,contextptr)/Beta(alpha,beta,contextptr);
+@@ -2111,6 +2158,8 @@
+     int s=int(v.size());
+     if (s==2)
+       return symbolic(at_betad,g);
++    if (s==3 && pas_last_list(v))
++      return pas_map_last(v,_betad,contextptr);
+     if (s==3)
+       return betad(v[0],v[1],v[2],contextptr);
+     return gensizeerr(contextptr);
+@@ -2218,6 +2267,8 @@
+   define_unary_function_ptr5( at_betavariate ,alias_at_betavariate,&__betavariate,0,true);
+ 
+   gen gammad(const gen &alpha,const gen & beta,const gen & x,GIAC_CONTEXT){
++    if (pas_below(x,0,contextptr))
++      return 0;
+     if (is_zero(x) && alpha==1)
+       return beta;
+     if (x==plus_inf)
+@@ -2232,6 +2283,8 @@
+     int s=int(v.size());
+     if (s==2)
+       return symbolic(at_gammad,g);
++    if (s==3 && pas_last_list(v))
++      return pas_map_last(v,_gammad,contextptr);
+     if (s==3)
+       return gammad(v[0],v[1],v[2],contextptr);
+     return gensizeerr(contextptr);
+@@ -2247,10 +2300,20 @@
+       return gensizeerr(contextptr);
+     vecteur & v=*g._VECTptr;
+     int s=int(v.size());
+-    if (s==3)
++    if (s==3 && pas_last_list(v))
++      return pas_map_last(v,_gammad_cdf,contextptr);
++    if (s==3){
++      if (pas_below(v[2],0,contextptr))
++	return 0;
+       return _lower_incomplete_gamma(makesequence(v[0],v[1]*v[2],1),contextptr);
+-    if (s==4)
++    }
++    if (s==4){
++      if (pas_below(v[3],0,contextptr))
++	return 0;
++      if (pas_below(v[2],0,contextptr))
++	return _lower_incomplete_gamma(makesequence(v[0],v[1]*v[3],1),contextptr);
+       return _lower_incomplete_gamma(makesequence(v[0],v[1]*v[3],1),contextptr)-_lower_incomplete_gamma(makesequence(v[0],v[1]*v[2],1),contextptr);
++    }
+     return gensizeerr(contextptr);
+   }
+   static const char _gammad_cdf_s []="gammad_cdf";
+@@ -2513,8 +2576,18 @@
+ 	return v[0]+(giac_rand(contextptr)/(rand_max2+1.0))*(v[1]-v[0]);
+       return symbolic(at_uniformd,makesequence(v[0],v[1]));
+     }
+-    if (s==3)
++    if (s==3 && pas_last_list(v)){
++      const vecteur xs=*v[2]._VECTptr;
++      vecteur res;
++      for (size_t i=0;i<xs.size();++i)
++	res.push_back(uniform(makesequence(v[0],v[1],xs[i]),ckpython,contextptr));
++      return gen(res,v[2].subtype);
++    }
++    if (s==3){
++      if (pas_below(v[2],v[0],contextptr) || pas_below(v[1],v[2],contextptr))
++	return 0;
+       return inv(v[1]-v[0],contextptr);
++    }
+     return gensizeerr(contextptr);
+   }
+   gen _uniform(const gen & g,GIAC_CONTEXT){
+@@ -2536,10 +2609,24 @@
+       return g;
+     vecteur & v=*g._VECTptr;
+     int s=int(v.size());
+-    if (s==3)
++    if (s==3 && pas_last_list(v))
++      return pas_map_last(v,_uniform_cdf,contextptr);
++    if (s==3){
++      if (pas_below(v[2],v[0],contextptr))
++	return 0;
++      if (pas_below(v[1],v[2],contextptr))
++	return 1;
+       return (v[2]-v[0])/(v[1]-v[0]);
+-    if (s==4)
+-      return (v[3]-v[2])/(v[1]-v[0]);
++    }
++    if (s==4){
++      // each bound clamped to the support [a,b] (the cdf is 0 below it and 1 above it)
++      gen x1=v[2],x2=v[3];
++      if (pas_below(x1,v[0],contextptr)) x1=v[0];
++      if (pas_below(v[1],x1,contextptr)) x1=v[1];
++      if (pas_below(x2,v[0],contextptr)) x2=v[0];
++      if (pas_below(v[1],x2,contextptr)) x2=v[1];
++      return (x2-x1)/(v[1]-v[0]);
++    }
+     return gensizeerr(contextptr);
+   }
+   static const char _uniform_cdf_s []="uniform_cdf";
+@@ -2574,8 +2661,13 @@
+       return symbolic(at_exponentiald,g);
+     vecteur & v=*g._VECTptr;
+     int s=int(v.size());
+-    if (s==2)
++    if (s==2 && pas_last_list(v))
++      return pas_map_last(v,_exponential,contextptr);
++    if (s==2){
++      if (pas_below(v[1],0,contextptr))
++	return 0;
+       return v[0]*exp(-v[0]*v[1],contextptr);
++    }
+     return gensizeerr(contextptr);
+   }
+   static const char _exponential_s []="exponential";
+@@ -2591,10 +2683,21 @@
+       return gensizeerr(contextptr);
+     vecteur & v=*g._VECTptr;
+     int s=int(v.size());
+-    if (s==2)
++    if (s==2 && pas_last_list(v))
++      return pas_map_last(v,_exponential_cdf,contextptr);
++    if (s==2){
++      if (pas_below(v[1],0,contextptr))
++	return 0;
+       return 1-exp(-v[0]*v[1],contextptr);
+-    if (s==3)
++    }
++    if (s==3){
++      // P(x1<=X<=x2): a bound below the support counts as 0
++      if (pas_below(v[2],0,contextptr))
++	return 0;
++      if (pas_below(v[1],0,contextptr))
++	return 1-exp(-v[0]*v[2],contextptr);
+       return exp(-v[0]*v[1],contextptr)-exp(-v[0]*v[2],contextptr);
++    }
+     return gensizeerr(contextptr);
+   }
+   static const char _exponential_cdf_s []="exponential_cdf";
