@@ -7,25 +7,20 @@
 // argument evaluates to (a stored list, Ans). Two arguments typed as two keep Giac's answer. R80f1: Giac's densities, cdfs
 // and inverse cdfs do the same (normald_cdf([0.5,1.5]) = normald_cdf(0.5,1.5), P(0.5 ≤ X ≤ 1.5)); a list as their x after
 // the parameters is one value per element since G111's patch 0007, except negbinomial_icdf; it and mlr_beta, mlr_predict
-// answer a list among their arguments wrongly (LIST_IN_ARGUMENTS).
+// answer a list among their arguments wrongly (LIST_IN_ARGUMENTS). G112: the names come from a probe (listargsTable.ts), no
+// longer by hand: Psi({1,2}) was Psi(1,2) = -2 Zeta(3), Zeta, the Bessel functions, atan2, comb, perm, surd, irem, Beta too.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { type Giac } from "./numeric.ts";
 import { callsOf, closing, functionsIn, namesIn, splitList, topLevelArgs } from "./giacPrint.ts";
 import { changesState } from "./novalue.ts";
+import { PROBED_LIST_AS_ARGUMENTS } from "./listargsTable.ts";
 
-/** The functions the G110 census's unchecked class shows reading a one-list argument as their arguments (probed on the
- *  pinned giac_2.1.0-1, 2026-10-26: f([1,2]) = f(1,2)). Each of them answers a list with one value. */
-export const LIST_AS_ARGUMENTS: readonly string[] = [
-  "LambertW", "hermite", "legendre", "tchebyshev1", "tchebyshev2", "cyclotomic", "range", "randvector",
-  // R80f1, probed on the shared engine with patch 0007 (2026-10-26): f(list[0.3,0.6]) = f(0.3,0.6), or f(list[2,0.3,0.6]) =
-  // f(2,0.3,0.6), one number; kolmogorovd, logistic and randgeometric map the list per element and are not here
-  "normald", "normald_cdf", "normald_icdf", "binomial", "binomial_cdf", "binomial_icdf", "poisson", "poisson_cdf",
-  "poisson_icdf", "student", "student_cdf", "student_icdf", "chisquare", "chisquare_cdf", "chisquare_icdf", "fisher",
-  "fisher_cdf", "fisher_icdf", "snedecor", "snedecor_cdf", "snedecor_icdf", "exponential", "exponential_cdf",
-  "exponential_icdf", "uniform", "uniform_cdf", "uniform_icdf", "geometric", "geometric_cdf", "geometric_icdf", "cauchy",
-  "cauchy_cdf", "cauchy_icdf", "weibull", "weibull_cdf", "weibull_icdf", "gammad", "gammad_cdf", "gammad_icdf", "betad",
-  "betad_cdf", "betad_icdf", "negbinomial", "negbinomial_cdf", "negbinomial_icdf", "UTPC", "UTPF", "UTPT", "igamma", "ugamma",
-];
+/** G112 (backlog F103): the functions that read a one-list argument as their arguments, from tools/probes/list-args.ts's
+ *  table (listargsTable.ts, generated on the pinned engine; each name's reason is in listargsEvidence.ts, kept out of the
+ *  bundle; listargsTable.test.ts fails when engine and table disagree): every name of Find's index and of the census whose
+ *  f(list[a,b]) or f(list[a,b,c]) is not one value per element and equals f(a,b), or is one number. It holds G111's
+ *  (LambertW, hermite …, range, randvector) and R80f1's (the distributions, igamma, ugamma). */
+export const LIST_AS_ARGUMENTS: readonly string[] = PROBED_LIST_AS_ARGUMENTS;
 const LIST_AS = new Set(LIST_AS_ARGUMENTS);
 
 /** R80f1: functions that answer a list among their arguments wrongly (probed on the shared engine with patch 0007,

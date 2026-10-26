@@ -16,7 +16,7 @@
 findings:
   F90: ["home batons/0", "cas batons/0", "home plotcdf/0", "cas plotcdf/0", "home polar_point/0", "cas polar_point/0", "home vector/0", "cas vector/0", "home plotinequation/0", "cas plotinequation/0", "home animation/0", "cas animation/0", "home camembert/0", "cas camembert/0", "home bar_plot/0", "cas bar_plot/0", "home listplot/0", "cas listplot/0", "home droite_tangente/0", "cas droite_tangente/0", "home prism/0", "home common_perpendicular/0", "home point2d/0", "cas point2d/0", "home octahedron/0", "home parallelepiped/0", "home polyhedron/0", "home cube/0", "home plane/0", "home point/0", "cas point/0", "home point/1", "cas point/1", "home point/2", "cas point/2", "home envelope/0", "cas envelope/0", "home division_point/0", "cas division_point/0", "home radical_axis/0", "cas radical_axis/0", "home polar/0", "cas polar/0", "home reciprocation/0", "cas reciprocation/0", "home harmonic_conjugate/0", "cas harmonic_conjugate/0", "cas harmonic_division/0", "home grid_paper/0", "cas grid_paper/0", "home line_paper/0", "cas line_paper/0", "home triangle_paper/0", "cas triangle_paper/0", "home dot_paper/0", "cas dot_paper/0", "home isopolygon/0", "cas isopolygon/0", "home isopolygon/2", "cas isopolygon/2", "home arc/0", "cas arc/0", "home cumulated_frequencies/0", "cas cumulated_frequencies/0", "home DrawInv/0", "cas DrawInv/0", "home LineHorz/0", "cas LineHorz/0", "home LineHorz/1", "cas LineHorz/1", "home LineHorz/2", "cas LineHorz/2", "home LineHorz/3", "cas LineHorz/3", "home Line/0", "cas Line/0", "home Line/1", "cas Line/1", "home Line/2", "cas Line/2", "home Line/3", "cas Line/3", "home LineVert/0", "cas LineVert/0", "home LineVert/1", "cas LineVert/1", "home LineVert/2", "cas LineVert/2", "home LineVert/3", "cas LineVert/3", "home polygonplot/0", "cas polygonplot/0", "home polygonscatterplot/0", "cas polygonscatterplot/0", "home scatterplot/0", "cas scatterplot/0", "home plotcontour/0", "cas plotcontour/0", "home Circle/0", "cas Circle/0", "home Circle/1", "cas Circle/1", "home Circle/2", "cas Circle/2", "home Circle/3", "cas Circle/3", "home parallelogram/0", "cas parallelogram/0", "home DrawSlp/0", "cas DrawSlp/0", "home DrawSlp/1", "cas DrawSlp/1", "home DrawSlp/2", "cas DrawSlp/2", "home DrawSlp/3", "cas DrawSlp/3", "home logistic_regression_plot/0", "cas logistic_regression_plot/0", "home linear_regression_plot/0", "cas linear_regression_plot/0", "home logarithmic_regression_plot/0", "cas logarithmic_regression_plot/0", "home polynomial_regression_plot/0", "cas polynomial_regression_plot/0", "home power_regression_plot/0", "cas power_regression_plot/0", "home square/0", "cas square/0", "home hexagon/0", "cas hexagon/0", "home rhombus/0", "cas rhombus/0", "home polygon/0", "cas polygon/0", "home open_polygon/0", "cas open_polygon/0", "home quadrilateral/0", "cas quadrilateral/0", "home rectangle/0", "cas rectangle/0", "home exponential_regression_plot/0", "cas exponential_regression_plot/0", "home histogram/0", "cas histogram/0", "home boxwhisker/0", "cas boxwhisker/0", "home slopeatraw/0", "cas slopeatraw/0", "home areaatraw/0", "cas areaatraw/0", "home perimeteratraw/0", "cas perimeteratraw/0", "home bisector/0", "cas bisector/0", "home exbisector/0", "cas exbisector/0", "home center/0", "cas center/0", "home conic/0", "cas conic/0", "home circle/0", "cas circle/0", "home altitude/0", "cas altitude/0", "home barycenter/0", "cas barycenter/0", "home isobarycenter/0", "cas isobarycenter/0", "home median_line/0", "cas median_line/0", "home perpen_bisector/0", "cas perpen_bisector/0", "home homothety/0", "cas homothety/0", "home inversion/0", "cas inversion/0", "home axis/0", "cas axis/0", "home axis/1", "cas axis/1", "home axis/2", "cas axis/2", "home axis/3", "cas axis/3", "home parabola/0", "cas parabola/0", "home parallel/0", "cas parallel/0", "home perpendicular/0", "cas perpendicular/0", "home orthogonal/0", "home plot/0", "cas plot/0", "home plotimplicit/0", "cas plotimplicit/0", "home plotfield/0", "cas plotfield/0", "home plotode/0", "cas plotode/0", "home plotpolar/0", "cas plotpolar/0", "home rotation/0", "cas rotation/0", "home segment/0", "cas segment/0", "home half_line/0", "cas half_line/0", "home similarity/0", "cas similarity/0", "home line_segments/0", "home vertices/0", "cas vertices/0", "home vertices_abca/0", "cas vertices_abca/0", "home reflection/0", "cas reflection/0", "home tangent/0", "cas tangent/0", "home translation/0", "cas translation/0", "home triangle/0", "cas triangle/0", "home equilateral_triangle/0", "cas equilateral_triangle/0", "home isosceles_triangle/0", "cas isosceles_triangle/0", "home right_triangle/0", "cas right_triangle/0", "home plotseq/0", "cas plotseq/0", "home plotproba/0", "cas plotproba/0", "home osculating_circle/0", "cas osculating_circle/0", "home evolute/0", "cas evolute/0", "home draw_graph/0", "cas draw_graph/0"]
   F92: ["home graph/0", "cas graph/0", "home graph/3", "cas graph/3", "home graph_complement/0", "cas graph_complement/0", "home subgraph/0", "cas subgraph/0", "home make_directed/0", "cas make_directed/0", "home underlying_graph/0", "cas underlying_graph/0", "home cycle_graph/0", "cas cycle_graph/0", "home lcf_graph/0", "cas lcf_graph/0", "home hypercube_graph/0", "cas hypercube_graph/0", "home seidel_switch/0", "cas seidel_switch/0", "home sierpinski_graph/0", "cas sierpinski_graph/0", "home complete_graph/0", "cas complete_graph/0", "home complete_graph/3", "cas complete_graph/3", "home petersen_graph/0", "cas petersen_graph/0", "home random_graph/0", "cas random_graph/0", "home random_graph/1", "cas random_graph/1", "home random_graph/3", "cas random_graph/3", "home random_digraph/0", "cas random_digraph/0", "home random_digraph/1", "cas random_digraph/1", "home random_bipartite_graph/0", "cas random_bipartite_graph/0", "home random_bipartite_graph/1", "cas random_bipartite_graph/1", "home random_tournament/0", "cas random_tournament/0", "home random_tournament/3", "cas random_tournament/3", "home random_sequence_graph/0", "cas random_sequence_graph/0", "home assign_edge_weights/0", "cas assign_edge_weights/0", "home add_arc/0", "cas add_arc/0", "home delete_arc/0", "cas delete_arc/0", "home add_edge/0", "cas add_edge/0", "home delete_edge/0", "cas delete_edge/0", "home delete_vertex/0", "cas delete_vertex/0", "home contract_edge/0", "cas contract_edge/0", "home make_weighted/0", "cas make_weighted/0", "home isomorphic_copy/0", "cas isomorphic_copy/0", "home permute_vertices/0", "cas permute_vertices/0", "home complete_binary_tree/0", "cas complete_binary_tree/0", "home complete_kary_tree/0", "cas complete_kary_tree/0", "home prism_graph/0", "cas prism_graph/0", "home antiprism_graph/0", "cas antiprism_graph/0", "home star_graph/0", "cas star_graph/0", "home wheel_graph/0", "cas wheel_graph/0", "home grid_graph/0", "cas grid_graph/0", "home torus_grid_graph/0", "cas torus_grid_graph/0", "home web_graph/0", "cas web_graph/0", "home cartesian_product/0", "cas cartesian_product/0", "home tensor_product/0", "cas tensor_product/0", "home path_graph/0", "cas path_graph/0", "home path_graph/3", "cas path_graph/3", "home kneser_graph/0", "cas kneser_graph/0", "home odd_graph/0", "cas odd_graph/0", "home johnson_graph/0", "cas johnson_graph/0", "home flower_snark/0", "cas flower_snark/0", "home goldberg_snark/0", "cas goldberg_snark/0", "home haar_graph/0", "cas haar_graph/0", "home paley_graph/0", "cas paley_graph/0", "home subdivide_edges/0", "cas subdivide_edges/0", "home minimal_spanning_tree/0", "cas minimal_spanning_tree/0", "home plane_dual/0", "cas plane_dual/0", "home line_graph/0", "cas line_graph/0", "home random_network/0", "cas random_network/0", "home tonnetz/0", "cas tonnetz/0", "home fundamental_cycle/0", "cas fundamental_cycle/0"]
-  F93: ["home znorder/1", "cas znorder/1", "home znorder/2", "cas znorder/2", "home znprimroot/1", "cas znprimroot/1", "home kolmogorovd/2", "cas kolmogorovd/2", "cas binomial_icdf/1", "cas binomial_icdf/2", "cas binomial_icdf/3", "home poisson_cdf/2", "cas poisson_cdf/2", "home poisson/2", "cas poisson/2", "home Airy_Ai/3", "home Airy_Bi/3", "cas student_icdf/1", "cas student_icdf/2", "cas student_icdf/3", "home orthocenter/0", "cas orthocenter/0", "home circumcircle/0", "cas circumcircle/0", "home circumcenter/0", "cas circumcenter/0", "home ecm_factor/3", "cas ecm_factor/3", "home incircle/0", "cas incircle/0", "home excircle/0", "cas excircle/0", "home incenter/0", "cas incenter/0", "home excenter/0", "cas excenter/0", "home when/0", "cas when/0", "home minimize/0", "home maximize/0", "home traveling_salesman/0", "cas traveling_salesman/0", "home vertex_cover_number/0", "cas vertex_cover_number/0", "home Psi/3", "home UTPC/3", "home UTPF/3", "home UTPT/3", "home binomial_icdf/3", "home max/3", "home min/3", "home student_icdf/3", "home trail/3", "home ugamma/3"]
+  F93: ["home znorder/1", "cas znorder/1", "home znorder/2", "cas znorder/2", "home znprimroot/1", "cas znprimroot/1", "home kolmogorovd/2", "cas kolmogorovd/2", "cas binomial_icdf/1", "cas binomial_icdf/2", "cas binomial_icdf/3", "home poisson_cdf/2", "cas poisson_cdf/2", "home poisson/2", "cas poisson/2", "home Airy_Ai/3", "home Airy_Bi/3", "cas student_icdf/1", "cas student_icdf/2", "cas student_icdf/3", "home orthocenter/0", "cas orthocenter/0", "home circumcircle/0", "cas circumcircle/0", "home circumcenter/0", "cas circumcenter/0", "home incircle/0", "cas incircle/0", "home excircle/0", "cas excircle/0", "home incenter/0", "cas incenter/0", "home excenter/0", "cas excenter/0", "home when/0", "cas when/0", "home minimize/0", "home maximize/0", "home traveling_salesman/0", "cas traveling_salesman/0", "home vertex_cover_number/0", "cas vertex_cover_number/0", "home Psi/3", "home UTPC/3", "home UTPF/3", "home UTPT/3", "home binomial_icdf/3", "home max/3", "home min/3", "home student_icdf/3", "home trail/3", "home ugamma/3"]
   F94: ["home mathml/0", "cas mathml/0", "home latex/0", "cas latex/0", "home getType/0", "cas getType/0", "home str/0", "cas str/0", "home str/1", "cas str/1", "home str/2", "cas str/2", "home str/3", "cas str/3", "home char/0", "cas char/0", "home char/2", "cas char/2", "home char/3", "cas char/3", "home tabvar/0", "cas tabvar/0", "home tabsign/0", "cas tabsign/0", "home mc_mean_antithetic/0", "cas mc_mean_antithetic/0"]
   F96: ["home wz_certificate/0", "cas wz_certificate/0", "home GF/0", "cas GF/0", "home point3d/0", "cas point3d/0", "home harmonic_division/0", "home QR/0", "cas QR/0", "home LU/0", "cas LU/0", "home Fill/0", "cas Fill/0", "home CopyVar/0", "cas CopyVar/0", "home debug/0", "cas debug/0", "home syzygy/0", "cas syzygy/0", "home gbasis/0", "cas gbasis/0", "home is_hamiltonian/0", "cas is_hamiltonian/0", "home interactive_plotode/0", "cas interactive_plotode/0"]
   F89: ["home ilaplace/0", "cas ilaplace/0"]
@@ -80,7 +80,7 @@ classes:
   "UTPT": "ccct|cccs"
   "VAS": "u|s"
   "VAS_positive": "u|s"
-  "Zeta": "cccr|cccs"
+  "Zeta": "cccr|cccr"
   "a2q": "s|s"
   "abcuv": "u|s"
   "about": "s|s"
@@ -357,7 +357,7 @@ classes:
   "dwt": "u|u"
   "e": "-"
   "ecef2geodetic": "uuur|uuur"
-  "ecm_factor": "rrrt|hrrt"
+  "ecm_factor": "rrrr|hrrr"
   "edge_connectivity": "u|u"
   "edges": "s|s"
   "egcd": "s|s"
@@ -466,7 +466,7 @@ classes:
   "gbasis": "x|x"
   "gbasis_max_pairs": "uuuu|uuuu"
   "gbasis_reinject": "urur|rrur"
-  "gbasis_simult_primes": "uuuu|uuuu"
+  "gbasis_simult_primes": "uuur|uuur"
   "gbasis_vars": "s|s"
   "gbm": "rrrr|rrrr"
   "genpoly": "s|s"
@@ -522,7 +522,7 @@ classes:
   "has": "u|u"
   "has_arc": "s|s"
   "has_edge": "s|s"
-  "hasard": "uuuu|uuuu"
+  "hasard": "uuur|uuur"
   "head": "uuuu|uuuu"
   "heapify": "-"
   "heappop": "-"
@@ -689,7 +689,7 @@ classes:
   "l1norm": "u|u"
   "labels": "-"
   "lagrange": "s|s"
-  "laguerre": "srrs|srrs"
+  "laguerre": "srrr|srrr"
   "laplace": "s|s"
   "laplacian": "s|s"
   "laplacian_matrix": "s|s"
@@ -983,7 +983,7 @@ classes:
   "radical_axis": "k|k"
   "radius": "u|u"
   "radius2": "u|u"
-  "rand": "uuuu|uuuu"
+  "rand": "uuur|uuur"
   "randbetad": "uurr|uurr"
   "randbinomial": "urrr|urrr"
   "randchisquare": "urrr|urrr"
@@ -1007,13 +1007,13 @@ classes:
   "random_variable": "-"
   "randperm": "urru|urru"
   "randpoisson": "uurr|uurr"
-  "randpoly": "suss|ssss"
+  "randpoly": "susr|sssr"
   "randstudent": "urrr|urrr"
   "randvector": "uuur|urur"
   "randweibulld": "uurr|uurr"
   "range": "urrr|urrr"
   "rank": "u|u"
-  "ranm": "uuus|urus"
+  "ranm": "uuur|urur"
   "rat_jordan": "s|s"
   "ratinterp": "s|s"
   "rationalroot": "u|s"
@@ -1135,7 +1135,7 @@ classes:
   "sorta": "uuus|uuus"
   "sortd": "uuus|uuus"
   "sortperm": "u|u"
-  "soundsec": "ssru|uuru"
+  "soundsec": "ssrr|uurr"
   "spanning_tree": "-"
   "sphere": "s|s"
   "splice": "-"

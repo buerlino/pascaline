@@ -13,7 +13,7 @@ import { rewriteAngles } from "./input/angles.ts";
 import { applyDefChanges, type DefChange } from "./engine/defs.ts";
 import { namesFlag } from "./engine/flags.ts";
 import { namesAssuming, setsAssumption } from "./engine/assumed.ts";
-import { chipFactsOf, chipOf, homeItem } from "./state/results.ts";
+import { casItem, chipFactsOf, chipOf, homeItem } from "./state/results.ts";
 
 export type Expect = string | Expect[];
 
@@ -226,12 +226,23 @@ export async function runPrecisionCase(c: Case, shared: EngineHost, fresh: () =>
   // The digits the result is shown with: the setting, or what the input asked for (CAS evalf(x,n), M4-6).
   const digits = c.settings?.shown ?? setting;
   const giacOf = (t: string): string => (c.latex !== undefined ? giacOfEntry(t, "home").giac : t);
-  const input = c.latex !== undefined ? giacOfEntry(c.latex, "home").giac : c.input!;
+  // G112: a CAS case with Ans parses once its `before` lines gave the chip (below)
+  const casAns = c.kind === "cas" && c.latex !== undefined && /\\ans(?![A-Za-z])/.test(c.latex);
+  let input = c.latex !== undefined && !casAns ? giacOfEntry(c.latex, "home").giac : (c.input ?? "");
   if (c.kind === "cas") {
     const cs = { ...defaultCasSettings, angle: c.settings?.angle ?? "rad", digits: setting };
     for (const b of c.beforeHome ?? []) defs.push(...host.home(giacOf(b), { ...defaultHomeSettings, digits: setting }).defs);
-    for (const b of c.before ?? []) defs.push(...host.cas(giacOf(b), cs).defs);
+    let ans: ChipTable = {};
+    for (const b of c.before ?? []) {
+      const out = host.cas(giacOf(b), cs);
+      defs.push(...out.defs);
+      // G112: the last line's result is the CAS view's Ans, by the session's rule (state/results.ts chipOf, casItem)
+      const chip = chipOf({ status: out.result.ok ? "done" : "error", ...casItem(out.result, false) });
+      ans = chip ? { [ANS_KEY]: chip } : {};
+    }
     await relaunched();
+    // a `latex` input with Ans goes through the parser as the CAS view sends it, with that chip
+    if (casAns) input = giacOfEntry(c.latex!, "cas", { chips: ans }).giac;
     const r = host.cas(input, cs).result;
     if (c.uses) {
       const got = (r.uses ?? []).map((u) => u.name).join(",");
