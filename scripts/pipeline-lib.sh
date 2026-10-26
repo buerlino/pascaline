@@ -171,6 +171,21 @@ GOLDEN_RE='^(engine/|app/src/engine/|app/src/input/|app/src/units/|tests/golden/
 # golden_selected: succeeds when a changed file (one per line, on stdin) plans the golden check.
 golden_selected() { grep -qE "$GOLDEN_RE"; }
 
+# behaviour_selected: succeeds when a changed file (one per line, on stdin) is engine, input or units code (A18).
+behaviour_selected() { grep -qE '^(engine/|app/src/engine/|app/src/input/|app/src/units/)'; }
+# behaviour_section <integ> <wt> <outfile>: A18, the "## Behaviour changes" section of the audit's input: G55's behaviour-diff.ts between
+# the phase-1 worktree and the worker's, once per call, at most 20 minutes, never retried. PASCALINE_BEHAVIOUR_TOOL overrides the script.
+behaviour_section() {
+  local integ="$1" wt="$2" out="$3" tool="${PASCALINE_BEHAVIOUR_TOOL:-$1/app/scripts/behaviour-diff.ts}" body rc=0
+  body="$(cd "$wt/app" && timeout -k 30 "${PASCALINE_BEHAVIOUR_SECONDS:-1200}" node "$tool" "$integ" "$wt" 2>&1)" || rc=$?
+  {
+    echo "## Behaviour changes (behaviour-diff.ts: phase-1 against $(basename "$wt"))"
+    if [[ $rc -eq 124 || $rc -eq 137 ]]; then echo "timed out after 20 min (judge the diff without it)"
+    elif [[ $rc -ne 0 ]]; then echo "failed to run (exit $rc; judge the diff without it):"; tail -n 10 <<<"$body"
+    else printf '%s\n' "$body"; fi
+  } > "$out"
+}
+
 # The gate's engine stages, run after golden (A25; app/scripts/gate.ts).
 ENGINE_STAGES=(sweep seqsweep casback viewsweep findcensus)
 # stage_findings <log>: prints the lines naming a NEW, NOW PASSING, CHANGED or GONE entry of a stage and succeeds when there are any.
