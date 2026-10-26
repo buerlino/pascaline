@@ -8,6 +8,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff. (The leftover `QALC_OUT` is A30.)
+- **G111's census finds (run 252), no id yet:** a probability at a non-integer k is a number: `poisson(2,1.5)` ≈ 0.288, `geometric(0.5,1.5)` ≈ 0.354, `negbinomial(3,0.5,1.5)` ≈ 0.193 (0, the pmf lives on the integers; `binomial` refuses). Not in the census (no sample). Proposal: a package before Find opens them, at the cause in `moyal.cc` (patch 0009).
 
 ## Decided proposals
 
