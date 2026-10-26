@@ -576,4 +576,8 @@ cases:
   - { id: "g111-cas-lambertw-list", kind: "cas", input: "LambertW([1,2])", expect: "error: listAsArguments", source: "derived", note: "F98: Giac's _LambertW reads a vector of two as (x, branch): CAS kept LambertW([1,2]) and its value is LambertW(1) on branch 2; refused as in Home" }
   - { id: "g111-cas-hermite-list", kind: "cas", input: "hermite([1,2])", expect: "error: listAsArguments", source: "derived", note: "F98: Giac reads [1,2] as hermite(1,2) = 4; refused as in Home" }
   - { id: "g111-cas-store-lambertw-list", kind: "cas", input: "W:=LambertW([1,2])", expect: "error: listAsArguments", source: "derived", note: "F98: refused in an assignment too, nothing stored" }
+  - { id: "g112-cas-psi-list", kind: "cas", input: "Psi(list[1,2])", expect: "error: listAsArguments", source: "derived", note: "F103: Giac reads the list as Psi(1,2) = -2·Zeta(3); refused as in Home" }
+  - { id: "g112-cas-zeta-list", kind: "cas", input: "Zeta(list[2,3])", expect: "error: listAsArguments", source: "derived", note: "F103: Giac reads the list as its two-argument Zeta(2,3); refused as in Home" }
+  - { id: "g112-cas-psi-stored", kind: "cas", input: "Psi(L112)", before: ["L112:=list[1,2]"], expect: "error: listAsArguments", source: "derived", note: "F103: a stored list in CAS; refused" }
+  - { id: "g112-cas-zeta-stored", kind: "cas", input: "Zeta(L112z)", before: ["L112z:=list[2,3]"], expect: "error: listAsArguments", source: "derived", note: "F103: a stored list in CAS; refused" }
   - { id: "g111-cas-fracmod-negative", kind: "cas", input: "fracmod(41,-2)", expect: "error: engine", source: "derived", note: "F91: refused by patch 0008 (it trapped the wasm); CAS shows Giac's message" }

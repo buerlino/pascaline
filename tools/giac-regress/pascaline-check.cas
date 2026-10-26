@@ -337,6 +337,30 @@ Digits:=40:; pc("g111-keep-lambertw-branch",'(LambertW(-(2/10^1),-1))',-(2542641
 Digits:=40:; pc("g111-keep-hermite-2args",'(hermite(1,2))',4,5/10^12);
 // g111-keep-fracmod (home.yaml, derived)
 Digits:=40:; pc("g111-keep-fracmod",'(fracmod(3,13))',-(25/10^2),5/10^13);
+// g112-keep-psi-2args (home.yaml, oracle)
+Digits:=40:; pc("g112-keep-psi-2args",'(Psi(1,2))',-(240411380632/10^11),5/10^12);
+// g112-keep-erf (home.yaml, oracle)
+Digits:=40:; pc("g112-keep-erf",'(erf(list[(5/10^1),1])[1])',(84270079295/10^11),5/10^13);
+// g112-keep-ci (home.yaml, oracle)
+Digits:=40:; pc("g112-keep-ci",'(Ci(list[1,2])[1])',(422980828775/10^12),5/10^13);
+// g112-keep-ei (home.yaml, oracle)
+Digits:=40:; pc("g112-keep-ei",'(Ei(list[1,2])[1])',(4954234356/10^9),5/10^12);
+// g112-keep-exp (home.yaml, oracle)
+Digits:=40:; pc("g112-keep-exp",'(exp(list[1,2])[1])',(738905609893/10^11),5/10^12);
+// g112-keep-ln (home.yaml, oracle)
+Digits:=40:; pc("g112-keep-ln",'(ln(list[2,3])[1])',(109861228867/10^11),5/10^12);
+// g112-keep-sign (home.yaml, derived)
+Digits:=40:; pc("g112-keep-sign",'(sign(list[-2,3])[0])',-1,5/10^12);
+// g112-keep-factorial (home.yaml, derived)
+Digits:=40:; pc("g112-keep-factorial",'(factorial(list[3,4])[1])',24,5/10^11);
+// g112-keep-sum (home.yaml, derived)
+Digits:=40:; pc("g112-keep-sum",'(sum(list[1,2,3]))',6,5/10^12);
+// g112-keep-mean (home.yaml, oracle)
+Digits:=40:; pc("g112-keep-mean",'(mean(list[1,2,4]))',(233333333333/10^11),5/10^12);
+// g112-keep-max (home.yaml, derived)
+Digits:=40:; pc("g112-keep-max",'(max(list[1,5,2]))',5,5/10^12);
+// g112-keep-min (home.yaml, derived)
+Digits:=40:; pc("g112-keep-min",'(min(list[4,1,2]))',1,5/10^12);
 // prec-20-sqrt2 (precision.yaml, oracle)
 Digits:=40:; pc("prec-20-sqrt2",'(sqrt(2))',(14142135623730950488/10^19),5/10^20);
 // prec-20-third (precision.yaml, oracle)
