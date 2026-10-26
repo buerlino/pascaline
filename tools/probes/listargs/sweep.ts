@@ -58,7 +58,7 @@ export function verdict(ev: (s: string) => string, f: string, takesList: boolean
   return { hit: false, why: maps ? "maps" : "none" };
 }
 
-/** Giac's help signature line (aide_cas "0 …") gives a list, vector or matrix as the first argument. */
+/** Giac's help signature line (aide_cas "0 …") gives a list, vector, matrix, cycle or permutation as the first argument. */
 export function signatureTakesList(signature: string): boolean {
   let depth = 0;
   let end = signature.length;
@@ -71,7 +71,7 @@ export function signatureTakesList(signature: string): boolean {
       break;
     }
   }
-  return /Lst|Vect|Mtrx|List|list|Seq|Matrix/.test(signature.slice(0, end));
+  return /Lst|Vect|Mtrx|List|list|Seq|Matrix|Cycle|Permut/.test(signature.slice(0, end));
 }
 
 /** Giac's help signatures by name (every name of an entry; the "0 " lines). */
