@@ -533,3 +533,54 @@ cases:
     expect: { result: "385", mark: "=" }
     value: "385"
     source: derived
+
+  # ---- what ships but no case keyed (S24, after-night check 2026-10-26; one green night is enough for these) ----
+  - id: c61
+    area: home
+    title: "the Format key, one step per row: 99999.999999999 in Scientific, Engineering, then Standard again (the 12-digit rounding carries)"
+    keys: [d9, d9, d9, d9, d9, dot, d9, d9, d9, d9, d9, d9, d9, d9, d9, enter, fmt,
+           d9, d9, d9, d9, d9, dot, d9, d9, d9, d9, d9, d9, d9, d9, d9, enter, fmt, fmt,
+           d9, d9, d9, d9, d9, dot, d9, d9, d9, d9, d9, d9, d9, d9, d9, enter, fmt, fmt, fmt]
+    expect: { rows: [{ result: "1.00000000000E5", mark: "≈" }, { result: "100.000000000E3", mark: "≈" }, { result: "100000", mark: "≈" }] }
+    value: "99999.999999999 at 12 digits: 100000 (oracle F('99999.999999999')); Scientific and Engineering keep all 12 digits, zeros too (format.ts sci and eng): 1.00000000000E5, 100.000000000E3 (derived from the same 12 digits)"
+    source: oracle
+
+  - id: c62
+    area: home
+    title: "a b/c on an empty line: 0.75 → 3/4, and a second press back to 0.75"
+    keys: [d0, dot, d7, d5, enter, frac, d0, dot, d7, d5, enter, frac, frac]
+    expect: { rows: [{ result: "3/4", mark: "=" }, { result: "0.75", mark: "=" }] }
+    value: "3/4"
+    source: derived
+
+  - id: c63
+    area: trig
+    title: "polar in DEG: 1+i, a b/c shows √2∡45"
+    keys: ["@mode", right, enter, d1, add, shift, d2, enter, frac]
+    expect: { result: "1.41421356237∡45", mark: "≈" }
+    value: "abs(1+i) = sqrt(2) = 1.41421356237309504880168872421; arg = atand(1) = 45"
+    source: oracle
+
+  - id: c64
+    area: entry
+    title: "an error, then the line fixed: 2+ Enter is an error row; ▲ Enter brings 2+ back, 3 Enter gives 5"
+    keys: [d2, add, enter, up, enter, d3, enter]
+    expect: { rows: [{ status: error }, { result: "5", mark: "=", status: done }] }
+    value: "5"
+    source: derived
+
+  - id: c65
+    area: entry
+    title: "Ans inside a line, not at its start: 5 Enter, then 2 × Ans + 1"
+    keys: [d5, enter, d2, mul, shift, add, add, d1, enter]
+    expect: { result: "11", mark: "=" }
+    value: "11"
+    source: derived
+
+  - id: c66
+    area: state
+    title: "a CAS function survives a relaunch: CAS p(x):=x², relaunch, CAS p(2)"
+    keys: ["@cas", alpha, emark, paren, x, right, alpha, sub, shift, dot, x, sq, enter, {relaunch: true}, "@cas", alpha, emark, paren, d2, right, enter]
+    expect: { result: "4", mark: none }
+    value: "4"
+    source: derived
