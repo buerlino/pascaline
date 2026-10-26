@@ -405,6 +405,7 @@ p1wt="$sb6/.claude/worktrees/phase-1"
 git -C "$sb6" branch p1/behind phase-1; git -C "$sb6" branch p1/uptodate phase-1; git -C "$sb6" branch p1/conflict phase-1
 echo 1 > "$p1wt/p1.txt"; git -C "$p1wt" add p1.txt; gc "$p1wt" "later merge"
 git -C "$sb6" branch p1/uptodate2 phase-1
+git -C "$sb6" worktree add -q "$tmp/cw" p1/conflict; echo branchside > "$tmp/cw/conf.txt"; git -C "$tmp/cw" add conf.txt; gc "$tmp/cw" "branch edit"; git -C "$sb6" worktree remove --force "$tmp/cw"
 echo phaseside > "$p1wt/conf.txt"; git -C "$p1wt" add conf.txt; gc "$p1wt" "phase edit"
 out="$(sb6run "$script" ron "x" --id P1 --branch p1/behind --checks none --no-merge 2>&1)"
 grep -q 'merging phase-1 into p1/behind' "$sb6/.coord/log.md" || fail "A38: a resumed branch behind phase-1: no 'merging phase-1 into' log line: $out"
