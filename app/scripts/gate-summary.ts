@@ -257,7 +257,7 @@ export function summarizeDocs(out: string, exitCode: number): Summary {
 }
 
 /** Engine-side, parser, unit or Find code: what the golden gate checks (CLAUDE.md: every engine build; brief section 8a step 3). */
-export const goldenPaths: readonly RegExp[] = [/^engine\/giac\//, /^app\/src\/engine\//, /^app\/src\/input\//, /^app\/src\/units\//, /^app\/scripts\/unit-case\.ts$/, /^tests\/golden\//, /^app\/scripts\/(golden\.ts|golden\/.*\.ts|golden-[a-z-]+\.ts|invariants\.ts|calls-budget\.ts|behaviour-diff\.ts|sweep\.ts|seqsweep\.ts|casback\.ts|viewsweep\.ts|findcensus\.ts)$/, /^find\//, /^tools\/find-index\//];
+export const goldenPaths: readonly RegExp[] = [/^engine\/giac\//, /^app\/src\/engine\//, /^app\/src\/input\//, /^app\/src\/units\//, /^app\/scripts\/unit-case\.ts$/, /^tests\/golden\//, /^app\/scripts\/(golden\.ts|golden\/.*\.ts|golden-[a-z-]+\.ts|invariants\.ts|calls-budget\.ts|behaviour-diff\.ts|sweep\.ts|seqsweep\.ts|casback\.ts|viewsweep\.ts|findcensus\.ts)$/, /^find\//, /^tools\/find-index\//, /^tools\/probes\/(giac-check\.mjs|giaccheck\/|sweep\/|casback\/)/, /^tests\/engine\//];
 /** Find data or its generator: the Find index must be generated again. */
 export const indexPaths: readonly RegExp[] = [/^find\//, /^tools\/find-index\//];
 

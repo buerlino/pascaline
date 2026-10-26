@@ -119,6 +119,7 @@ describe("what the gate selects by changed paths", () => {
     expect(selectsGolden(["app/scripts/unit-case.ts"])).toBe(true);
     expect(selectsGolden(["find/aliases.yaml"])).toBe(true);
     expect(selectsGolden(["tools/find-index/generate.mjs"])).toBe(true);
+    for (const f of ["tools/probes/giac-check.mjs", "tools/probes/giaccheck/lib.ts", "tools/probes/sweep/a.ts", "tools/probes/casback/a.ts", "tests/engine/a.test.ts"]) expect(selectsGolden([f])).toBe(true);
     expect(selectsGolden(["app/src/ui/Key.svelte", "docs/backlog.md"])).toBe(false);
   });
   it("the Find index is regenerated for find/ and its generator only", () => {

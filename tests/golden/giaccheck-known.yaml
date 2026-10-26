@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # A19: inputs of Giac's check/ suite (tools/probes/giac-check.mjs) whose answer differs from check/<set>.out on our build.
 # id = <set>#<n> (n from 1, in the order of check/test<set>), or <set>#/regex/ for every difference of the set whose answer matches.
 # A reason starting "random:" marks an input that depends on rand or a random field: it may or may not differ in a run.
@@ -25,7 +26,3 @@ known:
     reason: "random: factors over the random GF(7,7) of cas#266"
   - id: "geo#/window is not defined/"
     reason: "the geometry commands (pnt, point, segment, ...) call the plot code, which needs a browser window; Node has none (engine/giac/wasm/stubs.cc)"
-  - id: "normalize#9"
-    reason: "peval(res, ...) stays the unexpanded polynomial where the .out has 0; open, reported in A19's report (Giac forum candidate)"
-  - id: "normalize#15"
-    reason: "same as normalize#9 with the substitution s1..s4"

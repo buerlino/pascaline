@@ -52,7 +52,7 @@ const secs = ((performance.now() - t0) / 1000).toFixed(0);
 const known = new Map();
 for (const m of readFileSync(knownFile, "utf8").matchAll(/- id: "([^"]+)"\n\s+reason: (".*")/g)) known.set(m[1], JSON.parse(m[2]));
 if (args.includes("--write")) {
-  const lines = ["# A19: inputs of Giac's check/ suite whose answer differs from check/<set>.out on our build (id = <set>#<n>, n from 1).", "# Each needs a reason; tools/probes/giac-check.mjs fails on a new difference and on a listed one that no longer differs.", "known:"];
+  const lines = ["# SPDX-License-Identifier: GPL-3.0-or-later", "# A19: inputs of Giac's check/ suite whose answer differs from check/<set>.out on our build (id = <set>#<n>, n from 1).", "# Each needs a reason; tools/probes/giac-check.mjs fails on a new difference and on a listed one that no longer differs.", "known:"];
   for (const d of differ) {
     const id = d.got.includes("window is not defined") ? `${d.id.split("#")[0]}#/window is not defined/` : d.id;
     if (!lines.some((l) => l.includes(`"${id}"`))) lines.push(`  - id: "${id}"`, `    reason: ${JSON.stringify(known.get(id) ?? known.get(d.id) ?? "TODO")}`);

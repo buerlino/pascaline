@@ -9,6 +9,9 @@ describe("giac check runner", () => {
   test("a continuation joins, ; + newline splits", () => {
     expect(splitInputs(SNIPPET)).toEqual(["res := p11*p22*q1^2-p12*p21*q1^2", "non_recursive_normal(((x+y)^2-(z+1)^2)^4/(x+y+z+1)^8)", "f(x):=x^2", "int(x,x)"]);
   });
+  test("a colon before the semicolon (the quiet end) is dropped", () => {
+    expect(splitInputs("a:=x+1:;\n")).toEqual(["a:=x+1"]);
+  });
   test("a ; inside a line does not split", () => {
     expect(splitInputs("a:=1;b:=2;\nc;\n")).toEqual(["a:=1;b:=2", "c"]);
   });

@@ -13,6 +13,8 @@ export const SETS: readonly string[] = ["cas", "factor", "geo", "integrate", "li
 
 /** The tarball: GIAC_CHECK_TARBALL, else the download cache (PASCALINE_DL_DIR or this checkout's). */
 export function tarballPath(): string {
+  const env = process.env["GIAC_CHECK_TARBALL"];
+  if (env && existsSync(env)) return env;
   const dirs = [process.env["PASCALINE_DL_DIR"], resolve(repo, "engine/giac/_downloads")].filter((d): d is string => !!d);
   for (const d of dirs) for (const n of ["giac-2.1.0.tar.gz", "giac_2.1.0-1.tar.gz"]) if (existsSync(resolve(d, n))) return resolve(d, n);
   return process.env["GIAC_CHECK_TARBALL"] ?? "";
