@@ -39,6 +39,9 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
   });
   const home = (input: string) => host.home(input, defaultHomeSettings).result;
   const cas = (input: string) => host.cas(input, defaultCasSettings).result;
+  // a CAS result's items, each with its mark
+  const marks = (input: string) =>
+    (cas(input).numeric?.items ?? []).map((it) => `${it.display} ${markOf(precisionFacts(it), { format: "STD", digits: defaultCasSettings.digits })?.mark ?? "none"}`);
   // as the app copies: the port passes `exact` only for a rational (calc/engine.ts HOME_KEYS)
   const copy = (input: string) => {
     const { exact: _exact, ...r } = home(input);
@@ -138,16 +141,27 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
 
   // R80f1 (run 251's audit): a CAS float result of Giac's list type gets its items, each with its own mark, as a [ ] vector's
   it("gives a CAS float list-type result its items, each with a mark, as a vector's", () => {
-    const marks = (input: string) => {
-      const items = cas(input).numeric?.items ?? [];
-      return items.map((it) => `${it.display} ${markOf(precisionFacts(it), { format: "STD", digits: defaultCasSettings.digits })?.mark ?? "none"}`);
-    };
     // Ci(1) = 0.337403922900968…, Ci(2) = 0.422980828774865… (no MPFR path: ⚠, as for the vector)
     expect(marks("evalf(Ci(list[1,2]))")).toEqual(marks("evalf(Ci([1,2]))"));
     expect(marks("evalf(Ci(list[1,2]))")).toHaveLength(2);
     expect(marks("evalf(Ci(list[1,2]))")[0]).toMatch(/^0\.337403922901 /);
     // 1.5 and 2 are exact numbers made floats: each item ≈
     expect(marks("approx(list[3/2,2])")).toEqual(["1.5 ≈", "2 ≈"]);
+    expect(marks("approx(list[3/2,2])*1.0")).toEqual(["1.5 ≈", "2 ≈"]);
+    expect(marks("approx(list[3/2,2])*1.0")).toEqual(marks("approx([3/2,2])*1.0"));
+  });
+
+  // R80f1 fix round 1: the texts typed braces emit in CAS. Typed decimals are exact there (P9) and Ci of an integer stays
+  // exact, so neither has a float, and so no items: the same as the [ ] vector gives (the float forms are above)
+  it("shows CAS Ci({1,2}) and {1.5,2}*1.0 as the vector does, exact and without items", () => {
+    const typed = giacOfEntry("\\operatorname{Ci}\\left(\\left\\{1,2\\right\\}\\right)", "cas").giac;
+    expect(typed).toBe("Ci(list[1,2])");
+    expect(cas(typed)).toMatchObject({ ok: true, text: "{Ci(1),Ci(2)}" });
+    expect(cas("Ci([1,2])")).toMatchObject({ ok: true, text: "[Ci(1),Ci(2)]" });
+    expect(marks(typed)).toEqual([]);
+    expect(marks(typed)).toEqual(marks("Ci([1,2])"));
+    expect(cas("list[1.5,2]*1.0")).toMatchObject({ ok: true, text: "{3/2,2}" });
+    expect(marks("list[1.5,2]*1.0")).toEqual([]);
     expect(marks("list[1.5,2]*1.0")).toEqual(marks("[1.5,2]*1.0"));
   });
 

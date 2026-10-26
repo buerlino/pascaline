@@ -9,6 +9,7 @@ import type { EngineHost } from "./host.ts";
 import { defaultHomeSettings } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, nodeHost } from "./nodeGiac.ts";
+import { listAsArguments } from "./listargs.ts";
 
 const REFUSAL = { ok: false, error: "listAsArguments", display: "This function reads a list as its arguments: give it one value at a time" };
 
@@ -109,5 +110,18 @@ describe.skipIf(!giacAvailable())("G111 fracmod with a modulus ≤ 0 (patch 0008
     expect(host.home("1+1", defaultHomeSettings).result).toMatchObject({ ok: true, display: "2" });
     expect(host.cas("fracmod(41,-2)", defaultCasSettings).result).toMatchObject({ ok: false });
     expect(host.cas("fracmod(3,13)", defaultCasSettings).result).toMatchObject({ ok: true, text: "-1/4" });
+  });
+});
+
+// R80f1 fix round 1: an entry for argument 0 (a list-type first argument) is a mode, not "no mode"
+describe("R80f1 a LIST_IN_ARGUMENTS entry for argument 0", () => {
+  const giac = { eval: (): string => "[0]" } as unknown as Parameters<typeof listAsArguments>[0];
+  const table = { f0: 0 } as const;
+  it("refuses a list-type first argument of a call with more arguments, as listInArgument", () => {
+    expect(listAsArguments(giac, "f0(list[1,2],3)", () => false, table)).toBe("listInArgument");
+    expect(listAsArguments(giac, "f0(list[1,2])", () => false, table)).toBe("listInArgument");
+  });
+  it("keeps a list-type value in another argument", () => {
+    expect(listAsArguments(giac, "f0(3,list[1,2])", () => false, table)).toBeNull();
   });
 });

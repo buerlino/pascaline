@@ -56,18 +56,24 @@ function typedList(a: string, listType = false): boolean {
  * `input` (decimals exact) calls one of LIST_AS_ARGUMENTS with one argument that is a list ("listAsArguments"), or one of
  * LIST_IN_ARGUMENTS with a list among its arguments ("listInArgument"); else null. A typed list needs no engine call; an
  * argument that reads a name or holds a bracket is evaluated once more for its type, in one engine call for all of them,
- * unless it changes state (changesState) or calls a function `userFn` names (a program may change globals).
+ * unless it changes state (changesState) or calls a function `userFn` names (a program may change globals). `table`
+ * stands in for LIST_IN_ARGUMENTS (tests: an entry for argument 0).
  */
-export function listAsArguments(giac: Giac, input: string, userFn: (name: string) => boolean): ListRefusal | null {
-  const calls = callsOf(input, EITHER, "typed");
+export function listAsArguments(
+  giac: Giac,
+  input: string,
+  userFn: (name: string) => boolean,
+  table: Readonly<Record<string, "any" | number>> = LIST_IN_ARGUMENTS,
+): ListRefusal | null {
+  const calls = callsOf(input, table === LIST_IN_ARGUMENTS ? EITHER : new Set([...LIST_AS, ...Object.keys(table)]), "typed");
   if (!calls.length) return null;
   const ask: { text: string; why: ListRefusal }[] = [];
   for (const c of calls) {
     if (c.close < 0) continue;
     const args = topLevelArgs(input.slice(c.open + 1, c.close), "typed");
-    const mode = Object.hasOwn(LIST_IN_ARGUMENTS, c.name) ? LIST_IN_ARGUMENTS[c.name] : undefined;
-    const why: ListRefusal = mode ? "listInArgument" : "listAsArguments";
-    if (!mode && args.length !== 1) continue;
+    const mode = Object.hasOwn(table, c.name) ? table[c.name] : undefined;
+    const why: ListRefusal = mode !== undefined ? "listInArgument" : "listAsArguments";
+    if (mode === undefined && args.length !== 1) continue;
     const listType = typeof mode === "number";
     for (const [k, raw] of args.entries()) {
       if (listType && k !== mode) continue;
