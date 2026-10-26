@@ -31,3 +31,5 @@ scripts/night.sh --until 07:30 --dry-run   # prints each step's kind on a simula
 Desktop probes (no device): `tools/probes/` checks what the engine, the parser and the qalc and Find data do today; see its README.
 
 Docs check (no device): `node tools/docs-check.mjs` checks every Markdown link and the docs' size budgets; `npm run gate` runs it (S7).
+
+Release gate (A42): `tools/release-gate.sh` runs the golden gate, the canaries and the core list on `_out/release` (the engine the APK carries), rebuilding it first unless its `.release-key` stamp matches; one line per stage, last line `RELEASE GATE PASSED` or `RELEASE GATE FAILED: <stages>`. Test: `tools/release-gate.test.sh`. Needs `npm run index` done in the checkout; run it when the host is quiet (under load, `invariants` and core c46/c47 time out).
