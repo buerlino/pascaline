@@ -7,7 +7,7 @@ export function splitInputs(text: string): string[] {
   const joined = text.replace(/\\\r?\n/g, "");
   return joined
     .split(/;[ \t]*\r?\n/)
-    .map((s) => s.trim().replace(/;$/, "").trim())
+    .map((s) => s.trim().replace(/;$/, "").trim().replace(/:$/, "").trim())
     .filter((s) => s !== "");
 }
 

@@ -270,7 +270,7 @@ grep -q -- '--no-daemon' "$bs/stdin.txt" || fail "A35: build.sh's Gradle runs wi
 grep -q 'keep its screen on while charging (brief 0c rule 2); never remove its PIN' "$here/../tools/core-device.sh" || fail "A33f2: core-device.sh lock message"
 
 # A25 item 1+2: every script the golden gate runs selects the golden check; a diff of only such a file plans it
-for f in app/scripts/golden.ts app/scripts/golden/lib.ts app/scripts/golden/home.ts app/scripts/invariants.ts app/scripts/calls-budget.ts app/scripts/behaviour-diff.ts app/scripts/golden-speed.ts app/scripts/golden-compare.ts app/scripts/sweep.ts app/scripts/seqsweep.ts app/scripts/casback.ts app/scripts/viewsweep.ts app/scripts/findcensus.ts; do
+for f in app/scripts/golden.ts app/scripts/golden/lib.ts app/scripts/golden/home.ts app/scripts/invariants.ts app/scripts/calls-budget.ts app/scripts/behaviour-diff.ts app/scripts/golden-speed.ts app/scripts/golden-compare.ts app/scripts/sweep.ts app/scripts/seqsweep.ts app/scripts/casback.ts app/scripts/viewsweep.ts app/scripts/findcensus.ts tools/probes/giac-check.mjs tools/probes/giaccheck/lib.ts tools/probes/sweep/x.ts tools/probes/casback/x.ts tests/engine/x.test.ts; do
   printf '%s\n' "$f" | golden_selected || fail "A25: a diff touching only $f does not plan the golden check"
 done
 printf '%s\n' app/src/ui/foo.ts app/scripts/gate.ts docs/backlog.md | golden_selected && fail "A25: an unrelated diff plans the golden check"
