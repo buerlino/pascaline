@@ -53,12 +53,12 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
     expect(formatConfirmed(precisionFacts(r), { format: "STD", digits: 12 })).toBe("{1,16}");
     const text = copy("list[1,4]^2");
     expect(text).toBe("{1,16}");
-    // the copied text itself through the paste reader (golden invariant (c)) and the entry: the same list. Typed braces
-    // are a `[ ]` vector until R80, so the elements are compared, not the brackets.
+    // the copied text itself through the paste reader (golden invariant (c)) and the entry: the same list, and typed
+    // braces are Giac's list type (R80), so it comes back with braces
     const pasted = parsePastedNumber(text ?? "");
     expect(pasted?.latex).toBe("\\left\\{1,16\\right\\}");
     const back = home(giacOfEntry(pasted!.latex, "home").giac);
-    expect(back.ok).toBe(true);
+    expect(back).toMatchObject({ ok: true, display: "{1,16}" });
     expect(back.items?.map((it) => it.display)).toEqual(["1", "16"]);
     expect(back.items?.map((it) => it.display)).toEqual(r.items?.map((it) => it.display));
   });

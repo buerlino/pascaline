@@ -501,7 +501,7 @@ cases:
     source: derived
 
   # ---- lists: a { } list (Shift 8) typed, stored and used (owner, 2026-10-24; core-stability report step 2) ----
-  # The expected text is the list's own display, with braces (G109); until G109 and R80 merge the cases are known.
+  # The expected text is the list's own display, with braces (G109); typed braces are Giac's list type (R80).
   - id: c57
     area: home
     title: "a { } list plus a number goes elementwise: {1,4}+1"
@@ -509,7 +509,6 @@ cases:
     expect: { result: "{2,5}", mark: "=" }
     value: "[2,5]"
     source: derived
-    known: F79
 
   - id: c58
     area: state
@@ -518,7 +517,6 @@ cases:
     expect: { result: "{1,16}", mark: "=" }
     value: "[1,16]"
     source: derived
-    known: F77
 
   - id: c59
     area: state
@@ -527,7 +525,6 @@ cases:
     expect: { result: "{2,0.5}", mark: "=" }
     value: "[2,1/2]"
     source: derived
-    known: F82
 
   - id: c60
     area: home

@@ -26,7 +26,7 @@ describe("findcensus samples", () => {
     const cases: [string, string][] = [
       ["x-1/6*x^3,x", "x-(1/6)*x^3,x"],
       ["[[1,2],[3,4]]", "[[1,2],[3,4]]"],
-      ["[1,2,3],2", "[1,2,3],2"],
+      ["[1,2,3],2", "list[1,2,3],2"], // braces are Giac's list type (R80)
       ["2,sqrt(2)", "2,sqrt(2)"],
       ["-(x+1)^2", "-(x+1)^2"],
       ["a-(b+c),a-(-b)", "a-(b+c),a-(-b)"],
