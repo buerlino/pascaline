@@ -472,7 +472,7 @@ run_checks() {  # <round>; returns 1 and writes fail-<round>.txt on failure
                  # each is a FAIL on NEW or NOW PASSING (the script's exit code too)
                  if [[ $sc -ne 0 ]] || stage_findings "$out" > /dev/null; then rc=1; fi;;
       size)      (cd "$wt/app" && timeout 1800 npm run -s build && timeout 300 npm run -s size) > "$out" 2>&1 || rc=1;;
-      docs)      (cd "$wt" && timeout 300 node tools/docs-check.mjs) > "$out" 2>&1 || rc=1;;
+      docs)      (cd "$wt" && timeout 300 node tools/docs-check.mjs && timeout 120 node tools/docs-check.test.mjs) > "$out" 2>&1 || rc=1;;
       redfirst)  why="$(red_first "$wt" "$spec_file" "${p1_engine}" "$out")" || { rc=1; echo "red-first: $why" >> "$out"; redwhy="$why"; };;
       *) die "unknown check $name";;
     esac
