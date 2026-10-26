@@ -431,3 +431,13 @@ cases:
   - { id: "g109-seq-stored-plus-1", steps: [{"input": "M:=list[1,4]"}, {"input": "M+1"}], expect: "{2,5}", mark: "=", source: "derived", note: "a stored list-type value plus a number is elementwise, 1+1, 4+1, never G106's refusal; showed [2,5]" }
   - { id: "g109-solve-braces", input: "solve(x^2=4,x)", expect: "{-2,2}", mark: "=", source: "derived", note: "a solve result is Giac's list type: shown in braces (owner, 2026-10-25), x²=4 at x=±2; showed [-2,2]" }
   - { id: "g109-seq-solve-stored-pow-2", steps: [{"input": "S:=solve(x^2=4,x)"}, {"input": "S^2"}], expect: "{4,4}", mark: "=", source: "derived", note: "a stored solve result squares elementwise, (-2)², 2²; showed [4,4]" }
+  # R80 (F77, F79, F82): typed braces go to Giac as its list type, so a list stored by name or held in Ans stays a list
+  - { id: "r80-seq-stored-sq", steps: [{"latex": "L:=\\left\\{1,4\\right\\}"}, {"latex": "L^{2}"}], expect: "{1,16}", mark: "=", source: "derived", note: "1², 4²; showed = 17 (Giac's dot product on a vector)" }
+  - { id: "r80-seq-stored-times", steps: [{"latex": "L:=\\left\\{1,4\\right\\}"}, {"latex": "L\\times L"}], expect: "{1,16}", mark: "=", source: "derived", note: "1·1, 4·4; showed = 17" }
+  - { id: "r80-seq-stored-sum", steps: [{"latex": "L:=\\left\\{1,4\\right\\}"}, {"latex": "\\operatorname{sum}\\left(L+1\\right)"}], expect: "7", mark: "=", source: "derived", note: "(1+1)+(4+1); showed = 6 (poly1[1,5])" }
+  - { id: "r80-seq-stored-mean", steps: [{"latex": "L:=\\left\\{1,4\\right\\}"}, {"latex": "\\operatorname{mean}\\left(L+1\\right)"}], expect: "3.5", mark: "=", source: "derived", note: "(2+5)/2; showed = 3" }
+  - { id: "r80-seq-stored-div", steps: [{"latex": "L:=\\left\\{1,4\\right\\}"}, {"latex": "2\\div L"}], expect: "{2,0.5}", mark: "=", source: "derived", note: "2/1, 2/4 (F82); stayed unevaluated" }
+  - { id: "r80-seq-ans-sq", steps: [{"latex": "\\left\\{1,4\\right\\}"}, {"latex": "\\ans^{2}"}], expect: "{1,16}", mark: "=", source: "derived", note: "Ans keeps the list type; showed = 17" }
+  - { id: "r80-seq-store-plus", steps: [{"latex": "\\left\\{1,4\\right\\}\\blacktriangleright K"}, {"latex": "K+1"}], expect: "{2,5}", mark: "=", source: "derived", note: "1+1, 4+1; a stored vector plus a number was G106's refusal" }
+  - { id: "r80-seq-vector-sq", steps: [{"input": "V:=[1,4]"}, {"latex": "V^{2}"}], expect: "17", mark: "=", source: "derived", note: "guard: a [ ] vector keeps the dot product, 1+16 (owner, 2026-10-22)" }
+  - { id: "r80-dot-lists", latex: "\\operatorname{dot}\\left(\\left\\{1,4\\right\\},\\left\\{1,4\\right\\}\\right)", expect: "17", mark: "=", source: "derived", note: "guard: dot of two lists is a number, 1+16" }
