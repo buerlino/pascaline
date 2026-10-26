@@ -68,6 +68,21 @@ exclude:
   # G67: they change Giac's settings, which the engine puts back after the input (the result says so), or wipe every
   # name behind the definitions log's back
   settings: [cas_setup, epsilon, python_compat, eval_level, restart, rm_all_vars]
+  # G111 (decisions.md "Owner answers of 2026-10-25"): what Find cannot show yet, one group per census finding (backlog F90, F92,
+  # F94; tests/golden/findcensus-known.yaml). The census still runs them (`census` below), so an upstream fix shows.
+  # F90: graphics and geometry; Giac draws through its JS (window is not defined in the engine) or answers pnt(…) objects
+  graphics: [batons, plotcdf, polar_point, vector, plotinequation, animation, camembert, bar_plot, listplot, droite_tangente, prism, common_perpendicular, point2d, octahedron, parallelepiped, polyhedron, cube, plane, point, envelope, division_point, radical_axis, polar, reciprocation, harmonic_conjugate, harmonic_division, grid_paper, line_paper, triangle_paper, dot_paper, isopolygon, arc, cumulated_frequencies, DrawInv, LineHorz, Line, LineVert, polygonplot, polygonscatterplot, scatterplot, plotcontour, Circle, parallelogram, DrawSlp, logistic_regression_plot, linear_regression_plot, logarithmic_regression_plot, polynomial_regression_plot, power_regression_plot, square, hexagon, rhombus, polygon, open_polygon, quadrilateral, rectangle, exponential_regression_plot, histogram, boxwhisker, slopeatraw, areaatraw, perimeteratraw, bisector, exbisector, center, conic, circle, altitude, barycenter, isobarycenter, median_line, perpen_bisector, homothety, inversion, axis, parabola, parallel, perpendicular, orthogonal, plot, plotimplicit, plotfield, plotode, plotpolar, rotation, segment, half_line, similarity, line_segments, vertices, vertices_abca, reflection, tangent, translation, triangle, equilateral_triangle, isosceles_triangle, right_triangle, plotseq, plotproba, osculating_circle, evolute, draw_graph]
+  # F92: graphs; Giac answers a sentence ("an undirected unweighted graph with 15 vertices and 25 edges")
+  graphs: [graph, graph_complement, subgraph, make_directed, underlying_graph, cycle_graph, lcf_graph, hypercube_graph, seidel_switch, sierpinski_graph, complete_graph, petersen_graph, random_graph, random_digraph, random_bipartite_graph, random_tournament, random_sequence_graph, assign_edge_weights, add_arc, delete_arc, add_edge, delete_edge, delete_vertex, contract_edge, make_weighted, isomorphic_copy, permute_vertices, complete_binary_tree, complete_kary_tree, prism_graph, antiprism_graph, star_graph, wheel_graph, grid_graph, torus_grid_graph, web_graph, cartesian_product, tensor_product, path_graph, kneser_graph, odd_graph, johnson_graph, flower_snark, goldberg_snark, haar_graph, paley_graph, subdivide_edges, minimal_spanning_tree, plane_dual, line_graph, random_network, tonnetz, fundamental_cycle]
+  # F94: strings with their quotes and Giac's tables
+  strings: [mathml, latex, getType, str, char, tabvar, tabsign, mlr, mc_mean_antithetic]
+  # Giac's debugger: debug and interactive_plotode call the browser's prompt() (prompt is not defined); after debug every
+  # program call throws (F91, F96)
+  debugger: [debug, interactive_plotode]
+
+# G111: the exclude groups the Find census (tools/probes/findcensus) still runs, in their place in Giac's help, and reports as
+# left out: an upstream fix moves their classes, and the census shows it.
+census: [graphics, graphs, strings, debugger]
 
 # G67: Giac commands that change the engine's state on purpose, kept in Find with our own line saying so (replaces
 # Giac's English line).

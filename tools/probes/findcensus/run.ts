@@ -5,6 +5,7 @@
 // until a state change, a hang or a crash starts a new engine) is the same on every run.
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
+import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { Worker } from "node:worker_threads";
 import { giacOfEntry } from "../../../app/src/input/entry.ts";
@@ -32,6 +33,8 @@ export interface Row {
 export interface Entry {
   name: string;
   names: string[];
+  /** G111: the find/functions.yaml exclude group that leaves it out of Find's index (the census still runs it). */
+  leftOut?: string;
 }
 
 /** The Find index's tier-1 functions (app/src/find/_gen/find-index.json, `npm run index`). */
@@ -40,6 +43,50 @@ export function tier1(repo: string): Entry[] {
   if (!existsSync(index)) throw new Error("no Find index: run `npm run index` in app/ first");
   const items = JSON.parse(readFileSync(index, "utf8")) as { id: string; kind: string; tier?: number; names: string[] }[];
   return items.filter((i) => i.kind === "fn" && i.tier === 1).map((i) => ({ name: i.id.slice(3), names: i.names }));
+}
+
+const IDENT = /^[A-Za-z][A-Za-z0-9_]*$/;
+/** Giac's help entries in order, each with its names as the index generator keeps them (tools/find-index/generate.mjs: typeable
+ *  names, an all-capital spelling of another one dropped); the first is the Find id's name. */
+function helpEntries(aide: string): string[][] {
+  const out: string[][] = [];
+  for (const line of aide.split("\n")) {
+    if (!line.startsWith("# ")) continue;
+    const names = line.slice(2).trim().split(/\s+/).filter((n) => IDENT.test(n));
+    out.push(names.filter((n) => !(n === n.toUpperCase() && /[A-Z]/.test(n) && names.some((m) => m !== n && m.toUpperCase() === n))));
+  }
+  return out;
+}
+
+/**
+ * G111: the census's functions: Find's tier-1 ones (tier1) and those of the exclude groups find/functions.yaml's `census` names
+ * (left out of the index, run all the same, so an upstream fix shows), in the order of Giac's help, as the index holds them: the
+ * order decides what one input leaves for the next on an engine (run.ts census).
+ */
+export function censusEntries(repo: string, aide: string): Entry[] {
+  const YAML = createRequire(join(repo, "app/package.json"))("yaml") as { parse: (s: string) => unknown };
+  const fns = (YAML.parse(readFileSync(join(repo, "find/functions.yaml"), "utf8")) ?? {}) as { exclude?: Record<string, string[]>; census?: string[] };
+  const help = helpEntries(aide);
+  // an entry's place: the first help entry whose first name it is (the Find id's name)
+  const at = new Map<string, number>();
+  help.forEach((names, k) => {
+    if (names[0] !== undefined && !at.has(names[0])) at.set(names[0], k);
+  });
+  const left: Entry[] = [];
+  for (const group of fns.census ?? []) {
+    for (const n of fns.exclude?.[group] ?? []) {
+      const k = at.get(n);
+      if (k === undefined) throw new Error(`find/functions.yaml census group ${group}: no Giac help entry named first ${n}`);
+      left.push({ name: n, names: help[k]!, leftOut: group });
+    }
+  }
+  const index = tier1(repo);
+  const pos = (e: Entry): number => at.get(e.name) ?? Number.MAX_SAFE_INTEGER;
+  const out = [...index, ...left].map((e, i) => ({ e, i })).sort((a, b) => pos(a.e) - pos(b.e) || a.i - b.i).map((x) => x.e);
+  // the index's own entries keep their order
+  const kept = out.filter((e) => !e.leftOut);
+  if (kept.some((e, i) => e !== index[i])) throw new Error("census entries: the left-out functions moved the index's order");
+  return out;
 }
 
 /** Giac's help text from the pinned tarball (tools/find-index/state.mjs; PASCALINE_DL_DIR, default the main checkout's cache). */
@@ -58,19 +105,30 @@ export interface Plan {
   samples: Sample[];
   /** Entries without a sample, with the reason. */
   none: { name: string; why: string }[];
+  /** G111: the functions left out of Find's index that the census runs, with their exclude group. */
+  leftOut: { name: string; group: string }[];
 }
 
 export function plan(entries: readonly Entry[], aide: string, only?: ReadonlySet<string>): Plan {
   const ex = helpExamples(aide);
   const samples: Sample[] = [];
   const none: Plan["none"] = [];
+  const leftOut: Plan["leftOut"] = [];
   for (const e of entries) {
     if (only && !only.has(e.name)) continue;
+    if (e.leftOut) leftOut.push({ name: e.name, group: e.leftOut });
     const s = samplesOf(e.name, e.names, ex.get(e.name) ?? []);
     if ("none" in s) none.push({ name: e.name, why: s.none });
     else samples.push(...s);
   }
-  return { samples, none };
+  return { samples, none, leftOut };
+}
+
+/** G111: the census line of the functions left out of Find, by exclude group (`167 left out of Find: graphics 103, …`). */
+export function leftOutLine(left: Plan["leftOut"]): string {
+  const by = new Map<string, number>();
+  for (const l of left) by.set(l.group, (by.get(l.group) ?? 0) + 1);
+  return `${left.length} left out of Find${left.length ? `: ${[...by].map(([g, n]) => `${g} ${n}`).join(", ")}` : ""}`;
 }
 
 export function pythonFor(repo: string, mainCheckout: string): string {

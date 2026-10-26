@@ -20,7 +20,9 @@ const functionsOf = (line: string): string[] => [...new Set((known.findings[line
 
 describe.skipIf(!existsSync(indexFile) && !required)("G111 functions left out of Find", () => {
   const items = existsSync(indexFile) ? (JSON.parse(readFileSync(indexFile, "utf8")) as IndexItem[]) : [];
-  const names = new Set(items.filter((it) => it.kind === "fn").flatMap((it) => [it.id.slice(3), ...it.names]));
+  // Giac's commands: every function's id, and the names of the tier-1 ones (a curated item may take a word as its own name:
+  // fn:par answers to "parallel")
+  const names = new Set(items.filter((it) => it.kind === "fn").flatMap((it) => [it.id.slice(3), ...(it.tier === 1 ? it.names : [])]));
 
   it("reads the census's lines (F90 103 functions, F92 53, F94 9)", () => {
     expect(functionsOf("F90").length).toBe(103);
