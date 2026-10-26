@@ -10,7 +10,7 @@ import { loadNodeGiac } from "../../../app/src/engine/nodeGiac.ts";
 import { defaultHomeSettings, pasdegCommand, precisionFacts, type HomeResult } from "../../../app/src/engine/homeEval.ts";
 import { markOf, ZERO_VALUE, type ComplexValue } from "../../../app/src/engine/format.ts";
 import { rationalValue } from "../../../app/src/engine/numeric.ts";
-import { EXACT_DIGITS, EXACT_HI, exactReading } from "./exact.ts";
+import { EXACT_DIGITS, EXACT_HI, exactReading, listTypeOf } from "./exact.ts";
 import { casMark } from "../../../app/src/goldenRun.ts";
 import { onNumbers } from "./classify.ts";
 import { defaultCasSettings } from "../../../app/src/engine/types.ts";
@@ -150,7 +150,8 @@ function view(job: Job): Omit<Answer, "left"> & { defs: DefChange[] } {
     return q ? { ...base, value: { re: q.v, im: ZERO_VALUE }, mark: "=" } : { ...base, mark: "=" };
   }
   if (m) return { ...base, mark: m.mark };
-  const v = onNumbers(job.giac) ? exactOf(r.text) : null;
+  // R80f1: a list-type answer is shown in braces, which Giac would read as a set
+  const v = onNumbers(job.giac) ? exactOf(listTypeOf(r.text)) : null;
   if (!v) return base;
   if ("items" in v) return { ...base, items: v.items };
   return { ...base, ...v.scalar };

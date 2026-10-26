@@ -7,7 +7,7 @@ import { EngineHost } from "./host.ts";
 import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { formatConfirmed } from "./format.ts";
+import { formatConfirmed, markOf } from "./format.ts";
 import { bracesOf } from "./giacPrint.ts";
 import { homeItem } from "../state/results.ts";
 import { copyFull } from "../clipboard/text.ts";
@@ -134,6 +134,21 @@ describe.skipIf(!giacAvailable())("G109 on the real engine", () => {
     expect(r.display).not.toBe(bracesOf(r.full));
     expect(r.display.startsWith("{")).toBe(true);
     expect(copyFull({ latex: "", status: "done", text: r.display, ...homeItem(r, false) })).toBe(r.display);
+  });
+
+  // R80f1 (run 251's audit): a CAS float result of Giac's list type gets its items, each with its own mark, as a [ ] vector's
+  it("gives a CAS float list-type result its items, each with a mark, as a vector's", () => {
+    const marks = (input: string) => {
+      const items = cas(input).numeric?.items ?? [];
+      return items.map((it) => `${it.display} ${markOf(precisionFacts(it), { format: "STD", digits: defaultCasSettings.digits })?.mark ?? "none"}`);
+    };
+    // Ci(1) = 0.337403922900968…, Ci(2) = 0.422980828774865… (no MPFR path: ⚠, as for the vector)
+    expect(marks("evalf(Ci(list[1,2]))")).toEqual(marks("evalf(Ci([1,2]))"));
+    expect(marks("evalf(Ci(list[1,2]))")).toHaveLength(2);
+    expect(marks("evalf(Ci(list[1,2]))")[0]).toMatch(/^0\.337403922901 /);
+    // 1.5 and 2 are exact numbers made floats: each item ≈
+    expect(marks("approx(list[3/2,2])")).toEqual(["1.5 ≈", "2 ≈"]);
+    expect(marks("list[1.5,2]*1.0")).toEqual(marks("[1.5,2]*1.0"));
   });
 
   it("guards: a vector and a matrix show as before", () => {
