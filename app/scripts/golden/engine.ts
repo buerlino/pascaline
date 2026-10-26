@@ -28,9 +28,9 @@ export function stageFlags(): void {
   // G102: ctx-canary.ts sets each of bridge-1's fields and reads it back with Giac's own getter (needs the engine);
   // G92: assume-canary.ts, raw Giac still leaves the assumptions assumed.ts puts back (needs the engine);
   // G75: tanh-test.ts (needs the engine) and patch-canary.ts (the tarball) for patch 0003; G60: mpfr-pi-test.ts, 0005;
-  // G96: reim-test.ts, 0006;
+  // G96: reim-test.ts, 0006; G111: support-test.ts, 0007 and 0008;
   // G77: canaries.mjs (S17's workaround rows on the engine) and fetch-test.mjs (the pin's .dsc check, no network)
-  const runs = ["flags-canary.ts", "ctx-canary.ts", "assume-canary.ts", "tanh-test.ts", "mpfr-pi-test.ts", "reim-test.ts", "patch-canary.ts", "canaries.mjs", "fetch-test.mjs"].map((f) =>
+  const runs = ["flags-canary.ts", "ctx-canary.ts", "assume-canary.ts", "tanh-test.ts", "mpfr-pi-test.ts", "reim-test.ts", "support-test.ts", "patch-canary.ts", "canaries.mjs", "fetch-test.mjs"].map((f) =>
     spawnSync(process.execPath, [`${root}tests/engine/${f}`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 120_000 }),
   );
   const out = runs.map((r) => `${r.stdout}${r.stderr}`.trim().split("\n").slice(-3).join(" | ")).join(" | ");
