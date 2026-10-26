@@ -380,10 +380,11 @@ if [[ $engine_managed -eq 1 ]]; then
 fi
 
 # The worker's worktree, fresh from phase-1 or resumed from the branch's last commit.
+resumed=0
 if git show-ref --verify --quiet "refs/heads/$branch"; then
   existing="$(git worktree list --porcelain | awk -v b="refs/heads/$branch" '/^worktree /{w=$2} $0=="branch "b{print w}')"
   if [[ -n "$existing" ]]; then wt="$existing"; else git worktree add "$wt" "$branch" >/dev/null; fi
-  runlog "resume $branch in $wt"
+  runlog "resume $branch in $wt"; resumed=1
 else
   git worktree add "$wt" -b "$branch" phase-1 >/dev/null
 fi
@@ -516,21 +517,21 @@ resolve_audit_model() {
 
 # Round 0: the worker (or, with --no-worker, the merge of phase-1 into the branch).
 rounds=0
-if [[ $nowork -eq 0 ]]; then
-  run_agent "pl-$n-$agent" "$run/worker-0.log" "$agent" "$model" "$effort" "$bundle" "$worker_prompt" "${worker_tools[@]}"
-  log "pipeline #$n $id: worker done, $(git -C "$wt" log -1 --format=%h) — $(tail -n 1 "$run/worker-0.log" | cut -c1-120)"
-else
-  # Review-only: bring phase-1 into the branch first; a conflict is a fix round for the agent.
-  log "pipeline #$n $id: review-only (--no-worker); merging phase-1 into $branch"
+# A38: bring phase-1 into the branch (a branch that already contains it is left alone); a conflict is a resolve round for the agent.
+# Sets merge_conflicts=1 when a resolve round ran; ends the run when it fails.
+merge_phase1() {
+  merge_conflicts=0
+  git -C "$wt" merge-base --is-ancestor phase-1 HEAD && return 0
+  log "pipeline #$n $id: merging phase-1 into $branch"
   if ! git -C "$wt" merge --no-edit --signoff phase-1 > "$run/premerge.log" 2>&1; then
-    conflicts="$(git -C "$wt" diff --name-only --diff-filter=U)"
+    local conflicts; conflicts="$(git -C "$wt" diff --name-only --diff-filter=U)"
     if [[ -z "$conflicts" ]]; then
       git -C "$wt" merge --abort >/dev/null 2>&1 || true
       die "merge of phase-1 into $branch failed without conflicts: $(tail -n 1 "$run/premerge.log")"
     fi
     { echo "## merging phase-1 into $branch conflicts in:"; echo "$conflicts"; echo
       while IFS= read -r f; do echo "### $f"; grep -nE '^(<<<<<<<|=======|>>>>>>>)' "$wt/$f" | head -n 40; done <<<"$conflicts"; } > "$run/fail-1.txt"
-    rounds=1
+    merge_conflicts=1
     run_agent "fix-$n-1" "$run/fix-1.log" "$agent" "$model" "$effort" "$run/fail-1.txt" "You are $agent on branch $branch in your own worktree, a merge of phase-1 is in progress with conflicts (files and conflict markers on stdin) for package $id. Resolve every conflict keeping both sides' intent, git add the files and finish the merge with git commit -s (and your model's trailer). Run the typecheck. Reply in at most three lines." "${worker_tools[@]}"
     if git -C "$wt" rev-parse -q --verify MERGE_HEAD >/dev/null || [[ -n "$(git -C "$wt" diff --name-only --diff-filter=U)" ]]; then
       git -C "$wt" merge --abort >/dev/null 2>&1 || true
@@ -538,6 +539,16 @@ else
     fi
     log "pipeline #$n $id: conflicts with phase-1 resolved by $agent"
   fi
+}
+
+if [[ $nowork -eq 0 ]]; then
+  # A38: a resumed branch gets phase-1 first, as --no-worker's does
+  [[ $resumed -eq 0 ]] || merge_phase1
+  run_agent "pl-$n-$agent" "$run/worker-0.log" "$agent" "$model" "$effort" "$bundle" "$worker_prompt" "${worker_tools[@]}"
+  log "pipeline #$n $id: worker done, $(git -C "$wt" log -1 --format=%h) — $(tail -n 1 "$run/worker-0.log" | cut -c1-120)"
+else
+  # Review-only: bring phase-1 into the branch first; a conflict is a fix round for the agent.
+  merge_phase1; rounds=$merge_conflicts
 fi
 if [[ -z "$(git -C "$wt" log --oneline "phase-1..HEAD")" ]]; then
   log "pipeline #$n $id: NOT MERGED (no commits on $branch)"; echo "RESULT #$n $id: NOT MERGED (no commits; worktree $wt kept)"; exit 1

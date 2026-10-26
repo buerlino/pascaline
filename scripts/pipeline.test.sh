@@ -387,5 +387,33 @@ out="$(cd "$sb4" && PATH="$sb4/bin:$PATH" GIAC_OUT="$sb4/engine" PASCALINE_REDFI
 grep -q 'NOT MERGED' <<<"$out" || fail "A36: a passing new test does not fail the run: $out"
 grep -qs 'checks failed: red-first (every new test passes on phase-1)' "$sb4"/.tasks/*/fail-1.txt || fail "A36: fail-1.txt lacks the red-first line"
 
+# A38: a resumed branch behind phase-1 gets phase-1 merged in before the worker starts; a conflict goes to the resolve round; a branch that has it is left alone
+sb6="$tmp/sb6"; mkdir -p "$sb6/bin" "$sb6/tools" "$sb6/docs/shifts" "$sb6/app/node_modules/x"; git init -q -b main "$sb6"
+cp "$sb/tools/devlock.sh" "$sb6/tools/"; cp "$sb/bin/npm" "$sb6/bin/"; : > "$sb6/docs/shifts/brief.md"; echo t > "$sb6/app/keep"; echo base > "$sb6/conf.txt"
+cat > "$sb6/bin/claude" <<'STUB'
+#!/bin/sh
+case "$*" in
+  *"--agent sofia"*) echo APPROVED;;
+  *"merge of phase-1 is in progress"*) [ -z "$SB_NORESOLVE" ] || { echo unresolved; exit 0; }; echo resolved > conf.txt; git add conf.txt; git -c user.name=t -c user.email=t@t commit -qm resolve; echo resolved;;
+  *) echo "worker saw $(git log --oneline | wc -l) commits, p1.txt=$(cat p1.txt 2>/dev/null)" > seen.txt; echo w >> w.txt; git add -A; git -c user.name=t -c user.email=t@t commit -qm work; echo done;;
+esac
+STUB
+chmod +x "$sb6/bin/claude"; git -C "$sb6" add -A; gc "$sb6" init; git -C "$sb6" branch phase-1
+sb6run() { (cd "$sb6" && PATH="$sb6/bin:$PATH" GIAC_OUT="$sb6/engine" "$@"); }
+sb6run "$script" ron "x" --id P0 --branch p1/p0 --checks none --no-merge >/dev/null 2>&1   # creates the phase-1 worktree
+p1wt="$sb6/.claude/worktrees/phase-1"
+git -C "$sb6" branch p1/behind phase-1; git -C "$sb6" branch p1/uptodate phase-1; git -C "$sb6" branch p1/conflict phase-1
+echo 1 > "$p1wt/p1.txt"; git -C "$p1wt" add p1.txt; gc "$p1wt" "later merge"
+git -C "$sb6" branch p1/uptodate2 phase-1
+echo phaseside > "$p1wt/conf.txt"; git -C "$p1wt" add conf.txt; gc "$p1wt" "phase edit"
+out="$(sb6run "$script" ron "x" --id P1 --branch p1/behind --checks none --no-merge 2>&1)"
+grep -q 'merging phase-1 into p1/behind' "$sb6/.coord/log.md" || fail "A38: a resumed branch behind phase-1: no 'merging phase-1 into' log line: $out"
+git -C "$sb6" show p1/behind:seen.txt 2>/dev/null | grep -q 'p1.txt=1' || fail "A38: the worker did not start on a branch with phase-1 merged in: $out"
+git -C "$sb6" merge-base --is-ancestor phase-1 p1/behind || fail "A38: the resumed branch lacks phase-1 after the run"
+out="$(sb6run "$script" ron "x" --id P2 --branch p1/uptodate2 --checks none --no-merge 2>&1)"
+[[ "$(git -C "$sb6" log --merges --format=%s p1/uptodate2 | wc -l)" -eq 0 ]] || fail "A38: a branch containing phase-1 got a merge commit: $out"
+out="$(sb6run "$script" ron "x" --id P3 --branch p1/conflict --checks none --no-merge 2>&1)"
+grep -q 'conflicts with phase-1 resolved by ron' "$sb6/.coord/log.md" && [[ "$(git -C "$sb6" show p1/conflict:conf.txt)" == resolved ]] || fail "A38: a conflict on resume does not go to the resolve round: $out"
+
 [[ $fails -eq 0 ]] || { echo "pipeline.test.sh: $fails failure(s) in $count packages" >&2; exit 1; }
 echo "pipeline.test.sh: ok ($count packages)"
