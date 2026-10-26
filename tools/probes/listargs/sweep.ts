@@ -15,7 +15,7 @@ const REDUCE = ["3", "1", "4", "2", "5"];
 
 export type Verdict =
   | { hit: true; why: string }
-  | { hit: false; why: "maps" | "data" | "reduces" | "varies" | "none" };
+  | { hit: false; why: "maps" | "data" | "reduces" | "varies" | "elements" | "none" };
 
 const error = (t: string): boolean => t.startsWith("GIAC_ERROR") || t.includes("Error:");
 const NUMBER_TYPES = new Set(["integer", "rational", "real", "complex"]);
@@ -38,11 +38,14 @@ export function verdict(ev: (s: string) => string, f: string, takesList: boolean
     if (error(asList)) continue;
     // a clock (monotonic, time) answers each call anew, with srand or not: nothing to compare
     if (run(`${f}(list[${args}])`) !== asList) return { hit: false, why: "varies" };
-    const each = run(`list[${s.map((x) => `${f}(${x})`).join(",")}]`);
-    if (asList === each) {
+    // per element: the answer is the elements' values, as Giac's list type or as a plain vector (arg(list[1,2]) = [0,0])
+    const elems = s.map((x) => `${f}(${x})`).join(",");
+    if (asList === run(`list[${elems}]`) || asList === run(`[${elems}]`)) {
       maps = true;
       continue;
     }
+    // the list's elements themselves (op, feuille): what the list holds, whichever way f reads it
+    if (asList === run(args)) return { hit: false, why: "elements" };
     const asArgs = run(`${f}(${args})`);
     if (!error(asArgs) && asArgs === asList) return { hit: true, why: `${f}(list[${args}]) = ${f}(${args}) = ${asList}` };
     // an exact call Giac leaves unevaluated prints its argument as typed (LambertW(list[1,2]), LambertW(1,2)): its value decides
@@ -51,7 +54,8 @@ export function verdict(ev: (s: string) => string, f: string, takesList: boolean
     if (!error(numArgs) && numArgs === numList && numList !== asList) {
       return { hit: true, why: `evalf(${f}(list[${args}])) = evalf(${f}(${args})) = ${numList}` };
     }
-    if (!asList.includes("[") && NUMBER_TYPES.has(ev(`type(evalf(${asList}))`).trim())) {
+    // one number, not a sequence: evalf(1,2) would be evalf of 1 to 2 digits (op(list[1,2]) = 1,2 is the list's elements)
+    if (!asList.includes("[") && ev(`size([${asList}])`).trim() === "1" && NUMBER_TYPES.has(ev(`type(evalf(${asList}))`).trim())) {
       return { hit: true, why: `${f}(list[${args}]) = ${asList}, one number` };
     }
   }

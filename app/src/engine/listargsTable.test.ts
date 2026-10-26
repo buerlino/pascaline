@@ -48,3 +48,16 @@ describe.skipIf(!hasIndex || !giacAvailable())("G112 the list-as-arguments table
     }
   });
 });
+
+describe.skipIf(!giacAvailable())("G112 the probe's verdict (fix round 2)", () => {
+  it("a sequence is not one number, and a plain vector of the elements' values maps", async () => {
+    const { giac } = await loadNodeGiac();
+    const ev = (s: string): string => giac.eval(s);
+    // op(list[1,2]) = 1,2: evalf(1,2) is evalf of 1 to 2 digits, a real; the answer is the list's elements
+    expect(verdict(ev, "op", false)).toEqual({ hit: false, why: "elements" });
+    expect(verdict(ev, "feuille", false)).toEqual({ hit: false, why: "elements" });
+    // arg(list[1,2]) = [0,0], not list[0,0]: still one value per element
+    expect(verdict(ev, "arg", false)).toEqual({ hit: false, why: "maps" });
+    expect(verdict(ev, "Psi", false).hit).toBe(true);
+  });
+});

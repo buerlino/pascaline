@@ -524,3 +524,5 @@ cases:
   - { id: "g112-keep-mean", input: "mean(list[1,2,4])", oracle: "F(7,3)", expect: "2.33333333333", mark: "≈", source: "oracle", note: "guard: mean of one list (its help takes a list: the data class)" }
   - { id: "g112-keep-max", input: "max(list[1,5,2])", oracle: "F(5)", expect: "5", mark: "=", source: "derived", note: "guard: max of one list" }
   - { id: "g112-keep-min", input: "min(list[4,1,2])", oracle: "F(1)", expect: "1", mark: "=", source: "derived", note: "guard: min of one list" }
+  - { id: "g112-keep-op", input: "op(list[1,2])", expect: "1,2", source: "derived", note: "guard (G112 fix round 2): op of a list is the list's elements, the right meaning; the probe's one-number test read the sequence 1,2 as evalf(1,2) and refused it" }
+  - { id: "g112-keep-arg", input: "arg(list[1+i,2])[0]", oracle: "pi/4", expect: "0.785398163397", mark: "≈", source: "oracle", note: "guard (G112 fix round 2): arg maps a list per element but answers a plain vector [pi/4,0], which the probe's per-element test compared with list[…] as text and refused; its first value, arg(1+i)" }

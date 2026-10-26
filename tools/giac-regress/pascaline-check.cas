@@ -361,6 +361,8 @@ Digits:=40:; pc("g112-keep-mean",'(mean(list[1,2,4]))',(233333333333/10^11),5/10
 Digits:=40:; pc("g112-keep-max",'(max(list[1,5,2]))',5,5/10^12);
 // g112-keep-min (home.yaml, derived)
 Digits:=40:; pc("g112-keep-min",'(min(list[4,1,2]))',1,5/10^12);
+// g112-keep-arg (home.yaml, oracle)
+Digits:=40:; pc("g112-keep-arg",'(arg(list[1+i,2])[0])',(785398163397/10^12),5/10^13);
 // prec-20-sqrt2 (precision.yaml, oracle)
 Digits:=40:; pc("prec-20-sqrt2",'(sqrt(2))',(14142135623730950488/10^19),5/10^20);
 // prec-20-third (precision.yaml, oracle)
