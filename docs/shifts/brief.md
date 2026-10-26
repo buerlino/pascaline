@@ -4,24 +4,24 @@
 **Every package runs through `scripts/pipeline.sh`** (rules section 4): by day the owner starts one package at a time (`scripts/pipeline.sh <agent> "<ID>" --model <m>`, the table gives agent and model) and reads the RESULT line; at night `scripts/night.sh` runs the queue of section 0c. Nobody starts a worker or merges another way (CLAUDE.md). The standing rules in [rules.md](rules.md) apply; where the two differ, this brief wins. Each open package is one file in [packages/](packages/), in the shape the pipeline bundles (section 2). The shape of a package file: the heading `### <agent>, <ID>: <title>, branch \`p1/<agent>-<slug>\``; **Lane** (night-safe = no device, no APK, no eye on the UI; night (Tab One) = the plugged-in Tab One only, P23; day = the owner tries it or it changes the pipeline); **Starts when**; **Read** (repo paths get bundled, first 400 lines; the big shared docs by bare name and section); the steps; **Done when** (lines an auditor checks in the diff).
 
 ## 0. State and the path
-`phase-1` at `4e9df93` on 2026-10-25, after the tenth night ([2026-10-25-night-report.md](2026-10-25-night-report.md)): runs 231–240 merged G104, G92, G93, G105f2, G110f1 and G108; Opus passes 72–75 found no regression. The day of 2026-10-25 merged A37, A25 and A36, ran the Tab One core run (device run 904: 53 of 53) and the flake census (run 241: no flake). G109 (`p1/gorge-listtype`, `0010a1e`) is 79 commits behind phase-1: its step 0 merges phase-1 first. Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
+`phase-1` at `fb50120` on 2026-10-26, after the eleventh night ([2026-10-26-night-report.md](2026-10-26-night-report.md)): runs 246–254 merged R81 (F99), R74f1, G109, R74f2 (F100), G111 and R80f1 (R80); Opus passes 76–81 found no regression. G112 (`p1/gorge-g112`, `642318e`, worktree `pl-254-g112`) is unmerged after two fix rounds: G112f1 (Opus pass 81's FIX line, `.coord/log.md` 07:06) runs on the same branch and merges both. Every merge: `git log --merges --oneline phase-1`; the audits are in the Opus passes' defaults (decisions.md, older ones in [archive/decisions-2026-10.md](../archive/decisions-2026-10.md)) and the night reports ([archive/shifts/](../archive/shifts/)).
 
 ### The path: the core freeze (owner, 2026-10-21; decisions.md "P23")
 **Why.** Since 2026-10-14 phase-1 has had about two fix commits for every feature commit (`git log --no-merges` by `feat`/`fix`: 84 against 188, [freeze report](../archive/shifts/2026-10-21-sandra-freeze-report.md) section 1). Many are fix rounds before a merge, but 45 of 208 merges were follow-up packages (`<ID>f1`, `f2`) for work already merged (`git log --merges --since=2026-10-14 --format=%s phase-1`): merged changes break things too often. The open bugs are of two kinds. Most come from our layer guessing at Giac's printed text (settings, names, stores, bound variables, the kind of a number): the structured bridge (G85) removes their cause. The rest are precision edge cases inside Giac on extreme inputs. So: no new features until the core holds; the bridge first; "holds" is a fixed list, not a feeling; extreme inputs run as a background stream.
 
-**What "holds" means:** decisions.md "P23" (2): every active case of [tests/core/core.yaml](../../tests/core/core.yaml) passes on desktop (R74) and on the night's device (A32, A33; the same one both nights) two nights in a row, and the owner's [morning check](../../tests/core/MORNING.md) on that device finds nothing on both mornings. The Tab One core run and the flake census come first (owner, 2026-10-24; both done 2026-10-25). **The count:** the 2026-10-25 morning check failed on F99 (the system keyboard on a return from another app; all 15 cases passed), so it starts again. Tonight, on the Fairphone 6 (`ANDROID_SERIAL=4d42e62f`), is night 1 if R81 (F99) merges and the 2026-10-26 morning is clean. 3 cases need Find (R4a).
+**What "holds" means:** decisions.md "P23" (2): every active case of [tests/core/core.yaml](../../tests/core/core.yaml) passes on desktop (R74) and on the night's device (A32, A33; the same one both nights) two nights in a row, and the owner's [morning check](../../tests/core/MORNING.md) on that device finds nothing on both mornings. The Tab One core run and the flake census come first (owner, 2026-10-24; both done 2026-10-25). **The count:** the 2026-10-25 morning check failed on F99 (the system keyboard on a return from another app), so it started again. The night into 2026-10-26 on the Fairphone 6 (`ANDROID_SERIAL=4d42e62f`) was green with R81 merged (CORE 57/57 on desktop, CORE DEVICE 56/56 on `446ed9f`): it is night 1 if the 2026-10-26 morning check is clean. Night 2 is the next night on the same phone. 3 cases need Find (R4a).
 
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find (R4a, after G111: decisions.md "Owner answers of 2026-10-25"; three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **A38** (a resumed branch merges phase-1 first; G109's step 0 covers tonight without it), then **A39** (the gate judges as the pipeline does), annabell, Sonnet.
+1. **G112f1** first (gorge, Opus: `scripts/pipeline.sh gorge "<pass 81's FIX prompt>" --id G112f1 --branch p1/gorge-g112 --model opus --audit-model auto`), then **A41** (night.sh runs the device step after every pass), then **A38** (a resumed branch merges phase-1 first), annabell, Sonnet; both change a script the night runs on.
 2. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); **A40** (a known core case that passes on the device); the library replay and A20 again (G82 is merged; no package).
-3. When a slot is free (process, nothing users see): **A19** (S16 waits for it), **A18**, **A22** → **A26**, **A27**, **A30**.
+3. When a slot is free (process, nothing users see): **A18**, **A22** → **A26**, **A27**, **A30**.
 4. Every morning: the owner's check (MORNING.md, on the night's device, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
 
-**At night, the core lane** (section 0c's queue): **G112** (Opus pass 79's FIX: one list read as a function's arguments, at the cause, F103; R80 merged as R80f1 `bf57251`; R81's device check is the morning check). Every merge runs the core list (R74), and the night's device runs it after each Opus pass (A33).
+**At night, the core lane** (section 0c's queue) holds no package: G112 (F103, one list read as a function's arguments, at the cause) goes by day as G112f1 above; its refusal rule for constructors (Opus pass 80) goes in through the branch, with F107. So the night runs process steps only (owner, 2026-10-26): A39, A19, then S16 (steps 125a, 125b, 130). Every merge runs the core list (R74), and the night's device runs it after each Opus pass (A33).
 
-**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): F101 and F104 (before R4a, no package); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
+**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): F101 and F104 → **G113** (after P23's night 2, before R4a; owner, 2026-10-26); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
 **Why this order:** the list first, so nothing merges blind; silent wrong numbers next, by reach; the bridge before the readers it would replace; the device run once its harness exists. R15c3 and R15c4 move behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -29,12 +29,14 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
+| [A41](packages/A41.md) | night.sh runs the device step after every Opus pass | annabell, Sonnet | day | now | ~0.1 d |
 | [A38](packages/A38.md) | A resumed branch merges phase-1 before its worker starts | annabell, Sonnet | day | now | ~0.25 d |
-| [A39](packages/A39.md) | `npm run gate` judges e2e and vitest as the pipeline does | annabell, Sonnet | day | now | ~0.25 d |
+| [A39](packages/A39.md) | `npm run gate` judges e2e and vitest as the pipeline does | annabell, Sonnet | night (125a) | now | ~0.25 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A40](packages/A40.md) | A known core case that passes on the device is reported | annabell, Sonnet | day | now | ~0.1 d |
-| [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | day | now | ~0.25 d |
+| [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | night (125b) | now | ~0.25 d |
+| [G113](packages/G113.md) | A probability off the integers is 0; negbinomial_icdf exact (F101, F104) | gorge, Opus | night-safe | P23's night 2 | ~0.5 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | now | ~0.25 d |
 | [A22](packages/A22.md) | The docs check knows ids, live notes and source sizes | annabell, Sonnet | day | now | ~0.25 d |
 | [A26](packages/A26.md) | docs/README covers every live doc | annabell, Sonnet | day | A22 | ~0.25 d |
@@ -62,6 +64,8 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
+| 125a | [A39](packages/A39.md) `npm run gate` judges e2e and vitest as the pipeline does | annabell, Sonnet | `p1/annabell-gatetiming` | — | 45 min |
+| 125b | [A19](packages/A19.md) Giac's own test suite as an engine-gate stage | annabell, Sonnet | `p1/annabell-giaccheck` | — | 1 h |
 | 130 | [S16](packages/S16.md) the hardening pass, run as `scripts/pipeline.sh pass <n> "G61 G62 G63 G64 A19" "S16: docs/shifts/packages/S16.md"` | sofia, Opus | — | A19 | 1 h + fixes |
 | 135 | The flake census (A37): `scripts/pipeline.sh flakes <n>`, when no core step can start, before the last pass; once per night until the freeze ends | — | — | A37 | 1 h |
 | 190 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
