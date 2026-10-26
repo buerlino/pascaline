@@ -79,6 +79,8 @@ const RAW_WORDS: readonly [RegExp, string][] = [
 export function onNumbers(giac: string): boolean {
   for (const m of giac.matchAll(/[A-Za-z_][A-Za-z0-9_]*/g)) {
     if (/^(pi|e_|i_|inf|pasdeg)$/.test(m[0])) continue;
+    // R80f1: Giac's list type, `list[1,2]` (typed braces), is no free name
+    if (m[0] === "list" && giac.charAt(m.index + 4) === "[") continue;
     if (!/^\s*\(/.test(giac.slice(m.index + m[0].length))) return false;
   }
   return true;

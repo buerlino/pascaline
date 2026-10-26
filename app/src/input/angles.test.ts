@@ -35,12 +35,12 @@ describe("R64: every angle the user types carries pasdeg", () => {
     ["\\operatorname{polar\\_point}\\left(2,30\\right)", "polar_point(2,pasdeg*30)"],
     ["\\operatorname{rectangular\\_coordinates}\\left(r,t\\right)", "rectangular_coordinates(r,pasdeg*t)"],
     // R64f1: the one-list form takes its angle element times pasdeg; a list it cannot see into (a name, a matrix)
-    // is converted where it is evaluated, one point or a list of points
-    ["\\operatorname{rectangular\\_coordinates}\\left(\\left\\{2,30\\right\\}\\right)", "rectangular_coordinates([2,pasdeg*30])"],
-    ["\\operatorname{rectangular\\_coordinates}\\left(\\left\\{2+1,\\frac{30}{2}\\right\\}\\right)", "rectangular_coordinates([2+1,pasdeg*(30/2)])"],
+    // is converted where it is evaluated, one point or a list of points; typed braces are Giac's list type (R80)
+    ["\\operatorname{rectangular\\_coordinates}\\left(\\left\\{2,30\\right\\}\\right)", "rectangular_coordinates(list[2,pasdeg*30])"],
+    ["\\operatorname{rectangular\\_coordinates}\\left(\\left\\{2+1,\\frac{30}{2}\\right\\}\\right)", "rectangular_coordinates(list[2+1,pasdeg*(30/2)])"],
     // a name may hold a point (A:=[2,30]): only literal elements take the factor in the text (audit R64f1)
-    ["\\operatorname{rectangular\\_coordinates}\\left(\\left\\{ r,t+1\\right\\}\\right)", "rectangular_coordinates(R([r,t+1]))"],
-    ["\\operatorname{rectangular\\_coordinates}\\left(\\left\\{A,B\\right\\}\\right)", "rectangular_coordinates(R([A,B]))"],
+    ["\\operatorname{rectangular\\_coordinates}\\left(\\left\\{ r,t+1\\right\\}\\right)", "rectangular_coordinates(R(list[r,t+1]))"],
+    ["\\operatorname{rectangular\\_coordinates}\\left(\\left\\{A,B\\right\\}\\right)", "rectangular_coordinates(R(list[A,B]))"],
     ["\\operatorname{rectangular\\_coordinates}\\left(L\\right)", "rectangular_coordinates(R(L))"],
     // polar_coordinates and instfreq answer in radians: the angle element of every point, and the result, over pasdeg
     ["\\operatorname{polar\\_coordinates}\\left(1+\\imaginaryI\\right)", "P(polar_coordinates(1+i))"],

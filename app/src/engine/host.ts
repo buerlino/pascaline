@@ -1015,8 +1015,9 @@ export class EngineHost implements FactsHost {
     const builtin = notBuiltin(this.giac);
     const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
     if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn, this.bodiesFor(input))) return fail(enEngine["error.notSquare"], "notSquare");
-    // G111 (F98): one list argument of LambertW and others read as their argument list, refused as in Home.
-    if (listAsArguments(this.giac, asg0 ? asg0.rhs : exactInput, userFn)) return fail(enEngine["error.listAsArguments"], "listAsArguments");
+    // G111 (F98), R80f1: one list argument of LambertW, a distribution and others read as their argument list, refused as in Home.
+    const listRefused = listAsArguments(this.giac, asg0 ? asg0.rhs : exactInput, userFn);
+    if (listRefused) return fail(enEngine[`error.${listRefused}`], listRefused);
     // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.
     if (unaskedPoly(this.giac, "pcasans", asg0 ? asg0.rhs : exactInput, text, userFn)) return fail(enEngine["error.listPlusNumber"], "listPlusNumber");
     if (guarded) {

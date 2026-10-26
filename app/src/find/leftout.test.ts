@@ -24,15 +24,16 @@ describe.skipIf(!existsSync(indexFile) && !required)("G111 functions left out of
   // fn:par answers to "parallel")
   const names = new Set(items.filter((it) => it.kind === "fn").flatMap((it) => [it.id.slice(3), ...(it.tier === 1 ? it.names : [])]));
 
-  it("reads the census's lines (F90 103 functions, F92 53, F94 9)", () => {
+  // R80f1: mlr's typed list is refused since R80 (Giac's error), so it left F94's census line; the strings group still holds it
+  it("reads the census's lines (F90 103 functions, F92 53, F94 8)", () => {
     expect(functionsOf("F90").length).toBe(103);
     expect(functionsOf("F92").length).toBe(53);
-    expect(functionsOf("F94").length).toBe(9);
+    expect(functionsOf("F94").length).toBe(8);
   });
 
   it("holds none of them, nor Giac's debugger", () => {
     expect(items.length).toBeGreaterThan(0);
-    const left = [...functionsOf("F90"), ...functionsOf("F92"), ...functionsOf("F94"), "debug", "interactive_plotode"];
+    const left = [...functionsOf("F90"), ...functionsOf("F92"), ...functionsOf("F94"), "mlr", "debug", "interactive_plotode"];
     expect(left.filter((n) => names.has(n))).toEqual([]);
   });
 

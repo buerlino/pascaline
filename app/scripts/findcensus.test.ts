@@ -11,6 +11,7 @@ import type { Row } from "../../tools/probes/findcensus/run.ts";
 import type { Answer } from "../../tools/probes/findcensus/worker.ts";
 import { casMark } from "../src/goldenRun.ts";
 import { exactReading } from "../../tools/probes/findcensus/exact.ts";
+import { bracesOf, listTypeOf } from "../src/engine/giacPrint.ts";
 import type { GiacValue } from "../src/engine/bridge.ts";
 
 const answer = (o: Partial<Answer>): Answer => ({ ok: true, text: "", left: [], ...o });
@@ -26,7 +27,7 @@ describe("findcensus samples", () => {
     const cases: [string, string][] = [
       ["x-1/6*x^3,x", "x-(1/6)*x^3,x"],
       ["[[1,2],[3,4]]", "[[1,2],[3,4]]"],
-      ["[1,2,3],2", "[1,2,3],2"],
+      ["[1,2,3],2", "list[1,2,3],2"], // braces are Giac's list type (R80)
       ["2,sqrt(2)", "2,sqrt(2)"],
       ["-(x+1)^2", "-(x+1)^2"],
       ["a-(b+c),a-(-b)", "a-(b+c),a-(-b)"],
@@ -154,6 +155,15 @@ describe("findcensus classes", () => {
       expect(classify("erfc", "cas", "erfc([1,2])", a, items).cls).toBe("checked");
     });
   });
+  it("reads a CAS list-type answer shown in braces as Giac's list type again, not a set (R80f1)", () => {
+    expect(listTypeOf("{Ci(1),Ci(2)}")).toBe("list[Ci(1),Ci(2)]");
+    expect(listTypeOf("[{1,2},3]")).toBe("[list[1,2],3]");
+    expect(listTypeOf('{"{a}",1}')).toBe('list["{a}",1]');
+    expect(listTypeOf("[Ci(1),Ci(2)]")).toBe("[Ci(1),Ci(2)]");
+    // the inverse of the CAS view's print, so a change to bracesOf cannot leave the census misreading its results
+    for (const x of ["list[Ci(1),Ci(2)]", "[list[1,2],3]", 'list["{a}",1]', '"a""list[b]"', "list[list[1],[2,list[3]]]", "[Ci(1),Ci(2)]", "list[]"])
+      expect(listTypeOf(bracesOf(x))).toBe(x);
+  });
   it("reads a CAS mark by the golden runner's rule (goldenRun.ts casMark)", () => {
     const facts = { exact: true, reliableDigits: null };
     expect(casMark({ ok: true, text: "-7/3", latex: "", facts } as never, 12)).toEqual({ mark: "=" });
@@ -172,6 +182,9 @@ describe("findcensus classes", () => {
     expect(onNumbers("Ei(1)")).toBe(true);
     expect(onNumbers("sin(pasdeg*x)")).toBe(false);
     expect(onNumbers("Ei([1,2])+pi")).toBe(true);
+    expect(onNumbers("Ci(list[1,2])")).toBe(true);
+    expect(onNumbers("Ci(list(1))")).toBe(true);
+    expect(onNumbers("Ci(list)")).toBe(false);
     expect(rawText("Ei", "Ei(1)", "cas", "Ei(1)")).toBeNull();
     expect(rawText("Airy_Ai", "[Airy_Ai(1),Airy_Ai(2)]", "home", "Airy_Ai([1,2])")).toBe("Airy_Ai( came back unevaluated");
     expect(rawText("binomial_icdf", "binomial_icdf(4,0.5,3.0)", "cas", "binomial_icdf(4,0.5,3)")).toBe("binomial_icdf( came back unevaluated");

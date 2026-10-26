@@ -252,8 +252,8 @@ keys:
     primary: { type: "8" }
     shift:
       insert: "\\left\\{#0\\right\\}"
-      sample: ["\\left\\{1,2,3\\right\\}", "[1,2,3]"]
-      line: { insert: "\\left\\{#0\\right\\}", sample: ["\\left\\{1,2,3\\right\\}", "[1,2,3]"] }
+      sample: ["\\left\\{1,2,3\\right\\}", "list[1,2,3]"]
+      line: { insert: "\\left\\{#0\\right\\}", sample: ["\\left\\{1,2,3\\right\\}", "list[1,2,3]"] }
     alpha: { type: R }
     source: virtual-calc  # r7c3 (shift { }, the list template)
   - { id: d9, row: 6, col: 3, cls: num, label: { primary: "9", shift: "α∞", alpha: S }, primary: { type: "9" },

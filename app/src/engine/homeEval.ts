@@ -641,8 +641,10 @@ export function homeEval(
 
   // G58: past the deadline after the exact steps: refused, not checked for as long again.
   if (late()) return { ...failed(enEngine["error.timeout"], "exact"), error: "timeout" };
-  // G111 (F98): Giac reads one list argument of LambertW and others as their argument list (LambertW([1,2]) = LambertW(1,2)).
-  if (listAsArguments(giac, exactBody, userFn)) return refuse("listAsArguments", "exact");
+  // G111 (F98), R80f1: Giac reads one list argument of LambertW, a distribution and others as their argument list
+  // (LambertW([1,2]) = LambertW(1,2)); negbinomial_icdf answers a list wrongly.
+  const listRefused = listAsArguments(giac, exactBody, userFn);
+  if (listRefused) return refuse(listRefused, "exact");
   // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, no matrix power.
   if (!once && !isTimeout(exactOut) && nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn, fnBody)) return refuse("notSquare", "exact");
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
