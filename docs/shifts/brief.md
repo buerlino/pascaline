@@ -14,14 +14,14 @@
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; R49 → R55, R57, R70; R50e; R53; R12b → R12c → R41; R36, R33, R37, R40; R59; R38a → R38b; R15c4; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find (R4a, after G111: decisions.md "Owner answers of 2026-10-25"; three core cases wait for it: a command by name cannot be keyed today), then units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. **G112f1** first (gorge, Opus: `scripts/pipeline.sh gorge "<pass 81's FIX prompt>" --id G112f1 --branch p1/gorge-g112 --model opus --audit-model auto`), then **A38** (a resumed branch merges phase-1 first), then **A39** (the gate judges as the pipeline does), annabell, Sonnet.
+1. **G112f1** first (gorge, Opus: `scripts/pipeline.sh gorge "<pass 81's FIX prompt>" --id G112f1 --branch p1/gorge-g112 --model opus --audit-model auto`), then **A41** (night.sh runs the device step after every pass), then **A38** (a resumed branch merges phase-1 first), annabell, Sonnet; both change a script the night runs on.
 2. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); **A40** (a known core case that passes on the device); the library replay and A20 again (G82 is merged; no package).
-3. When a slot is free (process, nothing users see): **A19** (S16 waits for it), **A18**, **A22** → **A26**, **A27**, **A30**.
+3. When a slot is free (process, nothing users see): **A18**, **A22** → **A26**, **A27**, **A30**.
 4. Every morning: the owner's check (MORNING.md, on the night's device, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
 
-**At night, the core lane** (section 0c's queue) holds no package: G112 (F103, one list read as a function's arguments, at the cause) goes by day as G112f1 above; its refusal rule for constructors (Opus pass 80) goes in through the branch, with F107. Every merge runs the core list (R74), and the night's device runs it after each Opus pass (A33).
+**At night, the core lane** (section 0c's queue) holds no package: G112 (F103, one list read as a function's arguments, at the cause) goes by day as G112f1 above; its refusal rule for constructors (Opus pass 80) goes in through the branch, with F107. So the night runs process steps only (owner, 2026-10-26): A39, A19, then S16 (steps 125a, 125b, 130). Every merge runs the core list (R74), and the night's device runs it after each Opus pass (A33).
 
-**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): F101 and F104 (before R4a, no package); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
+**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): F101 and F104 → **G113** (after P23's night 2, before R4a; owner, 2026-10-26); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
 **Why this order:** the list first, so nothing merges blind; silent wrong numbers next, by reach; the bridge before the readers it would replace; the device run once its harness exists. R15c3 and R15c4 move behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -29,12 +29,14 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
+| [A41](packages/A41.md) | night.sh runs the device step after every Opus pass | annabell, Sonnet | day | now | ~0.1 d |
 | [A38](packages/A38.md) | A resumed branch merges phase-1 before its worker starts | annabell, Sonnet | day | now | ~0.25 d |
-| [A39](packages/A39.md) | `npm run gate` judges e2e and vitest as the pipeline does | annabell, Sonnet | day | now | ~0.25 d |
+| [A39](packages/A39.md) | `npm run gate` judges e2e and vitest as the pipeline does | annabell, Sonnet | night (125a) | now | ~0.25 d |
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A40](packages/A40.md) | A known core case that passes on the device is reported | annabell, Sonnet | day | now | ~0.1 d |
-| [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | day | now | ~0.25 d |
+| [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | night (125b) | now | ~0.25 d |
+| [G113](packages/G113.md) | A probability off the integers is 0; negbinomial_icdf exact (F101, F104) | gorge, Opus | night-safe | P23's night 2 | ~0.5 d |
 | [A18](packages/A18.md) | The audit sees the behaviour diff | annabell, Sonnet | day | now | ~0.25 d |
 | [A22](packages/A22.md) | The docs check knows ids, live notes and source sizes | annabell, Sonnet | day | now | ~0.25 d |
 | [A26](packages/A26.md) | docs/README covers every live doc | annabell, Sonnet | day | A22 | ~0.25 d |
@@ -62,6 +64,8 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
+| 125a | [A39](packages/A39.md) `npm run gate` judges e2e and vitest as the pipeline does | annabell, Sonnet | `p1/annabell-gatetiming` | — | 45 min |
+| 125b | [A19](packages/A19.md) Giac's own test suite as an engine-gate stage | annabell, Sonnet | `p1/annabell-giaccheck` | — | 1 h |
 | 130 | [S16](packages/S16.md) the hardening pass, run as `scripts/pipeline.sh pass <n> "G61 G62 G63 G64 A19" "S16: docs/shifts/packages/S16.md"` | sofia, Opus | — | A19 | 1 h + fixes |
 | 135 | The flake census (A37): `scripts/pipeline.sh flakes <n>`, when no core step can start, before the last pass; once per night until the freeze ends | — | — | A37 | 1 h |
 | 190 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
