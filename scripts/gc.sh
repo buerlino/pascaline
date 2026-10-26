@@ -61,10 +61,15 @@ act() { if [[ $apply -eq 1 ]]; then "$@"; else echo "would: $*"; fi; }
     [[ -e "$f" ]] || continue; act rm -rf "$f"; echo "- $f"
   done
   echo; echo "## Pruned (engine builds no branch uses; archive folders older than 14 days)"
-  keep=" $(engine_key "$main" phase-1)"
-  while read -r br; do keep+=" $(engine_key "$main" "$br")"; done < <(git for-each-ref --format='%(refname:short)' refs/heads)
+  keep=""; keys_ok=1
+  # a key counts only when git could read the tree: engine_key hides a failing ls-tree (the hash of nothing), and a lost key prunes a build in use
+  for br in phase-1 $(git for-each-ref --format='%(refname:short)' refs/heads); do
+    if git -C "$main" ls-tree -r "$br" -- engine/giac/build-wasm.sh >/dev/null 2>&1 && k="$(engine_key "$main" "$br")" && [[ -n "$k" ]]; then keep+=" $k"
+    else keys_ok=0; echo "- engine key of $br unreadable"; fi
+  done
+  if [[ $keys_ok -eq 0 ]]; then echo "- engine builds (key-*) NOT pruned: a branch's engine key could not be read"; fi
   for e in "$main"/engine/giac/_out/key-*; do
-    [[ -d "$e" ]] || continue
+    [[ -d "$e" && $keys_ok -eq 1 ]] || continue
     k="${e##*/key-}"; [[ "$keep" == *" $k"* ]] && continue
     freed=$((freed + $(kb "$e"))); act rm -rf "$e"; echo "- $e (key of no branch)"
   done
