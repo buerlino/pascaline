@@ -20,7 +20,8 @@ import { enEngine } from "../i18n/enEngine.ts";
 import { lostFloat, lostNumber, throughInfinity, underflow, zeroElements } from "./novalue.ts";
 import { icdfAtEnd, icdfCalls } from "./icdf.ts";
 import { NO_BODIES, nonSquarePower, type Bodies } from "./nonsquare.ts";
-import { POLY_AT, POLY_AT_ANY_DEPTH, listInDistribution, unaskedPoly } from "./polyvec.ts";
+import { POLY_AT, POLY_AT_ANY_DEPTH, unaskedPoly } from "./polyvec.ts";
+import { listAsArguments } from "./listargs.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { principalPowers } from "./powers.ts";
 import { dropAngleFactor, hasAngleFactor } from "../input/angles.ts";
@@ -640,12 +641,12 @@ export function homeEval(
 
   // G58: past the deadline after the exact steps: refused, not checked for as long again.
   if (late()) return { ...failed(enEngine["error.timeout"], "exact"), error: "timeout" };
+  // G111 (F98): Giac reads one list argument of LambertW and others as their argument list (LambertW([1,2]) = LambertW(1,2)).
+  if (listAsArguments(giac, exactBody, userFn)) return refuse("listAsArguments", "exact");
   // G97 (F69): a power, inverse or division of a non-square matrix is Giac's elementwise answer, no matrix power.
   if (!once && !isTimeout(exactOut) && nonSquarePower(giac, exactBody, exactOut, ambiguous, late, exactMs, userFn, fnBody)) return refuse("notSquare", "exact");
   if (isTimeout(exactOut)) return viaFloat("float-timeout");
   if (isError(exactOut)) return viaFloat("float-error");
-  // R80 fix 1 (F95, until G111): a distribution read a list (typed, stored or Ans) as a polynomial.
-  if (listInDistribution(exactBody, exactOut)) return refuse("listInDistribution", "exact");
   // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.
   if (unaskedPoly(giac, ans, exactBody, exactOut, userFn)) return refuse("listPlusNumber", "exact");
 

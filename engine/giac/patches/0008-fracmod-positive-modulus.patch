@@ -1,0 +1,14 @@
+# Upstream: giac 2.1.0 usual.cc _fracmod (and its alias iratrecon). fracmod(41,-2) reaches gen.cc in_fracmod, which calls mpz_sqrt on modulus/2 = -1; GMP aborts on the square root of a negative number, so the wasm trapped (unreachable) and the engine had to restart. A modulus that is an integer <= 0 is refused with a message (fracmod(41,0) already was: Reconstructed denominator is not prime with modulo; fracmod(41,-1) gave 0).
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -7683,6 +7683,10 @@
+     if ( (args.type!=_VECT) || (args._VECTptr->size()!=2))
+       return symbolic(at_fracmod,args);
+     vecteur & v=*args._VECTptr;
++    // Pascaline patch 0008 (G111): the modulus must be a positive integer. in_fracmod (gen.cc) takes the square root of
++    // modulus/2 with mpz_sqrt, which aborts on a negative number: fracmod(41,-2) trapped the wasm.
++    if (is_integer(v[1]) && !is_strictly_positive(v[1],contextptr))
++      return gensizeerr(gettext("fracmod: the modulus must be a positive integer"));
+     return fracmod(v[0],v[1]);
+   }
+   static const char _fracmod_s []="fracmod";

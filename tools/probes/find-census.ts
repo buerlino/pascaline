@@ -14,7 +14,7 @@ import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FINDINGS } from "./findcensus/classify.ts";
-import { aideCas, census, oracleFor, plan, pythonFor, tier1 } from "./findcensus/run.ts";
+import { aideCas, census, censusEntries, leftOutLine, oracleFor, plan, pythonFor } from "./findcensus/run.ts";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const common = spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: repo, encoding: "utf8" }).stdout.trim();
@@ -22,7 +22,8 @@ const mainCheckout = common ? resolve(common, "..") : repo;
 
 const names = process.argv.slice(2);
 const t0 = performance.now();
-const p = plan(tier1(repo), await aideCas(mainCheckout), names.length ? new Set(names) : undefined);
+const aide = await aideCas(mainCheckout);
+const p = plan(censusEntries(repo, aide), aide, names.length ? new Set(names) : undefined);
 const oracles = oracleFor(p.samples, pythonFor(repo, mainCheckout), resolve(repo, "tools/probes/findcensus/oracle.py"));
 const { rows, restarts } = await census(p.samples, oracles, 6000, Number(process.env["WORKERS"] ?? 4));
 const all = names.length > 0 || process.env["ALL"] === "1";
@@ -33,7 +34,7 @@ for (const n of p.none) if (all) console.log(`no sample ${n.name}: ${n.why}`);
 const counts = new Map<string, number>();
 for (const r of rows) counts.set(`${r.view} ${r.cls}`, (counts.get(`${r.view} ${r.cls}`) ?? 0) + 1);
 const line = (v: string): string => [...counts].filter(([k]) => k.startsWith(v)).map(([k, n]) => `${k.slice(v.length + 1)} ${n}`).join(", ");
-console.log(`FIND CENSUS: ${p.samples.length} inputs of ${p.samples.length ? new Set(p.samples.map((s) => s.name)).size : 0} functions (${p.none.length} without a sample), ${rows.length} runs; ${restarts} engine restarts; ${((performance.now() - t0) / 1000).toFixed(1)} s`);
+console.log(`FIND CENSUS: ${p.samples.length} inputs of ${p.samples.length ? new Set(p.samples.map((s) => s.name)).size : 0} functions (${p.none.length} without a sample; ${leftOutLine(p.leftOut)}), ${rows.length} runs; ${restarts} engine restarts; ${((performance.now() - t0) / 1000).toFixed(1)} s`);
 console.log(`  home: ${line("home")}`);
 console.log(`  cas: ${line("cas")}`);
 // bridge-3's kind of Giac's answer, per class (both views)
