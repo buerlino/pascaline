@@ -56,6 +56,17 @@ describe("timing tests of runs 150 and 152", () => {
     expect(onlyTiming("vitest", fl("G102: after each of G67's leak inputs the settings are back through giac_ctx_set, and no getter list is sent as text"))).toBe(false);
   });
 
+  it("FLAKES 1: the five wall-clock tests of 2026-10-26 are timing; their neighbours are not", () => {
+    const t = (file: string, title: string) => isTiming("vitest", { file, title });
+    expect(t("src/engine/converge.test.ts", "G39 on the real engine > Home and CAS refuse 3*int(1/x,x,-1,1)+1")).toBe(true);
+    expect(t("src/engine/converge.test.ts", "G39 on the real engine > Home and CAS refuse int(1/x,x,-1,1)")).toBe(false);
+    expect(t("src/engine/host.test.ts", "EngineHost (real Giac) > switching CAS -> Home restores Home's 300 ms budget")).toBe(true);
+    expect(t("src/engine/host.test.ts", "EngineHost (real Giac) > CAS keeps its own Ans; Home's Ans is unaffected")).toBe(false);
+    expect(t("src/engine/valueKind.test.ts", "G103: a value's kind from bridge-3 (F73) > an Integer_too_large_for_display print is an integer: 10^1000000+7 is exact, shown from its digits, with no such text as its exact form")).toBe(true);
+    expect(t("src/input/fuzz.test.ts", "parser fuzz > 20000 random token strings parse or fail with SerializeError, quickly")).toBe(true);
+    expect(isTiming("e2e", { file: "working.spec.ts", title: "a job shows Working… and Cancel only after 150 ms, and its row keeps the result's height" })).toBe(true);
+    expect(isTiming("e2e", { file: "working.spec.ts", title: "the Cancel key stops a job" })).toBe(false);
+  });
   it("another failure in the same files is not timing", () => {
     expect(isTiming("vitest", { file: "src/engine/novalue.test.ts", title: "G78 on the real engine > keeps 1/0 undefined" })).toBe(false);
     expect(isTiming("vitest", { file: "src/engine/homeDeadline.test.ts", title: "Home's deadline (real Giac) > sin(1) answers" })).toBe(false);

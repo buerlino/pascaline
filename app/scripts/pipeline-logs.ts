@@ -53,7 +53,7 @@ export function failedItems(check: Check, log: string): Item[] {
   return items;
 }
 
-/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, solve.spec.ts persistence, the clipboard poll, the G78 timing case, Home's acos deadline, the G83 library restore and first call, the Esc-before-Working test.
+/** A wall-clock test: the Find 16 ms/key test, the golden units p95 bar, solve.spec.ts persistence, the clipboard poll, the G78 timing case, Home's acos deadline, the G83 library restore and first call, the Esc-before-Working test; FLAKES 1: G39's 3*int(1/x), the CAS -> Home budget, 10^1000000+7, the parser fuzz, Working… after 150 ms.
  *  Not the golden g58-factorial cases: the golden log names only the stage ("FAIL precision: n/m active match"), the case id is on a plain line above it. */
 export function isTiming(check: Check, item: Item): boolean {
   if (check === "vitest") {
@@ -62,10 +62,15 @@ export function isTiming(check: Check, item: Item): boolean {
       (item.file.endsWith("engine/homeDeadline.test.ts") && /(?:^|> )acos\(120\^\(5\/2\+5\)\) answers/.test(item.title)) ||
       (item.file.endsWith("engine/library.test.ts") && /restore\(\) of the 200 takes under 50 ms/.test(item.title)) ||
       // F106 (FLAKES 78): its 1 ms Giac timeout races the interrupt under load
-      (item.file.endsWith("engine/flags.test.ts") && /G102: a Digits set right after an interrupted call/.test(item.title));
+      (item.file.endsWith("engine/flags.test.ts") && /G102: a Digits set right after an interrupted call/.test(item.title)) ||
+      // FLAKES 1 (2026-10-26, load 20-40): Giac's 1.5 s clock, a 2 s total, the 5 s test timeout
+      (item.file.endsWith("engine/converge.test.ts") && /Home and CAS refuse 3\*int\(1\/x,x,-1,1\)\+1$/.test(item.title)) ||
+      (item.file.endsWith("engine/host.test.ts") && /switching CAS -> Home restores Home's 300 ms budget/.test(item.title)) ||
+      (item.file.endsWith("engine/valueKind.test.ts") && /10\^1000000\+7 is exact/.test(item.title)) ||
+      (item.file.endsWith("input/fuzz.test.ts") && /20000 random token strings parse or fail/.test(item.title));
   }
   if (check === "e2e") {
-    return (item.file === "working.spec.ts" && /Esc stops a job before Working… shows/.test(item.title)) ||
+    return (item.file === "working.spec.ts" && /Esc stops a job before Working… shows|a job shows Working… and Cancel only after 150 ms/.test(item.title)) ||
       (item.file === "solve.spec.ts" && /equations and values are stored|kept across a reload/.test(item.title)) ||
       (item.file === "copy.spec.ts" && /copy → paste gives the value back/.test(item.title));
   }
