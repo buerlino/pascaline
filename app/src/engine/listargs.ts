@@ -7,7 +7,7 @@
 // argument evaluates to (a stored list, Ans). Two arguments typed as two keep Giac's answer.
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { type Giac } from "./numeric.ts";
-import { callsOf, closing, functionsIn, namesIn, topLevelArgs } from "./giacPrint.ts";
+import { callsOf, closing, functionsIn, namesIn, splitList, topLevelArgs } from "./giacPrint.ts";
 import { changesState } from "./novalue.ts";
 
 /** The functions the G110 census's unchecked class shows reading a one-list argument as their arguments (probed on the
@@ -48,5 +48,5 @@ export function listAsArguments(giac: Giac, input: string, userFn: (name: string
     ask.push(`when(type(${a})==DOM_LIST,1,0)`);
   }
   if (!ask.length) return false;
-  return /\b1\b/.test(giac.eval(`[${ask.join(",")}]`));
+  return (splitList(giac.eval(`[${ask.join(",")}]`).trim()) ?? []).some((t) => t.trim() === "1");
 }
