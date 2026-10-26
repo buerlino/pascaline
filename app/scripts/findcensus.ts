@@ -16,7 +16,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import { censusStage, knownText, timingChanges, timingSuspects, type CensusKnown } from "../../tools/probes/findcensus/stage.ts";
-import { aideCas, census, oracleFor, plan, pythonFor, tier1 } from "../../tools/probes/findcensus/run.ts";
+import { aideCas, census, censusEntries, leftOutLine, oracleFor, plan, pythonFor } from "../../tools/probes/findcensus/run.ts";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const mainCheckout = ((): string => {
@@ -29,7 +29,8 @@ const DEADLINE_MS = 6000; // Home answers or refuses within HOME_DEADLINE_MS (20
 
 const update = process.argv.includes("--update");
 const t0 = performance.now();
-const p = plan(tier1(repo), await aideCas(mainCheckout));
+const aide = await aideCas(mainCheckout);
+const p = plan(censusEntries(repo, aide), aide);
 const oracles = oracleFor(p.samples, pythonFor(repo, mainCheckout), resolve(repo, "tools/probes/findcensus/oracle.py"));
 const run = await census(p.samples, oracles, DEADLINE_MS, Number(process.env["FINDCENSUS_WORKERS"] ?? 4));
 const rows = run.rows;
@@ -50,7 +51,7 @@ const timing = timingChanges(rows, retried, known);
 const secs = (performance.now() - t0) / 1000;
 const r = censusStage(rows, p.none.map((n) => n.name), known, timing);
 const counts = ["checked", "unchecked", "symbolic", "refused", "raw", "wrong", "defined", "state", "hang", "crash"].map((c) => `${c} ${rows.filter((x) => x.cls === c).length}`).join(", ");
-const stats = `${rows.length} runs of ${p.samples.length} inputs (${new Set(p.samples.map((s) => s.name)).size} functions, ${p.none.length} without a sample): ${counts}; ${restarts} engine restarts; ${retried.size} retried alone, ${timing.size} timing changes; total ${secs.toFixed(1)} s`;
+const stats = `${rows.length} runs of ${p.samples.length} inputs (${new Set(p.samples.map((s) => s.name)).size} functions, ${p.none.length} without a sample; ${leftOutLine(p.leftOut)}): ${counts}; ${restarts} engine restarts; ${retried.size} retried alone, ${timing.size} timing changes; total ${secs.toFixed(1)} s`;
 
 if (update) {
   writeFileSync(KNOWN, knownText(readFileSync(KNOWN, "utf8"), rows, p.none.map((n) => n.name), known));

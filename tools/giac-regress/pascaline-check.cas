@@ -323,6 +323,20 @@ Digits:=40:; pc("g78-keep-piecewise",'(piecewise(0>0,1/0,5))',5,5/10^12);
 Digits:=40:; pc("g90-keep-int-gauss01",'(int(exp(-x^2),x,0,1))',(746824132812/10^12),5/10^13);
 // g97-keep-flat-pow-2 (home.yaml, derived)
 Digits:=40:; pc("g97-keep-flat-pow-2",'([1,2]^2)',5,5/10^12);
+// g111-exponential-inside (home.yaml, oracle)
+Digits:=40:; pc("g111-exponential-inside",'(exponential(2,1))',(270670566473/10^12),5/10^13);
+// g111-gammad-at-0 (home.yaml, oracle)
+Digits:=40:; pc("g111-gammad-at-0",'(gammad(1,3,0))',3,5/10^12);
+// g111-uniform-inside (home.yaml, oracle)
+Digits:=40:; pc("g111-uniform-inside",'(uniform(1,3,2))',(5/10^1),5/10^13);
+// g111-keep-lambertw-1 (home.yaml, oracle)
+Digits:=40:; pc("g111-keep-lambertw-1",'(LambertW(1))',(56714329041/10^11),5/10^13);
+// g111-keep-lambertw-branch (home.yaml, oracle)
+Digits:=40:; pc("g111-keep-lambertw-branch",'(LambertW(-(2/10^1),-1))',-(254264135777/10^11),5/10^12);
+// g111-keep-hermite-2args (home.yaml, derived)
+Digits:=40:; pc("g111-keep-hermite-2args",'(hermite(1,2))',4,5/10^12);
+// g111-keep-fracmod (home.yaml, derived)
+Digits:=40:; pc("g111-keep-fracmod",'(fracmod(3,13))',-(25/10^2),5/10^13);
 // prec-20-sqrt2 (precision.yaml, oracle)
 Digits:=40:; pc("prec-20-sqrt2",'(sqrt(2))',(14142135623730950488/10^19),5/10^20);
 // prec-20-third (precision.yaml, oracle)
