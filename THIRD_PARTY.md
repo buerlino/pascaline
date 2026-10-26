@@ -29,7 +29,7 @@ Generated at build time by `tools/find-index/generate.mjs`, not committed.
 2. libqalculate 5.13.1 `data/units.xml.in`, `variables.xml.in`, `prefixes.xml.in`: GPL-2.0-or-later, the library's licence (the combined work is GPL-3.0); names and titles read from the tarball. `find/factors.yaml`: the values and factors computed once by our qalc build (GPL-3.0-or-later as a file of ours; exact definitions and CODATA 2022 where they replace qalc's).
 3. `find/aliases.yaml`, `find/functions.yaml`, `find/units.yaml`: ours, GPL-3.0-or-later.
 
-The About screen credits Giac and libqalculate.
+The About screen will credit Giac and libqalculate and ship the MIT, LGPL and Apache notices of the components above; it does not exist yet (backlog R4, before the first release).
 
 ## Toolchain (not shipped)
 
@@ -59,6 +59,16 @@ The About screen credits Giac and libqalculate.
 | @capacitor/clipboard | 8.0.1 | MIT | https://github.com/ionic-team/capacitor-plugins | Android paste and copy; offline; no permission (shipped, clipboard chunk) |
 | @capacitor/share | 8.0.3 | MIT | https://github.com/ionic-team/capacitor-plugins | Android share sheet; offline; no permission (shipped, clipboard chunk) |
 | JSXGraph | 1.14.0 | MIT OR LGPL-3.0-or-later | https://github.com/jsxgraph/jsxgraph | Function app Plot view (shipped, loaded lazily when Plot first opens; D7) |
+
+## Android (android/variables.gradle and the Gradle files, pinned)
+
+| Component | Version | Licence | Source | Use |
+|---|---|---|---|---|
+| AndroidX appcompat | 1.7.1 | Apache-2.0 | https://developer.android.com/jetpack/androidx | app and Capacitor's Android shell (shipped) |
+| AndroidX coordinatorlayout | 1.3.0 | Apache-2.0 | https://developer.android.com/jetpack/androidx | the app module (shipped) |
+| AndroidX core-splashscreen | 1.2.0 | Apache-2.0 | https://developer.android.com/jetpack/androidx | start screen (shipped) |
+| Apache Cordova framework (`org.apache.cordova:framework`) | 14.0.1 | Apache-2.0 | https://github.com/apache/cordova-android | pulled in by Capacitor's plugin template (shipped) |
+| Android Gradle plugin | 8.13.0 | Apache-2.0 | https://developer.android.com/build | Android build (not shipped) |
 
 ## Theme colours (app/scripts/theme-families.ts, generated into app/src/theme/)
 
