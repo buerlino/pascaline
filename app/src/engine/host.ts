@@ -33,7 +33,7 @@ import { askedLiterals } from "./asked.ts";
 import { backInDegrees, needsDegrees } from "./degrees.ts";
 import { resolveAngle } from "./angleMigration.ts";
 import { mayPowerMatrix, nonSquarePower, type Bodies, type KnownBody } from "./nonsquare.ts";
-import { mayAddToList, unaskedPoly } from "./polyvec.ts";
+import { listInDistribution, mayAddToList, unaskedPoly } from "./polyvec.ts";
 import { callsIn, floatBounds, giacPair, hasDefiniteIntegral, integratedNumerically, refusalOf } from "./converge.ts";
 import { enEngine } from "../i18n/enEngine.ts";
 import { dropAngleFactor, PASDEG } from "../input/angles.ts";
@@ -1013,6 +1013,8 @@ export class EngineHost implements FactsHost {
     const builtin = notBuiltin(this.giac);
     const userFn = (name: string): boolean => builtin(name) && !(name in ENGINE_DEFINITIONS) && !WORKER_DEFINITION_NAMES.includes(name);
     if ((guarded || !single) && nonSquarePower(this.giac, body, text, ambiguous, () => false, performance.now() - t0, userFn, this.bodiesFor(input))) return fail(enEngine["error.notSquare"], "notSquare");
+    // R80 fix 1 (F95, until G111): a distribution read a list (typed, stored or Ans) as a polynomial.
+    if (listInDistribution(asg0 ? asg0.rhs : exactInput, text)) return fail(enEngine["error.listInDistribution"], "listInDistribution");
     // G106 (F78): Giac's polynomial of a list plus a number (`[1,4]+1` = poly1[1,5]), which the input did not ask for.
     if (unaskedPoly(this.giac, "pcasans", asg0 ? asg0.rhs : exactInput, text, userFn)) return fail(enEngine["error.listPlusNumber"], "listPlusNumber");
     if (guarded) {

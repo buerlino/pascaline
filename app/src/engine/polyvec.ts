@@ -10,6 +10,7 @@
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { type Giac } from "./numeric.ts";
 import { functionsIn, namesIn, type Quoting } from "./giacPrint.ts";
+import { callsDistribution } from "./ourNames.ts";
 
 /** Giac functions that create a coefficient vector of subtype 10, probed on the shared engine (2026-10-23). The ones
  *  that only pass a polynomial argument through (gcd, lcm, diff, factors) are not listed: that argument is a call of
@@ -64,4 +65,10 @@ export function unaskedPoly(giac: Giac, slot: string, input: string, output: str
  *  subtracts and holds a list, or a name `isList` says holds one. */
 export function mayAddToList(rhs: string, isList: (name: string) => boolean): boolean {
   return (rhs.includes("+") || rhs.includes("-")) && !asksPoly(rhs, "typed") && (rhs.includes("[") || namesIn(rhs, "typed").some(isList));
+}
+
+/** The printed result of `input`, which calls a distribution, holds a value of Giac's list type (a stored list or Ans
+ *  as its argument) or a coefficient vector the input did not ask for (a typed list, a `[ ]` vector there; R80 fix 1). */
+export function listInDistribution(input: string, output: string): boolean {
+  return (output.includes("list[") || (output.includes("poly1[") && !asksPoly(input, "typed"))) && callsDistribution(input);
 }

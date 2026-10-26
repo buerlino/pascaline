@@ -8,7 +8,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff. (The leftover `QALC_OUT` is A30.)
-- **R80's side effects (run 251):** (1) a matrix times a typed list scales its rows (`[[1,2],[3,4]]×{1,2}` = `[[1,2],[6,8]]`, was the matrix-vector product `[5,11]`); (2) Giac now takes a `{ }` list in a distribution, so Home shows F95's wrong values for it (`uniform_cdf(3.2,5.7,{1,2})` = `{-0.88,-0.48}`, was refused) until G111; (3) `mlr_*(M,{…})` is refused (was a value). Proposal: accept all three for the freeze (Find is closed; G111 fixes 2). Would change if: a core or golden case needs 1 or 3.
+- **R80's side effects (run 251):** (1) a matrix times a typed list scales its rows (`[[1,2],[3,4]]×{1,2}` = `[[1,2],[6,8]]`, was the matrix-vector product `[5,11]`); (2) `mlr_*(M,{…})` is refused (was a value). Proposal: accept both for the freeze (Find is closed). Would change if: a core or golden case needs 1 or 2.
 
 ## Decided proposals
 

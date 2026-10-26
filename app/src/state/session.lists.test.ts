@@ -72,4 +72,21 @@ describe.skipIf(!giacAvailable())("a stored { } list stays a list (R80, real eng
     expect((await run(`${LIST}\\times\\left\\{1,1\\right\\}`)).text).toBe("{1,4}");
     expect((await run(`\\left(${LIST}+1\\right)^{2}`)).text).toBe("{4,25}");
   });
+
+  // R80 fix round 1: Giac's distributions take a list-type argument as a polynomial and give wrong values (F95's family,
+  // uniform_cdf(3.2,5.7,list[1,2]) = list[-0.88,-0.48], right {0,0}); until G111 such an argument is refused, as on phase-1
+  it("a { } list in a distribution is refused, typed or stored", async () => {
+    const refused = async (...entries: string[]): Promise<string> => {
+      const s = new Session(calc, noKv);
+      for (const e of entries) await s.submit(e);
+      return (s.home[s.home.length - 1] as HistoryItem).status;
+    };
+    const CDF = "\\operatorname{uniform\\_cdf}";
+    expect(await refused(`${CDF}\\left(3.2,5.7,\\left\\{1,2\\right\\}\\right)`)).toBe("error");
+    expect(await refused(`L:=${LIST}`, `${CDF}\\left(3.2,5.7,L\\right)`)).toBe("error");
+    expect(await refused(LIST, `${CDF}\\left(3.2,5.7,\\ans\\right)`)).toBe("error");
+    expect(await refused(`${CDF}\\left(3.2,5.7,1\\right)`)).toBe("done");
+    // a list of distribution values stays a list (its braces go as a vector, R80 fix 1), not refused
+    expect(await refused(`\\left\\{${CDF}\\left(0,1,0.5\\right),2\\right\\}`)).toBe("done");
+  });
 });

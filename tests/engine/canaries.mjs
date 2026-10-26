@@ -47,6 +47,8 @@ const ROWS = [
     ["[[5],[1]]^2", "inv([[5],[1]])"], ([a, b]) => a === "26" && b === "[[1/5],[1]]"],
   ["list-plus-number", "a list plus a number is a polynomial: [1,4]+1 = poly1[1,5]", 12,
     ["[1,4]+1"], ([a]) => a === "poly1[1,5]"],
+  ["list-in-distribution", "a distribution reads a list as a polynomial: uniform_cdf(3.2,5.7,list[1,2]) = list[-0.88,-0.48] (right {0,0})", 12,
+    ["uniform_cdf(3.2,5.7,list[1,2])"], ([a]) => a === "list[-0.88,-0.48]"],
   ["list-vector-ops", "a list squared or times a list is the dot product: [1,2]^2 = 5, [1,4]*[1,1] = 5", 12,
     ["[1,2]^2", "[1,4]*[1,1]"], ([a, b]) => a === "5" && b === "5"],
   ["extended-reals", "1/0 is infinity and a value through it is exact: 1/(1/0) = 0", 12,

@@ -164,3 +164,21 @@ describe("a list expression as a part (R79)", () => {
     expect(latexToGiac("\\left(1+2\\right)^{2}\\times3")).toBe("(1+2)^2*3");
   });
 });
+
+// R80 fix 1 (F95's family, until G111): Giac's distributions read its list type as a polynomial and give wrong values
+// (uniform_cdf(3.2,5.7,list[1,2]) = list[-0.88,-0.48], right {0,0}), so a { } list in their arguments goes as a [ ]
+// vector, as before R80, and G106 refuses the poly1 result (golden r80f1-* in tests/golden/home.yaml).
+describe("a list in a distribution's arguments (R80 fix 1)", () => {
+  it("goes as a [ ] vector, at any depth of the argument", () => {
+    expect(latexToGiac("\\operatorname{uniform\\_cdf}\\left(3.2,5.7,\\left\\{1,2\\right\\}\\right)")).toBe("uniform_cdf(3.2,5.7,[1,2])");
+    expect(latexToGiac("\\operatorname{normald\\_cdf}\\left(\\left\\{1,2\\right\\}+1\\right)")).toBe("normald_cdf([1,2]+1)");
+    expect(mathJsonToGiac(["Call", "exponential", 2, ["List", 1, 2]])).toBe("exponential(2,[1,2])");
+    expect(mathJsonToGiac(["Call", "UTPC", 2, ["List", 1, 2]])).toBe("UTPC(2,[1,2])");
+    expect(latexToGiac("\\left\\{\\operatorname{normald\\_cdf}\\left(1\\right),2\\right\\}")).toBe("[normald_cdf(1),2]");
+  });
+
+  it("stays Giac's list type outside them", () => {
+    expect(latexToGiac("\\operatorname{sum}\\left(\\left\\{1,2\\right\\}\\right)")).toBe("sum(list[1,2])");
+    expect(mathJsonToGiac(["Call", "plotcdf", ["List", 1, 2]])).toBe("plotcdf(list[1,2])");
+  });
+});

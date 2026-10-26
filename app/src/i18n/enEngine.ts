@@ -13,6 +13,7 @@ export const enEngine = {
   "error.noValue": "No value found",
   "error.notSquare": "The matrix is not square",
   "error.listPlusNumber": "A list plus a number: use .+ or add a list of the same length",
+  "error.listInDistribution": "A distribution of a list: give one number at a time",
   "error.undecided": "undecided: the value sits on a cut Giac cannot decide",
   "why.pairDiffers": "The exact and numeric answers differ",
 } as const;

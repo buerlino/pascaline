@@ -2,7 +2,7 @@
 // G54: our replacements for Giac functions, by the name the user writes. One map for the parser (input/emit.ts) and for
 // every path that sends Giac text without the parser (the library import and its `// test:` lines, the export back).
 // No UI imports; only erasable TypeScript syntax.
-import { mapNames, type Quoting } from "./giacPrint.ts";
+import { functionsIn, mapNames, type Quoting } from "./giacPrint.ts";
 
 /** Giac's own `mod` is the modular-number constructor (an error as a call); Find's `mod` is irem (Euclidean,
  *  never negative: irem(-7,3) = 2), so the written word is renamed to our pasmod (homeEval.ts ENGINE_DEFINITIONS:
@@ -45,4 +45,26 @@ export const OUR_STORES: readonly string[] = ["pasinexact", "pasdiff"];
 /** A store target that is one of our helpers' names, not the user's state. */
 export function isOurStore(name: string): boolean {
   return OUR_STORES.includes(name);
+}
+
+/**
+ * R80 fix 1 (F95's family, until G111): Giac's densities and cdfs read an argument of its list type as a polynomial and
+ * give wrong values (`uniform_cdf(3.2,5.7,list[1,2])` = list[-0.88,-0.48], right {0,0}; probed 2026-10-26). A typed
+ * `{ }` list in their arguments goes as a `[ ]` vector, as before R80 (input/emit.ts), whose poly1 result G106 refuses;
+ * a list-type result of an input that calls one (a stored list or Ans as the argument) is refused (polyvec.ts).
+ */
+const DISTRIBUTION_NAMES = new Set([
+  "normald", "binomial", "poisson", "student", "chisquare", "fisher", "snedecor", "exponential", "uniform", "geometric",
+  "cauchy", "weibull", "gammad", "betad", "negbinomial", "kolmogorovd", "UTPC", "UTPF", "UTPN", "UTPT",
+  "igamma", "ugamma", "randgeometric",
+]);
+
+/** `head` is one of Giac's densities, cdfs or inverse cdfs (any `<name>_cdf` and `<name>_icdf`). */
+export function isDistribution(head: string): boolean {
+  return DISTRIBUTION_NAMES.has(head) || head.endsWith("_cdf") || head.endsWith("_icdf");
+}
+
+/** Giac text calls a distribution (its calls outside strings, as `q` writes them). */
+export function callsDistribution(text: string, q: Quoting = "typed"): boolean {
+  return functionsIn(text, q).some(isDistribution);
 }
