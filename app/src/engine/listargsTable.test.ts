@@ -15,7 +15,7 @@ import { PROBE_SKIPPED, PROBED_EVIDENCE } from "./listargsEvidence.ts";
 import { LIST_AS_ARGUMENTS } from "./listargs.ts";
 import { aideCas } from "../../../tools/probes/findcensus/run.ts";
 import { listArgNames } from "../../../tools/probes/listargs/names.ts";
-import { verdict } from "../../../tools/probes/listargs/sweep.ts";
+import { uninformative, verdict } from "../../../tools/probes/listargs/sweep.ts";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const hasIndex = existsSync(join(repo, "app/src/find/_gen/find-index.json"));
@@ -59,5 +59,26 @@ describe.skipIf(!giacAvailable())("G112 the probe's verdict (fix round 2)", () =
     // arg(list[1,2]) = [0,0], not list[0,0]: still one value per element
     expect(verdict(ev, "arg", false)).toEqual({ hit: false, why: "maps" });
     expect(verdict(ev, "Psi", false).hit).toBe(true);
+  });
+});
+
+describe.skipIf(!giacAvailable())("G112f1 the probe's verdict (round-2 audit finding 1)", () => {
+  it("an answer of undef, [], 0, a bare name or the unevaluated call is no evidence; the order must matter", async () => {
+    const { giac } = await loadNodeGiac();
+    const ev = (s: string): string => giac.eval(s);
+    // lvar(list[1,2]) = lvar(1,2) = [] and lname the same: no evidence, so lvar([x+y,z]) keeps its names
+    expect(verdict(ev, "lvar", false)).toEqual({ hit: false, why: "none" });
+    expect(verdict(ev, "lname", false)).toEqual({ hit: false, why: "none" });
+    // comb(list[1,2]) = 0 is skipped; comb(list[5,2]) = 10, comb(list[2,5]) = 0
+    expect(verdict(ev, "comb", false)).toEqual({ hit: true, why: "comb(list[5,2]) = comb(5,2) = 10" });
+    // diff leaves numbers unevaluated (diff(1,2)); diff(list[x^2,x]) = 2*x
+    expect(verdict(ev, "diff", false)).toEqual({ hit: true, why: "diff(list[x^2,x]) = diff(x^2,x) = 2*x" });
+    expect(uninformative("diff(1,2)")).toBe(true);
+    expect(uninformative("+infinity")).toBe(true);
+    expect(uninformative("list[]")).toBe(true);
+    expect(uninformative("seq[]")).toBe(true); // tangent(list[x^2,x]) = tangent(x^2,x) = seq[]
+    expect(uninformative("0.0")).toBe(true);
+    expect(uninformative("Beta(1/2,1,3/5,1)+1")).toBe(false);
+    expect(uninformative("-2*Zeta(3)")).toBe(false);
   });
 });
