@@ -73,20 +73,29 @@ describe.skipIf(!giacAvailable())("a stored { } list stays a list (R80, real eng
     expect((await run(`\\left(${LIST}+1\\right)^{2}`)).text).toBe("{4,25}");
   });
 
-  // R80 fix round 1: Giac's distributions take a list-type argument as a polynomial and give wrong values (F95's family,
-  // uniform_cdf(3.2,5.7,list[1,2]) = list[-0.88,-0.48], right {0,0}); until G111 such an argument is refused, as on phase-1
-  it("a { } list in a distribution is refused, typed or stored", async () => {
-    const refused = async (...entries: string[]): Promise<string> => {
+  // R80f1: G111's patch 0007 maps a list-type x per element, so R80 fix 1's refusal went; a list read as the argument list
+  // (normald_cdf({0.5,1.5}) = P(0.5 ≤ X ≤ 1.5)) and negbinomial_icdf's wrong answer stay refused (listargs.ts)
+  it("a { } list in a distribution is one value per element, typed or stored", async () => {
+    const last = async (...entries: string[]): Promise<HistoryItem> => {
       const s = new Session(calc, noKv);
       for (const e of entries) await s.submit(e);
-      return (s.home[s.home.length - 1] as HistoryItem).status;
+      return s.home[s.home.length - 1] as HistoryItem;
     };
     const CDF = "\\operatorname{uniform\\_cdf}";
-    expect(await refused(`${CDF}\\left(3.2,5.7,\\left\\{1,2\\right\\}\\right)`)).toBe("error");
-    expect(await refused(`L:=${LIST}`, `${CDF}\\left(3.2,5.7,L\\right)`)).toBe("error");
-    expect(await refused(LIST, `${CDF}\\left(3.2,5.7,\\ans\\right)`)).toBe("error");
-    expect(await refused(`${CDF}\\left(3.2,5.7,1\\right)`)).toBe("done");
-    // a list of distribution values stays a list (its braces go as a vector, R80 fix 1), not refused
-    expect(await refused(`\\left\\{${CDF}\\left(0,1,0.5\\right),2\\right\\}`)).toBe("done");
+    const L12 = "\\left\\{1,2\\right\\}";
+    // 3.2 ≤ x ≤ 5.7 holds for neither 1 nor 2, so both cdf values are 0
+    expect(await run(`${CDF}\\left(3.2,5.7,${L12}\\right)`)).toEqual({ text: "{0,0}", mark: "=" });
+    expect(await run(`L:=${L12}`, `${CDF}\\left(3.2,5.7,L\\right)`)).toEqual({ text: "{0,0}", mark: "=" });
+    expect(await run(L12, `${CDF}\\left(3.2,5.7,\\ans\\right)`)).toEqual({ text: "{0,0}", mark: "=" });
+    // binomial(5,2) = 10 times each element
+    expect(await run(`L:=${LIST}`, "L\\times\\operatorname{binomial}\\left(5,2\\right)")).toEqual({ text: "{10,40}", mark: "=" });
+    // 1 + Φ(1) and 2 + Φ(1): a list of two values, Φ(1) ≈ 0.841344746069
+    const sum = await last(`${L12}+\\operatorname{normald\\_cdf}\\left(1\\right)`);
+    expect(sum.status).toBe("done");
+    expect(sum.text).toBe("{1.84134474607,2.84134474607}");
+    // a list as the only argument is Giac's argument list (P(0.5 ≤ X ≤ 1.5) = 0.2417…), refused
+    expect(await last("\\operatorname{normald\\_cdf}\\left(\\left\\{0.5,1.5\\right\\}\\right)")).toMatchObject({ status: "error" });
+    // negbinomial_icdf(3,0.5,list[0.2,0.7]) = 0, right {1,4}: refused
+    expect(await last("\\operatorname{negbinomial\\_icdf}\\left(3,0.5,\\left\\{0.2,0.7\\right\\}\\right)")).toMatchObject({ status: "error" });
   });
 });

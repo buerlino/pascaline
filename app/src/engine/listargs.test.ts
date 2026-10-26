@@ -49,6 +49,46 @@ describe.skipIf(!giacAvailable())("G111 a list read as the argument list", () =>
   });
 });
 
+// R80f1: Giac's densities, cdfs and inverse cdfs read one list argument as their argument list too, probed with patch 0007
+// (normald_cdf([0.5,1.5]) = normald_cdf(0.5,1.5) = P(0.5 ≤ X ≤ 1.5) ≈ 0.2417); a list as their x after the parameters is
+// one value per element (uniform_cdf(3.2,5.7,list[1,2]) = list[0,0]), but negbinomial_icdf(3,1/2,list[1/5,7/10]) = 0
+// (right {1,4}: P(K ≤ 0) = 1/8 < 1/5 ≤ P(K ≤ 1) = 5/16, and P(K ≤ 3) = 21/32 < 7/10 ≤ P(K ≤ 4) = 99/128) is refused.
+describe.skipIf(!giacAvailable())("R80f1 a list in a distribution", () => {
+  let host: EngineHost;
+  const home = (input: string) => host.home(input, defaultHomeSettings).result;
+  const cas = (input: string) => host.cas(input, defaultCasSettings).result;
+  beforeAll(async () => {
+    host = await nodeHost();
+  });
+
+  it("refuses one list as a distribution's only argument, typed or stored", () => {
+    for (const f of ["normald_cdf", "normald", "exponential_cdf", "binomial", "cauchy_cdf", "igamma"]) {
+      expect(home(`${f}(list[1/2,3/2])`), f).toMatchObject(REFUSAL);
+    }
+    expect(home("M:=list[1/2,3/2]")).toMatchObject({ ok: true });
+    expect(home("normald_cdf(M)")).toMatchObject(REFUSAL);
+    expect(cas("normald_cdf([1/2,3/2])")).toMatchObject({ ok: false, error: "listAsArguments" });
+  });
+
+  it("refuses a list anywhere in negbinomial_icdf's arguments", () => {
+    const wrong = { ok: false, error: "listInArgument", display: "This function answers a list wrongly: give it one value at a time" };
+    expect(home("negbinomial_icdf(3,1/2,list[1/5,7/10])")).toMatchObject(wrong);
+    expect(home("P:=list[1/5,7/10]")).toMatchObject({ ok: true });
+    expect(home("negbinomial_icdf(3,1/2,P)")).toMatchObject(wrong);
+    expect(cas("negbinomial_icdf(3,1/2,[1/5,7/10])")).toMatchObject({ ok: false, error: "listInArgument" });
+    // one number is not refused (its value, 0 where 1 is right, is a finding of its own: the report of R80f1)
+    expect(home("negbinomial_icdf(3,1/2,1/5)")).toMatchObject({ ok: true });
+  });
+
+  it("keeps a list after the parameters, one value per element", () => {
+    expect(home("uniform_cdf(16/5,57/10,list[1,2])")).toMatchObject({ ok: true, display: "{0,0}" });
+    expect(home("binomial(5,2)*list[1,4]")).toMatchObject({ ok: true, display: "{10,40}" });
+    // 1−e^(−2·1) ≈ 0.864664716763 and 0 below the support
+    expect(home("exponential_cdf(2,list[1,-1])")).toMatchObject({ ok: true, display: "{0.864664716763,0}" });
+    expect(home("list[1,2]+normald_cdf(1)")).toMatchObject({ ok: true, display: "{1.84134474607,2.84134474607}" });
+  });
+});
+
 describe.skipIf(!giacAvailable())("G111 fracmod with a modulus ≤ 0 (patch 0008)", () => {
   it("is refused and the same engine answers the next input", async () => {
     const host = await nodeHost();

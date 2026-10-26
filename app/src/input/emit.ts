@@ -2,7 +2,7 @@
 // MathJSON (Compute Engine's shape, also produced by our own parser) -> Giac input string.
 import { parseError } from "../i18n/enParser.ts";
 import { SerializeError } from "./errors.ts";
-import { CALL_NAME, callsDistribution, isDistribution } from "../engine/ourNames.ts";
+import { CALL_NAME } from "../engine/ourNames.ts";
 import { ANGLE_IN, ANGLE_OUT, DEGREE, PASDEG, POLAR, POLAR_OUT, RECT, numericLiteral, rectArg, withFactor } from "./angles.ts";
 
 export { SerializeError };
@@ -24,8 +24,6 @@ export interface SerializeOptions {
    * result over `pasdeg` (angles.ts). On unless this is false (the kept text of an open `==` test, which is shown).
    */
   angleFactor?: boolean;
-  /** R80 fix 1: a `{ }` list emits Giac's `[ ]` vector, as before R80 (inside a distribution's arguments, ourNames.ts). */
-  listAsVector?: boolean;
 }
 
 function wholeText(e: Json | undefined): string | undefined {
@@ -157,9 +155,8 @@ function symbolText(e: Json): string | undefined {
 
 function call(name: string, args: Json[], o: SerializeOptions): Out {
   if (name === PASDEG) throw parseError("parse.reservedName", { name });
+  const outs = args.map((a) => ser(a, o));
   const head = CALL_NAME[name] ?? name;
-  const ao = isDistribution(head) ? { ...o, listAsVector: true } : o;
-  const outs = args.map((a) => ser(a, ao));
   const spec = o.angleFactor === false ? undefined : ANGLE_IN[head];
   const texts = outs.map((a) => a.s);
   if (spec && outs.length > spec[0] && (spec[1] === 0 || outs.length === spec[1])) {
@@ -307,11 +304,7 @@ function ser(e: Json, o: SerializeOptions): Out {
     case "List":
       // R80: a `{ }` list (typed braces, the list key) is Giac's list type, which keeps its type through :=, ▶ and Ans
       // and is elementwise in ^, *, + and / (G109); a `[ ]` vector keeps the dot product
-      // R80 fix 1 (ourNames.ts isDistribution): inside a distribution's arguments, or holding a distribution call, a
-      // `[ ]` vector as before R80, so a list-type result next to such a call comes from a name or Ans (refused there)
-      const els = args.map((a) => ser(a, o).s);
-      const vec = o.listAsVector === true || els.some((t) => callsDistribution(t));
-      return { s: `${vec ? "" : "list"}[${els.join(",")}]`, p: 5 };
+      return { s: `list[${args.map((a) => ser(a, o).s).join(",")}]`, p: 5 };
     case "Matrix": {
       // a matrix's rows are List nodes too, but it stays Giac's matrix of vectors (G97 reads it)
       if (!isHead(a0, "List")) return ser(a0, o);
