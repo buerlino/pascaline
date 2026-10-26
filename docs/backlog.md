@@ -80,7 +80,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F108 → G114 (the after-night check, 2026-10-26).** Home `fMin(x^2-x,x)` shows `seq[1/2]`, `fMax` too; the census reads it as symbolic (`classify.ts` RAW_WORDS has no `seq[`), so R4a's gate cannot see Giac's sequence answers. Family 5.
 - **F109, no package.** Home `DelAVars()` shows `DelAVars`, its own name: no answer and no refusal. Family 5.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds, Opus pass 53); raw output in the 2026-10-21 drafts (`../drafts/2026-10-21-packages/g94-raw`).
-- **The hardening without a bug line:** S16 (after A19; Giac's `check/` inputs come with A19 step 4); A31 (a gate stage for the three shell tests in `tools/` and `scripts/`, not drafted).
+- **The hardening without a bug line:** S16 (A19 done: `giaccheck` is a flags-stage line of `npm run golden`, 75 known differences in `tests/golden/giaccheck-known.yaml`, the `check/` inputs feed G64's stage); A31 (a gate stage for the three shell tests in `tools/` and `scripts/`, not drafted).
 
 ### After the freeze (P23 order; packages and order: brief section 0)
 - **Find (milestone 4, EN1):** packages and order in brief section 0 ("What waits"). Gate: task 5, the query test, the size test, no index request before idle. Three core cases (c38, c39, c43: a command by name) wait for it.

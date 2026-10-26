@@ -29,13 +29,25 @@ export function stageFlags(): void {
   // G92: assume-canary.ts, raw Giac still leaves the assumptions assumed.ts puts back (needs the engine);
   // G75: tanh-test.ts (needs the engine) and patch-canary.ts (the tarball) for patch 0003; G60: mpfr-pi-test.ts, 0005;
   // G96: reim-test.ts, 0006; G111: support-test.ts, 0007 and 0008;
+  // A19: memcap-test.mjs (the 1 GB cap of build-wasm.sh; a hog job ends and a fresh instance works);
   // G77: canaries.mjs (S17's workaround rows on the engine) and fetch-test.mjs (the pin's .dsc check, no network)
-  const runs = ["flags-canary.ts", "ctx-canary.ts", "assume-canary.ts", "tanh-test.ts", "mpfr-pi-test.ts", "reim-test.ts", "support-test.ts", "patch-canary.ts", "canaries.mjs", "fetch-test.mjs"].map((f) =>
+  const runs = ["flags-canary.ts", "ctx-canary.ts", "assume-canary.ts", "tanh-test.ts", "mpfr-pi-test.ts", "reim-test.ts", "support-test.ts", "patch-canary.ts", "canaries.mjs", "fetch-test.mjs", "memcap-test.mjs"].map((f) =>
     spawnSync(process.execPath, [`${root}tests/engine/${f}`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 120_000 }),
   );
   const out = runs.map((r) => `${r.stdout}${r.stderr}`.trim().split("\n").slice(-3).join(" | ")).join(" | ");
   report("flags", runs.every((r) => r.status === 0), out);
   stageRegress();
+  stageGiacCheck();
+}
+
+/** A19: Giac's own check/ suite (tools/probes/giac-check.mjs) on this build, against tests/golden/giaccheck-known.yaml.
+ *  The release build runs the same stage: GIAC_OUT=engine/giac/_out/release npm run golden. */
+export function stageGiacCheck(): void {
+  const t0 = performance.now();
+  const r = spawnSync(process.execPath, [`${root}tools/probes/giac-check.mjs`], { env: { ...process.env, GIAC_MJS: mjs }, encoding: "utf8", timeout: 600_000 });
+  const lines = `${r.stdout}${r.stderr}`.trim().split("\n");
+  for (const l of lines.filter((x) => /^\s+(NEW|GONE) /.test(x))) console.log(`  giaccheck ${l.trim()}`);
+  report("giaccheck", r.status === 0, `${(lines.pop() ?? "").replace(/^GIACCHECK (PASSED|FAILED): /, "")} (${((performance.now() - t0) / 1000).toFixed(0)} s)`);
 }
 
 /** G108: the Giac regression files (tools/giac-regress) are what export.mjs builds now, and on our build every check line
