@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // G64: CAS answers checked back as a gate stage (r16 section 3): an antiderivative differentiates to the integrand, a solution
 // substitutes to 0, a factorisation expands back, a simplification agrees at three points (tools/probes/casback/check.ts).
-// Questions: G55's corpus (tests/golden/corpus.yaml, the checkable ones) and generated ones from a fixed seed.
+// Questions: Giac's own check/ inputs (A19), G55's corpus (tests/golden/corpus.yaml, the checkable ones) and generated ones from a fixed seed.
 //   node scripts/casback.ts                       # the gate stage: fixed seed, CASBACK_COUNT generated questions (default 120), exit 1 on a new failure or past 30 s
 //   node scripts/casback.ts --nightly [--seed N] [--count N]   # rotating seed, default 1200, report only
 // Known failures: tests/golden/casback-known.yaml (id = the question, check = its kind, package = the open backlog id). Environment: GIAC_OUT.
@@ -16,6 +16,7 @@ import { defaultCasSettings } from "../src/engine/types.ts";
 import { invariantsStage, type InvariantFailure, type KnownFailure } from "./invariants.ts";
 import { generate } from "../../tools/probes/sweep/gen.ts";
 import { compileDefinition } from "../src/apps/function/compile.ts";
+import { SETS, loadSet, tarballPath } from "../../tools/probes/giaccheck/suite.ts";
 import { checkBack, fromCorpus, generated, type At, type Entries, type Probe, type Question } from "../../tools/probes/casback/check.ts";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -63,9 +64,22 @@ for (const c of generate(seed, Math.ceil(count / 4), { x: true, depth: 2 })) {
   const k = compileDefinition(c.latex, "rad");
   if (k.giac !== "" && k.error === "" && !fromG61.some((q) => q.subject === k.giac)) fromG61.push({ id: `simplification: ${c.latex}`, kind: "simplification", input: `simplify(${k.giac})`, subject: k.giac });
 }
-const questions = [...fromFile.questions, ...generated(seed, count), ...fromG61];
+// A19: Giac's own check/ inputs beside the corpus (the ones in x, in the four shapes the corpus reads; `integrate(f,x)` reads as `int(f,x)`)
+const tarball = tarballPath();
+/** One call whose first bracket closes at the last character (not `factor(a)/factor(b)`). */
+const wholeCall = (i: string): boolean => {
+  let d = 0;
+  for (let k = i.indexOf("("); k < i.length; k++) {
+    d += i[k] === "(" ? 1 : i[k] === ")" ? -1 : 0;
+    if (d === 0) return k === i.length - 1;
+  }
+  return false;
+};
+const checkInputs = tarball ? SETS.flatMap((s) => loadSet(tarball, s).map((p) => p.input.replace(/^integrate\((.+),x\)$/, "int($1,x)"))).filter((i) => wholeCall(i) && /\bx\b/.test(i) && !/,(?![^()]*\))/.test(i.replace(/^\w+\(/, "").replace(/,x\)$/, "").replace(/\)$/, ""))) : [];
+const fromCheck = fromCorpus(checkInputs);
+const questions = [...fromFile.questions, ...fromCheck.questions.filter((q) => !fromFile.questions.some((o) => o.id === q.id)), ...generated(seed, count), ...fromG61];
 let checked = 0;
-let skipped = fromFile.skipped;
+let skipped = fromFile.skipped + fromCheck.skipped;
 const failures: InvariantFailure[] = [];
 for (const q of questions) {
   const answer = cas(q.input);

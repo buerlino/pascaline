@@ -1,0 +1,31 @@
+# A19: inputs of Giac's check/ suite (tools/probes/giac-check.mjs) whose answer differs from check/<set>.out on our build.
+# id = <set>#<n> (n from 1, in the order of check/test<set>), or <set>#/regex/ for every difference of the set whose answer matches.
+# A reason starting "random:" marks an input that depends on rand or a random field: it may or may not differ in a run.
+# The runner fails on a new difference and on a listed one that no longer differs.
+known:
+  - id: "cas#151"
+    reason: "is_prime(9856989898997) answers 2 (certified prime) on giac_2.1.0-1, the .out says 1; both mean prime"
+  - id: "cas#252"
+    reason: "random: rand(21): the matrix is random, the .out holds one draw"
+  - id: "cas#253"
+    reason: "random: uses the random matrix A of cas#252"
+  - id: "cas#254"
+    reason: "random: the determinant of the random matrix of cas#252"
+  - id: "cas#260"
+    reason: "random: GF(3,3,...) picks a random irreducible polynomial; the field is the same up to isomorphism"
+  - id: "cas#263"
+    reason: "random: factors over the random GF(3,3) of cas#260"
+  - id: "cas#264"
+    reason: "random: GF(7,7,...) picks a random irreducible polynomial"
+  - id: "cas#265"
+    reason: "random: factors over the random GF(7,7) of cas#264"
+  - id: "cas#266"
+    reason: "random: GF(7,7,...) picks a random irreducible polynomial"
+  - id: "cas#268"
+    reason: "random: factors over the random GF(7,7) of cas#266"
+  - id: "geo#/window is not defined/"
+    reason: "the geometry commands (pnt, point, segment, ...) call the plot code, which needs a browser window; Node has none (engine/giac/wasm/stubs.cc)"
+  - id: "normalize#9"
+    reason: "peval(res, ...) stays the unexpanded polynomial where the .out has 0; open, reported in A19's report (Giac forum candidate)"
+  - id: "normalize#15"
+    reason: "same as normalize#9 with the substitution s1..s4"
