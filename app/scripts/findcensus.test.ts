@@ -10,7 +10,8 @@ import { censusStage, classStrings, hitDeadline, knownText, timingChanges, timin
 import type { Row } from "../../tools/probes/findcensus/run.ts";
 import type { Answer } from "../../tools/probes/findcensus/worker.ts";
 import { casMark } from "../src/goldenRun.ts";
-import { exactReading, listTypeOf } from "../../tools/probes/findcensus/exact.ts";
+import { exactReading } from "../../tools/probes/findcensus/exact.ts";
+import { bracesOf, listTypeOf } from "../src/engine/giacPrint.ts";
 import type { GiacValue } from "../src/engine/bridge.ts";
 
 const answer = (o: Partial<Answer>): Answer => ({ ok: true, text: "", left: [], ...o });
@@ -159,6 +160,9 @@ describe("findcensus classes", () => {
     expect(listTypeOf("[{1,2},3]")).toBe("[list[1,2],3]");
     expect(listTypeOf('{"{a}",1}')).toBe('list["{a}",1]');
     expect(listTypeOf("[Ci(1),Ci(2)]")).toBe("[Ci(1),Ci(2)]");
+    // the inverse of the CAS view's print, so a change to bracesOf cannot leave the census misreading its results
+    for (const x of ["list[Ci(1),Ci(2)]", "[list[1,2],3]", 'list["{a}",1]', '"a""list[b]"', "list[list[1],[2,list[3]]]", "[Ci(1),Ci(2)]", "list[]"])
+      expect(listTypeOf(bracesOf(x))).toBe(x);
   });
   it("reads a CAS mark by the golden runner's rule (goldenRun.ts casMark)", () => {
     const facts = { exact: true, reliableDigits: null };

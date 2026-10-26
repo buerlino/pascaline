@@ -6,7 +6,7 @@
   "src/engine/converge.ts": 9,
   "src/engine/decisions.ts": 9,
   "src/engine/format.ts": 8,
-  "src/engine/giacPrint.ts": 21,
+  "src/engine/giacPrint.ts": 22,
   "src/engine/homeEval.ts": 7,
   "src/engine/host.ts": 5,
   "src/engine/icdf.ts": 3,

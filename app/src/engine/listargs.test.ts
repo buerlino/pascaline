@@ -6,7 +6,8 @@
 // Expected values are derived (the golden cases g111-* in home.yaml and precision.yaml).
 import { beforeAll, describe, expect, it } from "vitest";
 import type { EngineHost } from "./host.ts";
-import { defaultHomeSettings } from "./homeEval.ts";
+import { defaultHomeSettings, precisionFacts } from "./homeEval.ts";
+import { markOf } from "./format.ts";
 import { defaultCasSettings } from "./types.ts";
 import { giacAvailable, nodeHost } from "./nodeGiac.ts";
 import { listAsArguments } from "./listargs.ts";
@@ -97,9 +98,12 @@ describe.skipIf(!giacAvailable())("R80f1 a list in a distribution", () => {
   it("keeps a list after the parameters, one value per element", () => {
     expect(home("uniform_cdf(16/5,57/10,list[1,2])")).toMatchObject({ ok: true, display: "{0,0}" });
     expect(home("binomial(5,2)*list[1,4]")).toMatchObject({ ok: true, display: "{10,40}" });
-    // 1−e^(−2·1) ≈ 0.864664716763 and 0 below the support
-    expect(home("exponential_cdf(2,list[1,-1])")).toMatchObject({ ok: true, display: "{0.864664716763,0}" });
-    expect(home("list[1,2]+normald_cdf(1)")).toMatchObject({ ok: true, display: "{1.84134474607,2.84134474607}" });
+    // 1−e^(−2·1) ≈ 0.864664716763 and 0 below the support; a float list takes its weakest element's mark (docs/04 2.4), ≈ here
+    for (const [input, display] of [["exponential_cdf(2,list[1,-1])", "{0.864664716763,0}"], ["list[1,2]+normald_cdf(1)", "{1.84134474607,2.84134474607}"]]) {
+      const r = home(input!);
+      expect(r).toMatchObject({ ok: true, display });
+      expect(markOf(precisionFacts(r), { format: "STD", digits: 12 })?.mark, input).toBe("≈");
+    }
   });
 });
 

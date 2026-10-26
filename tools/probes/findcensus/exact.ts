@@ -69,16 +69,3 @@ export function exactReading(v: GiacValue, digits: number): { scalar: ExactClaim
   }
   return items.some((it) => it.mark) ? { items } : null;
 }
-
-/** R80f1: the CAS view shows a value of Giac's list type in braces (giacPrint.ts bracesOf: `list[Ci(1),Ci(2)]` is shown
- *  `{Ci(1),Ci(2)}`), which Giac reads back as a set, a shape with no items. This is the shown text with every brace pair
- *  written as Giac's `list[…]` again, outside strings, so bridge-3 reads the list it came from. */
-export function listTypeOf(shown: string): string {
-  let out = "";
-  let inString = false;
-  for (const c of shown) {
-    if (c === '"') inString = !inString;
-    out += inString ? c : c === "{" ? "list[" : c === "}" ? "]" : c;
-  }
-  return out;
-}

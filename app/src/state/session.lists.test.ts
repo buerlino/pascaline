@@ -90,9 +90,8 @@ describe.skipIf(!giacAvailable())("a stored { } list stays a list (R80, real eng
     // binomial(5,2) = 10 times each element
     expect(await run(`L:=${LIST}`, "L\\times\\operatorname{binomial}\\left(5,2\\right)")).toEqual({ text: "{10,40}", mark: "=" });
     // 1 + Φ(1) and 2 + Φ(1): a list of two values, Φ(1) ≈ 0.841344746069
-    const sum = await last(`${L12}+\\operatorname{normald\\_cdf}\\left(1\\right)`);
-    expect(sum.status).toBe("done");
-    expect(sum.text).toBe("{1.84134474607,2.84134474607}");
+    // both values went through the numeric path at two precisions, so the list is ≈, never =
+    expect(await run(`${L12}+\\operatorname{normald\\_cdf}\\left(1\\right)`)).toEqual({ text: "{1.84134474607,2.84134474607}", mark: "≈" });
     // a list as the only argument is Giac's argument list (P(0.5 ≤ X ≤ 1.5) = 0.2417…), refused
     expect(await last("\\operatorname{normald\\_cdf}\\left(\\left\\{0.5,1.5\\right\\}\\right)")).toMatchObject({ status: "error" });
     // negbinomial_icdf(3,0.5,list[0.2,0.7]) = 0, right {1,4}: refused

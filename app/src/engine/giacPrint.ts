@@ -165,21 +165,41 @@ export const LIST_TYPE = "list[";
  *  Bridge-3 gives the kind and the flat elements but no print in braces, and a list inside a vector needs the nesting. */
 export function bracesOf(text: string): string {
   // where each list type opens (its `list[`) and where its `]` closes it
-  const opens = new Set<number>();
-  const cuts: number[] = [];
+  const cuts = new Map<number, [number, string]>();
   walk(text, 0, (k) => {
     const b = text.charAt(k - 1);
     if (!text.startsWith(LIST_TYPE, k) || isNameChar(b) || b === ".") return;
     const close = closing(text, k + LIST_TYPE.length - 1, "printed");
     if (close < 0) return;
-    opens.add(k);
-    cuts.push(k, close);
+    cuts.set(k, [LIST_TYPE.length, "{"]);
+    cuts.set(close, [1, "}"]);
   }, "printed");
+  return withCuts(text, cuts);
+}
+
+/** R80f1: the inverse of bracesOf: every brace pair outside strings written as Giac's `list[…]` again
+ *  (`{Ci(1),Ci(2)}` → `list[Ci(1),Ci(2)]`), so a value the CAS view shows in braces reads back as the list it came from,
+ *  not as a set. `listTypeOf(bracesOf(x)) === x` for every print without a brace of its own. */
+export function listTypeOf(shown: string): string {
+  const cuts = new Map<number, [number, string]>();
+  walk(shown, 0, (k, _d, ch) => {
+    if (ch !== "{") return;
+    const close = closing(shown, k, "printed");
+    if (close < 0) return;
+    cuts.set(k, [1, LIST_TYPE]);
+    cuts.set(close, [1, "]"]);
+  }, "printed");
+  return withCuts(shown, cuts);
+}
+
+/** `text` with each cut (at its index: the length it replaces, the text it puts there) applied. */
+function withCuts(text: string, cuts: ReadonlyMap<number, readonly [number, string]>): string {
   let out = "";
   let i = 0;
-  for (const k of cuts.sort((x, y) => x - y)) {
-    out += text.slice(i, k) + (opens.has(k) ? "{" : "}");
-    i = k + (opens.has(k) ? LIST_TYPE.length : 1);
+  for (const k of [...cuts.keys()].sort((x, y) => x - y)) {
+    const [len, put] = cuts.get(k)!;
+    out += text.slice(i, k) + put;
+    i = k + len;
   }
   return out + text.slice(i);
 }
