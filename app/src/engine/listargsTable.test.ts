@@ -10,7 +10,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { giacAvailable, loadNodeGiac } from "./nodeGiac.ts";
-import { PROBE_SKIPPED, PROBED_LIST_AS_ARGUMENTS, PROBED_NAMES } from "./listargsTable.ts";
+import { PROBED_LIST_AS_ARGUMENTS, PROBED_NAMES } from "./listargsTable.ts";
+import { PROBE_SKIPPED, PROBED_EVIDENCE } from "./listargsEvidence.ts";
 import { LIST_AS_ARGUMENTS } from "./listargs.ts";
 import { aideCas } from "../../../tools/probes/findcensus/run.ts";
 import { listArgNames } from "../../../tools/probes/listargs/names.ts";
@@ -35,7 +36,8 @@ describe.skipIf(!hasIndex || !giacAvailable())("G112 the list-as-arguments table
       const v = verdict((s) => giac.eval(s), n.name, n.takesList);
       if (v.hit) found[n.name] = v.why;
     }
-    expect(found).toEqual(PROBED_LIST_AS_ARGUMENTS);
+    expect(found).toEqual(PROBED_EVIDENCE);
+    expect(Object.keys(found)).toEqual(PROBED_LIST_AS_ARGUMENTS);
     expect(Object.keys(PROBE_SKIPPED).every((s) => names.some((n) => n.name === s))).toBe(true);
   });
 

@@ -16,10 +16,11 @@ import { changesState } from "./novalue.ts";
 import { PROBED_LIST_AS_ARGUMENTS } from "./listargsTable.ts";
 
 /** G112 (backlog F103): the functions that read a one-list argument as their arguments, from tools/probes/list-args.ts's
- *  table (listargsTable.ts, generated on the pinned engine; listargsTable.test.ts fails when they disagree): every name of
- *  Find's index and of the census whose f(list[a,b]) or f(list[a,b,c]) is not one value per element and equals f(a,b), or is
- *  one number. It holds G111's (LambertW, hermite …, range, randvector) and R80f1's (the distributions, igamma, ugamma). */
-export const LIST_AS_ARGUMENTS: readonly string[] = Object.keys(PROBED_LIST_AS_ARGUMENTS);
+ *  table (listargsTable.ts, generated on the pinned engine; each name's reason is in listargsEvidence.ts, kept out of the
+ *  bundle; listargsTable.test.ts fails when engine and table disagree): every name of Find's index and of the census whose
+ *  f(list[a,b]) or f(list[a,b,c]) is not one value per element and equals f(a,b), or is one number. It holds G111's
+ *  (LambertW, hermite …, range, randvector) and R80f1's (the distributions, igamma, ugamma). */
+export const LIST_AS_ARGUMENTS: readonly string[] = PROBED_LIST_AS_ARGUMENTS;
 const LIST_AS = new Set(LIST_AS_ARGUMENTS);
 
 /** R80f1: functions that answer a list among their arguments wrongly (probed on the shared engine with patch 0007,
