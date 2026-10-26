@@ -158,7 +158,7 @@ const GROUPS: [string, (page: Page) => Promise<void>, string, Record<string, str
   ["a column vector", async (page) => { await insert(page, "colvec"); await tap(page, ["d1", "right", "d2", "right"]); }, V,
     { div: "[[0.5],[1]]" }],
   ["a { } list", (page) => tap(page, ["shift", "d8", "d1", "comma", "d2", "right"]), L,
-    { inv: "[1,0.5]", div: "[0.5,1]" }],
+    { sq: "{1,4}", pow: "{1,4}", inv: "{1,0.5}", div: "{0.5,1}" }], // R80: Giac's list type, shown in braces; elementwise
   ["a bracket group", (page) => tap(page, ["paren", "d1", "add", "d2", "right"]), P, { sq: "9", pow: "9", inv: "0.333333333333", div: "1.5" }],
 ];
 const OPS: [string, string[], (g: string) => string][] = [
