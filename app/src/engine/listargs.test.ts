@@ -80,6 +80,19 @@ describe.skipIf(!giacAvailable())("R80f1 a list in a distribution", () => {
     expect(home("negbinomial_icdf(3,1/2,1/5)")).toMatchObject({ ok: true });
   });
 
+  // mlr_beta(X, y): the vector y gives Giac's betas [0.05,1.99] (intercept, slope of 2.1, 3.9, 6.2, 7.8, 10.1 on 1…5);
+  // the list type gives a 2×5 matrix, and mlr_predict a matrix where five predictions belong
+  it("refuses a list-type y or beta in mlr_beta and mlr_predict, and keeps a vector", () => {
+    const wrong = { ok: false, error: "listInArgument" };
+    const X = "[[1],[2],[3],[4],[5]]";
+    expect(cas(`mlr_beta(${X},list[21/10,39/10,31/5,39/5,101/10])`)).toMatchObject(wrong);
+    expect(cas(`mlr_predict(${X},list[1/20,199/100])`)).toMatchObject(wrong);
+    expect(home("Y:=list[21/10,39/10,31/5,39/5,101/10]")).toMatchObject({ ok: true });
+    expect(home(`mlr_beta(${X},Y)`)).toMatchObject(wrong);
+    expect(cas(`mlr_beta(${X},[21/10,39/10,31/5,39/5,101/10])`)).toMatchObject({ ok: true });
+    expect(cas(`mlr_beta(list[[1],[2],[3],[4],[5]],[21/10,39/10,31/5,39/5,101/10])`)).toMatchObject({ ok: true });
+  });
+
   it("keeps a list after the parameters, one value per element", () => {
     expect(home("uniform_cdf(16/5,57/10,list[1,2])")).toMatchObject({ ok: true, display: "{0,0}" });
     expect(home("binomial(5,2)*list[1,4]")).toMatchObject({ ok: true, display: "{10,40}" });

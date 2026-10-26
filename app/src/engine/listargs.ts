@@ -6,7 +6,8 @@
 // a call of one of LIST_AS_ARGUMENTS whose one argument is a list, typed (`[…]`, Giac's `list[…]`) or held by what the
 // argument evaluates to (a stored list, Ans). Two arguments typed as two keep Giac's answer. R80f1: Giac's densities, cdfs
 // and inverse cdfs do the same (normald_cdf([0.5,1.5]) = normald_cdf(0.5,1.5), P(0.5 ≤ X ≤ 1.5)); a list as their x after
-// the parameters is one value per element since G111's patch 0007, except negbinomial_icdf (LIST_IN_ARGUMENTS).
+// the parameters is one value per element since G111's patch 0007, except negbinomial_icdf; it and mlr_beta, mlr_predict
+// answer a list among their arguments wrongly (LIST_IN_ARGUMENTS).
 // Runs synchronously next to the engine; only erasable TypeScript syntax.
 import { type Giac } from "./numeric.ts";
 import { callsOf, closing, functionsIn, namesIn, splitList, topLevelArgs } from "./giacPrint.ts";
@@ -27,11 +28,15 @@ export const LIST_AS_ARGUMENTS: readonly string[] = [
 ];
 const LIST_AS = new Set(LIST_AS_ARGUMENTS);
 
-/** R80f1: the one distribution that still answers a list as its x wrongly after patch 0007 (probed 2026-10-26):
- *  negbinomial_icdf(3,0.5,list[0.2,0.7]) = 0, right list[1,4]. A list in any of its arguments is refused. */
-export const LIST_IN_ARGUMENTS: readonly string[] = ["negbinomial_icdf"];
-const LIST_IN = new Set(LIST_IN_ARGUMENTS);
-const EITHER = new Set([...LIST_AS, ...LIST_IN]);
+/** R80f1: functions that answer a list among their arguments wrongly (probed on the shared engine with patch 0007,
+ *  2026-10-26), refused when one argument is a list: "any" for a `[ ]` vector or Giac's list type in any argument, a number
+ *  k for the list type only (subtype 23, typed braces since R80) as argument k (from 0; a list-type X is answered right). negbinomial_icdf(3,0.5,[0.2,0.7]) = 0 for both (right {1,4}), the one
+ *  distribution patch 0007 left; mlr_beta(X,list[2.1,…]) is a 2×5 matrix and mlr_predict(X,list[0.05,1.99]) a matrix,
+ *  where the vector gives the betas [0.05,1.99] and the five predictions (mlr and its other forms give an error). */
+export const LIST_IN_ARGUMENTS: Readonly<Record<string, "any" | number>> = {
+  negbinomial_icdf: "any", mlr_beta: 1, mlr_predict: 1,
+};
+const EITHER = new Set([...LIST_AS, ...Object.keys(LIST_IN_ARGUMENTS)]);
 
 /** Which refusal a call earns: one list as its only argument, or (LIST_IN_ARGUMENTS) a list among its arguments. */
 export type ListRefusal = "listAsArguments" | "listInArgument";
@@ -41,9 +46,9 @@ export function mayListAsArguments(input: string): boolean {
   return callsOf(input, EITHER, "typed").length > 0;
 }
 
-/** The argument text is one typed list, `[…]` or `list[…]`, as a whole (not `[1,2][0]`). */
-function typedList(a: string): boolean {
-  const open = a.startsWith("[") ? 0 : a.startsWith("list[") ? 4 : -1;
+/** The argument text is one typed list, `[…]` or `list[…]` (only the latter when `listType`), as a whole (not `[1,2][0]`). */
+function typedList(a: string, listType = false): boolean {
+  const open = a.startsWith("[") && !listType ? 0 : a.startsWith("list[") ? 4 : -1;
   return open >= 0 && closing(a, open, "typed") === a.length - 1;
 }
 
@@ -60,14 +65,17 @@ export function listAsArguments(giac: Giac, input: string, userFn: (name: string
   for (const c of calls) {
     if (c.close < 0) continue;
     const args = topLevelArgs(input.slice(c.open + 1, c.close), "typed");
-    const why: ListRefusal = LIST_IN.has(c.name) ? "listInArgument" : "listAsArguments";
-    if (why === "listAsArguments" && args.length !== 1) continue;
-    for (const raw of args) {
+    const mode = Object.hasOwn(LIST_IN_ARGUMENTS, c.name) ? LIST_IN_ARGUMENTS[c.name] : undefined;
+    const why: ListRefusal = mode ? "listInArgument" : "listAsArguments";
+    if (!mode && args.length !== 1) continue;
+    const listType = typeof mode === "number";
+    for (const [k, raw] of args.entries()) {
+      if (listType && k !== mode) continue;
       const a = raw.trim();
-      if (typedList(a)) return why;
+      if (typedList(a, listType)) return why;
       if (!a.includes("[") && !namesIn(a, "typed").length) continue;
       if (changesState(a, "typed") || functionsIn(a, "typed").some(userFn)) continue;
-      ask.push({ text: `when(type(${a})==DOM_LIST,1,0)`, why });
+      ask.push({ text: listType ? `when(subtype(${a})==23,1,0)` : `when(type(${a})==DOM_LIST,1,0)`, why });
     }
   }
   if (!ask.length) return null;
