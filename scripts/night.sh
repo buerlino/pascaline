@@ -62,12 +62,11 @@ else
 fi
 log "night.sh started (max $max_steps steps$until_text)"
 export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
-steps=0; limits=0; bad=0; closing=0; declare -A norsl=()
+dry_rc=0; steps=0; limits=0; bad=0; closing=0; declare -A norsl=()
 henri_prompt='You are henri, the night coordinator. Read docs/shifts/brief.md section 0c (the rules, the queue table and the Opus pass) and the tail of .coord/log.md on stdin. Reply with exactly one line and nothing else: the next command to run, one of
   scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto   (the next queue step not done; skip steps the table or the log marks merged or skipped)
   scripts/pipeline.sh <agent> "<FIX prompt, verbatim>" --id <IDf1> --branch <branch> --model <m> --audit-model auto   (a FIX line of the last Opus pass, one per call, in order)
   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"   (after every 3 finished packages since the last pass, and at the end)
-  scripts/pipeline.sh device <n>                                                 (right after every Opus pass, with that pass'"'"'s number; a skipped device is fine)
   scripts/pipeline.sh report                                                     (after the last pass, its device step and its FIX packages)
   SHIFT DONE                                                                     (after the report)
 A RESULT line in the log means that step is finished (MERGED, NOT MERGED or SKIPPED); never repeat a finished step. Follow the last Opus pass QUEUE line. Decide nothing else. In a FIX prompt use no backtick and no dollar sign (the command is refused with them).'
@@ -77,7 +76,11 @@ closing_prompt='You are henri, the night coordinator. The night is closing (nigh
 Start no queue step and no FIX package. Use no backtick and no dollar sign.'
 
 ask_henri() {  # <n> <prompt>: henri's one-line reply
-  if [[ $dry -eq 1 ]]; then echo "(dry run: henri not asked)"; return; fi
+  if [[ $dry -eq 1 ]]; then  # stand-in: PASCALINE_NIGHT_REPLIES names a file of replies, one per ask (a line "75: <cmd>" ends with exit 75)
+    local f="${PASCALINE_NIGHT_REPLIES:-}"
+    if [[ -n "$f" && -f "$f" ]]; then sed -n "${1}p" "$f"; else echo "(dry run: henri not asked)"; fi
+    return
+  fi
   # shellcheck disable=SC2016
   local r
   r="$(tail -n 80 "$coord/log.md" | (cd "$integ" && timeout -k 60 600 claude -p --agent henri --model sonnet --effort medium --permission-mode auto --output-format text --no-session-persistence --allowedTools Read,Grep --disallowedTools Bash,Edit,Write,Agent,NotebookEdit -n "henri-$1" "$2") 2>>"$out" | grep -vE '^\s*$' | tail -n 1 | sed 's/^[` ]*//; s/[` ]*$//')" || r="(henri failed)"
@@ -89,7 +92,7 @@ unsafe() {  # <cmd>: shell metacharacters outside plain double quotes, or a back
 }
 run_cmd() {  # <cmd>: run one pipeline line; returns its exit code (75: usage limit, after the wait)
   local cmd="$1" cmdout rc
-  if [[ $dry -eq 1 ]]; then return 0; fi
+  if [[ $dry -eq 1 ]]; then say "run: $cmd"; local r=$dry_rc; dry_rc=0; return "$r"; fi
   set +e; cmdout="$(mktemp)"
   (cd "$integ" && eval "timeout -k 60 14400 $cmd") > "$cmdout" 2>&1; rc=$?
   set -e
@@ -142,9 +145,12 @@ while :; do
   fi
 
   cmd="$(ask_henri "$n" "$henri_prompt")"
-  [[ $dry -eq 0 ]] || cmd='scripts/pipeline.sh <agent> "<next step>" --model <m> --audit-model auto   (henri)'
+  if [[ $dry -eq 1 && -n "${PASCALINE_NIGHT_REPLIES:-}" ]]; then
+    [[ "$cmd" != 75:\ * ]] || { dry_rc=75; cmd="${cmd#75: }"; }
+    [[ -n "$cmd" ]] || cmd="SHIFT DONE"
+  else [[ $dry -eq 0 ]] || cmd='scripts/pipeline.sh <agent> "<next step>" --model <m> --audit-model auto   (henri)'; fi
   say "henri #$n: $cmd"; log "henri #$n: $cmd"
-  if [[ $dry -eq 1 ]]; then tick; continue; fi
+  if [[ $dry -eq 1 && -z "${PASCALINE_NIGHT_REPLIES:-}" ]]; then tick; continue; fi
   case "$cmd" in
     "SHIFT DONE") log "SHIFT DONE (night.sh)"; say "done"; exit 0;;
     scripts/pipeline.sh\ *)
@@ -152,7 +158,12 @@ while :; do
       bad=0
       # henri's package commands audit with auto (brief 0c: the pipeline raises gorge packages and Opus workers); pass and report take no such option
       [[ "$cmd" == scripts/pipeline.sh\ pass\ * || "$cmd" == scripts/pipeline.sh\ device\ * || "$cmd" == "scripts/pipeline.sh report" || "$cmd" == *--audit-model* ]] || cmd="$cmd --audit-model auto"
-      run_cmd "$cmd" || true;;
+      rc=0; run_cmd "$cmd" || rc=$?
+      # A41: after every Opus pass but a usage limit (75: henri is asked again), the device step with the pass's number
+      if [[ "$cmd" == scripts/pipeline.sh\ pass\ * && $rc -ne 75 ]]; then
+        pn="$(sed -E 's/^scripts\/pipeline\.sh pass ([0-9]+) .*/\1/' <<<"$cmd")"
+        [[ "$pn" =~ ^[0-9]+$ ]] && { run_cmd "scripts/pipeline.sh device $pn" || true; }
+      fi;;
     *)
       bad=$((bad + 1)); (( bad >= 2 )) && { log "STOPPED night.sh: henri gave no pipeline command twice"; say "STOPPED night.sh: henri gave no pipeline command twice"; exit 1; };;
   esac

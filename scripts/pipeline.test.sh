@@ -96,6 +96,15 @@ grep -q '#6' <<<"$out" && fail "night.sh --max-steps 5 runs a sixth step: $out"
 grep -q 'audit-model sonnet' "$here/night.sh" && fail "night.sh still names --audit-model sonnet (brief 0c says auto)"
 grep -q '"^## $(date +%F) night"' "$here/night.sh" && fail "night.sh writes the header only once per date"
 
+# A41: night.sh runs the device step right after each pass (same number), not after a pass that hit the usage limit
+printf '%s\n' 'scripts/pipeline.sh pass 7 "A1" "none"' '75: scripts/pipeline.sh pass 8 "A2" "none"' 'scripts/pipeline.sh pass 8 "A2" "none"' 'scripts/pipeline.sh ron "R1" --model sonnet' > "$tmp/replies"
+out="$(PASCALINE_NIGHT_REPLIES="$tmp/replies" PASCALINE_NIGHT_NOW=22:00 "$here/night.sh" --dry-run --max-steps 20 2>&1)"
+seq="$(grep -E '^[0-9:]+ run: ' <<<"$out" | sed -E 's/^[0-9:]+ run: //')"
+want=$'scripts/pipeline.sh pass 7 "A1" "none"\nscripts/pipeline.sh device 7\nscripts/pipeline.sh pass 8 "A2" "none"\nscripts/pipeline.sh pass 8 "A2" "none"\nscripts/pipeline.sh device 8\nscripts/pipeline.sh ron "R1" --model sonnet --audit-model auto'
+[[ "$seq" == "$want" ]] || fail "A41: the run sequence is not pass, device, (limit: no device), pass, device: $seq"
+out="$(PASCALINE_NIGHT_REPLIES="$tmp/replies" PASCALINE_NIGHT_NOW=22:00 "$here/night.sh" --dry-run --max-steps 6 2>&1)"
+grep -q 'closing 1 of 2' <<<"$out" && grep -q 'closing 2 of 2' <<<"$out" || fail "A41: the closing steps are gone: $out"
+
 # A24: each worktree gets its own node_modules (hard-link copy); a machine failure ends the run; a dirty phase-1 is not a conflict
 out="$("$script" ron "$ron_pkg" --dry-run 2>&1)"
 grep -q '^setup: .*cp -al' <<<"$out" || fail "A24: the dry run does not show the setup step (cp -al of node_modules)"
@@ -218,7 +227,7 @@ for want in 'host-cpu' 'tools/device-build.sh --test' 'devlock.sh acquire TESTSE
 done
 grep -qE 'HA24BZ2Y|4d42e62f' "$here/pipeline.sh" && fail "A33: pipeline.sh writes a device serial"
 grep -q 'DEVICE SKIPPED' "$here/pipeline.sh" || fail "A33: pipeline.sh has no DEVICE SKIPPED"
-grep -q 'scripts/pipeline.sh device <n>' "$here/night.sh" || fail "A33: the henri prompt does not list scripts/pipeline.sh device <n>"
+grep -q 'scripts/pipeline.sh device <n>' "$here/night.sh" && fail "A41: the henri prompt still lists the device line"
 grep -q 'pipeline.sh\\ device\\ \*' "$here/night.sh" || fail "A33: night.sh does not run a device line"
 
 # A33f1: a locked screen is skipped, not failed; the build is never run
