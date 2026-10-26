@@ -4,7 +4,7 @@
 //   npm run gate            # typecheck, index (when missing), vitest (FIND_INDEX=required), e2e, golden (when engine or
 //                           # parser code changed against phase-1), sweep (G61, the oracle sweep), seqsweep (G62), casback (G64), viewsweep (G63), findcensus (G110), size test, docs sizes
 //   npm run gate -- --quick # typecheck and vitest only
-//   npm run gate -- --update-text-baseline # rules stage: write app/scripts/text-baseline.json (G88)
+//   npm run gate -- --update-text-baseline # rules stage (G88: text matches and `.eval(` outside engine and units are counted): write app/scripts/text-baseline.json (G88)
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
 // QALC_OUT, PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
 import { spawnSync } from "node:child_process";
@@ -13,7 +13,7 @@ import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { countAll, evalOutside, judge, readBaseline, totals, writeBaseline } from "./text-rules.ts";
 import {
-  duration, formatLine, isSolveReloadFailure, playwrightFailedSpecs, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeFindCensus, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
+  duration, formatLine, playwrightFailedSpecs, retryable, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeFindCensus, summarizeTypecheck, regeneratesIndex, selectsGolden, summarizeVitest, vitestFailures,
   type Summary,
 } from "./gate-summary.ts";
 
@@ -115,10 +115,9 @@ const checks: Check[] = [
       };
       const first = go();
       if (first.ok) return first;
-      // A wall-clock test (the Find query's p95) fails when the whole suite runs in parallel on this machine, which is the
-      // gate's own load. Only those tests are run once more, alone; any other failure stays a FAIL.
+      // The pipeline's rule (pipeline-logs.ts isTiming): only wall-clock tests are run once more, alone; any other failure stays a FAIL.
       const failed = vitestFailures(readJson(json));
-      if (failed.length > 0 && failed.every((f) => /takes well under/.test(f.title))) {
+      if (retryable("vitest", failed)) {
         const again = go([...new Set(failed.map((f) => f.file))]);
         if (again.ok) return { ok: true, detail: `${again.detail} (timing test re-run alone: ${failed.map((f) => f.title.slice(0, 40)).join(", ")})` };
       }
@@ -139,11 +138,10 @@ const checks: Check[] = [
       };
       const first = go();
       if (first.ok) return first;
-      // brief section 8: the known-flaky persistence (reload) test of solve.spec.ts may be re-run once, and only it
       const failed = playwrightFailedSpecs(readJson(json));
-      if (failed.length > 0 && failed.every(isSolveReloadFailure)) {
-        const again = go(["solve.spec.ts"]);
-        if (again.ok) return { ok: true, detail: `${again.detail} (solve.spec.ts reload test re-run once, it was flaky: ${failed.map((f) => `${f.file}:${f.line}`).join(", ")})` };
+      if (retryable("e2e", failed)) {
+        const again = go(failed.map((f) => `${f.file}:${f.line}`));
+        if (again.ok) return { ok: true, detail: `${again.detail} (timing test re-run alone: ${failed.map((f) => `${f.file}:${f.line}`).join(", ")})` };
       }
       return first;
     },

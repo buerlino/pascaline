@@ -3,7 +3,7 @@
 // Vitest's and Playwright's JSON reporters.
 import { describe, expect, it } from "vitest";
 import {
-  formatLine, isSolveReloadFailure, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeFindCensus, summarizeTypecheck, summarizeVitest, vitestFailures,
+  formatLine, retryable, coreCount, regeneratesIndex, selectsGolden, playwrightFailedSpecs, playwrightFailures, summarizeDocs, summarizeGolden, summarizePlaywright, summarizeCasBack, summarizeSeqSweep, summarizeSize, summarizeSweep, summarizeViewSweep, summarizeFindCensus, summarizeTypecheck, summarizeVitest, vitestFailures,
 } from "./gate-summary.ts";
 
 const vitestOk = {
@@ -52,15 +52,25 @@ describe("playwright report", () => {
     expect(playwrightFailures(r)).toEqual(["solve.spec.ts:40", "keys.spec.ts:7"]);
     expect(summarizePlaywright(r)).toEqual({ ok: false, detail: "2 of 7 failed: solve.spec.ts:40, keys.spec.ts:7" });
   });
-  it("re-runs only the solve.spec.ts reload tests, by title", () => {
-    const t = (file: string, line: number, title: string) => ({ title, file, line, ok: false });
-    const reload = t("solve.spec.ts", 142, "Solve: equations and values are stored");
-    const reload2 = t("solve.spec.ts", 157, "Solve: the ⚠ of an answer is kept across a reload (M4-10)");
-    const other = t("solve.spec.ts", 55, "Solve: x·e^x=5 with guess 1 gives the oracle root and the info line");
-    const ok = (r: ReturnType<typeof t>[]) => playwrightFailedSpecs(pw(r.length, r)).every(isSolveReloadFailure);
-    expect(ok([reload, reload2])).toBe(true);
-    expect(ok([reload, other])).toBe(false);
-    expect(ok([reload, t("keys.spec.ts", 142, "Solve: equations and values are stored")])).toBe(false);
+  it("retries exactly what isTiming accepts, per check", () => {
+    const e = (file: string, title: string) => ({ file, line: 1, title });
+    const timing = e("working.spec.ts", "Esc stops a job before Working… shows");
+    const reload = e("solve.spec.ts", "Solve: equations and values are stored");
+    const other = e("solve.spec.ts", "Solve: x·e^x=5 with guess 1 gives the oracle root");
+    expect(retryable("e2e", [timing, reload])).toBe(true);
+    expect(retryable("e2e", [timing, other])).toBe(false);
+    expect(retryable("e2e", [e("keys.spec.ts", reload.title)])).toBe(false);
+    expect(retryable("e2e", [])).toBe(false);
+    expect(retryable("vitest", [{ file: "/x/src/find/queries.test.ts", title: "a takes well under 16 ms" }])).toBe(true);
+    expect(retryable("vitest", [{ file: "/x/src/find/queries.test.ts", title: "other" }])).toBe(false);
+  });
+  it("counts the core cases as the core reporter does", () => {
+    const t = (title: string, expectedStatus: string, status: string) => ({ title, file: "core.spec.ts", line: 1, ok: status !== "unexpected", tests: [{ expectedStatus, status }] });
+    const r = { suites: [{ specs: [t("c01 a", "passed", "expected"), t("c02 b", "passed", "unexpected"), t("c03 c", "failed", "expected"), t("c04 d", "passed", "skipped"), t("c05 e", "passed", "flaky"), { title: "other", file: "keys.spec.ts", line: 1, ok: true, tests: [{ expectedStatus: "passed", status: "expected" }] }] }] };
+    expect(coreCount(r)).toBe("CORE 2/3 (known 1, needs 1)");
+    expect(coreCount({ suites: [] })).toBeNull();
+    const good = { suites: [{ specs: [t("c01 a", "passed", "expected"), t("c03 c", "failed", "expected"), t("c04 d", "passed", "skipped")] }] };
+    expect(summarizePlaywright({ ...good, stats: { expected: 2, unexpected: 0, flaky: 0, skipped: 1 } }).detail).toBe("2 of 3, 1 skipped, CORE 1/1 (known 1, needs 1)");
   });
   it("fails on errors outside tests and on no report", () => {
     expect(summarizePlaywright(pw(0, [spec("a.spec.ts", 1, true)], { errors: [{ message: "boom\nmore" }] })).detail).toContain("boom");

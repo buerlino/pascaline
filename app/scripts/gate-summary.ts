@@ -2,6 +2,8 @@
 // The pure half of `npm run gate` (scripts/gate.ts): turns Vitest's and Playwright's JSON reports (never their text)
 // into one summary line each. Kept apart from gate.ts so a test can feed it fake reports.
 
+import { isTiming } from "./pipeline-logs.ts";
+
 export interface Summary {
   ok: boolean;
   /** The text after `PASS name ` / `FAIL name `, without the duration. */
@@ -97,9 +99,36 @@ export function playwrightFailedSpecs(report: unknown): { file: string; line: nu
   return out;
 }
 
-/** The two solve.spec.ts tests that reload the page and read what was stored (brief section 8: the known-flaky persistence test). */
-export function isSolveReloadFailure(f: { file: string; title: string }): boolean {
-  return f.file === "solve.spec.ts" && /equations and values are stored|kept across a reload/.test(f.title);
+/** The gate re-runs failed tests once and alone only when every one is a wall-clock test that the pipeline's `isTiming` accepts (one list, not two). */
+export function retryable(check: "vitest" | "e2e", failed: readonly { file: string; title: string }[]): boolean {
+  return failed.length > 0 && failed.every((f) => isTiming(check, f));
+}
+
+interface PwTest {
+  expectedStatus?: string;
+  status?: string;
+}
+
+/** `CORE <passed>/<active> (known <k>, needs <n>)` from a Playwright JSON report, counted as test/core-reporter.ts counts; null without core cases. */
+export function coreCount(report: unknown): string | null {
+  let passed = 0, active = 0, known = 0, needs = 0, seen = 0;
+  const walk = (s: PwSuite & { specs?: (PwSpec & { tests?: PwTest[] })[] }): void => {
+    for (const spec of s.specs ?? []) {
+      if (base(spec.file ?? "") !== "core.spec.ts" || !/^c\d\d /.test(spec.title ?? "")) continue;
+      for (const t of spec.tests ?? []) {
+        seen++;
+        if (t.status === "skipped") needs++;
+        else if (t.expectedStatus === "failed") known++;
+        else {
+          active++;
+          if (t.status === "expected" || t.status === "flaky") passed++;
+        }
+      }
+    }
+    for (const c of s.suites ?? []) walk(c);
+  };
+  for (const s of (report as PwReport | null)?.suites ?? []) walk(s);
+  return seen === 0 ? null : `CORE ${passed}/${active} (known ${known}, needs ${needs})`;
 }
 
 /** Playwright's `--reporter=json`. */
@@ -112,7 +141,7 @@ export function summarizePlaywright(report: unknown): Summary {
   if (unexpected > 0 || failed.length > 0) return { ok: false, detail: failLine(total, failed.length > 0 ? failed : Array(unexpected).fill("?"), "failed") };
   if ((r.errors?.length ?? 0) > 0) return { ok: false, detail: `${r.errors?.length} errors outside tests: ${(r.errors?.[0]?.message ?? "").split("\n")[0]}` };
   if (expected + flaky === 0) return { ok: false, detail: "0 tests ran" };
-  const extra = (flaky > 0 ? `, ${flaky} flaky` : "") + (skipped > 0 ? `, ${skipped} skipped` : "");
+  const extra = (flaky > 0 ? `, ${flaky} flaky` : "") + (skipped > 0 ? `, ${skipped} skipped` : "") + (coreCount(r) ? `, ${coreCount(r)}` : "");
   return { ok: true, detail: `${expected + flaky} of ${total}${extra}` };
 }
 
