@@ -402,16 +402,18 @@ chmod +x "$sb6/bin/claude"; git -C "$sb6" add -A; gc "$sb6" init; git -C "$sb6" 
 sb6run() { (cd "$sb6" && PATH="$sb6/bin:$PATH" GIAC_OUT="$sb6/engine" "$@"); }
 sb6run "$script" ron "x" --id P0 --branch p1/p0 --checks none --no-merge >/dev/null 2>&1   # creates the phase-1 worktree
 p1wt="$sb6/.claude/worktrees/phase-1"
-git -C "$sb6" branch p1/behind phase-1; git -C "$sb6" branch p1/uptodate phase-1; git -C "$sb6" branch p1/conflict phase-1
+git -C "$sb6" branch p1/behind phase-1; git -C "$sb6" branch p1/conflict phase-1
 echo 1 > "$p1wt/p1.txt"; git -C "$p1wt" add p1.txt; gc "$p1wt" "later merge"
-git -C "$sb6" branch p1/uptodate2 phase-1
 git -C "$sb6" worktree add -q "$tmp/cw" p1/conflict; echo branchside > "$tmp/cw/conf.txt"; git -C "$tmp/cw" add conf.txt; gc "$tmp/cw" "branch edit"; git -C "$sb6" worktree remove --force "$tmp/cw"
 echo phaseside > "$p1wt/conf.txt"; git -C "$p1wt" add conf.txt; gc "$p1wt" "phase edit"
+git -C "$sb6" branch p1/uptodate2 phase-1   # after the last phase-1 commit: really up to date
 out="$(sb6run "$script" ron "x" --id P1 --branch p1/behind --checks none --no-merge 2>&1)"
 grep -q 'merging phase-1 into p1/behind' "$sb6/.coord/log.md" || fail "A38: a resumed branch behind phase-1: no 'merging phase-1 into' log line: $out"
 git -C "$sb6" show p1/behind:seen.txt 2>/dev/null | grep -q 'p1.txt=1' || fail "A38: the worker did not start on a branch with phase-1 merged in: $out"
 git -C "$sb6" merge-base --is-ancestor phase-1 p1/behind || fail "A38: the resumed branch lacks phase-1 after the run"
+git -C "$sb6" merge-base --is-ancestor phase-1 p1/uptodate2 || fail "A38: fixture: p1/uptodate2 is not up to date"
 out="$(sb6run "$script" ron "x" --id P2 --branch p1/uptodate2 --checks none --no-merge 2>&1)"
+grep -q 'merging phase-1 into p1/uptodate2' "$sb6/.coord/log.md" && fail "A38: a branch containing phase-1 logged a merge of phase-1"
 [[ "$(git -C "$sb6" log --merges --format=%s p1/uptodate2 | wc -l)" -eq 0 ]] || fail "A38: a branch containing phase-1 got a merge commit: $out"
 out="$(sb6run "$script" ron "x" --id P3 --branch p1/conflict --checks none --no-merge 2>&1)"
 grep -q 'conflicts with phase-1 resolved by ron' "$sb6/.coord/log.md" && [[ "$(git -C "$sb6" show p1/conflict:conf.txt)" == resolved ]] || fail "A38: a conflict on resume does not go to the resolve round: $out"
