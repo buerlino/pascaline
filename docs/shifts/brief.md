@@ -21,7 +21,7 @@
 
 **At night, the core lane** (section 0c's queue) holds no package: G112 (F103, one list read as a function's arguments, at the cause) goes by day as G112f1 above; its refusal rule for constructors (Opus pass 80) goes in through the branch, with F107. So the night runs process steps only (owner, 2026-10-26): S24 first if the day did not merge it (124), then A39, A19, A42, then S16 (steps 125a–c, 130). Every merge runs the core list (R74), and the night's device runs it after each Opus pass (A33).
 
-**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): F101 and F104 → **G113**, then F108 → **G114** (both after P23's night 2, before R4a; owner, 2026-10-26); S16 after A19; F61, F62, F86 and G94 (no package). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
+**The background stream** (only when no core step can start; each still gets caught and marked, principle 3): F101 and F104 → **G113**, then F108 → **G114** (both after P23's night 2, before R4a; owner, 2026-10-26); F61, F62, F86, F111–F114 and G94 (no package; G94 also blocks G63 at volume, S16). G81 (σ through the basis) waits with the units. **If no step can start,** the night goes to its last pass and report: an early end is fine, there is no filler.
 
 **Why this order:** the list first, so nothing merges blind; silent wrong numbers next, by reach; the bridge before the readers it would replace; the device run once its harness exists. R15c3 and R15c4 move behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -36,7 +36,6 @@
 | [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A40](packages/A40.md) | A known core case that passes on the device is reported | annabell, Sonnet | day | now | ~0.1 d |
-| [A19](packages/A19.md) | Giac's own test suite as an engine-gate stage | annabell, Sonnet | night (125b) | now | ~0.25 d |
 | [A42](packages/A42.md) | The release engine through the gates (`tools/release-gate.sh`) | annabell, Sonnet | night (125c) | now | ~0.25 d |
 | [G113](packages/G113.md) | A probability off the integers is 0; negbinomial_icdf exact (F101, F104) | gorge, Opus | night-safe | P23's night 2 | ~0.5 d |
 | [G114](packages/G114.md) | The census sees Giac's sequence answers (F108) | gorge, Sonnet | night-safe | P23's night 2 | ~0.25 d |
@@ -70,9 +69,7 @@ Estimates are wall-clock guesses. A package merged by day is skipped (log it); a
 |---|---|---|---|---|---|
 | 124 | [S24](packages/S24.md) core cases c61–c66 (skip if merged by day) | sandra, Opus | `p1/sandra-corecases` | — | 45 min |
 | 125a | [A39](packages/A39.md) `npm run gate` judges e2e and vitest as the pipeline does | annabell, Sonnet | `p1/annabell-gatetiming` | — | 45 min |
-| 125b | [A19](packages/A19.md) Giac's own test suite as an engine-gate stage | annabell, Sonnet | `p1/annabell-giaccheck` | — | 1 h |
 | 125c | [A42](packages/A42.md) the release engine through the gates | annabell, Sonnet | `p1/annabell-releasegate` | — | 1 h 30 |
-| 130 | [S16](packages/S16.md) the hardening pass, run as `scripts/pipeline.sh pass <n> "G61 G62 G63 G64 A19" "S16: docs/shifts/packages/S16.md"` | sofia, Opus | — | A19 | 1 h + fixes |
 | 135 | The flake census (A37): `scripts/pipeline.sh flakes <n>`, when no core step can start, before the last pass; once per night until the freeze ends | — | — | A37 | 1 h |
 | 190 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 191 | Shift report, then stop | — | — | — | 10 min |
