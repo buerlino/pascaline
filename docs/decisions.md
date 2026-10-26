@@ -8,7 +8,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff. (The leftover `QALC_OUT` is A30.)
-- **R80's side effects (run 251):** (1) a matrix times a typed list scales its rows (`[[1,2],[3,4]]×{1,2}` = `[[1,2],[6,8]]`, was the matrix-vector product `[5,11]`); (2) `mlr_*(M,{…})` is refused (was a value). Proposal: accept both for the freeze (Find is closed). Would change if: a core or golden case needs 1 or 2.
 
 ## Decided proposals
 
@@ -57,6 +56,7 @@ Newest first within each group.
 - **Owner answers of 2026-10-19 (feel).** R34: one shared entry line, as on the G2 (an unentered line follows you between views; after Enter it clears); R43, R7's defaults and A4a points 3 and 4 as built. Full text: archive.
 
 ### Precision, engine and parser
+- **R80's side effects (Opus pass 78; R80f1):** accepted for the freeze (Find is closed): a matrix times a typed list scales its rows (`[[1,2],[3,4]]×{1,2}` = `[[1,2],[6,8]]`, was the matrix-vector product `[5,11]`), and `mlr` with a typed list is refused (Giac's error; `mlr_beta` and `mlr_predict`, whose list-type answer is a wrong matrix, by our `listInArgument`). Would change if: a core or golden case needs either.
 - **G77, G89 (Opus passes 68, 69):** `src/config.h` keeps pthreads (both pins, no golden difference): fixed after the freeze. G89 keeps a case's 12- and 30-digit lines. Would change if: a threaded path is taken.
 - **G82f1, G56, S17 (Opus pass 67):** Home's budget is 518,000 checks with a 1.5 s clock behind it; `factorial(10^6)`, deaf to interrupts, may be refused on a device 8× slower (honest; A20's rerun decides). A user function in a typed `evalf` stays ⚠ naming it during the freeze, its digits now right. Two-argument `round`/`trunc` stay ⚠ (G71), their patch gets an id after the freeze. Would change if: A20's rerun differs.
 - **G75, G103 (Opus pass 65):** patch 0003 is the sinh/sin form, not the plain swap (tanh(i)'s real part stays 0). A double in a list keeps today's display; each double as a number is the owner's choice after the freeze (no wrong value reaches the screen). Would change if: a list's double shows a wrong digit.
