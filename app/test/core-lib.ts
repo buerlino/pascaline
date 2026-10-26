@@ -184,9 +184,14 @@ async function rowState(row: import("@playwright/test").Locator): Promise<Requir
 /** Assert the case's `expect` against the page. */
 export async function check(page: Page, e: CoreExpect): Promise<void> {
   if (e.result !== undefined || e.mark !== undefined) {
-    const last = (await rowState(rowsOf(page).last()));
-    if (e.result !== undefined) expect(last.result, "result").toBe(e.result);
-    if (e.mark !== undefined) expect(last.mark, "mark").toBe(e.mark);
+    // polled: a b/c to polar asks the engine twice after the key (abs, arg; S24's c63), so the row changes later
+    const want = { ...(e.result !== undefined && { result: e.result }), ...(e.mark !== undefined && { mark: e.mark }) };
+    await expect
+      .poll(async () => {
+        const last = await rowState(rowsOf(page).last());
+        return { ...(e.result !== undefined && { result: last.result }), ...(e.mark !== undefined && { mark: last.mark }) };
+      }, { message: "last row" })
+      .toEqual(want);
   }
   if (e.rows !== undefined) {
     const all = rowsOf(page);
