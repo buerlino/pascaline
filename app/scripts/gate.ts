@@ -6,7 +6,7 @@
 //   npm run gate -- --quick # typecheck and vitest only
 //   npm run gate -- --update-text-baseline # rules stage (G88: text matches and `.eval(` outside engine and units are counted): write app/scripts/text-baseline.json (G88)
 // Environment: GIAC_OUT (absolute; default engine/giac/_out/gsl of this or the main checkout) for e2e and golden,
-// QALC_OUT, PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
+// PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR for `npm run index` (default: the main checkout's), PW_PORT for e2e's dev server, GATE_BASE (default phase-1) for the changed-files diff.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, isAbsolute, join, resolve } from "node:path";
@@ -98,7 +98,6 @@ const checks: Check[] = [
       const r = run("index", "npm", ["run", "index"], {
         PASCALINE_DL_DIR: process.env["PASCALINE_DL_DIR"] ?? join(mainCheckout, "engine/giac/_downloads"),
         PASCALINE_QALC_DL_DIR: process.env["PASCALINE_QALC_DL_DIR"] ?? join(mainCheckout, "engine/qalc/_downloads"),
-        QALC_OUT: process.env["QALC_OUT"] ?? join(mainCheckout, "engine/qalc/_out/dev"),
       });
       return { ok: r.code === 0, detail: r.code === 0 ? "generated" : `exit ${r.code}: ${r.out.trim().split("\n").slice(-1)[0]}` };
     },
