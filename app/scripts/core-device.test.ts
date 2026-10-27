@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadCore } from "../test/core-lib.ts";
-import { deviceLine, planDevice } from "../test-device/core-plan.ts";
+import { caseRecord, deviceLine, planDevice } from "../test-device/core-plan.ts";
 
 const root = (rel: string): string => readFileSync(new URL(`../../${rel}`, import.meta.url), "utf8");
 
@@ -34,6 +34,27 @@ describe("device plan", () => {
     expect(spec).toMatch(/replay\(/);
     expect(spec).toMatch(/check\(/);
     expect(spec).toMatch(/planDevice\(/);
+  });
+});
+
+describe("device reporter rows (A40)", () => {
+  const row = (expectedStatus: string, status: string) => caseRecord({ title: "c57 x", expectedStatus, status, duration: 5, error: "boom\nmore" }, "t", "S");
+  it("a known case that fails is ok and counts as known", () => {
+    const r = row("failed", "failed");
+    expect(r?.counts).toBe("known");
+    expect(r?.rec).toMatchObject({ ok: true, known: true });
+    expect(r?.rec).not.toHaveProperty("error");
+  });
+  it("a known case that passes is ok:false with the error", () => {
+    const r = row("failed", "passed");
+    expect(r?.counts).toBe("known");
+    expect(r?.rec).toMatchObject({ ok: false, known: true, error: "known case passes" });
+  });
+  it("active cases and skips as before", () => {
+    expect(row("passed", "passed")?.rec).toMatchObject({ ok: true });
+    expect(row("passed", "failed")?.rec).toMatchObject({ ok: false, error: "boom" });
+    expect(row("passed", "skipped")?.rec).toMatchObject({ ok: null, skipped: true });
+    expect(row("passed", "skipped")?.counts).toBe("needs");
   });
 });
 
