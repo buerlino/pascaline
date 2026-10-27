@@ -141,6 +141,7 @@ export interface ReplayHooks {
 export async function replay(page: Page, steps: readonly CoreStep[], hooks: ReplayHooks = {}): Promise<Page> {
   for (const [i, s] of steps.entries()) {
     if (typeof s === "string") {
+      if (/^d\d$/.test(s)) await pickSeen(page, s.slice(1));
       await tap(page, [s]);
       // a new row appears at once as pending (some views, Solve, add none); a {wait} next means the job is to be
       // interrupted, so do not wait for it
@@ -170,6 +171,23 @@ export async function replay(page: Page, steps: readonly CoreStep[], hooks: Repl
     }
   }
   return page;
+}
+
+/** R82f1 (F117): a digit pressed while a menu sheet is open picks the row numbered with it; that row must be on
+ *  screen and uncovered first, as the eye needs it (a replay that presses 1 without looking passed c46 on the Fairphone
+ *  while Root sat under the status line). Throws with what covers it, and the boxes, for a device log. */
+async function pickSeen(page: Page, digit: string): Promise<void> {
+  const id = await page.evaluate((d) => {
+    const sheet = document.querySelector('[data-testid="menu"], [data-testid="apps"]');
+    if (!sheet) return null;
+    const row = [...sheet.querySelectorAll<HTMLElement>(".row[data-id]")].find((r) => r.querySelector(".n")?.textContent?.trim() === d);
+    return row ? `[data-testid="${sheet.getAttribute("data-testid")}"] .row[data-id="${row.dataset["id"]}"]` : "";
+  }, digit);
+  if (id === null || id === "") return; // no list sheet open, or no row with that number (the key does what it does)
+  let why = "";
+  await expect.poll(async () => (why = await seen(page, id)), { message: `menu row ${digit} (${id}) on screen and uncovered`, timeout: 2000 }).toBe("").catch(() => {
+    throw new Error(`the menu row picked by ${digit} (${id}) cannot be seen: ${why}`);
+  });
 }
 
 async function rowState(row: import("@playwright/test").Locator): Promise<Required<RowCheck>> {
@@ -234,9 +252,14 @@ export function seen(page: Page, sel: string): Promise<string> {
     const cx = r.left + r.width / 2, cy = r.top + r.height / 2, i = Math.min(2, r.width / 4, r.height / 4);
     const points: [string, number, number][] = [["centre", cx, cy], ["top", cx, r.top + i], ["bottom", cx, r.bottom - i], ["left", r.left + i, cy], ["right", r.right - i, cy]];
     let top: Element | null = null, at = "";
+    // the list the element scrolls in: a hit on it inside the element's box is its overlay scroll bar (Android's
+    // WebView draws one over a scrollable list's right edge, R82f1), not something on top; a clipped point hits what
+    // is outside the list instead
+    let scroller: Element | null = el.parentElement;
+    while (scroller && !/(auto|scroll)/.test(getComputedStyle(scroller).overflowY)) scroller = scroller.parentElement;
     for (const [p, x, y] of points) {
       const hit = document.elementFromPoint(x, y);
-      if (!hit || (hit !== el && !el.contains(hit))) {
+      if (!hit || (hit !== el && !el.contains(hit) && hit !== scroller)) {
         top = hit;
         at = p;
         break;
