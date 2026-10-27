@@ -25,6 +25,9 @@ export interface AppHost {
   copy(text: string, notice?: string): void;
 }
 
+/** A place's glyph on the status line's tile (R82f2) and in the apps list (R84): maths-font text, or a drawn icon (Home's house). */
+export type Glyph = { readonly text: string } | { readonly icon: "home" };
+
 export interface MenuItem {
   readonly id: string;
   /** Already translated. */
@@ -45,6 +48,8 @@ export interface MenuItem {
   /** Picking the item runs it, or opens this follow-up list in place of the menu (e.g. Intersection: with which?). */
   run?(): void;
   readonly submenu?: SubMenu;
+  /** In the apps list: the place's glyph tile, drawn between the row's number and its name (R84). */
+  readonly glyph?: Glyph;
   /** In a grid sheet (the Tmpl palette): the cell drawn as math; `label` is then its spoken name. */
   readonly latex?: string;
   /** In a grid sheet: the key that picks this cell (its id) and its legend, shown on the cell (Shift + 6, R18). */
