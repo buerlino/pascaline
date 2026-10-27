@@ -143,6 +143,7 @@ export async function replay(page: Page, steps: readonly CoreStep[], hooks: Repl
     if (typeof s === "string") {
       if (/^d\d$/.test(s)) await pickSeen(page, s.slice(1));
       await tap(page, [s]);
+      if (/^@(symb|plot|num)$/.test(s)) await viewSeen(page, s.slice(1));
       // a new row appears at once as pending (some views, Solve, add none); a {wait} next means the job is to be
       // interrupted, so do not wait for it
       const next = steps[i + 1];
@@ -187,6 +188,25 @@ async function pickSeen(page: Page, digit: string): Promise<void> {
   let why = "";
   await expect.poll(async () => (why = await seen(page, id)), { message: `menu row ${digit} (${id}) on screen and uncovered`, timeout: 2000 }).toBe("").catch(() => {
     throw new Error(`the menu row picked by ${digit} (${id}) cannot be seen: ${why}`);
+  });
+}
+
+/** R82f2 (F118): a view the replay taps must be there for the eye too: its tab on screen, uncovered and not cut (the
+ *  Fairphone's status line showed "Sy… P… N…" while a tap by test id still found Plot). Checked right after the tap;
+ *  the tab does not move when it is selected. Throws with the cause and the boxes, for a device log. */
+async function viewSeen(page: Page, view: string): Promise<void> {
+  const sel = `[data-testid="tab-${view}"]`;
+  let why = "";
+  const check = async (): Promise<string> => {
+    const s = await seen(page, sel);
+    if (s !== "") return s;
+    return page.evaluate((q) => {
+      const el = document.querySelector(q) as HTMLElement;
+      return el.scrollWidth > el.clientWidth ? `cut (${el.scrollWidth} > ${el.clientWidth} px)` : "";
+    }, sel);
+  };
+  await expect.poll(async () => (why = await check()), { message: `view tab ${view} on screen and uncovered`, timeout: 2000 }).toBe("").catch(() => {
+    throw new Error(`the view tab ${view} the replay tapped cannot be seen: ${why}`);
   });
 }
 

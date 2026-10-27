@@ -75,12 +75,12 @@ test("from an app: the place name opens Apps, whose rows 1 and 2 go to Home and 
   await place(page).tap();
   await expect(appsSheet(page)).toBeVisible();
   await appsSheet(page).getByRole("menuitem").nth(1).tap();
-  await expect(place(page)).toHaveText("CAS");
+  await expect(place(page)).toHaveAccessibleName(/^Place: CAS\./);
   expect(await app(page)).toBeNull();
   await tap(page, ["@place", "d4"]);
   await expect(page.locator('[data-app="solve"]')).toBeVisible();
   await tap(page, ["@place", "d1"]);
-  await expect(place(page)).toHaveText("Home");
+  await expect(place(page)).toHaveAccessibleName(/^Place: Home\./);
   expect(await app(page)).toBeNull();
 });
 
@@ -192,13 +192,13 @@ test("a status tap while an app's code loads runs at once (decisions.md R8)", as
   await place(page).tap(); // the Apps sheet opens at once, and Home is its first row
   await appsSheet(page).getByRole("menuitem").first().tap();
   expect(await app(page)).toBeNull();
-  await expect(place(page)).toHaveText("Home");
+  await expect(place(page)).toHaveAccessibleName(/^Place: Home\./);
   await page.getByTestId("chip-format").tap(); // a chip opens Mode at once too
   await expect(page.getByTestId("sheet-title")).toHaveText("Mode");
   release();
   await page.waitForTimeout(500);
   expect(await app(page)).toBeNull(); // the late load does not take the place back
-  await expect(place(page)).toHaveText("Home");
+  await expect(place(page)).toHaveAccessibleName(/^Place: Home\./);
 });
 
 test("over an open sheet: the place name, and a free key that holds CAS or Home, close it and go there; a free key that holds no place does nothing", async ({ page }) => {
