@@ -39,7 +39,7 @@ function caseTest(c: CoreCase): void {
     if (c.known !== undefined) test.fail(true, `known ${c.known}`);
     await start(page);
     await replay(page, c.keys);
-    await check(page, c.expect);
+    await check(page, c.expect, c.id);
   });
 }
 
