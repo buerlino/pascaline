@@ -8,7 +8,7 @@ The one place for "where are we and what's left", one or two lines per open item
 | Stage | State |
 |---|---|
 | Phase 0 spike; MVP milestones 1 (Home, CAS), 2 (Function, Solve), 3 (Python, removed by P11) | **Done** 2026-10-11 (reports in [archive/shifts/](archive/shifts/)) |
-| **The core freeze (P23)** | **In progress since 2026-10-21.** No new feature until the core list holds ([tests/core/](../tests/core/README.md): 60 everyday tasks, 57 active, 3 waiting for R4a). Where the count stands and what ends it: brief section 0 ("What holds means"). The bridge moves G98–G105 are merged (G105 as G105f2, `694fb92`). |
+| **The core freeze (P23)** | **In progress since 2026-10-21.** No new feature until the core list holds ([tests/core/](../tests/core/README.md): 66 everyday tasks, 63 active, 3 waiting for R4a). Where the count stands and what ends it: brief section 0 ("What holds means"). The bridge moves G98–G105 are merged (G105 as G105f2, `694fb92`). |
 | Milestone 4a: feel (P11) | **Paused by P23.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, the Settings page, history-row actions, R15b, R15c1, R15c2, the mockups (R12a). Waiting: R15c3, R15c4, Settings rows, the palette, the visual pass, results mode, the trust features |
 | Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI (R4a, R4b, A4b) is first after the freeze |
 | Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad, the entry and the result view wait for the freeze |
@@ -43,6 +43,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
+- **F110 → R82 (owner, 2026-10-27; fixed on desktop, the night's device step judges).** Morning check 2026-10-26 on the Fairphone 6: c46's Root answer under the status bar, unread; CORE DEVICE passed it (it read text only). R82: a short stage no longer squeezes the readout under the keypad; `text` expects check the match is on screen and uncovered.
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it. Can start (G104 merged).
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F83, no package (G99's report).** CAS `sum(x^2,x=1..3)` reaches Giac as `sum(x^2,x=(3/10^1))` (toExactLiterals reads `1..3` as decimals) and errors; Home shows `≈ 14` (F73). Family 8.
@@ -77,7 +78,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F109, no package.** Home `DelAVars()` shows `DelAVars`, its own name: no answer and no refusal. Family 5.
 - **F111, no package (S16, `cbb636e`).** Home `|acos(π)|^2` ≈ -3.28162743582 (right 3.28162743582; `^6` ≈ -35.34): Giac makes `abs(acos(pi))^2` `acos(pi)^2`, a rule for reals (`MODE=raw node tools/probes/engine.ts 'abs(acos(pi))^2'`). Family 3.
 - **F112, no package (S16).** Home `asin(cos(asin(10)))` ≈ 0.148369807463·i, right 2.99322284613·i on either branch: Giac's exact form adds `i*pi` (`MODE=raw … 'asin(cos(asin(10)))'`).
-- **F113, no package (S16).** DEG Home `atan(cos(0.001))` = 45, marked exact (right 44.9999999956): Giac gives `atan(cos(pi/N))` = `pi/4` from about N = 10^5 (`MODE=raw … 'atan(cos(pi/100000))'`). Family 3.
+- **F113 → G115 (after night 2; owner, 2026-10-27).** DEG Home `atan(cos(0.001))` = 45, marked exact (right 44.9999999956): Giac gives `atan(cos(pi/N))` = `pi/4` from about N = 10^5 (`MODE=raw … 'atan(cos(pi/100000))'`). Family 3.
 - **F114, no package (S16).** Home `asin(tan(2)-10^5040)` at 30 digits ⚠ 2 -1.6-1E4·i, right -1.5708+11605.722·i: cancellation in Giac's log form. Family 6.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds, Opus pass 53; S16: also the nightly view sweep at count 300, seed 20752); raw output in the 2026-10-21 drafts (`../drafts/2026-10-21-packages/g94-raw`).
 - **The hardening without a bug line:** A31 (a gate stage for the three shell tests in `tools/` and `scripts/`, not drafted).

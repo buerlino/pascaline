@@ -181,8 +181,8 @@ async function rowState(row: import("@playwright/test").Locator): Promise<Requir
   return { result, mark, status };
 }
 
-/** Assert the case's `expect` against the page. */
-export async function check(page: Page, e: CoreExpect): Promise<void> {
+/** Assert the case's `expect` against the page (`id`: the case, for the messages). */
+export async function check(page: Page, e: CoreExpect, id = ""): Promise<void> {
   if (e.result !== undefined || e.mark !== undefined) {
     // polled: a b/c to polar asks the engine twice after the key (abs, arg; S24's c63), so the row changes later
     const want = { ...(e.result !== undefined && { result: e.result }), ...(e.mark !== undefined && { mark: e.mark }) };
@@ -212,5 +212,39 @@ export async function check(page: Page, e: CoreExpect): Promise<void> {
     const loc = page.locator(sel);
     if (Array.isArray(want)) await expect(loc).toHaveText(want);
     else await expect.poll(async () => (await loc.allTextContents()).map((t) => t.trim()), { message: sel }).toContain(want);
+    // R82 (F110): the text is also there for the eye: on screen and not under another element
+    await expect.poll(() => seen(page, sel), { message: `${id} ${sel} on screen and uncovered`.trim(), timeout: 2000 }).toBe("");
   }
+}
+
+/** Why the first match of `sel` cannot be read ("" = it can): hidden, outside the viewport, or covered at its centre
+ *  or an edge's middle (what `elementFromPoint` finds there, with the layout boxes, so a device log names the cause). */
+export function seen(page: Page, sel: string): Promise<string> {
+  return page.evaluate((s) => {
+    const el = document.querySelector(s);
+    if (!el) return "no match";
+    const r = el.getBoundingClientRect();
+    const box = (b: DOMRect): string => `${Math.round(b.left)},${Math.round(b.top)} ${Math.round(b.width)}×${Math.round(b.height)}`;
+    const where = (): string =>
+      ` (viewport ${innerWidth}×${innerHeight} dpr ${devicePixelRatio}; ` +
+      ["header", ".screen", ".keys"].map((q) => { const b = document.querySelector(q)?.getBoundingClientRect(); return `${q} ${b ? box(b) : "-"}`; }).join("; ") + ")";
+    if (r.width === 0 || r.height === 0 || getComputedStyle(el).visibility === "hidden") return `hidden, box ${box(r)}${where()}`;
+    if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) return `outside the viewport, box ${box(r)}${where()}`;
+    // the centre and the middle of each edge, 2 px in: a text half under the keypad cannot be read either
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2, i = Math.min(2, r.width / 4, r.height / 4);
+    const points: [string, number, number][] = [["centre", cx, cy], ["top", cx, r.top + i], ["bottom", cx, r.bottom - i], ["left", r.left + i, cy], ["right", r.right - i, cy]];
+    let top: Element | null = null, at = "";
+    for (const [p, x, y] of points) {
+      const hit = document.elementFromPoint(x, y);
+      if (!hit || (hit !== el && !el.contains(hit))) {
+        top = hit;
+        at = p;
+        break;
+      }
+    }
+    if (at === "") return "";
+    const name = (n: Element | null): string => n ? `${n.tagName.toLowerCase()}${n.id ? `#${n.id}` : ""}${n.className && typeof n.className === "string" ? `.${n.className.trim().split(/\s+/).join(".")}` : ""}` : "nothing";
+    const owner = top?.closest("[data-testid], header, .keys, [data-key]");
+    return `covered at its ${at} by ${name(top)}${owner && owner !== top ? ` in ${name(owner)}` : ""}, box ${box(r)}${where()}`;
+  }, sel);
 }
