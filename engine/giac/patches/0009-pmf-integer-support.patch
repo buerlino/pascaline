@@ -1,0 +1,151 @@
+# Upstream: giac 2.1.0 moyal.cc. A discrete distribution lives on the integers, but its pmf at a non-integer k was the formula's value: poisson(2,3/2) = exp(-2)*2^(3/2)/(3/2)! (0.288), geometric(1/2,3/2) = sqrt(1/2)/2, negbinomial(3,1/2,3/2) about 0.193, poisson(2,-1/2) 0.054; geometric_cdf(1/2,3/2) = 1-(1/2)^(3/2) and negbinomial_cdf(3,1/2,3/2) the incomplete beta at k+1 = 5/2, where the cdf is the one at floor(k); poisson_cdf(2,-1/2) undef; the two-bound forms of poisson_cdf and geometric_cdf took cdf(k1-1) at k1 = 3/2 as cdf(1/2), and negbinomial_cdf(n,p,k1,k2) was cdf(k2)-cdf(k1), which leaves k1 out (aide_cas: Proba(x<=X<=y)). geometric refused k <= 0 and geometric_cdf k < 0. binomial took only doubles and fractions for its argument order: an MPFR k of 3/2 at Digits 40 gave a number, and binomial(5,0.5,3/2) swapped its arguments without end. negbinomial_icdf read the double field of its probability unconverted: negbinomial_icdf(3,1/2,1/5) = 0 (right 1; with 0.2 it was 1). Now a pmf at a number k off the integers, or below the support, is an exact 0; a cdf there is the cdf at floor(k) (0 below the support), a lower bound off the integers is ceil(k1); binomial refuses a non-integer MPFR k; negbinomial_icdf converts its probability to a double. A symbolic k keeps the formula.
+--- a/src/moyal.cc
++++ b/src/moyal.cc
+@@ -607,6 +607,17 @@
+     return gen(v,e3.subtype);
+   }
+ 
++  // Pascaline patch 0009 (G113): a discrete distribution lives on the integers. pas_off_integers(k): k is a number (a
++  // double, an MPFR float, a fraction) that is no integer, so a probability there is 0 and a cdf there is the cdf at
++  // floor(k); a symbol or an exact non-rational keeps the formula. MPFR floats (_REAL) are numbers too: binomial took
++  // only doubles and fractions for its argument order, so binomial(5,0.5,1.5) at Digits 40 was a number, and
++  // binomial(5,0.5,3/2) swapped its arguments without end (a stack overflow).
++  static bool pas_off_integers(const gen & k,GIAC_CONTEXT){
++    if (k.type!=_DOUBLE_ && k.type!=_REAL && k.type!=_FLOAT_ && k.type!=_FRAC)
++      return false;
++    return !is_zero(k-_floor(k,contextptr));
++  }
++
+   gen binomial(const gen & N,const gen & K,const gen & P,GIAC_CONTEXT){
+     gen n(N),k(K),p(P);
+     is_integral(n); is_integral(k); is_integral(p);
+@@ -621,8 +632,8 @@
+ 	return gensizeerr(contextptr);
+       return binomial(n,p,k,contextptr);	
+     }
+-    if (k.type==_DOUBLE_ || k.type==_FLOAT_ || k.type==_FRAC){
+-      if (p.type==_DOUBLE_ || p.type==_FLOAT_ || p.type==_FRAC)
++    if (k.type==_DOUBLE_ || k.type==_FLOAT_ || k.type==_FRAC || pas_off_integers(k,contextptr)){
++      if (p.type==_DOUBLE_ || p.type==_FLOAT_ || p.type==_FRAC || p.type==_REAL)
+ 	return gensizeerr(contextptr);
+       return binomial(n,p,k,contextptr);
+     }
+@@ -782,7 +793,7 @@
+ 	swapgen(k,p);
+       if (is_integral(p))
+ 	swapgen(k,p);
+-      if (pas_below(k,0,contextptr))
++      if (pas_below(k,0,contextptr) || pas_off_integers(k,contextptr))
+ 	return 0;
+       if (is_zero(k))
+ 	return pow(p,r,contextptr);
+@@ -806,15 +817,22 @@
+       gen n=v[0],p=v[1],k=v[2];
+       if (pas_below(k,0,contextptr))
+ 	return 0;
++      if (pas_off_integers(k,contextptr))
++	k=_floor(k,contextptr);
+       return _Beta(makesequence(n,k+1,p,1),contextptr);
+     }
+     if (s==4){
+       gen n=v[0],p=v[1],k1=v[2],k2=v[3];
++      // P(k1<=K<=k2) (aide_cas), as binomial_cdf and poisson_cdf: cdf(k2)-cdf(k1-1); cdf(k2)-cdf(k1) left k1 out
++      if (pas_off_integers(k2,contextptr))
++	k2=_floor(k2,contextptr);
++      if (pas_off_integers(k1,contextptr))
++	k1=_ceil(k1,contextptr);
+       if (pas_below(k2,0,contextptr))
+ 	return 0;
+-      if (pas_below(k1,0,contextptr))
++      if (pas_below(k1,1,contextptr))
+ 	return _Beta(makesequence(n,k2+1,p,1),contextptr);
+-      return _Beta(makesequence(n,k2+1,p,1),contextptr)-_Beta(makesequence(n,k1+1,p,1),contextptr);
++      return _Beta(makesequence(n,k2+1,p,1),contextptr)-_Beta(makesequence(n,k1,p,1),contextptr);
+     }
+     return gensizeerr(contextptr);
+   }
+@@ -829,8 +847,9 @@
+     vecteur & v=*g._VECTptr;
+     int s=int(v.size());
+     if (s==3){
+-      gen R=v[0],P=evalf_double(v[1],1,contextptr),T=v[2];
+-      if (!is_integral(R) || R.val<=0 || P._DOUBLE_val<=0 || P._DOUBLE_val>=1)
++      // T as a double too: the double field of an exact 1/5 was read as 0, so negbinomial_icdf(3,1/2,1/5) was 0
++      gen R=v[0],P=evalf_double(v[1],1,contextptr),T=evalf_double(v[2],1,contextptr);
++      if (!is_integral(R) || R.type!=_INT_ || P.type!=_DOUBLE_ || T.type!=_DOUBLE_ || R.val<=0 || P._DOUBLE_val<=0 || P._DOUBLE_val>=1)
+ 	return gensizeerr(contextptr);
+       int r=R.val;
+       long_double p=P._DOUBLE_val,t=T._DOUBLE_val;
+@@ -1094,6 +1113,8 @@
+   gen poisson(const gen & m,const gen & k,GIAC_CONTEXT){
+     if (k.type==_VECT)
+       return apply2nd(m,k,contextptr,poisson);
++    if (pas_below(k,0,contextptr) || pas_off_integers(k,contextptr))
++      return 0;
+     gen M=evalf_double(m,1,contextptr);
+     if (M.type==_DOUBLE_){
+       gen K=evalf_double(k,1,contextptr);
+@@ -1156,6 +1177,8 @@
+ #endif
+   }
+   gen poisson_cdf(const gen & lambda_,const gen & x,GIAC_CONTEXT){
++    if (pas_below(x,0,contextptr))
++      return 0;
+     gen fx=_floor(x,contextptr);
+     gen lambda=evalf_double(lambda_,1,contextptr);
+     if (fx.type==_INT_ && fx.val>=0 && lambda.type==_DOUBLE_)
+@@ -1182,8 +1205,12 @@
+     int s=int(v.size());
+     if (s==2)
+       return poisson_cdf(v[0],v[1],contextptr);
+-    if (s==3)
+-      return poisson_cdf(v[0],v[2],contextptr)-poisson_cdf(v[0],v[1]-1,contextptr);
++    if (s==3){
++      gen k1=v[1];
++      if (pas_off_integers(k1,contextptr))
++	k1=_ceil(k1,contextptr);
++      return poisson_cdf(v[0],v[2],contextptr)-poisson_cdf(v[0],k1-1,contextptr);
++    }
+     return gensizeerr(contextptr);
+   }
+   static const char _poisson_cdf_s []="poisson_cdf";
+@@ -2730,6 +2757,8 @@
+   // geometric(p,k)=(1-p)^(k-1)*p
+   gen geometric(const gen & p,const gen & k,GIAC_CONTEXT){
+     gen K(k);
++    if (pas_below(k,1,contextptr) || pas_off_integers(k,contextptr))
++      return 0;
+     if (is_positive(-k,contextptr))
+       return gensizeerr(contextptr);
+     return pow(1-p,k-1,contextptr)*p;
+@@ -2751,9 +2780,13 @@
+   // geometric_cdf(p,k)=1-(1-p)^k
+   gen geometric_cdf(const gen & p,const gen & k,GIAC_CONTEXT){
+     gen K(k);
+-    if (is_strictly_positive(-k,contextptr))
++    if (pas_below(k,1,contextptr))
++      return 0;
++    if (pas_off_integers(k,contextptr))
++      K=_floor(k,contextptr);
++    if (is_strictly_positive(-K,contextptr))
+       return gensizeerr(contextptr);
+-    return 1-pow(1-p,k,contextptr);
++    return 1-pow(1-p,K,contextptr);
+   }
+   gen _geometric_cdf(const gen & g,GIAC_CONTEXT){
+     if ( g.type==_STRNG && g.subtype==-1) return  g;
+@@ -2763,8 +2796,12 @@
+     int s=int(v.size());
+     if (s==2)
+       return geometric_cdf(v[0],v[1],contextptr);
+-    if (s==3)
+-      return geometric_cdf(v[0],v[2],contextptr)-geometric_cdf(v[0],v[1]-1,contextptr);
++    if (s==3){
++      gen k1=v[1];
++      if (pas_off_integers(k1,contextptr))
++	k1=_ceil(k1,contextptr);
++      return geometric_cdf(v[0],v[2],contextptr)-geometric_cdf(v[0],k1-1,contextptr);
++    }
+     return gensizeerr(contextptr);
+   }
+   static const char _geometric_cdf_s []="geometric_cdf";
