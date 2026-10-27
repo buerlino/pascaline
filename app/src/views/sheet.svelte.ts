@@ -3,6 +3,7 @@
 // Home/CAS Menu and the row actions use it now; Find, the template palette and the settings values build on it.
 // Plain state, no DOM: the keys reach it through sheetKeys.ts, touch through Sheet.svelte.
 import type { MenuItem } from "../apps/types.ts";
+import type { IconId } from "./icons.ts";
 
 /** Lists with more items than this get the letter filter (docs/05 3.1: "for lists longer than 10 items"). */
 export const FILTER_ABOVE = 10;
@@ -162,6 +163,8 @@ export interface SheetOptions {
   at?: string;
   /** A grid of this many columns (see Level.columns). */
   columns?: number;
+  /** The icon drawn before the title (views/icons.ts; R83: the Menu's view). */
+  icon?: IconId;
 }
 
 /** What a pick did: opened a submenu or did nothing (the sheet stays), or chose an item to run (the sheet closes). */
@@ -175,9 +178,12 @@ export class Sheet {
   /** The list takes letters (a long list, Find later): it stays above the keypad, whose letter keys its query needs.
    *  Every other sheet is drawn over the keypad's maths rows (decisions.md "R21"). Fixed when it opens. */
   readonly letters: boolean;
+  /** The icon before the title, if any. */
+  readonly icon: IconId | undefined;
 
   constructor(id: string, title: string, items: () => readonly MenuItem[], opts?: SheetOptions) {
     this.id = id;
+    this.icon = opts?.icon;
     const root = new Level(title, items, id, opts);
     this.levels = [root];
     this.letters = root.filterable;

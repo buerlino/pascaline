@@ -441,7 +441,7 @@ The types live in the code; this is the map. Views see `Calc` (`app/src/calc/por
 
 | Item | Budget | State | Enforced by |
 |---|---|---|---|
-| Start chunk | ≤ 175 kB raw, ≤ 60 kB gzip | 59.98 kB gzip on `c151048` (R82f2, 2026-10-27: 20 bytes left; R83 raises the gzip budget to 61 kB, owner 2026-10-27; a split follows the freeze, brief section 0); `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test |
+| Start chunk | ≤ 175 kB raw, ≤ 61 kB gzip | 59.98 kB gzip on `c151048` (R82f2); the gzip budget rose from 60 to 61 kB on 2026-10-27 (owner; R82f2 left 20 bytes, R83's Menu title and pointer row need them; a split follows the freeze, brief section 0); `tools/probes/start-chunk.mjs` lists the bytes per source; every UI package reports its delta | size test |
 | MathLive chunk (after the keypad) | ≤ 830 kB raw | 807.74 kB (2026-10-18) | size test |
 | Find UI chunk | ≤ 30 kB raw | — | size test |
 | Find index asset | ≤ 400 kB raw, ≤ 100 kB gzip | 325.7 / 67.1 kB (2026-10-15) | size test (once Find loads it) |

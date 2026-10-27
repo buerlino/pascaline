@@ -69,7 +69,7 @@ describe("size-check", () => {
     const start = r.rows.find((x) => x.rule === "Start chunk");
     expect(start?.raw).toBe(200_000);
     expect(start?.files.sort()).toEqual(["assets/a.js", "assets/b.js", "assets/c.js", "assets/index.js"]);
-    // Over both the raw budget (200 kB > 175 kB) and the gzip one (80 kB of random bytes > 60 kB); nothing else fails.
+    // Over both the raw budget (200 kB > 175 kB) and the gzip one (80 kB of random bytes > 61 kB); nothing else fails.
     expect(r.failures.every((f) => f.startsWith("Start chunk"))).toBe(true);
     expect(r.failures.some((f) => f.includes("raw"))).toBe(true);
   });
@@ -88,10 +88,10 @@ describe("size-check", () => {
     expect(() => startFiles(manifest)).toThrow(/_missing\.js/);
   });
 
-  it("fails a start chunk over 60 kB gzip even when it is under 175 kB raw", () => {
+  it("fails a start chunk over 61 kB gzip even when it is under 175 kB raw", () => {
     const { manifest } = base(0);
-    // Random bytes do not compress, so 61 kB raw is over 60 kB gzip and well under 175 kB raw.
-    const r = checkSizes(fakeDist(manifest, { "assets/index.js": { random: 61_000 }, "assets/mathlive.js": 1000 }));
+    // Random bytes do not compress, so 62 kB raw is over 61 kB gzip and well under 175 kB raw.
+    const r = checkSizes(fakeDist(manifest, { "assets/index.js": { random: 62_000 }, "assets/mathlive.js": 1000 }));
     expect(r.failures).toHaveLength(1);
     expect(r.failures[0]).toContain("gzip");
   });

@@ -7,6 +7,7 @@
   // (`over: "view"`) stays above the keypad, over the history or view. The keys drive it through App.svelte and
   // sheetKeys.ts; touch is a shortcut: a tap on a row picks it, ◀ ▶ step a value, ‹ goes back a level, × closes it.
   import { t } from "../i18n/index.ts";
+  import { ICONS } from "./icons.ts";
   import MathView from "../render/Math.svelte";
   import type { Sheet } from "./sheet.svelte.ts";
   import { fitCell, fitRow, hasSteps, ROW, rowHeight, showsReason } from "./sheetFit.ts";
@@ -186,7 +187,7 @@
     {:else}
       <div class="head">
         {#if sheet.depth > 1}<button type="button" class="icon" aria-label={t("sheet.back")} onclick={onback}>‹</button>{/if}
-        <span class="title" data-testid="sheet-title">{sheet.path}</span>
+        {#if sheet.icon}<span class="ticon" aria-hidden="true">{@html ICONS[sheet.icon]}</span>{/if}<span class="title" data-testid="sheet-title">{sheet.path}</span>
         {#if level.filter !== ""}<span class="filter" data-testid="sheet-filter">{level.filter}</span>{/if}
         {#if cutTop || cutBottom}<span class="count" data-testid="sheet-count">{t("sheet.count", { n: String(rows.length) })}</span>{/if}
         <button type="button" class="icon" aria-label={t("apps.close")} onclick={onclose}>×</button>
@@ -309,6 +310,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .ticon {
+    display: inline-flex;
+    align-items: center;
+    margin-right: -2px;
+  }
+  .ticon :global(svg) {
+    width: 16px;
+    height: 14px;
   }
   .gtitle {
     white-space: nowrap;
