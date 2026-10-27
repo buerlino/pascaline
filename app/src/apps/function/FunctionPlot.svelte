@@ -203,7 +203,8 @@
   const traceName = $derived(app.slots.names[app.trace.slot] ?? "");
 </script>
 
-<div class="plot">
+<!-- data-floor: the readout keeps its lines on a short screen, the board gives way (R82, App.svelte .stage) -->
+<div class="plot" data-floor>
   <div class="board" bind:this={box} onpointerdown={pointerDown} onpointerup={pointerUp} aria-label={t("plot.label")} role="img"></div>
   {#if !ready}<p class="note">{t("plot.loading")}</p>{/if}
   {#if ready && app.active.length === 0}<p class="note">{t("plot.empty")}</p>{/if}
@@ -233,7 +234,7 @@
   .plot {
     position: relative;
     flex: 1;
-    min-height: 0;
+    min-height: auto;
     display: flex;
     flex-direction: column;
   }

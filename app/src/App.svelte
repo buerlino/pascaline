@@ -571,6 +571,13 @@
     display: flex;
     flex-direction: column;
   }
+  /* R82 (F110): a view whose root carries data-floor (the Plot view: its readout) is never squeezed below its own
+     minimum. Without it a short screen above the keypad (a phone with less height) shrank the stage under the readout and
+     the keypad, drawn after it, covered the Root answer. Lists keep min-height 0 and scroll inside themselves. */
+  .screen:has(> .stage > :global([data-floor])),
+  .stage:has(> :global([data-floor])) {
+    min-height: auto;
+  }
   .keys {
     position: relative;
   }
