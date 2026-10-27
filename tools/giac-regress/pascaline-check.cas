@@ -623,4 +623,6 @@ Digits:=40:; pc("g59-sqrt-sqrt-asin12-30",'(sqrt(sqrt(asin(12))))',(131937971748
 Digits:=40:; pc("g59f1-neg-base-imag-power-12",'((-3)^(i/1000))',(996862735403/10^12)+(109516609183/10^14)*i,5/10^13+5/10^15);
 // g59f1-neg-base-asin-power-12 (precision.yaml, oracle)
 Digits:=40:; pc("g59f1-neg-base-asin-power-12",'((-2)^(asin(5)/3))',(697569430243/10^11)+(14239325569/10^9)*i,5/10^12+5/10^11);
+// g113-poisson_cdf-2.5 (precision.yaml, oracle)
+Digits:=40:; pc("g113-poisson_cdf-2.5",'(poisson_cdf(2,(25/10^1)))',(676676416183/10^12),5/10^13);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");

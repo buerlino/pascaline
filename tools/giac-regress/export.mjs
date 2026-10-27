@@ -176,7 +176,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 and the g60-f5 lines pass on stock at these Digits, so they stay in the check file. g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file). Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 and the g60-f5 lines pass on stock at these Digits, so they stay in the check file. g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -231,6 +231,27 @@ export const PATCHED_IDS = new Map([
   ["g111-betad-list", "0007-densities-outside-support.patch"],
   ["g111-uniform-cdf-list", "0007-densities-outside-support.patch"],
   ["g111-exponential-cdf-list", "0007-densities-outside-support.patch"],
+  // G113: precision.yaml's pmfs off the integers, cdfs at the floor, negbinomial_icdf of an exact probability (stock: the formula, 0)
+  ["g113-poisson-1.5", "0009-pmf-integer-support.patch"],
+  ["g113-geometric-1.5", "0009-pmf-integer-support.patch"],
+  ["g113-negbinomial-1.5", "0009-pmf-integer-support.patch"],
+  ["g113-negbinomial-2.5", "0009-pmf-integer-support.patch"],
+  ["g113-poisson-neg0.5", "0009-pmf-integer-support.patch"],
+  ["g113-geometric-neg0.5", "0009-pmf-integer-support.patch"],
+  ["g113-geometric-0", "0009-pmf-integer-support.patch"],
+  ["g113-geometric_cdf-1.5", "0009-pmf-integer-support.patch"],
+  ["g113-geometric_cdf-2.5", "0009-pmf-integer-support.patch"],
+  ["g113-geometric_cdf-neg0.5", "0009-pmf-integer-support.patch"],
+  ["g113-negbinomial_cdf-1.5", "0009-pmf-integer-support.patch"],
+  ["g113-negbinomial_cdf-2.5", "0009-pmf-integer-support.patch"],
+  ["g113-poisson_cdf-neg0.5", "0009-pmf-integer-support.patch"],
+  ["g113-poisson_cdf-2bounds-1.5", "0009-pmf-integer-support.patch"],
+  ["g113-geometric_cdf-2bounds-1.5", "0009-pmf-integer-support.patch"],
+  ["g113-negbinomial_cdf-2bounds", "0009-pmf-integer-support.patch"],
+  ["g113-negbinomial_cdf-2bounds-frac", "0009-pmf-integer-support.patch"],
+  ["g113-negbinomial_icdf-exact", "0009-pmf-integer-support.patch"],
+  ["g113-negbinomial_icdf-decimal", "0009-pmf-integer-support.patch"],
+  ["g113-negbinomial_icdf-0.7", "0009-pmf-integer-support.patch"],
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 
