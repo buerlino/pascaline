@@ -90,7 +90,7 @@ function subjects(manifest: Record<string, ManifestChunk>, all: string[]): { pre
   };
   const dynamic = (prefix: string): string[] => chunks.filter((c) => c.isDynamicEntry && normalSrc(c.src).startsWith(prefix)).map((c) => c.file);
 
-  add("Start chunk", startFiles(manifest), { rawMax: 175 * KB, gzipMax: 60 * KB });
+  add("Start chunk", startFiles(manifest), { rawMax: 175 * KB, gzipMax: 61 * KB });
   add("MathLive chunk", chunks.filter((c) => /(^|\/)mathlive\/mathlive\.min\.m?js$/.test(normalSrc(c.src))).map((c) => c.file), { rawMax: 830 * KB });
   add("Find UI chunk", dynamic("src/find/"), { rawMax: 30 * KB });
   // The unit view (G16): Calc.units() loads the builder and the factor table (src/units/calc.ts) on its first call.

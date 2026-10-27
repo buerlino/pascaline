@@ -1,6 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
   import { onMount } from "svelte";
+  import { ICONS } from "./views/icons.ts";
   import { APPS, placeGlyph } from "./apps/registry.ts";
   import type { AppShell, PaletteId } from "./apps/shell.svelte.ts";
   import type { ClipActions } from "./clipboard/actions.svelte.ts";
@@ -44,14 +45,6 @@
   const statusKey = (id: string, name: "apps" | "symb" | "plot" | "num" | "menu"): Key => ({ id, row: 0, col: 0, span: 1, cls: "nav", label: { primary: "" }, actions: { primary: { kind: "special", name } } });
   const PLACE_KEY = statusKey("place", "apps");
   const MENU_KEY = statusKey("menu-status", "menu");
-  /** The status line's drawn icons (R82f2; fixed markup, no user text): Home's house, Symb, Plot's curve, Num's table. */
-  const svg = (body: string): string => `<svg viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.4">${body}</svg>`;
-  const ICONS = {
-    home: svg('<path d="M2.5 7.5 8 2.5l5.5 5M4 6.5v6h8v-6" stroke-linejoin="round"/>'),
-    symb: '<span class="math">ƒ=</span>',
-    plot: svg('<path d="M1 13h14M2 1v12"/><path d="M3 11c3-9 6-9 11-8" stroke-width="1.6" stroke-linecap="round"/>'),
-    num: svg('<rect x="1" y="1" width="14" height="12" rx="1.5"/><path d="M6 1v12M1 5h14M1 9h14"/>'),
-  };
   const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, name: t(`view.${v}`), key: statusKey(`tab-${v}`, v) }));
 
   /** The open Settings page and its model (null: closed). */
@@ -80,7 +73,8 @@
     };
     entry.onLetter = typeLetter;
     shell.goTo = goTo; // the Apps sheet's Home and CAS rows
-    shell.openSettings = openSettings; // the last row of every Menu
+    shell.openSettings = openSettings;
+    shell.homeView = () => (session.view === "cas" ? "cas" : "home"); // the last row of every Menu
     entry.onDead = dead;
   });
   let host: HTMLElement | undefined = $state();

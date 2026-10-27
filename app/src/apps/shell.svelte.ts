@@ -5,6 +5,7 @@
 import type { Calc, CalcSettings, UserName } from "../calc/port.ts";
 import { t } from "../i18n/index.ts";
 import type { Kv } from "../state/storage.ts";
+import type { IconId } from "../views/icons.ts";
 import { Sheet, type Picked } from "../views/sheet.svelte.ts";
 import { APPS, appEntry, isAppId } from "./registry.ts";
 import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type ViewId } from "./types.ts";
@@ -42,6 +43,8 @@ export class AppShell {
   homeMenu: (() => MenuItem[]) | undefined;
   /** Opens the Settings page (set by App.svelte); the last row of every Menu (R15c1). */
   openSettings: (() => void) | undefined;
+  /** Which of Home and CAS is under the keys (set by App.svelte); names the Menu there (R83). */
+  homeView: (() => "home" | "cas") | undefined;
 
   private readonly calc: Calc;
   private readonly kv: Kv;
@@ -185,7 +188,34 @@ export class AppShell {
   }
   /** The open view's own Menu items (Home/CAS: the copy actions), then Settings as the last row (R15c1). */
   get menuItems(): readonly MenuItem[] {
-    return this.withSettings((this.app === null ? this.homeMenu?.() : this.instance?.menu?.(this.view)) ?? []);
+    const own = this.app === null ? this.homeMenu?.() : this.instance?.menu?.(this.view);
+    return this.withSettings(own && own.length > 0 ? own : this.pointer());
+  }
+  /** R83: a view whose Menu has no rows of its own gets one row naming the view that has them; it switches there and
+   *  opens that Menu on its first row. Nothing when the view has rows, or no view has. */
+  private pointer(): MenuItem[] {
+    const a = this.instance;
+    if (this.app === null || !a?.menu) return [];
+    for (const v of a.views) {
+      const rows = v === this.view ? [] : a.menu(v);
+      if (rows.length === 0) continue;
+      const [x, y] = rows;
+      const low = (s: string): string => (/^\p{Lu}\p{Ll}/u.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+      const labels = `${x?.label ?? ""}${y ? `, ${low(y.label)}` : ""} …`;
+      return [
+        {
+          id: `in-${v}`,
+          label: t("menu.inView", { labels, view: t(`view.${v}`) }),
+          run: () => void this.setView(v).then(() => this.toggleMenu({ at: x?.id })),
+        },
+      ];
+    }
+    return [];
+  }
+  /** The Menu's title: the view whose Menu it is, and that view's icon. */
+  get menuTitle(): { text: string; icon: IconId } {
+    const v = this.app === null ? (this.homeView?.() ?? "home") : this.view;
+    return { text: t("menu.title", { view: t(`view.${v}`) }), icon: v };
   }
   /** A Menu list with Settings as its last row. */
   withSettings(own: readonly MenuItem[]): MenuItem[] {
@@ -219,13 +249,13 @@ export class AppShell {
       ]);
   }
   /** Menu key: the open view's menu, or close the open sheet. False when the view has no menu (a dead key). */
-  toggleMenu(): boolean {
+  toggleMenu(opts?: { at?: string }): boolean {
     if (this.menuOpen) {
       this.sheet = null;
       return true;
     }
     const place = this.app === null ? "home" : `${this.app}:${this.view}`;
-    this.sheet = this.menuItems.length > 0 ? new Sheet(`menu:${place}`, t("menu.title"), () => this.menuItems) : null;
+    this.sheet = this.menuItems.length > 0 ? new Sheet(`menu:${place}`, this.menuTitle.text, () => this.menuItems, { icon: this.menuTitle.icon, at: opts?.at }) : null;
     return this.sheet !== null;
   }
   /** Open a list of items over the view (a long press on a history row): same sheet and keys as the Menu key. */

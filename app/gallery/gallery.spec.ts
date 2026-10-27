@@ -289,6 +289,26 @@ const shots: Shot[] = [
     },
   },
   {
+    id: "fn-symb-menu",
+    group: "Function",
+    title: "Function, Symb menu (R83: a pointer row to Plot's Menu)",
+    setup: async (p) => {
+      await defineTwo(p);
+      await tap(p, ["@symb", "@menu"]);
+      await settle(p);
+    },
+  },
+  {
+    id: "fn-num-menu",
+    group: "Function",
+    title: "Function, Num menu (R83: titled Num menu)",
+    setup: async (p) => {
+      await defineTwo(p);
+      await tap(p, ["@num", "@menu"]);
+      await settle(p);
+    },
+  },
+  {
     id: "fn-num",
     group: "Function",
     title: "Function, Num table",
@@ -314,6 +334,15 @@ const shots: Shot[] = [
     title: "Solve, Num",
     setup: async (p) => {
       await tap(p, ["@place", "d4", "@symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "@num"]);
+      await settle(p);
+    },
+  },
+  {
+    id: "solve-symb-menu",
+    group: "Solve",
+    title: "Solve, Symb menu (R83: a pointer row to Num's Menu)",
+    setup: async (p) => {
+      await tap(p, ["@place", "d4", "@symb", "x", "shift", "ln", "x", "right", "shift", "dot", "d5", "enter", "@menu"]);
       await settle(p);
     },
   },
