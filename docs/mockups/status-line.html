@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<title>Status line (R82f2, R83, R84)</title>
+<style>
+/* The owner's pick of 2026-10-27 (mockup round 2: A + D + C + F), for R82f2, R83 and R84. Phone frames at their
+   real CSS width; colours are the Pascaline dark theme's tokens (app/src/style.css). Not the app's code. */
+:root { --page: #070b16; --bg: #0b1020; --panel: #121a2e; --line: #2d3a5a; --text: #eef1f8; --muted: #a3adc6;
+  --shift: #ffc233; --alpha: #86c5ff; --chip-bg: #1d3070; --nav: #141d33; --pick: #1a2442; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text); font: 15px/1.5 system-ui, Roboto, sans-serif; }
+main { max-width: 1240px; margin-inline: auto; padding: 16px; }
+h1 { font-size: 1.4rem; margin: 0 0 4px; }
+h2 { font-size: 1.05rem; margin: 28px 0 4px; }
+p { max-width: 76ch; margin: 4px 0; }
+.muted { color: var(--muted); }
+.grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 12px; align-items: flex-start; }
+.frame { width: 372px; max-width: 100%; }
+.frame.w360 { width: 360px; }
+.cap { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 10px 0 6px; }
+.crop { background: var(--bg); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; }
+button { all: unset; box-sizing: border-box; cursor: pointer; }
+.math { font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif; font-style: italic; }
+/* the status line */
+.bar { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.place { flex: none; display: flex; align-items: center; gap: 2px; height: 28px; }
+.place .name { font-weight: 700; margin-left: 4px; }
+.caret { color: var(--muted); font-size: 12px; }
+.tile { width: 30px; height: 22px; border-radius: 6px; background: var(--chip-bg); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.tile.small { font-size: 13px; }
+.tile.busy { border: 2px solid var(--alpha); }
+.seg { flex: none; display: flex; padding: 1px; gap: 1px; border: 1px solid var(--line); border-radius: 7px; }
+.seg button { width: 30px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 15px; }
+.seg button[aria-selected="true"] { background: var(--chip-bg); color: var(--text); }
+.spacer { flex: 1 1 0; min-width: 0; }
+.slot { flex: none; width: 16px; height: 18px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.slot.shift { color: var(--shift); } .slot.alpha { color: var(--alpha); }
+.slot.lock { border-bottom: 2px solid currentColor; }
+.chips { flex: none; display: flex; align-items: center; gap: 4px; }
+.chip { padding: 5px 6px; color: var(--muted); }
+.chip.changed { color: var(--shift); font-weight: 700; }
+.pill { display: flex; border: 1px solid var(--line); border-radius: 6px; }
+.pill button { padding: 4px 6px; color: var(--muted); }
+.pill button + button { padding-left: 0; }
+.menubtn { flex: none; width: 36px; height: 28px; margin-right: -8px; display: flex; align-items: center; justify-content: center; }
+.menubtn.open { background: var(--nav); }
+/* stage stubs */
+.stage { height: 64px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--muted); }
+.slotrow { height: 64px; padding: 10px 8px; }
+.slotrow div { height: 44px; border: 1.5px solid var(--shift); border-radius: 8px; display: flex; align-items: center; gap: 10px; padding: 0 12px; background: var(--panel); }
+.sq { width: 14px; height: 14px; border-radius: 3px; background: #ff7a45; }
+/* sheets */
+.sheet { background: var(--panel); font-size: 14px; }
+.sheet .title { height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--line); font-weight: 700; }
+.sheet .title .x { margin-left: auto; color: var(--muted); font-weight: 400; font-size: 18px; }
+.row { height: 34px; display: flex; align-items: center; gap: 12px; padding: 0 12px; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; }
+.row.tall { height: 40px; }
+.row.pick { background: var(--pick); }
+.row .n { width: 16px; text-align: right; color: var(--muted); font-size: 13px; }
+.row .go { margin-left: auto; color: var(--muted); }
+.glyphs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.glyphs div { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+.glyphs .tile { width: 36px; height: 28px; color: var(--text); font-size: 20px; }
+.glyphs .later .tile { background: none; border: 1px dashed #3d4a6b; }
+svg { display: block; }
+</style>
+</head>
+<body>
+<main>
+<h1>Status line: glyph, view icons, a fixed ⇧ α slot</h1>
+<p class="muted">The owner's pick of 2026-10-27 from two rounds of mockups, after the Fairphone 6 (372 CSS px) cut the view tabs to "Sy… P… N…" (F118). The right side (angle chip, format and digits) stays exactly as today. R82f2 builds sections 1–3, R83 section 4, R84 section 5.</p>
+
+<h2>1 · The status line at 372 px (R82f2)</h2>
+<p class="muted">Left to right: the place's glyph tile and ▾ (opens the apps list); the views as icons (Symb ƒ=, Plot a curve, Num a table; the selected one filled); a free gap; the fixed ⇧ α slot; the angle chip and the format/digits pill as today; ☰. Home and CAS have no views, so their name stands beside the tile. Busy: a ring on the tile. The engine's start and failure notes leave the bar for the stage.</p>
+<div class="grid">
+  <div class="frame">
+    <div class="cap">Function · Plot · defaults</div>
+    <div class="crop">
+      <div class="bar">
+        <button class="place" aria-label="Function: open the apps"><span class="tile math">ƒ</span><span class="caret">▾</span></button>
+        <div class="seg" role="tablist" aria-label="Views">
+          <button role="tab" aria-selected="false" aria-label="Symb" class="math">ƒ=</button>
+          <button role="tab" aria-selected="true" aria-label="Plot"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><path d="M1 13h14M2 1v12" stroke="currentColor" stroke-width="1.3"/><path d="M3 11c3-9 6-9 11-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+          <button role="tab" aria-selected="false" aria-label="Num"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><rect x="1" y="1" width="14" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 1v12M1 5h14M1 9h14" stroke="currentColor" stroke-width="1.3"/></svg></button>
+        </div>
+        <span class="spacer"></span><span class="slot"></span>
+        <span class="chips"><button class="chip">RAD</button><span class="pill"><button>STD</button><button>12</button></span></span>
+        <button class="menubtn" aria-label="Menu"><svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><path d="M1 1h16M1 7h16M1 13h16" stroke="#eef1f8" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="stage" style="height: 64px"><svg width="372" height="64" viewBox="0 0 372 64" aria-hidden="true"><line x1="0" y1="30" x2="372" y2="30" stroke="#2d3a5a"/><line x1="186" y1="0" x2="186" y2="64" stroke="#2d3a5a"/><path d="M126 0 Q186 104 246 0" fill="none" stroke="#86c5ff" stroke-width="2"/><circle cx="225" cy="30" r="4" fill="#ffc233"/></svg></div>
+    </div>
+  </div>
+  <div class="frame">
+    <div class="cap">Function · Symb · DEG, FIX 10, α locked, busy</div>
+    <div class="crop">
+      <div class="bar">
+        <button class="place" aria-label="Function, working: open the apps"><span class="tile busy math">ƒ</span><span class="caret">▾</span></button>
+        <div class="seg" role="tablist" aria-label="Views">
+          <button role="tab" aria-selected="true" aria-label="Symb" class="math">ƒ=</button>
+          <button role="tab" aria-selected="false" aria-label="Plot"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><path d="M1 13h14M2 1v12" stroke="currentColor" stroke-width="1.3"/><path d="M3 11c3-9 6-9 11-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+          <button role="tab" aria-selected="false" aria-label="Num"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><rect x="1" y="1" width="14" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 1v12M1 5h14M1 9h14" stroke="currentColor" stroke-width="1.3"/></svg></button>
+        </div>
+        <span class="spacer"></span><span class="slot alpha lock" aria-label="Alpha locked">α</span>
+        <span class="chips"><button class="chip changed">DEG</button><span class="pill"><button>FIX</button><button>10</button></span></span>
+        <button class="menubtn" aria-label="Menu"><svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><path d="M1 1h16M1 7h16M1 13h16" stroke="#eef1f8" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="slotrow"><div><span class="sq"></span><span class="muted">F1(x)=</span><span>x²−2</span></div></div>
+    </div>
+  </div>
+  <div class="frame">
+    <div class="cap">Home · the engine starting</div>
+    <div class="crop">
+      <div class="bar">
+        <button class="place" aria-label="Home, starting: open the apps"><span class="tile busy"><svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="#eef1f8" stroke-width="1.5" stroke-linejoin="round"/></svg></span><span class="name">Home</span><span class="caret">▾</span></button>
+        <span class="spacer"></span><span class="slot"></span>
+        <span class="chips"><button class="chip">RAD</button><span class="pill"><button>STD</button><button>12</button></span></span>
+        <button class="menubtn" aria-label="Menu"><svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><path d="M1 1h16M1 7h16M1 13h16" stroke="#eef1f8" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+      </div>
+      <div class="stage">Starting the engine…</div>
+    </div>
+  </div>
+</div>
+
+<h2>2 · The ⇧ α slot (R82f2)</h2>
+<p class="muted">Always 16 px, in every place, so pressing Shift or Alpha moves nothing. Once: the colour; locked: underlined. Shift lock is a flick up on Shift; Alpha lock is α twice or a flick up; Shift + Alpha lock is lower case.</p>
+<div class="grid">
+  <div class="frame">
+    <div class="cap">Nothing · ⇧ once · ⇧ locked</div>
+    <div class="crop"><div class="bar" style="justify-content: flex-end"><span class="slot"></span><span class="chips"><button class="chip">RAD</button><span class="pill"><button>STD</button><button>12</button></span></span><span class="menubtn"></span></div></div>
+    <div class="crop"><div class="bar" style="justify-content: flex-end"><span class="slot shift">⇧</span><span class="chips"><button class="chip">RAD</button><span class="pill"><button>STD</button><button>12</button></span></span><span class="menubtn"></span></div></div>
+    <div class="crop"><div class="bar" style="justify-content: flex-end"><span class="slot shift lock">⇧</span><span class="chips"><button class="chip">RAD</button><span class="pill"><button>STD</button><button>12</button></span></span><span class="menubtn"></span></div></div>
+  </div>
+  <div class="frame">
+    <div class="cap">α once · α locked · lower-case locked</div>
+    <div class="crop"><div class="bar" style="justify-content: flex-end"><span class="slot alpha">α</span><span class="chips"><button class="chip">RAD</button><span class="pill"><button>STD</button><button>12</button></span></span><span class="menubtn"></span></div></div>
+    <div class="crop"><div class="bar" style="justify-content: flex-end"><span class="slot alpha lock">α</span><span class="chips"><button class="chip">RAD</button><span class="pill"><button>STD</button><button>12</button></span></span><span class="menubtn"></span></div></div>
+    <div class="crop"><div class="bar" style="justify-content: flex-end"><span class="slot alpha lock">a</span><span class="chips"><button class="chip">RAD</button><span class="pill"><button>STD</button><button>12</button></span></span><span class="menubtn"></span></div></div>
+  </div>
+</div>
+
+<h2>3 · At 360 px, the worst case (R82f2)</h2>
+<div class="grid">
+  <div class="frame w360">
+    <div class="cap">Function · Symb · DEG, FIX 10, α locked, busy</div>
+    <div class="crop"><div class="bar">
+      <button class="place"><span class="tile busy math">ƒ</span><span class="caret">▾</span></button>
+      <div class="seg"><button aria-selected="true" class="math">ƒ=</button><button aria-selected="false"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><path d="M1 13h14M2 1v12" stroke="currentColor" stroke-width="1.3"/><path d="M3 11c3-9 6-9 11-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><button aria-selected="false"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><rect x="1" y="1" width="14" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 1v12M1 5h14M1 9h14" stroke="currentColor" stroke-width="1.3"/></svg></button></div>
+      <span class="spacer"></span><span class="slot alpha lock">α</span>
+      <span class="chips"><button class="chip changed">DEG</button><span class="pill"><button>FIX</button><button>10</button></span></span>
+      <button class="menubtn" aria-label="Menu"><svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><path d="M1 1h16M1 7h16M1 13h16" stroke="#eef1f8" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    </div></div>
+  </div>
+  <div class="frame w360">
+    <div class="cap">Solve · Num · the same state</div>
+    <div class="crop"><div class="bar">
+      <button class="place"><span class="tile busy small math">x=?</span><span class="caret">▾</span></button>
+      <div class="seg"><button aria-selected="false" class="math">ƒ=</button><button aria-selected="true"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><rect x="1" y="1" width="14" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 1v12M1 5h14M1 9h14" stroke="currentColor" stroke-width="1.3"/></svg></button></div>
+      <span class="spacer"></span><span class="slot alpha lock">α</span>
+      <span class="chips"><button class="chip changed">DEG</button><span class="pill"><button>FIX</button><button>10</button></span></span>
+      <button class="menubtn" aria-label="Menu"><svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><path d="M1 1h16M1 7h16M1 13h16" stroke="#eef1f8" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    </div></div>
+  </div>
+</div>
+
+<h2>4 · The Menu says whose it is (R83)</h2>
+<p class="muted">The title names the view, with its icon. A view whose Menu has no rows of its own (Function's Symb, Solve's Symb) gets a first row pointing to the view that has them: it switches there and opens that Menu.</p>
+<div class="grid">
+  <div class="frame">
+    <div class="cap">Function · Plot · ☰</div>
+    <div class="crop sheet">
+      <div class="title"><svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><path d="M1 13h14M2 1v12" stroke="#a3adc6" stroke-width="1.3"/><path d="M3 11c3-9 6-9 11-8" fill="none" stroke="#a3adc6" stroke-width="1.6" stroke-linecap="round"/></svg>Plot menu<span class="x">×</span></div>
+      <div class="row pick"><span class="n">1</span><b>Root</b></div>
+      <div class="row"><span class="n">2</span>Extremum</div>
+      <div class="row"><span class="n">3</span>Intersection<span class="go">›</span></div>
+      <div class="row"><span class="n">4</span>Slope</div>
+      <div class="row"><span class="n">5</span>Signed area</div>
+      <div class="row"><span class="n">6</span>Default window</div>
+      <div class="row"><span class="n">7</span>Copy</div>
+      <div class="row"><span class="n">8</span>Copy as shown</div>
+      <div class="row"><span class="n">9</span>Settings</div>
+    </div>
+  </div>
+  <div class="frame">
+    <div class="cap">Function · Symb · ☰</div>
+    <div class="crop sheet">
+      <div class="title"><span class="math muted">ƒ=</span>Symb menu<span class="x">×</span></div>
+      <div class="row pick"><span class="n">1</span>Root, Extremum … in Plot<span class="go">›</span></div>
+      <div class="row"><span class="n">2</span>Settings</div>
+    </div>
+    <div class="cap" style="margin-top: 16px">Solve · Symb · ☰</div>
+    <div class="crop sheet">
+      <div class="title"><span class="math muted">ƒ=</span>Symb menu<span class="x">×</span></div>
+      <div class="row pick"><span class="n">1</span>Solve, polynomial roots … in Num<span class="go">›</span></div>
+      <div class="row"><span class="n">2</span>Settings</div>
+    </div>
+  </div>
+</div>
+
+<h2>5 · Glyphs and the apps list (R84)</h2>
+<p class="muted">Every place has one glyph, kept in one table; the apps list shows it beside the name, so a new user learns what ƒ means. Later apps follow the same scheme (dashed: suggestions, not apps that exist).</p>
+<div class="grid">
+  <div class="frame">
+    <div class="cap">Today's places</div>
+    <div class="glyphs">
+      <div><span class="tile"><svg width="16" height="15" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="#eef1f8" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Home</div>
+      <div><span class="tile math">∫</span>CAS</div>
+      <div><span class="tile math">ƒ</span>Function</div>
+      <div><span class="tile math" style="font-size: 15px">x=?</span>Solve</div>
+    </div>
+    <div class="cap" style="margin-top: 16px">Later apps (suggestions)</div>
+    <div class="glyphs">
+      <div class="later"><span class="tile math" style="font-size: 18px">x̄</span>Statistics</div>
+      <div class="later"><span class="tile math" style="font-size: 17px">uₙ</span>Sequence</div>
+      <div class="later"><span class="tile math" style="font-size: 14px">x(t)</span>Parametric</div>
+      <div class="later"><span class="tile math" style="font-size: 16px">rθ</span>Polar</div>
+    </div>
+  </div>
+  <div class="frame">
+    <div class="cap">The glyph tapped: the apps list</div>
+    <div class="crop sheet">
+      <div class="title">Apps<span class="x">×</span></div>
+      <div class="row tall"><span class="n">1</span><span class="tile"><svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="#eef1f8" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Home</div>
+      <div class="row tall"><span class="n">2</span><span class="tile math" style="font-size: 17px">∫</span>CAS</div>
+      <div class="row tall pick"><span class="n">3</span><span class="tile math">ƒ</span><b>Function</b></div>
+      <div class="row tall"><span class="n">4</span><span class="tile small math">x=?</span>Solve</div>
+    </div>
+  </div>
+</div>
+</main>
+</body>
+</html>
