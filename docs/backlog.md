@@ -43,7 +43,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- **F110 → R82 (owner, 2026-10-27).** Morning check 2026-10-26 on the Fairphone 6 (372×828 CSS px): c46's Root answer sits under the status bar and cannot be read; CORE DEVICE passed c46 (the replay reads text, never visibility).
+- **F110 → R82 (owner, 2026-10-27; fixed on desktop, the night's device step judges).** Morning check 2026-10-26 on the Fairphone 6: c46's Root answer under the status bar, unread; CORE DEVICE passed it (it read text only). R82: a short stage no longer squeezes the readout under the keypad; `text` expects check the match is on screen and uncovered.
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it. Can start (G104 merged).
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F83, no package (G99's report).** CAS `sum(x^2,x=1..3)` reaches Giac as `sum(x^2,x=(3/10^1))` (toExactLiterals reads `1..3` as decimals) and errors; Home shows `≈ 14` (F73). Family 8.

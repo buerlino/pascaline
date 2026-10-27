@@ -60,7 +60,7 @@ test.describe("core list on the device", () => {
             return page;
           },
         });
-        await check(page, c.expect);
+        await check(page, c.expect, c.id);
       } catch (e) {
         // what the screen showed, for the report (a failing case is read from the log, not from a screenshot)
         const seen = await page.evaluate(() => document.body.innerText.replace(/\s+/g, " ").slice(0, 400)).catch(() => "(page gone)");
