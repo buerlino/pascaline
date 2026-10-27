@@ -7,6 +7,8 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
+- **R83 (2026-10-27): the Fairphone look.** `tools/core-device.sh` was not run in this worktree; the owner presses Function, Symb, ☰, 1 and should land in Plot's Menu on Root (with a function defined; with none, Root is disabled and the highlight starts on Default window).
+
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
 ## Decided proposals
