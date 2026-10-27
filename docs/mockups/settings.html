@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<title>Mode sheet and Settings (R49, R85, R86, R88, R89)</title>
+<style>
+/* The owner's pick of 2026-10-27 (one mockup round on a claude.ai canvas: option 4, option 8 only where it saves a
+   press, option 10 as presets). Frames at the Fairphone 6's CSS width (372 px; section 5 at 360). Colours are the
+   Pascaline dark theme's tokens (app/src/style.css). Not the app's code. */
+:root { --page: #070b16; --bg: #0b1020; --panel: #121a2e; --line: #2d3a5a; --text: #eef1f8; --muted: #a3adc6; --dead: #76819c;
+  --shift: #ffc233; --alpha: #86c5ff; --chip-bg: #1d3070; --nav: #141d33; --ctl: #2a2433; --num: #1f2a45; --op: #18233d;
+  --enter: #2346d8; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text); font: 15px/1.5 system-ui, Roboto, sans-serif; }
+main { max-width: 1240px; margin-inline: auto; padding: 16px; }
+h1 { font-size: 1.4rem; margin: 0 0 4px; }
+h2 { font-size: 1.05rem; margin: 28px 0 4px; }
+p, li { max-width: 80ch; }
+p { margin: 4px 0; }
+.muted { color: var(--muted); }
+.grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 12px; align-items: flex-start; }
+.frame { width: 372px; max-width: 100%; }
+.frame.w360 { width: 360px; }
+.cap { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 10px 0 6px; }
+.say { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+.crop { background: var(--bg); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; }
+.math { font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif; font-style: italic; }
+.gain { display: inline-block; font-size: 11px; font-weight: 700; color: var(--bg); background: var(--shift); border-radius: 4px; padding: 0 5px; }
+/* the status line (R82f2) */
+.bar { height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 8px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.place { flex: none; display: flex; align-items: center; gap: 2px; }
+.tile { width: 30px; height: 22px; border-radius: 6px; background: var(--chip-bg); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.name { font-weight: 700; margin-left: 4px; }
+.caret { color: var(--muted); font-size: 12px; }
+.spacer { flex: 1 1 0; }
+.chip { padding: 4px 6px; color: var(--muted); border-radius: 6px; }
+.chip.on { color: var(--shift); font-weight: 700; }
+.pill { display: flex; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); }
+.pill span { padding: 3px 6px; }
+.pill span + span { padding-left: 0; }
+.tapped { outline: 2px solid var(--shift); outline-offset: 1px; }
+.menubtn { width: 36px; margin-right: -8px; text-align: center; }
+.hist { height: 40px; padding: 10px 12px; font-size: 13px; color: var(--muted); text-align: right; }
+/* rows 0-2: the top cluster stays live above a sheet */
+.cluster { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-rows: 36px; gap: 6px; padding: 8px; background: #0e1426; }
+.k { border-radius: 8px; background: var(--nav); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+.k.u { background: none; border: 1px solid var(--line); color: var(--muted); }
+.k.set { color: var(--text); }
+.k.ring { box-shadow: 0 0 0 2px var(--shift); }
+.pad { grid-column: 3 / span 2; grid-row: 1 / span 3; border-radius: 50%; background: var(--ctl); position: relative; color: var(--muted); font-size: 13px; }
+.pad i { position: absolute; font-style: normal; }
+.pad .up { top: 6px; left: 50%; transform: translateX(-50%); }
+.pad .dn { bottom: 6px; left: 50%; transform: translateX(-50%); }
+.pad .lf { left: 10px; top: 50%; transform: translateY(-50%); }
+.pad .rt { right: 10px; top: 50%; transform: translateY(-50%); }
+/* the sheet */
+.sheet { background: var(--panel); border-top: 1px solid var(--line); border-radius: 12px 12px 0 0; padding: 4px 6px 2px; font-size: 17px; }
+.head { height: 32px; display: flex; align-items: center; gap: 6px; padding-left: 8px; color: var(--muted); font-size: 14px; }
+.head .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.head .back, .head .x { color: var(--text); font-size: 20px; padding: 0 6px; }
+.row { height: 44px; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 8px; }
+.row.hi { background: var(--num); box-shadow: inset 3px 0 0 var(--shift); }
+.row.tall { height: 52px; }
+.row.s38 { height: 38px; }
+.row.s36 { height: 36px; }
+.row .n { min-width: 12px; color: var(--shift); font-size: 14px; }
+.row .l { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .l small { display: block; font-size: 12px; line-height: 15px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.row .v { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.row .go { color: var(--muted); width: 14px; text-align: center; }
+.row.act .l { color: var(--alpha); }
+.step { display: flex; align-items: center; color: var(--shift); margin-right: -8px; }
+.step i { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-style: normal; font-size: 13px; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg b { min-width: 52px; height: 44px; padding: 0 6px; display: flex; align-items: center; justify-content: center; font-weight: 400; color: var(--muted); font-size: 14px; }
+.seg b + b { border-left: 1px solid var(--line); }
+.seg b.on { background: var(--chip-bg); color: var(--text); font-weight: 700; }
+.sw { width: 44px; height: 26px; border-radius: 13px; background: var(--op); box-shadow: inset 0 0 0 1px var(--line); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--muted); }
+.sw.on { background: var(--enter); }
+.sw.on::after { left: 21px; background: #fff; }
+.tick { width: 32px; text-align: center; }
+.dots { display: flex; gap: 3px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--line); }
+.radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--muted); flex: none; }
+.radio.on { border-color: var(--shift); background: radial-gradient(var(--shift) 0 3px, transparent 4px); }
+.note { font-size: 12px; color: var(--muted); padding: 2px 8px 6px; }
+.fade { max-height: 341px; overflow: hidden; mask-image: linear-gradient(to bottom, #000 calc(100% - 32px), transparent); }
+.entry { margin: 8px 12px; height: 56px; border-radius: 8px; background: var(--panel); border: 1px solid var(--shift); display: flex; align-items: center; gap: 10px; padding: 0 12px; font-size: 22px; }
+.entry .lab { font-size: 14px; color: var(--muted); }
+.notice { margin: 8px auto; width: max-content; max-width: 92%; padding: 6px 14px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); font-size: 14px; }
+.wrap { overflow-x: auto; max-width: 100%; }
+table { border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+<h1>Mode sheet and Settings: one sheet</h1>
+<p class="muted">The owner's pick of 2026-10-27 after one mockup round (option 4, with option 8 only where it saves a press and option 10 as presets). Settings becomes the next level of the same pick sheet as Mode and every ☰ menu, over the keypad's maths rows, so the top cluster stays live. The right side of the status line stays as today: a tap on RAD switches the angle unit, the format pill opens Mode. No long-press shortcuts. Built by R85 (Shift + Fmt), R49 (the levels), R86 (Mode values in sight), R57, R50e, R87 and the rows of R4b, R24d, R38a, R38b, R59, R70, R53, R37 and R15c4; presets by R88 and R89.</p>
+
+<h2>1 · The Mode sheet (R86; R85 adds Shift + Fmt)</h2>
+<p class="muted">Opened by the format pill (on Format), the digits chip (straight on the digits list) or Shift + Fmt (on Angle). Angle, Format and Entry show every value: a tap on a value sets it and closes the sheet; ◀ ▶ move the mark and keep the sheet open; Enter closes. Digits keep their list of presets. Settings › is the last row. <span class="gain">3 → 2</span> marks a change that saves a press; Settings' own rows stay ◀ ▶ rows, ticks and switches, where buttons would save nothing.</p>
+<div class="grid">
+  <div class="frame">
+    <div class="cap">Home · the format pill tapped</div>
+    <div class="crop">
+      <div class="bar"><span class="place"><span class="tile"><svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="#eef1f8" stroke-width="1.5" stroke-linejoin="round"/></svg></span><span class="name">Home</span><span class="caret">▾</span></span><span class="spacer"></span><span class="chip">RAD</span><span class="pill tapped"><span>STD</span><span>12</span></span><span class="menubtn">☰</span></div>
+      <div class="hist">√2 ≈ 1.41421356237</div>
+      <div class="cluster"><span class="k u">＋</span><span class="k u">＋</span><span class="pad"><i class="up">▲</i><i class="dn">▼</i><i class="lf">◀</i><i class="rt">▶</i></span><span class="k">View</span><span class="k">Esc</span><span class="k u">＋</span><span class="k u">＋</span><span class="k">Undo</span><span class="k">Copy</span><span class="k u">＋</span><span class="k u">＋</span><span class="k">⇤</span><span class="k">⇥</span></div>
+      <div class="sheet">
+        <div class="head"><span class="t">Mode</span><span class="x">×</span></div>
+        <div class="row tall"><span class="n">1</span><span class="l">Angle</span><span class="seg"><b class="on">RAD</b><b>DEG</b></span></div>
+        <div class="row tall hi"><span class="n">2</span><span class="l">Format</span><span class="seg"><b class="on">STD</b><b>SCI</b><b>ENG</b><b>PFX</b></span></div>
+        <div class="row"><span class="n">3</span><span class="l">Significant digits</span><span class="v">12</span><span class="go">›</span></div>
+        <div class="row tall"><span class="n">4</span><span class="l">Entry</span><span class="seg"><b class="on">Textbook</b><b>One line</b></span></div>
+        <div class="row"><span class="n">5</span><span class="l">Settings</span><span class="go">›</span></div>
+      </div>
+    </div>
+    <p class="say">SCI: STD, SCI <span class="gain">3 → 2</span> · One line: STD, One line <span class="gain">3 → 2</span> · 296 px of the 380 over the maths rows.</p>
+  </div>
+  <div class="frame">
+    <div class="cap">The digits chip tapped: straight to the list</div>
+    <div class="crop">
+      <div class="bar"><span class="place"><span class="tile"><svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="#eef1f8" stroke-width="1.5" stroke-linejoin="round"/></svg></span><span class="name">Home</span><span class="caret">▾</span></span><span class="spacer"></span><span class="chip">RAD</span><span class="pill tapped"><span>STD</span><span>12</span></span><span class="menubtn">☰</span></div>
+      <div class="sheet">
+        <div class="head"><span class="back">‹</span><span class="t">Mode › Significant digits</span><span class="x">×</span></div>
+        <div class="row s38"><span class="n">1</span><span class="l">4</span></div>
+        <div class="row s38"><span class="n">2</span><span class="l">6</span></div>
+        <div class="row s38"><span class="n">3</span><span class="l">8</span></div>
+        <div class="row s38"><span class="n">4</span><span class="l">10</span></div>
+        <div class="row s38 hi"><span class="n">5</span><span class="l">12</span><span class="tick">✓</span></div>
+        <div class="row s38"><span class="n">6</span><span class="l">15</span></div>
+        <div class="row s38"><span class="n">7</span><span class="l">20</span></div>
+        <div class="row s38"><span class="n">8</span><span class="l">25</span></div>
+        <div class="row s38"><span class="n">9</span><span class="l">30</span></div>
+      </div>
+    </div>
+    <p class="say">20 digits: 12, 20 <span class="gain">3 → 2</span> · ◀ goes up to Mode; ◀ ▶ on Mode's Digits row still step by one.</p>
+  </div>
+</div>
+<div class="wrap"><table>
+  <tr><th>Change</th><th>Today</th><th>After</th><th>How</th></tr>
+  <tr><td>RAD ↔ DEG</td><td>1 tap (chip)</td><td>1 tap (chip)</td><td>unchanged; inside Mode a value tap also closes the sheet</td></tr>
+  <tr><td>STD → SCI, ENG or PFX</td><td>3–4 taps</td><td>2</td><td>a tap on the value sets it and closes Mode</td></tr>
+  <tr><td>Textbook ↔ one line</td><td>3</td><td>2</td><td>the same</td></tr>
+  <tr><td>12 → 20 digits</td><td>3</td><td>2</td><td>the digits chip opens the list itself</td></tr>
+  <tr><td>Any of these by keys</td><td>no key opens Mode</td><td>Shift Fmt …</td><td>R85: Fmt's free Shift cell (docs/04 5.1)</td></tr>
+  <tr><td>A value inside Settings</td><td>4 (pill, 5, value, ×)</td><td>5</td><td>one level more than today's single page, as R49 already decided; the keys stay live in exchange</td></tr>
+</table></div>
+
+<h2>2 · Settings: the next level of the same sheet (R49)</h2>
+<p class="muted">Mode's last row and every ☰ menu's last row open Settings as a level of the sheet; the title shows the path. Digits pick a section, ▶ or Enter opens it, ◀ or Esc goes back one level onto the same row, a tap above the sheet or × closes it, Android back goes back one level. The top cluster stays live: the pad moves, Esc goes back, U1–U6 stay in view. Seven sections, each at most seven rows of 44 px: 7 × 44 + 32 + 8 = 348 of the 380 px at 372 × 767. A row whose package has not landed is left out.</p>
+<div class="grid">
+  <div class="frame">
+    <div class="cap">Mode › Settings</div>
+    <div class="crop">
+      <div class="bar"><span class="place"><span class="tile"><svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="#eef1f8" stroke-width="1.5" stroke-linejoin="round"/></svg></span><span class="name">Home</span><span class="caret">▾</span></span><span class="spacer"></span><span class="chip">RAD</span><span class="pill tapped"><span>STD</span><span>12</span></span><span class="menubtn">☰</span></div>
+      <div class="cluster"><span class="k u">＋</span><span class="k u">＋</span><span class="pad"><i class="up">▲</i><i class="dn">▼</i><i class="lf">◀</i><i class="rt">▶</i></span><span class="k">View</span><span class="k">Esc</span><span class="k u">＋</span><span class="k u">＋</span><span class="k">Undo</span><span class="k">Copy</span><span class="k u">＋</span><span class="k u">＋</span><span class="k">⇤</span><span class="k">⇥</span></div>
+      <div class="sheet">
+        <div class="head"><span class="back">‹</span><span class="t">Mode › Settings</span><span class="x">×</span></div>
+        <div class="row hi"><span class="n">1</span><span class="l">Appearance</span><span class="v">Pascaline · Dark</span><span class="go">›</span></div>
+        <div class="row"><span class="n">2</span><span class="l">Numbers</span><span class="v">Point · Std Sci Eng</span><span class="go">›</span></div>
+        <div class="row"><span class="n">3</span><span class="l">Key vibration</span><span class="v">Off</span><span class="go">›</span></div>
+        <div class="row"><span class="n">4</span><span class="l">Your keys</span><span class="v">None set</span><span class="go">›</span></div>
+        <div class="row"><span class="n">5</span><span class="l">Data</span><span class="v">Backup, library</span><span class="go">›</span></div>
+        <div class="row"><span class="n">6</span><span class="l">Counters</span><span class="v">1 284 presses</span><span class="go">›</span></div>
+        <div class="row"><span class="n">7</span><span class="l">Help and about</span><span class="go">›</span></div>
+      </div>
+    </div>
+    <p class="say">Taps: STD, Settings · keys: Shift Fmt 5</p>
+  </div>
+  <div class="frame">
+    <div class="cap">Function · Plot · ☰, its last row</div>
+    <div class="crop">
+      <div class="bar"><span class="place"><span class="tile math">ƒ</span><span class="caret">▾</span></span><span class="spacer"></span><span class="chip">RAD</span><span class="pill"><span>STD</span><span>12</span></span><span class="menubtn tapped">☰</span></div>
+      <div class="sheet">
+        <div class="head"><span class="back">‹</span><span class="t">Plot menu › Settings</span><span class="x">×</span></div>
+        <div class="row hi"><span class="n">1</span><span class="l">Appearance</span><span class="v">Pascaline · Dark</span><span class="go">›</span></div>
+        <div class="row"><span class="n">2</span><span class="l">Numbers</span><span class="v">Point · Std Sci Eng</span><span class="go">›</span></div>
+        <div class="row"><span class="n">3</span><span class="l">Key vibration</span><span class="v">Off</span><span class="go">›</span></div>
+        <div class="row"><span class="n">4</span><span class="l">Your keys</span><span class="v">None set</span><span class="go">›</span></div>
+        <div class="row"><span class="n">5</span><span class="l">Data</span><span class="v">Backup, library</span><span class="go">›</span></div>
+        <div class="row"><span class="n">6</span><span class="l">Counters</span><span class="v">1 284 presses</span><span class="go">›</span></div>
+        <div class="row"><span class="n">7</span><span class="l">Help and about</span><span class="go">›</span></div>
+      </div>
+    </div>
+    <p class="say">Taps: ☰, Settings (9 in Plot, 0 in Home) · ◀ goes back to the Plot menu</p>
+  </div>
+</div>
+
+<h2>3 · The seven sections</h2>
+<p class="muted">Each is a level of the same sheet (status line and top cluster above it, as in section 2). Value rows step with ◀ ▶ and their buttons; a tap or a digit on a value row steps it forward; ticks and switches toggle and stay; a row with › opens a level.</p>
+<div class="grid">
+  <div class="frame">
+    <div class="cap">1 · Appearance (R50e)</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Mode › Settings › Appearance</span><span class="x">×</span></div>
+      <div class="row hi"><span class="n">1</span><span class="l">Theme</span><span class="dots"><i style="background:#0b1020"></i><i style="background:#1f2a45"></i><i style="background:#2346d8"></i><i style="background:#ffc233"></i><i style="background:#86c5ff"></i></span><span class="v">Pascaline</span><span class="go">›</span></div>
+      <div class="row"><span class="n">2</span><span class="l">Brightness</span><span class="step"><i>◀</i>Dark<i>▶</i></span></div>
+      <div class="row tall"><span class="n">3</span><span class="l">High contrast<small>Text at 7:1, outlined keys</small></span><span class="sw"></span></div>
+      <div class="row tall"><span class="n">4</span><span class="l">Plain keys<small>No colour coding</small></span><span class="sw"></span></div>
+    </div>
+    <p class="say">◀ ▶ step the theme in place; › lists the five with their colours</p>
+  </div>
+  <div class="frame">
+    <div class="cap">1 · Appearance › Theme</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Settings › Appearance › Theme</span><span class="x">×</span></div>
+      <div class="row hi"><span class="n">1</span><span class="radio on"></span><span class="l">Pascaline</span><span class="dots"><i style="background:#0b1020"></i><i style="background:#1f2a45"></i><i style="background:#2346d8"></i><i style="background:#ffc233"></i><i style="background:#86c5ff"></i></span></div>
+      <div class="row"><span class="n">2</span><span class="radio"></span><span class="l">Graphite</span><span class="dots"><i style="background:#17181b"></i><i style="background:#323438"></i><i style="background:#a8620f"></i><i style="background:#f2b45a"></i><i style="background:#8fbdf0"></i></span></div>
+      <div class="row"><span class="n">3</span><span class="radio"></span><span class="l">Solarized</span><span class="dots"><i style="background:#002b36"></i><i style="background:#0a3f4c"></i><i style="background:#1f6fae"></i><i style="background:#cf9c00"></i><i style="background:#5baae1"></i></span></div>
+      <div class="row"><span class="n">4</span><span class="radio"></span><span class="l">Gruvbox</span><span class="dots"><i style="background:#1d2021"></i><i style="background:#3c3836"></i><i style="background:#417957"></i><i style="background:#fabd2f"></i><i style="background:#89a99d"></i></span></div>
+      <div class="row"><span class="n">5</span><span class="radio"></span><span class="l">Nord</span><span class="dots"><i style="background:#2e3440"></i><i style="background:#434c5e"></i><i style="background:#5579a5"></i><i style="background:#ebcb8b"></i><i style="background:#8fc4d3"></i></span></div>
+    </div>
+    <p class="say">A pick stays open: the status line and keys above show the theme at once</p>
+  </div>
+  <div class="frame">
+    <div class="cap">2 · Numbers (today's cycle; R57's decimal mark)</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Mode › Settings › Numbers</span><span class="x">×</span></div>
+      <div class="row hi"><span class="n">1</span><span class="l">Decimal mark</span><span class="step"><i>◀</i>Point<i>▶</i></span></div>
+      <div class="row"><span class="n">2</span><span class="l">Standard</span><span class="tick">✓</span></div>
+      <div class="row"><span class="n">3</span><span class="l">Scientific</span><span class="tick">✓</span></div>
+      <div class="row"><span class="n">4</span><span class="l">Engineering</span><span class="tick">✓</span></div>
+      <div class="row"><span class="n">5</span><span class="l">Prefixes (k, M, µ …)</span><span class="tick"></span></div>
+      <div class="row"><span class="n">6</span><span class="l">Fixed</span><span class="tick"></span></div>
+      <div class="row"><span class="n">7</span><span class="l">Decimals in Fixed</span><span class="step"><i>◀</i>4<i>▶</i></span></div>
+    </div>
+    <p class="say">Rows 2–6 are the Fmt key's cycle; its hint becomes a second line under Standard (R49)</p>
+  </div>
+  <div class="frame">
+    <div class="cap">3 · Key vibration (today; Try it from R49)</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Mode › Settings › Key vibration</span><span class="x">×</span></div>
+      <div class="row hi"><span class="n">1</span><span class="l">Key vibration</span><span class="sw on"></span></div>
+      <div class="row tall"><span class="n">2</span><span class="l">Strength<small>The Android app only</small></span><span class="step"><i>◀</i>50 %<i>▶</i></span></div>
+      <div class="row"><span class="n">3</span><span class="l">Length</span><span class="step"><i>◀</i>15 ms<i>▶</i></span></div>
+      <div class="row act"><span class="n">4</span><span class="l">Try it</span></div>
+    </div>
+  </div>
+  <div class="frame">
+    <div class="cap">4 · Your keys (R4b; the unit pad cells R24d)</div>
+    <div class="crop">
+      <div class="cluster"><span class="k u set">sinh</span><span class="k u set">kWh</span><span class="pad"><i class="up">▲</i><i class="dn">▼</i><i class="lf">◀</i><i class="rt">▶</i></span><span class="k">View</span><span class="k">Esc</span><span class="k u ring">＋</span><span class="k u">＋</span><span class="k">Undo</span><span class="k">Copy</span><span class="k u">＋</span><span class="k u">＋</span><span class="k">⇤</span><span class="k">⇥</span></div>
+      <div class="sheet">
+        <div class="head"><span class="back">‹</span><span class="t">Settings › Your keys</span><span class="count">21 items</span><span class="x">×</span></div>
+        <div class="note">Press U1–U6 above to go to that key's slots</div>
+        <div class="fade" style="max-height: 300px">
+          <div class="row s36"><span class="n">1</span><span class="l">U1</span><span class="v">sinh(□)</span><span class="go">›</span></div>
+          <div class="row s36"><span class="n">2</span><span class="l">U1 ⇧</span><span class="v">Mode</span><span class="go">›</span></div>
+          <div class="row s36"><span class="n">3</span><span class="l">U1 α</span><span class="v">Empty</span><span class="go">›</span></div>
+          <div class="row s36"><span class="n">4</span><span class="l">U2</span><span class="v">kWh</span><span class="go">›</span></div>
+          <div class="row s36"><span class="n">5</span><span class="l">U2 ⇧</span><span class="v">Empty</span><span class="go">›</span></div>
+          <div class="row s36"><span class="n">6</span><span class="l">U2 α</span><span class="v">Empty</span><span class="go">›</span></div>
+          <div class="row s36 hi"><span class="n">7</span><span class="l">U3</span><span class="v">Empty</span><span class="go">›</span></div>
+          <div class="row s36"><span class="n">8</span><span class="l">U3 ⇧</span><span class="v">Empty</span><span class="go">›</span></div>
+          <div class="row s36"><span class="n">9</span><span class="l">U3 α</span><span class="v">Empty</span><span class="go">›</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="say">18 slots, then Unit pad cells › and Reset all: the one level that scrolls</p>
+  </div>
+  <div class="frame">
+    <div class="cap">5 · Data (R38a, R38b; the library from R59)</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Mode › Settings › Data</span><span class="x">×</span></div>
+      <div class="row act hi"><span class="n">1</span><span class="l">Save a backup</span></div>
+      <div class="row act"><span class="n">2</span><span class="l">Restore from a file</span></div>
+      <div class="row act tall"><span class="n">3</span><span class="l">Undo the restore<small>Restored 27 Oct, 14:05; shown only then</small></span></div>
+      <div class="row act"><span class="n">4</span><span class="l">Import a library</span></div>
+      <div class="row act"><span class="n">5</span><span class="l">Export the library</span></div>
+    </div>
+    <p class="say">Results ("saved", "could not save") show as the notice in the stage, not on the status line</p>
+  </div>
+  <div class="frame">
+    <div class="cap">6 · Counters (R9 today; R70, R53, R37)</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Mode › Settings › Counters</span><span class="x">×</span></div>
+      <div class="row hi"><span class="n">1</span><span class="l">Every press</span><span class="v">12 840</span></div>
+      <div class="row"><span class="n">2</span><span class="l">Shift · Alpha taps</span><span class="v">1 204 · 311</span></div>
+      <div class="row"><span class="n">3</span><span class="l">Results mode</span><span class="v">64 times</span><span class="go">›</span></div>
+      <div class="row"><span class="n">4</span><span class="l">Angle hints shown · taken</span><span class="v">9 · 2</span></div>
+      <div class="row"><span class="n">5</span><span class="l">Presets switched</span><span class="v">17</span></div>
+      <div class="row"><span class="n">6</span><span class="l">Counted on this device since</span><span class="v">14 Oct</span></div>
+      <div class="row act"><span class="n">7</span><span class="l">Reset the counters</span></div>
+    </div>
+    <p class="say">One section for every removal-test count; nothing leaves the phone</p>
+  </div>
+  <div class="frame">
+    <div class="cap">7 · Help and about (R15c4, R87)</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Mode › Settings › Help and about</span><span class="x">×</span></div>
+      <div class="row act hi"><span class="n">1</span><span class="l">Show the first-start tips</span></div>
+      <div class="row tall"><span class="n">2</span><span class="l">About Pascaline<small>Version, source, GPL-3.0</small></span><span class="go">›</span></div>
+      <div class="row tall"><span class="n">3</span><span class="l">Parts we use and their licences<small>From THIRD_PARTY.md</small></span><span class="go">›</span></div>
+    </div>
+  </div>
+</div>
+
+<h2>4 · Presets (R88, R89)</h2>
+<p class="muted">A preset is a named snapshot of the user's own settings. It holds any of five groups, each a tick, all ticked when it is saved: Mode (angle, format, digits, entry), Numbers (decimal mark, the Fmt cycle, decimals), Appearance, Key vibration, and Your keys (U1–U6 on every layer and the unit pad cells). The fixed keys never change; the free keys switch with the preset, so the hand keeps every fixed key and the user gets a calculator per job (owner, 2026-10-27). Nothing saves by itself: after a change the preset's name carries a dot until Update or another preset.</p>
+<div class="grid">
+  <div class="frame">
+    <div class="cap">Mode with the Preset row</div>
+    <div class="crop">
+      <div class="bar"><span class="place"><span class="tile"><svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="#eef1f8" stroke-width="1.5" stroke-linejoin="round"/></svg></span><span class="name">Home</span><span class="caret">▾</span></span><span class="spacer"></span><span class="chip on">DEG</span><span class="pill tapped"><span>ENG</span><span>4</span></span><span class="menubtn">☰</span></div>
+      <div class="sheet">
+        <div class="head"><span class="t">Mode</span><span class="x">×</span></div>
+        <div class="row tall"><span class="n">1</span><span class="l">Angle</span><span class="seg"><b>RAD</b><b class="on">DEG</b></span></div>
+        <div class="row tall hi"><span class="n">2</span><span class="l">Format</span><span class="seg"><b>STD</b><b>SCI</b><b class="on">ENG</b><b>PFX</b></span></div>
+        <div class="row"><span class="n">3</span><span class="l">Significant digits</span><span class="v">4</span><span class="go">›</span></div>
+        <div class="row tall"><span class="n">4</span><span class="l">Entry</span><span class="seg"><b class="on">Textbook</b><b>One line</b></span></div>
+        <div class="row tall"><span class="n">5</span><span class="l">Preset<small>DEG · ENG 4 · comma · 5 keys</small></span><span class="step"><i>◀</i>Lab<i>▶</i></span><span class="go">›</span></div>
+        <div class="row"><span class="n">6</span><span class="l">Settings</span><span class="go">›</span></div>
+      </div>
+    </div>
+    <p class="say">◀ ▶ apply the next preset at once; › lists them · 340 of 380 px · Settings moves to row 6</p>
+  </div>
+  <div class="frame">
+    <div class="cap">Mode › Presets</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Mode › Presets</span><span class="x">×</span></div>
+      <div class="row tall"><span class="n">1</span><span class="radio"></span><span class="l">Default<small>RAD · STD 12 · point · no keys</small></span></div>
+      <div class="row tall hi"><span class="n">2</span><span class="radio on"></span><span class="l">Lab<small>DEG · ENG 4 · comma · 5 keys</small></span></div>
+      <div class="row tall"><span class="n">3</span><span class="radio"></span><span class="l">Chemistry<small>RAD · SCI 4 · point · 6 keys · Graphite</small></span></div>
+      <div class="row act"><span class="n">4</span><span class="l">Save the current setup as a preset</span></div>
+      <div class="row"><span class="n">5</span><span class="l">Edit the presets</span><span class="go">›</span></div>
+    </div>
+    <p class="say">A pick applies the preset and closes the sheet</p>
+  </div>
+  <div class="frame">
+    <div class="cap">Mode › Presets › Edit › Lab</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Presets › Edit › Lab</span><span class="x">×</span></div>
+      <div class="row tall hi"><span class="n">1</span><span class="l">Mode<small>DEG · ENG 4 · textbook</small></span><span class="tick">✓</span></div>
+      <div class="row tall"><span class="n">2</span><span class="l">Numbers<small>Comma · Std Sci Eng</small></span><span class="tick">✓</span></div>
+      <div class="row tall"><span class="n">3</span><span class="l">Appearance<small>Not held: the look stays as it is</small></span><span class="tick"></span></div>
+      <div class="row tall"><span class="n">4</span><span class="l">Key vibration<small>On · 50 % · 15 ms</small></span><span class="tick">✓</span></div>
+      <div class="row tall"><span class="n">5</span><span class="l">Your keys<small>U1 sinh, U2 kWh, U4 °C … 5 set</small></span><span class="tick">✓</span></div>
+      <div class="row act"><span class="n">6</span><span class="l">Update from the current setup</span></div>
+    </div>
+    <p class="say">A seventh row, Rename or delete ›, scrolls in (7 rows of 44 and 52 px)</p>
+  </div>
+  <div class="frame">
+    <div class="cap">Naming: the entry line, as an app's input</div>
+    <div class="crop">
+      <div class="bar"><span class="place"><span class="tile"><svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="#eef1f8" stroke-width="1.5" stroke-linejoin="round"/></svg></span><span class="name">Home</span><span class="caret">▾</span></span><span class="spacer"></span><span class="chip">RAD</span><span class="pill"><span>SCI</span><span>4</span></span><span class="menubtn">☰</span></div>
+      <div class="hist">Save the current setup as a preset</div>
+      <div class="entry"><span class="lab">Preset name</span><span>Chemistry</span><span style="width:2px;height:28px;background:var(--shift)"></span></div>
+    </div>
+    <p class="say">The sheet closes; Alpha types the letters; Enter saves; Esc cancels</p>
+  </div>
+  <div class="frame">
+    <div class="cap">After a switch: the notice, the keys</div>
+    <div class="crop">
+      <div class="bar"><span class="place"><span class="tile"><svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="#eef1f8" stroke-width="1.5" stroke-linejoin="round"/></svg></span><span class="name">Home</span><span class="caret">▾</span></span><span class="spacer"></span><span class="chip">RAD</span><span class="pill"><span>SCI</span><span>4</span></span><span class="menubtn">☰</span></div>
+      <div class="notice">Chemistry: RAD · SCI 4 · point · 6 keys · Graphite</div>
+      <div class="cluster"><span class="k u set">mol</span><span class="k u set">pH</span><span class="pad"><i class="up">▲</i><i class="dn">▼</i><i class="lf">◀</i><i class="rt">▶</i></span><span class="k">View</span><span class="k">Esc</span><span class="k u set">M</span><span class="k u set">Nₐ</span><span class="k">Undo</span><span class="k">Copy</span><span class="k u set">K</span><span class="k u set">R</span><span class="k">⇤</span><span class="k">⇥</span></div>
+    </div>
+    <p class="say">The chips and the free keys show the change; the angle chip is coloured when not RAD</p>
+  </div>
+</div>
+
+<h2>5 · At 360 px, the worst cases</h2>
+<div class="grid">
+  <div class="frame w360">
+    <div class="cap">Mode · DEG, PFX 30, one line, a long preset name</div>
+    <div class="crop">
+      <div class="bar"><span class="place"><span class="tile math">ƒ</span><span class="caret">▾</span></span><span class="spacer"></span><span class="chip on">DEG</span><span class="pill tapped"><span>PFX</span><span>30</span></span><span class="menubtn">☰</span></div>
+      <div class="sheet">
+        <div class="head"><span class="t">Mode</span><span class="x">×</span></div>
+        <div class="row tall"><span class="n">1</span><span class="l">Angle</span><span class="seg"><b>RAD</b><b class="on">DEG</b></span></div>
+        <div class="row tall hi"><span class="n">2</span><span class="l">Format</span><span class="seg"><b>STD</b><b>SCI</b><b>ENG</b><b class="on">PFX</b></span></div>
+        <div class="row"><span class="n">3</span><span class="l">Significant digits</span><span class="v">30</span><span class="go">›</span></div>
+        <div class="row tall"><span class="n">4</span><span class="l">Entry</span><span class="seg"><b>Textbook</b><b class="on">One line</b></span></div>
+        <div class="row tall"><span class="n">5</span><span class="l">Preset<small>DEG · PFX 30 · comma · 18 keys · Nord</small></span><span class="step"><i>◀</i>Strain…<i>▶</i></span><span class="go">›</span></div>
+        <div class="row"><span class="n">6</span><span class="l">Settings</span><span class="go">›</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="frame w360">
+    <div class="cap">Mode › Presets · nine saved</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Mode › Presets</span><span class="count">11 items</span><span class="x">×</span></div>
+      <div class="fade">
+        <div class="row tall"><span class="n">1</span><span class="radio"></span><span class="l">Default<small>RAD · STD 12 · point</small></span></div>
+        <div class="row tall hi"><span class="n">2</span><span class="radio on"></span><span class="l">Lab bench: strain-gauge calibration<small>DEG · ENG 4 · comma · 5 keys</small></span></div>
+        <div class="row tall"><span class="n">3</span><span class="radio"></span><span class="l">Chemistry<small>RAD · SCI 4 · point · 6 keys · Graphite</small></span></div>
+        <div class="row tall"><span class="n">4</span><span class="radio"></span><span class="l">Field survey<small>DEG · STD 8 · comma · 3 keys</small></span></div>
+        <div class="row tall"><span class="n">5</span><span class="radio"></span><span class="l">Power electronics<small>RAD · PFX 4 · point · 6 keys</small></span></div>
+        <div class="row tall"><span class="n">6</span><span class="radio"></span><span class="l">Structural checks<small>RAD · ENG 6 · comma · 4 keys</small></span></div>
+        <div class="row tall"><span class="n">7</span><span class="radio"></span><span class="l">Teaching<small>DEG · STD 10 · one line</small></span></div>
+      </div>
+    </div>
+    <p class="say">Past seven rows a level scrolls with the count in its title (docs/05 3.1)</p>
+  </div>
+  <div class="frame w360">
+    <div class="cap">Settings at 360 px: the longest values</div>
+    <div class="sheet">
+      <div class="head"><span class="back">‹</span><span class="t">Mode › Settings</span><span class="x">×</span></div>
+      <div class="row hi"><span class="n">1</span><span class="l">Appearance</span><span class="v">Pascaline · Sys…</span><span class="go">›</span></div>
+      <div class="row"><span class="n">2</span><span class="l">Numbers</span><span class="v">Comma · Std Sci…</span><span class="go">›</span></div>
+      <div class="row"><span class="n">3</span><span class="l">Key vibration</span><span class="v">On · 100 %…</span><span class="go">›</span></div>
+      <div class="row"><span class="n">4</span><span class="l">Your keys</span><span class="v">18 of 18 set</span><span class="go">›</span></div>
+      <div class="row"><span class="n">5</span><span class="l">Data</span><span class="v">Restored 27 Oct</span><span class="go">›</span></div>
+      <div class="row"><span class="n">6</span><span class="l">Counters</span><span class="v">128 400 presses</span><span class="go">›</span></div>
+      <div class="row"><span class="n">7</span><span class="l">Help and about</span><span class="go">›</span></div>
+    </div>
+    <p class="say">A value is cut with … before the section's name is</p>
+  </div>
+</div>
+
+<h2>6 · Key paths</h2>
+<p class="muted">On the phone a sheet's rows sit where the keys were, so a tap on row 3 is the key 3 (docs/05 2 rule 1); the pad and Esc above the sheet stay keys. A hardware keyboard presses all of them.</p>
+<div class="wrap"><table>
+  <tr><th>Task</th><th>Taps</th><th>Keys</th></tr>
+  <tr><td>RAD ↔ DEG</td><td>RAD (1)</td><td>Shift Fmt ▶ Enter (4)</td></tr>
+  <tr><td>STD → SCI</td><td>STD, SCI (2)</td><td>Shift Fmt 2 Enter (4)</td></tr>
+  <tr><td>12 → 20 digits</td><td>12, 20 (2)</td><td>Shift Fmt 3 7 (4)</td></tr>
+  <tr><td>Textbook → one line</td><td>STD, One line (2)</td><td>Shift Fmt 4 Enter (4)</td></tr>
+  <tr><td>Decimal comma</td><td>STD, Settings, Numbers, Decimal mark, × (5)</td><td>Shift Fmt 5 2 1 Enter (6)</td></tr>
+  <tr><td>Theme Nord</td><td>STD, Settings, Appearance, Theme, Nord, × (6)</td><td>Shift Fmt 5 1 1 5, then Esc per level</td></tr>
+  <tr><td>Settings from any ☰ menu</td><td>☰, its last row (2)</td><td>no key opens ☰; Shift Fmt 5 instead</td></tr>
+  <tr><td>Apply the preset Lab (R89)</td><td>STD, Preset, Lab (3)</td><td>Shift Fmt 5 2 (4; Settings is then row 6)</td></tr>
+  <tr><td>Back one level · close</td><td>‹ · × or a tap above the sheet</td><td>◀ or Esc · Enter on a value row</td></tr>
+</table></div>
+</main>
+</body>
+</html>
