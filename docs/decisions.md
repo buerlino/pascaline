@@ -8,6 +8,7 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
+- **R82f1 (F117), what covered Root:** the device replay on the Fairphone (WebView 372×767, DPR 3, our test build) shows Root at the menu's top, uncovered (row 7,424; DEG/RAD chip 217,2 in the 28 px status line); what it cut was the ninth row, Settings, by 3 px, with the "9 items" cue. R82f1 makes all nine fit. If Root is still under the chip by hand: which steps (from a cold start or the app as you left it, ☰ tapped or the Menu key, Shift or Alpha on, the system font size), and a screenshot.
 
 ## Decided proposals
 
