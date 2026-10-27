@@ -14,7 +14,7 @@
 **What waits** (the packages keep their files; none starts until P23 ends, whatever its file says): Find R4a → R4b with R15c3 and R72; the unit chain R24b → R24c → R24d, R60–R63, R71; the Settings chain (owner, 2026-10-27; decisions.md "Settings in the Mode sheet, and presets"; [mockups/settings.html](../mockups/settings.html)): R85; R49 → R86, R57, R50e, R87 (before A7), R70, R15c4, R38a → R38b, R59, R4b; R88 (after R4b, R57, R50e) → R89; R55 (after R15c4); R53; R12b → R12c → R41; R36, R33 → R37, R40; A4b; G79, S20; A7 → A8 on the owner's go. **After the freeze, in that order:** Find (R4a, after G111: decisions.md "Owner answers of 2026-10-25"; three core cases wait for it: a command by name cannot be keyed today), then a split of the start chunk (no package yet; R83 raises its budget to 61 kB, owner 2026-10-27, and the Settings base needs room), then the Settings base in this order: R85, R49, R86, R57 (R4b sets the free keys in R49's levels; the comma is the owner's daily use), then R4b and the units, then the rest.
 
 **By day, one pipeline at a time** (owner, 2026-10-18), each after the one before is merged:
-1. annabell on devices: **A16** (Enter p95, the third row: G65 is merged); **A9** with the owner's phone (F41); **A43** (an update keeps the data); the library replay and A20 again (G82 is merged; no package).
+1. annabell on devices: **A9** with the owner's phone (F41); **A43** (an update keeps the data); the library replay and A20 again (G82 is merged; no package).
 2. When a slot is free (process, nothing users see): **A26** (A22 is merged).
 3. Every morning: the owner's check (MORNING.md, on the night's device, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>` (section 8 counts these).
 
@@ -28,7 +28,6 @@
 
 | # | Package | Agent, model | Lane | Starts when merged | Size |
 |---|---|---|---|---|---|
-| [A16](packages/A16.md) | Enter p95 on the Tab One, the third row | annabell, Sonnet | day (device) | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [G113](packages/G113.md) | A probability off the integers is 0; negbinomial_icdf exact (F101, F104) | gorge, Opus | night-safe | P23's night 2 | ~0.5 d |
 | [G114](packages/G114.md) | The census sees Giac's sequence answers (F108) | gorge, Sonnet | night-safe | P23's night 2 | ~0.25 d |
