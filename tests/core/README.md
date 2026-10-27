@@ -3,7 +3,7 @@
 
 **What it is.** `core.yaml` is the definition of "the core holds" (decisions.md "P23", owner, 2026-10-21): about fifty everyday tasks on Home, CAS, the matrix templates, Solve and Function, each as the keys a user presses and what the screen must show. While the core freeze lasts, no new feature is built; the work is this list, the bugs it finds and the bridge (docs/shifts/brief.md section 0).
 
-**The freeze ends** when every active case passes in the desktop e2e suite and on the night's device (the Tab One or the Fairphone 6, the same one both nights; owner, 2026-10-22), on two nights in a row, and the owner's morning check ([MORNING.md](MORNING.md)) finds nothing on both mornings; before that, one core run on the Tab One passes and the flake census (A37) has run, its flakes moved to the retried timing stage (owner, 2026-10-24). The night's device step logs its count (`CORE DEVICE` lines in `.coord/log.md`).
+**The freeze ends** when every active case passes in the desktop e2e suite and on the night's device (the Tab One or the Fairphone 6, the same one both nights; owner, 2026-10-22), on two nights in a row, and the owner's morning check ([MORNING.md](MORNING.md)) finds nothing on both mornings, and the release engine passes the golden gate and the core list once (A42, met by `cbb636e`); the Tab One core run and the flake census (A37) came first (owner, 2026-10-24; both done 2026-10-25). The night's device step logs its count (`CORE DEVICE` lines in `.coord/log.md`).
 
 ## Rules
 - **Expected values** are `derived` or `oracle` (mpmath 1.3.0 in `tests/golden/.venv`), as in a golden case; never from memory of another calculator, never from what the app shows today. The shown text follows docs/04 2.4 and 2.6: 12 digits, `E` for large and small numbers, `=` exact, `≈` rounded with every digit right. A CAS result built from exact names carries no mark (docs/04 2.9, G51): those cases say `mark: none`.
@@ -17,5 +17,5 @@
 - **Device:** the same cases through the night's device's WebView (A32): a test build with WebView debugging, Playwright attached over adb, the same replay code. At night the pipeline's device step runs it after each Opus pass (A33; docs/shifts/rules.md section 6).
 - **By hand:** MORNING.md, the owner, about ten minutes on the night's device, on the APK the night checked (owner, 2026-10-24).
 
-## State on 2026-10-26 (S24, desktop)
-66 cases: 63 active, 3 need R4a. All 63 pass (`CORE 63/63 (known 0, needs 3)`). c61–c66 were added with the owner on 2026-10-26: the Format key, a b/c, polar in DEG, an error row then the fix, Ans inside a line, a CAS function after a relaunch. One green night is enough for them.
+## State on 2026-10-27 (desktop)
+66 cases: 63 active, 3 need R4a. All 63 pass (`CORE 63/63 (known 0, needs 3)`, Opus pass 86 on `13cc2da`). c61–c66 were added with the owner on 2026-10-26: the Format key, a b/c, polar in DEG, an error row then the fix, Ans inside a line, a CAS function after a relaunch. One green night is enough for them.

@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # R18: the outside test, two 30-minute rounds
 
-**Status (2026-10-21): reference.** The script and sheet of the owner's two outside rounds (backlog "Needs the user" 6); what they wait for is decided (decisions.md S8: R70 first, A23).
+**Status (2026-10-21): reference.** The script and sheet of the owner's two outside rounds (backlog "Needs the user" 7); what they wait for is decided (decisions.md S8: R70 first, A23).
 
 *sandra, 2026-10-20, package S8 (deep-dive item 24). The package named this note `r12-outside-test.md`; r12 is already [r12-evidence.md](r12-evidence.md) (docs/README.md:21) and r16 is in use, so it is R18. The printable sheet is [../mockups/outside-test.html](../mockups/outside-test.html). Nothing here changes the app.*
 

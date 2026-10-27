@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # The core list (decisions.md "P23"): the everyday tasks that must hold before anything new is built.
-# Format, rules and how it runs: README.md beside this file. Draft by sandra, 2026-10-21, for the owner to cut down.
+# Format, rules and how it runs: README.md beside this file. Drafted by sandra, 2026-10-21; it changes only with the owner (decisions.md "P23").
 #
 # A case has:
 #   id, area, title   c<nn>; area = entry | home | trig | cas | matrix | solve | function | state

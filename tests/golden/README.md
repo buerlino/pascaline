@@ -11,24 +11,29 @@ the ⚠, and every other case must not.
 
 | File | Cases | What |
 |---|---|---|
-| `home.yaml` | 304 | exact-first Home, STD 12 digits (no `assumed` case: the G2's differing answers are `derived` with a note, items 8 and 43, G45; 1 `device`: G2 item 16); every number has a `mark:` (114 `=`, 131 `≈`, 34 `⚠`: unaudited functions, a non-number that holds a float, G27, an undecided decision, or Giac's [exact, numeric] pair, G39; G47 pins the `round`/`trunc`/`normald_icdf` displays); a refusal (G39) expects its message; 21 are the accuracy cases of Find tier-0 functions, derived and checked by `oracle.py` |
-| `precision.yaml` | 237 (236 active, 1 `pending`) | docs/04 section 2.3 regression list (#2–#6, #9, #17) and the 20/30-digit `oracle` cases; `settings: { digits: N }`; `kind: cas` for the CAS view (`beforeHome:` runs inputs in Home first, `uses:` lists the stored names the result must report, G20); mark-only cases (no `expect`) for results whose true digits are out of reach |
+| `home.yaml` | 479 | exact-first Home, STD 12 digits (no `assumed` case: the G2's differing answers are `derived` with a note, items 8 and 43, G45; 1 `device`: G2 item 16); every number has a `mark:` (`⚠` for unaudited functions, a non-number that holds a float, G27, an undecided decision, or Giac's [exact, numeric] pair, G39; G47 pins the `round`/`trunc`/`normald_icdf` displays); a refusal (G39) expects its message; 21 are the accuracy cases of Find tier-0 functions, derived and checked by `oracle.py` |
+| `precision.yaml` | 518 (1 `pending`) | docs/04 section 2.3 regression list (#2–#6, #9, #17) and the 20/30-digit `oracle` cases; `settings: { digits: N }`; `kind: cas` for the CAS view (`beforeHome:` runs inputs in Home first, `uses:` lists the stored names the result must report, G20); mark-only cases (no `expect`) for results whose true digits are out of reach |
 | `solve.yaml` | 55 | Solve: 1-D (nearest root to the guess), systems (`kind: system`), polynomials (`kind: poly`) |
 | `function.yaml` | 28 | Function app: Plot analysis (root, extremum, intersection, slope, area) and Num table rows |
-| `bench.yaml` | 56 | benchmark inputs (timing set; 14 `derived` values checked) |
-| `units.yaml` | 136 | the unit view (G16, P15): the formula with its unit slots on the Find index's factors; value, mark, `exact` (Giac's exact text, checked by `oracle.py` against the oracle), `dim` (the dimension key) and, with an end slot, `si` (the SI value's exact text, against `si_oracle`), or the refusal's `message`; `to` is the end slot. Needs the Find index (`npm run index`). The gate also holds the desktop p95 of an evaluation to ≤ 5 ms |
-| `parser.yaml` | 588 | LaTeX to Giac round trip for our parser (2 known gaps, `status: gap`; the gate prints 527/529; group "palettes" 39); `error: true` cases must be rejected, `chips:` gives the chip table |
+| `bench.yaml` | 57 | benchmark inputs (timing set; 14 `derived` values checked) |
+| `units.yaml` | 166 | the unit view (G16, P15): the formula with its unit slots on the Find index's factors; value, mark, `exact` (Giac's exact text, checked by `oracle.py` against the oracle), `dim` (the dimension key) and, with an end slot, `si` (the SI value's exact text, against `si_oracle`), or the refusal's `message`; `to` is the end slot. Needs the Find index (`npm run index`). The gate also holds the desktop p95 of an evaluation to ≤ 5 ms |
+| `parser.yaml` | 623 | LaTeX to Giac round trip for our parser (2 known gaps, `status: gap`; group "palettes" 39); `error: true` cases must be rejected, `chips:` gives the chip table |
 | `calls-baseline.yaml` | 2 totals | G52: Giac calls per Enter at 12 digits, summed over the bench inputs (CAS) and home.yaml's single inputs (Home), with the commit they were taken on. The gate's `calls` stage prints both totals and the five largest, and fails when a total is more than 10 % above its value. Raising a value is a one-line change and the package's report must give the reason |
 | `invariants-known.yaml` | 0 | G43: the invariants the gate's `invariants` stage finds failing today, each with its package. The stage runs every `home.yaml` and `precision.yaml` input without settings (312 distinct, angle-only-setting cases with no angle function included, no expected values): (a) no angle function: same mark and text in RAD and DEG (252 inputs); (b) 12 and 30 digits round to the same 12-digit text (254); (c) the copy text read back by the paste reader gives the same text and no weaker mark (259); (d) `X:=input` in one mode, `X` in the other shows what the store line showed (505 runs, both directions). It passes when the failures are exactly the listed ones: a new failure, or a listed one that now passes, fails it. About 46 s on the desktop (limit 60) |
+| `sweep-known.yaml` | — | G61: the oracle sweep's failures today (`app/scripts/sweep.ts`), each with the package whose fix removes it |
+| `seqsweep-known.yaml` | — | G62: the sequence sweep's failures today (`app/scripts/seqsweep.ts`), each with its backlog id |
+| `viewsweep-known.yaml` | — | G63: the view sweep's failures today (`app/scripts/viewsweep.ts`), each with its backlog id |
+| `casback-known.yaml` | — | G64: the CAS check-back's failures today (`app/scripts/casback.ts`), each with its backlog id |
+| `findcensus-known.yaml` | — | G110: the census of Find's tier-1 functions (`app/scripts/findcensus.ts`): each function's classes in Home and CAS |
+| `giaccheck-known.yaml` | — | A19: the inputs of Giac's own check suite whose answer differs on our build (`tools/probes/giac-check.mjs`) |
 | `corpus.yaml` | 199 inputs, 6 sequences | G55: everyday engineering inputs with **no expected values** (rounding, statistics, distributions, trig, complex, physics formulas, stored names and functions, lists and run-once assignments), one per line under an area comment, plus short `sequences` run in order. Not a gate: `app/scripts/behaviour-diff.ts <treeA> <treeB>` runs it, with the single inputs of `home.yaml`, `precision.yaml` and `bench.yaml`, through two trees (Home and CAS, 12 and 30 digits, RAD and DEG) and prints every input whose display, mark, warn or why differs; "none" when equal; about 170 s |
-| `g2.yaml` | 31 items (all answered by the Virtual Calculator; items 8, 29 and the real-G2 spot checks are still worth a device check) | G2 checklist questions and answers; `tests/golden/G2-CHECKLIST.md` is generated from it |
+| `g2.yaml` | 71 items (13 unanswered: 41, 42, 52, 56, 63–71, backlog "Needs the user" 3; items 8, 29 and the real-G2 spot checks are still worth a device check) | G2 checklist questions and answers; `tests/golden/G2-CHECKLIST.md` is generated from it |
 
 **Marks (docs/04 section 2.4).** In `home.yaml` and `precision.yaml` every case whose `expect` is a number has `mark:`.
 `oracle.py` derives it: `=` when the oracle value equals the shown text exactly, `≈` when the text is rounded. `⚠` is
 never derived: it is written by hand for functions whose result the engine cannot confirm, and needs a `note`.
 A case with a mark and no `expect` is mark-only (the gate checks the mark, and that an answer came back: a number, or a
-non-number that holds a float, never the input echoed back). The gate
-checks marks from EN3-engine on, when the engine result carries one; until then it only counts them.
+non-number that holds a float, never the input echoed back).
 
 **Pending.** `status: "pending"` (precision.yaml) marks a regression case written before its fix. The gate runs
 it, lists it as still pending or `NOW PASSING`, and never fails on it. The package that fixes it removes the status.
@@ -43,7 +48,7 @@ python3 -m venv tests/golden/.venv && tests/golden/.venv/bin/pip install mpmath=
 tests/golden/.venv/bin/python tests/golden/oracle.py          # check expect values and the format
 tests/golden/.venv/bin/python tests/golden/oracle.py --write  # fill expect for source: oracle
 tests/golden/.venv/bin/python tests/golden/oracle.py --g2     # regenerate tests/golden/G2-CHECKLIST.md
-(cd app && npm run golden)                                    # the gate: interrupt, home, precision, solve, function, bench, calls, invariants, units, parser
+(cd app && npm run golden)                                    # the gate: interrupt, steps, flags, home, precision, solve, function, bench, calls, invariants, units, parser
 (cd app && GIAC_MJS=<other>/giac.mjs npm run golden)          # gate another engine build
 (cd app && node scripts/compare-engines.ts <a/giac.mjs> <b/giac.mjs>)   # list output differences between builds
 ```

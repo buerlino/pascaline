@@ -87,7 +87,7 @@ const sig = (a, n = 15) => {
 
 // ---------------------------------------------------------------- the index
 const idxPath = firstOf(join(root, 'app/src/find/_gen/find-index.json'), join(main, 'app/src/find/_gen/find-index.json'));
-if (!idxPath) throw new Error('no Find index: cd app && npm run index (QALC_OUT=<main>/engine/qalc/_out/dev in a worktree)');
+if (!idxPath) throw new Error('no Find index: cd app && npm run index');
 const index = JSON.parse(readFileSync(idxPath, 'utf8'));
 const byId = new Map(index.map((i) => [i.id, i]));
 const units = index.filter((i) => i.kind === 'unit');

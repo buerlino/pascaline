@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copy, paste and share as the keys and menus use them (docs/04 section 2.6): Shift + View, Shift + Menu, the Home/CAS
-// Menu, a long press on a history row, and the Num table. The texts come from text.ts and paste.ts; the delivery is the
+// Copy, paste and share as the keys and menus use them (docs/04 section 2.6): the Copy key and Shift + Copy, the Home/CAS
+// ☰ menu, a long press on a history row, and the Num table. The texts come from text.ts and paste.ts; the delivery is the
 // ClipboardPort. Every action ends in a short notice, so a refusal is never silent.
 import type { EntryController } from "../entry/controller.ts";
 import { tc } from "./strings.ts";
@@ -95,7 +95,7 @@ export class ClipActions {
     return ok;
   }
 
-  /** Shift + View: the full value of the picked or last result; in an app, what the open view offers (the Num table as CSV). */
+  /** The Copy key: the full value of the picked or last result; in an app, what the open view offers (the Num table as CSV). */
   copyKey(item?: HistoryItem): Promise<boolean> {
     return this.serial(async () => {
       if (this.shell.app !== null) return this.put(await this.shell.copyText());
@@ -133,7 +133,7 @@ export class ClipActions {
     });
   }
 
-  /** Shift + Menu, Menu → Paste: the clipboard as one number, onto the entry line. */
+  /** Shift + Copy, ☰ → Paste: the clipboard as one number, onto the entry line. */
   paste(): Promise<boolean> {
     return this.serial(() => this.pasteNow());
   }

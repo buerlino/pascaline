@@ -191,7 +191,7 @@ export class AppShell {
   withSettings(own: readonly MenuItem[]): MenuItem[] {
     return [...own, { id: "settings", label: t("mode.settings"), run: () => this.openSettings?.() }];
   }
-  /** What Copy (Shift + View) takes from the open app view; undefined when it has nothing to copy. */
+  /** What the Copy key takes from the open app view; undefined when it has nothing to copy. */
   copyText(): Promise<string | undefined> | string | undefined {
     return this.instance?.copyText?.(this.view);
   }

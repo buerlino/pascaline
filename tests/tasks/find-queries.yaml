@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# The Find query test (docs/04 3.8; phrases from Appendix B). Run by app/src/find/queries.test.ts against the
+# The Find query test (docs/04 3.8). Run by app/src/find/queries.test.ts against the
 # generated index (app/src/find/_gen/find-index.json, `npm run index`) and the real ranking (app/src/find/rank.ts).
 # Gate: every active phrase in the top 3, at least 90 % first. Add a phrase whenever Find misses one.
 #   query   what the user types (Find types lower case only, docs/04 3.7)

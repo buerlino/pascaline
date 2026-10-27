@@ -38,7 +38,7 @@ export interface Mark {
 }
 export interface Readout {
   /** Label and value pairs, already formatted. */
-  lines: { label: string; value: string; /** ⚠: the value behind the line is warned (M4-10) */ warn?: boolean; /** The engine number behind the line, for Copy. */ cell?: Cell; /** The line Shift + View copies. */ primary?: boolean }[];
+  lines: { label: string; value: string; /** ⚠: the value behind the line is warned (M4-10) */ warn?: boolean; /** The engine number behind the line, for Copy. */ cell?: Cell; /** The line the Copy key copies. */ primary?: boolean }[];
   info: string;
   warn: boolean;
 }
@@ -207,7 +207,7 @@ export class FunctionApp implements AppInstance {
     }
     return view === "num" ? this.numCsv() : undefined;
   }
-  /** The readout line Shift + View copies: the answer of the last analysis. */
+  /** The readout line the Copy key copies: the answer of the last analysis. */
   copyLine(): Readout["lines"][number] | undefined {
     return this.readout?.lines.find((l) => l.primary && l.cell?.ok);
   }

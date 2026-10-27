@@ -71,7 +71,7 @@ export interface AppInstance {
   enter(view: ViewId, latex: string): void;
   /** Arrow keys. `edited`: the entry line differs from the last setEntry. Return true when handled. */
   nav?(view: ViewId, dir: NavDir, edited: boolean): boolean;
-  /** What Shift + View copies in this view (the Num table as CSV); undefined: nothing to copy. */
+  /** What the Copy key copies in this view (the Num table as CSV); undefined: nothing to copy. */
   copyText?(view: ViewId): Promise<string | undefined> | string | undefined;
   /** The view's menu (Menu key), shown on the sheet (docs/05 3.1). */
   menu?(view: ViewId): MenuItem[];

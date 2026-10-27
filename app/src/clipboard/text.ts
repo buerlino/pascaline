@@ -85,7 +85,7 @@ function copyDigits(i: CopySource): number {
 }
 
 /**
- * The default copy (Shift + View, docs/04 section 2.6): a number as every confirmed digit up to 40 with trailing
+ * The default copy (the Copy key, docs/04 section 2.6): a number as every confirmed digit up to 40 with trailing
  * zeros dropped (an exact `1/3` as its 40 digits, an exact integer in full); anything else as the engine wrote it.
  * undefined: nothing finished to copy.
  */

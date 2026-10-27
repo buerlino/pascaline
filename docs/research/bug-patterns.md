@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 # Bug patterns: every bug found so far, grouped by how it happens
 
-**Status (2026-10-20): reference.** Every bug found to 2026-10-19, by family; the open rows, rechecked on `da7a59c`, are backlog F44–F59 ([the consolidation report](../archive/shifts/2026-10-20-sandra-consolidation-report.md) (a)); each family's question is in `.claude/agents/sofia.md`.
+**Status (2026-10-20, markers updated 2026-10-27): reference.** Every bug found to 2026-10-19 by family, and F99–F100 since; a row's state names its package and merge where one exists; the live open bugs are backlog.md's F lines, the rows open on `da7a59c` became F44–F59 ([the consolidation report](../archive/shifts/2026-10-20-sandra-consolidation-report.md) (a)); each family's question is in `.claude/agents/sofia.md`.
 
 *Written 2026-10-19, evening, by Claude (Opus, the owner's session; read and probe only) on `phase-1` `0bd9631`. The owner asked for every bug found and fixed, or still open, grouped so that the groups tell us where to look for the next ones. Sources: the 1063 commits on `phase-1` and the other branches (every `fix` commit, and the fix rounds inside feature merges), docs/backlog.md and its archive, feedback.md, docs/04 2.3 with [r12-evidence.md](r12-evidence.md), the check notes of 2026-10-18 and 2026-10-19, [r14-angle-mode.md](../archive/r14-angle-mode.md), [r16-verification.md](../archive/r16-verification.md) (untracked), the open package files and the shift reports. Rows come from those sources, where each was verified when it was found. The two rows marked **new** come from probes I ran today (section 4).*
 
@@ -68,11 +68,11 @@ In all, 224 rows outside family 16: 155 fixed and 69 open or proposed, 2 of them
 | G49f4 | the same through an arrow `f:=x->…` | the arrow form was not matched | fixed `3db5a51` |
 | G50f1 | a stored name holding `tanh(i)` gave Giac's wrong tanh | stored names were not read through our definitions | fixed `f0d8eed`, `37eb796` |
 | G49f2 | the golden runner built chips another way than the session | see family 8 | fixed `1065c70` |
-| n19 2.2 | `[q1,q2]:=[F,1]` = `=`; `q5,q6:=F,1` unmarked; `F=>pE` = `=` (F = `floor(sin(10^100)*10^12)`, wrong) | run-once inputs skip G38's second decision | **open G48** (running, branch `p1/gorge-m4-runonce`) |
-| n19 2.2 | `pA:=F`, `pu:=unapply(x+pA,x)`, `pu(0)` = `=` | `unapply` writes the value into the body, so no name is left to read | **open G48** |
-| n19 2.2 | `sto(…)` runs twice and is not in the defs log (inferred) | `sto(` is not in `STATEFUL` | **open G48** |
-| G49f3 open item, n19 2.7 | CAS `pA`, `pA+1`, `pf(0)` show 899450126402 unmarked | a CAS result with no float takes no stored facts | **open G51** |
-| n19 2.7 | CAS `w:=tanh(i)`, `g(x):=tanh(x)+w`, `evalf(g(i))` = ⚠ 0.9·i | CAS does not read a called function through our complex definitions | **open G56** |
+| n19 2.2 | `[q1,q2]:=[F,1]` = `=`; `q5,q6:=F,1` unmarked; `F=>pE` = `=` (F = `floor(sin(10^100)*10^12)`, wrong) | run-once inputs skip G38's second decision | **merged G48 `08262fe`** (running, branch `p1/gorge-m4-runonce`) |
+| n19 2.2 | `pA:=F`, `pu:=unapply(x+pA,x)`, `pu(0)` = `=` | `unapply` writes the value into the body, so no name is left to read | **merged G48 `08262fe`** |
+| n19 2.2 | `sto(…)` runs twice and is not in the defs log (inferred) | `sto(` is not in `STATEFUL` | **merged G48 `08262fe`** |
+| G49f3 open item, n19 2.7 | CAS `pA`, `pA+1`, `pf(0)` show 899450126402 unmarked | a CAS result with no float takes no stored facts | **merged G51 `25b65e3`** |
+| n19 2.7 | CAS `w:=tanh(i)`, `g(x):=tanh(x)+w`, `evalf(g(i))` = ⚠ 0.9·i | CAS does not read a called function through our complex definitions | **merged G56 `c4e68e9`** |
 
 **Hunt.** Test every pair of carrier and fact as a sequence (G62 in r16).
 - **Carriers:** `:=` and ▶, Ans, a `\res` chip, a `\const` chip, a function (Home, CAS, arrow, `unapply`), multiple assignment, `=>`, `sto`, Home ↔ CAS, the Solve app's stored unknowns, a Function Num cell, copy and paste, history recall (▲), undo, the defs replay after a relaunch, library export and import (R59), the backup (R38b), the unit view's `\res` chip back to Home (S11).
@@ -97,8 +97,8 @@ In all, 224 rows outside family 16: 155 fixed and 69 open or proposed, 2 of them
 | D6 | DEG `acos(2)` = `≈ 9.09E-13+75.456…i`, "39 digits confirmed" | inverse trig converts in double (the same 2⁻⁴⁰ at every Digits) | **open route R** |
 | D7 | DEG `int(1/(1+x^2),x)` = 180/π·atan(x); `desolve`, `laplace` wrong; `limit`, `series` refused | Giac's tables and solvers were written for radians | **open route R** |
 | D12 | DEG `(−8)^0.2` and CAS `(−32)^(1/5)` wrong | Giac builds the trig of a complex power itself | **open route R** |
-| chk 7 | `pasexp(` in the exported library file | see family 9 | **open G46** (migration) |
-| r14 §3, §5 | (with route R) the kept `==` text shows `cos(1*pi/7)`; a user's `pasdeg:=5` makes `sin(x)` into `sin(5x)` | see family 9 | **open R64** |
+| chk 7 | `pasexp(` in the exported library file | see family 9 | **merged G46 `2bee0fc`** (migration) |
+| r14 §3, §5 | (with route R) the kept `==` text shows `cos(1*pi/7)`; a user's `pasdeg:=5` makes `sin(x)` into `sin(5x)` | see family 9 | **merged R64 `ce41519`** |
 | **new N1** | CAS `approx_mode:=1` (or `cas_setup(1,…)`): CAS `1/3` and `int(x^2,x,0,1)` give 0.333333333333; Home `1/4` loses its `=`; the line is stored and replayed at every start; `approx_mode:=0` afterwards returns 1 and stores `approx_mode:=(1)` | the host resets `Digits` and the angle per call, but not the other `cas_setup()` fields, and the defs log stores a Giac flag as a user variable | **new**, no package (section 4) |
 
 Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the host sets it per call); `complex_mode:=1` and `epsilon:=0.001` changed no Home result I tried (**verified**, section 4).
@@ -124,8 +124,8 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | SB2 | Solve: no root for `(x-1/3)^4=0` | Newton on a multiple root | fixed G5 |
 | SB3 | Solve: guess 15.33 returns 3.333…, not 46/3 | sign tests at too few digits | fixed G5f1 `86ac6d0` |
 | m2 | linear systems broke | see family 5 (`0.-000`) | fixed `7a7a4e7` |
-| n19 2.8 | `floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)` = ⚠ 0 (exact 1) | on a cut no precision decides; G38's second round shows Giac's guess | **open G57** (refuse) |
-| n19 2.2 | run-once assignments keep an undecided `=` | see family 1 | **open G48** |
+| n19 2.8 | `floor(cos(pi/7)-cos(2*pi/7)+cos(3*pi/7)+1/2)` = ⚠ 0 (exact 1) | on a cut no precision decides; G38's second round shows Giac's guess | **merged G57 `80387e7`** (refuse) |
+| n19 2.2 | run-once assignments keep an undecided `=` | see family 1 | **merged G48 `08262fe`** |
 | D4 (Solve) | the substitution check confirmed a wrong root | it substitutes in the same engine with the same flag (see family 2) | route R; lesson for every check-back |
 
 **Hunt.**
@@ -138,7 +138,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 
 | Id | What the user saw | Cause | Status |
 |---|---|---|---|
-| §2.3 #2 | `normald_icdf(10^-10)` wrong from the 8th digit, unmarked | Giac's two evaluations agree on 9 digits | mark fixed `715e1e8` (⚠ unaudited); **value open G44** |
+| §2.3 #2 | `normald_icdf(10^-10)` wrong from the 8th digit, unmarked | Giac's two evaluations agree on 9 digits | mark fixed `715e1e8` (⚠ unaudited); **value: merged G44 `f25b2a7`** |
 | §2.3 #3 | `UTPN(10)` at 30 digits wrong from the 17th | cancellation in `1-erf` | fixed (agreement at P, P+20, P+40) |
 | §2.3 #4 | `romberg(exp(-x^2),x,0,1)` at 30 digits wrong from the 17th | Giac's routine | ⚠ until audited (M4-1) |
 | §2.3 #5 | `BesselJ(1,2)` above 14 digits shows the input as text | no MPFR path | fixed (a 14-digit fallback with ⚠) |
@@ -150,7 +150,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | r16-F4 | `log10(asinh(asin(e)))` at 30 digits wrong from the 14th under `≈` | complex asinh of that argument is a double; G50 audited 12 arguments | **proposed G60** |
 | r16-F5 | `⚠ 14` where 12 or 13 digits are right (`asin(sinh(π))·e^(44.4)` and four more) | asin and acos of a real \|x\|>1 return a double; outer functions amplify it | **proposed G60** |
 | r16-F6 | `√(asinh(cos 10))` shows a real part 4.7E-15 under ⚠ 13 | Giac's sqrt of that value; every digit of the real part is noise | **proposed G60** |
-| n19 2.7 | CAS stored tanh, see family 1 | | **open G56** |
+| n19 2.7 | CAS stored tanh, see family 1 | | **merged G56 `c4e68e9`** |
 
 **Hunt.**
 - **Functions with a hidden double:** if `evalf(f(x),30)` and `evalf(f(x),60)` print the same double digits, there is no MPFR path. Candidates: Bessel and Airy, complex inverse trig and asinh, complex Gamma, zeta, erf of complex, LambertW, the incomplete gamma, hypergeometric, polylog. Also the functions that return floats on the exact path (normald_icdf, romberg, nInt, fsolve).
@@ -175,8 +175,8 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | R19 | `mod(7,3)` was an error | Giac has no `mod(a,b)` | fixed `adb5eca` (irem) |
 | E7 | `median([1,2,3,4])` = ⚠ 2 (right: 2.5); `percentile` unevaluated | Giac's convention | fixed G42 (ours), G42 fix 1 `9cc5a3f` and G42f1 `8d82436` (refuse a matrix and non-real elements) |
 | r16-F7 | `asin(acos(π²))` shows the input; `√(asinh(asin(3.7)))` = `undef`; 34 overflows show symbolic text | lost answers: neither a number nor a refusal | **open** (a new G2 question: what an overflow shows) |
-| n19 2.5 | raw `median([1,2,3,4])` = 2 in a library body | see family 8 | **open G54** |
-| E7 | `round(-2.5)` = −2 while the display rounds −2.25 to −2.3 | two tie rules on one screen | **open G45** |
+| n19 2.5 | raw `median([1,2,3,4])` = 2 in a library body | see family 8 | **merged G54 `9ee7ecc`** |
+| E7 | `round(-2.5)` = −2 while the display rounds −2.25 to −2.3 | two tie rules on one screen | **merged G45 `cfa6127`** |
 | E7 | Giac's `stddevp` is the sample deviation and `stddev` the population one | names | **open** (R4a's Find titles) |
 
 **Hunt.**
@@ -191,7 +191,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | G31 | FIX 4 showed 4.7E-6 as 0.0000 | FIX had no fallback | fixed `ed665c6` (to SCI); G31f1 `88d9cd9` (the fallback showed unconfirmed digits) |
 | G36, chk 8 | FIX: `0.01+1.23E-4*i` with one digit confirmed | lowering `fixed` for one part pushed the other into the fallback | fixed `9a8d720`; fix 2 `de990b1` (cap sciDigits) |
 | G23f1 | a row with no confirmed digit inserted a digit as its chip | | fixed `b0ec2eb` |
-| n19 2.1 | `round(12.345,2)` = ≈ 12.4, `trunc(2.567,2)` = ⚠ 2.6 (20 minutes on phase-1) | G50's `shortDigits` trusted a short double print one digit less | fixed G42f1 `efefbf6`; **guard cases open G47** |
+| n19 2.1 | `round(12.345,2)` = ≈ 12.4, `trunc(2.567,2)` = ⚠ 2.6 (20 minutes on phase-1) | G50's `shortDigits` trusted a short double print one digit less | fixed G42f1 `efefbf6`; **guard cases: merged G47 `f41aa12`** |
 | r16-F1a | Home never answers `exp(1.5ᴇ8)` or `√(e^(2ᴇ8))` | `confirmedDigits` builds m·10^e as a BigInt at the full exponent (`format.ts:486`, since `715e1e8`) | **proposed G58** |
 | r16-F1b | DEG `acos(x)` for x ≥ about 10^200 never answers | `floatsShown` runs `regroup` (`numeric.ts:147`, G38f1), which Giac's timeout does not stop | **proposed G58** |
 | r16-F1 | `exp(10^7)` takes 2 s, `factorial(10^6)` 4 s, against 300 ms | | **proposed G58** |
@@ -227,10 +227,10 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | F18 | `\sqrt[3]{8}` with the index emptied computed √8 | see family 10 | fixed R26e |
 | R56 | `p(x):=x²`, relaunch, `p(2)` = p·2 | the parser forgot the user's functions | fixed `25c6a73` |
 | `688ca31` | a Find insert threw the selection away | | fixed |
-| chk 6, R67 | CAS after R58: Alpha + E types Euler's e (`2e` = 5.43656365692), Alpha + I the imaginary unit | the parser reads the letters e and i as constants | **open R67** (decided) |
+| chk 6, R67 | CAS after R58: Alpha + E types Euler's e (`2e` = 5.43656365692), Alpha + I the imaginary unit | the parser reads the letters e and i as constants | **merged R67 `2388fca`** (decided) |
 | R57 | after a pasted `1,5ᴇ-3`, ÷ takes only `5ᴇ-3` (a silent wrong numerator) | `selectENumber` reads digits and `.` only | **open R57** |
-| R56b | Solve and Function know only f, g, h | they parse without the user's names | **open R56b** |
-| R68 | `2 × ᴇ 3` is refused ("type the number") | ᴇ adds its 1 only on an empty line | **open R68** (a friction, not a wrong number) |
+| R56b | Solve and Function know only f, g, h | they parse without the user's names | **merged R56b `0773b64`** |
+| R68 | `2 × ᴇ 3` is refused ("type the number") | ᴇ adds its 1 only on an empty line | **merged R68 `52ee875`** (a friction, not a wrong number) |
 
 **Hunt.**
 - **The neighbour grid:** every key K × every left neighbour (digit, decimal point, ᴇ exponent, letter, Ans, `\res` chip, `\const` chip, closing bracket, template end, space, selection) × every right neighbour. The parsed Giac text must equal what the drawing shows. A juxtaposition is allowed only where the drawing shows a product. Today's grids check that a digit lands in the right box, not the value.
@@ -251,9 +251,9 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | `bc78534` | the parser gate failed on `pasmod` | the gate's Giac lacked our definitions | fixed |
 | G49f2 | golden sequence cases expected another chip than the app builds | the session's chip rule and the golden runner's | fixed `1065c70` |
 | D5 | Home and CAS `evalf` give two values for one complex input in DEG | `re()`/`im()` against `evalf` | **open route R** |
-| n19 2.5, G54 | raw `median([1,2,3,4])` = 2 in a library body; `irem` there is Giac's | the parser's renames (`CALL_NAME`) and the engine's (`complexSafe`) apply to parsed text only | **open G54** (before R59) |
+| n19 2.5, G54 | raw `median([1,2,3,4])` = 2 in a library body; `irem` there is Giac's | the parser's renames (`CALL_NAME`) and the engine's (`complexSafe`) apply to parsed text only | **merged G54 `9ee7ecc`** (before R59) |
 | chk 16 | a library `// test:` line passes on Giac's rules while Home shows another value | `library.ts:300` runs raw `eval` | **open** (R59's text; r14 section 5's rule) |
-| R56b | see family 7 | Function and Solve call `parseLatex` directly | **open R56b** |
+| R56b | see family 7 | Function and Solve call `parseLatex` directly | **merged R56b `0773b64`** |
 
 **Hunt.**
 - **Every way into Giac:** Home, CAS, Solve, Function analysis and table, the plot compiler, the unit view's builder, library import and its test lines, the defs replay, the backup restore (R38b), Find inserts, paste. For each, list which of our rules apply: the `CALL_NAME` renames, pasmod, complexSafe, pasexp and pasdeg, realOddRoots, exact decimals (P9), restoreLiterals, chip names. Run one corpus through every path; every difference is a bug or a decision to write down (G55's corpus fits).
@@ -265,15 +265,15 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | Id | What the user saw | Status |
 |---|---|---|
 | G21f1 | the helper name `pasexp` on screen | fixed `724e9c0` |
-| E8 | refusals with internal text: `floor(3*pasdimL/2)`, "no uncertainty: [2]", `1 m/(0 s)` → "infinity" | taken into G35 (merged); `30° × 2 m` drawn as `60 1°·m` **open G40** |
+| E8 | refusals with internal text: `floor(3*pasdimL/2)`, "no uncertainty: [2]", `1 m/(0 s)` → "infinity" | taken into G35 (merged); `30° × 2 m` drawn as `60 1°·m` **merged G40 `c0c5bbf`** |
 | G20, G28 | f's own parameter x listed as "stored in Home" | fixed `79e8b0f`, `a58c2e6` |
 | G33f2, G33f3 | a library body could store into a global, use a loop variable or an inner function; `FOR k FROM` slipped through | fixed `005c2f3`, `6da0743`, `c2907fa` |
 | `33f7f54`, `f170d97` | a library test line could change state; a store through nested index brackets slipped through | fixed |
 | G50 fix 2 | a library could define our complex helpers' names | fixed `af40dab` |
 | r6 §5 | an internal name with `_` reads as a unit (`pas_d`) | avoided by rule: our names have no `_` |
-| chk 7 | `pasexp(` in the exported library file | **open G46** |
-| r14 §5 | a user's `pasdeg:=5` (route R) | **open R64/G46**: reserve it |
-| r14 §3 | the angle factor in a kept `==` text | **open R64** |
+| chk 7 | `pasexp(` in the exported library file | **merged G46 `2bee0fc`** |
+| r14 §5 | a user's `pasdeg:=5` (route R) | **merged R64 `ce41519`, G46 `2bee0fc`**: reserve it |
+| r14 §3 | the angle factor in a kept `==` text | **merged R64 `ce41519`** |
 | **new N2** | the library's state-word guard does not list `approx_mode`, `epsilon` or `complex_variables` (`library.ts:21`), so a library line that sets them would pass (inferred, not run) | **new**, with N1 |
 
 **Hunt.**
@@ -322,7 +322,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | F32 | no memory cap (up to 2 GB on a 3.9 GB tablet) | fixed G24; the Tab One check is still open |
 | F42 | a long press before the sheet's chunk opened an invisible sheet; the next digit deleted a row | fixed R46f1 `90f27cb` |
 | F99 | the system keyboard opened again on some returns (Fairphone 6) | fixed R81 `a956ede` (a focus() while the window is blurred fires no focusin and is handed back on the return; dropped on the window's focus); the device confirms |
-| F100 | Paste right after Copy pasted the clipboard before it (core c50 on desktop) | **open** R74f2 (Copy and Paste run unordered) |
+| F100 | Paste right after Copy pasted the clipboard before it (core c50 on desktop) | fixed R74f2 `fa71393` (Copy and Paste run in order) |
 | `5ddd626` | Menu acted on the last result, not the picked row | fixed |
 | `aca4408`, `f6f9893` | ▲ ▼ could pick the safe-start note; a layer that gave way kept a back entry | fixed |
 | m1 | typing before MathLive loaded lost keys (2 of 5 runs) | fixed `d6c052f`; `cfe08b0` (keys while an app loads) |
@@ -361,10 +361,10 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | G15, G32 | `60 rpm → rad/s` had only the generic mismatch text | fixed `35ebf1f` |
 | chk 5 | `0 m + 1 s` = `= 1 s`; `5 m − 5 m + 1 s` = 1 s; `0 ± 0.1 m` lost its m | fixed G35 `842aee3`, fix round `2852e49` |
 | chk 13 | `−(5 °C)`: "Use K or Δ°C" (the wrong reason) | fixed in G35's message pass |
-| chk 12 | `1 J/(kg·°C) → J/(kg·K)` refused | **open G37** (decided) |
-| E3 | DEG `asin(1/2)·1 rad` = `= 30 rad`; `asin(1/2) → °` refused | **open G40** |
-| E4 | `3000 rpm × 0.1 m → m/s` = 5 (no 2π); `10 rad/s × 0.5 m` and `90° × 1 N·m → J` refused | **open G40** (decided) |
-| E5 | `cos(0 ± 0.1)` = 1 ± 0; `(0 ± 0.1 m)²` = 0 ± 0; `sqrt(0.01 ± 0.1 m²)` σ = 0.5 m | **open G41** |
+| chk 12 | `1 J/(kg·°C) → J/(kg·K)` refused | **merged G37 `d368dca`** (decided) |
+| E3 | DEG `asin(1/2)·1 rad` = `= 30 rad`; `asin(1/2) → °` refused | **merged G40 `c0c5bbf`** |
+| E4 | `3000 rpm × 0.1 m → m/s` = 5 (no 2π); `10 rad/s × 0.5 m` and `90° × 1 N·m → J` refused | **merged G40 `c0c5bbf`** (decided) |
+| E5 | `cos(0 ± 0.1)` = 1 ± 0; `(0 ± 0.1 m)²` = 0 ± 0; `sqrt(0.01 ± 0.1 m²)` σ = 0.5 m | **merged G41 `615b747`** |
 | chk 17 | Find lists 34 units the unit view refuses | **open** (R4a and R24d mark them) |
 | Giac data | the US quart, the f0 constant, Xcas menu units Giac does not read | drafted (`../outreach/upstream-reports.md` G11); Parisse takes it by email, forum or commit link (2026-10-19) |
 
@@ -407,14 +407,14 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | chk 11 | a hand-run e2e reused another checkout's dev server on port 5181 | fixed A15 |
 | chk 10 | `npm run size` measured a stale `dist/`; the pipeline ran neither size nor docs-check | fixed A15 |
 | chk 14 | docs-check read untracked files | fixed A15 (a warning) |
-| n19 2.8 | golden rows checked only the mark, so `⚠ 0` for an exact 1 passed | **open G57** (and promote mark-only rows) |
-| n19 2.1 | no golden case calls `round(x,n)` or `trunc(x,n)` | **open G47** |
+| n19 2.8 | golden rows checked only the mark, so `⚠ 0` for an exact 1 passed | **merged G57 `80387e7`** (and promote mark-only rows) |
+| n19 2.1 | no golden case calls `round(x,n)` or `trunc(x,n)` | **merged G47 `f41aa12`** |
 | r16 §1 | 213 of 233 Home cases enter as Giac text, so the keyboard-to-number path is thin | **open** (G61's keyboard LaTeX generator) |
 | r16 §1 | the plot evaluator is tested against hand-written JS only | **proposed G63** |
 | r16 §1 | Giac's own `check/` suite never ran on our wasm | **proposed A19** (first run clean) |
 | E10, chk Part 2 | no test changes a setting between two lines | G34's sequence form; **G43 open** |
 | backlog | A15's tests check dry-run echo lines, not `want_checks` | **open** |
-| backlog | a "command not found" (an emptied shared `node_modules`) counted as a code failure | **open** (A18) |
+| backlog | a "command not found" (an emptied shared `node_modules`) counted as a code failure | fixed A24 `bc4a187`, A34 (a machine failure ends the run, no fix round) |
 | n18 | "the regression test failed before the fix" is the worker's claim; audits do not rerun it on the old code | open (process) |
 
 **Hunt (meta).** For each family, the generator that would have found its bugs: the oracle sweep (G61) for 3, 4, 6; sequences (G62) for 1, 2; one value in every view (G63) for 8; CAS checked back (G64) for 5; Giac's suite (A19) for the build; invariants (G43) for 2; the behaviour diff (G55, A18) for regressions; the entry grids for 7 and 10.
@@ -444,7 +444,7 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | `450c3fd`, C6 | the device serial; warm launches; a measure build reported "release"; stay-awake restored only from its own worktree | fixed `a0d2a7d` |
 | m3 | `device_run.py --mode first` installed a fixed path; `--mode cold` waited for a mark never logged | fixed (tooling tidy) |
 | C4 | the F-Droid recipe: `npm ci` after `prebuild` downloads | **open** |
-| A18 | see family 14 (command not found) | **open** |
+| A18 | see family 14 (command not found) | fixed A24, A34 |
 | n19 3.3 | fix chains: 9 of 22 runs in one night were fix packages | open (process; S13, G55) |
 
 ### 16. Conventions that look like bugs

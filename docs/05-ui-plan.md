@@ -7,7 +7,7 @@
 
 ## 0. In one paragraph
 
-The keypad already works well. The screen above it does not yet feel like one designed product: every surface (app list, menus, Settings, history actions) behaves in its own way, important state such as the angle mode is invisible, and a few visual bugs make the keypad look unfinished. **Recommendation:** build one interaction model for every surface (one sheet component, one status bar, one context bar of soft keys), then put Find, the Units app and the template list on top of it. Do the quick fixes (U0) and the sheet component (U1) **before EN1 Find** (milestone 4, step 8), so Find is built on the shared component and not as one more special case. Total about 12–14 days for U0–U7, spread over milestones 4–6.
+The keypad already works well. The screen above it does not yet feel like one designed product: every surface (app list, menus, Settings, history actions) behaves in its own way, important state such as the angle mode is invisible, and a few visual bugs make the keypad look unfinished. **Recommendation:** build one interaction model for every surface (one sheet component, one status bar, one context bar of soft keys), then put Find, the unit view and the template palette on top of it. Do the quick fixes (U0) and the sheet component (U1) **before EN1 Find** (milestone 4, step 8), so Find is built on the shared component and not as one more special case. Total about 12–14 days for U0–U7, spread over milestones 4–6.
 
 ## 1. What the screenshots show (2026-10-13)
 
@@ -51,9 +51,8 @@ A pick sheet (Apps, every Menu, Mode, Tmpl, the Shift palettes) rises over the k
 | Enter | Pick the highlighted item |
 | ▶ | Open a submenu (shown with `›`) |
 | ◀ or Esc | Back one level (submenus stack; the title shows the path, e.g. `Plot › Intersection`) |
-| Cancel | Close every level |
 | Letter keys | Type-ahead filter, for lists longer than 10 items: a tap on a key that is not a digit types its letter (no Alpha press needed); a flick down types the letter on any key, digits included (section 7) |
-| Menu | Closes the sheet (the same key opens and closes it) |
+| ☰, the place, Tmpl | Close the sheet they opened (the same control opens and closes it) |
 
 - **Remembers the last pick** per sheet: reopening a menu highlights the item used last, so a repeated action is Menu + Enter (2 keys).
 - **Fit, then scroll:** rows and grid cells shrink to the room, from their normal size down to a floor (list rows 36 px, grid cells 44 px); only below the floor does the sheet scroll, with a fade at the cut edge and a count ("7 items") in the title row (fixes finding 5). A grid has no title row: its title and × share the hint line. Shift + 6 draws each cell over the key that picks it (7 8 9 ÷ / 4 5 6 × / 1 2 3).
@@ -65,30 +64,25 @@ A pick sheet (Apps, every Menu, Mode, Tmpl, the Shift palettes) rises over the k
 The header row (`App.svelte` `<header>`) becomes a slim status bar, one line, at most 28 px (docs/03 rule 9):
 
 ```
- Home                           RAD · STD 12 · ⇧        ⟳
- Function › Plot                DEG · ENG 6             
+ [⌂]▾ Home                ⇧   RAD   STD 12   ☰
+ [ƒ]▾ [f=|∿|▦]            α   DEG   ENG 6    ☰
 ```
 
-- **Left: where you are and the way out.** The place name (Home, CAS, or the app's name, drawn with ▾) opens the Apps sheet (1 Home, 2 CAS, then the apps); its target is 96 × 28 px (R15b). In an app, the tabs Symb, Plot and Num follow it, the current one marked. **At the right end ☰ opens the view's menu**, or the picked history row's menu; every ☰ menu ends with Settings (item 10 in Home and CAS, key 0).
-- **Right: the mode chips.** Angle (`RAD`/`DEG`, coloured when not the default), format and digits, the Shift/Alpha state (`⇧`, `α`, `α🔒`), a busy spinner. **A tap on a chip toggles or cycles it** (angle: 1 tap; format: opens the Mode sheet at that row). This fixes finding 6 and makes DEG/RAD one tap.
+- **Left: where you are and the way out** (R82f2, [mockup](mockups/status-line.html) sections 1–3). The place's glyph tile and ▾ open the Apps sheet (1 Home, 2 CAS, then the apps); Home and CAS show their name beside it; the target is at least 48 × 28 px (R15b). In an app, the views Symb, Plot and Num follow as one segmented control of icons, the current one filled. Busy, or the engine starting, is a ring on the tile.
+- **Right: the state and the mode chips.** A fixed slot shows ⇧ or α once (underlined when locked, `a` when Alpha types lower case), then angle (`RAD`/`DEG`, coloured when not the default), format and digits. **A tap on a chip toggles or cycles it** (angle: 1 tap; format: opens the Mode sheet at that row). This fixes finding 6 and makes DEG/RAD one tap. **At the right end ☰ opens the view's menu**, or the picked history row's menu; every ☰ menu ends with Settings (item 10 in Home and CAS, key 0).
 - Height freed by the tabs goes to the history (about 30 px on a phone).
 
 ### 3.3 A context bar of soft keys (the screen's own row of keys)
 
 One row of up to 6 touch buttons directly above the entry line. Its content follows the context. The keypad stays the same; this is screen space. The G2 has the same kind of on-screen menu row, so it fits the muscle memory, in our own design.
 
-| Context | Soft keys (first draft; the benchmark decides the order) |
+| Context | Soft keys (Home and CAS only: Function, Solve and the prefix row were dropped, section 7 point 2) |
 |---|---|
 | Home/CAS, entry line has text | none, the row is hidden (no clutter while typing) |
 | Home/CAS, a history row picked (▲ on an empty line) | Insert · Recall · Copy · Store ▶ · Delete |
-| After a number, the unit view (and Home if task 3 wins) | p n µ m k M G (the prefix chips of P8, in the same row) |
-| Function Plot | Zoom · Trace · Analyse › · Window · Fcn |
-| Function Num | Zoom · Go to · Start · Step · CSV |
-| Solve | Solve · Roots · Copy |
 
-- Each soft key is also reachable without touch: **Menu** opens the full list for the view (the soft keys are the first items, in the same order, so their numbers are 1–6). So "Plot → Trace" is either one tap or Menu + 2.
 - Tap targets at least 44 px high; a label of at most 8 characters; an item with a submenu shows `›`.
-- Home/CAS (R11): the picked row's buttons are items 1–5 of the Menu's list of nine (S2), so Menu + 1 is the same as a tap on Insert. A long press on a row opens the same nine on that row.
+- Home/CAS (R11): the picked row's buttons are items 1–5 of the Menu's list of nine (S2), so ☰ + 1 is the same as a tap on Insert. A long press on a row opens the same nine on that row.
 
 ### 3.4 The Mode sheet and Settings (fixes finding 7)
 
@@ -97,7 +91,7 @@ One sheet, split by how often a thing changes (owner, 2026-10-27; the picture: [
 - **Mode** (the format pill opens it on Format, the digits chip straight on its list of digits, Shift + Fmt on Angle): Angle, Format, Significant digits, Entry, then Preset (R89) and Settings ›. Angle, Format and Entry show every value as buttons: a tap sets the value and closes the sheet; ◀ ▶ move the mark with the sheet open; a digit (or a tap on the row's name) steps the value forward; Enter closes. Buttons stand only where they save a press (format and entry 3 → 2 taps; digits 3 → 2 through the chip); every other value keeps its ◀ ▶ row. Digits open their list (4 6 8 10 12 15 20 25 30, the current one marked) on a digit, Enter or a tap; ◀ ▶ still step by one. With no chip, Mode opens on Angle. DEG ↔ RAD: one tap on the chip, or Shift, Fmt, ▶, Enter; 20 digits: the digits chip, then 20, or Shift, Fmt, 3, 7.
 - **Settings** (Mode's last row, every ☰ menu's last row; Shift, Fmt, 5, then 6 once presets are in): the next level of the same sheet over the keypad's maths rows, not a page over everything, so the top cluster stays live (the pad, Esc, U1–U6). Digits pick a section, ▶ or Enter opens it, ◀ or Esc goes back one level onto the same row, × or a tap above the sheet closes it, Android back goes back one level; the title shows the path (`Mode › Settings › Numbers`). Seven sections in this order, each at most seven rows of 44 px so a level fits the 380 px at 372 × 767: Appearance (R50e), Numbers (the decimal mark R57, the Fmt key's cycle, the decimals of Fixed), Key vibration (with Try it), Your keys (U1–U6 on every layer R4b; the unit pad's cells R24d), Data (backup and restore R38a, R38b; library import and export R59), Counters (every removal-test count: R9, R70, R53, R37, R89), Help and about (first-start tips R15c4; version, source and licences R87). A section whose package has not landed is left out. A value row steps with ◀ ▶ and its 44 px buttons; ticks and switches toggle and stay; a pick in a list closes the sheet, except the theme list, which stays so the screen above shows the theme. No native `<select>`, no long-press shortcuts (owner, 2026-10-27).
 - **Presets** (R88, R89): a named snapshot of any of five groups, each a tick, all ticked when saved: Mode, Numbers, Appearance, Key vibration, Your keys. Mode's Preset row applies the next one with ◀ ▶ and lists them on a tap (`Mode › Presets`: pick one, save the current setup, edit); a preset's page holds its ticks, Update, Rename and Delete; a name is typed in the entry line under an entry label. The fixed keys never change; the free keys switch with the preset. A switch shows a notice naming what changed; nothing saves by itself (after a later change the name carries a dot).
-- Mode sits on Shift + Fmt, one of the free Shift cells (docs/04 5.1; R85). Apps, Menu and the views are on the status line since R15c1, so the old Shift + Apps path is gone, and the Home and CAS cells hold free keys (R15b).
+- Mode goes on Shift + Fmt, one of the free Shift cells (docs/04 5.1; R85, after the freeze). Apps, Menu and the views are on the status line since R15c1, so the old Shift + Apps path is gone, and the Home and CAS cells hold free keys (R15b).
 
 ### 3.5 History rows
 
@@ -134,7 +128,7 @@ The layout stays. Only the drawing changes:
 
 ### 3.9 Tablet and landscape
 
-The app is `max-width: 720px` and centred (`App.svelte` `.app`), so a Tab One in landscape shows a narrow column. Above 900 px width and in landscape: two panes, the screen on the left (history, plot, Find) and the keypad on the right at a fixed key size. The plot gets the full height. Phones in landscape: the same split with a smaller keypad, or results mode (R53).
+Deferred (section 7 point 4): the app stays a centred column of at most 720 px (`App.svelte` `.app`).
 
 ### 3.10 Look and feel
 
@@ -143,33 +137,20 @@ The app is `max-width: 720px` and centred (`App.svelte` `.app`), so a Tab One in
 - **Numbers:** one maths font for entry and results (MathLive's). UI text in the system font. Monospaced digits in tables (Num, Solve, the Find value column) so columns line up.
 - **App icons:** our own simple line icons in the Apps sheet beside the number and name.
 
-## 4. Work packages
+## 4. Work packages (built)
 
-The order lets every package build on the previous one. Owner of the code: ron; device checks: annabell. Each package ends with the UI gallery (U0) updated and its screenshots checked by the owner on a phone.
-
-| # | Package | Contents | Est. | Gate |
-|---|---|---|---|---|
-| **U0** | Quick fixes and the UI gallery | Findings 1, 3, 4, 8 fixed; a Playwright script that renders every view, sheet and layer in light and dark at phone and tablet size into `app/test/gallery/` (not committed, like other build output); a contrast test from the tokens; regression tests first for 4 (alpha leak) | 1.5 d | Contrast test; gallery reviewed by the owner |
-| **U1** | One sheet | `Sheet.svelte` and its model (3.1) replace `PickList`; Apps, view menus and the Home menu move to it; last pick, submenu stack with path, scroll cue, type-ahead | 2 d | e2e per key in 3.1; every existing menu test green |
-| **U2** | Status bar | 3.2: place, mode chips with tap actions, Shift/Alpha, busy | 1 d | e2e: tap RAD → DEG changes the next result |
-| **U3** | Context bar | 3.3 for Home rows, Plot, Num, Solve; Menu = the same items first | 2–3 d | Benchmark: no task gets more key presses; Plot trace in 1 tap |
-| **U4** | Mode sheet and Settings | 3.4; settings rows as sheet items; native inputs gone | 1.5 d | e2e: DEG → RAD in one tap, or 4 presses by keys |
-| **U5** | History rows | 3.5 | 1 d | Screenshot review; history performance test unchanged |
-| **U6** | Tablet and landscape | 3.9 | 1.5 d | Gallery at 1280×800; Tab One check (annabell) |
-| **U7** | Tokens, theme, icons, motion | 3.10, 3.7 press feedback, reduced motion | 2 d | Size test (start chunk unchanged within 2 kB) |
-
-Fit with the current plan (docs/backlog.md, milestone 4): **U0 and U1 before step 8 (EN1 Find)**; Find then uses the sheet and the design in 3.6. U2 and U4 any time in milestone 4 (they serve EN3 honest precision: the angle mode visible is a precision feature). U3 before milestone 5, because the prefix chips of the Units app live in the context bar. U5–U7 in milestone 6 or when the owner wants a release.
+U0–U7 were built as R6 (U0: the quick fixes and the UI gallery, a Playwright script that renders every view, sheet and layer in light and dark into `app/test/gallery/`, `npm run gallery`), R7 (U1, one sheet), R8 (U2 and U4, the status bar and the Mode sheet), R11 (U3, the Home/CAS row actions) and R12 (U5 and U7); U6 (tablet) is deferred (section 7 point 9).
 
 ## 5. How we know it works
 
-- **Keystrokes:** the EN0 task benchmark already counts them; add 5 UI tasks: switch DEG/RAD, copy the last result, reuse the result before last, trace a root in Plot, change digits to 20. Budget for each: 3 presses or 1 tap.
+- **Keystrokes:** the EN0 task benchmark counts them; five UI tasks are still to add to `tests/tasks/tasks.yaml`: switch DEG/RAD, copy the last result, reuse the result before last, trace a root in Plot, change digits to 20. Budget for each: 3 presses or 1 tap.
 - **Hand test with real users:** the owner and two engineers who have never used the app do the ten benchmark tasks with no instructions; note every hesitation longer than 3 seconds and every wrong key. Each one becomes an issue. Repeat after U3 and after milestone 5.
 - **The gallery** is the review tool: the owner reviews screenshots of every state in one page instead of finding them on the device.
 - **Feel on the device:** sheet open and key feedback within one frame on the Tab One (annabell measures with the `?bench` hooks).
 
 ## 6. Decisions for the owner
 
-Each with my recommendation; the plan assumes the recommended answer.
+Decided on 2026-10-13 (section 7 point 8); point 3 is replaced by P12.
 
 1. **Replace the header tabs with the status bar (3.2).** Recommended: yes. The keys already switch views, and the space is better used for state the user cannot see today.
 2. **Add the context bar of soft keys (3.3).** Recommended: yes. It is the largest speed gain for Plot, Num and history actions, and the reference has the same kind of row, so it keeps the habit.

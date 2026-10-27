@@ -69,7 +69,7 @@ henri_prompt='You are henri, the night coordinator. Read docs/shifts/brief.md se
   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches>" "<open questions or none>"   (after every 3 finished packages since the last pass, and at the end)
   scripts/pipeline.sh report                                                     (after the last pass, its device step and its FIX packages)
   SHIFT DONE                                                                     (after the report)
-A RESULT line in the log means that step is finished (MERGED, NOT MERGED or SKIPPED); never repeat a finished step. Follow the last Opus pass QUEUE line. Decide nothing else. In a FIX prompt use no backtick and no dollar sign (the command is refused with them).'
+A step whose log line says MERGED, NOT MERGED or SKIPPED (the pipeline line, or the RESULT line night.sh writes) is finished; never repeat a finished step. Follow the last Opus pass QUEUE line. Decide nothing else. In a FIX prompt use no backtick and no dollar sign (the command is refused with them).'
 closing_prompt='You are henri, the night coordinator. The night is closing (night.sh --until or its step cap): only the last Opus pass is left, and night.sh runs the report after it. Read docs/shifts/brief.md section 0c (the Opus pass) and the tail of .coord/log.md on stdin. Reply with exactly one line and nothing else, one of
   scripts/pipeline.sh pass <n> "<IDs with merge commits or unmerged branches since the last Opus pass>" "<open questions or none>"   (n: the last pass number plus 1)
   NO PASS   (no package finished since the last Opus pass)

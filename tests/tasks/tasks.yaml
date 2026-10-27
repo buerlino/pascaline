@@ -166,7 +166,7 @@ tasks:
     status: pending
     needs: "the unit view with uncertainty (milestone 5)"
     budget: 31
-    # Shift Tmpl; ( 1 2 . 3 4 ± 0 . 0 5 ) m Enter; × ; ( 3 . 2 ± 0 . 1 ) m Enter; Enter. ± is Shift (−) in the Units layer
+    # Shift Tmpl; ( 1 2 . 3 4 ± 0 . 0 5 ) m Enter; × ; ( 3 . 2 ± 0 . 1 ) m Enter; Enter. ± goes on Shift + `,` (decisions.md "M4-2", R71); R63 rewrites this plan and its budget (25)
     keys: [shift, tmpl, paren, d1, d2, dot, d3, d4, shift, neg, d0, dot, d0, d5, right, neg, enter, mul, paren, d3, dot, d2, shift, neg, d0, dot, d1, right, neg, enter, enter]
     expect: { value: "39.488", uncertainty: "1.244329538345851532731350590709587226327", shown: "39.5 ± 1.2", unit: "m^2" }
     source: derived   # first-order propagation of independent errors: sqrt((3.2·0.05)² + (12.34·0.1)²); arithmetic by mpmath 1.3.0

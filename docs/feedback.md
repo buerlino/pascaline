@@ -15,7 +15,7 @@ The one place for the owner's points from using the app (docs/03 section 0, rule
 | 1 | The goal has to go back to staying close to the G2; the flow being similar to the G2 feels really good. | decided: P11, new goal in CLAUDE.md |
 | 2 | Keep the arrow keys and their swipe mode. The 2D cursor after a long press anywhere is terrible; get rid of it entirely. Tapping into the formula on the screen already jumps there, as on the G2. | decided: P11; feel F2 |
 | 3 | Add the Tmpl menu (a/b is not a G2 key; the fraction is the menu's first entry). Recorded in `spec/keyboard.yaml` `templates:`. | feel F5 |
-| 4 | Switching apps (swipe gesture or the phone's app list) and coming back opens the system keyboard; it happens only when the entry field has focus. | bug F1 (fixed in the working tree, device check open) |
+| 4 | Switching apps (swipe gesture or the phone's app list) and coming back opens the system keyboard; it happens only when the entry field has focus. | bug F1, fixed; confirmed on the phone (#24) |
 | 5 | Python scripting is terrible with the calculator keypad. Nobody would use Python on a calculator; you would use a Jupyter notebook on a laptop. Drop it. | decided: P11, F7 removes it |
 | 5b | Instead: a hook into an AI tool, or a connection point (via Python, or to VS Code). | idea (see the discussion of 2026-10-13: an MCP server around the same engine) |
 | 6 | On the G2, `=` is in the Shift layer while the variables are in Alpha: in Alpha you must leave it, press Shift, `=`, and go back. | feel F4 (flicks) |
@@ -26,7 +26,7 @@ The one place for the owner's points from using the app (docs/03 section 0, rule
 | 10 | Generally make the UI better; the owner will gather more points and run UI feedback sessions. | feel F6 |
 | 11 | Worry: cramming three open-source engines into one app makes a soup where nothing is useful. Qalculate!: single-line entry, cumbersome units, and its keyboard moves up and down so no muscle memory forms. The G2 is loved because the keys stay where they are. | decided: docs/03 rules 5–13 (rule 8: keys never move) |
 | 12 | Anyone who really wants to graph uses Desmos or GeoGebra. | decided: P11, graphing stays at its level (rule 13) |
-| 13 | How is Find reached, and doesn't it need a keyboard? Wanted: a way that does not rely on typing. | open question, discussion 2026-10-13 |
+| 13 | How is Find reached, and doesn't it need a keyboard? Wanted: a way that does not rely on typing. | answered: P11 (#15); an empty query shows the Math menu (docs/05 section 7 point 1) |
 
 ## 2026-10-13 (second round)
 
@@ -35,14 +35,14 @@ The one place for the owner's points from using the app (docs/03 section 0, rule
 | 14 | Units after the formula replaces the Units app. But if the formula is already entered you never need + or −; and someone who only wants a quick unit check should not have to type a formula with numbers first. | decided: P11 (a single unit slot on an empty line) |
 | 15 | Find as a fixed G2-style Math menu, typing filters it, no usage ranking. | decided: P11 |
 | 16 | Uses Home daily, CAS sometimes, the other apps hardly (an engineering student). | decided: P11, Function and Solve frozen |
-| 17 | The MCP server could be good. But more important: anyone who wants to change parts of the calculator or add their own scripts needs a real connection point, not a Python terminal nobody uses. | idea (discussion: a plain-text function library, edited on a laptop, imported on the phone, found in Find, assignable to a user key). Shape and why written 2026-10-14: backlog "Parked ideas"; design note S4 when the owner says go |
+| 17 | The MCP server could be good. But more important: anyone who wants to change parts of the calculator or add their own scripts needs a real connection point, not a Python terminal nobody uses. | idea (discussion: a plain-text function library, edited on a laptop, imported on the phone, found in Find, assignable to a user key). Shape and why written 2026-10-14: [archive/backlog-2026-10.md](archive/backlog-2026-10.md) "Parked ideas"; done as S4 ([archive/r10-connector.md](archive/r10-connector.md)) |
 
 ## 2026-10-13 (third round: sign-off of the merged plan)
 
 | # | Owner's point | Triage |
 |---|---|---|
 | 18 | Find's Math menu: maybe let the user rearrange the slots. A feature for later. | idea (fits rule 8: a personal order stays put) |
-| 19 | Instead of the compact keypad (K4): a button makes the keypad collapse to the bottom with a small slice showing; tapping the slice brings it back. In this mode the viewport gains buttons to really work with the results, like a Jupyter notebook: delete, copy, move, merge, unit check, draw in Plot, and more later. | idea ("results mode", replaces K4; decide around 2026-10-20). R11's row actions are built so it can reuse them |
+| 19 | Instead of the compact keypad (K4): a button makes the keypad collapse to the bottom with a small slice showing; tapping the slice brings it back. In this mode the viewport gains buttons to really work with the results, like a Jupyter notebook: delete, copy, move, merge, unit check, draw in Plot, and more later. | idea ("results mode", replaces K4; decided: P16, package R53). R11's row actions are built so it can reuse them |
 | 20 | Unit view: why Shift + Tmpl? The arrows must move from one unit slot to the next, not through the whole formula. The end slot is optional (empty = no check). | decided: P11 (Shift + Tmpl is where the G2 keeps Units, G2 item 30; ◀ ▶ jump slot to slot; empty end slot = no check) |
 | 21 | The history-row buttons: needed, if only Home and CAS are the focus? | answered: yes, they are exactly Home/CAS (docs/05 section 7 point 2) |
 | 22 | Theme: a setting Light / Dark / Follow system. | decided: System / Light / Dark, Dark by default on Android (docs/05 section 7) |
@@ -74,7 +74,7 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 | 29 | The other app keys use up vertical space too: move the arrows one line down and clean up the top section (the menu keys etc.). | decided: P12 point 3; R15a mockups first |
 | 30 | I don't like 10^ as the scientific notation: it needs so much space and only hurts the formula's readability. Use an E, and give the button a better name than EEX or ×10^. | decided: P12 point 4; **built in R14** (`d614260`). |
 | 31 | Leave x/y for now. | decided: P12 point 5 |
-| 32 | The menus have to be revamped in the step where we add the other menus (fractions etc.); add it as an open point and analyse all menus. | open point A; S2 |
+| 32 | The menus have to be revamped in the step where we add the other menus (fractions etc.); add it as an open point and analyse all menus. | decided: S2 (the menu rules) |
 | 33 | I don't think we need quotes now that Python is gone. Decide. | decided: P12 point 7; built in R13 |
 | 34 | We don't need the line jump, because the whole arrow pad is a 2D cursor. | decided: P12 point 8; built in R13 |
 | 35 | Info, Notes and User omitted: good. | decided: P12 point 9 |
@@ -112,7 +112,7 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 
 | # | Owner's point | Triage |
 |---|---|---|
-| 45 | Are there more bugs like F9 and F10 in the same areas, patterns and edge cases? A deep analysis. | **feel, bugs F11–F23** (backlog milestone 4a items 21–33). Found by Playwright probes: every keyboard template under ⌫ and Del, a digit typed at every cursor position, and focus and touch cases around leaving the app. **Focus:** a held ⌫ keeps deleting while the app is away and focuses the field again (F11); a touch the app never saw end fires on the next key (F12); a key pressed less than 60 ms before leaving focuses the field after `dropFocus` (F13); on desktop, a mouse ⌫ released off the keypad never stops (F14). The notification shade or share sheet, twice, has the same cause as F9 (R22's test gains it). **⌫ and Del:** after `)` (F15); the hardware keys bypass our path (F16); powers (F17: `2 + x² ⌫ ⌫` gives 2²), fractions and roots (F18), lim Σ Π ∫ (F19), matrices and piecewise (F20), log base, EQ, DMS and evaluate-at (F21). **Neighbours:** 10ˣ after a digit gives 510² (F22); the cursor stops between sin and `(`, where a 7 gives sin 7(2) = sin 14 (F23). Rules: decisions.md "⌫ and Del keep a template whole" and "Nothing takes focus while the app is away". G2 items 46–51 |
+| 45 | Are there more bugs like F9 and F10 in the same areas, patterns and edge cases? A deep analysis. | **feel, bugs F11–F23** (packages R25–R27). Found by Playwright probes: every keyboard template under ⌫ and Del, a digit typed at every cursor position, and focus and touch cases around leaving the app. **Focus:** a held ⌫ keeps deleting while the app is away and focuses the field again (F11); a touch the app never saw end fires on the next key (F12); a key pressed less than 60 ms before leaving focuses the field after `dropFocus` (F13); on desktop, a mouse ⌫ released off the keypad never stops (F14). The notification shade or share sheet, twice, has the same cause as F9 (R22's test gains it). **⌫ and Del:** after `)` (F15); the hardware keys bypass our path (F16); powers (F17: `2 + x² ⌫ ⌫` gives 2²), fractions and roots (F18), lim Σ Π ∫ (F19), matrices and piecewise (F20), log base, EQ, DMS and evaluate-at (F21). **Neighbours:** 10ˣ after a digit gives 510² (F22); the cursor stops between sin and `(`, where a 7 gives sin 7(2) = sin 14 (F23). Rules: decisions.md "⌫ and Del keep a template whole" and "Nothing takes focus while the app is away". G2 items 46–51 |
 | 46 | Many small work packages with everything on the behaviour, how to reproduce it and how to fix it (or left open), written into the docs. | done: packages R25a–R25c (focus and touches), R26a–R26h (the ⌫ grid test, then one template family each), R27a–R27b (10ˣ after a digit, cursor stops) in brief sections 0b and 7, each a quarter to one day. R27a waits for G2 item 48 and the owner's pick |
 
 ## 2026-10-14 (eleventh round: a deep dive into the whole app)
@@ -126,14 +126,14 @@ The owner went through the key-by-key comparison ([06-keypad-vs-g2.md](06-keypad
 
 | # | Owner's point | Triage |
 |---|---|---|
-| 49 | "When you have a fraction in a fraction and press ▶, it does not go to the end of the inner fraction (inside the main fraction) but somewhere else, so you cannot add to the fraction; and pressing with the finger at the end does not put the cursor there either." | **feel, bugs F33 and F34** (backlog milestone 4a items 34 and 35). Two causes, both reproduced: ▶ jumps to any empty box ahead, so the end of the numerator is skipped while the denominator is empty (F34, also after a power or a root: x²/(+1)); a finger tap at the right edge of a fraction, root, power or bracket lands at the start of the line, since MathLive places the caret a second time on a touch lift from stale bounds (F33; 11 of 40 test points). Packages R42 and R43, rule in decisions.md "The cursor goes where the user aims", G2 item 57 |
+| 49 | "When you have a fraction in a fraction and press ▶, it does not go to the end of the inner fraction (inside the main fraction) but somewhere else, so you cannot add to the fraction; and pressing with the finger at the end does not put the cursor there either." | **feel, bugs F33 and F34** (packages R42, R43). Two causes, both reproduced: ▶ jumps to any empty box ahead, so the end of the numerator is skipped while the denominator is empty (F34, also after a power or a root: x²/(+1)); a finger tap at the right edge of a fraction, root, power or bracket lands at the start of the line, since MathLive places the caret a second time on a touch lift from stale bounds (F33; 11 of 40 test points). Packages R42 and R43, rule in decisions.md "The cursor goes where the user aims", G2 item 57 |
 
 ## 2026-10-17 (thirteenth round: vibration, ⌫ on log, lower-case faces, colours)
 
 | # | Owner's point | Triage |
 |---|---|---|
-| 50 | "Vibration does not work. The settings must be cleaned up so vibration is a submenu or so." | **bug F41** (backlog milestone 4a item 38; package A9 on the owner's phone: it was never tried on a phone with a motor, since the Tab One has none). **feel:** Settings as a short list of rows, each with a page of its own (package R49; decisions.md "Settings: a list of rows") |
-| 51 | "Pressing ⌫ on a log() used to be stuck at log(, now it is stuck at log, I think." | **bug F39** (backlog item 36, package R47). Reproduced in Playwright: a finger tap can put the cursor between `log` and `(`, where ◀ ▶ never stop; ⌫ there deletes only the name, leaving `(100)` with the cursor at the line's start, and every further ⌫ does nothing. Fixed in R47 (the tap case); *the owner's exact key sequence is still to confirm (backlog "Needs the user" item 7)* |
+| 50 | "Vibration does not work. The settings must be cleaned up so vibration is a submenu or so." | **bug F41** (package A9 on the owner's phone: it was never tried on a phone with a motor, since the Tab One has none). **feel:** Settings as a short list of rows, each with a page of its own (decisions.md "Settings in the Mode sheet, and presets": R49, R85–R89) |
+| 51 | "Pressing ⌫ on a log() used to be stuck at log(, now it is stuck at log, I think." | **bug F39** (package R47). Reproduced in Playwright: a finger tap can put the cursor between `log` and `(`, where ◀ ▶ never stop; ⌫ there deletes only the name, leaving `(100)` with the cursor at the line's start, and every further ⌫ does nothing. Fixed in R47 (the tap case); *the owner's exact key sequence is still to confirm (backlog "Needs the user" item 4)* |
 | 52 | "If you press Shift + Alpha, the letters on the keypad are still upper case; they should switch to show they are now lower case." | **bug F40** (backlog item 37, package R48): the keys type lower case, but the faces still show capitals |
 | 53 | "The colour scheme of the app is not good; I want something nicer, light and dark." | **feel:** decided 2026-10-18 on `docs/mockups/themes-r50.html` (decisions.md "R50"): five families, light and dark, High contrast and Plain keys; packages R50b–R50e, before R12's visual pass |
 
