@@ -4,7 +4,7 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import type { FullResult, Reporter, TestCase, TestResult } from "@playwright/test/reporter";
-import { deviceLine } from "./core-plan.ts";
+import { caseRecord, deviceLine } from "./core-plan.ts";
 
 const coord = (): string => {
   if (process.env["PASCALINE_COORD"]) return process.env["PASCALINE_COORD"];
@@ -20,18 +20,12 @@ export default class DeviceReporter implements Reporter {
   private seen = 0;
 
   onTestEnd(test: TestCase, result: TestResult): void {
-    const m = /^(c\d\d) /.exec(test.title);
-    if (!m) return;
+    const r = caseRecord({ title: test.title, expectedStatus: test.expectedStatus, status: result.status, duration: result.duration, error: result.error?.message }, new Date().toISOString().slice(0, 19), process.env["ANDROID_SERIAL"] ?? "");
+    if (!r) return;
     this.seen++;
-    const skipped = result.status === "skipped";
-    if (skipped) this.needs++;
-    else if (test.expectedStatus === "failed") this.known++;
-    else {
-      this.active++;
-      if (result.status === "passed") this.passed++;
-    }
-    const ok = skipped ? null : result.status === "passed" || test.expectedStatus === "failed" ? true : false;
-    const rec = { t: new Date().toISOString().slice(0, 19), kind: "core", case: m[1], ok, ms: Math.round(result.duration), serial: process.env["ANDROID_SERIAL"] ?? "", ...(skipped ? { skipped: true } : {}), ...(test.expectedStatus === "failed" ? { known: true } : {}), ...(ok === false ? { error: (result.error?.message ?? "").split("\n")[0]?.slice(0, 200) } : {}) };
+    this[r.counts]++;
+    if (r.passed) this.passed++;
+    const rec = r.rec;
     const dir = coord();
     mkdirSync(dir, { recursive: true });
     appendFileSync(resolve(dir, "device-runs.jsonl"), JSON.stringify(rec) + "\n");
