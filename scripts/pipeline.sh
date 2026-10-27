@@ -36,7 +36,7 @@
 # "RESULT -: NOT STARTED (why)" before a run number exists). Exit 0 merged, 1 not merged, 2 not started
 # or failed early, 75 usage limit (henri stops, night.sh waits).
 # Environment: PASCALINE_DL_DIR and PASCALINE_QALC_DL_DIR (tarball caches, default: the main checkout's
-# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT, QALC_OUT; PW_PORT=$((5200 + n % 100)) (a pass: 5290 + n) is
+# engine/giac/_downloads and engine/qalc/_downloads), GIAC_OUT; PW_PORT=$((5200 + n % 100)) (a pass: 5290 + n) is
 # exported to the worker, the fix rounds and the checks, so parallel runs never share a dev server.
 # Locks: host-cpu around the checks, integ (600 s) around the merge into phase-1.
 set -euo pipefail
@@ -55,7 +55,6 @@ export PASCALINE_QALC_DL_DIR="${PASCALINE_QALC_DL_DIR:-$main/engine/qalc/_downlo
 # engine's inputs is built once per key into $engine_root/key-<key>.
 engine_root="$main/engine/giac/_out"; engine_managed=1; [[ -z "${GIAC_OUT:-}" ]] || engine_managed=0
 export GIAC_OUT="${GIAC_OUT:-$engine_root/gsl}"
-[[ -n "${QALC_OUT:-}" ]] || { [[ -n "$(ls -A "$main/engine/qalc/_out/dev" 2>/dev/null)" ]] && export QALC_OUT="$main/engine/qalc/_out/dev"; } || true
 export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
 claude_common=(--permission-mode auto --output-format text --no-session-persistence)
 worker_tools=(--disallowedTools Agent)

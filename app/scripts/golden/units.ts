@@ -32,7 +32,7 @@ export async function stageUnits(): Promise<void> {
   const cs = cases("units.yaml");
   const indexFile = process.env.FIND_INDEX_JSON ?? `${root}app/src/find/_gen/find-index.json`;
   if (!existsSync(indexFile)) {
-    report("units", false, `no Find index at ${indexFile}: run npm run index (QALC_OUT=<main checkout>/engine/qalc/_out/dev in a worktree)`);
+    report("units", false, `no Find index at ${indexFile}: run npm run index (PASCALINE_QALC_DL_DIR=<main checkout>/engine/qalc/_downloads in a worktree)`);
     return;
   }
   const table = factorTable(JSON.parse(readFileSync(indexFile, "utf8")) as IndexItem[]);
