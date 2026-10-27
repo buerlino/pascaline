@@ -18,6 +18,8 @@ interface Shot {
   readonly setup: (page: Page) => Promise<void>;
   /** Another phone size than the Pixel 7's 412 × 915 (R21a: the small phone, 360 × 740). */
   readonly viewport?: { width: number; height: number };
+  /** Only the top of the screen, this many CSS px (the status line shots, R82f2). */
+  readonly clip?: number;
 }
 
 const ready = async (page: Page): Promise<void> => {
@@ -326,6 +328,53 @@ const shots: Shot[] = [
   },
 ];
 
+// R82f2 (F118): the status line at the small phone's and the Fairphone 6's width, in every place and state.
+type BarState = { angle?: "deg"; format?: "pfx" | "eng"; digits?: number; mod?: "shift" | "shiftLock" | "alpha" | "alphaLock" | "lowerLock"; starting?: true };
+const BAR_CASES: readonly [string, string, BarState][] = [
+  ["home", "Home", {}],
+  ["cas", "CAS", { mod: "shift" }],
+  ["function:plot", "Function, Plot", {}],
+  ["function:symb", "Function, Symb, DEG, PFX 30, α locked", { angle: "deg", format: "pfx", digits: 30, mod: "alphaLock" }],
+  ["function:num", "Function, Num, ⇧ locked", { mod: "shiftLock" }],
+  ["solve:symb", "Solve, Symb, α once", { mod: "alpha" }],
+  ["solve:num", "Solve, Num, DEG, ENG 10, lower-case lock", { angle: "deg", format: "eng", digits: 10, mod: "lowerLock" }],
+  ["home", "Home, the engine starting", { starting: true }],
+  ["function:symb", "Function, Symb, the engine starting", { starting: true }],
+];
+async function barState(page: Page, place: string, st: BarState): Promise<void> {
+  await page.evaluate(
+    async ([p, st]) => {
+      const { session: s, shell } = window.pascaline;
+      if (p === "home" || p === "cas") s.view = p;
+      else {
+        const [app, view] = p.split(":") as ["function" | "solve", "symb" | "plot" | "num"];
+        await shell.open(app, view);
+      }
+      if (st.angle) s.settings.angle = st.angle;
+      if (st.format) s.settings.format = st.format;
+      if (st.digits) s.settings.digits = st.digits;
+      const m = st.mod;
+      if (m === "shift" || m === "shiftLock" || m === "lowerLock") s.shift = true;
+      if (m === "shiftLock") s.shiftLock = true;
+      if (m === "alpha" || m === "alphaLock" || m === "lowerLock") s.alpha = true;
+      if (m === "alphaLock" || m === "lowerLock") s.alphaLock = true;
+      if (m === "lowerLock") s.capsLock = true;
+      if (st.starting) s.engineState = "starting";
+    },
+    [place, st] as const,
+  );
+}
+for (const width of [360, 372])
+  for (const [place, title, st] of BAR_CASES)
+    shots.push({
+      id: `bar-${width}-${place.replace(":", "-")}${st.starting ? "-starting" : ""}`,
+      group: `Status line at ${width} px (R82f2)`,
+      title,
+      viewport: { width, height: 800 },
+      clip: 110,
+      setup: (p) => barState(p, place, st),
+    });
+
 const done: { shot: Shot; files: Partial<Record<Theme, string>> }[] = [];
 
 test.beforeAll(() => {
@@ -345,7 +394,7 @@ for (const shot of shots)
         await shot.setup(page);
         await settle(page);
         const file = `${shot.id}.${theme}.png`;
-        await page.screenshot({ path: OUT + file });
+        await page.screenshot({ path: OUT + file, ...(shot.clip && { clip: { x: 0, y: 0, width: shot.viewport?.width ?? 412, height: shot.clip } }) });
         files[theme] = file;
       } finally {
         await context.close();
