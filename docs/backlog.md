@@ -8,16 +8,16 @@ The one place for "where are we and what's left", one or two lines per open item
 | Stage | State |
 |---|---|
 | Phase 0 spike; MVP milestones 1 (Home, CAS), 2 (Function, Solve), 3 (Python, removed by P11) | **Done** 2026-10-11 (reports in [archive/shifts/](archive/shifts/)) |
-| **The core freeze (P23)** | **In progress since 2026-10-21.** No new feature until the core list holds ([tests/core/](../tests/core/README.md): 66 everyday tasks, 63 active, 3 waiting for R4a). Where the count stands and what ends it: brief section 0 ("What holds means"). The bridge moves G98–G105 are merged (G105 as G105f2, `694fb92`). |
-| Milestone 4a: feel (P11) | **Paused by P23.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, the Settings page, history-row actions, R15b, R15c1, R15c2, the mockups (R12a). Waiting: R15c3, R15c4, Settings in one sheet, the palette, the visual pass, results mode, the trust features |
-| Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI (R4a, R4b, A4b) is first after the freeze |
-| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad, the entry and the result view wait for the freeze |
+| **The core freeze (P23)** | **Ended 2026-10-27** (owner). Its net stays: [tests/core/](../tests/core/README.md) (66 everyday tasks, 63 active, 3 waiting for R4a) runs on every merge and on the night's device; a red case is a bug to fix. Order of the work: brief section 0. |
+| Milestone 4a: feel (P11) | **Next after Find.** Merged: the entry work (⌫, cursor, focus, hardware keys), sheets, flicks, the Settings page, history-row actions, R15b, R15c1, R15c2, the mockups (R12a). Waiting: R15c3, R15c4, Settings in one sheet, the palette, the visual pass, results mode, the trust features |
+| Milestone 4: Find and trust | Engine side done (marks, 30 digits, chips, copy, defs, the Find index, the size test, A4a); Find's UI (R4a, R4b, A4b) is next by day |
+| Milestone 5: Units | The evaluator on Giac is done (P15: G15–G18, G25, G13, G7, G32, R28, R24a); the pad, the entry and the result view follow the Settings base |
 | Milestone 6: Structure | Not started (EN5–EN7, Help) |
 | MVP release | Not scheduled (owner, 2026-10-12); A7 and A8 on the owner's go |
 
 `phase-1` and `master` are on GitHub; `master` was last fast-forwarded to `phase-1` on 2026-10-14 (`ef857a6`). Work continues on `phase-1`.
 
-**On track:** on scope yes, on stability no: from 2026-10-14 to 2026-10-21 phase-1 got 188 `fix` commits against 84 `feat`, and 45 of 208 merges were follow-up fixes of merged work, which is why P23 stops new work until the core list holds. Speed holds on the low-end Tab One: at milestone 3 keyboard usable 662 ms, engine ready 995 ms, Plot 56 fps; Enter p95 141–153 ms after G53, at the 150 ms bar (A16, 2026-10-20). Two debts: everything is checked against the Virtual Calculator (rev 15751), not the owner's G2 (rev 15515); only the Tab One is measured regularly (Fairphone 6 once: keyboard usable 329 ms, engine ready 609 ms).
+**On track:** on scope yes, on stability no: from 2026-10-14 to 2026-10-21 phase-1 got 188 `fix` commits against 84 `feat`, and 45 of 208 merges were follow-up fixes of merged work, which is why P23 froze new work from 2026-10-21 to 2026-10-27; the core list stays the net. Speed holds on the low-end Tab One: at milestone 3 keyboard usable 662 ms, engine ready 995 ms, Plot 56 fps; Enter p95 141–153 ms after G53, at the 150 ms bar (A16, 2026-10-20). Two debts: everything is checked against the Virtual Calculator (rev 15751), not the owner's G2 (rev 15515); only the Tab One is measured regularly (Fairphone 6 once: keyboard usable 329 ms, engine ready 609 ms).
 
 ## Needs the user
 0. **The core list (P23):** cut or extend [tests/core/core.yaml](../tests/core/core.yaml) (66: 51 drafted by sandra, c52–c56 added with you on 2026-10-21, c57–c60 on 2026-10-24, c61–c66 on 2026-10-26; tell a session what to drop or add); do the [morning check](../tests/core/MORNING.md) on the night's device (about 10 minutes, 15 cases; tell the day session what failed); keep the night's device plugged in, unlocked and on the charger (A32, A33).
@@ -27,7 +27,7 @@ The one place for "where are we and what's left", one or two lines per open item
 4. **From daily use:** the key sequence that left ⌫ stuck "at log" (F39); connect your phone for A9 (F41, no vibration); more points into [feedback.md](feedback.md).
 5. **The new application id** (`io.github.buerlino.pascaline`): the next APK installs as a second app; copy what you need from the old one, then uninstall `org.pascaline.app`. Android's own backup is off (A23).
 6. **Tap "Allow USB debugging"** on a device when it shows `unauthorized`.
-7. **After the freeze:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70 first); at milestone 5, time ten tasks by hand (E-notation against units). **Later, not now:** the name and trademark checks, CI (C3), the F-Droid recipe (C4).
+7. **Later:** the outside rounds (two 30-minute rounds after R4b and R24c, [r18](research/r18-outside-test.md); R70 first); at milestone 5, time ten tasks by hand (E-notation against units). **Later, not now:** the name and trademark checks, CI (C3), the F-Droid recipe (C4).
 
 ### One-time checks on the phone (the daily list is MORNING.md; each by the owner, or annabell when a package names it)
 - Flick misfires (R9: 20 px arm, 12 px cancel); whether the first tap after a cold start vibrates (R35); R7's sheet defaults; the 36 px cluster rows and the 28 px status line (R15b).
@@ -43,13 +43,13 @@ The one place for "where are we and what's left", one or two lines per open item
 
 ## Tasks
 
-### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
+### Open bugs (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it. Can start (G104 merged).
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
-- **F83, no package (G99's report).** CAS `sum(x^2,x=1..3)` reaches Giac as `sum(x^2,x=(3/10^1))` (toExactLiterals reads `1..3` as decimals) and errors; Home shows `≈ 14` (F73). Family 8.
-- **F73, waits for the end of the freeze (owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
+- **F83 → G117 (G99's report).** CAS `sum(x^2,x=1..3)` reaches Giac as `sum(x^2,x=(3/10^1))` (toExactLiterals reads `1..3` as decimals) and errors; Home shows `≈ 14` (F73). Family 8.
+- **F73, no package (it waited for the end of the freeze; owner, 2026-10-24; G103 reads the doubles).** A double in a list shows Giac's text (`[BesselJ(1,2),1/3]`), not numbers with ⚠; no wrong value reaches the screen. Left: `hasFloat` (reads `1..3` and strings). Families 5, 6.
 
-### Background stream (extreme inputs; P23: runs when no core step can start)
+### Background stream (extreme inputs; at night, by reach)
 - **F86, no package (G60's report).** Home `exp(cosh(floor(asin(pi))))` is "No value found" (Giac's evalf leaves `exp(cosh(1-2*i))` as text); right 0.25326511802−0.461196406269·i. Family 5.
 - **F87, no package (G93's report).** CAS `restart(0)`, `restart_vars(0)`, `restart(1)` and Home `restart(1)` show "pcasans: recursive definition" (pasans in Home): the answer lists our Ans slot's own name. The command took effect. Our name on screen (family 9); not reachable by keys until Find.
 - **F88, no package (G105f1's report).** nonsquare.ts reads Giac's print of `string(part)` (a quoted string, quotes doubled), so changesState and functionsIn find nothing in it: a candidate that stores or calls a user function is evaluated again (G101 says not). Reading it with parsePrinted changes which F69 refusals happen: its own package and tests.
@@ -60,7 +60,7 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F96.** Names left that the definitions log does not hold (not in Vars, gone after a relaunch): `gbasis` (lastgb), `syzygy` (lastv), `GF(2,8)` (K, g), `wz_certificate` (k, n), and the name arguments of `QR`, `LU`, `Fill`, `CopyVar`, `point3d`, `is_hamiltonian`; `debug(…)` turns on Giac's debugger, after which every program call, our helpers too, throws `prompt is not defined`; `interactive_plotode` throws the same (both left out of Find, G111). (`sto`, `assign`, `assume`, `purge` leave only what the log holds, as intended: the census's class `defined`, not here.)
 - **F97.** CAS has no answer within 6 s (600 s hard timeout): `ellipse(-1,1,point(1+i))`, `hyperbola(…)`, `ecm_factor` of a 73-digit number; Home refuses them after 2 s.
 - **F101 → G113 (G111's report; Opus pass 78: before R4a, at the cause in `moyal.cc`, patch 0009).** A probability at a non-integer k is a number: `poisson(2,1.5)` ≈ 0.288, `geometric(0.5,1.5)` ≈ 0.354, `negbinomial(3,0.5,1.5)` ≈ 0.193; right 0 (the pmf lives on the integers; `binomial` refuses). No census sample. Family 5.
-- **F107, no package (after the freeze; owner, 2026-10-26).** Constructors Giac answers right with one list are refused too (Home `zeros({2,3})`, `matrix({{1,2},{3,4}})`, `ranm`, `simp2`, `iegcd`, `subst({x+1,x=2})`): the probe gets a class for names where the list form is the intended meaning. Family 5.
+- **F107, no package (it waited for the end of the freeze; owner, 2026-10-26).** Constructors Giac answers right with one list are refused too (Home `zeros({2,3})`, `matrix({{1,2},{3,4}})`, `ranm`, `simp2`, `iegcd`, `subst({x+1,x=2})`): the probe gets a class for names where the list form is the intended meaning. Family 5.
 - **F104 → G113 (R80f1's report).** Home `negbinomial_icdf(3,1/2,1/5)` = 0 with exact arguments (right 1: P(K≤0) = 1/8 < 1/5); floats give 1. Family 5.
 - **F105, no package.** Home `normald_cdf(0,1,{1/2,3/2})` stays the symbolic `(erf({…})+1)/2`, no numbers (erf of a list in the exact form); honest, no value.
 - **F116, flaky (FLAKES 1, 2026-10-26, load 20–40 from two editor searches; in `isTiming`; 5 of 5 clean on 10-25 at load 5).** `converge.test.ts` "refuse 3*int(1/x,x,-1,1)+1" (2/5; Giac's 1.5 s clock, see F115); `host.test.ts` "switching CAS -> Home restores Home's 300 ms budget" (4/5, > 2000 ms); `valueKind.test.ts` "10^1000000+7 is exact" (3/5, 5 s timeout); `fuzz.test.ts` "20000 random token strings …, quickly" (1/5, 5 s; seeded); e2e `working.spec.ts` "Working… and Cancel only after 150 ms" (1/5). The census leaves out a test that fails in every run (Esc before Working…, 5/5, 192 ms > 150).
@@ -74,14 +74,14 @@ The one place for "where are we and what's left", one or two lines per open item
 - **F66, no package.** The plot evaluator has NaN at x = 0 for x·x/x where Giac simplifies to x (`viewsweep-known.yaml`); Home and the plot disagree at one point. Also `√x·√x` for x < 0 (roots-11, G87's KNOWN list).
 - **F108 → G114 (the after-night check, 2026-10-26).** Home `fMin(x^2-x,x)` shows `seq[1/2]`, `fMax` too; the census reads it as symbolic (`classify.ts` RAW_WORDS has no `seq[`), so R4a's gate cannot see Giac's sequence answers. Family 5.
 - **F109, no package.** Home `DelAVars()` shows `DelAVars`, its own name: no answer and no refusal. Family 5.
-- **F111, no package (S16, `cbb636e`).** Home `|acos(π)|^2` ≈ -3.28162743582 (right 3.28162743582; `^6` ≈ -35.34): Giac makes `abs(acos(pi))^2` `acos(pi)^2`, a rule for reals (`MODE=raw node tools/probes/engine.ts 'abs(acos(pi))^2'`). Family 3.
+- **F111 → G118 (S16, `cbb636e`).** Home `|acos(π)|^2` ≈ -3.28162743582 (right 3.28162743582; `^6` ≈ -35.34): Giac makes `abs(acos(pi))^2` `acos(pi)^2`, a rule for reals (`MODE=raw node tools/probes/engine.ts 'abs(acos(pi))^2'`). Family 3.
 - **F112, no package (S16).** Home `asin(cos(asin(10)))` ≈ 0.148369807463·i, right 2.99322284613·i on either branch: Giac's exact form adds `i*pi` (`MODE=raw … 'asin(cos(asin(10)))'`).
 - **F113 → G115 (after night 2; owner, 2026-10-27).** DEG Home `atan(cos(0.001))` = 45, marked exact (right 44.9999999956): Giac gives `atan(cos(pi/N))` = `pi/4` from about N = 10^5 (`MODE=raw … 'atan(cos(pi/100000))'`). Family 3.
 - **F114, no package (S16).** Home `asin(tan(2)-10^5040)` at 30 digits ⚠ 2 -1.6-1E4·i, right -1.5708+11605.722·i: cancellation in Giac's log form. Family 6.
 - **G94, no package.** Depth-3 generated trees in the view sweep crash the in-process engine (wasm memory out of bounds, Opus pass 53; S16: also the nightly view sweep at count 300, seed 20752); raw output in the 2026-10-21 drafts (`../drafts/2026-10-21-packages/g94-raw`).
-- **The hardening without a bug line:** A31 (a gate stage for the shell tests in `tools/` and `scripts/`, not drafted); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume).
+- **The hardening without a bug line:** A31 (a gate stage for the shell tests in `tools/` and `scripts/`, not drafted); r16's end mark, a 50,000-input sweep with no new false mark, is not met (Opus pass 82; G94 stops the view sweep at volume); **G116** (the engine fuzzer: the oracle sweep at the edges with a fresh seed; owner, 2026-10-27) reports its finds from F119; the Opus pass files them here.
 
-### After the freeze (P23 order; packages and order: brief section 0)
+### Next (packages and order: brief section 0)
 - **Find (milestone 4, EN1):** packages and order in brief section 0 ("What waits"). Gate: task 5, the query test, the size test, no index request before idle. Three core cases (c38, c39, c43: a command by name) wait for it.
 - **Units (milestone 5; docs/04 section 4):** packages and order in brief section 0; the first unit result on the Tab One and the Fairphone 6 (< 1 s). Gate: tasks 1–4 and 10; a unit in ≤ 4 presses at the median; `units.yaml`; the owner's hand timing.
 - **Settings and looks (milestone 4a), the trust features, the backup and libraries:** packages and order in brief section 0 ("What waits").
