@@ -62,7 +62,7 @@ test("Home ↔ CAS: the place name and its sheet, by touch and by keys (the shee
   await expect(appsSheet(page)).toHaveCount(0);
   // the Apps sheet lists Home and CAS first (S2 point 4)
   await place(page).tap();
-  await expect(appsSheet(page).getByRole("menuitem")).toHaveText(["1Home", "2CAS", "3Function", "4Solve"]);
+  await expect(appsSheet(page).getByRole("menuitem")).toHaveText([/^1\s*Home$/, /^2\s*∫\s*CAS$/, /^3\s*ƒ\s*Function$/, /^4\s*x=\?\s*Solve$/]);
   await tap(page, ["d2"]);
   expect(await view(page)).toBe("cas");
   await tap(page, ["@place", "d1"]);
