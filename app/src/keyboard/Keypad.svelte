@@ -398,6 +398,21 @@
   .key[data-zone="true"] {
     min-height: 36px;
   }
+  /* R82: a short screen (bars, a larger font scale) lowers the rows (514 → 460 px), so the header, the keypad and the Plot
+     readout still fit the column without a scroll; a taller screen keeps the full rows */
+  @media (max-height: 700px) {
+    .key {
+      --legend-h: 10px;
+      min-height: 42px;
+    }
+    .key[data-letters="true"] .main {
+      line-height: 1; /* a letter row holds two legend lines: 10 + 20 + 10 + 2 = 42 px */
+    }
+    .key.nav,
+    .key[data-zone="true"] {
+      min-height: 32px;
+    }
+  }
   /* the trackpad (K1): one surface under the four arrow keys, which stay as its tap zones; drawn round, the G2's shape
      (R15c, R3), with a dashed hub ring at its centre where a drag may start (a tap there does nothing) */
   .trackpad {
