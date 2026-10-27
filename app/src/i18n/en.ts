@@ -170,10 +170,6 @@ export const en = {
   "status.angle": "Angle unit: {angle}. Tap to switch.",
   "status.format": "Number format and digits: {format}. Tap to change.",
   "status.busy": "Working",
-  "status.shift": "Shift",
-  "status.shiftLock": "Shift locked",
-  "status.alpha": "Alpha",
-  "status.alphaLock": "Alpha locked",
 } as const;
 
 export type MessageKey = keyof typeof en;

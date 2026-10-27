@@ -44,7 +44,15 @@
   const statusKey = (id: string, name: "apps" | "symb" | "plot" | "num" | "menu"): Key => ({ id, row: 0, col: 0, span: 1, cls: "nav", label: { primary: "" }, actions: { primary: { kind: "special", name } } });
   const PLACE_KEY = statusKey("place", "apps");
   const MENU_KEY = statusKey("menu-status", "menu");
-  const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, key: statusKey(`tab-${v}`, v) }));
+  /** The status line's drawn icons (R82f2; fixed markup, no user text): Home's house, Symb, Plot's curve, Num's table. */
+  const svg = (body: string): string => `<svg viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.4">${body}</svg>`;
+  const ICONS = {
+    home: svg('<path d="M2.5 7.5 8 2.5l5.5 5M4 6.5v6h8v-6" stroke-linejoin="round"/>'),
+    symb: '<span class="math">ƒ=</span>',
+    plot: svg('<path d="M1 13h14M2 1v12"/><path d="M3 11c3-9 6-9 11-8" stroke-width="1.6" stroke-linecap="round"/>'),
+    num: svg('<rect x="1" y="1" width="14" height="12" rx="1.5"/><path d="M6 1v12M1 5h14M1 9h14"/>'),
+  };
+  const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, name: t(`view.${v}`), key: statusKey(`tab-${v}`, v) }));
 
   /** The open Settings page and its model (null: closed). */
   let settings = $state.raw<{ C: SettingsUi["C"]; page: InstanceType<SettingsUi["SettingsPage"]> } | null>(null);
@@ -316,40 +324,35 @@
       data-view={shell.app === null ? session.view : shell.view}
       aria-label={t("status.place", { place })}
       onclick={() => press(PLACE_KEY, "primary")}>
-      <span class="tile" class:small={"text" in glyph && glyph.text.length > 1}>
-        {#if "icon" in glyph}<svg width="14" height="13" viewBox="0 0 14 13" aria-hidden="true"><path d="M1.5 6.5 7 1.5l5.5 5M3 5.5V11.5h8V5.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>{:else}<span class="math" aria-hidden="true">{glyph.text}</span>{/if}
-        {#if ring}<span class="ring" role="status" aria-label={t(busy ? "status.busy" : "engine.starting")} data-testid="busy"></span>{/if}
-      </span>
+      <!-- the glyph is our own table's text or icon (registry.ts), never user text -->
+      <span class="tile math" class:small={"text" in glyph && glyph.text.length > 1} data-ring={ring} aria-hidden="true">{@html "icon" in glyph ? ICONS.home : glyph.text}</span>
       {#if shell.app === null}<span class="name" aria-hidden="true">{place}</span>{/if}
       <span class="caret" aria-hidden="true">▾</span>
     </button>
     {#if shell.app !== null}
       <span class="seg" role="tablist" aria-label={t("status.views")}>
         {#each TABS.filter((tb) => shell.views.includes(tb.view)) as tab (tab.view)}
+          <!-- the icons are our own markup (ICONS), never user text -->
           <button
             type="button"
             class="tab"
             role="tab"
             data-testid="tab-{tab.view}"
             aria-selected={shell.view === tab.view}
-            aria-label={t(`view.${tab.view}`)}
-            title={t(`view.${tab.view}`)}
+            aria-label={tab.name}
+            title={tab.name}
             onclick={() => press(tab.key, "primary")}>
-            {#if tab.view === "symb"}<span class="math" aria-hidden="true">ƒ=</span>
-            {:else if tab.view === "plot"}<svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><path d="M1 13h14M2 1v12" stroke="currentColor" stroke-width="1.3"/><path d="M3 11c3-9 6-9 11-8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            {:else}<svg width="16" height="14" viewBox="0 0 16 14" aria-hidden="true"><rect x="1" y="1" width="14" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 1v12M1 5h14M1 9h14" stroke="currentColor" stroke-width="1.3"/></svg>{/if}
+            {@html ICONS[tab.view]}
           </button>
         {/each}
       </span>
     {/if}
     <span class="slot" data-testid="mod-slot">
-      {#if mod}<span
-          class="mod"
-          class:alpha={mod.alpha}
-          class:lock={mod.lock}
-          data-testid={mod.alpha ? "mod-alpha" : "mod-shift"}
-          data-lock={mod.lock}
-          aria-label={t(mod.alpha ? (mod.lock ? "status.alphaLock" : "status.alpha") : mod.lock ? "status.shiftLock" : "status.shift")}>{mod.text}</span>{/if}
+      <span
+        class="mod"
+        data-testid={mod ? `mod-${mod.alpha ? "alpha" : "shift"}` : undefined}
+        data-lock={mod?.lock}
+        aria-label={mod && t(mod.alpha ? "key.alpha" : "key.shift")}>{mod?.text}</span>
     </span>
     <span class="chips">
       <button
@@ -365,9 +368,7 @@
         <button type="button" class="chip" data-testid="chip-digits" onclick={() => openMode("digits")}>{session.settings.digits}</button>
       </span>
     </span>
-    <button type="button" class="menubtn" data-testid="menu-button" aria-label={t("status.menu")} onclick={() => press(MENU_KEY, "primary")}>
-      <svg width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><path d="M1 1h16M1 7h16M1 13h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </button>
+    <button type="button" class="menubtn" data-testid="menu-button" aria-label={t("status.menu")} onclick={() => press(MENU_KEY, "primary")}>☰</button>
   </header>
 
   <div class="screen">
@@ -490,10 +491,13 @@
     box-sizing: border-box;
     cursor: pointer;
   }
-  header svg {
+  /* the icons come from ICONS through {@html}, outside the component's scope */
+  header :global(svg) {
     display: block;
+    width: 16px;
+    height: 14px;
   }
-  .math {
+  header :global(.math) {
     font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif;
     font-style: italic;
   }
@@ -532,7 +536,8 @@
     font-size: 13px;
   }
   /* busy or starting: a 2 px ring over the tile, its size unchanged */
-  .ring {
+  .tile[data-ring="true"]::after {
+    content: "";
     position: absolute;
     inset: 0;
     border: 2px solid var(--alpha);
@@ -585,10 +590,10 @@
     font-weight: 700;
     line-height: 16px;
   }
-  .mod.alpha {
+  .mod[data-testid="mod-alpha"] {
     color: var(--alpha);
   }
-  .mod.lock {
+  .mod[data-lock="true"] {
     box-shadow: inset 0 -2px 0 currentColor;
   }
   .menubtn {
@@ -598,6 +603,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 17px;
     color: var(--text);
   }
   .menubtn:active {
