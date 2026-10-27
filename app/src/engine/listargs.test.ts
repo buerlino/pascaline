@@ -77,9 +77,10 @@ describe.skipIf(!giacAvailable())("R80f1 a list in a distribution", () => {
     expect(home("negbinomial_icdf(3,1/2,list[1/5,7/10])")).toMatchObject(wrong);
     expect(home("P:=list[1/5,7/10]")).toMatchObject({ ok: true });
     expect(home("negbinomial_icdf(3,1/2,P)")).toMatchObject(wrong);
-    expect(cas("negbinomial_icdf(3,1/2,[1/5,7/10])")).toMatchObject({ ok: false, error: "listInArgument" });
-    // one number is not refused (its value, 0 where 1 is right, is a finding of its own: the report of R80f1)
-    expect(home("negbinomial_icdf(3,1/2,1/5)")).toMatchObject({ ok: true });
+    // G113: since patch 0009 Giac refuses a list itself (its probability must be a double), so CAS shows Giac's message
+    expect(cas("negbinomial_icdf(3,1/2,[1/5,7/10])")).toMatchObject({ ok: false, error: "engine" });
+    // one number is not refused, and is right since patch 0009 (G113, F104: it was 0)
+    expect(home("negbinomial_icdf(3,1/2,1/5)")).toMatchObject({ ok: true, display: "1" });
   });
 
   // mlr_beta(X, y): the vector y gives Giac's betas [0.05,1.99] (intercept, slope of 2.1, 3.9, 6.2, 7.8, 10.1 on 1…5);

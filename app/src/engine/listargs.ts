@@ -25,8 +25,8 @@ const LIST_AS = new Set(LIST_AS_ARGUMENTS);
 
 /** R80f1: functions that answer a list among their arguments wrongly (probed on the shared engine with patch 0007,
  *  2026-10-26), refused when one argument is a list: "any" for a `[ ]` vector or Giac's list type in any argument, a number
- *  k for the list type only (subtype 23, typed braces since R80) as argument k (from 0; a list-type X is answered right). negbinomial_icdf(3,0.5,[0.2,0.7]) = 0 for both (right {1,4}), the one
- *  distribution patch 0007 left; mlr_beta(X,list[2.1,…]) is a 2×5 matrix and mlr_predict(X,list[0.05,1.99]) a matrix,
+ *  k for the list type only (subtype 23, typed braces since R80) as argument k (from 0; a list-type X is answered right). negbinomial_icdf(3,0.5,[0.2,0.7]) was 0 for both (right {1,4}), the one
+ *  distribution patch 0007 left (since patch 0009, G113, Giac refuses the list itself; Home keeps this reason); mlr_beta(X,list[2.1,…]) is a 2×5 matrix and mlr_predict(X,list[0.05,1.99]) a matrix,
  *  where the vector gives the betas [0.05,1.99] and the five predictions (mlr and its other forms give an error). */
 export const LIST_IN_ARGUMENTS: Readonly<Record<string, "any" | number>> = {
   negbinomial_icdf: "any", mlr_beta: 1, mlr_predict: 1,
