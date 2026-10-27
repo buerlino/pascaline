@@ -2,10 +2,9 @@
 // The app library. Only names live here; each app's code is a separate chunk loaded on first use, so the
 // start-up bundle does not grow with the number of apps.
 import type { MessageKey } from "../i18n/index.ts";
-import { instantiate, type AppHost, type AppId, type LoadedApp } from "./types.ts";
+import { instantiate, type AppHost, type AppId, type Glyph, type LoadedApp } from "./types.ts";
 
-/** A place's glyph on the status line's tile (R82f2): maths-font text, or a drawn icon (Home's house). */
-export type Glyph = { readonly text: string } | { readonly icon: "home" };
+export type { Glyph };
 
 export interface AppEntry {
   readonly id: AppId;

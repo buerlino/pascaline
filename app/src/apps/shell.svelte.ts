@@ -7,7 +7,7 @@ import { t } from "../i18n/index.ts";
 import type { Kv } from "../state/storage.ts";
 import type { IconId } from "../views/icons.ts";
 import { Sheet, type Picked } from "../views/sheet.svelte.ts";
-import { APPS, appEntry, isAppId } from "./registry.ts";
+import { APPS, appEntry, isAppId, placeGlyph } from "./registry.ts";
 import { VIEW_IDS, type AppHost, type AppId, type AppInstance, type LoadedApp, type MenuItem, type NavDir, type ViewId } from "./types.ts";
 
 /** The entry line as the shell sees it (EntryController in the app, a stub in tests). */
@@ -244,8 +244,8 @@ export class AppShell {
     if (this.switcherOpen) this.sheet = null;
     else
       this.sheet = new Sheet("apps", t("apps.title"), () => [
-        ...(["home", "cas"] as const).map((v) => ({ id: v, label: t(`view.${v}`), run: () => this.goTo?.(v) })),
-        ...APPS.map((a) => ({ id: a.id, label: t(a.name), run: () => void this.open(a.id) })),
+        ...(["home", "cas"] as const).map((v) => ({ id: v, label: t(`view.${v}`), glyph: placeGlyph(v), run: () => this.goTo?.(v) })),
+        ...APPS.map((a) => ({ id: a.id, label: t(a.name), glyph: a.glyph, run: () => void this.open(a.id) })),
       ]);
   }
   /** Menu key: the open view's menu, or close the open sheet. False when the view has no menu (a dead key). */
