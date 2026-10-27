@@ -28,7 +28,7 @@ Every package runs through `scripts/pipeline.sh` (docs/shifts/rules.md section 4
 Context hygiene: `.claude/settings.json` denies reads of build output, caches, lock files, screenshots and run logs. Read sections (`grep -n '^#'`), not whole files; the owner's untracked files are not yours.
 
 ## Repo layout
-`app/` (web app: Svelte 5, keyboard, MathLive entry, parser, MathPrint, engine client), `engine/giac/` (engine build + patches), `engine/qalc/` (libqalculate build, developer only), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `find/` (Find data; `factors.yaml` holds libqalculate's numbers, P22), `tests/golden/` (golden cases + oracle), `tests/engine/`, `tools/` (devices, probes, index generator), `scripts/` (pipeline), `docs/` (index: docs/README.md), `fastlane/`, `fdroid/`, `logo/`, `build.sh`, `spike/` (Phase 0 record), `.claude/agents/` (ron, gorge, annabell, sandra, sofia, henri).
+`app/` (web app: Svelte 5, keyboard, MathLive entry, parser, MathPrint, engine client), `engine/giac/` (engine build + patches), `engine/qalc/` (libqalculate build, developer only), `android/` (Capacitor), `spec/keyboard.yaml` (key layout), `find/` (Find data; `factors.yaml` holds libqalculate's numbers, P22), `tests/golden/` (golden cases + oracle), `tests/engine/`, `tools/` (devices, probes, index generator), `scripts/` (pipeline), `docs/` (index: docs/README.md), `fastlane/`, `fdroid/`, `logo/`, `build.sh`, `spike/` (Phase 0 record), `.claude/agents/` (ron, gorge, annabell, sandra, sofia, henri, percy).
 
 ## Conventions
 - Small, focused modules; engine code knows nothing about the UI. TypeScript strict, no `any`; user-facing strings go through the i18n table. Every other code rule is in docs/rules-core.md.
