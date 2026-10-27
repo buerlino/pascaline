@@ -4,16 +4,25 @@
 import type { MessageKey } from "../i18n/index.ts";
 import { instantiate, type AppHost, type AppId, type LoadedApp } from "./types.ts";
 
+/** A place's glyph on the status line's tile (R82f2): maths-font text, or a drawn icon (Home's house). */
+export type Glyph = { readonly text: string } | { readonly icon: "home" };
+
 export interface AppEntry {
   readonly id: AppId;
   readonly name: MessageKey;
+  readonly glyph: Glyph;
   load(host: AppHost): Promise<LoadedApp>;
 }
 
+/** Home and CAS have no app entry; their glyphs stand beside the apps' so all places are in one table. */
+export const HOME_GLYPHS: Readonly<Record<"home" | "cas", Glyph>> = { home: { icon: "home" }, cas: { text: "∫" } };
+
 export const APPS: readonly AppEntry[] = [
-  { id: "function", name: "app.function", load: async (h) => instantiate((await import("./function/index.ts")).default, h) },
-  { id: "solve", name: "app.solve", load: async (h) => instantiate((await import("./solve/index.ts")).default, h) },
+  { id: "function", name: "app.function", glyph: { text: "ƒ" }, load: async (h) => instantiate((await import("./function/index.ts")).default, h) },
+  { id: "solve", name: "app.solve", glyph: { text: "x=?" }, load: async (h) => instantiate((await import("./solve/index.ts")).default, h) },
 ];
 
 export const isAppId = (v: unknown): v is AppId => APPS.some((a) => a.id === v);
 export const appEntry = (id: AppId): AppEntry => APPS.find((a) => a.id === id) as AppEntry;
+/** The glyph of a place: Home, CAS or an app. */
+export const placeGlyph = (place: AppId | "home" | "cas"): Glyph => (place === "home" || place === "cas" ? HOME_GLYPHS[place] : appEntry(place).glyph);

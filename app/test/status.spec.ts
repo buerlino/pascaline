@@ -30,19 +30,19 @@ test("the status line is at most 28 px, and the viewport keeps its share of the 
 
 test("the status line shows the place, the angle unit, the format and digits", async ({ page }) => {
   await open(page);
-  await expect(page.getByTestId("place")).toHaveText("Home");
+  await expect(page.getByTestId("place")).toHaveAccessibleName(/^Place: Home\./);
   await expect(page.getByTestId("chip-angle")).toHaveText("RAD");
   await expect(page.getByTestId("chip-format")).toHaveText("STD");
   await expect(page.getByTestId("chip-digits")).toHaveText("12");
   await tap(page, ["@cas"]);
-  await expect(page.getByTestId("place")).toHaveText("CAS");
+  await expect(page.getByTestId("place")).toHaveAccessibleName(/^Place: CAS\./);
   await tap(page, ["@plot"]);
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "plot");
   await expect(page.getByTestId("place")).toHaveAttribute("data-app", "function");
-  await expect(page.getByTestId("place")).toHaveText("Function");
+  await expect(page.getByTestId("place")).toHaveAccessibleName(/^Place: Function\./);
   await page.getByTestId("place").tap(); // the place name opens Apps (R15c1); Home and CAS are its first rows
   await page.getByTestId("apps").getByRole("menuitem").nth(1).tap();
-  await expect(page.getByTestId("place")).toHaveText("CAS");
+  await expect(page.getByTestId("place")).toHaveAccessibleName(/^Place: CAS\./);
 });
 
 test("a tap on the place name opens the Apps sheet; Home and CAS are its first rows (R15c1)", async ({ page }) => {
@@ -79,7 +79,7 @@ test("the tabs switch the views of Function and Solve, the current one marked; H
   await expect(page.getByRole("tab")).toHaveCount(2);
   await tab("symb").tap();
   await expect(page.getByTestId("place")).toHaveAttribute("data-view", "symb");
-  await expect(page.getByTestId("place")).toHaveText("Solve");
+  await expect(page.getByTestId("place")).toHaveAccessibleName(/^Place: Solve\./);
 });
 
 test("☰ opens the view's menu and Settings is its last row, key 0 in Home (R15c1)", async ({ page }) => {
@@ -125,7 +125,7 @@ test("the status line fits at 360 px in an app with the chips and ☰, and the t
   expect(m.header).toBeLessThanOrEqual(28);
   expect(m.menu?.width ?? 0).toBeGreaterThanOrEqual(36);
   expect(m.menu?.height ?? 0).toBeGreaterThanOrEqual(28);
-  expect(m.place?.width ?? 0).toBeGreaterThanOrEqual(96);
+  expect(m.place?.width ?? 0).toBeGreaterThanOrEqual(48); // R82f2: the glyph tile and ▾ (R15b had 96 px for the name)
   expect((m.digits?.right ?? 999) <= (m.menu?.left ?? 0)).toBe(true);
 });
 
@@ -134,12 +134,18 @@ test("Shift and Alpha show in the status line: one tap each, twice for the lock"
   await expect(page.getByTestId("mod-shift")).toHaveCount(0);
   await tap(page, ["shift"]);
   await expect(page.getByTestId("mod-shift")).toHaveText("⇧");
+  await tap(page, ["shift", "alpha"]);
+  await expect(page.getByTestId("mod-shift")).toHaveCount(0); // one slot (R82f2): α once
+  await expect(page.getByTestId("mod-alpha")).toHaveText("α");
+  await expect(page.getByTestId("mod-alpha")).toHaveAttribute("data-lock", "false");
   await tap(page, ["alpha"]);
   await expect(page.getByTestId("mod-alpha")).toHaveText("α");
-  await tap(page, ["alpha"]);
-  await expect(page.getByTestId("mod-alpha")).toHaveText("α🔒");
+  await expect(page.getByTestId("mod-alpha")).toHaveAttribute("data-lock", "true");
   await tap(page, ["alpha"]);
   await expect(page.getByTestId("mod-alpha")).toHaveCount(0);
+  await tap(page, ["shift", "alpha", "alpha"]); // Shift, Alpha, Alpha: the lower-case lock
+  await expect(page.getByTestId("mod-alpha")).toHaveText("a");
+  await expect(page.getByTestId("mod-alpha")).toHaveAttribute("data-lock", "true");
 });
 
 test("tap RAD → DEG changes the next result; sin 90 is 1 in degrees", async ({ page }) => {

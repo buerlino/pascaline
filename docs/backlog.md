@@ -43,7 +43,7 @@ The one place for "where are we and what's left", one or two lines per open item
 ## Tasks
 
 ### Open bugs in the freeze (everyday reach; order: brief section 0; family n: [bug-patterns.md](research/bug-patterns.md) section 3; each line names its package, which holds the evidence)
-- **F118 → R82f2 (owner, 2026-10-27; F110 R82 and F117 R82f1 merged, c46 passes).** Fairphone 6 (372 px): the status line has no room; Function's tabs read "Sy… P… N…", with ⇧ or α🔒 Solve's too and at 412 px; while the engine starts ☰ is pushed off screen. The tabs are the only view keys, so ☰ in Symb (Settings only) hid Root.
+- **F118 → R82f2, built (run 272, `p1/ron-statusfit`, not merged).** Glyph tile, view icons, a fixed ⇧ α slot; fits 360–412 px in every place and state (`statusfit.spec.ts`). Waits for CORE DEVICE on the Fairphone and the owner's look there.
 - **F85, no package (G102's Not done; cost only).** A Home input with chips is parsed twice per Enter (G100); the parse is its own bridge-2 call, so G102 could not fold it. Can start (G104 merged).
 - **F80, no package (G99's Not done; probed: `tools/probes/bridge-forms.ts`).** After Home `(BesselJ(1,2))=>y`, `int(y^2,y,0,1)` shows `⚠ 0.333333333333` (right `≈`): Home stores at Digits 40, where `=>` keeps y as `BesselJ(1,2)` unevaluated, and Giac's int with that y errors (Bad Argument Value). `y:=` keeps the float. Test: `boundNames.test.ts` (`it.fails`), seqsweep `12 bound: int…`. Family 8.
 - **F83, no package (G99's report).** CAS `sum(x^2,x=1..3)` reaches Giac as `sum(x^2,x=(3/10^1))` (toExactLiterals reads `1..3` as decimals) and errors; Home shows `≈ 14` (F73). Family 8.

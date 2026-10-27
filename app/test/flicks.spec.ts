@@ -198,7 +198,8 @@ test("two thumbs keep their order: a second finger fires the first one's flick a
 
 test("lock flicks: up on Shift locks shift; a tap on Shift unlocks", async ({ page }) => {
   await flick(page, "shift", "up");
-  await expect(page.getByTestId("mod-shift")).toHaveText("⇧🔒");
+  await expect(page.getByTestId("mod-shift")).toHaveText("⇧");
+  await expect(page.getByTestId("mod-shift")).toHaveAttribute("data-lock", "true");
   await expect(page.locator('[data-key="shift"]')).toHaveAttribute("data-locked", "true");
   await tap(page, ["dot", "dot"]);
   expect(await entryValue(page)).toBe("==");
@@ -212,7 +213,8 @@ test("lock flicks: up on Shift locks shift; a tap on Shift unlocks", async ({ pa
 
 test("lock flicks: down on Alpha locks capitals, and a flick up types `=` without leaving the lock (the G2 friction)", async ({ page }) => {
   await flick(page, "alpha", "down");
-  await expect(page.getByTestId("mod-alpha")).toHaveText("α🔒");
+  await expect(page.getByTestId("mod-alpha")).toHaveText("α");
+  await expect(page.getByTestId("mod-alpha")).toHaveAttribute("data-lock", "true");
   await tap(page, ["vars", "math"]);
   await flick(page, "dot", "up");
   await tap(page, ["d5"]);

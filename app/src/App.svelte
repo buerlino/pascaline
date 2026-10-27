@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <script lang="ts">
   import { onMount } from "svelte";
-  import { APPS } from "./apps/registry.ts";
+  import { APPS, placeGlyph } from "./apps/registry.ts";
   import type { AppShell, PaletteId } from "./apps/shell.svelte.ts";
   import type { ClipActions } from "./clipboard/actions.svelte.ts";
   import type { EntryController } from "./entry/controller.ts";
@@ -44,7 +44,15 @@
   const statusKey = (id: string, name: "apps" | "symb" | "plot" | "num" | "menu"): Key => ({ id, row: 0, col: 0, span: 1, cls: "nav", label: { primary: "" }, actions: { primary: { kind: "special", name } } });
   const PLACE_KEY = statusKey("place", "apps");
   const MENU_KEY = statusKey("menu-status", "menu");
-  const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, key: statusKey(`tab-${v}`, v) }));
+  /** The status line's drawn icons (R82f2; fixed markup, no user text): Home's house, Symb, Plot's curve, Num's table. */
+  const svg = (body: string): string => `<svg viewBox="0 0 16 14" fill="none" stroke="currentColor" stroke-width="1.4">${body}</svg>`;
+  const ICONS = {
+    home: svg('<path d="M2.5 7.5 8 2.5l5.5 5M4 6.5v6h8v-6" stroke-linejoin="round"/>'),
+    symb: '<span class="math">ƒ=</span>',
+    plot: svg('<path d="M1 13h14M2 1v12"/><path d="M3 11c3-9 6-9 11-8" stroke-width="1.6" stroke-linecap="round"/>'),
+    num: svg('<rect x="1" y="1" width="14" height="12" rx="1.5"/><path d="M6 1v12M1 5h14M1 9h14"/>'),
+  };
+  const TABS = (["symb", "plot", "num"] as const).map((v) => ({ view: v, name: t(`view.${v}`), key: statusKey(`tab-${v}`, v) }));
 
   /** The open Settings page and its model (null: closed). */
   let settings = $state.raw<{ C: SettingsUi["C"]; page: InstanceType<SettingsUi["SettingsPage"]> } | null>(null);
@@ -287,13 +295,25 @@
   /** Where you are (docs/05 3.2): Home, CAS, or an app and its view. */
   const place = $derived(shell.app === null ? t(`view.${session.view}`) : appName);
   const angle = $derived(session.settings.angle);
+  const glyph = $derived(placeGlyph(shell.app ?? session.view));
+  /** The tile's ring: a job running, or the engine starting (R82f2: the ⟳ went). */
+  const ring = $derived(busy || session.engineState === "starting");
+  /** The ⇧ α slot: one sign, underlined when locked; Alpha with Shift types lower case, shown as `a`. */
+  const mod = $derived(
+    session.alpha
+      ? { alpha: true, lock: session.alphaLock, text: session.shift ? "a" : "α" }
+      : session.shift
+        ? { alpha: false, lock: session.shiftLock, text: "⇧" }
+        : null,
+  );
   /** The status line is not a place for typing: a tap on it must not take the caret out of the entry line. */
   const noFocus = (e: Event): void => e.preventDefault();
 </script>
 
 <main class="app">
-  <!-- the status line (docs/05 3.2): where you are, the mode chips, Shift/Alpha, busy. At most 28 px (docs/03 rule 9).
-       The place name is the Home ↔ CAS switch (P12 point 2, R15b); in an app it goes back to Home/CAS. -->
+  <!-- the status line (docs/05 3.2, R82f2): the place's glyph tile (the apps list), the views as icons, the fixed ⇧ α
+       slot, the mode chips, ☰. At most 28 px (docs/03 rule 9). Nothing in it changes width with Shift, Alpha or the
+       engine's state, so a press never moves a view from under the finger; the engine's notes show in the stage. -->
   <!-- svelte-ignore a11y_no_static_element_interactions (only keeps the caret in the entry line; the buttons inside are the controls) -->
   <header data-testid="status" data-engine={session.engineState} data-busy={busy} onpointerdown={noFocus}>
     <button
@@ -303,23 +323,38 @@
       data-app={shell.app ?? ""}
       data-view={shell.app === null ? session.view : shell.view}
       aria-label={t("status.place", { place })}
-      onclick={() => press(PLACE_KEY, "primary")}>{place}</button>
+      onclick={() => press(PLACE_KEY, "primary")}>
+      <!-- the glyph is our own table's text or icon (registry.ts), never user text -->
+      <span class="tile math" class:small={"text" in glyph && glyph.text.length > 1} data-ring={ring} aria-hidden="true">{@html "icon" in glyph ? ICONS.home : glyph.text}</span>
+      {#if shell.app === null}<span class="name" aria-hidden="true">{place}</span>{/if}
+      <span class="caret" aria-hidden="true">▾</span>
+    </button>
     {#if shell.app !== null}
-      <span class="tabs" role="tablist" aria-label={t("status.views")}>
+      <span class="seg" role="tablist" aria-label={t("status.views")}>
         {#each TABS.filter((tb) => shell.views.includes(tb.view)) as tab (tab.view)}
+          <!-- the icons are our own markup (ICONS), never user text -->
           <button
             type="button"
             class="tab"
             role="tab"
             data-testid="tab-{tab.view}"
             aria-selected={shell.view === tab.view}
-            onclick={() => press(tab.key, "primary")}>{t(`view.${tab.view}`)}</button>
+            aria-label={tab.name}
+            title={tab.name}
+            onclick={() => press(tab.key, "primary")}>
+            {@html ICONS[tab.view]}
+          </button>
         {/each}
       </span>
     {/if}
+    <span class="slot" data-testid="mod-slot">
+      <span
+        class="mod"
+        data-testid={mod ? `mod-${mod.alpha ? "alpha" : "shift"}` : undefined}
+        data-lock={mod?.lock}
+        aria-label={mod && t(mod.alpha ? "key.alpha" : "key.shift")}>{mod?.text}</span>
+    </span>
     <span class="chips">
-      {#if session.engineState === "starting"}<span class="note">{t("engine.starting")}</span>{/if}
-      {#if session.engineState === "failed"}<span class="note">{t("engine.error")}</span>{/if}
       <button
         type="button"
         class="chip"
@@ -332,15 +367,13 @@
         <button type="button" class="chip" data-testid="chip-format" onclick={() => openMode("format")}>{session.settings.format.toUpperCase()}</button>
         <button type="button" class="chip" data-testid="chip-digits" onclick={() => openMode("digits")}>{session.settings.digits}</button>
       </span>
-      {#if session.shiftLock}<span class="mod" data-testid="mod-shift">⇧🔒</span>{:else if session.shift}<span class="mod" data-testid="mod-shift">⇧</span>{/if}
-      {#if session.alphaLock}<span class="mod" data-testid="mod-alpha">α🔒</span>{:else if session.alpha}<span class="mod" data-testid="mod-alpha">α</span>{/if}
-      {#if busy}<span class="busy" role="status" aria-label={t("status.busy")} data-testid="busy">⟳</span>{/if}
     </span>
     <button type="button" class="menubtn" data-testid="menu-button" aria-label={t("status.menu")} onclick={() => press(MENU_KEY, "primary")}>☰</button>
   </header>
 
   <div class="screen">
     <div class="stage">
+      {#if session.engineState !== "ready"}<p class="enginenote" role="status" data-testid="engine-note">{t(session.engineState === "failed" ? "engine.error" : "engine.starting")}</p>{/if}
       {#if shell.app === null}
         <History
           items={session.items}
@@ -443,13 +476,13 @@
   }
   header {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    align-items: stretch;
+    gap: 6px;
     box-sizing: border-box;
     height: 28px;
     padding: 0 8px;
-    border-bottom: 1px solid var(--line);
+    /* the line under it as an inset shadow, so the targets keep the full 28 px */
+    box-shadow: inset 0 -1px 0 var(--line);
     font-size: 14px;
     line-height: 1;
   }
@@ -458,58 +491,118 @@
     box-sizing: border-box;
     cursor: pointer;
   }
-  /* The place name is a button (R15b). Its target is the line's full height and at least 96 px wide; it does not reach
-     below the line, where the top history row's formula and an app's first slot take their own taps (R15b report). */
+  /* the icons come from ICONS through {@html}, outside the component's scope */
+  header :global(svg) {
+    display: block;
+    width: 16px;
+    height: 14px;
+  }
+  header :global(.math) {
+    font-family: "STIX Two Math", "Cambria Math", "Times New Roman", serif;
+    font-style: italic;
+  }
+  /* The place (R15b, R82f2): its glyph tile and ▾, Home's and CAS's name between; the target is the line's full height,
+     from the screen's left edge, and does not reach below the line (the top history row and an app's first slot take
+     their own taps). */
   .place {
     flex: none;
-    max-width: 60%;
-    min-width: 96px;
-    height: 28px;
-    margin-left: -8px; /* from the screen's left edge */
-    padding: 0 8px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: -8px;
+    padding: 0 4px 0 8px;
     white-space: nowrap;
-    line-height: 28px;
     font-weight: 700;
     color: var(--text);
-  }
-  .place::after {
-    content: " ▾";
-    font-weight: 400;
-    color: var(--muted);
   }
   .place:active {
     background: var(--key-nav);
   }
-  .tabs {
+  .tile {
+    position: relative;
+    flex: none;
+    width: 30px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--chip-bg);
+    color: var(--text);
     display: flex;
-    gap: 2px;
-    min-width: 0;
-    flex: 0 1 auto;
-    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 400;
+  }
+  .tile.small {
+    font-size: 13px;
+  }
+  /* busy or starting: a 2 px ring over the tile, its size unchanged */
+  .tile[data-ring="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 2px solid var(--alpha);
+    border-radius: 6px;
+    box-sizing: border-box;
+  }
+  .name {
+    margin-left: 4px;
+  }
+  .caret {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--muted);
+  }
+  /* the views as icons, one segmented control; the selected one filled */
+  .seg {
+    flex: none;
+    align-self: center;
+    display: flex;
+    gap: 1px;
+    padding: 1px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
   }
   .tab {
-    min-width: 0;
-    padding: 5px 5px;
-    border-radius: 6px;
-    font-size: 13px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    width: 30px;
+    height: 20px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
     color: var(--muted);
   }
   .tab[aria-selected="true"] {
-    background: var(--key-nav);
+    background: var(--chip-bg);
     color: var(--text);
+  }
+  /* the fixed ⇧ α slot: always 16 px, so Shift or Alpha moves nothing */
+  .slot {
+    flex: none;
+    width: 16px;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .mod {
+    color: var(--shift);
     font-weight: 700;
+    line-height: 16px;
+  }
+  .mod[data-testid="mod-alpha"] {
+    color: var(--alpha);
+  }
+  .mod[data-lock="true"] {
+    box-shadow: inset 0 -2px 0 currentColor;
   }
   .menubtn {
     flex: none;
     width: 36px;
-    height: 28px;
     margin-right: -8px;
-    text-align: center;
-    line-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 17px;
     color: var(--text);
   }
@@ -538,24 +631,22 @@
     border: 1px solid var(--line);
     border-radius: 7px;
   }
-  .mod {
-    color: var(--shift);
-    font-weight: 700;
-  }
-  .busy {
-    color: var(--shift);
-    display: inline-block;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .busy {
-      animation: none;
-    }
+  /* the engine's start and failure notes, in the stage (R82f2: not in the status line) */
+  .enginenote {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    margin: 0;
+    padding: 6px 14px;
+    border-radius: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 14px;
+    white-space: nowrap;
+    pointer-events: none;
   }
   .screen {
     position: relative;
