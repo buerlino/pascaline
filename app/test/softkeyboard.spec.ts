@@ -261,7 +261,7 @@ const screens: Record<string, (page: Page) => Promise<void>> = {
   },
   "Menu sheet open": async (page) => {
     await tap(page, ["d1", "add", "d2", "enter", "@menu"]);
-    await sheet(page, "Menu");
+    await sheet(page, "Home menu");
   },
   "Mode sheet open": async (page) => {
     await tap(page, ["d1", "@mode"]);

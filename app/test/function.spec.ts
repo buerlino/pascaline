@@ -136,7 +136,7 @@ test("Function: Intersection with the x-axis is a root; Esc steps back out of th
   await tap(page, ["@menu", "d3"]);
   await expect(page.getByTestId("menu").getByRole("menu")).toHaveAttribute("aria-label", "Intersection of F2(x) and");
   await tap(page, ["esc"]); // back one level (R15c: no close-all key)
-  await expect(page.getByTestId("menu").getByRole("menu")).toHaveAttribute("aria-label", "Menu");
+  await expect(page.getByTestId("menu").getByRole("menu")).toHaveAttribute("aria-label", "Plot menu");
   await tap(page, ["esc"]);
   await expect(page.getByTestId("menu")).toHaveCount(0);
   await expect(page.getByTestId("readout-x")).toHaveCount(0);
@@ -145,7 +145,7 @@ test("Function: Intersection with the x-axis is a root; Esc steps back out of th
   await expect(page.getByTestId("readout-y")).toHaveText("0");
   // the plain menu comes back on the next Menu press
   await tap(page, ["@menu"]);
-  await expect(page.getByTestId("menu").getByRole("menu")).toHaveAttribute("aria-label", "Menu");
+  await expect(page.getByTestId("menu").getByRole("menu")).toHaveAttribute("aria-label", "Plot menu");
 });
 
 test("Function: Num shows NaN at the pole of 1/x (virtual-calc, G2 item 19)", async ({ page }) => {
