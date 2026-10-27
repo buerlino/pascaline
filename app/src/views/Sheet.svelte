@@ -269,6 +269,9 @@
     max-height: 100%;
     border-bottom: 0;
     border-radius: 12px 12px 0 0;
+    /* R82f1 (F117): at the keypad's bottom edge, with no border there, 2 px below the last row are enough; the 4 px
+       this saves let Plot's nine Menu rows fit at their floor on the Fairphone 6 (380 px of room), so none is cut */
+    padding-bottom: 2px;
     pointer-events: auto;
     box-shadow: 0 -2px 10px color-mix(in srgb, var(--bg) 50%, transparent);
   }
