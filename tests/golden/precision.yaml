@@ -655,3 +655,5 @@ cases:
   - { id: "g118-cas-abs-neg2-sq", kind: "cas", input: "abs(-2)^2", expect: "4", source: "derived", note: "guard: (-2)^2" }
   - { id: "g118-cas-abs-acos-pi-sq", kind: "cas", input: "abs(acos(pi))^2", expect: "abs(acos(pi))^2", source: "derived", note: "F111 in CAS: showed acos(pi)^2, which is -3.28; acos(pi) is not real, so the abs stays" }
   - { id: "g118-cas-evalf-abs-acos-pi-sq", kind: "cas", input: "evalf(abs(acos(pi))^2)", oracle: "fabs(acos(pi))**2", expect: "3.28162743582", mark: "≈", source: "oracle", note: "F111 in CAS: showed -3.28162743582" }
+  - { id: "g118-cas-abs-x-sq", kind: "cas", input: "abs(x)^2", expect: "x^2", source: "derived", note: "guard: a free x is real (is_real of an unassigned name), so the rule still holds; the patch must not stop it" }
+  - { id: "g118-cas-abs-x-3", kind: "cas", input: "abs(x)^3", expect: "abs(x)*x^2", source: "derived", note: "guard: an odd power of a free real x keeps stock Giac's abs(x)*x^2 (stock and patched builds agree)" }
