@@ -337,7 +337,7 @@ cases:
   - id: c38
     area: cas
     title: "CAS: solve(x²=4,x) from Find (Math, s o l v e, Enter) gives both roots"
-    keys: ["@cas", math, {down: d9}, comma, sq, d5, frac, enter, x, sq, shift, dot, d4, comma, x, right, enter]
+    keys: ["@cas", math, {down: d9}, comma, sq, {down: d5}, frac, enter, x, sq, shift, dot, d4, comma, x, right, enter]
     expect: { result: "{-2,2}", mark: none }
     value: "{-2,2}"
     source: derived
@@ -345,7 +345,7 @@ cases:
   - id: c39
     area: cas
     title: "an integral in Home, then solve(x²=4,x) from Find in CAS still gives both roots (state between inputs)"
-    keys: [{tmpl: integral}, d0, right, d1, right, x, sq, right, x, enter, "@cas", math, {down: d9}, comma, sq, d5, frac, enter, x, sq, shift, dot, d4, comma, x, right, enter]
+    keys: [{tmpl: integral}, d0, right, d1, right, x, sq, right, x, enter, "@cas", math, {down: d9}, comma, sq, {down: d5}, frac, enter, x, sq, shift, dot, d4, comma, x, right, enter]
     expect: { result: "{-2,2}", mark: none }
     value: "{-2,2}"
     source: derived

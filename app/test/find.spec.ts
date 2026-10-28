@@ -101,10 +101,14 @@ test.describe("by keys", () => {
     await expect(find(page).getByTestId("find-preview")).toContainText("299792458");
     await tap(page, ["esc", "math"]);
     await flick(page, "d9", "down"); // s (a tap on 9 would open the ninth category)
-    await tap(page, ["comma", "sq", "d5", "frac"]); // o l v e
+    await tap(page, ["comma", "sq"]); // o l
+    await flick(page, "d5", "down"); // v (a tap on 5 types the digit once a letter is in the query)
+    await tap(page, ["frac"]); // e
+    await expect(find(page).getByTestId("sheet-filter")).toHaveText("solve");
     await expect(active(page)).toHaveAttribute("data-id", "fn:solve");
     await expect(find(page).getByTestId("find-preview")).toContainText("solve(eq, x)");
     await tap(page, ["bksp", "bksp", "bksp", "bksp"]); // s: many hits
+    await expect(find(page).getByTestId("sheet-filter")).toHaveText("s");
     const first = await find(page).getByTestId("find-preview").textContent();
     await tap(page, ["down"]);
     await expect(find(page).getByTestId("find-preview")).not.toHaveText(first ?? "");

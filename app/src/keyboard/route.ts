@@ -45,7 +45,7 @@ export interface RouteCtx {
   openMode(at?: string): void;
   openTemplates(): void;
   openShiftPalette(id: "rel" | "sym"): void;
-  /** Math (R4a): Find, or close it when it is open. */
+  /** Math (R4a): open Find (inside Find, Math types b; docs/04 3.7). */
   openFind(): void;
   /** Run with the clipboard code, now or once it has loaded. */
   withClip(run: (c: ClipActions) => void): void;
