@@ -128,6 +128,8 @@ Checked and right today: `Digits:=5` typed in CAS does not leak into Home (the h
 | n19 2.2 | run-once assignments keep an undecided `=` | see family 1 | **merged G48 `08262fe`** |
 | D4 (Solve) | the substitution check confirmed a wrong root | it substitutes in the same engine with the same flag (see family 2) | route R; lesson for every check-back |
 | F111 | Home `abs(acos(pi))^2` ≈ -3.28 (right 3.28) | Giac's `pow` took abs(b)^2 = b^2 when b had no literal i, real or not | fixed G118 (patch 0012) `810c62d` |
+| F119, F120 | Home `asin(sin(2*i))` ≈ 1.14159265359·i (right 2·i), `atan(tan(4*i))` ≈ 0.858·i (right 4·i), `ln(2^(10*i))` ≈ 6.93·i (right 0.648·i) | Giac's asin(sin a), atan(tan a) and ln(a^b) rewrites, rules for a real a and b, ran on complex values (usual.cc:2318, 764, 489) | fixed G121 (patch 0013) `f6d07f4` |
+| F121 | Home `asin(cos(30!))` ≈ 0.221312219023 (right −0.221312219023), DEG `asin(sin(10^50))` = 1342177280 (right −80) | Giac's asin(sin a) = ±(a−n·π) tested the parity of n only for an `_INT_` and took n from a at the current Digits (usual.cc:2320, 2322) | fixed G122 (patch 0014) `54e81d9` |
 
 **Hunt.**
 - **Every decision Giac makes:** sign, abs, floor, ceil, round, trunc, frac, max, min, comparisons, piecewise, when, ifte, sort, iquo, irem of floats, and the sign tests inside int, sum, limit and solve.
