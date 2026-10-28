@@ -1,0 +1,24 @@
+# Upstream: giac 2.1.0 gen.cc pow. abs(b)^n with an integer n is rewritten as b^n (even n) or abs(b)*b^(n-1) (odd n), a rule for a real b, but the only test is has_i(base), a literal i: abs(acos(pi))^2 gave acos(pi)^2 = -3.28162743582 (right 3.28162743582), ^6 about -35.34, and abs(acos(pi)^2) the same through symb_abs. Takes the rule only when im(b) is 0 (is_real); a real b (abs(-2)^2 = 4, abs(pi)^2 = pi^2, abs(x)^2 = x^2 for a free real x) keeps it.
+--- a/src/gen.cc
++++ b/src/gen.cc
+@@ -6958,7 +6958,9 @@
+ 	if (w.size()==1) v1=w.front(); else v1=symbolic(at_prod,gen(w,_SEQ__VECT));
+ 	return new_ref_symbolic(symbolic(at_unit,makenewvecteur(pow(v[0],exponent,contextptr),v1)));
+       }
+-      if (u==at_abs && exponent.type==_INT_ && !complex_mode(contextptr) && !has_i(base)){ 
++      // Pascaline patch 0012 (G118): abs(b)^n is b^n (even n) only for a real b. has_i sees a literal i only, so a
++      // b with a complex value and no i took the rule: abs(acos(pi))^2 gave acos(pi)^2, about -3.28 (right 3.28).
++      if (u==at_abs && exponent.type==_INT_ && !complex_mode(contextptr) && !has_i(base) && is_real(base._SYMBptr->feuille,contextptr)){ 
+ 	int n=exponent.val,m;
+ 	if (n<0 && n%2)
+ 	  m=n-1;
+@@ -7825,7 +7827,8 @@
+ 	res= (*((base._SYMBptr->feuille)._VECTptr))[1];
+ 	return pow( (base._SYMBptr->feuille)._VECTptr->front(),gen((longlong) (exponent)) * res,context0) ;
+       }
+-      if ((exponent % 2==0) && base._SYMBptr->sommet==at_abs)
++      // Pascaline patch 0012 (G118): the same rule for an integer exponent, also only for a real b
++      if ((exponent % 2==0) && base._SYMBptr->sommet==at_abs && is_real(base._SYMBptr->feuille,context0))
+ 	return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base._SYMBptr->feuille,(longlong) exponent),_SEQ__VECT)));
+       return new_ref_symbolic(symbolic(at_pow,gen(makenewvecteur(base,(longlong) exponent),_SEQ__VECT)));
+     case _POLY:

@@ -109,10 +109,11 @@ export function caseLine(c, file) {
   };
 }
 
-// Giac's value must be within the tolerance of the expected one (G113: an MPFR NaN, printed undef, is both <= and > tol, so both are tested); a failing line is printed, the count comes last.
+// Giac's value must be within the tolerance of the expected one (G113: an MPFR NaN, printed undef, is both <= and > tol, so both are tested;
+// G118: another NaN, from abs(evalf(acos(pi)^2-e)) on stock at Digits 40, is <= tol and not > tol, so a difference that prints undef never passes); a failing line is printed, the count comes last.
 const PREAMBLE = [
   'pasn:=0:; pasfail:=0:;',
-  'pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol) { if (d>tol) { ok:=0; } else { ok:=1; } } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;',
+  'pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol && string(d)!="undef") { if (d>tol) { ok:=0; } else { ok:=1; } } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;',
 ];
 
 // Cases Giac gets wrong today, found by running pascaline-check.cas on the pin (giac_2.1.0-1). The first rule that matches an
@@ -176,7 +177,7 @@ export const KNOWN_IDS = new Set([
   "g71-census-tri-sin1e70",
 ]);
 // The ids that pass on our patched build and fail on stock giac_2.1.0-1 (found by matching the cases the tests and canaries of patches
-// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 and the g60-f5 lines pass on stock at these Digits, so they stay in the check file. g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
+// 0003 and 0005 name (tanh-test.ts, mpfr-pi-test.ts, patch-canary.ts) and the ids of G75 and G60; G111's g111-* of patch 0007; G113's g113-* of patch 0009 (g113-poisson_cdf-2.5 passes on stock, a guard in the check file); G113f1's ties of patch 0010; G115's g115-* of patch 0011; G118's g118-* of patch 0012. Each id was run on the stock build (engine/giac/_out/release) and fails there; ln(-pi)-30 passes on stock at these Digits, so it stays in the check file; the g60-f5 and g78-novalue lines seemed to pass on stock until G118 (their difference is an MPFR NaN, printed undef, that pc() took for a pass). g58-acos-5!^(2.5+5!)-30 has budgetMs, so it is left out as a time guard): [id, the patch file the line rests on]. They go to pascaline-patched.cas, not to the check file.
 export const PATCHED_IDS = new Map([
   ["prec-g50-tanh(i)-12", "0003-complex-tanh-mpfr.patch"],
   ["prec-g50-tanh(i)-30", "0003-complex-tanh-mpfr.patch"],
@@ -203,6 +204,16 @@ export const PATCHED_IDS = new Map([
   ["prec-g50-acos(-1+i)-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-imag-power-30", "0005-mpfr-pi-and-real-domains.patch"],
   ["g59f1-neg-base-asin-power-30", "0005-mpfr-pi-and-real-domains.patch"],
+  // G118: stock asin and acos of an MPFR real outside [-1,1] are NaN (undef), which pc() passed before it refused undef
+  ["g60-f5-cosh-acos-pi-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f5-asin-sinh-pi-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f5-asin-12-acos-pi-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f5-acos-sin1-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g60-f5-sinh-asin-pi-30", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g78-novalue-asin-acos", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g78-novalue-exp-cosh-asin", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g78-novalue-asin-pow", "0005-mpfr-pi-and-real-domains.patch"],
+  ["g118-abs-acos-pi-4-30", "0005-mpfr-pi-and-real-domains.patch"],
   // G111: home.yaml's densities and cdfs outside their support (stock giac_2.1.0-1 gives the formula's value)
   ["g111-exponential", "0007-densities-outside-support.patch"],
   ["g111-exponential-cdf", "0007-densities-outside-support.patch"],
@@ -253,9 +264,11 @@ export const PATCHED_IDS = new Map([
   ["g113-negbinomial_icdf-decimal", "0009-pmf-integer-support.patch"],
   ["g113-negbinomial_icdf-0.7", "0009-pmf-integer-support.patch"],
   // G113f1: negbinomial_icdf at an exact tie (patch 0009: one step high). g113f1-negbinomial_icdf-tie-0 passes on stock by accident (stock reads the
-  // double field of the exact 1/27 as 0, and t <= 0 gives 0) and the non-tie guard g113f1-negbinomial_icdf-between passes there too: both stay in the check file
+  // double field of the exact 1/27 as 0, and t <= 0 gives 0): it stays in the check file
   ["g113f1-negbinomial_icdf-tie-1", "0010-negbinomial-icdf-exact.patch"],
   ["g113f1-negbinomial_icdf-tie-2", "0010-negbinomial-icdf-exact.patch"],
+  // stock gives 0 for this non-tie too (G118 run on engine/giac/_out/release: it reads the double field of the exact 11/81, patch 0009's cause)
+  ["g113f1-negbinomial_icdf-between", "0009-pmf-integer-support.patch"],
   // G115: atan of an argument near 1 (stock: pi/4); the guard g115-atan-2-sqrt3-30 passes on stock and stays in the check file
   ["g115-atan-cos-pi/1e5-12", "0011-atan-pi12-exact-check.patch"],
   ["g115-atan-cos-pi/1e5-30", "0011-atan-pi12-exact-check.patch"],
@@ -263,6 +276,13 @@ export const PATCHED_IDS = new Map([
   ["g115-atan-sin-pi/2-pi/1e5-30", "0011-atan-pi12-exact-check.patch"],
   ["g115-atan-1-1e-9-30", "0011-atan-pi12-exact-check.patch"],
   ["g115-atan-1+1e-10-30", "0011-atan-pi12-exact-check.patch"],
+  // G118: abs(b)^n of a b with a complex value and no literal i (stock: b^n, the sign of acos(pi)^2); the guards
+  // g118-abs-asin2-4-30, g118-abs-1+i-sq, g118-abs-neg2-sq and g118-abs-pi-sq pass on stock and stay in the check file
+  ["g118-abs-acos-pi-sq-12", "0012-abs-power-real-base.patch"],
+  ["g118-abs-acos-pi-sq-30", "0012-abs-power-real-base.patch"],
+  ["g118-abs-acos-pi-6-12", "0012-abs-power-real-base.patch"],
+  ["g118-abs-acos-pi-3-12", "0012-abs-power-real-base.patch"],
+  ["g118-abs-of-acos-pi-sq-12", "0012-abs-power-real-base.patch"],
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 

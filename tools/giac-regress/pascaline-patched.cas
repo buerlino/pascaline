@@ -4,7 +4,16 @@
 // Each line: Giac's value of the input (typed decimals as exact rationals, Digits 40 or more) against the expected value
 // within half a unit of its last digit. Expected values: mpmath (oracle) or by hand (derived); see the comment above a line.
 pasn:=0:; pasfail:=0:;
-pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol) { if (d>tol) { ok:=0; } else { ok:=1; } } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;
+pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol && string(d)!="undef") { if (d>tol) { ok:=0; } else { ok:=1; } } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g78-novalue-asin-acos (home.yaml, oracle)
+Digits:=40:; pc("g78-novalue-asin-acos",'(asin(acos(pi*pi)))',(181211256762/10^11)*i,5/10^12);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g78-novalue-exp-cosh-asin (home.yaml, oracle)
+Digits:=40:; pc("g78-novalue-exp-cosh-asin",'(exp(cosh(asin(pi))))',-(338882521038/10^12)-(432930352189/10^12)*i,5/10^13+5/10^13);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g78-novalue-asin-pow (home.yaml, oracle)
+Digits:=40:; pc("g78-novalue-asin-pow",'((asin(pi)^exp(10))*(25/10^1))',-(76475862524*10^8355)-(603625290189*10^8354)*i,5*10^8353+5*10^8353);
 // patch 0007-densities-outside-support.patch
 // g111-exponential (home.yaml, oracle)
 Digits:=40:; pc("g111-exponential",'(exponential((21/10^1),-2))',0,1/10^30);
@@ -123,6 +132,21 @@ Digits:=60:; pc("g75-tanh(1+i)-50",'(tanh(1+i))',(108392332733869454347575206121
 // g60-f4-log10-asinh-asin-e-30 (precision.yaml, oracle)
 Digits:=40:; pc("g60-f4-log10-asinh-asin-e-30",'(log10(asinh(asin(exp(1)))))',(230738949730672683250514649292/10^30)-(202384165793980959013716890808/10^30)*i,5/10^31+5/10^31);
 // patch 0005-mpfr-pi-and-real-domains.patch
+// g60-f5-cosh-acos-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-cosh-acos-pi-30",'(cosh(acos(pi))*tan(tan(10)))',-(180625660199427098928523866446/10^30),5/10^31);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g60-f5-asin-sinh-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-asin-sinh-pi-30",'(asin(sinh(pi))*exp(12*(37/10^1)))',(301158325376997118077827337851/10^10)-(601597895673519412260047772706/10^10)*i,5/10^11+5/10^11);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g60-f5-asin-12-acos-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-asin-12-acos-pi-30",'(asin(12^acos(pi)))',-(14941871975491590895862354003/10^29)-(87347285783806326730012632973/10^29)*i,5/10^31+5/10^31);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g60-f5-acos-sin1-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-acos-sin1-30",'(acos(sin(1))*(((602*10^1))^asin(pi)))',-(492878642564893254975620626116/10^24)+(283543086879955971255678055775/10^25)*i,5/10^25+5/10^26);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g60-f5-sinh-asin-pi-30 (precision.yaml, oracle)
+Digits:=40:; pc("g60-f5-sinh-asin-pi-30",'(sinh(asin(pi))/asinh(1))',-(622501435827991780717103306515/10^30)-(276480298599259475297061253236/10^29)*i,5/10^31+5/10^30);
+// patch 0005-mpfr-pi-and-real-domains.patch
 // g60-f6-sqrt-asinh-cos10-30 (precision.yaml, oracle)
 Digits:=40:; pc("g60-f6-sqrt-asinh-cos10-30",'(sqrt(asinh(cos(10))))',(873434670974015864928722415538/10^30)*i,5/10^31);
 // patch 0005-mpfr-pi-and-real-domains.patch
@@ -227,6 +251,9 @@ Digits:=40:; pc("g113f1-negbinomial_icdf-tie-1",'(negbinomial_icdf(3,1/3,1/9))',
 // patch 0010-negbinomial-icdf-exact.patch
 // g113f1-negbinomial_icdf-tie-2 (precision.yaml, oracle)
 Digits:=40:; pc("g113f1-negbinomial_icdf-tie-2",'(negbinomial_icdf(3,1/3,17/81))',2,5/10^12);
+// patch 0009-pmf-integer-support.patch
+// g113f1-negbinomial_icdf-between (precision.yaml, oracle)
+Digits:=40:; pc("g113f1-negbinomial_icdf-between",'(negbinomial_icdf(3,1/3,11/81))',2,5/10^12);
 // patch 0011-atan-pi12-exact-check.patch
 // g115-atan-cos-pi/1e5-12 (precision.yaml, oracle)
 Digits:=40:; pc("g115-atan-cos-pi/1e5-12",'(atan(cos(pi/100000)))',(785398163151/10^12),5/10^13);
@@ -245,6 +272,24 @@ Digits:=40:; pc("g115-atan-1-1e-9-30",'(atan(1-1/10^9))',(7853981628974483093656
 // patch 0011-atan-pi12-exact-check.patch
 // g115-atan-1+1e-10-30 (precision.yaml, oracle)
 Digits:=40:; pc("g115-atan-1+1e-10-30",'(atan(1+10^-10))',(78539816344744830961316084582/10^29),5/10^31);
+// patch 0012-abs-power-real-base.patch
+// g118-abs-acos-pi-sq-12 (precision.yaml, oracle)
+Digits:=40:; pc("g118-abs-acos-pi-sq-12",'(abs(acos(pi))^2)',(328162743582/10^11),5/10^12);
+// patch 0012-abs-power-real-base.patch
+// g118-abs-acos-pi-sq-30 (precision.yaml, oracle)
+Digits:=40:; pc("g118-abs-acos-pi-sq-30",'(abs(acos(pi))^2)',(328162743581591300601821091708/10^29),5/10^30);
+// patch 0012-abs-power-real-base.patch
+// g118-abs-acos-pi-6-12 (precision.yaml, oracle)
+Digits:=40:; pc("g118-abs-acos-pi-6-12",'(abs(acos(pi))^6)',(353401038825/10^10),5/10^11);
+// patch 0012-abs-power-real-base.patch
+// g118-abs-acos-pi-3-12 (precision.yaml, oracle)
+Digits:=40:; pc("g118-abs-acos-pi-3-12",'(abs(acos(pi))^3)',(594475431641/10^11),5/10^12);
+// patch 0005-mpfr-pi-and-real-domains.patch
+// g118-abs-acos-pi-4-30 (precision.yaml, oracle)
+Digits:=40:; pc("g118-abs-acos-pi-4-30",'(abs(acos(pi))^4)',(107690786274997242359110761436/10^28),5/10^29);
+// patch 0012-abs-power-real-base.patch
+// g118-abs-of-acos-pi-sq-12 (precision.yaml, oracle)
+Digits:=40:; pc("g118-abs-of-acos-pi-sq-12",'(abs(acos(pi)^2))',(328162743582/10^11),5/10^12);
 // patch 0006-reim-root-of-unknown-sign.patch
 // g96-cas-im-2sqrt (bench.yaml, derived)
 Digits:=40:; pc("g96-cas-im-2sqrt",'subst(im(2*sqrt(x)),x,-1)',2,1/10^30);
