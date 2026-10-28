@@ -34,6 +34,7 @@ const note = "<!-- SPDX -->\n# R9: a note\n\n**Status (2026-10-27): reference.**
 const lines = (n) => "x\n".repeat(n);
 const base = {
   "docs/shifts/packages/A1.md": pkg("A1"),
+  "docs/README.md": "[b](backlog.md) [r](research/r9.md)\n",
   "docs/backlog.md": "- **F1.** one\n- **F2.** two\n",
   "docs/research/r9.md": note,
   "tools/line-baseline.yaml": "# baseline\napp/src/big.ts: 900\n",
@@ -84,4 +85,16 @@ test("a new source file past 800 lines fails", () => {
 test("a split file under its line passes", () => {
   const r = run({ ...base, "app/src/big.ts": lines(700) });
   assert.equal(r.code, 0, r.out);
+});
+
+test("a live doc missing from docs/README.md fails, naming it", () => {
+  const r = run({ ...base, "docs/extra.md": "# extra\n" });
+  assert.equal(r.code, 1);
+  assert.match(r.out, /index: docs\/extra\.md is linked 0 times/);
+});
+
+test("a live doc linked twice in docs/README.md fails", () => {
+  const r = run({ ...base, "docs/README.md": "[b](backlog.md) [b2](backlog.md) [r](research/r9.md)\n" });
+  assert.equal(r.code, 1);
+  assert.match(r.out, /index: docs\/backlog\.md is linked 2 times/);
 });

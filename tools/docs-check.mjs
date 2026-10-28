@@ -12,6 +12,8 @@
 //    status line (**Status … open, decided or reference**) in its first lines.
 // 5. Source size (A22): tools/line-baseline.yaml lists every source file over 800 lines at its size; a file past its line,
 //    or a new file past 800, fails. Raising a line is an edit of that file in the same diff, with the reason; a split lowers it.
+// 6. Index (A26): every tracked file under docs/ (not docs/archive, docs/shifts/packages, dated docs/shifts/*-report.md, docs/shifts/reports/,
+//    nor docs/README.md) appears in exactly one link of docs/README.md.
 // One line per failure, then one summary line; exit 1 on any failure. `npm run gate` runs it (step "docs").
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
@@ -136,6 +138,24 @@ for (const f of sources) {
   if (n > line) failures.push(`lines: ${f} has ${n} lines, over its line ${line}${baseline.has(f) ? " in tools/line-baseline.yaml (a split lowers it; raising it needs a reason in the diff)" : " (no source file passes 800 unless tools/line-baseline.yaml lists it with a reason)"}`);
 }
 sizes.push(`${big} source files over ${LINE_MAX} lines`);
+
+// 6. Index.
+if (existsSync(join(repo, "docs/README.md"))) {
+  const indexed = new Map();
+  for (const m of stripCode(read("docs/README.md")).matchAll(/\[[^\]\n]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g)) {
+    const t = decodeURI(m[1].replace(/#.*$/, ""));
+    if (t && !/^(https?:|mailto:)/.test(t)) {
+      const rel = relative(repo, resolve(join(repo, "docs"), t));
+      indexed.set(rel, (indexed.get(rel) ?? 0) + 1);
+    }
+  }
+  const tracked = execFileSync("git", ["ls-files", "docs"], { cwd: repo, encoding: "utf8" }).split("\n")
+    .filter((f) => f && f !== "docs/README.md" && existsSync(join(repo, f)) && !/^docs\/(archive|shifts\/(packages|reports))\//.test(f) && !/^docs\/shifts\/[^/]*-report\.md$/.test(f));
+  for (const f of tracked) {
+    const n = indexed.get(f) ?? 0;
+    if (n !== 1) failures.push(`index: ${f} is linked ${n} times in docs/README.md (must be exactly once)`);
+  }
+}
 
 for (const w of warnings) console.log(`warning (untracked, not counted): ${w}`);
 for (const f of failures) console.log(f);
