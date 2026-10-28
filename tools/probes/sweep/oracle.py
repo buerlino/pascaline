@@ -5,7 +5,7 @@
 #   {"kind": "skip", "reason": "..."}   unstable, a convention (negative base to a non-integer power, 0^0), complex in DEG, too slow
 # Run: tests/golden/.venv/bin/python -I tools/probes/sweep/oracle.py < requests.json   (mpmath 1.3.0)
 import json, signal, sys
-from mpmath import mp, mpf, mpc, sqrt, exp, sinh, cosh, tanh, asinh, log, pi, e, factorial, fabs, sin, cos, tan, asin, acos, atan, isfinite
+from mpmath import mp, mpf, mpc, sqrt, exp, sinh, cosh, tanh, asinh, acosh, atanh, cbrt, sign, log, pi, e, factorial, fabs, sin, cos, tan, asin, acos, atan, isfinite
 
 
 class Skip(Exception):
@@ -67,6 +67,27 @@ def ABS(x):
     return fabs(x)
 
 
+def ACOSH(x):
+    return acosh(x)
+
+
+def ATANH(x):
+    # G116: on the cut (a real |x| > 1) mpmath takes the lower side (atanh(3) = 0.35 - 1.57i); the oracle takes the textbook
+    # 1/2 ln((1+x)/(1-x)) with the principal ln, which is Giac's (+1.57i). A convention, written down in the G116 report.
+    if not isinstance(x, mpc) and abs(x) > 1:
+        return log((1 + x) / (1 - x)) / 2
+    return atanh(x)
+
+
+def CBRT(x):
+    # G116: the cube root key is Giac's surd(x,3), the real root of a negative real (realOddRoots); of a complex it is a convention
+    if isinstance(x, mpc):
+        if x.imag != 0:
+            raise Skip("cube root of a complex")
+        x = x.real
+    return sign(x) * cbrt(fabs(x))
+
+
 def DIV(a, b):
     return a / b
 
@@ -86,8 +107,28 @@ def POW(a, b):
     return a ** b
 
 
+def _cut(lo_on_cut):
+    """G116: a function with a branch cut on the real axis. An argument on the cut whose imaginary part is only working-precision noise
+    (at most 10^-(dps-10) of |x|) has no decidable side: cosh(ln(-1/2)) is -5/4 in exact maths, but mpmath carries an imaginary part of
+    about 1E-100 whose sign then picks a side of acos. The oracle skips such an input rather than guess."""
+    def wrap(f):
+        def g(*a):
+            x = a[0]
+            if isinstance(x, mpc) and x.imag == 0:  # a signed zero (cos of a pure imaginary gives -0.0) must not pick the lower side
+                x = x.real
+                a = (x, *a[1:])
+            if isinstance(x, mpc) and x.imag != 0 and abs(x.imag) <= abs(x) * mpf(10) ** (10 - mp.dps) and lo_on_cut(x.real):
+                raise Skip("on a branch cut within the noise")
+            return f(*a)
+        return g
+    return wrap
+
+
 NS = dict(mpf=mpf, sqrt=sqrt, exp=exp, sinh=sinh, cosh=cosh, tanh=tanh, asinh=asinh, SIN=SIN, COS=COS, TAN=TAN, ASIN=ASIN, ACOS=ACOS,
-          ATAN=ATAN, LN=LN, LOG10=LOG10, ABS=ABS, DIV=DIV, FACT=FACT, POW=POW)
+          ATAN=ATAN, ACOSH=ACOSH, ATANH=ATANH, CBRT=CBRT, LN=LN, LOG10=LOG10, ABS=ABS, DIV=DIV, FACT=FACT, POW=POW)
+for _k, _on in (("sqrt", lambda r: r < 0), ("LN", lambda r: r < 0), ("LOG10", lambda r: r < 0), ("POW", lambda r: r < 0),
+                ("ASIN", lambda r: abs(r) > 1), ("ACOS", lambda r: abs(r) > 1), ("ATANH", lambda r: abs(r) > 1), ("ACOSH", lambda r: r < 1)):
+    NS[_k] = _cut(_on)(NS[_k])
 
 
 def at(expr, dps):
@@ -140,6 +181,8 @@ def main():
             out.append({"kind": "skip", "reason": "oracle too slow (3 s)"})
         except (OverflowError, MemoryError):
             out.append({"kind": "skip", "reason": "oracle overflow"})
+        except Exception as x:  # G116: an edge input mpmath cannot take (NoConvergence, …) is a skip, never the end of the run
+            out.append({"kind": "skip", "reason": f"oracle error: {type(x).__name__}"})
         finally:
             signal.setitimer(signal.ITIMER_REAL, 0)
     json.dump(out, sys.stdout)

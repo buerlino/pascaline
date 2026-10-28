@@ -4,6 +4,16 @@ import { describe, expect, it } from "vitest";
 import { decimalFromString, ZERO_VALUE, type ComplexValue } from "../src/engine/format.ts";
 import { judge, parseDec, type Oracle, type Shown } from "../../tools/probes/sweep/judge.ts";
 import { generate } from "../../tools/probes/sweep/gen.ts";
+import { childrenOf, EDGE_CLASSES, generateEdges } from "../../tools/probes/sweep/edges.ts";
+import { oracleFor, pythonFor, runsOf } from "../../tools/probes/sweep/run.ts";
+import { latexToGiac } from "../src/input/latex-to-giac.ts";
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+const mainCheckout = resolve(spawnSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], { cwd: repo, encoding: "utf8" }).stdout.trim() || resolve(repo, ".git"), "..");
 
 const num = (re: string, im?: string): ComplexValue => ({ re: decimalFromString(re) ?? ZERO_VALUE, im: im === undefined ? ZERO_VALUE : (decimalFromString(im) ?? ZERO_VALUE) });
 const shown = (value: ComplexValue, mark: Shown["mark"], n?: number): Shown => ({ ok: true, display: "x", value, mark, ...(n === undefined ? {} : { n }) });
@@ -41,6 +51,13 @@ describe("sweep judge", () => {
     expect(judge(shown(num("2"), "≈"), val("2", "1e-40"), 12).kind).toBe("ok");
     expect(judge(shown(num("2", "3"), "≈"), val("2", "0"), 12)).toMatchObject({ kind: "wrong", check: "part" });
   });
+  it("G116: accepts an = whose hidden part is below 10^-50 of the value, rejects one above", () => {
+    expect(judge(shown(num("0.75"), "="), val("0.75", "3.5861160021995467e-102"), 30).kind).toBe("ok");
+    expect(judge(shown(num("0.75"), "="), val("0.75", "3e-40"), 30)).toMatchObject({ kind: "wrong", check: "part" });
+  });
+  it("G116: calls a dead engine a crash", () => {
+    expect(judge({ ok: false, crash: true, error: "engine", display: "worker error: memory access out of bounds" }, val("1"), 12)).toMatchObject({ kind: "crash", check: "crash" });
+  });
   it("refuses a number where the oracle has no value (F8)", () => {
     expect(judge(shown(num("5"), "≈"), { kind: "novalue" }, 12)).toMatchObject({ kind: "novalue" });
     expect(judge({ ok: false, error: "engine", display: "Division by zero" }, { kind: "novalue" }, 12).kind).toBe("refused");
@@ -67,5 +84,39 @@ describe("sweep generator", () => {
       expect(c.latex.length).toBeGreaterThan(0);
       expect(c.mp.length).toBeGreaterThan(0);
     }
+  });
+});
+
+// G116: the edge generator (tools/probes/sweep/edges.ts) and the gate's trees, which must not move.
+describe("sweep edge generator (G116)", () => {
+  it("is deterministic for a seed and differs for another", () => {
+    const a = generateEdges(11, 60);
+    expect(generateEdges(11, 60)).toEqual(a);
+    expect(generateEdges(12, 60)).not.toEqual(a);
+    expect(a).toHaveLength(60);
+  });
+  it("holds every leaf class in 2,000 trees of one seed", () => {
+    const seen = new Map<string, number>();
+    generateEdges(20261028, 2000, seen);
+    for (const k of EDGE_CLASSES) expect([k, seen.get(k) ?? 0]).not.toEqual([k, 0]);
+  });
+  it("gives LaTeX the parser takes, and children for the smallest failing subtree", () => {
+    const cs = generateEdges(3, 400);
+    for (const c of cs) expect(() => latexToGiac(c.latex), c.latex).not.toThrow();
+    const inner = cs.filter((c) => childrenOf(c.latex).length > 0);
+    expect(inner.length).toBeGreaterThan(100);
+    for (const c of inner) for (const k of childrenOf(c.latex)) expect(c.latex).toContain(k.latex);
+  });
+  it("gives mpmath texts the sweep oracle evaluates", () => {
+    const sample = generateEdges(4, 40).map((c) => ({ latex: c.latex, mp: c.mp, angle: "rad" as const, digits: 12 as const }));
+    const out = oracleFor(sample, pythonFor(repo, mainCheckout), resolve(repo, "tools/probes/sweep/oracle.py"));
+    expect(out).toHaveLength(sample.length);
+    expect(out.filter((o) => o.kind === "value").length).toBeGreaterThan(5);
+    for (const o of out) if (o.kind === "skip") expect(o.reason).not.toMatch(/oracle error/);
+  }, 120_000);
+  it("leaves the gate's trees for seed 20261021 byte-identical", () => {
+    const h = (x: unknown): string => createHash("sha256").update(JSON.stringify(x)).digest("hex");
+    expect(h(generate(20261021, 1000))).toBe("417322a084096c09b9d053acc87d7a8894917157decd3214a92adbb3dd87b5c7");
+    expect(h(runsOf(20261021, 1000))).toBe("83330d8832e56c7f5f990ac3375bae90b13eb3cf4b27bacec094eecbd769cfba");
   });
 });
