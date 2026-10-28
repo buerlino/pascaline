@@ -47,6 +47,9 @@ const CANARIES: [string, string, RegExp, string][] = [
   ["0010-negbinomial-icdf-exact.patch", "giac-2.1.0/src/moyal.cc", /if \(t<=0\)\s*return 0;\s*if \(t>=1\)\s*return 1;\s*long_double cumul=std::pow\(p,r\),current=cumul;/, "gen _negbinomial_icdf(const gen & g,GIAC_CONTEXT){"],
   // G115, patch 0011: atan's pi/12 test takes a double root within 1e-7 for exact, with no normal(...)==0 (atan(cos(pi/100000)) = pi/4)
   ["0011-atan-pi12-exact-check.patch", "giac-2.1.0/src/usual.cc", /edh=horner\(makevecteur\(-3,55,-198,198,-55,3\),tmp\*tmp\);\s*if \(absdouble\(edh\._DOUBLE_val\)<1e-7\)\{/, "// detect if atan is a multiples of pi/10"],
+  // G118, patch 0012: pow takes abs(b)^n as b^n (even n) when b has no literal i, real or not (abs(acos(pi))^2 = acos(pi)^2)
+  ["0012-abs-power-real-base.patch", "giac-2.1.0/src/gen.cc", /if \(u==at_abs && exponent\.type==_INT_ && !complex_mode\(contextptr\) && !has_i\(base\)\)\{/, "if (u==at_unit){"],
+  ["0012-abs-power-real-base.patch", "giac-2.1.0/src/gen.cc", /if \(\(exponent % 2==0\) && base\._SYMBptr->sommet==at_abs\)\s*return/, "gen pow(const gen & base, unsigned long int exponent){"],
   // G96, patch 0006: symb_reim takes a non-integer power of a base of unknown sign as real (r=s, i=0)
   ["0006-reim-root-of-unknown-sign.patch", "giac-2.1.0/src/gen.cc", /is_positive\(-e,contextptr\)\)\{\s*r=pow\(-e,expo,contextptr\)\*cos\(cst_pi\*expo,contextptr\);\s*i=pow\(-e,expo,contextptr\)\*sin\(cst_pi\*expo,contextptr\);\s*\}\s*else \{\s*r=s;\s*i=0;/, "sommei.push_back(signei*(*it)*pow(r,n-j)*pow(i,j));"],
 ];

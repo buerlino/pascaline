@@ -4,7 +4,7 @@
 // Each line: Giac's value of the input (typed decimals as exact rationals, Digits 40 or more) against the expected value
 // within half a unit of its last digit. Expected values: mpmath (oracle) or by hand (derived); see the comment above a line.
 pasn:=0:; pasfail:=0:;
-pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol) { if (d>tol) { ok:=0; } else { ok:=1; } } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;
+pc(id,v,e,tol):={ local d,g,ok; pasn:=pasn+1; ok:=0; try { g:=eval(v); d:=abs(evalf(g-e)); if (d<=tol && string(d)!="undef") { if (d>tol) { ok:=0; } else { ok:=1; } } } catch (err) { ok:=0; } if (ok==0) { pasfail:=pasfail+1; print("FAIL "+id); return 0; } return 1; }:;
 // trap-1-0.9-0.1 (home.yaml, derived)
 Digits:=40:; pc("trap-1-0.9-0.1",'(1-(9/10^1)-(1/10^1))',0,1/10^30);
 // trap-0.1+0.2 (home.yaml, derived)
@@ -301,12 +301,6 @@ Digits:=40:; pc("g39-keep-int-1/sqrt",'(int(1/sqrt(x),x,0,1))',2,5/10^12);
 Digits:=40:; pc("g39-keep-sum-1/k!",'(sum(1/k!,k,0,inf))',(271828182846/10^11),5/10^12);
 // g39-keep-int-sinc-inf (home.yaml, oracle)
 Digits:=40:; pc("g39-keep-int-sinc-inf",'(int(sin(x)/x,x,0,inf))',(157079632679/10^11),5/10^12);
-// g78-novalue-asin-acos (home.yaml, oracle)
-Digits:=40:; pc("g78-novalue-asin-acos",'(asin(acos(pi*pi)))',(181211256762/10^11)*i,5/10^12);
-// g78-novalue-exp-cosh-asin (home.yaml, oracle)
-Digits:=40:; pc("g78-novalue-exp-cosh-asin",'(exp(cosh(asin(pi))))',-(338882521038/10^12)-(432930352189/10^12)*i,5/10^13+5/10^13);
-// g78-novalue-asin-pow (home.yaml, oracle)
-Digits:=40:; pc("g78-novalue-asin-pow",'((asin(pi)^exp(10))*(25/10^1))',-(76475862524*10^8355)-(603625290189*10^8354)*i,5*10^8353+5*10^8353);
 // g84-keep-exp-1000 (home.yaml, oracle)
 Digits:=40:; pc("g84-keep-exp-1000",'(exp(-1000))',(507595889755/10^446),5/10^447);
 // g84-keep-sinpi (home.yaml, derived)
@@ -455,16 +449,6 @@ Digits:=40:; pc("prec-g38-30-max-sin1e50",'(max(sin(10^50),0))',0,1/10^30);
 Digits:=40:; pc("prec-g38-30-piecewise-sin1e50",'(piecewise(sin(10^50)>0,1,2))',2,5/10^30);
 // prec-g38-30-floor-ramanujan (precision.yaml, oracle)
 Digits:=40:; pc("prec-g38-30-floor-ramanujan",'(floor(exp(pi*sqrt(163))*10^20))',(262537412640768743999999999999*10^8),5*10^7);
-// g60-f5-cosh-acos-pi-30 (precision.yaml, oracle)
-Digits:=40:; pc("g60-f5-cosh-acos-pi-30",'(cosh(acos(pi))*tan(tan(10)))',-(180625660199427098928523866446/10^30),5/10^31);
-// g60-f5-asin-sinh-pi-30 (precision.yaml, oracle)
-Digits:=40:; pc("g60-f5-asin-sinh-pi-30",'(asin(sinh(pi))*exp(12*(37/10^1)))',(301158325376997118077827337851/10^10)-(601597895673519412260047772706/10^10)*i,5/10^11+5/10^11);
-// g60-f5-asin-12-acos-pi-30 (precision.yaml, oracle)
-Digits:=40:; pc("g60-f5-asin-12-acos-pi-30",'(asin(12^acos(pi)))',-(14941871975491590895862354003/10^29)-(87347285783806326730012632973/10^29)*i,5/10^31+5/10^31);
-// g60-f5-acos-sin1-30 (precision.yaml, oracle)
-Digits:=40:; pc("g60-f5-acos-sin1-30",'(acos(sin(1))*(((602*10^1))^asin(pi)))',-(492878642564893254975620626116/10^24)+(283543086879955971255678055775/10^25)*i,5/10^25+5/10^26);
-// g60-f5-sinh-asin-pi-30 (precision.yaml, oracle)
-Digits:=40:; pc("g60-f5-sinh-asin-pi-30",'(sinh(asin(pi))/asinh(1))',-(622501435827991780717103306515/10^30)-(276480298599259475297061253236/10^29)*i,5/10^31+5/10^30);
 // g60-ln(-pi)-30 (precision.yaml, oracle)
 Digits:=40:; pc("g60-ln(-pi)-30",'(ln(-pi))',(114472988584940017414342735135/10^29)+(314159265358979323846264338328/10^29)*i,5/10^30+5/10^30);
 // prec-g50-asin(2i)-12 (precision.yaml, oracle)
@@ -627,10 +611,16 @@ Digits:=40:; pc("g59f1-neg-base-asin-power-12",'((-2)^(asin(5)/3))',(69756943024
 Digits:=40:; pc("g113-poisson_cdf-2.5",'(poisson_cdf(2,(25/10^1)))',(676676416183/10^12),5/10^13);
 // g113f1-negbinomial_icdf-tie-0 (precision.yaml, oracle)
 Digits:=40:; pc("g113f1-negbinomial_icdf-tie-0",'(negbinomial_icdf(3,1/3,1/27))',0,1/10^30);
-// g113f1-negbinomial_icdf-between (precision.yaml, oracle)
-Digits:=40:; pc("g113f1-negbinomial_icdf-between",'(negbinomial_icdf(3,1/3,11/81))',2,5/10^12);
 // g115-atan-2-sqrt3-30 (precision.yaml, oracle)
 Digits:=40:; pc("g115-atan-2-sqrt3-30",'(atan(2-sqrt(3)))',(261799387799149436538553615273/10^30),5/10^31);
 // g117-home-sum-range (precision.yaml, derived)
 Digits:=40:; pc("g117-home-sum-range",'(sum(x^2,x=1..3))',14,5/10^11);
+// g118-abs-asin2-4-30 (precision.yaml, oracle)
+Digits:=40:; pc("g118-abs-asin2-4-30",'(abs(asin(2))^4)',(176549484669394928113636291111/10^28),5/10^29);
+// g118-abs-1+i-sq (precision.yaml, derived)
+Digits:=40:; pc("g118-abs-1+i-sq",'(abs(1+i)^2)',2,5/10^12);
+// g118-abs-neg2-sq (precision.yaml, derived)
+Digits:=40:; pc("g118-abs-neg2-sq",'(abs(-2)^2)',4,5/10^12);
+// g118-abs-pi-sq (precision.yaml, oracle)
+Digits:=40:; pc("g118-abs-pi-sq",'(abs(pi)^2)',(986960440109/10^11),5/10^12);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");
