@@ -1,0 +1,15 @@
+# Upstream: giac 2.1.0 usual.cc atan. Its test for a multiple of pi/12 accepts an argument whose double is a root of the pi/12 polynomial within 1e-7 and returns that multiple, with no exact check (the pi/10 and pi/8 tests beside it check normal(...)==0): atan(cos(pi/100000)), atan(1-1/10^9), atan(exp(10^-9)) gave pi/4, so DEG atan(cos(0.001)) showed = 45 (right 44.9999999956). Adds the exact check; a true multiple (2-sqrt(3), 2+sqrt(3)) still gives pi/12, 5*pi/12.
+--- a/src/usual.cc
++++ b/src/usual.cc
+@@ -722,7 +722,10 @@
+ 	  return (ed>0?res/2:-res/2)*(angle_radian(contextptr)?cst_pi/5:(angle_degree(contextptr)?gen(36):gen(40))); //grad
+       }
+       edh=horner(makevecteur(-3,55,-198,198,-55,3),tmp*tmp);
+-      if (absdouble(edh._DOUBLE_val)<1e-7){      
++      // Pascaline patch 0011 (G115): confirm the root exactly, as the pi/10 and pi/8 tests do. The double test alone
++      // took any argument within about 1e-9 of a multiple of pi/12's tangent for it: atan(cos(pi/100000)) gave pi/4.
++      if (absdouble(edh._DOUBLE_val)<1e-7 &&
++	  normal(horner(makevecteur(-3,55,-198,198,-55,3),e*e),contextptr)==0){
+ 	int res=int(std::floor(std::atan(absdouble(ed))*12/M_PI+.5));
+ 	int den=12;
+ 	int g=gcd(res,den);

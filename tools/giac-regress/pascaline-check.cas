@@ -629,4 +629,6 @@ Digits:=40:; pc("g113-poisson_cdf-2.5",'(poisson_cdf(2,(25/10^1)))',(67667641618
 Digits:=40:; pc("g113f1-negbinomial_icdf-tie-0",'(negbinomial_icdf(3,1/3,1/27))',0,1/10^30);
 // g113f1-negbinomial_icdf-between (precision.yaml, oracle)
 Digits:=40:; pc("g113f1-negbinomial_icdf-between",'(negbinomial_icdf(3,1/3,11/81))',2,5/10^12);
+// g115-atan-2-sqrt3-30 (precision.yaml, oracle)
+Digits:=40:; pc("g115-atan-2-sqrt3-30",'(atan(2-sqrt(3)))',(261799387799149436538553615273/10^30),5/10^31);
 print("pascaline-check: "+pasfail+" of "+pasn+" failed");

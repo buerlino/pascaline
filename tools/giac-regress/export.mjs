@@ -256,6 +256,13 @@ export const PATCHED_IDS = new Map([
   // double field of the exact 1/27 as 0, and t <= 0 gives 0) and the non-tie guard g113f1-negbinomial_icdf-between passes there too: both stay in the check file
   ["g113f1-negbinomial_icdf-tie-1", "0010-negbinomial-icdf-exact.patch"],
   ["g113f1-negbinomial_icdf-tie-2", "0010-negbinomial-icdf-exact.patch"],
+  // G115: atan of an argument near 1 (stock: pi/4); the guard g115-atan-2-sqrt3-30 passes on stock and stays in the check file
+  ["g115-atan-cos-pi/1e5-12", "0011-atan-pi12-exact-check.patch"],
+  ["g115-atan-cos-pi/1e5-30", "0011-atan-pi12-exact-check.patch"],
+  ["g115-atan-cos-pi/1e8-30", "0011-atan-pi12-exact-check.patch"],
+  ["g115-atan-sin-pi/2-pi/1e5-30", "0011-atan-pi12-exact-check.patch"],
+  ["g115-atan-1-1e-9-30", "0011-atan-pi12-exact-check.patch"],
+  ["g115-atan-1+1e-10-30", "0011-atan-pi12-exact-check.patch"],
 ]);
 export const knownReason = (id) => (KNOWN_IDS.has(id) ? KNOWN_RULES.find(([re]) => re.test(id))?.[1] : undefined);
 
