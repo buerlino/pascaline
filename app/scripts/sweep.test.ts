@@ -51,6 +51,13 @@ describe("sweep judge", () => {
     expect(judge(shown(num("2"), "≈"), val("2", "1e-40"), 12).kind).toBe("ok");
     expect(judge(shown(num("2", "3"), "≈"), val("2", "0"), 12)).toMatchObject({ kind: "wrong", check: "part" });
   });
+  it("G116: accepts an = whose hidden part is below 10^-50 of the value, rejects one above", () => {
+    expect(judge(shown(num("0.75"), "="), val("0.75", "3.5861160021995467e-102"), 30).kind).toBe("ok");
+    expect(judge(shown(num("0.75"), "="), val("0.75", "3e-40"), 30)).toMatchObject({ kind: "wrong", check: "part" });
+  });
+  it("G116: calls a dead engine a crash", () => {
+    expect(judge({ ok: false, crash: true, error: "engine", display: "worker error: memory access out of bounds" }, val("1"), 12)).toMatchObject({ kind: "crash", check: "crash" });
+  });
   it("refuses a number where the oracle has no value (F8)", () => {
     expect(judge(shown(num("5"), "≈"), { kind: "novalue" }, 12)).toMatchObject({ kind: "novalue" });
     expect(judge({ ok: false, error: "engine", display: "Division by zero" }, { kind: "novalue" }, 12).kind).toBe("refused");

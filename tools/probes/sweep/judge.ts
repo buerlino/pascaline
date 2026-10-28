@@ -117,7 +117,8 @@ export function judge(shown: Shown, oracle: Oracle, digits: number): Verdict {
       if (isZeroDec(ov)) continue;
       const nn = claim ?? 0;
       if (claim === null && mark === "⚠") continue;
-      if (mark === "=" ? !isZeroDec(ov) && !tinyRel(ov, scale, 50) : !atMost(ov, 2n, mag(scale) - (nn + 2))) {
+      // G116: `=` holds when the hidden part is below 10^-50 of the value (it compared the part with the value, so never held)
+      if (mark === "=" ? !atMost(ov, 2n, mag(scale) - 50) : !atMost(ov, 2n, mag(scale) - (nn + 2))) {
         return { kind: "wrong", check: "part", detail: `${name} not shown, oracle ${oracle[name]}` };
       }
       continue;

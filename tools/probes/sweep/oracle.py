@@ -107,8 +107,28 @@ def POW(a, b):
     return a ** b
 
 
+def chop(v):
+    """G116: a part below the working precision's noise (10^-(dps-10) of |v|) is 0. Without it a value that is real in exact maths
+    (cosh(ln(-1/2)) = -5/4) keeps an imaginary part of about 1E-100 whose sign then picks a side of the next cut (acos of it)."""
+    if not isinstance(v, mpc):
+        return v
+    tol = abs(v) * mpf(10) ** (10 - mp.dps)
+    if abs(v.imag) <= tol:
+        return v.real
+    if abs(v.real) <= tol:
+        return mpc(0, v.imag)
+    return v
+
+
+def _chopped(f):
+    def g(*a):
+        return chop(f(*[chop(x) for x in a]))
+    return g
+
+
 NS = dict(mpf=mpf, sqrt=sqrt, exp=exp, sinh=sinh, cosh=cosh, tanh=tanh, asinh=asinh, SIN=SIN, COS=COS, TAN=TAN, ASIN=ASIN, ACOS=ACOS,
           ATAN=ATAN, ACOSH=ACOSH, ATANH=ATANH, CBRT=CBRT, LN=LN, LOG10=LOG10, ABS=ABS, DIV=DIV, FACT=FACT, POW=POW)
+NS = {k: (f if k == "mpf" else _chopped(f)) for k, f in NS.items()}
 
 
 def at(expr, dps):
