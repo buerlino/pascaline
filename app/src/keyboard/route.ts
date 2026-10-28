@@ -12,7 +12,7 @@ import type { EntryController } from "../entry/controller.ts";
 import { ANS_CHIP } from "../entry/macros.ts";
 import { canPick, pickAfter, pickAtOrBefore } from "../state/pickRows.ts";
 import type { HistoryItem, Session, View } from "../state/session.svelte.ts";
-import { sheetFlick, sheetKey, type SheetKey } from "../views/sheetKeys.ts";
+import { findKey, sheetFlick, sheetKey, type SheetKey } from "../views/sheetKeys.ts";
 import { sheetChunk, loadSheetView } from "../views/sheetView.svelte.ts";
 import { actionFor, type ActionBody, type Key, type Layer, type Special } from "./keyboard.ts";
 
@@ -45,6 +45,8 @@ export interface RouteCtx {
   openMode(at?: string): void;
   openTemplates(): void;
   openShiftPalette(id: "rel" | "sym"): void;
+  /** Math (R4a): open Find (inside Find, Math types b; docs/04 3.7). */
+  openFind(): void;
   /** Run with the clipboard code, now or once it has loaded. */
   withClip(run: (c: ClipActions) => void): void;
   loadClip(): void;
@@ -132,6 +134,9 @@ export function special(c: RouteCtx, name: Special): void {
     case "symbols":
       c.openShiftPalette("sym");
       break;
+    case "find":
+      c.openFind();
+      break;
     case "shift":
     case "alpha":
     case "none":
@@ -199,7 +204,14 @@ export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boo
     shell.picked(byPlace);
     return true;
   }
-  const k = layer === "alpha" || layer === "shift" ? sheetFlick(key, layer === "alpha", level.filterable) : sheetKey(key, level.filterable);
+  const find = sheet.id === FIND_SHEET;
+  const k = find
+    ? findKey(key, layer, c.session.shift, level.filter === "")
+    : layer === "alpha" || layer === "shift"
+      ? sheetFlick(key, layer === "alpha", level.filterable)
+      : sheetKey(key, level.filterable);
+  // in Find a one-shot Shift is used up by the key it types (its lock stays); elsewhere a sheet leaves it as it is
+  if (find && c.session.shift && !c.session.shiftLock) c.session.clearModifiers();
   switch (k.kind) {
     case "move":
       level.move(k.by);
@@ -223,7 +235,8 @@ export function sheetPress(c: RouteCtx, key: Key, layer: Layer | undefined): boo
       level.type(k.ch);
       return true;
     case "backspace":
-      level.backspace();
+      // in Find ⌫ on an empty query goes back from a category to the list of categories
+      if (!level.backspace() && find) sheet.back();
       return true;
     case "none":
       return true;
@@ -275,7 +288,9 @@ function replay(c: RouteCtx): void {
     else if (!((c.settingsPage && settingsPress(c, w.key, w.layer)) || (c.shell.sheet && sheetPress(c, w.key, w.layer)))) run(c, w.key, w.mods); // a page or sheet opened meanwhile takes its keys
 }
 
-const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols"];
+const SHEET_KEYS: readonly string[] = ["apps", "menu", "tmpl", "relations", "symbols", "find"];
+/** The open sheet is Find (R4a): its keys follow docs/04 3.7 (sheetKeys.ts findKey). */
+export const FIND_SHEET = "find";
 /** Does this key open a sheet? (Mode and Settings load the view with their lists.) */
 function opensSheet(key: Key, mods: Mods): boolean {
   const a = actionFor(key, mods.shift, mods.alpha);
@@ -322,7 +337,7 @@ export function typeLetter(c: RouteCtx, ch: string): void {
   if (sheetUndrawn(c)) return wait(c, { letter: ch });
   const sheet = c.shell.sheet;
   if (sheet) {
-    if (sheet.level.filterable) sheet.level.type(ch);
+    if (sheet.level.filterable) sheet.level.type(sheet.id === FIND_SHEET ? ch.toLowerCase() : ch);
     return;
   }
   if (c.shell.loading !== null || c.sheetLoad !== null) return wait(c, { letter: ch });

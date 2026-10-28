@@ -208,11 +208,13 @@
             style:height={px(rowHeight(row, { reason, steps }))}
             onclick={() => ontap(r.index)}
           >
-            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{/if}</span>{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
+            <span class="n">{r.n === undefined ? "" : r.n % 10}</span>{#if r.item.glyph}<span class="tile math" class:small={"text" in r.item.glyph && r.item.glyph.text.length > 1} data-testid="row-glyph" aria-hidden="true">{@html "icon" in r.item.glyph ? ICONS.home : r.item.glyph.text}</span>{/if}<span class="text"><span class="label">{r.item.label}</span>{#if reason}<span class="reason">{r.item.reason}</span>{/if}</span>{#if r.item.note}<span class="note" data-testid="row-note">{r.item.note}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-down" aria-label={t("sheet.stepDown")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, -1); }}>◀</button>{/if}{#if r.item.value !== undefined}<span class="value" data-testid="sheet-value">{r.item.value}</span>{/if}{#if steps}<button type="button" class="step" data-testid="step-up" aria-label={t("sheet.stepUp")} disabled={r.item.disabled} onclick={(e) => { e.stopPropagation(); sheet.adjustAt(r.index, 1); }}>▶</button>{/if}{#if r.item.selected !== undefined}<span class="tick" aria-hidden="true">{r.item.selected ? "✓" : ""}</span>{/if}{#if r.item.submenu}<span class="more" aria-hidden="true">›</span>{/if}
           </div>
         {/each}
         {#if rows.length === 0}<p class="empty" data-testid="sheet-empty">{t("sheet.noMatch")}</p>{/if}
       </div>
+      <!-- Find (R4a): the highlighted item's details (docs/04 3.6) -->
+      {#if level.current?.preview}<div class="preview" data-testid="find-preview">{level.current.preview}</div>{/if}
     {/if}
   </div>
   <!-- over the view: shrinks first (flex-shrink weighs by size: 1000 × its height against the sheet's 1 × its own) -->
@@ -339,6 +341,22 @@
     border: 1px solid var(--line);
   }
   .count {
+    white-space: nowrap;
+  }
+  .note {
+    margin-left: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .preview {
+    flex: none;
+    padding: 4px 8px 0;
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
   .icon {

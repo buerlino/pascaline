@@ -89,8 +89,7 @@ tasks:
   - id: t05
     title: Insert the speed of light by name
     milestone: 4
-    status: pending   # becomes active when Find lands (backlog milestone 4, step 8)
-    needs: "Find UI (R4) and the index (G4)"
+    status: active   # since R4a (Find on the Math key)
     budget: 4   # "under 5 keys" counts the Enter that evaluates; ε₀ by name needs `eps` (6 presses) or a short alias
     # Math, c (the Tmpl key), Enter inserts the chip, Enter evaluates
     keys: [math, tmpl, enter, enter]

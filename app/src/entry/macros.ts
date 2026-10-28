@@ -16,13 +16,17 @@ interface ChipMacro {
   expand: false;
 }
 
-export const CHIP_MACROS: Record<"res" | "ans" | "const", ChipMacro> = {
+export const CHIP_MACROS: Record<"res" | "ans" | "const" | "unit" | "pfx", ChipMacro> = {
   /** `\res{k}{shown}`: a history result; its value is the chip table's `res:k`. */
   res: { def: `\\htmlStyle{${CHIP_STYLE}}{#2}`, args: 2, captureSelection: true, expand: false },
   /** `\ans`: the view's last result, read when Enter is pressed. */
   ans: { def: `\\htmlStyle{${CHIP_STYLE}}{\\mathrm{Ans}}`, args: 0, captureSelection: true, expand: false },
   /** `\const{ID}{symbol}`: a constant from Find; its value is the chip table's `const:ID`. */
   const: { def: `\\htmlStyle{${CHIP_STYLE}}{\\mathrm{#2}}`, args: 2, captureSelection: true, expand: false },
+  /** `\unit{ID}{symbol}`: a unit from Find (R4a); `symbol` is upright LaTeX already (`\mathrm{km/h}`). */
+  unit: { def: `\\htmlStyle{${CHIP_STYLE}}{#2}`, args: 2, captureSelection: true, expand: false },
+  /** `\pfx{ID}{symbol}`: an SI prefix from Find (R4a). */
+  pfx: { def: `\\htmlStyle{${CHIP_STYLE}}{#2}`, args: 2, captureSelection: true, expand: false },
 };
 
 /**
@@ -36,7 +40,7 @@ export const EMARK = "\\emark";
 const EMARK_MACRO: ChipMacro = { def: "\\mathopen{\u1D07}", args: 0, captureSelection: true, expand: false };
 
 /** Every macro of the entry line, for the field and for the static renderer. */
-export const ENTRY_MACROS: Record<"res" | "ans" | "const" | "emark", ChipMacro> = {
+export const ENTRY_MACROS: Record<"res" | "ans" | "const" | "unit" | "pfx" | "emark", ChipMacro> = {
   ...CHIP_MACROS,
   emark: EMARK_MACRO,
 };
@@ -48,4 +52,4 @@ export const constChip = (id: string, symbol: string): string => `\\const{${id}}
 export const ANS_CHIP = "\\ans";
 
 /** The LaTeX of an atom is one chip (the controller treats it as a whole term before ÷, x², xʸ, x⁻¹). */
-export const isChipLatex = (latex: string): boolean => /^\\(?:res|ans|const)(?![A-Za-z])/.test(latex);
+export const isChipLatex = (latex: string): boolean => /^\\(?:res|ans|const|unit|pfx)(?![A-Za-z])/.test(latex);

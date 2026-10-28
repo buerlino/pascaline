@@ -11,11 +11,13 @@ export type Special =
   | "home" | "cas" | "switch"
   /** The Shift palettes (R18): Shift + 6 relations and logic, Shift + 9 symbols and Greek. */
   | "relations" | "symbols"
+  /** Math (R4a): Find, everything (docs/04 3.5–3.7). */
+  | "find"
   /** A key whose function we don't have yet (it keeps its alpha letter): does nothing. */
   | "none";
 export const SPECIALS: readonly Special[] = [
   "shift", "alpha", "enter", "clear", "esc", "settings", "mode", "apps", "symb", "plot", "num", "menu", "fmt", "copy", "paste", "tmpl",
-  "home", "cas", "switch", "relations", "symbols", "none",
+  "home", "cas", "switch", "relations", "symbols", "find", "none",
 ];
 
 /** The first of the maths rows (3–9): a pick sheet is drawn over them, never over the top cluster (rows 0–2), whose
