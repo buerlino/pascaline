@@ -24,15 +24,51 @@ export function makeIndex(raw: readonly IndexItem[]): FindIndex {
   return { prepared, items, byId: new Map(items.map((it) => [it.id, it])) };
 }
 
+/** The index prepared a slice at a time, each in an idle moment, so the idle load never holds the main thread for
+ *  long (a long task there delayed Solve's first Working… frame, working.spec.ts). `hurry()` (a Math press) makes the
+ *  rest run at once. Without requestIdleCallback it is prepared in one go. */
+const SLICE = 200;
+let hurried = false;
+/** True while a job runs (App.svelte sets it): the slices wait for it, so its Working… line keeps its timing. */
+let busy: () => boolean = () => false;
+export function pauseWhile(b: () => boolean): void {
+  busy = b;
+}
+const idle = (): Promise<number> =>
+  new Promise((done) => {
+    if (hurried || typeof requestIdleCallback !== "function") return done(Infinity);
+    const ask = (): void => {
+      requestIdleCallback((d) => (busy() && !hurried ? ask() : done(d.didTimeout ? 4 : d.timeRemaining())), { timeout: 1000 });
+    };
+    ask();
+  });
+export async function makeIndexIdle(raw: readonly IndexItem[]): Promise<FindIndex> {
+  const parts: PreparedIndex["items"][] = [];
+  let i = 0;
+  while (i < raw.length) {
+    const room = await idle();
+    const t0 = performance.now();
+    do {
+      parts.push(prepare(raw.slice(i, i + SLICE)).items);
+      i += SLICE;
+    } while (i < raw.length && performance.now() - t0 < room);
+  }
+  const prepared: PreparedIndex = { items: parts.flat() };
+  const items = prepared.items.map((p) => p.item);
+  return { prepared, items, byId: new Map(items.map((it) => [it.id, it])) };
+}
+
 let loading: Promise<FindIndex> | null = null;
-/** Fetch and prepare the index, once; a failed fetch is tried again on the next call. */
-export function loadIndex(): Promise<FindIndex> {
+/** Fetch and prepare the index, once; a failed fetch is tried again on the next call. `urgent` (a Math press): the
+ *  preparing still to do runs at once. */
+export function loadIndex(urgent = false): Promise<FindIndex> {
+  if (urgent) hurried = true;
   loading ??= fetch(indexUrl)
     .then((r) => {
       if (!r.ok) throw new Error(`find index: HTTP ${r.status}`);
       return r.json() as Promise<IndexItem[]>;
     })
-    .then(makeIndex)
+    .then(makeIndexIdle)
     .catch((e: unknown) => {
       loading = null;
       throw e;

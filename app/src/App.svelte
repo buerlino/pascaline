@@ -42,9 +42,13 @@
   type FindCode = { m: typeof import("./find/finder.ts"); index: import("./find/finder.ts").FindIndex };
   let findCode: FindCode | null = null;
   let findLoading: Promise<FindCode> | null = null;
-  const loadFind = (): Promise<FindCode> =>
+  /** `urgent` (a Math press): an idle load under way prepares the rest of the index at once (finder.ts). */
+  const loadFind = (urgent = false): Promise<FindCode> =>
     (findLoading ??= import("./find/finder.ts")
-      .then(async (m) => (findCode = { m, index: await m.loadIndex() }))
+      .then(async (m) => {
+        m.pauseWhile(() => busy); // the idle preparing gives way to a running job
+        return (findCode = { m, index: await m.loadIndex(urgent) });
+      })
       .catch((e: unknown) => {
         findLoading = null; // a later Math press tries again
         throw e;
@@ -139,9 +143,12 @@
   }
   $effect(() => {
     // (a browser without requestIdleCallback loads it on the first use)
-    if (session.engineState !== "ready" || !("requestIdleCallback" in window)) return;
-    requestIdleCallback(() => void loadClip(), { timeout: 3000 });
-    requestIdleCallback(() => void loadFind().catch(() => {}), { timeout: 5000 }); // the first Math press tries again
+    if (session.engineState === "ready" && "requestIdleCallback" in window) requestIdleCallback(() => void loadClip(), { timeout: 3000 });
+  });
+  $effect(() => {
+    if (session.engineState !== "ready" || !("requestIdleCallback" in window) || findLoading) return;
+    // not while a job runs (its Working… timing, working.spec.ts); this runs again when it ends
+    if (!busy) requestIdleCallback(() => void loadFind().catch(() => {}), { timeout: 5000 }); // the first Math press tries again
   });
 
   /** Home/CAS: the entry line is cleared as soon as the job starts; the result arrives in the history. Apps decide themselves. */
@@ -201,7 +208,8 @@
       f.m.showFind(shell, entry, f.index);
     };
     if (findCode && sheetChunk.C) return show(findCode);
-    sheetLoad = Promise.all([loadFind(), loadSheetView()]).then(
+    if (findLoading) void import("./find/finder.ts").then((m) => m.loadIndex(true)).catch(() => {}); // hurry the idle load
+    sheetLoad = Promise.all([loadFind(true), loadSheetView()]).then(
       ([f]) => {
         sheetLoad = null;
         show(f);

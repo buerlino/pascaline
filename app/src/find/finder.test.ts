@@ -4,9 +4,9 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { CATEGORIES, categoryItems } from "./categories.ts";
-import { constChipOf, findMenu, itemRow, makeIndex, unitNote } from "./finder.ts";
+import { constChipOf, findMenu, itemRow, makeIndex, makeIndexIdle, pauseWhile, unitNote } from "./finder.ts";
 import type { FindItem, IndexItem } from "./types.ts";
 
 const file = join(dirname(fileURLToPath(import.meta.url)), "_gen/find-index.json");
@@ -75,5 +75,44 @@ describe.skipIf(!full)("Find on the generated index", () => {
   it("picking a row runs the pick with its item", () => {
     menu.search("det")[0]?.run?.();
     expect(picked.map((it) => it.id)).toEqual(["fn:det"]);
+  });
+});
+
+describe.skipIf(!full)("the idle load", () => {
+  it("prepares the index a slice per idle moment, never in one long task, and gives the same index", async () => {
+    let calls = 0;
+    // each idle moment has no time left: one slice per moment
+    vi.stubGlobal("requestIdleCallback", (cb: IdleRequestCallback) => {
+      calls++;
+      setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 0 }), 0);
+      return calls;
+    });
+    try {
+      const idle = await makeIndexIdle(raw);
+      expect(calls).toBe(Math.ceil(raw.length / 200));
+      expect(idle.items.map((it) => it.id)).toEqual(makeIndex(raw).items.map((it) => it.id));
+      expect(idle.byId.size).toBe(raw.length);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("prepares nothing while a job runs, and goes on when it ends", async () => {
+    let calls = 0;
+    let jobs = 3; // the first three idle moments come while a job runs
+    vi.stubGlobal("requestIdleCallback", (cb: IdleRequestCallback) => {
+      calls++;
+      setTimeout(() => cb({ didTimeout: false, timeRemaining: () => 0 }), 0);
+      return calls;
+    });
+    pauseWhile(() => jobs-- > 0);
+    try {
+      const idle = await makeIndexIdle(raw);
+      expect(calls).toBe(3 + Math.ceil(raw.length / 200));
+      expect(idle.byId.size).toBe(raw.length);
+    } finally {
+      pauseWhile(() => false);
+      vi.unstubAllGlobals();
+    }
   });
 });
