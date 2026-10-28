@@ -18,7 +18,7 @@
 
 **At night, the night-safe lane** (section 0c; no APK, no eye on the UI): silent wrong numbers and everyday bugs by reach (G117, G118), the engine fuzzer G116, tools (A26); the shortest steps last. **The nightly fuzz** (owner, 2026-10-27): from the night of 2026-10-28, once G116 is merged, every night runs `node scripts/sweep.ts --nightly --edges` once with its triage; that night's planner writes the step into 0c as a one-night package with a new ID (owner, 2026-10-28), from G120's text (`git log --all -- docs/shifts/packages/G120.md`): the worker triages into its report, the Opus pass files the backlog lines; about 45 min (G116's report: 6–7 min per 5,000 trees). A package whose lane says day runs by day, whatever room a night has.
 
-**No package yet** (backlog, by reach): F73 (it waited for the end of the freeze), F80, F85, F70, F71; the background stream F61, F62, F86, F112, F114, G94, F106; what G116 finds. S20 (the MPFI spike) by day.
+**No package yet** (backlog, by reach): F73 (it waited for the end of the freeze), F80, F85, F70, F71; the background stream F62, G94, F106; what G116 finds. S20 (the MPFI spike) by day.
 
 **Why this order:** silent wrong numbers first, by reach; R4a's gate before Find; Find before the Settings base (three core cases wait for it, and R4b fills the user keys); the start-chunk split before the Settings base needs its room; the units after (owner, 2026-10-27). R15c3 and R15c4 stay behind Find: the user keys stay empty until R4b, and the keys already moved by R15c1–R15c2 are what the hand learns now.
 
@@ -48,18 +48,22 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
 ### The queue (the night of 2026-10-28; steps 101–191 are done or dropped)
-Estimates are wall-clock guesses from the log (a package 25 min to 2 h from start to MERGED; an engine patch adds a rebuild). A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The Opus passes come from rule 5 (about 25 min each, after every three finished packages, FIX packages included) and are not rows. About 8½ hours to 06:30 with the passes.
+Estimates are wall-clock guesses from the log (a package 25 min to 2 h from start to MERGED; an engine patch adds a rebuild). A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The Opus passes come from rule 5 (about 25 min each, after every three finished packages, FIX packages included) and are not rows. About 10 hours with the passes at the estimates; at the 2026-10-28 day shift's pace (40 min a package) about 8 hours, to 08:00.
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
 | 192 | **G121** Giac's real-only rewrites on complex arguments (F119, F120); engine patch | gorge, Opus | p1/gorge-realrules | — | 2 h |
 | 193 | **G122** asin(cos(30!)) has the wrong sign (F121); likely an engine patch | gorge, Opus | p1/gorge-bigreduce | — | 1.5 h |
-| 194 | **G119** Home shows seq[…] as a value or a list (F108) | gorge, Opus | p1/gorge-seqshow | — | 1 h |
-| 195 | **G124** constructors Giac answers right with one list are refused (F107) | gorge, Opus | p1/gorge-listctor | — | 1 h |
-| 196 | **G123** an overflowing power shows ⚠ 12 1 (F123) | gorge, Opus | p1/gorge-overflowmark | — | 1 h |
-| 197 | **G120** the nightly fuzz of 2026-10-28 and its triage | gorge, Opus | p1/gorge-nightfuzz-1028 | — | 45 min |
-| 198 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
-| 199 | Shift report, then stop | — | — | — | 10 min |
+| 194 | **G125** asin(cos(asin(10))) is wrong (F112); likely an engine patch | gorge, Opus | p1/gorge-asincos | — | 1 h |
+| 195 | **G126** inverse functions of huge arguments lose their digits but keep their mark (F114) | gorge, Opus | p1/gorge-hugeinverse | — | 1.5 h |
+| 196 | **G119** Home shows seq[…] as a value or a list (F108) | gorge, Opus | p1/gorge-seqshow | — | 1 h |
+| 197 | **G124** constructors Giac answers right with one list are refused (F107) | gorge, Opus | p1/gorge-listctor | — | 1 h |
+| 198 | **G123** an overflowing power shows ⚠ 12 1 (F123) | gorge, Opus | p1/gorge-overflowmark | — | 1 h |
+| 199 | **G127** exp(cosh(floor(asin(pi)))) is "No value found" (F86) | gorge, Opus | p1/gorge-evalfnest | — | 1 h |
+| 200 | **G128** exact acosh of a negative number flips between precisions (F61, acosh part) | gorge, Opus | p1/gorge-acoshneg | — | 45 min |
+| 201 | **G120** the nightly fuzz of 2026-10-28 and its triage | gorge, Opus | p1/gorge-nightfuzz-1028 | — | 45 min |
+| 202 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
+| 203 | Shift report, then stop | — | — | — | 10 min |
 
 ### The commands henri replies with (one per decision; `scripts/night.sh` runs it)
 - `scripts/pipeline.sh <agent> "<ID>" --model <sonnet|opus> --audit-model auto`: the next queue step not done (the queue's skip rule above); `--audit-model opus` where its row says "audit Opus".
