@@ -114,6 +114,9 @@ def _cut(lo_on_cut):
     def wrap(f):
         def g(*a):
             x = a[0]
+            if isinstance(x, mpc) and x.imag == 0:  # a signed zero (cos of a pure imaginary gives -0.0) must not pick the lower side
+                x = x.real
+                a = (x, *a[1:])
             if isinstance(x, mpc) and x.imag != 0 and abs(x.imag) <= abs(x) * mpf(10) ** (10 - mp.dps) and lo_on_cut(x.real):
                 raise Skip("on a branch cut within the noise")
             return f(*a)
