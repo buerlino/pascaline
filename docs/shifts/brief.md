@@ -16,7 +16,7 @@
 4. **annabell on devices:** A9 with the owner's phone (F41); A43 (an update keeps the data; before A7); A4b after R4b; A7 → A8 on the owner's go.
 5. **Every morning:** the owner's check (MORNING.md, on the night's device when the night had one, about 10 minutes). The day session writes each failed step as a backlog bug line on phase-1 and logs one line in `.coord/log.md`: `- HH:MM morning <date>: clean` or `- HH:MM morning <date>: fails <ids>`.
 
-**At night, the night-safe lane** (section 0c; no APK, no eye on the UI): silent wrong numbers and everyday bugs by reach (G117, G118), the engine fuzzer G116, tools (A26, G79); the shortest steps last. **The nightly fuzz** (owner, 2026-10-27): from the night of 2026-10-28, once G116 is merged, every night runs `node scripts/sweep.ts --nightly --edges` once with its triage; that night's planner writes the step into 0c, sized by G116's report (time per 1,000 trees). A package whose lane says day runs by day, whatever room a night has.
+**At night, the night-safe lane** (section 0c; no APK, no eye on the UI): silent wrong numbers and everyday bugs by reach (G117, G118), the engine fuzzer G116, tools (A26); the shortest steps last. **The nightly fuzz** (owner, 2026-10-27): from the night of 2026-10-28, once G116 is merged, every night runs `node scripts/sweep.ts --nightly --edges` once with its triage; that night's planner writes the step into 0c, sized by G116's report (time per 1,000 trees). A package whose lane says day runs by day, whatever room a night has.
 
 **No package yet** (backlog, by reach): F73 and F107 (they waited for the end of the freeze), F80, F85, F70, F71; the background stream F61, F62, F86, F112, F114, G94, F106; what G116 finds. S20 (the MPFI spike) by day.
 
@@ -48,11 +48,10 @@ The queue below is the next nights'. **Start it from the phase-1 worktree:** `cd
 9. **The end:** after the last pass and its FIX packages, `scripts/pipeline.sh report` writes and commits the shift report; henri then answers `SHIFT DONE`. **On time (A17):** start `scripts/night.sh --until <HH:MM>` (`--dry-run` shows the plan); from that time, or at `--max-steps` minus 2, henri is asked only for the last Opus pass (or `NO PASS`), then night.sh runs the report and stops. The pipeline merges only the commit its audit read and stops with `NOT MERGED (the branch is not the audited HEAD)` otherwise.
 
 ### The queue (the night of 2026-10-27; steps 101–135 are done or dropped)
-Estimates are wall-clock guesses from the log (a package 25 min to 2 h from start to MERGED; an engine patch adds a rebuild). A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The Opus passes come from rule 5 (about 25 min each, after every three finished packages, FIX packages included) and are not rows. About 8 hours to 06:30 with the passes; 144 runs only if the night has room, else they open the next night's queue.
+Estimates are wall-clock guesses from the log (a package 25 min to 2 h from start to MERGED; an engine patch adds a rebuild). A package merged by day is skipped (log it); a step whose "After" is not merged is skipped for that night and stays in the queue. The audit model follows rule 1. The Opus passes come from rule 5 (about 25 min each, after every three finished packages, FIX packages included) and are not rows. About 8 hours to 06:30 with the passes.
 
 | Step | What | Agent, model | Branch | After | Est. |
 |---|---|---|---|---|---|
-| 144 | [G79](packages/G79.md): the G2 checklist cannot drift from g2.yaml | gorge, Sonnet | `p1/gorge-g2check` | — | 30 min |
 | 190 | **The last Opus pass** on what came after the last pass, then its FIX packages | Opus | — | — | 20 min + fixes |
 | 191 | Shift report, then stop | — | — | — | 10 min |
 
