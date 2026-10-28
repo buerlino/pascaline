@@ -4,7 +4,9 @@
 // 21/10*exp(21/5); with 0007 a value provably below the support (above it for betad and uniform) is an exact 0 (a cdf
 // above it 1), an argument of unknown sign keeps today's form, and a list as x is one value per element. Before 0008,
 // fracmod(41,-2) took the square root of a negative number in GMP (gen.cc in_fracmod) and trapped the wasm; with it the
-// modulus must be a positive integer, and the engine answers the next input. Needs the engine build (GIAC_OUT or
+// modulus must be a positive integer, and the engine answers the next input. G113, patch 0009: stock binomial with an
+// MPFR p and a fractional k (Home's binomial(5,0.5,3/2) at Digits 40) swapped its arguments without end, a stack overflow
+// that stopped the engine (here, the whole process: a red, not a pass); with 0009 it is refused. Needs the engine build (GIAC_OUT or
 // GIAC_MJS, as nodeGiac.ts).
 //   GIAC_OUT=<abs dir> node tests/engine/support-test.ts
 import { loadNodeGiac } from "../../app/src/engine/nodeGiac.ts";
@@ -84,8 +86,18 @@ if (!failures.some((f) => f.includes("threw"))) {
   const kept = giac.eval("fracmod(3,13)");
   if (kept !== "-1/4") failures.push(`fracmod(3,13) = ${kept}, expected -1/4 (4·3 = 12 ≡ -1 mod 13)`);
 }
+// 0009 (G113): refused like binomial(5,1/2,3/2), and the engine answers after it. Not a golden case: on a build without
+// 0009 the overflow ends the process, which in the golden gate stopped every later stage (pipeline run 278, red-first).
+giac.eval("Digits:=40");
+for (const input of ["binomial(5,evalf(1/2),3/2)", "binomial(5,evalf(1/2),evalf(3/2))"]) {
+  const got = giac.eval(input);
+  if (!/^GIAC_ERROR[\s\S]*Bad Argument Value/.test(got)) failures.push(`${input} at Digits 40 = ${got}, expected a refusal (Bad Argument Value)`);
+}
+giac.eval("Digits:=12");
+const afterBinomial = giac.eval("1+1");
+if (afterBinomial !== "2") failures.push(`1+1 after binomial = ${afterBinomial}`);
 if (failures.length) {
   console.log(`FAIL support-test ${failures.length}\n  ${failures.join("\n  ")}`);
   process.exit(1);
 }
-console.log(`PASS support-test: ${OUTSIDE.length} values outside the support, ${KEPT.length} kept, ${BOUNDS_AND_LISTS.length} bounds and lists, fracmod refused without a trap`);
+console.log(`PASS support-test: ${OUTSIDE.length} values outside the support, ${KEPT.length} kept, ${BOUNDS_AND_LISTS.length} bounds and lists, fracmod refused without a trap, binomial with an MPFR p and k = 3/2 refused`);

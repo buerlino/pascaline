@@ -6,7 +6,7 @@ import { cases, freshHost, report, expectAt, lostAnswer } from "./lib.ts";
 
 export async function stagePrecision(): Promise<void> {
   const cs = cases("precision.yaml");
-  const shared = await freshHost();
+  let shared = await freshHost();
   let active = 0;
   let activePass = 0;
   const pending: string[] = [];
@@ -15,7 +15,15 @@ export async function stagePrecision(): Promise<void> {
   for (const c of cs) {
     const attempt = async (): Promise<{ problems: string[] }> => {
       const t0 = performance.now();
-      const run = await runPrecisionCase(c, shared, freshHost);
+      let run: Awaited<ReturnType<typeof runPrecisionCase>>;
+      try {
+        run = await runPrecisionCase(c, shared, freshHost);
+      } catch (e) {
+        // G113: a case that stops the engine (stock Giac's binomial(5,0.5R,3/2) overflows the stack) fails here, and
+        // the next case gets a fresh engine: before, the throw ended the whole gate without GOLDEN GATE FAILED.
+        shared = await freshHost();
+        return { problems: [`the engine stopped: ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`] };
+      }
       const ms = performance.now() - t0;
       const { shown, mark, input, digits, problems } = run;
       // G58: `budgetMs`, the wall time of the case (its Enter): it answers or is refused within it.
