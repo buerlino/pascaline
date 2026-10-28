@@ -20,6 +20,7 @@ findings:
   F94: ["home mathml/0", "cas mathml/0", "home latex/0", "cas latex/0", "home getType/0", "cas getType/0", "home str/0", "cas str/0", "home str/1", "cas str/1", "home str/2", "cas str/2", "home str/3", "cas str/3", "home char/0", "cas char/0", "home char/2", "cas char/2", "home char/3", "cas char/3", "home tabvar/0", "cas tabvar/0", "home tabsign/0", "cas tabsign/0", "home mc_mean_antithetic/0", "cas mc_mean_antithetic/0"]
   F96: ["home wz_certificate/0", "cas wz_certificate/0", "home GF/0", "cas GF/0", "home point3d/0", "cas point3d/0", "home harmonic_division/0", "home QR/0", "cas QR/0", "home LU/0", "cas LU/0", "home Fill/0", "cas Fill/0", "home CopyVar/0", "cas CopyVar/0", "home debug/0", "cas debug/0", "home syzygy/0", "cas syzygy/0", "home gbasis/0", "cas gbasis/0", "home is_hamiltonian/0", "cas is_hamiltonian/0", "home interactive_plotode/0", "cas interactive_plotode/0"]
   F89: ["home ilaplace/0", "cas ilaplace/0"]
+  F108: ["home fMax/0", "cas fMax/0", "home fMin/0", "cas fMin/0"]
   F97: ["cas ellipse/0", "cas hyperbola/0", "cas ecm_factor/0"]
 deadline: ["cas ellipse/0", "cas hyperbola/0", "cas ecm_factor/0"]
 classes:
@@ -409,8 +410,8 @@ classes:
   "extrema": "s|s"
   "ezgcd": "r|r"
   "f2nd": "u|u"
-  "fMax": "s|s"
-  "fMin": "s|s"
+  "fMax": "t|t"
+  "fMin": "t|t"
   "faces": "s|s"
   "factor": "s|s"
   "factor_xn": "s|s"

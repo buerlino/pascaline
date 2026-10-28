@@ -65,6 +65,7 @@ const RAW_WORDS: readonly [RegExp, string][] = [
   [/\bpnt\(|\bgl_[a-z]|\blegende\b|\bgraphe\b/, "a graphic object"],
   [/\bbounded_function\b/, "bounded_function"],
   [/\b(un)?directed (un)?weighted graph with\b/, "a graph object"],
+  [/\bseq\[/, "a sequence"],
   [/\brootof\(/, "rootof"],
   [/\bundef\b/, "undef"],
   [/"/, "a string"],
