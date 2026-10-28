@@ -284,6 +284,21 @@ Digits:=40:; pc("g116-acos-cos-ln-neg-pi-30",'(acos(cos(ln(-pi))))',(11447298858
 // patch 0013-asin-ln-real-rules.patch
 // g116-ln-2^(10i)-12 (precision.yaml, oracle)
 Digits:=40:; pc("g116-ln-2^(10i)-12",'(ln(2^(10*i)))',(64828649842/10^11)*i,5/10^13);
+// patch 0014-asin-big-reduction.patch
+// g122-asin-cos-20!-12 (precision.yaml, oracle)
+Digits:=40:; pc("g122-asin-cos-20!-12",'(asin(cos(factorial(20))))',(115796639728/10^11),5/10^12);
+// patch 0014-asin-big-reduction.patch
+// g122-acos-sin-20!-12 (precision.yaml, oracle)
+Digits:=40:; pc("g122-acos-sin-20!-12",'(acos(sin(factorial(20))))',(115796639728/10^11),5/10^12);
+// patch 0014-asin-big-reduction.patch
+// g122-asin-sin-20!-12 (precision.yaml, oracle)
+Digits:=40:; pc("g122-asin-sin-20!-12",'(asin(sin(factorial(20))))',(41282992951/10^11),5/10^13);
+// patch 0014-asin-big-reduction.patch
+// g122-acos-cos-20!-12 (precision.yaml, oracle)
+Digits:=40:; pc("g122-acos-cos-20!-12",'(acos(cos(factorial(20))))',(41282992951/10^11),5/10^13);
+// patch 0014-asin-big-reduction.patch
+// g122-asin-sin-1e20-12 (precision.yaml, oracle)
+Digits:=40:; pc("g122-asin-sin-1e20-12",'(asin(sin(10^20)))',-(701352157715/10^12),5/10^13);
 // patch 0013-asin-ln-real-rules.patch
 // g121-acos-cos-2i-12 (precision.yaml, oracle)
 Digits:=40:; pc("g121-acos-cos-2i-12",'(acos(cos(2*i)))',2*i,5/10^12);
