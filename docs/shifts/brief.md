@@ -30,6 +30,7 @@
 | [R85](packages/R85.md) | Shift + Fmt opens Mode | ron, Sonnet | day | now | ~0.25 d |
 | [A9](packages/A9.md) | Key vibration on the owner's phone | annabell, Sonnet | day (device) | the phone connected | ~0.5 d |
 | [A43](packages/A43.md) | An app update keeps the user's data (before A7) | annabell, Sonnet | day (device) | now | ~0.5 d |
+| [G119](packages/G119.md) | Home shows `seq[…]` as a value or a list (F108) | gorge, Opus (P17: engine) | night-safe | now | ~0.5 d |
 
 **Why these models:** Opus where a slip breaks entry, the unit chain or stored data for every later package, or gives a wrong number (P17: the engine, input and units); sandra and sofia run Opus; Sonnet elsewhere (an existing pattern, pinned by tests); the audit model follows P17.
 

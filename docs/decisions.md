@@ -7,7 +7,6 @@ Phase 0 decisions (D1–D9, P1, P2): [spike/DECISIONS.md](../spike/DECISIONS.md)
 
 The owner's other open items are in [backlog.md](backlog.md), "Needs the user". Once decided, an entry moves to "Decided proposals".
 
-- **G114 (F108): how Home shows Giac's sequence answer.** Recommendation (Opus pass 1, 2026-10-28): show a one-element sequence as its value and a longer one as a list, in a small gorge package, since `seq[` is Giac's word on screen (F93). `fMin`/`fMax` (only these two of Find's 958 functions) answer `seq[…]`, shown as is; show it as the value, or as a list? Touches `homeEval.ts`: its own package.
 - **A21, the F-Droid recipe's qalc build (P22):** `fdroid/README.md` names the open answer. Until F-Droid says whether checked-in derived data (`find/factors.yaml`) is acceptable, the recipe keeps its libxml2 and libqalculate builds, unchanged. Yes: before C4 it drops both. No: it runs `tools/find-index/refresh-factors.mjs` and fails on a diff.
 
 ## Decided proposals
@@ -15,6 +14,7 @@ The owner's other open items are in [backlog.md](backlog.md), "Needs the user". 
 Newest first within each group.
 
 ### Pipeline and process
+- **Owner answers of 2026-10-28 (after the day shift).** Home shows a one-element `seq[…]` as its value, a longer sequence as a list in braces (G119, F108).
 - **Owner answers of 2026-10-26, afternoon (the after-night report checked).** One green night is enough for a new core case (S24's c61–c66); R4a's gate includes G114 (F108). Full text: archive.
 - **Owner answers of 2026-10-26 (after the eleventh night).** G112's rule (one list as the only argument is refused for every name the probe finds) stands until F107 narrows it; F101 and F104 are G113, before R4a. Full text: archive.
 - **Owner answers of 2026-10-25, afternoon (verification check).** A wall-clock test that fails only under load is a timing case, not a bug (`isTiming`); the gate gets the pipeline's retry list (A39). Would change if: a timing case fails without load. Full text: archive.
